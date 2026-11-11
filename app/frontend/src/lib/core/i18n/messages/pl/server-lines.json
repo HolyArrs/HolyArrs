@@ -1198,5 +1198,9 @@
 	"server.discover.coming-saturday": "Premiera: sobota",
 	"server.discover.new-episode-sat": "Nowy odcinek · sob.",
 	"server.discover.coming-sunday": "Premiera: niedziela",
-	"server.discover.new-episode-sun": "Nowy odcinek · niedz."
+	"server.discover.new-episode-sun": "Nowy odcinek · niedz.",
+	"server.requests.this-plex-account-no-longer-shares": "To konto Plex nie ma już udostępnionego serwera właściciela, więc jego lista obserwowanych nie jest odczytywana.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex pokazał pustą listę obserwowanych. Jeśli są na niej tytuły, ustawienie prywatności może ukrywać ją przed znajomymi.",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex nie udostępnił tej listy obserwowanych kontu Plex właściciela. Ustawienie prywatności może ukrywać ją przed znajomymi.",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex odrzucił połączenie Plex właściciela. Właściciel może ponownie połączyć Plex w Ustawieniach."
 }

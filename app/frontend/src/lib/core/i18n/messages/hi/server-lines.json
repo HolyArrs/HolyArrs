@@ -1198,5 +1198,9 @@
 	"server.discover.coming-saturday": "शनिवार को आ रहा है",
 	"server.discover.new-episode-sat": "नया एपिसोड · शनि",
 	"server.discover.coming-sunday": "रविवार को आ रहा है",
-	"server.discover.new-episode-sun": "नया एपिसोड · रवि"
+	"server.discover.new-episode-sun": "नया एपिसोड · रवि",
+	"server.requests.this-plex-account-no-longer-shares": "यह Plex अकाउंट अब ओनर का सर्वर शेयर नहीं करता, इसलिए इसकी वॉचलिस्ट नहीं पढ़ी जाती।",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex ने खाली वॉचलिस्ट दिखाई। अगर इसमें टाइटल हैं, तो इसकी प्राइवेसी सेटिंग इसे दोस्तों से छिपा सकती है।",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex ने यह वॉचलिस्ट ओनर के Plex अकाउंट के साथ शेयर नहीं की। इसकी प्राइवेसी सेटिंग इसे दोस्तों से छिपा सकती है।",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex ने ओनर का Plex लिंक नहीं माना। ओनर सेटिंग में Plex फिर से लिंक कर सकता है।"
 }

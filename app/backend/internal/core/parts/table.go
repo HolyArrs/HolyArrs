@@ -587,6 +587,7 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/my/plex-watchlist":                  wishlist,
 	"PUT /api/v1/my/plex-watchlist":                  wishlist,
 	"POST /api/v1/my/plex-watchlist/check":           wishlist,
+	"GET /api/v1/settings/asks/plex-friends":         wishlist,
 	"GET /api/v1/titles/{id}/follow":                 wishlist,
 	"PUT /api/v1/titles/{id}/follow":                 wishlist,
 	"DELETE /api/v1/titles/{id}/follow":              wishlist,

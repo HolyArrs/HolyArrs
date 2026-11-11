@@ -1198,5 +1198,9 @@
 	"server.discover.coming-saturday": "Cumartesi geliyor",
 	"server.discover.new-episode-sat": "Yeni bölüm · Cmt",
 	"server.discover.coming-sunday": "Pazar geliyor",
-	"server.discover.new-episode-sun": "Yeni bölüm · Paz"
+	"server.discover.new-episode-sun": "Yeni bölüm · Paz",
+	"server.requests.this-plex-account-no-longer-shares": "Bu Plex hesabı artık sahibin sunucusunu paylaşmıyor, bu yüzden izleme listesi okunmuyor.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex boş bir izleme listesi gösterdi. Listede başlıklar varsa gizlilik ayarı onu arkadaşlardan gizliyor olabilir.",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex bu izleme listesini sahibin Plex hesabıyla paylaşmadı. Gizlilik ayarı onu arkadaşlardan gizliyor olabilir.",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex, sahibin Plex bağlantısını reddetti. Sahip, Plex'i Ayarlar'da yeniden bağlayabilir."
 }

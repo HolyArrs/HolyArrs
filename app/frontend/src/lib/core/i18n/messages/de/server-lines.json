@@ -1198,5 +1198,9 @@
 	"server.discover.coming-saturday": "Kommt Samstag",
 	"server.discover.new-episode-sat": "Neue Folge · Sa",
 	"server.discover.coming-sunday": "Kommt Sonntag",
-	"server.discover.new-episode-sun": "Neue Folge · So"
+	"server.discover.new-episode-sun": "Neue Folge · So",
+	"server.requests.this-plex-account-no-longer-shares": "Dieses Plex-Konto teilt den Server des Besitzers nicht mehr, daher wird seine Merkliste nicht gelesen.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex hat eine leere Merkliste gezeigt. Wenn sie Titel enthält, verbirgt ihre Datenschutzeinstellung sie vielleicht vor Freunden.",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex hat diese Merkliste nicht mit dem Plex-Konto des Besitzers geteilt. Ihre Datenschutzeinstellung verbirgt sie vielleicht vor Freunden.",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex hat die Plex-Verknüpfung des Besitzers abgelehnt. Der Besitzer kann Plex in den Einstellungen erneut verknüpfen."
 }

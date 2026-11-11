@@ -670,9 +670,11 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	}})
 	requestsSvc.PrefetchParts = true
-	// Plex watchlists are read with each person's own kept Plex sign-in.
+	// Plex watchlists are read with each person's own kept Plex sign-in;
+	// imported Plex friends' with the owner's Plex link.
 	plexWatch := &requests.Watchlists{Asks: requestsSvc, Base: env("HOLYARRS_PLEX_DISCOVER_URL", requests.DefaultPlexDiscover),
-		Token: au.PlexToken, ClientID: au.PlexClientID}
+		Token: au.PlexToken, ClientID: au.PlexClientID, Owner: au.PlexOwnerLink,
+		PlexTV: env(accounts.EnvPlexURL, requests.DefaultPlexTV), Community: env("HOLYARRS_PLEX_COMMUNITY_URL", requests.DefaultPlexCommunity)}
 	watchlists.Store(plexWatch)
 	go requestsSvc.BackfillParts(context.Background())
 	requestsSvc.WatchEpisodes()

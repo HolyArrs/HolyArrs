@@ -1198,5 +1198,9 @@
 	"server.discover.coming-saturday": "Вийде: субота",
 	"server.discover.new-episode-sat": "Нова серія · сб",
 	"server.discover.coming-sunday": "Вийде: неділя",
-	"server.discover.new-episode-sun": "Нова серія · нд"
+	"server.discover.new-episode-sun": "Нова серія · нд",
+	"server.requests.this-plex-account-no-longer-shares": "Цей обліковий запис Plex більше не має доступу до сервера власника, тому його список перегляду не читається.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex показав порожній список перегляду. Якщо в ньому є назви, налаштування приватності може приховувати його від друзів.",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex не поділився цим списком перегляду з обліковим записом Plex власника. Налаштування приватності може приховувати його від друзів.",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex відхилив підключення Plex власника. Власник може знову підключити Plex у налаштуваннях."
 }

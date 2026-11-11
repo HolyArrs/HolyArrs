@@ -1198,5 +1198,9 @@
 	"server.discover.coming-saturday": "土曜日に公開",
 	"server.discover.new-episode-sat": "新しいエピソード · 土",
 	"server.discover.coming-sunday": "日曜日に公開",
-	"server.discover.new-episode-sun": "新しいエピソード · 日"
+	"server.discover.new-episode-sun": "新しいエピソード · 日",
+	"server.requests.this-plex-account-no-longer-shares": "この Plex アカウントはオーナーのサーバーを共有しなくなったため、ウォッチリストは読み込まれません。",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex は空のウォッチリストを返しました。タイトルがある場合、プライバシー設定でフレンドから隠されている可能性があります。",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex はこのウォッチリストをオーナーの Plex アカウントに共有しませんでした。プライバシー設定でフレンドから隠されている可能性があります。",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex がオーナーの Plex 連携を拒否しました。オーナーは設定で Plex を再度連携できます。"
 }

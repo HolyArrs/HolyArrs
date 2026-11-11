@@ -31,6 +31,36 @@ func (h *WatchlistHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/my/plex-watchlist", h.getMyWatchlist)
 	m.HandleFunc("PUT /api/v1/my/plex-watchlist", h.putMyWatchlist)
 	m.HandleFunc("POST /api/v1/my/plex-watchlist/check", h.checkMyWatchlist)
+	m.HandleFunc("GET /api/v1/settings/asks/plex-friends", h.getPlexFriends)
+}
+
+// plexFriendsView is the people Include Plex friends reads, for Request rules.
+type plexFriendsView struct {
+	// On: Plex watchlists and Include Plex friends are both on.
+	On bool `json:"on"`
+	// OwnerLinked: the owner's Plex link is kept, so friends can be read.
+	OwnerLinked bool         `json:"owner_linked"`
+	People      []PlexFriend `json:"people"`
+}
+
+func (h *WatchlistHandlers) getPlexFriends(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	db := h.Store.Read()
+	set, err := ReadSettings(ctx, db)
+	if err != nil {
+		webserver.Internal(w, "api", err)
+		return
+	}
+	v := plexFriendsView{On: set.PlexWatchlists && set.PlexFriends}
+	if wl := h.Watchlists(); wl != nil && wl.Owner != nil {
+		tok, _ := wl.Owner(ctx)
+		v.OwnerLinked = tok != ""
+	}
+	if v.People, err = ReadPlexFriends(ctx, db); err != nil {
+		webserver.Internal(w, "api", err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, v)
 }
 
 // watchlistView is My account's Plex watchlist card.

@@ -1198,5 +1198,9 @@
 	"server.discover.coming-saturday": "Chega sábado",
 	"server.discover.new-episode-sat": "Novo episódio · sáb.",
 	"server.discover.coming-sunday": "Chega domingo",
-	"server.discover.new-episode-sun": "Novo episódio · dom."
+	"server.discover.new-episode-sun": "Novo episódio · dom.",
+	"server.requests.this-plex-account-no-longer-shares": "Esta conta do Plex não compartilha mais o servidor do dono, então a watchlist dela não é lida.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "O Plex mostrou uma watchlist vazia. Se ela tiver títulos, a configuração de privacidade pode estar escondendo-a dos amigos.",
+	"server.requests.plex-did-not-share-this-watchlist": "O Plex não compartilhou esta watchlist com a conta do Plex do dono. A configuração de privacidade pode estar escondendo-a dos amigos.",
+	"server.requests.plex-refused-the-owner-s-plex": "O Plex recusou o vínculo do Plex do dono. O dono pode vincular o Plex de novo em Configurações."
 }

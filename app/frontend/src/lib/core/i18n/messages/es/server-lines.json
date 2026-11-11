@@ -1198,5 +1198,9 @@
 	"server.discover.coming-saturday": "Llega el sábado",
 	"server.discover.new-episode-sat": "Episodio nuevo · sáb",
 	"server.discover.coming-sunday": "Llega el domingo",
-	"server.discover.new-episode-sun": "Episodio nuevo · dom"
+	"server.discover.new-episode-sun": "Episodio nuevo · dom",
+	"server.requests.this-plex-account-no-longer-shares": "Esta cuenta de Plex ya no comparte el servidor del propietario, así que su lista de seguimiento no se lee.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex mostró una lista de seguimiento vacía. Si tiene títulos, su ajuste de privacidad puede ocultarla a los amigos.",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex no compartió esta lista de seguimiento con la cuenta de Plex del propietario. Su ajuste de privacidad puede ocultarla a los amigos.",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex rechazó la vinculación de Plex del propietario. El propietario puede volver a vincular Plex en Ajustes."
 }

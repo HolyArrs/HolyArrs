@@ -1198,5 +1198,9 @@
 	"server.discover.coming-saturday": "Arrive samedi",
 	"server.discover.new-episode-sat": "Nouvel épisode · sam.",
 	"server.discover.coming-sunday": "Arrive dimanche",
-	"server.discover.new-episode-sun": "Nouvel épisode · dim."
+	"server.discover.new-episode-sun": "Nouvel épisode · dim.",
+	"server.requests.this-plex-account-no-longer-shares": "Ce compte Plex ne partage plus le serveur du propriétaire, sa liste à voir n'est donc pas lue.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex a montré une liste à voir vide. Si elle contient des titres, son réglage de confidentialité la cache peut-être aux amis.",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex n'a pas partagé cette liste à voir avec le compte Plex du propriétaire. Son réglage de confidentialité la cache peut-être aux amis.",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex a refusé la liaison Plex du propriétaire. Le propriétaire peut relier Plex à nouveau dans Paramètres."
 }

@@ -1198,5 +1198,9 @@
 	"server.discover.coming-saturday": "يصل السبت",
 	"server.discover.new-episode-sat": "حلقة جديدة · السبت",
 	"server.discover.coming-sunday": "يصل الأحد",
-	"server.discover.new-episode-sun": "حلقة جديدة · الأحد"
+	"server.discover.new-episode-sun": "حلقة جديدة · الأحد",
+	"server.requests.this-plex-account-no-longer-shares": "لم يعد حساب Plex هذا يشارك خادم المالك، لذا لا تُقرأ قائمة مشاهدته.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "أظهر Plex قائمة مشاهدة فارغة. إن كانت فيها عناوين، فقد يخفيها إعداد الخصوصية عن الأصدقاء.",
+	"server.requests.plex-did-not-share-this-watchlist": "لم يشارك Plex قائمة المشاهدة هذه مع حساب Plex الخاص بالمالك. قد يخفيها إعداد الخصوصية عن الأصدقاء.",
+	"server.requests.plex-refused-the-owner-s-plex": "رفض Plex ربط Plex الخاص بالمالك. يمكن للمالك ربط Plex مرة أخرى في الإعدادات."
 }

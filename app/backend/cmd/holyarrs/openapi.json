@@ -1337,6 +1337,10 @@
             "description": "Pick rules for approved asks; 0 takes the folder's own.",
             "type": "integer"
           },
+          "plex_friends": {
+            "description": "While plex_watchlists is on, also read the watchlists of people imported from the owner's Plex account, with the owner's Plex link, and ask for them as those people. Only people already in HolyArrs who still share the chosen Plex server; anyone who turned their watchlist off is left alone. Default off.",
+            "type": "boolean"
+          },
           "plex_watchlists": {
             "description": "People may have their Plex watchlist asked for as them (each turns it on in My account). Default off.",
             "type": "boolean"
@@ -4168,6 +4172,55 @@
           },
           "wishlist": {
             "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "PlexFriends": {
+        "properties": {
+          "on": {
+            "description": "Plex watchlists and Include Plex friends are both on.",
+            "type": "boolean"
+          },
+          "owner_linked": {
+            "description": "The owner's Plex link is kept, so friends' watchlists can be read.",
+            "type": "boolean"
+          },
+          "people": {
+            "description": "The active people with a Plex link, the owner left out, by name.",
+            "items": {
+              "properties": {
+                "asked": {
+                  "description": "Watchlist entries asked for or joined as them.",
+                  "type": "integer"
+                },
+                "checked_at": {
+                  "description": "When their watchlist was last read.",
+                  "format": "date-time",
+                  "type": "string"
+                },
+                "error": {
+                  "description": "Why the last read did not work, in plain words.",
+                  "type": "string"
+                },
+                "kid": {
+                  "description": "A Kid: their age-rating limit applies to what their watchlist asks for.",
+                  "type": "boolean"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "plex_name": {
+                  "description": "Their Plex account name.",
+                  "type": "string"
+                },
+                "user_id": {
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
           }
         },
         "type": "object"
@@ -23774,6 +23827,31 @@
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/asks/plex-friends": {
+      "get": {
+        "description": "The people Include Plex friends reads: each person with a Plex link, whether they are a Kid, when their watchlist was last read, what went wrong and how many entries were asked for. Reads nothing from Plex.",
+        "operationId": "getPlexFriends",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlexFriends"
+                }
+              }
+            },
+            "description": "Plex friends."
+          }
+        },
+        "summary": "Plex friends for Requests",
+        "tags": [
+          "Requests"
+        ],
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/settings/downloaders": {

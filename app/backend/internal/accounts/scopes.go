@@ -190,6 +190,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/my/plex-watchlist":                  webserver.NeedSignedIn,
 	"PUT /api/v1/my/plex-watchlist":                  webserver.NeedSignedIn,
 	"POST /api/v1/my/plex-watchlist/check":           webserver.NeedSignedIn,
+	"GET /api/v1/settings/asks/plex-friends":         webserver.NeedUsers,
 	"GET /api/v1/asked-by":                           webserver.NeedSignedIn,
 	"GET /api/v1/my/profile":                         webserver.NeedSignedIn,
 	"PUT /api/v1/my/profile":                         webserver.NeedSignedIn,

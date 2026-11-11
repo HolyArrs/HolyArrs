@@ -1198,5 +1198,9 @@
 	"server.discover.coming-saturday": "토요일 공개",
 	"server.discover.new-episode-sat": "새 에피소드 · 토",
 	"server.discover.coming-sunday": "일요일 공개",
-	"server.discover.new-episode-sun": "새 에피소드 · 일"
+	"server.discover.new-episode-sun": "새 에피소드 · 일",
+	"server.requests.this-plex-account-no-longer-shares": "이 Plex 계정은 더 이상 소유자의 서버를 공유하지 않아 워치리스트를 읽지 않습니다.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex가 빈 워치리스트를 보여 주었습니다. 타이틀이 있다면 개인정보 설정 때문에 친구에게 숨겨져 있을 수 있습니다.",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex가 이 워치리스트를 소유자의 Plex 계정과 공유하지 않았습니다. 개인정보 설정 때문에 친구에게 숨겨져 있을 수 있습니다.",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex가 소유자의 Plex 연결을 거부했습니다. 소유자는 설정에서 Plex를 다시 연결할 수 있습니다."
 }
