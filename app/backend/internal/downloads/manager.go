@@ -186,6 +186,11 @@ func (m *Manager) EngineFor(ctx context.Context, d domain.Downloader) (Engine, e
 		e := NewDeluge(d.URL, secret, h)
 		e.Category, e.Others = d.Category, otherCategories(d)
 		return e, nil
+	case "rtorrent":
+		e := NewRTorrent(d.URL, d.Username, secret, h)
+		e.Category, e.Others = d.Category, otherCategories(d)
+		e.PathMap, e.SaveRoot = d.PathMap, m.SavePath
+		return e, nil
 	}
 	return nil, fmt.Errorf("no engine for adapter %q", d.Adapter)
 }

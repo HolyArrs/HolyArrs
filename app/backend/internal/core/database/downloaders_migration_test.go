@@ -118,7 +118,7 @@ func TestOptionalDownloadersMigrationKeepsData(t *testing.T) {
 	if got := downloaderRows(t, s.Read(), "PRAGMA foreign_key_list(downloads)"); len(got) == 0 {
 		t.Fatal("dependent foreign key removed")
 	}
-	for _, kind := range []string{"transmission", "nzbget", "deluge"} {
+	for _, kind := range []string{"transmission", "nzbget", "deluge", "rtorrent"} {
 		err = s.Write(context.Background(), func(tx *sql.Tx) error {
 			_, err := tx.Exec(`INSERT INTO downloaders(created_at,created_by,updated_at,updated_by,name,adapter,protocol,url) VALUES('t','{}','t','{}',?,?,?,'http://owned-fixture')`, kind, kind, map[bool]string{true: "usenet", false: "torrent"}[kind == "nzbget"])
 			return err
