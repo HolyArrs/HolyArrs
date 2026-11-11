@@ -312,8 +312,10 @@ func TestM1MigrationsAreAddOnly(t *testing.T) {
 		// TestMoveCredentialsPerAddressMigration proves no key is lost.
 		// 0103 rebuilds own_traits to add the size kind;
 		// TestOwnTraitsKeptBySizeMigration proves no trait or id is lost.
+		// 0106 rebuilds downloaders to add the rtorrent adapter;
+		// TestDownloadersKeptByRTorrentMigration proves no row is lost.
 		if m.Version < 7 || m.Version == 8 || m.Version == 19 || m.Version == 21 || m.Version == 23 || m.Version == 25 || m.Version == 42 || m.Version == 82 ||
-			m.Version == 84 || m.Version == 95 || m.Version == 102 || m.Version == 103 {
+			m.Version == 84 || m.Version == 95 || m.Version == 102 || m.Version == 103 || m.Version == 106 {
 			continue
 		}
 		up := strings.ToUpper(m.SQL)

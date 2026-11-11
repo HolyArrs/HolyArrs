@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "Искать сейчас",
 	"settings.index.search.search-now.search-now.words": "поиск копия получше ленты запуск",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "Загрузчики",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "клиент загрузки qbittorrent sabnzbd transmission deluge nzbget торрент клиент добавить",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "клиент загрузки qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget торрент клиент добавить",
 	"settings.index.downloaders.st-stall.stalled-after.label": "Считать зависшей через",
 	"settings.index.downloaders.st-stall.stalled-after.words": "завис застряла часы загрузка",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "Отказаться и пробовать следующий релиз через",

@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.18: новый вид Minimal**, с маленькими постерами, без больших фото и автовоспроизведения. И ещё 8 исправлений, в том числе для аниме, которое TMDB делит на две части. [Что нового](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.19: rTorrent и ruTorrent как загрузчик**, в том числе на сидбоксе. Готовые загрузки из Usenet теперь перемещаются в библиотеку, а не копируются. [Что нового](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
+> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
 
 > Каждый постер, трейлер и оценка в твоём HolyArrs приходят с сервера, который я держу и оплачиваю сам, чтобы он оставался бесплатным для всех. Если HolyArrs сделал твой киновечер чуть лучше, спонсорство помогает держать свет включённым для всех нас 💛
 >
@@ -152,7 +152,7 @@ docker compose up -d
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Загрузчики: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Медиасерверы: Plex, Jellyfin, Emby." /></picture>
 
-- **Загрузчики:** qBittorrent, Transmission, Deluge, SABnzbd, NZBGet
+- **Загрузчики:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
 - **Медиасерверы:** Plex, Jellyfin, Emby
 - **Sources:** любой индексер Torznab или Newznab, а также Prowlarr или Jackett
 - **Переносит настройки из:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -222,7 +222,7 @@ HolyArrs только читает ваши старые приложения и
 | Тег | Для чего |
 | :----: | --- |
 | `latest` | Самая новая версия. |
-| `1.0.18` | Одна точная версия. Никогда не сдвигается. |
+| `1.0.19` | Одна точная версия. Никогда не сдвигается. |
 
 ## Использование
 

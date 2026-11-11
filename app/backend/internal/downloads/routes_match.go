@@ -13,6 +13,8 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -486,6 +488,32 @@ func (a *Web) readMatches(ctx context.Context, where string, args ...any) ([]Mat
 	return out, rs.Err()
 }
 
+// dropOtherApps leaves out the rows for other apps' jobs in a shared
+// Usenet client, saved before those were left unmatched.
+func (a *Web) dropOtherApps(ctx context.Context, ms []MatchView) []MatchView {
+	cats, err := unsureCategories(ctx, a.Store.Read())
+	if err != nil || len(cats) == 0 {
+		return ms
+	}
+	ds := map[int64]*domain.Downloader{}
+	out := ms[:0]
+	for _, m := range ms {
+		d, ok := ds[m.DownloaderID]
+		if !ok {
+			d = &domain.Downloader{}
+			if database.Get(ctx, a.Store.Read(), "downloaders", m.DownloaderID, d) != nil {
+				d = nil
+			}
+			ds[m.DownloaderID] = d
+		}
+		if cat, seen := cats[itemKey{m.DownloaderID, m.Hash}]; seen && d != nil && otherApp(*d, cat) {
+			continue
+		}
+		out = append(out, m)
+	}
+	return out
+}
+
 // listMatches is the Confirm match list, with how many torrents are in
 // each state.
 func (a *Web) listMatches(w http.ResponseWriter, r *http.Request) {
@@ -494,6 +522,7 @@ func (a *Web) listMatches(w http.ResponseWriter, r *http.Request) {
 		webserver.Internal(w, "api", err)
 		return
 	}
+	unsure = a.dropOtherApps(r.Context(), unsure)
 	counts := map[string]int{LinkLinked: 0, LinkUnsure: 0, LinkNotMedia: 0, linkSkipped: 0}
 	rs, err := a.Store.Read().QueryContext(r.Context(), "SELECT state, COUNT(*) FROM client_links GROUP BY state")
 	if err != nil {
@@ -508,6 +537,7 @@ func (a *Web) listMatches(w http.ResponseWriter, r *http.Request) {
 			counts[st] = n
 		}
 	}
+	counts[LinkUnsure] = len(unsure)
 	var pending int
 	_ = a.read().QueryRowContext(r.Context(), "SELECT COUNT(*) FROM dl_match_queue WHERE outcome = ''").Scan(&pending)
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"matches": unsure, "counts": counts, "pending": pending})

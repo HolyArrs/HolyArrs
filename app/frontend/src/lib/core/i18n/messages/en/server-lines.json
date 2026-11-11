@@ -839,7 +839,7 @@
 	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists": "HolyArrs reads Trakt lists and watchlists; a watched or collection list stays in Radarr",
 	"server.migrate.holyarrs-sets-one-proxy-address-per": "HolyArrs sets one proxy address per Source; set it on the Sources that used it",
 	"server.migrate.holyarrs-stopped-during-this-import-before": "HolyArrs stopped during this import, before it finished. What it made is marked: import again to finish it (nothing is added twice), or undo it.",
-	"server.migrate.holyarrs-talks-to-qbittorrent-transmission-deluge": "HolyArrs talks to qBittorrent, Transmission, Deluge, SABnzbd and NZBGet only",
+	"server.migrate.holyarrs-talks-to-qbittorrent-transmission-deluge": "HolyArrs talks to qBittorrent, Transmission, Deluge, rTorrent, SABnzbd and NZBGet only",
 	"server.migrate.holyarrs-uses-one-category-of-its": "HolyArrs uses one category of its own per Downloader (holyarrs)",
 	"server.migrate.holyarrs-writes-no-metadata-files-for": "HolyArrs writes no metadata files for media players",
 	"server.migrate.import-row-was-replaced": "import row was replaced",

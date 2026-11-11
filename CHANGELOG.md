@@ -2,6 +2,19 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.0.19
+
+### Added
+
+- rTorrent and ruTorrent work as a Downloader, seedboxes too. ([#199](https://github.com/HolyArrs/HolyArrs/issues/199))
+
+### Fixed
+
+- Finished Usenet downloads move into the Library, and copies write each file once. ([#240](https://github.com/HolyArrs/HolyArrs/issues/240))
+- Downloads tabs count every torrent, and Show more works under each filter. ([#245](https://github.com/HolyArrs/HolyArrs/issues/245))
+- Free space on Downloads matches what qBittorrent and SABnzbd report. ([#246](https://github.com/HolyArrs/HolyArrs/issues/246))
+- A shared SABnzbd no longer asks you to match other apps' downloads. ([#248](https://github.com/HolyArrs/HolyArrs/issues/248))
+
 ## 1.0.18
 
 ### Added

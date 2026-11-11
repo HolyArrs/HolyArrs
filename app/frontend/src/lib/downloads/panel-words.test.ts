@@ -48,6 +48,7 @@ describe('clientMark', () => {
 	it('marks each kind', () => {
 		expect(clientMark('qbittorrent')).toEqual({ mark: 'qB', tone: 'qb' });
 		expect(clientMark('nzbget').mark).toBe('NZB');
+		expect(clientMark('rtorrent')).toEqual({ mark: 'rT', tone: 'rt' });
 		expect(clientMark('other').mark).toBe('');
 	});
 });

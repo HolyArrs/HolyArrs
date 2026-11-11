@@ -164,7 +164,7 @@ func setup(t *testing.T) world {
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	setFake(t, s, "import_size_floors", "false")
-	w := world{s: s, dl: t.TempDir(), lib: t.TempDir()}
+	w := world{s: s, dl: mediaTemp(t), lib: mediaTemp(t)}
 	write(t, filepath.Join(w.dl, relName+".mkv"), 2048)
 	err = s.Write(context.Background(), func(tx *sql.Tx) error {
 		var pr int64

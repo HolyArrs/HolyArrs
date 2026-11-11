@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "立即搜索",
 	"settings.index.search.search-now.search-now.words": "搜索 更好的副本 订阅源 运行 search better copy feeds run",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "下载器",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "下载客户端 qbittorrent sabnzbd transmission deluge nzbget 种子客户端 添加 download client qbittorrent sabnzbd transmission deluge nzbget torrent client add",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "下载客户端 qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget 种子客户端 添加 download client qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget torrent client add",
 	"settings.index.downloaders.st-stall.stalled-after.label": "多少小时后算停滞",
 	"settings.index.downloaders.st-stall.stalled-after.words": "停滞 卡住 小时 下载 stalled stuck hours download",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "放弃并尝试下一个资源的等待时间",

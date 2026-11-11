@@ -12,6 +12,7 @@ func TestDownloaderTimeout30s(t *testing.T) {
 		"sabnzbd":      NewSabnzbd("http://x", "k", nil).http.Timeout,
 		"nzbget":       NewNZBGet("http://x", "", "", nil).http.Timeout,
 		"deluge":       NewDeluge("http://x", "", nil).http.Timeout,
+		"rtorrent":     NewRTorrent("http://x", "", "", nil).http.Timeout,
 		"transmission": NewTransmission("http://x", "", "", nil).http.Timeout,
 	} {
 		if got != 30*time.Second {

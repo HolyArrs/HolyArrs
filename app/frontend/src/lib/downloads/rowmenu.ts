@@ -66,7 +66,7 @@ export function paneExtras(r: RowBits, opts: { steer: boolean; fail: boolean }):
 	const torrent = protocolOf(r) === 'torrent';
 	const client = clientOk(r);
 	if (client && torrent && controllable(r.downloader_kind)) out.push('recheck', 'reannounce');
-	// Force start and the sheets are qBittorrent calls; Transmission and Deluge refuse them.
+	// Force start and the sheets are qBittorrent calls; Transmission, Deluge and rTorrent refuse them.
 	if (client && torrent && controllable(r.downloader_kind) && opts.steer && !!r.downloader_id && !!r.hash) out.push('force', 'steer');
 	if (opts.fail) out.push('fail');
 	return out;

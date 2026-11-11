@@ -54,6 +54,7 @@ type matchWrite struct {
 	key, name, cat string
 	priority       int
 	rename         bool
+	recat          bool
 }
 
 // persister batches what the reader saw into dl_items, torrent_log and
@@ -115,6 +116,9 @@ func (p *persister) note(id int64, ch Changes, prev, cur map[string]Job, why str
 		}
 		if j.Name != old.Name {
 			p.matches = append(p.matches, matchWrite{id: id, key: k, name: j.Name, cat: j.Category, priority: matchPriority(j), rename: true})
+		}
+		if j.Category != old.Category {
+			p.matches = append(p.matches, matchWrite{id: id, key: k, name: j.Name, cat: j.Category, priority: matchPriority(j), recat: true})
 		}
 		if p.lines == nil {
 			continue
@@ -203,6 +207,18 @@ func (p *persister) flush(ctx context.Context) error {
 				// A new name deserves another try, even after nomatch.
 				if _, err := tx.Exec(`UPDATE dl_match_queue SET name = ?, attempts = 0, next_try_at = ?, outcome = '', last_error = ''
 					WHERE downloader_id = ? AND key = ? AND outcome IN ('', 'nomatch', 'unsure', 'not_media')`, m.name, at, m.id, m.key); err != nil {
+					return err
+				}
+				continue
+			}
+			if m.recat {
+				// The match decides from the category, so keep it current; a job
+				// moved out of another app's category is looked up again.
+				if _, err := tx.Exec(`UPDATE dl_match_queue SET category = ?,
+					attempts = CASE WHEN outcome = ? THEN 0 ELSE attempts END,
+					next_try_at = CASE WHEN outcome = ? THEN ? ELSE next_try_at END,
+					outcome = CASE WHEN outcome = ? THEN '' ELSE outcome END
+					WHERE downloader_id = ? AND key = ?`, m.cat, matchOtherApp, matchOtherApp, at, matchOtherApp, m.id, m.key); err != nil {
 					return err
 				}
 				continue

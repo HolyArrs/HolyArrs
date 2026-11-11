@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.18: नया Minimal लुक**, छोटे पोस्टर, बिना बड़ी फ़ोटो और बिना ऑटोप्ले। साथ में 8 सुधार, जिनमें TMDB पर दो हिस्सों में बँटे एनीमे भी शामिल हैं। [क्या नया है](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.19: डाउनलोडर के तौर पर rTorrent और ruTorrent**, सीडबॉक्स पर भी। पूरे हुए Usenet डाउनलोड अब कॉपी होने के बजाय आपकी लाइब्रेरी में मूव होते हैं। [क्या नया है](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
+> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
 
 > आपके HolyArrs का हर पोस्टर, ट्रेलर और स्कोर एक ऐसे सर्वर से आता है जिसे मैं खुद चलाता हूँ और जिसका खर्च खुद उठाता हूँ, ताकि यह सबके लिए मुफ़्त रहे। अगर HolyArrs ने आपकी मूवी नाइट थोड़ी बेहतर बनाई है, तो स्पॉन्सर बनकर हम सबके लिए यह रोशनी जलाए रखिए 💛
 >
@@ -152,7 +152,7 @@ docker compose up -d
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="डाउनलोडर: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet। मीडिया सर्वर: Plex, Jellyfin, Emby।" /></picture>
 
-- **डाउनलोडर:** qBittorrent, Transmission, Deluge, SABnzbd, NZBGet
+- **डाउनलोडर:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
 - **मीडिया सर्वर:** Plex, Jellyfin, Emby
 - **Sources:** कोई भी Torznab या Newznab इंडेक्सर, या Prowlarr या Jackett
 - **इनसे सेटअप लाया जा सकता है:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -222,7 +222,7 @@ NAS पर चला रहे हैं? देखिए [Unraid, Synology औ�
 | टैग | किसके लिए |
 | :----: | --- |
 | `latest` | नवीनतम रिलीज़। |
-| `1.0.18` | एक तय वर्ज़न। यह कभी नहीं बदलता। |
+| `1.0.19` | एक तय वर्ज़न। यह कभी नहीं बदलता। |
 
 ## इस्तेमाल
 

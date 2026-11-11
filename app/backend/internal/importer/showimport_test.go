@@ -42,7 +42,7 @@ func showSetup(t *testing.T, dlEps []int, files ...string) showWorld {
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	setFake(t, s, "import_size_floors", "false")
-	w := showWorld{s: s, dl: t.TempDir(), lib: t.TempDir(), slots: map[int]int64{}, folder: "Copper Valley (2025)"}
+	w := showWorld{s: s, dl: mediaTemp(t), lib: mediaTemp(t), slots: map[int]int64{}, folder: "Copper Valley (2025)"}
 	var seen []domain.SeenFile
 	for _, f := range files {
 		write(t, filepath.Join(w.dl, packName, filepath.FromSlash(f)), 2048)

@@ -139,6 +139,47 @@ export function counts(rows: RowBits[], tabs: Tab[]): Counted[] {
 	return out;
 }
 
+/** Torrents a view answer left out, per Downloader id: its protocol and how many per stage (its outside_rest). */
+export type Rest = Record<string, { protocol?: string; stages?: Partial<Record<Stage, number>> }>;
+
+/** The left-out torrents of every Downloader, per stage; with src only those of that protocol. */
+export function restSum(rest: Rest, src = ''): Partial<Record<Stage, number>> {
+	const out: Partial<Record<Stage, number>> = {};
+	for (const e of Object.values(rest)) {
+		if (src && e.protocol !== src) continue;
+		for (const [s, n] of Object.entries(e.stages ?? {}) as [Stage, number][]) out[s] = (out[s] ?? 0) + n;
+	}
+	return out;
+}
+
+/** How many torrents were left out in all. */
+export function restTotal(extra: Partial<Record<Stage, number>>): number {
+	return Object.values(extra).reduce((a, n) => a + (n ?? 0), 0);
+}
+
+/** Counts of the loaded rows plus the left-out torrents on each tab's (or sub-tab's) stages. */
+export function withRest(c: Counted[], groups: { key: string; stages: Stage[] }[], extra: Partial<Record<Stage, number>>): Counted[] {
+	return c.map((x) => {
+		const g = groups.find((y) => y.key === x.key);
+		return g ? { ...x, count: x.count + g.stages.reduce((a, s) => a + (extra[s] ?? 0), 0) } : x;
+	});
+}
+
+/** What the page says about torrents it has not loaded, for the source filter on (src) and whether another filter is on (partial). */
+export function moreOf(o: { rest: Rest; src: '' | 'usenet' | 'torrent'; partial: boolean; loaded: number; canMore: boolean }) {
+	const left = restSum(o.rest, o.src);
+	const n = restTotal(left);
+	return {
+		// Added to tab counts; another filter can only be checked against loaded rows.
+		extra: o.partial ? {} : left,
+		left: n,
+		loaded: o.loaded,
+		total: o.loaded + n,
+		more: n > 0 && o.canMore,
+		capped: n > 0 && !o.canMore
+	};
+}
+
 /** A tab's sub-tabs with their counts. */
 export function subCounts(rows: RowBits[], tab: Tab | undefined): Counted[] {
 	if (!tab) return [];

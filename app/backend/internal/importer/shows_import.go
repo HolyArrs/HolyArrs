@@ -152,6 +152,13 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	if !rootOK {
 		cands, bad = nil, []mediafiles.PlanStep{unpackStep(d.SavePath, "the Downloader reported a folder with \"..\" in it")}
 	}
+	prior, err := database.Select[mediafiles.Import](ctx, db, "imports", "download_id = ? AND state = 'placing' ORDER BY id DESC LIMIT 1", d.ID)
+	if err != nil {
+		return nil, err
+	}
+	if len(prior) == 1 && !dryRun {
+		restoreMoves(&prior[0])
+	}
 	unpacked, cleanup, unpackWhy := unpackRars(ctx, d.ID, root, cands, rules, dryRun)
 	defer cleanup()
 	cands = append(cands, unpacked...)
@@ -293,6 +300,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			}
 		}
 	}
+	im.markMoves(ctx, db, plan, dr, unpacked)
 	imp := &mediafiles.Import{DownloadID: &d.ID, FromPath: root, Kind: map[bool]string{false: "episodes", true: "tracks"}[music], Plan: plan, Result: []mediafiles.PlaceResult{}, Mode: "dry_run", State: "planned"}
 	if dryRun {
 		return imp, nil
@@ -303,10 +311,6 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		im.lowSpace(ctx, lowSpace, firstSlot, ti.ID, d.ID, by)
 	}
 
-	prior, err := database.Select[mediafiles.Import](ctx, db, "imports", "download_id = ? AND state = 'placing' ORDER BY id DESC LIMIT 1", d.ID)
-	if err != nil {
-		return nil, err
-	}
 	resumable := map[string]time.Time{}
 	recorded := []string{}
 	if len(prior) == 1 {
@@ -328,6 +332,11 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		}
 		imp.Result = append(imp.Result, r)
 	}
+	var before []mediafiles.PlaceResult
+	if len(prior) == 1 {
+		before = prior[0].Result
+	}
+	moveProof(plan, imp.Result, before)
 	imp.State = "placing"
 	var moved []int64
 	if err := im.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -401,7 +410,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			return imp, err
 		}
 	}
+	proof := imp.Result
 	imp.Result = execute(plan, im.Ops, resumable)
+	keepProof(imp.Result, proof)
 	for i, to := range heldFirst {
 		imp.Result[i].HeldAside = to
 	}

@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "Buscar ahora",
 	"settings.index.search.search-now.search-now.words": "buscar copia mejor feeds ejecutar",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "Gestores de descargas",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "cliente de descargas qbittorrent sabnzbd transmission deluge nzbget cliente torrent añadir",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "cliente de descargas qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget cliente torrent añadir",
 	"settings.index.downloaders.st-stall.stalled-after.label": "Estancada tras",
 	"settings.index.downloaders.st-stall.stalled-after.words": "estancada atascada horas descarga",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "Rendirse y probar el siguiente lanzamiento tras",
