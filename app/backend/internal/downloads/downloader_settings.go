@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -243,6 +244,19 @@ func absPath(p string) bool {
 	return strings.HasPrefix(p, "/") || len(p) >= 3 && p[1] == ':' && (p[2] == '\\' || p[2] == '/')
 }
 
+// samePath says two paths name the same folder: a trailing slash does not
+// count, and on Windows-style paths (a drive letter or \) neither does case.
+func samePath(a, b string) bool {
+	norm := func(p string) string {
+		p = strings.TrimSpace(p)
+		if strings.Contains(p, `\`) || len(p) >= 2 && p[1] == ':' {
+			p = strings.ToLower(strings.ReplaceAll(p, `\`, "/"))
+		}
+		return path.Clean(p)
+	}
+	return norm(a) == norm(b)
+}
+
 func fill(in Input, d *domain.Downloader, isNew bool) error {
 	name := strings.TrimSpace(in.Name)
 	if name == "" || len(name) > 80 {
@@ -315,7 +329,13 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 				return ErrPathMap
 			}
 		}
-		d.PathMap = in.PathMap
+		// A pair with the same folder on both sides changes nothing: drop it.
+		d.PathMap = []domain.PathMap{}
+		for _, p := range in.PathMap {
+			if !samePath(p.Theirs, p.Ours) {
+				d.PathMap = append(d.PathMap, p)
+			}
+		}
 	} else if isNew {
 		d.PathMap = []domain.PathMap{}
 	}

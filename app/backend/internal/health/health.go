@@ -63,6 +63,9 @@ type Backups struct {
 	KeyPrint string
 	// KeyKitPrint is the fingerprint of the last key kit downloaded.
 	KeyKitPrint string
+	// Off says the owner turned scheduled backups off: no backup is
+	// expected, so missing or old ones and the key kit are not warned about.
+	Off bool
 }
 
 // UpdateState is the update check's last answer as the checks need it.
@@ -671,6 +674,7 @@ func (e *Engine) backups(ctx context.Context) ([]Result, error) {
 	switch {
 	case err != nil:
 		r.State, r.Message = Warning, "The backups folder cannot be read"
+	case b.Off:
 	case b.LastErr != "":
 		r.State, r.Message = Error, "The last scheduled backup failed: "+b.LastErr
 	case b.Newest.IsZero() && !b.Started:
@@ -683,7 +687,7 @@ func (e *Engine) backups(ctx context.Context) ([]Result, error) {
 	// Backups do not hold the master key: without a copy of it, the saved
 	// passwords in a backup cannot be opened on a new machine.
 	k := Result{Key: "backups:key", Kind: "backups", Subject: "Backups", State: OK}
-	if err == nil && b.KeyPrint != "" && b.KeyKitPrint != b.KeyPrint {
+	if err == nil && !b.Off && b.KeyPrint != "" && b.KeyKitPrint != b.KeyPrint {
 		k.State, k.Message = Warning, "Download your key kit: Backups don't include the master key"
 	}
 	return []Result{r, k}, nil

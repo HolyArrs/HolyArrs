@@ -49,7 +49,8 @@ func (m *Manager) keyKitState(ctx context.Context) KeyKit {
 	if len(m.Key) > 0 {
 		st.Fingerprint = secrets.Fingerprint(m.Key)
 	}
-	if p := m.KeyPrint(); p != "" {
+	// With backups off there is no backup to open, so the card does not ask.
+	if p := m.KeyPrint(); p != "" && (m.Store == nil || !m.Off(ctx)) {
 		st.Needed = m.KeyKitPrint(ctx) != p
 	}
 	return st
