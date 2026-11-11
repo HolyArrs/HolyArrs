@@ -31,6 +31,24 @@ func usenetWorld(t *testing.T) world {
 
 func mayMove(domain.Downloader) bool { return true }
 
+// mediaTemp is a download or Library folder for an import test. With
+// HOLYARRS_TEST_MEDIA_DIR set it sits there instead, so the same tests run on a
+// share that cannot hardlink (a Docker Desktop mount of a Windows folder) while
+// the database stays on a local disk.
+func mediaTemp(t *testing.T) string {
+	t.Helper()
+	base := os.Getenv("HOLYARRS_TEST_MEDIA_DIR")
+	if base == "" {
+		return t.TempDir()
+	}
+	dir, err := os.MkdirTemp(base, "media-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+	return dir
+}
+
 func placedFiles(t *testing.T, w world) []mediafiles.File {
 	t.Helper()
 	fs, err := database.Select[mediafiles.File](context.Background(), w.s.Read(), "files", "")
