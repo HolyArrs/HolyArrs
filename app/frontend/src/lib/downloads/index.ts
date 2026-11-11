@@ -59,7 +59,7 @@ export { rowName } from './downloaders.ts';
 export { rowPath } from './downloaders.ts';
 export { searchShortcut } from './keys.ts';
 export { sizeFields } from './pick-rules.ts';
-export { stageOf } from './status-tabs.ts';
+export { stageOf, type Rest } from './status-tabs.ts';
 export { stepLabel } from './pick-rules.ts';
 export { tidyBody } from './pick-rules.ts';
 export { timeLeft } from './downloaders.ts';
