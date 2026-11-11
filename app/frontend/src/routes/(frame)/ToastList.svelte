@@ -5,7 +5,7 @@
 	import { AlertsPanel } from '#lib/alerts/index.ts';
 	import { metadataBackTitle, metadataDownTitle, clearMetadataBack, dismissMetadataDown, metadataDownShown, metadataOutage, watchMetadata } from '#lib/metadata/index.ts';
 	import { onMount, untrack } from 'svelte';
-	import { notifyIn, notifyOut } from '#lib/core/transitions.ts';
+	import { glide, notifyIn, notifyOut } from '#lib/core/transitions.ts';
 	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 
@@ -162,7 +162,8 @@
 	{/if}
 	<!-- While Recent alerts is open the pills step aside: every alert is in the list. -->
 	{#each alertsPanel.open ? [] : toasts.list as t (t.id)}
-		<div class="slot" in:toastIn out:toastOut>
+		<!-- The ones below glide into a leaving toast's place while it goes, instead of jumping once it has gone. -->
+		<div class="slot" in:toastIn out:toastOut animate:glide>
 			<Toast title={t.body ? t.text : undefined} text={t.body ?? t.text} tone={t.tone} action={t.action ? { label: t.action.label, run: () => toasts.runPast(t.id) } : undefined} ondismiss={() => toasts.dismiss(t.id)} onhold={() => toasts.pause(t.id)} onlet={() => toasts.resume(t.id)} />
 		</div>
 	{/each}
