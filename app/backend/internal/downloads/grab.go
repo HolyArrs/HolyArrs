@@ -206,7 +206,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 				break
 			}
 			d = dls[i]
-			ext, err := m.send(ctx, d, rel, slotID, hash, window > 0)
+			ext, own, err := m.send(ctx, d, rel, slotID, hash, window > 0)
 			if err != nil {
 				if errors.Is(err, ErrUncertain) || errors.Is(err, ErrAttemptStopped) {
 					return 0, err
@@ -216,7 +216,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			}
 			dl = &domain.Download{DownloaderID: d.ID, ReleaseID: &rel.ID, SlotIDs: []int64{slotID}, ExternalID: ext, State: "sent",
 				FilesSeen: []domain.SeenFile{}, SavePath: m.SavePath, StartedBy: by, ProgressAt: &now}
-			if window > 0 {
+			if window > 0 && own {
 				dl.PackFiles = []domain.PackFile{}
 			}
 		}
@@ -356,8 +356,8 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		m.publish("slot", map[string]any{"id": id, "state": mediafiles.SlotDownloading})
 	}
 	m.publish("download", dl)
-	if window > 0 {
-		m.packPending(ctx, d, *dl)
+	if window > 0 && dl.PackFiles != nil {
+		m.packPending(ctx, d, *dl) // only a torrent HolyArrs added, never another app's
 	}
 	m.Poke()
 	m.Kick(d.ID)
@@ -397,15 +397,16 @@ func (m *Manager) giveUp(ctx context.Context, slotID, releaseID int64, reason st
 	}
 }
 
-// send hands a Release to one Downloader and returns its id there.
-func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Release, slotID int64, hash string, stopped bool) (ext string, err error) {
+// send hands a Release to one Downloader and returns its id there. own is false for a torrent
+// another app added (same info hash, not in HolyArrs's category), which HolyArrs never changes.
+func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Release, slotID int64, hash string, stopped bool) (ext string, own bool, err error) {
 	a, err := m.claimAttempt(ctx, d, rel.ID, slotID)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	if a != nil {
 		if a.State == "resolved" {
-			return a.marker, nil
+			return a.marker, true, nil
 		}
 		d.Category = a.category
 		defer func() {
@@ -436,7 +437,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	}
 	e, err := m.engine(ctx, d)
 	if err != nil {
-		return "", fmt.Errorf("%s: %w", d.Name, err)
+		return "", false, fmt.Errorf("%s: %w", d.Name, err)
 	}
 	// A job found again by name is taken as this Release only when no other
 	// Download row holds its id. A failed or vanished one must not come back, and a
@@ -445,7 +446,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	rows, err := m.Store.Read().QueryContext(ctx, `SELECT external_id FROM downloads WHERE downloader_id = ? AND NOT (release_id IS ?
 		AND state IN (`+activeStates+`, 'finished') AND EXISTS (SELECT 1 FROM json_each(slot_ids) WHERE value = ?))`, d.ID, rel.ID, slotID)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	for rows.Next() {
 		var id string
@@ -455,7 +456,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
-		return "", err
+		return "", false, err
 	}
 	if a != nil && !a.created {
 		// A recovery is only a lookup. It needs neither the original Source nor a
@@ -465,43 +466,43 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			if unreachable(err) {
 				m.downloaderFailed(ctx, d, err)
 			}
-			return "", err
+			return "", false, err
 		}
 		if ext == "" {
-			return "", ErrUncertain
+			return "", false, ErrUncertain
 		}
 		m.downloaderOK(ctx, d)
-		return ext, nil
+		return ext, true, nil
 	}
 	if hash != "" {
 		if j, err := e.Get(ctx, hash); err == nil {
 			if skip[j.ID] || (d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "aria2") && j.Category != d.Category {
-				return "", errors.New("the torrent belongs to another download or category")
+				return "", false, errors.New("the torrent belongs to another download or category")
 			}
 			if j.ID != "" {
-				return j.ID, nil
+				hash = j.ID
 			}
-			return hash, nil
+			return hash, d.Category != "" && j.Category == d.Category, nil
 		}
 	}
 	link := rel.LinkRef
 	if m.Link != nil {
 		if link, err = m.Link(ctx, rel); err != nil {
-			return "", err
+			return "", false, err
 		}
 	}
 	var src domain.Source
 	if err := database.Get(ctx, m.Store.Read(), "sources", rel.SourceID, &src); err != nil {
-		return "", errors.New("the Release's Source could not be read")
+		return "", false, errors.New("the Release's Source could not be read")
 	}
 	allowLocal := src.AllowLocal
 	if d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "aria2" || d.Adapter == "nzbget" {
 		if !strings.HasPrefix(link, "magnet:") && src.ProxyURL != "" {
-			return "", errors.New("this Downloader cannot yet fetch Release files through a Source proxy")
+			return "", false, errors.New("this Downloader cannot yet fetch Release files through a Source proxy")
 		}
 	}
 	if link, err = grabLinkAllowed(d.Adapter, link, allowLocal); err != nil {
-		return "", err
+		return "", false, err
 	}
 	// qBittorrent and SABnzbd would fetch a link themselves from inside the home
 	// network, where a name leading home is never checked. Without local network
@@ -517,10 +518,10 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		var rt http.RoundTripper
 		if src.ProxyURL != "" {
 			if m.SourceTransport == nil {
-				return "", errors.New("this Downloader cannot yet fetch Release files through a Source proxy")
+				return "", false, errors.New("this Downloader cannot yet fetch Release files through a Source proxy")
 			}
 			if rt, err = m.SourceTransport(ctx, src); err != nil {
-				return "", err
+				return "", false, err
 			}
 		}
 		limit := addFetchMax
@@ -532,7 +533,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			link, _, err = safeMagnet(magnet, allowLocal)
 		}
 		if err != nil {
-			return "", err
+			return "", false, err
 		}
 	}
 	// Prowlarr and Jackett answer magnet-only sites with a redirect to a magnet,
@@ -555,29 +556,29 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		// is then the user's own.
 		if !allowLocal {
 			if file, err = safeTorrent(file); err != nil {
-				return "", errors.New("the Release file is not a torrent")
+				return "", false, errors.New("the Release file is not a torrent")
 			}
 		}
 		h, err := torrentFileHash(file)
 		if err != nil {
 			// Often a one-off page (a limit or a check) instead of the file, so try again
 			// and do not turn the Release down.
-			return "", errors.New("the Release file is not a torrent")
+			return "", false, errors.New("the Release file is not a torrent")
 		}
 		if hash != "" && !strings.EqualFold(hash, h) {
-			return "", releaseRefused{"the torrent file does not match its info hash"}
+			return "", false, releaseRefused{"the torrent file does not match its info hash"}
 		}
 		if hash == "" {
 			// The hash came from the file, so the earlier look for it in qBittorrent did
 			// not run, and adding a torrent it already has would fail.
 			if j, err := e.Get(ctx, h); err == nil {
 				if skip[j.ID] {
-					return "", errors.New("the torrent belongs to another download or category")
+					return "", false, errors.New("the torrent belongs to another download or category")
 				}
 				if j.ID != "" {
-					return j.ID, nil
+					h = j.ID
 				}
-				return h, nil
+				return h, d.Category != "" && j.Category == d.Category, nil
 			}
 		}
 		hash = h
@@ -587,12 +588,12 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	// would download unseen, so it is not sent.
 	if d.Adapter == "qbittorrent" && hash == "" {
 		if hash = linkHash(link); hash == "" {
-			return "", releaseRefused{"the Release has no info hash, so " + d.Name + "'s download of it could not be followed"}
+			return "", false, releaseRefused{"the Release has no info hash, so " + d.Name + "'s download of it could not be followed"}
 		}
 	}
 	done, err := m.space(ctx, d.URL)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	req := AddRequest{URL: link, File: file, Name: rel.Name, Category: d.Category, SavePath: m.SavePath, InfoHash: hash, Skip: skip,
 		AllowLocal: allowLocal, OperationKey: fmt.Sprintf("%d:%d:%d", d.ID, rel.ID, slotID), Stopped: stopped}
@@ -608,16 +609,16 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		if unreachable(err) {
 			m.downloaderFailed(ctx, d, err)
 		}
-		return "", fmt.Errorf("sending to %s: %w", d.Name, err)
+		return "", false, fmt.Errorf("sending to %s: %w", d.Name, err)
 	}
 	if ext == "" {
 		if a != nil {
-			return "", ErrUncertain
+			return "", false, ErrUncertain
 		}
-		return "", fmt.Errorf("%s gave no id for the Release (no info hash)", d.Name)
+		return "", false, fmt.Errorf("%s gave no id for the Release (no info hash)", d.Name)
 	}
 	m.downloaderOK(ctx, d)
-	return ext, nil
+	return ext, true, nil
 }
 
 func jsonIDs(ids []int64) string {

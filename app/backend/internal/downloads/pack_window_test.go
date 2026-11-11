@@ -159,6 +159,50 @@ func TestGrabPackWindowFailureRemovesAndNeverStarts(t *testing.T) {
 	}
 }
 
+// Another app (Sonarr, say) already has the same season pack in a shared
+// qBittorrent under its own category. The grab follows it as a whole download
+// and never switches its files, starts it or removes it with its data, even
+// when choosing files would fail.
+func TestGrabPackLeavesAnotherAppsTorrentAlone(t *testing.T) {
+	for _, prioFails := range []bool{true, false} {
+		w, m, slots := packWindowWorld(t, true)
+		w.fake.prioFails = prioFails
+		w.fake.set(hash, map[string]any{"name": "Lab.Show.S01.1080p", "category": "tv-sonarr", "state": "downloading", "progress": 0.4,
+			"save_path": "/data/downloads/sonarr", "size": 4010})
+		id, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(w.fake.steps) != 0 || len(w.fake.prio) != 0 || len(w.fake.deleted) != 0 {
+			t.Fatalf("prioFails %v: another app's torrent was changed: steps %v deleted %v", prioFails, w.fake.steps, w.fake.deleted)
+		}
+		if d := w.download(t, id); d.PackFiles != nil || d.State == "failed" || d.ExternalID != hash {
+			t.Fatalf("prioFails %v: download %s %q pack %+v", prioFails, d.State, d.ExternalID, d.PackFiles)
+		}
+		if got := slotStates(t, w, slots); !slices.Equal(got, []string{"downloading", "downloading", "wanted", "wanted"}) {
+			t.Fatalf("prioFails %v: slot states %v", prioFails, got)
+		}
+	}
+}
+
+// A grab killed after qBittorrent took the pack but before the Download row
+// was written finds it again in HolyArrs's own category, still stopped, and
+// goes on choosing its files.
+func TestGrabPackRetryTakesItsOwnStoppedTorrent(t *testing.T) {
+	w, m, _ := packWindowWorld(t, true)
+	w.fake.set(hash, map[string]any{"name": "Lab.Show.S01.1080p", "category": "holyarrs", "state": "stoppedDL", "save_path": "/data/downloads/complete", "size": 4010})
+	id, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"prio 2|3|4=0", "prio 0|1=1", "start " + hash}; !slices.Equal(w.fake.steps, want) {
+		t.Fatalf("steps %v, want %v", w.fake.steps, want)
+	}
+	if d := w.download(t, id); len(d.PackFiles) != 4 {
+		t.Fatalf("pack %+v", d.PackFiles)
+	}
+}
+
 func TestGrabPackWindowMagnetWaitsForFiles(t *testing.T) {
 	w, m, _ := packWindowWorld(t, false)
 	ctx := context.Background()

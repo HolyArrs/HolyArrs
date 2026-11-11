@@ -64,7 +64,8 @@ func (m *Manager) PackReady(ctx context.Context, titleTags []string) bool {
 // packPending chooses the files of a season pack added stopped, once the
 // Downloader lists them, and starts it. Without a file list yet it waits for
 // the next poll. Any error after that removes the torrent and fails the
-// Download, so the next Release is tried; it is never started then.
+// Download, so the next Release is tried; it is never started then. Only a
+// torrent HolyArrs added gets here, never another app's of the same hash.
 func (m *Manager) packPending(ctx context.Context, dr domain.Downloader, d domain.Download) {
 	var files []TorrentFile
 	err := m.ControlEngine(ctx, dr, func(e Engine) error {
