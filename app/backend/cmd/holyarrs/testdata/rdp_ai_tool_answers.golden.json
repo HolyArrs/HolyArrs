@@ -11,6 +11,7 @@
     "clients": [],
     "downloads": [],
     "next_cursor": "string",
+    "outside_rest": {},
     "outside_total": "number",
     "totals": {
       "speed": "number",
