@@ -895,6 +895,7 @@
 	"downloads.pr.err.term200": "Каждое условие может содержать не больше 200 символов.",
 	"downloads.pr.err.terms50": "Укажите не больше 50 условий.",
 	"downloads.pr.err.termsMin": "Укажите хотя бы одно слово или шаблон.",
+	"downloads.pr.err.sizeRange": "Укажите нижний или верхний предел; верхний должен быть больше нижнего.",
 	"downloads.pr.err.traitName": "Дайте признаку название.",
 	"downloads.pr.err.traitOnce": "Каждый признак можно указать один раз.",
 	"downloads.pr.err.wait": "Ожидание может быть от 0 до 10080 минут (7 дней).",
@@ -1211,5 +1212,13 @@
 	"downloads.ot.kindName": "название",
 	"downloads.ot.kindGroup": "группа",
 	"downloads.ot.kindSource": "источник",
-	"downloads.ot.kindResolution": "разрешение"
+	"downloads.ot.kindResolution": "разрешение",
+	"downloads.ot.size": "Размер",
+	"downloads.ot.kindSize": "размер",
+	"downloads.ot.over": "Больше (ГБ)",
+	"downloads.ot.upTo": "До (ГБ)",
+	"downloads.ot.hintSize": "Размер всего релиза в ГБ. Оставьте одно поле пустым, чтобы не ставить предел. Релиз без указанного размера никогда не подходит.",
+	"downloads.ot.sumSize": "Размер: {range}",
+	"downloads.ot.sizeOver": "больше {n} ГБ",
+	"downloads.ot.sizeUpTo": "до {n} ГБ"
 }

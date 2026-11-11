@@ -600,8 +600,7 @@
 	"downloads.ht.changes.downloads.hint": "Releases, die gewählt, zurückgehalten oder verworfen wurden, und ihre Downloads.",
 	"downloads.ht.changes.downloads.label": "Downloads",
 	"downloads.ht.changes.empty": "Nichts hat sich geändert.",
-	"downloads.ht.changes.hint": "Was hinzugefügt, zum Download geschickt, umbenannt oder gelöscht wurde, dazu Untertitel und Anfragen."
-,
+	"downloads.ht.changes.hint": "Was hinzugefügt, zum Download geschickt, umbenannt oder gelöscht wurde, dazu Untertitel und Anfragen.",
 	"downloads.ht.changes.label": "Änderungen",
 	"downloads.ht.changes.renamed.hint": "Umbenannte Dateien und Ordner.",
 	"downloads.ht.changes.renamed.label": "Umbenannt",
@@ -896,6 +895,7 @@
 	"downloads.pr.err.term200": "Jeder Begriff darf höchstens 200 Zeichen haben.",
 	"downloads.pr.err.terms50": "Liste höchstens 50 Begriffe auf.",
 	"downloads.pr.err.termsMin": "Liste mindestens ein Wort oder Muster auf.",
+	"downloads.pr.err.sizeRange": "Gib eine Unter- oder Obergrenze an, die Obergrenze über der Untergrenze.",
 	"downloads.pr.err.traitName": "Gib dem Merkmal einen Namen.",
 	"downloads.pr.err.traitOnce": "Jedes Merkmal lässt sich nur einmal auflisten.",
 	"downloads.pr.err.wait": "Eine Wartezeit kann 0 bis 10080 Minuten (7 Tage) betragen.",
@@ -1212,5 +1212,13 @@
 	"downloads.ot.kindName": "Name",
 	"downloads.ot.kindGroup": "Gruppe",
 	"downloads.ot.kindSource": "Herkunft",
-	"downloads.ot.kindResolution": "Auflösung"
+	"downloads.ot.kindResolution": "Auflösung",
+	"downloads.ot.size": "Größe",
+	"downloads.ot.kindSize": "Größe",
+	"downloads.ot.over": "Über (GB)",
+	"downloads.ot.upTo": "Bis (GB)",
+	"downloads.ot.hintSize": "Die Größe des ganzen Release in GB. Lass eine Seite leer für keine Grenze. Ein Release ohne bekannte Größe passt nie.",
+	"downloads.ot.sumSize": "Größe: {range}",
+	"downloads.ot.sizeOver": "über {n} GB",
+	"downloads.ot.sizeUpTo": "bis {n} GB"
 }

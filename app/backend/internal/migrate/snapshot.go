@@ -17,6 +17,9 @@ type Snapshot struct {
 	Version string    `json:"version"`
 	Schema  int       `json:"schema,omitempty"`
 	ReadAt  time.Time `json:"read_at"`
+	// Address is the app's address for a read over its API ("" for a
+	// backup); two reads of one kind at two addresses are two apps.
+	Address string `json:"address,omitempty"`
 
 	// Library (Radarr movies, Sonarr shows, Lidarr artists).
 	Titles []Title `json:"titles,omitempty"`

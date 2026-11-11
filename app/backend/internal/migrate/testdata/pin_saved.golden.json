@@ -4,6 +4,7 @@
   "owner_id": 7,
   "kind": "s",
   "via": "s",
+  "address": "s",
   "app_version": "s",
   "counts": {
     "s": 7

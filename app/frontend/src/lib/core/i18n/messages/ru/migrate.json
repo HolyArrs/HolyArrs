@@ -127,6 +127,7 @@
 	"migrate.nothingHere": "Здесь пусто.",
 	"migrate.show100More": "Показать ещё 100",
 	"migrate.edit": "Изменить {name}",
+	"migrate.appAt": "{name} по адресу {address}",
 	"migrate.addAnApp": "Добавить приложение",
 	"migrate.addTheAddress": "Укажите адрес.",
 	"migrate.readingStopped": "Чтение остановлено.",

@@ -9,7 +9,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-	import { checkOwnTrait, ownTerms } from './pick-rules.ts';
+	import { checkOwnTrait, checkSizeTrait, ownTerms, sizeParts, sizeTerm } from './pick-rules.ts';
 	import type { OwnTrait } from './types.ts';
 	import { onMount } from 'svelte';
 	import { api, ApiError } from '#lib/core/api.ts';
@@ -37,14 +37,19 @@
 
 	const matchChoices = $derived<{ value: OwnTrait['match']; label: string }[]>([
 		{ value: 'name', label: t('downloads.ot.words') },
-		{ value: 'group', label: t('downloads.ot.group') }
+		{ value: 'group', label: t('downloads.ot.group') },
+		{ value: 'size', label: t('downloads.ot.size') }
 	]);
 	// Traits synced from TRaSH Guides sit apart: there can be dozens, and only a sync changes them.
 	const handMade = $derived((list ?? []).filter((o) => !o.source));
 	const synced = $derived((list ?? []).filter((o) => o.source === 'trash'));
-	const specWord = (k: string) => ({ name: t('downloads.ot.kindName'), group: t('downloads.ot.kindGroup'), source: t('downloads.ot.kindSource'), resolution: t('downloads.ot.kindResolution') })[k] ?? k;
+	const specWord = (k: string) => ({ name: t('downloads.ot.kindName'), group: t('downloads.ot.kindGroup'), source: t('downloads.ot.kindSource'), resolution: t('downloads.ot.kindResolution'), size: t('downloads.ot.kindSize') })[k] ?? k;
 	const specSummary = (o: OwnTrait) => (o.specs ?? []).map((s) => t(s.negate ? 'downloads.ot.specNot' : 'downloads.ot.spec', { name: s.name, kind: specWord(s.kind) })).join(', ');
-	const summary = (o: OwnTrait) => t(o.match === 'group' ? 'downloads.ot.sumGroup' : 'downloads.ot.sumName', { terms: o.terms.join(', ') });
+	const sizeWords = (term: string) => {
+		const { over, upTo } = sizeParts(term);
+		return [over && t('downloads.ot.sizeOver', { n: over }), upTo && t('downloads.ot.sizeUpTo', { n: upTo })].filter(Boolean).join(', ');
+	};
+	const summary = (o: OwnTrait) => (o.match === 'size' ? t('downloads.ot.sumSize', { range: sizeWords(o.terms[0] ?? '') }) : t(o.match === 'group' ? 'downloads.ot.sumGroup' : 'downloads.ot.sumName', { terms: o.terms.join(', ') }));
 
 	// The sheet that makes or changes one trait.
 	let editing = $state<OwnTrait | null>(null);
@@ -52,18 +57,21 @@
 	let name = $state('');
 	let match = $state<OwnTrait['match']>('name');
 	let termsText = $state('');
+	let over = $state('');
+	let upTo = $state('');
 	let tried = $state(false);
 	let busy = $state(false);
 	let serverErrors = $state<Record<string, string>>({});
 	let formError = $state('');
-	const checked = $derived(checkOwnTrait(name, ownTerms(termsText)));
+	const checked = $derived(match === 'size' ? checkSizeTrait(name, over, upTo) : checkOwnTrait(name, ownTerms(termsText)));
 	const errors = $derived<Record<string, string>>({ ...(tried ? checked : {}), ...serverErrors });
 
 	function openSheet(o: OwnTrait | null) {
 		editing = o;
 		name = o?.name ?? '';
 		match = o?.match ?? 'name';
-		termsText = o?.terms.join('\n') ?? '';
+		termsText = o?.match === 'size' ? '' : (o?.terms.join('\n') ?? '');
+		({ over, upTo } = sizeParts(o?.match === 'size' ? o.terms[0] : ''));
 		tried = false;
 		serverErrors = {};
 		formError = '';
@@ -76,11 +84,11 @@
 		serverErrors = {};
 		formError = '';
 		if (Object.keys(checked).length) {
-			document.getElementById(checked.name ? 'ot-name' : 'ot-terms')?.focus();
+			document.getElementById(checked.name ? 'ot-name' : match === 'size' ? 'ot-over' : 'ot-terms')?.focus();
 			return;
 		}
 		busy = true;
-		const body = { name: name.trim(), match, terms: ownTerms(termsText) };
+		const body = { name: name.trim(), match, terms: match === 'size' ? [sizeTerm(over, upTo)] : ownTerms(termsText) };
 		try {
 			const saved = editing ? await api.put<OwnTrait>(`/own-traits/${editing.id}`, body) : await api.post<OwnTrait>('/own-traits', body);
 			const rest = (list ?? []).filter((x) => x.id !== saved.id);
@@ -176,11 +184,22 @@
 		<div class="field">
 			<span class="label" id="ot-match-label">{t('downloads.ot.lookAt')}</span>
 			<SegmentedControl options={matchChoices} bind:value={match} label={t('downloads.ot.lookAt')} testid="ot-match" />
-			<span class="hint">{match === 'group' ? t('downloads.ot.hintGroup') : t('downloads.ot.hintName')}</span>
+			<span class="hint">{match === 'size' ? t('downloads.ot.hintSize') : match === 'group' ? t('downloads.ot.hintGroup') : t('downloads.ot.hintName')}</span>
 		</div>
+		{#if match === 'size'}
+			<div class="pair">
+				<Field id="ot-over" label={t('downloads.ot.over')} error={errors.terms}>
+					<input id="ot-over" class="input" inputmode="decimal" autocomplete="off" bind:value={over} aria-invalid={errors.terms ? 'true' : undefined} aria-describedby={errors.terms ? 'ot-over-error' : undefined} />
+				</Field>
+				<Field id="ot-upto" label={t('downloads.ot.upTo')}>
+					<input id="ot-upto" class="input" inputmode="decimal" autocomplete="off" bind:value={upTo} />
+				</Field>
+			</div>
+		{:else}
 		<Field id="ot-terms" label={match === 'group' ? t('downloads.ot.groups') : t('downloads.ot.wordsLabel')} hint={t('downloads.ot.termsHint')} error={errors.terms}>
 			<textarea id="ot-terms" class="input mono" rows="4" spellcheck="false" autocomplete="off" bind:value={termsText} placeholder={match === 'group' ? 'HOLYARRS' : 'NLSubs'} aria-invalid={errors.terms ? 'true' : undefined} aria-describedby={errors.terms ? 'ot-terms-error' : 'ot-terms-hint'}></textarea>
 		</Field>
+		{/if}
 		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 	</form>
 	{#snippet footer()}
@@ -202,6 +221,7 @@
 
 <style>
 	.form { display: flex; flex-direction: column; gap: 16px; }
+	.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 	.synced > summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
 	.synced > p { margin: 4px 0 8px; }
 	.meta { display: block; overflow-wrap: anywhere; }

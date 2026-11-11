@@ -23,6 +23,8 @@ Your install sends only what it looks up, plus your language and region. Your fi
 
 To leave your install out of the install count, turn off **Count this install** in **Settings > This app**.
 
+Every outside address HolyArrs contacts, and how your own TMDB key changes what goes where, is in [Outside addresses](../run/outside-hosts.md).
+
 ## If it does not work
 
 **Symptom:** you set `HOLYARRS_METADATA_URL` and nothing loads.
@@ -61,5 +63,6 @@ Never sent: your files, folder paths or file names; your library, downloads or h
 
 ## Related
 
+- [Outside addresses](../run/outside-hosts.md)
 - [Data packs](data-packs.md)
 - [Trailers](trailers.md)

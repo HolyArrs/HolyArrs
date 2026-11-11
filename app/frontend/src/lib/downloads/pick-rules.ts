@@ -135,6 +135,27 @@ export function checkOwnTrait(name: string, terms: string[]): Record<string, str
 	return err;
 }
 
+/** A size trait's one term, "over-upto" in GB; an empty end is open. */
+export function sizeTerm(over: string, upTo: string): string {
+	return `${over.trim()}-${upTo.trim()}`;
+}
+
+/** Splits a size term back into its two ends. */
+export function sizeParts(term: string | undefined): { over: string; upTo: string } {
+	const [over = '', upTo = ''] = (term ?? '').split('-');
+	return { over: over.trim(), upTo: upTo.trim() };
+}
+
+/** Finds what the server would refuse in a size trait. */
+export function checkSizeTrait(name: string, over: string, upTo: string): Record<string, string> {
+	const err = checkOwnTrait(name, ['x']);
+	const read = (s: string) => (s.trim() === '' ? 0 : Number(s));
+	const lo = read(over);
+	const hi = read(upTo);
+	if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo < 0 || hi < 0 || (lo === 0 && hi === 0) || (hi > 0 && hi <= lo)) err.terms = say('downloads.pr.err.sizeRange');
+	return err;
+}
+
 /** Turns one kind on or off; music cannot share with movies or TV shows. */
 export function toggleKind(kinds: string[], kind: RulesKind, on: boolean): string[] {
 	if (!on) return kinds.filter((k) => k !== kind);

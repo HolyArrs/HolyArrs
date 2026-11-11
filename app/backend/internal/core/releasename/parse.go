@@ -164,6 +164,9 @@ type Result struct {
 	Show *ShowNumbers `json:"show,omitempty"`
 	// Music holds what an album Release name says; nil for movies and shows.
 	Music *MusicInfo `json:"music,omitempty"`
+	// Size is the whole Release's size in bytes when the judge knows it
+	// (0: not known). Parse leaves it unset.
+	Size int64 `json:"-"`
 }
 
 // ShowNumbers are the numbers a show Release names.

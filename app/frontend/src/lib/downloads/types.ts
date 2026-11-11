@@ -42,7 +42,7 @@ export interface OwnTrait {
 	id: number;
 	key: string;
 	name: string;
-	match: 'name' | 'group';
+	match: 'name' | 'group' | 'size';
 	/** Plain words (any case) or /pattern/. */
 	terms: string[];
 	/** "trash" for a trait synced from TRaSH Guides: it tests specs and is changed only by syncing again. */

@@ -4,6 +4,7 @@ import {
 	bytesPerMinute,
 	checkBody,
 	checkOwnTrait,
+	checkSizeTrait,
 	copyName,
 	fieldKey,
 	gbPerHour,
@@ -11,6 +12,8 @@ import {
 	ladderFor,
 	musicLadder,
 	neverChoices,
+	sizeParts,
+	sizeTerm,
 	ownTerms,
 	sizeFields,
 	stepLabel,
@@ -302,5 +305,18 @@ describe('your own traits', () => {
 		expect(checkOwnTrait('x'.repeat(61), ['x']).name).toBeTruthy();
 		expect(checkOwnTrait('A', []).terms).toBeTruthy();
 		expect(checkOwnTrait('A', ['/(?i)x265/']).terms).toBeUndefined();
+	});
+
+	it('write and check a size trait with either end open', () => {
+		expect(sizeTerm(' 60 ', '')).toBe('60-');
+		expect(sizeParts('2-8')).toEqual({ over: '2', upTo: '8' });
+		expect(sizeParts('-8')).toEqual({ over: '', upTo: '8' });
+		expect(checkSizeTrait('Huge', '60', '')).toEqual({});
+		expect(checkSizeTrait('Small', '', '8')).toEqual({});
+		expect(checkSizeTrait('Mid', '2', '8')).toEqual({});
+		expect(checkSizeTrait('None', '', '').terms).toBeTruthy();
+		expect(checkSizeTrait('Back', '8', '2').terms).toBeTruthy();
+		expect(checkSizeTrait('Word', 'x', '').terms).toBeTruthy();
+		expect(checkSizeTrait('', '1', '').name).toBeTruthy();
 	});
 });
