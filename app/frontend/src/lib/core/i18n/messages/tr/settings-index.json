@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "Şimdi ara",
 	"settings.index.search.search-now.search-now.words": "ara daha iyi kopya feed'ler çalıştır",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "İndiriciler",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "indirme istemcisi qbittorrent sabnzbd transmission deluge nzbget torrent istemcisi ekle",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "indirme istemcisi qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget torrent istemcisi ekle",
 	"settings.index.downloaders.st-stall.stalled-after.label": "Şu kadar sonra takıldı say",
 	"settings.index.downloaders.st-stall.stalled-after.words": "takıldı sıkıştı saat indirme",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "Vazgeç ve şu kadar sonra sonraki sürüm adayını dene",

@@ -152,7 +152,7 @@ Biri bir başlık ister. HolyArrs Kaynaklarını arar, Seçim kurallarınla en i
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="İndiriciler: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Medya sunucuları: Plex, Jellyfin, Emby." /></picture>
 
-- **İndiriciler:** qBittorrent, Transmission, Deluge, SABnzbd, NZBGet
+- **İndiriciler:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
 - **Medya sunucuları:** Plex, Jellyfin, Emby
 - **Kaynaklar:** herhangi bir Torznab ya da Newznab indeksleyicisi, ya da Prowlarr veya Jackett
 - **Kurulumunu şuradan taşır:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd

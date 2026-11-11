@@ -52,7 +52,7 @@ describe('downloaders', () => {
 	});
 
 	it('preserves optional Downloader sign-in names and labels', () => {
-		for (const [kind, name] of [['transmission', 'Transmission'], ['nzbget', 'NZBGet'], ['deluge', 'Deluge']] as const) {
+		for (const [kind, name] of [['transmission', 'Transmission'], ['nzbget', 'NZBGet'], ['deluge', 'Deluge'], ['rtorrent', 'rTorrent']] as const) {
 			const form = emptyForm(kind);
 			expect(form.name).toBe(name);
 			expect(form.category).toBe('holyarrs');

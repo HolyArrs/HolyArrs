@@ -9,9 +9,12 @@ describe("the pane's ⋯ menu", () => {
 		expect(paneExtras(torrent, { steer: true, fail: true })).toEqual(['recheck', 'reannounce', 'force', 'steer', 'fail']);
 		expect(paneExtras(torrent, { steer: false, fail: false })).toEqual(['recheck', 'reannounce']);
 	});
-	it('offers Transmission and Deluge none of the qBittorrent-only calls', () => {
+	it('offers Transmission, Deluge and rTorrent none of the qBittorrent-only calls', () => {
 		expect(paneExtras({ ...torrent, downloader_kind: 'transmission' }, { steer: true, fail: true })).toEqual(['fail']);
 		expect(paneExtras({ ...torrent, downloader_kind: 'deluge' }, { steer: true, fail: false })).toEqual([]);
+		expect(paneExtras({ ...torrent, downloader_kind: 'rtorrent' }, { steer: true, fail: true })).toEqual(['fail']);
+		expect(paneExtras({ ...torrent, downloader_kind: 'rtorrent', can_act: false }, { steer: true, fail: true })).toEqual([]);
+		expect(rowItems({ ...torrent, downloader_kind: 'rtorrent', can_act: false })).toEqual([]);
 	});
 	it('gives a Usenet job only Mark failed beyond its row list, which has its queue moves and priority', () => {
 		expect(paneExtras(job, { steer: true, fail: true })).toEqual(['fail']);

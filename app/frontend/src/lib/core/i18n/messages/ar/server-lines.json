@@ -839,7 +839,7 @@
 	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists": "يقرأ HolyArrs قوائم Trakt وقوائم المشاهدة؛ تبقى قائمة المشاهَد أو المجموعة في Radarr",
 	"server.migrate.holyarrs-sets-one-proxy-address-per": "يضبط HolyArrs عنوان وكيل واحدًا لكل مصدر؛ اضبطه على المصادر التي استخدمته",
 	"server.migrate.holyarrs-stopped-during-this-import-before": "توقف HolyArrs أثناء هذا الاستيراد قبل أن ينتهي. ما أنشأه معلَّم: استورد من جديد لإكماله (لا شيء يُضاف مرتين)، أو تراجع عنه.",
-	"server.migrate.holyarrs-talks-to-qbittorrent-transmission-deluge": "يتعامل HolyArrs مع qBittorrent وTransmission وDeluge وSABnzbd وNZBGet فقط",
+	"server.migrate.holyarrs-talks-to-qbittorrent-transmission-deluge": "يتعامل HolyArrs مع qBittorrent وTransmission وDeluge وrTorrent وSABnzbd وNZBGet فقط",
 	"server.migrate.holyarrs-uses-one-category-of-its": "يستخدم HolyArrs فئة واحدة خاصة به لكل برنامج تنزيل (holyarrs)",
 	"server.migrate.holyarrs-writes-no-metadata-files-for": "لا يكتب HolyArrs ملفات بيانات وصفية لمشغلات الوسائط",
 	"server.migrate.import-row-was-replaced": "استُبدل سطر الاستيراد",

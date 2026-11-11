@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "Nu zoeken",
 	"settings.index.search.search-now.search-now.words": "zoeken betere kopie feeds uitvoeren",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "Downloaders",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "downloadclient qbittorrent sabnzbd transmission deluge nzbget torrentclient toevoegen",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "downloadclient qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget torrentclient toevoegen",
 	"settings.index.downloaders.st-stall.stalled-after.label": "Vastgelopen na",
 	"settings.index.downloaders.st-stall.stalled-after.words": "vastgelopen vast uren download stalled",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "Opgeven en de volgende release proberen na",

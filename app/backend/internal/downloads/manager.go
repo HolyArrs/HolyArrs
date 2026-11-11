@@ -2,6 +2,7 @@ package downloads
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 // KindGrab is the Job kind that sends a chosen Release to a Downloader.
@@ -186,8 +188,31 @@ func (m *Manager) EngineFor(ctx context.Context, d domain.Downloader) (Engine, e
 		e := NewDeluge(d.URL, secret, h)
 		e.Category, e.Others = d.Category, otherCategories(d)
 		return e, nil
+	case "rtorrent":
+		e := NewRTorrent(d.URL, d.Username, secret, h)
+		e.Category, e.Others = d.Category, otherCategories(d)
+		e.PathMap, e.SaveRoot = d.PathMap, m.SavePath
+		e.Keep = m.libraryFolders
+		return e, nil
 	}
 	return nil, fmt.Errorf("no engine for adapter %q", d.Adapter)
+}
+
+// libraryFolders are the Library folders' paths. An rTorrent remove never
+// deletes in or around them, whatever path rTorrent reports.
+func (m *Manager) libraryFolders(ctx context.Context) ([]string, error) {
+	if m.Store == nil {
+		return nil, errors.New("no database")
+	}
+	fs, err := database.Select[mediafiles.LibraryFolder](ctx, m.Store.Read(), "library_folders", "1 = 1")
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+	out := make([]string, 0, len(fs))
+	for _, f := range fs {
+		out = append(out, f.Path)
+	}
+	return out, nil
 }
 
 func (e *TagsError) Error() string {

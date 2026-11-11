@@ -456,7 +456,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	}
 	if hash != "" {
 		if j, err := e.Get(ctx, hash); err == nil {
-			if skip[j.ID] || (d.Adapter == "transmission" || d.Adapter == "deluge") && j.Category != d.Category {
+			if skip[j.ID] || (d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent") && j.Category != d.Category {
 				return "", errors.New("the torrent belongs to another download or category")
 			}
 			if j.ID != "" {
@@ -476,7 +476,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		return "", errors.New("the Release's Source could not be read")
 	}
 	allowLocal := src.AllowLocal
-	if d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "nzbget" {
+	if d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "nzbget" {
 		if !strings.HasPrefix(link, "magnet:") && src.ProxyURL != "" {
 			return "", errors.New("this Downloader cannot yet fetch Release files through a Source proxy")
 		}
@@ -517,10 +517,10 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		}
 	}
 	// Prowlarr and Jackett answer magnet-only sites with a redirect to a magnet,
-	// which Transmission, Deluge and some qBittorrent stand-ins cannot follow. A
+	// which Transmission, Deluge, rTorrent and some qBittorrent stand-ins cannot follow. A
 	// torrent link not read above (a home Source whose Release has a hash) is read
 	// here and the magnet or file is sent; if that fails the link is sent as before.
-	torrentAdapter := d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "qbittorrent" && src.ProxyURL == ""
+	torrentAdapter := d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "qbittorrent" && src.ProxyURL == ""
 	if torrentAdapter && file == nil && !strings.HasPrefix(link, "magnet:") {
 		link, file = prefetchTorrent(ctx, link, allowLocal, sourceLocalHost(src.URL, allowLocal))
 		if hash == "" {

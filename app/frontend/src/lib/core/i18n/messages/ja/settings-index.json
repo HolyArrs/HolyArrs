@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "今すぐ検索",
 	"settings.index.search.search-now.search-now.words": "検索 より良いコピー フィード 実行 search better copy feeds run",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "ダウンローダー",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "ダウンロードクライアント qbittorrent sabnzbd transmission deluge nzbget トレント 追加 download client qbittorrent sabnzbd transmission deluge nzbget torrent client add",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "ダウンロードクライアント qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget トレント 追加 download client qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget torrent client add",
 	"settings.index.downloaders.st-stall.stalled-after.label": "停止とみなす時間",
 	"settings.index.downloaders.st-stall.stalled-after.words": "停止 止まった 時間 ダウンロード stalled stuck hours download",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "あきらめて次のリリースを試すまでの時間",

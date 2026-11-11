@@ -3,7 +3,9 @@ package downloads
 import (
 	"bytes"
 	"context"
+	"encoding/base32"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -135,7 +137,7 @@ func (d *Deluge) Add(ctx context.Context, r AddRequest) (string, error) {
 
 	var id string
 	var add func() error
-	if magnetHash, magnet := delugeMagnetHash(r.URL); magnet {
+	if magnetHash, magnet := magnetHash(r.URL); magnet {
 		if expected != "" && expected != magnetHash {
 			return "", errors.New("the torrent address and expected info hash do not match")
 		}
@@ -497,7 +499,9 @@ func (d *Deluge) setLabel(ctx context.Context, id, label string) error {
 	return fmt.Errorf("deluge set label: %w", err)
 }
 
-func delugeMagnetHash(raw string) (string, bool) {
+// magnetHash returns the lowercase hex info hash of a magnet link. A 32
+// character base32 hash is turned into hex.
+func magnetHash(raw string) (string, bool) {
 	u, err := url.Parse(raw)
 	if err != nil || !strings.EqualFold(u.Scheme, "magnet") {
 		return "", false
@@ -506,6 +510,11 @@ func delugeMagnetHash(raw string) (string, bool) {
 		const prefix = "urn:btih:"
 		if len(xt) > len(prefix) && strings.EqualFold(xt[:len(prefix)], prefix) {
 			hash := strings.ToLower(xt[len(prefix):])
+			if len(hash) == 32 {
+				if b, err := base32.StdEncoding.DecodeString(strings.ToUpper(hash)); err == nil {
+					hash = hex.EncodeToString(b)
+				}
+			}
 			if releasename.ValidInfoHash(hash) {
 				return hash, true
 			}
@@ -582,7 +591,7 @@ func (d *Deluge) status(ctx context.Context, id string) (delugeTorrent, error) {
 	return torrent, nil
 }
 
-func safeDelugeFileName(name string) string {
+func safeRelName(name string) string {
 	name = strings.ReplaceAll(name, `\`, "/")
 	name = strings.TrimLeft(name, "/")
 	name = path.Clean(name)
@@ -619,7 +628,7 @@ func appendDelugeFiles(value any, out *[]File) {
 			if progress > 1 {
 				progress = 1
 			}
-			if name = safeDelugeFileName(name); name != "" {
+			if name = safeRelName(name); name != "" {
 				*out = append(*out, File{Name: name, Size: int64(size), Progress: progress})
 			}
 			return
