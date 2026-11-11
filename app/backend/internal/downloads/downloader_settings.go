@@ -54,6 +54,8 @@ type Input struct {
 	Writable       *bool            `json:"writable"`
 	ClearFinished  *bool            `json:"clear_finished"`
 	Tags           []string         `json:"tags"`
+	// AfterSeeding: left out, the choice stays as it is.
+	AfterSeeding *SeedingChoice `json:"after_seeding"`
 }
 
 // HealthView is the stored health of a Downloader as shown to users.
@@ -337,6 +339,9 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 	}
 	if isNew {
 		d.AfterImport, d.State = "leave", "ok"
+	}
+	if in.AfterSeeding != nil {
+		return applySeeding(*in.AfterSeeding, d)
 	}
 	return nil
 }

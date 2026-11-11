@@ -77,6 +77,7 @@ adopt_scan_limit
 adult
 advanced
 after
+after_seeding
 age_seconds
 ai
 ai_translated
@@ -357,6 +358,8 @@ coverType
 cover_medium
 cover_xl
 covers
+crawl_hours
+crawl_kbps
 created
 created_at
 created_by
@@ -379,6 +382,7 @@ dates
 day
 day_down
 days
+dead_metadata_minutes
 death_place
 deathday
 deb

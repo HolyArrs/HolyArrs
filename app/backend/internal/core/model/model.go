@@ -138,6 +138,9 @@ type PathMap struct {
 type SeedGoal struct {
 	Ratio   *float64 `json:"ratio,omitempty"`
 	Minutes *int     `json:"minutes,omitempty"`
+	// DeleteFiles: removing a torrent after seeding also deletes its download
+	// files, only when that is safe.
+	DeleteFiles bool `json:"delete_files,omitempty"`
 }
 
 // Downloader is an app that downloads for HolyArrs.
