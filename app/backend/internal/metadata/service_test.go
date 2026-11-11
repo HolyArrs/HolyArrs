@@ -294,3 +294,67 @@ func TestServiceShowFallbackKeepsReleaseNumbers(t *testing.T) {
 		t.Fatalf("fallback: %+v, %v", got, err)
 	}
 }
+
+// An anime the map cannot number takes TVMaze's season sizes from the
+// server, found by the show's TVDB id; a failed call keeps stored numbers.
+func TestServiceShowReleaseNumbersFromTVMaze(t *testing.T) {
+	for _, tc := range []struct {
+		name         string
+		searchStatus int
+		tvdb         int
+		alt          [2]int
+		stale        bool
+	}{
+		{"split", 200, 999, [2]int{2, 5}, false},
+		{"other show", 200, 1000, [2]int{}, false},
+		{"server error", 500, 999, [2]int{}, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+				switch r.URL.Path {
+				case "/v1/anime/map":
+					http.NotFound(w, r)
+				case "/v1/search":
+					if q := r.URL.Query(); q.Get("provider") != "tvmaze" || q.Get("kind") != "show" {
+						t.Errorf("search query %s", r.URL.RawQuery)
+					}
+					if tc.searchStatus != 200 {
+						w.WriteHeader(tc.searchStatus)
+						return
+					}
+					serviceReply(w, "tvmaze", "", map[string]any{"items": []any{
+						normalizedItem("tvmaze", "77", "show", map[string]any{"id": 77, "name": "Series", "externals": map[string]any{"thetvdb": tc.tvdb}}),
+					}, "pagination": map[string]any{"page": 1, "total_pages": 1, "total_results": 1}})
+				case "/v1/shows/tvmaze/77":
+					eps := []any{}
+					for i := 1; i <= 24; i++ {
+						eps = append(eps, map[string]any{"id": 5000 + i, "season": 1 + (i-1)/12, "number": 1 + (i-1)%12, "airdate": "2023-04-01"})
+					}
+					serviceReply(w, "tvmaze", "77", normalizedItem("tvmaze", "77", "show", map[string]any{"id": 77, "name": "Series", "_embedded": map[string]any{"episodes": eps}}))
+				case "/v1/shows/tmdb/42":
+					serviceReply(w, "tmdb", "42", normalizedItem("tmdb", "42", "show", map[string]any{
+						"id": 42, "name": "Series", "original_language": "ja", "number_of_seasons": 1, "number_of_episodes": 24,
+						"genres": []any{map[string]any{"id": 16, "name": "Animation"}}, "external_ids": map[string]any{"tvdb_id": 999},
+						"seasons": []any{map[string]any{"id": 421, "season_number": 1, "episode_count": 24}},
+					}))
+				case "/v1/shows/tmdb/42/seasons/1":
+					eps := []any{}
+					for i := 1; i <= 24; i++ {
+						eps = append(eps, map[string]any{"id": 1000 + i, "season_number": 1, "episode_number": i, "air_date": "2023-04-01"})
+					}
+					serviceReply(w, "tmdb", "42", normalizedItem("tmdb", "421", "show", map[string]any{"id": 421, "season_number": 1, "episodes": eps}))
+				default:
+					http.NotFound(w, r)
+				}
+			})
+			got, err := s.Shows("tmdb", nil).Show(context.Background(), "tmdb:42")
+			if err != nil || len(got.Episodes) != 24 {
+				t.Fatalf("show: %+v, %v", got, err)
+			}
+			e17 := got.Episodes[16]
+			if [2]int{e17.AltSeason, e17.AltEpisode} != tc.alt || got.AltStale != tc.stale {
+				t.Fatalf("E17 %+v, stale %v", e17, got.AltStale)
+			}
+		})
+	}
+}

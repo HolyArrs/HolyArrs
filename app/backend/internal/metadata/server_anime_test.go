@@ -164,3 +164,81 @@ func TestAnimeReleaseNumbers(t *testing.T) {
 		}
 	}
 }
+
+// A map that names TMDB seasons the show no longer has is out of date, so
+// it numbers nothing, even inside the seasons TMDB still has.
+func TestAnimeReleaseNumbersStaleSeasons(t *testing.T) {
+	n := func(v int) *int { return &v }
+	entry := func(tmdbSeason, tmdbOff, tvdbSeason int) AnimeEntry {
+		return AnimeEntry{TMDBTV: 5, TMDBSeason: n(tmdbSeason), TMDBOffset: tmdbOff, TVDBSeason: n(tvdbSeason)}
+	}
+	list := []Episode{}
+	for i := 1; i <= 36; i++ {
+		list = append(list, Episode{Season: 1, Number: i})
+	}
+	AnimeMap{Entries: []AnimeEntry{entry(1, 0, 1), entry(1, 12, 2), entry(2, 0, 3)}}.SetReleaseNumbers("5", list)
+	for _, e := range list {
+		if e.AltSeason != 0 || e.AltEpisode != 0 {
+			t.Fatalf("S%02dE%02d got alt %d/%d", e.Season, e.Number, e.AltSeason, e.AltEpisode)
+		}
+	}
+}
+
+// TVMaze's season sizes split one long TMDB season the way release names
+// do; layouts that agree or do not fit are left alone.
+func TestSeasonSizeReleaseNumbers(t *testing.T) {
+	eps := func(counts ...int) []Episode {
+		out := []Episode{{Season: 0, Number: 1, AirDay: "2023-01-01"}}
+		for s, c := range counts {
+			for i := 1; i <= c; i++ {
+				out = append(out, Episode{Season: s + 1, Number: i, AirDay: "2023-04-01"})
+			}
+		}
+		return out
+	}
+	alt := func(list []Episode, season, number int) [2]int {
+		for _, e := range list {
+			if e.Season == season && e.Number == number {
+				return [2]int{e.AltSeason, e.AltEpisode}
+			}
+		}
+		t.Fatalf("no S%02dE%02d", season, number)
+		return [2]int{}
+	}
+
+	mashle := eps(25)
+	mashle[len(mashle)-1].AirDay = ""
+	setSeasonSizes(mashle, []int{12, 12})
+	for _, c := range []struct{ season, number, altS, altE int }{
+		{1, 5, 0, 0}, {1, 12, 0, 0}, {1, 13, 2, 1}, {1, 17, 2, 5}, {1, 24, 2, 12}, {1, 25, 2, 13}, {0, 1, 0, 0},
+	} {
+		if a := alt(mashle, c.season, c.number); a != [2]int{c.altS, c.altE} {
+			t.Errorf("S%02dE%02d: alt %v, want %d/%d", c.season, c.number, a, c.altS, c.altE)
+		}
+	}
+
+	two := eps(12, 24)
+	setSeasonSizes(two, []int{12, 12, 12})
+	if a, b := alt(two, 2, 1), alt(two, 2, 13); a != [2]int{} || b != [2]int{3, 1} {
+		t.Errorf("two TMDB seasons: S02E01 %v, S02E13 %v", a, b)
+	}
+
+	for name, c := range map[string]struct {
+		counts []int
+		sizes  []int
+	}{
+		"layouts agree":     {[]int{24}, []int{24}},
+		"too few episodes":  {[]int{24}, []int{12, 6}},
+		"split misaligned":  {[]int{10, 14}, []int{12, 6, 6}},
+		"empty last season": {[]int{24}, []int{12, 12, 12}},
+		"no sizes":          {[]int{24}, nil},
+	} {
+		list := eps(c.counts...)
+		setSeasonSizes(list, c.sizes)
+		for _, e := range list {
+			if e.AltSeason != 0 || e.AltEpisode != 0 {
+				t.Errorf("%s: S%02dE%02d got alt %d/%d", name, e.Season, e.Number, e.AltSeason, e.AltEpisode)
+			}
+		}
+	}
+}

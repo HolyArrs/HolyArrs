@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/url"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -105,8 +106,9 @@ func (p *serviceShows) Show(ctx context.Context, id string) (Show, error) {
 }
 
 // releaseNumbers adds the release-name numbers from the server's anime
-// map. A show the map does not know keeps none; a failed call marks them
-// stale so the stored ones stay.
+// map, or for an anime the map cannot number, from TVMaze's season sizes.
+// A show neither knows keeps none; a failed call marks them stale so the
+// stored ones stay.
 func (p *serviceShows) releaseNumbers(ctx context.Context, tmdbID string, out *Show) {
 	m, err := p.service.AnimeMap(ctx, "tmdb_tv", tmdbID)
 	switch {
@@ -114,7 +116,64 @@ func (p *serviceShows) releaseNumbers(ctx context.Context, tmdbID string, out *S
 		m.SetReleaseNumbers(tmdbID, out.Episodes)
 	case !errors.Is(err, ErrNotFound):
 		out.AltStale = true
+		return
 	}
+	if !LooksAnime(out.Genres, nil, out.OriginalLanguage) || slices.ContainsFunc(out.Episodes, func(e Episode) bool { return e.AltSeason > 0 }) {
+		return
+	}
+	sizes, err := p.mazeSeasonSizes(ctx, out)
+	if err != nil {
+		out.AltStale = true
+		return
+	}
+	setSeasonSizes(out.Episodes, sizes)
+}
+
+// mazeSeasonSizes reads the episode counts of TVMaze's regular seasons for
+// the show with out's TVDB id, through the server's TVMaze search (by name,
+// then original name) and detail. None when no TVMaze show has that id.
+func (p *serviceShows) mazeSeasonSizes(ctx context.Context, out *Show) ([]int, error) {
+	tvdb := out.IDs["tvdb"]
+	if tvdb == "" {
+		return nil, nil
+	}
+	names := append([]string{out.Name}, out.OtherNames...)
+	for _, name := range names[:min(2, len(names))] {
+		if strings.TrimSpace(name) == "" {
+			continue
+		}
+		res, err := p.service.search(ctx, "tvmaze", "show", name, 1, 20)
+		if err != nil {
+			return nil, err
+		}
+		for _, item := range res.Items {
+			if show, _, err := serviceTVMazeShowItem(item); err != nil || show.IDs["tvdb"] != tvdb {
+				continue
+			}
+			detail, err := p.service.detail(ctx, "tvmaze", "show", item.SourceID)
+			if err != nil {
+				return nil, err
+			}
+			maze, err := serviceTVMazeDetail(detail)
+			if err != nil {
+				return nil, err
+			}
+			var sizes []int
+			for _, e := range maze.Episodes {
+				if e.Season > serviceMaxSeasons {
+					return nil, nil
+				}
+				for e.Season > len(sizes) {
+					sizes = append(sizes, 0)
+				}
+				if e.Season > 0 {
+					sizes[e.Season-1]++
+				}
+			}
+			return sizes, nil
+		}
+	}
+	return nil, nil
 }
 
 type serviceTMDBShowCounts struct {
