@@ -184,6 +184,8 @@ var tableOwner = map[string]string{
 	"import_created":    "migrate",
 
 	// arrapi
-	"compat_keys": "accounts", // key checks run in auth, below arrapi
-	"compat_tags": "arrapi",
+	"compat_keys":       "accounts", // key checks run in auth, below arrapi
+	"compat_tags":       "arrapi",
+	"compat_title_tags": "arrapi",
+	"compat_hooks":      "arrapi",
 }

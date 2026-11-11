@@ -704,6 +704,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: musicDeps(hosted.Service, serverDeezer, serverDeezerAlbum, serverBio)})
 	// "Count this install" rides on every request to the metadata server.
 	a.ApplyCountryCount(ctx)
+	// The arr API's webhook records hear of every import, as Alerts do.
+	arrHooks := a.arr()
+	arrHooks.Watch(ctx)
+	defer arrHooks.Wait()
 	// Matching in the reader's queue is link-only: it never adds a title.
 	dls.Match = a.DownloadsWeb().MatchLinkOnly
 	// Push updates of the snapshots to the Downloads page (only while on).

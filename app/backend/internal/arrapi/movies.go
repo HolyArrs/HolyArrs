@@ -200,6 +200,10 @@ func (h *handler) loadMovies(ctx context.Context, lookup bool, where string, arg
 	for _, f := range fs {
 		fileOf[f.VersionID] = f
 	}
+	tags, err := tagsOf(ctx, db, ids)
+	if err != nil {
+		return nil, err
+	}
 	now := h.now()
 	out := make([]movie, 0, len(ts))
 	for _, t := range ts {
@@ -210,6 +214,9 @@ func (h *handler) loadMovies(ctx context.Context, lookup bool, where string, arg
 			IsAvailable: t.GateOpensAt != nil && !t.GateOpensAt.After(now), Runtime: t.RuntimeMinutes, TmdbID: sourceID(t.SourceIDs, "tmdb"),
 			ImdbID: t.SourceIDs["imdb"], TitleSlug: t.SourceIDs["tmdb"], Genres: nonNil(t.Genres), Tags: []int64{}, Added: utc(t.CreatedAt),
 			Images: h.libraryImages(ctx, t), AlternateTitles: ptr(alternateTitles(t.Aliases)), OriginalLanguage: ptr(originalLanguage(t.OriginalLanguage))}
+		if l := tags[t.ID]; l != nil {
+			m.Tags = l
+		}
 		if t.Overview != nil {
 			m.Overview = *t.Overview
 		}
@@ -363,23 +370,25 @@ func (h *handler) lookupMovies(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
-// movieIn is what an app sends to add or change a movie.
+// movieIn is what an app sends to add or change a movie. Ids may come as
+// numbers or as number text.
 type movieIn struct {
-	ID                  int64  `json:"id"`
-	TmdbID              int64  `json:"tmdbId"`
-	Title               string `json:"title"`
-	QualityProfileID    int64  `json:"qualityProfileId"`
-	MinimumAvailability string `json:"minimumAvailability"`
-	RootFolderPath      string `json:"rootFolderPath"`
-	Monitored           *bool  `json:"monitored"`
+	ID                  int64     `json:"id"`
+	TmdbID              int64     `json:"tmdbId"`
+	Title               string    `json:"title"`
+	QualityProfileID    looseID   `json:"qualityProfileId"`
+	MinimumAvailability string    `json:"minimumAvailability"`
+	RootFolderPath      string    `json:"rootFolderPath"`
+	Monitored           *bool     `json:"monitored"`
+	Tags                []looseID `json:"tags"`
 	AddOptions          struct {
 		SearchForMovie bool `json:"searchForMovie"`
 	} `json:"addOptions"`
 }
 
-// addMovie adds a movie. With searchForMovie the search waits for the
-// folder scan and stays within the Release gate, because the old apps
-// treat that search as automatic too.
+// addMovie adds a movie and puts the tags sent on it. With searchForMovie
+// the search waits for the folder scan and stays within the Release gate,
+// because the old apps treat that search as automatic too.
 func (h *handler) addMovie(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var in movieIn
@@ -390,7 +399,11 @@ func (h *handler) addMovie(w http.ResponseWriter, r *http.Request) {
 		refuse(w, failure{PropertyName: "TmdbId", ErrorMessage: "send the movie's TMDB id", AttemptedValue: in.TmdbID})
 		return
 	}
-	exists := failure{PropertyName: "TmdbId", ErrorMessage: "this movie is already in the HolyArrs Library", AttemptedValue: in.TmdbID, ErrorCode: "MovieExistsValidator"}
+	if in.QualityProfileID < 0 {
+		refuse(w, failure{PropertyName: "QualityProfileId", ErrorMessage: "send the Pick rules id as a number"})
+		return
+	}
+	exists := failure{PropertyName: "TmdbId", ErrorMessage: movieAlreadyAdded, AttemptedValue: in.TmdbID, ErrorCode: "MovieExistsValidator"}
 	if id, err := library.TitleByTMDB(ctx, h.Store.Read(), itoa(in.TmdbID)); err != nil {
 		internalError(w, err)
 		return
@@ -419,7 +432,7 @@ func (h *handler) addMovie(w http.ResponseWriter, r *http.Request) {
 	if gate == "" {
 		gate = library.GateReleased
 	}
-	opt := library.AddOptions{LibraryFolderID: folder, PickRulesID: in.QualityProfileID, KeepUpToDate: &keep,
+	opt := library.AddOptions{LibraryFolderID: folder, PickRulesID: int64(in.QualityProfileID), KeepUpToDate: &keep,
 		ReleaseGate: gate, SearchOnAdd: in.AddOptions.SearchForMovie}
 	id, _, err := h.Library.Add(ctx, m, opt, actor(r))
 	var dup *library.AlreadyAddedError
@@ -431,10 +444,14 @@ func (h *handler) addMovie(w http.ResponseWriter, r *http.Request) {
 		refuse(w, failure{PropertyName: "TmdbId", ErrorMessage: "this movie is on HolyArrs' Never-add list", AttemptedValue: in.TmdbID})
 		return
 	case err != nil:
-		if f, ok := addFailure(err, in.QualityProfileID, in.RootFolderPath); ok {
+		if f, ok := addFailure(err, int64(in.QualityProfileID), in.RootFolderPath); ok {
 			refuse(w, f)
 			return
 		}
+		internalError(w, err)
+		return
+	}
+	if err := linkTags(ctx, h.Store, id, tagIDs(in.Tags)); err != nil {
 		internalError(w, err)
 		return
 	}
@@ -477,12 +494,12 @@ func (h *handler) putMovie(w http.ResponseWriter, r *http.Request) {
 		internalError(w, err)
 		return
 	}
-	if in.QualityProfileID > 0 && in.QualityProfileID != mains[t.ID].PickRulesID {
-		c.PickRulesID = &in.QualityProfileID
+	if p := int64(in.QualityProfileID); p > 0 && p != mains[t.ID].PickRulesID {
+		c.PickRulesID = &p
 	}
 	if c != (library.TitleChange{}) {
 		if _, err := h.Library.Edit(ctx, t.ID, c, false, actor(r)); err != nil {
-			if f, ok := addFailure(err, in.QualityProfileID, in.RootFolderPath); ok {
+			if f, ok := addFailure(err, int64(in.QualityProfileID), in.RootFolderPath); ok {
 				refuse(w, f)
 				return
 			}

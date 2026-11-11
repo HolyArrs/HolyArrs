@@ -44,6 +44,15 @@ type ShowAddOptions struct {
 	// FirstSeason keeps only the show's first season up to date: season 1,
 	// else the lowest numbered season after it, else Specials.
 	FirstSeason bool `json:"-"`
+	// Specials, when set, says whether Specials start kept up to date with
+	// the other seasons, in place of the keep_specials default.
+	Specials *bool `json:"-"`
+	// KeepEpisode, when set, narrows the episodes that start kept up to
+	// date: one it says no to starts not kept, in the same write as the add,
+	// so the scan and search after it never see it kept. The arr API uses it
+	// for the old apps' episode choices (the first episode only, recent
+	// episodes).
+	KeepEpisode func(season, episode int, aired *time.Time) bool `json:"-"`
 }
 
 // ShowAlreadyAddedError says the show is already in the Library.
@@ -118,6 +127,9 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 	}
 	if opt.SeasonNumbers != nil || opt.FirstSeason {
 		opt.Seasons = library.SeasonsNone
+	}
+	if opt.Specials != nil {
+		defs.KeepSpecials = *opt.Specials
 	}
 	if opt.Seasons == "" {
 		opt.Seasons = defs.SeasonChoice
@@ -276,6 +288,11 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 				if _, err := tx.Exec("UPDATE items SET keep_up_to_date = 1, updated_at = ?, updated_by = ? WHERE part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'season' AND number = ?)", ts, who, t.ID, n); err != nil {
 					return err
 				}
+			}
+		}
+		if keep && opt.KeepEpisode != nil {
+			if err := narrowEpisodesTx(ctx, tx, t.ID, opt.KeepEpisode, by); err != nil {
+				return err
 			}
 		}
 		// More Versions after the episodes, so each gets one Slot per episode.
@@ -596,4 +613,31 @@ func (ss *SeasonSummary) tally(air sql.NullString, keep bool, state string, now 
 			ss.Missing++
 		}
 	}
+}
+
+// narrowEpisodesTx stops keeping up to date every kept episode of a show
+// that keepEpisode says no to.
+func narrowEpisodesTx(ctx context.Context, tx *sql.Tx, titleID int64, keepEpisode func(season, episode int, aired *time.Time) bool, by domain.Actor) error {
+	its, err := database.Select[mediafiles.Item](ctx, tx, "items", "title_id = ? AND kind = 'episode' AND keep_up_to_date = 1", titleID)
+	if err != nil {
+		return err
+	}
+	for i := range its {
+		it := &its[i]
+		season, episode := 0, 0
+		if it.Numbers.Season != nil {
+			season = *it.Numbers.Season
+		}
+		if it.Numbers.Episode != nil {
+			episode = *it.Numbers.Episode
+		}
+		if keepEpisode(season, episode, it.AirDate) {
+			continue
+		}
+		it.KeepUpToDate = false
+		if err := database.Update(tx, "items", it, by); err != nil {
+			return err
+		}
+	}
+	return nil
 }
