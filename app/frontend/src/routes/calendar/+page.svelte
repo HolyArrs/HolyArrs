@@ -20,6 +20,7 @@
 	import { api, message } from '#lib/core/api.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
+	import { views as savedViews } from '#lib/core/views.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { date } from '#lib/core/format.ts';
 	import { popIn, popOut } from '#lib/core/transitions.ts';
@@ -29,7 +30,7 @@
 	// ?month=October 2026 opens on that month, so a link to a month can be shared.
 	const asked = /^(\d{4})-(\d{2})$/.exec(page.url.searchParams.get('month') ?? '');
 	const askedMonth = asked && Number(asked[2]) >= 1 && Number(asked[2]) <= 12 ? new Date(Number(asked[1]), Number(asked[2]) - 1, 1) : null;
-	// Cards (big pictures, day by day) or List (compact rows): ?view=cards|list, kept for the session. Old layout links (?view=2&span=...) land on Cards.
+	// Cards (big pictures, day by day) or List (compact rows): ?view=cards|list, kept for the session and on the account. Old layout links (?view=2&span=...) land on Cards.
 	let view = $state<CalendarView>(startView(page.url.searchParams.get('view'), readView()));
 	// The days shown run from `start` (a year back, or the first of a linked month) to the day before `end`. Six more weeks load as the end comes near. Both stop a year from today.
 	const today0 = addDays(now, 0);
@@ -115,6 +116,7 @@
 		if (f !== follows) keepDay();
 		follows = f;
 		saveFollows(f);
+		savedViews.set('calendar.follows', f);
 	}
 	const clearFilters = () => pickFollows('library');
 	// A filter change keeps the date in view. The day at the top is noted, and after the list changes that day (or the next one with something on it, else the last before it) goes back under the bars. The page never jumps to today.
