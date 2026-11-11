@@ -27,14 +27,14 @@ func (s *Service) MusicSimilar(ctx context.Context, mbid string) ([]SimilarArtis
 	defer cancel()
 	tok, err := s.access(ctx)
 	if err != nil || tok == "" || strings.ContainsAny(tok, "\r\n") {
-		return nil, ErrServiceAccess
+		return nil, accessErr(err)
 	}
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.base+"/v1/music/similar/"+strings.ToLower(mbid), nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	req.Header.Set("Accept", "application/json")
 	resp, err := s.doPending(ctx, req)
 	if err != nil {
-		return nil, ErrServiceUnavailable
+		return nil, unreached(err)
 	}
 	defer resp.Body.Close()
 	switch {

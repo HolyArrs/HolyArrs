@@ -28,7 +28,7 @@ type ShowAddOptions struct {
 	Seasons         string `json:"seasons"`        // all, future, latest, none
 	NewSeasons      string `json:"new_seasons"`    // all, none
 	EpisodeOrder    string `json:"episode_order"`  // aired, daily, absolute
-	Source          string `json:"details_source"` // tmdb or tvmaze
+	Source          string `json:"details_source"` // tmdb, tvmaze, tvdb
 	// SearchOnAdd searches the whole show after the folder scan, the same
 	// search POST /titles/{id}/search starts for a show.
 	SearchOnAdd bool `json:"search_on_add"`

@@ -32,6 +32,8 @@ func (h *Handlers) PeopleRoutes(m *http.ServeMux) {
 // PeopleError answers a people provider error without its details.
 func PeopleError(w http.ResponseWriter, err error) {
 	switch {
+	case metadata.SourceOff(err):
+		metadata.WriteSourceOff(w)
 	case errors.Is(err, metadata.ErrNotFound):
 		webserver.Fail(w, http.StatusNotFound, "no such person")
 	case errors.Is(err, metadata.ErrNoAccess):

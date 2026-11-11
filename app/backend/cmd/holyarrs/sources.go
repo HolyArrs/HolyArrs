@@ -16,7 +16,8 @@ import (
 )
 
 // showSources are the show details sources: TMDB (with anime release
-// numbers) and TVmaze through the metadata server. TVDB is off; TVDB ids are still found through these two.
+// numbers) and TVmaze through the metadata server, or asked directly in
+// Your own keys mode, and TheTVDB with the owner's own key and PIN.
 // HOLYARRS_TVMAZE_URL points at a stand-in (tests); a
 // TVmaze stand-in is asked directly, and HOLYARRS_DIRECT_SOURCES=1
 // (developers only) keeps the real TVmaze behind the server for TVDB and
@@ -28,11 +29,14 @@ func showSources(v *secrets.Vault, hosted *metadata.Hosted) metadata.ShowSources
 		if directSources() {
 			direct = maze
 		}
-		maze = hosted.Service.Shows("tvmaze", direct)
+		// Your own keys asks TVmaze itself, read with the server's checks.
+		maze = metadata.ModeShows{Modes: hosted.Modes, Server: hosted.Service.Shows("tvmaze", direct),
+			Direct: metadata.GuardedTVMaze{TVMaze: &metadata.TVMaze{HTTP: hosted.Direct}}}
 	}
 	return metadata.ShowSources{
 		"tmdb":   hosted.Service.AnimeShows(hosted.TMDB()),
 		"tvmaze": maze,
+		"tvdb":   tvdbSource(v, hosted),
 	}
 }
 

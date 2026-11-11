@@ -56,6 +56,9 @@ type TMDB struct {
 	Images string
 	// Disk keeps answers across restarts (lookup_cache); nil keeps memory only.
 	Disk Cache
+	// Route, when set, picks where each request goes (the metadata mode)
+	// in place of BaseURL, Access and HTTP.
+	Route func(ctx context.Context) TMDBRoute
 
 	mu         sync.Mutex
 	last       time.Time
@@ -232,7 +235,8 @@ func tmdbStaleOK(ctx context.Context, err error) bool {
 }
 
 func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, error) {
-	u := t.base() + path
+	r := t.route(ctx)
+	u := r.base() + path
 	if len(q) > 0 {
 		u += "?" + q.Encode()
 	}
@@ -242,6 +246,9 @@ func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 	}
 	// Searches hold the person's words: they stay in memory only.
 	disk := t.Disk != nil && !strings.HasPrefix(path, "/search")
+	if r.Off {
+		return t.keptOnly(ctx, u, disk)
+	}
 	var stale *cached
 	if !noCache(ctx) {
 		if c, ok := t.kept(ctx, u, disk); ok {
@@ -278,7 +285,14 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	if ahead && t.hold.held(time.Now()) {
 		return nil, ErrRateLimited
 	}
-	tok, err := t.Access(ctx)
+	r := t.route(ctx)
+	if r.Off {
+		return nil, ErrSourceOff
+	}
+	if r.Access == nil {
+		return nil, ErrNoAccess
+	}
+	tok, err := r.Access(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +305,7 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	if ahead {
 		lane = "ahead"
 	}
-	op, err := outbound.Begin(ctx, outbound.Target{Kind: "metadata_tmdb", Identity: []string{t.base(), tok, lane}})
+	op, err := outbound.Begin(ctx, outbound.Target{Kind: "metadata_tmdb", Identity: []string{r.base(), tok, lane}})
 	if err != nil {
 		if errors.Is(err, outbound.ErrSuppressed) {
 			return nil, fmt.Errorf("TMDB: %w (%w)", ErrServiceUnavailable, err)
@@ -300,7 +314,7 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	}
 	outcome := outbound.Canceled
 	defer func() { op.Finish(outcome) }()
-	cl := t.HTTP
+	cl := r.HTTP
 	if cl == nil {
 		cl = http.DefaultClient
 	}

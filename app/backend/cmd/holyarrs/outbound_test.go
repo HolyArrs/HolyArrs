@@ -28,6 +28,52 @@ var standInFiles = map[string]bool{
 	// Only checks that a bio link the server sent is a Wikipedia page; it
 	// makes no request.
 	"internal/metadata/server_wikidata.go": true,
+	// The host list per mode for firewalls (Settings > Metadata); it makes
+	// no request.
+	"internal/metadata/mode_table.go": true,
+}
+
+// serverOnlyHosts are the sources only the metadata server ever asks, in
+// every mode: no direct client exists for them.
+var serverOnlyHosts = []string{"apple.com", "spotify81", "kworb", "movieofthenight", "rapidapi"}
+
+// TestServerOnlySourcesHaveNoClient: no Go file names a server-only
+// source's host, so no mode can build a client for one.
+func TestServerOnlySourcesHaveNoClient(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var found []string
+	for _, dir := range []string{"internal", "cmd"} {
+		err := filepath.WalkDir(filepath.Join(root, dir), func(path string, d fs.DirEntry, err error) error {
+			if err != nil || d.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+				return err
+			}
+			f, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+			if err != nil {
+				return err
+			}
+			ast.Inspect(f, func(n ast.Node) bool {
+				if lit, ok := n.(*ast.BasicLit); ok && lit.Kind == token.STRING {
+					v, _ := strconv.Unquote(lit.Value)
+					for _, h := range serverOnlyHosts {
+						if strings.Contains(strings.ToLower(v), h) {
+							found = append(found, path+": "+v)
+						}
+					}
+				}
+				return true
+			})
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(found) > 0 {
+		t.Fatalf("server-only sources named in the app:\n%s", strings.Join(found, "\n"))
+	}
 }
 
 // TestNoOutsideHostsOutsideStandIns: no Go file outside the stand-in

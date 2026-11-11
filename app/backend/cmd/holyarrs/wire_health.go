@@ -131,6 +131,10 @@ func (a *handlers) statusHandlers() *health.StatusHandlers {
 			}
 			return a.s.MetadataUp(ctx), true
 		},
+		MetadataMode: func() (string, string) {
+			m := a.s.MetadataModes
+			return string(m.Current()), m.BadValue()
+		},
 		UpdateNewer: func(ctx context.Context) bool { return a.s.Updates.Update(ctx).Newer }, Cache: &a.status}
 	if a.s.Parts != nil {
 		h.PartStatuses = func() []jobs.Status { return a.s.Parts.Statuses() }

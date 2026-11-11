@@ -177,6 +177,9 @@ type MusicBrainz struct {
 	// Tries is how many times a request is sent while the server says to
 	// slow down (503 or 429); default 4.
 	Tries int
+	// Allowed, when set, says MusicBrainz may be asked now (the metadata
+	// mode); false answers ErrSourceOff without waiting for the limiter.
+	Allowed func() bool
 
 	once sync.Once
 }
@@ -245,6 +248,10 @@ func (m *MusicBrainz) get(ctx context.Context, path string, q url.Values) ([]byt
 		if b, ok, err := m.Cache.Get(ctx, key, l.now()); err == nil && ok {
 			return b, nil
 		}
+	}
+	if m.Allowed != nil && !m.Allowed() {
+		// Kept answers above still answer; nothing new is asked.
+		return nil, ErrSourceOff
 	}
 	u := base + path + "?" + q.Encode()
 	var cl http.Client
