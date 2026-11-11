@@ -482,7 +482,12 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 						return nil
 					}
 				}
+				protected := false
 				if note != 0 {
+					var err error
+					if protected, err = mediafiles.ProtectedAt(ctx, tx, v.ID, af.Path); err != nil {
+						return err
+					}
 					if _, err := tx.Exec("DELETE FROM files WHERE id = ? AND origin = 'found'", note); err != nil {
 						return err
 					}
@@ -493,6 +498,11 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 				}
 				if a.Adopted == 0 {
 					return errNotLinked // keeps the note
+				}
+				if protected {
+					if err := mediafiles.ProtectAt(ctx, tx, v.ID, af.Path); err != nil {
+						return err
+					}
 				}
 				linked = true
 				return nil

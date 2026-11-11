@@ -105,3 +105,37 @@ func TestRescanLinksEarlierFoundNote(t *testing.T) {
 		t.Fatalf("earlier found note: %d rows, origin %q, episode %s", n, origin, ep.State)
 	}
 }
+
+// A found note the person protected stays protected once a rescan links it.
+func TestRescanLinkKeepsFoundNoteProtection(t *testing.T) {
+	svc, s, _, _ := addShowService(t)
+	ctx := context.Background()
+	lf := addShowFolder(t, s)
+	showTree(t, lf.Path)
+	res, err := svc.Adopt(ctx, lf.ID, []library.AdoptChoice{{Folder: "Lab Show (2025)", ID: "tmdb:100"}}, domain.System)
+	if err != nil || res[0].Error != "" {
+		t.Fatalf("adopt: %+v %v", res, err)
+	}
+	rel := filepath.ToSlash(filepath.Join("Lab Show (2025)", "Season 2", "Lab Series UK - S02E03.mkv"))
+	writeFile(t, filepath.Join(lf.Path, filepath.FromSlash(rel)), "the third episode")
+	var vid int64
+	_ = s.Read().QueryRow("SELECT id FROM versions WHERE title_id = ?", res[0].TitleID).Scan(&vid)
+	err = s.Write(ctx, func(tx *sql.Tx) error {
+		f := &mediafiles.File{SlotIDs: []int64{}, VersionID: vid, RelativePath: rel, Size: 17, Languages: []string{}, MediaInfo: map[string]any{},
+			Origin: "found", PlacedBy: "none", Role: "main", State: "present", Protected: true}
+		_, err := database.Insert(tx, "files", f, domain.System)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Rescan(ctx, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	var origin string
+	var protected bool
+	_ = s.Read().QueryRow("SELECT origin, protected FROM files WHERE relative_path = ?", rel).Scan(&origin, &protected)
+	if origin != "adopted" || !protected {
+		t.Fatalf("linked note: origin %q, protected %v", origin, protected)
+	}
+}

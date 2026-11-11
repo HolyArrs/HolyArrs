@@ -558,6 +558,12 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 		if r, err := filepath.Rel(lf.Path, src); err == nil && under(lf.Path, src) {
 			srcRel = filepath.ToSlash(r)
 		}
+		// A protected note keeps its protection on the imported file.
+		protected, err := mediafiles.ProtectedAt(ctx, tx, ver.ID, f.RelativePath, srcRel)
+		if err != nil {
+			return err
+		}
+		f.Protected = protected
 		if _, err := tx.Exec(`DELETE FROM files WHERE version_id = ? AND relative_path IN (?, ?) AND (slot_ids = '[]' OR origin = 'found')`,
 			ver.ID, f.RelativePath, srcRel); err != nil {
 			return err

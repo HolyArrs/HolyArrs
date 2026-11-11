@@ -82,3 +82,29 @@ func TestByHandTakesFoundFileOfEmptyEpisode(t *testing.T) {
 		t.Fatalf("the found note stayed next to the import: %d", notes)
 	}
 }
+
+// A found note the person protected stays protected once Import files takes it.
+func TestByHandKeepsFoundNoteProtection(t *testing.T) {
+	w := showSetup(t, nil)
+	ctx := context.Background()
+	rel3 := w.folder + "/Season 1/Copper Valley (US) - S01E03.mkv"
+	write(t, filepath.Join(w.lib, filepath.FromSlash(rel3)), 2048)
+	err := w.s.Write(ctx, func(tx *sql.Tx) error {
+		f := &mediafiles.File{SlotIDs: []int64{w.slots[3]}, VersionID: w.vID, RelativePath: rel3, Size: 2048, Languages: []string{}, MediaInfo: map[string]any{},
+			Origin: "found", PlacedBy: "none", Role: "main", State: "present", Protected: true}
+		_, err := database.Insert(tx, "files", f, domain.System)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	im := &Importer{Store: w.s}
+	res, err := im.ImportByHand(ctx, []ByHandItem{{Path: filepath.Join(w.lib, filepath.FromSlash(rel3)), SlotID: w.slots[3], Mode: "move"}}, domain.System)
+	if err != nil || res[0].Outcome != "placed" {
+		t.Fatalf("import %+v %v", res, err)
+	}
+	sl := w.slot(t, 3)
+	if sl.FileID == nil || !w.file(t, *sl.FileID).Protected {
+		t.Fatalf("the imported file lost the note's protection: %+v", sl)
+	}
+}
