@@ -63,6 +63,9 @@ export function downloadingNow<T extends CardRow>(rows: T[], cap = 20): T[] {
 		.slice(0, cap);
 }
 
+/** homeDownloadsURL reads every Downloader row (up to the server's 2000), so a busy Downloader or a second one is not cut off after 200. */
+export const homeDownloadsURL = '/downloads/view?limit=100&outside_limit=2000';
+
 /** notSentNow is what the Downloader is fetching that HolyArrs did not send and Home does not count. */
 export function notSentNow<T extends CardRow>(rows: T[]): T[] {
 	return rows.filter((d) => !homeCounts(d) && fetchingNow(d));

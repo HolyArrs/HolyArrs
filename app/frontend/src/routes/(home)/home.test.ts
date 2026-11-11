@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrivedAt, libraryCards, n, arrivedTitle, arrivedHead, askProgressLine, attention, downloadMoved, downloadingNow, notSentNow, fallbackRows, groupAttention, homeFailures, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, moreLink, shownState, soonLine, splitArrivals, uncheckedLine, freeSpace, partCount } from './home.ts';
+import { arrivedAt, libraryCards, n, arrivedTitle, arrivedHead, askProgressLine, attention, downloadMoved, downloadingNow, homeDownloadsURL, notSentNow, fallbackRows, groupAttention, homeFailures, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, moreLink, shownState, soonLine, splitArrivals, uncheckedLine, freeSpace, partCount } from './home.ts';
 import type { HealthCheck } from '#lib/core/types.ts';
 
 const check = (key: string, state: HealthCheck['state'], kind: HealthCheck['kind'] = 'source'): HealthCheck => ({ id: 1, key, kind, subject: 'S', state, message: `${key} broke`, since: '', checked_at: '' });
@@ -287,6 +287,12 @@ describe('torrents only the Downloader lists', () => {
 	it('that HolyArrs did not send are counted apart, only while they are fetching', () => {
 		expect(notSentNow(rows).map((d) => d.live_key).sort()).toEqual(['2:1', '2:4']);
 		expect(notSentNow([])).toEqual([]);
+	});
+	it('are all read, not only the first 200 Downloader rows', () => {
+		const q = new URLSearchParams(homeDownloadsURL.split('?')[1]);
+		expect(homeDownloadsURL.startsWith('/downloads/view?')).toBe(true);
+		expect(q.get('limit')).toBe('100');
+		expect(Number(q.get('outside_limit'))).toBe(2000);
 	});
 });
 
