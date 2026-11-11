@@ -45,6 +45,8 @@ test.beforeAll(async ({ browser }) => {
 	const pw = ['push', 'test', randomUUID()].join('-');
 	const owner = await call('POST', '/api/v1/auth/setup', { name: 'pushtest', password: pw });
 	csrf = owner.csrf;
+	// End the first run too, or the wizard gate sends /downloads to the welcome steps.
+	await call('POST', '/api/v1/auth/setup/done');
 	await call('POST', '/api/v1/downloaders', { name: 'Fake qBit', kind: 'qbittorrent', url: qbit, username: 'fake', secret: fakeClientKey, category: 'holyarrs', allow_local_network: true });
 	await setSync('on');
 });
