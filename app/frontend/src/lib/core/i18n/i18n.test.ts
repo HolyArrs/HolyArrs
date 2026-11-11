@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { browserLocale } from './i18n.svelte.ts';
@@ -8,28 +8,39 @@ const here = fileURLToPath(new URL('.', import.meta.url));
 const src = join(here, '..', '..', '..');
 const messages = join(here, 'messages');
 
+// Every message file and source file is read once, in parallel, before the tests
+// start; the tests then only compare in memory. Reading them one by one inside the
+// tests took seconds under a full parallel run and hit the 5 s test limit.
 type Words = Record<string, string>;
-const read = (dir: string): Words =>
-	Object.assign({}, ...readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')) as Words));
-const en = read(join(messages, 'en'));
-
-function files(dir: string, out: string[] = []): string[] {
-	for (const name of readdirSync(dir)) {
-		const p = join(dir, name);
-		if (statSync(p).isDirectory()) files(p, out);
-		else if (/\.(svelte|ts)$/.test(name) && !name.endsWith('.test.ts')) out.push(p);
-	}
-	return out;
+async function readWords(dir: string): Promise<Words> {
+	const names = (await readdir(dir)).filter((f) => f.endsWith('.json'));
+	return Object.assign({}, ...(await Promise.all(names.map(async (f) => JSON.parse(await readFile(join(dir, f), 'utf8')) as Words))));
 }
+const langs = new Map(await Promise.all((await readdir(messages)).map(async (l) => [l, await readWords(join(messages, l))] as const)));
+const en = langs.get('en') ?? {};
 
-const placeholders = (line: string) => [...line.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
-const markers = (line: string) => [...line.matchAll(/<\/?(b|strong|em|code|mono|a\d?)>/g)].map((m) => m[0]).sort();
+async function sourceFiles(dir: string): Promise<string[]> {
+	const found = await Promise.all(
+		(await readdir(dir, { withFileTypes: true })).map(async (e) => {
+			const p = join(dir, e.name);
+			if (e.isDirectory()) return sourceFiles(p);
+			return /\.(svelte|ts)$/.test(e.name) && !e.name.endsWith('.test.ts') ? [p] : [];
+		})
+	);
+	return found.flat();
+}
+const sources = await Promise.all((await sourceFiles(src)).map(async (f) => ({ f, text: await readFile(f, 'utf8') })));
+
+// A line without "{" or "<" can hold no placeholder or marker, so most lines skip the regex.
+const placeholders = (line: string) => (line.includes('{') ? [...line.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join() : '');
+const markers = (line: string) => (line.includes('<') ? [...line.matchAll(/<\/?(b|strong|em|code|mono|a\d?)>/g)].map((m) => m[0]).sort().join() : '');
+const shape = new Map(Object.entries(en).map(([k, line]) => [k, { holes: placeholders(line), marks: markers(line) }]));
 
 describe('message keys', () => {
 	it('every literal key in the code has an English line', () => {
+		expect(Object.keys(en).length).toBeGreaterThan(0);
 		const missing: string[] = [];
-		for (const f of files(src)) {
-			const text = readFileSync(f, 'utf8');
+		for (const { f, text } of sources) {
 			for (const m of text.matchAll(/\b(?:t|say|tr)\('([a-z][\w-]*(?:\.[\w-]+)+)'\s*[,)]/g)) if (!(m[1] in en)) missing.push(`${m[1]} (${f.slice(src.length + 1)})`);
 			for (const m of text.matchAll(/<Words\s+key="([^"]+)"/g)) if (!(m[1] in en)) missing.push(`${m[1]} (${f.slice(src.length + 1)})`);
 		}
@@ -37,13 +48,15 @@ describe('message keys', () => {
 	});
 
 	it('other languages only use English keys, with the same placeholders and markers', () => {
+		expect(langs.size).toBeGreaterThan(1);
 		const wrong: string[] = [];
-		for (const l of readdirSync(messages).filter((d) => d !== 'en')) {
-			const words = read(join(messages, l));
+		for (const [l, words] of langs) {
+			if (l === 'en') continue;
 			for (const [k, line] of Object.entries(words)) {
-				if (!(k in en)) wrong.push(`${l}: ${k} is not an English key`);
-				else if (placeholders(line).join() !== placeholders(en[k]).join()) wrong.push(`${l}: ${k} placeholders differ`);
-				else if (markers(line).join() !== markers(en[k]).join()) wrong.push(`${l}: ${k} markers differ`);
+				const want = shape.get(k);
+				if (!want) wrong.push(`${l}: ${k} is not an English key`);
+				else if (placeholders(line) !== want.holes) wrong.push(`${l}: ${k} placeholders differ`);
+				else if (markers(line) !== want.marks) wrong.push(`${l}: ${k} markers differ`);
 			}
 		}
 		expect(wrong).toEqual([]);
