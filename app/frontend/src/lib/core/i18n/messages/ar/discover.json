@@ -684,5 +684,12 @@
 	"discover.calendar.soonNone": "لا توجد تواريخ في المكتبة قادمة هذا العام.",
 	"discover.calendar.showWholeLibrary": "اعرض المكتبة كلها",
 	"discover.searchField.searchDownloads": "ابحث في التنزيلات",
-	"discover.searchField.showsMoviesPeople": "مسلسلات وأفلام وأشخاص"
+	"discover.searchField.showsMoviesPeople": "مسلسلات وأفلام وأشخاص",
+	"discover.titleLibrary.seasonPacks": "حزم المواسم",
+	"discover.titleLibrary.packWhole": "الموسم كاملًا",
+	"discover.titleLibrary.packAtATime": "{n} حلقات في كل مرة",
+	"discover.titleLibrary.packHint": "لتورنت qBittorrent. تأتي حلقات أخرى عبر «جلب الحلقات التالية» أو عندما يُظهر Plex أو Jellyfin حلقة على أنها شوهدت. يجلب Usenet الموسم كاملًا.",
+	"discover.titleLibrary.packNextStarted": "جارٍ جلب الحلقات التالية",
+	"discover.titleLibrary.packOneAtATime": "حلقة واحدة في كل مرة",
+	"discover.titleLibrary.packShort": "{n} في كل مرة"
 }

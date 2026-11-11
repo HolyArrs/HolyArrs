@@ -576,6 +576,15 @@ export interface DownloadRow extends DownloadView {
 	hash?: string;
 	category?: string;
 	live_key?: string;
+	// A season pack taken a few episodes at a time: the episodes switched on and how many of the pack's episodes that is.
+	pack?: PackRange;
+}
+
+export interface PackRange {
+	from: number;
+	to: number;
+	taken: number;
+	total: number;
 }
 
 export interface EpisodeLine {

@@ -114,7 +114,7 @@ func TestOptionalGrabUsesSourcePolicyAndStableOperation(t *testing.T) {
 		}); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := m.send(ctx, d, rel, w.slotID, ""); err != nil {
+		if _, err := m.send(ctx, d, rel, w.slotID, "", false); err != nil {
 			t.Fatal(err)
 		}
 		if e.request.AllowLocal != allowed || e.request.OperationKey == "" {
@@ -122,7 +122,7 @@ func TestOptionalGrabUsesSourcePolicyAndStableOperation(t *testing.T) {
 		}
 	}
 	first := e.request.OperationKey
-	if _, err := m.send(ctx, d, rel, w.slotID, ""); err != nil {
+	if _, err := m.send(ctx, d, rel, w.slotID, "", false); err != nil {
 		t.Fatal(err)
 	}
 	if first == "" || !e.request.ReconcileOnly || e.request.OperationKey != "" || e.request.AttemptMarker == "" {

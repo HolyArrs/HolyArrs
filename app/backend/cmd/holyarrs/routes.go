@@ -115,6 +115,12 @@ func buildHandlers(s services) *handlers {
 	a.trailers = a.newTrailers()
 	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}
 	a.shows = shows.NewHandlers(shows.Deps{Store: s.Store, Library: s.Library, Metadata: s.Metadata, AnimeMap: s.AnimeMap,
+		PackNext: func(ctx context.Context, titleID int64, season int, by domain.Actor) (int64, int, error) {
+			if a.s.Downloads == nil {
+				return 0, 0, downloads.ErrNoPack
+			}
+			return a.s.Downloads.PackNext(ctx, titleID, season, by)
+		},
 		KidMax: a.kidMax, KidLimited: a.disc.KidLimited, KidShows: a.kidShows, KindsOn: a.disc.KindsOn, LibraryRating: a.libraryRating,
 		Caching: a.disc.Caching, CachedDetails: a.disc.LoadedDetails, Details: a.disc.CachedDetails,
 		OpenAsk: func(r *http.Request, ids map[string]string) (any, error) {

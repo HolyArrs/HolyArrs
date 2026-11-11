@@ -688,7 +688,7 @@
 	"discover.titleLibrary.seasonPacks": "Season packs",
 	"discover.titleLibrary.packWhole": "Whole season",
 	"discover.titleLibrary.packAtATime": "{n} episodes at a time",
-	"discover.titleLibrary.packHint": "For torrents in qBittorrent. Usenet gets the whole season.",
+	"discover.titleLibrary.packHint": "For torrents in qBittorrent. More follow with Get the next episodes or when Plex or Jellyfin shows one as watched. Usenet gets the whole season.",
 	"discover.titleLibrary.packNextStarted": "Getting the next episodes",
 	"discover.titleLibrary.packOneAtATime": "1 episode at a time",
 	"discover.titleLibrary.packShort": "{n} at a time"

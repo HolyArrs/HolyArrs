@@ -650,6 +650,11 @@ func (im *Importer) publish(topic string, data any) {
 // ErrEpisodeImport is returned when placing episodes is turned off.
 var ErrEpisodeImport = errors.New("placing episodes is turned off; the download stays in the Downloader")
 
+// ErrPackWaiting is returned when every episode a season pack fetched a few
+// at a time waits for is still downloading; the download goes back to
+// downloading.
+var ErrPackWaiting = errors.New("the season pack's episodes are still downloading; the download goes back to downloading")
+
 // ErrAlbumImport is returned when placing albums is turned off.
 var ErrAlbumImport = errors.New("placing albums is turned off; the download stays in the Downloader")
 
@@ -723,7 +728,7 @@ func (im *Importer) HandleJob(ctx context.Context, r *jobs.Run) error {
 	}
 	dry, _ := r.Job.Params["dry_run"].(bool)
 	imp, err := im.Import(ctx, r.Job.Subject.ID, dry, domain.Actor{Kind: "job", ID: r.Job.ID})
-	if errors.Is(err, ErrEpisodeImport) || errors.Is(err, ErrAlbumImport) {
+	if errors.Is(err, ErrEpisodeImport) || errors.Is(err, ErrAlbumImport) || errors.Is(err, ErrPackWaiting) {
 		r.SetResult(map[string]any{"waiting": err.Error()})
 		return nil
 	}

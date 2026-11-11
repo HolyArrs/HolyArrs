@@ -16,6 +16,11 @@ func (s *Searcher) episodeSet(ctx context.Context, c slotCtx, out bool) (showSet
 		return set, nil, err
 	}
 	set.single = true
+	if set.window = s.packWindow(ctx, c.ti); set.window > 0 {
+		if set.packed, err = packFetchingItems(ctx, s.Store.Read(), c.ti.ID); err != nil {
+			return set, nil, err
+		}
+	}
 	set.target[c.sl.ID] = true
 	if !out {
 		set.notOut[c.sl.ID] = true

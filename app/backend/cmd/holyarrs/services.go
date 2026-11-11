@@ -205,6 +205,9 @@ func (s *services) fill() {
 					log.Printf("queue grab: %v", err)
 				}
 			}}
+		if s.Downloads != nil {
+			s.Search.PackReady = s.Downloads.PackReady
+		}
 	}
 }
 

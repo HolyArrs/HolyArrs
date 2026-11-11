@@ -684,5 +684,12 @@
 	"discover.calendar.soonNone": "Geen data in de Bibliotheek komen dit jaar eraan.",
 	"discover.calendar.showWholeLibrary": "De hele Bibliotheek tonen",
 	"discover.searchField.searchDownloads": "Downloads zoeken",
-	"discover.searchField.showsMoviesPeople": "Series, films en mensen"
+	"discover.searchField.showsMoviesPeople": "Series, films en mensen",
+	"discover.titleLibrary.seasonPacks": "Seizoenspakketten",
+	"discover.titleLibrary.packWhole": "Heel seizoen",
+	"discover.titleLibrary.packAtATime": "{n} afleveringen tegelijk",
+	"discover.titleLibrary.packHint": "Voor torrents in qBittorrent. Er komen er meer met ‘Volgende afleveringen ophalen’ of als Plex of Jellyfin er een als bekeken toont. Usenet haalt het hele seizoen op.",
+	"discover.titleLibrary.packNextStarted": "Volgende afleveringen worden opgehaald",
+	"discover.titleLibrary.packOneAtATime": "1 aflevering tegelijk",
+	"discover.titleLibrary.packShort": "{n} tegelijk"
 }

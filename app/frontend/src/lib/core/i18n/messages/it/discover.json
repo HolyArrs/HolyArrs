@@ -684,5 +684,12 @@
 	"discover.calendar.soonNone": "Nessuna data nella Libreria arriva quest'anno.",
 	"discover.calendar.showWholeLibrary": "Mostra tutta la Libreria",
 	"discover.searchField.searchDownloads": "Cerca nei download",
-	"discover.searchField.showsMoviesPeople": "Serie, film e persone"
+	"discover.searchField.showsMoviesPeople": "Serie, film e persone",
+	"discover.titleLibrary.seasonPacks": "Pacchetti di stagione",
+	"discover.titleLibrary.packWhole": "Stagione intera",
+	"discover.titleLibrary.packAtATime": "{n} episodi alla volta",
+	"discover.titleLibrary.packHint": "Per i torrent in qBittorrent. Altri arrivano con «Scarica i prossimi episodi» o quando Plex o Jellyfin ne segna uno come visto. Usenet scarica la stagione intera.",
+	"discover.titleLibrary.packNextStarted": "Scarico i prossimi episodi",
+	"discover.titleLibrary.packOneAtATime": "1 episodio alla volta",
+	"discover.titleLibrary.packShort": "{n} alla volta"
 }

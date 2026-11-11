@@ -388,3 +388,24 @@ func releaseName(ctx context.Context, q database.Querier, id int64) string {
 	_ = q.QueryRowContext(ctx, "SELECT name FROM releases WHERE id = ?", id).Scan(&name)
 	return name
 }
+
+// packFetchingItems lists the episode Items of a show held by a season pack
+// still fetched a few episodes at a time, switched on or not.
+func packFetchingItems(ctx context.Context, db *sql.DB, titleID int64) (map[int64]bool, error) {
+	rows, err := db.QueryContext(ctx, `SELECT DISTINCT it.value FROM downloads d, json_each(d.pack_files) f, json_each(json_extract(f.value, '$.items')) it
+		JOIN items i ON i.id = it.value WHERE json_array_length(d.pack_files) > 0
+		AND d.state IN ('sent', 'queued', 'downloading', 'stalled', 'paused', 'finished', 'seeding') AND i.title_id = ?`, titleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[int64]bool{}
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out[id] = true
+	}
+	return out, rows.Err()
+}

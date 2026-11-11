@@ -204,10 +204,26 @@ func (d Downloader) Categories() []string {
 	return out
 }
 
-// SeenFile is one file a Download reports.
+// SeenFile is one file a Download reports. Progress runs from 0 to 1 and
+// Priority is the client's file priority (0 skipped); both are kept for a
+// season pack fetched a few episodes at a time, where some files are skipped.
 type SeenFile struct {
-	Name string `json:"name"`
-	Size int64  `json:"size"`
+	Name     string  `json:"name"`
+	Size     int64   `json:"size"`
+	Progress float64 `json:"progress,omitempty"`
+	Priority int     `json:"priority,omitempty"`
+}
+
+// PackFile is one episode file of a season pack fetched a few episodes at a
+// time: its index in the torrent, its name, the Slots and episode Items it
+// fills, their episode numbers, and whether it is switched on.
+type PackFile struct {
+	I     int     `json:"i"`
+	Name  string  `json:"name"`
+	Slots []int64 `json:"slots"`
+	Items []int64 `json:"items"`
+	Eps   []int   `json:"eps"`
+	On    bool    `json:"on"`
 }
 
 // Download is one job in a Downloader.
@@ -232,6 +248,9 @@ type Download struct {
 	StartedBy        Actor      `db:"started_by,json"`
 	ProgressAt       *time.Time `db:"progress_at"` // last time progress went up; the stall timers count from here
 	ConfirmedEdition string     `db:"confirmed_edition"`
+	// PackFiles is set (not nil) for a season pack fetched a few episodes at a
+	// time, in episode order; empty while its file list is not known yet.
+	PackFiles []PackFile `db:"pack_files,json"`
 }
 
 // User is a person who signs in: the one owner, admins and members.

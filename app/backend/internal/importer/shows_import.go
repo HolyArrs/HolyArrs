@@ -59,9 +59,23 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		ss.live = ss.sl.State == mediafiles.SlotDownloading || ss.sl.State == mediafiles.SlotImporting
 		slots[id] = ss
 	}
+	files, waiting := packReady(d)
+	for id := range waiting {
+		if ss := slots[id]; ss != nil && ss.live && !dryRun {
+			ss.live = false // its file is switched on but not finished: it stays downloading
+		} else {
+			delete(waiting, id)
+		}
+	}
 	liveAny := false
 	for _, ss := range slots {
 		liveAny = liveAny || ss.live
+	}
+	if !dryRun && !liveAny && len(waiting) > 0 {
+		if err := reopenPack(ctx, im.Store, d.ID); err != nil {
+			return nil, err
+		}
+		return nil, ErrPackWaiting
 	}
 	if !dryRun && !liveAny {
 		return nil, fmt.Errorf("no Slot of download %d waits for it; nothing to import", d.ID)
@@ -148,7 +162,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		t.Episodes = append(t.Episodes, e)
 	}
 	root, rootOK := domain.MapPath(d.SavePath, dr.PathMap)
-	cands, bad := candidates(root, d.FilesSeen)
+	cands, bad := candidates(root, files)
 	if !rootOK {
 		cands, bad = nil, []mediafiles.PlanStep{unpackStep(d.SavePath, "the Downloader reported a folder with \"..\" in it")}
 	}
@@ -745,6 +759,11 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		}
 	}
 	im.publish("import", imp)
+	if len(waiting) > 0 {
+		if err := reopenPack(ctx, im.Store, d.ID); err != nil {
+			log.Printf("importer: download %d back to downloading: %v", d.ID, err)
+		}
+	}
 	if imp.State == "done" && !dryRun && im.OnImported != nil {
 		im.OnImported(ctx, d.ID)
 	}
@@ -754,4 +773,13 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		}
 	}
 	return imp, nil
+}
+
+// reopenPack moves a finished season pack back to downloading, so the poll
+// follows its files still coming.
+func reopenPack(ctx context.Context, s *database.Store, id int64) error {
+	return s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, "UPDATE downloads SET state = 'downloading', finished_at = NULL WHERE id = ? AND state = 'finished'", id)
+		return err
+	})
 }

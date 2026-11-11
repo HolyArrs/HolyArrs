@@ -684,5 +684,12 @@
 	"discover.calendar.soonNone": "今年これから来るライブラリの日付はありません。",
 	"discover.calendar.showWholeLibrary": "ライブラリ全体を表示",
 	"discover.searchField.searchDownloads": "ダウンロードを検索",
-	"discover.searchField.showsMoviesPeople": "番組、映画、人物"
+	"discover.searchField.showsMoviesPeople": "番組、映画、人物",
+	"discover.titleLibrary.seasonPacks": "シーズンパック",
+	"discover.titleLibrary.packWhole": "シーズン全体",
+	"discover.titleLibrary.packAtATime": "{n} 話ずつ",
+	"discover.titleLibrary.packHint": "qBittorrent のトレント向けです。「次の話を取得」を押すか、Plex または Jellyfin で視聴済みになると続きを取得します。Usenet はシーズン全体を取得します。",
+	"discover.titleLibrary.packNextStarted": "次のエピソードを取得しています",
+	"discover.titleLibrary.packOneAtATime": "1 話ずつ",
+	"discover.titleLibrary.packShort": "{n} 話ずつ"
 }

@@ -684,5 +684,12 @@
 	"discover.calendar.soonNone": "Цього року в бібліотеці не очікується жодної дати.",
 	"discover.calendar.showWholeLibrary": "Показати всю бібліотеку",
 	"discover.searchField.searchDownloads": "Шукати в завантаженнях",
-	"discover.searchField.showsMoviesPeople": "Серіали, фільми та люди"
+	"discover.searchField.showsMoviesPeople": "Серіали, фільми та люди",
+	"discover.titleLibrary.seasonPacks": "Пакети сезону",
+	"discover.titleLibrary.packWhole": "Весь сезон",
+	"discover.titleLibrary.packAtATime": "Серій за раз: {n}",
+	"discover.titleLibrary.packHint": "Для торентів у qBittorrent. Нові приходять за кнопкою «Завантажити наступні серії» або коли Plex чи Jellyfin показує серію як переглянуту. Usenet завантажує весь сезон.",
+	"discover.titleLibrary.packNextStarted": "Завантажуємо наступні серії",
+	"discover.titleLibrary.packOneAtATime": "По 1 серії за раз",
+	"discover.titleLibrary.packShort": "По {n} за раз"
 }

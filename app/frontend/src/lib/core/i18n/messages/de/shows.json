@@ -204,5 +204,15 @@
 	"shows.page.mainVersionParen": "(Hauptvariante)",
 	"shows.page.keepThem": "Aktuell halten",
 	"shows.page.leaveThem": "Aus lassen",
-	"shows.page.filesStay": "Folgen und Dateien bleiben."
+	"shows.page.filesStay": "Folgen und Dateien bleiben.",
+	"shows.page.seasonPacks": "Staffelpakete",
+	"shows.page.packWhole": "Die ganze Staffel holen",
+	"shows.page.packFew": "Ein paar Folgen auf einmal holen",
+	"shows.page.packAhead": "Folgen im Voraus",
+	"shows.page.packHint": "Wenn nur ein Paket der ganzen Staffel als Release da ist, holt qBittorrent die nächsten {n} Folgen. Weitere kommen mit „Die nächsten Folgen holen“ oder wenn Plex oder Jellyfin eine Folge als gesehen zeigt. Usenet und andere Downloader holen die ganze Staffel.",
+	"shows.page.packWholeShort": "Ganze Staffel",
+	"shows.page.packAtATime": "{n} Folgen auf einmal",
+	"shows.tools.packNote": "Diese Staffel kommt aus ihrem Paket, {n} Folgen auf einmal.",
+	"shows.tools.getNext": "Die nächsten {n} Folgen holen",
+	"shows.page.packOneAtATime": "1 Folge auf einmal"
 }

@@ -17,7 +17,7 @@ type Info struct {
 	SeasonChoice  string          `json:"season_choice,omitempty"`
 	NewSeasons    string          `json:"new_seasons"`
 	PackWindow    int             `json:"pack_window"`
-	Status       string          `json:"status"`
+	Status        string          `json:"status"`
 	Network       string          `json:"network,omitempty"`
 	AirTime       string          `json:"air_time,omitempty"`
 	TimeZone      string          `json:"time_zone,omitempty"`

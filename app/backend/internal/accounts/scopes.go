@@ -246,10 +246,11 @@ var RoutePerms = map[string]webserver.Perm{
 	"PUT /api/v1/titles/{id}":       webserver.PermManageLibrary,
 	"POST /api/v1/titles/{id}/move": webserver.PermManageLibrary,
 	// Shows.
-	"POST /api/v1/shows":                       webserver.PermManageLibrary,
-	"PUT /api/v1/titles/{id}/seasons/{number}": webserver.PermManageLibrary,
-	"PUT /api/v1/episodes/{id}":                webserver.PermManageLibrary,
-	"PUT /api/v1/settings/shows":               webserver.PermSettings,
+	"POST /api/v1/shows":                                  webserver.PermManageLibrary,
+	"PUT /api/v1/titles/{id}/seasons/{number}":            webserver.PermManageLibrary,
+	"POST /api/v1/titles/{id}/seasons/{number}/pack-next": webserver.PermManageLibrary,
+	"PUT /api/v1/episodes/{id}":                           webserver.PermManageLibrary,
+	"PUT /api/v1/settings/shows":                          webserver.PermSettings,
 	// Music.
 	"POST /api/v1/artists":           webserver.PermManageLibrary,
 	"PUT /api/v1/titles/{id}/artist": webserver.PermManageLibrary,

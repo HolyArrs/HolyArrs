@@ -88,6 +88,14 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 				active++
 				continue
 			}
+			if ok && d.PackFiles != nil && len(d.PackFiles) == 0 {
+				// A season pack added stopped from a magnet: its files are chosen once the
+				// client knows them, and it starts then.
+				m.seen(d.ID)
+				m.packPending(ctx, dr, d)
+				active++
+				continue
+			}
 			if ok {
 				m.seen(d.ID)
 			} else if !(d.State == "sent" && m.now().Sub(lastMoved(d)) < m.vanishGrace()) && !m.missedLongEnough(d.ID, readAt) {
@@ -302,7 +310,7 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 		if len(j.Files) > 0 {
 			next.FilesSeen = make([]domain.SeenFile, len(j.Files))
 			for i, f := range j.Files {
-				next.FilesSeen[i] = domain.SeenFile{Name: f.Name, Size: f.Size}
+				next.FilesSeen[i] = domain.SeenFile{Name: f.Name, Size: f.Size, Progress: f.Progress, Priority: f.Priority}
 			}
 		}
 	}

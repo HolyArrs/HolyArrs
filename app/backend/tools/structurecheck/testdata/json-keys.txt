@@ -503,6 +503,7 @@ episodes_added
 episodes_changed
 episodes_dropped
 episodes_removed
+eps
 error
 errorCode
 errorDescription
@@ -692,6 +693,7 @@ how
 href
 html_url
 hue
+i
 id
 ids
 ignore_picture_tracks
@@ -1569,6 +1571,7 @@ tag_name
 tagline
 tags
 tail
+taken
 tallies
 target
 target_path

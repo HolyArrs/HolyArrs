@@ -370,7 +370,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	dls := &downloads.Sync{Store: &downloads.Store{}, DB: s, Manager: dm, Lines: downloads.TorrentLines}
 	dm.Sync = dls
 	im := &importer.Importer{Store: s, Live: hub}
-	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
+	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, PackReady: dm.PackReady, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
 		enqueue(ctx, downloads.KindGrab, domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID))
 	}}
 	// A rejected Import turned its Release down: remove the Download from

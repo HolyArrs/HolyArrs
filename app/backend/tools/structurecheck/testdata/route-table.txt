@@ -438,6 +438,7 @@ POST /api/v1/titles/{id}/move auth=manage_library scope=write assurance=false pa
 POST /api/v1/titles/{id}/refresh auth=manage_library scope=write assurance=false part=title
 POST /api/v1/titles/{id}/rename auth=manage_library scope=write assurance=false part=title
 POST /api/v1/titles/{id}/search auth=manage_library scope=write assurance=false part=title
+POST /api/v1/titles/{id}/seasons/{number}/pack-next auth=manage_library scope=write assurance=false part=shows
 POST /api/v1/titles/{id}/versions auth=manage_library scope=write assurance=false part=title
 POST /api/v1/titles/{id}/versions/{vid}/adopt auth=manage_library scope=write assurance=false part=title
 POST /api/v1/users/invites auth=users scope=admin assurance=true part=core

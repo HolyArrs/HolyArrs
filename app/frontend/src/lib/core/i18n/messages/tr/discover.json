@@ -684,5 +684,12 @@
 	"discover.calendar.soonNone": "Kütüphanede bu yıl yaklaşan tarih yok.",
 	"discover.calendar.showWholeLibrary": "Tüm Kütüphaneyi göster",
 	"discover.searchField.searchDownloads": "İndirmelerde ara",
-	"discover.searchField.showsMoviesPeople": "Diziler, filmler ve kişiler"
+	"discover.searchField.showsMoviesPeople": "Diziler, filmler ve kişiler",
+	"discover.titleLibrary.seasonPacks": "Sezon paketleri",
+	"discover.titleLibrary.packWhole": "Tüm sezon",
+	"discover.titleLibrary.packAtATime": "Bir seferde {n} bölüm",
+	"discover.titleLibrary.packHint": "qBittorrent’teki torrentler için. “Sonraki bölümleri al” ile ya da Plex veya Jellyfin bir bölümü izlenmiş gösterdiğinde yenileri gelir. Usenet sezonun tamamını alır.",
+	"discover.titleLibrary.packNextStarted": "Sonraki bölümler alınıyor",
+	"discover.titleLibrary.packOneAtATime": "Bir seferde 1 bölüm",
+	"discover.titleLibrary.packShort": "Bir seferde {n}"
 }
