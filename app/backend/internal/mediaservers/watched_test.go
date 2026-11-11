@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"slices"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -61,8 +63,12 @@ func plexWatchServer(t *testing.T, paths *[]string) *httptest.Server {
 		case "/library/sections":
 			_, _ = w.Write([]byte(`<MediaContainer><Directory key="1" type="movie" title="Movies"/><Directory key="2" type="show" title="TV"/></MediaContainer>`))
 		case "/library/sections/2/all":
-			_, _ = w.Write([]byte(`<MediaContainer><Directory ratingKey="9" guid="com.plexapp.agents.thetvdb://555?lang=en"/>
-				<Directory ratingKey="7" guid="plex://show/abc"><Guid id="imdb://tt1"/><Guid id="tvdb://100"/></Directory></MediaContainer>`))
+			_, _ = w.Write([]byte(plexPage(r, `<Directory ratingKey="9" guid="com.plexapp.agents.thetvdb://555?lang=en"/>`,
+				`<Directory ratingKey="7" guid="plex://show/abc"><Guid id="imdb://tt1"/><Guid id="tvdb://100"/></Directory>`)))
+		case "/status/sessions/history/all":
+			// Another account watched S01E02; S02E05 belongs to another show.
+			_, _ = w.Write([]byte(plexPage(r, `<Video type="episode" accountID="2" grandparentKey="/library/metadata/9" parentIndex="1" index="1"/>`,
+				`<Video type="episode" accountID="2" grandparentKey="/library/metadata/7" parentIndex="1" index="2"/>`)))
 		case "/library/metadata/7/allLeaves":
 			_, _ = w.Write([]byte(`<MediaContainer><Video parentIndex="1" index="1" viewCount="2"/><Video parentIndex="1" index="2"/><Video parentIndex="1" index="3" viewCount="1"/></MediaContainer>`))
 		default:
@@ -73,7 +79,27 @@ func plexWatchServer(t *testing.T, paths *[]string) *httptest.Server {
 	return srv
 }
 
+// plexPage answers one page of entries, as X-Plex-Container-Start and -Size ask.
+func plexPage(r *http.Request, entries ...string) string {
+	q := r.URL.Query()
+	start, _ := strconv.Atoi(q.Get("X-Plex-Container-Start"))
+	size, err := strconv.Atoi(q.Get("X-Plex-Container-Size"))
+	if err != nil {
+		size = len(entries)
+	}
+	start = min(start, len(entries))
+	return "<MediaContainer>" + strings.Join(entries[start:min(start+size, len(entries))], "") + "</MediaContainer>"
+}
+
+// smallPages makes every list call ask for one entry at a time.
+func smallPages(t *testing.T) {
+	old := watchPage
+	watchPage = 1
+	t.Cleanup(func() { watchPage = old })
+}
+
 func TestAdvancePacksPlex(t *testing.T) {
+	smallPages(t)
 	w := newWorld(t)
 	ctx := context.Background()
 	title, eps := packShow(t, w)
@@ -86,12 +112,13 @@ func TestAdvancePacksPlex(t *testing.T) {
 	if err := (&Linker{Store: w.s, Vault: w.v}).AdvancePacks(ctx, []int64{title}, got.fn); err != nil {
 		t.Fatal(err)
 	}
-	if !maps.Equal(got[title], map[int64]bool{eps[0]: true, eps[2]: true}) {
+	if !maps.Equal(got[title], map[int64]bool{eps[0]: true, eps[1]: true, eps[2]: true}) {
 		t.Fatalf("watched %v, episodes %v", got, eps)
 	}
 }
 
 func TestAdvancePacksJellyfinAnyUser(t *testing.T) {
+	smallPages(t)
 	w := newWorld(t)
 	ctx := context.Background()
 	title, eps := packShow(t, w)
@@ -105,7 +132,14 @@ func TestAdvancePacksJellyfinAnyUser(t *testing.T) {
 		q := r.URL.Query()
 		switch r.URL.Path {
 		case "/Items":
-			_, _ = rw.Write([]byte(`{"Items":[{"Id":"s1","ProviderIds":{"Tvdb":"100"}},{"Id":"s2","ProviderIds":{"Tvdb":"200"}}]}`))
+			all := []string{`{"Id":"s2","ProviderIds":{"Tvdb":"200"}}`, `{"Id":"s1","ProviderIds":{"Tvdb":"100"}}`}
+			start, _ := strconv.Atoi(q.Get("StartIndex"))
+			limit, err := strconv.Atoi(q.Get("Limit"))
+			if err != nil {
+				limit = len(all)
+			}
+			start = min(start, len(all))
+			_, _ = rw.Write([]byte(`{"Items":[` + strings.Join(all[start:min(start+limit, len(all))], ",") + `]}`))
 		case "/Users":
 			_, _ = rw.Write([]byte(`[{"Id":"u1"},{"Id":"u2"}]`))
 		case "/Users/u1/Items", "/Users/u2/Items":
@@ -133,7 +167,7 @@ func TestAdvancePacksJellyfinAnyUser(t *testing.T) {
 	if !maps.Equal(got[title], map[int64]bool{eps[0]: true, eps[1]: true}) {
 		t.Fatalf("watched %v, episodes %v", got, eps)
 	}
-	if !slices.Equal(paths, []string{"/Items", "/Users", "/Users/u1/Items", "/Users/u2/Items"}) {
+	if !slices.Equal(paths, []string{"/Items", "/Items", "/Items", "/Users", "/Users/u1/Items", "/Users/u2/Items"}) {
 		t.Fatalf("calls %v", paths)
 	}
 }
@@ -161,7 +195,7 @@ func TestAdvancePacksSkipsAFailingServer(t *testing.T) {
 	if err := l.AdvancePacks(ctx, []int64{title}, got.fn); err != nil {
 		t.Fatal(err)
 	}
-	if !maps.Equal(got[title], map[int64]bool{eps[0]: true, eps[2]: true}) {
+	if !maps.Equal(got[title], map[int64]bool{eps[0]: true, eps[1]: true, eps[2]: true}) {
 		t.Fatalf("watched %v", got)
 	}
 }

@@ -26,7 +26,13 @@ type watchedOn struct {
 	shows  map[string]string // show id -> Plex ratingKey or Jellyfin series id
 	users  []string
 	failed bool
+	// history holds the episodes every Plex account watched, by show ratingKey.
+	history map[string][][2]int
 }
+
+// watchPage is how many entries one list call asks a server for, so a large
+// library is read a page at a time.
+var watchPage = 500
 
 // AdvancePacks asks every switched-on media server which episodes of each
 // show in titles anyone has watched and hands them to advance. Only reads;
@@ -127,7 +133,16 @@ func (l *Linker) watchedEpisodes(ctx context.Context, w *watchedOn, ids []string
 		return nil, nil
 	}
 	if w.m.Kind == "plex" {
-		return l.plexWatched(ctx, w.m, key)
+		if w.history == nil {
+			var err error
+			if w.history, err = l.plexHistory(ctx, w.m); err != nil {
+				// Only the token's own views count then.
+				log.Printf("media servers: %s: watch history of every account: %v", w.m.Name, err)
+				w.history = map[string][][2]int{}
+			}
+		}
+		out, err := l.plexWatched(ctx, w.m, key)
+		return append(out, w.history[key]...), err
 	}
 	seen := map[[2]int]bool{}
 	var out [][2]int
@@ -170,35 +185,82 @@ func (l *Linker) plexShows(ctx context.Context, m domain.MediaServer) (map[strin
 		if s.Type != "show" {
 			continue
 		}
-		b, err := l.do(ctx, m, http.MethodGet, "/library/sections/"+url.PathEscape(s.Key)+"/all?type=2&includeGuids=1", nil)
-		if err != nil {
-			return nil, err
-		}
-		var mc struct {
-			Directories []struct {
-				RatingKey string `xml:"ratingKey,attr"`
-				GUID      string `xml:"guid,attr"`
-				Guids     []struct {
-					ID string `xml:"id,attr"`
-				} `xml:"Guid"`
-			} `xml:"Directory"`
-		}
-		if err := xml.Unmarshal(b, &mc); err != nil {
-			return nil, errors.New("the server's answer was not a Plex show list")
-		}
-		for _, d := range mc.Directories {
-			gs := []string{d.GUID}
-			for _, g := range d.Guids {
-				gs = append(gs, g.ID)
+		for start := 0; ; start += watchPage {
+			b, err := l.do(ctx, m, http.MethodGet, "/library/sections/"+url.PathEscape(s.Key)+"/all?type=2&includeGuids=1"+plexRange(start), nil)
+			if err != nil {
+				return nil, err
 			}
-			for _, g := range gs {
-				if id := plexGUID(g); id != "" {
-					out[id] = d.RatingKey
+			var mc struct {
+				Directories []struct {
+					RatingKey string `xml:"ratingKey,attr"`
+					GUID      string `xml:"guid,attr"`
+					Guids     []struct {
+						ID string `xml:"id,attr"`
+					} `xml:"Guid"`
+				} `xml:"Directory"`
+			}
+			if err := xml.Unmarshal(b, &mc); err != nil {
+				return nil, errors.New("the server's answer was not a Plex show list")
+			}
+			for _, d := range mc.Directories {
+				gs := []string{d.GUID}
+				for _, g := range d.Guids {
+					gs = append(gs, g.ID)
 				}
+				for _, g := range gs {
+					if id := plexGUID(g); id != "" {
+						out[id] = d.RatingKey
+					}
+				}
+			}
+			if len(mc.Directories) < watchPage {
+				break
 			}
 		}
 	}
 	return out, nil
+}
+
+// plexRange asks Plex for one page of a list from start.
+func plexRange(start int) string {
+	return "&X-Plex-Container-Start=" + strconv.Itoa(start) + "&X-Plex-Container-Size=" + strconv.Itoa(watchPage)
+}
+
+// plexHistoryPath is Plex's watch history of every account, a server path
+// (kept without its leading slash, apart from page addresses).
+const plexHistoryPath = "status/sessions/history/all"
+
+// plexHistory reads the watch history of every account on the server (the
+// admin token may read it) and keeps the episodes by show ratingKey.
+func (l *Linker) plexHistory(ctx context.Context, m domain.MediaServer) (map[string][][2]int, error) {
+	out := map[string][][2]int{}
+	for start := 0; ; start += watchPage {
+		b, err := l.do(ctx, m, http.MethodGet, "/"+plexHistoryPath+"?sort=viewedAt:desc"+plexRange(start), nil)
+		if err != nil {
+			return nil, err
+		}
+		var mc struct {
+			Videos []struct {
+				Show    string `xml:"grandparentKey,attr"`
+				Season  string `xml:"parentIndex,attr"`
+				Episode string `xml:"index,attr"`
+			} `xml:"Video"`
+		}
+		if err := xml.Unmarshal(b, &mc); err != nil {
+			return nil, errors.New("the server's answer was not a Plex watch history")
+		}
+		for _, v := range mc.Videos {
+			key, ok := strings.CutPrefix(v.Show, "/library/metadata/")
+			s, err1 := strconv.Atoi(v.Season)
+			e, err2 := strconv.Atoi(v.Episode)
+			if ok && err1 == nil && err2 == nil {
+				out[key] = append(out[key], [2]int{s, e})
+			}
+		}
+		if len(mc.Videos) < watchPage {
+			return out, nil
+		}
+	}
 }
 
 // plexGUID turns tvdb://1, tmdb://2, imdb://tt3 or an old agent's
@@ -222,7 +284,7 @@ func plexGUID(g string) string {
 }
 
 // plexWatched lists the show's episodes with a view count (the admin
-// token's own watched state).
+// token's own watched state; plexHistory adds the other accounts).
 func (l *Linker) plexWatched(ctx context.Context, m domain.MediaServer, key string) ([][2]int, error) {
 	b, err := l.do(ctx, m, http.MethodGet, "/library/metadata/"+url.PathEscape(key)+"/allLeaves", nil)
 	if err != nil {
@@ -252,28 +314,34 @@ func (l *Linker) plexWatched(ctx context.Context, m domain.MediaServer, key stri
 // jellyShows maps the ids of every series on a Jellyfin or Emby server to
 // its item id, and lists the server's users.
 func (l *Linker) jellyShows(ctx context.Context, m domain.MediaServer) (map[string]string, []string, error) {
-	b, err := l.do(ctx, m, http.MethodGet, "/Items?Recursive=true&IncludeItemTypes=Series&Fields=ProviderIds", nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	var r struct {
-		Items []struct {
-			ID          string            `json:"Id"`
-			ProviderIDs map[string]string `json:"ProviderIds"`
-		}
-	}
-	if err := json.Unmarshal(b, &r); err != nil {
-		return nil, nil, errors.New("the server's answer was not a series list")
-	}
 	out := map[string]string{}
-	for _, it := range r.Items {
-		for k, v := range it.ProviderIDs {
-			if k = strings.ToLower(k); v != "" && (k == "tvdb" || k == "tmdb" || k == "imdb") {
-				out[k+":"+v] = it.ID
+	for start := 0; ; start += watchPage {
+		b, err := l.do(ctx, m, http.MethodGet, "/Items?Recursive=true&IncludeItemTypes=Series&Fields=ProviderIds&EnableImages=false&EnableUserData=false"+
+			"&StartIndex="+strconv.Itoa(start)+"&Limit="+strconv.Itoa(watchPage), nil)
+		if err != nil {
+			return nil, nil, err
+		}
+		var r struct {
+			Items []struct {
+				ID          string            `json:"Id"`
+				ProviderIDs map[string]string `json:"ProviderIds"`
 			}
 		}
+		if err := json.Unmarshal(b, &r); err != nil {
+			return nil, nil, errors.New("the server's answer was not a series list")
+		}
+		for _, it := range r.Items {
+			for k, v := range it.ProviderIDs {
+				if k = strings.ToLower(k); v != "" && (k == "tvdb" || k == "tmdb" || k == "imdb") {
+					out[k+":"+v] = it.ID
+				}
+			}
+		}
+		if len(r.Items) < watchPage {
+			break
+		}
 	}
-	b, err = l.do(ctx, m, http.MethodGet, "/Users", nil)
+	b, err := l.do(ctx, m, http.MethodGet, "/Users", nil)
 	if err != nil {
 		return nil, nil, err
 	}

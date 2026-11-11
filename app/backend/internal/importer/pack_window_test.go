@@ -9,6 +9,8 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
@@ -88,5 +90,57 @@ func TestPackWindowImportWaitsWhenNothingIsFinished(t *testing.T) {
 	}
 	if sl := w.slot(t, 2); sl.State != mediafiles.SlotDownloading {
 		t.Fatalf("E02 %+v", sl)
+	}
+}
+
+// editPack changes the lab pack's pack_files and files_seen in place.
+func editPack(t *testing.T, w showWorld, edit func(seen []domain.SeenFile, pack []domain.PackFile)) {
+	t.Helper()
+	var d domain.Download
+	if err := database.Get(context.Background(), w.s.Read(), "downloads", w.dlID, &d); err != nil {
+		t.Fatal(err)
+	}
+	edit(d.FilesSeen, d.PackFiles)
+	a, _ := json.Marshal(d.FilesSeen)
+	b, _ := json.Marshal(d.PackFiles)
+	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE downloads SET files_seen = ?, pack_files = ? WHERE id = ?", string(a), string(b), w.dlID)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPackWindowImportMatchesARenamedFileByIndex(t *testing.T) {
+	w := showSetup(t, []int{1, 2}, ep(1), ep(2), ep(3), ep(4))
+	packWindowDownload(t, w, 1)
+	editPack(t, w, func(_ []domain.SeenFile, pack []domain.PackFile) {
+		for i := range pack {
+			pack[i].Name += ".!qB" // the name when the files were chosen
+		}
+	})
+	imp, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil || imp.State != "done" {
+		t.Fatalf("import %+v %v", imp, err)
+	}
+	for _, n := range []int{1, 2} {
+		if sl := w.slot(t, n); sl.FileID == nil {
+			t.Fatalf("E%d not placed: %+v", n, sl)
+		}
+	}
+}
+
+func TestPackWindowImportDoesNotWaitForAFileSkippedInTheClient(t *testing.T) {
+	w := showSetup(t, []int{2}, ep(1), ep(2), ep(3), ep(4))
+	packWindowDownload(t, w, 0.4)
+	editPack(t, w, func(seen []domain.SeenFile, _ []domain.PackFile) {
+		seen[1].Priority = 0 // switched on here, unticked in the client
+	})
+	_, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System)
+	if errors.Is(err, ErrPackWaiting) {
+		t.Fatalf("waits for a file the client never fetches")
+	}
+	if sl := w.slot(t, 2); sl.State == mediafiles.SlotDownloading {
+		t.Fatalf("E02 stays downloading: %+v", sl)
 	}
 }

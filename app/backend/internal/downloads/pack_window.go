@@ -74,8 +74,17 @@ func (m *Manager) packPending(ctx context.Context, dr domain.Downloader, d domai
 			return err
 		})
 	})
-	if err != nil && !errors.Is(err, ErrNotSupported) || len(files) == 0 && err == nil {
-		return // not known yet, or the Downloader did not answer: the next poll tries again
+	if err != nil && !errors.Is(err, ErrNotSupported) {
+		return // the Downloader did not answer: the next poll tries again
+	}
+	if err == nil && len(files) == 0 {
+		// Not known yet. A magnet that gets no file list in the stall time fails, so
+		// the next Release is tried.
+		wait := m.now().Sub(lastMoved(d))
+		if wait < m.settings(ctx).stallAfter {
+			return
+		}
+		err = fmt.Errorf("the Downloader got no file list in %s", hours(wait))
 	}
 	if err == nil {
 		err = m.choosePackFiles(ctx, dr, d, files)

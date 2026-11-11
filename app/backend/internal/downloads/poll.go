@@ -333,7 +333,14 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 	// The write holds only while the row is still in the state this snapshot read.
 	// Mark failed (or another path) may have moved it since, and a stale snapshot is
 	// dropped.
+	// A season pack's files and Slots are read again in the same write, so a Widen
+	// since the snapshot is kept.
 	if err := m.Store.Write(ctx, func(tx *sql.Tx) error {
+		var cur domain.Download
+		if err := database.Get(ctx, tx, "downloads", d.ID, &cur); err != nil {
+			return err
+		}
+		next.PackFiles, next.SlotIDs = cur.PackFiles, cur.SlotIDs
 		return database.UpdateWhere(tx, "downloads", &next, domain.System, "state = ?", d.State)
 	}); err != nil {
 		return !errors.Is(err, database.ErrNotFound)

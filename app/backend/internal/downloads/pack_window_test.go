@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -352,5 +353,54 @@ func TestPackTitlesListsShowsWithAPartialPack(t *testing.T) {
 	_ = w.s.Read().QueryRow("SELECT title_id FROM items WHERE id = ?", w.download(t, id).PackFiles[0].Items[0]).Scan(&titleID)
 	if got, err := PackTitles(ctx, w.s.Read()); err != nil || !slices.Equal(got, []int64{titleID}) {
 		t.Fatalf("after the grab: %v %v", got, err)
+	}
+}
+
+func TestPackMagnetWithoutFilesFailsAfterTheStallTime(t *testing.T) {
+	w, m, _ := packWindowWorld(t, false)
+	ctx := context.Background()
+	id, err := m.Grab(ctx, w.slotID, w.relID, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.fake.set(hash, map[string]any{"name": "Lab.Show.S01.1080p", "category": "holyarrs", "state": "stoppedDL", "save_path": "/data/downloads/complete", "size": 4010})
+	w.fake.files[hash] = []map[string]any{}
+	w.exec(t, "UPDATE downloads SET progress_at = ? WHERE id = ?", database.FormatTime(w.now()), id)
+	if _, err := m.SyncOnce(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if d := w.download(t, id); d.State == "failed" {
+		t.Fatalf("failed too soon: %+v", d)
+	}
+	w.advance(7 * time.Hour)
+	if _, err := m.SyncOnce(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if d := w.download(t, id); d.State != "failed" || !slices.Contains(w.fake.deleted, hash+"|true") {
+		t.Fatalf("download %s deleted %v", d.State, w.fake.deleted)
+	}
+}
+
+func TestPollKeepsAWidenThatLandedAfterItsRead(t *testing.T) {
+	w, m, slots := packWindowWorld(t, true)
+	ctx := context.Background()
+	id, err := m.Grab(ctx, w.slotID, w.relID, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.exec(t, "UPDATE downloads SET state = 'downloading' WHERE id = ?", id)
+	w.fake.set(hash, map[string]any{"name": "Lab.Show.S01.1080p", "category": "holyarrs", "state": "downloading", "progress": 0.3, "save_path": "/data/downloads/complete", "size": 2000})
+	stale := w.download(t, id)
+	if n, err := m.Widen(ctx, id, 1, domain.System); err != nil || n != 1 {
+		t.Fatalf("widen %d %v", n, err)
+	}
+	var dr domain.Downloader
+	if err := database.Get(ctx, w.s.Read(), "downloaders", stale.DownloaderID, &dr); err != nil {
+		t.Fatal(err)
+	}
+	m.apply(ctx, dr, stale, Job{ID: hash, State: StateDownloading, Progress: 0.3}, true, m.settings(ctx))
+	d := w.download(t, id)
+	if !slices.Equal(d.SlotIDs, slots[:3]) || !d.PackFiles[2].On {
+		t.Fatalf("slots %v pack %+v", d.SlotIDs, d.PackFiles)
 	}
 }

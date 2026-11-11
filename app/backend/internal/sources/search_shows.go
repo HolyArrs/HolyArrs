@@ -320,14 +320,18 @@ func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand
 		}
 		vs[i] = mediafiles.Judge(rels[i], ss, set.pr.Body)
 	}
-	if set.single && set.window > 0 {
-		// A pack is taken only when no single episode passes.
-		single := false
+	if set.window > 0 {
+		// A pack is taken only when no single episode passes for its episodes.
+		single := map[int64]bool{}
 		for i := range vs {
-			single = single || vs[i].Passed && !mediafiles.IsPack(rels[i].Parse)
+			if vs[i].Passed && !mediafiles.IsPack(rels[i].Parse) {
+				for _, id := range vs[i].SlotIDs {
+					single[id] = true
+				}
+			}
 		}
 		for i := range vs {
-			if single && vs[i].Passed && mediafiles.IsPack(rels[i].Parse) {
+			if vs[i].Passed && mediafiles.IsPack(rels[i].Parse) && slices.ContainsFunc(vs[i].SlotIDs, func(id int64) bool { return single[id] }) {
 				vs[i].Passed, vs[i].Outcome = false, "refused"
 				vs[i].Reasons = append(vs[i].Reasons, matchFail("pack_window", "a season pack; a single episode passed, so it is taken instead"))
 			}
@@ -365,7 +369,7 @@ func (set showSet) lines(ss *mediafiles.SlotSet, rel mediafiles.ReleaseFacts, re
 		ss.MatchReasons = append(ss.MatchReasons, matchFail("several_seasons", "holds more than one season; Releases with several seasons are not taken (Settings > Search)"))
 		return
 	}
-	partial := set.single && pack && set.window > 0 && rel.Protocol == "torrent"
+	partial := pack && set.window > 0 && rel.Protocol == "torrent"
 	if partial && (p.Kind.Value == releasename.KindMultiSeason || p.Kind.Value == releasename.KindComplete) {
 		ss.MatchReasons = append(ss.MatchReasons, matchFail("several_seasons", "holds more than one season; a season pack a few episodes at a time must hold one"))
 		return
@@ -524,7 +528,7 @@ func (s *Searcher) pickShow(ctx context.Context, all []found, vs []mediafiles.Ve
 	return out
 }
 
-// windowLines fills a season pack's Slots for an episode search of a show
+// windowLines fills a season pack's Slots for an episode search or a feed check of a show
 // that takes packs a few episodes at a time: the next wanted episodes of the
 // pack, from the earliest, as many as the window. The searched episode must be
 // among them.

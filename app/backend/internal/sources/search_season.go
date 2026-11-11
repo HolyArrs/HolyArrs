@@ -167,14 +167,21 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 			return err
 		}
 		var first []*epSlot
+		wanted := 0
 		for _, e := range looking {
 			if packed[e.it.ID] {
 				result["skipped"] = fmt.Sprintf("a season pack of season %d is fetched a few episodes at a time; its next episodes come from it", season)
 				r.SetResult(result)
 				return nil
 			}
-			if len(first) < window && e.kept && e.soon && e.sl.State == mediafiles.SlotWanted {
+			// Failed episodes and upgrades are searched as before; the window
+			// counts only the wanted ones.
+			switch {
+			case e.sl.State != mediafiles.SlotWanted:
 				first = append(first, e)
+			case wanted < window && e.kept && e.soon:
+				first = append(first, e)
+				wanted++
 			}
 		}
 		if len(first) == 0 {
