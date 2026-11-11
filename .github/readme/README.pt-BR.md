@@ -130,7 +130,7 @@ Alguém pede um título. O HolyArrs busca nos seus Sources, escolhe o melhor rel
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Downloaders: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Servidores de mídia: Plex, Jellyfin, Emby." /></picture>
 
-- **Downloaders:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Downloaders:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Servidores de mídia:** Plex, Jellyfin, Emby
 - **Sources:** qualquer indexador Torznab ou Newznab, ou Prowlarr ou Jackett
 - **Traz sua configuração de:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd

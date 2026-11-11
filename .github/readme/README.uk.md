@@ -130,7 +130,7 @@ docker compose up -d
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Завантажувачі: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Медіасервери: Plex, Jellyfin, Emby." /></picture>
 
-- **Завантажувачі:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Завантажувачі:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Медіасервери:** Plex, Jellyfin, Emby
 - **Джерела:** будь-який індексер Torznab або Newznab, а також Prowlarr чи Jackett
 - **Переносить твої налаштування з:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd

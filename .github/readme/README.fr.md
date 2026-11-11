@@ -130,7 +130,7 @@ Quelqu'un demande un titre. HolyArrs cherche dans vos Sources, choisit la meille
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Outils de téléchargement : qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Serveurs multimédias : Plex, Jellyfin, Emby." /></picture>
 
-- **Outils de téléchargement :** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Outils de téléchargement :** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Serveurs multimédias :** Plex, Jellyfin, Emby
 - **Sources :** n'importe quel indexeur Torznab ou Newznab, ou Prowlarr ou Jackett
 - **Reprend votre configuration depuis :** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
