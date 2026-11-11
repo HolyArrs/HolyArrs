@@ -233,6 +233,8 @@ type LookupView struct {
 	Ask4K *requests.AskBrief `json:"ask_4k,omitempty"`
 	// Has4K: the Library copy has a 4K Version, so no 4K ask is needed.
 	Has4K bool `json:"has_4k,omitempty"`
+	// Hidden: hidden from browsing; managers still find it here to add it.
+	Hidden bool `json:"hidden,omitempty"`
 }
 
 // lookupTitles finds movies to add by name, "tmdb:<id>" or "imdb:<tt id>".
@@ -247,7 +249,8 @@ func (h *TitleHandlers) lookupTitles(w http.ResponseWriter, r *http.Request) {
 	}
 	var ms []metadata.Movie
 	low := strings.ToLower(term)
-	if strings.HasPrefix(low, "tmdb:") || strings.HasPrefix(low, "imdb:") {
+	byID := strings.HasPrefix(low, "tmdb:") || strings.HasPrefix(low, "imdb:")
+	if byID {
 		m, err := h.Metadata.Movie(r.Context(), low[:5]+strings.TrimSpace(term[5:]))
 		if err != nil && !errors.Is(err, metadata.ErrNotFound) {
 			h.Fail(w, err)
@@ -269,6 +272,11 @@ func (h *TitleHandlers) lookupTitles(w http.ResponseWriter, r *http.Request) {
 	for _, m := range h.KidMovies(r.Context(), h.KidMax(r), ms) {
 		v := LookupView{Movie: m}
 		if id := m.IDs["tmdb"]; id != "" {
+			hidden, drop := HiddenMark(r.Context(), h.Store, "movie", id, m.Genres)
+			if drop && !byID { // an id is a link: it still finds the title
+				continue
+			}
+			v.Hidden = hidden
 			var err error
 			if v.TitleID, err = library.TitleByTMDB(r.Context(), db, id); err != nil {
 				webserver.Internal(w, "api", err)

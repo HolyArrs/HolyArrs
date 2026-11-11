@@ -101,6 +101,7 @@ var RouteScopes = map[string]string{
 	"GET /api/v1/settings/trakt-token":                webserver.ScopeAdmin,
 	"GET /api/v1/users":                               webserver.ScopeAdmin,
 	"GET /api/v1/users/invites":                       webserver.ScopeAdmin,
+	"GET /api/v1/hidden":                              webserver.ScopeAdmin, // whose hides they are, per person
 	"GET /api/v1/app/storage":                         webserver.ScopeAdmin,
 	"GET /api/v1/logs":                                webserver.ScopeAdmin,
 	"GET /api/v1/logs/download":                       webserver.ScopeAdmin,

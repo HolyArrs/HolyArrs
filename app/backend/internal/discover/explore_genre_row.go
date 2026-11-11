@@ -17,7 +17,7 @@ func GenreRowPage(ctx context.Context, pg engine.Page, max string,
 	for _, rows := range [][]engine.Row{pg.Head, pg.Tail} {
 		for _, row := range rows {
 			for _, it := range row.Items {
-				all = append(all, metadata.DiscoverItem{TMDBID: it.TMDBID, Kind: it.Kind})
+				all = append(all, metadata.DiscoverItem{TMDBID: it.TMDBID, Kind: it.Kind, Genres: it.Genres})
 			}
 		}
 	}

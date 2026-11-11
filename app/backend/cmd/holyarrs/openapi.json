@@ -2676,6 +2676,42 @@
         },
         "type": "object"
       },
+      "Hide": {
+        "properties": {
+          "created_at": {
+            "type": "string"
+          },
+          "genre": {
+            "description": "Set for a genre hide: the English TMDB genre name for kind.",
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "movie",
+              "show"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "description": "The title's name when it was hidden.",
+            "type": "string"
+          },
+          "tmdb_id": {
+            "description": "Set for a title hide.",
+            "type": "string"
+          },
+          "user_id": {
+            "description": "The person it is hidden for; 0 for everyone.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "Job": {
         "description": "A background Job: state queued, running, done, failed or cancelled; result holds what it did (a dry-run plan, counts).",
         "properties": {
@@ -16788,6 +16824,179 @@
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/hidden": {
+      "get": {
+        "description": "Oldest first. Hidden titles stay out of Explore, New & Popular, genre pages, browse, search, suggestions, More like this and people pages; links, the Library and asks still work.",
+        "operationId": "listHidden",
+        "parameters": [
+          {
+            "description": "0 keeps the hides for everyone, a person's id keeps that person's.",
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "hidden": {
+                      "items": {
+                        "$ref": "#/components/schemas/Hide"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Hides."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "user_id is not a number."
+          }
+        },
+        "summary": "Titles and genres hidden from browsing",
+        "tags": [
+          "Hidden from browsing"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "description": "Send tmdb_id for a title or genre for a whole genre of kind, and user_id to hide it for one person only. Sending the same hide again answers 200 with the stored one.",
+        "operationId": "addHidden",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "genre": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "enum": [
+                      "movie",
+                      "show"
+                    ],
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "tmdb_id": {
+                    "type": "string"
+                  },
+                  "user_id": {
+                    "format": "int64",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Hide"
+                }
+              }
+            },
+            "description": "Already hidden."
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Hide"
+                }
+              }
+            },
+            "description": "Hidden."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A field is missing or wrong, or no such person."
+          }
+        },
+        "summary": "Hide a title or a genre from browsing",
+        "tags": [
+          "Hidden from browsing"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/hidden/{id}": {
+      "delete": {
+        "description": "Undo and Show again.",
+        "operationId": "deleteHidden",
+        "parameters": [
+          {
+            "description": "The hide's id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Shown again."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such hide."
+          }
+        },
+        "summary": "Show a hidden title or genre again",
+        "tags": [
+          "Hidden from browsing"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/holding": {

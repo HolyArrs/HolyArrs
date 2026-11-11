@@ -134,6 +134,7 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/explore/browse", h.searchBrowse)
 	m.HandleFunc("GET /api/v1/explore/browse/section", h.searchBrowseSection)
 	m.HandleFunc("GET /api/v1/explore/browse/category", h.searchBrowseCategory)
+	h.HiddenRoutes(m)
 }
 
 // TokenRoutes registers the Trakt VIP token setting (api registers it only

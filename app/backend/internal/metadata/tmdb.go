@@ -502,7 +502,9 @@ type tmdbExtras struct {
 	Genres       []struct {
 		Name string `json:"name"`
 	} `json:"genres"`
-	Images *struct {
+	// GenreIDs are what list and search answers carry in place of names.
+	GenreIDs []int64 `json:"genre_ids"`
+	Images   *struct {
 		Logos []struct {
 			FilePath string  `json:"file_path"`
 			Language *string `json:"iso_639_1"`
@@ -524,6 +526,16 @@ type tmdbExtras struct {
 // score is the members' average to one decimal and its vote count.
 func (x tmdbExtras) score() (float64, int) {
 	return float64(int(x.VoteAverage*10+0.5)) / 10, x.VoteCount
+}
+
+// tmdbGenreNames are TMDB's fixed movie and TV genre ids with their English
+// names (the two lists share the ids they have in common).
+var tmdbGenreNames = map[int64]string{
+	28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime", 99: "Documentary", 18: "Drama",
+	10751: "Family", 14: "Fantasy", 36: "History", 27: "Horror", 10402: "Music", 9648: "Mystery", 10749: "Romance",
+	878: "Science Fiction", 10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western",
+	10759: "Action & Adventure", 10762: "Kids", 10763: "News", 10764: "Reality", 10765: "Sci-Fi & Fantasy",
+	10766: "Soap", 10767: "Talk", 10768: "War & Politics",
 }
 
 // maxCast is how many cast names a Title keeps.
@@ -557,6 +569,13 @@ func (x tmdbExtras) pictures(images string) (backdrop, logo string, genres, peop
 	for _, g := range x.Genres {
 		if g.Name != "" {
 			genres = append(genres, g.Name)
+		}
+	}
+	if len(x.Genres) == 0 {
+		for _, id := range x.GenreIDs {
+			if name := tmdbGenreNames[id]; name != "" {
+				genres = append(genres, name)
+			}
 		}
 	}
 	if x.Credits != nil {
