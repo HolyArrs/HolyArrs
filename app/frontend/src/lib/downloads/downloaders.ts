@@ -17,7 +17,7 @@ export interface PathMap {
 export interface DownloaderView {
 	id: number;
 	name: string;
-	kind: 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge';
+	kind: 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge' | 'rtorrent';
 	protocol: 'torrent' | 'usenet';
 	url: string;
 	username: string;
@@ -111,7 +111,8 @@ export const kindWords: Record<DownloaderView['kind'], string> = {
 	sabnzbd: 'SABnzbd',
 	transmission: 'Transmission',
 	nzbget: 'NZBGet',
-	deluge: 'Deluge'
+	deluge: 'Deluge',
+	rtorrent: 'rTorrent'
 };
 
 /** Colours a Downloader's health chip. */
@@ -191,7 +192,7 @@ export function formBody(f: DownloaderForm): Record<string, unknown> {
 		name: f.name.trim(),
 		kind: f.kind,
 		url: f.url.trim(),
-		username: f.kind === 'qbittorrent' || f.kind === 'transmission' || f.kind === 'nzbget' ? f.username.trim() : '',
+		username: f.kind === 'qbittorrent' || f.kind === 'transmission' || f.kind === 'nzbget' || f.kind === 'rtorrent' ? f.username.trim() : '',
 		secret: f.secret,
 		category: f.category.trim(),
 		category_movies: f.category_movies.trim(),

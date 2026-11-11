@@ -135,7 +135,7 @@
 	}
 
 	function hasUsername(kind: DownloaderForm['kind']): boolean {
-		return kind === 'transmission' || kind === 'nzbget' || (kind === 'qbittorrent' && qbitWay === 'login');
+		return kind === 'transmission' || kind === 'nzbget' || kind === 'rtorrent' || (kind === 'qbittorrent' && qbitWay === 'login');
 	}
 
 	function addressPlaceholder(kind: DownloaderForm['kind']): string {
@@ -148,6 +148,8 @@
 				return 'http://192.168.1.10:6789';
 			case 'deluge':
 				return 'http://192.168.1.10:8112';
+			case 'rtorrent':
+				return 'http://192.168.1.10:8000/RPC2';
 			default:
 				return 'http://192.168.1.10:8090';
 		}
@@ -157,6 +159,7 @@
 		if (kind === 'sabnzbd') return t('settings.downloaders.catSab');
 		if (kind === 'transmission') return t('settings.downloaders.catTransmission');
 		if (kind === 'deluge') return t('settings.downloaders.catDeluge');
+		if (kind === 'rtorrent') return t('settings.downloaders.catRtorrent');
 		if (kind === 'nzbget') return t('settings.downloaders.catNzbget');
 		return t('settings.downloaders.catQbit');
 	}
@@ -328,6 +331,7 @@
 						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'qbittorrent'} onchange={() => pickKind('qbittorrent')} /><span><b>qBittorrent</b> {t('settings.downloaders.torrents')}</span></label>
 						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'transmission'} onchange={() => pickKind('transmission')} /><span><b>Transmission</b> {t('settings.downloaders.torrents')}</span></label>
 						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'deluge'} onchange={() => pickKind('deluge')} /><span><b>Deluge</b> {t('settings.downloaders.torrents')}</span></label>
+						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'rtorrent'} onchange={() => pickKind('rtorrent')} /><span><b>rTorrent</b> {t('settings.downloaders.torrents')}</span></label>
 						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'sabnzbd'} onchange={() => pickKind('sabnzbd')} /><span><b>SABnzbd</b> {t('settings.downloaders.usenet')}</span></label>
 						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'nzbget'} onchange={() => pickKind('nzbget')} /><span><b>NZBGet</b> {t('settings.downloaders.usenet')}</span></label>
 					</div>
@@ -368,6 +372,8 @@
 			{/if}
 			{#if form.kind === 'deluge'}
 				<p class="notice">{t('settings.downloaders.delugeNote')}</p>
+			{:else if form.kind === 'rtorrent'}
+				<p class="notice">{t('settings.downloaders.rtorrentNote')}</p>
 			{/if}
 			{#if form.kind === 'qbittorrent'}
 				<details class="more"><summary>{t('settings.downloaders.moreOptions')}</summary>{@render moreFields()}</details>
