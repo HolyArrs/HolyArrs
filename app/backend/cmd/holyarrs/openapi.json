@@ -3983,7 +3983,8 @@
               "shows",
               "music",
               "subtitles",
-              "wishlist"
+              "wishlist",
+              "sources"
             ],
             "type": "string"
           },
@@ -21760,7 +21761,7 @@
     },
     "/api/v1/parts/{part}/off": {
       "post": {
-        "description": "Two steps (confirm). Turns the part off and saves it: its screens hide, its routes answer \"this part is off\", its stages stop, its scheduled work is not queued and its Jobs wait in the queue (Jobs already running finish; nothing is cut off). Its data is kept. Refused when Subtitles or the Requests still need it (turn those off first), and in safe mode. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",
+        "description": "Two steps (confirm). Turns the part off and saves it: its screens hide, its routes answer \"this part is off\", its stages stop, its scheduled work is not queued and its Jobs wait in the queue (Jobs already running finish; nothing is cut off). Its data is kept. Refused when Subtitles or the Requests still need it (turn those off first), and in safe mode. Sources is the exception: it owns no screen or route, and off it only stops the searches HolyArrs starts on its own, while Downloaders and imports keep working. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",
         "operationId": "partOff",
         "parameters": [
           {
@@ -21773,7 +21774,8 @@
                 "shows",
                 "music",
                 "subtitles",
-                "wishlist"
+                "wishlist",
+                "sources"
               ],
               "type": "string"
             }
@@ -21855,7 +21857,8 @@
                 "shows",
                 "music",
                 "subtitles",
-                "wishlist"
+                "wishlist",
+                "sources"
               ],
               "type": "string"
             }
@@ -21917,7 +21920,8 @@
                 "shows",
                 "music",
                 "subtitles",
-                "wishlist"
+                "wishlist",
+                "sources"
               ],
               "type": "string"
             }

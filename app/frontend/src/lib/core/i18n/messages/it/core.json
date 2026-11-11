@@ -54,6 +54,7 @@
 	"core.plain.configDiskWarning": "Il disco con la cartella di configurazione sta finendo lo spazio.",
 	"core.plain.configFolder": "/config non è mappata a una cartella, quindi i dati di HolyArrs vanno persi quando il container viene ricreato.",
 	"core.plain.waitingDownloads": "I download sono in attesa perché il loro downloader non può usare i file.",
+	"core.plain.clearWaiting": "Download importati in attesa di essere ripuliti dal loro downloader.",
 	"core.plain.someone": "Qualcuno di casa tua",
 	"core.plain.keyKitOwner": "Il proprietario dovrebbe salvare il kit delle chiavi: i backup non contengono la chiave principale.",
 	"core.plain.keyKitNone": "Nessun kit delle chiavi salvato: i backup non contengono la chiave principale.",

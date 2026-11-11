@@ -256,6 +256,7 @@
 	"mediafiles.parts.stopsMusic": "Le pagine di artisti e album, le ricerche di musica e i download di musica si fermano. I file musicali restano dove sono.",
 	"mediafiles.parts.stopsSubtitles": "I sottotitoli non vengono più cercati né scaricati. I file dei sottotitoli già salvati restano.",
 	"mediafiles.parts.stopsWishlist": "Famiglia e amici non possono più richiedere titoli. Le richieste già fatte restano.",
+	"mediafiles.parts.stopsSources": "Le ricerche automatiche si fermano, per quando aggiungi i download da solo. I downloader e le importazioni continuano a funzionare.",
 	"mediafiles.parts.needsSubtitles": "Richiede Film o Serie.",
 	"mediafiles.parts.needsWishlist": "Richiede Film, Serie o Musica.",
 	"mediafiles.parts.allMedia": "Film, Serie e Musica",

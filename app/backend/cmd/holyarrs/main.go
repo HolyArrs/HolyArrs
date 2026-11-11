@@ -350,8 +350,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// "downloads" loop; the Manager and the Downloads view read its snapshots.
 	dls := &downloads.Sync{Store: &downloads.Store{}, DB: s, Manager: dm, Lines: downloads.TorrentLines}
 	dm.Sync = dls
-	im := &importer.Importer{Store: s, Live: hub}
-	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, PackReady: dm.PackReady, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
+	im := &importer.Importer{Store: s, Live: hub, SavePath: c.SavePath}
+	// Safe mode holds every part's work already; it says nothing about Sources.
+	sourcesOn := func() bool { return c.SafeMode || pc.On(parts.Sources) }
+	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, PackReady: dm.PackReady, SourcesOn: sourcesOn, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
 		enqueue(ctx, downloads.KindGrab, domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID))
 	}}
 	// A rejected Import turned its Release down: remove the Download from
@@ -505,7 +507,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	ol.Register(q)
 	q.ProbeSchedule(requests.OutsideListSync, ol.ProbeSync)
 	he := &health.Engine{Store: s, Version: version, ConfigUnmapped: unmapped, ConfigDir: c.ConfigDir, Publish: func(topic string, data any) { hub.Publish(topic, data) },
-		Backups: backupsHealth(bm)}
+		Backups: backupsHealth(bm), SourcesOn: sourcesOn}
 	// The update check: once a day from the release feed, through the
 	// network policy (public only unless the setting allows the local
 	// network; never cloud metadata addresses). HOLYARRS_RELEASE_FEED

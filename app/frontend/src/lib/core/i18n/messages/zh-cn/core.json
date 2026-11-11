@@ -54,6 +54,7 @@
 	"core.plain.configDiskWarning": "存放 config 文件夹的磁盘空间快用完了。",
 	"core.plain.configFolder": "/config 没有映射到文件夹，因此重新创建容器时 HolyArrs 的数据会丢失。",
 	"core.plain.waitingDownloads": "下载正在等待，因为它们的下载器无法使用这些文件。",
+	"core.plain.clearWaiting": "已导入的下载正在等待从它们的下载器中清理。",
 	"core.plain.someone": "你家里的某个人",
 	"core.plain.keyKitOwner": "所有者应保存密钥包：备份中不含主密钥。",
 	"core.plain.keyKitNone": "还没有保存密钥包：备份中不含主密钥。",

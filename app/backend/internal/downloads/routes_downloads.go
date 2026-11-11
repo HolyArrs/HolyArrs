@@ -360,7 +360,7 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 	}
 	rels := releaseNames(ctx, db, relIDs)
 	slots := slotInfos(ctx, db, slotIDs)
-	waits := clearWaits(ctx, db)
+	waits := ClearWaits(ctx, db)
 	rows := make([]DownloadRow, 0, len(ds))
 	shown := map[clientKey]bool{}
 	for _, d := range ds {

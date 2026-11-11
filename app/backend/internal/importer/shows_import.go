@@ -513,10 +513,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				}
 			}
 		default:
-			ss.outcome, ss.reason = "stuck", "nothing in the download could be matched to an episode; look at the import plan"
-			if music {
-				ss.reason = "nothing in the download could be matched to a track; look at the import plan"
-			}
+			ss.outcome, ss.reason = "stuck", im.nothingMatched(dr, files, music)
 			if unpackWhy != "" {
 				ss.reason = unpackWhy
 			}

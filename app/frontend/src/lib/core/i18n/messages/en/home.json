@@ -25,6 +25,7 @@
 	"home.lostIfTheContainer": "lost if the container is recreated",
 	"home.downloads": "Downloads",
 	"home.waitingForTheirFiles": "waiting for their files",
+	"home.waitingToBeCleared": "waiting to be cleared",
 	"home.masterKey": "Master key",
 	"home.noKeyKitSaved": "no key kit saved",
 	"home.trailers": "Trailers",

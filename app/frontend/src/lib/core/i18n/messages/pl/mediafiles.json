@@ -256,6 +256,7 @@
 	"mediafiles.parts.stopsMusic": "Strony wykonawców i albumów, wyszukiwania muzyki i pobierania muzyki się zatrzymują. Pliki muzyczne zostają tam, gdzie są.",
 	"mediafiles.parts.stopsSubtitles": "Napisów nie szuka się już ani nie pobiera. Zapisane pliki napisów zostają.",
 	"mediafiles.parts.stopsWishlist": "Rodzina i znajomi nie mogą już prosić o tytuły. Złożone już prośby zostają.",
+	"mediafiles.parts.stopsSources": "Automatyczne wyszukiwania się zatrzymują, gdy pobierania dodajesz sam. Downloadery i importy działają dalej.",
 	"mediafiles.parts.needsSubtitles": "Wymaga modułu Filmy lub Seriale.",
 	"mediafiles.parts.needsWishlist": "Wymaga modułu Filmy, Seriale lub Muzyka.",
 	"mediafiles.parts.allMedia": "Filmy, Seriale i Muzyka",

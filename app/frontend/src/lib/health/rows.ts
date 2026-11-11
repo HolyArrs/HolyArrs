@@ -78,7 +78,8 @@ const checkFix: Record<string, string> = {
 	config_disk: '/settings/this-app',
 	// An unmapped /config cannot be fixed in the app, so send people to make a backup.
 	config_folder: '/settings/backups',
-	waiting_downloads: '/downloads?show=waiting.paused'
+	waiting_downloads: '/downloads?show=waiting.paused',
+	clear_waiting: '/downloads'
 };
 const checkName: Record<string, string> = {
 	get library_folder() { return t('health.check.folder'); },
@@ -87,7 +88,8 @@ const checkName: Record<string, string> = {
 	get update() { return t('health.check.update'); },
 	get config_disk() { return t('health.check.configDisk'); },
 	get config_folder() { return t('health.check.configFolder'); },
-	get waiting_downloads() { return t('health.check.waiting'); }
+	get waiting_downloads() { return t('health.check.waiting'); },
+	get clear_waiting() { return t('health.check.clearWaiting'); }
 };
 
 // The server's own steps need a shell, so say what a container screen can do.
@@ -282,6 +284,6 @@ export function stopped(r: Pick<StatusRow, 'word'>): boolean {
 // Avoids saying the same word twice, like "Backups Backups".
 function checkTitle(c: Pick<HealthCheck, 'kind' | 'subject'>): string {
 	const n = checkName[c.kind];
-	if (!c.subject || c.subject === n || c.kind === 'waiting_downloads' || c.kind.startsWith('config_')) return n;
+	if (!c.subject || c.subject === n || c.kind === 'waiting_downloads' || c.kind === 'clear_waiting' || c.kind.startsWith('config_')) return n;
 	return c.kind === 'update' ? c.subject : `${n} ${c.subject}`;
 }

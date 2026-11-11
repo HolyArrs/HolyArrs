@@ -22,7 +22,8 @@ describe('setup controls', () => {
 	});
 
 	it('the user saves parts / they switch in order and turn-offs are confirmed at once', async () => {
-		const on: Record<PartName, boolean> = { movies: true, shows: true, music: true, subtitles: true, wishlist: true };
+		// Sources was turned off by hand; the welcome step does not name it, so it stays off.
+		const on: Record<PartName, boolean> = { movies: true, shows: true, music: true, subtitles: true, wishlist: true, sources: false };
 		const calls: string[] = [];
 		const c = createClient(async (url: string, init?: RequestInit) => {
 			const path = url.replace('/api/v1', '');

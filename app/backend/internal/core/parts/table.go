@@ -1,10 +1,12 @@
-// Package parts holds the five parts a person can turn on, off or restart
-// while the app runs (Movies, Shows, Music, Subtitles, Requests), the
-// one table that says which routes, screens, background loops and Job
+// Package parts holds the parts a person can turn on, off or restart
+// while the app runs (Movies, Shows, Music, Subtitles, Requests, Sources),
+// the one table that says which routes, screens, background loops and Job
 // kinds belong to which part, and the Control that switches them.
-// Everything not in a part is the core: sign-in and accounts, Sources,
-// Downloaders and Downloads, Library folders, settings, backups, health,
-// Alerts and the controls themselves. Sources are not a part.
+// Everything not in a part is the core: sign-in and accounts, Downloaders
+// and Downloads, imports, Library folders, settings, backups, health,
+// Alerts and the controls themselves. Sources owns no route, screen, loop
+// or Job kind: with it off, the searches skip themselves (people who add
+// their downloads by hand), and Downloaders and imports keep working.
 package parts
 
 import (
@@ -24,6 +26,7 @@ const (
 	Music     Part = "music"
 	Subtitles Part = "subtitles"
 	Wishlist  Part = "wishlist"
+	Sources   Part = "sources"
 
 	Core    = startup.Core
 	Media   = startup.Media

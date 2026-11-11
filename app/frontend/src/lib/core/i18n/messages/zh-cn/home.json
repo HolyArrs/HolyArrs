@@ -25,6 +25,7 @@
 	"home.lostIfTheContainer": "重新创建容器时会丢失",
 	"home.downloads": "下载",
 	"home.waitingForTheirFiles": "正在等待它们的文件",
+	"home.waitingToBeCleared": "正在等待清理",
 	"home.masterKey": "主密钥",
 	"home.noKeyKitSaved": "还没有保存密钥包",
 	"home.trailers": "预告片",

@@ -68,6 +68,9 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 	if r.Job.Subject == nil || r.Job.Subject.Type != "part" {
 		return errors.New("search_album needs a part subject")
 	}
+	if s.sourcesOff(r) {
+		return nil
+	}
 	db := s.Store.Read()
 	by := jobActor(r)
 	jobID := r.Job.ID

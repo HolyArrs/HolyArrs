@@ -373,6 +373,10 @@ func (a *StatusHandlers) statusInput(ctx context.Context, now time.Time) (Status
 			}
 		}
 	}
+	if a.Engine.SourcesOn != nil && !a.Engine.SourcesOn() {
+		// The Sources part is off: no Source needs a fix, and none is missing.
+		in.Sources, in.SourcesNear = nil, nil
+	}
 	dls, err := database.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0 ORDER BY priority, name")
 	if err != nil {
 		return in, err

@@ -79,6 +79,15 @@ describe('status rows', () => {
 		expect(headline(rows)).toBe('2 checks need attention');
 	});
 
+	it('shows imported downloads waiting to be cleared, fixed on Downloads', () => {
+		const rows = buildRows({
+			checks: [{ key: 'clear_waiting', kind: 'clear_waiting', subject: 'Downloads', state: 'warning', message: '1 imported download is still waiting to be cleared' } as never]
+		});
+		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason, r.fix])).toEqual([
+			['Downloads waiting to be cleared', 'library', 'wait', '1 imported download is still waiting to be cleared', '/downloads']
+		]);
+	});
+
 	it('does not count a starting part as a problem', () => {
 		expect(needsAttention(buildRows({ states: [link('source', 1, 'starting')] }))).toEqual([]);
 	});

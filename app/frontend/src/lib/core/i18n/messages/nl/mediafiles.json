@@ -256,6 +256,7 @@
 	"mediafiles.parts.stopsMusic": "Pagina's van artiesten en albums, zoeken naar muziek en downloads van muziek stoppen. Muziekbestanden blijven waar ze zijn.",
 	"mediafiles.parts.stopsSubtitles": "Er wordt niet meer naar ondertitels gezocht en ze worden niet meer opgehaald. Al opgeslagen ondertitelbestanden blijven.",
 	"mediafiles.parts.stopsWishlist": "Familie en vrienden kunnen geen titels meer aanvragen. Al gedane aanvragen blijven bewaard.",
+	"mediafiles.parts.stopsSources": "Automatische zoekopdrachten stoppen, voor als je downloads zelf toevoegt. Downloaders en imports blijven werken.",
 	"mediafiles.parts.needsSubtitles": "Vraagt Films of Series.",
 	"mediafiles.parts.needsWishlist": "Vraagt Films, Series of Muziek.",
 	"mediafiles.parts.allMedia": "Films, Series en Muziek",

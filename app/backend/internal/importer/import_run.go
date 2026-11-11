@@ -327,7 +327,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			}
 		}
 	}
-	slotTo, reason := mediafiles.SlotNeedsADecision, "nothing could be placed; look at the import plan"
+	slotTo, reason := mediafiles.SlotNeedsADecision, im.nothingPlaced(dr, d.FilesSeen)
 	if unpackWhy != "" {
 		reason = unpackWhy
 	}

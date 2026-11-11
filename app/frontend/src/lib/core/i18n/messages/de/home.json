@@ -25,6 +25,7 @@
 	"home.lostIfTheContainer": "geht verloren, wenn der Container neu erstellt wird",
 	"home.downloads": "Downloads",
 	"home.waitingForTheirFiles": "warten auf ihre Dateien",
+	"home.waitingToBeCleared": "warten aufs Aufräumen",
 	"home.masterKey": "Hauptschlüssel",
 	"home.noKeyKitSaved": "kein Schlüssel-Set gespeichert",
 	"home.trailers": "Trailer",

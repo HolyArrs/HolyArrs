@@ -29,13 +29,13 @@ export function linkTarget(key: string): { kind: string; id: string } | null {
 }
 
 export function onOff(a: PartsAnswer): Record<PartName, boolean> {
-	const out = { movies: true, shows: true, music: true, subtitles: true, wishlist: true };
+	const out = { movies: true, shows: true, music: true, subtitles: true, wishlist: true, sources: true };
 	for (const p of a.parts) out[p.part] = p.on;
 	return out;
 }
 
 // The person already agreed in the first-run step, so a turn-off is confirmed at once.
-export async function applyParts(want: Record<PartName, boolean>, client: Client = defaultClient): Promise<PartsAnswer> {
+export async function applyParts(want: Partial<Record<PartName, boolean>>, client: Client = defaultClient): Promise<PartsAnswer> {
 	let now = await client.get<PartsAnswer>('/parts');
 	for (const s of switchPlan(onOff(now), want)) {
 		const path = `/parts/${s.part}/${s.on ? 'on' : 'off'}`;
