@@ -93,6 +93,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if err := os.MkdirAll(c.ConfigDir, 0o750); err != nil {
 		return err
 	}
+	if abs, err := filepath.Abs(c.ConfigDir); err == nil {
+		downloads.ConfigDir = abs
+	}
 	// The app log for the log viewer: every line also goes to a capped
 	// file in the config folder, secrets masked; the program output (docker
 	// logs) is masked the same way.

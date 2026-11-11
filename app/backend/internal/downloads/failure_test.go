@@ -360,3 +360,26 @@ func letChange(t *testing.T, m *Manager) {
 		t.Fatal(err)
 	}
 }
+
+// With no root set up, a client still cannot point HolyArrs outside the job's
+// own save folder, or at HolyArrs's own config folder.
+func TestReadFinishedWithNoRootStaysInTheJobFolder(t *testing.T) {
+	dir := t.TempDir()
+	save := filepath.Join(dir, "complete")
+	cfg := filepath.Join(dir, "config")
+	for _, d := range []string{save, cfg} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	_ = os.WriteFile(filepath.Join(cfg, "holyarrs.key"), make([]byte, 5), 0o600)
+	old := ConfigDir
+	ConfigDir = cfg
+	t.Cleanup(func() { ConfigDir = old })
+	if _, files := readFinished(Job{ContentPath: cfg, SavePath: save}, nil, ""); len(files) != 0 {
+		t.Fatalf("read outside the job's save folder: %+v", files)
+	}
+	if _, files := readFinished(Job{ContentPath: cfg, SavePath: dir}, nil, ""); len(files) != 0 {
+		t.Fatalf("read HolyArrs's own config folder: %+v", files)
+	}
+}
