@@ -28,7 +28,10 @@ const RTL = new Set<Locale>(['ar']);
 type Words = Record<string, string>;
 // One file per module per language (messages/<lang>/<module>.json), so the words sit beside each other but never collide.
 const en: Words = merge(import.meta.glob<{ default: Words }>('./messages/en/*.json', { eager: true }));
-const lazy = import.meta.glob<{ default: Words }>(['./messages/*/*.json', '!./messages/en/*.json']);
+// Other languages ship as one pack each (scripts/pack-lang.mjs): only the lines, in sorted English key order.
+const packs = import.meta.glob<string>(['./packs/*.json', '!./packs/fit.json'], { query: '?url', import: 'default', eager: true });
+const fit = (Object.values(import.meta.glob<{ fit: string }>('./packs/fit.json', { eager: true, import: 'default' }))[0] ?? { fit: '' }).fit;
+const ORDER = Object.keys(en).sort();
 
 export const lang = $state<{ value: Locale; choice: LocaleChoice; words: Record<string, string> }>({
 	value: 'en',
@@ -90,12 +93,27 @@ export function isLocaleChoice(v: unknown): v is LocaleChoice {
 	return v === 'auto' || LOCALES.some((x) => x.code === v);
 }
 
+// The language asked for last; a slower earlier load never overwrites it.
+let want: Locale = 'en';
+
 async function use(l: Locale): Promise<void> {
+	want = l;
 	let words: Record<string, string> = en;
 	if (l !== 'en') {
 		try {
-			const files = Object.entries(lazy).filter(([p]) => p.startsWith(`./messages/${l}/`));
-			words = { ...en, ...merge(Object.fromEntries(await Promise.all(files.map(async ([p, load]) => [p, await load()])))) };
+			const url = packs[`./packs/${l}.json`];
+			if (!url) throw new Error('no pack');
+			const res = await fetch(url);
+			if (!res.ok) throw new Error('no pack');
+			const p = (await res.json()) as { fit: string; values: (string | null)[] };
+			if (p.fit !== fit || p.values.length !== ORDER.length) throw new Error('stale pack');
+			if (want !== l) return;
+			const got: Words = {};
+			ORDER.forEach((k, i) => {
+				const v = p.values[i];
+				if (typeof v === 'string') got[k] = v;
+			});
+			words = { ...en, ...got };
 		} catch {
 			l = 'en';
 		}
