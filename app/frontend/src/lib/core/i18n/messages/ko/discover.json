@@ -684,5 +684,12 @@
 	"discover.calendar.soonNone": "올해 라이브러리에 예정된 날짜가 없습니다.",
 	"discover.calendar.showWholeLibrary": "라이브러리 전체 보기",
 	"discover.searchField.searchDownloads": "다운로드 검색",
-	"discover.searchField.showsMoviesPeople": "TV 시리즈, 영화, 인물"
+	"discover.searchField.showsMoviesPeople": "TV 시리즈, 영화, 인물",
+	"discover.titleLibrary.seasonPacks": "시즌 팩",
+	"discover.titleLibrary.packWhole": "시즌 전체",
+	"discover.titleLibrary.packAtATime": "한 번에 에피소드 {n}개씩",
+	"discover.titleLibrary.packHint": "qBittorrent의 토렌트용입니다. '다음 에피소드 받기'를 누르거나 Plex 또는 Jellyfin에서 시청됨으로 표시되면 더 받습니다. Usenet은 시즌 전체를 받습니다.",
+	"discover.titleLibrary.packNextStarted": "다음 에피소드를 받는 중",
+	"discover.titleLibrary.packOneAtATime": "한 번에 1개씩",
+	"discover.titleLibrary.packShort": "한 번에 {n}개"
 }

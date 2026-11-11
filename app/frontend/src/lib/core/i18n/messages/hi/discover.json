@@ -684,5 +684,12 @@
 	"discover.calendar.soonNone": "लाइब्रेरी की कोई तारीख़ इस साल आने वाली नहीं है।",
 	"discover.calendar.showWholeLibrary": "पूरी लाइब्रेरी दिखाएं",
 	"discover.searchField.searchDownloads": "डाउनलोड खोजें",
-	"discover.searchField.showsMoviesPeople": "टीवी शो, फ़िल्में और लोग"
+	"discover.searchField.showsMoviesPeople": "टीवी शो, फ़िल्में और लोग",
+	"discover.titleLibrary.seasonPacks": "सीज़न पैक",
+	"discover.titleLibrary.packWhole": "पूरा सीज़न",
+	"discover.titleLibrary.packAtATime": "एक बार में {n} एपिसोड",
+	"discover.titleLibrary.packHint": "qBittorrent में टॉरेंट के लिए। “अगले एपिसोड लें” दबाने पर या Plex या Jellyfin में कोई एपिसोड देखा हुआ दिखने पर और एपिसोड आते हैं। Usenet पूरा सीज़न लेता है।",
+	"discover.titleLibrary.packNextStarted": "अगले एपिसोड लिए जा रहे हैं",
+	"discover.titleLibrary.packOneAtATime": "एक बार में 1 एपिसोड",
+	"discover.titleLibrary.packShort": "एक बार में {n}"
 }

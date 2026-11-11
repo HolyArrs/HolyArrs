@@ -204,5 +204,15 @@
 	"shows.page.mainVersionParen": "(Versione principale)",
 	"shows.page.keepThem": "Tienile aggiornate",
 	"shows.page.leaveThem": "Lasciale disattivate",
-	"shows.page.filesStay": "Episodi e file restano."
+	"shows.page.filesStay": "Episodi e file restano.",
+	"shows.page.seasonPacks": "Pacchetti di stagione",
+	"shows.page.packWhole": "Scarica la stagione intera",
+	"shows.page.packFew": "Scarica pochi episodi alla volta",
+	"shows.page.packAhead": "Episodi in anticipo",
+	"shows.page.packHint": "Quando l'unica release è un pacchetto della stagione intera, qBittorrent scarica i prossimi {n} episodi. Altri arrivano quando premi «Scarica i prossimi episodi» o quando Plex o Jellyfin ne segna uno come visto. Usenet e gli altri downloader scaricano la stagione intera.",
+	"shows.page.packWholeShort": "Stagione intera",
+	"shows.page.packAtATime": "{n} episodi alla volta",
+	"shows.tools.packNote": "Questa stagione arriva dal suo pacchetto, {n} episodi alla volta.",
+	"shows.tools.getNext": "Scarica i prossimi {n} episodi",
+	"shows.page.packOneAtATime": "1 episodio alla volta"
 }

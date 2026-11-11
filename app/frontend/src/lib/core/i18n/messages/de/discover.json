@@ -684,5 +684,12 @@
 	"discover.calendar.soonNone": "Dieses Jahr kommen keine Termine in der Bibliothek.",
 	"discover.calendar.showWholeLibrary": "Die ganze Bibliothek anzeigen",
 	"discover.searchField.searchDownloads": "Downloads durchsuchen",
-	"discover.searchField.showsMoviesPeople": "Serien, Filme und Personen"
+	"discover.searchField.showsMoviesPeople": "Serien, Filme und Personen",
+	"discover.titleLibrary.seasonPacks": "Staffelpakete",
+	"discover.titleLibrary.packWhole": "Ganze Staffel",
+	"discover.titleLibrary.packAtATime": "{n} Folgen auf einmal",
+	"discover.titleLibrary.packHint": "Für Torrents in qBittorrent. Weitere kommen mit „Die nächsten Folgen holen“ oder wenn Plex oder Jellyfin eine Folge als gesehen zeigt. Usenet holt die ganze Staffel.",
+	"discover.titleLibrary.packNextStarted": "Die nächsten Folgen werden geholt",
+	"discover.titleLibrary.packOneAtATime": "1 Folge auf einmal",
+	"discover.titleLibrary.packShort": "{n} auf einmal"
 }

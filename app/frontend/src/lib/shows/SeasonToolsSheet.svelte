@@ -5,7 +5,8 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import { RenamePreview } from '#lib/mediafiles/index.ts';
 	import type { SheetEpisode } from './EpisodeSheet.svelte';
-	import { api } from '#lib/core/api.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/core/format.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
@@ -16,8 +17,19 @@
 		season,
 		episodes,
 		onchange,
-		ondelete
-	}: { open?: boolean; mode?: 'files' | 'rename' | 'history'; titleId: number; season: number; episodes: SheetEpisode[]; onchange?: () => void; ondelete?: () => void } = $props();
+		ondelete,
+		packWindow = 0
+	}: {
+		open?: boolean;
+		mode?: 'files' | 'rename' | 'history';
+		titleId: number;
+		season: number;
+		episodes: SheetEpisode[];
+		onchange?: () => void;
+		ondelete?: () => void;
+		// Episodes ahead this show takes from a season pack; 0 is the whole season.
+		packWindow?: number;
+	} = $props();
 
 	let events = $state<{ ID: number; At?: string; Kind?: string; Summary?: string }[]>([]);
 	let loadingEvents = $state(false);
@@ -56,6 +68,21 @@
 			.finally(() => (loadingEvents = false));
 	});
 
+	// Switches on the next episodes of this season's pack in qBittorrent.
+	let nexting = $state(false);
+	async function packNext() {
+		nexting = true;
+		try {
+			await api.post(`/titles/${titleId}/seasons/${season}/pack-next`, {});
+			toasts.push(t('discover.titleLibrary.packNextStarted'), 'ok');
+			onchange?.();
+		} catch (e) {
+			toasts.push(t('discover.titleLibrary.couldntSave'), 'fail', { body: message(e) });
+		} finally {
+			nexting = false;
+		}
+	}
+
 	// Short source names for the quality tag.
 	const sources: Record<string, string> = { web_dl: 'WEB', webrip: 'WEB', bluray: 'BluRay', remux: 'Remux', hdtv: 'TV', dvd: 'DVD' };
 </script>
@@ -70,6 +97,12 @@
 
 		{#if mode === 'files'}
 			<p class="st-sum">{t('shows.tools.onDisk', { have: rows.length, all: episodes.length })}{total ? ` · ${bytes(total)}` : ''}</p>
+			{#if packWindow > 0}
+				<div class="st-pack" data-testid="season-pack-window">
+					<span>{t('shows.tools.packNote', { n: packWindow })}</span>
+					<button type="button" class="st-next" disabled={nexting} onclick={packNext}><Icon name="download" size={16} />{t('shows.tools.getNext', { n: packWindow })}</button>
+				</div>
+			{/if}
 			<ul class="st-files">
 				{#each rows as r (r.id)}
 					<li>
@@ -101,6 +134,12 @@
 	.st-seg button.on { background: var(--surface-1, var(--bg)); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / 18%); }
 	.st-del { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--surface-2); color: var(--fail-text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.st-del:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.st-pack { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 14px; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); font: 500 13.5px/1.35 var(--font-ui); }
+	.st-pack span { min-width: 0; color: var(--text); }
+	.st-next { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--accent-fill); color: var(--text-on-red); font: 600 13.5px/1 var(--font-ui); cursor: pointer; }
+	.st-next:hover { background: var(--accent-fill-hover); }
+	.st-next:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	@media (pointer: coarse) { .st-next { min-height: 44px; } }
 	.st-sum { margin: 0; color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
 	.st-files, .st-tl { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 	.st-files li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }

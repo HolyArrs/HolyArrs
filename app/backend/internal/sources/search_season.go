@@ -157,6 +157,44 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(result)
 		return nil
 	}
+	// A show that takes season packs a few episodes at a time searches only
+	// its next few wanted episodes, one by one; an episode search may take the
+	// pack for them. While a pack of the season is fetched that way, its next
+	// episodes come from it.
+	if window := s.packWindow(ctx, ti); window > 0 && !show {
+		packed, err := packFetchingItems(ctx, db, ti.ID)
+		if err != nil {
+			return err
+		}
+		var first []*epSlot
+		wanted := 0
+		for _, e := range looking {
+			if packed[e.it.ID] {
+				result["skipped"] = fmt.Sprintf("a season pack of season %d is fetched a few episodes at a time; its next episodes come from it", season)
+				r.SetResult(result)
+				return nil
+			}
+			// Failed episodes and upgrades are searched as before; the window
+			// counts only the wanted ones.
+			switch {
+			case e.sl.State != mediafiles.SlotWanted:
+				first = append(first, e)
+			case wanted < window && e.kept && e.soon:
+				first = append(first, e)
+				wanted++
+			}
+		}
+		if len(first) == 0 {
+			first = looking
+		}
+		n, err := s.queueEpisodes(ctx, first, hand, skipGate, by)
+		if err != nil {
+			return err
+		}
+		result["episodes_queued"] = n
+		r.SetResult(result)
+		return nil
+	}
 	if !show && (!whole || len(looking) < 2) {
 		n, err := s.queueEpisodes(ctx, looking, hand, skipGate, by)
 		if err != nil {

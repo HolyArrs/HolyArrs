@@ -527,15 +527,16 @@ var routeOwners = map[string]Owner{
 	"DELETE /api/v1/settings/old-app-api/keys/{side}": Core,
 
 	// Shows.
-	"POST /api/v1/shows":                       shows,
-	"GET /api/v1/shows/lookup":                 shows,
-	"GET /api/v1/settings/shows":               shows,
-	"PUT /api/v1/settings/shows":               shows,
-	"GET /api/v1/titles/{id}/seasons":          shows,
-	"GET /api/v1/titles/{id}/episode-groups":   shows,
-	"PUT /api/v1/titles/{id}/seasons/{number}": shows,
-	"GET /api/v1/titles/{id}/episodes":         shows,
-	"PUT /api/v1/episodes/{id}":                shows,
+	"POST /api/v1/shows":                                  shows,
+	"GET /api/v1/shows/lookup":                            shows,
+	"GET /api/v1/settings/shows":                          shows,
+	"PUT /api/v1/settings/shows":                          shows,
+	"GET /api/v1/titles/{id}/seasons":                     shows,
+	"GET /api/v1/titles/{id}/episode-groups":              shows,
+	"PUT /api/v1/titles/{id}/seasons/{number}":            shows,
+	"POST /api/v1/titles/{id}/seasons/{number}/pack-next": shows,
+	"GET /api/v1/titles/{id}/episodes":                    shows,
+	"PUT /api/v1/episodes/{id}":                           shows,
 
 	// Music.
 	"POST /api/v1/artists":           music,

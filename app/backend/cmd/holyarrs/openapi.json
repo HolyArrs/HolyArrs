@@ -28763,6 +28763,43 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/titles/{id}/seasons/{number}/pack-next": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The next episodes were switched on: download_id and added (how many)."
+          },
+          "404": {
+            "description": "No season pack of this season is fetched a few episodes at a time."
+          },
+          "409": {
+            "description": "The Downloader no longer has the season pack; its episodes are searched again."
+          }
+        },
+        "summary": "Fetch the next episodes of a season pack",
+        "x-holyarrs-part": "shows",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/titles/{id}/subtitle-wish": {
       "put": {
         "description": "For the title, one Version (version_id) or one episode (item_id); an empty languages list wants none; inherit removes the wish.",

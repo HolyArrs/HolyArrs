@@ -11,7 +11,7 @@
 	import { size as bytes, categoryWords, protocolOf, KIND_WORD } from './size.ts';
 	import { kindOf, kindWords, manyWords, rowName } from './downloaders.ts';
 	import type { ImportRecord } from './types.ts';
-	import { shortReason, stageOf, statusHint, statusWord, stepLine } from './status-tabs.ts';
+	import { packLine, shortReason, stageOf, statusHint, statusWord, stepLine } from './status-tabs.ts';
 	import { statusDetail } from './imports.ts';
 	import { poster, who } from './row-art.ts';
 	import { longPress, phoneTitle, subLine } from './phone.ts';
@@ -67,8 +67,9 @@
 	{:else if id === 'title'}
 		<span class="nm" class:ph data-col="title">
 			<span class="tt" title={rowName(r)}><span class="tn">{rowName(r)}</span><span class="tphone">{phoneTitle(r)}</span>{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
-			<span class="rel" title={r.name}>{sub2(r)}</span>
-			{#if subLine(r)}<span class="ep" data-testid="dl-epline">{subLine(r)}</span>{/if}
+			<!-- A season pack taken a few episodes at a time says which ones, ahead of the Release name. -->
+			<span class="rel" title={r.name}>{#if r.pack}<span class="pkc" data-testid="dl-pack">{packLine(r)}</span>{/if}{sub2(r)}</span>
+			{#if r.pack || subLine(r)}<span class="ep" data-testid="dl-epline">{r.pack ? packLine(r) : subLine(r)}</span>{/if}
 		</span>
 	{:else if id === 'progress'}
 			<!-- A finished row shows a full bar; nothing stops at 99. -->
@@ -177,6 +178,7 @@
 	.tt .tn, .tt .tphone { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 	.tt .ver { flex: none; }
 	.rel { color: var(--text-muted); font: var(--t-caption); }
+	.pkc { margin-right: 6px; padding: 0 5px; border-radius: 4px; background: var(--surface-3); color: var(--text); }
 	.ver { margin-left: 6px; padding: 0 5px; border-radius: 4px; background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); }
 	.prg { position: relative; display: flex; align-items: center; height: 14px; white-space: nowrap; padding: 0 6px; border-radius: 4px; overflow: hidden; background: var(--surface-3); color: var(--text); font-size: 10px; line-height: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.prg i { position: absolute; inset: 0; background: var(--ok); opacity: 0.5; transition: transform var(--dur-slow) var(--ease-out); }

@@ -32,6 +32,7 @@ Path
 Policy
 ProductName
 Progress
+ProviderIds
 RemainingSizeHi
 RemainingSizeLo
 ScriptStatus
@@ -503,6 +504,7 @@ episodes_added
 episodes_changed
 episodes_dropped
 episodes_removed
+eps
 error
 errorCode
 errorDescription
@@ -692,6 +694,7 @@ how
 href
 html_url
 hue
+i
 id
 ids
 ignore_picture_tracks
@@ -1077,6 +1080,7 @@ pack_alerts
 pack_digest
 pack_id
 pack_slot_ids
+pack_window
 packages
 page
 pageInfo
@@ -1568,6 +1572,7 @@ tag_name
 tagline
 tags
 tail
+taken
 tallies
 target
 target_path

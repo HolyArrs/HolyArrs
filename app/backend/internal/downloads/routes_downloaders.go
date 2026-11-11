@@ -414,6 +414,39 @@ type DownloadView struct {
 	PeersTotal int    `json:"peers_total,omitempty"`
 	ETA        *int64 `json:"eta,omitempty"`
 	Active     bool   `json:"active"`
+	// Pack is set for a season pack fetched a few episodes at a time.
+	Pack *PackRange `json:"pack,omitempty"`
+}
+
+// PackRange is the switched-on episodes of a season pack fetched a few at a
+// time: the first and last episode numbers, how many are on and how many the
+// pack holds.
+type PackRange struct {
+	From  int `json:"from"`
+	To    int `json:"to"`
+	Taken int `json:"taken"`
+	Total int `json:"total"`
+}
+
+func packRangeOf(files []domain.PackFile) *PackRange {
+	if len(files) == 0 {
+		return nil
+	}
+	r := &PackRange{}
+	for _, f := range files {
+		r.Total += len(f.Eps)
+		for _, e := range f.Eps {
+			if !f.On {
+				continue
+			}
+			r.Taken++
+			if r.From == 0 || e < r.From {
+				r.From = e
+			}
+			r.To = max(r.To, e)
+		}
+	}
+	return r
 }
 
 // DownloadLabels are the words people see for Download states.
@@ -423,7 +456,7 @@ var DownloadLabels = map[string]string{
 }
 
 func DownloadViewOf(d domain.Download) DownloadView {
-	v := DownloadView{ID: d.ID, State: d.State, Label: DownloadLabels[d.State], Progress: d.Progress, Speed: d.Speed, UpSpeed: d.UpSpeed, Seeds: d.Seeds, Peers: d.Peers, ETA: d.ETA}
+	v := DownloadView{ID: d.ID, State: d.State, Label: DownloadLabels[d.State], Progress: d.Progress, Speed: d.Speed, UpSpeed: d.UpSpeed, Seeds: d.Seeds, Peers: d.Peers, ETA: d.ETA, Pack: packRangeOf(d.PackFiles)}
 	switch d.State {
 	case "sent":
 		v.Text = "Sent to the Downloader; waiting for it to start."

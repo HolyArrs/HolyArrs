@@ -16,6 +16,11 @@ func (s *Searcher) episodeSet(ctx context.Context, c slotCtx, out bool) (showSet
 		return set, nil, err
 	}
 	set.single = true
+	if set.window = s.packWindow(ctx, c.ti); set.window > 0 {
+		if set.packed, err = packFetchingItems(ctx, s.Store.Read(), c.ti.ID); err != nil {
+			return set, nil, err
+		}
+	}
 	set.target[c.sl.ID] = true
 	if !out {
 		set.notOut[c.sl.ID] = true
@@ -49,6 +54,11 @@ func (s *Searcher) feedShow(ctx context.Context, by domain.Actor, jobID *int64, 
 		set, err := s.loadShow(ctx, group[0].ti, group[0].ver)
 		if err != nil {
 			return chosen, held, stored, err
+		}
+		if set.window = s.packWindow(ctx, group[0].ti); set.window > 0 {
+			if set.packed, err = packFetchingItems(ctx, s.Store.Read(), group[0].ti.ID); err != nil {
+				return chosen, held, stored, err
+			}
 		}
 		kept := map[int64]bool{}
 		for _, e := range set.eps {

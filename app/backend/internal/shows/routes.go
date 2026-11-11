@@ -12,6 +12,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -71,6 +72,9 @@ type Deps struct {
 	Trim func(ctx context.Context, slots map[int64][]EpisodeSlot)
 	// LibraryError answers Library refusals Error does not know.
 	LibraryError func(w http.ResponseWriter, err error)
+	// PackNext switches on the next episodes of a season pack fetched a few at
+	// a time, returning the Download and how many were switched on.
+	PackNext func(ctx context.Context, titleID int64, season int, by domain.Actor) (int64, int, error)
 }
 
 // Handlers serves the Shows routes. Its state fields are private and
@@ -95,7 +99,7 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 		},
 		OpenAsk: h.OpenAsk, Defaults: h.showDefaults, Follow: h.Follow, Added: h.Added}).Routes(m)
 	(&EpisodeHandlers{Store: h.Store, Lib: h.Library, TitleID: h.TitleID, Fail: h.Error, StateLabels: h.StateLabels, Trim: h.Trim}).Routes(m)
-	(&SeasonHandlers{Store: h.Store, Lib: h.Library, TitleID: h.TitleID, Fail: h.Error}).Routes(m)
+	(&SeasonHandlers{Store: h.Store, Lib: h.Library, TitleID: h.TitleID, Fail: h.Error, PackNext: h.PackNext}).Routes(m)
 }
 
 // SeasonHandlers serves a show's seasons and the show settings.
@@ -106,6 +110,8 @@ type SeasonHandlers struct {
 	TitleID func(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool)
 	// Fail answers a show or library error.
 	Fail func(w http.ResponseWriter, err error)
+	// PackNext is Deps.PackNext; nil answers that no pack is fetched that way.
+	PackNext func(ctx context.Context, titleID int64, season int, by domain.Actor) (int64, int, error)
 }
 
 // Routes registers the seasons and show settings routes.
@@ -113,6 +119,7 @@ func (h *SeasonHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/titles/{id}/seasons", h.listSeasons)
 	m.HandleFunc("GET /api/v1/titles/{id}/episode-groups", h.listEpisodeGroups)
 	m.HandleFunc("PUT /api/v1/titles/{id}/seasons/{number}", h.setSeason)
+	m.HandleFunc("POST /api/v1/titles/{id}/seasons/{number}/pack-next", h.packNext)
 	m.HandleFunc("GET /api/v1/settings/shows", h.getShowSettings)
 	m.HandleFunc("PUT /api/v1/settings/shows", h.putShowSettings)
 }
@@ -230,4 +237,33 @@ func (h *SeasonHandlers) putShowSettings(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, d)
+}
+
+// packNext answers POST /api/v1/titles/{id}/seasons/{number}/pack-next: the
+// season's pack fetched a few episodes at a time gets its next episodes.
+func (h *SeasonHandlers) packNext(w http.ResponseWriter, r *http.Request) {
+	t, ok := ShowID(h.TitleID, w, r)
+	if !ok {
+		return
+	}
+	n, err := strconv.Atoi(r.PathValue("number"))
+	if err != nil || n < 0 {
+		webserver.Fail(w, http.StatusNotFound, "no such season")
+		return
+	}
+	if h.PackNext == nil {
+		webserver.Fail(w, http.StatusNotFound, downloads.ErrNoPack.Error())
+		return
+	}
+	id, added, err := h.PackNext(r.Context(), t.ID, n, actor(r))
+	switch {
+	case errors.Is(err, downloads.ErrNoPack):
+		webserver.Fail(w, http.StatusNotFound, err.Error())
+	case errors.Is(err, downloads.ErrPackGone):
+		webserver.Fail(w, http.StatusConflict, err.Error())
+	case err != nil:
+		webserver.Fail(w, http.StatusBadGateway, err.Error())
+	default:
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"download_id": id, "added": added})
+	}
 }

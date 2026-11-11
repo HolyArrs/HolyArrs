@@ -140,6 +140,13 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	} else if len(prior) == 1 {
 		dl = &prior[0]
 	}
+	// A torrent season pack for a show that takes packs a few episodes at a time
+	// goes only to a qBittorrent HolyArrs may change, added stopped; with none,
+	// it is fetched whole as before.
+	window := 0
+	if dl == nil {
+		window = packWindow(ctx, db, rel, sl.ItemID)
+	}
 	var d domain.Downloader
 	if dl != nil {
 		if err := database.Get(ctx, db, "downloaders", dl.DownloaderID, &d); err != nil {
@@ -149,6 +156,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		var dls []domain.Downloader
 		var skipped []string
 		if attempt != nil {
+			window = 0
 			var original domain.Downloader
 			if err := database.Get(ctx, db, "downloaders", attempt.DownloaderID, &original); err != nil {
 				return 0, errors.Join(ErrUncertain, err)
@@ -166,6 +174,11 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			fit := mediafiles.Downloaders(all, titleTags, func(d domain.Downloader) []string { return d.Tags })
 			if len(fit) == 0 && len(all) > 0 {
 				return 0, &TagsError{Protocol: rel.Protocol, Title: titleTags}
+			}
+			if q := packDownloaders(fit); window > 0 && len(q) > 0 {
+				fit = q
+			} else {
+				window = 0
 			}
 			dls, skipped = m.order(fit, now)
 			// Each Downloader sends with its category for the title's kind.
@@ -193,7 +206,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 				break
 			}
 			d = dls[i]
-			ext, err := m.send(ctx, d, rel, slotID, hash)
+			ext, err := m.send(ctx, d, rel, slotID, hash, window > 0)
 			if err != nil {
 				if errors.Is(err, ErrUncertain) || errors.Is(err, ErrAttemptStopped) {
 					return 0, err
@@ -203,6 +216,9 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			}
 			dl = &domain.Download{DownloaderID: d.ID, ReleaseID: &rel.ID, SlotIDs: []int64{slotID}, ExternalID: ext, State: "sent",
 				FilesSeen: []domain.SeenFile{}, SavePath: m.SavePath, StartedBy: by, ProgressAt: &now}
+			if window > 0 {
+				dl.PackFiles = []domain.PackFile{}
+			}
 		}
 		if dl == nil {
 			return 0, grabFailed(fails)
@@ -340,6 +356,9 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		m.publish("slot", map[string]any{"id": id, "state": mediafiles.SlotDownloading})
 	}
 	m.publish("download", dl)
+	if window > 0 {
+		m.packPending(ctx, d, *dl)
+	}
 	m.Poke()
 	m.Kick(d.ID)
 	return dl.ID, nil
@@ -379,7 +398,7 @@ func (m *Manager) giveUp(ctx context.Context, slotID, releaseID int64, reason st
 }
 
 // send hands a Release to one Downloader and returns its id there.
-func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Release, slotID int64, hash string) (ext string, err error) {
+func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Release, slotID int64, hash string, stopped bool) (ext string, err error) {
 	a, err := m.claimAttempt(ctx, d, rel.ID, slotID)
 	if err != nil {
 		return "", err
@@ -576,7 +595,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		return "", err
 	}
 	req := AddRequest{URL: link, File: file, Name: rel.Name, Category: d.Category, SavePath: m.SavePath, InfoHash: hash, Skip: skip,
-		AllowLocal: allowLocal, OperationKey: fmt.Sprintf("%d:%d:%d", d.ID, rel.ID, slotID)}
+		AllowLocal: allowLocal, OperationKey: fmt.Sprintf("%d:%d:%d", d.ID, rel.ID, slotID), Stopped: stopped}
 	if a != nil {
 		req.AttemptMarker, req.ReconcileOnly = a.marker, !a.created
 	}
@@ -634,4 +653,146 @@ func slotTitleTags(ctx context.Context, db database.Querier, itemID int64) ([]st
 	var tags []string
 	_ = json.Unmarshal([]byte(raw), &tags)
 	return tags, kind, nil
+}
+
+// titlePackWindow reads pack_window of the title an Item belongs to.
+func titlePackWindow(ctx context.Context, db database.Querier, itemID int64) (int, error) {
+	var n int
+	err := db.QueryRowContext(ctx, "SELECT t.pack_window FROM items i JOIN titles t ON t.id = i.title_id WHERE i.id = ? AND t.kind = 'show'", itemID).Scan(&n)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
+	return n, err
+}
+
+// packEp is one episode of a pack's season with its Slot in the Version.
+type packEp struct {
+	ref    mediafiles.EpisodeRef
+	slotID int64
+}
+
+// packEpisodes lists the episodes of the season a Slot belongs to, with their
+
+// Slots in its Version, and the show's episode order.
+func packEpisodes(ctx context.Context, db *sql.DB, slotID int64) ([]packEp, string, error) {
+	var titleID, versionID int64
+	var season sql.NullInt64
+	var order string
+	if err := db.QueryRowContext(ctx, `SELECT i.title_id, s.version_id, json_extract(i.numbers, '$.season'), COALESCE(t.episode_order, '')
+		FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id WHERE s.id = ?`, slotID).Scan(&titleID, &versionID, &season, &order); err != nil {
+		return nil, "", err
+	}
+	if order == "" {
+		order = mediafiles.OrderAired
+	}
+	rows, err := db.QueryContext(ctx, `SELECT i.id, COALESCE(json_extract(i.numbers, '$.episode'), 0), COALESCE(json_extract(i.numbers, '$.absolute'), 0),
+		COALESCE(i.air_day, ''), COALESCE(s.id, 0) FROM items i LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = ?
+		WHERE i.title_id = ? AND i.kind = 'episode' AND i.dropped_at IS NULL AND json_extract(i.numbers, '$.season') IS ?`, versionID, titleID, season)
+	if err != nil {
+		return nil, "", err
+	}
+	defer rows.Close()
+	var out []packEp
+	for rows.Next() {
+		e := packEp{ref: mediafiles.EpisodeRef{Season: int(season.Int64)}}
+		if err := rows.Scan(&e.ref.ItemID, &e.ref.Episode, &e.ref.Absolute, &e.ref.AirDay, &e.slotID); err != nil {
+			return nil, "", err
+		}
+		out = append(out, e)
+	}
+	return out, order, rows.Err()
+}
+
+// savePackFiles writes a Download's pack_files; nil writes NULL, a normal
+// download again.
+func savePackFiles(ctx context.Context, s *database.Store, id int64, files []domain.PackFile) error {
+	var v any
+	if files != nil {
+		b, _ := json.Marshal(files)
+		v = string(b)
+	}
+	return s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, "UPDATE downloads SET pack_files = ? WHERE id = ?", v, id)
+		return err
+	})
+}
+
+// packSlotsWanted says every Slot of a pack file is wanted and its episode
+
+// and season are kept up to date.
+func packSlotsWanted(ctx context.Context, db *sql.DB, slotIDs []int64) (bool, error) {
+	if len(slotIDs) == 0 {
+		return false, nil
+	}
+	var n int
+	err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM slots s JOIN items i ON i.id = s.item_id LEFT JOIN parts p ON p.id = i.part_id
+		WHERE s.id IN (SELECT value FROM json_each(?)) AND s.state = 'wanted' AND i.keep_up_to_date = 1 AND (p.id IS NULL OR p.keep_up_to_date = 1)`, jsonIDs(slotIDs)).Scan(&n)
+	return n == len(slotIDs), err
+}
+
+// widenPack records switched-on pack files in one write: the new Slots move
+
+// to downloading for this Download, and the Download goes back to
+
+// downloading.
+func widenPack(ctx context.Context, s *database.Store, d *domain.Download, slots []int64, now time.Time, by domain.Actor) error {
+	return s.Write(ctx, func(tx *sql.Tx) error {
+		for _, id := range slots {
+			if _, err := tx.ExecContext(ctx, "UPDATE slots SET chosen_release_id = ? WHERE id = ?", *d.ReleaseID, id); err != nil {
+				return err
+			}
+			for _, to := range []mediafiles.SlotState{mediafiles.SlotSearching, mediafiles.SlotChosen, mediafiles.SlotDownloading} {
+				if err := mediafiles.MoveSlotTx(tx, id, to, "the next episode of the season pack", by); err != nil {
+					return err
+				}
+			}
+			if _, err := tx.ExecContext(ctx, "UPDATE slots SET active_download_id = ? WHERE id = ?", d.ID, id); err != nil {
+				return err
+			}
+		}
+		b, _ := json.Marshal(d.PackFiles)
+		at := database.FormatTime(now)
+		if _, err := tx.ExecContext(ctx, `UPDATE downloads SET pack_files = ?, slot_ids = ?, state = CASE WHEN state IN (`+activeStates+`) THEN state ELSE 'downloading' END,
+			progress = 0, progress_at = ?, finished_at = NULL, state_reason = NULL, updated_at = ? WHERE id = ?`, string(b), jsonIDs(d.SlotIDs), at, at, d.ID); err != nil {
+			return err
+		}
+		return database.Get(ctx, tx, "downloads", d.ID, d)
+	})
+}
+
+// partialPacks lists a show's season packs fetched a few episodes at a time
+
+// that are still in the Downloader (newest first), for one season or every
+
+// season when season is 0, with the show's pack_window.
+func partialPacks(ctx context.Context, db *sql.DB, titleID int64, season int) ([]domain.Download, int, error) {
+	var window int
+	if err := db.QueryRowContext(ctx, "SELECT pack_window FROM titles WHERE id = ?", titleID).Scan(&window); err != nil {
+		return nil, 0, err
+	}
+	ds, err := database.Select[domain.Download](ctx, db, "downloads", `json_array_length(pack_files) > 0 AND state IN (`+activeStates+`, 'finished', 'seeding')
+		AND EXISTS (SELECT 1 FROM json_each(pack_files) f, json_each(json_extract(f.value, '$.items')) it JOIN items i ON i.id = it.value
+		WHERE i.title_id = ? AND (? = 0 OR json_extract(i.numbers, '$.season') = ?)) ORDER BY id DESC`, titleID, season, season)
+	return ds, window, err
+}
+
+// PackTitles lists the shows that take season packs a few episodes at a
+// time and have such a pack still in the Downloader.
+func PackTitles(ctx context.Context, db *sql.DB) ([]int64, error) {
+	rows, err := db.QueryContext(ctx, `SELECT t.id FROM titles t WHERE t.pack_window > 0 AND EXISTS (SELECT 1 FROM downloads d,
+		json_each(d.pack_files) f, json_each(json_extract(f.value, '$.items')) it JOIN items i ON i.id = it.value
+		WHERE json_array_length(d.pack_files) > 0 AND d.state IN (`+activeStates+`, 'finished', 'seeding') AND i.title_id = t.id) ORDER BY t.id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
 }

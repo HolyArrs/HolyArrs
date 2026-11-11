@@ -38,6 +38,7 @@
   "DroppedAt": null,
   "SeasonChoice": null,
   "FutureFrom": null,
+  "PackWindow": 0,
   "Network": null,
   "AirTime": null,
   "TimeZone": null,

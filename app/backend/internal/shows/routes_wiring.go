@@ -36,7 +36,7 @@ func ShowError(w http.ResponseWriter, err error, other func(http.ResponseWriter,
 		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "title_id": dup.TitleID})
 	case errors.Is(err, library.ErrNoShowFolder), errors.Is(err, ErrShowNeverAdd):
 		webserver.Fail(w, http.StatusConflict, err.Error())
-	case errors.Is(err, library.ErrBadSeasonChoice), errors.Is(err, library.ErrBadNewSeasons), errors.Is(err, library.ErrBadOrder), errors.Is(err, library.ErrBadEpisodeGroup),
+	case errors.Is(err, library.ErrBadSeasonChoice), errors.Is(err, library.ErrBadNewSeasons), errors.Is(err, library.ErrBadOrder), errors.Is(err, library.ErrBadEpisodeGroup), errors.Is(err, library.ErrBadPackWindow),
 		errors.Is(err, library.ErrBadWait), errors.Is(err, library.ErrNotShowFolder), errors.Is(err, library.ErrMovieOnly),
 		errors.Is(err, library.ErrShowOnly), errors.Is(err, metadata.ErrUnknownSource):
 		webserver.Fail(w, http.StatusBadRequest, err.Error())

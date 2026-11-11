@@ -29,4 +29,10 @@ describe('problem', () => {
 	it('says import blocked when the files did not match', () => {
 		expect(problem(row({ phase: 'import_refused', state: 'failed' }))).toEqual({ text: 'import blocked', tone: 'fail' });
 	});
+	it('says nothing about copies or peers for a season pack taken a few episodes at a time', () => {
+		const pack = { from: 1, to: 2, taken: 2, total: 9 };
+		expect(problem(row({ protocol: 'torrent', availability: 0.4, pack }))).toBeNull();
+		expect(problem(row({ protocol: 'torrent', phase: 'stalled', state: 'stalled', seeds: 0, peers: 0, pack }))).toBeNull();
+		expect(problem(row({ protocol: 'torrent', tracker_problem: 'error', pack }))?.text).toBe('tracker error');
+	});
 });

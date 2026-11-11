@@ -16,6 +16,7 @@ type Info struct {
 	EpisodeOrder  string          `json:"episode_order"`
 	SeasonChoice  string          `json:"season_choice,omitempty"`
 	NewSeasons    string          `json:"new_seasons"`
+	PackWindow    int             `json:"pack_window"`
 	Status        string          `json:"status"`
 	Network       string          `json:"network,omitempty"`
 	AirTime       string          `json:"air_time,omitempty"`
@@ -68,7 +69,7 @@ func InfoOf(ctx context.Context, db database.Lister, t mediafiles.Title) (*Info,
 	if err != nil {
 		return nil, err
 	}
-	si := &Info{DetailsSource: t.MetadataSource, EpisodeOrder: strOrEmpty(t.EpisodeOrder), SeasonChoice: strOrEmpty(t.SeasonChoice), NewSeasons: t.NewPartsPolicy,
+	si := &Info{DetailsSource: t.MetadataSource, EpisodeOrder: strOrEmpty(t.EpisodeOrder), SeasonChoice: strOrEmpty(t.SeasonChoice), NewSeasons: t.NewPartsPolicy, PackWindow: t.PackWindow,
 		Status: t.Status, Network: strOrEmpty(t.Network), AirTime: strOrEmpty(t.AirTime), TimeZone: strOrEmpty(t.TimeZone), Seasons: ss}
 	if g := strOrEmpty(t.EpisodeGroupID); g != "" {
 		si.EpisodeGroup = &EpisodeGroupRef{ID: g}

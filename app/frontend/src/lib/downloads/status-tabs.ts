@@ -4,7 +4,7 @@ import type { DownloadRow } from '../core/types.ts';
 
 export type Stage = 'checking' | 'queued' | 'paused' | 'downloading' | 'stalled' | 'importing' | 'done' | 'seeding' | 'failed' | 'decide';
 
-type RowBits = Pick<DownloadRow, 'phase' | 'state' | 'progress'> & { replaced?: boolean; client_hint?: DownloadRow['client_hint'] };
+type RowBits = Pick<DownloadRow, 'phase' | 'state' | 'progress'> & { replaced?: boolean; client_hint?: DownloadRow['client_hint']; pack?: DownloadRow['pack'] };
 
 export type TabKey = 'active' | 'waiting' | 'progress' | 'done' | 'problems';
 
@@ -187,10 +187,24 @@ export function subCounts(rows: RowBits[], tab: Tab | undefined): Counted[] {
 	return tab.subs.map((s) => ({ key: s.key, label: s.label, count: stages.filter((x) => s.stages.includes(x)).length, hint: s.hint }));
 }
 
-/** The row's word in the status column; it follows the sub-tab words. A download removed outside HolyArrs, a failed copy already replaced, or a torrent the Downloader marks errored or missing its files reads accordingly. */
+/** True for a season pack that still has episodes it has not taken yet. */
+export function partialPack(r: Pick<RowBits, 'pack'>): boolean {
+	return !!r.pack && r.pack.taken < r.pack.total;
+}
+
+/** The chip for a season pack taken a few episodes at a time, or ''. */
+export function packLine(r: Pick<RowBits, 'pack'>): string {
+	const p = r.pack;
+	if (!p) return '';
+	return p.from === p.to ? t('downloads.pack.one', { from: p.from, taken: p.taken, total: p.total }) : t('downloads.pack.range', { from: p.from, to: p.to, taken: p.taken, total: p.total });
+}
+
+/** The row's word in the status column; it follows the sub-tab words. A download removed outside HolyArrs, a failed copy already replaced, or a torrent the Downloader marks errored or missing its files reads accordingly. A season pack whose taken episodes are in waits for the next ones. */
 export function statusWord(r: RowBits): string {
 	if (r.phase === 'failed' || r.phase === 'vanished') return t('downloads.status.failed');
-	switch (stageOf(r)) {
+	const stage = stageOf(r);
+	if ((stage === 'done' || stage === 'seeding') && partialPack(r)) return t('downloads.status.packWaiting');
+	switch (stage) {
 		case 'checking':
 			return r.client_hint === 'moving' ? t('downloads.status.moving') : t('downloads.status.checking');
 		case 'queued':

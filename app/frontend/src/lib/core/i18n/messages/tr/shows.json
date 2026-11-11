@@ -204,5 +204,15 @@
 	"shows.page.mainVersionParen": "(ana versiyon)",
 	"shows.page.keepThem": "Güncel tut",
 	"shows.page.leaveThem": "Kapalı bırak",
-	"shows.page.filesStay": "Bölümler ve dosyalar kalır."
+	"shows.page.filesStay": "Bölümler ve dosyalar kalır.",
+	"shows.page.seasonPacks": "Sezon paketleri",
+	"shows.page.packWhole": "Sezonun tamamını al",
+	"shows.page.packFew": "Birkaç bölüm birden al",
+	"shows.page.packAhead": "Öndeki bölümler",
+	"shows.page.packHint": "Tek sürüm tüm sezonu içeren bir paketse qBittorrent sonraki {n} bölümü alır. “Sonraki bölümleri al” düğmesine bastığında ya da Plex veya Jellyfin bir bölümü izlenmiş gösterdiğinde yenileri gelir. Usenet ve diğer İndiriciler sezonun tamamını alır.",
+	"shows.page.packWholeShort": "Tüm sezon",
+	"shows.page.packAtATime": "Bir seferde {n} bölüm",
+	"shows.tools.packNote": "Bu sezon paketinden bir seferde {n} bölüm olarak gelir.",
+	"shows.tools.getNext": "Sonraki {n} bölümü al",
+	"shows.page.packOneAtATime": "Bir seferde 1 bölüm"
 }

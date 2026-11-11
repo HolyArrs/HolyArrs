@@ -88,6 +88,14 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 				active++
 				continue
 			}
+			if ok && d.PackFiles != nil && len(d.PackFiles) == 0 {
+				// A season pack added stopped from a magnet: its files are chosen once the
+				// client knows them, and it starts then.
+				m.seen(d.ID)
+				m.packPending(ctx, dr, d)
+				active++
+				continue
+			}
 			if ok {
 				m.seen(d.ID)
 			} else if !(d.State == "sent" && m.now().Sub(lastMoved(d)) < m.vanishGrace()) && !m.missedLongEnough(d.ID, readAt) {
@@ -302,7 +310,7 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 		if len(j.Files) > 0 {
 			next.FilesSeen = make([]domain.SeenFile, len(j.Files))
 			for i, f := range j.Files {
-				next.FilesSeen[i] = domain.SeenFile{Name: f.Name, Size: f.Size}
+				next.FilesSeen[i] = domain.SeenFile{Name: f.Name, Size: f.Size, Progress: f.Progress, Priority: f.Priority}
 			}
 		}
 	}
@@ -325,7 +333,14 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 	// The write holds only while the row is still in the state this snapshot read.
 	// Mark failed (or another path) may have moved it since, and a stale snapshot is
 	// dropped.
+	// A season pack's files and Slots are read again in the same write, so a Widen
+	// since the snapshot is kept.
 	if err := m.Store.Write(ctx, func(tx *sql.Tx) error {
+		var cur domain.Download
+		if err := database.Get(ctx, tx, "downloads", d.ID, &cur); err != nil {
+			return err
+		}
+		next.PackFiles, next.SlotIDs = cur.PackFiles, cur.SlotIDs
 		return database.UpdateWhere(tx, "downloads", &next, domain.System, "state = ?", d.State)
 	}); err != nil {
 		return !errors.Is(err, database.ErrNotFound)

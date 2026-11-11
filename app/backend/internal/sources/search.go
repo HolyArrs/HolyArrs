@@ -29,6 +29,9 @@ type Searcher struct {
 	Secrets SecretReader
 	// Queue takes the searches a missing search queues.
 	Queue *jobs.Queue
+	// PackReady says a qBittorrent HolyArrs may change takes a show's torrents,
+	// so a season pack can be fetched a few episodes at a time. Nil means no.
+	PackReady func(ctx context.Context, titleTags []string) bool
 
 	mu         sync.Mutex
 	clients    map[int64]*Client

@@ -204,5 +204,15 @@
 	"shows.page.mainVersionParen": "(główna Odmiana)",
 	"shows.page.keepThem": "Śledź je",
 	"shows.page.leaveThem": "Zostaw wyłączone",
-	"shows.page.filesStay": "Odcinki i pliki zostają."
+	"shows.page.filesStay": "Odcinki i pliki zostają.",
+	"shows.page.seasonPacks": "Paczki sezonu",
+	"shows.page.packWhole": "Pobierz cały sezon",
+	"shows.page.packFew": "Pobieraj po kilka odcinków",
+	"shows.page.packAhead": "Odcinki do przodu",
+	"shows.page.packHint": "Gdy jedyny release to paczka całego sezonu, qBittorrent pobiera kolejne odcinki, po {n} naraz. Następne przychodzą, gdy naciśniesz „Pobierz następne odcinki” albo gdy Plex lub Jellyfin pokaże któryś jako obejrzany. Usenet i inne Downloadery pobierają cały sezon.",
+	"shows.page.packWholeShort": "Cały sezon",
+	"shows.page.packAtATime": "Odcinki: po {n} naraz",
+	"shows.tools.packNote": "Ten sezon przychodzi z paczki, po {n} naraz.",
+	"shows.tools.getNext": "Pobierz następne odcinki ({n})",
+	"shows.page.packOneAtATime": "Po 1 odcinku naraz"
 }

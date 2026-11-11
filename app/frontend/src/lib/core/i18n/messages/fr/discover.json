@@ -684,5 +684,12 @@
 	"discover.calendar.soonNone": "Aucune date de la Bibliothèque n'arrive cette année.",
 	"discover.calendar.showWholeLibrary": "Afficher toute la Bibliothèque",
 	"discover.searchField.searchDownloads": "Rechercher dans les téléchargements",
-	"discover.searchField.showsMoviesPeople": "Séries, films et personnes"
+	"discover.searchField.showsMoviesPeople": "Séries, films et personnes",
+	"discover.titleLibrary.seasonPacks": "Packs de saison",
+	"discover.titleLibrary.packWhole": "Saison entière",
+	"discover.titleLibrary.packAtATime": "{n} épisodes à la fois",
+	"discover.titleLibrary.packHint": "Pour les torrents dans qBittorrent. D'autres suivent avec « Récupérer les épisodes suivants » ou quand Plex ou Jellyfin en indique un comme vu. Usenet récupère la saison entière.",
+	"discover.titleLibrary.packNextStarted": "Récupération des épisodes suivants",
+	"discover.titleLibrary.packOneAtATime": "1 épisode à la fois",
+	"discover.titleLibrary.packShort": "{n} à la fois"
 }

@@ -684,5 +684,12 @@
 	"discover.calendar.soonNone": "В этом году в Медиатеке не ожидается дат.",
 	"discover.calendar.showWholeLibrary": "Показать всю Медиатеку",
 	"discover.searchField.searchDownloads": "Поиск по загрузкам",
-	"discover.searchField.showsMoviesPeople": "Сериалы, фильмы и люди"
+	"discover.searchField.showsMoviesPeople": "Сериалы, фильмы и люди",
+	"discover.titleLibrary.seasonPacks": "Сезонные паки",
+	"discover.titleLibrary.packWhole": "Весь сезон",
+	"discover.titleLibrary.packAtATime": "Серий за раз: {n}",
+	"discover.titleLibrary.packHint": "Для торрентов в qBittorrent. Новые приходят по кнопке «Скачать следующие серии» или когда Plex или Jellyfin показывает серию как просмотренную. Usenet скачивает весь сезон.",
+	"discover.titleLibrary.packNextStarted": "Скачиваем следующие серии",
+	"discover.titleLibrary.packOneAtATime": "По 1 серии за раз",
+	"discover.titleLibrary.packShort": "По {n} за раз"
 }
