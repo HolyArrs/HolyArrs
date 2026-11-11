@@ -290,7 +290,7 @@ func TestMusicDiscs(t *testing.T) {
 }
 
 // A disc count ("2CD") in a name with no clear split ends the artist and
-// album words, so what follows it (a country, a group) stays out (#269).
+// album words, so what follows it (a country, a group) stays out.
 func TestMusicDiscCountEndsNoSplitName(t *testing.T) {
 	for n, want := range map[string]string{
 		"Die Toten Hosen Ballast Der Republik 2CD DE 2012 MOD": "Die Toten Hosen Ballast Der Republik",

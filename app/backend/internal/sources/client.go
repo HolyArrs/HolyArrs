@@ -468,7 +468,7 @@ type rssXML struct {
 
 func textQuery(q Query) string {
 	// Apostrophes go without a space (Schitt's -> Schitts): most sites find
-	// nothing when the term keeps them (#271). Other punctuation splits words.
+	// nothing when the term keeps them. Other punctuation splits words.
 	title := strings.NewReplacer("'", "", "’", "", "‘", "", "`", "").Replace(q.Title)
 	words := strings.FieldsFunc(title, func(r rune) bool {
 		return !unicode.IsLetter(r) && !unicode.IsDigit(r)

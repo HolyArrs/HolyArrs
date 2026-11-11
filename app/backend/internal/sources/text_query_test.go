@@ -3,7 +3,7 @@ package sources
 import "testing"
 
 // TestTextQuery_DropsApostrophes checks that apostrophes are dropped without a
-// space (Schitt's -> Schitts) and other punctuation becomes a space (#271).
+// space (Schitt's -> Schitts) and other punctuation becomes a space.
 func TestTextQuery_DropsApostrophes(t *testing.T) {
 	for _, c := range []struct {
 		in   Query

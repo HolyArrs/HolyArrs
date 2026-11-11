@@ -506,7 +506,7 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 				r.Error = "placed, but the original could not be removed: " + err.Error()
 			} else {
 				srcGone = true
-				// A hardlink then delete is a move; a copy then delete stays a copy that fell back (#277).
+				// A hardlink then delete is a move; a copy then delete stays a copy that fell back.
 				if placedBy == "hardlink" {
 					placedBy = "move"
 				}

@@ -12,7 +12,7 @@ import (
 )
 
 // A Release found by an album's Choose a release search whose name gives no
-// album can still be picked with force for that album's tracks (#269).
+// album can still be picked with force for that album's tracks.
 func TestChoose_AlbumSearchReleaseWithNoAlbumInName(t *testing.T) {
 	const odd = "Velvet Cartography Low Tide Atlas DE 2019 FLAC"
 	ms := &musicServer{answer: func(url.Values) []string { return []string{odd} }}

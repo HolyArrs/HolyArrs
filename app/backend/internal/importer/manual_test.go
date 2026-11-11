@@ -214,7 +214,7 @@ type goneCtx struct{ context.Context }
 
 func (goneCtx) Err() error { return context.Canceled }
 
-// A by-hand move across two mounts is a copy then a delete, and is recorded as one (#277).
+// A by-hand move across two mounts is a copy then a delete, and is recorded as one.
 func TestByHandMoveAcrossMountsRecordsCopy(t *testing.T) {
 	w := setup(t)
 	ctx := context.Background()

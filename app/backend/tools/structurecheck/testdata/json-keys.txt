@@ -295,6 +295,7 @@ clear_app_token
 clear_finished
 clear_key
 clear_secret
+clear_waiting
 client
 clientIdentifier
 clientInfo
@@ -1010,6 +1011,7 @@ next_pass
 next_release
 next_run
 next_search
+next_try
 next_try_at
 no_limit
 no_release

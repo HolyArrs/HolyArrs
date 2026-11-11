@@ -485,7 +485,7 @@ func musicAlbumRegion(s string) (string, []string) {
 			_, isSource := musicSources[lw]
 			_, isFormat := musicFormats[lw]
 			last := k == len(words)-1
-			// A disc count ("2CD") is a tag wherever it stands after the first word (#269).
+			// A disc count ("2CD") is a tag wherever it stands after the first word.
 			stop := !first && reMusicDiscWord.MatchString(lw) && (last || musicTagWord(strings.ToLower(words[k+1]))) ||
 				!first && reMusicDiscCountWord.MatchString(lw) ||
 				!first && isYearWord(lw) || isFormat || reMusicKbps.MatchString(lw) || reMusicDepth.MatchString(lw) ||
