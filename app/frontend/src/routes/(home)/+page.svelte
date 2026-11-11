@@ -394,7 +394,8 @@
 	.top :global(.ui-head) { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 	.greet { font: var(--t-large-title); letter-spacing: var(--t-large-title-track); text-wrap: balance; overflow-wrap: anywhere; }
 	.top-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; min-height: 44px; }
-	.top-row :global(.ui-seg button) { padding: 0 16px; }
+	/* Wider pads only where there is room; small phones keep the control's own 8px, so long words (Finnish, Hungarian) fit. */
+	@media (min-width: 421px) { .top-row :global(.ui-seg button) { padding: 0 16px; } }
 	.note { min-width: 0; flex: 1 1 120px; color: var(--text-muted); font: var(--t-callout); line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
 	.note .dot { display: inline-block; width: 8px; height: 8px; margin-inline-end: 8px; vertical-align: 1px; border-radius: 50%; background: var(--text-faint); }
 	.note .dot.ok { background: var(--ok); }
