@@ -7,6 +7,7 @@ import (
 	"time"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
@@ -109,5 +110,23 @@ func TestJudgeShow_VersionAudioLanguages(t *testing.T) {
 	}
 	if vs[1].Passed || vs[2].Passed || !verdictHas(vs[1], "French audio") || !verdictHas(vs[2], "French audio") {
 		t.Fatalf("German and untagged episodes: %+v / %+v", vs[1].Reasons, vs[2].Reasons)
+	}
+}
+
+func TestAudioChoiceVerdict_LanguageNamesDoNotShow(t *testing.T) {
+	// The name reader cannot see Romanian, so a ROMANIAN name only warns; the media inspected at import decides.
+	ro := releasename.Parse("Quiet.Harbour.2019.ROMANIAN.1080p.WEB.H264-GROUP", releasename.Hints{})
+	if v := audioChoiceVerdict([]string{"ro"}, "en", ro, mediafiles.Verdict{Passed: true}); !v.Passed || !verdictHas(v, "inspected media decides") {
+		t.Fatalf("Romanian Version: %+v", v)
+	}
+	// A language the reader knows is still refused when clearly missing, whatever order the Version lists it in.
+	de := releasename.Parse("Quiet.Harbour.2019.GERMAN.1080p.WEB.H264-GROUP", releasename.Hints{})
+	if v := audioChoiceVerdict([]string{"ro", "fr"}, "en", de, mediafiles.Verdict{Passed: true}); v.Passed || !verdictHas(v, "French audio") {
+		t.Fatalf("Romanian and French Version: %+v", v)
+	}
+	// An untagged dotted WEB.DL name is the original language, not a dual-language one.
+	web := releasename.Parse("Quiet.Harbour.2019.1080p.WEB.DL.DD5.1.H264-GROUP", releasename.Hints{})
+	if v := audioChoiceVerdict([]string{"fr"}, "en", web, mediafiles.Verdict{Passed: true}); v.Passed || !verdictHas(v, "French audio") {
+		t.Fatalf("WEB.DL name for a French Version: %+v", v)
 	}
 }

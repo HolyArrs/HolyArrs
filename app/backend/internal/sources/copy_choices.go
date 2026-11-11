@@ -83,15 +83,26 @@ func audioChoiceVerdict(need []string, original string, p releasename.Result, v 
 	if (len(have) == 0 || p.Has("dual")) && original != "" {
 		have = append(have, original)
 	}
-	missing := ""
+	// A language names never show (the reader does not know it) cannot be clearly missing.
+	missing, unread := "", ""
 	for _, l := range need {
-		if !slices.Contains(have, l) {
+		if slices.Contains(have, l) {
+			continue
+		}
+		if releasename.ReadsLanguage(l) {
 			missing = l
 			break
 		}
+		if unread == "" {
+			unread = l
+		}
 	}
 	switch {
+	case missing == "" && unread == "":
+		return v
 	case missing == "":
+		v.Reasons = append(v.Reasons, mediafiles.Reason{Step: "copy", Rule: "audio_language_hint", Effect: "warn",
+			Detail: "Release names do not show " + mediafiles.LanguageName(unread) + " audio; inspected media decides at import"})
 		return v
 	case len(have) == 0:
 		v.Reasons = append(v.Reasons, mediafiles.Reason{Step: "copy", Rule: "audio_language_hint", Effect: "warn",

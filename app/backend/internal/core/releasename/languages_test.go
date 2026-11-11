@@ -49,3 +49,42 @@ func TestMoreLanguageWords_TitlesAndClashes(t *testing.T) {
 		}
 	}
 }
+
+func TestMoreLanguageWords_BeforeAPlainWord(t *testing.T) {
+	// A new language word before an ordinary word is part of an episode title or a subtitle note.
+	for _, name := range []string{
+		"Corner.Diner.S02E11.The.Chinese.Restaurant.1080p.WEB.H264-GROUP",
+		"Corner.Diner.S01E03.Greek.Tragedy.720p.HDTV.x264-GROUP",
+		"[Group] Quiet Harbour - 05 [1080p][Thai Sub]",
+		"Quiet.Harbour.2019.1080p.WEB.H264.Greek.Subs-GROUP",
+	} {
+		if r := Parse(name, Hints{}); len(r.Languages) != 0 {
+			t.Errorf("%s read as %v", name, r.Languages)
+		}
+	}
+	for name, want := range map[string][]string{
+		"Quiet.Harbour.2019.SWEDISH.DANISH.NORWEGIAN.1080p.BluRay.x264-GROUP": {"sv", "da", "no"},
+		"Quiet.Harbour.2019.POLISH.DUBBED.1080p.WEB.H264-GROUP":               {"pl"},
+		"Quiet.Harbour.2019.1080p.WEB.H264.CHINESE-GROUP":                     {"zh"},
+		"Quiet Harbour (2019) Hindi Dub 720p WEB x264":                        {"hi"},
+		"Quiet.Harbour.2019.Dual.Audio.Hindi.English.720p.WEB.x264-GROUP":     {"hi", "en"},
+	} {
+		if r := Parse(name, Hints{}); !slices.Equal(r.Languages, want) {
+			t.Errorf("%s: langs %v, want %v", name, r.Languages, want)
+		}
+	}
+}
+
+func TestDualLanguage_NotWebDL(t *testing.T) {
+	for name, dual := range map[string]bool{
+		"Quiet.Harbour.2019.1080p.WEB.DL.DD5.1.H264-GROUP":     false,
+		"Quiet Harbour 2019 1080p WEB DL x264":                 false,
+		"Quiet.Harbour.2019.GERMAN.DL.1080p.BluRay.x264-GROUP": true,
+		"Quiet.Harbour.2019.GERMAN.DL.1080p.WEB.DL.H264-GROUP": true,
+		"Quiet.Harbour.2019.FRENCH.DUAL.1080p.WEB.H264-GROUP":  true,
+	} {
+		if r := Parse(name, Hints{}); r.Has("dual") != dual {
+			t.Errorf("%s: dual %v, want %v", name, r.Has("dual"), dual)
+		}
+	}
+}

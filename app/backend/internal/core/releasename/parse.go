@@ -435,6 +435,25 @@ func isTag(tok string) bool {
 	return false
 }
 
+// plainWord says a lower-case word is neither a tag, a language nor a
+// number, so it reads as part of a title or a note.
+func plainWord(t string) bool {
+	_, lang := moreLangWords[t]
+	return !lang && !isTag(t) && !reNumber(t) && t != "dub" && t != "audio"
+}
+
+// ReadsLanguage reports whether Release names can show the language code at all.
+func ReadsLanguage(code string) bool {
+	for _, words := range []map[string]string{langWords, moreLangWords} {
+		for _, c := range words {
+			if c == code {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func reNumber(s string) bool {
 	if s == "" {
 		return false
@@ -584,11 +603,13 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 	}
 	r.Audio.Atmos = has("atmos")
 
-	// Languages.
-	for _, t := range low {
+	// Languages. A newer language word before an ordinary word belongs to
+	// an episode title or a subtitle note ("The Chinese Restaurant", "Thai Sub").
+	for i, t := range low {
 		code, ok := langWords[t]
 		if !ok {
 			code, ok = moreLangWords[t]
+			ok = ok && (i+1 == len(low) || !plainWord(low[i+1]))
 		}
 		if ok && !slices.Contains(r.Languages, code) {
 			r.Languages = append(r.Languages, code)
@@ -597,8 +618,11 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 	if has("multi") {
 		flags["multi"] = true
 	}
-	if has("dl", "dual") {
-		flags["dual"] = true
+	// DL is dual language, except after WEB, where it is the source ("WEB.DL").
+	for i, t := range low {
+		if t == "dual" || t == "dl" && (i == 0 || low[i-1] != "web") {
+			flags["dual"] = true
+		}
 	}
 
 	// Edition.
