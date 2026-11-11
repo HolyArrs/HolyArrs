@@ -26,7 +26,7 @@ New install: start with [Library folders](folders.md). The shared-folder layout 
 
 ## Sorting the Library
 
-Open **Sort & filter**, pick a sort under **Sort**, then **Ascending** or **Descending** under **Order**. A title with no value for the sort stays at the bottom either way.
+Open **Sort & filter**, pick a sort under **Sort by**, then **Ascending** or **Descending** under **Order**. A title with no value for the sort stays at the bottom either way.
 
 | Showing | Sorts |
 |---|---|
@@ -42,7 +42,7 @@ Open **Sort & filter**, pick a sort under **Sort**, then **Ascending** or **Desc
 - A title needs at least 25 votes to have a score. Titles without one stay at the bottom either way, and so does music in the whole Library.
 - While you sort by Score, every view shows it: a Score column first in **Rows**, the first fact in **Banners** and **Overview**, the line under each name on a phone, and a small ★ badge on each poster in **Posters**. Titles without a score show nothing.
 - The Score column goes away when you pick another sort, unless you turned it on yourself.
-- Music has no score, so the Music sort list leaves it out.
+- Music has no score, so the Music sort list leaves it out. A show that has only ever taken its details from TVMaze has none either.
 - Titles already in your Library get their score over the next few scheduled refreshes, up to 300 movies and 300 shows each run. To fill every title now, open **Settings > Schedules** and select **Run now** on **Refresh movie details** and **Refresh show details**. With **Refresh movie details** turned off, movies fill only with **Run now**.
 
 ## Related
