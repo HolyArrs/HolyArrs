@@ -205,7 +205,10 @@
 		.lede { margin: -10px 0 16px; }
 		.bento { grid-template-columns: 1fr 1fr; grid-template-rows: 210px; grid-auto-rows: 168px; gap: 12px; min-height: 0; flex: none; height: auto; }
 		.sx-card[data-group='library'] { grid-row: auto; grid-column: span 2; }
-		.sx-face { padding: 16px; }
+		/* Words first, the drawing after them: a long line (Finnish, Hungarian) pushes the drawing down instead of running under it. */
+		.sx-face { display: flex; flex-direction: column; padding: 16px; }
+		.art-hold { position: relative; flex: 1 1 0; min-height: 0; margin: 6px -16px -16px; }
+		.art-hold :global(.sx-art) { top: 0; }
 		.nm { font-size: 19px; }
 		.sx-card[data-group='library'] .nm { font-size: 24px; }
 		.pp { font-size: 13px; }
