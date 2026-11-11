@@ -289,16 +289,18 @@ func deleteSSOLink(ctx context.Context, q conn, userID int64, kind, issuer strin
 	return res.RowsAffected()
 }
 
-// LinkedPerson is the person a media server account is linked to.
+// LinkedPerson is the person a media server account is linked to, and the
+// account's name there (ExtName).
 type LinkedPerson struct {
-	ID   int64
-	Name string
+	ID      int64
+	Name    string
+	ExtName string
 }
 
 // LinkedPeople maps every linked account of one media server kind (plex,
 // jellyfin, emby) by its id there to its person.
 func LinkedPeople(ctx context.Context, q database.Lister, provider string) (map[string]LinkedPerson, error) {
-	rows, err := q.QueryContext(ctx, `SELECT l.external_id, u.id, u.name FROM user_links l JOIN users u ON u.id = l.user_id
+	rows, err := q.QueryContext(ctx, `SELECT l.external_id, l.external_name, u.id, u.name FROM user_links l JOIN users u ON u.id = l.user_id
 		WHERE l.provider = ?`, provider)
 	if err != nil {
 		return nil, err
@@ -308,7 +310,7 @@ func LinkedPeople(ctx context.Context, q database.Lister, provider string) (map[
 	for rows.Next() {
 		var ext string
 		var p LinkedPerson
-		if err := rows.Scan(&ext, &p.ID, &p.Name); err != nil {
+		if err := rows.Scan(&ext, &p.ExtName, &p.ID, &p.Name); err != nil {
 			return nil, err
 		}
 		out[ext] = p

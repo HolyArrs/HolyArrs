@@ -180,6 +180,44 @@ func TestWatchHistoryPlexEveryAccount(t *testing.T) {
 	}
 }
 
+// The Plex server's owner is account 1 on the server, while their Plex
+// link keeps their plex.tv id; their Plex name still links them.
+func TestWatchHistoryPlexOwnerLinkedByName(t *testing.T) {
+	smallPages(t)
+	w := newWorld(t)
+	ctx := context.Background()
+	watchTitles(t, w)
+	srv := plexHistoryServer(t, nil)
+	if _, err := Add(ctx, w.s, w.v, Input{Name: "Plex", Kind: "plex", URL: srv.URL, Token: tok}, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	watchOn(t, w, true)
+	if err := (&Linker{Store: w.s, Vault: w.v}).ReadWatchHistory(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
+		if _, err := tx.Exec(`INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES (8, 't', '{}', 't', '{}', 'Luis R', 'member', '')`); err != nil {
+			return err
+		}
+		_, err := tx.Exec(`INSERT INTO user_links(user_id, provider, external_id, external_name, created_at) VALUES (8, 'plex', '9876543', 'Luis', 't')`)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	sum, err := Watched(ctx, w.s.Read())
+	if err != nil || len(sum.People) != 2 {
+		t.Fatalf("summary %+v %v", sum, err)
+	}
+	for _, p := range sum.People {
+		switch {
+		case p.Name == "luis" && (!p.Linked || p.UserName != "Luis R" || p.UserID == nil || *p.UserID != 8):
+			t.Fatalf("the server owner %+v", p)
+		case p.Name == "ana" && p.Linked:
+			t.Fatalf("ana has no link %+v", p)
+		}
+	}
+}
+
 // A failed page keeps the rows of the last whole pass.
 func TestWatchHistoryFailedPageKeepsRows(t *testing.T) {
 	smallPages(t)

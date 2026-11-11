@@ -124,11 +124,29 @@ func Watched(ctx context.Context, q watchReader) (WatchedSummary, error) {
 			}
 			links[p.ServerKind] = byID
 		}
-		if lp, ok := byID[p.account]; ok {
+		lp, ok := byID[p.account]
+		if !ok && p.ServerKind == "plex" {
+			// The server's own owner is account 1 there, not the plex.tv id
+			// the link keeps; their Plex name still matches.
+			lp, ok = byPlexName(byID, p.Name)
+		}
+		if ok {
 			p.Linked, p.UserID, p.UserName = true, &lp.ID, lp.Name
 		}
 	}
 	return out, nil
+}
+
+// byPlexName is the one Plex link with this Plex name.
+func byPlexName(links map[string]accounts.LinkedPerson, name string) (accounts.LinkedPerson, bool) {
+	var found accounts.LinkedPerson
+	n := 0
+	for _, lp := range links {
+		if name != "" && strings.EqualFold(lp.ExtName, name) {
+			found, n = lp, n+1
+		}
+	}
+	return found, n == 1
 }
 
 // plexWatchPass reads the server's accounts, its movie and show keys and the
