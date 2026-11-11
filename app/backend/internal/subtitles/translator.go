@@ -142,6 +142,9 @@ func (s *Service) SaveTranslator(ctx context.Context, in TranslatorInput, by dom
 		return Translator{}, err
 	}
 	cur := s.Translator(ctx)
+	if in.URL == "" && in.Key == "" && cur.HasKey {
+		in.ClearKey = true // with no address left, a kept key has nowhere to go
+	}
 	if cur.HasKey && in.Key == "" && !in.ClearKey && originOf(in.URL) != originOf(cur.URL) {
 		return cur, ErrKeyElsewhere
 	}

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -410,5 +411,77 @@ func TestTranslate_Lingarr(t *testing.T) {
 	rows, _ := stopgapRows(ctx, f.st.Read(), f.movieFile)
 	if len(rows) != 1 || *rows[0].SiteName != "Lingarr" {
 		t.Fatalf("%+v", rows)
+	}
+}
+
+// roundTrip runs a function for every call the translator makes.
+type roundTrip func(*http.Request) (*http.Response, error)
+
+func (f roundTrip) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+// A person's subtitle that turns up while the translator works wins: the
+// translation is dropped, and nothing is saved next to the person's file.
+func TestTranslate_SubtitleArrivingMidwayWins(t *testing.T) {
+	f := newFix(t)
+	ctx := context.Background()
+	if err := os.WriteFile(f.abs("The Lantern (2010)/The Lantern (2010) 1080p BluRay.en.srt"), []byte(fakesite.Cue("hello", 1000)), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ft := &faketranslator.OpenAI{}
+	s, _ := withTranslator(t, f, ft)
+	theirs := f.abs("The Lantern (2010)/The Lantern (2010) 1080p BluRay.pob.srt")
+	s.TranslateHTTP = &http.Client{Transport: roundTrip(func(r *http.Request) (*http.Response, error) {
+		if err := os.WriteFile(theirs, []byte(fakesite.Cue("feito à mão", 1000)), 0o644); err != nil {
+			return nil, err
+		}
+		return http.DefaultTransport.RoundTrip(r)
+	})}
+	res, err := s.Translate(ctx, f.movieFile, TranslateRequest{Language: "pt-br", From: "en", ByHand: true}, domain.System)
+	if err != nil || res.Skipped == "" || ft.Calls == 0 {
+		t.Fatalf("%+v %v (calls %d)", res, err, ft.Calls)
+	}
+	if _, err := os.Stat(f.abs("The Lantern (2010)/The Lantern (2010) 1080p BluRay.pt-BR.srt")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("a translation was saved next to the person's file: %v", err)
+	}
+}
+
+// Clearing the address turns the translator off, and its key goes with it: a
+// key never waits in the vault for a translator that is gone.
+func TestSaveTranslator_ClearingTheAddressDropsTheKey(t *testing.T) {
+	f := newFix(t)
+	s, _ := withTranslator(t, f, &faketranslator.OpenAI{})
+	got, err := s.SaveTranslator(context.Background(), TranslatorInput{}, domain.System)
+	if err != nil || got.Kind != "" || got.URL != "" || got.HasKey {
+		t.Fatalf("%+v %v", got, err)
+	}
+}
+
+// Picking a pt subtitle by hand for a pt wish replaces the pt-BR file the app
+// saved for that wish, so the wish keeps one file.
+func TestChoose_ReplacesTheRegionalFileOfABaseWish(t *testing.T) {
+	f := newFix(t)
+	br := fakesite.Sub{ID: "br", Kind: "movie", Language: "pt-br", Title: "The Lantern", Year: 2010, ByID: true, Trusted: true,
+		Release: "The.Lantern.2010.1080p.BluRay.x264-GRP", Format: "srt", Text: fakesite.Cue("olá", 1000)}
+	site := &fakesite.Site{Subs: []fakesite.Sub{br}}
+	s, _ := svc(t, f, site)
+	ctx := context.Background()
+	wishAll(t, f, Want{Language: "pt-br"})
+	if res, err := s.Search(ctx, f.movieFile, SearchOptions{}, domain.System); err != nil || res.Outcomes[0].Result != "saved" {
+		t.Fatalf("%+v %v", res.Outcomes, err)
+	}
+	wishAll(t, f, Want{Language: "pt"})
+	pt := br
+	pt.ID, pt.Language, pt.Text = "pt", "pt", fakesite.Cue("olá de Lisboa", 1000)
+	site.Subs = append(site.Subs, pt)
+	rows, err := Sites(ctx, f.st.Read())
+	if err != nil || len(rows) != 1 {
+		t.Fatalf("%+v %v", rows, err)
+	}
+	p, err := s.Choose(ctx, f.movieFile, rows[0].Name, "pt", domain.System)
+	if err != nil || p != "The Lantern (2010)/The Lantern (2010) 1080p BluRay.pt.srt" {
+		t.Fatalf("%q %v", p, err)
+	}
+	if _, err := os.Stat(f.abs("The Lantern (2010)/The Lantern (2010) 1080p BluRay.pt-BR.srt")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("the pt-BR file stayed beside the chosen one: %v", err)
 	}
 }

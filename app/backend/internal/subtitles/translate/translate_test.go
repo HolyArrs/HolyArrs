@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -214,5 +217,74 @@ func TestCheckAddress(t *testing.T) {
 		if (CheckAddress(in) == nil) != ok {
 			t.Errorf("%q: %v", in, CheckAddress(in))
 		}
+	}
+}
+
+// stubClient answers every call with the same lines and error.
+type stubClient struct {
+	calls int
+	lines []Line
+	err   error
+}
+
+func (s *stubClient) Translate(context.Context, Batch) ([]Line, error) {
+	s.calls++
+	return s.lines, s.err
+}
+
+// A translator that never sends back a usable line is given up on after a
+// few calls, so a broken or too slow model never spends on every line of a
+// long file.
+func TestRun_GivesUpOnATranslatorThatSendsNothing(t *testing.T) {
+	noWait(t)
+	for _, c := range []*stubClient{
+		{err: &Error{Kind: KindUnreadable, Msg: "no numbered lines"}},
+		{err: &Error{Kind: KindCut, Msg: "did not answer in time"}},
+		{lines: []Line{{N: -1, Text: "never asked"}}},
+	} {
+		res, err := Run(context.Background(), c, job(400))
+		if err == nil || res.Translated != 0 || c.calls > 10 {
+			t.Fatalf("%d calls, %d translated, err %v", c.calls, res.Translated, err)
+		}
+	}
+}
+
+// Calls made without a client of their own share one, so a run reuses its
+// connection instead of opening a new one for every chunk.
+func TestSend_ReusesConnections(t *testing.T) {
+	f := &faketranslator.OpenAI{Models: []string{"lab-model"}}
+	srv := httptest.NewUnstartedServer(f)
+	var opened atomic.Int32
+	srv.Config.ConnState = func(_ net.Conn, s http.ConnState) {
+		if s == http.StateNew {
+			opened.Add(1)
+		}
+	}
+	srv.Start()
+	t.Cleanup(srv.Close)
+	c := &OpenAI{URL: srv.URL + "/v1", Model: "lab-model"}
+	for range 3 {
+		if _, err := c.Models(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if n := opened.Load(); n != 1 {
+		t.Fatalf("%d connections for 3 calls", n)
+	}
+}
+
+// A key the server repeats in its error answer never shows in the error.
+func TestOpenAI_KeyRepeatedInAnswerIsHidden(t *testing.T) {
+	const key = "made-up-key-echo-77"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, `{"error":{"message":"no model nope for %s"}}`, r.Header.Get("Authorization"))
+	}))
+	t.Cleanup(srv.Close)
+	c := &OpenAI{URL: srv.URL + "/v1", Key: key, Model: "nope"}
+	_, err := c.Translate(context.Background(), job(2).Batch)
+	if err == nil || KindOf(err) != KindRefused || strings.Contains(err.Error(), key) || !strings.Contains(err.Error(), "no model nope") {
+		t.Fatalf("%v", err)
 	}
 }

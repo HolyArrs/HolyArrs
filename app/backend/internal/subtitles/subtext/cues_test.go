@@ -54,6 +54,11 @@ func TestParseCues_Refusals(t *testing.T) {
 	if _, err := ParseCues(strings.Repeat("x", MaxText+1), SRT); err == nil {
 		t.Error("oversized text was read")
 	}
+	// A Format line naming fewer fields than Start and End need is refused, not
+	// read past its end.
+	if _, err := ParseCues("Format:Text\nDialogue:0", ASS); err == nil {
+		t.Error("a dialogue without its times was read")
+	}
 }
 
 func TestWriteSRT_SkipsEmptyAndBlankLines(t *testing.T) {

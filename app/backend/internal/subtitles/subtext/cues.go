@@ -97,7 +97,7 @@ func parseASS(text string) []Cue {
 			continue
 		}
 		rest, ok := strings.CutPrefix(trim, "Dialogue:")
-		if !ok || textAt != fields-1 {
+		if !ok || textAt != fields-1 || start >= fields || end >= fields {
 			continue
 		}
 		parts := strings.SplitN(rest, ",", fields)

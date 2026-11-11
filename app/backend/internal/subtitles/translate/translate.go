@@ -73,6 +73,7 @@ const (
 	MaxLines     = 20000 // lines in one file
 	maxLineTries = 3     // calls one line may take part in before it keeps its source text
 	callTries    = 3     // tries of one call when the server is busy or down
+	maxFruitless = 8     // calls in a row that bring back no line before a run gives up
 )
 
 // Job is a whole file to translate: the batch details with every line.
@@ -130,7 +131,7 @@ func Run(ctx context.Context, c Client, j Job) (Result, error) {
 		pending = append(pending, i)
 	}
 	res.Total = len(pending)
-	size, good, cursor := start, 0, 0
+	size, good, cursor, fruitless := start, 0, 0, 0
 	tries := make([]int, n)
 	var again [][]int // chunks to ask again, before new ones
 	for len(again) > 0 || cursor < len(pending) {
@@ -153,6 +154,11 @@ func Run(ctx context.Context, c Client, j Job) (Result, error) {
 		if err != nil {
 			switch KindOf(err) {
 			case KindCut, KindUnreadable:
+				// A translator that keeps failing this way is given up on, so a
+				// broken or too slow model never spends on every line.
+				if fruitless++; fruitless >= maxFruitless {
+					return res, err
+				}
 				// A smaller chunk usually fits and reads; one line that keeps
 				// failing keeps its source text.
 				size, good = max(1, len(chunk)/2), 0
@@ -186,6 +192,11 @@ func Run(ctx context.Context, c Client, j Job) (Result, error) {
 			if !ok {
 				missing = append(missing, chunk[k])
 			}
+		}
+		if len(missing) < len(chunk) {
+			fruitless = 0
+		} else if fruitless++; fruitless >= maxFruitless {
+			return res, &Error{Kind: KindUnreadable, Msg: "the translator keeps sending back no usable lines"}
 		}
 		if len(missing) == 0 {
 			if good++; good >= 3 && size < start {

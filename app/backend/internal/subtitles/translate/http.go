@@ -33,6 +33,10 @@ func NewHTTP() *http.Client {
 	return &http.Client{Transport: t, CheckRedirect: sameHost}
 }
 
+// shared is the client calls use when they are given none, so a run reuses
+// its connection instead of opening a new one for every chunk.
+var shared = NewHTTP()
+
 func sameHost(req *http.Request, via []*http.Request) error {
 	if len(via) >= 3 || req.URL.Host != via[0].URL.Host || req.URL.Scheme != via[0].URL.Scheme {
 		return errors.New("the translator redirected elsewhere; refused")
@@ -59,7 +63,7 @@ func endpoint(base, p string) string {
 // header only and never appears in an error.
 func send(ctx context.Context, hc *http.Client, method, addr string, hdr map[string]string, body []byte, timeout time.Duration, secret string) ([]byte, error) {
 	if hc == nil {
-		hc = NewHTTP()
+		hc = shared
 	}
 	if timeout <= 0 {
 		timeout = callTimeout
