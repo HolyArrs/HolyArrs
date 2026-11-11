@@ -74,6 +74,16 @@ var langWords = map[string]string{
 	"russian": "ru", "rus": "ru", "japanese": "ja", "jpn": "ja", "korean": "ko", "kor": "ko",
 }
 
+// moreLangWords are read as languages after the title, but never end a title,
+// because many are ordinary title words ("My Big Fat Greek Wedding"). Short
+// words that clash with names (fin, dan, hun, tur, pol, chi, pl, nl) stay out.
+var moreLangWords = map[string]string{
+	"polish": "pl", "dutch": "nl", "flemish": "nl", "portuguese": "pt", "swedish": "sv", "swe": "sv",
+	"danish": "da", "norwegian": "no", "finnish": "fi", "czech": "cs", "cze": "cs", "hungarian": "hu",
+	"greek": "el", "hebrew": "he", "heb": "he", "turkish": "tr", "arabic": "ar", "hindi": "hi",
+	"chinese": "zh", "mandarin": "zh", "thai": "th", "vietnamese": "vi", "ukrainian": "uk", "ukr": "uk",
+}
+
 var editions = []struct{ words, name string }{
 	{"directors cut", "Directors Cut"}, {"extended", "Extended"}, {"theatrical", "Theatrical"},
 	{"remastered", "Remastered"}, {"imax", "IMAX"}, {"unrated", "Unrated"}, {"anniversary", "Anniversary"},
@@ -576,7 +586,11 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 
 	// Languages.
 	for _, t := range low {
-		if code, ok := langWords[t]; ok && !slices.Contains(r.Languages, code) {
+		code, ok := langWords[t]
+		if !ok {
+			code, ok = moreLangWords[t]
+		}
+		if ok && !slices.Contains(r.Languages, code) {
 			r.Languages = append(r.Languages, code)
 		}
 	}

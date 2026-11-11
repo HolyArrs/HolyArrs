@@ -307,6 +307,7 @@ func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand
 	}
 	tref := set.ref()
 	checks := Checks(ctx, s.Store.Read())
+	body := withVersionAudio(set.pr.Body, set.ver.AudioLanguages)
 	rels := make([]mediafiles.ReleaseFacts, len(all))
 	vs := make([]mediafiles.Verdict, len(all))
 	for i, f := range all {
@@ -318,7 +319,7 @@ func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand
 		if ss.Match.Title != nil {
 			set.lines(&ss, rels[i], refs, byItem, rules, turnedFor)
 		}
-		vs[i] = mediafiles.Judge(rels[i], ss, set.pr.Body)
+		vs[i] = copyChoiceVerdict(set.ti, set.ver, rels[i], mediafiles.Judge(rels[i], ss, body))
 	}
 	if set.window > 0 {
 		// A pack is taken only when no single episode passes for its episodes.
@@ -338,9 +339,9 @@ func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand
 		}
 	}
 	if rules.packsFirst {
-		mediafiles.RankPacksFirst(rels, vs, set.pr.Body)
+		mediafiles.RankPacksFirst(rels, vs, body)
 	} else {
-		mediafiles.Rank(rels, vs, set.pr.Body)
+		mediafiles.Rank(rels, vs, body)
 	}
 	return rels, vs, nil
 }
