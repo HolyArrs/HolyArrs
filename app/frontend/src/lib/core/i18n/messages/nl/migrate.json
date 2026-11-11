@@ -293,5 +293,8 @@
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs handelt deze op zijn eigen manier af. Er is niets te doen.",
 	"migrate.allApps": "Alle apps",
 	"migrate.ifAnOldApp": "Ziet een oude app een map onder een ander pad, voer dan beide in.",
+	"migrate.notInContainer": "HolyArrs ziet {path} niet. Gebruik het pad in de container: de rechterkant van het Docker-volume.",
+	"migrate.foldersItSees": "Zichtbaar: {list}",
+	"migrate.sameNewFolder": "Zelfde map als {list}. Hun titels komen samen; geef 4K of andere kopieën een eigen map.",
 	"migrate.doneOfTotal": "{done} van {total}"
 }

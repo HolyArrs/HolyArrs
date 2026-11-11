@@ -53,6 +53,18 @@ describe('createMovePlan', () => {
 		expect(ctx.planError).toBe('');
 	});
 
+	it('keeps the folders that are not here and the folders HolyArrs can see', async () => {
+		req.mockResolvedValue({ plan: {}, suggested_path_rules: [], missing_paths: { '/mnt/78/Movies': '/home/mark/Movies' }, seen_folders: ['/data/movies'] });
+		const ctx = ctxOf();
+		await createMovePlan(ctx).makePlan();
+		expect(ctx.missingPaths).toEqual({ '/mnt/78/Movies': '/home/mark/Movies' });
+		expect(ctx.seenFolders).toEqual(['/data/movies']);
+		req.mockResolvedValue({ plan: {}, suggested_path_rules: [] });
+		await createMovePlan(ctx).makePlan();
+		expect(ctx.missingPaths).toEqual({});
+		expect(ctx.seenFolders).toEqual([]);
+	});
+
 	it('does not plan with nothing picked or with rule errors', async () => {
 		req.mockResolvedValue({ plan: {} });
 		await createMovePlan(ctxOf({ picked: [] })).makePlan();

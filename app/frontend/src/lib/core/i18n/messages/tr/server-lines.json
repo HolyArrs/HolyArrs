@@ -1052,6 +1052,8 @@
 	"server.migrate.usenet-servers-stay-set-up-in": "usenet sunucuları SABnzbd'de kurulu kalır",
 	"server.migrate.uses-the-folder-where-it-is": "{dir} klasörünü olduğu yerde kullanır",
 	"server.migrate.uses-the-folder-where-it-is-2": "{dir} klasörünü olduğu yerde kullanır; hiçbir dosya taşınmaz ya da yeniden adlandırılmaz",
+	"server.migrate.will-be-added-with-no-files": "şimdilik dosyasız eklenecek; {dir} konumunda klasör yok",
+	"server.migrate.added-with-no-files-yet-there": "şimdilik dosyasız eklendi; {dir} konumunda klasör yok",
 	"server.migrate.uses-the-folder-where-it-is-3": "{folder} klasörünü olduğu yerde kullanır",
 	"server.migrate.wait-before-grabbing-every-title": "almadan önce bekle (her başlık)",
 	"server.migrate.wait-before-grabbing": "almadan önce bekle {tags}",

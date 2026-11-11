@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -80,23 +81,44 @@ func (r *run) title(it Item) (string, string) {
 	if !filepath.IsLocal(t.Folder) || strings.ContainsAny(t.Folder, `/\`) {
 		return ResFailed, "its folder name is not one folder"
 	}
+	// A title whose own folder is missing (wanted, never downloaded) still
+	// comes over, with no files, as Radarr and Sonarr keep it; only a
+	// missing Library folder means the paths are wrong.
+	noFiles := false
 	if fi, err := os.Lstat(dir); err != nil || !fi.IsDir() {
-		return ResNotFound, "no folder at " + filepath.ToSlash(dir) + " on this server; add a path rule"
+		if !errors.Is(err, fs.ErrNotExist) {
+			return ResNotFound, "no folder at " + filepath.ToSlash(dir) + " on this server; add a path rule"
+		}
+		if !isDir(lib) {
+			return ResNotFound, "no folder at " + filepath.ToSlash(lib) + " on this server; add a path rule"
+		}
+		noFiles = true
 	}
 	if r.dry {
+		if noFiles {
+			return ResCreate, "will be added with no files yet; there is no folder at " + filepath.ToSlash(dir)
+		}
 		return ResAdopt, "uses the folder " + filepath.ToSlash(dir) + " where it is; no file is moved or renamed"
 	}
 	lfID := r.id("SELECT id FROM library_folders WHERE path = ?", filepath.Clean(lib))
 	if lfID == 0 {
 		return ResNotFound, "its Library folder " + t.Library + " is not here (not imported, or left out)"
 	}
-	c := library.AdoptChoice{Folder: t.Folder, ID: t.ID}
-	if t.Kind == "movie" {
-		c = library.AdoptChoice{Folder: t.Folder, TMDB: strings.TrimPrefix(t.ID, "tmdb:"), ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays}
-	}
-	res, err := r.m.Library.Adopt(r.ctx, lfID, []library.AdoptChoice{c}, r.by)
-	if err == nil && len(res) == 1 && res[0].Error != "" {
-		err = errors.New(res[0].Error)
+	var res []library.AdoptResult
+	var err error
+	if noFiles {
+		var id int64
+		id, err = r.addNoFiles(lfID, t)
+		res = []library.AdoptResult{{TitleID: id}}
+	} else {
+		c := library.AdoptChoice{Folder: t.Folder, ID: t.ID}
+		if t.Kind == "movie" {
+			c = library.AdoptChoice{Folder: t.Folder, TMDB: strings.TrimPrefix(t.ID, "tmdb:"), ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays}
+		}
+		res, err = r.m.Library.Adopt(r.ctx, lfID, []library.AdoptChoice{c}, r.by)
+		if err == nil && len(res) == 1 && res[0].Error != "" {
+			err = errors.New(res[0].Error)
+		}
 	}
 	if err != nil {
 		return ResFailed, err.Error()
@@ -152,13 +174,55 @@ func (r *run) title(it Item) (string, string) {
 		_ = shows.New(r.m.Library).SetSeason(r.ctx, id, n, false, r.by) // a season the show does not have is fine
 	}
 	d := "uses the folder " + filepath.ToSlash(dir) + " where it is"
+	if noFiles {
+		d = "added with no files yet; there is no folder at " + filepath.ToSlash(dir)
+	}
 	if res[0].File != "" {
 		d += ", with " + res[0].File
 	}
 	if !t.KeepUpToDate {
 		d += "; Keep up to date off"
 	}
+	if noFiles {
+		return ResCreated, d
+	}
 	return ResAdopted, d
+}
+
+// addNoFiles adds a title whose folder is not on disk the way a request
+// adds one: its ids, its folder name from the old app, and no files.
+func (r *run) addNoFiles(lfID int64, t *TitlePlan) (int64, error) {
+	switch t.Kind {
+	case "movie":
+		if r.m.Library.Metadata == nil {
+			return 0, errors.New("no metadata source")
+		}
+		tmdb := strings.TrimPrefix(t.ID, "tmdb:")
+		m, err := r.m.Library.Metadata.Movie(r.ctx, "tmdb:"+tmdb)
+		if err != nil {
+			return 0, fmt.Errorf("TMDB %s: %w", tmdb, err)
+		}
+		id, _, err := r.m.Library.Add(r.ctx, m, library.AddOptions{LibraryFolderID: lfID, WhyAdded: "import",
+			ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays, Adopt: &library.Adoption{FolderName: t.Folder}}, r.by)
+		return id, err
+	case "show":
+		id, _, err := shows.New(r.m.Library).AddShow(r.ctx, t.ID, shows.ShowAddOptions{LibraryFolderID: lfID, WhyAdded: "import",
+			Adopt: &shows.ShowAdoption{FolderName: t.Folder, LibraryPath: filepath.FromSlash(t.Library)}}, r.by)
+		return id, err
+	case "artist":
+		id, _, err := r.m.Library.AddArtist(r.ctx, t.ID, library.ArtistAddOptions{LibraryFolderID: lfID, WhyAdded: "import",
+			Adopt: &library.MusicAdoption{FolderName: t.Folder}}, r.by)
+		if err != nil {
+			return 0, err
+		}
+		// The albums are read now, so the old app's album choices apply.
+		if _, err := r.m.Library.RefreshArtist(r.ctx, id, r.by, nil); err != nil {
+			_, _ = r.m.Library.Remove(context.WithoutCancel(r.ctx), id, library.RemoveChoice{}, true, r.by)
+			return 0, fmt.Errorf("its albums could not be read: %w", err)
+		}
+		return id, nil
+	}
+	return 0, errors.New("unknown title kind " + t.Kind)
 }
 
 type musicPartState struct {

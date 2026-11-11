@@ -293,5 +293,8 @@
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs가 자체 방식으로 처리합니다. 할 일은 없습니다.",
 	"migrate.allApps": "모든 앱",
 	"migrate.ifAnOldApp": "기존 앱이 폴더를 다른 경로로 보면 두 경로를 모두 입력하세요.",
+	"migrate.notInContainer": "HolyArrs에서 {path}이(가) 보이지 않습니다. 컨테이너 안의 경로(Docker 볼륨의 오른쪽)를 사용하세요.",
+	"migrate.foldersItSees": "보이는 폴더: {list}",
+	"migrate.sameNewFolder": "{list}과(와) 같은 폴더입니다. 타이틀이 한곳에 모이니 4K 등 다른 사본에는 별도 폴더를 지정하세요.",
 	"migrate.doneOfTotal": "{total}개 중 {done}개"
 }

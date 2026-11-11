@@ -99,7 +99,7 @@ func (h *Handlers) movePlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"plan": p, "counts": p.Counts(), "suggested_path_rules": SuggestRules(r.Context(), h.Store, p),
-		"plan_hash": PlanHash(p)})
+		"missing_paths": missingTargets(p), "seen_folders": SeenFolders(), "plan_hash": PlanHash(p)})
 }
 
 func (h *Handlers) moveDryRun(w http.ResponseWriter, r *http.Request) {

@@ -13,7 +13,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { appName, folderProblem, OTHER, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from './move.ts';
+	import { appName, cleanPath, folderProblem, folderTo, OTHER, sharedTargets, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from './move.ts';
 
 	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
 
@@ -26,6 +26,8 @@
 		extra,
 		extraErrors,
 		suggested,
+		missing = {},
+		seen = [],
 		skip,
 		people,
 		onfolder,
@@ -44,6 +46,8 @@
 		extra: PathRule[];
 		extraErrors: string[];
 		suggested: Record<string, string>;
+		missing?: Record<string, string>;
+		seen?: string[];
 		skip: string[];
 		people: Record<string, PersonChoice>;
 		onfolder: (from: string, pick: string) => void;
@@ -82,6 +86,9 @@
 	const asked = $derived(peopleItems.filter((it) => it.person?.was_owner || it.person?.was_admin));
 	const pathRules = $derived(!!plan && oldRows.length === 0 && (extra.length > 0 || plan.not_moved.some((n) => n.group === 'titles')));
 	const needFolders = $derived(oldRows.filter((p) => held.includes(p) || !picks[p]));
+	const shared = $derived(sharedTargets(picks, others));
+	// The last plan's word on this row's new folder, while the row still points there.
+	const goneFor = (p: string) => (missing[p] && cleanPath(missing[p]) === cleanPath(folderTo(picks[p], others[p])) ? missing[p] : '');
 	const lead = $derived.by(() => {
 		const b = big.map((n) => on.find((g) => g.name === n)).filter((g): g is PlanGroup => !!g);
 		if (b.length > 0 || on.length === 0) return b;
@@ -142,7 +149,7 @@
 		if (add.length > 0) held = [...held, ...add];
 	});
 	$effect(() => {
-		if (oldRows.some((p) => !needFolders.includes(p) && folderProblem(p, picks[p] ?? '', others[p]) !== '')) open = true;
+		if (oldRows.some((p) => !needFolders.includes(p) && (folderProblem(p, picks[p] ?? '', others[p]) !== '' || goneFor(p) || shared[p]))) open = true;
 		if (extraErrors.some((e) => e !== '')) {
 			open = true;
 			advOpen = true;
@@ -165,6 +172,7 @@
 		const out = folders.filter((f) => !k || !f.kind || f.kind === k).map((f) => ({ value: f.path, label: f.path }));
 		const s = suggested[p];
 		if (s && !out.some((o) => o.value === s)) out.unshift({ value: s, label: s });
+		for (const f of seen) if (!out.some((o) => o.value === f)) out.push({ value: f, label: f });
 		return out;
 	}
 	function groupNote(g: PlanGroup): { text: string; warn: boolean } {
@@ -209,6 +217,8 @@
 {#snippet folderRow(p: string, n: number, id: string, testid: string, note: boolean)}
 	{@const pick = picks[p] ?? ''}
 	{@const err = folderProblem(p, pick, others[p])}
+	{@const gone = err ? '' : goneFor(p)}
+	{@const twins = shared[p] ?? []}
 	<li class="mrow wrap" data-testid={testid}>
 		<div class="txt">
 			<label for={id} class="mono path one" title={p}><span aria-hidden="true">{clipMiddle(p)}</span><span class="sr-only">{p}</span></label>
@@ -220,13 +230,15 @@
 			{#each choicesFor(p) as o (o.value)}<option value={o.value}>{o.label}</option>{/each}
 			<option value={OTHER}>{t('migrate.otherPath')}</option>
 		</select>
-		{#if pick === OTHER || err}
+		{#if pick === OTHER || err || gone || twins.length}
 			<div class="below">
 				{#if pick === OTHER}
 					<label class="sr-only" for="{id}-other">{t('migrate.pathHereFor', { path: p })}</label>
 					<input id="{id}-other" class="input mono wide" value={others[p] ?? ''} placeholder="/data/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `${id}-err` : undefined} oninput={(e) => onother(p, e.currentTarget.value)} onblur={oncommit} onkeydown={keyDone} />
 				{/if}
 				{#if err}<p class="form-error" id="{id}-err">{err}</p>{/if}
+				{#if gone}<p class="sub warn note" data-testid="folder-not-here">{t('migrate.notInContainer', { path: gone })}{#if seen.length} {t('migrate.foldersItSees', { list: seen.join(', ') })}{/if}</p>{/if}
+				{#if twins.length}<p class="sub warn note" data-testid="folder-shared">{t('migrate.sameNewFolder', { list: twins.join(', ') })}</p>{/if}
 			</div>
 		{/if}
 	</li>
@@ -464,7 +476,7 @@
 	.half { flex: 1 1 0; min-width: 0; min-height: 36px; height: 36px; }
 	.wide { width: 100%; max-width: 100%; box-sizing: border-box; min-height: 36px; }
 	.below { flex-basis: 100%; padding-bottom: 6px; }
-	.below .form-error { margin: 6px 0 0; }
+	.below .form-error, .below .note { margin: 6px 0 0; }
 
 	.quiet { flex: none; border: 0; padding: 4px 0; background: none; color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); cursor: pointer; }
 	.quiet:hover:not(:disabled) { color: var(--text); }

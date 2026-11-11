@@ -462,10 +462,29 @@ export function folderTo(pick: string | undefined, other: string | undefined): s
 	return pick === OTHER ? (other ?? '').trim() : pick;
 }
 
+// A path written the way the server keeps it: forward slashes, no doubled
+// or trailing slash, so two spellings of one folder compare equal.
+export function cleanPath(p: string): string {
+	const c = p.trim().replace(/\\/g, '/').replace(/\/{2,}/g, '/');
+	return c.length > 1 ? c.replace(/\/$/, '') : c;
+}
+
 export function folderProblem(from: string, pick: string | undefined, other: string | undefined): string {
 	if (!pick) return '';
 	if (pick === OTHER && !(other ?? '').trim()) return t('migrate.typeThePathHere');
 	return ruleProblem({ from, to: folderTo(pick, other) });
+}
+
+// For each old folder, the other old folders that point at the same new folder.
+export function sharedTargets(picks: Record<string, string>, others: Record<string, string>): Record<string, string[]> {
+	const by = new Map<string, string[]>();
+	for (const [from, pick] of Object.entries(picks)) {
+		const to = cleanPath(folderTo(pick, others[from]));
+		if (to) by.set(to, [...(by.get(to) ?? []), from]);
+	}
+	const out: Record<string, string[]> = {};
+	for (const froms of by.values()) if (froms.length > 1) for (const f of froms) out[f] = froms.filter((x) => x !== f);
+	return out;
 }
 
 export function extraProblems(rules: PathRule[]): string[] {

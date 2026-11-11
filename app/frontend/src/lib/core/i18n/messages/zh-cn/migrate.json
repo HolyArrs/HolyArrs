@@ -293,5 +293,8 @@
 	"migrate.holyarrsHandlesTheseIts": "HolyArrs 用自己的方式处理这些，无需你操作。",
 	"migrate.allApps": "所有应用",
 	"migrate.ifAnOldApp": "如果旧应用看到的文件夹路径不同，请把两个路径都填上。",
+	"migrate.notInContainer": "HolyArrs 看不到 {path}。请使用它在容器内的路径：Docker 卷映射的右侧。",
+	"migrate.foldersItSees": "它能看到：{list}",
+	"migrate.sameNewFolder": "与 {list} 是同一个文件夹。它们的影片会混在一起；请给 4K 或其他副本单独的文件夹。",
 	"migrate.doneOfTotal": "{done} / {total}"
 }
