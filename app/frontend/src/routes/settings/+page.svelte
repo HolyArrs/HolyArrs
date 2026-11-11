@@ -5,7 +5,7 @@
 	import SettingsTile from '#lib/ui/SettingsTile.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
-	import { entryLabel, searchSettings, settingIndex, type SettingEntry } from './(home)/settings-search.ts';
+	import { entryLabel, resultKey, searchSettings, settingIndex, type SettingEntry } from './(home)/settings-search.ts';
 	import GroupArt from './(home)/GroupArt.svelte';
 	import { homeArt } from './(home)/art.svelte.ts';
 	import { cancelOpen, push, settingsNav, zoomBack, zoomOpen, clearFlight } from './(home)/zoom.ts';
@@ -110,7 +110,7 @@
 	{#if query.trim()}
 		{#if results.length}
 			<ul class="results" id="settings-results" aria-label={t('settings.home.matching')} data-testid="setting-results">
-				{#each results as r (r.href + '#' + r.anchor)}
+				{#each results as r (resultKey(r))}
 					{@const s = sectionOf(r.href)}
 					<li>
 						<a class="row-link" href={link(r)} data-testid="setting-result" onclick={() => (settingsFind.term = '')}>

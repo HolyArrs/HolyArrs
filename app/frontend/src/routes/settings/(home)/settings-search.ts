@@ -36,6 +36,9 @@ const said = (key: string, fallback: string) => {
 /** The entry's label in the person's language (the English label when the entry has no message). */
 export const entryLabel = (entry: SettingEntry): string => (entry.id ? said(`${entry.id}.label`, entry.label) : entry.label);
 
+/** The key the results list uses for each row; it must differ for every entry the search can return. Several hand-made entries open the same card (the Quality ones) or the same page as a page row, so they use their own id. */
+export const resultKey = (entry: SettingEntry): string => entry.id ?? `${entry.href}#${entry.anchor}`;
+
 /** The words a person might type for it, in their language. */
 export const entryWords = (entry: SettingEntry): string => (entry.id ? said(`${entry.id}.words`, entry.words ?? '') : (entry.words ?? ''));
 
