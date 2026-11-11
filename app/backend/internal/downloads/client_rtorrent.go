@@ -46,6 +46,9 @@ type RTorrent struct {
 	// asks for the files can delete them here. rTorrent cannot delete them.
 	PathMap  []domain.PathMap
 	SaveRoot string
+	// Keep lists folders that are never deleted, nor anything in or around
+	// them: the Library folders. Without it nothing is deleted.
+	Keep func(ctx context.Context) ([]string, error)
 
 	endpoint, user, pass string
 	http                 *http.Client
@@ -278,7 +281,15 @@ func (r *RTorrent) Remove(ctx context.Context, id string, deleteFiles bool) erro
 		if err != nil {
 			return err
 		}
-		target, why = r.deleteTarget(row, others)
+		var keep []string
+		if r.Keep == nil {
+			why = "HolyArrs does not know its Library folders here"
+		} else if keep, err = r.Keep(ctx); err != nil {
+			why = "HolyArrs could not read its Library folders"
+		}
+		if why == "" {
+			target, why = r.deleteTarget(row, others, keep)
+		}
 	}
 	if _, err := r.call(ctx, "d.erase", strings.ToUpper(row.hash)); err != nil {
 		var f *xmlrpcFault

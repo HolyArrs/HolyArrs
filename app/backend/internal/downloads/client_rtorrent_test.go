@@ -565,15 +565,24 @@ func TestRTorrentRemoveDeletesOnlySafeFiles(t *testing.T) {
 		{"no pairs at all", []item{{rtHash, "a.mkv", "/remote/movies"}}, nil, false},
 		{"another torrent uses it", []item{{rtHash, "a.mkv", "/remote/movies"}, {"1111111111111111111111111111111111111111", "a.mkv", "/remote/movies"}}, []domain.PathMap{{Theirs: "/remote", Ours: here}}, false},
 		{"not visible", []item{{rtHash, "missing.mkv", "/remote/movies"}}, []domain.PathMap{{Theirs: "/remote", Ours: here}}, false},
+		{"names a Library folder", []item{{rtHash, "library", "/remote"}}, []domain.PathMap{{Theirs: "/remote", Ours: here}}, false},
+		{"holds a Library folder", []item{{rtHash, "movies", "/remote"}}, []domain.PathMap{{Theirs: "/remote", Ours: here}}, false},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			file := put("movies/a.mkv")
+			kept := put("library/Film (2024)/Film.mkv")
+			if c.name == "holds a Library folder" {
+				kept = put("movies/Film (2024)/Film.mkv")
+			}
 			f := &fakeRTorrent{items: map[string]*rtItem{}}
 			for _, it := range c.items {
 				f.items[strings.ToUpper(it.hash)] = &rtItem{name: it.name, label: "movies", dir: it.dir, open: 1, state: 1, complete: 1, size: 1, done: 1}
 			}
 			e := NewRTorrent(startRTorrent(t, f), "", "", nil)
 			e.Category, e.PathMap = "movies", c.pathMap
+			e.Keep = func(context.Context) ([]string, error) {
+				return []string{filepath.Join(here, "library"), filepath.Join(here, "movies", "Film (2024)")}, nil
+			}
 			var logged []string
 			old := logf
 			logf = func(format string, a ...any) { logged = append(logged, fmt.Sprintf(format, a...)) }
@@ -594,7 +603,33 @@ func TestRTorrentRemoveDeletesOnlySafeFiles(t *testing.T) {
 			if _, err := os.Stat(filepath.Join(here, "movies")); err != nil {
 				t.Error("the label folder went too")
 			}
+			if _, err := os.Stat(kept); err != nil {
+				t.Errorf("a Library file went: %v", err)
+			}
+			_ = os.RemoveAll(filepath.Join(here, "movies", "Film (2024)"))
 		})
+	}
+}
+
+func TestRTorrentRemoveDeletesNothingWithoutLibraryFolders(t *testing.T) {
+	here := t.TempDir()
+	file := filepath.Join(here, "a.mkv")
+	_ = os.WriteFile(file, []byte("x"), 0o644)
+	f := &fakeRTorrent{items: map[string]*rtItem{strings.ToUpper(rtHash): {name: "a.mkv", label: "movies", dir: "/remote", open: 1, state: 1, size: 1}}}
+	e := NewRTorrent(startRTorrent(t, f), "", "", nil)
+	e.PathMap = []domain.PathMap{{Theirs: "/remote", Ours: here}}
+	old := logf
+	logf = func(string, ...any) {}
+	t.Cleanup(func() { logf = old })
+	for _, keep := range []func(context.Context) ([]string, error){nil, func(context.Context) ([]string, error) { return nil, errors.New("locked") }} {
+		f.items[strings.ToUpper(rtHash)] = &rtItem{name: "a.mkv", label: "movies", dir: "/remote", open: 1, state: 1, size: 1}
+		e.Keep = keep
+		if err := e.Remove(context.Background(), rtHash, true); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := os.Stat(file); err != nil {
+			t.Errorf("deleted without knowing the Library folders: %v", err)
+		}
 	}
 }
 

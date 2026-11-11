@@ -151,7 +151,7 @@ type filesTarget struct{ root, rel string }
 // rTorrent lets go of it. It only says yes for a file or folder named like the
 // torrent, inside the save folder or a path pair, that no other torrent in
 // rTorrent uses. Otherwise it says why the files stay.
-func (r *RTorrent) deleteTarget(row rtRow, all []rtRow) (filesTarget, string) {
+func (r *RTorrent) deleteTarget(row rtRow, all []rtRow, keep []string) (filesTarget, string) {
 	content := row.content()
 	if content == "" {
 		return filesTarget{}, "rTorrent did not say where they are"
@@ -169,6 +169,11 @@ func (r *RTorrent) deleteTarget(row rtRow, all []rtRow) (filesTarget, string) {
 		}
 	}
 	local := filepath.Clean(mapLocal(content, r.PathMap))
+	for _, k := range keep {
+		if k = strings.TrimSpace(k); k != "" && (underAny(local, []string{k}) || underAny(filepath.Clean(k), []string{local})) {
+			return filesTarget{}, local + " is a Library folder or holds one"
+		}
+	}
 	roots := []string{}
 	if r.SaveRoot != "" {
 		roots = append(roots, r.SaveRoot)
