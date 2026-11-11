@@ -388,9 +388,7 @@ func readFinished(j Job, pm []domain.PathMap, saveRoot string) (string, []File) 
 	}
 	// Lstat so a symlink is not followed out of the roots.
 	fi, err := os.Lstat(local)
-	if !underAny(local, roots) && (anyRoot(roots) || !filepath.IsAbs(local) || isDiskRoot(local)) {
-		// With no save path and no path pair the Downloader's folder is shared
-		// as is, so its own path is trusted; a whole disk never is.
+	if !underAny(local, roots) && (anyRoot(roots) || !sharedAsIs(local, mapLocal(j.SavePath, pm))) {
 		err = fs.ErrPermission
 	}
 	switch {
@@ -458,6 +456,22 @@ func anyRoot(roots []string) bool {
 		}
 	}
 	return false
+}
+
+// ConfigDir is HolyArrs's own config folder; a Downloader is never trusted to
+// point into it. main sets it from -config.
+var ConfigDir = "/config"
+
+// sharedAsIs reports whether a finished job may be read where the Downloader
+// says it is, for setups with no save path and no path pair (the Downloader's
+// folder is shared as is). Only inside the job's own save folder, never a whole
+// disk, and never HolyArrs's own config folder.
+func sharedAsIs(local, save string) bool {
+	save = filepath.Clean(strings.TrimSpace(save))
+	if !filepath.IsAbs(local) || !filepath.IsAbs(save) || isDiskRoot(local) || isDiskRoot(save) {
+		return false
+	}
+	return underAny(local, []string{save}) && !underAny(local, []string{ConfigDir}) && !underAny(ConfigDir, []string{local})
 }
 
 // isDiskRoot reports whether p is a whole disk, such as / or C:\.
