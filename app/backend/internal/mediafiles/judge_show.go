@@ -41,8 +41,8 @@ type EpisodeRef struct {
 // Label names an episode the way people write it: S01E02.
 func (e EpisodeRef) Label() string { return fmt.Sprintf("S%02dE%02d", e.Season, e.Episode) }
 
-// named is the season and episode release names use for the episode.
-func (e EpisodeRef) named() (int, int) {
+// Named is the season and episode release names use for the episode.
+func (e EpisodeRef) Named() (int, int) {
 	if e.AltSeason > 0 {
 		return e.AltSeason, e.AltEpisode
 	}
@@ -84,7 +84,7 @@ func MatchEpisodes(p releasename.Result, order string, eps []EpisodeRef) ([]Epis
 	case releasename.KindSeasonPack, releasename.KindMultiSeason:
 		// An episode sits in the season release names give it; the stored
 		// season counts only when that finds nothing.
-		find(func(e EpisodeRef) bool { s, _ := e.named(); return slices.Contains(sh.Seasons, s) })
+		find(func(e EpisodeRef) bool { s, _ := e.Named(); return slices.Contains(sh.Seasons, s) })
 		if len(out) == 0 {
 			find(func(e EpisodeRef) bool { return slices.Contains(sh.Seasons, e.Season) })
 		}
@@ -127,7 +127,7 @@ func MatchEpisodes(p releasename.Result, order string, eps []EpisodeRef) ([]Epis
 	for _, n := range sh.Episodes {
 		// Release-name numbers first, as the old apps read scene numbers;
 		// then the stored ones.
-		i := slices.IndexFunc(eps, func(e EpisodeRef) bool { s, x := e.named(); return s == sh.Seasons[0] && x == n })
+		i := slices.IndexFunc(eps, func(e EpisodeRef) bool { s, x := e.Named(); return s == sh.Seasons[0] && x == n })
 		if i < 0 {
 			i = slices.IndexFunc(eps, func(e EpisodeRef) bool { return e.Season == sh.Seasons[0] && e.Episode == n })
 		}
