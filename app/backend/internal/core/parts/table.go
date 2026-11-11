@@ -532,6 +532,7 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/settings/shows":               shows,
 	"PUT /api/v1/settings/shows":               shows,
 	"GET /api/v1/titles/{id}/seasons":          shows,
+	"GET /api/v1/titles/{id}/episode-groups":   shows,
 	"PUT /api/v1/titles/{id}/seasons/{number}": shows,
 	"GET /api/v1/titles/{id}/episodes":         shows,
 	"PUT /api/v1/episodes/{id}":                shows,

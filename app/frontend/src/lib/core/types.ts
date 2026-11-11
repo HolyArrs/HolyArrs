@@ -132,6 +132,7 @@ export interface SeasonSummary {
 export interface ShowInfo {
 	details_source: string;
 	episode_order: string;
+	episode_group?: { id: string; name: string; type: number } | null;
 	season_choice?: string;
 	new_seasons: string;
 	status: string;

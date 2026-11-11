@@ -487,6 +487,8 @@ episodeIds
 episodeNumber
 episode_count
 episode_default_minutes
+episode_group
+episode_group_id
 episode_ids
 episode_info
 episode_name
@@ -636,6 +638,7 @@ grabs
 grabs_per_window
 grant_types
 group
+group_count
 groups
 guess
 guid
@@ -1059,6 +1062,7 @@ outputPath
 outside
 outside_list
 outside_lists
+outside_order
 outside_recent
 overview
 owned
@@ -1603,6 +1607,7 @@ titles
 tls
 tmdb
 tmdbId
+tmdb_episode
 tmdb_id
 tmdb_ids
 tmdb_movies

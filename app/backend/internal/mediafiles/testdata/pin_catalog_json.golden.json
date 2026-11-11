@@ -19,6 +19,7 @@
   "SourceIDs": null,
   "MetadataSource": "",
   "EpisodeOrder": null,
+  "EpisodeGroupID": null,
   "KeepUpToDate": false,
   "NewPartsPolicy": "",
   "ReleaseGate": "",

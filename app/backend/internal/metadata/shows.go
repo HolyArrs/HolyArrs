@@ -56,6 +56,9 @@ type Show struct {
 	// AltStale says the release-name numbers could not be read this time
 	// (the metadata server failed), so stored ones are kept.
 	AltStale bool `json:"-"`
+	// Grouped says the release-name numbers come from a chosen TMDB
+	// episode order.
+	Grouped bool `json:"-"`
 }
 
 // Season is one season of a looked-up show; 0 holds the specials.

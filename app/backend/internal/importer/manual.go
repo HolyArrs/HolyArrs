@@ -467,7 +467,8 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 		if folder == "" || folder == "." || folder == ".." {
 			folder = mediafiles.ShowFolder(ns, mediafiles.NameFacts{Title: ti.Name, Year: year})
 		}
-		t := ShowTarget{FolderName: folder, Show: mediafiles.TitleRef{ID: ti.ID, Name: ti.Name, Year: year, Kind: "show"}, IDs: ti.SourceIDs, Order: mediafiles.OrderAired, Naming: &ns}
+		t := ShowTarget{FolderName: folder, Show: mediafiles.TitleRef{ID: ti.ID, Name: ti.Name, Year: year, Kind: "show"}, IDs: ti.SourceIDs, Order: mediafiles.OrderAired, Naming: &ns,
+			ByOrder: ti.EpisodeGroupID != nil && *ti.EpisodeGroupID != ""}
 		if ti.EpisodeOrder != nil && *ti.EpisodeOrder != "" {
 			t.Order = *ti.EpisodeOrder
 		}

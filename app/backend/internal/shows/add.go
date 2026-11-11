@@ -530,6 +530,12 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 	if len(parts) == 0 {
 		return out, nil
 	}
+	if grouped, err := library.HasEpisodeGroup(ctx, db, titleID); err != nil || grouped {
+		if err != nil {
+			return nil, err
+		}
+		return groupSeasons(ctx, db, titleID, now, parts)
+	}
 	// One query for every season of the show instead of one per season. The
 	// main Version is looked up once (by the show's id), not once per episode.
 	rows, err := db.QueryContext(ctx, `SELECT i.part_id, i.air_date, i.keep_up_to_date, COALESCE(s.state, '') FROM items i
@@ -551,38 +557,43 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 		if !ok {
 			continue
 		}
-		ss := &out[idx]
-		ss.Episodes++
-		if air.Valid {
-			if at, err := time.Parse(database.TimeLayout, air.String); err == nil {
-				if !at.After(now) {
-					ss.Aired++
-				} else if ss.NextAirDate == nil || at.Before(*ss.NextAirDate) {
-					a := at
-					ss.NextAirDate = &a
-				}
-			}
-		}
-		switch mediafiles.SlotState(state) {
-		case mediafiles.SlotInLibrary:
-			ss.InLibrary++
-		case mediafiles.SlotBetterWanted:
-			ss.InLibrary++
-			ss.BetterWanted++
-		case mediafiles.SlotNotOutYet:
-			ss.NotOutYet++
-		case mediafiles.SlotChosen, mediafiles.SlotDownloading, mediafiles.SlotStalled, mediafiles.SlotImporting:
-			ss.Downloading++
-		case mediafiles.SlotFailed, mediafiles.SlotNeedsADecision:
-			ss.Failed++
-		case mediafiles.SlotWanted:
-			if keep {
-				ss.Missing++
-			}
-		}
+		out[idx].tally(air, keep, state, now)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return out, nil
+}
+
+// tally counts one episode of a season: its air date, its Keep up to date
+// switch and the main Version's Slot state.
+func (ss *SeasonSummary) tally(air sql.NullString, keep bool, state string, now time.Time) {
+	ss.Episodes++
+	if air.Valid {
+		if at, err := time.Parse(database.TimeLayout, air.String); err == nil {
+			if !at.After(now) {
+				ss.Aired++
+			} else if ss.NextAirDate == nil || at.Before(*ss.NextAirDate) {
+				a := at
+				ss.NextAirDate = &a
+			}
+		}
+	}
+	switch mediafiles.SlotState(state) {
+	case mediafiles.SlotInLibrary:
+		ss.InLibrary++
+	case mediafiles.SlotBetterWanted:
+		ss.InLibrary++
+		ss.BetterWanted++
+	case mediafiles.SlotNotOutYet:
+		ss.NotOutYet++
+	case mediafiles.SlotChosen, mediafiles.SlotDownloading, mediafiles.SlotStalled, mediafiles.SlotImporting:
+		ss.Downloading++
+	case mediafiles.SlotFailed, mediafiles.SlotNeedsADecision:
+		ss.Failed++
+	case mediafiles.SlotWanted:
+		if keep {
+			ss.Missing++
+		}
+	}
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
@@ -23,6 +24,8 @@ type ViewDeps struct {
 	Store *database.Store
 	Asks  *requests.Service
 	Live  *webserver.LiveHub
+	// Groups names a show's chosen TMDB episode order; nil leaves it unnamed.
+	Groups metadata.EpisodeGroupSource
 }
 
 // ViewHandlers builds views over ViewDeps.
@@ -222,6 +225,7 @@ func (h *ViewHandlers) View(ctx context.Context, t mediafiles.Title) (TitleView,
 		if v.Show, err = shows.InfoOf(ctx, h.Store.Read(), t); err != nil {
 			return v, err
 		}
+		shows.NameEpisodeGroup(ctx, h.Groups, t, v.Show)
 		v.Asks, err = titleAsks()
 		return TrimForViewer(ctx, v), err
 	}
