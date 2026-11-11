@@ -162,6 +162,7 @@
 	"downloads.dp.editionPh": "Baskı, örn. Theatrical",
 	"downloads.dp.editionSet": "Baskı ayarlandı · tekrar deneniyor",
 	"downloads.dp.editionUnknown": "Baskı bilinmiyor, bu yüzden dosya yerleştirilemedi.",
+	"downloads.dp.copyInPlace": "Bu dosya mevcut kopyanın yerini alamaz. Başka bir versiyona ait.",
 	"downloads.dp.hasCopy": "Kütüphanede zaten bir kopya var.",
 	"downloads.dp.lastRelease": "son sürüm adayı",
 	"downloads.dp.more": "Daha fazla",

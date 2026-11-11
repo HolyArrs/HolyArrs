@@ -162,6 +162,7 @@
 	"downloads.dp.editionPh": "Видання, напр. Theatrical",
 	"downloads.dp.editionSet": "Видання задано · пробуємо ще раз",
 	"downloads.dp.editionUnknown": "Видання невідоме, тому файл не вдалося розмістити.",
+	"downloads.dp.copyInPlace": "Цей файл не може замінити наявну копію. Він підходить для іншого Варіанта.",
 	"downloads.dp.hasCopy": "Копія вже є в бібліотеці.",
 	"downloads.dp.lastRelease": "його останній реліз",
 	"downloads.dp.more": "Ще",

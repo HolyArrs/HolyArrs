@@ -162,6 +162,7 @@
 	"downloads.dp.editionPh": "版(例: 劇場公開版)",
 	"downloads.dp.editionSet": "版を設定しました · 再試行中",
 	"downloads.dp.editionUnknown": "版が不明なため、ファイルを配置できませんでした。",
+	"downloads.dp.copyInPlace": "このファイルは既存のコピーと置き換えられません。別のバージョン用のファイルです。",
 	"downloads.dp.hasCopy": "コピーはすでにライブラリにあります。",
 	"downloads.dp.lastRelease": "最後のリリース",
 	"downloads.dp.more": "その他",

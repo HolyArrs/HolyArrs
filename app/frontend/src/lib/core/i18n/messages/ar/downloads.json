@@ -162,6 +162,7 @@
 	"downloads.dp.editionPh": "الإصدار، مثل Theatrical",
 	"downloads.dp.editionSet": "عُيّن الإصدار · تجري المحاولة من جديد",
 	"downloads.dp.editionUnknown": "الإصدار غير معروف، فتعذّر وضع الملف.",
+	"downloads.dp.copyInPlace": "لا يمكن لهذا الملف أن يحلّ محل النسخة الموجودة. مكانه في نسخة أخرى.",
 	"downloads.dp.hasCopy": "توجد نسخة في المكتبة بالفعل.",
 	"downloads.dp.lastRelease": "آخر إصدار له",
 	"downloads.dp.more": "المزيد",

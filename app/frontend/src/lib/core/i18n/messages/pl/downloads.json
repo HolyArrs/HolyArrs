@@ -162,6 +162,7 @@
 	"downloads.dp.editionPh": "Wydanie, np. Kinowe",
 	"downloads.dp.editionSet": "Ustawiono wydanie · próbuję ponownie",
 	"downloads.dp.editionUnknown": "Wydanie nieznane, więc nie dało się umieścić pliku.",
+	"downloads.dp.copyInPlace": "Ten plik nie może zastąpić kopii, która już tu jest. Pasuje do innej Odmiany.",
 	"downloads.dp.hasCopy": "Kopia jest już w Bibliotece.",
 	"downloads.dp.lastRelease": "jego ostatni release",
 	"downloads.dp.more": "Więcej",

@@ -45,3 +45,17 @@ func TestWhyNamesFilesTakenByAnotherApp(t *testing.T) {
 		t.Errorf("other placing error: %s", got)
 	}
 }
+
+// A file the importer would not put in place of the copy, or whose edition it could not settle, is a stuck import, not "ran out of Releases" (#274).
+func TestWhyCountsCopyRefusalsAsAStuckImport(t *testing.T) {
+	t.Parallel()
+	for _, r := range []string{
+		"the copy in place is protected; choose another Version for an upgrade",
+		"the new edition differs from the copy in place; choose another Version",
+		"edition is unknown; confirm the edition or choose an unconstrained Version",
+	} {
+		if got := why(r); got != "conflict" {
+			t.Errorf("%q: %s, want conflict", r, got)
+		}
+	}
+}

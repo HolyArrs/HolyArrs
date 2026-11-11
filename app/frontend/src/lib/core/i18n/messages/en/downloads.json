@@ -162,6 +162,7 @@
 	"downloads.dp.editionPh": "Edition, e.g. Theatrical",
 	"downloads.dp.editionSet": "Edition set · trying again",
 	"downloads.dp.editionUnknown": "Edition unknown, so the file couldn't be placed.",
+	"downloads.dp.copyInPlace": "This file can't replace the copy already here. It belongs in another Version.",
 	"downloads.dp.hasCopy": "A copy is already in the Library.",
 	"downloads.dp.lastRelease": "its last Release",
 	"downloads.dp.more": "More",

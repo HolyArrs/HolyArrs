@@ -162,6 +162,7 @@
 	"downloads.dp.editionPh": "एडिशन, जैसे Theatrical",
 	"downloads.dp.editionSet": "एडिशन सेट हुआ · फिर कोशिश हो रही है",
 	"downloads.dp.editionUnknown": "एडिशन पता नहीं, इसलिए फ़ाइल रखी नहीं जा सकी।",
+	"downloads.dp.copyInPlace": "यह फ़ाइल यहाँ पहले से मौजूद कॉपी की जगह नहीं ले सकती। यह किसी दूसरे वर्ज़न में जाती है।",
 	"downloads.dp.hasCopy": "एक कॉपी पहले से लाइब्रेरी में है।",
 	"downloads.dp.lastRelease": "इसकी आख़िरी रिलीज़",
 	"downloads.dp.more": "और",

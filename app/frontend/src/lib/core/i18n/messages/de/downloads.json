@@ -162,6 +162,7 @@
 	"downloads.dp.editionPh": "Edition, z. B. Kinofassung",
 	"downloads.dp.editionSet": "Edition gesetzt · neuer Versuch",
 	"downloads.dp.editionUnknown": "Edition unbekannt, deshalb konnte die Datei nicht abgelegt werden.",
+	"downloads.dp.copyInPlace": "Diese Datei kann die vorhandene Kopie nicht ersetzen. Sie gehört in eine andere Variante.",
 	"downloads.dp.hasCopy": "Eine Kopie ist schon in der Bibliothek.",
 	"downloads.dp.lastRelease": "sein letztes Release",
 	"downloads.dp.more": "Mehr",

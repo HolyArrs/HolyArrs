@@ -162,6 +162,7 @@
 	"downloads.dp.editionPh": "Версия фильма, например Theatrical",
 	"downloads.dp.editionSet": "Версия задана · пробуем снова",
 	"downloads.dp.editionUnknown": "Версия фильма неизвестна, поэтому файл не удалось разместить.",
+	"downloads.dp.copyInPlace": "Этот файл не может заменить уже имеющуюся копию. Он подходит для другого варианта.",
 	"downloads.dp.hasCopy": "Копия уже есть в Медиатеке.",
 	"downloads.dp.lastRelease": "его последний релиз",
 	"downloads.dp.more": "Ещё",

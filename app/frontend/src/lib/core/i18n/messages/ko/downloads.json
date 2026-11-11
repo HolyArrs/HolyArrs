@@ -162,6 +162,7 @@
 	"downloads.dp.editionPh": "에디션, 예: 극장판",
 	"downloads.dp.editionSet": "에디션 설정됨 · 다시 시도 중",
 	"downloads.dp.editionUnknown": "에디션을 알 수 없어 파일을 배치하지 못했습니다.",
+	"downloads.dp.copyInPlace": "이 파일은 이미 있는 사본을 대체할 수 없습니다. 다른 버전에 넣어야 합니다.",
 	"downloads.dp.hasCopy": "사본이 이미 라이브러리에 있습니다.",
 	"downloads.dp.lastRelease": "마지막 릴리스",
 	"downloads.dp.more": "더 보기",

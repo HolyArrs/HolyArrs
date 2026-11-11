@@ -162,6 +162,7 @@
 	"downloads.dp.editionPh": "Editie, bijv. Theatrical",
 	"downloads.dp.editionSet": "Editie ingesteld · opnieuw proberen",
 	"downloads.dp.editionUnknown": "Editie onbekend, dus het bestand kon niet worden geplaatst.",
+	"downloads.dp.copyInPlace": "Dit bestand kan de aanwezige kopie niet vervangen. Het hoort bij een andere variant.",
 	"downloads.dp.hasCopy": "Er staat al een kopie in de Bibliotheek.",
 	"downloads.dp.lastRelease": "de laatste release ervan",
 	"downloads.dp.more": "Meer",

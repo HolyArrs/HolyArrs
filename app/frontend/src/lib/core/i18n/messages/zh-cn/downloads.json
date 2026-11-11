@@ -162,6 +162,7 @@
 	"downloads.dp.editionPh": "剪辑版，例如院线版",
 	"downloads.dp.editionSet": "已设置剪辑版 · 正在重试",
 	"downloads.dp.editionUnknown": "剪辑版未知，无法放置文件。",
+	"downloads.dp.copyInPlace": "此文件不能替换已有的副本。它属于另一个版本。",
 	"downloads.dp.hasCopy": "媒体库中已有一份副本。",
 	"downloads.dp.lastRelease": "它的上一个资源",
 	"downloads.dp.more": "更多",

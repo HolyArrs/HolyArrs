@@ -162,6 +162,7 @@
 	"downloads.dp.editionPh": "Edizione, per es. Theatrical",
 	"downloads.dp.editionSet": "Edizione impostata · riprovo",
 	"downloads.dp.editionUnknown": "Edizione sconosciuta, quindi non ho potuto sistemare il file.",
+	"downloads.dp.copyInPlace": "Questo file non può sostituire la copia già presente. Va in un'altra Versione.",
 	"downloads.dp.hasCopy": "Una copia è già nella Libreria.",
 	"downloads.dp.lastRelease": "la sua ultima release",
 	"downloads.dp.more": "Altro",
