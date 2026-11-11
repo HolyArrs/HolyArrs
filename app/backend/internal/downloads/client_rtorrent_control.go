@@ -69,7 +69,7 @@ func (r *RTorrent) Status(ctx context.Context) (ClientStatus, error) {
 	}
 	st := ClientStatus{Speed: asInt(answers[0]), UpSpeed: asInt(answers[1]), SpeedLimit: max(0, asInt(answers[2])),
 		UpLimit: max(0, asInt(answers[3])), SessionDown: asInt(answers[4]), SessionUp: asInt(answers[5])}
-	rows, err := r.rows(ctx)
+	rows, err := r.rows(ctx, "main")
 	if err != nil {
 		return ClientStatus{}, err
 	}
@@ -87,7 +87,7 @@ func (r *RTorrent) Status(ctx context.Context) (ClientStatus, error) {
 }
 
 func (r *RTorrent) everyOwn(ctx context.Context, start bool) error {
-	rows, err := r.rows(ctx)
+	rows, err := r.rows(ctx, "main")
 	if err != nil {
 		return err
 	}

@@ -23,6 +23,7 @@ var optionalInterfaces = []reflect.Type{
 	reflect.TypeFor[TorrentInspector](),
 	reflect.TypeFor[Retrier](),
 	reflect.TypeFor[AllLister](),
+	reflect.TypeFor[ActiveLister](),
 	reflect.TypeFor[TorrentAdder](),
 	reflect.TypeFor[TorrentFolders](),
 	reflect.TypeFor[TorrentBulk](),
@@ -71,10 +72,12 @@ type roSab struct {
 	roUsenetQueue
 }
 
-// roRTorrent is rTorrent's shape: the engine plus the row controls.
+// roRTorrent is rTorrent's shape: the engine, the row controls and the
+// background read of what is still downloading.
 type roRTorrent struct {
 	*roCore
 	roController
+	roActiveLister
 }
 
 // roAria2 is aria2's shape: the engine plus the row controls.
@@ -94,6 +97,8 @@ type roTorrentInspector struct{ c *roCore }
 type roRetrier struct{ c *roCore }
 
 type roAllLister struct{ c *roCore }
+
+type roActiveLister struct{ c *roCore }
 
 type roTorrentAdder struct{ c *roCore }
 
@@ -192,6 +197,10 @@ func (r roAllLister) ListAll(ctx context.Context) ([]Job, error) {
 	return r.c.inner.(AllLister).ListAll(ctx)
 }
 
+func (r roActiveLister) ListActive(ctx context.Context, ids []string) ([]Job, error) {
+	return r.c.inner.(ActiveLister).ListActive(ctx, ids)
+}
+
 func (r roTorrentAdder) AddTorrents(ctx context.Context, b AddBatch) (AddOutcome, error) {
 	if r.c.allowAdd {
 		return r.c.inner.(TorrentAdder).AddTorrents(ctx, b)
@@ -287,7 +296,7 @@ func readOnlyWrap(inner Engine, allowAdd bool) Engine {
 	case shapeOf(&Sabnzbd{}):
 		return roSab{c, roController{c}, roRetrier{c}, roHistoryReader{c}, roQueueReader{c}, roUsenetInspector{c}, roUsenetQueue{c}}
 	case shapeOf(&RTorrent{}):
-		return roRTorrent{c, roController{c}}
+		return roRTorrent{c, roController{c}, roActiveLister{c}}
 	case shapeOf(&Aria2{}):
 		return roAria2{c, roController{c}}
 	}
