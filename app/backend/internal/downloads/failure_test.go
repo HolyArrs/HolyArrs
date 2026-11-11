@@ -256,6 +256,31 @@ func TestReadFinishedFolderAndFile(t *testing.T) {
 	}
 }
 
+// With no save path and no path pair the Downloader's own folder is shared
+// as is (SABnzbd's history gives no file list), so the finished folder is
+// read where the Downloader says it is. A whole disk is still never read.
+func TestReadFinishedWithNoRootSetUp(t *testing.T) {
+	dir := t.TempDir()
+	job := filepath.Join(dir, "complete", "Landman.S02E08.720p.BluRay.x264-GREASE")
+	if err := os.MkdirAll(job, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, n := range []string{"Landman.S02E08.720p.BluRay.x264-GREASE.mkv", "landman.s02e08.720p.bluray.x264-grease.sample.mkv", "www.scenenzb.org.txt"} {
+		_ = os.WriteFile(filepath.Join(job, n), make([]byte, 5), 0o644)
+	}
+	save, files := readFinished(Job{ContentPath: job, SavePath: filepath.Dir(job)}, nil, "")
+	if save != filepath.Dir(job) || len(files) != 3 {
+		t.Fatalf("no root set up: %s %+v", save, files)
+	}
+	root := string(filepath.Separator)
+	if v := filepath.VolumeName(dir); v != "" {
+		root = v + root
+	}
+	if _, files := readFinished(Job{ContentPath: root}, nil, ""); len(files) != 0 {
+		t.Fatalf("read a whole disk: %d files", len(files))
+	}
+}
+
 func TestDiscardAfterRejectedImport(t *testing.T) {
 	w, m := setup(t)
 	letChange(t, m)

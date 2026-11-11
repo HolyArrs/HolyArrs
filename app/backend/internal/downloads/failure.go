@@ -374,7 +374,7 @@ func (m *Manager) failed(ctx context.Context, dr domain.Downloader, old, next do
 	return true
 }
 
-// readFinished finds the final files of a finished job. It reads the disk through the path maps and never leaves the save root or the mapped roots, so a client cannot point HolyArrs at other files. If the path is not visible here, it falls back to the name and size the client gave.
+// readFinished finds the final files of a finished job. It reads the disk through the path maps and, once a save root or a path pair is set, never leaves them, so a client cannot point HolyArrs at other files. If the path is not visible here, it falls back to the name and size the client gave.
 func readFinished(j Job, pm []domain.PathMap, saveRoot string) (string, []File) {
 	content := j.ContentPath
 	if content == "" {
@@ -388,7 +388,9 @@ func readFinished(j Job, pm []domain.PathMap, saveRoot string) (string, []File) 
 	}
 	// Lstat so a symlink is not followed out of the roots.
 	fi, err := os.Lstat(local)
-	if !underAny(local, roots) {
+	if !underAny(local, roots) && (anyRoot(roots) || !filepath.IsAbs(local) || isDiskRoot(local)) {
+		// With no save path and no path pair the Downloader's folder is shared
+		// as is, so its own path is trusted; a whole disk never is.
 		err = fs.ErrPermission
 	}
 	switch {
@@ -446,6 +448,21 @@ func underAny(p string, roots []string) bool {
 		}
 	}
 	return false
+}
+
+// anyRoot reports whether any root is set.
+func anyRoot(roots []string) bool {
+	for _, r := range roots {
+		if strings.TrimSpace(r) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// isDiskRoot reports whether p is a whole disk, such as / or C:\.
+func isDiskRoot(p string) bool {
+	return filepath.Dir(p) == p
 }
 
 // mapLocal turns the client's path into ours.
