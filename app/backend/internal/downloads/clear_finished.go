@@ -162,23 +162,33 @@ func (m *Manager) clearDone(ctx context.Context, id int64) {
 
 // retryClears tries again every clear whose wait is over.
 func (m *Manager) retryClears(ctx context.Context) {
-	rows, err := m.Store.Read().QueryContext(ctx, "SELECT id FROM downloads WHERE clear_retry_at IS NOT NULL AND clear_retry_at <= ? ORDER BY clear_retry_at, id", database.FormatTime(m.now()))
+	rows, err := m.Store.Read().QueryContext(ctx, "SELECT id, state FROM downloads WHERE clear_retry_at IS NOT NULL AND clear_retry_at <= ? ORDER BY clear_retry_at, id", database.FormatTime(m.now()))
 	if err != nil {
 		return
 	}
-	var ids []int64
+	type due struct {
+		id    int64
+		state string
+	}
+	var list []due
 	for rows.Next() {
-		var id int64
-		if rows.Scan(&id) == nil {
-			ids = append(ids, id)
+		var d due
+		if rows.Scan(&d.id, &d.state) == nil {
+			list = append(list, d)
 		}
 	}
 	_ = rows.Close()
-	for _, id := range ids {
+	for _, d := range list {
 		if ctx.Err() != nil {
 			return
 		}
-		m.ClearFinished(ctx, id)
+		// A row that is downloading again belongs to a new grab: its old wait
+		// to clear ends and the new download is never touched.
+		if isActive(d.state) {
+			m.clearDone(ctx, d.id)
+			continue
+		}
+		m.ClearFinished(ctx, d.id)
 	}
 }
 

@@ -331,6 +331,10 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 				if err := database.Update(tx, "downloads", dl, by); err != nil {
 					return err
 				}
+				// A wait to clear the old download never carries over to the new one.
+				if _, err := tx.Exec("UPDATE downloads SET clear_retry_at = NULL, clear_tries = 0, clear_error = '' WHERE id = ?", old); err != nil {
+					return err
+				}
 			} else if _, err := database.Insert(tx, "downloads", dl, by); err != nil {
 				return err
 			}

@@ -180,3 +180,28 @@ func TestDownloadsViewShowsAWaitingClear(t *testing.T) {
 		t.Fatalf("after %+v", cw)
 	}
 }
+
+// A download row taken over by a new grab (same Downloader id) must never be
+// cleared by a retry left over from the old download.
+func TestClearRetryNeverRemovesANewDownloadOnAReusedRow(t *testing.T) {
+	w, m, id, spy, now := clearRetryRig(t)
+	ctx := context.Background()
+	spy.err = outbound.ErrSuppressed
+	m.ClearFinished(ctx, id)
+	if at, _ := clearWait(t, w, id); !at.Valid {
+		t.Fatal("not waiting to clear")
+	}
+	spy.err = nil
+	// A new grab reuses the row: it is downloading again.
+	if err := execSQL(w, `UPDATE downloads SET state = 'downloading'`); err != nil {
+		t.Fatal(err)
+	}
+	*now = now.Add(2 * time.Hour)
+	m.retryClears(ctx)
+	if len(spy.removed) != 0 {
+		t.Fatalf("removed the new download %v", spy.removed)
+	}
+	if at, _ := clearWait(t, w, id); at.Valid {
+		t.Fatal("old wait to clear kept on the reused row")
+	}
+}
