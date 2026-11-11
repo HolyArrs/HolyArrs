@@ -33,11 +33,12 @@ func longPath(p string) string {
 	if abs, err := filepath.Abs(p); err == nil {
 		p = abs
 	}
-	if len(p) < 248 || strings.HasPrefix(p, `\?\`) {
+	const prefix, unc = "\\\\?\\", "\\\\"
+	if len(p) < 248 || strings.HasPrefix(p, prefix) {
 		return p
 	}
-	if strings.HasPrefix(p, `\`) {
-		return `\?\UNC\` + p[2:]
+	if strings.HasPrefix(p, unc) {
+		return prefix + "UNC\\" + p[len(unc):]
 	}
-	return `\?\` + p
+	return prefix + p
 }

@@ -244,7 +244,9 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			}
 		}
 	}
+	proof := imp.Result
 	imp.Result = execute(plan, im.Ops, resumable)
+	keepProof(imp.Result, proof)
 	if heldEarly != "" {
 		imp.Result[sameIdx].HeldAside = heldEarly
 	}

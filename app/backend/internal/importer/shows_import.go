@@ -407,7 +407,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			return imp, err
 		}
 	}
+	proof := imp.Result
 	imp.Result = execute(plan, im.Ops, resumable)
+	keepProof(imp.Result, proof)
 	for i, to := range heldFirst {
 		imp.Result[i].HeldAside = to
 	}

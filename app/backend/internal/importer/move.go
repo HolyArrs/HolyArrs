@@ -104,3 +104,13 @@ func restoreMoves(prior *mediafiles.Import) {
 		}
 	}
 }
+
+// keepProof copies the recorded size and time of moved files onto fresh
+// results, so every later save of a placing import keeps them.
+func keepProof(results, recorded []mediafiles.PlaceResult) {
+	for i := range results {
+		if i < len(recorded) && results[i].SourceFile == recorded[i].SourceFile {
+			results[i].MoveSize, results[i].MoveMod = recorded[i].MoveSize, recorded[i].MoveMod
+		}
+	}
+}

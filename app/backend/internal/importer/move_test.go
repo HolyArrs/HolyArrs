@@ -238,3 +238,40 @@ func TestShowUsenetMoveResumesAfterCrash(t *testing.T) {
 		}
 	}
 }
+
+// A Usenet upgrade under a new file name that stops after the late hold still
+// has its move recorded, so the next attempt finishes it with one Library file.
+func TestUsenetUpgradeSurvivesCrashAfterLateHold(t *testing.T) {
+	w, _, oldID := upgradeWorld(t, "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS",
+		"Dune.Part.Two.2024.720p.HDTV.x264-OTHER")
+	ctx := context.Background()
+	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE downloaders SET adapter = 'sabnzbd', protocol = 'usenet'")
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	crashAt = func(s string) error {
+		if s == "held_late" {
+			return os.ErrDeadlineExceeded
+		}
+		return nil
+	}
+	im := &Importer{Store: w.s, MayMove: mayMove}
+	_, err := im.Import(ctx, w.dlID, false, domain.System)
+	crashAt = nil
+	if err == nil {
+		t.Fatal("no crash")
+	}
+	imp, err := im.Import(ctx, w.dlID, false, domain.System)
+	if err != nil || imp.State != "done" || imp.Result[0].PlacedBy != "move" {
+		t.Fatalf("restart %+v %v", imp, err)
+	}
+	var old mediafiles.File
+	_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
+	var present int
+	_ = w.s.Read().QueryRow("SELECT count(*) FROM files WHERE state = 'present'").Scan(&present)
+	if old.State != "replaced" || present != 1 {
+		t.Fatalf("old %s, present files %d", old.State, present)
+	}
+}
