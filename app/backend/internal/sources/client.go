@@ -467,8 +467,11 @@ type rssXML struct {
 }
 
 func textQuery(q Query) string {
-	words := strings.FieldsFunc(q.Title, func(r rune) bool {
-		return r != '\'' && !unicode.IsLetter(r) && !unicode.IsDigit(r)
+	// Apostrophes go without a space (Schitt's -> Schitts): most sites find
+	// nothing when the term keeps them (#271). Other punctuation splits words.
+	title := strings.NewReplacer("'", "", "’", "", "‘", "", "`", "").Replace(q.Title)
+	words := strings.FieldsFunc(title, func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
 	})
 	if q.Year > 0 {
 		words = append(words, strconv.Itoa(q.Year))
