@@ -24,6 +24,8 @@
 	"settings.pickRuleEdit.goodEnough": "충분한 품질",
 	"settings.pickRuleEdit.goodEnoughAt": "충분한 품질 기준",
 	"settings.pickRuleEdit.goodEnoughHint": "파일이 이 단계에 이르면 HolyArrs는 더 좋은 사본 찾기를 멈춥니다.",
+	"settings.pickRuleEdit.goodEnoughPoints": "충분한 품질 점수",
+	"settings.pickRuleEdit.goodEnoughPointsHint": "충분한 품질 단계의 파일은 이 점수도 있어야 합니다. 단계만으로 판단하려면 비워 두세요.",
 	"settings.pickRuleEdit.yourTraits": "내 특성",
 	"settings.pickRuleEdit.traits": "특성과 점수",
 	"settings.pickRuleEdit.traitsDesc": "같은 단계에서는 점수가 가장 높은 것이 선택됩니다",

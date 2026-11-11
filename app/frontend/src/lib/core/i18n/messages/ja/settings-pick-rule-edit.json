@@ -24,6 +24,8 @@
 "settings.pickRuleEdit.goodEnough": "十分な品質",
 "settings.pickRuleEdit.goodEnoughAt": "十分な品質とするステップ",
 "settings.pickRuleEdit.goodEnoughHint": "ファイルがこのステップに達すると、HolyArrs はより良いコピーを探すのをやめます。",
+"settings.pickRuleEdit.goodEnoughPoints": "十分な品質に必要なポイント",
+"settings.pickRuleEdit.goodEnoughPointsHint": "十分な品質のステップにあるファイルは、このポイントも必要です。ステップだけで判断するには空欄のままにします。",
 "settings.pickRuleEdit.yourTraits": "自分の特性",
 "settings.pickRuleEdit.traits": "特性とポイント",
 "settings.pickRuleEdit.traitsDesc": "同じステップでは、ポイントが最も多いものが採用されます",

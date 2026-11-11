@@ -24,6 +24,8 @@
 	"settings.pickRuleEdit.goodEnough": "جودة كافية",
 	"settings.pickRuleEdit.goodEnoughAt": "تكفي عند",
 	"settings.pickRuleEdit.goodEnoughHint": "يتوقف HolyArrs عن البحث عن نسخة أفضل عندما يبلغ الملف هذه الدرجة.",
+	"settings.pickRuleEdit.goodEnoughPoints": "نقاط الجودة الكافية",
+	"settings.pickRuleEdit.goodEnoughPointsHint": "يحتاج الملف عند درجة الجودة الكافية أيضًا إلى هذا العدد من النقاط. اتركه فارغًا ليُحكم بالدرجة وحدها.",
 	"settings.pickRuleEdit.yourTraits": "سماتك",
 	"settings.pickRuleEdit.traits": "السمات والنقاط",
 	"settings.pickRuleEdit.traitsDesc": "الأكثر نقاطًا يفوز ضمن الدرجة نفسها",

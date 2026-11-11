@@ -24,6 +24,8 @@
 	"settings.pickRuleEdit.goodEnough": "Bom o bastante",
 	"settings.pickRuleEdit.goodEnoughAt": "Bom o bastante em",
 	"settings.pickRuleEdit.goodEnoughHint": "O HolyArrs para de buscar uma cópia melhor quando um arquivo chega a esta etapa.",
+	"settings.pickRuleEdit.goodEnoughPoints": "Pontos para bom o bastante",
+	"settings.pickRuleEdit.goodEnoughPointsHint": "Um arquivo na etapa bom o bastante também precisa desses pontos. Deixe vazio para valer só a etapa.",
 	"settings.pickRuleEdit.yourTraits": "Suas características",
 	"settings.pickRuleEdit.traits": "Características e pontos",
 	"settings.pickRuleEdit.traitsDesc": "Quem tem mais pontos vence na mesma etapa",

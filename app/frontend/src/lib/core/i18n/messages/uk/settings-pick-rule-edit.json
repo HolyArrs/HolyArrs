@@ -24,6 +24,8 @@
 	"settings.pickRuleEdit.goodEnough": "Достатньо добре",
 	"settings.pickRuleEdit.goodEnoughAt": "Достатньо добре на",
 	"settings.pickRuleEdit.goodEnoughHint": "HolyArrs припиняє шукати кращу копію, щойно файл досягає цього кроку.",
+	"settings.pickRuleEdit.goodEnoughPoints": "Бали для «достатньо добре»",
+	"settings.pickRuleEdit.goodEnoughPointsHint": "Файлу на кроці «достатньо добре» потрібно ще й стільки балів. Залиште порожнім, щоб вирішував лише крок.",
 	"settings.pickRuleEdit.yourTraits": "Твої ознаки",
 	"settings.pickRuleEdit.traits": "Ознаки й бали",
 	"settings.pickRuleEdit.traitsDesc": "На одному кроці перемагає той, у кого більше балів",
