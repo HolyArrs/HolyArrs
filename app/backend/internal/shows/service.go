@@ -168,7 +168,12 @@ func applyShow(t *mediafiles.Title, sh metadata.Show) {
 	default:
 		t.Status = "running"
 	}
-	library.ApplyDetails(t, sh.Backdrop, sh.Logo, sh.Genres, sh.Rating, sh.People, sh.Runtime)
+	score, votes := t.Score, t.Votes
+	library.ApplyDetails(t, sh.Backdrop, sh.Logo, sh.Genres, sh.Rating, sh.People, sh.Runtime, sh.Score, sh.Votes)
+	// Only TMDB gives a score, so a show on another source keeps the one it had.
+	if sh.Source != "tmdb" && score != nil {
+		t.Score, t.Votes = score, votes
+	}
 }
 
 // absolutes gives each regular episode its absolute number: the source's,

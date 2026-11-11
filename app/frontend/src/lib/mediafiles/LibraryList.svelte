@@ -30,7 +30,7 @@
 	import { exceptionChip, firstOfLetter, letterOf, letters, missingEpisodes, posterStatus, type Kind } from './library.ts';
 	import { libraryState } from './library-state.ts';
 	import { partOff } from './parts.svelte.ts';
-	import { buildEntries, cell, grow, isProgressCol, posterExtra, posterFacts, requestedBy, rowCell, shrink, tone, type Entry, type View } from './library-view.ts';
+	import { buildEntries, cell, grow, isProgressCol, posterExtra, posterFacts, requestedBy, rowCell, scoreText, shrink, tone, type Entry, type View } from './library-view.ts';
 	import { needsAttention, barOf, type PosterDetail } from './poster.ts';
 	import { columnSort, progressOf, sortName, sortsFor, tableMinWidth, type Column, type FilterState, type LibKind, type SortDir, type SortKey } from './table.ts';
 	import { artName, slotKind } from './title-page.ts';
@@ -104,10 +104,10 @@
 	const actsW = $derived(96 + (touchActs ? 48 : 0));
 	const factCols = $derived(chosenCols.filter((c) => c.id !== 'status' && c.id !== 'kept'));
 	const rowCols = $derived.by(() => {
-		if (kind === 'all') return [];
 		let room = listWidth - 10 - 52 - 120 - 168 - actsW - 12 * 3 - (selecting ? 28 + 12 : 0);
 		const out: Column[] = [];
-		for (const c of factCols) {
+		// All mixes kinds, so its rows show only the score, and only while sorted by it.
+		for (const c of kind === 'all' ? factCols.filter((c) => c.id === 'score' && sort.key === 'score') : factCols) {
 			if (out.length === 3 || (out.length && room < colPx(c) + 12)) break;
 			out.push(c);
 			room -= colPx(c) + 12;
@@ -318,7 +318,7 @@
 					{@const p = progressOf(t)}
 					{@const ls = who === 'staff' ? libraryState(t) : null}
 					<li class="item" style:--poster-ratio={posterRatio(t.kind)} animate:flip={{ duration: moveMs, easing: easeOut }} data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
-						<LibraryPoster title={t.name} year={t.year} href={openLink(t)} image={posterSrc(t.artwork[0], gridMin)} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} kept={t.keep_up_to_date} {canManage} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} />
+						<LibraryPoster title={t.name} year={t.year} href={openLink(t)} image={posterSrc(t.artwork[0], gridMin)} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} score={sort.key === 'score' ? scoreText(t) : ''} kept={t.keep_up_to_date} {canManage} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} />
 						{#if selecting}
 							<button type="button" class="pick" aria-pressed={picked.has(t.id)} aria-label={tr('mediafiles.list.select', { name: t.name })} onclick={() => togglePick(t.id)} data-testid="library-pick"><span class="pick-dot" aria-hidden="true">{#if picked.has(t.id)}<Icon name="check" size={14} stroke={3} />{/if}</span></button>
 						{/if}
@@ -327,7 +327,7 @@
 				{/each}
 			</ul>
 		{:else}
-			<div class="rows {view}" class:v-rows={view === 'rows'} class:has-select={selecting} style="--acts-w: {actsW}px; --cols: {gridCols}; --table-min: {tableMin}px; --banner-w: {bannerW}px; --row-pad: {20 + touchActs}px" bind:this={listEl} bind:clientWidth={listWidth}>
+			<div class="rows {view}" class:v-rows={view === 'rows'} class:has-select={selecting} style="--acts-w: {actsW}px; --cols: {gridCols}; --table-min: {tableMin}px; --banner-w: {bannerW}px; --row-pad: {20 + touchActs + (view === 'table' && !phone && hiddenCols > 0 ? 16 : 0)}px" bind:this={listEl} bind:clientWidth={listWidth}>
 				{#if view === 'rows' && !phone}
 					<div class="lh" role="presentation" style="--facts: {factsTpl}">
 						{#if selecting}<span></span>{/if}
@@ -434,7 +434,7 @@
 											<span class="name">
 												<a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>
 												<span class="sub">
-													{#if kind === 'all'}{kindLabel(t.kind)}{#if t.year} · {t.year}{/if}{/if}
+													{#if kind === 'all'}{kindLabel(t.kind)}{#if t.year} · {t.year}{/if}{#if sort.key === 'score' && !phone && scoreText(t)} · ★ {scoreText(t)}{/if}{/if}
 													{#if ls && (kind === 'all' || phone || !shownCols.some((c) => c.id === 'status'))}<span class="ls {ls.tone}" data-testid="library-status" data-state={ls.key}><i class="dot" aria-hidden="true"></i>{ls.label}</span>{/if}
 												</span>
 												{#if phone}<span class="facts">{factCols.slice(0, 3).map((c) => (isProgressCol(c) ? `${p.have}/${p.total}` : cell(t, c, seriesOf(t)))).filter(Boolean).join(' · ')}</span>{/if}

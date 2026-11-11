@@ -84,7 +84,8 @@ func showFacts(ctx context.Context, db database.Lister, titleID int64, now time.
 // KindRefreshShows is the 12-hour show refresh, or every show by hand.
 const KindRefreshShows = "refresh_shows"
 
-// ShowRefreshPlan picks the shows a refresh-all run covers.
+// ShowRefreshPlan picks the shows a refresh-all run covers: up to
+// library.ScoreFillPerRun shows with no score yet, then what the rules say.
 func (s *Service) ShowRefreshPlan(ctx context.Context, byHand bool) (ids []int64, why map[int64]string, err error) {
 	db := s.Store.Read()
 	ts, err := database.Select[mediafiles.Title](ctx, db, "titles", "kind = 'show' AND state != 'removed' ORDER BY sort_name, id")
@@ -93,9 +94,14 @@ func (s *Service) ShowRefreshPlan(ctx context.Context, byHand bool) (ids []int64
 	}
 	why = map[int64]string{}
 	now := s.Clock()
+	filled := 0
 	for _, t := range ts {
 		if byHand {
 			ids, why[t.ID] = append(ids, t.ID), "by hand"
+			continue
+		}
+		if filled < library.ScoreFillPerRun && library.NeedsScore(t, now, showFresh) {
+			ids, why[t.ID], filled = append(ids, t.ID), "no score yet", filled+1
 			continue
 		}
 		f, err := showFacts(ctx, db, t.ID, now)
