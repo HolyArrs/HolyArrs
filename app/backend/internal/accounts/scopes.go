@@ -410,6 +410,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/settings/health":                                webserver.PermSettings,
 	"PUT /api/v1/settings/health":                                webserver.PermSettings,
 	"POST /api/v1/library-folders/{id}/check":                    webserver.PermManageLibrary,
+	"PUT /api/v1/library-folders/{id}/path":                      webserver.PermSettings, // a Settings change, like the folder's other edits
 
 	// Settings.
 	"POST /api/v1/library-folders":         webserver.PermSettings,

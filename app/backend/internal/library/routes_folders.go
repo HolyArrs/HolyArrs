@@ -26,6 +26,7 @@ func (h *FolderHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/library-folders", h.addFolder)
 	m.HandleFunc("PUT /api/v1/library-folders/{id}", h.editFolder)
 	m.HandleFunc("DELETE /api/v1/library-folders/{id}", h.deleteFolder)
+	m.HandleFunc("PUT /api/v1/library-folders/{id}/path", h.changeFolderPath)
 	m.HandleFunc("POST /api/v1/library-folders/{id}/check", h.checkFolder)
 	m.HandleFunc("GET /api/v1/never-add", h.listNeverAdd)
 	m.HandleFunc("POST /api/v1/never-add", h.addNeverAdd)
@@ -103,6 +104,25 @@ func (h *FolderHandlers) editFolder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	lf, err := UpdateFolder(r.Context(), h.Store, id, c, h.Actor(r))
+	if err != nil {
+		h.Fail(w, err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, folderView(lf))
+}
+
+func (h *FolderHandlers) changeFolderPath(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	var body struct {
+		Path string `json:"path"`
+	}
+	if !webserver.Decode(w, r, &body, `send {"path": "/data/media/movies"}`) {
+		return
+	}
+	lf, err := ChangeFolderPath(r.Context(), h.Store, id, body.Path, h.DownloadPaths(r), h.Actor(r))
 	if err != nil {
 		h.Fail(w, err)
 		return

@@ -254,6 +254,7 @@ var routeOwners = map[string]Owner{
 	"POST /api/v1/library-folders":            Core,
 	"PUT /api/v1/library-folders/{id}":        Core,
 	"DELETE /api/v1/library-folders/{id}":     Core,
+	"PUT /api/v1/library-folders/{id}/path":   Core,
 	"POST /api/v1/library-folders/{id}/check": Core,
 
 	// Sources, Downloaders and Downloads (linked apps are core).
