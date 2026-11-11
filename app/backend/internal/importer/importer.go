@@ -617,15 +617,22 @@ func candidates(root string, files []domain.SeenFile) ([]Candidate, []mediafiles
 }
 
 // sourcesGone reports whether another app took a finished download's files:
-// every file the plan would read is gone while the folder above the download
-// is still there. A folder HolyArrs cannot see at all (a wrong path map, a
-// share not mounted) is not taken for that.
-func sourcesGone(root string, plan []mediafiles.PlanStep) bool {
+// every file the plan would read is gone while the download's own folder is
+// still there. For a torrent that folder is the Downloader's save folder, so
+// a missing one is a wrong path map or an empty mount, never proof. A Usenet
+// job folder (ownFolder) belongs to the download alone; it may be gone too
+// when the folder above it is still there.
+func sourcesGone(root string, plan []mediafiles.PlanStep, ownFolder bool) bool {
 	if root == "" {
 		return false
 	}
-	if _, err := os.Stat(filepath.Dir(root)); err != nil {
-		return false
+	if _, err := os.Stat(root); err != nil {
+		if !ownFolder || !errors.Is(err, fs.ErrNotExist) {
+			return false
+		}
+		if _, err := os.Stat(filepath.Dir(root)); err != nil {
+			return false
+		}
 	}
 	seen := false
 	for _, st := range plan {

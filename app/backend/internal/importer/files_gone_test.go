@@ -71,6 +71,50 @@ func TestShowImportUnseenFolderStillNeedsADecision(t *testing.T) {
 	}
 }
 
+// An empty download mount (Docker made /downloads, the Downloader's save
+// folder below it is not there) is not taken for files another app removed:
+// the person still looks, and nothing is grabbed again.
+func TestShowImportEmptyDownloadMountStillNeedsADecision(t *testing.T) {
+	w := showSetup(t, []int{1, 2}, ep(1), ep(2))
+	if err := execSQL(w.s, "UPDATE downloads SET save_path = ? WHERE id = ?", filepath.Join(t.TempDir(), "tv"), w.dlID); err != nil {
+		t.Fatal(err)
+	}
+	gone := 0
+	im := &Importer{Store: w.s, OnFilesGone: func(context.Context, int64) { gone++ }}
+	if _, err := im.Import(context.Background(), w.dlID, false, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	for _, n := range []int{1, 2} {
+		if sl := w.slot(t, n); sl.State != mediafiles.SlotNeedsADecision || sl.ActiveDownloadID == nil || gone != 0 {
+			t.Fatalf("E%d slot %+v, rescans %d", n, sl, gone)
+		}
+	}
+}
+
+// A Usenet job folder is the download's own: when another app removed it
+// and the category folder above is still there, the movie is let go.
+func TestUsenetImportJobFolderTakenByAnotherApp(t *testing.T) {
+	w := usenetWorld(t)
+	ctx := context.Background()
+	if err := execSQL(w.s, "UPDATE slots SET active_download_id = ? WHERE id = ?", w.dlID, w.slotID); err != nil {
+		t.Fatal(err)
+	}
+	if err := execSQL(w.s, "UPDATE downloads SET save_path = ? WHERE id = ?", filepath.Join(w.dl, "Job"), w.dlID); err != nil {
+		t.Fatal(err)
+	}
+	imp, err := (&Importer{Store: w.s, MayMove: mayMove}).Import(ctx, w.dlID, false, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sl mediafiles.Slot
+	if err := database.Get(ctx, w.s.Read(), "slots", w.slotID, &sl); err != nil {
+		t.Fatal(err)
+	}
+	if imp.State != "failed" || sl.State != mediafiles.SlotWanted || sl.ActiveDownloadID != nil {
+		t.Fatalf("import %+v slot %+v", imp, sl)
+	}
+}
+
 func TestMovieImportFilesTakenByAnotherApp(t *testing.T) {
 	w := setup(t)
 	ctx := context.Background()

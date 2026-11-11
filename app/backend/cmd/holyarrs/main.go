@@ -387,7 +387,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// A finished Import: clear a Usenet download out of its Downloader.
 	im.OnImported = dm.ClearFinished
 	// Another app took a download's files before its import: a Library
-	// rescan links the copy that app placed.
+	// rescan links the copy that app placed in the Title's folder (one found
+	// movie video, or episode files by their numbers).
 	im.OnFilesGone = func(ctx context.Context, _ int64) {
 		if _, _, err := q.Enqueue(ctx, library.KindRescan, nil, nil, library.KindRescan, domain.System); err != nil {
 			log.Printf("queue %s: %v", library.KindRescan, err)
@@ -483,6 +484,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return m.AltNames(name)
 	}
 	lib.Artists = artistMD
+	lib.DownloadRunning = downloads.RunningTx
 	lib.Register(q)
 	// Once per install: grey stand-ins stored before they were refused are
 	// removed, so the picture run below fetches the real ones.

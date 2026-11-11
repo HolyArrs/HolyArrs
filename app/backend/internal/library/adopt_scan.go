@@ -432,8 +432,36 @@ func (s *Service) recordFound(ctx context.Context, lf mediafiles.LibraryFolder, 
 			n++
 			known[strings.ToLower(vid.Path)] = true
 		}
+		if err := s.linkFoundMovie(ctx, v, by); err != nil {
+			return n, err
+		}
 	}
 	return n, nil
+}
+
+// linkFoundMovie links the one found video in a movie Version's folder to
+// its slot when the slot has no file and no running download, as Radarr does
+// with a file another app placed: once the file is there the movie is no
+// longer wanted. A file that does not fit (edition, audio) stays a note.
+func (s *Service) linkFoundMovie(ctx context.Context, v mediafiles.Version, by domain.Actor) error {
+	notes, err := database.Select[mediafiles.File](ctx, s.Store.Read(), "files", "version_id = ? AND origin = 'found' AND state = 'present'", v.ID)
+	if err != nil {
+		return err
+	}
+	var only []mediafiles.File
+	for _, f := range notes {
+		if len(f.SlotIDs) == 0 && !f.Protected {
+			only = append(only, f)
+		}
+	}
+	if len(only) != 1 {
+		return nil
+	}
+	_, err = s.adoptMovieCopy(ctx, v.TitleID, v.ID, CopyAdoption{RelativePath: only[0].RelativePath}, true, by)
+	if errors.Is(err, ErrCopyChoice) {
+		return nil
+	}
+	return err
 }
 
 func (s *Service) handleRescan(ctx context.Context, r *jobs.Run) error {

@@ -120,7 +120,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if unpackWhy != "" {
 		plan = append(plan, unpackStep(root, unpackWhy))
 	}
-	gone := sourcesGone(root, plan)
+	gone := sourcesGone(root, plan, dr.Protocol == "usenet")
 	lowSpace, release := im.guard(plan, lf.Path, cands, rules)
 	defer release()
 	minutes := 0
