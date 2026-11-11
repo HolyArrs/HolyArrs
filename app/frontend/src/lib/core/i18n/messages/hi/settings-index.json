@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "अभी खोजें",
 	"settings.index.search.search-now.search-now.words": "खोज बेहतर कॉपी फ़ीड चलाएं",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "डाउनलोडर",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "डाउनलोड क्लाइंट qbittorrent sabnzbd transmission deluge nzbget टोरेंट क्लाइंट जोड़ें",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "डाउनलोड क्लाइंट qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget टोरेंट क्लाइंट जोड़ें",
 	"settings.index.downloaders.st-stall.stalled-after.label": "इतने समय बाद अटका माना जाए",
 	"settings.index.downloaders.st-stall.stalled-after.words": "अटका फंसा घंटे डाउनलोड",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "इतने समय बाद छोड़कर अगली रिलीज़ आज़माएं",

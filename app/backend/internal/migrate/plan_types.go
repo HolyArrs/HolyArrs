@@ -253,7 +253,7 @@ type SourcePlan struct {
 
 // DownloaderPlan is a Downloader to add.
 type DownloaderPlan struct {
-	Adapter    string `json:"kind"` // qbittorrent, transmission, deluge, sabnzbd, nzbget
+	Adapter    string `json:"kind"` // qbittorrent, transmission, deluge, rtorrent, sabnzbd, nzbget
 	URL        string `json:"url"`
 	Username   string `json:"username,omitempty"`
 	Category   string `json:"category,omitempty"`

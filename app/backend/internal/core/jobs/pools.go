@@ -9,10 +9,13 @@ const (
 	PoolCore  Pool = "core"
 	PoolIO    Pool = "io"
 	PoolHeavy Pool = "heavy"
+	// PoolMigrate runs Import from other apps, so it never queues behind
+	// imports and scans.
+	PoolMigrate Pool = "migrate"
 )
 
 // DefaultPools are the worker counts the app starts with.
-var DefaultPools = map[Pool]int{PoolCore: 1, PoolIO: 2, PoolHeavy: 1}
+var DefaultPools = map[Pool]int{PoolCore: 1, PoolIO: 2, PoolHeavy: 1, PoolMigrate: 1}
 
 // kindPools assigns every Job kind to a pool. A kind not listed runs in
 // the I/O pool; a test in cmd/holyarrs fails for a registered kind that
@@ -49,8 +52,8 @@ var kindPools = map[string]Pool{
 	"clean_holding":       PoolHeavy,
 	"scan_library_folder": PoolHeavy,
 	"adopt_library":       PoolHeavy,
-	"migrate_move":        PoolHeavy,
-	"migrate_undo":        PoolHeavy,
+	"migrate_move":        PoolMigrate,
+	"migrate_undo":        PoolMigrate,
 	"rescan_library":      PoolHeavy,
 	"subtitle_look":       PoolHeavy,
 	"recheck_pick_rules":  PoolHeavy,

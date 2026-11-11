@@ -8,6 +8,7 @@ const apps: Record<string, string> = {
 	transmission: 'Transmission',
 	nzbget: 'NZBGet',
 	deluge: 'Deluge',
+	rtorrent: 'rTorrent',
 	prowlarr: 'Prowlarr',
 	jackett: 'Jackett',
 	sonarr: 'Sonarr',

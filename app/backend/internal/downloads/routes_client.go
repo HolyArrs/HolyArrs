@@ -416,6 +416,8 @@ func adapterWord(adapter string) string {
 		return "Transmission"
 	case "deluge":
 		return "Deluge"
+	case "rtorrent":
+		return "rTorrent"
 	case "sabnzbd":
 		return "SABnzbd"
 	case "nzbget":

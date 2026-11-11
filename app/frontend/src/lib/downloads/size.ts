@@ -20,13 +20,26 @@ export function size(n: number | null | undefined): string {
 	return `${t} ${UNITS[i]}`;
 }
 
+/** Free disk space as the Downloaders show it: 1024-based steps, one decimal from GB up ("14.2 TB", "512.3 GB"). */
+export function freeSize(n: number | null | undefined): string {
+	if (!n || n < 0 || !Number.isFinite(n)) return '0 B';
+	let v = n;
+	let i = 0;
+	// Step on the shown (rounded) value, so 1023.96 GB reads 1.0 TB, not 1024.0 GB.
+	while (i < UNITS.length - 1 && (i < 3 ? Math.round(v) : Math.round(v * 10) / 10) >= 1024) {
+		v /= 1024;
+		i++;
+	}
+	return i < 3 ? `${Math.round(v)} ${UNITS[i]}` : `${(Math.round(v * 10) / 10).toFixed(1)} ${UNITS[i]}`;
+}
+
 /** A Downloader's protocol from what the row carries. */
 export function protocolOf(r: { protocol?: string; downloader_kind?: string }): 'torrent' | 'usenet' | '' {
 	const p = (r.protocol || '').toLowerCase();
 	if (p === 'torrent' || p === 'usenet') return p;
 	const k = (r.downloader_kind || '').toLowerCase();
 	if (k === 'sabnzbd' || k === 'nzbget') return 'usenet';
-	if (k === 'qbittorrent' || k === 'transmission' || k === 'deluge') return 'torrent';
+	if (k === 'qbittorrent' || k === 'transmission' || k === 'deluge' || k === 'rtorrent') return 'torrent';
 	return '';
 }
 

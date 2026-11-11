@@ -839,7 +839,7 @@
 	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists": "HolyArrs Trakt सूचियां और वॉचलिस्ट पढ़ता है; देखी हुई या कलेक्शन सूची Radarr में ही रहती है",
 	"server.migrate.holyarrs-sets-one-proxy-address-per": "HolyArrs हर सोर्स के लिए एक प्रॉक्सी पता सेट करता है; इसे उन सोर्स पर सेट करें जो इसे इस्तेमाल करते थे",
 	"server.migrate.holyarrs-stopped-during-this-import-before": "HolyArrs इस इंपोर्ट के बीच में, पूरा होने से पहले रुक गया। जो बना उस पर निशान है: पूरा करने के लिए फिर इंपोर्ट करें (कुछ दो बार नहीं जुड़ेगा), या इसे वापस लें।",
-	"server.migrate.holyarrs-talks-to-qbittorrent-transmission-deluge": "HolyArrs सिर्फ़ qBittorrent, Transmission, Deluge, SABnzbd और NZBGet से बात करता है",
+	"server.migrate.holyarrs-talks-to-qbittorrent-transmission-deluge": "HolyArrs सिर्फ़ qBittorrent, Transmission, Deluge, rTorrent, SABnzbd और NZBGet से बात करता है",
 	"server.migrate.holyarrs-uses-one-category-of-its": "HolyArrs हर डाउनलोडर में अपनी एक कैटेगरी इस्तेमाल करता है (holyarrs)",
 	"server.migrate.holyarrs-writes-no-metadata-files-for": "HolyArrs मीडिया प्लेयर के लिए मेटाडेटा फ़ाइलें नहीं लिखता",
 	"server.migrate.import-row-was-replaced": "इंपोर्ट की पंक्ति बदल दी गई",

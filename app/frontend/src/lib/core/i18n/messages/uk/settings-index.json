@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "Шукати зараз",
 	"settings.index.search.search-now.search-now.words": "пошук краща копія стрічки запустити",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "Завантажувачі",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "клієнт завантаження qbittorrent sabnzbd transmission deluge nzbget торент-клієнт додати",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "клієнт завантаження qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget торент-клієнт додати",
 	"settings.index.downloaders.st-stall.stalled-after.label": "Зависло після",
 	"settings.index.downloaders.st-stall.stalled-after.words": "зависло застрягло години завантаження",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "Здатися й пробувати наступний реліз через",

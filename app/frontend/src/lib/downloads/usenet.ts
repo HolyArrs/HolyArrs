@@ -18,12 +18,12 @@ export function retryable(r: RetryBits & { downloader_kind?: string }): boolean 
 	return (controllable(r.downloader_kind) || r.downloader_kind === 'nzbget') && !!r.client_item && !!r.outside && !!r.hash && !!r.downloader_id && r.protocol === 'usenet' && r.phase === 'failed';
 }
 
-/** Whether Pause and Resume mean anything: a Usenet job in the finished list cannot be paused. NZBGet takes pause and resume but not the other row controls. */
+/** Whether Pause and Resume mean anything: a Usenet job in the finished list cannot be paused. NZBGet and rTorrent take pause and resume but not the other row controls. */
 export function pausable(r: { protocol?: string; phase?: string; downloader_kind?: string }): boolean {
-	return (controllable(r.downloader_kind) || r.downloader_kind === 'nzbget') && !(r.protocol === 'usenet' && (r.phase === 'done' || r.phase === 'failed'));
+	return (controllable(r.downloader_kind) || r.downloader_kind === 'nzbget' || r.downloader_kind === 'rtorrent') && !(r.protocol === 'usenet' && (r.phase === 'done' || r.phase === 'failed'));
 }
 
-/** Whether the Downloader kind takes pause, resume, retry and the other row controls; Transmission, Deluge and NZBGet do not yet. An unknown kind is allowed and the server answers. */
+/** Whether the Downloader kind takes pause, resume, retry and the other row controls; Transmission, Deluge, rTorrent and NZBGet do not yet. An unknown kind is allowed and the server answers. */
 export function controllable(kind?: string): boolean {
 	return !kind || kind === 'qbittorrent' || kind === 'sabnzbd';
 }

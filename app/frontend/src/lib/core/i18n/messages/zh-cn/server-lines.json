@@ -839,7 +839,7 @@
 	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists": "HolyArrs 读取 Trakt 列表和待看清单；已观看或收藏的列表仍留在 Radarr",
 	"server.migrate.holyarrs-sets-one-proxy-address-per": "HolyArrs 每个来源只设一个代理地址；请在用过它的来源上设置",
 	"server.migrate.holyarrs-stopped-during-this-import-before": "HolyArrs 在这次导入完成之前停止了。它已创建的内容带有标记：再导入一次即可完成（不会重复添加），也可以撤销。",
-	"server.migrate.holyarrs-talks-to-qbittorrent-transmission-deluge": "HolyArrs 只支持 qBittorrent、Transmission、Deluge、SABnzbd 和 NZBGet",
+	"server.migrate.holyarrs-talks-to-qbittorrent-transmission-deluge": "HolyArrs 只支持 qBittorrent、Transmission、Deluge、rTorrent、SABnzbd 和 NZBGet",
 	"server.migrate.holyarrs-uses-one-category-of-its": "HolyArrs 为每个下载器使用一个自己的分类（holyarrs）",
 	"server.migrate.holyarrs-writes-no-metadata-files-for": "HolyArrs 不会为媒体播放器写元数据文件",
 	"server.migrate.import-row-was-replaced": "导入的这一行已被替换",

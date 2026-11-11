@@ -839,7 +839,7 @@
 	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists": "HolyArrs Trakt listelerini ve izleme listelerini okur; izlenenler ya da koleksiyon listesi Radarr'da kalır",
 	"server.migrate.holyarrs-sets-one-proxy-address-per": "HolyArrs her Kaynak için tek bir proxy adresi ayarlar; bunu onu kullanan Kaynaklarda ayarla",
 	"server.migrate.holyarrs-stopped-during-this-import-before": "HolyArrs bu içe aktarma sırasında, bitmeden durdu. Oluşturduğu her şey işaretli: bitirmek için yeniden içe aktar (hiçbir şey iki kez eklenmez) ya da geri al.",
-	"server.migrate.holyarrs-talks-to-qbittorrent-transmission-deluge": "HolyArrs yalnızca qBittorrent, Transmission, Deluge, SABnzbd ve NZBGet ile konuşur",
+	"server.migrate.holyarrs-talks-to-qbittorrent-transmission-deluge": "HolyArrs yalnızca qBittorrent, Transmission, Deluge, rTorrent, SABnzbd ve NZBGet ile konuşur",
 	"server.migrate.holyarrs-uses-one-category-of-its": "HolyArrs her İndirici için kendine ait tek bir kategori kullanır (holyarrs)",
 	"server.migrate.holyarrs-writes-no-metadata-files-for": "HolyArrs medya oynatıcılar için meta veri dosyası yazmaz",
 	"server.migrate.import-row-was-replaced": "içe aktarma satırı değiştirildi",

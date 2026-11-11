@@ -12,14 +12,14 @@
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { type Decision, type DownloadRow } from '#lib/core/types.ts';
 	type ClientHealth = { id: number; name: string; health: 'ok' | 'slow' | 'offline' | 'waiting' | 'checking' | 'degraded' | (string & {}); stale?: boolean; seen_at?: string };
-	type ViewAnswer = { downloads: DownloadRow[]; totals?: { speed: number; up_speed: number }; clients?: ClientHealth[]; outside_total?: number; next_cursor?: string; boot?: string; revs?: Record<string, number> };
+	type ViewAnswer = { downloads: DownloadRow[]; totals?: { speed: number; up_speed: number }; clients?: ClientHealth[]; outside_total?: number; outside_rest?: Rest; next_cursor?: string; boot?: string; revs?: Record<string, number> };
 	import { session } from '#lib/core/session.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import type { TitleView } from '#lib/core/types.ts';
-	import type { ImportRecord, SteerMode } from '#lib/downloads/index.ts';
+	import type { ImportRecord, Rest, SteerMode } from '#lib/downloads/index.ts';
 	
 	// Someone who may not manage the Library only watches the downloads for what they asked for.
 	const watch = $derived(!session.can('manage_library'));
@@ -40,7 +40,8 @@
 	// Outside torrents come 200 at a time; Show more asks for the next 200 too.
 	let outsideLimit = $state(200);
 	let moreOutside = $state(false);
-	let outsideTotal = $state(0);
+	// Torrents HolyArrs did not add that this page has not loaded, per Downloader and stage: the tabs count them too.
+	let outsideRest = $state<Rest>({});
 	// The most torrents the server sends that it did not add.
 	const outsideMax = 2000;
 	const clientNotes = $derived(
@@ -178,6 +179,11 @@
 		}
 	}
 
+	function showMore() {
+		outsideLimit = Math.min(outsideLimit + 200, outsideMax);
+		void load();
+	}
+
 	// Reads can overlap (a timed read, then a Remove's own read): only the newest one is applied, so an older answer never brings a removed row back.
 	let loadSeq = 0;
 	async function load() {
@@ -192,7 +198,7 @@
 			clientHealth = d.clients ?? [];
 			upTotal = d.totals?.up_speed;
 			moreOutside = !!d.next_cursor;
-			outsideTotal = d.outside_total ?? 0;
+			outsideRest = d.outside_rest ?? {};
 			const was = sync;
 			sync = fromAnswer(d);
 			dlPush.on = sync !== null;
@@ -222,6 +228,8 @@
 				sync = out.sync;
 				// That client has more torrents than this page holds: offer them.
 				if (d.next_cursor) moreOutside = true;
+				// Only that client's left-out torrents changed.
+				if (d.outside_rest) outsideRest = { ...outsideRest, [String(id)]: d.outside_rest[String(id)] ?? {} };
 			})
 			.catch(() => soon())
 			.finally(() => rereading.delete(id));
@@ -555,9 +563,7 @@
 	{#if error}<div class="pad"><LoadError hasData message={t('downloads.page.couldNotLoad')} onretry={load} /></div>{/if}
 	{#if notes.length}<ul class="notes" role="status" data-testid="dl-notes">{#each notes as n (n)}<li>{n}</li>{/each}</ul>{/if}
 	{#if !watch}<div class="matchpad"><ConfirmMatch refresh={reads} onchange={() => void load()} /></div>{/if}
-	<DlSections changeOutside={session.can('settings')} rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={(p) => batch(() => all(p))} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={(l, a) => batch(() => bulk(l, a))} onsteer={steer} onremovemany={askRemoveMany} onretry={(l) => batch(() => retryMany(l))} {batchBusy} {watch} {upTotal} {notes} />
-	{#if moreOutside && outsideLimit < outsideMax}<p class="more"><Button size="sm" variant="plain" onclick={() => { outsideLimit = Math.min(outsideLimit + 200, outsideMax); void load(); }} data-testid="dl-outside-more">{t('downloads.page.showMore')}</Button></p>
-	{:else if moreOutside}<p class="more small muted" data-testid="dl-outside-capped">{t('downloads.page.capped', { max: outsideMax.toLocaleString(), total: outsideTotal.toLocaleString() })}</p>{/if}
+	<DlSections changeOutside={session.can('settings')} rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={(p) => batch(() => all(p))} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={(l, a) => batch(() => bulk(l, a))} onsteer={steer} onremovemany={askRemoveMany} onretry={(l) => batch(() => retryMany(l))} {batchBusy} {watch} {upTotal} {notes} outside={{ rest: outsideRest, canMore: moreOutside && outsideLimit < outsideMax, capMax: outsideMax, onmore: showMore }} />
 {/if}
 </PageLoader>
 
@@ -631,9 +637,6 @@
 	.notes { list-style: none; margin: 0; padding: var(--s-2) var(--gutter) 0; display: grid; gap: 2px; color: var(--text-muted); font: var(--t-footnote); }
 	/* On desktop the notes live in the status popover (DlSections), behind a dot; the bare list is for phones. */
 	@media (min-width: 641px) { .notes { display: none; } }
-	.more { display: flex; justify-content: center; padding: var(--s-4) var(--gutter); }
-	/* Phones: the page fits the screen, so keep Show more torrents above the tab bar. */
-	@media (max-width: 640px) { .more { padding-bottom: calc(var(--tabbar, 60px) + env(safe-area-inset-bottom, 0px) + var(--s-4)); } }
 	.matchpad:empty { display: none; }
 	.aside-link { text-align: center; margin-top: -24px; }
 	.aside-link a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }

@@ -1,4 +1,4 @@
-// The Confirm match list: torrents in a Downloader that HolyArrs did not send and could not match to a title for sure. Pure helpers.
+// The Confirm match list: downloads in a Downloader that HolyArrs did not send and could not match to a title for sure. Pure helpers.
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export interface MatchCandidate {

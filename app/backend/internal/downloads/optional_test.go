@@ -132,7 +132,7 @@ func TestOptionalGrabUsesSourcePolicyAndStableOperation(t *testing.T) {
 
 func TestOptionalFactoryUsesGuardedClient(t *testing.T) {
 	m := &Manager{}
-	for _, kind := range []string{"transmission", "nzbget", "deluge"} {
+	for _, kind := range []string{"transmission", "nzbget", "deluge", "rtorrent"} {
 		e, err := m.EngineFor(context.Background(), domain.Downloader{Adapter: kind, URL: "http://127.0.0.1:1", Category: "holyarrs"})
 		if err != nil {
 			t.Fatal(err)
@@ -144,7 +144,7 @@ func TestOptionalFactoryUsesGuardedClient(t *testing.T) {
 }
 
 func TestOptionalDownloaderKinds(t *testing.T) {
-	for _, c := range []struct{ kind, protocol string }{{"transmission", "torrent"}, {"nzbget", "usenet"}, {"deluge", "torrent"}} {
+	for _, c := range []struct{ kind, protocol string }{{"transmission", "torrent"}, {"nzbget", "usenet"}, {"deluge", "torrent"}, {"rtorrent", "torrent"}} {
 		t.Run(c.kind, func(t *testing.T) {
 			var d domain.Downloader
 			if err := fill(Input{Name: "Optional", Adapter: c.kind, URL: "http://downloader:9091"}, &d, true); err != nil {

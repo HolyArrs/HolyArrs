@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.18: a new Minimal look**, with small posters and no big photos or autoplay. Plus 8 fixes, including anime that TMDB splits into two parts. [See what's new](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.19: rTorrent and ruTorrent as a Downloader**, seedboxes too. Finished Usenet downloads now move into your Library instead of being copied. [See what's new](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
+> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
 
 > Every poster, trailer and score in your HolyArrs comes from a server I run and pay for myself, so it stays free for everyone. If HolyArrs made movie night a little better, a sponsor keeps the lights on for all of us 💛
 >
@@ -152,7 +152,7 @@ Someone asks for a title. HolyArrs searches your Sources, picks the best release
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Downloaders: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Media servers: Plex, Jellyfin, Emby." /></picture>
 
-- **Downloaders:** qBittorrent, Transmission, Deluge, SABnzbd, NZBGet
+- **Downloaders:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
 - **Media servers:** Plex, Jellyfin, Emby
 - **Sources:** any Torznab or Newznab indexer, or Prowlarr or Jackett
 - **Moves your setup from:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -222,7 +222,7 @@ Images live on Docker Hub as [`holyarrs/holyarrs`](https://hub.docker.com/r/holy
 | Tag | Use it for |
 | :----: | --- |
 | `latest` | The newest release. |
-| `1.0.18` | One exact version. It never moves. |
+| `1.0.19` | One exact version. It never moves. |
 
 ## Usage
 

@@ -471,9 +471,11 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 		outside = keep
 	}
 	total := viewTotals(rows, outside)
-	page, next := pageOutside(outside, r.URL.Query().Get("cursor"), outsideLimit(r))
+	cursor := r.URL.Query().Get("cursor")
+	page, next := pageOutside(outside, cursor, outsideLimit(r))
 	rows = append(rows, page...)
-	out := map[string]any{"downloads": rows, "totals": total, "clients": health, "outside_total": len(outside), "next_cursor": next}
+	out := map[string]any{"downloads": rows, "totals": total, "clients": health, "outside_total": len(outside), "next_cursor": next,
+		"outside_rest": outsideRest(outside, cursor, len(page))}
 	if a.syncOn() {
 		// Someone is watching: the reader reads faster (no write, no call).
 		a.DLSync.Watched()
@@ -483,6 +485,76 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	webserver.WriteJSON(w, http.StatusOK, out)
+}
+
+// RestOf is the outside rows of one Downloader a view answer left out:
+// its protocol (so a Torrent or Usenet filter counts only its own) and how
+// many there are per stage.
+type RestOf struct {
+	Protocol string         `json:"protocol"`
+	Stages   map[string]int `json:"stages"`
+}
+
+// outsideRest counts, per Downloader id and stage, the outside rows this
+// answer leaves out (those before the cursor and after its page), so the
+// tabs can count every torrent while the page counts its own rows live.
+func outsideRest(outside []DownloadRow, cursor string, sent int) map[string]RestOf {
+	from, err := strconv.Atoi(cursor)
+	if err != nil || from < 0 {
+		from = 0
+	}
+	rest := map[string]RestOf{}
+	for i, row := range outside {
+		if i >= from && i < from+sent {
+			continue
+		}
+		k := strconv.FormatInt(row.DownloaderID, 10)
+		e, ok := rest[k]
+		if !ok {
+			e = RestOf{Protocol: row.Protocol, Stages: map[string]int{}}
+		}
+		e.Stages[stageOf(row)]++
+		rest[k] = e
+	}
+	return rest
+}
+
+// stageOf places a row on the stage the Downloads tabs count it under. It
+// must match stageOf in frontend/src/lib/downloads/status-tabs.ts.
+func stageOf(r DownloadRow) string {
+	if r.ClientHint == "checking" || r.ClientHint == "moving" {
+		return "checking"
+	}
+	switch r.Phase {
+	case "waiting":
+		return "queued"
+	case "paused":
+		return "paused"
+	case "downloading":
+		if r.Progress >= 1 {
+			return "importing"
+		}
+		return "downloading"
+	case "stalled":
+		return "stalled"
+	case "waiting_to_import", "importing":
+		return "importing"
+	case "needs_a_decision":
+		return "decide"
+	case "failed", "vanished":
+		if r.Replaced {
+			return "done"
+		}
+		return "failed"
+	case "import_refused":
+		return "failed"
+	case "done":
+		if r.State == "seeding" {
+			return "seeding"
+		}
+		return "done"
+	}
+	return "done"
 }
 
 // viewTotals adds up the speeds of HolyArrs' rows and every client row.

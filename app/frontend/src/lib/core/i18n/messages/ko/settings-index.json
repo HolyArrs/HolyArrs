@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "지금 검색",
 	"settings.index.search.search-now.search-now.words": "검색 더 좋은 사본 피드 실행 search better copy feeds run",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "다운로더",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "다운로드 클라이언트 qbittorrent sabnzbd transmission deluge nzbget 토렌트 클라이언트 추가 download client qbittorrent sabnzbd transmission deluge nzbget torrent client add",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "다운로드 클라이언트 qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget 토렌트 클라이언트 추가 download client qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget torrent client add",
 	"settings.index.downloaders.st-stall.stalled-after.label": "정체로 판단하는 시간",
 	"settings.index.downloaders.st-stall.stalled-after.words": "정체 멈춤 시간 다운로드 stalled stuck hours download",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "포기하고 다음 릴리스를 시도하는 시간",

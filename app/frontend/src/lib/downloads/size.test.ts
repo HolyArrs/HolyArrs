@@ -1,4 +1,4 @@
-import { protocolOf, size } from './size.ts';
+import { protocolOf, size, freeSize } from './size.ts';
 import { describe, expect, it } from 'vitest';
 
 describe('size', () => {
@@ -17,6 +17,7 @@ describe('size', () => {
 	it('names the protocol', () => {
 		expect(protocolOf({ protocol: 'usenet' })).toBe('usenet');
 		expect(protocolOf({ downloader_kind: 'qbittorrent' })).toBe('torrent');
+		expect(protocolOf({ downloader_kind: 'rtorrent' })).toBe('torrent');
 		expect(protocolOf({})).toBe('');
 	});
 });
@@ -30,5 +31,21 @@ describe('categoryWords', () => {
 		expect(categoryWords('radarr')).toBe('Movie');
 		expect(categoryWords('linux_isos')).toBe('Linux isos');
 		expect(categoryWords('')).toBe('');
+	});
+});
+
+describe('freeSize', () => {
+	it('shows disk space the way the Downloaders do: 1024 steps, one decimal', () => {
+		// qBittorrent's 14.152 TiB, SABnzbd's "14.2 T"
+		expect(freeSize(14.152 * 1024 ** 4)).toBe('14.2 TB');
+		expect(freeSize(10 * 1024 ** 4)).toBe('10.0 TB');
+		expect(freeSize(512.34 * 1024 ** 3)).toBe('512.3 GB');
+		expect(freeSize(700 * 1024 ** 2)).toBe('700 MB');
+		expect(freeSize(0)).toBe('0 B');
+		expect(freeSize(1023.96 * 1024 ** 3)).toBe('1.0 TB');
+		expect(freeSize(1023.6 * 1024 ** 2)).toBe('1.0 GB');
+	});
+	it('leaves download sizes as they are', () => {
+		expect(size(14.152 * 1024 ** 4)).toBe('16 TB');
 	});
 });

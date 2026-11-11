@@ -203,7 +203,7 @@ func (q *Queue) Start(ctx context.Context) error {
 		}
 		return nil
 	}
-	for _, p := range []Pool{PoolCore, PoolIO, PoolHeavy} {
+	for _, p := range []Pool{PoolCore, PoolIO, PoolHeavy, PoolMigrate} {
 		for range q.opt.Pools[p] {
 			q.wg.Add(1)
 			go q.work(ctx, p)

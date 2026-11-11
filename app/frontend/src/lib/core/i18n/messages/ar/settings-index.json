@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "ابحث الآن",
 	"settings.index.search.search-now.search-now.words": "بحث نسخة أفضل خلاصات تشغيل",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "برامج التنزيل",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "عميل تنزيل qbittorrent sabnzbd transmission deluge nzbget تورنت إضافة",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "عميل تنزيل qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget تورنت إضافة",
 	"settings.index.downloaders.st-stall.stalled-after.label": "يتعثر بعد",
 	"settings.index.downloaders.st-stall.stalled-after.words": "متعثر عالق ساعات تنزيل",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "تخلَّ وجرّب الإصدار التالي بعد",

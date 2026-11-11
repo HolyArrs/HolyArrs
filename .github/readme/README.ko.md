@@ -21,9 +21,9 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.18: 새로운 Minimal 보기.** 작은 포스터에 큰 사진과 자동 재생이 없어요. 그 밖에 TMDB에서 두 부분으로 나뉜 애니메이션 등 8가지 수정. [새 소식](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.0.19: 다운로더로 rTorrent와 ruTorrent 지원.** 시드박스도 돼요. 다 받은 Usenet 다운로드는 이제 복사하지 않고 라이브러리로 옮겨요. [새 소식](https://holyarrs.com/whats-new/)
 >
-> <img src="https://github.com/user-attachments/assets/f7e6987d-33eb-4fec-a8fe-ce2c2e264cdf" alt="HolyArrs 1.0.18" width="100%">
+> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
 
 > HolyArrs의 모든 포스터, 예고편, 평점은 제가 직접 운영하고 비용을 내는 서버에서 와요. 그래서 모두에게 무료로 유지돼요. HolyArrs 덕분에 영화 보는 밤이 조금 더 즐거워졌다면, 후원으로 우리 모두의 불을 계속 밝혀 주세요 💛
 >
@@ -152,7 +152,7 @@ docker compose up -d
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="다운로더: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. 미디어 서버: Plex, Jellyfin, Emby." /></picture>
 
-- **다운로더:** qBittorrent, Transmission, Deluge, SABnzbd, NZBGet
+- **다운로더:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
 - **미디어 서버:** Plex, Jellyfin, Emby
 - **Sources:** Torznab이나 Newznab 인덱서, 또는 Prowlarr나 Jackett
 - **설정을 옮겨 올 수 있는 앱:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -222,7 +222,7 @@ NAS를 쓰세요? [Unraid, Synology 및 기타 NAS](https://docs.HolyArrs.com/ru
 | 태그 | 용도 |
 | :----: | --- |
 | `latest` | 최신 릴리스. |
-| `1.0.18` | 정확히 한 버전이에요. 절대 움직이지 않아요. |
+| `1.0.19` | 정확히 한 버전이에요. 절대 움직이지 않아요. |
 
 ## 사용법
 
