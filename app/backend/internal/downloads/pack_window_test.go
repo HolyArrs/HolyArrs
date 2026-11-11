@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"slices"
 	"strings"
 	"testing"
@@ -182,6 +184,36 @@ func TestGrabPackLeavesAnotherAppsTorrentAlone(t *testing.T) {
 		if got := slotStates(t, w, slots); !slices.Equal(got, []string{"downloading", "downloading", "wanted", "wanted"}) {
 			t.Fatalf("prioFails %v: slot states %v", prioFails, got)
 		}
+	}
+}
+
+// The same with a Release that has no info hash (a private site's .torrent
+// link): the hash comes from the file, and another app's torrent of that hash
+// is still followed whole and never changed or removed.
+func TestGrabPackHashFromFileLeavesAnotherAppsTorrentAlone(t *testing.T) {
+	tor := []byte("d4:infod6:lengthi3e4:name5:pack.12:piece lengthi16384e6:pieces20:aaaaaaaaaaaaaaaaaaaaee")
+	h, err := torrentFileHash(tor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, m, _ := packWindowWorld(t, false)
+	src := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) { _, _ = rw.Write(tor) }))
+	t.Cleanup(src.Close)
+	w.exec(t, "UPDATE releases SET info_hash = NULL, link_ref = ?", src.URL+"/dl/site/?path=x")
+	w.exec(t, "UPDATE sources SET allow_local_network = 1, url = ?", src.URL+"/api")
+	w.fake.prioFails = true
+	w.fake.files[h] = packFiles()
+	w.fake.set(h, map[string]any{"name": "Lab.Show.S01.1080p", "category": "tv-sonarr", "state": "downloading", "progress": 0.4,
+		"save_path": "/data/downloads/sonarr", "size": 4010})
+	id, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(w.fake.steps) != 0 || len(w.fake.deleted) != 0 {
+		t.Fatalf("another app's torrent was changed: steps %v deleted %v", w.fake.steps, w.fake.deleted)
+	}
+	if d := w.download(t, id); d.PackFiles != nil || d.State == "failed" || d.ExternalID != h {
+		t.Fatalf("download %s %q pack %+v", d.State, d.ExternalID, d.PackFiles)
 	}
 }
 
