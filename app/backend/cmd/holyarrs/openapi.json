@@ -2080,7 +2080,8 @@
               "sabnzbd",
               "transmission",
               "nzbget",
-              "deluge"
+              "deluge",
+              "rtorrent"
             ],
             "type": "string"
           },
@@ -2102,7 +2103,7 @@
             "type": "integer"
           },
           "secret": {
-            "description": "the SABnzbd API key or the qBittorrent, Transmission, Deluge or NZBGet password; the masked value or empty keeps the stored one. Needed again when the address moves to another host.",
+            "description": "the SABnzbd API key or the qBittorrent, Transmission, Deluge, rTorrent or NZBGet password; the masked value or empty keeps the stored one. Needed again when the address moves to another host.",
             "type": "string"
           },
           "tags": {
@@ -13100,7 +13101,7 @@
         "x-holyarrs-scope": "read"
       },
       "post": {
-        "description": "Adds qBittorrent, Transmission or Deluge for torrents, or SABnzbd or NZBGet for Usenet. The key or password goes to the vault. Needs a recent sign-in.",
+        "description": "Adds qBittorrent, Transmission, Deluge or rTorrent for torrents, or SABnzbd or NZBGet for Usenet. The key or password goes to the vault. Needs a recent sign-in.",
         "operationId": "addDownloader",
         "requestBody": {
           "content": {

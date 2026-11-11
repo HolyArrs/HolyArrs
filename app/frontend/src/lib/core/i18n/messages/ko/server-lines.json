@@ -839,7 +839,7 @@
 	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists": "HolyArrs는 Trakt 목록과 관심 목록을 읽습니다. 시청 기록이나 컬렉션 목록은 Radarr에 남습니다",
 	"server.migrate.holyarrs-sets-one-proxy-address-per": "HolyArrs는 소스마다 프록시 주소를 하나 설정합니다. 사용하던 소스에 설정하세요",
 	"server.migrate.holyarrs-stopped-during-this-import-before": "HolyArrs가 이번 가져오기 도중 끝나기 전에 멈췄습니다. 만들어진 항목에는 표시가 있습니다. 다시 가져와서 마무리하거나(중복 추가는 없음) 되돌리세요.",
-	"server.migrate.holyarrs-talks-to-qbittorrent-transmission-deluge": "HolyArrs는 qBittorrent, Transmission, Deluge, SABnzbd, NZBGet하고만 연동합니다",
+	"server.migrate.holyarrs-talks-to-qbittorrent-transmission-deluge": "HolyArrs는 qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet하고만 연동합니다",
 	"server.migrate.holyarrs-uses-one-category-of-its": "HolyArrs는 다운로더마다 자체 카테고리 하나(holyarrs)를 사용합니다",
 	"server.migrate.holyarrs-writes-no-metadata-files-for": "HolyArrs는 미디어 플레이어용 메타데이터 파일을 쓰지 않습니다",
 	"server.migrate.import-row-was-replaced": "가져오기 항목이 교체됨",
