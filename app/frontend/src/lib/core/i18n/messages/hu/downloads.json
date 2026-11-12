@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "ukrán",
 	"downloads.row.imported": "Importálva",
 	"downloads.row.stillIn": "Még a(z) {app} alkalmazásban",
-	"downloads.dp.openDownloaders": "Letöltők megnyitása"
+	"downloads.dp.openDownloaders": "Letöltők megnyitása",
+	"downloads.hl.notMoved": "Importálás után nem lett áthelyezve"
 }

@@ -1272,5 +1272,10 @@
 	"server.downloads.marked-bad": "Ditandai buruk",
 	"server.suggest.because-you-have": "Karena kamu punya {name}",
 	"server.health.downloader-save-folder": "Folder simpan Pengunduh",
+	"server.downloads.could-not-move-the-imported-download": "Unduhan yang diimpor tidak bisa dipindahkan ke {cat} di {name}: {error}; HolyArrs akan mencoba lagi pada impor berikutnya",
+	"server.downloads.moved-to-after-import": "Dipindahkan ke {cat} setelah impor",
+	"server.library.files-matched-by-hand": "{name}: {n} file dicocokkan manual",
+	"server.library.no-such-file-in-this-title": "tidak ada file seperti itu di judul ini",
+	"server.library.send-1-to-2000-files": "kirim 1 sampai 2000 file",
 	"server.sources.this-kind-of-title-can-t": "jenis judul ini tidak bisa dicari"
 }

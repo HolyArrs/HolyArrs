@@ -288,16 +288,17 @@
 	.settings-shell:not(.home) { max-width: 1120px; margin-inline: auto; }
 	.settings-shell:not(.home) .settings-workspace { max-width: none; }
 	.group-name { margin: 2px 0 14px; font: var(--t-large-title); letter-spacing: var(--t-large-title-track, -0.022em); }
-	/* Section tabs: the Status tab track (one pill, the open tab lifted in white). */
-	.caps { display: inline-flex; flex-wrap: nowrap; gap: 2px; max-width: 100%; margin: 0 0 20px; padding: 2px; border-radius: var(--r-pill); background: var(--surface-2); overflow-x: auto; }
-	.cap { min-height: 32px; height: 32px; padding: 0 16px; background: none; box-shadow: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-subhead); font-size: 14px; }
+	/* Section tabs: the Status tab track (one pill, the open tab lifted in white). A row too long for the screen (a phone, or long words in de, hu, fi, ar) wraps onto more lines instead of hiding its last tabs past the edge; the corners stay round on one line and soften on two. */
+	.caps { display: inline-flex; flex-wrap: wrap; gap: 2px; max-width: 100%; margin: 0 0 20px; padding: 2px; border-radius: 18px; background: var(--surface-2); overflow-x: visible; }
+	/* A single label wider than the screen (long words in bg, ca, nl) breaks onto a second line inside its tab. */
+	.cap { min-height: 32px; height: auto; max-width: 100%; padding: 6px 16px; white-space: normal; background: none; box-shadow: none; color: color-mix(in srgb, var(--text) 76%, var(--bg)); font: var(--t-subhead); font-size: 14px; }
 	.cap:hover { background: none; color: var(--text); }
 	.cap[aria-current='page'] { background: var(--seg-thumb); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); }
-	@media (pointer: coarse) { .cap { min-height: 40px; height: 40px; } }
+	@media (pointer: coarse) { .caps { border-radius: 22px; } .cap { min-height: 40px; } }
 	@media (max-width: 767px) {
 		.group-name { font-size: 30px; }
-		.caps { display: flex; flex-wrap: nowrap; overflow-x: auto; margin-bottom: 16px; }
-		.cap { padding: 0 14px; }
+		.caps { margin-bottom: 16px; }
+		.cap { padding: 6px 14px; }
 	}
 	/* The open section's own title: a quiet bar with its buttons on the right (the tab already names it). */
 	.settings-content :global(> .ui-head), .settings-content :global(.ui-head) { margin-bottom: 4px; }

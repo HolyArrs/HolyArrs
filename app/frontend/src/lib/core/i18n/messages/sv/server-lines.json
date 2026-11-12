@@ -1272,5 +1272,10 @@
 	"server.downloads.marked-bad": "Markerad som dålig",
 	"server.suggest.because-you-have": "Eftersom du har {name}",
 	"server.health.downloader-save-folder": "Nedladdarens sparmapp",
+	"server.downloads.could-not-move-the-imported-download": "Den importerade nedladdningen kunde inte flyttas till {cat} i {name}: {error}; HolyArrs försöker igen vid nästa import",
+	"server.downloads.moved-to-after-import": "Flyttad till {cat} efter import",
+	"server.library.files-matched-by-hand": "{name}: {n} filer kopplade för hand",
+	"server.library.no-such-file-in-this-title": "ingen sådan fil i den här titeln",
+	"server.library.send-1-to-2000-files": "skicka 1 till 2000 filer",
 	"server.sources.this-kind-of-title-can-t": "den här typen av titel kan inte sökas"
 }

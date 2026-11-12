@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "ukraina",
 	"downloads.row.imported": "Imporditud",
 	"downloads.row.stillIn": "Alles rakenduses {app}",
-	"downloads.dp.openDownloaders": "Ava Allalaadijad"
+	"downloads.dp.openDownloaders": "Ava Allalaadijad",
+	"downloads.hl.notMoved": "Pärast importi ei teisaldatud"
 }

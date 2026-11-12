@@ -501,6 +501,7 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 			return r, nil
 		}
 		placedBy, fellBack = res.PlacedBy, res.FellBack
+		im.placeSideFiles(ctx, "", []mediafiles.PlanStep{{SourceFile: src, TargetPath: target}}, []mediafiles.PlaceResult{res}, item.Kind == "episode")
 		if mode == "move" {
 			if err := os.Remove(src); err != nil {
 				r.Error = "placed, but the original could not be removed: " + err.Error()

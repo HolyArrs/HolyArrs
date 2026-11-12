@@ -32,5 +32,7 @@
   "Removed": false,
   "Writable": false,
   "ClearFinished": false,
-  "Tags": []
+  "Tags": [],
+  "CategoryAfterImport": "",
+  "OwnOnly": false
 }

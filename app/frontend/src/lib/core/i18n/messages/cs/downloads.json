@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "ukrajinština",
 	"downloads.row.imported": "Importováno",
 	"downloads.row.stillIn": "Stále v {app}",
-	"downloads.dp.openDownloaders": "Otevřít Stahovače"
+	"downloads.dp.openDownloaders": "Otevřít Stahovače",
+	"downloads.hl.notMoved": "Po importu nepřesunuto"
 }

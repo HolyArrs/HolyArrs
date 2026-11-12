@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 изключва тази проверка; иначе от 5 до 1440.",
 	"settings.downloaders.crawlKbps": "По-бавно от (KB/s)",
 	"settings.downloaders.crawlHours": "За (часа)",
-	"settings.downloaders.crawlHint": "0 в която и да е от двете изключва проверката за бавна скорост."
+	"settings.downloaders.crawlHint": "0 в която и да е от двете изключва проверката за бавна скорост.",
+	"settings.downloaders.categoryAfterImport": "Категория след импортиране",
+	"settings.downloaders.categoryAfterImportHint": "След импортиране HolyArrs мести торента в тази категория. Оставете празно, за да остане в основната категория.",
+	"settings.downloaders.ownOnly": "Показвай само елементите на HolyArrs",
+	"settings.downloaders.ownOnlyHint": "Елементите на други приложения в този сваляч са скрити и HolyArrs не ги променя."
 }

@@ -40,3 +40,19 @@ func deadCandidates(ctx context.Context, db *sql.DB) ([]domain.Download, error) 
 	return database.Select[domain.Download](ctx, db, "downloads", `state IN ('downloading', 'stalled') AND downloader_id IN (
 		SELECT id FROM downloaders WHERE protocol = 'torrent' AND removed = 0) ORDER BY downloader_id, id`)
 }
+
+// categoryMoved reports whether the download was already moved to its
+// category after import.
+func (m *Manager) categoryMoved(ctx context.Context, id int64) (bool, error) {
+	var at sql.NullString
+	err := m.Store.Read().QueryRowContext(ctx, "SELECT category_moved_at FROM downloads WHERE id = ?", id).Scan(&at)
+	return at.Valid, err
+}
+
+// markCategoryMoved records that the download was moved after import.
+func (m *Manager) markCategoryMoved(ctx context.Context, id int64) error {
+	return m.Store.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE downloads SET category_moved_at = ? WHERE id = ? AND category_moved_at IS NULL", database.FormatTime(m.now()), id)
+		return err
+	})
+}

@@ -56,6 +56,8 @@
 	@media (hover: hover) { .mode :global(.ui-ibtn.glass:hover), .mode :global(.trigger.icon:hover), .mode :global(.trigger.icon[aria-expanded='true']) { color: #fff; background: rgb(0 0 0 / 0.3); }
 }
 	.mode :global(.ui-ibtn.glass:focus-visible), .mode :global(.trigger.icon:focus-visible) { outline: none; box-shadow: 0 0 0 2px rgb(255 255 255 / 0.85); }
+	/* Touch screens: a 44 px tap for the language button too (the 36 px above beats LanguagePicker's own touch rule). */
+	@media (pointer: coarse) { .mode :global(.trigger.button) { min-height: 44px; } }
 	/* Phones: the desktop card, floating low over full-bleed art with 24 px of art on every side; it rides above the keyboard (--kb) with a smooth lift. */
 	@media (max-width: 600px) {
 		.mode { top: max(14px, env(safe-area-inset-top)); inset-inline-end: max(14px, env(safe-area-inset-right)); }

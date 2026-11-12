@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 tắt kiểm tra này; nếu không thì 5 đến 1440.",
 	"settings.downloaders.crawlKbps": "Chậm hơn (KB/s)",
 	"settings.downloaders.crawlHours": "Trong (giờ)",
-	"settings.downloaders.crawlHint": "0 ở một trong hai sẽ tắt kiểm tra chậm."
+	"settings.downloaders.crawlHint": "0 ở một trong hai sẽ tắt kiểm tra chậm.",
+	"settings.downloaders.categoryAfterImport": "Danh mục sau khi nhập",
+	"settings.downloaders.categoryAfterImportHint": "Khi torrent đã được nhập, HolyArrs chuyển nó sang danh mục này. Để trống để giữ nó ở danh mục chính.",
+	"settings.downloaders.ownOnly": "Chỉ hiện mục của HolyArrs",
+	"settings.downloaders.ownOnlyHint": "Mục của ứng dụng khác trên trình tải này sẽ bị ẩn, và HolyArrs không thay đổi chúng."
 }

@@ -19,6 +19,7 @@ func TestLabQbitControls(t *testing.T) {
 		base = "http://qbittorrent:8090"
 	}
 	q := NewQbittorrent(base, nil)
+	q.cats = []string{"holyarrs-labtest"}
 	ctx := context.Background()
 	before, err := q.Status(ctx)
 	if err != nil {

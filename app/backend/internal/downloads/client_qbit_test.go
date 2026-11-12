@@ -128,6 +128,10 @@ func (f *fakeQbit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("Ok."))
 	case "/api/v2/torrents/start":
 		f.steps = append(f.steps, "start "+r.PostForm.Get("hashes"))
+	case "/api/v2/torrents/stop":
+		f.steps = append(f.steps, "stop "+r.PostForm.Get("hashes"))
+	case "/api/v2/torrents/setCategory":
+		f.steps = append(f.steps, "setCategory "+r.PostForm.Get("hashes")+" "+r.PostForm.Get("category"))
 	case "/api/v2/torrents/info":
 		var out []map[string]any
 		hashes := r.Form.Get("hashes")

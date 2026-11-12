@@ -82,6 +82,36 @@
 	let extraError = $state('');
 	let extraSaving = $state(false);
 	const canSaveExtra = $derived(session.can('users'));
+	// Subtitle files brought along on import: off with srt until turned on.
+	let side = $state<{ on: boolean; types: string[] } | null>(null);
+	let sideTypes = $state('srt');
+	let sideError = $state('');
+	let sideSaving = $state(false);
+	const canSaveSide = $derived(session.can('settings'));
+	async function loadSide() {
+		try {
+			side = await api.get<{ on: boolean; types: string[] }>('/settings/side-files');
+			sideTypes = side.types.join(', ');
+		} catch {
+			side = null; // No settings permission: the card stays hidden.
+		}
+	}
+	async function saveSide(e: SubmitEvent) {
+		e.preventDefault();
+		if (!side) return;
+		sideError = '';
+		sideSaving = true;
+		try {
+			const types = sideTypes.split(/[\s,]+/).map((x) => x.trim()).filter(Boolean);
+			side = await api.put<{ on: boolean; types: string[] }>('/settings/side-files', { on: side.on, types });
+			sideTypes = side.types.join(', ');
+			toasts.push(t('settings.libraryFolders.importSaved'), 'ok');
+		} catch (err) {
+			sideError = message(err);
+		} finally {
+			sideSaving = false;
+		}
+	}
 
 	async function load() {
 		try {
@@ -104,6 +134,7 @@
 	onMount(() => {
 		void load();
 		void loadExtra();
+		void loadSide();
 	});
 
 	async function saveExtra(e: SubmitEvent) {
@@ -305,6 +336,27 @@
 			{#if canSaveExtra}
 				<div class="row" style="margin-top: var(--s-5)">
 					<Button variant="primary" type="submit" disabled={extraSaving} aria-busy={extraSaving}>{t('settings.libraryFolders.save')}</Button>
+				</div>
+			{:else}
+				<p class="hint">{t('settings.libraryFolders.ownerOnly')}</p>
+			{/if}
+		</SettingsCard>
+	</form>
+{/if}
+
+{#if side}
+	<form class="sc-form extra" onsubmit={saveSide} aria-label={t('settings.libraryFolders.sideFiles')} data-testid="side-files">
+		<SettingsCard id="side-files" title={t('settings.libraryFolders.sideFiles')} description={t('settings.libraryFolders.sideFilesDesc')}>
+			<label class="checkline">
+				<input type="checkbox" bind:checked={side.on} disabled={!canSaveSide} data-testid="side-files-on" />
+				<span><b>{t('settings.libraryFolders.sideOn')}</b><br /><span class="hint">{t('settings.libraryFolders.sideOnHint')}</span></span>
+			</label>
+			<Field id="side-types" label={t('settings.libraryFolders.sideTypes')} hint={t('settings.libraryFolders.sideTypesHint')} error={sideError}>
+				<input id="side-types" class="input mono" bind:value={sideTypes} placeholder="srt" autocomplete="off" spellcheck="false" readonly={!canSaveSide} />
+			</Field>
+			{#if canSaveSide}
+				<div class="row" style="margin-top: var(--s-5)">
+					<Button variant="primary" type="submit" disabled={sideSaving} aria-busy={sideSaving}>{t('settings.libraryFolders.save')}</Button>
 				</div>
 			{:else}
 				<p class="hint">{t('settings.libraryFolders.ownerOnly')}</p>

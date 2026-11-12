@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 會關閉此檢查；否則為 5 到 1440。",
 	"settings.downloaders.crawlKbps": "速度低於（KB/s）",
 	"settings.downloaders.crawlHours": "持續（小時）",
-	"settings.downloaders.crawlHint": "任一項為 0 都會關閉速度過慢檢查。"
+	"settings.downloaders.crawlHint": "任一項為 0 都會關閉速度過慢檢查。",
+	"settings.downloaders.categoryAfterImport": "匯入後的分類",
+	"settings.downloaders.categoryAfterImportHint": "種子匯入後，HolyArrs 會把它移到這個分類。留空則保留在主分類中。",
+	"settings.downloaders.ownOnly": "只顯示 HolyArrs 的項目",
+	"settings.downloaders.ownOnlyHint": "此下載器上其他應用程式的項目會被隱藏，HolyArrs 也不會變更它們。"
 }

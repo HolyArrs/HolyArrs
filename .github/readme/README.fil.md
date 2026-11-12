@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent at ruTorrent bilang Downloader**, pati sa mga seedbox. Ang mga natapos na Usenet download ay inililipat na ngayon sa Aklatan mo sa halip na kinokopya. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: nasa 44 wika na**, pati kanan-pakaliwa. Gumagana ang aria2 bilang Downloader, at ilang episode lang ang dina-download ng season pack kada beses. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
 
 > Ang bawat poster, trailer at score sa HolyArrs mo ay galing sa server na ako mismo ang nagpapatakbo at nagbabayad, kaya nananatili itong libre para sa lahat. Kung napaganda nang kaunti ng HolyArrs ang movie night mo, ang sponsor ang nagpapanatiling bukas ang ilaw para sa ating lahat 💛
 >
@@ -222,7 +220,7 @@ Nasa Docker Hub ang mga image bilang [`holyarrs/holyarrs`](https://hub.docker.co
 | Tag | Gamitin para sa |
 | :----: | --- |
 | `latest` | Ang pinakabagong bersyon. |
-| `1.0.19` | Isang eksaktong bersyon. Hindi ito kailanman gumagalaw. |
+| `1.1.0` | Isang eksaktong bersyon. Hindi ito kailanman gumagalaw. |
 
 ## Paggamit
 
