@@ -470,7 +470,8 @@
 	.path { font-size: 13px; color: var(--text); }
 	.arrow { flex: none; color: var(--text-muted); }
 	.sw-word { color: var(--text-muted); font: var(--t-footnote); white-space: nowrap; }
-	.switch { flex: none; }
+	/* The settings pages stretch a switch across its row (settings-content.css); here it sits at the row's end, beside the words. */
+	.list > .mrow > .switch { flex: none; width: auto; }
 
 	select.pick { flex: none; width: 240px; min-height: 36px; height: 36px; }
 	.half { flex: 1 1 0; min-width: 0; min-height: 36px; height: 36px; }
