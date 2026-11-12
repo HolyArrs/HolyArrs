@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Само власник може да га преузме; замоли га.",
 	"settings.backups.fingerprint": "Отисак кључа",
 	"settings.backups.downloadKit": "Преузми комплет кључа",
-	"settings.backups.restoreKey": "За враћање: преименуј у holyarrs.key и стави у config фасциклу"
+	"settings.backups.restoreKey": "За враћање: преименуј у holyarrs.key и стави у config фасциклу",
+	"settings.backups.offPlan": "Искључено",
+	"settings.backups.offAbout": "Нема заказаних резервних копија. Копија се и даље прави пре сваког ажурирања.",
+	"settings.backups.offKeeps": "Искључено задржава резервне копије које већ имате."
 }

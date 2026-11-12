@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Avisos per a mi",
 	"settings.index.account.alerts-me.alerts-for-me.words": "el meu correu electrònic discord notificacions",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Els meus dispositius amb la sessió iniciada",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "sessions dispositius tanca la sessió a tot arreu"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "sessions dispositius tanca la sessió a tot arreu",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "D'on vénen els detalls",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "mode de metadades claus pròpies desactivat consultes privadesa servidor independent",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Les teves pròpies claus",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart clau api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adreces per al teu tallafoc",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "tallafoc amfitrions exteriors adreces llista de permesos"
 }

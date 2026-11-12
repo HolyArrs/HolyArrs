@@ -328,6 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Обавештења за мене",
 	"settings.index.account.alerts-me.alerts-for-me.words": "моја е-пошта discord нотификације",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Моји пријављени уређаји",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "сесије уређаји одјави свуда"
-
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "сесије уређаји одјави свуда",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Одакле долазе детаљи",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "режим метаподатака сопствени кључеви искључено претраге приватност сервер независан",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Ваши сопствени кључеви",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb токен tvdb pin mdblist fanart кључ api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Адресе за ваш заштитни зид",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "заштитни зид хостови спољне адресе листа дозвољених"
 }

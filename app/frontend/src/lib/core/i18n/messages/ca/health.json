@@ -259,5 +259,7 @@
 	"health.word.broken": "Avariat",
 	"health.word.notSent": "Encara no enviat",
 	"health.word.notSynced": "Encara no sincronitzat",
-	"health.word.working": "Funcionant"
+	"health.word.working": "Funcionant",
+	"health.check.clearWaiting": "Baixades que esperen ser netejades",
+	"health.kind.clearWaiting": "Baixades que esperen ser netejades"
 }

@@ -259,5 +259,7 @@
 	"health.word.broken": "Покварено",
 	"health.word.notSent": "Још није послато",
 	"health.word.notSynced": "Још није синхронизовано",
-	"health.word.working": "Ради"
+	"health.word.working": "Ради",
+	"health.check.clearWaiting": "Преузимања која чекају чишћење",
+	"health.kind.clearWaiting": "Преузимања која чекају чишћење"
 }

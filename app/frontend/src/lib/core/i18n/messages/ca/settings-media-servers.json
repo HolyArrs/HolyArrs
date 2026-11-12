@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Prova",
 	"settings.mediaServers.changeButton": "Canvia",
 	"settings.mediaServers.removeName": "Elimina {name}",
-	"settings.mediaServers.remove": "Elimina"
+	"settings.mediaServers.remove": "Elimina",
+	"settings.mediaServers.watchTitle": "Historial de visualització",
+	"settings.mediaServers.watchRead": "Llegeix l'historial de visualització",
+	"settings.mediaServers.watchHint": "Mostra a Estadístiques de la Biblioteca qui ha vist què, per a qui gestiona la Biblioteca. Desactivat esborra el que s'ha llegit.",
+	"settings.mediaServers.watchConfirmOff": "Vols desactivar l'historial de visualització? Tot el que s'ha llegit fins ara s'esborra.",
+	"settings.mediaServers.watchTurnedOn": "Historial de visualització activat. La primera lectura es fa en un termini de 30 minuts.",
+	"settings.mediaServers.watchTurnedOff": "Historial de visualització desactivat",
+	"settings.mediaServers.watchFailed": "No s'ha pogut canviar l'historial de visualització"
 }

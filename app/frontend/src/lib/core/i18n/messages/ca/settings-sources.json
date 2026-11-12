@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Canvia",
 	"settings.sources.removeName": "Elimina {name}",
 	"settings.sources.remove": "Elimina",
-	"settings.sources.bridge": "Enllaça Jackett o Prowlarr"
+	"settings.sources.bridge": "Enllaça Jackett o Prowlarr",
+	"settings.sources.off": "Les Fonts estan desactivades",
+	"settings.sources.offText": "HolyArrs no cerca ni captura. Les baixades que afegeixes al teu Gestor de baixades continuen important-se.",
+	"settings.sources.openParts": "Obre Parts",
+	"settings.sources.offState": "Desactivat"
 }

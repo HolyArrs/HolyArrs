@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Semua tempat",
 	"frame.layout.newWord": "baharu",
 	"frame.layout.accountName": "Akaun · {name}",
-	"frame.layout.hostRefused": "<b>Perubahan tidak dapat disimpan pada {host}.</b> HolyArrs hanya menyimpan pada nama yang anda benarkan. Buka sekali menggunakan alamat IP, kemudian tambah {host} di bawah Tetapan › Log masuk › Nama hos dibenarkan. Tidak perlu mula semula."
+	"frame.layout.hostRefused": "<b>Perubahan tidak dapat disimpan pada {host}.</b> HolyArrs hanya menyimpan pada nama yang anda benarkan. Buka sekali menggunakan alamat IP, kemudian tambah {host} di bawah Tetapan › Log masuk › Nama hos dibenarkan. Tidak perlu mula semula.",
+	"frame.feeds.clearOne": "Muat turun yang diimport belum dibersihkan",
+	"frame.feeds.clearMany": "{n} muat turun yang diimport belum dibersihkan",
+	"frame.feeds.clearBody": "HolyArrs mencuba semula sendiri",
+	"frame.feeds.clearNow": "Bersihkan sekarang",
+	"frame.feeds.cleared": "Dibersihkan daripada Pemuat turun",
+	"frame.feeds.clearStill": "Belum dibersihkan"
 }

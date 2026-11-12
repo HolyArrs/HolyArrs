@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Ubah",
 	"settings.sources.removeName": "Buang {name}",
 	"settings.sources.remove": "Buang",
-	"settings.sources.bridge": "Pautkan Jackett atau Prowlarr"
+	"settings.sources.bridge": "Pautkan Jackett atau Prowlarr",
+	"settings.sources.off": "Sumber dimatikan",
+	"settings.sources.offText": "HolyArrs tidak mencari dan tidak mengambil. Muat turun yang anda tambah dalam Pemuat turun anda masih diimport.",
+	"settings.sources.openParts": "Buka Bahagian",
+	"settings.sources.offState": "Mati"
 }

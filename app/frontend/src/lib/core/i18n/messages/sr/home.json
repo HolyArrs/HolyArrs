@@ -266,5 +266,8 @@
 	"home.version": "Верзија {version}",
 	"home.metadataServerDown": "Сервер метаподатака не ради",
 	"home.metadataServerOnline": "Сервер метаподатака ради",
-	"home.homeCouldNotRead3": "Почетна сада није могла да прочита преузимања."
+	"home.homeCouldNotRead3": "Почетна сада није могла да прочита преузимања.",
+	"home.waitingToBeCleared": "чека чишћење",
+	"home.off": "Искључено",
+	"home.sourcesOff": "Искључено у Деловима"
 }

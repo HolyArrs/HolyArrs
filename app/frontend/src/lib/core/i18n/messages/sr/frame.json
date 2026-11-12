@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Сва места",
 	"frame.layout.newWord": "ново",
 	"frame.layout.accountName": "Налог · {name}",
-	"frame.layout.hostRefused": "<b>Измене се не могу сачувати на {host}.</b> HolyArrs чува само на називима које дозволиш. Отвори га једном преко његове IP адресе, па додај {host} у Подешавања › Пријава › Дозвољени називи хоста. Поновно покретање није потребно."
+	"frame.layout.hostRefused": "<b>Измене се не могу сачувати на {host}.</b> HolyArrs чува само на називима које дозволиш. Отвори га једном преко његове IP адресе, па додај {host} у Подешавања › Пријава › Дозвољени називи хоста. Поновно покретање није потребно.",
+	"frame.feeds.clearOne": "Увезено преузимање није очишћено",
+	"frame.feeds.clearMany": "Неочишћених увезених преузимања: {n}",
+	"frame.feeds.clearBody": "HolyArrs покушава поново сам",
+	"frame.feeds.clearNow": "Очисти сада",
+	"frame.feeds.cleared": "Очишћено из Преузимача",
+	"frame.feeds.clearStill": "Још није очишћено"
 }

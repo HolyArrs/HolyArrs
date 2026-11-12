@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Захтевај са Plex листа за гледање",
 	"settings.requests.plexOnHint": "Свако то укључује у Мом налогу. Важе њихова Ограничења.",
 	"settings.requests.plexEveryone": "Укључи за све који се пријављују преко Plex-а",
-	"settings.requests.plexEveryoneHint": "Свако може да искључи за себе у Мом налогу."
+	"settings.requests.plexEveryoneHint": "Свако може да искључи за себе у Мом налогу.",
+	"settings.requests.plexFriends": "Укључи Plex пријатеље",
+	"settings.requests.plexFriendsHint": "Пријатељи које сте увезли из Plex-а. Читају се вашом Plex везом; важе Ограничења сваког пријатеља.",
+	"settings.requests.plexFriendsNoLink": "Прво повежите Plex у Подешавања › Пријава.",
+	"settings.requests.plexFriendsNone": "Још нико није увезен из Plex-а.",
+	"settings.requests.plexFriendsRead": "Прочитано {when}",
+	"settings.requests.plexFriendsNotYet": "Још није прочитано",
+	"settings.requests.plexFriendsAsked": "Затражено: {n}"
 }

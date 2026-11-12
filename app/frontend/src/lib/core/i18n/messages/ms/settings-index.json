@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Makluman untuk saya",
 	"settings.index.account.alerts-me.alerts-for-me.words": "e-mel discord pemberitahuan saya",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Peranti saya yang telah log masuk",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "sesi peranti log keluar di mana-mana"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "sesi peranti log keluar di mana-mana",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Dari mana butiran datang",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "mod metadata kunci sendiri mati carian privasi pelayan bebas",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Kunci anda sendiri",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart kunci api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Alamat untuk tembok api anda",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "tembok api hos luar alamat senarai dibenarkan"
 }

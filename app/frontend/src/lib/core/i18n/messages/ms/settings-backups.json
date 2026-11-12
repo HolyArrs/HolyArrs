@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Hanya pemilik boleh memuat turunnya; minta mereka melakukannya.",
 	"settings.backups.fingerprint": "Cap jari kunci",
 	"settings.backups.downloadKit": "Muat turun kit kunci",
-	"settings.backups.restoreKey": "Untuk memulihkan: namakan semula kepada holyarrs.key, letakkan dalam folder config"
+	"settings.backups.restoreKey": "Untuk memulihkan: namakan semula kepada holyarrs.key, letakkan dalam folder config",
+	"settings.backups.offPlan": "Mati",
+	"settings.backups.offAbout": "Tiada sandaran berjadual. Satu salinan masih dibuat sebelum setiap kemas kini.",
+	"settings.backups.offKeeps": "Mati mengekalkan sandaran yang telah anda ada."
 }

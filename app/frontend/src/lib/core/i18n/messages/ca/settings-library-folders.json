@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Només el propietari i els administradors",
 	"settings.libraryFolders.copiesExpected": "Es preveu copiar",
 	"settings.libraryFolders.copiesExpectedState": "Còpies, com estava previst",
-	"settings.libraryFolders.warnAgain": "Torna a avisar"
+	"settings.libraryFolders.warnAgain": "Torna a avisar",
+	"settings.libraryFolders.whyCopies": "Per què?",
+	"settings.libraryFolders.stateInstant": "Instantani, sense espai extra",
+	"settings.libraryFolders.changePath": "Canvia la ruta",
+	"settings.libraryFolders.changePathOf": "Canvia la ruta de {path}",
+	"settings.libraryFolders.newPath": "Ruta nova",
+	"settings.libraryFolders.changePathHint": "Mou primer els fitxers allà. HolyArrs comprova cada fitxer i no mou res.",
+	"settings.libraryFolders.checkingFiles": "Comprovant fitxers…",
+	"settings.libraryFolders.pathChanged": "Ruta canviada"
 }

@@ -266,5 +266,8 @@
 	"home.version": "Versi {version}",
 	"home.metadataServerDown": "Pelayan metadata terhenti",
 	"home.metadataServerOnline": "Pelayan metadata dalam talian",
-	"home.homeCouldNotRead3": "Utama tidak dapat membaca muat turun sekarang."
+	"home.homeCouldNotRead3": "Utama tidak dapat membaca muat turun sekarang.",
+	"home.waitingToBeCleared": "menunggu untuk dibersihkan",
+	"home.off": "Mati",
+	"home.sourcesOff": "Dimatikan dalam Bahagian"
 }

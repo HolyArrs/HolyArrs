@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Zona de perill",
 	"core.settings.danger.about": "Reinicia o atura",
 	"core.settings.account.label": "El meu compte",
-	"core.settings.account.about": "Contrasenya, verificació en dos passos, dispositius"
+	"core.settings.account.about": "Contrasenya, verificació en dos passos, dispositius",
+	"core.plain.clearWaiting": "Les baixades importades esperen ser netejades del seu Gestor de baixades.",
+	"core.api.sourceOff": "Algunes files estan desactivades en aquesta instal·lació."
 }

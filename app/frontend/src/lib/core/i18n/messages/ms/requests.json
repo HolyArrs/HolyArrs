@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Sebab pantas",
 	"requests.page.takeBackTitle": "Tarik balik {name}?",
 	"requests.page.takeBackDesc": "Ia keluar daripada Permintaan. Anda boleh meminta semula kemudian.",
-	"requests.page.keepIt": "Kekalkan"
+	"requests.page.keepIt": "Kekalkan",
+	"requests.moment.downloaded.title": "Dimuat turun",
+	"requests.moment.downloaded.body": "Untuk kakitangan: sebuah Pemuat turun telah selesai memuat turun (import menyusul).",
+	"requests.moment.download_failed.title": "Muat turun gagal",
+	"requests.moment.download_failed.body": "Untuk kakitangan: satu muat turun gagal dan Keluarannya ditolak."
 }

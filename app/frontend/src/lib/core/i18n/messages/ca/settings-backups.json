@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Només el propietari el pot baixar; demana-li que ho faci.",
 	"settings.backups.fingerprint": "Empremta de la clau",
 	"settings.backups.downloadKit": "Baixa el joc de claus",
-	"settings.backups.restoreKey": "Per restaurar: canvia-li el nom a holyarrs.key i posa'l a la carpeta config"
+	"settings.backups.restoreKey": "Per restaurar: canvia-li el nom a holyarrs.key i posa'l a la carpeta config",
+	"settings.backups.offPlan": "Desactivat",
+	"settings.backups.offAbout": "No hi ha còpies de seguretat programades. Abans de cada actualització es fa una còpia igualment.",
+	"settings.backups.offKeeps": "Desactivat conserva les còpies de seguretat que ja tens."
 }

@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Zon bahaya",
 	"core.settings.danger.about": "Mulakan semula atau matikan",
 	"core.settings.account.label": "Akaun saya",
-	"core.settings.account.about": "Kata laluan, dua faktor, peranti"
+	"core.settings.account.about": "Kata laluan, dua faktor, peranti",
+	"core.plain.clearWaiting": "Muat turun yang diimport sedang menunggu untuk dibersihkan daripada Pemuat turunnya.",
+	"core.api.sourceOff": "Sesetengah baris dimatikan pada pemasangan ini."
 }

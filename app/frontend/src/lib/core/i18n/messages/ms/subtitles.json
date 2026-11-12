@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Bahasa",
 	"subtitles.wants.pick": "Pilih bahasa",
 	"subtitles.wants.takeOff": "Keluarkan {name}",
-	"subtitles.wants.thisLanguage": "bahasa ini"
+	"subtitles.wants.thisLanguage": "bahasa ini",
+	"subtitles.made.translated": "Diterjemah",
+	"subtitles.made.partial": "Diterjemah sebahagian",
+	"subtitles.made.ai": "Diterjemah AI",
+	"subtitles.made.machine": "Diterjemah mesin",
+	"subtitles.wants.translateFrom": "Terjemah daripada",
+	"subtitles.wants.noTranslate": "Jangan terjemah",
+	"subtitles.panel.picture": "Gambar",
+	"subtitles.panel.pictureTitle": "Sari kata gambar: tidak boleh diterjemah",
+	"subtitles.panel.translate": "Terjemah",
+	"subtitles.panel.translateFor": "Terjemah sari kata {name}",
+	"subtitles.panel.translateFrom": "Terjemah daripada",
+	"subtitles.panel.translateQueued": "Menterjemah",
+	"subtitles.panel.translateQueuedBody": "Sari kata {name} dipaparkan di sini apabila siap.",
+	"subtitles.panel.translating": "Tiada ditemui, jadi penterjemah anda sedang membuatnya."
 }

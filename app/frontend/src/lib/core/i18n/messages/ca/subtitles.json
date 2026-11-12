@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Idioma",
 	"subtitles.wants.pick": "Tria un idioma",
 	"subtitles.wants.takeOff": "Treu {name}",
-	"subtitles.wants.thisLanguage": "aquest idioma"
+	"subtitles.wants.thisLanguage": "aquest idioma",
+	"subtitles.made.translated": "Traduït",
+	"subtitles.made.partial": "Traduït en part",
+	"subtitles.made.ai": "Traduït per IA",
+	"subtitles.made.machine": "Traduït per màquina",
+	"subtitles.wants.translateFrom": "Tradueix des de",
+	"subtitles.wants.noTranslate": "No tradueixis",
+	"subtitles.panel.picture": "Imatge",
+	"subtitles.panel.pictureTitle": "Un subtítol en imatge: no es pot traduir",
+	"subtitles.panel.translate": "Tradueix",
+	"subtitles.panel.translateFor": "Tradueix un subtítol {name}",
+	"subtitles.panel.translateFrom": "Tradueix des de",
+	"subtitles.panel.translateQueued": "Traduint",
+	"subtitles.panel.translateQueuedBody": "El subtítol {name} es mostrarà aquí quan estigui llest.",
+	"subtitles.panel.translating": "No se n'ha trobat cap, així que el teu traductor en fa un."
 }

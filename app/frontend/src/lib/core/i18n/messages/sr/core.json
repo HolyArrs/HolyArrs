@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Опасна зона",
 	"core.settings.danger.about": "Поново покрени или искључи",
 	"core.settings.account.label": "Мој налог",
-	"core.settings.account.about": "Лозинка, двофакторска, уређаји"
+	"core.settings.account.about": "Лозинка, двофакторска, уређаји",
+	"core.plain.clearWaiting": "Увезена преузимања чекају да буду очишћена из свог Преузимача.",
+	"core.api.sourceOff": "Неки редови су искључени на овој инсталацији."
 }

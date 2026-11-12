@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "No falta res.",
 	"mediafiles.showDelete.deleteLabel": "Suprimeix {what}",
 	"mediafiles.showReleases.searchingFor": "Cercant {name}",
-	"mediafiles.sheet.file": "Fitxer"
+	"mediafiles.sheet.file": "Fitxer",
+	"mediafiles.parts.stopsSources": "Les cerques automàtiques s'aturen, per a quan afegeixes tu mateix les baixades. Els Gestors de baixades i les importacions continuen funcionant."
 }

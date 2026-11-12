@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Само власник и администратори",
 	"settings.libraryFolders.copiesExpected": "Копирање је очекивано",
 	"settings.libraryFolders.copiesExpectedState": "Копира, како се очекује",
-	"settings.libraryFolders.warnAgain": "Упозори поново"
+	"settings.libraryFolders.warnAgain": "Упозори поново",
+	"settings.libraryFolders.whyCopies": "Зашто?",
+	"settings.libraryFolders.stateInstant": "Тренутно, без додатног простора",
+	"settings.libraryFolders.changePath": "Промени путању",
+	"settings.libraryFolders.changePathOf": "Промени путању за {path}",
+	"settings.libraryFolders.newPath": "Нова путања",
+	"settings.libraryFolders.changePathHint": "Прво тамо преместите датотеке. HolyArrs проверава сваку датотеку и ништа не премешта.",
+	"settings.libraryFolders.checkingFiles": "Проверавам датотеке…",
+	"settings.libraryFolders.pathChanged": "Путања промењена"
 }

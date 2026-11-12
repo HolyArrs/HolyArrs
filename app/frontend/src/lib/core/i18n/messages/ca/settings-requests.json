@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Sol·licita des de les llistes de seguiment de Plex",
 	"settings.requests.plexOnHint": "Cada persona ho activa a El meu compte. S'apliquen els seus Límits.",
 	"settings.requests.plexEveryone": "Activa-ho per a tothom qui iniciï la sessió amb Plex",
-	"settings.requests.plexEveryoneHint": "Qualsevol persona ho pot desactivar per a si mateixa a El meu compte."
+	"settings.requests.plexEveryoneHint": "Qualsevol persona ho pot desactivar per a si mateixa a El meu compte.",
+	"settings.requests.plexFriends": "Inclou els amics de Plex",
+	"settings.requests.plexFriendsHint": "Amics que has importat de Plex. Es llegeixen amb el teu enllaç de Plex; s'apliquen els Límits de cada amic.",
+	"settings.requests.plexFriendsNoLink": "Enllaça primer Plex a Configuració › Inici de sessió.",
+	"settings.requests.plexFriendsNone": "Encara no s'ha importat ningú de Plex.",
+	"settings.requests.plexFriendsRead": "Llegit {when}",
+	"settings.requests.plexFriendsNotYet": "Encara no llegit",
+	"settings.requests.plexFriendsAsked": "Sol·licitats: {n}"
 }

@@ -508,6 +508,6 @@
 	"mediafiles.list.nothingMissing": "Ништа не недостаје.",
 	"mediafiles.showDelete.deleteLabel": "Обриши {what}",
 	"mediafiles.showReleases.searchingFor": "Тражим {name}",
-	"mediafiles.sheet.file": "Датотека"
-
+	"mediafiles.sheet.file": "Датотека",
+	"mediafiles.parts.stopsSources": "Аутоматске претраге се заустављају, за случај када сами додајете преузимања. Преузимачи и увози настављају да раде."
 }

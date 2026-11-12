@@ -266,5 +266,8 @@
 	"home.version": "Versió {version}",
 	"home.metadataServerDown": "Servidor de metadades caigut",
 	"home.metadataServerOnline": "Servidor de metadades en línia",
-	"home.homeCouldNotRead3": "Inici no ha pogut llegir les baixades ara mateix."
+	"home.homeCouldNotRead3": "Inici no ha pogut llegir les baixades ara mateix.",
+	"home.waitingToBeCleared": "espera ser netejat",
+	"home.off": "Desactivat",
+	"home.sourcesOff": "Desactivat a Parts"
 }

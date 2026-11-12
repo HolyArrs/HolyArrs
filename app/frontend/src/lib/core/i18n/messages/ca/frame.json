@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Tots els llocs",
 	"frame.layout.newWord": "nou",
 	"frame.layout.accountName": "Compte · {name}",
-	"frame.layout.hostRefused": "<b>Els canvis no es poden desar a {host}.</b> HolyArrs només desa als noms que permets. Obre'l una vegada per la seva adreça IP i després afegeix {host} a Configuració › Inici de sessió › Noms de host permesos. No cal reiniciar."
+	"frame.layout.hostRefused": "<b>Els canvis no es poden desar a {host}.</b> HolyArrs només desa als noms que permets. Obre'l una vegada per la seva adreça IP i després afegeix {host} a Configuració › Inici de sessió › Noms de host permesos. No cal reiniciar.",
+	"frame.feeds.clearOne": "Baixada importada sense netejar",
+	"frame.feeds.clearMany": "{n} baixades importades sense netejar",
+	"frame.feeds.clearBody": "HolyArrs ho torna a intentar tot sol",
+	"frame.feeds.clearNow": "Neteja ara",
+	"frame.feeds.cleared": "Netejat del Gestor de baixades",
+	"frame.feeds.clearStill": "Encara no netejat"
 }
