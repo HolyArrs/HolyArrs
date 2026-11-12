@@ -266,5 +266,8 @@
 	"home.version": "版本 {version}",
 	"home.metadataServerDown": "中繼資料伺服器離線",
 	"home.metadataServerOnline": "中繼資料伺服器線上",
-	"home.homeCouldNotRead3": "首頁暫時無法讀取下載。"
+	"home.homeCouldNotRead3": "首頁暫時無法讀取下載。",
+	"home.waitingToBeCleared": "等待清除",
+	"home.off": "關閉",
+	"home.sourcesOff": "已在功能模組中關閉"
 }

@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "فقط مالک و مدیران",
 	"settings.libraryFolders.copiesExpected": "کپی‌کردن انتظار می‌رود",
 	"settings.libraryFolders.copiesExpectedState": "کپی، طبق انتظار",
-	"settings.libraryFolders.warnAgain": "دوباره هشدار بده"
+	"settings.libraryFolders.warnAgain": "دوباره هشدار بده",
+	"settings.libraryFolders.whyCopies": "چرا؟",
+	"settings.libraryFolders.stateInstant": "فوری، بدون فضای اضافه",
+	"settings.libraryFolders.changePath": "تغییر مسیر",
+	"settings.libraryFolders.changePathOf": "تغییر مسیر {path}",
+	"settings.libraryFolders.newPath": "مسیر جدید",
+	"settings.libraryFolders.changePathHint": "ابتدا فایل‌ها را به آنجا منتقل کنید. HolyArrs هر فایل را بررسی می‌کند و چیزی را جابه‌جا نمی‌کند.",
+	"settings.libraryFolders.checkingFiles": "در حال بررسی فایل‌ها…",
+	"settings.libraryFolders.pathChanged": "مسیر تغییر کرد"
 }

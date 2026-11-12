@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "Нищо не липсва.",
 	"mediafiles.showDelete.deleteLabel": "Изтриване на {what}",
 	"mediafiles.showReleases.searchingFor": "Търси се {name}",
-	"mediafiles.sheet.file": "Файл"
+	"mediafiles.sheet.file": "Файл",
+	"mediafiles.parts.stopsSources": "Автоматичните търсения спират, за случаите, когато сами добавяте изтегляния. Програмите за изтегляне и вносът продължават да работят."
 }

@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "沒有缺少的內容。",
 	"mediafiles.showDelete.deleteLabel": "刪除{what}",
 	"mediafiles.showReleases.searchingFor": "正在搜尋 {name}",
-	"mediafiles.sheet.file": "檔案"
+	"mediafiles.sheet.file": "檔案",
+	"mediafiles.parts.stopsSources": "自動搜尋會停止，適用於你自己新增下載的情況。下載器與匯入仍會運作。"
 }

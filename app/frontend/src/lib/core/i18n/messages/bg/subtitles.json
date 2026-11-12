@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Език",
 	"subtitles.wants.pick": "Изберете език",
 	"subtitles.wants.takeOff": "Махане на {name}",
-	"subtitles.wants.thisLanguage": "този език"
+	"subtitles.wants.thisLanguage": "този език",
+	"subtitles.made.translated": "Преведено",
+	"subtitles.made.partial": "Частично преведено",
+	"subtitles.made.ai": "Преведено с AI",
+	"subtitles.made.machine": "Машинно преведено",
+	"subtitles.wants.translateFrom": "Превеждане от",
+	"subtitles.wants.noTranslate": "Без превод",
+	"subtitles.panel.picture": "Картинка",
+	"subtitles.panel.pictureTitle": "Картинен субтитър: не може да се преведе",
+	"subtitles.panel.translate": "Превеждане",
+	"subtitles.panel.translateFor": "Превеждане на субтитри {name}",
+	"subtitles.panel.translateFrom": "Превеждане от",
+	"subtitles.panel.translateQueued": "Превежда се",
+	"subtitles.panel.translateQueuedBody": "Субтитрите {name} се показват тук, когато са готови.",
+	"subtitles.panel.translating": "Не са намерени, затова вашият преводач прави такива."
 }

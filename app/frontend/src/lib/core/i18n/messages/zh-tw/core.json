@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "危險操作",
 	"core.settings.danger.about": "重新啟動或關閉",
 	"core.settings.account.label": "我的帳號",
-	"core.settings.account.about": "密碼、雙重驗證、裝置"
+	"core.settings.account.about": "密碼、雙重驗證、裝置",
+	"core.plain.clearWaiting": "已匯入的下載正等待從其下載器中清除。",
+	"core.api.sourceOff": "此安裝中有些列已關閉。"
 }

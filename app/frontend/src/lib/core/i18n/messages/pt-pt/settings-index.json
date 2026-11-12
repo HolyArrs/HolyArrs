@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Alertas para mim",
 	"settings.index.account.alerts-me.alerts-for-me.words": "o meu e-mail discord notificações",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Os meus dispositivos ligados",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "sessões dispositivos sair de todos os lugares"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "sessões dispositivos sair de todos os lugares",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "De onde vêm os detalhes",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "modo de metadados chaves próprias desativado pesquisas privacidade servidor independente",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "As tuas próprias chaves",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart chave api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Endereços para a tua firewall",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall anfitriões exterior endereços lista de permissões"
 }

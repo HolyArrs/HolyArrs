@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "آزمایش",
 	"settings.mediaServers.changeButton": "تغییر",
 	"settings.mediaServers.removeName": "حذف {name}",
-	"settings.mediaServers.remove": "حذف"
+	"settings.mediaServers.remove": "حذف",
+	"settings.mediaServers.watchTitle": "تاریخچه تماشا",
+	"settings.mediaServers.watchRead": "خواندن تاریخچه تماشا",
+	"settings.mediaServers.watchHint": "در آمار کتابخانه نشان می‌دهد چه کسی چه دیده، برای کسانی که کتابخانه را اداره می‌کنند. «خاموش» آنچه خوانده شده را حذف می‌کند.",
+	"settings.mediaServers.watchConfirmOff": "تاریخچه تماشا خاموش شود؟ همه چیزهایی که تا حالا خوانده شده حذف می‌شود.",
+	"settings.mediaServers.watchTurnedOn": "تاریخچه تماشا روشن شد. اولین خواندن ظرف ۳۰ دقیقه انجام می‌شود.",
+	"settings.mediaServers.watchTurnedOff": "تاریخچه تماشا خاموش شد",
+	"settings.mediaServers.watchFailed": "تاریخچه تماشا تغییر نکرد"
 }

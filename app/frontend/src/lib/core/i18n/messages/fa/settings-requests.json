@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "درخواست از فهرست‌های تماشای Plex",
 	"settings.requests.plexOnHint": "هر نفر آن را در حساب من روشن می‌کند. سقف‌های او اعمال می‌شود.",
 	"settings.requests.plexEveryone": "برای همه کسانی که با Plex وارد می‌شوند روشن کن",
-	"settings.requests.plexEveryoneHint": "هر کس می‌تواند آن را در حساب من برای خودش خاموش کند."
+	"settings.requests.plexEveryoneHint": "هر کس می‌تواند آن را در حساب من برای خودش خاموش کند.",
+	"settings.requests.plexFriends": "شامل دوستان Plex",
+	"settings.requests.plexFriendsHint": "دوستانی که از Plex وارد کرده‌اید. با پیوند Plex شما خوانده می‌شوند؛ سقف‌های هر دوست اعمال می‌شود.",
+	"settings.requests.plexFriendsNoLink": "ابتدا Plex را در تنظیمات › ورود پیوند دهید.",
+	"settings.requests.plexFriendsNone": "هنوز کسی از Plex وارد نشده است.",
+	"settings.requests.plexFriendsRead": "خوانده شد {when}",
+	"settings.requests.plexFriendsNotYet": "هنوز خوانده نشده",
+	"settings.requests.plexFriendsAsked": "درخواست‌شده: {n}"
 }

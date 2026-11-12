@@ -259,5 +259,7 @@
 	"health.word.broken": "خراب",
 	"health.word.notSent": "هنوز ارسال نشده",
 	"health.word.notSynced": "هنوز همگام نشده",
-	"health.word.working": "کار می‌کند"
+	"health.word.working": "کار می‌کند",
+	"health.check.clearWaiting": "دانلودهای منتظر پاک شدن",
+	"health.kind.clearWaiting": "دانلودهای منتظر پاک شدن"
 }

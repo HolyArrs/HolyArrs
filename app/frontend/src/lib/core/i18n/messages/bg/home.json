@@ -266,5 +266,8 @@
 	"home.version": "Версия {version}",
 	"home.metadataServerDown": "Сървърът за метаданни не работи",
 	"home.metadataServerOnline": "Сървърът за метаданни е достъпен",
-	"home.homeCouldNotRead3": "„Начало“ не можа да прочете изтеглянията в момента."
+	"home.homeCouldNotRead3": "„Начало“ не можа да прочете изтеглянията в момента.",
+	"home.waitingToBeCleared": "чака изчистване",
+	"home.off": "Изключено",
+	"home.sourcesOff": "Изключено в Части"
 }

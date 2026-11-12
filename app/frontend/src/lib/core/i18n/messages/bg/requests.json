@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Бързи причини",
 	"requests.page.takeBackTitle": "Да се оттегли ли {name}?",
 	"requests.page.takeBackDesc": "Напуска „Заявки“. Можете да заявите отново по-късно.",
-	"requests.page.keepIt": "Запази го"
+	"requests.page.keepIt": "Запази го",
+	"requests.moment.downloaded.title": "Изтеглено",
+	"requests.moment.downloaded.body": "До персонала: Програма за изтегляне приключи изтегляне (следва внос).",
+	"requests.moment.download_failed.title": "Изтеглянето се провали",
+	"requests.moment.download_failed.body": "До персонала: изтегляне се провали и неговото Издание беше отхвърлено."
 }

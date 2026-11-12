@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "زبان",
 	"subtitles.wants.pick": "یک زبان انتخاب کن",
 	"subtitles.wants.takeOff": "برداشتن {name}",
-	"subtitles.wants.thisLanguage": "این زبان"
+	"subtitles.wants.thisLanguage": "این زبان",
+	"subtitles.made.translated": "ترجمه‌شده",
+	"subtitles.made.partial": "تا حدی ترجمه‌شده",
+	"subtitles.made.ai": "ترجمه با هوش مصنوعی",
+	"subtitles.made.machine": "ترجمه ماشینی",
+	"subtitles.wants.translateFrom": "ترجمه از",
+	"subtitles.wants.noTranslate": "ترجمه نشود",
+	"subtitles.panel.picture": "تصویر",
+	"subtitles.panel.pictureTitle": "زیرنویس تصویری: قابل ترجمه نیست",
+	"subtitles.panel.translate": "ترجمه",
+	"subtitles.panel.translateFor": "ترجمه زیرنویس {name}",
+	"subtitles.panel.translateFrom": "ترجمه از",
+	"subtitles.panel.translateQueued": "در حال ترجمه",
+	"subtitles.panel.translateQueuedBody": "زیرنویس {name} وقتی آماده شد اینجا نشان داده می‌شود.",
+	"subtitles.panel.translating": "چیزی پیدا نشد، پس مترجم شما در حال ساختن یکی است."
 }

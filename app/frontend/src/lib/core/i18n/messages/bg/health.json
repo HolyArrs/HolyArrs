@@ -259,5 +259,7 @@
 	"health.word.broken": "Повредено",
 	"health.word.notSent": "Още не е изпратено",
 	"health.word.notSynced": "Още не е синхронизирано",
-	"health.word.working": "Работи"
+	"health.word.working": "Работи",
+	"health.check.clearWaiting": "Изтегляния, чакащи изчистване",
+	"health.kind.clearWaiting": "Изтегляния, чакащи изчистване"
 }

@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "همه جاها",
 	"frame.layout.newWord": "جدید",
 	"frame.layout.accountName": "حساب · {name}",
-	"frame.layout.hostRefused": "<b>تغییرها روی {host} ذخیره نمی‌شوند.</b> HolyArrs فقط روی نام‌هایی که اجازه بدهی ذخیره می‌کند. یک بار با آدرس IP بازش کن، بعد {host} را در تنظیمات › ورود › نام‌های میزبان مجاز اضافه کن. نیازی به راه‌اندازی مجدد نیست."
+	"frame.layout.hostRefused": "<b>تغییرها روی {host} ذخیره نمی‌شوند.</b> HolyArrs فقط روی نام‌هایی که اجازه بدهی ذخیره می‌کند. یک بار با آدرس IP بازش کن، بعد {host} را در تنظیمات › ورود › نام‌های میزبان مجاز اضافه کن. نیازی به راه‌اندازی مجدد نیست.",
+	"frame.feeds.clearOne": "دانلود واردشده پاک نشده است",
+	"frame.feeds.clearMany": "{n} دانلود واردشده پاک نشده است",
+	"frame.feeds.clearBody": "HolyArrs خودش دوباره تلاش می‌کند",
+	"frame.feeds.clearNow": "همین حالا پاک شود",
+	"frame.feeds.cleared": "از دانلودر پاک شد",
+	"frame.feeds.clearStill": "هنوز پاک نشده"
 }

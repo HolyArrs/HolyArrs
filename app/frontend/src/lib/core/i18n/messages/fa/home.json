@@ -266,5 +266,8 @@
 	"home.version": "نسخه {version}",
 	"home.metadataServerDown": "سرور متادیتا از کار افتاده",
 	"home.metadataServerOnline": "سرور متادیتا آنلاین است",
-	"home.homeCouldNotRead3": "خانه الان نتوانست دانلودها را بخواند."
+	"home.homeCouldNotRead3": "خانه الان نتوانست دانلودها را بخواند.",
+	"home.waitingToBeCleared": "منتظر پاک شدن",
+	"home.off": "خاموش",
+	"home.sourcesOff": "در بخش‌ها خاموش است"
 }

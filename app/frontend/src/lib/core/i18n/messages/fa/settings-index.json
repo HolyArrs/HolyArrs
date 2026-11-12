@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "هشدارها برای من",
 	"settings.index.account.alerts-me.alerts-for-me.words": "ایمیل discord اعلان‌های من",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "دستگاه‌های واردشده من",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "نشست‌ها دستگاه‌ها خروج از همه‌جا"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "نشست‌ها دستگاه‌ها خروج از همه‌جا",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "جزئیات از کجا می‌آیند",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "حالت فراداده کلیدهای خودتان خاموش جست‌وجوها حریم خصوصی سرور مستقل",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "کلیدهای خودتان",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb توکن tvdb pin mdblist fanart کلید api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "آدرس‌ها برای فایروال شما",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "فایروال میزبان‌ها بیرونی آدرس‌ها فهرست مجاز"
 }

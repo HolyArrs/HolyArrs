@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "常用原因",
 	"requests.page.takeBackTitle": "撤回 {name}？",
 	"requests.page.takeBackDesc": "它會從「請求」中移除。你之後可以再次請求。",
-	"requests.page.keepIt": "保留"
+	"requests.page.keepIt": "保留",
+	"requests.moment.downloaded.title": "已下載",
+	"requests.moment.downloaded.body": "給工作人員：下載器已完成一個下載（接著是匯入）。",
+	"requests.moment.download_failed.title": "下載失敗",
+	"requests.moment.download_failed.body": "給工作人員：一個下載失敗，其資源已被拒絕。"
 }

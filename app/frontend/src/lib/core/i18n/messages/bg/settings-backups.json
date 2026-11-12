@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Само собственикът може да го изтегли; помолете го.",
 	"settings.backups.fingerprint": "Отпечатък на ключа",
 	"settings.backups.downloadKit": "Изтегляне на комплекта с ключове",
-	"settings.backups.restoreKey": "За възстановяване: преименувайте на holyarrs.key и сложете в папката config"
+	"settings.backups.restoreKey": "За възстановяване: преименувайте на holyarrs.key и сложете в папката config",
+	"settings.backups.offPlan": "Изключено",
+	"settings.backups.offAbout": "Няма планирани резервни копия. Преди всяка актуализация все пак се прави копие.",
+	"settings.backups.offKeeps": "Изключено запазва резервните копия, които вече имате."
 }

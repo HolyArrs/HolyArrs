@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Всички места",
 	"frame.layout.newWord": "ново",
 	"frame.layout.accountName": "Акаунт · {name}",
-	"frame.layout.hostRefused": "<b>Промените не могат да се запазят на {host}.</b> HolyArrs запазва само при разрешени имена. Отворете го веднъж по IP адрес, после добавете {host} в Настройки › Вход › Разрешени имена на хостове. Не е нужно рестартиране."
+	"frame.layout.hostRefused": "<b>Промените не могат да се запазят на {host}.</b> HolyArrs запазва само при разрешени имена. Отворете го веднъж по IP адрес, после добавете {host} в Настройки › Вход › Разрешени имена на хостове. Не е нужно рестартиране.",
+	"frame.feeds.clearOne": "Внесеното изтегляне не е изчистено",
+	"frame.feeds.clearMany": "{n} внесени изтегляния не са изчистени",
+	"frame.feeds.clearBody": "HolyArrs опитва отново сам",
+	"frame.feeds.clearNow": "Изчисти сега",
+	"frame.feeds.cleared": "Изчистено от Програмата за изтегляне",
+	"frame.feeds.clearStill": "Още не е изчистено"
 }

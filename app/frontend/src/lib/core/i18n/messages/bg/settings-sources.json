@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Промяна",
 	"settings.sources.removeName": "Премахване на {name}",
 	"settings.sources.remove": "Премахване",
-	"settings.sources.bridge": "Свързване на Jackett или Prowlarr"
+	"settings.sources.bridge": "Свързване на Jackett или Prowlarr",
+	"settings.sources.off": "Източниците са изключени",
+	"settings.sources.offText": "HolyArrs не търси и не хваща. Изтеглянията, които добавяте в своята Програма за изтегляне, все още се внасят.",
+	"settings.sources.openParts": "Отваряне на Части",
+	"settings.sources.offState": "Изключено"
 }

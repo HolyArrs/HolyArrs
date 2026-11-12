@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Só o proprietário pode transferir; peça a ele.",
 	"settings.backups.fingerprint": "Impressão digital da chave",
 	"settings.backups.downloadKit": "Transferir kit de chave",
-	"settings.backups.restoreKey": "Para restaurar: renomeie para holyarrs.key e coloque na pasta config"
+	"settings.backups.restoreKey": "Para restaurar: renomeie para holyarrs.key e coloque na pasta config",
+	"settings.backups.offPlan": "Desativado",
+	"settings.backups.offAbout": "Sem cópias de segurança agendadas. Continua a ser feita uma cópia antes de cada atualização.",
+	"settings.backups.offKeeps": "Desativado mantém as cópias de segurança que já tens."
 }

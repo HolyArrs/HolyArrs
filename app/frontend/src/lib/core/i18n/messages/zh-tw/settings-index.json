@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "我的通知",
 	"settings.index.account.alerts-me.alerts-for-me.words": "我的電子郵件信箱 discord 通知 my email discord notifications",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "我已登入的裝置",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "工作階段 裝置 全部登出 sessions devices sign out everywhere"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "工作階段 裝置 全部登出 sessions devices sign out everywhere",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "詳細資料的來源",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "中繼資料模式 自己的金鑰 關閉 查詢 隱私 伺服器 獨立",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "你自己的金鑰",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart 金鑰 api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "供你的防火牆使用的位址",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "防火牆 主機 外部 位址 允許清單"
 }

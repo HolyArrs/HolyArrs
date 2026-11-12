@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "只有擁有者可以下載，請聯絡擁有者。",
 	"settings.backups.fingerprint": "金鑰指紋",
 	"settings.backups.downloadKit": "下載金鑰包",
-	"settings.backups.restoreKey": "還原方法：改名為 holyarrs.key，放入 config 資料夾"
+	"settings.backups.restoreKey": "還原方法：改名為 holyarrs.key，放入 config 資料夾",
+	"settings.backups.offPlan": "關閉",
+	"settings.backups.offAbout": "沒有排程備份。每次更新前仍會建立一份副本。",
+	"settings.backups.offKeeps": "關閉會保留你現有的備份。"
 }

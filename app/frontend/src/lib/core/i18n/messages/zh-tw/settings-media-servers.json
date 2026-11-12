@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "測試",
 	"settings.mediaServers.changeButton": "更改",
 	"settings.mediaServers.removeName": "移除 {name}",
-	"settings.mediaServers.remove": "移除"
+	"settings.mediaServers.remove": "移除",
+	"settings.mediaServers.watchTitle": "觀看紀錄",
+	"settings.mediaServers.watchRead": "讀取觀看紀錄",
+	"settings.mediaServers.watchHint": "在媒體庫統計中顯示誰看了什麼，供管理媒體庫的人使用。關閉會刪除已讀取的內容。",
+	"settings.mediaServers.watchConfirmOff": "要關閉觀看紀錄嗎？到目前為止讀取的所有內容都會被刪除。",
+	"settings.mediaServers.watchTurnedOn": "觀看紀錄已開啟。第一次讀取會在 30 分鐘內進行。",
+	"settings.mediaServers.watchTurnedOff": "觀看紀錄已關閉",
+	"settings.mediaServers.watchFailed": "無法變更觀看紀錄"
 }

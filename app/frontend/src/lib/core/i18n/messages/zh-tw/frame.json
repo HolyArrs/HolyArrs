@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "所有位置",
 	"frame.layout.newWord": "新",
 	"frame.layout.accountName": "帳號 · {name}",
-	"frame.layout.hostRefused": "<b>無法在 {host} 上儲存更改。</b>HolyArrs 只在你允許的名稱上儲存。請先用 IP 位址開啟一次，然後在 設定 › 登入與安全 › 允許的主機名稱 中新增 {host}。無需重新啟動。"
+	"frame.layout.hostRefused": "<b>無法在 {host} 上儲存更改。</b>HolyArrs 只在你允許的名稱上儲存。請先用 IP 位址開啟一次，然後在 設定 › 登入與安全 › 允許的主機名稱 中新增 {host}。無需重新啟動。",
+	"frame.feeds.clearOne": "已匯入的下載尚未清除",
+	"frame.feeds.clearMany": "{n} 個已匯入的下載尚未清除",
+	"frame.feeds.clearBody": "HolyArrs 會自行重試",
+	"frame.feeds.clearNow": "立即清除",
+	"frame.feeds.cleared": "已從下載器清除",
+	"frame.feeds.clearStill": "尚未清除"
 }

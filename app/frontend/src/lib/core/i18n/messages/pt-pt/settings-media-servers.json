@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Testar",
 	"settings.mediaServers.changeButton": "Alterar",
 	"settings.mediaServers.removeName": "Remover {name}",
-	"settings.mediaServers.remove": "Remover"
+	"settings.mediaServers.remove": "Remover",
+	"settings.mediaServers.watchTitle": "Histórico de visualização",
+	"settings.mediaServers.watchRead": "Ler histórico de visualização",
+	"settings.mediaServers.watchHint": "Mostra nas Estatísticas da Biblioteca quem viu o quê, para quem gere a Biblioteca. Desativado apaga o que foi lido.",
+	"settings.mediaServers.watchConfirmOff": "Desativar o histórico de visualização? Tudo o que foi lido até agora é apagado.",
+	"settings.mediaServers.watchTurnedOn": "Histórico de visualização ativado. A primeira leitura ocorre nos próximos 30 minutos.",
+	"settings.mediaServers.watchTurnedOff": "Histórico de visualização desativado",
+	"settings.mediaServers.watchFailed": "Não foi possível alterar o histórico de visualização"
 }

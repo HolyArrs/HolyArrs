@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Zona de perigo",
 	"core.settings.danger.about": "Reiniciar ou desligar",
 	"core.settings.account.label": "A minha conta",
-	"core.settings.account.about": "Palavra-passe, duas etapas, dispositivos"
+	"core.settings.account.about": "Palavra-passe, duas etapas, dispositivos",
+	"core.plain.clearWaiting": "Os downloads importados estão à espera de ser limpos do seu Gestor de downloads.",
+	"core.api.sourceOff": "Algumas linhas estão desligadas nesta instalação."
 }

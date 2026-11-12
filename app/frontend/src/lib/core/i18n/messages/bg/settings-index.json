@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Известия за мен",
 	"settings.index.account.alerts-me.alerts-for-me.words": "моят имейл discord известия",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Моите влезли устройства",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "сесии устройства изход отвсякъде sessions devices sign out"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "сесии устройства изход отвсякъде sessions devices sign out",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Откъде идват подробностите",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "режим на метаданни собствени ключове изключено търсения поверителност сървър независим",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Вашите собствени ключове",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb токен tvdb pin mdblist fanart ключ api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Адреси за вашата защитна стена",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "защитна стена хостове външни адреси списък с разрешени"
 }

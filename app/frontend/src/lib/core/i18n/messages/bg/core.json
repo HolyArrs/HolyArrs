@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Опасна зона",
 	"core.settings.danger.about": "Рестартиране или изключване",
 	"core.settings.account.label": "Моят акаунт",
-	"core.settings.account.about": "Парола, двуфакторно, устройства"
+	"core.settings.account.about": "Парола, двуфакторно, устройства",
+	"core.plain.clearWaiting": "Внесените изтегляния чакат да бъдат изчистени от своята Програма за изтегляне.",
+	"core.api.sourceOff": "Някои редове са изключени при тази инсталация."
 }

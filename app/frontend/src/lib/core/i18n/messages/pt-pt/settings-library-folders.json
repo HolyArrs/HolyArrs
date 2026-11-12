@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Só o proprietário e administradores",
 	"settings.libraryFolders.copiesExpected": "Copiar é o esperado",
 	"settings.libraryFolders.copiesExpectedState": "Copia, como esperado",
-	"settings.libraryFolders.warnAgain": "Avisar novamente"
+	"settings.libraryFolders.warnAgain": "Avisar novamente",
+	"settings.libraryFolders.whyCopies": "Porquê?",
+	"settings.libraryFolders.stateInstant": "Instantâneo, sem espaço extra",
+	"settings.libraryFolders.changePath": "Alterar caminho",
+	"settings.libraryFolders.changePathOf": "Alterar o caminho de {path}",
+	"settings.libraryFolders.newPath": "Novo caminho",
+	"settings.libraryFolders.changePathHint": "Move primeiro os ficheiros para lá. O HolyArrs verifica cada ficheiro e não move nada.",
+	"settings.libraryFolders.checkingFiles": "A verificar ficheiros…",
+	"settings.libraryFolders.pathChanged": "Caminho alterado"
 }

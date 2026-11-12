@@ -259,5 +259,7 @@
 	"health.word.broken": "故障",
 	"health.word.notSent": "尚未傳送",
 	"health.word.notSynced": "尚未同步",
-	"health.word.working": "正常"
+	"health.word.working": "正常",
+	"health.check.clearWaiting": "等待清除的下載",
+	"health.kind.clearWaiting": "等待清除的下載"
 }

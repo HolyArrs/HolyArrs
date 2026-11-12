@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "從 Plex 想看清單發起請求",
 	"settings.requests.plexOnHint": "每個人在「我的帳號」中自行開啟，並受其限額約束。",
 	"settings.requests.plexEveryone": "為所有使用 Plex 登入的人開啟",
-	"settings.requests.plexEveryoneHint": "每個人都可以在「我的帳號」中為自己關閉。"
+	"settings.requests.plexEveryoneHint": "每個人都可以在「我的帳號」中為自己關閉。",
+	"settings.requests.plexFriends": "包含 Plex 朋友",
+	"settings.requests.plexFriendsHint": "你從 Plex 匯入的朋友。使用你的 Plex 連結讀取；每位朋友的限制仍然適用。",
+	"settings.requests.plexFriendsNoLink": "請先在「設定」›「登入」中連結 Plex。",
+	"settings.requests.plexFriendsNone": "還沒有從 Plex 匯入任何人。",
+	"settings.requests.plexFriendsRead": "讀取於 {when}",
+	"settings.requests.plexFriendsNotYet": "尚未讀取",
+	"settings.requests.plexFriendsAsked": "已請求：{n}"
 }

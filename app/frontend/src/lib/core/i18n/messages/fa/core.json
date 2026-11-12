@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "منطقه خطر",
 	"core.settings.danger.about": "راه‌اندازی مجدد یا خاموش کردن",
 	"core.settings.account.label": "حساب من",
-	"core.settings.account.about": "رمز عبور، دومرحله‌ای، دستگاه‌ها"
+	"core.settings.account.about": "رمز عبور، دومرحله‌ای، دستگاه‌ها",
+	"core.plain.clearWaiting": "دانلودهای واردشده منتظر پاک شدن از دانلودر خود هستند.",
+	"core.api.sourceOff": "برخی ردیف‌ها در این نصب خاموش هستند."
 }

@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Само за собственика и администраторите",
 	"settings.libraryFolders.copiesExpected": "Копирането се очаква",
 	"settings.libraryFolders.copiesExpectedState": "Копира, както се очаква",
-	"settings.libraryFolders.warnAgain": "Предупреди отново"
+	"settings.libraryFolders.warnAgain": "Предупреди отново",
+	"settings.libraryFolders.whyCopies": "Защо?",
+	"settings.libraryFolders.stateInstant": "Мигновено, без допълнително място",
+	"settings.libraryFolders.changePath": "Промяна на пътя",
+	"settings.libraryFolders.changePathOf": "Промяна на пътя на {path}",
+	"settings.libraryFolders.newPath": "Нов път",
+	"settings.libraryFolders.changePathHint": "Първо преместете файловете там. HolyArrs проверява всеки файл и не премества нищо.",
+	"settings.libraryFolders.checkingFiles": "Проверяват се файловете…",
+	"settings.libraryFolders.pathChanged": "Пътят е променен"
 }

@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "تغییر",
 	"settings.sources.removeName": "حذف {name}",
 	"settings.sources.remove": "حذف",
-	"settings.sources.bridge": "اتصال Jackett یا Prowlarr"
+	"settings.sources.bridge": "اتصال Jackett یا Prowlarr",
+	"settings.sources.off": "منبع‌ها خاموش هستند",
+	"settings.sources.offText": "HolyArrs جست‌وجو نمی‌کند و دریافت نمی‌کند. دانلودهایی که در دانلودر خود اضافه می‌کنید همچنان وارد می‌شوند.",
+	"settings.sources.openParts": "باز کردن بخش‌ها",
+	"settings.sources.offState": "خاموش"
 }

@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "僅限擁有者和管理員",
 	"settings.libraryFolders.copiesExpected": "複製是預期的",
 	"settings.libraryFolders.copiesExpectedState": "複製，符合預期",
-	"settings.libraryFolders.warnAgain": "重新提醒"
+	"settings.libraryFolders.warnAgain": "重新提醒",
+	"settings.libraryFolders.whyCopies": "為什麼？",
+	"settings.libraryFolders.stateInstant": "即時，不佔額外空間",
+	"settings.libraryFolders.changePath": "變更路徑",
+	"settings.libraryFolders.changePathOf": "變更 {path} 的路徑",
+	"settings.libraryFolders.newPath": "新路徑",
+	"settings.libraryFolders.changePathHint": "請先將檔案移到那裡。HolyArrs 會檢查每個檔案，且不會移動任何東西。",
+	"settings.libraryFolders.checkingFiles": "正在檢查檔案…",
+	"settings.libraryFolders.pathChanged": "路徑已變更"
 }

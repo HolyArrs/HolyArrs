@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Проверка",
 	"settings.mediaServers.changeButton": "Промяна",
 	"settings.mediaServers.removeName": "Премахване на {name}",
-	"settings.mediaServers.remove": "Премахване"
+	"settings.mediaServers.remove": "Премахване",
+	"settings.mediaServers.watchTitle": "История на гледане",
+	"settings.mediaServers.watchRead": "Четене на историята на гледане",
+	"settings.mediaServers.watchHint": "Показва в Статистика на Библиотеката кой какво е гледал, за хората, които управляват Библиотеката. Изключено изтрива прочетеното.",
+	"settings.mediaServers.watchConfirmOff": "Да изключа ли историята на гледане? Всичко прочетено досега се изтрива.",
+	"settings.mediaServers.watchTurnedOn": "Историята на гледане е включена. Първото четене става до 30 минути.",
+	"settings.mediaServers.watchTurnedOff": "Историята на гледане е изключена",
+	"settings.mediaServers.watchFailed": "Историята на гледане не можа да се промени"
 }

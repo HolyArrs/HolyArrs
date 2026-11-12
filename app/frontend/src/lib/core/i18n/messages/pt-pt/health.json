@@ -259,5 +259,7 @@
 	"health.word.broken": "Quebrado",
 	"health.word.notSent": "Ainda não enviado",
 	"health.word.notSynced": "Ainda não sincronizado",
-	"health.word.working": "A funcionar"
+	"health.word.working": "A funcionar",
+	"health.check.clearWaiting": "Downloads à espera de limpeza",
+	"health.kind.clearWaiting": "Downloads à espera de limpeza"
 }

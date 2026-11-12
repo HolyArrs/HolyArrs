@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Alterar",
 	"settings.sources.removeName": "Remover {name}",
 	"settings.sources.remove": "Remover",
-	"settings.sources.bridge": "Associar Jackett ou Prowlarr"
+	"settings.sources.bridge": "Associar Jackett ou Prowlarr",
+	"settings.sources.off": "As Fontes estão desativadas",
+	"settings.sources.offText": "O HolyArrs não pesquisa nem obtém. Os downloads que adicionas no teu Gestor de downloads continuam a ser importados.",
+	"settings.sources.openParts": "Abrir Partes",
+	"settings.sources.offState": "Desativado"
 }
