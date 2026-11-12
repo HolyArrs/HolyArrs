@@ -268,6 +268,8 @@
 	"home.metadataServerOnline": "Сервер метаподатака ради",
 	"home.homeCouldNotRead3": "Почетна сада није могла да прочита преузимања.",
 	"home.waitingToBeCleared": "чека чишћење",
+	"home.noSaveFolder": "нема фасциклу за чување",
+	"home.noSaveFolderMany": "немају фасциклу за чување",
 	"home.off": "Искључено",
 	"home.sourcesOff": "Искључено у Деловима"
 }

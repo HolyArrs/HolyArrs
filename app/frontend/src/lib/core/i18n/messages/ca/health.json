@@ -261,5 +261,8 @@
 	"health.word.notSynced": "Encara no sincronitzat",
 	"health.word.working": "Funcionant",
 	"health.check.clearWaiting": "Baixades que esperen ser netejades",
-	"health.kind.clearWaiting": "Baixades que esperen ser netejades"
+	"health.check.saveFolder": "Carpeta de desament de",
+	"health.check.saveFolderWhy": "{app} no té carpeta de desament, així que HolyArrs no pot importar les baixades acabades. Afegeix un parell de rutes a Configuració > Gestors de baixades.",
+	"health.kind.clearWaiting": "Baixades que esperen ser netejades",
+	"health.kind.saveFolder": "Carpeta de desament del gestor de baixades"
 }

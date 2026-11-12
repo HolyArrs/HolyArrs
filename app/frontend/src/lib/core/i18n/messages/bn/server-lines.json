@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "ইতিহাস",
 	"server.metadata.set-by-your-docker-settings": "আপনার Docker সেটিংস দ্বারা নির্ধারিত",
 	"server.metadata.tv-movie": "টিভি সিনেমা",
-	"server.metadata.western": "ওয়েস্টার্ন"
+	"server.metadata.western": "ওয়েস্টার্ন",
+	"server.health.downloader-save-folder": "ডাউনলোডারের সেভ ফোল্ডার"
 }

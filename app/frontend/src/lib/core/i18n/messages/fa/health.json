@@ -261,5 +261,8 @@
 	"health.word.notSynced": "هنوز همگام نشده",
 	"health.word.working": "کار می‌کند",
 	"health.check.clearWaiting": "دانلودهای منتظر پاک شدن",
-	"health.kind.clearWaiting": "دانلودهای منتظر پاک شدن"
+	"health.check.saveFolder": "پوشه ذخیره برای",
+	"health.check.saveFolderWhy": "{app} پوشه ذخیره ندارد، پس HolyArrs نمی‌تواند دانلودهای تمام‌شده‌اش را وارد کند. در تنظیمات > دانلودرها یک جفت مسیر اضافه کنید.",
+	"health.kind.clearWaiting": "دانلودهای منتظر پاک شدن",
+	"health.kind.saveFolder": "پوشه ذخیره دانلودر"
 }

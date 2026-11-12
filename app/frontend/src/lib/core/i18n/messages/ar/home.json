@@ -26,6 +26,8 @@
 	"home.downloads": "التنزيلات",
 	"home.waitingForTheirFiles": "بانتظار ملفاتها",
 	"home.waitingToBeCleared": "بانتظار التنظيف",
+	"home.noSaveFolder": "بلا مجلد حفظ",
+	"home.noSaveFolderMany": "بلا مجلد حفظ",
 	"home.masterKey": "المفتاح الرئيسي",
 	"home.noKeyKitSaved": "لا توجد حزمة مفتاح محفوظة",
 	"home.trailers": "الإعلانات التشويقية",

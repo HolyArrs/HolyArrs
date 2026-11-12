@@ -268,6 +268,8 @@
 	"home.metadataServerOnline": "Metadataserveren er online",
 	"home.homeCouldNotRead3": "Hjem kunne ikke læse downloads lige nu.",
 	"home.waitingToBeCleared": "venter på at blive ryddet væk",
+	"home.noSaveFolder": "har ingen gemmemappe",
+	"home.noSaveFolderMany": "har ingen gemmemappe",
 	"home.off": "Fra",
 	"home.sourcesOff": "Slået fra i Dele"
 }

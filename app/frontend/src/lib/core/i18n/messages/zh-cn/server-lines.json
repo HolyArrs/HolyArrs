@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "历史",
 	"server.metadata.set-by-your-docker-settings": "由你的 Docker 设置指定",
 	"server.metadata.tv-movie": "电视电影",
-	"server.metadata.western": "西部"
+	"server.metadata.western": "西部",
+	"server.health.downloader-save-folder": "下载器保存文件夹"
 }

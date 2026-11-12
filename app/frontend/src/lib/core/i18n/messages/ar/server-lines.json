@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "تاريخ",
 	"server.metadata.set-by-your-docker-settings": "محدد من إعدادات Docker",
 	"server.metadata.tv-movie": "فيلم تلفزيوني",
-	"server.metadata.western": "ويسترن"
+	"server.metadata.western": "ويسترن",
+	"server.health.downloader-save-folder": "مجلد حفظ برنامج التنزيل"
 }

@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "ประวัติศาสตร์",
 	"server.metadata.set-by-your-docker-settings": "กำหนดโดยการตั้งค่า Docker ของคุณ",
 	"server.metadata.tv-movie": "ภาพยนตร์ทีวี",
-	"server.metadata.western": "เวสเทิร์น"
+	"server.metadata.western": "เวสเทิร์น",
+	"server.health.downloader-save-folder": "โฟลเดอร์บันทึกของตัวดาวน์โหลด"
 }

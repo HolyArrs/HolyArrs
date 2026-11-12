@@ -144,5 +144,6 @@
 	"core.settings.account.label": "Môj účet",
 	"core.settings.account.about": "Heslo, dvojfaktorové overenie, zariadenia",
 	"core.plain.clearWaiting": "Importované sťahovania čakajú na vyčistenie zo svojho Sťahovača.",
+	"core.plain.saveFolder": "Jeden Sťahovač nemá nastavený priečinok na ukladanie, takže HolyArrs nemôže importovať jeho dokončené sťahovania.",
 	"core.api.sourceOff": "Niektoré riadky sú v tejto inštalácii vypnuté."
 }

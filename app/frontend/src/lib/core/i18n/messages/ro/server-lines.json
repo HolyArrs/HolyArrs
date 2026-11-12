@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "Istorie",
 	"server.metadata.set-by-your-docker-settings": "Stabilit de setările tale Docker",
 	"server.metadata.tv-movie": "Film TV",
-	"server.metadata.western": "Western"
+	"server.metadata.western": "Western",
+	"server.health.downloader-save-folder": "Dosar de salvare al clientului de descărcare"
 }

@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "Povijesni",
 	"server.metadata.set-by-your-docker-settings": "Određeno vašim Docker postavkama",
 	"server.metadata.tv-movie": "TV film",
-	"server.metadata.western": "Vestern"
+	"server.metadata.western": "Vestern",
+	"server.health.downloader-save-folder": "Mapa za spremanje preuzimatelja"
 }

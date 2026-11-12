@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "تاریخی",
 	"server.metadata.set-by-your-docker-settings": "توسط تنظیمات Docker شما تعیین شده",
 	"server.metadata.tv-movie": "فیلم تلویزیونی",
-	"server.metadata.western": "وسترن"
+	"server.metadata.western": "وسترن",
+	"server.health.downloader-save-folder": "پوشه ذخیره دانلودر"
 }

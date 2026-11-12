@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "História",
 	"server.metadata.set-by-your-docker-settings": "Definido pelas tuas definições do Docker",
 	"server.metadata.tv-movie": "Filme de TV",
-	"server.metadata.western": "Faroeste"
+	"server.metadata.western": "Faroeste",
+	"server.health.downloader-save-folder": "Pasta de salvamento do gestor de downloads"
 }

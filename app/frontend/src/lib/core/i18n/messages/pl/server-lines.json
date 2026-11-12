@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "Historyczny",
 	"server.metadata.set-by-your-docker-settings": "Ustawione w ustawieniach Dockera",
 	"server.metadata.tv-movie": "Film telewizyjny",
-	"server.metadata.western": "Western"
+	"server.metadata.western": "Western",
+	"server.health.downloader-save-folder": "Folder zapisu Downloadera"
 }

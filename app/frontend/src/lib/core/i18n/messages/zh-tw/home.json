@@ -268,6 +268,8 @@
 	"home.metadataServerOnline": "中繼資料伺服器線上",
 	"home.homeCouldNotRead3": "首頁暫時無法讀取下載。",
 	"home.waitingToBeCleared": "等待清除",
+	"home.noSaveFolder": "沒有設定儲存資料夾",
+	"home.noSaveFolderMany": "沒有設定儲存資料夾",
 	"home.off": "關閉",
 	"home.sourcesOff": "已在功能模組中關閉"
 }

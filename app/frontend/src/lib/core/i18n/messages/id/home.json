@@ -268,6 +268,8 @@
 	"home.metadataServerOnline": "Server metadata aktif",
 	"home.homeCouldNotRead3": "Beranda tidak bisa membaca unduhan saat ini.",
 	"home.waitingToBeCleared": "menunggu dibersihkan",
+	"home.noSaveFolder": "belum punya folder simpan",
+	"home.noSaveFolderMany": "belum punya folder simpan",
 	"home.off": "Mati",
 	"home.sourcesOff": "Dimatikan di Bagian"
 }

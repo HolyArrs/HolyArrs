@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "Tarih",
 	"server.metadata.set-by-your-docker-settings": "Docker ayarlarınla belirlendi",
 	"server.metadata.tv-movie": "TV Filmi",
-	"server.metadata.western": "Vahşi Batı"
+	"server.metadata.western": "Vahşi Batı",
+	"server.health.downloader-save-folder": "İndiricinin kayıt klasörü"
 }

@@ -26,6 +26,8 @@
 	"home.downloads": "Загрузки",
 	"home.waitingForTheirFiles": "ждут свои файлы",
 	"home.waitingToBeCleared": "ждут очистки",
+	"home.noSaveFolder": "нет папки сохранения",
+	"home.noSaveFolderMany": "нет папки сохранения",
 	"home.masterKey": "Главный ключ",
 	"home.noKeyKitSaved": "набор ключа не сохранён",
 	"home.trailers": "Трейлеры",

@@ -55,6 +55,7 @@
 	"core.plain.configFolder": "/config bir klasöre eşlenmemiş, bu yüzden konteyner yeniden oluşturulunca HolyArrs verileri kaybolur.",
 	"core.plain.waitingDownloads": "İndirmeler bekliyor çünkü indiricileri dosyaları kullanamıyor.",
 	"core.plain.clearWaiting": "İçe aktarılan indirmeler indiricilerinden temizlenmeyi bekliyor.",
+	"core.plain.saveFolder": "Bir indiricinin kayıt klasörü yok, bu yüzden HolyArrs biten indirmelerini içe aktaramıyor.",
 	"core.plain.someone": "Evinden biri",
 	"core.plain.keyKitOwner": "Sahip anahtar paketini kaydetmeli: yedekler ana anahtarı içermez.",
 	"core.plain.keyKitNone": "Kayıtlı anahtar paketi yok: yedekler ana anahtarı içermez.",

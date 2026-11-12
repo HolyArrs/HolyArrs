@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "Historie",
 	"server.metadata.set-by-your-docker-settings": "Styret af dine Docker-indstillinger",
 	"server.metadata.tv-movie": "Tv-film",
-	"server.metadata.western": "Western"
+	"server.metadata.western": "Western",
+	"server.health.downloader-save-folder": "Downloaderens gemmemappe"
 }

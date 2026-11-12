@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "Történelmi",
 	"server.metadata.set-by-your-docker-settings": "A Docker-beállításaid határozzák meg",
 	"server.metadata.tv-movie": "Tévéfilm",
-	"server.metadata.western": "Western"
+	"server.metadata.western": "Western",
+	"server.health.downloader-save-folder": "Letöltő mentési mappája"
 }

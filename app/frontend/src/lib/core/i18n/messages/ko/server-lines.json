@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "역사",
 	"server.metadata.set-by-your-docker-settings": "Docker 설정에서 지정됨",
 	"server.metadata.tv-movie": "TV 영화",
-	"server.metadata.western": "서부극"
+	"server.metadata.western": "서부극",
+	"server.health.downloader-save-folder": "다운로더 저장 폴더"
 }

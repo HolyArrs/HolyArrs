@@ -26,6 +26,8 @@
 	"home.downloads": "Pobieranie",
 	"home.waitingForTheirFiles": "czeka na swoje pliki",
 	"home.waitingToBeCleared": "czeka na wyczyszczenie",
+	"home.noSaveFolder": "nie ma folderu zapisu",
+	"home.noSaveFolderMany": "nie mają folderu zapisu",
 	"home.masterKey": "Klucz główny",
 	"home.noKeyKitSaved": "brak zapisanego zestawu kluczy",
 	"home.trailers": "Zwiastuny",

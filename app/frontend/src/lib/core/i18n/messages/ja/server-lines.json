@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "歴史",
 	"server.metadata.set-by-your-docker-settings": "Docker の設定で指定されています",
 	"server.metadata.tv-movie": "テレビ映画",
-	"server.metadata.western": "西部劇"
+	"server.metadata.western": "西部劇",
+	"server.health.downloader-save-folder": "ダウンローダーの保存先フォルダー"
 }

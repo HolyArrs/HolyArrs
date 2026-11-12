@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "Історичне",
 	"server.metadata.set-by-your-docker-settings": "Задано в налаштуваннях Docker",
 	"server.metadata.tv-movie": "Телефільм",
-	"server.metadata.western": "Вестерн"
+	"server.metadata.western": "Вестерн",
+	"server.health.downloader-save-folder": "Тека збереження завантажувача"
 }

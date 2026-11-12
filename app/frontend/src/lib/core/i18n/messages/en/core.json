@@ -55,6 +55,7 @@
 	"core.plain.configFolder": "/config is not mapped to a folder, so HolyArrs data is lost when the container is recreated.",
 	"core.plain.waitingDownloads": "Downloads are waiting because their Downloader can't use the files.",
 	"core.plain.clearWaiting": "Imported downloads are waiting to be cleared from their Downloader.",
+	"core.plain.saveFolder": "A Downloader has no save folder set, so HolyArrs can't import its finished downloads.",
 	"core.plain.someone": "Someone in your household",
 	"core.plain.keyKitOwner": "The owner should save the key kit: backups do not hold the master key.",
 	"core.plain.keyKitNone": "No key kit is saved: backups do not hold the master key.",

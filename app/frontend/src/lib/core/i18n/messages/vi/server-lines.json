@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "Lịch sử",
 	"server.metadata.set-by-your-docker-settings": "Do cài đặt Docker của bạn quyết định",
 	"server.metadata.tv-movie": "Phim truyền hình",
-	"server.metadata.western": "Miền Tây"
+	"server.metadata.western": "Miền Tây",
+	"server.health.downloader-save-folder": "Thư mục lưu của trình tải xuống"
 }

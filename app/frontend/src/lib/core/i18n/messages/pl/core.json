@@ -55,6 +55,7 @@
 	"core.plain.configFolder": "/config nie jest zmapowany na folder, więc dane HolyArrs przepadną przy ponownym utworzeniu kontenera.",
 	"core.plain.waitingDownloads": "Pobierania czekają, bo ich Downloader nie może użyć plików.",
 	"core.plain.clearWaiting": "Zaimportowane pobierania czekają na wyczyszczenie z ich Downloadera.",
+	"core.plain.saveFolder": "Jeden Downloader nie ma folderu zapisu, więc HolyArrs nie może zaimportować jego ukończonych pobrań.",
 	"core.plain.someone": "Ktoś z twojego domu",
 	"core.plain.keyKitOwner": "Właściciel powinien zapisać zestaw kluczy: backupy nie zawierają klucza głównego.",
 	"core.plain.keyKitNone": "Nie zapisano zestawu kluczy: backupy nie zawierają klucza głównego.",

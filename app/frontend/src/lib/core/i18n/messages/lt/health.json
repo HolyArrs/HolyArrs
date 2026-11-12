@@ -261,5 +261,8 @@
 	"health.word.notSynced": "Dar nesinchronizuota",
 	"health.word.working": "Veikia",
 	"health.check.clearWaiting": "Atsisiuntimai, laukiantys išvalymo",
-	"health.kind.clearWaiting": "Atsisiuntimai, laukiantys išvalymo"
+	"health.check.saveFolder": "Išsaugojimo aplankas:",
+	"health.check.saveFolderWhy": "{app} neturi išsaugojimo aplanko, todėl HolyArrs negali importuoti baigtų atsisiuntimų. Pridėkite kelių porą skiltyje Nustatymai > Atsisiuntėjai.",
+	"health.kind.clearWaiting": "Atsisiuntimai, laukiantys išvalymo",
+	"health.kind.saveFolder": "Atsisiuntėjo išsaugojimo aplankas"
 }

@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "Sejarah",
 	"server.metadata.set-by-your-docker-settings": "Ditetapkan oleh tetapan Docker anda",
 	"server.metadata.tv-movie": "Filem TV",
-	"server.metadata.western": "Western"
+	"server.metadata.western": "Western",
+	"server.health.downloader-save-folder": "Folder simpan Pemuat turun"
 }

@@ -261,5 +261,8 @@
 	"health.word.notSynced": "Още не е синхронизирано",
 	"health.word.working": "Работи",
 	"health.check.clearWaiting": "Изтегляния, чакащи изчистване",
-	"health.kind.clearWaiting": "Изтегляния, чакащи изчистване"
+	"health.check.saveFolder": "Папка за запис за",
+	"health.check.saveFolderWhy": "{app} няма зададена папка за запис, затова HolyArrs не може да внесе завършените изтегляния. Добавете двойка пътища в Настройки > Програми за изтегляне.",
+	"health.kind.clearWaiting": "Изтегляния, чакащи изчистване",
+	"health.kind.saveFolder": "Папка за запис на програмата за изтегляне"
 }

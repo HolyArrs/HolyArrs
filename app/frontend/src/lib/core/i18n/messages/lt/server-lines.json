@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "Istorijos",
 	"server.metadata.set-by-your-docker-settings": "Nustatyta jūsų Docker nustatymuose",
 	"server.metadata.tv-movie": "TV filmas",
-	"server.metadata.western": "Vesternų"
+	"server.metadata.western": "Vesternų",
+	"server.health.downloader-save-folder": "Atsisiuntėjo išsaugojimo aplankas"
 }

@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "Vēsture",
 	"server.metadata.set-by-your-docker-settings": "Noteikts jūsu Docker iestatījumos",
 	"server.metadata.tv-movie": "TV filma",
-	"server.metadata.western": "Vesterns"
+	"server.metadata.western": "Vesterns",
+	"server.health.downloader-save-folder": "Lejupielādētāja saglabāšanas mape"
 }

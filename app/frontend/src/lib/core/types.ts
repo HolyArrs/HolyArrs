@@ -442,7 +442,7 @@ export interface EventPage {
 export interface HealthCheck {
 	id: number;
 	key: string;
-	kind: 'library_folder' | 'disk_space' | 'source' | 'downloader' | 'backups' | 'update' | 'config_disk' | 'config_folder' | 'waiting_downloads' | 'clear_waiting';
+	kind: 'library_folder' | 'disk_space' | 'source' | 'downloader' | 'backups' | 'update' | 'config_disk' | 'config_folder' | 'waiting_downloads' | 'clear_waiting' | 'save_folder';
 	subject: string;
 	state: 'ok' | 'warning' | 'error';
 	message: string;

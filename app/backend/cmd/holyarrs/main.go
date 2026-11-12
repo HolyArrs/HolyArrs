@@ -506,7 +506,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	ol.Register(q)
 	q.ProbeSchedule(requests.OutsideListSync, ol.ProbeSync)
 	he := &health.Engine{Store: s, Version: version, ConfigUnmapped: unmapped, ConfigDir: c.ConfigDir, Publish: func(topic string, data any) { hub.Publish(topic, data) },
-		Backups: backupsHealth(bm), SourcesOn: sourcesOn}
+		Backups: backupsHealth(bm), SourcesOn: sourcesOn, SavePath: c.SavePath}
 	// The update check: once a day from the release feed, through the
 	// network policy (public only unless the setting allows the local
 	// network; never cloud metadata addresses). HOLYARRS_RELEASE_FEED

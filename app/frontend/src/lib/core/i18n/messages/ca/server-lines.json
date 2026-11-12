@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "Història",
 	"server.metadata.set-by-your-docker-settings": "Establert per la teva configuració de Docker",
 	"server.metadata.tv-movie": "Pel·lícula de TV",
-	"server.metadata.western": "Western"
+	"server.metadata.western": "Western",
+	"server.health.downloader-save-folder": "Carpeta de desament del gestor de baixades"
 }

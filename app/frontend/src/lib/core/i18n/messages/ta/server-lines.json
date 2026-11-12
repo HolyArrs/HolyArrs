@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "வரலாறு",
 	"server.metadata.set-by-your-docker-settings": "உங்கள் Docker அமைப்புகளால் அமைக்கப்பட்டது",
 	"server.metadata.tv-movie": "தொலைக்காட்சித் திரைப்படம்",
-	"server.metadata.western": "வெஸ்டர்ன்"
+	"server.metadata.western": "வெஸ்டர்ன்",
+	"server.health.downloader-save-folder": "பதிவிறக்கி சேமிக்கும் கோப்புறை"
 }

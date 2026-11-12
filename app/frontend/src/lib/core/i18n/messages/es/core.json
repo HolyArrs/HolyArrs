@@ -55,6 +55,7 @@
 	"core.plain.configFolder": "/config no está asignada a una carpeta, así que los datos de HolyArrs se pierden al recrear el contenedor.",
 	"core.plain.waitingDownloads": "Hay descargas esperando porque su gestor de descargas no puede usar los archivos.",
 	"core.plain.clearWaiting": "Hay descargas importadas esperando a que se limpien de su gestor de descargas.",
+	"core.plain.saveFolder": "Un gestor de descargas no tiene carpeta de descarga, así que HolyArrs no puede importar sus descargas terminadas.",
 	"core.plain.someone": "Alguien de tu hogar",
 	"core.plain.keyKitOwner": "El propietario debería guardar el kit de clave: las copias de seguridad no incluyen la clave maestra.",
 	"core.plain.keyKitNone": "No hay un kit de clave guardado: las copias de seguridad no incluyen la clave maestra.",

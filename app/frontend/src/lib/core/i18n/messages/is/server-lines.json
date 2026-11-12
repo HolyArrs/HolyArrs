@@ -1267,5 +1267,6 @@
   "server.metadata.history": "Saga",
   "server.metadata.set-by-your-docker-settings": "Ákveðið af Docker-stillingunum þínum",
   "server.metadata.tv-movie": "Sjónvarpsmynd",
-  "server.metadata.western": "Vestri"
+  "server.metadata.western": "Vestri",
+	"server.health.downloader-save-folder": "Vistunarmappa niðurhalara"
 }

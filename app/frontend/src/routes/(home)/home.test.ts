@@ -115,6 +115,13 @@ describe('home', () => {
 		expect(item.text).toBe('Imported downloads are waiting to be cleared from their Downloader.');
 	});
 
+	it('names a Downloader with no save folder, linked to Settings > Downloaders', () => {
+		const [item] = attention({ failed: [], decisions: [], health: [{ ...check('save_folder:2', 'warning', 'save_folder'), subject: 'SABnzbd' }] });
+		expect(item.reason).toBe('has no save folder set');
+		expect(item.href).toBe('/settings/downloaders');
+		expect(item.text).toBe("A Downloader has no save folder set, so HolyArrs can't import its finished downloads.");
+	});
+
 	it('follows the flap guard when the server sends the confirmed state', () => {
 		const flaky = { ...check('d', 'error', 'downloader'), confirmed: 'ok' as const };
 		const held = { ...check('s', 'ok', 'source'), confirmed: 'warning' as const };

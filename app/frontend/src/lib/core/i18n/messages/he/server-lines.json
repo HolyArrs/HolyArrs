@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "היסטוריה",
 	"server.metadata.set-by-your-docker-settings": "נקבע בהגדרות ה-Docker שלכם",
 	"server.metadata.tv-movie": "סרט טלוויזיה",
-	"server.metadata.western": "מערבון"
+	"server.metadata.western": "מערבון",
+	"server.health.downloader-save-folder": "תיקיית השמירה של המוריד"
 }

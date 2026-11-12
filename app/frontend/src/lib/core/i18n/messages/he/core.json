@@ -144,5 +144,6 @@
 	"core.settings.account.label": "החשבון שלי",
 	"core.settings.account.about": "סיסמה, אימות דו־שלבי, מכשירים",
 	"core.plain.clearWaiting": "הורדות שיובאו ממתינות לניקוי מהמוריד שלהן.",
+	"core.plain.saveFolder": "לאחד המורידים אין תיקיית שמירה, ולכן HolyArrs לא יכול לייבא את ההורדות שהסתיימו שלו.",
 	"core.api.sourceOff": "חלק מהשורות כבויות בהתקנה הזו."
 }

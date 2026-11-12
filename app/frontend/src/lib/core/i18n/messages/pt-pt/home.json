@@ -268,6 +268,8 @@
 	"home.metadataServerOnline": "Servidor de metadados no ar",
 	"home.homeCouldNotRead3": "O Início não conseguiu ler os downloads agora.",
 	"home.waitingToBeCleared": "à espera de limpeza",
+	"home.noSaveFolder": "não tem pasta de salvamento",
+	"home.noSaveFolderMany": "não têm pasta de salvamento",
 	"home.off": "Desativado",
 	"home.sourcesOff": "Desativado em Partes"
 }

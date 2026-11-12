@@ -144,5 +144,6 @@
 	"core.settings.account.label": "Akunku",
 	"core.settings.account.about": "Kata sandi, dua faktor, perangkat",
 	"core.plain.clearWaiting": "Unduhan yang sudah diimpor menunggu dibersihkan dari Pengunduhnya.",
+	"core.plain.saveFolder": "Satu Pengunduh belum punya folder simpan, jadi HolyArrs tidak bisa mengimpor unduhannya yang sudah selesai.",
 	"core.api.sourceOff": "Beberapa baris dimatikan di instalasi ini."
 }

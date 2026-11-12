@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "Ajalugu",
 	"server.metadata.set-by-your-docker-settings": "Määratud sinu Dockeri seadetes",
 	"server.metadata.tv-movie": "Telefilm",
-	"server.metadata.western": "Vestern"
+	"server.metadata.western": "Vestern",
+	"server.health.downloader-save-folder": "Allalaadija salvestuskaust"
 }

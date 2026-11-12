@@ -1267,5 +1267,6 @@
 	"server.metadata.history": "Historický",
 	"server.metadata.set-by-your-docker-settings": "Nastavené v nastaveniach Dockeru",
 	"server.metadata.tv-movie": "TV film",
-	"server.metadata.western": "Western"
+	"server.metadata.western": "Western",
+	"server.health.downloader-save-folder": "Priečinok na ukladanie Sťahovača"
 }

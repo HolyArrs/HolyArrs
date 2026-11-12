@@ -144,5 +144,6 @@
 	"core.settings.account.label": "Saját fiók",
 	"core.settings.account.about": "Jelszó, kétlépcsős azonosítás, eszközök",
 	"core.plain.clearWaiting": "Az importált letöltések arra várnak, hogy törlődjenek a Letöltőből.",
+	"core.plain.saveFolder": "Egy letöltőnek nincs mentési mappája, így a HolyArrs nem tudja importálni a kész letöltéseit.",
 	"core.api.sourceOff": "Néhány sor ki van kapcsolva ezen a telepítésen."
 }

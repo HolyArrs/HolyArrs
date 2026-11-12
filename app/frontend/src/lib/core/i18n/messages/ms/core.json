@@ -144,5 +144,6 @@
 	"core.settings.account.label": "Akaun saya",
 	"core.settings.account.about": "Kata laluan, dua faktor, peranti",
 	"core.plain.clearWaiting": "Muat turun yang diimport sedang menunggu untuk dibersihkan daripada Pemuat turunnya.",
+	"core.plain.saveFolder": "Satu Pemuat turun tiada folder simpan, jadi HolyArrs tidak dapat mengimport muat turunnya yang sudah siap.",
 	"core.api.sourceOff": "Sesetengah baris dimatikan pada pemasangan ini."
 }
