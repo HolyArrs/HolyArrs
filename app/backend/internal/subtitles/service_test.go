@@ -681,3 +681,33 @@ func TestService_FailedEventHidesLibraryFolder(t *testing.T) {
 		t.Fatalf("error %q summary %q", msg, es[0].Summary)
 	}
 }
+
+// A subtitle picked by hand can be swapped for another pick: the choices
+// list still asks the sites for its language. A timed better search leaves
+// it alone.
+func TestService_ChoicesAfterAHandPick(t *testing.T) {
+	f := newFix(t)
+	site := &fakesite.Site{Subs: []fakesite.Sub{{ID: "s1", Kind: "movie", Language: "en", Title: "The Lantern", Year: 2010,
+		Release: "The.Lantern.2010.720p.WEB.x264-OTHER", Format: "srt", Text: fakesite.Cue("x", 1000)}}}
+	s, _ := svc(t, f, site)
+	wishAll(t, f, Want{Language: "en"})
+	ctx := context.Background()
+	fc, _ := s.load(ctx, f.movieFile)
+	if _, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("picked", 0), "srt", DefaultSettings(), nil, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.st.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE subtitles SET origin = 'by_hand', score = 53 WHERE file_id = ? AND state = 'present'", f.movieFile)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	res, err := s.Search(ctx, f.movieFile, SearchOptions{Show: true}, domain.System)
+	if err != nil || len(res.Outcomes) != 1 || len(res.Outcomes[0].Choices) != 1 {
+		t.Fatalf("choices after a hand pick: %+v %v", res, err)
+	}
+	res, err = s.Search(ctx, f.movieFile, SearchOptions{Better: true}, domain.System)
+	if err != nil || len(res.Outcomes) != 0 {
+		t.Fatalf("a better search touched the hand pick: %+v %v", res, err)
+	}
+}
