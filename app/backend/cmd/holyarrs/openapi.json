@@ -596,20 +596,27 @@
             "type": "string"
           },
           "moments": {
-            "description": "Ask moments go to the staff or the people who asked; grab, import, rename, add, delete, health and needs_decision go to the staff (email: staff_to).",
+            "description": "Ask moments go to the staff or the people who asked; grab, downloaded, download_failed, import, rename, add, delete, health, needs_decision and subtitle go to the staff (email: staff_to).",
             "items": {
               "enum": [
                 "ask_waiting",
                 "ask_approved",
                 "ask_turned_down",
                 "ask_ready",
+                "new_episodes",
+                "new_albums",
+                "report_made",
+                "report_fixed",
                 "grab",
+                "downloaded",
+                "download_failed",
                 "import",
                 "rename",
                 "add",
                 "delete",
                 "health",
-                "needs_decision"
+                "needs_decision",
+                "subtitle"
               ],
               "type": "string"
             },
@@ -619,7 +626,7 @@
             "type": "string"
           },
           "secret": {
-            "description": "Webhook secret; kept encrypted. Signs each message (X-HolyArrs-Signature: sha256= HMAC-SHA256 of the X-HolyArrs-Timestamp value, a dot and the body) or is sent as a bearer token. Empty or masked keeps the stored one, but must be sent again when the link points to another host.",
+            "description": "Webhook secret; kept encrypted. Signs each message (X-HolyArrs-Signature: sha256= HMAC-SHA256 of the X-HolyArrs-Timestamp value, a dot, the X-HolyArrs-Delivery value, a dot and the body) or is sent as a bearer token. Empty or masked keeps the stored one, but must be sent again when the link points to another host.",
             "type": "string"
           },
           "server_url": {
@@ -717,20 +724,27 @@
             "type": "string"
           },
           "moments": {
-            "description": "Ask moments go to the staff or the people who asked; grab, import, rename, add, delete, health and needs_decision go to the staff (email: staff_to).",
+            "description": "Ask moments go to the staff or the people who asked; grab, downloaded, download_failed, import, rename, add, delete, health, needs_decision and subtitle go to the staff (email: staff_to).",
             "items": {
               "enum": [
                 "ask_waiting",
                 "ask_approved",
                 "ask_turned_down",
                 "ask_ready",
+                "new_episodes",
+                "new_albums",
+                "report_made",
+                "report_fixed",
                 "grab",
+                "downloaded",
+                "download_failed",
                 "import",
                 "rename",
                 "add",
                 "delete",
                 "health",
-                "needs_decision"
+                "needs_decision",
+                "subtitle"
               ],
               "type": "string"
             },
@@ -740,7 +754,7 @@
             "type": "string"
           },
           "secret": {
-            "description": "Webhook secret; kept encrypted. Signs each message (X-HolyArrs-Signature: sha256= HMAC-SHA256 of the X-HolyArrs-Timestamp value, a dot and the body) or is sent as a bearer token. Empty or masked keeps the stored one, but must be sent again when the link points to another host.",
+            "description": "Webhook secret; kept encrypted. Signs each message (X-HolyArrs-Signature: sha256= HMAC-SHA256 of the X-HolyArrs-Timestamp value, a dot, the X-HolyArrs-Delivery value, a dot and the body) or is sent as a bearer token. Empty or masked keeps the stored one, but must be sent again when the link points to another host.",
             "type": "string"
           },
           "server_url": {
