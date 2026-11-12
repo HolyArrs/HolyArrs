@@ -1269,7 +1269,7 @@
 	"downloads.noDl.add": "أضف برنامج تنزيل",
 	"downloads.hl.noUsenetDl": "لم يُعدّ أي برنامج تنزيل Usenet",
 	"downloads.hl.noTorrentDl": "لم يُعدّ أي برنامج تنزيل تورنت",
-	"downloads.problem.importBlocked": "الاستيراد محظور",
+	"downloads.problem.importBlocked": "الاستيراد متوقف",
 	"downloads.problem.missingArticles": "مقالات مفقودة",
 	"downloads.problem.noFullCopy": "لا توجد نسخة كاملة",
 	"downloads.problem.noPeers": "لا يوجد نظراء",
