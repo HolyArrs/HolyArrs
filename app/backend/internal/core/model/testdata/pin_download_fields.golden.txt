@@ -56,3 +56,4 @@ Ours string db="" json="ours"
 --
 Ratio *float64 db="" json="ratio,omitempty"
 Minutes *int db="" json="minutes,omitempty"
+DeleteFiles bool db="" json="delete_files,omitempty"

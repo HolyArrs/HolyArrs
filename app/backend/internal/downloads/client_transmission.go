@@ -114,6 +114,24 @@ func (tr *Transmission) List(ctx context.Context, category string) ([]Job, error
 	return out, nil
 }
 
+// ListAll returns every torrent, whatever its labels, so a twin that shares
+// the files is seen before they are deleted.
+func (tr *Transmission) ListAll(ctx context.Context) ([]Job, error) {
+	ts, err := tr.torrents(ctx, "", false)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Job, 0, len(ts))
+	for _, t := range ts {
+		label := ""
+		if len(t.Labels) > 0 {
+			label = t.Labels[0]
+		}
+		out = append(out, t.job(label))
+	}
+	return out, nil
+}
+
 // Get returns the torrent with the given id.
 func (tr *Transmission) Get(ctx context.Context, id string) (Job, error) {
 	j, err := tr.get(ctx, id, tr.category)
