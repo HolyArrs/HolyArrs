@@ -491,6 +491,10 @@ func TestWidenAtOnceNeverPicksTheSameEpisode(t *testing.T) {
 	}
 	finishWindow(t, w, id, slots[:2])
 	w.fake.steps = nil
+	// Hold the first filePrio call open so, without the lock, the second
+	// Widen reads the pack before the first records its pick.
+	var first sync.Once
+	w.fake.prioWait = func() { first.Do(func() { time.Sleep(300 * time.Millisecond) }) }
 	var wg sync.WaitGroup
 	got := make([]int, 2)
 	for k := range got {

@@ -261,7 +261,7 @@ func (h *SeasonHandlers) packNext(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.Is(err, downloads.ErrNoPack):
 		webserver.Fail(w, http.StatusNotFound, err.Error())
-	case errors.Is(err, downloads.ErrPackGone):
+	case errors.Is(err, downloads.ErrPackGone), errors.Is(err, downloads.ErrPackChanged):
 		webserver.Fail(w, http.StatusConflict, err.Error())
 	case err != nil:
 		webserver.Fail(w, http.StatusBadGateway, err.Error())

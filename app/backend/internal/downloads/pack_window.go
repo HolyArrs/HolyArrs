@@ -24,9 +24,10 @@ import (
 var (
 	// ErrNoPack means no season pack is being fetched a few episodes at a time.
 	ErrNoPack = errors.New("no season pack of this show is being fetched a few episodes at a time")
-	// ErrPackGone means the Downloader no longer has the season pack.
+	// ErrPackChanged means the pack's files changed while Widen ran.
 	ErrPackChanged = errors.New("the season pack changed while switching on episodes; try again")
-	ErrPackGone    = errors.New("the Downloader no longer has the season pack; its episodes are searched again")
+	// ErrPackGone means the Downloader no longer has the season pack.
+	ErrPackGone = errors.New("the Downloader no longer has the season pack; its episodes are searched again")
 )
 
 // packWindow is how many episodes ahead a Release is fetched when it is a
