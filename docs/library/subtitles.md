@@ -25,7 +25,7 @@ Files brought in with **Import a library** are read the same way.
 
 ## See what is missing
 
-Open **Library > Missing subtitles**. Each row is a movie or episode that lacks a subtitle, with the reason (not looked for yet, not found yet, or nothing over the Pass mark yet) and the next try.
+Open **Library > Missing subtitles**. Each row is a movie or episode that lacks a subtitle, with the reason (not looked for yet, not found yet, or nothing over the Pass mark yet) and the next try. A title removed from the Library is left out, even when its files stay on disk.
 
 - Filter by language, by movies or episodes, and by title. The page address keeps your filters, so you can bookmark a view.
 - **Search all** searches every row in the filtered list and shows progress.
