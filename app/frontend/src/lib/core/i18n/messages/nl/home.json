@@ -267,5 +267,7 @@
 	"home.version": "Versie {version}",
 	"home.metadataServerDown": "Metadataserver offline",
 	"home.metadataServerOnline": "Metadataserver online",
-	"home.homeCouldNotRead3": "Start kon downloads nu niet lezen."
+	"home.homeCouldNotRead3": "Start kon downloads nu niet lezen.",
+	"home.off": "Uit",
+	"home.sourcesOff": "Uitgezet in Onderdelen"
 }

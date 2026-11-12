@@ -1229,5 +1229,8 @@
 	"downloads.ot.hintSize": "Release 전체 크기(GB)입니다. 한쪽을 비워 두면 제한이 없습니다. 크기가 알려지지 않은 Release는 맞지 않습니다.",
 	"downloads.ot.sumSize": "크기: {range}",
 	"downloads.ot.sizeOver": "{n} GB 초과",
-	"downloads.ot.sizeUpTo": "{n} GB 이하"
+	"downloads.ot.sizeUpTo": "{n} GB 이하",
+	"downloads.row.imported": "가져옴",
+	"downloads.row.stillIn": "아직 {app}에 있음",
+	"downloads.dp.openDownloaders": "다운로더 열기"
 }

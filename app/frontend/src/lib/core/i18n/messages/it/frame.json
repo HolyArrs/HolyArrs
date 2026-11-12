@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Tutti i posti",
 	"frame.layout.newWord": "nuovo",
 	"frame.layout.accountName": "Account · {name}",
-	"frame.layout.hostRefused": "<b>Le modifiche non si possono salvare su {host}.</b> HolyArrs salva solo sui nomi che permetti. Aprilo una volta con il suo indirizzo IP, poi aggiungi {host} in Impostazioni › Accesso › Nomi host consentiti. Non serve riavviare."
+	"frame.layout.hostRefused": "<b>Le modifiche non si possono salvare su {host}.</b> HolyArrs salva solo sui nomi che permetti. Aprilo una volta con il suo indirizzo IP, poi aggiungi {host} in Impostazioni › Accesso › Nomi host consentiti. Non serve riavviare.",
+	"frame.feeds.clearOne": "Download importato non rimosso",
+	"frame.feeds.clearMany": "{n} download importati non rimossi",
+	"frame.feeds.clearBody": "HolyArrs riprova da solo",
+	"frame.feeds.clearNow": "Rimuovi ora",
+	"frame.feeds.cleared": "Rimosso dal downloader",
+	"frame.feeds.clearStill": "Non ancora rimosso"
 }

@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Усі місця",
 	"frame.layout.newWord": "нове",
 	"frame.layout.accountName": "Обліковий запис · {name}",
-	"frame.layout.hostRefused": "<b>На {host} зміни не зберігаються.</b> HolyArrs зберігає лише на дозволених іменах. Відкрий його один раз за IP-адресою, а тоді додай {host} у Налаштування › Вхід і безпека › Дозволені імена хостів. Перезапуск не потрібен."
+	"frame.layout.hostRefused": "<b>На {host} зміни не зберігаються.</b> HolyArrs зберігає лише на дозволених іменах. Відкрий його один раз за IP-адресою, а тоді додай {host} у Налаштування › Вхід і безпека › Дозволені імена хостів. Перезапуск не потрібен.",
+	"frame.feeds.clearOne": "Імпортоване завантаження не прибрано",
+	"frame.feeds.clearMany": "Не прибрано імпортованих завантажень: {n}",
+	"frame.feeds.clearBody": "HolyArrs спробує знову сам",
+	"frame.feeds.clearNow": "Прибрати зараз",
+	"frame.feeds.cleared": "Прибрано із завантажувача",
+	"frame.feeds.clearStill": "Ще не прибрано"
 }

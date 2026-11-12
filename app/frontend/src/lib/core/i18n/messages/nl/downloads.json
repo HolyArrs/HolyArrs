@@ -1229,5 +1229,8 @@
 	"downloads.why.notReplaced": "De download is buiten HolyArrs verwijderd en wordt niet vanzelf vervangen (instelling).",
 	"downloads.why.notSent": "Geen Downloader kon hem aannemen: controleer de tags op de titel en je Downloaders.",
 	"downloads.why.out": "HolyArrs heeft geen releases meer die door de Keuzeregels komen.",
-	"downloads.why.taken": "Een andere app heeft de bestanden meegenomen voordat HolyArrs ze kon importeren."
+	"downloads.why.taken": "Een andere app heeft de bestanden meegenomen voordat HolyArrs ze kon importeren.",
+	"downloads.row.imported": "Geïmporteerd",
+	"downloads.row.stillIn": "Nog in {app}",
+	"downloads.dp.openDownloaders": "Downloaders openen"
 }

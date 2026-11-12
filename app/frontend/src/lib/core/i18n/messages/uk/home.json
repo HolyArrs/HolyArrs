@@ -267,5 +267,7 @@
 	"home.version": "Версія {version}",
 	"home.metadataServerDown": "Сервер метаданих не працює",
 	"home.metadataServerOnline": "Сервер метаданих онлайн",
-	"home.homeCouldNotRead3": "Головна зараз не змогла прочитати завантаження."
+	"home.homeCouldNotRead3": "Головна зараз не змогла прочитати завантаження.",
+	"home.off": "Вимк.",
+	"home.sourcesOff": "Вимкнено в розділі «Частини»"
 }

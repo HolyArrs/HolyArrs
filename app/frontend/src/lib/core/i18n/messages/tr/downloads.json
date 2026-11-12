@@ -1229,5 +1229,8 @@
 	"downloads.why.notReplaced": "İndirmesi HolyArrs dışında kaldırıldı ve kendiliğinden yenisiyle değiştirilmiyor (ayar).",
 	"downloads.why.notSent": "Hiçbir İndirici kabul edemedi: başlığın etiketlerini ve İndiricilerini denetle.",
 	"downloads.why.out": "HolyArrs'ın Seçim kurallarını geçen sürüm adayı kalmadı.",
-	"downloads.why.taken": "HolyArrs içe aktaramadan önce başka bir uygulama dosyaları aldı."
+	"downloads.why.taken": "HolyArrs içe aktaramadan önce başka bir uygulama dosyaları aldı.",
+	"downloads.row.imported": "İçe aktarıldı",
+	"downloads.row.stillIn": "Hâlâ {app} içinde",
+	"downloads.dp.openDownloaders": "İndiricileri aç"
 }

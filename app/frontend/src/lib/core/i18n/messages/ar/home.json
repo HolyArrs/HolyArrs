@@ -267,5 +267,7 @@
 	"home.version": "الإصدار {version}",
 	"home.metadataServerDown": "خادم البيانات الوصفية متوقف",
 	"home.metadataServerOnline": "خادم البيانات الوصفية متصل",
-	"home.homeCouldNotRead3": "تعذّر على الرئيسية قراءة التنزيلات الآن."
+	"home.homeCouldNotRead3": "تعذّر على الرئيسية قراءة التنزيلات الآن.",
+	"home.off": "متوقف",
+	"home.sourcesOff": "متوقف في الأجزاء"
 }

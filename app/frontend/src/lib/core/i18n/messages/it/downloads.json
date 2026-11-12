@@ -1229,5 +1229,8 @@
 	"downloads.why.notReplaced": "Il suo download è stato rimosso fuori da HolyArrs e non viene sostituito da solo (impostazione).",
 	"downloads.why.notSent": "Nessun downloader ha potuto prenderlo: controlla i tag del titolo e i tuoi downloader.",
 	"downloads.why.out": "A HolyArrs sono finite le release che superano le Regole di scelta.",
-	"downloads.why.taken": "Un'altra app ha preso i file prima che HolyArrs potesse importarli."
+	"downloads.why.taken": "Un'altra app ha preso i file prima che HolyArrs potesse importarli.",
+	"downloads.row.imported": "Importato",
+	"downloads.row.stillIn": "Ancora in {app}",
+	"downloads.dp.openDownloaders": "Apri downloader"
 }

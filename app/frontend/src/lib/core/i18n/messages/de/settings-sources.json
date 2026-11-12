@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Ändern",
 	"settings.sources.removeName": "{name} entfernen",
 	"settings.sources.remove": "Entfernen",
-	"settings.sources.bridge": "Jackett oder Prowlarr verknüpfen"
+	"settings.sources.bridge": "Jackett oder Prowlarr verknüpfen",
+	"settings.sources.off": "Quellen sind aus",
+	"settings.sources.offText": "HolyArrs sucht und holt nichts. Downloads, die du im Downloader hinzufügst, werden weiter importiert.",
+	"settings.sources.openParts": "Teile öffnen",
+	"settings.sources.offState": "Aus"
 }

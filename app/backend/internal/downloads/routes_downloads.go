@@ -23,6 +23,7 @@ import (
 func (a *Web) downloadsRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/downloads/view", a.DownloadsView)
 	m.HandleFunc("POST /api/v1/downloads/{id}/remove", a.removeDownload)
+	m.HandleFunc("POST /api/v1/downloads/clear-now", a.clearNow)
 	m.HandleFunc("GET /api/v1/needs-decision", a.needsDecision)
 	a.downloadControlRoutes(m)
 	a.clientMatchRoutes(m)

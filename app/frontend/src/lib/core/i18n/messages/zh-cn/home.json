@@ -267,5 +267,7 @@
 	"home.version": "版本 {version}",
 	"home.metadataServerDown": "元数据服务器已宕机",
 	"home.metadataServerOnline": "元数据服务器在线",
-	"home.homeCouldNotRead3": "首页暂时无法读取下载。"
+	"home.homeCouldNotRead3": "首页暂时无法读取下载。",
+	"home.off": "关闭",
+	"home.sourcesOff": "已在“部分”中关闭"
 }

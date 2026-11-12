@@ -267,5 +267,7 @@
 	"home.version": "Versión {version}",
 	"home.metadataServerDown": "Servidor de metadatos caído",
 	"home.metadataServerOnline": "Servidor de metadatos en línea",
-	"home.homeCouldNotRead3": "Inicio no pudo leer las descargas ahora mismo."
+	"home.homeCouldNotRead3": "Inicio no pudo leer las descargas ahora mismo.",
+	"home.off": "Apagado",
+	"home.sourcesOff": "Apagado en Partes"
 }

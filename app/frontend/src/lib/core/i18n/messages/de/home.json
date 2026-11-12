@@ -267,5 +267,7 @@
 	"home.version": "Version {version}",
 	"home.metadataServerDown": "Metadatenserver nicht erreichbar",
 	"home.metadataServerOnline": "Metadatenserver online",
-	"home.homeCouldNotRead3": "Start konnte Downloads gerade nicht lesen."
+	"home.homeCouldNotRead3": "Start konnte Downloads gerade nicht lesen.",
+	"home.off": "Aus",
+	"home.sourcesOff": "In Teile ausgeschaltet"
 }

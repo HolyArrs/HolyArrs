@@ -11,7 +11,7 @@
 	import { arrive, coverPage, push, settingsNav, swap } from './(home)/zoom.ts';
 	import { backdrop } from '#lib/accounts/index.ts';
 	import { minimalLook } from '#lib/core/look.svelte.ts';
-	import { partsNow, offPartName } from '#lib/mediafiles/index.ts';
+	import { partsNow, offPartName, partOff } from '#lib/mediafiles/index.ts';
 	import { settingsNow, refreshSettingsStatus, pageState, stateWords } from '#lib/alerts/index.ts';
 	import type { Snippet } from 'svelte';
 	import { onMount } from 'svelte';
@@ -156,7 +156,9 @@
 <svelte:window onhashchange={() => location.hash && highlight(decodeURIComponent(location.hash.slice(1)))} onkeydown={escape} />
 
 {#snippet pill()}
-	{#if status && stateWords(status)}<span class="page-status" data-testid="page-status"><StatusPill kind={status.state === 'ok' ? 'in_library' : status.state === 'attention' ? 'failed' : 'missing'} label={stateWords(status)} /></span>{/if}
+	<!-- Sources switched off in Parts: the page says Off, not Not set up. -->
+	{#if currentSection?.href === '/settings/sources' && partOff('sources')}<span class="page-status" data-testid="page-status"><StatusPill kind="missing" label={t('settings.sources.offState')} /></span>
+	{:else if status && stateWords(status)}<span class="page-status" data-testid="page-status"><StatusPill kind={status.state === 'ok' ? 'in_library' : status.state === 'attention' ? 'failed' : 'missing'} label={stateWords(status)} /></span>{/if}
 {/snippet}
 
 <!-- Background: this Library's posters, blurred and dimmed, still. -->

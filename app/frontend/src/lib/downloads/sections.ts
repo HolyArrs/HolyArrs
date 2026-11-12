@@ -87,7 +87,7 @@ export function matches(r: Pick<DownloadRow, 'name' | 'title' | 'covers' | 'albu
 }
 
 /** A History row's text and whether it reads as a failure. */
-export function historyStatus(r: DownloadRow, im: ImportRecord | undefined): { text: string; bad: boolean } {
+export function historyStatus(r: DownloadRow, im: ImportRecord | undefined): { text: string; bad: boolean; still?: string } {
 	const s = stageOf(r);
 	// A client item has no import, so its word is the client's own state.
 	if (r.client_item) {
@@ -99,6 +99,8 @@ export function historyStatus(r: DownloadRow, im: ImportRecord | undefined): { t
 		return { text: why ? t('downloads.fact.failedWhy', { why }) : t('downloads.fact.failed'), bad: true };
 	}
 	if (r.phase === 'removed') return { text: t('downloads.fact.removed'), bad: false };
+	// Imported, but the Downloader still holds it: HolyArrs tries the clear again.
+	if (r.clear_waiting) return { text: t('downloads.row.imported'), bad: false, still: t('downloads.row.stillIn', { app: r.downloader }) };
 	return { text: s === 'seeding' ? t('downloads.fact.doneSeeding') : t('downloads.fact.done'), bad: false };
 }
 

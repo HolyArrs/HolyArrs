@@ -1229,5 +1229,8 @@
 	"downloads.ot.hintSize": "पूरे Release का आकार GB में। कोई सीमा न रखने के लिए एक तरफ़ खाली छोड़ें। जिस Release का आकार नहीं दिया गया, वह कभी मेल नहीं खाता।",
 	"downloads.ot.sumSize": "आकार: {range}",
 	"downloads.ot.sizeOver": "{n} GB से अधिक",
-	"downloads.ot.sizeUpTo": "{n} GB तक"
+	"downloads.ot.sizeUpTo": "{n} GB तक",
+	"downloads.row.imported": "इम्पोर्ट हुआ",
+	"downloads.row.stillIn": "अभी भी {app} में",
+	"downloads.dp.openDownloaders": "डाउनलोडर खोलें"
 }

@@ -1229,5 +1229,8 @@
 	"downloads.ot.hintSize": "整个 Release 的大小，单位 GB。留空一端表示不设限制。没有给出大小的 Release 永远不符合。",
 	"downloads.ot.sumSize": "大小：{range}",
 	"downloads.ot.sizeOver": "大于 {n} GB",
-	"downloads.ot.sizeUpTo": "不超过 {n} GB"
+	"downloads.ot.sizeUpTo": "不超过 {n} GB",
+	"downloads.row.imported": "已导入",
+	"downloads.row.stillIn": "仍在 {app} 中",
+	"downloads.dp.openDownloaders": "打开下载器"
 }

@@ -85,8 +85,8 @@
 		{#if hist}
 			{@const s = historyStatus(r, importOf.get(r.id))}
 			{@const cut = s.text.indexOf(': ')}
-			{@const reason = cut > 0 ? shortReason(s.text.slice(cut + 2)) : ''}
-			<span class="st" class:ph class:bad={s.bad} class:two={!!reason} data-col="status" title={s.text}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{cut > 0 ? s.text.slice(0, cut) : s.text}</span>{#if reason}<span class="why" data-testid="dl-why">{reason}</span>{/if}</span></span>
+			{@const reason = s.still ?? (cut > 0 ? shortReason(s.text.slice(cut + 2)) : '')}
+			<span class="st" class:ph class:bad={s.bad} class:still={!!s.still} class:two={!!reason} data-col="status" title={s.still ? `${s.text} · ${s.still}` : s.text}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{cut > 0 ? s.text.slice(0, cut) : s.text}</span>{#if reason}<span class="why" data-testid="dl-why">{reason}</span>{/if}</span></span>
 		{:else}
 			{@const tn = barTone(r)}
 			{@const detail = statusDetail(r, importOf.get(r.id))}
@@ -201,6 +201,7 @@
 	.st.queued .dot { background: var(--info); }
 	.st:global(.held) .dot { background: var(--wait); }
 	.st.bad .dot { background: var(--fail); }
+	.st.still .dot { background: var(--wait); }
 	.st.bad { color: var(--fail-text); }
 	.dline > .ph { display: none; }
 	.txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-footnote); }
@@ -310,6 +311,11 @@
 		.dline > [data-col='title'] .rel { display: none; }
 		.dline > [data-col='title'] .tt { font: 600 15px/19px var(--font-ui); }
 		.dline > [data-col='status'] { font: 400 12px/16px var(--font-ui); }
+		/* One line on phones: the step or reason when there is one, else the word. */
+		.st.two { align-items: center; }
+		.st.two .dot { margin-top: 0; }
+		.st.two .sw { display: none; }
+		.st.two .why { font: inherit; color: inherit; }
 		.dline > [data-col='time'] { font-variant-numeric: tabular-nums; white-space: nowrap; }
 		.tg { align-self: center; }
 		.tg .pk.any { width: 20px; height: 20px; margin-left: 4px; }

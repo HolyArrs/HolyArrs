@@ -1229,5 +1229,8 @@
 	"downloads.ot.hintSize": "Розмір усього релізу в ГБ. Залиште одне поле порожнім, щоб не ставити межу. Реліз без указаного розміру ніколи не підходить.",
 	"downloads.ot.sumSize": "Розмір: {range}",
 	"downloads.ot.sizeOver": "понад {n} ГБ",
-	"downloads.ot.sizeUpTo": "до {n} ГБ"
+	"downloads.ot.sizeUpTo": "до {n} ГБ",
+	"downloads.row.imported": "Імпортовано",
+	"downloads.row.stillIn": "Ще в {app}",
+	"downloads.dp.openDownloaders": "Відкрити завантажувачі"
 }

@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Змінити",
 	"settings.sources.removeName": "Прибрати {name}",
 	"settings.sources.remove": "Прибрати",
-	"settings.sources.bridge": "Підключити Jackett чи Prowlarr"
+	"settings.sources.bridge": "Підключити Jackett чи Prowlarr",
+	"settings.sources.off": "Джерела вимкнено",
+	"settings.sources.offText": "HolyArrs нічого не шукає і не завантажує. Завантаження, додані в завантажувачі, і далі імпортуються.",
+	"settings.sources.openParts": "Відкрити «Частини»",
+	"settings.sources.offState": "Вимк."
 }

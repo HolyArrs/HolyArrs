@@ -6,6 +6,7 @@
 	import { n, uncheckedLine, type HomeAnswer, type HomeCard } from './home.ts';
 	import { sized } from '#lib/core/tmdb-image.ts';
 	import { stageOf } from '#lib/downloads/index.ts';
+	import { partOff } from '#lib/mediafiles/index.ts';
 	import { metadataOutage } from '#lib/metadata/index.ts';
 	import SettingsTile from '#lib/ui/SettingsTile.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -75,13 +76,18 @@
 		{/snippet}
 		<!-- Sources or Downloaders: how many work, which have a problem, and one pip each along the foot. -->
 		{#snippet partTile(label: string, icon: IconName, tint: Tint, p: { total: number; on: number; working: number; off: number; failing: number }, trouble: string, path: string, empty: string)}
-			<a class="tile stat" class:lined={settled && !uncheckedParts && p.total > 0} href={to(admin ? path : '/health')}>
+			{@const off = icon === 'source' && partOff('sources')}
+			<a class="tile stat" class:lined={settled && !uncheckedParts && !off && p.total > 0} href={to(admin ? (off ? '/settings/parts' : path) : '/health')}>
 				{@render head(icon, tint, label)}
 				{#if !settled}
 					{@render wait()}
 				{:else if uncheckedParts}
 					<span class="word">{t('home.couldNotRead')}</span>
 					<span class="sm">{t('home.homeCouldNotRead')}</span>
+				{:else if off}
+					<!-- Sources switched off in Parts: no count and no trouble to show. -->
+					<span class="word">{t('home.off')}</span>
+					<span class="sm">{t('home.sourcesOff')}</span>
 				{:else if !p.total}
 					<span class="word">{t('home.noneAdded')}</span>
 					<span class="sm">{empty}</span>

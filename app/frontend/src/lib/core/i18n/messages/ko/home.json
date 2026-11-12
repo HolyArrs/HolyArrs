@@ -267,5 +267,7 @@
 	"home.version": "버전 {version}",
 	"home.metadataServerDown": "메타데이터 서버 중단",
 	"home.metadataServerOnline": "메타데이터 서버 정상",
-	"home.homeCouldNotRead3": "홈에서 지금 다운로드를 읽지 못했습니다."
+	"home.homeCouldNotRead3": "홈에서 지금 다운로드를 읽지 못했습니다.",
+	"home.off": "꺼짐",
+	"home.sourcesOff": "부분에서 꺼짐"
 }

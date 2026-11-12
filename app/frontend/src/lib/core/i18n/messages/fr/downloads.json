@@ -1229,5 +1229,8 @@
 	"downloads.ot.hintSize": "La taille de toute la Release en Go. Laissez un côté vide pour ne pas fixer de limite. Une Release sans taille connue ne correspond jamais.",
 	"downloads.ot.sumSize": "Taille : {range}",
 	"downloads.ot.sizeOver": "plus de {n} Go",
-	"downloads.ot.sizeUpTo": "jusqu'à {n} Go"
+	"downloads.ot.sizeUpTo": "jusqu'à {n} Go",
+	"downloads.row.imported": "Importé",
+	"downloads.row.stillIn": "Encore dans {app}",
+	"downloads.dp.openDownloaders": "Ouvrir les téléchargeurs"
 }

@@ -267,5 +267,7 @@
 	"home.version": "Versão {version}",
 	"home.metadataServerDown": "Servidor de metadados fora do ar",
 	"home.metadataServerOnline": "Servidor de metadados no ar",
-	"home.homeCouldNotRead3": "O Início não conseguiu ler os downloads agora."
+	"home.homeCouldNotRead3": "O Início não conseguiu ler os downloads agora.",
+	"home.off": "Desligado",
+	"home.sourcesOff": "Desligado em Partes"
 }

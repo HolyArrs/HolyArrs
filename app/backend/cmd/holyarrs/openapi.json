@@ -14842,6 +14842,36 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/downloads/clear-now": {
+      "post": {
+        "description": "Tries at once every imported download still waiting to be cleared from its Downloader, instead of at its next try. left is how many still wait.",
+        "operationId": "clearDownloadsNow",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "left": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Tried."
+          }
+        },
+        "summary": "Clear waiting downloads now",
+        "tags": [
+          "Downloaders"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloads/clients": {
       "get": {
         "description": "Paused, speeds, speed limits, totals and free space, as each Downloader reports them (bytes, bytes per second; 0 means none or not reported).",
