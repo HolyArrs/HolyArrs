@@ -122,7 +122,7 @@
 	"settings.downloaders.seedRemoveHintGoal": "Only downloads HolyArrs sent and already imported. Removed when {app} stops seeding, or at a goal below.",
 	"settings.downloaders.seedNeedsWritable": "Turn on “HolyArrs can change this Downloader” first.",
 	"settings.downloaders.seedRatio": "Ratio goal",
-	"settings.downloaders.seedRatioHint": "Leave empty to let {app} decide.",
+	"settings.downloaders.seedRatioHint": "Leave empty to let {app} decide. An unknown ratio never counts.",
 	"settings.downloaders.seedHours": "Seed time goal (hours)",
 	"settings.downloaders.seedHoursHint": "Whichever comes first.",
 	"settings.downloaders.seedDelete": "Also delete its files",
