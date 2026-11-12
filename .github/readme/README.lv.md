@@ -125,7 +125,7 @@ Kāds pieprasa nosaukumu. HolyArrs pārmeklē tavus avotus, ar taviem izvēles n
 | 💬 **Subtitri** | Tavās izvēlētajās valodās, atrasti subtitru vietnēs un saglabāti kopā ar failu. |
 | 📅 **Calendar** | Kas tiks rādīts nākamais visam, kam tu seko. |
 | 🔔 **Alerts** | Discord, e-pasts, Telegram, ntfy, Gotify, Pushover vai webhook. |
-| 🚚 **Importē savu iestatījumu kopu** | No Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent un SABnzbd. Vispirms izmēģini, vēlāk atsauc. |
+| 🚚 **Importē savu iestatījumu kopu** | No Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent un SABnzbd. Izvēlies, ko pārnest, vēlāk atsauc. |
 | 🔌 **Iepriekšējo lietotņu API** | Seerr, Prowlarr, Bazarr, Unpackerr un Homepage turpina strādāt, kad tu to ieslēdz. |
 | 🗝️ **API atslēgas nav vajadzīgas** | Nosaukumi, noformējums un topi nāk no HolyArrs metadatu servera. Der arī tavas pašas atslēgas vai serveris. |
 | 🔒 **Šifrētas atslēgas** | Saglabātās paroles un atslēgas aizslēdz galvenā atslēga, kas atrodas tavā konfigurācijas mapē. |

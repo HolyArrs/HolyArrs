@@ -125,7 +125,7 @@ Kažkas paprašo pavadinimo. HolyArrs ieško tavo šaltiniuose, pagal tavo parin
 | 💬 **Subtitrai** | Tavo pasirinktomis kalbomis, randami subtitrų svetainėse ir saugomi kartu su failu. |
 | 📅 **Calendar** | Kas rodoma toliau iš visko, ką seki. |
 | 🔔 **Alerts** | Discord, el. paštas, Telegram, ntfy, Gotify, Pushover arba webhook. |
-| 🚚 **Importuok savo sąranką** | Iš Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent ir SABnzbd. Pirma išbandyk, vėliau atšauk. |
+| 🚚 **Importuok savo sąranką** | Iš Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent ir SABnzbd. Pasirink, ką perkelti, vėliau atšauk. |
 | 🔌 **Ankstesnių programų API** | Seerr, Prowlarr, Bazarr, Unpackerr ir Homepage toliau veikia, kai tai įjungi. |
 | 🗝️ **API raktų nereikia** | Pavadinimai, iliustracijos ir topai ateina iš HolyArrs metaduomenų serverio. Tinka ir tavo paties raktai ar serveris. |
 | 🔒 **Užšifruoti raktai** | Išsaugoti slaptažodžiai ir raktai užrakinami pagrindiniu raktu, kuris yra tavo konfigūracijos aplanke. |

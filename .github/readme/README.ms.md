@@ -125,7 +125,7 @@ Seseorang meminta sebuah judul. HolyArrs mencari dalam Sumber anda, memilih kelu
 | 💬 **Sari kata** | Dalam bahasa yang anda pilih, dicari di laman sari kata dan disimpan bersama fail. |
 | 📅 **Calendar** | Apa yang akan disiarkan seterusnya untuk semua yang anda ikuti. |
 | 🔔 **Alerts** | Discord, e-mel, Telegram, ntfy, Gotify, Pushover atau webhook. |
-| 🚚 **Bawa persediaan anda** | Dari Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent dan SABnzbd. Cuba dahulu, buat asal kemudian. |
+| 🚚 **Bawa persediaan anda** | Dari Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent dan SABnzbd. Pilih apa yang dibawa, buat asal kemudian. |
 | 🔌 **API app lama** | Seerr, Prowlarr, Bazarr, Unpackerr dan Homepage terus berfungsi setelah anda menghidupkannya. |
 | 🗝️ **Tiada kunci API diperlukan** | Judul, ilustrasi dan carta datang daripada pelayan metadata HolyArrs. Kunci atau pelayan anda sendiri juga boleh digunakan. |
 | 🔒 **Kunci disulitkan** | Kata laluan dan kunci yang disimpan dikunci dengan kunci induk yang berada dalam folder konfigurasi anda. |

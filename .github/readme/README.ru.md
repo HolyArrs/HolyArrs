@@ -125,7 +125,7 @@ docker compose up -d
 | 💬 **Субтитры** | На выбранных вами языках, находятся на сайтах субтитров и хранятся рядом с файлом. |
 | 📅 **Calendar** | Что выходит дальше из всего, за чем вы следите. |
 | 🔔 **Alerts** | Discord, почта, Telegram, ntfy, Gotify, Pushover или webhook. |
-| 🚚 **Импорт настроек** | Из Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent и SABnzbd. Сначала пробный запуск, отменить можно потом. |
+| 🚚 **Импорт настроек** | Из Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent и SABnzbd. Выберите, что перенести, отменить можно потом. |
 | 🔌 **API старых приложений** | Seerr, Prowlarr, Bazarr, Unpackerr и Homepage продолжают работать, когда вы это включите. |
 | 🗝️ **API-ключи не нужны** | Тайтлы, обложки и чарты приходят с сервера метаданных HolyArrs. Свои ключи или свой сервер тоже подойдут. |
 | 🔒 **Зашифрованные ключи** | Сохранённые пароли и ключи закрыты мастер-ключом, который лежит в вашей папке config. |

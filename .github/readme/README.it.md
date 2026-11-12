@@ -125,7 +125,7 @@ Qualcuno richiede un titolo. HolyArrs cerca nelle tue Fonti, sceglie la release 
 | 💬 **Sottotitoli** | Nelle lingue che scegli, trovati sui siti di sottotitoli e conservati insieme al file. |
 | 📅 **Calendar** | Cosa va in onda prossimamente, per tutto quello che segui. |
 | 🔔 **Alerts** | Discord, email, Telegram, ntfy, Gotify, Pushover o un webhook. |
-| 🚚 **Porta con te la configurazione** | Da Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent e SABnzbd. Prima provi, poi annulli quando vuoi. |
+| 🚚 **Porta con te la configurazione** | Da Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent e SABnzbd. Scegli cosa portare, poi annulli quando vuoi. |
 | 🔌 **API per le app precedenti** | Seerr, Prowlarr, Bazarr, Unpackerr e Homepage continuano a funzionare, appena lo attivi. |
 | 🗝️ **Nessuna chiave API necessaria** | Titoli, immagini e classifiche arrivano dal server di metadati di HolyArrs. Funzionano anche chiavi o server tuoi. |
 | 🔒 **Chiavi cifrate** | Password e chiavi salvate sono protette da una chiave principale che sta nella tua cartella di configurazione. |

@@ -125,7 +125,7 @@ Někdo požádá o titul. HolyArrs prohledá tvoje zdroje, podle tvých pravidel
 | 💬 **Titulky** | V jazycích, které vybereš, nalezené na webech s titulky a uložené u souboru. |
 | 📅 **Calendar** | Co se bude vysílat dál u všeho, co sleduješ. |
 | 🔔 **Alerts** | Discord, e-mail, Telegram, ntfy, Gotify, Pushover nebo webhook. |
-| 🚚 **Převezmi své nastavení** | Ze Sonarru, Radarru, Lidarru, Prowlarru, Bazarru, Seerr, Overseerr, qBittorrentu a SABnzbd. Nejdřív to vyzkoušej, později to vrať zpět. |
+| 🚚 **Převezmi své nastavení** | Ze Sonarru, Radarru, Lidarru, Prowlarru, Bazarru, Seerr, Overseerr, qBittorrentu a SABnzbd. Vyber, co se přenese, později to vrať zpět. |
 | 🔌 **API pro dřívější aplikace** | Seerr, Prowlarr, Bazarr, Unpackerr a Homepage fungují dál, jakmile to zapneš. |
 | 🗝️ **Žádné API klíče** | Tituly, obrázky a žebříčky přicházejí z metadatového serveru HolyArrs. Fungují i tvoje vlastní klíče nebo server. |
 | 🔒 **Šifrované klíče** | Uložená hesla a klíče jsou zamčené hlavním klíčem, který leží ve tvé konfigurační složce. |

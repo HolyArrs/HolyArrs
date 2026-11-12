@@ -125,7 +125,7 @@ Biri bir başlık ister. HolyArrs Kaynaklarını arar, Seçim kurallarınla en i
 | 💬 **Altyazı** | Seçtiğin dillerde, altyazı sitelerinden bulunur ve dosyayla birlikte saklanır. |
 | 📅 **Calendar** | Takip ettiğin her şey için sıradaki yayınlar. |
 | 🔔 **Alerts** | Discord, e-posta, Telegram, ntfy, Gotify, Pushover ya da bir webhook. |
-| 🚚 **Kurulumunu içe aktar** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent ve SABnzbd'den. Önce dene, sonra istersen geri al. |
+| 🚚 **Kurulumunu içe aktar** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent ve SABnzbd'den. Neyin geleceğini seç, sonra istersen geri al. |
 | 🔌 **Eski uygulama API'si** | Sen açtıktan sonra Seerr, Prowlarr, Bazarr, Unpackerr ve Homepage çalışmaya devam eder. |
 | 🗝️ **API anahtarı gerekmez** | Başlıklar, görseller ve listeler HolyArrs metadata sunucusundan gelir. Kendi anahtarların veya kendi sunucun da çalışır. |
 | 🔒 **Şifreli anahtarlar** | Saklanan parolalar ve anahtarlar, yapılandırma klasöründe duran bir ana anahtarla kilitlenir. |

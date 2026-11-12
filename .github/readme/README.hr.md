@@ -125,7 +125,7 @@ Netko zatraži naslov. HolyArrs pretraži tvoje izvore, pomoću tvojih pravila o
 | 💬 **Titlovi** | Na jezicima koje odabereš, pronađeni na stranicama s titlovima i spremljeni uz datoteku. |
 | 📅 **Calendar** | Što sljedeće izlazi za sve što pratiš. |
 | 🔔 **Alerts** | Discord, e-pošta, Telegram, ntfy, Gotify, Pushover ili webhook. |
-| 🚚 **Ponesi svoje postavke** | Iz Sonarra, Radarra, Lidarra, Prowlarra, Bazarra, Seerra, Overseerra, qBittorrenta i SABnzbd-a. Prvo probaj, kasnije poništi. |
+| 🚚 **Ponesi svoje postavke** | Iz Sonarra, Radarra, Lidarra, Prowlarra, Bazarra, Seerra, Overseerra, qBittorrenta i SABnzbd-a. Odaberi što prelazi, kasnije poništi. |
 | 🔌 **API za dosadašnje aplikacije** | Seerr, Prowlarr, Bazarr, Unpackerr i Homepage nastavljaju raditi kad to uključiš. |
 | 🗝️ **API ključevi nisu potrebni** | Naslovi, slike i ljestvice dolaze s HolyArrs metadata servera. Rade i tvoji vlastiti ključevi ili server. |
 | 🔒 **Šifrirani ključevi** | Spremljene lozinke i ključevi zaključani su glavnim ključem koji se nalazi u tvojoj mapi s konfiguracijom. |

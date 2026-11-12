@@ -125,7 +125,7 @@ Ktoś prosi o tytuł. HolyArrs przeszukuje twoje źródła, wybiera najlepszy re
 | 💬 **Napisy** | W wybranych przez ciebie językach, wyszukane na stronach z napisami i zapisane razem z plikiem. |
 | 📅 **Calendar** | Co leci następne w tym, co obserwujesz. |
 | 🔔 **Alerts** | Discord, e-mail, Telegram, ntfy, Gotify, Pushover albo webhook. |
-| 🚚 **Zaimportuj swoją konfigurację** | Ze Sonarra, Radarra, Lidarra, Prowlarra, Bazarra, Seerra, Overseerra, qBittorrenta i SABnzbd. Najpierw wypróbuj, potem możesz cofnąć. |
+| 🚚 **Zaimportuj swoją konfigurację** | Ze Sonarra, Radarra, Lidarra, Prowlarra, Bazarra, Seerra, Overseerra, qBittorrenta i SABnzbd. Wybierz, co przenieść, potem możesz cofnąć. |
 | 🔌 **API dla starych aplikacji** | Seerr, Prowlarr, Bazarr, Unpackerr i Homepage dalej działają, gdy to włączysz. |
 | 🗝️ **Bez kluczy API** | Tytuły, grafiki i listy przebojów pochodzą z serwera metadanych HolyArrs. Działają też twoje własne klucze lub serwer. |
 | 🔒 **Zaszyfrowane klucze** | Zapisane hasła i klucze są zablokowane kluczem głównym, który leży w twoim folderze konfiguracji. |

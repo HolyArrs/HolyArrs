@@ -125,7 +125,7 @@ docker compose up -d
 | 💬 **字幕** | 選んだ言語の字幕を字幕サイトから探し、ファイルと一緒に保存します。 |
 | 📅 **Calendar** | フォローしているすべての作品の、次の放送予定です。 |
 | 🔔 **Alerts** | Discord、メール、Telegram、ntfy、Gotify、Pushover、webhook。 |
-| 🚚 **設定のインポート** | Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd から。先に試せて、あとから元に戻せます。 |
+| 🚚 **設定のインポート** | Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd から。移す内容を選べて、あとから元に戻せます。 |
 | 🔌 **旧アプリ API** | 有効にすると、Seerr、Prowlarr、Bazarr、Unpackerr、Homepage がこれまでどおり動きます。 |
 | 🗝️ **API キー不要** | タイトル、アートワーク、チャートは HolyArrs のメタデータサーバーから届きます。自分のキーやサーバーも使えます。 |
 | 🔒 **暗号化されたキー** | 保存したパスワードとキーは、config フォルダにあるマスターキーでロックされます。 |

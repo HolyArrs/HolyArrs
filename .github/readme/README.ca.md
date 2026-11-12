@@ -125,7 +125,7 @@ Algú demana un títol. HolyArrs cerca a les teves Fonts, tria el millor llança
 | 💬 **Subtítols** | En els idiomes que triïs, trobats en webs de subtítols i conservats amb el fitxer. |
 | 📅 **Calendar** | Què s'emet a continuació de tot el que segueixes. |
 | 🔔 **Alerts** | Discord, correu, Telegram, ntfy, Gotify, Pushover o un webhook. |
-| 🚚 **Importa la teva configuració** | Des de Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent i SABnzbd. Prova-ho primer, desfés-ho després. |
+| 🚚 **Importa la teva configuració** | Des de Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent i SABnzbd. Tria què es porta, desfés-ho després. |
 | 🔌 **API d'apps anteriors** | Seerr, Prowlarr, Bazarr, Unpackerr i Homepage continuen funcionant quan ho activis. |
 | 🗝️ **Sense claus d'API** | Els títols, les il·lustracions i les llistes d'èxits vénen del servidor de metadades d'HolyArrs. També funcionen les teves pròpies claus o el teu servidor. |
 | 🔒 **Claus xifrades** | Les contrasenyes i claus desades queden tancades amb una clau mestra que viu a la teva carpeta de configuració. |

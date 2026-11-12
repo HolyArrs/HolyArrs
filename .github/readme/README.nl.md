@@ -125,7 +125,7 @@ Iemand vraagt een titel aan. HolyArrs doorzoekt je bronnen, kiest met je keuzere
 | 💬 **Ondertitels** | In de talen die je kiest, gevonden op ondertitelsites en bewaard bij het bestand. |
 | 📅 **Calendar** | Wat er hierna wordt uitgezonden voor alles wat je volgt. |
 | 🔔 **Alerts** | Discord, e-mail, Telegram, ntfy, Gotify, Pushover of een webhook. |
-| 🚚 **Neem je setup mee** | Van Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent en SABnzbd. Eerst proberen, later ongedaan maken. |
+| 🚚 **Neem je setup mee** | Van Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent en SABnzbd. Kies wat er meekomt, later ongedaan maken. |
 | 🔌 **API voor eerdere apps** | Seerr, Prowlarr, Bazarr, Unpackerr en Homepage blijven werken zodra je dat aanzet. |
 | 🗝️ **Geen API-sleutels nodig** | Titels, artwork en hitlijsten komen van de metadataserver van HolyArrs. Je eigen sleutels of server werken ook. |
 | 🔒 **Versleutelde sleutels** | Opgeslagen wachtwoorden en sleutels zijn vergrendeld met een hoofdsleutel die in je configuratiemap staat. |

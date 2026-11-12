@@ -125,7 +125,7 @@ Einhver biður um titil. HolyArrs leitar í uppsprettunum þínum, velur bestu �
 | 💬 **Skjátextar** | Á tungumálunum sem þú velur, sóttir af skjátextasíðum og geymdir með skránni. |
 | 📅 **Calendar** | Hvað er næst á dagskrá hjá öllu sem þú fylgir. |
 | 🔔 **Alerts** | Discord, tölvupóstur, Telegram, ntfy, Gotify, Pushover eða webhook. |
-| 🚚 **Taktu uppsetninguna með** | Frá Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent og SABnzbd. Prófaðu fyrst, afturkallaðu síðar. |
+| 🚚 **Taktu uppsetninguna með** | Frá Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent og SABnzbd. Veldu hvað kemur með, afturkallaðu síðar. |
 | 🔌 **API fyrir eldri forrit** | Seerr, Prowlarr, Bazarr, Unpackerr og Homepage halda áfram að virka þegar þú kveikir á því. |
 | 🗝️ **Engir API-lyklar nauðsynlegir** | Titlar, myndefni og vinsældalistar koma frá metadata-server HolyArrs. Þínir eigin lyklar eða þjónn virka líka. |
 | 🔒 **Dulkóðaðir lyklar** | Vistuð lykilorð og lyklar eru læstir með aðallykli sem liggur í stillingamöppunni þinni. |

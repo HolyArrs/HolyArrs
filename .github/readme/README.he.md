@@ -125,7 +125,7 @@ docker compose up -d
 | 💬 **כתוביות** | בשפות שאתה בוחר, נמצאות באתרי כתוביות ונשמרות עם הקובץ. |
 | 📅 **Calendar** (לוח שנה) | מה משודר בקרוב, לכל מה שאתה עוקב אחריו. |
 | 🔔 **Alerts** | Discord, אימייל, Telegram, ntfy, Gotify, Pushover או webhook. |
-| 🚚 **לייבא את ההגדרות שלך** | מ-Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent ו-SABnzbd. קודם מנסים, אפשר לבטל אחר כך. |
+| 🚚 **לייבא את ההגדרות שלך** | מ-Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent ו-SABnzbd. בוחרים מה עובר, אפשר לבטל אחר כך. |
 | 🔌 **API של אפליקציות קודמות** | Seerr, Prowlarr, Bazarr, Unpackerr ו-Homepage ממשיכים לעבוד ברגע שתפעיל את זה. |
 | 🗝️ **בלי מפתחות API** | כותרים, תמונות ותרשימים מגיעים משרת המטא-דאטה של HolyArrs. גם מפתחות או שרת משלך עובדים. |
 | 🔒 **מפתחות מוצפנים** | סיסמאות ומפתחות שמורים נעולים במפתח ראשי שנמצא בתיקיית ההגדרות שלך. |

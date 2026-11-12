@@ -125,7 +125,7 @@ docker compose up -d
 | 💬 **字幕** | 使用你選的語言，從字幕網站尋找，並和檔案一起保存。 |
 | 📅 **Calendar**（行事曆） | 你追蹤的所有作品接下來會播出什麼。 |
 | 🔔 **Alerts** | Discord、電子郵件、Telegram、ntfy、Gotify、Pushover 或 webhook。 |
-| 🚚 **匯入你的設定** | 從 Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent 和 SABnzbd。先試跑，之後還能復原。 |
+| 🚚 **匯入你的設定** | 從 Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent 和 SABnzbd。可以選擇要匯入的內容，之後還能復原。 |
 | 🔌 **舊的 App API** | 開啟之後，Seerr、Prowlarr、Bazarr、Unpackerr 和 Homepage 都能繼續運作。 |
 | 🗝️ **不需要 API 金鑰** | 作品資料、圖片和排行榜都來自 HolyArrs 的 metadata 伺服器。也可以用你自己的金鑰或伺服器。 |
 | 🔒 **已加密的金鑰** | 儲存的密碼和金鑰都用主金鑰鎖住，主金鑰放在你的設定資料夾裡。 |

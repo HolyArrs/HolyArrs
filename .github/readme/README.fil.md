@@ -125,7 +125,7 @@ May humiling ng pamagat. Hahanapin ng HolyArrs ang mga Pinagkukunan mo, pipiliin
 | 💬 **Mga subtitle** | Sa mga wikang pipiliin mo, hinahanap sa mga subtitle site at naka-save kasama ng file. |
 | 📅 **Calendar** | Ang susunod na ipapalabas sa lahat ng sinusundan mo. |
 | 🔔 **Alerts** | Discord, email, Telegram, ntfy, Gotify, Pushover o isang webhook. |
-| 🚚 **I-import ang setup mo** | Mula sa Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent at SABnzbd. Subukan muna, i-undo mamaya. |
+| 🚚 **I-import ang setup mo** | Mula sa Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent at SABnzbd. Piliin kung ano ang ililipat, i-undo mamaya. |
 | 🔌 **API ng mga naunang app** | Patuloy na gagana ang Seerr, Prowlarr, Bazarr, Unpackerr at Homepage kapag in-on mo ito. |
 | 🗝️ **Hindi kailangan ng API key** | Ang mga pamagat, artwork at chart ay galing sa metadata server ng HolyArrs. Gumagana rin ang sarili mong mga key o server. |
 | 🔒 **Naka-encrypt na key** | Ang mga naka-save na password at key ay naka-lock gamit ang master key na nasa config folder mo. |

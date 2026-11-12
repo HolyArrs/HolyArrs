@@ -125,7 +125,7 @@ Noen ber om en tittel. HolyArrs søker gjennom kildene dine, velger den beste re
 | 💬 **Undertekster** | På språkene du velger, funnet på undertekstsider og lagret sammen med filen. |
 | 📅 **Calendar** | Hva som sendes neste gang, for alt du følger. |
 | 🔔 **Alerts** | Discord, e-post, Telegram, ntfy, Gotify, Pushover eller en webhook. |
-| 🚚 **Ta med oppsettet ditt** | Fra Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent og SABnzbd. Prøv først, angre senere. |
+| 🚚 **Ta med oppsettet ditt** | Fra Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent og SABnzbd. Velg hva som blir med, angre senere. |
 | 🔌 **API for tidligere apper** | Seerr, Prowlarr, Bazarr, Unpackerr og Homepage fortsetter å virke når du slår det på. |
 | 🗝️ **Ingen API-nøkler nødvendig** | Titler, artwork og lister kommer fra HolyArrs' metadataserver. Egne nøkler eller egen server fungerer også. |
 | 🔒 **Krypterte nøkler** | Lagrede passord og nøkler er låst med en hovednøkkel som ligger i konfigurasjonsmappen din. |

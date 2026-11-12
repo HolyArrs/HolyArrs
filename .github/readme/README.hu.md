@@ -125,7 +125,7 @@ Valaki kér egy címet. A HolyArrs végigkeresi a Forrásaidat, a Választási s
 | 💬 **Feliratok** | Az általad választott nyelveken, feliratoldalakról keresve és a fájllal együtt tárolva. |
 | 📅 **Calendar** (Naptár) | Mi következik mindenből, amit követsz. |
 | 🔔 **Alerts** | Discord, e-mail, Telegram, ntfy, Gotify, Pushover vagy egy webhook. |
-| 🚚 **Vidd magaddal a beállításaidat** | Sonarrból, Radarrból, Lidarrból, Prowlarrból, Bazarrból, Seerrből, Overseerrből, qBittorrentből és SABnzbdból. Előbb próbáld ki, később visszavonhatod. |
+| 🚚 **Vidd magaddal a beállításaidat** | Sonarrból, Radarrból, Lidarrból, Prowlarrból, Bazarrból, Seerrből, Overseerrből, qBittorrentből és SABnzbdból. Válaszd ki, mi jöjjön át, később visszavonhatod. |
 | 🔌 **API a korábbi appokhoz** | A Seerr, a Prowlarr, a Bazarr, az Unpackerr és a Homepage tovább működik, ha bekapcsolod. |
 | 🗝️ **Nem kellenek API-kulcsok** | A címek, a borítók és a toplisták a HolyArrs metaadat-szerveréről jönnek. Saját kulcsokkal vagy saját szerverrel is megy. |
 | 🔒 **Titkosított kulcsok** | A tárolt jelszavakat és kulcsokat egy főkulcs zárja le, amely a konfigurációs mappádban van. |

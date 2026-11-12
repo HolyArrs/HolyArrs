@@ -125,7 +125,7 @@ Keegi soovib pealkirja. HolyArrs otsib sinu allikatest, valib sinu valikureeglit
 | 💬 **Subtiitrid** | Sinu valitud keeltes, leitud subtiitrisaitidelt ja salvestatud faili kõrvale. |
 | 📅 **Calendar** | Mis läheb järgmisena eetrisse, kõige kohta, mida jälgid. |
 | 🔔 **Alerts** | Discord, e-post, Telegram, ntfy, Gotify, Pushover või webhook. |
-| 🚚 **Võta oma seadistus kaasa** | Sonarrist, Radarrist, Lidarrist, Prowlarrist, Bazarrist, Seerrist, Overseerrist, qBittorrentist ja SABnzbdist. Proovi enne läbi, võta hiljem tagasi. |
+| 🚚 **Võta oma seadistus kaasa** | Sonarrist, Radarrist, Lidarrist, Prowlarrist, Bazarrist, Seerrist, Overseerrist, qBittorrentist ja SABnzbdist. Vali, mis kaasa tuleb, võta hiljem tagasi. |
 | 🔌 **Vanade rakenduste API** | Seerr, Prowlarr, Bazarr, Unpackerr ja Homepage töötavad edasi, kui selle sisse lülitad. |
 | 🗝️ **API-võtmeid pole vaja** | Pealkirjad, pildid ja edetabelid tulevad HolyArrsi metaandmete serverist. Töötavad ka sinu enda võtmed või server. |
 | 🔒 **Krüpteeritud võtmed** | Salvestatud paroolid ja võtmed on lukustatud peavõtmega, mis asub sinu seadete kaustas. |

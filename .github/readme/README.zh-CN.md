@@ -125,7 +125,7 @@ docker compose up -d
 | 💬 **字幕** | 使用你选的语言，从字幕网站查找，并与文件保存在一起。 |
 | 📅 **Calendar** | 你关注的所有内容接下来会播出什么。 |
 | 🔔 **Alerts** | Discord、邮件、Telegram、ntfy、Gotify、Pushover 或 webhook。 |
-| 🚚 **导入你的设置** | 支持 Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent 和 SABnzbd。先试运行，之后还能撤销。 |
+| 🚚 **导入你的设置** | 支持 Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent 和 SABnzbd。可以选择要导入的内容，之后还能撤销。 |
 | 🔌 **旧应用 API** | 开启后，Seerr、Prowlarr、Bazarr、Unpackerr 和 Homepage 都能继续工作。 |
 | 🗝️ **不需要 API 密钥** | 标题、海报和榜单都来自 HolyArrs 元数据服务器。也可以用你自己的密钥或服务器。 |
 | 🔒 **加密保存密钥** | 保存的密码和密钥由主密钥锁定，主密钥放在你的配置文件夹里。 |

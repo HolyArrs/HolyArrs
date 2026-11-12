@@ -127,7 +127,7 @@ docker compose up -d
 | 💬 **الترجمات** | باللغات التي تختارها، تُجلب من مواقع الترجمات وتبقى مع الملف. |
 | 📅 **Calendar** | ما سيُعرض قريبًا لكل ما تتابعه. |
 | 🔔 **Alerts** | Discord أو البريد الإلكتروني أو Telegram أو ntfy أو Gotify أو Pushover أو webhook. |
-| 🚚 **استورد إعدادك** | من Sonarr وRadarr وLidarr وProwlarr وBazarr وSeerr وOverseerr وqBittorrent وSABnzbd. جرّبه أولًا، وتراجع عنه لاحقًا. |
+| 🚚 **استورد إعدادك** | من Sonarr وRadarr وLidarr وProwlarr وBazarr وSeerr وOverseerr وqBittorrent وSABnzbd. اختر ما يُنقل، وتراجع عنه لاحقًا. |
 | 🔌 **API التطبيقات القديمة** | يستمر Seerr وProwlarr وBazarr وUnpackerr وHomepage في العمل بعد أن تفعّل ذلك. |
 | 🗝️ **بلا مفاتيح API** | العناوين والصور والقوائم تأتي من خادم البيانات الوصفية (metadata) الخاص بـ HolyArrs. مفاتيحك الخاصة أو خادمك الخاص يعملان أيضًا. |
 | 🔒 **مفاتيح مشفرة** | كلمات المرور والمفاتيح المخزنة مقفلة بمفتاح رئيسي موجود في مجلد الإعدادات. |

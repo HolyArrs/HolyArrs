@@ -125,7 +125,7 @@ Có người yêu cầu một mục. HolyArrs tìm trong các Nguồn của bạ
 | 💬 **Phụ đề** | Theo các ngôn ngữ bạn chọn, được tìm trên các trang phụ đề và giữ cùng với tệp. |
 | 📅 **Calendar** | Những gì sắp phát sóng tiếp theo của mọi thứ bạn theo dõi. |
 | 🔔 **Alerts** | Discord, email, Telegram, ntfy, Gotify, Pushover hoặc một webhook. |
-| 🚚 **Mang theo thiết lập của bạn** | Từ Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent và SABnzbd. Thử trước, hoàn tác sau. |
+| 🚚 **Mang theo thiết lập của bạn** | Từ Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent và SABnzbd. Chọn những gì mang sang, hoàn tác sau. |
 | 🔌 **API của ứng dụng cũ** | Seerr, Prowlarr, Bazarr, Unpackerr và Homepage vẫn chạy tiếp khi bạn bật tính năng này. |
 | 🗝️ **Không cần khóa API** | Tên mục, ảnh bìa và bảng xếp hạng đến từ máy chủ metadata của HolyArrs. Khóa hoặc máy chủ riêng của bạn cũng dùng được. |
 | 🔒 **Khóa được mã hóa** | Mật khẩu và khóa đã lưu được khóa bằng một khóa chính nằm trong thư mục cấu hình của bạn. |

@@ -107,7 +107,7 @@ So I built it.
 | **Six together** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **19.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>About 37 times smaller. Compressed registry download, linuxserver.io images, amd64, measured 2026-11-08, HolyArrs 1.1.0 on 2026-11-12. Idle RAM measured with 10,000 titles and 55,000 movies and episodes.</sub>
+<sub>About 37 times smaller. Compressed registry download, linuxserver.io images, amd64, measured 2026-11-08 (HolyArrs size measured on 1.1.0, 2026-11-12). Idle RAM measured 2026-11-08 with 10,000 titles and 55,000 movies and episodes.</sub>
 
 <a id="what-it-does"></a>
 
@@ -125,7 +125,7 @@ Someone asks for a title. HolyArrs searches your Sources, picks the best release
 | 💬 **Subtitles** | In the languages you pick, found on subtitle sites and kept with the file. |
 | 📅 **Calendar** | What's airing next for everything you follow. |
 | 🔔 **Alerts** | Discord, email, Telegram, ntfy, Gotify, Pushover or a webhook. |
-| 🚚 **Import your setup** | From Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent and SABnzbd. Try it first, undo it later. |
+| 🚚 **Import your setup** | From Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent and SABnzbd. Pick what comes over, undo it later. |
 | 🔌 **Old-app API** | Seerr, Prowlarr, Bazarr, Unpackerr and Homepage keep working once you turn it on. |
 | 🗝️ **No API keys needed** | Titles, artwork and charts come from the HolyArrs metadata server. Your own keys or server work too. |
 | 🔒 **Encrypted keys** | Stored passwords and keys are locked with a master key that lives in your config folder. |

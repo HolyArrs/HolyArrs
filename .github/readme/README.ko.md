@@ -125,7 +125,7 @@ docker compose up -d
 | 💬 **자막** | 고른 언어로 자막 사이트에서 찾아, 파일과 함께 보관해요. |
 | 📅 **Calendar** | 팔로우하는 모든 작품의 다음 방영 일정이에요. |
 | 🔔 **Alerts** | Discord, 이메일, Telegram, ntfy, Gotify, Pushover 또는 webhook. |
-| 🚚 **설정 가져오기** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd에서 옮겨 와요. 먼저 시험해 보고, 나중에 되돌릴 수 있어요. |
+| 🚚 **설정 가져오기** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd에서 옮겨 와요. 옮길 항목을 고르고, 나중에 되돌릴 수 있어요. |
 | 🔌 **기존 앱용 API** | 켜 두면 Seerr, Prowlarr, Bazarr, Unpackerr, Homepage가 계속 동작해요. |
 | 🗝️ **API 키 필요 없음** | 타이틀, 아트워크, 차트는 HolyArrs 메타데이터 서버에서 가져와요. 직접 가진 키나 서버도 쓸 수 있어요. |
 | 🔒 **암호화된 키** | 저장된 비밀번호와 키는 config 폴더에 있는 마스터 키로 잠겨요. |

@@ -125,7 +125,7 @@ Joku pyytää nimikettä. HolyArrs hakee lähteistäsi, valitsee parhaan julkais
 | 💬 **Tekstitykset** | Valitsemillasi kielillä, haettuna tekstityssivustoilta ja tallennettuna tiedoston mukana. |
 | 📅 **Calendar** | Mitä on tulossa seuraavaksi kaikesta, mitä seuraat. |
 | 🔔 **Alerts** | Discord, sähköposti, Telegram, ntfy, Gotify, Pushover tai webhook. |
-| 🚚 **Tuo asetuksesi mukanasi** | Sonarrista, Radarrista, Lidarrista, Prowlarrista, Bazarrista, Seerristä, Overseerristä, qBittorrentista ja SABnzbd:stä. Kokeile ensin, peruuta myöhemmin. |
+| 🚚 **Tuo asetuksesi mukanasi** | Sonarrista, Radarrista, Lidarrista, Prowlarrista, Bazarrista, Seerristä, Overseerristä, qBittorrentista ja SABnzbd:stä. Valitse, mitä tuodaan, peruuta myöhemmin. |
 | 🔌 **Vanhojen sovellusten API** | Seerr, Prowlarr, Bazarr, Unpackerr ja Homepage toimivat edelleen, kun otat sen käyttöön. |
 | 🗝️ **API-avaimia ei tarvita** | Nimikkeet, kuvitus ja listat tulevat HolyArrsin metadatapalvelimelta. Omat avaimet tai oma palvelin käyvät myös. |
 | 🔒 **Salatut avaimet** | Tallennetut salasanat ja avaimet on lukittu pääavaimella, joka on asetuskansiossasi. |

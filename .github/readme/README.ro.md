@@ -125,7 +125,7 @@ Cineva cere un titlu. HolyArrs caută în Sursele tale, alege cea mai bună vari
 | 💬 **Subtitrări** | În limbile pe care le alegi, găsite pe site-uri de subtitrări și păstrate împreună cu fișierul. |
 | 📅 **Calendar** | Ce se difuzează în continuare pentru tot ce urmărești. |
 | 🔔 **Alerts** | Discord, e-mail, Telegram, ntfy, Gotify, Pushover sau un webhook. |
-| 🚚 **Adu-ți configurarea cu tine** | De la Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent și SABnzbd. Încearcă întâi, anulează mai târziu. |
+| 🚚 **Adu-ți configurarea cu tine** | De la Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent și SABnzbd. Alege ce aduci, anulează mai târziu. |
 | 🔌 **API pentru aplicațiile mai vechi** | Seerr, Prowlarr, Bazarr, Unpackerr și Homepage funcționează în continuare, după ce îl pornești. |
 | 🗝️ **Fără chei API** | Titlurile, imaginile și topurile vin de la serverul de metadate HolyArrs. Merg și cheile sau serverul tău. |
 | 🔒 **Chei criptate** | Parolele și cheile salvate sunt blocate cu o cheie principală care stă în dosarul tău de configurare. |

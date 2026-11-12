@@ -125,7 +125,7 @@ Jemand wünscht sich einen Titel. HolyArrs durchsucht deine Sources, wählt mit 
 | 💬 **Untertitel** | In den Sprachen, die du wählst, auf Untertitelseiten gefunden und zusammen mit der Datei gespeichert. |
 | 📅 **Calendar** | Was als Nächstes läuft, für alles, dem du folgst. |
 | 🔔 **Alerts** | Discord, E-Mail, Telegram, ntfy, Gotify, Pushover oder ein Webhook. |
-| 🚚 **Setup mitnehmen** | Von Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent und SABnzbd. Erst ausprobieren, später rückgängig machen. |
+| 🚚 **Setup mitnehmen** | Von Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent und SABnzbd. Auswählen, was mitkommt, später rückgängig machen. |
 | 🔌 **API für alte Apps** | Seerr, Prowlarr, Bazarr, Unpackerr und Homepage funktionieren weiter, sobald du das einschaltest. |
 | 🗝️ **Keine API-Keys nötig** | Titel, Artwork und Charts kommen vom HolyArrs-Metadatenserver. Eigene Keys oder ein eigener Server gehen auch. |
 | 🔒 **Verschlüsselte Keys** | Gespeicherte Passwörter und Keys sind mit einem Master-Key gesperrt, der in deinem Config-Ordner liegt. |

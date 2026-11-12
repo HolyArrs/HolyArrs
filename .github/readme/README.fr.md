@@ -125,7 +125,7 @@ Quelqu'un demande un titre. HolyArrs cherche dans vos Sources, choisit la meille
 | 💬 **Sous-titres** | Dans les langues que vous choisissez, trouvés sur des sites de sous-titres et conservés avec le fichier. |
 | 📅 **Calendar** | Ce qui passe bientôt pour tout ce que vous suivez. |
 | 🔔 **Alerts** | Discord, e-mail, Telegram, ntfy, Gotify, Pushover ou un webhook. |
-| 🚚 **Reprenez votre configuration** | Depuis Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent et SABnzbd. Essayez d'abord, annulez plus tard. |
+| 🚚 **Reprenez votre configuration** | Depuis Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent et SABnzbd. Choisissez ce qui est repris, annulez plus tard. |
 | 🔌 **API des anciennes applications** | Seerr, Prowlarr, Bazarr, Unpackerr et Homepage continuent de fonctionner une fois que vous l'activez. |
 | 🗝️ **Aucune clé d'API nécessaire** | Les titres, les visuels et les classements viennent du serveur de métadonnées de HolyArrs. Vos propres clés ou votre propre serveur fonctionnent aussi. |
 | 🔒 **Clés chiffrées** | Les mots de passe et les clés enregistrés sont verrouillés par une clé maître qui reste dans votre dossier de configuration. |

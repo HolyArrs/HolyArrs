@@ -125,7 +125,7 @@ docker compose up -d
 | 💬 **সাবটাইটেল** | আপনার বেছে নেওয়া ভাষায়, সাবটাইটেল সাইট থেকে খুঁজে আনা আর ফাইলের সঙ্গেই রাখা। |
 | 📅 **Calendar** | আপনি যা যা ফলো করেন, তার মধ্যে এরপর কী আসছে। |
 | 🔔 **Alerts** | Discord, ইমেল, Telegram, ntfy, Gotify, Pushover বা একটা webhook। |
-| 🚚 **সেটআপ ইমপোর্ট করুন** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent আর SABnzbd থেকে। আগে চেষ্টা করে দেখুন, পরে চাইলে ফিরিয়ে নিন। |
+| 🚚 **সেটআপ ইমপোর্ট করুন** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent আর SABnzbd থেকে। কী কী আসবে বেছে নিন, পরে চাইলে ফিরিয়ে নিন। |
 | 🔌 **আগের অ্যাপের API** | চালু করলে Seerr, Prowlarr, Bazarr, Unpackerr আর Homepage আগের মতোই কাজ করে। |
 | 🗝️ **কোনো API কী লাগে না** | টাইটেল, আর্টওয়ার্ক আর চার্ট আসে HolyArrs মেটাডেটা সার্ভার থেকে। নিজের কী বা নিজের সার্ভারও চলে। |
 | 🔒 **এনক্রিপ্টেড কী** | সেভ করা পাসওয়ার্ড আর কী একটা মাস্টার কী দিয়ে তালাবন্ধ থাকে, যেটা আপনার কনফিগ ফোল্ডারেই থাকে। |

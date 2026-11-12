@@ -125,7 +125,7 @@ Seseorang meminta sebuah judul. HolyArrs mencarinya di sumber kamu, memilih rili
 | 💬 **Subtitle** | Dalam bahasa yang kamu pilih, dicari di situs subtitle dan disimpan bersama filenya. |
 | 📅 **Calendar** | Apa yang tayang berikutnya untuk semua yang kamu ikuti. |
 | 🔔 **Alerts** | Discord, email, Telegram, ntfy, Gotify, Pushover, atau webhook. |
-| 🚚 **Bawa penyiapan lama** | Dari Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, dan SABnzbd. Coba dulu, batalkan nanti. |
+| 🚚 **Bawa penyiapan lama** | Dari Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, dan SABnzbd. Pilih apa yang dibawa, batalkan nanti. |
 | 🔌 **API aplikasi lama** | Seerr, Prowlarr, Bazarr, Unpackerr, dan Homepage tetap berjalan setelah kamu mengaktifkannya. |
 | 🗝️ **Tanpa API key** | Judul, artwork, dan chart berasal dari server metadata HolyArrs. Key atau server milikmu sendiri juga bisa. |
 | 🔒 **Kunci terenkripsi** | Kata sandi dan kunci yang tersimpan dikunci dengan kunci utama yang ada di folder konfigurasi kamu. |

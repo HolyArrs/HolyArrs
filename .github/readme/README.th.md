@@ -125,7 +125,7 @@ docker compose up -d
 | 💬 **คำบรรยาย** | ในภาษาที่คุณเลือก หาจากเว็บคำบรรยาย และเก็บไว้พร้อมกับไฟล์ |
 | 📅 **Calendar** | รายการที่จะออกอากาศต่อไปของทุกอย่างที่คุณติดตาม |
 | 🔔 **Alerts** | Discord, อีเมล, Telegram, ntfy, Gotify, Pushover หรือ webhook |
-| 🚚 **นำเข้าระบบเดิม** | จาก Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent และ SABnzbd ลองก่อนได้ ยกเลิกทีหลังได้ |
+| 🚚 **นำเข้าระบบเดิม** | จาก Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent และ SABnzbd เลือกได้ว่าจะย้ายอะไรมา ยกเลิกทีหลังได้ |
 | 🔌 **API สำหรับแอปรุ่นเดิม** | Seerr, Prowlarr, Bazarr, Unpackerr และ Homepage ใช้งานต่อได้ เมื่อคุณเปิดใช้ |
 | 🗝️ **ไม่ต้องใช้ API key** | รายการ ภาพ และชาร์ตมาจากเซิร์ฟเวอร์ข้อมูลของ HolyArrs ใช้คีย์หรือเซิร์ฟเวอร์ของคุณเองก็ได้ |
 | 🔒 **คีย์เข้ารหัส** | รหัสผ่านและคีย์ที่เก็บไว้ถูกล็อกด้วยคีย์หลักที่อยู่ในโฟลเดอร์คอนฟิกของคุณ |
