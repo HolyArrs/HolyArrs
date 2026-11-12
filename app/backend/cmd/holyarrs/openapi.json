@@ -15585,6 +15585,51 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/downloads/{id}/import": {
+      "post": {
+        "description": "Asks again for the import of a finished download that still waits for it.",
+        "operationId": "importDownload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "The import is queued."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such download."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The download is not waiting for an import."
+          }
+        },
+        "summary": "Import a waiting download",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloads/{id}/mark-failed": {
       "post": {
         "description": "The active download fails with your name as the reason: its Release is turned down, it is removed from the Downloader (setting remove_failed) and the movie is searched for the next Release, or needs a decision when nothing else passes.",
