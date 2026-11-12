@@ -80,7 +80,7 @@ class InstallGuides(unittest.TestCase):
                          ":/config", "6262:6262", "unless-stopped"):
                 with self.subTest(want=want):
                     self.assertIn(want, block)
-            # 1.1.0: the main example mounts one data folder (#264).
+            # 1.1.0: the main example mounts one data folder.
             self.assertIn("/srv/data:/data", block)
         # Separate mounts stay documented as the optional alternative.
         sep = text[text.index("- /path/to/movies:/movies"):]
