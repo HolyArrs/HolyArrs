@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Μόνο ο ιδιοκτήτης και οι διαχειριστές",
 	"settings.libraryFolders.copiesExpected": "Αναμένεται αντιγραφή",
 	"settings.libraryFolders.copiesExpectedState": "Αντίγραφα, όπως αναμένεται",
-	"settings.libraryFolders.warnAgain": "Προειδοποίηση ξανά"
+	"settings.libraryFolders.warnAgain": "Προειδοποίηση ξανά",
+	"settings.libraryFolders.whyCopies": "Γιατί;",
+	"settings.libraryFolders.stateInstant": "Άμεσα, χωρίς επιπλέον χώρο",
+	"settings.libraryFolders.changePath": "Αλλαγή διαδρομής",
+	"settings.libraryFolders.changePathOf": "Αλλαγή της διαδρομής του {path}",
+	"settings.libraryFolders.newPath": "Νέα διαδρομή",
+	"settings.libraryFolders.changePathHint": "Μετακινήστε πρώτα εκεί τα αρχεία. Το HolyArrs ελέγχει κάθε αρχείο και δεν μετακινεί τίποτα.",
+	"settings.libraryFolders.checkingFiles": "Έλεγχος αρχείων…",
+	"settings.libraryFolders.pathChanged": "Η διαδρομή άλλαξε"
 }

@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Gyors indoklások",
 	"requests.page.takeBackTitle": "Visszavonja: {name}?",
 	"requests.page.takeBackDesc": "Kikerül a Kérések közül. Később újra kérheti.",
-	"requests.page.keepIt": "Megtartom"
+	"requests.page.keepIt": "Megtartom",
+	"requests.moment.downloaded.title": "Letöltve",
+	"requests.moment.downloaded.body": "A személyzetnek: egy Letöltő befejezett egy letöltést (következik az import).",
+	"requests.moment.download_failed.title": "A letöltés sikertelen",
+	"requests.moment.download_failed.body": "A személyzetnek: egy letöltés sikertelen volt, és a Release-t elutasították."
 }

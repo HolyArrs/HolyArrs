@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "סיבות מהירות",
 	"requests.page.takeBackTitle": "למשוך את {name}?",
 	"requests.page.takeBackDesc": "היא עוזבת את הבקשות. אפשר לבקש שוב בהמשך.",
-	"requests.page.keepIt": "להשאיר"
+	"requests.page.keepIt": "להשאיר",
+	"requests.moment.downloaded.title": "הורד",
+	"requests.moment.downloaded.body": "לצוות: מוריד סיים הורדה (הייבוא יבוא בהמשך).",
+	"requests.moment.download_failed.title": "ההורדה נכשלה",
+	"requests.moment.download_failed.body": "לצוות: הורדה נכשלה והריליז שלה נדחה."
 }

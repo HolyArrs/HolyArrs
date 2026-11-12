@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Stáhnout ji může jen vlastník; požádejte ho o to.",
 	"settings.backups.fingerprint": "Otisk klíče",
 	"settings.backups.downloadKit": "Stáhnout sadu klíčů",
-	"settings.backups.restoreKey": "Pro obnovu: přejmenujte na holyarrs.key a vložte do složky config"
+	"settings.backups.restoreKey": "Pro obnovu: přejmenujte na holyarrs.key a vložte do složky config",
+	"settings.backups.offPlan": "Vypnuto",
+	"settings.backups.offAbout": "Žádné plánované zálohy. Kopie se stále vytvoří před každou aktualizací.",
+	"settings.backups.offKeeps": "Vypnuto zachová zálohy, které už máte."
 }

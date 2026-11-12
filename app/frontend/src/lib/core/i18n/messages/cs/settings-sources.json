@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Změnit",
 	"settings.sources.removeName": "Odebrat {name}",
 	"settings.sources.remove": "Odebrat",
-	"settings.sources.bridge": "Propojit Jackett nebo Prowlarr"
+	"settings.sources.bridge": "Propojit Jackett nebo Prowlarr",
+	"settings.sources.off": "Zdroje jsou vypnuté",
+	"settings.sources.offText": "HolyArrs nevyhledává ani nestahuje. Stahování, která přidáte ve svém Stahovači, se stále importují.",
+	"settings.sources.openParts": "Otevřít Části",
+	"settings.sources.offState": "Vypnuto"
 }

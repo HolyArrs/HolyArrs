@@ -266,5 +266,8 @@
 	"home.version": "גרסה {version}",
 	"home.metadataServerDown": "שרת המטא־דאטה למטה",
 	"home.metadataServerOnline": "שרת המטא־דאטה פועל",
-	"home.homeCouldNotRead3": "הבית לא הצליח לקרוא הורדות כרגע."
+	"home.homeCouldNotRead3": "הבית לא הצליח לקרוא הורדות כרגע.",
+	"home.waitingToBeCleared": "ממתין לניקוי",
+	"home.off": "כבוי",
+	"home.sourcesOff": "כבוי ב\"רכיבים\""
 }

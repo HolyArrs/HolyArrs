@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Všechna místa",
 	"frame.layout.newWord": "nové",
 	"frame.layout.accountName": "Účet · {name}",
-	"frame.layout.hostRefused": "<b>Na {host} nelze ukládat změny.</b> HolyArrs ukládá jen na povolených názvech. Otevřete ho jednou přes IP adresu a pak přidejte {host} v Nastavení › Přihlášení › Povolené názvy hostitelů. Restart není nutný."
+	"frame.layout.hostRefused": "<b>Na {host} nelze ukládat změny.</b> HolyArrs ukládá jen na povolených názvech. Otevřete ho jednou přes IP adresu a pak přidejte {host} v Nastavení › Přihlášení › Povolené názvy hostitelů. Restart není nutný.",
+	"frame.feeds.clearOne": "Importované stahování nebylo vyčištěno",
+	"frame.feeds.clearMany": "Nevyčištěná importovaná stahování: {n}",
+	"frame.feeds.clearBody": "HolyArrs to zkusí znovu sám",
+	"frame.feeds.clearNow": "Vyčistit teď",
+	"frame.feeds.cleared": "Vyčištěno ze Stahovače",
+	"frame.feeds.clearStill": "Zatím nevyčištěno"
 }

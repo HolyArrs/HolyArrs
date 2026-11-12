@@ -266,5 +266,8 @@
 	"home.version": "Verze {version}",
 	"home.metadataServerDown": "Server metadat nefunguje",
 	"home.metadataServerOnline": "Server metadat je online",
-	"home.homeCouldNotRead3": "Domů teď nemohlo přečíst stahování."
+	"home.homeCouldNotRead3": "Domů teď nemohlo přečíst stahování.",
+	"home.waitingToBeCleared": "čeká na vyčištění",
+	"home.off": "Vypnuto",
+	"home.sourcesOff": "Vypnuto v Částech"
 }

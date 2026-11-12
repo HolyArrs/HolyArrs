@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Αλλαγή",
 	"settings.sources.removeName": "Αφαίρεση: {name}",
 	"settings.sources.remove": "Αφαίρεση",
-	"settings.sources.bridge": "Σύνδεση Jackett ή Prowlarr"
+	"settings.sources.bridge": "Σύνδεση Jackett ή Prowlarr",
+	"settings.sources.off": "Οι Πηγές είναι απενεργοποιημένες",
+	"settings.sources.offText": "Το HolyArrs δεν αναζητά και δεν πιάνει. Οι λήψεις που προσθέτετε στο Πρόγραμμα λήψης σας εξακολουθούν να εισάγονται.",
+	"settings.sources.openParts": "Άνοιγμα Ενοτήτων",
+	"settings.sources.offState": "Ανενεργό"
 }

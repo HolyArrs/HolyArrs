@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Teszt",
 	"settings.mediaServers.changeButton": "Módosítás",
 	"settings.mediaServers.removeName": "{name} eltávolítása",
-	"settings.mediaServers.remove": "Eltávolítás"
+	"settings.mediaServers.remove": "Eltávolítás",
+	"settings.mediaServers.watchTitle": "Megtekintési előzmények",
+	"settings.mediaServers.watchRead": "Megtekintési előzmények olvasása",
+	"settings.mediaServers.watchHint": "A Médiatár-statisztikában megmutatja, ki mit nézett, azoknak, akik a Médiatárat üzemeltetik. A Ki törli a beolvasottakat.",
+	"settings.mediaServers.watchConfirmOff": "Kikapcsolod a megtekintési előzményeket? Minden eddig beolvasott törlődik.",
+	"settings.mediaServers.watchTurnedOn": "A megtekintési előzmények be vannak kapcsolva. Az első beolvasás 30 percen belül megtörténik.",
+	"settings.mediaServers.watchTurnedOff": "A megtekintési előzmények ki vannak kapcsolva",
+	"settings.mediaServers.watchFailed": "A megtekintési előzményeket nem sikerült módosítani"
 }

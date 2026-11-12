@@ -259,5 +259,7 @@
 	"health.word.broken": "Nefunguje",
 	"health.word.notSent": "Zatím neodesláno",
 	"health.word.notSynced": "Zatím nesynchronizováno",
-	"health.word.working": "Funguje"
+	"health.word.working": "Funguje",
+	"health.check.clearWaiting": "Stahování čekající na vyčištění",
+	"health.kind.clearWaiting": "Stahování čekající na vyčištění"
 }

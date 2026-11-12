@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "Δεν λείπει τίποτα.",
 	"mediafiles.showDelete.deleteLabel": "Διαγραφή: {what}",
 	"mediafiles.showReleases.searchingFor": "Αναζήτηση: {name}",
-	"mediafiles.sheet.file": "Αρχείο"
+	"mediafiles.sheet.file": "Αρχείο",
+	"mediafiles.parts.stopsSources": "Οι αυτόματες αναζητήσεις σταματούν, για όταν προσθέτετε λήψεις μόνοι σας. Τα Προγράμματα λήψης και οι εισαγωγές συνεχίζουν να λειτουργούν."
 }

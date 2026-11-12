@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "אזור מסוכן",
 	"core.settings.danger.about": "הפעלה מחדש או כיבוי",
 	"core.settings.account.label": "החשבון שלי",
-	"core.settings.account.about": "סיסמה, אימות דו־שלבי, מכשירים"
+	"core.settings.account.about": "סיסמה, אימות דו־שלבי, מכשירים",
+	"core.plain.clearWaiting": "הורדות שיובאו ממתינות לניקוי מהמוריד שלהן.",
+	"core.api.sourceOff": "חלק מהשורות כבויות בהתקנה הזו."
 }

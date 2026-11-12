@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Επικίνδυνη ζώνη",
 	"core.settings.danger.about": "Επανεκκίνηση ή τερματισμός",
 	"core.settings.account.label": "Ο λογαριασμός μου",
-	"core.settings.account.about": "Κωδικός, δύο παράγοντες, συσκευές"
+	"core.settings.account.about": "Κωδικός, δύο παράγοντες, συσκευές",
+	"core.plain.clearWaiting": "Οι εισηγμένες λήψεις περιμένουν να καθαριστούν από το Πρόγραμμα λήψης τους.",
+	"core.api.sourceOff": "Ορισμένες γραμμές είναι απενεργοποιημένες σε αυτή την εγκατάσταση."
 }

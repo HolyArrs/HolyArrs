@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Jen vlastník a správci",
 	"settings.libraryFolders.copiesExpected": "Kopírování se očekává",
 	"settings.libraryFolders.copiesExpectedState": "Kopíruje, jak se čekalo",
-	"settings.libraryFolders.warnAgain": "Upozornit znovu"
+	"settings.libraryFolders.warnAgain": "Upozornit znovu",
+	"settings.libraryFolders.whyCopies": "Proč?",
+	"settings.libraryFolders.stateInstant": "Okamžitě, bez dalšího místa",
+	"settings.libraryFolders.changePath": "Změnit cestu",
+	"settings.libraryFolders.changePathOf": "Změnit cestu {path}",
+	"settings.libraryFolders.newPath": "Nová cesta",
+	"settings.libraryFolders.changePathHint": "Nejdřív tam přesuňte soubory. HolyArrs zkontroluje každý soubor a nic nepřesouvá.",
+	"settings.libraryFolders.checkingFiles": "Kontrolují se soubory…",
+	"settings.libraryFolders.pathChanged": "Cesta změněna"
 }

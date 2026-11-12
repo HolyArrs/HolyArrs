@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "כל המקומות",
 	"frame.layout.newWord": "חדש",
 	"frame.layout.accountName": "חשבון · {name}",
-	"frame.layout.hostRefused": "<b>אי אפשר לשמור שינויים ב־{host}.</b> HolyArrs שומר רק בשמות שאישרת. פתח אותו פעם אחת לפי כתובת ה־IP, ואז הוסף את {host} תחת הגדרות › התחברות › שמות מארח מותרים. אין צורך בהפעלה מחדש."
+	"frame.layout.hostRefused": "<b>אי אפשר לשמור שינויים ב־{host}.</b> HolyArrs שומר רק בשמות שאישרת. פתח אותו פעם אחת לפי כתובת ה־IP, ואז הוסף את {host} תחת הגדרות › התחברות › שמות מארח מותרים. אין צורך בהפעלה מחדש.",
+	"frame.feeds.clearOne": "הורדה שיובאה לא נוקתה",
+	"frame.feeds.clearMany": "{n} הורדות שיובאו לא נוקו",
+	"frame.feeds.clearBody": "HolyArrs מנסה שוב בעצמו",
+	"frame.feeds.clearNow": "ניקוי עכשיו",
+	"frame.feeds.cleared": "נוקתה מהמוריד",
+	"frame.feeds.clearStill": "עדיין לא נוקתה"
 }

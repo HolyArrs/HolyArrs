@@ -266,5 +266,8 @@
 	"home.version": "{version} verzió",
 	"home.metadataServerDown": "A metaadat-szerver nem működik",
 	"home.metadataServerOnline": "A metaadat-szerver elérhető",
-	"home.homeCouldNotRead3": "A Kezdőlap most nem tudta beolvasni a letöltéseket."
+	"home.homeCouldNotRead3": "A Kezdőlap most nem tudta beolvasni a letöltéseket.",
+	"home.waitingToBeCleared": "törlésre vár",
+	"home.off": "Ki",
+	"home.sourcesOff": "Kikapcsolva a Modulokban"
 }

@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Módosítás",
 	"settings.sources.removeName": "{name} eltávolítása",
 	"settings.sources.remove": "Eltávolítás",
-	"settings.sources.bridge": "Jackett vagy Prowlarr összekapcsolása"
+	"settings.sources.bridge": "Jackett vagy Prowlarr összekapcsolása",
+	"settings.sources.off": "A Források ki vannak kapcsolva",
+	"settings.sources.offText": "A HolyArrs nem keres és nem tölt le. A Letöltődben hozzáadott letöltések továbbra is importálódnak.",
+	"settings.sources.openParts": "Modulok megnyitása",
+	"settings.sources.offState": "Ki"
 }

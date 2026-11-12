@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "לבעלים ולמנהלים בלבד",
 	"settings.libraryFolders.copiesExpected": "העתקה היא צפויה",
 	"settings.libraryFolders.copiesExpectedState": "עותקים, כצפוי",
-	"settings.libraryFolders.warnAgain": "התרע שוב"
+	"settings.libraryFolders.warnAgain": "התרע שוב",
+	"settings.libraryFolders.whyCopies": "למה?",
+	"settings.libraryFolders.stateInstant": "מיידי, בלי מקום נוסף",
+	"settings.libraryFolders.changePath": "שינוי נתיב",
+	"settings.libraryFolders.changePathOf": "שינוי הנתיב של {path}",
+	"settings.libraryFolders.newPath": "נתיב חדש",
+	"settings.libraryFolders.changePathHint": "העבירו את הקבצים לשם קודם. HolyArrs בודק כל קובץ ולא מעביר דבר.",
+	"settings.libraryFolders.checkingFiles": "בודק קבצים…",
+	"settings.libraryFolders.pathChanged": "הנתיב שונה"
 }

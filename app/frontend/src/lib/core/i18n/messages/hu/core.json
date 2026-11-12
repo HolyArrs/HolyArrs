@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Veszélyzóna",
 	"core.settings.danger.about": "Újraindítás vagy leállítás",
 	"core.settings.account.label": "Saját fiók",
-	"core.settings.account.about": "Jelszó, kétlépcsős azonosítás, eszközök"
+	"core.settings.account.about": "Jelszó, kétlépcsős azonosítás, eszközök",
+	"core.plain.clearWaiting": "Az importált letöltések arra várnak, hogy törlődjenek a Letöltőből.",
+	"core.api.sourceOff": "Néhány sor ki van kapcsolva ezen a telepítésen."
 }

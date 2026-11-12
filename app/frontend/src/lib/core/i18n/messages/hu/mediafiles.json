@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "Nincs hiányzó.",
 	"mediafiles.showDelete.deleteLabel": "{what} törlése",
 	"mediafiles.showReleases.searchingFor": "{name} keresése",
-	"mediafiles.sheet.file": "Fájl"
+	"mediafiles.sheet.file": "Fájl",
+	"mediafiles.parts.stopsSources": "Az automatikus keresések leállnak, arra az esetre, ha a letöltéseket te adod hozzá. A Letöltők és az importok tovább működnek."
 }

@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Αιτήματα από λίστες παρακολούθησης Plex",
 	"settings.requests.plexOnHint": "Κάθε άτομο το ενεργοποιεί στον Λογαριασμό μου. Ισχύουν τα Όριά του.",
 	"settings.requests.plexEveryone": "Ενεργοποίηση για όλους όσους συνδέονται με Plex",
-	"settings.requests.plexEveryoneHint": "Ο καθένας μπορεί να το απενεργοποιήσει για τον εαυτό του στον Λογαριασμό μου."
+	"settings.requests.plexEveryoneHint": "Ο καθένας μπορεί να το απενεργοποιήσει για τον εαυτό του στον Λογαριασμό μου.",
+	"settings.requests.plexFriends": "Συμπερίληψη φίλων του Plex",
+	"settings.requests.plexFriendsHint": "Φίλοι που εισήχθησαν από το Plex. Διαβάζονται με τη σύνδεσή σας στο Plex· ισχύουν τα Όρια του καθενός.",
+	"settings.requests.plexFriendsNoLink": "Συνδέστε πρώτα το Plex στις Ρυθμίσεις › Σύνδεση.",
+	"settings.requests.plexFriendsNone": "Κανείς δεν έχει εισαχθεί ακόμα από το Plex.",
+	"settings.requests.plexFriendsRead": "Διαβάστηκε {when}",
+	"settings.requests.plexFriendsNotYet": "Δεν έχει διαβαστεί ακόμα",
+	"settings.requests.plexFriendsAsked": "Αιτήματα: {n}"
 }

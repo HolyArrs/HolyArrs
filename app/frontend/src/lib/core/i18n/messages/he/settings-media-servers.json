@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "בדיקה",
 	"settings.mediaServers.changeButton": "שינוי",
 	"settings.mediaServers.removeName": "הסרת {name}",
-	"settings.mediaServers.remove": "הסרה"
+	"settings.mediaServers.remove": "הסרה",
+	"settings.mediaServers.watchTitle": "היסטוריית צפייה",
+	"settings.mediaServers.watchRead": "קריאת היסטוריית צפייה",
+	"settings.mediaServers.watchHint": "מציג בסטטיסטיקות הספרייה מי צפה במה, לאנשים שמנהלים את הספרייה. \"כבוי\" מוחק את מה שנקרא.",
+	"settings.mediaServers.watchConfirmOff": "לכבות את היסטוריית הצפייה? כל מה שנקרא עד כה נמחק.",
+	"settings.mediaServers.watchTurnedOn": "היסטוריית הצפייה פועלת. הקריאה הראשונה תתבצע תוך 30 דקות.",
+	"settings.mediaServers.watchTurnedOff": "היסטוריית הצפייה כבויה",
+	"settings.mediaServers.watchFailed": "לא ניתן היה לשנות את היסטוריית הצפייה"
 }

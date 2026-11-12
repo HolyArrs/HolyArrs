@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Γλώσσα",
 	"subtitles.wants.pick": "Επιλέξτε γλώσσα",
 	"subtitles.wants.takeOff": "Αφαίρεση: {name}",
-	"subtitles.wants.thisLanguage": "αυτή η γλώσσα"
+	"subtitles.wants.thisLanguage": "αυτή η γλώσσα",
+	"subtitles.made.translated": "Μεταφρασμένο",
+	"subtitles.made.partial": "Μερικώς μεταφρασμένο",
+	"subtitles.made.ai": "Μετάφραση από AI",
+	"subtitles.made.machine": "Μηχανική μετάφραση",
+	"subtitles.wants.translateFrom": "Μετάφραση από",
+	"subtitles.wants.noTranslate": "Να μη μεταφραστεί",
+	"subtitles.panel.picture": "Εικόνα",
+	"subtitles.panel.pictureTitle": "Υπότιτλος εικόνας: δεν μπορεί να μεταφραστεί",
+	"subtitles.panel.translate": "Μετάφραση",
+	"subtitles.panel.translateFor": "Μετάφραση υποτίτλου {name}",
+	"subtitles.panel.translateFrom": "Μετάφραση από",
+	"subtitles.panel.translateQueued": "Μετάφραση σε εξέλιξη",
+	"subtitles.panel.translateQueuedBody": "Ο υπότιτλος {name} εμφανίζεται εδώ όταν ολοκληρωθεί.",
+	"subtitles.panel.translating": "Δεν βρέθηκε, οπότε ο μεταφραστής σας φτιάχνει έναν."
 }

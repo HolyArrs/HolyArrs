@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Γρήγοροι λόγοι",
 	"requests.page.takeBackTitle": "Να ανακληθεί το «{name}»;",
 	"requests.page.takeBackDesc": "Φεύγει από τα Αιτήματα. Μπορείτε να το ζητήσετε ξανά αργότερα.",
-	"requests.page.keepIt": "Να μείνει"
+	"requests.page.keepIt": "Να μείνει",
+	"requests.moment.downloaded.title": "Λήφθηκε",
+	"requests.moment.downloaded.body": "Για το προσωπικό: ένα Πρόγραμμα λήψης ολοκλήρωσε μια λήψη (ακολουθεί η εισαγωγή).",
+	"requests.moment.download_failed.title": "Η λήψη απέτυχε",
+	"requests.moment.download_failed.body": "Για το προσωπικό: μια λήψη απέτυχε και η Κυκλοφορία της απορρίφθηκε."
 }

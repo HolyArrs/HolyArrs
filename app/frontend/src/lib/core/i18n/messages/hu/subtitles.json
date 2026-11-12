@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Nyelv",
 	"subtitles.wants.pick": "Válasszon nyelvet",
 	"subtitles.wants.takeOff": "{name} levétele",
-	"subtitles.wants.thisLanguage": "ez a nyelv"
+	"subtitles.wants.thisLanguage": "ez a nyelv",
+	"subtitles.made.translated": "Lefordítva",
+	"subtitles.made.partial": "Részben lefordítva",
+	"subtitles.made.ai": "AI-fordítás",
+	"subtitles.made.machine": "Gépi fordítás",
+	"subtitles.wants.translateFrom": "Fordítás ebből",
+	"subtitles.wants.noTranslate": "Ne fordítsa",
+	"subtitles.panel.picture": "Kép",
+	"subtitles.panel.pictureTitle": "Képfelirat: nem fordítható le",
+	"subtitles.panel.translate": "Fordítás",
+	"subtitles.panel.translateFor": "{name} felirat fordítása",
+	"subtitles.panel.translateFrom": "Fordítás ebből",
+	"subtitles.panel.translateQueued": "Fordítás folyamatban",
+	"subtitles.panel.translateQueuedBody": "A(z) {name} felirat itt jelenik meg, ha elkészült.",
+	"subtitles.panel.translating": "Nem található, ezért a fordítód készít egyet."
 }

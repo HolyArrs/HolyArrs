@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Rychlé důvody",
 	"requests.page.takeBackTitle": "Vzít zpět {name}?",
 	"requests.page.takeBackDesc": "Opustí Žádosti. Můžete požádat znovu později.",
-	"requests.page.keepIt": "Ponechat"
+	"requests.page.keepIt": "Ponechat",
+	"requests.moment.downloaded.title": "Staženo",
+	"requests.moment.downloaded.body": "Pro správce: Stahovač dokončil stahování (následuje import).",
+	"requests.moment.download_failed.title": "Stahování selhalo",
+	"requests.moment.download_failed.body": "Pro správce: stahování selhalo a jeho Release byl odmítnut."
 }

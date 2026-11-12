@@ -266,5 +266,8 @@
 	"home.version": "Έκδοση {version}",
 	"home.metadataServerDown": "Ο διακομιστής μεταδεδομένων δεν λειτουργεί",
 	"home.metadataServerOnline": "Ο διακομιστής μεταδεδομένων λειτουργεί",
-	"home.homeCouldNotRead3": "Η Αρχική δεν μπόρεσε να διαβάσει τις λήψεις αυτή τη στιγμή."
+	"home.homeCouldNotRead3": "Η Αρχική δεν μπόρεσε να διαβάσει τις λήψεις αυτή τη στιγμή.",
+	"home.waitingToBeCleared": "περιμένει καθαρισμό",
+	"home.off": "Ανενεργό",
+	"home.sourcesOff": "Απενεργοποιημένο στις Ενότητες"
 }

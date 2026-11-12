@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "בקשות מרשימות צפייה ב־Plex",
 	"settings.requests.plexOnHint": "כל אדם מפעיל זאת בחשבון שלי. המגבלות שלו חלות.",
 	"settings.requests.plexEveryone": "הפעלה לכל מי שמתחבר עם Plex",
-	"settings.requests.plexEveryoneHint": "כל אחד יכול לכבות זאת לעצמו בחשבון שלי."
+	"settings.requests.plexEveryoneHint": "כל אחד יכול לכבות זאת לעצמו בחשבון שלי.",
+	"settings.requests.plexFriends": "לכלול חברי Plex",
+	"settings.requests.plexFriendsHint": "חברים שייבאתם מ-Plex. נקראים עם קישור ה-Plex שלכם; המגבלות של כל חבר חלות.",
+	"settings.requests.plexFriendsNoLink": "קשרו קודם את Plex ב\"הגדרות\" › \"התחברות\".",
+	"settings.requests.plexFriendsNone": "עדיין לא יובא איש מ-Plex.",
+	"settings.requests.plexFriendsRead": "נקרא {when}",
+	"settings.requests.plexFriendsNotYet": "עדיין לא נקרא",
+	"settings.requests.plexFriendsAsked": "התבקשו: {n}"
 }

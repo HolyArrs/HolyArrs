@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Értesítések nekem",
 	"settings.index.account.alerts-me.alerts-for-me.words": "saját e-mail discord értesítések",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Bejelentkezett eszközeim",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "munkamenetek eszközök kijelentkezés mindenhol"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "munkamenetek eszközök kijelentkezés mindenhol",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Honnan jönnek a részletek",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "metaadat mód saját kulcsok ki keresések adatvédelem szerver független",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Saját kulcsaid",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart kulcs api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Címek a tűzfaladhoz",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "tűzfal gazdák külső címek engedélyezési lista"
 }

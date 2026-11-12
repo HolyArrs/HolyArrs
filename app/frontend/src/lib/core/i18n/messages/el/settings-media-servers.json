@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Δοκιμή",
 	"settings.mediaServers.changeButton": "Αλλαγή",
 	"settings.mediaServers.removeName": "Αφαίρεση: {name}",
-	"settings.mediaServers.remove": "Αφαίρεση"
+	"settings.mediaServers.remove": "Αφαίρεση",
+	"settings.mediaServers.watchTitle": "Ιστορικό προβολών",
+	"settings.mediaServers.watchRead": "Ανάγνωση ιστορικού προβολών",
+	"settings.mediaServers.watchHint": "Δείχνει στα Στατιστικά Βιβλιοθήκης ποιος είδε τι, για όσους διαχειρίζονται τη Βιβλιοθήκη. Το Ανενεργό διαγράφει ό,τι διαβάστηκε.",
+	"settings.mediaServers.watchConfirmOff": "Απενεργοποίηση ιστορικού προβολών; Όλα όσα έχουν διαβαστεί μέχρι τώρα διαγράφονται.",
+	"settings.mediaServers.watchTurnedOn": "Το ιστορικό προβολών ενεργοποιήθηκε. Η πρώτη ανάγνωση γίνεται εντός 30 λεπτών.",
+	"settings.mediaServers.watchTurnedOff": "Το ιστορικό προβολών απενεργοποιήθηκε",
+	"settings.mediaServers.watchFailed": "Δεν ήταν δυνατή η αλλαγή του ιστορικού προβολών"
 }

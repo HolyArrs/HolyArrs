@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Minden hely",
 	"frame.layout.newWord": "új",
 	"frame.layout.accountName": "Fiók · {name}",
-	"frame.layout.hostRefused": "<b>A módosítások nem menthetők itt: {host}.</b> A HolyArrs csak az Ön által engedélyezett neveken ment. Nyissa meg egyszer az IP-címével, majd adja hozzá a(z) {host} gazdanevet a Beállítások › Bejelentkezés › Engedélyezett gazdanevek alatt. Újraindítás nem kell."
+	"frame.layout.hostRefused": "<b>A módosítások nem menthetők itt: {host}.</b> A HolyArrs csak az Ön által engedélyezett neveken ment. Nyissa meg egyszer az IP-címével, majd adja hozzá a(z) {host} gazdanevet a Beállítások › Bejelentkezés › Engedélyezett gazdanevek alatt. Újraindítás nem kell.",
+	"frame.feeds.clearOne": "Az importált letöltés nem lett törölve",
+	"frame.feeds.clearMany": "{n} importált letöltés nem lett törölve",
+	"frame.feeds.clearBody": "A HolyArrs magától újra próbálja",
+	"frame.feeds.clearNow": "Törlés most",
+	"frame.feeds.cleared": "Törölve a Letöltőből",
+	"frame.feeds.clearStill": "Még nincs törölve"
 }

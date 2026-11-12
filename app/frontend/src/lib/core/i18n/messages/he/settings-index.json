@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "התראות עבורי",
 	"settings.index.account.alerts-me.alerts-for-me.words": "אימייל שלי discord הודעות",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "המכשירים המחוברים שלי",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "הפעלות מכשירים ניתוק מכל מקום"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "הפעלות מכשירים ניתוק מכל מקום",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "מאיפה מגיעים הפרטים",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "מצב מטא-דאטה מפתחות משלכם כבוי חיפושים פרטיות שרת עצמאי",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "המפתחות שלכם",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart מפתח api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "כתובות לחומת האש שלכם",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "חומת אש מארחים כתובות חיצוניות רשימת היתרים"
 }

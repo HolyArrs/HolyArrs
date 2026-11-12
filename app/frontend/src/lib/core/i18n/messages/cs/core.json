@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Nebezpečná zóna",
 	"core.settings.danger.about": "Restart nebo vypnutí",
 	"core.settings.account.label": "Můj účet",
-	"core.settings.account.about": "Heslo, dvoufázové ověření, zařízení"
+	"core.settings.account.about": "Heslo, dvoufázové ověření, zařízení",
+	"core.plain.clearWaiting": "Importovaná stahování čekají na vyčištění ze svého Stahovače.",
+	"core.api.sourceOff": "Některé řádky jsou v této instalaci vypnuté."
 }

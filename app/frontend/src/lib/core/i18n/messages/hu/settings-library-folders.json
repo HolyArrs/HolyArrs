@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Csak tulajdonosoknak és adminoknak",
 	"settings.libraryFolders.copiesExpected": "A másolás várható",
 	"settings.libraryFolders.copiesExpectedState": "Másolatok, ahogy várható",
-	"settings.libraryFolders.warnAgain": "Újra figyelmeztessen"
+	"settings.libraryFolders.warnAgain": "Újra figyelmeztessen",
+	"settings.libraryFolders.whyCopies": "Miért?",
+	"settings.libraryFolders.stateInstant": "Azonnal, nincs extra hely",
+	"settings.libraryFolders.changePath": "Útvonal módosítása",
+	"settings.libraryFolders.changePathOf": "A(z) {path} útvonalának módosítása",
+	"settings.libraryFolders.newPath": "Új útvonal",
+	"settings.libraryFolders.changePathHint": "Előbb oda mozgasd a fájlokat. A HolyArrs minden fájlt ellenőriz, és semmit nem mozgat.",
+	"settings.libraryFolders.checkingFiles": "Fájlok ellenőrzése…",
+	"settings.libraryFolders.pathChanged": "Útvonal módosítva"
 }

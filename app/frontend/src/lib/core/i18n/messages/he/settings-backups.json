@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "רק הבעלים יכול להוריד אותה; בקש ממנו.",
 	"settings.backups.fingerprint": "טביעת אצבע של המפתח",
 	"settings.backups.downloadKit": "הורדת ערכת המפתח",
-	"settings.backups.restoreKey": "לשחזור: שנה את השם ל־holyarrs.key והנח בתיקיית config"
+	"settings.backups.restoreKey": "לשחזור: שנה את השם ל־holyarrs.key והנח בתיקיית config",
+	"settings.backups.offPlan": "כבוי",
+	"settings.backups.offAbout": "אין גיבויים מתוזמנים. עדיין נוצר עותק לפני כל עדכון.",
+	"settings.backups.offKeeps": "\"כבוי\" שומר את הגיבויים שכבר יש לכם."
 }

@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "שפה",
 	"subtitles.wants.pick": "בחר שפה",
 	"subtitles.wants.takeOff": "הסרת {name}",
-	"subtitles.wants.thisLanguage": "השפה הזו"
+	"subtitles.wants.thisLanguage": "השפה הזו",
+	"subtitles.made.translated": "תורגם",
+	"subtitles.made.partial": "תורגם חלקית",
+	"subtitles.made.ai": "תורגם ב-AI",
+	"subtitles.made.machine": "תורגם במכונה",
+	"subtitles.wants.translateFrom": "תרגום מ",
+	"subtitles.wants.noTranslate": "לא לתרגם",
+	"subtitles.panel.picture": "תמונה",
+	"subtitles.panel.pictureTitle": "כתובית תמונה: אי אפשר לתרגם אותה",
+	"subtitles.panel.translate": "תרגום",
+	"subtitles.panel.translateFor": "תרגום כתובית {name}",
+	"subtitles.panel.translateFrom": "תרגום מ",
+	"subtitles.panel.translateQueued": "מתרגם",
+	"subtitles.panel.translateQueuedBody": "כתובית ה-{name} תופיע כאן כשתהיה מוכנה.",
+	"subtitles.panel.translating": "לא נמצאה, ולכן המתרגם שלכם יוצר אחת."
 }

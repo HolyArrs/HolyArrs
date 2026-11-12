@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "שינוי",
 	"settings.sources.removeName": "הסרת {name}",
 	"settings.sources.remove": "הסרה",
-	"settings.sources.bridge": "קישור Jackett או Prowlarr"
+	"settings.sources.bridge": "קישור Jackett או Prowlarr",
+	"settings.sources.off": "המקורות כבויים",
+	"settings.sources.offText": "HolyArrs לא מחפש ולא תופס. הורדות שאתם מוסיפים במוריד שלכם עדיין מיובאות.",
+	"settings.sources.openParts": "פתיחת רכיבים",
+	"settings.sources.offState": "כבוי"
 }

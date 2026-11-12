@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Μόνο ο ιδιοκτήτης μπορεί να το κατεβάσει· ζητήστε το από αυτόν.",
 	"settings.backups.fingerprint": "Αποτύπωμα κλειδιού",
 	"settings.backups.downloadKit": "Λήψη σετ κλειδιών",
-	"settings.backups.restoreKey": "Για επαναφορά: μετονομάστε σε holyarrs.key και βάλτε το στον φάκελο config"
+	"settings.backups.restoreKey": "Για επαναφορά: μετονομάστε σε holyarrs.key και βάλτε το στον φάκελο config",
+	"settings.backups.offPlan": "Ανενεργό",
+	"settings.backups.offAbout": "Δεν υπάρχουν προγραμματισμένα αντίγραφα ασφαλείας. Πριν από κάθε ενημέρωση γίνεται πάντα ένα αντίγραφο.",
+	"settings.backups.offKeeps": "Το Ανενεργό κρατά τα αντίγραφα που ήδη έχετε."
 }

@@ -259,5 +259,7 @@
 	"health.word.broken": "שבור",
 	"health.word.notSent": "עדיין לא נשלח",
 	"health.word.notSynced": "עדיין לא סונכרן",
-	"health.word.working": "עובד"
+	"health.word.working": "עובד",
+	"health.check.clearWaiting": "הורדות הממתינות לניקוי",
+	"health.kind.clearWaiting": "הורדות הממתינות לניקוי"
 }

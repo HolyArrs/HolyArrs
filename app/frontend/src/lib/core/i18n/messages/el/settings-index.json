@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Ειδοποιήσεις για εμένα",
 	"settings.index.account.alerts-me.alerts-for-me.words": "το email μου discord ειδοποιήσεις",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Οι συνδεδεμένες συσκευές μου",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "συνεδρίες συσκευές αποσύνδεση από παντού"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "συνεδρίες συσκευές αποσύνδεση από παντού",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Από πού προέρχονται οι λεπτομέρειες",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "λειτουργία μεταδεδομένων δικά κλειδιά ανενεργό αναζητήσεις απόρρητο διακομιστής ανεξάρτητο",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Τα δικά σας κλειδιά",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart κλειδί api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Διευθύνσεις για το τείχος προστασίας σας",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "τείχος προστασίας hosts εξωτερικές διευθύνσεις λίστα επιτρεπόμενων"
 }

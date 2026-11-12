@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Jazyk",
 	"subtitles.wants.pick": "Vyberte jazyk",
 	"subtitles.wants.takeOff": "Odebrat {name}",
-	"subtitles.wants.thisLanguage": "tento jazyk"
+	"subtitles.wants.thisLanguage": "tento jazyk",
+	"subtitles.made.translated": "Přeloženo",
+	"subtitles.made.partial": "Částečně přeloženo",
+	"subtitles.made.ai": "Přeloženo AI",
+	"subtitles.made.machine": "Přeloženo strojově",
+	"subtitles.wants.translateFrom": "Přeložit z",
+	"subtitles.wants.noTranslate": "Nepřekládat",
+	"subtitles.panel.picture": "Obrázek",
+	"subtitles.panel.pictureTitle": "Obrázkové titulky: nelze je přeložit",
+	"subtitles.panel.translate": "Přeložit",
+	"subtitles.panel.translateFor": "Přeložit titulky {name}",
+	"subtitles.panel.translateFrom": "Přeložit z",
+	"subtitles.panel.translateQueued": "Překládá se",
+	"subtitles.panel.translateQueuedBody": "Titulky {name} se zde zobrazí, až budou hotové.",
+	"subtitles.panel.translating": "Nic nenalezeno, takže je vytváří váš překladač."
 }

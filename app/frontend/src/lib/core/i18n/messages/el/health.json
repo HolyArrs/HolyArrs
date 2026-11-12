@@ -259,5 +259,7 @@
 	"health.word.broken": "Χαλασμένο",
 	"health.word.notSent": "Δεν στάλθηκε ακόμη",
 	"health.word.notSynced": "Δεν συγχρονίστηκε ακόμη",
-	"health.word.working": "Λειτουργεί"
+	"health.word.working": "Λειτουργεί",
+	"health.check.clearWaiting": "Λήψεις που περιμένουν καθαρισμό",
+	"health.kind.clearWaiting": "Λήψεις που περιμένουν καθαρισμό"
 }

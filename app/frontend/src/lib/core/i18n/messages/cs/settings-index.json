@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Upozornění pro mě",
 	"settings.index.account.alerts-me.alerts-for-me.words": "můj e-mail discord oznámení",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Má přihlášená zařízení",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "relace zařízení odhlásit všude"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "relace zařízení odhlásit všude",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Odkud se berou podrobnosti",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "režim metadat vlastní klíče vypnuto vyhledávání soukromí server nezávislý",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Vaše vlastní klíče",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart klíč api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adresy pro váš firewall",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall hostitelé vnější adresy povolený seznam"
 }

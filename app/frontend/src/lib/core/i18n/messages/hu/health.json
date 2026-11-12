@@ -259,5 +259,7 @@
 	"health.word.broken": "Hibás",
 	"health.word.notSent": "Még nincs elküldve",
 	"health.word.notSynced": "Még nincs szinkronizálva",
-	"health.word.working": "Működik"
+	"health.word.working": "Működik",
+	"health.check.clearWaiting": "Törlésre váró letöltések",
+	"health.kind.clearWaiting": "Törlésre váró letöltések"
 }

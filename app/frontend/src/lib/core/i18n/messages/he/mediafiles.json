@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "שום דבר לא חסר.",
 	"mediafiles.showDelete.deleteLabel": "מחיקת {what}",
 	"mediafiles.showReleases.searchingFor": "מחפש את {name}",
-	"mediafiles.sheet.file": "קובץ"
+	"mediafiles.sheet.file": "קובץ",
+	"mediafiles.parts.stopsSources": "החיפושים האוטומטיים נעצרים, למקרה שאתם מוסיפים הורדות בעצמכם. מורידים וייבוא ממשיכים לעבוד."
 }

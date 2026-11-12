@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Csak a tulajdonos töltheti le; kérje meg rá.",
 	"settings.backups.fingerprint": "Kulcs ujjlenyomata",
 	"settings.backups.downloadKit": "Kulcscsomag letöltése",
-	"settings.backups.restoreKey": "Visszaállításhoz: nevezze át holyarrs.key-re, és tegye a config mappába"
+	"settings.backups.restoreKey": "Visszaállításhoz: nevezze át holyarrs.key-re, és tegye a config mappába",
+	"settings.backups.offPlan": "Ki",
+	"settings.backups.offAbout": "Nincsenek ütemezett biztonsági mentések. Minden frissítés előtt még mindig készül egy másolat.",
+	"settings.backups.offKeeps": "A Ki megtartja a már meglévő biztonsági mentéseket."
 }
