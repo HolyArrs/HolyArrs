@@ -14,6 +14,7 @@
 		seen_address?: string;
 		gateway_networks?: string[];
 		proxy_untrusted?: boolean;
+		seen_gateway?: boolean;
 	}
 </script>
 
@@ -80,7 +81,9 @@
 	const proxyProblems = $derived(checkLines(proxies, 'proxy'));
 	const problems = $derived(netProblems.length + proxyProblems.length);
 	const seen = $derived(settings.seen_address ?? '');
-	const onBridge = $derived(seen !== '' && gatewayLike(seen));
+	const onBridge = $derived(seen !== '' && gatewayLike(seen) && !settings.seen_gateway);
+	// The container's own gateway: LAN visits by IP arrive as it and count as home.
+	const ownGateway = $derived(seen !== '' && settings.seen_gateway === true);
 	const covered = $derived(seen ? covers(seen, lines(nets)) : null);
 	const cgnat = $derived(settings.cgnat_range ?? '100.64.0.0/10');
 	const hasCgnat = $derived(lines(nets).includes(cgnat));
@@ -171,7 +174,15 @@
 	{:else if skip && settings.local_skip_off === 'kid'}
 		<p class="notice bad" role="status" data-testid="skip-off"><Icon name="info" size={18} /><span>{t('settings.signIn.offKid')}</span></p>
 	{/if}
-	{#if onBridge}
+	{#if ownGateway}
+		<div class="notice" role="status" data-testid="bridge-ok">
+			<Icon name="info" size={18} />
+			<div>
+				<p class="strong">{t('settings.signIn.bridgeOkTitle', { ip: seen })}</p>
+				<p>{t('settings.signIn.bridgeOkBody')}</p>
+			</div>
+		</div>
+	{:else if onBridge}
 		<div class="notice warn" role="status" data-testid="bridge-warn">
 			<Icon name="info" size={18} />
 			<div>
@@ -215,8 +226,8 @@
 				{@render problemList(netProblems, 'nets-fixes')}
 				{#if seen}
 					<p class="you xs" data-testid="seen-address">
-						<span class="dot" class:ok={covered === true && !onBridge}></span>
-						{onBridge ? t('settings.signIn.youBridge', { ip: seen }) : covered === true ? t('settings.signIn.youCovered', { ip: seen }) : t('settings.signIn.youNot', { ip: seen })}
+						<span class="dot" class:ok={ownGateway || (covered === true && !onBridge)}></span>
+						{ownGateway ? t('settings.signIn.youBridgeOk', { ip: seen }) : onBridge ? t('settings.signIn.youBridge', { ip: seen }) : covered === true ? t('settings.signIn.youCovered', { ip: seen }) : t('settings.signIn.youNot', { ip: seen })}
 					</p>
 				{/if}
 				<div><Button type="button" size="sm" onclick={addHome}>{t('settings.signIn.addHome')}</Button></div>
