@@ -319,14 +319,17 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		}
 		if dl.ID == 0 {
 			// The Downloader may return the id of an old Download that was not reused (its
-			// Import was rejected), so that row starts afresh. A row another Slot still
-			// follows is never taken over.
-			var old int64
-			var oldState string
-			if tx.QueryRow("SELECT id, state FROM downloads WHERE downloader_id = ? AND external_id = ?", dl.DownloaderID, dl.ExternalID).Scan(&old, &oldState) == nil {
-				if isActive(oldState) {
-					return fmt.Errorf("%s gave the id of Download %d, which is still active", d.Name, old)
-				}
+			// Import was rejected, or the same torrent is sent again), so that row starts
+			// afresh. A row still active, followed by another Slot or waiting on a removal
+			// is never taken over.
+			old, inUse, err := heldBy(ctx, tx, dl.DownloaderID, dl.ExternalID)
+			if err != nil {
+				return err
+			}
+			if inUse {
+				return fmt.Errorf("%s gave the id of Download %d, which is still in use", d.Name, old)
+			}
+			if old > 0 {
 				dl.ID = old
 				if err := updateReused(tx, dl, by); err != nil {
 					return err
@@ -439,23 +442,10 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	if err != nil {
 		return "", false, fmt.Errorf("%s: %w", d.Name, err)
 	}
-	// A job found again by name is taken as this Release only when no other
-	// Download row holds its id. A failed or vanished one must not come back, and a
-	// row for another Release or Slot is not this one.
-	skip := map[string]bool{}
-	rows, err := m.Store.Read().QueryContext(ctx, `SELECT external_id FROM downloads WHERE downloader_id = ? AND NOT (release_id IS ?
-		AND state IN (`+activeStates+`, 'finished') AND EXISTS (SELECT 1 FROM json_each(slot_ids) WHERE value = ?))`, d.ID, rel.ID, slotID)
+	// A job found again is taken as this Release only when no other Download row
+	// still holds its id; a torrent whose old row is over may be sent again.
+	skip, err := sendSkip(ctx, m.Store.Read(), d.ID, rel.ID, slotID, d.Protocol == "torrent")
 	if err != nil {
-		return "", false, err
-	}
-	for rows.Next() {
-		var id string
-		if rows.Scan(&id) == nil {
-			skip[id] = true
-		}
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
 		return "", false, err
 	}
 	if a != nil && !a.created {
@@ -475,6 +465,9 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		return ext, true, nil
 	}
 	if hash != "" {
+		if skip[hash] {
+			return "", false, errors.New("the torrent belongs to another download")
+		}
 		if j, err := e.Get(ctx, hash); err == nil {
 			if skip[j.ID] || (d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "aria2") && j.Category != d.Category {
 				return "", false, errors.New("the torrent belongs to another download or category")
