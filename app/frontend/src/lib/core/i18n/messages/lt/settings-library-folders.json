@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Tik savininkui ir administratoriams",
 	"settings.libraryFolders.copiesExpected": "Kopijavimas tikėtinas",
 	"settings.libraryFolders.copiesExpectedState": "Kopijuojama, kaip ir tikėtasi",
-	"settings.libraryFolders.warnAgain": "Įspėti dar kartą"
+	"settings.libraryFolders.warnAgain": "Įspėti dar kartą",
+	"settings.libraryFolders.whyCopies": "Kodėl?",
+	"settings.libraryFolders.stateInstant": "Akimirksniu, be papildomos vietos",
+	"settings.libraryFolders.changePath": "Keisti kelią",
+	"settings.libraryFolders.changePathOf": "Keisti {path} kelią",
+	"settings.libraryFolders.newPath": "Naujas kelias",
+	"settings.libraryFolders.changePathHint": "Pirmiausia perkelkite failus ten. HolyArrs patikrina kiekvieną failą ir nieko neperkelia.",
+	"settings.libraryFolders.checkingFiles": "Tikrinami failai…",
+	"settings.libraryFolders.pathChanged": "Kelias pakeistas"
 }

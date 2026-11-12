@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Ang owner lang ang makakapag-download nito; hilingin sa kanila.",
 	"settings.backups.fingerprint": "Fingerprint ng key",
 	"settings.backups.downloadKit": "I-download ang key kit",
-	"settings.backups.restoreKey": "Para mag-restore: palitan ang pangalan ng holyarrs.key, ilagay sa config folder"
+	"settings.backups.restoreKey": "Para mag-restore: palitan ang pangalan ng holyarrs.key, ilagay sa config folder",
+	"settings.backups.offPlan": "Off",
+	"settings.backups.offAbout": "Walang naka-iskedyul na backup. May kopya pa ring ginagawa bago ang bawat update.",
+	"settings.backups.offKeeps": "Pinapanatili ng Off ang mga backup na mayroon ka na."
 }

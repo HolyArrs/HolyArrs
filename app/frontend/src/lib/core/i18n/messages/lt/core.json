@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Pavojinga zona",
 	"core.settings.danger.about": "Paleiskite iš naujo arba išjunkite",
 	"core.settings.account.label": "Mano paskyra",
-	"core.settings.account.about": "Slaptažodis, dviejų veiksnių patvirtinimas, įrenginiai"
+	"core.settings.account.about": "Slaptažodis, dviejų veiksnių patvirtinimas, įrenginiai",
+	"core.plain.clearWaiting": "Importuoti atsisiuntimai laukia, kol bus išvalyti iš savo Atsisiuntėjo.",
+	"core.api.sourceOff": "Kai kurios eilutės šioje diegtyje išjungtos."
 }

@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Kalba",
 	"subtitles.wants.pick": "Pasirinkite kalbą",
 	"subtitles.wants.takeOff": "Išimti: {name}",
-	"subtitles.wants.thisLanguage": "ši kalba"
+	"subtitles.wants.thisLanguage": "ši kalba",
+	"subtitles.made.translated": "Išversta",
+	"subtitles.made.partial": "Iš dalies išversta",
+	"subtitles.made.ai": "Išversta DI",
+	"subtitles.made.machine": "Išversta mašina",
+	"subtitles.wants.translateFrom": "Versti iš",
+	"subtitles.wants.noTranslate": "Neversti",
+	"subtitles.panel.picture": "Paveikslėlis",
+	"subtitles.panel.pictureTitle": "Vaizdiniai subtitrai: jų išversti negalima",
+	"subtitles.panel.translate": "Versti",
+	"subtitles.panel.translateFor": "Versti {name} subtitrus",
+	"subtitles.panel.translateFrom": "Versti iš",
+	"subtitles.panel.translateQueued": "Verčiama",
+	"subtitles.panel.translateQueuedBody": "{name} subtitrai bus rodomi čia, kai bus paruošti.",
+	"subtitles.panel.translating": "Nerasta, todėl jūsų vertėjas kuria subtitrus."
 }

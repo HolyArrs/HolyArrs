@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "ভাষা",
 	"subtitles.wants.pick": "একটি ভাষা বাছুন",
 	"subtitles.wants.takeOff": "{name} সরিয়ে নিন",
-	"subtitles.wants.thisLanguage": "এই ভাষা"
+	"subtitles.wants.thisLanguage": "এই ভাষা",
+	"subtitles.made.translated": "অনুবাদ করা হয়েছে",
+	"subtitles.made.partial": "আংশিক অনুবাদ করা হয়েছে",
+	"subtitles.made.ai": "AI দিয়ে অনুবাদ",
+	"subtitles.made.machine": "মেশিনে অনুবাদ",
+	"subtitles.wants.translateFrom": "যে ভাষা থেকে অনুবাদ",
+	"subtitles.wants.noTranslate": "অনুবাদ করবেন না",
+	"subtitles.panel.picture": "ছবি",
+	"subtitles.panel.pictureTitle": "একটি ছবির সাবটাইটেল: এটি অনুবাদ করা যায় না",
+	"subtitles.panel.translate": "অনুবাদ করুন",
+	"subtitles.panel.translateFor": "একটি {name} সাবটাইটেল অনুবাদ করুন",
+	"subtitles.panel.translateFrom": "যে ভাষা থেকে অনুবাদ",
+	"subtitles.panel.translateQueued": "অনুবাদ হচ্ছে",
+	"subtitles.panel.translateQueuedBody": "{name} সাবটাইটেল তৈরি হলে এখানে দেখা যাবে।",
+	"subtitles.panel.translating": "কিছু পাওয়া যায়নি, তাই আপনার অনুবাদক একটি তৈরি করছে।"
 }

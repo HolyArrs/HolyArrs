@@ -266,5 +266,8 @@
 	"home.version": "Versija {version}",
 	"home.metadataServerDown": "Metaduomenų serveris neveikia",
 	"home.metadataServerOnline": "Metaduomenų serveris veikia",
-	"home.homeCouldNotRead3": "Pradžia dabar negalėjo nuskaityti atsisiuntimų."
+	"home.homeCouldNotRead3": "Pradžia dabar negalėjo nuskaityti atsisiuntimų.",
+	"home.waitingToBeCleared": "laukia išvalymo",
+	"home.off": "Išjungta",
+	"home.sourcesOff": "Išjungta Dalyse"
 }

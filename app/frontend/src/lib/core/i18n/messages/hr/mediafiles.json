@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "Ništa ne nedostaje.",
 	"mediafiles.showDelete.deleteLabel": "Obriši {what}",
 	"mediafiles.showReleases.searchingFor": "Traži se: {name}",
-	"mediafiles.sheet.file": "Datoteka"
+	"mediafiles.sheet.file": "Datoteka",
+	"mediafiles.parts.stopsSources": "Automatska pretraživanja se zaustavljaju, za slučaj kad sami dodajete preuzimanja. Preuzimatelji i uvozi nastavljaju raditi."
 }

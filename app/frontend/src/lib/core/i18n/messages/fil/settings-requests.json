@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Mag-request mula sa mga watchlist ng Plex",
 	"settings.requests.plexOnHint": "I-on ito ng bawat tao sa Ang account ko. Susundin ang kanilang mga Limit.",
 	"settings.requests.plexEveryone": "I-on para sa lahat ng nagsa-sign in gamit ang Plex",
-	"settings.requests.plexEveryoneHint": "Puwedeng i-off ito ng sinuman para sa sarili sa Ang account ko."
+	"settings.requests.plexEveryoneHint": "Puwedeng i-off ito ng sinuman para sa sarili sa Ang account ko.",
+	"settings.requests.plexFriends": "Isama ang mga kaibigan sa Plex",
+	"settings.requests.plexFriendsHint": "Mga kaibigang na-import mo mula sa Plex. Binabasa gamit ang iyong Plex link; nalalapat ang Mga limit ng bawat kaibigan.",
+	"settings.requests.plexFriendsNoLink": "I-link muna ang Plex sa Mga Setting › Pag-sign in.",
+	"settings.requests.plexFriendsNone": "Wala pang na-import mula sa Plex.",
+	"settings.requests.plexFriendsRead": "Nabasa {when}",
+	"settings.requests.plexFriendsNotYet": "Hindi pa nababasa",
+	"settings.requests.plexFriendsAsked": "Hiniling: {n}"
 }

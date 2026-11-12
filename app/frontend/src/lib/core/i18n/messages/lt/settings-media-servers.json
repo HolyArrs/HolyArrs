@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Išbandyti",
 	"settings.mediaServers.changeButton": "Keisti",
 	"settings.mediaServers.removeName": "Pašalinti: {name}",
-	"settings.mediaServers.remove": "Pašalinti"
+	"settings.mediaServers.remove": "Pašalinti",
+	"settings.mediaServers.watchTitle": "Žiūrėjimo istorija",
+	"settings.mediaServers.watchRead": "Skaityti žiūrėjimo istoriją",
+	"settings.mediaServers.watchHint": "Bibliotekos statistikoje rodo, kas ką žiūrėjo, tiems, kurie tvarko Biblioteką. Išjungta ištrina tai, kas perskaityta.",
+	"settings.mediaServers.watchConfirmOff": "Išjungti žiūrėjimo istoriją? Viskas, kas iki šiol perskaityta, ištrinama.",
+	"settings.mediaServers.watchTurnedOn": "Žiūrėjimo istorija įjungta. Pirmasis skaitymas įvyksta per 30 minučių.",
+	"settings.mediaServers.watchTurnedOff": "Žiūrėjimo istorija išjungta",
+	"settings.mediaServers.watchFailed": "Nepavyko pakeisti žiūrėjimo istorijos"
 }

@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "টেস্ট",
 	"settings.mediaServers.changeButton": "বদলান",
 	"settings.mediaServers.removeName": "{name} সরান",
-	"settings.mediaServers.remove": "সরান"
+	"settings.mediaServers.remove": "সরান",
+	"settings.mediaServers.watchTitle": "দেখার ইতিহাস",
+	"settings.mediaServers.watchRead": "দেখার ইতিহাস পড়ুন",
+	"settings.mediaServers.watchHint": "যারা লাইব্রেরি চালান তাদের জন্য লাইব্রেরির পরিসংখ্যানে কে কী দেখেছে তা দেখায়। বন্ধ করলে যা পড়া হয়েছে তা মুছে যায়।",
+	"settings.mediaServers.watchConfirmOff": "দেখার ইতিহাস বন্ধ করবেন? এ পর্যন্ত যা পড়া হয়েছে সব মুছে যাবে।",
+	"settings.mediaServers.watchTurnedOn": "দেখার ইতিহাস চালু। প্রথম পড়া ৩০ মিনিটের মধ্যে হয়।",
+	"settings.mediaServers.watchTurnedOff": "দেখার ইতিহাস বন্ধ",
+	"settings.mediaServers.watchFailed": "দেখার ইতিহাস বদলানো যায়নি"
 }

@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Brzi razlozi",
 	"requests.page.takeBackTitle": "Povući: {name}?",
 	"requests.page.takeBackDesc": "Napušta Zahtjeve. Kasnije možeš ponovno zatražiti.",
-	"requests.page.keepIt": "Zadrži"
+	"requests.page.keepIt": "Zadrži",
+	"requests.moment.downloaded.title": "Preuzeto",
+	"requests.moment.downloaded.body": "Za osoblje: Preuzimatelj je završio preuzimanje (slijedi uvoz).",
+	"requests.moment.download_failed.title": "Preuzimanje nije uspjelo",
+	"requests.moment.download_failed.body": "Za osoblje: preuzimanje nije uspjelo i njegovo Izdanje je odbijeno."
 }

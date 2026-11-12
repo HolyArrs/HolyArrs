@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Samo ga vlasnik može preuzeti; zamoli ga.",
 	"settings.backups.fingerprint": "Otisak ključa",
 	"settings.backups.downloadKit": "Preuzmi komplet ključeva",
-	"settings.backups.restoreKey": "Za vraćanje: preimenuj u holyarrs.key i stavi u mapu config"
+	"settings.backups.restoreKey": "Za vraćanje: preimenuj u holyarrs.key i stavi u mapu config",
+	"settings.backups.offPlan": "Isključeno",
+	"settings.backups.offAbout": "Nema zakazanih sigurnosnih kopija. Kopija se i dalje izrađuje prije svakog ažuriranja.",
+	"settings.backups.offKeeps": "Isključeno zadržava sigurnosne kopije koje već imate."
 }

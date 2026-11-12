@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Jezik",
 	"subtitles.wants.pick": "Odaberi jezik",
 	"subtitles.wants.takeOff": "Skini {name}",
-	"subtitles.wants.thisLanguage": "ovaj jezik"
+	"subtitles.wants.thisLanguage": "ovaj jezik",
+	"subtitles.made.translated": "Prevedeno",
+	"subtitles.made.partial": "Djelomično prevedeno",
+	"subtitles.made.ai": "Prevedeno AI-jem",
+	"subtitles.made.machine": "Strojno prevedeno",
+	"subtitles.wants.translateFrom": "Prevedi s",
+	"subtitles.wants.noTranslate": "Ne prevodi",
+	"subtitles.panel.picture": "Slika",
+	"subtitles.panel.pictureTitle": "Titl u slici: ne može se prevesti",
+	"subtitles.panel.translate": "Prevedi",
+	"subtitles.panel.translateFor": "Prevedi titl {name}",
+	"subtitles.panel.translateFrom": "Prevedi s",
+	"subtitles.panel.translateQueued": "Prevođenje",
+	"subtitles.panel.translateQueuedBody": "Titl {name} prikazat će se ovdje kad bude gotov.",
+	"subtitles.panel.translating": "Nijedan nije pronađen, pa ga izrađuje vaš prevoditelj."
 }

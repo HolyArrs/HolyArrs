@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "শুধু ওনার এটি ডাউনলোড করতে পারেন; তাঁকে বলুন।",
 	"settings.backups.fingerprint": "কীয়ের ফিঙ্গারপ্রিন্ট",
 	"settings.backups.downloadKit": "কী কিট ডাউনলোড করুন",
-	"settings.backups.restoreKey": "রিস্টোর করতে: নাম বদলে holyarrs.key করে কনফিগ ফোল্ডারে রাখুন"
+	"settings.backups.restoreKey": "রিস্টোর করতে: নাম বদলে holyarrs.key করে কনফিগ ফোল্ডারে রাখুন",
+	"settings.backups.offPlan": "বন্ধ",
+	"settings.backups.offAbout": "কোনো নির্ধারিত ব্যাকআপ নেই। প্রতিটি আপডেটের আগে তবুও একটি কপি করা হয়।",
+	"settings.backups.offKeeps": "বন্ধ থাকলে আপনার আগে থেকে থাকা ব্যাকআপ রাখা হয়।"
 }

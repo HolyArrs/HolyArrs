@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Pranešimai man",
 	"settings.index.account.alerts-me.alerts-for-me.words": "mano el. paštas discord pranešimai notifications",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Mano prisijungę įrenginiai",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "seansai įrenginiai atsijungti visur sessions devices"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "seansai įrenginiai atsijungti visur sessions devices",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Iš kur ateina išsami informacija",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "metaduomenų režimas savi raktai išjungta paieškos privatumas serveris nepriklausomas",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Jūsų savi raktai",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb žetonas tvdb pin mdblist fanart raktas api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adresai jūsų užkardai",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "užkarda serveriai išoriniai adresai leidžiamųjų sąrašas"
 }

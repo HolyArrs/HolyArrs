@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "কিছু বাকি নেই।",
 	"mediafiles.showDelete.deleteLabel": "{what} মুছুন",
 	"mediafiles.showReleases.searchingFor": "{name} খোঁজা হচ্ছে",
-	"mediafiles.sheet.file": "ফাইল"
+	"mediafiles.sheet.file": "ফাইল",
+	"mediafiles.parts.stopsSources": "স্বয়ংক্রিয় সার্চ থেমে যায়, যখন আপনি নিজে ডাউনলোড যোগ করেন। ডাউনলোডার ও ইমপোর্ট কাজ করতে থাকে।"
 }

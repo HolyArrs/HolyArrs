@@ -259,5 +259,7 @@
 	"health.word.broken": "নষ্ট",
 	"health.word.notSent": "এখনো পাঠানো হয়নি",
 	"health.word.notSynced": "এখনো সিঙ্ক হয়নি",
-	"health.word.working": "কাজ করছে"
+	"health.word.working": "কাজ করছে",
+	"health.check.clearWaiting": "মোছার অপেক্ষায় থাকা ডাউনলোড",
+	"health.kind.clearWaiting": "মোছার অপেক্ষায় থাকা ডাউনলোড"
 }

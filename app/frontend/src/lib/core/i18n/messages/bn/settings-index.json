@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "আমার জন্য অ্যালার্ট",
 	"settings.index.account.alerts-me.alerts-for-me.words": "আমার ইমেইল নোটিফিকেশন my email discord notifications",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "আমার সাইন ইন করা ডিভাইস",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "সেশন ডিভাইস সব জায়গা থেকে সাইন আউট sessions devices sign out everywhere"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "সেশন ডিভাইস সব জায়গা থেকে সাইন আউট sessions devices sign out everywhere",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "বিবরণ কোথা থেকে আসে",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "মেটাডেটা মোড নিজের কী বন্ধ লুকআপ প্রাইভেসি সার্ভার স্বাধীন",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "আপনার নিজের কী",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb টোকেন tvdb পিন mdblist fanart কী api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "আপনার ফায়ারওয়ালের জন্য ঠিকানা",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "ফায়ারওয়াল হোস্ট বাইরের ঠিকানা অনুমতি তালিকা"
 }

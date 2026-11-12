@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Opasna zona",
 	"core.settings.danger.about": "Ponovno pokreni ili isključi",
 	"core.settings.account.label": "Moj račun",
-	"core.settings.account.about": "Lozinka, dvofaktorska prijava, uređaji"
+	"core.settings.account.about": "Lozinka, dvofaktorska prijava, uređaji",
+	"core.plain.clearWaiting": "Uvezena preuzimanja čekaju da budu očišćena iz svog Preuzimatelja.",
+	"core.api.sourceOff": "Neki su retci isključeni na ovoj instalaciji."
 }

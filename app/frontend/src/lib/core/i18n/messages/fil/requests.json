@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Mabilis na dahilan",
 	"requests.page.takeBackTitle": "Bawiin ang {name}?",
 	"requests.page.takeBackDesc": "Aalis ito sa Mga Request. Puwede kang humiling ulit sa susunod.",
-	"requests.page.keepIt": "Panatilihin"
+	"requests.page.keepIt": "Panatilihin",
+	"requests.moment.downloaded.title": "Na-download",
+	"requests.moment.downloaded.body": "Para sa staff: natapos ng isang Downloader ang isang download (susunod ang import).",
+	"requests.moment.download_failed.title": "Nabigo ang download",
+	"requests.moment.download_failed.body": "Para sa staff: nabigo ang isang download at tinanggihan ang Release nito."
 }

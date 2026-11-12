@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "Nieko netrūksta.",
 	"mediafiles.showDelete.deleteLabel": "Ištrinti: {what}",
 	"mediafiles.showReleases.searchingFor": "Ieškoma: {name}",
-	"mediafiles.sheet.file": "Failas"
+	"mediafiles.sheet.file": "Failas",
+	"mediafiles.parts.stopsSources": "Automatinės paieškos sustoja, kai atsisiuntimus pridedate patys. Atsisiuntėjai ir importai toliau veikia."
 }

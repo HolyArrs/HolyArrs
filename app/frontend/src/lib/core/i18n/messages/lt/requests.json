@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Greitos priežastys",
 	"requests.page.takeBackTitle": "Atsiimti: {name}?",
 	"requests.page.takeBackDesc": "Jis dingsta iš Užsakymų. Vėliau galėsite užsakyti dar kartą.",
-	"requests.page.keepIt": "Palikti"
+	"requests.page.keepIt": "Palikti",
+	"requests.moment.downloaded.title": "Atsisiųsta",
+	"requests.moment.downloaded.body": "Darbuotojams: Atsisiuntėjas baigė atsisiuntimą (toliau seka importas).",
+	"requests.moment.download_failed.title": "Atsisiuntimas nepavyko",
+	"requests.moment.download_failed.body": "Darbuotojams: atsisiuntimas nepavyko, o jo Leidimas buvo atmestas."
 }

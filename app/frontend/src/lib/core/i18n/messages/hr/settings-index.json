@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Obavijesti za mene",
 	"settings.index.account.alerts-me.alerts-for-me.words": "moja e-pošta discord obavijesti",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Moji prijavljeni uređaji",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "sesije uređaji odjava svugdje"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "sesije uređaji odjava svugdje",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Odakle dolaze detalji",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "način metapodataka vlastiti ključevi isključeno pretraživanja privatnost poslužitelj neovisan",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Vaši vlastiti ključevi",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart ključ api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adrese za vaš vatrozid",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "vatrozid hostovi vanjske adrese popis dopuštenih"
 }

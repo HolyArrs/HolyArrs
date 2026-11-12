@@ -266,5 +266,8 @@
 	"home.version": "Bersyon {version}",
 	"home.metadataServerDown": "Down ang metadata server",
 	"home.metadataServerOnline": "Online ang metadata server",
-	"home.homeCouldNotRead3": "Hindi mabasa ng Home ang mga download ngayon."
+	"home.homeCouldNotRead3": "Hindi mabasa ng Home ang mga download ngayon.",
+	"home.waitingToBeCleared": "naghihintay ma-clear",
+	"home.off": "Off",
+	"home.sourcesOff": "Naka-off sa Mga Bahagi"
 }

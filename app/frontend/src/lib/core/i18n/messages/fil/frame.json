@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Lahat ng lugar",
 	"frame.layout.newWord": "bago",
 	"frame.layout.accountName": "Account · {name}",
-	"frame.layout.hostRefused": "<b>Hindi mase-save ang mga pagbabago sa {host}.</b> Sa mga pangalang pinapayagan mo lang nagse-save ang HolyArrs. Buksan ito nang isang beses gamit ang IP address, pagkatapos idagdag ang {host} sa Mga Setting › Sign-in › Mga pinapayagang host name. Hindi kailangan ng restart."
+	"frame.layout.hostRefused": "<b>Hindi mase-save ang mga pagbabago sa {host}.</b> Sa mga pangalang pinapayagan mo lang nagse-save ang HolyArrs. Buksan ito nang isang beses gamit ang IP address, pagkatapos idagdag ang {host} sa Mga Setting › Sign-in › Mga pinapayagang host name. Hindi kailangan ng restart.",
+	"frame.feeds.clearOne": "Hindi pa na-clear ang na-import na download",
+	"frame.feeds.clearMany": "{n} na-import na download ang hindi pa na-clear",
+	"frame.feeds.clearBody": "Sinusubukan ulit ng HolyArrs nang mag-isa",
+	"frame.feeds.clearNow": "I-clear na ngayon",
+	"frame.feeds.cleared": "Na-clear mula sa Downloader",
+	"frame.feeds.clearStill": "Hindi pa na-clear"
 }

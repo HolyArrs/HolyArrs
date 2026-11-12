@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Subukan",
 	"settings.mediaServers.changeButton": "Baguhin",
 	"settings.mediaServers.removeName": "Alisin ang {name}",
-	"settings.mediaServers.remove": "Alisin"
+	"settings.mediaServers.remove": "Alisin",
+	"settings.mediaServers.watchTitle": "Kasaysayan ng panonood",
+	"settings.mediaServers.watchRead": "Basahin ang kasaysayan ng panonood",
+	"settings.mediaServers.watchHint": "Ipinapakita sa Mga stat ng Library kung sino ang nanood ng ano, para sa mga nagpapatakbo ng Library. Binubura ng Off ang nabasa na.",
+	"settings.mediaServers.watchConfirmOff": "I-off ang kasaysayan ng panonood? Mabubura ang lahat ng nabasa hanggang ngayon.",
+	"settings.mediaServers.watchTurnedOn": "Naka-on ang kasaysayan ng panonood. Ang unang pagbasa ay gagawin sa loob ng 30 minuto.",
+	"settings.mediaServers.watchTurnedOff": "Naka-off ang kasaysayan ng panonood",
+	"settings.mediaServers.watchFailed": "Hindi mapalitan ang kasaysayan ng panonood"
 }

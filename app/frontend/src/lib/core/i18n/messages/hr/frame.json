@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Sva mjesta",
 	"frame.layout.newWord": "novo",
 	"frame.layout.accountName": "Račun · {name}",
-	"frame.layout.hostRefused": "<b>Promjene se ne mogu spremiti na {host}.</b> HolyArrs sprema samo na nazivima koje dopustiš. Otvori ga jednom preko IP adrese, pa dodaj {host} u Postavke › Prijava › Dopušteni nazivi hostova. Ponovno pokretanje nije potrebno."
+	"frame.layout.hostRefused": "<b>Promjene se ne mogu spremiti na {host}.</b> HolyArrs sprema samo na nazivima koje dopustiš. Otvori ga jednom preko IP adrese, pa dodaj {host} u Postavke › Prijava › Dopušteni nazivi hostova. Ponovno pokretanje nije potrebno.",
+	"frame.feeds.clearOne": "Uvezeno preuzimanje nije očišćeno",
+	"frame.feeds.clearMany": "Neočišćenih uvezenih preuzimanja: {n}",
+	"frame.feeds.clearBody": "HolyArrs pokušava ponovno sam",
+	"frame.feeds.clearNow": "Očisti sada",
+	"frame.feeds.cleared": "Očišćeno iz Preuzimatelja",
+	"frame.feeds.clearStill": "Još nije očišćeno"
 }

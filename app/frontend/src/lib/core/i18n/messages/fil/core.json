@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Danger zone",
 	"core.settings.danger.about": "I-restart o i-shut down",
 	"core.settings.account.label": "Ang account ko",
-	"core.settings.account.about": "Password, two-factor, mga device"
+	"core.settings.account.about": "Password, two-factor, mga device",
+	"core.plain.clearWaiting": "Naghihintay na ma-clear mula sa kanilang Downloader ang mga na-import na download.",
+	"core.api.sourceOff": "Naka-off ang ilang row sa installation na ito."
 }

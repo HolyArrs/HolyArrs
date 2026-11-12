@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "ডেঞ্জার জোন",
 	"core.settings.danger.about": "রিস্টার্ট বা বন্ধ করুন",
 	"core.settings.account.label": "আমার অ্যাকাউন্ট",
-	"core.settings.account.about": "পাসওয়ার্ড, টু-ফ্যাক্টর, ডিভাইস"
+	"core.settings.account.about": "পাসওয়ার্ড, টু-ফ্যাক্টর, ডিভাইস",
+	"core.plain.clearWaiting": "ইমপোর্ট করা ডাউনলোডগুলো তাদের ডাউনলোডার থেকে মুছে ফেলার অপেক্ষায় আছে।",
+	"core.api.sourceOff": "এই ইনস্টলে কিছু সারি বন্ধ আছে।"
 }

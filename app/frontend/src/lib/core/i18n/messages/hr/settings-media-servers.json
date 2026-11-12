@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Testiraj",
 	"settings.mediaServers.changeButton": "Promijeni",
 	"settings.mediaServers.removeName": "Ukloni {name}",
-	"settings.mediaServers.remove": "Ukloni"
+	"settings.mediaServers.remove": "Ukloni",
+	"settings.mediaServers.watchTitle": "Povijest gledanja",
+	"settings.mediaServers.watchRead": "Čitaj povijest gledanja",
+	"settings.mediaServers.watchHint": "Prikazuje u Statistici Biblioteke tko je što gledao, za one koji vode Biblioteku. Isključeno briše ono što je pročitano.",
+	"settings.mediaServers.watchConfirmOff": "Isključiti povijest gledanja? Sve što je dosad pročitano briše se.",
+	"settings.mediaServers.watchTurnedOn": "Povijest gledanja uključena. Prvo čitanje obavlja se u roku od 30 minuta.",
+	"settings.mediaServers.watchTurnedOff": "Povijest gledanja isključena",
+	"settings.mediaServers.watchFailed": "Povijest gledanja nije se mogla promijeniti"
 }

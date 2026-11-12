@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Para lang sa owner at mga admin",
 	"settings.libraryFolders.copiesExpected": "Inaasahan ang pagkopya",
 	"settings.libraryFolders.copiesExpectedState": "Nagkokopya, gaya ng inaasahan",
-	"settings.libraryFolders.warnAgain": "Balaan ulit"
+	"settings.libraryFolders.warnAgain": "Balaan ulit",
+	"settings.libraryFolders.whyCopies": "Bakit?",
+	"settings.libraryFolders.stateInstant": "Instant, walang dagdag na espasyo",
+	"settings.libraryFolders.changePath": "Palitan ang path",
+	"settings.libraryFolders.changePathOf": "Palitan ang path ng {path}",
+	"settings.libraryFolders.newPath": "Bagong path",
+	"settings.libraryFolders.changePathHint": "Ilipat muna roon ang mga file. Sinusuri ng HolyArrs ang bawat file at walang inililipat.",
+	"settings.libraryFolders.checkingFiles": "Sinusuri ang mga file…",
+	"settings.libraryFolders.pathChanged": "Napalitan ang path"
 }

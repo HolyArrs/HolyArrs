@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "সব জায়গা",
 	"frame.layout.newWord": "নতুন",
 	"frame.layout.accountName": "অ্যাকাউন্ট · {name}",
-	"frame.layout.hostRefused": "<b>{host}-এ বদলগুলো সেভ করা যাচ্ছে না।</b> HolyArrs শুধু আপনার অনুমতি দেওয়া নামে সেভ করে। একবার এটি IP ঠিকানা দিয়ে খুলুন, তারপর সেটিংস › সাইন ইন › অনুমোদিত হোস্ট নামে {host} যোগ করুন। রিস্টার্ট লাগবে না।"
+	"frame.layout.hostRefused": "<b>{host}-এ বদলগুলো সেভ করা যাচ্ছে না।</b> HolyArrs শুধু আপনার অনুমতি দেওয়া নামে সেভ করে। একবার এটি IP ঠিকানা দিয়ে খুলুন, তারপর সেটিংস › সাইন ইন › অনুমোদিত হোস্ট নামে {host} যোগ করুন। রিস্টার্ট লাগবে না।",
+	"frame.feeds.clearOne": "ইমপোর্ট করা ডাউনলোড মোছা হয়নি",
+	"frame.feeds.clearMany": "{n}টি ইমপোর্ট করা ডাউনলোড মোছা হয়নি",
+	"frame.feeds.clearBody": "HolyArrs নিজেই আবার চেষ্টা করে",
+	"frame.feeds.clearNow": "এখনই মুছুন",
+	"frame.feeds.cleared": "ডাউনলোডার থেকে মোছা হয়েছে",
+	"frame.feeds.clearStill": "এখনও মোছা হয়নি"
 }

@@ -259,5 +259,7 @@
 	"health.word.broken": "Sugedę",
 	"health.word.notSent": "Dar neišsiųsta",
 	"health.word.notSynced": "Dar nesinchronizuota",
-	"health.word.working": "Veikia"
+	"health.word.working": "Veikia",
+	"health.check.clearWaiting": "Atsisiuntimai, laukiantys išvalymo",
+	"health.kind.clearWaiting": "Atsisiuntimai, laukiantys išvalymo"
 }

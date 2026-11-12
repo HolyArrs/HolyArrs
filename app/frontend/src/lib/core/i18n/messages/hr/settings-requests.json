@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Zatraži s Plex popisa za gledanje",
 	"settings.requests.plexOnHint": "Svaka osoba to uključuje u Mom računu. Vrijede njezina ograničenja.",
 	"settings.requests.plexEveryone": "Uključi za sve koji se prijavljuju putem Plexa",
-	"settings.requests.plexEveryoneHint": "Svatko to može isključiti za sebe u Mom računu."
+	"settings.requests.plexEveryoneHint": "Svatko to može isključiti za sebe u Mom računu.",
+	"settings.requests.plexFriends": "Uključi Plex prijatelje",
+	"settings.requests.plexFriendsHint": "Prijatelji koje ste uvezli iz Plexa. Čitaju se vašom Plex vezom; vrijede Ograničenja svakog prijatelja.",
+	"settings.requests.plexFriendsNoLink": "Najprije povežite Plex u Postavke › Prijava.",
+	"settings.requests.plexFriendsNone": "Još nitko nije uvezen iz Plexa.",
+	"settings.requests.plexFriendsRead": "Pročitano {when}",
+	"settings.requests.plexFriendsNotYet": "Još nije pročitano",
+	"settings.requests.plexFriendsAsked": "Zatraženo: {n}"
 }

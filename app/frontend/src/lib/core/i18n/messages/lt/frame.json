@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Visos vietos",
 	"frame.layout.newWord": "nauja",
 	"frame.layout.accountName": "Paskyra · {name}",
-	"frame.layout.hostRefused": "<b>Pakeitimų negalima išsaugoti {host}.</b> HolyArrs išsaugo tik leidžiamuose pavadinimuose. Atidarykite jį vieną kartą pagal IP adresą, tada pridėkite {host} skiltyje Nustatymai › Prisijungimas › Leidžiami pagrindinio kompiuterio pavadinimai. Paleisti iš naujo nereikia."
+	"frame.layout.hostRefused": "<b>Pakeitimų negalima išsaugoti {host}.</b> HolyArrs išsaugo tik leidžiamuose pavadinimuose. Atidarykite jį vieną kartą pagal IP adresą, tada pridėkite {host} skiltyje Nustatymai › Prisijungimas › Leidžiami pagrindinio kompiuterio pavadinimai. Paleisti iš naujo nereikia.",
+	"frame.feeds.clearOne": "Importuotas atsisiuntimas neišvalytas",
+	"frame.feeds.clearMany": "Neišvalytų importuotų atsisiuntimų: {n}",
+	"frame.feeds.clearBody": "HolyArrs bando iš naujo pats",
+	"frame.feeds.clearNow": "Išvalyti dabar",
+	"frame.feeds.cleared": "Išvalyta iš Atsisiuntėjo",
+	"frame.feeds.clearStill": "Dar neišvalyta"
 }

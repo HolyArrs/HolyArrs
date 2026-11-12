@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Atsisiųsti gali tik savininkas; paprašykite jo.",
 	"settings.backups.fingerprint": "Rakto kontrolinis kodas",
 	"settings.backups.downloadKit": "Atsisiųsti raktų rinkinį",
-	"settings.backups.restoreKey": "Norėdami atkurti: pervadinkite į holyarrs.key ir įdėkite į config aplanką"
+	"settings.backups.restoreKey": "Norėdami atkurti: pervadinkite į holyarrs.key ir įdėkite į config aplanką",
+	"settings.backups.offPlan": "Išjungta",
+	"settings.backups.offAbout": "Suplanuotų atsarginių kopijų nėra. Kopija vis tiek daroma prieš kiekvieną naujinimą.",
+	"settings.backups.offKeeps": "Išjungta palieka jau turimas atsargines kopijas."
 }

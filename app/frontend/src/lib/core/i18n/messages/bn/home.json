@@ -266,5 +266,8 @@
 	"home.version": "ভার্সন {version}",
 	"home.metadataServerDown": "মেটাডেটা সার্ভার বন্ধ",
 	"home.metadataServerOnline": "মেটাডেটা সার্ভার অনলাইনে",
-	"home.homeCouldNotRead3": "হোম এখন ডাউনলোড পড়তে পারেনি।"
+	"home.homeCouldNotRead3": "হোম এখন ডাউনলোড পড়তে পারেনি।",
+	"home.waitingToBeCleared": "মোছার অপেক্ষায়",
+	"home.off": "বন্ধ",
+	"home.sourcesOff": "অংশে বন্ধ করা আছে"
 }

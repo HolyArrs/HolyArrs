@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "শুধু ওনার ও অ্যাডমিন",
 	"settings.libraryFolders.copiesExpected": "কপি হওয়াই স্বাভাবিক",
 	"settings.libraryFolders.copiesExpectedState": "কপি হচ্ছে, যেমনটা আশা করা হয়",
-	"settings.libraryFolders.warnAgain": "আবার সতর্ক করুন"
+	"settings.libraryFolders.warnAgain": "আবার সতর্ক করুন",
+	"settings.libraryFolders.whyCopies": "কেন?",
+	"settings.libraryFolders.stateInstant": "তাৎক্ষণিক, বাড়তি জায়গা লাগে না",
+	"settings.libraryFolders.changePath": "পাথ বদলান",
+	"settings.libraryFolders.changePathOf": "{path}-এর পাথ বদলান",
+	"settings.libraryFolders.newPath": "নতুন পাথ",
+	"settings.libraryFolders.changePathHint": "আগে ফাইলগুলো সেখানে সরান। HolyArrs প্রতিটি ফাইল যাচাই করে এবং কিছুই সরায় না।",
+	"settings.libraryFolders.checkingFiles": "ফাইল যাচাই হচ্ছে…",
+	"settings.libraryFolders.pathChanged": "পাথ বদলানো হয়েছে"
 }

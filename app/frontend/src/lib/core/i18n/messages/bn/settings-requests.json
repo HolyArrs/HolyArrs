@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Plex ওয়াচলিস্ট থেকে রিকোয়েস্ট করুন",
 	"settings.requests.plexOnHint": "প্রত্যেকে আমার অ্যাকাউন্টে এটি চালু করে। তাদের সীমা প্রযোজ্য।",
 	"settings.requests.plexEveryone": "যারা Plex দিয়ে সাইন ইন করে তাদের সবার জন্য চালু করুন",
-	"settings.requests.plexEveryoneHint": "যে কেউ আমার অ্যাকাউন্টে নিজের জন্য এটি বন্ধ করতে পারে।"
+	"settings.requests.plexEveryoneHint": "যে কেউ আমার অ্যাকাউন্টে নিজের জন্য এটি বন্ধ করতে পারে।",
+	"settings.requests.plexFriends": "Plex বন্ধুদের অন্তর্ভুক্ত করুন",
+	"settings.requests.plexFriendsHint": "যে বন্ধুদের আপনি Plex থেকে ইমপোর্ট করেছেন। আপনার Plex লিংক দিয়ে পড়া হয়; প্রতিটি বন্ধুর সীমা প্রযোজ্য।",
+	"settings.requests.plexFriendsNoLink": "আগে সেটিংস › সাইন-ইন-এ Plex লিংক করুন।",
+	"settings.requests.plexFriendsNone": "Plex থেকে এখনও কেউ ইমপোর্ট হয়নি।",
+	"settings.requests.plexFriendsRead": "পড়া হয়েছে {when}",
+	"settings.requests.plexFriendsNotYet": "এখনও পড়া হয়নি",
+	"settings.requests.plexFriendsAsked": "অনুরোধ করা: {n}"
 }

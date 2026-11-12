@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "বদলান",
 	"settings.sources.removeName": "{name} সরান",
 	"settings.sources.remove": "সরান",
-	"settings.sources.bridge": "Jackett বা Prowlarr লিংক করুন"
+	"settings.sources.bridge": "Jackett বা Prowlarr লিংক করুন",
+	"settings.sources.off": "সোর্স বন্ধ আছে",
+	"settings.sources.offText": "HolyArrs সার্চ করে না বা ধরে না। আপনার ডাউনলোডারে যোগ করা ডাউনলোড এখনও ইমপোর্ট হয়।",
+	"settings.sources.openParts": "অংশ খুলুন",
+	"settings.sources.offState": "বন্ধ"
 }
