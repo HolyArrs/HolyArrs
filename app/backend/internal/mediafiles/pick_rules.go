@@ -63,6 +63,9 @@ type PickRulesBody struct {
 	Order            string               `json:"order"` // quality_then_points, points_then_quality
 	UpgradeMinPoints int                  `json:"upgrade_min_points"`
 	ProperPolicy     ProperPolicy         `json:"proper_policy"`
+	// Tags limit the Sources these rules search: with any, only Sources
+	// sharing one of them are asked (nil: no limit).
+	Tags []string `json:"tags,omitempty"`
 	// Synced names the TRaSH Guides profile last applied, for re-syncing.
 	Synced *SyncedProfile `json:"synced,omitempty"`
 }

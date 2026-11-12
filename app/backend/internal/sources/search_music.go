@@ -157,7 +157,7 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(result)
 		return nil
 	}
-	fs, failures, answered, skipped, err := s.askAll(ctx, r, albumQuery(ti, part), hand, false, ti.Tags)
+	fs, failures, answered, skipped, err := s.askAll(ctx, r, albumQuery(ti, part), hand, false, ti.Tags, set.pr.Body.Tags)
 	if err != nil {
 		return err
 	}

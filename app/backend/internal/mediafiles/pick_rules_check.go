@@ -124,6 +124,14 @@ func CheckPickRules(name string, kinds []string, b PickRulesBody) error {
 			seen[trait] = true
 		}
 	}
+	if len(b.Tags) > pickMaxNested {
+		return fieldErr("body.tags", "List at most 64 tags.")
+	}
+	for _, t := range b.Tags {
+		if strings.TrimSpace(t) == "" || utf8.RuneCountInString(t) > pickMaxText {
+			return fieldErr("body.tags", "Each tag holds 1 to 200 characters.")
+		}
+	}
 	if !inPickPoints(b.MinPoints) {
 		return fieldErr("body.min_points", "Minimum points must be from -10000 to 10000.")
 	}

@@ -289,14 +289,14 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 		}
 		q = showQuery(ti, ep.ref.Season, ep)
 	}
-	all, failures, answered, skipped, err := s.askAll(ctx, r, q, handSearch, isShow, ti.Tags)
+	all, failures, answered, skipped, err := s.askAll(ctx, r, q, handSearch, isShow, ti.Tags, c.pr.Body.Tags)
 	if err != nil {
 		return err
 	}
 	// Absolute order also searches by title and running number; a Source
 	// that failed or was skipped is said once.
 	if aq, ok := absoluteQuery(ti, ep); isShow && ok {
-		more, _, n, _, err := s.askAll(ctx, r, aq, handSearch, true, ti.Tags)
+		more, _, n, _, err := s.askAll(ctx, r, aq, handSearch, true, ti.Tags, c.pr.Body.Tags)
 		if err != nil {
 			return err
 		}

@@ -14,8 +14,9 @@ import (
 
 // askAll asks every Source used for this kind of search; tv picks the Sources
 // and categories for shows. A Source with tags is asked only for a title that
-// shares one of them.
-func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bool, titleTags []string) ([]found, []string, int, []skippedSource, error) {
+// shares one of them; Pick rules with tags (ruleTags) ask only the Sources
+// sharing one of those.
+func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bool, titleTags, ruleTags []string) ([]found, []string, int, []skippedSource, error) {
 	now := time.Now().UTC()
 	srcs, err := database.Select[domain.Source](ctx, s.Store.Read(), "sources",
 		"state IN ('enabled', 'paused') ORDER BY priority, id")
@@ -32,6 +33,14 @@ func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bo
 		}
 		if !mediafiles.SourceServes(src.Tags, titleTags) {
 			skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: tagsWhy + strings.Join(src.Tags, ", ") + ") are not on this title"})
+			continue
+		}
+		if len(ruleTags) > 0 && !mediafiles.Shares(src.Tags, ruleTags) {
+			has := strings.Join(src.Tags, ", ")
+			if has == "" {
+				has = "none"
+			}
+			skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: tagsWhy + has + ") are not in the Pick rules' tags (" + strings.Join(ruleTags, ", ") + ")"})
 			continue
 		}
 		if src.State == "paused" && (src.PausedUntil == nil || src.PausedUntil.After(now)) {
