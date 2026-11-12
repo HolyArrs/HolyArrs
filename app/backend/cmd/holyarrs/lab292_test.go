@@ -71,7 +71,7 @@ func labQbitList(t *testing.T, qb string, form url.Values) []labQbitTorrent {
 	return out
 }
 
-// #292 on a shared qBittorrent: another app's torrent sits in its own
+// On a shared qBittorrent: another app's torrent sits in its own
 // category next to HolyArrs's. HolyArrs grabs and imports our Dune test
 // torrent, moves it to the after-import category once, and never touches the
 // other app's torrent (not by the move, not by Pause all):
@@ -201,8 +201,8 @@ func TestLabCategoryAfterImportSharedQbit(t *testing.T) {
 	if got := labQbitList(t, qb, url.Values{"hashes": {hash}})[0].Category; got != cat {
 		t.Fatalf("before import our torrent is in %q, want %q", got, cat)
 	}
-	// A subtitle file that came with the download is brought along (#292
-	// part 3): our own test file, dropped beside the finished video.
+	// A subtitle file that came with the download is brought along:
+	// our own test file, dropped beside the finished video.
 	saveDir := "/data/downloads/incomplete/" + cat
 	t.Cleanup(func() { _ = os.RemoveAll(saveDir); _ = os.RemoveAll("/data/downloads/incomplete/" + other) })
 	if _, err := importer.SaveSideFiles(ctx, s, importer.SideFiles{On: true, Types: []string{"srt"}}, domain.System); err != nil {
