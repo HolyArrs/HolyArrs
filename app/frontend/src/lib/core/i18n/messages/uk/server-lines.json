@@ -1288,5 +1288,6 @@
 	"server.library.files-matched-by-hand": "{name}: файлів зіставлено вручну: {n}",
 	"server.library.no-such-file-in-this-title": "такого файлу в цьому тайтлі немає",
 	"server.library.send-1-to-2000-files": "надішліть від 1 до 2000 файлів",
-	"server.sources.this-kind-of-title-can-t": "цей вид тайтла не можна шукати"
+	"server.sources.this-kind-of-title-can-t": "цей вид тайтла не можна шукати",
+	"server.migrate.scored-there-points-here-stop-at": "{name} мав там {n}; бали тут обмежені {n2}"
 }

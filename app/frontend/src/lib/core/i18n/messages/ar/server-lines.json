@@ -1288,5 +1288,6 @@
 	"server.library.files-matched-by-hand": "{name}: تمت مطابقة {n} ملفات يدويًا",
 	"server.library.no-such-file-in-this-title": "لا يوجد ملف كهذا في هذا العنوان",
 	"server.library.send-1-to-2000-files": "أرسل من 1 إلى 2000 ملف",
-	"server.sources.this-kind-of-title-can-t": "لا يمكن البحث عن هذا النوع من العناوين"
+	"server.sources.this-kind-of-title-can-t": "لا يمكن البحث عن هذا النوع من العناوين",
+	"server.migrate.scored-there-points-here-stop-at": "{name} سجّل {n} هناك؛ النقاط هنا تتوقف عند {n2}"
 }

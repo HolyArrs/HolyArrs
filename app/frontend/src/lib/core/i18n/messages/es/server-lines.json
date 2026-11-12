@@ -1288,5 +1288,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} archivos asignados a mano",
 	"server.library.no-such-file-in-this-title": "no hay ese archivo en este título",
 	"server.library.send-1-to-2000-files": "envía de 1 a 2000 archivos",
-	"server.sources.this-kind-of-title-can-t": "este tipo de título no se puede buscar"
+	"server.sources.this-kind-of-title-can-t": "este tipo de título no se puede buscar",
+	"server.migrate.scored-there-points-here-stop-at": "{name} tenía {n} allí; aquí los puntos llegan hasta {n2}"
 }
