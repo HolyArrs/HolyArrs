@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} on serveris piiratud; kinnita enne täiskasvanuna importimist",
 	"server.accounts.address-must-look-like-http-192": "{p} aadress peab välja nägema nagu http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} katkestas kasutaja {userid} sisselogimise ({word}) sidumise",
-	"server.accounts.unlinked-their-sign-in": "{r} katkestas oma sisselogimise ({word}) sidumise",
+	"server.accounts.unlinked-the-sign-in-of": "{name} katkestas kasutaja {name2} sisselogimise ({word}) sidumise",
+	"server.accounts.unlinked-their-sign-in": "{name} katkestas oma sisselogimise ({word}) sidumise",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} on juba seotud teise HolyArrsi kasutajaga",
 	"server.accounts.a-key-cannot-make-a-key": "võti ei saa luua võtit skoobiga, mida sellel pole",
 	"server.accounts.ai-connections-are-off": "Tehisintellekti ühendused on välja lülitatud",

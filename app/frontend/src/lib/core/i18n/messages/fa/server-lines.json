@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} در سرور محدود شده؛ پیش از وارد کردنش به‌عنوان بزرگسال تأیید کن",
 	"server.accounts.address-must-look-like-http-192": "آدرس {p} باید شبیه http://192.168.1.10:8096 باشد",
-	"server.accounts.unlinked-the-sign-in-of": "{r} ورود {word} مربوط به {userid} را جدا کرد",
-	"server.accounts.unlinked-their-sign-in": "{r} ورود {word} خودش را جدا کرد",
+	"server.accounts.unlinked-the-sign-in-of": "{name} ورود {word} مربوط به {name2} را جدا کرد",
+	"server.accounts.unlinked-their-sign-in": "{name} ورود {word} خودش را جدا کرد",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} از قبل به کاربر دیگری در HolyArrs متصل است",
 	"server.accounts.a-key-cannot-make-a-key": "یک کلید نمی‌تواند کلیدی با دامنه‌ای که خودش ندارد بسازد",
 	"server.accounts.ai-connections-are-off": "اتصال‌های هوش مصنوعی خاموش‌اند",

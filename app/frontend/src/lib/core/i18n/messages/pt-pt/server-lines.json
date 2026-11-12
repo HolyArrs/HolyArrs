@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} tem restrição no servidor; confirme antes de importar como adulto",
 	"server.accounts.address-must-look-like-http-192": "o endereço de {p} deve ter o formato http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} desassociou o início de sessão por {word} de {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} desassociou o próprio início de sessão por {word}",
+	"server.accounts.unlinked-the-sign-in-of": "{name} desassociou o início de sessão por {word} de {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} desassociou o próprio início de sessão por {word}",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} já está associado a outro utilizador do HolyArrs",
 	"server.accounts.a-key-cannot-make-a-key": "uma chave não pode criar uma chave com um escopo que ela não tem",
 	"server.accounts.ai-connections-are-off": "as ligações de IA estão desativadas",

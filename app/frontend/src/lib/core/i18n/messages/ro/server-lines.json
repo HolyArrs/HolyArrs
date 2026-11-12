@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} e restricționat pe server; confirmă înainte de a-l importa ca adult",
 	"server.accounts.address-must-look-like-http-192": "Adresa {p} trebuie să arate ca http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} a disociat autentificarea {word} a lui {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} și-a disociat autentificarea {word}",
+	"server.accounts.unlinked-the-sign-in-of": "{name} a disociat autentificarea {word} a lui {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} și-a disociat autentificarea {word}",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} e deja asociat cu alt utilizator HolyArrs",
 	"server.accounts.a-key-cannot-make-a-key": "o cheie nu poate crea o cheie cu un domeniu pe care nu îl are",
 	"server.accounts.ai-connections-are-off": "Conexiunile AI sunt oprite",

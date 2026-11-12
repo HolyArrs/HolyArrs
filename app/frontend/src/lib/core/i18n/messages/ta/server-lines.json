@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} சேவையகத்தில் கட்டுப்படுத்தப்பட்டுள்ளார்; வயதுவந்தவராக இறக்குமதி செய்வதற்கு முன் உறுதிசெய்யுங்கள்",
 	"server.accounts.address-must-look-like-http-192": "{p} முகவரி http://192.168.1.10:8096 போல இருக்க வேண்டும்",
-	"server.accounts.unlinked-the-sign-in-of": "{userid} இன் {word} உள்நுழைவை {r} துண்டித்தார்",
-	"server.accounts.unlinked-their-sign-in": "{r} தனது {word} உள்நுழைவைத் துண்டித்தார்",
+	"server.accounts.unlinked-the-sign-in-of": "{name2} இன் {word} உள்நுழைவை {name} துண்டித்தார்",
+	"server.accounts.unlinked-their-sign-in": "{name} தனது {word} உள்நுழைவைத் துண்டித்தார்",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} ஏற்கெனவே வேறொரு HolyArrs பயனருடன் இணைக்கப்பட்டுள்ளது",
 	"server.accounts.a-key-cannot-make-a-key": "தன்னிடம் இல்லாத scope கொண்ட விசையை ஒரு விசையால் உருவாக்க முடியாது",
 	"server.accounts.ai-connections-are-off": "AI இணைப்புகள் அணைக்கப்பட்டுள்ளன",

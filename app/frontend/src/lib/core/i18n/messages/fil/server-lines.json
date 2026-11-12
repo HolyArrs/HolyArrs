@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "may restriksyon si {name} sa server; kumpirmahin bago siya i-import bilang nasa hustong gulang",
 	"server.accounts.address-must-look-like-http-192": "dapat mukhang http://192.168.1.10:8096 ang address ng {p}",
-	"server.accounts.unlinked-the-sign-in-of": "in-unlink ni {r} ang {word} sign-in ni {userid}",
-	"server.accounts.unlinked-their-sign-in": "in-unlink ni {r} ang {word} sign-in niya",
+	"server.accounts.unlinked-the-sign-in-of": "in-unlink ni {name} ang {word} sign-in ni {name2}",
+	"server.accounts.unlinked-their-sign-in": "in-unlink ni {name} ang {word} sign-in niya",
 	"server.accounts.is-already-linked-to-another-holyarrs": "naka-link na ang {what} sa ibang user ng HolyArrs",
 	"server.accounts.a-key-cannot-make-a-key": "hindi makakagawa ang isang key ng key na may scope na wala sa kanya",
 	"server.accounts.ai-connections-are-off": "naka-off ang mga koneksyon ng AI",

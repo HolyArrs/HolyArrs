@@ -152,7 +152,6 @@
 	"mediafiles.byHand.pickTitle": "এটি কোন সিনেমা বা শো তা বাছুন।",
 	"mediafiles.byHand.pickSeasonEpisode": "সিজন ও এপিসোড বাছুন।",
 	"mediafiles.byHand.hasFile": "এতে আগেই একটি ফাইল আছে। আগে সেটি মুছুন বা অন্য ভার্সন বাছুন।",
-	"mediafiles.byHand.moved": "সরানো হয়েছে",
 	"mediafiles.byHand.copied": "কপি হয়েছে",
 	"mediafiles.byHand.linked": "লিংক করা (বাড়তি জায়গা নেয় না)",
 	"mediafiles.byHand.recorded": "রেকর্ড করা হয়েছে",

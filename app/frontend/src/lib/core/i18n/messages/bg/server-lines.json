@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} е ограничен на сървъра; потвърдете, преди да ги импортирате като възрастен",
 	"server.accounts.address-must-look-like-http-192": "Адресът на {p} трябва да изглежда като http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} разкачи входа чрез {word} на {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} разкачи входа си чрез {word}",
+	"server.accounts.unlinked-the-sign-in-of": "{name} разкачи входа чрез {word} на {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} разкачи входа си чрез {word}",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} вече е свързан с друг потребител на HolyArrs",
 	"server.accounts.a-key-cannot-make-a-key": "ключ не може да създаде ключ с обхват, който не притежава",
 	"server.accounts.ai-connections-are-off": "AI връзките са изключени",

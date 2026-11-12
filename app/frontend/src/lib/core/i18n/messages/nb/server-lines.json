@@ -1,8 +1,8 @@
 {
   "server.accounts.is-restricted-on-the-server-confirm": "{name} er begrenset på serveren. Bekreft før du importerer dem som voksen",
   "server.accounts.address-must-look-like-http-192": "{p}-adressen må se ut som http://192.168.1.10:8096",
-  "server.accounts.unlinked-the-sign-in-of": "{r} koblet fra {word}-innloggingen til {userid}",
-  "server.accounts.unlinked-their-sign-in": "{r} koblet fra {word}-innloggingen sin",
+  "server.accounts.unlinked-the-sign-in-of": "{name} koblet fra {word}-innloggingen til {name2}",
+  "server.accounts.unlinked-their-sign-in": "{name} koblet fra {word}-innloggingen sin",
   "server.accounts.is-already-linked-to-another-holyarrs": "{what} er allerede koblet til en annen HolyArrs-bruker",
   "server.accounts.a-key-cannot-make-a-key": "en nøkkel kan ikke lage en nøkkel med et omfang den ikke har",
   "server.accounts.ai-connections-are-off": "KI-tilkoblinger er av",

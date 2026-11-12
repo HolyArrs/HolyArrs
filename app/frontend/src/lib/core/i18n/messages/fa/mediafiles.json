@@ -152,7 +152,6 @@
 	"mediafiles.byHand.pickTitle": "فیلم یا سریالی را که هست انتخاب کن.",
 	"mediafiles.byHand.pickSeasonEpisode": "فصل و قسمت را انتخاب کن.",
 	"mediafiles.byHand.hasFile": "این از قبل فایل دارد. اول آن را حذف کن یا نسخه دیگری انتخاب کن.",
-	"mediafiles.byHand.moved": "منتقل شد",
 	"mediafiles.byHand.copied": "کپی شد",
 	"mediafiles.byHand.linked": "پیوند داده شد (بدون فضای اضافه)",
 	"mediafiles.byHand.recorded": "ثبت شد",

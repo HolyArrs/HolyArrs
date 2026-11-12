@@ -152,7 +152,6 @@
 	"mediafiles.byHand.pickTitle": "Hãy chọn phim hoặc phim bộ mà nó thuộc về.",
 	"mediafiles.byHand.pickSeasonEpisode": "Hãy chọn mùa và tập.",
 	"mediafiles.byHand.hasFile": "Mục này đã có tệp. Hãy xóa nó trước hoặc chọn Phiên bản khác.",
-	"mediafiles.byHand.moved": "Đã chuyển",
 	"mediafiles.byHand.copied": "Đã sao chép",
 	"mediafiles.byHand.linked": "Đã liên kết (không tốn thêm dung lượng)",
 	"mediafiles.byHand.recorded": "Đã ghi nhận",

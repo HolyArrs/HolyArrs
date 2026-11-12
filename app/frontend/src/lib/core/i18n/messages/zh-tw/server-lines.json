@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} 在伺服器上受到限制；請確認後再將其作為成年人匯入",
 	"server.accounts.address-must-look-like-http-192": "{p} 位址必須形如 http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} 取消關聯了 {userid} 的 {word} 登入",
-	"server.accounts.unlinked-their-sign-in": "{r} 取消關聯了自己的 {word} 登入",
+	"server.accounts.unlinked-the-sign-in-of": "{name} 取消關聯了 {name2} 的 {word} 登入",
+	"server.accounts.unlinked-their-sign-in": "{name} 取消關聯了自己的 {word} 登入",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} 已關聯到另一個 HolyArrs 使用者",
 	"server.accounts.a-key-cannot-make-a-key": "金鑰不能建立權限範圍超出自身的金鑰",
 	"server.accounts.ai-connections-are-off": "AI 連線已關閉",

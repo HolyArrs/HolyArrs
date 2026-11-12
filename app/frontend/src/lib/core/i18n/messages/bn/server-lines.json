@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} সার্ভারে সীমাবদ্ধ; প্রাপ্তবয়স্ক হিসেবে ইমপোর্ট করার আগে নিশ্চিত করুন",
 	"server.accounts.address-must-look-like-http-192": "{p} ঠিকানা দেখতে হবে http://192.168.1.10:8096-এর মতো",
-	"server.accounts.unlinked-the-sign-in-of": "{r} {userid}-এর {word} সাইন ইন আনলিংক করেছেন",
-	"server.accounts.unlinked-their-sign-in": "{r} নিজের {word} সাইন ইন আনলিংক করেছেন",
+	"server.accounts.unlinked-the-sign-in-of": "{name} {name2}-এর {word} সাইন ইন আনলিংক করেছেন",
+	"server.accounts.unlinked-their-sign-in": "{name} নিজের {word} সাইন ইন আনলিংক করেছেন",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} আগেই অন্য একজন HolyArrs ইউজারের সঙ্গে লিংক করা আছে",
 	"server.accounts.a-key-cannot-make-a-key": "একটি কী এমন স্কোপের কী বানাতে পারে না যা তার নিজের নেই",
 	"server.accounts.ai-connections-are-off": "AI সংযোগ বন্ধ আছে",

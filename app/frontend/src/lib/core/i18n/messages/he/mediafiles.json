@@ -152,7 +152,6 @@
 	"mediafiles.byHand.pickTitle": "בחר איזה סרט או סדרה זה.",
 	"mediafiles.byHand.pickSeasonEpisode": "בחר את העונה והפרק.",
 	"mediafiles.byHand.hasFile": "כבר יש לזה קובץ. מחק אותו קודם או בחר גרסה אחרת.",
-	"mediafiles.byHand.moved": "הועבר",
 	"mediafiles.byHand.copied": "הועתק",
 	"mediafiles.byHand.linked": "מקושר (בלי מקום נוסף)",
 	"mediafiles.byHand.recorded": "נרשם",

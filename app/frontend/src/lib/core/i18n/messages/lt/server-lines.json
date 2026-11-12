@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} serveryje yra apribotas; prieš importuodami jį kaip suaugusįjį, patvirtinkite",
 	"server.accounts.address-must-look-like-http-192": "{p} adresas turi atrodyti taip: http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} atsiejo {userid} {word} prisijungimą",
-	"server.accounts.unlinked-their-sign-in": "{r} atsiejo savo {word} prisijungimą",
+	"server.accounts.unlinked-the-sign-in-of": "{name} atsiejo {name2} {word} prisijungimą",
+	"server.accounts.unlinked-their-sign-in": "{name} atsiejo savo {word} prisijungimą",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} jau susietas su kitu HolyArrs naudotoju",
 	"server.accounts.a-key-cannot-make-a-key": "raktas negali sukurti rakto su apimtimi, kurios pats neturi",
 	"server.accounts.ai-connections-are-off": "DI jungtys išjungtos",

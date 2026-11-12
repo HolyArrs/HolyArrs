@@ -152,7 +152,6 @@
 	"mediafiles.byHand.pickTitle": "Välj vilken film eller serie det är.",
 	"mediafiles.byHand.pickSeasonEpisode": "Välj säsong och avsnitt.",
 	"mediafiles.byHand.hasFile": "Det här har redan en fil. Radera den först eller välj en annan version.",
-	"mediafiles.byHand.moved": "Flyttad",
 	"mediafiles.byHand.copied": "Kopierad",
 	"mediafiles.byHand.linked": "Länkad (inget extra utrymme)",
 	"mediafiles.byHand.recorded": "Registrerad",

@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} je ograničen na poslužitelju; potvrdi prije uvoza kao odrasle osobe",
 	"server.accounts.address-must-look-like-http-192": "adresa {p} mora izgledati ovako: http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} je odspojio prijavu ({word}) za {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} je odspojio svoju prijavu ({word})",
+	"server.accounts.unlinked-the-sign-in-of": "{name} je odspojio prijavu ({word}) za {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} je odspojio svoju prijavu ({word})",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} je već povezan s drugim HolyArrs korisnikom",
 	"server.accounts.a-key-cannot-make-a-key": "ključ ne može napraviti ključ s dosegom koji sam nema",
 	"server.accounts.ai-connections-are-off": "AI veze su isključene",

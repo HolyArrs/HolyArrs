@@ -152,7 +152,6 @@
 	"mediafiles.byHand.pickTitle": "Tria quina pel·lícula o sèrie és.",
 	"mediafiles.byHand.pickSeasonEpisode": "Tria la temporada i l'episodi.",
 	"mediafiles.byHand.hasFile": "Això ja té un fitxer. Suprimeix-lo primer o tria una altra Versió.",
-	"mediafiles.byHand.moved": "Mogut",
 	"mediafiles.byHand.copied": "Copiat",
 	"mediafiles.byHand.linked": "Enllaçat (sense espai addicional)",
 	"mediafiles.byHand.recorded": "Registrat",

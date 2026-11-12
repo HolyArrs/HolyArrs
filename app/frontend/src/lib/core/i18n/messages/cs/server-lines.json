@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} je na serveru omezen; před importem jako dospělého to potvrďte",
 	"server.accounts.address-must-look-like-http-192": "adresa {p} musí vypadat jako http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} odpojil(a) přihlášení {word} uživatele {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} odpojil(a) své přihlášení {word}",
+	"server.accounts.unlinked-the-sign-in-of": "{name} odpojil(a) přihlášení {word} uživatele {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} odpojil(a) své přihlášení {word}",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} je už propojeno s jiným uživatelem HolyArrs",
 	"server.accounts.a-key-cannot-make-a-key": "klíč nemůže vytvořit klíč s oprávněním, které sám nemá",
 	"server.accounts.ai-connections-are-off": "připojení AI jsou vypnutá",

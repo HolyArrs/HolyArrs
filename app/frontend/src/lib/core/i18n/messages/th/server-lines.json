@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} ถูกจำกัดบนเซิร์ฟเวอร์ ยืนยันก่อนนำเข้าเป็นผู้ใหญ่",
 	"server.accounts.address-must-look-like-http-192": "ที่อยู่ {p} ต้องมีรูปแบบเช่น http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} ยกเลิกการเชื่อมโยงการเข้าสู่ระบบ {word} ของ {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} ยกเลิกการเชื่อมโยงการเข้าสู่ระบบ {word} ของตัวเอง",
+	"server.accounts.unlinked-the-sign-in-of": "{name} ยกเลิกการเชื่อมโยงการเข้าสู่ระบบ {word} ของ {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} ยกเลิกการเชื่อมโยงการเข้าสู่ระบบ {word} ของตัวเอง",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} ถูกเชื่อมโยงกับผู้ใช้ HolyArrs คนอื่นแล้ว",
 	"server.accounts.a-key-cannot-make-a-key": "คีย์สร้างคีย์ที่มีขอบเขตที่ตัวเองไม่มีไม่ได้",
 	"server.accounts.ai-connections-are-off": "การเชื่อมต่อ AI ปิดอยู่",

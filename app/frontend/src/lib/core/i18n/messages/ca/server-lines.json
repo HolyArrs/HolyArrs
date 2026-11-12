@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} està restringit al servidor; confirma-ho abans d'importar-lo com a adult",
 	"server.accounts.address-must-look-like-http-192": "l'adreça de {p} ha de ser com http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} ha desvinculat l'inici de sessió de {word} de {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} ha desvinculat el seu inici de sessió de {word}",
+	"server.accounts.unlinked-the-sign-in-of": "{name} ha desvinculat l'inici de sessió de {word} de {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} ha desvinculat el seu inici de sessió de {word}",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} ja està vinculat a un altre usuari de HolyArrs",
 	"server.accounts.a-key-cannot-make-a-key": "una clau no pot crear una clau amb un àmbit que no té",
 	"server.accounts.ai-connections-are-off": "les connexions d'IA estan desactivades",

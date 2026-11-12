@@ -152,7 +152,6 @@
 	"mediafiles.byHand.pickTitle": "Изберете филма или сериала, който е.",
 	"mediafiles.byHand.pickSeasonEpisode": "Изберете сезона и епизода.",
 	"mediafiles.byHand.hasFile": "Това вече има файл. Първо го изтрийте или изберете друг вариант.",
-	"mediafiles.byHand.moved": "Преместено",
 	"mediafiles.byHand.copied": "Копирано",
 	"mediafiles.byHand.linked": "Свързано (без допълнително място)",
 	"mediafiles.byHand.recorded": "Записано",

@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} on rajoitettu palvelimella; vahvista ennen kuin tuot hänet aikuisena",
 	"server.accounts.address-must-look-like-http-192": "{p}-osoitteen on näytettävä tältä: http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} katkaisi käyttäjän {userid} {word}-kirjautumisen yhteyden",
-	"server.accounts.unlinked-their-sign-in": "{r} katkaisi oman {word}-kirjautumisensa yhteyden",
+	"server.accounts.unlinked-the-sign-in-of": "{name} katkaisi käyttäjän {name2} {word}-kirjautumisen yhteyden",
+	"server.accounts.unlinked-their-sign-in": "{name} katkaisi oman {word}-kirjautumisensa yhteyden",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} on jo yhdistetty toiseen HolyArrs-käyttäjään",
 	"server.accounts.a-key-cannot-make-a-key": "avain ei voi luoda avainta, jonka oikeutta se ei omista",
 	"server.accounts.ai-connections-are-off": "tekoälyyhteydet ovat pois päältä",

@@ -152,7 +152,6 @@
 	"mediafiles.byHand.pickTitle": "Válassza ki, melyik film vagy sorozat.",
 	"mediafiles.byHand.pickSeasonEpisode": "Válassza ki az évadot és az epizódot.",
 	"mediafiles.byHand.hasFile": "Ehhez már van fájl. Előbb törölje, vagy válasszon másik Változatot.",
-	"mediafiles.byHand.moved": "Áthelyezve",
 	"mediafiles.byHand.copied": "Átmásolva",
 	"mediafiles.byHand.linked": "Összekapcsolva (nincs extra hely)",
 	"mediafiles.byHand.recorded": "Rögzítve",

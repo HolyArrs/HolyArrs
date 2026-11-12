@@ -152,7 +152,6 @@
 	"mediafiles.byHand.pickTitle": "Velg filmen eller serien den er.",
 	"mediafiles.byHand.pickSeasonEpisode": "Velg sesong og episode.",
 	"mediafiles.byHand.hasFile": "Denne har allerede en fil. Slett den først, eller velg en annen versjon.",
-	"mediafiles.byHand.moved": "Flyttet",
 	"mediafiles.byHand.copied": "Kopiert",
 	"mediafiles.byHand.linked": "Lenket (ingen ekstra plass)",
 	"mediafiles.byHand.recorded": "Registrert",

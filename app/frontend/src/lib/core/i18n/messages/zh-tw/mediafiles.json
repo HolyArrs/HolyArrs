@@ -152,7 +152,6 @@
 	"mediafiles.byHand.pickTitle": "請選擇它是哪部電影或影集。",
 	"mediafiles.byHand.pickSeasonEpisode": "請選擇季和集。",
 	"mediafiles.byHand.hasFile": "這裡已經有檔案。請先刪除它，或選擇另一個版本。",
-	"mediafiles.byHand.moved": "已移動",
 	"mediafiles.byHand.copied": "已複製",
 	"mediafiles.byHand.linked": "已連結（不占額外空間）",
 	"mediafiles.byHand.recorded": "已記錄",

@@ -152,7 +152,6 @@
 	"mediafiles.byHand.pickTitle": "Alege ce film sau serial este.",
 	"mediafiles.byHand.pickSeasonEpisode": "Alege sezonul și episodul.",
 	"mediafiles.byHand.hasFile": "Acesta are deja un fișier. Șterge-l mai întâi sau alege altă Versiune.",
-	"mediafiles.byHand.moved": "Mutat",
 	"mediafiles.byHand.copied": "Copiat",
 	"mediafiles.byHand.linked": "Legat (fără spațiu în plus)",
 	"mediafiles.byHand.recorded": "Înregistrat",

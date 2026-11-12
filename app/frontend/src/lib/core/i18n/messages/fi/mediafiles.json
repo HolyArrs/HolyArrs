@@ -152,7 +152,6 @@
 	"mediafiles.byHand.pickTitle": "Valitse elokuva tai sarja, joka se on.",
 	"mediafiles.byHand.pickSeasonEpisode": "Valitse kausi ja jakso.",
 	"mediafiles.byHand.hasFile": "Tällä on jo tiedosto. Poista se ensin tai valitse toinen versio.",
-	"mediafiles.byHand.moved": "Siirretty",
 	"mediafiles.byHand.copied": "Kopioitu",
 	"mediafiles.byHand.linked": "Linkitetty (ei lisätilaa)",
 	"mediafiles.byHand.recorded": "Kirjattu",

@@ -1,8 +1,8 @@
 {
   "server.accounts.is-restricted-on-the-server-confirm": "{name} er takmarkað á þjóninum; staðfestu áður en þú flytur viðkomandi inn sem fullorðinn",
   "server.accounts.address-must-look-like-http-192": "{p}-vistfang verður að líta út eins og http://192.168.1.10:8096",
-  "server.accounts.unlinked-the-sign-in-of": "{r} aftengdi {word}-innskráningu {userid}",
-  "server.accounts.unlinked-their-sign-in": "{r} aftengdi {word}-innskráningu sína",
+  "server.accounts.unlinked-the-sign-in-of": "{name} aftengdi {word}-innskráningu {name2}",
+  "server.accounts.unlinked-their-sign-in": "{name} aftengdi {word}-innskráningu sína",
   "server.accounts.is-already-linked-to-another-holyarrs": "{what} er þegar tengt öðrum HolyArrs-notanda",
   "server.accounts.a-key-cannot-make-a-key": "lykill getur ekki búið til lykil með sviði sem hann hefur ekki",
   "server.accounts.ai-connections-are-off": "gervigreindartengingar eru óvirkar",

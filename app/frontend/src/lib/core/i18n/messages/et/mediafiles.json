@@ -152,7 +152,6 @@
 	"mediafiles.byHand.pickTitle": "Vali film või sari, mis see on.",
 	"mediafiles.byHand.pickSeasonEpisode": "Vali hooaeg ja episood.",
 	"mediafiles.byHand.hasFile": "Sellel on juba fail. Kustuta see esmalt või vali teine versioon.",
-	"mediafiles.byHand.moved": "Liigutatud",
 	"mediafiles.byHand.copied": "Kopeeritud",
 	"mediafiles.byHand.linked": "Seotud (lisaruumi ei kulu)",
 	"mediafiles.byHand.recorded": "Registreeritud",

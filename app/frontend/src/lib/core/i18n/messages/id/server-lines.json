@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} dibatasi di server; konfirmasi sebelum mengimpornya sebagai dewasa",
 	"server.accounts.address-must-look-like-http-192": "Alamat {p} harus seperti http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} melepas tautan masuk {word} milik {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} melepas tautan masuk {word} miliknya",
+	"server.accounts.unlinked-the-sign-in-of": "{name} melepas tautan masuk {word} milik {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} melepas tautan masuk {word} miliknya",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} sudah tertaut ke pengguna HolyArrs lain",
 	"server.accounts.a-key-cannot-make-a-key": "sebuah kunci tidak bisa membuat kunci dengan cakupan yang tidak dimilikinya",
 	"server.accounts.ai-connections-are-off": "Koneksi AI mati",

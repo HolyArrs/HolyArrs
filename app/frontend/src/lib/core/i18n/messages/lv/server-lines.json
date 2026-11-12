@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} serverī ir ierobežots; pirms importē tos kā pieaugušos, apstiprini",
 	"server.accounts.address-must-look-like-http-192": "{p} adresei jāizskatās kā http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} atsaistīja {word} pieteikšanos lietotājam {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} atsaistīja savu {word} pieteikšanos",
+	"server.accounts.unlinked-the-sign-in-of": "{name} atsaistīja {word} pieteikšanos lietotājam {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} atsaistīja savu {word} pieteikšanos",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} jau ir sasaistīts ar citu HolyArrs lietotāju",
 	"server.accounts.a-key-cannot-make-a-key": "atslēga nevar izveidot atslēgu ar darbības jomu, kuras tai nav",
 	"server.accounts.ai-connections-are-off": "MI savienojumi ir izslēgti",

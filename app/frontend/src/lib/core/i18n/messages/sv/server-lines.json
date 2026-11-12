@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} är begränsad på servern; bekräfta innan du importerar personen som vuxen",
 	"server.accounts.address-must-look-like-http-192": "adressen till {p} måste se ut som http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} kopplade bort {word}-inloggningen för {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} kopplade bort sin {word}-inloggning",
+	"server.accounts.unlinked-the-sign-in-of": "{name} kopplade bort {word}-inloggningen för {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} kopplade bort sin {word}-inloggning",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} är redan länkad till en annan HolyArrs-användare",
 	"server.accounts.a-key-cannot-make-a-key": "en nyckel kan inte skapa en nyckel med ett omfång som den inte har",
 	"server.accounts.ai-connections-are-off": "AI-anslutningar är avstängda",

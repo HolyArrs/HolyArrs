@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "Ο χρήστης {name} έχει περιορισμούς στον διακομιστή· επιβεβαιώστε πριν τον εισαγάγετε ως ενήλικα",
 	"server.accounts.address-must-look-like-http-192": "Η διεύθυνση του {p} πρέπει να μοιάζει με http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "Ο/Η {r} αποσύνδεσε τη σύνδεση {word} του/της {userid}",
-	"server.accounts.unlinked-their-sign-in": "Ο/Η {r} αποσύνδεσε τη δική του/της σύνδεση {word}",
+	"server.accounts.unlinked-the-sign-in-of": "Ο/Η {name} αποσύνδεσε τη σύνδεση {word} του/της {name2}",
+	"server.accounts.unlinked-their-sign-in": "Ο/Η {name} αποσύνδεσε τη δική του/της σύνδεση {word}",
 	"server.accounts.is-already-linked-to-another-holyarrs": "Το «{what}» είναι ήδη συνδεδεμένο με άλλον χρήστη του HolyArrs",
 	"server.accounts.a-key-cannot-make-a-key": "ένα κλειδί δεν μπορεί να δημιουργήσει κλειδί με εύρος που δεν διαθέτει",
 	"server.accounts.ai-connections-are-off": "Οι συνδέσεις AI είναι απενεργοποιημένες",

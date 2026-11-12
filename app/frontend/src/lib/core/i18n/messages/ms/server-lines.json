@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} dihadkan pada pelayan; sahkan sebelum mengimportnya sebagai orang dewasa",
 	"server.accounts.address-must-look-like-http-192": "alamat {p} mesti kelihatan seperti http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} menyahpaut log masuk {word} milik {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} menyahpaut log masuk {word} mereka",
+	"server.accounts.unlinked-the-sign-in-of": "{name} menyahpaut log masuk {word} milik {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} menyahpaut log masuk {word} mereka",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} sudah dipautkan kepada pengguna HolyArrs lain",
 	"server.accounts.a-key-cannot-make-a-key": "kunci tidak boleh membuat kunci dengan skop yang tidak dimilikinya",
 	"server.accounts.ai-connections-are-off": "sambungan AI dimatikan",

@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} מוגבל בשרת; אשר לפני שתייבא אותו כמבוגר",
 	"server.accounts.address-must-look-like-http-192": "כתובת {p} צריכה להיראות כמו http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} ניתק את ההתחברות של {word} של {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} ניתק את ההתחברות שלו עם {word}",
+	"server.accounts.unlinked-the-sign-in-of": "{name} ניתק את ההתחברות של {word} של {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} ניתק את ההתחברות שלו עם {word}",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} כבר מקושר למשתמש HolyArrs אחר",
 	"server.accounts.a-key-cannot-make-a-key": "מפתח לא יכול ליצור מפתח עם היקף שאין לו",
 	"server.accounts.ai-connections-are-off": "חיבורי AI כבויים",

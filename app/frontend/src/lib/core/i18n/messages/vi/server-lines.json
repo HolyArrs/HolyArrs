@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} bị hạn chế trên máy chủ; hãy xác nhận trước khi nhập họ như người lớn",
 	"server.accounts.address-must-look-like-http-192": "Địa chỉ {p} phải có dạng http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} đã hủy liên kết đăng nhập {word} của {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} đã hủy liên kết đăng nhập {word} của họ",
+	"server.accounts.unlinked-the-sign-in-of": "{name} đã hủy liên kết đăng nhập {word} của {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} đã hủy liên kết đăng nhập {word} của họ",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} đã được liên kết với một người dùng HolyArrs khác",
 	"server.accounts.a-key-cannot-make-a-key": "một khóa không thể tạo khóa có phạm vi mà nó không có",
 	"server.accounts.ai-connections-are-off": "Kết nối AI đang tắt",
