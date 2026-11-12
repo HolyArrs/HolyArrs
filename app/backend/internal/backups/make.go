@@ -433,7 +433,13 @@ func (m *Manager) SetPreset(ctx context.Context, p Preset, by domain.Actor) erro
 	if _, ok := Rules[p]; !ok && p != Off {
 		return fmt.Errorf("unknown preset %q; pick balanced, light, careful or off", p)
 	}
-	return m.setSetting(ctx, settingPreset, string(p), by)
+	if err := m.setSetting(ctx, settingPreset, string(p), by); err != nil {
+		return err
+	}
+	if m.OnPreset != nil {
+		m.OnPreset(p)
+	}
+	return nil
 }
 
 // due says whether a scheduled backup should be made now.

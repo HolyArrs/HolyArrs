@@ -88,3 +88,20 @@ func TestSettingsRouteTakesOff(t *testing.T) {
 }
 
 func toString(v any) string { b, _ := json.Marshal(v); return string(b) }
+
+// Saving a preset tells OnPreset, so the health checks can run again and
+// drop backup warnings right away when backups are turned off.
+func TestSetPresetCallsOnPreset(t *testing.T) {
+	m, _, _, _ := setup(t)
+	var got []Preset
+	m.OnPreset = func(p Preset) { got = append(got, p) }
+	if err := m.SetPreset(t.Context(), Off, domain.Actor{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := m.SetPreset(t.Context(), "nope", domain.Actor{}); err == nil {
+		t.Fatal("unknown preset saved")
+	}
+	if len(got) != 1 || got[0] != Off {
+		t.Fatalf("OnPreset calls %v, want [off]", got)
+	}
+}

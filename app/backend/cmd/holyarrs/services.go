@@ -186,6 +186,18 @@ func (s *services) fill() {
 	if s.Updates == nil {
 		s.Updates = &updates.Checker{Store: s.Store, Version: s.Version}
 	}
+	if s.Backups != nil && s.Backups.OnPreset == nil {
+		h := s.Health
+		// A new preset runs the checks again, so turning backups off clears
+		// their warnings now instead of at the next scheduled run.
+		s.Backups.OnPreset = func(backups.Preset) {
+			go func() {
+				if _, err := h.Run(context.Background()); err != nil {
+					log.Printf("health: %v", err)
+				}
+			}()
+		}
+	}
 	if s.Health.UpdateCheck == nil {
 		WireUpdateChecks(s.Health, s.Updates)
 	}
