@@ -14,7 +14,7 @@
 	"health.check.waiting": "Téléchargements en attente de fichiers",
 	"health.check.clearWaiting": "Téléchargements en attente de nettoyage",
 	"health.check.saveFolder": "Dossier d'enregistrement de",
-	"health.check.saveFolderWhy": "{app} n'a pas de dossier d'enregistrement, donc HolyArrs ne peut pas importer ses téléchargements terminés. Ajoutez une paire de chemins dans Paramètres > Clients de téléchargement.",
+	"health.check.saveFolderWhy": "{app} n'a pas de dossier d'enregistrement, donc HolyArrs ne peut pas importer ses téléchargements terminés. Ajoutez une paire de chemins dans Paramètres › Clients de téléchargement.",
 	"health.day.ahead": "{count} à venir",
 	"health.day.cancelled": "a été annulé",
 	"health.day.due": "attendu",

@@ -14,7 +14,7 @@
 	"health.check.waiting": "Dosya bekleyen indirmeler",
 	"health.check.clearWaiting": "Temizlenmeyi bekleyen indirmeler",
 	"health.check.saveFolder": "Kayıt klasörü:",
-	"health.check.saveFolderWhy": "{app} için kayıt klasörü yok, bu yüzden HolyArrs biten indirmeleri içe aktaramıyor. Ayarlar > İndiriciler bölümünde bir yol çifti ekleyin.",
+	"health.check.saveFolderWhy": "{app} için kayıt klasörü yok, bu yüzden HolyArrs biten indirmeleri içe aktaramıyor. Ayarlar › İndiriciler bölümünde bir yol çifti ekleyin.",
 	"health.day.ahead": "{count} sırada",
 	"health.day.cancelled": "iptal edildi",
 	"health.day.due": "zamanı geldi",

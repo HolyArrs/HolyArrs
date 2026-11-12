@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Skannanir",
 	"downloads.ht.routine.searches.hint": "Leitir að útgáfum og straumathuganir.",
 	"downloads.ht.routine.searches.label": "Leitir",
-	"downloads.import.copy": "afritun",
+	"downloads.import.copy": "Afritað",
 	"downloads.import.hardlink": "harður tengill",
 	"downloads.import.move": "færsla",
 	"downloads.import.noFile": "engin skrá var sett á sinn stað",

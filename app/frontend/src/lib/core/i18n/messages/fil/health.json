@@ -262,7 +262,7 @@
 	"health.word.working": "Gumagana",
 	"health.check.clearWaiting": "Mga download na naghihintay ma-clear",
 	"health.check.saveFolder": "Save folder ng",
-	"health.check.saveFolderWhy": "Walang save folder ang {app}, kaya hindi ma-import ng HolyArrs ang mga tapos na download nito. Magdagdag ng pares ng path sa Mga Setting > Mga Downloader.",
+	"health.check.saveFolderWhy": "Walang save folder ang {app}, kaya hindi ma-import ng HolyArrs ang mga tapos na download nito. Magdagdag ng pares ng path sa Mga Setting › Mga Downloader.",
 	"health.kind.clearWaiting": "Mga download na naghihintay ma-clear",
 	"health.kind.saveFolder": "Save folder ng Downloader"
 }
