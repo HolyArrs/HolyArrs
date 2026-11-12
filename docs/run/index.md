@@ -22,3 +22,4 @@ Keep a running HolyArrs updated, backed up and healthy.
 - [NAS, Synology and Unraid](platforms.md): one shared media mount.
 - [Reverse proxy and URL base](url-base.md): serve HolyArrs under a path.
 - [Portable build](portable.md): run without Docker on Linux or Windows.
+- [Synology package](synology.md): experimental, installs from Package Center without Container Manager.
