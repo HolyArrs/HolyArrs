@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "再確認",
 	"downloads.act.down": "下へ移動",
 	"downloads.act.forceStart": "強制開始",
+	"downloads.act.importAgain": "もう一度インポート",
+	"downloads.act.importQueued": "インポートを待機列に追加しました",
 	"downloads.act.library": "ライブラリで開く",
 	"downloads.act.markFailed": "失敗としてマーク",
 	"downloads.act.moved": "移動しました",

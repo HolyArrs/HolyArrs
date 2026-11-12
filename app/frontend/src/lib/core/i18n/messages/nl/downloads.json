@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Opnieuw controleren",
 	"downloads.act.down": "Omlaag verplaatsen",
 	"downloads.act.forceStart": "Geforceerd starten",
+	"downloads.act.importAgain": "Opnieuw importeren",
+	"downloads.act.importQueued": "Import in de wachtrij",
 	"downloads.act.library": "Openen in Bibliotheek",
 	"downloads.act.markFailed": "Als mislukt markeren",
 	"downloads.act.moved": "Verplaatst",

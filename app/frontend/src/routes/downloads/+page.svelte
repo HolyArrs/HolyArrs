@@ -346,6 +346,8 @@
 		const own = ok.length === 1 && !ok[0].client_item;
 		choice = own ? removeStart(settings) : { delete_files: false, turn_down: false, search_again: false };
 		if (withFiles) choice.delete_files = true;
+		// A removed Downloader's rows: no Downloader is left to delete files from.
+		if (ok.every((r) => r.downloader_gone)) choice.delete_files = false;
 		removeError = '';
 		removeOpen = true;
 	}
@@ -582,10 +584,12 @@
 			{:else}
 				<ul class="many" data-testid="dl-remove-list">{#each targets.slice(0, 6) as r (r.id)}<li>{who(r)}</li>{/each}{#if targets.length > 6}<li class="hint">{t('downloads.page.andMore', { count: targets.length - 6 })}</li>{/if}</ul>
 			{/if}
+			{#if !targets.every((r) => r.downloader_gone)}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={choice.delete_files} data-testid="dl-remove-files" />
 				<span><b>{t('downloads.page.alsoDelete')}</b><br /><span class="hint" data-testid="dl-remove-files-hint">{choice.delete_files ? removeFilesWords(targets)   : t('downloads.page.offKeeps', { name: target?.downloader || t('downloads.rm.theDownloader') })}</span></span>
 			</label>
+			{/if}
 			{#if target && !target.client_item}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={choice.turn_down} />

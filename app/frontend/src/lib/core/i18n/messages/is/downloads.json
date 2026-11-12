@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Athuga aftur",
 	"downloads.act.down": "Færa niður",
 	"downloads.act.forceStart": "Þvinga ræsingu",
+	"downloads.act.importAgain": "Flytja inn aftur",
+	"downloads.act.importQueued": "Innflutningur kominn í röð",
 	"downloads.act.library": "Opna í safni",
 	"downloads.act.markFailed": "Merkja sem misheppnað",
 	"downloads.act.moved": "Fært",

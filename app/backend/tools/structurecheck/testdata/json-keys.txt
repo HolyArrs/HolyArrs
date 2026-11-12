@@ -269,6 +269,7 @@ callback_url
 calls
 calls_24h
 can_act
+can_import
 can_read
 candidate
 candidates
@@ -464,6 +465,7 @@ download_payload_rate
 downloaded
 downloader
 downloader_folders
+downloader_gone
 downloader_id
 downloader_kind
 downloaders

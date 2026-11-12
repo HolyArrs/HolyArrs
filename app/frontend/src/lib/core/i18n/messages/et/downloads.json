@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Kontrolli uuesti",
 	"downloads.act.down": "Liiguta allapoole",
 	"downloads.act.forceStart": "Sunni käivitama",
+	"downloads.act.importAgain": "Impordi uuesti",
+	"downloads.act.importQueued": "Import on järjekorras",
 	"downloads.act.library": "Ava meediakogus",
 	"downloads.act.markFailed": "Märgi ebaõnnestunuks",
 	"downloads.act.moved": "Liigutatud",

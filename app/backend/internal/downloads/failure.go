@@ -100,12 +100,15 @@ func (m *Manager) Remove(ctx context.Context, downloadID int64, c RemoveChoice, 
 	if err := database.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil {
 		return err
 	}
-	if !isActive(d.State) {
-		return ErrNotActive
-	}
-	var dr domain.Downloader
-	if err := database.Get(ctx, m.Store.Read(), "downloaders", d.DownloaderID, &dr); err != nil {
+	// A finished download whose Downloader was removed may go too: nothing
+	// else can end it. Only HolyArrs' own record changes then.
+	dr, gone, err := m.downloaderGone(ctx, d.DownloaderID)
+	if err != nil {
 		return err
+	}
+	removable := func(state string) bool { return isActive(state) || gone && (state == "finished" || state == "seeding") }
+	if !removable(d.State) {
+		return ErrNotActive
 	}
 	reason := "removed"
 	if who != "" {
@@ -116,20 +119,22 @@ func (m *Manager) Remove(ctx context.Context, downloadID int64, c RemoveChoice, 
 	search := c.TurnDown && c.SearchAgain
 	var moved []int64
 	rest := map[int64]mediafiles.SlotState{}
-	err := m.Store.Write(ctx, func(tx *sql.Tx) error {
+	err = m.Store.Write(ctx, func(tx *sql.Tx) error {
 		// Read the state again inside the write so an earlier sync that ended the download wins.
 		var cur string
 		if err := tx.QueryRow("SELECT state FROM downloads WHERE id = ?", d.ID).Scan(&cur); err != nil {
 			return err
 		}
-		if !isActive(cur) {
+		if !removable(cur) {
 			return ErrNotActive
 		}
 		if err := database.Update(tx, "downloads", &next, by); err != nil {
 			return err
 		}
-		if _, err := tx.Exec("UPDATE downloads SET removal_pending = ? WHERE id = ?", c.DeleteFiles, d.ID); err != nil {
-			return err
+		if !gone {
+			if _, err := tx.Exec("UPDATE downloads SET removal_pending = ? WHERE id = ?", c.DeleteFiles, d.ID); err != nil {
+				return err
+			}
 		}
 		if c.TurnDown && next.ReleaseID != nil {
 			if _, err := tx.Exec(`UPDATE releases SET state = 'turned_down', hold_until = NULL,
@@ -169,12 +174,8 @@ func (m *Manager) Remove(ctx context.Context, downloadID int64, c RemoveChoice, 
 	}
 	m.publish("download", next)
 	m.event(ctx, &next, "download_removed", "Download "+reason)
-	if e, err := m.engine(ctx, dr); err == nil {
-		if err := e.Remove(ctx, next.ExternalID, c.DeleteFiles); err != nil && !errors.Is(err, ErrNotFound) {
-			m.event(ctx, &next, "download_not_removed", fmt.Sprintf("Could not remove the download from %s: %v; HolyArrs tries again on the next sync", dr.Name, firstLine(err.Error())))
-		} else {
-			m.removalDone(ctx, d.ID)
-		}
+	if !gone {
+		m.removeFromClient(ctx, dr, d.ID, &next, c.DeleteFiles)
 	}
 	for _, sid := range moved {
 		if search {
@@ -187,6 +188,20 @@ func (m *Manager) Remove(ctx context.Context, downloadID int64, c RemoveChoice, 
 		m.publish("slot", map[string]any{"id": sid, "state": rest[sid], "reason": reason})
 	}
 	return nil
+}
+
+// removeFromClient asks the Downloader to drop a removed download; a refusal
+// stays in removal_pending and is asked again on the next sync.
+func (m *Manager) removeFromClient(ctx context.Context, dr domain.Downloader, id int64, next *domain.Download, deleteFiles bool) {
+	e, err := m.engine(ctx, dr)
+	if err != nil {
+		return
+	}
+	if err := e.Remove(ctx, next.ExternalID, deleteFiles); err != nil && !errors.Is(err, ErrNotFound) {
+		m.event(ctx, next, "download_not_removed", fmt.Sprintf("Could not remove the download from %s: %v; HolyArrs tries again on the next sync", dr.Name, firstLine(err.Error())))
+	} else {
+		m.removalDone(ctx, id)
+	}
 }
 
 // dangerous returns names of files that run code or hide their type. The bidi control characters reverse text, so a name can look like a harmless extension.

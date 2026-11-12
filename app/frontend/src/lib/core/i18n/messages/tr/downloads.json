@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Tekrar denetle",
 	"downloads.act.down": "Aşağı taşı",
 	"downloads.act.forceStart": "Zorla başlat",
+	"downloads.act.importAgain": "Yeniden içe aktar",
+	"downloads.act.importQueued": "İçe aktarma sıraya alındı",
 	"downloads.act.library": "Kütüphanede aç",
 	"downloads.act.markFailed": "Başarısız olarak işaretle",
 	"downloads.act.moved": "Taşındı",

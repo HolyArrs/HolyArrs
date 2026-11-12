@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "افحص مرة أخرى",
 	"downloads.act.down": "انقل لأسفل",
 	"downloads.act.forceStart": "ابدأ قسرًا",
+	"downloads.act.importAgain": "استيراد مرة أخرى",
+	"downloads.act.importQueued": "تمت إضافة الاستيراد إلى الطابور",
 	"downloads.act.library": "افتح في المكتبة",
 	"downloads.act.markFailed": "علّمه بالفشل",
 	"downloads.act.moved": "تم النقل",

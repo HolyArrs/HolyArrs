@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Tarkista uudelleen",
 	"downloads.act.down": "Siirrä alas",
 	"downloads.act.forceStart": "Pakota käynnistys",
+	"downloads.act.importAgain": "Tuo uudelleen",
+	"downloads.act.importQueued": "Tuonti jonossa",
 	"downloads.act.library": "Avaa Kirjastossa",
 	"downloads.act.markFailed": "Merkitse epäonnistuneeksi",
 	"downloads.act.moved": "Siirretty",

@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Перевірити ще раз",
 	"downloads.act.down": "Нижче",
 	"downloads.act.forceStart": "Примусовий запуск",
+	"downloads.act.importAgain": "Імпортувати знову",
+	"downloads.act.importQueued": "Імпорт додано в чергу",
 	"downloads.act.library": "Відкрити в бібліотеці",
 	"downloads.act.markFailed": "Позначити як невдале",
 	"downloads.act.moved": "Переміщено",

@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "மீண்டும் சோதி",
 	"downloads.act.down": "கீழே நகர்த்து",
 	"downloads.act.forceStart": "கட்டாயத் தொடக்கம்",
+	"downloads.act.importAgain": "மீண்டும் இறக்குமதி செய்",
+	"downloads.act.importQueued": "இறக்குமதி வரிசையில் உள்ளது",
 	"downloads.act.library": "நூலகத்தில் திற",
 	"downloads.act.markFailed": "தோல்வி எனக் குறி",
 	"downloads.act.moved": "நகர்த்தப்பட்டது",

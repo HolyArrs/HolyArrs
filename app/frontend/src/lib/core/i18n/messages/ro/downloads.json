@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Verifică din nou",
 	"downloads.act.down": "Mută mai jos",
 	"downloads.act.forceStart": "Pornire forțată",
+	"downloads.act.importAgain": "Importă din nou",
+	"downloads.act.importQueued": "Importul a intrat în coadă",
 	"downloads.act.library": "Deschide în Bibliotecă",
 	"downloads.act.markFailed": "Marchează ca eșuat",
 	"downloads.act.moved": "Mutat",

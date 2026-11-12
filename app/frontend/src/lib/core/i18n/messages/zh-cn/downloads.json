@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "重新检查",
 	"downloads.act.down": "下移",
 	"downloads.act.forceStart": "强制开始",
+	"downloads.act.importAgain": "重新导入",
+	"downloads.act.importQueued": "已加入导入队列",
 	"downloads.act.library": "在媒体库中打开",
 	"downloads.act.markFailed": "标记为失败",
 	"downloads.act.moved": "已移动",

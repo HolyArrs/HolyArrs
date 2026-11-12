@@ -376,6 +376,7 @@ POST /api/v1/downloads/matches/run auth=manage_library scope=write assurance=fal
 POST /api/v1/downloads/matches/{id}/pick auth=manage_library scope=write assurance=false part=core
 POST /api/v1/downloads/pause-all auth=manage_library scope=write assurance=false part=core
 POST /api/v1/downloads/resume-all auth=manage_library scope=write assurance=false part=core
+POST /api/v1/downloads/{id}/import auth=manage_library scope=write assurance=false part=core
 POST /api/v1/downloads/{id}/mark-failed auth=manage_library scope=write assurance=false part=core
 POST /api/v1/downloads/{id}/pause auth=manage_library scope=write assurance=false part=core
 POST /api/v1/downloads/{id}/reannounce auth=manage_library scope=write assurance=false part=core

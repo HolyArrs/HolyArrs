@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Провери поново",
 	"downloads.act.down": "Премести ниже",
 	"downloads.act.forceStart": "Принудно покрени",
+	"downloads.act.importAgain": "Увези поново",
+	"downloads.act.importQueued": "Увоз је у реду чекања",
 	"downloads.act.library": "Отвори у Библиотеци",
 	"downloads.act.markFailed": "Означи као неуспело",
 	"downloads.act.moved": "Премештено",

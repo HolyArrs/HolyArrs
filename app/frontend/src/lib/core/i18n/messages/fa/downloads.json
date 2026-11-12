@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "بررسی دوباره",
 	"downloads.act.down": "انتقال به پایین",
 	"downloads.act.forceStart": "شروع اجباری",
+	"downloads.act.importAgain": "ورود دوباره",
+	"downloads.act.importQueued": "ورود در صف قرار گرفت",
 	"downloads.act.library": "باز کردن در کتابخانه",
 	"downloads.act.markFailed": "علامت ناموفق",
 	"downloads.act.moved": "منتقل شد",
