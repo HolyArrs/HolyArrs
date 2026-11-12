@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Ang unang pagbasa ay gagawin sa loob ng 30 minuto.",
 	"library.stats.watchedHelp": "Mula sa kasaysayan ng pag-play ng Plex, Jellyfin, at Emby. Pag-play lang ang binibilang ng Plex, kaya hindi lumalabas ang mga title na minarkahang napanood nang mano-mano.",
 	"library.stats.lastRead": "Huling nabasa {ago}.",
-	"library.stats.nobody": "Wala pang nanood ng kahit ano",
+	"library.stats.noMatch": "Huling nabasa {ago}. Wala pang napanood na tumutugma sa Library mo.",
 	"library.stats.notLinked": "Hindi naka-link",
 	"library.stats.lastWatched": "Huling napanood {ago}",
 	"library.stats.unit.movie.one": "{n} pelikula",

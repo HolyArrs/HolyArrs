@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Den första avläsningen sker inom 30 minuter.",
 	"library.stats.watchedHelp": "Från uppspelningshistoriken i Plex, Jellyfin och Emby. Plex räknar bara uppspelningar, så titlar som markerats som sedda för hand syns inte.",
 	"library.stats.lastRead": "Senast avläst {ago}.",
-	"library.stats.nobody": "Ingen har tittat på något än",
+	"library.stats.noMatch": "Senast avläst {ago}. Inget av det som har setts matchar ditt Bibliotek än.",
 	"library.stats.notLinked": "Inte länkad",
 	"library.stats.lastWatched": "Senast sedd {ago}",
 	"library.stats.unit.movie.one": "{n} film",

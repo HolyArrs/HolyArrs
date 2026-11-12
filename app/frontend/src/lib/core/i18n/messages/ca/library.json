@@ -349,7 +349,7 @@
 	"library.stats.firstText": "La primera lectura es fa en un termini de 30 minuts.",
 	"library.stats.watchedHelp": "De l'historial de reproducció de Plex, Jellyfin i Emby. Plex només compta reproduccions, així que els títols marcats com a vistos a mà no es mostren.",
 	"library.stats.lastRead": "Última lectura {ago}.",
-	"library.stats.nobody": "Encara ningú no ha vist res",
+	"library.stats.noMatch": "Última lectura {ago}. Res del que s'ha vist coincideix encara amb la teva Biblioteca.",
 	"library.stats.notLinked": "No enllaçat",
 	"library.stats.lastWatched": "Vist per última vegada {ago}",
 	"library.stats.unit.movie.one": "{n} pel·lícula",

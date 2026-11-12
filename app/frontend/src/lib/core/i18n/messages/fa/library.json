@@ -349,7 +349,7 @@
 	"library.stats.firstText": "اولین خواندن ظرف ۳۰ دقیقه انجام می‌شود.",
 	"library.stats.watchedHelp": "از تاریخچه پخش Plex، Jellyfin و Emby. Plex فقط پخش‌ها را می‌شمارد، پس عنوان‌هایی که دستی به‌عنوان دیده‌شده علامت خورده‌اند نشان داده نمی‌شوند.",
 	"library.stats.lastRead": "آخرین خواندن {ago}.",
-	"library.stats.nobody": "هنوز هیچ‌کس چیزی ندیده است",
+	"library.stats.noMatch": "آخرین خواندن {ago}. هنوز هیچ‌یک از موارد تماشاشده با کتابخانهٔ شما مطابقت ندارد.",
 	"library.stats.notLinked": "پیوند نشده",
 	"library.stats.lastWatched": "آخرین تماشا {ago}",
 	"library.stats.unit.movie.one": "{n} فیلم",

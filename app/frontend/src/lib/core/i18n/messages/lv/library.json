@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Pirmā nolasīšana notiek 30 minūšu laikā.",
 	"library.stats.watchedHelp": "No Plex, Jellyfin un Emby atskaņošanas vēstures. Plex skaita tikai atskaņošanas, tāpēc nosaukumi, kas ar roku atzīmēti kā noskatīti, netiek rādīti.",
 	"library.stats.lastRead": "Pēdējoreiz nolasīts {ago}.",
-	"library.stats.nobody": "Neviens vēl nav neko noskatījies",
+	"library.stats.noMatch": "Pēdējoreiz nolasīts {ago}. Nekas no skatītā vēl neatbilst jūsu Bibliotēkai.",
 	"library.stats.notLinked": "Nav saistīts",
 	"library.stats.lastWatched": "Pēdējoreiz skatīts {ago}",
 	"library.stats.unit.movie.one": "{n} filma",

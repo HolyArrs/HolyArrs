@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Lần đọc đầu tiên diễn ra trong vòng 30 phút.",
 	"library.stats.watchedHelp": "Từ lịch sử phát của Plex, Jellyfin và Emby. Plex chỉ đếm lượt phát, nên các tựa đánh dấu đã xem thủ công sẽ không hiện.",
 	"library.stats.lastRead": "Đọc lần cuối {ago}.",
-	"library.stats.nobody": "Chưa ai xem gì cả",
+	"library.stats.noMatch": "Đọc lần cuối {ago}. Chưa có nội dung đã xem nào khớp với Thư viện của bạn.",
 	"library.stats.notLinked": "Chưa liên kết",
 	"library.stats.lastWatched": "Xem lần cuối {ago}",
 	"library.stats.unit.movie.one": "{n} phim",

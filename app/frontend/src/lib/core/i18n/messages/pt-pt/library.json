@@ -349,7 +349,7 @@
 	"library.stats.firstText": "A primeira leitura ocorre nos próximos 30 minutos.",
 	"library.stats.watchedHelp": "Do histórico de reprodução do Plex, Jellyfin e Emby. O Plex só conta reproduções, por isso os títulos marcados como vistos à mão não aparecem.",
 	"library.stats.lastRead": "Última leitura {ago}.",
-	"library.stats.nobody": "Ninguém viu nada ainda",
+	"library.stats.noMatch": "Última leitura {ago}. Nada do que foi visto corresponde ainda à sua Biblioteca.",
 	"library.stats.notLinked": "Não ligado",
 	"library.stats.lastWatched": "Visto pela última vez {ago}",
 	"library.stats.unit.movie.one": "{n} filme",

@@ -17,7 +17,8 @@ func (h *Handlers) getWatchHistory(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, watchSetting{Enabled: &on})
 }
 
-// putWatchHistory turns watch history on or off; off deletes what was read.
+// putWatchHistory turns watch history on or off; off deletes what was
+// read, on starts a read right away.
 func (h *Handlers) putWatchHistory(w http.ResponseWriter, r *http.Request) {
 	if !webserver.RequireStrong(w, r) {
 		return
@@ -30,6 +31,9 @@ func (h *Handlers) putWatchHistory(w http.ResponseWriter, r *http.Request) {
 	if err := SetWatchHistory(r.Context(), h.Store, *in.Enabled, actorOf(r)); err != nil {
 		internalError(w, err)
 		return
+	}
+	if *in.Enabled {
+		h.Linker.ReadWatchHistorySoon()
 	}
 	webserver.WriteJSON(w, http.StatusOK, in)
 }

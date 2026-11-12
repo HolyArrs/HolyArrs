@@ -349,7 +349,7 @@
 	"library.stats.firstText": "The first read comes within 30 minutes.",
 	"library.stats.watchedHelp": "From Plex, Jellyfin and Emby play history. Plex counts plays only, so titles marked watched by hand don't show.",
 	"library.stats.lastRead": "Last read {ago}.",
-	"library.stats.nobody": "Nobody has watched anything yet",
+	"library.stats.noMatch": "Read {ago}. Nothing watched matches your Library yet.",
 	"library.stats.notLinked": "Not linked",
 	"library.stats.lastWatched": "Last watched {ago}",
 	"library.stats.unit.movie.one": "{n} movie",

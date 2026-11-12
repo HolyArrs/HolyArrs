@@ -10,6 +10,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
@@ -392,5 +393,118 @@ func TestWatchHistoryJellyfinAndEmby(t *testing.T) {
 				t.Fatalf("rows changed after a capped answer: %v", after)
 			}
 		})
+	}
+}
+
+// A whole pass that matches nothing in the Library still counts as read:
+// the summary carries when, with nobody in it. A failed pass does not
+// count, and turning watch history off forgets the time.
+func TestWatchHistoryReadWithNoMatchKeepsTheReadTime(t *testing.T) {
+	smallPages(t)
+	w := newWorld(t)
+	ctx := context.Background()
+	var fail atomic.Bool
+	fail.Store(true)
+	srv := plexHistoryServer(t, &fail, nil)
+	if _, err := Add(ctx, w.s, w.v, Input{Name: "Plex", Kind: "plex", URL: srv.URL, Token: tok}, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	watchOn(t, w, true)
+	l := &Linker{Store: w.s, Vault: w.v}
+	if err := l.ReadWatchHistory(ctx); err == nil {
+		t.Fatal("a failed page was not an error")
+	}
+	if sum, err := Watched(ctx, w.s.Read()); err != nil || sum.ReadAt != nil {
+		t.Fatalf("a failed pass counted as read: %+v %v", sum, err)
+	}
+	fail.Store(false)
+	if err := l.ReadWatchHistory(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if rows := watchRows(t, w); len(rows) != 0 {
+		t.Fatalf("rows %v", rows)
+	}
+	sum, err := Watched(ctx, w.s.Read())
+	if err != nil || !sum.Enabled || sum.ReadAt == nil || len(sum.People) != 0 {
+		t.Fatalf("summary %+v %v", sum, err)
+	}
+	watchOn(t, w, false)
+	watchOn(t, w, true)
+	if sum, err := Watched(ctx, w.s.Read()); err != nil || sum.ReadAt != nil {
+		t.Fatalf("read time kept after off: %+v %v", sum, err)
+	}
+}
+
+// Turning watch history on reads right away in the background, and so does
+// adding a media server while it is on.
+func TestWatchHistoryReadsRightAway(t *testing.T) {
+	smallPages(t)
+	w := newWorld(t)
+	ctx := context.Background()
+	watchTitles(t, w)
+	srv := plexHistoryServer(t, nil, nil)
+	l := &Linker{Store: w.s, Vault: w.v}
+	m := http.NewServeMux()
+	(&Handlers{Store: w.s, Vault: w.v, Linker: l}).Routes(m)
+	send := func(method, path, body string) {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		m.ServeHTTP(rec, httptest.NewRequest(method, path, strings.NewReader(body)))
+		if rec.Code/100 != 2 {
+			t.Fatalf("%s %s: %d %s", method, path, rec.Code, rec.Body)
+		}
+	}
+	if _, err := Add(ctx, w.s, w.v, Input{Name: "Plex", Kind: "plex", URL: srv.URL, Token: tok}, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	send("PUT", "/api/v1/settings/watch-history", `{"enabled":true}`)
+	l.Wait()
+	if rows := watchRows(t, w); len(rows) != 2 {
+		t.Fatalf("rows after turning on %v", rows)
+	}
+
+	jelly := jellyHistoryServer(t, "jellyfin", nil)
+	send("POST", "/api/v1/media-servers", `{"name":"Home","kind":"jellyfin","url":"`+jelly.URL+`","token":"`+tok+`"}`)
+	l.Wait()
+	if rows := watchRows(t, w); len(rows) != 5 {
+		t.Fatalf("rows after adding a server %v", rows)
+	}
+
+	// Safe mode reads nothing in the background.
+	watchOn(t, w, false)
+	l.Paused = true
+	send("PUT", "/api/v1/settings/watch-history", `{"enabled":true}`)
+	l.Wait()
+	if rows := watchRows(t, w); len(rows) != 0 {
+		t.Fatalf("rows in safe mode %v", rows)
+	}
+}
+
+// Stop ends a background read, so a shutdown does not wait for it.
+func TestStopEndsABackgroundRead(t *testing.T) {
+	smallPages(t)
+	w := newWorld(t)
+	ctx := context.Background()
+	started := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		select {
+		case started <- struct{}{}:
+		default:
+		}
+		<-r.Context().Done()
+	}))
+	t.Cleanup(srv.Close)
+	if _, err := Add(ctx, w.s, w.v, Input{Name: "Plex", Kind: "plex", URL: srv.URL, Token: tok}, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	watchOn(t, w, true)
+	l := &Linker{Store: w.s, Vault: w.v}
+	l.ReadWatchHistorySoon()
+	<-started
+	begin := time.Now()
+	l.Stop()
+	l.Wait()
+	if time.Since(begin) > 5*time.Second {
+		t.Fatalf("Stop waited %s", time.Since(begin))
 	}
 }

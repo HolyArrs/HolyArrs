@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Pembacaan pertama dilakukan dalam 30 menit.",
 	"library.stats.watchedHelp": "Dari riwayat pemutaran Plex, Jellyfin, dan Emby. Plex hanya menghitung pemutaran, jadi judul yang ditandai sudah ditonton secara manual tidak muncul.",
 	"library.stats.lastRead": "Terakhir dibaca {ago}.",
-	"library.stats.nobody": "Belum ada yang menonton apa pun",
+	"library.stats.noMatch": "Terakhir dibaca {ago}. Belum ada tontonan yang cocok dengan Pustaka Anda.",
 	"library.stats.notLinked": "Belum terhubung",
 	"library.stats.lastWatched": "Terakhir ditonton {ago}",
 	"library.stats.unit.movie.one": "{n} film",

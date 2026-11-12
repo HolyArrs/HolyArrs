@@ -115,9 +115,9 @@
 	{:else if watched && !watched.read_at}
 		<EmptyState icon="clock" title={t('library.stats.firstTitle')} text={t('library.stats.firstText')} />
 	{:else if watched}
-		<p class="help">{t('library.stats.watchedHelp')} {t('library.stats.lastRead', { ago: ago(watched.read_at) })}</p>
+		<p class="help">{t('library.stats.watchedHelp')}{#if watched.people?.length} {t('library.stats.lastRead', { ago: ago(watched.read_at) })}{/if}</p>
 		{#if !watched.people?.length}
-			<EmptyState icon="eye" title={t('library.stats.nobody')} compact />
+			<EmptyState icon="eye" title={t('library.stats.noMatch', { ago: ago(watched.read_at) })} compact />
 		{:else}
 		<div class="tp-sheet">
 			<ul class="tp-rows people">

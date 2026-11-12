@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Първото четене става до 30 минути.",
 	"library.stats.watchedHelp": "От историята на възпроизвеждане на Plex, Jellyfin и Emby. Plex брои само възпроизвеждания, така че заглавия, отбелязани ръчно като гледани, не се показват.",
 	"library.stats.lastRead": "Последно прочетено {ago}.",
-	"library.stats.nobody": "Още никой не е гледал нищо",
+	"library.stats.noMatch": "Последно прочетено {ago}. Нищо от гледаното още не съвпада с вашата Библиотека.",
 	"library.stats.notLinked": "Не е свързано",
 	"library.stats.lastWatched": "Последно гледано {ago}",
 	"library.stats.unit.movie.one": "{n} филм",

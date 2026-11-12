@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Das erste Lesen folgt innerhalb von 30 Minuten.",
 	"library.stats.watchedHelp": "Aus dem Wiedergabeverlauf von Plex, Jellyfin und Emby. Plex zählt nur Wiedergaben, von Hand als gesehen markierte Titel fehlen also.",
 	"library.stats.lastRead": "Zuletzt gelesen {ago}.",
-	"library.stats.nobody": "Noch niemand hat etwas gesehen",
+	"library.stats.noMatch": "Zuletzt gelesen {ago}. Nichts vom Gesehenen passt bisher zu deiner Bibliothek.",
 	"library.stats.notLinked": "Nicht verknüpft",
 	"library.stats.lastWatched": "Zuletzt gesehen {ago}",
 	"library.stats.unit.movie.one": "{n} Film",

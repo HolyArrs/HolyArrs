@@ -349,7 +349,7 @@
 	"library.stats.firstText": "De eerste keer lezen volgt binnen 30 minuten.",
 	"library.stats.watchedHelp": "Uit de kijkgeschiedenis van Plex, Jellyfin en Emby. Plex telt alleen afspelen, dus titels die met de hand als bekeken zijn gemarkeerd ontbreken.",
 	"library.stats.lastRead": "Laatst gelezen {ago}.",
-	"library.stats.nobody": "Nog niemand heeft iets gekeken",
+	"library.stats.noMatch": "Laatst gelezen {ago}. Niets van wat is gekeken komt al overeen met je bibliotheek.",
 	"library.stats.notLinked": "Niet gekoppeld",
 	"library.stats.lastWatched": "Laatst gekeken {ago}",
 	"library.stats.unit.movie.one": "{n} film",

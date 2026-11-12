@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
@@ -70,6 +71,8 @@ func (p *watchPass) list() []watchRow {
 // keeps it in watch_state, a whole pass per server: a server with a failed
 // or too-big page keeps the rows of its last whole pass.
 func (l *Linker) ReadWatchHistory(ctx context.Context) error {
+	l.reading.Lock()
+	defer l.reading.Unlock()
 	if !WatchHistoryOn(ctx, l.Store.Read()) {
 		return nil
 	}
@@ -104,6 +107,32 @@ func (l *Linker) ReadWatchHistory(ctx context.Context) error {
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// ReadWatchHistorySoon reads the watch history now, in the background, so
+// turning it on or adding a media server does not wait for the next
+// scheduled read. Stop ends it; Wait waits for it.
+func (l *Linker) ReadWatchHistorySoon() {
+	if l.Paused {
+		return
+	}
+	l.mu.Lock()
+	if l.stopRead != nil {
+		l.stopRead() // a newer read replaces one still going
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	l.stopRead = cancel
+	l.wg.Add(1)
+	l.mu.Unlock()
+	go func() {
+		defer l.wg.Done()
+		defer cancel()
+		jobs.Guard("media_servers", func() {
+			if err := l.ReadWatchHistory(ctx); err != nil && ctx.Err() == nil {
+				log.Printf("media servers: watch history: %v", err)
+			}
+		})
+	}()
 }
 
 // Watched sums what each account watched, most plays first. An account

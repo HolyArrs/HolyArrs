@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Prima citire are loc în 30 de minute.",
 	"library.stats.watchedHelp": "Din istoricul de redare Plex, Jellyfin și Emby. Plex numără doar redările, deci titlurile marcate manual ca vizionate nu apar.",
 	"library.stats.lastRead": "Citit ultima dată {ago}.",
-	"library.stats.nobody": "Nimeni nu a vizionat nimic încă",
+	"library.stats.noMatch": "Citit ultima dată {ago}. Nimic din ce s-a vizionat nu se potrivește încă cu Biblioteca ta.",
 	"library.stats.notLinked": "Neconectat",
 	"library.stats.lastWatched": "Vizionat ultima dată {ago}",
 	"library.stats.unit.movie.one": "{n} film",

@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Prvo čitanje obavlja se u roku od 30 minuta.",
 	"library.stats.watchedHelp": "Iz povijesti reprodukcije u Plexu, Jellyfinu i Embyju. Plex broji samo reprodukcije, pa se naslovi ručno označeni kao gledani ne prikazuju.",
 	"library.stats.lastRead": "Zadnje čitanje {ago}.",
-	"library.stats.nobody": "Još nitko nije ništa gledao",
+	"library.stats.noMatch": "Zadnje čitanje {ago}. Ništa od gledanog još se ne podudara s vašom Bibliotekom.",
 	"library.stats.notLinked": "Nije povezano",
 	"library.stats.lastWatched": "Zadnje gledano {ago}",
 	"library.stats.unit.movie.one": "{n} film",
