@@ -171,7 +171,7 @@
 		lookFor = null;
 	}
 
-	// Posters mount only for rows near the screen, so a scan of thousands of folders stays fast (#305).
+	// Posters mount only for rows near the screen, so a scan of thousands of folders stays fast.
 	let near = $state<Record<string, boolean>>({});
 	let seen: IntersectionObserver | undefined;
 	function whenNear(node: HTMLElement, folder: string) {

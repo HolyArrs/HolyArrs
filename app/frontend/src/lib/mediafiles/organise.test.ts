@@ -122,7 +122,7 @@ describe('following a Job', () => {
 		});
 		expect((await p).State).toBe('done');
 	});
-	// #306: a long scan that keeps moving is waited for; only one that
+	// A long scan that keeps moving is waited for; only one that
 	// stops moving for the whole wait gives up.
 	it('keeps waiting while the Job moves, gives up when it stalls', async () => {
 		let n = 0;

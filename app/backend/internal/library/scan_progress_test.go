@@ -10,7 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// #306: a scan of a big Library folder tells how far it is, folder by
+// A scan of a big Library folder tells how far it is, folder by
 // folder, out of the folders this scan reads (the limit, not all of them),
 // and ends at all of them, so the page keeps waiting and shows it moving.
 func TestPlanAdoptReportsProgress(t *testing.T) {

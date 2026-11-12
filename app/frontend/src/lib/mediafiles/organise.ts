@@ -355,7 +355,7 @@ export function matchKey(m: AdoptMatch): string {
 	return m.id || m.tmdb_id;
 }
 
-// The poster of the picked match, from the scan itself (#305).
+// The poster of the picked match, from the scan itself.
 export function pickedPoster(f: AdoptCandidate, id: string | undefined): string {
 	if (!id) return '';
 	return [f.match, ...f.others].find((x) => x && matchKey(x) === id)?.poster ?? '';
@@ -442,7 +442,7 @@ export async function followJob(
 ): Promise<JobView> {
 	const every = opts.every ?? 700;
 	// The wait gives up only when the Job has not moved for the whole of
-	// it, so a long scan that keeps going (#306) is waited for.
+	// it, so a long scan that keeps going is waited for.
 	const wait = opts.timeout ?? 10 * 60_000;
 	let until = Date.now() + wait;
 	let moved = '';

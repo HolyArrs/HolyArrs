@@ -264,7 +264,7 @@ func TestScanAndAdoptAPI(t *testing.T) {
 	if j.State != "done" || !strings.Contains(string(b), `"status":"matched"`) || !strings.Contains(string(b), `"tmdb_id":"693134"`) {
 		t.Fatalf("scan %s %s", j.State, b)
 	}
-	// #306: the scan Job shows how far it got, done/total folders.
+	// The scan Job shows how far it got, done/total folders.
 	var pj struct {
 		Progress     float64
 		ProgressNote *string

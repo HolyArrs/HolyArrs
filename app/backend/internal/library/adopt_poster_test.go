@@ -9,7 +9,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// #305: a match carries the poster the lookup already returned, so the
+// A match carries the poster the lookup already returned, so the
 // Import list can show it without another provider call.
 func TestPlanAdoptMatchCarriesPoster(t *testing.T) {
 	s := open(t)

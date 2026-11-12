@@ -47,7 +47,7 @@ type AdoptMatch struct {
 	Name  string  `json:"name"`
 	Year  int     `json:"year"`
 	Score float64 `json:"score"`
-	// Poster is the art the lookup already returned (#305); no extra call.
+	// Poster is the art the lookup already returned; no extra call.
 	Poster string `json:"poster,omitempty"`
 }
 
