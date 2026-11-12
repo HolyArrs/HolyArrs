@@ -126,6 +126,15 @@
 	$effect(() => {
 		if (mayAsk) void fourKReady().then((r) => (fourKMovies = r.movie));
 	});
+	// Phones share one row between the 4K, Follow and Trailer buttons: the 4K caption shortens to "4K" so it is never cut to "Req…".
+	let phone = $state(false);
+	$effect(() => {
+		const mq = matchMedia('(max-width: 767px)');
+		const set = () => (phone = mq.matches);
+		set();
+		mq.addEventListener('change', set);
+		return () => mq.removeEventListener('change', set);
+	});
 	let gateDefault = $state('released');
 	let showDefaults = $state<ShowSettings | null>(null);
 	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
@@ -431,7 +440,7 @@
 		{#snippet ask4kButton(td: TitleDetails)}
 			{@const offer = fourKMovies ? fourKOffer({ ...td, titleId: td.titleId ?? owned?.id }) : null}
 			{#if offer}
-				<ActionButton icon="wish" pill label={offer === 'asked' ? t('discover.titlePage.askedFor4k', { name: td.name }) : t('discover.titlePage.askFor4k', { name: td.name })} caption={offer === 'asked' ? t('discover.titlePage.requested4kCaption') : t('discover.titlePage.request4k')} disabled={offer === 'asked'} onclick={() => askMovieDialog?.open({ tmdb: td.tmdb, name: td.name, year: td.year, ask4k: td.ask4k, fourKOnly: true })} data-testid="hero-ask-4k" />
+				<ActionButton icon="wish" pill label={offer === 'asked' ? t('discover.titlePage.askedFor4k', { name: td.name }) : t('discover.titlePage.askFor4k', { name: td.name })} caption={phone ? '4K' : offer === 'asked' ? t('discover.titlePage.requested4kCaption') : t('discover.titlePage.request4k')} disabled={offer === 'asked'} onclick={() => askMovieDialog?.open({ tmdb: td.tmdb, name: td.name, year: td.year, ask4k: td.ask4k, fourKOnly: true })} data-testid="hero-ask-4k" />
 			{/if}
 		{/snippet}
 		{#snippet castRow()}
