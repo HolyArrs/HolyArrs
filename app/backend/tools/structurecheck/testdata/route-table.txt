@@ -274,6 +274,7 @@ GET /movie/{id} auth=unlisted scope=admin assurance=false part=-
 GET /notification auth=unlisted scope=admin assurance=false part=-
 GET /oauth/authorize auth=public scope=admin assurance=false part=core
 GET /qualityprofile auth=unlisted scope=admin assurance=false part=-
+GET /qualityprofile/{id} auth=unlisted scope=admin assurance=false part=-
 GET /queue auth=unlisted scope=admin assurance=false part=-
 GET /queue/details auth=unlisted scope=admin assurance=false part=-
 GET /radarr/ auth=manage_library scope=compat assurance=false part=movies
