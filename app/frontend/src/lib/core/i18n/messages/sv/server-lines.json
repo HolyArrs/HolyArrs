@@ -1274,5 +1274,6 @@
 	"server.health.downloader-save-folder": "Nedladdarens sparmapp",
 	"server.library.files-matched-by-hand": "{name}: {n} filer kopplade för hand",
 	"server.library.no-such-file-in-this-title": "ingen sådan fil i den här titeln",
-	"server.library.send-1-to-2000-files": "skicka 1 till 2000 filer"
+	"server.library.send-1-to-2000-files": "skicka 1 till 2000 filer",
+	"server.sources.this-kind-of-title-can-t": "den här typen av titel kan inte sökas"
 }

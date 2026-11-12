@@ -1274,5 +1274,6 @@
 	"server.health.downloader-save-folder": "Фасцикла за чување Преузимача",
 	"server.library.files-matched-by-hand": "{name}: ручно повезане датотеке: {n}",
 	"server.library.no-such-file-in-this-title": "нема такве датотеке у овом наслову",
-	"server.library.send-1-to-2000-files": "пошаљите од 1 до 2000 датотека"
+	"server.library.send-1-to-2000-files": "пошаљите од 1 до 2000 датотека",
+	"server.sources.this-kind-of-title-can-t": "ова врста наслова не може да се тражи"
 }

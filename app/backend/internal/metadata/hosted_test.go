@@ -44,10 +44,92 @@ func TestServiceRegisterSendsNoCredential(t *testing.T) {
 	if _, err := s.Register(context.Background()); !errors.Is(err, ErrServiceBusy) {
 		t.Fatalf("429: %v", err)
 	}
+	regHoldOver(s)
 	status.Store(503)
 	if _, err := s.Register(context.Background()); !errors.Is(err, ErrServiceUnavailable) {
 		t.Fatalf("503: %v", err)
 	}
+}
+
+// regHoldOver ends the registration hold and returns how long was left.
+func regHoldOver(s *Service) time.Duration {
+	s.regHold.mu.Lock()
+	defer s.regHold.mu.Unlock()
+	left := time.Until(s.regHold.until)
+	s.regHold.until = time.Now().Add(-time.Second)
+	return left
+}
+
+// Any failed registration holds the next one: 30 s, doubling to 15 minutes,
+// and back to 30 s after one that worked. Calls inside the hold get the calm
+// busy answer without asking the server.
+func TestServiceRegisterBacksOffAfterAnyFailure(t *testing.T) {
+	var calls, status atomic.Int32
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		w.WriteHeader(int(status.Load()))
+		if status.Load() == 201 {
+			_, _ = w.Write([]byte(`{"schema_version":1,"` + "tok" + `en":"` + fixtureValue + `"}`))
+		}
+	})
+	near := func(got, want time.Duration) bool { return got > want-5*time.Second && got <= want }
+	want := 30 * time.Second
+	for i, code := range []int{429, 403, 500, 503, 404, 429, 500} {
+		status.Store(int32(code))
+		if _, err := s.Register(context.Background()); err == nil {
+			t.Fatalf("%d: no error", code)
+		}
+		n := calls.Load()
+		if _, err := s.Register(context.Background()); !errors.Is(err, ErrServiceBusy) || calls.Load() != n {
+			t.Fatalf("%d: asked again inside the hold: %v", code, err)
+		}
+		if left := regHoldOver(s); !near(left, want) {
+			t.Fatalf("failure %d (%d): held for %v, want %v", i+1, code, left, want)
+		}
+		want = min(want*2, 15*time.Minute)
+	}
+	if want != 15*time.Minute {
+		t.Fatalf("the hold never reached its top: %v", want)
+	}
+	status.Store(201)
+	if tok, err := s.Register(context.Background()); err != nil || tok != fixtureValue {
+		t.Fatalf("after the hold: %q %v", tok, err)
+	}
+	status.Store(500)
+	_, _ = s.Register(context.Background())
+	if left := regHoldOver(s); !near(left, 30*time.Second) {
+		t.Fatalf("after a success the hold starts over: %v", left)
+	}
+}
+
+// A server that cannot be reached holds too; a caller that gave up does not.
+func TestServiceRegisterBacksOffWhenUnreachable(t *testing.T) {
+	var calls atomic.Int32
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) { calls.Add(1); w.WriteHeader(500) })
+	gone, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := s.Register(gone); err == nil {
+		t.Fatal("cancelled call worked")
+	}
+	if s.regHold.held(time.Now()) {
+		t.Fatal("a caller that gave up started a hold")
+	}
+	s.http = &http.Client{Transport: failingTransport{}}
+	if _, err := s.Register(context.Background()); err == nil || errors.Is(err, ErrServiceBusy) {
+		t.Fatalf("unreachable: %v", err)
+	}
+	if _, err := s.Register(context.Background()); !errors.Is(err, ErrServiceBusy) {
+		t.Fatalf("unreachable server asked again inside the hold: %v", err)
+	}
+	if left := regHoldOver(s); left < 25*time.Second || left > 30*time.Second {
+		t.Fatalf("held for %v, want 30s", left)
+	}
+}
+
+type failingTransport struct{}
+
+func (failingTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	return nil, errors.New("dial tcp: connection refused")
 }
 
 // A refused registration (429) with Retry-After is not tried again before

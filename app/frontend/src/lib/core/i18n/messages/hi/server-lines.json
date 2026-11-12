@@ -1274,5 +1274,6 @@
 	"server.health.downloader-save-folder": "डाउनलोडर का सेव फ़ोल्डर",
 	"server.library.files-matched-by-hand": "{name}: {n} फ़ाइलें हाथ से मिलाई गईं",
 	"server.library.no-such-file-in-this-title": "इस टाइटल में ऐसी कोई फ़ाइल नहीं",
-	"server.library.send-1-to-2000-files": "1 से 2000 फ़ाइलें भेजें"
+	"server.library.send-1-to-2000-files": "1 से 2000 फ़ाइलें भेजें",
+	"server.sources.this-kind-of-title-can-t": "इस तरह का शीर्षक खोजा नहीं जा सकता"
 }

@@ -1274,5 +1274,6 @@
 	"server.health.downloader-save-folder": "Thư mục lưu của trình tải xuống",
 	"server.library.files-matched-by-hand": "{name}: đã ghép {n} tệp bằng tay",
 	"server.library.no-such-file-in-this-title": "không có tệp đó trong mục này",
-	"server.library.send-1-to-2000-files": "gửi từ 1 đến 2000 tệp"
+	"server.library.send-1-to-2000-files": "gửi từ 1 đến 2000 tệp",
+	"server.sources.this-kind-of-title-can-t": "không thể tìm kiếm loại tựa đề này"
 }

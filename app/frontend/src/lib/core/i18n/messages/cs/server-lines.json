@@ -1274,5 +1274,6 @@
 	"server.health.downloader-save-folder": "Složka pro ukládání Stahovače",
 	"server.library.files-matched-by-hand": "{name}: ručně přiřazené soubory: {n}",
 	"server.library.no-such-file-in-this-title": "takový soubor v tomto titulu není",
-	"server.library.send-1-to-2000-files": "pošlete 1 až 2000 souborů"
+	"server.library.send-1-to-2000-files": "pošlete 1 až 2000 souborů",
+	"server.sources.this-kind-of-title-can-t": "tento druh titulu nelze vyhledat"
 }

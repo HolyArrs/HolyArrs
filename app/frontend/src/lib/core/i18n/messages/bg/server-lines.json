@@ -1274,5 +1274,6 @@
 	"server.health.downloader-save-folder": "Папка за запис на програмата за изтегляне",
 	"server.library.files-matched-by-hand": "{name}: ръчно свързани файлове: {n}",
 	"server.library.no-such-file-in-this-title": "няма такъв файл в това заглавие",
-	"server.library.send-1-to-2000-files": "изпратете от 1 до 2000 файла"
+	"server.library.send-1-to-2000-files": "изпратете от 1 до 2000 файла",
+	"server.sources.this-kind-of-title-can-t": "този вид заглавие не може да се търси"
 }

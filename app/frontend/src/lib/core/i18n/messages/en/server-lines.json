@@ -1274,5 +1274,6 @@
 	"server.health.downloader-save-folder": "Downloader save folder",
 	"server.library.files-matched-by-hand": "{name}: {n} files matched by hand",
 	"server.library.no-such-file-in-this-title": "no such file in this title",
-	"server.library.send-1-to-2000-files": "send 1 to 2000 files"
+	"server.library.send-1-to-2000-files": "send 1 to 2000 files",
+	"server.sources.this-kind-of-title-can-t": "this kind of title can't be searched"
 }

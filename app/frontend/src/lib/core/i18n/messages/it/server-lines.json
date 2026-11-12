@@ -1274,5 +1274,6 @@
 	"server.health.downloader-save-folder": "Cartella di salvataggio del downloader",
 	"server.library.files-matched-by-hand": "{name}: {n} file abbinati a mano",
 	"server.library.no-such-file-in-this-title": "nessun file del genere in questo titolo",
-	"server.library.send-1-to-2000-files": "invia da 1 a 2000 file"
+	"server.library.send-1-to-2000-files": "invia da 1 a 2000 file",
+	"server.sources.this-kind-of-title-can-t": "questo tipo di titolo non può essere cercato"
 }

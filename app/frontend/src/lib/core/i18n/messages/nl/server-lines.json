@@ -1274,5 +1274,6 @@
 	"server.health.downloader-save-folder": "Opslagmap van de Downloader",
 	"server.library.files-matched-by-hand": "{name}: {n} bestanden met de hand gekoppeld",
 	"server.library.no-such-file-in-this-title": "zo'n bestand bestaat niet in deze titel",
-	"server.library.send-1-to-2000-files": "stuur 1 tot 2000 bestanden"
+	"server.library.send-1-to-2000-files": "stuur 1 tot 2000 bestanden",
+	"server.sources.this-kind-of-title-can-t": "dit soort titel kan niet worden gezocht"
 }
