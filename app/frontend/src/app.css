@@ -67,6 +67,11 @@ textarea {
 	font: inherit;
 	color: inherit;
 }
+/* Placeholders read at 4.5:1 on a field in both themes; some browsers fade them further on their own. */
+::placeholder {
+	color: var(--text-muted);
+	opacity: 1;
+}
 /* Some browsers draw a drop-down's list with system colours; give its rows the page's own. */
 select option,
 select optgroup {
@@ -256,7 +261,7 @@ select.input {
 	transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
 .input::placeholder {
-	color: var(--text-faint);
+	color: var(--text-muted);
 }
 .input:hover {
 	border-color: var(--line-strong);
