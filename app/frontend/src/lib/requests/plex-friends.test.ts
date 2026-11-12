@@ -19,9 +19,9 @@ describe('friendsNote', () => {
 describe('friendLine', () => {
 	it('names the Plex account, the last read and the asked count', () => {
 		const at = new Date(Date.now() - 2 * 3600 * 1000).toISOString();
-		expect(friendLine({ user_id: 1, name: 'A', plex_name: 'ann', kid: false, asked: 3, checked_at: at })).toBe('Plex: ann · Read 2 h ago · Asked: 3');
+		expect(friendLine({ user_id: 1, name: 'A', plex_name: 'ann', kid: false, asked: 3, checked_at: at })).toBe('Plex: ann · Watchlist checked 2 h ago · Requests: 3');
 	});
 	it('says not read yet before the first pass and skips an empty Plex name', () => {
-		expect(friendLine({ user_id: 1, name: 'A', plex_name: '', kid: false, asked: 0 })).toBe('Not read yet · Asked: 0');
+		expect(friendLine({ user_id: 1, name: 'A', plex_name: '', kid: false, asked: 0 })).toBe('Watchlist not checked yet · Requests: 0');
 	});
 });

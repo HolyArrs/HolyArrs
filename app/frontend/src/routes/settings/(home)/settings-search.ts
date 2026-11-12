@@ -159,7 +159,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/downloaders', 'replace-removed', 'Replace downloads removed outside HolyArrs', 'removed outside', true),
 	e('/settings/downloaders', 'remove-defaults', 'What removing a download does by default', 'remove delete files turned down search again'),
 	e('/settings/downloaders', 'try-next-dl', 'Try the next Downloader', 'fallback downloader', true),
-	e('/settings/downloaders', 'st-gap', 'Seconds between sends to one Downloader', 'delay seconds send', true),
+	e('/settings/downloaders', 'st-gap', 'Wait between sends (seconds)', 'delay seconds send gap', true),
 	e('/settings/pick-rules', 'pick-rules-card', 'Quality', 'quality profile quality formats resolution 4k 1080p pick rules'),
 	// The editor works on one set at a time, so these open the list to pick which set to change.
 	e('/settings/pick-rules', 'pick-rules-card', 'New quality set', 'make add create copy new quality profile'),

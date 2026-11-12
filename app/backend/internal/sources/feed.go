@@ -142,7 +142,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			cl, err := s.client(ctx, src)
 			var items []Item
 			if err == nil {
-				cats := src.Categories["movie"]
+				cats := movieFeedCategories(src)
 				if handlesTV(src) && showsWanted {
 
 					// One feed read serves movies and shows.

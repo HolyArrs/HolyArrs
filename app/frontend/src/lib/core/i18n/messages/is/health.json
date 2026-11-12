@@ -262,7 +262,7 @@
 	"health.word.working": "Virkar",
 	"health.check.clearWaiting": "Niðurhöl sem bíða hreinsunar",
 	"health.check.saveFolder": "Vistunarmappa fyrir",
-	"health.check.saveFolderWhy": "{app} er ekki með vistunarmöppu, svo HolyArrs getur ekki flutt inn niðurhöl sem eru búin. Bættu við slóðapari í Stillingar > Niðurhalarar.",
+	"health.check.saveFolderWhy": "{app} er ekki með vistunarmöppu, svo HolyArrs getur ekki flutt inn niðurhöl sem eru búin. Bættu við slóðapari í Stillingar › Niðurhalarar.",
 	"health.kind.clearWaiting": "Niðurhöl sem bíða hreinsunar",
 	"health.kind.saveFolder": "Vistunarmappa niðurhalara"
 }

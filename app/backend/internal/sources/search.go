@@ -281,6 +281,10 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	}
 	q.TMDb, _ = strconv.Atoi(ti.SourceIDs["tmdb"])
 	isShow := ti.Kind == "show"
+	if !isShow && ti.Kind != "movie" {
+		r.SetResult(map[string]any{"skipped": "a " + ti.Kind + " is not searched as a movie"})
+		return nil
+	}
 	var shows showSet
 	var ep *epSlot
 	if isShow {

@@ -50,6 +50,41 @@ func TestServiceRegisterSendsNoCredential(t *testing.T) {
 	}
 }
 
+// A refused registration (429) with Retry-After is not tried again before
+// that time: the calm busy answer comes back without asking the server.
+func TestServiceRegisterWaitsOutRetryAfter(t *testing.T) {
+	var calls, status atomic.Int32
+	status.Store(429)
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		if status.Load() == 429 {
+			w.Header().Set("Retry-After", "120")
+			w.WriteHeader(429)
+			_, _ = w.Write([]byte(`{"error":{"code":"registration_limit"}}`))
+			return
+		}
+		w.WriteHeader(201)
+		_, _ = w.Write([]byte(`{"schema_version":1,"` + "tok" + `en":"` + fixtureValue + `"}`))
+	})
+	if _, err := s.Register(context.Background()); !errors.Is(err, ErrServiceBusy) {
+		t.Fatalf("429: %v", err)
+	}
+	status.Store(201)
+	if _, err := s.Register(context.Background()); !errors.Is(err, ErrServiceBusy) || calls.Load() != 1 {
+		t.Fatalf("asked again before Retry-After: %v, %d calls", err, calls.Load())
+	}
+	s.regHold.mu.Lock()
+	left := time.Until(s.regHold.until)
+	s.regHold.until = time.Now().Add(-time.Second)
+	s.regHold.mu.Unlock()
+	if left < 100*time.Second || left > 120*time.Second {
+		t.Fatalf("held for %v, want about 120s", left)
+	}
+	if tok, err := s.Register(context.Background()); err != nil || tok != fixtureValue || calls.Load() != 2 {
+		t.Fatalf("after Retry-After: %q %v, %d calls", tok, err, calls.Load())
+	}
+}
+
 func TestHealthCachedForTTL(t *testing.T) {
 	var calls, status atomic.Int32
 	status.Store(200)

@@ -66,6 +66,10 @@ func (h *TitleSearchHandlers) searchTitle(w http.ResponseWriter, r *http.Request
 		h.Artist(w, r, t, in)
 		return
 	}
+	if t.Kind != "movie" {
+		webserver.Fail(w, http.StatusBadRequest, "this kind of title can't be searched")
+		return
+	}
 	if in.ItemID != nil || in.Season != nil || in.VersionID != nil || in.AlbumID != nil {
 		webserver.Fail(w, http.StatusBadRequest, "item_id, season, album_id and version_id are for shows and artists")
 		return

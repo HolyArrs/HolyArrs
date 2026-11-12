@@ -189,6 +189,11 @@ func (a *Auth) localPeer(r *http.Request) bool {
 // proxy warning saw; a proxy that never sends any forwarding header and is
 // not listed cannot be told apart from a home device, which is why the
 // Settings card asks the owner to list it.
+//
+// The container's own gateway is the exception to that memory: on a Docker
+// bridge every home device arrives as the gateway, so one device sending a
+// forwarding header would end the skip for the whole household. There only
+// the request that carries the header is refused.
 func (a *Auth) strictLocal(r *http.Request) bool {
 	if !a.skipLocal.Load() || r.Header.Get(outbound.SelfCallHeader) != "" || !a.hostAllowed(r) {
 		return false
@@ -204,12 +209,15 @@ func (a *Auth) strictLocal(r *http.Request) bool {
 		}
 		return a.localPeer(r)
 	}
-	if ip == nil || a.trustedProxy(ip) || a.seenProxy(ip) {
+	if ip == nil || a.trustedProxy(ip) {
 		return false
 	}
 	// The container's own gateway is how LAN visits arrive on a Docker
 	// bridge; it counts while the skip is on (local_gateway.go).
-	return a.isLocal(ip.String()) || ownGateway(ip)
+	if ownGateway(ip) {
+		return true
+	}
+	return !a.seenProxy(ip) && a.isLocal(ip.String())
 }
 
 // anyForwardHeader says whether the request carries any proxy forwarding header.

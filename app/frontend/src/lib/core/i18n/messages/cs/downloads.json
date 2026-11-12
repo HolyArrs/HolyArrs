@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Skeny",
 	"downloads.ht.routine.searches.hint": "Hledání release a kontroly kanálů.",
 	"downloads.ht.routine.searches.label": "Hledání",
-	"downloads.import.copy": "kopírování",
+	"downloads.import.copy": "Zkopírováno",
 	"downloads.import.hardlink": "pevný odkaz",
 	"downloads.import.move": "přesun",
 	"downloads.import.noFile": "žádný soubor nešlo umístit",

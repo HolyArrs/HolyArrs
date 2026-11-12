@@ -14,7 +14,7 @@
 	"health.check.waiting": "Downloads die op bestanden wachten",
 	"health.check.clearWaiting": "Downloads die op opruimen wachten",
 	"health.check.saveFolder": "Opslagmap voor",
-	"health.check.saveFolderWhy": "{app} heeft geen opslagmap, dus HolyArrs kan de voltooide downloads niet importeren. Voeg een paar paden toe in Instellingen > Downloaders.",
+	"health.check.saveFolderWhy": "{app} heeft geen opslagmap, dus HolyArrs kan de voltooide downloads niet importeren. Voeg een paar paden toe in Instellingen › Downloaders.",
 	"health.day.ahead": "{count} vooruit",
 	"health.day.cancelled": "werd geannuleerd",
 	"health.day.due": "aan de beurt",

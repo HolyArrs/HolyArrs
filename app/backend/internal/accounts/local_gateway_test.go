@@ -48,6 +48,50 @@ func TestSkipLocalOwnGateway(t *testing.T) {
 	}
 }
 
+// On a Docker bridge every home device shows up as the gateway. One of them
+// sending a forwarding header (a browser extension, a phone proxy) is refused
+// itself, but must not end the skip for the header-free visits that follow
+// from the same address. An address that is not the gateway and was seen
+// forwarding still never skips without headers.
+func TestGatewayStrayForwardHeaderDoesNotEndSkip(t *testing.T) {
+	old := readGateways
+	readGateways = func() []net.IP { return []net.IP{net.ParseIP("172.18.0.1")} }
+	t.Cleanup(func() { readGateways = old; resetGateways() })
+	resetGateways()
+	nets, err := parseLocalNets([]string{"192.168.1.0/24"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	try := func(a *Auth, peer, xff string) bool {
+		r := httptest.NewRequest("GET", "/api/v1/titles", nil)
+		r.RemoteAddr, r.Host = peer+":5000", "192.168.1.9:6262"
+		if xff != "" {
+			r.Header.Set("X-Forwarded-For", xff)
+		}
+		return a.strictLocal(r)
+	}
+	a := setup(t, Options{}).a
+	a.localNets.Store(nets)
+	a.skipLocal.Store(true)
+	if try(a, "172.18.0.1", "192.168.1.20") {
+		t.Fatal("a forwarding header from the untrusted gateway skipped sign-in")
+	}
+	if !try(a, "172.18.0.1", "") {
+		t.Error("one stray forwarding header ended the skip for everyone behind the gateway")
+	}
+	if try(a, "172.18.0.1", "192.168.1.20") {
+		t.Error("the header-carrying request skipped sign-in the second time")
+	}
+	// Not the gateway: the memory still holds.
+	b := setup(t, Options{}).a
+	b.localNets.Store(nets)
+	b.skipLocal.Store(true)
+	try(b, "192.168.1.5", "8.8.8.8")
+	if try(b, "192.168.1.5", "") {
+		t.Error("a home address seen forwarding skipped sign-in without headers")
+	}
+}
+
 // parseRoute reads the default gateways from /proc/net/route text.
 func TestParseRouteGateways(t *testing.T) {
 	in := "Iface\tDestination\tGateway \tFlags\tRefCnt\tUse\tMetric\tMask\t\tMTU\tWindow\tIRTT\n" +
