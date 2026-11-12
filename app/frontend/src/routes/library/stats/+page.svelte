@@ -162,7 +162,7 @@
 	}
 	.nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.bar { height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--text) 8%, transparent); overflow: hidden; }
-	.bar i { display: block; height: 100%; background: var(--accent); transform-origin: left; transition: transform 320ms cubic-bezier(.22, 1, .36, 1); }
+	.bar i { display: block; height: 100%; background: var(--accent); transform-origin: left; transition: transform var(--dur-slow) var(--ease-out); }
 	:global([dir='rtl']) .bar i { transform-origin: right; }
 	.num { justify-self: end; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.num, .tile b { direction: ltr; unicode-bidi: isolate; }

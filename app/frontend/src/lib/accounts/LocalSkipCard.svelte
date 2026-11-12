@@ -270,6 +270,8 @@
 	.tile.sk { cursor: default; }
 	.tile:hover { border-color: var(--line-strong, var(--text-muted)); }
 	.tile.on { border-color: var(--ha-red); background: color-mix(in srgb, var(--ha-red) 14%, var(--surface-2)); }
+	/* The red tint drops grey text under 4.5:1; pull it toward the main text colour. */
+	.tile.on .muted { color: color-mix(in srgb, var(--text-muted) 70%, var(--text)); }
 	.tile:has(input:focus-visible) { outline: 2px solid var(--focus, var(--ha-red)); outline-offset: 2px; }
 	.who { display: grid; min-width: 0; flex: 1; }
 	.who > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
