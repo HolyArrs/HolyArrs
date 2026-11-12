@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { existsSync, readFileSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { browserLocale } from './i18n.svelte.ts';
+import { browserLocale, readPack } from './i18n.svelte.ts';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const src = join(here, '..', '..', '..');
@@ -43,6 +44,16 @@ describe('message keys', () => {
 		for (const { f, text } of sources) {
 			for (const m of text.matchAll(/\b(?:t|say|tr)\('([a-z][\w-]*(?:\.[\w-]+)+)'\s*[,)]/g)) if (!(m[1] in en)) missing.push(`${m[1]} (${f.slice(src.length + 1)})`);
 			for (const m of text.matchAll(/<Words\s+key="([^"]+)"/g)) if (!(m[1] in en)) missing.push(`${m[1]} (${f.slice(src.length + 1)})`);
+		}
+		expect(missing).toEqual([]);
+	});
+
+	// A line one language lacks shows in English there, so every line (server lines too) ships in every language.
+	it('every language has every English line', () => {
+		const missing: string[] = [];
+		for (const [l, words] of langs) {
+			if (l === 'en') continue;
+			for (const k of Object.keys(en)) if (typeof words[k] !== 'string') missing.push(`${l}: ${k}`);
 		}
 		expect(missing).toEqual([]);
 	});
@@ -88,5 +99,49 @@ describe('browserLocale', () => {
 		expect(browserLocale(['tr-TR'])).toBe('tr');
 		expect(browserLocale(['xx'])).toBe('en');
 		expect(browserLocale(['xx', 'de-AT'])).toBe('de');
+	});
+});
+
+describe('readPack', () => {
+	const kept = new Map<string, string>();
+	const reload = vi.fn();
+	const fitFile = join(here, 'packs', 'fit.json');
+	const fit = existsSync(fitFile) ? (JSON.parse(readFileSync(fitFile, 'utf8')) as { fit: string }).fit : '';
+	const answer = (status: number, body: unknown = {}) => vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(body), { status })));
+	beforeEach(() => {
+		kept.clear();
+		reload.mockReset();
+		vi.stubGlobal('sessionStorage', { getItem: (k: string) => kept.get(k) ?? null, setItem: (k: string, v: string) => void kept.set(k, v), removeItem: (k: string) => void kept.delete(k) });
+		vi.stubGlobal('location', { reload });
+	});
+	afterEach(() => vi.unstubAllGlobals());
+
+	it('reloads the page once when the pack is gone after an update', async () => {
+		answer(404);
+		expect(await readPack('/_app/immutable/assets/fr.old.json')).toBe('reload');
+		expect(reload).toHaveBeenCalledTimes(1);
+		// The reloaded page still gets no pack: it shows English instead of reloading again.
+		expect(await readPack('/_app/immutable/assets/fr.old.json')).toBeNull();
+		expect(reload).toHaveBeenCalledTimes(1);
+	});
+
+	it('does not reload for other failures', async () => {
+		answer(500);
+		expect(await readPack('/_app/immutable/assets/fr.json')).toBeNull();
+		answer(200, { fit: 'not-this-build', values: [] });
+		expect(await readPack('/_app/immutable/assets/fr.json')).toBeNull();
+		expect(reload).not.toHaveBeenCalled();
+	});
+
+	it('a pack that loads lets a later update reload again', async () => {
+		answer(404);
+		await readPack('/_app/immutable/assets/fr.old.json');
+		const keys = Object.keys(en).sort();
+		answer(200, { fit, values: keys.map((k, i) => (i === 0 ? 'Bonjour' : null)) });
+		const words = await readPack('/_app/immutable/assets/fr.json');
+		expect(words && typeof words === 'object' ? [words[keys[0]], words[keys[1]]] : words).toEqual(['Bonjour', en[keys[1]]]);
+		answer(404);
+		expect(await readPack('/_app/immutable/assets/fr.old.json')).toBe('reload');
+		expect(reload).toHaveBeenCalledTimes(2);
 	});
 });

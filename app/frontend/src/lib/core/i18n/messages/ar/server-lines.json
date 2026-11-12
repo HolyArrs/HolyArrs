@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} مقيّد على الخادم؛ أكّد قبل استيراده بصفة بالغ",
 	"server.accounts.address-must-look-like-http-192": "يجب أن يبدو عنوان {p} هكذا http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} ألغى ربط تسجيل الدخول عبر {word} لـ {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} ألغى ربط تسجيل دخوله عبر {word}",
+	"server.accounts.unlinked-the-sign-in-of": "{name} ألغى ربط تسجيل الدخول عبر {word} لـ {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} ألغى ربط تسجيل دخوله عبر {word}",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} مرتبط بالفعل بمستخدم HolyArrs آخر",
 	"server.accounts.a-key-cannot-make-a-key": "لا يستطيع مفتاح إنشاء مفتاح بنطاق لا يملكه",
 	"server.accounts.ai-connections-are-off": "اتصالات الذكاء الاصطناعي متوقفة",
@@ -1223,5 +1223,19 @@
 	"server.requests.this-plex-account-no-longer-shares": "لم يعد حساب Plex هذا يشارك خادم المالك، لذا لا تُقرأ قائمة مشاهدته.",
 	"server.requests.plex-showed-an-empty-watchlist-if": "أظهر Plex قائمة مشاهدة فارغة. إن كانت فيها عناوين، فقد يخفيها إعداد الخصوصية عن الأصدقاء.",
 	"server.requests.plex-did-not-share-this-watchlist": "لم يشارك Plex قائمة المشاهدة هذه مع حساب Plex الخاص بالمالك. قد يخفيها إعداد الخصوصية عن الأصدقاء.",
-	"server.requests.plex-refused-the-owner-s-plex": "رفض Plex ربط Plex الخاص بالمالك. يمكن للمالك ربط Plex مرة أخرى في الإعدادات."
+	"server.requests.plex-refused-the-owner-s-plex": "رفض Plex ربط Plex الخاص بالمالك. يمكن للمالك ربط Plex مرة أخرى في الإعدادات.",
+	"server.accounts.the-stage": "المرحلة {name}: {past}",
+	"server.downloads.download": "التنزيل {externalid}: {state}",
+	"server.downloads.download-2": "التنزيل: {reason}",
+	"server.migrate.an-unclosed": "قوس { غير مغلق",
+	"server.migrate.no-folder-at-on-this-server-4": "لا مجلد في {lib} على هذا الخادم؛ أضف قاعدة مسار",
+	"server.migrate.prowlarr-s-api-key-line": "مفتاح API الخاص بـ Prowlarr",
+	"server.migrate.there-is-no-saved-key-for-2": "لا يوجد مفتاح محفوظ لهذا التطبيق على هذا العنوان؛ اكتب مفتاحه",
+	"server.migrate.uses-which-has-no-holyarrs-word": "يستخدم {{w}}، ولا توجد له كلمة في HolyArrs",
+	"server.shows.tmdb-could-not-be-read": "تعذّرت قراءة TMDB: {error}",
+	"server.accounts.paused-the-stage": "{name} أوقف المرحلة {stage} مؤقتًا",
+	"server.accounts.restarted-the-stage": "{name} أعاد تشغيل المرحلة {stage}",
+	"server.accounts.resumed-the-stage": "{name} استأنف المرحلة {stage}",
+	"server.downloads.download-removed": "أُزيل التنزيل",
+	"server.downloads.download-removed-by": "{name} أزال التنزيل"
 }

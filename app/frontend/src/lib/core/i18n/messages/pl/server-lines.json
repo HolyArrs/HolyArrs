@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} ma ograniczenia na serwerze; potwierdź przed zaimportowaniem jako dorosłego",
 	"server.accounts.address-must-look-like-http-192": "adres {p} musi wyglądać jak http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r}: rozłączono logowanie {word} użytkownika {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r}: rozłączono swoje logowanie {word}",
+	"server.accounts.unlinked-the-sign-in-of": "{name}: rozłączono logowanie {word} użytkownika {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name}: rozłączono swoje logowanie {word}",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} jest już połączone z innym użytkownikiem HolyArrs",
 	"server.accounts.a-key-cannot-make-a-key": "klucz nie może utworzyć klucza z zakresem, którego nie ma",
 	"server.accounts.ai-connections-are-off": "połączenia AI są wyłączone",
@@ -1223,5 +1223,19 @@
 	"server.requests.this-plex-account-no-longer-shares": "To konto Plex nie ma już udostępnionego serwera właściciela, więc jego lista obserwowanych nie jest odczytywana.",
 	"server.requests.plex-showed-an-empty-watchlist-if": "Plex pokazał pustą listę obserwowanych. Jeśli są na niej tytuły, ustawienie prywatności może ukrywać ją przed znajomymi.",
 	"server.requests.plex-did-not-share-this-watchlist": "Plex nie udostępnił tej listy obserwowanych kontu Plex właściciela. Ustawienie prywatności może ukrywać ją przed znajomymi.",
-	"server.requests.plex-refused-the-owner-s-plex": "Plex odrzucił połączenie Plex właściciela. Właściciel może ponownie połączyć Plex w Ustawieniach."
+	"server.requests.plex-refused-the-owner-s-plex": "Plex odrzucił połączenie Plex właściciela. Właściciel może ponownie połączyć Plex w Ustawieniach.",
+	"server.accounts.the-stage": "Etap {name}: {past}",
+	"server.downloads.download": "Pobieranie {externalid}: {state}",
+	"server.downloads.download-2": "Pobieranie: {reason}",
+	"server.migrate.an-unclosed": "niezamknięty {",
+	"server.migrate.no-folder-at-on-this-server-4": "brak folderu {lib} na tym serwerze; dodaj regułę ścieżki",
+	"server.migrate.prowlarr-s-api-key-line": "klucz API Prowlarra",
+	"server.migrate.there-is-no-saved-key-for-2": "nie ma zapisanego klucza dla tej aplikacji pod tym adresem; wpisz jej klucz",
+	"server.migrate.uses-which-has-no-holyarrs-word": "używa {{w}}, dla którego HolyArrs nie ma słowa",
+	"server.shows.tmdb-could-not-be-read": "Nie udało się odczytać TMDB: {error}",
+	"server.accounts.paused-the-stage": "{name}: wstrzymano etap {stage}",
+	"server.accounts.restarted-the-stage": "{name}: zrestartowano etap {stage}",
+	"server.accounts.resumed-the-stage": "{name}: wznowiono etap {stage}",
+	"server.downloads.download-removed": "Usunięto pobieranie",
+	"server.downloads.download-removed-by": "{name}: usunięto pobieranie"
 }

@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} 在服务器上受到限制；请确认后再将其作为成年人导入",
 	"server.accounts.address-must-look-like-http-192": "{p} 地址必须形如 http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} 取消关联了 {userid} 的 {word} 登录",
-	"server.accounts.unlinked-their-sign-in": "{r} 取消关联了自己的 {word} 登录",
+	"server.accounts.unlinked-the-sign-in-of": "{name} 取消关联了 {name2} 的 {word} 登录",
+	"server.accounts.unlinked-their-sign-in": "{name} 取消关联了自己的 {word} 登录",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} 已关联到另一个 HolyArrs 用户",
 	"server.accounts.a-key-cannot-make-a-key": "密钥不能创建权限范围超出自身的密钥",
 	"server.accounts.ai-connections-are-off": "AI 连接已关闭",
@@ -1223,5 +1223,19 @@
 	"server.requests.this-plex-account-no-longer-shares": "这个 Plex 账户不再共享所有者的服务器，因此不会读取它的想看清单。",
 	"server.requests.plex-showed-an-empty-watchlist-if": "Plex 显示的想看清单是空的。如果其中有内容，可能是隐私设置对好友隐藏了它。",
 	"server.requests.plex-did-not-share-this-watchlist": "Plex 没有把这个想看清单共享给所有者的 Plex 账户。可能是隐私设置对好友隐藏了它。",
-	"server.requests.plex-refused-the-owner-s-plex": "Plex 拒绝了所有者的 Plex 关联。所有者可以在设置中重新关联 Plex。"
+	"server.requests.plex-refused-the-owner-s-plex": "Plex 拒绝了所有者的 Plex 关联。所有者可以在设置中重新关联 Plex。",
+	"server.accounts.the-stage": "环节 {name}：{past}",
+	"server.downloads.download": "下载 {externalid}：{state}",
+	"server.downloads.download-2": "下载：{reason}",
+	"server.migrate.an-unclosed": "有未闭合的 {",
+	"server.migrate.no-folder-at-on-this-server-4": "这台服务器上没有 {lib} 这个文件夹；请添加路径规则",
+	"server.migrate.prowlarr-s-api-key-line": "Prowlarr 的 API 密钥",
+	"server.migrate.there-is-no-saved-key-for-2": "这个地址上的这个应用没有已保存的密钥；请输入它的密钥",
+	"server.migrate.uses-which-has-no-holyarrs-word": "使用了 {{w}}，HolyArrs 中没有对应的词",
+	"server.shows.tmdb-could-not-be-read": "无法读取 TMDB：{error}",
+	"server.accounts.paused-the-stage": "{name} 暂停了环节 {stage}",
+	"server.accounts.restarted-the-stage": "{name} 重启了环节 {stage}",
+	"server.accounts.resumed-the-stage": "{name} 恢复了环节 {stage}",
+	"server.downloads.download-removed": "已移除下载",
+	"server.downloads.download-removed-by": "{name} 移除了下载"
 }

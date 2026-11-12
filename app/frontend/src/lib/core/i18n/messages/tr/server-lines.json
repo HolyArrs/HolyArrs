@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} sunucuda kısıtlı; yetişkin olarak içe aktarmadan önce onayla",
 	"server.accounts.address-must-look-like-http-192": "{p} adresi http://192.168.1.10:8096 gibi görünmeli",
-	"server.accounts.unlinked-the-sign-in-of": "{r}, {userid} kullanıcısının {word} girişinin bağlantısını kaldırdı",
-	"server.accounts.unlinked-their-sign-in": "{r} kendi {word} girişinin bağlantısını kaldırdı",
+	"server.accounts.unlinked-the-sign-in-of": "{name}, {name2} kullanıcısının {word} girişinin bağlantısını kaldırdı",
+	"server.accounts.unlinked-their-sign-in": "{name} kendi {word} girişinin bağlantısını kaldırdı",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} zaten başka bir HolyArrs kullanıcısına bağlı",
 	"server.accounts.a-key-cannot-make-a-key": "bir anahtar, sahip olmadığı kapsamla anahtar oluşturamaz",
 	"server.accounts.ai-connections-are-off": "Yapay zekâ bağlantıları kapalı",
@@ -1223,5 +1223,19 @@
 	"server.requests.this-plex-account-no-longer-shares": "Bu Plex hesabı artık sahibin sunucusunu paylaşmıyor, bu yüzden izleme listesi okunmuyor.",
 	"server.requests.plex-showed-an-empty-watchlist-if": "Plex boş bir izleme listesi gösterdi. Listede başlıklar varsa gizlilik ayarı onu arkadaşlardan gizliyor olabilir.",
 	"server.requests.plex-did-not-share-this-watchlist": "Plex bu izleme listesini sahibin Plex hesabıyla paylaşmadı. Gizlilik ayarı onu arkadaşlardan gizliyor olabilir.",
-	"server.requests.plex-refused-the-owner-s-plex": "Plex, sahibin Plex bağlantısını reddetti. Sahip, Plex'i Ayarlar'da yeniden bağlayabilir."
+	"server.requests.plex-refused-the-owner-s-plex": "Plex, sahibin Plex bağlantısını reddetti. Sahip, Plex'i Ayarlar'da yeniden bağlayabilir.",
+	"server.accounts.the-stage": "{name} aşaması: {past}",
+	"server.downloads.download": "İndirme {externalid}: {state}",
+	"server.downloads.download-2": "İndirme: {reason}",
+	"server.migrate.an-unclosed": "kapatılmamış bir {",
+	"server.migrate.no-folder-at-on-this-server-4": "bu sunucuda {lib} yolunda klasör yok; bir yol kuralı ekle",
+	"server.migrate.prowlarr-s-api-key-line": "Prowlarr'ın API anahtarı",
+	"server.migrate.there-is-no-saved-key-for-2": "bu adreste bu uygulama için kayıtlı anahtar yok; anahtarını yaz",
+	"server.migrate.uses-which-has-no-holyarrs-word": "{{w}} kullanıyor; HolyArrs'ta bunun bir karşılığı yok",
+	"server.shows.tmdb-could-not-be-read": "TMDB okunamadı: {error}",
+	"server.accounts.paused-the-stage": "{name}, {stage} aşamasını duraklattı",
+	"server.accounts.restarted-the-stage": "{name}, {stage} aşamasını yeniden başlattı",
+	"server.accounts.resumed-the-stage": "{name}, {stage} aşamasını sürdürdü",
+	"server.downloads.download-removed": "İndirme kaldırıldı",
+	"server.downloads.download-removed-by": "İndirme {name} tarafından kaldırıldı"
 }

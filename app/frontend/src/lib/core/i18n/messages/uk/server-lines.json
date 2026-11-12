@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} має обмеження на сервері; підтверди перед імпортом як дорослого",
 	"server.accounts.address-must-look-like-http-192": "адреса {p} має виглядати як http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} відключив(ла) вхід {word} для {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} відключив(ла) свій вхід {word}",
+	"server.accounts.unlinked-the-sign-in-of": "{name} відключив(ла) вхід {word} для {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} відключив(ла) свій вхід {word}",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} уже підключено до іншого користувача HolyArrs",
 	"server.accounts.a-key-cannot-make-a-key": "ключ не може створити ключ із правами, яких сам не має",
 	"server.accounts.ai-connections-are-off": "підключення ШІ вимкнено",
@@ -1223,5 +1223,19 @@
 	"server.requests.this-plex-account-no-longer-shares": "Цей обліковий запис Plex більше не має доступу до сервера власника, тому його список перегляду не читається.",
 	"server.requests.plex-showed-an-empty-watchlist-if": "Plex показав порожній список перегляду. Якщо в ньому є назви, налаштування приватності може приховувати його від друзів.",
 	"server.requests.plex-did-not-share-this-watchlist": "Plex не поділився цим списком перегляду з обліковим записом Plex власника. Налаштування приватності може приховувати його від друзів.",
-	"server.requests.plex-refused-the-owner-s-plex": "Plex відхилив підключення Plex власника. Власник може знову підключити Plex у налаштуваннях."
+	"server.requests.plex-refused-the-owner-s-plex": "Plex відхилив підключення Plex власника. Власник може знову підключити Plex у налаштуваннях.",
+	"server.accounts.the-stage": "Етап {name}: {past}",
+	"server.downloads.download": "Завантаження {externalid}: {state}",
+	"server.downloads.download-2": "Завантаження: {reason}",
+	"server.migrate.an-unclosed": "незакрита {",
+	"server.migrate.no-folder-at-on-this-server-4": "на цьому сервері немає теки {lib}; додай правило шляху",
+	"server.migrate.prowlarr-s-api-key-line": "API-ключ Prowlarr",
+	"server.migrate.there-is-no-saved-key-for-2": "для цього застосунку за цією адресою немає збереженого ключа; введи його ключ",
+	"server.migrate.uses-which-has-no-holyarrs-word": "використовує {{w}}, для якого в HolyArrs немає слова",
+	"server.shows.tmdb-could-not-be-read": "Не вдалося прочитати TMDB: {error}",
+	"server.accounts.paused-the-stage": "{name}: етап {stage} призупинено",
+	"server.accounts.restarted-the-stage": "{name}: етап {stage} перезапущено",
+	"server.accounts.resumed-the-stage": "{name}: етап {stage} відновлено",
+	"server.downloads.download-removed": "Завантаження видалено",
+	"server.downloads.download-removed-by": "{name}: завантаження видалено"
 }

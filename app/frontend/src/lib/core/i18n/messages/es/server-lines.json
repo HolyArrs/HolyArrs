@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} tiene restricciones en el servidor; confirma antes de importarlo como adulto",
 	"server.accounts.address-must-look-like-http-192": "la dirección de {p} debe tener un formato como http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} desvinculó el inicio de sesión de {word} de {userid}",
-	"server.accounts.unlinked-their-sign-in": "{r} desvinculó su inicio de sesión de {word}",
+	"server.accounts.unlinked-the-sign-in-of": "{name} desvinculó el inicio de sesión de {word} de {name2}",
+	"server.accounts.unlinked-their-sign-in": "{name} desvinculó su inicio de sesión de {word}",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} ya está vinculado a otro usuario de HolyArrs",
 	"server.accounts.a-key-cannot-make-a-key": "una clave no puede crear una clave con un alcance que no tiene",
 	"server.accounts.ai-connections-are-off": "las conexiones de IA están desactivadas",
@@ -1223,5 +1223,19 @@
 	"server.requests.this-plex-account-no-longer-shares": "Esta cuenta de Plex ya no comparte el servidor del propietario, así que su lista de seguimiento no se lee.",
 	"server.requests.plex-showed-an-empty-watchlist-if": "Plex mostró una lista de seguimiento vacía. Si tiene títulos, su ajuste de privacidad puede ocultarla a los amigos.",
 	"server.requests.plex-did-not-share-this-watchlist": "Plex no compartió esta lista de seguimiento con la cuenta de Plex del propietario. Su ajuste de privacidad puede ocultarla a los amigos.",
-	"server.requests.plex-refused-the-owner-s-plex": "Plex rechazó la vinculación de Plex del propietario. El propietario puede volver a vincular Plex en Ajustes."
+	"server.requests.plex-refused-the-owner-s-plex": "Plex rechazó la vinculación de Plex del propietario. El propietario puede volver a vincular Plex en Ajustes.",
+	"server.accounts.the-stage": "Etapa {name}: {past}",
+	"server.downloads.download": "Descarga {externalid}: {state}",
+	"server.downloads.download-2": "Descarga: {reason}",
+	"server.migrate.an-unclosed": "una { sin cerrar",
+	"server.migrate.no-folder-at-on-this-server-4": "no hay ninguna carpeta en {lib} en este servidor; añade una regla de ruta",
+	"server.migrate.prowlarr-s-api-key-line": "clave API de Prowlarr",
+	"server.migrate.there-is-no-saved-key-for-2": "no hay una clave guardada para esta app en esta dirección; escribe su clave",
+	"server.migrate.uses-which-has-no-holyarrs-word": "usa {{w}}, que no tiene palabra en HolyArrs",
+	"server.shows.tmdb-could-not-be-read": "No se pudo leer TMDB: {error}",
+	"server.accounts.paused-the-stage": "{name} pausó la etapa {stage}",
+	"server.accounts.restarted-the-stage": "{name} reinició la etapa {stage}",
+	"server.accounts.resumed-the-stage": "{name} reanudó la etapa {stage}",
+	"server.downloads.download-removed": "Descarga quitada",
+	"server.downloads.download-removed-by": "{name} quitó la descarga"
 }

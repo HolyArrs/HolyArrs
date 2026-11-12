@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} पर सर्वर में पाबंदी है; वयस्क के तौर पर इंपोर्ट करने से पहले पक्का करें",
 	"server.accounts.address-must-look-like-http-192": "{p} का पता http://192.168.1.10:8096 जैसा होना चाहिए",
-	"server.accounts.unlinked-the-sign-in-of": "{r} ने {userid} का {word} साइन-इन अनलिंक किया",
-	"server.accounts.unlinked-their-sign-in": "{r} ने अपना {word} साइन-इन अनलिंक किया",
+	"server.accounts.unlinked-the-sign-in-of": "{name} ने {name2} का {word} साइन-इन अनलिंक किया",
+	"server.accounts.unlinked-their-sign-in": "{name} ने अपना {word} साइन-इन अनलिंक किया",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} पहले से दूसरे HolyArrs यूज़र से लिंक है",
 	"server.accounts.a-key-cannot-make-a-key": "कोई कुंजी ऐसे स्कोप वाली कुंजी नहीं बना सकती जो उसके पास खुद नहीं है",
 	"server.accounts.ai-connections-are-off": "AI कनेक्शन बंद हैं",
@@ -1223,5 +1223,19 @@
 	"server.requests.this-plex-account-no-longer-shares": "यह Plex अकाउंट अब ओनर का सर्वर शेयर नहीं करता, इसलिए इसकी वॉचलिस्ट नहीं पढ़ी जाती।",
 	"server.requests.plex-showed-an-empty-watchlist-if": "Plex ने खाली वॉचलिस्ट दिखाई। अगर इसमें टाइटल हैं, तो इसकी प्राइवेसी सेटिंग इसे दोस्तों से छिपा सकती है।",
 	"server.requests.plex-did-not-share-this-watchlist": "Plex ने यह वॉचलिस्ट ओनर के Plex अकाउंट के साथ शेयर नहीं की। इसकी प्राइवेसी सेटिंग इसे दोस्तों से छिपा सकती है।",
-	"server.requests.plex-refused-the-owner-s-plex": "Plex ने ओनर का Plex लिंक नहीं माना। ओनर सेटिंग में Plex फिर से लिंक कर सकता है।"
+	"server.requests.plex-refused-the-owner-s-plex": "Plex ने ओनर का Plex लिंक नहीं माना। ओनर सेटिंग में Plex फिर से लिंक कर सकता है।",
+	"server.accounts.the-stage": "स्टेज {name}: {past}",
+	"server.downloads.download": "डाउनलोड {externalid}: {state}",
+	"server.downloads.download-2": "डाउनलोड: {reason}",
+	"server.migrate.an-unclosed": "एक { जो बंद नहीं हुआ",
+	"server.migrate.no-folder-at-on-this-server-4": "इस सर्वर पर {lib} पर कोई फ़ोल्डर नहीं है; पाथ नियम जोड़ें",
+	"server.migrate.prowlarr-s-api-key-line": "Prowlarr की API कुंजी",
+	"server.migrate.there-is-no-saved-key-for-2": "इस पते पर इस ऐप की कोई कुंजी सेव नहीं है; उसकी कुंजी डालें",
+	"server.migrate.uses-which-has-no-holyarrs-word": "{{w}} का उपयोग करता है, जिसके लिए HolyArrs में कोई शब्द नहीं है",
+	"server.shows.tmdb-could-not-be-read": "TMDB पढ़ा नहीं जा सका: {error}",
+	"server.accounts.paused-the-stage": "{name} ने स्टेज {stage} रोका",
+	"server.accounts.restarted-the-stage": "{name} ने स्टेज {stage} रीस्टार्ट किया",
+	"server.accounts.resumed-the-stage": "{name} ने स्टेज {stage} फिर शुरू किया",
+	"server.downloads.download-removed": "डाउनलोड हटाया गया",
+	"server.downloads.download-removed-by": "{name} ने डाउनलोड हटाया"
 }

@@ -1,8 +1,8 @@
 {
 	"server.accounts.is-restricted-on-the-server-confirm": "{name} ist auf dem Server eingeschränkt; bestätige das, bevor du die Person als Erwachsene importierst",
 	"server.accounts.address-must-look-like-http-192": "Die Adresse von {p} muss so aussehen: http://192.168.1.10:8096",
-	"server.accounts.unlinked-the-sign-in-of": "{r} hat die Anmeldung per {word} von {userid} getrennt",
-	"server.accounts.unlinked-their-sign-in": "{r} hat die eigene Anmeldung per {word} getrennt",
+	"server.accounts.unlinked-the-sign-in-of": "{name} hat die Anmeldung per {word} von {name2} getrennt",
+	"server.accounts.unlinked-their-sign-in": "{name} hat die eigene Anmeldung per {word} getrennt",
 	"server.accounts.is-already-linked-to-another-holyarrs": "{what} ist schon mit einem anderen HolyArrs-Konto verknüpft",
 	"server.accounts.a-key-cannot-make-a-key": "ein Schlüssel kann keinen Schlüssel mit einem Bereich erstellen, den er selbst nicht hat",
 	"server.accounts.ai-connections-are-off": "KI-Verbindungen sind aus",
@@ -1223,5 +1223,19 @@
 	"server.requests.this-plex-account-no-longer-shares": "Dieses Plex-Konto teilt den Server des Besitzers nicht mehr, daher wird seine Merkliste nicht gelesen.",
 	"server.requests.plex-showed-an-empty-watchlist-if": "Plex hat eine leere Merkliste gezeigt. Wenn sie Titel enthält, verbirgt ihre Datenschutzeinstellung sie vielleicht vor Freunden.",
 	"server.requests.plex-did-not-share-this-watchlist": "Plex hat diese Merkliste nicht mit dem Plex-Konto des Besitzers geteilt. Ihre Datenschutzeinstellung verbirgt sie vielleicht vor Freunden.",
-	"server.requests.plex-refused-the-owner-s-plex": "Plex hat die Plex-Verknüpfung des Besitzers abgelehnt. Der Besitzer kann Plex in den Einstellungen erneut verknüpfen."
+	"server.requests.plex-refused-the-owner-s-plex": "Plex hat die Plex-Verknüpfung des Besitzers abgelehnt. Der Besitzer kann Plex in den Einstellungen erneut verknüpfen.",
+	"server.accounts.the-stage": "Stufe {name}: {past}",
+	"server.downloads.download": "Download {externalid}: {state}",
+	"server.downloads.download-2": "Download: {reason}",
+	"server.migrate.an-unclosed": "eine nicht geschlossene {",
+	"server.migrate.no-folder-at-on-this-server-4": "kein Ordner unter {lib} auf diesem Server; füge eine Pfadregel hinzu",
+	"server.migrate.prowlarr-s-api-key-line": "API-Schlüssel von Prowlarr",
+	"server.migrate.there-is-no-saved-key-for-2": "für diese App gibt es unter dieser Adresse keinen gespeicherten Schlüssel; gib ihren Schlüssel ein",
+	"server.migrate.uses-which-has-no-holyarrs-word": "nutzt {{w}}, wofür HolyArrs kein Wort hat",
+	"server.shows.tmdb-could-not-be-read": "TMDB konnte nicht gelesen werden: {error}",
+	"server.accounts.paused-the-stage": "{name} hat die Stufe {stage} pausiert",
+	"server.accounts.restarted-the-stage": "{name} hat die Stufe {stage} neu gestartet",
+	"server.accounts.resumed-the-stage": "{name} hat die Stufe {stage} fortgesetzt",
+	"server.downloads.download-removed": "Download entfernt",
+	"server.downloads.download-removed-by": "{name} hat den Download entfernt"
 }
