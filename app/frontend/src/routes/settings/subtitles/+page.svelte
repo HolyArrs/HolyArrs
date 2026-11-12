@@ -13,7 +13,6 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import { LanguageWants as WishEditor, accountMissing, accountWords, kindCovers, siteBody, siteForm, siteState, translatorBody, wishProblem, type Language, type Translator, type TranslatorForm, type SiteForm, type SiteKind, type SiteView, type SubtitleSettings } from '#lib/subtitles/index.ts';
 	import { onMount } from 'svelte';
-	import { session } from '#lib/core/session.svelte.ts';
 	import { testCount } from '#lib/core/test-tag.ts';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -103,9 +102,8 @@
 			}),
 			api.get<{ languages: Language[] }>('/subtitles/languages').then((r) => (langs = r.languages)),
 			api.get<Translator>('/settings/subtitles/translator').then(setTranslator),
-			...(session.held('subtitle_sites')
-				? []
-				: [api.get<{ kinds: SiteKind[] }>('/subtitle-sites/kinds').then((r) => (kinds = r.kinds)), loadSites()])
+			api.get<{ kinds: SiteKind[] }>('/subtitle-sites/kinds').then((r) => (kinds = r.kinds)),
+			loadSites()
 		])
 			.catch((e) => (error = message(e)))
 			.finally(() => (loaded = true));
@@ -115,10 +113,10 @@
 		void load();
 		const offs = [
 			live.on('event', (d) => {
-				if (String((d as { Kind?: string })?.Kind) === 'subtitle_site_paused' && !session.held('subtitle_sites')) void loadSites();
+				if (String((d as { Kind?: string })?.Kind) === 'subtitle_site_paused') void loadSites();
 			}),
 			live.on('resync', () => {
-				if (!session.held('subtitle_sites')) void loadSites();
+				void loadSites();
 			})
 		];
 		return () => offs.forEach((off) => off());
@@ -313,7 +311,6 @@
 			</SettingsCard>
 		</form>
 	{/if}
-	{#if !session.held('subtitle_sites')}
 	<section class="sites-sec" id="sites-card" aria-labelledby="h-sites" tabindex="-1">
 		<div class="sites-head">
 			<div>
@@ -449,7 +446,6 @@
 			</ul>
 		{/if}
 	</section>
-	{/if}
 
 	<div class="sc-form sub-more">
 		<SettingsCard id="when-to-look" title={t('settings.subtitles.whenToLook')} description={t('settings.subtitles.whenToLookDesc')}>
