@@ -68,6 +68,17 @@ Set these before start. If `HOLYARRS_OIDC_ENABLED` is present at all, even as `f
 
 A bad setup stops HolyArrs from starting. Steps are in [Sign-in and passwords](../users/sign-in.md).
 
+## Proxy variables
+
+HolyArrs ignores `HTTP_PROXY`, `HTTPS_PROXY` and `ALL_PROXY`, in capitals or lowercase, on purpose. Before every outside connection, HolyArrs checks the real address it is about to reach, so that a lookup can never be steered to your local network. A proxy from the environment would connect for HolyArrs, to an address HolyArrs never sees, and that check would mean nothing.
+
+When one of them is set, the log says so at start and the doctor shows a warning under **Network**. Posters, metadata and update checks still connect directly, and fail where your network blocks them. There is no app-wide proxy setting.
+
+What to do instead:
+
+- Let HolyArrs reach the addresses in [Outside addresses](../run/outside-hosts.md) through your firewall.
+- For a Source that needs another route, set **Proxy** on that Source. It takes an HTTP or SOCKS5 proxy. See [Sources](../downloads/sources.md#for-experts).
+
 ## For experts
 
 <details class="ha-more"><summary>Metadata</summary>
