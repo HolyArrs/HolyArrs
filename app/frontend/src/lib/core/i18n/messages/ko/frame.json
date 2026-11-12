@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "모든 위치",
 	"frame.layout.newWord": "새 항목",
 	"frame.layout.accountName": "계정 · {name}",
-	"frame.layout.hostRefused": "<b>{host}에서는 변경 사항을 저장할 수 없습니다.</b> HolyArrs는 허용한 이름에서만 저장합니다. IP 주소로 한 번 연 다음 설정 › 로그인 및 보안 › 허용된 호스트 이름에 {host}을(를) 추가하세요. 다시 시작할 필요는 없습니다."
+	"frame.layout.hostRefused": "<b>{host}에서는 변경 사항을 저장할 수 없습니다.</b> HolyArrs는 허용한 이름에서만 저장합니다. IP 주소로 한 번 연 다음 설정 › 로그인 및 보안 › 허용된 호스트 이름에 {host}을(를) 추가하세요. 다시 시작할 필요는 없습니다.",
+	"frame.feeds.clearOne": "가져온 다운로드가 정리되지 않음",
+	"frame.feeds.clearMany": "가져온 다운로드 {n}개가 정리되지 않음",
+	"frame.feeds.clearBody": "HolyArrs가 알아서 다시 시도합니다",
+	"frame.feeds.clearNow": "지금 정리",
+	"frame.feeds.cleared": "다운로더에서 정리됨",
+	"frame.feeds.clearStill": "아직 정리되지 않음"
 }

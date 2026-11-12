@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "تنظیمات",
+	"alerts.panel.clearAll": "پاک کردن همه",
+	"alerts.panel.empty": "فعلاً چیزی نیست",
+	"alerts.panel.needsAttention": "نیاز به توجه دارد",
+	"alerts.panel.recent": "اخیر",
+	"alerts.panel.remove": "حذف {text}",
+	"alerts.panel.title": "هشدارهای اخیر",
+	"alerts.state.manyNeed": "{count} مورد نیاز به توجه دارد",
+	"alerts.state.ok": "همه‌چیز آماده است",
+	"alerts.state.oneNeeds": "1 مورد نیاز به توجه دارد",
+	"alerts.state.unset": "راه‌اندازی نشده",
+	"alerts.time.days": "{n} روز",
+	"alerts.time.hours": "{n} ساعت",
+	"alerts.time.minutes": "{n} دقیقه",
+	"alerts.time.now": "همین حالا"
+}

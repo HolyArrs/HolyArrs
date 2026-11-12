@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Papildomai",
+	"settings.home.page": "{group} · puslapis",
+	"settings.home.title": "Nustatymai",
+	"settings.home.search": "Ieškoti nustatymų",
+	"settings.home.matching": "Atitinkantys nustatymai",
+	"settings.home.noMatch": "Atitinkančių nustatymų nėra",
+	"settings.home.noMatchText": "Pabandykite kitą žodį, pavyzdžiui aplankas, raktas ar slaptažodis.",
+	"settings.home.clear": "Išvalyti paiešką"
+}

@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Pokročilé",
+	"settings.home.page": "{group} · stránka",
+	"settings.home.title": "Nastavení",
+	"settings.home.search": "Hledat v nastavení",
+	"settings.home.matching": "Odpovídající nastavení",
+	"settings.home.noMatch": "Žádné odpovídající nastavení",
+	"settings.home.noMatchText": "Zkuste jiné slovo, třeba složka, klíč nebo heslo.",
+	"settings.home.clear": "Vymazat hledání"
+}

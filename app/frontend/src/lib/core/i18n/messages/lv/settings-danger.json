@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs apstājas.",
+	"settings.danger.couldnt": "Neizdevās: {action}",
+	"settings.danger.title": "Bīstamā zona",
+	"settings.danger.ownerOnly": "Tikai īpašniekam un adminiem",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Jā: {action}",
+	"settings.danger.cancel": "Atcelt",
+	"settings.danger.expires": "Beidzas pēc 60 s",
+	"settings.danger.wholeApp": "Visa lietotne",
+	"settings.danger.intro": "Šīs darbības aptur HolyArrs. Docker restartēšanas politika to startē atkal pēc dažām sekundēm, ja vien politika nav <code>no</code>; tad konteineru startē pats. Katra darbība vispirms jautā.",
+	"settings.danger.restart": "Restartēt HolyArrs",
+	"settings.danger.safe": "Restartēt drošajā režīmā",
+	"settings.danger.shutdown": "Izslēgt",
+	"settings.danger.safeNote": "Startē vienreiz ar tikai pieteikšanos, Iestatījumiem un Bibliotēku. Izmanto, ja kāda Daļa bloķē startēšanu."
+}

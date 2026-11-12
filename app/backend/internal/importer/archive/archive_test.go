@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"testing"
@@ -214,5 +215,14 @@ func TestSevenZipDecoderAsksAreCapped(t *testing.T) {
 	// A usual size passes the check (the stream itself is empty here).
 	if _, err := lzma2Reader([]byte{24}, 0, src()); errors.Is(err, unrar.ErrUnrecognised) {
 		t.Errorf("LZMA2 16 MB dictionary refused: %v", err)
+	}
+}
+
+// The PPMd decoder counts in int, so on a 32-bit build a file bigger than
+// int can hold is refused instead of wrapping and ending early as damage.
+func TestSevenZipPPMdSizePastIntIsRefused(t *testing.T) {
+	stream := []io.ReadCloser{io.NopCloser(bytes.NewReader(make([]byte, 64)))}
+	if _, err := ppmdReader([]byte{6, 0, 0, 0, 0x01}, uint64(math.MaxInt)+1, stream); err == nil {
+		t.Fatal("a PPMd size past int was handed to the decoder")
 	}
 }

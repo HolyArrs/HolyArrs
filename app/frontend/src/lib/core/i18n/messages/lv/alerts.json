@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Iestatījumi",
+	"alerts.panel.clearAll": "Notīrīt visu",
+	"alerts.panel.empty": "Šeit vēl nekā nav",
+	"alerts.panel.needsAttention": "Jāpievērš uzmanība",
+	"alerts.panel.recent": "Nesenie",
+	"alerts.panel.remove": "Noņemt: {text}",
+	"alerts.panel.title": "Nesenie paziņojumi",
+	"alerts.state.manyNeed": "Jāpievērš uzmanība: {count}",
+	"alerts.state.ok": "Viss kārtībā",
+	"alerts.state.oneNeeds": "1 jāpievērš uzmanība",
+	"alerts.state.unset": "Nav iestatīts",
+	"alerts.time.days": "{n} d",
+	"alerts.time.hours": "{n} h",
+	"alerts.time.minutes": "{n} min",
+	"alerts.time.now": "tagad"
+}

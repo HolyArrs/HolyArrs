@@ -12,10 +12,16 @@ const (
 	// PoolMigrate runs Import from other apps, so it never queues behind
 	// imports and scans.
 	PoolMigrate Pool = "migrate"
+	// PoolTranslate runs subtitle translations, which can take minutes, so
+	// searches, grabs and imports never wait behind one.
+	PoolTranslate Pool = "translate"
 )
 
 // DefaultPools are the worker counts the app starts with.
-var DefaultPools = map[Pool]int{PoolCore: 1, PoolIO: 2, PoolHeavy: 1, PoolMigrate: 1}
+var DefaultPools = map[Pool]int{PoolCore: 1, PoolIO: 2, PoolHeavy: 1, PoolMigrate: 1, PoolTranslate: 1}
+
+// AllPools lists every pool in start order.
+var AllPools = []Pool{PoolCore, PoolIO, PoolHeavy, PoolMigrate, PoolTranslate}
 
 // kindPools assigns every Job kind to a pool. A kind not listed runs in
 // the I/O pool; a test in cmd/holyarrs fails for a registered kind that
@@ -36,6 +42,7 @@ var kindPools = map[string]Pool{
 	"subtitle_search":      PoolIO,
 	"subtitle_missing":     PoolIO,
 	"subtitle_better":      PoolIO,
+	"subtitle_translate":   PoolTranslate,
 	"sync_outside_lists":   PoolIO,
 	"sync_plex_watchlists": PoolIO,
 	"check_bridges":        PoolIO,

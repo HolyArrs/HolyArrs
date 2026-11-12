@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Aus Plex-Merklisten anfragen",
 	"settings.requests.plexOnHint": "Jede Person schaltet es in Mein Konto ein. Ihre Limits gelten.",
 	"settings.requests.plexEveryone": "Für alle aktivieren, die sich mit Plex anmelden",
-	"settings.requests.plexEveryoneHint": "Jeder kann es unter Mein Konto für sich ausschalten."
+	"settings.requests.plexEveryoneHint": "Jeder kann es unter Mein Konto für sich ausschalten.",
+	"settings.requests.plexFriends": "Plex-Freunde einbeziehen",
+	"settings.requests.plexFriendsHint": "Freunde, die du aus Plex importiert hast. Gelesen mit deiner Plex-Verknüpfung; für jeden Freund gelten seine Limits.",
+	"settings.requests.plexFriendsNoLink": "Verknüpfe zuerst Plex unter Einstellungen › Anmeldung.",
+	"settings.requests.plexFriendsNone": "Noch niemand aus Plex importiert.",
+	"settings.requests.plexFriendsRead": "Gelesen {when}",
+	"settings.requests.plexFriendsNotYet": "Noch nicht gelesen",
+	"settings.requests.plexFriendsAsked": "Angefragt: {n}"
 }

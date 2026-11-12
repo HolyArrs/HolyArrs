@@ -25,6 +25,9 @@
 	"home.lostIfTheContainer": "przepadnie przy ponownym utworzeniu kontenera",
 	"home.downloads": "Pobieranie",
 	"home.waitingForTheirFiles": "czeka na swoje pliki",
+	"home.waitingToBeCleared": "czeka na wyczyszczenie",
+	"home.noSaveFolder": "nie ma folderu zapisu",
+	"home.noSaveFolderMany": "nie mają folderu zapisu",
 	"home.masterKey": "Klucz główny",
 	"home.noKeyKitSaved": "brak zapisanego zestawu kluczy",
 	"home.trailers": "Zwiastuny",
@@ -266,5 +269,7 @@
 	"home.version": "Wersja {version}",
 	"home.metadataServerDown": "Serwer metadanych nie działa",
 	"home.metadataServerOnline": "Serwer metadanych działa",
-	"home.homeCouldNotRead3": "Start nie mógł teraz odczytać pobrań."
+	"home.homeCouldNotRead3": "Start nie mógł teraz odczytać pobrań.",
+	"home.off": "Wyłączone",
+	"home.sourcesOff": "Wyłączone w Częściach"
 }

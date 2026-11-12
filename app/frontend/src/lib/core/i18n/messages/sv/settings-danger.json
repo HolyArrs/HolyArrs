@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs stoppas.",
+	"settings.danger.couldnt": "Det gick inte att {action}",
+	"settings.danger.title": "Farozon",
+	"settings.danger.ownerOnly": "Bara ägare och admins",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Ja, {action}",
+	"settings.danger.cancel": "Avbryt",
+	"settings.danger.expires": "Går ut om 60 s",
+	"settings.danger.wholeApp": "Hela appen",
+	"settings.danger.intro": "De här stoppar HolyArrs. Dockers omstartspolicy startar det igen efter några sekunder, om inte policyn är <code>no</code>; då startar du containern själv. Var och en frågar först.",
+	"settings.danger.restart": "Starta om HolyArrs",
+	"settings.danger.safe": "Starta om i felsäkert läge",
+	"settings.danger.shutdown": "Stäng av",
+	"settings.danger.safeNote": "Startar en gång med bara inloggning, Inställningar och Bibliotek. Använd det när en Del blockerar starten."
+}

@@ -106,7 +106,7 @@ func (o *OpenSubs) search(w http.ResponseWriter, r *http.Request) {
 	langs := strings.Split(q.Get("languages"), ",")
 	data := []any{}
 	for _, s := range o.Subs {
-		if s.Kind != q.Get("type") || !contains(langs, strings.SplitN(s.Language, "-", 2)[0]) {
+		if s.Kind != q.Get("type") || !(contains(langs, s.Language) || contains(langs, strings.SplitN(s.Language, "-", 2)[0])) {
 			continue
 		}
 		feature := map[string]any{"title": s.Title, "year": s.Year}
@@ -125,6 +125,7 @@ func (o *OpenSubs) search(w http.ResponseWriter, r *http.Request) {
 		data = append(data, map[string]any{"id": "s" + s.ID, "type": "subtitle", "attributes": map[string]any{
 			"language": s.Language, "hearing_impaired": s.HearingImpaired, "foreign_parts_only": s.Forced, "fps": s.FPS,
 			"download_count": s.Downloads, "release": s.Release, "from_trusted": s.Trusted, "moviehash_match": s.Corrected && q.Get("moviehash") != "",
+			"ai_translated": s.AITranslated, "machine_translated": s.MachineTranslated,
 			"uploader": map[string]any{"name": s.Uploader}, "feature_details": feature,
 			"files": []any{map[string]any{"file_id": id, "file_name": s.Release + ".srt"}},
 		}})

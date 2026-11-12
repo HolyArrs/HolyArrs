@@ -25,8 +25,11 @@ var (
 	// ErrNoTVDBKey means TVDB is not used: no key of the person's own is
 	// set, or TVDB refused it.
 	ErrNoTVDBKey = errors.New("TVDB needs a TVDB key, and none is set; use TMDB or TVMaze for this show")
+	// ErrTVDBRefused means TVDB refused the key or the PIN at login.
+	// errors.Is(err, ErrNoTVDBKey) holds for it.
+	ErrTVDBRefused error = tvdbRefused{}
 	// ErrUnknownSource names a details source HolyArrs does not have.
-	ErrUnknownSource = errors.New("show details source must be tmdb or tvmaze")
+	ErrUnknownSource = errors.New("show details source must be tmdb, tvmaze or tvdb")
 )
 
 // Show is one looked-up show. Episodes are empty in search answers.
@@ -56,6 +59,9 @@ type Show struct {
 	// AltStale says the release-name numbers could not be read this time
 	// (the metadata server failed), so stored ones are kept.
 	AltStale bool `json:"-"`
+	// Grouped says the release-name numbers come from a chosen TMDB
+	// episode order.
+	Grouped bool `json:"-"`
 }
 
 // Season is one season of a looked-up show; 0 holds the specials.
@@ -98,7 +104,7 @@ type ShowProvider interface {
 type ShowSources map[string]ShowProvider
 
 // ValidShowSource reports whether name is a show details source.
-func ValidShowSource(name string) bool { return name == "tmdb" || name == "tvmaze" }
+func ValidShowSource(name string) bool { return name == "tmdb" || name == "tvmaze" || name == "tvdb" }
 
 // Get returns the named source.
 func (ss ShowSources) Get(name string) (ShowProvider, error) {
@@ -290,6 +296,10 @@ func (g *getter) do(ctx context.Context, identity []string, mk func(ctx context.
 		resp, err := cl.Do(req)
 		if err != nil {
 			outcome = outbound.HTTPOutcome(0, err, ctx)
+			if errors.Is(err, ErrSourceOff) {
+				// Kept in by the mode: not a failure of the source.
+				outcome = outbound.Canceled
+			}
 			cancel()
 			return nil, fmt.Errorf("%s: %w", g.name, stripURL(err))
 		}
@@ -327,3 +337,8 @@ func (g *getter) do(ctx context.Context, identity []string, mk func(ctx context.
 		}
 	}
 }
+
+type tvdbRefused struct{}
+
+func (tvdbRefused) Error() string   { return "Key or PIN refused" }
+func (tvdbRefused) Is(t error) bool { return t == ErrNoTVDBKey }

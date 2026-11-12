@@ -11,7 +11,7 @@
 	import { arrive, coverPage, push, settingsNav, swap } from './(home)/zoom.ts';
 	import { backdrop } from '#lib/accounts/index.ts';
 	import { minimalLook } from '#lib/core/look.svelte.ts';
-	import { partsNow, offPartName } from '#lib/mediafiles/index.ts';
+	import { partsNow, offPartName, partOff } from '#lib/mediafiles/index.ts';
 	import { settingsNow, refreshSettingsStatus, pageState, stateWords } from '#lib/alerts/index.ts';
 	import type { Snippet } from 'svelte';
 	import { onMount } from 'svelte';
@@ -156,7 +156,9 @@
 <svelte:window onhashchange={() => location.hash && highlight(decodeURIComponent(location.hash.slice(1)))} onkeydown={escape} />
 
 {#snippet pill()}
-	{#if status && stateWords(status)}<span class="page-status" data-testid="page-status"><StatusPill kind={status.state === 'ok' ? 'in_library' : status.state === 'attention' ? 'failed' : 'missing'} label={stateWords(status)} /></span>{/if}
+	<!-- Sources switched off in Parts: the page says Off, not Not set up. -->
+	{#if currentSection?.href === '/settings/sources' && partOff('sources')}<span class="page-status" data-testid="page-status"><StatusPill kind="missing" label={t('settings.sources.offState')} /></span>
+	{:else if status && stateWords(status)}<span class="page-status" data-testid="page-status"><StatusPill kind={status.state === 'ok' ? 'in_library' : status.state === 'attention' ? 'failed' : 'missing'} label={stateWords(status)} /></span>{/if}
 {/snippet}
 
 <!-- Background: this Library's posters, blurred and dimmed, still. -->
@@ -224,7 +226,7 @@
 	.settings-shell { position: relative; isolation: isolate; }
 	.settings-workspace { min-width: 0; max-width: 980px; }
 	.settings-shell.home .settings-workspace { max-width: none; }
-	.settings-content { width: 100%; min-width: 0; }
+	.settings-content { width: 100%; min-width: 0; container: settings / inline-size; }
 	.flag { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--fail); }
 	.group-top { display: flex; align-items: center; gap: 12px; min-height: 36px; }
 	.page-status { margin-left: auto; }
@@ -364,9 +366,9 @@
 	/* A field row's label lines up with its box, not with box and hint. */
 	.settings-content :global(section.ui-settings :is(.srow, .field):not(.ask > *, .row-fields > *):has(> .ctl :is(input, select), > :is(input, select), > .ctl > .input)) { align-items: start !important; }
 	.settings-content :global(section.ui-settings :is(.srow, .field):not(.ask > *, .row-fields > *):has(> .ctl :is(input, select), > :is(input, select), > .ctl > .input) > :is(.txt, label:first-child)) { padding-top: 10px; }
-	/* Long values (patterns, addresses, paths) get half the row so they are never cut off. */
-	@media (min-width: 761px) {
-		.settings-content :global(.field:not(.ask > *, .row-fields > *):is(:has(> input:is([type='text'], [type='url'], :not([type])):not(.narrow)), :has(> .row > input.input))) { grid-template-columns: minmax(0, 1fr) minmax(0, 50%) !important; }
+	/* Every field with a control gets the same half-row control column, so controls in one card start on one edge and long values (patterns, addresses, paths) are never cut off. */
+	@container settings (min-width: 600px) {
+		.settings-content :global(.field:not(.ask > *, .row-fields > *):has(> :is(input.input, select.input, textarea.input, .row)):not(:has(> .narrow))) { grid-template-columns: minmax(0, 1fr) minmax(0, 50%) !important; }
 		.settings-content :global(section.ui-settings .srow:has(> .ctl > input:is([type='text'], [type='url'], :not([type])):not(.narrow)) > .ctl) { width: 50%; max-width: none; flex: 0 0 50%; }
 	}
 	/* Inner panels (examples, notes) sit inside the row padding with their own soft fill. */

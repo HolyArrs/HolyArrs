@@ -274,6 +274,41 @@ test('the subtitle screens fit a phone and pass the accessibility scan', async (
 	await ph.context().close();
 });
 
+test('a long translator error wraps inside its card on a small phone', async ({ browser }) => {
+	const ph = await fresh(browser, 360);
+	await signIn(ph, owner());
+	const word = 'invalid_api_key_provided_please_check_your_settings_and_try_again_' + 'a'.repeat(40);
+	await ph.route('**/api/v1/settings/subtitles/translator', (rt) =>
+		rt.request().method() === 'GET' ? rt.fulfill({ json: { kind: 'openai', url: 'http://192.168.1.20:11434/v1', model: 'm', has_key: false, built_in_auto: false } }) : rt.continue()
+	);
+	await ph.route('**/api/v1/settings/subtitles/translator/test', (rt) => rt.fulfill({ json: { ok: false, message: word, models: [] } }));
+	await ph.goto('/settings/subtitles');
+	await ph.getByTestId('translator-test-button').click();
+	const line = ph.getByTestId('translator-test');
+	await expect(line).toContainText(word);
+	const fits = await ph.locator('#translator-card').evaluate((card) => {
+		const c = card.getBoundingClientRect();
+		return [...card.querySelectorAll('[data-testid=translator-test] *')].every((e) => e.getBoundingClientRect().right <= c.right + 1);
+	});
+	expect(fits).toBe(true);
+	await noSidewaysScroll(ph);
+	await ph.context().close();
+});
+
+test('with a translator set up, each language row keeps its labels on one line at desktop width', async ({ browser }) => {
+	const ph = await fresh(browser, 1440);
+	await signIn(ph, owner());
+	await ph.route('**/api/v1/settings/subtitles/translator', (rt) =>
+		rt.request().method() === 'GET' ? rt.fulfill({ json: { kind: 'openai', url: 'http://192.168.1.20:11434/v1', model: 'm', has_key: false, built_in_auto: false } }) : rt.continue()
+	);
+	await ph.goto('/settings/subtitles');
+	const row = ph.getByTestId('wish-row').first();
+	await expect(row.getByTestId('wish-translate-from')).toBeVisible();
+	const tall = await row.locator('.field > label').evaluateAll((ls) => ls.filter((l) => l.getBoundingClientRect().height > (parseFloat(getComputedStyle(l).lineHeight) || 20) * 1.8).map((l) => l.textContent));
+	expect(tall).toEqual([]);
+	await ph.context().close();
+});
+
 test('members see none of it', async ({ browser }) => {
 	await page.goto('/settings/users');
 	await page.getByRole('button', { name: 'Invite someone' }).click();

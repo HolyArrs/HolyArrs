@@ -25,6 +25,9 @@
 	"home.lostIfTheContainer": "se pierde si se recrea el contenedor",
 	"home.downloads": "Descargas",
 	"home.waitingForTheirFiles": "esperando sus archivos",
+	"home.waitingToBeCleared": "esperando la limpieza",
+	"home.noSaveFolder": "no tiene carpeta de descarga",
+	"home.noSaveFolderMany": "no tienen carpeta de descarga",
 	"home.masterKey": "Clave maestra",
 	"home.noKeyKitSaved": "sin kit de clave guardado",
 	"home.trailers": "Tráileres",
@@ -266,5 +269,7 @@
 	"home.version": "Versión {version}",
 	"home.metadataServerDown": "Servidor de metadatos caído",
 	"home.metadataServerOnline": "Servidor de metadatos en línea",
-	"home.homeCouldNotRead3": "Inicio no pudo leer las descargas ahora mismo."
+	"home.homeCouldNotRead3": "Inicio no pudo leer las descargas ahora mismo.",
+	"home.off": "Apagado",
+	"home.sourcesOff": "Apagado en Partes"
 }

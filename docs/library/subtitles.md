@@ -25,7 +25,7 @@ Files brought in with **Import a library** are read the same way.
 
 ## See what is missing
 
-Open **Library > Missing subtitles**. Each row is a movie or episode that lacks a subtitle, with the reason (not looked for yet, not found yet, or nothing over the Pass mark yet) and the next try.
+Open **Library > Missing subtitles**. Each row is a movie or episode that lacks a subtitle, with the reason (not looked for yet, not found yet, or nothing over the Pass mark yet) and the next try. A title removed from the Library is left out, even when its files stay on disk.
 
 - Filter by language, by movies or episodes, and by title. The page address keeps your filters, so you can bookmark a view.
 - **Search all** searches every row in the filtered list and shows progress.
@@ -41,7 +41,10 @@ A movie page has a **Subtitles** card. A show page has one for the whole show. E
 | **Look for subtitles** | Searches for what is missing now. |
 | **Choose a subtitle** | Lists every result from every site with its score out of 100 and what matched. **Choose** saves it, whatever its score. |
 | **Sync fix** | For subtitles HolyArrs saved. Shifts every line by up to 10 minutes, changes the frame rate (such as 25 to 23.976), or both. The old file goes to the holding folder. |
+| **Translate** | Next to a missing language, when a translator is set up. Pick a text subtitle beside the video or inside it, and your translator makes the missing one. |
 | **Turn down** | For subtitles HolyArrs saved. The file goes to the holding folder, that subtitle is never picked again for this file, and HolyArrs looks for another. |
+
+A subtitle no person made carries a label: **Translated**, **Partly translated** (some lines kept the original language), **AI-translated** or **Machine-translated** (a site's own machine-made file). Picture subtitles inside the video are marked **Picture** and can't be translated.
 
 Each subtitle shows its language, kind (normal, hearing-impaired or forced), source (inside the video, beside it, a site, or chosen by hand), score and file name. Everything that happens shows in the title's **History** under Subtitles, and [Alerts](../users/alerts.md) can tell you too.
 
@@ -53,6 +56,7 @@ Each subtitle shows its language, kind (normal, hearing-impaired or forced), sou
 |---|---|
 | **Hearing-impaired** | Normal (a hearing-impaired subtitle also counts), Hearing-impaired only (waits for one with sound descriptions), or Either. |
 | **Forced only** | Only the lines for foreign speech and signs. |
+| **Translate from** | Shows once a translator is set up. When no subtitle in this language is found, your translator makes one from this language. |
 
 Up to 10 languages. A language can appear twice only if one is full and the other forced only. With no languages set, HolyArrs looks for nothing.
 
@@ -70,6 +74,23 @@ Movie (2020).fr.forced.ass
 - A subtitle HolyArrs replaces goes to the holding folder first.
 - **Rename files** moves subtitles with their video. If the new name is taken, that subtitle stays and says why.
 - Deleting a title with its files sends its subtitles to the holding folder too.
+
+Portuguese (Brazil) has its own files, `Movie (2020).pt-BR.srt`. Older `.pt` files stay where they are, so both can sit next to the video.
+
+### Translate subtitles
+
+In **Settings > Subtitles > Translate subtitles**, pick your own translator:
+
+| Translator | What to fill in |
+|---|---|
+| **AI service** | The address of any service that speaks the OpenAI chat API (OpenRouter, OpenAI, Ollama, LM Studio), the model, and a key if it needs one. **Test** lists the models it offers. A local one keeps everything at home. |
+| **Lingarr** | The address of your Lingarr server. |
+
+The key is kept encrypted and never shown again. Leave the box empty to keep it, or tick **Remove the saved key**.
+
+**Translate subtitles inside the video by themselves** lets the timed search translate text tracks inside the video. Off, those are translated only when you click **Translate**. Picture tracks are always skipped.
+
+Each subtitle site has **Machine-made subtitles**. Off by default. On, a site's AI or machine-translated files are used only when no file made by a person exists, and a person's file replaces it later.
 
 How scoring works, when HolyArrs searches, and the sites it uses are in [Subtitle scoring and sites](subtitle-scoring.md).
 

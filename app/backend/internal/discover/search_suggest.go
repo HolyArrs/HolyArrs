@@ -435,10 +435,11 @@ func (h *Suggest) suggestMovies(ctx context.Context, r *http.Request, q string) 
 		ms = ms[:suggestFromEach]
 	}
 	db := h.Store().Read()
+	rules, _ := hideRulesFor(ctx, h.Store())
 	out := []SuggestRow{}
 	for i, m := range ms {
 		id := m.IDs["tmdb"]
-		if id == "" {
+		if id == "" || rules.hides("movie", id, m.Genres) {
 			continue
 		}
 		row := SuggestRow{Kind: "movie", Name: m.Name, Sub: "Movie", Art: m.Poster, TMDB: id}
@@ -473,8 +474,12 @@ func (h *Suggest) suggestShows(ctx context.Context, r *http.Request, q string) [
 		shows = shows[:suggestFromEach]
 	}
 	db := h.Store().Read()
+	rules, _ := hideRulesFor(ctx, h.Store())
 	out := []SuggestRow{}
 	for i, sh := range shows {
+		if id := sh.IDs["tmdb"]; id != "" && rules.hides("show", id, sh.Genres) {
+			continue
+		}
 		row := SuggestRow{Kind: "show", Name: sh.Name, Sub: "Show", Art: sh.Poster, TMDB: sh.IDs["tmdb"]}
 		if sh.Year > 0 {
 			row.Sub += " · " + strconv.Itoa(sh.Year)

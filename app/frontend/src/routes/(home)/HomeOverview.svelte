@@ -6,6 +6,7 @@
 	import { n, uncheckedLine, type HomeAnswer, type HomeCard } from './home.ts';
 	import { sized } from '#lib/core/tmdb-image.ts';
 	import { stageOf } from '#lib/downloads/index.ts';
+	import { partOff } from '#lib/mediafiles/index.ts';
 	import { metadataOutage } from '#lib/metadata/index.ts';
 	import SettingsTile from '#lib/ui/SettingsTile.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -75,13 +76,18 @@
 		{/snippet}
 		<!-- Sources or Downloaders: how many work, which have a problem, and one pip each along the foot. -->
 		{#snippet partTile(label: string, icon: IconName, tint: Tint, p: { total: number; on: number; working: number; off: number; failing: number }, trouble: string, path: string, empty: string)}
-			<a class="tile stat" class:lined={settled && !uncheckedParts && p.total > 0} href={to(admin ? path : '/health')}>
+			{@const off = icon === 'source' && partOff('sources')}
+			<a class="tile stat" class:lined={settled && !uncheckedParts && !off && p.total > 0} href={to(admin ? (off ? '/settings/parts' : path) : '/health')}>
 				{@render head(icon, tint, label)}
 				{#if !settled}
 					{@render wait()}
 				{:else if uncheckedParts}
 					<span class="word">{t('home.couldNotRead')}</span>
 					<span class="sm">{t('home.homeCouldNotRead')}</span>
+				{:else if off}
+					<!-- Sources switched off in Parts: no count and no trouble to show. -->
+					<span class="word">{t('home.off')}</span>
+					<span class="sm">{t('home.sourcesOff')}</span>
 				{:else if !p.total}
 					<span class="word">{t('home.noneAdded')}</span>
 					<span class="sm">{empty}</span>
@@ -326,7 +332,7 @@
 	/* The tile is the Requests card's sheet on its own: lit from above, a hairline, and one long soft shadow. A whisper of grain keeps the flat colour from looking printed. */
 	.tile {
 		position: relative; isolation: isolate; min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 16px 18px; border: 0; border-radius: 20px; overflow: hidden;
-		color: var(--text); text-align: left; font: inherit; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: var(--edge), var(--drop);
+		color: var(--text); text-align: start; font: inherit; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: var(--edge), var(--drop);
 		transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 	}
 	.stat::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; opacity: .05; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
@@ -343,7 +349,7 @@
 	a.tile:hover .go { color: var(--text); transform: translateX(2px); }
 	.num, .word { margin-top: auto; }
 	.num { font: 800 40px / 1 var(--font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.num small { margin-left: 5px; font: 500 13px / 1 var(--font-ui); letter-spacing: 0; color: var(--text-muted); }
+	.num small { margin-inline-start: 5px; font: 500 13px / 1 var(--font-ui); letter-spacing: 0; color: var(--text-muted); }
 	.word { font: 700 24px / 1.1 var(--font-display); letter-spacing: -0.025em; }
 	.sm { margin-top: 5px; font: var(--t-footnote); color: var(--text-muted); overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
 	.stat > .num + .sm:not(:has(+ .sm)), .stat > .word + .sm:not(:has(+ .sm)) { min-height: 2.6em; }
@@ -369,14 +375,14 @@
 	.pic .sm { color: rgb(255 255 255 / 86%); font: 600 12px / 1.3 var(--font-ui); -webkit-line-clamp: 1; line-clamp: 1; }
 
 	.ask-stack { margin-top: auto; display: flex; align-items: center; }
-	.ask-stack img { width: 38px; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 7px; margin-left: -12px; background: var(--surface-3); box-shadow: 0 0 0 2.5px var(--sheet-b), 0 6px 14px -4px rgb(0 0 0 / 35%); }
-	.ask-stack img:first-child { margin-left: 0; }
-	.ask-stack b { min-width: 30px; height: 30px; margin-left: 10px; padding: 0 8px; display: grid; place-items: center; border-radius: 999px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); font: var(--t-footnote); font-weight: 700; font-variant-numeric: tabular-nums; }
+	.ask-stack img { width: 38px; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 7px; margin-inline-start: -12px; background: var(--surface-3); box-shadow: 0 0 0 2.5px var(--sheet-b), 0 6px 14px -4px rgb(0 0 0 / 35%); }
+	.ask-stack img:first-child { margin-inline-start: 0; }
+	.ask-stack b { min-width: 30px; height: 30px; margin-inline-start: 10px; padding: 0 8px; display: grid; place-items: center; border-radius: 999px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); font: var(--t-footnote); font-weight: 700; font-variant-numeric: tabular-nums; }
 
 	.dl .num, .dl > .word { margin-top: 14px; }
 	.flow { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 12px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); }
 	.flow li { position: relative; min-width: 0; padding: 9px 12px; display: flex; flex-direction: column; gap: 2px; }
-	.flow li + li::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 1px; background: var(--line); }
+	.flow li + li::before { content: ''; position: absolute; inset-inline-start: 0; top: 10px; bottom: 10px; width: 1px; background: var(--line); }
 	.flow b { font: 700 18px / 1.1 var(--font-display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 	.flow span { font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.dl-list { list-style: none; margin: auto 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -420,12 +426,12 @@
 		.head { gap: 8px; }
 		.lab { font-size: 13px; }
 		.num { font-size: 30px; }
-		.num small { font-size: 12px; margin-left: 4px; }
+		.num small { font-size: 12px; margin-inline-start: 4px; }
 		.word { font-size: 19px; }
 		.life { left: 14px; right: 14px; bottom: 5px; height: 3px; }
 		.sm { line-height: 1.3; }
-		.ask-stack img { width: 32px; margin-left: -10px; border-radius: 6px; }
-		.ask-stack b { min-width: 26px; height: 26px; margin-left: 8px; }
+		.ask-stack img { width: 32px; margin-inline-start: -10px; border-radius: 6px; }
+		.ask-stack b { min-width: 26px; height: 26px; margin-inline-start: 8px; }
 		.dl .num, .dl > .word { margin-top: 10px; }
 		.flow { margin-top: 10px; }
 		.flow li { padding: 7px 10px; }
@@ -441,6 +447,12 @@
 	/* Two columns on a wide screen: a little taller, so pictures are not thin strips. */
 	@container home (min-width: 560px) and (max-width: 900px) {
 		.bento { grid-auto-rows: 150px; }
+}
+	/* Phones: smaller request posters, so a two-line note under them stays inside the tile in long languages. */
+	@container home (max-width: 400px) {
+		.ask-stack img { width: 28px; margin-inline-start: -9px; }
+		.ask-stack img:first-child { margin-inline-start: 0; }
+		.ask-stack b { min-width: 24px; height: 24px; margin-inline-start: 6px; }
 }
 	/* A small phone (360): the tile names still fit. */
 	@container home (max-width: 340px) {

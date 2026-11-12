@@ -49,6 +49,7 @@
 	"welcome.userName": "Nazwa użytkownika",
 	"welcome.apiKeyLabel": "Klucz API",
 	"welcome.passwordLabel": "Hasło",
+	"welcome.secretTokenLabel": "Tajny token",
 	"welcome.save": "Zapisz",
 	"welcome.connect": "Podłącz: {name}",
 	"welcome.continue": "Dalej",

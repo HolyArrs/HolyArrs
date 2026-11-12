@@ -31,16 +31,20 @@ type SearchOptions struct {
 	BetterDays int
 	// Show only lists the candidates for a person to pick; nothing is saved.
 	Show bool
+	// NoTranslate never queues a translation; the search a failed translation
+	// falls back to sets it.
+	NoTranslate bool
 }
 
 // Outcome is what a search did for one wanted language.
 type Outcome struct {
 	Want    Want     `json:"want"`
-	Result  string   `json:"result"` // saved, upgraded, none_good_enough, failed or kept
+	Result  string   `json:"result"` // saved, upgraded, none_good_enough, failed, kept or translating
 	Path    string   `json:"path,omitempty"`
 	Score   int      `json:"score,omitempty"`
 	Site    string   `json:"site,omitempty"`
 	Reason  string   `json:"reason,omitempty"`
+	Made    string   `json:"made,omitempty"`    // a machine-made file stood in, see Subtitle.Made
 	Choices []Scored `json:"choices,omitempty"` // filled only for Show searches
 }
 
@@ -85,12 +89,19 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 		}
 		for i := range saved {
 			sv := &saved[i]
-			if !opt.Show && (*sv.Score >= 99 || (opt.BetterDays > 0 && sv.SavedAt != nil && sv.SavedAt.Before(now().AddDate(0, 0, -opt.BetterDays)))) {
+			// A machine-made subtitle is looked past at any age, and any file made
+			// by a person that passes replaces it.
+			stop := sv.Made != nil
+			if !opt.Show && !stop && (*sv.Score >= 99 || (opt.BetterDays > 0 && sv.SavedAt != nil && sv.SavedAt.Before(now().AddDate(0, 0, -opt.BetterDays)))) {
 				continue
 			}
 			for _, w := range st.Wish.Wants {
 				if meets(w, Have{Language: sv.Language, Forced: sv.Forced, HearingImpaired: sv.HearingImpaired}) {
-					targets = append(targets, target{want: w, beat: *sv.Score, old: sv})
+					t := target{want: w, beat: *sv.Score, old: sv}
+					if stop {
+						t.beat = -1
+					}
+					targets = append(targets, t)
 					break
 				}
 			}
@@ -106,15 +117,31 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 		IMDb: fc.title.SourceIDs["imdb"], TMDB: fc.title.SourceIDs["tmdb"], TVDB: fc.title.SourceIDs["tvdb"]}
 	if h, err := s.videoHash(ctx, fc, set); err == nil && h != "" {
 		q.Hash = h // hash-matching sites use it and the rest ignore it
+		if st, err := os.Stat(fc.video()); err == nil {
+			q.Size = st.Size()
+		}
 	}
+	sc := &searchCtx{fc: fc, status: st, set: set, opt: opt, pass: pass, video: v, bySite: map[string]SiteRow{}, by: by}
 	seenLang := map[string]bool{}
+	ask := func(l string) {
+		if !seenLang[l] {
+			seenLang[l] = true
+			q.Languages = append(q.Languages, l)
+		}
+	}
 	for _, t := range targets {
-		if !seenLang[t.want.Language] {
-			seenLang[t.want.Language] = true
-			q.Languages = append(q.Languages, t.want.Language)
+		ask(t.want.Language)
+		if t.isNew && t.want.TranslateFrom != "" && !opt.Show && !opt.NoTranslate {
+			if !sc.translator.Ready() {
+				sc.translator = s.Translator(ctx)
+			}
+			if sc.translator.Ready() {
+				ask(t.want.TranslateFrom) // a source to translate from, in the same call
+			}
 		}
 	}
 	turned := s.turnedDown(ctx, fileID)
+	sc.turned = turned
 
 	// Each usable site is asked once for all languages to keep traffic low.
 	rows, err := usable(ctx, s.Store.Read(), now())
@@ -122,7 +149,7 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 		return res, err
 	}
 	var all []Scored
-	bySite := map[string]SiteRow{}
+	bySite := sc.bySite
 	for order, r := range rows {
 		k, _ := sites.KindOf(r.Kind)
 		if (fc.item.Kind == "movie" && !k.Movies) || (fc.item.Kind == "episode" && !k.Shows) {
@@ -144,15 +171,19 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 		s.recovered(ctx, r)
 		bySite[r.Name] = r
 		for _, c := range cands[:min(len(cands), MaxCandidatesPerSite)] {
+			if c.MachineMade != "" && !r.MachineMade {
+				continue // the site's machine-made switch is off
+			}
 			c.Site = r.Name
 			all = append(all, Scored{Candidate: c, Priority: r.Priority, Order: order})
 		}
 	}
+	sc.all = all
 
 	for _, t := range targets {
 		var choices []Scored
 		for _, c := range all {
-			if c.Language != t.want.Language || turned[c.Site+"\x00"+c.Key] {
+			if !LangMatches(t.want.Language, c.Language) || turned[c.Site+"\x00"+c.Key] {
 				continue
 			}
 			c.Score = ScoreCandidate(v, t.want, c.Candidate)
@@ -167,6 +198,9 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 		}
 		out.Result = "none_good_enough"
 		for _, c := range choices {
+			if c.MachineMade != "" {
+				continue // used only when nothing made by a person passes
+			}
 			if c.Score.Refused != "" || c.Score.Total < pass || c.Score.Total <= t.beat {
 				break // the list is ranked, so nothing after this is better
 			}
@@ -181,8 +215,14 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 			}
 			break
 		}
+		if t.isNew && out.Result == "none_good_enough" {
+			s.stopgap(ctx, sc, t, choices, &out)
+		}
 		if t.old != nil && out.Result == "none_good_enough" {
 			out.Result = "kept"
+			if t.old.Made != nil {
+				s.touchStopgap(ctx, t.old.ID)
+			}
 		}
 		s.afterTarget(ctx, fc, t, &out, set, by)
 		res.Outcomes = append(res.Outcomes, out)
@@ -203,7 +243,7 @@ func (s *Service) afterTarget(ctx context.Context, fc *fileCtx, t target, out *O
 		s.event(ctx, &domain.Event{Actor: by, Kind: kind, TitleID: &titleID, SlotID: &slotID,
 			Summary: fmt.Sprintf("%s %s subtitle from %s (score %d)", verb, fmtWant(t.want), out.Site, out.Score),
 			Data:    map[string]any{"file_id": fileID, "language": t.want.Language, "path": out.Path, "score": out.Score, "site": out.Site}, GroupKey: "subtitles:" + itoa(fileID)})
-	case "none_good_enough":
+	case "none_good_enough", "translating":
 		next := now().Add(time.Duration(set.SearchHours) * time.Hour)
 		_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
 			var first sql.NullString
@@ -219,6 +259,9 @@ func (s *Service) afterTarget(ctx context.Context, fc *fileCtx, t target, out *O
 				database.FormatTime(now()), database.FormatTime(now()), database.FormatTime(next), database.FormatTime(now()), fileID, t.want.Language, t.want.Forced)
 			return err
 		})
+		if out.Result == "translating" {
+			return // the translation Job writes its own Event
+		}
 		s.event(ctx, &domain.Event{Actor: by, Kind: EventNoneGood, TitleID: &titleID, SlotID: &slotID,
 			Summary: fmt.Sprintf("No %s subtitle reached the Pass mark", fmtWant(t.want)),
 			Data:    map[string]any{"file_id": fileID, "language": t.want.Language, "reason": out.Reason, "next_try_at": next}, GroupKey: "subtitles:" + itoa(fileID)})
@@ -252,8 +295,20 @@ func (s *Service) fetchAndSave(ctx context.Context, fc *fileCtx, t target, c Sco
 		return "", err
 	}
 	siteID := r.ID
-	row := Subtitle{FileID: fc.file.ID, Language: t.want.Language, Forced: t.want.Forced, HearingImpaired: c.HearingImpaired, Place: "beside",
+	// The file keeps the language the site gave, so a pt-BR file found for a pt
+	// wish is named and recorded as pt-BR.
+	lang := t.want.Language
+	if LangMatches(lang, c.Language) {
+		lang = c.Language
+	}
+	row := Subtitle{FileID: fc.file.ID, Language: lang, Forced: t.want.Forced, HearingImpaired: c.HearingImpaired, Place: "beside",
 		SiteName: &c.Site, SiteKey: &c.Key, Score: &c.Score.Total, ScoreParts: c.Score.Parts, Origin: "fetched", State: "present", Sync: map[string]any{}}
+	if c.MachineMade != "" {
+		// A machine-made file is marked as such and keeps a low score, so a
+		// later search replaces it with a file made by a person.
+		made, score := c.MachineMade, stopgapScore(c.MachineMade, c.Score.Total)
+		row.Made, row.Score = &made, &score
+	}
 	if siteID != 0 {
 		row.SiteID = &siteID
 	}
@@ -292,7 +347,7 @@ func (s *Service) failed(ctx context.Context, fc *fileCtx, w Want, site string, 
 // base.lang[.hi|.forced].format.
 func SubtitleName(videoRel, lang string, hi, forced bool, hiSuffix, format string) string {
 	base := strings.TrimSuffix(path.Base(videoRel), path.Ext(videoRel))
-	name := base + "." + lang
+	name := base + "." + LanguageTag(lang)
 	switch {
 	case forced:
 		name += ".forced"
@@ -510,7 +565,10 @@ func (s *Service) recordSave(ctx context.Context, tx *sql.Tx, row *Subtitle, rep
 	if _, err := database.Insert(tx, "subtitles", row, by); err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, "DELETE FROM subtitles WHERE file_id = ? AND place = 'wish' AND language = ? AND forced = ?", row.FileID, row.Language, row.Forced); err != nil {
+	// The saved file meets the wish for its own language and for its base
+	// language, as a pt-BR file meets a pt wish.
+	if _, err := tx.ExecContext(ctx, "DELETE FROM subtitles WHERE file_id = ? AND place = 'wish' AND language IN (?, ?) AND forced = ?",
+		row.FileID, row.Language, baseOf(row.Language), row.Forced); err != nil {
 		return err
 	}
 	_, err := tx.ExecContext(ctx, "DELETE FROM subtitle_saves WHERE id = ?", saveID)

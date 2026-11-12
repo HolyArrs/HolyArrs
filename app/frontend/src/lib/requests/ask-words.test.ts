@@ -1,4 +1,4 @@
-import { alsoDeclined, approverCounts, approverSort, approverTab, askTab, askTabs, askedBy, firstTab, tabCounts, limitLine, limitLines, names, waitWords } from './ask-words.ts';
+import { alsoDeclined, approverCounts, approverSort, approverTab, askMoments, askTab, askTabs, askedBy, firstTab, libraryMoments, momentWords, tabCounts, limitLine, limitLines, names, waitWords } from './ask-words.ts';
 import type { AskKindLimit, AskLimit } from './types.ts';
 import { describe, expect, it } from 'vitest';
 import type { AskState } from '../core/types.ts';
@@ -105,5 +105,15 @@ describe('alsoDeclined (#136)', () => {
 		expect(alsoDeclined({ also_declined: [w(2, 'bo', 'Bo B'), w(3, 'cy')] })).toBe('Bo B and 1 other declined it before.');
 		expect(alsoDeclined({ also_declined: [w(3, 'cy')] })).toBe('1 other person declined it before.');
 		expect(alsoDeclined({ also_declined: [w(3, 'cy'), w(4, 'di', '  ')] })).toBe('2 other people declined it before.');
+	});
+});
+
+describe('Alert moments', () => {
+	it('offers every moment that has words, so a new Alert speaks for it', () => {
+		const offered: string[] = [...askMoments, ...libraryMoments];
+		expect(Object.keys(momentWords).filter((m) => !offered.includes(m))).toEqual([]);
+	});
+	it('puts the download moments between Sent to download and In the Library, as the server lists them', () => {
+		expect(libraryMoments.slice(0, 4)).toEqual(['grab', 'downloaded', 'download_failed', 'import']);
 	});
 });

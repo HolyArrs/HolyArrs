@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Pengaturan",
+	"settings.layout.home": "Beranda",
+	"settings.layout.sections": "Bagian pengaturan",
+	"settings.layout.needsAttention": "Perlu perhatian",
+	"settings.layout.needsAttentionLower": "perlu perhatian",
+	"settings.layout.blocked": "Ini tidak bisa kamu ubah",
+	"settings.layout.backToSettings": "Kembali ke Pengaturan",
+	"settings.layout.setPasswordFirst": "Atur kata sandi dulu",
+	"settings.layout.setPasswordDesc": "Kunci, kata sandi, pengguna, dan cadangan memerlukan kata sandi HolyArrs. Kamu belum punya.",
+	"settings.layout.setPasswordLabel": "Atur kata sandi",
+	"settings.layout.confirmPasswordLabel": "Konfirmasi kata sandimu",
+	"settings.layout.confirmPasswordDesc": "Kunci, kata sandi, pengguna, dan cadangan memerlukan kata sandimu. Berlaku 10 menit."
+}

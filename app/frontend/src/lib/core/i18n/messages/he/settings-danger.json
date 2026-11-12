@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs נעצר.",
+	"settings.danger.couldnt": "לא ניתן {action}",
+	"settings.danger.title": "אזור מסוכן",
+	"settings.danger.ownerOnly": "לבעלים ולמנהלים בלבד",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "כן, {action}",
+	"settings.danger.cancel": "ביטול",
+	"settings.danger.expires": "פג תוקף בעוד 60 שנ׳",
+	"settings.danger.wholeApp": "האפליקציה כולה",
+	"settings.danger.intro": "הפעולות האלה עוצרות את HolyArrs. מדיניות ההפעלה מחדש של Docker מפעילה אותו שוב תוך כמה שניות, אלא אם המדיניות היא <code>no</code>; במקרה כזה הפעל את הקונטיינר בעצמך. כל פעולה מבקשת אישור קודם.",
+	"settings.danger.restart": "הפעלה מחדש של HolyArrs",
+	"settings.danger.safe": "הפעלה מחדש במצב בטוח",
+	"settings.danger.shutdown": "כיבוי",
+	"settings.danger.safeNote": "מופעל פעם אחת עם כניסה, הגדרות וספרייה בלבד. השתמש בזה כשחלק חוסם את ההפעלה."
+}

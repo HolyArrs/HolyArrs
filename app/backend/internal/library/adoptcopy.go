@@ -27,6 +27,13 @@ type CopyAdoption struct {
 func (s *Service) AdoptMovieCopy(ctx context.Context, titleID, versionID int64, in CopyAdoption, by domain.Actor) (mediafiles.File, error) {
 	unlock := s.Store.LockFiles()
 	defer unlock()
+	return s.adoptMovieCopy(ctx, titleID, versionID, in, false, by)
+}
+
+// adoptMovieCopy is AdoptMovieCopy under the files lock. With fromRescan, a
+// slot whose download is no longer running is untied from it first, and a
+// slot being grabbed or imported is left alone.
+func (s *Service) adoptMovieCopy(ctx context.Context, titleID, versionID int64, in CopyAdoption, fromRescan bool, by domain.Actor) (mediafiles.File, error) {
 	var f mediafiles.File
 	v, err := versionOf(ctx, s.Store.Read(), titleID, versionID)
 	if err != nil {
@@ -86,6 +93,24 @@ func (s *Service) AdoptMovieCopy(ctx context.Context, titleID, versionID int64, 
 			return fmt.Errorf("%w: choose one movie Version", ErrCopyChoice)
 		}
 		slot = slots[0]
+		if fromRescan {
+			switch slot.State {
+			case mediafiles.SlotChosen, mediafiles.SlotDownloading, mediafiles.SlotImporting:
+				return fmt.Errorf("%w: this Version is being downloaded", ErrCopyChoice)
+			}
+			if slot.FileID == nil && slot.ActiveDownloadID != nil && s.DownloadRunning != nil {
+				running, err := s.DownloadRunning(tx, *slot.ActiveDownloadID)
+				if err != nil {
+					return err
+				}
+				if !running {
+					if err := mediafiles.ClearSlotDownloadTx(tx, slot.ID); err != nil {
+						return err
+					}
+					slot.ActiveDownloadID = nil
+				}
+			}
+		}
 		if slot.FileID != nil || slot.ActiveDownloadID != nil || slot.State == mediafiles.SlotRemoved {
 			return fmt.Errorf("%w: this Version already has a copy or download", ErrCopyChoice)
 		}

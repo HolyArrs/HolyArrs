@@ -38,6 +38,14 @@
 "settings.libraryFolders.foldersHint": "1 行に 1 パス(例: /data/imports)。最大 32 件。",
 "settings.libraryFolders.ownerOnly": "オーナーと管理者のみ",
 	"settings.libraryFolders.copiesExpected": "コピーで問題なし",
-	"settings.libraryFolders.copiesExpectedState": "コピー（想定どおり）",
-	"settings.libraryFolders.warnAgain": "再び警告する"
+	"settings.libraryFolders.copiesExpectedState": "完全なコピー(選択どおり)",
+	"settings.libraryFolders.whyCopies": "なぜ?",
+	"settings.libraryFolders.stateInstant": "すぐ完了、余分な容量なし",
+	"settings.libraryFolders.warnAgain": "再び警告する",
+	"settings.libraryFolders.changePath": "パスを変更",
+	"settings.libraryFolders.changePathOf": "{path} のパスを変更",
+	"settings.libraryFolders.newPath": "新しいパス",
+	"settings.libraryFolders.changePathHint": "先にファイルをそこへ移してください。HolyArrs は各ファイルを確認するだけで、何も移動しません。",
+	"settings.libraryFolders.checkingFiles": "ファイルを確認中…",
+	"settings.libraryFolders.pathChanged": "パスを変更しました"
 }

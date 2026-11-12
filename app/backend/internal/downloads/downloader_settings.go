@@ -24,6 +24,7 @@ var (
 	ErrURL         = errors.New("the address must start with http:// or https:// and name a host, with no name or password in it")
 	ErrCategory    = errors.New("the category must be 1 to 64 characters with no slashes")
 	ErrDelugeLabel = errors.New("Deluge labels use only lowercase letters, digits, _ - and .")
+	ErrAria2Folder = errors.New("aria2 keeps each category in a folder, so the category must be a plain folder name")
 	ErrPriority    = errors.New("priority must be 1 to 50 (1 is used first)")
 	ErrPathMap     = errors.New("each path map needs both paths, each starting with / or a drive letter")
 	ErrUsername    = errors.New("the sign-in name must be at most 100 characters")
@@ -53,6 +54,8 @@ type Input struct {
 	Writable       *bool            `json:"writable"`
 	ClearFinished  *bool            `json:"clear_finished"`
 	Tags           []string         `json:"tags"`
+	// AfterSeeding: left out, the choice stays as it is.
+	AfterSeeding *SeedingChoice `json:"after_seeding"`
 }
 
 // HealthView is the stored health of a Downloader as shown to users.
@@ -115,7 +118,7 @@ func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, 
 		if err := fill(in, &d, false); err != nil {
 			return err
 		}
-		if hostOf(d.URL) != oldHost || strings.Join(d.Categories(), "/") != oldCat {
+		if hostOf(d.URL) != oldHost || !sameCategory(strings.Join(d.Categories(), "/"), oldCat) {
 			n, err := activeCount(tx, id)
 			if err != nil {
 				return err
@@ -250,7 +253,7 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 	d.Name = name
 	if isNew || in.Adapter != "" {
 		switch in.Adapter {
-		case "qbittorrent", "transmission", "deluge", "rtorrent":
+		case "qbittorrent", "transmission", "deluge", "rtorrent", "aria2":
 			d.Protocol = "torrent"
 		case "sabnzbd", "nzbget":
 			d.Protocol = "usenet"
@@ -337,6 +340,9 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 	if isNew {
 		d.AfterImport, d.State = "leave", "ok"
 	}
+	if in.AfterSeeding != nil {
+		return applySeeding(*in.AfterSeeding, d)
+	}
 	return nil
 }
 
@@ -394,6 +400,9 @@ func checkCategory(raw, adapter string) (string, error) {
 	}
 	if adapter == "deluge" && strings.Trim(c, "abcdefghijklmnopqrstuvwxyz0123456789_.-") != "" {
 		return "", ErrDelugeLabel
+	}
+	if adapter == "aria2" && (c == "." || c == ".." || strings.ContainsAny(c, `:*?"<>|`) || strings.ContainsFunc(c, func(r rune) bool { return r < 0x20 || r == 0x7f })) {
+		return "", ErrAria2Folder
 	}
 	return c, nil
 }

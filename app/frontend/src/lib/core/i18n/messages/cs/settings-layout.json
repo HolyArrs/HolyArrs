@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Nastavení",
+	"settings.layout.home": "Domů",
+	"settings.layout.sections": "Sekce nastavení",
+	"settings.layout.needsAttention": "Vyžaduje pozornost",
+	"settings.layout.needsAttentionLower": "vyžaduje pozornost",
+	"settings.layout.blocked": "Tohle nemůžete změnit",
+	"settings.layout.backToSettings": "Zpět do Nastavení",
+	"settings.layout.setPasswordFirst": "Nejdřív nastavte heslo",
+	"settings.layout.setPasswordDesc": "Klíče, hesla, lidé a zálohy vyžadují heslo k HolyArrs. Zatím žádné nemáte.",
+	"settings.layout.setPasswordLabel": "Nastavit heslo",
+	"settings.layout.confirmPasswordLabel": "Potvrďte své heslo",
+	"settings.layout.confirmPasswordDesc": "Klíče, hesla, lidé a zálohy vyžadují vaše heslo. Platí 10 minut."
+}

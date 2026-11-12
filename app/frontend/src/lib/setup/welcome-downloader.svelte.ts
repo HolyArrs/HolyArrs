@@ -5,8 +5,8 @@ import { api, message, ApiError } from '#lib/core/api.ts';
 import { t as say } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createWelcomeDownloader(ctx: any) {
-	const dlKinds: DownloaderForm['kind'][] = ['qbittorrent', 'sabnzbd', 'transmission', 'nzbget', 'deluge', 'rtorrent'];
-	const dlPorts: Record<DownloaderForm['kind'], string> = { qbittorrent: '8080', sabnzbd: '8080', transmission: '9091', nzbget: '6789', deluge: '8112', rtorrent: '8000' };
+	const dlKinds: DownloaderForm['kind'][] = ['qbittorrent', 'sabnzbd', 'transmission', 'nzbget', 'deluge', 'rtorrent', 'aria2'];
+	const dlPorts: Record<DownloaderForm['kind'], string> = { qbittorrent: '8080', sabnzbd: '8080', transmission: '9091', nzbget: '6789', deluge: '8112', rtorrent: '8000', aria2: '6800' };
 	let dl = $state<DownloaderForm>(emptyForm());
 	// Every connected downloader, each with its last test answer; the form shows when there is none yet or the owner adds another.
 	let dlList = $state<DownloaderView[]>([]);
@@ -19,13 +19,31 @@ export function createWelcomeDownloader(ctx: any) {
 	// Shown under User name when an app that signs in turned down a try without one.
 	let dlAuth = $state('');
 	const dlForm = $derived(dlList.length === 0 || dlAdding);
-	const dlUser = $derived(dl.kind === 'qbittorrent' || dl.kind === 'transmission' || dl.kind === 'nzbget' || dl.kind === 'rtorrent');
+	// qBittorrent signs in with an API key (5.2 or newer, asked first, like Settings) or a user name and password.
+	let qbitWay = $state<'key' | 'login'>('key');
+	const dlUser = $derived((dl.kind === 'qbittorrent' && qbitWay === 'login') || dl.kind === 'transmission' || dl.kind === 'nzbget' || dl.kind === 'rtorrent');
+	function pickWay(w: 'key' | 'login') {
+		qbitWay = w;
+		dl.secret = '';
+		dlAuth = '';
+		if (w === 'key') dl.username = '';
+	}
 	function pickDl(k: DownloaderForm['kind']) {
 		ctx.error = '';
 		dlError = '';
 		dlAuth = '';
 		const url = dl.url;
 		dl = { ...emptyForm(k), url: url !== 'http://' ? url : 'http://' };
+		qbitWay = 'key';
+	}
+	// Cancel and a finished save: an empty form, asking for the key again.
+	function resetForm() {
+		dlError = '';
+		dlAuth = '';
+		dlAdding = false;
+		dlEditing = null;
+		dl = emptyForm();
+		qbitWay = 'key';
 	}
 	async function listDownloaders(): Promise<DownloaderView[]> {
 		try {
@@ -59,6 +77,7 @@ export function createWelcomeDownloader(ctx: any) {
 		ctx.error = '';
 		dlError = '';
 		dl = formFrom(d);
+		qbitWay = d.username ? 'login' : 'key';
 		dlEditing = d.id;
 		dlAdding = true;
 	}
@@ -87,7 +106,9 @@ export function createWelcomeDownloader(ctx: any) {
 		if (u && !/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) dl.url = `http://${u}`;
 		try {
 			const editing = dlEditing;
-			const v = editing != null ? await api.put<DownloaderView>(`/downloaders/${editing}`, formBody(dl)) : await api.post<DownloaderView>('/downloaders', formBody(dl));
+			// Key mode never sends a user name left over from the other way.
+			const body = { ...formBody(dl), ...(dl.kind === 'qbittorrent' && qbitWay === 'key' ? { username: '' } : {}) };
+			const v = editing != null ? await api.put<DownloaderView>(`/downloaders/${editing}`, body) : await api.post<DownloaderView>('/downloaders', body);
 			if (editing != null) dlList = dlList.map((x) => (x.id === v.id ? v : x));
 			// Only a downloader that answers becomes a row; a new one that does not is taken back and the form stays.
 			const t = await api.post<{ ok: boolean; text: string }>(`/downloaders/${v.id}/test`).catch((err) => ({ ok: false, text: message(err) }));
@@ -100,9 +121,7 @@ export function createWelcomeDownloader(ctx: any) {
 			}
 			dlTests = { ...dlTests, [v.id]: { ok: t.ok, text: t.text } };
 			if (editing == null) dlList = [...dlList, v];
-			dlEditing = null;
-			dlAdding = false;
-			dl = emptyForm();
+			resetForm();
 		} catch (err) {
 			// HolyArrs itself did not answer: the Source step's wording.
 			if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) ctx.error = say('setup.notAnswering');
@@ -157,6 +176,9 @@ export function createWelcomeDownloader(ctx: any) {
 		set dlError(v) { dlError = v; },
 		get dlPorts() { return dlPorts; },
 		get dlUser() { return dlUser; },
+		get qbitWay() { return qbitWay; },
+		pickWay,
+		resetForm,
 		get dlAuth() { return dlAuth; },
 		set dlAuth(v) { dlAuth = v; },
 		get dlEditing() { return dlEditing; },

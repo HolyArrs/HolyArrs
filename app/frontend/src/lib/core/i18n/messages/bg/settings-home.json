@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Разширени",
+	"settings.home.page": "{group} · страница",
+	"settings.home.title": "Настройки",
+	"settings.home.search": "Търсене в настройките",
+	"settings.home.matching": "Намерени настройки",
+	"settings.home.noMatch": "Няма съвпадащи настройки",
+	"settings.home.noMatchText": "Опитайте с друга дума, например папка, ключ или парола.",
+	"settings.home.clear": "Изчистване на търсенето"
+}

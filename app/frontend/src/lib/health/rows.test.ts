@@ -79,6 +79,24 @@ describe('status rows', () => {
 		expect(headline(rows)).toBe('2 checks need attention');
 	});
 
+	it('shows imported downloads waiting to be cleared, fixed on Downloads', () => {
+		const rows = buildRows({
+			checks: [{ key: 'clear_waiting', kind: 'clear_waiting', subject: 'Downloads', state: 'warning', message: '1 imported download is still waiting to be cleared' } as never]
+		});
+		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason, r.fix])).toEqual([
+			['Imported downloads still in a Downloader', 'library', 'wait', '1 imported download is still waiting to be cleared', '/downloads']
+		]);
+	});
+
+	it('names the Downloader with no save folder, fixed in Settings > Downloaders', () => {
+		const rows = buildRows({
+			checks: [{ key: 'save_folder:2', kind: 'save_folder', subject: 'SABnzbd', state: 'warning', message: 'SABnzbd has no save folder set' } as never]
+		});
+		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason, r.fix])).toEqual([
+			['Save folder for SABnzbd', 'downloaders', 'wait', "SABnzbd has no save folder set, so HolyArrs can't import its finished downloads. Add a path pair in Settings › Downloaders.", '/settings/downloaders']
+		]);
+	});
+
 	it('does not count a starting part as a problem', () => {
 		expect(needsAttention(buildRows({ states: [link('source', 1, 'starting')] }))).toEqual([]);
 	});

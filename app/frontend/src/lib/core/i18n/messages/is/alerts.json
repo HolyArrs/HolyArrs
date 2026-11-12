@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Stillingar",
+	"alerts.panel.clearAll": "Hreinsa allt",
+	"alerts.panel.empty": "Ekkert hér enn",
+	"alerts.panel.needsAttention": "Þarfnast athygli",
+	"alerts.panel.recent": "Nýlegt",
+	"alerts.panel.remove": "Fjarlægja {text}",
+	"alerts.panel.title": "Nýlegar tilkynningar",
+	"alerts.state.manyNeed": "{count} þarfnast athygli",
+	"alerts.state.ok": "Allt í lagi",
+	"alerts.state.oneNeeds": "1 þarfnast athygli",
+	"alerts.state.unset": "Ekki sett upp",
+	"alerts.time.days": "{n} d.",
+	"alerts.time.hours": "{n} klst.",
+	"alerts.time.minutes": "{n} mín.",
+	"alerts.time.now": "núna"
+}

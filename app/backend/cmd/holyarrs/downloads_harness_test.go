@@ -388,7 +388,7 @@ func (w *dlPinWorld) seed(t *testing.T) {
 				dl.ReleaseID = &rel.ID
 				pw.name, pw.size, pw.source, pw.hasRelease = rel.Name, rel.Size, "Lab", true
 			} else {
-				pw.name = dl.ExternalID
+				pw.name = name // no Release and no files seen: the row is named by its title
 			}
 			if _, err := database.Insert(tx, "downloads", dl, domain.System); err != nil {
 				return err

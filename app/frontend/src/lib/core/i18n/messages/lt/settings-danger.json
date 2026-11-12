@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs sustoja.",
+	"settings.danger.couldnt": "Nepavyko: {action}",
+	"settings.danger.title": "Pavojinga zona",
+	"settings.danger.ownerOnly": "Tik savininkui ir administratoriams",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Taip: {action}",
+	"settings.danger.cancel": "Atšaukti",
+	"settings.danger.expires": "Baigs galioti po 60 s",
+	"settings.danger.wholeApp": "Visa programa",
+	"settings.danger.intro": "Šie veiksmai sustabdo HolyArrs. Docker paleidimo iš naujo politika po kelių sekundžių jį paleidžia vėl, nebent politika yra <code>no</code>; tada konteinerį paleiskite patys. Kiekvienas veiksmas pirma paklausia.",
+	"settings.danger.restart": "Paleisti HolyArrs iš naujo",
+	"settings.danger.safe": "Paleisti iš naujo saugiuoju režimu",
+	"settings.danger.shutdown": "Išjungti",
+	"settings.danger.safeNote": "Paleidžiama vieną kartą tik su prisijungimu, Nustatymais ir Biblioteka. Naudokite, kai Dalis trukdo paleidimui."
+}

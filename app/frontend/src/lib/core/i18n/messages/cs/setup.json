@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Znovu připojit",
+	"setup.testNow": "Otestovat",
+	"setup.movies": "Filmy",
+	"setup.tvShows": "Seriály",
+	"setup.music": "Hudba",
+	"setup.subtitles": "Titulky",
+	"setup.fullPath": "Zadejte úplnou cestu ke složce, například {path}.",
+	"setup.folderUsed": "Tuto složku už něco používá, nebo leží uvnitř složky, kterou používá.",
+	"setup.folderMissing": "Taková složka neexistuje. Zkontrolujte cestu.",
+	"setup.addFolderOrOff": "Přidejte složku, nebo to vypněte.",
+	"setup.notAnswering": "HolyArrs neodpovídá. Zkuste to za chvíli znovu.",
+	"setup.addUserPasswordHint": "Zadejte uživatelské jméno a heslo.",
+	"setup.folders": "Složky",
+	"setup.downloader": "Stahovač",
+	"setup.source": "Zdroj"
+}

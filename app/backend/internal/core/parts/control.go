@@ -23,7 +23,7 @@ import (
 // Errors a control answers with; their text is shown to people.
 var (
 	ErrSafeMode = errors.New("the app runs in safe mode: every part is off until it starts again without safe mode")
-	ErrNoPart   = errors.New("no such part: use movies, shows, music, subtitles or wishlist")
+	ErrNoPart   = errors.New("no such part: use movies, shows, music, subtitles, wishlist or sources")
 	ErrNoStage  = errors.New("no such stage, or it cannot be paused on its own (restart the app instead)")
 	ErrBusy     = errors.New("another control is still running; try again in a moment")
 )

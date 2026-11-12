@@ -1,10 +1,12 @@
-// Package parts holds the five parts a person can turn on, off or restart
-// while the app runs (Movies, Shows, Music, Subtitles, Requests), the
-// one table that says which routes, screens, background loops and Job
+// Package parts holds the parts a person can turn on, off or restart
+// while the app runs (Movies, Shows, Music, Subtitles, Requests, Sources),
+// the one table that says which routes, screens, background loops and Job
 // kinds belong to which part, and the Control that switches them.
-// Everything not in a part is the core: sign-in and accounts, Sources,
-// Downloaders and Downloads, Library folders, settings, backups, health,
-// Alerts and the controls themselves. Sources are not a part.
+// Everything not in a part is the core: sign-in and accounts, Downloaders
+// and Downloads, imports, Library folders, settings, backups, health,
+// Alerts and the controls themselves. Sources owns no route, screen, loop
+// or Job kind: with it off, the searches skip themselves (people who add
+// their downloads by hand), and Downloaders and imports keep working.
 package parts
 
 import (
@@ -24,6 +26,7 @@ const (
 	Music     Part = "music"
 	Subtitles Part = "subtitles"
 	Wishlist  Part = "wishlist"
+	Sources   Part = "sources"
 
 	Core    = startup.Core
 	Media   = startup.Media
@@ -235,11 +238,15 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/my/profile":               Core,
 	"PUT /api/v1/my/profile":               Core,
 	"PUT /api/v1/my/language":              Core,
+	"GET /api/v1/my/views":                 Core,
+	"PUT /api/v1/my/views":                 Core,
 	"GET /api/v1/media-servers":            Core,
 	"POST /api/v1/media-servers":           Core,
 	"PUT /api/v1/media-servers/{id}":       Core,
 	"DELETE /api/v1/media-servers/{id}":    Core,
 	"POST /api/v1/media-servers/{id}/test": Core,
+	"GET /api/v1/settings/watch-history":   Media,
+	"PUT /api/v1/settings/watch-history":   Media,
 	"GET /api/v1/events":                   Core,
 	"GET /api/v1/jobs":                     Core,
 	"GET /api/v1/jobs/{id}":                Core,
@@ -254,6 +261,7 @@ var routeOwners = map[string]Owner{
 	"POST /api/v1/library-folders":            Core,
 	"PUT /api/v1/library-folders/{id}":        Core,
 	"DELETE /api/v1/library-folders/{id}":     Core,
+	"PUT /api/v1/library-folders/{id}/path":   Core,
 	"POST /api/v1/library-folders/{id}/check": Core,
 
 	// Sources, Downloaders and Downloads (linked apps are core).
@@ -290,6 +298,7 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/downloads/view":                                 Core,
 	"POST /api/v1/downloads/{id}/mark-failed":                    Core,
 	"POST /api/v1/downloads/{id}/remove":                         Core,
+	"POST /api/v1/downloads/clear-now":                           Core,
 	"POST /api/v1/downloads/{id}/pause":                          Core,
 	"POST /api/v1/downloads/{id}/resume":                         Core,
 	"POST /api/v1/downloads/{id}/top":                            Core,
@@ -355,6 +364,9 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/app/update":                 Core,
 	"GET /api/v1/settings/ui":                Core,
 	"PUT /api/v1/settings/ui":                Core,
+	"GET /api/v1/settings/metadata":          Core,
+	"PUT /api/v1/settings/metadata":          Core,
+	"POST /api/v1/settings/metadata/test":    Core,
 	"POST /api/v1/app/update/check":          Core,
 	"POST /api/v1/schedules/{kind}/run":      Core,
 	"PUT /api/v1/schedules/{kind}":           Core,
@@ -380,6 +392,8 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/titles":                      Media,
 	"GET /api/v1/titles/owned":                Media,
 	"GET /api/v1/library/search":              Media,
+	"GET /api/v1/library/stats":               Media,
+	"GET /api/v1/library/stats/watched":       Media,
 	"GET /api/v1/search/suggest":              Media,
 	"GET /api/v1/search":                      Media,
 	"GET /api/v1/home":                        Media,
@@ -402,6 +416,9 @@ var routeOwners = map[string]Owner{
 	"DELETE /api/v1/own-traits/{id}":          Media,
 	"GET /api/v1/trash/profiles":              Media,
 	"POST /api/v1/pick-rules/{id}/trash":      Media,
+	"GET /api/v1/hidden":                      Media,
+	"POST /api/v1/hidden":                     Media,
+	"DELETE /api/v1/hidden/{id}":              Media,
 	"GET /api/v1/never-add":                   Media,
 	"POST /api/v1/never-add":                  Media,
 	"DELETE /api/v1/never-add/{id}":           Media,
@@ -527,14 +544,16 @@ var routeOwners = map[string]Owner{
 	"DELETE /api/v1/settings/old-app-api/keys/{side}": Core,
 
 	// Shows.
-	"POST /api/v1/shows":                       shows,
-	"GET /api/v1/shows/lookup":                 shows,
-	"GET /api/v1/settings/shows":               shows,
-	"PUT /api/v1/settings/shows":               shows,
-	"GET /api/v1/titles/{id}/seasons":          shows,
-	"PUT /api/v1/titles/{id}/seasons/{number}": shows,
-	"GET /api/v1/titles/{id}/episodes":         shows,
-	"PUT /api/v1/episodes/{id}":                shows,
+	"POST /api/v1/shows":                                  shows,
+	"GET /api/v1/shows/lookup":                            shows,
+	"GET /api/v1/settings/shows":                          shows,
+	"PUT /api/v1/settings/shows":                          shows,
+	"GET /api/v1/titles/{id}/seasons":                     shows,
+	"GET /api/v1/titles/{id}/episode-groups":              shows,
+	"PUT /api/v1/titles/{id}/seasons/{number}":            shows,
+	"POST /api/v1/titles/{id}/seasons/{number}/pack-next": shows,
+	"GET /api/v1/titles/{id}/episodes":                    shows,
+	"PUT /api/v1/episodes/{id}":                           shows,
 
 	// Music.
 	"POST /api/v1/artists":           music,
@@ -568,6 +587,12 @@ var routeOwners = map[string]Owner{
 	"DELETE /api/v1/subtitle-sites/{id}":        subtitles,
 	"POST /api/v1/subtitle-sites/{id}/test":     subtitles,
 
+	// Subtitle translation.
+	"GET /api/v1/settings/subtitles/translator":       subtitles,
+	"PUT /api/v1/settings/subtitles/translator":       subtitles,
+	"POST /api/v1/settings/subtitles/translator/test": subtitles,
+	"POST /api/v1/files/{id}/subtitles/translate":     subtitles,
+
 	// Requests: asks, limits, and the messages about asks.
 	"GET /api/v1/asks":                               wishlist,
 	"GET /api/v1/asks/{id}":                          wishlist,
@@ -585,6 +610,7 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/my/plex-watchlist":                  wishlist,
 	"PUT /api/v1/my/plex-watchlist":                  wishlist,
 	"POST /api/v1/my/plex-watchlist/check":           wishlist,
+	"GET /api/v1/settings/asks/plex-friends":         wishlist,
 	"GET /api/v1/titles/{id}/follow":                 wishlist,
 	"PUT /api/v1/titles/{id}/follow":                 wishlist,
 	"DELETE /api/v1/titles/{id}/follow":              wishlist,

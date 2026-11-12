@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Настройки",
+	"alerts.panel.clearAll": "Изчистване на всички",
+	"alerts.panel.empty": "Още няма нищо",
+	"alerts.panel.needsAttention": "Изисква внимание",
+	"alerts.panel.recent": "Скорошни",
+	"alerts.panel.remove": "Премахване на {text}",
+	"alerts.panel.title": "Скорошни известия",
+	"alerts.state.manyNeed": "{count} изискват внимание",
+	"alerts.state.ok": "Всичко е наред",
+	"alerts.state.oneNeeds": "1 изисква внимание",
+	"alerts.state.unset": "Не е настроено",
+	"alerts.time.days": "{n} д",
+	"alerts.time.hours": "{n} ч",
+	"alerts.time.minutes": "{n} мин",
+	"alerts.time.now": "сега"
+}

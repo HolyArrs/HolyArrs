@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Logid",
+	"settings.logs.download": "Laadi alla",
+	"settings.logs.filter": "Filtreeri logi",
+	"settings.logs.level": "Tase",
+	"settings.logs.every": "Iga rida",
+	"settings.logs.warnings": "Hoiatused ja vead",
+	"settings.logs.errors": "Ainult vead",
+	"settings.logs.text": "Tekst",
+	"settings.logs.example": "nt qBittorrent",
+	"settings.logs.from": "Alates",
+	"settings.logs.to": "Kuni",
+	"settings.logs.apply": "Rakenda",
+	"settings.logs.clear": "Tühjenda",
+	"settings.logs.lines": "Read",
+	"settings.logs.newer": "Uuemad",
+	"settings.logs.older": "Vanemad"
+}

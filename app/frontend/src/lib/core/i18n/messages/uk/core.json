@@ -16,7 +16,7 @@
 	"core.format.healthy": "Усе гаразд",
 	"core.format.folderNotFound": "Теку не знайдено",
 	"core.format.cannotWrite": "Тут не можна записувати",
-	"core.format.copiedNoHardlinks": "Працює, але файли копіюються (без жорстких посилань)",
+	"core.format.copiedNoHardlinks": "Кожен імпорт робить повну копію (займає більше місця)",
 	"core.format.notChecked": "Ще не перевірено",
 	"core.loader.welcome": "Вітаємо, {name}",
 	"core.loader.reconnecting": "Повторне підключення…",
@@ -54,6 +54,8 @@
 	"core.plain.configDiskWarning": "На диску з текою конфігурації закінчується місце.",
 	"core.plain.configFolder": "/config не прив’язано до теки, тому дані HolyArrs втратяться під час перестворення контейнера.",
 	"core.plain.waitingDownloads": "Завантаження чекають, бо їхній завантажувач не може використати файли.",
+	"core.plain.clearWaiting": "Імпортовані завантаження чекають на очищення зі свого завантажувача.",
+	"core.plain.saveFolder": "В одного завантажувача не задано теку збереження, тому HolyArrs не може імпортувати його готові завантаження.",
 	"core.plain.someone": "Хтось із твого дому",
 	"core.plain.keyKitOwner": "Власнику варто зберегти набір ключів: бекапи не містять головного ключа.",
 	"core.plain.keyKitNone": "Набір ключів не збережено: бекапи не містять головного ключа.",
@@ -142,5 +144,6 @@
 	"core.settings.danger.label": "Небезпечна зона",
 	"core.settings.danger.about": "Перезапуск або вимкнення",
 	"core.settings.account.label": "Мій обліковий запис",
-	"core.settings.account.about": "Пароль, двоетапна перевірка, пристрої"
+	"core.settings.account.about": "Пароль, двоетапна перевірка, пристрої",
+	"core.api.sourceOff": "Деякі ряди вимкнено в цьому встановленні."
 }

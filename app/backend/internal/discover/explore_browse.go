@@ -9,7 +9,7 @@ import (
 func ItemRefs(items []engine.Item) []metadata.DiscoverItem {
 	refs := make([]metadata.DiscoverItem, len(items))
 	for i, it := range items {
-		refs[i] = metadata.DiscoverItem{TMDBID: it.TMDBID, Kind: it.Kind}
+		refs[i] = metadata.DiscoverItem{TMDBID: it.TMDBID, Kind: it.Kind, Genres: it.Genres}
 	}
 	return refs
 }

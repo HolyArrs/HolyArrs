@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // sourceKinds are the media kinds a Source from an app serves.
@@ -228,24 +230,31 @@ func (b *builder) downloaders(s *Snapshot) {
 		from := b.from("download_clients", i)
 		var adapter string
 		switch k := strings.ToLower(d.Kind); k {
-		case "qbittorrent", "sabnzbd", "transmission", "deluge", "rtorrent", "nzbget":
+		case "qbittorrent", "sabnzbd", "transmission", "deluge", "rtorrent", "aria2", "nzbget":
 			adapter = k
 		}
 		if adapter == "" {
-			b.not(GroupDownloaders, from, d.Name, "HolyArrs talks to qBittorrent, Transmission, Deluge, rTorrent, SABnzbd and NZBGet only")
+			b.not(GroupDownloaders, from, d.Name, "HolyArrs talks to qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd and NZBGet only")
 			continue
 		}
 		port, _ := setNum(d.Settings, "port")
 		tls := strings.EqualFold(setStr(d.Settings, "useSsl"), "true")
-		u := hostURL(setStr(d.Settings, "host"), int(port), tls, setStr(d.Settings, "urlBase"))
+		path := setStr(d.Settings, "urlBase", "rpcPath")
+		if adapter == "aria2" {
+			path = downloads.Aria2Path(path)
+		}
+		u := hostURL(setStr(d.Settings, "host"), int(port), tls, path)
 		if u == "" || metadataHost(u) {
 			b.not(GroupDownloaders, from, d.Name, "no usable address")
 			continue
 		}
 		cat := setStr(d.Settings, "movieCategory", "tvCategory", "musicCategory", "category")
-		locked := hasField(d.NeedsReentry, "password", "apiKey")
+		locked := hasField(d.NeedsReentry, "password", "apiKey", "secretToken")
 		b.addDownloader(s.Kind, from, d.Name, &DownloaderPlan{Adapter: adapter, URL: u, Username: clip(setStr(d.Settings, "username"), 100),
 			Category: clean64(cat), Priority: d.Priority, NeedsInput: locked}, d.Tags)
+		if adapter == "aria2" && setStr(d.Settings, "directory") != "" {
+			b.not(GroupDownloaders, from+".directory", "download folders", "the Downloader keeps its own folders; HolyArrs reads where each download lands")
+		}
 	}
 	if d := s.Downloader; d != nil {
 		adapter := map[Kind]string{QBittorrent: "qbittorrent", SABnzbd: "sabnzbd"}[s.Kind]
@@ -285,8 +294,11 @@ func (b *builder) addDownloader(app Kind, from, name string, d *DownloaderPlan, 
 	it.Detail += "; added paused: check it and resume it yourself"
 	if d.NeedsInput {
 		it.Needs = "your password"
-		if d.Adapter == "sabnzbd" {
+		switch d.Adapter {
+		case "sabnzbd":
 			it.Needs = "your key"
+		case "aria2":
+			it.Needs = "your secret token"
 		}
 		it.Detail = d.Adapter + " at " + d.URL + "; added paused until you type " + it.Needs + " and resume it"
 	}
@@ -409,7 +421,8 @@ func (b *builder) naming(s *Snapshot) {
 }
 
 // subtitleSiteKinds maps their subtitle site names to ours.
-var subtitleSiteKinds = map[string]string{"podnapisi": "podnapisi", "gestdown": "gestdown"}
+var subtitleSiteKinds = map[string]string{"podnapisi": "podnapisi", "gestdown": "gestdown", "yifysubtitles": "yifysubtitles",
+	"tvsubtitles": "tvsubtitles", "bsplayer": "bsplayer"}
 
 func (b *builder) subtitles(s *Snapshot) {
 	b.cover("subtitles")

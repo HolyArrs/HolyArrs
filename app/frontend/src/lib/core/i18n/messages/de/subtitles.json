@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Sprache",
 	"subtitles.wants.pick": "Sprache wählen",
 	"subtitles.wants.takeOff": "{name} entfernen",
-	"subtitles.wants.thisLanguage": "diese Sprache"
+	"subtitles.wants.thisLanguage": "diese Sprache",
+	"subtitles.made.translated": "Übersetzt",
+	"subtitles.made.partial": "Teilweise übersetzt",
+	"subtitles.made.ai": "KI-übersetzt",
+	"subtitles.made.machine": "Maschinell übersetzt",
+	"subtitles.wants.translateFrom": "Übersetzen aus",
+	"subtitles.wants.noTranslate": "Nicht übersetzen",
+	"subtitles.panel.picture": "Bild",
+	"subtitles.panel.pictureTitle": "Bilduntertitel: kann nicht übersetzt werden",
+	"subtitles.panel.translate": "Übersetzen",
+	"subtitles.panel.translateFor": "{name}-Untertitel übersetzen",
+	"subtitles.panel.translateFrom": "Übersetzen aus",
+	"subtitles.panel.translateQueued": "Wird übersetzt",
+	"subtitles.panel.translateQueuedBody": "Der {name}-Untertitel erscheint hier, sobald er fertig ist.",
+	"subtitles.panel.translating": "Nichts gefunden, dein Übersetzer erstellt einen."
 }

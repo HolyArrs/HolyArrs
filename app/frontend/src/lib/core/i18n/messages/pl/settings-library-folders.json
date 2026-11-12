@@ -38,6 +38,14 @@
 	"settings.libraryFolders.foldersHint": "Jedna ścieżka w linii, np. /data/imports. Do 32.",
 	"settings.libraryFolders.ownerOnly": "Tylko właściciel i administratorzy",
 	"settings.libraryFolders.copiesExpected": "Kopiowanie jest zamierzone",
-	"settings.libraryFolders.copiesExpectedState": "Kopiuje, zgodnie z zamiarem",
-	"settings.libraryFolders.warnAgain": "Ostrzegaj ponownie"
+	"settings.libraryFolders.copiesExpectedState": "Pełne kopie, jak wybrano",
+	"settings.libraryFolders.whyCopies": "Dlaczego?",
+	"settings.libraryFolders.stateInstant": "Od razu, bez dodatkowego miejsca",
+	"settings.libraryFolders.warnAgain": "Ostrzegaj ponownie",
+	"settings.libraryFolders.changePath": "Zmień ścieżkę",
+	"settings.libraryFolders.changePathOf": "Zmień ścieżkę {path}",
+	"settings.libraryFolders.newPath": "Nowa ścieżka",
+	"settings.libraryFolders.changePathHint": "Najpierw przenieś tam pliki. HolyArrs sprawdza każdy plik i niczego nie przenosi.",
+	"settings.libraryFolders.checkingFiles": "Sprawdzanie plików…",
+	"settings.libraryFolders.pathChanged": "Ścieżka zmieniona"
 }

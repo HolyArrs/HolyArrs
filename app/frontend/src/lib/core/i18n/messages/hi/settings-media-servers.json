@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "टेस्ट",
 	"settings.mediaServers.changeButton": "बदलें",
 	"settings.mediaServers.removeName": "{name} हटाएं",
-	"settings.mediaServers.remove": "हटाएं"
+	"settings.mediaServers.remove": "हटाएं",
+	"settings.mediaServers.watchTitle": "देखने का इतिहास",
+	"settings.mediaServers.watchRead": "देखने का इतिहास पढ़ें",
+	"settings.mediaServers.watchHint": "लाइब्रेरी चलाने वालों के लिए आँकड़ों में दिखाता है कि किसने क्या देखा। बंद करने पर पढ़ा हुआ मिट जाता है।",
+	"settings.mediaServers.watchConfirmOff": "देखने का इतिहास बंद करें? अब तक पढ़ा सब मिट जाएगा।",
+	"settings.mediaServers.watchTurnedOn": "देखने का इतिहास चालू। पहली बार पढ़ना 30 मिनट के अंदर होगा।",
+	"settings.mediaServers.watchTurnedOff": "देखने का इतिहास बंद",
+	"settings.mediaServers.watchFailed": "देखने का इतिहास बदला नहीं जा सका"
 }

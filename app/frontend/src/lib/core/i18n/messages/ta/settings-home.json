@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "மேம்பட்டவை",
+	"settings.home.page": "{group} · பக்கம்",
+	"settings.home.title": "அமைப்புகள்",
+	"settings.home.search": "அமைப்புகளில் தேடு",
+	"settings.home.matching": "பொருந்தும் அமைப்புகள்",
+	"settings.home.noMatch": "பொருந்தும் அமைப்புகள் இல்லை",
+	"settings.home.noMatchText": "கோப்புறை, விசை அல்லது கடவுச்சொல் போன்ற வேறொரு சொல்லை முயலுங்கள்.",
+	"settings.home.clear": "தேடலை அழி"
+}

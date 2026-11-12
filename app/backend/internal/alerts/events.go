@@ -19,6 +19,10 @@ func MomentOf(e domain.Event) string {
 	switch e.Kind {
 	case "download_sent":
 		return MomentGrab
+	case "download_finished":
+		return MomentDownloaded
+	case "download_failed":
+		return MomentDownloadFailed
 	case "import_done", "import_partly_done":
 		return MomentImport
 	case domain.EventRenamed:

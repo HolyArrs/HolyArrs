@@ -366,8 +366,12 @@
 	"accounts.invite.confirm": "确认密码",
 	"accounts.invite.joinSignIn": "加入并登录",
 	"accounts.language.label": "语言",
+	"accounts.language.top": "常用",
+	"accounts.language.more": "更多语言",
 	"accounts.language.auto": "自动",
 	"accounts.language.hint": "“自动”会跟随你的浏览器。保存在你的账户中。",
 	"accounts.language.saveFailed": "无法保存语言",
+	"accounts.language.count.one": "1 种语言",
+	"accounts.language.count.other": "{n} 种语言",
 	"accounts.account.watchEveryone": "所有者已为所有人开启此功能。关闭两项即可停止。"
 }

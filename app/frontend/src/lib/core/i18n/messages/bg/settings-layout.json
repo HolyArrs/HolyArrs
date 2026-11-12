@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Настройки",
+	"settings.layout.home": "Начало",
+	"settings.layout.sections": "Раздели на настройките",
+	"settings.layout.needsAttention": "Изисква внимание",
+	"settings.layout.needsAttentionLower": "изисква внимание",
+	"settings.layout.blocked": "Не можете да променяте това",
+	"settings.layout.backToSettings": "Назад към настройките",
+	"settings.layout.setPasswordFirst": "Първо задайте парола",
+	"settings.layout.setPasswordDesc": "Ключовете, паролите, хората и резервните копия изискват парола за HolyArrs. Все още нямате такава.",
+	"settings.layout.setPasswordLabel": "Задаване на парола",
+	"settings.layout.confirmPasswordLabel": "Потвърдете паролата си",
+	"settings.layout.confirmPasswordDesc": "Ключовете, паролите, хората и резервните копия изискват паролата ви. Важи 10 минути."
+}

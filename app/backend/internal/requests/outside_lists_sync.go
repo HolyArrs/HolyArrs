@@ -42,9 +42,16 @@ type OutsideLists struct {
 	// The keys go only in request headers and are never logged.
 	TMDBToken   func(ctx context.Context) (string, error)
 	TraktClient func(ctx context.Context) (string, error)
-	HTTP        *http.Client
-	Now         func() time.Time
+	// TMDBRoute, when set, says where TMDB lists are read now (the metadata
+	// mode): the address, the credential and the client, in place of
+	// TMDBBase, TMDBToken and HTTP. metadata.ErrSourceOff: lookups are off.
+	TMDBRoute func(ctx context.Context) (string, func(context.Context) (string, error), *http.Client, error)
+	HTTP      *http.Client
+	Now       func() time.Time
 }
+
+// ErrListsOff means TMDB lists are not read: lookups are off on this install.
+var ErrListsOff = errors.New("TMDB lists are off on this install")
 
 // OutsideListResult counts what one sync of one list did.
 type OutsideListResult struct {
@@ -307,6 +314,11 @@ func (s *OutsideLists) record(ctx context.Context, l domain.OutsideList, res Out
 // get fetches one page and decodes it into into. The identity keeps retry
 // state per service and key. The body is capped at 4 MiB.
 func (s *OutsideLists) get(ctx context.Context, what, endpoint, u string, head map[string]string, into any) (http.Header, error) {
+	return s.getWith(ctx, s.client(), what, endpoint, u, head, into)
+}
+
+// getWith is get through the client cl.
+func (s *OutsideLists) getWith(ctx context.Context, cl *http.Client, what, endpoint, u string, head map[string]string, into any) (http.Header, error) {
 	identity := []string{what, endpoint}
 	for _, k := range []string{"Authorization", "trakt-api-key", "X-Trakt-Client-Id"} {
 		identity = append(identity, head[k])
@@ -328,8 +340,11 @@ func (s *OutsideLists) get(ctx context.Context, what, endpoint, u string, head m
 	for k, v := range head {
 		req.Header.Set(k, v)
 	}
-	resp, err := s.client().Do(req)
+	resp, err := cl.Do(req)
 	if err != nil {
+		if errors.Is(err, metadata.ErrSourceOff) {
+			return nil, ErrListsOff
+		}
 		outcome = outbound.HTTPOutcome(0, err, ctx)
 		return nil, fmt.Errorf("%s did not answer", what)
 	}
@@ -365,14 +380,27 @@ func (s *OutsideLists) get(ctx context.Context, what, endpoint, u string, head m
 // fetchTMDB reads a TMDB list. A list can mix movies and shows, so only the
 // ones of the list's kind are kept.
 func (s *OutsideLists) fetchTMDB(ctx context.Context, ref, titleKind string) ([]entry, error) {
-	if s.TMDBToken == nil {
+	base, token, cl := s.TMDBBase, s.TMDBToken, s.client()
+	if s.TMDBRoute != nil {
+		var err error
+		if base, token, cl, err = s.TMDBRoute(ctx); err != nil {
+			if errors.Is(err, metadata.ErrSourceOff) {
+				return nil, ErrListsOff
+			}
+			return nil, err
+		}
+		if cl == nil {
+			cl = s.client()
+		}
+	}
+	if token == nil {
 		return nil, metadata.ErrNoAccess
 	}
-	tok, err := s.TMDBToken(ctx)
+	tok, err := token(ctx)
 	if err != nil || tok == "" {
 		return nil, metadata.ErrNoAccess
 	}
-	base := strings.TrimRight(s.TMDBBase, "/")
+	base = strings.TrimRight(base, "/")
 	if base == "" {
 		base = "https://api.themoviedb.org/3"
 	}
@@ -388,7 +416,7 @@ func (s *OutsideLists) fetchTMDB(ctx context.Context, ref, titleKind string) ([]
 			} `json:"items"`
 		}
 		u := base + "/list/" + url.PathEscape(ref) + "?page=" + strconv.Itoa(page)
-		if _, err := s.get(ctx, "TMDB", base, u, map[string]string{"Authorization": "Bearer " + tok}, &body); err != nil {
+		if _, err := s.getWith(ctx, cl, "TMDB", base, u, map[string]string{"Authorization": "Bearer " + tok}, &body); err != nil {
 			return nil, err
 		}
 		for _, it := range body.Items {

@@ -264,6 +264,15 @@ func TestScanAndAdoptAPI(t *testing.T) {
 	if j.State != "done" || !strings.Contains(string(b), `"status":"matched"`) || !strings.Contains(string(b), `"tmdb_id":"693134"`) {
 		t.Fatalf("scan %s %s", j.State, b)
 	}
+	// The scan Job shows how far it got, done/total folders.
+	var pj struct {
+		Progress     float64
+		ProgressNote *string
+	}
+	_ = json.Unmarshal(lbDo(t, "GET", url+"/api/v1/jobs/"+lbItoa(q.JobID), "", 200), &pj)
+	if pj.Progress != 1 || pj.ProgressNote == nil || *pj.ProgressNote != "1/1" {
+		t.Fatalf("scan progress %v %v", pj.Progress, pj.ProgressNote)
+	}
 	// 5.1.7 minor 9: "scan the rest" starts after the last folder read.
 	_ = json.Unmarshal(lbDo(t, "POST", url+"/api/v1/library-folders/"+lbItoa(lf.ID)+"/scan", `{"after":"Dune - Part Two (2024)"}`, 202), &q)
 	j = waitJob(t, url, q.JobID)

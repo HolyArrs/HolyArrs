@@ -2,7 +2,7 @@ import { ApiError } from '../core/api.ts';
 import { detailPath } from '../core/paths.ts';
 import { shownScore } from '../core/rating.ts';
 import { t } from '../core/i18n/i18n.svelte.ts';
-import type { AskBrief, LookupMovie, LookupShow } from '../core/types.ts';
+import type { AskBrief, Hide, LookupMovie, LookupShow } from '../core/types.ts';
 
 export type DetailKind = 'movie' | 'show';
 
@@ -45,6 +45,10 @@ export interface TitleDetails {
 	has4k?: boolean;
 	movie?: LookupMovie;
 	show?: LookupShow;
+	/** Hidden from browsing for the viewer. */
+	hidden?: boolean;
+	/** The hides that cover it, for owners and admins. */
+	hides?: Hide[];
 }
 
 // Kept so a title page can paint at once from what search already knew.
@@ -90,15 +94,17 @@ export function fromMetadata(kind: DetailKind, tmdb: string, raw: Raw): TitleDet
 				return { kind: (str(s.kind) === 'show' ? 'show' : kind) as DetailKind, tmdb: id ?? '', name: str(s.name) ?? str(s.title) ?? '', year: num(s.year), poster: str(s.poster) };
 			})
 			.filter((s) => s.tmdb && s.name),
-		titleId: num(raw.title_id)
+		titleId: num(raw.title_id),
+		hidden: raw.hidden === true || undefined,
+		hides: Array.isArray(raw.hides) ? (raw.hides as Hide[]) : undefined
 	};
 }
 
 export function fromMovie(m: LookupMovie): TitleDetails {
-	return { kind: 'movie', tmdb: m.ids.tmdb ?? '', name: m.name, year: num(m.year), overview: m.overview || undefined, poster: m.poster, genres: [], runtime: num(m.runtime), cast: [], similar: [], titleId: m.title_id, neverAdd: m.never_add, ask: m.ask, ask4k: m.ask_4k, has4k: m.has_4k, movie: m };
+	return { kind: 'movie', tmdb: m.ids.tmdb ?? '', name: m.name, year: num(m.year), overview: m.overview || undefined, poster: m.poster, genres: [], runtime: num(m.runtime), cast: [], similar: [], titleId: m.title_id, neverAdd: m.never_add, ask: m.ask, ask4k: m.ask_4k, has4k: m.has_4k, movie: m, hidden: m.hidden || undefined };
 }
 export function fromShow(s: LookupShow): TitleDetails {
-	return { kind: 'show', tmdb: s.ids.tmdb ?? '', name: s.name, year: num(s.year), overview: s.overview || undefined, poster: s.poster, genres: [], runtime: num(s.runtime), network: s.network, cast: [], similar: [], titleId: s.title_id, neverAdd: s.never_add, ask: s.ask, show: s };
+	return { kind: 'show', tmdb: s.ids.tmdb ?? '', name: s.name, year: num(s.year), overview: s.overview || undefined, poster: s.poster, genres: [], runtime: num(s.runtime), network: s.network, cast: [], similar: [], titleId: s.title_id, neverAdd: s.never_add, ask: s.ask, show: s, hidden: s.hidden || undefined };
 }
 
 export async function loadDetails(get: Get, kind: DetailKind, tmdb: string, signal?: AbortSignal, onMeta?: (meta: TitleDetails) => void): Promise<TitleDetails | null> {
@@ -108,11 +114,11 @@ export async function loadDetails(get: Get, kind: DetailKind, tmdb: string, sign
 	const lookup: Promise<TitleDetails | null> =
 		kind === 'movie'
 			? get<{ movies: LookupMovie[] }>(`/titles/lookup?term=${term}`, signal).then((r) => {
-					const m = r.movies.find((x) => x.ids.tmdb === tmdb) ?? r.movies[0];
+					const m = r.movies.find((x) => x.ids.tmdb === tmdb);
 					return m ? fromMovie(m) : null;
 				})
 			: get<{ shows: LookupShow[] }>(`/shows/lookup?term=${term}`, signal).then((r) => {
-					const s = r.shows.find((x) => x.ids.tmdb === tmdb) ?? r.shows[0];
+					const s = r.shows.find((x) => x.ids.tmdb === tmdb);
 					return s ? fromShow(s) : null;
 				});
 	const looked = lookup.then(
@@ -133,7 +139,7 @@ export async function loadDetails(get: Get, kind: DetailKind, tmdb: string, sign
 	else if (!meta || signal?.aborted) throw r.e;
 	if (!meta) return found;
 	if (!found) return meta;
-	return { ...found, ...meta, name: meta.name || found.name, overview: meta.overview ?? found.overview, poster: meta.poster ?? found.poster, year: meta.year ?? found.year, titleId: found.titleId ?? meta.titleId, neverAdd: found.neverAdd, ask: found.ask, ask4k: found.ask4k, has4k: found.has4k, movie: found.movie, show: found.show };
+	return { ...found, ...meta, name: meta.name || found.name, overview: meta.overview ?? found.overview, poster: meta.poster ?? found.poster, year: meta.year ?? found.year, titleId: found.titleId ?? meta.titleId, neverAdd: found.neverAdd, ask: found.ask, ask4k: found.ask4k, has4k: found.has4k, movie: found.movie, show: found.show, hidden: meta.hidden || found.hidden, hides: meta.hides };
 }
 
 export function fourKOffer(d: Pick<TitleDetails, 'kind' | 'titleId' | 'neverAdd' | 'ask' | 'ask4k' | 'has4k'>): 'ask' | 'asked' | null {

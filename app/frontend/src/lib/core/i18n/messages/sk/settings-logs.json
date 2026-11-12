@@ -1,0 +1,18 @@
+{
+"settings.logs.title": "Záznamy",
+"settings.logs.download": "Stiahnuť",
+"settings.logs.filter": "Filtrovať záznam",
+"settings.logs.level": "Úroveň",
+"settings.logs.every": "Každý riadok",
+"settings.logs.warnings": "Varovania a chyby",
+"settings.logs.errors": "Iba chyby",
+"settings.logs.text": "Text",
+"settings.logs.example": "napr. qBittorrent",
+"settings.logs.from": "Od",
+"settings.logs.to": "Do",
+"settings.logs.apply": "Použiť",
+"settings.logs.clear": "Vymazať",
+"settings.logs.lines": "Riadky",
+"settings.logs.newer": "Novšie",
+"settings.logs.older": "Staršie"
+}

@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Alle plekken",
 	"frame.layout.newWord": "nieuw",
 	"frame.layout.accountName": "Account · {name}",
-	"frame.layout.hostRefused": "<b>Wijzigingen kunnen niet worden opgeslagen op {host}.</b> HolyArrs slaat alleen op onder namen die je toestaat. Open het eenmalig via het IP-adres en voeg {host} toe onder Instellingen › Aanmelden › Toegestane hostnamen. Een herstart is niet nodig."
+	"frame.layout.hostRefused": "<b>Wijzigingen kunnen niet worden opgeslagen op {host}.</b> HolyArrs slaat alleen op onder namen die je toestaat. Open het eenmalig via het IP-adres en voeg {host} toe onder Instellingen › Aanmelden › Toegestane hostnamen. Een herstart is niet nodig.",
+	"frame.feeds.clearOne": "Geïmporteerde download niet opgeruimd",
+	"frame.feeds.clearMany": "{n} geïmporteerde downloads niet opgeruimd",
+	"frame.feeds.clearBody": "HolyArrs probeert het zelf opnieuw",
+	"frame.feeds.clearNow": "Nu opruimen",
+	"frame.feeds.cleared": "Uit de downloader opgeruimd",
+	"frame.feeds.clearStill": "Nog niet opgeruimd"
 }

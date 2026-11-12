@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "יומנים",
+	"settings.logs.download": "הורדה",
+	"settings.logs.filter": "סינון היומן",
+	"settings.logs.level": "רמה",
+	"settings.logs.every": "כל שורה",
+	"settings.logs.warnings": "אזהרות ושגיאות",
+	"settings.logs.errors": "שגיאות בלבד",
+	"settings.logs.text": "טקסט",
+	"settings.logs.example": "לדוגמה: qBittorrent",
+	"settings.logs.from": "מ־",
+	"settings.logs.to": "עד",
+	"settings.logs.apply": "החלה",
+	"settings.logs.clear": "ניקוי",
+	"settings.logs.lines": "שורות",
+	"settings.logs.newer": "חדשות יותר",
+	"settings.logs.older": "ישנות יותר"
+}

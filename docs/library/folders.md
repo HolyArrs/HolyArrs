@@ -23,7 +23,7 @@ You need the **Change settings** permission. First-run setup adds one folder; ad
 6. Select **Add**. You should see the folder in its group with free space and a health state.
 
 :::tip
-For instant moves, keep downloads and media under one shared parent folder on one disk, such as `/data/downloads` and `/data/media/movies`. Separate `/movies`, `/tv`, `/music` and `/downloads` mounts make every import a full copy. The layout is in [Folders and hardlinks](../start/folders.md).
+For instant moves, keep downloads and media under one shared parent folder on one disk, such as `/data/downloads` and `/data/media/movies`. Separate `/movies`, `/tv`, `/music` and `/downloads` mounts make every import a full copy. The layout is in [Folders and hardlinks](../start/folders.md). To switch an existing setup, see [Move to one data folder](move-to-one-folder.md).
 :::
 
 ## What the check tells you
@@ -34,11 +34,24 @@ A hardlink is a second name for the same file on the same disk. It is instant an
 
 | State shown | Meaning | Imports |
 |---|---|---|
-| **Healthy** | All checks passed | Instant moves |
+| **Instant, no extra space** | Downloads and this folder are on the same drive | Each import is instant and uses no extra space |
 | **Folder not found** or **Cannot write here** | The folder is gone or not writable | Stopped until you fix it |
-| **Works, but files are copied (no hardlinks)** | Downloads sit on another disk or mount | Work, but copy the file: slower, and double space until the Downloader deletes its copy |
+| **Each import makes a full copy (uses extra space)** | Downloads sit on another drive or mount | Imports work, but each one copies the file: slower, and double the space until the Downloader deletes its copy |
 
 Under 100 MB free adds a low space note. Imports work until the disk fills.
+
+## Change a folder's path
+
+New in 1.1.0. Use it when the files already sit somewhere else: a new mount point, a renamed share, or a move to one data folder. HolyArrs does not import anything again.
+
+1. Move the folder on disk yourself, with everything inside it as it is.
+2. Make sure HolyArrs sees the new place. In Docker, mount it and recreate the container.
+3. On the folder's row in **Settings > Library folders**, select **Change path**.
+4. Type the new path as HolyArrs sees it, such as `/data/media/movies`, and save.
+
+HolyArrs checks that every file it knows in this folder is at the new path, with the same size. If one is not, nothing changes and the message names the first file that is missing or different. When all are there, HolyArrs saves the new path and runs the folder check again. It moves and renames nothing on disk.
+
+The step-by-step guide for a whole setup is [Move to one data folder](move-to-one-folder.md).
 
 ## Rename or remove a folder
 
@@ -50,7 +63,7 @@ HolyArrs also keeps the folder while deleted files in it can still be restored f
 
 ## If it does not work
 
-**Symptom:** the state says files are copied (no hardlinks).
+**Symptom:** the state says "Each import makes a full copy (uses extra space)".
 **Cause:** downloads and media are on separate mounts.
 **Fix:** mount one shared parent folder holding both, at the same path in every container.
 
@@ -60,6 +73,10 @@ HolyArrs also keeps the folder while deleted files in it can still be restored f
 **Symptom:** import cannot see the download folder.
 **Cause:** `HOLYARRS_SAVE_PATH` is not set and no Downloader has a path pair.
 **Fix:** set `HOLYARRS_SAVE_PATH`, or add the download folder, such as `/downloads`, under **Extra import folders**.
+
+**Symptom:** **Change path** says a file is not at the new path.
+**Cause:** that file was not moved, was renamed, or was still being copied.
+**Fix:** put the named file at the same place under the new path, then try again. A file with another size is still being copied, or is a different file.
 
 **Symptom:** cannot remove a folder.
 **Fix:** move its titles to another folder first. If it says deleted files can still be restored, wait until their holding days are over, or delete the folder's `.holyarrs-replaced` folder on disk. If an outside list adds to it, point that list at another folder.
@@ -74,11 +91,13 @@ A Library folder must exist, be a folder, be a full path, be writable, and not s
 
 <details class="ha-more"><summary>Extra import folders</summary>
 
-**Library > Import files by hand** reads, copies and moves files only inside:
+**Library > Import files by hand** reads and places files only inside:
 
 - your Library folders,
 - the folders your Downloaders save into, as HolyArrs sees them: `HOLYARRS_SAVE_PATH` and the HolyArrs side of each Downloader path pair,
 - the **Extra import folders** on **Settings > Library folders**.
+
+Files are placed like automatic imports: a link when the file and the Library folder are on the same drive (no extra space used), otherwise a real copy. The original stays where it was.
 
 Type one full path per line, such as `/imports` or `D:\Imports`. Up to 32. A whole disk such as `/` or `C:\` is refused.
 
@@ -89,6 +108,7 @@ Only the owner, or an admin signed in with a password, can change the list. An A
 ## Related
 
 - [Folders and hardlinks](../start/folders.md)
+- [Move to one data folder](move-to-one-folder.md)
 - [Downloaders](../downloads/downloaders.md)
 - [Media servers](media-servers.md)
 - [Protected copies](protected-copies.md)

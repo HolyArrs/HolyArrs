@@ -52,6 +52,10 @@ type Gate struct {
 	// countryOff: the owner switched "Count this install" off (Settings,
 	// This app); every request then carries X-Country-Count: off.
 	countryOff atomic.Bool
+
+	// Modes is where details come from. Unless it is the metadata server,
+	// no request is sent: each answers ErrSourceOff here.
+	Modes *Modes
 }
 
 // CountryCountHeader tells the metadata server this install is not counted
@@ -194,6 +198,13 @@ func (g *Gate) refused(code int, retryAfter string) {
 
 func (g *Gate) RoundTrip(req *http.Request) (*http.Response, error) {
 	ahead := gateAhead(req)
+	if !g.Modes.Server() {
+		g.count(req, ahead, "off")
+		if req.Body != nil {
+			_ = req.Body.Close()
+		}
+		return nil, ErrSourceOff
+	}
 	t0 := time.Now()
 	held, err := g.take(req.Context(), ahead)
 	t1 := time.Now()
@@ -210,6 +221,11 @@ func (g *Gate) RoundTrip(req *http.Request) (*http.Response, error) {
 		body := fmt.Sprintf(`{"error":{"code":"client_held","retry_after_seconds":%d}}`, secs)
 		return &http.Response{Status: "429 Too Many Requests", StatusCode: http.StatusTooManyRequests, Proto: "HTTP/1.1", ProtoMajor: 1, ProtoMinor: 1,
 			Header: h, Body: io.NopCloser(strings.NewReader(body)), ContentLength: int64(len(body)), Request: req}, nil
+	}
+	// Asked again after the wait: the mode may have changed meanwhile.
+	if !g.Modes.Server() {
+		g.count(req, ahead, "off")
+		return nil, ErrSourceOff
 	}
 	if g.countryOff.Load() {
 		req = req.Clone(req.Context())

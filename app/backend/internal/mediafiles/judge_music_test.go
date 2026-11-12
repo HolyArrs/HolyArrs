@@ -195,6 +195,9 @@ func TestMusicMatching(t *testing.T) {
 		{"Velvet Cartography - Glass Ocean (2019) [FLAC]", 1, 0, false, true},
 		{"Jay-Rook-Lowlands-WEB-2022-GRP", 3, 14, false, false},
 		{"Velvet Cartography Harbour Songs 2021 FLAC", 1, 11, false, false},
+		// No clear split with a disc count and a country after the album.
+		{"Velvet Cartography Harbour Songs 2CD DE 2021 MOD", 1, 11, false, false},
+		{"Velvet Cartography Low Tide Atlas 3CD 2019", 1, 10, false, false},
 	}
 	for _, c := range cases {
 		p := releasename.Parse(c.name, releasename.Hints{Music: true})

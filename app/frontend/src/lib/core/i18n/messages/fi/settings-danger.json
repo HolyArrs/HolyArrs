@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs pysähtyy.",
+	"settings.danger.couldnt": "Toiminto epäonnistui: {action}",
+	"settings.danger.title": "Vaaravyöhyke",
+	"settings.danger.ownerOnly": "Vain omistaja ja ylläpitäjät",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Kyllä, {action}",
+	"settings.danger.cancel": "Peruuta",
+	"settings.danger.expires": "Vanhenee 60 s kuluttua",
+	"settings.danger.wholeApp": "Koko sovellus",
+	"settings.danger.intro": "Nämä pysäyttävät HolyArrsin. Dockerin uudelleenkäynnistyskäytäntö käynnistää sen uudelleen muutamassa sekunnissa, ellei käytäntö ole <code>no</code>; silloin käynnistä kontti itse. Jokainen kysyy ensin vahvistuksen.",
+	"settings.danger.restart": "Käynnistä HolyArrs uudelleen",
+	"settings.danger.safe": "Käynnistä uudelleen vikasietotilassa",
+	"settings.danger.shutdown": "Sammuta",
+	"settings.danger.safeNote": "Käynnistyy kerran vain kirjautumisen, asetusten ja kirjaston kanssa. Käytä, kun jokin osa estää käynnistymisen."
+}

@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Мова",
 	"subtitles.wants.pick": "Обери мову",
 	"subtitles.wants.takeOff": "Зняти {name}",
-	"subtitles.wants.thisLanguage": "ця мова"
+	"subtitles.wants.thisLanguage": "ця мова",
+	"subtitles.made.translated": "Перекладено",
+	"subtitles.made.partial": "Перекладено частково",
+	"subtitles.made.ai": "Перекладено ШІ",
+	"subtitles.made.machine": "Машинний переклад",
+	"subtitles.wants.translateFrom": "Перекладати з",
+	"subtitles.wants.noTranslate": "Не перекладати",
+	"subtitles.panel.picture": "Зображення",
+	"subtitles.panel.pictureTitle": "Субтитри-зображення: перекласти не можна",
+	"subtitles.panel.translate": "Перекласти",
+	"subtitles.panel.translateFor": "Перекласти субтитри: {name}",
+	"subtitles.panel.translateFrom": "Перекладати з",
+	"subtitles.panel.translateQueued": "Переклад триває",
+	"subtitles.panel.translateQueuedBody": "Субтитри ({name}) з’являться тут, коли будуть готові.",
+	"subtitles.panel.translating": "Нічого не знайдено, перекладач робить субтитри."
 }

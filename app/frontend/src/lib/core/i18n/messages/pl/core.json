@@ -16,7 +16,7 @@
 	"core.format.healthy": "W dobrej kondycji",
 	"core.format.folderNotFound": "Nie znaleziono folderu",
 	"core.format.cannotWrite": "Nie można tu zapisywać",
-	"core.format.copiedNoHardlinks": "Działa, ale pliki są kopiowane (bez hardlinków)",
+	"core.format.copiedNoHardlinks": "Każdy import tworzy pełną kopię (zajmuje więcej miejsca)",
 	"core.format.notChecked": "Jeszcze nie sprawdzono",
 	"core.loader.welcome": "Witaj, {name}",
 	"core.loader.reconnecting": "Łączenie ponownie…",
@@ -54,6 +54,8 @@
 	"core.plain.configDiskWarning": "Na dysku z folderem konfiguracji kończy się miejsce.",
 	"core.plain.configFolder": "/config nie jest zmapowany na folder, więc dane HolyArrs przepadną przy ponownym utworzeniu kontenera.",
 	"core.plain.waitingDownloads": "Pobierania czekają, bo ich Downloader nie może użyć plików.",
+	"core.plain.clearWaiting": "Zaimportowane pobierania czekają na wyczyszczenie z ich Downloadera.",
+	"core.plain.saveFolder": "Jeden Downloader nie ma folderu zapisu, więc HolyArrs nie może zaimportować jego ukończonych pobrań.",
 	"core.plain.someone": "Ktoś z twojego domu",
 	"core.plain.keyKitOwner": "Właściciel powinien zapisać zestaw kluczy: backupy nie zawierają klucza głównego.",
 	"core.plain.keyKitNone": "Nie zapisano zestawu kluczy: backupy nie zawierają klucza głównego.",
@@ -142,5 +144,6 @@
 	"core.settings.danger.label": "Strefa zagrożenia",
 	"core.settings.danger.about": "Restart lub wyłączenie",
 	"core.settings.account.label": "Moje konto",
-	"core.settings.account.about": "Hasło, uwierzytelnianie dwuskładnikowe, urządzenia"
+	"core.settings.account.about": "Hasło, uwierzytelnianie dwuskładnikowe, urządzenia",
+	"core.api.sourceOff": "Niektóre rzędy są wyłączone w tej instalacji."
 }

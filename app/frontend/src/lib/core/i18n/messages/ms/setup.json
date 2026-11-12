@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Sambung semula",
+	"setup.testNow": "Uji sekarang",
+	"setup.movies": "Filem",
+	"setup.tvShows": "Siri TV",
+	"setup.music": "Muzik",
+	"setup.subtitles": "Sari kata",
+	"setup.fullPath": "Gunakan laluan folder penuh, seperti {path}.",
+	"setup.folderUsed": "Folder ini sudah digunakan, atau terletak di dalam folder yang digunakan.",
+	"setup.folderMissing": "Folder itu tidak wujud. Semak laluan.",
+	"setup.addFolderOrOff": "Tambah folder atau matikan ini.",
+	"setup.notAnswering": "HolyArrs tidak menjawab. Cuba lagi sebentar nanti.",
+	"setup.addUserPasswordHint": "Tambah nama pengguna dan kata laluan.",
+	"setup.folders": "Folder",
+	"setup.downloader": "Pemuat turun",
+	"setup.source": "Sumber"
+}

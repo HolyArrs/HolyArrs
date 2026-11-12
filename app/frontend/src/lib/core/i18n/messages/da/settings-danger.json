@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs stopper.",
+	"settings.danger.couldnt": "Kunne ikke {action}",
+	"settings.danger.title": "Farezone",
+	"settings.danger.ownerOnly": "Kun ejer og administratorer",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Ja, {action}",
+	"settings.danger.cancel": "Annuller",
+	"settings.danger.expires": "Udløber om 60 s",
+	"settings.danger.wholeApp": "Hele appen",
+	"settings.danger.intro": "Disse stopper HolyArrs. Dockers genstartspolitik starter den igen efter få sekunder, medmindre politikken er <code>no</code>; så skal du selv starte containeren. Hver handling spørger først.",
+	"settings.danger.restart": "Genstart HolyArrs",
+	"settings.danger.safe": "Genstart i sikker tilstand",
+	"settings.danger.shutdown": "Luk ned",
+	"settings.danger.safeNote": "Starter én gang med kun login, Indstillinger og Bibliotek. Brug det, når en Del blokerer opstarten."
+}

@@ -28,6 +28,7 @@ HolyArrs does not download by itself. A **downloader** (qBittorrent, SABnzbd and
    | Transmission | Username and password, empty if it asks for none. Version 4 or newer |
    | Deluge | Web UI password, no username |
    | rTorrent | Username and password of the web server in front of it, empty if it asks for none. The address is its XML-RPC link, such as `http://192.168.1.10:8000/RPC2`. See [rTorrent address](../downloads/downloaders.md#rtorrent-address) |
+   | aria2 | Secret token (its `rpc-secret`), no username. Empty if aria2 runs without one. The address is its JSON-RPC link, such as `http://192.168.1.10:6800/jsonrpc`. See [aria2 address](../downloads/downloaders.md#aria2-address) |
    | NZBGet | Username and password |
 
 5. Press **Save**, then **Test** on its row.

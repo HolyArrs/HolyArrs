@@ -100,3 +100,22 @@ func torrentFileHash(b []byte) (string, error) {
 	h := sha1.Sum(info)
 	return hex.EncodeToString(h[:]), nil
 }
+
+// torrentPrivate reports a torrent whose info dictionary says private=1.
+func torrentPrivate(b []byte) bool {
+	v, end, err := bdecode(b, 0, 0)
+	if err != nil || v.kind != 'd' || end != len(b) {
+		return false
+	}
+	for _, kv := range v.d {
+		if string(kv.key) != "info" || kv.val.kind != 'd' {
+			continue
+		}
+		for _, x := range kv.val.d {
+			if string(x.key) == "private" {
+				return x.val.kind == 'i' && x.val.i == 1
+			}
+		}
+	}
+	return false
+}

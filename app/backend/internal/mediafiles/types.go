@@ -35,6 +35,7 @@ type Title struct {
 	SourceIDs        map[string]string `db:"source_ids,json"`
 	MetadataSource   string            `db:"metadata_source"` // tmdb, tvmaze, tvdb, musicbrainz
 	EpisodeOrder     *string           `db:"episode_order"`
+	EpisodeGroupID   *string           `db:"episode_group_id"` // the TMDB episode order followed; nil: TMDB's own
 	KeepUpToDate     bool              `db:"keep_up_to_date"`
 	NewPartsPolicy   string            `db:"new_parts_policy"` // all, future_only, none
 	ReleaseGate      string            `db:"release_gate"`     // announced, in_cinemas, released
@@ -61,9 +62,12 @@ type Title struct {
 	// FutureFrom is set for Future seasons only: episodes that aired by
 	// then are not wanted when a refresh finds them.
 	FutureFrom *time.Time `db:"future_from"`
-	Network    *string    `db:"network"`
-	AirTime    *string    `db:"air_time"`  // local, HH:MM
-	TimeZone   *string    `db:"time_zone"` // IANA name
+	// PackWindow is how many episodes ahead a season pack fetches (shows);
+	// 0 fetches the whole season.
+	PackWindow int     `db:"pack_window"`
+	Network    *string `db:"network"`
+	AirTime    *string `db:"air_time"`  // local, HH:MM
+	TimeZone   *string `db:"time_zone"` // IANA name
 	// Artists: the album choice made at add time (all, future, missing,
 	// latest, first, none), the extra album kinds and Pressing statuses
 	// that count (MusicTypes holds the main kinds), and details.

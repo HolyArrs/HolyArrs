@@ -25,6 +25,9 @@
 	"home.lostIfTheContainer": "gaat verloren als de container opnieuw wordt aangemaakt",
 	"home.downloads": "Downloads",
 	"home.waitingForTheirFiles": "wachten op hun bestanden",
+	"home.waitingToBeCleared": "wachten op opruimen",
+	"home.noSaveFolder": "heeft geen opslagmap",
+	"home.noSaveFolderMany": "hebben geen opslagmap",
 	"home.masterKey": "Hoofdsleutel",
 	"home.noKeyKitSaved": "geen sleutelpakket opgeslagen",
 	"home.trailers": "Trailers",
@@ -266,5 +269,7 @@
 	"home.version": "Versie {version}",
 	"home.metadataServerDown": "Metadataserver offline",
 	"home.metadataServerOnline": "Metadataserver online",
-	"home.homeCouldNotRead3": "Start kon downloads nu niet lezen."
+	"home.homeCouldNotRead3": "Start kon downloads nu niet lezen.",
+	"home.off": "Uit",
+	"home.sourcesOff": "Uitgezet in Onderdelen"
 }

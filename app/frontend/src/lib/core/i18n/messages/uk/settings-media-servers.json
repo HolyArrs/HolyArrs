@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Перевірити",
 	"settings.mediaServers.changeButton": "Змінити",
 	"settings.mediaServers.removeName": "Прибрати {name}",
-	"settings.mediaServers.remove": "Прибрати"
+	"settings.mediaServers.remove": "Прибрати",
+	"settings.mediaServers.watchTitle": "Історія переглядів",
+	"settings.mediaServers.watchRead": "Читати історію переглядів",
+	"settings.mediaServers.watchHint": "Показує в статистиці, хто що дивився, тим, хто керує бібліотекою. Вимкнення видаляє прочитане.",
+	"settings.mediaServers.watchConfirmOff": "Вимкнути історію переглядів? Усе прочитане буде видалено.",
+	"settings.mediaServers.watchTurnedOn": "Історію переглядів увімкнено. Перше читання — протягом 30 хвилин.",
+	"settings.mediaServers.watchTurnedOff": "Історію переглядів вимкнено",
+	"settings.mediaServers.watchFailed": "Не вдалося змінити історію переглядів"
 }

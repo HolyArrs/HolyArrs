@@ -236,7 +236,6 @@
 		margin: 0;
 		display: grid;
 		gap: var(--s-3);
-		max-width: 560px;
 		min-width: 0;
 	}
 	.sso :global(button) {
@@ -261,7 +260,7 @@
 		}
 	}
 	/* Phones: the whole callback address shows, Copy goes under it. */
-	@media (max-width: 560px) {
+	@container settings (max-width: 520px) {
 		.callback-row {
 			flex-direction: column;
 			align-items: stretch;

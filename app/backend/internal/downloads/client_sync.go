@@ -109,7 +109,7 @@ func (s *MainState) Apply(d MainData) (changed []string, err error) {
 func (s *MainState) Jobs(category string) []Job {
 	out := make([]Job, 0, len(s.jobs))
 	for _, j := range s.jobs {
-		if category == "" || j.Category == category {
+		if category == "" || sameCategory(j.Category, category) {
 			out = append(out, j)
 		}
 	}

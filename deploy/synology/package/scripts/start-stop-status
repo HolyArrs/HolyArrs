@@ -1,0 +1,96 @@
+#!/bin/sh
+# Starts, stops and reports on HolyArrs. DSM runs this as the package's own
+# user, never as root.
+#
+# HolyArrs stops itself after Restart in the app, safe mode and a backup
+# restore, and expects to be started again. The loop below does that.
+
+PORT=6262
+BIN="${SYNOPKG_PKGDEST:-/var/packages/holyarrs/target}/bin/holyarrs"
+VAR="${SYNOPKG_PKGVAR:-/var/packages/holyarrs/var}"
+CFG="$VAR/config"
+LOG="$VAR/holyarrs.log"
+PID="$VAR/holyarrs.pid"
+LOOP="$VAR/loop.pid"
+RUN="$VAR/run"
+
+alive() {
+    [ -f "$1" ] || return 1
+    p="$(cat "$1" 2>/dev/null)"
+    [ -n "$p" ] && kill -0 "$p" 2>/dev/null
+}
+
+run_loop() {
+    trap '' HUP
+    while [ -f "$RUN" ]; do
+        began="$(date +%s)"
+        HOME="$VAR" "$BIN" -config "$CFG" -addr ":$PORT" &
+        echo $! > "$PID"
+        wait $!
+        code=$?
+        [ -f "$RUN" ] || break
+        # 75 is HolyArrs asking to be started again (Restart, a restore).
+        if [ "$code" -ne 75 ] && [ $(( $(date +%s) - began )) -lt 20 ]; then
+            echo "$(date '+%Y-%m-%d %H:%M:%S') HolyArrs stopped after a few seconds (code $code). If the lines above name port $PORT, another app is using it. Next try in 30 seconds."
+            sleep 30
+        else
+            sleep 2
+        fi
+    done
+    rm -f "$PID"
+}
+
+start() {
+    if alive "$LOOP"; then
+        return 0
+    fi
+    mkdir -p "$CFG" || return 1
+    if [ -f "$LOG" ] && [ "$(wc -c < "$LOG")" -gt 10485760 ]; then
+        mv -f "$LOG" "$LOG.1"
+    fi
+    touch "$RUN"
+    run_loop >> "$LOG" 2>&1 < /dev/null &
+    echo $! > "$LOOP"
+    return 0
+}
+
+stop() {
+    rm -f "$RUN"
+    if alive "$PID"; then
+        p="$(cat "$PID")"
+        kill "$p" 2>/dev/null
+        n=0
+        while kill -0 "$p" 2>/dev/null && [ "$n" -lt 30 ]; do
+            sleep 1
+            n=$((n + 1))
+        done
+        kill -9 "$p" 2>/dev/null
+    fi
+    if alive "$LOOP"; then
+        kill "$(cat "$LOOP")" 2>/dev/null
+    fi
+    rm -f "$PID" "$LOOP"
+    return 0
+}
+
+case "$1" in
+    start)
+        start
+        exit $?
+        ;;
+    stop)
+        stop
+        exit 0
+        ;;
+    status)
+        if alive "$PID" || alive "$LOOP"; then
+            exit 0
+        fi
+        exit 3
+        ;;
+    log)
+        echo "$LOG"
+        exit 0
+        ;;
+esac
+exit 0

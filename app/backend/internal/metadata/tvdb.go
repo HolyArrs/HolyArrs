@@ -21,6 +21,9 @@ import (
 type TVDB struct {
 	BaseURL string                                    // default https://api4.thetvdb.com/v4
 	Key     func(ctx context.Context) (string, error) // the person's key, read on each login
+	// PIN is the subscriber PIN that goes with a user-supported key, read
+	// on each login; nil or "" logs in with the key alone.
+	PIN     func(ctx context.Context) (string, error)
 	HTTP    *http.Client
 	Timeout time.Duration
 	Gap     time.Duration
@@ -57,6 +60,17 @@ func (d *TVDB) session(ctx context.Context, fresh bool) (string, error) {
 	if key == "" {
 		return "", ErrNoTVDBKey
 	}
+	pin := ""
+	if d.PIN != nil {
+		if pin, err = d.PIN(ctx); err != nil {
+			return "", err
+		}
+	}
+	login := map[string]string{"apikey": key}
+	if pin != "" {
+		login["pin"] = pin
+		key += "|pin:" + pin // a new PIN buys a new token
+	}
 	d.mu.Lock()
 	if !fresh && d.token != "" && d.keyAt == key {
 		t := d.token
@@ -64,7 +78,7 @@ func (d *TVDB) session(ctx context.Context, fresh bool) (string, error) {
 		return t, nil
 	}
 	d.mu.Unlock()
-	body, _ := json.Marshal(map[string]string{"apikey": key})
+	body, _ := json.Marshal(login)
 	b, err := d.getter().do(ctx, []string{d.base(), key}, func(ctx context.Context) (*http.Request, error) {
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, d.base()+"/login", bytes.NewReader(body))
 		if err == nil {
@@ -75,7 +89,7 @@ func (d *TVDB) session(ctx context.Context, fresh bool) (string, error) {
 	var es errStatus
 	if errors.As(err, &es) {
 		if es.code == http.StatusUnauthorized || es.code == http.StatusForbidden {
-			return "", ErrNoTVDBKey
+			return "", ErrTVDBRefused
 		}
 		return "", fmt.Errorf("TVDB answered %d", es.code)
 	}

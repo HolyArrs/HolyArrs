@@ -38,6 +38,14 @@
 	"settings.libraryFolders.foldersHint": "Eén pad per regel, bijv. /data/imports. Maximaal 32.",
 	"settings.libraryFolders.ownerOnly": "Alleen eigenaar en beheerders",
 	"settings.libraryFolders.copiesExpected": "Kopiëren is de bedoeling",
-	"settings.libraryFolders.copiesExpectedState": "Kopieert, zoals bedoeld",
-	"settings.libraryFolders.warnAgain": "Weer waarschuwen"
+	"settings.libraryFolders.copiesExpectedState": "Volledige kopieën, zoals gekozen",
+	"settings.libraryFolders.whyCopies": "Waarom?",
+	"settings.libraryFolders.stateInstant": "Direct, geen extra ruimte",
+	"settings.libraryFolders.warnAgain": "Weer waarschuwen",
+	"settings.libraryFolders.changePath": "Pad wijzigen",
+	"settings.libraryFolders.changePathOf": "Pad van {path} wijzigen",
+	"settings.libraryFolders.newPath": "Nieuw pad",
+	"settings.libraryFolders.changePathHint": "Zet de bestanden er eerst neer. HolyArrs controleert elk bestand en verplaatst niets.",
+	"settings.libraryFolders.checkingFiles": "Bestanden controleren…",
+	"settings.libraryFolders.pathChanged": "Pad gewijzigd"
 }

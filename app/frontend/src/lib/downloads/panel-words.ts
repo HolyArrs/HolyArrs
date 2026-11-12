@@ -91,6 +91,7 @@ export function clientMark(kind: string | undefined): { mark: string; tone: stri
 		case 'transmission': return { mark: 'Tr', tone: 'tr' };
 		case 'deluge': return { mark: 'De', tone: 'de' };
 		case 'rtorrent': return { mark: 'rT', tone: 'rt' };
+		case 'aria2': return { mark: 'a2', tone: 'a2' };
 		case 'sabnzbd': return { mark: 'SAB', tone: 'sab' };
 		case 'nzbget': return { mark: 'NZB', tone: 'nzb' };
 	}

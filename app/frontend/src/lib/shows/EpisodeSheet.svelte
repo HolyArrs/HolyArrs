@@ -25,6 +25,7 @@
 		runtime_minutes?: number;
 		still?: string;
 		keep_up_to_date?: boolean;
+		outside_order?: boolean;
 		slots: { id: number; state: string; state_label: string; file?: Record<string, any> | null }[];
 	};
 

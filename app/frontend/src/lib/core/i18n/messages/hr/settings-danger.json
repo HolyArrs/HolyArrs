@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs se zaustavlja.",
+	"settings.danger.couldnt": "Nije uspjelo: {action}",
+	"settings.danger.title": "Opasna zona",
+	"settings.danger.ownerOnly": "Samo vlasnik i administratori",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Da, {action}",
+	"settings.danger.cancel": "Odustani",
+	"settings.danger.expires": "Istječe za 60 s",
+	"settings.danger.wholeApp": "Cijela aplikacija",
+	"settings.danger.intro": "Ovo zaustavlja HolyArrs. Dockerovo pravilo ponovnog pokretanja pokrene ga opet za nekoliko sekundi, osim ako je pravilo <code>no</code>; tada sam pokreni kontejner. Svaka radnja prvo pita.",
+	"settings.danger.restart": "Ponovno pokreni HolyArrs",
+	"settings.danger.safe": "Ponovno pokreni u sigurnom načinu",
+	"settings.danger.shutdown": "Isključi",
+	"settings.danger.safeNote": "Pokreće se jednom samo s prijavom, postavkama i bibliotekom. Koristi kad neki Dio blokira pokretanje."
+}

@@ -8,7 +8,7 @@ import { t } from '#lib/core/i18n/i18n.svelte.ts';
 export function createWelcomeParts(ctx: any) {
 	function partsOn(): Record<PartName, boolean> {
 		const on = (p: PartName) => partsNow.answer?.parts.find((x) => x.part === p)?.on === true;
-		return { movies: on('movies'), shows: on('shows'), music: on('music'), subtitles: on('subtitles'), wishlist: on('wishlist') };
+		return { movies: on('movies'), shows: on('shows'), music: on('music'), subtitles: on('subtitles'), wishlist: on('wishlist'), sources: on('sources') };
 	}
 
 	// Parts: a later visit to /welcome, outside first run.
@@ -20,7 +20,8 @@ export function createWelcomeParts(ctx: any) {
 		{ part: 'music', get label() { return t('setup.music'); }, icon: 'music' },
 		{ part: 'subtitles', get label() { return t('setup.subtitles'); }, icon: 'subtitle' }
 	];
-	const full = $derived<Record<PartName, boolean>>({ ...want, wishlist: family === 'yes' });
+	// Sources is not asked about here, so it stays as it is.
+	const full = $derived<Partial<Record<PartName, boolean>>>({ ...want, wishlist: family === 'yes' });
 	const problem = $derived(needsProblem(full));
 	async function submitParts(e: SubmitEvent) {
 		e.preventDefault();

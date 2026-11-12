@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "מתקדם",
+	"settings.home.page": "{group} · עמוד",
+	"settings.home.title": "הגדרות",
+	"settings.home.search": "חיפוש בהגדרות",
+	"settings.home.matching": "הגדרות תואמות",
+	"settings.home.noMatch": "אין הגדרות תואמות",
+	"settings.home.noMatchText": "נסה מילה אחרת, כמו תיקייה, מפתח או סיסמה.",
+	"settings.home.clear": "ניקוי החיפוש"
+}

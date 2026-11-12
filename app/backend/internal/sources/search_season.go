@@ -74,6 +74,28 @@ func handlesTV(src domain.Source) bool {
 	return len(src.Kinds) == 0 || slices.Contains(src.Kinds, "tv")
 }
 
+// handlesMovies says whether a Source is set up for movies; no kinds means every kind.
+func handlesMovies(src domain.Source) bool {
+	return len(src.Kinds) == 0 || slices.Contains(src.Kinds, "movie")
+}
+
+// movieCategories are the categories a Source uses for movies.
+func movieCategories(src domain.Source) []int {
+	if c := src.Categories["movie"]; len(c) > 0 {
+		return c
+	}
+	return DefaultCategories["movie"]
+}
+
+// movieFeedCategories are the movie categories a feed read asks for: none
+// for a Source not set up for movies.
+func movieFeedCategories(src domain.Source) []int {
+	if !handlesMovies(src) {
+		return nil
+	}
+	return movieCategories(src)
+}
+
 // tvCategories are the categories a Source uses for shows.
 func tvCategories(src domain.Source) []int {
 	if c := src.Categories["tv"]; len(c) > 0 {
@@ -94,6 +116,9 @@ func tvCategories(src domain.Source) []int {
 func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 	if r.Job.Subject == nil || r.Job.Subject.Type != "part" {
 		return errors.New("search_season needs a part subject")
+	}
+	if s.sourcesOff(r) {
+		return nil
 	}
 	db := s.Store.Read()
 	by := jobActor(r)
@@ -154,6 +179,44 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 	result := map[string]any{"season": season, "version_id": ver.ID}
 	if len(looking) == 0 {
 		result["skipped"] = fmt.Sprintf("nothing in season %d is looking for a copy", season)
+		r.SetResult(result)
+		return nil
+	}
+	// A show that takes season packs a few episodes at a time searches only
+	// its next few wanted episodes, one by one; an episode search may take the
+	// pack for them. While a pack of the season is fetched that way, its next
+	// episodes come from it.
+	if window := s.packWindow(ctx, ti); window > 0 && !show {
+		packed, err := packFetchingItems(ctx, db, ti.ID)
+		if err != nil {
+			return err
+		}
+		var first []*epSlot
+		wanted := 0
+		for _, e := range looking {
+			if packed[e.it.ID] {
+				result["skipped"] = fmt.Sprintf("a season pack of season %d is fetched a few episodes at a time; its next episodes come from it", season)
+				r.SetResult(result)
+				return nil
+			}
+			// Failed episodes and upgrades are searched as before; the window
+			// counts only the wanted ones.
+			switch {
+			case e.sl.State != mediafiles.SlotWanted:
+				first = append(first, e)
+			case wanted < window && e.kept && e.soon:
+				first = append(first, e)
+				wanted++
+			}
+		}
+		if len(first) == 0 {
+			first = looking
+		}
+		n, err := s.queueEpisodes(ctx, first, hand, skipGate, by)
+		if err != nil {
+			return err
+		}
+		result["episodes_queued"] = n
 		r.SetResult(result)
 		return nil
 	}

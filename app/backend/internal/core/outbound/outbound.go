@@ -140,6 +140,22 @@ func Reset() {
 // States returns the health states of the process-wide registry.
 func States() []State { return shared.States() }
 
+// Clear closes target's breaker in the process-wide registry, so the next
+// call goes through at once.
+func Clear(target Target) { shared.Clear(target) }
+
+// Clear closes target's breaker: the next call goes through at once, and a
+// failure counts from zero again. A person's own test of a service uses it,
+// so a service that is back answers without waiting out the cooldown.
+func (r *Registry) Clear(target Target) {
+	id := r.identity(target)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if e := r.entries[id]; e != nil {
+		e.failures, e.openUntil, e.probe = 0, time.Time{}, false
+	}
+}
+
 // HTTPOutcome classifies a transport error, a body read error or a status.
 // caller is the context of the whole operation, not of one attempt.
 func HTTPOutcome(status int, err error, caller context.Context) Outcome {

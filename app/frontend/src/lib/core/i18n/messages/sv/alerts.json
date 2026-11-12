@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Inställningar",
+	"alerts.panel.clearAll": "Rensa alla",
+	"alerts.panel.empty": "Inget här ännu",
+	"alerts.panel.needsAttention": "Behöver åtgärdas",
+	"alerts.panel.recent": "Senaste",
+	"alerts.panel.remove": "Ta bort {text}",
+	"alerts.panel.title": "Senaste aviseringar",
+	"alerts.state.manyNeed": "{count} behöver åtgärdas",
+	"alerts.state.ok": "Allt klart",
+	"alerts.state.oneNeeds": "1 behöver åtgärdas",
+	"alerts.state.unset": "Inte inställt",
+	"alerts.time.days": "{n} d",
+	"alerts.time.hours": "{n} h",
+	"alerts.time.minutes": "{n} min",
+	"alerts.time.now": "nu"
+}

@@ -38,6 +38,14 @@
 	"settings.libraryFolders.foldersHint": "每行一个路径，例如 /data/imports，最多 32 个。",
 	"settings.libraryFolders.ownerOnly": "仅限所有者和管理员",
 	"settings.libraryFolders.copiesExpected": "复制是预期的",
-	"settings.libraryFolders.copiesExpectedState": "复制，符合预期",
-	"settings.libraryFolders.warnAgain": "重新提醒"
+	"settings.libraryFolders.copiesExpectedState": "完整复制（按你的选择）",
+	"settings.libraryFolders.whyCopies": "为什么？",
+	"settings.libraryFolders.stateInstant": "即时完成，不占额外空间",
+	"settings.libraryFolders.warnAgain": "重新提醒",
+	"settings.libraryFolders.changePath": "更改路径",
+	"settings.libraryFolders.changePathOf": "更改 {path} 的路径",
+	"settings.libraryFolders.newPath": "新路径",
+	"settings.libraryFolders.changePathHint": "请先把文件移到那里。HolyArrs 只检查每个文件，不移动任何东西。",
+	"settings.libraryFolders.checkingFiles": "正在检查文件…",
+	"settings.libraryFolders.pathChanged": "路径已更改"
 }

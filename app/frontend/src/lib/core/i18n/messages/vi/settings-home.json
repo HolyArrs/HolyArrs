@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Nâng cao",
+	"settings.home.page": "{group} · trang",
+	"settings.home.title": "Cài đặt",
+	"settings.home.search": "Tìm trong cài đặt",
+	"settings.home.matching": "Cài đặt phù hợp",
+	"settings.home.noMatch": "Không có cài đặt phù hợp",
+	"settings.home.noMatchText": "Hãy thử từ khác, như thư mục, khóa hoặc mật khẩu.",
+	"settings.home.clear": "Xóa tìm kiếm"
+}

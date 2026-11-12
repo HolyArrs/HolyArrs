@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -59,7 +60,7 @@ func matchShowFolder(ctx context.Context, p metadata.ShowProvider, folder string
 	if m := reShowTag.FindStringSubmatch(folder); m != nil {
 		sh, err := p.Show(ctx, strings.ToLower(m[1])+":"+m[2])
 		if err == nil {
-			return sh.Name, sh.Year, []library.AdoptMatch{{ID: showID(sh), TMDB: sh.IDs["tmdb"], Name: sh.Name, Year: sh.Year, Score: 1}}, nil
+			return sh.Name, sh.Year, []library.AdoptMatch{{ID: showID(sh), TMDB: sh.IDs["tmdb"], Name: sh.Name, Year: sh.Year, Score: 1, Poster: sh.Poster}}, nil
 		}
 		if !errors.Is(err, metadata.ErrShowNotFound) {
 			return "", 0, nil, err
@@ -76,7 +77,7 @@ func matchShowFolder(ctx context.Context, p metadata.ShowProvider, folder string
 		if id == "" {
 			continue
 		}
-		out = append(out, library.AdoptMatch{ID: id, TMDB: sh.IDs["tmdb"], Name: sh.Name, Year: sh.Year, Score: library.NameScore(name, year, sh.Name, sh.Year)})
+		out = append(out, library.AdoptMatch{ID: id, TMDB: sh.IDs["tmdb"], Name: sh.Name, Year: sh.Year, Score: library.NameScore(name, year, sh.Name, sh.Year), Poster: sh.Poster})
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Score > out[j].Score })
 	if len(out) > 4 {
@@ -172,14 +173,17 @@ func PlanShowAdoptFrom(ctx context.Context, db library.Reader, shows metadata.Sh
 		known[library.FolderKey(v.FolderName, fold)] = v.TitleID
 	}
 	p.Warning = library.MountWarning(ctx, db, lf, len(ents))
+	total := library.ScanTotal(ents, after, p.Limit)
+	defer func() { library.ReportScan(ctx, len(p.Folders), total) }()
 	for _, e := range ents {
-		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || library.NasSystemDir(e.Name()) || (after != "" && e.Name() <= after) {
+		if !library.ScanWants(e, after) {
 			continue
 		}
 		if len(p.Folders) >= p.Limit {
 			p.More, p.Next = true, p.Folders[len(p.Folders)-1].Folder
 			break
 		}
+		library.ReportScan(ctx, len(p.Folders), total)
 		vids := library.ListVideosN(lf.Path, e.Name(), maxShowVideos)
 		c := library.AdoptCandidate{Folder: e.Name(), Videos: vids, Others: []library.AdoptMatch{}}
 		if id, ok := known[library.FolderKey(e.Name(), fold)]; ok {
@@ -472,6 +476,7 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 		if len(slotIDs) > 0 && len(slotIDs) == len(af.Keys) {
 			linked := false
 			err := s.Store.Write(ctx, func(tx *sql.Tx) error {
+				var stale []int64
 				for _, sid := range slotIDs {
 					var sl mediafiles.Slot
 					if err := database.Get(ctx, tx, "slots", sid, &sl); err != nil {
@@ -481,8 +486,22 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 					case mediafiles.SlotRemoved, mediafiles.SlotChosen, mediafiles.SlotDownloading, mediafiles.SlotImporting:
 						return nil
 					}
-					if sl.FileID != nil || sl.ActiveDownloadID != nil {
+					if sl.FileID != nil {
 						return nil
+					}
+					// A download that is no longer running (another app took
+					// its files) does not hold the episode back.
+					if sl.ActiveDownloadID != nil {
+						running, err := downloads.RunningTx(tx, *sl.ActiveDownloadID)
+						if err != nil || running {
+							return err
+						}
+						stale = append(stale, sid)
+					}
+				}
+				for _, sid := range stale {
+					if err := mediafiles.ClearSlotDownloadTx(tx, sid); err != nil {
+						return err
 					}
 				}
 				protected := false

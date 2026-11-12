@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "Το HolyArrs τερματίζεται.",
+	"settings.danger.couldnt": "Δεν ήταν δυνατή η ενέργεια: {action}",
+	"settings.danger.title": "Επικίνδυνη ζώνη",
+	"settings.danger.ownerOnly": "Μόνο ο ιδιοκτήτης και οι διαχειριστές",
+	"settings.danger.ask": "{label};",
+	"settings.danger.yes": "Ναι, {action}",
+	"settings.danger.cancel": "Ακύρωση",
+	"settings.danger.expires": "Λήγει σε 60 δευτ.",
+	"settings.danger.wholeApp": "Ολόκληρη η εφαρμογή",
+	"settings.danger.intro": "Αυτές οι ενέργειες σταματούν το HolyArrs. Η πολιτική επανεκκίνησης του Docker το ξεκινά ξανά σε λίγα δευτερόλεπτα, εκτός αν η πολιτική είναι <code>no</code>· τότε ξεκινήστε μόνοι σας το κοντέινερ. Κάθε ενέργεια ζητά πρώτα επιβεβαίωση.",
+	"settings.danger.restart": "Επανεκκίνηση του HolyArrs",
+	"settings.danger.safe": "Επανεκκίνηση σε ασφαλή λειτουργία",
+	"settings.danger.shutdown": "Τερματισμός",
+	"settings.danger.safeNote": "Ξεκινά μία φορά μόνο με τη σύνδεση, τις Ρυθμίσεις και τη Βιβλιοθήκη. Χρησιμοποιήστε το όταν μια Ενότητα εμποδίζει την εκκίνηση."
+}

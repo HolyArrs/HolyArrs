@@ -62,7 +62,7 @@
 	"settings.index.title-defaults.td-order.episode-order-for-new-shows.label": "Episode order for new shows",
 	"settings.index.title-defaults.td-order.episode-order-for-new-shows.words": "shows series type anime daily absolute aired numbering",
 	"settings.index.title-defaults.td-source.where-show-details-come-from.label": "Where show details come from",
-	"settings.index.title-defaults.td-source.where-show-details-come-from.words": "shows metadata tmdb tvmaze details source",
+	"settings.index.title-defaults.td-source.where-show-details-come-from.words": "shows metadata tmdb tvmaze tvdb details source",
 	"settings.index.naming.file-pattern.movie-file-name-pattern.label": "Movie file name pattern",
 	"settings.index.naming.file-pattern.movie-file-name-pattern.words": "naming rename format movie file",
 	"settings.index.naming.folder-pattern.movie-folder-name-pattern.label": "Movie folder name pattern",
@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "Search now",
 	"settings.index.search.search-now.search-now.words": "search better copy feeds run",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "Downloaders",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "download client qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget torrent client add",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "download client qbittorrent sabnzbd transmission deluge rtorrent rutorrent aria2 nzbget torrent client add",
 	"settings.index.downloaders.st-stall.stalled-after.label": "Stalled after",
 	"settings.index.downloaders.st-stall.stalled-after.words": "stalled stuck hours download",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "Give up and try the next Release after",
@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Alerts for me",
 	"settings.index.account.alerts-me.alerts-for-me.words": "my email discord notifications",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "My signed-in devices",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "sessions devices sign out everywhere"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "sessions devices sign out everywhere",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Where details come from",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "metadata mode own keys off lookups privacy server independent",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Your own keys",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart key api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Addresses for your firewall",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall hosts outside addresses allow list"
 }

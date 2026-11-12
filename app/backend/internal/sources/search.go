@@ -29,6 +29,12 @@ type Searcher struct {
 	Secrets SecretReader
 	// Queue takes the searches a missing search queues.
 	Queue *jobs.Queue
+	// PackReady says a qBittorrent HolyArrs may change takes a show's torrents,
+	// so a season pack can be fetched a few episodes at a time. Nil means no.
+	PackReady func(ctx context.Context, titleTags []string) bool
+	// SourcesOn says the Sources part is on. Off, only searches a person asks
+	// for run (see sourcesOff). Nil means on.
+	SourcesOn func() bool
 
 	mu         sync.Mutex
 	clients    map[int64]*Client
@@ -211,6 +217,9 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	if r.Job.Subject == nil || r.Job.Subject.Type != "slot" {
 		return errors.New("search_slot needs a slot subject")
 	}
+	if s.sourcesOff(r) {
+		return nil
+	}
 	slotID := r.Job.Subject.ID
 	by := jobActor(r)
 	c, err := s.loadSlot(ctx, slotID)
@@ -272,6 +281,10 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	}
 	q.TMDb, _ = strconv.Atoi(ti.SourceIDs["tmdb"])
 	isShow := ti.Kind == "show"
+	if !isShow && ti.Kind != "movie" {
+		r.SetResult(map[string]any{"skipped": "a " + ti.Kind + " is not searched as a movie"})
+		return nil
+	}
 	var shows showSet
 	var ep *epSlot
 	if isShow {

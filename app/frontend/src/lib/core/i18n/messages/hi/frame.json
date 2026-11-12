@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "सभी जगहें",
 	"frame.layout.newWord": "नया",
 	"frame.layout.accountName": "अकाउंट · {name}",
-	"frame.layout.hostRefused": "<b>{host} पर बदलाव सेव नहीं हो सकते।</b> HolyArrs सिर्फ़ उन्हीं नामों पर सेव करता है जिन्हें आप अनुमति देते हैं। इसे एक बार IP पते से खोलें, फिर सेटिंग › साइन इन और सुरक्षा › मान्य होस्ट नाम में {host} जोड़ें। दोबारा चालू करने की ज़रूरत नहीं।"
+	"frame.layout.hostRefused": "<b>{host} पर बदलाव सेव नहीं हो सकते।</b> HolyArrs सिर्फ़ उन्हीं नामों पर सेव करता है जिन्हें आप अनुमति देते हैं। इसे एक बार IP पते से खोलें, फिर सेटिंग › साइन इन और सुरक्षा › मान्य होस्ट नाम में {host} जोड़ें। दोबारा चालू करने की ज़रूरत नहीं।",
+	"frame.feeds.clearOne": "इम्पोर्ट हुआ डाउनलोड हटाया नहीं गया",
+	"frame.feeds.clearMany": "{n} इम्पोर्ट हुए डाउनलोड हटाए नहीं गए",
+	"frame.feeds.clearBody": "HolyArrs खुद फिर कोशिश करता है",
+	"frame.feeds.clearNow": "अभी हटाएँ",
+	"frame.feeds.cleared": "डाउनलोडर से हटाया गया",
+	"frame.feeds.clearStill": "अभी हटाया नहीं गया"
 }

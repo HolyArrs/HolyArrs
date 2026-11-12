@@ -132,8 +132,11 @@ export interface SeasonSummary {
 export interface ShowInfo {
 	details_source: string;
 	episode_order: string;
+	episode_group?: { id: string; name: string; type: number } | null;
 	season_choice?: string;
 	new_seasons: string;
+	// Episodes ahead a season pack fetches; 0 or missing gets the whole season.
+	pack_window?: number;
 	status: string;
 	network?: string;
 	air_time?: string;
@@ -210,6 +213,8 @@ export interface LookupMovie extends Movie {
 	ask?: AskBrief;
 	ask_4k?: AskBrief;
 	has_4k?: boolean;
+	/** Hidden from browsing; managers still find it to add it. */
+	hidden?: boolean;
 }
 
 export type AskState = 'asked' | 'approved' | 'turned_down' | 'available';
@@ -290,6 +295,8 @@ export type Moment =
 	| 'report_made'
 	| 'report_fixed'
 	| 'grab'
+	| 'downloaded'
+	| 'download_failed'
 	| 'import'
 	| 'rename'
 	| 'add'
@@ -435,7 +442,7 @@ export interface EventPage {
 export interface HealthCheck {
 	id: number;
 	key: string;
-	kind: 'library_folder' | 'disk_space' | 'source' | 'downloader' | 'backups' | 'update' | 'config_disk' | 'config_folder' | 'waiting_downloads';
+	kind: 'library_folder' | 'disk_space' | 'source' | 'downloader' | 'backups' | 'update' | 'config_disk' | 'config_folder' | 'waiting_downloads' | 'clear_waiting' | 'save_folder';
 	subject: string;
 	state: 'ok' | 'warning' | 'error';
 	message: string;
@@ -545,6 +552,8 @@ export interface DownloadRow extends DownloadView {
 	finished_at?: string;
 	updated_at: string;
 	slot_state?: string;
+	/** Imported, but its clear from the Downloader failed; HolyArrs tries again at next_try. */
+	clear_waiting?: { next_try: string; tries: number; reason?: string };
 	can_act: boolean;
 	client_locked?: boolean;
 	replaced?: boolean;
@@ -573,6 +582,15 @@ export interface DownloadRow extends DownloadView {
 	hash?: string;
 	category?: string;
 	live_key?: string;
+	// A season pack taken a few episodes at a time: the episodes switched on and how many of the pack's episodes that is.
+	pack?: PackRange;
+}
+
+export interface PackRange {
+	from: number;
+	to: number;
+	taken: number;
+	total: number;
 }
 
 export interface EpisodeLine {
@@ -592,7 +610,7 @@ export interface Decision {
 	year?: number;
 	version: string;
 	versions: number;
-	why: 'ran_out' | 'conflict' | 'not_replaced' | 'not_sent';
+	why: 'ran_out' | 'conflict' | 'not_replaced' | 'not_sent' | 'taken';
 	reason: string;
 	release_id?: number;
 	release_name?: string;
@@ -643,6 +661,8 @@ export interface LookupShow {
 	title_id?: number;
 	never_add?: boolean;
 	ask?: AskBrief;
+	/** Hidden from browsing; managers still find it to add it. */
+	hidden?: boolean;
 }
 
 export interface ApiKey {
@@ -664,4 +684,15 @@ export interface UpdateInfo {
 	no_release?: boolean;
 	problem?: string;
 	version: string;
+}
+
+/** One hide from GET /api/v1/hidden: a title (tmdb_id, name) or a genre, for everyone (user_id 0) or one person. */
+export interface Hide {
+	id: number;
+	kind: 'movie' | 'show';
+	tmdb_id?: string;
+	genre?: string;
+	name?: string;
+	user_id: number;
+	created_at: string;
 }

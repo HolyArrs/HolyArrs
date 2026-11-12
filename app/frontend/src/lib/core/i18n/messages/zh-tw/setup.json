@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "重新連線",
+	"setup.testNow": "立即測試",
+	"setup.movies": "電影",
+	"setup.tvShows": "影集",
+	"setup.music": "音樂",
+	"setup.subtitles": "字幕",
+	"setup.fullPath": "請使用完整的資料夾路徑，例如 {path}。",
+	"setup.folderUsed": "這個資料夾已被使用，或位於已被使用的資料夾內。",
+	"setup.folderMissing": "該資料夾不存在，請檢查路徑。",
+	"setup.addFolderOrOff": "請新增資料夾，或關閉此項。",
+	"setup.notAnswering": "HolyArrs 沒有回應，請稍後再試。",
+	"setup.addUserPasswordHint": "請填寫使用者名稱和密碼。",
+	"setup.folders": "資料夾",
+	"setup.downloader": "下載器",
+	"setup.source": "來源"
+}

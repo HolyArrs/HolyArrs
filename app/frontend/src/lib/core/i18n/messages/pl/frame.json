@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Wszystkie miejsca",
 	"frame.layout.newWord": "nowe",
 	"frame.layout.accountName": "Konto · {name}",
-	"frame.layout.hostRefused": "<b>Nie można zapisać zmian na {host}.</b> HolyArrs zapisuje tylko na nazwach, które dopuścisz. Otwórz go raz pod adresem IP, a potem dodaj {host} w Ustawienia › Logowanie › Dozwolone nazwy hostów. Restart nie jest potrzebny."
+	"frame.layout.hostRefused": "<b>Nie można zapisać zmian na {host}.</b> HolyArrs zapisuje tylko na nazwach, które dopuścisz. Otwórz go raz pod adresem IP, a potem dodaj {host} w Ustawienia › Logowanie › Dozwolone nazwy hostów. Restart nie jest potrzebny.",
+	"frame.feeds.clearOne": "Zaimportowane pobranie nieusunięte",
+	"frame.feeds.clearMany": "Nieusunięte zaimportowane pobrania: {n}",
+	"frame.feeds.clearBody": "HolyArrs spróbuje ponownie sam",
+	"frame.feeds.clearNow": "Usuń teraz",
+	"frame.feeds.cleared": "Usunięto z klienta pobierania",
+	"frame.feeds.clearStill": "Jeszcze nieusunięte"
 }

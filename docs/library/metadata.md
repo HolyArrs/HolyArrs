@@ -33,6 +33,9 @@ Every outside address HolyArrs contacts, and how your own TMDB key changes what 
 **Symptom:** artist pages show no top songs.
 **Fix:** check `HOLYARRS_DEEZER_URL` is not `off`.
 
+**Symptom:** lookups fail on a network that only lets traffic out through a proxy, even with `HTTPS_PROXY` set.
+**Fix:** HolyArrs ignores proxy variables on purpose. Let it reach the addresses in [Outside addresses](../run/outside-hosts.md). Why is in [Proxy variables](../reference/env-vars.md#proxy-variables).
+
 ## For experts
 
 <details class="ha-more"><summary>What your install sends</summary>

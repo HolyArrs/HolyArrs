@@ -24,6 +24,10 @@ var siteReason = map[string]string{
 	"login_refused":  "It turned down the sign-in. Check the account, then test it.",
 }
 
+// SourcesOffReason is why every Source shows as off while the Sources part
+// is off.
+const SourcesOffReason = "Sources are turned off in Settings > Parts."
+
 // Links returns the state of every linked app: each Source, Downloader,
 // subtitle site and media server, in the five state names. Paused by a
 // person is off; waiting to try again is retrying; a refused sign-in or a
@@ -38,9 +42,12 @@ func (e *Engine) Links(ctx context.Context) ([]jobs.Status, error) {
 	if err != nil {
 		return nil, err
 	}
+	off := e.SourcesOn != nil && !e.SourcesOn()
 	for _, s := range ss {
 		h := sources.HealthOf(s)
 		switch {
+		case off:
+			add("source", s.ID, s.Name, jobs.Off, SourcesOffReason)
 		case h.State == sources.StateDisabled:
 			add("source", s.ID, s.Name, jobs.Off, h.Text)
 		case h.State == sources.StateAuthFailed:

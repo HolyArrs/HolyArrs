@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -18,6 +19,8 @@ import (
 type ShowRefresh struct {
 	Dropped bool   `json:"dropped,omitempty"`
 	Source  string `json:"details_source"`
+	// AltStale says the release-name numbers could not be read.
+	AltStale bool `json:"-"`
 	ShowSync
 }
 
@@ -88,6 +91,8 @@ func (s *Service) refreshShow(ctx context.Context, titleID int64, switchTo strin
 		}
 	}
 	s.addAirTimes(metadata.NoCache(ctx), &sh)
+	s.applyEpisodeGroup(metadata.NoCache(ctx), t, &sh)
+	out.AltStale = sh.AltStale
 	was := t.MetadataSource
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
@@ -153,4 +158,42 @@ func (s *Service) episodeGateEvents(ctx context.Context, t mediafiles.Title, ope
 			s.Publish("slot", map[string]any{"id": slot, "state": list.to})
 		}
 	}
+}
+
+// applyEpisodeGroup numbers a TMDB show's episodes by its chosen episode
+// order, over any anime numbers. When the order cannot be read the stored
+// numbers stay.
+func (s *Service) applyEpisodeGroup(ctx context.Context, t mediafiles.Title, sh *metadata.Show) {
+	if t.EpisodeGroupID == nil || *t.EpisodeGroupID == "" || sh.Source != "tmdb" {
+		return
+	}
+	if s.EpisodeGroups == nil {
+		sh.AltStale = true
+		return
+	}
+	g, err := s.EpisodeGroups.EpisodeGroup(ctx, *t.EpisodeGroupID)
+	if err != nil {
+		sh.AltStale = true
+		return
+	}
+	sh.Episodes = slices.Clone(sh.Episodes) // a cached answer stays as it was
+	g.SetNumbers(sh.Episodes)
+	sh.AltStale, sh.Grouped = false, true
+}
+
+// Regroup refreshes a show whose episode order was just changed from
+// prev. When the new numbers cannot all be read, the order goes back to
+// prev and the error is returned, so the order and its numbers change
+// together.
+func (s *Service) Regroup(ctx context.Context, titleID int64, prev *string, by domain.Actor) (ShowRefresh, error) {
+	out, err := s.RefreshShow(ctx, titleID, by, nil)
+	if err == nil && out.AltStale {
+		err = library.ErrEpisodeGroupUnread
+	}
+	if err != nil {
+		if rerr := library.SetEpisodeGroup(ctx, s.Store, titleID, prev, by); rerr != nil {
+			return out, errors.Join(err, rerr)
+		}
+	}
+	return out, err
 }

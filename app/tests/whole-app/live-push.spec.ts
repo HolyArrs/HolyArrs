@@ -45,6 +45,8 @@ test.beforeAll(async ({ browser }) => {
 	const pw = ['push', 'test', randomUUID()].join('-');
 	const owner = await call('POST', '/api/v1/auth/setup', { name: 'pushtest', password: pw });
 	csrf = owner.csrf;
+	// End the first run too, or the wizard gate sends /downloads to the welcome steps.
+	await call('POST', '/api/v1/auth/setup/done');
 	await call('POST', '/api/v1/downloaders', { name: 'Fake qBit', kind: 'qbittorrent', url: qbit, username: 'fake', secret: fakeClientKey, category: 'holyarrs', allow_local_network: true });
 	await setSync('on');
 });
@@ -224,41 +226,30 @@ test('AC6: 2,000-row list scrolls smoothly and draws fewer than 100 rows', async
 	await fetch(`${qbit}/set?count=0`);
 });
 
-// 883 torrents HolyArrs did not add: the tabs count every one, a note under
-// the tabs says only some are loaded, and Show more torrents sits at the end
-// of the list for Torrent (and every network), never for Usenet with none left.
-test('tab counts and Show more follow every torrent and the network filter', async ({ browser }) => {
+// 883 torrents HolyArrs did not add: all of them load at once (up to 2,000;
+// more load as the list scrolls), the tabs count every one, and there is no
+// Show more button or note. The network filter narrows the counts.
+test('tab counts and the list cover every torrent, with no Show more', async ({ browser }) => {
 	test.setTimeout(120_000);
 	await fetch(`${qbit}/set?count=883`);
 	await expect.poll(async () => (await page.request.get('/api/v1/downloads/view?limit=1')).json().then((v) => v.outside_total), { timeout: 30_000 }).toBeGreaterThanOrEqual(883);
 	const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, storageState: await page.context().storageState() });
 	const p = await ctx.newPage();
 	await p.goto('/downloads');
-	const all = p.locator('[data-testid="rail-item"][data-key="active"]');
-	await expect.poll(async () => Number(await all.getAttribute('data-count')), { timeout: 30_000 }).toBeGreaterThanOrEqual(883);
-	await expect(p.getByTestId('dl-morenote')).toBeVisible();
+	const count = async (key: string) => Number(await p.locator(`[data-testid="rail-item"][data-key="${key}"]`).getAttribute('data-count'));
+	await expect.poll(() => count('active'), { timeout: 30_000 }).toBeGreaterThanOrEqual(883);
+	await expect.poll(async () => Number(await p.locator('[data-testid="dl-list"]').getAttribute('data-rows')), { timeout: 30_000 }).toBeGreaterThanOrEqual(883);
+	await expect(p.getByTestId('dl-outside-more')).toHaveCount(0);
+	await expect(p.getByTestId('dl-morenote')).toHaveCount(0);
 	const network = async (key: string) => {
 		await p.getByTestId('dl-filters-btn').click();
 		await p.locator(`[data-testid="dl-f-src"][data-key="${key}"]`).click();
 		await p.getByTestId('dl-filters-done').click();
 	};
-	const toEnd = () => p.getByTestId('dl-listbox').evaluate((b) => (b.scrollTop = b.scrollHeight));
-	const loaded = async () => Number(await p.locator('[data-testid="dl-list"]').getAttribute('data-rows'));
-
-	await network('torrent');
-	await toEnd();
-	await expect(p.getByTestId('dl-outside-more')).toBeInViewport();
-
 	await network('usenet');
-	await expect(p.getByTestId('dl-outside-more')).toHaveCount(0);
-	await expect(p.getByTestId('dl-morenote')).toHaveCount(0);
-
+	await expect.poll(() => count('active')).toBe(0);
 	await network('torrent');
-	await toEnd();
-	const before = await loaded();
-	await expect(p.getByTestId('dl-outside-more')).toBeInViewport();
-	await p.getByTestId('dl-outside-more').click();
-	await expect.poll(loaded, { timeout: 30_000 }).toBeGreaterThan(before);
+	await expect.poll(() => count('active')).toBeGreaterThanOrEqual(883);
 	await ctx.close();
 	await fetch(`${qbit}/set?count=0`);
 });

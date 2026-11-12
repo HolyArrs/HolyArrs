@@ -78,22 +78,51 @@ func (a *Auth) getSettings(w http.ResponseWriter, r *http.Request) {
 		nets = l.list
 	}
 	seen, untrusted := a.seenAddress(r)
+	saved := []string{}
+	if p := a.savedProxies.Load(); p != nil {
+		saved = p.list
+	}
+	// Why the skip would not let anyone in now ("" when it would).
+	skipOff := ""
+	if _, why, ok := a.localCaller(ctx); !ok {
+		skipOff = why
+	}
+	// The Plex, Jellyfin and Emby sign-in ways that are on: people there
+	// have their own accounts, so the card can say what the skip means.
+	media := []string{}
+	for _, p := range []string{ProviderPlex, ProviderJellyfin, ProviderEmby} {
+		if a.way(ctx, p).On {
+			media = append(media, p)
+		}
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		settingSkipLocal:   a.skipLocal.Load(),
-		keyLocalNets:       nets,
-		keyRequireAdmin2FA: a.requireAdmin2FA.Load(),
-		keyMinLength:       MinPasswordLength(ctx, a.s.Read()),
-		ProviderPlex:       a.way(ctx, ProviderPlex),
-		ProviderJellyfin:   a.way(ctx, ProviderJellyfin),
-		ProviderEmby:       a.way(ctx, ProviderEmby),
-		"plex_owner":       a.plexOwner(ctx),
-		keyAllowedHosts:    a.savedHostList(),
+		settingSkipLocal:  a.skipLocal.Load(),
+		keyLocalNets:      nets,
+		keyLocalPerson:    a.localPerson.Load(),
+		"local_skip_off":  skipOff,
+		"media_sign_in":   media,
+		"home_ranges":     homeRanges,
+		"cgnat_range":     cgnatRange,
+		keyTrustedProxies: saved,
+		// Set by HOLYARRS_TRUSTED_PROXIES (or start-up options): shown
+		// locked, they always apply.
+		"trusted_proxies_fixed": a.fixedProxyList(),
+		keyRequireAdmin2FA:      a.requireAdmin2FA.Load(),
+		keyMinLength:            MinPasswordLength(ctx, a.s.Read()),
+		ProviderPlex:            a.way(ctx, ProviderPlex),
+		ProviderJellyfin:        a.way(ctx, ProviderJellyfin),
+		ProviderEmby:            a.way(ctx, ProviderEmby),
+		"plex_owner":            a.plexOwner(ctx),
+		keyAllowedHosts:         a.savedHostList(),
 		// For the skip card: the address this browser shows up as, listed
 		// networks that look like a container gateway, and whether a proxy
 		// in front is not trusted (then the skip never applies).
 		"seen_address":     seen,
 		"gateway_networks": gatewayNets(nets, seen),
 		"proxy_untrusted":  untrusted,
+		// The seen address is this container's own gateway, which the
+		// skip counts as local.
+		"seen_gateway": ownGateway(parseHostIP(seen)),
 	})
 }
 
@@ -102,13 +131,20 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		SkipLocal    *bool    `json:"skip_login_local_network"`
-		LocalNets    []string `json:"local_networks"`
-		RequireAdmin *bool    `json:"require_two_factor_admins"`
-		MinPassword  *int     `json:"min_password_length"`
-		Plex         *WayView `json:"plex"`
-		Jellyfin     *WayView `json:"jellyfin"`
-		Emby         *WayView `json:"emby"`
+		SkipLocal *bool    `json:"skip_login_local_network"`
+		LocalNets []string `json:"local_networks"`
+		// LocalPerson is who local visitors become (0: the owner).
+		LocalPerson *int64 `json:"local_person"`
+		// AddHomeRanges adds the usual home ranges to the list (and the
+		// Tailscale and carrier range with AddCGNAT).
+		AddHomeRanges bool      `json:"add_home_ranges"`
+		AddCGNAT      bool      `json:"add_cgnat"`
+		Proxies       *[]string `json:"trusted_proxies"`
+		RequireAdmin  *bool     `json:"require_two_factor_admins"`
+		MinPassword   *int      `json:"min_password_length"`
+		Plex          *WayView  `json:"plex"`
+		Jellyfin      *WayView  `json:"jellyfin"`
+		Emby          *WayView  `json:"emby"`
 		// AllowedHosts are the host names saved in Settings; names from
 		// HOLYARRS_ALLOWED_HOSTS are not listed and stay.
 		AllowedHosts *[]string `json:"allowed_hosts"`
@@ -117,37 +153,12 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 		ConfirmEveryone bool `json:"confirm_everyone"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&body); err != nil ||
-		(body.SkipLocal == nil && body.LocalNets == nil && body.RequireAdmin == nil && body.MinPassword == nil && body.Plex == nil && body.Jellyfin == nil && body.Emby == nil && body.AllowedHosts == nil) {
-		fail(w, http.StatusBadRequest, `send {"skip_login_local_network": true|false, "local_networks": ["192.168.1.0/24"], "require_two_factor_admins": true|false, "min_password_length": 4..64, "plex": {...}, "jellyfin": {...}, "emby": {...}}`)
+		(body.SkipLocal == nil && body.LocalNets == nil && body.LocalPerson == nil && !body.AddHomeRanges && !body.AddCGNAT && body.Proxies == nil &&
+			body.RequireAdmin == nil && body.MinPassword == nil && body.Plex == nil && body.Jellyfin == nil && body.Emby == nil && body.AllowedHosts == nil) {
+		fail(w, http.StatusBadRequest, `send {"skip_login_local_network": true|false, "local_networks": ["192.168.1.0/24"], "local_person": 0, "add_home_ranges": true, "add_cgnat": true, "trusted_proxies": ["172.18.0.2"], "require_two_factor_admins": true|false, "min_password_length": 4..64, "plex": {...}, "jellyfin": {...}, "emby": {...}}`)
 		return
 	}
-	if body.SkipLocal != nil && *body.SkipLocal {
-		kids, err := countKids(r.Context(), a.s.Read())
-		if err != nil {
-			serverError(w, "sign-in settings", err)
-			return
-		}
-		if kids > 0 {
-			fail(w, http.StatusBadRequest, "Skipping sign-in on the local network cannot be on while a Kid account has an age limit: anyone at home would sign in as the owner. Remove the limits first.")
-			return
-		}
-		// An open invite with an age limit makes a Kid once it is used.
-		expiries, err := kidInviteExpiries(r.Context(), a.s.Read())
-		if err != nil {
-			serverError(w, "sign-in settings", err)
-			return
-		}
-		open := false
-		for _, expires := range expiries {
-			if a.now().Before(parseTime(expires)) {
-				open = true
-			}
-		}
-		if open {
-			fail(w, http.StatusBadRequest, "Skipping sign-in on the local network cannot be on while an open invite has an age limit: the Kid it makes would sign in as the owner at home. Withdraw the invite or let it run out first.")
-			return
-		}
-	}
+	ctx := r.Context()
 	// Skipping needs at least one listed network; an empty list skips nowhere.
 	nets := a.localNets.Load()
 	if body.LocalNets != nil {
@@ -157,9 +168,45 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	if body.AddHomeRanges || body.AddCGNAT {
+		list := []string{}
+		if nets != nil {
+			list = nets.list
+		}
+		var err error
+		if nets, err = parseLocalNets(withHomeRanges(list, body.AddHomeRanges, body.AddCGNAT)); err != nil {
+			fail(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		body.LocalNets = nets.list
+	}
 	skip := a.skipLocal.Load()
 	if body.SkipLocal != nil {
 		skip = *body.SkipLocal
+	}
+	person := a.localPerson.Load()
+	if body.LocalPerson != nil {
+		person = *body.LocalPerson
+	}
+	// Turning the skip on, or picking someone: the person must exist and be
+	// on, and with the skip on the Kid guard holds.
+	if body.LocalPerson != nil || body.SkipLocal != nil && *body.SkipLocal {
+		who, err := a.checkLocalPerson(ctx, person)
+		if err != nil {
+			fail(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		if skip {
+			msg, err := a.kidGuardMsg(ctx, who)
+			if err != nil {
+				serverError(w, "sign-in settings", err)
+				return
+			}
+			if msg != "" {
+				fail(w, http.StatusBadRequest, msg)
+				return
+			}
+		}
 	}
 	if (body.SkipLocal != nil || body.LocalNets != nil) && skip && (nets == nil || len(nets.list) == 0) {
 		fail(w, http.StatusBadRequest, "List at least one local network first, like 192.168.1.0/24: sign-in is skipped only there.")
@@ -172,6 +219,20 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 	if body.LocalNets != nil {
 		v, _ := json.Marshal(nets.list)
 		set[settingsGroup+"/"+signInPrefix+keyLocalNets] = string(v)
+	}
+	if body.LocalPerson != nil {
+		set[settingsGroup+"/"+signInPrefix+keyLocalPerson] = strconv.FormatInt(person, 10)
+	}
+	var proxies *proxyList
+	if body.Proxies != nil {
+		var code int
+		var msg string
+		if proxies, code, msg = a.checkProxyChange(r, *body.Proxies); msg != "" {
+			fail(w, code, msg)
+			return
+		}
+		v, _ := json.Marshal(proxies.list)
+		set[settingsGroup+"/"+signInPrefix+keyTrustedProxies] = string(v)
 	}
 	if body.RequireAdmin != nil {
 		set[settingsGroup+"/"+signInPrefix+keyRequireAdmin2FA] = strconv.FormatBool(*body.RequireAdmin)
@@ -263,6 +324,14 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 	if body.LocalNets != nil {
 		a.localNets.Store(nets)
 		log.Printf("auth: local networks set to %s", strings.Join(nets.list, ", "))
+	}
+	if body.LocalPerson != nil {
+		a.localPerson.Store(person)
+		log.Printf("auth: local visitors become user %d (0 is the owner)", person)
+	}
+	if proxies != nil {
+		a.savedProxies.Store(proxies)
+		log.Printf("auth: trusted proxies set to %s", strings.Join(proxies.list, ", "))
 	}
 	if body.SkipLocal != nil {
 		a.skipLocal.Store(*body.SkipLocal)

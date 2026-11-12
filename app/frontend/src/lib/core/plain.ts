@@ -13,7 +13,9 @@ const sentences = (): Record<HealthCheck['kind'], [error: string, warning: strin
 	update: [t('core.plain.updateError'), t('core.plain.updateWarning')],
 	config_disk: [t('core.plain.configDiskError'), t('core.plain.configDiskWarning')],
 	config_folder: [t('core.plain.configFolder'), t('core.plain.configFolder')],
-	waiting_downloads: [t('core.plain.waitingDownloads'), t('core.plain.waitingDownloads')]
+	waiting_downloads: [t('core.plain.waitingDownloads'), t('core.plain.waitingDownloads')],
+	clear_waiting: [t('core.plain.clearWaiting'), t('core.plain.clearWaiting')],
+	save_folder: [t('core.plain.saveFolder'), t('core.plain.saveFolder')]
 });
 
 // Signs of raw system text that people should not see as the main message.

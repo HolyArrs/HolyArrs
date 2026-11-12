@@ -263,8 +263,10 @@ func seerrRequest(id, status int64, mediaType string, media map[string]any, by, 
 	switch mediaType {
 	case "tv":
 		rq.Kind = "show"
-	default:
+	case "movie":
 		rq.Kind = "movie"
+	default:
+		return Request{}, false // a request of no known kind is not brought over
 	}
 	for k, id := range map[string]string{"tmdbId": "tmdb", "tvdbId": "tvdb", "imdbId": "imdb"} {
 		if v := str(first(media, k)); v != "" && v != "0" {

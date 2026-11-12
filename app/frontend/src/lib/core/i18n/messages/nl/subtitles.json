@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Taal",
 	"subtitles.wants.pick": "Kies een taal",
 	"subtitles.wants.takeOff": "{name} verwijderen",
-	"subtitles.wants.thisLanguage": "deze taal"
+	"subtitles.wants.thisLanguage": "deze taal",
+	"subtitles.made.translated": "Vertaald",
+	"subtitles.made.partial": "Deels vertaald",
+	"subtitles.made.ai": "Door AI vertaald",
+	"subtitles.made.machine": "Machinevertaling",
+	"subtitles.wants.translateFrom": "Vertalen uit",
+	"subtitles.wants.noTranslate": "Niet vertalen",
+	"subtitles.panel.picture": "Beeld",
+	"subtitles.panel.pictureTitle": "Beeldondertitel: kan niet vertaald worden",
+	"subtitles.panel.translate": "Vertalen",
+	"subtitles.panel.translateFor": "Een {name} ondertitel vertalen",
+	"subtitles.panel.translateFrom": "Vertalen uit",
+	"subtitles.panel.translateQueued": "Bezig met vertalen",
+	"subtitles.panel.translateQueuedBody": "De {name} ondertitel verschijnt hier zodra hij klaar is.",
+	"subtitles.panel.translating": "Niets gevonden, je vertaler maakt er een."
 }

@@ -38,9 +38,19 @@ type fakeQbit struct {
 	prio     []string
 	addFails bool
 	selected []string
+	// steps lists add, filePrio, start and delete calls in order; prioFails
+	// makes filePrio answer 500.
+	steps     []string
+	prioFails bool
+	// prioWait, set before the test starts, runs before each filePrio call
+	// takes the lock, so a test can hold a call open.
+	prioWait func()
 }
 
 func (f *fakeQbit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if f.prioWait != nil && r.URL.Path == "/api/v2/torrents/filePrio" {
+		f.prioWait()
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.refuse {
@@ -103,16 +113,21 @@ func (f *fakeQbit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			_, _ = w.Write([]byte("Fails."))
 			return
 		}
-		add := map[string]string{"urls": r.PostForm.Get("urls"), "category": r.PostForm.Get("category"), "savepath": r.PostForm.Get("savepath")}
+		add := map[string]string{"urls": r.PostForm.Get("urls"), "category": r.PostForm.Get("category"), "savepath": r.PostForm.Get("savepath"),
+			"stopped": r.PostForm.Get("stopped"), "paused": r.PostForm.Get("paused")}
 		if r.ParseMultipartForm(1<<20) == nil {
 			add["category"], add["savepath"] = r.FormValue("category"), r.FormValue("savepath")
+			add["stopped"], add["paused"] = r.FormValue("stopped"), r.FormValue("paused")
 			if file, _, err := r.FormFile("torrents"); err == nil {
 				b, _ := io.ReadAll(file)
 				add["torrent"] = string(b)
 			}
 		}
 		f.added = append(f.added, add)
+		f.steps = append(f.steps, "add stopped="+add["stopped"])
 		_, _ = w.Write([]byte("Ok."))
+	case "/api/v2/torrents/start":
+		f.steps = append(f.steps, "start "+r.PostForm.Get("hashes"))
 	case "/api/v2/torrents/info":
 		var out []map[string]any
 		hashes := r.Form.Get("hashes")
@@ -154,8 +169,14 @@ func (f *fakeQbit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
+		if f.prioFails {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		f.prio = append(f.prio, r.PostForm.Get("hash")+"|"+r.PostForm.Get("id")+"|"+r.PostForm.Get("priority"))
+		f.steps = append(f.steps, "prio "+r.PostForm.Get("id")+"="+r.PostForm.Get("priority"))
 	case "/api/v2/torrents/delete":
+		f.steps = append(f.steps, "delete "+r.PostForm.Get("deleteFiles"))
 		f.selected = append(f.selected, r.PostForm.Get("hashes"))
 		f.deleted = append(f.deleted, r.PostForm.Get("hashes")+"|"+r.PostForm.Get("deleteFiles"))
 	default:

@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Todos los lugares",
 	"frame.layout.newWord": "nuevo",
 	"frame.layout.accountName": "Cuenta · {name}",
-	"frame.layout.hostRefused": "<b>No se pueden guardar cambios en {host}.</b> HolyArrs solo guarda en los nombres que permites. Ábrelo una vez por su dirección IP y añade {host} en Ajustes › Inicio de sesión y seguridad › Nombres de host permitidos. No hace falta reiniciar."
+	"frame.layout.hostRefused": "<b>No se pueden guardar cambios en {host}.</b> HolyArrs solo guarda en los nombres que permites. Ábrelo una vez por su dirección IP y añade {host} en Ajustes › Inicio de sesión y seguridad › Nombres de host permitidos. No hace falta reiniciar.",
+	"frame.feeds.clearOne": "Descarga importada sin quitar",
+	"frame.feeds.clearMany": "{n} descargas importadas sin quitar",
+	"frame.feeds.clearBody": "HolyArrs lo vuelve a intentar solo",
+	"frame.feeds.clearNow": "Quitar ahora",
+	"frame.feeds.cleared": "Quitada del gestor de descargas",
+	"frame.feeds.clearStill": "Aún sin quitar"
 }

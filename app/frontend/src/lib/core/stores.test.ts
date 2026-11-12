@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createLive, type SourceFactory } from './live.svelte.ts';
 import { createToasts } from './toasts.svelte.ts';
 import { createSession } from './session.svelte.ts';
+import { createViews } from './views.svelte.ts';
 import { createClient } from './api.ts';
 
 describe('live', () => {
@@ -301,6 +302,20 @@ describe('session', () => {
 		expect(out).toBe(true);
 		expect(s.s.state).toBe('signed_out');
 		expect(c.csrf()).toBe('');
+	});
+
+	it('takes the saved views with the session and forgets them on sign-out', async () => {
+		const c = server({
+			'GET /auth/me': json(200, { name: 'luis', via: 'session', csrf: 'abc', views: { 'library.view.movie': 'posters' } }),
+			'POST /auth/logout': () => new Response(null, { status: 204 }),
+			'GET /auth/state': json(200, { needs_setup: false })
+		});
+		const v = createViews(c, () => undefined);
+		const s = createSession(c, v);
+		await s.load();
+		expect(v.get('library.view.movie')).toBe('posters');
+		await s.logout();
+		expect(v.get('library.view.movie')).toBeUndefined();
 	});
 
 	it('runs first-run setup with the setup code', async () => {

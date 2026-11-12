@@ -236,7 +236,7 @@ func TestShortTypedKeyNeverKept(t *testing.T) {
 }
 
 func TestSecretNames(t *testing.T) {
-	for _, n := range []string{"apiKey", "password", "authPassword", "authUsername", "accessToken", "cookie", "webHookUrl", "baseSettings.apiKey", "PostgresPassword", "pgpKey", "x_api_key"} {
+	for _, n := range []string{"apiKey", "password", "authPassword", "authUsername", "accessToken", "cookie", "webHookUrl", "baseSettings.apiKey", "PostgresPassword", "pgpKey", "x_api_key", "secretToken"} {
 		if !IsSecretName(n) {
 			t.Errorf("%s not secret", n)
 		}

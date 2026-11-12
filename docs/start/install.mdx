@@ -10,7 +10,7 @@ Run HolyArrs in Docker and open it in your browser. It takes a few minutes.
 ## Before you start
 
 - A machine with Docker and Docker Compose.
-- Your media folders, or a place to make them. Read [Folders](folders.md) first if you want instant moves instead of copies.
+- One disk, or one share, with room for your downloads and your media.
 - On a NAS, Unraid or Synology, see [NAS, Synology and Unraid](../run/platforms.md). Without Docker, see [Portable archives](../run/portable.md).
 
 ## Steps
@@ -19,7 +19,18 @@ Run HolyArrs in Docker and open it in your browser. It takes a few minutes.
    `/srv/holyarrs/config`.
    Not a network share. On Docker Desktop, use a named volume instead. See
    [Docker Desktop](#docker-desktop-windows-and-mac).
-2. Find the user and group that own your media folders:
+2. Make one data folder with your downloads and your media inside it, on
+   one disk:
+
+   ```sh
+   mkdir -p /srv/data/downloads /srv/data/media/movies /srv/data/media/tv /srv/data/media/music
+   ```
+
+   With both under one folder, a finished download reaches your Library at
+   once as a hardlink or a move, and takes no extra space. Your media is
+   somewhere else already? Move it in here first, or use
+   [Separate mounts](#separate-mounts).
+3. Find the user and group that own the data folder:
 
    ```sh
    id youruser
@@ -27,7 +38,7 @@ Run HolyArrs in Docker and open it in your browser. It takes a few minutes.
    ```
 
    Use the `uid` as `PUID` and the `gid` as `PGID`.
-3. Save this as `docker-compose.yml` and change the paths:
+4. Save this as `docker-compose.yml` and change the paths:
 
    ```yaml
    name: holyarrs
@@ -41,16 +52,15 @@ Run HolyArrs in Docker and open it in your browser. It takes a few minutes.
          - TZ=Etc/UTC
        volumes:
          - /srv/holyarrs/config:/config
-         - /path/to/movies:/movies #optional
-         - /path/to/tv:/tv #optional
-         - /path/to/music:/music #optional
-         - /path/to/downloads:/downloads #optional
+         - /srv/data:/data
        ports:
          - 6262:6262
        restart: unless-stopped
    ```
 
-4. Start it:
+   Mount the same folder the same way in your downloader
+   (`/srv/data:/data`) and set its save folder to `/data/downloads`.
+5. Start it:
 
    ```sh
    docker compose up -d
@@ -58,10 +68,12 @@ Run HolyArrs in Docker and open it in your browser. It takes a few minutes.
    ```
 
    The container shows as healthy once HolyArrs answers.
-5. Open `http://your-server:6262` and make the owner account right away.
+6. Open `http://your-server:6262` and make the owner account right away.
    There is no default password. Until you make it, whoever opens HolyArrs
    first becomes the owner.
-6. Follow the setup that opens next. See [First run](first-run.md).
+7. Follow the setup that opens next. When it asks where your media is, type
+   `/data/media/movies`, `/data/media/tv` and `/data/media/music`. See
+   [First run](first-run.md).
 
 :::caution
 There is no default password. Whoever opens a new HolyArrs first becomes the owner. Make the account now.
@@ -77,10 +89,41 @@ docker run -d \
   -e TZ=Etc/UTC \
   -p 6262:6262 \
   -v /srv/holyarrs/config:/config \
-  -v /path/to/movies:/movies `#optional`   -v /path/to/tv:/tv `#optional`   -v /path/to/music:/music `#optional`   -v /path/to/downloads:/downloads `#optional` \
+  -v /srv/data:/data \
   --restart unless-stopped \
   holyarrs/holyarrs:latest
 ```
+
+### Separate mounts
+
+The simple option: mount each media folder and the download folder on its
+own.
+
+:::caution
+Every import is a full copy. A file cannot be hardlinked or moved at once
+from one mount to another, so HolyArrs writes each finished download into
+your Library a second time. That takes longer and uses double the space
+until the downloader deletes its copy.
+:::
+
+```yaml
+    volumes:
+      - /srv/holyarrs/config:/config
+      - /path/to/movies:/movies #optional
+      - /path/to/tv:/tv #optional
+      - /path/to/music:/music #optional
+      - /path/to/downloads:/downloads #optional
+```
+
+With `docker run`, use these in place of `-v /srv/data:/data`:
+
+```sh
+  -v /path/to/movies:/movies `#optional`   -v /path/to/tv:/tv `#optional`   -v /path/to/music:/music `#optional`   -v /path/to/downloads:/downloads `#optional` \
+```
+
+During setup, type `/movies`, `/tv` and `/music` as your folders. You can
+switch to one data folder later without importing again. See
+[Move to one data folder](../library/move-to-one-folder.md).
 
 ### Image tag
 
@@ -97,10 +140,8 @@ docker run -d \
 | --- | --- |
 | `-p 6262:6262` | The web app. |
 | `-v /config` | Databases, settings, the master key, backups and logs. Local disk only. |
-| `-v /movies` | Optional. A movie Library folder. |
-| `-v /tv` | Optional. A shows Library folder. |
-| `-v /music` | Optional. A music Library folder. |
-| `-v /downloads` | Optional. The Downloader's download folder. See [Media folders](#media-folders). |
+| `-v /data` | Your downloads and your Library folders, in one folder. See [Media folders](#media-folders). |
+| `-v /movies`, `-v /tv`, `-v /music`, `-v /downloads` | Optional, in place of `/data`. See [Separate mounts](#separate-mounts). Every import is then a full copy. |
 | `--read-only=true` | Optional. See [Read-only root filesystem](#read-only-root-filesystem). |
 | `--user=1000:1000` | Optional. See [Start as a fixed user](#start-as-a-fixed-user). |
 
@@ -174,17 +215,17 @@ others read. Use `002` when a group must write too.
 
 ### Media folders
 
-Mount only the folders you use: `/movies`, `/tv` and `/music` as Library
-folders and `/downloads` as the download folder.
+Mount one data folder at `/data`, with your downloads and your Library
+folders inside it, and give the downloader the same mount at the same path.
+A finished download then reaches the Library as a hardlink or a move: at
+once, with no extra space. The data folder must be one filesystem on the
+host. Separate NAS shares or datasets under it still copy. The layout is in
+[Folders](folders.md), and what HolyArrs does with each download is in
+[Hardlink, move or copy](folders.md#hardlink-move-or-copy).
 
-Tip for hardlinks: each folder you mount on its own is a separate mount inside
-the container, and a file cannot be hardlinked across mounts, so imports become
-full copies. If you want hardlinks, you can instead mount one shared parent
-folder (with downloads and Library folders inside it) in place of the four
-optional mounts, and give the Downloader the same mount at the same path. The
-parent folder must also be one filesystem. Separate NAS
-shares or datasets under it still copy. Settings > Library folders warns you
-when HolyArrs has to copy.
+Separate `/movies`, `/tv`, `/music` and `/downloads` mounts also work, but
+each one is its own mount inside the container, so every import is a full
+copy. Settings > Library folders warns you when HolyArrs has to copy.
 
 `HOLYARRS_SAVE_PATH` is sent to the Downloader with every download, so it also
 changes where the Downloader saves. Leave it out to keep the Downloader's own
@@ -424,7 +465,7 @@ bundle.
 | A `FILE__` variable cannot be read | Check the path and that the file is mounted. |
 | Permission denied | Check `PUID`, `PGID` and write access on all folders. |
 | Unknown host name | Open HolyArrs by IP and add the name under Allowed host names. |
-| Imports are copied | Mount one shared folder. See [Media folders](#media-folders). |
+| Imports are copied | Mount one data folder. See [Media folders](#media-folders). Already set up? See [Move to one data folder](../library/move-to-one-folder.md). |
 | Master key does not match | Put back the key that belongs to those databases. |
 | Restore staged but the app stays down | Add a restart policy and start the container. |
 
@@ -447,6 +488,7 @@ in an unnamed volume. List them with `docker volume ls`.
 ## Related
 
 - [Folders](folders.md)
+- [Move to one data folder](../library/move-to-one-folder.md)
 - [First run](first-run.md)
 - [NAS, Synology and Unraid](../run/platforms.md)
 - [Updates](../run/updates.md)

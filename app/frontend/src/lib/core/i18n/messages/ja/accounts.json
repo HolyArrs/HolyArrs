@@ -366,8 +366,12 @@
 	"accounts.invite.confirm": "パスワードの確認",
 	"accounts.invite.joinSignIn": "参加してサインイン",
 	"accounts.language.label": "言語",
+	"accounts.language.top": "よく使われる言語",
+	"accounts.language.more": "その他の言語",
 	"accounts.language.auto": "自動",
 	"accounts.language.hint": "「自動」はブラウザーの設定に従います。アカウントに保存されます。",
 	"accounts.language.saveFailed": "言語を保存できませんでした",
+	"accounts.language.count.one": "1 件の言語",
+	"accounts.language.count.other": "{n} 件の言語",
 	"accounts.account.watchEveryone": "オーナーが全員に対してオンにしました。止めるには両方をオフにしてください。"
 }

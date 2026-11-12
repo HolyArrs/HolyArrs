@@ -16,7 +16,7 @@
 	"core.format.healthy": "Sağlıklı",
 	"core.format.folderNotFound": "Klasör bulunamadı",
 	"core.format.cannotWrite": "Buraya yazılamıyor",
-	"core.format.copiedNoHardlinks": "Çalışıyor, ama dosyalar kopyalanıyor (hardlink yok)",
+	"core.format.copiedNoHardlinks": "Her içe aktarma tam bir kopya oluşturur (fazladan yer kaplar)",
 	"core.format.notChecked": "Henüz denetlenmedi",
 	"core.loader.welcome": "Hoş geldin, {name}",
 	"core.loader.reconnecting": "Yeniden bağlanılıyor…",
@@ -54,6 +54,8 @@
 	"core.plain.configDiskWarning": "Yapılandırma klasörünü tutan diskin alanı azalıyor.",
 	"core.plain.configFolder": "/config bir klasöre eşlenmemiş, bu yüzden konteyner yeniden oluşturulunca HolyArrs verileri kaybolur.",
 	"core.plain.waitingDownloads": "İndirmeler bekliyor çünkü indiricileri dosyaları kullanamıyor.",
+	"core.plain.clearWaiting": "İçe aktarılan indirmeler indiricilerinden temizlenmeyi bekliyor.",
+	"core.plain.saveFolder": "Bir indiricinin kayıt klasörü yok, bu yüzden HolyArrs biten indirmelerini içe aktaramıyor.",
 	"core.plain.someone": "Evinden biri",
 	"core.plain.keyKitOwner": "Sahip anahtar paketini kaydetmeli: yedekler ana anahtarı içermez.",
 	"core.plain.keyKitNone": "Kayıtlı anahtar paketi yok: yedekler ana anahtarı içermez.",
@@ -142,5 +144,6 @@
 	"core.settings.danger.label": "Tehlikeli bölge",
 	"core.settings.danger.about": "Yeniden başlat ya da kapat",
 	"core.settings.account.label": "Hesabım",
-	"core.settings.account.about": "Parola, iki adımlı giriş, cihazlar"
+	"core.settings.account.about": "Parola, iki adımlı giriş, cihazlar",
+	"core.api.sourceOff": "Bu kurulumda bazı satırlar kapalı."
 }

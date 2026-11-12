@@ -37,8 +37,8 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 	}
 	u := domain.User{Role: webserver.RoleMember, State: "active", Perms: permsJSON(webserver.DefaultPerms(webserver.RoleMember))}
 	if kid {
-		if a.skipLocal.Load() {
-			// A Kid could not be told apart from the owner at home.
+		if a.skipBlocksKids(ctx) {
+			// A Kid could not be told apart from the person local visitors become.
 			return 0, "", errKidSkipLocal
 		}
 		u.Perms, u.MaxRating = permsJSON([]webserver.Perm{webserver.PermAsk}), "PG"

@@ -62,7 +62,7 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 			Preset Preset `json:"preset"`
 		}
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&body); err != nil {
-			webserver.Fail(w, http.StatusBadRequest, `send {"preset": "balanced"|"light"|"careful"}`)
+			webserver.Fail(w, http.StatusBadRequest, `send {"preset": "balanced"|"light"|"careful"|"off"}`)
 			return
 		}
 		if err := m.SetPreset(r.Context(), body.Preset, webserver.Actor(r.Context())); err != nil {

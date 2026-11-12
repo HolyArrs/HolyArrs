@@ -62,7 +62,7 @@
 	"settings.index.title-defaults.td-order.episode-order-for-new-shows.label": "Afleveringsvolgorde voor nieuwe series",
 	"settings.index.title-defaults.td-order.episode-order-for-new-shows.words": "series soort anime dagelijks doorlopend uitgezonden nummering",
 	"settings.index.title-defaults.td-source.where-show-details-come-from.label": "Waar seriedetails vandaan komen",
-	"settings.index.title-defaults.td-source.where-show-details-come-from.words": "series metadata tmdb tvmaze details bron",
+	"settings.index.title-defaults.td-source.where-show-details-come-from.words": "series metadata tmdb tvmaze tvdb details bron",
 	"settings.index.naming.file-pattern.movie-file-name-pattern.label": "Patroon voor bestandsnamen van films",
 	"settings.index.naming.file-pattern.movie-file-name-pattern.words": "naamgeving hernoemen opmaak filmbestand",
 	"settings.index.naming.folder-pattern.movie-folder-name-pattern.label": "Patroon voor mapnamen van films",
@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "Nu zoeken",
 	"settings.index.search.search-now.search-now.words": "zoeken betere kopie feeds uitvoeren",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "Downloaders",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "downloadclient qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget torrentclient toevoegen",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "downloadclient qbittorrent sabnzbd transmission deluge rtorrent rutorrent aria2 nzbget torrentclient toevoegen",
 	"settings.index.downloaders.st-stall.stalled-after.label": "Vastgelopen na",
 	"settings.index.downloaders.st-stall.stalled-after.words": "vastgelopen vast uren download stalled",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "Opgeven en de volgende release proberen na",
@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Meldingen voor mij",
 	"settings.index.account.alerts-me.alerts-for-me.words": "mijn e-mail discord notificaties",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Mijn aangemelde apparaten",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "sessies apparaten overal afmelden"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "sessies apparaten overal afmelden",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Waar details vandaan komen",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "metadata mode own keys off lookups privacy server independent",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Eigen sleutels",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart key api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adressen voor je firewall",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall hosts outside addresses allow list"
 }

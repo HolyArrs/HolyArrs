@@ -204,5 +204,15 @@
 	"shows.page.mainVersionParen": "(기본 버전)",
 	"shows.page.keepThem": "최신 상태로 유지",
 	"shows.page.leaveThem": "꺼 두기",
-	"shows.page.filesStay": "에피소드와 파일은 그대로 남습니다."
+	"shows.page.filesStay": "에피소드와 파일은 그대로 남습니다.",
+	"shows.page.seasonPacks": "시즌 팩",
+	"shows.page.packWhole": "시즌 전체 받기",
+	"shows.page.packFew": "에피소드를 몇 개씩 받기",
+	"shows.page.packAhead": "미리 받을 에피소드",
+	"shows.page.packHint": "릴리스가 시즌 전체 팩뿐이라면 qBittorrent가 다음 에피소드 {n}개를 받습니다. '다음 에피소드 받기'를 누르거나 Plex 또는 Jellyfin에서 에피소드가 시청됨으로 표시되면 더 받습니다. Usenet과 다른 다운로더는 시즌 전체를 받습니다.",
+	"shows.page.packWholeShort": "시즌 전체",
+	"shows.page.packAtATime": "한 번에 {n}개씩",
+	"shows.tools.packNote": "이 시즌은 팩에서 에피소드를 한 번에 {n}개씩 받습니다.",
+	"shows.tools.getNext": "다음 에피소드 {n}개 받기",
+	"shows.page.packOneAtATime": "한 번에 1개씩"
 }

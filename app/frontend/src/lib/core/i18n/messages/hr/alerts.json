@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Postavke",
+	"alerts.panel.clearAll": "Očisti sve",
+	"alerts.panel.empty": "Ovdje još nema ničega",
+	"alerts.panel.needsAttention": "Traži pažnju",
+	"alerts.panel.recent": "Nedavno",
+	"alerts.panel.remove": "Ukloni {text}",
+	"alerts.panel.title": "Nedavne obavijesti",
+	"alerts.state.manyNeed": "{count} traži pažnju",
+	"alerts.state.ok": "Sve je u redu",
+	"alerts.state.oneNeeds": "1 traži pažnju",
+	"alerts.state.unset": "Nije postavljeno",
+	"alerts.time.days": "{n} d",
+	"alerts.time.hours": "{n} h",
+	"alerts.time.minutes": "{n} min",
+	"alerts.time.now": "sad"
+}

@@ -289,6 +289,25 @@ func TestMusicDiscs(t *testing.T) {
 	}
 }
 
+// A disc count ("2CD") in a name with no clear split ends the artist and
+// album words, so what follows it (a country, a group) stays out.
+func TestMusicDiscCountEndsNoSplitName(t *testing.T) {
+	for n, want := range map[string]string{
+		"Die Toten Hosen Ballast Der Republik 2CD DE 2012 MOD": "Die Toten Hosen Ballast Der Republik",
+		"Velvet Cartography Low Tide Atlas 3CD 2019":           "Velvet Cartography Low Tide Atlas",
+		"Velvet Cartography Low Tide Atlas 2Discs FLAC":        "Velvet Cartography Low Tide Atlas",
+	} {
+		p := Parse(n, Hints{Music: true})
+		if p.Music.Artist != want || p.Music.DiscCount < 2 {
+			t.Errorf("%s: artist %q discs %d, want %q", n, p.Music.Artist, p.Music.DiscCount, want)
+		}
+	}
+	// A name that starts with a disc count keeps it as the name.
+	if p := Parse("2CD Club Hits 2019 FLAC", Hints{Music: true}); p.Music.Artist != "2CD Club Hits" {
+		t.Errorf("leading disc count: %q", p.Music.Artist)
+	}
+}
+
 // Scene names whose album is a number keep it as the album.
 func TestMusicSceneNumericAlbum(t *testing.T) {
 	for n, want := range map[string][3]string{

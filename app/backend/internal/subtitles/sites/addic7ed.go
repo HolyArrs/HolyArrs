@@ -229,7 +229,7 @@ func (a *addic7ed) Search(ctx context.Context, q Query) ([]Candidate, error) {
 	}
 	var langs []string
 	for _, l := range q.Languages {
-		if l = baseLang(l); l != "" {
+		if l = siteLang(l); l != "" {
 			langs = append(langs, l)
 		}
 	}
@@ -287,7 +287,7 @@ func (a *addic7ed) Search(ctx context.Context, q Query) ([]Candidate, error) {
 			continue
 		}
 		lang := langCode(r.cells[3])
-		if lang == "" || !contains(langs, lang) {
+		if lang == "" || !langWanted(langs, lang) {
 			continue
 		}
 		if !strings.EqualFold(strings.TrimSpace(r.cells[5]), "completed") {
@@ -400,19 +400,10 @@ func isYes(s string) bool {
 	return true
 }
 
-func contains(list []string, v string) bool {
-	for _, x := range list {
-		if x == v {
-			return true
-		}
-	}
-	return false
-}
-
-// a7Langs maps the site's language names to two-letter codes.
+// a7Langs maps the site's language names to our language codes.
 var a7Langs = map[string]string{
 	"english": "en", "french": "fr", "spanish": "es", "spanish (latin america)": "es", "spanish (spain)": "es", "german": "de",
-	"italian": "it", "portuguese": "pt", "portuguese (brazilian)": "pt", "dutch": "nl", "swedish": "sv", "polish": "pl",
+	"italian": "it", "portuguese": "pt", "portuguese (brazilian)": "pt-br", "dutch": "nl", "swedish": "sv", "polish": "pl",
 	"russian": "ru", "greek": "el", "hungarian": "hu", "romanian": "ro", "czech": "cs", "turkish": "tr", "arabic": "ar",
 	"hebrew": "he", "croatian": "hr", "serbian (latin)": "sr", "serbian (cyrillic)": "sr", "danish": "da", "finnish": "fi",
 	"norwegian": "no", "bulgarian": "bg", "catalan": "ca", "chinese (simplified)": "zh", "chinese (traditional)": "zh",
@@ -444,6 +435,7 @@ type token struct {
 	name      string
 	text      string
 	valid     bool
+	attrs     []byte // the raw attributes of a start tag, read with attr
 }
 
 // tokens calls fn for each tag and run of text in b.
@@ -485,6 +477,9 @@ func tokens(b []byte, fn func(token)) {
 			continue // doctype, processing instruction or a stray angle bracket
 		}
 		t.tag = strings.ToLower(string(inner[:n]))
+		if !t.end {
+			t.attrs = inner[n:]
+		}
 		if !t.end && (t.tag == "script" || t.tag == "style") {
 			k := indexClosingTag(b[i:], t.tag)
 			if k < 0 {

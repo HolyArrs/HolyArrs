@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "ตั้งค่า",
+	"settings.layout.home": "หน้าหลัก",
+	"settings.layout.sections": "หมวดการตั้งค่า",
+	"settings.layout.needsAttention": "ต้องดูแล",
+	"settings.layout.needsAttentionLower": "ต้องดูแล",
+	"settings.layout.blocked": "คุณเปลี่ยนส่วนนี้ไม่ได้",
+	"settings.layout.backToSettings": "กลับไปที่ตั้งค่า",
+	"settings.layout.setPasswordFirst": "ตั้งรหัสผ่านก่อน",
+	"settings.layout.setPasswordDesc": "คีย์ รหัสผ่าน ผู้ใช้ และการสำรองข้อมูลต้องใช้รหัสผ่าน HolyArrs ซึ่งคุณยังไม่มี",
+	"settings.layout.setPasswordLabel": "ตั้งรหัสผ่าน",
+	"settings.layout.confirmPasswordLabel": "ยืนยันรหัสผ่านของคุณ",
+	"settings.layout.confirmPasswordDesc": "คีย์ รหัสผ่าน ผู้ใช้ และการสำรองข้อมูลต้องใช้รหัสผ่านของคุณ ใช้ได้นาน 10 นาที"
+}

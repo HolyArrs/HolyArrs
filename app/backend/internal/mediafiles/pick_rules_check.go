@@ -33,7 +33,8 @@ var (
 	videoTraits       = traitSet("hevc", "ddp_audio", "web_dl", "upscaled", "dubbed_only", "hardcoded_subs", "3d", "cam", "telesync", "remux", "av1", "dv", "hdr10", "hdr10plus", "atmos")
 	musicTraits       = traitSet("cd_source", "web_source", "vinyl_source", "log_cue", "hires", "mp3", "aac", "opus", "vorbis", "flac", "alac", "single_image", "lossy_transcode", "deluxe")
 	checkSafetyTraits = traitSet("sample", "executable", "password_protected", "disc_image")
-	pickLangs         = traitSet("en", "fr", "de", "it", "es", "ru", "ja", "ko")
+	pickLangs         = traitSet("en", "fr", "de", "it", "es", "ru", "ja", "ko",
+		"pl", "nl", "pt", "sv", "da", "no", "fi", "cs", "hu", "el", "he", "tr", "ar", "hi", "zh", "th", "vi", "uk")
 )
 
 func traitSet(values ...string) map[string]bool {

@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"slices"
 	"strings"
@@ -109,6 +110,10 @@ func checkOne(ctx context.Context, h *Handlers, sec SecretReader, src domain.Sou
 		items, err = New(cfg).Search(ctx, qq)
 	}
 	took := time.Since(start)
+	if errors.Is(err, ErrNothingToSearch) {
+		c.Error = err.Error()
+		return
+	}
 	Record(context.WithoutCancel(ctx), h.Store, src.ID, "test", took, err)
 	c.MS = took.Milliseconds()
 	if err != nil {

@@ -53,7 +53,7 @@ func startApp(t *testing.T, c config, o runOpts) (*jobs.Registry, string) {
 }
 
 // supervisedLoops are every background loop main starts under the supervisor.
-var supervisedLoops = []string{"backups", "downloads", "schedules", "stranded_imports", "gates", "sessions", "wishlist", "log_secrets", "music_warm", "trailer_pass"}
+var supervisedLoops = []string{"backups", "downloads", "schedules", "stranded_imports", "pack_watched", "watch_history", "gates", "sessions", "wishlist", "log_secrets", "music_warm", "trailer_pass"}
 
 // A crash injected into each loop leaves the program running and the stage
 // failed, then retrying, then running again.
@@ -152,7 +152,7 @@ func TestEveryJobKindHasAPool(t *testing.T) {
 func TestSafeModeStartsOnlyTheCore(t *testing.T) {
 	reg, addr := startApp(t, config{SafeMode: true}, runOpts{})
 	base := "http://" + addr
-	for _, name := range []string{"schedules", "downloads", "stranded_imports", "gates", "wishlist", "jobs_io", "jobs_heavy", "jobs_migrate", "media_servers"} {
+	for _, name := range []string{"schedules", "downloads", "stranded_imports", "pack_watched", "watch_history", "gates", "wishlist", "jobs_io", "jobs_heavy", "jobs_migrate", "media_servers"} {
 		st, _ := reg.Get(jobs.StageKey(name))
 		if st.State != jobs.Off || !strings.Contains(st.Reason, "Safe mode") {
 			t.Errorf("%s: %+v", name, st)

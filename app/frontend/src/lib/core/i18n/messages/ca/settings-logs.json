@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Registres",
+	"settings.logs.download": "Baixa",
+	"settings.logs.filter": "Filtra el registre",
+	"settings.logs.level": "Nivell",
+	"settings.logs.every": "Totes les línies",
+	"settings.logs.warnings": "Advertiments i errors",
+	"settings.logs.errors": "Només errors",
+	"settings.logs.text": "Text",
+	"settings.logs.example": "p. ex. qBittorrent",
+	"settings.logs.from": "Des de",
+	"settings.logs.to": "Fins a",
+	"settings.logs.apply": "Aplica",
+	"settings.logs.clear": "Esborra",
+	"settings.logs.lines": "Línies",
+	"settings.logs.newer": "Més noves",
+	"settings.logs.older": "Més antigues"
+}

@@ -82,7 +82,7 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 	newHost := ""
 	if !a.hostAllowed(r) {
 		h := normHost(r.Host)
-		if !homeName(h) || len(a.proxies) > 0 || forwarded(r) {
+		if !homeName(h) || a.anyProxy() || forwarded(r) {
 			a.logRefusedHost(r.Host)
 			fail(w, http.StatusForbidden, hostRefusedMsg(r.Host))
 			return

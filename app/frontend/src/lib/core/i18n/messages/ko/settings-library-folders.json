@@ -38,6 +38,14 @@
 	"settings.libraryFolders.foldersHint": "한 줄에 경로 하나, 예: /data/imports. 최대 32개.",
 	"settings.libraryFolders.ownerOnly": "소유자와 관리자만",
 	"settings.libraryFolders.copiesExpected": "복사가 의도된 것임",
-	"settings.libraryFolders.copiesExpectedState": "복사 (의도대로)",
-	"settings.libraryFolders.warnAgain": "다시 경고"
+	"settings.libraryFolders.copiesExpectedState": "전체 사본, 선택한 대로",
+	"settings.libraryFolders.whyCopies": "왜요?",
+	"settings.libraryFolders.stateInstant": "즉시, 추가 공간 없음",
+	"settings.libraryFolders.warnAgain": "다시 경고",
+	"settings.libraryFolders.changePath": "경로 변경",
+	"settings.libraryFolders.changePathOf": "{path} 경로 변경",
+	"settings.libraryFolders.newPath": "새 경로",
+	"settings.libraryFolders.changePathHint": "먼저 파일을 그곳으로 옮기세요. HolyArrs는 각 파일을 확인할 뿐 아무것도 옮기지 않습니다.",
+	"settings.libraryFolders.checkingFiles": "파일 확인 중…",
+	"settings.libraryFolders.pathChanged": "경로를 변경했습니다"
 }

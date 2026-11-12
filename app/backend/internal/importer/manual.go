@@ -73,6 +73,7 @@ type ByHandResult struct {
 	Path     string `json:"path"`
 	Outcome  string `json:"outcome"`
 	PlacedBy string `json:"placed_by,omitempty"`
+	FellBack bool   `json:"fell_back,omitempty"`
 	Target   string `json:"target,omitempty"`
 	TitleID  int64  `json:"title_id,omitempty"`
 	SlotID   int64  `json:"slot_id,omitempty"`
@@ -467,7 +468,8 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 		if folder == "" || folder == "." || folder == ".." {
 			folder = mediafiles.ShowFolder(ns, mediafiles.NameFacts{Title: ti.Name, Year: year})
 		}
-		t := ShowTarget{FolderName: folder, Show: mediafiles.TitleRef{ID: ti.ID, Name: ti.Name, Year: year, Kind: "show"}, IDs: ti.SourceIDs, Order: mediafiles.OrderAired, Naming: &ns}
+		t := ShowTarget{FolderName: folder, Show: mediafiles.TitleRef{ID: ti.ID, Name: ti.Name, Year: year, Kind: "show"}, IDs: ti.SourceIDs, Order: mediafiles.OrderAired, Naming: &ns,
+			ByOrder: ti.EpisodeGroupID != nil && *ti.EpisodeGroupID != ""}
 		if ti.EpisodeOrder != nil && *ti.EpisodeOrder != "" {
 			t.Order = *ti.EpisodeOrder
 		}
@@ -484,7 +486,7 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 		return refuse(long)
 	}
 	r.Target = target
-	placedBy := "none"
+	placedBy, fellBack, srcGone := "none", false, false
 	if filepath.Clean(target) != src {
 		ops := im.Ops
 		if ops.Link == nil {
@@ -498,18 +500,22 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 			r.Outcome, r.Error = res.Outcome, res.Error
 			return r, nil
 		}
-		placedBy = res.PlacedBy
+		placedBy, fellBack = res.PlacedBy, res.FellBack
 		if mode == "move" {
 			if err := os.Remove(src); err != nil {
 				r.Error = "placed, but the original could not be removed: " + err.Error()
 			} else {
-				placedBy = "move"
+				srcGone = true
+				// A hardlink then delete is a move; a copy then delete stays a copy that fell back.
+				if placedBy == "hardlink" {
+					placedBy = "move"
+				}
 			}
 		}
 	}
-	r.Outcome, r.PlacedBy = "placed", placedBy
+	r.Outcome, r.PlacedBy, r.FellBack = "placed", placedBy, fellBack
 	if err := im.recordByHand(ctx, &r, src, target, lf, ver, item, ti, sl, p, by); err != nil {
-		if placedBy == "hardlink" || placedBy == "copy" {
+		if !srcGone && (placedBy == "hardlink" || placedBy == "copy") {
 			_ = os.Remove(target)
 		}
 		return r, err
@@ -548,11 +554,12 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 		kind = "episodes"
 	}
 	imp := &mediafiles.Import{FromPath: filepath.Dir(src), Kind: kind, Plan: []mediafiles.PlanStep{step}, Mode: "by_hand", DecidedBy: &by, State: "done",
-		Result: []mediafiles.PlaceResult{{SourceFile: src, Outcome: "placed", PlacedBy: r.PlacedBy}}}
+		Result: []mediafiles.PlaceResult{{SourceFile: src, Outcome: "placed", PlacedBy: r.PlacedBy, FellBack: r.FellBack}}}
 	err = im.Store.Write(ctx, func(tx *sql.Tx) error {
 		f := &mediafiles.File{SlotIDs: []int64{sl.ID}, VersionID: ver.ID, RelativePath: filepath.ToSlash(rel), Size: size, AddedAt: time.Now().UTC(),
 			Quality:   mediafiles.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
-			Languages: InspectedLanguages(facts), MediaInfo: info, ReleaseName: &release, Origin: "imported", PlacedBy: r.PlacedBy, Role: "main", State: "present"}
+			Languages: InspectedLanguages(facts), MediaInfo: info, ReleaseName: &release, Origin: "imported", PlacedBy: r.PlacedBy,
+			FellBack: r.FellBack, Role: "main", State: "present"}
 		if g := p.Group.Value; g != "" {
 			f.Group = &g
 		}
@@ -589,7 +596,7 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 	im.publish("slot", map[string]any{"id": sl.ID, "state": state, "reason": why})
 	slotID, titleID := sl.ID, ti.ID
 	e := &domain.Event{Actor: by, Kind: "import_done", TitleID: &titleID, SlotID: &slotID, Summary: "Imported by hand: " + filepath.Base(target),
-		Data:     map[string]any{"import_id": imp.ID, "by_hand": true, "from": src, "slot_ids": []int64{slotID}, "placed_by": r.PlacedBy, "paths": planPaths(imp.Plan)},
+		Data:     map[string]any{"import_id": imp.ID, "by_hand": true, "from": src, "slot_ids": []int64{slotID}, "placed_by": r.PlacedBy, "fell_back": r.FellBack, "paths": planPaths(imp.Plan)},
 		GroupKey: "slot:" + strconv.FormatInt(slotID, 10)}
 	if im.Store.AddEvent(ctx, e) == nil {
 		im.publish("event", e)

@@ -56,6 +56,9 @@ type TMDB struct {
 	Images string
 	// Disk keeps answers across restarts (lookup_cache); nil keeps memory only.
 	Disk Cache
+	// Route, when set, picks where each request goes (the metadata mode)
+	// in place of BaseURL, Access and HTTP.
+	Route func(ctx context.Context) TMDBRoute
 
 	mu         sync.Mutex
 	last       time.Time
@@ -63,6 +66,8 @@ type TMDB struct {
 	cache      map[string]cached
 	refreshing map[string]bool
 	hold       serviceHold
+	// texts are titles' texts per app language, by "kind|id" (title_text.go).
+	texts map[string]map[string]TitleText
 }
 
 type cached struct {
@@ -232,7 +237,8 @@ func tmdbStaleOK(ctx context.Context, err error) bool {
 }
 
 func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, error) {
-	u := t.base() + path
+	r := t.route(ctx)
+	u := r.base() + path
 	if len(q) > 0 {
 		u += "?" + q.Encode()
 	}
@@ -242,6 +248,9 @@ func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 	}
 	// Searches hold the person's words: they stay in memory only.
 	disk := t.Disk != nil && !strings.HasPrefix(path, "/search")
+	if r.Off {
+		return t.keptOnly(ctx, u, disk)
+	}
 	var stale *cached
 	if !noCache(ctx) {
 		if c, ok := t.kept(ctx, u, disk); ok {
@@ -278,7 +287,14 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	if ahead && t.hold.held(time.Now()) {
 		return nil, ErrRateLimited
 	}
-	tok, err := t.Access(ctx)
+	r := t.route(ctx)
+	if r.Off {
+		return nil, ErrSourceOff
+	}
+	if r.Access == nil {
+		return nil, ErrNoAccess
+	}
+	tok, err := r.Access(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +307,7 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	if ahead {
 		lane = "ahead"
 	}
-	op, err := outbound.Begin(ctx, outbound.Target{Kind: "metadata_tmdb", Identity: []string{t.base(), tok, lane}})
+	op, err := outbound.Begin(ctx, outbound.Target{Kind: "metadata_tmdb", Identity: []string{r.base(), tok, lane}})
 	if err != nil {
 		if errors.Is(err, outbound.ErrSuppressed) {
 			return nil, fmt.Errorf("TMDB: %w (%w)", ErrServiceUnavailable, err)
@@ -300,7 +316,7 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	}
 	outcome := outbound.Canceled
 	defer func() { op.Finish(outcome) }()
-	cl := t.HTTP
+	cl := r.HTTP
 	if cl == nil {
 		cl = http.DefaultClient
 	}
@@ -502,7 +518,9 @@ type tmdbExtras struct {
 	Genres       []struct {
 		Name string `json:"name"`
 	} `json:"genres"`
-	Images *struct {
+	// GenreIDs are what list and search answers carry in place of names.
+	GenreIDs []int64 `json:"genre_ids"`
+	Images   *struct {
 		Logos []struct {
 			FilePath string  `json:"file_path"`
 			Language *string `json:"iso_639_1"`
@@ -524,6 +542,16 @@ type tmdbExtras struct {
 // score is the members' average to one decimal and its vote count.
 func (x tmdbExtras) score() (float64, int) {
 	return float64(int(x.VoteAverage*10+0.5)) / 10, x.VoteCount
+}
+
+// tmdbGenreNames are TMDB's fixed movie and TV genre ids with their English
+// names (the two lists share the ids they have in common).
+var tmdbGenreNames = map[int64]string{
+	28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime", 99: "Documentary", 18: "Drama",
+	10751: "Family", 14: "Fantasy", 36: "History", 27: "Horror", 10402: "Music", 9648: "Mystery", 10749: "Romance",
+	878: "Science Fiction", 10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western",
+	10759: "Action & Adventure", 10762: "Kids", 10763: "News", 10764: "Reality", 10765: "Sci-Fi & Fantasy",
+	10766: "Soap", 10767: "Talk", 10768: "War & Politics",
 }
 
 // maxCast is how many cast names a Title keeps.
@@ -557,6 +585,13 @@ func (x tmdbExtras) pictures(images string) (backdrop, logo string, genres, peop
 	for _, g := range x.Genres {
 		if g.Name != "" {
 			genres = append(genres, g.Name)
+		}
+	}
+	if len(x.Genres) == 0 {
+		for _, id := range x.GenreIDs {
+			if name := tmdbGenreNames[id]; name != "" {
+				genres = append(genres, name)
+			}
 		}
 	}
 	if x.Credits != nil {

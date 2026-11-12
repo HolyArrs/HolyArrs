@@ -81,7 +81,7 @@ type DecisionView struct {
 	Year        *int      `json:"year,omitempty"`
 	Version     string    `json:"version"`
 	Versions    int       `json:"versions"` // how many Versions the Title has
-	Why         string    `json:"why"`      // ran_out, conflict, not_replaced
+	Why         string    `json:"why"`      // ran_out, conflict, not_replaced, not_sent, taken
 	Reason      string    `json:"reason"`
 	ReleaseID   *int64    `json:"release_id,omitempty"`
 	ReleaseName string    `json:"release_name,omitempty"`
@@ -99,9 +99,12 @@ type DecisionView struct {
 	Pack        []EpisodeLine `json:"pack,omitempty"` // every episode of that download
 }
 
-// why sorts a Slot's last reason into the three ways it ends up waiting.
+// why sorts a Slot's last reason into the ways it ends up waiting.
 func why(reason string) string {
 	switch {
+	case strings.Contains(reason, "could not be placed") && filesTaken(reason):
+		// An older import whose files another app had already taken.
+		return "taken"
 	case strings.Contains(reason, "not replaced (setting)"):
 		return "not_replaced"
 	case strings.HasPrefix(reason, "not sent:"):
@@ -110,10 +113,24 @@ func why(reason string) string {
 	case strings.HasPrefix(reason, "nothing could be placed"), strings.Contains(reason, "import"),
 		strings.Contains(reason, "could not be placed"), strings.HasPrefix(reason, "nothing in the download could be matched"),
 		// The unpack reasons (importer/unpack.go): the import could not finish, Releases did not run out.
-		strings.Contains(reason, "RAR file"), strings.Contains(reason, "archive file"), strings.HasPrefix(reason, "Packed in "), strings.HasPrefix(reason, "Not enough free space to unpack"):
+		strings.Contains(reason, "RAR file"), strings.Contains(reason, "archive file"), strings.HasPrefix(reason, "Packed in "), strings.HasPrefix(reason, "Not enough free space to unpack"),
+		// The file was refused in place of the copy, or its edition was not settled (importer/upgrade.go, copyfacts.go).
+		strings.Contains(reason, "copy in place"), strings.HasPrefix(reason, "edition "):
 		return "conflict"
 	}
 	return "ran_out"
+}
+
+// filesTaken reports whether a placing error says the download's file was
+// no longer there.
+func filesTaken(reason string) bool {
+	r := strings.ToLower(reason)
+	for _, w := range []string{"no such file or directory", "cannot find the file", "cannot find the path", "not in the download folder any more"} {
+		if strings.Contains(r, w) {
+			return true
+		}
+	}
+	return false
 }
 
 func (a *Web) decisions(ctx context.Context, slotID int64) ([]DecisionView, error) {
@@ -367,4 +384,10 @@ func (a *Web) decide(w http.ResponseWriter, r *http.Request) {
 	default:
 		webserver.Fail(w, http.StatusBadRequest, `action is "search", "turn_down" or "stop"`)
 	}
+}
+
+// clearNow tries every imported download still waiting to be cleared from
+// its Downloader at once, and answers how many still wait.
+func (a *Web) clearNow(w http.ResponseWriter, r *http.Request) {
+	webserver.WriteJSON(w, http.StatusOK, map[string]int{"left": a.Manager().ClearNow(r.Context())})
 }

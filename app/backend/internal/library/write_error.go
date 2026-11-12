@@ -16,14 +16,17 @@ func WriteError(w http.ResponseWriter, err error) {
 	}
 	var dup *AlreadyAddedError
 	var fe *FolderError
+	var pf *PathFileError
 	switch {
+	case errors.As(err, &pf):
+		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "file": pf.RelativePath})
 	case errors.As(err, &dup):
 		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "title_id": dup.TitleID})
 	case errors.As(err, &fe):
 		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "health": fe.Health.State, "reason": fe.Health.Reason})
 	case errors.Is(err, ErrNeverAdd), errors.Is(err, ErrNoFolder), errors.Is(err, ErrFolderInUse), errors.Is(err, ErrFolderHeld), errors.Is(err, ErrFolderListed),
 		errors.Is(err, ErrFolderTaken), errors.Is(err, ErrFolderName), errors.Is(err, ErrMainVersion), errors.Is(err, ErrVersionHasFiles), errors.Is(err, ErrVersionBusy),
-		errors.Is(err, ErrVersionFolder), errors.Is(err, ErrProtectedCopy):
+		errors.Is(err, ErrVersionFolder), errors.Is(err, ErrProtectedCopy), errors.Is(err, ErrFolderFilesChanged):
 		webserver.Fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, ErrBadGate), errors.Is(err, ErrBadDelay), errors.Is(err, ErrNotMovieFolder), errors.Is(err, ErrNotShowFolder), errors.Is(err, ErrNotMusicFolder),
 		errors.Is(err, ErrNoPickRules), errors.Is(err, ErrNotMusicRules), errors.Is(err, ErrNotVideoRules), errors.Is(err, ErrFolderPath), errors.Is(err, ErrFolderKind),
@@ -47,6 +50,9 @@ func ServiceError(w http.ResponseWriter, err error) bool {
 	var message string
 	status := http.StatusServiceUnavailable
 	switch {
+	case metadata.SourceOff(err):
+		metadata.WriteSourceOff(w)
+		return true
 	case errors.Is(err, metadata.ErrServiceAccess):
 		message = metadata.ErrServiceAccess.Error()
 	case errors.Is(err, metadata.ErrServiceUnavailable):

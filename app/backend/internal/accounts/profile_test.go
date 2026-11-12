@@ -59,6 +59,12 @@ func TestMyLanguage(t *testing.T) {
 	if resp, out := own.do(t, f, "PUT", "/api/v1/my/language", `{"language":"de"}`); resp.StatusCode != 200 || !strings.Contains(out, `"language":"de"`) {
 		t.Fatalf("put: %d %s", resp.StatusCode, out)
 	}
+	for _, l := range []string{"zh-tw", "pt-pt", "nb", "he", "th"} {
+		if resp, out := own.do(t, f, "PUT", "/api/v1/my/language", `{"language":"`+l+`"}`); resp.StatusCode != 200 || !strings.Contains(out, `"language":"`+l+`"`) {
+			t.Fatalf("put %s: %d %s", l, resp.StatusCode, out)
+		}
+	}
+	own.do(t, f, "PUT", "/api/v1/my/language", `{"language":"de"}`)
 	if resp, _ := own.do(t, f, "PUT", "/api/v1/my/language", `{"language":"xx"}`); resp.StatusCode != 400 {
 		t.Fatalf("bad language took %d", resp.StatusCode)
 	}

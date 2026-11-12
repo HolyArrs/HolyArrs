@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Ponovno poveži",
+	"setup.testNow": "Testiraj sada",
+	"setup.movies": "Filmovi",
+	"setup.tvShows": "Serije",
+	"setup.music": "Glazba",
+	"setup.subtitles": "Titlovi",
+	"setup.fullPath": "Upiši cijelu putanju mape, na primjer {path}.",
+	"setup.folderUsed": "Ova se mapa već koristi ili se nalazi unutar mape koja se koristi.",
+	"setup.folderMissing": "Ta mapa ne postoji. Provjeri putanju.",
+	"setup.addFolderOrOff": "Dodaj mapu ili isključi ovo.",
+	"setup.notAnswering": "HolyArrs ne odgovara. Pokušaj ponovno za trenutak.",
+	"setup.addUserPasswordHint": "Dodaj korisničko ime i lozinku.",
+	"setup.folders": "Mape",
+	"setup.downloader": "Preuzimatelj",
+	"setup.source": "Izvor"
+}

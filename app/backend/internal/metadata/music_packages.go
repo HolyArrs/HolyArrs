@@ -135,7 +135,7 @@ func (s *Service) MusicPackages(ctx context.Context, since int64, limit int) (Pa
 	req.Header.Set("Accept", "application/json")
 	resp, err := s.http.Do(req)
 	if err != nil {
-		return out, ErrServiceUnavailable
+		return out, unreached(err)
 	}
 	defer resp.Body.Close()
 	if err := packageStatus(resp.StatusCode); err != nil {
@@ -178,14 +178,14 @@ func (s *Service) WantMusicPackage(ctx context.Context, mbid string) error {
 	defer cancel()
 	tok, err := s.access(ctx)
 	if err != nil || tok == "" || strings.ContainsAny(tok, "\r\n") {
-		return ErrServiceAccess
+		return accessErr(err)
 	}
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.base+"/v1/music/package-want/"+strings.ToLower(mbid), nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	req.Header.Set("Accept", "application/json")
 	resp, err := s.http.Do(req)
 	if err != nil {
-		return ErrServiceUnavailable
+		return unreached(err)
 	}
 	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<16))
 	_ = resp.Body.Close()

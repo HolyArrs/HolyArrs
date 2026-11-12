@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "बदलें",
 	"settings.sources.removeName": "{name} हटाएं",
 	"settings.sources.remove": "हटाएं",
-	"settings.sources.bridge": "Jackett या Prowlarr जोड़ें"
+	"settings.sources.bridge": "Jackett या Prowlarr जोड़ें",
+	"settings.sources.off": "सोर्स बंद हैं",
+	"settings.sources.offText": "HolyArrs न खोजता है न डाउनलोड लेता है। आप डाउनलोडर में जो डाउनलोड जोड़ते हैं, वे इम्पोर्ट होते रहते हैं।",
+	"settings.sources.openParts": "हिस्से खोलें",
+	"settings.sources.offState": "बंद"
 }

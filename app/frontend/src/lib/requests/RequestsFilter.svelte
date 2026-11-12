@@ -106,8 +106,9 @@
 	</div>
 {#if open && phone}
 	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-	<div class="sf-scrim" aria-hidden="true" in:fade={{ duration: ms(300) }} out:fade={{ duration: ms(200) }} onclick={(e) => { e.preventDefault(); sfClose(true); }}></div>
-	<div class="sf-sheet" role="dialog" aria-modal="true" aria-label={t('requests.filter.label')} tabindex="-1" bind:this={sfPop} onkeydown={sfKeys} in:fly={{ y: 80, duration: ms(420), easing: cubicOut }} out:fly={{ y: 80, duration: ms(200), easing: cubicIn }}>
+	<!-- The sheet rises solid (the cards never show through it) at the shared sheet's pace. -->
+	<div class="sf-scrim" aria-hidden="true" in:fade={{ duration: ms(240) }} out:fade={{ duration: ms(150) }} onclick={(e) => { e.preventDefault(); sfClose(true); }}></div>
+	<div class="sf-sheet" role="dialog" aria-modal="true" aria-label={t('requests.filter.label')} tabindex="-1" bind:this={sfPop} onkeydown={sfKeys} in:fly={{ y: 80, opacity: 1, duration: ms(240), easing: cubicOut }} out:fly={{ y: 80, opacity: 1, duration: ms(150), easing: cubicIn }}>
 		<div class="sf-head"><span class="sf-ht">{t('requests.filter.label')}</span><button type="button" class="sf-done" onclick={() => sfClose(true)}>{t('requests.filter.done')}</button></div>
 		<div role="menu" aria-label={t('requests.filter.options')}>{@render filterItems()}</div>
 	</div>

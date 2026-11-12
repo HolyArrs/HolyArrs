@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Iestatījumi",
+	"settings.layout.home": "Sākums",
+	"settings.layout.sections": "Iestatījumu sadaļas",
+	"settings.layout.needsAttention": "Jāpievērš uzmanība",
+	"settings.layout.needsAttentionLower": "jāpievērš uzmanība",
+	"settings.layout.blocked": "Šo nevar mainīt",
+	"settings.layout.backToSettings": "Atpakaļ uz Iestatījumiem",
+	"settings.layout.setPasswordFirst": "Vispirms iestati paroli",
+	"settings.layout.setPasswordDesc": "Atslēgām, parolēm, cilvēkiem un dublējumiem vajadzīga HolyArrs parole. Tev tās vēl nav.",
+	"settings.layout.setPasswordLabel": "Iestatīt paroli",
+	"settings.layout.confirmPasswordLabel": "Apstiprini savu paroli",
+	"settings.layout.confirmPasswordDesc": "Atslēgām, parolēm, cilvēkiem un dublējumiem vajadzīga tava parole. Derīga 10 minūtes."
+}

@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
@@ -46,12 +47,13 @@ func refuseCopyChoice(v mediafiles.Verdict, rule, detail string) mediafiles.Verd
 	return v
 }
 
-// copyChoiceVerdict adds the checks that depend on the Version a movie is chosen for. A wrong or unclear edition refuses the Release. A missing audio language only warns, because the media inspected at import decides.
-func copyChoiceVerdict(c slotCtx, rel mediafiles.ReleaseFacts, v mediafiles.Verdict) mediafiles.Verdict {
-	if c.ti.Kind != "" && c.ti.Kind != "movie" {
+// copyChoiceVerdict adds the checks that depend on the Version a movie or show is chosen for. A wrong or unclear edition refuses a movie Release. A name that clearly lacks an audio language the Version needs is refused; an unclear one only warns, because the media inspected at import decides.
+func copyChoiceVerdict(ti mediafiles.Title, ver mediafiles.Version, rel mediafiles.ReleaseFacts, v mediafiles.Verdict) mediafiles.Verdict {
+	movie := ti.Kind == "" || ti.Kind == "movie"
+	if !movie && ti.Kind != "show" {
 		return v
 	}
-	if wanted := strings.TrimSpace(c.ver.Edition); wanted != "" {
+	if wanted := strings.TrimSpace(ver.Edition); wanted != "" && movie {
 		editions := rel.Parse.Edition
 		switch {
 		case len(editions) == 0:
@@ -64,18 +66,67 @@ func copyChoiceVerdict(c slotCtx, rel mediafiles.ReleaseFacts, v mediafiles.Verd
 			return refuseCopyChoice(v, "edition_wrong", "edition does not match the selected Version")
 		}
 	}
-	if len(c.ver.AudioLanguages) > 0 && len(rel.Parse.Languages) > 0 {
-		missing := false
-		for _, wanted := range c.ver.AudioLanguages {
-			if !slices.Contains(rel.Parse.Languages, wanted) {
-				missing = true
-				break
-			}
+	original := ""
+	if ti.OriginalLanguage != nil {
+		original = *ti.OriginalLanguage
+	}
+	return audioChoiceVerdict(ver.AudioLanguages, original, rel.Parse, v)
+}
+
+// audioChoiceVerdict checks the audio languages a Version needs against the languages a Release name claims. A name with no language is read as the original language. MULTI, or a DUAL name that names no language, may hold any language, so a gap there only warns.
+func audioChoiceVerdict(need []string, original string, p releasename.Result, v mediafiles.Verdict) mediafiles.Verdict {
+	if len(need) == 0 {
+		return v
+	}
+	have := slices.Clone(p.Languages)
+	unclear := p.Has("multi") || p.Has("dual") && len(have) == 0
+	if (len(have) == 0 || p.Has("dual")) && original != "" {
+		have = append(have, original)
+	}
+	// A language names never show (the reader does not know it) cannot be clearly missing.
+	missing, unread := "", ""
+	for _, l := range need {
+		if slices.Contains(have, l) {
+			continue
 		}
-		if missing {
-			v.Reasons = append(v.Reasons, mediafiles.Reason{Step: "copy", Rule: "audio_language_hint", Effect: "warn",
-				Detail: "the Release name does not claim every requested audio language; inspected media decides at import"})
+		if releasename.ReadsLanguage(l) {
+			missing = l
+			break
+		}
+		if unread == "" {
+			unread = l
 		}
 	}
-	return v
+	switch {
+	case missing == "" && unread == "":
+		return v
+	case missing == "":
+		v.Reasons = append(v.Reasons, mediafiles.Reason{Step: "copy", Rule: "audio_language_hint", Effect: "warn",
+			Detail: "Release names do not show " + mediafiles.LanguageName(unread) + " audio; inspected media decides at import"})
+		return v
+	case len(have) == 0:
+		v.Reasons = append(v.Reasons, mediafiles.Reason{Step: "copy", Rule: "audio_language_hint", Effect: "warn",
+			Detail: "no language in the name and the original language is unknown; inspected media decides at import"})
+		return v
+	case unclear:
+		v.Reasons = append(v.Reasons, mediafiles.Reason{Step: "copy", Rule: "audio_language_hint", Effect: "warn",
+			Detail: "MULTI or DUAL may hold " + mediafiles.LanguageName(missing) + " audio; inspected media decides at import"})
+		return v
+	}
+	return refuseCopyChoice(v, "audio_language_missing", "the name has no "+mediafiles.LanguageName(missing)+" audio, which this Version needs")
+}
+
+// withVersionAudio returns the rules body with the Version's audio languages added to the wanted languages, so a French Version of an English title passes French names. The list is copied: the shared body is never written.
+func withVersionAudio(body mediafiles.PickRulesBody, audio []string) mediafiles.PickRulesBody {
+	if len(audio) == 0 {
+		return body
+	}
+	wanted := slices.Clip(slices.Clone(body.Language.Wanted))
+	for _, l := range audio {
+		if !slices.Contains(wanted, l) {
+			wanted = append(wanted, l)
+		}
+	}
+	body.Language.Wanted = wanted
+	return body
 }

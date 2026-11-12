@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "اتصال دوباره",
+	"setup.testNow": "آزمایش",
+	"setup.movies": "فیلم‌ها",
+	"setup.tvShows": "سریال‌ها",
+	"setup.music": "موسیقی",
+	"setup.subtitles": "زیرنویس",
+	"setup.fullPath": "مسیر کامل پوشه را وارد کن، مثل {path}.",
+	"setup.folderUsed": "این پوشه قبلاً استفاده شده یا داخل پوشه‌ای است که استفاده شده.",
+	"setup.folderMissing": "این پوشه وجود ندارد. مسیر را بررسی کن.",
+	"setup.addFolderOrOff": "یک پوشه اضافه کن یا این را خاموش کن.",
+	"setup.notAnswering": "HolyArrs پاسخ نمی‌دهد. کمی بعد دوباره امتحان کن.",
+	"setup.addUserPasswordHint": "نام کاربری و رمز عبور را وارد کن.",
+	"setup.folders": "پوشه‌ها",
+	"setup.downloader": "دانلودر",
+	"setup.source": "منبع"
+}

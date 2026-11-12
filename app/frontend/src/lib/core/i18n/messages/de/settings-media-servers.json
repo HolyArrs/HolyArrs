@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Testen",
 	"settings.mediaServers.changeButton": "Ändern",
 	"settings.mediaServers.removeName": "{name} entfernen",
-	"settings.mediaServers.remove": "Entfernen"
+	"settings.mediaServers.remove": "Entfernen",
+	"settings.mediaServers.watchTitle": "Wiedergabeverlauf",
+	"settings.mediaServers.watchRead": "Wiedergabeverlauf lesen",
+	"settings.mediaServers.watchHint": "Zeigt in der Bibliotheksstatistik, wer was gesehen hat, für alle, die die Bibliothek verwalten. Aus löscht das Gelesene.",
+	"settings.mediaServers.watchConfirmOff": "Wiedergabeverlauf ausschalten? Alles bisher Gelesene wird gelöscht.",
+	"settings.mediaServers.watchTurnedOn": "Wiedergabeverlauf an. Das erste Lesen folgt innerhalb von 30 Minuten.",
+	"settings.mediaServers.watchTurnedOff": "Wiedergabeverlauf aus",
+	"settings.mediaServers.watchFailed": "Wiedergabeverlauf konnte nicht geändert werden"
 }

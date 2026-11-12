@@ -3,3 +3,6 @@ node_modules/
 test-results/
 playwright-report/
 static/vendor/
+
+# built by scripts/pack-lang.mjs
+src/lib/core/i18n/packs/

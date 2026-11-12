@@ -53,6 +53,15 @@ describe('calendar week', () => {
 		expect(viewFromAddress('week')).toBeNull();
 	});
 
+	it('opens on the view and follows saved to the account before what this tab picked', () => {
+		const m = new Map([['holyarrs.calendar-view', 'cards'], ['holyarrs.calendar-follows', 'library']]);
+		const store = { getItem: (k: string) => m.get(k) ?? null };
+		expect(readView(store, 'list')).toBe('list');
+		expect(readView(store, 'junk')).toBe('cards');
+		expect(readFollows(store, 'everyone')).toBe('everyone');
+		expect(readFollows(store, 7)).toBe('library');
+	});
+
 	it('remembers the view, and survives storage that throws', () => {
 		const m = new Map<string, string>();
 		const store = { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) };

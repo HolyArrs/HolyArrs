@@ -37,13 +37,13 @@
 	let sideNotes = $state<Record<string, string>>({});
 	let clientHealth = $state<ClientHealth[]>([]);
 	let upTotal = $state<number | undefined>(undefined);
-	// Outside torrents come 200 at a time; Show more asks for the next 200 too.
-	let outsideLimit = $state(200);
+	// Outside torrents come 2,000 at a time; the list asks for the next 2,000 as it scrolls near its end.
+	let outsideLimit = $state(2000);
 	let moreOutside = $state(false);
 	// Torrents HolyArrs did not add that this page has not loaded, per Downloader and stage: the tabs count them too.
 	let outsideRest = $state<Rest>({});
-	// The most torrents the server sends that it did not add.
-	const outsideMax = 2000;
+	// The most torrents the server sends that it did not add (outsideMax in routes_downloads.go); the tabs still count the rest.
+	const outsideMax = 5000;
 	const clientNotes = $derived(
 		clientHealth
 			.filter((c) => c.health !== 'ok')
@@ -179,9 +179,14 @@
 		}
 	}
 
-	function showMore() {
-		outsideLimit = Math.min(outsideLimit + 200, outsideMax);
-		void load();
+	let moreBusy = false;
+	// all: a tab is empty only because its torrents are not loaded yet, so load every one left at once.
+	async function showMore(all = false) {
+		if (moreBusy || outsideLimit >= outsideMax) return;
+		moreBusy = true;
+		outsideLimit = all ? outsideMax : Math.min(outsideLimit + 2000, outsideMax);
+		await load();
+		moreBusy = false;
 	}
 
 	// Reads can overlap (a timed read, then a Remove's own read): only the newest one is applied, so an older answer never brings a removed row back.

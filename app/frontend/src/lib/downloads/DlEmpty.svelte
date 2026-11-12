@@ -4,9 +4,9 @@
 	import type { Empty } from './status-tabs.ts';
 
 	// The empty list's words and its one way on. A tab whose torrents are not loaded yet says so (left of them), not that there are none.
-	let { em, left = 0, more = false, onclear, onall, onmore }: { em: Empty; left?: number; more?: boolean; onclear: () => void; onall: () => void; onmore?: () => void } = $props();
-	const shown = $derived(left > 0 ? { title: t('downloads.page.notLoaded.title'), text: t('downloads.page.notLoaded.text', { count: left.toLocaleString() }), act: more ? 'more' : '', label: t('downloads.page.showMore') } : { title: em.title, text: em.text, act: em.action?.act ?? '', label: em.action?.label ?? '' });
-	const run = () => (shown.act === 'clear' ? onclear() : shown.act === 'all' ? onall() : onmore?.());
+	let { em, left = 0, onclear, onall }: { em: Empty; left?: number; more?: boolean; onclear: () => void; onall: () => void } = $props();
+	const shown = $derived(left > 0 ? { title: t('downloads.page.notLoaded.title'), text: t('downloads.page.notLoaded.text', { count: left.toLocaleString() }), act: '', label: '' } : { title: em.title, text: em.text, act: em.action?.act ?? '', label: em.action?.label ?? '' });
+	const run = () => (shown.act === 'clear' ? onclear() : onall());
 </script>
 
 {#key shown.title}

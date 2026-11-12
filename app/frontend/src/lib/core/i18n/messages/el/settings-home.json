@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Για προχωρημένους",
+	"settings.home.page": "{group} · σελίδα",
+	"settings.home.title": "Ρυθμίσεις",
+	"settings.home.search": "Αναζήτηση ρυθμίσεων",
+	"settings.home.matching": "Ρυθμίσεις που ταιριάζουν",
+	"settings.home.noMatch": "Καμία ρύθμιση δεν ταιριάζει",
+	"settings.home.noMatchText": "Δοκιμάστε άλλη λέξη, όπως φάκελος, κλειδί ή κωδικός.",
+	"settings.home.clear": "Εκκαθάριση αναζήτησης"
+}

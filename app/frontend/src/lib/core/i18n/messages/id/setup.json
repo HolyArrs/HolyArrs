@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Hubungkan ulang",
+	"setup.testNow": "Uji sekarang",
+	"setup.movies": "Film",
+	"setup.tvShows": "Serial TV",
+	"setup.music": "Musik",
+	"setup.subtitles": "Subtitle",
+	"setup.fullPath": "Gunakan path folder lengkap, misalnya {path}.",
+	"setup.folderUsed": "Folder ini sudah dipakai, atau berada di dalam folder yang sudah dipakai.",
+	"setup.folderMissing": "Folder itu tidak ada. Periksa path-nya.",
+	"setup.addFolderOrOff": "Tambahkan folder atau matikan opsi ini.",
+	"setup.notAnswering": "HolyArrs tidak merespons. Coba lagi sebentar lagi.",
+	"setup.addUserPasswordHint": "Isi nama pengguna dan kata sandi.",
+	"setup.folders": "Folder",
+	"setup.downloader": "Pengunduh",
+	"setup.source": "Sumber"
+}

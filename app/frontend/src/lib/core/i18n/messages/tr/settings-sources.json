@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Değiştir",
 	"settings.sources.removeName": "{name} kaldır",
 	"settings.sources.remove": "Kaldır",
-	"settings.sources.bridge": "Jackett ya da Prowlarr'ı bağla"
+	"settings.sources.bridge": "Jackett ya da Prowlarr'ı bağla",
+	"settings.sources.off": "Kaynaklar kapalı",
+	"settings.sources.offText": "HolyArrs arama yapmaz ve indirmez. İndiricine eklediğin indirmeler yine içe aktarılır.",
+	"settings.sources.openParts": "Bölümler'i aç",
+	"settings.sources.offState": "Kapalı"
 }

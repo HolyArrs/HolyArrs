@@ -88,20 +88,35 @@ func TestSigninSeedInlinesFirstSlideThumbnails(t *testing.T) {
 	if len(shots) == 0 {
 		t.Fatal("no shots")
 	}
-	var got []byte
-	for i := 0; i < 200 && !bytes.Contains(got, []byte(`"poster"`)); i++ {
-		got = a.signinSeedJSON(context.Background())
-		time.Sleep(5 * time.Millisecond)
-	}
-	if got == nil {
-		t.Fatal("thumbnails never ready")
-	}
-	var body struct {
+	type seedBody struct {
 		Shots []SigninShot                 `json:"shots"`
 		Seed  map[string]map[string]string `json:"seed"`
 	}
-	if err := json.Unmarshal(got, &body); err != nil {
-		t.Fatal(err)
+	// Every shot carries a "poster" field too, so wait on the seed thumbnails
+	// themselves, not on the word showing up.
+	ready := func(b seedBody) bool {
+		for _, k := range []string{"backdrop", "poster"} {
+			for _, s := range []string{"t24", "t64"} {
+				if b.Seed[k][s] == "" {
+					return false
+				}
+			}
+		}
+		return true
+	}
+	var got []byte
+	var body seedBody
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		got = a.signinSeedJSON(context.Background())
+		body = seedBody{}
+		if got != nil && json.Unmarshal(got, &body) == nil && ready(body) {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("thumbnails never ready: %.200s", got)
+		}
+		time.Sleep(5 * time.Millisecond)
 	}
 	if len(body.Shots) != len(shots) || body.Shots[0].Backdrop.URL != publicShots(shots)[0].Backdrop.URL {
 		t.Fatalf("shots %+v", body.Shots)

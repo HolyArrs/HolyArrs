@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Запрашивать из списков Plex",
 	"settings.requests.plexOnHint": "Каждый включает это в разделе «Моя учётная запись». Действуют его лимиты.",
 	"settings.requests.plexEveryone": "Включить для всех, кто входит через Plex",
-	"settings.requests.plexEveryoneHint": "Каждый может выключить это для себя в разделе «Мой аккаунт»."
+	"settings.requests.plexEveryoneHint": "Каждый может выключить это для себя в разделе «Мой аккаунт».",
+	"settings.requests.plexFriends": "Включить друзей из Plex",
+	"settings.requests.plexFriendsHint": "Друзья, импортированные из Plex. Читаются через вашу привязку Plex; действуют лимиты каждого друга.",
+	"settings.requests.plexFriendsNoLink": "Сначала привяжите Plex в Настройки › Вход.",
+	"settings.requests.plexFriendsNone": "Из Plex ещё никто не импортирован.",
+	"settings.requests.plexFriendsRead": "Прочитано {when}",
+	"settings.requests.plexFriendsNotYet": "Ещё не прочитано",
+	"settings.requests.plexFriendsAsked": "Запрошено: {n}"
 }

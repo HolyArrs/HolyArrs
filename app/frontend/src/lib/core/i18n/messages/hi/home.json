@@ -25,6 +25,9 @@
 	"home.lostIfTheContainer": "कंटेनर दोबारा बनाने पर मिट जाएगा",
 	"home.downloads": "डाउनलोड",
 	"home.waitingForTheirFiles": "अपनी फ़ाइलों का इंतज़ार कर रहे हैं",
+	"home.waitingToBeCleared": "साफ़ होने का इंतज़ार कर रहे हैं",
+	"home.noSaveFolder": "सेव फ़ोल्डर सेट नहीं है",
+	"home.noSaveFolderMany": "सेव फ़ोल्डर सेट नहीं है",
 	"home.masterKey": "मास्टर कुंजी",
 	"home.noKeyKitSaved": "कोई कुंजी किट सेव नहीं है",
 	"home.trailers": "ट्रेलर",
@@ -266,5 +269,7 @@
 	"home.version": "वर्ज़न {version}",
 	"home.metadataServerDown": "मेटाडेटा सर्वर बंद है",
 	"home.metadataServerOnline": "मेटाडेटा सर्वर चालू है",
-	"home.homeCouldNotRead3": "होम अभी डाउनलोड नहीं पढ़ सका।"
+	"home.homeCouldNotRead3": "होम अभी डाउनलोड नहीं पढ़ सका।",
+	"home.off": "बंद",
+	"home.sourcesOff": "हिस्सों में बंद"
 }

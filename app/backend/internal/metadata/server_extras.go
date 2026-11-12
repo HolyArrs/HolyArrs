@@ -96,7 +96,7 @@ func (s *Service) extra(ctx context.Context, path string, out any) error {
 	}
 	tok, err := s.access(ctx)
 	if err != nil || tok == "" || strings.ContainsAny(tok, "\r\n") {
-		return ErrServiceAccess
+		return accessErr(err)
 	}
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.base+path, nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
@@ -104,7 +104,7 @@ func (s *Service) extra(ctx context.Context, path string, out any) error {
 	aheadRequest(ctx, req)
 	resp, err := s.doPending(ctx, req)
 	if err != nil {
-		return ErrServiceUnavailable
+		return unreached(err)
 	}
 	defer resp.Body.Close()
 	switch {

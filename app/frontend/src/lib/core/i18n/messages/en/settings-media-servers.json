@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Test",
 	"settings.mediaServers.changeButton": "Change",
 	"settings.mediaServers.removeName": "Remove {name}",
-	"settings.mediaServers.remove": "Remove"
+	"settings.mediaServers.remove": "Remove",
+	"settings.mediaServers.watchTitle": "Watch history",
+	"settings.mediaServers.watchRead": "Read watch history",
+	"settings.mediaServers.watchHint": "Shows who watched what on Library stats, for people who run the Library. Off deletes what was read.",
+	"settings.mediaServers.watchConfirmOff": "Turn off watch history? Everything read so far is deleted.",
+	"settings.mediaServers.watchTurnedOn": "Watch history on. The first read comes within 30 minutes.",
+	"settings.mediaServers.watchTurnedOff": "Watch history off",
+	"settings.mediaServers.watchFailed": "Couldn't change watch history"
 }

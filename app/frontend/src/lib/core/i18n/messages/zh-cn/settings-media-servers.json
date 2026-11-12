@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "测试",
 	"settings.mediaServers.changeButton": "更改",
 	"settings.mediaServers.removeName": "移除 {name}",
-	"settings.mediaServers.remove": "移除"
+	"settings.mediaServers.remove": "移除",
+	"settings.mediaServers.watchTitle": "观看记录",
+	"settings.mediaServers.watchRead": "读取观看记录",
+	"settings.mediaServers.watchHint": "为管理媒体库的人在统计中显示谁看了什么。关闭会删除已读取的内容。",
+	"settings.mediaServers.watchConfirmOff": "关闭观看记录？目前读取的内容将全部删除。",
+	"settings.mediaServers.watchTurnedOn": "观看记录已开启。首次读取会在 30 分钟内完成。",
+	"settings.mediaServers.watchTurnedOff": "观看记录已关闭",
+	"settings.mediaServers.watchFailed": "无法更改观看记录"
 }

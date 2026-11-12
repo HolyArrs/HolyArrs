@@ -9,7 +9,7 @@
 	import { TAB_WORD, tabsOf } from './pane-facts.ts';
 	import { healthLine } from './panel-words.ts';
 	import { size as bytes, protocolOf } from './size.ts';
-	import { statusWord } from './status-tabs.ts';
+	import { packLine, statusWord } from './status-tabs.ts';
 	import { pausable, retryable } from './usenet.ts';
 	import { poster, who } from './row-art.ts';
 	import { problem } from './problem.ts';
@@ -152,7 +152,7 @@
 	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? (paneFit ? `max-height: ${maxPane()}px; --ph: ${maxPane()}px` : `height: ${paneH}px; --ph: ${paneH}px`) : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label={t('downloads.pane.detailsOf', { name: who(r) })}>
 		<div class="phd">
 			<button type="button" class="grab" aria-label={t('downloads.pane.close')} onpointerdown={(e) => (grabY = e.clientY)} onpointerup={(e) => { if (grabY != null && e.clientY - grabY > 40) openId = 0; grabY = null; }} onclick={() => (openId = 0)} data-testid="dl-pane-grab"><i></i></button>
-			<p class="xt pt"><b>{who(r)}</b><span class="hs"><i class="hdot {barTone(r)}" class:bad={problem(r)?.tone === 'fail' || r.phase === 'failed'} aria-hidden="true"></i><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: pane.det.id === r.id ? pane.det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: pane.det.id === r.id ? pane.det.detail?.torrent?.seeding_time : undefined, ratio: pane.det.id === r.id ? pane.det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : t('downloads.pane.line', { status: statusWord(r), pct: Math.floor(percent(r.progress)), size: sizeWord })}</span></span></p>
+			<p class="xt pt"><b>{who(r)}</b><span class="hs"><i class="hdot {barTone(r)}" class:bad={problem(r)?.tone === 'fail' || r.phase === 'failed'} aria-hidden="true"></i><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: pane.det.id === r.id ? pane.det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: pane.det.id === r.id ? pane.det.detail?.torrent?.seeding_time : undefined, ratio: pane.det.id === r.id ? pane.det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : t('downloads.pane.line', { status: statusWord(r), pct: Math.floor(percent(r.progress)), size: sizeWord })}</span></span>{#if r.pack}<span data-testid="dl-pane-pack">{packLine(r)}</span>{/if}</p>
 			{@render tabStrip(r)}
 			{#if paneOpen}
 			<div class="pact" data-testid="dl-pane-actions">
@@ -334,12 +334,16 @@
 		.pb .big { width: 140px; height: 210px; }
 		.pb .big.square { height: 140px; }
 	}
-	@media (max-width: 767px) {
+	/* Tablets only: phones (640px and under) hide the poster, so a 56px poster column there would squeeze the facts into it. */
+	@media (min-width: 641px) and (max-width: 767px) {
 		.pb { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
 		.pb .big { width: 56px; height: 84px; border-radius: var(--r-poster); }
 		.pb .big.square { height: 56px; }
 		.pb .big { width: 56px; height: 84px; }
 		.pb .big.square { height: 56px; }
+	}
+	@media (max-width: 640px) {
+		.pb { grid-template-columns: minmax(0, 1fr); }
 	}
 	@supports not selector(::-webkit-scrollbar) {
 		.pb { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 24%, transparent) transparent; }

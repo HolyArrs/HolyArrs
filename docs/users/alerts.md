@@ -1,16 +1,16 @@
 ---
 title: Alerts
-description: Send Discord or email messages when a request waits, a title lands in the Library or a health check breaks.
+description: Send Discord, email, Telegram, ntfy, Gotify, Pushover or webhook messages when a request waits, a download finishes, a title lands in the Library or a health check breaks.
 level: Setup
 sidebar: { order: 5 }
 ---
 
-An Alert sends a Discord or email message when something happens: a request waits, a movie lands, a health check breaks. You need the **Change settings** permission.
+An Alert sends a message when something happens: a request waits, a download finishes, a movie lands, a health check breaks. It goes to Discord, email, Telegram, ntfy, Gotify, Pushover or your own webhook. You need the **Change settings** permission.
 
 ## Add an Alert
 
 1. Open **Settings > Alerts** and select **Add an Alert**.
-2. Give it a **Name** and pick a **Kind**: Discord or email.
+2. Give it a **Name** and pick a **Kind**: Discord, email, Telegram, ntfy, Gotify, Pushover or **Webhook (JSON)**.
 3. Fill in the kind's fields (see [Kinds](#kinds)).
 4. Under **When to send**, untick the moments you do not want. All start ticked; **All of these** and **None of these** work on a whole group.
 5. Leave **Send messages** on and select **Save**.
@@ -34,7 +34,20 @@ In Discord, open the channel settings, then **Integrations > Webhooks**, and cop
 
 Messages about a request go to the people who asked, at their account address. Everything else goes to the staff addresses.
 
-Telegram, ntfy, Gotify, Pushover and webhooks are held back in this release. See [Held-back features](../run/updates.md#held-back-features).
+### Telegram, ntfy, Gotify and Pushover
+
+| Kind | Fields |
+| --- | --- |
+| Telegram | **Bot token** from @BotFather, **Chat ID** (user, group or channel ID, or `@channel`). Message the bot or add it to the group first |
+| ntfy | **Server address** (empty means ntfy.sh), **Topic**, optional **Access token**. Anyone who knows the topic can read it |
+| Gotify | **Server address**, **App token** |
+| Pushover | **User key** (group keys work), **App token** |
+
+These four get the same short message as Discord: a title line and the details below it.
+
+### Webhook
+
+Paste your receiver's address into **Webhook link**. Each message is one JSON `POST`; see [What a webhook receives](#for-experts). An optional **Secret** either signs each message or is sent as a bearer token (**What the secret does**). Use it to run your own steps when a download finishes or files land in the Library, for example copying a finished show to another folder.
 
 ## Choices
 
@@ -51,6 +64,8 @@ Telegram, ntfy, Gotify, Pushover and webhooks are held back in this release. See
 | **Problem reported** | Staff | Someone reported a title. Reports are at `/requests/reports` |
 | **Problem fixed** | Reporter | With your reply |
 | **Sent to download** | Staff | A release went to a downloader |
+| **Downloaded** | Staff | The downloader finished a download. The import comes next |
+| **Download failed** | Staff | A download failed and its release was turned down |
 | **In the Library** | Staff | Files were placed, including a better copy |
 | **Renamed** | Staff | Files got new names |
 | **Added** | Staff | A title was added by hand, from a list or from a request |
@@ -104,27 +119,13 @@ A timeout, a slow-down answer or a server error is retried after 5 s, 30 s and 2
 
 </details>
 
-<details class="ha-more"><summary>Held-back kinds and their fields</summary>
-
-Shown only with the `alert_channels_more` switch on.
-
-| Kind | Fields |
-| --- | --- |
-| Telegram | **Bot token** from @BotFather, **Chat ID** (user, group or channel ID, or `@channel`). Message the bot or add it to the group first |
-| ntfy | **Server address** (empty means ntfy.sh), **Topic**, optional **Access token**. Anyone who knows the topic can read it |
-| Gotify | **Server address**, **App token** |
-| Pushover | **User key** (group keys work), **App token** |
-| Webhook (JSON) | **Webhook link**, optional **Secret**, **What the secret does** |
-
-</details>
-
 <details class="ha-more"><summary>What a webhook receives</summary>
 
 One `POST` per message, `Content-Type: application/json`, with these headers:
 
 | Header | Value |
 | --- | --- |
-| `X-HolyArrs-Event` | The moment, such as `import` or `test` |
+| `X-HolyArrs-Event` | The moment, such as `downloaded`, `import`, `download_failed` or `test` |
 | `X-HolyArrs-Delivery` | Random ID for this message |
 | `X-HolyArrs-Timestamp` | With **Signs each message**: seconds since 1970 |
 | `X-HolyArrs-Signature` | With **Signs each message**: `sha256=` plus hex HMAC-SHA256 of `<timestamp>.<delivery>.<body>`, keyed with your secret |
@@ -132,19 +133,42 @@ One `POST` per message, `Content-Type: application/json`, with these headers:
 
 With **Nothing**, no secret is sent. When signing, refuse old timestamps and delivery IDs you have seen, so a copied message cannot be replayed.
 
+A finished download:
+
+```json
+{
+  "moment": "downloaded",
+  "event_kind": "download_finished",
+  "subject": "Downloaded: Arrival (2016)",
+  "text": "Download 3f2a9c1b: finished\nrelease: Arrival.2016.1080p.WEB\ndownloader: qBittorrent\nsave_path: Arrival.2016.1080p.WEB",
+  "at": "2025-01-01T17:58:40Z",
+  "movie": { "id": 12, "name": "Arrival", "year": 2016, "tmdb": "329865", "imdb": "tt2543164" },
+  "data": { "state": "finished", "progress": 1, "release": "Arrival.2016.1080p.WEB", "release_id": 7, "downloader": "qBittorrent", "save_path": "Arrival.2016.1080p.WEB" }
+}
+```
+
+The import that follows:
+
 ```json
 {
   "moment": "import",
   "event_kind": "import_done",
   "subject": "In the Library: Arrival (2016)",
-  "text": "Import done: 1 placed by hardlink",
+  "text": "Import done: 1 placed by hardlink\nfrom: Arrival.2016.1080p.WEB",
   "at": "2025-01-01T18:04:11Z",
   "movie": { "id": 12, "name": "Arrival", "year": 2016, "tmdb": "329865", "imdb": "tt2543164" },
-  "data": { "from": "/downloads/Arrival.2016.1080p" }
+  "data": { "from": "Arrival.2016.1080p.WEB", "paths": [{ "from": "Arrival.2016.1080p.WEB.mkv", "to": "Arrival (2016).mkv", "method": "hardlink" }] }
 }
 ```
 
-Other fields appear when they apply: `test`, `show` and `episodes`, `artist` and `tracks`, `report`, `people`. `people` holds requester names, never addresses. `data` holds the reasons and paths from the History row behind the message. Any `2xx` answer counts as delivered.
+| Moment | `event_kind` |
+| --- | --- |
+| `grab` | `download_sent` |
+| `downloaded` | `download_finished` |
+| `download_failed` | `download_failed` |
+| `import` | `import_done` or `import_partly_done` |
+
+Other fields appear when they apply: `test`, `show` and `episodes`, `artist` and `tracks`, `report`, `people`. `people` holds requester names, never addresses. `data` holds the reasons and paths from the History row behind the message. A full path on this machine (a download folder, a Library folder) is cut to its last name. Any `2xx` answer counts as delivered.
 
 </details>
 

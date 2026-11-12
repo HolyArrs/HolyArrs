@@ -1,4 +1,4 @@
-<p align="center"><b>English</b> · <a href=".github/readme/README.zh-CN.md">简体中文</a> · <a href=".github/readme/README.hi.md">हिन्दी</a> · <a href=".github/readme/README.es.md">Español</a> · <a href=".github/readme/README.fr.md">Français</a> · <a href=".github/readme/README.ar.md">العربية</a> · <a href=".github/readme/README.pt-BR.md">Português</a> · <a href=".github/readme/README.ru.md">Русский</a> · <a href=".github/readme/README.ja.md">日本語</a> · <a href=".github/readme/README.de.md">Deutsch</a> · <a href=".github/readme/README.ko.md">한국어</a> · <a href=".github/readme/README.it.md">Italiano</a> · <a href=".github/readme/README.pl.md">Polski</a> · <a href=".github/readme/README.nl.md">Nederlands</a> · <a href=".github/readme/README.tr.md">Türkçe</a> · <a href=".github/readme/README.uk.md">Українська</a></p>
+<p align="center"><b>English</b> · <a href=".github/readme/README.es.md">Español</a> · <a href=".github/readme/README.pt-BR.md">Português (Brasil)</a> · <a href=".github/readme/README.fr.md">Français</a> · <a href=".github/readme/README.de.md">Deutsch</a> · <a href=".github/readme/README.ru.md">Русский</a> · <a href=".github/readme/README.zh-CN.md">简体中文</a> · <a href=".github/readme/README.ja.md">日本語</a> · <a href=".github/readme/README.hi.md">हिन्दी</a> · <a href=".github/readme/README.ar.md">العربية</a> · <a href=".github/readme/LANGUAGES.md">More languages</a></p>
 
 <p align="center">
   <picture>
@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent and ruTorrent as a Downloader**, seedboxes too. Finished Usenet downloads now move into your Library instead of being copied. [See what's new](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: now in 44 languages**, right-to-left too. aria2 works as a Downloader, and season packs download a few episodes at a time. [See what's new](https://holyarrs.com/whats-new/)
 
 > Every poster, trailer and score in your HolyArrs comes from a server I run and pay for myself, so it stays free for everyone. If HolyArrs made movie night a little better, a sponsor keeps the lights on for all of us 💛
 >
@@ -152,7 +150,7 @@ Someone asks for a title. HolyArrs searches your Sources, picks the best release
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Downloaders: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Media servers: Plex, Jellyfin, Emby." /></picture>
 
-- **Downloaders:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Downloaders:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Media servers:** Plex, Jellyfin, Emby
 - **Sources:** any Torznab or Newznab indexer, or Prowlarr or Jackett
 - **Moves your setup from:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -222,7 +220,7 @@ Images live on Docker Hub as [`holyarrs/holyarrs`](https://hub.docker.com/r/holy
 | Tag | Use it for |
 | :----: | --- |
 | `latest` | The newest release. |
-| `1.0.19` | One exact version. It never moves. |
+| `1.1.0` | One exact version. It never moves. |
 
 ## Usage
 

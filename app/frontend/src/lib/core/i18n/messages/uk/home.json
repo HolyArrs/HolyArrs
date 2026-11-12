@@ -25,6 +25,9 @@
 	"home.lostIfTheContainer": "буде втрачено, якщо контейнер перестворити",
 	"home.downloads": "Завантаження",
 	"home.waitingForTheirFiles": "чекають на свої файли",
+	"home.waitingToBeCleared": "чекають на очищення",
+	"home.noSaveFolder": "немає теки збереження",
+	"home.noSaveFolderMany": "немає теки збереження",
 	"home.masterKey": "Головний ключ",
 	"home.noKeyKitSaved": "набір ключів не збережено",
 	"home.trailers": "Трейлери",
@@ -266,5 +269,7 @@
 	"home.version": "Версія {version}",
 	"home.metadataServerDown": "Сервер метаданих не працює",
 	"home.metadataServerOnline": "Сервер метаданих онлайн",
-	"home.homeCouldNotRead3": "Головна зараз не змогла прочитати завантаження."
+	"home.homeCouldNotRead3": "Головна зараз не змогла прочитати завантаження.",
+	"home.off": "Вимк.",
+	"home.sourcesOff": "Вимкнено в розділі «Частини»"
 }

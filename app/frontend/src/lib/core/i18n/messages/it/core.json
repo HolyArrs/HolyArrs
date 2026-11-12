@@ -16,7 +16,7 @@
 	"core.format.healthy": "Tutto ok",
 	"core.format.folderNotFound": "Cartella non trovata",
 	"core.format.cannotWrite": "Qui non si può scrivere",
-	"core.format.copiedNoHardlinks": "Funziona, ma i file vengono copiati (niente hardlink)",
+	"core.format.copiedNoHardlinks": "Ogni importazione fa una copia completa (usa più spazio)",
 	"core.format.notChecked": "Non ancora controllato",
 	"core.loader.welcome": "Ciao, {name}",
 	"core.loader.reconnecting": "Riconnessione…",
@@ -54,6 +54,8 @@
 	"core.plain.configDiskWarning": "Il disco con la cartella di configurazione sta finendo lo spazio.",
 	"core.plain.configFolder": "/config non è mappata a una cartella, quindi i dati di HolyArrs vanno persi quando il container viene ricreato.",
 	"core.plain.waitingDownloads": "I download sono in attesa perché il loro downloader non può usare i file.",
+	"core.plain.clearWaiting": "Download importati in attesa di essere ripuliti dal loro downloader.",
+	"core.plain.saveFolder": "Un downloader non ha una cartella di salvataggio, quindi HolyArrs non può importare i suoi download finiti.",
 	"core.plain.someone": "Qualcuno di casa tua",
 	"core.plain.keyKitOwner": "Il proprietario dovrebbe salvare il kit delle chiavi: i backup non contengono la chiave principale.",
 	"core.plain.keyKitNone": "Nessun kit delle chiavi salvato: i backup non contengono la chiave principale.",
@@ -142,5 +144,6 @@
 	"core.settings.danger.label": "Zona pericolosa",
 	"core.settings.danger.about": "Riavvia o spegni",
 	"core.settings.account.label": "Il mio account",
-	"core.settings.account.about": "Password, due fattori, dispositivi"
+	"core.settings.account.about": "Password, due fattori, dispositivi",
+	"core.api.sourceOff": "Alcune righe sono disattivate in questa installazione."
 }

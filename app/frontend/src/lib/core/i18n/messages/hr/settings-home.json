@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Napredno",
+	"settings.home.page": "{group} · stranica",
+	"settings.home.title": "Postavke",
+	"settings.home.search": "Pretraži postavke",
+	"settings.home.matching": "Postavke koje odgovaraju",
+	"settings.home.noMatch": "Nema postavki koje odgovaraju",
+	"settings.home.noMatchText": "Probaj drugu riječ, na primjer mapa, ključ ili lozinka.",
+	"settings.home.clear": "Očisti pretragu"
+}

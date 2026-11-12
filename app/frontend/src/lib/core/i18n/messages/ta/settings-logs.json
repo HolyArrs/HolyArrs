@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "பதிவுகள்",
+	"settings.logs.download": "பதிவிறக்கு",
+	"settings.logs.filter": "பதிவை வடிகட்டு",
+	"settings.logs.level": "நிலை",
+	"settings.logs.every": "எல்லா வரிகளும்",
+	"settings.logs.warnings": "எச்சரிக்கைகளும் பிழைகளும்",
+	"settings.logs.errors": "பிழைகள் மட்டும்",
+	"settings.logs.text": "உரை",
+	"settings.logs.example": "எ.கா. qBittorrent",
+	"settings.logs.from": "தொடக்கம்",
+	"settings.logs.to": "முடிவு",
+	"settings.logs.apply": "செயல்படுத்து",
+	"settings.logs.clear": "அழி",
+	"settings.logs.lines": "வரிகள்",
+	"settings.logs.newer": "புதியவை",
+	"settings.logs.older": "பழையவை"
+}

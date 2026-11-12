@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Tester",
 	"settings.mediaServers.changeButton": "Modifier",
 	"settings.mediaServers.removeName": "Retirer {name}",
-	"settings.mediaServers.remove": "Retirer"
+	"settings.mediaServers.remove": "Retirer",
+	"settings.mediaServers.watchTitle": "Historique de visionnage",
+	"settings.mediaServers.watchRead": "Lire l’historique",
+	"settings.mediaServers.watchHint": "Montre qui a regardé quoi dans les statistiques, pour ceux qui gèrent la bibliothèque. Désactiver efface ce qui a été lu.",
+	"settings.mediaServers.watchConfirmOff": "Désactiver l’historique ? Tout ce qui a été lu est effacé.",
+	"settings.mediaServers.watchTurnedOn": "Historique activé. La première lecture arrive sous 30 minutes.",
+	"settings.mediaServers.watchTurnedOff": "Historique désactivé",
+	"settings.mediaServers.watchFailed": "Impossible de changer l’historique"
 }

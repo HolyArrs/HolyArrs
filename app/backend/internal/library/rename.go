@@ -216,6 +216,9 @@ func fileEpisodes(ctx context.Context, db Reader, f mediafiles.File) ([]importer
 		if it.Numbers.Absolute != nil {
 			e.Ref.Absolute = *it.Numbers.Absolute
 		}
+		if it.Numbers.AltSeason != nil && it.Numbers.AltEpisode != nil {
+			e.Ref.AltSeason, e.Ref.AltEpisode = *it.Numbers.AltSeason, *it.Numbers.AltEpisode
+		}
 		if it.AirDay != nil {
 			e.Ref.AirDay = *it.AirDay
 		}
@@ -246,6 +249,15 @@ func episodeFacts(t mediafiles.Title, f mediafiles.File, eps []importer.Episode)
 	order := mediafiles.OrderAired
 	if t.EpisodeOrder != nil && *t.EpisodeOrder != "" {
 		order = *t.EpisodeOrder
+	}
+	if t.EpisodeGroupID != nil && *t.EpisodeGroupID != "" {
+		eps = importer.NamedEpisodes(eps)
+		sort.SliceStable(eps, func(i, j int) bool {
+			if eps[i].Ref.Season != eps[j].Ref.Season {
+				return eps[i].Ref.Season < eps[j].Ref.Season
+			}
+			return eps[i].Ref.Episode < eps[j].Ref.Episode
+		})
 	}
 	fa := importer.EpisodeFactsFor(t.Name, year, t.SourceIDs, order, releasename.Parse(release, releasename.Hints{Show: true}), release, path.Ext(f.RelativePath), eps)
 	if step, ok := f.MediaInfo["step"].(string); ok && step != "" {

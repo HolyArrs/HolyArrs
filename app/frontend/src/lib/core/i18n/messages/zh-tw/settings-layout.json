@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "設定",
+	"settings.layout.home": "首頁",
+	"settings.layout.sections": "設定分區",
+	"settings.layout.needsAttention": "需要處理",
+	"settings.layout.needsAttentionLower": "需要處理",
+	"settings.layout.blocked": "你無法更改此項",
+	"settings.layout.backToSettings": "返回設定",
+	"settings.layout.setPasswordFirst": "請先設定密碼",
+	"settings.layout.setPasswordDesc": "金鑰、密碼、成員和備份需要 HolyArrs 密碼，而你還沒有設定。",
+	"settings.layout.setPasswordLabel": "設定密碼",
+	"settings.layout.confirmPasswordLabel": "確認你的密碼",
+	"settings.layout.confirmPasswordDesc": "金鑰、密碼、成員和備份需要驗證你的密碼，10 分鐘內有效。"
+}

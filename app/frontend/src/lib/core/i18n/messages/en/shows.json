@@ -204,5 +204,15 @@
 	"shows.page.mainVersionParen": "(main Version)",
 	"shows.page.keepThem": "Keep them up to date",
 	"shows.page.leaveThem": "Leave them off",
-	"shows.page.filesStay": "Episodes and files stay."
+	"shows.page.filesStay": "Episodes and files stay.",
+	"shows.page.seasonPacks": "Season packs",
+	"shows.page.packWhole": "Get the whole season",
+	"shows.page.packFew": "Get a few episodes at a time",
+	"shows.page.packAhead": "Episodes ahead",
+	"shows.page.packHint": "When a whole-season pack is the only release, qBittorrent gets the next {n} episodes. More follow when you press Get the next episodes or when Plex or Jellyfin shows one as watched. Usenet and other Downloaders get the whole season.",
+	"shows.page.packWholeShort": "Whole season",
+	"shows.page.packAtATime": "{n} episodes at a time",
+	"shows.tools.packNote": "This season comes from its pack {n} episodes at a time.",
+	"shows.tools.getNext": "Get the next {n} episodes",
+	"shows.page.packOneAtATime": "1 episode at a time"
 }

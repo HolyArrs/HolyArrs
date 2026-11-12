@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "A HolyArrs leáll.",
+	"settings.danger.couldnt": "Nem sikerült: {action}",
+	"settings.danger.title": "Veszélyzóna",
+	"settings.danger.ownerOnly": "Csak tulajdonosoknak és adminoknak",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Igen, {action}",
+	"settings.danger.cancel": "Mégse",
+	"settings.danger.expires": "60 mp múlva lejár",
+	"settings.danger.wholeApp": "Az egész alkalmazás",
+	"settings.danger.intro": "Ezek leállítják a HolyArrst. A Docker újraindítási szabálya néhány másodperc múlva újraindítja, kivéve, ha a szabály <code>no</code>; akkor indítsa el a tárolót saját kezűleg. Mindegyik megerősítést kér.",
+	"settings.danger.restart": "HolyArrs újraindítása",
+	"settings.danger.safe": "Újraindítás biztonságos módban",
+	"settings.danger.shutdown": "Leállítás",
+	"settings.danger.safeNote": "Egyszer indul el, csak a bejelentkezéssel, a Beállításokkal és a Médiatárral. Akkor használja, ha egy Modul akadályozza az indulást."
+}

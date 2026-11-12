@@ -16,7 +16,7 @@
 	"core.format.healthy": "正常",
 	"core.format.folderNotFound": "找不到文件夹",
 	"core.format.cannotWrite": "无法写入此处",
-	"core.format.copiedNoHardlinks": "可用，但文件会被复制（无法使用硬链接）",
+	"core.format.copiedNoHardlinks": "每次导入都会完整复制一份（占用额外空间）",
 	"core.format.notChecked": "尚未检查",
 	"core.loader.welcome": "欢迎，{name}",
 	"core.loader.reconnecting": "正在重新连接…",
@@ -54,6 +54,8 @@
 	"core.plain.configDiskWarning": "存放 config 文件夹的磁盘空间快用完了。",
 	"core.plain.configFolder": "/config 没有映射到文件夹，因此重新创建容器时 HolyArrs 的数据会丢失。",
 	"core.plain.waitingDownloads": "下载正在等待，因为它们的下载器无法使用这些文件。",
+	"core.plain.clearWaiting": "已导入的下载正在等待从它们的下载器中清理。",
+	"core.plain.saveFolder": "有一个下载器没有设置保存文件夹，所以 HolyArrs 无法导入它已完成的下载。",
 	"core.plain.someone": "你家里的某个人",
 	"core.plain.keyKitOwner": "所有者应保存密钥包：备份中不含主密钥。",
 	"core.plain.keyKitNone": "还没有保存密钥包：备份中不含主密钥。",
@@ -142,5 +144,6 @@
 	"core.settings.danger.label": "危险操作",
 	"core.settings.danger.about": "重启或关闭",
 	"core.settings.account.label": "我的账户",
-	"core.settings.account.about": "密码、双重验证、设备"
+	"core.settings.account.about": "密码、双重验证、设备",
+	"core.api.sourceOff": "此安装中部分行已关闭。"
 }

@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Cài đặt",
+	"settings.layout.home": "Trang chủ",
+	"settings.layout.sections": "Các mục cài đặt",
+	"settings.layout.needsAttention": "Cần chú ý",
+	"settings.layout.needsAttentionLower": "cần chú ý",
+	"settings.layout.blocked": "Bạn không thể thay đổi mục này",
+	"settings.layout.backToSettings": "Quay lại Cài đặt",
+	"settings.layout.setPasswordFirst": "Hãy đặt mật khẩu trước",
+	"settings.layout.setPasswordDesc": "Khóa, mật khẩu, người dùng và bản sao lưu cần có mật khẩu HolyArrs. Bạn chưa có mật khẩu.",
+	"settings.layout.setPasswordLabel": "Đặt mật khẩu",
+	"settings.layout.confirmPasswordLabel": "Xác nhận mật khẩu",
+	"settings.layout.confirmPasswordDesc": "Khóa, mật khẩu, người dùng và bản sao lưu cần mật khẩu của bạn. Có hiệu lực trong 10 phút."
+}

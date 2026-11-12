@@ -38,6 +38,14 @@
 	"settings.libraryFolders.foldersHint": "Her satıra bir yol, örn. /data/imports. En fazla 32.",
 	"settings.libraryFolders.ownerOnly": "Yalnızca sahip ve yöneticiler",
 	"settings.libraryFolders.copiesExpected": "Kopyalama bekleniyor",
-	"settings.libraryFolders.copiesExpectedState": "Kopyalıyor, beklendiği gibi",
-	"settings.libraryFolders.warnAgain": "Yeniden uyar"
+	"settings.libraryFolders.copiesExpectedState": "Tam kopyalar, seçtiğin gibi",
+	"settings.libraryFolders.whyCopies": "Neden?",
+	"settings.libraryFolders.stateInstant": "Anında, fazladan yer yok",
+	"settings.libraryFolders.warnAgain": "Yeniden uyar",
+	"settings.libraryFolders.changePath": "Yolu değiştir",
+	"settings.libraryFolders.changePathOf": "{path} yolunu değiştir",
+	"settings.libraryFolders.newPath": "Yeni yol",
+	"settings.libraryFolders.changePathHint": "Önce dosyaları oraya taşıyın. HolyArrs her dosyayı kontrol eder ve hiçbir şeyi taşımaz.",
+	"settings.libraryFolders.checkingFiles": "Dosyalar kontrol ediliyor…",
+	"settings.libraryFolders.pathChanged": "Yol değiştirildi"
 }

@@ -63,6 +63,9 @@ type Backups struct {
 	KeyPrint string
 	// KeyKitPrint is the fingerprint of the last key kit downloaded.
 	KeyKitPrint string
+	// Off says the owner turned scheduled backups off: no backup is
+	// expected, so missing or old ones and the key kit are not warned about.
+	Off bool
 }
 
 // UpdateState is the update check's last answer as the checks need it.
@@ -105,6 +108,12 @@ type Engine struct {
 	// ConfigDir is the config folder; its disk is checked for free space
 	// ("" adds no check).
 	ConfigDir string
+	// SourcesOn says the Sources part is on; off, no Source is checked
+	// (nil means on).
+	SourcesOn func() bool
+	// SavePath is HOLYARRS_SAVE_PATH, the downloads folder HolyArrs may read
+	// ("" means only path pairs).
+	SavePath string
 
 	mu  sync.Mutex
 	low map[string]int64 // folder -> bytes an import needed but could not get
@@ -191,7 +200,7 @@ func (e *Engine) update(ctx context.Context) ([]Result, error) {
 // Check runs every check once and returns the results, without storing.
 func (e *Engine) Check(ctx context.Context) ([]Result, error) {
 	var out []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.waiting, e.backups, e.trailers, e.update} {
+	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.saveFolders, e.waiting, e.clearing, e.backups, e.trailers, e.update} {
 		rs, err := f(ctx)
 		if err != nil {
 			return nil, err
@@ -217,7 +226,7 @@ func (e *Engine) Probe(ctx context.Context, now time.Time) (bool, any, error) {
 		return true, nil, nil
 	}
 	var rs []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.waiting, e.backups, e.trailers} {
+	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.saveFolders, e.waiting, e.clearing, e.backups, e.trailers} {
 		got, err := f(ctx)
 		if err != nil {
 			return true, nil, err
@@ -366,6 +375,10 @@ func label(kind string) string {
 		return "Downloader"
 	case "waiting_downloads":
 		return "downloads waiting for their files"
+	case "save_folder":
+		return "Downloader save folder"
+	case "clear_waiting":
+		return "imported downloads waiting to be cleared"
 	case "backups":
 		return "backups"
 	case "update":
@@ -536,8 +549,12 @@ func inside(p, folder string) bool {
 	return p == folder || strings.HasPrefix(p, folder+string(filepath.Separator))
 }
 
-// sources warns about every Source HolyArrs cannot use right now.
+// sources warns about every Source HolyArrs cannot use right now. With the
+// Sources part off there is nothing to say: their checks go quietly.
 func (e *Engine) sources(ctx context.Context) ([]Result, error) {
+	if e.SourcesOn != nil && !e.SourcesOn() {
+		return nil, nil
+	}
 	ss, err := database.Select[domain.Source](ctx, e.Store.Read(), "sources", "1=1 ORDER BY id")
 	if err != nil {
 		return nil, err
@@ -671,6 +688,7 @@ func (e *Engine) backups(ctx context.Context) ([]Result, error) {
 	switch {
 	case err != nil:
 		r.State, r.Message = Warning, "The backups folder cannot be read"
+	case b.Off:
 	case b.LastErr != "":
 		r.State, r.Message = Error, "The last scheduled backup failed: "+b.LastErr
 	case b.Newest.IsZero() && !b.Started:
@@ -683,7 +701,7 @@ func (e *Engine) backups(ctx context.Context) ([]Result, error) {
 	// Backups do not hold the master key: without a copy of it, the saved
 	// passwords in a backup cannot be opened on a new machine.
 	k := Result{Key: "backups:key", Kind: "backups", Subject: "Backups", State: OK}
-	if err == nil && b.KeyPrint != "" && b.KeyKitPrint != b.KeyPrint {
+	if err == nil && !b.Off && b.KeyPrint != "" && b.KeyKitPrint != b.KeyPrint {
 		k.State, k.Message = Warning, "Download your key kit: Backups don't include the master key"
 	}
 	return []Result{r, k}, nil

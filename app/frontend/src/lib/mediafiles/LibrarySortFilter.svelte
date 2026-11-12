@@ -100,6 +100,7 @@
 		{#if canManage && anyPart}
 			<span class="sf-sep" aria-hidden="true"></span>
 			<a class="sf-o sf-link" href={to('/library/deleted')} onclick={onclose} data-testid="library-deleted"><span class="sf-tick" aria-hidden="true"><Icon name="trash" size={14} /></span><span class="sf-l">{t('mediafiles.sortFilter.recentlyDeleted')}</span>{#if deletedCount}<span class="sf-n">{deletedCount}</span>{/if}</a>
+			<a class="sf-o sf-link" href={to('/library/stats')} onclick={onclose} data-testid="library-stats"><span class="sf-tick" aria-hidden="true"><Icon name="gauge" size={14} /></span><span class="sf-l">{t('library.stats.title')}</span></a>
 		{/if}
 	</section>
 	{#if phone && view === 'posters'}

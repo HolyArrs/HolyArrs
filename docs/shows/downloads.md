@@ -40,6 +40,30 @@ Torrent files are hardlinked when the download and the Library share a disk: the
 A download fills one Version. For a show kept in HD and 4K, each pack goes to its own Version's folder, for example `Copper Valley (2025)` and `Copper Valley (2025) [4K]`.
 :::
 
+## Get a season pack a few episodes at a time
+
+When the only release for a season is a whole-season pack, HolyArrs can take a few episodes from it at a time instead of the whole season. You keep the disk space for what you are about to watch.
+
+1. Open the show and press **Edit**.
+2. Under **Season packs**, choose **Get a few episodes at a time**.
+3. Set **Episodes ahead**, for example 2, and save.
+
+You can also change it in the **Season packs** row on the show's Library tab.
+
+You should see the pack on **Downloads** with a line like "Season pack: episodes 1–2 (2 of 9 taken)". When those episodes are in your Library, the row says **Waiting for next episodes**.
+
+More episodes come from the same pack in two ways:
+
+- Press **Get the next 2 episodes** in the season's **Season tools**. HolyArrs takes that many more.
+- Every 15 minutes HolyArrs asks your Plex and Jellyfin servers which episodes are watched, by anyone on that server. It then takes enough new episodes to keep your number unwatched ahead.
+
+Good to know:
+
+- This works with qBittorrent only. Usenet and the other Downloaders get the whole season as usual.
+- Nothing is ever deleted for you. Watched episodes stay in your Library.
+- Torrent pieces cross the edges between files, so qBittorrent also writes a little of the files next to the ones you take. That uses a little extra disk. Those part files are never placed in your Library.
+- A pack is taken this way only when no single-episode release passes your Pick rules. See [Search for shows](search.md#season-packs).
+
 ## Settle episodes in Review
 
 An episode lands in **Review** (shown as Needs a decision in History) when HolyArrs ran out of releases, or a file it did not place already sits where the episode should go.
@@ -88,6 +112,18 @@ Fix: none needed. After a restart or power cut it finishes the import on its nex
 **Episodes wait in Review because of disk space.**
 Fix: free space on the Library disk, then press **Search again**.
 
+**A whole season came in although the show takes a few episodes at a time.**
+Cause: the release went to Usenet or a Downloader other than qBittorrent.
+Fix: none needed. To take packs a few episodes at a time, add qBittorrent in **Settings > Downloaders**.
+
+**No new episodes come after you watch one.**
+Cause: HolyArrs checks your media servers every 15 minutes, or the server is not connected.
+Fix: wait a few minutes, or press **Get the next 2 episodes** in **Season tools**. Check the server in **Settings > Media servers**.
+
+**A season pack stays on Waiting for next episodes.**
+Cause: every episode ahead is still unwatched, so nothing more is needed yet.
+Fix: none needed. Watch an episode or press **Get the next 2 episodes**.
+
 ## For experts
 
 <details class="ha-more"><summary>Settings reference: Settings > Naming and files > Show names</summary>
@@ -119,6 +155,17 @@ The same page sets the free space an import must leave (default and minimum 100 
 | `Copper.Valley.S01E02E03.1080p.WEB.mkv` | Episodes 2 and 3 |
 | `The.Late.Lamp.Show.2025.03.14.mkv` | The episode that aired that day |
 | `[Group] Starfall Kitchen - 112.mkv` | Running number 112 |
+
+</details>
+
+<details class="ha-more"><summary>How a pack is taken a few episodes at a time</summary>
+
+1. HolyArrs adds the pack to qBittorrent stopped. For a magnet link it waits until qBittorrent knows the file list.
+2. It matches each file to an episode by its name. Files outside the window are set to not download, the window's files to download.
+3. It starts the torrent. If any step fails, the torrent is removed without its data and the next release is tried.
+4. **Get the next episodes** and a watched episode switch on the next files in episode order. The torrent is never added again. Only aired episodes that **Keep up to date** covers are switched on.
+
+The window is the number of switched-on episodes nobody has watched yet. Plex is read with the owner's account, so it counts what the owner watched. Jellyfin and Emby count every user. Packs with several seasons are never taken this way. **A season pack is taken when** and **Season pack or single episodes** on **Settings > Search** do not apply to these shows: a single episode always comes first. If the torrent is removed from qBittorrent, the episodes not yet in your Library go back to looking.
 
 </details>
 

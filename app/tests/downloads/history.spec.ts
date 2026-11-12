@@ -154,7 +154,7 @@ test('alerts: add a webhook with Library moments, send a test, the receiver gets
 	await page.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
 	const card = page.getByTestId('alert').filter({ hasText: 'Home server hook' });
 	await expect(card).toContainText('Webhook');
-	await expect(card).toContainText('Sent to download · In the Library · Renamed');
+	await expect(card).toContainText('Sent to download · Downloaded · Download failed · In the Library · Renamed');
 	await expect(card).not.toContainText('New request');
 	await card.getByRole('button', { name: 'Send a test' }).click();
 	await expect(card.getByTestId('alert-test')).toHaveText('Webhook');

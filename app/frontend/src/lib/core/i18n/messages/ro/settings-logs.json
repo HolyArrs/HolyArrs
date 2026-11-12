@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Jurnale",
+	"settings.logs.download": "Descarcă",
+	"settings.logs.filter": "Filtrează jurnalul",
+	"settings.logs.level": "Nivel",
+	"settings.logs.every": "Toate liniile",
+	"settings.logs.warnings": "Avertismente și erori",
+	"settings.logs.errors": "Doar erori",
+	"settings.logs.text": "Text",
+	"settings.logs.example": "ex.: qBittorrent",
+	"settings.logs.from": "De la",
+	"settings.logs.to": "Până la",
+	"settings.logs.apply": "Aplică",
+	"settings.logs.clear": "Șterge",
+	"settings.logs.lines": "Linii",
+	"settings.logs.newer": "Mai noi",
+	"settings.logs.older": "Mai vechi"
+}

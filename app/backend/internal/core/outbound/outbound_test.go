@@ -176,3 +176,29 @@ func TestStateOpenUntilShowsNextTry(t *testing.T) {
 		t.Fatalf("states = %#v", states)
 	}
 }
+
+// A person's own test of a service goes through at once: Clear ends the
+// wait of an open breaker.
+func TestClearLetsTheNextCallThrough(t *testing.T) {
+	now := time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)
+	r := New([]byte("test process key"), Options{Threshold: 1, Cooldown: time.Hour, Now: func() time.Time { return now }})
+	target := Target{Kind: "downloader", Identity: []string{"http://nzbget:6789"}}
+	op, err := r.Begin(context.Background(), target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	op.Finish(TransientFailure)
+	if _, err := r.Begin(context.Background(), target); !errors.Is(err, ErrSuppressed) {
+		t.Fatalf("open Begin error = %v", err)
+	}
+	r.Clear(target)
+	op, err = r.Begin(context.Background(), target)
+	if err != nil {
+		t.Fatalf("Begin after Clear: %v", err)
+	}
+	op.Finish(Success)
+	if s := r.States(); len(s) != 0 {
+		t.Fatalf("states after a good answer = %#v", s)
+	}
+	r.Clear(Target{Kind: "downloader", Identity: []string{"never seen"}}) // no entry: nothing to do
+}

@@ -96,6 +96,7 @@ var tableOwner = map[string]string{
 	"explore_category_counts": "accounts",
 	"explore_title_counts":    "accounts",
 	"explore_prefs":           "accounts",
+	"user_views":              "accounts",
 
 	// metadata
 	"lookup_cache":   "metadata",
@@ -120,6 +121,9 @@ var tableOwner = map[string]string{
 	"imports":                 "mediafiles",
 	"rename_steps":            "mediafiles",
 	"title_search":            "mediafiles",
+
+	// discover
+	"hidden": "discover",
 
 	// sources
 	"sources":      "sources",
@@ -147,6 +151,7 @@ var tableOwner = map[string]string{
 
 	// mediaservers
 	"media_servers": "mediaservers",
+	"watch_state":   "mediaservers",
 
 	// alerts
 	"alerts": "alerts",
@@ -184,6 +189,8 @@ var tableOwner = map[string]string{
 	"import_created":    "migrate",
 
 	// arrapi
-	"compat_keys": "accounts", // key checks run in auth, below arrapi
-	"compat_tags": "arrapi",
+	"compat_keys":       "accounts", // key checks run in auth, below arrapi
+	"compat_tags":       "arrapi",
+	"compat_title_tags": "arrapi",
+	"compat_hooks":      "arrapi",
 }

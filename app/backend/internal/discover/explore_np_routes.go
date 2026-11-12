@@ -146,6 +146,7 @@ func (hd *Handlers) newRailViews(r *http.Request, rail []newRailDay) ([]newRailD
 		if len(views) == 0 || len(views[0].Items) == 0 {
 			continue
 		}
+		hd.rowsText(r, views)
 		dv := newRailDayView{Day: d.Day, Items: []newRailView{}}
 		for _, v := range views[0].Items {
 			e := extra[v.Kind+":"+v.TMDBID]
@@ -199,6 +200,11 @@ func (hd *Handlers) exploreNew(w http.ResponseWriter, r *http.Request) {
 	me := hd.UserID(r)
 	hd.WarmMusicNew() // the Music tab's lists build in the background (Music on)
 	pg, building := hd.newRows(r.Context(), r, me, sw)
+	// With lookups off the rows never build: say so once instead of "building" forever.
+	if building && len(pg.Rows) == 0 && hd.Modes.Current() == metadata.ModeOff {
+		metadata.WriteSourceOff(w)
+		return
+	}
 	var hero []ItemView
 	if n == 0 {
 		if hero, err = hd.newHero(r, pg, me); err != nil {

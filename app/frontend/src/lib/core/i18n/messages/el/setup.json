@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Επανασύνδεση",
+	"setup.testNow": "Δοκιμή τώρα",
+	"setup.movies": "Ταινίες",
+	"setup.tvShows": "Σειρές",
+	"setup.music": "Μουσική",
+	"setup.subtitles": "Υπότιτλοι",
+	"setup.fullPath": "Χρησιμοποιήστε την πλήρη διαδρομή του φακέλου, όπως {path}.",
+	"setup.folderUsed": "Αυτός ο φάκελος χρησιμοποιείται ήδη ή βρίσκεται μέσα σε έναν που χρησιμοποιείται.",
+	"setup.folderMissing": "Ο φάκελος δεν υπάρχει. Ελέγξτε τη διαδρομή.",
+	"setup.addFolderOrOff": "Προσθέστε έναν φάκελο ή απενεργοποιήστε το.",
+	"setup.notAnswering": "Το HolyArrs δεν ανταποκρίνεται. Δοκιμάστε ξανά σε λίγο.",
+	"setup.addUserPasswordHint": "Προσθέστε το όνομα χρήστη και τον κωδικό.",
+	"setup.folders": "Φάκελοι",
+	"setup.downloader": "Πρόγραμμα λήψης",
+	"setup.source": "Πηγή"
+}

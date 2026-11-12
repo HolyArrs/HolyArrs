@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "اللغة",
 	"subtitles.wants.pick": "اختر لغة",
 	"subtitles.wants.takeOff": "أزل {name}",
-	"subtitles.wants.thisLanguage": "هذه اللغة"
+	"subtitles.wants.thisLanguage": "هذه اللغة",
+	"subtitles.made.translated": "مترجم",
+	"subtitles.made.partial": "مترجم جزئيًا",
+	"subtitles.made.ai": "ترجمة بالذكاء الاصطناعي",
+	"subtitles.made.machine": "ترجمة آلية",
+	"subtitles.wants.translateFrom": "الترجمة من",
+	"subtitles.wants.noTranslate": "بدون ترجمة",
+	"subtitles.panel.picture": "صورة",
+	"subtitles.panel.pictureTitle": "ترجمة مصورة: لا يمكن ترجمتها",
+	"subtitles.panel.translate": "ترجمة",
+	"subtitles.panel.translateFor": "ترجمة ترجمة {name}",
+	"subtitles.panel.translateFrom": "الترجمة من",
+	"subtitles.panel.translateQueued": "جارٍ الترجمة",
+	"subtitles.panel.translateQueuedBody": "تظهر ترجمة {name} هنا عند اكتمالها.",
+	"subtitles.panel.translating": "لم يُعثر على شيء، فالمترجم يصنع واحدة."
 }

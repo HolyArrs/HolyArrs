@@ -31,6 +31,8 @@ type ShowTarget struct {
 	Episodes    []Episode
 	ReleaseName string
 	Naming      *mediafiles.NamingSettings
+	// ByOrder names files by the show's chosen episode order.
+	ByOrder bool
 }
 
 func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episode) string {
@@ -40,6 +42,9 @@ func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episo
 	}
 	ext := filepath.Ext(source)
 	release := strings.TrimSuffix(filepath.Base(source), ext)
+	if t.ByOrder {
+		eps = NamedEpisodes(eps)
+	}
 	f := EpisodeFactsFor(t.Show.Name, t.Show.Year, t.IDs, t.Order, p, release, ext, eps)
 	if !ns.RenameOnImport {
 		return path.Join(t.FolderName, mediafiles.SeasonFolder(ns, f.Season), mediafiles.CleanWith(ns, release)+strings.ToLower(ext))
@@ -59,6 +64,37 @@ func EpisodeFactsFor(show string, year int, ids map[string]string, order string,
 		f.Titles = append(f.Titles, e.Name)
 	}
 	return f
+}
+
+// NamedEpisodes copies eps with each episode on its release-name numbers,
+// for naming files by a chosen episode order.
+func NamedEpisodes(eps []Episode) []Episode {
+	out := make([]Episode, len(eps))
+	for i, e := range eps {
+		e.Ref.Season, e.Ref.Episode = e.Ref.Named()
+		e.Ref.AltSeason, e.Ref.AltEpisode = 0, 0
+		out[i] = e
+	}
+	return out
+}
+
+// orderClash names an episode of eps the chosen order leaves out whose
+// TMDB numbers another episode has in the order, or "" when none does.
+func (t ShowTarget) orderClash(eps []Episode) string {
+	if !t.ByOrder {
+		return ""
+	}
+	for _, e := range eps {
+		if e.Ref.AltSeason > 0 {
+			continue
+		}
+		for _, o := range t.Episodes {
+			if o.Ref.AltSeason == e.Ref.Season && o.Ref.AltEpisode == e.Ref.Episode {
+				return e.Ref.Label()
+			}
+		}
+	}
+	return ""
 }
 
 func labels(eps []Episode) string {
@@ -127,6 +163,10 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []mediafiles.PlanStep {
 			}
 			if len(want) == 0 {
 				s.Method, s.Why = "skip", []string{labels(eps) + " is not filled by this download; left alone"}
+				break
+			}
+			if c := t.orderClash(eps); c != "" {
+				s.Method, s.Why = "refuse", []string{c + " is not in the chosen episode order, and its TMDB number names another episode in that order"}
 				break
 			}
 			s.Method = "hardlink"

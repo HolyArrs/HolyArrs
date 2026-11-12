@@ -22,6 +22,10 @@ import {
 	wantLabel,
 	wishLine,
 	wishProblem,
+	madeLabel,
+	translateBody,
+	translateSources,
+	translatorBody,
 	type SiteKind,
 	type SubtitleRow
 } from './api.ts';
@@ -150,5 +154,38 @@ describe('scores, sync and progress', () => {
 	});
 	it('counts ended Jobs', () => {
 		expect(jobsDone([1, 2, 3], { 1: 'done', 2: 'running', 3: 'failed' })).toBe(2);
+	});
+});
+
+describe('translation', () => {
+	const row = (o: Partial<SubtitleRow>): SubtitleRow => ({ ID: 1, file_id: 1, language: 'en', forced: false, hearing_impaired: false, place: 'beside', score_parts: [], origin: 'found', state: 'present', tries: 0, sync: {}, ...o });
+	it('names what made a subtitle', () => {
+		expect(madeLabel(undefined)).toBe('');
+		expect(madeLabel('ai_translated')).not.toBe('');
+	});
+	it('offers text subtitles in other languages only', () => {
+		const rows = [
+			row({ ID: 1, relative_path: 'a.en.srt' }),
+			row({ ID: 2, place: 'built_in', track_index: 3 }),
+			row({ ID: 3, place: 'built_in', track_index: 4, picture: true }),
+			row({ ID: 4, language: 'pt-br', relative_path: 'a.pt-BR.srt' }),
+			row({ ID: 5, place: 'wish', state: 'wanted' })
+		];
+		expect(translateSources(rows, 'pt-br').map((r) => r.ID)).toEqual([2, 1]);
+	});
+	it('builds the translate request', () => {
+		expect(translateBody({ language: 'pt-br', forced: false }, row({ relative_path: 'a.en.srt' }))).toEqual({ language: 'pt-br', from: 'en', source: 'beside', path: 'a.en.srt' });
+		expect(translateBody({ language: 'pt-br', forced: true }, row({ place: 'built_in', track_index: 2 }))).toEqual({ language: 'pt-br', from: 'en', forced: true, source: 'built_in', track: 2 });
+	});
+	it('keeps the stored key unless one is typed or cleared', () => {
+		const f = { kind: 'openai' as const, url: ' http://x/v1 ', model: 'm', has_key: true, built_in_auto: false, key: '', clear_key: false };
+		expect(translatorBody(f)).toEqual({ kind: 'openai', url: 'http://x/v1', model: 'm', built_in_auto: false });
+		expect(translatorBody({ ...f, key: 'k' }).key).toBe('k');
+		expect(translatorBody({ ...f, clear_key: true }).clear_key).toBe(true);
+		expect(translatorBody({ ...f, kind: 'lingarr' }).model).toBe('');
+	});
+	it('sends the machine-made switch with a site', () => {
+		const k: SiteKind = { kind: 'opensubtitles', name: 'OpenSubtitles', movies: true, shows: true, needs_account: false };
+		expect(siteBody({ ...siteForm(k), machine_made: true }).machine_made).toBe(true);
 	});
 });

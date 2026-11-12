@@ -72,6 +72,11 @@ describe('history', () => {
 		expect(historyStatus(row({ phase: 'done' }), undefined)).toEqual({ text: 'Done', bad: false });
 		expect(historyStatus(row({ phase: 'vanished' }), undefined)).toEqual({ text: 'Failed: removed outside HolyArrs', bad: true });
 	});
+	it('says an imported download is still in its Downloader while its clear waits', () => {
+		const waiting = row({ phase: 'done', clear_waiting: { next_try: '2026-11-11T03:05:00Z', tries: 2, reason: 'busy' } });
+		expect(historyStatus(waiting, undefined)).toEqual({ text: 'Imported', bad: false, still: 'Still in SABnzbd' });
+		expect(historyStatus(row({ phase: 'failed', clear_waiting: { next_try: '', tries: 1 } }), undefined).still).toBeUndefined();
+	});
 });
 
 describe('facts', () => {

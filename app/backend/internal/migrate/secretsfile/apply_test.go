@@ -80,7 +80,7 @@ func TestApplyAndAgain(t *testing.T) {
 
 	// A dry run changes nothing.
 	dry := Apply(ctx, d, f, true)
-	if r := results(dry); r["tvdb"] != tvdbOff || !strings.HasPrefix(r["indexers[1]"], WouldSet) {
+	if r := results(dry); r["tvdb"] != WouldSet || !strings.HasPrefix(r["indexers[1]"], WouldSet) {
 		t.Fatalf("dry %v", r)
 	}
 	if count(t, d, "SELECT count(*) FROM sources")+count(t, d, "SELECT count(*) FROM downloaders")+count(t, d, "SELECT (SELECT count(*) FROM move_credentials) + count(*) FROM settings WHERE key IN ('tmdb_token', 'tvdb_key', 'trakt_client_id')")+
@@ -91,7 +91,7 @@ func TestApplyAndAgain(t *testing.T) {
 	ls := Apply(ctx, d, f, false)
 	r := results(ls)
 	want := map[string]string{
-		"tmdb.read_token": Set, "tmdb.api_key": Empty, "tvdb": tvdbOff, "trakt": Set, "opensubtitles": Set, "subdl": Set, "addic7ed": Empty,
+		"tmdb.read_token": Set, "tmdb.api_key": Empty, "tvdb": Set, "trakt": Set, "opensubtitles": Set, "subdl": Set, "addic7ed": Empty,
 		"jackett": Empty, "nzbget": Empty, "emby": Empty, "plex": Empty, "sonarr (old app)": Empty, "discord": Empty,
 	}
 	for k, v := range want {
@@ -154,15 +154,15 @@ func TestApplyAndAgain(t *testing.T) {
 	}
 
 	// One changed item: only it is set.
-	f2 := parse(t, strings.Replace(fakeFile, "your-trakt-id-3", "your-trakt-id-33", 1))
+	f2 := parse(t, strings.Replace(fakeFile, "your-tvdb-key-2", "your-tvdb-key-22", 1))
 	third := results(Apply(ctx, d, f2, false))
 	for k, v := range third {
-		if strings.HasPrefix(v, Set) && k != "trakt" {
+		if strings.HasPrefix(v, Set) && k != "tvdb" {
 			t.Errorf("also set: %s", k)
 		}
 	}
-	if third["trakt"] != Set {
-		t.Errorf("trakt %q", third["trakt"])
+	if third["tvdb"] != Set {
+		t.Errorf("tvdb %q", third["tvdb"])
 	}
 
 	// A bad item fails on its own; the others stay as they are.

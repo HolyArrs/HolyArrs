@@ -106,18 +106,18 @@ func TestUnusedMetadataAccountFields(t *testing.T) {
 	if !AllOK(ls) || !strings.HasPrefix(r["tvdb.unique_user_key"], "skipped (not used:") || !strings.HasPrefix(r["trakt.redirect_urls"], "skipped (not used:") {
 		t.Fatalf("unused account fields: %v", ls)
 	}
-	for key, want := range map[string]string{TraktClientKey: "your-trakt-client-id"} {
+	for key, want := range map[string]string{TVDBKeyKey: "your-tvdb-api-key", TraktClientKey: "your-trakt-client-id"} {
 		value, err := d.Vault.Setting(ctx, LinksGroup, key)
 		if err != nil || value != want {
 			t.Fatalf("wrong credential selected for %s", key)
 		}
 	}
-	if count(t, d, "SELECT count(*) FROM secrets") != before+1 {
+	if count(t, d, "SELECT count(*) FROM secrets") != before+2 {
 		t.Fatal("unused account values were stored")
 	}
 	noValues(t, d, f, ls)
 	again := results(Apply(ctx, d, f, true))
-	if again["tvdb"] != tvdbOff || again["trakt"] != Unchanged {
+	if again["tvdb"] != Unchanged || again["trakt"] != Unchanged {
 		t.Fatal("unused account fields changed repeat-import behavior")
 	}
 }

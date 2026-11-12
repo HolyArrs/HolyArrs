@@ -186,11 +186,13 @@ func RunDoctor(ctx context.Context, o DoctorOptions) Report {
 	if timeout <= 0 {
 		timeout = 5 * time.Second
 	}
-	client := o.HTTP
-	if client == nil {
-		client = metadataClient()
+	if !metadataModeChecks(ctx, &r, db) {
+		client := o.HTTP
+		if client == nil {
+			client = metadataClient()
+		}
+		networkChecks(ctx, &r, raw, timeout, client, net.DefaultResolver.LookupHost)
 	}
-	networkChecks(ctx, &r, raw, timeout, client, net.DefaultResolver.LookupHost)
 	if w := ProxyWarning(os.Getenv); w != "" {
 		r.add("Network", StatusWarn, w, proxyFix)
 	}

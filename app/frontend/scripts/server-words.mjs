@@ -3,6 +3,8 @@
 // lines, event summaries). serverWords() in lib/core/i18n/server-words.ts maps them
 // back to keys so the page can show them in the picked language.
 // Run: node scripts/server-words.mjs  (then review the diff by hand).
+// Check: node scripts/server-words.mjs --check  writes nothing and fails when the
+// server sends a line the file lacks (the i18n tests run it).
 // Lines already in the file keep their keys (the other languages hold them);
 // a run only adds keys for new lines. Reword an old line by editing its value by hand.
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -13,6 +15,15 @@ const out = new URL('../src/lib/core/i18n/messages/en/server-lines.json', import
 // Words the app never shows (scripts/check-words.mjs); a line holding one is left out.
 const banned = ['Monitored', 'Activity', 'Wanted', 'Cutoff', 'Quality Profile', 'Root Folder', 'Download Client',
 	'Interactive Search', 'Manual Import', 'Grabbed', 'Connections', 'Discover', 'Series'];
+// Codes and names the scan picks up that no one reads as words (setting values,
+// ids, kinds); they stay out of the file and the check.
+const notWords = new Set(['dash', 'each', 'range', 'smart', 'remove', 'normal', 'key', 'movie', 'show', 'artist',
+	'podnapisi', 'gestdown', 'yifysubtitles', 'tvsubtitles', 'bsplayer', 'qBittorrent', 'subtitles:languages', 'subtitle site ', 'tmdb:{v}', 'mbid:{v}']);
+// Lines the scan cannot put together: a control's Event starts with the person's name (setup ControlEvent)
+// and takes its verb from a map; a removal's reason may name who removed it.
+const handLines = { 'Because you have {name}': 'suggest', 'Deleted by hand': 'downloads', 'Marked bad': 'downloads',
+	'{name} paused the stage {stage}': 'accounts', '{name} resumed the stage {stage}': 'accounts',
+	'{name} restarted the stage {stage}': 'accounts', 'Download removed': 'downloads', 'Download removed by {name}': 'downloads' };
 // Files whose fmt.Sprintf lines are display text (card lines, labels).
 const display = /(accounts[\\/]events|discover[\\/](home|explore_np|title_view)|shows[\\/]episode_labels|requests[\\/](episodes|follows\w*|reports)|health[\\/](health|routes_settings_status)|migrate[\\/]plan_\w+|metadata[\\/]moods)\.go$/;
 
@@ -219,7 +230,7 @@ const found = new Map(); // text -> module
 function add(file, t, error = false) {
 	const mod = relative(root, file).split(sep)[0];
 	// arrapi answers Sonarr/Radarr-style apps, not people.
-	if (mod === 'arrapi' || !readable(t, error) || found.has(t)) return;
+	if (mod === 'arrapi' || notWords.has(t) || !readable(t, error) || found.has(t)) return;
 	found.set(t, mod);
 }
 
@@ -257,13 +268,25 @@ for (const file of walk(root)) {
 	}
 }
 
+for (const [t, mod] of Object.entries(handLines)) if (!found.has(t)) found.set(t, mod);
+
 // Keep every line already in the file under its key; give new lines new keys.
 const words = existsSync(out) ? JSON.parse(readFileSync(out, 'utf8')) : {};
 const keys = new Set(Object.keys(words));
 const known = new Set(Object.values(words));
+const fresh = [...found].filter(([text]) => !known.has(text)).sort((a, b) => a[1].localeCompare(b[1]) || a[0].localeCompare(b[0]));
+if (process.argv.includes('--check')) {
+	if (!fresh.length) {
+		console.log(`server words: every line is in the file (${keys.size} lines)`);
+		process.exit(0);
+	}
+	console.log(`server words: ${fresh.length} lines the server sends are missing from ${relative(process.cwd(), out)}:`);
+	for (const [text, mod] of fresh) console.log(`  ${mod}: ${text}`);
+	console.log('Run node scripts/server-words.mjs, then add the new keys to every language (or list a code in notWords).');
+	process.exit(1);
+}
 let added = 0;
-for (const [text, mod] of [...found].sort((a, b) => a[1].localeCompare(b[1]) || a[0].localeCompare(b[0]))) {
-	if (known.has(text)) continue;
+for (const [text, mod] of fresh) {
 	let slug = text.replace(/\{\w+\}/g, ' ').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').slice(0, 6).join('-') || 'line';
 	// A key ending in a secret word looks like a stored secret to the commit scan.
 	if (/(password|passwd|token|secret|key)$/.test(slug)) slug += '-line';

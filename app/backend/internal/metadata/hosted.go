@@ -29,8 +29,10 @@ const EnvServiceURL = "HOLYARRS_METADATA_URL"
 const EnvTMDBKey = "HOLYARRS_TMDB_KEY"
 
 // ServiceURL is the metadata server address: EnvServiceURL, else the default.
+// EnvServiceURL=off is not an address: it picks Your own keys (Modes), and
+// the default address stays only so kept answers can be found.
 func ServiceURL() string {
-	if v := strings.TrimRight(strings.TrimSpace(os.Getenv(EnvServiceURL)), "/"); v != "" {
+	if v := strings.TrimRight(strings.TrimSpace(os.Getenv(EnvServiceURL)), "/"); v != "" && !strings.EqualFold(v, "off") {
 		return v
 	}
 	return DefaultServiceURL
@@ -45,15 +47,64 @@ const TMDBPath = "/v1/tmdb"
 func (s *Service) Base() string { return s.base }
 
 // Register asks the server for a new installation credential. The server
-// limits how often an address may do this; it needs no credential.
+// limits how often an address may do this; it needs no credential. A
+// registration that failed (refused, server error, timeout, unreachable) is
+// not tried again straight away: the wait starts at regWaitMin and doubles to
+// regWaitMax, or is the server's Retry-After when that is longer. Inside the
+// wait the busy answer comes back without asking the server.
 func (s *Service) Register(ctx context.Context) (string, error) {
+	if s.regHold.held(time.Now()) {
+		return "", ErrServiceBusy
+	}
+	tok, err := s.register(ctx)
+	switch {
+	case err == nil:
+		s.regHold.mu.Lock()
+		s.regHold.fails = 0
+		s.regHold.mu.Unlock()
+	case ctx.Err() == nil && !errors.Is(err, ErrSourceOff): // a caller that gave up, or lookups off, says nothing about the server
+		s.regHold.backOff(time.Now())
+	}
+	return tok, err
+}
+
+// ResetRegisterWait ends the wait after failed registrations (a mode picked
+// in Settings), so the next lookup asks the server straight away.
+func (s *Service) ResetRegisterWait() {
+	s.regHold.mu.Lock()
+	s.regHold.until, s.regHold.fails = time.Time{}, 0
+	s.regHold.mu.Unlock()
+}
+
+// regWaitMin and regWaitMax bound the wait after a failed registration.
+const (
+	regWaitMin = 30 * time.Second
+	regWaitMax = 15 * time.Minute
+)
+
+// backOff holds for regWaitMin, doubled for each failure in a row, up to
+// regWaitMax. A longer hold already set (Retry-After) stays.
+func (h *serviceHold) backOff(now time.Time) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	d := regWaitMax
+	if h.fails < 5 {
+		d = regWaitMin << h.fails
+	}
+	h.fails++
+	if u := now.Add(d); u.After(h.until) {
+		h.until = u
+	}
+}
+
+func (s *Service) register(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, s.base+"/v1/installations", http.NoBody)
 	req.Header.Set("Accept", "application/json")
 	resp, err := s.http.Do(req)
 	if err != nil {
-		return "", ErrServiceUnavailable
+		return "", unreached(err)
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 8<<10))
 	_ = resp.Body.Close()
@@ -63,6 +114,9 @@ func (s *Service) Register(ctx context.Context) (string, error) {
 	switch {
 	case resp.StatusCode == http.StatusCreated:
 	case resp.StatusCode == http.StatusTooManyRequests:
+		if ra := resp.Header.Get("Retry-After"); ra != "" {
+			s.regHold.set(ra, body, time.Now())
+		}
 		return "", ErrServiceBusy
 	case resp.StatusCode >= 500 || resp.StatusCode == http.StatusRequestTimeout:
 		return "", ErrServiceUnavailable

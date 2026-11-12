@@ -53,7 +53,7 @@ var writeMethods = map[string]bool{
 
 var readMethods = map[string]bool{
 	"Health": true, "List": true, "Get": true, "Status": true, "Trackers": true, "Peers": true, "Properties": true,
-	"TorrentFiles": true, "ListAll": true, "SaveBase": true, "SyncMain": true, "History": true,
+	"TorrentFiles": true, "ListAll": true, "ListActive": true, "SaveBase": true, "SyncMain": true, "History": true,
 	"Queue": true, "JobStages": true, "ServerStats": true,
 }
 
@@ -391,7 +391,7 @@ func TestSabHistoryCounter(t *testing.T) {
 func adapterEngines(t *testing.T, base string) map[string]Engine {
 	t.Helper()
 	out := map[string]Engine{}
-	for _, kind := range []string{"qbittorrent", "sabnzbd", "transmission", "deluge", "rtorrent", "nzbget"} {
+	for _, kind := range []string{"qbittorrent", "sabnzbd", "transmission", "deluge", "rtorrent", "aria2", "nzbget"} {
 		e, err := (&Manager{}).EngineFor(context.Background(), domain.Downloader{Adapter: kind, URL: base, AllowLocal: true})
 		if err != nil {
 			t.Fatalf("%s: %v", kind, err)

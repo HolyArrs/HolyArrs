@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Dil",
 	"subtitles.wants.pick": "Bir dil seç",
 	"subtitles.wants.takeOff": "{name} çıkar",
-	"subtitles.wants.thisLanguage": "bu dil"
+	"subtitles.wants.thisLanguage": "bu dil",
+	"subtitles.made.translated": "Çevrildi",
+	"subtitles.made.partial": "Kısmen çevrildi",
+	"subtitles.made.ai": "Yapay zekâ çevirisi",
+	"subtitles.made.machine": "Makine çevirisi",
+	"subtitles.wants.translateFrom": "Şuradan çevir",
+	"subtitles.wants.noTranslate": "Çevirme",
+	"subtitles.panel.picture": "Görüntü",
+	"subtitles.panel.pictureTitle": "Görüntü altyazısı: çevrilemez",
+	"subtitles.panel.translate": "Çevir",
+	"subtitles.panel.translateFor": "{name} altyazısı çevir",
+	"subtitles.panel.translateFrom": "Şuradan çevir",
+	"subtitles.panel.translateQueued": "Çevriliyor",
+	"subtitles.panel.translateQueuedBody": "{name} altyazısı bitince burada görünür.",
+	"subtitles.panel.translating": "Bulunamadı, çevirmenin bir tane hazırlıyor."
 }

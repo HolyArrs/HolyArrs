@@ -25,6 +25,9 @@
 	"home.lostIfTheContainer": "пропадёт при пересоздании контейнера",
 	"home.downloads": "Загрузки",
 	"home.waitingForTheirFiles": "ждут свои файлы",
+	"home.waitingToBeCleared": "ждут очистки",
+	"home.noSaveFolder": "нет папки сохранения",
+	"home.noSaveFolderMany": "нет папки сохранения",
 	"home.masterKey": "Главный ключ",
 	"home.noKeyKitSaved": "набор ключа не сохранён",
 	"home.trailers": "Трейлеры",
@@ -266,5 +269,7 @@
 	"home.version": "Версия {version}",
 	"home.metadataServerDown": "Сервер метаданных недоступен",
 	"home.metadataServerOnline": "Сервер метаданных работает",
-	"home.homeCouldNotRead3": "Главной сейчас не удалось прочитать загрузки."
+	"home.homeCouldNotRead3": "Главной сейчас не удалось прочитать загрузки.",
+	"home.off": "Выкл.",
+	"home.sourcesOff": "Выключено в разделе «Части»"
 }

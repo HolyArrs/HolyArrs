@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "আবার সংযুক্ত করুন",
+	"setup.testNow": "এখনই টেস্ট করুন",
+	"setup.movies": "সিনেমা",
+	"setup.tvShows": "টিভি শো",
+	"setup.music": "মিউজিক",
+	"setup.subtitles": "সাবটাইটেল",
+	"setup.fullPath": "ফোল্ডারের পুরো পাথ দিন, যেমন {path}।",
+	"setup.folderUsed": "এই ফোল্ডার আগেই ব্যবহার হচ্ছে, বা এমন একটির ভেতরে আছে যা ব্যবহার হচ্ছে।",
+	"setup.folderMissing": "ওই ফোল্ডার নেই। পাথটি দেখে নিন।",
+	"setup.addFolderOrOff": "একটি ফোল্ডার যোগ করুন বা এটি বন্ধ করুন।",
+	"setup.notAnswering": "HolyArrs সাড়া দিচ্ছে না। একটু পরে আবার চেষ্টা করুন।",
+	"setup.addUserPasswordHint": "ইউজারনেম ও পাসওয়ার্ড দিন।",
+	"setup.folders": "ফোল্ডার",
+	"setup.downloader": "ডাউনলোডার",
+	"setup.source": "সোর্স"
+}

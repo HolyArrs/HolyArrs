@@ -6,6 +6,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // artwork serves a stored Library picture (discover.LibraryArtwork).
@@ -27,7 +28,12 @@ func (a *handlers) serveRemoteArtwork(w http.ResponseWriter, r *http.Request, sr
 	discover.ServeRemoteArtwork(w, r, a.s.Library.Artwork, &a.artMisses, src, send)
 }
 
-func (a *handlers) serverArtLink(u string) string { return discover.ServerArtLink(a.s.ImageBase, u) }
+func (a *handlers) serverArtLink(u string) string {
+	if a.s.MetadataModes.Direct() && metadata.FanartPicture(u) {
+		return u // fanart.tv with the owner's own key (Your own keys)
+	}
+	return discover.ServerArtLink(a.s.ImageBase, u)
+}
 
 func (a *handlers) serverArtwork(w http.ResponseWriter, r *http.Request) {
 	var c *library.ArtworkCache

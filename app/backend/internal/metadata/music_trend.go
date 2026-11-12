@@ -48,7 +48,7 @@ func (s *Service) MusicTrending(ctx context.Context, kind, region string) (Music
 	defer cancel()
 	tok, err := s.access(ctx)
 	if err != nil || tok == "" || strings.ContainsAny(tok, "\r\n") {
-		return out, ErrServiceAccess
+		return out, accessErr(err)
 	}
 	q := url.Values{"kind": {kind}, "region": {region}}
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.base+"/v1/lists/music-trending?"+q.Encode(), nil)
@@ -56,7 +56,7 @@ func (s *Service) MusicTrending(ctx context.Context, kind, region string) (Music
 	req.Header.Set("Accept", "application/json")
 	resp, err := s.doPending(ctx, req)
 	if err != nil {
-		return out, ErrServiceUnavailable
+		return out, unreached(err)
 	}
 	defer resp.Body.Close()
 	switch {

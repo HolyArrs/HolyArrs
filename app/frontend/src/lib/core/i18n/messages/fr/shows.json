@@ -204,5 +204,15 @@
 	"shows.page.mainVersionParen": "(version principale)",
 	"shows.page.keepThem": "Les tenir à jour",
 	"shows.page.leaveThem": "Les laisser désactivées",
-	"shows.page.filesStay": "Les épisodes et fichiers restent."
+	"shows.page.filesStay": "Les épisodes et fichiers restent.",
+	"shows.page.seasonPacks": "Packs de saison",
+	"shows.page.packWhole": "Récupérer la saison entière",
+	"shows.page.packFew": "Récupérer quelques épisodes à la fois",
+	"shows.page.packAhead": "Épisodes d'avance",
+	"shows.page.packHint": "Quand un pack de la saison entière est la seule release, qBittorrent récupère les {n} épisodes suivants. D'autres suivent quand vous appuyez sur « Récupérer les épisodes suivants » ou quand Plex ou Jellyfin en indique un comme vu. Usenet et les autres clients de téléchargement récupèrent la saison entière.",
+	"shows.page.packWholeShort": "Saison entière",
+	"shows.page.packAtATime": "{n} épisodes à la fois",
+	"shows.tools.packNote": "Cette saison vient de son pack, {n} épisodes à la fois.",
+	"shows.tools.getNext": "Récupérer les {n} épisodes suivants",
+	"shows.page.packOneAtATime": "1 épisode à la fois"
 }

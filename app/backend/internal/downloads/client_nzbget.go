@@ -206,7 +206,7 @@ func (n *NZBGet) List(ctx context.Context, category string) ([]Job, error) {
 			out = append(out, match.row.job(match.history))
 		}
 	}
-	n.shareSpeed(ctx, out)
+	n.applyStatus(ctx, out)
 	return out, nil
 }
 
@@ -323,6 +323,52 @@ func (n *NZBGet) rpc(ctx context.Context, method string, params []any, out any) 
 		return fmt.Errorf("nzbget %s: invalid result", method)
 	}
 	return nil
+}
+
+// finishedFolders tells where NZBGet puts finished jobs, as it sees them:
+// its main folder for them first, then for each of cats the category's own
+// folder, or the main one with the category's name added when NZBGet adds it.
+func (n *NZBGet) finishedFolders(ctx context.Context, cats []string) ([]string, error) {
+	var opts []nzbParam
+	if err := n.rpc(ctx, "config", nil, &opts); err != nil {
+		return nil, err
+	}
+	o := make(map[string]string, len(opts))
+	for _, p := range opts {
+		o[strings.ToLower(p.Name)] = p.Value
+	}
+	main := nzbgetExpand(o["destdir"], o["maindir"])
+	var out []string
+	if main != "" {
+		out = append(out, main)
+	}
+	appendName := !strings.EqualFold(strings.TrimSpace(o["appendcategorydir"]), "no")
+	for i := 1; i < 1000; i++ {
+		key := "category" + strconv.Itoa(i)
+		name, ok := o[key+".name"]
+		if !ok {
+			break
+		}
+		if !hasCategory(cats, name) {
+			continue
+		}
+		if dir := nzbgetExpand(o[key+".destdir"], o["maindir"]); dir != "" {
+			out = append(out, dir)
+		} else if appendName && main != "" {
+			out = append(out, joinFolder(main, name))
+		}
+	}
+	return out, nil
+}
+
+// nzbgetExpand puts the main folder in for ${MainDir}, as NZBGet does.
+func nzbgetExpand(v, mainDir string) string {
+	v = strings.TrimSpace(v)
+	const key = "${maindir}"
+	if i := strings.Index(strings.ToLower(v), key); i >= 0 {
+		v = v[:i] + strings.TrimSpace(mainDir) + v[i+len(key):]
+	}
+	return v
 }
 
 func nzbgetID(r AddRequest, attempt int) string {
@@ -525,25 +571,37 @@ func (n *NZBGet) lookup(ctx context.Context, id, category string) (nzbgetMatch, 
 	return nzbgetFind(active, history, id, category)
 }
 
-func (n *NZBGet) shareSpeed(ctx context.Context, jobs []Job) {
-	moving := 0
+// applyStatus reads NZBGet's status once: a paused download queue holds
+// every job waiting or downloading, and the speed is shared among the jobs
+// still moving.
+func (n *NZBGet) applyStatus(ctx context.Context, jobs []Job) {
+	ask := false
 	for _, j := range jobs {
-		if j.State == StateDownloading {
+		ask = ask || j.State == StateDownloading || nzbgetHeld(j)
+	}
+	if !ask {
+		return
+	}
+	var st nzbgetStatus
+	if err := n.rpc(ctx, "status", nil, &st); err != nil {
+		return
+	}
+	moving := 0
+	for i := range jobs {
+		if st.DownloadPaused && nzbgetHeld(jobs[i]) {
+			jobs[i].State = StatePaused
+		}
+		if jobs[i].State == StateDownloading {
 			moving++
 		}
 	}
-	if moving == 0 {
-		return
-	}
-	var st struct {
-		DownloadRate int64 `json:"DownloadRate"`
-	}
-	if err := n.rpc(ctx, "status", nil, &st); err != nil || st.DownloadRate <= 0 {
+	rate := st.rate()
+	if moving == 0 || rate <= 0 {
 		return
 	}
 	for i := range jobs {
 		if jobs[i].State == StateDownloading {
-			jobs[i].Speed = st.DownloadRate / int64(moving)
+			jobs[i].Speed = rate / int64(moving)
 		}
 	}
 }

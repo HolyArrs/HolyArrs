@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs se oprește.",
+	"settings.danger.couldnt": "Nu s-a putut {action}",
+	"settings.danger.title": "Zonă periculoasă",
+	"settings.danger.ownerOnly": "Doar proprietarul și administratorii",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Da, {action}",
+	"settings.danger.cancel": "Anulează",
+	"settings.danger.expires": "Expiră în 60 s",
+	"settings.danger.wholeApp": "Toată aplicația",
+	"settings.danger.intro": "Acestea opresc HolyArrs. Politica de repornire Docker îl pornește din nou în câteva secunde, cu excepția cazului în care politica este <code>no</code>; atunci pornește tu containerul. Fiecare cere mai întâi confirmare.",
+	"settings.danger.restart": "Repornește HolyArrs",
+	"settings.danger.safe": "Repornește în mod sigur",
+	"settings.danger.shutdown": "Oprește",
+	"settings.danger.safeNote": "Pornește o singură dată doar cu autentificarea, Setările și Biblioteca. Folosește-l când un Modul blochează pornirea."
+}

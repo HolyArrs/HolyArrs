@@ -10,6 +10,7 @@ import { toasts } from '#lib/core/toasts.svelte.ts';
 import { glideScroll } from '#lib/core/transitions.ts';
 import type { CalendarEntry } from '#lib/core/types.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { views } from '#lib/core/views.svelte.ts';
 
 export type CalendarAnswer = { dates: CalendarEntry[] | null; my_follows?: number; people?: number };
 
@@ -308,9 +309,10 @@ export function createCalendarScroll(ctx: any) {
 		});
 	}
 
-	// Cards or List: in the address and kept for the session. Switching keeps the same day under the bars: the height is held while the views swap, so the page cannot shrink and scroll up, which would bring the top bar back.
+	// Cards or List: in the address, kept for the session and saved to the account. Switching keeps the same day under the bars: the height is held while the views swap, so the page cannot shrink and scroll up, which would bring the top bar back.
 	function pickView(v: CalendarView) {
 		if (v === ctx.view) return;
+		views.set('calendar.view', v);
 		// Not placed yet (the first load is still on its way): switch only; the load puts the new view on today.
 		if (!ctx.placed) {
 			ctx.view = v;

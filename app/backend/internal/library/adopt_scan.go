@@ -33,6 +33,7 @@ func (s *Service) handleScanLibrary(ctx context.Context, r *jobs.Run) error {
 	if err := database.Get(ctx, s.Store.Read(), "library_folders", r.Job.Subject.ID, &lf); err != nil {
 		return ErrNoFolder
 	}
+	ctx = WithScanProgress(ctx, scanProgress(ctx, r, time.Now))
 	var p AdoptPlan
 	var err error
 	switch lf.Kind {
@@ -62,6 +63,23 @@ func (s *Service) handleScanLibrary(ctx context.Context, r *jobs.Run) error {
 		Summary: fmt.Sprintf("Scanned %s: %d matched, %d unsure, %d unmatched", p.Path, p.Counts["matched"], p.Counts["unsure"], p.Counts["unmatched"]),
 		Data:    map[string]any{"library_folder_id": p.LibraryFolderID, "counts": p.Counts}})
 	return nil
+}
+
+// scanProgressEvery is the least time between two progress saves of a scan.
+const scanProgressEvery = 2 * time.Second
+
+// scanProgress saves a scan's progress as "done/total" on its Job, at most
+// every scanProgressEvery and always when it ends, so the page shows a long
+// scan moving (and keeps waiting for it) without a write per folder.
+func scanProgress(ctx context.Context, r *jobs.Run, now func() time.Time) func(done, total int) {
+	var last time.Time
+	return func(done, total int) {
+		if total <= 0 || (done < total && done > 0 && now().Sub(last) < scanProgressEvery) {
+			return
+		}
+		last = now()
+		_ = r.Progress(ctx, float64(done)/float64(total), strconv.Itoa(done)+"/"+strconv.Itoa(total))
+	}
 }
 
 func (s *Service) handleAdopt(ctx context.Context, r *jobs.Run) error {
@@ -432,8 +450,36 @@ func (s *Service) recordFound(ctx context.Context, lf mediafiles.LibraryFolder, 
 			n++
 			known[strings.ToLower(vid.Path)] = true
 		}
+		if err := s.linkFoundMovie(ctx, v, by); err != nil {
+			return n, err
+		}
 	}
 	return n, nil
+}
+
+// linkFoundMovie links the one found video in a movie Version's folder to
+// its slot when the slot has no file and no running download, as Radarr does
+// with a file another app placed: once the file is there the movie is no
+// longer wanted. A file that does not fit (edition, audio) stays a note.
+func (s *Service) linkFoundMovie(ctx context.Context, v mediafiles.Version, by domain.Actor) error {
+	notes, err := database.Select[mediafiles.File](ctx, s.Store.Read(), "files", "version_id = ? AND origin = 'found' AND state = 'present'", v.ID)
+	if err != nil {
+		return err
+	}
+	var only []mediafiles.File
+	for _, f := range notes {
+		if len(f.SlotIDs) == 0 && !f.Protected {
+			only = append(only, f)
+		}
+	}
+	if len(only) != 1 {
+		return nil
+	}
+	_, err = s.adoptMovieCopy(ctx, v.TitleID, v.ID, CopyAdoption{RelativePath: only[0].RelativePath}, true, by)
+	if errors.Is(err, ErrCopyChoice) {
+		return nil
+	}
+	return err
 }
 
 func (s *Service) handleRescan(ctx context.Context, r *jobs.Run) error {

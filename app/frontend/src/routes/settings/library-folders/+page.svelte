@@ -40,6 +40,42 @@
 	let editLabel = $state('');
 	let busyId = $state<number | null>(null);
 
+	// Change path: the files were already moved; the server checks each one and moves nothing.
+	let moving = $state<number | null>(null);
+	let movePath = $state('');
+	let moveError = $state('');
+	let moveBusy = $state(false);
+	function openMove(f: LibraryFolder) {
+		moving = moving === f.id ? null : f.id;
+		movePath = f.path;
+		moveError = '';
+	}
+	async function changePath(f: LibraryFolder) {
+		moveError = '';
+		const p = movePath.trim();
+		if (!p) {
+			moveError = t('settings.libraryFolders.pathNeeded');
+			return;
+		}
+		if (p === f.path) {
+			moving = null;
+			return;
+		}
+		moveBusy = true;
+		busyId = f.id;
+		try {
+			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}/path`, { path: p });
+			folders = folders.map((x) => (x.id === f.id ? n : x));
+			moving = null;
+			toasts.push(t('settings.libraryFolders.pathChanged'), n.health === 'ok' ? 'ok' : 'info', { body: n.health === 'ok' ? undefined : folderHealth(n.health) });
+		} catch (err) {
+			moveError = message(err);
+		} finally {
+			moveBusy = false;
+			busyId = null;
+		}
+	}
+
 	// Extra import folders: where Import files by hand may also read.
 	let extraText = $state('');
 	let extraLoaded = $state(false);
@@ -137,7 +173,9 @@
 	// Copying on purpose (downloads and media on separate disks): the folder then counts as fine.
 	const copiesOk = (f: LibraryFolder) => f.health === 'no_hardlink' && !!f.copies_expected;
 	const rowTone = (f: LibraryFolder) => (copiesOk(f) ? 'ok' : tone(f.health));
-	const rowHealth = (f: LibraryFolder) => (copiesOk(f) ? t('settings.libraryFolders.copiesExpectedState') : folderHealth(f.health));
+	const rowHealth = (f: LibraryFolder) => (copiesOk(f) ? t('settings.libraryFolders.copiesExpectedState') : f.health === 'ok' ? t('settings.libraryFolders.stateInstant') : folderHealth(f.health));
+	// The one /data folder layout that makes imports instant.
+	const copiesDoc = 'https://docs.holyarrs.com/start/folders/';
 	async function setCopies(f: LibraryFolder, on: boolean) {
 		busyId = f.id;
 		try {
@@ -222,17 +260,30 @@
 				{:else}
 					<div class="top"><span class="name">{f.label || f.path}</span><span class="kind" data-testid="folder-kind">{f.kind === 'show' ? t('settings.libraryFolders.forShows') : f.kind === 'music' ? t('settings.libraryFolders.forMusic') : t('settings.libraryFolders.forMovies')}</span></div>
 				{/if}
-				<div class="where">{shortPath(f.path)}</div>
+				<div class="where"><bdi dir="ltr">{shortPath(f.path)}</bdi></div>
 				{#if f.health_reason && rowTone(f) !== 'ok'}<div class="why {rowTone(f)}">{f.health_reason}</div>{/if}
 			</div>
 			<div class="free"><b>{freeNum(f.free_space)[0]}</b><small>{t('settings.libraryFolders.free', { unit: freeNum(f.free_space)[1] ?? '' })}</small></div>
-			<span class="st {rowTone(f)}"><i></i><span>{rowHealth(f)}</span></span>
+			<span class="st {rowTone(f)}"><i></i><span>{rowHealth(f)}</span>{#if f.health === 'no_hardlink'}<a class="why-link" href={copiesDoc} target="_blank" rel="noopener noreferrer">{t('settings.libraryFolders.whyCopies')}</a>{/if}</span>
 			<div class="acts">
 				<IconButton icon="refresh" label={t('settings.libraryFolders.checkAgain', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => recheck(f)} />
 				{#if f.health === 'no_hardlink'}<Button variant="plain" size="sm" type="button" disabled={busyId === f.id} onclick={() => setCopies(f, !f.copies_expected)}>{f.copies_expected ? t('settings.libraryFolders.warnAgain') : t('settings.libraryFolders.copiesExpected')}</Button>{/if}
 				<Button variant="plain" size="sm" type="button" onclick={() => ((editing = f.id), (editLabel = f.label))}>{t('settings.libraryFolders.rename')}</Button>
+				<IconButton icon="folderMove" label={t('settings.libraryFolders.changePathOf', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} aria-expanded={moving === f.id} onclick={() => openMove(f)} />
 				<IconButton icon="trash" label={t('settings.libraryFolders.removePath', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => remove(f)} />
 			</div>
+			{#if moving === f.id}
+				<form class="mv" onsubmit={(e) => (e.preventDefault(), changePath(f))} aria-label={t('settings.libraryFolders.changePath')}>
+					<label for="mv-{f.id}">{t('settings.libraryFolders.newPath')}</label>
+					<div class="mv-row">
+						<input id="mv-{f.id}" class="input mono" dir="ltr" bind:value={movePath} autocomplete="off" spellcheck="false" disabled={moveBusy} aria-describedby="mv-{f.id}-hint" />
+						<Button variant="primary" size="sm" type="submit" busy={moveBusy} disabled={moveBusy}>{moveBusy ? t('settings.libraryFolders.checkingFiles') : t('settings.libraryFolders.changePath')}</Button>
+						<Button variant="plain" size="sm" type="button" disabled={moveBusy} onclick={() => (moving = null)}>{t('settings.libraryFolders.cancel')}</Button>
+					</div>
+					<p class="hint" id="mv-{f.id}-hint">{t('settings.libraryFolders.changePathHint')}</p>
+					{#if moveError}<p class="form-error" role="alert">{moveError}</p>{/if}
+				</form>
+			{/if}
 		</li>
 	{/snippet}
 	<div class="fl-groups">
@@ -290,12 +341,20 @@
 	.free b { font: 600 15px/1 var(--font-ui); }
 	.free small { color: var(--text-muted); font: 400 12px/1 var(--font-ui); }
 	.st { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font: 500 12px/1 var(--font-ui); white-space: nowrap; }
-	.st i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 18%, transparent); }
+	.st i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 18%, transparent); }
 	.st.wait i { background: var(--wait); box-shadow: 0 0 0 3px color-mix(in srgb, var(--wait) 22%, transparent); }
 	.st.fail i { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
+	.st .why-link { flex: none; color: var(--accent, var(--text)); text-decoration: underline; text-underline-offset: 2px; }
 	.acts { display: flex; align-items: center; gap: 2px; }
 	.ed { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 	.ed .input { max-width: 240px; min-height: 36px; }
+	/* Change path: a full-width line under the row. */
+	.folder .mv { grid-column: 2 / -1; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-top: 6px; }
+	.mv label { color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); }
+	.mv-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+	.mv-row .input { flex: 1 1 220px; min-width: 0; min-height: 36px; }
+	.mv .hint { margin: 0; color: var(--text-muted); font: 400 12px/1.4 var(--font-ui); }
+	.mv .form-error { margin: 0; overflow-wrap: anywhere; }
 	/* Glass sheet shared by the folder rows. */
 	.fl {
 		border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px;
@@ -314,9 +373,9 @@
 	.fl-group h3 .cnt { padding: 3px 8px; border-radius: var(--r-pill); background: var(--surface-2); font-size: 11px; font-variant-numeric: tabular-nums; }
 	.kind { display: none; }
 
-	@media (max-width: 760px) {
-		.folder { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic grow st' 'ic free acts'; row-gap: 6px; }
-		.folder .ic { grid-area: ic; align-self: start; } .folder .grow { grid-area: grow; } .folder .st { grid-area: st; justify-self: end; }
+	@container settings (max-width: 640px) {
+		.folder { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic grow grow' 'ic st st' 'ic free acts'; row-gap: 6px; }
+		.folder .ic { grid-area: ic; align-self: start; } .folder .grow { grid-area: grow; } .folder .st { grid-area: st; justify-self: start; white-space: normal; line-height: 1.3; }
 		.folder .free { grid-area: free; justify-content: flex-start; } .folder .acts { grid-area: acts; justify-self: end; opacity: 1 !important; }
 		.folder .kind { display: none; }
 		.folder .name { white-space: normal; }
@@ -325,7 +384,12 @@
 	/* The folder mark: a plain line icon, no tile. */
 	.fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto auto auto; }
 	.ic, .k-show .ic, .k-music .ic { width: 24px; height: 24px; background: none; box-shadow: none; border-radius: 0; color: color-mix(in srgb, var(--text) 55%, transparent); }
-	@media (max-width: 760px) { .fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto; } }
-	/* Phones: the buttons take their own line, so a long Rename label cannot squeeze the name. */
-	@media (max-width: 480px) { .folder { grid-template-areas: 'ic grow st' 'ic free free' 'ic acts acts'; } .folder .acts { justify-self: start; margin-inline-start: -8px; } }
+	@container settings (max-width: 640px) { .fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto; } }
+	/* Phones: the buttons take their own line at the row's end (change path, then remove, last), so a long Rename label cannot squeeze the name. */
+	/* The state takes its own line too, so a long state never squeezes the name. */
+	@container settings (max-width: 440px) {
+		.folder { grid-template-areas: 'ic grow grow' 'ic st st' 'ic free free' 'ic acts acts'; }
+		.folder .st { justify-self: start; white-space: normal; line-height: 1.3; }
+		.folder .acts { justify-self: end; flex-wrap: wrap; justify-content: flex-end; margin-inline-end: -8px; }
+	}
 </style>

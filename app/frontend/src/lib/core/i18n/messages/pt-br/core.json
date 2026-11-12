@@ -16,7 +16,7 @@
 	"core.format.healthy": "Saudável",
 	"core.format.folderNotFound": "Pasta não encontrada",
 	"core.format.cannotWrite": "Não é possível gravar aqui",
-	"core.format.copiedNoHardlinks": "Funciona, mas os arquivos são copiados (sem links físicos)",
+	"core.format.copiedNoHardlinks": "Cada importação faz uma cópia completa (usa mais espaço)",
 	"core.format.notChecked": "Ainda não verificado",
 	"core.loader.welcome": "Bem-vindo(a), {name}",
 	"core.loader.reconnecting": "Reconectando…",
@@ -54,6 +54,8 @@
 	"core.plain.configDiskWarning": "O disco que guarda a pasta config está com pouco espaço.",
 	"core.plain.configFolder": "/config não está mapeada para uma pasta, então os dados do HolyArrs se perdem quando o contêiner é recriado.",
 	"core.plain.waitingDownloads": "Os downloads estão esperando porque o gerenciador de downloads deles não consegue usar os arquivos.",
+	"core.plain.clearWaiting": "Downloads importados estão esperando a limpeza no gerenciador de downloads deles.",
+	"core.plain.saveFolder": "Um gerenciador de downloads não tem pasta de salvamento, então o HolyArrs não consegue importar os downloads concluídos.",
 	"core.plain.someone": "Alguém da sua casa",
 	"core.plain.keyKitOwner": "O dono deve salvar o kit de chave: os backups não guardam a chave mestra.",
 	"core.plain.keyKitNone": "Nenhum kit de chave salvo: os backups não guardam a chave mestra.",
@@ -142,5 +144,6 @@
 	"core.settings.danger.label": "Zona de perigo",
 	"core.settings.danger.about": "Reiniciar ou desligar",
 	"core.settings.account.label": "Minha conta",
-	"core.settings.account.about": "Senha, duas etapas, dispositivos"
+	"core.settings.account.about": "Senha, duas etapas, dispositivos",
+	"core.api.sourceOff": "Algumas linhas estão desligadas nesta instalação."
 }

@@ -366,8 +366,12 @@
 	"accounts.invite.confirm": "비밀번호 확인",
 	"accounts.invite.joinSignIn": "가입하고 로그인",
 	"accounts.language.label": "언어",
+	"accounts.language.top": "자주 쓰는 언어",
+	"accounts.language.more": "더 많은 언어",
 	"accounts.language.auto": "자동",
 	"accounts.language.hint": "자동은 브라우저 설정을 따릅니다. 내 계정에 저장됩니다.",
 	"accounts.language.saveFailed": "언어를 저장하지 못했습니다",
+	"accounts.language.count.one": "언어 1개",
+	"accounts.language.count.other": "언어 {n}개",
 	"accounts.account.watchEveryone": "소유자가 모두에게 켰습니다. 멈추려면 둘 다 끄세요."
 }

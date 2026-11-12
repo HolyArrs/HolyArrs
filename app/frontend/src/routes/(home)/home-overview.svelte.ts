@@ -1,7 +1,7 @@
 // Home's overview: the picture tiles, the stats and what is coming up.
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { askArtist, askDetails, wantDetails } from '#lib/requests/index.ts';
-import { arrivedTitle, type HomeCard } from './home.ts';
+import { arrivedTitle, upLine, type HomeCard } from './home.ts';
 import { localDay } from './home-line.ts';
 import { SvelteSet } from 'svelte/reactivity';
 import type { Ask } from '#lib/core/types.ts';
@@ -101,10 +101,7 @@ export function createHomeOverview(ctx: Pick<HomeContext, 'manager' | 'kid' | 'h
 		const add = (c: HomeCard, max: number) => {
 			if (seen.has(c.title_id) || out.length >= max) return;
 			seen.add(c.title_id);
-			const [sub, tail] = (c.line ?? '').split(' · ');
-			const outNow = /out now/i.test(tail ?? '');
-			const isToday = c.at?.slice(0, 10) === today;
-			out.push({ key: c.key, c, sub: sub ?? '', when: outNow ? t('home.outNow') : isToday ? t('home.today') : (tail ?? ''), now: outNow || isToday });
+			out.push({ key: c.key, c, ...upLine(c, today) });
 		};
 		for (const c of (ctx.home?.new_seasons ?? []).filter((x) => /out now/i.test(x.line ?? ''))) add(c, 2);
 		for (const c of ctx.home?.soon ?? []) add(c, 6);

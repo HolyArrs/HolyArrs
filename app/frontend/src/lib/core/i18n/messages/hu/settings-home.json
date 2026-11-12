@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Speciális",
+	"settings.home.page": "{group} · oldal",
+	"settings.home.title": "Beállítások",
+	"settings.home.search": "Keresés a beállításokban",
+	"settings.home.matching": "Találatok a beállításokban",
+	"settings.home.noMatch": "Nincs találat",
+	"settings.home.noMatchText": "Próbáljon másik szót, például mappa, kulcs vagy jelszó.",
+	"settings.home.clear": "Keresés törlése"
+}

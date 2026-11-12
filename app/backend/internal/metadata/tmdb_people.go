@@ -169,11 +169,12 @@ type tmdbCredit struct {
 	Popularity   float64 `json:"popularity"`
 	VoteAverage  float64 `json:"vote_average"`
 	VoteCount    int     `json:"vote_count"`
+	GenreIDs     []int64 `json:"genre_ids"`
 }
 
 func (c tmdbCredit) movie(images string) Movie {
 	return (tmdbMovie{ID: c.ID, Title: c.Title, ReleaseDate: c.ReleaseDate, PosterPath: c.PosterPath,
-		tmdbExtras: tmdbExtras{BackdropPath: c.BackdropPath}}).movie(images)
+		tmdbExtras: tmdbExtras{BackdropPath: c.BackdropPath, GenreIDs: c.GenreIDs}}).movie(images)
 }
 
 func (c tmdbCredit) person(images string) Person {

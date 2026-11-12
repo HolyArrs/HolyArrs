@@ -403,6 +403,11 @@ func TestOldAppUnpackerrQueue(t *testing.T) {
 			t.Errorf("sonarr row: %v", row)
 		}
 	}
+	// A page past every page shows the last one, on a 32-bit build too.
+	last := fields(t, "sonarr queue", f.arrOK(f.sonarrKey, "GET", "/sonarr/api/v3/queue?page=9223372036854775807&pageSize=1", "", 200), []string{"page", "records"})
+	if num(last["page"]) != 2 || len(last["records"].([]any)) != 1 {
+		t.Fatalf("queue past every page: %v", last)
+	}
 	q = poll(f.radarrKey, "radarr")
 	rows := arrList(t, "radarr rows", q["records"], 1)
 	if row := fields(t, "unpackerr movie row", rows[0], []string{"title", "status", "protocol", "outputPath", "downloadId", "movieId", "size", "sizeleft", "statusMessages"}); row["status"] != "completed" ||

@@ -80,10 +80,14 @@ class InstallGuides(unittest.TestCase):
                          ":/config", "6262:6262", "unless-stopped"):
                 with self.subTest(want=want):
                     self.assertIn(want, block)
-            for folder in ("/movies", "/tv", "/music", "/downloads"):
-                with self.subTest(folder=folder):
-                    self.assertRegex(block, re.escape(":" + folder) + r"`? *`?#optional")
-            self.assertNotIn(":/data", block)
+            # 1.1.0: the main example mounts one data folder.
+            self.assertIn("/srv/data:/data", block)
+        # Separate mounts stay documented as the optional alternative.
+        sep = text[text.index("- /path/to/movies:/movies"):]
+        for folder in ("/movies", "/tv", "/music", "/downloads"):
+            with self.subTest(folder=folder):
+                self.assertRegex(sep, re.escape(":" + folder) + r" #optional")
+                self.assertRegex(sep, re.escape(":" + folder) + r" `#optional`")
         # Every port, folder and variable in the examples is explained.
         self.assertLess(text.index("## Steps"), text.index("## Settings explained"))
         headings = re.findall(r"^#+ (.+)$", text, re.M)

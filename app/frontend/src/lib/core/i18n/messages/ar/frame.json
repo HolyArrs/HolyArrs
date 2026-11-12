@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "كل الأماكن",
 	"frame.layout.newWord": "جديد",
 	"frame.layout.accountName": "الحساب · {name}",
-	"frame.layout.hostRefused": "<b>لا يمكن حفظ التغييرات على {host}.</b> يحفظ HolyArrs فقط على الأسماء التي تسمح بها. افتحه مرة واحدة بعنوان IP، ثم أضف {host} في الإعدادات › تسجيل الدخول والأمان › أسماء المضيفين المسموحة. لا حاجة لإعادة التشغيل."
+	"frame.layout.hostRefused": "<b>لا يمكن حفظ التغييرات على {host}.</b> يحفظ HolyArrs فقط على الأسماء التي تسمح بها. افتحه مرة واحدة بعنوان IP، ثم أضف {host} في الإعدادات › تسجيل الدخول والأمان › أسماء المضيفين المسموحة. لا حاجة لإعادة التشغيل.",
+	"frame.feeds.clearOne": "تنزيل مستورد لم تتم إزالته",
+	"frame.feeds.clearMany": "{n} تنزيلات مستوردة لم تتم إزالتها",
+	"frame.feeds.clearBody": "يعيد HolyArrs المحاولة تلقائيًا",
+	"frame.feeds.clearNow": "إزالة الآن",
+	"frame.feeds.cleared": "تمت الإزالة من برنامج التنزيل",
+	"frame.feeds.clearStill": "لم تتم الإزالة بعد"
 }

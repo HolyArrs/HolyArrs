@@ -110,7 +110,11 @@ func (h *PartHandlers) partOff(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p, ok := h.partFrom(w, r)
-	if !ok || !h.Confirm(w, r, "turn "+p.Label()+" off (its screens hide, its scheduled work stops and its waiting Jobs wait; its data is kept)") {
+	what := "turn " + p.Label() + " off (its screens hide, its scheduled work stops and its waiting Jobs wait; its data is kept)"
+	if p == parts.Sources {
+		what = "turn Sources off (HolyArrs stops searching on its own; a search you start on a title still runs, and Downloaders and imports keep working)"
+	}
+	if !ok || !h.Confirm(w, r, what) {
 		return
 	}
 	if err := h.Parts.Set(r.Context(), p, false, h.Actor(r)); err != nil {

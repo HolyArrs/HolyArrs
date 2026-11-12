@@ -90,7 +90,7 @@ To turn one on, add its switch to `HOLYARRS_FLAGS`, comma-separated, and restart
 
 ```yaml
 environment:
-  HOLYARRS_FLAGS: "subtitle_sites,alert_channels_more"
+  HOLYARRS_FLAGS: "subtitle_sites,trakt_lists"
 ```
 
 Remove the name and restart to turn it off. Hidden settings come back when you turn it on again.
@@ -100,7 +100,6 @@ Remove the name and restart to turn it off. Hidden settings come back when you t
 | `ai_apps` | Connect AI apps: **Settings > AI apps**, the `/ai` page and its routes |
 | `row_title_stats` | Explore row title statistics in Appearance |
 | `trakt_lists` | Trakt key, Trakt lists and Trakt reviews. TMDB lists stay on |
-| `alert_channels_more` | Telegram, ntfy, Gotify, Pushover and webhook Alerts. Discord and email stay on |
 | `subtitle_sites` | Subtitle sites and subtitle search. Your subtitle language stays on |
 | `emby_signin` | Sign in with Emby. Emby library refresh still works |
 | `go_back` | The **Go back** panel on the Status page. The steps in [Go back](#go-back-to-the-older-version) work without it |
@@ -127,7 +126,7 @@ Before changing stored data, HolyArrs:
 2. Copies each database to `backups`, checks the copy and writes a sha256 file beside it. After 3 failed copies, nothing changes.
 3. Runs each update step on its own and checks it. A failed step is undone; finished steps stay. Start the same version again to carry on from the failed step with the same copy.
 
-After the first good start the copy becomes `holyarrs-backup-pre-update-<time>.zip`, described like "before updating from 1.1.0 to 1.2.0". It shows in **Settings > Backups** and `holyarrs restore --list`. The newest 3 are kept; the backup schedule never removes them. A fresh install or an update that leaves the data alone makes none.
+After the first good start the copy becomes `holyarrs-backup-pre-update-<time>.zip`, described like "before updating from 1.1.0 to 1.2.0". It shows in **Settings > Backups** and `holyarrs restore --list`. The newest 3 are kept; the backup schedule never removes them. A fresh install or an update that leaves the data alone makes none. This copy is made even when **Settings > Backups > How often** is **Off**.
 
 </details>
 

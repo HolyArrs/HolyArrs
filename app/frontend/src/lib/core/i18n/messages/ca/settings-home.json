@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Avançat",
+	"settings.home.page": "{group} · pàgina",
+	"settings.home.title": "Configuració",
+	"settings.home.search": "Cerca a la configuració",
+	"settings.home.matching": "Ajustos coincidents",
+	"settings.home.noMatch": "Cap ajust coincident",
+	"settings.home.noMatchText": "Prova una altra paraula, com carpeta, clau o contrasenya.",
+	"settings.home.clear": "Esborra la cerca"
+}

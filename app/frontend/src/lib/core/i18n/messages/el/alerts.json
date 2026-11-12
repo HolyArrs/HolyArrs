@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Ρυθμίσεις",
+	"alerts.panel.clearAll": "Εκκαθάριση όλων",
+	"alerts.panel.empty": "Δεν υπάρχει τίποτα ακόμη",
+	"alerts.panel.needsAttention": "Χρειάζονται προσοχή",
+	"alerts.panel.recent": "Πρόσφατες",
+	"alerts.panel.remove": "Αφαίρεση: {text}",
+	"alerts.panel.title": "Πρόσφατες ειδοποιήσεις",
+	"alerts.state.manyNeed": "{count} χρειάζονται προσοχή",
+	"alerts.state.ok": "Όλα εντάξει",
+	"alerts.state.oneNeeds": "1 χρειάζεται προσοχή",
+	"alerts.state.unset": "Δεν έχει ρυθμιστεί",
+	"alerts.time.days": "{n}ημ.",
+	"alerts.time.hours": "{n}ώ.",
+	"alerts.time.minutes": "{n}λ.",
+	"alerts.time.now": "τώρα"
+}

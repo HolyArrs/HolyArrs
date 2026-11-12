@@ -79,6 +79,18 @@
 		return t('alerts.time.days', { n: Math.round(s / 86400) });
 	}
 	const live = (p: { action?: unknown; until?: number }) => !!p.action && (!p.until || now <= p.until);
+
+	// A pinned fix that runs in place (Clear now): one try at a time.
+	let running = $state('');
+	async function runPin(f: PinnedAlert) {
+		if (!f.run || running) return;
+		running = f.key;
+		try {
+			await f.run.go();
+		} finally {
+			running = '';
+		}
+	}
 </script>
 
 <svelte:window onpointerdown={alertsPanel.open && !phone ? outside : undefined} onkeydown={key} />
@@ -93,7 +105,11 @@
 					<span class="tx">
 						<span class="t">{serverWords(f.title)}</span>
 						{#if f.body}<span class="b">{serverWords(f.body)}</span>{/if}
-						<a class="act" href={to(f.href)} onclick={() => (alertsPanel.open = false)}>{f.label} ›</a>
+						{#if f.run}
+							<button type="button" class="act" disabled={running === f.key} aria-busy={running === f.key} onclick={() => runPin(f)} data-testid="pin-run">{f.run.label}</button>
+						{:else}
+							<a class="act" href={to(f.href)} onclick={() => (alertsPanel.open = false)}>{f.label} ›</a>
+						{/if}
 					</span>
 				</li>
 			{/each}
@@ -178,6 +194,7 @@
 	time { flex: none; line-height: 20px; font: var(--t-footnote); color: rgb(245 245 247 / 58%); font-variant-numeric: tabular-nums; }
 	.act { align-self: flex-start; margin-top: 6px; padding: 4px 12px; border-radius: 999px; font: var(--t-footnote); font-weight: 600; color: #f5f5f7; background: rgb(255 255 255 / 14%); }
 	.act:hover { background: rgb(255 255 255 / 22%); }
+	.act:disabled { opacity: 0.6; cursor: default; }
 	.x { flex: none; width: 22px; height: 22px; margin-right: -4px; display: grid; place-items: center; border-radius: 50%; color: rgb(245 245 247 / 55%); }
 	.x:hover { color: #f5f5f7; background: rgb(255 255 255 / 12%); }
 	.x:focus-visible, .act:focus-visible, .clear:focus-visible { outline: none; box-shadow: var(--focus-ring); }

@@ -16,7 +16,7 @@
 	"core.format.healthy": "ठीक है",
 	"core.format.folderNotFound": "फ़ोल्डर नहीं मिला",
 	"core.format.cannotWrite": "यहाँ लिख नहीं सकते",
-	"core.format.copiedNoHardlinks": "चलता है, पर फ़ाइलें कॉपी होती हैं (हार्डलिंक नहीं)",
+	"core.format.copiedNoHardlinks": "हर इम्पोर्ट पूरी कॉपी बनाता है (ज़्यादा जगह लेता है)",
 	"core.format.notChecked": "अभी जाँचा नहीं गया",
 	"core.loader.welcome": "स्वागत है, {name}",
 	"core.loader.reconnecting": "दोबारा जुड़ रहा है…",
@@ -54,6 +54,8 @@
 	"core.plain.configDiskWarning": "कॉन्फ़िग फ़ोल्डर वाली डिस्क में जगह कम होती जा रही है।",
 	"core.plain.configFolder": "/config किसी फ़ोल्डर से जुड़ा नहीं है, इसलिए कंटेनर दोबारा बनने पर HolyArrs का डेटा चला जाएगा।",
 	"core.plain.waitingDownloads": "डाउनलोड रुके हैं क्योंकि उनका डाउनलोडर फ़ाइलें इस्तेमाल नहीं कर पा रहा।",
+	"core.plain.clearWaiting": "इंपोर्ट हो चुके डाउनलोड अपने डाउनलोडर से साफ़ किए जाने का इंतज़ार कर रहे हैं।",
+	"core.plain.saveFolder": "एक डाउनलोडर का सेव फ़ोल्डर सेट नहीं है, इसलिए HolyArrs उसके पूरे हुए डाउनलोड इंपोर्ट नहीं कर सकता।",
 	"core.plain.someone": "आपके घर का कोई सदस्य",
 	"core.plain.keyKitOwner": "ओनर को कुंजी किट सेव कर लेनी चाहिए: बैकअप में मास्टर कुंजी नहीं होती।",
 	"core.plain.keyKitNone": "कोई कुंजी किट सेव नहीं है: बैकअप में मास्टर कुंजी नहीं होती।",
@@ -142,5 +144,6 @@
 	"core.settings.danger.label": "ख़तरे वाला हिस्सा",
 	"core.settings.danger.about": "रीस्टार्ट या बंद करें",
 	"core.settings.account.label": "मेरा अकाउंट",
-	"core.settings.account.about": "पासवर्ड, टू-फ़ैक्टर, डिवाइस"
+	"core.settings.account.about": "पासवर्ड, टू-फ़ैक्टर, डिवाइस",
+	"core.api.sourceOff": "इस इंस्टॉल पर कुछ पंक्तियाँ बंद हैं।"
 }

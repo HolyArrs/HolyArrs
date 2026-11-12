@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "语言",
 	"subtitles.wants.pick": "选择语言",
 	"subtitles.wants.takeOff": "移除 {name}",
-	"subtitles.wants.thisLanguage": "这种语言"
+	"subtitles.wants.thisLanguage": "这种语言",
+	"subtitles.made.translated": "已翻译",
+	"subtitles.made.partial": "部分翻译",
+	"subtitles.made.ai": "AI 翻译",
+	"subtitles.made.machine": "机器翻译",
+	"subtitles.wants.translateFrom": "翻译自",
+	"subtitles.wants.noTranslate": "不翻译",
+	"subtitles.panel.picture": "图像",
+	"subtitles.panel.pictureTitle": "图像字幕，无法翻译",
+	"subtitles.panel.translate": "翻译",
+	"subtitles.panel.translateFor": "翻译 {name} 字幕",
+	"subtitles.panel.translateFrom": "翻译自",
+	"subtitles.panel.translateQueued": "正在翻译",
+	"subtitles.panel.translateQueuedBody": "{name} 字幕完成后会显示在这里。",
+	"subtitles.panel.translating": "未找到，翻译工具正在生成。"
 }

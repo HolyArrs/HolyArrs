@@ -11,13 +11,15 @@ Your own services are not listed: Sources, Downloaders, media servers, alert app
 
 Every address below uses HTTPS on port 443. HolyArrs also needs DNS.
 
+HolyArrs connects to these directly. It ignores `HTTP_PROXY`, `HTTPS_PROXY` and `ALL_PROXY`. See [Proxy variables](../reference/env-vars.md#proxy-variables).
+
 ## The metadata server
 
 | Address | `api.holyarrs.com` |
 |---|---|
 | What for | Title, show and music lookups, charts, trailer lists, ratings, Wikipedia details, anime episode maps, extra artwork, and TMDB lookups unless you set your own TMDB key |
 | When | On first start (to get an install token), then whenever a page or job looks something up |
-| Turn off | Not possible. Without it, searches and new details stop; your Library and downloads keep working |
+| Turn off | Pick **Your own keys** or **Off** under **Where details come from** in **Settings > Metadata** (or set `HOLYARRS_METADATA_MODE`). Nothing is sent to it then. See [By choice](#by-choice) |
 | Point elsewhere | `HOLYARRS_METADATA_URL`. Restart after changing |
 
 `holyarrs-api.coderluii.dev` is the server's old address. HolyArrs still loads pictures saved under it, but only while `HOLYARRS_METADATA_URL` is unset. It answers until version 2.
@@ -36,9 +38,24 @@ What the install sends is listed in [Metadata](../library/metadata.md#for-expert
 | `api.github.com`, `raw.githubusercontent.com` | TRaSH Guides profiles | Only when you pick or sync a TRaSH Guides profile | Do not use [TRaSH Guides scores](../library/trash-guides.md) |
 | `plex.tv`, `app.plex.tv` | Sign in with Plex | Only when someone signs in with Plex | Do not use Plex sign-in |
 | `discover.provider.plex.tv` | Plex watchlists | Only when [Plex watchlists](../requests/settings.md#plex-watchlists) are on | Turn Plex watchlists off |
+| `plex.tv`, `community.plex.tv` | Plex friends' watchlists, read with the owner's Plex link | Only when Plex watchlists and **Include Plex friends** are both on | Turn **Include Plex friends** off |
 | `api.trakt.tv` | Trakt lists and Trakt reviews | Only with the `trakt_lists` switch on and a Trakt key saved | Leave the switch off. See [Held-back features](updates.md#held-back-features) |
 
-Music lookups (MusicBrainz, Deezer, Wikipedia) and TVmaze go through the metadata server. Your install does not contact them itself. TheTVDB is not contacted at all; TVDB ids come from TMDB and TVmaze.
+With the HolyArrs server, music lookups (MusicBrainz, Deezer, Wikipedia) and TVmaze go through the metadata server; your install does not contact them itself. TheTVDB is contacted only with your own TheTVDB key and PIN; otherwise TVDB ids come from TMDB and TVmaze.
+
+When someone opens a show's season in a language other than English, the season lookup names that language (for example `language=es-ES`), so the metadata server, or TMDB with your own key, sees which app languages your people use. Title pages and Explore cards send no language.
+
+## By choice
+
+**Settings > Metadata** shows the exact list for the choice in force, under **Addresses for your firewall**.
+
+| Where details come from | Addresses lookups reach |
+|---|---|
+| HolyArrs server | `api.holyarrs.com`, `image.tmdb.org`, `www.youtube.com`, plus `api4.thetvdb.com` and `artworks.thetvdb.com` with a TheTVDB key |
+| Your own keys | Never the metadata server. `api.themoviedb.org` and `image.tmdb.org` (with a TMDB token), `api.tvmaze.com`, `static.tvmaze.com`, `musicbrainz.org`, `api.deezer.com`, `en.wikipedia.org`, `www.youtube.com`; `api.mdblist.com` and `webservice.fanart.tv`/`assets.fanart.tv` with those keys; TheTVDB with its key |
+| Off | None. Pictures and details already saved keep showing |
+
+Music charts, new music rows, streaming Top 10s, Wikipedia facts and anime maps come only from the metadata server, so they are off with your own keys.
 
 ## Your own TMDB key and the metadata server
 

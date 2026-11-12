@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.ar.md">العربية</a> · <a href="README.pt-BR.md">Português</a> · <a href="README.ru.md">Русский</a> · <a href="README.ja.md">日本語</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ko.md">한국어</a> · <a href="README.it.md">Italiano</a> · <a href="README.pl.md">Polski</a> · <a href="README.nl.md">Nederlands</a> · <a href="README.tr.md">Türkçe</a> · <b>Українська</b></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <b>Українська</b> · <a href="LANGUAGES.md">Інші мови</a></p>
 
 <p align="center">
   <picture>
@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent і ruTorrent як завантажувач**, зокрема на сідбоксі. Готові завантаження з Usenet тепер переміщуються в бібліотеку, а не копіюються. [Що нового](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: тепер 44 мовами**, зокрема справа наліво. aria2 працює як завантажувач, а сезонні паки завантажуються по кілька серій. [Що нового](https://holyarrs.com/whats-new/)
 
 > Кожен постер, трейлер і оцінка у твоєму HolyArrs приходять із сервера, який я тримаю й оплачую сам, щоб він лишався безкоштовним для всіх. Якщо HolyArrs зробив твій кіновечір трохи кращим, спонсорство тримає світло увімкненим для всіх нас 💛
 >
@@ -152,7 +150,7 @@ docker compose up -d
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Завантажувачі: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Медіасервери: Plex, Jellyfin, Emby." /></picture>
 
-- **Завантажувачі:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Завантажувачі:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Медіасервери:** Plex, Jellyfin, Emby
 - **Джерела:** будь-який індексер Torznab або Newznab, а також Prowlarr чи Jackett
 - **Переносить твої налаштування з:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -222,7 +220,7 @@ HolyArrs лише читає твої старі застосунки й ніч�
 | Тег | Для чого |
 | :----: | --- |
 | `latest` | Найновіша версія. |
-| `1.0.19` | Одна точна версія. Вона ніколи не змінюється. |
+| `1.1.0` | Одна точна версія. Вона ніколи не змінюється. |
 
 ## Використання
 

@@ -21,6 +21,7 @@ export { default as AskArtistDialog } from './AskArtistDialog.svelte';
 export { default as AskMovieDialog } from './AskMovieDialog.svelte';
 export { default as AskShowDialog } from './AskShowDialog.svelte';
 export { default as QuickAsk } from './QuickAsk.svelte';
+export { default as PlexFriends } from './PlexFriends.svelte';
 export { default as ReportSheet } from './ReportSheet.svelte';
 export { default as ReportsList } from './ReportsList.svelte';
 export { default as RequestsBoard } from './RequestsBoard.svelte';

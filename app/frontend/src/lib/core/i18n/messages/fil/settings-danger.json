@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "Hihinto na ang HolyArrs.",
+	"settings.danger.couldnt": "Hindi nagawang {action}",
+	"settings.danger.title": "Danger zone",
+	"settings.danger.ownerOnly": "Para lang sa owner at mga admin",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Oo, {action}",
+	"settings.danger.cancel": "Kanselahin",
+	"settings.danger.expires": "Mag-e-expire sa 60 s",
+	"settings.danger.wholeApp": "Ang buong app",
+	"settings.danger.intro": "Pinahihinto nito ang HolyArrs. Sisimulan itong muli ng restart policy ng Docker sa loob ng ilang segundo, maliban kung <code>no</code> ang policy; kung gayon, ikaw na ang magsimula ng container. Magtatanong muna ang bawat isa.",
+	"settings.danger.restart": "I-restart ang HolyArrs",
+	"settings.danger.safe": "I-restart sa safe mode",
+	"settings.danger.shutdown": "I-shut down",
+	"settings.danger.safeNote": "Magsisimula nang isang beses na sign-in, Mga Setting at Library lang ang gumagana. Gamitin ito kapag may Bahagi na humaharang sa pagsisimula."
+}
