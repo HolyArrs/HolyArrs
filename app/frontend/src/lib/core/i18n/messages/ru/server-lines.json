@@ -1273,5 +1273,6 @@
 	"server.suggest.because-you-have": "Потому что у вас есть {name}",
 	"server.health.downloader-save-folder": "Папка сохранения загрузчика",
 	"server.downloads.could-not-move-the-imported-download": "Не удалось переместить импортированную загрузку в {cat} в {name}: {error}; HolyArrs попробует снова при следующем импорте",
-	"server.downloads.moved-to-after-import": "Перемещено в {cat} после импорта"
+	"server.downloads.moved-to-after-import": "Перемещено в {cat} после импорта",
+	"server.sources.this-kind-of-title-can-t": "этот вид тайтла нельзя искать"
 }

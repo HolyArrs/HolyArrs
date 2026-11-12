@@ -1273,5 +1273,6 @@
 	"server.suggest.because-you-have": "Jer imate {name}",
 	"server.health.downloader-save-folder": "Mapa za spremanje preuzimatelja",
 	"server.downloads.could-not-move-the-imported-download": "Uvezeno preuzimanje nije se moglo premjestiti u {cat} u {name}: {error}; HolyArrs će pokušati ponovno pri sljedećem uvozu",
-	"server.downloads.moved-to-after-import": "Premješteno u {cat} nakon uvoza"
+	"server.downloads.moved-to-after-import": "Premješteno u {cat} nakon uvoza",
+	"server.sources.this-kind-of-title-can-t": "ovu vrstu naslova nije moguće pretražiti"
 }

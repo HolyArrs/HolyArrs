@@ -1273,5 +1273,6 @@
 	"server.suggest.because-you-have": "Jo jums ir {name}",
 	"server.health.downloader-save-folder": "Lejupielādētāja saglabāšanas mape",
 	"server.downloads.could-not-move-the-imported-download": "Importēto lejupielādi neizdevās pārvietot uz {cat} klientā {name}: {error}; HolyArrs mēģinās vēlreiz nākamajā importā",
-	"server.downloads.moved-to-after-import": "Pēc importa pārvietots uz {cat}"
+	"server.downloads.moved-to-after-import": "Pēc importa pārvietots uz {cat}",
+	"server.sources.this-kind-of-title-can-t": "šāda veida nosaukumu nevar meklēt"
 }

@@ -1273,5 +1273,6 @@
 	"server.suggest.because-you-have": "Pretože máte {name}",
 	"server.health.downloader-save-folder": "Priečinok na ukladanie Sťahovača",
 	"server.downloads.could-not-move-the-imported-download": "Importované sťahovanie sa nepodarilo presunúť do {cat} v {name}: {error}; HolyArrs to skúsi znova pri ďalšom importe",
-	"server.downloads.moved-to-after-import": "Po importe presunuté do {cat}"
+	"server.downloads.moved-to-after-import": "Po importe presunuté do {cat}",
+	"server.sources.this-kind-of-title-can-t": "tento druh titulu sa nedá vyhľadať"
 }

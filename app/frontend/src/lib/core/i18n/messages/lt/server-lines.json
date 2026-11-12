@@ -1273,5 +1273,6 @@
 	"server.suggest.because-you-have": "Nes turite {name}",
 	"server.health.downloader-save-folder": "Atsisiuntėjo išsaugojimo aplankas",
 	"server.downloads.could-not-move-the-imported-download": "Importuoto atsisiuntimo nepavyko perkelti į {cat} kliente {name}: {error}; HolyArrs bandys vėl kito importo metu",
-	"server.downloads.moved-to-after-import": "Po importo perkelta į {cat}"
+	"server.downloads.moved-to-after-import": "Po importo perkelta į {cat}",
+	"server.sources.this-kind-of-title-can-t": "tokio tipo pavadinimo ieškoti negalima"
 }

@@ -1273,5 +1273,6 @@
 	"server.suggest.because-you-have": "{name} sende olduğu için",
 	"server.health.downloader-save-folder": "İndiricinin kayıt klasörü",
 	"server.downloads.could-not-move-the-imported-download": "İçe aktarılan indirme {name} içinde {cat} kategorisine taşınamadı: {error}; HolyArrs bir sonraki içe aktarmada yeniden dener",
-	"server.downloads.moved-to-after-import": "İçe aktarmadan sonra {cat} kategorisine taşındı"
+	"server.downloads.moved-to-after-import": "İçe aktarmadan sonra {cat} kategorisine taşındı",
+	"server.sources.this-kind-of-title-can-t": "bu tür başlık aranamaz"
 }

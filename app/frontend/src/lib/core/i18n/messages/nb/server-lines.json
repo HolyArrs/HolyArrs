@@ -1273,5 +1273,6 @@
 	"server.suggest.because-you-have": "Fordi du har {name}",
 	"server.health.downloader-save-folder": "Nedlasterens lagringsmappe",
 	"server.downloads.could-not-move-the-imported-download": "Den importerte nedlastingen kunne ikke flyttes til {cat} i {name}: {error}; HolyArrs prøver igjen ved neste import",
-	"server.downloads.moved-to-after-import": "Flyttet til {cat} etter import"
+	"server.downloads.moved-to-after-import": "Flyttet til {cat} etter import",
+	"server.sources.this-kind-of-title-can-t": "denne typen tittel kan ikke søkes etter"
 }

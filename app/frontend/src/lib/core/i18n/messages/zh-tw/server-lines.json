@@ -1273,5 +1273,6 @@
 	"server.suggest.because-you-have": "因為你有{name}",
 	"server.health.downloader-save-folder": "下載器儲存資料夾",
 	"server.downloads.could-not-move-the-imported-download": "無法把已匯入的下載移到 {name} 中的 {cat}：{error}；HolyArrs 會在下次匯入時再試",
-	"server.downloads.moved-to-after-import": "匯入後已移到 {cat}"
+	"server.downloads.moved-to-after-import": "匯入後已移到 {cat}",
+	"server.sources.this-kind-of-title-can-t": "無法搜尋這類標題"
 }

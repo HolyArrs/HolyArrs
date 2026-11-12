@@ -1273,5 +1273,6 @@
 	"server.suggest.because-you-have": "Karena kamu punya {name}",
 	"server.health.downloader-save-folder": "Folder simpan Pengunduh",
 	"server.downloads.could-not-move-the-imported-download": "Unduhan yang diimpor tidak bisa dipindahkan ke {cat} di {name}: {error}; HolyArrs akan mencoba lagi pada impor berikutnya",
-	"server.downloads.moved-to-after-import": "Dipindahkan ke {cat} setelah impor"
+	"server.downloads.moved-to-after-import": "Dipindahkan ke {cat} setelah impor",
+	"server.sources.this-kind-of-title-can-t": "jenis judul ini tidak bisa dicari"
 }

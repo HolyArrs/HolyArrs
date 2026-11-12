@@ -1273,5 +1273,6 @@
 	"server.suggest.because-you-have": "{name} を持っているので",
 	"server.health.downloader-save-folder": "ダウンローダーの保存先フォルダー",
 	"server.downloads.could-not-move-the-imported-download": "インポート済みのダウンロードを {name} の {cat} へ移動できませんでした：{error}。次回のインポートで HolyArrs が再度試します",
-	"server.downloads.moved-to-after-import": "インポート後に {cat} へ移動しました"
+	"server.downloads.moved-to-after-import": "インポート後に {cat} へ移動しました",
+	"server.sources.this-kind-of-title-can-t": "この種類のタイトルは検索できません"
 }

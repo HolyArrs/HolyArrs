@@ -1273,5 +1273,6 @@
 	"server.suggest.because-you-have": "உங்களிடம் {name} இருப்பதால்",
 	"server.health.downloader-save-folder": "பதிவிறக்கி சேமிக்கும் கோப்புறை",
 	"server.downloads.could-not-move-the-imported-download": "இறக்குமதியான பதிவிறக்கத்தை {name} இல் {cat} க்கு நகர்த்த முடியவில்லை: {error}; அடுத்த இறக்குமதியில் HolyArrs மீண்டும் முயலும்",
-	"server.downloads.moved-to-after-import": "இறக்குமதிக்குப் பின் {cat} க்கு நகர்த்தப்பட்டது"
+	"server.downloads.moved-to-after-import": "இறக்குமதிக்குப் பின் {cat} க்கு நகர்த்தப்பட்டது",
+	"server.sources.this-kind-of-title-can-t": "இந்த வகைத் தலைப்பைத் தேட முடியாது"
 }

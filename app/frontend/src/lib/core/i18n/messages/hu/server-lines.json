@@ -1273,5 +1273,6 @@
 	"server.suggest.because-you-have": "Mert megvan neked: {name}",
 	"server.health.downloader-save-folder": "Letöltő mentési mappája",
 	"server.downloads.could-not-move-the-imported-download": "Az importált letöltést nem sikerült áthelyezni ide: {cat} ({name}): {error}; a HolyArrs a következő importáláskor újra próbálja",
-	"server.downloads.moved-to-after-import": "Importálás után áthelyezve ide: {cat}"
+	"server.downloads.moved-to-after-import": "Importálás után áthelyezve ide: {cat}",
+	"server.sources.this-kind-of-title-can-t": "ilyen típusú címet nem lehet keresni"
 }

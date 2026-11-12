@@ -1273,5 +1273,6 @@
 	"server.suggest.because-you-have": "Perché hai {name}",
 	"server.health.downloader-save-folder": "Cartella di salvataggio del downloader",
 	"server.downloads.could-not-move-the-imported-download": "Impossibile spostare il download importato in {cat} su {name}: {error}; HolyArrs riproverà alla prossima importazione",
-	"server.downloads.moved-to-after-import": "Spostato in {cat} dopo l'importazione"
+	"server.downloads.moved-to-after-import": "Spostato in {cat} dopo l'importazione",
+	"server.sources.this-kind-of-title-can-t": "questo tipo di titolo non può essere cercato"
 }

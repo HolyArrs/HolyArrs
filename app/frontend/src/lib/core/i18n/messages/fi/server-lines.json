@@ -1273,5 +1273,6 @@
 	"server.suggest.because-you-have": "Koska sinulla on {name}",
 	"server.health.downloader-save-folder": "Lataajan tallennuskansio",
 	"server.downloads.could-not-move-the-imported-download": "Tuotua latausta ei voitu siirtää luokkaan {cat} lataajassa {name}: {error}; HolyArrs yrittää uudelleen seuraavassa tuonnissa",
-	"server.downloads.moved-to-after-import": "Siirretty luokkaan {cat} tuonnin jälkeen"
+	"server.downloads.moved-to-after-import": "Siirretty luokkaan {cat} tuonnin jälkeen",
+	"server.sources.this-kind-of-title-can-t": "tämäntyyppistä nimikettä ei voi hakea"
 }
