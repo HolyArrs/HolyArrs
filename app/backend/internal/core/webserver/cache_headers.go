@@ -7,7 +7,7 @@ import "net/http"
 // follow it), and a private one (a Kid's) is never reused without asking
 // again. Others get cache ("" for none).
 func CacheHeaders(w http.ResponseWriter, cache string, private bool) {
-	w.Header().Set("Vary", "Cookie, Authorization, X-HolyArrs-Language")
+	w.Header().Set("Vary", "Cookie, Authorization, X-HolyArrs-Language, Accept-Language")
 	if private {
 		cache = "private, no-cache"
 	}
