@@ -11,7 +11,7 @@ Import your music, subtitle languages, Sources and Downloaders. The steps match 
 
 1. Open **Settings > Import from other apps** and click **Add an app** for each app.
 2. Type the address and API key, or the backup path, and click **Check connection**. For qBittorrent, type the user name and password, or its API key on version 5.2 and later.
-3. Read each app, then go through **Choose**, **Try it** and **Import**. You should see each app's groups in **Choose**.
+3. Read each app, then go through **What to import** and **Import**. You should see each app's groups in **What to import**.
 
 ## Lidarr
 
