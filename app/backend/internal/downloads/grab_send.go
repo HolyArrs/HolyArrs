@@ -92,6 +92,14 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		return "", false, errors.New("the Release's Source could not be read")
 	}
 	allowLocal := src.AllowLocal
+	var hdr http.Header
+	if m.SourceHeader != nil {
+		h, err := m.SourceHeader(ctx, src)
+		if err != nil {
+			return "", false, err
+		}
+		hdr = sourceHeaderFor(src.URL, link, h)
+	}
 	if d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "aria2" || d.Adapter == "nzbget" {
 		if !strings.HasPrefix(link, "magnet:") && src.ProxyURL != "" {
 			return "", false, errors.New("this Downloader cannot yet fetch Release files through a Source proxy")
@@ -110,7 +118,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	// download can be followed.
 	var file []byte
 	noHash := d.Adapter == "qbittorrent" && hash == "" && linkHash(link) == ""
-	if (d.Adapter == "qbittorrent" || d.Adapter == "sabnzbd") && (!allowLocal || noHash) && !strings.HasPrefix(link, "magnet:") {
+	if (d.Adapter == "qbittorrent" || d.Adapter == "sabnzbd") && (!allowLocal || noHash || hdr != nil) && !strings.HasPrefix(link, "magnet:") {
 		var rt http.RoundTripper
 		if src.ProxyURL != "" {
 			if m.SourceTransport == nil {
@@ -125,7 +133,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			limit = sabMaxNZB
 		}
 		var magnet string
-		if file, magnet, err = fetchGrabLink(ctx, link, limit, rt, sourceLocalHost(src.URL, allowLocal)); err == nil && magnet != "" {
+		if file, magnet, err = fetchGrabLinkHeader(ctx, link, limit, rt, sourceLocalHost(src.URL, allowLocal), hdr); err == nil && magnet != "" {
 			link, _, err = safeMagnet(magnet, allowLocal)
 		}
 		if err != nil {
@@ -138,7 +146,11 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	// here and the magnet or file is sent; if that fails the link is sent as before.
 	torrentAdapter := d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "aria2" || d.Adapter == "qbittorrent" && src.ProxyURL == ""
 	if torrentAdapter && file == nil && !strings.HasPrefix(link, "magnet:") {
-		link, file = prefetchTorrent(ctx, link, allowLocal, sourceLocalHost(src.URL, allowLocal))
+		link, file = prefetchTorrentHeader(ctx, link, allowLocal, sourceLocalHost(src.URL, allowLocal), hdr)
+		if hdr != nil && file == nil && !strings.HasPrefix(link, "magnet:") {
+			// The Downloader has no cookie, so the bare link would fail there.
+			return "", false, errors.New("the Release file could not be read from its Source")
+		}
 		if hash == "" {
 			hash = linkHash(link)
 		}

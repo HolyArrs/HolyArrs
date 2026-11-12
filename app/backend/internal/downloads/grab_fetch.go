@@ -24,6 +24,12 @@ var (
 )
 
 func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTripper, localHost string) (file []byte, magnet string, err error) {
+	return fetchGrabLinkHeader(ctx, raw, limit, rt, localHost, nil)
+}
+
+// fetchGrabLinkHeader is fetchGrabLink with extra request headers, such as a
+// site's sign-in cookie (see sourceHeaderFor).
+func fetchGrabLinkHeader(ctx context.Context, raw string, limit int64, rt http.RoundTripper, localHost string, hdr http.Header) (file []byte, magnet string, err error) {
 	u, err := url.Parse(raw)
 	if err != nil || u.Host == "" || u.User != nil || (u.Scheme != "http" && u.Scheme != "https") {
 		return nil, "", errors.New("the Release file needs an http or https address without a sign-in")
@@ -70,6 +76,9 @@ func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTr
 	// Sites behind Cloudflare refuse Go's default User-Agent; a proxied
 	// Source's transport would add this too, but a plain one would not.
 	req.Header.Set("User-Agent", sources.UserAgent)
+	for k, v := range hdr {
+		req.Header[k] = v
+	}
 	resp, err := h.Do(req)
 	if err != nil {
 		if ctx.Err() != nil {
@@ -106,6 +115,19 @@ func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTr
 	return b, "", nil
 }
 
+// sourceHeaderFor gives hdr only when link is on the Source's own site, so a
+// sign-in cookie never goes to another address. Go's client also drops it
+// on a redirect to another site.
+func sourceHeaderFor(sourceURL, link string, hdr http.Header) http.Header {
+	su, err1 := url.Parse(sourceURL)
+	lu, err2 := url.Parse(link)
+	if len(hdr) == 0 || err1 != nil || err2 != nil || su.Hostname() == "" ||
+		!strings.EqualFold(strings.TrimSuffix(su.Hostname(), "."), strings.TrimSuffix(lu.Hostname(), ".")) {
+		return nil
+	}
+	return hdr
+}
+
 // sourceLocalHost is the host and port a Source on the home network may be
 // fetched from; other local addresses stay refused.
 func sourceLocalHost(sourceURL string, allowLocal bool) string {
@@ -123,7 +145,11 @@ func sourceLocalHost(sourceURL string, allowLocal bool) string {
 // prefetchTorrent reads a torrent link without following a magnet redirect. It
 // returns the magnet, or the link with the file, or the link alone if the read fails.
 func prefetchTorrent(ctx context.Context, link string, allowLocal bool, localHost string) (string, []byte) {
-	file, magnet, err := fetchGrabLink(ctx, link, torrentFetchMax, nil, localHost)
+	return prefetchTorrentHeader(ctx, link, allowLocal, localHost, nil)
+}
+
+func prefetchTorrentHeader(ctx context.Context, link string, allowLocal bool, localHost string, hdr http.Header) (string, []byte) {
+	file, magnet, err := fetchGrabLinkHeader(ctx, link, torrentFetchMax, nil, localHost, hdr)
 	if err != nil {
 		return link, nil
 	}

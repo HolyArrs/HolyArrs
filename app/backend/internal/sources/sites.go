@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
@@ -499,4 +500,28 @@ func (c *Client) siteTest(ctx context.Context) (int, error) {
 	}
 	items, err := c.siteSearch(ctx, q, c.cfg.Observe)
 	return len(items), err
+}
+
+// FileHeader gives the headers src's own site needs to hand out a Release
+// file: the IPTorrents sign-in cookie. Download links from a cookie-only
+// search carry no passkey, so the Downloader could not fetch them; HolyArrs
+// fetches the file with this cookie and sends the file instead. Nil for
+// every other Source, and the cookie is never put in a link.
+func FileHeader(ctx context.Context, src domain.Source, sec SecretReader) (http.Header, error) {
+	if src.Extra[extraSiteKind] != "iptorrents" {
+		return nil, nil
+	}
+	cfg, err := ConfigFor(ctx, src, sec)
+	if err != nil {
+		return nil, err
+	}
+	if c := iptKeys(cfg.APIKey).cookie(); c != "" {
+		return http.Header{"Cookie": {c}}, nil
+	}
+	return nil, nil
+}
+
+// FileHeaders is FileHeader reading keys from sec, as the grab step asks.
+func FileHeaders(sec SecretReader) func(context.Context, domain.Source) (http.Header, error) {
+	return func(ctx context.Context, src domain.Source) (http.Header, error) { return FileHeader(ctx, src, sec) }
 }

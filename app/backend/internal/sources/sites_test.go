@@ -10,6 +10,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // siteServer serves one saved fixture and records each request.
@@ -226,5 +228,27 @@ func TestSiteSourceAdd(t *testing.T) {
 	raw := string(do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"IPT","format":"site","site":"iptorrents","api_key":"uid=1; pass=secretcookie"}`, 201))
 	if strings.Contains(raw, "secretcookie") {
 		t.Fatalf("key shown %s", raw)
+	}
+}
+
+type oneSecret string
+
+func (s oneSecret) Get(context.Context, int64) (string, error) { return string(s), nil }
+
+// FileHeader gives the IPTorrents cookie (without the RSS key) for fetching
+// a Release file, and nothing for other Sources or a key-only IPTorrents.
+func TestFileHeaderIPTorrentsCookie(t *testing.T) {
+	ref := int64(1)
+	ipt := domain.Source{URL: "https://iptorrents.com", Format: "site", Extra: map[string]string{"site": "iptorrents"}, SecretRef: &ref}
+	h, err := FileHeader(context.Background(), ipt, oneSecret("uid=1234; pass=cookiepass; tp=passkey99"))
+	if err != nil || h.Get("Cookie") != "uid=1234; pass=cookiepass" {
+		t.Fatalf("cookie %q, %v", h.Get("Cookie"), err)
+	}
+	if h, _ := FileHeader(context.Background(), ipt, oneSecret("u=1234; tp=passkey99")); h != nil {
+		t.Fatalf("key only: %v", h)
+	}
+	knaben := domain.Source{URL: "https://knaben.org", Format: "site", Extra: map[string]string{"site": "knaben"}, SecretRef: &ref}
+	if h, _ := FileHeader(context.Background(), knaben, oneSecret("uid=1; pass=x")); h != nil {
+		t.Fatalf("knaben: %v", h)
 	}
 }
