@@ -75,15 +75,16 @@
 					}
 					var early = (window.__holyarrsEarly = { at: Date.now(), asks: {} });
 					// lib/core/api.ts: titles and synopses in the saved language; none saved, the one i18n browserLocale shows (English when the app lacks the browser's).
-					var sl = saved('holyarrs-lang'), shown = ' en de es fr it pt-br nl pl ru uk tr ar hi ja ko zh-cn ';
+					var sl = saved('holyarrs-lang'), shown = ' en es pt-br pt-pt fr de it nl sv nb da fi ru uk pl cs hu ro el sk bg sr hr ca lt lv et is zh-cn zh-tw ja ko hi bn ta id ms fil vi th tr he fa ar ', alias = { no: 'nb', nn: 'nb', iw: 'he', 'in': 'id', tl: 'fil', sh: 'sr' };
 					if (!/^[a-z]{2,3}(-[a-z]{2})?$/.test(sl || '')) {
 						sl = 'en';
 						var bl = navigator.languages || [];
 						for (var j = 0; j < bl.length; j++) {
 							var l = String(bl[j]).toLowerCase(), b = l.split('-')[0];
 							if (shown.indexOf(' ' + l + ' ') >= 0) { sl = l; break; }
-							if (b === 'pt') { sl = 'pt-br'; break; }
-							if (b === 'zh') { sl = 'zh-cn'; break; }
+							if (b === 'pt') { sl = /^pt(-br)?$/.test(l) ? 'pt-br' : 'pt-pt'; break; }
+							if (b === 'zh') { sl = /^(tw|hk|mo|hant)/.test(l.slice(3)) ? 'zh-tw' : 'zh-cn'; break; }
+							if (alias[b]) { sl = alias[b]; break; }
 							if (shown.indexOf(' ' + b + ' ') >= 0) { sl = b; break; }
 						}
 					}
