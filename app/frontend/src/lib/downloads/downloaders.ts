@@ -14,6 +14,20 @@ export interface PathMap {
 	ours: string;
 }
 
+// samePathPair says both sides of a path pair name the same folder (a
+// trailing slash does not count; on Windows-style paths neither does case).
+// Such a pair renames nothing, but it is still kept: its HolyArrs side tells
+// HolyArrs where the Downloader's files are.
+export function samePathPair(p: PathMap): boolean {
+	const norm = (x: string) => {
+		x = x.trim();
+		if (x.includes('\\') || /^[a-zA-Z]:/.test(x)) x = x.replaceAll('\\', '/').toLowerCase();
+		return x.replace(/\/+/g, '/').replace(/(.)\/$/, '$1');
+	};
+	const a = norm(p.theirs);
+	return a !== '' && a === norm(p.ours);
+}
+
 export interface DownloaderView {
 	id: number;
 	name: string;

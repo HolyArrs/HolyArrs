@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Шлях завантажувача",
 	"settings.downloaders.ourPath": "Шлях HolyArrs",
 	"settings.downloaders.addPair": "Додати пару шляхів",
+	"settings.downloaders.samePair": "Обидва шляхи однакові, тож ця пара нічого не змінює. Але вона підказує HolyArrs, де лежать файли цього клієнта, тому її можна залишити.",
 	"settings.downloaders.change": "Змінити {name}",
 	"settings.downloaders.whichApp": "Який застосунок",
 	"settings.downloaders.torrents": "(торенти)",

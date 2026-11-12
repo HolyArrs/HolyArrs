@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "ডাউনলোডারের পাথ",
 	"settings.downloaders.ourPath": "HolyArrs-এর পাথ",
 	"settings.downloaders.addPair": "একটি পাথ জোড়া যোগ করুন",
+	"settings.downloaders.samePair": "দুটি পথ একই, তাই এই জোড়া কিছুই বদলায় না। তবুও এটি HolyArrs-কে জানায় এই ডাউনলোডারের ফাইল কোথায় আছে, তাই এটি রাখতে পারেন।",
 	"settings.downloaders.change": "{name} বদলান",
 	"settings.downloaders.whichApp": "কোন অ্যাপ",
 	"settings.downloaders.torrents": "(টরেন্ট)",

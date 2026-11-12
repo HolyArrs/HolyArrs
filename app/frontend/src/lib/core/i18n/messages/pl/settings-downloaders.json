@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Ścieżka Downloadera",
 	"settings.downloaders.ourPath": "Ścieżka HolyArrs",
 	"settings.downloaders.addPair": "Dodaj parę ścieżek",
+	"settings.downloaders.samePair": "Obie ścieżki są takie same, więc ta para niczego nie zmienia. Nadal mówi HolyArrs, gdzie są pliki tego klienta, więc możesz ją zostawić.",
 	"settings.downloaders.change": "Zmień: {name}",
 	"settings.downloaders.whichApp": "Która aplikacja",
 	"settings.downloaders.torrents": "(torrenty)",

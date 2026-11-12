@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "下載器中的路徑",
 	"settings.downloaders.ourPath": "HolyArrs 中的路徑",
 	"settings.downloaders.addPair": "新增一組路徑",
+	"settings.downloaders.samePair": "兩個路徑相同，所以這一組不會替換任何內容。它仍會告訴 HolyArrs 這個下載器的檔案在哪裡，因此可以保留。",
 	"settings.downloaders.change": "更改 {name}",
 	"settings.downloaders.whichApp": "哪個應用程式",
 	"settings.downloaders.torrents": "（種子）",

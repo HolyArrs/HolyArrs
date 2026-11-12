@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Път на програмата за изтегляне",
 	"settings.downloaders.ourPath": "Път в HolyArrs",
 	"settings.downloaders.addPair": "Добавяне на двойка пътища",
+	"settings.downloaders.samePair": "Двата пътя са еднакви, така че тази двойка не преименува нищо. Тя все пак казва на HolyArrs къде са файловете на този клиент, така че можете да я запазите.",
 	"settings.downloaders.change": "Промяна на {name}",
 	"settings.downloaders.whichApp": "Кое приложение",
 	"settings.downloaders.torrents": "(торенти)",

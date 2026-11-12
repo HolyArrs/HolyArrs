@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "مسار برنامج التنزيل",
 	"settings.downloaders.ourPath": "مسار HolyArrs",
 	"settings.downloaders.addPair": "أضف زوج مسارات",
+	"settings.downloaders.samePair": "المساران متطابقان، لذا لا يغيّر هذا الزوج أي اسم. لكنه يخبر HolyArrs بمكان ملفات هذا التنزيل، فيمكنك إبقاؤه.",
 	"settings.downloaders.change": "تغيير {name}",
 	"settings.downloaders.whichApp": "أي تطبيق",
 	"settings.downloaders.torrents": "(تورنت)",

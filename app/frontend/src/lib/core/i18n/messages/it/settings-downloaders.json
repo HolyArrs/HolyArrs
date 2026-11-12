@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Percorso del downloader",
 	"settings.downloaders.ourPath": "Percorso di HolyArrs",
 	"settings.downloaders.addPair": "Aggiungi una coppia di percorsi",
+	"settings.downloaders.samePair": "I due percorsi sono uguali, quindi questa coppia non cambia nulla. Indica comunque a HolyArrs dove sono i file di questo client, quindi puoi tenerla.",
 	"settings.downloaders.change": "Modifica {name}",
 	"settings.downloaders.whichApp": "Quale app",
 	"settings.downloaders.torrents": "(torrent)",

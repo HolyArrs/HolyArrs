@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Laluan Pemuat turun",
 	"settings.downloaders.ourPath": "Laluan HolyArrs",
 	"settings.downloaders.addPair": "Tambah pasangan laluan",
+	"settings.downloaders.samePair": "Kedua-dua laluan sama, jadi pasangan ini tidak menukar apa-apa. Ia masih memberitahu HolyArrs di mana fail pemuat turun ini, jadi anda boleh menyimpannya.",
 	"settings.downloaders.change": "Ubah {name}",
 	"settings.downloaders.whichApp": "Apl yang mana",
 	"settings.downloaders.torrents": "(torrent)",

@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Nedladdarens sökväg",
 	"settings.downloaders.ourPath": "HolyArrs sökväg",
 	"settings.downloaders.addPair": "Lägg till ett sökvägspar",
+	"settings.downloaders.samePair": "Båda sökvägarna är lika, så det här paret ändrar ingenting. Det talar ändå om för HolyArrs var klientens filer ligger, så du kan behålla det.",
 	"settings.downloaders.change": "Ändra {name}",
 	"settings.downloaders.whichApp": "Vilken app",
 	"settings.downloaders.torrents": "(torrenter)",

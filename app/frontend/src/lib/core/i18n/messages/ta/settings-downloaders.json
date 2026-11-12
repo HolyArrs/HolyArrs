@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "பதிவிறக்கியின் பாதை",
 	"settings.downloaders.ourPath": "HolyArrs இன் பாதை",
 	"settings.downloaders.addPair": "பாதை இணையைச் சேர்",
+	"settings.downloaders.samePair": "இரண்டு பாதைகளும் ஒன்றே, எனவே இந்த ஜோடி எதையும் மாற்றாது. ஆனாலும் இந்த பதிவிறக்கியின் கோப்புகள் எங்கே என்று HolyArrs-க்கு சொல்கிறது, எனவே இதை வைத்திருக்கலாம்.",
 	"settings.downloaders.change": "{name} ஐ மாற்று",
 	"settings.downloaders.whichApp": "எந்த ஆப்",
 	"settings.downloaders.torrents": "(டொரண்டுகள்)",

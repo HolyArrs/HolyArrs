@@ -58,6 +58,7 @@ export { removeFilesWords } from './downloaders.ts';
 export { removeStart } from './downloaders.ts';
 export { resetActiveDownloads } from './active.svelte.ts';
 export { rowName } from './downloaders.ts';
+export { samePathPair } from './downloaders.ts';
 export { rowPath } from './downloaders.ts';
 export { searchShortcut } from './keys.ts';
 export { sizeFields } from './pick-rules.ts';

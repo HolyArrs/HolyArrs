@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "İndiricinin yolu",
 	"settings.downloaders.ourPath": "HolyArrs'ın yolu",
 	"settings.downloaders.addPair": "Yol çifti ekle",
+	"settings.downloaders.samePair": "İki yol da aynı, bu yüzden bu çift hiçbir şeyi değiştirmez. Yine de HolyArrs'a bu indiricinin dosyalarının nerede olduğunu söyler, bu yüzden tutabilirsiniz.",
 	"settings.downloaders.change": "{name} değiştir",
 	"settings.downloaders.whichApp": "Hangi uygulama",
 	"settings.downloaders.torrents": "(torrent'ler)",

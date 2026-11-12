@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Lejupielādētāja ceļš",
 	"settings.downloaders.ourPath": "HolyArrs ceļš",
 	"settings.downloaders.addPair": "Pievienot ceļu pāri",
+	"settings.downloaders.samePair": "Abi ceļi ir vienādi, tāpēc šis pāris neko nemaina. Tas tomēr pasaka HolyArrs, kur atrodas šī klienta faili, tāpēc varat to paturēt.",
 	"settings.downloaders.change": "Mainīt: {name}",
 	"settings.downloaders.whichApp": "Kura lietotne",
 	"settings.downloaders.torrents": "(torenti)",

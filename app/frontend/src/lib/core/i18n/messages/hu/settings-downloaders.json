@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "A Letöltő útvonala",
 	"settings.downloaders.ourPath": "A HolyArrs útvonala",
 	"settings.downloaders.addPair": "Útvonalpár hozzáadása",
+	"settings.downloaders.samePair": "A két útvonal azonos, így ez a pár semmit sem nevez át. Ettől még megmondja a HolyArrsnak, hol vannak ennek a letöltőnek a fájljai, így megtarthatod.",
 	"settings.downloaders.change": "{name} módosítása",
 	"settings.downloaders.whichApp": "Melyik alkalmazás",
 	"settings.downloaders.torrents": "(torrentek)",

@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Path ng Downloader",
 	"settings.downloaders.ourPath": "Path ng HolyArrs",
 	"settings.downloaders.addPair": "Magdagdag ng pares ng path",
+	"settings.downloaders.samePair": "Pareho ang dalawang path, kaya walang binabago ang pares na ito. Sinasabi pa rin nito sa HolyArrs kung nasaan ang mga file ng downloader na ito, kaya puwede mo itong itago.",
 	"settings.downloaders.change": "Baguhin ang {name}",
 	"settings.downloaders.whichApp": "Aling app",
 	"settings.downloaders.torrents": "(mga torrent)",

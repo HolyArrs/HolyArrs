@@ -13,7 +13,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { emptyForm, formBody, formFrom, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
+	import { emptyForm, samePathPair, formBody, formFrom, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -344,6 +344,7 @@
 				<input id="pm-ours-{i}" class="input mono" bind:value={p.ours} placeholder="/downloads" />
 			</Field>
 		</div>
+		{#if samePathPair(p)}<p class="hint" data-testid="pm-same-{i}">{t('settings.downloaders.samePair')}</p>{/if}
 	{/each}
 	<Button variant="plain" type="button" style="margin-top: var(--s-3)" onclick={() => form.path_map.push({ theirs: '', ours: '' })}>{t('settings.downloaders.addPair')}</Button>
 </details>

@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "다운로더의 경로",
 	"settings.downloaders.ourPath": "HolyArrs의 경로",
 	"settings.downloaders.addPair": "경로 쌍 추가",
+	"settings.downloaders.samePair": "두 경로가 같아서 이 쌍은 아무것도 바꾸지 않습니다. 그래도 이 다운로더의 파일 위치를 HolyArrs에 알려 주므로 그대로 두어도 됩니다.",
 	"settings.downloaders.change": "{name} 변경",
 	"settings.downloaders.whichApp": "어떤 앱",
 	"settings.downloaders.torrents": "(토렌트)",
