@@ -43,7 +43,7 @@ describe('format', () => {
 		expect(tone('downloading')).toBe('wait');
 		expect(tone('whatever')).toBe('idle');
 		expect(words('needs_a_decision')).toBe('Needs a decision');
-		expect(folderHealth('no_hardlink')).toContain('copied');
+		expect(folderHealth('no_hardlink')).toContain('full copy');
 		expect(greeting(9)).toBe('Good morning');
 		expect(greeting(20)).toBe('Good evening');
 	});

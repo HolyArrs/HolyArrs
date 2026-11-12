@@ -55,8 +55,6 @@ export interface Pick {
 	has_file?: boolean;
 }
 
-export type Mode = 'copy' | 'move';
-
 // Starts from the scanner guess; no guess means no pick.
 export function startPick(f: ByHandFile): Pick | null {
 	const g = f.guess;
@@ -101,12 +99,13 @@ export function startTicked(f: ByHandFile, p: Pick | null): boolean {
 }
 
 // Builds the import request from ticked files that have a valid pick.
-export function itemsFor(files: ByHandFile[], picks: Record<string, Pick | null>, ticked: Record<string, boolean>, mode: Mode) {
-	const out: { path: string; title_id: number; version_id?: number; season?: number; episode?: number; mode: Mode }[] = [];
+// No mode is sent: files are placed like automatic imports (a link when possible, else a real copy).
+export function itemsFor(files: ByHandFile[], picks: Record<string, Pick | null>, ticked: Record<string, boolean>) {
+	const out: { path: string; title_id: number; version_id?: number; season?: number; episode?: number }[] = [];
 	for (const f of files) {
 		const p = picks[f.path] ?? null;
 		if (!ticked[f.path] || !p || blocker(f, p)) continue;
-		const item: (typeof out)[number] = { path: f.path, title_id: p.title_id, mode };
+		const item: (typeof out)[number] = { path: f.path, title_id: p.title_id };
 		if (p.version_id) item.version_id = p.version_id;
 		if (p.title_kind === 'show') {
 			item.season = p.season;
@@ -120,7 +119,7 @@ export function itemsFor(files: ByHandFile[], picks: Record<string, Pick | null>
 // Plain words for what happened to one file.
 export function resultLine(r: ByHandResult): string {
 	if (r.outcome === 'placed') {
-		const how = r.placed_by === 'move' ? t('mediafiles.byHand.moved') : r.placed_by === 'copy' ? t('mediafiles.byHand.copied') : r.placed_by === 'hardlink' ? t('mediafiles.byHand.linked') : t('mediafiles.byHand.recorded');
+		const how = r.placed_by === 'copy' ? t('mediafiles.byHand.copied') : r.placed_by === 'hardlink' ? t('mediafiles.byHand.linked') : t('mediafiles.byHand.recorded');
 		return r.error ? `${how}. ${r.error}` : how;
 	}
 	return t('mediafiles.byHand.outcome', { outcome: r.outcome === 'failed' ? t('mediafiles.byHand.failed') : t('mediafiles.byHand.notImported'), why: r.error || t('mediafiles.byHand.noReason') });

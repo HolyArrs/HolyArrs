@@ -74,11 +74,13 @@ A Library folder must exist, be a folder, be a full path, be writable, and not s
 
 <details class="ha-more"><summary>Extra import folders</summary>
 
-**Library > Import files by hand** reads, copies and moves files only inside:
+**Library > Import files by hand** reads and places files only inside:
 
 - your Library folders,
 - the folders your Downloaders save into, as HolyArrs sees them: `HOLYARRS_SAVE_PATH` and the HolyArrs side of each Downloader path pair,
 - the **Extra import folders** on **Settings > Library folders**.
+
+Files are placed like automatic imports: a link when the file and the Library folder are on the same drive (no extra space used), otherwise a real copy. The original stays where it was.
 
 Type one full path per line, such as `/imports` or `D:\Imports`. Up to 32. A whole disk such as `/` or `C:\` is refused.
 
