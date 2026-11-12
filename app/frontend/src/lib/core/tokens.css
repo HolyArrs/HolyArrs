@@ -148,7 +148,7 @@
   --shadow-modal: 0 24px 64px rgb(0 0 0 / 24%);
   --ring-dark: 0 0 0 0 transparent;
   --seg-thumb: #ffffff;
-  /* A control that is off fades, but its words keep 3:1 or more. */
+  /* A control that is off fades enough to read as off, but stays more readable than the old fade. */
   --disabled-opacity: .6;
   color-scheme: light;
 }
