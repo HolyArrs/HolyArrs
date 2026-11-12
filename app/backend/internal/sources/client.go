@@ -522,13 +522,15 @@ func (c *Client) Search(ctx context.Context, q Query) ([]Item, error) {
 			}
 		}
 	}
+	// The answers are the site's newest releases, so a failed title search
+	// gives nothing rather than them.
 	v, _, err = searchValues(q, *caps, false)
 	if err != nil {
-		return items, nil
+		return nil, nil
 	}
 	byName, err := c.searchWith(ctx, q, *caps, v)
 	if err != nil {
-		return items, nil
+		return nil, err
 	}
 	// No id answer names the title under any of its names: the site ignored
 	// the id, so its answers are its newest releases. Keep the title search.
