@@ -97,6 +97,7 @@ var loopOwners = map[string]Owner{
 	"jobs_io":          Core,
 	"jobs_heavy":       Core,
 	"jobs_migrate":     Core,
+	"jobs_translate":   Core,
 	"stranded_imports": Media,
 	"pack_watched":     Media,
 	"gates":            movies,
