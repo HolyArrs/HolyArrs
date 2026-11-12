@@ -67,6 +67,11 @@ func (b *builder) people(s *Snapshot) {
 			switch p {
 			case "ADMIN", "REQUEST", "AUTO_APPROVE", "MANAGE_REQUESTS", "MANAGE_SETTINGS", "AUTO_APPROVE_4K":
 				continue
+			case "AUTO_APPROVE_4K_MOVIE", "AUTO_APPROVE_4K_TV":
+				// Both halves together became the 4K permission above.
+				if has("AUTO_APPROVE_4K_MOVIE") && has("AUTO_APPROVE_4K_TV") {
+					continue
+				}
 			}
 			dropped = append(dropped, clip(p, 40))
 		}
