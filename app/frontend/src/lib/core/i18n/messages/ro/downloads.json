@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "ucraineană",
 	"downloads.row.imported": "Importat",
 	"downloads.row.stillIn": "Încă în {app}",
-	"downloads.dp.openDownloaders": "Deschide Programele de descărcare"
+	"downloads.dp.openDownloaders": "Deschide Programele de descărcare",
+	"downloads.hl.notMoved": "Nu a fost mutat după import"
 }

@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "۰ این بررسی را خاموش می‌کند؛ در غیر این صورت ۵ تا ۱۴۴۰.",
 	"settings.downloaders.crawlKbps": "کندتر از (KB/s)",
 	"settings.downloaders.crawlHours": "به مدت (ساعت)",
-	"settings.downloaders.crawlHint": "۰ در هرکدام بررسی کندی را خاموش می‌کند."
+	"settings.downloaders.crawlHint": "۰ در هرکدام بررسی کندی را خاموش می‌کند.",
+	"settings.downloaders.categoryAfterImport": "دسته پس از وارد کردن",
+	"settings.downloaders.categoryAfterImportHint": "پس از وارد شدن تورنت، HolyArrs آن را به این دسته می‌برد. برای ماندن در دسته اصلی خالی بگذارید.",
+	"settings.downloaders.ownOnly": "فقط موارد HolyArrs را نشان بده",
+	"settings.downloaders.ownOnlyHint": "موارد برنامه‌های دیگر در این دانلودر پنهان می‌شوند و HolyArrs آن‌ها را تغییر نمی‌دهد."
 }

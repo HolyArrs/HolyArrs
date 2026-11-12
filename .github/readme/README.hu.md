@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: az rTorrent és a ruTorrent mint Letöltő**, seedboxokon is. A kész Usenet-letöltések mostantól átkerülnek a Médiatárba, nem másolódnak. [Nézd meg, mi újság](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: már 44 nyelven**, jobbról balra is. Az aria2 letöltőként működik, az évadcsomagok pedig néhány részenként töltődnek le. [Újdonságok](https://holyarrs.com/whats-new/)
 
 > A HolyArrsodban minden poszter, trailer és értékelés egy általam üzemeltetett és fizetett szerverről jön, hogy mindenkinek ingyenes maradhasson. Ha a HolyArrs egy kicsit jobbá tette a filmes estédet, egy szponzoráció mindannyiunk számára életben tartja a projektet 💛
 >
@@ -222,7 +220,7 @@ Az image-ek a Docker Hubon vannak, [`holyarrs/holyarrs`](https://hub.docker.com/
 | Címke | Mire használd |
 | :----: | --- |
 | `latest` | A legújabb verzió. |
-| `1.0.19` | Egy pontos verzió. Sosem változik. |
+| `1.1.0` | Egy pontos verzió. Sosem változik. |
 
 ## Használat
 

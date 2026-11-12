@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19：支持 rTorrent 和 ruTorrent 作为下载器**，种子盒也可以。完成的 Usenet 下载现在会移动到媒体库，而不是复制。 [新功能](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0：现已支持 44 种语言**，包括从右到左的语言。aria2 可作为下载器使用，整季资源包每次只下载几集。[查看新功能](https://holyarrs.com/whats-new/)
 
 > 你的 HolyArrs 里每一张海报、每一段预告片和每一个评分，都来自我自己运营、自己付费的服务器，所以它对所有人都免费。如果 HolyArrs 让你的电影之夜更好了一点，赞助一下，就能为我们所有人留着这盏灯 💛
 >
@@ -222,7 +220,7 @@ HolyArrs 只读取你的旧应用，不会改动它们里面的任何东西，�
 | 标签 | 用途 |
 | :----: | --- |
 | `latest` | 最新版本。 |
-| `1.0.19` | 固定的某一个版本，永远不会变。 |
+| `1.1.0` | 固定的某一个版本，永远不会变。 |
 
 ## 用法
 

@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent og ruTorrent sem niðurhalsforrit**, líka fyrir seedbox. Kláruð Usenet-niðurhöl flytjast nú yfir í safnið þitt í stað þess að vera afrituð. [Sjáðu hvað er nýtt](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: nú á 44 tungumálum**, líka frá hægri til vinstri. aria2 virkar sem niðurhalsforrit og þáttaraðapakkar sækjast nokkrir þættir í einu. [Sjáðu hvað er nýtt](https://holyarrs.com/whats-new/)
 
 > Hvert veggspjald, hver stikla og hver einkunn í HolyArrs kemur frá server sem ég rek og borga sjálfur, svo að það haldist ókeypis fyrir alla. Ef HolyArrs gerði bíókvöldið aðeins betra heldur styrktaraðili ljósunum kveiktum fyrir okkur öll 💛
 >
@@ -222,7 +220,7 @@ Image eru á Docker Hub sem [`holyarrs/holyarrs`](https://hub.docker.com/r/holya
 | Tag | Notaðu það fyrir |
 | :----: | --- |
 | `latest` | Nýjustu útgáfuna. |
-| `1.0.19` | Eina tiltekna útgáfu. Hún breytist aldrei. |
+| `1.1.0` | Eina tiltekna útgáfu. Hún breytist aldrei. |
 
 ## Notkun
 

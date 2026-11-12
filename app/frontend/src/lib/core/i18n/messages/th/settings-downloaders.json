@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 คือปิดการตรวจสอบนี้ ไม่เช่นนั้น 5 ถึง 1440",
 	"settings.downloaders.crawlKbps": "ช้ากว่า (KB/s)",
 	"settings.downloaders.crawlHours": "นาน (ชั่วโมง)",
-	"settings.downloaders.crawlHint": "0 ในช่องใดช่องหนึ่งจะปิดการตรวจสอบความช้า"
+	"settings.downloaders.crawlHint": "0 ในช่องใดช่องหนึ่งจะปิดการตรวจสอบความช้า",
+	"settings.downloaders.categoryAfterImport": "หมวดหลังนำเข้า",
+	"settings.downloaders.categoryAfterImportHint": "เมื่อนำเข้าทอร์เรนต์แล้ว HolyArrs จะย้ายไปยังหมวดนี้ เว้นว่างไว้เพื่อให้อยู่ในหมวดหลัก",
+	"settings.downloaders.ownOnly": "แสดงเฉพาะรายการของ HolyArrs",
+	"settings.downloaders.ownOnlyHint": "รายการของแอปอื่นในโปรแกรมดาวน์โหลดนี้จะถูกซ่อน และ HolyArrs จะไม่เปลี่ยนแปลง"
 }

@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent dan ruTorrent sebagai pemuat turun**, termasuk seedbox. Muat turun Usenet yang siap kini dialihkan ke Pustaka anda, bukan disalin. [Lihat perkara baharu](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: kini dalam 44 bahasa**, termasuk kanan ke kiri. aria2 berfungsi sebagai pemuat turun, dan pek musim dimuat turun beberapa episod pada satu masa. [Lihat perkara baharu](https://holyarrs.com/whats-new/)
 
 > Setiap poster, treler dan skor dalam HolyArrs anda datang daripada pelayan yang saya jalankan dan bayar sendiri, supaya ia kekal percuma untuk semua orang. Jika HolyArrs menjadikan malam menonton filem anda sedikit lebih baik, seorang penaja membantu menghidupkan lampu untuk kita semua 💛
 >
@@ -222,7 +220,7 @@ Imej berada di Docker Hub sebagai [`holyarrs/holyarrs`](https://hub.docker.com/r
 | Teg | Gunakan untuk |
 | :----: | --- |
 | `latest` | Keluaran terbaharu. |
-| `1.0.19` | Satu versi tepat. Ia tidak pernah berubah. |
+| `1.1.0` | Satu versi tepat. Ia tidak pernah berubah. |
 
 ## Penggunaan
 

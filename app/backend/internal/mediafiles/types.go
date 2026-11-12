@@ -283,6 +283,10 @@ type File struct {
 	Role         string         `db:"role"` // main, subtitle, artwork, info, lyrics
 	ParentFileID *int64         `db:"parent_file_id"`
 	State        string         `db:"state"` // present, missing, gone, replaced
+	// LeftoverReason says why a found file fills no episode (a key the app
+	// translates); LeftoverDismissed keeps it out of the way.
+	LeftoverReason    *string `db:"leftover_reason"`
+	LeftoverDismissed bool    `db:"leftover_dismissed"`
 }
 
 // Pressing is one specific release of an album.

@@ -1272,5 +1272,10 @@
 	"server.downloads.marked-bad": "已标记为损坏",
 	"server.suggest.because-you-have": "因为你有{name}",
 	"server.health.downloader-save-folder": "下载器保存文件夹",
+	"server.downloads.could-not-move-the-imported-download": "无法把已导入的下载移到 {name} 中的 {cat}：{error}；HolyArrs 会在下次导入时再试",
+	"server.downloads.moved-to-after-import": "导入后已移到 {cat}",
+	"server.library.files-matched-by-hand": "{name}：已手动匹配 {n} 个文件",
+	"server.library.no-such-file-in-this-title": "此作品中没有该文件",
+	"server.library.send-1-to-2000-files": "请发送 1 到 2000 个文件",
 	"server.sources.this-kind-of-title-can-t": "无法搜索这类标题"
 }

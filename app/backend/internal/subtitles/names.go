@@ -1,12 +1,16 @@
 package subtitles
 
 import (
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
 
 // Linking this package in hands the library its rules for subtitle file names.
-func init() { library.UseSubtitleNames(Names{}) }
+func init() {
+	library.UseSubtitleNames(Names{})
+	importer.UseLanguages(NormLanguage)
+}
 
 // Names tells the library which files beside a video are its subtitles.
 type Names struct{}

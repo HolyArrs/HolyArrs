@@ -1272,5 +1272,10 @@
 	"server.downloads.marked-bad": "סומן כפגום",
 	"server.suggest.because-you-have": "כי יש לך את {name}",
 	"server.health.downloader-save-folder": "תיקיית השמירה של המוריד",
+	"server.downloads.could-not-move-the-imported-download": "לא ניתן היה להעביר את ההורדה שיובאה אל {cat} ב־{name}: {error}; HolyArrs ינסה שוב בייבוא הבא",
+	"server.downloads.moved-to-after-import": "הועבר אל {cat} אחרי הייבוא",
+	"server.library.files-matched-by-hand": "{name}: {n} קבצים הותאמו ידנית",
+	"server.library.no-such-file-in-this-title": "אין קובץ כזה בכותר הזה",
+	"server.library.send-1-to-2000-files": "יש לשלוח בין 1 ל־2000 קבצים",
 	"server.sources.this-kind-of-title-can-t": "אי אפשר לחפש כותר מהסוג הזה"
 }

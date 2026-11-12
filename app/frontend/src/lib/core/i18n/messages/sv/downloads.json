@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "Ukrainska",
 	"downloads.row.imported": "Importerad",
 	"downloads.row.stillIn": "Finns kvar i {app}",
-	"downloads.dp.openDownloaders": "Öppna Nedladdare"
+	"downloads.dp.openDownloaders": "Öppna Nedladdare",
+	"downloads.hl.notMoved": "Inte flyttad efter import"
 }

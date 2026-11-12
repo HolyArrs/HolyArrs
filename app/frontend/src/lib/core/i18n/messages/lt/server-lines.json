@@ -1272,5 +1272,10 @@
 	"server.downloads.marked-bad": "Pažymėta kaip bloga",
 	"server.suggest.because-you-have": "Nes turite {name}",
 	"server.health.downloader-save-folder": "Atsisiuntėjo išsaugojimo aplankas",
+	"server.downloads.could-not-move-the-imported-download": "Importuoto atsisiuntimo nepavyko perkelti į {cat} kliente {name}: {error}; HolyArrs bandys vėl kito importo metu",
+	"server.downloads.moved-to-after-import": "Po importo perkelta į {cat}",
+	"server.library.files-matched-by-hand": "{name}: rankiniu būdu susieti failai: {n}",
+	"server.library.no-such-file-in-this-title": "tokio failo šiame pavadinime nėra",
+	"server.library.send-1-to-2000-files": "siųskite nuo 1 iki 2000 failų",
 	"server.sources.this-kind-of-title-can-t": "tokio tipo pavadinimo ieškoti negalima"
 }

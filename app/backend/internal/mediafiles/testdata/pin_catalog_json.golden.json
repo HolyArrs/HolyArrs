@@ -108,7 +108,9 @@
   "CheckedAt": null,
   "Role": "",
   "ParentFileID": null,
-  "State": ""
+  "State": "",
+  "LeftoverReason": null,
+  "LeftoverDismissed": false
 }
 {
   "steps": [

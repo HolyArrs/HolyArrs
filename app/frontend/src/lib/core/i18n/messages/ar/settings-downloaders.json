@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 يوقف هذا الفحص؛ وإلا من 5 إلى 1440.",
 	"settings.downloaders.crawlKbps": "أبطأ من (ك.ب/ث)",
 	"settings.downloaders.crawlHours": "لمدة (ساعات)",
-	"settings.downloaders.crawlHint": "0 في أيٍّ منهما يوقف فحص البطء."
+	"settings.downloaders.crawlHint": "0 في أيٍّ منهما يوقف فحص البطء.",
+	"settings.downloaders.categoryAfterImport": "الفئة بعد الاستيراد",
+	"settings.downloaders.categoryAfterImportHint": "بعد استيراد التورنت ينقله HolyArrs إلى هذه الفئة. اتركها فارغة لإبقائه في الفئة الرئيسية.",
+	"settings.downloaders.ownOnly": "إظهار عناصر HolyArrs فقط",
+	"settings.downloaders.ownOnlyHint": "تُخفى عناصر التطبيقات الأخرى في برنامج التنزيل هذا، ولا يغيّرها HolyArrs."
 }

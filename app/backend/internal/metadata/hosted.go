@@ -62,10 +62,18 @@ func (s *Service) Register(ctx context.Context) (string, error) {
 		s.regHold.mu.Lock()
 		s.regHold.fails = 0
 		s.regHold.mu.Unlock()
-	case ctx.Err() == nil: // a caller that gave up says nothing about the server
+	case ctx.Err() == nil && !errors.Is(err, ErrSourceOff): // a caller that gave up, or lookups off, says nothing about the server
 		s.regHold.backOff(time.Now())
 	}
 	return tok, err
+}
+
+// ResetRegisterWait ends the wait after failed registrations (a mode picked
+// in Settings), so the next lookup asks the server straight away.
+func (s *Service) ResetRegisterWait() {
+	s.regHold.mu.Lock()
+	s.regHold.until, s.regHold.fails = time.Time{}, 0
+	s.regHold.mu.Unlock()
 }
 
 // regWaitMin and regWaitMax bound the wait after a failed registration.

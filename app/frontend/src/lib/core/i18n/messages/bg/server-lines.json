@@ -1272,5 +1272,10 @@
 	"server.downloads.marked-bad": "Отбелязано като лошо",
 	"server.suggest.because-you-have": "Защото имате {name}",
 	"server.health.downloader-save-folder": "Папка за запис на програмата за изтегляне",
+	"server.downloads.could-not-move-the-imported-download": "Импортираното сваляне не можа да се премести в {cat} в {name}: {error}; HolyArrs ще опита пак при следващото импортиране",
+	"server.downloads.moved-to-after-import": "Преместено в {cat} след импортиране",
+	"server.library.files-matched-by-hand": "{name}: ръчно свързани файлове: {n}",
+	"server.library.no-such-file-in-this-title": "няма такъв файл в това заглавие",
+	"server.library.send-1-to-2000-files": "изпратете от 1 до 2000 файла",
 	"server.sources.this-kind-of-title-can-t": "този вид заглавие не може да се търси"
 }

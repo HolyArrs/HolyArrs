@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "烏克蘭語",
 	"downloads.row.imported": "已匯入",
 	"downloads.row.stillIn": "仍在 {app} 中",
-	"downloads.dp.openDownloaders": "開啟下載器"
+	"downloads.dp.openDownloaders": "開啟下載器",
+	"downloads.hl.notMoved": "匯入後未能移動"
 }

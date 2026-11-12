@@ -428,6 +428,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	proof := imp.Result
 	imp.Result = execute(plan, im.Ops, resumable)
 	keepProof(imp.Result, proof)
+	im.placeSideFiles(ctx, imp.FromPath, plan, imp.Result, true)
 	for i, to := range heldFirst {
 		imp.Result[i].HeldAside = to
 	}

@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "A 0 kikapcsolja ezt az ellenőrzést; különben 5 és 1440 között.",
 	"settings.downloaders.crawlKbps": "Lassabb, mint (KB/s)",
 	"settings.downloaders.crawlHours": "Ennyi ideig (óra)",
-	"settings.downloaders.crawlHint": "Bármelyikben a 0 kikapcsolja a lassúság ellenőrzését."
+	"settings.downloaders.crawlHint": "Bármelyikben a 0 kikapcsolja a lassúság ellenőrzését.",
+	"settings.downloaders.categoryAfterImport": "Kategória importálás után",
+	"settings.downloaders.categoryAfterImportHint": "Importálás után a HolyArrs ebbe a kategóriába teszi a torrentet. Hagyja üresen, hogy a fő kategóriában maradjon.",
+	"settings.downloaders.ownOnly": "Csak a HolyArrs elemeinek mutatása",
+	"settings.downloaders.ownOnlyHint": "Más alkalmazások elemei ezen a letöltőn rejtve maradnak, és a HolyArrs nem módosítja őket."
 }

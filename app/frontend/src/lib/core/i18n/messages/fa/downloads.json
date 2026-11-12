@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "اوکراینی",
 	"downloads.row.imported": "واردشده",
 	"downloads.row.stillIn": "هنوز در {app}",
-	"downloads.dp.openDownloaders": "باز کردن دانلودرها"
+	"downloads.dp.openDownloaders": "باز کردن دانلودرها",
+	"downloads.hl.notMoved": "پس از وارد کردن جابه‌جا نشد"
 }

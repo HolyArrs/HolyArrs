@@ -238,6 +238,9 @@ func (b *builder) downloaders(s *Snapshot) {
 			continue
 		}
 		port, _ := setNum(d.Settings, "port")
+		if port < 0 || port > 65535 {
+			port = 0
+		}
 		tls := strings.EqualFold(setStr(d.Settings, "useSsl"), "true")
 		path := setStr(d.Settings, "urlBase", "rpcPath")
 		if adapter == "aria2" {
