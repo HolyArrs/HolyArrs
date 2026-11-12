@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Не се изтегля: намерените изтегляния изискват програма за изтегляне на торенти, а няма настроена.",
 	"downloads.noDl.add": "Добави програма за изтегляне",
 	"downloads.hl.noUsenetDl": "няма настроена програма за изтегляне от Usenet",
-	"downloads.hl.noTorrentDl": "няма настроена програма за изтегляне на торенти"
+	"downloads.hl.noTorrentDl": "няма настроена програма за изтегляне на торенти",
+	"downloads.problem.importBlocked": "Импортът е блокиран",
+	"downloads.problem.missingArticles": "Липсващи статии",
+	"downloads.problem.noFullCopy": "Няма пълно копие",
+	"downloads.problem.noPeers": "Няма пиъри",
+	"downloads.problem.repairNeeded": "Нужен е ремонт"
 }

@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Ei laadi alla: leitud allalaadimised vajavad torrentite allalaadijat, aga ühtegi pole seadistatud.",
 	"downloads.noDl.add": "Lisa allalaadija",
 	"downloads.hl.noUsenetDl": "ühtegi Useneti allalaadijat pole seadistatud",
-	"downloads.hl.noTorrentDl": "ühtegi torrentite allalaadijat pole seadistatud"
+	"downloads.hl.noTorrentDl": "ühtegi torrentite allalaadijat pole seadistatud",
+	"downloads.problem.importBlocked": "Import blokeeritud",
+	"downloads.problem.missingArticles": "Puuduvad artiklid",
+	"downloads.problem.noFullCopy": "Täielikku koopiat pole",
+	"downloads.problem.noPeers": "Partnereid pole",
+	"downloads.problem.repairNeeded": "Vajab parandamist"
 }

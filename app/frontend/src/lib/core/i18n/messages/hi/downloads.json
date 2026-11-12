@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "डाउनलोड नहीं हो रहा: मिले डाउनलोड के लिए टोरेंट डाउनलोडर चाहिए, और कोई सेट अप नहीं है।",
 	"downloads.noDl.add": "डाउनलोडर जोड़ें",
 	"downloads.hl.noUsenetDl": "कोई Usenet डाउनलोडर सेट अप नहीं है",
-	"downloads.hl.noTorrentDl": "कोई टोरेंट डाउनलोडर सेट अप नहीं है"
+	"downloads.hl.noTorrentDl": "कोई टोरेंट डाउनलोडर सेट अप नहीं है",
+	"downloads.problem.importBlocked": "इम्पोर्ट रुका हुआ",
+	"downloads.problem.missingArticles": "आर्टिकल गायब",
+	"downloads.problem.noFullCopy": "पूरी कॉपी नहीं",
+	"downloads.problem.noPeers": "कोई पीयर नहीं",
+	"downloads.problem.repairNeeded": "मरम्मत ज़रूरी"
 }

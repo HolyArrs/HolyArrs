@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Not downloading: the downloads found need a torrent Downloader, and none is set up.",
 	"downloads.noDl.add": "Add a Downloader",
 	"downloads.hl.noUsenetDl": "no Usenet Downloader is set up",
-	"downloads.hl.noTorrentDl": "no torrent Downloader is set up"
+	"downloads.hl.noTorrentDl": "no torrent Downloader is set up",
+	"downloads.problem.importBlocked": "Import blocked",
+	"downloads.problem.missingArticles": "Missing articles",
+	"downloads.problem.noFullCopy": "No full copy",
+	"downloads.problem.noPeers": "No peers",
+	"downloads.problem.repairNeeded": "Repair needed"
 }

@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "לא מוריד: ההורדות שנמצאו צריכות מוריד טורנטים, ואף אחד לא הוגדר.",
 	"downloads.noDl.add": "הוספת מוריד",
 	"downloads.hl.noUsenetDl": "לא הוגדר מוריד Usenet",
-	"downloads.hl.noTorrentDl": "לא הוגדר מוריד טורנטים"
+	"downloads.hl.noTorrentDl": "לא הוגדר מוריד טורנטים",
+	"downloads.problem.importBlocked": "הייבוא נחסם",
+	"downloads.problem.missingArticles": "מאמרים חסרים",
+	"downloads.problem.noFullCopy": "אין עותק מלא",
+	"downloads.problem.noPeers": "אין עמיתים",
+	"downloads.problem.repairNeeded": "נדרש תיקון"
 }

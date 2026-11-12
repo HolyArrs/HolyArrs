@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Tidak mengunduh: unduhan yang ditemukan butuh pengunduh torrent, dan belum ada yang disiapkan.",
 	"downloads.noDl.add": "Tambah pengunduh",
 	"downloads.hl.noUsenetDl": "belum ada pengunduh Usenet yang disiapkan",
-	"downloads.hl.noTorrentDl": "belum ada pengunduh torrent yang disiapkan"
+	"downloads.hl.noTorrentDl": "belum ada pengunduh torrent yang disiapkan",
+	"downloads.problem.importBlocked": "Impor diblokir",
+	"downloads.problem.missingArticles": "Artikel hilang",
+	"downloads.problem.noFullCopy": "Tidak ada salinan lengkap",
+	"downloads.problem.noPeers": "Tidak ada peer",
+	"downloads.problem.repairNeeded": "Perlu perbaikan"
 }

@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "لا يجري التنزيل: التنزيلات التي وُجدت تحتاج إلى برنامج تنزيل تورنت، ولم يُعدّ أي منها.",
 	"downloads.noDl.add": "أضف برنامج تنزيل",
 	"downloads.hl.noUsenetDl": "لم يُعدّ أي برنامج تنزيل Usenet",
-	"downloads.hl.noTorrentDl": "لم يُعدّ أي برنامج تنزيل تورنت"
+	"downloads.hl.noTorrentDl": "لم يُعدّ أي برنامج تنزيل تورنت",
+	"downloads.problem.importBlocked": "الاستيراد محظور",
+	"downloads.problem.missingArticles": "مقالات مفقودة",
+	"downloads.problem.noFullCopy": "لا توجد نسخة كاملة",
+	"downloads.problem.noPeers": "لا يوجد نظراء",
+	"downloads.problem.repairNeeded": "يلزم الإصلاح"
 }

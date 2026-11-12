@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "İndirilmiyor: bulunan indirmeler bir torrent indiricisi gerektiriyor ve hiçbiri kurulu değil.",
 	"downloads.noDl.add": "İndirici ekle",
 	"downloads.hl.noUsenetDl": "kurulu bir Usenet indiricisi yok",
-	"downloads.hl.noTorrentDl": "kurulu bir torrent indiricisi yok"
+	"downloads.hl.noTorrentDl": "kurulu bir torrent indiricisi yok",
+	"downloads.problem.importBlocked": "İçe aktarma engellendi",
+	"downloads.problem.missingArticles": "Eksik makaleler",
+	"downloads.problem.noFullCopy": "Tam kopya yok",
+	"downloads.problem.noPeers": "Eş yok",
+	"downloads.problem.repairNeeded": "Onarım gerekli"
 }

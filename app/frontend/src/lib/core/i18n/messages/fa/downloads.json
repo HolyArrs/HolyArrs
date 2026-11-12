@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "دانلود نمی‌شود: دانلودهای پیداشده به یک دانلودر تورنت نیاز دارند و هیچ‌کدام تنظیم نشده است.",
 	"downloads.noDl.add": "افزودن دانلودر",
 	"downloads.hl.noUsenetDl": "هیچ دانلودر Usenet تنظیم نشده است",
-	"downloads.hl.noTorrentDl": "هیچ دانلودر تورنت تنظیم نشده است"
+	"downloads.hl.noTorrentDl": "هیچ دانلودر تورنت تنظیم نشده است",
+	"downloads.problem.importBlocked": "وارد کردن مسدود شد",
+	"downloads.problem.missingArticles": "مقاله‌های گم‌شده",
+	"downloads.problem.noFullCopy": "نسخه کامل وجود ندارد",
+	"downloads.problem.noPeers": "همتایی نیست",
+	"downloads.problem.repairNeeded": "نیاز به تعمیر"
 }

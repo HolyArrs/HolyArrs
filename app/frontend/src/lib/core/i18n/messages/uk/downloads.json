@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Не завантажується: знайденим завантаженням потрібен торент-завантажувач, а жодного не налаштовано.",
 	"downloads.noDl.add": "Додати завантажувач",
 	"downloads.hl.noUsenetDl": "не налаштовано жодного завантажувача Usenet",
-	"downloads.hl.noTorrentDl": "не налаштовано жодного торент-завантажувача"
+	"downloads.hl.noTorrentDl": "не налаштовано жодного торент-завантажувача",
+	"downloads.problem.importBlocked": "Імпорт заблоковано",
+	"downloads.problem.missingArticles": "Бракує статей",
+	"downloads.problem.noFullCopy": "Немає повної копії",
+	"downloads.problem.noPeers": "Немає пірів",
+	"downloads.problem.repairNeeded": "Потрібне відновлення"
 }

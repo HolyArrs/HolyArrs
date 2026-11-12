@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Tidak memuat turun: muat turun yang ditemui memerlukan pemuat turun torrent, dan tiada yang disediakan.",
 	"downloads.noDl.add": "Tambah pemuat turun",
 	"downloads.hl.noUsenetDl": "tiada pemuat turun Usenet disediakan",
-	"downloads.hl.noTorrentDl": "tiada pemuat turun torrent disediakan"
+	"downloads.hl.noTorrentDl": "tiada pemuat turun torrent disediakan",
+	"downloads.problem.importBlocked": "Import disekat",
+	"downloads.problem.missingArticles": "Artikel hilang",
+	"downloads.problem.noFullCopy": "Tiada salinan penuh",
+	"downloads.problem.noPeers": "Tiada rakan",
+	"downloads.problem.repairNeeded": "Perlu dibaiki"
 }

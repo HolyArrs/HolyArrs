@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Non in download: i download trovati richiedono un downloader torrent e non ne è configurato nessuno.",
 	"downloads.noDl.add": "Aggiungi un downloader",
 	"downloads.hl.noUsenetDl": "nessun downloader Usenet configurato",
-	"downloads.hl.noTorrentDl": "nessun downloader torrent configurato"
+	"downloads.hl.noTorrentDl": "nessun downloader torrent configurato",
+	"downloads.problem.importBlocked": "Importazione bloccata",
+	"downloads.problem.missingArticles": "Articoli mancanti",
+	"downloads.problem.noFullCopy": "Nessuna copia completa",
+	"downloads.problem.noPeers": "Nessun peer",
+	"downloads.problem.repairNeeded": "Riparazione necessaria"
 }

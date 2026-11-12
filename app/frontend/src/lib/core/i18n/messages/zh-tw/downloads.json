@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "未在下載：找到的下載需要種子下載器，但尚未設定任何下載器。",
 	"downloads.noDl.add": "新增下載器",
 	"downloads.hl.noUsenetDl": "尚未設定 Usenet 下載器",
-	"downloads.hl.noTorrentDl": "尚未設定種子下載器"
+	"downloads.hl.noTorrentDl": "尚未設定種子下載器",
+	"downloads.problem.importBlocked": "匯入遭封鎖",
+	"downloads.problem.missingArticles": "缺少文章",
+	"downloads.problem.noFullCopy": "沒有完整副本",
+	"downloads.problem.noPeers": "沒有對等方",
+	"downloads.problem.repairNeeded": "需要修復"
 }

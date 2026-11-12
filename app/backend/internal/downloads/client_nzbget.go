@@ -37,7 +37,6 @@ func (e nzbgetReply) Error() string { return "nzbget " + e.method + ": " + e.msg
 
 var (
 	errNZBGetAmbiguousMarker = errors.New("NZBGet has multiple jobs with the same HolyArrs marker")
-	errNZBGetForeignMarker   = errors.New("the NZBGet job marker belongs to another category")
 )
 
 // NZBGet is a Client for the NZBGet JSON-RPC API.
@@ -175,7 +174,7 @@ func (n *NZBGet) Add(ctx context.Context, r AddRequest) (string, error) {
 	if err := n.appendRPC(ctx, params, &native); err != nil {
 		if ctx.Err() == nil {
 			_, found, getErr := n.lookup(ctx, id, r.Category)
-			if errors.Is(getErr, errNZBGetAmbiguousMarker) || errors.Is(getErr, errNZBGetForeignMarker) {
+			if errors.Is(getErr, errNZBGetAmbiguousMarker) {
 				return "", errors.Join(ErrUncertain, getErr)
 			}
 			if getErr == nil && found {
@@ -194,7 +193,10 @@ func (n *NZBGet) Add(ctx context.Context, r AddRequest) (string, error) {
 	return id, nil
 }
 
-// List returns the jobs in category.
+// List returns the jobs in category that carry HolyArrs's marker. NZBGet
+// renames the category of a job when that category has an Alias (tv becomes
+// Series), so a marked job in a category HolyArrs does not use counts as one
+// of ours too.
 func (n *NZBGet) List(ctx context.Context, category string) ([]Job, error) {
 	active, history, err := n.rows(ctx)
 	if err != nil {
@@ -202,12 +204,12 @@ func (n *NZBGet) List(ctx context.Context, category string) ([]Job, error) {
 	}
 	ids := map[string]bool{}
 	for _, r := range active {
-		if id := nzbgetMarkerID(r.Parameters); id != "" && (category == "" || strings.EqualFold(r.Category, category)) {
+		if id := nzbgetMarkerID(r.Parameters); id != "" && n.listed(r.Category, category) {
 			ids[id] = true
 		}
 	}
 	for _, r := range history {
-		if id := nzbgetMarkerID(r.Parameters); id != "" && (category == "" || strings.EqualFold(r.Category, category)) {
+		if id := nzbgetMarkerID(r.Parameters); id != "" && n.listed(r.Category, category) {
 			ids[id] = true
 		}
 	}
@@ -223,6 +225,17 @@ func (n *NZBGet) List(ctx context.Context, category string) ([]Job, error) {
 	}
 	n.applyStatus(ctx, out)
 	return out, nil
+}
+
+// listed reports whether a marked job in rowCat belongs in a List of category:
+// the same category, or, when category is one of ours, a category none of
+// ours has (NZBGet renamed it through an Alias).
+func (n *NZBGet) listed(rowCat, category string) bool {
+	if category == "" || strings.EqualFold(rowCat, category) {
+		return true
+	}
+	ours := append([]string{n.Category}, n.Others...)
+	return hasCategory(ours, category) && !hasCategory(ours, rowCat)
 }
 
 // Get returns the job with the given id.
@@ -466,15 +479,13 @@ func validNZB(b []byte) bool {
 	}
 }
 
+// nzbgetFind finds the job carrying marker id in any category (see List).
 func nzbgetFind(active, history []nzbgetRow, id, category string) (nzbgetMatch, bool, error) {
 	var match nzbgetMatch
 	found := false
 	add := func(r nzbgetRow, isHistory bool) error {
 		if nzbgetMarkerID(r.Parameters) != id {
 			return nil
-		}
-		if category != "" && !strings.EqualFold(r.Category, category) {
-			return errNZBGetForeignMarker
 		}
 		if !found {
 			match, found = nzbgetMatch{row: r, history: isHistory}, true

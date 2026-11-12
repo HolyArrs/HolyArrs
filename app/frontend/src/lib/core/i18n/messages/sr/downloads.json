@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Не преузима се: пронађена преузимања траже торент преузимач, а ниједан није подешен.",
 	"downloads.noDl.add": "Додај преузимач",
 	"downloads.hl.noUsenetDl": "ниједан Usenet преузимач није подешен",
-	"downloads.hl.noTorrentDl": "ниједан торент преузимач није подешен"
+	"downloads.hl.noTorrentDl": "ниједан торент преузимач није подешен",
+	"downloads.problem.importBlocked": "Увоз блокиран",
+	"downloads.problem.missingArticles": "Недостају чланци",
+	"downloads.problem.noFullCopy": "Нема потпуне копије",
+	"downloads.problem.noPeers": "Нема пирова",
+	"downloads.problem.repairNeeded": "Потребна поправка"
 }

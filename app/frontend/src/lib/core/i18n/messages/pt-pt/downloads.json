@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Não está a transferir: as transferências encontradas precisam de um gestor de downloads de torrents, e nenhum está configurado.",
 	"downloads.noDl.add": "Adicionar gestor de downloads",
 	"downloads.hl.noUsenetDl": "nenhum gestor de downloads Usenet está configurado",
-	"downloads.hl.noTorrentDl": "nenhum gestor de downloads de torrents está configurado"
+	"downloads.hl.noTorrentDl": "nenhum gestor de downloads de torrents está configurado",
+	"downloads.problem.importBlocked": "Importação bloqueada",
+	"downloads.problem.missingArticles": "Artigos em falta",
+	"downloads.problem.noFullCopy": "Nenhuma cópia completa",
+	"downloads.problem.noPeers": "Sem pares",
+	"downloads.problem.repairNeeded": "Precisa de reparação"
 }
