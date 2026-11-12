@@ -138,7 +138,7 @@ test('Import files by hand: the scan guesses the movie, Import adds it and its L
 	expect(res.outcome).toBe('placed');
 	expect(res.title_id).toBe(id);
 	const target = res.target ?? '';
-	await expect(row.getByRole('status')).toContainText(/^(Added to the Library, no extra space used|Copied to the Library, uses extra space)/);
+	await expect(row.getByRole('status')).toContainText(/^(Added to the Library \(no extra space used\)|Copied to the Library \(uses extra space\))/);
 	await expect(page.getByText('1 file imported')).toBeVisible();
 	await expect(row.getByRole('checkbox')).not.toBeChecked();
 	// Importing keeps the original and puts a link (or a real copy) in the Library folder.

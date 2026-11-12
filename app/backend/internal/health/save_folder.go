@@ -10,7 +10,7 @@ import (
 )
 
 // saveFolders warns about each Usenet Downloader whose finished jobs HolyArrs
-// can't import (#272): it gives no file list, and with no save folder
+// can't import: it gives no file list, and with no save folder
 // (HOLYARRS_SAVE_PATH) and no path pair HolyArrs never reads its folders.
 // Torrent Downloaders give their file list, so they get no line.
 func (e *Engine) saveFolders(ctx context.Context) ([]Result, error) {

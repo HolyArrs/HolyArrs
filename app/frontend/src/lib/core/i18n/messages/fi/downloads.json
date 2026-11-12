@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Skannaukset",
 	"downloads.ht.routine.searches.hint": "Julkaisuhaut ja syötetarkistukset.",
 	"downloads.ht.routine.searches.label": "Haut",
-	"downloads.import.copy": "kopioimalla",
+	"downloads.import.copy": "Kopioitu",
 	"downloads.import.hardlink": "kovalla linkillä",
 	"downloads.import.move": "siirtämällä",
 	"downloads.import.noFile": "yhtään tiedostoa ei voitu sijoittaa",

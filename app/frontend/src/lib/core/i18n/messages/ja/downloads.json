@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "スキャン",
 	"downloads.ht.routine.searches.hint": "リリースの検索とフィードのチェック。",
 	"downloads.ht.routine.searches.label": "検索",
-	"downloads.import.copy": "ライブラリにコピーしました",
+	"downloads.import.copy": "ライブラリにコピーしました。容量を余分に使います",
 	"downloads.import.hardlink": "ライブラリに追加しました(余分な容量なし)",
 	"downloads.import.move": "ライブラリに移動しました",
 	"downloads.import.noFile": "配置できたファイルはありません",

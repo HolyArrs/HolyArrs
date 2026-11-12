@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "סריקות",
 	"downloads.ht.routine.searches.hint": "חיפושי ריליזים ובדיקות פידים.",
 	"downloads.ht.routine.searches.label": "חיפושים",
-	"downloads.import.copy": "העתקה",
+	"downloads.import.copy": "הועתק",
 	"downloads.import.hardlink": "קישור קשיח",
 	"downloads.import.move": "העברה",
 	"downloads.import.noFile": "אף קובץ לא הוצב",

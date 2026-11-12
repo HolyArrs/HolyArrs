@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Quét",
 	"downloads.ht.routine.searches.hint": "Các lượt tìm Bản phát hành và kiểm tra nguồn cấp.",
 	"downloads.ht.routine.searches.label": "Tìm kiếm",
-	"downloads.import.copy": "sao chép",
+	"downloads.import.copy": "Đã sao chép",
 	"downloads.import.hardlink": "hardlink",
 	"downloads.import.move": "di chuyển",
 	"downloads.import.noFile": "không đặt được tệp nào",

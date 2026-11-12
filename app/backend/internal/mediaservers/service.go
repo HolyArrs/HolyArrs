@@ -207,6 +207,13 @@ type Linker struct {
 	// Delay gathers changes before they are sent, so a rename of many files
 	// is one call per folder (default 10 s).
 	Delay time.Duration
+	// Paused (safe mode) keeps ReadWatchHistorySoon from reading.
+	Paused bool
+
+	// reading lets one watch history pass run at a time; stopRead ends a
+	// background one.
+	reading  sync.Mutex
+	stopRead context.CancelFunc
 
 	mu      sync.Mutex
 	pending map[string]string // folder -> change
@@ -372,6 +379,9 @@ func (l *Linker) Wait() { l.wg.Wait() }
 func (l *Linker) Stop() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	if l.stopRead != nil {
+		l.stopRead()
+	}
 	if l.timer == nil || !l.timer.Stop() {
 		return // nothing gathered, or the send already started
 	}

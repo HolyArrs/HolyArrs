@@ -14,7 +14,7 @@
 	"health.check.waiting": "Завантаження чекають на файли",
 	"health.check.clearWaiting": "Завантаження чекають на очищення",
 	"health.check.saveFolder": "Тека збереження для",
-	"health.check.saveFolderWhy": "У {app} не задано теку збереження, тому HolyArrs не може імпортувати готові завантаження. Додайте пару шляхів у Налаштування > Завантажувачі.",
+	"health.check.saveFolderWhy": "У {app} не задано теку збереження, тому HolyArrs не може імпортувати готові завантаження. Додайте пару шляхів у Налаштування › Завантажувачі.",
 	"health.day.ahead": "Попереду: {count}",
 	"health.day.cancelled": "скасовано",
 	"health.day.due": "час настав",

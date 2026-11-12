@@ -649,7 +649,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	sender := &alerts.Sender{Store: s, Vault: vault, Lang: func(ctx context.Context) string { return accounts.OwnerLanguage(ctx, s.Read()) }}
 	sender.Watch(ctx)
-	media := &mediaservers.Linker{Store: s, Vault: vault}
+	media := &mediaservers.Linker{Store: s, Vault: vault, Paused: c.SafeMode}
 	reg.AlsoWait(func() { media.Stop(); media.Wait() })
 	reg.AlsoWait(he.Wait)
 	if !c.SafeMode {

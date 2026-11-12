@@ -262,7 +262,7 @@
 	"health.word.working": "Funcționează",
 	"health.check.clearWaiting": "Descărcări care așteaptă ștergerea",
 	"health.check.saveFolder": "Dosar de salvare pentru",
-	"health.check.saveFolderWhy": "{app} nu are dosar de salvare, așa că HolyArrs nu poate importa descărcările terminate. Adaugă o pereche de căi în Setări > Programe de descărcare.",
+	"health.check.saveFolderWhy": "{app} nu are dosar de salvare, așa că HolyArrs nu poate importa descărcările terminate. Adaugă o pereche de căi în Setări › Programe de descărcare.",
 	"health.kind.clearWaiting": "Descărcări care așteaptă ștergerea",
 	"health.kind.saveFolder": "Dosar de salvare al clientului de descărcare"
 }

@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Scans",
 	"downloads.ht.routine.searches.hint": "Zoekopdrachten naar releases en feedcontroles.",
 	"downloads.ht.routine.searches.label": "Zoekopdrachten",
-	"downloads.import.copy": "Gekopieerd naar de Bibliotheek",
+	"downloads.import.copy": "Gekopieerd naar de Bibliotheek, gebruikt extra ruimte",
 	"downloads.import.hardlink": "Toegevoegd aan de Bibliotheek (geen extra ruimte)",
 	"downloads.import.move": "Verplaatst naar de Bibliotheek",
 	"downloads.import.noFile": "er kon geen bestand worden geplaatst",

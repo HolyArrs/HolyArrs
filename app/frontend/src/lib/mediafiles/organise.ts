@@ -42,6 +42,7 @@ export interface AdoptMatch {
 	name: string;
 	year: number;
 	score: number;
+	poster?: string;
 }
 
 export type AdoptStatus = 'matched' | 'unsure' | 'unmatched' | 'no_video' | 'in_library' | 'never_add';
@@ -354,6 +355,12 @@ export function matchKey(m: AdoptMatch): string {
 	return m.id || m.tmdb_id;
 }
 
+// The poster of the picked match, from the scan itself.
+export function pickedPoster(f: AdoptCandidate, id: string | undefined): string {
+	if (!id) return '';
+	return [f.match, ...f.others].find((x) => x && matchKey(x) === id)?.poster ?? '';
+}
+
 // Only sure matches start picked.
 export function startPicks(folders: AdoptCandidate[]): Record<string, string> {
 	const out: Record<string, string> = {};
@@ -421,6 +428,12 @@ export function finished(j: Pick<JobView, 'State'>): boolean {
 	return j.State === 'done' || j.State === 'failed' || j.State === 'cancelled';
 }
 
+/** A scan's progress note ("1200/3000"): folders read and folders this scan reads. */
+export function scanCount(note: string | null | undefined): { done: number; total: number } | null {
+	const m = /^(\d+)\/(\d+)$/.exec(note ?? '');
+	return m ? { done: Number(m[1]), total: Number(m[2]) } : null;
+}
+
 export async function followJob(
 	get: (id: number) => Promise<JobView>,
 	id: number,
@@ -428,7 +441,11 @@ export async function followJob(
 	opts: { every?: number; poke?: (wake: () => void) => () => void; timeout?: number } = {}
 ): Promise<JobView> {
 	const every = opts.every ?? 700;
-	const until = Date.now() + (opts.timeout ?? 10 * 60_000);
+	// The wait gives up only when the Job has not moved for the whole of
+	// it, so a long scan that keeps going is waited for.
+	const wait = opts.timeout ?? 10 * 60_000;
+	let until = Date.now() + wait;
+	let moved = '';
 	let wake: (() => void) | null = null;
 	const off = opts.poke?.(() => wake?.());
 	try {
@@ -436,6 +453,11 @@ export async function followJob(
 			const j = await get(id);
 			tick(j);
 			if (finished(j)) return j;
+			const now = `${j.State} ${j.Progress} ${j.ProgressNote ?? ''}`;
+			if (now !== moved) {
+				moved = now;
+				until = Date.now() + wait;
+			}
 			if (Date.now() > until) throw new Error(t('mediafiles.organise.slow'));
 			await new Promise<void>((res) => {
 				const timer = setTimeout(res, every);

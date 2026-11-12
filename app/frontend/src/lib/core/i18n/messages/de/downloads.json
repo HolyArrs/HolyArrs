@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Scans",
 	"downloads.ht.routine.searches.hint": "Suchen nach Releases und Feed-Prüfungen.",
 	"downloads.ht.routine.searches.label": "Suchen",
-	"downloads.import.copy": "In die Bibliothek kopiert",
+	"downloads.import.copy": "In die Bibliothek kopiert, braucht zusätzlichen Platz",
 	"downloads.import.hardlink": "Zur Bibliothek hinzugefügt (kein zusätzlicher Platz)",
 	"downloads.import.move": "In die Bibliothek verschoben",
 	"downloads.import.noFile": "keine Datei konnte abgelegt werden",

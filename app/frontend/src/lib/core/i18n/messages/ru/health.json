@@ -14,7 +14,7 @@
 	"health.check.waiting": "Загрузки ждут файлы",
 	"health.check.clearWaiting": "Загрузки ждут очистки",
 	"health.check.saveFolder": "Папка сохранения для",
-	"health.check.saveFolderWhy": "У {app} не задана папка сохранения, поэтому HolyArrs не может импортировать готовые загрузки. Добавьте пару путей в Настройки > Загрузчики.",
+	"health.check.saveFolderWhy": "У {app} не задана папка сохранения, поэтому HolyArrs не может импортировать готовые загрузки. Добавьте пару путей в Настройки › Загрузчики.",
 	"health.day.ahead": "Впереди: {count}",
 	"health.day.cancelled": "отменено",
 	"health.day.due": "пора",

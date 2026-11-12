@@ -64,6 +64,9 @@ func (h *Handlers) add(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
+	if WatchHistoryOn(r.Context(), h.Store.Read()) {
+		h.Linker.ReadWatchHistorySoon() // the new server's history, without the wait
+	}
 	webserver.WriteJSON(w, http.StatusCreated, ViewOf(m))
 }
 

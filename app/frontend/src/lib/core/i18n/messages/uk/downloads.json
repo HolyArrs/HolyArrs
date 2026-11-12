@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Сканування",
 	"downloads.ht.routine.searches.hint": "Пошуки релізів і перевірки стрічок.",
 	"downloads.ht.routine.searches.label": "Пошуки",
-	"downloads.import.copy": "Скопійовано до Бібліотеки",
+	"downloads.import.copy": "Скопійовано до Бібліотеки, займає зайве місце",
 	"downloads.import.hardlink": "Додано до Бібліотеки (без зайвого місця)",
 	"downloads.import.move": "Переміщено до Бібліотеки",
 	"downloads.import.noFile": "жодного файлу не вдалося розмістити",

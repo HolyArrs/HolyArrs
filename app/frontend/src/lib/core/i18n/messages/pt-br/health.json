@@ -14,7 +14,7 @@
 	"health.check.waiting": "Downloads esperando arquivos",
 	"health.check.clearWaiting": "Downloads esperando a limpeza",
 	"health.check.saveFolder": "Pasta de salvamento de",
-	"health.check.saveFolderWhy": "{app} não tem pasta de salvamento, então o HolyArrs não consegue importar os downloads concluídos. Adicione um par de caminhos em Configurações > Gerenciadores de downloads.",
+	"health.check.saveFolderWhy": "{app} não tem pasta de salvamento, então o HolyArrs não consegue importar os downloads concluídos. Adicione um par de caminhos em Configurações › Gerenciadores de downloads.",
 	"health.day.ahead": "{count} à frente",
 	"health.day.cancelled": "foi cancelada",
 	"health.day.due": "prevista",

@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Beolvasások",
 	"downloads.ht.routine.searches.hint": "Release-ek keresései és hírcsatorna-ellenőrzések.",
 	"downloads.ht.routine.searches.label": "Keresések",
-	"downloads.import.copy": "másolással",
+	"downloads.import.copy": "Átmásolva",
 	"downloads.import.hardlink": "hardlinkkel",
 	"downloads.import.move": "áthelyezéssel",
 	"downloads.import.noFile": "egyetlen fájlt sem lehetett elhelyezni",

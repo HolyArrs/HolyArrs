@@ -14,7 +14,7 @@
 	"health.check.waiting": "Downloads warten auf Dateien",
 	"health.check.clearWaiting": "Downloads warten aufs Aufräumen",
 	"health.check.saveFolder": "Speicherordner für",
-	"health.check.saveFolderWhy": "{app} hat keinen Speicherordner, daher kann HolyArrs die fertigen Downloads nicht importieren. Füge unter Einstellungen > Downloader ein Pfadpaar hinzu.",
+	"health.check.saveFolderWhy": "{app} hat keinen Speicherordner, daher kann HolyArrs die fertigen Downloads nicht importieren. Füge unter Einstellungen › Downloader ein Pfadpaar hinzu.",
 	"health.day.ahead": "{count} voraus",
 	"health.day.cancelled": "abgebrochen",
 	"health.day.due": "fällig",

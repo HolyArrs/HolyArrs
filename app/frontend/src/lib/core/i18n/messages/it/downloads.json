@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Scansioni",
 	"downloads.ht.routine.searches.hint": "Ricerche di release e controlli dei feed.",
 	"downloads.ht.routine.searches.label": "Ricerche",
-	"downloads.import.copy": "Copiato nella Libreria",
+	"downloads.import.copy": "Copiato nella Libreria, usa spazio in più",
 	"downloads.import.hardlink": "Aggiunto alla Libreria (nessuno spazio in più)",
 	"downloads.import.move": "Spostato nella Libreria",
 	"downloads.import.noFile": "nessun file è stato sistemato",

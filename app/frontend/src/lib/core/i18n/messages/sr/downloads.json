@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Скенирања",
 	"downloads.ht.routine.searches.hint": "Претраге Издања и провере фида.",
 	"downloads.ht.routine.searches.label": "Претраге",
-	"downloads.import.copy": "копирањем",
+	"downloads.import.copy": "Копирано",
 	"downloads.import.hardlink": "чврстом везом",
 	"downloads.import.move": "премештањем",
 	"downloads.import.noFile": "ниједна датотека није могла да се постави",

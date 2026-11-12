@@ -47,8 +47,12 @@ const TMDBPath = "/v1/tmdb"
 func (s *Service) Base() string { return s.base }
 
 // Register asks the server for a new installation credential. The server
-// limits how often an address may do this; it needs no credential.
+// limits how often an address may do this; it needs no credential. When the
+// server refuses with a Retry-After, it is not asked again before that time.
 func (s *Service) Register(ctx context.Context) (string, error) {
+	if s.regHold.held(time.Now()) {
+		return "", ErrServiceBusy
+	}
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, s.base+"/v1/installations", http.NoBody)
@@ -65,6 +69,9 @@ func (s *Service) Register(ctx context.Context) (string, error) {
 	switch {
 	case resp.StatusCode == http.StatusCreated:
 	case resp.StatusCode == http.StatusTooManyRequests:
+		if ra := resp.Header.Get("Retry-After"); ra != "" {
+			s.regHold.set(ra, body, time.Now())
+		}
 		return "", ErrServiceBusy
 	case resp.StatusCode >= 500 || resp.StatusCode == http.StatusRequestTimeout:
 		return "", ErrServiceUnavailable

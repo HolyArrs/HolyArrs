@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Taramalar",
 	"downloads.ht.routine.searches.hint": "Sürüm adayı aramaları ve feed denetimleri.",
 	"downloads.ht.routine.searches.label": "Aramalar",
-	"downloads.import.copy": "Kütüphaneye kopyalandı",
+	"downloads.import.copy": "Kütüphaneye kopyalandı, fazladan yer kullanır",
 	"downloads.import.hardlink": "Kütüphaneye eklendi (fazladan yer yok)",
 	"downloads.import.move": "Kütüphaneye taşındı",
 	"downloads.import.noFile": "hiçbir dosya yerleştirilemedi",

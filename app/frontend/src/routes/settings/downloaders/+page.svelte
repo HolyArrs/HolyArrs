@@ -462,7 +462,7 @@
 {#if !loaded}
 	<SkSettings rows={1} />
 {:else if error && !listOk}
-	<LoadError hasData={false} message={error} onretry={load} />
+	<LoadError hasData={false} message={error} onretry={() => { load(); if (setLoadError) loadSettings(); }} />
 {:else if list.length === 0 && !editing}
 	<EmptyState icon="downloader" title={t('settings.downloaders.none')} text={t('settings.downloaders.noneText')} action={{ label: t('settings.downloaders.add'), onclick: startAdd, icon: 'plus' }} />
 {:else}
@@ -523,7 +523,9 @@
 {/if}
 
 {#if !saved}
-	{#if setLoadError}
+	{#if setLoadError && error && !listOk}
+		<!-- the list's error above already offers one retry for both -->
+	{:else if setLoadError}
 		<div class="settings"><LoadError hasData={false} message={setLoadError} onretry={loadSettings} busy={setLoading} /></div>
 	{:else}
 		<div class="settings"><SkSettings rows={2} /></div>

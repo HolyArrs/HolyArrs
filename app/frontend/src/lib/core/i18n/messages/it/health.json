@@ -14,7 +14,7 @@
 	"health.check.waiting": "Download in attesa dei file",
 	"health.check.clearWaiting": "Download in attesa di pulizia",
 	"health.check.saveFolder": "Cartella di salvataggio per",
-	"health.check.saveFolderWhy": "{app} non ha una cartella di salvataggio, quindi HolyArrs non può importare i download finiti. Aggiungi una coppia di percorsi in Impostazioni > Downloader.",
+	"health.check.saveFolderWhy": "{app} non ha una cartella di salvataggio, quindi HolyArrs non può importare i download finiti. Aggiungi una coppia di percorsi in Impostazioni › Downloader.",
 	"health.day.ahead": "{count} avanti",
 	"health.day.cancelled": "è stato annullato",
 	"health.day.due": "da fare",
