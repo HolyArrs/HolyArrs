@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "Istorijos",
 	"server.metadata.set-by-your-docker-settings": "Nustatyta jūsų Docker nustatymuose",
 	"server.metadata.tv-movie": "TV filmas",
-	"server.metadata.western": "Vesternų"
+	"server.metadata.western": "Vesternų",
+	"server.downloads.deleted-by-hand": "Ištrinta rankiniu būdu",
+	"server.downloads.marked-bad": "Pažymėta kaip bloga",
+	"server.suggest.because-you-have": "Nes turite {name}"
 }

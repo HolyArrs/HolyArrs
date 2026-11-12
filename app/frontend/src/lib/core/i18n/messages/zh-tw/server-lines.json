@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "歷史",
 	"server.metadata.set-by-your-docker-settings": "由你的 Docker 設定決定",
 	"server.metadata.tv-movie": "電視電影",
-	"server.metadata.western": "西部"
+	"server.metadata.western": "西部",
+	"server.downloads.deleted-by-hand": "已手動刪除",
+	"server.downloads.marked-bad": "已標記為損壞",
+	"server.suggest.because-you-have": "因為你有{name}"
 }

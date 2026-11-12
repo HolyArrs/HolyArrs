@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "வரலாறு",
 	"server.metadata.set-by-your-docker-settings": "உங்கள் Docker அமைப்புகளால் அமைக்கப்பட்டது",
 	"server.metadata.tv-movie": "தொலைக்காட்சித் திரைப்படம்",
-	"server.metadata.western": "வெஸ்டர்ன்"
+	"server.metadata.western": "வெஸ்டர்ன்",
+	"server.downloads.deleted-by-hand": "கைமுறையாக நீக்கப்பட்டது",
+	"server.downloads.marked-bad": "மோசமானதாகக் குறிக்கப்பட்டது",
+	"server.suggest.because-you-have": "உங்களிடம் {name} இருப்பதால்"
 }

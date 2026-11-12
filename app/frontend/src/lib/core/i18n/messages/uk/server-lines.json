@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "Історичне",
 	"server.metadata.set-by-your-docker-settings": "Задано в налаштуваннях Docker",
 	"server.metadata.tv-movie": "Телефільм",
-	"server.metadata.western": "Вестерн"
+	"server.metadata.western": "Вестерн",
+	"server.downloads.deleted-by-hand": "Видалено вручну",
+	"server.downloads.marked-bad": "Позначено як погане",
+	"server.suggest.because-you-have": "Бо у вас є {name}"
 }

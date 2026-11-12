@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "Ajalugu",
 	"server.metadata.set-by-your-docker-settings": "Määratud sinu Dockeri seadetes",
 	"server.metadata.tv-movie": "Telefilm",
-	"server.metadata.western": "Vestern"
+	"server.metadata.western": "Vestern",
+	"server.downloads.deleted-by-hand": "Käsitsi kustutatud",
+	"server.downloads.marked-bad": "Märgitud vigaseks",
+	"server.suggest.because-you-have": "Sest sul on {name}"
 }

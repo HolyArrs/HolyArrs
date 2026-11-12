@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "Geschiedenis",
 	"server.metadata.set-by-your-docker-settings": "Ingesteld door je Docker-instellingen",
 	"server.metadata.tv-movie": "Tv-film",
-	"server.metadata.western": "Western"
+	"server.metadata.western": "Western",
+	"server.downloads.deleted-by-hand": "Handmatig verwijderd",
+	"server.downloads.marked-bad": "Als slecht gemarkeerd",
+	"server.suggest.because-you-have": "Omdat je {name} hebt"
 }

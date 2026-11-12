@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "Historický",
 	"server.metadata.set-by-your-docker-settings": "Nastavené v nastaveniach Dockeru",
 	"server.metadata.tv-movie": "TV film",
-	"server.metadata.western": "Western"
+	"server.metadata.western": "Western",
+	"server.downloads.deleted-by-hand": "Odstránené ručne",
+	"server.downloads.marked-bad": "Označené ako chybné",
+	"server.suggest.because-you-have": "Pretože máte {name}"
 }

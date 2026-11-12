@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "Ιστορικά",
 	"server.metadata.set-by-your-docker-settings": "Καθορίζεται από τις ρυθμίσεις του Docker σας",
 	"server.metadata.tv-movie": "Τηλεοπτική ταινία",
-	"server.metadata.western": "Γουέστερν"
+	"server.metadata.western": "Γουέστερν",
+	"server.downloads.deleted-by-hand": "Διαγράφηκε χειροκίνητα",
+	"server.downloads.marked-bad": "Σημειώθηκε ως κακό",
+	"server.suggest.because-you-have": "Επειδή έχετε το {name}"
 }

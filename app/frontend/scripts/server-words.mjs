@@ -21,7 +21,8 @@ const notWords = new Set(['dash', 'each', 'range', 'smart', 'remove', 'normal', 
 	'podnapisi', 'gestdown', 'yifysubtitles', 'tvsubtitles', 'bsplayer', 'qBittorrent', 'subtitles:languages', 'subtitle site ', 'tmdb:{v}', 'mbid:{v}']);
 // Lines the scan cannot put together: a control's Event starts with the person's name (setup ControlEvent)
 // and takes its verb from a map; a removal's reason may name who removed it.
-const handLines = { '{name} paused the stage {stage}': 'accounts', '{name} resumed the stage {stage}': 'accounts',
+const handLines = { 'Because you have {name}': 'suggest', 'Deleted by hand': 'downloads', 'Marked bad': 'downloads',
+	'{name} paused the stage {stage}': 'accounts', '{name} resumed the stage {stage}': 'accounts',
 	'{name} restarted the stage {stage}': 'accounts', 'Download removed': 'downloads', 'Download removed by {name}': 'downloads' };
 // Files whose fmt.Sprintf lines are display text (card lines, labels).
 const display = /(accounts[\\/]events|discover[\\/](home|explore_np|title_view)|shows[\\/]episode_labels|requests[\\/](episodes|follows\w*|reports)|health[\\/](health|routes_settings_status)|migrate[\\/]plan_\w+|metadata[\\/]moods)\.go$/;

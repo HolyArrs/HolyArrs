@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "Kasaysayan",
 	"server.metadata.set-by-your-docker-settings": "Itinakda ng iyong mga setting ng Docker",
 	"server.metadata.tv-movie": "Pelikula sa TV",
-	"server.metadata.western": "Western"
+	"server.metadata.western": "Western",
+	"server.downloads.deleted-by-hand": "Binura nang mano-mano",
+	"server.downloads.marked-bad": "Minarkahang sira",
+	"server.suggest.because-you-have": "Dahil mayroon kang {name}"
 }

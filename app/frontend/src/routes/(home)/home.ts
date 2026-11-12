@@ -339,6 +339,19 @@ export function arrivedHead(cards: Pick<HomeCard, 'at'>[], now = Date.now()): { 
 	return { title: arrivedTitle(newest, now), subtitle: now - newest < 14 * DAY ? t('home.newInTheLast') : undefined };
 }
 
+/** upLine is one Coming up line: its episode words and when it airs. The day comes from the card's
+ * own date in the app's language; the server's English day words are the fallback. */
+export function upLine(c: { line?: string; at?: string }, today: string, locale = appLocale()): { sub: string; when: string; now: boolean } {
+	let [sub = '', tail] = (c.line ?? '').split(' · ');
+	const outNow = /out now/i.test(tail ?? '');
+	const now = outNow || c.at?.slice(0, 10) === today;
+	const d = /^\d{4}-\d{2}-\d{2}/.test(c.at ?? '') ? new Date(`${c.at!.slice(0, 10)}T00:00:00Z`) : null;
+	const day = d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }) : '';
+	// A movie's line is "Out <day>": the date column holds the day.
+	if (tail === undefined && /^Out \S/.test(sub) && day) [sub, tail] = ['', day];
+	return { sub, when: outNow ? t('home.outNow') : now ? t('home.today') : day || (tail ?? ''), now };
+}
+
 /** soonTitle is Coming soon's subtitle: what is next and when. */
 export function soonLine(first: { name: string; subtitle?: string } | undefined): string {
 	if (!first) return t('home.theNext30Days');

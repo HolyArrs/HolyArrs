@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "تاریخی",
 	"server.metadata.set-by-your-docker-settings": "توسط تنظیمات Docker شما تعیین شده",
 	"server.metadata.tv-movie": "فیلم تلویزیونی",
-	"server.metadata.western": "وسترن"
+	"server.metadata.western": "وسترن",
+	"server.downloads.deleted-by-hand": "به‌صورت دستی حذف شد",
+	"server.downloads.marked-bad": "به‌عنوان خراب علامت خورد",
+	"server.suggest.because-you-have": "چون {name} را دارید"
 }

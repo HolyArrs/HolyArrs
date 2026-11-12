@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "Vēsture",
 	"server.metadata.set-by-your-docker-settings": "Noteikts jūsu Docker iestatījumos",
 	"server.metadata.tv-movie": "TV filma",
-	"server.metadata.western": "Vesterns"
+	"server.metadata.western": "Vesterns",
+	"server.downloads.deleted-by-hand": "Izdzēsts manuāli",
+	"server.downloads.marked-bad": "Atzīmēts kā slikts",
+	"server.suggest.because-you-have": "Jo jums ir {name}"
 }

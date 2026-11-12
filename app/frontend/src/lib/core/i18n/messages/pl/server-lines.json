@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "Historyczny",
 	"server.metadata.set-by-your-docker-settings": "Ustawione w ustawieniach Dockera",
 	"server.metadata.tv-movie": "Film telewizyjny",
-	"server.metadata.western": "Western"
+	"server.metadata.western": "Western",
+	"server.downloads.deleted-by-hand": "Usunięto ręcznie",
+	"server.downloads.marked-bad": "Oznaczono jako wadliwe",
+	"server.suggest.because-you-have": "Bo masz {name}"
 }

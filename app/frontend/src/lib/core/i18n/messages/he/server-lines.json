@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "היסטוריה",
 	"server.metadata.set-by-your-docker-settings": "נקבע בהגדרות ה-Docker שלכם",
 	"server.metadata.tv-movie": "סרט טלוויזיה",
-	"server.metadata.western": "מערבון"
+	"server.metadata.western": "מערבון",
+	"server.downloads.deleted-by-hand": "נמחק ידנית",
+	"server.downloads.marked-bad": "סומן כפגום",
+	"server.suggest.because-you-have": "כי יש לך את {name}"
 }
