@@ -53,8 +53,8 @@ describe('import files by hand', () => {
 	});
 
 	it('words results', () => {
-		expect(resultLine({ path: 'x', outcome: 'placed', placed_by: 'hardlink' })).toBe('Added to the Library, no extra space used');
-		expect(resultLine({ path: 'x', outcome: 'placed', placed_by: 'copy' })).toBe('Copied to the Library, uses extra space');
+		expect(resultLine({ path: 'x', outcome: 'placed', placed_by: 'hardlink' })).toBe('Added to the Library (no extra space used)');
+		expect(resultLine({ path: 'x', outcome: 'placed', placed_by: 'copy' })).toBe('Copied to the Library (uses extra space)');
 		expect(resultLine({ path: 'x', outcome: 'refused', error: 'nope' })).toBe('Not imported: nope');
 	});
 });

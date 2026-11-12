@@ -3,6 +3,8 @@ package mediaservers
 import (
 	"context"
 	"database/sql"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -12,6 +14,12 @@ import (
 // watchGroup and watchKey hold the owner's "Read watch history" switch
 // ("on"; anything else is off).
 const watchGroup, watchKey = "links", "watch_history"
+
+// watchReadKey starts the settings that keep when each media server's watch
+// history was last read whole (the server's id follows it; "" for not since
+// it was turned on). A pass that matches nothing in the Library leaves no
+// rows, so the rows alone cannot say a read happened.
+const watchReadKey = "watch_history_read:"
 
 // WatchHistoryOn says whether the owner turned watch history on.
 func WatchHistoryOn(ctx context.Context, q database.Querier) bool {
@@ -32,8 +40,23 @@ func SetWatchHistory(ctx context.Context, s *database.Store, on bool, by domain.
 		if on {
 			return nil
 		}
-		_, err := tx.Exec("DELETE FROM watch_state")
-		return err
+		if _, err := tx.Exec("DELETE FROM watch_state"); err != nil {
+			return err
+		}
+		var read []string
+		if err := database.EachSetting(ctx, tx, watchGroup, func(k, _ string) {
+			if strings.HasPrefix(k, watchReadKey) {
+				read = append(read, k)
+			}
+		}); err != nil {
+			return err
+		}
+		for _, k := range read {
+			if err := database.PutSetting(tx, watchGroup, k, "", by, time.Now().UTC()); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 
@@ -64,6 +87,9 @@ func replaceWatchState(ctx context.Context, s *database.Store, serverID int64, r
 		}
 		defer st.Close()
 		readAt := database.FormatTime(at)
+		if err := database.PutSetting(tx, watchGroup, watchReadKey+strconv.FormatInt(serverID, 10), readAt, domain.System, at); err != nil {
+			return err
+		}
 		for _, r := range rows {
 			var last any
 			if r.last != nil {
@@ -114,6 +140,22 @@ func watchedRows(ctx context.Context, q watchReader) (WatchedSummary, error) {
 	out := WatchedSummary{Enabled: WatchHistoryOn(ctx, q), People: []WatchedPerson{}}
 	var readAt sql.NullString
 	if err := q.QueryRowContext(ctx, "SELECT max(read_at) FROM watch_state").Scan(&readAt); err != nil {
+		return out, err
+	}
+	// The newest whole read of a server still here, rows or not.
+	ms, err := listServers(ctx, q)
+	if err != nil {
+		return out, err
+	}
+	here := map[string]bool{}
+	for _, m := range ms {
+		here[watchReadKey+strconv.FormatInt(m.ID, 10)] = true
+	}
+	if err := database.EachSetting(ctx, q, watchGroup, func(k, v string) {
+		if here[k] && v > readAt.String {
+			readAt = sql.NullString{String: v, Valid: true}
+		}
+	}); err != nil {
 		return out, err
 	}
 	if readAt.Valid {

@@ -98,7 +98,7 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 				answers[i] = feedProbeAnswer{src: src, err: err}
 				return
 			}
-			cats := src.Categories["movie"]
+			cats := movieFeedCategories(src)
 			if handlesTV(src) && showsWanted {
 				cats = append(slices.Clone(cats), tvCategories(src)...)
 			}

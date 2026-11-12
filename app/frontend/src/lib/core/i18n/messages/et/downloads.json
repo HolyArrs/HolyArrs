@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Skannimised",
 	"downloads.ht.routine.searches.hint": "Väljalaskeotsingud ja voo kontrollid.",
 	"downloads.ht.routine.searches.label": "Otsingud",
-	"downloads.import.copy": "kopeerimine",
+	"downloads.import.copy": "Kopeeritud",
 	"downloads.import.hardlink": "kõvalink",
 	"downloads.import.move": "liigutamine",
 	"downloads.import.noFile": "ühtegi faili ei saanud paigutada",

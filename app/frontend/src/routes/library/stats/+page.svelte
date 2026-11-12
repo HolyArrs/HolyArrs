@@ -115,9 +115,9 @@
 	{:else if watched && !watched.read_at}
 		<EmptyState icon="clock" title={t('library.stats.firstTitle')} text={t('library.stats.firstText')} />
 	{:else if watched}
-		<p class="help">{t('library.stats.watchedHelp')} {t('library.stats.lastRead', { ago: ago(watched.read_at) })}</p>
+		<p class="help">{t('library.stats.watchedHelp')}{#if watched.people?.length} {t('library.stats.lastRead', { ago: ago(watched.read_at) })}{/if}</p>
 		{#if !watched.people?.length}
-			<EmptyState icon="eye" title={t('library.stats.nobody')} compact />
+			<EmptyState icon="eye" title={t('library.stats.noMatch', { ago: ago(watched.read_at) })} compact />
 		{:else}
 		<div class="tp-sheet">
 			<ul class="tp-rows people">
@@ -162,7 +162,7 @@
 	}
 	.nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.bar { height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--text) 8%, transparent); overflow: hidden; }
-	.bar i { display: block; height: 100%; background: var(--accent); transform-origin: left; transition: transform 320ms cubic-bezier(.22, 1, .36, 1); }
+	.bar i { display: block; height: 100%; background: var(--accent); transform-origin: left; transition: transform var(--dur-slow) var(--ease-out); }
 	:global([dir='rtl']) .bar i { transform-origin: right; }
 	.num { justify-self: end; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.num, .tile b { direction: ltr; unicode-bidi: isolate; }
