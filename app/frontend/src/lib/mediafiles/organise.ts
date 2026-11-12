@@ -42,6 +42,7 @@ export interface AdoptMatch {
 	name: string;
 	year: number;
 	score: number;
+	poster?: string;
 }
 
 export type AdoptStatus = 'matched' | 'unsure' | 'unmatched' | 'no_video' | 'in_library' | 'never_add';
@@ -352,6 +353,12 @@ export function canAdopt(f: AdoptCandidate): boolean {
 
 export function matchKey(m: AdoptMatch): string {
 	return m.id || m.tmdb_id;
+}
+
+// The poster of the picked match, from the scan itself (#305).
+export function pickedPoster(f: AdoptCandidate, id: string | undefined): string {
+	if (!id) return '';
+	return [f.match, ...f.others].find((x) => x && matchKey(x) === id)?.poster ?? '';
 }
 
 // Only sure matches start picked.

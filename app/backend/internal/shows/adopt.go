@@ -60,7 +60,7 @@ func matchShowFolder(ctx context.Context, p metadata.ShowProvider, folder string
 	if m := reShowTag.FindStringSubmatch(folder); m != nil {
 		sh, err := p.Show(ctx, strings.ToLower(m[1])+":"+m[2])
 		if err == nil {
-			return sh.Name, sh.Year, []library.AdoptMatch{{ID: showID(sh), TMDB: sh.IDs["tmdb"], Name: sh.Name, Year: sh.Year, Score: 1}}, nil
+			return sh.Name, sh.Year, []library.AdoptMatch{{ID: showID(sh), TMDB: sh.IDs["tmdb"], Name: sh.Name, Year: sh.Year, Score: 1, Poster: sh.Poster}}, nil
 		}
 		if !errors.Is(err, metadata.ErrShowNotFound) {
 			return "", 0, nil, err
@@ -77,7 +77,7 @@ func matchShowFolder(ctx context.Context, p metadata.ShowProvider, folder string
 		if id == "" {
 			continue
 		}
-		out = append(out, library.AdoptMatch{ID: id, TMDB: sh.IDs["tmdb"], Name: sh.Name, Year: sh.Year, Score: library.NameScore(name, year, sh.Name, sh.Year)})
+		out = append(out, library.AdoptMatch{ID: id, TMDB: sh.IDs["tmdb"], Name: sh.Name, Year: sh.Year, Score: library.NameScore(name, year, sh.Name, sh.Year), Poster: sh.Poster})
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Score > out[j].Score })
 	if len(out) > 4 {
