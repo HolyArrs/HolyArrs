@@ -34,9 +34,9 @@ A hardlink is a second name for the same file on the same disk. It is instant an
 
 | State shown | Meaning | Imports |
 |---|---|---|
-| **Healthy** | All checks passed | Instant moves |
+| **Instant, no extra space** | Downloads and this folder are on the same drive | Each import is instant and uses no extra space |
 | **Folder not found** or **Cannot write here** | The folder is gone or not writable | Stopped until you fix it |
-| **Works, but files are copied (no hardlinks)** | Downloads sit on another disk or mount | Work, but copy the file: slower, and double space until the Downloader deletes its copy |
+| **Each import makes a full copy (uses extra space)** | Downloads sit on another drive or mount | Imports work, but each one copies the file: slower, and double the space until the Downloader deletes its copy |
 
 Under 100 MB free adds a low space note. Imports work until the disk fills.
 
@@ -50,7 +50,7 @@ HolyArrs also keeps the folder while deleted files in it can still be restored f
 
 ## If it does not work
 
-**Symptom:** the state says files are copied (no hardlinks).
+**Symptom:** the state says "Each import makes a full copy (uses extra space)".
 **Cause:** downloads and media are on separate mounts.
 **Fix:** mount one shared parent folder holding both, at the same path in every container.
 
