@@ -14,6 +14,21 @@ describe('local network card', () => {
 		expect(card).toContain('{ skip_login_local_network: true, local_networks: lines(nets), local_person: person }');
 	});
 
+	it('never resets what the owner types: the copy effect reads only the settings', () => {
+		const copy = card.slice(card.indexOf('$effect.pre('), card.indexOf('});', card.indexOf('$effect.pre(')));
+		expect(copy).toContain('savedText = savedOf(settings)');
+		expect(copy).not.toMatch(/=\s*nets\s*\+/);
+	});
+
+	it('puts the fix bar on the reading-start side, so Arabic gets it on the right', () => {
+		expect(card).not.toMatch(/border-left|padding-left/);
+	});
+
+	it('keeps addresses left-to-right in Arabic, so 192.168.l.0/24 is not shown out of order', () => {
+		expect(card).toContain('<span class="mono xs" dir="ltr">{p.text}</span>');
+		expect(card.match(/<textarea[^>]*dir="ltr"/g)?.length).toBe(2);
+	});
+
 	it('keeps Save off while a line needs a fix', () => {
 		expect(card).toContain('disabled={saving || problems > 0 || !dirty}');
 	});

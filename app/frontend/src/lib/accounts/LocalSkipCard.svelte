@@ -47,12 +47,14 @@
 	let proxies = $state('');
 	let person = $state(0);
 	let savedText = $state('');
+	// Reads only the settings, so typing never re-runs the copy below and wipes the edits.
+	const savedOf = (s: LocalSkip) => (s.local_networks ?? []).join('\n') + '|' + (s.trusted_proxies ?? []).join('\n') + '|' + (s.local_person ?? 0);
 	$effect.pre(() => {
 		skip = settings.skip_login_local_network;
 		nets = (settings.local_networks ?? []).join('\n');
 		proxies = (settings.trusted_proxies ?? []).join('\n');
 		person = settings.local_person ?? 0;
-		savedText = nets + '|' + proxies + '|' + person;
+		savedText = savedOf(settings);
 	});
 
 	let people = $state<Person[] | null>(null);
@@ -148,7 +150,7 @@
 			<p class="fix-head">{t(list.length === 1 ? 'settings.signIn.linesFixOne' : 'settings.signIn.linesFixOther', { n: list.length })}</p>
 			<ul>
 				{#each list as p (p.line)}
-					<li><span class="xs muted">{t('settings.signIn.lineN', { n: p.line })}</span> <span class="mono xs">{p.text}</span><br /><span class="xs">{fixText(p.fix)}</span></li>
+					<li><span class="xs muted">{t('settings.signIn.lineN', { n: p.line })}</span> <span class="mono xs" dir="ltr">{p.text}</span><br /><span class="xs">{fixText(p.fix)}</span></li>
 				{/each}
 			</ul>
 		</div>
@@ -208,7 +210,7 @@
 
 			<section class="part">
 				<label class="label" for="local-nets">{t('settings.signIn.homeNets')}</label>
-				<textarea id="local-nets" class="input mono" class:bad={netProblems.length} rows="4" bind:value={nets} spellcheck="false" autocapitalize="off" autocomplete="off" aria-invalid={netProblems.length > 0} aria-describedby="nets-hint nets-fixes"></textarea>
+				<textarea id="local-nets" dir="ltr" class="input mono" class:bad={netProblems.length} rows="4" bind:value={nets} spellcheck="false" autocapitalize="off" autocomplete="off" aria-invalid={netProblems.length > 0} aria-describedby="nets-hint nets-fixes"></textarea>
 				<p id="nets-hint" class="hint">{t('settings.signIn.homeNetsHint')}</p>
 				{@render problemList(netProblems, 'nets-fixes')}
 				{#if seen}
@@ -227,9 +229,9 @@
 			<section class="part">
 				<label class="label" for="trusted-proxies">{t('settings.signIn.proxies')}</label>
 				{#each settings.trusted_proxies_fixed ?? [] as p (p)}
-					<p class="fixed"><span class="mono">{p}</span> <span class="xs muted">· {t('settings.signIn.fixedRow')}</span></p>
+					<p class="fixed"><span class="mono" dir="ltr">{p}</span> <span class="xs muted">· {t('settings.signIn.fixedRow')}</span></p>
 				{/each}
-				<textarea id="trusted-proxies" class="input mono" class:bad={proxyProblems.length} rows="2" bind:value={proxies} placeholder="10.0.0.5" spellcheck="false" autocapitalize="off" autocomplete="off" aria-invalid={proxyProblems.length > 0} aria-describedby="proxies-hint proxies-fixes"></textarea>
+				<textarea id="trusted-proxies" dir="ltr" class="input mono" class:bad={proxyProblems.length} rows="2" bind:value={proxies} placeholder="10.0.0.5" spellcheck="false" autocapitalize="off" autocomplete="off" aria-invalid={proxyProblems.length > 0} aria-describedby="proxies-hint proxies-fixes"></textarea>
 				<p id="proxies-hint" class="hint">{t('settings.signIn.proxiesHelp')}</p>
 				{@render problemList(proxyProblems, 'proxies-fixes')}
 			</section>
@@ -268,7 +270,7 @@
 	.fixes { display: grid; gap: var(--s-1); }
 	.fix-head { margin: 0; color: var(--fail); font-size: var(--text-xs); font-weight: var(--weight-semibold); }
 	.fixes ul { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--s-2); }
-	.fixes li { border-left: 2px solid var(--fail); padding-left: var(--s-2); overflow-wrap: anywhere; }
+	.fixes li { border-inline-start: 2px solid var(--fail); padding-inline-start: var(--s-2); overflow-wrap: anywhere; }
 	.you { display: flex; align-items: center; gap: 6px; margin: 0; }
 	.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); flex: none; }
 	.dot.ok { background: var(--ok); }
