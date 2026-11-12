@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -16,10 +17,13 @@ import (
 
 // status answers the server test. Seerr reads urlBase and uses it as the
 // base path from then on. On the Sonarr side it also reads the version.
+// Pulsarr connects only when appName is the old app's own name and
+// authentication is text, so the side's old name goes there and HolyArrs
+// stays the instance name.
 func (h *handler) status(w http.ResponseWriter, r *http.Request) {
 	docker := startup.InContainer(func(p string) bool { _, err := os.Stat(p); return err == nil }, os.Getenv)
 	writeJSON(w, http.StatusOK, map[string]any{
-		"appName": AppName, "instanceName": AppName, "version": h.version, "urlBase": h.base(r.Context()),
+		"appName": oldAppNames[h.side], "instanceName": AppName, "version": h.version, "urlBase": h.base(r.Context()), "authentication": "apikey",
 		"isDebug": false, "isProduction": true, "isAdmin": false, "isUserInteractive": false,
 		"osName": runtime.GOOS, "isLinux": runtime.GOOS == "linux", "isOsx": runtime.GOOS == "darwin", "isWindows": runtime.GOOS == "windows",
 		"isDocker": docker, "mode": "console", "branch": "main", "databaseType": "sqLite", "runtimeName": "go",
@@ -156,4 +160,75 @@ func (h *handler) putTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusAccepted, in)
+}
+
+// removeTag deletes a tag and takes it off every title. A gone id is 404.
+func (h *handler) removeTag(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	var n int64
+	err := h.Store.Write(r.Context(), func(tx *sql.Tx) error {
+		var err error
+		n, err = deleteTag(tx, id)
+		return err
+	})
+	switch {
+	case err != nil:
+		internalError(w, err)
+	case n == 0:
+		notFound(w)
+	default:
+		writeJSON(w, http.StatusOK, map[string]any{})
+	}
+}
+
+// tagDetail lists each tag with the ids of this side's titles that carry
+// it (shows on the Sonarr side, movies on the Radarr side). Removed titles
+// are left out.
+func (h *handler) tagDetail(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	db := h.Store.Read()
+	tags, err := listTags(ctx, db)
+	if err != nil {
+		internalError(w, err)
+		return
+	}
+	links, err := allTagLinks(ctx, db)
+	if err != nil {
+		internalError(w, err)
+		return
+	}
+	var ids []int64
+	for _, l := range links {
+		ids = append(ids, l.titleID)
+	}
+	live := map[int64]bool{}
+	if len(ids) > 0 {
+		slices.Sort(ids)
+		ts, err := database.Select[mediafiles.Title](ctx, db, "titles", "kind = ? AND state != 'removed' AND id IN "+idList(slices.Compact(ids)), h.folderKind())
+		if err != nil {
+			internalError(w, err)
+			return
+		}
+		for _, t := range ts {
+			live[t.ID] = true
+		}
+	}
+	key := "movieIds"
+	if h.side == "sonarr" {
+		key = "seriesIds"
+	}
+	out := make([]map[string]any, 0, len(tags))
+	for _, tg := range tags {
+		on := []int64{}
+		for _, l := range links {
+			if l.tagID == tg.ID && live[l.titleID] {
+				on = append(on, l.titleID)
+			}
+		}
+		out = append(out, map[string]any{"id": tg.ID, "label": tg.Label, key: on})
+	}
+	writeJSON(w, http.StatusOK, out)
 }

@@ -523,6 +523,7 @@ errors
 estimatedCompletionTime
 eta
 event
+eventType
 event_kind
 every_minutes
 every_s
@@ -671,6 +672,7 @@ have
 haves
 hdr
 head
+headers
 health
 health_checked_at
 health_reason
@@ -738,8 +740,10 @@ info
 infoHash
 inherit
 inspection_status
+instanceName
 ip
 isAvailable
+isUpgrade
 is_finished
 is_private
 iso_3166_1
@@ -922,6 +926,7 @@ missing_search_shows
 mode
 moment
 moments
+monitor
 monitorNewItems
 monitored
 month
@@ -1240,6 +1245,7 @@ qid
 qualities
 quality
 qualityProfileId
+qualityVersion
 quality_profiles
 query
 queue

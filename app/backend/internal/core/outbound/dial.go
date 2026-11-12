@@ -105,3 +105,8 @@ func inBlocked(ip net.IP) bool {
 	}
 	return false
 }
+
+// SelfCallHeader marks a call HolyArrs sends out to an address someone else
+// chose, such as a hook. A request that carries it never skips sign-in on
+// the local network, so a hook pointed back at HolyArrs gets no owner rights.
+const SelfCallHeader = "X-Holyarrs-Outgoing"

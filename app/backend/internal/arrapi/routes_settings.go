@@ -27,6 +27,40 @@ type Handlers struct {
 	// Auth makes, lists and deletes the keys of both sides. Nil means
 	// sign-in is off and no key can be made.
 	Auth *accounts.Auth
+
+	hooks *hookSender
+}
+
+// Watch sends each import the Library records to the webhook records
+// those apps keep, on goroutines Wait waits for. Ending ctx stops them.
+func (h *Handlers) Watch(ctx context.Context) {
+	h.hooks = &hookSender{store: h.Store, vault: h.Secrets, allowed: h.maySend}
+	h.hooks.watch(ctx)
+}
+
+// Wait waits for the sends Watch started.
+func (h *Handlers) Wait() {
+	if h.hooks != nil {
+		h.hooks.wait()
+	}
+}
+
+// maySend reports whether a side may tell its hooks: the arr API is on
+// and the side still has a key. Taking a side's key away stops its hooks.
+func (h *Handlers) maySend(ctx context.Context, side string) bool {
+	if h.Auth == nil || !h.On(ctx) {
+		return false
+	}
+	keys, err := h.Auth.ArrKeys(ctx)
+	if err != nil {
+		return false
+	}
+	for _, k := range keys {
+		if k.Side == side {
+			return true
+		}
+	}
+	return false
 }
 
 // Routes registers the two prefixes and their settings. Each prefix gets
