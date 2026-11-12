@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrivedAt, libraryCards, n, arrivedTitle, arrivedHead, askProgressLine, attention, downloadMoved, downloadingNow, homeDownloadsURL, notSentNow, fallbackRows, groupAttention, homeFailures, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, moreLink, shownState, soonLine, splitArrivals, uncheckedLine, freeSpace, partCount } from './home.ts';
+import { arrivedAt, libraryCards, n, arrivedTitle, arrivedHead, askProgressLine, attention, downloadMoved, downloadingNow, homeDownloadsURL, notSentNow, fallbackRows, groupAttention, homeFailures, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, moreLink, shownState, soonLine, splitArrivals, upLine, uncheckedLine, freeSpace, partCount } from './home.ts';
 import type { HealthCheck } from '#lib/core/types.ts';
 
 const check = (key: string, state: HealthCheck['state'], kind: HealthCheck['kind'] = 'source'): HealthCheck => ({ id: 1, key, kind, subject: 'S', state, message: `${key} broke`, since: '', checked_at: '' });
@@ -183,6 +183,12 @@ describe('home rows', () => {
 		expect(arrivedTitle(now - 3 * 86400000, now)).toBe('New this week');
 		expect(arrivedTitle(now - 10 * 86400000, now)).toBe('Just arrived');
 		expect(arrivedTitle(now - 40 * 86400000, now)).toBe('Recently added');
+		// Coming up writes its date from the card's day, in the app's language, not the server's English words.
+		expect(upLine({ line: 'S2E1 · Nov 14', at: '2026-11-14' }, '2026-11-12')).toEqual({ sub: 'S2E1', when: 'Nov 14', now: false });
+		expect(upLine({ line: 'Out Nov 20', at: '2026-11-20' }, '2026-11-12')).toEqual({ sub: '', when: 'Nov 20', now: false });
+		expect(upLine({ line: 'S1E4 · Nov 12', at: '2026-11-12T21:00:00-05:00' }, '2026-11-12')).toEqual({ sub: 'S1E4', when: 'Today', now: true });
+		expect(upLine({ line: 'S3 · Out now', at: '2026-11-01' }, '2026-11-12')).toEqual({ sub: 'S3', when: 'Out now', now: true });
+		expect(upLine({ line: 'S2E1 · Nov 14', at: '2026-11-14' }, '2026-11-12', 'de')).toEqual({ sub: 'S2E1', when: '14. Nov.', now: false });
 		expect(soonLine({ name: 'Dune', subtitle: 'Fri' })).toBe('Next up: Dune, Fri');
 		expect(soonLine(undefined)).toBe('The next 30 days');
 	});

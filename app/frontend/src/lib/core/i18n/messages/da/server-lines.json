@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "Historie",
 	"server.metadata.set-by-your-docker-settings": "Styret af dine Docker-indstillinger",
 	"server.metadata.tv-movie": "Tv-film",
-	"server.metadata.western": "Western"
+	"server.metadata.western": "Western",
+	"server.downloads.deleted-by-hand": "Slettet manuelt",
+	"server.downloads.marked-bad": "Markeret som dårlig",
+	"server.suggest.because-you-have": "Fordi du har {name}"
 }

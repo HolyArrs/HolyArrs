@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
@@ -86,7 +87,7 @@
 			{@const s = historyStatus(r, importOf.get(r.id))}
 			{@const cut = s.text.indexOf(': ')}
 			{@const reason = cut > 0 ? shortReason(s.text.slice(cut + 2)) : ''}
-			<span class="st" class:ph class:bad={s.bad} class:two={!!reason} data-col="status" title={s.text}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{cut > 0 ? s.text.slice(0, cut) : s.text}</span>{#if reason}<span class="why" data-testid="dl-why">{reason}</span>{/if}</span></span>
+			<span class="st" class:ph class:bad={s.bad} class:two={!!reason} data-col="status" title={s.text}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{cut > 0 ? s.text.slice(0, cut) : s.text}</span>{#if reason}<span class="why" data-testid="dl-why">{serverWords(reason)}</span>{/if}</span></span>
 		{:else}
 			{@const tn = barTone(r)}
 			{@const detail = statusDetail(r, importOf.get(r.id))}

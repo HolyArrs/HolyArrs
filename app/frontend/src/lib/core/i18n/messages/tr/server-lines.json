@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "Tarih",
 	"server.metadata.set-by-your-docker-settings": "Docker ayarlarınla belirlendi",
 	"server.metadata.tv-movie": "TV Filmi",
-	"server.metadata.western": "Vahşi Batı"
+	"server.metadata.western": "Vahşi Batı",
+	"server.downloads.deleted-by-hand": "Elle silindi",
+	"server.downloads.marked-bad": "Bozuk olarak işaretlendi",
+	"server.suggest.because-you-have": "{name} sende olduğu için"
 }

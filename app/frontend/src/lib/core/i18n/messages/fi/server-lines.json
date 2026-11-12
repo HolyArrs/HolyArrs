@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "Historia",
 	"server.metadata.set-by-your-docker-settings": "Docker-asetustesi määräämä",
 	"server.metadata.tv-movie": "TV-elokuva",
-	"server.metadata.western": "Western"
+	"server.metadata.western": "Western",
+	"server.downloads.deleted-by-hand": "Poistettu käsin",
+	"server.downloads.marked-bad": "Merkitty huonoksi",
+	"server.suggest.because-you-have": "Koska sinulla on {name}"
 }

@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "Историјски",
 	"server.metadata.set-by-your-docker-settings": "Одређено вашим Docker подешавањима",
 	"server.metadata.tv-movie": "ТВ филм",
-	"server.metadata.western": "Вестерн"
+	"server.metadata.western": "Вестерн",
+	"server.downloads.deleted-by-hand": "Ручно обрисано",
+	"server.downloads.marked-bad": "Означено као лоше",
+	"server.suggest.because-you-have": "Зато што имате {name}"
 }

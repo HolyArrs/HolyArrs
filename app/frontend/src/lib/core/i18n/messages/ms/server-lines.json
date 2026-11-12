@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "Sejarah",
 	"server.metadata.set-by-your-docker-settings": "Ditetapkan oleh tetapan Docker anda",
 	"server.metadata.tv-movie": "Filem TV",
-	"server.metadata.western": "Western"
+	"server.metadata.western": "Western",
+	"server.downloads.deleted-by-hand": "Dipadam secara manual",
+	"server.downloads.marked-bad": "Ditanda rosak",
+	"server.suggest.because-you-have": "Kerana anda ada {name}"
 }

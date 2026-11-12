@@ -24,6 +24,14 @@ describe('serverWords', () => {
 		for (const [line, want] of [['New movie', 'Nuovo film'], ['New show', 'Nuova serie'], ['New episode Mon', 'Nuovo episodio · lun'], ['Coming Friday', 'Arriva venerdì'], ['New season', 'Nuova stagione']]) expect(serverWords(line)).toBe(want);
 	});
 
+	it('shows the Because you have row and the short download reasons in the picked language', async () => {
+		const de = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>('./messages/de/server-lines.json', { eager: true })).map((f) => f.default));
+		speak(de);
+		expect(serverWords('Because you have Slow Horses')).toBe('Weil du Slow Horses hast');
+		expect(serverWords('Deleted by hand')).toBe('Von Hand gelöscht');
+		expect(serverWords('Marked bad')).toBe('Als fehlerhaft markiert');
+	});
+
 	it('names the file a folder path change stopped at', async () => {
 		const de = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>('./messages/de/server-lines.json', { eager: true })).map((f) => f.default));
 		speak(de);

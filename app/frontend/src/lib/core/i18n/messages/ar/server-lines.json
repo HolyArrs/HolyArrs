@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "تاريخ",
 	"server.metadata.set-by-your-docker-settings": "محدد من إعدادات Docker",
 	"server.metadata.tv-movie": "فيلم تلفزيوني",
-	"server.metadata.western": "ويسترن"
+	"server.metadata.western": "ويسترن",
+	"server.downloads.deleted-by-hand": "حُذف يدويًا",
+	"server.downloads.marked-bad": "وُسم بأنه تالف",
+	"server.suggest.because-you-have": "لأن لديك {name}"
 }

@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "Histoire",
 	"server.metadata.set-by-your-docker-settings": "Défini par vos réglages Docker",
 	"server.metadata.tv-movie": "Téléfilm",
-	"server.metadata.western": "Western"
+	"server.metadata.western": "Western",
+	"server.downloads.deleted-by-hand": "Supprimé à la main",
+	"server.downloads.marked-bad": "Marqué comme mauvais",
+	"server.suggest.because-you-have": "Parce que vous avez {name}"
 }

@@ -1267,5 +1267,8 @@
 	"server.metadata.history": "ইতিহাস",
 	"server.metadata.set-by-your-docker-settings": "আপনার Docker সেটিংস দ্বারা নির্ধারিত",
 	"server.metadata.tv-movie": "টিভি সিনেমা",
-	"server.metadata.western": "ওয়েস্টার্ন"
+	"server.metadata.western": "ওয়েস্টার্ন",
+	"server.downloads.deleted-by-hand": "হাতে মুছে ফেলা হয়েছে",
+	"server.downloads.marked-bad": "খারাপ হিসেবে চিহ্নিত",
+	"server.suggest.because-you-have": "কারণ আপনার কাছে {name} আছে"
 }

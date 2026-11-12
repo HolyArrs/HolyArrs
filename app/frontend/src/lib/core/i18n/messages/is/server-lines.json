@@ -1267,5 +1267,8 @@
   "server.metadata.history": "Saga",
   "server.metadata.set-by-your-docker-settings": "Ákveðið af Docker-stillingunum þínum",
   "server.metadata.tv-movie": "Sjónvarpsmynd",
-  "server.metadata.western": "Vestri"
+  "server.metadata.western": "Vestri",
+	"server.downloads.deleted-by-hand": "Eytt handvirkt",
+	"server.downloads.marked-bad": "Merkt sem slæmt",
+	"server.suggest.because-you-have": "Af því að þú átt {name}"
 }
