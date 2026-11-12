@@ -100,5 +100,6 @@
 	"settings.users.note": "给自己的备注",
 	"settings.users.noteExample": "例如 妈妈",
 	"settings.users.days": "链接有效天数",
-	"settings.users.makeInvite": "创建邀请链接"
+	"settings.users.makeInvite": "创建邀请链接",
+	"settings.users.permAuto4k": "4K 请求无需等待即获批准"
 }

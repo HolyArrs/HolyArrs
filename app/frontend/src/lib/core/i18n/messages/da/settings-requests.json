@@ -38,5 +38,12 @@
 	"settings.requests.plexFriendsNone": "Ingen er importeret fra Plex endnu.",
 	"settings.requests.plexFriendsRead": "Ønskeliste tjekket {when}",
 	"settings.requests.plexFriendsNotYet": "Ønskeliste ikke tjekket endnu",
-	"settings.requests.plexFriendsAsked": "Anmodninger: {n}"
+	"settings.requests.plexFriendsAsked": "Anmodninger: {n}",
+	"settings.requests.plexFriendsRead": "Læst {when}",
+	"settings.requests.plexFriendsNotYet": "Ikke læst endnu",
+	"settings.requests.plexFriendsAsked": "Anmodet: {n}",
+	"settings.requests.fourK": "4K-kopi",
+	"settings.requests.fourKDesc": "Hvor godkendte 4K-anmodninger havner, og hvordan de vælges",
+	"settings.requests.fourKSameFolder": "Som andre anmodninger",
+	"settings.requests.fourKNamedRules": "Kvaliteten med navnet 4K"
 }

@@ -26,6 +26,10 @@
 		show_pick_rules_id: 0,
 		music_library_folder_id: 0,
 		music_pick_rules_id: 0,
+		four_k_library_folder_id: 0,
+		four_k_pick_rules_id: 0,
+		show_four_k_library_folder_id: 0,
+		show_four_k_pick_rules_id: 0,
 		plex_watchlists: false,
 		plex_watchlists_everyone: false,
 		plex_friends: false
@@ -181,6 +185,40 @@
 					</select>
 				</Field>
 			{/snippet}
+		</SettingsCard>
+		<SettingsCard id="four-k" title={t('settings.requests.fourK')} description={t('settings.requests.fourKDesc')}>
+			<Field id="ask-4k-folder" label={t('settings.requests.movieFolder')}>
+				<select id="ask-4k-folder" class="input" bind:value={settings.four_k_library_folder_id}>
+					<option value={0}>{t('settings.requests.fourKSameFolder')}</option>
+					{#each movieFolders as f (f.id)}
+						<option value={f.id}>{f.label || f.path} ({f.path})</option>
+					{/each}
+				</select>
+			</Field>
+			<Field id="ask-4k-rules" label={t('settings.requests.movieQuality')}>
+				<select id="ask-4k-rules" class="input" bind:value={settings.four_k_pick_rules_id}>
+					<option value={0}>{t('settings.requests.fourKNamedRules')}</option>
+					{#each movieRules as r (r.id)}
+						<option value={r.id}>{r.name}</option>
+					{/each}
+				</select>
+			</Field>
+			<Field id="ask-show-4k-folder" label={t('settings.requests.showFolder')}>
+				<select id="ask-show-4k-folder" class="input" bind:value={settings.show_four_k_library_folder_id}>
+					<option value={0}>{t('settings.requests.fourKSameFolder')}</option>
+					{#each showFolders as f (f.id)}
+						<option value={f.id}>{f.label || f.path} ({f.path})</option>
+					{/each}
+				</select>
+			</Field>
+			<Field id="ask-show-4k-rules" label={t('settings.requests.showQuality')}>
+				<select id="ask-show-4k-rules" class="input" bind:value={settings.show_four_k_pick_rules_id}>
+					<option value={0}>{t('settings.requests.fourKNamedRules')}</option>
+					{#each showRules as r (r.id)}
+						<option value={r.id}>{r.name}</option>
+					{/each}
+				</select>
+			</Field>
 		</SettingsCard>
 		<SettingsCard id="plex-watchlists" title={t('settings.requests.plex')} description={t('settings.requests.plexDesc')}>
 			<label class="checkline">

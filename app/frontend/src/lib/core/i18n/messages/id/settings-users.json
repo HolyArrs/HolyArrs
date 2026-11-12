@@ -100,5 +100,6 @@
 	"settings.users.note": "Catatan untuk dirimu sendiri",
 	"settings.users.noteExample": "mis. Ibu",
 	"settings.users.days": "Hari tautan berlaku",
-	"settings.users.makeInvite": "Buat tautan undangan"
+	"settings.users.makeInvite": "Buat tautan undangan",
+	"settings.users.permAuto4k": "Permintaan 4K disetujui tanpa menunggu"
 }

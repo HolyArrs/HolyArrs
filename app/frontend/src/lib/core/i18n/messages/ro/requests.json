@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Descărcat",
 	"requests.moment.downloaded.body": "Pentru personal: un Program de descărcare a terminat o descărcare (urmează importul).",
 	"requests.moment.download_failed.title": "Descărcarea a eșuat",
-	"requests.moment.download_failed.body": "Pentru personal: o descărcare a eșuat, iar Lansarea ei a fost respinsă."
+	"requests.moment.download_failed.body": "Pentru personal: o descărcare a eșuat, iar Lansarea ei a fost respinsă.",
+	"requests.ask.fourK": "Copie 4K",
+	"requests.ask.fourKHint": "Sezoanele alese se descarcă și la calitate normală."
 }

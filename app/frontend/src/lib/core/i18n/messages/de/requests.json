@@ -579,5 +579,7 @@
 	"requests.page.quickReasons": "Schnelle Gründe",
 	"requests.page.takeBackTitle": "{name} zurückziehen?",
 	"requests.page.takeBackDesc": "Sie verlässt die Anfragen. Du kannst später erneut anfragen.",
-	"requests.page.keepIt": "Behalten"
+	"requests.page.keepIt": "Behalten",
+	"requests.ask.fourK": "4K-Kopie",
+	"requests.ask.fourKHint": "Die gewählten Staffeln werden auch in normaler Qualität geladen."
 }

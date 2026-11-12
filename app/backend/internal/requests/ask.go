@@ -166,6 +166,9 @@ type Person struct {
 	UserID      int64
 	Name        string
 	AutoApprove bool // their asks are approved straight away
+	// AutoApproveFourK lets their 4K asks be approved straight away too
+	// (with AutoApprove); without it a 4K ask waits for staff.
+	AutoApproveFourK bool
 	NoLimit     bool // the weekly limit does not apply (people who approve)
 	// MaxRating is a Kid's age-rating limit ("" for none): they may ask
 	// only for movies and shows rated up to it, and never for music.
@@ -382,15 +385,26 @@ func (s *Service) Ask4K(ctx context.Context, p Person, tmdbID string) (Result, e
 	return s.ask(ctx, p, tmdbID, true, false)
 }
 
-// fourKVersion finds the title's 4K Version (labelled 4K or on the 4K
-// Pick rules), 0 when it has none.
-func fourKVersion(ctx context.Context, db database.Querier, titleID int64) (int64, error) {
+// autoApproves says p's ask of this kind is approved straight away: a 4K
+// ask needs the 4K switch too.
+func (p Person) autoApproves(fourK bool) bool {
+	return p.AutoApprove && (!fourK || p.AutoApproveFourK)
+}
+
+// copyOf finds the title's 4K Version (fourK) or its plain copy (the main
+// one first among the Versions without the 4K mark), 0 when it has none.
+func copyOf(ctx context.Context, db database.Querier, titleID int64, fourK bool) (int64, error) {
 	var id int64
-	err := db.QueryRowContext(ctx, fourKVersionSQL, titleID, mediafiles.FourKName, mediafiles.FourKName).Scan(&id)
+	err := db.QueryRowContext(ctx, copyOfSQL, titleID, fourK).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, nil
 	}
 	return id, err
+}
+
+// fourKVersion finds the title's 4K Version, 0 when it has none.
+func fourKVersion(ctx context.Context, db database.Querier, titleID int64) (int64, error) {
+	return copyOf(ctx, db, titleID, true)
 }
 
 // HasFourK says the title already has a 4K Version (a 4K ask is refused then).
@@ -452,20 +466,15 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, fourK, retri
 	if tid, err := library.TitleByTMDB(ctx, db, tmdbID); err != nil {
 		return Result{}, err
 	} else if tid != 0 {
-		// A 4K ask is fine for a movie in the Library without a 4K Version.
-		vid := int64(0)
-		if fourK {
-			if vid, err = fourKVersion(ctx, db, tid); err != nil {
-				return Result{}, err
-			}
+		// A 4K ask is fine for a movie in the Library without a 4K
+		// Version, a plain ask for one whose only copy is the 4K one.
+		vid, err := copyOf(ctx, db, tid, fourK)
+		if err != nil {
+			return Result{}, err
 		}
-		if !fourK || vid != 0 {
-			q, args := askSQL2, []any{tid}
-			if fourK {
-				q, args = q+" AND version_id = ?", append(args, vid)
-			}
+		if vid != 0 {
 			var n int
-			_ = db.QueryRowContext(ctx, q, args...).Scan(&n)
+			_ = db.QueryRowContext(ctx, askSQL2, tid, vid).Scan(&n)
 			return Result{}, &InLibraryError{TitleID: tid, Ready: n > 0}
 		}
 	}
@@ -509,7 +518,7 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, fourK, retri
 	}
 	s.event(ctx, &domain.Event{Actor: p.actor(), Kind: domain.EventAskMade, Summary: p.Name + " asked for " + label(a),
 		Data: map[string]any{"ask_id": a.ID, "tmdb_id": tmdbID, "asked_by": p.Name}, GroupKey: groupKey(a.ID)})
-	if p.AutoApprove {
+	if p.autoApproves(fourK) {
 		if got, err := s.decide(ctx, a.ID, p, ApproveOptions{}, true); err == nil {
 			return Result{Ask: got}, nil
 		} else {
@@ -543,7 +552,7 @@ func (s *Service) join(ctx context.Context, p Person, id int64) (Result, error) 
 	}
 	s.event(ctx, &domain.Event{Actor: p.actor(), Kind: domain.EventAskJoined, TitleID: a.TitleID, Summary: p.Name + " also asked for " + label(a),
 		Data: map[string]any{"ask_id": a.ID, "asked_by": p.Name}, GroupKey: groupKey(a.ID)})
-	if a.State == domain.AskAsked && p.AutoApprove {
+	if a.State == domain.AskAsked && p.autoApproves(a.FourK) {
 		if got, err := s.decide(ctx, a.ID, p, ApproveOptions{}, true); err == nil {
 			a = got
 		}

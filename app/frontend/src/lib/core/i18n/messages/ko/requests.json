@@ -579,5 +579,7 @@
 	"requests.page.quickReasons": "빠른 이유",
 	"requests.page.takeBackTitle": "{name} 요청을 취소할까요?",
 	"requests.page.takeBackDesc": "요청에서 사라집니다. 나중에 다시 요청할 수 있습니다.",
-	"requests.page.keepIt": "유지"
+	"requests.page.keepIt": "유지",
+	"requests.ask.fourK": "4K 사본",
+	"requests.ask.fourKHint": "고른 시즌은 일반 품질로도 내려받습니다."
 }

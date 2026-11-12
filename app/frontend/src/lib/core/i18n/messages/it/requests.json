@@ -579,5 +579,7 @@
 	"requests.page.quickReasons": "Motivi rapidi",
 	"requests.page.takeBackTitle": "Ritirare {name}?",
 	"requests.page.takeBackDesc": "Esce da Richieste. Potrai richiederlo di nuovo più avanti.",
-	"requests.page.keepIt": "Tienila"
+	"requests.page.keepIt": "Tienila",
+	"requests.ask.fourK": "Copia 4K",
+	"requests.ask.fourKHint": "Le stagioni scelte vengono scaricate anche in qualità normale."
 }

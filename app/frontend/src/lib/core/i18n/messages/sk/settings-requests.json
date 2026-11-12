@@ -38,5 +38,12 @@
 	"settings.requests.plexFriendsNone": "Z Plexu zatiaľ nikto nie je naimportovaný.",
 	"settings.requests.plexFriendsRead": "Zoznam na pozeranie skontrolovaný {when}",
 	"settings.requests.plexFriendsNotYet": "Zoznam na pozeranie zatiaľ neskontrolovaný",
-	"settings.requests.plexFriendsAsked": "Žiadosti: {n}"
+	"settings.requests.plexFriendsAsked": "Žiadosti: {n}",
+	"settings.requests.plexFriendsRead": "Prečítané {when}",
+	"settings.requests.plexFriendsNotYet": "Zatiaľ neprečítané",
+	"settings.requests.plexFriendsAsked": "Požiadané: {n}",
+	"settings.requests.fourK": "Kópia 4K",
+	"settings.requests.fourKDesc": "Kam idú schválené žiadosti o 4K a ako sa vyberajú",
+	"settings.requests.fourKSameFolder": "Rovnako ako ostatné žiadosti",
+	"settings.requests.fourKNamedRules": "Kvalita s názvom 4K"
 }

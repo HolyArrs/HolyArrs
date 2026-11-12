@@ -38,5 +38,12 @@
 	"settings.requests.plexFriendsNone": "Ainda ninguém foi importado do Plex.",
 	"settings.requests.plexFriendsRead": "Watchlist verificada {when}",
 	"settings.requests.plexFriendsNotYet": "Watchlist ainda não verificada",
-	"settings.requests.plexFriendsAsked": "Pedidos: {n}"
+	"settings.requests.plexFriendsAsked": "Pedidos: {n}",
+	"settings.requests.plexFriendsRead": "Lido {when}",
+	"settings.requests.plexFriendsNotYet": "Ainda não lido",
+	"settings.requests.plexFriendsAsked": "Pedidos: {n}",
+	"settings.requests.fourK": "Cópia 4K",
+	"settings.requests.fourKDesc": "Para onde vão os pedidos 4K aprovados e como são escolhidos",
+	"settings.requests.fourKSameFolder": "Igual aos outros pedidos",
+	"settings.requests.fourKNamedRules": "A qualidade chamada 4K"
 }

@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "No one imported from Plex yet.",
 	"settings.requests.plexFriendsRead": "Watchlist checked {when}",
 	"settings.requests.plexFriendsNotYet": "Watchlist not checked yet",
-	"settings.requests.plexFriendsAsked": "Requests: {n}"
+	"settings.requests.plexFriendsAsked": "Requests: {n}",
+	"settings.requests.fourK": "4K copy",
+	"settings.requests.fourKDesc": "Where approved 4K requests go and how they are picked",
+	"settings.requests.fourKSameFolder": "Same as other requests",
+	"settings.requests.fourKNamedRules": "The quality named 4K"
 }

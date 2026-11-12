@@ -38,5 +38,12 @@
 	"settings.requests.plexFriendsNone": "Из Plex ещё никто не импортирован.",
 	"settings.requests.plexFriendsRead": "Список «Смотреть позже» проверен {when}",
 	"settings.requests.plexFriendsNotYet": "Список «Смотреть позже» ещё не проверен",
-	"settings.requests.plexFriendsAsked": "Запросы: {n}"
+	"settings.requests.plexFriendsAsked": "Запросы: {n}",
+	"settings.requests.plexFriendsRead": "Прочитано {when}",
+	"settings.requests.plexFriendsNotYet": "Ещё не прочитано",
+	"settings.requests.plexFriendsAsked": "Запрошено: {n}",
+	"settings.requests.fourK": "Копия в 4K",
+	"settings.requests.fourKDesc": "Куда попадают одобренные запросы в 4K и как они выбираются",
+	"settings.requests.fourKSameFolder": "Как для других запросов",
+	"settings.requests.fourKNamedRules": "Качество с названием 4K"
 }

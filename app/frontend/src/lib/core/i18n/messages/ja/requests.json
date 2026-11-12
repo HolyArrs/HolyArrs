@@ -579,5 +579,7 @@
 	"requests.page.quickReasons": "クイック理由",
 	"requests.page.takeBackTitle": "{name} を取り下げますか?",
 	"requests.page.takeBackDesc": "リクエストから外れます。あとからもう一度リクエストできます。",
-	"requests.page.keepIt": "そのままにする"
+	"requests.page.keepIt": "そのままにする",
+	"requests.ask.fourK": "4K コピー",
+	"requests.ask.fourKHint": "選んだシーズンは通常の品質でもダウンロードされます。"
 }

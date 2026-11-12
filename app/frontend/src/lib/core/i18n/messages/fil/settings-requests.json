@@ -38,5 +38,12 @@
 	"settings.requests.plexFriendsNone": "Wala pang na-import mula sa Plex.",
 	"settings.requests.plexFriendsRead": "Na-check ang watchlist {when}",
 	"settings.requests.plexFriendsNotYet": "Hindi pa na-check ang watchlist",
-	"settings.requests.plexFriendsAsked": "Mga request: {n}"
+	"settings.requests.plexFriendsAsked": "Mga request: {n}",
+	"settings.requests.plexFriendsRead": "Nabasa {when}",
+	"settings.requests.plexFriendsNotYet": "Hindi pa nababasa",
+	"settings.requests.plexFriendsAsked": "Hiniling: {n}",
+	"settings.requests.fourK": "4K na kopya",
+	"settings.requests.fourKDesc": "Kung saan napupunta ang mga naaprubahang 4K request at paano pinipili",
+	"settings.requests.fourKSameFolder": "Kapareho ng ibang request",
+	"settings.requests.fourKNamedRules": "Ang kalidad na may pangalang 4K"
 }

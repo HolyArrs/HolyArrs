@@ -117,8 +117,9 @@ func TestPinCheckReadyPlainAndFourK(t *testing.T) {
 	}
 }
 
-// fourKVersion matches by label (any case) or by the 4K Pick rules name.
-func TestPinHasFourKByLabelOrRulesName(t *testing.T) {
+// fourKVersion finds the Version with the 4K mark, whatever its label or
+// Pick rules are called.
+func TestPinHasFourKByMark(t *testing.T) {
 	r := newRig(t)
 	ctx := context.Background()
 	pinBigLibrary(t, r, 50)
@@ -128,21 +129,19 @@ func TestPinHasFourKByLabelOrRulesName(t *testing.T) {
 	if has, err := HasFourK(ctx, r.st.Read(), tid); err != nil || has {
 		t.Fatalf("plain only: %v %v", has, err)
 	}
-	// A version labelled "4k" (lower case) counts.
+	// A version only labelled "4k" is not the 4K copy; a marked one is.
 	_ = r.st.Read().QueryRow("SELECT id FROM pick_rules WHERE name != '4K' ORDER BY id LIMIT 1").Scan(&rules)
 	pinExec(t, r, `INSERT INTO versions (created_at, created_by, updated_at, updated_by, title_id, label, pick_rules_id, library_folder_id, folder_name)
 		VALUES (?, '{}', ?, '{}', ?, '4k', ?, ?, 'x')`, pinNow, pinNow, tid, rules, folder)
-	if has, _ := HasFourK(ctx, r.st.Read(), tid); !has {
-		t.Fatal("label 4k not seen")
+	if has, _ := HasFourK(ctx, r.st.Read(), tid); has {
+		t.Fatal("label alone seen as 4K")
 	}
-	// A differently labelled version on the 4K Pick rules counts.
-	var tid2, rules4 int64
+	var tid2 int64
 	_ = r.st.Read().QueryRow("SELECT id FROM titles WHERE name = 'Crowd 0008'").Scan(&tid2)
-	_ = r.st.Read().QueryRow("SELECT id FROM pick_rules WHERE name = '4K'").Scan(&rules4)
-	pinExec(t, r, `INSERT INTO versions (created_at, created_by, updated_at, updated_by, title_id, label, pick_rules_id, library_folder_id, folder_name)
-		VALUES (?, '{}', ?, '{}', ?, 'Ultra', ?, ?, 'y')`, pinNow, pinNow, tid2, rules4, folder)
+	pinExec(t, r, `INSERT INTO versions (created_at, created_by, updated_at, updated_by, title_id, label, pick_rules_id, library_folder_id, folder_name, four_k)
+		VALUES (?, '{}', ?, '{}', ?, 'Ultra', ?, ?, 'y', 1)`, pinNow, pinNow, tid2, rules, folder)
 	if has, _ := HasFourK(ctx, r.st.Read(), tid2); !has {
-		t.Fatal("4K rules not seen")
+		t.Fatal("4K mark not seen")
 	}
 	// A title with no versions at all: no 4K, no error.
 	if has, err := HasFourK(ctx, r.st.Read(), 987654); err != nil || has {

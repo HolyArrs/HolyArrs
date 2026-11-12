@@ -179,6 +179,8 @@ type Version struct {
 	IsMain          bool     `db:"is_main"`
 	Edition         string   `db:"edition"`
 	AudioLanguages  []string `db:"audio_languages,json"`
+	// FourK marks the title's 4K copy (at most one a title).
+	FourK bool `db:"four_k"`
 }
 
 // Slot is one Item in one Version; the core loop state lives here.

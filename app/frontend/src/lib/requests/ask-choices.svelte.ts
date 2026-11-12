@@ -18,6 +18,8 @@ export function createAskChoices(ctx: { rules: PickRulesView[]; folders: Library
 		return ctx.folders.filter((f) => f.kind === k);
 	};
 	const rulesOf = (a: Ask) => {
+		// A 4K copy always gets the 4K quality from the request settings, so there is nothing to pick.
+		if (a.four_k) return [];
 		const k = a.kind === 'show' ? 'show' : a.kind === 'artist' ? 'music' : 'movie';
 		return ctx.rules.filter((r) => !r.kinds.length || r.kinds.includes(k));
 	};

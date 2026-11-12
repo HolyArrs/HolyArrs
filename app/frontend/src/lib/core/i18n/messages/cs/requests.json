@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Staženo",
 	"requests.moment.downloaded.body": "Pro správce: Stahovač dokončil stahování (následuje import).",
 	"requests.moment.download_failed.title": "Stahování selhalo",
-	"requests.moment.download_failed.body": "Pro správce: stahování selhalo a jeho Release byl odmítnut."
+	"requests.moment.download_failed.body": "Pro správce: stahování selhalo a jeho Release byl odmítnut.",
+	"requests.ask.fourK": "Kopie ve 4K",
+	"requests.ask.fourKHint": "Vybrané řady se stáhnou i v běžné kvalitě."
 }

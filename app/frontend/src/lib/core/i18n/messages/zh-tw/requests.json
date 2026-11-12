@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "已下載",
 	"requests.moment.downloaded.body": "給工作人員：下載器已完成一個下載（接著是匯入）。",
 	"requests.moment.download_failed.title": "下載失敗",
-	"requests.moment.download_failed.body": "給工作人員：一個下載失敗，其資源已被拒絕。"
+	"requests.moment.download_failed.body": "給工作人員：一個下載失敗，其資源已被拒絕。",
+	"requests.ask.fourK": "4K 副本",
+	"requests.ask.fourKHint": "你選的季也會以一般畫質下載。"
 }

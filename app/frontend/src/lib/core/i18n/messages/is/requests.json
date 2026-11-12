@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Niðurhalað",
 	"requests.moment.downloaded.body": "Til starfsfólks: Niðurhalari lauk niðurhali (innflutningur kemur næst).",
 	"requests.moment.download_failed.title": "Niðurhal mistókst",
-	"requests.moment.download_failed.body": "Til starfsfólks: niðurhal mistókst og Útgáfu þess var hafnað."
+	"requests.moment.download_failed.body": "Til starfsfólks: niðurhal mistókst og Útgáfu þess var hafnað.",
+	"requests.ask.fourK": "4K-eintak",
+	"requests.ask.fourKHint": "Þáttaraðirnar sem þú velur sækjast líka í venjulegum gæðum."
 }

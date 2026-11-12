@@ -100,5 +100,6 @@
 	"settings.users.note": "Athugasemd fyrir sjálfa(n) þig",
 	"settings.users.noteExample": "t.d. Mamma",
 	"settings.users.days": "Dagar sem tengillinn gildir",
-	"settings.users.makeInvite": "Búa til boðstengil"
+	"settings.users.makeInvite": "Búa til boðstengil",
+	"settings.users.permAuto4k": "4K-beiðnir samþykktar án biðar"
 }

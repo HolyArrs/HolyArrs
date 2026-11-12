@@ -38,5 +38,12 @@
 	"settings.requests.plexFriendsNone": "Encara no s'ha importat ningú de Plex.",
 	"settings.requests.plexFriendsRead": "Llista de seguiment revisada {when}",
 	"settings.requests.plexFriendsNotYet": "Llista de seguiment encara no revisada",
-	"settings.requests.plexFriendsAsked": "Sol·licituds: {n}"
+	"settings.requests.plexFriendsAsked": "Sol·licituds: {n}",
+	"settings.requests.plexFriendsRead": "Llegit {when}",
+	"settings.requests.plexFriendsNotYet": "Encara no llegit",
+	"settings.requests.plexFriendsAsked": "Sol·licitats: {n}",
+	"settings.requests.fourK": "Còpia 4K",
+	"settings.requests.fourKDesc": "On van les sol·licituds 4K aprovades i com es trien",
+	"settings.requests.fourKSameFolder": "Igual que les altres sol·licituds",
+	"settings.requests.fourKNamedRules": "La qualitat anomenada 4K"
 }

@@ -100,5 +100,6 @@
 	"settings.users.note": "Jegyzet magának",
 	"settings.users.noteExample": "pl. Anya",
 	"settings.users.days": "A hivatkozás érvényességi ideje (nap)",
-	"settings.users.makeInvite": "Meghívó-hivatkozás létrehozása"
+	"settings.users.makeInvite": "Meghívó-hivatkozás létrehozása",
+	"settings.users.permAuto4k": "Várakozás nélkül jóváhagyott 4K kérések"
 }

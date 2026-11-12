@@ -38,5 +38,12 @@
 	"settings.requests.plexFriendsNone": "Plex'ten henüz kimse içe aktarılmadı.",
 	"settings.requests.plexFriendsRead": "İzleme listesi kontrol edildi: {when}",
 	"settings.requests.plexFriendsNotYet": "İzleme listesi henüz kontrol edilmedi",
-	"settings.requests.plexFriendsAsked": "İstekler: {n}"
+	"settings.requests.plexFriendsAsked": "İstekler: {n}",
+	"settings.requests.plexFriendsRead": "Okundu: {when}",
+	"settings.requests.plexFriendsNotYet": "Henüz okunmadı",
+	"settings.requests.plexFriendsAsked": "İstenen: {n}",
+	"settings.requests.fourK": "4K kopya",
+	"settings.requests.fourKDesc": "Onaylanan 4K istekleri nereye gider ve nasıl seçilir",
+	"settings.requests.fourKSameFolder": "Diğer isteklerle aynı",
+	"settings.requests.fourKNamedRules": "4K adlı kalite"
 }

@@ -38,5 +38,12 @@
 	"settings.requests.plexFriendsNone": "עדיין לא יובא איש מ-Plex.",
 	"settings.requests.plexFriendsRead": "רשימת הצפייה נבדקה {when}",
 	"settings.requests.plexFriendsNotYet": "רשימת הצפייה עוד לא נבדקה",
-	"settings.requests.plexFriendsAsked": "בקשות: {n}"
+	"settings.requests.plexFriendsAsked": "בקשות: {n}",
+	"settings.requests.plexFriendsRead": "נקרא {when}",
+	"settings.requests.plexFriendsNotYet": "עדיין לא נקרא",
+	"settings.requests.plexFriendsAsked": "התבקשו: {n}",
+	"settings.requests.fourK": "עותק 4K",
+	"settings.requests.fourKDesc": "לאן הולכות בקשות 4K שאושרו ואיך הן נבחרות",
+	"settings.requests.fourKSameFolder": "כמו בקשות אחרות",
+	"settings.requests.fourKNamedRules": "האיכות בשם 4K"
 }

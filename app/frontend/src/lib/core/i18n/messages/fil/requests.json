@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Na-download",
 	"requests.moment.downloaded.body": "Para sa staff: natapos ng isang Downloader ang isang download (susunod ang import).",
 	"requests.moment.download_failed.title": "Nabigo ang download",
-	"requests.moment.download_failed.body": "Para sa staff: nabigo ang isang download at tinanggihan ang Release nito."
+	"requests.moment.download_failed.body": "Para sa staff: nabigo ang isang download at tinanggihan ang Release nito.",
+	"requests.ask.fourK": "4K na kopya",
+	"requests.ask.fourKHint": "Ang mga season na pipiliin mo ay ida-download din sa normal na kalidad."
 }

@@ -360,7 +360,7 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	if ask.Name != "The Matrix" || ask.Ask.By != "person:seerr:2" || ask.Ask.Approved {
 		t.Fatalf("ask %+v", ask)
 	}
-	if sh := item(t, p, GroupRequests, "ask:seerr:8").Ask; !sh.Approved || sh.Ref != "tvdb:73739" || sh.Decider != "person:seerr:1" || sh.Note == "" {
+	if sh := item(t, p, GroupRequests, "ask:seerr:8").Ask; !sh.Approved || sh.Ref != "tvdb:73739" || sh.Decider != "person:seerr:1" || !sh.FourK {
 		t.Fatalf("show ask %+v", sh)
 	}
 	// Alerts: Discord and email (off until their secret), others listed.

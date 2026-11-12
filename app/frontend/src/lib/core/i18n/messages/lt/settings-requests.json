@@ -38,5 +38,12 @@
 	"settings.requests.plexFriendsNone": "Iš Plex dar niekas neimportuotas.",
 	"settings.requests.plexFriendsRead": "Stebėjimo sąrašas patikrintas {when}",
 	"settings.requests.plexFriendsNotYet": "Stebėjimo sąrašas dar nepatikrintas",
-	"settings.requests.plexFriendsAsked": "Užsakymai: {n}"
+	"settings.requests.plexFriendsAsked": "Užsakymai: {n}",
+	"settings.requests.plexFriendsRead": "Skaityta {when}",
+	"settings.requests.plexFriendsNotYet": "Dar neskaityta",
+	"settings.requests.plexFriendsAsked": "Paprašyta: {n}",
+	"settings.requests.fourK": "4K kopija",
+	"settings.requests.fourKDesc": "Kur keliauja patvirtinti 4K užsakymai ir kaip jie parenkami",
+	"settings.requests.fourKSameFolder": "Kaip kiti užsakymai",
+	"settings.requests.fourKNamedRules": "Kokybė pavadinimu 4K"
 }

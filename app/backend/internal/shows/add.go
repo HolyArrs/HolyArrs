@@ -34,6 +34,8 @@ type ShowAddOptions struct {
 	SearchOnAdd bool `json:"search_on_add"`
 	// MoreVersions are extra wanted copies (for example 4K) next to the main one.
 	MoreVersions []library.VersionInput `json:"more_versions"`
+	// MainFourK adds the main copy as the 4K copy, labelled 4K (a 4K ask).
+	MainFourK bool `json:"-"`
 	// WhyAdded records why the show was added (by_hand when empty).
 	WhyAdded string `json:"-"`
 	// Adopt keeps a show folder found on disk as it is, with its files.
@@ -272,7 +274,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 			}
 			folder = library.ExistingFolder(lf.Path, folder, t.Name, year, func(d string) bool { return taken[strings.ToLower(d)] })
 		}
-		v := &mediafiles.Version{TitleID: t.ID, Label: "Main", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: folder, KeepUpToDate: keep, IsMain: true}
+		v := &mediafiles.Version{TitleID: t.ID, Label: library.MainLabel(opt.MainFourK), PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: folder, KeepUpToDate: keep, IsMain: true, FourK: opt.MainFourK}
 		if _, err := database.Insert(tx, "versions", v, by); err != nil {
 			return err
 		}

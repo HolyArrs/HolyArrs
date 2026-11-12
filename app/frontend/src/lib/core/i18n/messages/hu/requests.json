@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Letöltve",
 	"requests.moment.downloaded.body": "A személyzetnek: egy Letöltő befejezett egy letöltést (következik az import).",
 	"requests.moment.download_failed.title": "A letöltés sikertelen",
-	"requests.moment.download_failed.body": "A személyzetnek: egy letöltés sikertelen volt, és a Release-t elutasították."
+	"requests.moment.download_failed.body": "A személyzetnek: egy letöltés sikertelen volt, és a Release-t elutasították.",
+	"requests.ask.fourK": "4K másolat",
+	"requests.ask.fourKHint": "A választott évadok normál minőségben is letöltődnek."
 }

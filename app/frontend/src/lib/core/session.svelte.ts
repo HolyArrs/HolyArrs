@@ -6,7 +6,7 @@ import { views as accountViews } from './views.svelte.ts';
 
 export type SessionState = 'unknown' | 'signed_out' | 'needs_setup' | 'signed_in';
 export type Role = 'owner' | 'admin' | 'member';
-export type Perm = 'ask' | 'auto_approve' | 'approve' | 'manage_library' | 'settings';
+export type Perm = 'ask' | 'auto_approve' | 'auto_approve_four_k' | 'approve' | 'manage_library' | 'settings';
 export type Way = 'password' | 'plex' | 'jellyfin' | 'emby' | 'oidc' | 'forward_auth';
 export type AuthMethod = string;
 

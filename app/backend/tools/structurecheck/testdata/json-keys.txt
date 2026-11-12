@@ -626,6 +626,8 @@ forward
 found
 found_by
 four_k
+four_k_library_folder_id
+four_k_pick_rules_id
 fps
 free_bytes
 free_space
@@ -1513,6 +1515,8 @@ shelf
 show
 show_days
 show_folder_pattern
+show_four_k_library_folder_id
+show_four_k_pick_rules_id
 show_library_folder_id
 show_limit
 show_limit_set

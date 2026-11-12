@@ -100,5 +100,6 @@
 	"settings.users.note": "Σημείωση για εσάς",
 	"settings.users.noteExample": "π.χ. Μαμά",
 	"settings.users.days": "Ημέρες ισχύος του συνδέσμου",
-	"settings.users.makeInvite": "Δημιουργία συνδέσμου πρόσκλησης"
+	"settings.users.makeInvite": "Δημιουργία συνδέσμου πρόσκλησης",
+	"settings.users.permAuto4k": "Αιτήματα 4K που εγκρίνονται χωρίς αναμονή"
 }

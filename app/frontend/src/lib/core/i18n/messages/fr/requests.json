@@ -579,5 +579,7 @@
 	"requests.page.quickReasons": "Motifs rapides",
 	"requests.page.takeBackTitle": "Retirer {name} ?",
 	"requests.page.takeBackDesc": "Elle quitte Demandes. Vous pourrez redemander plus tard.",
-	"requests.page.keepIt": "La garder"
+	"requests.page.keepIt": "La garder",
+	"requests.ask.fourK": "Copie 4K",
+	"requests.ask.fourKHint": "Les saisons choisies sont aussi téléchargées en qualité normale."
 }

@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Đã tải",
 	"requests.moment.downloaded.body": "Gửi nhân viên: một Trình tải đã tải xong một bản tải (tiếp theo là nhập).",
 	"requests.moment.download_failed.title": "Tải thất bại",
-	"requests.moment.download_failed.body": "Gửi nhân viên: một bản tải thất bại và Bản phát hành của nó bị từ chối."
+	"requests.moment.download_failed.body": "Gửi nhân viên: một bản tải thất bại và Bản phát hành của nó bị từ chối.",
+	"requests.ask.fourK": "Bản 4K",
+	"requests.ask.fourKHint": "Các mùa bạn chọn cũng được tải ở chất lượng thường."
 }

@@ -100,5 +100,6 @@
 	"settings.users.note": "給自己的備注",
 	"settings.users.noteExample": "例如 媽媽",
 	"settings.users.days": "連結有效天數",
-	"settings.users.makeInvite": "建立邀請連結"
+	"settings.users.makeInvite": "建立邀請連結",
+	"settings.users.permAuto4k": "4K 請求無需等待即獲核准"
 }

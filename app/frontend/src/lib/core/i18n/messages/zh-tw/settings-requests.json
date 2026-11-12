@@ -38,5 +38,12 @@
 	"settings.requests.plexFriendsNone": "還沒有從 Plex 匯入任何人。",
 	"settings.requests.plexFriendsRead": "想看清單上次檢查：{when}",
 	"settings.requests.plexFriendsNotYet": "尚未檢查想看清單",
-	"settings.requests.plexFriendsAsked": "請求：{n}"
+	"settings.requests.plexFriendsAsked": "請求：{n}",
+	"settings.requests.plexFriendsRead": "讀取於 {when}",
+	"settings.requests.plexFriendsNotYet": "尚未讀取",
+	"settings.requests.plexFriendsAsked": "已請求：{n}",
+	"settings.requests.fourK": "4K 副本",
+	"settings.requests.fourKDesc": "獲准的 4K 請求存放在哪裡、如何挑選",
+	"settings.requests.fourKSameFolder": "與其他請求相同",
+	"settings.requests.fourKNamedRules": "名為 4K 的畫質"
 }

@@ -100,5 +100,6 @@
 	"settings.users.note": "הערה לעצמך",
 	"settings.users.noteExample": "לדוגמה: אמא",
 	"settings.users.days": "ימים שהקישור תקף",
-	"settings.users.makeInvite": "יצירת קישור הזמנה"
+	"settings.users.makeInvite": "יצירת קישור הזמנה",
+	"settings.users.permAuto4k": "בקשות 4K שמאושרות בלי להמתין"
 }

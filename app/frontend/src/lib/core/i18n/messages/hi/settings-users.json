@@ -100,5 +100,6 @@
 	"settings.users.note": "अपने लिए नोट",
 	"settings.users.noteExample": "जैसे मम्मी",
 	"settings.users.days": "लिंक कितने दिन चलेगा",
-	"settings.users.makeInvite": "न्योते का लिंक बनाएं"
+	"settings.users.makeInvite": "न्योते का लिंक बनाएं",
+	"settings.users.permAuto4k": "4K रिक्वेस्ट बिना इंतज़ार के मंज़ूर"
 }

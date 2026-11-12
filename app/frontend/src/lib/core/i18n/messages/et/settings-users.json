@@ -100,5 +100,6 @@
 	"settings.users.note": "Märge sinu enda jaoks",
 	"settings.users.noteExample": "nt Ema",
 	"settings.users.days": "Päevi, mil link kehtib",
-	"settings.users.makeInvite": "Loo kutse link"
+	"settings.users.makeInvite": "Loo kutse link",
+	"settings.users.permAuto4k": "4K taotlused kiidetakse heaks ilma ootamata"
 }

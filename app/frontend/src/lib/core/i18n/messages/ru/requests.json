@@ -579,5 +579,7 @@
 	"requests.page.quickReasons": "Быстрые причины",
 	"requests.page.takeBackTitle": "Отозвать {name}?",
 	"requests.page.takeBackDesc": "Он покинет страницу «Запросы». Позже можно запросить снова.",
-	"requests.page.keepIt": "Оставить"
+	"requests.page.keepIt": "Оставить",
+	"requests.ask.fourK": "Копия в 4K",
+	"requests.ask.fourKHint": "Выбранные сезоны скачиваются и в обычном качестве."
 }

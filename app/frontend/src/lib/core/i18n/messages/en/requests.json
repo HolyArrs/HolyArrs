@@ -579,5 +579,7 @@
 	"requests.page.quickReasons": "Quick reasons",
 	"requests.page.takeBackTitle": "Take back {name}?",
 	"requests.page.takeBackDesc": "It leaves Requests. You can ask again later.",
-	"requests.page.keepIt": "Keep it"
+	"requests.page.keepIt": "Keep it",
+	"requests.ask.fourK": "4K copy",
+	"requests.ask.fourKHint": "Seasons you pick also download in normal quality."
 }

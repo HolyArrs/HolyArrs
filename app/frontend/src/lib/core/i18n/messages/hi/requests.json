@@ -579,5 +579,7 @@
 	"requests.page.quickReasons": "झटपट वजहें",
 	"requests.page.takeBackTitle": "{name} वापस लें?",
 	"requests.page.takeBackDesc": "यह रिक्वेस्ट से हट जाएगा। आप बाद में फिर रिक्वेस्ट कर सकते हैं।",
-	"requests.page.keepIt": "रहने दें"
+	"requests.page.keepIt": "रहने दें",
+	"requests.ask.fourK": "4K कॉपी",
+	"requests.ask.fourKHint": "आपके चुने सीज़न सामान्य क्वालिटी में भी डाउनलोड होते हैं।"
 }

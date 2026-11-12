@@ -42,6 +42,10 @@
   "my_asks": {
     "asks": [],
     "limit": {
+      "four_k": {
+        "movie": "bool",
+        "show": "bool"
+      },
       "movies": {
         "left": "number",
         "no_limit": "bool",

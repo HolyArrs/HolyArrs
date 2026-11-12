@@ -43,7 +43,7 @@ type View struct {
 	Episodes []domain.AskEpisodes `json:"episodes"`
 	// FutureOnly: the show's future seasons only.
 	FutureOnly bool `json:"future_only"`
-	// FourK: a movie ask for a 4K copy.
+	// FourK: a movie or show ask for a 4K copy.
 	FourK bool `json:"four_k"`
 	// Albums are the albums of an artist asked for; empty: the whole artist.
 	Albums []domain.AskAlbum `json:"albums"`

@@ -100,5 +100,6 @@
 	"settings.users.note": "自分用のメモ",
 	"settings.users.noteExample": "例: 母",
 	"settings.users.days": "リンクの有効日数",
-	"settings.users.makeInvite": "招待リンクを作成"
+	"settings.users.makeInvite": "招待リンクを作成",
+	"settings.users.permAuto4k": "待たずに承認される 4K リクエスト"
 }

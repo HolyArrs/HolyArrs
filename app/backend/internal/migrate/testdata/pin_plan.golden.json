@@ -260,7 +260,8 @@
             "decided_by": "s",
             "asked_at": "s",
             "decided_at": "s",
-            "note": "s"
+            "note": "s",
+            "four_k": true
           },
           "alert": {
             "kind": "s",

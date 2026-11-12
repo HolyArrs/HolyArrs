@@ -56,6 +56,7 @@ func (b *builder) people(s *Snapshot) {
 		}
 		add("ask", has("REQUEST") || pp.Role != "member")
 		add("auto_approve", has("AUTO_APPROVE"))
+		add("auto_approve_four_k", has("AUTO_APPROVE_4K") || has("AUTO_APPROVE_4K_MOVIE") && has("AUTO_APPROVE_4K_TV"))
 		add("approve", has("MANAGE_REQUESTS"))
 		add("settings", has("MANAGE_SETTINGS") && pp.Role == "admin")
 		if has("MANAGE_SETTINGS") && pp.Role != "admin" {
@@ -64,8 +65,13 @@ func (b *builder) people(s *Snapshot) {
 		var dropped []string
 		for _, p := range u.Permissions {
 			switch p {
-			case "ADMIN", "REQUEST", "AUTO_APPROVE", "MANAGE_REQUESTS", "MANAGE_SETTINGS":
+			case "ADMIN", "REQUEST", "AUTO_APPROVE", "MANAGE_REQUESTS", "MANAGE_SETTINGS", "AUTO_APPROVE_4K":
 				continue
+			case "AUTO_APPROVE_4K_MOVIE", "AUTO_APPROVE_4K_TV":
+				// Both halves together became the 4K permission above.
+				if has("AUTO_APPROVE_4K_MOVIE") && has("AUTO_APPROVE_4K_TV") {
+					continue
+				}
 			}
 			dropped = append(dropped, clip(p, 40))
 		}
@@ -260,9 +266,7 @@ func (b *builder) asks(s *Snapshot) {
 				ap.Seasons = append(ap.Seasons, n)
 			}
 		}
-		if r.FourK {
-			ap.Note = "asked for 4K in " + string(s.Kind)
-		}
+		ap.FourK = r.FourK
 		state := "waiting"
 		if ap.Approved {
 			state = "approved"

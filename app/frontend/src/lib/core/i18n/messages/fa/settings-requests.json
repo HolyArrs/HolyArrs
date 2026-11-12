@@ -38,5 +38,12 @@
 	"settings.requests.plexFriendsNone": "هنوز کسی از Plex وارد نشده است.",
 	"settings.requests.plexFriendsRead": "فهرست تماشا {when} بررسی شد",
 	"settings.requests.plexFriendsNotYet": "فهرست تماشا هنوز بررسی نشده",
-	"settings.requests.plexFriendsAsked": "درخواست‌ها: {n}"
+	"settings.requests.plexFriendsAsked": "درخواست‌ها: {n}",
+	"settings.requests.plexFriendsRead": "خوانده شد {when}",
+	"settings.requests.plexFriendsNotYet": "هنوز خوانده نشده",
+	"settings.requests.plexFriendsAsked": "درخواست‌شده: {n}",
+	"settings.requests.fourK": "کپی 4K",
+	"settings.requests.fourKDesc": "درخواست‌های 4K تأییدشده کجا می‌روند و چطور انتخاب می‌شوند",
+	"settings.requests.fourKSameFolder": "مثل بقیه درخواست‌ها",
+	"settings.requests.fourKNamedRules": "کیفیتی به نام 4K"
 }

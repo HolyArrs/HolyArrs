@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Baixat",
 	"requests.moment.downloaded.body": "Per a l'equip: un Gestor de baixades ha acabat una baixada (la importació és la següent).",
 	"requests.moment.download_failed.title": "La baixada ha fallat",
-	"requests.moment.download_failed.body": "Per a l'equip: una baixada ha fallat i el seu Llançament s'ha rebutjat."
+	"requests.moment.download_failed.body": "Per a l'equip: una baixada ha fallat i el seu Llançament s'ha rebutjat.",
+	"requests.ask.fourK": "Còpia 4K",
+	"requests.ask.fourKHint": "Les temporades que triïs també es baixen en qualitat normal."
 }
