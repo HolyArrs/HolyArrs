@@ -271,5 +271,6 @@
 	"home.metadataServerOnline": "Metadata sunucusu çevrimiçi",
 	"home.homeCouldNotRead3": "Ana sayfa indirmeleri şu an okuyamadı.",
 	"home.off": "Kapalı",
-	"home.sourcesOff": "Bölümler'de kapatıldı"
+	"home.sourcesOff": "Bölümler'de kapatıldı",
+	"home.noneForSources": "kaynaklarının bulduğu şey için yok"
 }

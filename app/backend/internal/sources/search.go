@@ -35,6 +35,8 @@ type Searcher struct {
 	// SourcesOn says the Sources part is on. Off, only searches a person asks
 	// for run (see sourcesOff). Nil means on.
 	SourcesOn func() bool
+	// HasDownloader says a Downloader takes the protocol. Nil means yes.
+	HasDownloader func(ctx context.Context, protocol string) bool
 
 	mu         sync.Mutex
 	clients    map[int64]*Client
@@ -396,15 +398,21 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(result)
 	default:
 		reason := fmt.Sprintf("no Release passed the Pick rules (%d found, %d refused)", len(all), refused)
+		blocked := blockedWhy(vs)
+		if blocked != "" {
+			reason = blocked
+		}
 		if from != mediafiles.SlotHeld {
 			to := restState(c, from)
 			// A failed download with no other release and no copy in place goes to a person. With a copy it keeps looking for a better one.
-			if from == mediafiles.SlotFailed && c.cur == nil {
+			if from == mediafiles.SlotFailed && c.cur == nil && blocked == "" {
 				to = mediafiles.SlotNeedsADecision
 				reason = "the download failed and no other Release passed the Pick rules (" + strconv.Itoa(len(all)) + " found, " + strconv.Itoa(refused) + " refused)"
 			}
 			if from == mediafiles.SlotNeedsADecision {
 				to = mediafiles.SlotNeedsADecision
+			}
+			if from == mediafiles.SlotNeedsADecision && blocked == "" {
 				reason = "searched again and no Release passed the Pick rules (" + strconv.Itoa(len(all)) + " found, " + strconv.Itoa(refused) + " refused)"
 			}
 			if err := mediafiles.MoveSlot(ctx, s.Store, slotID, to, reason, by); err != nil {

@@ -18,6 +18,7 @@ export { default as DlFind } from './DlFind.svelte';
 export { default as DlSections } from './DlSections.svelte';
 export { default as HistoryLine } from './HistoryLine.svelte';
 export { default as HistoryPage } from './HistoryPage.svelte';
+export { default as NoDownloaderNote } from './NoDownloaderNote.svelte';
 export { default as OwnTraits } from './OwnTraits.svelte';
 export { default as SteerSheet } from './SteerSheet.svelte';
 export { dlPush } from './push.svelte.ts';

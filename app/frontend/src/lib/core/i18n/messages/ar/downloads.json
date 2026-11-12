@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "استيراد {file} على أنه {name}؟",
 	"downloads.dp.askImportReplace": "استيراد {file} على أنه {name}؟ سيحل محل الملف الحالي، الذي ينتقل إلى المحذوف حديثًا.",
 	"downloads.dp.imported": "تم استيراد {name}",
-	"downloads.dp.importFailed": "تعذّر استيراد الملف"
+	"downloads.dp.importFailed": "تعذّر استيراد الملف",
+	"downloads.hl.notMoved": "لم يُنقل بعد الاستيراد",
+	"downloads.noDl.usenet": "لا يجري التنزيل: التنزيلات التي وُجدت تحتاج إلى برنامج تنزيل Usenet، ولم يُعدّ أي منها.",
+	"downloads.noDl.torrent": "لا يجري التنزيل: التنزيلات التي وُجدت تحتاج إلى برنامج تنزيل تورنت، ولم يُعدّ أي منها.",
+	"downloads.noDl.add": "أضف برنامج تنزيل",
+	"downloads.hl.noUsenetDl": "لم يُعدّ أي برنامج تنزيل Usenet",
+	"downloads.hl.noTorrentDl": "لم يُعدّ أي برنامج تنزيل تورنت"
 }

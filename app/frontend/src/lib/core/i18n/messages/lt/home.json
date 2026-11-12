@@ -271,5 +271,6 @@
 	"home.noSaveFolder": "neturi išsaugojimo aplanko",
 	"home.noSaveFolderMany": "neturi išsaugojimo aplanko",
 	"home.off": "Išjungta",
-	"home.sourcesOff": "Išjungta Dalyse"
+	"home.sourcesOff": "Išjungta Dalyse",
+	"home.noneForSources": "trūksta tam, ką randa jūsų šaltiniai"
 }

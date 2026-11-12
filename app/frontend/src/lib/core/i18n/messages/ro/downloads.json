@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Importi {file} ca {name}?",
 	"downloads.dp.askImportReplace": "Importi {file} ca {name}? Înlocuiește fișierul curent, care merge în Șterse recent.",
 	"downloads.dp.imported": "{name} importat",
-	"downloads.dp.importFailed": "Fișierul nu a putut fi importat"
+	"downloads.dp.importFailed": "Fișierul nu a putut fi importat",
+	"downloads.hl.notMoved": "Nu a fost mutat după import",
+	"downloads.noDl.usenet": "Nu se descarcă: descărcările găsite au nevoie de un program de descărcare Usenet și nu e configurat niciunul.",
+	"downloads.noDl.torrent": "Nu se descarcă: descărcările găsite au nevoie de un program de descărcare torrent și nu e configurat niciunul.",
+	"downloads.noDl.add": "Adaugă un program de descărcare",
+	"downloads.hl.noUsenetDl": "niciun program de descărcare Usenet nu e configurat",
+	"downloads.hl.noTorrentDl": "niciun program de descărcare torrent nu e configurat"
 }

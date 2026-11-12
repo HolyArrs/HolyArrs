@@ -264,5 +264,9 @@
 	"health.word.broken": "故障",
 	"health.word.notSent": "尚未发送",
 	"health.word.notSynced": "尚未同步",
-	"health.word.working": "正常"
+	"health.word.working": "正常",
+	"health.check.usenetDl": "Usenet 下载器",
+	"health.check.torrentDl": "种子下载器",
+	"health.check.noUsenetDl": "你的来源找到了 Usenet 下载，但尚未设置 Usenet 下载器，所以无法发送任何下载。请在 设置 › 下载器 中添加一个。",
+	"health.check.noTorrentDl": "你的来源找到了种子下载，但尚未设置种子下载器，所以无法发送任何下载。请在 设置 › 下载器 中添加一个。"
 }

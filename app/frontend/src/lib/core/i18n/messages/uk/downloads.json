@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Імпортувати {file} як {name}?",
 	"downloads.dp.askImportReplace": "Імпортувати {file} як {name}? Він замінить поточний файл, який потрапить до «Нещодавно видалені».",
 	"downloads.dp.imported": "{name} імпортовано",
-	"downloads.dp.importFailed": "Не вдалося імпортувати файл"
+	"downloads.dp.importFailed": "Не вдалося імпортувати файл",
+	"downloads.hl.notMoved": "Не переміщено після імпорту",
+	"downloads.noDl.usenet": "Не завантажується: знайденим завантаженням потрібен завантажувач Usenet, а жодного не налаштовано.",
+	"downloads.noDl.torrent": "Не завантажується: знайденим завантаженням потрібен торент-завантажувач, а жодного не налаштовано.",
+	"downloads.noDl.add": "Додати завантажувач",
+	"downloads.hl.noUsenetDl": "не налаштовано жодного завантажувача Usenet",
+	"downloads.hl.noTorrentDl": "не налаштовано жодного торент-завантажувача"
 }

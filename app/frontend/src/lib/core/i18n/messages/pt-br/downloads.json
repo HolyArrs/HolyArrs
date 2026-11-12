@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Importar {file} como {name}?",
 	"downloads.dp.askImportReplace": "Importar {file} como {name}? Ele substitui o arquivo atual, que vai para Apagados recentemente.",
 	"downloads.dp.imported": "{name} importado",
-	"downloads.dp.importFailed": "Não foi possível importar o arquivo"
+	"downloads.dp.importFailed": "Não foi possível importar o arquivo",
+	"downloads.hl.notMoved": "Não movido após importar",
+	"downloads.noDl.usenet": "Não está baixando: os downloads encontrados precisam de um gerenciador de downloads Usenet, e nenhum está configurado.",
+	"downloads.noDl.torrent": "Não está baixando: os downloads encontrados precisam de um gerenciador de downloads de torrent, e nenhum está configurado.",
+	"downloads.noDl.add": "Adicionar gerenciador de downloads",
+	"downloads.hl.noUsenetDl": "nenhum gerenciador de downloads Usenet está configurado",
+	"downloads.hl.noTorrentDl": "nenhum gerenciador de downloads de torrent está configurado"
 }

@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "{file} als {name} importieren?",
 	"downloads.dp.askImportReplace": "{file} als {name} importieren? Sie ersetzt die aktuelle Datei, die in „Kürzlich gelöscht“ kommt.",
 	"downloads.dp.imported": "{name} importiert",
-	"downloads.dp.importFailed": "Datei konnte nicht importiert werden"
+	"downloads.dp.importFailed": "Datei konnte nicht importiert werden",
+	"downloads.hl.notMoved": "Nach dem Import nicht verschoben",
+	"downloads.noDl.usenet": "Lädt nicht: Die gefundenen Downloads brauchen einen Usenet-Downloader, und keiner ist eingerichtet.",
+	"downloads.noDl.torrent": "Lädt nicht: Die gefundenen Downloads brauchen einen Torrent-Downloader, und keiner ist eingerichtet.",
+	"downloads.noDl.add": "Downloader hinzufügen",
+	"downloads.hl.noUsenetDl": "kein Usenet-Downloader eingerichtet",
+	"downloads.hl.noTorrentDl": "kein Torrent-Downloader eingerichtet"
 }

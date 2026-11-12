@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Importera {file} som {name}?",
 	"downloads.dp.askImportReplace": "Importera {file} som {name}? Den ersätter den nuvarande filen, som hamnar i Nyligen raderade.",
 	"downloads.dp.imported": "{name} importerades",
-	"downloads.dp.importFailed": "Det gick inte att importera filen"
+	"downloads.dp.importFailed": "Det gick inte att importera filen",
+	"downloads.hl.notMoved": "Inte flyttad efter import",
+	"downloads.noDl.usenet": "Laddar inte ned: de hittade nedladdningarna behöver en Usenet-nedladdare, och ingen är inställd.",
+	"downloads.noDl.torrent": "Laddar inte ned: de hittade nedladdningarna behöver en torrent-nedladdare, och ingen är inställd.",
+	"downloads.noDl.add": "Lägg till en nedladdare",
+	"downloads.hl.noUsenetDl": "ingen Usenet-nedladdare är inställd",
+	"downloads.hl.noTorrentDl": "ingen torrent-nedladdare är inställd"
 }

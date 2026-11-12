@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "odsud se importuje jen stahování filmu; použijte Importovat soubory ručně",
 	"server.downloads.the-download-has-no-single-video": "stahování nemá jediné video k importu; použijte Importovat soubory ručně",
 	"server.downloads.this-movie-already-has-a-file": "tento film už má soubor; pošlete replace, aby tento soubor zaujal jeho místo",
-	"server.importer.replaced-by-hand": "{path} nahrazeno ručně"
+	"server.importer.replaced-by-hand": "{path} nahrazeno ručně",
+	"server.health.downloader-for": "Stahovač pro"
 }

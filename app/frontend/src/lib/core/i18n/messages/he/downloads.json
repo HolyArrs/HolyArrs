@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "לייבא את {file} בתור {name}?",
 	"downloads.dp.askImportReplace": "לייבא את {file} בתור {name}? הוא מחליף את הקובץ הנוכחי, שעובר אל „נמחקו לאחרונה”.",
 	"downloads.dp.imported": "{name} יובא",
-	"downloads.dp.importFailed": "לא ניתן היה לייבא את הקובץ"
+	"downloads.dp.importFailed": "לא ניתן היה לייבא את הקובץ",
+	"downloads.hl.notMoved": "לא הועבר אחרי הייבוא",
+	"downloads.noDl.usenet": "לא מוריד: ההורדות שנמצאו צריכות מוריד Usenet, ואף אחד לא הוגדר.",
+	"downloads.noDl.torrent": "לא מוריד: ההורדות שנמצאו צריכות מוריד טורנטים, ואף אחד לא הוגדר.",
+	"downloads.noDl.add": "הוספת מוריד",
+	"downloads.hl.noUsenetDl": "לא הוגדר מוריד Usenet",
+	"downloads.hl.noTorrentDl": "לא הוגדר מוריד טורנטים"
 }

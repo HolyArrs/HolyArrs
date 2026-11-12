@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "odavde se uvozi samo preuzimanje filma; koristi Uvezi datoteke ručno",
 	"server.downloads.the-download-has-no-single-video": "preuzimanje nema jedan video za uvoz; koristi Uvezi datoteke ručno",
 	"server.downloads.this-movie-already-has-a-file": "ovaj film već ima datoteku; pošalji replace da ovu staviš na njezino mjesto",
-	"server.importer.replaced-by-hand": "{path} zamijenjeno ručno"
+	"server.importer.replaced-by-hand": "{path} zamijenjeno ručno",
+	"server.health.downloader-for": "Preuzimatelj za"
 }

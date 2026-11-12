@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "{file}, {name} olarak içe aktarılsın mı?",
 	"downloads.dp.askImportReplace": "{file}, {name} olarak içe aktarılsın mı? Mevcut dosyanın yerini alır; o dosya Yakında silinenler bölümüne gider.",
 	"downloads.dp.imported": "{name} içe aktarıldı",
-	"downloads.dp.importFailed": "Dosya içe aktarılamadı"
+	"downloads.dp.importFailed": "Dosya içe aktarılamadı",
+	"downloads.hl.notMoved": "İçe aktarmadan sonra taşınmadı",
+	"downloads.noDl.usenet": "İndirilmiyor: bulunan indirmeler bir Usenet indiricisi gerektiriyor ve hiçbiri kurulu değil.",
+	"downloads.noDl.torrent": "İndirilmiyor: bulunan indirmeler bir torrent indiricisi gerektiriyor ve hiçbiri kurulu değil.",
+	"downloads.noDl.add": "İndirici ekle",
+	"downloads.hl.noUsenetDl": "kurulu bir Usenet indiricisi yok",
+	"downloads.hl.noTorrentDl": "kurulu bir torrent indiricisi yok"
 }

@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "{file} কে {name} হিসেবে ইমপোর্ট করবেন?",
 	"downloads.dp.askImportReplace": "{file} কে {name} হিসেবে ইমপোর্ট করবেন? এটি বর্তমান ফাইলের জায়গা নেবে, যা সম্প্রতি মোছা-এ যাবে।",
 	"downloads.dp.imported": "{name} ইমপোর্ট হয়েছে",
-	"downloads.dp.importFailed": "ফাইলটি ইমপোর্ট করা যায়নি"
+	"downloads.dp.importFailed": "ফাইলটি ইমপোর্ট করা যায়নি",
+	"downloads.hl.notMoved": "ইমপোর্টের পরে সরানো হয়নি",
+	"downloads.noDl.usenet": "ডাউনলোড হচ্ছে না: পাওয়া ডাউনলোডগুলোর জন্য একটি Usenet ডাউনলোডার দরকার, কিন্তু কোনোটি সেট আপ করা নেই।",
+	"downloads.noDl.torrent": "ডাউনলোড হচ্ছে না: পাওয়া ডাউনলোডগুলোর জন্য একটি টরেন্ট ডাউনলোডার দরকার, কিন্তু কোনোটি সেট আপ করা নেই।",
+	"downloads.noDl.add": "একটি ডাউনলোডার যোগ করুন",
+	"downloads.hl.noUsenetDl": "কোনো Usenet ডাউনলোডার সেট আপ করা নেই",
+	"downloads.hl.noTorrentDl": "কোনো টরেন্ট ডাউনলোডার সেট আপ করা নেই"
 }

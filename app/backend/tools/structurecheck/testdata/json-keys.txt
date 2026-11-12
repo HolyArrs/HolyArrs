@@ -1058,6 +1058,7 @@ next_search
 next_try
 next_try_at
 no_formats
+no_downloader
 no_limit
 no_release
 nodes

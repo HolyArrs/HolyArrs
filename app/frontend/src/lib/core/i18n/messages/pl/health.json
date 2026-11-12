@@ -264,5 +264,9 @@
 	"health.word.broken": "Zepsute",
 	"health.word.notSent": "Jeszcze niewysłane",
 	"health.word.notSynced": "Jeszcze niezsynchronizowane",
-	"health.word.working": "Działa"
+	"health.word.working": "Działa",
+	"health.check.usenetDl": "Downloader Usenet",
+	"health.check.torrentDl": "Downloader torrentów",
+	"health.check.noUsenetDl": "Twoje źródła znajdują pobrania z Usenetu, ale nie skonfigurowano downloadera Usenet, więc nic nie może zostać wysłane. Dodaj go w Ustawienia › Downloadery.",
+	"health.check.noTorrentDl": "Twoje źródła znajdują torrenty, ale nie skonfigurowano downloadera torrentów, więc nic nie może zostać wysłane. Dodaj go w Ustawienia › Downloadery."
 }

@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Zaimportować {file} jako {name}?",
 	"downloads.dp.askImportReplace": "Zaimportować {file} jako {name}? Zastąpi obecny plik, który trafi do „Ostatnio usunięte”.",
 	"downloads.dp.imported": "Zaimportowano {name}",
-	"downloads.dp.importFailed": "Nie udało się zaimportować pliku"
+	"downloads.dp.importFailed": "Nie udało się zaimportować pliku",
+	"downloads.hl.notMoved": "Nie przeniesiono po imporcie",
+	"downloads.noDl.usenet": "Nie pobiera: znalezione pobrania wymagają downloadera Usenet, a żaden nie jest skonfigurowany.",
+	"downloads.noDl.torrent": "Nie pobiera: znalezione pobrania wymagają downloadera torrentów, a żaden nie jest skonfigurowany.",
+	"downloads.noDl.add": "Dodaj downloader",
+	"downloads.hl.noUsenetDl": "nie skonfigurowano downloadera Usenet",
+	"downloads.hl.noTorrentDl": "nie skonfigurowano downloadera torrentów"
 }

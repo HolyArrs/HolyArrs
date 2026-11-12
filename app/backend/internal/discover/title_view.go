@@ -89,6 +89,9 @@ type TitleView struct {
 	Stage            string     `json:"stage"`       // announced, in_cinemas, released
 	GateOpen         bool       `json:"gate_open"`   // searching may start
 	GateReason       string     `json:"gate_reason"` // why it is or is not searched yet
+	// NoDownloader names the protocol ("usenet", "torrent") wanted copies could
+	// not be sent for, since no Downloader takes it; "" when none.
+	NoDownloader string `json:"no_downloader,omitempty"`
 	// The main Version: its folder and Pick rules.
 	LibraryFolderID int64    `json:"library_folder_id,omitempty"`
 	FolderPath      string   `json:"folder_path,omitempty"`
@@ -182,6 +185,7 @@ func (h *ViewHandlers) View(ctx context.Context, t mediafiles.Title) (TitleView,
 		if v.LastActivity, err = mediafiles.TitleActivity(ctx, db, t.ID); err != nil {
 			return v, err
 		}
+		v.NoDownloader = titleNoDownloader(ctx, db, t.ID)
 	}
 	if t.Kind == "artist" {
 		v.Stage, v.GateOpen = t.Status, true

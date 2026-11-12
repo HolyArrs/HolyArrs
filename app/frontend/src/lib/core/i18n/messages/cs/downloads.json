@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Importovat {file} jako {name}?",
 	"downloads.dp.askImportReplace": "Importovat {file} jako {name}? Nahradí současný soubor, který půjde do sekce Nedávno smazané.",
 	"downloads.dp.imported": "{name} importováno",
-	"downloads.dp.importFailed": "Soubor se nepodařilo importovat"
+	"downloads.dp.importFailed": "Soubor se nepodařilo importovat",
+	"downloads.hl.notMoved": "Po importu nepřesunuto",
+	"downloads.noDl.usenet": "Nestahuje se: nalezená stahování potřebují stahovač pro Usenet a žádný není nastavený.",
+	"downloads.noDl.torrent": "Nestahuje se: nalezená stahování potřebují stahovač torrentů a žádný není nastavený.",
+	"downloads.noDl.add": "Přidat stahovač",
+	"downloads.hl.noUsenetDl": "není nastavený žádný stahovač pro Usenet",
+	"downloads.hl.noTorrentDl": "není nastavený žádný stahovač torrentů"
 }

@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Εισαγωγή του {file} ως {name};",
 	"downloads.dp.askImportReplace": "Εισαγωγή του {file} ως {name}; Αντικαθιστά το τρέχον αρχείο, που πηγαίνει στα «Πρόσφατα διαγραμμένα».",
 	"downloads.dp.imported": "Εισήχθη: {name}",
-	"downloads.dp.importFailed": "Δεν ήταν δυνατή η εισαγωγή του αρχείου"
+	"downloads.dp.importFailed": "Δεν ήταν δυνατή η εισαγωγή του αρχείου",
+	"downloads.hl.notMoved": "Δεν μεταφέρθηκε μετά την εισαγωγή",
+	"downloads.noDl.usenet": "Δεν γίνεται λήψη: οι λήψεις που βρέθηκαν χρειάζονται πρόγραμμα λήψης Usenet και δεν έχει ρυθμιστεί κανένα.",
+	"downloads.noDl.torrent": "Δεν γίνεται λήψη: οι λήψεις που βρέθηκαν χρειάζονται πρόγραμμα λήψης torrent και δεν έχει ρυθμιστεί κανένα.",
+	"downloads.noDl.add": "Προσθήκη προγράμματος λήψης",
+	"downloads.hl.noUsenetDl": "δεν έχει ρυθμιστεί πρόγραμμα λήψης Usenet",
+	"downloads.hl.noTorrentDl": "δεν έχει ρυθμιστεί πρόγραμμα λήψης torrent"
 }

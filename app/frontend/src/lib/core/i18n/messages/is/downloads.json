@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Flytja inn {file} sem {name}?",
 	"downloads.dp.askImportReplace": "Flytja inn {file} sem {name}? Hún kemur í stað núverandi skrár, sem fer í „Nýlega eytt“.",
 	"downloads.dp.imported": "{name} flutt inn",
-	"downloads.dp.importFailed": "Ekki tókst að flytja inn skrána"
+	"downloads.dp.importFailed": "Ekki tókst að flytja inn skrána",
+	"downloads.hl.notMoved": "Ekki fært eftir innflutning",
+	"downloads.noDl.usenet": "Sækir ekki: niðurhölin sem fundust þurfa Usenet-niðurhalara og enginn er uppsettur.",
+	"downloads.noDl.torrent": "Sækir ekki: niðurhölin sem fundust þurfa torrent-niðurhalara og enginn er uppsettur.",
+	"downloads.noDl.add": "Bæta við niðurhalara",
+	"downloads.hl.noUsenetDl": "enginn Usenet-niðurhalari er uppsettur",
+	"downloads.hl.noTorrentDl": "enginn torrent-niðurhalari er uppsettur"
 }

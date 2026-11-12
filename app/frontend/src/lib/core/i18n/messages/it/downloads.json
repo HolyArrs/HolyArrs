@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Importare {file} come {name}?",
 	"downloads.dp.askImportReplace": "Importare {file} come {name}? Sostituisce il file attuale, che va in Eliminati di recente.",
 	"downloads.dp.imported": "{name} importato",
-	"downloads.dp.importFailed": "Impossibile importare il file"
+	"downloads.dp.importFailed": "Impossibile importare il file",
+	"downloads.hl.notMoved": "Non spostato dopo l'importazione",
+	"downloads.noDl.usenet": "Non in download: i download trovati richiedono un downloader Usenet e non ne è configurato nessuno.",
+	"downloads.noDl.torrent": "Non in download: i download trovati richiedono un downloader torrent e non ne è configurato nessuno.",
+	"downloads.noDl.add": "Aggiungi un downloader",
+	"downloads.hl.noUsenetDl": "nessun downloader Usenet configurato",
+	"downloads.hl.noTorrentDl": "nessun downloader torrent configurato"
 }

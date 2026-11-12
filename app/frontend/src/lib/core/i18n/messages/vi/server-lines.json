@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "ở đây chỉ nhập bản tải về của một phim; hãy dùng Nhập tệp thủ công",
 	"server.downloads.the-download-has-no-single-video": "bản tải về không có đúng một video để nhập; hãy dùng Nhập tệp thủ công",
 	"server.downloads.this-movie-already-has-a-file": "phim này đã có tệp; gửi replace để đặt tệp này vào chỗ của nó",
-	"server.importer.replaced-by-hand": "Đã thay thế {path} thủ công"
+	"server.importer.replaced-by-hand": "Đã thay thế {path} thủ công",
+	"server.health.downloader-for": "Trình tải cho"
 }

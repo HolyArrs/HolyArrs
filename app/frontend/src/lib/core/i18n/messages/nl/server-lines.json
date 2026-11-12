@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "hier wordt alleen de download van een film geïmporteerd; gebruik Bestanden met de hand importeren",
 	"server.downloads.the-download-has-no-single-video": "de download heeft niet één video om te importeren; gebruik Bestanden met de hand importeren",
 	"server.downloads.this-movie-already-has-a-file": "deze film heeft al een bestand; stuur replace om dit bestand ervoor in de plaats te zetten",
-	"server.importer.replaced-by-hand": "{path} met de hand vervangen"
+	"server.importer.replaced-by-hand": "{path} met de hand vervangen",
+	"server.health.downloader-for": "Downloader voor"
 }

@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Import {file} sebagai {name}?",
 	"downloads.dp.askImportReplace": "Import {file} sebagai {name}? Ia menggantikan fail semasa, yang pergi ke Baru dipadam.",
 	"downloads.dp.imported": "{name} diimport",
-	"downloads.dp.importFailed": "Fail tidak dapat diimport"
+	"downloads.dp.importFailed": "Fail tidak dapat diimport",
+	"downloads.hl.notMoved": "Tidak dipindahkan selepas import",
+	"downloads.noDl.usenet": "Tidak memuat turun: muat turun yang ditemui memerlukan pemuat turun Usenet, dan tiada yang disediakan.",
+	"downloads.noDl.torrent": "Tidak memuat turun: muat turun yang ditemui memerlukan pemuat turun torrent, dan tiada yang disediakan.",
+	"downloads.noDl.add": "Tambah pemuat turun",
+	"downloads.hl.noUsenetDl": "tiada pemuat turun Usenet disediakan",
+	"downloads.hl.noTorrentDl": "tiada pemuat turun torrent disediakan"
 }

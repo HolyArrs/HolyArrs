@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "отсюда импортируется только загрузка фильма; используйте «Импорт файлов вручную»",
 	"server.downloads.the-download-has-no-single-video": "в загрузке нет одного видео для импорта; используйте «Импорт файлов вручную»",
 	"server.downloads.this-movie-already-has-a-file": "у этого фильма уже есть файл; отправьте replace, чтобы поставить этот на его место",
-	"server.importer.replaced-by-hand": "{path} заменён вручную"
+	"server.importer.replaced-by-hand": "{path} заменён вручную",
+	"server.health.downloader-for": "Загрузчик для"
 }

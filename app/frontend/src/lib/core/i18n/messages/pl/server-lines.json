@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "stąd importuje się tylko pobieranie filmu; użyj „Import plików ręcznie”",
 	"server.downloads.the-download-has-no-single-video": "pobieranie nie ma jednego wideo do zaimportowania; użyj „Import plików ręcznie”",
 	"server.downloads.this-movie-already-has-a-file": "ten film ma już plik; wyślij replace, aby ten trafił na jego miejsce",
-	"server.importer.replaced-by-hand": "Zastąpiono {path} ręcznie"
+	"server.importer.replaced-by-hand": "Zastąpiono {path} ręcznie",
+	"server.health.downloader-for": "Downloader dla"
 }

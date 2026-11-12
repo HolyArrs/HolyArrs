@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Импортировать {file} как {name}?",
 	"downloads.dp.askImportReplace": "Импортировать {file} как {name}? Он заменит текущий файл, который попадёт в «Недавно удалённые».",
 	"downloads.dp.imported": "{name} импортирован",
-	"downloads.dp.importFailed": "Не удалось импортировать файл"
+	"downloads.dp.importFailed": "Не удалось импортировать файл",
+	"downloads.hl.notMoved": "Не перемещено после импорта",
+	"downloads.noDl.usenet": "Не загружается: найденным загрузкам нужен загрузчик Usenet, а ни один не настроен.",
+	"downloads.noDl.torrent": "Не загружается: найденным загрузкам нужен торрент-загрузчик, а ни один не настроен.",
+	"downloads.noDl.add": "Добавить загрузчик",
+	"downloads.hl.noUsenetDl": "не настроен ни один загрузчик Usenet",
+	"downloads.hl.noTorrentDl": "не настроен ни один торрент-загрузчик"
 }

@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "¿Importar {file} como {name}?",
 	"downloads.dp.askImportReplace": "¿Importar {file} como {name}? Reemplaza el archivo actual, que va a Eliminados recientemente.",
 	"downloads.dp.imported": "{name} importado",
-	"downloads.dp.importFailed": "No se pudo importar el archivo"
+	"downloads.dp.importFailed": "No se pudo importar el archivo",
+	"downloads.hl.notMoved": "No se movió tras importar",
+	"downloads.noDl.usenet": "No se descarga: las descargas encontradas necesitan un gestor de descargas Usenet y no hay ninguno configurado.",
+	"downloads.noDl.torrent": "No se descarga: las descargas encontradas necesitan un gestor de descargas de torrents y no hay ninguno configurado.",
+	"downloads.noDl.add": "Añadir un gestor de descargas",
+	"downloads.hl.noUsenetDl": "no hay ningún gestor de descargas Usenet configurado",
+	"downloads.hl.noTorrentDl": "no hay ningún gestor de descargas de torrents configurado"
 }

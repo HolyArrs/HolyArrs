@@ -1,6 +1,8 @@
 package downloads
 
 import (
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
+
 	"context"
 	"database/sql"
 	"errors"
@@ -116,6 +118,11 @@ type releaseRefused struct{ msg string }
 // grabFailed holds each Downloader's refusal of one grab, in the order tried.
 // It is final only when every refusal was the Release's own.
 type grabFailed []error
+
+// NoDownloaderError says no Downloader takes the Release's protocol at all.
+type NoDownloaderError struct{ Protocol string }
+
+func (e *NoDownloaderError) Error() string { return sources.NoDownloader(e.Protocol) }
 
 // TagsError says no Downloader of the protocol takes the title's tags.
 type TagsError struct {

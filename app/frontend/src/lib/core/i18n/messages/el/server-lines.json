@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "από εδώ εισάγεται μόνο η λήψη μιας ταινίας· χρησιμοποιήστε την «Εισαγωγή αρχείων με το χέρι»",
 	"server.downloads.the-download-has-no-single-video": "η λήψη δεν έχει ένα μόνο βίντεο για εισαγωγή· χρησιμοποιήστε την «Εισαγωγή αρχείων με το χέρι»",
 	"server.downloads.this-movie-already-has-a-file": "αυτή η ταινία έχει ήδη αρχείο· στείλτε replace για να μπει αυτό στη θέση του",
-	"server.importer.replaced-by-hand": "Το {path} αντικαταστάθηκε με το χέρι"
+	"server.importer.replaced-by-hand": "Το {path} αντικαταστάθηκε με το χέρι",
+	"server.health.downloader-for": "Πρόγραμμα λήψης για"
 }

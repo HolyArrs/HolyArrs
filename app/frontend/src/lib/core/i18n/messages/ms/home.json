@@ -271,5 +271,6 @@
 	"home.noSaveFolder": "tiada folder simpan",
 	"home.noSaveFolderMany": "tiada folder simpan",
 	"home.off": "Mati",
-	"home.sourcesOff": "Dimatikan dalam Bahagian"
+	"home.sourcesOff": "Dimatikan dalam Bahagian",
+	"home.noneForSources": "tiada untuk apa yang ditemui sumber anda"
 }

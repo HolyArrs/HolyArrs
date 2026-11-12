@@ -271,5 +271,6 @@
 	"home.noSaveFolder": "אין תיקיית שמירה",
 	"home.noSaveFolderMany": "אין תיקיית שמירה",
 	"home.off": "כבוי",
-	"home.sourcesOff": "כבוי ב\"רכיבים\""
+	"home.sourcesOff": "כבוי ב\"רכיבים\"",
+	"home.noneForSources": "חסר עבור מה שהמקורות שלך מוצאים"
 }

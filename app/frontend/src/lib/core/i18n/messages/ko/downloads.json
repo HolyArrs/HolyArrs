@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "{file}을(를) {name}(으)로 가져올까요?",
 	"downloads.dp.askImportReplace": "{file}을(를) {name}(으)로 가져올까요? 현재 파일을 바꾸며, 이전 파일은 '최근 삭제됨'(으)로 갑니다.",
 	"downloads.dp.imported": "{name} 가져옴",
-	"downloads.dp.importFailed": "파일을 가져오지 못했습니다"
+	"downloads.dp.importFailed": "파일을 가져오지 못했습니다",
+	"downloads.hl.notMoved": "가져온 후 옮기지 못함",
+	"downloads.noDl.usenet": "다운로드 안 됨: 찾은 다운로드에는 Usenet 다운로더가 필요한데 설정된 것이 없습니다.",
+	"downloads.noDl.torrent": "다운로드 안 됨: 찾은 다운로드에는 토렌트 다운로더가 필요한데 설정된 것이 없습니다.",
+	"downloads.noDl.add": "다운로더 추가",
+	"downloads.hl.noUsenetDl": "설정된 Usenet 다운로더가 없습니다",
+	"downloads.hl.noTorrentDl": "설정된 토렌트 다운로더가 없습니다"
 }

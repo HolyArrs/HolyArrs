@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "I-import ang {file} bilang {name}?",
 	"downloads.dp.askImportReplace": "I-import ang {file} bilang {name}? Papalitan nito ang kasalukuyang file, na mapupunta sa Kamakailang na-delete.",
 	"downloads.dp.imported": "Na-import ang {name}",
-	"downloads.dp.importFailed": "Hindi ma-import ang file"
+	"downloads.dp.importFailed": "Hindi ma-import ang file",
+	"downloads.hl.notMoved": "Hindi nailipat pagkatapos ng import",
+	"downloads.noDl.usenet": "Hindi nagda-download: kailangan ng mga nahanap na download ang isang Usenet Downloader, at walang naka-set up.",
+	"downloads.noDl.torrent": "Hindi nagda-download: kailangan ng mga nahanap na download ang isang torrent Downloader, at walang naka-set up.",
+	"downloads.noDl.add": "Magdagdag ng Downloader",
+	"downloads.hl.noUsenetDl": "walang naka-set up na Usenet Downloader",
+	"downloads.hl.noTorrentDl": "walang naka-set up na torrent Downloader"
 }

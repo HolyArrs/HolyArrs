@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "innen csak film letöltése importálható; használja ezt: Fájlok importálása kézzel",
 	"server.downloads.the-download-has-no-single-video": "a letöltésben nincs egyetlen importálható videó; használja ezt: Fájlok importálása kézzel",
 	"server.downloads.this-movie-already-has-a-file": "ennek a filmnek már van fájlja; küldjön replace-t, hogy ez kerüljön a helyére",
-	"server.importer.replaced-by-hand": "{path} kézzel lecserélve"
+	"server.importer.replaced-by-hand": "{path} kézzel lecserélve",
+	"server.health.downloader-for": "Letöltő ehhez:"
 }

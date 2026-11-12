@@ -23,6 +23,7 @@
 	import TitleScores from './TitleScores.svelte';
 	import TitleTrailers from './TitleTrailers.svelte';
 	import { createOwnedTitle } from './title-owned.svelte.ts';
+	import { NoDownloaderNote } from '#lib/downloads/index.ts';
 	import TitleLibrary from './TitleLibrary.svelte';
 	import TitleOwnedSheets from './TitleOwnedSheets.svelte';
 	import { SearchOutcomeLine, QuickAsk, AddMovieDialog, AddShowDialog, AskShowDialog, AskMovieDialog } from '#lib/requests/index.ts';
@@ -471,6 +472,7 @@
 		{/if}
 		{#if owned}
 			{@render ownTabBar()}
+			<NoDownloaderNote kind={owned.no_downloader} {manage} />
 			<TitleLibrary {own} {folders} {rules} />
 			<TitleOwnedSheets {own} />
 		{/if}

@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Importuoti {file} kaip {name}?",
 	"downloads.dp.askImportReplace": "Importuoti {file} kaip {name}? Jis pakeičia dabartinį failą, kuris keliauja į „Neseniai ištrinta“.",
 	"downloads.dp.imported": "{name} importuota",
-	"downloads.dp.importFailed": "Failo importuoti nepavyko"
+	"downloads.dp.importFailed": "Failo importuoti nepavyko",
+	"downloads.hl.notMoved": "Po importo neperkelta",
+	"downloads.noDl.usenet": "Nesisiunčiama: rastiems atsisiuntimams reikia Usenet atsisiuntėjo, o nė vienas nenustatytas.",
+	"downloads.noDl.torrent": "Nesisiunčiama: rastiems atsisiuntimams reikia torrentų atsisiuntėjo, o nė vienas nenustatytas.",
+	"downloads.noDl.add": "Pridėti atsisiuntėją",
+	"downloads.hl.noUsenetDl": "nenustatytas joks Usenet atsisiuntėjas",
+	"downloads.hl.noTorrentDl": "nenustatytas joks torrentų atsisiuntėjas"
 }

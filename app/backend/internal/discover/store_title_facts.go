@@ -3,6 +3,7 @@ package discover
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -80,4 +81,22 @@ func WithTitleFacts(ctx context.Context, db database.Lister) (context.Context, e
 func factsOf(ctx context.Context) *titleFacts {
 	f, _ := ctx.Value(titleFactsKey{}).(*titleFacts)
 	return f
+}
+
+// titleNoDownloader returns the protocol ("usenet", "torrent") a wanted Slot
+// of the title could not be sent for because no Downloader takes it, while
+// that is still so; "" when none.
+func titleNoDownloader(ctx context.Context, q database.Querier, titleID int64) string {
+	var reason string
+	err := q.QueryRowContext(ctx, `SELECT s.last_reason FROM slots s JOIN items i ON i.id = s.item_id
+		WHERE i.title_id = ? AND s.state = 'wanted' AND s.last_reason LIKE '%Downloader is set up'
+		AND NOT EXISTS (SELECT 1 FROM downloaders d WHERE d.removed = 0
+			AND d.protocol = CASE WHEN s.last_reason LIKE '%Usenet Downloader%' THEN 'usenet' ELSE 'torrent' END) LIMIT 1`, titleID).Scan(&reason)
+	if err != nil {
+		return ""
+	}
+	if strings.Contains(reason, "Usenet Downloader") {
+		return "usenet"
+	}
+	return "torrent"
 }

@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Importēt {file} kā {name}?",
 	"downloads.dp.askImportReplace": "Importēt {file} kā {name}? Tas aizstāj pašreizējo failu, kas nonāk sadaļā “Nesen dzēstie”.",
 	"downloads.dp.imported": "{name} importēts",
-	"downloads.dp.importFailed": "Failu neizdevās importēt"
+	"downloads.dp.importFailed": "Failu neizdevās importēt",
+	"downloads.hl.notMoved": "Pēc importa netika pārvietots",
+	"downloads.noDl.usenet": "Netiek lejupielādēts: atrastajām lejupielādēm vajag Usenet lejupielādētāju, bet neviens nav iestatīts.",
+	"downloads.noDl.torrent": "Netiek lejupielādēts: atrastajām lejupielādēm vajag torrentu lejupielādētāju, bet neviens nav iestatīts.",
+	"downloads.noDl.add": "Pievienot lejupielādētāju",
+	"downloads.hl.noUsenetDl": "nav iestatīts neviens Usenet lejupielādētājs",
+	"downloads.hl.noTorrentDl": "nav iestatīts neviens torrentu lejupielādētājs"
 }

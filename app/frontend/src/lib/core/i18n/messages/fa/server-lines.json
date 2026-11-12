@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "از اینجا فقط دانلود یک فیلم وارد می‌شود؛ از «ورود دستی فایل‌ها» استفاده کن",
 	"server.downloads.the-download-has-no-single-video": "دانلود یک ویدیوی تنها برای وارد کردن ندارد؛ از «ورود دستی فایل‌ها» استفاده کن",
 	"server.downloads.this-movie-already-has-a-file": "این فیلم از قبل فایل دارد؛ replace را بفرست تا این یکی جای آن را بگیرد",
-	"server.importer.replaced-by-hand": "{path} به‌صورت دستی جایگزین شد"
+	"server.importer.replaced-by-hand": "{path} به‌صورت دستی جایگزین شد",
+	"server.health.downloader-for": "دانلودر برای"
 }

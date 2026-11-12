@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Importere {file} som {name}?",
 	"downloads.dp.askImportReplace": "Importere {file} som {name}? Den erstatter den nåværende filen, som flyttes til Nylig slettet.",
 	"downloads.dp.imported": "{name} importert",
-	"downloads.dp.importFailed": "Kunne ikke importere filen"
+	"downloads.dp.importFailed": "Kunne ikke importere filen",
+	"downloads.hl.notMoved": "Ikke flyttet etter import",
+	"downloads.noDl.usenet": "Laster ikke ned: nedlastingene som ble funnet trenger en Usenet-nedlaster, og ingen er satt opp.",
+	"downloads.noDl.torrent": "Laster ikke ned: nedlastingene som ble funnet trenger en torrent-nedlaster, og ingen er satt opp.",
+	"downloads.noDl.add": "Legg til en nedlaster",
+	"downloads.hl.noUsenetDl": "ingen Usenet-nedlaster er satt opp",
+	"downloads.hl.noTorrentDl": "ingen torrent-nedlaster er satt opp"
 }

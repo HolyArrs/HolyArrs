@@ -46,6 +46,7 @@ describe('line 2', () => {
 		expect(eventText(ev('import_failed', { Data: { reason: 'no video file found' } }), ctx).line).toBe('No video file found');
 		expect(eventText(ev('import_rejected'), ctx).line).toBe('Nothing could be placed');
 		expect(plainWhy('no Release passed the Pick rules')).toBe('nothing good enough was found');
+		expect(plainWhy('not sent: no Usenet Downloader is set up')).toBe('not sent: no Usenet Downloader is set up');
 		expect(resolutionOf('Se7en.1995.1080p.BluRay')).toBe('1080p');
 		expect(resolutionOf('Dune.2160p.WEB')).toBe('4K');
 	});

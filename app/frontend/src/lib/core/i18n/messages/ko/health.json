@@ -264,5 +264,9 @@
 	"health.word.broken": "고장",
 	"health.word.notSent": "아직 전송 안 됨",
 	"health.word.notSynced": "아직 동기화 안 됨",
-	"health.word.working": "정상 작동"
+	"health.word.working": "정상 작동",
+	"health.check.usenetDl": "Usenet 다운로더",
+	"health.check.torrentDl": "토렌트 다운로더",
+	"health.check.noUsenetDl": "소스가 Usenet 다운로드를 찾지만 설정된 Usenet 다운로더가 없어 아무것도 보낼 수 없습니다. 설정 › 다운로더에서 추가하세요.",
+	"health.check.noTorrentDl": "소스가 토렌트 다운로드를 찾지만 설정된 토렌트 다운로더가 없어 아무것도 보낼 수 없습니다. 설정 › 다운로더에서 추가하세요."
 }

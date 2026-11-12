@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Importer {file} comme {name} ?",
 	"downloads.dp.askImportReplace": "Importer {file} comme {name} ? Il remplace le fichier actuel, qui va dans Supprimés récemment.",
 	"downloads.dp.imported": "{name} importé",
-	"downloads.dp.importFailed": "Impossible d'importer le fichier"
+	"downloads.dp.importFailed": "Impossible d'importer le fichier",
+	"downloads.hl.notMoved": "Non déplacé après l'import",
+	"downloads.noDl.usenet": "Pas de téléchargement : les téléchargements trouvés ont besoin d'un client de téléchargement Usenet, et aucun n'est configuré.",
+	"downloads.noDl.torrent": "Pas de téléchargement : les téléchargements trouvés ont besoin d'un client de téléchargement torrent, et aucun n'est configuré.",
+	"downloads.noDl.add": "Ajouter un client de téléchargement",
+	"downloads.hl.noUsenetDl": "aucun client de téléchargement Usenet n'est configuré",
+	"downloads.hl.noTorrentDl": "aucun client de téléchargement torrent n'est configuré"
 }

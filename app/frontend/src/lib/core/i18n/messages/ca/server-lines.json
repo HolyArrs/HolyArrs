@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "des d'aquí només s'importa la baixada d'una pel·lícula; fes servir Importa fitxers a mà",
 	"server.downloads.the-download-has-no-single-video": "la baixada no té un sol vídeo per importar; fes servir Importa fitxers a mà",
 	"server.downloads.this-movie-already-has-a-file": "aquesta pel·lícula ja té un fitxer; envia replace per posar aquest al seu lloc",
-	"server.importer.replaced-by-hand": "{path} substituït a mà"
+	"server.importer.replaced-by-hand": "{path} substituït a mà",
+	"server.health.downloader-for": "Gestor de baixades per a"
 }

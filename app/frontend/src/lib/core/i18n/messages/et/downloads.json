@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Kas importida {file} kui {name}?",
 	"downloads.dp.askImportReplace": "Kas importida {file} kui {name}? See asendab praeguse faili, mis läheb jaotisse „Hiljuti kustutatud“.",
 	"downloads.dp.imported": "{name} imporditud",
-	"downloads.dp.importFailed": "Faili ei õnnestunud importida"
+	"downloads.dp.importFailed": "Faili ei õnnestunud importida",
+	"downloads.hl.notMoved": "Pärast importi ei teisaldatud",
+	"downloads.noDl.usenet": "Ei laadi alla: leitud allalaadimised vajavad Useneti allalaadijat, aga ühtegi pole seadistatud.",
+	"downloads.noDl.torrent": "Ei laadi alla: leitud allalaadimised vajavad torrentite allalaadijat, aga ühtegi pole seadistatud.",
+	"downloads.noDl.add": "Lisa allalaadija",
+	"downloads.hl.noUsenetDl": "ühtegi Useneti allalaadijat pole seadistatud",
+	"downloads.hl.noTorrentDl": "ühtegi torrentite allalaadijat pole seadistatud"
 }

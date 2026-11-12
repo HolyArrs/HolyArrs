@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "no šejienes importē tikai filmas lejupielādi; izmanto “Importēt failus ar roku”",
 	"server.downloads.the-download-has-no-single-video": "lejupielādē nav viena video, ko importēt; izmanto “Importēt failus ar roku”",
 	"server.downloads.this-movie-already-has-a-file": "šai filmai jau ir fails; nosūti replace, lai šis stātos tā vietā",
-	"server.importer.replaced-by-hand": "{path} aizstāts ar roku"
+	"server.importer.replaced-by-hand": "{path} aizstāts ar roku",
+	"server.health.downloader-for": "Lejupielādētājs:"
 }

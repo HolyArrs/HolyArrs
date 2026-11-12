@@ -271,5 +271,6 @@
 	"home.noSaveFolder": "சேமிக்கும் கோப்புறை இல்லை",
 	"home.noSaveFolderMany": "சேமிக்கும் கோப்புறை இல்லை",
 	"home.off": "அணை",
-	"home.sourcesOff": "பகுதிகளில் அணைக்கப்பட்டுள்ளது"
+	"home.sourcesOff": "பகுதிகளில் அணைக்கப்பட்டுள்ளது",
+	"home.noneForSources": "உங்கள் மூலங்கள் கண்டறிவதற்கு இல்லை"
 }

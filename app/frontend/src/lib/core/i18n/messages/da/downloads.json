@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Importér {file} som {name}?",
 	"downloads.dp.askImportReplace": "Importér {file} som {name}? Den erstatter den nuværende fil, som flyttes til Slettet for nylig.",
 	"downloads.dp.imported": "{name} importeret",
-	"downloads.dp.importFailed": "Filen kunne ikke importeres"
+	"downloads.dp.importFailed": "Filen kunne ikke importeres",
+	"downloads.hl.notMoved": "Ikke flyttet efter import",
+	"downloads.noDl.usenet": "Downloader ikke: de fundne downloads kræver en Usenet-downloader, og der er ingen sat op.",
+	"downloads.noDl.torrent": "Downloader ikke: de fundne downloads kræver en torrent-downloader, og der er ingen sat op.",
+	"downloads.noDl.add": "Tilføj en downloader",
+	"downloads.hl.noUsenetDl": "ingen Usenet-downloader er sat op",
+	"downloads.hl.noTorrentDl": "ingen torrent-downloader er sat op"
 }

@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "將 {file} 匯入為 {name}？",
 	"downloads.dp.askImportReplace": "將 {file} 匯入為 {name}？它會取代目前的檔案，舊檔案會移到「最近刪除」。",
 	"downloads.dp.imported": "已匯入 {name}",
-	"downloads.dp.importFailed": "無法匯入該檔案"
+	"downloads.dp.importFailed": "無法匯入該檔案",
+	"downloads.hl.notMoved": "匯入後未能移動",
+	"downloads.noDl.usenet": "未在下載：找到的下載需要 Usenet 下載器，但尚未設定任何下載器。",
+	"downloads.noDl.torrent": "未在下載：找到的下載需要種子下載器，但尚未設定任何下載器。",
+	"downloads.noDl.add": "新增下載器",
+	"downloads.hl.noUsenetDl": "尚未設定 Usenet 下載器",
+	"downloads.hl.noTorrentDl": "尚未設定種子下載器"
 }

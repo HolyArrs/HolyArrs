@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "héðan er aðeins niðurhal kvikmyndar flutt inn; notaðu „Flytja inn skrár í höndunum“",
 	"server.downloads.the-download-has-no-single-video": "niðurhalið hefur ekki eitt myndband til að flytja inn; notaðu „Flytja inn skrár í höndunum“",
 	"server.downloads.this-movie-already-has-a-file": "þessi kvikmynd hefur þegar skrá; sendu replace til að setja þessa í hennar stað",
-	"server.importer.replaced-by-hand": "{path} skipt út í höndunum"
+	"server.importer.replaced-by-hand": "{path} skipt út í höndunum",
+	"server.health.downloader-for": "Niðurhalari fyrir"
 }

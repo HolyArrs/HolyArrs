@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "härifrån importeras bara en films nedladdning; använd Importera filer manuellt",
 	"server.downloads.the-download-has-no-single-video": "nedladdningen har inte en enda video att importera; använd Importera filer manuellt",
 	"server.downloads.this-movie-already-has-a-file": "den här filmen har redan en fil; skicka replace för att sätta den här i dess ställe",
-	"server.importer.replaced-by-hand": "{path} ersattes manuellt"
+	"server.importer.replaced-by-hand": "{path} ersattes manuellt",
+	"server.health.downloader-for": "Nedladdare för"
 }

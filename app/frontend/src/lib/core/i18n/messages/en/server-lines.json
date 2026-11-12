@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "only a movie's download is imported from here; use Import files by hand",
 	"server.downloads.the-download-has-no-single-video": "the download has no single video to import; use Import files by hand",
 	"server.downloads.this-movie-already-has-a-file": "this movie already has a file; send replace to put this one in its place",
-	"server.importer.replaced-by-hand": "Replaced {path} by hand"
+	"server.importer.replaced-by-hand": "Replaced {path} by hand",
+	"server.health.downloader-for": "Downloader for"
 }

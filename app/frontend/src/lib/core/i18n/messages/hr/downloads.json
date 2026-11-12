@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Uvesti {file} kao {name}?",
 	"downloads.dp.askImportReplace": "Uvesti {file} kao {name}? Zamjenjuje trenutačnu datoteku, koja ide u Nedavno obrisano.",
 	"downloads.dp.imported": "{name} uvezeno",
-	"downloads.dp.importFailed": "Datoteku nije bilo moguće uvesti"
+	"downloads.dp.importFailed": "Datoteku nije bilo moguće uvesti",
+	"downloads.hl.notMoved": "Nije premješteno nakon uvoza",
+	"downloads.noDl.usenet": "Ne preuzima se: pronađena preuzimanja trebaju Usenet preuzimatelja, a nijedan nije postavljen.",
+	"downloads.noDl.torrent": "Ne preuzima se: pronađena preuzimanja trebaju torrent preuzimatelja, a nijedan nije postavljen.",
+	"downloads.noDl.add": "Dodaj preuzimatelja",
+	"downloads.hl.noUsenetDl": "nijedan Usenet preuzimatelj nije postavljen",
+	"downloads.hl.noTorrentDl": "nijedan torrent preuzimatelj nije postavljen"
 }

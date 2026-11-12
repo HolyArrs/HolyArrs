@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "這裡只能匯入電影的下載；請使用「手動匯入檔案」",
 	"server.downloads.the-download-has-no-single-video": "下載中沒有唯一一個可匯入的影片；請使用「手動匯入檔案」",
 	"server.downloads.this-movie-already-has-a-file": "這部電影已經有檔案；傳送 replace 即可用這個檔案取代它",
-	"server.importer.replaced-by-hand": "已手動取代 {path}"
+	"server.importer.replaced-by-hand": "已手動取代 {path}",
+	"server.health.downloader-for": "下載器："
 }

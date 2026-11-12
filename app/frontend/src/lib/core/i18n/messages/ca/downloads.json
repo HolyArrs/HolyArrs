@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Vols importar {file} com a {name}?",
 	"downloads.dp.askImportReplace": "Vols importar {file} com a {name}? Substitueix el fitxer actual, que va a Suprimits recentment.",
 	"downloads.dp.imported": "{name} importat",
-	"downloads.dp.importFailed": "No s'ha pogut importar el fitxer"
+	"downloads.dp.importFailed": "No s'ha pogut importar el fitxer",
+	"downloads.hl.notMoved": "No s'ha mogut després d'importar",
+	"downloads.noDl.usenet": "No es baixa: les baixades trobades necessiten un gestor de baixades Usenet i no n'hi ha cap de configurat.",
+	"downloads.noDl.torrent": "No es baixa: les baixades trobades necessiten un gestor de baixades de torrents i no n'hi ha cap de configurat.",
+	"downloads.noDl.add": "Afegeix un gestor de baixades",
+	"downloads.hl.noUsenetDl": "no hi ha cap gestor de baixades Usenet configurat",
+	"downloads.hl.noTorrentDl": "no hi ha cap gestor de baixades de torrents configurat"
 }

@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "download lang ng pelikula ang ini-import mula rito; gamitin ang Mag-import ng mga file nang mano-mano",
 	"server.downloads.the-download-has-no-single-video": "walang iisang video na ma-import sa download; gamitin ang Mag-import ng mga file nang mano-mano",
 	"server.downloads.this-movie-already-has-a-file": "may file na ang pelikulang ito; ipadala ang replace para ilagay ito sa puwesto nito",
-	"server.importer.replaced-by-hand": "Pinalitan nang mano-mano ang {path}"
+	"server.importer.replaced-by-hand": "Pinalitan nang mano-mano ang {path}",
+	"server.health.downloader-for": "Downloader para sa"
 }

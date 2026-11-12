@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Impor {file} sebagai {name}?",
 	"downloads.dp.askImportReplace": "Impor {file} sebagai {name}? File ini menggantikan file saat ini, yang masuk ke Baru dihapus.",
 	"downloads.dp.imported": "{name} diimpor",
-	"downloads.dp.importFailed": "File tidak bisa diimpor"
+	"downloads.dp.importFailed": "File tidak bisa diimpor",
+	"downloads.hl.notMoved": "Tidak dipindahkan setelah impor",
+	"downloads.noDl.usenet": "Tidak mengunduh: unduhan yang ditemukan butuh pengunduh Usenet, dan belum ada yang disiapkan.",
+	"downloads.noDl.torrent": "Tidak mengunduh: unduhan yang ditemukan butuh pengunduh torrent, dan belum ada yang disiapkan.",
+	"downloads.noDl.add": "Tambah pengunduh",
+	"downloads.hl.noUsenetDl": "belum ada pengunduh Usenet yang disiapkan",
+	"downloads.hl.noTorrentDl": "belum ada pengunduh torrent yang disiapkan"
 }

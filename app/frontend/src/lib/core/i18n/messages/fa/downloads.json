@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "{file} به‌عنوان {name} وارد شود؟",
 	"downloads.dp.askImportReplace": "{file} به‌عنوان {name} وارد شود؟ جای فایل فعلی را می‌گیرد که به «اخیراً حذف‌شده» می‌رود.",
 	"downloads.dp.imported": "{name} وارد شد",
-	"downloads.dp.importFailed": "وارد کردن فایل ممکن نشد"
+	"downloads.dp.importFailed": "وارد کردن فایل ممکن نشد",
+	"downloads.hl.notMoved": "پس از وارد کردن جابه‌جا نشد",
+	"downloads.noDl.usenet": "دانلود نمی‌شود: دانلودهای پیداشده به یک دانلودر Usenet نیاز دارند و هیچ‌کدام تنظیم نشده است.",
+	"downloads.noDl.torrent": "دانلود نمی‌شود: دانلودهای پیداشده به یک دانلودر تورنت نیاز دارند و هیچ‌کدام تنظیم نشده است.",
+	"downloads.noDl.add": "افزودن دانلودر",
+	"downloads.hl.noUsenetDl": "هیچ دانلودر Usenet تنظیم نشده است",
+	"downloads.hl.noTorrentDl": "هیچ دانلودر تورنت تنظیم نشده است"
 }

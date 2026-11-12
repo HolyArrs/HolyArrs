@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Nhập {file} thành {name}?",
 	"downloads.dp.askImportReplace": "Nhập {file} thành {name}? Tệp này thay thế tệp hiện tại, tệp đó sẽ chuyển vào Đã xóa gần đây.",
 	"downloads.dp.imported": "Đã nhập {name}",
-	"downloads.dp.importFailed": "Không nhập được tệp"
+	"downloads.dp.importFailed": "Không nhập được tệp",
+	"downloads.hl.notMoved": "Không chuyển được sau khi nhập",
+	"downloads.noDl.usenet": "Không tải: các bản tải tìm được cần trình tải Usenet, nhưng chưa thiết lập trình nào.",
+	"downloads.noDl.torrent": "Không tải: các bản tải tìm được cần trình tải torrent, nhưng chưa thiết lập trình nào.",
+	"downloads.noDl.add": "Thêm trình tải",
+	"downloads.hl.noUsenetDl": "chưa thiết lập trình tải Usenet nào",
+	"downloads.hl.noTorrentDl": "chưa thiết lập trình tải torrent nào"
 }

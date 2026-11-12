@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "{file} importeren als {name}?",
 	"downloads.dp.askImportReplace": "{file} importeren als {name}? Het vervangt het huidige bestand, dat naar Onlangs verwijderd gaat.",
 	"downloads.dp.imported": "{name} geïmporteerd",
-	"downloads.dp.importFailed": "Kon het bestand niet importeren"
+	"downloads.dp.importFailed": "Kon het bestand niet importeren",
+	"downloads.hl.notMoved": "Niet verplaatst na import",
+	"downloads.noDl.usenet": "Downloadt niet: de gevonden downloads hebben een Usenet-downloader nodig, en er is er geen ingesteld.",
+	"downloads.noDl.torrent": "Downloadt niet: de gevonden downloads hebben een torrent-downloader nodig, en er is er geen ingesteld.",
+	"downloads.noDl.add": "Downloader toevoegen",
+	"downloads.hl.noUsenetDl": "geen Usenet-downloader ingesteld",
+	"downloads.hl.noTorrentDl": "geen torrent-downloader ingesteld"
 }

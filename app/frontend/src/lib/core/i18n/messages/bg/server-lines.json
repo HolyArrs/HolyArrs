@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "оттук се импортира само изтегляне на филм; използвайте „Импорт на файлове на ръка“",
 	"server.downloads.the-download-has-no-single-video": "изтеглянето няма един видеоклип за импорт; използвайте „Импорт на файлове на ръка“",
 	"server.downloads.this-movie-already-has-a-file": "този филм вече има файл; изпратете replace, за да сложите този на негово място",
-	"server.importer.replaced-by-hand": "{path} е заменен на ръка"
+	"server.importer.replaced-by-hand": "{path} е заменен на ръка",
+	"server.health.downloader-for": "Програма за изтегляне за"
 }

@@ -515,6 +515,9 @@ func (s *Searcher) pickShow(ctx context.Context, all []found, vs []mediafiles.Ve
 		if clash {
 			continue
 		}
+		if s.noDownloader(ctx, all[i].item.Protocol, &vs[i]) {
+			continue
+		}
 		if over, why := s.overGrabLimit(ctx, all[i].src, now); over {
 			vs[i].Outcome = "passed_over"
 			vs[i].Reasons = append(vs[i].Reasons, mediafiles.Reason{Step: "rank", Rule: "source_limit", Effect: "rank", Detail: why})

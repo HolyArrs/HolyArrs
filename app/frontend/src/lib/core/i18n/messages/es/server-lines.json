@@ -1293,5 +1293,6 @@
 	"server.downloads.only-a-movie-s-download-is": "desde aquí solo se importa la descarga de una película; usa Importar archivos a mano",
 	"server.downloads.the-download-has-no-single-video": "la descarga no tiene un solo vídeo que importar; usa Importar archivos a mano",
 	"server.downloads.this-movie-already-has-a-file": "esta película ya tiene un archivo; envía replace para poner este en su lugar",
-	"server.importer.replaced-by-hand": "{path} reemplazado a mano"
+	"server.importer.replaced-by-hand": "{path} reemplazado a mano",
+	"server.health.downloader-for": "Gestor de descargas para"
 }

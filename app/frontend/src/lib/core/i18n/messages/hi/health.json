@@ -264,5 +264,9 @@
 	"health.word.broken": "खराब",
 	"health.word.notSent": "अभी भेजा नहीं गया",
 	"health.word.notSynced": "अभी सिंक नहीं हुआ",
-	"health.word.working": "चल रहा है"
+	"health.word.working": "चल रहा है",
+	"health.check.usenetDl": "Usenet डाउनलोडर",
+	"health.check.torrentDl": "टोरेंट डाउनलोडर",
+	"health.check.noUsenetDl": "आपके सोर्स Usenet डाउनलोड ढूँढते हैं, पर कोई Usenet डाउनलोडर सेट अप नहीं है, इसलिए कोई भी भेजा नहीं जा सकता। सेटिंग › डाउनलोडर में एक जोड़ें।",
+	"health.check.noTorrentDl": "आपके सोर्स टोरेंट डाउनलोड ढूँढते हैं, पर कोई टोरेंट डाउनलोडर सेट अप नहीं है, इसलिए कोई भी भेजा नहीं जा सकता। सेटिंग › डाउनलोडर में एक जोड़ें।"
 }

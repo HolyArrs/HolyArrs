@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Importovať {file} ako {name}?",
 	"downloads.dp.askImportReplace": "Importovať {file} ako {name}? Nahradí aktuálny súbor, ktorý pôjde do sekcie Nedávno odstránené.",
 	"downloads.dp.imported": "{name} importované",
-	"downloads.dp.importFailed": "Súbor sa nepodarilo importovať"
+	"downloads.dp.importFailed": "Súbor sa nepodarilo importovať",
+	"downloads.hl.notMoved": "Po importe nepresunuté",
+	"downloads.noDl.usenet": "Nesťahuje sa: nájdené sťahovania potrebujú sťahovač pre Usenet a žiadny nie je nastavený.",
+	"downloads.noDl.torrent": "Nesťahuje sa: nájdené sťahovania potrebujú sťahovač torrentov a žiadny nie je nastavený.",
+	"downloads.noDl.add": "Pridať sťahovač",
+	"downloads.hl.noUsenetDl": "nie je nastavený žiadny sťahovač pre Usenet",
+	"downloads.hl.noTorrentDl": "nie je nastavený žiadny sťahovač torrentov"
 }

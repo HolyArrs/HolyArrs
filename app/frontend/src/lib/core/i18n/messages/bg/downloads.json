@@ -1262,5 +1262,11 @@
 	"downloads.dp.askImport": "Да се импортира ли {file} като {name}?",
 	"downloads.dp.askImportReplace": "Да се импортира ли {file} като {name}? Той заменя текущия файл, който отива в „Наскоро изтрити“.",
 	"downloads.dp.imported": "{name} е импортиран",
-	"downloads.dp.importFailed": "Файлът не можа да се импортира"
+	"downloads.dp.importFailed": "Файлът не можа да се импортира",
+	"downloads.hl.notMoved": "Не е преместено след импортиране",
+	"downloads.noDl.usenet": "Не се изтегля: намерените изтегляния изискват програма за изтегляне от Usenet, а няма настроена.",
+	"downloads.noDl.torrent": "Не се изтегля: намерените изтегляния изискват програма за изтегляне на торенти, а няма настроена.",
+	"downloads.noDl.add": "Добави програма за изтегляне",
+	"downloads.hl.noUsenetDl": "няма настроена програма за изтегляне от Usenet",
+	"downloads.hl.noTorrentDl": "няма настроена програма за изтегляне на торенти"
 }
