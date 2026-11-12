@@ -2,6 +2,7 @@ package arrapi
 
 import (
 	"context"
+	"errors"
 	"math"
 	"net/http"
 	"slices"
@@ -163,7 +164,7 @@ func (h *handler) missingEpisodes(w http.ResponseWriter, r *http.Request) {
 		size = min(n, 10000)
 	}
 	page := 1
-	if n, err := strconv.ParseInt(query(r, "page"), 10, 32); err == nil && n > 0 {
+	if n, err := strconv.ParseInt(query(r, "page"), 10, 32); (err == nil || errors.Is(err, strconv.ErrRange)) && n > 0 {
 		page = int(min(n, math.MaxInt32)) // past the end on a 32-bit build too
 	}
 	kept := true
