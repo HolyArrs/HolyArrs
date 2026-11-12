@@ -480,6 +480,10 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 		src.UseFor = *in.UseFor
 	} else if isNew {
 		src.UseFor = domain.SourceUse{Feed: true, AutoSearch: src.Format != "rss", HandSearch: src.Format != "rss"}
+		if site.ID == "torrentscsv" {
+			// TorrentsCSV only searches; it has no newest list to watch.
+			src.UseFor.Feed = false
+		}
 	}
 	if src.Format == "rss" && (src.UseFor.AutoSearch || src.UseFor.HandSearch) {
 		return "", "", ErrUse

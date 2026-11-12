@@ -217,6 +217,10 @@ func TestSiteSourceAdd(t *testing.T) {
 	if len(x.Kinds) != 1 || x.Kinds[0] != "tv" {
 		t.Fatalf("subsplease kinds %v", x.Kinds)
 	}
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"TCSV","format":"site","site":"torrentscsv"}`, 201), &x)
+	if x.UseFor.Feed || !x.UseFor.AutoSearch || !x.UseFor.HandSearch {
+		t.Fatalf("torrentscsv use_for %+v", x.UseFor)
+	}
 	do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"Nope","format":"site","site":"other"}`, 400)
 	do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"Nope","format":"site","site":"knaben","protocol":"usenet"}`, 400)
 	raw := string(do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"IPT","format":"site","site":"iptorrents","api_key":"uid=1; pass=secretcookie"}`, 201))
