@@ -37,6 +37,17 @@ var (
 		"pl", "nl", "pt", "sv", "da", "no", "fi", "cs", "hu", "el", "he", "tr", "ar", "hi", "zh", "th", "vi", "uk")
 )
 
+// PickLanguages lists every language Pick rules can want, sorted: wanting
+// them all takes a Release in any language.
+func PickLanguages() []string {
+	out := make([]string, 0, len(pickLangs))
+	for l := range pickLangs {
+		out = append(out, l)
+	}
+	slices.Sort(out)
+	return out
+}
+
 func traitSet(values ...string) map[string]bool {
 	m := make(map[string]bool, len(values))
 	for _, v := range values {

@@ -30,13 +30,13 @@ type OwnTrait struct {
 }
 
 // OwnSpec is one test of a synced or imported trait. Kind is name, group
-// or edition (a pattern), source (one of the HolyArrs sources,
+// or edition (a pattern), source or modifier (one of the HolyArrs sources,
 // comma-separated), resolution (a number), size ("over-upto" in GB, either
 // end open), language (a language code, "original" or "any"; "!" before a
 // code fits any other language), release_type (single, multi or
-// season_pack) or year ("from-to"). Tests of one kind pass when every Required one
-// passes and, if there are others, at least one of those does; the trait
-// matches when every kind passes. Negate turns a test's answer around.
+// season_pack) or year ("from-to"). Tests of one kind pass when no Required
+// one fails and at least one of them passes; the trait matches when every
+// kind passes. Negate turns a test's answer around.
 type OwnSpec struct {
 	Name     string `json:"name"`
 	Kind     string `json:"kind"`

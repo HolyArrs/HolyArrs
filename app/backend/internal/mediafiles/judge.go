@@ -53,6 +53,9 @@ type Current struct {
 	Group      string
 	Fix        int
 	ImportedAt time.Time
+	// parse is the file's name as read, kept so Judge can score it again
+	// once it knows the title (its original language and year).
+	parse *releasename.Result
 }
 
 // SlotSet is the Slots a Release matched, with what judging needs about them.
@@ -334,6 +337,9 @@ func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 	if set.Match.Title != nil && rel.Parse.OriginalLanguage == "" {
 		rel.Parse.OriginalLanguage = set.Match.Title.OriginalLanguage
 	}
+	if set.Match.Title != nil && rel.Parse.TitleYear == 0 {
+		rel.Parse.TitleYear = set.Match.Title.Year
+	}
 	p := rel.Parse
 	if rel.Size > 0 {
 		p.Size = rel.Size
@@ -442,6 +448,7 @@ func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 	// 4. Better than what we have.
 	points := sumPoints(p, rules)
 	if set.Current != nil && v.Step != nil {
+		set.Current = currentWithTitle(set.Current, p, rules)
 		v.better(rel, rules, set.Current, idx, points)
 	}
 	if v.failed() {

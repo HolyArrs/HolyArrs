@@ -96,6 +96,11 @@ func ConvertFormat(app string, in []FormatSpec, opt ConvertOptions) (specs []med
 				bad["quality modifier"] = true
 				continue
 			}
+			// An import keeps it a kind of its own, so it and a source
+			// test must both pass, as there.
+			if opt.MoreKinds {
+				o.Kind = "modifier"
+			}
 		case "LanguageSpecification":
 			code := s.Language
 			if !opt.MoreKinds || code == "" || s.Except && code == "any" {

@@ -46,7 +46,7 @@
 	const imported = $derived((list ?? []).filter((o) => o.source === 'import'));
 	const appWord = (o: OwnTrait) => ({ sonarr: 'Sonarr', radarr: 'Radarr' })[o.app ?? ''] ?? '';
 	const specWord = (k: string) =>
-		({ name: t('downloads.ot.kindName'), group: t('downloads.ot.kindGroup'), source: t('downloads.ot.kindSource'), resolution: t('downloads.ot.kindResolution'), size: t('downloads.ot.kindSize'), edition: t('downloads.ot.kindEdition'), language: t('downloads.ot.kindLanguage'), release_type: t('downloads.ot.kindReleaseType'), year: t('downloads.ot.kindYear') })[k] ?? k;
+		({ name: t('downloads.ot.kindName'), group: t('downloads.ot.kindGroup'), source: t('downloads.ot.kindSource'), modifier: t('downloads.ot.kindSource'), resolution: t('downloads.ot.kindResolution'), size: t('downloads.ot.kindSize'), edition: t('downloads.ot.kindEdition'), language: t('downloads.ot.kindLanguage'), release_type: t('downloads.ot.kindReleaseType'), year: t('downloads.ot.kindYear') })[k] ?? k;
 	const specSummary = (o: OwnTrait) => (o.specs ?? []).map((s) => t(s.negate ? 'downloads.ot.specNot' : 'downloads.ot.spec', { name: s.name, kind: specWord(s.kind) })).join(', ');
 	const sizeWords = (term: string) => {
 		const { over, upTo } = sizeParts(term);

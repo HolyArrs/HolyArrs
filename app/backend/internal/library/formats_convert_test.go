@@ -28,7 +28,7 @@ func TestConvertFormat(t *testing.T) {
 		{"radarr", FormatSpec{Implementation: "EditionSpecification", Value: `\bIMAX\b`}, more, "edition", `\bIMAX\b`, ""},
 		{"radarr", FormatSpec{Implementation: "YearSpecification", Min: 1990, Max: 1999}, more, "year", "1990-1999", ""},
 		{"radarr", FormatSpec{Implementation: "YearSpecification", Min: 2000, Max: 1999}, more, "", "", "year"},
-		{"radarr", FormatSpec{Implementation: "QualityModifierSpecification", Value: "5"}, more, "source", "remux", ""},
+		{"radarr", FormatSpec{Implementation: "QualityModifierSpecification", Value: "5"}, more, "modifier", "remux", ""},
 		{"radarr", FormatSpec{Implementation: "QualityModifierSpecification", Value: "3"}, more, "", "", "quality modifier"},
 		{"sonarr", FormatSpec{Implementation: "IndexerFlagSpecification", Value: "1"}, more, "", "", "indexer flag"},
 		{"sonarr", FormatSpec{Implementation: "ReleaseTitleSpecification", Value: strings.Repeat("a", 1001)}, more, "", "", "unreadable pattern"},

@@ -174,3 +174,111 @@ func TestUndoRemovesUnusedImport(t *testing.T) {
 		t.Fatalf("after undo %d rows left", n)
 	}
 }
+
+// planRules plans one Radarr or Sonarr profile and returns its Pick rules.
+func planRules(t *testing.T, kind Kind, p Profile, formats ...Named) *RulesPlan {
+	t.Helper()
+	s := &Snapshot{Kind: kind, Address: "http://old:1", CustomFormats: formats, QualityProfiles: []Profile{p}}
+	it := item(t, BuildPlan([]Input{{1, s}}, Choices{}), GroupRules, "pick_rules:1:"+string(kind)+":"+strconv.FormatInt(p.ID, 10))
+	if it.Rules == nil || it.Rules.Body == nil {
+		t.Fatalf("no imported rules: %+v", it)
+	}
+	if err := mediafiles.CheckPickRules("x", it.Rules.Kinds, withOwnTraits(*it.Rules.Body)); err != nil {
+		t.Fatalf("the planned body is refused: %v", err)
+	}
+	return it.Rules
+}
+
+func withOwnTraits(b mediafiles.PickRulesBody) mediafiles.PickRulesBody {
+	if b.Traits == nil {
+		b.Traits = []mediafiles.TraitPoints{}
+	}
+	return b
+}
+
+var oneFormat = Named{ID: 1, Name: "x265", Items: []map[string]any{{"name": "x265", "kind": "ReleaseTitleSpecification", "value.value": `x265`}}}
+
+// TestImportedRulesMatchTheProfile: the parts of the ready-made rules an
+// old app has no word for are left out (size limits, refused traits), the
+// language is the profile's, a profile that never upgrades stops at the
+// first copy, and points cut to the bound are said.
+func TestImportedRulesMatchTheProfile(t *testing.T) {
+	base := Profile{ID: 7, Name: "HD", UpgradeAllowed: true, Qualities: []string{"WEBDL-720p", "WEBDL-1080p", "Bluray-1080p"},
+		CutoffQualities: []string{"WEBDL-1080p"}, Scores: map[string]int{"x265": 50}}
+
+	rp := planRules(t, Sonarr, base, oneFormat)
+	b := rp.Body
+	if len(b.SizeLimits) != 0 {
+		t.Errorf("size limits %+v", b.SizeLimits)
+	}
+	for _, n := range []string{"hardcoded_subs", "3d"} {
+		if slices.Contains(b.Never, n) {
+			t.Errorf("never still has %s", n)
+		}
+	}
+	if !slices.Contains(b.Never, "disc_image") || !slices.Contains(b.Never, "sample") {
+		t.Errorf("never %v", b.Never)
+	}
+	// Sonarr profiles have no language: every language is taken.
+	if !slices.Equal(b.Language.Wanted, mediafiles.PickLanguages()) || !b.Language.OriginalOK {
+		t.Errorf("sonarr language %+v", b.Language)
+	}
+	if b.GoodEnoughAt != "1080p_web" || b.GoodEnoughPoints == nil || *b.GoodEnoughPoints != 0 || b.UpgradeMinPoints != 1 {
+		t.Errorf("thresholds %s %v %d", b.GoodEnoughAt, b.GoodEnoughPoints, b.UpgradeMinPoints)
+	}
+	if !strings.Contains(strings.Join(rp.Notes, "; "), "size limits") {
+		t.Errorf("no size note: %v", rp.Notes)
+	}
+
+	p := base
+	p.Language = "Original"
+	if l := planRules(t, Radarr, p, oneFormat).Body.Language; len(l.Wanted) != 0 || !l.OriginalOK {
+		t.Errorf("original language %+v", l)
+	}
+	p.Language = "German"
+	if l := planRules(t, Radarr, p, oneFormat).Body.Language; !slices.Equal(l.Wanted, []string{"de"}) || l.OriginalOK {
+		t.Errorf("german %+v", l)
+	}
+	p.Language = "Any"
+	if l := planRules(t, Radarr, p, oneFormat).Body.Language; !slices.Equal(l.Wanted, mediafiles.PickLanguages()) {
+		t.Errorf("any %+v", l)
+	}
+
+	p = base
+	p.UpgradeAllowed, p.MinScore = false, -20
+	b = planRules(t, Radarr, p, oneFormat).Body
+	if b.GoodEnoughAt != "720p_web" || b.GoodEnoughPoints == nil || *b.GoodEnoughPoints != -20 {
+		t.Errorf("no upgrades: good enough %s %v", b.GoodEnoughAt, b.GoodEnoughPoints)
+	}
+
+	p = base
+	p.Qualities = []string{"WEBDL-1080p", "BR-DISK", "Unknown"}
+	p.Scores = map[string]int{"x265": -999999}
+	rp = planRules(t, Radarr, p, oneFormat)
+	if slices.Contains(rp.Body.Never, "disc_image") {
+		t.Error("a profile allowing full discs still refuses them")
+	}
+	notes := strings.Join(rp.Notes, "; ")
+	if rp.Traits[0].Points != -10000 || !strings.Contains(notes, "10000") || !strings.Contains(notes, "Unknown") {
+		t.Errorf("points %d notes %q", rp.Traits[0].Points, notes)
+	}
+
+	p = base
+	p.Qualities = []string{"Bluray-1080p", "WEBDL-1080p"}
+	if notes := strings.Join(planRules(t, Radarr, p, oneFormat).Notes, "; "); !strings.Contains(notes, "order") {
+		t.Errorf("no order note: %q", notes)
+	}
+}
+
+// TestModifierIsItsOwnKind: an import keeps a quality modifier apart from
+// the source, so a format asking for both needs both.
+func TestModifierIsItsOwnKind(t *testing.T) {
+	f := Named{ID: 3, Name: "Remux", Items: []map[string]any{
+		{"name": "Blu-ray", "kind": "SourceSpecification", "value.value": float64(9)},
+		{"name": "Remux", "kind": "QualityModifierSpecification", "value.value": float64(5)}}}
+	rp := planRules(t, Radarr, Profile{ID: 7, Name: "HD", UpgradeAllowed: true, Qualities: []string{"Bluray-1080p", "Remux-1080p"},
+		CutoffQualities: []string{"Remux-1080p"}, Scores: map[string]int{"Remux": 50}}, f)
+	if len(rp.Traits) != 1 || rp.Traits[0].Specs[0].Kind != "source" || rp.Traits[0].Specs[1].Kind != "modifier" || rp.Traits[0].Specs[1].Value != "remux" {
+		t.Fatalf("traits %+v skipped %+v", rp.Traits, rp.Skipped)
+	}
+}

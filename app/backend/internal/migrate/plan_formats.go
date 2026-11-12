@@ -47,28 +47,57 @@ func (b *builder) importedRules(s *Snapshot, p Profile, preset string) (*RulesPl
 		body = mediafiles.FourK()
 	}
 	body.Traits = nil
-	if steps, good := profileSteps(p); len(steps) > 0 && good != "" {
+	var notes []string
+	// The old apps keep size limits per quality and refuse no traits of
+	// their own, so the ready-made rules' limits and refusals are left out.
+	body.SizeLimits = map[string]mediafiles.SizeLimit{}
+	notes = append(notes, "its size limits are not brought; set them under Pick rules")
+	discs := slices.ContainsFunc(p.Qualities, func(q string) bool {
+		q = strings.ToLower(q)
+		return strings.Contains(q, "br-disk") || strings.Contains(q, "brdisk")
+	})
+	steps, good := profileSteps(p)
+	body.Never = slices.DeleteFunc(slices.Clone(body.Never), func(t string) bool {
+		// A step it allows is not also refused as a trait.
+		return t == "hardcoded_subs" || t == "3d" || t == "disc_image" && discs || (t == "cam" || t == "telesync") && slices.Contains(steps, t)
+	})
+	body.MinPoints = clampPoints(p.MinScore)
+	g := clampPoints(p.CutoffScore)
+	if len(steps) > 0 && good != "" {
 		for i := range body.Steps {
 			body.Steps[i].Allowed = slices.Contains(steps, body.Steps[i].Quality)
 		}
 		body.GoodEnoughAt = good
-		// A step it allows is not also refused as a trait.
-		body.Never = slices.DeleteFunc(slices.Clone(body.Never), func(t string) bool {
-			return (t == "cam" || t == "telesync") && slices.Contains(steps, t)
-		})
+		if !p.UpgradeAllowed {
+			// It never replaced a file: the first copy is good enough.
+			for _, s := range body.Steps {
+				if s.Allowed {
+					body.GoodEnoughAt = s.Quality
+					break
+				}
+			}
+			g = body.MinPoints
+		}
 	}
-	body.MinPoints = clampPoints(p.MinScore)
-	g := clampPoints(p.CutoffScore)
 	body.GoodEnoughPoints = &g
 	// Older apps have no minimum upgrade step: any gain counts, as 1 does.
 	body.UpgradeMinPoints = clampPoints(max(p.MinUpgradeScore, 1))
 	body.Order = "quality_then_points"
-	var notes []string
-	if lang := strings.ToLower(strings.TrimSpace(p.Language)); lang != "" && lang != "any" && lang != "original" && lang != "unknown" {
+	notes = append(notes, qualityNotes(p)...)
+	// Sonarr profiles and Radarr's "Any" take every language; "Original"
+	// is what the ready-made rules already ask.
+	every := mediafiles.LanguageRule{Wanted: mediafiles.PickLanguages(), OriginalOK: true}
+	switch lang := strings.ToLower(strings.TrimSpace(p.Language)); lang {
+	case "original":
+		body.Language = mediafiles.LanguageRule{Wanted: []string{}, OriginalOK: true}
+	case "", "any", "unknown":
+		body.Language = every
+	default:
 		want := withLang(body, subtitles.NormLanguage(lang))
 		if want.Language.Wanted[0] != "" && mediafiles.CheckPickRules("x", []string{"movie"}, want) == nil {
 			body = want
 		} else {
+			body.Language = every
 			notes = append(notes, "its language "+clip(p.Language, 40)+" has no match here, so any language is taken")
 		}
 	}
@@ -100,6 +129,9 @@ func (b *builder) importedRules(s *Snapshot, p Profile, preset string) (*RulesPl
 		}
 		rp.Traits = append(rp.Traits, library.ImportedTrait{SourceID: fmt.Sprintf("%s:%s:%d", app, instanceLabel(s.Address), f.ID),
 			Name: clip(f.Name, 60), Specs: specs, Points: clampPoints(p.Scores[n])})
+		if clampPoints(p.Scores[n]) != p.Scores[n] {
+			notes = append(notes, fmt.Sprintf("%s scored %d there; points here stop at %d", clip(f.Name, 60), p.Scores[n], clampPoints(p.Scores[n])))
+		}
 	}
 	if len(rp.Traits) > maxImportTraits {
 		sort.SliceStable(rp.Traits, func(i, j int) bool { return abs(rp.Traits[i].Points) > abs(rp.Traits[j].Points) })
@@ -108,11 +140,31 @@ func (b *builder) importedRules(s *Snapshot, p Profile, preset string) (*RulesPl
 		}
 		rp.Traits = rp.Traits[:maxImportTraits]
 	}
-	if !p.UpgradeAllowed {
-		notes = append(notes, "it never looked for better copies; these Pick rules do until Good enough")
-	}
 	rp.Notes = notes
 	return rp, true
+}
+
+// qualityNotes says where a profile's qualities do not line up with the
+// ladder here: a quality with no step, and an order of its own.
+func qualityNotes(p Profile) []string {
+	var notes, lost []string
+	last, reordered := -1, false
+	for _, q := range p.Qualities {
+		i := slices.Index(mediafiles.Ladder, qualityStep(q))
+		if i < 0 {
+			lost = append(lost, clip(q, 40))
+			continue
+		}
+		reordered = reordered || i < last
+		last = max(last, i)
+	}
+	if len(lost) > 0 {
+		notes = append(notes, "no step here for "+strings.Join(lost, ", "))
+	}
+	if reordered {
+		notes = append(notes, "it ranks its qualities in an order of its own; here they keep the ladder's order")
+	}
+	return notes
 }
 
 func abs(n int) int {

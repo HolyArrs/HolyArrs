@@ -74,7 +74,9 @@ func compileSpecs(specs []OwnSpec) ([]ownSpec, bool) {
 				return nil, false
 			}
 			o.re = re
-		case "source":
+		case "source", "modifier":
+			// A modifier (remux, full disc) is read from the source too, but
+			// is a kind of its own, so it and a source test must both pass.
 			o.sources = strings.Split(s.Value, ",")
 		case "resolution":
 			n, err := strconv.Atoi(s.Value)
@@ -162,8 +164,9 @@ func (s ownSpec) language(p releasename.Result) (hit, known bool) {
 		return true, true
 	case "original":
 		if p.OriginalLanguage == "" {
-			// Never fits, and negate turns that into a fit.
-			return false, true
+			// Not known: it is in no list, so it never fits (negate turns
+			// that into a fit) and every language is another one.
+			return s.except, true
 		}
 		want = p.OriginalLanguage
 	}
@@ -210,8 +213,13 @@ func (s ownSpec) test(trait string, p releasename.Result) bool {
 	case "release_type":
 		hit = releaseType(p) == s.Value
 	case "year":
-		hit = p.Year.Value > 0 && p.Year.Value >= s.years[0] && p.Year.Value <= s.years[1]
-	case "source":
+		// The name's year, else the title's.
+		y := p.Year.Value
+		if y <= 0 {
+			y = p.TitleYear
+		}
+		hit = y > 0 && y >= s.years[0] && y <= s.years[1]
+	case "source", "modifier":
 		hit = p.Source.Conf != releasename.Unknown && slices.Contains(s.sources, p.Source.Value)
 	case "resolution":
 		hit = p.Resolution.Conf != releasename.Unknown && p.Resolution.Value == s.res
@@ -221,30 +229,21 @@ func (s ownSpec) test(trait string, p releasename.Result) bool {
 	return hit != s.Negate
 }
 
-// formatMatches runs a synced trait's tests: per kind, every required
-// test passes and at least one of the others (if any). A trait with no
-// tests fits everything.
+// formatMatches runs a synced trait's tests: a kind passes when no
+// required test in it failed and at least one of its tests passed (so a
+// required test that passes carries its kind). A trait with no tests fits
+// everything.
 func formatMatches(name string, specs []ownSpec, p releasename.Result) (bool, string) {
-	type kindState struct{ optional, optionalHit bool }
-	kinds := map[string]*kindState{}
+	kinds := map[string]bool{}
 	for _, s := range specs {
-		k := kinds[s.Kind]
-		if k == nil {
-			k = &kindState{}
-			kinds[s.Kind] = k
-		}
 		ok := s.test(name, p)
-		if s.Required {
-			if !ok {
-				return false, name + ": " + s.Name + " does not fit"
-			}
-			continue
+		if s.Required && !ok {
+			return false, name + ": " + s.Name + " does not fit"
 		}
-		k.optional = true
-		k.optionalHit = k.optionalHit || ok
+		kinds[s.Kind] = kinds[s.Kind] || ok
 	}
-	for kind, k := range kinds {
-		if k.optional && !k.optionalHit {
+	for kind, hit := range kinds {
+		if !hit {
 			return false, name + ": no " + kind + " test fits"
 		}
 	}
