@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -56,7 +57,7 @@ func labQbitCall(t *testing.T, qb, method, path string, form url.Values) []byte 
 			break
 		}
 	}
-	if res.StatusCode != 200 {
+	if res.StatusCode/100 != 2 { // qBittorrent 5.2 answers 202 while it fetches a link
 		t.Fatalf("%s %s: %d %s", method, path, res.StatusCode, b.String())
 	}
 	return []byte(b.String())
@@ -157,7 +158,7 @@ func TestLabCategoryAfterImportSharedQbit(t *testing.T) {
 			return err
 		}
 		dl = domain.Downloader{Name: "Lab qBittorrent", Adapter: "qbittorrent", Protocol: "torrent", URL: qb, Category: cat, Priority: 1,
-			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true, CategoryAfterImport: done, OwnOnly: true}
+			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true, Writable: true, CategoryAfterImport: done, OwnOnly: true}
 		if _, err := database.Insert(tx, "downloaders", &dl, domain.System); err != nil {
 			return err
 		}
@@ -200,9 +201,37 @@ func TestLabCategoryAfterImportSharedQbit(t *testing.T) {
 	if got := labQbitList(t, qb, url.Values{"hashes": {hash}})[0].Category; got != cat {
 		t.Fatalf("before import our torrent is in %q, want %q", got, cat)
 	}
+	// A subtitle file that came with the download is brought along (#292
+	// part 3): our own test file, dropped beside the finished video.
+	saveDir := "/data/downloads/incomplete/" + cat
+	t.Cleanup(func() { _ = os.RemoveAll(saveDir); _ = os.RemoveAll("/data/downloads/incomplete/" + other) })
+	if _, err := importer.SaveSideFiles(ctx, s, importer.SideFiles{On: true, Types: []string{"srt"}}, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	vids, _ := filepath.Glob(saveDir + "/*.mkv")
+	if len(vids) != 1 {
+		t.Fatalf("downloaded videos in %s: %v", saveDir, vids)
+	}
+	if err := os.WriteFile(strings.TrimSuffix(vids[0], ".mkv")+".en.srt", []byte("1\n00:00:01,000 --> 00:00:02,000\nlab\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	imp, err := im.Import(ctx, id, false, domain.System)
 	if err != nil {
 		t.Fatal(err)
+	}
+	var placedVideo, placedSub string
+	_ = filepath.WalkDir(movies, func(p string, d os.DirEntry, _ error) error {
+		switch {
+		case d == nil || d.IsDir():
+		case strings.HasSuffix(p, ".mkv"):
+			placedVideo = p
+		case strings.HasSuffix(p, ".srt"):
+			placedSub = p
+		}
+		return nil
+	})
+	if placedVideo == "" || placedSub != strings.TrimSuffix(placedVideo, ".mkv")+".en.srt" {
+		t.Fatalf("after import the Library has video %q and subtitle %q; want the subtitle beside the video as <video name>.en.srt", placedVideo, placedSub)
 	}
 	ours := labQbitList(t, qb, url.Values{"hashes": {hash}})
 	if len(ours) != 1 || ours[0].Category != done {
@@ -247,5 +276,5 @@ func TestLabCategoryAfterImportSharedQbit(t *testing.T) {
 	if !strings.HasPrefix(oursPaused.State, "stopped") && !strings.HasPrefix(oursPaused.State, "paused") {
 		t.Fatalf("Pause all left our torrent running: %+v", oursPaused)
 	}
-	t.Logf("import %s; ours moved %s -> %s (History lines %d); other %s stayed %s/%s", imp.State, cat, done, lines, otherHash[:8], otherAfter[0].Category, otherAfter[0].State)
+	t.Logf("subtitle came along as %s; import %s; ours moved %s -> %s (History lines %d); other %s stayed %s/%s", filepath.Base(placedSub), imp.State, cat, done, lines, otherHash[:8], otherAfter[0].Category, otherAfter[0].State)
 }
