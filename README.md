@@ -1,4 +1,4 @@
-<p align="center"><b>English</b> · <a href=".github/readme/README.es.md">Español</a> · <a href=".github/readme/README.pt-BR.md">Português (Brasil)</a> · <a href=".github/readme/README.fr.md">Français</a> · <a href=".github/readme/README.de.md">Deutsch</a> · <a href=".github/readme/README.ru.md">Русский</a> · <a href=".github/readme/README.zh-CN.md">简体中文</a> · <a href=".github/readme/README.ja.md">日本語</a> · <a href=".github/readme/README.hi.md">हिन्दी</a> · <a href=".github/readme/README.ar.md">العربية</a> · <a href=".github/readme/LANGUAGES.md">More languages</a></p>
+<p align="center"><b>English</b> · <a href=".github/readme/README.es.md">Español</a> · <a href=".github/readme/README.fr.md">Français</a> · <a href=".github/readme/README.de.md">Deutsch</a> · <a href=".github/readme/README.ru.md">Русский</a> · <a href=".github/readme/README.zh-CN.md">简体中文</a> · <a href=".github/readme/README.ja.md">日本語</a> · <a href=".github/readme/README.hi.md">हिन्दी</a> · <a href=".github/readme/README.ar.md">العربية</a> · <a href=".github/readme/LANGUAGES.md">More languages</a></p>
 
 <p align="center">
   <picture>
