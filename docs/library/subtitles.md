@@ -90,7 +90,7 @@ The key is kept encrypted and never shown again. Leave the box empty to keep it,
 
 **Translate subtitles inside the video by themselves** lets the timed search translate text tracks inside the video. Off, those are translated only when you click **Translate**. Picture tracks are always skipped.
 
-Each subtitle site has **Include machine-made subtitles**. Off by default. On, a site's AI or machine-translated files are used only when no file made by a person exists, and a person's file replaces it later.
+Each subtitle site has **Machine-made subtitles**. Off by default. On, a site's AI or machine-translated files are used only when no file made by a person exists, and a person's file replaces it later.
 
 How scoring works, when HolyArrs searches, and the sites it uses are in [Subtitle scoring and sites](subtitle-scoring.md).
 

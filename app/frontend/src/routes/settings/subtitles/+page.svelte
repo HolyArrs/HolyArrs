@@ -623,6 +623,8 @@
 	}
 	.bad-text {
 		color: var(--fail-text);
+		min-width: 0;
+		overflow-wrap: anywhere;
 	}
 	.ok-text {
 		color: var(--ok-text, inherit);

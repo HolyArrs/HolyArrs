@@ -103,6 +103,6 @@
 	"settings.subtitles.trBuiltIn": "Translate subtitles inside the video by themselves",
 	"settings.subtitles.trBuiltInHint": "Off: only when you click Translate. Picture subtitles are always skipped.",
 	"settings.subtitles.trSaved": "Translator saved",
-	"settings.subtitles.machineMade": "Include machine-made subtitles",
+	"settings.subtitles.machineMade": "Machine-made subtitles",
 	"settings.subtitles.machineMadeHint": "Used only when no file made by a person exists. A person's file replaces it later."
 }

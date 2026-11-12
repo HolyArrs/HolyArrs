@@ -99,10 +99,10 @@
 	"settings.subtitles.trKeyHint": "Wird verschlüsselt gespeichert und nie wieder angezeigt.",
 	"settings.subtitles.trKeyKept": "Ein Schlüssel ist gespeichert. Leer lassen, um ihn zu behalten.",
 	"settings.subtitles.trKeyEmpty": "Leer bei lokalen Diensten",
-	"settings.subtitles.trClearKey": "Gespeicherten Schlüssel entfernen",
+	"settings.subtitles.trClearKey": "Schlüssel entfernen",
 	"settings.subtitles.trBuiltIn": "Untertitel im Video selbstständig übersetzen",
 	"settings.subtitles.trBuiltInHint": "Aus: nur wenn du auf Übersetzen klickst. Bilduntertitel werden immer übersprungen.",
 	"settings.subtitles.trSaved": "Übersetzer gespeichert",
-	"settings.subtitles.machineMade": "Maschinell erstellte Untertitel einbeziehen",
+	"settings.subtitles.machineMade": "Maschinelle Untertitel",
 	"settings.subtitles.machineMadeHint": "Nur genutzt, wenn keine Datei von einem Menschen da ist. Eine solche ersetzt sie später."
 }

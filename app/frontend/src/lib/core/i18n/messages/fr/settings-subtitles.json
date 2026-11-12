@@ -103,6 +103,6 @@
 	"settings.subtitles.trBuiltIn": "Traduire seuls les sous-titres dans la vidéo",
 	"settings.subtitles.trBuiltInHint": "Désactivé : seulement quand tu cliques sur Traduire. Les sous-titres image sont toujours ignorés.",
 	"settings.subtitles.trSaved": "Traducteur enregistré",
-	"settings.subtitles.machineMade": "Inclure les sous-titres automatiques",
+	"settings.subtitles.machineMade": "Sous-titres automatiques",
 	"settings.subtitles.machineMadeHint": "Utilisés seulement sans fichier fait par une personne, qui le remplacera ensuite."
 }

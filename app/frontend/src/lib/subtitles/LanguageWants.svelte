@@ -76,8 +76,15 @@
 	}
 	.wants { padding: 0; list-style: none; }
 	.wants > li.small { color: var(--text-muted); font: var(--t-callout); }
+	/* Label above its picker: the settings pages' label-left field rows would squeeze a row of three to one letter wide. */
 	.want .field {
+		display: flex !important;
+		flex-direction: column;
+		gap: 6px;
+		min-width: 0;
 		margin-top: 0;
+		padding: 0 !important;
+		border-top: 0 !important;
 	}
 	.forced {
 		min-height: 40px;

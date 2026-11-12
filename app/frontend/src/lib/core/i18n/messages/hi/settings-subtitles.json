@@ -103,6 +103,6 @@
 	"settings.subtitles.trBuiltIn": "वीडियो के अंदर के सबटाइटल अपने आप अनुवाद करें",
 	"settings.subtitles.trBuiltInHint": "बंद: सिर्फ अनुवाद करें दबाने पर। चित्र वाले सबटाइटल हमेशा छोड़े जाते हैं।",
 	"settings.subtitles.trSaved": "अनुवादक सहेजा गया",
-	"settings.subtitles.machineMade": "मशीन से बने सबटाइटल शामिल करें",
+	"settings.subtitles.machineMade": "मशीन से बने सबटाइटल",
 	"settings.subtitles.machineMadeHint": "सिर्फ तब, जब किसी इंसान की बनाई फ़ाइल न हो। बाद में वह इसकी जगह लेती है।"
 }
