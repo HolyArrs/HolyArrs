@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "西部劇",
 	"server.downloads.deleted-by-hand": "手動で削除",
 	"server.downloads.marked-bad": "不良としてマーク",
-	"server.suggest.because-you-have": "{name} を持っているので"
+	"server.suggest.because-you-have": "{name} を持っているので",
+	"server.health.downloader-save-folder": "ダウンローダーの保存先フォルダー"
 }

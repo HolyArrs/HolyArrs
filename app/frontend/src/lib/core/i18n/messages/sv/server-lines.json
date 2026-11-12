@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Western",
 	"server.downloads.deleted-by-hand": "Raderad manuellt",
 	"server.downloads.marked-bad": "Markerad som dålig",
-	"server.suggest.because-you-have": "Eftersom du har {name}"
+	"server.suggest.because-you-have": "Eftersom du har {name}",
+	"server.health.downloader-save-folder": "Nedladdarens sparmapp"
 }

@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Western",
 	"server.downloads.deleted-by-hand": "Esborrat a mà",
 	"server.downloads.marked-bad": "Marcat com a dolent",
-	"server.suggest.because-you-have": "Perquè tens {name}"
+	"server.suggest.because-you-have": "Perquè tens {name}",
+	"server.health.downloader-save-folder": "Carpeta de desament del gestor de baixades"
 }

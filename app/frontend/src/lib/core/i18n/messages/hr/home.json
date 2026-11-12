@@ -268,6 +268,8 @@
 	"home.metadataServerOnline": "Poslužitelj metapodataka je dostupan",
 	"home.homeCouldNotRead3": "Početna sada nije mogla pročitati preuzimanja.",
 	"home.waitingToBeCleared": "čeka čišćenje",
+	"home.noSaveFolder": "nema mapu za spremanje",
+	"home.noSaveFolderMany": "nemaju mapu za spremanje",
 	"home.off": "Isključeno",
 	"home.sourcesOff": "Isključeno u Dijelovima"
 }

@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Western",
 	"server.downloads.deleted-by-hand": "Usunięto ręcznie",
 	"server.downloads.marked-bad": "Oznaczono jako wadliwe",
-	"server.suggest.because-you-have": "Bo masz {name}"
+	"server.suggest.because-you-have": "Bo masz {name}",
+	"server.health.downloader-save-folder": "Folder zapisu Downloadera"
 }

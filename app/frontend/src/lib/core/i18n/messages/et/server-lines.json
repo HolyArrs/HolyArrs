@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Vestern",
 	"server.downloads.deleted-by-hand": "Käsitsi kustutatud",
 	"server.downloads.marked-bad": "Märgitud vigaseks",
-	"server.suggest.because-you-have": "Sest sul on {name}"
+	"server.suggest.because-you-have": "Sest sul on {name}",
+	"server.health.downloader-save-folder": "Allalaadija salvestuskaust"
 }

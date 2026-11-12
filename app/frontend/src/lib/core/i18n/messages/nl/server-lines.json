@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Western",
 	"server.downloads.deleted-by-hand": "Handmatig verwijderd",
 	"server.downloads.marked-bad": "Als slecht gemarkeerd",
-	"server.suggest.because-you-have": "Omdat je {name} hebt"
+	"server.suggest.because-you-have": "Omdat je {name} hebt",
+	"server.health.downloader-save-folder": "Opslagmap van de Downloader"
 }

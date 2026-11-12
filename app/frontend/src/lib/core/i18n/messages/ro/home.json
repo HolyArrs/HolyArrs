@@ -268,6 +268,8 @@
 	"home.metadataServerOnline": "Serverul de metadate e online",
 	"home.homeCouldNotRead3": "Acasă nu a putut citi descărcările acum.",
 	"home.waitingToBeCleared": "așteaptă ștergerea",
+	"home.noSaveFolder": "nu are dosar de salvare",
+	"home.noSaveFolderMany": "nu au dosar de salvare",
 	"home.off": "Oprit",
 	"home.sourcesOff": "Oprit în Module"
 }

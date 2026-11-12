@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Western",
 	"server.downloads.deleted-by-hand": "Șters manual",
 	"server.downloads.marked-bad": "Marcat ca defect",
-	"server.suggest.because-you-have": "Pentru că ai {name}"
+	"server.suggest.because-you-have": "Pentru că ai {name}",
+	"server.health.downloader-save-folder": "Dosar de salvare al clientului de descărcare"
 }

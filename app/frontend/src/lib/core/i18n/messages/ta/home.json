@@ -268,6 +268,8 @@
 	"home.metadataServerOnline": "மெட்டாடேட்டா சேவையகம் இணைப்பில் உள்ளது",
 	"home.homeCouldNotRead3": "முகப்பால் இப்போது பதிவிறக்கங்களைப் படிக்க முடியவில்லை.",
 	"home.waitingToBeCleared": "அழிக்கப்படக் காத்திருக்கிறது",
+	"home.noSaveFolder": "சேமிக்கும் கோப்புறை இல்லை",
+	"home.noSaveFolderMany": "சேமிக்கும் கோப்புறை இல்லை",
 	"home.off": "அணை",
 	"home.sourcesOff": "பகுதிகளில் அணைக்கப்பட்டுள்ளது"
 }

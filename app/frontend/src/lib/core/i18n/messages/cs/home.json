@@ -268,6 +268,8 @@
 	"home.metadataServerOnline": "Server metadat je online",
 	"home.homeCouldNotRead3": "Domů teď nemohlo přečíst stahování.",
 	"home.waitingToBeCleared": "čeká na vyčištění",
+	"home.noSaveFolder": "nemá složku pro ukládání",
+	"home.noSaveFolderMany": "nemají složku pro ukládání",
 	"home.off": "Vypnuto",
 	"home.sourcesOff": "Vypnuto v Částech"
 }

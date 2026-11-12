@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "ওয়েস্টার্ন",
 	"server.downloads.deleted-by-hand": "হাতে মুছে ফেলা হয়েছে",
 	"server.downloads.marked-bad": "খারাপ হিসেবে চিহ্নিত",
-	"server.suggest.because-you-have": "কারণ আপনার কাছে {name} আছে"
+	"server.suggest.because-you-have": "কারণ আপনার কাছে {name} আছে",
+	"server.health.downloader-save-folder": "ডাউনলোডারের সেভ ফোল্ডার"
 }

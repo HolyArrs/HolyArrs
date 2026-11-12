@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Vesterns",
 	"server.downloads.deleted-by-hand": "Izdzēsts manuāli",
 	"server.downloads.marked-bad": "Atzīmēts kā slikts",
-	"server.suggest.because-you-have": "Jo jums ir {name}"
+	"server.suggest.because-you-have": "Jo jums ir {name}",
+	"server.health.downloader-save-folder": "Lejupielādētāja saglabāšanas mape"
 }

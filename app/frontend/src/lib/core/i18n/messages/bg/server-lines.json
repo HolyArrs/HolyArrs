@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Уестърн",
 	"server.downloads.deleted-by-hand": "Изтрито ръчно",
 	"server.downloads.marked-bad": "Отбелязано като лошо",
-	"server.suggest.because-you-have": "Защото имате {name}"
+	"server.suggest.because-you-have": "Защото имате {name}",
+	"server.health.downloader-save-folder": "Папка за запис на програмата за изтегляне"
 }

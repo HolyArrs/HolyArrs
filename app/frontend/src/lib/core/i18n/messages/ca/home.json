@@ -268,6 +268,8 @@
 	"home.metadataServerOnline": "Servidor de metadades en línia",
 	"home.homeCouldNotRead3": "Inici no ha pogut llegir les baixades ara mateix.",
 	"home.waitingToBeCleared": "espera ser netejat",
+	"home.noSaveFolder": "no té carpeta de desament",
+	"home.noSaveFolderMany": "no tenen carpeta de desament",
 	"home.off": "Desactivat",
 	"home.sourcesOff": "Desactivat a Parts"
 }

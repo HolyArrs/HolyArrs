@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Western",
 	"server.downloads.deleted-by-hand": "Smazáno ručně",
 	"server.downloads.marked-bad": "Označeno jako vadné",
-	"server.suggest.because-you-have": "Protože máte {name}"
+	"server.suggest.because-you-have": "Protože máte {name}",
+	"server.health.downloader-save-folder": "Složka pro ukládání Stahovače"
 }

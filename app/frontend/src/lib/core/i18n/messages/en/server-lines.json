@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Western",
 	"server.downloads.deleted-by-hand": "Deleted by hand",
 	"server.downloads.marked-bad": "Marked bad",
-	"server.suggest.because-you-have": "Because you have {name}"
+	"server.suggest.because-you-have": "Because you have {name}",
+	"server.health.downloader-save-folder": "Downloader save folder"
 }

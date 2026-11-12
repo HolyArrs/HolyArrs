@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Western",
 	"server.downloads.deleted-by-hand": "Dipadam secara manual",
 	"server.downloads.marked-bad": "Ditanda rosak",
-	"server.suggest.because-you-have": "Kerana anda ada {name}"
+	"server.suggest.because-you-have": "Kerana anda ada {name}",
+	"server.health.downloader-save-folder": "Folder simpan Pemuat turun"
 }

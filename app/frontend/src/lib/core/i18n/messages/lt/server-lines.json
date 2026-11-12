@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Vesternų",
 	"server.downloads.deleted-by-hand": "Ištrinta rankiniu būdu",
 	"server.downloads.marked-bad": "Pažymėta kaip bloga",
-	"server.suggest.because-you-have": "Nes turite {name}"
+	"server.suggest.because-you-have": "Nes turite {name}",
+	"server.health.downloader-save-folder": "Atsisiuntėjo išsaugojimo aplankas"
 }

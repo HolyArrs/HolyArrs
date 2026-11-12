@@ -55,6 +55,7 @@
 	"core.plain.configFolder": "/config n'est pas associé à un dossier, donc les données de HolyArrs sont perdues quand le conteneur est recréé.",
 	"core.plain.waitingDownloads": "Des téléchargements attendent car leur client de téléchargement ne peut pas utiliser les fichiers.",
 	"core.plain.clearWaiting": "Des téléchargements importés attendent d'être nettoyés de leur client de téléchargement.",
+	"core.plain.saveFolder": "Un client de téléchargement n'a pas de dossier d'enregistrement, donc HolyArrs ne peut pas importer ses téléchargements terminés.",
 	"core.plain.someone": "Quelqu'un de votre foyer",
 	"core.plain.keyKitOwner": "Le propriétaire devrait enregistrer le kit de clé : les sauvegardes ne contiennent pas la clé maîtresse.",
 	"core.plain.keyKitNone": "Aucun kit de clé n'est enregistré : les sauvegardes ne contiennent pas la clé maîtresse.",

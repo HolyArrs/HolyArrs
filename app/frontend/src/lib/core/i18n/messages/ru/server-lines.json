@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Вестерн",
 	"server.downloads.deleted-by-hand": "Удалено вручную",
 	"server.downloads.marked-bad": "Помечено как плохое",
-	"server.suggest.because-you-have": "Потому что у вас есть {name}"
+	"server.suggest.because-you-have": "Потому что у вас есть {name}",
+	"server.health.downloader-save-folder": "Папка сохранения загрузчика"
 }

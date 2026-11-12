@@ -268,6 +268,8 @@
 	"home.metadataServerOnline": "Lýsigagnaþjónn tengdur",
 	"home.homeCouldNotRead3": "Heim gat ekki lesið niðurhöl núna.",
 	"home.waitingToBeCleared": "bíður hreinsunar",
+	"home.noSaveFolder": "er ekki með vistunarmöppu",
+	"home.noSaveFolderMany": "eru ekki með vistunarmöppu",
 	"home.off": "Af",
 	"home.sourcesOff": "Slökkt í Hlutum"
 }

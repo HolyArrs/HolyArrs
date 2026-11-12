@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "वेस्टर्न",
 	"server.downloads.deleted-by-hand": "हाथ से हटाया गया",
 	"server.downloads.marked-bad": "खराब के रूप में चिह्नित",
-	"server.suggest.because-you-have": "क्योंकि आपके पास {name} है"
+	"server.suggest.because-you-have": "क्योंकि आपके पास {name} है",
+	"server.health.downloader-save-folder": "डाउनलोडर का सेव फ़ोल्डर"
 }

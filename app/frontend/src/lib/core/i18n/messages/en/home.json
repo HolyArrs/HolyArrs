@@ -26,6 +26,8 @@
 	"home.downloads": "Downloads",
 	"home.waitingForTheirFiles": "waiting for their files",
 	"home.waitingToBeCleared": "waiting to be cleared",
+	"home.noSaveFolder": "has no save folder set",
+	"home.noSaveFolderMany": "have no save folder set",
 	"home.masterKey": "Master key",
 	"home.noKeyKitSaved": "no key kit saved",
 	"home.trailers": "Trailers",

@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Western",
 	"server.downloads.deleted-by-hand": "Poistettu käsin",
 	"server.downloads.marked-bad": "Merkitty huonoksi",
-	"server.suggest.because-you-have": "Koska sinulla on {name}"
+	"server.suggest.because-you-have": "Koska sinulla on {name}",
+	"server.health.downloader-save-folder": "Lataajan tallennuskansio"
 }

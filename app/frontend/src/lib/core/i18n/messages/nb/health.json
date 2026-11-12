@@ -261,5 +261,8 @@
 	"health.word.notSynced": "Ikke synkronisert ennå",
 	"health.word.working": "Fungerer",
 	"health.check.clearWaiting": "Nedlastinger som venter på å bli ryddet bort",
-	"health.kind.clearWaiting": "Nedlastinger som venter på å bli ryddet bort"
+	"health.check.saveFolder": "Lagringsmappe for",
+	"health.check.saveFolderWhy": "{app} har ingen lagringsmappe, så HolyArrs kan ikke importere de ferdige nedlastingene. Legg til et stipar under Innstillinger > Nedlastere.",
+	"health.kind.clearWaiting": "Nedlastinger som venter på å bli ryddet bort",
+	"health.kind.saveFolder": "Nedlasterens lagringsmappe"
 }

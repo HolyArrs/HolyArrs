@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "เวสเทิร์น",
 	"server.downloads.deleted-by-hand": "ลบด้วยตนเอง",
 	"server.downloads.marked-bad": "ทำเครื่องหมายว่าเสีย",
-	"server.suggest.because-you-have": "เพราะคุณมี {name}"
+	"server.suggest.because-you-have": "เพราะคุณมี {name}",
+	"server.health.downloader-save-folder": "โฟลเดอร์บันทึกของตัวดาวน์โหลด"
 }

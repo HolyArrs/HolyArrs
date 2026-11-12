@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Western",
 	"server.downloads.deleted-by-hand": "Dihapus secara manual",
 	"server.downloads.marked-bad": "Ditandai buruk",
-	"server.suggest.because-you-have": "Karena kamu punya {name}"
+	"server.suggest.because-you-have": "Karena kamu punya {name}",
+	"server.health.downloader-save-folder": "Folder simpan Pengunduh"
 }

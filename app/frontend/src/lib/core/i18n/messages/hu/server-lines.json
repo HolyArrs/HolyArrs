@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Western",
 	"server.downloads.deleted-by-hand": "Kézzel törölve",
 	"server.downloads.marked-bad": "Rossznak jelölve",
-	"server.suggest.because-you-have": "Mert megvan neked: {name}"
+	"server.suggest.because-you-have": "Mert megvan neked: {name}",
+	"server.health.downloader-save-folder": "Letöltő mentési mappája"
 }

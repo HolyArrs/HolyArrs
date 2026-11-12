@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "ويسترن",
 	"server.downloads.deleted-by-hand": "حُذف يدويًا",
 	"server.downloads.marked-bad": "وُسم بأنه تالف",
-	"server.suggest.because-you-have": "لأن لديك {name}"
+	"server.suggest.because-you-have": "لأن لديك {name}",
+	"server.health.downloader-save-folder": "مجلد حفظ برنامج التنزيل"
 }

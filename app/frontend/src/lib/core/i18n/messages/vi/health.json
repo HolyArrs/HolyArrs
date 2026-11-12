@@ -261,5 +261,8 @@
 	"health.word.notSynced": "Chưa đồng bộ",
 	"health.word.working": "Đang hoạt động",
 	"health.check.clearWaiting": "Bản tải đang chờ dọn",
-	"health.kind.clearWaiting": "Bản tải đang chờ dọn"
+	"health.check.saveFolder": "Thư mục lưu của",
+	"health.check.saveFolderWhy": "{app} chưa có thư mục lưu, nên HolyArrs không thể nhập các bản tải đã xong. Thêm một cặp đường dẫn trong Cài đặt > Trình tải.",
+	"health.kind.clearWaiting": "Bản tải đang chờ dọn",
+	"health.kind.saveFolder": "Thư mục lưu của trình tải xuống"
 }

@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Miền Tây",
 	"server.downloads.deleted-by-hand": "Đã xóa thủ công",
 	"server.downloads.marked-bad": "Đã đánh dấu hỏng",
-	"server.suggest.because-you-have": "Vì bạn có {name}"
+	"server.suggest.because-you-have": "Vì bạn có {name}",
+	"server.health.downloader-save-folder": "Thư mục lưu của trình tải xuống"
 }

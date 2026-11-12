@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Вестерн",
 	"server.downloads.deleted-by-hand": "Видалено вручну",
 	"server.downloads.marked-bad": "Позначено як погане",
-	"server.suggest.because-you-have": "Бо у вас є {name}"
+	"server.suggest.because-you-have": "Бо у вас є {name}",
+	"server.health.downloader-save-folder": "Тека збереження завантажувача"
 }

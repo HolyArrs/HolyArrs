@@ -26,6 +26,8 @@
 	"home.downloads": "Downloads",
 	"home.waitingForTheirFiles": "esperando os arquivos",
 	"home.waitingToBeCleared": "esperando a limpeza",
+	"home.noSaveFolder": "não tem pasta de salvamento",
+	"home.noSaveFolderMany": "não têm pasta de salvamento",
 	"home.masterKey": "Chave mestra",
 	"home.noKeyKitSaved": "nenhum kit de chave salvo",
 	"home.trailers": "Trailers",

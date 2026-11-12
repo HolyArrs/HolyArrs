@@ -268,6 +268,8 @@
 	"home.metadataServerOnline": "Online ang metadata server",
 	"home.homeCouldNotRead3": "Hindi mabasa ng Home ang mga download ngayon.",
 	"home.waitingToBeCleared": "naghihintay ma-clear",
+	"home.noSaveFolder": "walang save folder",
+	"home.noSaveFolderMany": "walang save folder",
 	"home.off": "Off",
 	"home.sourcesOff": "Naka-off sa Mga Bahagi"
 }

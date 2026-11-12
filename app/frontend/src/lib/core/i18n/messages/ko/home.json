@@ -26,6 +26,8 @@
 	"home.downloads": "다운로드",
 	"home.waitingForTheirFiles": "파일 대기 중",
 	"home.waitingToBeCleared": "정리 대기 중",
+	"home.noSaveFolder": "저장 폴더 없음",
+	"home.noSaveFolderMany": "저장 폴더 없음",
 	"home.masterKey": "마스터 키",
 	"home.noKeyKitSaved": "저장된 키 킷 없음",
 	"home.trailers": "예고편",

@@ -261,5 +261,8 @@
 	"health.word.notSynced": "Belum disegerakkan",
 	"health.word.working": "Berfungsi",
 	"health.check.clearWaiting": "Muat turun menunggu untuk dibersihkan",
-	"health.kind.clearWaiting": "Muat turun menunggu untuk dibersihkan"
+	"health.check.saveFolder": "Folder simpan untuk",
+	"health.check.saveFolderWhy": "{app} tiada folder simpan, jadi HolyArrs tidak dapat mengimport muat turun yang sudah siap. Tambah pasangan laluan dalam Tetapan > Pemuat turun.",
+	"health.kind.clearWaiting": "Muat turun menunggu untuk dibersihkan",
+	"health.kind.saveFolder": "Folder simpan Pemuat turun"
 }

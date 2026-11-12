@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Faroeste",
 	"server.downloads.deleted-by-hand": "Apagado manualmente",
 	"server.downloads.marked-bad": "Marcado como mau",
-	"server.suggest.because-you-have": "Porque tem {name}"
+	"server.suggest.because-you-have": "Porque tem {name}",
+	"server.health.downloader-save-folder": "Pasta de salvamento do gestor de downloads"
 }

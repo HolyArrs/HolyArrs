@@ -268,6 +268,8 @@
 	"home.metadataServerOnline": "سرور متادیتا آنلاین است",
 	"home.homeCouldNotRead3": "خانه الان نتوانست دانلودها را بخواند.",
 	"home.waitingToBeCleared": "منتظر پاک شدن",
+	"home.noSaveFolder": "پوشه ذخیره ندارد",
+	"home.noSaveFolderMany": "پوشه ذخیره ندارند",
 	"home.off": "خاموش",
 	"home.sourcesOff": "در بخش‌ها خاموش است"
 }

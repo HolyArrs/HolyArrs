@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "מערבון",
 	"server.downloads.deleted-by-hand": "נמחק ידנית",
 	"server.downloads.marked-bad": "סומן כפגום",
-	"server.suggest.because-you-have": "כי יש לך את {name}"
+	"server.suggest.because-you-have": "כי יש לך את {name}",
+	"server.health.downloader-save-folder": "תיקיית השמירה של המוריד"
 }

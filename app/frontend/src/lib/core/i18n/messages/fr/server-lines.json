@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Western",
 	"server.downloads.deleted-by-hand": "Supprimé à la main",
 	"server.downloads.marked-bad": "Marqué comme mauvais",
-	"server.suggest.because-you-have": "Parce que vous avez {name}"
+	"server.suggest.because-you-have": "Parce que vous avez {name}",
+	"server.health.downloader-save-folder": "Dossier d'enregistrement du client de téléchargement"
 }

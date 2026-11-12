@@ -144,5 +144,6 @@
 	"core.settings.account.label": "Mans konts",
 	"core.settings.account.about": "Parole, divfaktoru autentifikācija, ierīces",
 	"core.plain.clearWaiting": "Importētie lejupielādes gaida, kad tiks notīrīti no sava Lejupielādētāja.",
+	"core.plain.saveFolder": "Vienam lejupielādētājam nav saglabāšanas mapes, tāpēc HolyArrs nevar importēt tā pabeigtās lejupielādes.",
 	"core.api.sourceOff": "Dažas rindas šajā instalācijā ir izslēgtas."
 }

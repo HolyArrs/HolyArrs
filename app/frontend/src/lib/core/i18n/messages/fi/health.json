@@ -261,5 +261,8 @@
 	"health.word.notSynced": "Ei vielä synkronoitu",
 	"health.word.working": "Toimii",
 	"health.check.clearWaiting": "Poistamista odottavat lataukset",
-	"health.kind.clearWaiting": "Poistamista odottavat lataukset"
+	"health.check.saveFolder": "Tallennuskansio:",
+	"health.check.saveFolderWhy": "Lataajalla {app} ei ole tallennuskansiota, joten HolyArrs ei voi tuoda valmiita latauksia. Lisää polkupari kohdassa Asetukset > Lataajat.",
+	"health.kind.clearWaiting": "Poistamista odottavat lataukset",
+	"health.kind.saveFolder": "Lataajan tallennuskansio"
 }

@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Γουέστερν",
 	"server.downloads.deleted-by-hand": "Διαγράφηκε χειροκίνητα",
 	"server.downloads.marked-bad": "Σημειώθηκε ως κακό",
-	"server.suggest.because-you-have": "Επειδή έχετε το {name}"
+	"server.suggest.because-you-have": "Επειδή έχετε το {name}",
+	"server.health.downloader-save-folder": "Φάκελος αποθήκευσης του Προγράμματος λήψης"
 }

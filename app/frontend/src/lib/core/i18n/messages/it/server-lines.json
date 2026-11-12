@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Western",
 	"server.downloads.deleted-by-hand": "Eliminato a mano",
 	"server.downloads.marked-bad": "Segnato come difettoso",
-	"server.suggest.because-you-have": "Perché hai {name}"
+	"server.suggest.because-you-have": "Perché hai {name}",
+	"server.health.downloader-save-folder": "Cartella di salvataggio del downloader"
 }

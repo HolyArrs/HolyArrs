@@ -261,5 +261,8 @@
 	"health.word.notSynced": "Још није синхронизовано",
 	"health.word.working": "Ради",
 	"health.check.clearWaiting": "Преузимања која чекају чишћење",
-	"health.kind.clearWaiting": "Преузимања која чекају чишћење"
+	"health.check.saveFolder": "Фасцикла за чување за",
+	"health.check.saveFolderWhy": "{app} нема фасциклу за чување, па HolyArrs не може да увезе завршена преузимања. Додајте пар путања у Подешавања > Преузимачи.",
+	"health.kind.clearWaiting": "Преузимања која чекају чишћење",
+	"health.kind.saveFolder": "Фасцикла за чување Преузимача"
 }

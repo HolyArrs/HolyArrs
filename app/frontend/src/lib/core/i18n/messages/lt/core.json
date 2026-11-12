@@ -144,5 +144,6 @@
 	"core.settings.account.label": "Mano paskyra",
 	"core.settings.account.about": "Slaptažodis, dviejų veiksnių patvirtinimas, įrenginiai",
 	"core.plain.clearWaiting": "Importuoti atsisiuntimai laukia, kol bus išvalyti iš savo Atsisiuntėjo.",
+	"core.plain.saveFolder": "Vienas atsisiuntėjas neturi išsaugojimo aplanko, todėl HolyArrs negali importuoti jo baigtų atsisiuntimų.",
 	"core.api.sourceOff": "Kai kurios eilutės šioje diegtyje išjungtos."
 }

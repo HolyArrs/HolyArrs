@@ -268,6 +268,8 @@
 	"home.metadataServerOnline": "Сървърът за метаданни е достъпен",
 	"home.homeCouldNotRead3": "„Начало“ не можа да прочете изтеглянията в момента.",
 	"home.waitingToBeCleared": "чака изчистване",
+	"home.noSaveFolder": "няма папка за запис",
+	"home.noSaveFolderMany": "нямат папка за запис",
 	"home.off": "Изключено",
 	"home.sourcesOff": "Изключено в Части"
 }

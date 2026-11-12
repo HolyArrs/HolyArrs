@@ -26,6 +26,8 @@
 	"home.downloads": "डाउनलोड",
 	"home.waitingForTheirFiles": "अपनी फ़ाइलों का इंतज़ार कर रहे हैं",
 	"home.waitingToBeCleared": "साफ़ होने का इंतज़ार कर रहे हैं",
+	"home.noSaveFolder": "सेव फ़ोल्डर सेट नहीं है",
+	"home.noSaveFolderMany": "सेव फ़ोल्डर सेट नहीं है",
 	"home.masterKey": "मास्टर कुंजी",
 	"home.noKeyKitSaved": "कोई कुंजी किट सेव नहीं है",
 	"home.trailers": "ट्रेलर",

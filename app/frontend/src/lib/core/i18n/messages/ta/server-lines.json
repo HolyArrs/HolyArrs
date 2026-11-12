@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "வெஸ்டர்ன்",
 	"server.downloads.deleted-by-hand": "கைமுறையாக நீக்கப்பட்டது",
 	"server.downloads.marked-bad": "மோசமானதாகக் குறிக்கப்பட்டது",
-	"server.suggest.because-you-have": "உங்களிடம் {name} இருப்பதால்"
+	"server.suggest.because-you-have": "உங்களிடம் {name} இருப்பதால்",
+	"server.health.downloader-save-folder": "பதிவிறக்கி சேமிக்கும் கோப்புறை"
 }

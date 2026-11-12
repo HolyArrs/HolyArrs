@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Vestern",
 	"server.downloads.deleted-by-hand": "Ručno izbrisano",
 	"server.downloads.marked-bad": "Označeno kao loše",
-	"server.suggest.because-you-have": "Jer imate {name}"
+	"server.suggest.because-you-have": "Jer imate {name}",
+	"server.health.downloader-save-folder": "Mapa za spremanje preuzimatelja"
 }

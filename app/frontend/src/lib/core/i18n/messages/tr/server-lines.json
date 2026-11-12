@@ -1270,5 +1270,6 @@
 	"server.metadata.western": "Vahşi Batı",
 	"server.downloads.deleted-by-hand": "Elle silindi",
 	"server.downloads.marked-bad": "Bozuk olarak işaretlendi",
-	"server.suggest.because-you-have": "{name} sende olduğu için"
+	"server.suggest.because-you-have": "{name} sende olduğu için",
+	"server.health.downloader-save-folder": "İndiricinin kayıt klasörü"
 }

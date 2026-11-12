@@ -144,5 +144,6 @@
 	"core.settings.account.label": "El meu compte",
 	"core.settings.account.about": "Contrasenya, verificació en dos passos, dispositius",
 	"core.plain.clearWaiting": "Les baixades importades esperen ser netejades del seu Gestor de baixades.",
+	"core.plain.saveFolder": "Un gestor de baixades no té carpeta de desament, així que HolyArrs no pot importar les baixades acabades.",
 	"core.api.sourceOff": "Algunes files estan desactivades en aquesta instal·lació."
 }

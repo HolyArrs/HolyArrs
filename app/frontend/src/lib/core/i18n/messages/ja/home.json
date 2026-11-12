@@ -26,6 +26,8 @@
 	"home.downloads": "ダウンロード",
 	"home.waitingForTheirFiles": "ファイルを待っています",
 	"home.waitingToBeCleared": "整理を待っています",
+	"home.noSaveFolder": "保存先フォルダーが未設定",
+	"home.noSaveFolderMany": "保存先フォルダーが未設定",
 	"home.masterKey": "マスターキー",
 	"home.noKeyKitSaved": "キーキット未保存",
 	"home.trailers": "予告編",
