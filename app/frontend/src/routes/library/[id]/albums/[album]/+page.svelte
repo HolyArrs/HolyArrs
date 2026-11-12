@@ -400,7 +400,7 @@
 	.alb-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 	.alb-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.alb-btn.primary { background: var(--text); color: var(--bg); }
-	.alb-btn:disabled { opacity: .55; }
+	.alb-btn:disabled { opacity: var(--disabled-opacity); }
 	.alb-h { margin: 16px 0 0; font: 700 20px/1.2 var(--font-ui); }
 	.alb-hist { display: grid; gap: 2px; margin: 0 -12px; }
 	.alb-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: 16px; background: var(--surface-2); overflow: hidden; }

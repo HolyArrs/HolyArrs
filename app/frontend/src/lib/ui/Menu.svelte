@@ -124,7 +124,7 @@
 	.item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 0 10px 0 8px; border-radius: 8px; color: var(--text); font: var(--t-callout); font-size: 15px; text-align: left; }
 	.item:hover, .item:focus-visible { background: var(--surface-3); outline: none; box-shadow: none; }
 	.item:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
-	.item[aria-disabled='true'] { opacity: .45; cursor: not-allowed; }
+	.item[aria-disabled='true'] { opacity: var(--disabled-opacity); cursor: not-allowed; }
 	.danger { color: var(--fail-text); }
 	.ic { width: 20px; display: grid; place-items: center; color: var(--text-muted); flex: none; }
 	.danger .ic { color: inherit; }

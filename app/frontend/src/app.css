@@ -451,7 +451,7 @@ input[type='checkbox'], input[type='radio'], progress { accent-color: var(--acce
 :where(h1, h2, h3, p, label, dd, .notice, .form-error, .hint) { overflow-wrap: anywhere; }
 :where(.row, .card-head) > * { min-width: 0; }
 .notice > .icon { flex: none; }
-:where(button, input, select, textarea):disabled { opacity: .6; }
+:where(button, input, select, textarea):disabled { opacity: var(--disabled-opacity); }
 :where(dialog) { max-width: calc(100vw - 2rem); max-height: calc(100dvh - 2rem); overflow: auto; }
 :where(dialog)::backdrop { background: var(--scrim); }
 :where(table) { font-variant-numeric: tabular-nums; }
