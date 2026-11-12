@@ -262,7 +262,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			continue
 		}
 		for _, c := range ctxs[titleID] {
-			cands := append([]found(nil), fs...)
+			cands := rulesTake(c.pr.Body.Tags, fs)
 			for k := range cands {
 				if id := storedID[keyOf(cands[k])]; id > 0 {
 					cands[k].relID = id
@@ -652,4 +652,16 @@ func movieOut(t mediafiles.Title) *time.Time {
 // lookingStateNames is lookingStates as the strings the store compares with.
 func lookingStateNames() [3]string {
 	return [3]string{string(lookingStates[0]), string(lookingStates[1]), string(lookingStates[2])}
+}
+
+// rulesTake keeps the feed Releases whose Source these Pick rules may use,
+// the same rule Search follows when it picks Sources to ask.
+func rulesTake(rules []string, fs []found) []found {
+	out := make([]found, 0, len(fs))
+	for _, f := range fs {
+		if mediafiles.RulesTakeSource(f.src.Tags, rules) {
+			out = append(out, f)
+		}
+	}
+	return out
 }

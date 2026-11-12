@@ -67,7 +67,7 @@ func (s *Searcher) feedShow(ctx context.Context, by domain.Actor, jobID *int64, 
 			}
 		}
 		heldNow := map[int64]int64{}
-		cands := append([]found(nil), fs...)
+		cands := rulesTake(group[0].pr.Body.Tags, fs)
 		for _, c := range group {
 			if !kept[c.sl.ID] {
 				continue

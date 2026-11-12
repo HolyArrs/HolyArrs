@@ -36,7 +36,7 @@ func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bo
 			skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: tagsWhy + strings.Join(src.Tags, ", ") + ") are not on this title"})
 			continue
 		}
-		if len(ruleTags) > 0 && !mediafiles.Shares(src.Tags, ruleTags) {
+		if !mediafiles.RulesTakeSource(src.Tags, ruleTags) {
 			has := strings.Join(src.Tags, ", ")
 			if has == "" {
 				has = "none"
