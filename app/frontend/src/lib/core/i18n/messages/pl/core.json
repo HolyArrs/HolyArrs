@@ -142,5 +142,6 @@
 	"core.settings.danger.label": "Strefa zagrożenia",
 	"core.settings.danger.about": "Restart lub wyłączenie",
 	"core.settings.account.label": "Moje konto",
-	"core.settings.account.about": "Hasło, uwierzytelnianie dwuskładnikowe, urządzenia"
+	"core.settings.account.about": "Hasło, uwierzytelnianie dwuskładnikowe, urządzenia",
+	"core.api.sourceOff": "Niektóre rzędy są wyłączone w tej instalacji."
 }

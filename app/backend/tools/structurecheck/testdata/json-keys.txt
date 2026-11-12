@@ -434,6 +434,7 @@ dl_rate_limit
 dl_speed
 dlspeed
 docker
+docker_value
 done_at
 down
 download
@@ -674,6 +675,7 @@ hash_string
 hashes
 have
 haves
+hdmovielogo
 hdr
 head
 headers
@@ -706,6 +708,7 @@ holyarrs
 home
 home_date
 host
+hosts
 how
 href
 html_url
@@ -862,6 +865,8 @@ local_network_allowed
 local_networks
 local_path
 local_recent
+locked
+locked_note
 log
 logo
 logo_path
@@ -957,9 +962,12 @@ movie_days
 movie_limit
 movie_limit_set
 movie_results
+moviebackground
+moviebanner
 moviehash_match
 movies
 movies_per_week
+moviethumb
 mp4_audio
 mp4_url
 ms
@@ -1091,6 +1099,7 @@ outside_lists
 outside_order
 outside_recent
 overview
+own_keys_note
 owned
 owned_titles
 owner
@@ -1172,6 +1181,7 @@ picture
 picture_big
 picture_xl
 pictures
+pin
 place
 place_of_birth
 placed_by
@@ -1267,6 +1277,7 @@ rated
 rating
 ratingKey
 rating_country
+ratings
 ratio
 ratio_limit
 read_at
@@ -1640,6 +1651,7 @@ tmdbId
 tmdb_episode
 tmdb_id
 tmdb_ids
+tmdb_key_from_docker
 tmdb_movies
 tmdb_offset
 tmdb_season

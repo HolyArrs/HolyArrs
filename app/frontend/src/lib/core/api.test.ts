@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError, createClient, isIncomplete, keepFor, message } from './api.ts';
+import { ApiError, createClient, isIncomplete, isSourceOff, keepFor, message } from './api.ts';
 
 function reply(status: number, body?: unknown, headers: Record<string, string> = {}) {
 	return new Response(body === undefined ? null : typeof body === 'string' ? body : JSON.stringify(body), { status, headers });
@@ -18,6 +18,14 @@ describe('api client', () => {
 		await c.post('/y', {});
 		await c.get('/x');
 		expect(f).toHaveBeenCalledTimes(3);
+	});
+
+	it('turns a lookup that is off on this install into a calm error, not data', async () => {
+		const f = vi.fn(async () => reply(200, { source_off: true, note: 'Some rows are off on this install.' }));
+		const c = createClient(f);
+		const e = await c.get('/discover/x').catch((x) => x);
+		expect(isSourceOff(e)).toBe(true);
+		expect(isSourceOff(new ApiError('no', 500))).toBe(false);
 	});
 
 	it('does not keep a failed read', async () => {

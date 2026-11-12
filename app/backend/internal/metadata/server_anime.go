@@ -88,14 +88,14 @@ func (s *Service) AnimeMap(ctx context.Context, by, id string) (AnimeMap, error)
 	defer cancel()
 	tok, err := s.access(ctx)
 	if err != nil || tok == "" || strings.ContainsAny(tok, "\r\n") {
-		return out, ErrServiceAccess
+		return out, accessErr(err)
 	}
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.base+"/v1/anime/map?"+q.Encode(), nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	req.Header.Set("Accept", "application/json")
 	resp, err := s.http.Do(req)
 	if err != nil {
-		return out, ErrServiceUnavailable
+		return out, unreached(err)
 	}
 	defer resp.Body.Close()
 	switch {

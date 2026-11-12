@@ -119,7 +119,7 @@ func (s *Service) Control(ctx context.Context) (Control, error) {
 	req.Header.Set("Accept", "application/json")
 	resp, err := s.http.Do(req)
 	if err != nil {
-		return c, ErrServiceUnavailable
+		return c, unreached(err)
 	}
 	defer resp.Body.Close()
 	switch {

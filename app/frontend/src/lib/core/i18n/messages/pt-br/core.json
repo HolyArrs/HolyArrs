@@ -142,5 +142,6 @@
 	"core.settings.danger.label": "Zona de perigo",
 	"core.settings.danger.about": "Reiniciar ou desligar",
 	"core.settings.account.label": "Minha conta",
-	"core.settings.account.about": "Senha, duas etapas, dispositivos"
+	"core.settings.account.about": "Senha, duas etapas, dispositivos",
+	"core.api.sourceOff": "Algumas linhas estão desligadas nesta instalação."
 }

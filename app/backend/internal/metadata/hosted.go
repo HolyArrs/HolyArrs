@@ -29,8 +29,10 @@ const EnvServiceURL = "HOLYARRS_METADATA_URL"
 const EnvTMDBKey = "HOLYARRS_TMDB_KEY"
 
 // ServiceURL is the metadata server address: EnvServiceURL, else the default.
+// EnvServiceURL=off is not an address: it picks Your own keys (Modes), and
+// the default address stays only so kept answers can be found.
 func ServiceURL() string {
-	if v := strings.TrimRight(strings.TrimSpace(os.Getenv(EnvServiceURL)), "/"); v != "" {
+	if v := strings.TrimRight(strings.TrimSpace(os.Getenv(EnvServiceURL)), "/"); v != "" && !strings.EqualFold(v, "off") {
 		return v
 	}
 	return DefaultServiceURL
@@ -53,7 +55,7 @@ func (s *Service) Register(ctx context.Context) (string, error) {
 	req.Header.Set("Accept", "application/json")
 	resp, err := s.http.Do(req)
 	if err != nil {
-		return "", ErrServiceUnavailable
+		return "", unreached(err)
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 8<<10))
 	_ = resp.Body.Close()

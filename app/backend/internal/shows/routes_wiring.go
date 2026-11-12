@@ -32,6 +32,8 @@ func (h *Handlers) Error(w http.ResponseWriter, err error) {
 func ShowError(w http.ResponseWriter, err error, other func(http.ResponseWriter, error)) {
 	var dup *ShowAlreadyAddedError
 	switch {
+	case metadata.SourceOff(err):
+		metadata.WriteSourceOff(w)
 	case errors.As(err, &dup):
 		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "title_id": dup.TitleID})
 	case errors.Is(err, library.ErrNoShowFolder), errors.Is(err, ErrShowNeverAdd):

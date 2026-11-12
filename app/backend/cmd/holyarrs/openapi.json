@@ -24202,6 +24202,129 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/settings/metadata": {
+      "get": {
+        "description": "The mode (full: the HolyArrs metadata server, own: your own keys, off: no lookups), whether the Docker settings lock it, which own keys are saved (never the keys), each kind of detail on or off, and the outside addresses the mode uses.",
+        "operationId": "getMetadataSettings",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Settings."
+          }
+        },
+        "summary": "Where details come from",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Sets the mode and saves own keys (an empty key removes it, a left-out key stays). A mode change applies at once.",
+        "operationId": "putMetadataSettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Saved."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A value is not valid."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The Docker settings set the mode."
+          }
+        },
+        "summary": "Change where details come from",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/metadata/test": {
+      "post": {
+        "description": "Checks a TMDB, TheTVDB (with its PIN), MDBList or fanart.tv key, given or saved. Answers ok and a short line either way.",
+        "operationId": "testMetadataKey",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The result."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unknown key name."
+          }
+        },
+        "summary": "Test an own key",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/settings/music": {
       "get": {
         "description": "Defaults for new artists (album choice, new albums, album kinds, Pressing statuses), how a Pressing is chosen, and where MusicBrainz is reached with how long its answers are kept.",

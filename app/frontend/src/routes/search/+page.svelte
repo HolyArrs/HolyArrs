@@ -38,7 +38,7 @@
 	import { page } from '$app/state';
 	import { to } from '#lib/core/paths.ts';
 	import { focusField, forgetReturn, playFieldEntry, searchField, searchHooks } from '#lib/core/search-field.svelte.ts';
-	import { api, message, ApiError } from '#lib/core/api.ts';
+	import { api, message, ApiError, isSourceOff } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { reducedMotion } from '#lib/core/motion.ts';
 	import { plainReason } from '#lib/core/plain.ts';
@@ -245,7 +245,7 @@
 						groups[t] = [];
 						failures++;
 						if (err instanceof ApiError && err.status === 503) noTMDB = true;
-						else if (!(err instanceof ApiError && err.status === 403)) error = message(err);
+						else if (!(err instanceof ApiError && err.status === 403) && !isSourceOff(err)) error = message(err);
 					})
 			)
 		);

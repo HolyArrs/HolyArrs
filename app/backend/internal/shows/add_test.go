@@ -161,8 +161,8 @@ func TestAddShowRefusals(t *testing.T) {
 	if _, _, err := svc.AddShow(ctx, "tmdb:999", ShowAddOptions{}, domain.System); !errors.Is(err, metadata.ErrShowNotFound) {
 		t.Fatalf("unknown: %v", err)
 	}
-	if _, _, err := svc.AddShow(ctx, "tvdb:200", ShowAddOptions{Source: "tvdb"}, domain.System); !errors.Is(err, metadata.ErrUnknownSource) {
-		t.Fatalf("tvdb is off: %v", err)
+	if _, _, err := svc.AddShow(ctx, "tvdb:200", ShowAddOptions{Source: "tvdb"}, domain.System); !errors.Is(err, metadata.ErrNoTVDBKey) {
+		t.Fatalf("tvdb without key: %v", err)
 	}
 	// A TMDB id added to follow TVMaze: TVMaze is asked by the TVDB id it learnt.
 	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{Source: "tvmaze", NewSeasons: "none"}, domain.System)

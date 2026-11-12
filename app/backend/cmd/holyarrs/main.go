@@ -415,6 +415,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	}
 	hosted.Disk = metadata.LookupCache{Store: s}
+	hosted.Modes.LoadMode(ctx, s.Read())
 	// "Count this install" is set before the Job queue starts: a Job's
 	// request must not go out counted after the owner switched it off.
 	hosted.Gate.SetCountryCount(health.CountInstall(ctx, s.Read()))
@@ -426,11 +427,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// directly; HOLYARRS_DIRECT_SOURCES=1 (developers only) keeps the real
 	// MusicBrainz behind the server for its fallbacks.
 	if os.Getenv("HOLYARRS_MUSICBRAINZ_URL") == "" {
-		var direct metadata.ArtistProvider
-		if directSources() {
-			direct = artistMD
-		}
-		artistMD = hosted.Service.Artists(direct)
+		artistMD = hosted.Service.Artists(ownMusic(s, version, hosted))
 	}
 	pictures := artistImages()
 	// Pictures come from public addresses only; a picture stand-in named
@@ -501,8 +498,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	} else if n, err := lib.RecoverRenames(ctx, domain.System); err != nil || n > 0 {
 		log.Printf("renames cut off by a stop: %d finished, error %v", n, err)
 	}
-	ol := &requests.OutsideLists{Store: s, Queue: q, Library: lib, Metadata: md, TMDBBase: hosted.TMDBBase,
-		TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), TMDBToken: hosted.TMDBAccess,
+	ol := &requests.OutsideLists{Store: s, Queue: q, Library: lib, Metadata: md, TMDBRoute: hosted.ListRoute,
+		TraktBase:   os.Getenv("HOLYARRS_TRAKT_URL"),
 		TraktClient: func(ctx context.Context) (string, error) { return vault.Setting(ctx, "links", "trakt_client_id") }}
 	ol.Register(q)
 	q.ProbeSchedule(requests.OutsideListSync, ol.ProbeSync)
@@ -696,14 +693,14 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	// Artist packages are copied to disk on a schedule (no credential sent);
 	// the hosted music source answers from them first.
-	pkgs := &music.PackageSync{Store: s, Source: hosted.Service}
+	pkgs, own := &music.PackageSync{Store: s, Source: hosted.Service}, ownExtras(hosted)
 	hosted.Service.SetLocalMusic(pkgs)
 	a := buildHandlers(services{Bridges: bridges, Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
-		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: hosted.Health.Up, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
+		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: metadataUp(hosted), MetadataModes: hosted.Modes, MetadataTest: hosted.TestKey, MetadataEnvKey: hosted.OwnKey, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
-		}, AnimeMap: hosted.Service.AnimeMap, ExtraArt: hosted.Service.Art, ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: hosted.Service.Ratings, CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: requestsSvc, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Updates: uc, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
-		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: musicDeps(hosted.Service, serverDeezer, serverDeezerAlbum, serverBio)})
+		}, AnimeMap: hosted.Service.AnimeMap, ExtraArt: metadata.ModeArt(hosted.Modes, hosted.Service.Art, own.Art), ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: metadata.ModeRatings(hosted.Modes, hosted.Service.Ratings, own.Ratings), CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: requestsSvc, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Updates: uc, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
+		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: ownPictures(musicDeps(hosted.Service, serverDeezer, serverDeezerAlbum, serverBio), hosted, version)})
 	// "Count this install" rides on every request to the metadata server.
 	a.ApplyCountryCount(ctx)
 	// The arr API's webhook records hear of every import, as Alerts do.

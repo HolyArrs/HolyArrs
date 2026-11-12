@@ -19,7 +19,10 @@ func TestMainWiresEveryMusicDep(t *testing.T) {
 	deezer := func(context.Context, string) (metadata.DeezerProfile, error) { return metadata.DeezerProfile{}, nil }
 	album := func(context.Context, int64) (metadata.DeezerAlbumInfo, error) { return metadata.DeezerAlbumInfo{}, nil }
 	bio := func(context.Context, string) (*metadata.WikiSummary, error) { return nil, nil }
-	d := musicDeps(&metadata.Service{}, deezer, album, bio)
+	// As main wires it: the server's calls, plus Deezer and Wikipedia asked
+	// directly in Your own keys mode.
+	hosted := &metadata.Hosted{Modes: metadata.NewModes(func(string) string { return "" })}
+	d := ownPictures(musicDeps(&metadata.Service{}, deezer, album, bio), hosted, "test")
 	v := reflect.ValueOf(d)
 	for i := 0; i < v.NumField(); i++ {
 		if f := v.Field(i); f.Kind() == reflect.Func && f.IsNil() {

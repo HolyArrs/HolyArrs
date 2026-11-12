@@ -47,6 +47,9 @@ func ServiceError(w http.ResponseWriter, err error) bool {
 	var message string
 	status := http.StatusServiceUnavailable
 	switch {
+	case metadata.SourceOff(err):
+		metadata.WriteSourceOff(w)
+		return true
 	case errors.Is(err, metadata.ErrServiceAccess):
 		message = metadata.ErrServiceAccess.Error()
 	case errors.Is(err, metadata.ErrServiceUnavailable):
