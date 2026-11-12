@@ -435,6 +435,7 @@ type token struct {
 	name      string
 	text      string
 	valid     bool
+	attrs     []byte // the raw attributes of a start tag, read with attr
 }
 
 // tokens calls fn for each tag and run of text in b.
@@ -476,6 +477,9 @@ func tokens(b []byte, fn func(token)) {
 			continue // doctype, processing instruction or a stray angle bracket
 		}
 		t.tag = strings.ToLower(string(inner[:n]))
+		if !t.end {
+			t.attrs = inner[n:]
+		}
 		if !t.end && (t.tag == "script" || t.tag == "style") {
 			k := indexClosingTag(b[i:], t.tag)
 			if k < 0 {

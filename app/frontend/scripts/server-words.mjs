@@ -18,7 +18,7 @@ const banned = ['Monitored', 'Activity', 'Wanted', 'Cutoff', 'Quality Profile', 
 // Codes and names the scan picks up that no one reads as words (setting values,
 // ids, kinds); they stay out of the file and the check.
 const notWords = new Set(['dash', 'each', 'range', 'smart', 'remove', 'normal', 'key', 'movie', 'show', 'artist',
-	'podnapisi', 'gestdown', 'qBittorrent', 'subtitles:languages', 'subtitle site ', 'tmdb:{v}', 'mbid:{v}']);
+	'podnapisi', 'gestdown', 'yifysubtitles', 'tvsubtitles', 'bsplayer', 'qBittorrent', 'subtitles:languages', 'subtitle site ', 'tmdb:{v}', 'mbid:{v}']);
 // Lines the scan cannot put together: a control's Event starts with the person's name (setup ControlEvent)
 // and takes its verb from a map; a removal's reason may name who removed it.
 const handLines = { '{name} paused the stage {stage}': 'accounts', '{name} resumed the stage {stage}': 'accounts',

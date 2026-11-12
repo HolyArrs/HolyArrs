@@ -64,9 +64,10 @@ func fullSnapshots() []Input {
 		AppProfiles:    []map[string]any{{"name": "Standard"}},
 	}
 	bazarr := &Snapshot{Kind: Bazarr, Subtitles: &SubtitleSetup{Languages: []string{"en", "es", "fr"},
-		Profiles:  []SubtitleProfile{{ID: 1, Name: "Main", Languages: []SubtitleLanguage{{Language: "en"}, {Language: "es", HI: true}}}, {ID: 2, Name: "Anime"}},
-		Providers: []Provider{{Name: "podnapisi", Kind: "podnapisi"}, {Name: "opensubtitlescom", Kind: "opensubtitlescom", NeedsReentry: []string{"password"}}, {Name: "addic7ed", Kind: "addic7ed"}},
-		Defaults:  map[string]any{"movie_default_profile": int64(1), "use_embedded_subs": true}}}
+		Profiles: []SubtitleProfile{{ID: 1, Name: "Main", Languages: []SubtitleLanguage{{Language: "en"}, {Language: "es", HI: true}}}, {ID: 2, Name: "Anime"}},
+		Providers: []Provider{{Name: "podnapisi", Kind: "podnapisi"}, {Name: "opensubtitlescom", Kind: "opensubtitlescom", NeedsReentry: []string{"password"}}, {Name: "addic7ed", Kind: "addic7ed"},
+			{Name: "yifysubtitles", Kind: "yifysubtitles"}, {Name: "tvsubtitles", Kind: "tvsubtitles"}, {Name: "bsplayer", Kind: "bsplayer"}, {Name: "subf2m", Kind: "subf2m"}},
+		Defaults: map[string]any{"movie_default_profile": int64(1), "use_embedded_subs": true}}}
 	qbit := &Snapshot{Kind: QBittorrent, Downloader: &Downloader{Host: "10.0.0.5", Port: 8080, Username: "admin", NeedsPassword: true, SavePath: "/downloads",
 		Categories: []Category{{Name: "radarr", Path: "/downloads/radarr"}}}}
 	sab := &Snapshot{Kind: SABnzbd, Downloader: &Downloader{Host: "sab", Port: 8080, Servers: []Provider{{Name: "news.example"}}}}
@@ -328,6 +329,14 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	item(t, p, GroupSubtitles, "subtitle_site:podnapisi")
 	if n, ok := notMoved(p, "bazarr subtitles.providers[2]"); !ok || !strings.Contains(n.Why, "Gestdown") {
 		t.Fatalf("addic7ed %+v", n)
+	}
+	for _, k := range []string{"yifysubtitles", "tvsubtitles", "bsplayer"} {
+		if it := item(t, p, GroupSubtitles, "subtitle_site:"+k); it.Subtitles.SiteKind != k {
+			t.Fatalf("%s %+v", k, it)
+		}
+	}
+	if _, ok := notMoved(p, "bazarr subtitles.providers[6]"); !ok {
+		t.Fatal("subf2m should stay behind")
 	}
 	// People: the owner maps to us; others are placeholders. Non-seven-day
 	// source windows stay explicit in NotMoved rather than widening access.
