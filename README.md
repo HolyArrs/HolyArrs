@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> is one self-hosted app for your shows, movies and music.<br>Browse like a streaming app, ask for what you want, and it handles the rest.</p>
 
-<p align="center"><b>About 15 MB to download · about 140 MB of RAM idle with 10,000 titles · amd64, arm64, armv7</b><br><sub>The six apps it replaces download 718.2 MB together.</sub></p>
+<p align="center"><b>About 19 MB to download · about 140 MB of RAM idle with 10,000 titles · amd64, arm64, armv7</b><br><sub>The six apps it replaces download 718.2 MB together.</sub></p>
 
 <p align="center"><a href="#quick-start">Quick start</a> · <a href="#why">Why</a> · <a href="#what-it-does">What it does</a> · <a href="#moving">Moving from other apps</a> · <a href="#manual">The manual</a> · <a href="#help">Help</a></p>
 
@@ -105,9 +105,9 @@ So I built it.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Six together** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>About 48 times smaller. Compressed registry download, linuxserver.io images, amd64, measured 2026-11-08. Idle RAM measured with 10,000 titles and 55,000 movies and episodes.</sub>
+<sub>About 37 times smaller. Compressed registry download, linuxserver.io images, amd64, measured 2026-11-08 (HolyArrs size measured on 1.1.0, 2026-11-12). Idle RAM measured 2026-11-08 with 10,000 titles and 55,000 movies and episodes.</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Someone asks for a title. HolyArrs searches your Sources, picks the best release
 | | |
 |---|---|
 | 🍿 **Explore** | Browse like a streaming app. Hover a title and the trailer plays. |
-| 🙋 **Requests** | A whole show or one season. You approve, or let trusted people skip the queue. |
+| 🙋 **Requests** | A whole show or one season. You approve, or let trusted people skip the queue. Plex and Pulsarr watchlists can become requests. |
 | 🎯 **Pick rules** | You decide which release wins: size, quality, language. |
-| 💬 **Subtitles** | In the languages you pick, kept with the file. Finding them online comes after 1.0. |
+| 💬 **Subtitles** | In the languages you pick, found on subtitle sites and kept with the file. |
 | 📅 **Calendar** | What's airing next for everything you follow. |
-| 🚚 **Move your setup** | From Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent and SABnzbd. Try it first, undo it later. |
-| 🔌 **Old-app API** | Prowlarr can keep pushing Sources to HolyArrs once you turn it on. |
-| 🗝️ **No API keys needed** | Titles, artwork and charts come from the HolyArrs metadata server. |
+| 🔔 **Alerts** | Discord, email, Telegram, ntfy, Gotify, Pushover or a webhook. |
+| 🚚 **Import your setup** | From Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent and SABnzbd. Pick what comes over, undo it later. |
+| 🔌 **Old-app API** | Seerr, Prowlarr, Bazarr, Unpackerr and Homepage keep working once you turn it on. |
+| 🗝️ **No API keys needed** | Titles, artwork and charts come from the HolyArrs metadata server. Your own keys or server work too. |
 | 🔒 **Encrypted keys** | Stored passwords and keys are locked with a master key that lives in your config folder. |
-| 🪶 **Tiny** | An image of about 15 MB with nothing but HolyArrs inside. |
+| 🪶 **Tiny** | An image of about 19 MB with nothing but HolyArrs inside. |
 
 <details>
 <summary><b>See every page in motion</b></summary>
@@ -148,18 +149,18 @@ Someone asks for a title. HolyArrs searches your Sources, picks the best release
 
 ## 🤝 It works with what you already run
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Downloaders: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Media servers: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Downloaders: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Media servers: Plex, Jellyfin, Emby." /></picture>
 
 - **Downloaders:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Media servers:** Plex, Jellyfin, Emby
 - **Sources:** any Torznab or Newznab indexer, or Prowlarr or Jackett
-- **Moves your setup from:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
+- **Imports your setup from:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
 
 <a id="moving"></a>
 
 ## 🚚 Bring your old setup with you
 
-Open **Settings > Move from other apps**, add each old app's address and API key (or a backup zip), pick what comes over, run **Try it**, then **Move**. You can undo a move later.
+Open **Settings > Import from other apps**, add each old app's address and API key (or a backup zip), pick what comes over, then select **Import**. You can undo an import later.
 
 | From | What comes over |
 |---|---|
@@ -171,12 +172,11 @@ Open **Settings > Move from other apps**, add each old app's address and API key
 
 HolyArrs only reads your old apps and changes nothing in them, so you can run both side by side until you trust it.
 
-Keys and passwords stay behind; you type them in again or import them from a file. Custom formats, tags and history don't come over. Media files never move. Step by step: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Keys and passwords stay behind; you type them in again or import them from a file. Custom formats, tags and history don't come over. Media files never move. Step by step: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 What it doesn't do yet
 
 - **Downloading by itself.** HolyArrs connects to qBittorrent, SABnzbd and the others. It doesn't replace them.
-- **AI or MCP features.** Not in 1.0.
 - **Phone and TV apps.** Not built. The web app works on a phone.
 - **Music in Explore** is still being built.
 
@@ -212,6 +212,8 @@ Pulling `holyarrs/holyarrs:latest` gets the right image for your machine.
 | armv7 | ✅ | Older 32-bit ARM boards |
 
 On a NAS? See [Unraid, Synology and other NAS boxes](https://docs.HolyArrs.com/run/platforms/).
+
+Prefer a native package? An experimental Synology package (`.spk`) is attached to each [release](https://github.com/HolyArrs/HolyArrs/releases). See [Synology package](docs/run/synology.md).
 
 ## Version tags
 
@@ -415,7 +417,7 @@ Want to build it into a closed product? Email support@HolyArrs.com for a commerc
 
 ## Keep it going
 
-HolyArrs is free, but it isn't free to run. Every install talks to a metadata server I pay for every month. Sponsors cover that, and buy more hours for the things you vote for.
+HolyArrs is free, but it isn't free to run. By default, each install talks to a metadata server I pay for every month. Sponsors cover that, and buy more hours for the things you vote for.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Sponsor HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Vote on the roadmap" /></picture></a></p>
 

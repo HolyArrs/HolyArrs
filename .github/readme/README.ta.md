@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> என்பது உங்கள் தொடர்கள், திரைப்படங்கள், இசைக்கான ஒரே சுயமாக ஹோஸ்ட் செய்யும் பயன்பாடு.<br>ஒரு streaming பயன்பாட்டைப் போல உலாவவும், வேண்டியதைக் கோரவும், மீதியை அது பார்த்துக்கொள்ளும்.</p>
 
-<p align="center"><b>பதிவிறக்கம் சுமார் 15 MB · 10,000 தலைப்புகளுடன் சும்மா இருக்கும்போது சுமார் 140 MB RAM · amd64, arm64, armv7</b><br><sub>இது மாற்றும் ஆறு பயன்பாடுகளின் பதிவிறக்கம் சேர்ந்து 718.2 MB.</sub></p>
+<p align="center"><b>பதிவிறக்கம் சுமார் 19 MB · 10,000 தலைப்புகளுடன் சும்மா இருக்கும்போது சுமார் 140 MB RAM · amd64, arm64, armv7</b><br><sub>இது மாற்றும் ஆறு பயன்பாடுகளின் பதிவிறக்கம் சேர்ந்து 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">விரைவு தொடக்கம்</a> · <a href="#why">ஏன்</a> · <a href="#what-it-does">இது என்ன செய்கிறது</a> · <a href="#moving">பிற பயன்பாடுகளிலிருந்து மாறுதல்</a> · <a href="#manual">கையேடு</a> · <a href="#help">உதவி</a></p>
 
@@ -105,9 +105,9 @@ docker compose up -d
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **ஆறும் சேர்ந்து** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>சுமார் 48 மடங்கு சிறியது. சுருக்கப்பட்ட registry பதிவிறக்கம், linuxserver.io images, amd64, 2026-11-08 அன்று அளக்கப்பட்டது. சும்மா இருக்கும்போதான RAM, 10,000 தலைப்புகள் மற்றும் 55,000 திரைப்படங்கள், அத்தியாயங்களுடன் அளக்கப்பட்டது.</sub>
+<sub>சுமார் 37 மடங்கு சிறியது. சுருக்கப்பட்ட registry பதிவிறக்கம், linuxserver.io images, amd64, 2026-11-08 அன்று அளக்கப்பட்டது. சும்மா இருக்கும்போதான RAM, 10,000 தலைப்புகள் மற்றும் 55,000 திரைப்படங்கள், அத்தியாயங்களுடன் அளக்கப்பட்டது. (HolyArrs 1.1.0: 2026-11-12)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ docker compose up -d
 | | |
 |---|---|
 | 🍿 **Explore** | ஒரு streaming பயன்பாட்டைப் போல உலாவவும். ஒரு தலைப்பின் மேல் சுட்டியை வைத்தால் ட்ரெய்லர் ஓடும். |
-| 🙋 **Requests** | ஒரு முழுத் தொடர் அல்லது ஒரு பருவம் மட்டும். நீங்கள் அங்கீகரிக்கலாம், அல்லது நம்பகமானவர்கள் வரிசையைத் தாண்டிச் செல்ல விடலாம். |
+| 🙋 **Requests** | ஒரு முழுத் தொடர் அல்லது ஒரு பருவம் மட்டும். நீங்கள் அங்கீகரிக்கலாம், அல்லது நம்பகமானவர்கள் வரிசையைத் தாண்டிச் செல்ல விடலாம். Plex, Pulsarr watchlist-கள் கோரிக்கைகளாக மாறலாம். |
 | 🎯 **Pick rules** | எந்த வெளியீடு வெல்ல வேண்டும் என்பதை நீங்களே முடிவு செய்கிறீர்கள்: அளவு, தரம், மொழி. |
-| 💬 **வசனங்கள்** | நீங்கள் தேர்ந்தெடுக்கும் மொழிகளில், கோப்புடன் சேர்த்துச் சேமிக்கப்படும். இணையத்தில் தேடிக் கண்டுபிடிப்பது 1.0-க்குப் பிறகு வரும். |
+| 💬 **வசனங்கள்** | நீங்கள் தேர்ந்தெடுக்கும் மொழிகளில், வசனத் தளங்களில் தேடிக் கண்டுபிடித்து, கோப்புடன் சேர்த்துச் சேமிக்கப்படும். |
 | 📅 **Calendar** | நீங்கள் பின்தொடரும் எல்லாவற்றிலும் அடுத்து ஒளிபரப்பாவது என்ன. |
-| 🚚 **உங்கள் அமைவைக் கொண்டுவாருங்கள்** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd ஆகியவற்றிலிருந்து. முதலில் முயன்று பாருங்கள், பின்னர் செயல்தவிர்க்கலாம். |
-| 🔌 **பழைய பயன்பாடுகளுக்கான API** | நீங்கள் இயக்கியதும், Prowlarr தொடர்ந்து HolyArrs-க்கு மூலங்களை அனுப்பலாம். |
-| 🗝️ **API விசைகள் தேவையில்லை** | தலைப்புகள், artwork, charts எல்லாம் HolyArrs metadata server-இலிருந்து வருகின்றன. |
+| 🔔 **Alerts** | Discord, மின்னஞ்சல், Telegram, ntfy, Gotify, Pushover அல்லது ஒரு webhook. |
+| 🚚 **உங்கள் அமைவை இறக்குமதி செய்யுங்கள்** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd ஆகியவற்றிலிருந்து. எதைக் கொண்டுவருவது என்று தேர்ந்தெடுங்கள், பின்னர் செயல்தவிர்க்கலாம். |
+| 🔌 **பழைய பயன்பாடுகளுக்கான API** | நீங்கள் இயக்கியதும், Seerr, Prowlarr, Bazarr, Unpackerr, Homepage தொடர்ந்து வேலை செய்யும். |
+| 🗝️ **API விசைகள் தேவையில்லை** | தலைப்புகள், artwork, charts எல்லாம் HolyArrs metadata server-இலிருந்து வருகின்றன. உங்கள் சொந்த விசைகள் அல்லது server-உம் வேலை செய்யும். |
 | 🔒 **குறியாக்கம் செய்யப்பட்ட விசைகள்** | சேமித்த கடவுச்சொற்களும் விசைகளும், உங்கள் கட்டமைவு அடைவில் இருக்கும் ஒரு முதன்மை விசையால் பூட்டப்படுகின்றன. |
-| 🪶 **மிகச் சிறியது** | HolyArrs மட்டுமே உள்ள சுமார் 15 MB image. |
+| 🪶 **மிகச் சிறியது** | HolyArrs மட்டுமே உள்ள சுமார் 19 MB image. |
 
 <details>
 <summary><b>ஒவ்வொரு பக்கத்தையும் இயக்கத்தில் பாருங்கள்</b></summary>
@@ -148,18 +149,18 @@ docker compose up -d
 
 ## 🤝 நீங்கள் ஏற்கனவே பயன்படுத்துபவற்றுடன் இது வேலை செய்கிறது
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="பதிவிறக்கிகள்: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Media server-கள்: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="பதிவிறக்கிகள்: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Media server-கள்: Plex, Jellyfin, Emby." /></picture>
 
-- **பதிவிறக்கிகள்:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **பதிவிறக்கிகள்:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Media server-கள்:** Plex, Jellyfin, Emby
 - **மூலங்கள்:** எந்த Torznab அல்லது Newznab indexer-உம், அல்லது Prowlarr அல்லது Jackett
-- **உங்கள் அமைவைக் கொண்டுவரும் இடங்கள்:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
+- **உங்கள் அமைவை இறக்குமதி செய்யும் இடங்கள்:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
 
 <a id="moving"></a>
 
 ## 🚚 உங்கள் பழைய அமைவைக் கொண்டுவாருங்கள்
 
-**Settings > Move from other apps** ஐத் திறந்து, ஒவ்வொரு பழைய பயன்பாட்டின் முகவரியையும் API விசையையும் (அல்லது ஒரு backup zip) சேர்க்கவும். எவை வர வேண்டும் என்பதைத் தேர்ந்தெடுத்து, **Try it** ஐ இயக்கவும், பிறகு **Move**. ஒரு மாற்றத்தைப் பின்னர் செயல்தவிர்க்கலாம்.
+**Settings > Import from other apps** ஐத் திறந்து, ஒவ்வொரு பழைய பயன்பாட்டின் முகவரியையும் API விசையையும் (அல்லது ஒரு backup zip) சேர்க்கவும். எவை வர வேண்டும் என்பதைத் தேர்ந்தெடுத்து, பிறகு **Import** ஐத் தேர்ந்தெடுக்கவும். ஒரு இறக்குமதியைப் பின்னர் செயல்தவிர்க்கலாம்.
 
 | இதிலிருந்து | என்ன வருகிறது |
 |---|---|
@@ -171,12 +172,11 @@ docker compose up -d
 
 HolyArrs உங்கள் பழைய பயன்பாடுகளைப் படிக்க மட்டுமே செய்கிறது, அவற்றில் எதையும் மாற்றாது. அதனால் அதை நம்பும் வரை இரண்டையும் அருகருகே இயக்கலாம்.
 
-விசைகளும் கடவுச்சொற்களும் வராது; அவற்றை மீண்டும் உள்ளிடலாம் அல்லது ஒரு கோப்பிலிருந்து இறக்குமதி செய்யலாம். தனிப்பயன் வடிவங்கள், tag-கள், வரலாறு வராது. ஊடகக் கோப்புகள் ஒருபோதும் நகர்த்தப்படுவதில்லை. படிப்படியாக: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+விசைகளும் கடவுச்சொற்களும் வராது; அவற்றை மீண்டும் உள்ளிடலாம் அல்லது ஒரு கோப்பிலிருந்து இறக்குமதி செய்யலாம். தனிப்பயன் வடிவங்கள், tag-கள், வரலாறு வராது. ஊடகக் கோப்புகள் ஒருபோதும் நகர்த்தப்படுவதில்லை. படிப்படியாக: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 இது இன்னும் செய்யாதவை
 
 - **தானாகவே பதிவிறக்குதல்.** HolyArrs qBittorrent, SABnzbd மற்றும் மற்றவற்றுடன் இணைகிறது. அவற்றை மாற்றுவதில்லை.
-- **AI அல்லது MCP வசதிகள்.** 1.0-இல் இல்லை.
 - **தொலைபேசி மற்றும் TV பயன்பாடுகள்.** உருவாக்கப்படவில்லை. Web பயன்பாடு தொலைபேசியில் வேலை செய்கிறது.
 - **Explore-இல் இசை** இன்னும் உருவாக்கப்பட்டு வருகிறது.
 
@@ -212,6 +212,8 @@ HolyArrs உங்கள் பழைய பயன்பாடுகளைப்
 | armv7 | ✅ | பழைய 32-bit ARM பலகைகள் |
 
 NAS-இல் இயக்குகிறீர்களா? [Unraid, Synology மற்றும் பிற NAS சாதனங்கள்](https://docs.HolyArrs.com/run/platforms/) பார்க்கவும்.
+
+சொந்த package வேண்டுமா? ஒவ்வொரு [வெளியீட்டுடனும்](https://github.com/HolyArrs/HolyArrs/releases) ஒரு சோதனை நிலை Synology package (`.spk`) இணைக்கப்பட்டுள்ளது. [Synology package](../../docs/run/synology.md) பாருங்கள்.
 
 ## பதிப்புக் குறிச்சொற்கள்
 
@@ -415,7 +417,7 @@ HolyArrs [GNU AGPL-3.0](../../LICENSE) கீழ் இலவசமானது,
 
 ## தொடர்ந்து இயங்க வையுங்கள்
 
-HolyArrs இலவசம், ஆனால் இதை இயக்குவது இலவசம் அல்ல. ஒவ்வொரு நிறுவலும் நான் மாதந்தோறும் பணம் செலுத்தும் ஒரு metadata server-உடன் பேசுகிறது. Sponsor-கள் அதை ஈடுகட்டுகிறார்கள், நீங்கள் வாக்களிக்கும் விஷயங்களுக்கு மேலும் மணிநேரங்களையும் வாங்குகிறார்கள்.
+HolyArrs இலவசம், ஆனால் இதை இயக்குவது இலவசம் அல்ல. இயல்பாக, ஒவ்வொரு நிறுவலும் நான் மாதந்தோறும் பணம் செலுத்தும் ஒரு metadata server-உடன் பேசுகிறது. Sponsor-கள் அதை ஈடுகட்டுகிறார்கள், நீங்கள் வாக்களிக்கும் விஷயங்களுக்கு மேலும் மணிநேரங்களையும் வாங்குகிறார்கள்.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="HolyArrs-ஐ ஆதரிக்கவும்" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="வழித்தடத்தில் வாக்களியுங்கள்" /></picture></a></p>
 

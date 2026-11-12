@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> ir viena paštīklotā lietotne taviem seriāliem, filmām un mūzikai.<br>Pārlūko kā straumēšanas lietotnē, pieprasi, ko vēlies, un pārējo tā izdara pati.</p>
 
-<p align="center"><b>Aptuveni 15 MB lejupielādes · aptuveni 140 MB RAM dīkstāvē ar 10,000 nosaukumiem · amd64, arm64, armv7</b><br><sub>Sešas lietotnes, ko tā aizstāj, kopā lejupielādē 718.2 MB.</sub></p>
+<p align="center"><b>Aptuveni 19 MB lejupielādes · aptuveni 140 MB RAM dīkstāvē ar 10,000 nosaukumiem · amd64, arm64, armv7</b><br><sub>Sešas lietotnes, ko tā aizstāj, kopā lejupielādē 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Ātrā sākšana</a> · <a href="#why">Kāpēc</a> · <a href="#what-it-does">Ko tā dara</a> · <a href="#moving">Pāreja no citām lietotnēm</a> · <a href="#manual">Rokasgrāmata</a> · <a href="#help">Palīdzība</a></p>
 
@@ -105,9 +105,9 @@ Tāpēc es to uzbūvēju.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Visas sešas kopā** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Aptuveni 48 reizes mazāk. Saspiesta lejupielāde no reģistra, linuxserver.io attēli, amd64, izmērīts 2026-11-08. RAM dīkstāvē izmērīts ar 10,000 nosaukumiem un 55,000 filmu un epizožu.</sub>
+<sub>Aptuveni 37 reizes mazāk. Saspiesta lejupielāde no reģistra, linuxserver.io attēli, amd64, izmērīts 2026-11-08. RAM dīkstāvē izmērīts ar 10,000 nosaukumiem un 55,000 filmu un epizožu. (HolyArrs 1.1.0: 2026-11-12)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Kāds pieprasa nosaukumu. HolyArrs pārmeklē tavus avotus, ar taviem izvēles n
 | | |
 |---|---|
 | 🍿 **Explore** | Pārlūko kā straumēšanas lietotnē. Uzvelc kursoru virs nosaukuma, un sāk spēlēt treileris. |
-| 🙋 **Requests** | Viss seriāls vai tikai viena sezona. Tu apstiprini, vai ļauj uzticamiem cilvēkiem apiet rindu. |
+| 🙋 **Requests** | Viss seriāls vai tikai viena sezona. Tu apstiprini, vai ļauj uzticamiem cilvēkiem apiet rindu. Plex un Pulsarr skatīšanās saraksti var kļūt par pieprasījumiem. |
 | 🎯 **Pick rules** | Tu izlem, kurš izlaidums uzvar: izmērs, kvalitāte, valoda. |
-| 💬 **Subtitri** | Tavās izvēlētajās valodās, saglabāti kopā ar failu. Meklēšana tiešsaistē nāk pēc 1.0. |
+| 💬 **Subtitri** | Tavās izvēlētajās valodās, atrasti subtitru vietnēs un saglabāti kopā ar failu. |
 | 📅 **Calendar** | Kas tiks rādīts nākamais visam, kam tu seko. |
-| 🚚 **Importē savu iestatījumu kopu** | No Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent un SABnzbd. Vispirms izmēģini, vēlāk atsauc. |
-| 🔌 **Iepriekšējo lietotņu API** | Prowlarr var turpināt sūtīt avotus uz HolyArrs, kad tu to ieslēdz. |
-| 🗝️ **API atslēgas nav vajadzīgas** | Nosaukumi, noformējums un topi nāk no HolyArrs metadatu servera. |
+| 🔔 **Alerts** | Discord, e-pasts, Telegram, ntfy, Gotify, Pushover vai webhook. |
+| 🚚 **Importē savu iestatījumu kopu** | No Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent un SABnzbd. Izvēlies, ko pārnest, vēlāk atsauc. |
+| 🔌 **Iepriekšējo lietotņu API** | Seerr, Prowlarr, Bazarr, Unpackerr un Homepage turpina strādāt, kad tu to ieslēdz. |
+| 🗝️ **API atslēgas nav vajadzīgas** | Nosaukumi, noformējums un topi nāk no HolyArrs metadatu servera. Der arī tavas pašas atslēgas vai serveris. |
 | 🔒 **Šifrētas atslēgas** | Saglabātās paroles un atslēgas aizslēdz galvenā atslēga, kas atrodas tavā konfigurācijas mapē. |
-| 🪶 **Sīka** | Aptuveni 15 MB liels attēls, kurā ir tikai HolyArrs. |
+| 🪶 **Sīka** | Aptuveni 19 MB liels attēls, kurā ir tikai HolyArrs. |
 
 <details>
 <summary><b>Skaties katru lapu kustībā</b></summary>
@@ -148,9 +149,9 @@ Kāds pieprasa nosaukumu. HolyArrs pārmeklē tavus avotus, ar taviem izvēles n
 
 ## 🤝 Tā strādā ar to, ko tu jau lieto
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Lejupielādētāji: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Multivides serveri: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Lejupielādētāji: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Multivides serveri: Plex, Jellyfin, Emby." /></picture>
 
-- **Lejupielādētāji:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Lejupielādētāji:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Multivides serveri:** Plex, Jellyfin, Emby
 - **Avoti:** jebkurš Torznab vai Newznab indeksētājs, vai Prowlarr vai Jackett
 - **Importē tavu iestatījumu kopu no:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -159,7 +160,7 @@ Kāds pieprasa nosaukumu. HolyArrs pārmeklē tavus avotus, ar taviem izvēles n
 
 ## 🚚 Paņem savu veco iestatījumu kopu līdzi
 
-Atver **Settings > Move from other apps** (iestatījumi > pārcelšana no citām lietotnēm), pievieno katras vecās lietotnes adresi un API atslēgu (vai dublējuma zip), izvēlies, kas tiks pārņemts, palaid **Try it** (izmēģināt) un tad **Move** (pārvietot). Pārcelšanu vēlāk var atsaukt.
+Atver **Settings > Import from other apps** (iestatījumi > importēt no citām lietotnēm), pievieno katras vecās lietotnes adresi un API atslēgu (vai dublējuma zip), izvēlies, kas tiks pārņemts, un tad izvēlies **Import** (importēt). Importu vēlāk var atsaukt.
 
 | No | Kas tiek pārņemts |
 |---|---|
@@ -171,12 +172,11 @@ Atver **Settings > Move from other apps** (iestatījumi > pārcelšana no citām
 
 HolyArrs tikai nolasa tavas vecās lietotnes un neko tajās nemaina, tāpēc vari darbināt abas blakus, līdz tam uzticies.
 
-Atslēgas un paroles paliek vecajā vietā; tu tās ieraksti vēlreiz vai importē no faila. Pielāgotie formāti, birkas un vēsture netiek pārņemti. Multivides faili netiek pārvietoti nekad. Soli pa solim: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Atslēgas un paroles paliek vecajā vietā; tu tās ieraksti vēlreiz vai importē no faila. Pielāgotie formāti, birkas un vēsture netiek pārņemti. Multivides faili netiek pārvietoti nekad. Soli pa solim: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Ko tā vēl nedara
 
 - **Pati lejupielādēšana.** HolyArrs savienojas ar qBittorrent, SABnzbd un citiem. Tā tos neaizstāj.
-- **MI vai MCP funkcijas.** Ne 1.0 versijā.
 - **Tālruņa un TV lietotnes.** Nav uzbūvētas. Tīmekļa lietotne darbojas tālrunī.
 - **Mūzika sadaļā Explore** vēl tiek būvēta.
 
@@ -212,6 +212,8 @@ Kad lejupielādē `holyarrs/holyarrs:latest`, tu saņem tavam datoram piemēroto
 | armv7 | ✅ | Vecākām 32 bitu ARM platēm |
 
 Lieto NAS? Skaties [Unraid, Synology un citas NAS ierīces](https://docs.HolyArrs.com/run/platforms/).
+
+Gribi vietējo pakotni? Katram [laidienam](https://github.com/HolyArrs/HolyArrs/releases) pievienota eksperimentāla Synology pakotne (`.spk`). Skati [Synology pakotne](../../docs/run/synology.md).
 
 ## Versiju birkas
 
@@ -415,7 +417,7 @@ Gribi to iebūvēt slēgtā produktā? Raksti uz support@HolyArrs.com pēc komer
 
 ## Palīdzi to uzturēt
 
-HolyArrs ir bez maksas, bet tā darbināšana nav. Katra instalācija sazinās ar metadatu serveri, ko es apmaksāju katru mēnesi. Sponsori to sedz un nopērk vairāk stundu tam, par ko tu balso.
+HolyArrs ir bez maksas, bet tā darbināšana nav. Pēc noklusējuma katra instalācija sazinās ar metadatu serveri, ko es apmaksāju katru mēnesi. Sponsori to sedz un nopērk vairāk stundu tam, par ko tu balso.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Atbalsti HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Balso ceļvedī" /></picture></a></p>
 

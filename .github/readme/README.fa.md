@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> یک برنامهٔ خودمیزبان برای سریال‌ها، فیلم‌ها و موسیقی شماست.<br>مثل یک برنامهٔ استریم گشت بزنید، هر چه می‌خواهید درخواست کنید و بقیه‌اش با HolyArrs.</p>
 
-<p align="center"><b>حدود 15 MB دانلود · حدود 140 MB حافظهٔ RAM در حالت بی‌کاری با 10,000 عنوان · amd64، arm64، armv7</b><br><sub>شش برنامه‌ای که جایگزین می‌شوند روی هم 718.2 MB دانلود دارند.</sub></p>
+<p align="center"><b>حدود 19 MB دانلود · حدود 140 MB حافظهٔ RAM در حالت بی‌کاری با 10,000 عنوان · amd64، arm64، armv7</b><br><sub>شش برنامه‌ای که جایگزین می‌شوند روی هم 718.2 MB دانلود دارند.</sub></p>
 
 <p align="center"><a href="#quick-start">شروع سریع</a> · <a href="#why">چرا</a> · <a href="#what-it-does">چه کار می‌کند</a> · <a href="#moving">انتقال از برنامه‌های دیگر</a> · <a href="#manual">راهنما</a> · <a href="#help">کمک</a></p>
 
@@ -105,9 +105,9 @@ docker compose up -d
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **هر شش با هم** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>حدود 48 برابر کوچک‌تر. دانلود فشردهٔ رجیستری، ایمیج‌های linuxserver.io، amd64، اندازه‌گیری در 2026-11-08. RAM در حالت بی‌کاری با 10,000 عنوان و 55,000 فیلم و قسمت اندازه‌گیری شده است.</sub>
+<sub>حدود 37 برابر کوچک‌تر. دانلود فشردهٔ رجیستری، ایمیج‌های linuxserver.io، amd64، اندازه‌گیری در 2026-11-08. RAM در حالت بی‌کاری با 10,000 عنوان و 55,000 فیلم و قسمت اندازه‌گیری شده است. (HolyArrs 1.1.0: 2026-11-12)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ docker compose up -d
 | | |
 |---|---|
 | 🍿 **Explore** (کشف) | مثل یک برنامهٔ استریم گشت بزنید. نشانگر را روی یک عنوان ببرید تا تریلر پخش شود. |
-| 🙋 **Requests** (درخواست‌ها) | یک سریال کامل یا فقط یک فصل. خودتان تأیید می‌کنید، یا به افراد مورد اعتماد اجازه می‌دهید از صف رد شوند. |
+| 🙋 **Requests** (درخواست‌ها) | یک سریال کامل یا فقط یک فصل. خودتان تأیید می‌کنید، یا به افراد مورد اعتماد اجازه می‌دهید از صف رد شوند. فهرست‌های تماشای Plex و Pulsarr می‌توانند به درخواست تبدیل شوند. |
 | 🎯 **Pick rules** (قوانین انتخاب) | شما تصمیم می‌گیرید کدام ریلیز برنده شود: حجم، کیفیت، زبان. |
-| 💬 **زیرنویس** | به زبان‌هایی که انتخاب می‌کنید، کنار فایل نگه داشته می‌شود. پیدا کردن آنلاین زیرنویس بعد از 1.0 می‌آید. |
+| 💬 **زیرنویس** | به زبان‌هایی که انتخاب می‌کنید، از سایت‌های زیرنویس پیدا می‌شود و کنار فایل نگه داشته می‌شود. |
 | 📅 **Calendar** (تقویم) | قسمت بعدیِ هر چیزی که دنبال می‌کنید. |
-| 🚚 **راه‌اندازی خود را منتقل کنید** | از Sonarr، Radarr، Lidarr، Prowlarr، Bazarr، Seerr، Overseerr، qBittorrent و SABnzbd. اول امتحان کنید، بعداً برگردانید. |
-| 🔌 **API برنامه‌های قبلی** | با روشن کردنش، Prowlarr می‌تواند منبع‌ها را همچنان به HolyArrs بفرستد. |
-| 🗝️ **بدون نیاز به کلید API** | عنوان‌ها، تصاویر و نمودارها از سرور فراداده‌های HolyArrs می‌آیند. |
+| 🔔 **Alerts** | Discord، ایمیل، Telegram، ntfy، Gotify، Pushover یا یک webhook. |
+| 🚚 **راه‌اندازی خود را وارد کنید** | از Sonarr، Radarr، Lidarr، Prowlarr، Bazarr، Seerr، Overseerr، qBittorrent و SABnzbd. انتخاب کنید چه چیزی منتقل شود، بعداً برگردانید. |
+| 🔌 **API برنامه‌های قبلی** | با روشن کردنش، Seerr، Prowlarr، Bazarr، Unpackerr و Homepage همچنان کار می‌کنند. |
+| 🗝️ **بدون نیاز به کلید API** | عنوان‌ها، تصاویر و نمودارها از سرور فراداده‌های HolyArrs می‌آیند. کلیدها یا سرور خودتان هم کار می‌کند. |
 | 🔒 **کلیدهای رمزگذاری‌شده** | گذرواژه‌ها و کلیدهای ذخیره‌شده با یک کلید اصلی قفل می‌شوند که در پوشهٔ پیکربندی شما می‌ماند. |
-| 🪶 **کوچک** | یک ایمیج حدود 15 MB که چیزی جز HolyArrs درونش نیست. |
+| 🪶 **کوچک** | یک ایمیج حدود 19 MB که چیزی جز HolyArrs درونش نیست. |
 
 <details>
 <summary><b>همهٔ صفحه‌ها را در حرکت ببینید</b></summary>
@@ -148,18 +149,18 @@ docker compose up -d
 
 ## 🤝 با چیزی که از قبل دارید کار می‌کند
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="دانلودرها: qBittorrent، Transmission، Deluge، SABnzbd، NZBGet. مدیاسرورها: Plex، Jellyfin، Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="دانلودرها: qBittorrent، Transmission، Deluge، rTorrent، aria2، SABnzbd، NZBGet. مدیاسرورها: Plex، Jellyfin، Emby." /></picture>
 
-- **دانلودرها:** qBittorrent، Transmission، Deluge، rTorrent، SABnzbd، NZBGet
+- **دانلودرها:** qBittorrent، Transmission، Deluge، rTorrent، aria2، SABnzbd، NZBGet
 - **مدیاسرورها:** Plex، Jellyfin، Emby
 - **منبع‌ها:** هر ایندکسر Torznab یا Newznab، یا Prowlarr یا Jackett
-- **راه‌اندازی شما را از این‌ها منتقل می‌کند:** Sonarr، Radarr، Lidarr، Prowlarr، Bazarr، Seerr، Overseerr، qBittorrent، SABnzbd
+- **راه‌اندازی شما را از این‌ها وارد می‌کند:** Sonarr، Radarr، Lidarr، Prowlarr، Bazarr، Seerr، Overseerr، qBittorrent، SABnzbd
 
 <a id="moving"></a>
 
 ## 🚚 راه‌اندازی قبلی‌تان را با خود بیاورید
 
-**Settings > Move from other apps** را باز کنید، نشانی و کلید API هر برنامهٔ قبلی (یا یک فایل zip بکاپ) را اضافه کنید، انتخاب کنید چه چیزی منتقل شود، **Try it** را اجرا کنید و سپس **Move**. انتقال را بعداً می‌توانید برگردانید.
+**Settings > Import from other apps** را باز کنید، نشانی و کلید API هر برنامهٔ قبلی (یا یک فایل zip بکاپ) را اضافه کنید، انتخاب کنید چه چیزی وارد شود و سپس **Import** را انتخاب کنید. وارد کردن را بعداً می‌توانید برگردانید.
 
 | از | چه چیزی منتقل می‌شود |
 |---|---|
@@ -171,12 +172,11 @@ docker compose up -d
 
 HolyArrs برنامه‌های قبلی شما را فقط می‌خواند و چیزی در آن‌ها تغییر نمی‌دهد، پس می‌توانید هر دو را کنار هم اجرا کنید تا به آن اعتماد کنید.
 
-کلیدها و گذرواژه‌ها منتقل نمی‌شوند؛ دوباره وارد‌شان می‌کنید یا از یک فایل وارد می‌کنید. فرمت‌های سفارشی، تگ‌ها و تاریخچه منتقل نمی‌شوند. فایل‌های رسانه هرگز جابه‌جا نمی‌شوند. مرحله‌به‌مرحله: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+کلیدها و گذرواژه‌ها منتقل نمی‌شوند؛ دوباره وارد‌شان می‌کنید یا از یک فایل وارد می‌کنید. فرمت‌های سفارشی، تگ‌ها و تاریخچه منتقل نمی‌شوند. فایل‌های رسانه هرگز جابه‌جا نمی‌شوند. مرحله‌به‌مرحله: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 هنوز چه کارهایی را نمی‌کند
 
 - **خودش دانلود کردن.** HolyArrs به qBittorrent، SABnzbd و بقیه وصل می‌شود. جایگزین آن‌ها نیست.
-- **قابلیت‌های هوش مصنوعی یا MCP.** در 1.0 نیست.
 - **برنامه‌های موبایل و تلویزیون.** ساخته نشده‌اند. برنامهٔ وب روی گوشی کار می‌کند.
 - **موسیقی در Explore** هنوز در حال ساخت است.
 
@@ -212,6 +212,8 @@ HolyArrs برنامه‌های قبلی شما را فقط می‌خواند و 
 | armv7 | ✅ | بردهای ARM قدیمی‌تر 32 بیتی |
 
 روی NAS هستید؟ [Unraid، Synology و دیگر دستگاه‌های NAS](https://docs.HolyArrs.com/run/platforms/) را ببینید.
+
+بستهٔ بومی می‌خواهید؟ یک بستهٔ آزمایشی Synology (`.spk`) به هر [نسخه](https://github.com/HolyArrs/HolyArrs/releases) پیوست شده است. [بستهٔ Synology](../../docs/run/synology.md) را ببینید.
 
 ## تگ‌های نسخه
 
@@ -415,7 +417,7 @@ HolyArrs رایگان و متن‌باز است، تحت [GNU AGPL-3.0](../../LI
 
 ## ادامه‌اش بدهید
 
-HolyArrs رایگان است، اما اجرایش رایگان نیست. هر نصب با یک سرور فراداده صحبت می‌کند که من هر ماه هزینه‌اش را می‌دهم. حامیان مالی این هزینه را پوشش می‌دهند و برای چیزهایی که شما به آن‌ها رأی می‌دهید ساعت‌های بیشتری می‌خرند.
+HolyArrs رایگان است، اما اجرایش رایگان نیست. به‌طور پیش‌فرض، هر نصب با یک سرور فراداده صحبت می‌کند که من هر ماه هزینه‌اش را می‌دهم. حامیان مالی این هزینه را پوشش می‌دهند و برای چیزهایی که شما به آن‌ها رأی می‌دهید ساعت‌های بیشتری می‌خرند.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="حمایت مالی از HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="رأی دادن در نقشهٔ راه" /></picture></a></p>
 

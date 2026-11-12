@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> је једна самостално хостована апликација за твоје серије, филмове и музику.<br>Прегледај као стриминг апликацију, затражи шта желиш, а остало ради она.</p>
 
-<p align="center"><b>Око 15 MB за преузимање · око 140 MB RAM-а у мировању са 10,000 наслова · amd64, arm64, armv7</b><br><sub>Шест апликација које она замењује заједно имају 718.2 MB.</sub></p>
+<p align="center"><b>Око 19 MB за преузимање · око 140 MB RAM-а у мировању са 10,000 наслова · amd64, arm64, armv7</b><br><sub>Шест апликација које она замењује заједно имају 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Брзи почетак</a> · <a href="#why">Зашто</a> · <a href="#what-it-does">Шта ради</a> · <a href="#moving">Прелазак са других апликација</a> · <a href="#manual">Приручник</a> · <a href="#help">Помоћ</a></p>
 
@@ -105,9 +105,9 @@ docker compose up -d
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Свих шест заједно** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Око 48 пута мањи. Компримовано преузимање из registry-ја, linuxserver.io image-и, amd64, измерено 2026-11-08. RAM у мировању измерен са 10,000 наслова и 55,000 филмова и епизода.</sub>
+<sub>Око 37 пута мањи. Компримовано преузимање из registry-ја, linuxserver.io image-и, amd64, измерено 2026-11-08. RAM у мировању измерен са 10,000 наслова и 55,000 филмова и епизода. (HolyArrs 1.1.0: 2026-11-12)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ docker compose up -d
 | | |
 |---|---|
 | 🍿 **Explore** | Прегледај као стриминг апликацију. Пређи мишем преко наслова и трејлер почиње. |
-| 🙋 **Requests** | Цела серија или само једна сезона. Ти одобраваш, или пусти поуздане људе да прескоче ред. |
+| 🙋 **Requests** | Цела серија или само једна сезона. Ти одобраваш, или пусти поуздане људе да прескоче ред. Листе за гледање из Plex-а и Pulsarr-а могу да постану захтеви. |
 | 🎯 **Pick rules** | Ти одлучујеш који релиз побеђује: величина, квалитет, језик. |
-| 💬 **Титлови** | На језицима које изабереш, сачувани уз фајл. Налажење титлова онлајн долази после 1.0. |
+| 💬 **Титлови** | На језицима које изабереш, пронађени на сајтовима за титлове и сачувани уз фајл. |
 | 📅 **Calendar** | Шта се следеће емитује за све што пратиш. |
-| 🚚 **Пренеси своје подешавање** | Са Sonarr-а, Radarr-а, Lidarr-а, Prowlarr-а, Bazarr-а, Seerr-а, Overseerr-а, qBittorrent-а и SABnzbd-а. Прво пробај, касније поништи. |
-| 🔌 **API за претходне апликације** | Prowlarr може да настави да шаље Sources у HolyArrs кад то укључиш. |
-| 🗝️ **API кључеви нису потребни** | Наслови, слике и листе долазе са HolyArrs сервера за метаподатке. |
+| 🔔 **Alerts** | Discord, имејл, Telegram, ntfy, Gotify, Pushover или webhook. |
+| 🚚 **Увези своје подешавање** | Са Sonarr-а, Radarr-а, Lidarr-а, Prowlarr-а, Bazarr-а, Seerr-а, Overseerr-а, qBittorrent-а и SABnzbd-а. Изабери шта прелази, касније поништи. |
+| 🔌 **API за претходне апликације** | Seerr, Prowlarr, Bazarr, Unpackerr и Homepage настављају да раде кад то укључиш. |
+| 🗝️ **API кључеви нису потребни** | Наслови, слике и листе долазе са HolyArrs сервера за метаподатке. Раде и твоји кључеви или твој сервер. |
 | 🔒 **Шифровани кључеви** | Сачуване лозинке и кључеви закључани су главним кључем који стоји у твом конфигурационом фолдеру. |
-| 🪶 **Ситан** | Image од око 15 MB у коме нема ничега осим HolyArrs-а. |
+| 🪶 **Ситан** | Image од око 19 MB у коме нема ничега осим HolyArrs-а. |
 
 <details>
 <summary><b>Погледај све странице у покрету</b></summary>
@@ -148,18 +149,18 @@ docker compose up -d
 
 ## 🤝 Ради са оним што већ користиш
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Преузимачи: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Медија сервери: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Преузимачи: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Медија сервери: Plex, Jellyfin, Emby." /></picture>
 
-- **Преузимачи:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Преузимачи:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Медија сервери:** Plex, Jellyfin, Emby
 - **Sources:** било који Torznab или Newznab индексер, или Prowlarr или Jackett
-- **Преноси твоје подешавање са:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
+- **Увози твоје подешавање са:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
 
 <a id="moving"></a>
 
 ## 🚚 Понеси своје старо подешавање са собом
 
-Отвори **Settings > Move from other apps**, додај адресу и API кључ сваке старе апликације (или бекап zip), изабери шта прелази, покрени **Try it**, па **Move**. Премештање можеш касније да поништиш.
+Отвори **Settings > Import from other apps**, додај адресу и API кључ сваке старе апликације (или бекап zip), изабери шта прелази, па изабери **Import**. Увоз можеш касније да поништиш.
 
 | Са | Шта прелази |
 |---|---|
@@ -171,12 +172,11 @@ docker compose up -d
 
 HolyArrs само чита твоје старе апликације и ништа у њима не мења, па можеш да вртиш обе једну уз другу док му не поверујеш.
 
-Кључеви и лозинке остају иза; унесеш их поново или их увезеш из фајла. Прилагођени формати, тагови и историја не прелазе. Медија фајлови се никад не премештају. Корак по корак: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Кључеви и лозинке остају иза; унесеш их поново или их увезеш из фајла. Прилагођени формати, тагови и историја не прелазе. Медија фајлови се никад не премештају. Корак по корак: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Шта још не ради
 
 - **Само преузимање.** HolyArrs се повезује са qBittorrent-ом, SABnzbd-ом и осталима. Не замењује их.
-- **AI или MCP функције.** Нису у 1.0.
 - **Апликације за телефон и ТВ.** Нису направљене. Веб апликација ради на телефону.
 - **Музика у Explore** се још прави.
 
@@ -212,6 +212,8 @@ HolyArrs само чита твоје старе апликације и ниш�
 | armv7 | ✅ | Старијим 32-битним ARM плочама |
 
 Користиш NAS? Погледај [Unraid, Synology и остале NAS уређаје](https://docs.HolyArrs.com/run/platforms/).
+
+Више волиш изворни пакет? Уз свако [издање](https://github.com/HolyArrs/HolyArrs/releases) приложен је експериментални пакет за Synology (`.spk`). Погледај [Пакет за Synology](../../docs/run/synology.md).
 
 ## Тагови верзија
 
@@ -415,7 +417,7 @@ HolyArrs је бесплатан и отвореног кода под [GNU AGPL
 
 ## Помози да траје
 
-HolyArrs је бесплатан, али није бесплатно држати га у раду. Свака инсталација комуницира са сервером за метаподатке који плаћам сваког месеца. Спонзори то покривају и купују више сати за ствари за које гласаш.
+HolyArrs је бесплатан, али није бесплатно држати га у раду. Подразумевано, свака инсталација комуницира са сервером за метаподатке који плаћам сваког месеца. Спонзори то покривају и купују више сати за ствари за које гласаш.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Спонзориши HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Гласај на мапи пута" /></picture></a></p>
 

@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> je jedna aplikacija na vlastitom serveru za tvoje serije, filmove i glazbu.<br>Pregledavaj kao streaming aplikaciju, zatraži što želiš, a ostalo obavlja ona.</p>
 
-<p align="center"><b>Oko 15 MB za preuzimanje · oko 140 MB RAM-a u mirovanju s 10,000 naslova · amd64, arm64, armv7</b><br><sub>Šest aplikacija koje zamjenjuje zajedno se preuzimaju kao 718.2 MB.</sub></p>
+<p align="center"><b>Oko 19 MB za preuzimanje · oko 140 MB RAM-a u mirovanju s 10,000 naslova · amd64, arm64, armv7</b><br><sub>Šest aplikacija koje zamjenjuje zajedno se preuzimaju kao 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Brzi početak</a> · <a href="#why">Zašto</a> · <a href="#what-it-does">Što radi</a> · <a href="#moving">Prelazak s drugih aplikacija</a> · <a href="#manual">Priručnik</a> · <a href="#help">Pomoć</a></p>
 
@@ -105,9 +105,9 @@ Pa sam je napravio.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Svih šest zajedno** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Oko 48 puta manji. Komprimirano preuzimanje iz registryja, linuxserver.io imagei, amd64, izmjereno 2026-11-08. RAM u mirovanju izmjeren s 10,000 naslova i 55,000 filmova i epizoda.</sub>
+<sub>Oko 37 puta manji. Komprimirano preuzimanje iz registryja, linuxserver.io imagei, amd64, izmjereno 2026-11-08. RAM u mirovanju izmjeren s 10,000 naslova i 55,000 filmova i epizoda. (HolyArrs 1.1.0: 2026-11-12)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Netko zatraži naslov. HolyArrs pretraži tvoje izvore, pomoću tvojih pravila o
 | | |
 |---|---|
 | 🍿 **Explore** | Pregledavaj kao streaming aplikaciju. Zadrži miš iznad naslova i trailer se pokreće. |
-| 🙋 **Requests** | Cijela serija ili samo jedna sezona. Ti odobravaš, ili pouzdanim ljudima dopuštaš da preskoče red. |
+| 🙋 **Requests** | Cijela serija ili samo jedna sezona. Ti odobravaš, ili pouzdanim ljudima dopuštaš da preskoče red. Popisi za gledanje iz Plexa i Pulsarra mogu postati zahtjevi. |
 | 🎯 **Pick rules** | Ti odlučuješ koji release pobjeđuje: veličina, kvaliteta, jezik. |
-| 💬 **Titlovi** | Na jezicima koje odabereš, spremljeni uz datoteku. Traženje titlova na internetu stiže nakon 1.0. |
+| 💬 **Titlovi** | Na jezicima koje odabereš, pronađeni na stranicama s titlovima i spremljeni uz datoteku. |
 | 📅 **Calendar** | Što sljedeće izlazi za sve što pratiš. |
-| 🚚 **Ponesi svoje postavke** | Iz Sonarra, Radarra, Lidarra, Prowlarra, Bazarra, Seerra, Overseerra, qBittorrenta i SABnzbd-a. Prvo probaj, kasnije poništi. |
-| 🔌 **API za dosadašnje aplikacije** | Prowlarr može nastaviti slati izvore u HolyArrs kad to uključiš. |
-| 🗝️ **API ključevi nisu potrebni** | Naslovi, slike i ljestvice dolaze s HolyArrs metadata servera. |
+| 🔔 **Alerts** | Discord, e-pošta, Telegram, ntfy, Gotify, Pushover ili webhook. |
+| 🚚 **Ponesi svoje postavke** | Iz Sonarra, Radarra, Lidarra, Prowlarra, Bazarra, Seerra, Overseerra, qBittorrenta i SABnzbd-a. Odaberi što prelazi, kasnije poništi. |
+| 🔌 **API za dosadašnje aplikacije** | Seerr, Prowlarr, Bazarr, Unpackerr i Homepage nastavljaju raditi kad to uključiš. |
+| 🗝️ **API ključevi nisu potrebni** | Naslovi, slike i ljestvice dolaze s HolyArrs metadata servera. Rade i tvoji vlastiti ključevi ili server. |
 | 🔒 **Šifrirani ključevi** | Spremljene lozinke i ključevi zaključani su glavnim ključem koji se nalazi u tvojoj mapi s konfiguracijom. |
-| 🪶 **Sićušan** | Image od oko 15 MB u kojem nema ničega osim HolyArrsa. |
+| 🪶 **Sićušan** | Image od oko 19 MB u kojem nema ničega osim HolyArrsa. |
 
 <details>
 <summary><b>Pogledaj svaku stranicu u pokretu</b></summary>
@@ -148,9 +149,9 @@ Netko zatraži naslov. HolyArrs pretraži tvoje izvore, pomoću tvojih pravila o
 
 ## 🤝 Radi s onim što već koristiš
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Preuzimatelji: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Medijski poslužitelji: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Preuzimatelji: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Medijski poslužitelji: Plex, Jellyfin, Emby." /></picture>
 
-- **Preuzimatelji:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Preuzimatelji:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Medijski poslužitelji:** Plex, Jellyfin, Emby
 - **Izvori:** bilo koji Torznab ili Newznab indekser, ili Prowlarr ili Jackett
 - **Preuzima tvoje postavke iz:** Sonarra, Radarra, Lidarra, Prowlarra, Bazarra, Seerra, Overseerra, qBittorrenta, SABnzbd-a
@@ -159,7 +160,7 @@ Netko zatraži naslov. HolyArrs pretraži tvoje izvore, pomoću tvojih pravila o
 
 ## 🚚 Ponesi svoj stari setup sa sobom
 
-Otvori **Settings > Move from other apps**, dodaj adresu i API ključ svake stare aplikacije (ili zip backupa), odaberi što se prenosi, pokreni **Try it**, zatim **Move**. Prelazak možeš kasnije poništiti.
+Otvori **Settings > Import from other apps**, dodaj adresu i API ključ svake stare aplikacije (ili zip backupa), odaberi što se prenosi, zatim odaberi **Import**. Uvoz možeš kasnije poništiti.
 
 | Iz | Što se prenosi |
 |---|---|
@@ -171,12 +172,11 @@ Otvori **Settings > Move from other apps**, dodaj adresu i API ključ svake star
 
 HolyArrs samo čita tvoje stare aplikacije i ništa u njima ne mijenja, pa možeš pokretati obje usporedno dok mu ne počneš vjerovati.
 
-Ključevi i lozinke ostaju iza; unesi ih ponovno ili ih uvezi iz datoteke. Prilagođeni formati, tagovi i povijest ne prenose se. Medijske datoteke se nikad ne premještaju. Korak po korak: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Ključevi i lozinke ostaju iza; unesi ih ponovno ili ih uvezi iz datoteke. Prilagođeni formati, tagovi i povijest ne prenose se. Medijske datoteke se nikad ne premještaju. Korak po korak: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Što još ne radi
 
 - **Samostalno preuzimanje.** HolyArrs se spaja na qBittorrent, SABnzbd i ostale. Ne zamjenjuje ih.
-- **AI ili MCP funkcije.** Ne u 1.0.
 - **Aplikacije za mobitel i TV.** Nisu napravljene. Web aplikacija radi na mobitelu.
 - **Glazba u Exploreu** još se gradi.
 
@@ -212,6 +212,8 @@ Kad povučeš `holyarrs/holyarrs:latest`, dobiješ image koji odgovara tvom rač
 | armv7 | ✅ | Starijim 32-bitnim ARM pločama |
 
 Imaš NAS? Pogledaj [Unraid, Synology i drugi NAS uređaji](https://docs.HolyArrs.com/run/platforms/).
+
+Želiš izvorni paket? Uz svako [izdanje](https://github.com/HolyArrs/HolyArrs/releases) priložen je eksperimentalni paket za Synology (`.spk`). Pogledaj [Paket za Synology](../../docs/run/synology.md).
 
 ## Oznake verzija
 
@@ -415,7 +417,7 @@ HolyArrs je besplatan i otvorenog koda pod licencom [GNU AGPL-3.0](../../LICENSE
 
 ## Pomozi da nastavi raditi
 
-HolyArrs je besplatan, ali pokretanje nije. Svaka instalacija razgovara s metadata serverom koji plaćam svaki mjesec. Sponzori to pokrivaju i kupuju dodatne sate za stvari za koje glasaš.
+HolyArrs je besplatan, ali pokretanje nije. Prema zadanim postavkama svaka instalacija razgovara s metadata serverom koji plaćam svaki mjesec. Sponzori to pokrivaju i kupuju dodatne sate za stvari za koje glasaš.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Sponzoriraj HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Glasaj na planu razvoja" /></picture></a></p>
 

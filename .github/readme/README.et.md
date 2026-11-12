@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> on üks isehostitav rakendus sinu sarjade, filmide ja muusika jaoks.<br>Sirvi nagu voogedastusrakenduses, soovi, mida tahad, ja ülejäänu teeb ta ise.</p>
 
-<p align="center"><b>Umbes 15 MB allalaadimist · umbes 140 MB RAM-i tühikäigul 10,000 pealkirjaga · amd64, arm64, armv7</b><br><sub>Kuus rakendust, mille ta asendab, on kokku 718.2 MB.</sub></p>
+<p align="center"><b>Umbes 19 MB allalaadimist · umbes 140 MB RAM-i tühikäigul 10,000 pealkirjaga · amd64, arm64, armv7</b><br><sub>Kuus rakendust, mille ta asendab, on kokku 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Kiirstart</a> · <a href="#why">Miks</a> · <a href="#what-it-does">Mida ta teeb</a> · <a href="#moving">Import teistest rakendustest</a> · <a href="#manual">Käsiraamat</a> · <a href="#help">Abi</a></p>
 
@@ -105,9 +105,9 @@ Nii ma selle ehitasin.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Kõik kuus kokku** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Umbes 48 korda väiksem. Pakitud registry allalaadimine, linuxserver.io image'id, amd64, mõõdetud 2026-11-08. RAM tühikäigul mõõdetud 10,000 pealkirja ning 55,000 filmi ja episoodiga.</sub>
+<sub>Umbes 37 korda väiksem. Pakitud registry allalaadimine, linuxserver.io image'id, amd64, mõõdetud 2026-11-08. RAM tühikäigul mõõdetud 10,000 pealkirja ning 55,000 filmi ja episoodiga. (HolyArrs 1.1.0: 2026-11-12)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Keegi soovib pealkirja. HolyArrs otsib sinu allikatest, valib sinu valikureeglit
 | | |
 |---|---|
 | 🍿 **Explore** | Sirvi nagu voogedastusrakenduses. Vii kursor pealkirja kohale ja treiler hakkab mängima. |
-| 🙋 **Requests** | Terve sari või üks hooaeg. Sina kinnitad või lased usaldatud inimestel järjekorrast mööda minna. |
+| 🙋 **Requests** | Terve sari või üks hooaeg. Sina kinnitad või lased usaldatud inimestel järjekorrast mööda minna. Plexi ja Pulsarri vaatamisnimekirjadest saavad päringud. |
 | 🎯 **Pick rules** | Sina otsustad, milline väljalase võidab: suurus, kvaliteet, keel. |
-| 💬 **Subtiitrid** | Sinu valitud keeltes, salvestatud faili kõrvale. Nende veebist otsimine tuleb pärast 1.0. |
+| 💬 **Subtiitrid** | Sinu valitud keeltes, leitud subtiitrisaitidelt ja salvestatud faili kõrvale. |
 | 📅 **Calendar** | Mis läheb järgmisena eetrisse, kõige kohta, mida jälgid. |
-| 🚚 **Võta oma seadistus kaasa** | Sonarrist, Radarrist, Lidarrist, Prowlarrist, Bazarrist, Seerrist, Overseerrist, qBittorrentist ja SABnzbdist. Proovi enne läbi, võta hiljem tagasi. |
-| 🔌 **Vanade rakenduste API** | Prowlarr saab jätkata allikate saatmist HolyArrsi, kui selle sisse lülitad. |
-| 🗝️ **API-võtmeid pole vaja** | Pealkirjad, pildid ja edetabelid tulevad HolyArrsi metaandmete serverist. |
+| 🔔 **Alerts** | Discord, e-post, Telegram, ntfy, Gotify, Pushover või webhook. |
+| 🚚 **Võta oma seadistus kaasa** | Sonarrist, Radarrist, Lidarrist, Prowlarrist, Bazarrist, Seerrist, Overseerrist, qBittorrentist ja SABnzbdist. Vali, mis kaasa tuleb, võta hiljem tagasi. |
+| 🔌 **Vanade rakenduste API** | Seerr, Prowlarr, Bazarr, Unpackerr ja Homepage töötavad edasi, kui selle sisse lülitad. |
+| 🗝️ **API-võtmeid pole vaja** | Pealkirjad, pildid ja edetabelid tulevad HolyArrsi metaandmete serverist. Töötavad ka sinu enda võtmed või server. |
 | 🔒 **Krüpteeritud võtmed** | Salvestatud paroolid ja võtmed on lukustatud peavõtmega, mis asub sinu seadete kaustas. |
-| 🪶 **Pisike** | Umbes 15 MB suurune image, milles pole muud kui HolyArrs. |
+| 🪶 **Pisike** | Umbes 19 MB suurune image, milles pole muud kui HolyArrs. |
 
 <details>
 <summary><b>Vaata kõiki lehti liikumises</b></summary>
@@ -148,9 +149,9 @@ Keegi soovib pealkirja. HolyArrs otsib sinu allikatest, valib sinu valikureeglit
 
 ## 🤝 Ta töötab koos sellega, mida sul juba on
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Allalaadijad: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Meediaserverid: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Allalaadijad: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Meediaserverid: Plex, Jellyfin, Emby." /></picture>
 
-- **Allalaadijad:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Allalaadijad:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Meediaserverid:** Plex, Jellyfin, Emby
 - **Allikad:** iga Torznabi või Newznabi indekser, või Prowlarr või Jackett
 - **Toob sinu seadistuse üle rakendustest:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -159,7 +160,7 @@ Keegi soovib pealkirja. HolyArrs otsib sinu allikatest, valib sinu valikureeglit
 
 ## 🚚 Võta oma vana seadistus kaasa
 
-Ava **Settings > Move from other apps**, lisa iga vana rakenduse aadress ja API-võti (või varukoopia zip), vali, mis üle tuleb, käivita **Try it** ja siis **Move**. Ülekande saad hiljem tagasi võtta.
+Ava **Settings > Import from other apps**, lisa iga vana rakenduse aadress ja API-võti (või varukoopia zip), vali, mis üle tuleb, ja vali siis **Import**. Impordi saad hiljem tagasi võtta.
 
 | Kust | Mis üle tuleb |
 |---|---|
@@ -171,12 +172,11 @@ Ava **Settings > Move from other apps**, lisa iga vana rakenduse aadress ja API-
 
 HolyArrs ainult loeb sinu vanu rakendusi ega muuda neis midagi, nii et saad mõlemat kõrvuti kasutada, kuni sellesse usaldust tunned.
 
-Võtmed ja paroolid jäävad maha; sisesta need uuesti või impordi failist. Kohandatud vormingud, sildid ja ajalugu üle ei tule. Meediafaile ei liigutata kunagi. Samm-sammult: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Võtmed ja paroolid jäävad maha; sisesta need uuesti või impordi failist. Kohandatud vormingud, sildid ja ajalugu üle ei tule. Meediafaile ei liigutata kunagi. Samm-sammult: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Mida ta veel ei tee
 
 - **Ise allalaadimine.** HolyArrs ühendub qBittorrenti, SABnzbdi ja teistega. Ta ei asenda neid.
-- **Tehisintellekti- või MCP-funktsioonid.** Mitte versioonis 1.0.
 - **Telefoni- ja TV-rakendused.** Ehitamata. Veebirakendus töötab telefonis.
 - **Muusika Explore'is** on alles ehitamisel.
 
@@ -212,6 +212,8 @@ Kui tõmbad `holyarrs/holyarrs:latest`, saad oma arvutile sobiva image'i.
 | armv7 | ✅ | Vanemates 32-bitistes ARM-plaatides |
 
 Kasutad NAS-i? Vaata [Unraid, Synology ja muud NAS-seadmed](https://docs.HolyArrs.com/run/platforms/).
+
+Eelistad omapaketti? Iga [väljalaske](https://github.com/HolyArrs/HolyArrs/releases) juures on katseline Synology pakett (`.spk`). Vaata [Synology pakett](../../docs/run/synology.md).
 
 ## Versioonisildid
 
@@ -415,7 +417,7 @@ Tahad selle sisse ehitada suletud tootesse? Kirjuta aadressile support@HolyArrs.
 
 ## Hoia see käimas
 
-HolyArrs on tasuta, aga selle töös hoidmine ei ole. Iga paigaldus suhtleb metaandmete serveriga, mille eest ma maksan igal kuul. Sponsorid katavad selle ja ostavad rohkem tunde asjadele, mille poolt hääletad.
+HolyArrs on tasuta, aga selle töös hoidmine ei ole. Vaikimisi suhtleb iga paigaldus metaandmete serveriga, mille eest ma maksan igal kuul. Sponsorid katavad selle ja ostavad rohkem tunde asjadele, mille poolt hääletad.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Toeta HolyArrsi" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Hääleta teekaardil" /></picture></a></p>
 

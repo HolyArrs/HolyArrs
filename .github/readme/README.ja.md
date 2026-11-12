@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> は、番組、映画、音楽のためのセルフホスト型アプリです。<br>配信アプリのように見て回り、欲しいものをリクエストすれば、あとは任せられます。</p>
 
-<p align="center"><b>ダウンロードは約 15 MB · アイドル時の RAM は 10,000 タイトルで約 140 MB · amd64, arm64, armv7</b><br><sub>置き換える6つのアプリは、合計で 718.2 MB あります。</sub></p>
+<p align="center"><b>ダウンロードは約 19 MB · アイドル時の RAM は 10,000 タイトルで約 140 MB · amd64, arm64, armv7</b><br><sub>置き換える6つのアプリは、合計で 718.2 MB あります。</sub></p>
 
 <p align="center"><a href="#quick-start">クイックスタート</a> · <a href="#why">作った理由</a> · <a href="#what-it-does">できること</a> · <a href="#moving">他のアプリからの移行</a> · <a href="#manual">マニュアル</a> · <a href="#help">ヘルプ</a></p>
 
@@ -105,9 +105,9 @@ docker compose up -d
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **6つの合計** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>約48分の1のサイズです。レジストリからの圧縮ダウンロードサイズで、linuxserver.io のイメージ、amd64、2026-11-08 に測定しました。アイドル時の RAM は、10,000 タイトルと、映画とエピソード合計 55,000 件で測定しています。</sub>
+<sub>約37分の1のサイズです。レジストリからの圧縮ダウンロードサイズで、linuxserver.io のイメージ、amd64、2026-11-08 に測定しました。アイドル時の RAM は、10,000 タイトルと、映画とエピソード合計 55,000 件で測定しています。 (HolyArrs 1.1.0: 2026-11-12)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ docker compose up -d
 | | |
 |---|---|
 | 🍿 **Explore** | 配信アプリのように見て回れます。タイトルにカーソルを合わせると、予告編が流れます。 |
-| 🙋 **Requests** | 番組まるごとでも、1シーズンだけでも。あなたが承認します。信頼できる人は承認なしで通すこともできます。 |
+| 🙋 **Requests** | 番組まるごとでも、1シーズンだけでも。あなたが承認します。信頼できる人は承認なしで通すこともできます。Plex と Pulsarr のウォッチリストをリクエストにできます。 |
 | 🎯 **Pick rules** | どのリリースを選ぶかを、サイズ、画質、言語で決められます。 |
-| 💬 **字幕** | 選んだ言語で、ファイルと一緒に保存します。オンラインで探す機能は 1.0 のあとです。 |
+| 💬 **字幕** | 選んだ言語の字幕を字幕サイトから探し、ファイルと一緒に保存します。 |
 | 📅 **Calendar** | フォローしているすべての作品の、次の放送予定です。 |
-| 🚚 **設定の引っ越し** | Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd から。先に試せて、あとから元に戻せます。 |
-| 🔌 **旧アプリ API** | 有効にすると、Prowlarr がこれまでどおり HolyArrs に Sources を送り続けられます。 |
-| 🗝️ **API キー不要** | タイトル、アートワーク、チャートは HolyArrs のメタデータサーバーから届きます。 |
+| 🔔 **Alerts** | Discord、メール、Telegram、ntfy、Gotify、Pushover、webhook。 |
+| 🚚 **設定のインポート** | Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd から。移す内容を選べて、あとから元に戻せます。 |
+| 🔌 **旧アプリ API** | 有効にすると、Seerr、Prowlarr、Bazarr、Unpackerr、Homepage がこれまでどおり動きます。 |
+| 🗝️ **API キー不要** | タイトル、アートワーク、チャートは HolyArrs のメタデータサーバーから届きます。自分のキーやサーバーも使えます。 |
 | 🔒 **暗号化されたキー** | 保存したパスワードとキーは、config フォルダにあるマスターキーでロックされます。 |
-| 🪶 **小さい** | HolyArrs だけが入った、約 15 MB のイメージです。 |
+| 🪶 **小さい** | HolyArrs だけが入った、約 19 MB のイメージです。 |
 
 <details>
 <summary><b>各ページの動きを見る</b></summary>
@@ -148,18 +149,18 @@ docker compose up -d
 
 ## 🤝 いま使っているアプリと一緒に使えます
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="ダウンローダー: qBittorrent、Transmission、Deluge、SABnzbd、NZBGet。メディアサーバー: Plex、Jellyfin、Emby。" /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="ダウンローダー: qBittorrent、Transmission、Deluge、rTorrent、aria2、SABnzbd、NZBGet。メディアサーバー: Plex、Jellyfin、Emby。" /></picture>
 
 - **ダウンローダー:** qBittorrent、Transmission、Deluge、rTorrent、aria2、SABnzbd、NZBGet
 - **メディアサーバー:** Plex、Jellyfin、Emby
 - **Sources:** Torznab または Newznab のインデクサー、あるいは Prowlarr や Jackett
-- **設定を引き継げる元:** Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd
+- **設定をインポートできる元:** Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd
 
 <a id="moving"></a>
 
 ## 🚚 古い環境をそのまま引き継ぐ
 
-**Settings > Move from other apps** を開き、古いアプリごとにアドレスと API キー（またはバックアップの zip）を追加します。引き継ぐ内容を選び、**Try it** で試してから **Move** を実行します。移行はあとから元に戻せます。
+**Settings > Import from other apps** を開き、古いアプリごとにアドレスと API キー（またはバックアップの zip）を追加します。引き継ぐ内容を選び、**Import** を選びます。インポートはあとから元に戻せます。
 
 | 移行元 | 引き継ぐもの |
 |---|---|
@@ -171,12 +172,11 @@ docker compose up -d
 
 HolyArrs は古いアプリを読み取るだけで、中身は何も変更しません。信頼できるようになるまで、両方を並べて動かせます。
 
-キーとパスワードは引き継がれません。もう一度入力するか、ファイルからインポートします。カスタムフォーマット、タグ、履歴も引き継がれません。メディアファイルは一切移動しません。手順は [Move from other apps](https://docs.HolyArrs.com/migrate/) にあります。
+キーとパスワードは引き継がれません。もう一度入力するか、ファイルからインポートします。カスタムフォーマット、タグ、履歴も引き継がれません。メディアファイルは一切移動しません。手順は [Import from other apps](https://docs.HolyArrs.com/migrate/) にあります。
 
 ## 🧭 まだできないこと
 
 - **ダウンロード自体。** HolyArrs は qBittorrent や SABnzbd などに接続します。それらを置き換えるものではありません。
-- **AI や MCP の機能。** 1.0 には入りません。
 - **スマホとテレビのアプリ。** 作っていません。Web アプリはスマホでも使えます。
 - **Explore の音楽** はまだ作っている途中です。
 
@@ -212,6 +212,8 @@ HolyArrs は古いアプリを読み取るだけで、中身は何も変更し�
 | armv7 | ✅ | 古い 32 ビット ARM ボード |
 
 NAS をお使いですか。[Unraid、Synology などの NAS](https://docs.HolyArrs.com/run/platforms/) を見てください。
+
+ネイティブパッケージがよければ、実験的な Synology パッケージ（`.spk`）が各[リリース](https://github.com/HolyArrs/HolyArrs/releases)に添付されています。[Synology パッケージ](../../docs/run/synology.md)を見てください。
 
 ## バージョンタグ
 
@@ -415,7 +417,7 @@ HolyArrs は、[GNU AGPL-3.0](../../LICENSE) のもとで公開されている�
 
 ## 続けていくために
 
-HolyArrs は無料ですが、動かすのは無料ではありません。すべてのインストールが、私が毎月料金を払っているメタデータサーバーと通信します。スポンサーの支援がそれをまかない、投票で選ばれたものに使える時間も増やします。
+HolyArrs は無料ですが、動かすのは無料ではありません。初期設定では、すべてのインストールが、私が毎月料金を払っているメタデータサーバーと通信します。スポンサーの支援がそれをまかない、投票で選ばれたものに使える時間も増やします。
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="HolyArrs をスポンサーする" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="ロードマップに投票する" /></picture></a></p>
 
