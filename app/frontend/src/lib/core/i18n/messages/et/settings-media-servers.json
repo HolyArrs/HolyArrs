@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Testi",
 	"settings.mediaServers.changeButton": "Muuda",
 	"settings.mediaServers.removeName": "Eemalda {name}",
-	"settings.mediaServers.remove": "Eemalda"
+	"settings.mediaServers.remove": "Eemalda",
+	"settings.mediaServers.watchTitle": "Vaatamisajalugu",
+	"settings.mediaServers.watchRead": "Loe vaatamisajalugu",
+	"settings.mediaServers.watchHint": "Näitab Meediakogu statistikas, kes mida vaatas, neile, kes Meediakogu haldavad. Väljas kustutab loetu.",
+	"settings.mediaServers.watchConfirmOff": "Kas lülitada vaatamisajalugu välja? Kõik seni loetu kustutatakse.",
+	"settings.mediaServers.watchTurnedOn": "Vaatamisajalugu on sees. Esimene lugemine toimub 30 minuti jooksul.",
+	"settings.mediaServers.watchTurnedOff": "Vaatamisajalugu on väljas",
+	"settings.mediaServers.watchFailed": "Vaatamisajaloo muutmine ebaõnnestus"
 }

@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Tilkynningar fyrir mig",
 	"settings.index.account.alerts-me.alerts-for-me.words": "mitt tölvupóstur discord tilkynningar",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Mín innskráðu tæki",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "lotur tæki skrá út alls staðar"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "lotur tæki skrá út alls staðar",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Hvaðan upplýsingar koma",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "lýsigagnaham eigin lyklar af uppflettingar persónuvernd þjónn sjálfstæður",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Þínir eigin lyklar",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb tóki tvdb pin mdblist fanart lykill api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Vistföng fyrir eldvegginn þinn",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "eldveggur gestgjafar utanaðkomandi vistföng heimildalisti"
 }

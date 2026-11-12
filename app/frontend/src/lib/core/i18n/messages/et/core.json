@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Ohutsoon",
 	"core.settings.danger.about": "Taaskäivita või lülita välja",
 	"core.settings.account.label": "Minu konto",
-	"core.settings.account.about": "Parool, kaheastmeline autentimine, seadmed"
+	"core.settings.account.about": "Parool, kaheastmeline autentimine, seadmed",
+	"core.plain.clearWaiting": "Imporditud allalaadimised ootavad oma Allalaadijast tühjendamist.",
+	"core.api.sourceOff": "Mõned read on selles paigalduses välja lülitatud."
 }

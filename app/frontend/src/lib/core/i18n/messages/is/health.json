@@ -259,5 +259,7 @@
 	"health.word.broken": "Bilað",
 	"health.word.notSent": "Ekki sent enn",
 	"health.word.notSynced": "Ekki samstillt enn",
-	"health.word.working": "Virkar"
+	"health.word.working": "Virkar",
+	"health.check.clearWaiting": "Niðurhöl sem bíða hreinsunar",
+	"health.kind.clearWaiting": "Niðurhöl sem bíða hreinsunar"
 }

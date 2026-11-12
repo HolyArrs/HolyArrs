@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "உரிமையாளரும் நிர்வாகிகளும் மட்டும்",
 	"settings.libraryFolders.copiesExpected": "நகலெடுப்பது எதிர்பார்த்ததே",
 	"settings.libraryFolders.copiesExpectedState": "நகலெடுப்பு, எதிர்பார்த்தபடி",
-	"settings.libraryFolders.warnAgain": "மீண்டும் எச்சரி"
+	"settings.libraryFolders.warnAgain": "மீண்டும் எச்சரி",
+	"settings.libraryFolders.whyCopies": "ஏன்?",
+	"settings.libraryFolders.stateInstant": "உடனடியாக, கூடுதல் இடம் தேவையில்லை",
+	"settings.libraryFolders.changePath": "பாதையை மாற்று",
+	"settings.libraryFolders.changePathOf": "{path} இன் பாதையை மாற்று",
+	"settings.libraryFolders.newPath": "புதிய பாதை",
+	"settings.libraryFolders.changePathHint": "முதலில் கோப்புகளை அங்கே நகர்த்துங்கள். HolyArrs ஒவ்வொரு கோப்பையும் சரிபார்க்கும்; எதையும் நகர்த்தாது.",
+	"settings.libraryFolders.checkingFiles": "கோப்புகளைச் சரிபார்க்கிறது…",
+	"settings.libraryFolders.pathChanged": "பாதை மாற்றப்பட்டது"
 }

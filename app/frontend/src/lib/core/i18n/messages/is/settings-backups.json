@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Aðeins eigandinn getur sótt hann; biddu hann um það.",
 	"settings.backups.fingerprint": "Fingrafar lykils",
 	"settings.backups.downloadKit": "Sækja lyklapakka",
-	"settings.backups.restoreKey": "Til að endurheimta: endurnefndu í holyarrs.key og settu í config-möppuna"
+	"settings.backups.restoreKey": "Til að endurheimta: endurnefndu í holyarrs.key og settu í config-möppuna",
+	"settings.backups.offPlan": "Af",
+	"settings.backups.offAbout": "Engin tímasett öryggisafrit. Afrit er samt gert fyrir hverja uppfærslu.",
+	"settings.backups.offKeeps": "Af heldur öryggisafritunum sem þú átt nú þegar."
 }

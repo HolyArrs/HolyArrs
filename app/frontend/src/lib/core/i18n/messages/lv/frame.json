@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Visas vietas",
 	"frame.layout.newWord": "jauns",
 	"frame.layout.accountName": "Konts · {name}",
-	"frame.layout.hostRefused": "<b>Izmaiņas nevar saglabāt, atverot {host}.</b> HolyArrs saglabā tikai uz atļautiem nosaukumiem. Atver to vienreiz pēc IP adreses, tad pievieno {host} sadaļā Iestatījumi › Pieteikšanās › Atļautie resursdatoru nosaukumi. Restartēt nevajag."
+	"frame.layout.hostRefused": "<b>Izmaiņas nevar saglabāt, atverot {host}.</b> HolyArrs saglabā tikai uz atļautiem nosaukumiem. Atver to vienreiz pēc IP adreses, tad pievieno {host} sadaļā Iestatījumi › Pieteikšanās › Atļautie resursdatoru nosaukumi. Restartēt nevajag.",
+	"frame.feeds.clearOne": "Importētais lejupielādes ieraksts nav notīrīts",
+	"frame.feeds.clearMany": "Nenotīrīti importētie lejupielādes ieraksti: {n}",
+	"frame.feeds.clearBody": "HolyArrs mēģina vēlreiz pats",
+	"frame.feeds.clearNow": "Notīrīt tagad",
+	"frame.feeds.cleared": "Notīrīts no Lejupielādētāja",
+	"frame.feeds.clearStill": "Vēl nav notīrīts"
 }

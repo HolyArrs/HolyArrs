@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "உரிமையாளர் மட்டுமே பதிவிறக்கலாம்; அவரிடம் கேளுங்கள்.",
 	"settings.backups.fingerprint": "விசை கைரேகை",
 	"settings.backups.downloadKit": "விசைத் தொகுப்பைப் பதிவிறக்கு",
-	"settings.backups.restoreKey": "மீட்க: holyarrs.key என மறுபெயரிட்டு config கோப்புறையில் வையுங்கள்"
+	"settings.backups.restoreKey": "மீட்க: holyarrs.key என மறுபெயரிட்டு config கோப்புறையில் வையுங்கள்",
+	"settings.backups.offPlan": "அணை",
+	"settings.backups.offAbout": "திட்டமிட்ட காப்புப்பிரதிகள் இல்லை. ஒவ்வொரு புதுப்பிப்புக்கும் முன் ஒரு நகல் இன்னும் எடுக்கப்படுகிறது.",
+	"settings.backups.offKeeps": "அணை என்பது உங்களிடம் ஏற்கெனவே உள்ள காப்புப்பிரதிகளை வைத்திருக்கும்."
 }

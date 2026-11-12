@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Prófa",
 	"settings.mediaServers.changeButton": "Breyta",
 	"settings.mediaServers.removeName": "Fjarlægja {name}",
-	"settings.mediaServers.remove": "Fjarlægja"
+	"settings.mediaServers.remove": "Fjarlægja",
+	"settings.mediaServers.watchTitle": "Áhorfssaga",
+	"settings.mediaServers.watchRead": "Lesa áhorfssögu",
+	"settings.mediaServers.watchHint": "Sýnir í Tölfræði Safnsins hver horfði á hvað, fyrir þá sem reka Safnið. Af eyðir því sem hefur verið lesið.",
+	"settings.mediaServers.watchConfirmOff": "Slökkva á áhorfssögu? Öllu sem hefur verið lesið hingað til er eytt.",
+	"settings.mediaServers.watchTurnedOn": "Kveikt á áhorfssögu. Fyrsti lestur fer fram innan 30 mínútna.",
+	"settings.mediaServers.watchTurnedOff": "Slökkt á áhorfssögu",
+	"settings.mediaServers.watchFailed": "Gat ekki breytt áhorfssögu"
 }

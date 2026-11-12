@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Valoda",
 	"subtitles.wants.pick": "Izvēlies valodu",
 	"subtitles.wants.takeOff": "Noņemt {name}",
-	"subtitles.wants.thisLanguage": "šī valoda"
+	"subtitles.wants.thisLanguage": "šī valoda",
+	"subtitles.made.translated": "Iztulkots",
+	"subtitles.made.partial": "Daļēji iztulkots",
+	"subtitles.made.ai": "AI iztulkots",
+	"subtitles.made.machine": "Mašīntulkots",
+	"subtitles.wants.translateFrom": "Tulkot no",
+	"subtitles.wants.noTranslate": "Netulkot",
+	"subtitles.panel.picture": "Attēls",
+	"subtitles.panel.pictureTitle": "Attēla subtitri: tos nevar iztulkot",
+	"subtitles.panel.translate": "Tulkot",
+	"subtitles.panel.translateFor": "Tulkot {name} subtitrus",
+	"subtitles.panel.translateFrom": "Tulkot no",
+	"subtitles.panel.translateQueued": "Tulko",
+	"subtitles.panel.translateQueuedBody": "{name} subtitri parādīsies šeit, kad būs gatavi.",
+	"subtitles.panel.translating": "Neviens nav atrasts, tāpēc jūsu tulkotājs tos izveido."
 }

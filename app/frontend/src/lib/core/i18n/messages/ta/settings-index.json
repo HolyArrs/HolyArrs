@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "எனக்கான அறிவிப்புகள்",
 	"settings.index.account.alerts-me.alerts-for-me.words": "என் மின்னஞ்சல் அறிவிப்புகள் my email discord notifications",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "நான் உள்நுழைந்த சாதனங்கள்",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "அமர்வுகள் சாதனங்கள் எங்கும் வெளியேறு sessions devices sign out everywhere"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "அமர்வுகள் சாதனங்கள் எங்கும் வெளியேறு sessions devices sign out everywhere",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "விவரங்கள் எங்கிருந்து வருகின்றன",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "மெட்டாடேட்டா பயன்முறை சொந்த விசைகள் அணை தேடல்கள் தனியுரிமை சேவையகம் சுதந்திரமான",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "உங்கள் சொந்த விசைகள்",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb டோக்கன் tvdb பின் mdblist fanart விசை api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "உங்கள் ஃபயர்வாலுக்கான முகவரிகள்",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "ஃபயர்வால் ஹோஸ்ட்கள் வெளி முகவரிகள் அனுமதிப் பட்டியல்"
 }

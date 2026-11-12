@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Teavitused minule",
 	"settings.index.account.alerts-me.alerts-for-me.words": "minu e-post discord märguanded",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Minu sisselogitud seadmed",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "seansid seadmed logi kõikjalt välja"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "seansid seadmed logi kõikjalt välja",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Kust üksikasjad tulevad",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "metaandmete režiim omad võtmed väljas päringud privaatsus server sõltumatu",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Sinu enda võtmed",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart võti api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Aadressid sinu tulemüürile",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "tulemüür hostid välised aadressid lubatud nimekiri"
 }

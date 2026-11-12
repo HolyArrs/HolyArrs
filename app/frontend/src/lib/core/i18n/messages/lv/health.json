@@ -259,5 +259,7 @@
 	"health.word.broken": "Bojāts",
 	"health.word.notSent": "Vēl nav nosūtīts",
 	"health.word.notSynced": "Vēl nav sinhronizēts",
-	"health.word.working": "Darbojas"
+	"health.word.working": "Darbojas",
+	"health.check.clearWaiting": "Lejupielādes, kas gaida notīrīšanu",
+	"health.kind.clearWaiting": "Lejupielādes, kas gaida notīrīšanu"
 }

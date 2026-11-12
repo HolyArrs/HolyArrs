@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Allir staðir",
 	"frame.layout.newWord": "nýtt",
 	"frame.layout.accountName": "Aðgangur · {name}",
-	"frame.layout.hostRefused": "<b>Ekki er hægt að vista breytingar á {host}.</b> HolyArrs vistar aðeins á nöfnum sem þú leyfir. Opnaðu það einu sinni með IP-tölunni og bættu síðan {host} við undir Stillingar › Innskráning › Leyfð hýsilnöfn. Engin endurræsing nauðsynleg."
+	"frame.layout.hostRefused": "<b>Ekki er hægt að vista breytingar á {host}.</b> HolyArrs vistar aðeins á nöfnum sem þú leyfir. Opnaðu það einu sinni með IP-tölunni og bættu síðan {host} við undir Stillingar › Innskráning › Leyfð hýsilnöfn. Engin endurræsing nauðsynleg.",
+	"frame.feeds.clearOne": "Innflutt niðurhal ekki hreinsað",
+	"frame.feeds.clearMany": "{n} innflutt niðurhöl ekki hreinsuð",
+	"frame.feeds.clearBody": "HolyArrs reynir aftur sjálft",
+	"frame.feeds.clearNow": "Hreinsa núna",
+	"frame.feeds.cleared": "Hreinsað úr Niðurhalaranum",
+	"frame.feeds.clearStill": "Ekki hreinsað enn"
 }

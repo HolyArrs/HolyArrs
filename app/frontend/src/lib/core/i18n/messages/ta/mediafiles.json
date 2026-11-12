@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "எதுவும் இல்லாமல் போகவில்லை.",
 	"mediafiles.showDelete.deleteLabel": "{what} ஐ நீக்கு",
 	"mediafiles.showReleases.searchingFor": "{name} ஐத் தேடுகிறது",
-	"mediafiles.sheet.file": "கோப்பு"
+	"mediafiles.sheet.file": "கோப்பு",
+	"mediafiles.parts.stopsSources": "நீங்களே பதிவிறக்கங்களைச் சேர்க்கும்போது தானியங்கி தேடல்கள் நிற்கும். பதிவிறக்கிகளும் இறக்குமதிகளும் தொடர்ந்து வேலை செய்யும்."
 }

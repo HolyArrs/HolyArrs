@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Kiired põhjused",
 	"requests.page.takeBackTitle": "Kas võtta {name} tagasi?",
 	"requests.page.takeBackDesc": "See lahkub taotlustest. Saad hiljem uuesti taotleda.",
-	"requests.page.keepIt": "Jäta alles"
+	"requests.page.keepIt": "Jäta alles",
+	"requests.moment.downloaded.title": "Alla laaditud",
+	"requests.moment.downloaded.body": "Personalile: Allalaadija lõpetas allalaadimise (järgmine on import).",
+	"requests.moment.download_failed.title": "Allalaadimine ebaõnnestus",
+	"requests.moment.download_failed.body": "Personalile: allalaadimine ebaõnnestus ja selle Väljalase lükati tagasi."
 }

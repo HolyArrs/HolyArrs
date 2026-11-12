@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "To var lejupielādēt tikai īpašnieks; palūdz viņam.",
 	"settings.backups.fingerprint": "Atslēgas pirkstu nospiedums",
 	"settings.backups.downloadKit": "Lejupielādēt atslēgu komplektu",
-	"settings.backups.restoreKey": "Lai atjaunotu: pārdēvē par holyarrs.key un ieliec konfigurācijas mapē"
+	"settings.backups.restoreKey": "Lai atjaunotu: pārdēvē par holyarrs.key un ieliec konfigurācijas mapē",
+	"settings.backups.offPlan": "Izslēgts",
+	"settings.backups.offAbout": "Ieplānotu dublējumu nav. Pirms katra atjauninājuma tomēr tiek izveidota kopija.",
+	"settings.backups.offKeeps": "Izslēgts saglabā dublējumus, kas jums jau ir."
 }

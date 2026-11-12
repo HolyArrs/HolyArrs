@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Ātrie iemesli",
 	"requests.page.takeBackTitle": "Atsaukt {name}?",
 	"requests.page.takeBackDesc": "Tas pamet Pieprasījumus. Vēlāk vari pieprasīt atkal.",
-	"requests.page.keepIt": "Paturēt"
+	"requests.page.keepIt": "Paturēt",
+	"requests.moment.downloaded.title": "Lejupielādēts",
+	"requests.moment.downloaded.body": "Personālam: Lejupielādētājs pabeidza lejupielādi (tālāk seko imports).",
+	"requests.moment.download_failed.title": "Lejupielāde neizdevās",
+	"requests.moment.download_failed.body": "Personālam: lejupielāde neizdevās, un tās Izlaidums tika noraidīts."
 }

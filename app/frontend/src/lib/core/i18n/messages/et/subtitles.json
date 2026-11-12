@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Keel",
 	"subtitles.wants.pick": "Vali keel",
 	"subtitles.wants.takeOff": "Eemalda {name}",
-	"subtitles.wants.thisLanguage": "see keel"
+	"subtitles.wants.thisLanguage": "see keel",
+	"subtitles.made.translated": "Tõlgitud",
+	"subtitles.made.partial": "Osaliselt tõlgitud",
+	"subtitles.made.ai": "AI-tõlgitud",
+	"subtitles.made.machine": "Masintõlgitud",
+	"subtitles.wants.translateFrom": "Tõlgi keelest",
+	"subtitles.wants.noTranslate": "Ära tõlgi",
+	"subtitles.panel.picture": "Pilt",
+	"subtitles.panel.pictureTitle": "Pildisubtiitrid: neid ei saa tõlkida",
+	"subtitles.panel.translate": "Tõlgi",
+	"subtitles.panel.translateFor": "Tõlgi {name} subtiitrid",
+	"subtitles.panel.translateFrom": "Tõlgi keelest",
+	"subtitles.panel.translateQueued": "Tõlgin",
+	"subtitles.panel.translateQueuedBody": "{name} subtiitrid ilmuvad siia, kui need on valmis.",
+	"subtitles.panel.translating": "Ühtegi ei leitud, nii et sinu tõlkija teeb need."
 }

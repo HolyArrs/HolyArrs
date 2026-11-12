@@ -266,5 +266,8 @@
 	"home.version": "Versioon {version}",
 	"home.metadataServerDown": "Metaandmete server on maas",
 	"home.metadataServerOnline": "Metaandmete server on võrgus",
-	"home.homeCouldNotRead3": "Avaleht ei saanud allalaadimisi praegu lugeda."
+	"home.homeCouldNotRead3": "Avaleht ei saanud allalaadimisi praegu lugeda.",
+	"home.waitingToBeCleared": "ootab tühjendamist",
+	"home.off": "Väljas",
+	"home.sourcesOff": "Moodulites välja lülitatud"
 }

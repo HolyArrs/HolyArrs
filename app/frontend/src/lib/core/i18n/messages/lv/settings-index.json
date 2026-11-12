@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Paziņojumi man",
 	"settings.index.account.alerts-me.alerts-for-me.words": "mans e-pasts discord paziņojumi notifications",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Manas pieteiktās ierīces",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "sesijas ierīces izrakstīties visur sessions devices"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "sesijas ierīces izrakstīties visur sessions devices",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "No kurienes nāk detaļas",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "metadatu režīms paša atslēgas izslēgts meklēšana privātums serveris neatkarīgs",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Jūsu paša atslēgas",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb pilnvara tvdb pin mdblist fanart atslēga api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adreses jūsu ugunsmūrim",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "ugunsmūris resursdatori ārējas adreses atļauto saraksts"
 }

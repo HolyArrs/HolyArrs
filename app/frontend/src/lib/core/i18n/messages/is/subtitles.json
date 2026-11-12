@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Tungumál",
 	"subtitles.wants.pick": "Veldu tungumál",
 	"subtitles.wants.takeOff": "Taka {name} af",
-	"subtitles.wants.thisLanguage": "þetta tungumál"
+	"subtitles.wants.thisLanguage": "þetta tungumál",
+	"subtitles.made.translated": "Þýtt",
+	"subtitles.made.partial": "Að hluta þýtt",
+	"subtitles.made.ai": "Þýtt af gervigreind",
+	"subtitles.made.machine": "Vélþýtt",
+	"subtitles.wants.translateFrom": "Þýða úr",
+	"subtitles.wants.noTranslate": "Ekki þýða",
+	"subtitles.panel.picture": "Mynd",
+	"subtitles.panel.pictureTitle": "Myndatexti: ekki hægt að þýða hann",
+	"subtitles.panel.translate": "Þýða",
+	"subtitles.panel.translateFor": "Þýða {name} texta",
+	"subtitles.panel.translateFrom": "Þýða úr",
+	"subtitles.panel.translateQueued": "Þýði",
+	"subtitles.panel.translateQueuedBody": "{name} textinn birtist hér þegar hann er tilbúinn.",
+	"subtitles.panel.translating": "Enginn fannst, svo þýðandinn þinn býr til einn."
 }

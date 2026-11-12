@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "Midagi ei puudu.",
 	"mediafiles.showDelete.deleteLabel": "Kustuta {what}",
 	"mediafiles.showReleases.searchingFor": "Otsin: {name}",
-	"mediafiles.sheet.file": "Fail"
+	"mediafiles.sheet.file": "Fail",
+	"mediafiles.parts.stopsSources": "Automaatsed otsingud peatuvad, juhuks kui lisad allalaadimised ise. Allalaadijad ja impordid töötavad edasi."
 }

@@ -259,5 +259,7 @@
 	"health.word.broken": "Katki",
 	"health.word.notSent": "Pole veel saadetud",
 	"health.word.notSynced": "Pole veel sünkroonitud",
-	"health.word.working": "Töötab"
+	"health.word.working": "Töötab",
+	"health.check.clearWaiting": "Tühjendamist ootavad allalaadimised",
+	"health.kind.clearWaiting": "Tühjendamist ootavad allalaadimised"
 }

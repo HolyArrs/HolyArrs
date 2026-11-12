@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Hættusvæði",
 	"core.settings.danger.about": "Endurræsa eða slökkva",
 	"core.settings.account.label": "Minn aðgangur",
-	"core.settings.account.about": "Lykilorð, tveggja þátta, tæki"
+	"core.settings.account.about": "Lykilorð, tveggja þátta, tæki",
+	"core.plain.clearWaiting": "Innflutt niðurhöl bíða þess að verða hreinsuð úr Niðurhalaranum sínum.",
+	"core.api.sourceOff": "Sumar raðir eru slökktar í þessari uppsetningu."
 }

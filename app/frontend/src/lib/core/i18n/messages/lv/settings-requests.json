@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Pieprasīt no Plex vēlmju sarakstiem",
 	"settings.requests.plexOnHint": "Katrs to ieslēdz sadaļā Mans konts. Viņu Ierobežojumi attiecas.",
 	"settings.requests.plexEveryone": "Ieslēgt visiem, kas piesakās ar Plex",
-	"settings.requests.plexEveryoneHint": "Ikviens var to izslēgt sev sadaļā Mans konts."
+	"settings.requests.plexEveryoneHint": "Ikviens var to izslēgt sev sadaļā Mans konts.",
+	"settings.requests.plexFriends": "Iekļaut Plex draugus",
+	"settings.requests.plexFriendsHint": "Draugi, ko importējāt no Plex. Tiek lasīti ar jūsu Plex saiti; katra drauga Ierobežojumi ir spēkā.",
+	"settings.requests.plexFriendsNoLink": "Vispirms sasaistiet Plex sadaļā Iestatījumi › Pieteikšanās.",
+	"settings.requests.plexFriendsNone": "No Plex vēl neviens nav importēts.",
+	"settings.requests.plexFriendsRead": "Nolasīts {when}",
+	"settings.requests.plexFriendsNotYet": "Vēl nav nolasīts",
+	"settings.requests.plexFriendsAsked": "Pieprasīts: {n}"
 }

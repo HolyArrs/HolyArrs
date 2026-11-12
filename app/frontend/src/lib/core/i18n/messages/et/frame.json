@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Kõik kohad",
 	"frame.layout.newWord": "uus",
 	"frame.layout.accountName": "Konto · {name}",
-	"frame.layout.hostRefused": "<b>Muudatusi ei saa serveris {host} salvestada.</b> HolyArrs salvestab ainult sinu lubatud nimede all. Ava see korra IP-aadressi kaudu ja lisa siis {host} jaotises Seaded › Sisselogimine › Lubatud hostinimed. Taaskäivitus pole vajalik."
+	"frame.layout.hostRefused": "<b>Muudatusi ei saa serveris {host} salvestada.</b> HolyArrs salvestab ainult sinu lubatud nimede all. Ava see korra IP-aadressi kaudu ja lisa siis {host} jaotises Seaded › Sisselogimine › Lubatud hostinimed. Taaskäivitus pole vajalik.",
+	"frame.feeds.clearOne": "Imporditud allalaadimist pole tühjendatud",
+	"frame.feeds.clearMany": "{n} imporditud allalaadimist pole tühjendatud",
+	"frame.feeds.clearBody": "HolyArrs proovib ise uuesti",
+	"frame.feeds.clearNow": "Tühjenda kohe",
+	"frame.feeds.cleared": "Allalaadijast tühjendatud",
+	"frame.feeds.clearStill": "Pole veel tühjendatud"
 }

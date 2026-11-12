@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "விரைவுக் காரணங்கள்",
 	"requests.page.takeBackTitle": "{name} ஐத் திரும்பப் பெறவா?",
 	"requests.page.takeBackDesc": "அது கோரிக்கைகளிலிருந்து நீங்கும். பின்னர் மீண்டும் கோரலாம்.",
-	"requests.page.keepIt": "வைத்திரு"
+	"requests.page.keepIt": "வைத்திரு",
+	"requests.moment.downloaded.title": "பதிவிறக்கப்பட்டது",
+	"requests.moment.downloaded.body": "பணியாளர்களுக்கு: ஒரு பதிவிறக்கி பதிவிறக்கத்தை முடித்தது (அடுத்து இறக்குமதி).",
+	"requests.moment.download_failed.title": "பதிவிறக்கம் தோல்வியடைந்தது",
+	"requests.moment.download_failed.body": "பணியாளர்களுக்கு: ஒரு பதிவிறக்கம் தோல்வியடைந்தது; அதன் வெளியீடு நிராகரிக்கப்பட்டது."
 }

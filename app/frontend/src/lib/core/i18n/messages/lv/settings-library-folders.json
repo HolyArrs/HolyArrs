@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Tikai īpašniekam un adminiem",
 	"settings.libraryFolders.copiesExpected": "Kopēšana ir gaidāma",
 	"settings.libraryFolders.copiesExpectedState": "Kopē, kā gaidīts",
-	"settings.libraryFolders.warnAgain": "Brīdināt vēlreiz"
+	"settings.libraryFolders.warnAgain": "Brīdināt vēlreiz",
+	"settings.libraryFolders.whyCopies": "Kāpēc?",
+	"settings.libraryFolders.stateInstant": "Acumirklī, bez papildu vietas",
+	"settings.libraryFolders.changePath": "Mainīt ceļu",
+	"settings.libraryFolders.changePathOf": "Mainīt ceļu: {path}",
+	"settings.libraryFolders.newPath": "Jauns ceļš",
+	"settings.libraryFolders.changePathHint": "Vispirms pārvietojiet failus turp. HolyArrs pārbauda katru failu un neko nepārvieto.",
+	"settings.libraryFolders.checkingFiles": "Pārbauda failus…",
+	"settings.libraryFolders.pathChanged": "Ceļš mainīts"
 }

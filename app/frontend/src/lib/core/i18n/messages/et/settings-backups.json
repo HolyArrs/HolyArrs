@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Selle saab alla laadida ainult omanik; palu tal seda teha.",
 	"settings.backups.fingerprint": "Võtme sõrmejälg",
 	"settings.backups.downloadKit": "Laadi võtmekomplekt alla",
-	"settings.backups.restoreKey": "Taastamiseks: nimeta ümber holyarrs.key ja pane config-kausta"
+	"settings.backups.restoreKey": "Taastamiseks: nimeta ümber holyarrs.key ja pane config-kausta",
+	"settings.backups.offPlan": "Väljas",
+	"settings.backups.offAbout": "Ajastatud varukoopiaid pole. Enne iga uuendust tehakse siiski koopia.",
+	"settings.backups.offKeeps": "Väljas säilitab varukoopiad, mis sul juba on."
 }

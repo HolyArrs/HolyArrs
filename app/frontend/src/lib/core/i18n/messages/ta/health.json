@@ -259,5 +259,7 @@
 	"health.word.broken": "பழுது",
 	"health.word.notSent": "இன்னும் அனுப்பப்படவில்லை",
 	"health.word.notSynced": "இன்னும் ஒத்திசைக்கப்படவில்லை",
-	"health.word.working": "இயங்குகிறது"
+	"health.word.working": "இயங்குகிறது",
+	"health.check.clearWaiting": "அழிக்கப்படக் காத்திருக்கும் பதிவிறக்கங்கள்",
+	"health.kind.clearWaiting": "அழிக்கப்படக் காத்திருக்கும் பதிவிறக்கங்கள்"
 }

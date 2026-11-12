@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "மொழி",
 	"subtitles.wants.pick": "ஒரு மொழியைத் தேர்ந்தெடுங்கள்",
 	"subtitles.wants.takeOff": "{name} ஐ நீக்கு",
-	"subtitles.wants.thisLanguage": "இந்த மொழி"
+	"subtitles.wants.thisLanguage": "இந்த மொழி",
+	"subtitles.made.translated": "மொழிபெயர்க்கப்பட்டது",
+	"subtitles.made.partial": "பகுதியாக மொழிபெயர்க்கப்பட்டது",
+	"subtitles.made.ai": "AI மொழிபெயர்ப்பு",
+	"subtitles.made.machine": "இயந்திர மொழிபெயர்ப்பு",
+	"subtitles.wants.translateFrom": "இதிலிருந்து மொழிபெயர்",
+	"subtitles.wants.noTranslate": "மொழிபெயர்க்க வேண்டாம்",
+	"subtitles.panel.picture": "படம்",
+	"subtitles.panel.pictureTitle": "ஒரு பட வசனம்: இதை மொழிபெயர்க்க முடியாது",
+	"subtitles.panel.translate": "மொழிபெயர்",
+	"subtitles.panel.translateFor": "{name} வசனத்தை மொழிபெயர்",
+	"subtitles.panel.translateFrom": "இதிலிருந்து மொழிபெயர்",
+	"subtitles.panel.translateQueued": "மொழிபெயர்க்கிறது",
+	"subtitles.panel.translateQueuedBody": "{name} வசனம் தயாரானதும் இங்கே தோன்றும்.",
+	"subtitles.panel.translating": "எதுவும் கிடைக்கவில்லை, எனவே உங்கள் மொழிபெயர்ப்பாளர் ஒன்றை உருவாக்குகிறார்."
 }

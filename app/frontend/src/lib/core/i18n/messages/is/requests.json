@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Fljótlegar ástæður",
 	"requests.page.takeBackTitle": "Taka {name} til baka?",
 	"requests.page.takeBackDesc": "Það fer úr Beiðnum. Þú getur beðið aftur síðar.",
-	"requests.page.keepIt": "Halda því"
+	"requests.page.keepIt": "Halda því",
+	"requests.moment.downloaded.title": "Niðurhalað",
+	"requests.moment.downloaded.body": "Til starfsfólks: Niðurhalari lauk niðurhali (innflutningur kemur næst).",
+	"requests.moment.download_failed.title": "Niðurhal mistókst",
+	"requests.moment.download_failed.body": "Til starfsfólks: niðurhal mistókst og Útgáfu þess var hafnað."
 }

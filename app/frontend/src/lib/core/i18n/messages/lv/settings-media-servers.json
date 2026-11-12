@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Pārbaudīt",
 	"settings.mediaServers.changeButton": "Mainīt",
 	"settings.mediaServers.removeName": "Noņemt {name}",
-	"settings.mediaServers.remove": "Noņemt"
+	"settings.mediaServers.remove": "Noņemt",
+	"settings.mediaServers.watchTitle": "Skatīšanās vēsture",
+	"settings.mediaServers.watchRead": "Lasīt skatīšanās vēsturi",
+	"settings.mediaServers.watchHint": "Bibliotēkas statistikā parāda, kurš ko skatījies, tiem, kas pārvalda Bibliotēku. Izslēgts izdzēš nolasīto.",
+	"settings.mediaServers.watchConfirmOff": "Vai izslēgt skatīšanās vēsturi? Viss līdz šim nolasītais tiek izdzēsts.",
+	"settings.mediaServers.watchTurnedOn": "Skatīšanās vēsture ieslēgta. Pirmā nolasīšana notiek 30 minūšu laikā.",
+	"settings.mediaServers.watchTurnedOff": "Skatīšanās vēsture izslēgta",
+	"settings.mediaServers.watchFailed": "Neizdevās mainīt skatīšanās vēsturi"
 }

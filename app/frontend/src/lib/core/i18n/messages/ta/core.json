@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "ஆபத்துப் பகுதி",
 	"core.settings.danger.about": "மறுதொடக்கு அல்லது நிறுத்து",
 	"core.settings.account.label": "எனது கணக்கு",
-	"core.settings.account.about": "கடவுச்சொல், இருபடிச் சரிபார்ப்பு, சாதனங்கள்"
+	"core.settings.account.about": "கடவுச்சொல், இருபடிச் சரிபார்ப்பு, சாதனங்கள்",
+	"core.plain.clearWaiting": "இறக்குமதி செய்யப்பட்ட பதிவிறக்கங்கள் அவற்றின் பதிவிறக்கியிலிருந்து அழிக்கப்படக் காத்திருக்கின்றன.",
+	"core.api.sourceOff": "இந்த நிறுவலில் சில வரிசைகள் அணைக்கப்பட்டுள்ளன."
 }

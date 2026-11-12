@@ -508,5 +508,6 @@
   "mediafiles.list.nothingMissing": "Ekkert vantar.",
   "mediafiles.showDelete.deleteLabel": "Eyða {what}",
   "mediafiles.showReleases.searchingFor": "Leita að {name}",
-  "mediafiles.sheet.file": "Skrá"
+  "mediafiles.sheet.file": "Skrá",
+  "mediafiles.parts.stopsSources": "Sjálfvirkar leitir stöðvast, fyrir þegar þú bætir niðurhölum við sjálf(ur). Niðurhalarar og innflutningur halda áfram að virka."
 }

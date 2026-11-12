@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Plex பார்வைப்பட்டியல்களிலிருந்து கோரு",
 	"settings.requests.plexOnHint": "ஒவ்வொருவரும் எனது கணக்கில் இதை இயக்குவார்கள். அவர்களின் வரம்புகள் பொருந்தும்.",
 	"settings.requests.plexEveryone": "Plex மூலம் உள்நுழையும் அனைவருக்கும் இயக்கு",
-	"settings.requests.plexEveryoneHint": "யாரும் தமக்காக எனது கணக்கில் இதை அணைக்கலாம்."
+	"settings.requests.plexEveryoneHint": "யாரும் தமக்காக எனது கணக்கில் இதை அணைக்கலாம்.",
+	"settings.requests.plexFriends": "Plex நண்பர்களைச் சேர்",
+	"settings.requests.plexFriendsHint": "நீங்கள் Plex இலிருந்து இறக்குமதி செய்த நண்பர்கள். உங்கள் Plex இணைப்பால் படிக்கப்படுகிறது; ஒவ்வொரு நண்பரின் வரம்புகளும் பொருந்தும்.",
+	"settings.requests.plexFriendsNoLink": "முதலில் அமைப்புகள் › உள்நுழைவில் Plex ஐ இணையுங்கள்.",
+	"settings.requests.plexFriendsNone": "Plex இலிருந்து இன்னும் யாரும் இறக்குமதி செய்யப்படவில்லை.",
+	"settings.requests.plexFriendsRead": "படித்தது {when}",
+	"settings.requests.plexFriendsNotYet": "இன்னும் படிக்கவில்லை",
+	"settings.requests.plexFriendsAsked": "கோரப்பட்டது: {n}"
 }

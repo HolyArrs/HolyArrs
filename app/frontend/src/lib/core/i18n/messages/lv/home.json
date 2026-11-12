@@ -266,5 +266,8 @@
 	"home.version": "Versija {version}",
 	"home.metadataServerDown": "Metadatu serveris nedarbojas",
 	"home.metadataServerOnline": "Metadatu serveris darbojas",
-	"home.homeCouldNotRead3": "Sākums šobrīd nevarēja nolasīt lejupielādes."
+	"home.homeCouldNotRead3": "Sākums šobrīd nevarēja nolasīt lejupielādes.",
+	"home.waitingToBeCleared": "gaida notīrīšanu",
+	"home.off": "Izslēgts",
+	"home.sourcesOff": "Izslēgts sadaļā Daļas"
 }

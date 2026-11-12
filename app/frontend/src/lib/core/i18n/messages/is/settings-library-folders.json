@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Aðeins eigandi og stjórnendur",
 	"settings.libraryFolders.copiesExpected": "Afritun er væntanleg",
 	"settings.libraryFolders.copiesExpectedState": "Afritun, eins og búist var við",
-	"settings.libraryFolders.warnAgain": "Vara við aftur"
+	"settings.libraryFolders.warnAgain": "Vara við aftur",
+	"settings.libraryFolders.whyCopies": "Af hverju?",
+	"settings.libraryFolders.stateInstant": "Strax, ekkert aukapláss",
+	"settings.libraryFolders.changePath": "Breyta slóð",
+	"settings.libraryFolders.changePathOf": "Breyta slóð {path}",
+	"settings.libraryFolders.newPath": "Ný slóð",
+	"settings.libraryFolders.changePathHint": "Færðu skrárnar þangað fyrst. HolyArrs athugar hverja skrá og færir ekkert.",
+	"settings.libraryFolders.checkingFiles": "Athuga skrár…",
+	"settings.libraryFolders.pathChanged": "Slóð breytt"
 }

@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "சோதி",
 	"settings.mediaServers.changeButton": "மாற்று",
 	"settings.mediaServers.removeName": "{name} ஐ நீக்கு",
-	"settings.mediaServers.remove": "நீக்கு"
+	"settings.mediaServers.remove": "நீக்கு",
+	"settings.mediaServers.watchTitle": "பார்வை வரலாறு",
+	"settings.mediaServers.watchRead": "பார்வை வரலாற்றைப் படி",
+	"settings.mediaServers.watchHint": "நூலகத்தை நிர்வகிப்பவர்களுக்காக, நூலகப் புள்ளிவிவரங்களில் யார் எதைப் பார்த்தார்கள் என்பதைக் காட்டும். அணை என்பது படித்ததை நீக்கும்.",
+	"settings.mediaServers.watchConfirmOff": "பார்வை வரலாற்றை அணைக்கவா? இதுவரை படித்த அனைத்தும் நீக்கப்படும்.",
+	"settings.mediaServers.watchTurnedOn": "பார்வை வரலாறு இயக்கப்பட்டது. முதல் வாசிப்பு 30 நிமிடங்களுக்குள் நடக்கும்.",
+	"settings.mediaServers.watchTurnedOff": "பார்வை வரலாறு அணைக்கப்பட்டது",
+	"settings.mediaServers.watchFailed": "பார்வை வரலாற்றை மாற்ற முடியவில்லை"
 }
