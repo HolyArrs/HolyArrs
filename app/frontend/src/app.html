@@ -74,9 +74,20 @@
 						asks.push('/downloads/view?limit=100');
 					}
 					var early = (window.__holyarrsEarly = { at: Date.now(), asks: {} });
-					// lib/core/api.ts: titles and synopses in the saved language (none saved: the browser's).
-					var hd = { Accept: 'application/json' }, sl = saved('holyarrs-lang');
-					if (/^[a-z]{2,3}(-[a-z]{2})?$/.test(sl || '')) hd['X-HolyArrs-Language'] = sl;
+					// lib/core/api.ts: titles and synopses in the saved language; none saved, the one i18n browserLocale shows (English when the app lacks the browser's).
+					var sl = saved('holyarrs-lang'), shown = ' en de es fr it pt-br nl pl ru uk tr ar hi ja ko zh-cn ';
+					if (!/^[a-z]{2,3}(-[a-z]{2})?$/.test(sl || '')) {
+						sl = 'en';
+						var bl = navigator.languages || [];
+						for (var j = 0; j < bl.length; j++) {
+							var l = String(bl[j]).toLowerCase(), b = l.split('-')[0];
+							if (shown.indexOf(' ' + l + ' ') >= 0) { sl = l; break; }
+							if (b === 'pt') { sl = 'pt-br'; break; }
+							if (b === 'zh') { sl = 'zh-cn'; break; }
+							if (shown.indexOf(' ' + b + ' ') >= 0) { sl = b; break; }
+						}
+					}
+					var hd = { Accept: 'application/json', 'X-HolyArrs-Language': sl };
 					for (var i = 0; i < asks.length; i++) {
 						var url = base + '/api/v1' + asks[i];
 						early.asks[url] = fetch(url, { headers: hd, credentials: 'same-origin' });
