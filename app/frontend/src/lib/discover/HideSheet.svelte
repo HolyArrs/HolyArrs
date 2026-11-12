@@ -132,6 +132,10 @@
 		margin: 0;
 		text-wrap: pretty;
 	}
+	/* The form's gap already spaces fields; the global .field + .field margin would double it. */
+	.hf > :global(.field + .field) {
+		margin-top: 0;
+	}
 	h3.label {
 		margin: 0 0 var(--s-1);
 	}

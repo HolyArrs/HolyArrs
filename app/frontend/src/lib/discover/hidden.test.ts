@@ -22,7 +22,12 @@ describe('hidden from browsing', () => {
 	it('pill names the one person, or counts them', () => {
 		expect(hiddenPill([], people)).toBe('Hidden from browsing');
 		expect(hiddenPill([hide({}), hide({ id: 2, genre: 'Horror' })], people)).toBe('Hidden from browsing · Everyone');
-		expect(hiddenPill([hide({}), hide({ id: 2, user_id: 2 })], people)).toBe('Hidden from browsing · 2 people');
+		// A hide for everyone already covers each person.
+		expect(hiddenPill([hide({}), hide({ id: 2, user_id: 2 })], people)).toBe('Hidden from browsing · Everyone');
+		expect(hiddenPill([hide({ user_id: 2 }), hide({ id: 2, user_id: 3 })], people)).toBe('Hidden from browsing · 2 people');
+		// Before the names arrive, two people are still two, never one "Removed person".
+		expect(hiddenPill([hide({ user_id: 2 }), hide({ id: 2, user_id: 3 })], new Map())).toBe('Hidden from browsing · 2 people');
+		expect(hiddenPill([hide({ user_id: 2 }), hide({ id: 2, user_id: 2, genre: 'Horror' })], people)).toBe('Hidden from browsing · Sam');
 	});
 
 	it('asks browsing again after a hide and after Show again', async () => {

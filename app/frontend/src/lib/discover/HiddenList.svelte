@@ -27,7 +27,7 @@
 	{#each hides as h (h.id)}
 		<li>
 			<div class="grow">
-				<div class="name">{hideName(h)}</div>
+				<div class="name" dir="auto">{hideName(h)}</div>
 				<div class="xs muted">{hideLine(h, people)}</div>
 			</div>
 			<Button variant="plain" size="sm" type="button" busy={busy === h.id} disabled={busy !== null} onclick={() => show(h)} aria-label={t('discover.hidden.showAgainName', { name: hideName(h) })}>{t('discover.hidden.showAgain')}</Button>
@@ -41,5 +41,9 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+	/* dir="auto" cuts a Latin name at its end in Arabic; it still lines up with the line under it. */
+	:global([dir='rtl']) .name {
+		text-align: right;
 	}
 </style>

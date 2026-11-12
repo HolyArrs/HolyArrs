@@ -45,7 +45,9 @@ export function hideLine(h: Hide, people: ReadonlyMap<number, string>): string {
 export function hiddenPill(hides: Hide[], people: ReadonlyMap<number, string>): string {
 	const base = t('discover.hidden.pill');
 	if (hides.length === 0) return base;
-	const who = [...new Set(hides.map((h) => hideFor(h, people)))];
-	return `${base} · ${who.length === 1 ? who[0] : t('discover.hidden.peopleCount', { n: who.length })}`;
+	// A hide for everyone covers each person; people count by id so names still loading never merge.
+	if (hides.some((h) => !h.user_id)) return `${base} · ${t('discover.hidden.everyone')}`;
+	const ids = [...new Set(hides.map((h) => h.user_id))];
+	return `${base} · ${ids.length === 1 ? hideFor(hides[0], people) : t('discover.hidden.peopleCount', { n: ids.length })}`;
 }
 

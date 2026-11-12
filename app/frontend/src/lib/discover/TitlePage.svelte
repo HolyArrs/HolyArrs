@@ -96,8 +96,9 @@
 			() => (peopleAsked = false)
 		);
 	}
+	// Fetched with the page so the Hide sheet opens with its For choice already there.
 	$effect(() => {
-		if (details?.hides?.length) loadPeople();
+		if (mayHide) loadPeople();
 	});
 	const hideItem = $derived<MenuItem>({ label: t('discover.hidden.menu'), icon: 'eyeOff', onselect: () => { loadPeople(); hideOpen = true; } });
 	const titleMenu = $derived<MenuItem[]>(mayHide ? [...moreMenu, ...(moreMenu.length ? [{ kind: 'separator' as const }] : []), hideItem] : moreMenu);
