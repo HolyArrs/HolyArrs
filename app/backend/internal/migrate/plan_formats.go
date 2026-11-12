@@ -167,6 +167,22 @@ func qualityNotes(p Profile) []string {
 	return notes
 }
 
+// ownRulesName gives imported Pick rules a name no other imported ones
+// have: two apps' profiles of one name stay two Pick rules, so each app's
+// titles name their own. leftOut takes each format it left out, and why.
+func (b *builder) ownRulesName(rp *RulesPlan, leftOut map[string]string) {
+	for _, sk := range rp.Skipped {
+		leftOut[sk.Name] = sk.Reason
+	}
+	for n, base := 2, rp.Name; b.imported[rp.Name]; n++ {
+		rp.Name = clip(base, maxName-20) + " (" + rp.App + ")"
+		if n > 2 {
+			rp.Name = fmt.Sprintf("%s (%s %d)", clip(base, maxName-20), rp.App, n-1)
+		}
+		rp.Preset = rp.Name
+	}
+}
+
 func abs(n int) int {
 	if n < 0 {
 		return -n

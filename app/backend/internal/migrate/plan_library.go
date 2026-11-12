@@ -84,18 +84,7 @@ func (b *builder) profiles(s *Snapshot) {
 		preset, why := matchPreset(s.Kind, p)
 		key := fmt.Sprintf("pick_rules:%d:%s:%d", b.snapID, s.Kind, p.ID)
 		if rp, ok := b.importedRules(s, p, preset); ok {
-			// Two apps' profiles of one name stay two Pick rules, so each
-			// app's titles name their own.
-			for n, base := 2, rp.Name; b.imported[rp.Name]; n++ {
-				rp.Name = clip(base, maxName-20) + " (" + rp.App + ")"
-				if n > 2 {
-					rp.Name = fmt.Sprintf("%s (%s %d)", clip(base, maxName-20), rp.App, n-1)
-				}
-				rp.Preset = rp.Name
-			}
-			for _, sk := range rp.Skipped {
-				leftOut[sk.Name] = sk.Reason
-			}
+			b.ownRulesName(rp, leftOut)
 			b.presets[b.presetKey(s.Kind, p.ID)] = rp.Name
 			b.imported[rp.Name] = true
 			b.snapRules = append(b.snapRules, rp)
