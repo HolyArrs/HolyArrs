@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Automatica",
 	"accounts.language.hint": "Automatica segue il tuo browser. Salvata nel tuo account.",
 	"accounts.language.saveFailed": "Non sono riuscito a salvare la lingua",
+	"accounts.language.count.one": "1 lingua",
+	"accounts.language.count.other": "{n} lingue",
 	"accounts.account.watchEveryone": "Il proprietario l'ha attivato per tutti. Disattiva entrambi per fermarlo."
 }

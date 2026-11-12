@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Аутоматски",
 	"accounts.language.hint": "Аутоматски прати твој прегледач. Чува се на твом налогу.",
 	"accounts.language.saveFailed": "Језик није сачуван",
+	"accounts.language.count.one": "1 језик",
+	"accounts.language.count.other": "Језика: {n}",
 	"accounts.account.watchEveryone": "Власник је ово укључио за све. Искључи оба да зауставиш."
 }

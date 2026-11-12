@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Automàtic",
 	"accounts.language.hint": "Automàtic segueix el teu navegador. Es desa al teu compte.",
 	"accounts.language.saveFailed": "No s'ha pogut desar l'idioma",
+	"accounts.language.count.one": "1 idioma",
+	"accounts.language.count.other": "{n} idiomes",
 	"accounts.account.watchEveryone": "El propietari ho ha activat per a tothom. Desactiva-ho tot per aturar-ho."
 }

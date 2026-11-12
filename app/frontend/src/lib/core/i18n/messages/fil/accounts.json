@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Awtomatiko",
 	"accounts.language.hint": "Sinusunod ng Awtomatiko ang browser mo. Naka-save sa account mo.",
 	"accounts.language.saveFailed": "Hindi na-save ang wika",
+	"accounts.language.count.one": "1 wika",
+	"accounts.language.count.other": "{n} wika",
 	"accounts.account.watchEveryone": "In-on ito ng owner para sa lahat. I-off ang dalawa para ihinto ito."
 }

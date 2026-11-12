@@ -365,8 +365,8 @@
 
 <SettingsCard id="preferences-me" title={t('accounts.account.preferences')} icon="appearance">
 	<div class="srow" id="language-row-me">
-		<div class="txt"><label class="label" for="language-me">{t('accounts.language.label')}</label><span class="hint">{t('accounts.language.hint')}</span></div>
-		<div class="ctl"><LanguagePicker id="language-me" /></div>
+		<div class="txt"><span class="label" id="language-me-label">{t('accounts.language.label')}</span><span class="hint">{t('accounts.language.hint')}</span></div>
+		<div class="ctl"><LanguagePicker id="language-me" align="end" /></div>
 	</div>
 	<div class="srow">
 		<div class="txt"><span class="label">{t('accounts.account.trailers')}</span>{#if minimalLook()}<span class="hint">{t('accounts.account.trailersMinimal')}</span>{:else}<span class="hint" title={t('accounts.account.trailersHint')}>{t('accounts.account.trailersHint')}</span>{/if}</div>

@@ -371,5 +371,7 @@
 	"accounts.language.auto": "อัตโนมัติ",
 	"accounts.language.hint": "อัตโนมัติจะตามเบราว์เซอร์ของคุณ บันทึกไว้กับบัญชีของคุณ",
 	"accounts.language.saveFailed": "บันทึกภาษาไม่สำเร็จ",
+	"accounts.language.count.one": "1 ภาษา",
+	"accounts.language.count.other": "{n} ภาษา",
 	"accounts.account.watchEveryone": "เจ้าของเปิดสิ่งนี้ให้ทุกคน ปิดทั้งสองอย่างเพื่อหยุด"
 }

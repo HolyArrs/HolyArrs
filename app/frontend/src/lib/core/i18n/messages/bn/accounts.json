@@ -371,5 +371,7 @@
 	"accounts.language.auto": "স্বয়ংক্রিয়",
 	"accounts.language.hint": "স্বয়ংক্রিয় মোডে আপনার ব্রাউজারের ভাষা অনুসরণ করা হয়। আপনার অ্যাকাউন্টে সেভ হয়।",
 	"accounts.language.saveFailed": "ভাষা সেভ করা যায়নি",
+	"accounts.language.count.one": "১টি ভাষা",
+	"accounts.language.count.other": "{n}টি ভাষা",
 	"accounts.account.watchEveryone": "ওনার এটি সবার জন্য চালু করেছেন। বন্ধ করতে দুটোই বন্ধ করুন।"
 }

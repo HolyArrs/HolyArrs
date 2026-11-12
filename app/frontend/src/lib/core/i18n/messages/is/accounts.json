@@ -371,5 +371,7 @@
   "accounts.language.auto": "Sjálfvirkt",
   "accounts.language.hint": "Sjálfvirkt fylgir vafranum þínum. Vistað á aðgangnum þínum.",
   "accounts.language.saveFailed": "Ekki tókst að vista tungumálið",
+	"accounts.language.count.one": "1 tungumál",
+	"accounts.language.count.other": "{n} tungumál",
   "accounts.account.watchEveryone": "Eigandinn kveikti á þessu fyrir alla. Slökktu á báðu til að stöðva það."
 }

@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Automatisch",
 	"accounts.language.hint": "Automatisch folgt deinem Browser. Wird in deinem Konto gespeichert.",
 	"accounts.language.saveFailed": "Die Sprache konnte nicht gespeichert werden",
+	"accounts.language.count.one": "1 Sprache",
+	"accounts.language.count.other": "{n} Sprachen",
 	"accounts.account.watchEveryone": "Der Besitzer hat das für alle aktiviert. Schalte beides aus, um es zu stoppen."
 }

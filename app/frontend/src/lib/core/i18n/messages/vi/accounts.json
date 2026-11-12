@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Tự động",
 	"accounts.language.hint": "Tự động theo trình duyệt của bạn. Được lưu trong tài khoản của bạn.",
 	"accounts.language.saveFailed": "Không thể lưu ngôn ngữ",
+	"accounts.language.count.one": "1 ngôn ngữ",
+	"accounts.language.count.other": "{n} ngôn ngữ",
 	"accounts.account.watchEveryone": "Chủ sở hữu đã bật việc này cho mọi người. Hãy tắt cả hai để dừng."
 }

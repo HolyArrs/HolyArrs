@@ -371,5 +371,7 @@
 	"accounts.language.auto": "自動",
 	"accounts.language.hint": "「自動」會跟隨你的瀏覽器。儲存在你的帳號中。",
 	"accounts.language.saveFailed": "無法儲存語言",
+	"accounts.language.count.one": "1 種語言",
+	"accounts.language.count.other": "{n} 種語言",
 	"accounts.account.watchEveryone": "擁有者已為所有人開啟此功能。關閉兩項即可停止。"
 }

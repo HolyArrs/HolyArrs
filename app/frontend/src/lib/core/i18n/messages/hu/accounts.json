@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Automatikus",
 	"accounts.language.hint": "Az Automatikus a böngészőjét követi. A fiókján mentve.",
 	"accounts.language.saveFailed": "A nyelvet nem sikerült menteni",
+	"accounts.language.count.one": "1 nyelv",
+	"accounts.language.count.other": "{n} nyelv",
 	"accounts.account.watchEveryone": "A tulajdonos mindenkinek bekapcsolta ezt. A leállításhoz kapcsolja ki mindkettőt."
 }
