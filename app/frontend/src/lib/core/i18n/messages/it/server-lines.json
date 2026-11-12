@@ -1294,5 +1294,6 @@
 	"server.downloads.the-download-has-no-single-video": "il download non ha un solo video da importare; usa Importa i file a mano",
 	"server.downloads.this-movie-already-has-a-file": "questo film ha già un file; invia replace per mettere questo al suo posto",
 	"server.importer.replaced-by-hand": "{path} sostituito a mano",
-	"server.health.downloader-for": "Downloader per"
+	"server.health.downloader-for": "Downloader per",
+	"server.health.downloader-added-twice": "Downloader aggiunto due volte"
 }

@@ -1294,5 +1294,6 @@
 	"server.downloads.the-download-has-no-single-video": "பதிவிறக்கத்தில் இறக்குமதி செய்ய ஒரே ஒரு வீடியோ இல்லை; கோப்புகளைக் கைமுறையாக இறக்குமதி செய் பயன்படுத்துங்கள்",
 	"server.downloads.this-movie-already-has-a-file": "இந்தத் திரைப்படத்துக்கு ஏற்கெனவே கோப்பு உள்ளது; இதை அதன் இடத்தில் வைக்க replace அனுப்புங்கள்",
 	"server.importer.replaced-by-hand": "{path} கைமுறையாக மாற்றப்பட்டது",
-	"server.health.downloader-for": "பதிவிறக்கி:"
+	"server.health.downloader-for": "பதிவிறக்கி:",
+	"server.health.downloader-added-twice": "இருமுறை சேர்க்கப்பட்ட பதிவிறக்கி"
 }

@@ -1,9 +1,11 @@
 package importer
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -105,6 +107,52 @@ func labels(eps []Episode) string {
 	return strings.Join(out, ", ")
 }
 
+// grabbed gives the episodes this download was grabbed for when the file
+// carries the same episode numbers as the grabbed release: search matched
+// that release to them, so the file holds them too, whatever numbers its
+// name uses. It gives nothing when the counts differ.
+func (t ShowTarget) grabbed(p releasename.Result) []Episode {
+	if t.ReleaseName == "" || p.Show == nil {
+		return nil
+	}
+	rel := releasename.Parse(t.ReleaseName, releasename.Hints{Show: true})
+	if rel.Show == nil || rel.Kind.Value != p.Kind.Value || mediafiles.IsPack(rel) || !slices.Equal(rel.Show.Seasons, p.Show.Seasons) ||
+		!slices.Equal(rel.Show.Episodes, p.Show.Episodes) || !slices.Equal(rel.Show.Absolute, p.Show.Absolute) || rel.Show.AirDate != p.Show.AirDate {
+		return nil
+	}
+	var want []Episode
+	for _, e := range t.Episodes {
+		if e.Wanted {
+			want = append(want, e)
+		}
+	}
+	if len(want) == 0 || len(want) != max(len(p.Show.Episodes), len(p.Show.Absolute), 1) {
+		return nil
+	}
+	return want
+}
+
+// releaseLabel names the episode numbers a release name gives: S02E06,
+// S02E06E07 or a running number.
+func releaseLabel(p releasename.Result) string {
+	sh := p.Show
+	switch {
+	case len(sh.Seasons) > 0 && len(sh.Episodes) > 0:
+		out := fmt.Sprintf("S%02d", sh.Seasons[0])
+		for _, n := range sh.Episodes {
+			out += fmt.Sprintf("E%02d", n)
+		}
+		return out
+	case len(sh.Absolute) > 0:
+		parts := make([]string, len(sh.Absolute))
+		for i, n := range sh.Absolute {
+			parts[i] = strconv.Itoa(n)
+		}
+		return strings.Join(parts, ", ")
+	}
+	return sh.AirDate
+}
+
 // PlanEpisodes turns candidate files into copy steps for a show.
 func PlanEpisodes(cands []Candidate, t ShowTarget) []mediafiles.PlanStep {
 	t.Show.Kind = "show"
@@ -149,10 +197,6 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []mediafiles.PlanStep {
 				break
 			}
 			found, why := mediafiles.MatchEpisodes(p, t.Order, refs)
-			if len(found) == 0 {
-				s.Method, s.Why = "skip", []string{why + "; left alone"}
-				break
-			}
 			var eps, want []Episode
 			for _, f := range found {
 				e := byItem[f.ItemID]
@@ -160,6 +204,19 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []mediafiles.PlanStep {
 				if e.Wanted {
 					want = append(want, e)
 				}
+			}
+			grabbedAs := ""
+			if len(want) == 0 {
+				if g := t.grabbed(p); len(g) > 0 {
+					// Search took this release for these episodes (scene or
+					// running numbers); the import keeps that choice.
+					grabbedAs = releaseLabel(p)
+					eps, want = g, g
+				}
+			}
+			if len(found) == 0 && grabbedAs == "" {
+				s.Method, s.Why = "skip", []string{why + "; left alone"}
+				break
 			}
 			if len(want) == 0 {
 				s.Method, s.Why = "skip", []string{labels(eps) + " is not filled by this download; left alone"}
@@ -176,6 +233,9 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []mediafiles.PlanStep {
 			s.TargetPath = filepath.Join(t.LibraryPath, filepath.FromSlash(t.episodePath(p, c.Path, eps)))
 			s.Confidence = confidence(m.Conf)
 			s.Why = []string{m.Detail, "holds " + labels(eps)}
+			if grabbedAs != "" {
+				s.Why[1] += " (grabbed as " + grabbedAs + ")"
+			}
 			if s.Confidence < MinConfidence {
 				s.Method = "refuse"
 				s.Why = append(s.Why, "too unsure to import without you")

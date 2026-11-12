@@ -1294,5 +1294,6 @@
 	"server.downloads.the-download-has-no-single-video": "בהורדה אין סרטון יחיד לייבוא; השתמש ב„ייבוא קבצים ידנית”",
 	"server.downloads.this-movie-already-has-a-file": "לסרט הזה כבר יש קובץ; שלח replace כדי לשים את זה במקומו",
 	"server.importer.replaced-by-hand": "{path} הוחלף ידנית",
-	"server.health.downloader-for": "מוריד עבור"
+	"server.health.downloader-for": "מוריד עבור",
+	"server.health.downloader-added-twice": "מוריד שנוסף פעמיים"
 }

@@ -270,5 +270,8 @@
 	"health.check.usenetDl": "Gestor de baixades Usenet",
 	"health.check.torrentDl": "Gestor de baixades de torrents",
 	"health.check.noUsenetDl": "Les teves fonts troben baixades Usenet, però no hi ha cap gestor de baixades Usenet configurat, així que no se'n pot enviar cap. Afegeix-ne un a Configuració › Gestors de baixades.",
-	"health.check.noTorrentDl": "Les teves fonts troben baixades de torrents, però no hi ha cap gestor de baixades de torrents configurat, així que no se'n pot enviar cap. Afegeix-ne un a Configuració › Gestors de baixades."
+	"health.check.noTorrentDl": "Les teves fonts troben baixades de torrents, però no hi ha cap gestor de baixades de torrents configurat, així que no se'n pot enviar cap. Afegeix-ne un a Configuració › Gestors de baixades.",
+	"health.check.sameDownloader": "Afegit dues vegades:",
+	"health.check.sameDownloaderWhy": "{app} arriba a la mateixa aplicació de baixades que un altre gestor, així que les baixades poden sortir dues vegades. Treu-ne un a Configuració › Gestors de baixades.",
+	"health.kind.sameDownloader": "Gestor de baixades afegit dues vegades"
 }

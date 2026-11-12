@@ -272,5 +272,7 @@
 	"home.homeCouldNotRead3": "Главной сейчас не удалось прочитать загрузки.",
 	"home.off": "Выкл.",
 	"home.sourcesOff": "Выключено в разделе «Части»",
-	"home.noneForSources": "нет для того, что находят ваши источники"
+	"home.noneForSources": "нет для того, что находят ваши источники",
+	"home.addedTwice": "добавлен дважды",
+	"home.addedTwiceMany": "добавлены дважды"
 }

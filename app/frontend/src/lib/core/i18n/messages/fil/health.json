@@ -270,5 +270,8 @@
 	"health.check.usenetDl": "Usenet Downloader",
 	"health.check.torrentDl": "Torrent Downloader",
 	"health.check.noUsenetDl": "Nakakahanap ang mga Source mo ng Usenet download, pero walang naka-set up na Usenet Downloader, kaya walang maipapadala. Magdagdag sa Mga Setting › Mga Downloader.",
-	"health.check.noTorrentDl": "Nakakahanap ang mga Source mo ng torrent download, pero walang naka-set up na torrent Downloader, kaya walang maipapadala. Magdagdag sa Mga Setting › Mga Downloader."
+	"health.check.noTorrentDl": "Nakakahanap ang mga Source mo ng torrent download, pero walang naka-set up na torrent Downloader, kaya walang maipapadala. Magdagdag sa Mga Setting › Mga Downloader.",
+	"health.check.sameDownloader": "Dalawang beses idinagdag:",
+	"health.check.sameDownloaderWhy": "Naaabot ng {app} ang parehong download app ng isa pang Downloader, kaya puwedeng dalawang beses lumabas ang mga download nito. Alisin ang isa sa Settings › Downloaders.",
+	"health.kind.sameDownloader": "Downloader na dalawang beses idinagdag"
 }

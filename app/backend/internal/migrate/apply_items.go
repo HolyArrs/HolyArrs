@@ -86,7 +86,7 @@ func (r *run) downloader(it Item) (string, string) {
 	if u := unseenMaps(maps); u != "" {
 		unseen = "; not visible here yet (check your mounts): " + u
 	}
-	if r.id("SELECT id FROM downloaders WHERE url = ? AND removed = 0", d.URL) != 0 {
+	if have := r.sameDownloader(d); have != "" {
 		if len(maps) > 0 {
 			// Nothing is changed on a Downloader that is already here.
 			return ResAlready, "a Downloader at this address is here; add these folder maps to it yourself if it needs them: " + mapList(maps) + unseen
@@ -122,6 +122,22 @@ func (r *run) downloader(it Item) (string, string) {
 		return r.markTx(tx, it.Key, "downloader", id, "", "")
 	})
 	return result(err, ResCreated, what)
+}
+
+// sameDownloader names a Downloader here that reaches the same app as d
+// (same kind, host and port; a path such as /sabnzbd does not count), or "".
+func (r *run) sameDownloader(d *DownloaderPlan) string {
+	have, err := database.Select[domain.Downloader](r.ctx, r.m.Store.Read(), "downloaders", "removed = 0 AND adapter = ? ORDER BY id", d.Adapter)
+	if err != nil {
+		return ""
+	}
+	want := domain.Downloader{Adapter: d.Adapter, URL: d.URL}
+	for _, h := range have {
+		if domain.SameClient(h, want) {
+			return h.Name
+		}
+	}
+	return ""
 }
 
 // setNaming puts one moved naming value on s.

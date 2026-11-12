@@ -270,5 +270,8 @@
 	"health.check.usenetDl": "Usenet-nedlaster",
 	"health.check.torrentDl": "Torrent-nedlaster",
 	"health.check.noUsenetDl": "Kildene dine finner Usenet-nedlastinger, men ingen Usenet-nedlaster er satt opp, så ingen kan sendes. Legg til en under Innstillinger › Nedlastere.",
-	"health.check.noTorrentDl": "Kildene dine finner torrent-nedlastinger, men ingen torrent-nedlaster er satt opp, så ingen kan sendes. Legg til en under Innstillinger › Nedlastere."
+	"health.check.noTorrentDl": "Kildene dine finner torrent-nedlastinger, men ingen torrent-nedlaster er satt opp, så ingen kan sendes. Legg til en under Innstillinger › Nedlastere.",
+	"health.check.sameDownloader": "Lagt til to ganger:",
+	"health.check.sameDownloaderWhy": "{app} når samme nedlastingsapp som en annen nedlaster, så nedlastingene kan vises to ganger. Fjern den ene under Innstillinger › Nedlastere.",
+	"health.kind.sameDownloader": "Nedlaster lagt til to ganger"
 }

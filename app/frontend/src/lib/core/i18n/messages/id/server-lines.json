@@ -1294,5 +1294,6 @@
 	"server.downloads.the-download-has-no-single-video": "unduhan tidak punya satu video untuk diimpor; gunakan Impor file secara manual",
 	"server.downloads.this-movie-already-has-a-file": "film ini sudah punya file; kirim replace untuk menaruh yang ini di tempatnya",
 	"server.importer.replaced-by-hand": "{path} diganti secara manual",
-	"server.health.downloader-for": "Pengunduh untuk"
+	"server.health.downloader-for": "Pengunduh untuk",
+	"server.health.downloader-added-twice": "Pengunduh ditambahkan dua kali"
 }

@@ -268,5 +268,8 @@
 	"health.check.usenetDl": "Downloader Usenet",
 	"health.check.torrentDl": "Downloader torrentów",
 	"health.check.noUsenetDl": "Twoje źródła znajdują pobrania z Usenetu, ale nie skonfigurowano downloadera Usenet, więc nic nie może zostać wysłane. Dodaj go w Ustawienia › Downloadery.",
-	"health.check.noTorrentDl": "Twoje źródła znajdują torrenty, ale nie skonfigurowano downloadera torrentów, więc nic nie może zostać wysłane. Dodaj go w Ustawienia › Downloadery."
+	"health.check.noTorrentDl": "Twoje źródła znajdują torrenty, ale nie skonfigurowano downloadera torrentów, więc nic nie może zostać wysłane. Dodaj go w Ustawienia › Downloadery.",
+	"health.check.sameDownloader": "Dodany dwa razy:",
+	"health.check.sameDownloaderWhy": "{app} łączy się z tą samą aplikacją do pobierania co inny Downloader, więc jego pobrania mogą pojawiać się podwójnie. Usuń jeden w Ustawienia › Downloadery.",
+	"health.kind.sameDownloader": "Downloader dodany dwa razy"
 }

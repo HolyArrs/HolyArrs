@@ -272,5 +272,7 @@
 	"home.noSaveFolderMany": "ei tallennuskansiota",
 	"home.off": "Pois",
 	"home.sourcesOff": "Pois päältä Osissa",
-	"home.noneForSources": "puuttuu siihen, mitä lähteesi löytävät"
+	"home.noneForSources": "puuttuu siihen, mitä lähteesi löytävät",
+	"home.addedTwice": "on lisätty kahdesti",
+	"home.addedTwiceMany": "on lisätty kahdesti"
 }

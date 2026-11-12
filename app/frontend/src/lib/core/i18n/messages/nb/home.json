@@ -272,5 +272,7 @@
 	"home.noSaveFolderMany": "har ingen lagringsmappe",
 	"home.off": "Av",
 	"home.sourcesOff": "Slått av i Deler",
-	"home.noneForSources": "mangler for det kildene dine finner"
+	"home.noneForSources": "mangler for det kildene dine finner",
+	"home.addedTwice": "er lagt til to ganger",
+	"home.addedTwiceMany": "er lagt til to ganger"
 }

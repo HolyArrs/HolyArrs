@@ -270,5 +270,8 @@
 	"health.check.usenetDl": "Pengunduh Usenet",
 	"health.check.torrentDl": "Pengunduh torrent",
 	"health.check.noUsenetDl": "Sumbermu menemukan unduhan Usenet, tapi belum ada pengunduh Usenet yang disiapkan, jadi tidak ada yang bisa dikirim. Tambahkan di Pengaturan › Pengunduh.",
-	"health.check.noTorrentDl": "Sumbermu menemukan unduhan torrent, tapi belum ada pengunduh torrent yang disiapkan, jadi tidak ada yang bisa dikirim. Tambahkan di Pengaturan › Pengunduh."
+	"health.check.noTorrentDl": "Sumbermu menemukan unduhan torrent, tapi belum ada pengunduh torrent yang disiapkan, jadi tidak ada yang bisa dikirim. Tambahkan di Pengaturan › Pengunduh.",
+	"health.check.sameDownloader": "Ditambahkan dua kali:",
+	"health.check.sameDownloaderWhy": "{app} terhubung ke aplikasi unduhan yang sama dengan pengunduh lain, jadi unduhannya bisa muncul dua kali. Hapus salah satunya di Pengaturan › Pengunduh.",
+	"health.kind.sameDownloader": "Pengunduh ditambahkan dua kali"
 }

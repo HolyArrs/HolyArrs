@@ -272,5 +272,7 @@
 	"home.homeCouldNotRead3": "تعذّر على الرئيسية قراءة التنزيلات الآن.",
 	"home.off": "متوقف",
 	"home.sourcesOff": "متوقف في الأجزاء",
-	"home.noneForSources": "مفقود لما تجده مصادرك"
+	"home.noneForSources": "مفقود لما تجده مصادرك",
+	"home.addedTwice": "مضاف مرتين",
+	"home.addedTwiceMany": "مضافة مرتين"
 }

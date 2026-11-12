@@ -1294,5 +1294,6 @@
 	"server.downloads.the-download-has-no-single-video": "การดาวน์โหลดไม่มีวิดีโอเดียวให้นำเข้า ใช้ นำเข้าไฟล์ด้วยตัวเอง",
 	"server.downloads.this-movie-already-has-a-file": "ภาพยนตร์นี้มีไฟล์อยู่แล้ว ส่ง replace เพื่อใส่ไฟล์นี้แทน",
 	"server.importer.replaced-by-hand": "แทนที่ {path} ด้วยตัวเองแล้ว",
-	"server.health.downloader-for": "ตัวดาวน์โหลดสำหรับ"
+	"server.health.downloader-for": "ตัวดาวน์โหลดสำหรับ",
+	"server.health.downloader-added-twice": "ตัวดาวน์โหลดที่เพิ่มซ้ำ"
 }

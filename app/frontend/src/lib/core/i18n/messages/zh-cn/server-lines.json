@@ -1294,5 +1294,6 @@
 	"server.downloads.the-download-has-no-single-video": "下载中没有唯一一个可导入的视频；请使用“手动导入文件”",
 	"server.downloads.this-movie-already-has-a-file": "这部电影已经有文件；发送 replace 可用这个文件替换它",
 	"server.importer.replaced-by-hand": "已手动替换 {path}",
-	"server.health.downloader-for": "下载器："
+	"server.health.downloader-for": "下载器：",
+	"server.health.downloader-added-twice": "下载器重复添加"
 }

@@ -272,5 +272,7 @@
 	"home.noSaveFolderMany": "neturi išsaugojimo aplanko",
 	"home.off": "Išjungta",
 	"home.sourcesOff": "Išjungta Dalyse",
-	"home.noneForSources": "trūksta tam, ką randa jūsų šaltiniai"
+	"home.noneForSources": "trūksta tam, ką randa jūsų šaltiniai",
+	"home.addedTwice": "pridėtas du kartus",
+	"home.addedTwiceMany": "pridėti du kartus"
 }

@@ -1294,5 +1294,6 @@
 	"server.downloads.the-download-has-no-single-video": "sťahovanie nemá jediné video na import; použite Importovať súbory ručne",
 	"server.downloads.this-movie-already-has-a-file": "tento film už má súbor; pošlite replace, aby tento zaujal jeho miesto",
 	"server.importer.replaced-by-hand": "{path} nahradené ručne",
-	"server.health.downloader-for": "Sťahovač pre"
+	"server.health.downloader-for": "Sťahovač pre",
+	"server.health.downloader-added-twice": "Sťahovač pridaný dvakrát"
 }

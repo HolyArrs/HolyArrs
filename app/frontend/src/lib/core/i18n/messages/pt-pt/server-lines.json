@@ -1294,5 +1294,6 @@
 	"server.downloads.the-download-has-no-single-video": "a transferência não tem um único vídeo para importar; use Importar ficheiros à mão",
 	"server.downloads.this-movie-already-has-a-file": "este filme já tem um ficheiro; envie replace para pôr este no lugar dele",
 	"server.importer.replaced-by-hand": "{path} substituído à mão",
-	"server.health.downloader-for": "Gestor de downloads para"
+	"server.health.downloader-for": "Gestor de downloads para",
+	"server.health.downloader-added-twice": "Gestor de downloads adicionado duas vezes"
 }

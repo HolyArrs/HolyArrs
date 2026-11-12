@@ -268,5 +268,8 @@
 	"health.check.usenetDl": "Usenet ダウンローダー",
 	"health.check.torrentDl": "トレント ダウンローダー",
 	"health.check.noUsenetDl": "ソースは Usenet のダウンロードを見つけますが、Usenet ダウンローダーが設定されていないため、送信できません。設定 › ダウンローダー で追加してください。",
-	"health.check.noTorrentDl": "ソースはトレントのダウンロードを見つけますが、トレント ダウンローダーが設定されていないため、送信できません。設定 › ダウンローダー で追加してください。"
+	"health.check.noTorrentDl": "ソースはトレントのダウンロードを見つけますが、トレント ダウンローダーが設定されていないため、送信できません。設定 › ダウンローダー で追加してください。",
+	"health.check.sameDownloader": "二重に追加:",
+	"health.check.sameDownloaderWhy": "{app} は別のダウンローダーと同じダウンロードアプリにつながっているため、ダウンロードが二重に表示されることがあります。設定 › ダウンローダーでどちらかを削除してください。",
+	"health.kind.sameDownloader": "二重に追加されたダウンローダー"
 }

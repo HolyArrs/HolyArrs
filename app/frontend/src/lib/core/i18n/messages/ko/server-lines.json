@@ -1294,5 +1294,6 @@
 	"server.downloads.the-download-has-no-single-video": "다운로드에 가져올 동영상이 하나만 있지 않습니다. '파일 직접 가져오기'를 사용하세요",
 	"server.downloads.this-movie-already-has-a-file": "이 영화에는 이미 파일이 있습니다. 이 파일로 바꾸려면 replace를 보내세요",
 	"server.importer.replaced-by-hand": "{path}을(를) 직접 바꿈",
-	"server.health.downloader-for": "다운로더:"
+	"server.health.downloader-for": "다운로더:",
+	"server.health.downloader-added-twice": "두 번 추가된 다운로더"
 }

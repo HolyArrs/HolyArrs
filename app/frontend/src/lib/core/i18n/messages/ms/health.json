@@ -270,5 +270,8 @@
 	"health.check.usenetDl": "Pemuat turun Usenet",
 	"health.check.torrentDl": "Pemuat turun torrent",
 	"health.check.noUsenetDl": "Sumber anda menemui muat turun Usenet, tetapi tiada pemuat turun Usenet disediakan, jadi tiada yang boleh dihantar. Tambah satu dalam Tetapan › Pemuat turun.",
-	"health.check.noTorrentDl": "Sumber anda menemui muat turun torrent, tetapi tiada pemuat turun torrent disediakan, jadi tiada yang boleh dihantar. Tambah satu dalam Tetapan › Pemuat turun."
+	"health.check.noTorrentDl": "Sumber anda menemui muat turun torrent, tetapi tiada pemuat turun torrent disediakan, jadi tiada yang boleh dihantar. Tambah satu dalam Tetapan › Pemuat turun.",
+	"health.check.sameDownloader": "Ditambah dua kali:",
+	"health.check.sameDownloaderWhy": "{app} sampai ke aplikasi muat turun yang sama dengan pemuat turun lain, jadi muat turunnya boleh muncul dua kali. Buang satu dalam Tetapan › Pemuat turun.",
+	"health.kind.sameDownloader": "Pemuat turun ditambah dua kali"
 }

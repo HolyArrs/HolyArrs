@@ -81,7 +81,8 @@ const checkFix: Record<string, string> = {
 	waiting_downloads: '/downloads?show=waiting.paused',
 	clear_waiting: '/downloads',
 	save_folder: '/settings/downloaders',
-	no_downloader: '/settings/downloaders'
+	no_downloader: '/settings/downloaders',
+	same_downloader: '/settings/downloaders'
 };
 const checkName: Record<string, string> = {
 	get library_folder() { return t('health.check.folder'); },
@@ -92,7 +93,8 @@ const checkName: Record<string, string> = {
 	get config_folder() { return t('health.check.configFolder'); },
 	get waiting_downloads() { return t('health.check.waiting'); },
 	get clear_waiting() { return t('health.check.clearWaiting'); },
-	get save_folder() { return t('health.check.saveFolder'); }
+	get save_folder() { return t('health.check.saveFolder'); },
+	get same_downloader() { return t('health.check.sameDownloader'); }
 };
 
 // The server's own steps need a shell, so say what a container screen can do.
@@ -191,12 +193,12 @@ export function buildRows(i: StatusInput): StatusRow[] {
 		if (typeof checkFix[c.kind] !== 'string') continue;
 		const tone: Tone = c.state === 'ok' ? 'ok' : c.state === 'warning' ? 'wait' : 'fail';
 		rows.push({
-			group: c.kind === 'update' ? 'app' : c.kind === 'save_folder' || c.kind === 'no_downloader' ? 'downloaders' : 'library',
+			group: c.kind === 'update' ? 'app' : c.kind === 'save_folder' || c.kind === 'no_downloader' || c.kind === 'same_downloader' ? 'downloaders' : 'library',
 			key: c.key,
 			name: checkTitle(c),
 			tone,
 			word: tone === 'ok' ? t('health.word.working') : tone === 'wait' ? t('health.state.warning') : t('health.word.broken'),
-			reason: c.kind === 'config_folder' && c.state !== 'ok' ? t('health.check.configSteps') : c.kind === 'save_folder' && c.state !== 'ok' ? t('health.check.saveFolderWhy', { app: c.subject }) : c.kind === 'no_downloader' && c.state !== 'ok' ? t(c.subject === 'usenet' ? 'health.check.noUsenetDl' : 'health.check.noTorrentDl') : c.message,
+			reason: c.kind === 'config_folder' && c.state !== 'ok' ? t('health.check.configSteps') : c.kind === 'save_folder' && c.state !== 'ok' ? t('health.check.saveFolderWhy', { app: c.subject }) : c.kind === 'no_downloader' && c.state !== 'ok' ? t(c.subject === 'usenet' ? 'health.check.noUsenetDl' : 'health.check.noTorrentDl') : c.kind === 'same_downloader' && c.state !== 'ok' ? t('health.check.sameDownloaderWhy', { app: c.subject }) : c.message,
 			at: c.checked_at || c.since,
 			fix: checkFix[c.kind] || undefined,
 			check: { kind: 'checks' }

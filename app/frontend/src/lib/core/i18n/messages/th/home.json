@@ -272,5 +272,7 @@
 	"home.noSaveFolderMany": "ยังไม่ได้ตั้งโฟลเดอร์บันทึก",
 	"home.off": "ปิด",
 	"home.sourcesOff": "ปิดอยู่ในส่วนเสริม",
-	"home.noneForSources": "ไม่มีสำหรับสิ่งที่แหล่งที่มาของคุณพบ"
+	"home.noneForSources": "ไม่มีสำหรับสิ่งที่แหล่งที่มาของคุณพบ",
+	"home.addedTwice": "ถูกเพิ่มซ้ำ",
+	"home.addedTwiceMany": "ถูกเพิ่มซ้ำ"
 }

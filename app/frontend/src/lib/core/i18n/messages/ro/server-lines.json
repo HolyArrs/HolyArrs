@@ -1294,5 +1294,6 @@
 	"server.downloads.the-download-has-no-single-video": "descărcarea nu are un singur video de importat; folosește Importă fișiere manual",
 	"server.downloads.this-movie-already-has-a-file": "acest film are deja un fișier; trimite replace ca să pui acesta în locul lui",
 	"server.importer.replaced-by-hand": "{path} înlocuit manual",
-	"server.health.downloader-for": "Program de descărcare pentru"
+	"server.health.downloader-for": "Program de descărcare pentru",
+	"server.health.downloader-added-twice": "Program de descărcare adăugat de două ori"
 }

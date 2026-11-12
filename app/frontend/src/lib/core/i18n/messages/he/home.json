@@ -272,5 +272,7 @@
 	"home.noSaveFolderMany": "אין תיקיית שמירה",
 	"home.off": "כבוי",
 	"home.sourcesOff": "כבוי ב\"רכיבים\"",
-	"home.noneForSources": "חסר עבור מה שהמקורות שלך מוצאים"
+	"home.noneForSources": "חסר עבור מה שהמקורות שלך מוצאים",
+	"home.addedTwice": "נוסף פעמיים",
+	"home.addedTwiceMany": "נוספו פעמיים"
 }

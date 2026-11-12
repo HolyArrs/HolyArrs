@@ -1294,5 +1294,6 @@
 	"server.downloads.the-download-has-no-single-video": "indirmede içe aktarılacak tek bir video yok; Dosyaları elle içe aktar kullan",
 	"server.downloads.this-movie-already-has-a-file": "bu filmin zaten bir dosyası var; bunu yerine koymak için replace gönder",
 	"server.importer.replaced-by-hand": "{path} elle değiştirildi",
-	"server.health.downloader-for": "İndirici:"
+	"server.health.downloader-for": "İndirici:",
+	"server.health.downloader-added-twice": "İki kez eklenmiş indirici"
 }

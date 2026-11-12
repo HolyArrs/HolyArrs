@@ -272,5 +272,7 @@
 	"home.noSaveFolderMany": "нямат папка за запис",
 	"home.off": "Изключено",
 	"home.sourcesOff": "Изключено в Части",
-	"home.noneForSources": "липсва за това, което намират източниците ви"
+	"home.noneForSources": "липсва за това, което намират източниците ви",
+	"home.addedTwice": "е добавена два пъти",
+	"home.addedTwiceMany": "са добавени два пъти"
 }

@@ -270,5 +270,8 @@
 	"health.check.usenetDl": "Trình tải Usenet",
 	"health.check.torrentDl": "Trình tải torrent",
 	"health.check.noUsenetDl": "Nguồn của bạn tìm được bản tải Usenet, nhưng chưa thiết lập trình tải Usenet nào, nên không gửi được bản nào. Thêm một trình trong Cài đặt › Trình tải.",
-	"health.check.noTorrentDl": "Nguồn của bạn tìm được bản tải torrent, nhưng chưa thiết lập trình tải torrent nào, nên không gửi được bản nào. Thêm một trình trong Cài đặt › Trình tải."
+	"health.check.noTorrentDl": "Nguồn của bạn tìm được bản tải torrent, nhưng chưa thiết lập trình tải torrent nào, nên không gửi được bản nào. Thêm một trình trong Cài đặt › Trình tải.",
+	"health.check.sameDownloader": "Đã thêm hai lần:",
+	"health.check.sameDownloaderWhy": "{app} kết nối tới cùng ứng dụng tải xuống với một trình tải khác, nên các lượt tải có thể hiện hai lần. Xóa một cái trong Cài đặt › Trình tải.",
+	"health.kind.sameDownloader": "Trình tải được thêm hai lần"
 }

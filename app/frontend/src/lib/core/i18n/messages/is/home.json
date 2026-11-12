@@ -272,5 +272,7 @@
 	"home.noSaveFolderMany": "eru ekki með vistunarmöppu",
 	"home.off": "Af",
 	"home.sourcesOff": "Slökkt í Hlutum",
-	"home.noneForSources": "vantar fyrir það sem veiturnar þínar finna"
+	"home.noneForSources": "vantar fyrir það sem veiturnar þínar finna",
+	"home.addedTwice": "er bætt við tvisvar",
+	"home.addedTwiceMany": "eru bætt við tvisvar"
 }

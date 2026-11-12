@@ -270,5 +270,8 @@
 	"health.check.usenetDl": "Usenet-nedladdare",
 	"health.check.torrentDl": "Torrent-nedladdare",
 	"health.check.noUsenetDl": "Dina källor hittar Usenet-nedladdningar, men ingen Usenet-nedladdare är inställd, så ingen kan skickas. Lägg till en under Inställningar › Nedladdare.",
-	"health.check.noTorrentDl": "Dina källor hittar torrent-nedladdningar, men ingen torrent-nedladdare är inställd, så ingen kan skickas. Lägg till en under Inställningar › Nedladdare."
+	"health.check.noTorrentDl": "Dina källor hittar torrent-nedladdningar, men ingen torrent-nedladdare är inställd, så ingen kan skickas. Lägg till en under Inställningar › Nedladdare.",
+	"health.check.sameDownloader": "Tillagd två gånger:",
+	"health.check.sameDownloaderWhy": "{app} når samma nedladdningsapp som en annan nedladdare, så dess nedladdningar kan visas två gånger. Ta bort en under Inställningar › Nedladdare.",
+	"health.kind.sameDownloader": "Nedladdare tillagd två gånger"
 }

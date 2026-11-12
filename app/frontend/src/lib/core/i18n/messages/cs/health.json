@@ -270,5 +270,8 @@
 	"health.check.usenetDl": "Stahovač pro Usenet",
 	"health.check.torrentDl": "Stahovač torrentů",
 	"health.check.noUsenetDl": "Vaše zdroje nacházejí stahování z Usenetu, ale není nastavený žádný stahovač pro Usenet, takže nic nelze odeslat. Přidejte ho v Nastavení › Stahovače.",
-	"health.check.noTorrentDl": "Vaše zdroje nacházejí torrenty, ale není nastavený žádný stahovač torrentů, takže nic nelze odeslat. Přidejte ho v Nastavení › Stahovače."
+	"health.check.noTorrentDl": "Vaše zdroje nacházejí torrenty, ale není nastavený žádný stahovač torrentů, takže nic nelze odeslat. Přidejte ho v Nastavení › Stahovače.",
+	"health.check.sameDownloader": "Přidáno dvakrát:",
+	"health.check.sameDownloaderWhy": "{app} vede na stejnou stahovací aplikaci jako jiný stahovač, takže se jeho stahování může zobrazit dvakrát. Jeden odeberte v Nastavení › Stahovače.",
+	"health.kind.sameDownloader": "Stahovač přidán dvakrát"
 }

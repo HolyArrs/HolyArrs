@@ -272,5 +272,7 @@
 	"home.homeCouldNotRead3": "Start kon downloads nu niet lezen.",
 	"home.off": "Uit",
 	"home.sourcesOff": "Uitgezet in Onderdelen",
-	"home.noneForSources": "ontbreekt voor wat je bronnen vinden"
+	"home.noneForSources": "ontbreekt voor wat je bronnen vinden",
+	"home.addedTwice": "is twee keer toegevoegd",
+	"home.addedTwiceMany": "zijn twee keer toegevoegd"
 }

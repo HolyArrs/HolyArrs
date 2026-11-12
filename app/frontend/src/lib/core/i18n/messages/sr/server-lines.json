@@ -1294,5 +1294,6 @@
 	"server.downloads.the-download-has-no-single-video": "преузимање нема један видео за увоз; користи „Увези датотеке ручно”",
 	"server.downloads.this-movie-already-has-a-file": "овај филм већ има датотеку; пошаљи replace да ову ставиш на њено место",
 	"server.importer.replaced-by-hand": "{path} замењено ручно",
-	"server.health.downloader-for": "Преузимач за"
+	"server.health.downloader-for": "Преузимач за",
+	"server.health.downloader-added-twice": "Преузимач додат двапут"
 }

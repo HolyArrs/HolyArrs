@@ -270,5 +270,8 @@
 	"health.check.usenetDl": "Usenet-niðurhalari",
 	"health.check.torrentDl": "Torrent-niðurhalari",
 	"health.check.noUsenetDl": "Veiturnar þínar finna Usenet-niðurhöl en enginn Usenet-niðurhalari er uppsettur, svo ekkert er hægt að senda. Bættu einum við í Stillingar › Niðurhalarar.",
-	"health.check.noTorrentDl": "Veiturnar þínar finna torrent-niðurhöl en enginn torrent-niðurhalari er uppsettur, svo ekkert er hægt að senda. Bættu einum við í Stillingar › Niðurhalarar."
+	"health.check.noTorrentDl": "Veiturnar þínar finna torrent-niðurhöl en enginn torrent-niðurhalari er uppsettur, svo ekkert er hægt að senda. Bættu einum við í Stillingar › Niðurhalarar.",
+	"health.check.sameDownloader": "Bætt við tvisvar:",
+	"health.check.sameDownloaderWhy": "{app} nær í sama niðurhalsforrit og annar niðurhalari, svo niðurhöl hans geta birst tvisvar. Fjarlægðu annan í Stillingar › Niðurhalarar.",
+	"health.kind.sameDownloader": "Niðurhalara bætt við tvisvar"
 }

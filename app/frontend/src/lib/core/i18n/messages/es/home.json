@@ -272,5 +272,7 @@
 	"home.homeCouldNotRead3": "Inicio no pudo leer las descargas ahora mismo.",
 	"home.off": "Apagado",
 	"home.sourcesOff": "Apagado en Partes",
-	"home.noneForSources": "falta para lo que encuentran tus fuentes"
+	"home.noneForSources": "falta para lo que encuentran tus fuentes",
+	"home.addedTwice": "está añadido dos veces",
+	"home.addedTwiceMany": "están añadidos dos veces"
 }

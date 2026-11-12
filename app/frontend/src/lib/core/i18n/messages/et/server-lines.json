@@ -1294,5 +1294,6 @@
 	"server.downloads.the-download-has-no-single-video": "allalaadimises pole ühte videot, mida importida; kasuta valikut „Impordi failid käsitsi“",
 	"server.downloads.this-movie-already-has-a-file": "sellel filmil on juba fail; saada replace, et panna see selle asemele",
 	"server.importer.replaced-by-hand": "{path} asendati käsitsi",
-	"server.health.downloader-for": "Allalaadija:"
+	"server.health.downloader-for": "Allalaadija:",
+	"server.health.downloader-added-twice": "Allalaadija lisatud kaks korda"
 }
