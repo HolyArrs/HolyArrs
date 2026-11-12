@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
@@ -173,7 +174,7 @@ func (a *Auth) localPeer(r *http.Request) bool {
 // not listed cannot be told apart from a home device, which is why the
 // Settings card asks the owner to list it.
 func (a *Auth) strictLocal(r *http.Request) bool {
-	if !a.skipLocal.Load() || !a.hostAllowed(r) {
+	if !a.skipLocal.Load() || r.Header.Get(outbound.SelfCallHeader) != "" || !a.hostAllowed(r) {
 		return false
 	}
 	if h := normHost(r.Host); net.ParseIP(h) == nil && !homeName(h) {

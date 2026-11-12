@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
@@ -56,7 +57,8 @@ type hookIn struct {
 // framingHeaders are header names a record may not set: they change how
 // the call is sent, or which server it reaches.
 var framingHeaders = map[string]bool{"host": true, "content-length": true, "content-type": true, "transfer-encoding": true, "connection": true,
-	"upgrade": true, "te": true, "trailer": true, "keep-alive": true, "expect": true, "proxy-connection": true, "proxy-authorization": true}
+	"upgrade": true, "te": true, "trailer": true, "keep-alive": true, "expect": true, "proxy-connection": true, "proxy-authorization": true,
+	strings.ToLower(outbound.SelfCallHeader): true}
 
 // checkHookURL accepts an http or https address with a host and no
 // sign-in in it. Where it may connect is checked on every call, after DNS.
@@ -144,6 +146,10 @@ func (h *handler) readHook(w http.ResponseWriter, r *http.Request) (hookIn, bool
 	in.sec.URL = strings.TrimSpace(in.sec.URL)
 	if !checkHookURL(in.sec.URL) {
 		refuse(w, failure{PropertyName: "Url", ErrorMessage: "give an address that starts with http:// or https:// and names a host; a sign-in goes in the username and password settings"})
+		return in, false
+	}
+	if reachedOn(r, in.sec.URL) {
+		refuse(w, failure{PropertyName: "Url", ErrorMessage: "this address points back at HolyArrs itself; give the address of the app that should get the calls", AttemptedValue: in.sec.URL})
 		return in, false
 	}
 	// The old apps number the methods: 1 is POST, 2 is PUT.

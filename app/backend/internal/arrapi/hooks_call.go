@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
+	"syscall"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
@@ -22,9 +24,23 @@ import (
 var hookHTTP = func() *http.Client {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.Proxy = nil
-	t.DialContext = outbound.PolicyDialer(outbound.NotMetadata).DialContext
+	d := outbound.PolicyDialer(outbound.NotMetadata)
+	policy := d.Control
+	d.Control = func(network, address string, c syscall.RawConn) error {
+		if err := policy(network, address, c); err != nil {
+			return err
+		}
+		if host, port, err := net.SplitHostPort(address); err == nil && selfAddr(net.ParseIP(host), port) {
+			return errSelf
+		}
+		return nil
+	}
+	t.DialContext = d.DialContext
 	return &http.Client{Transport: t, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 }()
+
+// errSelf is the dial error for an address that is HolyArrs itself.
+var errSelf = errors.New("the address is HolyArrs itself")
 
 // hookError is a failed call. Its text is safe to show and log: it never
 // holds the address or a header. again marks a failure worth another try
@@ -64,6 +80,7 @@ func callHook(ctx context.Context, method string, sec hookSecret, body []byte) e
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "HolyArrs")
+	req.Header.Set(outbound.SelfCallHeader, "hook")
 	if sec.Username != "" || sec.Password != "" {
 		req.SetBasicAuth(sec.Username, sec.Password)
 	}
@@ -75,6 +92,8 @@ func callHook(ctx context.Context, method string, sec hookSecret, body []byte) e
 			err = ue.Err
 		}
 		switch {
+		case errors.Is(err, errSelf):
+			return &hookError{text: "the address points back at HolyArrs itself"}
 		case errors.Is(err, outbound.ErrAddressRefused):
 			return &hookError{text: "the address points to a network HolyArrs may not reach"}
 		case ctx.Err() != nil || errors.Is(err, context.DeadlineExceeded):
