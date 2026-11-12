@@ -82,6 +82,8 @@ export function appLocale(en?: string): string | undefined {
 		const b = typeof navigator === 'undefined' ? '' : navigator.language ?? '';
 		return en ?? (b.toLowerCase().startsWith('en') ? b : 'en');
 	}
+	// Thai defaults to the Buddhist calendar (2026 shows as 2569); air dates and release years must match the rest of the app.
+	if (lang.value === 'th') return 'th-TH-u-ca-gregory';
 	return bcp47(lang.value);
 }
 
