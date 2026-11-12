@@ -22,6 +22,8 @@ type Deps struct {
 	Metadata  metadata.Provider
 	Secrets   *secrets.Vault
 	TraktBase string
+	// Modes is where details come from; nil means the metadata server.
+	Modes *metadata.Modes
 	// Cache is the Explore row and details cache shared with the program.
 	Cache *Cache
 	// Explore is the pool job with its lists and pages.

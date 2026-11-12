@@ -142,5 +142,6 @@
 	"core.settings.danger.label": "Zona de peligro",
 	"core.settings.danger.about": "Reiniciar o apagar",
 	"core.settings.account.label": "Mi cuenta",
-	"core.settings.account.about": "Contraseña, dos pasos, dispositivos"
+	"core.settings.account.about": "Contraseña, dos pasos, dispositivos",
+	"core.api.sourceOff": "Algunas filas están desactivadas en esta instalación."
 }

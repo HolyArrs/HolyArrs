@@ -3,6 +3,7 @@ import { to } from './paths.ts';
 import { registerPictures } from './pictures.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import { serverWords } from '#lib/core/i18n/server-words.ts';
+import { sourceOff } from './source-off.svelte.ts';
 
 export class ApiError extends Error {
 	status: number;
@@ -143,6 +144,11 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 			const msg = typeof data.error === 'string' && data.error ? serverWords(data.error) : t('core.api.requestFailed', { status: res.status });
 			throw new ApiError(msg, res.status, data, Number.isFinite(ra) && ra > 0 ? ra : null);
 		}
+		// A lookup that is off on this install answers 200 with source_off: a calm note, not data.
+		if (data && data.source_off === true) {
+			sourceOff.seen = true;
+			throw new ApiError(t('core.api.sourceOff'), res.status, data);
+		}
 		if (data && typeof data === 'object' && 'pictures' in data) registerPictures(data.pictures);
 		return data as T;
 	}
@@ -217,6 +223,11 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 }
 
 export const api = createClient();
+
+// True for the calm "some rows are off on this install" answer.
+export function isSourceOff(e: unknown): boolean {
+	return e instanceof ApiError && e.body.source_off === true;
+}
 
 export function message(e: unknown): string {
 	if (e instanceof ApiError) return e.message;

@@ -142,5 +142,6 @@
 	"core.settings.danger.label": "危険な操作",
 	"core.settings.danger.about": "再起動またはシャットダウン",
 	"core.settings.account.label": "マイアカウント",
-	"core.settings.account.about": "パスワード、二要素認証、デバイス"
+	"core.settings.account.about": "パスワード、二要素認証、デバイス",
+	"core.api.sourceOff": "このインストールでは一部の行がオフです。"
 }

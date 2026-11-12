@@ -142,5 +142,6 @@
 	"core.settings.danger.label": "Опасная зона",
 	"core.settings.danger.about": "Перезапуск или выключение",
 	"core.settings.account.label": "Моя учётная запись",
-	"core.settings.account.about": "Пароль, двухфакторная защита, устройства"
+	"core.settings.account.about": "Пароль, двухфакторная защита, устройства",
+	"core.api.sourceOff": "Некоторые ряды выключены в этой установке."
 }
