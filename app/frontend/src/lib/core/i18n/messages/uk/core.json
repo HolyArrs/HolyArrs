@@ -16,7 +16,7 @@
 	"core.format.healthy": "Усе гаразд",
 	"core.format.folderNotFound": "Теку не знайдено",
 	"core.format.cannotWrite": "Тут не можна записувати",
-	"core.format.copiedNoHardlinks": "Працює, але файли копіюються (без жорстких посилань)",
+	"core.format.copiedNoHardlinks": "Кожен імпорт робить повну копію (займає більше місця)",
 	"core.format.notChecked": "Ще не перевірено",
 	"core.loader.welcome": "Вітаємо, {name}",
 	"core.loader.reconnecting": "Повторне підключення…",

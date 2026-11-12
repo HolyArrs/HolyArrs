@@ -154,7 +154,7 @@
 	"mediafiles.byHand.hasFile": "इसकी फ़ाइल पहले से है। पहले उसे डिलीट करें या दूसरा वर्ज़न चुनें।",
 	"mediafiles.byHand.moved": "ले जाया गया",
 	"mediafiles.byHand.copied": "कॉपी किया गया",
-	"mediafiles.byHand.linked": "लिंक किया गया (अतिरिक्त जगह नहीं लगती)",
+	"mediafiles.byHand.linked": "जोड़ा गया (कोई अतिरिक्त जगह नहीं)",
 	"mediafiles.byHand.recorded": "दर्ज किया गया",
 	"mediafiles.byHand.outcome": "{outcome}: {why}",
 	"mediafiles.byHand.failed": "नाकाम",

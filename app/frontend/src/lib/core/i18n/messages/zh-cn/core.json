@@ -16,7 +16,7 @@
 	"core.format.healthy": "正常",
 	"core.format.folderNotFound": "找不到文件夹",
 	"core.format.cannotWrite": "无法写入此处",
-	"core.format.copiedNoHardlinks": "可用，但文件会被复制（无法使用硬链接）",
+	"core.format.copiedNoHardlinks": "每次导入都会完整复制一份（占用额外空间）",
 	"core.format.notChecked": "尚未检查",
 	"core.loader.welcome": "欢迎，{name}",
 	"core.loader.reconnecting": "正在重新连接…",

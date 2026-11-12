@@ -16,7 +16,7 @@
 	"core.format.healthy": "In Ordnung",
 	"core.format.folderNotFound": "Ordner nicht gefunden",
 	"core.format.cannotWrite": "Hier kann nicht geschrieben werden",
-	"core.format.copiedNoHardlinks": "Funktioniert, aber Dateien werden kopiert (keine harten Verknüpfungen)",
+	"core.format.copiedNoHardlinks": "Jeder Import legt eine volle Kopie an (braucht mehr Platz)",
 	"core.format.notChecked": "Noch nicht geprüft",
 	"core.loader.welcome": "Willkommen, {name}",
 	"core.loader.reconnecting": "Verbindet neu …",

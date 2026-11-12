@@ -173,7 +173,9 @@
 	// Copying on purpose (downloads and media on separate disks): the folder then counts as fine.
 	const copiesOk = (f: LibraryFolder) => f.health === 'no_hardlink' && !!f.copies_expected;
 	const rowTone = (f: LibraryFolder) => (copiesOk(f) ? 'ok' : tone(f.health));
-	const rowHealth = (f: LibraryFolder) => (copiesOk(f) ? t('settings.libraryFolders.copiesExpectedState') : folderHealth(f.health));
+	const rowHealth = (f: LibraryFolder) => (copiesOk(f) ? t('settings.libraryFolders.copiesExpectedState') : f.health === 'ok' ? t('settings.libraryFolders.stateInstant') : folderHealth(f.health));
+	// The one /data folder layout that makes imports instant.
+	const copiesDoc = 'https://docs.holyarrs.com/start/folders/';
 	async function setCopies(f: LibraryFolder, on: boolean) {
 		busyId = f.id;
 		try {
@@ -262,7 +264,7 @@
 				{#if f.health_reason && rowTone(f) !== 'ok'}<div class="why {rowTone(f)}">{f.health_reason}</div>{/if}
 			</div>
 			<div class="free"><b>{freeNum(f.free_space)[0]}</b><small>{t('settings.libraryFolders.free', { unit: freeNum(f.free_space)[1] ?? '' })}</small></div>
-			<span class="st {rowTone(f)}"><i></i><span>{rowHealth(f)}</span></span>
+			<span class="st {rowTone(f)}"><i></i><span>{rowHealth(f)}</span>{#if f.health === 'no_hardlink'}<a class="why-link" href={copiesDoc} target="_blank" rel="noopener noreferrer">{t('settings.libraryFolders.whyCopies')}</a>{/if}</span>
 			<div class="acts">
 				<IconButton icon="refresh" label={t('settings.libraryFolders.checkAgain', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => recheck(f)} />
 				{#if f.health === 'no_hardlink'}<Button variant="plain" size="sm" type="button" disabled={busyId === f.id} onclick={() => setCopies(f, !f.copies_expected)}>{f.copies_expected ? t('settings.libraryFolders.warnAgain') : t('settings.libraryFolders.copiesExpected')}</Button>{/if}
@@ -342,6 +344,7 @@
 	.st i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 18%, transparent); }
 	.st.wait i { background: var(--wait); box-shadow: 0 0 0 3px color-mix(in srgb, var(--wait) 22%, transparent); }
 	.st.fail i { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
+	.st .why-link { color: var(--accent, var(--text)); text-decoration: underline; text-underline-offset: 2px; }
 	.acts { display: flex; align-items: center; gap: 2px; }
 	.ed { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 	.ed .input { max-width: 240px; min-height: 36px; }

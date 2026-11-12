@@ -154,7 +154,7 @@
 	"mediafiles.byHand.hasFile": "これにはすでにファイルがあります。先に削除するか、別のバージョンを選んでください。",
 	"mediafiles.byHand.moved": "移動しました",
 	"mediafiles.byHand.copied": "コピーしました",
-	"mediafiles.byHand.linked": "リンクしました(追加の容量なし)",
+	"mediafiles.byHand.linked": "追加済み(余分な容量なし)",
 	"mediafiles.byHand.recorded": "記録しました",
 	"mediafiles.byHand.outcome": "{outcome}: {why}",
 	"mediafiles.byHand.failed": "失敗",

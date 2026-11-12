@@ -154,7 +154,7 @@
 	"mediafiles.byHand.hasFile": "Este já tem um arquivo. Apague-o primeiro ou escolha outra Versão.",
 	"mediafiles.byHand.moved": "Movido",
 	"mediafiles.byHand.copied": "Copiado",
-	"mediafiles.byHand.linked": "Vinculado (sem espaço extra)",
+	"mediafiles.byHand.linked": "Adicionado (sem espaço extra)",
 	"mediafiles.byHand.recorded": "Registrado",
 	"mediafiles.byHand.outcome": "{outcome}: {why}",
 	"mediafiles.byHand.failed": "Falhou",

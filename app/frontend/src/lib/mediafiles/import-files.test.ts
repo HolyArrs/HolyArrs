@@ -53,7 +53,7 @@ describe('import files by hand', () => {
 	});
 
 	it('words results', () => {
-		expect(resultLine({ path: 'x', outcome: 'placed', placed_by: 'hardlink' })).toBe('Linked (no extra space)');
+		expect(resultLine({ path: 'x', outcome: 'placed', placed_by: 'hardlink' })).toBe('Added (no extra space used)');
 		expect(resultLine({ path: 'x', outcome: 'refused', error: 'nope' })).toBe('Not imported: nope');
 	});
 });

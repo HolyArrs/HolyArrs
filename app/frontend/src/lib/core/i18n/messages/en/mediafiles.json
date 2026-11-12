@@ -154,7 +154,7 @@
 	"mediafiles.byHand.hasFile": "This already has a file. Delete it first or pick another Version.",
 	"mediafiles.byHand.moved": "Moved",
 	"mediafiles.byHand.copied": "Copied",
-	"mediafiles.byHand.linked": "Linked (no extra space)",
+	"mediafiles.byHand.linked": "Added (no extra space used)",
 	"mediafiles.byHand.recorded": "Recorded",
 	"mediafiles.byHand.outcome": "{outcome}: {why}",
 	"mediafiles.byHand.failed": "Failed",

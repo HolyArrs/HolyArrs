@@ -154,7 +154,7 @@
 	"mediafiles.byHand.hasFile": "Ten już ma plik. Najpierw go usuń albo wybierz inną Odmianę.",
 	"mediafiles.byHand.moved": "Przeniesiono",
 	"mediafiles.byHand.copied": "Skopiowano",
-	"mediafiles.byHand.linked": "Połączono (bez dodatkowego miejsca)",
+	"mediafiles.byHand.linked": "Dodano (bez dodatkowego miejsca)",
 	"mediafiles.byHand.recorded": "Zapisano",
 	"mediafiles.byHand.outcome": "{outcome}: {why}",
 	"mediafiles.byHand.failed": "Nie udało się",

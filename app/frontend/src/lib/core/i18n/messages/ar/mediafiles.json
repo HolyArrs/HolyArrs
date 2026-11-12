@@ -154,7 +154,7 @@
 	"mediafiles.byHand.hasFile": "لهذا ملف بالفعل. احذفه أولًا أو اختر نسخة أخرى.",
 	"mediafiles.byHand.moved": "نُقل",
 	"mediafiles.byHand.copied": "نُسخ",
-	"mediafiles.byHand.linked": "رُبط (بلا مساحة إضافية)",
+	"mediafiles.byHand.linked": "أُضيف (بلا مساحة إضافية)",
 	"mediafiles.byHand.recorded": "سُجّل",
 	"mediafiles.byHand.outcome": "{outcome}: {why}",
 	"mediafiles.byHand.failed": "فشل",

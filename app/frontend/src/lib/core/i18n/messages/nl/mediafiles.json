@@ -154,7 +154,7 @@
 	"mediafiles.byHand.hasFile": "Hiervoor is al een bestand. Verwijder het eerst of kies een andere variant.",
 	"mediafiles.byHand.moved": "Verplaatst",
 	"mediafiles.byHand.copied": "Gekopieerd",
-	"mediafiles.byHand.linked": "Gekoppeld (geen extra ruimte)",
+	"mediafiles.byHand.linked": "Toegevoegd (geen extra ruimte)",
 	"mediafiles.byHand.recorded": "Vastgelegd",
 	"mediafiles.byHand.outcome": "{outcome}: {why}",
 	"mediafiles.byHand.failed": "Mislukt",

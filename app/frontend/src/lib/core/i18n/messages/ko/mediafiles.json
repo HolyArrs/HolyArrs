@@ -154,7 +154,7 @@
 	"mediafiles.byHand.hasFile": "이미 파일이 있습니다. 먼저 삭제하거나 다른 버전을 고르세요.",
 	"mediafiles.byHand.moved": "이동함",
 	"mediafiles.byHand.copied": "복사함",
-	"mediafiles.byHand.linked": "링크함 (추가 공간 없음)",
+	"mediafiles.byHand.linked": "추가됨 (추가 공간 없음)",
 	"mediafiles.byHand.recorded": "기록함",
 	"mediafiles.byHand.outcome": "{outcome}: {why}",
 	"mediafiles.byHand.failed": "실패",

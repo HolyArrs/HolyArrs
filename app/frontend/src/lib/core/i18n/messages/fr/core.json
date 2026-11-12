@@ -16,7 +16,7 @@
 	"core.format.healthy": "En bonne santé",
 	"core.format.folderNotFound": "Dossier introuvable",
 	"core.format.cannotWrite": "Écriture impossible ici",
-	"core.format.copiedNoHardlinks": "Fonctionne, mais les fichiers sont copiés (pas de liens physiques)",
+	"core.format.copiedNoHardlinks": "Chaque import fait une copie complète (prend plus de place)",
 	"core.format.notChecked": "Pas encore vérifié",
 	"core.loader.welcome": "Bienvenue, {name}",
 	"core.loader.reconnecting": "Reconnexion…",

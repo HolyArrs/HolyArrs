@@ -16,7 +16,7 @@
 	"core.format.healthy": "W dobrej kondycji",
 	"core.format.folderNotFound": "Nie znaleziono folderu",
 	"core.format.cannotWrite": "Nie można tu zapisywać",
-	"core.format.copiedNoHardlinks": "Działa, ale pliki są kopiowane (bez hardlinków)",
+	"core.format.copiedNoHardlinks": "Każdy import tworzy pełną kopię (zajmuje więcej miejsca)",
 	"core.format.notChecked": "Jeszcze nie sprawdzono",
 	"core.loader.welcome": "Witaj, {name}",
 	"core.loader.reconnecting": "Łączenie ponownie…",

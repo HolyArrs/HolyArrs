@@ -154,7 +154,7 @@
 	"mediafiles.byHand.hasFile": "这里已经有文件。请先删除它，或选择另一个版本。",
 	"mediafiles.byHand.moved": "已移动",
 	"mediafiles.byHand.copied": "已复制",
-	"mediafiles.byHand.linked": "已链接（不占额外空间）",
+	"mediafiles.byHand.linked": "已添加（未占用额外空间）",
 	"mediafiles.byHand.recorded": "已记录",
 	"mediafiles.byHand.outcome": "{outcome}：{why}",
 	"mediafiles.byHand.failed": "失败",

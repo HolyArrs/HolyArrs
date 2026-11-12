@@ -154,7 +154,7 @@
 	"mediafiles.byHand.hasFile": "У этого уже есть файл. Сначала удалите его или выберите другой вариант.",
 	"mediafiles.byHand.moved": "Перемещён",
 	"mediafiles.byHand.copied": "Скопирован",
-	"mediafiles.byHand.linked": "Связан ссылкой (без лишнего места)",
+	"mediafiles.byHand.linked": "Добавлено (без лишнего места)",
 	"mediafiles.byHand.recorded": "Записан",
 	"mediafiles.byHand.outcome": "{outcome}: {why}",
 	"mediafiles.byHand.failed": "Не удалось",

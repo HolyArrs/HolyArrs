@@ -16,7 +16,7 @@
 	"core.format.healthy": "Tutto ok",
 	"core.format.folderNotFound": "Cartella non trovata",
 	"core.format.cannotWrite": "Qui non si può scrivere",
-	"core.format.copiedNoHardlinks": "Funziona, ma i file vengono copiati (niente hardlink)",
+	"core.format.copiedNoHardlinks": "Ogni importazione fa una copia completa (usa più spazio)",
 	"core.format.notChecked": "Non ancora controllato",
 	"core.loader.welcome": "Ciao, {name}",
 	"core.loader.reconnecting": "Riconnessione…",

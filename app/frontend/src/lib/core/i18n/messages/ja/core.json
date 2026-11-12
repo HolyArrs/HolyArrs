@@ -16,7 +16,7 @@
 	"core.format.healthy": "正常",
 	"core.format.folderNotFound": "フォルダーが見つかりません",
 	"core.format.cannotWrite": "ここには書き込めません",
-	"core.format.copiedNoHardlinks": "動作しますが、ファイルはコピーされます(ハードリンクなし)",
+	"core.format.copiedNoHardlinks": "取り込むたびに完全なコピーを作ります(容量を余分に使います)",
 	"core.format.notChecked": "まだ確認していません",
 	"core.loader.welcome": "ようこそ、{name}",
 	"core.loader.reconnecting": "再接続中…",

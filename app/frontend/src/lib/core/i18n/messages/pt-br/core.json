@@ -16,7 +16,7 @@
 	"core.format.healthy": "Saudável",
 	"core.format.folderNotFound": "Pasta não encontrada",
 	"core.format.cannotWrite": "Não é possível gravar aqui",
-	"core.format.copiedNoHardlinks": "Funciona, mas os arquivos são copiados (sem links físicos)",
+	"core.format.copiedNoHardlinks": "Cada importação faz uma cópia completa (usa mais espaço)",
 	"core.format.notChecked": "Ainda não verificado",
 	"core.loader.welcome": "Bem-vindo(a), {name}",
 	"core.loader.reconnecting": "Reconectando…",

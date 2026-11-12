@@ -154,7 +154,7 @@
 	"mediafiles.byHand.hasFile": "Dafür gibt es schon eine Datei. Lösche sie zuerst oder wähl eine andere Variante.",
 	"mediafiles.byHand.moved": "Verschoben",
 	"mediafiles.byHand.copied": "Kopiert",
-	"mediafiles.byHand.linked": "Verknüpft (kein zusätzlicher Platz)",
+	"mediafiles.byHand.linked": "Hinzugefügt (kein zusätzlicher Platz)",
 	"mediafiles.byHand.recorded": "Erfasst",
 	"mediafiles.byHand.outcome": "{outcome}: {why}",
 	"mediafiles.byHand.failed": "Fehlgeschlagen",
