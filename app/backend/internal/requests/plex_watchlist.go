@@ -91,7 +91,16 @@ func (w *Watchlists) client() *http.Client {
 	if w.HTTP != nil {
 		return w.HTTP
 	}
-	return &http.Client{Timeout: 20 * time.Second}
+	// Go copies X-Plex-Token across a redirect; never let it reach another host.
+	return &http.Client{Timeout: 20 * time.Second, CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		if len(via) > 0 && req.URL.Host != via[0].URL.Host {
+			return http.ErrUseLastResponse
+		}
+		if len(via) >= 10 {
+			return errors.New("too many redirects")
+		}
+		return nil
+	}}
 }
 
 // Register adds the Job handler and its schedule check.
@@ -196,7 +205,7 @@ func (w *Watchlists) Run(ctx context.Context, r *jobs.Run) error {
 		}
 		total.Read += res.Read
 		total.Asked += res.Asked
-		if w.HasToken(ctx, id) {
+		if res.own {
 			covered[id] = true
 		}
 	}
@@ -219,6 +228,7 @@ type PassResult struct {
 	Read   int // watchlist entries read
 	Asked  int // asks made or joined
 	Failed int
+	own    bool // read with the person's own Plex sign-in
 }
 
 // watchEntry is one movie or show on a Plex watchlist.
@@ -275,12 +285,15 @@ func (w *Watchlists) Pass(ctx context.Context, userID int64) (PassResult, error)
 		}
 		return res, w.checked(ctx, userID, "Link your Plex account so HolyArrs can read your watchlist.")
 	}
+	res.own = true
 	entries, err := w.fetch(ctx, tok)
 	if err != nil {
 		_ = w.checked(ctx, userID, err.Error())
 		return res, err
 	}
-	return w.actOn(ctx, userID, *p, movies, shows, tok, entries)
+	res, err = w.actOn(ctx, userID, *p, movies, shows, tok, entries)
+	res.own = true
+	return res, err
 }
 
 // actOn asks for a person's new watchlist entries as p, looking up missing

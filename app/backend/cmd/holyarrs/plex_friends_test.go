@@ -51,4 +51,28 @@ func TestPlexFriendsOverHTTP(t *testing.T) {
 	if p := v.People[0]; p.UserID != r.ana.id || p.Name != "ana" || p.PlexName != "anaplex" || !p.Kid || p.CheckedAt != nil {
 		t.Fatalf("ana's row %+v", p)
 	}
+	// My account says the owner's link reads ana's watchlist, and she can
+	// turn it off.
+	type mine struct {
+		ReadByOwner bool `json:"read_by_owner"`
+		CanRead     bool `json:"can_read"`
+		Movies      bool `json:"movies"`
+		Shows       bool `json:"shows"`
+	}
+	var m mine
+	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/my/plex-watchlist", "", 200), &m)
+	if !m.ReadByOwner || m.CanRead || !m.Movies || !m.Shows {
+		t.Fatalf("ana's card %+v", m)
+	}
+	_ = json.Unmarshal(r.ana.call("PUT", "/api/v1/my/plex-watchlist", `{"movies":false,"shows":false}`, 200), &m)
+	if m.Movies || m.Shows {
+		t.Fatalf("after turning off %+v", m)
+	}
+	r.ana.call("PUT", "/api/v1/my/plex-watchlist", `{"shows":true}`, 200)
+	// The owner is never read as a friend.
+	var o mine
+	_ = json.Unmarshal(r.owner.call("GET", "/api/v1/my/plex-watchlist", "", 200), &o)
+	if o.ReadByOwner {
+		t.Fatalf("owner's card %+v", o)
+	}
 }

@@ -33,6 +33,7 @@ const (
 	friendsSQL = `SELECT u.id, l.external_id FROM users u JOIN user_links l ON l.user_id = u.id AND l.provider = 'plex'
 		LEFT JOIN plex_watchlist_people x ON x.user_id = u.id
 		WHERE u.state = 'active' AND u.role <> 'owner' AND (coalesce(x.chosen, 0) = 0 OR x.movies = 1 OR x.shows = 1) ORDER BY u.id`
+	userRoleSQL   = "SELECT role FROM users WHERE id = ?"
 	friendsDueSQL = `SELECT count(*) FROM users u JOIN user_links l ON l.user_id = u.id AND l.provider = 'plex'
 		LEFT JOIN plex_watchlist_people x ON x.user_id = u.id
 		WHERE u.state = 'active' AND u.role <> 'owner' AND (coalesce(x.chosen, 0) = 0 OR x.movies = 1 OR x.shows = 1)`

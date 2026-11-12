@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
@@ -164,7 +165,7 @@ func friendsRig(t *testing.T) (*rig, *fakeFriends, *Watchlists, *string) {
 	}
 	f.setFriends(
 		map[string]any{"id": 9001, "uuid": "aaa111", "username": "anaplex", "sharedServers": []map[string]string{{"machineIdentifier": "srv-1"}}},
-		map[string]any{"id": "9002", "uuid": "bbb222", "username": "boplex", "restricted": true},
+		map[string]any{"id": "9002", "uuid": "bbb222", "username": "boplex", "restricted": true, "home": true},
 	)
 	return r, f, w, &owner
 }
@@ -350,6 +351,13 @@ func TestFriendsRemovedShareStops(t *testing.T) {
 			t.Fatalf("user %d: %q", id, st.Error)
 		}
 	}
+	// Plex still lists ana after her share went, with no servers and outside
+	// the owner's Home: she is not read.
+	f.setFriends(map[string]any{"id": 9001, "uuid": "aaa111", "home": false, "sharedServers": []map[string]string{}})
+	runWatchlists(t, w)
+	if countAsks(t, r) != 1 || f.count("watchlist") != reads {
+		t.Fatalf("empty share: %d asks, %d watchlist reads", countAsks(t, r), f.count("watchlist")-reads)
+	}
 	// With no server chosen, a friend who shares nothing listed is read again.
 	w.Owner = func(context.Context) (string, string) { return ownerTok, "" }
 	runWatchlists(t, w)
@@ -460,5 +468,99 @@ func TestFriendsRefusedReadNotes(t *testing.T) {
 	}
 	if st, _ := ReadWatchlist(ctx, r.st.Read(), r.bo.UserID); st.Error != friendWords["refused"] {
 		t.Fatalf("401: %q", st.Error)
+	}
+}
+
+func TestFriendsCraftedUUIDNeverQueried(t *testing.T) {
+	r, f, w, _ := friendsRig(t)
+	setFriendsSwitch(t, r, true)
+	f.setFriends(map[string]any{"id": 9001, "uuid": `x") { id } } #`, "sharedServers": []map[string]string{{"machineIdentifier": "srv-1"}}})
+	runWatchlists(t, w)
+	if f.count("watchlist") != 0 {
+		t.Fatalf("a crafted uuid reached the community service: %v", f.calls)
+	}
+	if _, err := w.fetchFriendList(context.Background(), ownerTok, `x") { id } } #`); err == nil || f.count("watchlist") != 0 {
+		t.Fatalf("fetchFriendList sent a crafted uuid: %v", err)
+	}
+}
+
+func TestFriendsOwnerNeverReadAsFriend(t *testing.T) {
+	r, f, w, _ := friendsRig(t)
+	ctx := context.Background()
+	setFriendsSwitch(t, r, true)
+	var owner int64
+	if err := r.st.Read().QueryRow("SELECT id FROM users WHERE role = 'owner'").Scan(&owner); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.st.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("INSERT INTO user_links (user_id, provider, external_id, external_name, created_at) VALUES (?, 'plex', '9003', 'me', '2026-10-01T00:00:00Z')", owner)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	f.setFriends(map[string]any{"id": 9003, "uuid": "ccc333", "sharedServers": []map[string]string{{"machineIdentifier": "srv-1"}}})
+	f.setList("ccc333", f.friendNode("k-dune", "MOVIE", "Dune: Part Two", 2024, "tmdb://693134"))
+	runWatchlists(t, w)
+	if f.count("watchlist") != 0 || countAsks(t, r) != 0 {
+		t.Fatalf("the owner was read as a friend: %v", f.calls)
+	}
+}
+
+func TestFriendsGoneOnlyForPeopleReadBefore(t *testing.T) {
+	r, f, w, _ := friendsRig(t)
+	ctx := context.Background()
+	setFriendsSwitch(t, r, true)
+	// ana was never the owner's friend: no note at all.
+	f.setFriends(map[string]any{"id": "9002", "uuid": "bbb222", "home": true})
+	runWatchlists(t, w)
+	if st, _ := ReadWatchlist(ctx, r.st.Read(), r.ana.UserID); st.Error != "" || st.CheckedAt != nil {
+		t.Fatalf("never-read ana got %q", st.Error)
+	}
+	// bo was read, then dropped: he gets the note once.
+	f.setFriends()
+	runWatchlists(t, w)
+	st, _ := ReadWatchlist(ctx, r.st.Read(), r.bo.UserID)
+	if st.Error != friendWords["gone"] || st.CheckedAt == nil {
+		t.Fatalf("bo: %q", st.Error)
+	}
+	r.clock = r.clock.Add(time.Hour)
+	runWatchlists(t, w)
+	if again, _ := ReadWatchlist(ctx, r.st.Read(), r.bo.UserID); !again.CheckedAt.Equal(*st.CheckedAt) {
+		t.Fatal("the same gone note was written again")
+	}
+}
+
+func TestFriendsPrivateListIsNotAFailure(t *testing.T) {
+	r, f, w, _ := friendsRig(t)
+	ctx := context.Background()
+	setFriendsSwitch(t, r, true)
+	f.mu.Lock()
+	f.hidden["aaa111"] = true
+	f.status["bbb222"] = http.StatusForbidden
+	f.mu.Unlock()
+	for id, uuid := range map[int64]string{r.ana.UserID: "aaa111", r.bo.UserID: "bbb222"} {
+		if _, err := w.friendPass(ctx, id, uuid, ownerTok); err != nil {
+			t.Fatalf("user %d: a private list counted as a failure: %v", id, err)
+		}
+	}
+}
+
+func TestFriendsTokenNeverFollowsRedirectToAnotherHost(t *testing.T) {
+	r, _, w, _ := friendsRig(t)
+	setFriendsSwitch(t, r, true)
+	var got string
+	other := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		got = req.Header.Get("X-Plex-Token")
+		_, _ = rw.Write([]byte(`[]`))
+	}))
+	t.Cleanup(other.Close)
+	hop := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		http.Redirect(rw, req, strings.Replace(other.URL, "127.0.0.1", "localhost", 1)+req.URL.Path, http.StatusFound)
+	}))
+	t.Cleanup(hop.Close)
+	w.PlexTV = hop.URL
+	_, _ = w.fetchFriends(context.Background(), ownerTok, "srv-1")
+	if got != "" {
+		t.Fatal("the owner's token followed a redirect to another host")
 	}
 }

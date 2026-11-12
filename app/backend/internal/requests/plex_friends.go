@@ -117,8 +117,12 @@ func (w *Watchlists) friendsPass(ctx context.Context, covered map[int64]bool) (f
 		}
 	}
 	rows.Close()
-	if err := rows.Err(); err != nil || len(todo) == 0 {
+	if err := rows.Err(); err != nil {
 		return out, err
+	}
+	todo = slices.DeleteFunc(todo, func(f friendRow) bool { return !w.mayAskAs(ctx, f.userID) })
+	if len(todo) == 0 {
+		return out, nil
 	}
 	listed, err := w.fetchFriends(ctx, tok, server)
 	if err != nil {
@@ -127,7 +131,7 @@ func (w *Watchlists) friendsPass(ctx context.Context, covered map[int64]bool) (f
 	for _, f := range todo {
 		uuid, ok := listed[f.plexID]
 		if !ok {
-			if err := w.checked(ctx, f.userID, friendWords["gone"]); err != nil {
+			if err := w.noteGone(ctx, f.userID); err != nil {
 				return out, err
 			}
 			continue
@@ -142,6 +146,33 @@ func (w *Watchlists) friendsPass(ctx context.Context, covered map[int64]bool) (f
 		out.Asked += res.Asked
 	}
 	return out, nil
+}
+
+// mayAskAs says whether userID is active and may ask for titles, so their
+// watchlist is worth reading.
+func (w *Watchlists) mayAskAs(ctx context.Context, userID int64) bool {
+	var name, role, perms, state, maxRating string
+	var movies, shows, chosen bool
+	err := w.Asks.Store.Read().QueryRowContext(ctx, passSQL, userID).Scan(&name, &role, &perms, &state, &maxRating, &movies, &shows, &chosen)
+	return err == nil && state == "active" && personOf(userID, name, role, perms, maxRating) != nil
+}
+
+// noteGone tells a person the friends path read before that Plex no longer
+// lists them. People it never read, or who keep their own Plex sign-in,
+// get no note, and an unchanged note is not written again.
+func (w *Watchlists) noteGone(ctx context.Context, userID int64) error {
+	if w.HasToken(ctx, userID) {
+		return nil
+	}
+	st, err := ReadWatchlist(ctx, w.Asks.Store.Read(), userID)
+	if err != nil || st.Error == friendWords["gone"] {
+		return err
+	}
+	readBefore := len(st.Items) > 0 || st.CheckedAt != nil && (st.Error == "" || slices.Contains([]string{friendWords["empty"], friendWords["hidden"], friendWords["refused"]}, st.Error))
+	if !readBefore {
+		return nil
+	}
+	return w.checked(ctx, userID, friendWords["gone"])
 }
 
 // friendPass reads one imported friend's watchlist with the owner's token
@@ -177,7 +208,12 @@ func (w *Watchlists) friendPass(ctx context.Context, userID int64, uuid, tok str
 		case errors.Is(err, ErrPlexRefused):
 			note = friendWords["refused"]
 		}
-		_ = w.checked(ctx, userID, note)
+		if err := w.checked(ctx, userID, note); err != nil {
+			return res, err
+		}
+		if errors.Is(err, errFriendHidden) || errors.Is(err, errPlexForbidden) {
+			return res, nil // their privacy choice, not a failure
+		}
 		return res, err
 	}
 	if len(entries) == 0 {
@@ -187,12 +223,14 @@ func (w *Watchlists) friendPass(ctx context.Context, userID int64, uuid, tok str
 }
 
 // fetchFriends maps each Plex friend's account id to their uuid, keeping
-// only those who share server ("" for any). A friend Plex lists without
-// servers is kept, as the people import does.
+// only those who share server ("" for any). With a server chosen, a friend
+// Plex lists without servers is kept only when they are in the owner's Plex
+// Home: a friend whose share was removed can be listed that way too.
 func (w *Watchlists) fetchFriends(ctx context.Context, tok, server string) (map[string]string, error) {
 	var got []struct {
 		ID     flexText `json:"id"`
 		UUID   string   `json:"uuid"`
+		Home   bool     `json:"home"`
 		Shared []struct {
 			MachineIdentifier string `json:"machineIdentifier"`
 		} `json:"sharedServers"`
@@ -205,6 +243,9 @@ func (w *Watchlists) fetchFriends(ctx context.Context, tok, server string) (map[
 	for _, f := range got {
 		id, uuid := strings.TrimSpace(string(f.ID)), strings.TrimSpace(f.UUID)
 		if id == "" || !plexUUID.MatchString(uuid) {
+			continue
+		}
+		if server != "" && len(f.Shared) == 0 && !f.Home {
 			continue
 		}
 		if server != "" && len(f.Shared) > 0 && !slices.ContainsFunc(f.Shared, func(s struct {

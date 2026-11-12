@@ -1263,6 +1263,7 @@ rating_country
 ratio
 ratio_limit
 read_at
+read_by_owner
 read_token
 reason
 reasons

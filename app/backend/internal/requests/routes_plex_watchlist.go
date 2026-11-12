@@ -77,6 +77,10 @@ type watchlistView struct {
 	CanRead bool `json:"can_read"`
 	// MayAsk: this person may ask for titles at all.
 	MayAsk bool `json:"may_ask"`
+	// ReadByOwner: with Include Plex friends on, this person's watchlist is
+	// read with the owner's Plex link; Movies and Shows say what is read,
+	// and turning both off stops it.
+	ReadByOwner bool `json:"read_by_owner"`
 }
 
 func mayAsk(r *http.Request) bool {
@@ -106,6 +110,18 @@ func (h *WatchlistHandlers) watchlistView(r *http.Request) (watchlistView, error
 	v.Everyone = set.PlexWatchlists && set.PlexWatchlistsEveryone
 	if v.Everyone && !v.Chosen && v.CanRead && v.MayAsk {
 		v.Movies, v.Shows = true, true // what the schedule does for them
+	}
+	if v.Linked && !v.CanRead && v.MayAsk && set.PlexWatchlists && set.PlexFriends && v.Error != friendWords["gone"] {
+		var role string
+		_ = db.QueryRowContext(ctx, userRoleSQL, uid).Scan(&role)
+		if wl := h.Watchlists(); wl != nil && wl.Owner != nil && role != "owner" {
+			if tok, _ := wl.Owner(ctx); tok != "" {
+				v.ReadByOwner = true
+				if !v.Chosen {
+					v.Movies, v.Shows = true, true // what friendPass reads
+				}
+			}
+		}
 	}
 	return v, nil
 }
@@ -138,7 +154,7 @@ func (h *WatchlistHandlers) putMyWatchlist(w http.ResponseWriter, r *http.Reques
 			webserver.Fail(w, http.StatusConflict, "the owner has not turned on Plex watchlists in Request rules")
 			return
 		}
-		if !v.CanRead {
+		if !v.CanRead && !v.ReadByOwner {
 			webserver.Fail(w, http.StatusConflict, "link your Plex account first")
 			return
 		}
