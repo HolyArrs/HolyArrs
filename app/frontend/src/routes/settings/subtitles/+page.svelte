@@ -533,7 +533,7 @@
 	.ok-text {
 		color: var(--ok-text, inherit);
 	}
-	@media (max-width: 600px) {
+	@container settings (max-width: 600px) {
 		.two,
 		.three {
 			grid-template-columns: 1fr;

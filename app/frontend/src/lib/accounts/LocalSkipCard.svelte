@@ -251,7 +251,7 @@
 
 <style>
 	.local fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: var(--s-4); }
-	.part { display: grid; gap: var(--s-2); padding-top: var(--s-4); border-top: 1px solid var(--line); max-width: 520px; }
+	.part { display: grid; gap: var(--s-2); padding-top: var(--s-4); border-top: 1px solid var(--line); }
 	.part:first-child { margin-top: var(--s-3); }
 	h3.label { margin: 0; }
 	.tiles { display: grid; gap: var(--s-2); }
