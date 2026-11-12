@@ -52,7 +52,10 @@ type StatusInput struct {
 	Downloaders []NamedState
 	// NewestBackup is the newest backup's time (RFC 3339), "" for none.
 	NewestBackup *string
-	MetadataUp   *bool
+	// BackupsOff says the owner turned scheduled backups off: no backup
+	// warning is raised, old backups checks included.
+	BackupsOff bool
+	MetadataUp *bool
 	// MetadataMode is where details come from (full, own or off; "" not
 	// known); MetadataBad is a Docker value that was not understood.
 	MetadataMode string
@@ -108,7 +111,7 @@ func SettingsStatus(in StatusInput) StatusAnswer {
 	}
 	for _, c := range in.Checks {
 		to, ok := checkTarget[c.Kind]
-		if !ok {
+		if !ok || (in.BackupsOff && c.Kind == "backups") {
 			continue
 		}
 		known(to.page)
@@ -181,7 +184,9 @@ func SettingsStatus(in StatusInput) StatusAnswer {
 	}
 	if in.NewestBackup != nil {
 		known("/settings/backups")
-		if *in.NewestBackup == "" {
+		if in.BackupsOff {
+			// Off: no backup is expected.
+		} else if *in.NewestBackup == "" {
 			add(StatusItem{"maintenance", "/settings/backups", "No backup yet", "warning"}, "backup-age")
 		} else if at, err := time.Parse(time.RFC3339, *in.NewestBackup); err == nil && in.Now.Sub(at) > 7*24*time.Hour {
 			add(StatusItem{"maintenance", "/settings/backups", "No backup in the last 7 days", "warning"}, "backup-age")
@@ -286,6 +291,8 @@ type StatusHandlers struct {
 	// NewestBackup is the newest backup's time ("" none); ok false when
 	// backups are not known.
 	NewestBackup func() (newest string, ok bool)
+	// BackupsOff says scheduled backups are turned off (nil: not known).
+	BackupsOff func(context.Context) bool
 	// MetadataUp says whether the metadata server answers; known false
 	// when that is not known.
 	MetadataUp func(context.Context) (up, known bool)
@@ -397,6 +404,9 @@ func (a *StatusHandlers) statusInput(ctx context.Context, now time.Time) (Status
 		if newest, ok := a.NewestBackup(); ok {
 			in.NewestBackup = &newest
 		}
+	}
+	if a.BackupsOff != nil {
+		in.BackupsOff = a.BackupsOff(ctx)
 	}
 	if a.MetadataMode != nil {
 		in.MetadataMode, in.MetadataBad = a.MetadataMode()
