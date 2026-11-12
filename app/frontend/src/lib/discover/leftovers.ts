@@ -1,4 +1,4 @@
-// Leftover files of a title (#284): videos in its folder that fill no listed episode.
+// Leftover files of a title: videos in its folder that fill no listed episode.
 
 export type Leftover = {
 	file_id: number;

@@ -78,7 +78,7 @@ func filled(t *testing.T, s *database.Store, id int64) map[string]bool {
 	return out
 }
 
-// #284 test 1 and 4: the source merges 2x12 into 1x24. After a refresh and
+// Leftovers test 1 and 4: the source merges 2x12 into 1x24. After a refresh and
 // rescan the twelve season 2 files are leftovers; a bulk match links all
 // 24 episodes, moves nothing, and survives a refresh and a rescan. When the
 // episodes leave the list again the files are leftovers again.
@@ -164,7 +164,7 @@ func TestLeftoversAfterSeasonMerge(t *testing.T) {
 	}
 }
 
-// #284 test 2 and 7: an episode removed while it holds a file lists the
+// Leftovers test 2 and 7: an episode removed while it holds a file lists the
 // file with its media facts; unmatch restores a note and dismiss lasts.
 func TestLeftoverRemovedEpisodeUnmatchDismiss(t *testing.T) {
 	svc, s, tmdb, _ := addShowService(t)
@@ -223,7 +223,7 @@ func TestLeftoverRemovedEpisodeUnmatchDismiss(t *testing.T) {
 	}
 }
 
-// #284 test 5 and 6: the match checks, replace, a double-episode file, a
+// Leftovers test 5 and 6: the match checks, replace, a double-episode file, a
 // special.
 func TestLeftoverMatchChecks(t *testing.T) {
 	svc, s, tmdb, _ := addShowService(t)
@@ -316,7 +316,7 @@ func addShowService2(t *testing.T, svc *Service, tmdb *fakeShows, lf mediafiles.
 	return episodes(t, svc.Store, res[0].TitleID)["S01E02"].ItemID
 }
 
-// #284 test 3: a title rescan with its folder gone, or most files gone at
+// Leftovers test 3: a title rescan with its folder gone, or most files gone at
 // once, marks nothing missing.
 func TestRescanTitleGuards(t *testing.T) {
 	svc, s, tmdb, _ := addShowService(t)

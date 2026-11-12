@@ -10,7 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// #284 test 8: two videos in a movie's folder stay notes with
+// Leftovers test 8: two videos in a movie's folder stay notes with
 // movie_more_than_one; a match by hand links the chosen one, and replace
 // turns it back into a note when the other is picked.
 func TestMovieLeftoversMatchByHand(t *testing.T) {

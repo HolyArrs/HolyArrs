@@ -1,4 +1,4 @@
-<!-- Rescan folder and the title's leftover files (#284): match one by hand, move a shifted season in one go, or leave a file alone. Nothing moves on disk. -->
+<!-- Rescan folder and the title's leftover files: match one by hand, move a shifted season in one go, or leave a file alone. Nothing moves on disk. -->
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
