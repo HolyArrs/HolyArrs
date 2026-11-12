@@ -1249,5 +1249,12 @@
 	"downloads.row.imported": "இறக்குமதி செய்யப்பட்டது",
 	"downloads.row.stillIn": "இன்னும் {app} இல் உள்ளது",
 	"downloads.dp.openDownloaders": "பதிவிறக்கிகளைத் திற",
+	"downloads.ot.fromOldApps": "பழைய செயலிகளிலிருந்து ({n})",
+	"downloads.ot.importAgain": "இவற்றின் சோதனைகளைப் புதுப்பிக்க மீண்டும் இறக்குமதி செய்யுங்கள்; இவற்றின் புள்ளிகளை ஒவ்வொரு தேர்வு விதிகளிலும் மாற்றலாம்",
+	"downloads.ot.fromApp": "{app} இலிருந்து",
+	"downloads.ot.kindEdition": "பதிப்பு",
+	"downloads.ot.kindLanguage": "மொழி",
+	"downloads.ot.kindReleaseType": "வெளியீட்டு வகை",
+	"downloads.ot.kindYear": "ஆண்டு",
 	"downloads.hl.notMoved": "இறக்குமதிக்குப் பின் நகர்த்தப்படவில்லை"
 }

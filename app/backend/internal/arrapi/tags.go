@@ -30,24 +30,6 @@ func (h *handler) status(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// qualityProfiles lists the Pick rules for movies and shows as quality
-// profiles. Music rules are left out. Callers read only id and name.
-func (h *handler) qualityProfiles(w http.ResponseWriter, r *http.Request) {
-	ps, err := database.Select[mediafiles.PickRules](r.Context(), h.Store.Read(), "pick_rules", "1=1 ORDER BY id")
-	if err != nil {
-		internalError(w, err)
-		return
-	}
-	out := []map[string]any{}
-	for _, p := range ps {
-		if mediafiles.IsMusicRules(p.Body) {
-			continue
-		}
-		out = append(out, map[string]any{"id": p.ID, "name": p.Name})
-	}
-	writeJSON(w, http.StatusOK, out)
-}
-
 // folderKind returns the Library folder kind of this side.
 func (h *handler) folderKind() string {
 	if h.side == "sonarr" {

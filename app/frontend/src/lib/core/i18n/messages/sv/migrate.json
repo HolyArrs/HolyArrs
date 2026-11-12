@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs ser inte {path}. Använd sökvägen inuti containern: högra sidan av Docker-volymen.",
 	"migrate.foldersItSees": "Den ser: {list}",
 	"migrate.sameNewFolder": "Samma mapp som {list}. Deras titlar hamnar ihop; ge 4K eller andra kopior en egen mapp.",
-	"migrate.doneOfTotal": "{done} av {total}"
+	"migrate.doneOfTotal": "{done} av {total}",
+	"migrate.bringFormats": "Ta med format och poäng",
+	"migrate.bringFormatsHint": "Varje profil som ger format poäng blir egna Valregler, med de formaten som egenskaper.",
+	"migrate.formatTraits": "Egenskaper: {list}",
+	"migrate.formatsLeftOut": "Utelämnade: {list}"
 }

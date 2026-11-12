@@ -1249,5 +1249,12 @@
 	"downloads.row.imported": "Importuota",
 	"downloads.row.stillIn": "Vis dar programoje {app}",
 	"downloads.dp.openDownloaders": "Atidaryti Atsisiuntėjus",
+	"downloads.ot.fromOldApps": "Iš senų programų ({n})",
+	"downloads.ot.importAgain": "Importuok dar kartą, kad atnaujintum jų testus; jų taškus galima keisti kiekvienose Pasirinkimo taisyklėse",
+	"downloads.ot.fromApp": "Iš {app}",
+	"downloads.ot.kindEdition": "leidimas",
+	"downloads.ot.kindLanguage": "kalba",
+	"downloads.ot.kindReleaseType": "išleidimo tipas",
+	"downloads.ot.kindYear": "metai",
 	"downloads.hl.notMoved": "Po importo neperkelta"
 }

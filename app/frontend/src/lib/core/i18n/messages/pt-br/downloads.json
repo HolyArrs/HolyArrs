@@ -1249,5 +1249,12 @@
 	"downloads.row.imported": "Importado",
 	"downloads.row.stillIn": "Ainda no {app}",
 	"downloads.dp.openDownloaders": "Abrir downloaders",
+	"downloads.ot.fromOldApps": "Dos apps antigos ({n})",
+	"downloads.ot.importAgain": "Importe de novo para atualizar os testes deles; os pontos podem ser mudados em cada Regras de escolha",
+	"downloads.ot.fromApp": "Do {app}",
+	"downloads.ot.kindEdition": "edição",
+	"downloads.ot.kindLanguage": "idioma",
+	"downloads.ot.kindReleaseType": "tipo de lançamento",
+	"downloads.ot.kindYear": "ano",
 	"downloads.hl.notMoved": "Não movido após importar"
 }

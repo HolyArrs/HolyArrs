@@ -1272,10 +1272,22 @@
 	"server.downloads.marked-bad": "மோசமானதாகக் குறிக்கப்பட்டது",
 	"server.suggest.because-you-have": "உங்களிடம் {name} இருப்பதால்",
 	"server.health.downloader-save-folder": "பதிவிறக்கி சேமிக்கும் கோப்புறை",
+	"server.library.edition": "பதிப்பு",
+	"server.migrate.of-its-formats-become-traits-with": "இதன் {traits} வடிவங்கள் அதே புள்ளிகளுடன் பண்புகளாகின்றன",
+	"server.migrate.updated-the-ones-imported-before": "{what} (முன்பு இறக்குமதி செய்தவை புதுப்பிக்கப்பட்டன)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (முன்பு இறக்குமதி செய்தவற்றைப் புதுப்பிக்கிறது)",
+	"server.migrate.becomes-pick-rules-traits": "தேர்வு விதிகள் {name} ஆகிறது · {traits} பண்புகள்",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "இது {kinds} ஐச் சோதிக்கிறது, அதை HolyArrs சோதிக்க முடியாது",
+	"server.migrate.its-format-was-not-read-from": "இதன் வடிவம் பழைய செயலியிலிருந்து படிக்கப்படவில்லை",
+	"server.migrate.nothing-in-the-old-app-gives": "பழைய செயலியில் எதுவும் இதற்குப் புள்ளிகள் தரவில்லை, எனவே இங்கே எதையும் மாற்றாது",
+	"server.migrate.pick-rules-here-still-give-it": "இங்குள்ள தேர்வு விதிகள் இன்னும் இதற்குப் புள்ளிகள் தருகின்றன, எனவே இது இருக்கிறது",
+	"server.migrate.pick-rules-hold-at-most-64": "தேர்வு விதிகளில் அதிகபட்சம் 64 பண்புகள்; வலுவான மதிப்பெண்கள் வைக்கப்பட்டன",
+	"server.migrate.something-here-still-uses-these-pick": "இங்கே ஏதோ ஒன்று இன்னும் இந்தத் தேர்வு விதிகளைப் பயன்படுத்துகிறது, எனவே அவை இருக்கின்றன",
 	"server.downloads.could-not-move-the-imported-download": "இறக்குமதியான பதிவிறக்கத்தை {name} இல் {cat} க்கு நகர்த்த முடியவில்லை: {error}; அடுத்த இறக்குமதியில் HolyArrs மீண்டும் முயலும்",
 	"server.downloads.moved-to-after-import": "இறக்குமதிக்குப் பின் {cat} க்கு நகர்த்தப்பட்டது",
 	"server.library.files-matched-by-hand": "{name}: {n} கோப்புகள் கையால் பொருத்தப்பட்டன",
 	"server.library.no-such-file-in-this-title": "இந்தத் தலைப்பில் அப்படி ஒரு கோப்பு இல்லை",
 	"server.library.send-1-to-2000-files": "1 முதல் 2000 கோப்புகளை அனுப்பு",
-	"server.sources.this-kind-of-title-can-t": "இந்த வகைத் தலைப்பைத் தேட முடியாது"
+	"server.sources.this-kind-of-title-can-t": "இந்த வகைத் தலைப்பைத் தேட முடியாது",
+	"server.migrate.scored-there-points-here-stop-at": "{name} அங்கு {n} பெற்றது; இங்கு புள்ளிகள் {n2}-இல் நிற்கின்றன"
 }

@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} eiginleikar fengu stig",
 	"settings.pickRuleEdit.trashResult": "{n} eiginleikar fengu stig · {added} nýir · {updated} uppfærðir",
 	"settings.pickRuleEdit.trashLeftOut": "{n} útundan",
-	"settings.pickRuleEdit.trashTests": "prófar {kinds}"
+	"settings.pickRuleEdit.trashTests": "prófar {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Uppsprettur",
+	"settings.pickRuleEdit.sourcesDesc": "Leita aðeins í Uppsprettum sem deila einu af þessum merkjum. Hafðu autt til að leita í öllum Uppsprettum.",
+	"settings.pickRuleEdit.tags": "Merki"
 }

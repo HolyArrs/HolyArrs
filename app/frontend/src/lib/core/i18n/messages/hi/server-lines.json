@@ -1272,10 +1272,22 @@
 	"server.downloads.marked-bad": "खराब के रूप में चिह्नित",
 	"server.suggest.because-you-have": "क्योंकि आपके पास {name} है",
 	"server.health.downloader-save-folder": "डाउनलोडर का सेव फ़ोल्डर",
+	"server.library.edition": "संस्करण",
+	"server.migrate.of-its-formats-become-traits-with": "इसके {traits} फ़ॉर्मेट उन्हीं पॉइंट के साथ विशेषताएं बनते हैं",
+	"server.migrate.updated-the-ones-imported-before": "{what} (पहले इंपोर्ट किए गए अपडेट हुए)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (पहले इंपोर्ट किए गए को अपडेट करता है)",
+	"server.migrate.becomes-pick-rules-traits": "चुनाव के नियम {name} बनता है · {traits} विशेषताएं",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "यह {kinds} टेस्ट करता है, जिसे HolyArrs टेस्ट नहीं कर सकता",
+	"server.migrate.its-format-was-not-read-from": "इसका फ़ॉर्मेट पुराने ऐप से नहीं पढ़ा गया",
+	"server.migrate.nothing-in-the-old-app-gives": "पुराने ऐप में कुछ भी इसे पॉइंट नहीं देता, इसलिए यह यहां कुछ नहीं बदलता",
+	"server.migrate.pick-rules-here-still-give-it": "यहां के चुनाव के नियम अब भी इसे पॉइंट देते हैं, इसलिए यह रहता है",
+	"server.migrate.pick-rules-hold-at-most-64": "चुनाव के नियम में ज़्यादा से ज़्यादा 64 विशेषताएं होती हैं; सबसे मज़बूत स्कोर रखे गए",
+	"server.migrate.something-here-still-uses-these-pick": "यहां कुछ अब भी इन चुनाव के नियम का इस्तेमाल करता है, इसलिए ये रहते हैं",
 	"server.downloads.could-not-move-the-imported-download": "इम्पोर्ट किया गया डाउनलोड {name} में {cat} पर नहीं ले जाया जा सका: {error}; HolyArrs अगले इम्पोर्ट पर फिर कोशिश करेगा",
 	"server.downloads.moved-to-after-import": "इम्पोर्ट के बाद {cat} में ले जाया गया",
 	"server.library.files-matched-by-hand": "{name}: {n} फ़ाइलें हाथ से मिलाई गईं",
 	"server.library.no-such-file-in-this-title": "इस टाइटल में ऐसी कोई फ़ाइल नहीं",
 	"server.library.send-1-to-2000-files": "1 से 2000 फ़ाइलें भेजें",
-	"server.sources.this-kind-of-title-can-t": "इस तरह का शीर्षक खोजा नहीं जा सकता"
+	"server.sources.this-kind-of-title-can-t": "इस तरह का शीर्षक खोजा नहीं जा सकता",
+	"server.migrate.scored-there-points-here-stop-at": "{name} को वहाँ {n} मिले थे; यहाँ पॉइंट {n2} पर रुकते हैं"
 }

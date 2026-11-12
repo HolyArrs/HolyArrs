@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} ominaisuutta pisteytetty",
 	"settings.pickRuleEdit.trashResult": "{n} ominaisuutta pisteytetty · {added} uutta · {updated} päivitetty",
 	"settings.pickRuleEdit.trashLeftOut": "{n} jätetty pois",
-	"settings.pickRuleEdit.trashTests": "testaa {kinds}"
+	"settings.pickRuleEdit.trashTests": "testaa {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Lähteet",
+	"settings.pickRuleEdit.sourcesDesc": "Hae vain Lähteistä, joilla on jokin näistä tunnisteista. Jätä tyhjäksi hakeaksesi kaikista Lähteistä.",
+	"settings.pickRuleEdit.tags": "Tunnisteet"
 }

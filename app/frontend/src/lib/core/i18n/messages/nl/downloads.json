@@ -1249,5 +1249,12 @@
 	"downloads.row.imported": "Geïmporteerd",
 	"downloads.row.stillIn": "Nog in {app}",
 	"downloads.dp.openDownloaders": "Downloaders openen",
+	"downloads.ot.fromOldApps": "Uit oude apps ({n})",
+	"downloads.ot.importAgain": "Importeer opnieuw om hun tests bij te werken; hun punten kun je in elke Keuzeregels wijzigen",
+	"downloads.ot.fromApp": "Uit {app}",
+	"downloads.ot.kindEdition": "editie",
+	"downloads.ot.kindLanguage": "taal",
+	"downloads.ot.kindReleaseType": "soort release",
+	"downloads.ot.kindYear": "jaar",
 	"downloads.hl.notMoved": "Niet verplaatst na import"
 }

@@ -1272,10 +1272,22 @@
 	"server.downloads.marked-bad": "Bozuk olarak işaretlendi",
 	"server.suggest.because-you-have": "{name} sende olduğu için",
 	"server.health.downloader-save-folder": "İndiricinin kayıt klasörü",
+	"server.library.edition": "sürüm",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} biçimi aynı puanlarla özellik olur",
+	"server.migrate.updated-the-ones-imported-before": "{what} (önceden içe aktarılanlar güncellendi)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (önceden içe aktarılanları günceller)",
+	"server.migrate.becomes-pick-rules-traits": "{name} Seçim kuralları olur · {traits} özellik",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "{kinds} test ediyor, HolyArrs bunu test edemez",
+	"server.migrate.its-format-was-not-read-from": "biçimi eski uygulamadan okunamadı",
+	"server.migrate.nothing-in-the-old-app-gives": "eski uygulamada ona puan veren bir şey yok, bu yüzden burada hiçbir şeyi değiştirmez",
+	"server.migrate.pick-rules-here-still-give-it": "buradaki Seçim kuralları ona hâlâ puan veriyor, bu yüzden kalıyor",
+	"server.migrate.pick-rules-hold-at-most-64": "Seçim kuralları en fazla 64 özellik tutar; en güçlü puanlar tutuldu",
+	"server.migrate.something-here-still-uses-these-pick": "burada bir şey bu Seçim kurallarını hâlâ kullanıyor, bu yüzden kalıyorlar",
 	"server.downloads.could-not-move-the-imported-download": "İçe aktarılan indirme {name} içinde {cat} kategorisine taşınamadı: {error}; HolyArrs bir sonraki içe aktarmada yeniden dener",
 	"server.downloads.moved-to-after-import": "İçe aktarmadan sonra {cat} kategorisine taşındı",
 	"server.library.files-matched-by-hand": "{name}: {n} dosya elle eşleştirildi",
 	"server.library.no-such-file-in-this-title": "bu başlıkta böyle bir dosya yok",
 	"server.library.send-1-to-2000-files": "1 ile 2000 arasında dosya gönder",
-	"server.sources.this-kind-of-title-can-t": "bu tür başlık aranamaz"
+	"server.sources.this-kind-of-title-can-t": "bu tür başlık aranamaz",
+	"server.migrate.scored-there-points-here-stop-at": "{name} orada {n} aldı; puanlar burada {n2} değerinde durur"
 }

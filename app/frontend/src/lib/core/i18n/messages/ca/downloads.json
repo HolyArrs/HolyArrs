@@ -1249,5 +1249,12 @@
 	"downloads.row.imported": "Importat",
 	"downloads.row.stillIn": "Encara a {app}",
 	"downloads.dp.openDownloaders": "Obre Gestors de baixades",
+	"downloads.ot.fromOldApps": "De les apps antigues ({n})",
+	"downloads.ot.importAgain": "Torna a importar per actualitzar-ne les proves; els punts es poden canviar a cada Regles d'elecció",
+	"downloads.ot.fromApp": "De {app}",
+	"downloads.ot.kindEdition": "edició",
+	"downloads.ot.kindLanguage": "idioma",
+	"downloads.ot.kindReleaseType": "tipus de llançament",
+	"downloads.ot.kindYear": "any",
 	"downloads.hl.notMoved": "No s'ha mogut després d'importar"
 }

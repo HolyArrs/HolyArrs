@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs sér ekki {path}. Notaðu slóðina inni í gáminum: hægri hlið Docker-bindingarinnar.",
 	"migrate.foldersItSees": "Það sér: {list}",
 	"migrate.sameNewFolder": "Sama mappa og {list}. Titlar þeirra enda saman; gefðu 4K eða öðrum eintökum sína eigin möppu.",
-	"migrate.doneOfTotal": "{done} af {total}"
+	"migrate.doneOfTotal": "{done} af {total}",
+	"migrate.bringFormats": "Taka snið og stig með",
+	"migrate.bringFormatsHint": "Hver prófíll sem gefur sniðum stig verður að eigin Valreglum, með þau snið sem eiginleika.",
+	"migrate.formatTraits": "Eiginleikar: {list}",
+	"migrate.formatsLeftOut": "Sleppt: {list}"
 }

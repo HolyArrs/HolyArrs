@@ -1272,10 +1272,22 @@
 	"server.downloads.marked-bad": "불량으로 표시됨",
 	"server.suggest.because-you-have": "{name}을(를) 가지고 있어서",
 	"server.health.downloader-save-folder": "다운로더 저장 폴더",
+	"server.library.edition": "에디션",
+	"server.migrate.of-its-formats-become-traits-with": "포맷 {traits}개가 같은 점수의 특성이 됩니다",
+	"server.migrate.updated-the-ones-imported-before": "{what} (전에 가져온 것을 업데이트함)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (전에 가져온 것을 업데이트함)",
+	"server.migrate.becomes-pick-rules-traits": "선택 규칙 {name}이 됩니다 · 특성 {traits}개",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "{kinds}을(를) 테스트하는데, HolyArrs는 이를 테스트할 수 없습니다",
+	"server.migrate.its-format-was-not-read-from": "이전 앱에서 포맷을 읽지 못했습니다",
+	"server.migrate.nothing-in-the-old-app-gives": "이전 앱에서 점수를 주는 것이 없어 여기서는 바뀌는 것이 없습니다",
+	"server.migrate.pick-rules-here-still-give-it": "여기 선택 규칙이 아직 점수를 주므로 남아 있습니다",
+	"server.migrate.pick-rules-hold-at-most-64": "선택 규칙에는 특성을 최대 64개까지 담을 수 있어 가장 높은 점수를 남겼습니다",
+	"server.migrate.something-here-still-uses-these-pick": "여기서 아직 이 선택 규칙을 사용하는 것이 있어 남아 있습니다",
 	"server.downloads.could-not-move-the-imported-download": "가져온 다운로드를 {name}의 {cat}(으)로 옮기지 못했습니다: {error}. 다음 가져오기 때 HolyArrs가 다시 시도합니다",
 	"server.downloads.moved-to-after-import": "가져온 후 {cat}(으)로 옮김",
 	"server.library.files-matched-by-hand": "{name}: 파일 {n}개를 직접 연결했어요",
 	"server.library.no-such-file-in-this-title": "이 타이틀에 그런 파일이 없어요",
 	"server.library.send-1-to-2000-files": "파일을 1~2000개 보내세요",
-	"server.sources.this-kind-of-title-can-t": "이 종류의 타이틀은 검색할 수 없습니다"
+	"server.sources.this-kind-of-title-can-t": "이 종류의 타이틀은 검색할 수 없습니다",
+	"server.migrate.scored-there-points-here-stop-at": "{name}은(는) 그곳에서 {n}점이었습니다. 여기서는 점수가 {n2}에서 멈춥니다"
 }

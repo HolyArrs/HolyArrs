@@ -30,6 +30,8 @@
 		seen = [],
 		skip,
 		people,
+		noFormats = false,
+		onformats,
 		onfolder,
 		onother,
 		onextra,
@@ -50,6 +52,8 @@
 		seen?: string[];
 		skip: string[];
 		people: Record<string, PersonChoice>;
+		noFormats?: boolean;
+		onformats?: (on: boolean) => void;
 		onfolder: (from: string, pick: string) => void;
 		onother: (from: string, to: string) => void;
 		onextra: (rules: PathRule[]) => void;
@@ -185,9 +189,14 @@
 		return { text: '', warn: false };
 	}
 	function itemRow(it: PlanItem) {
-		const hint = [serverWords(it.why || it.detail), it.needs ? t('migrate.needs', { what: serverWords(it.needs) }) : ''].filter(Boolean).join(' · ');
+		const traits = it.rules?.traits?.length ? t('migrate.formatTraits', { list: it.rules.traits.map((x) => `${x.name} ${x.points > 0 ? '+' : ''}${x.points}`).join(', ') }) : '';
+		const left = it.rules?.skipped?.length ? t('migrate.formatsLeftOut', { list: it.rules.skipped.map((x) => `${x.name} (${serverWords(x.reason)})`).join('; ') }) : '';
+		const lead = it.rules?.body ? [serverWords(it.detail), serverWords(it.why)] : [serverWords(it.why || it.detail)];
+		const hint = [...lead, traits, left, it.needs ? t('migrate.needs', { what: serverWords(it.needs) }) : ''].filter(Boolean).join(' · ');
 		return { key: it.key, name: serverWords(it.name), hint };
 	}
+	// Profiles that score formats can bring them as traits; the switch shows while any could.
+	const formatsAsk = $derived(noFormats || (plan?.groups.find((g) => g.name === 'pick_rules')?.items ?? []).some((it) => !!it.rules?.body));
 	function openKeys(k: 'sources' | 'downloaders') {
 		keysOf = k;
 		keysOpen = true;
@@ -360,6 +369,15 @@
 										<span class="sw" aria-hidden="true"></span>
 									</label>
 								</li>
+								{#if g.name === 'pick_rules' && formatsAsk && onformats && !skip.includes(g.name)}
+									<li class="mrow" data-testid="formats-row">
+										<span class="txt"><label class="name" for="move-formats">{t('migrate.bringFormats')}</label><span class="sub">{t('migrate.bringFormatsHint')}</span></span>
+										<label class="switch">
+											<input id="move-formats" type="checkbox" checked={!noFormats} onchange={(e) => onformats(e.currentTarget.checked)} />
+											<span class="sw" aria-hidden="true"></span>
+										</label>
+									</li>
+								{/if}
 							{/each}
 						</ul>
 					{/if}
@@ -471,6 +489,8 @@
 	.arrow { flex: none; color: var(--text-muted); }
 	.sw-word { color: var(--text-muted); font: var(--t-footnote); white-space: nowrap; }
 	.switch { flex: none; }
+	/* Settings pages stretch a switch that sits straight in a list row; here the row's words take that room. */
+	.list > .mrow > label.switch { width: auto; }
 
 	select.pick { flex: none; width: 240px; min-height: 36px; height: 36px; }
 	.half { flex: 1 1 0; min-width: 0; min-height: 36px; height: 36px; }

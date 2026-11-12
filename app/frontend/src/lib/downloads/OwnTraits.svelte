@@ -43,7 +43,10 @@
 	// Traits synced from TRaSH Guides sit apart: there can be dozens, and only a sync changes them.
 	const handMade = $derived((list ?? []).filter((o) => !o.source));
 	const synced = $derived((list ?? []).filter((o) => o.source === 'trash'));
-	const specWord = (k: string) => ({ name: t('downloads.ot.kindName'), group: t('downloads.ot.kindGroup'), source: t('downloads.ot.kindSource'), resolution: t('downloads.ot.kindResolution'), size: t('downloads.ot.kindSize') })[k] ?? k;
+	const imported = $derived((list ?? []).filter((o) => o.source === 'import' || o.source === 'arrapi'));
+	const appWord = (o: OwnTrait) => ({ sonarr: 'Sonarr', radarr: 'Radarr' })[o.app ?? ''] ?? '';
+	const specWord = (k: string) =>
+		({ name: t('downloads.ot.kindName'), group: t('downloads.ot.kindGroup'), source: t('downloads.ot.kindSource'), modifier: t('downloads.ot.kindSource'), resolution: t('downloads.ot.kindResolution'), size: t('downloads.ot.kindSize'), edition: t('downloads.ot.kindEdition'), language: t('downloads.ot.kindLanguage'), release_type: t('downloads.ot.kindReleaseType'), year: t('downloads.ot.kindYear') })[k] ?? k;
 	const specSummary = (o: OwnTrait) => (o.specs ?? []).map((s) => t(s.negate ? 'downloads.ot.specNot' : 'downloads.ot.spec', { name: s.name, kind: specWord(s.kind) })).join(', ');
 	const sizeWords = (term: string) => {
 		const { over, upTo } = sizeParts(term);
@@ -164,6 +167,25 @@
 							<span class="grow">
 								<b>{o.name}</b>
 								<span class="xs muted meta">{specSummary(o)}</span>
+							</span>
+							{#if mayEdit}<span class="acts">
+									<Menu label={t('downloads.ot.moreFor', { name: o.name })} items={[{ label: t('downloads.act.remove'), icon: 'trash', destructive: true, onselect: () => ((removing = o), (removeError = ''), (removeOpen = true)) }]} />
+								</span>{/if}
+						</li>
+					{/each}
+				</ul>
+			</details>
+		{/if}
+		{#if imported.length}
+			<details class="synced" data-testid="imported-traits">
+				<summary>{t('downloads.ot.fromOldApps', { n: imported.length })}</summary>
+				<p class="xs muted">{t('downloads.ot.importAgain')}</p>
+				<ul class="rows">
+					{#each imported as o (o.id)}
+						<li data-testid="imported-trait">
+							<span class="grow">
+								<b>{o.name}</b>
+								<span class="xs muted meta">{[appWord(o) && t('downloads.ot.fromApp', { app: appWord(o) }), specSummary(o)].filter(Boolean).join(' · ')}</span>
 							</span>
 							{#if mayEdit}<span class="acts">
 									<Menu label={t('downloads.ot.moreFor', { name: o.name })} items={[{ label: t('downloads.act.remove'), icon: 'trash', destructive: true, onselect: () => ((removing = o), (removeError = ''), (removeOpen = true)) }]} />

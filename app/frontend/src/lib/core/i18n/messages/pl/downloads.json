@@ -1249,5 +1249,12 @@
 	"downloads.row.imported": "Zaimportowano",
 	"downloads.row.stillIn": "Nadal w {app}",
 	"downloads.dp.openDownloaders": "Otwórz klienty pobierania",
+	"downloads.ot.fromOldApps": "Ze starych aplikacji ({n})",
+	"downloads.ot.importAgain": "Zaimportuj ponownie, aby zaktualizować ich testy; ich punkty można zmienić w każdych Regułach wyboru",
+	"downloads.ot.fromApp": "Z {app}",
+	"downloads.ot.kindEdition": "wydanie",
+	"downloads.ot.kindLanguage": "język",
+	"downloads.ot.kindReleaseType": "typ wydania",
+	"downloads.ot.kindYear": "rok",
 	"downloads.hl.notMoved": "Nie przeniesiono po imporcie"
 }

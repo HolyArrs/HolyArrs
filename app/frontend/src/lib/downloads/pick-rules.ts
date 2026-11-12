@@ -296,6 +296,7 @@ export function tidyBody(body: PickRulesBody): PickRulesBody {
 	else b.good_enough_points = whole(gep);
 	b.protocol.wait_minutes_torrent = whole(b.protocol.wait_minutes_torrent);
 	b.protocol.wait_minutes_usenet = whole(b.protocol.wait_minutes_usenet);
+	if (!b.tags?.length) delete b.tags;
 	const days = whole(b.proper_policy.max_age_days);
 	if (days) b.proper_policy.max_age_days = days;
 	else delete b.proper_policy.max_age_days;

@@ -1272,10 +1272,22 @@
 	"server.downloads.marked-bad": "وُسم بأنه تالف",
 	"server.suggest.because-you-have": "لأن لديك {name}",
 	"server.health.downloader-save-folder": "مجلد حفظ برنامج التنزيل",
+	"server.library.edition": "الإصدار",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} من صيغه تصبح سمات بالنقاط نفسها",
+	"server.migrate.updated-the-ones-imported-before": "{what} (حُدّثت التي استُوردت من قبل)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (يحدّث التي استُوردت من قبل)",
+	"server.migrate.becomes-pick-rules-traits": "يصبح قواعد الاختيار {name} · {traits} سمات",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "يختبر {kinds}، وهذا ما لا يستطيع HolyArrs اختباره",
+	"server.migrate.its-format-was-not-read-from": "لم تُقرأ صيغته من التطبيق القديم",
+	"server.migrate.nothing-in-the-old-app-gives": "لا شيء في التطبيق القديم يمنحه نقاطًا، لذا لا يغيّر شيئًا هنا",
+	"server.migrate.pick-rules-here-still-give-it": "ما زالت قواعد اختيار هنا تمنحه نقاطًا، لذا يبقى",
+	"server.migrate.pick-rules-hold-at-most-64": "تحمل قواعد الاختيار 64 سمة على الأكثر؛ احتُفظ بأقوى النقاط",
+	"server.migrate.something-here-still-uses-these-pick": "ما زال شيء هنا يستخدم قواعد الاختيار هذه، لذا تبقى",
 	"server.downloads.could-not-move-the-imported-download": "تعذّر نقل التنزيل المستورد إلى {cat} في {name}: {error}؛ سيحاول HolyArrs مجددًا في الاستيراد التالي",
 	"server.downloads.moved-to-after-import": "نُقل إلى {cat} بعد الاستيراد",
 	"server.library.files-matched-by-hand": "{name}: تمت مطابقة {n} ملفات يدويًا",
 	"server.library.no-such-file-in-this-title": "لا يوجد ملف كهذا في هذا العنوان",
 	"server.library.send-1-to-2000-files": "أرسل من 1 إلى 2000 ملف",
-	"server.sources.this-kind-of-title-can-t": "لا يمكن البحث عن هذا النوع من العناوين"
+	"server.sources.this-kind-of-title-can-t": "لا يمكن البحث عن هذا النوع من العناوين",
+	"server.migrate.scored-there-points-here-stop-at": "{name} سجّل {n} هناك؛ النقاط هنا تتوقف عند {n2}"
 }

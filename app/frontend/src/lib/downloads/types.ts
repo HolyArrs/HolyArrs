@@ -33,6 +33,8 @@ export interface PickRulesBody {
 	order: 'quality_then_points' | 'points_then_quality';
 	upgrade_min_points: number;
 	proper_policy: { mode: 'take_any' | 'same_group_only' | 'prefer_only' | 'ignore'; max_age_days?: number };
+	/** With any, a search asks only the Sources sharing one of these tags. */
+	tags?: string[];
 	/** Set when a TRaSH Guides profile was applied. */
 	synced?: SyncedProfile;
 }
@@ -45,8 +47,10 @@ export interface OwnTrait {
 	match: 'name' | 'group' | 'size';
 	/** Plain words (any case) or /pattern/. */
 	terms: string[];
-	/** "trash" for a trait synced from TRaSH Guides: it tests specs and is changed only by syncing again. */
+	/** "trash" for a trait synced from TRaSH Guides, "import" for one brought from an old app, "arrapi" for one an app sent through the arr API: it tests specs, which only a sync or an import changes. */
 	source?: string;
+	/** For an imported trait, the old app it came from (sonarr, radarr). */
+	app?: string;
 	specs?: OwnSpec[];
 }
 

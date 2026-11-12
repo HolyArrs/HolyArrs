@@ -1249,5 +1249,12 @@
 	"downloads.row.imported": "İçe aktarıldı",
 	"downloads.row.stillIn": "Hâlâ {app} içinde",
 	"downloads.dp.openDownloaders": "İndiricileri aç",
+	"downloads.ot.fromOldApps": "Eski uygulamalardan ({n})",
+	"downloads.ot.importAgain": "Testlerini güncellemek için yeniden içe aktar; puanları her Seçim kurallarında değiştirilebilir",
+	"downloads.ot.fromApp": "{app} uygulamasından",
+	"downloads.ot.kindEdition": "sürüm",
+	"downloads.ot.kindLanguage": "dil",
+	"downloads.ot.kindReleaseType": "yayın türü",
+	"downloads.ot.kindYear": "yıl",
 	"downloads.hl.notMoved": "İçe aktarmadan sonra taşınmadı"
 }

@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs не вижда {path}. Ползвайте пътя вътре в контейнера: дясната страна на Docker тома.",
 	"migrate.foldersItSees": "Вижда: {list}",
 	"migrate.sameNewFolder": "Същата папка като {list}. Заглавията им се смесват; дайте на 4K или други копия собствена папка.",
-	"migrate.doneOfTotal": "{done} от {total}"
+	"migrate.doneOfTotal": "{done} от {total}",
+	"migrate.bringFormats": "Пренеси формати и точки",
+	"migrate.bringFormatsHint": "Всеки профил, който дава точки на формати, става свои Правила за избор, с тези формати като признаци.",
+	"migrate.formatTraits": "Признаци: {list}",
+	"migrate.formatsLeftOut": "Пропуснати: {list}"
 }

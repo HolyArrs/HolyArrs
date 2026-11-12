@@ -1272,10 +1272,22 @@
 	"server.downloads.marked-bad": "Merkt sem slæmt",
 	"server.suggest.because-you-have": "Af því að þú átt {name}",
 	"server.health.downloader-save-folder": "Vistunarmappa niðurhalara",
+	"server.library.edition": "útgáfa",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} af sniðum hans verða eiginleikar með sömu stigum",
+	"server.migrate.updated-the-ones-imported-before": "{what} (þau sem voru flutt inn áður voru uppfærð)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (uppfærir þau sem voru flutt inn áður)",
+	"server.migrate.becomes-pick-rules-traits": "verður að Valreglunum {name} · {traits} eiginleikar",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "það prófar {kinds}, sem HolyArrs getur ekki prófað",
+	"server.migrate.its-format-was-not-read-from": "snið þess var ekki lesið úr gamla appinu",
+	"server.migrate.nothing-in-the-old-app-gives": "ekkert í gamla appinu gefur því stig, svo það breytir engu hér",
+	"server.migrate.pick-rules-here-still-give-it": "Valreglur hér gefa því enn stig, svo það helst",
+	"server.migrate.pick-rules-hold-at-most-64": "Valreglur rúma mest 64 eiginleika; sterkustu stigin voru haldin",
+	"server.migrate.something-here-still-uses-these-pick": "eitthvað hér notar enn þessar Valreglur, svo þær haldast",
 	"server.downloads.could-not-move-the-imported-download": "Ekki tókst að færa innflutta niðurhalið í {cat} í {name}: {error}; HolyArrs reynir aftur við næsta innflutning",
 	"server.downloads.moved-to-after-import": "Fært í {cat} eftir innflutning",
 	"server.library.files-matched-by-hand": "{name}: {n} skrár tengdar handvirkt",
 	"server.library.no-such-file-in-this-title": "engin slík skrá í þessum titli",
 	"server.library.send-1-to-2000-files": "sendu 1 til 2000 skrár",
-	"server.sources.this-kind-of-title-can-t": "ekki er hægt að leita að þessari tegund titils"
+	"server.sources.this-kind-of-title-can-t": "ekki er hægt að leita að þessari tegund titils",
+	"server.migrate.scored-there-points-here-stop-at": "{name} fékk {n} þar; stig hér stöðvast við {n2}"
 }

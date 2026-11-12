@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs {path} দেখতে পায় না। এর কন্টেইনারের ভেতরের পাথ ব্যবহার করুন: Docker ভলিউমের ডান দিকটি।",
 	"migrate.foldersItSees": "এটি দেখতে পায়: {list}",
 	"migrate.sameNewFolder": "{list}-এর মতোই ফোল্ডার। তাদের টাইটেল একসঙ্গে মিশে যায়; 4K বা অন্য কপিকে নিজস্ব ফোল্ডার দিন।",
-	"migrate.doneOfTotal": "{total}টির মধ্যে {done}টি"
+	"migrate.doneOfTotal": "{total}টির মধ্যে {done}টি",
+	"migrate.bringFormats": "ফরম্যাট ও স্কোর আনুন",
+	"migrate.bringFormatsHint": "যে প্রোফাইল ফরম্যাটে স্কোর দেয়, সেটি নিজস্ব বাছাইয়ের নিয়ম হয়, আর সেই ফরম্যাটগুলো বৈশিষ্ট্য হয়।",
+	"migrate.formatTraits": "বৈশিষ্ট্য: {list}",
+	"migrate.formatsLeftOut": "বাদ পড়েছে: {list}"
 }

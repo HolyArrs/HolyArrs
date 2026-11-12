@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs не видит {path}. Укажите путь внутри контейнера: правую часть тома Docker.",
 	"migrate.foldersItSees": "Видны папки: {list}",
 	"migrate.sameNewFolder": "Та же папка, что и у {list}. Их фильмы и сериалы окажутся вместе; дайте 4K и другим копиям отдельную папку.",
-	"migrate.doneOfTotal": "{done} из {total}"
+	"migrate.doneOfTotal": "{done} из {total}",
+	"migrate.bringFormats": "Перенести форматы и оценки",
+	"migrate.bringFormatsHint": "Каждый профиль, который оценивает форматы, становится своими Правилами отбора, а эти форматы — признаками.",
+	"migrate.formatTraits": "Признаки: {list}",
+	"migrate.formatsLeftOut": "Не перенесено: {list}"
 }

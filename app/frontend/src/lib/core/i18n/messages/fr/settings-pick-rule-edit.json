@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} critères notés",
 	"settings.pickRuleEdit.trashResult": "{n} critères notés · {added} nouveaux · {updated} mis à jour",
 	"settings.pickRuleEdit.trashLeftOut": "{n} laissés de côté",
-	"settings.pickRuleEdit.trashTests": "teste {kinds}"
+	"settings.pickRuleEdit.trashTests": "teste {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Sources",
+	"settings.pickRuleEdit.sourcesDesc": "Ne chercher que dans les Sources qui partagent une de ces étiquettes. Laissez vide pour chercher dans toutes les Sources.",
+	"settings.pickRuleEdit.tags": "Étiquettes"
 }

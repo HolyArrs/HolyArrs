@@ -1272,10 +1272,22 @@
 	"server.downloads.marked-bad": "Oznaczono jako wadliwe",
 	"server.suggest.because-you-have": "Bo masz {name}",
 	"server.health.downloader-save-folder": "Folder zapisu Downloadera",
+	"server.library.edition": "wydanie",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} jego formatów staje się cechami z tymi samymi punktami",
+	"server.migrate.updated-the-ones-imported-before": "{what} (zaktualizowano te zaimportowane wcześniej)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (aktualizuje te zaimportowane wcześniej)",
+	"server.migrate.becomes-pick-rules-traits": "staje się Regułami wyboru {name} · {traits} cech",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "testuje {kinds}, czego HolyArrs nie umie testować",
+	"server.migrate.its-format-was-not-read-from": "jego formatu nie odczytano ze starej aplikacji",
+	"server.migrate.nothing-in-the-old-app-gives": "nic w starej aplikacji nie daje mu punktów, więc niczego tu nie zmienia",
+	"server.migrate.pick-rules-here-still-give-it": "Reguły wyboru tutaj wciąż dają mu punkty, więc zostaje",
+	"server.migrate.pick-rules-hold-at-most-64": "Reguły wyboru mieszczą najwyżej 64 cechy; zachowano najsilniejsze wyniki",
+	"server.migrate.something-here-still-uses-these-pick": "coś tutaj wciąż używa tych Reguł wyboru, więc zostają",
 	"server.downloads.could-not-move-the-imported-download": "Nie udało się przenieść zaimportowanego pobrania do {cat} w {name}: {error}; HolyArrs spróbuje ponownie przy następnym imporcie",
 	"server.downloads.moved-to-after-import": "Przeniesiono do {cat} po imporcie",
 	"server.library.files-matched-by-hand": "{name}: ręcznie dopasowane pliki: {n}",
 	"server.library.no-such-file-in-this-title": "nie ma takiego pliku w tym tytule",
 	"server.library.send-1-to-2000-files": "wyślij od 1 do 2000 plików",
-	"server.sources.this-kind-of-title-can-t": "tego rodzaju tytułu nie można wyszukać"
+	"server.sources.this-kind-of-title-can-t": "tego rodzaju tytułu nie można wyszukać",
+	"server.migrate.scored-there-points-here-stop-at": "{name} miało tam {n}; punkty tutaj kończą się na {n2}"
 }

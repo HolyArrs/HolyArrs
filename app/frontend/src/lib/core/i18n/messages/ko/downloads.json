@@ -1249,5 +1249,12 @@
 	"downloads.row.imported": "가져옴",
 	"downloads.row.stillIn": "아직 {app}에 있음",
 	"downloads.dp.openDownloaders": "다운로더 열기",
+	"downloads.ot.fromOldApps": "이전 앱에서 ({n})",
+	"downloads.ot.importAgain": "테스트를 업데이트하려면 다시 가져오세요. 점수는 각 선택 규칙에서 바꿀 수 있습니다",
+	"downloads.ot.fromApp": "{app}에서",
+	"downloads.ot.kindEdition": "에디션",
+	"downloads.ot.kindLanguage": "언어",
+	"downloads.ot.kindReleaseType": "릴리스 유형",
+	"downloads.ot.kindYear": "연도",
 	"downloads.hl.notMoved": "가져온 후 옮기지 못함"
 }

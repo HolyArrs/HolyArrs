@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} özellik puanlandı",
 	"settings.pickRuleEdit.trashResult": "{n} özellik puanlandı · {added} yeni · {updated} güncellendi",
 	"settings.pickRuleEdit.trashLeftOut": "{n} dışarıda kaldı",
-	"settings.pickRuleEdit.trashTests": "dener {kinds}"
+	"settings.pickRuleEdit.trashTests": "dener {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Kaynaklar",
+	"settings.pickRuleEdit.sourcesDesc": "Yalnızca bu etiketlerden birini paylaşan Kaynaklarda ara. Her Kaynakta aramak için boş bırak.",
+	"settings.pickRuleEdit.tags": "Etiketler"
 }

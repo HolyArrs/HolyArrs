@@ -212,6 +212,7 @@ Language LanguageRule `json:"language"`
 Order string `json:"order"`
 UpgradeMinPoints int `json:"upgrade_min_points"`
 ProperPolicy ProperPolicy `json:"proper_policy"`
+Tags []string `json:"tags,omitempty"`
 Synced *SyncedProfile `json:"synced,omitempty"`
 == OwnTrait
 Meta Meta ``

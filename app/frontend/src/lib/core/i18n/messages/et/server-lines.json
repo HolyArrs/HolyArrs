@@ -1272,10 +1272,22 @@
 	"server.downloads.marked-bad": "Märgitud vigaseks",
 	"server.suggest.because-you-have": "Sest sul on {name}",
 	"server.health.downloader-save-folder": "Allalaadija salvestuskaust",
+	"server.library.edition": "väljaanne",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} selle vormingut saavad samade punktidega tunnusteks",
+	"server.migrate.updated-the-ones-imported-before": "{what} (varem imporditud uuendati)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (uuendab varem imporditud)",
+	"server.migrate.becomes-pick-rules-traits": "saab Valikureegliteks {name} · {traits} tunnust",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "see testib {kinds}, mida HolyArrs testida ei oska",
+	"server.migrate.its-format-was-not-read-from": "selle vormingut ei loetud vanast rakendusest",
+	"server.migrate.nothing-in-the-old-app-gives": "miski vanas rakenduses ei anna sellele punkte, seega ei muuda see siin midagi",
+	"server.migrate.pick-rules-here-still-give-it": "siinsed Valikureeglid annavad sellele veel punkte, seega see jääb",
+	"server.migrate.pick-rules-hold-at-most-64": "Valikureeglites on kuni 64 tunnust; alles jäeti tugevaimad skoorid",
+	"server.migrate.something-here-still-uses-these-pick": "miski siin kasutab neid Valikureegleid veel, seega need jäävad",
 	"server.downloads.could-not-move-the-imported-download": "Imporditud allalaadimist ei saanud teisaldada kategooriasse {cat} kliendis {name}: {error}; HolyArrs proovib järgmisel impordil uuesti",
 	"server.downloads.moved-to-after-import": "Pärast importi teisaldatud kategooriasse {cat}",
 	"server.library.files-matched-by-hand": "{name}: {n} faili käsitsi seotud",
 	"server.library.no-such-file-in-this-title": "sellist faili selles nimetuses pole",
 	"server.library.send-1-to-2000-files": "saada 1 kuni 2000 faili",
-	"server.sources.this-kind-of-title-can-t": "seda liiki pealkirja ei saa otsida"
+	"server.sources.this-kind-of-title-can-t": "seda liiki pealkirja ei saa otsida",
+	"server.migrate.scored-there-points-here-stop-at": "{name} sai seal {n}; punktid lõpevad siin {n2} juures"
 }

@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs не види {path}. Користи путању унутар његовог контејнера: десна страна Docker волумена.",
 	"migrate.foldersItSees": "Види: {list}",
 	"migrate.sameNewFolder": "Иста фасцикла као {list}. Њихови наслови се завршавају заједно; дај 4K или другим копијама своју фасциклу.",
-	"migrate.doneOfTotal": "{done} од {total}"
+	"migrate.doneOfTotal": "{done} од {total}",
+	"migrate.bringFormats": "Пренеси формате и оцене",
+	"migrate.bringFormatsHint": "Сваки профил који бодује формате постаје сопствена Правила избора, а ти формати постају особине.",
+	"migrate.formatTraits": "Особине: {list}",
+	"migrate.formatsLeftOut": "Изостављено: {list}"
 }

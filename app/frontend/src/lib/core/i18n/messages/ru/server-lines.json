@@ -1272,10 +1272,22 @@
 	"server.downloads.marked-bad": "Помечено как плохое",
 	"server.suggest.because-you-have": "Потому что у вас есть {name}",
 	"server.health.downloader-save-folder": "Папка сохранения загрузчика",
+	"server.library.edition": "издание",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} его форматов становятся признаками с теми же баллами",
+	"server.migrate.updated-the-ones-imported-before": "{what} (импортированные ранее обновлены)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (обновляет импортированные ранее)",
+	"server.migrate.becomes-pick-rules-traits": "становится Правилами отбора {name} · признаков: {traits}",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "он проверяет {kinds}, чего HolyArrs проверять не умеет",
+	"server.migrate.its-format-was-not-read-from": "его формат не был прочитан из старого приложения",
+	"server.migrate.nothing-in-the-old-app-gives": "ничто в старом приложении не даёт ему баллов, поэтому здесь он ничего не меняет",
+	"server.migrate.pick-rules-here-still-give-it": "Правила отбора здесь ещё дают ему баллы, поэтому он остаётся",
+	"server.migrate.pick-rules-hold-at-most-64": "в Правилах отбора не больше 64 признаков; оставлены самые сильные оценки",
+	"server.migrate.something-here-still-uses-these-pick": "что-то здесь ещё использует эти Правила отбора, поэтому они остаются",
 	"server.downloads.could-not-move-the-imported-download": "Не удалось переместить импортированную загрузку в {cat} в {name}: {error}; HolyArrs попробует снова при следующем импорте",
 	"server.downloads.moved-to-after-import": "Перемещено в {cat} после импорта",
 	"server.library.files-matched-by-hand": "{name}: файлов сопоставлено вручную: {n}",
 	"server.library.no-such-file-in-this-title": "такого файла у этого тайтла нет",
 	"server.library.send-1-to-2000-files": "отправьте от 1 до 2000 файлов",
-	"server.sources.this-kind-of-title-can-t": "этот вид тайтла нельзя искать"
+	"server.sources.this-kind-of-title-can-t": "этот вид тайтла нельзя искать",
+	"server.migrate.scored-there-points-here-stop-at": "{name} имел там {n}; баллы здесь ограничены {n2}"
 }

@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} ciri diberi skor",
 	"settings.pickRuleEdit.trashResult": "{n} ciri diberi skor · {added} baharu · {updated} dikemas kini",
 	"settings.pickRuleEdit.trashLeftOut": "{n} ditinggalkan",
-	"settings.pickRuleEdit.trashTests": "menguji {kinds}"
+	"settings.pickRuleEdit.trashTests": "menguji {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Sumber",
+	"settings.pickRuleEdit.sourcesDesc": "Cari hanya dalam Sumber yang berkongsi salah satu tag ini. Biarkan kosong untuk mencari dalam setiap Sumber.",
+	"settings.pickRuleEdit.tags": "Tag"
 }

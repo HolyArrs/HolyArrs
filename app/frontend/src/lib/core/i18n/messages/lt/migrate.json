@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs nemato {path}. Naudokite kelią jo konteinerio viduje: dešinė Docker tomo pusė.",
 	"migrate.foldersItSees": "Mato: {list}",
 	"migrate.sameNewFolder": "Tas pats aplankas kaip {list}. Jų kūriniai atsiduria kartu; 4K ar kitoms kopijoms skirkite atskirą aplanką.",
-	"migrate.doneOfTotal": "{done} iš {total}"
+	"migrate.doneOfTotal": "{done} iš {total}",
+	"migrate.bringFormats": "Perkelti formatus ir balus",
+	"migrate.bringFormatsHint": "Kiekvienas profilis, kuris vertina formatus, tampa savomis Pasirinkimo taisyklėmis, o tie formatai – ypatybėmis.",
+	"migrate.formatTraits": "Ypatybės: {list}",
+	"migrate.formatsLeftOut": "Praleista: {list}"
 }

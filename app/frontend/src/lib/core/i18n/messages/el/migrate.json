@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "Το HolyArrs δεν βλέπει το {path}. Χρησιμοποιήστε τη διαδρομή μέσα στο container του: τη δεξιά πλευρά του Docker volume.",
 	"migrate.foldersItSees": "Βλέπει: {list}",
 	"migrate.sameNewFolder": "Ίδιος φάκελος με {list}. Οι τίτλοι τους καταλήγουν μαζί· δώστε στα 4K ή σε άλλα αντίγραφα δικό τους φάκελο.",
-	"migrate.doneOfTotal": "{done} από {total}"
+	"migrate.doneOfTotal": "{done} από {total}",
+	"migrate.bringFormats": "Μεταφορά μορφών και βαθμολογιών",
+	"migrate.bringFormatsHint": "Κάθε προφίλ που βαθμολογεί μορφές γίνεται δικοί του Κανόνες επιλογής, με αυτές τις μορφές ως χαρακτηριστικά.",
+	"migrate.formatTraits": "Χαρακτηριστικά: {list}",
+	"migrate.formatsLeftOut": "Παραλείφθηκαν: {list}"
 }

@@ -259,6 +259,9 @@ type run struct {
 	owner        int64
 	// choose is set by one() for the item it just ran (Line.Choose).
 	choose string
+	// ruleIDs are the Pick rules this run made from profiles, by the name
+	// the plan gave them (the name here may differ when it was taken).
+	ruleIDs map[string]int64
 	// prowlarr is the kept Prowlarr address and key, read once.
 	prowlarr *secretsfile.MoveCredential
 }
@@ -488,6 +491,7 @@ var natural = map[string][2]string{
 	"ask": {"asks", "name"}, "user": {"users", "name"}, "alert": {"alerts", "name"}, "subtitle_site": {"subtitle_sites", "name"},
 	"source": {"sources", "name"}, "downloader": {"downloaders", "name"}, "never_add": {"never_add", "name"},
 	"title": {"titles", "kind"}, "folder": {"library_folders", "path"}, "outside_list": {"outside_lists", "name"},
+	"pick_rules": {"pick_rules", "name"}, "own_trait": {"own_traits", "name"},
 }
 
 type rowQuerier interface {

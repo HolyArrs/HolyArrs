@@ -1249,5 +1249,12 @@
 	"downloads.row.imported": "Importēts",
 	"downloads.row.stillIn": "Joprojām lietotnē {app}",
 	"downloads.dp.openDownloaders": "Atvērt Lejupielādētājus",
+	"downloads.ot.fromOldApps": "No vecajām lietotnēm ({n})",
+	"downloads.ot.importAgain": "Importē vēlreiz, lai atjauninātu to testus; to punktus var mainīt katros Izvēles noteikumos",
+	"downloads.ot.fromApp": "No {app}",
+	"downloads.ot.kindEdition": "izdevums",
+	"downloads.ot.kindLanguage": "valoda",
+	"downloads.ot.kindReleaseType": "izlaiduma veids",
+	"downloads.ot.kindYear": "gads",
 	"downloads.hl.notMoved": "Pēc importa netika pārvietots"
 }

@@ -1272,10 +1272,22 @@
 	"server.downloads.marked-bad": "Merket som dårlig",
 	"server.suggest.because-you-have": "Fordi du har {name}",
 	"server.health.downloader-save-folder": "Nedlasterens lagringsmappe",
+	"server.library.edition": "utgave",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} av formatene blir egenskaper med de samme poengene",
+	"server.migrate.updated-the-ones-imported-before": "{what} (oppdaterte dem som ble importert før)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (oppdaterer dem som ble importert før)",
+	"server.migrate.becomes-pick-rules-traits": "blir Valgregler {name} · {traits} egenskaper",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "den tester {kinds}, som HolyArrs ikke kan teste",
+	"server.migrate.its-format-was-not-read-from": "formatet ble ikke lest fra den gamle appen",
+	"server.migrate.nothing-in-the-old-app-gives": "ingenting i den gamle appen gir den poeng, så den endrer ingenting her",
+	"server.migrate.pick-rules-here-still-give-it": "Valgregler her gir den fortsatt poeng, så den blir",
+	"server.migrate.pick-rules-hold-at-most-64": "Valgregler rommer høyst 64 egenskaper; de sterkeste poengene ble beholdt",
+	"server.migrate.something-here-still-uses-these-pick": "noe her bruker fortsatt disse Valgreglene, så de blir",
 	"server.downloads.could-not-move-the-imported-download": "Den importerte nedlastingen kunne ikke flyttes til {cat} i {name}: {error}; HolyArrs prøver igjen ved neste import",
 	"server.downloads.moved-to-after-import": "Flyttet til {cat} etter import",
 	"server.library.files-matched-by-hand": "{name}: {n} filer koblet for hånd",
 	"server.library.no-such-file-in-this-title": "ingen slik fil i denne tittelen",
 	"server.library.send-1-to-2000-files": "send 1 til 2000 filer",
-	"server.sources.this-kind-of-title-can-t": "denne typen tittel kan ikke søkes etter"
+	"server.sources.this-kind-of-title-can-t": "denne typen tittel kan ikke søkes etter",
+	"server.migrate.scored-there-points-here-stop-at": "{name} ga {n} der; poeng her stopper på {n2}"
 }

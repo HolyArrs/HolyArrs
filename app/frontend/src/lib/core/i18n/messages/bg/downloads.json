@@ -1249,5 +1249,12 @@
 	"downloads.row.imported": "Внесено",
 	"downloads.row.stillIn": "Все още в {app}",
 	"downloads.dp.openDownloaders": "Отваряне на Програми за изтегляне",
+	"downloads.ot.fromOldApps": "От старите приложения ({n})",
+	"downloads.ot.importAgain": "Импортирай отново, за да обновиш проверките им; точките им могат да се сменят във всеки Правила за избор",
+	"downloads.ot.fromApp": "От {app}",
+	"downloads.ot.kindEdition": "издание",
+	"downloads.ot.kindLanguage": "език",
+	"downloads.ot.kindReleaseType": "вид издание",
+	"downloads.ot.kindYear": "година",
 	"downloads.hl.notMoved": "Не е преместено след импортиране"
 }

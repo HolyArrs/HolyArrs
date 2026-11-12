@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} katangian ang may score",
 	"settings.pickRuleEdit.trashResult": "{n} katangian ang may score · {added} bago · {updated} na-update",
 	"settings.pickRuleEdit.trashLeftOut": "{n} ang hindi isinama",
-	"settings.pickRuleEdit.trashTests": "sumusubok ng {kinds}"
+	"settings.pickRuleEdit.trashTests": "sumusubok ng {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Mga Source",
+	"settings.pickRuleEdit.sourcesDesc": "Maghanap lang sa mga Source na may isa sa mga tag na ito. Iwanang blangko para maghanap sa bawat Source.",
+	"settings.pickRuleEdit.tags": "Mga tag"
 }

@@ -1249,5 +1249,12 @@
 	"downloads.row.imported": "Importeret",
 	"downloads.row.stillIn": "Stadig i {app}",
 	"downloads.dp.openDownloaders": "Åbn Downloadere",
+	"downloads.ot.fromOldApps": "Fra gamle apps ({n})",
+	"downloads.ot.importAgain": "Importér igen for at opdatere deres test; deres point kan ændres i hvert sæt Valgregler",
+	"downloads.ot.fromApp": "Fra {app}",
+	"downloads.ot.kindEdition": "udgave",
+	"downloads.ot.kindLanguage": "sprog",
+	"downloads.ot.kindReleaseType": "udgivelsestype",
+	"downloads.ot.kindYear": "år",
 	"downloads.hl.notMoved": "Ikke flyttet efter import"
 }

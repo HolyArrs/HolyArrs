@@ -257,7 +257,7 @@ func notMoved(p *Plan, from string) (NotMoved, bool) {
 }
 
 func TestPlanMapsEachGroup(t *testing.T) {
-	p := planOf(t, Choices{PathRules: []PathRule{{From: `D:\TV`, To: "/tv"}, {From: "/movies", To: "/data/movies"}}, People: map[string]string{"person:seerr:1": PersonOwner}})
+	p := planOf(t, Choices{NoFormats: true, PathRules: []PathRule{{From: `D:\TV`, To: "/tv"}, {From: "/movies", To: "/data/movies"}}, People: map[string]string{"person:seerr:1": PersonOwner}})
 	// Folders follow the path rules.
 	if f := item(t, p, GroupFolders, "folder:/data/movies").Folder; f.Kind != "movie" || f.OldPath != "/movies" {
 		t.Fatalf("movie folder %+v", f)

@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} trets puntuats",
 	"settings.pickRuleEdit.trashResult": "{n} trets puntuats · {added} de nous · {updated} d'actualitzats",
 	"settings.pickRuleEdit.trashLeftOut": "{n} deixats fora",
-	"settings.pickRuleEdit.trashTests": "prova {kinds}"
+	"settings.pickRuleEdit.trashTests": "prova {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Fonts",
+	"settings.pickRuleEdit.sourcesDesc": "Cerca només a les Fonts que comparteixen una d'aquestes etiquetes. Deixa-ho buit per cercar a totes les Fonts.",
+	"settings.pickRuleEdit.tags": "Etiquetes"
 }

@@ -1249,5 +1249,12 @@
 	"downloads.row.imported": "Імпортовано",
 	"downloads.row.stillIn": "Ще в {app}",
 	"downloads.dp.openDownloaders": "Відкрити завантажувачі",
+	"downloads.ot.fromOldApps": "Зі старих застосунків ({n})",
+	"downloads.ot.importAgain": "Імпортуйте знову, щоб оновити їхні перевірки; бали можна змінити в кожних Правилах вибору",
+	"downloads.ot.fromApp": "З {app}",
+	"downloads.ot.kindEdition": "видання",
+	"downloads.ot.kindLanguage": "мова",
+	"downloads.ot.kindReleaseType": "тип релізу",
+	"downloads.ot.kindYear": "рік",
 	"downloads.hl.notMoved": "Не переміщено після імпорту"
 }

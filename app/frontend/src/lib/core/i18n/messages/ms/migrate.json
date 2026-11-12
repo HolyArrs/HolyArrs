@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs tidak dapat melihat {path}. Gunakan laluan di dalam bekasnya: bahagian kanan volum Docker.",
 	"migrate.foldersItSees": "Ia dapat melihat: {list}",
 	"migrate.sameNewFolder": "Folder yang sama dengan {list}. Tajuk mereka berakhir bersama; beri 4K atau salinan lain folder sendiri.",
-	"migrate.doneOfTotal": "{done} daripada {total}"
+	"migrate.doneOfTotal": "{done} daripada {total}",
+	"migrate.bringFormats": "Bawa format dan skor",
+	"migrate.bringFormatsHint": "Setiap profil yang memberi skor kepada format menjadi Peraturan pilihannya sendiri, dengan format itu sebagai ciri.",
+	"migrate.formatTraits": "Ciri: {list}",
+	"migrate.formatsLeftOut": "Ditinggalkan: {list}"
 }

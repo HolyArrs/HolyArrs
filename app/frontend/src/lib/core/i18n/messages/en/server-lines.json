@@ -1272,10 +1272,22 @@
 	"server.downloads.marked-bad": "Marked bad",
 	"server.suggest.because-you-have": "Because you have {name}",
 	"server.health.downloader-save-folder": "Downloader save folder",
+	"server.library.edition": "edition",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} of its formats become traits with the same points",
+	"server.migrate.updated-the-ones-imported-before": "{what} (updated the ones imported before)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (updates the ones imported before)",
+	"server.migrate.becomes-pick-rules-traits": "becomes Pick rules {name} · {traits} traits",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "it tests {kinds}, which HolyArrs cannot test",
+	"server.migrate.its-format-was-not-read-from": "its format was not read from the old app",
+	"server.migrate.nothing-in-the-old-app-gives": "nothing in the old app gives it points, so it changes nothing here",
+	"server.migrate.pick-rules-here-still-give-it": "Pick rules here still give it points, so it stays",
+	"server.migrate.pick-rules-hold-at-most-64": "Pick rules hold at most 64 traits; the strongest scores were kept",
+	"server.migrate.something-here-still-uses-these-pick": "something here still uses these Pick rules, so they stay",
 	"server.downloads.could-not-move-the-imported-download": "Could not move the imported download to {cat} in {name}: {error}; HolyArrs tries again on the next import",
 	"server.downloads.moved-to-after-import": "Moved to {cat} after import",
 	"server.library.files-matched-by-hand": "{name}: {n} files matched by hand",
 	"server.library.no-such-file-in-this-title": "no such file in this title",
 	"server.library.send-1-to-2000-files": "send 1 to 2000 files",
-	"server.sources.this-kind-of-title-can-t": "this kind of title can't be searched"
+	"server.sources.this-kind-of-title-can-t": "this kind of title can't be searched",
+	"server.migrate.scored-there-points-here-stop-at": "{name} scored {n} there; points here stop at {n2}"
 }

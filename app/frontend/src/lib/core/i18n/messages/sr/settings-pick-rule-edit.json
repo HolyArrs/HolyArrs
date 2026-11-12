@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} особина је оцењено",
 	"settings.pickRuleEdit.trashResult": "{n} особина је оцењено · {added} нових · {updated} ажурираних",
 	"settings.pickRuleEdit.trashLeftOut": "{n} изостављено",
-	"settings.pickRuleEdit.trashTests": "тестира {kinds}"
+	"settings.pickRuleEdit.trashTests": "тестира {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Извори",
+	"settings.pickRuleEdit.sourcesDesc": "Претражуј само Изворе који деле једну од ових ознака. Остави празно за претрагу свих Извора.",
+	"settings.pickRuleEdit.tags": "Ознаке"
 }

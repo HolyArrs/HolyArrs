@@ -382,6 +382,7 @@ custom_formats
 cut
 cutoff
 cutoffFormatScore
+cutoff_qualities
 cutoff_score
 cw
 d
@@ -943,6 +944,7 @@ min_points
 min_s
 min_score
 min_seeders
+min_upgrade_score
 mine
 minimumAvailability
 minutes
@@ -1054,6 +1056,7 @@ next_run
 next_search
 next_try
 next_try_at
+no_formats
 no_limit
 no_release
 nodes
@@ -1259,6 +1262,7 @@ problem
 production_companies
 profile
 profile_id
+profile_key
 profile_path
 profiles
 progress
@@ -1745,6 +1749,7 @@ tracks_dropped
 tracks_removed
 trailer_key
 trait
+trait_id
 traits
 trakt
 translate_from
@@ -1806,6 +1811,7 @@ update_check_url
 update_prerelease
 updated
 updated_at
+upgradeAllowed
 upgrade_allowed
 upgrade_min_points
 uploadLength

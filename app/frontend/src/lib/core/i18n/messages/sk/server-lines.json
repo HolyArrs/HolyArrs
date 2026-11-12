@@ -1272,10 +1272,22 @@
 	"server.downloads.marked-bad": "Označené ako chybné",
 	"server.suggest.because-you-have": "Pretože máte {name}",
 	"server.health.downloader-save-folder": "Priečinok na ukladanie Sťahovača",
+	"server.library.edition": "edícia",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} jeho formátov sa stane vlastnosťami s rovnakými bodmi",
+	"server.migrate.updated-the-ones-imported-before": "{what} (aktualizované tie importované skôr)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (aktualizuje tie importované skôr)",
+	"server.migrate.becomes-pick-rules-traits": "stane sa Pravidlami výberu {name} · {traits} vlastností",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "testuje {kinds}, čo HolyArrs testovať nevie",
+	"server.migrate.its-format-was-not-read-from": "jeho formát sa zo starej aplikácie neprečítal",
+	"server.migrate.nothing-in-the-old-app-gives": "nič v starej aplikácii mu nedáva body, takže tu nič nemení",
+	"server.migrate.pick-rules-here-still-give-it": "Pravidlá výberu tu mu stále dávajú body, takže zostáva",
+	"server.migrate.pick-rules-hold-at-most-64": "Pravidlá výberu pojmú najviac 64 vlastností; ponechané boli najsilnejšie skóre",
+	"server.migrate.something-here-still-uses-these-pick": "niečo tu tieto Pravidlá výberu stále používa, takže zostávajú",
 	"server.downloads.could-not-move-the-imported-download": "Importované sťahovanie sa nepodarilo presunúť do {cat} v {name}: {error}; HolyArrs to skúsi znova pri ďalšom importe",
 	"server.downloads.moved-to-after-import": "Po importe presunuté do {cat}",
 	"server.library.files-matched-by-hand": "{name}: ručne priradené súbory: {n}",
 	"server.library.no-such-file-in-this-title": "taký súbor v tomto titule nie je",
 	"server.library.send-1-to-2000-files": "pošlite 1 až 2000 súborov",
-	"server.sources.this-kind-of-title-can-t": "tento druh titulu sa nedá vyhľadať"
+	"server.sources.this-kind-of-title-can-t": "tento druh titulu sa nedá vyhľadať",
+	"server.migrate.scored-there-points-here-stop-at": "{name} tam malo {n}; body tu končia na {n2}"
 }

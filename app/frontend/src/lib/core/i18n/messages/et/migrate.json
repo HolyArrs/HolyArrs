@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs ei näe teed {path}. Kasuta teed selle konteineri sees: Dockeri köite parempoolset külge.",
 	"migrate.foldersItSees": "See näeb: {list}",
 	"migrate.sameNewFolder": "Sama kaust mis {list}. Nende pealkirjad satuvad kokku; anna 4K või muudele koopiatele oma kaust.",
-	"migrate.doneOfTotal": "{done} / {total}"
+	"migrate.doneOfTotal": "{done} / {total}",
+	"migrate.bringFormats": "Too vormingud ja skoorid kaasa",
+	"migrate.bringFormatsHint": "Iga profiil, mis annab vormingutele punkte, saab omaenda Valikureegliteks ja need vormingud tunnusteks.",
+	"migrate.formatTraits": "Tunnused: {list}",
+	"migrate.formatsLeftOut": "Välja jäetud: {list}"
 }

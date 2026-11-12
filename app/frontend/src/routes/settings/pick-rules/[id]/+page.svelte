@@ -10,6 +10,7 @@
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
+	import TagInput from '#lib/ui/TagInput.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { applySize, blankBody, checkBody, copyName, fieldKey, isMusic, isOwnTrait, kindChoices, languages, neverChoices, orderChoices, preferChoices, properChoices, sizeFields, stepLabel, tidyBody, toggleKind, traitLabel, traitsFor, usedWords, type RulesKind, type SizeFields } from '#lib/downloads/index.ts';
@@ -72,6 +73,7 @@
 	const kindWords = $derived(form.kinds.map((k) => kindChoices.find(([c]) => c === k)?.[1] ?? k).join(', '));
 
 	function start(f: Form) {
+		f.body.tags ??= [];
 		form = f;
 		sizeStart = { ...f.size };
 		saved = JSON.stringify(f);
@@ -514,6 +516,14 @@
 				<span><b>{t('settings.pickRuleEdit.skipWait')}</b></span>
 			</label>
 		</SettingsCard>
+
+		{#if !music}
+			<SettingsCard id="rules-sources" title={t('settings.pickRuleEdit.sourcesTitle')} description={t('settings.pickRuleEdit.sourcesDesc')}>
+				<Field id="pr-tags" label={t('settings.pickRuleEdit.tags')}>
+					<TagInput id="pr-tags" bind:value={form.body.tags} testid="pr-tags" />
+				</Field>
+			</SettingsCard>
+		{/if}
 
 		<SettingsCard id="rules-language" title={t('settings.pickRuleEdit.language')} description={t('settings.pickRuleEdit.languageDesc')}>
 			<div class="field">

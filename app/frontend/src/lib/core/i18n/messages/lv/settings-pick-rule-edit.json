@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "Novērtētas pazīmes: {n}",
 	"settings.pickRuleEdit.trashResult": "Novērtētas pazīmes: {n} · jaunas: {added} · atjauninātas: {updated}",
 	"settings.pickRuleEdit.trashLeftOut": "Izlaistas: {n}",
-	"settings.pickRuleEdit.trashTests": "pārbauda: {kinds}"
+	"settings.pickRuleEdit.trashTests": "pārbauda: {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Avoti",
+	"settings.pickRuleEdit.sourcesDesc": "Meklēt tikai Avotos, kuriem ir kāda no šīm birkām. Atstāj tukšu, lai meklētu visos Avotos.",
+	"settings.pickRuleEdit.tags": "Birkas"
 }

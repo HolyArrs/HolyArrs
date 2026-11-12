@@ -1249,5 +1249,12 @@
 	"downloads.row.imported": "Na-import",
 	"downloads.row.stillIn": "Nasa {app} pa rin",
 	"downloads.dp.openDownloaders": "Buksan ang Mga Downloader",
+	"downloads.ot.fromOldApps": "Mula sa mga lumang app ({n})",
+	"downloads.ot.importAgain": "Mag-import ulit para ma-update ang kanilang mga test; mapapalitan ang kanilang puntos sa bawat Mga panuntunan sa pagpili",
+	"downloads.ot.fromApp": "Mula sa {app}",
+	"downloads.ot.kindEdition": "edisyon",
+	"downloads.ot.kindLanguage": "wika",
+	"downloads.ot.kindReleaseType": "uri ng release",
+	"downloads.ot.kindYear": "taon",
 	"downloads.hl.notMoved": "Hindi nailipat pagkatapos ng import"
 }

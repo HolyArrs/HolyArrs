@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs نمی‌تواند {path} را ببیند. مسیر داخل کانتینرش را استفاده کن: سمت راست volume در Docker.",
 	"migrate.foldersItSees": "می‌تواند ببیند: {list}",
 	"migrate.sameNewFolder": "همان پوشه {list}. عنوان‌هایشان کنار هم می‌افتند؛ به 4K یا کپی‌های دیگر پوشه جدا بده.",
-	"migrate.doneOfTotal": "{done} از {total}"
+	"migrate.doneOfTotal": "{done} از {total}",
+	"migrate.bringFormats": "آوردن قالب‌ها و امتیازها",
+	"migrate.bringFormatsHint": "هر نمایه‌ای که به قالب‌ها امتیاز می‌دهد، قوانین انتخاب خودش می‌شود و آن قالب‌ها ویژگی‌هایش.",
+	"migrate.formatTraits": "ویژگی‌ها: {list}",
+	"migrate.formatsLeftOut": "کنار گذاشته شد: {list}"
 }

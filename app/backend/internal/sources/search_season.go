@@ -265,7 +265,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		}
 	}
 
-	found, failures, answered, skipped, err := s.askAll(ctx, r, showQuery(ti, season, nil), hand, true, ti.Tags)
+	found, failures, answered, skipped, err := s.askAll(ctx, r, showQuery(ti, season, nil), hand, true, ti.Tags, set.pr.Body.Tags)
 	if err != nil {
 		return err
 	}
@@ -278,7 +278,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 			continue
 		}
 		asked[named] = true
-		more, _, n, _, err := s.askAll(ctx, r, showQuery(ti, named, nil), hand, true, ti.Tags)
+		more, _, n, _, err := s.askAll(ctx, r, showQuery(ti, named, nil), hand, true, ti.Tags, set.pr.Body.Tags)
 		if err != nil {
 			return err
 		}

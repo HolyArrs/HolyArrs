@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs から {path} が見えません。コンテナー内のパス（Docker ボリュームの右側）を使ってください。",
 	"migrate.foldersItSees": "見えるフォルダー: {list}",
 	"migrate.sameNewFolder": "{list} と同じフォルダーです。タイトルがまとめて入るので、4K などの別コピーには専用のフォルダーを用意してください。",
-	"migrate.doneOfTotal": "{done} / {total}"
+	"migrate.doneOfTotal": "{done} / {total}",
+	"migrate.bringFormats": "フォーマットとスコアを持ってくる",
+	"migrate.bringFormatsHint": "フォーマットにスコアを付けているプロファイルはそれぞれ独自の選定ルールになり、そのフォーマットは特性になります。",
+	"migrate.formatTraits": "特性：{list}",
+	"migrate.formatsLeftOut": "除外：{list}"
 }

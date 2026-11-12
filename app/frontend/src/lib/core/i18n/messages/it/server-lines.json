@@ -1272,10 +1272,22 @@
 	"server.downloads.marked-bad": "Segnato come difettoso",
 	"server.suggest.because-you-have": "Perché hai {name}",
 	"server.health.downloader-save-folder": "Cartella di salvataggio del downloader",
+	"server.library.edition": "edizione",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} dei suoi formati diventano tratti con gli stessi punti",
+	"server.migrate.updated-the-ones-imported-before": "{what} (aggiornate quelle importate prima)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (aggiorna quelle importate prima)",
+	"server.migrate.becomes-pick-rules-traits": "diventa le Regole di scelta {name} · {traits} tratti",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "verifica {kinds}, che HolyArrs non sa verificare",
+	"server.migrate.its-format-was-not-read-from": "il suo formato non è stato letto dalla vecchia app",
+	"server.migrate.nothing-in-the-old-app-gives": "niente nella vecchia app gli dà punti, quindi qui non cambia nulla",
+	"server.migrate.pick-rules-here-still-give-it": "delle Regole di scelta qui gli danno ancora punti, quindi resta",
+	"server.migrate.pick-rules-hold-at-most-64": "le Regole di scelta contengono al massimo 64 tratti; sono stati tenuti i punteggi più forti",
+	"server.migrate.something-here-still-uses-these-pick": "qualcosa qui usa ancora queste Regole di scelta, quindi restano",
 	"server.downloads.could-not-move-the-imported-download": "Impossibile spostare il download importato in {cat} su {name}: {error}; HolyArrs riproverà alla prossima importazione",
 	"server.downloads.moved-to-after-import": "Spostato in {cat} dopo l'importazione",
 	"server.library.files-matched-by-hand": "{name}: {n} file abbinati a mano",
 	"server.library.no-such-file-in-this-title": "nessun file del genere in questo titolo",
 	"server.library.send-1-to-2000-files": "invia da 1 a 2000 file",
-	"server.sources.this-kind-of-title-can-t": "questo tipo di titolo non può essere cercato"
+	"server.sources.this-kind-of-title-can-t": "questo tipo di titolo non può essere cercato",
+	"server.migrate.scored-there-points-here-stop-at": "{name} valeva {n} lì; qui i punti si fermano a {n2}"
 }

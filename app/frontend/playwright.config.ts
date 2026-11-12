@@ -105,6 +105,8 @@ export default defineConfig({
 		{ name: 'settings', testMatch: '**/whole-app/settings.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Pick rules: copy Standard, change a step and a trait, save and reload, a mistake named on its field, remove the copy (asked first), a ready-made set cannot be removed, the music steps, a phone and accessibility.
 		{ name: 'pickrules', testMatch: '**/downloads/pick-rules.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
+		// Pick rules tags: the Sources card saves tags and fits at every width in en, de and ar.
+		{ name: 'pickrulestags', testMatch: '**/downloads/pick-rules-tags.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Kid accounts: invite a Kid (PG), join, the Library shows only titles rated up to PG, an R title and an ask for it are refused in plain words, no Music.
 		{ name: 'kid', testMatch: '**/whole-app/kid.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		// Trailers: the trailer pass looks titles up on a fake YouTube; the title hero plays the kept address, an age-restricted trailer gives way to the next, removed ones say so on screen, a title not looked up yet plays in YouTube's player.

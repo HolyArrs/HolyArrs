@@ -37,6 +37,17 @@ var (
 		"pl", "nl", "pt", "sv", "da", "no", "fi", "cs", "hu", "el", "he", "tr", "ar", "hi", "zh", "th", "vi", "uk")
 )
 
+// PickLanguages lists every language Pick rules can want, sorted: wanting
+// them all takes a Release in any language.
+func PickLanguages() []string {
+	out := make([]string, 0, len(pickLangs))
+	for l := range pickLangs {
+		out = append(out, l)
+	}
+	slices.Sort(out)
+	return out
+}
+
 func traitSet(values ...string) map[string]bool {
 	m := make(map[string]bool, len(values))
 	for _, v := range values {
@@ -122,6 +133,14 @@ func CheckPickRules(name string, kinds []string, b PickRulesBody) error {
 				return fieldErr(l.field, "Unknown or repeated trait %q.", trait)
 			}
 			seen[trait] = true
+		}
+	}
+	if len(b.Tags) > pickMaxNested {
+		return fieldErr("body.tags", "List at most 64 tags.")
+	}
+	for _, t := range b.Tags {
+		if strings.TrimSpace(t) == "" || utf8.RuneCountInString(t) > pickMaxText {
+			return fieldErr("body.tags", "Each tag holds 1 to 200 characters.")
 		}
 	}
 	if !inPickPoints(b.MinPoints) {

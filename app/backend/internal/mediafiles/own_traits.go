@@ -21,18 +21,31 @@ type OwnTrait struct {
 	Match string   `db:"match"` // name, group, size
 	Terms []string `db:"terms,json"`
 	// Source and SourceID say where a synced trait came from ("trash",
-	// "sonarr:<trash id>"); empty for a trait a person made. A synced
+	// "sonarr:<trash id>"; "import", "<app>:<address>:<format id>" for one
+	// brought from an old app; "arrapi", "<side>:<format id>" for one sent
+	// through the arr API); empty for a trait a person made. A synced
 	// trait tests Specs instead of Terms.
 	Source   string    `db:"source"`
 	SourceID string    `db:"source_id"`
 	Specs    []OwnSpec `db:"specs,json"`
 }
 
-// OwnSpec is one test of a synced trait. Kind is name or group (a
-// pattern), source (one of the HolyArrs sources, comma-separated),
-// resolution (a number) or size ("over-upto" in GB, either end open). Tests of one kind pass when every Required one
-// passes and, if there are others, at least one of those does; the trait
-// matches when every kind passes. Negate turns a test's answer around.
+// SourceArrAPI marks a trait or Pick rules an app sent through the arr API
+// (Profilarr pushing its formats and profiles).
+const SourceArrAPI = "arrapi"
+
+// OldApp reports whether the trait is an old app's format, imported or
+// sent through the arr API: it tests Specs, and none fits every Release.
+func (t OwnTrait) OldApp() bool { return t.Source == "import" || t.Source == SourceArrAPI }
+
+// OwnSpec is one test of a synced or imported trait. Kind is name, group
+// or edition (a pattern), source or modifier (one of the HolyArrs sources,
+// comma-separated), resolution (a number), size ("over-upto" in GB, either
+// end open), language (a language code, "original" or "any"; "!" before a
+// code fits any other language), release_type (single, multi or
+// season_pack) or year ("from-to"). Tests of one kind pass when no Required
+// one fails and at least one of them passes; the trait matches when every
+// kind passes. Negate turns a test's answer around.
 type OwnSpec struct {
 	Name     string `json:"name"`
 	Kind     string `json:"kind"`

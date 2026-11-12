@@ -150,6 +150,14 @@ type Profile struct {
 	Allowed        []string `json:"allowed,omitempty"`
 	MinScore       int      `json:"min_score,omitempty"`
 	CutoffScore    int      `json:"cutoff_score,omitempty"`
+	// MinUpgradeScore is the least score gain an upgrade needs.
+	MinUpgradeScore int `json:"min_upgrade_score,omitempty"`
+	// Qualities are the allowed qualities with groups opened up, and
+	// CutoffQualities the cutoff's (several when it is a group).
+	Qualities       []string `json:"qualities,omitempty"`
+	CutoffQualities []string `json:"cutoff_qualities,omitempty"`
+	// Language is the profile's wanted language by name (Radarr).
+	Language string `json:"language,omitempty"`
 	// Scores maps custom format names to their score in this profile.
 	Scores map[string]int `json:"scores,omitempty"`
 }
