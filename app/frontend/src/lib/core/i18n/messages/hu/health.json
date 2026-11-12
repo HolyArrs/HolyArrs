@@ -260,9 +260,9 @@
 	"health.word.notSent": "Még nincs elküldve",
 	"health.word.notSynced": "Még nincs szinkronizálva",
 	"health.word.working": "Működik",
-	"health.check.clearWaiting": "Törlésre váró letöltések",
+	"health.check.clearWaiting": "Importált letöltések, amelyek még egy Letöltőben vannak",
 	"health.check.saveFolder": "Mentési mappa:",
 	"health.check.saveFolderWhy": "A(z) {app} letöltőnek nincs mentési mappája, így a HolyArrs nem tudja importálni a kész letöltéseket. Adj hozzá egy útvonalpárt itt: Beállítások › Letöltők.",
-	"health.kind.clearWaiting": "Törlésre váró letöltések",
+	"health.kind.clearWaiting": "Importált letöltések, amelyek még egy Letöltőben vannak",
 	"health.kind.saveFolder": "Letöltő mentési mappája"
 }

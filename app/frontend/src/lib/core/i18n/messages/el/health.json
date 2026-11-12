@@ -260,9 +260,9 @@
 	"health.word.notSent": "Δεν στάλθηκε ακόμη",
 	"health.word.notSynced": "Δεν συγχρονίστηκε ακόμη",
 	"health.word.working": "Λειτουργεί",
-	"health.check.clearWaiting": "Λήψεις που περιμένουν καθαρισμό",
+	"health.check.clearWaiting": "Εισηγμένες λήψεις που είναι ακόμα σε Πρόγραμμα λήψης",
 	"health.check.saveFolder": "Φάκελος αποθήκευσης για",
 	"health.check.saveFolderWhy": "Το {app} δεν έχει φάκελο αποθήκευσης, οπότε το HolyArrs δεν μπορεί να εισαγάγει τις ολοκληρωμένες λήψεις. Προσθέστε ζεύγος διαδρομών στο Ρυθμίσεις › Προγράμματα λήψης.",
-	"health.kind.clearWaiting": "Λήψεις που περιμένουν καθαρισμό",
+	"health.kind.clearWaiting": "Εισηγμένες λήψεις που είναι ακόμα σε Πρόγραμμα λήψης",
 	"health.kind.saveFolder": "Φάκελος αποθήκευσης του Προγράμματος λήψης"
 }

@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "保存できませんでした",
 	"settings.tmdb.locked": "Docker の設定で指定されています",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE が \"{value}\" で、full・own・off のいずれでもないため、検索はオフです。",
-	"settings.tmdb.ownNote": "自分のキーでは各ソースに直接問い合わせます。音楽チャート、新着音楽の行、配信サービスのトップ10、Wikipedia の情報、アニメの対応表は HolyArrs サーバーからのみ届くため、オフになります。",
+	"settings.tmdb.ownNote": "自分のキーを使うと、HolyArrs が各ソースに直接問い合わせます。音楽チャート、新着音楽の行、配信サービスのトップ10、Wikipedia の情報、アニメの対応表は HolyArrs サーバーからのみ届くため、オフになります。",
 	"settings.tmdb.keysTitle": "あなたのキー",
 	"settings.tmdb.keysDesc": "必要なのは TMDB の読み取りトークンだけです",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

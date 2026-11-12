@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Kunne ikke gemme",
 	"settings.tmdb.locked": "Styret af dine Docker-indstillinger",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE er \"{value}\", som ikke er full, own eller off, så opslag er slået fra.",
-	"settings.tmdb.ownNote": "Dine egne nøgler spørger hver kilde selv. Musikhitlister, rækker med ny musik, Top 10 på streaming, Wikipedia-fakta og anime-kort kommer kun fra HolyArrs-serveren, så de er slået fra.",
+	"settings.tmdb.ownNote": "Med dine egne nøgler spørger HolyArrs hver kilde direkte. Musikhitlister, rækker med ny musik, Top 10 på streaming, Wikipedia-fakta og anime-kort kommer kun fra HolyArrs-serveren, så de er slået fra.",
 	"settings.tmdb.keysTitle": "Dine nøgler",
 	"settings.tmdb.keysDesc": "Kun TMDB-læsetokenet er nødvendigt",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

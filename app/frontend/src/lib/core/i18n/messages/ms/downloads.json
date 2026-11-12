@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Imbasan",
 	"downloads.ht.routine.searches.hint": "Carian untuk Keluaran dan semakan suapan.",
 	"downloads.ht.routine.searches.label": "Carian",
-	"downloads.import.copy": "Disalin",
+	"downloads.import.copy": "Disalin ke Pustaka (menggunakan ruang tambahan)",
 	"downloads.import.hardlink": "pautan keras",
 	"downloads.import.move": "mengalih",
 	"downloads.import.noFile": "tiada fail dapat diletakkan",

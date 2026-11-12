@@ -260,9 +260,9 @@
 	"health.word.notSent": "Zatím neodesláno",
 	"health.word.notSynced": "Zatím nesynchronizováno",
 	"health.word.working": "Funguje",
-	"health.check.clearWaiting": "Stahování čekající na vyčištění",
+	"health.check.clearWaiting": "Importovaná stahování, která jsou stále ve Stahovači",
 	"health.check.saveFolder": "Složka pro ukládání pro",
 	"health.check.saveFolderWhy": "{app} nemá nastavenou složku pro ukládání, takže HolyArrs nemůže importovat jeho dokončená stahování. Přidejte dvojici cest v Nastavení › Stahovače.",
-	"health.kind.clearWaiting": "Stahování čekající na vyčištění",
+	"health.kind.clearWaiting": "Importovaná stahování, která jsou stále ve Stahovači",
 	"health.kind.saveFolder": "Složka pro ukládání Stahovače"
 }

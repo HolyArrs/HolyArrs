@@ -260,9 +260,9 @@
 	"health.word.notSent": "Pole veel saadetud",
 	"health.word.notSynced": "Pole veel sünkroonitud",
 	"health.word.working": "Töötab",
-	"health.check.clearWaiting": "Tühjendamist ootavad allalaadimised",
+	"health.check.clearWaiting": "Imporditud allalaadimised on veel allalaadijas",
 	"health.check.saveFolder": "Salvestuskaust:",
 	"health.check.saveFolderWhy": "{app} jaoks pole salvestuskausta määratud, seega ei saa HolyArrs valmis allalaadimisi importida. Lisa teepaar jaotises Seaded › Allalaadijad.",
-	"health.kind.clearWaiting": "Tühjendamist ootavad allalaadimised",
+	"health.kind.clearWaiting": "Imporditud allalaadimised on veel allalaadijas",
 	"health.kind.saveFolder": "Allalaadija salvestuskaust"
 }

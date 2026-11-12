@@ -260,9 +260,9 @@
 	"health.word.notSent": "Ekki sent enn",
 	"health.word.notSynced": "Ekki samstillt enn",
 	"health.word.working": "Virkar",
-	"health.check.clearWaiting": "Niðurhöl sem bíða hreinsunar",
+	"health.check.clearWaiting": "Innflutt niðurhöl sem eru enn í niðurhalara",
 	"health.check.saveFolder": "Vistunarmappa fyrir",
 	"health.check.saveFolderWhy": "{app} er ekki með vistunarmöppu, svo HolyArrs getur ekki flutt inn niðurhöl sem eru búin. Bættu við slóðapari í Stillingar › Niðurhalarar.",
-	"health.kind.clearWaiting": "Niðurhöl sem bíða hreinsunar",
+	"health.kind.clearWaiting": "Innflutt niðurhöl sem eru enn í niðurhalara",
 	"health.kind.saveFolder": "Vistunarmappa niðurhalara"
 }

@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "无法保存",
 	"settings.tmdb.locked": "由你的 Docker 设置指定",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE 的值是 \"{value}\"，不是 full、own 或 off，因此查询已关闭。",
-	"settings.tmdb.ownNote": "使用自己的密钥时，你直接向每个来源查询。音乐榜单、新音乐行、流媒体 Top 10、维基百科资料和动画对照只来自 HolyArrs 服务器，因此会关闭。",
+	"settings.tmdb.ownNote": "使用自己的密钥时，HolyArrs 直接向每个来源查询。音乐榜单、新音乐行、流媒体 Top 10、维基百科资料和动画对照只来自 HolyArrs 服务器，因此会关闭。",
 	"settings.tmdb.keysTitle": "你的密钥",
 	"settings.tmdb.keysDesc": "只需要 TMDB 读取令牌",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

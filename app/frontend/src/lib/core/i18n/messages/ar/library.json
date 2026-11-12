@@ -349,7 +349,7 @@
 	"library.stats.firstText": "تأتي أول قراءة خلال 30 دقيقة.",
 	"library.stats.watchedHelp": "من سجل التشغيل في Plex وJellyfin وEmby. يعدّ Plex مرات التشغيل فقط، فلا تظهر العناوين المعلَّمة كمشاهدة يدويًا.",
 	"library.stats.lastRead": "آخر قراءة {ago}.",
-	"library.stats.noMatch": "آخر قراءة {ago}. لا شيء مما شوهد يطابق مكتبتك بعد.",
+	"library.stats.noMatch": "فُحص سجل المشاهدة {ago}. لا شيء مما شوهد يطابق مكتبتك بعد.",
 	"library.stats.notLinked": "غير مرتبط",
 	"library.stats.lastWatched": "آخر مشاهدة {ago}",
 	"library.stats.unit.movie.one": "الأفلام: {n}",

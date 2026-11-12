@@ -33,10 +33,10 @@
 	"settings.requests.plexEveryone": "Activar para todos los que inician sesión con Plex",
 	"settings.requests.plexEveryoneHint": "Cualquiera puede desactivarlo para sí mismo en Mi cuenta.",
 	"settings.requests.plexFriends": "Incluir amigos de Plex",
-	"settings.requests.plexFriendsHint": "Amigos que importaste de Plex. Se leen con tu enlace de Plex; se aplican los límites de cada amigo.",
+	"settings.requests.plexFriendsHint": "Amigos que importaste de Plex. Sus listas de seguimiento se leen con tu enlace de Plex, y se aplican los límites de cada amigo.",
 	"settings.requests.plexFriendsNoLink": "Primero vincula Plex en Ajustes › Inicio de sesión.",
 	"settings.requests.plexFriendsNone": "Aún no has importado a nadie de Plex.",
-	"settings.requests.plexFriendsRead": "Leído {when}",
-	"settings.requests.plexFriendsNotYet": "Aún no leído",
-	"settings.requests.plexFriendsAsked": "Pedidos: {n}"
+	"settings.requests.plexFriendsRead": "Lista de seguimiento revisada {when}",
+	"settings.requests.plexFriendsNotYet": "Lista de seguimiento aún sin revisar",
+	"settings.requests.plexFriendsAsked": "Solicitudes: {n}"
 }

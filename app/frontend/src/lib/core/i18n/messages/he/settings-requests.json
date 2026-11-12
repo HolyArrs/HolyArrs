@@ -33,10 +33,10 @@
 	"settings.requests.plexEveryone": "הפעלה לכל מי שמתחבר עם Plex",
 	"settings.requests.plexEveryoneHint": "כל אחד יכול לכבות זאת לעצמו בחשבון שלי.",
 	"settings.requests.plexFriends": "לכלול חברי Plex",
-	"settings.requests.plexFriendsHint": "חברים שייבאתם מ-Plex. נקראים עם קישור ה-Plex שלכם; המגבלות של כל חבר חלות.",
+	"settings.requests.plexFriendsHint": "חברים שייבאתם מ-Plex. רשימות הצפייה שלהם נקראות דרך הקישור שלכם ל-Plex, והמגבלות של כל חבר חלות.",
 	"settings.requests.plexFriendsNoLink": "קשרו קודם את Plex ב\"הגדרות\" › \"התחברות\".",
 	"settings.requests.plexFriendsNone": "עדיין לא יובא איש מ-Plex.",
-	"settings.requests.plexFriendsRead": "נקרא {when}",
-	"settings.requests.plexFriendsNotYet": "עדיין לא נקרא",
-	"settings.requests.plexFriendsAsked": "התבקשו: {n}"
+	"settings.requests.plexFriendsRead": "רשימת הצפייה נבדקה {when}",
+	"settings.requests.plexFriendsNotYet": "רשימת הצפייה עוד לא נבדקה",
+	"settings.requests.plexFriendsAsked": "בקשות: {n}"
 }

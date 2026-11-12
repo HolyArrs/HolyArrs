@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Tidak bisa menyimpan",
 	"settings.tmdb.locked": "Diatur oleh pengaturan Docker Anda",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE adalah \"{value}\", yang bukan full, own, atau off, jadi pencarian mati.",
-	"settings.tmdb.ownNote": "Kunci Anda sendiri menanyakan setiap sumber sendiri. Tangga lagu musik, baris musik baru, Top 10 streaming, fakta Wikipedia, dan peta anime hanya berasal dari server HolyArrs, jadi semuanya mati.",
+	"settings.tmdb.ownNote": "Dengan kunci Anda sendiri, HolyArrs bertanya langsung ke setiap sumber. Tangga lagu musik, baris musik baru, Top 10 streaming, fakta Wikipedia, dan peta anime hanya berasal dari server HolyArrs, jadi semuanya mati.",
 	"settings.tmdb.keysTitle": "Kunci Anda",
 	"settings.tmdb.keysDesc": "Hanya token baca TMDB yang diperlukan",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

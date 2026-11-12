@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Nem sikerült menteni",
 	"settings.tmdb.locked": "A Docker-beállításaid határozzák meg",
 	"settings.tmdb.dockerValue": "A HOLYARRS_METADATA_MODE értéke „{value}”, ami nem full, own vagy off, ezért a keresések ki vannak kapcsolva.",
-	"settings.tmdb.ownNote": "A Saját kulcsaid minden forrást maga kérdez meg. A zenei toplisták, az új zenék sorai, a streaming Top 10-ek, a Wikipedia-tények és az anime-térképek csak a HolyArrs szerverről jönnek, ezért ki vannak kapcsolva.",
+	"settings.tmdb.ownNote": "Saját kulcsokkal a HolyArrs közvetlenül kérdez meg minden forrást. A zenei toplisták, az új zenék sorai, a streaming Top 10-ek, a Wikipedia-tények és az anime-térképek csak a HolyArrs szerverről jönnek, ezért ki vannak kapcsolva.",
 	"settings.tmdb.keysTitle": "Kulcsaid",
 	"settings.tmdb.keysDesc": "Csak a TMDB olvasási tokenre van szükség",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

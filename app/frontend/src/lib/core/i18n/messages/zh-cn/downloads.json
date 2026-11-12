@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "扫描",
 	"downloads.ht.routine.searches.hint": "资源搜索和订阅源检查。",
 	"downloads.ht.routine.searches.label": "搜索",
-	"downloads.import.copy": "已复制到媒体库，占用额外空间",
+	"downloads.import.copy": "已复制到媒体库（占用额外空间）",
 	"downloads.import.hardlink": "已添加到媒体库（未占用额外空间）",
 	"downloads.import.move": "已移动到媒体库",
 	"downloads.import.noFile": "没有文件可以放置",

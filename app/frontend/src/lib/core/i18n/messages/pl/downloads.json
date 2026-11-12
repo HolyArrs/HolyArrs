@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Skany",
 	"downloads.ht.routine.searches.hint": "Wyszukiwania release'ów i sprawdzenia kanałów.",
 	"downloads.ht.routine.searches.label": "Wyszukiwania",
-	"downloads.import.copy": "Skopiowano do Biblioteki, zajmuje dodatkowe miejsce",
+	"downloads.import.copy": "Skopiowano do Biblioteki (zajmuje dodatkowe miejsce)",
 	"downloads.import.hardlink": "Dodano do Biblioteki (bez dodatkowego miejsca)",
 	"downloads.import.move": "Przeniesiono do Biblioteki",
 	"downloads.import.noFile": "nie dało się umieścić żadnego pliku",

@@ -349,7 +349,7 @@
 	"library.stats.firstText": "첫 읽기는 30분 안에 이뤄져요.",
 	"library.stats.watchedHelp": "Plex, Jellyfin, Emby 재생 기록 기준. Plex는 재생만 세므로 직접 시청 표시한 타이틀은 보이지 않아요.",
 	"library.stats.lastRead": "마지막 읽기 {ago}.",
-	"library.stats.noMatch": "마지막 읽기 {ago}. 시청한 항목 중 아직 라이브러리와 일치하는 것이 없어요.",
+	"library.stats.noMatch": "시청 기록 확인 {ago}. 시청한 항목 중 아직 라이브러리와 일치하는 것이 없어요.",
 	"library.stats.notLinked": "연결 안 됨",
 	"library.stats.lastWatched": "마지막 시청 {ago}",
 	"library.stats.unit.movie.one": "영화 {n}편",

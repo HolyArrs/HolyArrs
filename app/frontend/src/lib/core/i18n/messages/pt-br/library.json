@@ -349,7 +349,7 @@
 	"library.stats.firstText": "A primeira leitura chega em até 30 minutos.",
 	"library.stats.watchedHelp": "Do histórico do Plex, Jellyfin e Emby. O Plex conta só reproduções, então títulos marcados como assistidos à mão não aparecem.",
 	"library.stats.lastRead": "Última leitura {ago}.",
-	"library.stats.noMatch": "Última leitura {ago}. Nada do que foi assistido corresponde à sua biblioteca ainda.",
+	"library.stats.noMatch": "Histórico verificado {ago}. Nada do que foi assistido corresponde à sua biblioteca ainda.",
 	"library.stats.notLinked": "Não vinculado",
 	"library.stats.lastWatched": "Assistido {ago}",
 	"library.stats.unit.movie.one": "{n} filme",

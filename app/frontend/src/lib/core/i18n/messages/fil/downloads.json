@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Mga scan",
 	"downloads.ht.routine.searches.hint": "Mga paghahanap ng Release at feed check.",
 	"downloads.ht.routine.searches.label": "Mga Paghahanap",
-	"downloads.import.copy": "Kinopya",
+	"downloads.import.copy": "Kinopya sa Library (gumagamit ng dagdag na espasyo)",
 	"downloads.import.hardlink": "hardlink",
 	"downloads.import.move": "paglipat",
 	"downloads.import.noFile": "walang file na nailagay",

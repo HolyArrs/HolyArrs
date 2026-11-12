@@ -260,9 +260,9 @@
 	"health.word.notSent": "Ainda não enviado",
 	"health.word.notSynced": "Ainda não sincronizado",
 	"health.word.working": "A funcionar",
-	"health.check.clearWaiting": "Downloads à espera de limpeza",
+	"health.check.clearWaiting": "Downloads importados ainda num gestor de downloads",
 	"health.check.saveFolder": "Pasta de salvamento de",
 	"health.check.saveFolderWhy": "{app} não tem pasta de salvamento, por isso o HolyArrs não consegue importar as transferências concluídas. Adicione um par de caminhos em Definições › Gestores de downloads.",
-	"health.kind.clearWaiting": "Downloads à espera de limpeza",
+	"health.kind.clearWaiting": "Downloads importados ainda num gestor de downloads",
 	"health.kind.saveFolder": "Pasta de salvamento do gestor de downloads"
 }

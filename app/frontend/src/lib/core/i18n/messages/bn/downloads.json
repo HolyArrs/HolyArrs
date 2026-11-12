@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "স্ক্যান",
 	"downloads.ht.routine.searches.hint": "রিলিজের সার্চ ও ফিড চেক।",
 	"downloads.ht.routine.searches.label": "সার্চ",
-	"downloads.import.copy": "কপি হয়েছে",
+	"downloads.import.copy": "লাইব্রেরিতে কপি হয়েছে (বাড়তি জায়গা নেয়)",
 	"downloads.import.hardlink": "হার্ডলিংক",
 	"downloads.import.move": "সরানো হচ্ছে",
 	"downloads.import.noFile": "কোনো ফাইল বসানো যায়নি",

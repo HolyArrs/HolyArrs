@@ -260,9 +260,9 @@
 	"health.word.notSent": "Inte skickad ännu",
 	"health.word.notSynced": "Inte synkad ännu",
 	"health.word.working": "Fungerar",
-	"health.check.clearWaiting": "Nedladdningar som väntar på att rensas",
+	"health.check.clearWaiting": "Importerade nedladdningar som fortfarande ligger i en nedladdare",
 	"health.check.saveFolder": "Sparmapp för",
 	"health.check.saveFolderWhy": "{app} har ingen sparmapp, så HolyArrs kan inte importera de färdiga nedladdningarna. Lägg till ett sökvägspar under Inställningar › Nedladdare.",
-	"health.kind.clearWaiting": "Nedladdningar som väntar på att rensas",
+	"health.kind.clearWaiting": "Importerade nedladdningar som fortfarande ligger i en nedladdare",
 	"health.kind.saveFolder": "Nedladdarens sparmapp"
 }

@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Pemindaian",
 	"downloads.ht.routine.searches.hint": "Pencarian Rilis dan pemeriksaan feed.",
 	"downloads.ht.routine.searches.label": "Pencarian",
-	"downloads.import.copy": "Disalin",
+	"downloads.import.copy": "Disalin ke Pustaka (memakai ruang tambahan)",
 	"downloads.import.hardlink": "hardlink",
 	"downloads.import.move": "memindahkan",
 	"downloads.import.noFile": "tidak ada file yang bisa ditempatkan",

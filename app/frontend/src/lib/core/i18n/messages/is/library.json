@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Fyrsti lestur fer fram innan 30 mínútna.",
 	"library.stats.watchedHelp": "Úr spilunarsögu Plex, Jellyfin og Emby. Plex telur aðeins spilanir, svo titlar sem merktir eru handvirkt sem séðir birtast ekki.",
 	"library.stats.lastRead": "Síðast lesið {ago}.",
-	"library.stats.noMatch": "Síðast lesið {ago}. Ekkert af því sem horft var á passar enn við Safnið þitt.",
+	"library.stats.noMatch": "Áhorfsferill athugaður {ago}. Ekkert af því sem horft var á passar enn við Safnið þitt.",
 	"library.stats.notLinked": "Ekki tengt",
 	"library.stats.lastWatched": "Síðast horft {ago}",
 	"library.stats.unit.movie.one": "{n} kvikmynd",

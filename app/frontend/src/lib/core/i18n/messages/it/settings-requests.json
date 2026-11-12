@@ -33,10 +33,10 @@
 	"settings.requests.plexEveryone": "Attiva per tutti quelli che accedono con Plex",
 	"settings.requests.plexEveryoneHint": "Chiunque può disattivarlo per sé in Il mio account.",
 	"settings.requests.plexFriends": "Includi gli amici Plex",
-	"settings.requests.plexFriendsHint": "Amici importati da Plex. Letti con il tuo collegamento Plex; valgono i limiti di ciascun amico.",
+	"settings.requests.plexFriendsHint": "Amici importati da Plex. Le loro watchlist vengono lette tramite il tuo collegamento Plex, e valgono i limiti di ciascun amico.",
 	"settings.requests.plexFriendsNoLink": "Prima collega Plex in Impostazioni › Accesso.",
 	"settings.requests.plexFriendsNone": "Nessuno importato da Plex finora.",
-	"settings.requests.plexFriendsRead": "Letto {when}",
-	"settings.requests.plexFriendsNotYet": "Non ancora letto",
-	"settings.requests.plexFriendsAsked": "Richiesti: {n}"
+	"settings.requests.plexFriendsRead": "Watchlist controllata {when}",
+	"settings.requests.plexFriendsNotYet": "Watchlist non ancora controllata",
+	"settings.requests.plexFriendsAsked": "Richieste: {n}"
 }

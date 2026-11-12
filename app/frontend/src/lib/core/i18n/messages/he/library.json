@@ -349,7 +349,7 @@
 	"library.stats.firstText": "הקריאה הראשונה תתבצע תוך 30 דקות.",
 	"library.stats.watchedHelp": "מהיסטוריית ההפעלות של Plex, ‏Jellyfin ו-Emby. Plex סופר רק הפעלות, ולכן כותרות שסומנו ידנית כנצפו לא יופיעו.",
 	"library.stats.lastRead": "נקרא לאחרונה {ago}.",
-	"library.stats.noMatch": "נקרא לאחרונה {ago}. שום דבר ממה שנצפה עדיין לא תואם לספרייה שלך.",
+	"library.stats.noMatch": "היסטוריית הצפייה נבדקה {ago}. שום דבר ממה שנצפה עדיין לא תואם לספרייה שלך.",
 	"library.stats.notLinked": "לא מקושר",
 	"library.stats.lastWatched": "נצפה לאחרונה {ago}",
 	"library.stats.unit.movie.one": "{n} סרט",

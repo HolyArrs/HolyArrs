@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Không lưu được",
 	"settings.tmdb.locked": "Do cài đặt Docker của bạn quyết định",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE là \"{value}\", không phải full, own hay off, nên tra cứu đang tắt.",
-	"settings.tmdb.ownNote": "Khóa riêng của bạn tự hỏi từng nguồn. Bảng xếp hạng nhạc, hàng nhạc mới, Top 10 trên streaming, thông tin Wikipedia và bản đồ anime chỉ đến từ máy chủ HolyArrs, nên chúng đang tắt.",
+	"settings.tmdb.ownNote": "Với khóa riêng, HolyArrs hỏi trực tiếp từng nguồn. Bảng xếp hạng nhạc, hàng nhạc mới, Top 10 trên streaming, thông tin Wikipedia và bản đồ anime chỉ đến từ máy chủ HolyArrs, nên chúng đang tắt.",
 	"settings.tmdb.keysTitle": "Khóa của bạn",
 	"settings.tmdb.keysDesc": "Chỉ cần token đọc của TMDB",
 	"settings.tmdb.tvdbTitle": "TheTVDB",
