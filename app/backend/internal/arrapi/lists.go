@@ -163,8 +163,8 @@ func (h *handler) missingEpisodes(w http.ResponseWriter, r *http.Request) {
 		size = min(n, 10000)
 	}
 	page := 1
-	if n, err := strconv.ParseInt(query(r, "page"), 10, 64); err == nil && n > 0 {
-		page = int(min(n, math.MaxInt)) // past the end on a 32-bit build too
+	if n, err := strconv.ParseInt(query(r, "page"), 10, 32); err == nil && n > 0 {
+		page = int(min(n, math.MaxInt32)) // past the end on a 32-bit build too
 	}
 	kept := true
 	if v := query(r, "monitored"); v != "" {
