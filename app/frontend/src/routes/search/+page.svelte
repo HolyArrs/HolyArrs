@@ -37,7 +37,7 @@
 	import { afterNavigate, beforeNavigate, goto, snapshot } from '$app/navigation';
 	import { page } from '$app/state';
 	import { to } from '#lib/core/paths.ts';
-	import { focusField, forgetReturn, playFieldEntry, searchField, searchHooks } from '#lib/core/search-field.svelte.ts';
+	import { focusOnOpen, forgetReturn, playFieldEntry, searchField, searchHooks } from '#lib/core/search-field.svelte.ts';
 	import { api, message, ApiError } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { reducedMotion } from '#lib/core/motion.ts';
@@ -360,7 +360,7 @@
 		searchHooks.submit = () => void run(new SubmitEvent('submit'));
 		searchHooks.blur = blurred;
 		searchHooks.exit = entry.exit;
-		if (!(document.activeElement instanceof HTMLInputElement)) focusField();
+		if (!(document.activeElement instanceof HTMLInputElement)) focusOnOpen();
 		playFieldEntry(calm || restored);
 		return () => {
 			searchHooks.submit = searchHooks.blur = searchHooks.exit = undefined;
@@ -387,7 +387,7 @@
 		browse.mood = readMood(dest.url.searchParams);
 		browse.cat = readCategory(dest.url.searchParams);
 		browse.mgenre = dest.url.searchParams.get('mgenre')?.trim() || null;
-		void tick().then(() => focusField());
+		void tick().then(() => focusOnOpen());
 		if (q === searchField.term && s === scope) return;
 		searchField.term = lastTerm = q;
 		scope = s;
