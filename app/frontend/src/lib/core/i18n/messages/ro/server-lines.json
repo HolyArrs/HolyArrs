@@ -1289,5 +1289,9 @@
 	"server.library.no-such-file-in-this-title": "nu există un astfel de fișier în acest titlu",
 	"server.library.send-1-to-2000-files": "trimite între 1 și 2000 de fișiere",
 	"server.sources.this-kind-of-title-can-t": "acest tip de titlu nu poate fi căutat",
-	"server.migrate.scored-there-points-here-stop-at": "{name} avea {n} acolo; aici punctele se opresc la {n2}"
+	"server.migrate.scored-there-points-here-stop-at": "{name} avea {n} acolo; aici punctele se opresc la {n2}",
+	"server.downloads.only-a-movie-s-download-is": "de aici se importă doar descărcarea unui film; folosește Importă fișiere manual",
+	"server.downloads.the-download-has-no-single-video": "descărcarea nu are un singur video de importat; folosește Importă fișiere manual",
+	"server.downloads.this-movie-already-has-a-file": "acest film are deja un fișier; trimite replace ca să pui acesta în locul lui",
+	"server.importer.replaced-by-hand": "{path} înlocuit manual"
 }

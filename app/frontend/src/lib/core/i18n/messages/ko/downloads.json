@@ -1256,5 +1256,11 @@
 	"downloads.ot.kindLanguage": "언어",
 	"downloads.ot.kindReleaseType": "릴리스 유형",
 	"downloads.ot.kindYear": "연도",
-	"downloads.hl.notMoved": "가져온 후 옮기지 못함"
+	"downloads.hl.notMoved": "가져온 후 옮기지 못함",
+	"downloads.hl.notMoved": "가져온 후 옮기지 못함",
+	"downloads.dp.importFile": "이 파일 가져오기",
+	"downloads.dp.askImport": "{file}을(를) {name}(으)로 가져올까요?",
+	"downloads.dp.askImportReplace": "{file}을(를) {name}(으)로 가져올까요? 현재 파일을 바꾸며, 이전 파일은 '최근 삭제됨'(으)로 갑니다.",
+	"downloads.dp.imported": "{name} 가져옴",
+	"downloads.dp.importFailed": "파일을 가져오지 못했습니다"
 }

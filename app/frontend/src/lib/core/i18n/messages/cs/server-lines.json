@@ -1289,5 +1289,9 @@
 	"server.library.no-such-file-in-this-title": "takový soubor v tomto titulu není",
 	"server.library.send-1-to-2000-files": "pošlete 1 až 2000 souborů",
 	"server.sources.this-kind-of-title-can-t": "tento druh titulu nelze vyhledat",
-	"server.migrate.scored-there-points-here-stop-at": "{name} tam mělo {n}; body zde končí na {n2}"
+	"server.migrate.scored-there-points-here-stop-at": "{name} tam mělo {n}; body zde končí na {n2}",
+	"server.downloads.only-a-movie-s-download-is": "odsud se importuje jen stahování filmu; použijte Importovat soubory ručně",
+	"server.downloads.the-download-has-no-single-video": "stahování nemá jediné video k importu; použijte Importovat soubory ručně",
+	"server.downloads.this-movie-already-has-a-file": "tento film už má soubor; pošlete replace, aby tento soubor zaujal jeho místo",
+	"server.importer.replaced-by-hand": "{path} nahrazeno ručně"
 }

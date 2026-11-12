@@ -1256,5 +1256,11 @@
 	"downloads.ot.kindLanguage": "langue",
 	"downloads.ot.kindReleaseType": "type de sortie",
 	"downloads.ot.kindYear": "année",
-	"downloads.hl.notMoved": "Non déplacé après l'import"
+	"downloads.hl.notMoved": "Non déplacé après l'import",
+	"downloads.hl.notMoved": "Non déplacé après l'import",
+	"downloads.dp.importFile": "Importer ce fichier",
+	"downloads.dp.askImport": "Importer {file} comme {name} ?",
+	"downloads.dp.askImportReplace": "Importer {file} comme {name} ? Il remplace le fichier actuel, qui va dans Supprimés récemment.",
+	"downloads.dp.imported": "{name} importé",
+	"downloads.dp.importFailed": "Impossible d'importer le fichier"
 }

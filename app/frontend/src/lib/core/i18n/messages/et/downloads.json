@@ -1256,5 +1256,11 @@
 	"downloads.ot.kindLanguage": "keel",
 	"downloads.ot.kindReleaseType": "väljalaske tüüp",
 	"downloads.ot.kindYear": "aasta",
-	"downloads.hl.notMoved": "Pärast importi ei teisaldatud"
+	"downloads.hl.notMoved": "Pärast importi ei teisaldatud",
+	"downloads.hl.notMoved": "Pärast importi ei teisaldatud",
+	"downloads.dp.importFile": "Impordi see fail",
+	"downloads.dp.askImport": "Kas importida {file} kui {name}?",
+	"downloads.dp.askImportReplace": "Kas importida {file} kui {name}? See asendab praeguse faili, mis läheb jaotisse „Hiljuti kustutatud“.",
+	"downloads.dp.imported": "{name} imporditud",
+	"downloads.dp.importFailed": "Faili ei õnnestunud importida"
 }

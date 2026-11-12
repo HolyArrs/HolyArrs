@@ -1256,5 +1256,11 @@
 	"downloads.ot.kindLanguage": "idioma",
 	"downloads.ot.kindReleaseType": "tipus de llançament",
 	"downloads.ot.kindYear": "any",
-	"downloads.hl.notMoved": "No s'ha mogut després d'importar"
+	"downloads.hl.notMoved": "No s'ha mogut després d'importar",
+	"downloads.hl.notMoved": "No s'ha mogut després d'importar",
+	"downloads.dp.importFile": "Importa aquest fitxer",
+	"downloads.dp.askImport": "Vols importar {file} com a {name}?",
+	"downloads.dp.askImportReplace": "Vols importar {file} com a {name}? Substitueix el fitxer actual, que va a Suprimits recentment.",
+	"downloads.dp.imported": "{name} importat",
+	"downloads.dp.importFailed": "No s'ha pogut importar el fitxer"
 }

@@ -1256,5 +1256,11 @@
 	"downloads.ot.kindLanguage": "limbă",
 	"downloads.ot.kindReleaseType": "tip de lansare",
 	"downloads.ot.kindYear": "an",
-	"downloads.hl.notMoved": "Nu a fost mutat după import"
+	"downloads.hl.notMoved": "Nu a fost mutat după import",
+	"downloads.hl.notMoved": "Nu a fost mutat după import",
+	"downloads.dp.importFile": "Importă acest fișier",
+	"downloads.dp.askImport": "Importi {file} ca {name}?",
+	"downloads.dp.askImportReplace": "Importi {file} ca {name}? Înlocuiește fișierul curent, care merge în Șterse recent.",
+	"downloads.dp.imported": "{name} importat",
+	"downloads.dp.importFailed": "Fișierul nu a putut fi importat"
 }

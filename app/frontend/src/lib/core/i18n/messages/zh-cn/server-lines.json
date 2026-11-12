@@ -1289,5 +1289,9 @@
 	"server.library.no-such-file-in-this-title": "此作品中没有该文件",
 	"server.library.send-1-to-2000-files": "请发送 1 到 2000 个文件",
 	"server.sources.this-kind-of-title-can-t": "无法搜索这类标题",
-	"server.migrate.scored-there-points-here-stop-at": "{name} 在那里得 {n} 分；这里的分数最多到 {n2}"
+	"server.migrate.scored-there-points-here-stop-at": "{name} 在那里得 {n} 分；这里的分数最多到 {n2}",
+	"server.downloads.only-a-movie-s-download-is": "这里只能导入电影的下载；请使用“手动导入文件”",
+	"server.downloads.the-download-has-no-single-video": "下载中没有唯一一个可导入的视频；请使用“手动导入文件”",
+	"server.downloads.this-movie-already-has-a-file": "这部电影已经有文件；发送 replace 可用这个文件替换它",
+	"server.importer.replaced-by-hand": "已手动替换 {path}"
 }

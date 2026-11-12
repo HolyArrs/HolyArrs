@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n}টি এপিসোড",
 	"library.stats.unit.episode.other": "{n}টি এপিসোড",
 	"library.stats.unit.play.one": "{n}বার প্লে",
-	"library.stats.unit.play.other": "{n}বার প্লে"
+	"library.stats.unit.play.other": "{n}বার প্লে",
+	"library.byHand.askReplaceOne": "১টি ফাইল লাইব্রেরিতে থাকা একটি ফাইলের জায়গা নেবে। পুরোনো ফাইলটি সম্প্রতি মোছা-এ যাবে। ইমপোর্ট করবেন?",
+	"library.byHand.askReplaceMany": "{n}টি ফাইল লাইব্রেরিতে থাকা ফাইলগুলোর জায়গা নেবে। পুরোনো ফাইলগুলো সম্প্রতি মোছা-এ যাবে। ইমপোর্ট করবেন?"
 }

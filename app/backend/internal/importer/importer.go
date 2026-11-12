@@ -42,6 +42,7 @@ type Target struct {
 	FolderName  string
 	TitleID     int64
 	TitleName   string
+	Aliases     []string // other names (alternative and original titles); they match too
 	Year        int
 	SlotIDs     []int64
 	Edition     string
@@ -186,7 +187,7 @@ const MinConfidence = 0.7
 
 // Plan turns candidate files into copy steps for a movie.
 func Plan(cands []Candidate, t Target) []mediafiles.PlanStep {
-	ref := mediafiles.TitleRef{ID: t.TitleID, Name: t.TitleName, Year: t.Year}
+	ref := mediafiles.TitleRef{ID: t.TitleID, Name: t.TitleName, Aliases: t.Aliases, Year: t.Year}
 	var steps []mediafiles.PlanStep
 	var mains []int
 	for _, c := range cands {
@@ -205,7 +206,8 @@ func Plan(cands []Candidate, t Target) []mediafiles.PlanStep {
 			s.Method, s.Why = "refuse", []string{"a sample, not the full video"}
 		default:
 			m := mediafiles.MatchTitle(p, []mediafiles.TitleRef{ref})
-			if m.Title == nil && p.Year.Value == 0 {
+			// A file name that names nothing (an odd short name) falls back to its folder's name.
+			if m.Title == nil {
 				if fp := releasename.Parse(filepath.Base(filepath.Dir(c.Path)), releasename.Hints{Size: c.Size}); fp.Title.Value != "" {
 					if fm := mediafiles.MatchTitle(fp, []mediafiles.TitleRef{ref}); fm.Title != nil {
 						m = fm

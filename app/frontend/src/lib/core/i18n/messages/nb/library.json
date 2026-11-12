@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} episode",
 	"library.stats.unit.episode.other": "{n} episoder",
 	"library.stats.unit.play.one": "{n} avspilling",
-	"library.stats.unit.play.other": "{n} avspillinger"
+	"library.stats.unit.play.other": "{n} avspillinger",
+	"library.byHand.askReplaceOne": "1 fil erstatter en fil som allerede er i Biblioteket. Den gamle filen flyttes til Nylig slettet. Importere?",
+	"library.byHand.askReplaceMany": "{n} filer erstatter filer som allerede er i Biblioteket. De gamle filene flyttes til Nylig slettet. Importere?"
 }

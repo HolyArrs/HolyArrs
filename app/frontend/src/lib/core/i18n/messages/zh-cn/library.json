@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} 集",
 	"library.stats.unit.episode.other": "{n} 集",
 	"library.stats.unit.play.one": "{n} 次播放",
-	"library.stats.unit.play.other": "{n} 次播放"
+	"library.stats.unit.play.other": "{n} 次播放",
+	"library.byHand.askReplaceOne": "1 个文件将替换媒体库中已有的文件。旧文件会移到“最近删除”。要导入吗？",
+	"library.byHand.askReplaceMany": "{n} 个文件将替换媒体库中已有的文件。旧文件会移到“最近删除”。要导入吗？"
 }

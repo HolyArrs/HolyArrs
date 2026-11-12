@@ -53,6 +53,8 @@ export interface Pick {
 	season?: number;
 	episode?: number;
 	has_file?: boolean;
+	// Put this file in place of the one it has; the old one goes to Recently deleted.
+	replace?: boolean;
 }
 
 // Starts from the scanner guess; no guess means no pick.
@@ -89,7 +91,7 @@ export function blocker(f: ByHandFile, p: Pick | null): string {
 	if (f.in_library) return t('mediafiles.byHand.already');
 	if (!p) return t('mediafiles.byHand.pickTitle');
 	if (p.title_kind === 'show' && (p.season === undefined || p.episode === undefined)) return t('mediafiles.byHand.pickSeasonEpisode');
-	if (p.has_file) return t('mediafiles.byHand.hasFile');
+	if (p.has_file && !p.replace) return t('mediafiles.byHand.hasFileReplace');
 	return '';
 }
 
@@ -101,12 +103,13 @@ export function startTicked(f: ByHandFile, p: Pick | null): boolean {
 // Builds the import request from ticked files that have a valid pick.
 // No mode is sent: files are placed like automatic imports (a link when possible, else a real copy).
 export function itemsFor(files: ByHandFile[], picks: Record<string, Pick | null>, ticked: Record<string, boolean>) {
-	const out: { path: string; title_id: number; version_id?: number; season?: number; episode?: number }[] = [];
+	const out: { path: string; title_id: number; version_id?: number; season?: number; episode?: number; replace?: boolean }[] = [];
 	for (const f of files) {
 		const p = picks[f.path] ?? null;
 		if (!ticked[f.path] || !p || blocker(f, p)) continue;
 		const item: (typeof out)[number] = { path: f.path, title_id: p.title_id };
 		if (p.version_id) item.version_id = p.version_id;
+		if (p.has_file && p.replace) item.replace = true;
 		if (p.title_kind === 'show') {
 			item.season = p.season;
 			item.episode = p.episode;

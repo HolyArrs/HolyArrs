@@ -1256,5 +1256,11 @@
 	"downloads.ot.kindLanguage": "ภาษา",
 	"downloads.ot.kindReleaseType": "ประเภทการเผยแพร่",
 	"downloads.ot.kindYear": "ปี",
-	"downloads.hl.notMoved": "ไม่ได้ย้ายหลังนำเข้า"
+	"downloads.hl.notMoved": "ไม่ได้ย้ายหลังนำเข้า",
+	"downloads.hl.notMoved": "ไม่ได้ย้ายหลังนำเข้า",
+	"downloads.dp.importFile": "นำเข้าไฟล์นี้",
+	"downloads.dp.askImport": "นำเข้า {file} เป็น {name} ไหม?",
+	"downloads.dp.askImportReplace": "นำเข้า {file} เป็น {name} ไหม? ไฟล์นี้จะแทนที่ไฟล์ปัจจุบัน ซึ่งจะไปที่ ลบล่าสุด",
+	"downloads.dp.imported": "นำเข้า {name} แล้ว",
+	"downloads.dp.importFailed": "นำเข้าไฟล์ไม่ได้"
 }

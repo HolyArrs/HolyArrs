@@ -1289,5 +1289,9 @@
 	"server.library.no-such-file-in-this-title": "এই টাইটেলে এমন কোনো ফাইল নেই",
 	"server.library.send-1-to-2000-files": "১ থেকে ২০০০টি ফাইল পাঠান",
 	"server.sources.this-kind-of-title-can-t": "এই ধরনের শিরোনাম খোঁজা যায় না",
-	"server.migrate.scored-there-points-here-stop-at": "{name} সেখানে {n} পেয়েছিল; এখানে পয়েন্ট {n2}-এ থামে"
+	"server.migrate.scored-there-points-here-stop-at": "{name} সেখানে {n} পেয়েছিল; এখানে পয়েন্ট {n2}-এ থামে",
+	"server.downloads.only-a-movie-s-download-is": "এখান থেকে শুধু সিনেমার ডাউনলোড ইমপোর্ট হয়; হাতে ফাইল ইমপোর্ট করুন ব্যবহার করুন",
+	"server.downloads.the-download-has-no-single-video": "ডাউনলোডে ইমপোর্ট করার মতো একটিমাত্র ভিডিও নেই; হাতে ফাইল ইমপোর্ট করুন ব্যবহার করুন",
+	"server.downloads.this-movie-already-has-a-file": "এই সিনেমার আগেই একটি ফাইল আছে; এটির জায়গায় বসাতে replace পাঠান",
+	"server.importer.replaced-by-hand": "{path} হাতে বদলানো হয়েছে"
 }

@@ -1289,5 +1289,9 @@
 	"server.library.no-such-file-in-this-title": "такого файлу в цьому тайтлі немає",
 	"server.library.send-1-to-2000-files": "надішліть від 1 до 2000 файлів",
 	"server.sources.this-kind-of-title-can-t": "цей вид тайтла не можна шукати",
-	"server.migrate.scored-there-points-here-stop-at": "{name} мав там {n}; бали тут обмежені {n2}"
+	"server.migrate.scored-there-points-here-stop-at": "{name} мав там {n}; бали тут обмежені {n2}",
+	"server.downloads.only-a-movie-s-download-is": "звідси імпортується лише завантаження фільму; скористайся «Імпорт файлів вручну»",
+	"server.downloads.the-download-has-no-single-video": "у завантаженні немає одного відео для імпорту; скористайся «Імпорт файлів вручну»",
+	"server.downloads.this-movie-already-has-a-file": "цей фільм уже має файл; надішли replace, щоб поставити цей на його місце",
+	"server.importer.replaced-by-hand": "{path} замінено вручну"
 }

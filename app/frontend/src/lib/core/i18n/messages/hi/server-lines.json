@@ -1289,5 +1289,9 @@
 	"server.library.no-such-file-in-this-title": "इस टाइटल में ऐसी कोई फ़ाइल नहीं",
 	"server.library.send-1-to-2000-files": "1 से 2000 फ़ाइलें भेजें",
 	"server.sources.this-kind-of-title-can-t": "इस तरह का शीर्षक खोजा नहीं जा सकता",
-	"server.migrate.scored-there-points-here-stop-at": "{name} को वहाँ {n} मिले थे; यहाँ पॉइंट {n2} पर रुकते हैं"
+	"server.migrate.scored-there-points-here-stop-at": "{name} को वहाँ {n} मिले थे; यहाँ पॉइंट {n2} पर रुकते हैं",
+	"server.downloads.only-a-movie-s-download-is": "यहाँ से सिर्फ़ फ़िल्म का डाउनलोड इंपोर्ट होता है; फ़ाइलें हाथ से इंपोर्ट करें इस्तेमाल करें",
+	"server.downloads.the-download-has-no-single-video": "डाउनलोड में इंपोर्ट करने लायक एक ही वीडियो नहीं है; फ़ाइलें हाथ से इंपोर्ट करें इस्तेमाल करें",
+	"server.downloads.this-movie-already-has-a-file": "इस फ़िल्म की फ़ाइल पहले से है; इसे उसकी जगह रखने के लिए replace भेजें",
+	"server.importer.replaced-by-hand": "{path} हाथ से बदली गई"
 }

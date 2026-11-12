@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} episode",
 	"library.stats.unit.episode.other": "{n} episode",
 	"library.stats.unit.play.one": "{n} pemutaran",
-	"library.stats.unit.play.other": "{n} pemutaran"
+	"library.stats.unit.play.other": "{n} pemutaran",
+	"library.byHand.askReplaceOne": "1 file menggantikan file yang sudah ada di Pustaka. File lama masuk ke Baru dihapus. Impor?",
+	"library.byHand.askReplaceMany": "{n} file menggantikan file yang sudah ada di Pustaka. File lama masuk ke Baru dihapus. Impor?"
 }

@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} episodio",
 	"library.stats.unit.episode.other": "{n} episodios",
 	"library.stats.unit.play.one": "{n} reproducción",
-	"library.stats.unit.play.other": "{n} reproducciones"
+	"library.stats.unit.play.other": "{n} reproducciones",
+	"library.byHand.askReplaceOne": "1 archivo reemplaza un archivo que ya está en la Biblioteca. El archivo antiguo va a Eliminados recientemente. ¿Importar?",
+	"library.byHand.askReplaceMany": "{n} archivos reemplazan archivos que ya están en la Biblioteca. Los archivos antiguos van a Eliminados recientemente. ¿Importar?"
 }

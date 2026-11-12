@@ -1289,5 +1289,9 @@
 	"server.library.no-such-file-in-this-title": "δεν υπάρχει τέτοιο αρχείο σε αυτόν τον τίτλο",
 	"server.library.send-1-to-2000-files": "στείλε από 1 έως 2000 αρχεία",
 	"server.sources.this-kind-of-title-can-t": "αυτό το είδος τίτλου δεν μπορεί να αναζητηθεί",
-	"server.migrate.scored-there-points-here-stop-at": "Το {name} είχε {n} εκεί· οι πόντοι εδώ σταματούν στο {n2}"
+	"server.migrate.scored-there-points-here-stop-at": "Το {name} είχε {n} εκεί· οι πόντοι εδώ σταματούν στο {n2}",
+	"server.downloads.only-a-movie-s-download-is": "από εδώ εισάγεται μόνο η λήψη μιας ταινίας· χρησιμοποιήστε την «Εισαγωγή αρχείων με το χέρι»",
+	"server.downloads.the-download-has-no-single-video": "η λήψη δεν έχει ένα μόνο βίντεο για εισαγωγή· χρησιμοποιήστε την «Εισαγωγή αρχείων με το χέρι»",
+	"server.downloads.this-movie-already-has-a-file": "αυτή η ταινία έχει ήδη αρχείο· στείλτε replace για να μπει αυτό στη θέση του",
+	"server.importer.replaced-by-hand": "Το {path} αντικαταστάθηκε με το χέρι"
 }

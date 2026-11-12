@@ -1256,5 +1256,11 @@
 	"downloads.ot.kindLanguage": "jezik",
 	"downloads.ot.kindReleaseType": "vrsta izdanja",
 	"downloads.ot.kindYear": "godina",
-	"downloads.hl.notMoved": "Nije premješteno nakon uvoza"
+	"downloads.hl.notMoved": "Nije premješteno nakon uvoza",
+	"downloads.hl.notMoved": "Nije premješteno nakon uvoza",
+	"downloads.dp.importFile": "Uvezi ovu datoteku",
+	"downloads.dp.askImport": "Uvesti {file} kao {name}?",
+	"downloads.dp.askImportReplace": "Uvesti {file} kao {name}? Zamjenjuje trenutačnu datoteku, koja ide u Nedavno obrisano.",
+	"downloads.dp.imported": "{name} uvezeno",
+	"downloads.dp.importFailed": "Datoteku nije bilo moguće uvesti"
 }

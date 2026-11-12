@@ -1256,5 +1256,11 @@
 	"downloads.ot.kindLanguage": "语言",
 	"downloads.ot.kindReleaseType": "发布类型",
 	"downloads.ot.kindYear": "年份",
-	"downloads.hl.notMoved": "导入后未能移动"
+	"downloads.hl.notMoved": "导入后未能移动",
+	"downloads.hl.notMoved": "导入后未能移动",
+	"downloads.dp.importFile": "导入此文件",
+	"downloads.dp.askImport": "将 {file} 导入为 {name}？",
+	"downloads.dp.askImportReplace": "将 {file} 导入为 {name}？它会替换当前文件，旧文件会移到“最近删除”。",
+	"downloads.dp.imported": "已导入 {name}",
+	"downloads.dp.importFailed": "无法导入该文件"
 }

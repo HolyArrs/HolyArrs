@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} епизод",
 	"library.stats.unit.episode.other": "{n} епизода",
 	"library.stats.unit.play.one": "{n} възпроизвеждане",
-	"library.stats.unit.play.other": "{n} възпроизвеждания"
+	"library.stats.unit.play.other": "{n} възпроизвеждания",
+	"library.byHand.askReplaceOne": "1 файл заменя файл, който вече е в Библиотеката. Старият файл отива в „Наскоро изтрити“. Импорт?",
+	"library.byHand.askReplaceMany": "{n} файла заменят файлове, които вече са в Библиотеката. Старите файлове отиват в „Наскоро изтрити“. Импорт?"
 }

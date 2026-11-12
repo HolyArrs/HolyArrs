@@ -1289,5 +1289,9 @@
 	"server.library.no-such-file-in-this-title": "bu başlıkta böyle bir dosya yok",
 	"server.library.send-1-to-2000-files": "1 ile 2000 arasında dosya gönder",
 	"server.sources.this-kind-of-title-can-t": "bu tür başlık aranamaz",
-	"server.migrate.scored-there-points-here-stop-at": "{name} orada {n} aldı; puanlar burada {n2} değerinde durur"
+	"server.migrate.scored-there-points-here-stop-at": "{name} orada {n} aldı; puanlar burada {n2} değerinde durur",
+	"server.downloads.only-a-movie-s-download-is": "buradan yalnızca bir filmin indirmesi içe aktarılır; Dosyaları elle içe aktar kullan",
+	"server.downloads.the-download-has-no-single-video": "indirmede içe aktarılacak tek bir video yok; Dosyaları elle içe aktar kullan",
+	"server.downloads.this-movie-already-has-a-file": "bu filmin zaten bir dosyası var; bunu yerine koymak için replace gönder",
+	"server.importer.replaced-by-hand": "{path} elle değiştirildi"
 }

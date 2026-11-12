@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} episode",
 	"library.stats.unit.episode.other": "{n} episodes",
 	"library.stats.unit.play.one": "{n} play",
-	"library.stats.unit.play.other": "{n} plays"
+	"library.stats.unit.play.other": "{n} plays",
+	"library.byHand.askReplaceOne": "1 file replaces a file already in the Library. The old file goes to Recently deleted. Import?",
+	"library.byHand.askReplaceMany": "{n} files replace files already in the Library. The old files go to Recently deleted. Import?"
 }

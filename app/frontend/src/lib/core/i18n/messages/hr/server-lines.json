@@ -1289,5 +1289,9 @@
 	"server.library.no-such-file-in-this-title": "nema takve datoteke u ovom naslovu",
 	"server.library.send-1-to-2000-files": "pošaljite od 1 do 2000 datoteka",
 	"server.sources.this-kind-of-title-can-t": "ovu vrstu naslova nije moguće pretražiti",
-	"server.migrate.scored-there-points-here-stop-at": "{name} je ondje imao {n}; bodovi ovdje staju na {n2}"
+	"server.migrate.scored-there-points-here-stop-at": "{name} je ondje imao {n}; bodovi ovdje staju na {n2}",
+	"server.downloads.only-a-movie-s-download-is": "odavde se uvozi samo preuzimanje filma; koristi Uvezi datoteke ručno",
+	"server.downloads.the-download-has-no-single-video": "preuzimanje nema jedan video za uvoz; koristi Uvezi datoteke ručno",
+	"server.downloads.this-movie-already-has-a-file": "ovaj film već ima datoteku; pošalji replace da ovu staviš na njezino mjesto",
+	"server.importer.replaced-by-hand": "{path} zamijenjeno ručno"
 }

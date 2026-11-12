@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "الحلقات: {n}",
 	"library.stats.unit.episode.other": "الحلقات: {n}",
 	"library.stats.unit.play.one": "مرات التشغيل: {n}",
-	"library.stats.unit.play.other": "مرات التشغيل: {n}"
+	"library.stats.unit.play.other": "مرات التشغيل: {n}",
+	"library.byHand.askReplaceOne": "ملف واحد يحل محل ملف موجود في المكتبة. ينتقل الملف القديم إلى المحذوف حديثًا. هل تريد الاستيراد؟",
+	"library.byHand.askReplaceMany": "{n} ملفات تحل محل ملفات موجودة في المكتبة. تنتقل الملفات القديمة إلى المحذوف حديثًا. هل تريد الاستيراد؟"
 }

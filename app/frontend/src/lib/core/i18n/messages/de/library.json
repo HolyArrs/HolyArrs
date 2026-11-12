@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} Folge",
 	"library.stats.unit.episode.other": "{n} Folgen",
 	"library.stats.unit.play.one": "{n} Wiedergabe",
-	"library.stats.unit.play.other": "{n} Wiedergaben"
+	"library.stats.unit.play.other": "{n} Wiedergaben",
+	"library.byHand.askReplaceOne": "1 Datei ersetzt eine Datei, die schon in der Bibliothek ist. Die alte Datei kommt in „Kürzlich gelöscht“. Importieren?",
+	"library.byHand.askReplaceMany": "{n} Dateien ersetzen Dateien, die schon in der Bibliothek sind. Die alten Dateien kommen in „Kürzlich gelöscht“. Importieren?"
 }

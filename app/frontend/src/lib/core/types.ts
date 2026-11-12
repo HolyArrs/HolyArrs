@@ -623,6 +623,8 @@ export interface Decision {
 	pack_slot_ids?: number[];
 	pack?: EpisodeLine[];
 	artwork?: string;
+	// The one video a movie's finished download holds; Review can import it.
+	import_file?: string;
 }
 
 export interface SearchView {

@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} epizode",
 	"library.stats.unit.episode.other": "{n} epizodes",
 	"library.stats.unit.play.one": "{n} atskaņošana",
-	"library.stats.unit.play.other": "{n} atskaņošanas"
+	"library.stats.unit.play.other": "{n} atskaņošanas",
+	"library.byHand.askReplaceOne": "1 fails aizstāj failu, kas jau ir Bibliotēkā. Vecais fails nonāk sadaļā “Nesen dzēstie”. Importēt?",
+	"library.byHand.askReplaceMany": "Faili ({n}) aizstāj failus, kas jau ir Bibliotēkā. Vecie faili nonāk sadaļā “Nesen dzēstie”. Importēt?"
 }

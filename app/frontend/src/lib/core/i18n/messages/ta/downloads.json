@@ -1256,5 +1256,11 @@
 	"downloads.ot.kindLanguage": "மொழி",
 	"downloads.ot.kindReleaseType": "வெளியீட்டு வகை",
 	"downloads.ot.kindYear": "ஆண்டு",
-	"downloads.hl.notMoved": "இறக்குமதிக்குப் பின் நகர்த்தப்படவில்லை"
+	"downloads.hl.notMoved": "இறக்குமதிக்குப் பின் நகர்த்தப்படவில்லை",
+	"downloads.hl.notMoved": "இறக்குமதிக்குப் பின் நகர்த்தப்படவில்லை",
+	"downloads.dp.importFile": "இந்தக் கோப்பை இறக்குமதி செய்",
+	"downloads.dp.askImport": "{file} ஐ {name} ஆக இறக்குமதி செய்யவா?",
+	"downloads.dp.askImportReplace": "{file} ஐ {name} ஆக இறக்குமதி செய்யவா? இது தற்போதைய கோப்பை மாற்றும்; அது சமீபத்தில் நீக்கியவை பகுதிக்குச் செல்லும்.",
+	"downloads.dp.imported": "{name} இறக்குமதி செய்யப்பட்டது",
+	"downloads.dp.importFailed": "கோப்பை இறக்குமதி செய்ய முடியவில்லை"
 }

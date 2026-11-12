@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} jakso",
 	"library.stats.unit.episode.other": "{n} jaksoa",
 	"library.stats.unit.play.one": "{n} toisto",
-	"library.stats.unit.play.other": "{n} toistoa"
+	"library.stats.unit.play.other": "{n} toistoa",
+	"library.byHand.askReplaceOne": "1 tiedosto korvaa Kirjastossa jo olevan tiedoston. Vanha tiedosto siirtyy kohtaan Äskettäin poistetut. Tuodaanko?",
+	"library.byHand.askReplaceMany": "{n} tiedostoa korvaa Kirjastossa jo olevia tiedostoja. Vanhat tiedostot siirtyvät kohtaan Äskettäin poistetut. Tuodaanko?"
 }

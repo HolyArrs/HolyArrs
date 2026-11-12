@@ -1256,5 +1256,11 @@
 	"downloads.ot.kindLanguage": "мова",
 	"downloads.ot.kindReleaseType": "тип релізу",
 	"downloads.ot.kindYear": "рік",
-	"downloads.hl.notMoved": "Не переміщено після імпорту"
+	"downloads.hl.notMoved": "Не переміщено після імпорту",
+	"downloads.hl.notMoved": "Не переміщено після імпорту",
+	"downloads.dp.importFile": "Імпортувати цей файл",
+	"downloads.dp.askImport": "Імпортувати {file} як {name}?",
+	"downloads.dp.askImportReplace": "Імпортувати {file} як {name}? Він замінить поточний файл, який потрапить до «Нещодавно видалені».",
+	"downloads.dp.imported": "{name} імпортовано",
+	"downloads.dp.importFailed": "Не вдалося імпортувати файл"
 }

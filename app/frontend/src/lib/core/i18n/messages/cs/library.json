@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} epizoda",
 	"library.stats.unit.episode.other": "{n} epizod",
 	"library.stats.unit.play.one": "{n} přehrání",
-	"library.stats.unit.play.other": "{n} přehrání"
+	"library.stats.unit.play.other": "{n} přehrání",
+	"library.byHand.askReplaceOne": "1 soubor nahradí soubor, který už je v Knihovně. Starý soubor půjde do sekce Nedávno smazané. Importovat?",
+	"library.byHand.askReplaceMany": "Soubory ({n}) nahradí soubory, které už jsou v Knihovně. Staré soubory půjdou do sekce Nedávno smazané. Importovat?"
 }

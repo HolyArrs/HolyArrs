@@ -1289,5 +1289,9 @@
 	"server.library.no-such-file-in-this-title": "không có tệp đó trong mục này",
 	"server.library.send-1-to-2000-files": "gửi từ 1 đến 2000 tệp",
 	"server.sources.this-kind-of-title-can-t": "không thể tìm kiếm loại tựa đề này",
-	"server.migrate.scored-there-points-here-stop-at": "{name} được {n} ở đó; điểm ở đây dừng ở {n2}"
+	"server.migrate.scored-there-points-here-stop-at": "{name} được {n} ở đó; điểm ở đây dừng ở {n2}",
+	"server.downloads.only-a-movie-s-download-is": "ở đây chỉ nhập bản tải về của một phim; hãy dùng Nhập tệp thủ công",
+	"server.downloads.the-download-has-no-single-video": "bản tải về không có đúng một video để nhập; hãy dùng Nhập tệp thủ công",
+	"server.downloads.this-movie-already-has-a-file": "phim này đã có tệp; gửi replace để đặt tệp này vào chỗ của nó",
+	"server.importer.replaced-by-hand": "Đã thay thế {path} thủ công"
 }

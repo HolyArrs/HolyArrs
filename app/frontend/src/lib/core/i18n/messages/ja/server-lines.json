@@ -1289,5 +1289,9 @@
 	"server.library.no-such-file-in-this-title": "このタイトルにそのファイルはありません",
 	"server.library.send-1-to-2000-files": "1〜2000 件のファイルを送ってください",
 	"server.sources.this-kind-of-title-can-t": "この種類のタイトルは検索できません",
-	"server.migrate.scored-there-points-here-stop-at": "{name} はそこで {n} でした。ここではポイントの上限が {n2} です"
+	"server.migrate.scored-there-points-here-stop-at": "{name} はそこで {n} でした。ここではポイントの上限が {n2} です",
+	"server.downloads.only-a-movie-s-download-is": "ここからインポートできるのは映画のダウンロードだけです。「ファイルを手動でインポート」を使ってください",
+	"server.downloads.the-download-has-no-single-video": "ダウンロードにインポートできる動画が 1 本だけではありません。「ファイルを手動でインポート」を使ってください",
+	"server.downloads.this-movie-already-has-a-file": "この映画にはすでにファイルがあります。置き換えるには replace を送ってください",
+	"server.importer.replaced-by-hand": "{path} を手動で置き換えました"
 }

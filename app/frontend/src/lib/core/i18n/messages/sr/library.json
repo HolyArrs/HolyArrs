@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} епизода",
 	"library.stats.unit.episode.other": "{n} епизода",
 	"library.stats.unit.play.one": "{n} репродукција",
-	"library.stats.unit.play.other": "{n} репродукција"
+	"library.stats.unit.play.other": "{n} репродукција",
+	"library.byHand.askReplaceOne": "1 датотека замењује датотеку која је већ у Библиотеци. Стара датотека иде у „Недавно обрисано”. Увести?",
+	"library.byHand.askReplaceMany": "Датотеке ({n}) замењују датотеке које су већ у Библиотеци. Старе датотеке иду у „Недавно обрисано”. Увести?"
 }

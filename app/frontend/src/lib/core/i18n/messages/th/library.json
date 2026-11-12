@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} ตอน",
 	"library.stats.unit.episode.other": "{n} ตอน",
 	"library.stats.unit.play.one": "เล่น {n} ครั้ง",
-	"library.stats.unit.play.other": "เล่น {n} ครั้ง"
+	"library.stats.unit.play.other": "เล่น {n} ครั้ง",
+	"library.byHand.askReplaceOne": "1 ไฟล์จะแทนที่ไฟล์ที่อยู่ในคลังแล้ว ไฟล์เก่าจะไปที่ ลบล่าสุด นำเข้าไหม?",
+	"library.byHand.askReplaceMany": "{n} ไฟล์จะแทนที่ไฟล์ที่อยู่ในคลังแล้ว ไฟล์เก่าจะไปที่ ลบล่าสุด นำเข้าไหม?"
 }

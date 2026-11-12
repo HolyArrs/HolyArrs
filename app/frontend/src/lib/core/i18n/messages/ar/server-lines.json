@@ -1289,5 +1289,9 @@
 	"server.library.no-such-file-in-this-title": "لا يوجد ملف كهذا في هذا العنوان",
 	"server.library.send-1-to-2000-files": "أرسل من 1 إلى 2000 ملف",
 	"server.sources.this-kind-of-title-can-t": "لا يمكن البحث عن هذا النوع من العناوين",
-	"server.migrate.scored-there-points-here-stop-at": "{name} سجّل {n} هناك؛ النقاط هنا تتوقف عند {n2}"
+	"server.migrate.scored-there-points-here-stop-at": "{name} سجّل {n} هناك؛ النقاط هنا تتوقف عند {n2}",
+	"server.downloads.only-a-movie-s-download-is": "يُستورد من هنا تنزيل فيلم فقط؛ استخدم استيراد الملفات يدويًا",
+	"server.downloads.the-download-has-no-single-video": "لا يحتوي التنزيل على فيديو واحد للاستيراد؛ استخدم استيراد الملفات يدويًا",
+	"server.downloads.this-movie-already-has-a-file": "لهذا الفيلم ملف بالفعل؛ أرسل replace لوضع هذا الملف مكانه",
+	"server.importer.replaced-by-hand": "تم استبدال {path} يدويًا"
 }

@@ -1289,5 +1289,9 @@
 	"server.library.no-such-file-in-this-title": "não existe esse arquivo neste título",
 	"server.library.send-1-to-2000-files": "envie de 1 a 2000 arquivos",
 	"server.sources.this-kind-of-title-can-t": "este tipo de título não pode ser buscado",
-	"server.migrate.scored-there-points-here-stop-at": "{name} valia {n} lá; aqui os pontos param em {n2}"
+	"server.migrate.scored-there-points-here-stop-at": "{name} valia {n} lá; aqui os pontos param em {n2}",
+	"server.downloads.only-a-movie-s-download-is": "daqui só se importa o download de um filme; use Importar arquivos à mão",
+	"server.downloads.the-download-has-no-single-video": "o download não tem um único vídeo para importar; use Importar arquivos à mão",
+	"server.downloads.this-movie-already-has-a-file": "este filme já tem um arquivo; envie replace para colocar este no lugar dele",
+	"server.importer.replaced-by-hand": "{path} substituído à mão"
 }

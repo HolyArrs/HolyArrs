@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} episood",
 	"library.stats.unit.episode.other": "{n} episoodi",
 	"library.stats.unit.play.one": "{n} esitus",
-	"library.stats.unit.play.other": "{n} esitust"
+	"library.stats.unit.play.other": "{n} esitust",
+	"library.byHand.askReplaceOne": "1 fail asendab faili, mis on juba Kogus. Vana fail läheb jaotisse „Hiljuti kustutatud“. Kas importida?",
+	"library.byHand.askReplaceMany": "{n} faili asendavad faile, mis on juba Kogus. Vanad failid lähevad jaotisse „Hiljuti kustutatud“. Kas importida?"
 }

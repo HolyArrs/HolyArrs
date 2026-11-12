@@ -1256,5 +1256,11 @@
 	"downloads.ot.kindLanguage": "язык",
 	"downloads.ot.kindReleaseType": "тип релиза",
 	"downloads.ot.kindYear": "год",
-	"downloads.hl.notMoved": "Не перемещено после импорта"
+	"downloads.hl.notMoved": "Не перемещено после импорта",
+	"downloads.hl.notMoved": "Не перемещено после импорта",
+	"downloads.dp.importFile": "Импортировать этот файл",
+	"downloads.dp.askImport": "Импортировать {file} как {name}?",
+	"downloads.dp.askImportReplace": "Импортировать {file} как {name}? Он заменит текущий файл, который попадёт в «Недавно удалённые».",
+	"downloads.dp.imported": "{name} импортирован",
+	"downloads.dp.importFailed": "Не удалось импортировать файл"
 }

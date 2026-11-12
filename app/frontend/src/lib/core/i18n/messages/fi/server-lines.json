@@ -1289,5 +1289,9 @@
 	"server.library.no-such-file-in-this-title": "tällaista tiedostoa ei ole tässä nimikkeessä",
 	"server.library.send-1-to-2000-files": "lähetä 1–2000 tiedostoa",
 	"server.sources.this-kind-of-title-can-t": "tämäntyyppistä nimikettä ei voi hakea",
-	"server.migrate.scored-there-points-here-stop-at": "{name} sai siellä {n}; pisteet päättyvät täällä lukuun {n2}"
+	"server.migrate.scored-there-points-here-stop-at": "{name} sai siellä {n}; pisteet päättyvät täällä lukuun {n2}",
+	"server.downloads.only-a-movie-s-download-is": "täältä tuodaan vain elokuvan lataus; käytä kohtaa Tuo tiedostot käsin",
+	"server.downloads.the-download-has-no-single-video": "latauksessa ei ole yhtä tuotavaa videota; käytä kohtaa Tuo tiedostot käsin",
+	"server.downloads.this-movie-already-has-a-file": "tällä elokuvalla on jo tiedosto; lähetä replace, niin tämä tulee sen tilalle",
+	"server.importer.replaced-by-hand": "{path} korvattu käsin"
 }

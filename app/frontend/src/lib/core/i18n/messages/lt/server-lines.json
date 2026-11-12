@@ -1289,5 +1289,9 @@
 	"server.library.no-such-file-in-this-title": "tokio failo šiame pavadinime nėra",
 	"server.library.send-1-to-2000-files": "siųskite nuo 1 iki 2000 failų",
 	"server.sources.this-kind-of-title-can-t": "tokio tipo pavadinimo ieškoti negalima",
-	"server.migrate.scored-there-points-here-stop-at": "{name} ten turėjo {n}; taškai čia baigiasi ties {n2}"
+	"server.migrate.scored-there-points-here-stop-at": "{name} ten turėjo {n}; taškai čia baigiasi ties {n2}",
+	"server.downloads.only-a-movie-s-download-is": "iš čia importuojamas tik filmo atsisiuntimas; naudokite „Importuoti failus ranka“",
+	"server.downloads.the-download-has-no-single-video": "atsisiuntime nėra vieno vaizdo įrašo importuoti; naudokite „Importuoti failus ranka“",
+	"server.downloads.this-movie-already-has-a-file": "šis filmas jau turi failą; siųskite replace, kad šis atsidurtų jo vietoje",
+	"server.importer.replaced-by-hand": "{path} pakeistas ranka"
 }

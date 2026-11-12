@@ -1256,5 +1256,11 @@
 	"downloads.ot.kindLanguage": "اللغة",
 	"downloads.ot.kindReleaseType": "نوع الإصدار",
 	"downloads.ot.kindYear": "السنة",
-	"downloads.hl.notMoved": "لم يُنقل بعد الاستيراد"
+	"downloads.hl.notMoved": "لم يُنقل بعد الاستيراد",
+	"downloads.hl.notMoved": "لم يُنقل بعد الاستيراد",
+	"downloads.dp.importFile": "استيراد هذا الملف",
+	"downloads.dp.askImport": "استيراد {file} على أنه {name}؟",
+	"downloads.dp.askImportReplace": "استيراد {file} على أنه {name}؟ سيحل محل الملف الحالي، الذي ينتقل إلى المحذوف حديثًا.",
+	"downloads.dp.imported": "تم استيراد {name}",
+	"downloads.dp.importFailed": "تعذّر استيراد الملف"
 }

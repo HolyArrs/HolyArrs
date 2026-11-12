@@ -1256,5 +1256,11 @@
 	"downloads.ot.kindLanguage": "valoda",
 	"downloads.ot.kindReleaseType": "izlaiduma veids",
 	"downloads.ot.kindYear": "gads",
-	"downloads.hl.notMoved": "Pēc importa netika pārvietots"
+	"downloads.hl.notMoved": "Pēc importa netika pārvietots",
+	"downloads.hl.notMoved": "Pēc importa netika pārvietots",
+	"downloads.dp.importFile": "Importēt šo failu",
+	"downloads.dp.askImport": "Importēt {file} kā {name}?",
+	"downloads.dp.askImportReplace": "Importēt {file} kā {name}? Tas aizstāj pašreizējo failu, kas nonāk sadaļā “Nesen dzēstie”.",
+	"downloads.dp.imported": "{name} importēts",
+	"downloads.dp.importFailed": "Failu neizdevās importēt"
 }

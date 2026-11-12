@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} एपिसोड",
 	"library.stats.unit.episode.other": "{n} एपिसोड",
 	"library.stats.unit.play.one": "{n} प्ले",
-	"library.stats.unit.play.other": "{n} प्ले"
+	"library.stats.unit.play.other": "{n} प्ले",
+	"library.byHand.askReplaceOne": "1 फ़ाइल लाइब्रेरी में पहले से मौजूद एक फ़ाइल की जगह लेगी। पुरानी फ़ाइल हाल में मिटाई गई में जाएगी। इंपोर्ट करें?",
+	"library.byHand.askReplaceMany": "{n} फ़ाइलें लाइब्रेरी में पहले से मौजूद फ़ाइलों की जगह लेंगी। पुरानी फ़ाइलें हाल में मिटाई गई में जाएँगी। इंपोर्ट करें?"
 }

@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} episodi",
 	"library.stats.unit.episode.other": "{n} episodis",
 	"library.stats.unit.play.one": "{n} reproducció",
-	"library.stats.unit.play.other": "{n} reproduccions"
+	"library.stats.unit.play.other": "{n} reproduccions",
+	"library.byHand.askReplaceOne": "1 fitxer substitueix un fitxer que ja és a la Biblioteca. El fitxer antic va a Suprimits recentment. Vols importar?",
+	"library.byHand.askReplaceMany": "{n} fitxers substitueixen fitxers que ja són a la Biblioteca. Els fitxers antics van a Suprimits recentment. Vols importar?"
 }
