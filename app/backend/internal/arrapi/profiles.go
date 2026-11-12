@@ -442,6 +442,12 @@ func (h *handler) saveProfile(w http.ResponseWriter, r *http.Request, id int64) 
 		internalError(w, err)
 		return
 	}
+	cfg, err := h.loadConfig(ctx)
+	if err != nil {
+		internalError(w, err)
+		return
+	}
+	cfg.fold(&body)
 	body.Synced = &mediafiles.SyncedProfile{From: mediafiles.SourceArrAPI, App: h.side, ProfileID: h.side + ":" + in.Name,
 		Name: clipName(in.Name), At: h.now().UTC().Format(time.RFC3339)}
 	by := actor(r)
