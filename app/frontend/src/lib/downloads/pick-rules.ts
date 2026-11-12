@@ -35,7 +35,25 @@ export const languages: [string, string][] = [
 	tup<[string, string]>('es', () => say('downloads.pr.lang.es')),
 	tup<[string, string]>('ru', () => say('downloads.pr.lang.ru')),
 	tup<[string, string]>('ja', () => say('downloads.pr.lang.ja')),
-	tup<[string, string]>('ko', () => say('downloads.pr.lang.ko'))
+	tup<[string, string]>('ko', () => say('downloads.pr.lang.ko')),
+	tup<[string, string]>('pl', () => say('downloads.pr.lang.pl')),
+	tup<[string, string]>('nl', () => say('downloads.pr.lang.nl')),
+	tup<[string, string]>('pt', () => say('downloads.pr.lang.pt')),
+	tup<[string, string]>('sv', () => say('downloads.pr.lang.sv')),
+	tup<[string, string]>('da', () => say('downloads.pr.lang.da')),
+	tup<[string, string]>('no', () => say('downloads.pr.lang.no')),
+	tup<[string, string]>('fi', () => say('downloads.pr.lang.fi')),
+	tup<[string, string]>('cs', () => say('downloads.pr.lang.cs')),
+	tup<[string, string]>('hu', () => say('downloads.pr.lang.hu')),
+	tup<[string, string]>('el', () => say('downloads.pr.lang.el')),
+	tup<[string, string]>('he', () => say('downloads.pr.lang.he')),
+	tup<[string, string]>('tr', () => say('downloads.pr.lang.tr')),
+	tup<[string, string]>('ar', () => say('downloads.pr.lang.ar')),
+	tup<[string, string]>('hi', () => say('downloads.pr.lang.hi')),
+	tup<[string, string]>('zh', () => say('downloads.pr.lang.zh')),
+	tup<[string, string]>('th', () => say('downloads.pr.lang.th')),
+	tup<[string, string]>('vi', () => say('downloads.pr.lang.vi')),
+	tup<[string, string]>('uk', () => say('downloads.pr.lang.uk'))
 ];
 
 export const kindChoices: [RulesKind, string][] = [

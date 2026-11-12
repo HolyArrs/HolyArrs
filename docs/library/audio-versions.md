@@ -24,11 +24,22 @@ HolyArrs never copies a file into a second Version on its own.
 - Codes for one language are the same: `eng` matches `en`, `fra` matches `fr`.
 - Every language you list must be among the file's audio tracks.
 - A Version with no languages only looks at quality.
-- Only tracks found in the file count. Release names, subtitles and language tags in a name do not. See [Codecs and media inspection](codecs-inspection.md).
+- On import, only tracks found in the file count. Release names, subtitles and language tags in a name do not. See [Codecs and media inspection](codecs-inspection.md).
 - The title's original language describes the movie or show. It says nothing about a file's tracks.
 - One file with several languages can meet several Versions. An import still fills only the Version the download was for.
 
 This applies to movies and shows. Music is not checked this way.
+
+## How search follows a Version's languages
+
+Searches for a Version also read the language tags in each Release name, such as `FRENCH` or `GERMAN`.
+
+- A name with no language tag counts as the title's original language.
+- A name that clearly lacks a language the Version needs is refused.
+- `MULTI`, or `DUAL` with no language named, may hold any language, so these names only get a warning.
+- Subtitle tags such as `VOSTFR` or `SUBFRENCH` never count as audio.
+
+The file's real tracks are still checked on import.
 
 ## The Copies section
 
