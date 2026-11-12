@@ -196,6 +196,8 @@ CheckedAt *time.Time `db:"checked_at"`
 Role string `db:"role"`
 ParentFileID *int64 `db:"parent_file_id"`
 State string `db:"state"`
+LeftoverReason *string `db:"leftover_reason"`
+LeftoverDismissed bool `db:"leftover_dismissed"`
 == PickRulesBody
 Steps []Step `json:"steps"`
 GoodEnoughAt string `json:"good_enough_at"`

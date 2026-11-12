@@ -1274,5 +1274,8 @@
 	"server.health.downloader-save-folder": "پوشه ذخیره دانلودر",
 	"server.downloads.could-not-move-the-imported-download": "دانلود واردشده در {name} به {cat} منتقل نشد: {error}؛ HolyArrs در وارد کردن بعدی دوباره تلاش می‌کند",
 	"server.downloads.moved-to-after-import": "پس از وارد کردن به {cat} منتقل شد",
+	"server.library.files-matched-by-hand": "{name}: {n} فایل به‌صورت دستی تطبیق یافت",
+	"server.library.no-such-file-in-this-title": "چنین فایلی در این عنوان نیست",
+	"server.library.send-1-to-2000-files": "۱ تا ۲۰۰۰ فایل بفرستید",
 	"server.sources.this-kind-of-title-can-t": "این نوع عنوان قابل جستجو نیست"
 }

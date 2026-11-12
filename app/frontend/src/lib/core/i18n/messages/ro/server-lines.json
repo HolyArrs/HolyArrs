@@ -1274,5 +1274,8 @@
 	"server.health.downloader-save-folder": "Dosar de salvare al clientului de descărcare",
 	"server.downloads.could-not-move-the-imported-download": "Descărcarea importată nu a putut fi mutată în {cat} din {name}: {error}; HolyArrs încearcă din nou la următorul import",
 	"server.downloads.moved-to-after-import": "Mutat în {cat} după import",
+	"server.library.files-matched-by-hand": "{name}: {n} fișiere potrivite manual",
+	"server.library.no-such-file-in-this-title": "nu există un astfel de fișier în acest titlu",
+	"server.library.send-1-to-2000-files": "trimite între 1 și 2000 de fișiere",
 	"server.sources.this-kind-of-title-can-t": "acest tip de titlu nu poate fi căutat"
 }

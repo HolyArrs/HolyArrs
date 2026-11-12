@@ -1274,5 +1274,8 @@
 	"server.health.downloader-save-folder": "Mapa za spremanje preuzimatelja",
 	"server.downloads.could-not-move-the-imported-download": "Uvezeno preuzimanje nije se moglo premjestiti u {cat} u {name}: {error}; HolyArrs će pokušati ponovno pri sljedećem uvozu",
 	"server.downloads.moved-to-after-import": "Premješteno u {cat} nakon uvoza",
+	"server.library.files-matched-by-hand": "{name}: ručno povezane datoteke: {n}",
+	"server.library.no-such-file-in-this-title": "nema takve datoteke u ovom naslovu",
+	"server.library.send-1-to-2000-files": "pošaljite od 1 do 2000 datoteka",
 	"server.sources.this-kind-of-title-can-t": "ovu vrstu naslova nije moguće pretražiti"
 }

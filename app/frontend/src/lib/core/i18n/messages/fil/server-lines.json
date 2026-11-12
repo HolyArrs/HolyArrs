@@ -1274,5 +1274,8 @@
 	"server.health.downloader-save-folder": "Save folder ng Downloader",
 	"server.downloads.could-not-move-the-imported-download": "Hindi nailipat ang na-import na download sa {cat} sa {name}: {error}; susubukan ulit ng HolyArrs sa susunod na import",
 	"server.downloads.moved-to-after-import": "Inilipat sa {cat} pagkatapos ng import",
+	"server.library.files-matched-by-hand": "{name}: {n} file ang itinugma nang manu-mano",
+	"server.library.no-such-file-in-this-title": "walang ganoong file sa title na ito",
+	"server.library.send-1-to-2000-files": "magpadala ng 1 hanggang 2000 file",
 	"server.sources.this-kind-of-title-can-t": "hindi mahahanap ang ganitong uri ng pamagat"
 }

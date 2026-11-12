@@ -1274,5 +1274,8 @@
 	"server.health.downloader-save-folder": "Folder simpan Pemuat turun",
 	"server.downloads.could-not-move-the-imported-download": "Muat turun yang diimport tidak dapat dipindahkan ke {cat} dalam {name}: {error}; HolyArrs akan mencuba lagi pada import seterusnya",
 	"server.downloads.moved-to-after-import": "Dipindahkan ke {cat} selepas import",
+	"server.library.files-matched-by-hand": "{name}: {n} fail dipadankan secara manual",
+	"server.library.no-such-file-in-this-title": "tiada fail sedemikian dalam tajuk ini",
+	"server.library.send-1-to-2000-files": "hantar 1 hingga 2000 fail",
 	"server.sources.this-kind-of-title-can-t": "tajuk jenis ini tidak boleh dicari"
 }

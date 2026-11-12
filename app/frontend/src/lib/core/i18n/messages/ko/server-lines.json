@@ -1274,5 +1274,8 @@
 	"server.health.downloader-save-folder": "다운로더 저장 폴더",
 	"server.downloads.could-not-move-the-imported-download": "가져온 다운로드를 {name}의 {cat}(으)로 옮기지 못했습니다: {error}. 다음 가져오기 때 HolyArrs가 다시 시도합니다",
 	"server.downloads.moved-to-after-import": "가져온 후 {cat}(으)로 옮김",
+	"server.library.files-matched-by-hand": "{name}: 파일 {n}개를 직접 연결했어요",
+	"server.library.no-such-file-in-this-title": "이 타이틀에 그런 파일이 없어요",
+	"server.library.send-1-to-2000-files": "파일을 1~2000개 보내세요",
 	"server.sources.this-kind-of-title-can-t": "이 종류의 타이틀은 검색할 수 없습니다"
 }

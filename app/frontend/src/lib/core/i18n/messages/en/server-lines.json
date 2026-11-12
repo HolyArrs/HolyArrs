@@ -1274,5 +1274,8 @@
 	"server.health.downloader-save-folder": "Downloader save folder",
 	"server.downloads.could-not-move-the-imported-download": "Could not move the imported download to {cat} in {name}: {error}; HolyArrs tries again on the next import",
 	"server.downloads.moved-to-after-import": "Moved to {cat} after import",
+	"server.library.files-matched-by-hand": "{name}: {n} files matched by hand",
+	"server.library.no-such-file-in-this-title": "no such file in this title",
+	"server.library.send-1-to-2000-files": "send 1 to 2000 files",
 	"server.sources.this-kind-of-title-can-t": "this kind of title can't be searched"
 }

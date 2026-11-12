@@ -1274,5 +1274,8 @@
 	"server.health.downloader-save-folder": "Lejupielādētāja saglabāšanas mape",
 	"server.downloads.could-not-move-the-imported-download": "Importēto lejupielādi neizdevās pārvietot uz {cat} klientā {name}: {error}; HolyArrs mēģinās vēlreiz nākamajā importā",
 	"server.downloads.moved-to-after-import": "Pēc importa pārvietots uz {cat}",
+	"server.library.files-matched-by-hand": "{name}: manuāli sasaistīti faili: {n}",
+	"server.library.no-such-file-in-this-title": "šādā nosaukumā tāda faila nav",
+	"server.library.send-1-to-2000-files": "nosūtiet no 1 līdz 2000 failiem",
 	"server.sources.this-kind-of-title-can-t": "šāda veida nosaukumu nevar meklēt"
 }

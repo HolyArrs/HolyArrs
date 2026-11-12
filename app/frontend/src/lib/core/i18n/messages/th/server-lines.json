@@ -1274,5 +1274,8 @@
 	"server.health.downloader-save-folder": "โฟลเดอร์บันทึกของตัวดาวน์โหลด",
 	"server.downloads.could-not-move-the-imported-download": "ย้ายการดาวน์โหลดที่นำเข้าแล้วไปยัง {cat} ใน {name} ไม่ได้: {error}; HolyArrs จะลองอีกครั้งในการนำเข้าครั้งถัดไป",
 	"server.downloads.moved-to-after-import": "ย้ายไปยัง {cat} หลังนำเข้า",
+	"server.library.files-matched-by-hand": "{name}: จับคู่ด้วยมือ {n} ไฟล์",
+	"server.library.no-such-file-in-this-title": "ไม่มีไฟล์นี้ในรายการนี้",
+	"server.library.send-1-to-2000-files": "ส่ง 1 ถึง 2000 ไฟล์",
 	"server.sources.this-kind-of-title-can-t": "ไม่สามารถค้นหาชื่อเรื่องประเภทนี้ได้"
 }
