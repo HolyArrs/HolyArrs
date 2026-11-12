@@ -47,6 +47,8 @@ type AdoptMatch struct {
 	Name  string  `json:"name"`
 	Year  int     `json:"year"`
 	Score float64 `json:"score"`
+	// Poster is the art the lookup already returned (#305); no extra call.
+	Poster string `json:"poster,omitempty"`
 }
 
 // AdoptVideo is a video file found in a movie folder.
@@ -228,7 +230,7 @@ func matchFolder(ctx context.Context, md metadata.Provider, folder string) (stri
 	if m := reTMDBTag.FindStringSubmatch(folder); m != nil {
 		mv, err := md.Movie(ctx, "tmdb:"+m[1])
 		if err == nil {
-			return mv.Name, mv.Year, []AdoptMatch{{TMDB: mv.IDs["tmdb"], Name: mv.Name, Year: mv.Year, Score: 1}}, nil
+			return mv.Name, mv.Year, []AdoptMatch{{TMDB: mv.IDs["tmdb"], Name: mv.Name, Year: mv.Year, Score: 1, Poster: mv.Poster}}, nil
 		}
 		if !errors.Is(err, metadata.ErrNotFound) {
 			return "", 0, nil, err
@@ -247,7 +249,7 @@ func matchFolder(ctx context.Context, md metadata.Provider, folder string) (stri
 		if m.IDs["tmdb"] == "" {
 			continue
 		}
-		out = append(out, AdoptMatch{TMDB: m.IDs["tmdb"], Name: m.Name, Year: m.Year, Score: score(name, year, m)})
+		out = append(out, AdoptMatch{TMDB: m.IDs["tmdb"], Name: m.Name, Year: m.Year, Score: score(name, year, m), Poster: m.Poster})
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Score > out[j].Score })
 	if len(out) > 4 {

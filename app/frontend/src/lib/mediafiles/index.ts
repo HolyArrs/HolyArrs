@@ -88,6 +88,7 @@ export { loadPosterDetail } from './poster.ts';
 export { loadSaved } from './table.ts';
 export { matchesTitleQuery } from './library.ts';
 export { matchKey } from './organise.ts';
+export { pickedPoster } from './organise.ts';
 export { missingEpisodes } from './library.ts';
 export { multiEpisodeChoices } from './organise.ts';
 export { musicExampleRows } from './organise.ts';
