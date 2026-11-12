@@ -16,7 +16,7 @@
 	"core.format.healthy": "Healthy",
 	"core.format.folderNotFound": "Folder not found",
 	"core.format.cannotWrite": "Cannot write here",
-	"core.format.copiedNoHardlinks": "Works, but files are copied (no hardlinks)",
+	"core.format.copiedNoHardlinks": "Each import makes a full copy (uses extra space)",
 	"core.format.notChecked": "Not checked yet",
 	"core.loader.welcome": "Welcome, {name}",
 	"core.loader.reconnecting": "Reconnecting…",

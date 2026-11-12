@@ -16,7 +16,7 @@
 	"core.format.healthy": "Sano",
 	"core.format.folderNotFound": "Carpeta no encontrada",
 	"core.format.cannotWrite": "No se puede escribir aquí",
-	"core.format.copiedNoHardlinks": "Funciona, pero los archivos se copian (sin enlaces duros)",
+	"core.format.copiedNoHardlinks": "Cada importación hace una copia completa (usa más espacio)",
 	"core.format.notChecked": "Aún sin comprobar",
 	"core.loader.welcome": "Te damos la bienvenida, {name}",
 	"core.loader.reconnecting": "Reconectando…",

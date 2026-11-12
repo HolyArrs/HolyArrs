@@ -5,7 +5,7 @@ import { stageOf } from './status-tabs.ts';
 import type { DownloadRow } from '../core/types.ts';
 
 export interface ImportFacts {
-	/** "Placed by hardlink", "2 of 3 files placed by hardlink". */
+	/** "Added to the Library (no extra space used)", "2 of 3 files added to the Library". */
 	how: string;
 	/** The Library folder it went to ("Se7en (1995)"), when known. */
 	where: string;
@@ -23,6 +23,7 @@ export function byDownload(imports: ImportRecord[]): Map<number, ImportRecord> {
 	return out;
 }
 
+// One full line per way a file was placed; plain words, no "hardlink".
 const methodWords: Record<string, string> = {
 	get hardlink() { return t('downloads.import.hardlink'); },
 	get move() { return t('downloads.import.move'); },
@@ -42,10 +43,10 @@ export function placed(im: ImportRecord | undefined): ImportFacts | null {
 	const res = im?.Result ?? [];
 	const ok = res.filter((r) => r.outcome === 'placed');
 	if (!ok.length) return null;
-	const ways = [...new Set(ok.map((r) => methodWords[r.placed_by ?? ''] ?? r.placed_by ?? ''))].filter(Boolean);
-	const by = ways.length ? t('downloads.import.by', { ways: ways.join(t('downloads.import.and')) }) : '';
+	const ways = [...new Set(ok.map((r) => r.placed_by ?? ''))];
 	const wanted = res.filter((r) => r.outcome !== 'skipped').length;
-	const how = im?.State === 'partly_done' && wanted > ok.length ? t('downloads.import.partly', { ok: ok.length, wanted, by }) : t('downloads.import.placed', { by });
+	const one = ways.length === 1 ? methodWords[ways[0]] : undefined;
+	const how = im?.State === 'partly_done' && wanted > ok.length ? t('downloads.import.partly', { ok: ok.length, wanted }) : (one ?? t('downloads.import.placed'));
 	const first = im?.Plan?.find((p) => p.source_file === ok[0].source_file) ?? im?.Plan?.find((p) => p.target_path);
 	return { how, where: folder(first?.target_path) };
 }

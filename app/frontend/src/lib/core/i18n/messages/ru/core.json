@@ -16,7 +16,7 @@
 	"core.format.healthy": "Исправно",
 	"core.format.folderNotFound": "Папка не найдена",
 	"core.format.cannotWrite": "Сюда нельзя писать",
-	"core.format.copiedNoHardlinks": "Работает, но файлы копируются (без жёстких ссылок)",
+	"core.format.copiedNoHardlinks": "Каждый импорт делает полную копию (занимает больше места)",
 	"core.format.notChecked": "Ещё не проверено",
 	"core.loader.welcome": "Здравствуйте, {name}",
 	"core.loader.reconnecting": "Переподключение…",
