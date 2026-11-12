@@ -23,7 +23,7 @@ var ErrFolderFilesChanged = errors.New("files in this Library folder changed whi
 type PathFileError struct {
 	RelativePath string
 	Missing      bool
-	Want, Got    int64 // bytes the Library recorded, bytes at the new path
+	Want, Got    int64 // bytes the Library knows (the last rescan's, else the import's), bytes at the new path
 }
 
 func (e *PathFileError) Error() string {
@@ -36,8 +36,8 @@ func (e *PathFileError) Error() string {
 // ChangeFolderPath points a Library folder at a new path whose files were
 // already moved there (a new mount point, a renamed share). The path is
 // checked like a new folder's; then every present file must be at the new
-// path with the size the Library recorded, and the first that is not stops
-// the change and is named. Only then is the path saved and the folder
+// path with a size the Library knows for it, and the first that is not
+// stops the change and is named. Only then is the path saved and the folder
 // checked again. Nothing on disk is moved or written, beyond the check's
 // own probe files.
 func ChangeFolderPath(ctx context.Context, s *database.Store, id int64, newPath string, downloadPaths []string, by domain.Actor) (mediafiles.LibraryFolder, error) {
@@ -109,8 +109,8 @@ func pathFree(ctx context.Context, db database.Lister, id int64, p string) error
 }
 
 // filesAt checks each file under root in order and stops at the first that
-// is missing or has another size. A size the Library never recorded (0)
-// only needs the file to be there. A request that goes away stops it.
+// is missing or has a size the Library does not know for it. A request
+// that goes away stops it.
 func filesAt(ctx context.Context, root string, files []mediafiles.FolderFile) error {
 	for _, f := range files {
 		if err := ctx.Err(); err != nil {
@@ -120,9 +120,23 @@ func filesAt(ctx context.Context, root string, files []mediafiles.FolderFile) er
 		if err != nil || !st.Mode().IsRegular() {
 			return &PathFileError{RelativePath: f.RelativePath, Missing: true, Want: f.Size}
 		}
-		if f.Size > 0 && st.Size() != f.Size {
-			return &PathFileError{RelativePath: f.RelativePath, Want: f.Size, Got: st.Size()}
+		if !sizeFits(st.Size(), f) {
+			want := f.Size
+			if f.Seen > 0 {
+				want = f.Seen
+			}
+			return &PathFileError{RelativePath: f.RelativePath, Want: want, Got: st.Size()}
 		}
 	}
 	return nil
+}
+
+// sizeFits says whether n bytes is a size the Library knows for f: the one
+// recorded at import or the one the last rescan read. A file with neither
+// only needs to be there.
+func sizeFits(n int64, f mediafiles.FolderFile) bool {
+	if f.Size <= 0 && f.Seen <= 0 {
+		return true
+	}
+	return (f.Size > 0 && n == f.Size) || (f.Seen > 0 && n == f.Seen)
 }

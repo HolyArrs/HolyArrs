@@ -17500,7 +17500,7 @@
     },
     "/api/v1/library-folders/{id}/path": {
       "put": {
-        "description": "For files already moved to a new place (a new mount point, a renamed share). The new path is checked like a new folder's. Then every present file must be at the new path with the size the Library recorded; the first that is not stops the change, and the 409 answer names it in file. Only then is the path saved and the folder checked again. Nothing on disk is moved.",
+        "description": "For files already moved to a new place (a new mount point, a renamed share). The new path is checked like a new folder's. Then every present file (titles deleted from the Library left out) must be at the new path with a size the Library knows for it, recorded at import or read by the last rescan; the first that is not stops the change, and the 409 answer names it in file. Only then is the path saved and the folder checked again. Nothing on disk is moved.",
         "operationId": "changeFolderPath",
         "parameters": [
           {

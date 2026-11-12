@@ -36,6 +36,13 @@ func putAt(t *testing.T, root, rel string, n int) {
 	writeFile(t, filepath.Join(root, filepath.FromSlash(rel)), strings.Repeat("x", n))
 }
 
+func sqlExec(t *testing.T, s *database.Store, q string, args ...any) {
+	t.Helper()
+	if err := s.Write(context.Background(), func(tx *sql.Tx) error { _, err := tx.Exec(q, args...); return err }); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func folderPath(t *testing.T, s *database.Store, id int64) string {
 	t.Helper()
 	var lf mediafiles.LibraryFolder
@@ -52,6 +59,8 @@ func TestChangeFolderPathSaves(t *testing.T) {
 	for _, f := range fs {
 		putAt(t, to, f.RelativePath, 10)
 	}
+	// The old path's last check said missing; the new one must replace it.
+	sqlExec(t, s, "UPDATE library_folders SET health = 'missing', health_reason = 'old mount' WHERE id = ?", lf.ID)
 	got, err := ChangeFolderPath(context.Background(), s, lf.ID, to+string(filepath.Separator), nil, domain.System)
 	if err != nil {
 		t.Fatalf("change path: %v", err)
@@ -59,8 +68,12 @@ func TestChangeFolderPathSaves(t *testing.T) {
 	if got.Path != filepath.Clean(to) || folderPath(t, s, lf.ID) != filepath.Clean(to) {
 		t.Fatalf("path %q, saved %q, want %q", got.Path, folderPath(t, s, lf.ID), to)
 	}
-	if got.Health != "ok" || got.HealthCheckedAt == nil || !got.HealthCheckedAt.After(*lf.HealthCheckedAt) && !got.HealthCheckedAt.Equal(*lf.HealthCheckedAt) {
+	if got.Health != "ok" || got.HealthReason != "" || got.HealthCheckedAt == nil || got.HealthCheckedAt.Before(*lf.HealthCheckedAt) {
 		t.Fatalf("folder not checked at the new path: %+v", got)
+	}
+	var saved mediafiles.LibraryFolder
+	if err := database.Get(context.Background(), s.Read(), "library_folders", lf.ID, &saved); err != nil || saved.Health != "ok" {
+		t.Fatalf("saved health %q (%v), want ok", saved.Health, err)
 	}
 	for _, f := range fs {
 		if r := fileRow(t, s, f.ID); r.RelativePath != f.RelativePath || r.State != "present" {
@@ -166,6 +179,39 @@ func TestChangeFolderPathSkipsAbsentFiles(t *testing.T) {
 	}
 	if _, err := ChangeFolderPath(ctx, s, lf.ID, to, nil, domain.System); err != nil {
 		t.Fatalf("no present files: %v", err)
+	}
+}
+
+// Files of a title deleted from the Library (its files kept on disk, the
+// default) are not looked for: nothing on the Library's screens could put
+// them back, so they would block every change.
+func TestChangeFolderPathSkipsDeletedTitles(t *testing.T) {
+	s, lf, _, to := pathWorld(t)
+	sqlExec(t, s, "UPDATE titles SET state = 'removed' WHERE id IN (SELECT title_id FROM versions WHERE library_folder_id = ?)", lf.ID)
+	if _, err := ChangeFolderPath(context.Background(), s, lf.ID, to, nil, domain.System); err != nil {
+		t.Fatalf("deleted title's files: %v", err)
+	}
+}
+
+// A file changed in place after its import (a re-encode, a tag edit) is
+// checked against the size the last rescan read too, not only the size
+// recorded at import, which is never updated.
+func TestChangeFolderPathRescannedSize(t *testing.T) {
+	s, lf, fs, to := pathWorld(t)
+	ctx := context.Background()
+	sqlExec(t, s, "UPDATE files SET media_info = json_set(media_info, '$.inspection_size', 12) WHERE id = ?", fs[0].ID)
+	putAt(t, to, fs[0].RelativePath, 13)
+	putAt(t, to, fs[1].RelativePath, 10)
+	var pe *PathFileError
+	if _, err := ChangeFolderPath(ctx, s, lf.ID, to, nil, domain.System); !errors.As(err, &pe) || pe.Want != 12 || pe.Got != 13 {
+		t.Fatalf("got %v, want 13 bytes refused against the rescanned 12", err)
+	}
+	putAt(t, to, fs[0].RelativePath, 12)
+	if _, err := ChangeFolderPath(ctx, s, lf.ID, to, nil, domain.System); err != nil {
+		t.Fatalf("rescanned size: %v", err)
+	}
+	if p := folderPath(t, s, lf.ID); p != filepath.Clean(to) {
+		t.Fatalf("path %q, want %q", p, to)
 	}
 }
 
