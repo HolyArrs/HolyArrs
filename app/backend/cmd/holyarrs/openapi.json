@@ -17738,6 +17738,34 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/library/stats": {
+      "get": {
+        "description": "Counts present main files per kind (movies, shows, music; only kinds whose part is on): titles, files and bytes split by video codec, resolution, HDR, container, audio codec and audio channels. Values outside the known list come back as \"other\", files not read yet as \"unchecked\", files that could not be read as \"unknown\". Music has no video facts.",
+        "responses": {
+          "200": {
+            "description": "The counts per kind and fact."
+          }
+        },
+        "summary": "Library files by fact",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/library/stats/watched": {
+      "get": {
+        "description": "Watched movies, shows and episodes per account on each Plex, Jellyfin or Emby server, from the last watch history read. An account linked to a person here carries that person; any other is shown by its media-server name with linked false. Empty while watch history is off.",
+        "responses": {
+          "200": {
+            "description": "Whether watch history is on, when it was last read, and each account's counts."
+          }
+        },
+        "summary": "Who watched what",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/links/{kind}/{id}/restart": {
       "post": {
         "description": "Reconnects one linked app and leaves the others alone: a Downloader is signed in again and checked, a Source is tested now, a media server or subtitle site is tested again. Answers what that app's own test answers. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",
@@ -25323,6 +25351,38 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/watch-history": {
+      "get": {
+        "description": "Whether HolyArrs reads watch history from the media servers. Off by default.",
+        "responses": {
+          "200": {
+            "description": "{\"enabled\": true or false}."
+          }
+        },
+        "summary": "Watch history switch",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Body {\"enabled\": true or false}. Turning it off deletes every watch history row read so far. Needs a password sign-in or an API key.",
+        "responses": {
+          "200": {
+            "description": "Saved."
+          },
+          "400": {
+            "description": "The body is not {\"enabled\": true or false}."
+          },
+          "403": {
+            "description": "Only the owner, signed in with a password or an API key, may change it."
+          }
+        },
+        "summary": "Turn watch history on or off",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/shows": {

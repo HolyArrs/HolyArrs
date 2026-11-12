@@ -38,6 +38,10 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/library/copies":                        webserver.PermManageLibrary,
 	"POST /api/v1/library/copies/search/preview":        webserver.PermManageLibrary,
 	"POST /api/v1/library/copies/search":                webserver.PermManageLibrary,
+	"GET /api/v1/library/stats":                         webserver.PermManageLibrary,
+	"GET /api/v1/library/stats/watched":                 webserver.PermManageLibrary,
+	"GET /api/v1/settings/watch-history":                webserver.NeedOwner,
+	"PUT /api/v1/settings/watch-history":                webserver.NeedOwner,
 
 	// The app's pages and files; the pages themselves ask the API.
 	"GET /":      webserver.NeedSelf,

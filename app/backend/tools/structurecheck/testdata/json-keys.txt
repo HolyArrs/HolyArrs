@@ -17,6 +17,7 @@ HistoryTime
 Id
 IsAdministrator
 IsDisabled
+LastPlayedDate
 MarkStatus
 MaxParentalRating
 MediaContainer
@@ -30,6 +31,7 @@ Name
 ParStatus
 Parameters
 Path
+PlayCount
 Policy
 ProductName
 Progress
@@ -37,13 +39,16 @@ ProviderIds
 RemainingSizeHi
 RemainingSizeLo
 ScriptStatus
+SeriesId
 ServerName
 Status
+Type
 UnpackStatus
 UpdateType
 Updates
 UrlStatus
 User
+UserData
 Value
 Version
 _embedded
@@ -549,6 +554,7 @@ extract
 f14
 f60
 f7
+facts
 fail_dangerous
 fail_message
 failed
@@ -822,6 +828,7 @@ last_sync
 last_synced_at
 last_tried_at
 last_used_at
+last_watched_at
 last_year
 later
 latest
@@ -1191,6 +1198,7 @@ plan_hash
 plans
 playabilityStatus
 playerStoryboardSpecRenderer
+plays
 plex
 plex_name
 plex_watchlists
@@ -1458,6 +1466,7 @@ server
 serverAbrStreamingUrl
 server_admin
 server_id
+server_kind
 server_state
 server_url
 servers
@@ -1792,6 +1801,7 @@ user
 user_fingerprint
 user_id
 user_key
+user_name
 user_rating
 userinfo_endpoint
 username

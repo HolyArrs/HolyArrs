@@ -147,6 +147,7 @@ var tableOwner = map[string]string{
 
 	// mediaservers
 	"media_servers": "mediaservers",
+	"watch_state":   "mediaservers",
 
 	// alerts
 	"alerts": "alerts",

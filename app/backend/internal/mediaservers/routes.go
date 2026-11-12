@@ -33,6 +33,9 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("PUT /api/v1/media-servers/{id}", h.edit)
 	m.HandleFunc("DELETE /api/v1/media-servers/{id}", h.remove)
 	m.HandleFunc("POST /api/v1/media-servers/{id}/test", h.Test)
+	m.HandleFunc("GET /api/v1/settings/watch-history", h.getWatchHistory)
+	m.HandleFunc("PUT /api/v1/settings/watch-history", h.putWatchHistory)
+	m.HandleFunc("GET /api/v1/library/stats/watched", h.watched)
 }
 
 func (h *Handlers) list(w http.ResponseWriter, r *http.Request) {

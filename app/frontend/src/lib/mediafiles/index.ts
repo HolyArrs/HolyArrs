@@ -200,3 +200,4 @@ export { createTitleVersions } from './title-versions.svelte.ts';
 export { createTitleEdit } from './title-edit.svelte.ts';
 export { default as TitleEmpty } from './TitleEmpty.svelte';
 export { unit } from './organise.ts';
+export { factOrder as statFacts, valueLabel as statValue, unitWord as statUnit, type KindStats, type Watched } from './library-stats.ts';

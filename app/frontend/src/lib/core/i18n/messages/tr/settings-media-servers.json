@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Dene",
 	"settings.mediaServers.changeButton": "Değiştir",
 	"settings.mediaServers.removeName": "{name} kaldır",
-	"settings.mediaServers.remove": "Kaldır"
+	"settings.mediaServers.remove": "Kaldır",
+	"settings.mediaServers.watchTitle": "İzleme geçmişi",
+	"settings.mediaServers.watchRead": "İzleme geçmişini oku",
+	"settings.mediaServers.watchHint": "Kütüphaneyi yönetenler için istatistiklerde kimin ne izlediğini gösterir. Kapatmak okunanları siler.",
+	"settings.mediaServers.watchConfirmOff": "İzleme geçmişi kapatılsın mı? Şimdiye kadar okunan her şey silinir.",
+	"settings.mediaServers.watchTurnedOn": "İzleme geçmişi açık. İlk okuma 30 dakika içinde gelir.",
+	"settings.mediaServers.watchTurnedOff": "İzleme geçmişi kapalı",
+	"settings.mediaServers.watchFailed": "İzleme geçmişi değiştirilemedi"
 }

@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Проверить",
 	"settings.mediaServers.changeButton": "Изменить",
 	"settings.mediaServers.removeName": "Удалить {name}",
-	"settings.mediaServers.remove": "Удалить"
+	"settings.mediaServers.remove": "Удалить",
+	"settings.mediaServers.watchTitle": "История просмотров",
+	"settings.mediaServers.watchRead": "Читать историю просмотров",
+	"settings.mediaServers.watchHint": "Показывает в статистике, кто что смотрел, тем, кто управляет медиатекой. Выключение удаляет прочитанное.",
+	"settings.mediaServers.watchConfirmOff": "Выключить историю просмотров? Всё прочитанное будет удалено.",
+	"settings.mediaServers.watchTurnedOn": "История просмотров включена. Первое чтение — в течение 30 минут.",
+	"settings.mediaServers.watchTurnedOff": "История просмотров выключена",
+	"settings.mediaServers.watchFailed": "Не удалось изменить историю просмотров"
 }

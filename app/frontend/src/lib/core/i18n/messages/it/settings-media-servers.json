@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Prova",
 	"settings.mediaServers.changeButton": "Modifica",
 	"settings.mediaServers.removeName": "Rimuovi {name}",
-	"settings.mediaServers.remove": "Rimuovi"
+	"settings.mediaServers.remove": "Rimuovi",
+	"settings.mediaServers.watchTitle": "Cronologia di visione",
+	"settings.mediaServers.watchRead": "Leggi cronologia",
+	"settings.mediaServers.watchHint": "Mostra chi ha visto cosa nelle statistiche, per chi gestisce la libreria. Spegnerla cancella ciò che è stato letto.",
+	"settings.mediaServers.watchConfirmOff": "Spegnere la cronologia? Tutto ciò che è stato letto viene cancellato.",
+	"settings.mediaServers.watchTurnedOn": "Cronologia attiva. La prima lettura arriva entro 30 minuti.",
+	"settings.mediaServers.watchTurnedOff": "Cronologia spenta",
+	"settings.mediaServers.watchFailed": "Impossibile cambiare la cronologia"
 }
