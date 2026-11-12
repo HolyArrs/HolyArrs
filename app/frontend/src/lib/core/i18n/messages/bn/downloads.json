@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "ইমপোর্ট করা হয়েছে",
 	"downloads.row.stillIn": "এখনও {app}-এ আছে",
 	"downloads.dp.openDownloaders": "ডাউনলোডার খুলুন",
-	"downloads.hl.notMoved": "ইমপোর্টের পরে সরানো হয়নি"
+	"downloads.hl.notMoved": "ইমপোর্টের পরে সরানো হয়নি",
+	"downloads.dp.importFile": "এই ফাইলটি ইমপোর্ট করুন",
+	"downloads.dp.askImport": "{file} কে {name} হিসেবে ইমপোর্ট করবেন?",
+	"downloads.dp.askImportReplace": "{file} কে {name} হিসেবে ইমপোর্ট করবেন? এটি বর্তমান ফাইলের জায়গা নেবে, যা সম্প্রতি মোছা-এ যাবে।",
+	"downloads.dp.imported": "{name} ইমপোর্ট হয়েছে",
+	"downloads.dp.importFailed": "ফাইলটি ইমপোর্ট করা যায়নি"
 }

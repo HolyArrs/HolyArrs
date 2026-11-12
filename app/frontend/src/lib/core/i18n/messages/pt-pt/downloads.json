@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importado",
 	"downloads.row.stillIn": "Ainda em {app}",
 	"downloads.dp.openDownloaders": "Abrir Gestores de downloads",
-	"downloads.hl.notMoved": "Não movido após importar"
+	"downloads.hl.notMoved": "Não movido após importar",
+	"downloads.dp.importFile": "Importar este ficheiro",
+	"downloads.dp.askImport": "Importar {file} como {name}?",
+	"downloads.dp.askImportReplace": "Importar {file} como {name}? Substitui o ficheiro atual, que vai para Apagados recentemente.",
+	"downloads.dp.imported": "{name} importado",
+	"downloads.dp.importFailed": "Não foi possível importar o ficheiro"
 }

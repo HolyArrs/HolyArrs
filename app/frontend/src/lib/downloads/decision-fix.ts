@@ -1,9 +1,9 @@
 // Which fix a download waiting for a decision leads with, and how its reason reads.
 import type { Decision } from '../core/types.ts';
 
-export type Fix = 'edition' | 'version' | 'hand' | 'search' | 'folder';
+export type Fix = 'edition' | 'version' | 'hand' | 'search' | 'folder' | 'import';
 
-type D = Pick<Decision, 'kind' | 'why' | 'download_id' | 'reason'>;
+type D = Pick<Decision, 'kind' | 'why' | 'download_id' | 'reason'> & Partial<Pick<Decision, 'import_file'>>;
 
 // The importer refused the file in place of the copy that is already there.
 const copyInPlace = (r: string) => /copy in place/i.test(r);
@@ -18,6 +18,8 @@ export function decisionFix(d: D): Fix {
 	if (noSaveFolder(r)) return 'folder';
 	if (d.kind === 'movie' && d.download_id && editionRefusal(r)) return 'edition';
 	if (d.kind === 'movie' && copyInPlace(r)) return 'version';
+	// The movie's download holds one video: the person can say it is this movie.
+	if (d.kind === 'movie' && d.import_file) return 'import';
 	if (d.why === 'conflict' || d.why === 'taken') return 'hand';
 	return 'search';
 }
@@ -27,6 +29,7 @@ export function reasonKind(d: D): 'edition' | 'copy' | 'taken' | 'plain' {
 	const fix = decisionFix(d);
 	if (fix === 'edition') return 'edition';
 	if (fix === 'version') return 'copy';
+	if (fix === 'import') return 'plain';
 	if (d.why === 'taken') return 'taken';
 	return 'plain';
 }

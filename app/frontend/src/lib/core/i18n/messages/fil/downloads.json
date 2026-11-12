@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Na-import",
 	"downloads.row.stillIn": "Nasa {app} pa rin",
 	"downloads.dp.openDownloaders": "Buksan ang Mga Downloader",
-	"downloads.hl.notMoved": "Hindi nailipat pagkatapos ng import"
+	"downloads.hl.notMoved": "Hindi nailipat pagkatapos ng import",
+	"downloads.dp.importFile": "I-import ang file na ito",
+	"downloads.dp.askImport": "I-import ang {file} bilang {name}?",
+	"downloads.dp.askImportReplace": "I-import ang {file} bilang {name}? Papalitan nito ang kasalukuyang file, na mapupunta sa Kamakailang na-delete.",
+	"downloads.dp.imported": "Na-import ang {name}",
+	"downloads.dp.importFailed": "Hindi ma-import ang file"
 }

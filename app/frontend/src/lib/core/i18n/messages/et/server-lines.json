@@ -1277,5 +1277,9 @@
 	"server.library.files-matched-by-hand": "{name}: {n} faili käsitsi seotud",
 	"server.library.no-such-file-in-this-title": "sellist faili selles nimetuses pole",
 	"server.library.send-1-to-2000-files": "saada 1 kuni 2000 faili",
-	"server.sources.this-kind-of-title-can-t": "seda liiki pealkirja ei saa otsida"
+	"server.sources.this-kind-of-title-can-t": "seda liiki pealkirja ei saa otsida",
+	"server.downloads.only-a-movie-s-download-is": "siit imporditakse ainult filmi allalaadimine; kasuta valikut „Impordi failid käsitsi“",
+	"server.downloads.the-download-has-no-single-video": "allalaadimises pole ühte videot, mida importida; kasuta valikut „Impordi failid käsitsi“",
+	"server.downloads.this-movie-already-has-a-file": "sellel filmil on juba fail; saada replace, et panna see selle asemele",
+	"server.importer.replaced-by-hand": "{path} asendati käsitsi"
 }

@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} episode",
 	"library.stats.unit.episode.other": "{n} episode",
 	"library.stats.unit.play.one": "{n} play",
-	"library.stats.unit.play.other": "{n} play"
+	"library.stats.unit.play.other": "{n} play",
+	"library.byHand.askReplaceOne": "Papalitan ng 1 file ang isang file na nasa Library na. Mapupunta ang lumang file sa Kamakailang na-delete. I-import?",
+	"library.byHand.askReplaceMany": "Papalitan ng {n} file ang mga file na nasa Library na. Mapupunta ang mga lumang file sa Kamakailang na-delete. I-import?"
 }

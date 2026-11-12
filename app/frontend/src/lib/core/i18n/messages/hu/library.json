@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} epizód",
 	"library.stats.unit.episode.other": "{n} epizód",
 	"library.stats.unit.play.one": "{n} lejátszás",
-	"library.stats.unit.play.other": "{n} lejátszás"
+	"library.stats.unit.play.other": "{n} lejátszás",
+	"library.byHand.askReplaceOne": "1 fájl lecserél egy fájlt, amely már a Könyvtárban van. A régi fájl ide kerül: Nemrég törölt. Importálja?",
+	"library.byHand.askReplaceMany": "{n} fájl lecserél fájlokat, amelyek már a Könyvtárban vannak. A régi fájlok ide kerülnek: Nemrég törölt. Importálja?"
 }

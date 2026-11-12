@@ -1277,5 +1277,9 @@
 	"server.library.files-matched-by-hand": "{name}: {n} filer koblet i hånden",
 	"server.library.no-such-file-in-this-title": "ingen sådan fil i denne titel",
 	"server.library.send-1-to-2000-files": "send 1 til 2000 filer",
-	"server.sources.this-kind-of-title-can-t": "denne slags titel kan ikke søges"
+	"server.sources.this-kind-of-title-can-t": "denne slags titel kan ikke søges",
+	"server.downloads.only-a-movie-s-download-is": "herfra importeres kun en films download; brug Importér filer manuelt",
+	"server.downloads.the-download-has-no-single-video": "downloadet har ikke én enkelt video at importere; brug Importér filer manuelt",
+	"server.downloads.this-movie-already-has-a-file": "denne film har allerede en fil; send replace for at sætte denne i stedet",
+	"server.importer.replaced-by-hand": "{path} erstattet manuelt"
 }

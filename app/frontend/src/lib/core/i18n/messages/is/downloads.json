@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Innflutt",
 	"downloads.row.stillIn": "Enn í {app}",
 	"downloads.dp.openDownloaders": "Opna Niðurhalara",
-	"downloads.hl.notMoved": "Ekki fært eftir innflutning"
+	"downloads.hl.notMoved": "Ekki fært eftir innflutning",
+	"downloads.dp.importFile": "Flytja inn þessa skrá",
+	"downloads.dp.askImport": "Flytja inn {file} sem {name}?",
+	"downloads.dp.askImportReplace": "Flytja inn {file} sem {name}? Hún kemur í stað núverandi skrár, sem fer í „Nýlega eytt“.",
+	"downloads.dp.imported": "{name} flutt inn",
+	"downloads.dp.importFailed": "Ekki tókst að flytja inn skrána"
 }

@@ -1277,5 +1277,9 @@
 	"server.library.files-matched-by-hand": "{name}: จับคู่ด้วยมือ {n} ไฟล์",
 	"server.library.no-such-file-in-this-title": "ไม่มีไฟล์นี้ในรายการนี้",
 	"server.library.send-1-to-2000-files": "ส่ง 1 ถึง 2000 ไฟล์",
-	"server.sources.this-kind-of-title-can-t": "ไม่สามารถค้นหาชื่อเรื่องประเภทนี้ได้"
+	"server.sources.this-kind-of-title-can-t": "ไม่สามารถค้นหาชื่อเรื่องประเภทนี้ได้",
+	"server.downloads.only-a-movie-s-download-is": "ที่นี่นำเข้าได้เฉพาะการดาวน์โหลดภาพยนตร์ ใช้ นำเข้าไฟล์ด้วยตัวเอง",
+	"server.downloads.the-download-has-no-single-video": "การดาวน์โหลดไม่มีวิดีโอเดียวให้นำเข้า ใช้ นำเข้าไฟล์ด้วยตัวเอง",
+	"server.downloads.this-movie-already-has-a-file": "ภาพยนตร์นี้มีไฟล์อยู่แล้ว ส่ง replace เพื่อใส่ไฟล์นี้แทน",
+	"server.importer.replaced-by-hand": "แทนที่ {path} ด้วยตัวเองแล้ว"
 }

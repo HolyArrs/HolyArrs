@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Zaimportowano",
 	"downloads.row.stillIn": "Nadal w {app}",
 	"downloads.dp.openDownloaders": "Otwórz klienty pobierania",
-	"downloads.hl.notMoved": "Nie przeniesiono po imporcie"
+	"downloads.hl.notMoved": "Nie przeniesiono po imporcie",
+	"downloads.dp.importFile": "Importuj ten plik",
+	"downloads.dp.askImport": "Zaimportować {file} jako {name}?",
+	"downloads.dp.askImportReplace": "Zaimportować {file} jako {name}? Zastąpi obecny plik, który trafi do „Ostatnio usunięte”.",
+	"downloads.dp.imported": "Zaimportowano {name}",
+	"downloads.dp.importFailed": "Nie udało się zaimportować pliku"
 }

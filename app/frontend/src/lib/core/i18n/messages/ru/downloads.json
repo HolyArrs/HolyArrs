@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Импортировано",
 	"downloads.row.stillIn": "Ещё в {app}",
 	"downloads.dp.openDownloaders": "Открыть загрузчики",
-	"downloads.hl.notMoved": "Не перемещено после импорта"
+	"downloads.hl.notMoved": "Не перемещено после импорта",
+	"downloads.dp.importFile": "Импортировать этот файл",
+	"downloads.dp.askImport": "Импортировать {file} как {name}?",
+	"downloads.dp.askImportReplace": "Импортировать {file} как {name}? Он заменит текущий файл, который попадёт в «Недавно удалённые».",
+	"downloads.dp.imported": "{name} импортирован",
+	"downloads.dp.importFailed": "Не удалось импортировать файл"
 }

@@ -1277,5 +1277,9 @@
 	"server.library.files-matched-by-hand": "{name}: {n} קבצים הותאמו ידנית",
 	"server.library.no-such-file-in-this-title": "אין קובץ כזה בכותר הזה",
 	"server.library.send-1-to-2000-files": "יש לשלוח בין 1 ל־2000 קבצים",
-	"server.sources.this-kind-of-title-can-t": "אי אפשר לחפש כותר מהסוג הזה"
+	"server.sources.this-kind-of-title-can-t": "אי אפשר לחפש כותר מהסוג הזה",
+	"server.downloads.only-a-movie-s-download-is": "מכאן מיובאת רק הורדה של סרט; השתמש ב„ייבוא קבצים ידנית”",
+	"server.downloads.the-download-has-no-single-video": "בהורדה אין סרטון יחיד לייבוא; השתמש ב„ייבוא קבצים ידנית”",
+	"server.downloads.this-movie-already-has-a-file": "לסרט הזה כבר יש קובץ; שלח replace כדי לשים את זה במקומו",
+	"server.importer.replaced-by-hand": "{path} הוחלף ידנית"
 }

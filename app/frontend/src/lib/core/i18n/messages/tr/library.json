@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} bölüm",
 	"library.stats.unit.episode.other": "{n} bölüm",
 	"library.stats.unit.play.one": "{n} oynatma",
-	"library.stats.unit.play.other": "{n} oynatma"
+	"library.stats.unit.play.other": "{n} oynatma",
+	"library.byHand.askReplaceOne": "1 dosya, Kitaplıkta zaten olan bir dosyanın yerini alır. Eski dosya Yakında silinenler bölümüne gider. İçe aktarılsın mı?",
+	"library.byHand.askReplaceMany": "{n} dosya, Kitaplıkta zaten olan dosyaların yerini alır. Eski dosyalar Yakında silinenler bölümüne gider. İçe aktarılsın mı?"
 }

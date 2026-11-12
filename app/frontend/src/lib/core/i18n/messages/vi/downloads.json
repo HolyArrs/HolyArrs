@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Đã nhập",
 	"downloads.row.stillIn": "Vẫn còn trong {app}",
 	"downloads.dp.openDownloaders": "Mở Trình tải",
-	"downloads.hl.notMoved": "Không chuyển được sau khi nhập"
+	"downloads.hl.notMoved": "Không chuyển được sau khi nhập",
+	"downloads.dp.importFile": "Nhập tệp này",
+	"downloads.dp.askImport": "Nhập {file} thành {name}?",
+	"downloads.dp.askImportReplace": "Nhập {file} thành {name}? Tệp này thay thế tệp hiện tại, tệp đó sẽ chuyển vào Đã xóa gần đây.",
+	"downloads.dp.imported": "Đã nhập {name}",
+	"downloads.dp.importFailed": "Không nhập được tệp"
 }

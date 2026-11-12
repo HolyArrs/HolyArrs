@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "Odcinki: {n}",
 	"library.stats.unit.episode.other": "Odcinki: {n}",
 	"library.stats.unit.play.one": "Odtworzenia: {n}",
-	"library.stats.unit.play.other": "Odtworzenia: {n}"
+	"library.stats.unit.play.other": "Odtworzenia: {n}",
+	"library.byHand.askReplaceOne": "1 plik zastąpi plik, który już jest w Bibliotece. Stary plik trafi do „Ostatnio usunięte”. Importować?",
+	"library.byHand.askReplaceMany": "Pliki ({n}) zastąpią pliki, które już są w Bibliotece. Stare pliki trafią do „Ostatnio usunięte”. Importować?"
 }

@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Внесено",
 	"downloads.row.stillIn": "Все още в {app}",
 	"downloads.dp.openDownloaders": "Отваряне на Програми за изтегляне",
-	"downloads.hl.notMoved": "Не е преместено след импортиране"
+	"downloads.hl.notMoved": "Не е преместено след импортиране",
+	"downloads.dp.importFile": "Импортирай този файл",
+	"downloads.dp.askImport": "Да се импортира ли {file} като {name}?",
+	"downloads.dp.askImportReplace": "Да се импортира ли {file} като {name}? Той заменя текущия файл, който отива в „Наскоро изтрити“.",
+	"downloads.dp.imported": "{name} е импортиран",
+	"downloads.dp.importFailed": "Файлът не можа да се импортира"
 }

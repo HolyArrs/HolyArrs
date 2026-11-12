@@ -1277,5 +1277,9 @@
 	"server.library.files-matched-by-hand": "{name}: {n} file ang itinugma nang manu-mano",
 	"server.library.no-such-file-in-this-title": "walang ganoong file sa title na ito",
 	"server.library.send-1-to-2000-files": "magpadala ng 1 hanggang 2000 file",
-	"server.sources.this-kind-of-title-can-t": "hindi mahahanap ang ganitong uri ng pamagat"
+	"server.sources.this-kind-of-title-can-t": "hindi mahahanap ang ganitong uri ng pamagat",
+	"server.downloads.only-a-movie-s-download-is": "download lang ng pelikula ang ini-import mula rito; gamitin ang Mag-import ng mga file nang mano-mano",
+	"server.downloads.the-download-has-no-single-video": "walang iisang video na ma-import sa download; gamitin ang Mag-import ng mga file nang mano-mano",
+	"server.downloads.this-movie-already-has-a-file": "may file na ang pelikulang ito; ipadala ang replace para ilagay ito sa puwesto nito",
+	"server.importer.replaced-by-hand": "Pinalitan nang mano-mano ang {path}"
 }

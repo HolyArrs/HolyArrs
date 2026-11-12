@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} þáttur",
 	"library.stats.unit.episode.other": "{n} þættir",
 	"library.stats.unit.play.one": "{n} spilun",
-	"library.stats.unit.play.other": "{n} spilanir"
+	"library.stats.unit.play.other": "{n} spilanir",
+	"library.byHand.askReplaceOne": "1 skrá kemur í stað skrár sem er þegar í Safninu. Gamla skráin fer í „Nýlega eytt“. Flytja inn?",
+	"library.byHand.askReplaceMany": "{n} skrár koma í stað skráa sem eru þegar í Safninu. Gömlu skrárnar fara í „Nýlega eytt“. Flytja inn?"
 }

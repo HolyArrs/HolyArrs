@@ -1277,5 +1277,9 @@
 	"server.library.files-matched-by-hand": "{name}: {n} Dateien von Hand zugeordnet",
 	"server.library.no-such-file-in-this-title": "keine solche Datei in diesem Titel",
 	"server.library.send-1-to-2000-files": "1 bis 2000 Dateien senden",
-	"server.sources.this-kind-of-title-can-t": "diese Art von Titel kann nicht gesucht werden"
+	"server.sources.this-kind-of-title-can-t": "diese Art von Titel kann nicht gesucht werden",
+	"server.downloads.only-a-movie-s-download-is": "von hier wird nur der Download eines Films importiert; nutze „Dateien von Hand importieren“",
+	"server.downloads.the-download-has-no-single-video": "der Download hat kein einzelnes Video zum Importieren; nutze „Dateien von Hand importieren“",
+	"server.downloads.this-movie-already-has-a-file": "dieser Film hat schon eine Datei; sende replace, um diese an ihre Stelle zu setzen",
+	"server.importer.replaced-by-hand": "{path} von Hand ersetzt"
 }

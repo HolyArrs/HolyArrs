@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importato",
 	"downloads.row.stillIn": "Ancora in {app}",
 	"downloads.dp.openDownloaders": "Apri downloader",
-	"downloads.hl.notMoved": "Non spostato dopo l'importazione"
+	"downloads.hl.notMoved": "Non spostato dopo l'importazione",
+	"downloads.dp.importFile": "Importa questo file",
+	"downloads.dp.askImport": "Importare {file} come {name}?",
+	"downloads.dp.askImportReplace": "Importare {file} come {name}? Sostituisce il file attuale, che va in Eliminati di recente.",
+	"downloads.dp.imported": "{name} importato",
+	"downloads.dp.importFailed": "Impossibile importare il file"
 }

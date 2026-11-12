@@ -1277,5 +1277,9 @@
 	"server.library.files-matched-by-hand": "{name}: {n} ficheiros associados à mão",
 	"server.library.no-such-file-in-this-title": "não existe esse ficheiro neste título",
 	"server.library.send-1-to-2000-files": "envie de 1 a 2000 ficheiros",
-	"server.sources.this-kind-of-title-can-t": "este tipo de título não pode ser pesquisado"
+	"server.sources.this-kind-of-title-can-t": "este tipo de título não pode ser pesquisado",
+	"server.downloads.only-a-movie-s-download-is": "daqui só se importa a transferência de um filme; use Importar ficheiros à mão",
+	"server.downloads.the-download-has-no-single-video": "a transferência não tem um único vídeo para importar; use Importar ficheiros à mão",
+	"server.downloads.this-movie-already-has-a-file": "este filme já tem um ficheiro; envie replace para pôr este no lugar dele",
+	"server.importer.replaced-by-hand": "{path} substituído à mão"
 }

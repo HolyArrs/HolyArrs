@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "已匯入",
 	"downloads.row.stillIn": "仍在 {app} 中",
 	"downloads.dp.openDownloaders": "開啟下載器",
-	"downloads.hl.notMoved": "匯入後未能移動"
+	"downloads.hl.notMoved": "匯入後未能移動",
+	"downloads.dp.importFile": "匯入此檔案",
+	"downloads.dp.askImport": "將 {file} 匯入為 {name}？",
+	"downloads.dp.askImportReplace": "將 {file} 匯入為 {name}？它會取代目前的檔案，舊檔案會移到「最近刪除」。",
+	"downloads.dp.imported": "已匯入 {name}",
+	"downloads.dp.importFailed": "無法匯入該檔案"
 }

@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importerad",
 	"downloads.row.stillIn": "Finns kvar i {app}",
 	"downloads.dp.openDownloaders": "Öppna Nedladdare",
-	"downloads.hl.notMoved": "Inte flyttad efter import"
+	"downloads.hl.notMoved": "Inte flyttad efter import",
+	"downloads.dp.importFile": "Importera den här filen",
+	"downloads.dp.askImport": "Importera {file} som {name}?",
+	"downloads.dp.askImportReplace": "Importera {file} som {name}? Den ersätter den nuvarande filen, som hamnar i Nyligen raderade.",
+	"downloads.dp.imported": "{name} importerades",
+	"downloads.dp.importFailed": "Det gick inte att importera filen"
 }

@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} επεισόδιο",
 	"library.stats.unit.episode.other": "{n} επεισόδια",
 	"library.stats.unit.play.one": "{n} αναπαραγωγή",
-	"library.stats.unit.play.other": "{n} αναπαραγωγές"
+	"library.stats.unit.play.other": "{n} αναπαραγωγές",
+	"library.byHand.askReplaceOne": "1 αρχείο αντικαθιστά ένα αρχείο που υπάρχει ήδη στη Βιβλιοθήκη. Το παλιό αρχείο πηγαίνει στα «Πρόσφατα διαγραμμένα». Εισαγωγή;",
+	"library.byHand.askReplaceMany": "{n} αρχεία αντικαθιστούν αρχεία που υπάρχουν ήδη στη Βιβλιοθήκη. Τα παλιά αρχεία πηγαίνουν στα «Πρόσφατα διαγραμμένα». Εισαγωγή;"
 }

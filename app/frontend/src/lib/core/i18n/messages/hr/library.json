@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} epizoda",
 	"library.stats.unit.episode.other": "{n} epizoda",
 	"library.stats.unit.play.one": "{n} reprodukcija",
-	"library.stats.unit.play.other": "{n} reprodukcija"
+	"library.stats.unit.play.other": "{n} reprodukcija",
+	"library.byHand.askReplaceOne": "1 datoteka zamjenjuje datoteku koja je već u Biblioteci. Stara datoteka ide u Nedavno obrisano. Uvesti?",
+	"library.byHand.askReplaceMany": "Datoteke ({n}) zamjenjuju datoteke koje su već u Biblioteci. Stare datoteke idu u Nedavno obrisano. Uvesti?"
 }

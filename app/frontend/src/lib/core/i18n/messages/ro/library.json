@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} episod",
 	"library.stats.unit.episode.other": "{n} episoade",
 	"library.stats.unit.play.one": "{n} redare",
-	"library.stats.unit.play.other": "{n} redări"
+	"library.stats.unit.play.other": "{n} redări",
+	"library.byHand.askReplaceOne": "1 fișier înlocuiește un fișier aflat deja în Bibliotecă. Fișierul vechi merge în Șterse recent. Importi?",
+	"library.byHand.askReplaceMany": "{n} fișiere înlocuiesc fișiere aflate deja în Bibliotecă. Fișierele vechi merg în Șterse recent. Importi?"
 }

@@ -118,7 +118,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	unpacked, cleanup, unpackWhy := unpackRars(ctx, d.ID, root, cands, rules, dryRun)
 	defer cleanup()
 	cands = append(cands, unpacked...)
-	t := Target{LibraryPath: lf.Path, FolderName: folder, TitleID: ti.ID, TitleName: ti.Name, Year: year, SlotIDs: d.SlotIDs, IDs: ti.SourceIDs, Naming: &ns, Edition: ver.Edition}
+	t := Target{LibraryPath: lf.Path, FolderName: folder, TitleID: ti.ID, TitleName: ti.Name, Aliases: OtherNames(ti), Year: year, SlotIDs: d.SlotIDs, IDs: ti.SourceIDs, Naming: &ns, Edition: ver.Edition}
 	plan := append(Plan(cands, t), bad...)
 	if unpackWhy != "" {
 		plan = append(plan, unpackStep(root, unpackWhy))

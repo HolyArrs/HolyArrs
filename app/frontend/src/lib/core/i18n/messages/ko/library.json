@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "에피소드 {n}개",
 	"library.stats.unit.episode.other": "에피소드 {n}개",
 	"library.stats.unit.play.one": "재생 {n}회",
-	"library.stats.unit.play.other": "재생 {n}회"
+	"library.stats.unit.play.other": "재생 {n}회",
+	"library.byHand.askReplaceOne": "파일 1개가 라이브러리에 있는 파일을 바꿉니다. 이전 파일은 '최근 삭제됨'(으)로 갑니다. 가져올까요?",
+	"library.byHand.askReplaceMany": "파일 {n}개가 라이브러리에 있는 파일을 바꿉니다. 이전 파일은 '최근 삭제됨'(으)로 갑니다. 가져올까요?"
 }

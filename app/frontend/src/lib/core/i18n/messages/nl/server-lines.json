@@ -1277,5 +1277,9 @@
 	"server.library.files-matched-by-hand": "{name}: {n} bestanden met de hand gekoppeld",
 	"server.library.no-such-file-in-this-title": "zo'n bestand bestaat niet in deze titel",
 	"server.library.send-1-to-2000-files": "stuur 1 tot 2000 bestanden",
-	"server.sources.this-kind-of-title-can-t": "dit soort titel kan niet worden gezocht"
+	"server.sources.this-kind-of-title-can-t": "dit soort titel kan niet worden gezocht",
+	"server.downloads.only-a-movie-s-download-is": "hier wordt alleen de download van een film geïmporteerd; gebruik Bestanden met de hand importeren",
+	"server.downloads.the-download-has-no-single-video": "de download heeft niet één video om te importeren; gebruik Bestanden met de hand importeren",
+	"server.downloads.this-movie-already-has-a-file": "deze film heeft al een bestand; stuur replace om dit bestand ervoor in de plaats te zetten",
+	"server.importer.replaced-by-hand": "{path} met de hand vervangen"
 }

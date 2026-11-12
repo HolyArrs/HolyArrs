@@ -26,6 +26,13 @@ describe('decision fix', () => {
 			expect(reasonKind(dec({ reason }))).toBe('copy');
 		}
 	});
+	it('leads with Import this file when the movie download holds one video', () => {
+		const reason = 'nothing could be placed; look at the import plan';
+		expect(decisionFix(dec({ reason, import_file: 'grp-ean.mkv' }))).toBe('import');
+		expect(reasonKind(dec({ reason, import_file: 'grp-ean.mkv' }))).toBe('plain');
+		expect(decisionFix(dec({ reason: 'edition is unknown', import_file: 'x.mkv' }))).toBe('edition');
+		expect(decisionFix(dec({ kind: 'show', reason, import_file: 'x.mkv' }))).toBe('hand');
+	});
 	it('keeps shows and missing downloads off the movie fixes', () => {
 		expect(decisionFix(dec({ kind: 'show', reason: 'edition is unknown' }))).toBe('hand');
 		expect(decisionFix(dec({ download_id: undefined, reason: 'edition is unknown' }))).toBe('hand');

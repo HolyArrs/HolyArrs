@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} epizodas",
 	"library.stats.unit.episode.other": "{n} epizodai",
 	"library.stats.unit.play.one": "{n} peržiūra",
-	"library.stats.unit.play.other": "{n} peržiūros"
+	"library.stats.unit.play.other": "{n} peržiūros",
+	"library.byHand.askReplaceOne": "1 failas pakeičia failą, kuris jau yra Bibliotekoje. Senas failas keliauja į „Neseniai ištrinta“. Importuoti?",
+	"library.byHand.askReplaceMany": "Failai ({n}) pakeičia failus, kurie jau yra Bibliotekoje. Seni failai keliauja į „Neseniai ištrinta“. Importuoti?"
 }

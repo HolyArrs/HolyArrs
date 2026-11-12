@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} פרק",
 	"library.stats.unit.episode.other": "{n} פרקים",
 	"library.stats.unit.play.one": "{n} הפעלה",
-	"library.stats.unit.play.other": "{n} הפעלות"
+	"library.stats.unit.play.other": "{n} הפעלות",
+	"library.byHand.askReplaceOne": "קובץ אחד מחליף קובץ שכבר בספרייה. הקובץ הישן עובר אל „נמחקו לאחרונה”. לייבא?",
+	"library.byHand.askReplaceMany": "{n} קבצים מחליפים קבצים שכבר בספרייה. הקבצים הישנים עוברים אל „נמחקו לאחרונה”. לייבא?"
 }

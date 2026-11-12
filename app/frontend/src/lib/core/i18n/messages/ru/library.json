@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "Серий: {n}",
 	"library.stats.unit.episode.other": "Серий: {n}",
 	"library.stats.unit.play.one": "Просмотров: {n}",
-	"library.stats.unit.play.other": "Просмотров: {n}"
+	"library.stats.unit.play.other": "Просмотров: {n}",
+	"library.byHand.askReplaceOne": "1 файл заменит файл, который уже есть в Библиотеке. Старый файл попадёт в «Недавно удалённые». Импортировать?",
+	"library.byHand.askReplaceMany": "Файлы ({n}) заменят файлы, которые уже есть в Библиотеке. Старые файлы попадут в «Недавно удалённые». Импортировать?"
 }

@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "エピソード {n}話",
 	"library.stats.unit.episode.other": "エピソード {n}話",
 	"library.stats.unit.play.one": "再生 {n}回",
-	"library.stats.unit.play.other": "再生 {n}回"
+	"library.stats.unit.play.other": "再生 {n}回",
+	"library.byHand.askReplaceOne": "1 件のファイルがライブラリにあるファイルを置き換えます。古いファイルは「最近削除したもの」に移ります。インポートしますか？",
+	"library.byHand.askReplaceMany": "{n} 件のファイルがライブラリにあるファイルを置き換えます。古いファイルは「最近削除したもの」に移ります。インポートしますか？"
 }

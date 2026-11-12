@@ -1277,5 +1277,9 @@
 	"server.library.files-matched-by-hand": "{name}: {n} fail dipadankan secara manual",
 	"server.library.no-such-file-in-this-title": "tiada fail sedemikian dalam tajuk ini",
 	"server.library.send-1-to-2000-files": "hantar 1 hingga 2000 fail",
-	"server.sources.this-kind-of-title-can-t": "tajuk jenis ini tidak boleh dicari"
+	"server.sources.this-kind-of-title-can-t": "tajuk jenis ini tidak boleh dicari",
+	"server.downloads.only-a-movie-s-download-is": "dari sini hanya muat turun filem diimport; gunakan Import fail dengan tangan",
+	"server.downloads.the-download-has-no-single-video": "muat turun tidak mempunyai satu video untuk diimport; gunakan Import fail dengan tangan",
+	"server.downloads.this-movie-already-has-a-file": "filem ini sudah mempunyai fail; hantar replace untuk meletakkan yang ini di tempatnya",
+	"server.importer.replaced-by-hand": "{path} digantikan dengan tangan"
 }

@@ -1277,5 +1277,9 @@
 	"server.library.files-matched-by-hand": "{name}: 파일 {n}개를 직접 연결했어요",
 	"server.library.no-such-file-in-this-title": "이 타이틀에 그런 파일이 없어요",
 	"server.library.send-1-to-2000-files": "파일을 1~2000개 보내세요",
-	"server.sources.this-kind-of-title-can-t": "이 종류의 타이틀은 검색할 수 없습니다"
+	"server.sources.this-kind-of-title-can-t": "이 종류의 타이틀은 검색할 수 없습니다",
+	"server.downloads.only-a-movie-s-download-is": "여기서는 영화 다운로드만 가져옵니다. '파일 직접 가져오기'를 사용하세요",
+	"server.downloads.the-download-has-no-single-video": "다운로드에 가져올 동영상이 하나만 있지 않습니다. '파일 직접 가져오기'를 사용하세요",
+	"server.downloads.this-movie-already-has-a-file": "이 영화에는 이미 파일이 있습니다. 이 파일로 바꾸려면 replace를 보내세요",
+	"server.importer.replaced-by-hand": "{path}을(를) 직접 바꿈"
 }

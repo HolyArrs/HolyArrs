@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} aflevering",
 	"library.stats.unit.episode.other": "{n} afleveringen",
 	"library.stats.unit.play.one": "{n} keer afgespeeld",
-	"library.stats.unit.play.other": "{n} keer afgespeeld"
+	"library.stats.unit.play.other": "{n} keer afgespeeld",
+	"library.byHand.askReplaceOne": "1 bestand vervangt een bestand dat al in de Bibliotheek staat. Het oude bestand gaat naar Onlangs verwijderd. Importeren?",
+	"library.byHand.askReplaceMany": "{n} bestanden vervangen bestanden die al in de Bibliotheek staan. De oude bestanden gaan naar Onlangs verwijderd. Importeren?"
 }

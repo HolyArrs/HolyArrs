@@ -1277,5 +1277,9 @@
 	"server.library.files-matched-by-hand": "{name}: {n} கோப்புகள் கையால் பொருத்தப்பட்டன",
 	"server.library.no-such-file-in-this-title": "இந்தத் தலைப்பில் அப்படி ஒரு கோப்பு இல்லை",
 	"server.library.send-1-to-2000-files": "1 முதல் 2000 கோப்புகளை அனுப்பு",
-	"server.sources.this-kind-of-title-can-t": "இந்த வகைத் தலைப்பைத் தேட முடியாது"
+	"server.sources.this-kind-of-title-can-t": "இந்த வகைத் தலைப்பைத் தேட முடியாது",
+	"server.downloads.only-a-movie-s-download-is": "இங்கிருந்து திரைப்படப் பதிவிறக்கம் மட்டுமே இறக்குமதியாகும்; கோப்புகளைக் கைமுறையாக இறக்குமதி செய் பயன்படுத்துங்கள்",
+	"server.downloads.the-download-has-no-single-video": "பதிவிறக்கத்தில் இறக்குமதி செய்ய ஒரே ஒரு வீடியோ இல்லை; கோப்புகளைக் கைமுறையாக இறக்குமதி செய் பயன்படுத்துங்கள்",
+	"server.downloads.this-movie-already-has-a-file": "இந்தத் திரைப்படத்துக்கு ஏற்கெனவே கோப்பு உள்ளது; இதை அதன் இடத்தில் வைக்க replace அனுப்புங்கள்",
+	"server.importer.replaced-by-hand": "{path} கைமுறையாக மாற்றப்பட்டது"
 }

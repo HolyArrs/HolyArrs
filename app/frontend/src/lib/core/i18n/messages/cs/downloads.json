@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importováno",
 	"downloads.row.stillIn": "Stále v {app}",
 	"downloads.dp.openDownloaders": "Otevřít Stahovače",
-	"downloads.hl.notMoved": "Po importu nepřesunuto"
+	"downloads.hl.notMoved": "Po importu nepřesunuto",
+	"downloads.dp.importFile": "Importovat tento soubor",
+	"downloads.dp.askImport": "Importovat {file} jako {name}?",
+	"downloads.dp.askImportReplace": "Importovat {file} jako {name}? Nahradí současný soubor, který půjde do sekce Nedávno smazané.",
+	"downloads.dp.imported": "{name} importováno",
+	"downloads.dp.importFailed": "Soubor se nepodařilo importovat"
 }

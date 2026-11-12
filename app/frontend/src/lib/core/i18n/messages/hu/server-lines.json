@@ -1277,5 +1277,9 @@
 	"server.library.files-matched-by-hand": "{name}: {n} fájl kézzel hozzárendelve",
 	"server.library.no-such-file-in-this-title": "nincs ilyen fájl ebben a címben",
 	"server.library.send-1-to-2000-files": "küldj 1–2000 fájlt",
-	"server.sources.this-kind-of-title-can-t": "ilyen típusú címet nem lehet keresni"
+	"server.sources.this-kind-of-title-can-t": "ilyen típusú címet nem lehet keresni",
+	"server.downloads.only-a-movie-s-download-is": "innen csak film letöltése importálható; használja ezt: Fájlok importálása kézzel",
+	"server.downloads.the-download-has-no-single-video": "a letöltésben nincs egyetlen importálható videó; használja ezt: Fájlok importálása kézzel",
+	"server.downloads.this-movie-already-has-a-file": "ennek a filmnek már van fájlja; küldjön replace-t, hogy ez kerüljön a helyére",
+	"server.importer.replaced-by-hand": "{path} kézzel lecserélve"
 }

@@ -52,6 +52,23 @@
 		}
 	}
 
+	// Import this file: the person says the download's one video is this movie. A movie with a file swaps it; the old one goes to Recently deleted.
+	async function importFile(d: Decision, key: string) {
+		const ask = d.has_copy ? 'downloads.dp.askImportReplace' : 'downloads.dp.askImport';
+		if (!confirm(t(ask, { file: d.import_file ?? '', name: decisionName(d) }))) return;
+		busy = key;
+		try {
+			await api.post(`/needs-decision/${d.slot_id}/decide`, { action: 'import', replace: d.has_copy });
+			toasts.push(t('downloads.dp.imported', { name: decisionName(d) }), 'ok');
+			await refreshDecisions();
+			ondone?.();
+		} catch (e) {
+			toasts.push(t('downloads.dp.importFailed'), 'fail', { body: plainReason(message(e)).text });
+		} finally {
+			busy = '';
+		}
+	}
+
 	const primary = (d: Decision): Fix => decisionFix(d);
 	// Set edition only for an edition refusal; a file refused in place of the copy points to another Version.
 	function reasonLine(d: Decision): string {
@@ -65,6 +82,7 @@
 	const versionLabel = (d: Decision) => (d.versions > 1 ? t('downloads.dp.anotherVersion') : t('downloads.dp.addVersion'));
 	function more(d: Decision, key: string, fix: Fix): MenuItem[] {
 		const out: MenuItem[] = [];
+		if (d.import_file && fix !== 'import') out.push({ label: t('downloads.dp.importFile'), onselect: () => importFile(d, key) });
 		if (fix !== 'search') out.push({ label: t('downloads.dp.searchAgain'), onselect: () => act(d, 'search', false, key) });
 		if (fix !== 'hand') out.push({ label: t('downloads.dp.byHand'), href: to(`/library/${d.title_id}?tab=library&pick=1#h-rel`) });
 		if (!manyWords(d.kind) && fix !== 'version') out.push({ label: versionLabel(d), href: to(`/library/${d.title_id}?tab=library#h-versions`) });
@@ -147,6 +165,8 @@
 					<Button size="sm" variant="primary" href={to(`/library/${d.title_id}?tab=library#h-versions`)} data-testid="decision-fix">{versionLabel(d)}</Button>
 				{:else if fix === 'folder'}
 					<Button size="sm" variant="primary" href={to('/settings/downloaders')} data-testid="decision-fix">{t('downloads.dp.openDownloaders')}</Button>
+				{:else if fix === 'import'}
+					<Button size="sm" variant="primary" onclick={() => importFile(d, key)} disabled={busy === key} busy={busy === key} data-testid="decision-fix">{t('downloads.dp.importFile')}</Button>
 				{:else if fix === 'hand'}
 					<Button size="sm" variant="primary" href={to(`/library/${d.title_id}?tab=library&pick=1#h-rel`)} data-testid="decision-fix">{t('downloads.dp.byHand')}</Button>
 				{:else}

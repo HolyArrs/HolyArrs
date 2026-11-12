@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Geïmporteerd",
 	"downloads.row.stillIn": "Nog in {app}",
 	"downloads.dp.openDownloaders": "Downloaders openen",
-	"downloads.hl.notMoved": "Niet verplaatst na import"
+	"downloads.hl.notMoved": "Niet verplaatst na import",
+	"downloads.dp.importFile": "Dit bestand importeren",
+	"downloads.dp.askImport": "{file} importeren als {name}?",
+	"downloads.dp.askImportReplace": "{file} importeren als {name}? Het vervangt het huidige bestand, dat naar Onlangs verwijderd gaat.",
+	"downloads.dp.imported": "{name} geïmporteerd",
+	"downloads.dp.importFailed": "Kon het bestand niet importeren"
 }

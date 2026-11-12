@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Diimpor",
 	"downloads.row.stillIn": "Masih di {app}",
 	"downloads.dp.openDownloaders": "Buka Pengunduh",
-	"downloads.hl.notMoved": "Tidak dipindahkan setelah impor"
+	"downloads.hl.notMoved": "Tidak dipindahkan setelah impor",
+	"downloads.dp.importFile": "Impor file ini",
+	"downloads.dp.askImport": "Impor {file} sebagai {name}?",
+	"downloads.dp.askImportReplace": "Impor {file} sebagai {name}? File ini menggantikan file saat ini, yang masuk ke Baru dihapus.",
+	"downloads.dp.imported": "{name} diimpor",
+	"downloads.dp.importFailed": "File tidak bisa diimpor"
 }

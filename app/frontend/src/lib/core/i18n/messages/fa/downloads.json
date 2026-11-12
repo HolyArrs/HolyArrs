@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "واردشده",
 	"downloads.row.stillIn": "هنوز در {app}",
 	"downloads.dp.openDownloaders": "باز کردن دانلودرها",
-	"downloads.hl.notMoved": "پس از وارد کردن جابه‌جا نشد"
+	"downloads.hl.notMoved": "پس از وارد کردن جابه‌جا نشد",
+	"downloads.dp.importFile": "وارد کردن این فایل",
+	"downloads.dp.askImport": "{file} به‌عنوان {name} وارد شود؟",
+	"downloads.dp.askImportReplace": "{file} به‌عنوان {name} وارد شود؟ جای فایل فعلی را می‌گیرد که به «اخیراً حذف‌شده» می‌رود.",
+	"downloads.dp.imported": "{name} وارد شد",
+	"downloads.dp.importFailed": "وارد کردن فایل ممکن نشد"
 }

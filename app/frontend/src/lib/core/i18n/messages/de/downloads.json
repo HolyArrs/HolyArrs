@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importiert",
 	"downloads.row.stillIn": "Noch in {app}",
 	"downloads.dp.openDownloaders": "Downloader öffnen",
-	"downloads.hl.notMoved": "Nach dem Import nicht verschoben"
+	"downloads.hl.notMoved": "Nach dem Import nicht verschoben",
+	"downloads.dp.importFile": "Diese Datei importieren",
+	"downloads.dp.askImport": "{file} als {name} importieren?",
+	"downloads.dp.askImportReplace": "{file} als {name} importieren? Sie ersetzt die aktuelle Datei, die in „Kürzlich gelöscht“ kommt.",
+	"downloads.dp.imported": "{name} importiert",
+	"downloads.dp.importFailed": "Datei konnte nicht importiert werden"
 }

@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "יובא",
 	"downloads.row.stillIn": "עדיין ב-{app}",
 	"downloads.dp.openDownloaders": "פתיחת מורידים",
-	"downloads.hl.notMoved": "לא הועבר אחרי הייבוא"
+	"downloads.hl.notMoved": "לא הועבר אחרי הייבוא",
+	"downloads.dp.importFile": "ייבוא הקובץ הזה",
+	"downloads.dp.askImport": "לייבא את {file} בתור {name}?",
+	"downloads.dp.askImportReplace": "לייבא את {file} בתור {name}? הוא מחליף את הקובץ הנוכחי, שעובר אל „נמחקו לאחרונה”.",
+	"downloads.dp.imported": "{name} יובא",
+	"downloads.dp.importFailed": "לא ניתן היה לייבא את הקובץ"
 }

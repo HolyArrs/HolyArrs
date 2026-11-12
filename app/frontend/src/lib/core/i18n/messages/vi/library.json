@@ -357,5 +357,7 @@
 	"library.stats.unit.episode.one": "{n} tập",
 	"library.stats.unit.episode.other": "{n} tập",
 	"library.stats.unit.play.one": "{n} lượt phát",
-	"library.stats.unit.play.other": "{n} lượt phát"
+	"library.stats.unit.play.other": "{n} lượt phát",
+	"library.byHand.askReplaceOne": "1 tệp sẽ thay thế một tệp đã có trong Thư viện. Tệp cũ sẽ chuyển vào Đã xóa gần đây. Nhập?",
+	"library.byHand.askReplaceMany": "{n} tệp sẽ thay thế các tệp đã có trong Thư viện. Các tệp cũ sẽ chuyển vào Đã xóa gần đây. Nhập?"
 }

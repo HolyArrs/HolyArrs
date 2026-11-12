@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "İçe aktarıldı",
 	"downloads.row.stillIn": "Hâlâ {app} içinde",
 	"downloads.dp.openDownloaders": "İndiricileri aç",
-	"downloads.hl.notMoved": "İçe aktarmadan sonra taşınmadı"
+	"downloads.hl.notMoved": "İçe aktarmadan sonra taşınmadı",
+	"downloads.dp.importFile": "Bu dosyayı içe aktar",
+	"downloads.dp.askImport": "{file}, {name} olarak içe aktarılsın mı?",
+	"downloads.dp.askImportReplace": "{file}, {name} olarak içe aktarılsın mı? Mevcut dosyanın yerini alır; o dosya Yakında silinenler bölümüne gider.",
+	"downloads.dp.imported": "{name} içe aktarıldı",
+	"downloads.dp.importFailed": "Dosya içe aktarılamadı"
 }

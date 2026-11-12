@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Увезено",
 	"downloads.row.stillIn": "Још у {app}",
 	"downloads.dp.openDownloaders": "Отвори Преузимаче",
-	"downloads.hl.notMoved": "Није премештено после увоза"
+	"downloads.hl.notMoved": "Није премештено после увоза",
+	"downloads.dp.importFile": "Увези ову датотеку",
+	"downloads.dp.askImport": "Увести {file} као {name}?",
+	"downloads.dp.askImportReplace": "Увести {file} као {name}? Замењује тренутну датотеку, која иде у „Недавно обрисано”.",
+	"downloads.dp.imported": "{name} увезено",
+	"downloads.dp.importFailed": "Датотеку није било могуће увести"
 }

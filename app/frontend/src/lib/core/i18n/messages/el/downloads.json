@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Εισήχθη",
 	"downloads.row.stillIn": "Ακόμα στο {app}",
 	"downloads.dp.openDownloaders": "Άνοιγμα Προγραμμάτων λήψης",
-	"downloads.hl.notMoved": "Δεν μεταφέρθηκε μετά την εισαγωγή"
+	"downloads.hl.notMoved": "Δεν μεταφέρθηκε μετά την εισαγωγή",
+	"downloads.dp.importFile": "Εισαγωγή αυτού του αρχείου",
+	"downloads.dp.askImport": "Εισαγωγή του {file} ως {name};",
+	"downloads.dp.askImportReplace": "Εισαγωγή του {file} ως {name}; Αντικαθιστά το τρέχον αρχείο, που πηγαίνει στα «Πρόσφατα διαγραμμένα».",
+	"downloads.dp.imported": "Εισήχθη: {name}",
+	"downloads.dp.importFailed": "Δεν ήταν δυνατή η εισαγωγή του αρχείου"
 }
