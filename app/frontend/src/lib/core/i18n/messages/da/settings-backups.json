@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Kun ejeren kan downloade det; bed vedkommende om det.",
 	"settings.backups.fingerprint": "Nøglens fingeraftryk",
 	"settings.backups.downloadKit": "Download nøglesæt",
-	"settings.backups.restoreKey": "Sådan gendanner du: omdøb til holyarrs.key, læg i mappen config"
+	"settings.backups.restoreKey": "Sådan gendanner du: omdøb til holyarrs.key, læg i mappen config",
+	"settings.backups.offPlan": "Fra",
+	"settings.backups.offAbout": "Ingen planlagte sikkerhedskopier. Der laves stadig en kopi før hver opdatering.",
+	"settings.backups.offKeeps": "Fra beholder de sikkerhedskopier, du allerede har."
 }

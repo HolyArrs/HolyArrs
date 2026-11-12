@@ -259,5 +259,7 @@
 	"health.word.broken": "Ødelagt",
 	"health.word.notSent": "Ikke sendt ennå",
 	"health.word.notSynced": "Ikke synkronisert ennå",
-	"health.word.working": "Fungerer"
+	"health.word.working": "Fungerer",
+	"health.check.clearWaiting": "Nedlastinger som venter på å bli ryddet bort",
+	"health.kind.clearWaiting": "Nedlastinger som venter på å bli ryddet bort"
 }

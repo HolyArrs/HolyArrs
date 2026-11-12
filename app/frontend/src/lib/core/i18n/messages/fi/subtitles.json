@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Kieli",
 	"subtitles.wants.pick": "Valitse kieli",
 	"subtitles.wants.takeOff": "Poista {name}",
-	"subtitles.wants.thisLanguage": "tämä kieli"
+	"subtitles.wants.thisLanguage": "tämä kieli",
+	"subtitles.made.translated": "Käännetty",
+	"subtitles.made.partial": "Osittain käännetty",
+	"subtitles.made.ai": "AI-käännetty",
+	"subtitles.made.machine": "Konekäännetty",
+	"subtitles.wants.translateFrom": "Käännä kielestä",
+	"subtitles.wants.noTranslate": "Älä käännä",
+	"subtitles.panel.picture": "Kuva",
+	"subtitles.panel.pictureTitle": "Kuvatekstitys: sitä ei voi kääntää",
+	"subtitles.panel.translate": "Käännä",
+	"subtitles.panel.translateFor": "Käännä {name}-tekstitys",
+	"subtitles.panel.translateFrom": "Käännä kielestä",
+	"subtitles.panel.translateQueued": "Käännetään",
+	"subtitles.panel.translateQueuedBody": "{name}-tekstitys näkyy tässä, kun se on valmis.",
+	"subtitles.panel.translating": "Ei löytynyt, joten kääntäjäsi tekee sellaisen."
 }

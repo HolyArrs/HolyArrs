@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Testaa",
 	"settings.mediaServers.changeButton": "Muuta",
 	"settings.mediaServers.removeName": "Poista {name}",
-	"settings.mediaServers.remove": "Poista"
+	"settings.mediaServers.remove": "Poista",
+	"settings.mediaServers.watchTitle": "Katseluhistoria",
+	"settings.mediaServers.watchRead": "Lue katseluhistoria",
+	"settings.mediaServers.watchHint": "Näyttää Kirjastotilastoissa, kuka katsoi mitä, Kirjastoa ylläpitäville. Pois päältä poistaa luetun.",
+	"settings.mediaServers.watchConfirmOff": "Poistetaanko katseluhistoria käytöstä? Kaikki tähän mennessä luettu poistetaan.",
+	"settings.mediaServers.watchTurnedOn": "Katseluhistoria päällä. Ensimmäinen luku tehdään 30 minuutin kuluessa.",
+	"settings.mediaServers.watchTurnedOff": "Katseluhistoria pois päältä",
+	"settings.mediaServers.watchFailed": "Katseluhistoriaa ei voitu muuttaa"
 }

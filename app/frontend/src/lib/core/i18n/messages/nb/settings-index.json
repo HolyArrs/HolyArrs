@@ -328,5 +328,11 @@
   "settings.index.account.alerts-me.alerts-for-me.label": "Varsler til meg",
   "settings.index.account.alerts-me.alerts-for-me.words": "min e-post discord varsler",
   "settings.index.account.sessions-me.my-signed-in-devices.label": "Mine innloggede enheter",
-  "settings.index.account.sessions-me.my-signed-in-devices.words": "økter enheter logg ut overalt"
+  "settings.index.account.sessions-me.my-signed-in-devices.words": "økter enheter logg ut overalt",
+  "settings.index.tmdb.metadata-mode.where-details-come-from.label": "Hvor detaljene kommer fra",
+  "settings.index.tmdb.metadata-mode.where-details-come-from.words": "metadatamodus egne nøkler av oppslag personvern server uavhengig",
+  "settings.index.tmdb.metadata-keys.your-own-keys.label": "Dine egne nøkler",
+  "settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart nøkkel api",
+  "settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adresser for brannmuren din",
+  "settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "brannmur verter utenfor adresser tillatelsesliste"
 }

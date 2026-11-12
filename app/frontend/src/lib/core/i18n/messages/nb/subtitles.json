@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Språk",
 	"subtitles.wants.pick": "Velg et språk",
 	"subtitles.wants.takeOff": "Ta {name} bort",
-	"subtitles.wants.thisLanguage": "dette språket"
+	"subtitles.wants.thisLanguage": "dette språket",
+	"subtitles.made.translated": "Oversatt",
+	"subtitles.made.partial": "Delvis oversatt",
+	"subtitles.made.ai": "AI-oversatt",
+	"subtitles.made.machine": "Maskinoversatt",
+	"subtitles.wants.translateFrom": "Oversett fra",
+	"subtitles.wants.noTranslate": "Ikke oversett",
+	"subtitles.panel.picture": "Bilde",
+	"subtitles.panel.pictureTitle": "En bildeundertekst: den kan ikke oversettes",
+	"subtitles.panel.translate": "Oversett",
+	"subtitles.panel.translateFor": "Oversett en {name}-undertekst",
+	"subtitles.panel.translateFrom": "Oversett fra",
+	"subtitles.panel.translateQueued": "Oversetter",
+	"subtitles.panel.translateQueuedBody": "{name}-underteksten vises her når den er ferdig.",
+	"subtitles.panel.translating": "Ingen funnet, så oversetteren din lager en."
 }

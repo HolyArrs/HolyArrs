@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Pikasyyt",
 	"requests.page.takeBackTitle": "Perutaanko pyyntö: {name}?",
 	"requests.page.takeBackDesc": "Se poistuu Pyynnöistä. Voit pyytää uudelleen myöhemmin.",
-	"requests.page.keepIt": "Säilytä se"
+	"requests.page.keepIt": "Säilytä se",
+	"requests.moment.downloaded.title": "Ladattu",
+	"requests.moment.downloaded.body": "Henkilökunnalle: Lataaja sai latauksen valmiiksi (tuonti seuraa).",
+	"requests.moment.download_failed.title": "Lataus epäonnistui",
+	"requests.moment.download_failed.body": "Henkilökunnalle: lataus epäonnistui ja sen Julkaisu hylättiin."
 }

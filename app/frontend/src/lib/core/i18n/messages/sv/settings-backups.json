@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Bara ägaren kan ladda ned det; be ägaren göra det.",
 	"settings.backups.fingerprint": "Nyckelns fingeravtryck",
 	"settings.backups.downloadKit": "Ladda ned nyckelpaket",
-	"settings.backups.restoreKey": "För att återställa: byt namn till holyarrs.key och lägg den i konfigurationsmappen"
+	"settings.backups.restoreKey": "För att återställa: byt namn till holyarrs.key och lägg den i konfigurationsmappen",
+	"settings.backups.offPlan": "Av",
+	"settings.backups.offAbout": "Inga schemalagda säkerhetskopior. En kopia görs fortfarande före varje uppdatering.",
+	"settings.backups.offKeeps": "Av behåller de säkerhetskopior du redan har."
 }

@@ -91,5 +91,11 @@
   "frame.layout.allPlaces": "Alla platser",
   "frame.layout.newWord": "ny",
   "frame.layout.accountName": "Konto · {name}",
-  "frame.layout.hostRefused": "<b>Ändringar kan inte sparas på {host}.</b> HolyArrs sparar bara på namn du tillåter. Öppna det en gång via IP-adressen och lägg sedan till {host} under Inställningar › Inloggning › Tillåtna värdnamn. Ingen omstart behövs."
+  "frame.layout.hostRefused": "<b>Ändringar kan inte sparas på {host}.</b> HolyArrs sparar bara på namn du tillåter. Öppna det en gång via IP-adressen och lägg sedan till {host} under Inställningar › Inloggning › Tillåtna värdnamn. Ingen omstart behövs.",
+  "frame.feeds.clearOne": "Importerad nedladdning inte rensad",
+  "frame.feeds.clearMany": "{n} importerade nedladdningar inte rensade",
+  "frame.feeds.clearBody": "HolyArrs försöker igen av sig själv",
+  "frame.feeds.clearNow": "Rensa nu",
+  "frame.feeds.cleared": "Rensad från Nedladdaren",
+  "frame.feeds.clearStill": "Inte rensad än"
 }

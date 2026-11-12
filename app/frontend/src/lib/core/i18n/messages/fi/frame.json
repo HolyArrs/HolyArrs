@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Kaikki paikat",
 	"frame.layout.newWord": "uusi",
 	"frame.layout.accountName": "Tili · {name}",
-	"frame.layout.hostRefused": "<b>Muutoksia ei voi tallentaa isännällä {host}.</b> HolyArrs tallentaa vain sallituilla nimillä. Avaa se kerran IP-osoitteella ja lisää sitten {host} kohdassa Asetukset › Kirjautuminen › Sallitut isäntänimet. Uudelleenkäynnistystä ei tarvita."
+	"frame.layout.hostRefused": "<b>Muutoksia ei voi tallentaa isännällä {host}.</b> HolyArrs tallentaa vain sallituilla nimillä. Avaa se kerran IP-osoitteella ja lisää sitten {host} kohdassa Asetukset › Kirjautuminen › Sallitut isäntänimet. Uudelleenkäynnistystä ei tarvita.",
+	"frame.feeds.clearOne": "Tuotua latausta ei ole poistettu",
+	"frame.feeds.clearMany": "{n} tuotua latausta ei ole poistettu",
+	"frame.feeds.clearBody": "HolyArrs yrittää uudelleen itse",
+	"frame.feeds.clearNow": "Poista nyt",
+	"frame.feeds.cleared": "Poistettu Lataajasta",
+	"frame.feeds.clearStill": "Ei vielä poistettu"
 }

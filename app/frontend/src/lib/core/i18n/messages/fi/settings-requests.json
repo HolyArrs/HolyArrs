@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Pyydä Plex-katselulistoilta",
 	"settings.requests.plexOnHint": "Jokainen ottaa sen käyttöön kohdassa Oma tili. Heidän rajansa pätevät.",
 	"settings.requests.plexEveryone": "Ota käyttöön kaikille, jotka kirjautuvat Plexillä",
-	"settings.requests.plexEveryoneHint": "Kuka tahansa voi poistaa sen käytöstä itseltään kohdassa Oma tili."
+	"settings.requests.plexEveryoneHint": "Kuka tahansa voi poistaa sen käytöstä itseltään kohdassa Oma tili.",
+	"settings.requests.plexFriends": "Sisällytä Plex-ystävät",
+	"settings.requests.plexFriendsHint": "Plexistä tuomasi ystävät. Luetaan Plex-linkilläsi; kunkin ystävän Rajat pätevät.",
+	"settings.requests.plexFriendsNoLink": "Linkitä ensin Plex kohdassa Asetukset › Kirjautuminen.",
+	"settings.requests.plexFriendsNone": "Plexistä ei ole vielä tuotu ketään.",
+	"settings.requests.plexFriendsRead": "Luettu {when}",
+	"settings.requests.plexFriendsNotYet": "Ei vielä luettu",
+	"settings.requests.plexFriendsAsked": "Pyydetty: {n}"
 }

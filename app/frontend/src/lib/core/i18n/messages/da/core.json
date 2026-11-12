@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Farezone",
 	"core.settings.danger.about": "Genstart eller luk ned",
 	"core.settings.account.label": "Min konto",
-	"core.settings.account.about": "Adgangskode, tofaktor, enheder"
+	"core.settings.account.about": "Adgangskode, tofaktor, enheder",
+	"core.plain.clearWaiting": "Importerede downloads venter på at blive ryddet væk fra deres Downloader.",
+	"core.api.sourceOff": "Nogle rækker er slået fra på denne installation."
 }

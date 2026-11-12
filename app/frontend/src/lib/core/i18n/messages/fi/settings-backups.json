@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Vain omistaja voi ladata sen; pyydä häntä tekemään se.",
 	"settings.backups.fingerprint": "Avaimen sormenjälki",
 	"settings.backups.downloadKit": "Lataa avainpaketti",
-	"settings.backups.restoreKey": "Palauttaaksesi: nimeä uudelleen muotoon holyarrs.key ja aseta config-kansioon"
+	"settings.backups.restoreKey": "Palauttaaksesi: nimeä uudelleen muotoon holyarrs.key ja aseta config-kansioon",
+	"settings.backups.offPlan": "Pois",
+	"settings.backups.offAbout": "Ei ajastettuja varmuuskopioita. Kopio tehdään silti ennen jokaista päivitystä.",
+	"settings.backups.offKeeps": "Pois päältä säilyttää jo olevat varmuuskopiot."
 }

@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Test",
 	"settings.mediaServers.changeButton": "Ændr",
 	"settings.mediaServers.removeName": "Fjern {name}",
-	"settings.mediaServers.remove": "Fjern"
+	"settings.mediaServers.remove": "Fjern",
+	"settings.mediaServers.watchTitle": "Visningshistorik",
+	"settings.mediaServers.watchRead": "Læs visningshistorik",
+	"settings.mediaServers.watchHint": "Viser, hvem der har set hvad, i Bibliotekstatistik, til dem der driver Biblioteket. Fra sletter det, der er læst.",
+	"settings.mediaServers.watchConfirmOff": "Slå visningshistorik fra? Alt, der er læst indtil nu, slettes.",
+	"settings.mediaServers.watchTurnedOn": "Visningshistorik slået til. Den første aflæsning sker inden for 30 minutter.",
+	"settings.mediaServers.watchTurnedOff": "Visningshistorik slået fra",
+	"settings.mediaServers.watchFailed": "Kunne ikke ændre visningshistorik"
 }

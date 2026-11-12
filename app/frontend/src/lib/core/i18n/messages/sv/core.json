@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Farozon",
 	"core.settings.danger.about": "Starta om eller stäng av",
 	"core.settings.account.label": "Mitt konto",
-	"core.settings.account.about": "Lösenord, tvåstegsverifiering, enheter"
+	"core.settings.account.about": "Lösenord, tvåstegsverifiering, enheter",
+	"core.plain.clearWaiting": "Importerade nedladdningar väntar på att rensas från sin Nedladdare.",
+	"core.api.sourceOff": "Vissa rader är avstängda i den här installationen."
 }

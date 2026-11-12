@@ -575,5 +575,9 @@
   "requests.page.quickReasons": "Raske begrunnelser",
   "requests.page.takeBackTitle": "Trekke tilbake {name}?",
   "requests.page.takeBackDesc": "Den forlater Forespørsler. Du kan be om den igjen senere.",
-  "requests.page.keepIt": "Behold den"
+  "requests.page.keepIt": "Behold den",
+  "requests.moment.downloaded.title": "Lastet ned",
+  "requests.moment.downloaded.body": "Til staben: en Nedlaster er ferdig med en nedlasting (importen kommer neste).",
+  "requests.moment.download_failed.title": "Nedlastingen mislyktes",
+  "requests.moment.download_failed.body": "Til staben: en nedlasting mislyktes, og Utgivelsen ble avvist."
 }

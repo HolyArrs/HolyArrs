@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Aviseringar till mig",
 	"settings.index.account.alerts-me.alerts-for-me.words": "min e-post discord notiser",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Mina inloggade enheter",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "sessioner enheter logga ut överallt"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "sessioner enheter logga ut överallt",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Varifrån detaljer kommer",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "metadatalage egna nycklar av sökningar integritet server oberoende",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Dina egna nycklar",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart nyckel api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adresser för din brandvägg",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "brandvägg värdar utanför adresser tillåtelselista"
 }

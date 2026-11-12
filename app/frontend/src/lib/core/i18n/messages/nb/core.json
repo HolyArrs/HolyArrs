@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Faresonen",
 	"core.settings.danger.about": "Start på nytt eller slå av",
 	"core.settings.account.label": "Min konto",
-	"core.settings.account.about": "Passord, tofaktor, enheter"
+	"core.settings.account.about": "Passord, tofaktor, enheter",
+	"core.plain.clearWaiting": "Importerte nedlastinger venter på å bli ryddet bort fra Nedlasteren sin.",
+	"core.api.sourceOff": "Noen rader er av på denne installasjonen."
 }

@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Snabba orsaker",
 	"requests.page.takeBackTitle": "Dra tillbaka {name}?",
 	"requests.page.takeBackDesc": "Den lämnar Förfrågningar. Du kan efterfråga den igen senare.",
-	"requests.page.keepIt": "Behåll den"
+	"requests.page.keepIt": "Behåll den",
+	"requests.moment.downloaded.title": "Nedladdad",
+	"requests.moment.downloaded.body": "Till personalen: en Nedladdare blev klar med en nedladdning (importen kommer härnäst).",
+	"requests.moment.download_failed.title": "Nedladdningen misslyckades",
+	"requests.moment.download_failed.body": "Till personalen: en nedladdning misslyckades och dess Release avvisades."
 }

@@ -259,5 +259,7 @@
 	"health.word.broken": "Trasig",
 	"health.word.notSent": "Inte skickad ännu",
 	"health.word.notSynced": "Inte synkad ännu",
-	"health.word.working": "Fungerar"
+	"health.word.working": "Fungerar",
+	"health.check.clearWaiting": "Nedladdningar som väntar på att rensas",
+	"health.kind.clearWaiting": "Nedladdningar som väntar på att rensas"
 }

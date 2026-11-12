@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Underretninger til mig",
 	"settings.index.account.alerts-me.alerts-for-me.words": "min e-mail discord beskeder my email notifications",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Mine loggede enheder",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "sessioner enheder log ud overalt sessions devices sign out"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "sessioner enheder log ud overalt sessions devices sign out",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Hvor detaljerne kommer fra",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "metadatatilstand egne nøgler fra opslag privatliv server uafhængig",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Dine egne nøgler",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart nøgle api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adresser til din firewall",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall værter udenfor adresser tilladelsesliste"
 }

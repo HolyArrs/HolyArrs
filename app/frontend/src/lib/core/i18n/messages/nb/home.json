@@ -266,5 +266,8 @@
 	"home.version": "Versjon {version}",
 	"home.metadataServerDown": "Metadataserveren er nede",
 	"home.metadataServerOnline": "Metadataserveren er online",
-	"home.homeCouldNotRead3": "Hjem kunne ikke lese nedlastinger akkurat nå."
+	"home.homeCouldNotRead3": "Hjem kunne ikke lese nedlastinger akkurat nå.",
+	"home.waitingToBeCleared": "venter på å bli ryddet bort",
+	"home.off": "Av",
+	"home.sourcesOff": "Slått av i Deler"
 }

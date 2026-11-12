@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Vaaravyöhyke",
 	"core.settings.danger.about": "Käynnistä uudelleen tai sammuta",
 	"core.settings.account.label": "Oma tili",
-	"core.settings.account.about": "Salasana, kaksivaiheinen tunnistus, laitteet"
+	"core.settings.account.about": "Salasana, kaksivaiheinen tunnistus, laitteet",
+	"core.plain.clearWaiting": "Tuodut lataukset odottavat poistamista Lataajastaan.",
+	"core.api.sourceOff": "Jotkin rivit ovat pois päältä tässä asennuksessa."
 }

@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Ændr",
 	"settings.sources.removeName": "Fjern {name}",
 	"settings.sources.remove": "Fjern",
-	"settings.sources.bridge": "Forbind Jackett eller Prowlarr"
+	"settings.sources.bridge": "Forbind Jackett eller Prowlarr",
+	"settings.sources.off": "Kilder er slået fra",
+	"settings.sources.offText": "HolyArrs søger og henter ikke. Downloads, du tilføjer i din Downloader, bliver stadig importeret.",
+	"settings.sources.openParts": "Åbn Dele",
+	"settings.sources.offState": "Fra"
 }

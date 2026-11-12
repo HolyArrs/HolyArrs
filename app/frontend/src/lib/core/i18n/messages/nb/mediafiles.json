@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "Ingenting mangler.",
 	"mediafiles.showDelete.deleteLabel": "Slett {what}",
 	"mediafiles.showReleases.searchingFor": "Søker etter {name}",
-	"mediafiles.sheet.file": "Fil"
+	"mediafiles.sheet.file": "Fil",
+	"mediafiles.parts.stopsSources": "Automatiske søk stopper, for når du legger til nedlastinger selv. Nedlastere og importer fortsetter å fungere."
 }

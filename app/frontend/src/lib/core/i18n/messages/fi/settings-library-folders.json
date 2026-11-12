@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Vain omistaja ja ylläpitäjät",
 	"settings.libraryFolders.copiesExpected": "Kopiointi on odotettua",
 	"settings.libraryFolders.copiesExpectedState": "Kopioi, kuten odotettu",
-	"settings.libraryFolders.warnAgain": "Varoita uudelleen"
+	"settings.libraryFolders.warnAgain": "Varoita uudelleen",
+	"settings.libraryFolders.whyCopies": "Miksi?",
+	"settings.libraryFolders.stateInstant": "Heti, ei lisätilaa",
+	"settings.libraryFolders.changePath": "Vaihda polku",
+	"settings.libraryFolders.changePathOf": "Vaihda polku: {path}",
+	"settings.libraryFolders.newPath": "Uusi polku",
+	"settings.libraryFolders.changePathHint": "Siirrä tiedostot sinne ensin. HolyArrs tarkistaa jokaisen tiedoston eikä siirrä mitään.",
+	"settings.libraryFolders.checkingFiles": "Tarkistetaan tiedostoja…",
+	"settings.libraryFolders.pathChanged": "Polku vaihdettu"
 }

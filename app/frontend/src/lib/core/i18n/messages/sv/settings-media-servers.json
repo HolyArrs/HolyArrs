@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Testa",
 	"settings.mediaServers.changeButton": "Ändra",
 	"settings.mediaServers.removeName": "Ta bort {name}",
-	"settings.mediaServers.remove": "Ta bort"
+	"settings.mediaServers.remove": "Ta bort",
+	"settings.mediaServers.watchTitle": "Tittarhistorik",
+	"settings.mediaServers.watchRead": "Läs tittarhistorik",
+	"settings.mediaServers.watchHint": "Visar vem som tittat på vad i Biblioteksstatistik, för dem som driver Biblioteket. Av raderar det som lästs.",
+	"settings.mediaServers.watchConfirmOff": "Slå av tittarhistorik? Allt som lästs hittills raderas.",
+	"settings.mediaServers.watchTurnedOn": "Tittarhistorik på. Den första avläsningen sker inom 30 minuter.",
+	"settings.mediaServers.watchTurnedOff": "Tittarhistorik av",
+	"settings.mediaServers.watchFailed": "Kunde inte ändra tittarhistorik"
 }

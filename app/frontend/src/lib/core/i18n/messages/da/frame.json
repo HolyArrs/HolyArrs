@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Alle steder",
 	"frame.layout.newWord": "ny",
 	"frame.layout.accountName": "Konto · {name}",
-	"frame.layout.hostRefused": "<b>Ændringer kan ikke gemmes på {host}.</b> HolyArrs gemmer kun på navne, du tillader. Åbn den én gang med dens IP-adresse, og tilføj derefter {host} under Indstillinger › Login › Tilladte værtsnavne. Genstart er ikke nødvendig."
+	"frame.layout.hostRefused": "<b>Ændringer kan ikke gemmes på {host}.</b> HolyArrs gemmer kun på navne, du tillader. Åbn den én gang med dens IP-adresse, og tilføj derefter {host} under Indstillinger › Login › Tilladte værtsnavne. Genstart er ikke nødvendig.",
+	"frame.feeds.clearOne": "Importeret download ikke ryddet væk",
+	"frame.feeds.clearMany": "{n} importerede downloads ikke ryddet væk",
+	"frame.feeds.clearBody": "HolyArrs prøver igen af sig selv",
+	"frame.feeds.clearNow": "Ryd væk nu",
+	"frame.feeds.cleared": "Ryddet væk fra Downloaderen",
+	"frame.feeds.clearStill": "Endnu ikke ryddet væk"
 }

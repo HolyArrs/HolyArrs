@@ -266,5 +266,8 @@
 	"home.version": "Version {version}",
 	"home.metadataServerDown": "Metadataserveren er nede",
 	"home.metadataServerOnline": "Metadataserveren er online",
-	"home.homeCouldNotRead3": "Hjem kunne ikke læse downloads lige nu."
+	"home.homeCouldNotRead3": "Hjem kunne ikke læse downloads lige nu.",
+	"home.waitingToBeCleared": "venter på at blive ryddet væk",
+	"home.off": "Fra",
+	"home.sourcesOff": "Slået fra i Dele"
 }

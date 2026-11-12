@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Bara ägare och admins",
 	"settings.libraryFolders.copiesExpected": "Kopiering är väntad",
 	"settings.libraryFolders.copiesExpectedState": "Kopior, som väntat",
-	"settings.libraryFolders.warnAgain": "Varna igen"
+	"settings.libraryFolders.warnAgain": "Varna igen",
+	"settings.libraryFolders.whyCopies": "Varför?",
+	"settings.libraryFolders.stateInstant": "Direkt, ingen extra plats",
+	"settings.libraryFolders.changePath": "Ändra sökväg",
+	"settings.libraryFolders.changePathOf": "Ändra sökvägen för {path}",
+	"settings.libraryFolders.newPath": "Ny sökväg",
+	"settings.libraryFolders.changePathHint": "Flytta filerna dit först. HolyArrs kontrollerar varje fil och flyttar ingenting.",
+	"settings.libraryFolders.checkingFiles": "Kontrollerar filer…",
+	"settings.libraryFolders.pathChanged": "Sökvägen ändrad"
 }

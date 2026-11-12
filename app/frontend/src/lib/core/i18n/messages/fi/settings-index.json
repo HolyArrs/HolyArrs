@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Ilmoitukset minulle",
 	"settings.index.account.alerts-me.alerts-for-me.words": "oma sähköposti discord ilmoitukset",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Kirjautuneet laitteeni",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "istunnot laitteet kirjaudu ulos kaikkialta"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "istunnot laitteet kirjaudu ulos kaikkialta",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Mistä tiedot tulevat",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "metadatatila omat avaimet pois haut yksityisyys palvelin itsenäinen",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Omat avaimesi",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart avain api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Osoitteet palomuurillesi",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "palomuuri isännät ulkopuoliset osoitteet sallittujen lista"
 }

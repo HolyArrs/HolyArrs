@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Bare eier og administratorer",
 	"settings.libraryFolders.copiesExpected": "Kopiering er forventet",
 	"settings.libraryFolders.copiesExpectedState": "Kopier, som forventet",
-	"settings.libraryFolders.warnAgain": "Advar igjen"
+	"settings.libraryFolders.warnAgain": "Advar igjen",
+	"settings.libraryFolders.whyCopies": "Hvorfor?",
+	"settings.libraryFolders.stateInstant": "Umiddelbart, ingen ekstra plass",
+	"settings.libraryFolders.changePath": "Endre sti",
+	"settings.libraryFolders.changePathOf": "Endre stien til {path}",
+	"settings.libraryFolders.newPath": "Ny sti",
+	"settings.libraryFolders.changePathHint": "Flytt filene dit først. HolyArrs sjekker hver fil og flytter ingenting.",
+	"settings.libraryFolders.checkingFiles": "Sjekker filer …",
+	"settings.libraryFolders.pathChanged": "Sti endret"
 }

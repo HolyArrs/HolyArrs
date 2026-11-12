@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "Mikään ei puutu.",
 	"mediafiles.showDelete.deleteLabel": "Poista {what}",
 	"mediafiles.showReleases.searchingFor": "Etsitään: {name}",
-	"mediafiles.sheet.file": "Tiedosto"
+	"mediafiles.sheet.file": "Tiedosto",
+	"mediafiles.parts.stopsSources": "Automaattiset haut pysähtyvät, kun lisäät lataukset itse. Lataajat ja tuonnit toimivat edelleen."
 }

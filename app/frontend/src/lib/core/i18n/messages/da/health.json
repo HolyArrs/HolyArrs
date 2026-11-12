@@ -259,5 +259,7 @@
 	"health.word.broken": "Defekt",
 	"health.word.notSent": "Ikke sendt endnu",
 	"health.word.notSynced": "Ikke synkroniseret endnu",
-	"health.word.working": "Virker"
+	"health.word.working": "Virker",
+	"health.check.clearWaiting": "Downloads der venter på at blive ryddet væk",
+	"health.kind.clearWaiting": "Downloads der venter på at blive ryddet væk"
 }

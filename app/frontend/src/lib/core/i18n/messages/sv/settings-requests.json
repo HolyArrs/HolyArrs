@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Efterfråga från Plex-bevakningslistor",
 	"settings.requests.plexOnHint": "Var och en slår på det under Mitt konto. Deras Gränser gäller.",
 	"settings.requests.plexEveryone": "Slå på för alla som loggar in med Plex",
-	"settings.requests.plexEveryoneHint": "Var och en kan stänga av det för sig själv under Mitt konto."
+	"settings.requests.plexEveryoneHint": "Var och en kan stänga av det för sig själv under Mitt konto.",
+	"settings.requests.plexFriends": "Ta med Plex-vänner",
+	"settings.requests.plexFriendsHint": "Vänner du importerat från Plex. Läses med din Plex-länk; varje väns Gränser gäller.",
+	"settings.requests.plexFriendsNoLink": "Länka Plex i Inställningar › Inloggning först.",
+	"settings.requests.plexFriendsNone": "Ingen har importerats från Plex än.",
+	"settings.requests.plexFriendsRead": "Läst {when}",
+	"settings.requests.plexFriendsNotYet": "Inte läst än",
+	"settings.requests.plexFriendsAsked": "Efterfrågade: {n}"
 }

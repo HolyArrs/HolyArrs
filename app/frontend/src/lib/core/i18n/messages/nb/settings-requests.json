@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Be om fra Plex-ønskelister",
 	"settings.requests.plexOnHint": "Hver person slår det på i Min konto. Grensene deres gjelder.",
 	"settings.requests.plexEveryone": "Slå på for alle som logger inn med Plex",
-	"settings.requests.plexEveryoneHint": "Alle kan slå det av for seg selv i Min konto."
+	"settings.requests.plexEveryoneHint": "Alle kan slå det av for seg selv i Min konto.",
+	"settings.requests.plexFriends": "Ta med Plex-venner",
+	"settings.requests.plexFriendsHint": "Venner du importerte fra Plex. Leses med Plex-koblingen din; hver vens Grenser gjelder.",
+	"settings.requests.plexFriendsNoLink": "Koble til Plex i Innstillinger › Innlogging først.",
+	"settings.requests.plexFriendsNone": "Ingen er importert fra Plex ennå.",
+	"settings.requests.plexFriendsRead": "Lest {when}",
+	"settings.requests.plexFriendsNotYet": "Ikke lest ennå",
+	"settings.requests.plexFriendsAsked": "Forespurt: {n}"
 }

@@ -266,5 +266,8 @@
 	"home.version": "Versio {version}",
 	"home.metadataServerDown": "Metatietopalvelin alhaalla",
 	"home.metadataServerOnline": "Metatietopalvelin verkossa",
-	"home.homeCouldNotRead3": "Koti ei voinut lukea latauksia juuri nyt."
+	"home.homeCouldNotRead3": "Koti ei voinut lukea latauksia juuri nyt.",
+	"home.waitingToBeCleared": "odottaa poistamista",
+	"home.off": "Pois",
+	"home.sourcesOff": "Pois päältä Osissa"
 }

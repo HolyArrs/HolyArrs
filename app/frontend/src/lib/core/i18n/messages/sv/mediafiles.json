@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "Inget saknas.",
 	"mediafiles.showDelete.deleteLabel": "Radera {what}",
 	"mediafiles.showReleases.searchingFor": "Söker efter {name}",
-	"mediafiles.sheet.file": "Fil"
+	"mediafiles.sheet.file": "Fil",
+	"mediafiles.parts.stopsSources": "Automatiska sökningar stoppas, för när du lägger till nedladdningar själv. Nedladdare och importer fortsätter fungera."
 }

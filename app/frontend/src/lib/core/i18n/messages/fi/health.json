@@ -259,5 +259,7 @@
 	"health.word.broken": "Rikki",
 	"health.word.notSent": "Ei vielä lähetetty",
 	"health.word.notSynced": "Ei vielä synkronoitu",
-	"health.word.working": "Toimii"
+	"health.word.working": "Toimii",
+	"health.check.clearWaiting": "Poistamista odottavat lataukset",
+	"health.kind.clearWaiting": "Poistamista odottavat lataukset"
 }

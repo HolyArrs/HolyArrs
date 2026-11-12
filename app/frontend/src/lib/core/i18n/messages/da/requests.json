@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Hurtige begrundelser",
 	"requests.page.takeBackTitle": "Træk {name} tilbage?",
 	"requests.page.takeBackDesc": "Den forlader Anmodninger. Du kan anmode igen senere.",
-	"requests.page.keepIt": "Behold den"
+	"requests.page.keepIt": "Behold den",
+	"requests.moment.downloaded.title": "Downloadet",
+	"requests.moment.downloaded.body": "Til personalet: en Downloader er færdig med en download (importen kommer næste gang).",
+	"requests.moment.download_failed.title": "Download mislykkedes",
+	"requests.moment.download_failed.body": "Til personalet: en download mislykkedes, og dens Udgivelse blev afvist."
 }

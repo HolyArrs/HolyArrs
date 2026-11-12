@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Alle steder",
 	"frame.layout.newWord": "ny",
 	"frame.layout.accountName": "Konto · {name}",
-	"frame.layout.hostRefused": "<b>Endringer kan ikke lagres på {host}.</b> HolyArrs lagrer bare på navn du tillater. Åpne det én gang med IP-adressen, og legg deretter til {host} under Innstillinger › Innlogging › Tillatte vertsnavn. Ingen omstart nødvendig."
+	"frame.layout.hostRefused": "<b>Endringer kan ikke lagres på {host}.</b> HolyArrs lagrer bare på navn du tillater. Åpne det én gang med IP-adressen, og legg deretter til {host} under Innstillinger › Innlogging › Tillatte vertsnavn. Ingen omstart nødvendig.",
+	"frame.feeds.clearOne": "Importert nedlasting ikke ryddet bort",
+	"frame.feeds.clearMany": "{n} importerte nedlastinger ikke ryddet bort",
+	"frame.feeds.clearBody": "HolyArrs prøver igjen av seg selv",
+	"frame.feeds.clearNow": "Rydd bort nå",
+	"frame.feeds.cleared": "Ryddet bort fra Nedlasteren",
+	"frame.feeds.clearStill": "Ikke ryddet bort ennå"
 }
