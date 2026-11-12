@@ -259,5 +259,7 @@
 	"health.word.broken": "Hỏng",
 	"health.word.notSent": "Chưa gửi",
 	"health.word.notSynced": "Chưa đồng bộ",
-	"health.word.working": "Đang hoạt động"
+	"health.word.working": "Đang hoạt động",
+	"health.check.clearWaiting": "Bản tải đang chờ dọn",
+	"health.kind.clearWaiting": "Bản tải đang chờ dọn"
 }

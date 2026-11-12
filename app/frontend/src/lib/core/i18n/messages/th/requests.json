@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "เหตุผลด่วน",
 	"requests.page.takeBackTitle": "ถอนคืน {name} ไหม",
 	"requests.page.takeBackDesc": "จะออกจากหน้าคำขอ คุณขอใหม่ได้ภายหลัง",
-	"requests.page.keepIt": "เก็บไว้"
+	"requests.page.keepIt": "เก็บไว้",
+	"requests.moment.downloaded.title": "ดาวน์โหลดแล้ว",
+	"requests.moment.downloaded.body": "ถึงทีมงาน: ตัวดาวน์โหลดทำการดาวน์โหลดเสร็จแล้ว (ต่อไปคือการนำเข้า)",
+	"requests.moment.download_failed.title": "ดาวน์โหลดล้มเหลว",
+	"requests.moment.download_failed.body": "ถึงทีมงาน: ดาวน์โหลดล้มเหลวและรีลีสของมันถูกปฏิเสธ"
 }

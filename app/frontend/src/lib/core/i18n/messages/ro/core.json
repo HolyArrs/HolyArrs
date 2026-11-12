@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Zonă periculoasă",
 	"core.settings.danger.about": "Repornire sau oprire",
 	"core.settings.account.label": "Contul meu",
-	"core.settings.account.about": "Parolă, autentificare în doi pași, dispozitive"
+	"core.settings.account.about": "Parolă, autentificare în doi pași, dispozitive",
+	"core.plain.clearWaiting": "Descărcările importate așteaptă să fie șterse din Programul lor de descărcare.",
+	"core.api.sourceOff": "Unele rânduri sunt oprite pe această instalare."
 }

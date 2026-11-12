@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "Không thiếu gì.",
 	"mediafiles.showDelete.deleteLabel": "Xóa {what}",
 	"mediafiles.showReleases.searchingFor": "Đang tìm {name}",
-	"mediafiles.sheet.file": "Tệp"
+	"mediafiles.sheet.file": "Tệp",
+	"mediafiles.parts.stopsSources": "Tìm kiếm tự động dừng lại, dành cho khi bạn tự thêm bản tải. Trình tải và nhập vẫn hoạt động."
 }

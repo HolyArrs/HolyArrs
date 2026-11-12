@@ -259,5 +259,7 @@
 	"health.word.broken": "Defect",
 	"health.word.notSent": "Încă netrimis",
 	"health.word.notSynced": "Încă nesincronizat",
-	"health.word.working": "Funcționează"
+	"health.word.working": "Funcționează",
+	"health.check.clearWaiting": "Descărcări care așteaptă ștergerea",
+	"health.kind.clearWaiting": "Descărcări care așteaptă ștergerea"
 }

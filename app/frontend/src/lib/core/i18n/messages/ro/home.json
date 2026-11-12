@@ -266,5 +266,8 @@
 	"home.version": "Versiunea {version}",
 	"home.metadataServerDown": "Serverul de metadate e oprit",
 	"home.metadataServerOnline": "Serverul de metadate e online",
-	"home.homeCouldNotRead3": "Acasă nu a putut citi descărcările acum."
+	"home.homeCouldNotRead3": "Acasă nu a putut citi descărcările acum.",
+	"home.waitingToBeCleared": "așteaptă ștergerea",
+	"home.off": "Oprit",
+	"home.sourcesOff": "Oprit în Module"
 }

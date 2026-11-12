@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "ทุกที่",
 	"frame.layout.newWord": "ใหม่",
 	"frame.layout.accountName": "บัญชี · {name}",
-	"frame.layout.hostRefused": "<b>บันทึกการเปลี่ยนแปลงบน {host} ไม่ได้</b> HolyArrs บันทึกเฉพาะบนชื่อที่คุณอนุญาต ให้เปิดด้วยที่อยู่ IP ก่อนหนึ่งครั้ง แล้วเพิ่ม {host} ที่ตั้งค่า › เข้าสู่ระบบ › ชื่อโฮสต์ที่อนุญาต ไม่ต้องรีสตาร์ต"
+	"frame.layout.hostRefused": "<b>บันทึกการเปลี่ยนแปลงบน {host} ไม่ได้</b> HolyArrs บันทึกเฉพาะบนชื่อที่คุณอนุญาต ให้เปิดด้วยที่อยู่ IP ก่อนหนึ่งครั้ง แล้วเพิ่ม {host} ที่ตั้งค่า › เข้าสู่ระบบ › ชื่อโฮสต์ที่อนุญาต ไม่ต้องรีสตาร์ต",
+	"frame.feeds.clearOne": "ดาวน์โหลดที่นำเข้าแล้วยังไม่ถูกล้าง",
+	"frame.feeds.clearMany": "ดาวน์โหลดที่นำเข้าแล้ว {n} รายการยังไม่ถูกล้าง",
+	"frame.feeds.clearBody": "HolyArrs จะลองใหม่เอง",
+	"frame.feeds.clearNow": "ล้างเดี๋ยวนี้",
+	"frame.feeds.cleared": "ล้างออกจากตัวดาวน์โหลดแล้ว",
+	"frame.feeds.clearStill": "ยังไม่ได้ล้าง"
 }

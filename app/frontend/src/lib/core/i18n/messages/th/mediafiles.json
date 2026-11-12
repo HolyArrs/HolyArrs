@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "ไม่มีอะไรขาด",
 	"mediafiles.showDelete.deleteLabel": "ลบ{what}",
 	"mediafiles.showReleases.searchingFor": "กำลังค้นหา {name}",
-	"mediafiles.sheet.file": "ไฟล์"
+	"mediafiles.sheet.file": "ไฟล์",
+	"mediafiles.parts.stopsSources": "การค้นหาอัตโนมัติหยุดลง สำหรับตอนที่คุณเพิ่มดาวน์โหลดเอง ตัวดาวน์โหลดและการนำเข้ายังทำงานต่อ"
 }

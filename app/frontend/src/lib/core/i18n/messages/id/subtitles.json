@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Bahasa",
 	"subtitles.wants.pick": "Pilih bahasa",
 	"subtitles.wants.takeOff": "Lepas {name}",
-	"subtitles.wants.thisLanguage": "bahasa ini"
+	"subtitles.wants.thisLanguage": "bahasa ini",
+	"subtitles.made.translated": "Diterjemahkan",
+	"subtitles.made.partial": "Sebagian diterjemahkan",
+	"subtitles.made.ai": "Diterjemahkan AI",
+	"subtitles.made.machine": "Diterjemahkan mesin",
+	"subtitles.wants.translateFrom": "Terjemahkan dari",
+	"subtitles.wants.noTranslate": "Jangan terjemahkan",
+	"subtitles.panel.picture": "Gambar",
+	"subtitles.panel.pictureTitle": "Subtitel gambar: tidak bisa diterjemahkan",
+	"subtitles.panel.translate": "Terjemahkan",
+	"subtitles.panel.translateFor": "Terjemahkan subtitel {name}",
+	"subtitles.panel.translateFrom": "Terjemahkan dari",
+	"subtitles.panel.translateQueued": "Menerjemahkan",
+	"subtitles.panel.translateQueuedBody": "Subtitel {name} muncul di sini setelah selesai.",
+	"subtitles.panel.translating": "Tidak ditemukan, jadi penerjemah Anda membuatnya."
 }

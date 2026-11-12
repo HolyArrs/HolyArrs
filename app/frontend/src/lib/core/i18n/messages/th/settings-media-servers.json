@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "ทดสอบ",
 	"settings.mediaServers.changeButton": "เปลี่ยน",
 	"settings.mediaServers.removeName": "ลบ {name}",
-	"settings.mediaServers.remove": "ลบ"
+	"settings.mediaServers.remove": "ลบ",
+	"settings.mediaServers.watchTitle": "ประวัติการรับชม",
+	"settings.mediaServers.watchRead": "อ่านประวัติการรับชม",
+	"settings.mediaServers.watchHint": "แสดงใน สถิติไลบรารี ว่าใครดูอะไร สำหรับคนที่ดูแลไลบรารี ปิด จะลบสิ่งที่อ่านไปแล้ว",
+	"settings.mediaServers.watchConfirmOff": "ปิดประวัติการรับชมไหม ทุกอย่างที่อ่านมาจนถึงตอนนี้จะถูกลบ",
+	"settings.mediaServers.watchTurnedOn": "เปิดประวัติการรับชมแล้ว การอ่านครั้งแรกจะเกิดขึ้นภายใน 30 นาที",
+	"settings.mediaServers.watchTurnedOff": "ปิดประวัติการรับชมแล้ว",
+	"settings.mediaServers.watchFailed": "เปลี่ยนประวัติการรับชมไม่ได้"
 }

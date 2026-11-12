@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Khusus pemilik dan admin",
 	"settings.libraryFolders.copiesExpected": "Penyalinan memang diharapkan",
 	"settings.libraryFolders.copiesExpectedState": "Disalin, seperti yang diharapkan",
-	"settings.libraryFolders.warnAgain": "Peringatkan lagi"
+	"settings.libraryFolders.warnAgain": "Peringatkan lagi",
+	"settings.libraryFolders.whyCopies": "Mengapa?",
+	"settings.libraryFolders.stateInstant": "Instan, tanpa ruang tambahan",
+	"settings.libraryFolders.changePath": "Ubah jalur",
+	"settings.libraryFolders.changePathOf": "Ubah jalur {path}",
+	"settings.libraryFolders.newPath": "Jalur baru",
+	"settings.libraryFolders.changePathHint": "Pindahkan file ke sana dulu. HolyArrs memeriksa setiap file dan tidak memindahkan apa pun.",
+	"settings.libraryFolders.checkingFiles": "Memeriksa file…",
+	"settings.libraryFolders.pathChanged": "Jalur diubah"
 }

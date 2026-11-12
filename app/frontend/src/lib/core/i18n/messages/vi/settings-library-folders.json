@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Chỉ chủ sở hữu và quản trị viên",
 	"settings.libraryFolders.copiesExpected": "Việc sao chép là điều dự kiến",
 	"settings.libraryFolders.copiesExpectedState": "Sao chép, như dự kiến",
-	"settings.libraryFolders.warnAgain": "Cảnh báo lại"
+	"settings.libraryFolders.warnAgain": "Cảnh báo lại",
+	"settings.libraryFolders.whyCopies": "Tại sao?",
+	"settings.libraryFolders.stateInstant": "Tức thì, không tốn thêm chỗ",
+	"settings.libraryFolders.changePath": "Đổi đường dẫn",
+	"settings.libraryFolders.changePathOf": "Đổi đường dẫn của {path}",
+	"settings.libraryFolders.newPath": "Đường dẫn mới",
+	"settings.libraryFolders.changePathHint": "Hãy chuyển tệp đến đó trước. HolyArrs kiểm tra từng tệp và không chuyển gì cả.",
+	"settings.libraryFolders.checkingFiles": "Đang kiểm tra tệp…",
+	"settings.libraryFolders.pathChanged": "Đã đổi đường dẫn"
 }

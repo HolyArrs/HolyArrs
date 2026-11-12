@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Toate locurile",
 	"frame.layout.newWord": "nou",
 	"frame.layout.accountName": "Cont · {name}",
-	"frame.layout.hostRefused": "<b>Modificările nu pot fi salvate pe {host}.</b> HolyArrs salvează doar pe numele permise de tine. Deschide-l o dată după adresa IP, apoi adaugă {host} la Setări › Autentificare › Nume de gazdă permise. Nu e nevoie de repornire."
+	"frame.layout.hostRefused": "<b>Modificările nu pot fi salvate pe {host}.</b> HolyArrs salvează doar pe numele permise de tine. Deschide-l o dată după adresa IP, apoi adaugă {host} la Setări › Autentificare › Nume de gazdă permise. Nu e nevoie de repornire.",
+	"frame.feeds.clearOne": "Descărcare importată neștearsă",
+	"frame.feeds.clearMany": "{n} descărcări importate neșterse",
+	"frame.feeds.clearBody": "HolyArrs încearcă din nou singur",
+	"frame.feeds.clearNow": "Șterge acum",
+	"frame.feeds.cleared": "Șters din Programul de descărcare",
+	"frame.feeds.clearStill": "Încă neșters"
 }

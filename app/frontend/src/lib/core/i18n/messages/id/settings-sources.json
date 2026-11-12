@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Ubah",
 	"settings.sources.removeName": "Hapus {name}",
 	"settings.sources.remove": "Hapus",
-	"settings.sources.bridge": "Tautkan Jackett atau Prowlarr"
+	"settings.sources.bridge": "Tautkan Jackett atau Prowlarr",
+	"settings.sources.off": "Sumber mati",
+	"settings.sources.offText": "HolyArrs tidak mencari dan tidak mengambil. Unduhan yang Anda tambahkan di Pengunduh tetap diimpor.",
+	"settings.sources.openParts": "Buka Bagian",
+	"settings.sources.offState": "Mati"
 }

@@ -259,5 +259,7 @@
 	"health.word.broken": "Rusak",
 	"health.word.notSent": "Belum terkirim",
 	"health.word.notSynced": "Belum disinkronkan",
-	"health.word.working": "Berfungsi"
+	"health.word.working": "Berfungsi",
+	"health.check.clearWaiting": "Unduhan yang menunggu dibersihkan",
+	"health.kind.clearWaiting": "Unduhan yang menunggu dibersihkan"
 }

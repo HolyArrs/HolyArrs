@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Cảnh báo cho tôi",
 	"settings.index.account.alerts-me.alerts-for-me.words": "email discord thông báo của tôi my notifications",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Thiết bị đang đăng nhập của tôi",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "phiên thiết bị đăng xuất mọi nơi sessions devices"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "phiên thiết bị đăng xuất mọi nơi sessions devices",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Chi tiết lấy từ đâu",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "chế độ metadata khóa riêng tắt tra cứu quyền riêng tư máy chủ độc lập",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Khóa riêng của bạn",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart khóa api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Địa chỉ cho tường lửa của bạn",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "tường lửa host bên ngoài địa chỉ danh sách cho phép"
 }

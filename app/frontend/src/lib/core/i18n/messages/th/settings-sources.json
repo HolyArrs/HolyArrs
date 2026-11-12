@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "เปลี่ยน",
 	"settings.sources.removeName": "ลบ {name}",
 	"settings.sources.remove": "ลบ",
-	"settings.sources.bridge": "เชื่อมต่อ Jackett หรือ Prowlarr"
+	"settings.sources.bridge": "เชื่อมต่อ Jackett หรือ Prowlarr",
+	"settings.sources.off": "แหล่งที่มาปิดอยู่",
+	"settings.sources.offText": "HolyArrs ไม่ค้นหาและไม่คว้า ดาวน์โหลดที่คุณเพิ่มในตัวดาวน์โหลดของคุณยังถูกนำเข้า",
+	"settings.sources.openParts": "เปิดส่วนเสริม",
+	"settings.sources.offState": "ปิด"
 }

@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Testează",
 	"settings.mediaServers.changeButton": "Schimbă",
 	"settings.mediaServers.removeName": "Elimină {name}",
-	"settings.mediaServers.remove": "Elimină"
+	"settings.mediaServers.remove": "Elimină",
+	"settings.mediaServers.watchTitle": "Istoricul vizionărilor",
+	"settings.mediaServers.watchRead": "Citește istoricul vizionărilor",
+	"settings.mediaServers.watchHint": "Arată în Statistici Bibliotecă cine ce a vizionat, pentru cei care administrează Biblioteca. Oprit șterge ce s-a citit.",
+	"settings.mediaServers.watchConfirmOff": "Oprești istoricul vizionărilor? Tot ce s-a citit până acum se șterge.",
+	"settings.mediaServers.watchTurnedOn": "Istoricul vizionărilor este pornit. Prima citire are loc în 30 de minute.",
+	"settings.mediaServers.watchTurnedOff": "Istoricul vizionărilor este oprit",
+	"settings.mediaServers.watchFailed": "Nu s-a putut schimba istoricul vizionărilor"
 }

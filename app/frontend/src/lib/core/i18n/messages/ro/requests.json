@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Motive rapide",
 	"requests.page.takeBackTitle": "Retragi {name}?",
 	"requests.page.takeBackDesc": "Iese din Cereri. Poți cere din nou mai târziu.",
-	"requests.page.keepIt": "Păstrează-l"
+	"requests.page.keepIt": "Păstrează-l",
+	"requests.moment.downloaded.title": "Descărcat",
+	"requests.moment.downloaded.body": "Pentru personal: un Program de descărcare a terminat o descărcare (urmează importul).",
+	"requests.moment.download_failed.title": "Descărcarea a eșuat",
+	"requests.moment.download_failed.body": "Pentru personal: o descărcare a eșuat, iar Lansarea ei a fost respinsă."
 }

@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "การแจ้งเตือนสำหรับฉัน",
 	"settings.index.account.alerts-me.alerts-for-me.words": "อีเมลของฉัน discord การแจ้งเตือน",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "อุปกรณ์ที่เข้าสู่ระบบของฉัน",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "เซสชัน อุปกรณ์ ออกจากระบบทุกที่"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "เซสชัน อุปกรณ์ ออกจากระบบทุกที่",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "รายละเอียดมาจากไหน",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "โหมดข้อมูลเมตา คีย์ของคุณเอง ปิด การค้นหา ความเป็นส่วนตัว เซิร์ฟเวอร์ อิสระ",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "คีย์ของคุณเอง",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart คีย์ api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "ที่อยู่สำหรับไฟร์วอลล์ของคุณ",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "ไฟร์วอลล์ โฮสต์ ภายนอก ที่อยู่ รายการอนุญาต"
 }

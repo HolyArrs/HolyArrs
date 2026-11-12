@@ -266,5 +266,8 @@
 	"home.version": "Versi {version}",
 	"home.metadataServerDown": "Server metadata mati",
 	"home.metadataServerOnline": "Server metadata aktif",
-	"home.homeCouldNotRead3": "Beranda tidak bisa membaca unduhan saat ini."
+	"home.homeCouldNotRead3": "Beranda tidak bisa membaca unduhan saat ini.",
+	"home.waitingToBeCleared": "menunggu dibersihkan",
+	"home.off": "Mati",
+	"home.sourcesOff": "Dimatikan di Bagian"
 }

@@ -575,5 +575,9 @@
 	"requests.page.quickReasons": "Alasan cepat",
 	"requests.page.takeBackTitle": "Tarik kembali {name}?",
 	"requests.page.takeBackDesc": "Ia keluar dari Permintaan. Kamu bisa meminta lagi nanti.",
-	"requests.page.keepIt": "Pertahankan"
+	"requests.page.keepIt": "Pertahankan",
+	"requests.moment.downloaded.title": "Terunduh",
+	"requests.moment.downloaded.body": "Untuk staf: sebuah Pengunduh selesai mengunduh (impor menyusul).",
+	"requests.moment.download_failed.title": "Unduhan gagal",
+	"requests.moment.download_failed.body": "Untuk staf: sebuah unduhan gagal dan Rilisnya ditolak."
 }

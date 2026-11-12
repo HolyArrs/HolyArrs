@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Limbă",
 	"subtitles.wants.pick": "Alege o limbă",
 	"subtitles.wants.takeOff": "Scoate {name}",
-	"subtitles.wants.thisLanguage": "această limbă"
+	"subtitles.wants.thisLanguage": "această limbă",
+	"subtitles.made.translated": "Tradus",
+	"subtitles.made.partial": "Tradus parțial",
+	"subtitles.made.ai": "Tradus cu AI",
+	"subtitles.made.machine": "Tradus automat",
+	"subtitles.wants.translateFrom": "Tradu din",
+	"subtitles.wants.noTranslate": "Nu traduce",
+	"subtitles.panel.picture": "Imagine",
+	"subtitles.panel.pictureTitle": "O subtitrare imagine: nu poate fi tradusă",
+	"subtitles.panel.translate": "Tradu",
+	"subtitles.panel.translateFor": "Tradu o subtitrare {name}",
+	"subtitles.panel.translateFrom": "Tradu din",
+	"subtitles.panel.translateQueued": "Se traduce",
+	"subtitles.panel.translateQueuedBody": "Subtitrarea {name} apare aici când este gata.",
+	"subtitles.panel.translating": "Nu s-a găsit niciuna, deci traducătorul tău face una."
 }

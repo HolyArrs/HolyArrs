@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Uji",
 	"settings.mediaServers.changeButton": "Ubah",
 	"settings.mediaServers.removeName": "Hapus {name}",
-	"settings.mediaServers.remove": "Hapus"
+	"settings.mediaServers.remove": "Hapus",
+	"settings.mediaServers.watchTitle": "Riwayat tontonan",
+	"settings.mediaServers.watchRead": "Baca riwayat tontonan",
+	"settings.mediaServers.watchHint": "Menampilkan siapa menonton apa di Statistik Pustaka, untuk orang yang mengelola Pustaka. Mati menghapus apa yang sudah dibaca.",
+	"settings.mediaServers.watchConfirmOff": "Matikan riwayat tontonan? Semua yang sudah dibaca sejauh ini dihapus.",
+	"settings.mediaServers.watchTurnedOn": "Riwayat tontonan menyala. Pembacaan pertama dilakukan dalam 30 menit.",
+	"settings.mediaServers.watchTurnedOff": "Riwayat tontonan mati",
+	"settings.mediaServers.watchFailed": "Tidak bisa mengubah riwayat tontonan"
 }

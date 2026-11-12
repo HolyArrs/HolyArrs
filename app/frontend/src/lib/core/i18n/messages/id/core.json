@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Zona berbahaya",
 	"core.settings.danger.about": "Mulai ulang atau matikan",
 	"core.settings.account.label": "Akunku",
-	"core.settings.account.about": "Kata sandi, dua faktor, perangkat"
+	"core.settings.account.about": "Kata sandi, dua faktor, perangkat",
+	"core.plain.clearWaiting": "Unduhan yang sudah diimpor menunggu dibersihkan dari Pengunduhnya.",
+	"core.api.sourceOff": "Beberapa baris dimatikan di instalasi ini."
 }

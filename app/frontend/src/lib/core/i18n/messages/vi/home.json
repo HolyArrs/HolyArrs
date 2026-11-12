@@ -266,5 +266,8 @@
 	"home.version": "Phiên bản {version}",
 	"home.metadataServerDown": "Máy chủ metadata ngừng hoạt động",
 	"home.metadataServerOnline": "Máy chủ metadata trực tuyến",
-	"home.homeCouldNotRead3": "Trang chủ hiện không đọc được các lượt tải."
+	"home.homeCouldNotRead3": "Trang chủ hiện không đọc được các lượt tải.",
+	"home.waitingToBeCleared": "đang chờ dọn",
+	"home.off": "Tắt",
+	"home.sourcesOff": "Đã tắt trong Các Phần"
 }

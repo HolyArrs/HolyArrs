@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Alerte pentru mine",
 	"settings.index.account.alerts-me.alerts-for-me.words": "e-mail discord notificările mele",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Dispozitivele mele autentificate",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "sesiuni dispozitive deconectare peste tot"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "sesiuni dispozitive deconectare peste tot",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "De unde vin detaliile",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "mod metadate chei proprii oprit căutări confidențialitate server independent",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Cheile tale proprii",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart cheie api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adrese pentru firewall-ul tău",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall gazde adrese externe listă permisă"
 }

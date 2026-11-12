@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "ภาษา",
 	"subtitles.wants.pick": "เลือกภาษา",
 	"subtitles.wants.takeOff": "เอา {name} ออก",
-	"subtitles.wants.thisLanguage": "ภาษานี้"
+	"subtitles.wants.thisLanguage": "ภาษานี้",
+	"subtitles.made.translated": "แปลแล้ว",
+	"subtitles.made.partial": "แปลบางส่วน",
+	"subtitles.made.ai": "แปลโดย AI",
+	"subtitles.made.machine": "แปลโดยเครื่อง",
+	"subtitles.wants.translateFrom": "แปลจาก",
+	"subtitles.wants.noTranslate": "ไม่ต้องแปล",
+	"subtitles.panel.picture": "ภาพ",
+	"subtitles.panel.pictureTitle": "คำบรรยายแบบภาพ: แปลไม่ได้",
+	"subtitles.panel.translate": "แปล",
+	"subtitles.panel.translateFor": "แปลคำบรรยาย {name}",
+	"subtitles.panel.translateFrom": "แปลจาก",
+	"subtitles.panel.translateQueued": "กำลังแปล",
+	"subtitles.panel.translateQueuedBody": "คำบรรยาย {name} จะแสดงที่นี่เมื่อเสร็จ",
+	"subtitles.panel.translating": "ไม่พบ ตัวแปลของคุณจึงกำลังสร้างขึ้น"
 }

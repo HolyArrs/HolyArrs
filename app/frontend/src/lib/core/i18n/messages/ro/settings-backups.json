@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Doar proprietarul îl poate descărca; roagă-l să o facă.",
 	"settings.backups.fingerprint": "Amprenta cheii",
 	"settings.backups.downloadKit": "Descarcă setul de chei",
-	"settings.backups.restoreKey": "Pentru restaurare: redenumește în holyarrs.key și pune-l în dosarul config"
+	"settings.backups.restoreKey": "Pentru restaurare: redenumește în holyarrs.key și pune-l în dosarul config",
+	"settings.backups.offPlan": "Oprit",
+	"settings.backups.offAbout": "Fără copii de siguranță programate. Se face totuși o copie înaintea fiecărei actualizări.",
+	"settings.backups.offKeeps": "Oprit păstrează copiile de siguranță pe care le ai deja."
 }

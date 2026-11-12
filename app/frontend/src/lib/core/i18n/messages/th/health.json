@@ -259,5 +259,7 @@
 	"health.word.broken": "เสีย",
 	"health.word.notSent": "ยังไม่ได้ส่ง",
 	"health.word.notSynced": "ยังไม่ได้ซิงก์",
-	"health.word.working": "ทำงานอยู่"
+	"health.word.working": "ทำงานอยู่",
+	"health.check.clearWaiting": "ดาวน์โหลดที่รอการล้าง",
+	"health.kind.clearWaiting": "ดาวน์โหลดที่รอการล้าง"
 }

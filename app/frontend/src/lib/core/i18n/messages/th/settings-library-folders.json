@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "เฉพาะเจ้าของและผู้ดูแล",
 	"settings.libraryFolders.copiesExpected": "คาดว่าจะมีการคัดลอก",
 	"settings.libraryFolders.copiesExpectedState": "คัดลอกตามที่คาดไว้",
-	"settings.libraryFolders.warnAgain": "เตือนอีกครั้ง"
+	"settings.libraryFolders.warnAgain": "เตือนอีกครั้ง",
+	"settings.libraryFolders.whyCopies": "ทำไม",
+	"settings.libraryFolders.stateInstant": "ทันที ไม่ใช้พื้นที่เพิ่ม",
+	"settings.libraryFolders.changePath": "เปลี่ยนพาธ",
+	"settings.libraryFolders.changePathOf": "เปลี่ยนพาธของ {path}",
+	"settings.libraryFolders.newPath": "พาธใหม่",
+	"settings.libraryFolders.changePathHint": "ย้ายไฟล์ไปที่นั่นก่อน HolyArrs ตรวจสอบทุกไฟล์และไม่ย้ายอะไรเลย",
+	"settings.libraryFolders.checkingFiles": "กำลังตรวจสอบไฟล์…",
+	"settings.libraryFolders.pathChanged": "เปลี่ยนพาธแล้ว"
 }

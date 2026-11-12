@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Minta dari watchlist Plex",
 	"settings.requests.plexOnHint": "Tiap orang menyalakannya di Akun saya. Batas mereka tetap berlaku.",
 	"settings.requests.plexEveryone": "Nyalakan untuk semua yang masuk dengan Plex",
-	"settings.requests.plexEveryoneHint": "Siapa pun bisa mematikannya untuk dirinya sendiri di Akun saya."
+	"settings.requests.plexEveryoneHint": "Siapa pun bisa mematikannya untuk dirinya sendiri di Akun saya.",
+	"settings.requests.plexFriends": "Sertakan teman Plex",
+	"settings.requests.plexFriendsHint": "Teman yang Anda impor dari Plex. Dibaca dengan tautan Plex Anda; Batas tiap teman berlaku.",
+	"settings.requests.plexFriendsNoLink": "Tautkan Plex dulu di Pengaturan › Masuk.",
+	"settings.requests.plexFriendsNone": "Belum ada yang diimpor dari Plex.",
+	"settings.requests.plexFriendsRead": "Dibaca {when}",
+	"settings.requests.plexFriendsNotYet": "Belum dibaca",
+	"settings.requests.plexFriendsAsked": "Diminta: {n}"
 }

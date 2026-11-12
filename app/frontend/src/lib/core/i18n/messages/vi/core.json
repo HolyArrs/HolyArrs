@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "Vùng nguy hiểm",
 	"core.settings.danger.about": "Khởi động lại hoặc tắt",
 	"core.settings.account.label": "Tài khoản của tôi",
-	"core.settings.account.about": "Mật khẩu, xác thực hai lớp, thiết bị"
+	"core.settings.account.about": "Mật khẩu, xác thực hai lớp, thiết bị",
+	"core.plain.clearWaiting": "Các bản tải đã nhập đang chờ được dọn khỏi Trình tải của chúng.",
+	"core.api.sourceOff": "Một số hàng đang tắt trên bản cài đặt này."
 }

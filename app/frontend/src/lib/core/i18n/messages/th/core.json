@@ -142,5 +142,7 @@
 	"core.settings.danger.label": "เขตอันตราย",
 	"core.settings.danger.about": "รีสตาร์ตหรือปิดเครื่อง",
 	"core.settings.account.label": "บัญชีของฉัน",
-	"core.settings.account.about": "รหัสผ่าน การยืนยันสองขั้นตอน อุปกรณ์"
+	"core.settings.account.about": "รหัสผ่าน การยืนยันสองขั้นตอน อุปกรณ์",
+	"core.plain.clearWaiting": "ดาวน์โหลดที่นำเข้าแล้วกำลังรอให้ล้างออกจากตัวดาวน์โหลดของมัน",
+	"core.api.sourceOff": "บางแถวปิดอยู่ในการติดตั้งนี้"
 }

@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Yêu cầu từ danh sách xem sau của Plex",
 	"settings.requests.plexOnHint": "Mỗi người tự bật trong Tài khoản của tôi. Giới hạn của họ vẫn áp dụng.",
 	"settings.requests.plexEveryone": "Bật cho mọi người đăng nhập bằng Plex",
-	"settings.requests.plexEveryoneHint": "Ai cũng có thể tự tắt cho mình trong Tài khoản của tôi."
+	"settings.requests.plexEveryoneHint": "Ai cũng có thể tự tắt cho mình trong Tài khoản của tôi.",
+	"settings.requests.plexFriends": "Gồm bạn bè Plex",
+	"settings.requests.plexFriendsHint": "Bạn bè bạn đã nhập từ Plex. Đọc bằng liên kết Plex của bạn; Giới hạn của từng người bạn vẫn áp dụng.",
+	"settings.requests.plexFriendsNoLink": "Hãy liên kết Plex trong Cài đặt › Đăng nhập trước.",
+	"settings.requests.plexFriendsNone": "Chưa nhập ai từ Plex.",
+	"settings.requests.plexFriendsRead": "Đã đọc {when}",
+	"settings.requests.plexFriendsNotYet": "Chưa đọc",
+	"settings.requests.plexFriendsAsked": "Đã yêu cầu: {n}"
 }

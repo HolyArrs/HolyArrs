@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "Tidak ada yang hilang.",
 	"mediafiles.showDelete.deleteLabel": "Hapus {what}",
 	"mediafiles.showReleases.searchingFor": "Mencari {name}",
-	"mediafiles.sheet.file": "File"
+	"mediafiles.sheet.file": "File",
+	"mediafiles.parts.stopsSources": "Pencarian otomatis berhenti, untuk saat Anda menambahkan unduhan sendiri. Pengunduh dan impor tetap berfungsi."
 }

@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Ngôn ngữ",
 	"subtitles.wants.pick": "Chọn một ngôn ngữ",
 	"subtitles.wants.takeOff": "Gỡ {name}",
-	"subtitles.wants.thisLanguage": "ngôn ngữ này"
+	"subtitles.wants.thisLanguage": "ngôn ngữ này",
+	"subtitles.made.translated": "Đã dịch",
+	"subtitles.made.partial": "Dịch một phần",
+	"subtitles.made.ai": "Dịch bằng AI",
+	"subtitles.made.machine": "Dịch bằng máy",
+	"subtitles.wants.translateFrom": "Dịch từ",
+	"subtitles.wants.noTranslate": "Không dịch",
+	"subtitles.panel.picture": "Hình ảnh",
+	"subtitles.panel.pictureTitle": "Một phụ đề hình ảnh: không thể dịch",
+	"subtitles.panel.translate": "Dịch",
+	"subtitles.panel.translateFor": "Dịch một phụ đề {name}",
+	"subtitles.panel.translateFrom": "Dịch từ",
+	"subtitles.panel.translateQueued": "Đang dịch",
+	"subtitles.panel.translateQueuedBody": "Phụ đề {name} sẽ hiện ở đây khi xong.",
+	"subtitles.panel.translating": "Không tìm thấy, nên trình dịch của bạn đang tạo một phụ đề."
 }

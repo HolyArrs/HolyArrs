@@ -39,5 +39,13 @@
 	"settings.libraryFolders.ownerOnly": "Doar proprietarul și administratorii",
 	"settings.libraryFolders.copiesExpected": "Se așteaptă copiere",
 	"settings.libraryFolders.copiesExpectedState": "Copiază, cum era de așteptat",
-	"settings.libraryFolders.warnAgain": "Avertizează din nou"
+	"settings.libraryFolders.warnAgain": "Avertizează din nou",
+	"settings.libraryFolders.whyCopies": "De ce?",
+	"settings.libraryFolders.stateInstant": "Instantaneu, fără spațiu în plus",
+	"settings.libraryFolders.changePath": "Schimbă calea",
+	"settings.libraryFolders.changePathOf": "Schimbă calea pentru {path}",
+	"settings.libraryFolders.newPath": "Cale nouă",
+	"settings.libraryFolders.changePathHint": "Mută mai întâi fișierele acolo. HolyArrs verifică fiecare fișier și nu mută nimic.",
+	"settings.libraryFolders.checkingFiles": "Se verifică fișierele…",
+	"settings.libraryFolders.pathChanged": "Cale schimbată"
 }

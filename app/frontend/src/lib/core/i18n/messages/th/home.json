@@ -266,5 +266,8 @@
 	"home.version": "เวอร์ชัน {version}",
 	"home.metadataServerDown": "เซิร์ฟเวอร์เมทาดาทาล่ม",
 	"home.metadataServerOnline": "เซิร์ฟเวอร์เมทาดาทาออนไลน์",
-	"home.homeCouldNotRead3": "หน้าหลักอ่านดาวน์โหลดไม่ได้ในตอนนี้"
+	"home.homeCouldNotRead3": "หน้าหลักอ่านดาวน์โหลดไม่ได้ในตอนนี้",
+	"home.waitingToBeCleared": "รอการล้าง",
+	"home.off": "ปิด",
+	"home.sourcesOff": "ปิดอยู่ในส่วนเสริม"
 }

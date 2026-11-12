@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Peringatan untukku",
 	"settings.index.account.alerts-me.alerts-for-me.words": "email discord notifikasiku my notifications",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Perangkatku yang sedang masuk",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "sesi perangkat keluar di mana saja sessions devices sign out everywhere"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "sesi perangkat keluar di mana saja sessions devices sign out everywhere",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Dari mana detail berasal",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "mode metadata kunci sendiri mati pencarian privasi server mandiri",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Kunci Anda sendiri",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart kunci api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Alamat untuk firewall Anda",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall host luar alamat daftar izin"
 }

@@ -508,5 +508,6 @@
 	"mediafiles.list.nothingMissing": "Nu lipsește nimic.",
 	"mediafiles.showDelete.deleteLabel": "Șterge {what}",
 	"mediafiles.showReleases.searchingFor": "Se caută {name}",
-	"mediafiles.sheet.file": "Fișier"
+	"mediafiles.sheet.file": "Fișier",
+	"mediafiles.parts.stopsSources": "Căutările automate se opresc, pentru când adaugi tu descărcările. Programele de descărcare și importurile continuă să funcționeze."
 }

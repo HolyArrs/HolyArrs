@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "เฉพาะเจ้าของที่ดาวน์โหลดได้ ลองขอให้เขาดาวน์โหลดให้",
 	"settings.backups.fingerprint": "ลายนิ้วมือของคีย์",
 	"settings.backups.downloadKit": "ดาวน์โหลดชุดคีย์",
-	"settings.backups.restoreKey": "วิธีกู้คืน: เปลี่ยนชื่อเป็น holyarrs.key แล้ววางในโฟลเดอร์ config"
+	"settings.backups.restoreKey": "วิธีกู้คืน: เปลี่ยนชื่อเป็น holyarrs.key แล้ววางในโฟลเดอร์ config",
+	"settings.backups.offPlan": "ปิด",
+	"settings.backups.offAbout": "ไม่มีการสำรองข้อมูลตามกำหนดเวลา ระบบยังคงทำสำเนาก่อนการอัปเดตทุกครั้ง",
+	"settings.backups.offKeeps": "ปิด จะเก็บข้อมูลสำรองที่คุณมีอยู่แล้ว"
 }

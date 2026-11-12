@@ -35,5 +35,8 @@
 	"settings.backups.ownerOnlyKit": "Hanya pemilik yang bisa mengunduhnya; mintalah kepada mereka.",
 	"settings.backups.fingerprint": "Sidik jari kunci",
 	"settings.backups.downloadKit": "Unduh paket kunci",
-	"settings.backups.restoreKey": "Untuk memulihkan: ganti nama menjadi holyarrs.key, taruh di folder config"
+	"settings.backups.restoreKey": "Untuk memulihkan: ganti nama menjadi holyarrs.key, taruh di folder config",
+	"settings.backups.offPlan": "Mati",
+	"settings.backups.offAbout": "Tidak ada cadangan terjadwal. Salinan tetap dibuat sebelum setiap pembaruan.",
+	"settings.backups.offKeeps": "Mati mempertahankan cadangan yang sudah Anda miliki."
 }
