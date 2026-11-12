@@ -1209,5 +1209,11 @@
 	"server.accounts.pick-a-person-for-local-visitors": "wähle eine Person für lokale Besuche",
 	"server.accounts.there-is-no-owner-yet": "es gibt noch keinen Besitzer",
 	"server.accounts.change-trusted-proxies-in-the-browser": "ändere vertrauenswürdige Proxys im Browser, mit deinem Passwort angemeldet",
-	"server.accounts.you-reach-holyarrs-through-the-proxy": "du erreichst HolyArrs über den Proxy unter {ip}; lass ihn in der Liste"
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "du erreichst HolyArrs über den Proxy unter {ip}; lass ihn in der Liste",
+	"server.library.is-not-at-the-new-path": "{name} liegt nicht am neuen Pfad",
+	"server.library.bytes-at-the-new-path-but": "{name} hat am neuen Pfad {got} Bytes, in der Bibliothek aber {want} Bytes",
+	"server.library.files-in-this-library-folder-changed": "Dateien in diesem Bibliotheksordner haben sich während der Prüfung des neuen Pfads geändert; versuche es erneut",
+	"server.library.the-folder-does-not-exist": "der Ordner existiert nicht",
+	"server.library.the-path-must-be-an-absolute": "der Pfad muss ein absoluter Ordnerpfad sein, kein ganzes Laufwerk und nicht im oder um den Config-Ordner",
+	"server.library.that-folder-or-one-inside-or": "dieser Ordner, oder einer darin oder darum, ist schon ein Bibliotheksordner"
 }

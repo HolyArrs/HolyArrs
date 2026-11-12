@@ -1209,5 +1209,11 @@
 	"server.accounts.pick-a-person-for-local-visitors": "выберите человека для локальных визитов",
 	"server.accounts.there-is-no-owner-yet": "владельца пока нет",
 	"server.accounts.change-trusted-proxies-in-the-browser": "меняйте доверенные прокси в браузере, войдя по паролю",
-	"server.accounts.you-reach-holyarrs-through-the-proxy": "вы заходите в HolyArrs через прокси {ip}; оставьте его в списке"
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "вы заходите в HolyArrs через прокси {ip}; оставьте его в списке",
+	"server.library.is-not-at-the-new-path": "{name} нет по новому пути",
+	"server.library.bytes-at-the-new-path-but": "{name}: {got} байт по новому пути, но {want} байт в Библиотеке",
+	"server.library.files-in-this-library-folder-changed": "файлы в этой папке Библиотеки изменились во время проверки нового пути; попробуйте ещё раз",
+	"server.library.the-folder-does-not-exist": "папка не существует",
+	"server.library.the-path-must-be-an-absolute": "путь должен быть полным путём к папке, не целым диском и не внутри или вокруг папки настроек",
+	"server.library.that-folder-or-one-inside-or": "эта папка, или папка внутри или вокруг неё, уже папка Медиатеки"
 }

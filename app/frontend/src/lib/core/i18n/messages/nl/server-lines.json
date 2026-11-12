@@ -1209,5 +1209,11 @@
 	"server.accounts.pick-a-person-for-local-visitors": "kies een persoon voor lokale bezoeken",
 	"server.accounts.there-is-no-owner-yet": "er is nog geen eigenaar",
 	"server.accounts.change-trusted-proxies-in-the-browser": "wijzig vertrouwde proxy's in de browser, ingelogd met je wachtwoord",
-	"server.accounts.you-reach-holyarrs-through-the-proxy": "je bereikt HolyArrs via de proxy op {ip}; laat die in de lijst staan"
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "je bereikt HolyArrs via de proxy op {ip}; laat die in de lijst staan",
+	"server.library.is-not-at-the-new-path": "{name} staat niet op het nieuwe pad",
+	"server.library.bytes-at-the-new-path-but": "{name} is {got} bytes op het nieuwe pad, maar {want} bytes in de Bibliotheek",
+	"server.library.files-in-this-library-folder-changed": "bestanden in deze Bibliotheekmap zijn veranderd tijdens het controleren van het nieuwe pad; probeer het opnieuw",
+	"server.library.the-folder-does-not-exist": "de map bestaat niet",
+	"server.library.the-path-must-be-an-absolute": "het pad moet een absoluut mappad zijn, geen hele schijf en niet in of rond de configmap",
+	"server.library.that-folder-or-one-inside-or": "die map, of een map erin of eromheen, is al een Bibliotheekmap"
 }

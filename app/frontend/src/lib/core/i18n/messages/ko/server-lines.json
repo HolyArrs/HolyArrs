@@ -1209,5 +1209,11 @@
 	"server.accounts.pick-a-person-for-local-visitors": "로컬 방문자에게 쓸 사람을 고르세요",
 	"server.accounts.there-is-no-owner-yet": "아직 소유자가 없습니다",
 	"server.accounts.change-trusted-proxies-in-the-browser": "신뢰하는 프록시는 브라우저에서 비밀번호로 로그인한 뒤 바꾸세요",
-	"server.accounts.you-reach-holyarrs-through-the-proxy": "{ip} 프록시를 통해 HolyArrs에 접속 중입니다. 목록에 남겨 두세요"
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "{ip} 프록시를 통해 HolyArrs에 접속 중입니다. 목록에 남겨 두세요",
+	"server.library.is-not-at-the-new-path": "{name}이(가) 새 경로에 없습니다",
+	"server.library.bytes-at-the-new-path-but": "{name}은(는) 새 경로에서 {got}바이트지만 라이브러리에서는 {want}바이트입니다",
+	"server.library.files-in-this-library-folder-changed": "새 경로를 확인하는 동안 이 라이브러리 폴더의 파일이 바뀌었습니다. 다시 시도하세요",
+	"server.library.the-folder-does-not-exist": "폴더가 없습니다",
+	"server.library.the-path-must-be-an-absolute": "경로는 폴더의 절대 경로여야 합니다. 드라이브 전체나 설정 폴더 안이나 그 주변은 안 됩니다",
+	"server.library.that-folder-or-one-inside-or": "이 폴더 또는 그 안이나 주변의 폴더가 이미 라이브러리 폴더입니다"
 }

@@ -488,6 +488,7 @@ PUT /api/v1/downloads/{id}/edition auth=manage_library scope=write assurance=fal
 PUT /api/v1/downloads/{id}/files auth=manage_library scope=admin assurance=false part=core
 PUT /api/v1/episodes/{id} auth=manage_library scope=write assurance=false part=shows
 PUT /api/v1/library-folders/{id} auth=settings scope=write assurance=false part=core
+PUT /api/v1/library-folders/{id}/path auth=settings scope=write assurance=false part=core
 PUT /api/v1/media-servers/{id} auth=settings scope=write assurance=false part=core
 PUT /api/v1/metadata/album/{mbid}/follow auth=signed_in scope=write assurance=false part=music
 PUT /api/v1/metadata/movie/{tmdb_id}/follow auth=signed_in scope=write assurance=false part=wishlist

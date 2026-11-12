@@ -1209,5 +1209,11 @@
 	"server.accounts.pick-a-person-for-local-visitors": "виберіть людину для локальних візитів",
 	"server.accounts.there-is-no-owner-yet": "власника ще немає",
 	"server.accounts.change-trusted-proxies-in-the-browser": "змінюйте довірені проксі в браузері, увійшовши з паролем",
-	"server.accounts.you-reach-holyarrs-through-the-proxy": "ви заходите в HolyArrs через проксі {ip}; залиште його в списку"
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "ви заходите в HolyArrs через проксі {ip}; залиште його в списку",
+	"server.library.is-not-at-the-new-path": "{name} немає за новим шляхом",
+	"server.library.bytes-at-the-new-path-but": "{name}: {got} байт за новим шляхом, але {want} байт у Бібліотеці",
+	"server.library.files-in-this-library-folder-changed": "файли в цій папці Бібліотеки змінилися під час перевірки нового шляху; спробуйте ще раз",
+	"server.library.the-folder-does-not-exist": "теки не існує",
+	"server.library.the-path-must-be-an-absolute": "шлях має бути повним шляхом до теки, не цілим диском і не всередині чи навколо теки налаштувань",
+	"server.library.that-folder-or-one-inside-or": "ця тека, або тека в ній чи навколо неї, уже тека бібліотеки"
 }

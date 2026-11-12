@@ -17715,6 +17715,97 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/library-folders/{id}/path": {
+      "put": {
+        "description": "For files already moved to a new place (a new mount point, a renamed share). The new path is checked like a new folder's. Then every present file (titles deleted from the Library left out) must be at the new path with a size the Library knows for it, recorded at import or read by the last rescan; the first that is not stops the change, and the 409 answer names it in file. Only then is the path saved and the folder checked again. Nothing on disk is moved.",
+        "operationId": "changeFolderPath",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Folder"
+                }
+              }
+            },
+            "description": "Changed and checked."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not a full folder path, the config folder, or a folder that does not exist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such folder."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "file": {
+                      "description": "The first file missing at the new path or of another size, under the folder.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Inside or around another Library folder, files changed during the check, or a file is not at the new path (file names it)."
+          }
+        },
+        "summary": "Change a Library folder's path",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/library-folders/{id}/scan": {
       "post": {
         "description": "Queues a dry run that matches each folder to a TMDB movie with a confidence score; nothing is written. GET /api/v1/jobs/{id} then holds result.plan (an AdoptPlan). At most adopt_scan_limit folders (default 5000) are read, in name order; when plan.more is true, scan again with after set to plan.next for the rest. A folder whose TMDB lookup fails is unmatched with the reason instead of stopping the scan. A {tmdb-N} tag in a folder name wins over the name and year. A show Library folder (5.2.2) matches each folder to a show at the show details source (a {tvdb-N}, {tmdb-N}, {tvmaze-N} or {imdb-ttN} tag wins), and lists each video under files with the episodes its name gives (S01E02, multi-episode names, an air day or a running number) or why it gives none; plan.kind says movie or show, and plan.warning is set when the Library folder is empty while the Library knows files in it (a drive or share not mounted). A music Library folder reads at most music_adopt_scan_limit artist folders (default 200); its MusicBrainz lookups wait behind album imports, searches and staff, each artist folder's result is saved to the Job as it is done (plan.partial), and each album lists at most 40 files (album.cut).",

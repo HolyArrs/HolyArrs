@@ -1209,5 +1209,11 @@
 	"server.accounts.pick-a-person-for-local-visitors": "请为本地访问者选择一个人",
 	"server.accounts.there-is-no-owner-yet": "还没有所有者",
 	"server.accounts.change-trusted-proxies-in-the-browser": "请在浏览器中用密码登录后更改受信任的代理",
-	"server.accounts.you-reach-holyarrs-through-the-proxy": "你通过 {ip} 的代理访问 HolyArrs；请把它保留在列表中"
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "你通过 {ip} 的代理访问 HolyArrs；请把它保留在列表中",
+	"server.library.is-not-at-the-new-path": "{name} 不在新路径下",
+	"server.library.bytes-at-the-new-path-but": "{name} 在新路径下为 {got} 字节，但在媒体库中为 {want} 字节",
+	"server.library.files-in-this-library-folder-changed": "检查新路径时，此媒体库文件夹中的文件发生了变化；请重试",
+	"server.library.the-folder-does-not-exist": "文件夹不存在",
+	"server.library.the-path-must-be-an-absolute": "路径必须是文件夹的绝对路径，不能是整个磁盘，也不能在配置文件夹之内或周围",
+	"server.library.that-folder-or-one-inside-or": "这个文件夹，或其中或周围的文件夹，已是媒体库文件夹"
 }

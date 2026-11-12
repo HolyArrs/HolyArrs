@@ -1209,5 +1209,11 @@
 	"server.accounts.pick-a-person-for-local-visitors": "wybierz osobę dla wizyt lokalnych",
 	"server.accounts.there-is-no-owner-yet": "nie ma jeszcze właściciela",
 	"server.accounts.change-trusted-proxies-in-the-browser": "zmieniaj zaufane proxy w przeglądarce, zalogowany hasłem",
-	"server.accounts.you-reach-holyarrs-through-the-proxy": "łączysz się z HolyArrs przez proxy {ip}; zostaw je na liście"
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "łączysz się z HolyArrs przez proxy {ip}; zostaw je na liście",
+	"server.library.is-not-at-the-new-path": "{name} nie ma w nowej ścieżce",
+	"server.library.bytes-at-the-new-path-but": "{name} ma {got} bajtów w nowej ścieżce, ale {want} bajtów w Bibliotece",
+	"server.library.files-in-this-library-folder-changed": "pliki w tym folderze Biblioteki zmieniły się podczas sprawdzania nowej ścieżki; spróbuj ponownie",
+	"server.library.the-folder-does-not-exist": "folder nie istnieje",
+	"server.library.the-path-must-be-an-absolute": "ścieżka musi być bezwzględną ścieżką folderu, nie całym dyskiem i nie w folderze konfiguracji ani wokół niego",
+	"server.library.that-folder-or-one-inside-or": "ten folder, albo folder w nim lub wokół niego, to już folder biblioteki"
 }
