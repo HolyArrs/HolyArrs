@@ -10,7 +10,7 @@ import (
 )
 
 // A title removed from the Library gets no subtitle work: no look, no
-// Missing row, no due search, and its pending wishes are cleaned (#285).
+// Missing row, no due search, and its pending wishes are cleaned.
 func TestRemovedTitle_GetsNoSubtitleWork(t *testing.T) {
 	f := newFix(t)
 	ctx := context.Background()
