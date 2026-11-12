@@ -41,6 +41,17 @@ describe('shiftGuess', () => {
 		expect(shiftGuess(ls, season(1, 4, 2))).toBeNull();
 	});
 
+	it('offers the shift again after it was undone', () => {
+		const ls = [left(1, 2, 1, 'unmatched'), left(2, 2, 2, 'unmatched')];
+		const g = shiftGuess(ls, season(1, 7, 5));
+		expect([g?.from, g?.to, g?.shift]).toEqual([2, 1, 5]);
+	});
+
+	it('skips an unmatched file whose episode is listed', () => {
+		const ls = [left(1, 1, 3, 'unmatched'), left(2, 1, 4, 'unmatched')];
+		expect(shiftGuess(ls, [...season(1, 4, 2), ...season(2, 6, 0)])).toBeNull();
+	});
+
 	it('skips dismissed files and other reasons', () => {
 		const ls = [left(1, 2, 1), { ...left(2, 2, 2), dismissed: true }, left(3, 2, 3, 'no_episode_numbers')];
 		expect(shiftGuess(ls, season(1, 4, 2))).toBeNull();

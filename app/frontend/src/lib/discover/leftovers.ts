@@ -44,8 +44,12 @@ export function reasonKey(l: Pick<Leftover, 'reason' | 'dropped_season'>): strin
 // one season gives no guess.
 export function shiftGuess(leftovers: Leftover[], episodes: MatchEpisode[]): ShiftGuess | null {
 	const bySeason = new Map<number, { file_id: number; e: number }[]>();
+	const listed = new Set(episodes.map((e) => `${e.season}x${e.episode}`));
 	for (const l of leftovers) {
-		if (l.dismissed || l.reason !== 'episode_not_listed' || !l.guess || l.guess.episodes.length !== 1) continue;
+		if (l.dismissed || !l.guess || l.guess.episodes.length !== 1) continue;
+		// A file unmatched by hand (an undone shift) counts while its episode is still off the list.
+		const off = l.reason === 'episode_not_listed' || (l.reason === 'unmatched' && !listed.has(`${l.guess.season}x${l.guess.episodes[0]}`));
+		if (!off) continue;
 		const list = bySeason.get(l.guess.season) ?? [];
 		list.push({ file_id: l.file_id, e: l.guess.episodes[0] });
 		bySeason.set(l.guess.season, list);
