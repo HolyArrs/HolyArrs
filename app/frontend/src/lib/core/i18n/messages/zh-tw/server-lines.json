@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "已手動刪除",
 	"server.downloads.marked-bad": "已標記為損壞",
 	"server.suggest.because-you-have": "因為你有{name}",
-	"server.health.downloader-save-folder": "下載器儲存資料夾"
+	"server.health.downloader-save-folder": "下載器儲存資料夾",
+	"server.library.files-matched-by-hand": "{name}：已手動配對 {n} 個檔案",
+	"server.library.no-such-file-in-this-title": "此作品中沒有該檔案",
+	"server.library.send-1-to-2000-files": "請傳送 1 到 2000 個檔案"
 }

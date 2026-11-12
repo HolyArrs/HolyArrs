@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Đã xóa thủ công",
 	"server.downloads.marked-bad": "Đã đánh dấu hỏng",
 	"server.suggest.because-you-have": "Vì bạn có {name}",
-	"server.health.downloader-save-folder": "Thư mục lưu của trình tải xuống"
+	"server.health.downloader-save-folder": "Thư mục lưu của trình tải xuống",
+	"server.library.files-matched-by-hand": "{name}: đã ghép {n} tệp bằng tay",
+	"server.library.no-such-file-in-this-title": "không có tệp đó trong mục này",
+	"server.library.send-1-to-2000-files": "gửi từ 1 đến 2000 tệp"
 }

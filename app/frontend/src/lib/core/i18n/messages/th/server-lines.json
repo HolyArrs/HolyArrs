@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "ลบด้วยตนเอง",
 	"server.downloads.marked-bad": "ทำเครื่องหมายว่าเสีย",
 	"server.suggest.because-you-have": "เพราะคุณมี {name}",
-	"server.health.downloader-save-folder": "โฟลเดอร์บันทึกของตัวดาวน์โหลด"
+	"server.health.downloader-save-folder": "โฟลเดอร์บันทึกของตัวดาวน์โหลด",
+	"server.library.files-matched-by-hand": "{name}: จับคู่ด้วยมือ {n} ไฟล์",
+	"server.library.no-such-file-in-this-title": "ไม่มีไฟล์นี้ในรายการนี้",
+	"server.library.send-1-to-2000-files": "ส่ง 1 ถึง 2000 ไฟล์"
 }

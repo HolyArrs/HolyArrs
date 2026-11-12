@@ -108,6 +108,7 @@ func (s *Service) Register(q *jobs.Queue) {
 	q.Handle(KindScanLibrary, s.handleScanLibrary)
 	q.Handle(KindAdopt, s.handleAdopt)
 	q.Handle(KindRescan, s.handleRescan)
+	q.Handle(KindRescanTitle, s.handleRescanTitle)
 	q.Handle(KindRecheckPickRules, s.handleRecheckPickRules)
 }
 

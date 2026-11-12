@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "حُذف يدويًا",
 	"server.downloads.marked-bad": "وُسم بأنه تالف",
 	"server.suggest.because-you-have": "لأن لديك {name}",
-	"server.health.downloader-save-folder": "مجلد حفظ برنامج التنزيل"
+	"server.health.downloader-save-folder": "مجلد حفظ برنامج التنزيل",
+	"server.library.files-matched-by-hand": "{name}: تمت مطابقة {n} ملفات يدويًا",
+	"server.library.no-such-file-in-this-title": "لا يوجد ملف كهذا في هذا العنوان",
+	"server.library.send-1-to-2000-files": "أرسل من 1 إلى 2000 ملف"
 }

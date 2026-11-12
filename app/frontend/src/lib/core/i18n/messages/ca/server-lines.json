@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Esborrat a mà",
 	"server.downloads.marked-bad": "Marcat com a dolent",
 	"server.suggest.because-you-have": "Perquè tens {name}",
-	"server.health.downloader-save-folder": "Carpeta de desament del gestor de baixades"
+	"server.health.downloader-save-folder": "Carpeta de desament del gestor de baixades",
+	"server.library.files-matched-by-hand": "{name}: {n} fitxers assignats a mà",
+	"server.library.no-such-file-in-this-title": "no hi ha aquest fitxer en aquest títol",
+	"server.library.send-1-to-2000-files": "envia d'1 a 2000 fitxers"
 }

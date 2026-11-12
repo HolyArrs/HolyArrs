@@ -432,6 +432,7 @@ discord_id
 discs
 diskspace1
 diskspace2
+dismissed
 display_name
 display_priorities
 display_priority
@@ -475,6 +476,7 @@ downloads_today
 draft
 dropped
 dropped_at
+dropped_season
 dry
 dry_run
 duplicates
@@ -1365,6 +1367,7 @@ remove_search_again
 remove_turn_down
 removed
 rename_on_import
+replace
 replace_vanished
 replaced
 replaces_file_id

@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Eytt handvirkt",
 	"server.downloads.marked-bad": "Merkt sem slæmt",
 	"server.suggest.because-you-have": "Af því að þú átt {name}",
-	"server.health.downloader-save-folder": "Vistunarmappa niðurhalara"
+	"server.health.downloader-save-folder": "Vistunarmappa niðurhalara",
+	"server.library.files-matched-by-hand": "{name}: {n} skrár tengdar handvirkt",
+	"server.library.no-such-file-in-this-title": "engin slík skrá í þessum titli",
+	"server.library.send-1-to-2000-files": "sendu 1 til 2000 skrár"
 }

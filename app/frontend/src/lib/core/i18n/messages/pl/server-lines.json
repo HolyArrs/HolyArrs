@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Usunięto ręcznie",
 	"server.downloads.marked-bad": "Oznaczono jako wadliwe",
 	"server.suggest.because-you-have": "Bo masz {name}",
-	"server.health.downloader-save-folder": "Folder zapisu Downloadera"
+	"server.health.downloader-save-folder": "Folder zapisu Downloadera",
+	"server.library.files-matched-by-hand": "{name}: ręcznie dopasowane pliki: {n}",
+	"server.library.no-such-file-in-this-title": "nie ma takiego pliku w tym tytule",
+	"server.library.send-1-to-2000-files": "wyślij od 1 do 2000 plików"
 }

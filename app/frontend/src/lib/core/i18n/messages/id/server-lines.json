@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Dihapus secara manual",
 	"server.downloads.marked-bad": "Ditandai buruk",
 	"server.suggest.because-you-have": "Karena kamu punya {name}",
-	"server.health.downloader-save-folder": "Folder simpan Pengunduh"
+	"server.health.downloader-save-folder": "Folder simpan Pengunduh",
+	"server.library.files-matched-by-hand": "{name}: {n} file dicocokkan manual",
+	"server.library.no-such-file-in-this-title": "tidak ada file seperti itu di judul ini",
+	"server.library.send-1-to-2000-files": "kirim 1 sampai 2000 file"
 }

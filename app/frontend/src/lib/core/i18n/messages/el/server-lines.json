@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Διαγράφηκε χειροκίνητα",
 	"server.downloads.marked-bad": "Σημειώθηκε ως κακό",
 	"server.suggest.because-you-have": "Επειδή έχετε το {name}",
-	"server.health.downloader-save-folder": "Φάκελος αποθήκευσης του Προγράμματος λήψης"
+	"server.health.downloader-save-folder": "Φάκελος αποθήκευσης του Προγράμματος λήψης",
+	"server.library.files-matched-by-hand": "{name}: {n} αρχεία αντιστοιχίστηκαν με το χέρι",
+	"server.library.no-such-file-in-this-title": "δεν υπάρχει τέτοιο αρχείο σε αυτόν τον τίτλο",
+	"server.library.send-1-to-2000-files": "στείλε από 1 έως 2000 αρχεία"
 }

@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Odstránené ručne",
 	"server.downloads.marked-bad": "Označené ako chybné",
 	"server.suggest.because-you-have": "Pretože máte {name}",
-	"server.health.downloader-save-folder": "Priečinok na ukladanie Sťahovača"
+	"server.health.downloader-save-folder": "Priečinok na ukladanie Sťahovača",
+	"server.library.files-matched-by-hand": "{name}: ručne priradené súbory: {n}",
+	"server.library.no-such-file-in-this-title": "taký súbor v tomto titule nie je",
+	"server.library.send-1-to-2000-files": "pošlite 1 až 2000 súborov"
 }

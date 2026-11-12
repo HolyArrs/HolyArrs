@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Handmatig verwijderd",
 	"server.downloads.marked-bad": "Als slecht gemarkeerd",
 	"server.suggest.because-you-have": "Omdat je {name} hebt",
-	"server.health.downloader-save-folder": "Opslagmap van de Downloader"
+	"server.health.downloader-save-folder": "Opslagmap van de Downloader",
+	"server.library.files-matched-by-hand": "{name}: {n} bestanden met de hand gekoppeld",
+	"server.library.no-such-file-in-this-title": "zo'n bestand bestaat niet in deze titel",
+	"server.library.send-1-to-2000-files": "stuur 1 tot 2000 bestanden"
 }

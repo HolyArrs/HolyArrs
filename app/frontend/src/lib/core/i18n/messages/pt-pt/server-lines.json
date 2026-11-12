@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Apagado manualmente",
 	"server.downloads.marked-bad": "Marcado como mau",
 	"server.suggest.because-you-have": "Porque tem {name}",
-	"server.health.downloader-save-folder": "Pasta de salvamento do gestor de downloads"
+	"server.health.downloader-save-folder": "Pasta de salvamento do gestor de downloads",
+	"server.library.files-matched-by-hand": "{name}: {n} ficheiros associados à mão",
+	"server.library.no-such-file-in-this-title": "não existe esse ficheiro neste título",
+	"server.library.send-1-to-2000-files": "envie de 1 a 2000 ficheiros"
 }

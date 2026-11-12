@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Удалено вручную",
 	"server.downloads.marked-bad": "Помечено как плохое",
 	"server.suggest.because-you-have": "Потому что у вас есть {name}",
-	"server.health.downloader-save-folder": "Папка сохранения загрузчика"
+	"server.health.downloader-save-folder": "Папка сохранения загрузчика",
+	"server.library.files-matched-by-hand": "{name}: файлов сопоставлено вручную: {n}",
+	"server.library.no-such-file-in-this-title": "такого файла у этого тайтла нет",
+	"server.library.send-1-to-2000-files": "отправьте от 1 до 2000 файлов"
 }

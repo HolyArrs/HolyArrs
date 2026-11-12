@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Slettet manuelt",
 	"server.downloads.marked-bad": "Merket som dårlig",
 	"server.suggest.because-you-have": "Fordi du har {name}",
-	"server.health.downloader-save-folder": "Nedlasterens lagringsmappe"
+	"server.health.downloader-save-folder": "Nedlasterens lagringsmappe",
+	"server.library.files-matched-by-hand": "{name}: {n} filer koblet for hånd",
+	"server.library.no-such-file-in-this-title": "ingen slik fil i denne tittelen",
+	"server.library.send-1-to-2000-files": "send 1 til 2000 filer"
 }

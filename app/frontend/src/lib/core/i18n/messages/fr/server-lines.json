@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Supprimé à la main",
 	"server.downloads.marked-bad": "Marqué comme mauvais",
 	"server.suggest.because-you-have": "Parce que vous avez {name}",
-	"server.health.downloader-save-folder": "Dossier d'enregistrement du client de téléchargement"
+	"server.health.downloader-save-folder": "Dossier d'enregistrement du client de téléchargement",
+	"server.library.files-matched-by-hand": "{name} : {n} fichiers associés à la main",
+	"server.library.no-such-file-in-this-title": "aucun fichier de ce type dans ce titre",
+	"server.library.send-1-to-2000-files": "envoyez de 1 à 2000 fichiers"
 }

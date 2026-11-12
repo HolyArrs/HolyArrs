@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "به‌صورت دستی حذف شد",
 	"server.downloads.marked-bad": "به‌عنوان خراب علامت خورد",
 	"server.suggest.because-you-have": "چون {name} را دارید",
-	"server.health.downloader-save-folder": "پوشه ذخیره دانلودر"
+	"server.health.downloader-save-folder": "پوشه ذخیره دانلودر",
+	"server.library.files-matched-by-hand": "{name}: {n} فایل به‌صورت دستی تطبیق یافت",
+	"server.library.no-such-file-in-this-title": "چنین فایلی در این عنوان نیست",
+	"server.library.send-1-to-2000-files": "۱ تا ۲۰۰۰ فایل بفرستید"
 }

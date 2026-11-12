@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "נמחק ידנית",
 	"server.downloads.marked-bad": "סומן כפגום",
 	"server.suggest.because-you-have": "כי יש לך את {name}",
-	"server.health.downloader-save-folder": "תיקיית השמירה של המוריד"
+	"server.health.downloader-save-folder": "תיקיית השמירה של המוריד",
+	"server.library.files-matched-by-hand": "{name}: {n} קבצים הותאמו ידנית",
+	"server.library.no-such-file-in-this-title": "אין קובץ כזה בכותר הזה",
+	"server.library.send-1-to-2000-files": "יש לשלוח בין 1 ל־2000 קבצים"
 }

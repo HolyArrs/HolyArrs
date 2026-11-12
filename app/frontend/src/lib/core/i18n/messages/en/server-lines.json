@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Deleted by hand",
 	"server.downloads.marked-bad": "Marked bad",
 	"server.suggest.because-you-have": "Because you have {name}",
-	"server.health.downloader-save-folder": "Downloader save folder"
+	"server.health.downloader-save-folder": "Downloader save folder",
+	"server.library.files-matched-by-hand": "{name}: {n} files matched by hand",
+	"server.library.no-such-file-in-this-title": "no such file in this title",
+	"server.library.send-1-to-2000-files": "send 1 to 2000 files"
 }

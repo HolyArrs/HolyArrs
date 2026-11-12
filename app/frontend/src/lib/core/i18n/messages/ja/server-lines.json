@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "手動で削除",
 	"server.downloads.marked-bad": "不良としてマーク",
 	"server.suggest.because-you-have": "{name} を持っているので",
-	"server.health.downloader-save-folder": "ダウンローダーの保存先フォルダー"
+	"server.health.downloader-save-folder": "ダウンローダーの保存先フォルダー",
+	"server.library.files-matched-by-hand": "{name}: {n} 件を手動で照合しました",
+	"server.library.no-such-file-in-this-title": "このタイトルにそのファイルはありません",
+	"server.library.send-1-to-2000-files": "1〜2000 件のファイルを送ってください"
 }

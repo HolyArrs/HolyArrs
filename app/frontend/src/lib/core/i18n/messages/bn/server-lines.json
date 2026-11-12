@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "হাতে মুছে ফেলা হয়েছে",
 	"server.downloads.marked-bad": "খারাপ হিসেবে চিহ্নিত",
 	"server.suggest.because-you-have": "কারণ আপনার কাছে {name} আছে",
-	"server.health.downloader-save-folder": "ডাউনলোডারের সেভ ফোল্ডার"
+	"server.health.downloader-save-folder": "ডাউনলোডারের সেভ ফোল্ডার",
+	"server.library.files-matched-by-hand": "{name}: {n}টি ফাইল হাতে মেলানো হয়েছে",
+	"server.library.no-such-file-in-this-title": "এই টাইটেলে এমন কোনো ফাইল নেই",
+	"server.library.send-1-to-2000-files": "১ থেকে ২০০০টি ফাইল পাঠান"
 }

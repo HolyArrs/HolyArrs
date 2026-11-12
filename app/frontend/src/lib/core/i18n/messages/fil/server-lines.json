@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Binura nang mano-mano",
 	"server.downloads.marked-bad": "Minarkahang sira",
 	"server.suggest.because-you-have": "Dahil mayroon kang {name}",
-	"server.health.downloader-save-folder": "Save folder ng Downloader"
+	"server.health.downloader-save-folder": "Save folder ng Downloader",
+	"server.library.files-matched-by-hand": "{name}: {n} file ang itinugma nang manu-mano",
+	"server.library.no-such-file-in-this-title": "walang ganoong file sa title na ito",
+	"server.library.send-1-to-2000-files": "magpadala ng 1 hanggang 2000 file"
 }

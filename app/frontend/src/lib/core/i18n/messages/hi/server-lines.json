@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "हाथ से हटाया गया",
 	"server.downloads.marked-bad": "खराब के रूप में चिह्नित",
 	"server.suggest.because-you-have": "क्योंकि आपके पास {name} है",
-	"server.health.downloader-save-folder": "डाउनलोडर का सेव फ़ोल्डर"
+	"server.health.downloader-save-folder": "डाउनलोडर का सेव फ़ोल्डर",
+	"server.library.files-matched-by-hand": "{name}: {n} फ़ाइलें हाथ से मिलाई गईं",
+	"server.library.no-such-file-in-this-title": "इस टाइटल में ऐसी कोई फ़ाइल नहीं",
+	"server.library.send-1-to-2000-files": "1 से 2000 फ़ाइलें भेजें"
 }

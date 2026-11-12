@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Ručno izbrisano",
 	"server.downloads.marked-bad": "Označeno kao loše",
 	"server.suggest.because-you-have": "Jer imate {name}",
-	"server.health.downloader-save-folder": "Mapa za spremanje preuzimatelja"
+	"server.health.downloader-save-folder": "Mapa za spremanje preuzimatelja",
+	"server.library.files-matched-by-hand": "{name}: ručno povezane datoteke: {n}",
+	"server.library.no-such-file-in-this-title": "nema takve datoteke u ovom naslovu",
+	"server.library.send-1-to-2000-files": "pošaljite od 1 do 2000 datoteka"
 }

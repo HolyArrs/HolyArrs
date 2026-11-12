@@ -535,7 +535,11 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 				continue
 			}
 		}
+		reason := leftoverReason(af, len(slotIDs))
 		if note != 0 {
+			if err := s.Store.Write(ctx, func(tx *sql.Tx) error { return mediafiles.SetLeftoverReason(ctx, tx, note, reason) }); err != nil {
+				return n, err
+			}
 			continue
 		}
 		release := strings.TrimSuffix(path.Base(af.Path), path.Ext(af.Path))
@@ -544,7 +548,7 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 			info = map[string]any{}
 		}
 		f := &mediafiles.File{SlotIDs: slotIDs, VersionID: v.ID, RelativePath: af.Path, Size: af.Size, AddedAt: s.Clock(), Languages: []string{},
-			MediaInfo: info, ReleaseName: &release, Origin: "found", PlacedBy: "none", Role: "main", State: "present"}
+			MediaInfo: info, ReleaseName: &release, Origin: "found", PlacedBy: "none", Role: "main", State: "present", LeftoverReason: &reason}
 		f.Languages = library.InspectedLanguages(info)
 		if err := s.Store.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "files", f, by); return err }); err != nil {
 			return n, err
@@ -553,4 +557,22 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 		known[strings.ToLower(af.Path)] = true
 	}
 	return n, nil
+}
+
+// leftoverReason is the short key the app translates for why a found file
+// fills no episode; slots is how many of its episodes have a Slot.
+func leftoverReason(af library.AdoptEpisodeFile, slots int) string {
+	switch {
+	case len(af.Keys) > 0 && slots == len(af.Keys):
+		return "episode_has_file"
+	case len(af.Keys) > 0:
+		return "episode_not_listed"
+	case strings.Contains(af.Why, "no episode numbers"):
+		return "no_episode_numbers"
+	case strings.Contains(af.Why, "whole seasons"):
+		return "whole_season"
+	case strings.Contains(af.Why, "bigger file"):
+		return "bigger_file_same_episode"
+	}
+	return "episode_not_listed"
 }

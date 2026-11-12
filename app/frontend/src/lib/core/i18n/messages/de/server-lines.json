@@ -1271,5 +1271,8 @@
 	"server.downloads.deleted-by-hand": "Von Hand gelöscht",
 	"server.downloads.marked-bad": "Als fehlerhaft markiert",
 	"server.suggest.because-you-have": "Weil du {name} hast",
-	"server.health.downloader-save-folder": "Speicherordner des Downloaders"
+	"server.health.downloader-save-folder": "Speicherordner des Downloaders",
+	"server.library.files-matched-by-hand": "{name}: {n} Dateien von Hand zugeordnet",
+	"server.library.no-such-file-in-this-title": "keine solche Datei in diesem Titel",
+	"server.library.send-1-to-2000-files": "1 bis 2000 Dateien senden"
 }
