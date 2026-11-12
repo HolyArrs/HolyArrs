@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Aanvragen vanuit Plex-watchlists",
 	"settings.requests.plexOnHint": "Elke persoon zet dit zelf aan in Mijn account. Hun limieten gelden.",
 	"settings.requests.plexEveryone": "Aanzetten voor iedereen die met Plex inlogt",
-	"settings.requests.plexEveryoneHint": "Iedereen kan het voor zichzelf uitzetten in Mijn account."
+	"settings.requests.plexEveryoneHint": "Iedereen kan het voor zichzelf uitzetten in Mijn account.",
+	"settings.requests.plexFriends": "Plex-vrienden meenemen",
+	"settings.requests.plexFriendsHint": "Vrienden die je uit Plex hebt geïmporteerd. Gelezen met je Plex-koppeling; de limieten van elke vriend gelden.",
+	"settings.requests.plexFriendsNoLink": "Koppel eerst Plex in Instellingen › Inloggen.",
+	"settings.requests.plexFriendsNone": "Nog niemand uit Plex geïmporteerd.",
+	"settings.requests.plexFriendsRead": "Gelezen {when}",
+	"settings.requests.plexFriendsNotYet": "Nog niet gelezen",
+	"settings.requests.plexFriendsAsked": "Aangevraagd: {n}"
 }

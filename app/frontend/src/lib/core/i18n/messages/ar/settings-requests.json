@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "اطلب من قوائم مشاهدة Plex",
 	"settings.requests.plexOnHint": "يفعّلها كل شخص في حسابي. وتنطبق عليه حدوده.",
 	"settings.requests.plexEveryone": "التشغيل لكل من يسجّل الدخول باستخدام Plex",
-	"settings.requests.plexEveryoneHint": "يمكن لأي شخص إيقافه لنفسه من حسابي."
+	"settings.requests.plexEveryoneHint": "يمكن لأي شخص إيقافه لنفسه من حسابي.",
+	"settings.requests.plexFriends": "تضمين أصدقاء Plex",
+	"settings.requests.plexFriendsHint": "الأصدقاء الذين استوردتهم من Plex. تُقرأ قوائمهم عبر ربط Plex الخاص بك، وتسري حدود كل صديق.",
+	"settings.requests.plexFriendsNoLink": "اربط Plex أولًا من الإعدادات › تسجيل الدخول.",
+	"settings.requests.plexFriendsNone": "لم يُستورد أحد من Plex بعد.",
+	"settings.requests.plexFriendsRead": "قُرئت {when}",
+	"settings.requests.plexFriendsNotYet": "لم تُقرأ بعد",
+	"settings.requests.plexFriendsAsked": "طلبات: {n}"
 }

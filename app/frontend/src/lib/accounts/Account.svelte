@@ -19,6 +19,7 @@
 	import { page } from '$app/state';
 	import { personName } from '#lib/core/plain.ts';
 	import { api } from '#lib/core/api.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { session } from '../core/session.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
@@ -449,7 +450,7 @@
 				</div>
 				<div class="ctl"><Button variant="secondary" disabled={watchBusy || !watch.can_read} onclick={checkWatch}>{t('accounts.account.readNow')}</Button></div>
 			</div>
-			{#if watch.error}<p class="form-error" role="alert" data-testid="watchlist-error">{watch.error}</p>{/if}
+			{#if watch.error}<p class="form-error" role="alert" data-testid="watchlist-error">{serverWords(watch.error)}</p>{/if}
 		{/if}
 		{#if watch.items.length}
 			<ul class="follows" data-testid="watchlist-items" aria-label={t('accounts.account.newest')}>

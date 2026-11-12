@@ -69,6 +69,8 @@ By default each person turns it on for themselves in **My account**, for movies,
 
 Turn on **Turn on for everyone who signs in with Plex** to read everyone's watchlist without asking them first. People who signed in another way are left out. Anyone can still turn it off for themselves in **My account**, and HolyArrs keeps their choice.
 
+Turn on **Include Plex friends** to also read the watchlists of people you imported from Plex who never signed in to HolyArrs. HolyArrs reads them with your own Plex link, so link Plex in **Settings › Sign-in** first. Each friend's weekly limits and age-rating limits apply. The list under the switch shows each friend, when their watchlist was last read, how many titles it asked for, and any problem, such as a watchlist their Plex privacy setting hides from friends. Anyone who turns their watchlist off in **My account** is left alone.
+
 ## Related
 
 - [Approve or decline](approving.md)

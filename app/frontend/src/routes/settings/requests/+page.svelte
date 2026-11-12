@@ -6,7 +6,7 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import type { AskSettings } from '#lib/requests/index.ts';
+	import { PlexFriends, type AskSettings } from '#lib/requests/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { api } from '#lib/core/api.ts';
@@ -27,7 +27,8 @@
 		music_library_folder_id: 0,
 		music_pick_rules_id: 0,
 		plex_watchlists: false,
-		plex_watchlists_everyone: false
+		plex_watchlists_everyone: false,
+		plex_friends: false
 	});
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
@@ -190,6 +191,11 @@
 				<input id="plex-watchlists-everyone" type="checkbox" bind:checked={settings.plex_watchlists_everyone} disabled={!settings.plex_watchlists} />
 				<span><b>{t('settings.requests.plexEveryone')}</b><br /><span class="hint">{t('settings.requests.plexEveryoneHint')}</span></span>
 			</label>
+			<label class="checkline">
+				<input id="plex-friends" type="checkbox" bind:checked={settings.plex_friends} disabled={!settings.plex_watchlists} data-testid="plex-friends" />
+				<span><b>{t('settings.requests.plexFriends')}</b><br /><span class="hint">{t('settings.requests.plexFriendsHint')}</span></span>
+			</label>
+			<PlexFriends on={!!settings.plex_watchlists && !!settings.plex_friends} />
 		</SettingsCard>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</form>
