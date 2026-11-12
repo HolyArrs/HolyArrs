@@ -146,7 +146,7 @@ func newLabAlbum(t *testing.T) labAlbum {
 	x.m = &downloads.Manager{Store: s, SavePath: filepath.Join("/data/downloads/incomplete", lab414Cat)}
 	im := &importer.Importer{Store: s}
 	sr := &sources.Searcher{Store: s, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
-		_, _, _ = q.Enqueue(ctx, downloads.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID), domain.System)
+		_, _, _ = q.Enqueue(ctx, downloads.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, downloads.GrabKey(slotID, releaseID), domain.System)
 	}}
 	x.m.OnFailed = func(ctx context.Context, slotID int64) {
 		if err := sr.QueueAfterFailure(ctx, slotID, domain.System); err != nil {
