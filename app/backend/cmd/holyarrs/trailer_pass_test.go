@@ -208,7 +208,14 @@ func TestTrailerPassCoversEveryCard(t *testing.T) {
 	}
 	for _, tr := range pg.Tail {
 		for _, it := range tr.Items {
-			if !slices.Contains(asked(), "movie:"+it.TMDBID) {
+			k := it.Kind + ":" + it.TMDBID
+			if k == "movie:205" { // on the Never-add list: never looked up
+				if slices.Contains(asked(), k) {
+					t.Fatalf("Never-add card %s looked up", k)
+				}
+				continue
+			}
+			if !slices.Contains(asked(), k) {
 				t.Fatalf("tail card %s not looked up", it.TMDBID)
 			}
 		}
