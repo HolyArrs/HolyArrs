@@ -220,8 +220,8 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			m = mediafiles.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Music: true}), refs)
 		}
 
-		// A tagged Source's Release goes only to a Title sharing a tag. It is matched against every wanted Title first, so it never lands on a look-alike because the right one was left out.
-		if m.Title != nil && mediafiles.SourceServes(f.src.Tags, m.Title.Tags) {
+		// A tagged Source's Release goes only to a Title sharing a tag, on the Title or its Pick rules. It is matched against every wanted Title first, so it never lands on a look-alike because the right one was left out.
+		if m.Title != nil && mediafiles.SourceTakesTitle(f.src.Tags, m.Title.Tags, m.Title.RuleTags) {
 			byTitle[m.Title.ID] = append(byTitle[m.Title.ID], f)
 		}
 	}
@@ -534,9 +534,13 @@ func (s *Searcher) wantedTitleRefs(ctx context.Context) ([]mediafiles.TitleRef, 
 	if err != nil {
 		return nil, err
 	}
+	ruleTags, err := mediafiles.LookingRuleTags(ctx, s.Store.Read(), lookingStateNames())
+	if err != nil {
+		return nil, err
+	}
 	refs := make([]mediafiles.TitleRef, 0, len(titles))
 	for _, title := range titles {
-		ref := mediafiles.TitleRef{ID: title.ID, Name: title.Name, Aliases: title.Aliases, Tags: title.Tags}
+		ref := mediafiles.TitleRef{ID: title.ID, Name: title.Name, Aliases: title.Aliases, Tags: title.Tags, RuleTags: ruleTags[title.ID]}
 		if title.Year != nil {
 			ref.Year = *title.Year
 		}

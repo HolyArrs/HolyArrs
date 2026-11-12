@@ -32,7 +32,7 @@ func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bo
 		if src.Format == "rss" || hand && !src.UseFor.HandSearch || !hand && !src.UseFor.AutoSearch || tv && !handlesTV(src) || q.Music && !handlesMusic(src) || !tv && !q.Music && !handlesMovies(src) {
 			continue
 		}
-		if !mediafiles.SourceServes(src.Tags, titleTags) && !mediafiles.Shares(src.Tags, ruleTags) {
+		if !mediafiles.SourceTakesTitle(src.Tags, titleTags, ruleTags) {
 			skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: tagsWhy + strings.Join(src.Tags, ", ") + ") are not on this title"})
 			continue
 		}

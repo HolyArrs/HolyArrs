@@ -58,6 +58,13 @@ func SourceServes(source, title []string) bool {
 	return len(source) == 0 || Shares(source, title)
 }
 
+// SourceTakesTitle says whether a Source with these tags is read for a title:
+// it serves the title's own tags, or shares a tag with the title's Pick rules.
+// Search and the feed both use it.
+func SourceTakesTitle(source, title, rules []string) bool {
+	return SourceServes(source, title) || Shares(source, CleanTags(rules))
+}
+
 // Downloaders keeps the entries a title's grab may use: those sharing a tag
 // with the title when there are any, else those with no tags. tagsOf reads
 // an entry's tags. An empty result means no Downloader takes this title.

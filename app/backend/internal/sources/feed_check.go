@@ -145,7 +145,7 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 			if m.Title == nil && hasArtist {
 				m = mediafiles.MatchTitle(releasename.Parse(item.Title, releasename.Hints{Size: item.Size, Music: true}), refs)
 			}
-			if m.Title != nil && mediafiles.SourceServes(answer.src.Tags, m.Title.Tags) {
+			if m.Title != nil && mediafiles.SourceTakesTitle(answer.src.Tags, m.Title.Tags, m.Title.RuleTags) {
 				return true, prepared, nil
 			}
 		}
