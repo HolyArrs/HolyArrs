@@ -6,6 +6,21 @@ function reply(status: number, body?: unknown, headers: Record<string, string> =
 }
 
 describe('api client', () => {
+	it('asks for browsing answers at a fresh address after a hide, and leaves other reads alone', async () => {
+		const f = vi.fn(async () => reply(200, {}));
+		const c = createClient(f, () => undefined);
+		await c.get('/explore/head?type=all');
+		c.freshBrowsing();
+		await c.get('/explore/head?type=all');
+		await c.get('/metadata/movie/1');
+		await c.get('/users');
+		const urls = f.mock.calls.map((x) => String((x as unknown[])[0]));
+		expect(urls[0]).not.toContain('fresh=');
+		expect(urls[1]).toMatch(/\/explore\/head\?type=all&fresh=\d+$/);
+		expect(urls[2]).toMatch(/\/metadata\/movie\/1\?fresh=\d+$/);
+		expect(urls[3]).not.toContain('fresh=');
+	});
+
 	it('shares one request between identical reads and forgets it after a change', async () => {
 		const f = vi.fn(async () => reply(200, { n: [1] }));
 		const c = createClient(f);

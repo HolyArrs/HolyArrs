@@ -12,6 +12,7 @@ DELETE /api/v1/downloaders/{id} auth=settings scope=write assurance=false part=c
 DELETE /api/v1/explore/strip/counts auth=signed_in scope=write assurance=false part=media
 DELETE /api/v1/held auth=manage_library scope=write assurance=false part=media
 DELETE /api/v1/held/{id} auth=manage_library scope=write assurance=false part=media
+DELETE /api/v1/hidden/{id} auth=users scope=admin assurance=false part=media
 DELETE /api/v1/library-folders/{id} auth=settings scope=write assurance=false part=core
 DELETE /api/v1/media-servers/{id} auth=settings scope=write assurance=false part=core
 DELETE /api/v1/metadata/album/{mbid}/follow auth=signed_in scope=write assurance=false part=music
@@ -120,6 +121,7 @@ GET /api/v1/health/checks auth=manage_library scope=read assurance=false part=co
 GET /api/v1/health/disks auth=manage_library scope=read assurance=false part=core
 GET /api/v1/health/states auth=manage_library scope=health_read assurance=false part=core
 GET /api/v1/held auth=manage_library scope=read assurance=false part=media
+GET /api/v1/hidden auth=users scope=admin assurance=false part=media
 GET /api/v1/holding auth=manage_library scope=read assurance=false part=media
 GET /api/v1/home auth=signed_in scope=read assurance=false part=media
 GET /api/v1/imports auth=manage_library scope=read assurance=false part=core
@@ -376,6 +378,7 @@ POST /api/v1/explore/strip/counts auth=signed_in scope=write assurance=false par
 POST /api/v1/files/{id}/subtitles/choices auth=manage_library scope=write assurance=false part=subtitles
 POST /api/v1/files/{id}/subtitles/choose auth=manage_library scope=write assurance=false part=subtitles
 POST /api/v1/health/checks/run auth=manage_library scope=write assurance=false part=core
+POST /api/v1/hidden auth=users scope=admin assurance=false part=media
 POST /api/v1/holding/clean auth=manage_library scope=write assurance=false part=media
 POST /api/v1/holding/restore auth=manage_library scope=write assurance=false part=media
 POST /api/v1/library-folders auth=settings scope=write assurance=false part=core

@@ -121,6 +121,9 @@ var tableOwner = map[string]string{
 	"rename_steps":            "mediafiles",
 	"title_search":            "mediafiles",
 
+	// discover
+	"hidden": "discover",
+
 	// sources
 	"sources":      "sources",
 	"releases":     "sources",

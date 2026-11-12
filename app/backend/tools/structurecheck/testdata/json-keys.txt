@@ -700,6 +700,8 @@ hero
 hh
 hi
 hi_suffix
+hidden
+hides
 hint
 hints
 history

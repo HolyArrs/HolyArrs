@@ -61,6 +61,8 @@ type Deps struct {
 	Follow func(r *http.Request, titleID int64) error
 	// Added is the title view of a just added Title, also sent to live pages.
 	Added func(ctx context.Context, t mediafiles.Title) (any, error)
+	// Hidden marks a looked-up show the person's hides cover (nil: none).
+	Hidden func(ctx context.Context, kind, tmdbID string, genres []string) (hidden, drop bool)
 	// KindDefaultsFor fills an add's left-out fields from the saved defaults.
 	KindDefaultsFor func(ctx context.Context, kind string, sent map[string]json.RawMessage,
 		folder, rules *int64, keep **bool, search *bool) error
@@ -97,7 +99,7 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 		KidShows: func(r *http.Request, list []metadata.Show) []metadata.Show {
 			return h.KidShows(r.Context(), h.KidMax(r), list)
 		},
-		OpenAsk: h.OpenAsk, Defaults: h.showDefaults, Follow: h.Follow, Added: h.Added}).Routes(m)
+		OpenAsk: h.OpenAsk, Defaults: h.showDefaults, Follow: h.Follow, Added: h.Added, Hidden: h.Hidden}).Routes(m)
 	(&EpisodeHandlers{Store: h.Store, Lib: h.Library, TitleID: h.TitleID, Fail: h.Error, StateLabels: h.StateLabels, Trim: h.Trim}).Routes(m)
 	(&SeasonHandlers{Store: h.Store, Lib: h.Library, TitleID: h.TitleID, Fail: h.Error, PackNext: h.PackNext}).Routes(m)
 }
