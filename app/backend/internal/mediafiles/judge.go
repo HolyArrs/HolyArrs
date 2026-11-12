@@ -331,6 +331,9 @@ func sizeMidpoint(lo, hi int64) int64 { return lo + (hi-lo)/2 }
 // Judge runs the pipeline of pick-rules.md section 3.1 for one Release.
 // Hard steps all run so every refusal is reported at once.
 func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
+	if set.Match.Title != nil && rel.Parse.OriginalLanguage == "" {
+		rel.Parse.OriginalLanguage = set.Match.Title.OriginalLanguage
+	}
 	p := rel.Parse
 	if rel.Size > 0 {
 		p.Size = rel.Size
