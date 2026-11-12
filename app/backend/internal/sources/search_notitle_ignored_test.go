@@ -24,7 +24,7 @@ func idIgnoringSite(t *testing.T, byTitle ...string) *Client {
 }
 
 // TestSearch_IgnoredIDNoTitleHits: a site that ignores the id and finds
-// nothing by title gives no results, not its newest releases (#307).
+// nothing by title gives no results, not its newest releases.
 func TestSearch_IgnoredIDNoTitleHits(t *testing.T) {
 	q := Query{Title: "Cabin in the Woods", TV: true, Season: 1, Words: "S01", TVDB: 4242}
 	items, err := idIgnoringSite(t).Search(context.Background(), q)
