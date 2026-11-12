@@ -172,8 +172,8 @@ func (h *handler) getSize(w http.ResponseWriter, r *http.Request) {
 }
 
 // takeSizes copies the sent sizes and title onto the matching row, by id
-// and then by quality name; false when no row matches.
-func takeSizes(l []obj, in obj) bool {
+// and then by quality name; -1 when no row matches.
+func takeSizes(l []obj, in obj) int {
 	q, _ := in["quality"].(obj)
 	name := strOf(q["name"])
 	i := slices.IndexFunc(l, func(o obj) bool { return in["id"] != nil && sameID(o, int64(num(in["id"]))) })
@@ -181,14 +181,14 @@ func takeSizes(l []obj, in obj) bool {
 		i = slices.IndexFunc(l, func(o obj) bool { oq, _ := o["quality"].(obj); return strOf(oq["name"]) == name })
 	}
 	if i < 0 {
-		return false
+		return -1
 	}
 	for _, k := range []string{"minSize", "maxSize", "preferredSize", "title"} {
 		if v, ok := in[k]; ok {
 			l[i][k] = v
 		}
 	}
-	return true
+	return i
 }
 
 func (h *handler) putSizes(w http.ResponseWriter, r *http.Request) {
@@ -222,12 +222,13 @@ func (h *handler) putSize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	in["id"] = id
-	if !takeSizes(l, in) {
+	i := takeSizes(l, in)
+	if i < 0 {
 		notFound(w)
 		return
 	}
 	if h.saveAndFold(w, r, "sizes", l) {
-		writeJSON(w, http.StatusAccepted, l[slices.IndexFunc(l, func(o obj) bool { return sameID(o, id) })])
+		writeJSON(w, http.StatusAccepted, l[i])
 	}
 }
 

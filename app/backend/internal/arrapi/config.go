@@ -40,6 +40,9 @@ func readJSONBody(w http.ResponseWriter, r *http.Request, v any) bool {
 	if err == nil {
 		err = json.Unmarshal(b, v)
 	}
+	if o, ok := v.(*obj); err == nil && ok && *o == nil {
+		err = io.ErrUnexpectedEOF // null: there is no object to keep
+	}
 	if err != nil {
 		message(w, http.StatusBadRequest, "the body is not valid JSON for this route")
 		return false

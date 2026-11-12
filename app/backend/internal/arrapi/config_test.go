@@ -180,3 +180,22 @@ func TestConfig_NeedSettingsPermission(t *testing.T) {
 		}
 	}
 }
+
+func TestConfig_OddBodies(t *testing.T) {
+	h := newHookRig(t)
+	pushAll(t, h)
+	for _, path := range []string{"delayprofile", "delayprofile/1", "config/mediamanagement", "config/naming"} {
+		method := "PUT"
+		if path == "delayprofile" {
+			method = "POST"
+		}
+		if st, out := h.do("radarr", method, path, "null"); st != 400 {
+			t.Fatalf("%s %s null: %d %s", method, path, st, out)
+		}
+	}
+	// An id no row has, but a quality name one row has.
+	st, out := h.do("radarr", "PUT", "qualitydefinition/999", `{"quality":{"name":"Bluray-1080p"},"minSize":5}`)
+	if st != 202 || !strings.Contains(out, `"Bluray-1080p"`) {
+		t.Fatalf("by name: %d %s", st, out)
+	}
+}
