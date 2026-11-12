@@ -262,7 +262,7 @@
 	"health.word.working": "Virker",
 	"health.check.clearWaiting": "Downloads der venter på at blive ryddet væk",
 	"health.check.saveFolder": "Gemmemappe for",
-	"health.check.saveFolderWhy": "{app} har ingen gemmemappe, så HolyArrs kan ikke importere dens færdige downloads. Tilføj et stipar under Indstillinger > Downloadere.",
+	"health.check.saveFolderWhy": "{app} har ingen gemmemappe, så HolyArrs kan ikke importere dens færdige downloads. Tilføj et stipar under Indstillinger › Downloadere.",
 	"health.kind.clearWaiting": "Downloads der venter på at blive ryddet væk",
 	"health.kind.saveFolder": "Downloaderens gemmemappe"
 }

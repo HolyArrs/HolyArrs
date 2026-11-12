@@ -47,5 +47,5 @@
 	"settings.mediaServers.watchConfirmOff": "Turn off watch history? Everything read so far is deleted.",
 	"settings.mediaServers.watchTurnedOn": "Watch history on. The first read comes within 30 minutes.",
 	"settings.mediaServers.watchTurnedOff": "Watch history off",
-	"settings.mediaServers.watchFailed": "Couldn’t change watch history"
+	"settings.mediaServers.watchFailed": "Couldn't change watch history"
 }

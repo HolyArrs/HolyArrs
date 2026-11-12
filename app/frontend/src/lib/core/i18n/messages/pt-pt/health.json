@@ -262,7 +262,7 @@
 	"health.word.working": "A funcionar",
 	"health.check.clearWaiting": "Downloads à espera de limpeza",
 	"health.check.saveFolder": "Pasta de salvamento de",
-	"health.check.saveFolderWhy": "{app} não tem pasta de salvamento, por isso o HolyArrs não consegue importar as transferências concluídas. Adicione um par de caminhos em Definições > Gestores de downloads.",
+	"health.check.saveFolderWhy": "{app} não tem pasta de salvamento, por isso o HolyArrs não consegue importar as transferências concluídas. Adicione um par de caminhos em Definições › Gestores de downloads.",
 	"health.kind.clearWaiting": "Downloads à espera de limpeza",
 	"health.kind.saveFolder": "Pasta de salvamento do gestor de downloads"
 }
