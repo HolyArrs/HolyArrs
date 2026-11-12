@@ -366,6 +366,8 @@
 	"accounts.invite.confirm": "Confirme a senha",
 	"accounts.invite.joinSignIn": "Entrar e fazer login",
 	"accounts.language.label": "Idioma",
+	"accounts.language.top": "Mais usados",
+	"accounts.language.more": "Mais idiomas",
 	"accounts.language.auto": "Automático",
 	"accounts.language.hint": "Automático segue o seu navegador. Salvo na sua conta.",
 	"accounts.language.saveFailed": "Não foi possível salvar o idioma",

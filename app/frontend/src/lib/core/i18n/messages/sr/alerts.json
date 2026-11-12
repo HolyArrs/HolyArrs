@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Подешавања",
+	"alerts.panel.clearAll": "Обриши све",
+	"alerts.panel.empty": "Овде још нема ничега",
+	"alerts.panel.needsAttention": "Захтева пажњу",
+	"alerts.panel.recent": "Недавно",
+	"alerts.panel.remove": "Уклони {text}",
+	"alerts.panel.title": "Недавна обавештења",
+	"alerts.state.manyNeed": "{count} захтева пажњу",
+	"alerts.state.ok": "Све је у реду",
+	"alerts.state.oneNeeds": "1 захтева пажњу",
+	"alerts.state.unset": "Није подешено",
+	"alerts.time.days": "{n}д",
+	"alerts.time.hours": "{n}ч",
+	"alerts.time.minutes": "{n}м",
+	"alerts.time.now": "сада"
+}

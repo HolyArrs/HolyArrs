@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Lanjutan",
+	"settings.home.page": "{group} · halaman",
+	"settings.home.title": "Tetapan",
+	"settings.home.search": "Cari tetapan",
+	"settings.home.matching": "Tetapan yang sepadan",
+	"settings.home.noMatch": "Tiada tetapan yang sepadan",
+	"settings.home.noMatchText": "Cuba perkataan lain, seperti folder, kunci atau kata laluan.",
+	"settings.home.clear": "Kosongkan carian"
+}

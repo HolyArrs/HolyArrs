@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "ตั้งค่า",
+	"alerts.panel.clearAll": "ล้างทั้งหมด",
+	"alerts.panel.empty": "ยังไม่มีอะไรที่นี่",
+	"alerts.panel.needsAttention": "ต้องดูแล",
+	"alerts.panel.recent": "ล่าสุด",
+	"alerts.panel.remove": "ลบ {text}",
+	"alerts.panel.title": "การแจ้งเตือนล่าสุด",
+	"alerts.state.manyNeed": "{count} รายการต้องดูแล",
+	"alerts.state.ok": "เรียบร้อยดี",
+	"alerts.state.oneNeeds": "1 รายการต้องดูแล",
+	"alerts.state.unset": "ยังไม่ได้ตั้งค่า",
+	"alerts.time.days": "{n} วัน",
+	"alerts.time.hours": "{n} ชม.",
+	"alerts.time.minutes": "{n} นาที",
+	"alerts.time.now": "ตอนนี้"
+}

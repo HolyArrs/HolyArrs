@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "התחברות מחדש",
+	"setup.testNow": "בדיקה עכשיו",
+	"setup.movies": "סרטים",
+	"setup.tvShows": "סדרות",
+	"setup.music": "מוזיקה",
+	"setup.subtitles": "כתוביות",
+	"setup.fullPath": "השתמש בנתיב המלא של התיקייה, כמו {path}.",
+	"setup.folderUsed": "התיקייה הזו כבר בשימוש, או שהיא נמצאת בתוך תיקייה שכבר בשימוש.",
+	"setup.folderMissing": "התיקייה הזו לא קיימת. בדוק את הנתיב.",
+	"setup.addFolderOrOff": "הוסף תיקייה או כבה את האפשרות הזו.",
+	"setup.notAnswering": "HolyArrs לא מגיב. נסה שוב בעוד רגע.",
+	"setup.addUserPasswordHint": "הוסף את שם המשתמש והסיסמה.",
+	"setup.folders": "תיקיות",
+	"setup.downloader": "מוריד",
+	"setup.source": "מקור"
+}

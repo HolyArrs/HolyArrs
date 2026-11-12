@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Avanceret",
+	"settings.home.page": "{group} · side",
+	"settings.home.title": "Indstillinger",
+	"settings.home.search": "Søg i indstillinger",
+	"settings.home.matching": "Matchende indstillinger",
+	"settings.home.noMatch": "Ingen matchende indstillinger",
+	"settings.home.noMatchText": "Prøv et andet ord, f.eks. mappe, nøgle eller adgangskode.",
+	"settings.home.clear": "Ryd søgningen"
+}

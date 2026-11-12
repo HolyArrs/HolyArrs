@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Lanjutan",
+	"settings.home.page": "{group} · halaman",
+	"settings.home.title": "Pengaturan",
+	"settings.home.search": "Cari pengaturan",
+	"settings.home.matching": "Pengaturan yang cocok",
+	"settings.home.noMatch": "Tidak ada pengaturan yang cocok",
+	"settings.home.noMatchText": "Coba kata lain, misalnya folder, kunci, atau kata sandi.",
+	"settings.home.clear": "Hapus pencarian"
+}

@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Mga Setting",
+	"alerts.panel.clearAll": "I-clear lahat",
+	"alerts.panel.empty": "Wala pa rito",
+	"alerts.panel.needsAttention": "Kailangan ng pansin",
+	"alerts.panel.recent": "Kamakailan",
+	"alerts.panel.remove": "Alisin ang {text}",
+	"alerts.panel.title": "Mga kamakailang alerto",
+	"alerts.state.manyNeed": "{count} ang kailangan ng pansin",
+	"alerts.state.ok": "Maayos ang lahat",
+	"alerts.state.oneNeeds": "1 ang kailangan ng pansin",
+	"alerts.state.unset": "Hindi pa naka-set up",
+	"alerts.time.days": "{n}d",
+	"alerts.time.hours": "{n}h",
+	"alerts.time.minutes": "{n}m",
+	"alerts.time.now": "ngayon"
+}

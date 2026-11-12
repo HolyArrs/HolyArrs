@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Log",
+	"settings.logs.download": "Muat turun",
+	"settings.logs.filter": "Tapis log",
+	"settings.logs.level": "Tahap",
+	"settings.logs.every": "Setiap baris",
+	"settings.logs.warnings": "Amaran dan ralat",
+	"settings.logs.errors": "Ralat sahaja",
+	"settings.logs.text": "Teks",
+	"settings.logs.example": "cth. qBittorrent",
+	"settings.logs.from": "Dari",
+	"settings.logs.to": "Hingga",
+	"settings.logs.apply": "Guna",
+	"settings.logs.clear": "Kosongkan",
+	"settings.logs.lines": "Baris",
+	"settings.logs.newer": "Lebih baharu",
+	"settings.logs.older": "Lebih lama"
+}

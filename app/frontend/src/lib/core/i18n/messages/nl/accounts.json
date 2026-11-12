@@ -366,6 +366,8 @@
 	"accounts.invite.confirm": "Wachtwoord bevestigen",
 	"accounts.invite.joinSignIn": "Meedoen en aanmelden",
 	"accounts.language.label": "Taal",
+	"accounts.language.top": "Meest gebruikt",
+	"accounts.language.more": "Meer talen",
 	"accounts.language.auto": "Automatisch",
 	"accounts.language.hint": "Automatisch volgt je browser. Opgeslagen bij je account.",
 	"accounts.language.saveFailed": "De taal kon niet worden opgeslagen",

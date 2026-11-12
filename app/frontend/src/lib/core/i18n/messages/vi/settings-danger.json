@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs đang dừng.",
+	"settings.danger.couldnt": "Không thể {action}",
+	"settings.danger.title": "Vùng nguy hiểm",
+	"settings.danger.ownerOnly": "Chỉ chủ sở hữu và quản trị viên",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Có, {action}",
+	"settings.danger.cancel": "Hủy",
+	"settings.danger.expires": "Hết hạn sau 60 giây",
+	"settings.danger.wholeApp": "Toàn bộ ứng dụng",
+	"settings.danger.intro": "Các thao tác này sẽ dừng HolyArrs. Chính sách khởi động lại của Docker sẽ bật lại sau vài giây, trừ khi chính sách là <code>no</code>; khi đó hãy tự khởi động container. Mỗi thao tác đều hỏi xác nhận trước.",
+	"settings.danger.restart": "Khởi động lại HolyArrs",
+	"settings.danger.safe": "Khởi động lại ở chế độ an toàn",
+	"settings.danger.shutdown": "Tắt",
+	"settings.danger.safeNote": "Chỉ chạy một lần với đăng nhập, Cài đặt và Thư viện. Dùng khi một Phần chặn việc khởi động."
+}

@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Подешавања",
+	"settings.layout.home": "Почетна",
+	"settings.layout.sections": "Одељци подешавања",
+	"settings.layout.needsAttention": "Захтева пажњу",
+	"settings.layout.needsAttentionLower": "захтева пажњу",
+	"settings.layout.blocked": "Ово не можеш да мењаш",
+	"settings.layout.backToSettings": "Назад на Подешавања",
+	"settings.layout.setPasswordFirst": "Прво постави лозинку",
+	"settings.layout.setPasswordDesc": "Кључеви, лозинке, људи и резервне копије захтевају HolyArrs лозинку. Још је немаш.",
+	"settings.layout.setPasswordLabel": "Постави лозинку",
+	"settings.layout.confirmPasswordLabel": "Потврди лозинку",
+	"settings.layout.confirmPasswordDesc": "Кључеви, лозинке, људи и резервне копије захтевају твоју лозинку. Важи 10 минута."
+}

@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "پیشرفته",
+	"settings.home.page": "{group} · صفحه",
+	"settings.home.title": "تنظیمات",
+	"settings.home.search": "جستجو در تنظیمات",
+	"settings.home.matching": "تنظیمات منطبق",
+	"settings.home.noMatch": "تنظیماتی پیدا نشد",
+	"settings.home.noMatchText": "کلمه دیگری امتحان کن، مثل پوشه، کلید یا رمز عبور.",
+	"settings.home.clear": "پاک کردن جستجو"
+}

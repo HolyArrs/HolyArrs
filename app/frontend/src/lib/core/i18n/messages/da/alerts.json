@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Indstillinger",
+	"alerts.panel.clearAll": "Ryd alle",
+	"alerts.panel.empty": "Intet her endnu",
+	"alerts.panel.needsAttention": "Kræver opmærksomhed",
+	"alerts.panel.recent": "Seneste",
+	"alerts.panel.remove": "Fjern {text}",
+	"alerts.panel.title": "Seneste underretninger",
+	"alerts.state.manyNeed": "{count} kræver opmærksomhed",
+	"alerts.state.ok": "Alt er klar",
+	"alerts.state.oneNeeds": "1 kræver opmærksomhed",
+	"alerts.state.unset": "Ikke sat op",
+	"alerts.time.days": "{n} d.",
+	"alerts.time.hours": "{n} t.",
+	"alerts.time.minutes": "{n} min.",
+	"alerts.time.now": "nu"
+}

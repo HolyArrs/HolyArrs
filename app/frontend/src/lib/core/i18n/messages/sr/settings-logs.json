@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Дневници",
+	"settings.logs.download": "Преузми",
+	"settings.logs.filter": "Филтрирај дневник",
+	"settings.logs.level": "Ниво",
+	"settings.logs.every": "Свака линија",
+	"settings.logs.warnings": "Упозорења и грешке",
+	"settings.logs.errors": "Само грешке",
+	"settings.logs.text": "Текст",
+	"settings.logs.example": "нпр. qBittorrent",
+	"settings.logs.from": "Од",
+	"settings.logs.to": "До",
+	"settings.logs.apply": "Примени",
+	"settings.logs.clear": "Обриши",
+	"settings.logs.lines": "Линије",
+	"settings.logs.newer": "Новије",
+	"settings.logs.older": "Старије"
+}

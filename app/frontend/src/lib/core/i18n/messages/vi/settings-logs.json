@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Nhật ký",
+	"settings.logs.download": "Tải xuống",
+	"settings.logs.filter": "Lọc nhật ký",
+	"settings.logs.level": "Mức",
+	"settings.logs.every": "Mọi dòng",
+	"settings.logs.warnings": "Cảnh báo và lỗi",
+	"settings.logs.errors": "Chỉ lỗi",
+	"settings.logs.text": "Văn bản",
+	"settings.logs.example": "ví dụ: qBittorrent",
+	"settings.logs.from": "Từ",
+	"settings.logs.to": "Đến",
+	"settings.logs.apply": "Áp dụng",
+	"settings.logs.clear": "Xóa bộ lọc",
+	"settings.logs.lines": "Số dòng",
+	"settings.logs.newer": "Mới hơn",
+	"settings.logs.older": "Cũ hơn"
+}

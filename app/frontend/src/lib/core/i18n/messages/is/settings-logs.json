@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Annálar",
+	"settings.logs.download": "Sækja",
+	"settings.logs.filter": "Sía annálinn",
+	"settings.logs.level": "Stig",
+	"settings.logs.every": "Allar línur",
+	"settings.logs.warnings": "Viðvaranir og villur",
+	"settings.logs.errors": "Aðeins villur",
+	"settings.logs.text": "Texti",
+	"settings.logs.example": "t.d. qBittorrent",
+	"settings.logs.from": "Frá",
+	"settings.logs.to": "Til",
+	"settings.logs.apply": "Virkja",
+	"settings.logs.clear": "Hreinsa",
+	"settings.logs.lines": "Línur",
+	"settings.logs.newer": "Nýrra",
+	"settings.logs.older": "Eldra"
+}

@@ -1,6 +1,9 @@
 // The app's words in the person's language. English ships in the bundle; other languages load when picked, and any missing line falls back to English.
 
-export type Locale = 'en' | 'es' | 'pt-br' | 'fr' | 'de' | 'ru' | 'uk' | 'zh-cn' | 'ja' | 'ko' | 'hi' | 'ar' | 'it' | 'nl' | 'pl' | 'tr';
+export type Locale =
+	| 'en' | 'es' | 'pt-br' | 'pt-pt' | 'fr' | 'de' | 'it' | 'nl' | 'sv' | 'nb' | 'da' | 'fi' | 'ru' | 'uk' | 'pl' | 'cs' | 'hu' | 'ro' | 'el'
+	| 'sk' | 'bg' | 'sr' | 'hr' | 'ca' | 'lt' | 'lv' | 'et' | 'is'
+	| 'zh-cn' | 'zh-tw' | 'ja' | 'ko' | 'hi' | 'bn' | 'ta' | 'id' | 'ms' | 'fil' | 'vi' | 'th' | 'tr' | 'he' | 'fa' | 'ar';
 export type LocaleChoice = Locale | 'auto';
 
 /** Each language named in itself, in the same order as holyarrs.com. */
@@ -8,23 +11,51 @@ export const LOCALES: { code: Locale; name: string }[] = [
 	{ code: 'en', name: 'English' },
 	{ code: 'es', name: 'Español' },
 	{ code: 'pt-br', name: 'Português (Brasil)' },
+	{ code: 'pt-pt', name: 'Português (Portugal)' },
 	{ code: 'fr', name: 'Français' },
 	{ code: 'de', name: 'Deutsch' },
 	{ code: 'it', name: 'Italiano' },
 	{ code: 'nl', name: 'Nederlands' },
+	{ code: 'sv', name: 'Svenska' },
+	{ code: 'nb', name: 'Norsk bokmål' },
+	{ code: 'da', name: 'Dansk' },
+	{ code: 'fi', name: 'Suomi' },
 	{ code: 'ru', name: 'Русский' },
 	{ code: 'uk', name: 'Українська' },
 	{ code: 'pl', name: 'Polski' },
+	{ code: 'cs', name: 'Čeština' },
+	{ code: 'hu', name: 'Magyar' },
+	{ code: 'ro', name: 'Română' },
+	{ code: 'el', name: 'Ελληνικά' },
+	{ code: 'sk', name: 'Slovenčina' },
+	{ code: 'bg', name: 'Български' },
+	{ code: 'sr', name: 'Српски' },
+	{ code: 'hr', name: 'Hrvatski' },
+	{ code: 'ca', name: 'Català' },
+	{ code: 'lt', name: 'Lietuvių' },
+	{ code: 'lv', name: 'Latviešu' },
+	{ code: 'et', name: 'Eesti' },
+	{ code: 'is', name: 'Íslenska' },
 	{ code: 'zh-cn', name: '简体中文' },
+	{ code: 'zh-tw', name: '繁體中文' },
 	{ code: 'ja', name: '日本語' },
 	{ code: 'ko', name: '한국어' },
 	{ code: 'hi', name: 'हिन्दी' },
+	{ code: 'bn', name: 'বাংলা' },
+	{ code: 'ta', name: 'தமிழ்' },
+	{ code: 'id', name: 'Bahasa Indonesia' },
+	{ code: 'ms', name: 'Bahasa Melayu' },
+	{ code: 'fil', name: 'Filipino' },
+	{ code: 'vi', name: 'Tiếng Việt' },
+	{ code: 'th', name: 'ไทย' },
 	{ code: 'tr', name: 'Türkçe' },
+	{ code: 'he', name: 'עברית' },
+	{ code: 'fa', name: 'فارسی' },
 	{ code: 'ar', name: 'العربية' }
 ];
 
 const KEY = 'holyarrs-lang';
-const RTL = new Set<Locale>(['ar']);
+const RTL = new Set<Locale>(['ar', 'he', 'fa']);
 type Words = Record<string, string>;
 // One file per module per language (messages/<lang>/<module>.json), so the words sit beside each other but never collide.
 const en: Words = merge(import.meta.glob<{ default: Words }>('./messages/en/*.json', { eager: true }));
@@ -55,7 +86,8 @@ export function appLocale(en?: string): string | undefined {
 }
 
 function bcp47(l: Locale): string {
-	return l === 'pt-br' ? 'pt-BR' : l === 'zh-cn' ? 'zh-CN' : l;
+	const [a, b] = l.split('-');
+	return b ? `${a}-${b.toUpperCase()}` : l;
 }
 
 /** Picks a language; 'auto' follows the browser. Saved in this browser so the first paint is right. */
@@ -81,8 +113,14 @@ export function browserLocale(asked: readonly string[] = typeof navigator === 'u
 		const l = a.toLowerCase();
 		const exact = LOCALES.find((x) => x.code === l);
 		if (exact) return exact.code;
-		if (l.startsWith('pt')) return 'pt-br';
-		if (l.startsWith('zh')) return 'zh-cn';
+		const [b, region = ''] = l.split('-');
+		if (b === 'pt') return ['br', ''].includes(region) ? 'pt-br' : 'pt-pt';
+		if (b === 'zh') return /^(tw|hk|mo|hant)/.test(l.slice(3)) ? 'zh-tw' : 'zh-cn';
+		if (b === 'no' || b === 'nn') return 'nb';
+		if (b === 'iw') return 'he';
+		if (b === 'in') return 'id';
+		if (b === 'tl') return 'fil';
+		if (b === 'sh') return 'sr';
 		const base = LOCALES.find((x) => x.code === l.split('-')[0]);
 		if (base) return base.code;
 	}

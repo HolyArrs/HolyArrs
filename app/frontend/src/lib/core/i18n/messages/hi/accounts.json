@@ -366,6 +366,8 @@
 	"accounts.invite.confirm": "पासवर्ड पक्का करें",
 	"accounts.invite.joinSignIn": "जुड़ें और साइन इन करें",
 	"accounts.language.label": "भाषा",
+	"accounts.language.top": "सबसे ज़्यादा इस्तेमाल",
+	"accounts.language.more": "और भाषाएँ",
 	"accounts.language.auto": "अपने आप",
 	"accounts.language.hint": "अपने आप में ब्राउज़र की भाषा चलती है। आपके अकाउंट में सेव रहती है।",
 	"accounts.language.saveFailed": "भाषा सेव नहीं हो सकी",

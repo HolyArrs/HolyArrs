@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Stillingar",
+	"settings.layout.home": "Heim",
+	"settings.layout.sections": "Hlutar stillinga",
+	"settings.layout.needsAttention": "Þarfnast athygli",
+	"settings.layout.needsAttentionLower": "þarfnast athygli",
+	"settings.layout.blocked": "Þú getur ekki breytt þessu",
+	"settings.layout.backToSettings": "Aftur í stillingar",
+	"settings.layout.setPasswordFirst": "Settu fyrst lykilorð",
+	"settings.layout.setPasswordDesc": "Lyklar, lykilorð, fólk og afrit krefjast HolyArrs-lykilorðs. Þú ert ekki með það enn.",
+	"settings.layout.setPasswordLabel": "Setja lykilorð",
+	"settings.layout.confirmPasswordLabel": "Staðfestu lykilorðið þitt",
+	"settings.layout.confirmPasswordDesc": "Lyklar, lykilorð, fólk og afrit krefjast lykilorðsins þíns. Gildir í 10 mínútur."
+}

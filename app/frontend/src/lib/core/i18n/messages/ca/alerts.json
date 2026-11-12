@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Configuració",
+	"alerts.panel.clearAll": "Esborra-ho tot",
+	"alerts.panel.empty": "Encara no hi ha res",
+	"alerts.panel.needsAttention": "Requereix atenció",
+	"alerts.panel.recent": "Recents",
+	"alerts.panel.remove": "Elimina {text}",
+	"alerts.panel.title": "Avisos recents",
+	"alerts.state.manyNeed": "{count} requereixen atenció",
+	"alerts.state.ok": "Tot a punt",
+	"alerts.state.oneNeeds": "1 requereix atenció",
+	"alerts.state.unset": "Sense configurar",
+	"alerts.time.days": "{n} d",
+	"alerts.time.hours": "{n} h",
+	"alerts.time.minutes": "{n} min",
+	"alerts.time.now": "ara"
+}

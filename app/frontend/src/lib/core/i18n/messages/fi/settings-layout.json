@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Asetukset",
+	"settings.layout.home": "Etusivu",
+	"settings.layout.sections": "Asetusosiot",
+	"settings.layout.needsAttention": "Vaatii huomiota",
+	"settings.layout.needsAttentionLower": "vaatii huomiota",
+	"settings.layout.blocked": "Et voi muuttaa tätä",
+	"settings.layout.backToSettings": "Takaisin asetuksiin",
+	"settings.layout.setPasswordFirst": "Aseta ensin salasana",
+	"settings.layout.setPasswordDesc": "Avaimet, salasanat, käyttäjät ja varmuuskopiot vaativat HolyArrs-salasanan. Sinulla ei vielä ole sellaista.",
+	"settings.layout.setPasswordLabel": "Aseta salasana",
+	"settings.layout.confirmPasswordLabel": "Vahvista salasanasi",
+	"settings.layout.confirmPasswordDesc": "Avaimet, salasanat, käyttäjät ja varmuuskopiot vaativat salasanasi. Voimassa 10 minuuttia."
+}

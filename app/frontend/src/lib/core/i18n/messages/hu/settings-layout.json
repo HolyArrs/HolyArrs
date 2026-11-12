@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Beállítások",
+	"settings.layout.home": "Kezdőlap",
+	"settings.layout.sections": "Beállítások szakaszai",
+	"settings.layout.needsAttention": "Figyelmet igényel",
+	"settings.layout.needsAttentionLower": "figyelmet igényel",
+	"settings.layout.blocked": "Ezt nem módosíthatja",
+	"settings.layout.backToSettings": "Vissza a Beállításokhoz",
+	"settings.layout.setPasswordFirst": "Először állítson be jelszót",
+	"settings.layout.setPasswordDesc": "A kulcsokhoz, jelszavakhoz, személyekhez és biztonsági mentésekhez HolyArrs-jelszó kell. Önnek még nincs.",
+	"settings.layout.setPasswordLabel": "Jelszó beállítása",
+	"settings.layout.confirmPasswordLabel": "Erősítse meg a jelszavát",
+	"settings.layout.confirmPasswordDesc": "A kulcsokhoz, jelszavakhoz, személyekhez és biztonsági mentésekhez a jelszava kell. 10 percig érvényes."
+}

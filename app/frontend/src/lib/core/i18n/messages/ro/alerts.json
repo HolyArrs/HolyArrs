@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Setări",
+	"alerts.panel.clearAll": "Șterge tot",
+	"alerts.panel.empty": "Nimic încă",
+	"alerts.panel.needsAttention": "Necesită atenție",
+	"alerts.panel.recent": "Recente",
+	"alerts.panel.remove": "Elimină {text}",
+	"alerts.panel.title": "Alerte recente",
+	"alerts.state.manyNeed": "{count} necesită atenție",
+	"alerts.state.ok": "Totul e în regulă",
+	"alerts.state.oneNeeds": "1 necesită atenție",
+	"alerts.state.unset": "Neconfigurat",
+	"alerts.time.days": "{n}z",
+	"alerts.time.hours": "{n}h",
+	"alerts.time.minutes": "{n}m",
+	"alerts.time.now": "acum"
+}

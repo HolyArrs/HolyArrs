@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Mga Setting",
+	"settings.layout.home": "Home",
+	"settings.layout.sections": "Mga seksyon ng Setting",
+	"settings.layout.needsAttention": "Kailangan ng pansin",
+	"settings.layout.needsAttentionLower": "kailangan ng pansin",
+	"settings.layout.blocked": "Hindi mo ito mababago",
+	"settings.layout.backToSettings": "Bumalik sa Mga Setting",
+	"settings.layout.setPasswordFirst": "Magtakda muna ng password",
+	"settings.layout.setPasswordDesc": "Kailangan ng HolyArrs password para sa mga key, password, tao at backup. Wala ka pa nito.",
+	"settings.layout.setPasswordLabel": "Magtakda ng password",
+	"settings.layout.confirmPasswordLabel": "Kumpirmahin ang password mo",
+	"settings.layout.confirmPasswordDesc": "Kailangan ng password mo para sa mga key, password, tao at backup. Tatagal ito ng 10 minuto."
+}

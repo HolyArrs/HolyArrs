@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Nustatymai",
+	"alerts.panel.clearAll": "Išvalyti viską",
+	"alerts.panel.empty": "Čia kol kas nieko nėra",
+	"alerts.panel.needsAttention": "Reikia dėmesio",
+	"alerts.panel.recent": "Neseniai",
+	"alerts.panel.remove": "Pašalinti: {text}",
+	"alerts.panel.title": "Naujausi pranešimai",
+	"alerts.state.manyNeed": "Reikia dėmesio: {count}",
+	"alerts.state.ok": "Viskas gerai",
+	"alerts.state.oneNeeds": "1 reikia dėmesio",
+	"alerts.state.unset": "Nenustatyta",
+	"alerts.time.days": "{n} d.",
+	"alerts.time.hours": "{n} val.",
+	"alerts.time.minutes": "{n} min.",
+	"alerts.time.now": "dabar"
+}

@@ -1,0 +1,10 @@
+{
+"settings.home.advanced": "Rozšírené",
+"settings.home.page": "{group} · stránka",
+"settings.home.title": "Nastavenia",
+"settings.home.search": "Hľadať v nastaveniach",
+"settings.home.matching": "Zodpovedajúce nastavenia",
+"settings.home.noMatch": "Nič nezodpovedá",
+"settings.home.noMatchText": "Skúste iné slovo, napríklad priečinok, kľúč alebo heslo.",
+"settings.home.clear": "Vymazať hľadanie"
+}

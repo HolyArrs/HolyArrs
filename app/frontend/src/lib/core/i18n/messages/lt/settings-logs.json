@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Žurnalai",
+	"settings.logs.download": "Atsisiųsti",
+	"settings.logs.filter": "Filtruoti žurnalą",
+	"settings.logs.level": "Lygis",
+	"settings.logs.every": "Visos eilutės",
+	"settings.logs.warnings": "Įspėjimai ir klaidos",
+	"settings.logs.errors": "Tik klaidos",
+	"settings.logs.text": "Tekstas",
+	"settings.logs.example": "pvz., qBittorrent",
+	"settings.logs.from": "Nuo",
+	"settings.logs.to": "Iki",
+	"settings.logs.apply": "Taikyti",
+	"settings.logs.clear": "Išvalyti",
+	"settings.logs.lines": "Eilutės",
+	"settings.logs.newer": "Naujesni",
+	"settings.logs.older": "Senesni"
+}

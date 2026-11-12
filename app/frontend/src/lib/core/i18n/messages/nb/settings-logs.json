@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Logger",
+	"settings.logs.download": "Last ned",
+	"settings.logs.filter": "Filtrer loggen",
+	"settings.logs.level": "Nivå",
+	"settings.logs.every": "Alle linjer",
+	"settings.logs.warnings": "Advarsler og feil",
+	"settings.logs.errors": "Bare feil",
+	"settings.logs.text": "Tekst",
+	"settings.logs.example": "f.eks. qBittorrent",
+	"settings.logs.from": "Fra",
+	"settings.logs.to": "Til",
+	"settings.logs.apply": "Bruk",
+	"settings.logs.clear": "Tøm",
+	"settings.logs.lines": "Linjer",
+	"settings.logs.newer": "Nyere",
+	"settings.logs.older": "Eldre"
+}

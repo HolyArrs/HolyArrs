@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Напредно",
+	"settings.home.page": "{group} · страница",
+	"settings.home.title": "Подешавања",
+	"settings.home.search": "Претражи подешавања",
+	"settings.home.matching": "Одговарајућа подешавања",
+	"settings.home.noMatch": "Нема одговарајућих подешавања",
+	"settings.home.noMatchText": "Пробај другу реч, на пример фасцикла, кључ или лозинка.",
+	"settings.home.clear": "Обриши претрагу"
+}

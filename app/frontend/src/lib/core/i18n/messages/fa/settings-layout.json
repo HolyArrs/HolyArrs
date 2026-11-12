@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "تنظیمات",
+	"settings.layout.home": "خانه",
+	"settings.layout.sections": "بخش‌های تنظیمات",
+	"settings.layout.needsAttention": "نیاز به توجه دارد",
+	"settings.layout.needsAttentionLower": "نیاز به توجه دارد",
+	"settings.layout.blocked": "نمی‌توانی این را تغییر بدهی",
+	"settings.layout.backToSettings": "بازگشت به تنظیمات",
+	"settings.layout.setPasswordFirst": "اول یک رمز عبور بگذار",
+	"settings.layout.setPasswordDesc": "کلیدها، رمزهای عبور، افراد و پشتیبان‌ها به رمز عبور HolyArrs نیاز دارند. هنوز رمزی نداری.",
+	"settings.layout.setPasswordLabel": "تنظیم رمز عبور",
+	"settings.layout.confirmPasswordLabel": "رمز عبورت را تأیید کن",
+	"settings.layout.confirmPasswordDesc": "کلیدها، رمزهای عبور، افراد و پشتیبان‌ها به رمز عبور تو نیاز دارند. تا 10 دقیقه معتبر است."
+}

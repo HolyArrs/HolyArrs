@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "گزارش‌ها",
+	"settings.logs.download": "دانلود",
+	"settings.logs.filter": "فیلتر گزارش",
+	"settings.logs.level": "سطح",
+	"settings.logs.every": "همه خط‌ها",
+	"settings.logs.warnings": "هشدارها و خطاها",
+	"settings.logs.errors": "فقط خطاها",
+	"settings.logs.text": "متن",
+	"settings.logs.example": "مثلاً qBittorrent",
+	"settings.logs.from": "از",
+	"settings.logs.to": "تا",
+	"settings.logs.apply": "اعمال",
+	"settings.logs.clear": "پاک کردن",
+	"settings.logs.lines": "خط‌ها",
+	"settings.logs.newer": "جدیدتر",
+	"settings.logs.older": "قدیمی‌تر"
+}

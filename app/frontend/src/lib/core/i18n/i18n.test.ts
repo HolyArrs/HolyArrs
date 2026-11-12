@@ -52,8 +52,21 @@ describe('message keys', () => {
 
 describe('browserLocale', () => {
 	it('maps browser languages to the closest one the app has', () => {
-		expect(browserLocale(['pt-PT'])).toBe('pt-br');
-		expect(browserLocale(['zh-TW'])).toBe('zh-cn');
+		expect(browserLocale(['pt-PT'])).toBe('pt-pt');
+		expect(browserLocale(['pt-BR'])).toBe('pt-br');
+		expect(browserLocale(['pt'])).toBe('pt-br');
+		expect(browserLocale(['zh-TW'])).toBe('zh-tw');
+		expect(browserLocale(['zh-HK'])).toBe('zh-tw');
+		expect(browserLocale(['zh-Hant-TW'])).toBe('zh-tw');
+		expect(browserLocale(['zh-CN'])).toBe('zh-cn');
+		expect(browserLocale(['zh'])).toBe('zh-cn');
+		expect(browserLocale(['no'])).toBe('nb');
+		expect(browserLocale(['nn-NO'])).toBe('nb');
+		expect(browserLocale(['nb-NO'])).toBe('nb');
+		expect(browserLocale(['he-IL'])).toBe('he');
+		expect(browserLocale(['iw'])).toBe('he');
+		expect(browserLocale(['sv-SE'])).toBe('sv');
+		expect(browserLocale(['th-TH'])).toBe('th');
 		expect(browserLocale(['ar-EG'])).toBe('ar');
 		expect(browserLocale(['uk-UA'])).toBe('uk');
 		expect(browserLocale(['it-IT'])).toBe('it');

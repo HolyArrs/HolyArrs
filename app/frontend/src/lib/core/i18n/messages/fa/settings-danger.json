@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs در حال توقف است.",
+	"settings.danger.couldnt": "انجام نشد: {action}",
+	"settings.danger.title": "منطقه خطر",
+	"settings.danger.ownerOnly": "فقط مالک و مدیران",
+	"settings.danger.ask": "{label}؟",
+	"settings.danger.yes": "بله، {action}",
+	"settings.danger.cancel": "انصراف",
+	"settings.danger.expires": "تا 60 ثانیه دیگر منقضی می‌شود",
+	"settings.danger.wholeApp": "کل برنامه",
+	"settings.danger.intro": "این‌ها HolyArrs را متوقف می‌کنند. سیاست راه‌اندازی مجدد Docker چند ثانیه بعد دوباره آن را اجرا می‌کند، مگر اینکه سیاست <code>no</code> باشد؛ در آن صورت خودت کانتینر را اجرا کن. هر کدام اول تأیید می‌گیرد.",
+	"settings.danger.restart": "راه‌اندازی مجدد HolyArrs",
+	"settings.danger.safe": "راه‌اندازی مجدد در حالت امن",
+	"settings.danger.shutdown": "خاموش کردن",
+	"settings.danger.safeNote": "یک بار فقط با ورود، تنظیمات و کتابخانه راه می‌افتد. وقتی یک بخش جلوی راه‌اندازی را می‌گیرد، از این استفاده کن."
+}

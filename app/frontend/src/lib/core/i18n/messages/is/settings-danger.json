@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs er að stöðvast.",
+	"settings.danger.couldnt": "Tókst ekki: {action}",
+	"settings.danger.title": "Hættusvæði",
+	"settings.danger.ownerOnly": "Aðeins eigandi og stjórnendur",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Já, {action}",
+	"settings.danger.cancel": "Hætta við",
+	"settings.danger.expires": "Rennur út eftir 60 sek.",
+	"settings.danger.wholeApp": "Allt forritið",
+	"settings.danger.intro": "Þetta stöðvar HolyArrs. Endurræsingarregla Docker ræsir það aftur eftir nokkrar sekúndur, nema reglan sé <code>no</code>; þá þarftu að ræsa gáminn sjálf(ur). Hvert þeirra spyr fyrst.",
+	"settings.danger.restart": "Endurræsa HolyArrs",
+	"settings.danger.safe": "Endurræsa í öruggum ham",
+	"settings.danger.shutdown": "Slökkva",
+	"settings.danger.safeNote": "Ræsir einu sinni með aðeins innskráningu, stillingum og safni. Notaðu það þegar hluti kemur í veg fyrir ræsingu."
+}
