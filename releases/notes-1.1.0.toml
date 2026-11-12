@@ -88,7 +88,7 @@ Indexers = [
 ]
 Accounts = [
   "Skip sign-in on your home network or listed addresses. (#262)",
-  "Fixed: Key kit and backup downloads work without a local password. (#283)",
+  "Fixed: Key kit and backup downloads explain a missing password. (#283)",
 ]
 Setup = [
   "Run without the HolyArrs metadata server. (#206)",

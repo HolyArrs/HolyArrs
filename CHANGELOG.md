@@ -47,7 +47,7 @@ All notable changes to HolyArrs are listed here. The format follows [Keep a Chan
 - A by-hand move says copied when the file was copied. ([#277](https://github.com/HolyArrs/HolyArrs/issues/277))
 - Searches drop apostrophes, so "Schitt's Creek" finds releases. ([#271](https://github.com/HolyArrs/HolyArrs/issues/271))
 - A search with no title never reaches a Source. ([#307](https://github.com/HolyArrs/HolyArrs/issues/307))
-- Key kit and backup downloads work without a local password. ([#283](https://github.com/HolyArrs/HolyArrs/issues/283))
+- Key kit and backup downloads explain a missing password. ([#283](https://github.com/HolyArrs/HolyArrs/issues/283))
 - Placeholders and turned-off controls are easier to read. ([#300](https://github.com/HolyArrs/HolyArrs/issues/300))
 - Settings pages no longer squeeze their columns. ([#304](https://github.com/HolyArrs/HolyArrs/issues/304))
 - Settings search no longer crashes. ([#268](https://github.com/HolyArrs/HolyArrs/issues/268))
