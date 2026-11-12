@@ -1245,5 +1245,8 @@
 	"downloads.ot.hintSize": "Release 全体のサイズ (GB)。片方を空欄にすると上限・下限なしになります。サイズが不明な Release は一致しません。",
 	"downloads.ot.sumSize": "サイズ: {range}",
 	"downloads.ot.sizeOver": "{n} GB 超",
-	"downloads.ot.sizeUpTo": "{n} GB 以下"
+	"downloads.ot.sizeUpTo": "{n} GB 以下",
+	"downloads.row.imported": "インポート済み",
+	"downloads.row.stillIn": "まだ {app} にあります",
+	"downloads.dp.openDownloaders": "ダウンローダーを開く"
 }

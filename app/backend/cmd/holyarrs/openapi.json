@@ -4052,7 +4052,8 @@
               "shows",
               "music",
               "subtitles",
-              "wishlist"
+              "wishlist",
+              "sources"
             ],
             "type": "string"
           },
@@ -15055,6 +15056,36 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/downloads/clear-now": {
+      "post": {
+        "description": "Tries at once every imported download still waiting to be cleared from its Downloader, instead of at its next try. left is how many still wait.",
+        "operationId": "clearDownloadsNow",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "left": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Tried."
+          }
+        },
+        "summary": "Clear waiting downloads now",
+        "tags": [
+          "Downloaders"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloads/clients": {
       "get": {
         "description": "Paused, speeds, speed limits, totals and free space, as each Downloader reports them (bytes, bytes per second; 0 means none or not reported).",
@@ -22452,7 +22483,7 @@
     },
     "/api/v1/parts/{part}/off": {
       "post": {
-        "description": "Two steps (confirm). Turns the part off and saves it: its screens hide, its routes answer \"this part is off\", its stages stop, its scheduled work is not queued and its Jobs wait in the queue (Jobs already running finish; nothing is cut off). Its data is kept. Refused when Subtitles or the Requests still need it (turn those off first), and in safe mode. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",
+        "description": "Two steps (confirm). Turns the part off and saves it: its screens hide, its routes answer \"this part is off\", its stages stop, its scheduled work is not queued and its Jobs wait in the queue (Jobs already running finish; nothing is cut off). Its data is kept. Refused when Subtitles or the Requests still need it (turn those off first), and in safe mode. Sources is the exception: it owns no screen or route, and off it only stops the searches HolyArrs starts on its own, while Downloaders and imports keep working. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",
         "operationId": "partOff",
         "parameters": [
           {
@@ -22465,7 +22496,8 @@
                 "shows",
                 "music",
                 "subtitles",
-                "wishlist"
+                "wishlist",
+                "sources"
               ],
               "type": "string"
             }
@@ -22547,7 +22579,8 @@
                 "shows",
                 "music",
                 "subtitles",
-                "wishlist"
+                "wishlist",
+                "sources"
               ],
               "type": "string"
             }
@@ -22609,7 +22642,8 @@
                 "shows",
                 "music",
                 "subtitles",
-                "wishlist"
+                "wishlist",
+                "sources"
               ],
               "type": "string"
             }

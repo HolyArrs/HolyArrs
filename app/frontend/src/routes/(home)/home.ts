@@ -108,6 +108,8 @@ export function healthFix(kind: HealthCheck['kind']): string {
 			return '/settings/backups';
 		case 'waiting_downloads':
 			return '/downloads?show=waiting.paused';
+		case 'clear_waiting':
+			return '/downloads';
 		case 'config_folder':
 			// No setting fixes it: Status shows the steps.
 			return '/health';
@@ -130,6 +132,7 @@ const healthWords = (): Record<HealthKind, { one: string; many: string; error: [
 	config_disk: { one: t('home.configFolder'), many: t('home.configFolder'), error: [t('home.almostOutOfSpace'), t('home.almostOutOfSpace')], warning: [t('home.runningLowOnSpace'), t('home.runningLowOnSpace')] },
 	config_folder: { one: t('home.configFolder'), many: t('home.configFolder'), error: [t('home.lostIfTheContainer'), t('home.lostIfTheContainer')], warning: [t('home.needsALook'), t('home.needsALook')] },
 	waiting_downloads: { one: t('home.downloads'), many: t('home.downloads'), error: [t('home.waitingForTheirFiles'), t('home.waitingForTheirFiles')], warning: [t('home.waitingForTheirFiles'), t('home.waitingForTheirFiles')] },
+	clear_waiting: { one: t('home.downloads'), many: t('home.downloads'), error: [t('home.waitingToBeCleared'), t('home.waitingToBeCleared')], warning: [t('home.waitingToBeCleared'), t('home.waitingToBeCleared')] },
 	// The backups:key check: no key kit saved for the current master key.
 	key_kit: { one: t('home.masterKey'), many: t('home.masterKey'), error: [t('home.noKeyKitSaved'), t('home.noKeyKitSaved')], warning: [t('home.noKeyKitSaved'), t('home.noKeyKitSaved')] },
 	trailers: { one: t('home.trailers'), many: t('home.trailers'), error: [t('home.notLoading'), t('home.notLoading')], warning: [t('home.lookupsFailing'), t('home.lookupsFailing')] }

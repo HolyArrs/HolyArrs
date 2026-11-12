@@ -68,5 +68,9 @@
 "settings.sources.changeButton": "変更",
 "settings.sources.removeName": "{name} を削除",
 "settings.sources.remove": "削除",
-"settings.sources.bridge": "Jackett または Prowlarr を連携"
+"settings.sources.bridge": "Jackett または Prowlarr を連携",
+"settings.sources.off": "ソースはオフです",
+"settings.sources.offText": "HolyArrs は検索も取得もしません。ダウンローダーで追加したダウンロードは引き続きインポートされます。",
+"settings.sources.openParts": "パーツを開く",
+"settings.sources.offState": "オフ"
 }

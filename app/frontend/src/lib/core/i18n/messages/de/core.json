@@ -54,6 +54,7 @@
 	"core.plain.configDiskWarning": "Auf dem Datenträger mit dem config-Ordner wird der Platz knapp.",
 	"core.plain.configFolder": "/config ist keinem Ordner zugeordnet, deshalb gehen die HolyArrs-Daten verloren, wenn der Container neu erstellt wird.",
 	"core.plain.waitingDownloads": "Downloads warten, weil ihr Downloader die Dateien nicht nutzen kann.",
+	"core.plain.clearWaiting": "Importierte Downloads warten darauf, aus ihrem Downloader aufgeräumt zu werden.",
 	"core.plain.someone": "Jemand in deinem Haushalt",
 	"core.plain.keyKitOwner": "Der Besitzer sollte das Schlüssel-Set speichern: Backups enthalten den Hauptschlüssel nicht.",
 	"core.plain.keyKitNone": "Es ist kein Schlüssel-Set gespeichert: Backups enthalten den Hauptschlüssel nicht.",

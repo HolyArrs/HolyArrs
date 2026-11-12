@@ -33,8 +33,8 @@ func (m *Manager) clearDone(ctx context.Context, id int64) {
 	})
 }
 
-// clearWaits reads every download waiting to be cleared, by download id.
-func clearWaits(ctx context.Context, db *sql.DB) map[int64]ClearWait {
+// ClearWaits reads every download waiting to be cleared, by download id.
+func ClearWaits(ctx context.Context, db *sql.DB) map[int64]ClearWait {
 	out := map[int64]ClearWait{}
 	rows, err := db.QueryContext(ctx, "SELECT id, clear_retry_at, clear_tries, clear_error FROM downloads WHERE clear_retry_at IS NOT NULL")
 	if err != nil {
@@ -85,4 +85,19 @@ func updateReused(tx *sql.Tx, dl *domain.Download, by domain.Actor) error {
 	}
 	_, err := tx.Exec("UPDATE downloads SET clear_retry_at = NULL, clear_tries = 0, clear_error = '' WHERE id = ?", dl.ID)
 	return err
+}
+
+// dueNow makes every waiting clear due at once (Clear now).
+func (m *Manager) dueNow(ctx context.Context) {
+	_ = m.Store.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE downloads SET clear_retry_at = ? WHERE clear_retry_at IS NOT NULL", database.FormatTime(m.now()))
+		return err
+	})
+}
+
+// waitingClears counts the downloads still waiting to be cleared.
+func (m *Manager) waitingClears(ctx context.Context) int {
+	var n int
+	_ = m.Store.Read().QueryRowContext(ctx, "SELECT COUNT(*) FROM downloads WHERE clear_retry_at IS NOT NULL").Scan(&n)
+	return n
 }

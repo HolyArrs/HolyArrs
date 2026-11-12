@@ -442,7 +442,7 @@ export interface EventPage {
 export interface HealthCheck {
 	id: number;
 	key: string;
-	kind: 'library_folder' | 'disk_space' | 'source' | 'downloader' | 'backups' | 'update' | 'config_disk' | 'config_folder' | 'waiting_downloads';
+	kind: 'library_folder' | 'disk_space' | 'source' | 'downloader' | 'backups' | 'update' | 'config_disk' | 'config_folder' | 'waiting_downloads' | 'clear_waiting';
 	subject: string;
 	state: 'ok' | 'warning' | 'error';
 	message: string;
@@ -552,6 +552,8 @@ export interface DownloadRow extends DownloadView {
 	finished_at?: string;
 	updated_at: string;
 	slot_state?: string;
+	/** Imported, but its clear from the Downloader failed; HolyArrs tries again at next_try. */
+	clear_waiting?: { next_try: string; tries: number; reason?: string };
 	can_act: boolean;
 	client_locked?: boolean;
 	replaced?: boolean;

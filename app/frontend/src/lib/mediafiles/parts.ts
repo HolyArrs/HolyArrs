@@ -2,7 +2,7 @@
 import { t } from '../core/i18n/i18n.svelte.ts';
 
 
-export type PartName = 'movies' | 'shows' | 'music' | 'subtitles' | 'wishlist';
+export type PartName = 'movies' | 'shows' | 'music' | 'subtitles' | 'wishlist' | 'sources';
 
 export interface PartView {
 	part: PartName;
@@ -23,7 +23,7 @@ export interface PartsAnswer {
 }
 
 // Switch order: parts that need others come later.
-export const partOrder: PartName[] = ['movies', 'shows', 'music', 'subtitles', 'wishlist'];
+export const partOrder: PartName[] = ['movies', 'shows', 'music', 'subtitles', 'wishlist', 'sources'];
 
 // The lines read their words when used, so they follow the language.
 export const partStops: Record<PartName, string> = {
@@ -41,6 +41,9 @@ export const partStops: Record<PartName, string> = {
 	},
 	get wishlist() {
 		return t('mediafiles.parts.stopsWishlist');
+	},
+	get sources() {
+		return t('mediafiles.parts.stopsSources');
 	}
 };
 
@@ -53,7 +56,8 @@ export const partNeeds: Record<PartName, string> = {
 	},
 	get wishlist() {
 		return t('mediafiles.parts.needsWishlist');
-	}
+	},
+	sources: ''
 };
 
 export function screenOwner(screens: Record<string, string>, path: string): string | null {
@@ -73,18 +77,18 @@ export function offPartName(a: PartsAnswer | null, path: string): string | null 
 	return a.parts.find((x) => x.part === owner)?.name ?? owner;
 }
 
-export function needsProblem(want: Record<PartName, boolean>): string {
+export function needsProblem(want: Partial<Record<PartName, boolean>>): string {
 	if (!want.movies && !want.shows && !want.music) return t('mediafiles.parts.pickOne');
 	if (want.subtitles && !want.movies && !want.shows) return t('mediafiles.parts.subtitlesNeed');
 	return '';
 }
 
-// Turn parts on in order and off in reverse, so a part never runs without what it needs.
-export function switchPlan(now: Record<PartName, boolean>, want: Record<PartName, boolean>): { part: PartName; on: boolean }[] {
+// Turn parts on in order and off in reverse, so a part never runs without what it needs. A part want does not name stays as it is.
+export function switchPlan(now: Partial<Record<PartName, boolean>>, want: Partial<Record<PartName, boolean>>): { part: PartName; on: boolean }[] {
 	const ons = partOrder.filter((p) => want[p] && !now[p]).map((part) => ({ part, on: true }));
 	const offs = [...partOrder]
 		.reverse()
-		.filter((p) => !want[p] && now[p])
+		.filter((p) => want[p] === false && now[p])
 		.map((part) => ({ part, on: false }));
 	return [...ons, ...offs];
 }

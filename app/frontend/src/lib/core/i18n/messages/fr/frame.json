@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Tous les endroits",
 	"frame.layout.newWord": "nouveau",
 	"frame.layout.accountName": "Compte · {name}",
-	"frame.layout.hostRefused": "<b>Impossible d'enregistrer les changements sur {host}.</b> HolyArrs n'enregistre que sur les noms que vous autorisez. Ouvrez-le une fois par son adresse IP, puis ajoutez {host} dans Paramètres › Connexion et sécurité › Noms d'hôte autorisés. Pas besoin de redémarrer."
+	"frame.layout.hostRefused": "<b>Impossible d'enregistrer les changements sur {host}.</b> HolyArrs n'enregistre que sur les noms que vous autorisez. Ouvrez-le une fois par son adresse IP, puis ajoutez {host} dans Paramètres › Connexion et sécurité › Noms d'hôte autorisés. Pas besoin de redémarrer.",
+	"frame.feeds.clearOne": "Téléchargement importé non retiré",
+	"frame.feeds.clearMany": "{n} téléchargements importés non retirés",
+	"frame.feeds.clearBody": "HolyArrs réessaie tout seul",
+	"frame.feeds.clearNow": "Retirer maintenant",
+	"frame.feeds.cleared": "Retiré du téléchargeur",
+	"frame.feeds.clearStill": "Pas encore retiré"
 }

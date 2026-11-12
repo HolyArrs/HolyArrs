@@ -108,6 +108,13 @@ describe('home', () => {
 		expect(member.map((i) => i.href)).toEqual(['/health', '/health']);
 	});
 
+	it('names imported downloads waiting to be cleared, linked to Downloads', () => {
+		const [item] = attention({ failed: [], decisions: [], health: [check('clear_waiting', 'warning', 'clear_waiting')] });
+		expect(`${item.title} · ${item.reason}`).toBe('Downloads · waiting to be cleared');
+		expect([item.href, item.action]).toEqual(['/downloads', 'Downloads']);
+		expect(item.text).toBe('Imported downloads are waiting to be cleared from their Downloader.');
+	});
+
 	it('follows the flap guard when the server sends the confirmed state', () => {
 		const flaky = { ...check('d', 'error', 'downloader'), confirmed: 'ok' as const };
 		const held = { ...check('s', 'ok', 'source'), confirmed: 'warning' as const };

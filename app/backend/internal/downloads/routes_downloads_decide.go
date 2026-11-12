@@ -385,3 +385,9 @@ func (a *Web) decide(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, `action is "search", "turn_down" or "stop"`)
 	}
 }
+
+// clearNow tries every imported download still waiting to be cleared from
+// its Downloader at once, and answers how many still wait.
+func (a *Web) clearNow(w http.ResponseWriter, r *http.Request) {
+	webserver.WriteJSON(w, http.StatusOK, map[string]int{"left": a.Manager().ClearNow(r.Context())})
+}

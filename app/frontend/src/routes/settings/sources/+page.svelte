@@ -12,6 +12,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import { ConnectBridge } from '#lib/sources/index.ts';
+	import { partOff } from '#lib/mediafiles/index.ts';
 	import { healthTone, healthWord, pausedUntil, SourceCheck, emptyForm, formBody, formFrom, ms, uses, type SourceForm } from '#lib/sources/index.ts';
 	import type { SourceHealth, SourceView } from '#lib/sources/index.ts';
 	import { onMount } from 'svelte';
@@ -239,6 +240,8 @@
 	<SkSettings rows={1} />
 {:else if error && !sources.length}
 	<LoadError hasData={false} message={error} onretry={load} />
+{:else if partOff('sources') && sources.length === 0 && !editing}
+	<EmptyState icon="source" title={t('settings.sources.off')} text={t('settings.sources.offText')} action={{ label: t('settings.sources.openParts'), href: to('/settings/parts') }} />
 {:else if sources.length === 0 && !editing}
 	<EmptyState
 		icon="source"
@@ -249,6 +252,7 @@
 	<ConnectBridge onchange={load} />
 {:else}
 	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
+	{#if partOff('sources')}<EmptyState compact icon="source" title={t('settings.sources.off')} text={t('settings.sources.offText')} action={{ label: t('settings.sources.openParts'), href: to('/settings/parts') }} />{/if}
 	<ul class="fl">
 		{#each sources as s (s.id)}
 			<li class="dl" data-testid="source" title={t('settings.sources.rowTitle', { url: s.url, priority: s.priority, uses: uses(s) })}>
@@ -288,8 +292,10 @@
 			</li>
 		{/each}
 	</ul>
-	<ConnectBridge onchange={load} />
-	{#if sources.length}<SourceCheck />{/if}
+	{#if !partOff('sources')}
+		<ConnectBridge onchange={load} />
+		{#if sources.length}<SourceCheck />{/if}
+	{/if}
 {/if}
 
 <style>

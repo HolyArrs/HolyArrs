@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Change",
 	"settings.sources.removeName": "Remove {name}",
 	"settings.sources.remove": "Remove",
-	"settings.sources.bridge": "Link Jackett or Prowlarr"
+	"settings.sources.bridge": "Link Jackett or Prowlarr",
+	"settings.sources.off": "Sources are off",
+	"settings.sources.offText": "HolyArrs doesn't search or grab. Downloads you add in your Downloader still import.",
+	"settings.sources.openParts": "Open Parts",
+	"settings.sources.offState": "Off"
 }

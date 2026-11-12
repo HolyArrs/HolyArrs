@@ -369,6 +369,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/downloads/{id}/mark-failed":                    webserver.PermManageLibrary,
 	"GET /api/v1/downloads/view":                                 webserver.NeedSignedIn, // everyone; non-managers see only their own asks
 	"POST /api/v1/downloads/{id}/remove":                         webserver.PermManageLibrary,
+	"POST /api/v1/downloads/clear-now":                           webserver.PermManageLibrary,
 	"POST /api/v1/downloads/{id}/pause":                          webserver.PermManageLibrary,
 	"POST /api/v1/downloads/{id}/resume":                         webserver.PermManageLibrary,
 	"POST /api/v1/downloads/{id}/top":                            webserver.PermManageLibrary,

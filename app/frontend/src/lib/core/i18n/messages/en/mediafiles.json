@@ -255,6 +255,7 @@
 	"mediafiles.parts.stopsMusic": "Artist and album pages, music searches and music downloads stop. Music files stay where they are.",
 	"mediafiles.parts.stopsSubtitles": "Subtitles are no longer looked for or fetched. Subtitle files already saved stay.",
 	"mediafiles.parts.stopsWishlist": "Family and friends can no longer request titles. Requests already made are kept.",
+	"mediafiles.parts.stopsSources": "Automatic searches stop, for when you add downloads yourself. Downloaders and imports keep working.",
 	"mediafiles.parts.needsSubtitles": "Needs Movies or TV shows.",
 	"mediafiles.parts.needsWishlist": "Needs Movies, TV shows or Music.",
 	"mediafiles.parts.allMedia": "Movies, TV shows and Music",

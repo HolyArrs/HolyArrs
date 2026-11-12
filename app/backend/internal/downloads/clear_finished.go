@@ -158,6 +158,13 @@ func (m *Manager) retryClears(ctx context.Context) {
 	}
 }
 
+// ClearNow tries every waiting clear at once and returns how many still wait.
+func (m *Manager) ClearNow(ctx context.Context) int {
+	m.dueNow(ctx)
+	m.retryClears(ctx)
+	return m.waitingClears(ctx)
+}
+
 // ClearWait is an imported download still waiting to be cleared from its
 // Downloader: when the next try runs, how many tries failed, and the last
 // reason.

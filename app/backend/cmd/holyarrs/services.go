@@ -138,7 +138,7 @@ type services struct {
 	States *jobs.Registry
 	// SafeMode says the app started with only the core.
 	SafeMode bool
-	// Parts switches the five parts and the stages (nil: every part on,
+	// Parts switches the parts and the stages (nil: every part on,
 	// no controls).
 	Parts *parts.Control
 	// Mover runs moves from the old apps; made on first use when nil.

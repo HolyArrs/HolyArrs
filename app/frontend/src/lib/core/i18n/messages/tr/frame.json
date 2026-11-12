@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "Tüm yerler",
 	"frame.layout.newWord": "yeni",
 	"frame.layout.accountName": "Hesap · {name}",
-	"frame.layout.hostRefused": "<b>{host} üzerinde değişiklikler kaydedilemiyor.</b> HolyArrs yalnızca izin verdiğin adlarda kaydeder. Bir kez IP adresiyle aç, sonra Ayarlar › Giriş › İzin verilen host adları altına {host} ekle. Yeniden başlatma gerekmez."
+	"frame.layout.hostRefused": "<b>{host} üzerinde değişiklikler kaydedilemiyor.</b> HolyArrs yalnızca izin verdiğin adlarda kaydeder. Bir kez IP adresiyle aç, sonra Ayarlar › Giriş › İzin verilen host adları altına {host} ekle. Yeniden başlatma gerekmez.",
+	"frame.feeds.clearOne": "İçe aktarılan indirme kaldırılmadı",
+	"frame.feeds.clearMany": "{n} içe aktarılan indirme kaldırılmadı",
+	"frame.feeds.clearBody": "HolyArrs kendisi yeniden dener",
+	"frame.feeds.clearNow": "Şimdi kaldır",
+	"frame.feeds.cleared": "İndiriciden kaldırıldı",
+	"frame.feeds.clearStill": "Henüz kaldırılmadı"
 }

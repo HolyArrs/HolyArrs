@@ -13,7 +13,7 @@ const screens = {
 };
 
 function answer(off: PartName[]): PartsAnswer {
-	const names: Record<PartName, string> = { movies: 'Movies', shows: 'TV shows', music: 'Music', subtitles: 'Subtitles', wishlist: 'Requests' };
+	const names: Record<PartName, string> = { movies: 'Movies', shows: 'TV shows', music: 'Music', subtitles: 'Subtitles', wishlist: 'Requests', sources: 'Sources' };
 	return {
 		parts: (Object.keys(names) as PartName[]).map((p) => ({ part: p, name: names[p], on: !off.includes(p), state: off.includes(p) ? 'off' : 'running' })),
 		screens,
@@ -77,6 +77,13 @@ describe('switching parts', () => {
 			{ part: 'shows', on: false }
 		]);
 		expect(switchPlan(all, all)).toEqual([]);
+	});
+	it('leaves a part the caller does not name as it is (the welcome step does not ask about Sources)', () => {
+		// Sources on (a fresh install) and a step that does not name it: it stays on.
+		expect(switchPlan({ ...all, sources: true }, all)).toEqual([]);
+		expect(switchPlan({ ...all, sources: false }, all)).toEqual([]);
+		expect(switchPlan({ ...all, sources: true }, { ...all, sources: false })).toEqual([{ part: 'sources', on: false }]);
+		expect(switchPlan({ ...all, sources: false }, { ...all, sources: true })).toEqual([{ part: 'sources', on: true }]);
 	});
 	it('says what cannot be', () => {
 		const none = { movies: false, shows: false, music: false, subtitles: false, wishlist: false };

@@ -145,6 +145,8 @@
 					<Button size="sm" variant="primary" aria-expanded={!!editOpen[key]} aria-controls="ed-form-{key}" onclick={() => (editOpen[key] = !editOpen[key])} data-testid="decision-fix">{t('downloads.dp.setEdition')}</Button>
 				{:else if fix === 'version'}
 					<Button size="sm" variant="primary" href={to(`/library/${d.title_id}?tab=library#h-versions`)} data-testid="decision-fix">{versionLabel(d)}</Button>
+				{:else if fix === 'folder'}
+					<Button size="sm" variant="primary" href={to('/settings/downloaders')} data-testid="decision-fix">{t('downloads.dp.openDownloaders')}</Button>
 				{:else if fix === 'hand'}
 					<Button size="sm" variant="primary" href={to(`/library/${d.title_id}?tab=library&pick=1#h-rel`)} data-testid="decision-fix">{t('downloads.dp.byHand')}</Button>
 				{:else}

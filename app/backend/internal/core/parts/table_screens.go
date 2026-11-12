@@ -207,7 +207,7 @@ var SafeLibrary = map[string]bool{
 // SafeScreens are the pages that show in safe mode for the same reason.
 var SafeScreens = []string{"/library", "/library/[id]", "/library/[id]/albums/[album]"}
 
-// Register adds the five parts and their route, screen, loop and Job kind
+// Register adds the parts and their route, screen, loop and Job kind
 // owners to the registry. The program wiring calls it once before anything
 // reads the registry; calling it again does nothing.
 func Register() {
@@ -220,7 +220,7 @@ func register() {
 	for _, p := range []struct {
 		part  Part
 		label string
-	}{{Movies, "Movies"}, {Shows, "TV shows"}, {Music, "Music"}, {Subtitles, "Subtitles"}, {Wishlist, "Requests"}} {
+	}{{Movies, "Movies"}, {Shows, "TV shows"}, {Music, "Music"}, {Subtitles, "Subtitles"}, {Wishlist, "Requests"}, {Sources, "Sources"}} {
 		startup.RegisterPart(p.part, p.label)
 	}
 	startup.RegisterOwners(startup.RouteOwners, routeOwners)

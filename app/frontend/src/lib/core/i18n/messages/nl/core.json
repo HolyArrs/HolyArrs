@@ -54,6 +54,7 @@
 	"core.plain.configDiskWarning": "De schijf met de configuratiemap raakt zonder ruimte.",
 	"core.plain.configFolder": "/config is niet toegewezen aan een map, dus de gegevens van HolyArrs gaan verloren als de container opnieuw wordt aangemaakt.",
 	"core.plain.waitingDownloads": "Downloads wachten omdat hun Downloader de bestanden niet kan gebruiken.",
+	"core.plain.clearWaiting": "Geïmporteerde downloads wachten tot ze uit hun Downloader worden opgeruimd.",
 	"core.plain.someone": "Iemand in je huishouden",
 	"core.plain.keyKitOwner": "De eigenaar moet het sleutelpakket opslaan: backups bevatten de hoofdsleutel niet.",
 	"core.plain.keyKitNone": "Er is geen sleutelpakket opgeslagen: backups bevatten de hoofdsleutel niet.",

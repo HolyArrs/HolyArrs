@@ -255,6 +255,7 @@
 	"mediafiles.parts.stopsMusic": "Sanatçı ve albüm sayfaları, müzik aramaları ve müzik indirmeleri durur. Müzik dosyaları olduğu yerde kalır.",
 	"mediafiles.parts.stopsSubtitles": "Altyazılar artık aranmaz ya da alınmaz. Zaten kayıtlı altyazı dosyaları kalır.",
 	"mediafiles.parts.stopsWishlist": "Aile ve arkadaşlar artık başlık isteyemez. Yapılmış istekler korunur.",
+	"mediafiles.parts.stopsSources": "Otomatik aramalar durur; indirmeleri kendin eklediğin durumlar için. İndiriciler ve içe aktarmalar çalışmaya devam eder.",
 	"mediafiles.parts.needsSubtitles": "Filmler ya da Diziler gerekir.",
 	"mediafiles.parts.needsWishlist": "Filmler, Diziler ya da Müzik gerekir.",
 	"mediafiles.parts.allMedia": "Filmler, Diziler ve Müzik",

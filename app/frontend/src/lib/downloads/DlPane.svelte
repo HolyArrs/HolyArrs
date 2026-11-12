@@ -342,6 +342,9 @@
 		.pb .big { width: 56px; height: 84px; }
 		.pb .big.square { height: 56px; }
 	}
+	@media (max-width: 640px) {
+		.pb { grid-template-columns: minmax(0, 1fr); }
+	}
 	@supports not selector(::-webkit-scrollbar) {
 		.pb { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 24%, transparent) transparent; }
 		.pb:hover { scrollbar-color: color-mix(in srgb, var(--text) 38%, transparent) transparent; }

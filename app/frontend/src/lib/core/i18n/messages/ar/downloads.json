@@ -1245,5 +1245,8 @@
 	"downloads.ot.hintSize": "حجم الإصدار كاملًا بالغيغابايت. اترك أحد الطرفين فارغًا لعدم وضع حد. الإصدار الذي لا يُعرف حجمه لا يطابق أبدًا.",
 	"downloads.ot.sumSize": "الحجم: {range}",
 	"downloads.ot.sizeOver": "أكبر من {n} غيغابايت",
-	"downloads.ot.sizeUpTo": "حتى {n} غيغابايت"
+	"downloads.ot.sizeUpTo": "حتى {n} غيغابايت",
+	"downloads.row.imported": "تم الاستيراد",
+	"downloads.row.stillIn": "لا يزال في {app}",
+	"downloads.dp.openDownloaders": "فتح برامج التنزيل"
 }

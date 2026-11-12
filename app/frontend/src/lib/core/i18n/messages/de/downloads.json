@@ -1245,5 +1245,8 @@
 	"downloads.ot.hintSize": "Die Größe des ganzen Release in GB. Lass eine Seite leer für keine Grenze. Ein Release ohne bekannte Größe passt nie.",
 	"downloads.ot.sumSize": "Größe: {range}",
 	"downloads.ot.sizeOver": "über {n} GB",
-	"downloads.ot.sizeUpTo": "bis {n} GB"
+	"downloads.ot.sizeUpTo": "bis {n} GB",
+	"downloads.row.imported": "Importiert",
+	"downloads.row.stillIn": "Noch in {app}",
+	"downloads.dp.openDownloaders": "Downloader öffnen"
 }

@@ -108,6 +108,9 @@ type Engine struct {
 	// ConfigDir is the config folder; its disk is checked for free space
 	// ("" adds no check).
 	ConfigDir string
+	// SourcesOn says the Sources part is on; off, no Source is checked
+	// (nil means on).
+	SourcesOn func() bool
 
 	mu  sync.Mutex
 	low map[string]int64 // folder -> bytes an import needed but could not get
@@ -194,7 +197,7 @@ func (e *Engine) update(ctx context.Context) ([]Result, error) {
 // Check runs every check once and returns the results, without storing.
 func (e *Engine) Check(ctx context.Context) ([]Result, error) {
 	var out []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.waiting, e.backups, e.trailers, e.update} {
+	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.waiting, e.clearing, e.backups, e.trailers, e.update} {
 		rs, err := f(ctx)
 		if err != nil {
 			return nil, err
@@ -220,7 +223,7 @@ func (e *Engine) Probe(ctx context.Context, now time.Time) (bool, any, error) {
 		return true, nil, nil
 	}
 	var rs []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.waiting, e.backups, e.trailers} {
+	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.waiting, e.clearing, e.backups, e.trailers} {
 		got, err := f(ctx)
 		if err != nil {
 			return true, nil, err
@@ -369,6 +372,8 @@ func label(kind string) string {
 		return "Downloader"
 	case "waiting_downloads":
 		return "downloads waiting for their files"
+	case "clear_waiting":
+		return "imported downloads waiting to be cleared"
 	case "backups":
 		return "backups"
 	case "update":
@@ -539,8 +544,12 @@ func inside(p, folder string) bool {
 	return p == folder || strings.HasPrefix(p, folder+string(filepath.Separator))
 }
 
-// sources warns about every Source HolyArrs cannot use right now.
+// sources warns about every Source HolyArrs cannot use right now. With the
+// Sources part off there is nothing to say: their checks go quietly.
 func (e *Engine) sources(ctx context.Context) ([]Result, error) {
+	if e.SourcesOn != nil && !e.SourcesOn() {
+		return nil, nil
+	}
 	ss, err := database.Select[domain.Source](ctx, e.Store.Read(), "sources", "1=1 ORDER BY id")
 	if err != nil {
 		return nil, err

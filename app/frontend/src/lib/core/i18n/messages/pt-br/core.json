@@ -54,6 +54,7 @@
 	"core.plain.configDiskWarning": "O disco que guarda a pasta config está com pouco espaço.",
 	"core.plain.configFolder": "/config não está mapeada para uma pasta, então os dados do HolyArrs se perdem quando o contêiner é recriado.",
 	"core.plain.waitingDownloads": "Os downloads estão esperando porque o gerenciador de downloads deles não consegue usar os arquivos.",
+	"core.plain.clearWaiting": "Downloads importados estão esperando a limpeza no gerenciador de downloads deles.",
 	"core.plain.someone": "Alguém da sua casa",
 	"core.plain.keyKitOwner": "O dono deve salvar o kit de chave: os backups não guardam a chave mestra.",
 	"core.plain.keyKitNone": "Nenhum kit de chave salvo: os backups não guardam a chave mestra.",

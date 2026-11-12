@@ -25,6 +25,7 @@
 	"home.lostIfTheContainer": "تضيع عند إعادة إنشاء الحاوية",
 	"home.downloads": "التنزيلات",
 	"home.waitingForTheirFiles": "بانتظار ملفاتها",
+	"home.waitingToBeCleared": "بانتظار التنظيف",
 	"home.masterKey": "المفتاح الرئيسي",
 	"home.noKeyKitSaved": "لا توجد حزمة مفتاح محفوظة",
 	"home.trailers": "الإعلانات التشويقية",
@@ -266,5 +267,7 @@
 	"home.version": "الإصدار {version}",
 	"home.metadataServerDown": "خادم البيانات الوصفية متوقف",
 	"home.metadataServerOnline": "خادم البيانات الوصفية متصل",
-	"home.homeCouldNotRead3": "تعذّر على الرئيسية قراءة التنزيلات الآن."
+	"home.homeCouldNotRead3": "تعذّر على الرئيسية قراءة التنزيلات الآن.",
+	"home.off": "متوقف",
+	"home.sourcesOff": "متوقف في الأجزاء"
 }

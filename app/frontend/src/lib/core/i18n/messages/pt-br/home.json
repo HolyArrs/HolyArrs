@@ -25,6 +25,7 @@
 	"home.lostIfTheContainer": "perdida se o contêiner for recriado",
 	"home.downloads": "Downloads",
 	"home.waitingForTheirFiles": "esperando os arquivos",
+	"home.waitingToBeCleared": "esperando a limpeza",
 	"home.masterKey": "Chave mestra",
 	"home.noKeyKitSaved": "nenhum kit de chave salvo",
 	"home.trailers": "Trailers",
@@ -266,5 +267,7 @@
 	"home.version": "Versão {version}",
 	"home.metadataServerDown": "Servidor de metadados fora do ar",
 	"home.metadataServerOnline": "Servidor de metadados no ar",
-	"home.homeCouldNotRead3": "O Início não conseguiu ler os downloads agora."
+	"home.homeCouldNotRead3": "O Início não conseguiu ler os downloads agora.",
+	"home.off": "Desligado",
+	"home.sourcesOff": "Desligado em Partes"
 }

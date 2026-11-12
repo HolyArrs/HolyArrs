@@ -156,7 +156,7 @@ func TestClearWaitsListsWaitingDownloads(t *testing.T) {
 	ctx := context.Background()
 	spy.err = outbound.ErrSuppressed
 	m.ClearFinished(ctx, id)
-	waits := clearWaits(ctx, w.s.Read())
+	waits := ClearWaits(ctx, w.s.Read())
 	cw, ok := waits[id]
 	if !ok || cw.Tries != 1 || cw.NextTry.IsZero() || cw.Reason == "" {
 		t.Fatalf("waits %+v", waits)

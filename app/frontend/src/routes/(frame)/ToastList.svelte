@@ -171,7 +171,7 @@
 		<button type="button" class="more" data-alerts-open in:toastIn out:toastOut onclick={() => (alertsPanel.open = true)}>{t('frame.toasts.more', { n: toasts.counts.waiting })}</button>
 	{/if}
 </div>
-{#if signedIn}<AlertsPanel before={feedPins.update ? [feedPins.update] : []} after={decisionPins()} />{/if}
+{#if signedIn}<AlertsPanel before={feedPins.update ? [feedPins.update] : []} after={[...decisionPins(), ...(feedPins.clear ? [feedPins.clear] : [])]} />{/if}
 
 <style>
 	.alerts-demo { position: fixed; z-index: 89; inset-inline-end: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); padding: 8px 14px; border-radius: 999px; font: var(--t-subhead); font-weight: 600; color: #f5f5f7; background: rgb(30 30 34 / 80%); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: 0 6px 20px rgb(0 0 0 / 35%), inset 0 0 0 0.5px rgb(255 255 255 / 12%); }

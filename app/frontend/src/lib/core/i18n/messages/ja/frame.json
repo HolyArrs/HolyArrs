@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "すべての場所",
 	"frame.layout.newWord": "新着",
 	"frame.layout.accountName": "アカウント · {name}",
-	"frame.layout.hostRefused": "<b>{host} では変更を保存できません。</b>HolyArrs は許可した名前でのみ保存します。一度 IP アドレスで開き、設定 › サインインとセキュリティ › 許可するホスト名 に {host} を追加してください。再起動は不要です。"
+	"frame.layout.hostRefused": "<b>{host} では変更を保存できません。</b>HolyArrs は許可した名前でのみ保存します。一度 IP アドレスで開き、設定 › サインインとセキュリティ › 許可するホスト名 に {host} を追加してください。再起動は不要です。",
+	"frame.feeds.clearOne": "インポート済みのダウンロードが消去されていません",
+	"frame.feeds.clearMany": "インポート済みのダウンロード {n} 件が消去されていません",
+	"frame.feeds.clearBody": "HolyArrs が自動で再試行します",
+	"frame.feeds.clearNow": "今すぐ消去",
+	"frame.feeds.cleared": "ダウンローダーから消去しました",
+	"frame.feeds.clearStill": "まだ消去されていません"
 }
