@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent en ruTorrent als downloader**, ook op een seedbox. Afgeronde Usenet-downloads worden nu naar je bibliotheek verplaatst in plaats van gekopieerd. [Wat is er nieuw](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: nu in 44 talen**, ook van rechts naar links. aria2 werkt als downloader, en seizoenspakketten komen binnen met een paar afleveringen tegelijk. [Wat is er nieuw](https://holyarrs.com/whats-new/)
 
 > Elke poster, trailer en score in je HolyArrs komt van een server die ik zelf draai en betaal, zodat het voor iedereen gratis blijft. Heeft HolyArrs je filmavond een beetje beter gemaakt? Met een sponsor blijven de lichten aan voor ons allemaal 💛
 >
@@ -222,7 +220,7 @@ De images staan op Docker Hub als [`holyarrs/holyarrs`](https://hub.docker.com/r
 | Tag | Gebruik het voor |
 | :----: | --- |
 | `latest` | De nieuwste versie. |
-| `1.0.19` | Eén exacte versie. Die verandert nooit. |
+| `1.1.0` | Eén exacte versie. Die verandert nooit. |
 
 ## Gebruik
 

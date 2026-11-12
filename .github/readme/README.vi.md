@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent và ruTorrent làm trình tải xuống**, kể cả seedbox. Các lượt tải xuống Usenet đã hoàn tất giờ được chuyển vào Thư viện của bạn thay vì sao chép. [Xem có gì mới](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: nay có 44 ngôn ngữ**, kể cả viết từ phải sang trái. aria2 dùng được làm trình tải xuống, và gói mùa tải vài tập mỗi lần. [Xem có gì mới](https://holyarrs.com/whats-new/)
 
 > Mọi poster, trailer và điểm đánh giá trong HolyArrs của bạn đều đến từ một máy chủ do chính tôi vận hành và trả tiền, để nó luôn miễn phí cho mọi người. Nếu HolyArrs làm buổi xem phim của bạn vui hơn một chút, một lượt tài trợ sẽ giúp giữ đèn sáng cho tất cả chúng ta 💛
 >
@@ -222,7 +220,7 @@ Các image nằm trên Docker Hub với tên [`holyarrs/holyarrs`](https://hub.d
 | Tag | Dùng cho |
 | :----: | --- |
 | `latest` | Phiên bản mới nhất. |
-| `1.0.19` | Một phiên bản chính xác. Nó không bao giờ thay đổi. |
+| `1.1.0` | Một phiên bản chính xác. Nó không bao giờ thay đổi. |
 
 ## Cách dùng
 
