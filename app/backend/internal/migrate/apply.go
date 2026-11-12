@@ -488,6 +488,7 @@ var natural = map[string][2]string{
 	"ask": {"asks", "name"}, "user": {"users", "name"}, "alert": {"alerts", "name"}, "subtitle_site": {"subtitle_sites", "name"},
 	"source": {"sources", "name"}, "downloader": {"downloaders", "name"}, "never_add": {"never_add", "name"},
 	"title": {"titles", "kind"}, "folder": {"library_folders", "path"}, "outside_list": {"outside_lists", "name"},
+	"pick_rules": {"pick_rules", "name"}, "own_trait": {"own_traits", "name"},
 }
 
 type rowQuerier interface {

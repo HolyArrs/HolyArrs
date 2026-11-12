@@ -18,7 +18,8 @@
     "people": {
       "s": "s"
     },
-    "approved_hash": "s"
+    "approved_hash": "s",
+    "no_formats": true
   },
   "state": "s",
   "job_id": 7,

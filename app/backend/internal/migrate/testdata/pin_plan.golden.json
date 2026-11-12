@@ -30,7 +30,90 @@
           "rules": {
             "app": "s",
             "profile": "s",
-            "preset": "s"
+            "preset": "s",
+            "name": "s",
+            "profile_key": "s",
+            "kinds": [
+              "s"
+            ],
+            "body": {
+              "steps": [
+                {
+                  "quality": "",
+                  "allowed": false
+                }
+              ],
+              "good_enough_at": "s",
+              "traits": [
+                {
+                  "trait": "",
+                  "points": 0
+                }
+              ],
+              "must_have": [
+                ""
+              ],
+              "never": [
+                ""
+              ],
+              "min_points": 7,
+              "good_enough_points": 0,
+              "size_limits": {
+                "": {
+                  "min": 0,
+                  "max": 0,
+                  "per_minute": false
+                }
+              },
+              "protocol": {
+                "prefer": "",
+                "wait_minutes_torrent": 0,
+                "wait_minutes_usenet": 0,
+                "skip_wait_at_good_enough": false
+              },
+              "language": {
+                "wanted": null,
+                "original_ok": false
+              },
+              "order": "s",
+              "upgrade_min_points": 7,
+              "proper_policy": {
+                "mode": ""
+              },
+              "tags": [
+                ""
+              ],
+              "synced": {
+                "from": "",
+                "app": "",
+                "profile_id": "",
+                "name": "",
+                "at": ""
+              }
+            },
+            "traits": [
+              {
+                "source_id": "s",
+                "name": "s",
+                "specs": [
+                  {
+                    "name": "",
+                    "kind": "",
+                    "value": ""
+                  }
+                ],
+                "points": 7
+              }
+            ],
+            "skipped": [
+              {
+                "name": "s",
+                "reason": "s"
+              }
+            ],
+            "notes": [
+              "s"
+            ]
           },
           "protocol": {
             "preset": "s",

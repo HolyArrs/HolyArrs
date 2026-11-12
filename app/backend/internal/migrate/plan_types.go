@@ -2,6 +2,8 @@ package migrate
 
 import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 // A Plan says what a move would bring over from one or more Snapshots:
@@ -67,6 +69,9 @@ type Choices struct {
 	// preview. A queued move must reproduce this exact canonical plan before
 	// it may change domain data.
 	ApprovedHash string `json:"approved_hash,omitempty"`
+	// NoFormats keeps profiles as ready-made Pick rules matches, leaving
+	// their formats and scores behind (off: they are brought).
+	NoFormats bool `json:"no_formats,omitempty"`
 }
 
 // Person choices on the move screen.
@@ -161,6 +166,15 @@ type RulesPlan struct {
 	App     string `json:"app"`
 	Profile string `json:"profile"`
 	Preset  string `json:"preset"`
+	// Body is set when the profile becomes its own Pick rules (Name, with
+	// Traits from the formats it scores) instead of a ready-made match.
+	Name       string                    `json:"name,omitempty"`
+	ProfileKey string                    `json:"profile_key,omitempty"`
+	Kinds      []string                  `json:"kinds,omitempty"`
+	Body       *mediafiles.PickRulesBody `json:"body,omitempty"`
+	Traits     []library.ImportedTrait   `json:"traits,omitempty"`
+	Skipped    []ImportSkipped           `json:"skipped,omitempty"`
+	Notes      []string                  `json:"notes,omitempty"`
 }
 
 // ProtocolPlan is the wait an old app's untagged default wait rule gives a
