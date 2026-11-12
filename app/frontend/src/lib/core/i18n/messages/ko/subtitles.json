@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "언어",
 	"subtitles.wants.pick": "언어 선택",
 	"subtitles.wants.takeOff": "{name} 제외",
-	"subtitles.wants.thisLanguage": "이 언어"
+	"subtitles.wants.thisLanguage": "이 언어",
+	"subtitles.made.translated": "번역됨",
+	"subtitles.made.partial": "일부 번역됨",
+	"subtitles.made.ai": "AI 번역",
+	"subtitles.made.machine": "기계 번역",
+	"subtitles.wants.translateFrom": "번역할 언어",
+	"subtitles.wants.noTranslate": "번역 안 함",
+	"subtitles.panel.picture": "이미지",
+	"subtitles.panel.pictureTitle": "이미지 자막이라 번역할 수 없습니다",
+	"subtitles.panel.translate": "번역",
+	"subtitles.panel.translateFor": "{name} 자막 번역",
+	"subtitles.panel.translateFrom": "번역할 원본",
+	"subtitles.panel.translateQueued": "번역 중",
+	"subtitles.panel.translateQueuedBody": "{name} 자막은 완료되면 여기에 표시됩니다.",
+	"subtitles.panel.translating": "찾지 못해 번역기가 만드는 중입니다."
 }

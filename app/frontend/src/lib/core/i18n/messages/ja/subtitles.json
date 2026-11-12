@@ -147,5 +147,19 @@
 "subtitles.wants.language": "言語",
 "subtitles.wants.pick": "言語を選ぶ",
 "subtitles.wants.takeOff": "{name} を外す",
-"subtitles.wants.thisLanguage": "この言語"
+"subtitles.wants.thisLanguage": "この言語",
+"subtitles.made.translated": "翻訳済み",
+"subtitles.made.partial": "一部翻訳",
+"subtitles.made.ai": "AI翻訳",
+"subtitles.made.machine": "機械翻訳",
+"subtitles.wants.translateFrom": "翻訳元",
+"subtitles.wants.noTranslate": "翻訳しない",
+"subtitles.panel.picture": "画像",
+"subtitles.panel.pictureTitle": "画像字幕のため翻訳できません",
+"subtitles.panel.translate": "翻訳",
+"subtitles.panel.translateFor": "{name}の字幕を翻訳",
+"subtitles.panel.translateFrom": "翻訳元",
+"subtitles.panel.translateQueued": "翻訳中",
+"subtitles.panel.translateQueuedBody": "{name}の字幕は完了するとここに表示されます。",
+"subtitles.panel.translating": "見つからないため、翻訳ツールが作成中です。"
 }

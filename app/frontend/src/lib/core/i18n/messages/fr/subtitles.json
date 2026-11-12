@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Langue",
 	"subtitles.wants.pick": "Choisir une langue",
 	"subtitles.wants.takeOff": "Retirer {name}",
-	"subtitles.wants.thisLanguage": "cette langue"
+	"subtitles.wants.thisLanguage": "cette langue",
+	"subtitles.made.translated": "Traduit",
+	"subtitles.made.partial": "Traduit en partie",
+	"subtitles.made.ai": "Traduit par IA",
+	"subtitles.made.machine": "Traduction automatique",
+	"subtitles.wants.translateFrom": "Traduire depuis",
+	"subtitles.wants.noTranslate": "Ne pas traduire",
+	"subtitles.panel.picture": "Image",
+	"subtitles.panel.pictureTitle": "Sous-titre image : impossible à traduire",
+	"subtitles.panel.translate": "Traduire",
+	"subtitles.panel.translateFor": "Traduire un sous-titre {name}",
+	"subtitles.panel.translateFrom": "Traduire depuis",
+	"subtitles.panel.translateQueued": "Traduction en cours",
+	"subtitles.panel.translateQueuedBody": "Le sous-titre {name} apparaît ici une fois prêt.",
+	"subtitles.panel.translating": "Rien trouvé : ton traducteur en crée un."
 }

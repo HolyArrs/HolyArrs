@@ -24,6 +24,7 @@ func (s *Service) Register(q *jobs.Queue) {
 	q.Handle(KindMissing, s.handleMissing)
 	q.Handle(KindBetter, s.handleBetter)
 	q.Handle(KindLook, s.handleLook)
+	q.Handle(KindTranslate, s.handleTranslate)
 	if s.Enqueue == nil {
 		s.Enqueue = func(ctx context.Context, kind string, subj *domain.Subject, params map[string]any, key string) error {
 			_, _, err := q.Enqueue(ctx, kind, subj, params, key, domain.System)
@@ -224,13 +225,27 @@ func (s *Service) handleBetter(ctx context.Context, r *jobs.Run) error {
 		return err
 	}
 	var ids []int64
+	seen := map[int64]bool{}
 	for rows.Next() {
 		var id int64
 		if rows.Scan(&id) == nil {
-			ids = append(ids, id)
+			ids, seen[id] = append(ids, id), true
 		}
 	}
 	rows.Close()
+	// Machine-made subtitles of any age get a look for a file made by a person
+	// once a week, in the room the batch has left.
+	if room := set.Batch - len(ids); room > 0 {
+		more, err := stopgapsDue(ctx, s.Store.Read(), room)
+		if err != nil {
+			return err
+		}
+		for _, id := range more {
+			if !seen[id] {
+				ids = append(ids, id)
+			}
+		}
+	}
 	for _, id := range ids {
 		if err := s.Queue(ctx, id, map[string]any{"better": true, "better_days": set.BetterDays}); err != nil {
 			return err

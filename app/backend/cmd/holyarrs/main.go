@@ -576,7 +576,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	}
 	defer q.Stop()
-	for p, label := range map[jobs.Pool]string{jobs.PoolCore: "Core workers", jobs.PoolIO: "Search and download workers", jobs.PoolHeavy: "Import and scan workers", jobs.PoolMigrate: "Import from other apps worker"} {
+	for p, label := range map[jobs.Pool]string{jobs.PoolCore: "Core workers", jobs.PoolIO: "Search and download workers", jobs.PoolHeavy: "Import and scan workers", jobs.PoolMigrate: "Import from other apps worker", jobs.PoolTranslate: "Subtitle translation worker"} {
 		if pools[p] == 0 {
 			reg.Set(jobs.StageKey("jobs_"+string(p)), "stage", label, jobs.Off, notStarted)
 			continue

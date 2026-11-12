@@ -203,6 +203,7 @@ GET /api/v1/settings/search auth=settings scope=read assurance=false part=media
 GET /api/v1/settings/shows auth=manage_library scope=read assurance=false part=shows
 GET /api/v1/settings/status auth=settings scope=read assurance=false part=core
 GET /api/v1/settings/subtitles auth=settings scope=read assurance=false part=subtitles
+GET /api/v1/settings/subtitles/translator auth=settings scope=read assurance=false part=subtitles
 GET /api/v1/settings/title-defaults auth=manage_library scope=read assurance=false part=media
 GET /api/v1/settings/trakt-key auth=settings scope=admin assurance=false part=core
 GET /api/v1/settings/trakt-token auth=owner scope=admin assurance=false part=core
@@ -377,6 +378,7 @@ POST /api/v1/explore/counts auth=signed_in scope=write assurance=false part=medi
 POST /api/v1/explore/strip/counts auth=signed_in scope=write assurance=false part=media
 POST /api/v1/files/{id}/subtitles/choices auth=manage_library scope=write assurance=false part=subtitles
 POST /api/v1/files/{id}/subtitles/choose auth=manage_library scope=write assurance=false part=subtitles
+POST /api/v1/files/{id}/subtitles/translate auth=manage_library scope=write assurance=false part=subtitles
 POST /api/v1/health/checks/run auth=manage_library scope=write assurance=false part=core
 POST /api/v1/hidden auth=users scope=admin assurance=false part=media
 POST /api/v1/holding/clean auth=manage_library scope=write assurance=false part=media
@@ -427,6 +429,7 @@ POST /api/v1/settings/import-secrets auth=owner scope=admin assurance=false part
 POST /api/v1/settings/metadata/test auth=settings scope=write assurance=false part=core
 POST /api/v1/settings/naming/example auth=manage_library scope=write assurance=false part=media
 POST /api/v1/settings/old-app-api/keys/{side} auth=settings scope=admin assurance=true part=core
+POST /api/v1/settings/subtitles/translator/test auth=settings scope=write assurance=false part=subtitles
 POST /api/v1/shows auth=manage_library scope=write assurance=false part=shows
 POST /api/v1/sources auth=settings scope=write assurance=false part=core
 POST /api/v1/sources/check auth=settings scope=write assurance=false part=core
@@ -516,6 +519,7 @@ PUT /api/v1/settings/release-gate auth=settings scope=write assurance=false part
 PUT /api/v1/settings/search auth=settings scope=write assurance=false part=media
 PUT /api/v1/settings/shows auth=settings scope=write assurance=false part=shows
 PUT /api/v1/settings/subtitles auth=settings scope=write assurance=false part=subtitles
+PUT /api/v1/settings/subtitles/translator auth=settings scope=write assurance=false part=subtitles
 PUT /api/v1/settings/title-defaults auth=settings scope=write assurance=false part=media
 PUT /api/v1/settings/trakt-key auth=settings scope=write assurance=false part=core
 PUT /api/v1/settings/trakt-token auth=owner scope=admin assurance=false part=core

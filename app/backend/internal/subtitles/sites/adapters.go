@@ -297,7 +297,7 @@ func fold(s string) string {
 }
 
 // langNames maps two-letter codes to the English language names Gestdown expects.
-var langNames = map[string]string{"en": "English", "es": "Spanish", "fr": "French", "de": "German", "it": "Italian", "pt": "Portuguese",
+var langNames = map[string]string{"en": "English", "es": "Spanish", "fr": "French", "de": "German", "it": "Italian", "pt": "Portuguese", "pt-br": "Portuguese (Brazilian)",
 	"nl": "Dutch", "pl": "Polish", "ro": "Romanian", "ru": "Russian", "sv": "Swedish", "tr": "Turkish", "el": "Greek", "he": "Hebrew",
 	"hu": "Hungarian", "cs": "Czech", "da": "Danish", "fi": "Finnish", "no": "Norwegian", "ar": "Arabic", "bg": "Bulgarian", "hr": "Croatian",
 	"sr": "Serbian", "sl": "Slovenian", "ca": "Catalan", "eu": "Euskera", "gl": "Galego", "ja": "Japanese", "ko": "Korean", "zh": "Chinese (Simplified)"}

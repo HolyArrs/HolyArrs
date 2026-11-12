@@ -162,11 +162,15 @@ func (s *Service) Choose(ctx context.Context, fileID int64, siteName, key string
 					continue
 				}
 				t := target{want: o.Want, beat: -1}
+				// The wish's saved file may carry a region, as a pt-BR file for a pt wish.
 				old, _ := database.Select[Subtitle](ctx, s.Store.Read(), "subtitles",
-					"file_id = ? AND place = 'beside' AND state = 'present' AND origin IN ('fetched', 'by_hand') AND language = ? AND forced = ?",
-					fileID, o.Want.Language, o.Want.Forced)
-				if len(old) > 0 {
-					t.old = &old[0]
+					"file_id = ? AND place = 'beside' AND state = 'present' AND origin IN ('fetched', 'by_hand') AND forced = ?",
+					fileID, o.Want.Forced)
+				for i := range old {
+					if LangMatches(o.Want.Language, old[i].Language) {
+						t.old = &old[i]
+						break
+					}
 				}
 				p, err := s.fetchAndSave(ctx, fc, t, c, r, set, by)
 				if err != nil {
