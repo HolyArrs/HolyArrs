@@ -222,7 +222,7 @@
 				<li>
 					<label class:on={chosen.includes(e.id)}>
 						<input type="checkbox" checked={chosen.includes(e.id)} onchange={() => toggle(e.id)} />
-						<span class="lo-text"><b>{se([e.season, e.episode])}{e.name ? ` · ${e.name}` : ''}</b>{#if e.hasFile}<small>{t('discover.leftovers.hasFile')}</small>{/if}</span>
+						<span class="lo-text"><b dir="auto">{se([e.season, e.episode])}{e.name ? ` · ${e.name}` : ''}</b>{#if e.hasFile}<small>{t('discover.leftovers.hasFile')}</small>{/if}</span>
 					</label>
 				</li>
 			{/each}
