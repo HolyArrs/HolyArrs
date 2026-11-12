@@ -466,6 +466,7 @@ func (h *Handlers) searchBrowseCategory(w http.ResponseWriter, r *http.Request) 
 		webserver.Internal(w, "api", err)
 		return
 	}
+	h.rowsText(r, views)
 	out := []ItemView{}
 	if len(views) > 0 && views[0].Items != nil {
 		out = views[0].Items

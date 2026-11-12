@@ -146,6 +146,7 @@ func (hd *Handlers) newRailViews(r *http.Request, rail []newRailDay) ([]newRailD
 		if len(views) == 0 || len(views[0].Items) == 0 {
 			continue
 		}
+		hd.rowsText(r, views)
 		dv := newRailDayView{Day: d.Day, Items: []newRailView{}}
 		for _, v := range views[0].Items {
 			e := extra[v.Kind+":"+v.TMDBID]

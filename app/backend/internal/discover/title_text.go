@@ -53,6 +53,14 @@ func FillText(r *http.Request, p metadata.Provider, items []ItemView) {
 	}
 }
 
+// rowsText puts every row's cards in the asking page's language, for rows
+// that skip CardArt.Fill (Browse grids, the New & Popular day rail).
+func (h *Handlers) rowsText(r *http.Request, views []ExploreRowView) {
+	for i := range views {
+		FillText(r, h.Metadata, views[i].Items)
+	}
+}
+
 // detailsText shows a title page in x: its name, synopsis and tagline, and
 // the original title only while it differs from the name shown.
 func detailsText(d *metadata.Details, x metadata.TitleText) {
