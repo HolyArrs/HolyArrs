@@ -17,7 +17,7 @@
 	import { refreshParts } from '#lib/mediafiles/index.ts';
 	import { applyParts } from '#lib/setup/index.ts';
 	import { theme, SigninBackdrop } from '#lib/accounts/index.ts';
-	import { emptyForm, kindWords } from '#lib/downloads/index.ts';
+	import { kindWords } from '#lib/downloads/index.ts';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { onMount, tick, untrack } from 'svelte';
@@ -401,6 +401,15 @@
 					<input id="dl-url" class="input" type="text" inputmode="url" bind:value={downloaderStep.dl.url} oninput={() => (downloaderStep.dlError = '')} placeholder="192.168.1.10:{downloaderStep.dlPorts[downloaderStep.dl.kind]}" autocomplete="off" spellcheck="false" aria-invalid={downloaderStep.dlError ? 'true' : undefined} aria-describedby={downloaderStep.dlError ? 'dl-url-error' : undefined} />
 					{#if downloaderStep.dlError}<p class="form-error" id="dl-url-error" role="alert">{downloaderStep.dlError}</p>{/if}
 				</div>
+				{#if downloaderStep.dl.kind === 'qbittorrent'}
+					<fieldset class="way" data-testid="welcome-qbit-way">
+						<legend class="label">{t('settings.downloaders.signInWith')}</legend>
+						<div class="seg">
+							<label class:on={downloaderStep.qbitWay === 'key'}><input type="radio" name="qbit-way" value="key" checked={downloaderStep.qbitWay === 'key'} onchange={() => downloaderStep.pickWay('key')} />{t('welcome.apiKeyLabel')}</label>
+							<label class:on={downloaderStep.qbitWay === 'login'}><input type="radio" name="qbit-way" value="login" checked={downloaderStep.qbitWay === 'login'} onchange={() => downloaderStep.pickWay('login')} />{t('welcome.passwordLabel')}</label>
+						</div>
+					</fieldset>
+				{/if}
 				<div class="two">
 					{#if downloaderStep.dlUser}
 						<div class="field">
@@ -410,15 +419,16 @@
 						</div>
 					{/if}
 					<div class="field">
-						<label for="dl-secret">{downloaderStep.dl.kind === 'sabnzbd' ? t('welcome.apiKeyLabel') : downloaderStep.dl.kind === 'aria2' ? t('welcome.secretTokenLabel') : t('welcome.passwordLabel')}</label>
-						<input id="dl-secret" class="input" type="password" bind:value={downloaderStep.dl.secret} autocomplete="new-password" />
+						<label for="dl-secret">{downloaderStep.dl.kind === 'sabnzbd' || (downloaderStep.dl.kind === 'qbittorrent' && downloaderStep.qbitWay === 'key') ? t('welcome.apiKeyLabel') : downloaderStep.dl.kind === 'aria2' ? t('welcome.secretTokenLabel') : t('welcome.passwordLabel')}</label>
+						<input id="dl-secret" class="input" type="password" bind:value={downloaderStep.dl.secret} autocomplete="new-password" spellcheck="false" aria-describedby={downloaderStep.dl.kind === 'qbittorrent' && downloaderStep.qbitWay === 'key' ? 'dl-secret-hint' : undefined} />
+						{#if downloaderStep.dl.kind === 'qbittorrent' && downloaderStep.qbitWay === 'key'}<span class="hint" id="dl-secret-hint">{t('settings.downloaders.secretQbit')}</span>{/if}
 					</div>
 				</div>
 			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 			<Button variant="primary" size="lg" full type="submit" disabled={busy} {busy}>{downloaderStep.dlEditing != null ? t('welcome.save') : downloaderStep.dlForm ? t('welcome.connect', { name: kindWords[downloaderStep.dl.kind] }) : t('welcome.continue')}</Button>
 			{#if downloaderStep.dlForm && downloaderStep.dlList.length}
-				<button class="alt" type="button" disabled={busy} onclick={() => { error = ''; downloaderStep.dlError = ''; downloaderStep.dlAdding = false; downloaderStep.dlEditing = null; downloaderStep.dl = emptyForm(); }}>{t('welcome.cancel')}</button>
+				<button class="alt" type="button" disabled={busy} onclick={() => { error = ''; downloaderStep.resetForm(); }}>{t('welcome.cancel')}</button>
 			{:else}
 				<button class="alt" type="button" disabled={busy} onclick={downloaderStep.afterDownloader}>{t('welcome.skipForNow')}</button>
 			{/if}
@@ -581,6 +591,8 @@
 
 	/* Family: a two-way switch, the picked side lifted. */
 	.family { margin-top: 26px; }
+	.way { margin-top: 16px; }
+	.way legend { margin-bottom: 8px; }
 	.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); }
 	.seg label {
 		position: relative;
@@ -744,7 +756,7 @@
 	.glass :global(.input:hover) { border-color: rgb(255 255 255 / 0.2); }
 	.glass :global(.input:focus-visible) { border-color: rgb(255 255 255 / 0.6); box-shadow: 0 0 0 3px rgb(255 255 255 / 0.18); background-color: rgb(255 255 255 / 0.1); }
 	.glass :global(.input[aria-invalid='true']) { border-color: var(--fail); }
-	.glass :global(.field label), .glass .field > label { font: 600 13px/1.3 var(--font-ui); color: rgb(255 255 255 / 0.85); }
+	.glass :global(.field label), .glass .field > label, .glass .way legend { font: 600 13px/1.3 var(--font-ui); color: rgb(255 255 255 / 0.85); }
 	.glass :global(.hint), .glass :global(.muted), .glass .hint { color: rgb(255 255 255 / 0.55); }
 	.glass :global(.cb-addr) { color: #fff; font-weight: 600; }
 	.glass :global(.link), .glass :global(.quiet) { color: rgb(255 255 255 / 0.7); }
