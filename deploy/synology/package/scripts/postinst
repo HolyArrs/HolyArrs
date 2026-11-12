@@ -1,0 +1,8 @@
+#!/bin/sh
+# Runs after an install and after an upgrade. Saves the shared folder named in
+# the wizard, so the next upgrade can offer the same one.
+var="${SYNOPKG_PKGVAR:-/var/packages/holyarrs/var}"
+if [ -n "${wizard_media_share:-}" ]; then
+    printf '%s\n' "$wizard_media_share" > "$var/media-share" 2>/dev/null || true
+fi
+exit 0
