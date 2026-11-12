@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Testen",
 	"settings.mediaServers.changeButton": "Wijzigen",
 	"settings.mediaServers.removeName": "{name} verwijderen",
-	"settings.mediaServers.remove": "Verwijderen"
+	"settings.mediaServers.remove": "Verwijderen",
+	"settings.mediaServers.watchTitle": "Kijkgeschiedenis",
+	"settings.mediaServers.watchRead": "Kijkgeschiedenis lezen",
+	"settings.mediaServers.watchHint": "Toont in de statistieken wie wat keek, voor wie de bibliotheek beheert. Uit wist wat gelezen is.",
+	"settings.mediaServers.watchConfirmOff": "Kijkgeschiedenis uitzetten? Alles wat tot nu toe gelezen is, wordt gewist.",
+	"settings.mediaServers.watchTurnedOn": "Kijkgeschiedenis aan. De eerste keer lezen volgt binnen 30 minuten.",
+	"settings.mediaServers.watchTurnedOff": "Kijkgeschiedenis uit",
+	"settings.mediaServers.watchFailed": "Kijkgeschiedenis kon niet worden gewijzigd"
 }

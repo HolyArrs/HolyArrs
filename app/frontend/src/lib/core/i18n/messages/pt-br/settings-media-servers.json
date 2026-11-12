@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Testar",
 	"settings.mediaServers.changeButton": "Alterar",
 	"settings.mediaServers.removeName": "Remover {name}",
-	"settings.mediaServers.remove": "Remover"
+	"settings.mediaServers.remove": "Remover",
+	"settings.mediaServers.watchTitle": "Histórico de exibição",
+	"settings.mediaServers.watchRead": "Ler histórico",
+	"settings.mediaServers.watchHint": "Mostra quem assistiu o quê nas estatísticas, para quem cuida da biblioteca. Desligar apaga o que foi lido.",
+	"settings.mediaServers.watchConfirmOff": "Desligar o histórico? Tudo o que foi lido até agora é apagado.",
+	"settings.mediaServers.watchTurnedOn": "Histórico ligado. A primeira leitura chega em até 30 minutos.",
+	"settings.mediaServers.watchTurnedOff": "Histórico desligado",
+	"settings.mediaServers.watchFailed": "Não foi possível mudar o histórico"
 }

@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Testuj",
 	"settings.mediaServers.changeButton": "Zmień",
 	"settings.mediaServers.removeName": "Usuń: {name}",
-	"settings.mediaServers.remove": "Usuń"
+	"settings.mediaServers.remove": "Usuń",
+	"settings.mediaServers.watchTitle": "Historia oglądania",
+	"settings.mediaServers.watchRead": "Czytaj historię oglądania",
+	"settings.mediaServers.watchHint": "Pokazuje w statystykach, kto co oglądał, osobom zarządzającym biblioteką. Wyłączenie usuwa to, co odczytano.",
+	"settings.mediaServers.watchConfirmOff": "Wyłączyć historię oglądania? Wszystko, co odczytano, zostanie usunięte.",
+	"settings.mediaServers.watchTurnedOn": "Historia oglądania włączona. Pierwszy odczyt nastąpi w ciągu 30 minut.",
+	"settings.mediaServers.watchTurnedOff": "Historia oglądania wyłączona",
+	"settings.mediaServers.watchFailed": "Nie udało się zmienić historii oglądania"
 }

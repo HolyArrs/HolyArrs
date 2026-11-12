@@ -32,6 +32,7 @@ var screenOwners = map[string]Owner{
 	"/library/[id]/albums/[album]":   music,
 	"/library/held":                  Media,
 	"/library/deleted":               Media,
+	"/library/stats":                 Media,
 	"/library/turned-down":           Media,
 	"/library/import":                Media,
 	"/library/import-files":          Media,
