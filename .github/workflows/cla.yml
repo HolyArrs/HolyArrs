@@ -44,6 +44,7 @@ jobs:
       contents: read
       pull-requests: read
       statuses: write
+      actions: write # re-run the check on an agreer's other pull requests
     steps:
       - name: Sign in as HolyArrs Bot
         id: bot
@@ -58,6 +59,7 @@ jobs:
           permission-pull-requests: write
 
       - name: Check and record agreements
+        id: check
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ steps.bot.outputs.token }}
@@ -173,6 +175,7 @@ jobs:
               for (const f of fresh) {
                 await github.rest.reactions.createForIssueComment({ owner, repo, comment_id: f.comment_id, content: 'hooray' }).catch(() => {});
               }
+              core.setOutput('agreed', fresh.map((f) => f.id).join(','));
             }
 
             const waiting = [...people.entries()].filter(([id]) => !signed(id));
@@ -236,6 +239,26 @@ jobs:
             }
             for (const c of ours.filter((c) => repost || c.id !== current.id)) {
               await say(github.rest.issues.deleteComment({ owner, repo, comment_id: c.id }), 'removed');
+            }
+
+      # Someone who just agreed may have other pull requests open that still say
+      # they have to: check those again. Only the check itself runs there.
+      - name: Check the agreer's other pull requests
+        if: steps.check.outputs.agreed != ''
+        continue-on-error: true # this pull request's check is already done
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          AGREED: ${{ steps.check.outputs.agreed }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const ids = process.env.AGREED.split(',').map(Number);
+            const number = context.payload.pull_request?.number ?? context.payload.issue?.number ?? Number(context.payload.inputs.pull_request);
+            const open = await github.paginate(github.rest.pulls.list, { owner, repo, state: 'open', per_page: 100 });
+            const ref = (await github.rest.repos.get({ owner, repo })).data.default_branch;
+            for (const p of open.filter((p) => ids.includes(p.user?.id) && p.number !== number).slice(0, 20)) {
+              await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'cla.yml', ref, inputs: { pull_request: String(p.number) } })
+                .catch((e) => core.warning(`could not re-check #${p.number}: ${e.message}`));
             }
 
       # Without a working sign-in (wrong key, app not installed) nothing above
