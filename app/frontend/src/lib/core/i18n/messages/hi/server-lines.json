@@ -1272,5 +1272,7 @@
 	"server.downloads.marked-bad": "खराब के रूप में चिह्नित",
 	"server.suggest.because-you-have": "क्योंकि आपके पास {name} है",
 	"server.health.downloader-save-folder": "डाउनलोडर का सेव फ़ोल्डर",
+	"server.downloads.could-not-move-the-imported-download": "इम्पोर्ट किया गया डाउनलोड {name} में {cat} पर नहीं ले जाया जा सका: {error}; HolyArrs अगले इम्पोर्ट पर फिर कोशिश करेगा",
+	"server.downloads.moved-to-after-import": "इम्पोर्ट के बाद {cat} में ले जाया गया",
 	"server.sources.this-kind-of-title-can-t": "इस तरह का शीर्षक खोजा नहीं जा सकता"
 }

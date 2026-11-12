@@ -58,6 +58,8 @@ type TrackerEditor interface {
 type Mover interface {
 	SetLocation(ctx context.Context, hashes []string, folder string) error
 	SetTorrentLimits(ctx context.Context, hashes []string, down, up int64) error
+	// SetCategory moves one torrent to a category, made first when missing.
+	SetCategory(ctx context.Context, id, category string) error
 }
 
 // SetShareLimits sets seeding rules. The action field needs a newer web API; with an older client any non-default action is refused instead of silently ignored.
@@ -304,4 +306,29 @@ func (q *Qbittorrent) trackerURLs(ctx context.Context, h string) (map[string]str
 		}
 	}
 	return out, nil
+}
+
+// SetCategory moves one torrent to category, making the category first when
+// qBittorrent does not have it yet. A torrent the client no longer holds is
+// ErrNotFound.
+func (q *Qbittorrent) SetCategory(ctx context.Context, id, category string) error {
+	h, err := qbitHash(id)
+	if err != nil {
+		return err
+	}
+	if category == "" || len(category) > 64 || strings.ContainsAny(category, `/\`) {
+		return ErrCategory
+	}
+	js, err := q.info(ctx, url.Values{"hashes": {h}})
+	if err != nil {
+		return err
+	}
+	if len(js) == 0 {
+		return ErrNotFound
+	}
+	if _, err := q.call(ctx, http.MethodPost, "torrents/createCategory", url.Values{"category": {category}}, http.StatusConflict); err != nil {
+		return err
+	}
+	_, err = q.call(ctx, http.MethodPost, "torrents/setCategory", url.Values{"hashes": {h}, "category": {category}})
+	return err
 }

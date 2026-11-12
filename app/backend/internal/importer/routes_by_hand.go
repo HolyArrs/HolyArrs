@@ -29,6 +29,8 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/manual-import", h.importByHand)
 	m.HandleFunc("GET /api/v1/settings/import-folders", h.getImportFolders)
 	m.HandleFunc("PUT /api/v1/settings/import-folders", h.putImportFolders)
+	m.HandleFunc("GET /api/v1/settings/side-files", h.getSideFiles)
+	m.HandleFunc("PUT /api/v1/settings/side-files", h.putSideFiles)
 }
 
 func (h *Handlers) byHandImporter() *Importer {
@@ -115,4 +117,31 @@ func (h *Handlers) putImportFolders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.getImportFolders(w, r)
+}
+
+// getSideFiles answers whether subtitle files are brought along on import,
+// and which file types.
+func (h *Handlers) getSideFiles(w http.ResponseWriter, r *http.Request) {
+	webserver.WriteJSON(w, http.StatusOK, ReadSideFiles(r.Context(), h.Store.Read()))
+}
+
+// putSideFiles saves the side files setting.
+func (h *Handlers) putSideFiles(w http.ResponseWriter, r *http.Request) {
+	if !webserver.RequireStrong(w, r) {
+		return
+	}
+	var body SideFiles
+	if !webserver.Decode(w, r, &body, `send {"on": true or false, "types": ["srt"]}`) {
+		return
+	}
+	out, err := SaveSideFiles(r.Context(), h.Store, body, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
+	if errors.Is(err, ErrSideFileTypes) {
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err != nil {
+		webserver.Internal(w, "api", err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, out)
 }

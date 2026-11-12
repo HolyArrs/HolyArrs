@@ -1272,5 +1272,7 @@
 	"server.downloads.marked-bad": "ทำเครื่องหมายว่าเสีย",
 	"server.suggest.because-you-have": "เพราะคุณมี {name}",
 	"server.health.downloader-save-folder": "โฟลเดอร์บันทึกของตัวดาวน์โหลด",
+	"server.downloads.could-not-move-the-imported-download": "ย้ายการดาวน์โหลดที่นำเข้าแล้วไปยัง {cat} ใน {name} ไม่ได้: {error}; HolyArrs จะลองอีกครั้งในการนำเข้าครั้งถัดไป",
+	"server.downloads.moved-to-after-import": "ย้ายไปยัง {cat} หลังนำเข้า",
 	"server.sources.this-kind-of-title-can-t": "ไม่สามารถค้นหาชื่อเรื่องประเภทนี้ได้"
 }

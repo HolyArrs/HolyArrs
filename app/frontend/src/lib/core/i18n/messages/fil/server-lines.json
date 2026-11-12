@@ -1272,5 +1272,7 @@
 	"server.downloads.marked-bad": "Minarkahang sira",
 	"server.suggest.because-you-have": "Dahil mayroon kang {name}",
 	"server.health.downloader-save-folder": "Save folder ng Downloader",
+	"server.downloads.could-not-move-the-imported-download": "Hindi nailipat ang na-import na download sa {cat} sa {name}: {error}; susubukan ulit ng HolyArrs sa susunod na import",
+	"server.downloads.moved-to-after-import": "Inilipat sa {cat} pagkatapos ng import",
 	"server.sources.this-kind-of-title-can-t": "hindi mahahanap ang ganitong uri ng pamagat"
 }

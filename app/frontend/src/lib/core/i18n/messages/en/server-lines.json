@@ -1272,5 +1272,7 @@
 	"server.downloads.marked-bad": "Marked bad",
 	"server.suggest.because-you-have": "Because you have {name}",
 	"server.health.downloader-save-folder": "Downloader save folder",
+	"server.downloads.could-not-move-the-imported-download": "Could not move the imported download to {cat} in {name}: {error}; HolyArrs tries again on the next import",
+	"server.downloads.moved-to-after-import": "Moved to {cat} after import",
 	"server.sources.this-kind-of-title-can-t": "this kind of title can't be searched"
 }

@@ -1272,5 +1272,7 @@
 	"server.downloads.marked-bad": "Marcado como mau",
 	"server.suggest.because-you-have": "Porque tem {name}",
 	"server.health.downloader-save-folder": "Pasta de salvamento do gestor de downloads",
+	"server.downloads.could-not-move-the-imported-download": "Não foi possível mover a transferência importada para {cat} em {name}: {error}; o HolyArrs tenta de novo na próxima importação",
+	"server.downloads.moved-to-after-import": "Movido para {cat} após importar",
 	"server.sources.this-kind-of-title-can-t": "este tipo de título não pode ser pesquisado"
 }

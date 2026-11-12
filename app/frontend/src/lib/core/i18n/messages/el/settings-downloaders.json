@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "Το 0 απενεργοποιεί αυτόν τον έλεγχο· διαφορετικά 5 έως 1440.",
 	"settings.downloaders.crawlKbps": "Πιο αργά από (KB/s)",
 	"settings.downloaders.crawlHours": "Για (ώρες)",
-	"settings.downloaders.crawlHint": "Το 0 σε οποιοδήποτε από τα δύο απενεργοποιεί τον έλεγχο χαμηλής ταχύτητας."
+	"settings.downloaders.crawlHint": "Το 0 σε οποιοδήποτε από τα δύο απενεργοποιεί τον έλεγχο χαμηλής ταχύτητας.",
+	"settings.downloaders.categoryAfterImport": "Κατηγορία μετά την εισαγωγή",
+	"settings.downloaders.categoryAfterImportHint": "Μόλις εισαχθεί ένα torrent, το HolyArrs το μεταφέρει σε αυτή την κατηγορία. Αφήστε το κενό για να μείνει στην κύρια κατηγορία.",
+	"settings.downloaders.ownOnly": "Εμφάνιση μόνο στοιχείων του HolyArrs",
+	"settings.downloaders.ownOnlyHint": "Τα στοιχεία άλλων εφαρμογών σε αυτό το πρόγραμμα λήψης κρύβονται και το HolyArrs δεν τα αλλάζει."
 }

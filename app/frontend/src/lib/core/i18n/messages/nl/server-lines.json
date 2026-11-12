@@ -1272,5 +1272,7 @@
 	"server.downloads.marked-bad": "Als slecht gemarkeerd",
 	"server.suggest.because-you-have": "Omdat je {name} hebt",
 	"server.health.downloader-save-folder": "Opslagmap van de Downloader",
+	"server.downloads.could-not-move-the-imported-download": "De geïmporteerde download kon niet naar {cat} in {name} worden verplaatst: {error}; HolyArrs probeert het opnieuw bij de volgende import",
+	"server.downloads.moved-to-after-import": "Na import verplaatst naar {cat}",
 	"server.sources.this-kind-of-title-can-t": "dit soort titel kan niet worden gezocht"
 }

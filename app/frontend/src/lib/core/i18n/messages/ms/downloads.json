@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "Ukraine",
 	"downloads.row.imported": "Diimport",
 	"downloads.row.stillIn": "Masih dalam {app}",
-	"downloads.dp.openDownloaders": "Buka Pemuat turun"
+	"downloads.dp.openDownloaders": "Buka Pemuat turun",
+	"downloads.hl.notMoved": "Tidak dipindahkan selepas import"
 }

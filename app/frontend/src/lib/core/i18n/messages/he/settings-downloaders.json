@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 מכבה את הבדיקה הזו; אחרת 5 עד 1440.",
 	"settings.downloaders.crawlKbps": "איטי מ-(KB/s)",
 	"settings.downloaders.crawlHours": "במשך (שעות)",
-	"settings.downloaders.crawlHint": "0 באחד מהם מכבה את בדיקת האיטיות."
+	"settings.downloaders.crawlHint": "0 באחד מהם מכבה את בדיקת האיטיות.",
+	"settings.downloaders.categoryAfterImport": "קטגוריה אחרי הייבוא",
+	"settings.downloaders.categoryAfterImportHint": "אחרי שטורנט יובא, HolyArrs מעביר אותו לקטגוריה הזו. השאירו ריק כדי להשאיר אותו בקטגוריה הראשית.",
+	"settings.downloaders.ownOnly": "להציג רק פריטים של HolyArrs",
+	"settings.downloaders.ownOnlyHint": "פריטים של אפליקציות אחרות במוריד הזה מוסתרים, ו־HolyArrs לא משנה אותם."
 }

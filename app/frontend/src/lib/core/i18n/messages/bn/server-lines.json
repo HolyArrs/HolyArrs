@@ -1272,5 +1272,7 @@
 	"server.downloads.marked-bad": "খারাপ হিসেবে চিহ্নিত",
 	"server.suggest.because-you-have": "কারণ আপনার কাছে {name} আছে",
 	"server.health.downloader-save-folder": "ডাউনলোডারের সেভ ফোল্ডার",
+	"server.downloads.could-not-move-the-imported-download": "ইমপোর্ট করা ডাউনলোড {name}-এ {cat}-তে সরানো যায়নি: {error}; পরের ইমপোর্টে HolyArrs আবার চেষ্টা করবে",
+	"server.downloads.moved-to-after-import": "ইমপোর্টের পরে {cat}-তে সরানো হয়েছে",
 	"server.sources.this-kind-of-title-can-t": "এই ধরনের শিরোনাম খোঁজা যায় না"
 }

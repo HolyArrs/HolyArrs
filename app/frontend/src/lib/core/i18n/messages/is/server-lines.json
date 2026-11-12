@@ -1272,5 +1272,7 @@
 	"server.downloads.marked-bad": "Merkt sem slæmt",
 	"server.suggest.because-you-have": "Af því að þú átt {name}",
 	"server.health.downloader-save-folder": "Vistunarmappa niðurhalara",
+	"server.downloads.could-not-move-the-imported-download": "Ekki tókst að færa innflutta niðurhalið í {cat} í {name}: {error}; HolyArrs reynir aftur við næsta innflutning",
+	"server.downloads.moved-to-after-import": "Fært í {cat} eftir innflutning",
 	"server.sources.this-kind-of-title-can-t": "ekki er hægt að leita að þessari tegund titils"
 }

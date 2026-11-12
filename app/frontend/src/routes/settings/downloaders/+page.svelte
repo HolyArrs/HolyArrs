@@ -321,6 +321,17 @@
 <Field id="dl-tags" label={t('settings.downloaders.tags')} hint={t('settings.downloaders.tagsHint')}>
 	<TagInput id="dl-tags" bind:value={form.tags} describedby="dl-tags-hint" testid="dl-tags" />
 </Field>
+{#if form.kind === 'qbittorrent'}
+	<Field id="dl-cat-after" label={t('settings.downloaders.categoryAfterImport')} hint={t('settings.downloaders.categoryAfterImportHint')}>
+		<input id="dl-cat-after" class="input" bind:value={form.category_after_import} maxlength="64" aria-describedby="dl-cat-after-hint" data-testid="dl-cat-after" />
+	</Field>
+{/if}
+{#if form.kind !== 'sabnzbd' && form.kind !== 'nzbget'}
+	<label class="checkline">
+		<input type="checkbox" bind:checked={form.own_only} data-testid="dl-own-only" />
+		<span><b>{t('settings.downloaders.ownOnly')}</b><br /><span class="hint">{t('settings.downloaders.ownOnlyHint')}</span></span>
+	</label>
+{/if}
 <details class="more" open={form.path_map.length > 0}>
 	<summary>{t('settings.downloaders.folderNames')}</summary>
 	<p class="hint">{t('settings.downloaders.folderNamesHint')}</p>

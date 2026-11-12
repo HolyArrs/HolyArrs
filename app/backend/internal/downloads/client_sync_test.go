@@ -48,7 +48,7 @@ var writeMethods = map[string]bool{
 	"Add": true, "Remove": true, "PauseItem": true, "ResumeItem": true, "PauseAll": true, "ResumeAll": true, "MoveTop": true, "MoveItem": true, "SetPriority": true,
 	"SetSpeedLimit": true, "Recheck": true, "Reannounce": true, "SetFilePriority": true, "Retry": true, "AddTorrents": true,
 	"Bulk": true, "RemoveMany": true, "SetShareLimits": true, "SetSlowMode": true, "AddTrackers": true, "EditTracker": true,
-	"RemoveTrackers": true, "SetLocation": true, "SetTorrentLimits": true,
+	"RemoveTrackers": true, "SetLocation": true, "SetTorrentLimits": true, "SetCategory": true,
 }
 
 var readMethods = map[string]bool{

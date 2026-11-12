@@ -1272,5 +1272,7 @@
 	"server.downloads.marked-bad": "Ditanda rosak",
 	"server.suggest.because-you-have": "Kerana anda ada {name}",
 	"server.health.downloader-save-folder": "Folder simpan Pemuat turun",
+	"server.downloads.could-not-move-the-imported-download": "Muat turun yang diimport tidak dapat dipindahkan ke {cat} dalam {name}: {error}; HolyArrs akan mencuba lagi pada import seterusnya",
+	"server.downloads.moved-to-after-import": "Dipindahkan ke {cat} selepas import",
 	"server.sources.this-kind-of-title-can-t": "tajuk jenis ini tidak boleh dicari"
 }

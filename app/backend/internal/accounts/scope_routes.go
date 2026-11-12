@@ -195,7 +195,7 @@ func init() {
 		"GET /api/v1/never-add", "GET /api/v1/openapi.json", "GET /api/v1/outside-lists",
 		"GET /api/v1/parts", "GET /api/v1/pick-rules", "GET /api/v1/pick-rules/{id}", "GET /api/v1/own-traits", "GET /api/v1/rename", "GET /api/v1/searches",
 		"GET /api/v1/settings/alerts", "GET /api/v1/settings/url-base", "GET /api/v1/settings/asks", "GET /api/v1/settings/downloaders",
-		"GET /api/v1/settings/files", "GET /api/v1/settings/import-folders", "GET /api/v1/settings/health", "GET /api/v1/settings/music", "GET /api/v1/settings/metadata",
+		"GET /api/v1/settings/files", "GET /api/v1/settings/import-folders", "GET /api/v1/settings/side-files", "GET /api/v1/settings/health", "GET /api/v1/settings/music", "GET /api/v1/settings/metadata",
 		"GET /api/v1/settings/naming", "GET /api/v1/settings/release-gate", "GET /api/v1/settings/search", "GET /api/v1/bridges",
 		"GET /api/v1/settings/shows", "GET /api/v1/settings/status", "GET /api/v1/settings/subtitles", "GET /api/v1/settings/subtitles/translator", "GET /api/v1/settings/title-defaults", "GET /api/v1/shows/lookup",
 		"GET /api/v1/sources", "GET /api/v1/sources/{id}/stats", "GET /api/v1/subtitle-sites",

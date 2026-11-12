@@ -1272,5 +1272,7 @@
 	"server.downloads.marked-bad": "Oznaczono jako wadliwe",
 	"server.suggest.because-you-have": "Bo masz {name}",
 	"server.health.downloader-save-folder": "Folder zapisu Downloadera",
+	"server.downloads.could-not-move-the-imported-download": "Nie udało się przenieść zaimportowanego pobrania do {cat} w {name}: {error}; HolyArrs spróbuje ponownie przy następnym imporcie",
+	"server.downloads.moved-to-after-import": "Przeniesiono do {cat} po imporcie",
 	"server.sources.this-kind-of-title-can-t": "tego rodzaju tytułu nie można wyszukać"
 }

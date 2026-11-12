@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "ইউক্রেনীয়",
 	"downloads.row.imported": "ইমপোর্ট করা হয়েছে",
 	"downloads.row.stillIn": "এখনও {app}-এ আছে",
-	"downloads.dp.openDownloaders": "ডাউনলোডার খুলুন"
+	"downloads.dp.openDownloaders": "ডাউনলোডার খুলুন",
+	"downloads.hl.notMoved": "ইমপোর্টের পরে সরানো হয়নি"
 }

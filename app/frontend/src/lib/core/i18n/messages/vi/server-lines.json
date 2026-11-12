@@ -1272,5 +1272,7 @@
 	"server.downloads.marked-bad": "Đã đánh dấu hỏng",
 	"server.suggest.because-you-have": "Vì bạn có {name}",
 	"server.health.downloader-save-folder": "Thư mục lưu của trình tải xuống",
+	"server.downloads.could-not-move-the-imported-download": "Không chuyển được bản tải đã nhập sang {cat} trong {name}: {error}; HolyArrs sẽ thử lại ở lần nhập tiếp theo",
+	"server.downloads.moved-to-after-import": "Đã chuyển sang {cat} sau khi nhập",
 	"server.sources.this-kind-of-title-can-t": "không thể tìm kiếm loại tựa đề này"
 }

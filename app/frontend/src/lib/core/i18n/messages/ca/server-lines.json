@@ -1272,5 +1272,7 @@
 	"server.downloads.marked-bad": "Marcat com a dolent",
 	"server.suggest.because-you-have": "Perquè tens {name}",
 	"server.health.downloader-save-folder": "Carpeta de desament del gestor de baixades",
+	"server.downloads.could-not-move-the-imported-download": "No s'ha pogut moure la baixada importada a {cat} a {name}: {error}; HolyArrs ho tornarà a provar a la propera importació",
+	"server.downloads.moved-to-after-import": "Mogut a {cat} després d'importar",
 	"server.sources.this-kind-of-title-can-t": "aquest tipus de títol no es pot cercar"
 }

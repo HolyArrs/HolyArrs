@@ -290,6 +290,8 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/manual-import":                webserver.PermSettings,
 	"GET /api/v1/settings/import-folders":       webserver.PermSettings,
 	"PUT /api/v1/settings/import-folders":       webserver.NeedUsers, // widens what import by hand may read
+	"GET /api/v1/settings/side-files":           webserver.PermSettings,
+	"PUT /api/v1/settings/side-files":           webserver.PermSettings,
 	"POST /api/v1/titles/{id}/versions":         webserver.PermManageLibrary,
 	"PUT /api/v1/titles/{id}/versions/{vid}":    webserver.PermManageLibrary,
 	"DELETE /api/v1/titles/{id}/versions/{vid}": webserver.PermManageLibrary,

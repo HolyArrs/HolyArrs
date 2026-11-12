@@ -1272,5 +1272,7 @@
 	"server.downloads.marked-bad": "Означено као лоше",
 	"server.suggest.because-you-have": "Зато што имате {name}",
 	"server.health.downloader-save-folder": "Фасцикла за чување Преузимача",
+	"server.downloads.could-not-move-the-imported-download": "Увезено преузимање није могло да се премести у {cat} у {name}: {error}; HolyArrs ће покушати поново при следећем увозу",
+	"server.downloads.moved-to-after-import": "Премештено у {cat} после увоза",
 	"server.sources.this-kind-of-title-can-t": "ова врста наслова не може да се тражи"
 }
