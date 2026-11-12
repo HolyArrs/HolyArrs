@@ -102,6 +102,10 @@ describe('app.html boot requests', () => {
 			headers: { Accept: 'application/json', 'X-HolyArrs-Language': 'pt-br' },
 			credentials: 'same-origin'
 		});
+		expect(boot({ url: '/', stored: { 'holyarrs-lang': 'fil' } }).init).toEqual({
+			headers: { Accept: 'application/json', 'X-HolyArrs-Language': 'fil' },
+			credentials: 'same-origin'
+		});
 		expect(boot({ url: '/', stored: { 'holyarrs-lang': '"><x' } }).init).toEqual({ headers: { Accept: 'application/json' }, credentials: 'same-origin' });
 	});
 

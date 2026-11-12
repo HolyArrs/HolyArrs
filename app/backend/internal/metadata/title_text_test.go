@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -23,7 +25,15 @@ func TestTextLanguage(t *testing.T) {
 		{"en", "de-DE,de;q=0.9", "en"},
 		// The header names what the page shows; an odd one falls back to the browser's.
 		{"xx", "fr-CA,fr;q=0.9", "fr"},
-		{"", "ca,es;q=0.9", "es"},
+		{"", "eu,es;q=0.9", "es"},
+		// Every app language has its texts, old tags included.
+		{"ca", "", "ca"},
+		{"fil", "", "fil"},
+		{"tl", "", "fil"},
+		{"iw", "", "he"},
+		{"in", "", "id"},
+		{"sh", "", "sr"},
+		{"", "fa-IR,fa;q=0.9", "fa"},
 		{"", "de-DE,de;q=0.9", "de"},
 		{"", "", "en"},
 		{"", "*", "en"},
@@ -45,7 +55,8 @@ func TestTextLanguage(t *testing.T) {
 func TestTMDBLanguage(t *testing.T) {
 	for lang, want := range map[string]string{"en": "en-US", "es": "es-ES", "pt-br": "pt-BR", "pt-pt": "pt-PT", "zh-cn": "zh-CN", "zh-tw": "zh-TW",
 		"nb": "no-NO", "ar": "ar-SA", "ja": "ja-JP", "uk": "uk-UA", "he": "he-IL", "el": "el-GR", "cs": "cs-CZ", "da": "da-DK", "sv": "sv-SE",
-		"vi": "vi-VN", "hi": "hi-IN", "ko": "ko-KR", "fi": "fi-FI", "de": "de-DE"} {
+		"vi": "vi-VN", "hi": "hi-IN", "ko": "ko-KR", "fi": "fi-FI", "de": "de-DE",
+		"fil": "tl-PH", "ca": "ca-ES", "fa": "fa-IR", "bn": "bn-BD", "ta": "ta-IN", "ms": "ms-MY", "sr": "sr-RS", "et": "et-EE", "sk": "sk-SK", "is": "is-IS"} {
 		if got := TMDBLanguage(lang); got != want {
 			t.Errorf("%s: %q, want %q", lang, got, want)
 		}
@@ -70,6 +81,7 @@ func textTMDB(t *testing.T, hits *atomic.Int32, asked *atomic.Value) *httptest.S
 				{"iso_639_1":"es","iso_3166_1":"ES","data":{"title":"Cinco","overview":"","tagline":""}},
 				{"iso_639_1":"pt","iso_3166_1":"BR","data":{"title":"Cinco BR","overview":"História BR"}},
 				{"iso_639_1":"fr","iso_3166_1":"FR","data":{"title":"","overview":" Histoire "}},
+				{"iso_639_1":"tl","iso_3166_1":"PH","data":{"title":"Lima","overview":"Kuwento"}},
 				{"iso_639_1":"xx","iso_3166_1":"XX","data":{"title":"Unknown","overview":"Unknown"}}]}}`))
 		case r.URL.Path == "/3/tv/8":
 			_, _ = w.Write([]byte(`{"id":8,"name":"Eight","overview":"Show story","translations":{"translations":[
@@ -112,6 +124,8 @@ func TestDetailsKeepTitleTexts(t *testing.T) {
 		"fr": {Overview: "Histoire"},
 		// Portuguese from Portugal falls back to Brazil before English.
 		"pt-pt": {Name: "Cinco BR", Overview: "História BR"},
+		// Filipino is TMDB's tl.
+		"fil": {Name: "Lima", Overview: "Kuwento"},
 		// Kept, but nothing in German: English everywhere.
 		"de": {},
 	}
@@ -161,5 +175,18 @@ func TestTitleTextApply(t *testing.T) {
 	TitleText{Overview: "Historia"}.Apply(&it)
 	if it.Name != "Five" || it.Overview != "Historia" {
 		t.Fatalf("%+v", it)
+	}
+}
+
+// Every language the app is shown in (a messages folder) has its texts.
+func TestTextLanguageCoversAppLanguages(t *testing.T) {
+	dirs, err := os.ReadDir(filepath.Join("..", "..", "..", "frontend", "src", "lib", "core", "i18n", "messages"))
+	if err != nil {
+		t.Skip("no app words here:", err)
+	}
+	for _, d := range dirs {
+		if d.IsDir() && appLanguage(d.Name()) != d.Name() {
+			t.Errorf("app language %q has no texts (%q)", d.Name(), appLanguage(d.Name()))
+		}
 	}
 }

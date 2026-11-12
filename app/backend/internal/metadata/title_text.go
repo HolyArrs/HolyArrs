@@ -41,13 +41,15 @@ func (x TitleText) Apply(it *DiscoverItem) {
 }
 
 // textLanguages are the languages the app is shown in.
-var textLanguages = []string{"ar", "cs", "da", "de", "el", "en", "es", "fi", "fr", "he", "hi", "hu", "id", "it", "ja", "ko", "nb", "nl", "pl",
-	"pt-br", "pt-pt", "ro", "ru", "sv", "th", "tr", "uk", "vi", "zh-cn", "zh-tw"}
+var textLanguages = []string{"ar", "bg", "bn", "ca", "cs", "da", "de", "el", "en", "es", "et", "fa", "fi", "fil", "fr", "he", "hi", "hr", "hu",
+	"id", "is", "it", "ja", "ko", "lt", "lv", "ms", "nb", "nl", "pl", "pt-br", "pt-pt", "ro", "ru", "sk", "sr", "sv", "ta", "th", "tr", "uk", "vi",
+	"zh-cn", "zh-tw"}
 
 // tmdbRegion is the country whose TMDB text a language reads first, where
 // it is not the language code itself (de-DE, fr-FR).
 var tmdbRegion = map[string]string{"en": "US", "es": "ES", "pt-br": "BR", "pt-pt": "PT", "zh-cn": "CN", "zh-tw": "TW", "nb": "NO",
-	"ar": "SA", "ja": "JP", "uk": "UA", "he": "IL", "el": "GR", "cs": "CZ", "da": "DK", "sv": "SE", "vi": "VN", "hi": "IN", "ko": "KR"}
+	"ar": "SA", "ja": "JP", "uk": "UA", "he": "IL", "el": "GR", "cs": "CZ", "da": "DK", "sv": "SE", "vi": "VN", "hi": "IN", "ko": "KR",
+	"fil": "PH", "ca": "ES", "fa": "IR", "bn": "BD", "ta": "IN", "ms": "MY", "sr": "RS", "et": "EE"}
 
 // tmdbNext is the country read second, before the language's others.
 var tmdbNext = map[string]string{"zh-cn": "SG", "zh-tw": "HK"}
@@ -71,6 +73,14 @@ func appLanguage(tag string) string {
 		return "zh-cn"
 	case "no", "nn", "nb":
 		return "nb"
+	case "iw":
+		return "he"
+	case "in":
+		return "id"
+	case "tl":
+		return "fil"
+	case "sh":
+		return "sr"
 	}
 	if slices.Contains(textLanguages, parts[0]) {
 		return parts[0]
@@ -97,8 +107,11 @@ func TextLanguage(r *http.Request) string {
 // tmdbParts are TMDB's language code and first country for an app language.
 func tmdbParts(lang string) (code, country string) {
 	code, _, _ = strings.Cut(lang, "-")
-	if code == "nb" {
+	switch code {
+	case "nb":
 		code = "no"
+	case "fil":
+		code = "tl"
 	}
 	if country = tmdbRegion[lang]; country == "" {
 		country = strings.ToUpper(code)
