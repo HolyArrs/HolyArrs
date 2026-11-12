@@ -105,6 +105,7 @@ func (h *AddHandlers) lookupShows(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	fillTMDBIDs(r.Context(), h.finderFor(source), list)
 	out := []ShowResult{}
 	for _, sh := range h.KidShows(r, list) {
 		sh.Episodes = nil
