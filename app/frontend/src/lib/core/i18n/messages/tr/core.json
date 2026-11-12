@@ -142,5 +142,6 @@
 	"core.settings.danger.label": "Tehlikeli bölge",
 	"core.settings.danger.about": "Yeniden başlat ya da kapat",
 	"core.settings.account.label": "Hesabım",
-	"core.settings.account.about": "Parola, iki adımlı giriş, cihazlar"
+	"core.settings.account.about": "Parola, iki adımlı giriş, cihazlar",
+	"core.api.sourceOff": "Bu kurulumda bazı satırlar kapalı."
 }

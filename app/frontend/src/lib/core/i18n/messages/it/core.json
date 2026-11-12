@@ -142,5 +142,6 @@
 	"core.settings.danger.label": "Zona pericolosa",
 	"core.settings.danger.about": "Riavvia o spegni",
 	"core.settings.account.label": "Il mio account",
-	"core.settings.account.about": "Password, due fattori, dispositivi"
+	"core.settings.account.about": "Password, due fattori, dispositivi",
+	"core.api.sourceOff": "Alcune righe sono disattivate in questa installazione."
 }

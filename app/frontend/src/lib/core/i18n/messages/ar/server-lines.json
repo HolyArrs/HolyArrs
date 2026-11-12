@@ -1198,5 +1198,22 @@
 	"server.discover.coming-saturday": "يصل السبت",
 	"server.discover.new-episode-sat": "حلقة جديدة · السبت",
 	"server.discover.coming-sunday": "يصل الأحد",
-	"server.discover.new-episode-sun": "حلقة جديدة · الأحد"
+	"server.discover.new-episode-sun": "حلقة جديدة · الأحد",
+	"server.accounts.is-too-wide-list-your-home": "\"{entry}\" واسعة جدًا: اكتب شبكة منزلك، مثل 192.168.1.0/24",
+	"server.accounts.is-not-a-network-use-one": "\"{entry}\" ليست شبكة: استخدم مثل 192.168.1.0/24 أو عنوانًا مثل 192.168.1.5",
+	"server.accounts.is-not-a-proxy-address-use": "\"{entry}\" ليس عنوان وكيل: استخدم مثل 172.18.0.2 أو نطاقًا مثل 172.18.0.0/16",
+	"server.accounts.is-too-wide-list-only-the": "\"{entry}\" واسع جدًا: اكتب عناوين وكيلك فقط",
+	"server.accounts.list-at-most-proxies": "اكتب {n} وكلاء على الأكثر",
+	"server.accounts.list-at-most-networks": "اكتب {n} شبكات على الأكثر",
+	"server.accounts.pick-a-person-who-exists-and": "اختر شخصًا موجودًا ومفعّلًا",
+	"server.accounts.pick-a-person-for-local-visitors": "اختر شخصًا للزوار المحليين",
+	"server.accounts.there-is-no-owner-yet": "لا يوجد مالك بعد",
+	"server.accounts.change-trusted-proxies-in-the-browser": "غيّر الوكلاء الموثوقين في المتصفح وأنت مسجّل بكلمة مرورك",
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "تصل إلى HolyArrs عبر الوكيل {ip}؛ أبقه في القائمة",
+	"server.library.is-not-at-the-new-path": "{name} غير موجود في المسار الجديد",
+	"server.library.bytes-at-the-new-path-but": "حجم {name} في المسار الجديد {got} بايت، لكنه {want} بايت في المكتبة",
+	"server.library.files-in-this-library-folder-changed": "تغيّرت ملفات في مجلد المكتبة هذا أثناء فحص المسار الجديد؛ حاول مرة أخرى",
+	"server.library.the-folder-does-not-exist": "المجلد غير موجود",
+	"server.library.the-path-must-be-an-absolute": "يجب أن يكون المسار مسار مجلد كاملًا، لا قرصًا كاملًا، ولا داخل مجلد الإعدادات أو حوله",
+	"server.library.that-folder-or-one-inside-or": "هذا المجلد، أو مجلد داخله أو حوله، هو مجلد مكتبة بالفعل"
 }

@@ -12,6 +12,7 @@ DELETE /api/v1/downloaders/{id} auth=settings scope=write assurance=false part=c
 DELETE /api/v1/explore/strip/counts auth=signed_in scope=write assurance=false part=media
 DELETE /api/v1/held auth=manage_library scope=write assurance=false part=media
 DELETE /api/v1/held/{id} auth=manage_library scope=write assurance=false part=media
+DELETE /api/v1/hidden/{id} auth=users scope=admin assurance=false part=media
 DELETE /api/v1/library-folders/{id} auth=settings scope=write assurance=false part=core
 DELETE /api/v1/media-servers/{id} auth=settings scope=write assurance=false part=core
 DELETE /api/v1/metadata/album/{mbid}/follow auth=signed_in scope=write assurance=false part=music
@@ -120,6 +121,7 @@ GET /api/v1/health/checks auth=manage_library scope=read assurance=false part=co
 GET /api/v1/health/disks auth=manage_library scope=read assurance=false part=core
 GET /api/v1/health/states auth=manage_library scope=health_read assurance=false part=core
 GET /api/v1/held auth=manage_library scope=read assurance=false part=media
+GET /api/v1/hidden auth=users scope=admin assurance=false part=media
 GET /api/v1/holding auth=manage_library scope=read assurance=false part=media
 GET /api/v1/home auth=signed_in scope=read assurance=false part=media
 GET /api/v1/imports auth=manage_library scope=read assurance=false part=core
@@ -129,6 +131,8 @@ GET /api/v1/jobs/{id} auth=manage_library scope=read assurance=false part=core
 GET /api/v1/library-folders auth=manage_library scope=read assurance=false part=core
 GET /api/v1/library/copies auth=manage_library scope=read assurance=false part=movies
 GET /api/v1/library/search auth=signed_in scope=read assurance=false part=media
+GET /api/v1/library/stats auth=manage_library scope=admin assurance=false part=media
+GET /api/v1/library/stats/watched auth=manage_library scope=admin assurance=false part=media
 GET /api/v1/logs auth=users scope=admin assurance=false part=core
 GET /api/v1/logs/download auth=users scope=admin assurance=false part=core
 GET /api/v1/mcp auth=signed_in scope=mcp assurance=false part=core
@@ -190,6 +194,7 @@ GET /api/v1/settings/downloaders auth=settings scope=read assurance=false part=c
 GET /api/v1/settings/files auth=manage_library scope=read assurance=false part=media
 GET /api/v1/settings/health auth=settings scope=read assurance=false part=core
 GET /api/v1/settings/import-folders auth=settings scope=read assurance=false part=media
+GET /api/v1/settings/metadata auth=settings scope=read assurance=false part=core
 GET /api/v1/settings/music auth=manage_library scope=read assurance=false part=music
 GET /api/v1/settings/naming auth=manage_library scope=read assurance=false part=media
 GET /api/v1/settings/old-app-api auth=settings scope=admin assurance=false part=core
@@ -203,6 +208,7 @@ GET /api/v1/settings/trakt-key auth=settings scope=admin assurance=false part=co
 GET /api/v1/settings/trakt-token auth=owner scope=admin assurance=false part=core
 GET /api/v1/settings/ui auth=signed_in scope=read assurance=false part=core
 GET /api/v1/settings/url-base auth=settings scope=read assurance=false part=core
+GET /api/v1/settings/watch-history auth=owner scope=admin assurance=false part=media
 GET /api/v1/shows/lookup auth=signed_in scope=read assurance=false part=shows
 GET /api/v1/sources auth=manage_library scope=read assurance=false part=core
 GET /api/v1/sources/{id}/stats auth=manage_library scope=read assurance=false part=core
@@ -372,6 +378,7 @@ POST /api/v1/explore/strip/counts auth=signed_in scope=write assurance=false par
 POST /api/v1/files/{id}/subtitles/choices auth=manage_library scope=write assurance=false part=subtitles
 POST /api/v1/files/{id}/subtitles/choose auth=manage_library scope=write assurance=false part=subtitles
 POST /api/v1/health/checks/run auth=manage_library scope=write assurance=false part=core
+POST /api/v1/hidden auth=users scope=admin assurance=false part=media
 POST /api/v1/holding/clean auth=manage_library scope=write assurance=false part=media
 POST /api/v1/holding/restore auth=manage_library scope=write assurance=false part=media
 POST /api/v1/library-folders auth=settings scope=write assurance=false part=core
@@ -417,6 +424,7 @@ POST /api/v1/search/better auth=manage_library scope=write assurance=false part=
 POST /api/v1/search/feed-check auth=manage_library scope=write assurance=false part=media
 POST /api/v1/search/missing auth=manage_library scope=write assurance=false part=media
 POST /api/v1/settings/import-secrets auth=owner scope=admin assurance=false part=core
+POST /api/v1/settings/metadata/test auth=settings scope=write assurance=false part=core
 POST /api/v1/settings/naming/example auth=manage_library scope=write assurance=false part=media
 POST /api/v1/settings/old-app-api/keys/{side} auth=settings scope=admin assurance=true part=core
 POST /api/v1/shows auth=manage_library scope=write assurance=false part=shows
@@ -480,6 +488,7 @@ PUT /api/v1/downloads/{id}/edition auth=manage_library scope=write assurance=fal
 PUT /api/v1/downloads/{id}/files auth=manage_library scope=admin assurance=false part=core
 PUT /api/v1/episodes/{id} auth=manage_library scope=write assurance=false part=shows
 PUT /api/v1/library-folders/{id} auth=settings scope=write assurance=false part=core
+PUT /api/v1/library-folders/{id}/path auth=settings scope=write assurance=false part=core
 PUT /api/v1/media-servers/{id} auth=settings scope=write assurance=false part=core
 PUT /api/v1/metadata/album/{mbid}/follow auth=signed_in scope=write assurance=false part=music
 PUT /api/v1/metadata/movie/{tmdb_id}/follow auth=signed_in scope=write assurance=false part=wishlist
@@ -499,6 +508,7 @@ PUT /api/v1/settings/downloaders auth=settings scope=write assurance=false part=
 PUT /api/v1/settings/files auth=settings scope=write assurance=false part=media
 PUT /api/v1/settings/health auth=settings scope=write assurance=false part=core
 PUT /api/v1/settings/import-folders auth=users scope=admin assurance=false part=media
+PUT /api/v1/settings/metadata auth=settings scope=write assurance=false part=core
 PUT /api/v1/settings/music auth=settings scope=write assurance=false part=music
 PUT /api/v1/settings/naming auth=settings scope=write assurance=false part=media
 PUT /api/v1/settings/old-app-api auth=settings scope=write assurance=false part=core
@@ -511,6 +521,7 @@ PUT /api/v1/settings/trakt-key auth=settings scope=write assurance=false part=co
 PUT /api/v1/settings/trakt-token auth=owner scope=admin assurance=false part=core
 PUT /api/v1/settings/ui auth=settings scope=write assurance=false part=core
 PUT /api/v1/settings/url-base auth=settings scope=write assurance=false part=core
+PUT /api/v1/settings/watch-history auth=owner scope=admin assurance=false part=media
 PUT /api/v1/sources/{id} auth=settings scope=write assurance=false part=core
 PUT /api/v1/subtitle-sites/{id} auth=settings scope=write assurance=false part=subtitles
 PUT /api/v1/titles/{id} auth=manage_library scope=write assurance=false part=title

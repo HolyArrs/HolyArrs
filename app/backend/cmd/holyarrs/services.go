@@ -64,6 +64,12 @@ type services struct {
 	// MetadataUp reports whether the metadata server answers (cached
 	// about a minute); nil counts as up.
 	MetadataUp func(context.Context) bool
+	// MetadataModes is where details come from (Settings > Metadata);
+	// MetadataTest checks an own key and MetadataEnvKey says a TMDB key
+	// comes from the Docker settings. nil Modes: the metadata server.
+	MetadataModes  *metadata.Modes
+	MetadataTest   func(ctx context.Context, key, value, pin string) error
+	MetadataEnvKey bool
 	// ServiceTop reads every streaming service's top list for a region
 	// from the metadata server; nil leaves the row empty.
 	ServiceTop func(ctx context.Context, region string) (metadata.ServiceTop, error)

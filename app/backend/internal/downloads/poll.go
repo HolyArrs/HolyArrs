@@ -156,7 +156,8 @@ func (m *Manager) Poke() {
 }
 
 // Run syncs until ctx ends: every 2s while Downloads are active, 30s when idle,
-// and it checks every Downloader once a minute.
+// and it checks every Downloader once a minute, with the remove after seeding
+// and dead torrent checks beside it.
 func (m *Manager) Run(ctx context.Context) {
 	m.mu.Lock()
 	if m.wake == nil {
@@ -176,6 +177,7 @@ func (m *Manager) Run(ctx context.Context) {
 	for {
 		if time.Since(checked) >= every {
 			m.CheckAll(ctx)
+			m.tidy(ctx)
 			checked = time.Now()
 		}
 		n, _ := m.SyncOnce(ctx)

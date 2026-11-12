@@ -142,5 +142,6 @@
 	"core.settings.danger.label": "ख़तरे वाला हिस्सा",
 	"core.settings.danger.about": "रीस्टार्ट या बंद करें",
 	"core.settings.account.label": "मेरा अकाउंट",
-	"core.settings.account.about": "पासवर्ड, टू-फ़ैक्टर, डिवाइस"
+	"core.settings.account.about": "पासवर्ड, टू-फ़ैक्टर, डिवाइस",
+	"core.api.sourceOff": "इस इंस्टॉल पर कुछ पंक्तियाँ बंद हैं।"
 }

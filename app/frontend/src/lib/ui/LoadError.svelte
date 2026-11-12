@@ -3,6 +3,7 @@
 	// Error state: a compact banner when old data is still shown, otherwise a full block.
 	import Icon from './Icon.svelte';
 	import Button from './Button.svelte';
+	import { sourceOff } from '../core/source-off.svelte.ts';
 
 	let {
 		hasData,
@@ -13,7 +14,12 @@
 	}: { hasData: boolean; message?: string; onretry?: () => void; busy?: boolean; network?: boolean } = $props();
 </script>
 
-{#if hasData}
+<!-- Lookups off on this install are not a failure: one calm line, no retry; none when the page's own note shows it. -->
+{#if message === t('core.api.sourceOff') && !sourceOff.notices}
+	<p class="notice" role="status" data-testid="source-off"><Icon name="info" size={18} /><span>{message}</span></p>
+{:else if sourceOff.seen && sourceOff.notices}
+	<!-- The page's MetadataNotice already says it. -->
+{:else if hasData}
 	<div class="ui-loaderr inline" role="status">
 		<Icon name="alert" size={17} />
 		<span class="grow">{t('ui.loadError.showingWhatWasLoaded', { message })}</span>

@@ -17,12 +17,15 @@
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { bytes, dateTime, words } from '#lib/core/format.ts';
 	import { session } from '#lib/core/session.svelte.ts';
+	import { freshAsk } from '#lib/backups/index.ts';
+	import { goto } from '$app/navigation';
 
-	type Preset = 'balanced' | 'light' | 'careful';
+	type Preset = 'balanced' | 'light' | 'careful' | 'off';
 	const presets = $derived<{ key: Preset; name: string; about: string }[]>([
 		{ key: 'balanced', name: t('settings.backups.balanced'), about: t('settings.backups.balancedAbout') },
 		{ key: 'light', name: t('settings.backups.light'), about: t('settings.backups.lightAbout') },
-		{ key: 'careful', name: t('settings.backups.careful'), about: t('settings.backups.carefulAbout') }
+		{ key: 'careful', name: t('settings.backups.careful'), about: t('settings.backups.carefulAbout') },
+		{ key: 'off', name: t('settings.backups.offPlan'), about: t('settings.backups.offAbout') }
 	]);
 
 	let backups = $state<BackupInfo[]>([]);
@@ -61,18 +64,25 @@
 
 	// A backup file is the whole database: downloading it is a risky action, so a sign-in older than 10 minutes is asked for the password first (the box above the page), then Download works.
 	function download(e: MouseEvent) {
-		if (session.s.via !== 'session' || session.s.localRecent) return;
+		if (!askFresh()) return;
 		e.preventDefault();
+	}
+
+	// Asks for a fresh password (or to set one first) and says so in a toast, so the click is never silent. Returns true when it asked.
+	function askFresh(): boolean {
+		const need = freshAsk(session.s);
+		if (!need) return false;
 		window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method: 'POST' } }));
+		if (need === 'set') toasts.push(t('settings.layout.setPasswordFirst'), 'warn', { body: t('settings.layout.setPasswordDesc'), action: { label: t('settings.layout.setPasswordLabel'), run: () => void goto(to('/account')) } });
+		else toasts.push(t('settings.layout.confirmPasswordLabel'), 'info', { body: t('settings.layout.confirmPasswordDesc') });
+		requestAnimationFrame(() => document.getElementById('settings-reauth')?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+		return true;
 	}
 
 	// The key kit is the master key as a file (owner only, fresh password). It is a POST, so it is fetched and handed to the browser as a download.
 	async function downloadKeyKit() {
 		if (gettingKit) return;
-		if (session.s.via === 'session' && !session.s.localRecent) {
-			window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method: 'POST' } }));
-			return;
-		}
+		if (askFresh()) return;
 		gettingKit = true;
 		try {
 			const headers: Record<string, string> = {};
@@ -211,7 +221,7 @@
 		{#if keyNote}<p class="xs muted keynote">{keyNote}</p>{/if}
 	</section>
 
-	<SettingsCard id="backup-often" title={t('settings.backups.often')}>
+	<SettingsCard id="backup-often" title={t('settings.backups.often')} description={t('settings.backups.offKeeps')}>
 		<div class="presets" role="radiogroup" aria-label={t('settings.backups.often')} aria-busy={savingPreset}>
 			{#each presets as p (p.key)}
 				<label class="preset" class:on={preset === p.key}>
@@ -256,7 +266,7 @@
 	@media (pointer: coarse) { .restore { min-height: 44px; } }
 	.presets {
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: repeat(4, minmax(0, 1fr));
 		gap: var(--s-3);
 		margin-top: var(--s-4);
 	}
@@ -307,6 +317,11 @@
 		justify-content: space-between;
 		gap: var(--s-3);
 		margin-top: var(--s-4);
+	}
+	@media (max-width: 1100px) {
+		.presets {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
 	}
 	@media (max-width: 700px) {
 		.presets {

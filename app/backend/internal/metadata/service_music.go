@@ -384,7 +384,12 @@ func (m *serviceMusic) AlbumArtist(ctx context.Context, albumMBID string) (strin
 		}
 	}
 	if f, ok := m.direct.(AlbumArtistFinder); ok {
-		return f.AlbumArtist(ctx, albumMBID)
+		id, err := f.AlbumArtist(ctx, albumMBID)
+		if errors.Is(err, ErrSourceOff) {
+			// MusicBrainz is not asked in this mode: the same as no direct source.
+			return "", ErrArtistNotFound
+		}
+		return id, err
 	}
 	return "", ErrArtistNotFound
 }

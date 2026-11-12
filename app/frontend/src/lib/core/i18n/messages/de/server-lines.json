@@ -1198,5 +1198,22 @@
 	"server.discover.coming-saturday": "Kommt Samstag",
 	"server.discover.new-episode-sat": "Neue Folge · Sa",
 	"server.discover.coming-sunday": "Kommt Sonntag",
-	"server.discover.new-episode-sun": "Neue Folge · So"
+	"server.discover.new-episode-sun": "Neue Folge · So",
+	"server.accounts.is-too-wide-list-your-home": "\"{entry}\" ist zu weit: trage dein Heimnetz ein, z. B. 192.168.1.0/24",
+	"server.accounts.is-not-a-network-use-one": "\"{entry}\" ist kein Netz: nutze z. B. 192.168.1.0/24 oder eine einzelne Adresse wie 192.168.1.5",
+	"server.accounts.is-not-a-proxy-address-use": "\"{entry}\" ist keine Proxy-Adresse: nutze z. B. 172.18.0.2 oder einen Bereich wie 172.18.0.0/16",
+	"server.accounts.is-too-wide-list-only-the": "\"{entry}\" ist zu weit: trage nur die Adressen deines Proxys ein",
+	"server.accounts.list-at-most-proxies": "höchstens {n} Proxys eintragen",
+	"server.accounts.list-at-most-networks": "höchstens {n} Netze eintragen",
+	"server.accounts.pick-a-person-who-exists-and": "wähle eine Person, die existiert und eingeschaltet ist",
+	"server.accounts.pick-a-person-for-local-visitors": "wähle eine Person für lokale Besuche",
+	"server.accounts.there-is-no-owner-yet": "es gibt noch keinen Besitzer",
+	"server.accounts.change-trusted-proxies-in-the-browser": "ändere vertrauenswürdige Proxys im Browser, mit deinem Passwort angemeldet",
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "du erreichst HolyArrs über den Proxy unter {ip}; lass ihn in der Liste",
+	"server.library.is-not-at-the-new-path": "{name} liegt nicht am neuen Pfad",
+	"server.library.bytes-at-the-new-path-but": "{name} hat am neuen Pfad {got} Bytes, in der Bibliothek aber {want} Bytes",
+	"server.library.files-in-this-library-folder-changed": "Dateien in diesem Bibliotheksordner haben sich während der Prüfung des neuen Pfads geändert; versuche es erneut",
+	"server.library.the-folder-does-not-exist": "der Ordner existiert nicht",
+	"server.library.the-path-must-be-an-absolute": "der Pfad muss ein absoluter Ordnerpfad sein, kein ganzes Laufwerk und nicht im oder um den Config-Ordner",
+	"server.library.that-folder-or-one-inside-or": "dieser Ordner, oder einer darin oder darum, ist schon ein Bibliotheksordner"
 }

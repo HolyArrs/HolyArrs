@@ -123,6 +123,9 @@ func buildHandlers(s services) *handlers {
 		},
 		KidMax: a.kidMax, KidLimited: a.disc.KidLimited, KidShows: a.kidShows, KindsOn: a.disc.KindsOn, LibraryRating: a.libraryRating,
 		Caching: a.disc.Caching, CachedDetails: a.disc.LoadedDetails, Details: a.disc.CachedDetails,
+		Hidden: func(ctx context.Context, kind, tmdbID string, genres []string) (bool, bool) {
+			return discover.HiddenMark(ctx, s.Store, kind, tmdbID, genres)
+		},
 		OpenAsk: func(r *http.Request, ids map[string]string) (any, error) {
 			b, err := a.openShowAsk(r.Context(), ids, a.person(r).UserID)
 			if b == nil || err != nil {

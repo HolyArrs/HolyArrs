@@ -1198,5 +1198,22 @@
 	"server.discover.coming-saturday": "Вийде: субота",
 	"server.discover.new-episode-sat": "Нова серія · сб",
 	"server.discover.coming-sunday": "Вийде: неділя",
-	"server.discover.new-episode-sun": "Нова серія · нд"
+	"server.discover.new-episode-sun": "Нова серія · нд",
+	"server.accounts.is-too-wide-list-your-home": "«{entry}» надто широка: укажіть домашню мережу, як-от 192.168.1.0/24",
+	"server.accounts.is-not-a-network-use-one": "«{entry}» — не мережа: укажіть, як-от 192.168.1.0/24, або адресу як 192.168.1.5",
+	"server.accounts.is-not-a-proxy-address-use": "«{entry}» — не адреса проксі: укажіть, як-от 172.18.0.2, або діапазон 172.18.0.0/16",
+	"server.accounts.is-too-wide-list-only-the": "«{entry}» надто широкий: укажіть лише адреси вашого проксі",
+	"server.accounts.list-at-most-proxies": "не більше {n} проксі",
+	"server.accounts.list-at-most-networks": "не більше {n} мереж",
+	"server.accounts.pick-a-person-who-exists-and": "виберіть людину, яка існує й увімкнена",
+	"server.accounts.pick-a-person-for-local-visitors": "виберіть людину для локальних візитів",
+	"server.accounts.there-is-no-owner-yet": "власника ще немає",
+	"server.accounts.change-trusted-proxies-in-the-browser": "змінюйте довірені проксі в браузері, увійшовши з паролем",
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "ви заходите в HolyArrs через проксі {ip}; залиште його в списку",
+	"server.library.is-not-at-the-new-path": "{name} немає за новим шляхом",
+	"server.library.bytes-at-the-new-path-but": "{name}: {got} байт за новим шляхом, але {want} байт у Бібліотеці",
+	"server.library.files-in-this-library-folder-changed": "файли в цій папці Бібліотеки змінилися під час перевірки нового шляху; спробуйте ще раз",
+	"server.library.the-folder-does-not-exist": "теки не існує",
+	"server.library.the-path-must-be-an-absolute": "шлях має бути повним шляхом до теки, не цілим диском і не всередині чи навколо теки налаштувань",
+	"server.library.that-folder-or-one-inside-or": "ця тека, або тека в ній чи навколо неї, уже тека бібліотеки"
 }

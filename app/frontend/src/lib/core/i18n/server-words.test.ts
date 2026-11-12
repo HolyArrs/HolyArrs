@@ -21,6 +21,15 @@ describe('serverWords', () => {
 		for (const [line, want] of [['New movie', 'Nuovo film'], ['New show', 'Nuova serie'], ['New episode Mon', 'Nuovo episodio · lun'], ['Coming Friday', 'Arriva venerdì'], ['New season', 'Nuova stagione']]) expect(serverWords(line)).toBe(want);
 	});
 
+	it('names the file a folder path change stopped at', async () => {
+		const de = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>('./messages/de/server-lines.json', { eager: true })).map((f) => f.default));
+		speak(de);
+		expect(serverWords('Dune (2021)/Dune.mkv is not at the new path')).toBe('Dune (2021)/Dune.mkv liegt nicht am neuen Pfad');
+		expect(serverWords('a.mkv is 10 bytes at the new path, but 11 bytes in the Library')).toBe('a.mkv hat am neuen Pfad 10 Bytes, in der Bibliothek aber 11 Bytes');
+		// The new path is checked like a new folder: these three come back most often.
+		for (const line of ['the folder does not exist', 'the path must be an absolute folder path, not a whole drive and not inside or around the config folder', 'that folder, or one inside or around it, is already a Library folder']) expect(serverWords(line)).not.toBe(line);
+	});
+
 	it('shows a known line in the picked language', () => {
 		speak({ 'server.requests.waiting-for-approval': 'En attente de validation' });
 		expect(serverWords('Waiting for approval')).toBe('En attente de validation');

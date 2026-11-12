@@ -199,6 +199,11 @@ func (hd *Handlers) exploreNew(w http.ResponseWriter, r *http.Request) {
 	me := hd.UserID(r)
 	hd.WarmMusicNew() // the Music tab's lists build in the background (Music on)
 	pg, building := hd.newRows(r.Context(), r, me, sw)
+	// With lookups off the rows never build: say so once instead of "building" forever.
+	if building && len(pg.Rows) == 0 && hd.Modes.Current() == metadata.ModeOff {
+		metadata.WriteSourceOff(w)
+		return
+	}
 	var hero []ItemView
 	if n == 0 {
 		if hero, err = hd.newHero(r, pg, me); err != nil {

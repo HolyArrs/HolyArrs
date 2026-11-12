@@ -39,5 +39,11 @@
 	"settings.libraryFolders.ownerOnly": "Propriétaire et administrateurs seulement",
 	"settings.libraryFolders.copiesExpected": "La copie est voulue",
 	"settings.libraryFolders.copiesExpectedState": "Copie, comme prévu",
-	"settings.libraryFolders.warnAgain": "Avertir à nouveau"
+	"settings.libraryFolders.warnAgain": "Avertir à nouveau",
+	"settings.libraryFolders.changePath": "Changer le chemin",
+	"settings.libraryFolders.changePathOf": "Changer le chemin de {path}",
+	"settings.libraryFolders.newPath": "Nouveau chemin",
+	"settings.libraryFolders.changePathHint": "Déplacez d’abord les fichiers à cet endroit. HolyArrs vérifie chaque fichier et ne déplace rien.",
+	"settings.libraryFolders.checkingFiles": "Vérification des fichiers…",
+	"settings.libraryFolders.pathChanged": "Chemin changé"
 }

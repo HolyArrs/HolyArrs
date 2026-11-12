@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "Probar",
 	"settings.mediaServers.changeButton": "Cambiar",
 	"settings.mediaServers.removeName": "Quitar {name}",
-	"settings.mediaServers.remove": "Quitar"
+	"settings.mediaServers.remove": "Quitar",
+	"settings.mediaServers.watchTitle": "Historial de visionado",
+	"settings.mediaServers.watchRead": "Leer historial",
+	"settings.mediaServers.watchHint": "Muestra quién vio qué en Estadísticas de la biblioteca, para quienes gestionan la biblioteca. Apagarlo borra lo leído.",
+	"settings.mediaServers.watchConfirmOff": "¿Apagar el historial? Se borra todo lo leído hasta ahora.",
+	"settings.mediaServers.watchTurnedOn": "Historial activado. La primera lectura llega en menos de 30 minutos.",
+	"settings.mediaServers.watchTurnedOff": "Historial apagado",
+	"settings.mediaServers.watchFailed": "No se pudo cambiar el historial"
 }

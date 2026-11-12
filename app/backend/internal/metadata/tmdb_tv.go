@@ -372,3 +372,25 @@ func (g EpisodeGroup) seasonAt(order int) GroupSeason {
 	}
 	return GroupSeason{}
 }
+
+// ShowTMDBID finds the tmdb id for a "tvdb:<id>" or "imdb:<tt id>" show
+// through TMDB's find, without loading the show itself.
+func (t *TMDB) ShowTMDBID(ctx context.Context, id string) (string, error) {
+	kind, v, ok := splitID(id)
+	if !ok || (kind != "tvdb" && kind != "imdb") {
+		return "", ErrShowNotFound
+	}
+	b, err := t.get(ctx, "/find/"+url.PathEscape(v), url.Values{"external_source": {kind + "_id"}})
+	if err != nil {
+		return "", notFoundShow(err)
+	}
+	var res struct {
+		TV []struct {
+			ID int64 `json:"id"`
+		} `json:"tv_results"`
+	}
+	if err := json.Unmarshal(b, &res); err != nil || len(res.TV) == 0 || res.TV[0].ID <= 0 {
+		return "", ErrShowNotFound
+	}
+	return strconv.FormatInt(res.TV[0].ID, 10), nil
+}

@@ -121,8 +121,12 @@ func (v *Verdict) size(rel ReleaseFacts, rules PickRulesBody, step string, runti
 	}
 }
 
+// langNames names every language the release-name reader knows.
 var langNames = map[string]string{"en": "English", "fr": "French", "de": "German", "it": "Italian",
-	"es": "Spanish", "ru": "Russian", "ja": "Japanese", "ko": "Korean"}
+	"es": "Spanish", "ru": "Russian", "ja": "Japanese", "ko": "Korean",
+	"pl": "Polish", "nl": "Dutch", "pt": "Portuguese", "sv": "Swedish", "da": "Danish", "no": "Norwegian",
+	"fi": "Finnish", "cs": "Czech", "hu": "Hungarian", "el": "Greek", "he": "Hebrew", "tr": "Turkish",
+	"ar": "Arabic", "hi": "Hindi", "zh": "Chinese", "th": "Thai", "vi": "Vietnamese", "uk": "Ukrainian"}
 
 func (v *Verdict) language(p releasename.Result, rules PickRulesBody, t *TitleRef) {
 	langs := p.Languages
@@ -133,11 +137,11 @@ func (v *Verdict) language(p releasename.Result, rules PickRulesBody, t *TitleRe
 	keepsOriginal := p.Has("dual") || p.Has("multi")
 	for _, l := range langs {
 		if slices.Contains(rules.Language.Wanted, l) {
-			v.add("hard", "language", "pass", langName(l)+" is wanted", 0)
+			v.add("hard", "language", "pass", LanguageName(l)+" is wanted", 0)
 			return
 		}
 		if rules.Language.OriginalOK && l == t.OriginalLanguage {
-			v.add("hard", "language", "pass", langName(l)+" is the original language", 0)
+			v.add("hard", "language", "pass", LanguageName(l)+" is the original language", 0)
 			return
 		}
 	}
@@ -145,10 +149,11 @@ func (v *Verdict) language(p releasename.Result, rules PickRulesBody, t *TitleRe
 		v.add("hard", "language", "pass", "also has the original language", 0)
 		return
 	}
-	v.add("hard", "language", "fail", "language "+langName(langs[0])+" not wanted", 0)
+	v.add("hard", "language", "fail", "language "+LanguageName(langs[0])+" not wanted", 0)
 }
 
-func langName(code string) string {
+// LanguageName is the English name of a language code, or the code when it is not known.
+func LanguageName(code string) string {
 	if n, ok := langNames[code]; ok {
 		return n
 	}

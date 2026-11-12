@@ -42,6 +42,9 @@ const (
 	Balanced Preset = "balanced"
 	Light    Preset = "light"
 	Careful  Preset = "careful"
+	// Off makes no scheduled backups. Manual backups and the copies taken
+	// around an update still are, so going back after an update works.
+	Off Preset = "off"
 )
 
 // Rules for each preset.
@@ -87,6 +90,12 @@ func (m *Manager) State(ctx context.Context) (time.Time, time.Duration, string, 
 		return time.Time{}, Rules[p].Every, last, err
 	}
 	return all[0].CreatedAt, Rules[p].Every, last, nil
+}
+
+// Off says scheduled backups are turned off.
+func (m *Manager) Off(ctx context.Context) bool {
+	p, err := m.Preset(ctx)
+	return err == nil && p == Off
 }
 
 func (m *Manager) now() time.Time {
@@ -413,7 +422,7 @@ func (m *Manager) Preset(ctx context.Context) (Preset, error) {
 	if err != nil || v == "" {
 		return Balanced, err
 	}
-	if _, ok := Rules[Preset(v)]; !ok {
+	if _, ok := Rules[Preset(v)]; !ok && Preset(v) != Off {
 		return Balanced, nil
 	}
 	return Preset(v), nil
@@ -421,8 +430,8 @@ func (m *Manager) Preset(ctx context.Context) (Preset, error) {
 
 // SetPreset chooses a preset.
 func (m *Manager) SetPreset(ctx context.Context, p Preset, by domain.Actor) error {
-	if _, ok := Rules[p]; !ok {
-		return fmt.Errorf("unknown preset %q; pick balanced, light or careful", p)
+	if _, ok := Rules[p]; !ok && p != Off {
+		return fmt.Errorf("unknown preset %q; pick balanced, light, careful or off", p)
 	}
 	return m.setSetting(ctx, settingPreset, string(p), by)
 }
@@ -448,7 +457,7 @@ func (m *Manager) Tick(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if !m.due(p) {
+	if p == Off || !m.due(p) {
 		return nil
 	}
 	if err := m.roomFor(); err != nil {

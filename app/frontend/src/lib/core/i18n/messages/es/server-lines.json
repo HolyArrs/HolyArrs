@@ -1198,5 +1198,22 @@
 	"server.discover.coming-saturday": "Llega el sábado",
 	"server.discover.new-episode-sat": "Episodio nuevo · sáb",
 	"server.discover.coming-sunday": "Llega el domingo",
-	"server.discover.new-episode-sun": "Episodio nuevo · dom"
+	"server.discover.new-episode-sun": "Episodio nuevo · dom",
+	"server.accounts.is-too-wide-list-your-home": "\"{entry}\" es demasiado amplia: pon tu red de casa, como 192.168.1.0/24",
+	"server.accounts.is-not-a-network-use-one": "\"{entry}\" no es una red: usa una como 192.168.1.0/24 o una dirección como 192.168.1.5",
+	"server.accounts.is-not-a-proxy-address-use": "\"{entry}\" no es una dirección de proxy: usa una como 172.18.0.2 o un rango como 172.18.0.0/16",
+	"server.accounts.is-too-wide-list-only-the": "\"{entry}\" es demasiado amplio: pon solo las direcciones que usa tu proxy",
+	"server.accounts.list-at-most-proxies": "pon como máximo {n} proxies",
+	"server.accounts.list-at-most-networks": "pon como máximo {n} redes",
+	"server.accounts.pick-a-person-who-exists-and": "elige una persona que exista y esté activada",
+	"server.accounts.pick-a-person-for-local-visitors": "elige una persona para las visitas locales",
+	"server.accounts.there-is-no-owner-yet": "aún no hay propietario",
+	"server.accounts.change-trusted-proxies-in-the-browser": "cambia los proxies de confianza en el navegador, con sesión iniciada con tu contraseña",
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "llegas a HolyArrs por el proxy en {ip}; déjalo en la lista",
+	"server.library.is-not-at-the-new-path": "{name} no está en la ruta nueva",
+	"server.library.bytes-at-the-new-path-but": "{name} tiene {got} bytes en la ruta nueva, pero {want} bytes en la Biblioteca",
+	"server.library.files-in-this-library-folder-changed": "los archivos de esta carpeta de la Biblioteca cambiaron mientras se comprobaba la ruta nueva; inténtalo de nuevo",
+	"server.library.the-folder-does-not-exist": "la carpeta no existe",
+	"server.library.the-path-must-be-an-absolute": "la ruta debe ser una ruta de carpeta absoluta, no una unidad entera ni dentro o alrededor de la carpeta de configuración",
+	"server.library.that-folder-or-one-inside-or": "esa carpeta, o una dentro o alrededor de ella, ya es una carpeta de la Biblioteca"
 }

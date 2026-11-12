@@ -3,6 +3,7 @@ import { to } from './paths.ts';
 import { registerPictures } from './pictures.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import { serverWords } from '#lib/core/i18n/server-words.ts';
+import { sourceOff } from './source-off.svelte.ts';
 
 export class ApiError extends Error {
 	status: number;
@@ -81,10 +82,15 @@ export function isIncomplete(v: unknown): boolean {
 	return !!v && typeof v === 'object' && (v as { incomplete?: unknown }).incomplete === true;
 }
 
+// Browsing answers that leave out hidden titles.
+const BROWSING = /^\/(explore|discover|search|metadata|titles\/lookup|shows\/lookup)/;
+
 // One shared client per page; same-path GETs in flight or fresh are answered from one request.
 export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: () => EarlyAsks | undefined = bootAsks) {
 	let csrf = '';
 	let signedOut: (() => void) | null = null;
+	// Set after a hide or its Undo: browsing answers are kept by the browser for minutes, so they are asked for again with a fresh address.
+	let fresh = 0;
 
 	function takeEarly(url: string): Promise<Response> | undefined {
 		const e = early();
@@ -110,7 +116,7 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 			headers['Content-Type'] = 'application/json';
 		}
 		if (method !== 'GET' && csrf) headers['X-CSRF-Token'] = csrf;
-		const url = to('/api/v1' + path);
+		const url = to('/api/v1' + (fresh && method === 'GET' && BROWSING.test(path) ? `${path}${path.includes('?') ? '&' : '?'}fresh=${fresh}` : path));
 		const ahead = method === 'GET' && body === undefined ? takeEarly(url) : undefined;
 		const ask = () => fetchFn(url, { method, headers, body, signal: opts.signal, credentials: 'same-origin' });
 		let res: Response;
@@ -142,6 +148,11 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 			// message is shown in the picked language; body.error keeps the server's English for matching.
 			const msg = typeof data.error === 'string' && data.error ? serverWords(data.error) : t('core.api.requestFailed', { status: res.status });
 			throw new ApiError(msg, res.status, data, Number.isFinite(ra) && ra > 0 ? ra : null);
+		}
+		// A lookup that is off on this install answers 200 with source_off: a calm note, not data.
+		if (data && data.source_off === true) {
+			sourceOff.seen = true;
+			throw new ApiError(t('core.api.sourceOff'), res.status, data);
 		}
 		if (data && typeof data === 'object' && 'pictures' in data) registerPictures(data.pictures);
 		return data as T;
@@ -191,6 +202,11 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 			csrf = v;
 		},
 		csrf: () => csrf,
+		/** After a hide or its Undo: Explore, New & Popular and search are asked for again, not taken from the browser's copy. */
+		freshBrowsing() {
+			fresh = Date.now();
+			shared.clear();
+		},
 		forget: () => {
 			shared.clear();
 			dropEarly();
@@ -217,6 +233,11 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 }
 
 export const api = createClient();
+
+// True for the calm "some rows are off on this install" answer.
+export function isSourceOff(e: unknown): boolean {
+	return e instanceof ApiError && e.body.source_off === true;
+}
 
 export function message(e: unknown): string {
 	if (e instanceof ApiError) return e.message;

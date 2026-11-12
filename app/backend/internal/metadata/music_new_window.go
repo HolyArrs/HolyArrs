@@ -43,14 +43,14 @@ func (s *Service) MusicNewWindow(ctx context.Context, window string) (MusicNew, 
 	defer cancel()
 	tok, err := s.access(ctx)
 	if err != nil || tok == "" || strings.ContainsAny(tok, "\r\n") {
-		return out, ErrServiceAccess
+		return out, accessErr(err)
 	}
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.base+"/v1/music/new?"+url.Values{"window": {window}}.Encode(), nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	req.Header.Set("Accept", "application/json")
 	resp, err := s.http.Do(req)
 	if err != nil {
-		return out, ErrServiceUnavailable
+		return out, unreached(err)
 	}
 	defer resp.Body.Close()
 	switch {

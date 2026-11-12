@@ -509,6 +509,9 @@ func client(m domain.MediaServer) *http.Client {
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 }
 
+// maxAnswer is the most bytes of one media server answer read.
+const maxAnswer = 4 << 20
+
 // do sends one request with the server's token and returns the body. The
 // error never holds the address or the token.
 func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path string, body []byte) ([]byte, error) {
@@ -559,13 +562,18 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 		}
 		return nil, errors.New("the server did not answer")
 	}
-	b, readErr := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+	b, readErr := io.ReadAll(io.LimitReader(resp.Body, maxAnswer+1))
 	if closeErr := resp.Body.Close(); readErr == nil {
 		readErr = closeErr
 	}
 	if readErr != nil {
 		outcome = outbound.HTTPOutcome(resp.StatusCode, readErr, ctx)
 		return nil, errors.New("reading the server answer failed")
+	}
+	if len(b) > maxAnswer {
+		// A cut answer would read as a short list.
+		outcome = outbound.TerminalFailure
+		return nil, errors.New("the server's answer was too big to read")
 	}
 	outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
 	switch {

@@ -82,6 +82,10 @@ func SettingsChange(method, path string) (area, label, action string, id int64, 
 	if !known {
 		return "", "", "", 0, false
 	}
+	// A Library folder's new path is logged like its other edits.
+	if seg[0] == "library-folders" && len(seg) == 3 && seg[2] == "path" && method == http.MethodPut {
+		seg = seg[:2]
+	}
 	switch {
 	case len(seg) == 1 && method == http.MethodPost:
 		action = "added"

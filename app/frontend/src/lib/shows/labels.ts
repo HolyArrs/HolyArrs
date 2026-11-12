@@ -34,7 +34,8 @@ export const episodeOrders: [string, string, string][] = [
 
 export const detailsSources: [string, string][] = [
 	['tmdb', 'TMDB'],
-	['tvmaze', 'TVMaze']
+	['tvmaze', 'TVMaze'],
+	['tvdb', 'TheTVDB']
 ];
 
 export function label(list: [string, string, ...string[]][], v: string | undefined): string {

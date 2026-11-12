@@ -1198,5 +1198,22 @@
 	"server.discover.coming-saturday": "Cumartesi geliyor",
 	"server.discover.new-episode-sat": "Yeni bölüm · Cmt",
 	"server.discover.coming-sunday": "Pazar geliyor",
-	"server.discover.new-episode-sun": "Yeni bölüm · Paz"
+	"server.discover.new-episode-sun": "Yeni bölüm · Paz",
+	"server.accounts.is-too-wide-list-your-home": "\"{entry}\" çok geniş: ev ağınızı yazın, örn. 192.168.1.0/24",
+	"server.accounts.is-not-a-network-use-one": "\"{entry}\" bir ağ değil: 192.168.1.0/24 gibi bir ağ ya da 192.168.1.5 gibi bir adres kullanın",
+	"server.accounts.is-not-a-proxy-address-use": "\"{entry}\" bir proxy adresi değil: 172.18.0.2 gibi bir adres ya da 172.18.0.0/16 gibi bir aralık kullanın",
+	"server.accounts.is-too-wide-list-only-the": "\"{entry}\" çok geniş: yalnızca proxy'nizin adreslerini yazın",
+	"server.accounts.list-at-most-proxies": "en fazla {n} proxy yazın",
+	"server.accounts.list-at-most-networks": "en fazla {n} ağ yazın",
+	"server.accounts.pick-a-person-who-exists-and": "var olan ve açık olan bir kişi seçin",
+	"server.accounts.pick-a-person-for-local-visitors": "yerel ziyaretler için bir kişi seçin",
+	"server.accounts.there-is-no-owner-yet": "henüz sahip yok",
+	"server.accounts.change-trusted-proxies-in-the-browser": "güvenilir proxy'leri tarayıcıda, şifrenizle giriş yapmışken değiştirin",
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "HolyArrs'a {ip} adresindeki proxy üzerinden ulaşıyorsunuz; listede tutun",
+	"server.library.is-not-at-the-new-path": "{name} yeni yolda değil",
+	"server.library.bytes-at-the-new-path-but": "{name} yeni yolda {got} bayt, ama Kitaplıkta {want} bayt",
+	"server.library.files-in-this-library-folder-changed": "yeni yol kontrol edilirken bu Kitaplık klasöründeki dosyalar değişti; yeniden deneyin",
+	"server.library.the-folder-does-not-exist": "klasör yok",
+	"server.library.the-path-must-be-an-absolute": "yol mutlak bir klasör yolu olmalı; tüm bir sürücü olamaz, ayar klasörünün içinde veya çevresinde olamaz",
+	"server.library.that-folder-or-one-inside-or": "bu klasör, ya da içindeki veya çevresindeki bir klasör, zaten bir Kütüphane klasörü"
 }

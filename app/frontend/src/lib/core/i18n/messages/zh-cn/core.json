@@ -142,5 +142,6 @@
 	"core.settings.danger.label": "危险操作",
 	"core.settings.danger.about": "重启或关闭",
 	"core.settings.account.label": "我的账户",
-	"core.settings.account.about": "密码、双重验证、设备"
+	"core.settings.account.about": "密码、双重验证、设备",
+	"core.api.sourceOff": "此安装中部分行已关闭。"
 }

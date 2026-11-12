@@ -28,7 +28,7 @@ type ShowAddOptions struct {
 	Seasons         string `json:"seasons"`        // all, future, latest, none
 	NewSeasons      string `json:"new_seasons"`    // all, none
 	EpisodeOrder    string `json:"episode_order"`  // aired, daily, absolute
-	Source          string `json:"details_source"` // tmdb or tvmaze
+	Source          string `json:"details_source"` // tmdb, tvmaze, tvdb
 	// SearchOnAdd searches the whole show after the folder scan, the same
 	// search POST /titles/{id}/search starts for a show.
 	SearchOnAdd bool `json:"search_on_add"`
@@ -257,6 +257,20 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		folder := mediafiles.ShowFolder(ns, mediafiles.NameFacts{Title: t.Name, Year: year, TMDB: t.SourceIDs["tmdb"], IMDB: t.SourceIDs["imdb"]})
 		if opt.Adopt != nil {
 			folder = opt.Adopt.FolderName
+		} else {
+			// A folder for this show already on disk under a slightly different
+			// name is used as is, so the scan after the add finds its files.
+			taken := map[string]bool{}
+			if rows, err := tx.QueryContext(ctx, "SELECT folder_name FROM versions WHERE library_folder_id = ?", lf.ID); err == nil {
+				for rows.Next() {
+					var n string
+					if rows.Scan(&n) == nil {
+						taken[strings.ToLower(n)] = true
+					}
+				}
+				rows.Close()
+			}
+			folder = library.ExistingFolder(lf.Path, folder, t.Name, year, func(d string) bool { return taken[strings.ToLower(d)] })
 		}
 		v := &mediafiles.Version{TitleID: t.ID, Label: "Main", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: folder, KeepUpToDate: keep, IsMain: true}
 		if _, err := database.Insert(tx, "versions", v, by); err != nil {

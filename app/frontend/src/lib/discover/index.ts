@@ -25,6 +25,7 @@ export { default as ComingSoon } from './ComingSoon.svelte';
 export { default as ExploreHero } from './ExploreHero.svelte';
 export { default as FollowWho } from './FollowWho.svelte';
 export { default as GenreBanner } from './GenreBanner.svelte';
+export { default as HiddenCard } from './HiddenCard.svelte';
 export { default as MiniMonth } from './MiniMonth.svelte';
 export { default as MosaicReveal } from './MosaicReveal.svelte';
 export { default as MusicBrowseSections } from './MusicBrowseSections.svelte';

@@ -46,6 +46,10 @@ type settings struct {
 	removeFailed         bool
 	failDangerous        bool
 	replaceVanished      bool
+	// The dead or crawling torrent rule; zero is off.
+	deadMetadata time.Duration
+	crawlKBps    float64
+	crawlHours   time.Duration
 }
 
 // Client returns the HTTP client for one Downloader. It never follows a redirect
@@ -333,6 +337,18 @@ func (m *Manager) settings(ctx context.Context) settings {
 				st.failDangerous = v != "false"
 			case SettingReplaceVanished:
 				st.replaceVanished = v != "false"
+			case SettingDeadMetadata:
+				if nerr == nil && n > 0 {
+					st.deadMetadata = time.Duration(n * float64(time.Minute))
+				}
+			case SettingCrawlKBps:
+				if nerr == nil && n > 0 {
+					st.crawlKBps = n
+				}
+			case SettingCrawlHours:
+				if nerr == nil && n > 0 {
+					st.crawlHours = time.Duration(n * float64(time.Hour))
+				}
 			}
 		}
 	}

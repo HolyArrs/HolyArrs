@@ -326,7 +326,7 @@ var errBrowseBuilding = errors.New("browse section building")
 // errBrowseBuilding.
 func (h *Handlers) browseSectionTiles(ctx context.Context, r *http.Request, sw string, kid bool, pg engine.Page, page []engine.BrowseTile, id string) ([]engine.CategoryTile, error) {
 	max := h.KidMax(r)
-	key := fmt.Sprintf("%p|%d|%s|%t|%s", h.Explore, h.UserID(r), sw, kid, max)
+	key := fmt.Sprintf("%p|%d|%s|%t|%s|%d", h.Explore, h.UserID(r), sw, kid, max, hiddenGen(h.Store))
 	v, loaded := browseBuilds.LoadOrStore(key, &browseBuild{})
 	if !loaded {
 		sweepBrowseBuilds(key)

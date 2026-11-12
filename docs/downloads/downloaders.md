@@ -129,6 +129,20 @@ On by default, since Downloaders usually run at home. Turn it off for a Download
 
 Off means new downloads still go there, but HolyArrs never pauses, changes or removes anything already in it. Use it for a Downloader you share with other apps.
 
+### Remove after seeding
+
+Torrent Downloaders only, and off by default. When it is on, HolyArrs removes a torrent it sent once the import is done and seeding is over. Seeding is over when the torrent app stops seeding it on its own. With qBittorrent and rTorrent you can also set a ratio goal or a seeding time goal; whichever comes first counts. An unknown ratio or seeding time never counts.
+
+**Also delete its files** deletes the downloaded files too. HolyArrs keeps them when your Library folder is inside the download (or the download is inside your Library), when the download is a whole save folder, or when another torrent in the same app uses the same files. Every removal shows in History.
+
+A cross-seed twin in a second torrent app is not detected, so leave **Also delete its files** off if you cross-seed between apps.
+
+This choice needs **HolyArrs can change this Downloader** on.
+
+### Give up on dead torrents sooner
+
+Under **When downloads go wrong**, open **Advanced**. Off by default. A torrent fails, and HolyArrs searches again, when it is stuck finding its files for longer than the minutes you set, or when it stays slower than the speed you set for the hours you set. Paused and queued time does not count.
+
 ## Follow a download
 
 A title's page shows each download: waiting its turn, downloading with speed and time left, stalled, or failed with the reason.

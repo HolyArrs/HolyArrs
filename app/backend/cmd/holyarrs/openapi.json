@@ -2676,6 +2676,42 @@
         },
         "type": "object"
       },
+      "Hide": {
+        "properties": {
+          "created_at": {
+            "type": "string"
+          },
+          "genre": {
+            "description": "Set for a genre hide: the English TMDB genre name for kind.",
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "movie",
+              "show"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "description": "The title's name when it was hidden.",
+            "type": "string"
+          },
+          "tmdb_id": {
+            "description": "Set for a title hide.",
+            "type": "string"
+          },
+          "user_id": {
+            "description": "The person it is hidden for; 0 for everyone.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "Job": {
         "description": "A background Job: state queued, running, done, failed or cancelled; result holds what it did (a dry-run plan, counts).",
         "properties": {
@@ -3530,6 +3566,10 @@
       },
       "Movie": {
         "properties": {
+          "hidden": {
+            "description": "Hidden from browsing for the person asking; managers still find it here to add it.",
+            "type": "boolean"
+          },
           "ids": {
             "additionalProperties": {
               "type": "string"
@@ -5259,6 +5299,10 @@
               }
             },
             "type": "object"
+          },
+          "hidden": {
+            "description": "Hidden from browsing for the person asking; managers still find it here to add it.",
+            "type": "boolean"
           },
           "ids": {
             "additionalProperties": {
@@ -11050,7 +11094,7 @@
     },
     "/api/v1/auth/settings": {
       "get": {
-        "description": "Sign-in ways, local-network sign-in (skip_login_local_network and the local_networks it covers), two-factor rules and min_password_length (the shortest new password allowed; 4 by default). plex_owner says whether the owner's Plex account is linked (never the token).",
+        "description": "Sign-in ways, local-network sign-in (skip_login_local_network and the local_networks it covers), two-factor rules and min_password_length (the shortest new password allowed; 4 by default). plex_owner says whether the owner's Plex account is linked (never the token). local_person is who local visitors become (0: the owner); local_skip_off says why the skip lets nobody in now (\"kid\" or \"person_gone\", \"\" when it works); media_sign_in lists the Plex, Jellyfin and Emby sign-in ways that are on; home_ranges and cgnat_range are what add_home_ranges and add_cgnat add; trusted_proxies are the ones saved here and trusted_proxies_fixed the locked ones from HOLYARRS_TRUSTED_PROXIES.",
         "operationId": "getAuthSettings",
         "responses": {
           "200": {
@@ -11073,7 +11117,7 @@
         "x-holyarrs-scope": "admin"
       },
       "put": {
-        "description": "Owner only. local_networks takes up to 32 CIDRs or single addresses (400 names a bad entry); skip_login_local_network cannot be on with an empty list (400). min_password_length takes 4 to 64; it counts for new passwords (setup, invites, password changes, reset-owner). Turning a sign-in way to join \"everyone\" when it was not already needs confirm_everyone: true (409 otherwise).",
+        "description": "Owner only. local_networks takes up to 32 CIDRs or single addresses (400 names a bad entry); skip_login_local_network cannot be on with an empty list (400). min_password_length takes 4 to 64; it counts for new passwords (setup, invites, password changes, reset-owner). Turning a sign-in way to join \"everyone\" when it was not already needs confirm_everyone: true (409 otherwise). local_person must be 0 (the owner) or a person who is turned on; while any Kid or open age-limited invite exists, the skip can only be on for a Kid (400). add_home_ranges adds 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 and fc00::/7, add_cgnat adds 100.64.0.0/10. trusted_proxies (browser session only) takes up to 32 addresses or ranges, added to HOLYARRS_TRUSTED_PROXIES; dropping the proxy this request came through answers 409. Local visits get a CSRF token from /api/v1/auth/me that every change must send.",
         "operationId": "putAuthSettings",
         "requestBody": {
           "content": {
@@ -12012,7 +12056,7 @@
     },
     "/api/v1/backups/settings": {
       "put": {
-        "description": "preset is balanced, light or careful.",
+        "description": "preset is balanced, light, careful or off (off makes no scheduled backups; manual backups and the copies taken around an update are still made).",
         "operationId": "putBackupSettings",
         "requestBody": {
           "content": {
@@ -12023,7 +12067,8 @@
                     "enum": [
                       "balanced",
                       "light",
-                      "careful"
+                      "careful",
+                      "off"
                     ],
                     "type": "string"
                   }
@@ -16790,6 +16835,179 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/hidden": {
+      "get": {
+        "description": "Oldest first. Hidden titles stay out of Explore, New & Popular, genre pages, browse, search, suggestions, More like this and people pages; links, the Library and asks still work.",
+        "operationId": "listHidden",
+        "parameters": [
+          {
+            "description": "0 keeps the hides for everyone, a person's id keeps that person's.",
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "hidden": {
+                      "items": {
+                        "$ref": "#/components/schemas/Hide"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Hides."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "user_id is not a number."
+          }
+        },
+        "summary": "Titles and genres hidden from browsing",
+        "tags": [
+          "Hidden from browsing"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "description": "Send tmdb_id for a title or genre for a whole genre of kind, and user_id to hide it for one person only. Sending the same hide again answers 200 with the stored one.",
+        "operationId": "addHidden",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "genre": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "enum": [
+                      "movie",
+                      "show"
+                    ],
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "tmdb_id": {
+                    "type": "string"
+                  },
+                  "user_id": {
+                    "format": "int64",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Hide"
+                }
+              }
+            },
+            "description": "Already hidden."
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Hide"
+                }
+              }
+            },
+            "description": "Hidden."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A field is missing or wrong, or no such person."
+          }
+        },
+        "summary": "Hide a title or a genre from browsing",
+        "tags": [
+          "Hidden from browsing"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/hidden/{id}": {
+      "delete": {
+        "description": "Undo and Show again.",
+        "operationId": "deleteHidden",
+        "parameters": [
+          {
+            "description": "The hide's id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Shown again."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such hide."
+          }
+        },
+        "summary": "Show a hidden title or genre again",
+        "tags": [
+          "Hidden from browsing"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/holding": {
       "get": {
         "description": "Lists the deleted files still waiting in the holding folders, newest first. path is where each file was in its Library folder; title_deleted says the movie, show or artist was deleted with it; expires_at is when the daily clean-up empties it (left out when holding_days is 0).",
@@ -17498,6 +17716,97 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/library-folders/{id}/path": {
+      "put": {
+        "description": "For files already moved to a new place (a new mount point, a renamed share). The new path is checked like a new folder's. Then every present file (titles deleted from the Library left out) must be at the new path with a size the Library knows for it, recorded at import or read by the last rescan; the first that is not stops the change, and the 409 answer names it in file. Only then is the path saved and the folder checked again. Nothing on disk is moved.",
+        "operationId": "changeFolderPath",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Folder"
+                }
+              }
+            },
+            "description": "Changed and checked."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not a full folder path, the config folder, or a folder that does not exist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such folder."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "file": {
+                      "description": "The first file missing at the new path or of another size, under the folder.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Inside or around another Library folder, files changed during the check, or a file is not at the new path (file names it)."
+          }
+        },
+        "summary": "Change a Library folder's path",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/library-folders/{id}/scan": {
       "post": {
         "description": "Queues a dry run that matches each folder to a TMDB movie with a confidence score; nothing is written. GET /api/v1/jobs/{id} then holds result.plan (an AdoptPlan). At most adopt_scan_limit folders (default 5000) are read, in name order; when plan.more is true, scan again with after set to plan.next for the rest. A folder whose TMDB lookup fails is unmatched with the reason instead of stopping the scan. A {tmdb-N} tag in a folder name wins over the name and year. A show Library folder (5.2.2) matches each folder to a show at the show details source (a {tvdb-N}, {tmdb-N}, {tvmaze-N} or {imdb-ttN} tag wins), and lists each video under files with the episodes its name gives (S01E02, multi-episode names, an air day or a running number) or why it gives none; plan.kind says movie or show, and plan.warning is set when the Library folder is empty while the Library knows files in it (a drive or share not mounted). A music Library folder reads at most music_adopt_scan_limit artist folders (default 200); its MusicBrainz lookups wait behind album imports, searches and staff, each artist folder's result is saved to the Job as it is done (plan.partial), and each album lists at most 40 files (album.cut).",
@@ -17736,6 +18045,34 @@
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/library/stats": {
+      "get": {
+        "description": "Counts present main files per kind (movies, shows, music; only kinds whose part is on): titles, files and bytes split by video codec, resolution, HDR, container, audio codec and audio channels. Values outside the known list come back as \"other\", files not read yet as \"unchecked\", files that could not be read as \"unknown\". Music has no video facts.",
+        "responses": {
+          "200": {
+            "description": "The counts per kind and fact."
+          }
+        },
+        "summary": "Library files by fact",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/library/stats/watched": {
+      "get": {
+        "description": "Watched movies, shows and episodes per account on each Plex, Jellyfin or Emby server, from the last watch history read. An account linked to a person here carries that person; any other is shown by its media-server name with linked false. Empty while watch history is off.",
+        "responses": {
+          "200": {
+            "description": "Whether watch history is on, when it was last read, and each account's counts."
+          }
+        },
+        "summary": "Who watched what",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/links/{kind}/{id}/restart": {
@@ -24202,6 +24539,129 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/settings/metadata": {
+      "get": {
+        "description": "The mode (full: the HolyArrs metadata server, own: your own keys, off: no lookups), whether the Docker settings lock it, which own keys are saved (never the keys), each kind of detail on or off, and the outside addresses the mode uses.",
+        "operationId": "getMetadataSettings",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Settings."
+          }
+        },
+        "summary": "Where details come from",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Sets the mode and saves own keys (an empty key removes it, a left-out key stays). A mode change applies at once.",
+        "operationId": "putMetadataSettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Saved."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A value is not valid."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The Docker settings set the mode."
+          }
+        },
+        "summary": "Change where details come from",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/metadata/test": {
+      "post": {
+        "description": "Checks a TMDB, TheTVDB (with its PIN), MDBList or fanart.tv key, given or saved. Answers ok and a short line either way.",
+        "operationId": "testMetadataKey",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The result."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unknown key name."
+          }
+        },
+        "summary": "Test an own key",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/settings/music": {
       "get": {
         "description": "Defaults for new artists (album choice, new albums, album kinds, Pressing statuses), how a Pressing is chosen, and where MusicBrainz is reached with how long its answers are kept.",
@@ -25200,6 +25660,38 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/watch-history": {
+      "get": {
+        "description": "Whether HolyArrs reads watch history from the media servers. Off by default.",
+        "responses": {
+          "200": {
+            "description": "{\"enabled\": true or false}."
+          }
+        },
+        "summary": "Watch history switch",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Body {\"enabled\": true or false}. Turning it off deletes every watch history row read so far. Needs a password sign-in or an API key.",
+        "responses": {
+          "200": {
+            "description": "Saved."
+          },
+          "400": {
+            "description": "The body is not {\"enabled\": true or false}."
+          },
+          "403": {
+            "description": "Only the owner, signed in with a password or an API key, may change it."
+          }
+        },
+        "summary": "Turn watch history on or off",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/shows": {

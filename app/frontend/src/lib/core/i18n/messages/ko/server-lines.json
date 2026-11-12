@@ -1198,5 +1198,22 @@
 	"server.discover.coming-saturday": "토요일 공개",
 	"server.discover.new-episode-sat": "새 에피소드 · 토",
 	"server.discover.coming-sunday": "일요일 공개",
-	"server.discover.new-episode-sun": "새 에피소드 · 일"
+	"server.discover.new-episode-sun": "새 에피소드 · 일",
+	"server.accounts.is-too-wide-list-your-home": "\"{entry}\"은(는) 너무 넓습니다: 192.168.1.0/24처럼 홈 네트워크를 적으세요",
+	"server.accounts.is-not-a-network-use-one": "\"{entry}\"은(는) 네트워크가 아닙니다: 192.168.1.0/24 또는 192.168.1.5 같은 주소를 쓰세요",
+	"server.accounts.is-not-a-proxy-address-use": "\"{entry}\"은(는) 프록시 주소가 아닙니다: 172.18.0.2 또는 172.18.0.0/16 같은 범위를 쓰세요",
+	"server.accounts.is-too-wide-list-only-the": "\"{entry}\"은(는) 너무 넓습니다: 프록시가 쓰는 주소만 적으세요",
+	"server.accounts.list-at-most-proxies": "프록시는 최대 {n}개",
+	"server.accounts.list-at-most-networks": "네트워크는 최대 {n}개",
+	"server.accounts.pick-a-person-who-exists-and": "존재하고 켜져 있는 사람을 고르세요",
+	"server.accounts.pick-a-person-for-local-visitors": "로컬 방문자에게 쓸 사람을 고르세요",
+	"server.accounts.there-is-no-owner-yet": "아직 소유자가 없습니다",
+	"server.accounts.change-trusted-proxies-in-the-browser": "신뢰하는 프록시는 브라우저에서 비밀번호로 로그인한 뒤 바꾸세요",
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "{ip} 프록시를 통해 HolyArrs에 접속 중입니다. 목록에 남겨 두세요",
+	"server.library.is-not-at-the-new-path": "{name}이(가) 새 경로에 없습니다",
+	"server.library.bytes-at-the-new-path-but": "{name}은(는) 새 경로에서 {got}바이트지만 라이브러리에서는 {want}바이트입니다",
+	"server.library.files-in-this-library-folder-changed": "새 경로를 확인하는 동안 이 라이브러리 폴더의 파일이 바뀌었습니다. 다시 시도하세요",
+	"server.library.the-folder-does-not-exist": "폴더가 없습니다",
+	"server.library.the-path-must-be-an-absolute": "경로는 폴더의 절대 경로여야 합니다. 드라이브 전체나 설정 폴더 안이나 그 주변은 안 됩니다",
+	"server.library.that-folder-or-one-inside-or": "이 폴더 또는 그 안이나 주변의 폴더가 이미 라이브러리 폴더입니다"
 }

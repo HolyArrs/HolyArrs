@@ -38,6 +38,10 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/library/copies":                        webserver.PermManageLibrary,
 	"POST /api/v1/library/copies/search/preview":        webserver.PermManageLibrary,
 	"POST /api/v1/library/copies/search":                webserver.PermManageLibrary,
+	"GET /api/v1/library/stats":                         webserver.PermManageLibrary,
+	"GET /api/v1/library/stats/watched":                 webserver.PermManageLibrary,
+	"GET /api/v1/settings/watch-history":                webserver.NeedOwner,
+	"PUT /api/v1/settings/watch-history":                webserver.NeedOwner,
 
 	// The app's pages and files; the pages themselves ask the API.
 	"GET /":      webserver.NeedSelf,
@@ -108,6 +112,9 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/trailer/stream/{id}/manifest.m3u8":        webserver.NeedSignedIn,
 	"GET /api/v1/trailer/stream/{id}/seg/{n}":              webserver.NeedSignedIn,
 	"GET /api/v1/settings/ui":                              webserver.NeedSignedIn,
+	"GET /api/v1/settings/metadata":                        webserver.PermSettings,
+	"PUT /api/v1/settings/metadata":                        webserver.PermSettings,
+	"POST /api/v1/settings/metadata/test":                  webserver.PermSettings,
 	"PUT /api/v1/settings/ui":                              webserver.PermSettings,
 	"GET /api/v1/discover":                                 webserver.NeedSignedIn,
 	"GET /api/v1/watch-services":                           webserver.NeedSignedIn,
@@ -324,6 +331,9 @@ var RoutePerms = map[string]webserver.Perm{
 	"DELETE /api/v1/own-traits/{id}":                             webserver.PermSettings,
 	"GET /api/v1/trash/profiles":                                 webserver.PermSettings,
 	"POST /api/v1/pick-rules/{id}/trash":                         webserver.PermSettings,
+	"GET /api/v1/hidden":                                         webserver.NeedUsers,
+	"POST /api/v1/hidden":                                        webserver.NeedUsers,
+	"DELETE /api/v1/hidden/{id}":                                 webserver.NeedUsers,
 	"GET /api/v1/never-add":                                      webserver.PermManageLibrary,
 	"POST /api/v1/never-add":                                     webserver.PermManageLibrary,
 	"DELETE /api/v1/never-add/{id}":                              webserver.PermManageLibrary,
@@ -410,6 +420,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/settings/health":                                webserver.PermSettings,
 	"PUT /api/v1/settings/health":                                webserver.PermSettings,
 	"POST /api/v1/library-folders/{id}/check":                    webserver.PermManageLibrary,
+	"PUT /api/v1/library-folders/{id}/path":                      webserver.PermSettings, // a Settings change, like the folder's other edits
 
 	// Settings.
 	"POST /api/v1/library-folders":         webserver.PermSettings,

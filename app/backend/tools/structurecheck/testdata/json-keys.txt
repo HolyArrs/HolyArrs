@@ -17,6 +17,7 @@ HistoryTime
 Id
 IsAdministrator
 IsDisabled
+LastPlayedDate
 MarkStatus
 MaxParentalRating
 MediaContainer
@@ -30,6 +31,7 @@ Name
 ParStatus
 Parameters
 Path
+PlayCount
 Policy
 ProductName
 Progress
@@ -37,13 +39,16 @@ ProviderIds
 RemainingSizeHi
 RemainingSizeLo
 ScriptStatus
+SeriesId
 ServerName
 Status
+Type
 UnpackStatus
 UpdateType
 Updates
 UrlStatus
 User
+UserData
 Value
 Version
 _embedded
@@ -66,6 +71,8 @@ actor_name
 adaptive
 adaptiveFormats
 addOptions
+add_cgnat
+add_home_ranges
 added
 added_at
 added_names
@@ -78,6 +85,7 @@ adopt_scan_limit
 adult
 advanced
 after
+after_seeding
 age_seconds
 ai
 ai_translated
@@ -358,6 +366,8 @@ coverType
 cover_medium
 cover_xl
 covers
+crawl_hours
+crawl_kbps
 created
 created_at
 created_by
@@ -380,6 +390,7 @@ dates
 day
 day_down
 days
+dead_metadata_minutes
 death_place
 deathday
 deb
@@ -430,6 +441,7 @@ dl_rate_limit
 dl_speed
 dlspeed
 docker
+docker_value
 done_at
 down
 download
@@ -544,6 +556,7 @@ extract
 f14
 f60
 f7
+facts
 fail_dangerous
 fail_message
 failed
@@ -670,6 +683,7 @@ hash_string
 hashes
 have
 haves
+hdmovielogo
 hdr
 head
 headers
@@ -688,6 +702,8 @@ hero
 hh
 hi
 hi_suffix
+hidden
+hides
 hint
 hints
 history
@@ -702,6 +718,7 @@ holyarrs
 home
 home_date
 host
+hosts
 how
 href
 html_url
@@ -815,6 +832,7 @@ last_sync
 last_synced_at
 last_tried_at
 last_used_at
+last_watched_at
 last_year
 later
 latest
@@ -857,7 +875,10 @@ local
 local_network_allowed
 local_networks
 local_path
+local_person
 local_recent
+locked
+locked_note
 log
 logo
 logo_path
@@ -953,9 +974,12 @@ movie_days
 movie_limit
 movie_limit_set
 movie_results
+moviebackground
+moviebanner
 moviehash_match
 movies
 movies_per_week
+moviethumb
 mp4_audio
 mp4_url
 ms
@@ -1087,6 +1111,7 @@ outside_lists
 outside_order
 outside_recent
 overview
+own_keys_note
 owned
 owned_titles
 owner
@@ -1168,6 +1193,7 @@ picture
 picture_big
 picture_xl
 pictures
+pin
 place
 place_of_birth
 placed_by
@@ -1177,6 +1203,7 @@ plan_hash
 plans
 playabilityStatus
 playerStoryboardSpecRenderer
+plays
 plex
 plex_name
 plex_watchlists
@@ -1263,6 +1290,7 @@ rated
 rating
 ratingKey
 rating_country
+ratings
 ratio
 ratio_limit
 read_at
@@ -1443,6 +1471,7 @@ server
 serverAbrStreamingUrl
 server_admin
 server_id
+server_kind
 server_state
 server_url
 servers
@@ -1636,6 +1665,7 @@ tmdbId
 tmdb_episode
 tmdb_id
 tmdb_ids
+tmdb_key_from_docker
 tmdb_movies
 tmdb_offset
 tmdb_season
@@ -1706,6 +1736,7 @@ tries
 trigger
 trimmed
 trusted
+trusted_proxies
 try_next_downloader
 turn_down
 turned_down_for
@@ -1776,6 +1807,7 @@ user
 user_fingerprint
 user_id
 user_key
+user_name
 user_rating
 userinfo_endpoint
 username

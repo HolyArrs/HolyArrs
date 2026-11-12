@@ -21,21 +21,26 @@ HolyArrs slows repeated wrong sign-ins, but a short password is still easy to gu
 
 ## Skip sign-in on my local network
 
-Devices on your home network open HolyArrs as the owner, with no password. Off by default.
+Devices on your home network open HolyArrs as the person you pick, with no password. Off by default.
 
 1. Open **Settings > Sign-in and security > Local network**.
-2. List your networks, one per line, up to 32. Use a range (`192.168.1.0/24`, `fd00::/8`) or one address (`192.168.1.20`).
-3. Turn the switch on and save. You should see your own address on the card.
+2. Under **Who opens HolyArrs at home**, pick a person. The owner is picked by default; pick a Kid profile if children use this network.
+3. List your **Home networks**, one per line, up to 32. Use a range (`192.168.1.0/24`, `fd00::/8`) or one address (`192.168.1.20`). Each line is checked as you type, with a fix for each typo. **Add usual home ranges** adds `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16` and `fc00::/7`. Tick **Also my Tailscale range** to add `100.64.0.0/10`; only do this if the tailnet is yours alone, since a shared tailnet lets other people in too.
+4. Turn the switch on and save. The card shows your own address and whether it is covered.
 
-The switch cannot be on with an empty list, or while any [Kid account](kids.md) exists. Making API keys, changing sign-in settings, reading or replacing secrets and restoring backups still ask for a password.
+The visitor gets the picked person's role and limits. If that person is removed or turned off, everyone signs in again until you pick someone else. While any [Kid account](kids.md) or open age-limited invite exists, only a Kid can be picked. Making API keys, changing sign-in settings, reading or replacing secrets and restoring backups still ask for a password. Scripts that change things need an API key; a local visit alone is refused.
+
+The card hides while people sign in with Plex, Jellyfin or Emby, since they have their own accounts. If the skip was already on, the card stays so you can turn it off.
 
 ### Check the address first
 
-Some setups make every device look like one gateway address: Docker Desktop, rootless Docker or Podman, and Kubernetes NodePort. Typical ones are `172.17.0.1`, `172.18.0.1` and up, `10.88.0.1`, `10.89.x.1`, `10.0.2.2` and `192.168.65.x`.
+Some setups make every device look like one gateway address: Docker's bridge, Docker Desktop, rootless Docker or Podman, and Kubernetes NodePort. Typical ones are `172.17.0.1`, `172.18.0.1` and up, `10.88.0.1`, `10.89.x.1`, `10.0.2.2` and `192.168.65.x`.
 
-List one of those and anyone who reaches HolyArrs gets in as the owner. The card warns when an entry looks like one. Open the page from a second device: if it shows the same address, turn the switch off and remove that entry.
+When your own address is Docker's bridge, the card says so: HolyArrs cannot tell home from outside, so everyone keeps signing in with a password. Run the container with `network_mode: host`, or open HolyArrs through a reverse proxy listed under trusted proxies. A bridge address in **Home networks** is refused, because anyone who reaches HolyArrs would get in.
 
-Behind a reverse proxy, HolyArrs reads the forwarded address only from proxies in `HOLYARRS_TRUSTED_PROXIES`. Otherwise the card shows no address and says the proxy is not trusted.
+### Trusted proxies
+
+Behind a reverse proxy, HolyArrs reads the forwarded address only from trusted proxies. List them under **Trusted proxies** on the same card, up to 32, or in `HOLYARRS_TRUSTED_PROXIES`. Ones from `HOLYARRS_TRUSTED_PROXIES` show as **From Docker settings** and cannot be removed here. Changing the list needs your password sign-in in the browser, and HolyArrs refuses to drop the proxy you are using right now.
 
 ## Single sign-on
 

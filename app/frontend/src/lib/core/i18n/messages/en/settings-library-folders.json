@@ -39,5 +39,11 @@
 	"settings.libraryFolders.ownerOnly": "Owner and admins only",
 	"settings.libraryFolders.copiesExpected": "Copying is expected",
 	"settings.libraryFolders.copiesExpectedState": "Copies, as expected",
-	"settings.libraryFolders.warnAgain": "Warn again"
+	"settings.libraryFolders.warnAgain": "Warn again",
+	"settings.libraryFolders.changePath": "Change path",
+	"settings.libraryFolders.changePathOf": "Change the path of {path}",
+	"settings.libraryFolders.newPath": "New path",
+	"settings.libraryFolders.changePathHint": "Move the files there first. HolyArrs checks each file and moves nothing.",
+	"settings.libraryFolders.checkingFiles": "Checking files…",
+	"settings.libraryFolders.pathChanged": "Path changed"
 }

@@ -311,9 +311,9 @@ func TestSwitchShowSource(t *testing.T) {
 		t.Fatalf("refresh after switch: %v maze %v tmdb %v", err, maze.calls, tmdb.calls)
 	}
 
-	// TVDB is off: refused, nothing changes.
-	if _, err := svc.SwitchSource(ctx, ti.ID, "tvdb", domain.System); !errors.Is(err, metadata.ErrUnknownSource) {
-		t.Fatalf("tvdb is off: %v", err)
+	// TVDB without the person's key: refused, nothing changes.
+	if _, err := svc.SwitchSource(ctx, ti.ID, "tvdb", domain.System); !errors.Is(err, metadata.ErrNoTVDBKey) {
+		t.Fatalf("tvdb without key: %v", err)
 	}
 	// A source that does not know the show: refused, nothing changes.
 	if _, err := svc.SwitchSource(ctx, ti.ID, "tmdb", domain.System); err != nil {

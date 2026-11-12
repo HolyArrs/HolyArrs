@@ -142,5 +142,6 @@
 	"core.settings.danger.label": "Небезпечна зона",
 	"core.settings.danger.about": "Перезапуск або вимкнення",
 	"core.settings.account.label": "Мій обліковий запис",
-	"core.settings.account.about": "Пароль, двоетапна перевірка, пристрої"
+	"core.settings.account.about": "Пароль, двоетапна перевірка, пристрої",
+	"core.api.sourceOff": "Деякі ряди вимкнено в цьому встановленні."
 }

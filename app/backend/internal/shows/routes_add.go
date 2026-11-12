@@ -22,6 +22,8 @@ type ShowResult struct {
 	TitleID  int64 `json:"title_id,omitempty"` // set when already in the Library
 	NeverAdd bool  `json:"never_add,omitempty"`
 	Ask      any   `json:"ask,omitempty"` // the open ask for it, if any
+	// Hidden: hidden from browsing; managers still find it here to add it.
+	Hidden bool `json:"hidden,omitempty"`
 }
 
 // AddHandlers serves looking up and adding shows.
@@ -42,6 +44,9 @@ type AddHandlers struct {
 	Follow func(r *http.Request, titleID int64) error
 	// Added is the answer's title view for the added show; it also tells live pages.
 	Added func(ctx context.Context, t mediafiles.Title) (any, error)
+	// Hidden says whether the person's hides cover a show (hidden) and
+	// whether they should not see it at all (drop); nil hides nothing.
+	Hidden func(ctx context.Context, kind, tmdbID string, genres []string) (hidden, drop bool)
 }
 
 // Routes registers the lookup and add routes.
@@ -78,7 +83,9 @@ func (h *AddHandlers) lookupShows(w http.ResponseWriter, r *http.Request) {
 	}
 	var list []metadata.Show
 	low := strings.ToLower(term)
-	if k, _, ok := strings.Cut(low, ":"); ok && (k == "tmdb" || k == "tvdb" || k == "tvmaze" || k == "imdb") {
+	k, _, byID := strings.Cut(low, ":")
+	byID = byID && (k == "tmdb" || k == "tvdb" || k == "tvmaze" || k == "imdb")
+	if byID {
 		sh, err := New(h.Lib).LookupShow(r.Context(), k+":"+strings.TrimSpace(term[len(k)+1:]), source)
 		if err != nil && !errors.Is(err, metadata.ErrShowNotFound) {
 			h.Fail(w, err)
@@ -98,10 +105,18 @@ func (h *AddHandlers) lookupShows(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	fillTMDBIDs(r.Context(), h.finderFor(source), list)
 	out := []ShowResult{}
 	for _, sh := range h.KidShows(r, list) {
 		sh.Episodes = nil
 		v := ShowResult{Show: sh}
+		if id := sh.IDs["tmdb"]; id != "" && h.Hidden != nil {
+			hidden, drop := h.Hidden(r.Context(), "show", id, sh.Genres)
+			if drop && !byID { // an id is a link: it still finds the show
+				continue
+			}
+			v.Hidden = hidden
+		}
 		var err error
 		if v.TitleID, err = library.ShowByIDs(r.Context(), h.Store.Read(), sh.IDs); err != nil {
 			webserver.Internal(w, "api", err)
@@ -132,7 +147,7 @@ func Source(lib *library.Service, name string) (metadata.ShowProvider, error) {
 	return lib.Shows.Get(name)
 }
 
-const addShowHelp = `send {"id": "tmdb:<number>"} (or tvdb:, tvmaze:, imdb:, looked up through TMDB and TVMaze) with optional library_folder_id, pick_rules_id, keep_up_to_date, seasons (all, future, latest, none), new_seasons (all, none), episode_order (aired, daily, absolute), details_source (tmdb, tvmaze), search_on_add, more_versions ([{"label": "4K", "pick_rules_id": <id>, "library_folder_id": <id>}])`
+const addShowHelp = `send {"id": "tmdb:<number>"} (or tvdb:, tvmaze:, imdb:) with optional library_folder_id, pick_rules_id, keep_up_to_date, seasons (all, future, latest, none), new_seasons (all, none), episode_order (aired, daily, absolute), details_source (tmdb, tvmaze, tvdb), search_on_add, more_versions ([{"label": "4K", "pick_rules_id": <id>, "library_folder_id": <id>}])`
 
 func (h *AddHandlers) addShow(w http.ResponseWriter, r *http.Request) {
 	var body struct {

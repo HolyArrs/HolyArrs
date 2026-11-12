@@ -67,11 +67,11 @@ func TestImportSecretsRoutes(t *testing.T) {
 	// A dry run, then the run, then again.
 	dry, _ := json.Marshal(map[string]any{"file": file, "dry_run": true})
 	st, out := keyCall(t, r.srv.URL, k.Key, "POST", "/api/v1/settings/import-secrets", string(dry))
-	if st != 200 || !strings.Contains(out, `"result":"would set`) {
+	if st != 200 || !strings.Contains(out, `"result":"would set"`) {
 		t.Fatalf("dry %d %s", st, out)
 	}
 	st, out = keyCall(t, r.srv.URL, k.Key, "POST", "/api/v1/settings/import-secrets", string(body))
-	if st != 200 || !strings.Contains(out, `"ok":true`) || !strings.Contains(out, `{"item":"radarr (old app)","result":"set`) {
+	if st != 200 || !strings.Contains(out, `"ok":true`) || !strings.Contains(out, `{"item":"tvdb","result":"set"}`) {
 		t.Fatalf("run %d %s", st, out)
 	}
 	for _, v := range []string{radarrKey, "your-tvdb-key-2", "your-owner-key-3"} {
@@ -79,7 +79,7 @@ func TestImportSecretsRoutes(t *testing.T) {
 			t.Fatalf("a value in the answer")
 		}
 	}
-	if _, out = keyCall(t, r.srv.URL, k.Key, "POST", "/api/v1/settings/import-secrets", string(body)); !strings.Contains(out, `{"item":"radarr (old app)","result":"unchanged`) {
+	if _, out = keyCall(t, r.srv.URL, k.Key, "POST", "/api/v1/settings/import-secrets", string(body)); !strings.Contains(out, `{"item":"tvdb","result":"unchanged"}`) {
 		t.Fatalf("again %s", out)
 	}
 

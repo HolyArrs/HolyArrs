@@ -63,6 +63,7 @@ func TestCheckPickRules(t *testing.T) {
 		{"usenet wait", "x", video, func(b *PickRulesBody) { b.Protocol.WaitMinutesUsenet = -1 }, "body.protocol.wait_minutes_usenet"},
 		{"language", "x", video, func(b *PickRulesBody) { b.Language.Wanted = []string{"xx"} }, "body.language.wanted"},
 		{"repeated language", "x", video, func(b *PickRulesBody) { b.Language.Wanted = []string{"en", "en"} }, "body.language.wanted"},
+		{"newer languages", "x", video, func(b *PickRulesBody) { b.Language.Wanted = []string{"pl", "nl", "pt", "zh", "uk"} }, ""},
 		{"order", "x", video, func(b *PickRulesBody) { b.Order = "random" }, "body.order"},
 		{"proper mode", "x", video, func(b *PickRulesBody) { b.ProperPolicy.Mode = "always" }, "body.proper_policy.mode"},
 		{"proper age", "x", video, func(b *PickRulesBody) { b.ProperPolicy.MaxAgeDays = 36501 }, "body.proper_policy.max_age_days"},

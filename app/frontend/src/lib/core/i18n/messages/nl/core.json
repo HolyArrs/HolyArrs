@@ -142,5 +142,6 @@
 	"core.settings.danger.label": "Gevarenzone",
 	"core.settings.danger.about": "Herstarten of afsluiten",
 	"core.settings.account.label": "Mijn account",
-	"core.settings.account.about": "Wachtwoord, tweestapsverificatie, apparaten"
+	"core.settings.account.about": "Wachtwoord, tweestapsverificatie, apparaten",
+	"core.api.sourceOff": "Sommige rijen staan uit op deze installatie."
 }
