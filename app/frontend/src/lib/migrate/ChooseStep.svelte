@@ -489,6 +489,8 @@
 	.arrow { flex: none; color: var(--text-muted); }
 	.sw-word { color: var(--text-muted); font: var(--t-footnote); white-space: nowrap; }
 	.switch { flex: none; }
+	/* Settings pages stretch a switch that sits straight in a list row; here the row's words take that room. */
+	.list > .mrow > label.switch { width: auto; }
 
 	select.pick { flex: none; width: 240px; min-height: 36px; height: 36px; }
 	.half { flex: 1 1 0; min-width: 0; min-height: 36px; height: 36px; }
