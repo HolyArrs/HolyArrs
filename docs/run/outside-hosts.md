@@ -43,6 +43,8 @@ What the install sends is listed in [Metadata](../library/metadata.md#for-expert
 
 With the HolyArrs server, music lookups (MusicBrainz, Deezer, Wikipedia) and TVmaze go through the metadata server; your install does not contact them itself. TheTVDB is contacted only with your own TheTVDB key and PIN; otherwise TVDB ids come from TMDB and TVmaze.
 
+When someone opens a show's season in a language other than English, the season lookup names that language (for example `language=es-ES`), so the metadata server, or TMDB with your own key, sees which app languages your people use. Title pages and Explore cards send no language.
+
 ## By choice
 
 **Settings > Metadata** shows the exact list for the choice in force, under **Addresses for your firewall**.
