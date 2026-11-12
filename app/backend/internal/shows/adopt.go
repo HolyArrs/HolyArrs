@@ -379,6 +379,9 @@ func (s *Service) adoptShowOne(ctx context.Context, lf mediafiles.LibraryFolder,
 		return r, err
 	}
 	r.TitleID, r.Episodes, r.Unknown = id, a.Episodes, a.Unknown
+	if len(a.Unknown) > 0 {
+		s.noteLeftAlone(ctx, lf, id, by)
+	}
 	var name string
 	_ = s.Store.Read().QueryRowContext(ctx, "SELECT name FROM titles WHERE id = ?", id).Scan(&name)
 	summary := fmt.Sprintf("Adopted %s from %s: %d episodes in %d files", name, c.Folder, a.Episodes, a.Adopted)
@@ -389,6 +392,31 @@ func (s *Service) adoptShowOne(ctx context.Context, lf mediafiles.LibraryFolder,
 		Data:     map[string]any{"library_folder_id": lf.ID, "folder": c.Folder, "id": c.ID, "files": a.Adopted, "episodes": a.Episodes, "left_alone": a.Unknown},
 		GroupKey: library.GroupKey(id)})
 	return r, nil
+}
+
+// noteLeftAlone records the files adopting left alone as found Files, so
+// the show lists them as leftovers at once instead of after the next
+// rescan. A failure only delays that to the rescan.
+func (s *Service) noteLeftAlone(ctx context.Context, lf mediafiles.LibraryFolder, titleID int64, by domain.Actor) {
+	vs, err := database.Select[mediafiles.Version](ctx, s.Store.Read(), "versions", "title_id = ? AND library_folder_id = ? ORDER BY id", titleID, lf.ID)
+	if err != nil {
+		return
+	}
+	for _, v := range vs {
+		known := map[string]bool{}
+		rows, err := s.Store.Read().QueryContext(ctx, "SELECT relative_path FROM files WHERE version_id = ?", v.ID)
+		if err != nil {
+			return
+		}
+		for rows.Next() {
+			var rel string
+			if rows.Scan(&rel) == nil {
+				known[strings.ToLower(rel)] = true
+			}
+		}
+		_ = rows.Close()
+		_, _ = s.recordFoundEpisodes(ctx, lf, v, known, by)
+	}
 }
 
 var errNotLinked = errors.New("not linked")

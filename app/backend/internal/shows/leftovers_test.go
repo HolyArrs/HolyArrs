@@ -345,3 +345,31 @@ func TestRescanTitleGuards(t *testing.T) {
 func execTx(q string, args ...any) func(*sql.Tx) error {
 	return func(tx *sql.Tx) error { _, err := tx.Exec(q, args...); return err }
 }
+
+// A folder with files of a season the source does not list: adopting shows
+// them as leftovers at once, with no rescan in between.
+func TestAdoptRecordsLeftovers(t *testing.T) {
+	svc, s, tmdb, _ := addShowService(t)
+	lf := addShowFolder(t, s)
+	tmdb.set(copperShow(1, 5), "tmdb:700", "tvdb:701")
+	for _, n := range []string{"S01E01", "S01E02", "S01E03", "S01E04", "S01E05", "S02E01", "S02E02"} {
+		writeFile(t, filepath.Join(lf.Path, "Copper Valley (2020)", "Season "+n[2:3], "Copper.Valley."+n+".1080p.WEB.mkv"), strings.Repeat("x", 100))
+	}
+	res, err := svc.Adopt(context.Background(), lf.ID, []library.AdoptChoice{{Folder: "Copper Valley (2020)", ID: "tmdb:700"}}, domain.System)
+	if err != nil || res[0].Error != "" || res[0].Episodes != 5 || len(res[0].Unknown) != 2 {
+		t.Fatalf("adopt %+v %v", res, err)
+	}
+	ls := leftovers(t, svc, res[0].TitleID)
+	if len(ls) != 2 {
+		t.Fatalf("leftovers %d: %+v", len(ls), ls)
+	}
+	for _, n := range []string{"S02E01", "S02E02"} {
+		l, ok := ls["Copper.Valley."+n+".1080p.WEB.mkv"]
+		if !ok || l.Reason != "episode_not_listed" || l.Guess == nil || l.Guess.Season != 2 {
+			t.Fatalf("%s %+v", n, l)
+		}
+	}
+	if f := filled(t, s, res[0].TitleID); !f["S01E05"] {
+		t.Fatalf("filled %v", f)
+	}
+}
