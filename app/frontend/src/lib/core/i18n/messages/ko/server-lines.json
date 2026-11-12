@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "직접 삭제됨",
 	"server.downloads.marked-bad": "불량으로 표시됨",
 	"server.suggest.because-you-have": "{name}을(를) 가지고 있어서",
-	"server.health.downloader-save-folder": "다운로더 저장 폴더"
+	"server.health.downloader-save-folder": "다운로더 저장 폴더",
+	"server.sources.this-kind-of-title-can-t": "이 종류의 타이틀은 검색할 수 없습니다"
 }

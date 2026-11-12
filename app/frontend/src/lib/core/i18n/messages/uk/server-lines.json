@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Видалено вручну",
 	"server.downloads.marked-bad": "Позначено як погане",
 	"server.suggest.because-you-have": "Бо у вас є {name}",
-	"server.health.downloader-save-folder": "Тека збереження завантажувача"
+	"server.health.downloader-save-folder": "Тека збереження завантажувача",
+	"server.sources.this-kind-of-title-can-t": "цей вид тайтла не можна шукати"
 }

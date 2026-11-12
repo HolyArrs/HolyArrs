@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Odstránené ručne",
 	"server.downloads.marked-bad": "Označené ako chybné",
 	"server.suggest.because-you-have": "Pretože máte {name}",
-	"server.health.downloader-save-folder": "Priečinok na ukladanie Sťahovača"
+	"server.health.downloader-save-folder": "Priečinok na ukladanie Sťahovača",
+	"server.sources.this-kind-of-title-can-t": "tento druh titulu sa nedá vyhľadať"
 }

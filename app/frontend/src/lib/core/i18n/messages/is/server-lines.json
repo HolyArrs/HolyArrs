@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Eytt handvirkt",
 	"server.downloads.marked-bad": "Merkt sem slæmt",
 	"server.suggest.because-you-have": "Af því að þú átt {name}",
-	"server.health.downloader-save-folder": "Vistunarmappa niðurhalara"
+	"server.health.downloader-save-folder": "Vistunarmappa niðurhalara",
+	"server.sources.this-kind-of-title-can-t": "ekki er hægt að leita að þessari tegund titils"
 }

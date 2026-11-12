@@ -47,12 +47,49 @@ const TMDBPath = "/v1/tmdb"
 func (s *Service) Base() string { return s.base }
 
 // Register asks the server for a new installation credential. The server
-// limits how often an address may do this; it needs no credential. When the
-// server refuses with a Retry-After, it is not asked again before that time.
+// limits how often an address may do this; it needs no credential. A
+// registration that failed (refused, server error, timeout, unreachable) is
+// not tried again straight away: the wait starts at regWaitMin and doubles to
+// regWaitMax, or is the server's Retry-After when that is longer. Inside the
+// wait the busy answer comes back without asking the server.
 func (s *Service) Register(ctx context.Context) (string, error) {
 	if s.regHold.held(time.Now()) {
 		return "", ErrServiceBusy
 	}
+	tok, err := s.register(ctx)
+	switch {
+	case err == nil:
+		s.regHold.mu.Lock()
+		s.regHold.fails = 0
+		s.regHold.mu.Unlock()
+	case ctx.Err() == nil: // a caller that gave up says nothing about the server
+		s.regHold.backOff(time.Now())
+	}
+	return tok, err
+}
+
+// regWaitMin and regWaitMax bound the wait after a failed registration.
+const (
+	regWaitMin = 30 * time.Second
+	regWaitMax = 15 * time.Minute
+)
+
+// backOff holds for regWaitMin, doubled for each failure in a row, up to
+// regWaitMax. A longer hold already set (Retry-After) stays.
+func (h *serviceHold) backOff(now time.Time) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	d := regWaitMax
+	if h.fails < 5 {
+		d = regWaitMin << h.fails
+	}
+	h.fails++
+	if u := now.Add(d); u.After(h.until) {
+		h.until = u
+	}
+}
+
+func (s *Service) register(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, s.base+"/v1/installations", http.NoBody)

@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Eliminato a mano",
 	"server.downloads.marked-bad": "Segnato come difettoso",
 	"server.suggest.because-you-have": "Perché hai {name}",
-	"server.health.downloader-save-folder": "Cartella di salvataggio del downloader"
+	"server.health.downloader-save-folder": "Cartella di salvataggio del downloader",
+	"server.sources.this-kind-of-title-can-t": "questo tipo di titolo non può essere cercato"
 }
