@@ -100,5 +100,6 @@
 	"settings.users.note": "Белешка за тебе",
 	"settings.users.noteExample": "нпр. мама",
 	"settings.users.days": "Дани трајања везе",
-	"settings.users.makeInvite": "Направи везу позивнице"
+	"settings.users.makeInvite": "Направи везу позивнице",
+	"settings.users.permAuto4k": "4K захтеви се одобравају без чекања"
 }

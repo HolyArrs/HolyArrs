@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "Ingen er importert fra Plex ennå.",
 	"settings.requests.plexFriendsRead": "Lest {when}",
 	"settings.requests.plexFriendsNotYet": "Ikke lest ennå",
-	"settings.requests.plexFriendsAsked": "Forespurt: {n}"
+	"settings.requests.plexFriendsAsked": "Forespurt: {n}",
+	"settings.requests.fourK": "4K-kopi",
+	"settings.requests.fourKDesc": "Hvor godkjente 4K-forespørsler havner og hvordan de velges",
+	"settings.requests.fourKSameFolder": "Som andre forespørsler",
+	"settings.requests.fourKNamedRules": "Kvaliteten som heter 4K"
 }

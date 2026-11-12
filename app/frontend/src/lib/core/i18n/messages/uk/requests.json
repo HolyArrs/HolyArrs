@@ -579,5 +579,7 @@
 	"requests.page.quickReasons": "Швидкі причини",
 	"requests.page.takeBackTitle": "Відкликати {name}?",
 	"requests.page.takeBackDesc": "Воно зникне із запитів. Згодом можна запросити знову.",
-	"requests.page.keepIt": "Залишити"
+	"requests.page.keepIt": "Залишити",
+	"requests.ask.fourK": "Копія 4K",
+	"requests.ask.fourKHint": "Вибрані сезони завантажуються й у звичайній якості."
 }

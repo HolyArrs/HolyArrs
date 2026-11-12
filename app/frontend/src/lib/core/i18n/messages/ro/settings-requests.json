@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "Încă nimeni nu a fost importat din Plex.",
 	"settings.requests.plexFriendsRead": "Citit {when}",
 	"settings.requests.plexFriendsNotYet": "Încă necitit",
-	"settings.requests.plexFriendsAsked": "Cerute: {n}"
+	"settings.requests.plexFriendsAsked": "Cerute: {n}",
+	"settings.requests.fourK": "Copie 4K",
+	"settings.requests.fourKDesc": "Unde ajung cererile 4K aprobate și cum sunt alese",
+	"settings.requests.fourKSameFolder": "La fel ca celelalte cereri",
+	"settings.requests.fourKNamedRules": "Calitatea numită 4K"
 }

@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Изтеглено",
 	"requests.moment.downloaded.body": "До персонала: Програма за изтегляне приключи изтегляне (следва внос).",
 	"requests.moment.download_failed.title": "Изтеглянето се провали",
-	"requests.moment.download_failed.body": "До персонала: изтегляне се провали и неговото Издание беше отхвърлено."
+	"requests.moment.download_failed.body": "До персонала: изтегляне се провали и неговото Издание беше отхвърлено.",
+	"requests.ask.fourK": "4K копие",
+	"requests.ask.fourKHint": "Избраните сезони се изтеглят и в нормално качество."
 }

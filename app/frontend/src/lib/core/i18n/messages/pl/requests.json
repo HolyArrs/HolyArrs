@@ -579,5 +579,7 @@
 	"requests.page.quickReasons": "Szybkie powody",
 	"requests.page.takeBackTitle": "Wycofać: {name}?",
 	"requests.page.takeBackDesc": "Opuszcza Prośby. Możesz poprosić ponownie później.",
-	"requests.page.keepIt": "Zostaw"
+	"requests.page.keepIt": "Zostaw",
+	"requests.ask.fourK": "Kopia 4K",
+	"requests.ask.fourKHint": "Wybrane sezony pobierają się też w zwykłej jakości."
 }

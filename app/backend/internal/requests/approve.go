@@ -224,9 +224,10 @@ func (s *Service) setAudio(ctx context.Context, titleID int64, langs []string, b
 }
 
 // addForAsk adds the asked-for movie to the Library, or finds it there. A
-// 4K ask always uses the 4K Pick rules: on a movie already in the Library
-// it adds a 4K Version (unless one is there), otherwise the movie is added
-// with its main copy on the 4K Pick rules.
+// 4K ask uses the 4K Pick rules and folder: on a movie already in the
+// Library it adds the 4K Version (unless one is there), otherwise the
+// movie is added with its main copy as the 4K copy. A plain ask on a movie
+// whose only copy is the 4K one adds a plain copy beside it.
 func (s *Service) addForAsk(ctx context.Context, a domain.Ask, set Settings, opt ApproveOptions, by Person) (int64, error) {
 	db := s.Store.Read()
 	tid, err := library.TitleByTMDB(ctx, db, a.TMDBID)
@@ -234,37 +235,18 @@ func (s *Service) addForAsk(ctx context.Context, a domain.Ask, set Settings, opt
 		return 0, err
 	}
 	if a.FourK {
-		rules, err := fourKRules(ctx, db)
-		if err != nil {
+		if err := fourKPlace(ctx, db, &opt, set.FourKLibraryFolderID, set.FourKPickRulesID, set.LibraryFolderID); err != nil {
 			return 0, err
-		}
-		if rules == 0 {
-			return 0, ErrNoFourKRules
-		}
-		opt.PickRulesID = rules
-		if tid != 0 {
-			if vid, err := fourKVersion(ctx, db, tid); err != nil || vid != 0 {
-				return tid, err
-			}
-			v, err := library.AddVersion(ctx, s.Store, tid, library.VersionInput{Label: mediafiles.FourKName, PickRulesID: rules}, nil, s.Library.Clock(), by.actor())
-			if err != nil {
-				return 0, err
-			}
-			var t mediafiles.Title
-			if database.Get(ctx, db, "titles", tid, &t) == nil {
-				s.Library.VersionEvent(ctx, t, "Added the "+v.Label+" Version", v, by.actor())
-			}
-			return tid, nil
 		}
 	}
 	if tid != 0 {
-		return tid, nil
+		return tid, s.addCopy(ctx, tid, a.FourK, opt, set.LibraryFolderID, set.PickRulesID, by)
 	}
 	m, err := s.Metadata.Movie(ctx, "tmdb:"+a.TMDBID)
 	if err != nil {
 		return 0, err
 	}
-	o := library.AddOptions{LibraryFolderID: opt.LibraryFolderID, PickRulesID: opt.PickRulesID, SearchOnAdd: set.SearchOnApprove, WhyAdded: "ask"}
+	o := library.AddOptions{LibraryFolderID: opt.LibraryFolderID, PickRulesID: opt.PickRulesID, SearchOnAdd: set.SearchOnApprove, WhyAdded: "ask", MainFourK: a.FourK}
 	if o.LibraryFolderID == 0 {
 		o.LibraryFolderID = set.LibraryFolderID
 	}
@@ -274,9 +256,104 @@ func (s *Service) addForAsk(ctx context.Context, a domain.Ask, set Settings, opt
 	tid, _, err = s.Library.Add(ctx, m, o, by.actor())
 	var dup *library.AlreadyAddedError
 	if errors.As(err, &dup) {
-		return dup.TitleID, nil
+		// Added by someone else meanwhile: make sure this ask's copy is there.
+		return dup.TitleID, s.addCopy(ctx, dup.TitleID, a.FourK, opt, set.LibraryFolderID, set.PickRulesID, by)
 	}
 	return tid, err
+}
+
+// fourKPlace puts a 4K ask's Pick rules and Library folder on opt: the
+// 4K settings, else the Pick rules named 4K and the approver's folder (then
+// the plain ask folder). No 4K Pick rules at all is ErrNoFourKRules.
+func fourKPlace(ctx context.Context, db database.Querier, opt *ApproveOptions, folder, rules, plainFolder int64) error {
+	if rules == 0 {
+		var err error
+		if rules, err = fourKRules(ctx, db); err != nil {
+			return err
+		}
+	}
+	if rules == 0 {
+		return ErrNoFourKRules
+	}
+	opt.PickRulesID = rules
+	if opt.LibraryFolderID == 0 {
+		opt.LibraryFolderID = folder
+	}
+	if opt.LibraryFolderID == 0 {
+		opt.LibraryFolderID = plainFolder
+	}
+	return nil
+}
+
+// FourKReady says a 4K ask of kind ("movie" or "show") could be approved:
+// 4K Pick rules are set for it or named 4K.
+func FourKReady(ctx context.Context, db querier, kind string) (bool, error) {
+	set, err := ReadSettings(ctx, db)
+	if err != nil {
+		return false, err
+	}
+	rules := set.FourKPickRulesID
+	if kind == "show" {
+		rules = set.ShowFourKPickRulesID
+	}
+	if rules == 0 {
+		if rules, err = fourKRules(ctx, db); err != nil {
+			return false, err
+		}
+	}
+	return rules != 0, nil
+}
+
+// plainCopyLabel labels a plain copy added beside a 4K main copy.
+const plainCopyLabel = "Main HD"
+
+// addCopy gives a title in the Library the ask's own copy when it has none:
+// the 4K Version on opt's 4K Pick rules and folder, or a plain copy on the
+// approver's (else the ask settings', else the folder's default) Pick
+// rules. The main copy is left as it is.
+func (s *Service) addCopy(ctx context.Context, tid int64, fourK bool, opt ApproveOptions, plainFolder, plainRules int64, by Person) error {
+	db := s.Store.Read()
+	if vid, err := copyOf(ctx, db, tid, fourK); err != nil || vid != 0 {
+		return err
+	}
+	in := library.VersionInput{Label: mediafiles.FourKName, PickRulesID: opt.PickRulesID, LibraryFolderID: opt.LibraryFolderID, FourK: fourK}
+	if !fourK {
+		in.Label = plainCopyLabel
+		if in.LibraryFolderID == 0 {
+			in.LibraryFolderID = plainFolder
+		}
+		if in.LibraryFolderID == 0 {
+			if err := db.QueryRowContext(ctx, mainFolderSQL, tid).Scan(&in.LibraryFolderID); err != nil {
+				return err
+			}
+		}
+		if in.PickRulesID == 0 {
+			in.PickRulesID = plainRules
+		}
+		if in.PickRulesID == 0 {
+			// Not the main copy's rules: those are the 4K ones.
+			if err := db.QueryRowContext(ctx, plainRulesSQL, in.LibraryFolderID).Scan(&in.PickRulesID); err != nil && !errors.Is(err, sql.ErrNoRows) {
+				return err
+			}
+		}
+		if in.PickRulesID == 0 {
+			if err := db.QueryRowContext(ctx, plainRulesSQL2, mediafiles.GoodEverydayName).Scan(&in.PickRulesID); err != nil {
+				return err
+			}
+		}
+	}
+	v, err := library.AddVersion(ctx, s.Store, tid, in, nil, s.Library.Clock(), by.actor())
+	if errors.Is(err, library.ErrFourKTaken) {
+		return nil // added at the same moment by another approval
+	}
+	if err != nil {
+		return err
+	}
+	var t mediafiles.Title
+	if database.Get(ctx, db, "titles", tid, &t) == nil {
+		s.Library.VersionEvent(ctx, t, "Added the "+v.Label+" Version", v, by.actor())
+	}
+	return nil
 }
 
 // TurnDown says no to an ask, with a note for the people who asked.

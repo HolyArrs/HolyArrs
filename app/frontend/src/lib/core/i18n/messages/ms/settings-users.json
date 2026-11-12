@@ -100,5 +100,6 @@
 	"settings.users.note": "Catatan untuk diri sendiri",
 	"settings.users.noteExample": "cth. Mak",
 	"settings.users.days": "Hari pautan bertahan",
-	"settings.users.makeInvite": "Buat pautan jemputan"
+	"settings.users.makeInvite": "Buat pautan jemputan",
+	"settings.users.permAuto4k": "Permintaan 4K diluluskan tanpa menunggu"
 }

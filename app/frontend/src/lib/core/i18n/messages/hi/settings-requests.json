@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "Plex से अभी तक कोई इंपोर्ट नहीं हुआ।",
 	"settings.requests.plexFriendsRead": "पढ़ा गया {when}",
 	"settings.requests.plexFriendsNotYet": "अभी पढ़ा नहीं गया",
-	"settings.requests.plexFriendsAsked": "माँगे गए: {n}"
+	"settings.requests.plexFriendsAsked": "माँगे गए: {n}",
+	"settings.requests.fourK": "4K कॉपी",
+	"settings.requests.fourKDesc": "मंज़ूर 4K रिक्वेस्ट कहाँ जाती हैं और कैसे चुनी जाती हैं",
+	"settings.requests.fourKSameFolder": "दूसरी रिक्वेस्ट जैसा",
+	"settings.requests.fourKNamedRules": "4K नाम की क्वालिटी"
 }

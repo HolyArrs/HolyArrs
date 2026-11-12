@@ -121,6 +121,7 @@ KeepUpToDate bool `db:"keep_up_to_date"`
 IsMain bool `db:"is_main"`
 Edition string `db:"edition"`
 AudioLanguages []string `db:"audio_languages,json"`
+FourK bool `db:"four_k"`
 == Slot
 Meta Meta ``
 ItemID int64 `db:"item_id"`

@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "ডাউনলোড হয়েছে",
 	"requests.moment.downloaded.body": "স্টাফের জন্য: একটি ডাউনলোডার ডাউনলোড শেষ করেছে (এরপর ইমপোর্ট হবে)।",
 	"requests.moment.download_failed.title": "ডাউনলোড ব্যর্থ হয়েছে",
-	"requests.moment.download_failed.body": "স্টাফের জন্য: একটি ডাউনলোড ব্যর্থ হয়েছে এবং তার রিলিজ প্রত্যাখ্যাত হয়েছে।"
+	"requests.moment.download_failed.body": "স্টাফের জন্য: একটি ডাউনলোড ব্যর্থ হয়েছে এবং তার রিলিজ প্রত্যাখ্যাত হয়েছে।",
+	"requests.ask.fourK": "4K কপি",
+	"requests.ask.fourKHint": "আপনার বাছা সিজনগুলো সাধারণ কোয়ালিটিতেও ডাউনলোড হয়।"
 }

@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "Plex இலிருந்து இன்னும் யாரும் இறக்குமதி செய்யப்படவில்லை.",
 	"settings.requests.plexFriendsRead": "படித்தது {when}",
 	"settings.requests.plexFriendsNotYet": "இன்னும் படிக்கவில்லை",
-	"settings.requests.plexFriendsAsked": "கோரப்பட்டது: {n}"
+	"settings.requests.plexFriendsAsked": "கோரப்பட்டது: {n}",
+	"settings.requests.fourK": "4K பிரதி",
+	"settings.requests.fourKDesc": "அங்கீகரிக்கப்பட்ட 4K கோரிக்கைகள் எங்கே சேரும், எப்படித் தேர்வாகும்",
+	"settings.requests.fourKSameFolder": "மற்ற கோரிக்கைகளைப் போலவே",
+	"settings.requests.fourKNamedRules": "4K என்ற பெயருள்ள தரம்"
 }

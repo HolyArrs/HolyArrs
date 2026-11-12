@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Преузето",
 	"requests.moment.downloaded.body": "За особље: Преузимач је завршио преузимање (следи увоз).",
 	"requests.moment.download_failed.title": "Преузимање није успело",
-	"requests.moment.download_failed.body": "За особље: преузимање није успело и његово Издање је одбијено."
+	"requests.moment.download_failed.body": "За особље: преузимање није успело и његово Издање је одбијено.",
+	"requests.ask.fourK": "4K копија",
+	"requests.ask.fourKHint": "Изабране сезоне се преузимају и у обичном квалитету."
 }

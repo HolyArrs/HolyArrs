@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "ดาวน์โหลดแล้ว",
 	"requests.moment.downloaded.body": "ถึงทีมงาน: ตัวดาวน์โหลดทำการดาวน์โหลดเสร็จแล้ว (ต่อไปคือการนำเข้า)",
 	"requests.moment.download_failed.title": "ดาวน์โหลดล้มเหลว",
-	"requests.moment.download_failed.body": "ถึงทีมงาน: ดาวน์โหลดล้มเหลวและรีลีสของมันถูกปฏิเสธ"
+	"requests.moment.download_failed.body": "ถึงทีมงาน: ดาวน์โหลดล้มเหลวและรีลีสของมันถูกปฏิเสธ",
+	"requests.ask.fourK": "สำเนา 4K",
+	"requests.ask.fourKHint": "ซีซันที่คุณเลือกจะดาวน์โหลดแบบคุณภาพปกติด้วย"
 }

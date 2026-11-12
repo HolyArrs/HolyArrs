@@ -579,5 +579,7 @@
 	"requests.page.quickReasons": "常用原因",
 	"requests.page.takeBackTitle": "撤回 {name}？",
 	"requests.page.takeBackDesc": "它会从“请求”中移除。你之后可以再次请求。",
-	"requests.page.keepIt": "保留"
+	"requests.page.keepIt": "保留",
+	"requests.ask.fourK": "4K 副本",
+	"requests.ask.fourKHint": "你选的季也会以普通画质下载。"
 }

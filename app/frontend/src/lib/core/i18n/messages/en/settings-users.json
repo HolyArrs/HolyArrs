@@ -100,5 +100,6 @@
 	"settings.users.note": "Note for yourself",
 	"settings.users.noteExample": "e.g. Mum",
 	"settings.users.days": "Days the link lasts",
-	"settings.users.makeInvite": "Make an invite link"
+	"settings.users.makeInvite": "Make an invite link",
+	"settings.users.permAuto4k": "4K requests approved without waiting"
 }

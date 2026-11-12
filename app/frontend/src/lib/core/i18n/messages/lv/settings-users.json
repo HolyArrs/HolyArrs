@@ -100,5 +100,6 @@
 	"settings.users.note": "Piezīme sev",
 	"settings.users.noteExample": "piem., Mamma",
 	"settings.users.days": "Dienas, cik saite darbojas",
-	"settings.users.makeInvite": "Izveidot ielūguma saiti"
+	"settings.users.makeInvite": "Izveidot ielūguma saiti",
+	"settings.users.permAuto4k": "4K pieprasījumi apstiprināti bez gaidīšanas"
 }

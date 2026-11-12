@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "还没有从 Plex 导入任何人。",
 	"settings.requests.plexFriendsRead": "{when}读取",
 	"settings.requests.plexFriendsNotYet": "尚未读取",
-	"settings.requests.plexFriendsAsked": "已请求：{n}"
+	"settings.requests.plexFriendsAsked": "已请求：{n}",
+	"settings.requests.fourK": "4K 副本",
+	"settings.requests.fourKDesc": "获批的 4K 请求存放在哪里、如何挑选",
+	"settings.requests.fourKSameFolder": "与其他请求相同",
+	"settings.requests.fourKNamedRules": "名为 4K 的画质"
 }

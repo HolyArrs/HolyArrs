@@ -317,6 +317,8 @@ type AskPlan struct {
 	AskedAt   string `json:"asked_at,omitempty"`
 	DecidedAt string `json:"decided_at,omitempty"`
 	Note      string `json:"note,omitempty"`
+	// FourK: a request for a 4K copy, its own ask here too.
+	FourK bool `json:"four_k,omitempty"`
 }
 
 // AskSettingsPlan is the subset of the old app's default quotas represented

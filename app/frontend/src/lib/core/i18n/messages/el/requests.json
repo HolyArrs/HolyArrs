@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Λήφθηκε",
 	"requests.moment.downloaded.body": "Για το προσωπικό: ένα Πρόγραμμα λήψης ολοκλήρωσε μια λήψη (ακολουθεί η εισαγωγή).",
 	"requests.moment.download_failed.title": "Η λήψη απέτυχε",
-	"requests.moment.download_failed.body": "Για το προσωπικό: μια λήψη απέτυχε και η Κυκλοφορία της απορρίφθηκε."
+	"requests.moment.download_failed.body": "Για το προσωπικό: μια λήψη απέτυχε και η Κυκλοφορία της απορρίφθηκε.",
+	"requests.ask.fourK": "Αντίγραφο 4K",
+	"requests.ask.fourKHint": "Οι σεζόν που διαλέγεις κατεβαίνουν και σε κανονική ποιότητα."
 }

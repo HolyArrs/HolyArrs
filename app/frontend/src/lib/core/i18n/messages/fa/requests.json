@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "دانلودشده",
 	"requests.moment.downloaded.body": "برای کارکنان: یک دانلودر دانلودی را تمام کرد (واردکردن بعد از آن می‌آید).",
 	"requests.moment.download_failed.title": "دانلود ناموفق بود",
-	"requests.moment.download_failed.body": "برای کارکنان: یک دانلود ناموفق بود و ریلیز آن رد شد."
+	"requests.moment.download_failed.body": "برای کارکنان: یک دانلود ناموفق بود و ریلیز آن رد شد.",
+	"requests.ask.fourK": "کپی 4K",
+	"requests.ask.fourKHint": "فصل‌هایی که انتخاب می‌کنید با کیفیت معمولی هم دانلود می‌شوند."
 }

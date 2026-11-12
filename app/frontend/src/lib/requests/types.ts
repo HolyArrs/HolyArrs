@@ -17,6 +17,8 @@ export interface AskLimit {
 	movies: AskKindLimit;
 	shows: AskKindLimit;
 	music: AskKindLimit;
+	/** Which kinds can take a 4K request (4K quality set up). */
+	four_k?: { movie: boolean; show: boolean };
 }
 
 /** A person's own weekly limit per kind; null takes that kind's default. */
@@ -37,6 +39,11 @@ export interface AskSettings {
 	show_pick_rules_id: number;
 	music_library_folder_id: number;
 	music_pick_rules_id: number;
+	/** Where approved 4K requests go and how they are picked (0: the plain folder, the quality named 4K). */
+	four_k_library_folder_id: number;
+	four_k_pick_rules_id: number;
+	show_four_k_library_folder_id: number;
+	show_four_k_pick_rules_id: number;
 	/** People may have their Plex watchlist asked for as them. */
 	plex_watchlists?: boolean;
 	plex_watchlists_everyone?: boolean;

@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "Nessuno importato da Plex finora.",
 	"settings.requests.plexFriendsRead": "Letto {when}",
 	"settings.requests.plexFriendsNotYet": "Non ancora letto",
-	"settings.requests.plexFriendsAsked": "Richiesti: {n}"
+	"settings.requests.plexFriendsAsked": "Richiesti: {n}",
+	"settings.requests.fourK": "Copia 4K",
+	"settings.requests.fourKDesc": "Dove vanno le richieste 4K approvate e come vengono scelte",
+	"settings.requests.fourKSameFolder": "Come le altre richieste",
+	"settings.requests.fourKNamedRules": "La qualità chiamata 4K"
 }

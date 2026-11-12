@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Descarregado",
 	"requests.moment.downloaded.body": "Para a equipa: um Gestor de downloads terminou um download (a importação segue-se).",
 	"requests.moment.download_failed.title": "O download falhou",
-	"requests.moment.download_failed.body": "Para a equipa: um download falhou e o seu Lançamento foi recusado."
+	"requests.moment.download_failed.body": "Para a equipa: um download falhou e o seu Lançamento foi recusado.",
+	"requests.ask.fourK": "Cópia 4K",
+	"requests.ask.fourKHint": "As temporadas escolhidas também são transferidas em qualidade normal."
 }

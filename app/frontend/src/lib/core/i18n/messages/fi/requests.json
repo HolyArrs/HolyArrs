@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Ladattu",
 	"requests.moment.downloaded.body": "Henkilökunnalle: Lataaja sai latauksen valmiiksi (tuonti seuraa).",
 	"requests.moment.download_failed.title": "Lataus epäonnistui",
-	"requests.moment.download_failed.body": "Henkilökunnalle: lataus epäonnistui ja sen Julkaisu hylättiin."
+	"requests.moment.download_failed.body": "Henkilökunnalle: lataus epäonnistui ja sen Julkaisu hylättiin.",
+	"requests.ask.fourK": "4K-kopio",
+	"requests.ask.fourKHint": "Valitsemasi kaudet ladataan myös tavallisessa laadussa."
 }

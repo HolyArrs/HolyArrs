@@ -25,7 +25,7 @@
 	import { createOwnedTitle } from './title-owned.svelte.ts';
 	import TitleLibrary from './TitleLibrary.svelte';
 	import TitleOwnedSheets from './TitleOwnedSheets.svelte';
-	import { SearchOutcomeLine, QuickAsk, AddMovieDialog, AddShowDialog, AskShowDialog, AskMovieDialog } from '#lib/requests/index.ts';
+	import { SearchOutcomeLine, QuickAsk, AddMovieDialog, AddShowDialog, AskShowDialog, AskMovieDialog, fourKReady } from '#lib/requests/index.ts';
 	import { seasonWords, SeasonFolds } from '#lib/shows/index.ts';
 	import { detailPath, fourKOffer, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/metadata/index.ts';
 	import type { GateDefaults } from '#lib/mediafiles/index.ts';
@@ -48,6 +48,7 @@
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
 	import HideSheet from './HideSheet.svelte';
 	import { hiddenPill, type Hide } from './hidden.ts';
+
 
 	// The one title page for a movie or show, wherever it is opened from (/title/<kind>/<tmdb> and /library/<id> both render it). Not in the Library: Add (people who manage it) or Ask (members). In the Library: the same page with its Library tab.
 	let { kind, tmdb, libraryId, backHref }: { kind: string; tmdb: string; libraryId?: number; backHref?: string } = $props();
@@ -119,6 +120,11 @@
 	});
 	const askers = $derived(owned ? (askedBy.titles[String(owned.id)]?.askers ?? []) : []);
 	const mayAsk = $derived(session.can('ask') && !manage);
+	// The 4K request button shows only when 4K quality is set up for movies.
+	let fourKMovies = $state(false);
+	$effect(() => {
+		if (mayAsk) void fourKReady().then((r) => (fourKMovies = r.movie));
+	});
 	let gateDefault = $state('released');
 	let showDefaults = $state<ShowSettings | null>(null);
 	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
@@ -422,7 +428,7 @@
 		</TitleHero>
 
 		{#snippet ask4kButton(td: TitleDetails)}
-			{@const offer = fourKOffer({ ...td, titleId: td.titleId ?? owned?.id })}
+			{@const offer = fourKMovies ? fourKOffer({ ...td, titleId: td.titleId ?? owned?.id }) : null}
 			{#if offer}
 				<ActionButton icon="wish" pill label={offer === 'asked' ? t('discover.titlePage.askedFor4k', { name: td.name }) : t('discover.titlePage.askFor4k', { name: td.name })} caption={offer === 'asked' ? t('discover.titlePage.requested4kCaption') : t('discover.titlePage.request4k')} disabled={offer === 'asked'} onclick={() => askMovieDialog?.open({ tmdb: td.tmdb, name: td.name, year: td.year, ask4k: td.ask4k, fourKOnly: true })} data-testid="hero-ask-4k" />
 			{/if}

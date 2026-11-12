@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "Plexist pole veel kedagi imporditud.",
 	"settings.requests.plexFriendsRead": "Loetud {when}",
 	"settings.requests.plexFriendsNotYet": "Pole veel loetud",
-	"settings.requests.plexFriendsAsked": "Taotletud: {n}"
+	"settings.requests.plexFriendsAsked": "Taotletud: {n}",
+	"settings.requests.fourK": "4K koopia",
+	"settings.requests.fourKDesc": "Kuhu heakskiidetud 4K taotlused lähevad ja kuidas need valitakse",
+	"settings.requests.fourKSameFolder": "Nagu teised taotlused",
+	"settings.requests.fourKNamedRules": "Kvaliteet nimega 4K"
 }

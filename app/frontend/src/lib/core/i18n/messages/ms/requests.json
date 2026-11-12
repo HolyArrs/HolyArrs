@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Dimuat turun",
 	"requests.moment.downloaded.body": "Untuk kakitangan: sebuah Pemuat turun telah selesai memuat turun (import menyusul).",
 	"requests.moment.download_failed.title": "Muat turun gagal",
-	"requests.moment.download_failed.body": "Untuk kakitangan: satu muat turun gagal dan Keluarannya ditolak."
+	"requests.moment.download_failed.body": "Untuk kakitangan: satu muat turun gagal dan Keluarannya ditolak.",
+	"requests.ask.fourK": "Salinan 4K",
+	"requests.ask.fourKHint": "Musim yang anda pilih juga dimuat turun dalam kualiti biasa."
 }

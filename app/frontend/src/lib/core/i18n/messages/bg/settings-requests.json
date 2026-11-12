@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "Още никой не е внесен от Plex.",
 	"settings.requests.plexFriendsRead": "Прочетено {when}",
 	"settings.requests.plexFriendsNotYet": "Още не е прочетено",
-	"settings.requests.plexFriendsAsked": "Заявени: {n}"
+	"settings.requests.plexFriendsAsked": "Заявени: {n}",
+	"settings.requests.fourK": "4K копие",
+	"settings.requests.fourKDesc": "Къде отиват одобрените 4K заявки и как се избират",
+	"settings.requests.fourKSameFolder": "Като другите заявки",
+	"settings.requests.fourKNamedRules": "Качеството с име 4K"
 }

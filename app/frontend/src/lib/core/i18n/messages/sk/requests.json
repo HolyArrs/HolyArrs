@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Stiahnuté",
 	"requests.moment.downloaded.body": "Pre správcov: Sťahovač dokončil sťahovanie (nasleduje import).",
 	"requests.moment.download_failed.title": "Sťahovanie zlyhalo",
-	"requests.moment.download_failed.body": "Pre správcov: sťahovanie zlyhalo a jeho Release bol odmietnutý."
+	"requests.moment.download_failed.body": "Pre správcov: sťahovanie zlyhalo a jeho Release bol odmietnutý.",
+	"requests.ask.fourK": "Kópia 4K",
+	"requests.ask.fourKHint": "Vybrané série sa stiahnu aj v bežnej kvalite."
 }

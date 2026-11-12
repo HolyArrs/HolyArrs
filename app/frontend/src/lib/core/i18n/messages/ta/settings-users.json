@@ -100,5 +100,6 @@
 	"settings.users.note": "உங்களுக்கான குறிப்பு",
 	"settings.users.noteExample": "எ.கா. அம்மா",
 	"settings.users.days": "இணைப்பு நீடிக்கும் நாட்கள்",
-	"settings.users.makeInvite": "அழைப்பு இணைப்பை உருவாக்கு"
+	"settings.users.makeInvite": "அழைப்பு இணைப்பை உருவாக்கு",
+	"settings.users.permAuto4k": "காத்திருக்காமல் அங்கீகரிக்கப்படும் 4K கோரிக்கைகள்"
 }

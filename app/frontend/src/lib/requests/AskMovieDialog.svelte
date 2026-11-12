@@ -21,6 +21,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { api, message, ApiError } from '../core/api.ts';
 	import type { Ask } from '../core/types.ts';
+	import { fourKReady } from './four-k-ready.ts';
 
 	let {
 		onasked,
@@ -36,6 +37,8 @@
 	let follow = $state(true);
 	// Ask for a 4K copy instead; it is its own ask, approved on its own.
 	let fourK = $state(false);
+	// The 4K box shows only when 4K quality is set up for movies.
+	let fourKOn = $state(false);
 	let busy = $state(false);
 	let error = $state('');
 
@@ -43,6 +46,8 @@
 	export function open(m: AskMovie) {
 		follow = true;
 		fourK = !!m.fourKOnly;
+		fourKOn = false;
+		if (!m.fourKOnly) void fourKReady().then((r) => (fourKOn = r.movie));
 		picked = m;
 		error = '';
 		sheetOpen = true;
@@ -82,7 +87,7 @@
 				<input type="checkbox" bind:checked={follow} />
 				<span><b>{t('requests.add.follow')}</b><br /><span class="hint">{t('requests.add.followHint')}</span></span>
 			</label>
-			{#if !picked.fourKOnly}
+			{#if !picked.fourKOnly && fourKOn}
 				<label class="checkline" data-testid="four-k-box">
 					<input type="checkbox" bind:checked={fourK} />
 					<span><b>{t('requests.askMovie.fourK')}</b><br /><span class="hint">{t('requests.askMovie.fourKHint')}</span></span>

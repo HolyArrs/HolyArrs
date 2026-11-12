@@ -579,6 +579,7 @@
 	"requests.page.quickReasons": "أسباب سريعة",
 	"requests.page.takeBackTitle": "سحب {name}؟",
 	"requests.page.takeBackDesc": "يغادر الطلبات. يمكنك طلبه مرة أخرى لاحقًا.",
-	"requests.page.keepIt": "أبقِه"
-
+	"requests.page.keepIt": "أبقِه",
+	"requests.ask.fourK": "نسخة 4K",
+	"requests.ask.fourKHint": "المواسم التي تختارها تُنزَّل بالجودة العادية أيضًا."
 }

@@ -100,5 +100,6 @@
 	"settings.users.note": "নিজের জন্য নোট",
 	"settings.users.noteExample": "যেমন মা",
 	"settings.users.days": "লিংক যত দিন চলবে",
-	"settings.users.makeInvite": "একটি আমন্ত্রণের লিংক বানান"
+	"settings.users.makeInvite": "একটি আমন্ত্রণের লিংক বানান",
+	"settings.users.permAuto4k": "অপেক্ষা ছাড়াই অনুমোদিত 4K রিকোয়েস্ট"
 }

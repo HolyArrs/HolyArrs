@@ -579,5 +579,7 @@
 	"requests.page.quickReasons": "Hızlı nedenler",
 	"requests.page.takeBackTitle": "{name} geri çekilsin mi?",
 	"requests.page.takeBackDesc": "İsteklerden çıkar. Daha sonra tekrar isteyebilirsin.",
-	"requests.page.keepIt": "Kalsın"
+	"requests.page.keepIt": "Kalsın",
+	"requests.ask.fourK": "4K kopya",
+	"requests.ask.fourKHint": "Seçtiğin sezonlar normal kalitede de indirilir."
 }

@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "Még senki sincs importálva a Plexből.",
 	"settings.requests.plexFriendsRead": "Beolvasva: {when}",
 	"settings.requests.plexFriendsNotYet": "Még nincs beolvasva",
-	"settings.requests.plexFriendsAsked": "Kérések: {n}"
+	"settings.requests.plexFriendsAsked": "Kérések: {n}",
+	"settings.requests.fourK": "4K másolat",
+	"settings.requests.fourKDesc": "Hová kerülnek a jóváhagyott 4K kérések, és hogyan választódnak",
+	"settings.requests.fourKSameFolder": "Mint a többi kérés",
+	"settings.requests.fourKNamedRules": "A 4K nevű minőség"
 }

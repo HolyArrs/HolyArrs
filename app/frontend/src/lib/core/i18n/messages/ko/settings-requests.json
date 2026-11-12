@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "아직 Plex에서 가져온 사람이 없습니다.",
 	"settings.requests.plexFriendsRead": "{when} 읽음",
 	"settings.requests.plexFriendsNotYet": "아직 읽지 않음",
-	"settings.requests.plexFriendsAsked": "요청: {n}"
+	"settings.requests.plexFriendsAsked": "요청: {n}",
+	"settings.requests.fourK": "4K 사본",
+	"settings.requests.fourKDesc": "승인된 4K 요청이 저장되는 곳과 고르는 방식",
+	"settings.requests.fourKSameFolder": "다른 요청과 같음",
+	"settings.requests.fourKNamedRules": "4K라는 이름의 품질"
 }

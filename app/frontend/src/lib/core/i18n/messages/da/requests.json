@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Downloadet",
 	"requests.moment.downloaded.body": "Til personalet: en Downloader er færdig med en download (importen kommer næste gang).",
 	"requests.moment.download_failed.title": "Download mislykkedes",
-	"requests.moment.download_failed.body": "Til personalet: en download mislykkedes, og dens Udgivelse blev afvist."
+	"requests.moment.download_failed.body": "Til personalet: en download mislykkedes, og dens Udgivelse blev afvist.",
+	"requests.ask.fourK": "4K-kopi",
+	"requests.ask.fourKHint": "De sæsoner, du vælger, hentes også i normal kvalitet."
 }

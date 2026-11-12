@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "Nog niemand uit Plex geïmporteerd.",
 	"settings.requests.plexFriendsRead": "Gelezen {when}",
 	"settings.requests.plexFriendsNotYet": "Nog niet gelezen",
-	"settings.requests.plexFriendsAsked": "Aangevraagd: {n}"
+	"settings.requests.plexFriendsAsked": "Aangevraagd: {n}",
+	"settings.requests.fourK": "4K-kopie",
+	"settings.requests.fourKDesc": "Waar goedgekeurde 4K-aanvragen heen gaan en hoe ze worden gekozen",
+	"settings.requests.fourKSameFolder": "Zoals andere aanvragen",
+	"settings.requests.fourKNamedRules": "De kwaliteit met de naam 4K"
 }

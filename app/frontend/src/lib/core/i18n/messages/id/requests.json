@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Terunduh",
 	"requests.moment.downloaded.body": "Untuk staf: sebuah Pengunduh selesai mengunduh (impor menyusul).",
 	"requests.moment.download_failed.title": "Unduhan gagal",
-	"requests.moment.download_failed.body": "Untuk staf: sebuah unduhan gagal dan Rilisnya ditolak."
+	"requests.moment.download_failed.body": "Untuk staf: sebuah unduhan gagal dan Rilisnya ditolak.",
+	"requests.ask.fourK": "Salinan 4K",
+	"requests.ask.fourKHint": "Musim yang kamu pilih juga diunduh dalam kualitas biasa."
 }

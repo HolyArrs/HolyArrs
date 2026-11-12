@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "No Plex vēl neviens nav importēts.",
 	"settings.requests.plexFriendsRead": "Nolasīts {when}",
 	"settings.requests.plexFriendsNotYet": "Vēl nav nolasīts",
-	"settings.requests.plexFriendsAsked": "Pieprasīts: {n}"
+	"settings.requests.plexFriendsAsked": "Pieprasīts: {n}",
+	"settings.requests.fourK": "4K kopija",
+	"settings.requests.fourKDesc": "Kur nonāk apstiprinātie 4K pieprasījumi un kā tie tiek izvēlēti",
+	"settings.requests.fourKSameFolder": "Tāpat kā citi pieprasījumi",
+	"settings.requests.fourKNamedRules": "Kvalitāte ar nosaukumu 4K"
 }

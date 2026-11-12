@@ -345,7 +345,7 @@ func (r *run) ask(it Item) (string, string) {
 		return ResSkipped, "its part is off"
 	}
 	tmdb := a.IDs["tmdb"]
-	existing := r.id(`SELECT id FROM asks WHERE kind = ? AND state IN ('asked', 'approved') AND (ref = ? OR (tmdb_id != '' AND tmdb_id = ?))`, a.Kind, a.Ref, tmdb)
+	existing := r.id(`SELECT id FROM asks WHERE kind = ? AND four_k = ? AND state IN ('asked', 'approved') AND (ref = ? OR (tmdb_id != '' AND tmdb_id = ?))`, a.Kind, a.FourK, a.Ref, tmdb)
 	var titleID int64
 	if a.Kind == "movie" {
 		titleID, _ = library.TitleByTMDB(r.ctx, r.m.Store.Read(), tmdb)
@@ -425,6 +425,10 @@ func (r *run) ask(it Item) (string, string) {
 		return result(err, ResCreated, "added this person's request to the existing request")
 	}
 	state := "asked"
+	// An approved 4K request is approved here only when the 4K copy is.
+	if a.FourK && titleID != 0 && r.id("SELECT id FROM versions WHERE title_id = ? AND four_k = 1", titleID) == 0 {
+		titleID = 0
+	}
 	if a.Approved && titleID != 0 {
 		state = "approved"
 	} else if a.Approved {
@@ -450,7 +454,7 @@ func (r *run) ask(it Item) (string, string) {
 		return ResFailed, "the import's stable request time was not found: " + timeErr.Error()
 	}
 	row := domain.Ask{Kind: a.Kind, TMDBID: tmdb, Name: it.Name, State: state, AskedBy: by, AskedAt: asked, Note: clip(note, 300),
-		Ref: a.Ref, SourceIDs: a.IDs, Seasons: append([]int{}, a.Seasons...), Albums: []domain.AskAlbum{}}
+		Ref: a.Ref, SourceIDs: a.IDs, Seasons: append([]int{}, a.Seasons...), Albums: []domain.AskAlbum{}, FourK: a.FourK}
 	if a.Kind == "movie" {
 		row.Seasons = []int{}
 	}

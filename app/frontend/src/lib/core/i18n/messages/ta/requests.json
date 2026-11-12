@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "பதிவிறக்கப்பட்டது",
 	"requests.moment.downloaded.body": "பணியாளர்களுக்கு: ஒரு பதிவிறக்கி பதிவிறக்கத்தை முடித்தது (அடுத்து இறக்குமதி).",
 	"requests.moment.download_failed.title": "பதிவிறக்கம் தோல்வியடைந்தது",
-	"requests.moment.download_failed.body": "பணியாளர்களுக்கு: ஒரு பதிவிறக்கம் தோல்வியடைந்தது; அதன் வெளியீடு நிராகரிக்கப்பட்டது."
+	"requests.moment.download_failed.body": "பணியாளர்களுக்கு: ஒரு பதிவிறக்கம் தோல்வியடைந்தது; அதன் வெளியீடு நிராகரிக்கப்பட்டது.",
+	"requests.ask.fourK": "4K பிரதி",
+	"requests.ask.fourKHint": "நீங்கள் தேர்ந்த சீசன்கள் சாதாரண தரத்திலும் பதிவிறங்கும்."
 }

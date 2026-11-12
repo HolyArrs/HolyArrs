@@ -100,5 +100,6 @@
 	"settings.users.note": "Muistiinpano itsellesi",
 	"settings.users.noteExample": "esim. Äiti",
 	"settings.users.days": "Linkin voimassaolopäivät",
-	"settings.users.makeInvite": "Luo kutsulinkki"
+	"settings.users.makeInvite": "Luo kutsulinkki",
+	"settings.users.permAuto4k": "4K-pyynnöt hyväksytään odottamatta"
 }

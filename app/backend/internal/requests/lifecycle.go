@@ -178,7 +178,7 @@ func (s *Service) CheckReady(ctx context.Context) (int, error) {
 	if _, err := s.TellMovieFollows(ctx); err != nil {
 		log.Printf("asks: followed movies ready: %v", err)
 	}
-	// A 4K ask is ready once its 4K copy is in (labelled 4K or on the 4K Pick rules).
+	// A 4K ask is ready once its 4K copy (the Version with the 4K mark) is in.
 	as, err := database.Select[domain.Ask](ctx, s.Store.Read(), "asks", checkReadySQL)
 	if err != nil {
 		return 0, err

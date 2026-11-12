@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "Plexからまだ誰もインポートされていません。",
 	"settings.requests.plexFriendsRead": "{when}に読み取り",
 	"settings.requests.plexFriendsNotYet": "まだ読み取っていません",
-	"settings.requests.plexFriendsAsked": "リクエスト: {n}"
+	"settings.requests.plexFriendsAsked": "リクエスト: {n}",
+	"settings.requests.fourK": "4K コピー",
+	"settings.requests.fourKDesc": "承認された 4K リクエストの保存先と選び方",
+	"settings.requests.fourKSameFolder": "他のリクエストと同じ",
+	"settings.requests.fourKNamedRules": "4K という名前の品質"
 }

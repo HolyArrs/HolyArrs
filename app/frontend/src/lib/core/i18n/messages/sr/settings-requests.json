@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "Још нико није увезен из Plex-а.",
 	"settings.requests.plexFriendsRead": "Прочитано {when}",
 	"settings.requests.plexFriendsNotYet": "Још није прочитано",
-	"settings.requests.plexFriendsAsked": "Затражено: {n}"
+	"settings.requests.plexFriendsAsked": "Затражено: {n}",
+	"settings.requests.fourK": "4K копија",
+	"settings.requests.fourKDesc": "Где иду одобрени 4K захтеви и како се бирају",
+	"settings.requests.fourKSameFolder": "Као и остали захтеви",
+	"settings.requests.fourKNamedRules": "Квалитет под називом 4K"
 }

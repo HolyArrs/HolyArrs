@@ -9,6 +9,10 @@
   "show_pick_rules_id": 7,
   "music_library_folder_id": 7,
   "music_pick_rules_id": 7,
+  "four_k_library_folder_id": 7,
+  "four_k_pick_rules_id": 7,
+  "show_four_k_library_folder_id": 7,
+  "show_four_k_pick_rules_id": 7,
   "plex_watchlists": true,
   "plex_watchlists_everyone": true,
   "plex_friends": true

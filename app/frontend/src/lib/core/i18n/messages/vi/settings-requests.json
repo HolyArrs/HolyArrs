@@ -38,5 +38,9 @@
 	"settings.requests.plexFriendsNone": "Chưa nhập ai từ Plex.",
 	"settings.requests.plexFriendsRead": "Đã đọc {when}",
 	"settings.requests.plexFriendsNotYet": "Chưa đọc",
-	"settings.requests.plexFriendsAsked": "Đã yêu cầu: {n}"
+	"settings.requests.plexFriendsAsked": "Đã yêu cầu: {n}",
+	"settings.requests.fourK": "Bản 4K",
+	"settings.requests.fourKDesc": "Yêu cầu 4K đã duyệt được lưu ở đâu và chọn thế nào",
+	"settings.requests.fourKSameFolder": "Giống các yêu cầu khác",
+	"settings.requests.fourKNamedRules": "Chất lượng tên 4K"
 }

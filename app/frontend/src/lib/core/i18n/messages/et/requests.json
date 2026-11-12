@@ -579,5 +579,7 @@
 	"requests.moment.downloaded.title": "Alla laaditud",
 	"requests.moment.downloaded.body": "Personalile: Allalaadija lõpetas allalaadimise (järgmine on import).",
 	"requests.moment.download_failed.title": "Allalaadimine ebaõnnestus",
-	"requests.moment.download_failed.body": "Personalile: allalaadimine ebaõnnestus ja selle Väljalase lükati tagasi."
+	"requests.moment.download_failed.body": "Personalile: allalaadimine ebaõnnestus ja selle Väljalase lükati tagasi.",
+	"requests.ask.fourK": "4K koopia",
+	"requests.ask.fourKHint": "Valitud hooajad laaditakse alla ka tavakvaliteedis."
 }
