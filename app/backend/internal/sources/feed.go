@@ -78,7 +78,7 @@ func (s *Searcher) Register(q *jobs.Queue) {
 }
 
 // HandleFeed reads the newest Releases of every feed Source, matches them to Titles whose Slots want one, judges them per Slot, and chooses or holds the best.
-// A feed Release is looked at once: a name already stored by the feed check, or still waiting as judged, is skipped. Names stored and settled by other searches are looked at again.
+// A feed Release is looked at once: a name already stored by the feed check, or still waiting as judged, is skipped. Names stored and settled by other searches, and feed Releases refused before, are looked at again.
 // Held Releases whose wait is over are chosen at the end.
 func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	if s.sourcesOff(r) {
@@ -121,12 +121,12 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			read++
 			s.recovered(ctx, src)
 			for _, it := range answer.items {
-				seen, err := releaseSeen(ctx, db, src.ID, it.Title)
+				seen, refused, err := releaseSeen(ctx, db, src.ID, it.Title)
 				if err != nil {
 					return err
 				}
 				if !seen {
-					all = append(all, found{src: src, item: it, keys: answer.keys})
+					all = append(all, found{src: src, item: it, keys: answer.keys, relID: refused})
 				} else {
 					drops.add(src, it.Title, dropSeen)
 				}
@@ -168,12 +168,12 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			read++
 			s.recovered(ctx, src)
 			for _, it := range items {
-				seen, err := releaseSeen(ctx, db, src.ID, it.Title)
+				seen, refused, err := releaseSeen(ctx, db, src.ID, it.Title)
 				if err != nil {
 					return err
 				}
 				if !seen {
-					all = append(all, found{src: src, item: it, keys: secretValues(cl.cfg)})
+					all = append(all, found{src: src, item: it, keys: secretValues(cl.cfg), relID: refused})
 				} else {
 					drops.add(src, it.Title, dropSeen)
 				}

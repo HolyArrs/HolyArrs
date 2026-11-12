@@ -240,6 +240,10 @@ func (s *Searcher) storeAll(ctx context.Context, by domain.Actor, jobID *int64, 
 				if err := updateJudgedTx(tx, f.relID, state, hold, v, bySlot, by); err != nil {
 					return err
 				}
+				// A Release judged again keeps the counts it was judged with.
+				if err := updateCountsTx(tx, f.relID, f.item.Seeders, f.item.Peers); err != nil {
+					return err
+				}
 				continue
 			}
 			verdict := toMap(v)

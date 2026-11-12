@@ -215,6 +215,15 @@ func updateJudgedTx(tx *sql.Tx, releaseID int64, state string, hold *time.Time, 
 	return err
 }
 
+// updateCountsTx sets a Release's seeders and peers when the Source sent them.
+func updateCountsTx(tx *sql.Tx, releaseID int64, seeders, peers *int) error {
+	if seeders == nil && peers == nil {
+		return nil
+	}
+	_, err := tx.Exec(`UPDATE releases SET seeders = COALESCE(?, seeders), peers = COALESCE(?, peers) WHERE id = ?`, seeders, peers, releaseID)
+	return err
+}
+
 // insertReleaseTx stores a new Release and returns its id.
 func insertReleaseTx(tx *sql.Tx, rel *domain.Release, by domain.Actor) (int64, error) {
 	return database.Insert(tx, "releases", rel, by)
