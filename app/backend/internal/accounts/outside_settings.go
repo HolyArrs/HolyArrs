@@ -120,6 +120,9 @@ func (a *Auth) getSettings(w http.ResponseWriter, r *http.Request) {
 		"seen_address":     seen,
 		"gateway_networks": gatewayNets(nets, seen),
 		"proxy_untrusted":  untrusted,
+		// The seen address is this container's own gateway, which the
+		// skip counts as local.
+		"seen_gateway": ownGateway(parseHostIP(seen)),
 	})
 }
 

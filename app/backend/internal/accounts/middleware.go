@@ -207,7 +207,9 @@ func (a *Auth) strictLocal(r *http.Request) bool {
 	if ip == nil || a.trustedProxy(ip) || a.seenProxy(ip) {
 		return false
 	}
-	return a.isLocal(ip.String())
+	// The container's own gateway is how LAN visits arrive on a Docker
+	// bridge; it counts while the skip is on (local_gateway.go).
+	return a.isLocal(ip.String()) || ownGateway(ip)
 }
 
 // anyForwardHeader says whether the request carries any proxy forwarding header.
