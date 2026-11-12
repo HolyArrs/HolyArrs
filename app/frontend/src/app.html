@@ -74,9 +74,23 @@
 						asks.push('/downloads/view?limit=100');
 					}
 					var early = (window.__holyarrsEarly = { at: Date.now(), asks: {} });
+					// lib/core/api.ts: titles and synopses in the saved language; none saved, the one i18n browserLocale shows (English when the app lacks the browser's).
+					var sl = saved('holyarrs-lang'), shown = ' en de es fr it pt-br nl pl ru uk tr ar hi ja ko zh-cn ';
+					if (!/^[a-z]{2,3}(-[a-z]{2})?$/.test(sl || '')) {
+						sl = 'en';
+						var bl = navigator.languages || [];
+						for (var j = 0; j < bl.length; j++) {
+							var l = String(bl[j]).toLowerCase(), b = l.split('-')[0];
+							if (shown.indexOf(' ' + l + ' ') >= 0) { sl = l; break; }
+							if (b === 'pt') { sl = 'pt-br'; break; }
+							if (b === 'zh') { sl = 'zh-cn'; break; }
+							if (shown.indexOf(' ' + b + ' ') >= 0) { sl = b; break; }
+						}
+					}
+					var hd = { Accept: 'application/json', 'X-HolyArrs-Language': sl };
 					for (var i = 0; i < asks.length; i++) {
 						var url = base + '/api/v1' + asks[i];
-						early.asks[url] = fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+						early.asks[url] = fetch(url, { headers: hd, credentials: 'same-origin' });
 						// Not taken: no "unhandled rejection" if the network fails.
 						early.asks[url].catch(function () {});
 					}
@@ -119,7 +133,7 @@
 			// The saved language (lib/core/i18n setLang), or the browser's, so text direction is right on the first frame.
 			try {
 				var lg = localStorage.getItem('holyarrs-lang') || (navigator.language || '').toLowerCase().split('-')[0];
-				if (/^[a-z]{2}(-[a-z]{2})?$/.test(lg)) {
+				if (/^[a-z]{2,3}(-[a-z]{2})?$/.test(lg)) {
 					document.documentElement.lang = lg.replace(/-([a-z]{2})$/, function (m, r) { return '-' + r.toUpperCase(); });
 					document.documentElement.dir = lg === 'ar' || lg === 'he' || lg === 'iw' || lg === 'fa' ? 'rtl' : 'ltr';
 				}

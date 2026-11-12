@@ -90,8 +90,18 @@ function bcp47(l: Locale): string {
 	return b ? `${a}-${b.toUpperCase()}` : l;
 }
 
+// The choice picked last in this visit; null until the app starts.
+let picked: LocaleChoice | null = null;
+
+/** The language the app is shown in (or is loading): the server sends titles and synopses in it. */
+export function appLanguage(): Locale {
+	const c = picked ?? storedChoice();
+	return c === 'auto' ? browserLocale() : c;
+}
+
 /** Picks a language; 'auto' follows the browser. Saved in this browser so the first paint is right. */
 export async function setLang(choice: LocaleChoice): Promise<void> {
+	picked = choice;
 	lang.choice = choice;
 	try {
 		if (choice === 'auto') localStorage.removeItem(KEY);

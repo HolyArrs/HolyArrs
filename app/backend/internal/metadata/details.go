@@ -170,9 +170,9 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 	if err != nil {
 		return Details{}, err
 	}
-	appendTo := "release_dates,images,credits,recommendations,videos,keywords"
+	appendTo := "release_dates,images,credits,recommendations,videos,keywords,translations"
 	if kind == "show" {
-		appendTo = "content_ratings,images,credits,recommendations,videos,keywords"
+		appendTo = "content_ratings,images,credits,recommendations,videos,keywords,translations"
 	}
 	b, err := t.get(ctx, "/"+tvPath(kind)+"/"+strconv.FormatInt(n, 10),
 		url.Values{"append_to_response": {appendTo}, "include_image_language": {"en,null"}})
@@ -260,6 +260,9 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 				Language string `json:"iso_639_1"`
 			} `json:"results"`
 		} `json:"videos"`
+		Translations struct {
+			List []tmdbTranslation `json:"translations"`
+		} `json:"translations"`
 	}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return Details{}, fmt.Errorf("TMDB: odd answer: %w", err)
@@ -391,6 +394,8 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 	if raw.Recommendations != nil {
 		d.Similar = t.items(kind, raw.Recommendations.Results, names, maxSimilar)
 	}
+	// Kept even when empty: the title's texts are then known to be English only.
+	t.keepTexts(ctx, kind, tmdbID, titleTexts(raw.Translations.List))
 	return d, nil
 }
 

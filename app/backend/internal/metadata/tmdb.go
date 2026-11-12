@@ -66,6 +66,8 @@ type TMDB struct {
 	cache      map[string]cached
 	refreshing map[string]bool
 	hold       serviceHold
+	// texts are titles' texts per app language, by "kind|id" (title_text.go).
+	texts map[string]map[string]TitleText
 }
 
 type cached struct {
