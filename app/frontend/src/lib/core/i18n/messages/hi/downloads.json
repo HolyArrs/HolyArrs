@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "स्कैन",
 	"downloads.ht.routine.searches.hint": "रिलीज़ की खोज और फ़ीड जांच।",
 	"downloads.ht.routine.searches.label": "खोज",
-	"downloads.import.copy": "लाइब्रेरी में कॉपी किया गया, अतिरिक्त जगह लेता है",
+	"downloads.import.copy": "लाइब्रेरी में कॉपी किया गया (अतिरिक्त जगह लेता है)",
 	"downloads.import.hardlink": "लाइब्रेरी में जोड़ा गया (कोई अतिरिक्त जगह नहीं)",
 	"downloads.import.move": "लाइब्रेरी में ले जाया गया",
 	"downloads.import.noFile": "कोई फ़ाइल रखी नहीं जा सकी",

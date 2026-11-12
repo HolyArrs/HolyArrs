@@ -33,10 +33,10 @@
   "settings.requests.plexEveryone": "Kveikja fyrir alla sem skrá sig inn með Plex",
   "settings.requests.plexEveryoneHint": "Hver sem er getur slökkt á því fyrir sig í Mínum aðgangi.",
   "settings.requests.plexFriends": "Taka með Plex-vini",
-  "settings.requests.plexFriendsHint": "Vinir sem þú fluttir inn frá Plex. Lesið með Plex-tengingunni þinni; Takmörk hvers vinar gilda.",
+  "settings.requests.plexFriendsHint": "Vinir sem þú fluttir inn frá Plex. Áhorfslistar þeirra eru lesnir í gegnum Plex-tenginguna þína og Takmörk hvers vinar gilda.",
   "settings.requests.plexFriendsNoLink": "Tengdu Plex fyrst í Stillingar › Innskráning.",
   "settings.requests.plexFriendsNone": "Enginn hefur verið fluttur inn frá Plex enn.",
-  "settings.requests.plexFriendsRead": "Lesið {when}",
-  "settings.requests.plexFriendsNotYet": "Ekki lesið enn",
-  "settings.requests.plexFriendsAsked": "Beðið um: {n}"
+  "settings.requests.plexFriendsRead": "Áhorfslisti athugaður {when}",
+  "settings.requests.plexFriendsNotYet": "Áhorfslisti ekki athugaður enn",
+  "settings.requests.plexFriendsAsked": "Beiðnir: {n}"
 }

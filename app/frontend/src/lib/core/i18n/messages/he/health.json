@@ -260,9 +260,9 @@
 	"health.word.notSent": "עדיין לא נשלח",
 	"health.word.notSynced": "עדיין לא סונכרן",
 	"health.word.working": "עובד",
-	"health.check.clearWaiting": "הורדות הממתינות לניקוי",
+	"health.check.clearWaiting": "הורדות שיובאו ועדיין נמצאות במוריד",
 	"health.check.saveFolder": "תיקיית שמירה עבור",
 	"health.check.saveFolderWhy": "ל-{app} אין תיקיית שמירה, ולכן HolyArrs לא יכול לייבא את ההורדות שהסתיימו. הוסיפו זוג נתיבים בהגדרות › מורידים.",
-	"health.kind.clearWaiting": "הורדות הממתינות לניקוי",
+	"health.kind.clearWaiting": "הורדות שיובאו ועדיין נמצאות במוריד",
 	"health.kind.saveFolder": "תיקיית השמירה של המוריד"
 }

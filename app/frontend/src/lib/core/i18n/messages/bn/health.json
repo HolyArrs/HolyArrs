@@ -260,9 +260,9 @@
 	"health.word.notSent": "এখনো পাঠানো হয়নি",
 	"health.word.notSynced": "এখনো সিঙ্ক হয়নি",
 	"health.word.working": "কাজ করছে",
-	"health.check.clearWaiting": "মোছার অপেক্ষায় থাকা ডাউনলোড",
+	"health.check.clearWaiting": "ইমপোর্ট হওয়া ডাউনলোড এখনও ডাউনলোডারে আছে",
 	"health.check.saveFolder": "সেভ ফোল্ডার:",
 	"health.check.saveFolderWhy": "{app}-এর সেভ ফোল্ডার সেট করা নেই, তাই HolyArrs এর শেষ হওয়া ডাউনলোড ইমপোর্ট করতে পারে না। সেটিংস › ডাউনলোডার-এ একটি পাথ জোড়া যোগ করুন।",
-	"health.kind.clearWaiting": "মোছার অপেক্ষায় থাকা ডাউনলোড",
+	"health.kind.clearWaiting": "ইমপোর্ট হওয়া ডাউনলোড এখনও ডাউনলোডারে আছে",
 	"health.kind.saveFolder": "ডাউনলোডারের সেভ ফোল্ডার"
 }

@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Az első beolvasás 30 percen belül megtörténik.",
 	"library.stats.watchedHelp": "A Plex, a Jellyfin és az Emby lejátszási előzményeiből. A Plex csak a lejátszásokat számolja, ezért a kézzel megtekintettnek jelölt címek nem látszanak.",
 	"library.stats.lastRead": "Utoljára olvasva: {ago}.",
-	"library.stats.noMatch": "Utoljára olvasva: {ago}. A megnézettek közül még semmi sem egyezik a Médiatáraddal.",
+	"library.stats.noMatch": "Lejátszási előzmények ellenőrizve: {ago}. A megnézettek közül még semmi sem egyezik a Médiatáraddal.",
 	"library.stats.notLinked": "Nincs összekapcsolva",
 	"library.stats.lastWatched": "Utoljára nézte: {ago}",
 	"library.stats.unit.movie.one": "{n} film",

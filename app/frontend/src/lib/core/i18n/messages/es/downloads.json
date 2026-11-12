@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Escaneos",
 	"downloads.ht.routine.searches.hint": "Búsquedas de lanzamientos y revisiones de fuentes.",
 	"downloads.ht.routine.searches.label": "Búsquedas",
-	"downloads.import.copy": "Copiado a la Biblioteca, usa espacio extra",
+	"downloads.import.copy": "Copiado a la Biblioteca (usa espacio extra)",
 	"downloads.import.hardlink": "Añadido a la Biblioteca (sin espacio extra)",
 	"downloads.import.move": "Movido a la Biblioteca",
 	"downloads.import.noFile": "no se pudo colocar ningún archivo",

@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Не вдалося зберегти",
 	"settings.tmdb.locked": "Задано в налаштуваннях Docker",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE має значення \"{value}\", а не full, own чи off, тому запити вимкнено.",
-	"settings.tmdb.ownNote": "З власними ключами ви звертаєтеся до кожного джерела самі. Музичні чарти, ряди нової музики, топ-10 стримінгів, факти з Вікіпедії та мапи аніме надходять лише із сервера HolyArrs, тому їх вимкнено.",
+	"settings.tmdb.ownNote": "З власними ключами HolyArrs звертається до кожного джерела напряму. Музичні чарти, ряди нової музики, топ-10 стримінгів, факти з Вікіпедії та мапи аніме надходять лише із сервера HolyArrs, тому їх вимкнено.",
 	"settings.tmdb.keysTitle": "Ваші ключі",
 	"settings.tmdb.keysDesc": "Потрібен лише токен читання TMDB",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

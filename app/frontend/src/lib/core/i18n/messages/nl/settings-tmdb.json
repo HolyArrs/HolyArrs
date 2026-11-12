@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Opslaan mislukt",
 	"settings.tmdb.locked": "Ingesteld door je Docker-instellingen",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE is \"{value}\", niet full, own of off, dus opzoekingen staan uit.",
-	"settings.tmdb.ownNote": "Met eigen sleutels vraag je elke bron zelf. Muziekhitlijsten, rijen met nieuwe muziek, streaming-Top 10's, Wikipedia-feiten en anime-koppelingen komen alleen van de HolyArrs-server, dus die staan uit.",
+	"settings.tmdb.ownNote": "Met eigen sleutels vraagt HolyArrs elke bron rechtstreeks. Muziekhitlijsten, rijen met nieuwe muziek, streaming-Top 10's, Wikipedia-feiten en anime-koppelingen komen alleen van de HolyArrs-server, dus die staan uit.",
 	"settings.tmdb.keysTitle": "Je sleutels",
 	"settings.tmdb.keysDesc": "Alleen het TMDB-leestoken is nodig",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

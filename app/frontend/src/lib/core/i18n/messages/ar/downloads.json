@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "عمليات المسح",
 	"downloads.ht.routine.searches.hint": "عمليات بحث عن الإصدارات وفحوصات الخلاصات.",
 	"downloads.ht.routine.searches.label": "عمليات البحث",
-	"downloads.import.copy": "نُسخ إلى المكتبة، يشغل مساحة إضافية",
+	"downloads.import.copy": "نُسخ إلى المكتبة (يشغل مساحة إضافية)",
 	"downloads.import.hardlink": "أُضيف إلى المكتبة (بلا مساحة إضافية)",
 	"downloads.import.move": "نُقل إلى المكتبة",
 	"downloads.import.noFile": "تعذّر وضع أي ملف",

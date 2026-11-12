@@ -33,10 +33,10 @@
 	"settings.requests.plexEveryone": "Plex でサインインする全員に対してオンにする",
 	"settings.requests.plexEveryoneHint": "各自がマイアカウントで自分の分をオフにできます。",
 	"settings.requests.plexFriends": "Plexの友達も含める",
-	"settings.requests.plexFriendsHint": "Plexからインポートした友達。あなたのPlex連携で読み取り、各友達の上限が適用されます。",
+	"settings.requests.plexFriendsHint": "Plexからインポートした友達。ウォッチリストはあなたのPlex連携で読み取り、各友達の上限が適用されます。",
 	"settings.requests.plexFriendsNoLink": "先に 設定 › サインイン でPlexを連携してください。",
 	"settings.requests.plexFriendsNone": "Plexからまだ誰もインポートされていません。",
-	"settings.requests.plexFriendsRead": "{when}に読み取り",
-	"settings.requests.plexFriendsNotYet": "まだ読み取っていません",
+	"settings.requests.plexFriendsRead": "ウォッチリスト確認: {when}",
+	"settings.requests.plexFriendsNotYet": "ウォッチリストはまだ確認していません",
 	"settings.requests.plexFriendsAsked": "リクエスト: {n}"
 }

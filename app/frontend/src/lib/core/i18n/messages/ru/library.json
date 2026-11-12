@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Первое чтение — в течение 30 минут.",
 	"library.stats.watchedHelp": "По истории воспроизведения Plex, Jellyfin и Emby. Plex считает только просмотры, поэтому отмеченные вручную тайтлы не видны.",
 	"library.stats.lastRead": "Прочитано {ago}.",
-	"library.stats.noMatch": "Прочитано {ago}. Ничего из просмотренного пока не совпадает с вашей медиатекой.",
+	"library.stats.noMatch": "История просмотров проверена {ago}. Ничего из просмотренного пока не совпадает с вашей медиатекой.",
 	"library.stats.notLinked": "Не связан",
 	"library.stats.lastWatched": "Смотрел {ago}",
 	"library.stats.unit.movie.one": "Фильмов: {n}",

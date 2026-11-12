@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Speichern fehlgeschlagen",
 	"settings.tmdb.locked": "Durch deine Docker-Einstellungen festgelegt",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE ist \"{value}\", nicht full, own oder off, daher sind Abfragen aus.",
-	"settings.tmdb.ownNote": "Mit eigenen Schlüsseln fragst du jede Quelle selbst. Musik-Charts, neue Musik-Reihen, Streaming-Top-10, Wikipedia-Fakten und Anime-Zuordnungen kommen nur vom HolyArrs-Server und sind daher aus.",
+	"settings.tmdb.ownNote": "Mit eigenen Schlüsseln fragt HolyArrs jede Quelle direkt. Musik-Charts, neue Musik-Reihen, Streaming-Top-10, Wikipedia-Fakten und Anime-Zuordnungen kommen nur vom HolyArrs-Server und sind daher aus.",
 	"settings.tmdb.keysTitle": "Deine Schlüssel",
 	"settings.tmdb.keysDesc": "Nur das TMDB-Lesetoken wird gebraucht",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

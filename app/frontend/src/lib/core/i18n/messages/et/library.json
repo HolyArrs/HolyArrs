@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Esimene lugemine toimub 30 minuti jooksul.",
 	"library.stats.watchedHelp": "Plexi, Jellyfini ja Emby esitusajaloost. Plex loeb ainult esitusi, nii et käsitsi vaadatuks märgitud pealkirju ei näidata.",
 	"library.stats.lastRead": "Viimati loetud {ago}.",
-	"library.stats.noMatch": "Viimati loetud {ago}. Miski vaadatust ei kattu veel sinu Meediakoguga.",
+	"library.stats.noMatch": "Vaatamisajalugu kontrollitud {ago}. Miski vaadatust ei kattu veel sinu Meediakoguga.",
 	"library.stats.notLinked": "Linkimata",
 	"library.stats.lastWatched": "Viimati vaadatud {ago}",
 	"library.stats.unit.movie.one": "{n} film",

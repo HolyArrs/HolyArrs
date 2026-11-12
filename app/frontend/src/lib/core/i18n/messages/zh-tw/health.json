@@ -260,9 +260,9 @@
 	"health.word.notSent": "尚未傳送",
 	"health.word.notSynced": "尚未同步",
 	"health.word.working": "正常",
-	"health.check.clearWaiting": "等待清除的下載",
+	"health.check.clearWaiting": "已匯入但仍留在下載器中的下載",
 	"health.check.saveFolder": "儲存資料夾：",
 	"health.check.saveFolderWhy": "{app} 沒有設定儲存資料夾，所以 HolyArrs 無法匯入已完成的下載。請在 設定 › 下載器 中新增一組路徑。",
-	"health.kind.clearWaiting": "等待清除的下載",
+	"health.kind.clearWaiting": "已匯入但仍留在下載器中的下載",
 	"health.kind.saveFolder": "下載器儲存資料夾"
 }

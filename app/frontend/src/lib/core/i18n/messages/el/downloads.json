@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Σαρώσεις",
 	"downloads.ht.routine.searches.hint": "Αναζητήσεις κυκλοφοριών και έλεγχοι ροής.",
 	"downloads.ht.routine.searches.label": "Αναζητήσεις",
-	"downloads.import.copy": "Αντιγράφηκε",
+	"downloads.import.copy": "Αντιγράφηκε στη Βιβλιοθήκη (πιάνει επιπλέον χώρο)",
 	"downloads.import.hardlink": "hardlink",
 	"downloads.import.move": "μετακίνηση",
 	"downloads.import.noFile": "δεν ήταν δυνατή η τοποθέτηση κανενός αρχείου",

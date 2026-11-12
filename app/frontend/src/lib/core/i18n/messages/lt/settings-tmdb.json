@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Nepavyko išsaugoti",
 	"settings.tmdb.locked": "Nustatyta jūsų Docker nustatymuose",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE yra „{value}“, o tai nėra full, own ar off, todėl paieškos išjungtos.",
-	"settings.tmdb.ownNote": "Jūsų savi raktai kiekvieno šaltinio klausia pats. Muzikos topai, naujos muzikos eilutės, srautinio perdavimo Top 10, Vikipedijos faktai ir anime žemėlapiai ateina tik iš HolyArrs serverio, todėl yra išjungti.",
+	"settings.tmdb.ownNote": "Su savo raktais HolyArrs kiekvieno šaltinio klausia tiesiogiai. Muzikos topai, naujos muzikos eilutės, srautinio perdavimo Top 10, Vikipedijos faktai ir anime žemėlapiai ateina tik iš HolyArrs serverio, todėl yra išjungti.",
 	"settings.tmdb.keysTitle": "Jūsų raktai",
 	"settings.tmdb.keysDesc": "Reikia tik TMDB skaitymo žetono",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

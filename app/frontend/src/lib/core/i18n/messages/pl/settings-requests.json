@@ -33,10 +33,10 @@
 	"settings.requests.plexEveryone": "Włącz dla wszystkich, którzy logują się przez Plex",
 	"settings.requests.plexEveryoneHint": "Każdy może to wyłączyć dla siebie w Moje konto.",
 	"settings.requests.plexFriends": "Uwzględnij znajomych z Plex",
-	"settings.requests.plexFriendsHint": "Znajomi zaimportowani z Plex. Odczyt przez Twoje połączenie z Plex; obowiązują limity każdego znajomego.",
+	"settings.requests.plexFriendsHint": "Znajomi zaimportowani z Plex. Ich listy obserwowanych są odczytywane przez Twoje połączenie z Plex i obowiązują limity każdego znajomego.",
 	"settings.requests.plexFriendsNoLink": "Najpierw połącz Plex w Ustawienia › Logowanie.",
 	"settings.requests.plexFriendsNone": "Nikt nie został jeszcze zaimportowany z Plex.",
-	"settings.requests.plexFriendsRead": "Odczytano {when}",
-	"settings.requests.plexFriendsNotYet": "Jeszcze nie odczytano",
-	"settings.requests.plexFriendsAsked": "Zamówiono: {n}"
+	"settings.requests.plexFriendsRead": "Lista obserwowanych sprawdzona {when}",
+	"settings.requests.plexFriendsNotYet": "Lista obserwowanych jeszcze nie sprawdzona",
+	"settings.requests.plexFriendsAsked": "Prośby: {n}"
 }

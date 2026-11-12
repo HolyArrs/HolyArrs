@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Skanningar",
 	"downloads.ht.routine.searches.hint": "Sökningar efter releaser och flödeskontroller.",
 	"downloads.ht.routine.searches.label": "Sökningar",
-	"downloads.import.copy": "Kopierad",
+	"downloads.import.copy": "Kopierad till Biblioteket (tar extra utrymme)",
 	"downloads.import.hardlink": "hårdlänk",
 	"downloads.import.move": "flytt",
 	"downloads.import.noFile": "ingen fil kunde placeras",

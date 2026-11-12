@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Skanninger",
 	"downloads.ht.routine.searches.hint": "Søk etter utgivelser og feedsjekker.",
 	"downloads.ht.routine.searches.label": "Søk",
-	"downloads.import.copy": "Kopiert",
+	"downloads.import.copy": "Kopiert til Biblioteket (bruker ekstra plass)",
 	"downloads.import.hardlink": "hardlink",
 	"downloads.import.move": "flytting",
 	"downloads.import.noFile": "ingen fil kunne plasseres",

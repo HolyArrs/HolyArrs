@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "無法儲存",
 	"settings.tmdb.locked": "由你的 Docker 設定決定",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE 為「{value}」，不是 full、own 或 off，因此查詢已關閉。",
-	"settings.tmdb.ownNote": "「你自己的金鑰」會自行詢問每個來源。音樂排行榜、新音樂列、串流 Top 10、維基百科資料與動畫對照表僅來自 HolyArrs 伺服器，因此已關閉。",
+	"settings.tmdb.ownNote": "使用你自己的金鑰時，HolyArrs 會直接詢問每個來源。音樂排行榜、新音樂列、串流 Top 10、維基百科資料與動畫對照表僅來自 HolyArrs 伺服器，因此已關閉。",
 	"settings.tmdb.keysTitle": "你的金鑰",
 	"settings.tmdb.keysDesc": "只需要 TMDB 讀取權杖",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

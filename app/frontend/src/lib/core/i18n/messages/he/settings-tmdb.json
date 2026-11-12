@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "לא ניתן היה לשמור",
 	"settings.tmdb.locked": "נקבע בהגדרות ה-Docker שלכם",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE הוא \"{value}\", שאינו full, ‏own או off, ולכן החיפושים כבויים.",
-	"settings.tmdb.ownNote": "\"המפתחות שלכם\" פונה לכל מקור בעצמו. טבלאות דירוג מוזיקה, שורות מוזיקה חדשה, עשירייה פותחת בסטרימינג, עובדות מוויקיפדיה ומפות אנימה מגיעים רק משרת HolyArrs, ולכן הם כבויים.",
+	"settings.tmdb.ownNote": "עם מפתחות משלכם, HolyArrs פונה ישירות לכל מקור. טבלאות דירוג מוזיקה, שורות מוזיקה חדשה, עשירייה פותחת בסטרימינג, עובדות מוויקיפדיה ומפות אנימה מגיעים רק משרת HolyArrs, ולכן הם כבויים.",
 	"settings.tmdb.keysTitle": "המפתחות שלכם",
 	"settings.tmdb.keysDesc": "נדרש רק אסימון הקריאה של TMDB",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

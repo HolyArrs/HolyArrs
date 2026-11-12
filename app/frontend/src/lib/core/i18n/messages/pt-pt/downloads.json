@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Análises",
 	"downloads.ht.routine.searches.hint": "Pesquisas de lançamentos e verificações de feed.",
 	"downloads.ht.routine.searches.label": "Pesquisas",
-	"downloads.import.copy": "Copiado",
+	"downloads.import.copy": "Copiado para a Biblioteca (ocupa espaço extra)",
 	"downloads.import.hardlink": "link físico",
 	"downloads.import.move": "movimentação",
 	"downloads.import.noFile": "nenhum ficheiro pôde ser colocado",

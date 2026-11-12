@@ -33,10 +33,10 @@
 	"settings.requests.plexEveryone": "Hidupkan untuk semua orang yang log masuk dengan Plex",
 	"settings.requests.plexEveryoneHint": "Sesiapa sahaja boleh mematikannya untuk diri sendiri dalam Akaun saya.",
 	"settings.requests.plexFriends": "Sertakan rakan Plex",
-	"settings.requests.plexFriendsHint": "Rakan yang anda import daripada Plex. Dibaca dengan pautan Plex anda; Had setiap rakan terpakai.",
+	"settings.requests.plexFriendsHint": "Rakan yang anda import daripada Plex. Senarai tontonan mereka dibaca melalui pautan Plex anda, dan Had setiap rakan terpakai.",
 	"settings.requests.plexFriendsNoLink": "Pautkan Plex dahulu dalam Tetapan › Log masuk.",
 	"settings.requests.plexFriendsNone": "Belum ada sesiapa diimport daripada Plex.",
-	"settings.requests.plexFriendsRead": "Dibaca {when}",
-	"settings.requests.plexFriendsNotYet": "Belum dibaca",
-	"settings.requests.plexFriendsAsked": "Diminta: {n}"
+	"settings.requests.plexFriendsRead": "Senarai tontonan disemak {when}",
+	"settings.requests.plexFriendsNotYet": "Senarai tontonan belum disemak",
+	"settings.requests.plexFriendsAsked": "Permintaan: {n}"
 }

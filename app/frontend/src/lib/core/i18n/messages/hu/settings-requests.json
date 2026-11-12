@@ -33,10 +33,10 @@
 	"settings.requests.plexEveryone": "Bekapcsolás mindenkinek, aki Plexszel jelentkezik be",
 	"settings.requests.plexEveryoneHint": "Bárki kikapcsolhatja magának a Fiókomban.",
 	"settings.requests.plexFriends": "Plex-barátok is",
-	"settings.requests.plexFriendsHint": "A Plexből importált barátok. A Plex-összekapcsolásoddal olvassuk; minden barát Korlátai érvényesek.",
+	"settings.requests.plexFriendsHint": "A Plexből importált barátok. A figyelőlistáikat a Plex-összekapcsolásoddal olvassuk, és minden barát Korlátai érvényesek.",
 	"settings.requests.plexFriendsNoLink": "Előbb kapcsold össze a Plexet a Beállítások › Bejelentkezés alatt.",
 	"settings.requests.plexFriendsNone": "Még senki sincs importálva a Plexből.",
-	"settings.requests.plexFriendsRead": "Beolvasva: {when}",
-	"settings.requests.plexFriendsNotYet": "Még nincs beolvasva",
+	"settings.requests.plexFriendsRead": "Figyelőlista ellenőrizve: {when}",
+	"settings.requests.plexFriendsNotYet": "A figyelőlista még nincs ellenőrizve",
 	"settings.requests.plexFriendsAsked": "Kérések: {n}"
 }

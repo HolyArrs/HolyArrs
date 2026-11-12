@@ -349,7 +349,7 @@
 	"library.stats.firstText": "প্রথম পড়া ৩০ মিনিটের মধ্যে হয়।",
 	"library.stats.watchedHelp": "Plex, Jellyfin ও Emby-র প্লে ইতিহাস থেকে। Plex শুধু প্লে গোনে, তাই হাতে দেখা হিসেবে চিহ্নিত টাইটেল দেখা যায় না।",
 	"library.stats.lastRead": "সর্বশেষ পড়া {ago}।",
-	"library.stats.noMatch": "সর্বশেষ পড়া {ago}। দেখা কিছুই এখনও আপনার লাইব্রেরির সঙ্গে মেলেনি।",
+	"library.stats.noMatch": "দেখার ইতিহাস যাচাই হয়েছে {ago}। দেখা কিছুই এখনও আপনার লাইব্রেরির সঙ্গে মেলেনি।",
 	"library.stats.notLinked": "লিংক করা নেই",
 	"library.stats.lastWatched": "সর্বশেষ দেখা {ago}",
 	"library.stats.unit.movie.one": "{n}টি মুভি",

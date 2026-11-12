@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Escanejos",
 	"downloads.ht.routine.searches.hint": "Cerques de Llançaments i comprovacions de feeds.",
 	"downloads.ht.routine.searches.label": "Cerques",
-	"downloads.import.copy": "Copiat",
+	"downloads.import.copy": "Copiat a la Biblioteca (ocupa espai addicional)",
 	"downloads.import.hardlink": "enllaç físic",
 	"downloads.import.move": "movent",
 	"downloads.import.noFile": "no s'ha pogut col·locar cap fitxer",

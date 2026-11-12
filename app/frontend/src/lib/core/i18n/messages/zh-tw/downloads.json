@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "掃描",
 	"downloads.ht.routine.searches.hint": "資源搜尋和訂閱來源檢查。",
 	"downloads.ht.routine.searches.label": "搜尋",
-	"downloads.import.copy": "已複製",
+	"downloads.import.copy": "已複製到媒體庫（占用額外空間）",
 	"downloads.import.hardlink": "硬連結",
 	"downloads.import.move": "移動",
 	"downloads.import.noFile": "沒有檔案可以放置",

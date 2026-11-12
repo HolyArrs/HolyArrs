@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Den første aflæsning sker inden for 30 minutter.",
 	"library.stats.watchedHelp": "Fra afspilningshistorikken i Plex, Jellyfin og Emby. Plex tæller kun afspilninger, så titler markeret som set i hånden vises ikke.",
 	"library.stats.lastRead": "Sidst læst {ago}.",
-	"library.stats.noMatch": "Sidst læst {ago}. Intet af det sete matcher dit Bibliotek endnu.",
+	"library.stats.noMatch": "Afspilningshistorik tjekket {ago}. Intet af det sete matcher dit Bibliotek endnu.",
 	"library.stats.notLinked": "Ikke forbundet",
 	"library.stats.lastWatched": "Sidst set {ago}",
 	"library.stats.unit.movie.one": "{n} film",

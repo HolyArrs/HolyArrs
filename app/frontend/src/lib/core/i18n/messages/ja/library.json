@@ -349,7 +349,7 @@
 	"library.stats.firstText": "最初の読み取りは30分以内に行われます。",
 	"library.stats.watchedHelp": "Plex、Jellyfin、Emby の再生履歴から。Plex は再生のみを数えるため、手動で視聴済みにしたタイトルは表示されません。",
 	"library.stats.lastRead": "最終読み取り {ago}。",
-	"library.stats.noMatch": "最終読み取り {ago}。視聴されたものの中に、ライブラリと一致するものはまだありません。",
+	"library.stats.noMatch": "視聴履歴の確認: {ago}。視聴されたものの中に、ライブラリと一致するものはまだありません。",
 	"library.stats.notLinked": "未リンク",
 	"library.stats.lastWatched": "最終視聴 {ago}",
 	"library.stats.unit.movie.one": "映画 {n}本",

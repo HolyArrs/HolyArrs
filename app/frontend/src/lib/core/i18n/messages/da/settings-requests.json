@@ -33,10 +33,10 @@
 	"settings.requests.plexEveryone": "Slå til for alle, der logger ind med Plex",
 	"settings.requests.plexEveryoneHint": "Alle kan slå det fra for sig selv i Min konto.",
 	"settings.requests.plexFriends": "Medtag Plex-venner",
-	"settings.requests.plexFriendsHint": "Venner, du har importeret fra Plex. Læses med dit Plex-link; hver vens Grænser gælder.",
+	"settings.requests.plexFriendsHint": "Venner, du har importeret fra Plex. Deres ønskelister læses via dit Plex-link, og hver vens Grænser gælder.",
 	"settings.requests.plexFriendsNoLink": "Link Plex i Indstillinger › Log ind først.",
 	"settings.requests.plexFriendsNone": "Ingen er importeret fra Plex endnu.",
-	"settings.requests.plexFriendsRead": "Læst {when}",
-	"settings.requests.plexFriendsNotYet": "Ikke læst endnu",
-	"settings.requests.plexFriendsAsked": "Anmodet: {n}"
+	"settings.requests.plexFriendsRead": "Ønskeliste tjekket {when}",
+	"settings.requests.plexFriendsNotYet": "Ønskeliste ikke tjekket endnu",
+	"settings.requests.plexFriendsAsked": "Anmodninger: {n}"
 }

@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Prvé čítanie prebehne do 30 minút.",
 	"library.stats.watchedHelp": "Z histórie prehrávania v Plexe, Jellyfine a Embym. Plex počíta len prehratia, takže tituly ručne označené ako pozreté sa nezobrazia.",
 	"library.stats.lastRead": "Naposledy prečítané {ago}.",
-	"library.stats.noMatch": "Naposledy prečítané {ago}. Nič z pozretého zatiaľ nezodpovedá vašej Knižnici.",
+	"library.stats.noMatch": "História pozerania skontrolovaná {ago}. Nič z pozretého zatiaľ nezodpovedá vašej Knižnici.",
 	"library.stats.notLinked": "Nepripojené",
 	"library.stats.lastWatched": "Naposledy pozerané {ago}",
 	"library.stats.unit.movie.one": "{n} film",

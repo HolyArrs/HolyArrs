@@ -33,10 +33,10 @@
 	"settings.requests.plexEveryone": "Увімкнути для всіх, хто входить через Plex",
 	"settings.requests.plexEveryoneHint": "Кожен може вимкнути це для себе в розділі «Мій акаунт».",
 	"settings.requests.plexFriends": "Додати друзів з Plex",
-	"settings.requests.plexFriendsHint": "Друзі, імпортовані з Plex. Читаються через вашу прив'язку Plex; діють ліміти кожного друга.",
+	"settings.requests.plexFriendsHint": "Друзі, імпортовані з Plex. Їхні списки перегляду читаються через вашу прив'язку Plex, і діють ліміти кожного друга.",
 	"settings.requests.plexFriendsNoLink": "Спершу прив'яжіть Plex у Налаштування › Вхід.",
 	"settings.requests.plexFriendsNone": "З Plex ще нікого не імпортовано.",
-	"settings.requests.plexFriendsRead": "Прочитано {when}",
-	"settings.requests.plexFriendsNotYet": "Ще не прочитано",
-	"settings.requests.plexFriendsAsked": "Запитано: {n}"
+	"settings.requests.plexFriendsRead": "Список перегляду перевірено {when}",
+	"settings.requests.plexFriendsNotYet": "Список перегляду ще не перевірено",
+	"settings.requests.plexFriendsAsked": "Запити: {n}"
 }

@@ -33,10 +33,10 @@
 	"settings.requests.plexEveryone": "เปิดให้ทุกคนที่เข้าสู่ระบบด้วย Plex",
 	"settings.requests.plexEveryoneHint": "ทุกคนปิดสำหรับตัวเองได้ในบัญชีของฉัน",
 	"settings.requests.plexFriends": "รวมเพื่อน Plex",
-	"settings.requests.plexFriendsHint": "เพื่อนที่คุณนำเข้าจาก Plex อ่านด้วยลิงก์ Plex ของคุณ ขีดจำกัดของเพื่อนแต่ละคนยังมีผล",
+	"settings.requests.plexFriendsHint": "เพื่อนที่คุณนำเข้าจาก Plex รายการที่ต้องการดูของพวกเขาจะอ่านผ่านลิงก์ Plex ของคุณ และขีดจำกัดของเพื่อนแต่ละคนยังมีผล",
 	"settings.requests.plexFriendsNoLink": "เชื่อมโยง Plex ที่ ตั้งค่า › เข้าสู่ระบบ ก่อน",
 	"settings.requests.plexFriendsNone": "ยังไม่มีใครถูกนำเข้าจาก Plex",
-	"settings.requests.plexFriendsRead": "อ่านเมื่อ {when}",
-	"settings.requests.plexFriendsNotYet": "ยังไม่ได้อ่าน",
-	"settings.requests.plexFriendsAsked": "ขอไปแล้ว: {n}"
+	"settings.requests.plexFriendsRead": "ตรวจรายการที่ต้องการดูเมื่อ {when}",
+	"settings.requests.plexFriendsNotYet": "ยังไม่ได้ตรวจรายการที่ต้องการดู",
+	"settings.requests.plexFriendsAsked": "คำขอ: {n}"
 }

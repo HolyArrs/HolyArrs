@@ -260,9 +260,9 @@
 	"health.word.notSent": "Još nije poslano",
 	"health.word.notSynced": "Još nije sinkronizirano",
 	"health.word.working": "Radi",
-	"health.check.clearWaiting": "Preuzimanja koja čekaju čišćenje",
+	"health.check.clearWaiting": "Uvezena preuzimanja koja su još u preuzimatelju",
 	"health.check.saveFolder": "Mapa za spremanje za",
 	"health.check.saveFolderWhy": "{app} nema mapu za spremanje, pa HolyArrs ne može uvesti završena preuzimanja. Dodajte par putanja u Postavke › Preuzimatelji.",
-	"health.kind.clearWaiting": "Preuzimanja koja čekaju čišćenje",
+	"health.kind.clearWaiting": "Uvezena preuzimanja koja su još u preuzimatelju",
 	"health.kind.saveFolder": "Mapa za spremanje preuzimatelja"
 }

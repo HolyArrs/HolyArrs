@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Nepodařilo se uložit",
 	"settings.tmdb.locked": "Nastaveno v nastavení Dockeru",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE je „{value}“, což není full, own ani off, takže je vyhledávání vypnuté.",
-	"settings.tmdb.ownNote": "Vaše vlastní klíče se ptá každého zdroje samo. Hudební žebříčky, řádky s novou hudbou, Top 10 ve streamování, fakta z Wikipedie a mapy anime pocházejí jen ze serveru HolyArrs, takže jsou vypnuté.",
+	"settings.tmdb.ownNote": "S vlastními klíči se HolyArrs ptá každého zdroje přímo. Hudební žebříčky, řádky s novou hudbou, Top 10 ve streamování, fakta z Wikipedie a mapy anime pocházejí jen ze serveru HolyArrs, takže jsou vypnuté.",
 	"settings.tmdb.keysTitle": "Vaše klíče",
 	"settings.tmdb.keysDesc": "Potřebný je jen čtecí token TMDB",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

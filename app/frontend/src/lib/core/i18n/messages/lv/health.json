@@ -260,9 +260,9 @@
 	"health.word.notSent": "Vēl nav nosūtīts",
 	"health.word.notSynced": "Vēl nav sinhronizēts",
 	"health.word.working": "Darbojas",
-	"health.check.clearWaiting": "Lejupielādes, kas gaida notīrīšanu",
+	"health.check.clearWaiting": "Importētas lejupielādes, kas vēl ir Lejupielādētājā",
 	"health.check.saveFolder": "Saglabāšanas mape:",
 	"health.check.saveFolderWhy": "{app} nav saglabāšanas mapes, tāpēc HolyArrs nevar importēt pabeigtās lejupielādes. Pievienojiet ceļu pāri sadaļā Iestatījumi › Lejupielādētāji.",
-	"health.kind.clearWaiting": "Lejupielādes, kas gaida notīrīšanu",
+	"health.kind.clearWaiting": "Importētas lejupielādes, kas vēl ir Lejupielādētājā",
 	"health.kind.saveFolder": "Lejupielādētāja saglabāšanas mape"
 }

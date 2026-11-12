@@ -349,7 +349,7 @@
 	"library.stats.firstText": "Pirmasis skaitymas įvyksta per 30 minučių.",
 	"library.stats.watchedHelp": "Iš Plex, Jellyfin ir Emby peržiūrų istorijos. Plex skaičiuoja tik peržiūras, todėl rankiniu būdu kaip žiūrėti pažymėti pavadinimai nerodomi.",
 	"library.stats.lastRead": "Paskutinį kartą skaityta {ago}.",
-	"library.stats.noMatch": "Paskutinį kartą skaityta {ago}. Niekas iš žiūrėto dar nesutampa su jūsų Biblioteka.",
+	"library.stats.noMatch": "Žiūrėjimo istorija patikrinta {ago}. Niekas iš žiūrėto dar nesutampa su jūsų Biblioteka.",
 	"library.stats.notLinked": "Nesusieta",
 	"library.stats.lastWatched": "Paskutinį kartą žiūrėta {ago}",
 	"library.stats.unit.movie.one": "{n} filmas",

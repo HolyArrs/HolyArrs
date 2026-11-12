@@ -349,7 +349,7 @@
 	"library.stats.firstText": "首次读取会在 30 分钟内完成。",
 	"library.stats.watchedHelp": "来自 Plex、Jellyfin 和 Emby 的播放记录。Plex 只统计播放，手动标为已看的条目不会显示。",
 	"library.stats.lastRead": "上次读取 {ago}。",
-	"library.stats.noMatch": "上次读取 {ago}。观看记录中还没有与你的媒体库匹配的内容。",
+	"library.stats.noMatch": "观看记录上次检查：{ago}。看过的内容中还没有与你的媒体库匹配的。",
 	"library.stats.notLinked": "未关联",
 	"library.stats.lastWatched": "上次观看 {ago}",
 	"library.stats.unit.movie.one": "{n} 部电影",

@@ -260,9 +260,9 @@
 	"health.word.notSent": "Ikke sendt endnu",
 	"health.word.notSynced": "Ikke synkroniseret endnu",
 	"health.word.working": "Virker",
-	"health.check.clearWaiting": "Downloads der venter på at blive ryddet væk",
+	"health.check.clearWaiting": "Importerede downloads, der stadig ligger i en Downloader",
 	"health.check.saveFolder": "Gemmemappe for",
 	"health.check.saveFolderWhy": "{app} har ingen gemmemappe, så HolyArrs kan ikke importere dens færdige downloads. Tilføj et stipar under Indstillinger › Downloadere.",
-	"health.kind.clearWaiting": "Downloads der venter på at blive ryddet væk",
+	"health.kind.clearWaiting": "Importerede downloads, der stadig ligger i en Downloader",
 	"health.kind.saveFolder": "Downloaderens gemmemappe"
 }

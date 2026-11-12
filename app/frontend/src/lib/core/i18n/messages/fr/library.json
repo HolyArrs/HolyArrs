@@ -349,7 +349,7 @@
 	"library.stats.firstText": "La première lecture arrive sous 30 minutes.",
 	"library.stats.watchedHelp": "D’après l’historique de Plex, Jellyfin et Emby. Plex ne compte que les lectures : les titres marqués vus à la main n’apparaissent pas.",
 	"library.stats.lastRead": "Dernière lecture {ago}.",
-	"library.stats.noMatch": "Dernière lecture {ago}. Rien de ce qui a été regardé ne correspond encore à votre bibliothèque.",
+	"library.stats.noMatch": "Historique vérifié {ago}. Rien de ce qui a été regardé ne correspond encore à votre bibliothèque.",
 	"library.stats.notLinked": "Non lié",
 	"library.stats.lastWatched": "Vu {ago}",
 	"library.stats.unit.movie.one": "{n} film",

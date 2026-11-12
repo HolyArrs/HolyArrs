@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "सहेजा नहीं जा सका",
 	"settings.tmdb.locked": "आपकी Docker सेटिंग्स से तय",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE का मान \"{value}\" है, जो full, own या off नहीं है, इसलिए खोज बंद है।",
-	"settings.tmdb.ownNote": "अपनी कुंजियों के साथ आप हर स्रोत से खुद पूछते हैं। संगीत चार्ट, नए संगीत की पंक्तियाँ, स्ट्रीमिंग टॉप 10, विकिपीडिया तथ्य और एनीमे मैप केवल HolyArrs सर्वर से आते हैं, इसलिए वे बंद हैं।",
+	"settings.tmdb.ownNote": "अपनी कुंजियों के साथ HolyArrs हर स्रोत से सीधे पूछता है। संगीत चार्ट, नए संगीत की पंक्तियाँ, स्ट्रीमिंग टॉप 10, विकिपीडिया तथ्य और एनीमे मैप केवल HolyArrs सर्वर से आते हैं, इसलिए वे बंद हैं।",
 	"settings.tmdb.keysTitle": "आपकी कुंजियाँ",
 	"settings.tmdb.keysDesc": "केवल TMDB रीड टोकन ज़रूरी है",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

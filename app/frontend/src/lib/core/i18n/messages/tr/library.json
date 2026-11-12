@@ -349,7 +349,7 @@
 	"library.stats.firstText": "İlk okuma 30 dakika içinde gelir.",
 	"library.stats.watchedHelp": "Plex, Jellyfin ve Emby oynatma geçmişinden. Plex yalnızca oynatmaları sayar, elle izlendi işaretlenen başlıklar görünmez.",
 	"library.stats.lastRead": "Son okuma {ago}.",
-	"library.stats.noMatch": "Son okuma {ago}. İzlenenlerin hiçbiri henüz Kütüphanenizle eşleşmiyor.",
+	"library.stats.noMatch": "İzleme geçmişi kontrol edildi: {ago}. İzlenenlerin hiçbiri henüz Kütüphanenizle eşleşmiyor.",
 	"library.stats.notLinked": "Bağlı değil",
 	"library.stats.lastWatched": "Son izleme {ago}",
 	"library.stats.unit.movie.one": "{n} film",

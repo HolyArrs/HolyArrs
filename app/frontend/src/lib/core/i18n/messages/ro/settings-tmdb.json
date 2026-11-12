@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Nu s-a putut salva",
 	"settings.tmdb.locked": "Stabilit de setările tale Docker",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE este „{value}”, care nu este full, own sau off, deci căutările sunt oprite.",
-	"settings.tmdb.ownNote": "Cheile tale proprii întreabă singur fiecare sursă. Topurile de muzică, rândurile cu muzică nouă, Top 10 de pe streaming, faptele din Wikipedia și hărțile anime vin doar de la serverul HolyArrs, deci sunt oprite.",
+	"settings.tmdb.ownNote": "Cu cheile tale proprii, HolyArrs întreabă direct fiecare sursă. Topurile de muzică, rândurile cu muzică nouă, Top 10 de pe streaming, faptele din Wikipedia și hărțile anime vin doar de la serverul HolyArrs, deci sunt oprite.",
 	"settings.tmdb.keysTitle": "Cheile tale",
 	"settings.tmdb.keysDesc": "Este nevoie doar de tokenul de citire TMDB",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

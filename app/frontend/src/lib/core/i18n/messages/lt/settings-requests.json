@@ -33,10 +33,10 @@
 	"settings.requests.plexEveryone": "Įjungti visiems, kurie prisijungia per Plex",
 	"settings.requests.plexEveryoneHint": "Kiekvienas gali tai išjungti sau skiltyje Mano paskyra.",
 	"settings.requests.plexFriends": "Įtraukti Plex draugus",
-	"settings.requests.plexFriendsHint": "Draugai, kuriuos importavote iš Plex. Skaitoma jūsų Plex nuoroda; taikomi kiekvieno draugo Limitai.",
+	"settings.requests.plexFriendsHint": "Draugai, kuriuos importavote iš Plex. Jų stebėjimo sąrašai skaitomi per jūsų Plex nuorodą, ir taikomi kiekvieno draugo Limitai.",
 	"settings.requests.plexFriendsNoLink": "Pirmiausia susiekite Plex Nustatymai › Prisijungimas.",
 	"settings.requests.plexFriendsNone": "Iš Plex dar niekas neimportuotas.",
-	"settings.requests.plexFriendsRead": "Skaityta {when}",
-	"settings.requests.plexFriendsNotYet": "Dar neskaityta",
-	"settings.requests.plexFriendsAsked": "Paprašyta: {n}"
+	"settings.requests.plexFriendsRead": "Stebėjimo sąrašas patikrintas {when}",
+	"settings.requests.plexFriendsNotYet": "Stebėjimo sąrašas dar nepatikrintas",
+	"settings.requests.plexFriendsAsked": "Užsakymai: {n}"
 }

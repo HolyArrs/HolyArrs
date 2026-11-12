@@ -349,7 +349,7 @@
 	"library.stats.firstText": "पहली बार पढ़ना 30 मिनट के अंदर होगा।",
 	"library.stats.watchedHelp": "Plex, Jellyfin और Emby के प्ले इतिहास से। Plex सिर्फ़ प्ले गिनता है, इसलिए हाथ से देखा हुआ चिह्नित टाइटल नहीं दिखते।",
 	"library.stats.lastRead": "आख़िरी बार पढ़ा {ago}।",
-	"library.stats.noMatch": "आख़िरी बार पढ़ा {ago}। देखी गई कोई भी चीज़ अभी आपकी लाइब्रेरी से मेल नहीं खाती।",
+	"library.stats.noMatch": "देखने का इतिहास जाँचा गया {ago}। देखी गई कोई भी चीज़ अभी आपकी लाइब्रेरी से मेल नहीं खाती।",
 	"library.stats.notLinked": "जुड़ा नहीं",
 	"library.stats.lastWatched": "आख़िरी बार देखा {ago}",
 	"library.stats.unit.movie.one": "{n} फ़िल्म",
