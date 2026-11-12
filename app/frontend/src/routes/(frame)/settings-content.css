@@ -118,7 +118,8 @@
 	grid-template-columns: minmax(0, 1fr);
 	gap: 0;
 }
-@media (min-width: 761px) {
+/* The pane's own width decides (not the window's): with the settings sidebar open a wide window can still leave a narrow pane, so label and control only sit side by side when the pane has room for both; otherwise they stack. */
+@container settings (min-width: 600px) {
 	.settings-content :is(.ui-settings, .card) .field {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) minmax(0, 300px);

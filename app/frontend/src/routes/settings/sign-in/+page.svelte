@@ -549,13 +549,11 @@
 		margin: 0;
 		display: grid;
 		gap: var(--s-3);
-		max-width: 520px;
 	}
 	.nets {
 		display: grid;
 		gap: var(--s-3);
 		margin-top: var(--s-3);
-		max-width: 520px;
 	}
 	.way :global(button),
 	.nets :global(button),

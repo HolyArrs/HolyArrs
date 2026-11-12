@@ -373,7 +373,7 @@
 	.fl-group h3 .cnt { padding: 3px 8px; border-radius: var(--r-pill); background: var(--surface-2); font-size: 11px; font-variant-numeric: tabular-nums; }
 	.kind { display: none; }
 
-	@media (max-width: 760px) {
+	@container settings (max-width: 640px) {
 		.folder { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic grow grow' 'ic st st' 'ic free acts'; row-gap: 6px; }
 		.folder .ic { grid-area: ic; align-self: start; } .folder .grow { grid-area: grow; } .folder .st { grid-area: st; justify-self: start; white-space: normal; line-height: 1.3; }
 		.folder .free { grid-area: free; justify-content: flex-start; } .folder .acts { grid-area: acts; justify-self: end; opacity: 1 !important; }
@@ -384,10 +384,10 @@
 	/* The folder mark: a plain line icon, no tile. */
 	.fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto auto auto; }
 	.ic, .k-show .ic, .k-music .ic { width: 24px; height: 24px; background: none; box-shadow: none; border-radius: 0; color: color-mix(in srgb, var(--text) 55%, transparent); }
-	@media (max-width: 760px) { .fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto; } }
+	@container settings (max-width: 640px) { .fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto; } }
 	/* Phones: the buttons take their own line at the row's end (change path, then remove, last), so a long Rename label cannot squeeze the name. */
 	/* The state takes its own line too, so a long state never squeezes the name. */
-	@media (max-width: 480px) {
+	@container settings (max-width: 440px) {
 		.folder { grid-template-areas: 'ic grow grow' 'ic st st' 'ic free free' 'ic acts acts'; }
 		.folder .st { justify-self: start; white-space: normal; line-height: 1.3; }
 		.folder .acts { justify-self: end; flex-wrap: wrap; justify-content: flex-end; margin-inline-end: -8px; }
