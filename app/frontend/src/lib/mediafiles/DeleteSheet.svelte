@@ -123,7 +123,7 @@
 	.ds-actions { display: flex; justify-content: flex-end; gap: 8px; }
 	.ds-btn { height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
 	.ds-btn.danger { background: var(--accent-fill); color: var(--text-on-red); }
-	.ds-btn:disabled { opacity: .45; cursor: default; }
+	.ds-btn:disabled { opacity: var(--disabled-opacity); cursor: default; }
 	@media (max-width: 600px) { .ds-actions .ds-btn { flex: 1; } }
 	@media (prefers-reduced-motion: reduce) { .ds-skel { animation: none; } }
 </style>
