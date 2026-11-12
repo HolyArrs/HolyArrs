@@ -3732,6 +3732,17 @@
         ],
         "type": "object"
       },
+      "MyViews": {
+        "additionalProperties": {
+          "description": "Short JSON, up to 256 bytes; the page checks it when it reads it."
+        },
+        "description": "The view picks saved on my account, by name: library.view.all, library.view.movie, library.view.show and library.view.artist (rows, posters, overview or table), calendar.view (cards or list) and calendar.follows (mine, everyone or library). A name never picked is left out.",
+        "example": {
+          "calendar.follows": "everyone",
+          "library.view.movie": "posters"
+        },
+        "type": "object"
+      },
       "NamingSettings": {
         "description": "Naming settings. On PUT and on the example, fields left out keep their saved value; empty show and music patterns take their default.",
         "properties": {
@@ -7181,6 +7192,9 @@
           "rating_country": {
             "description": "The country whose ratings apply; US for now.",
             "type": "string"
+          },
+          "views": {
+            "$ref": "#/components/schemas/MyViews"
           }
         },
         "type": "object"
@@ -21548,6 +21562,74 @@
         "summary": "Set my display name",
         "tags": [
           "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/my/views": {
+      "get": {
+        "description": "The Library and Calendar views I picked last, kept on my account so every device opens on them. The same picks come with Who am I.",
+        "operationId": "getMyViews",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyViews"
+                }
+              }
+            },
+            "description": "My saved views."
+          }
+        },
+        "summary": "My saved views",
+        "tags": [
+          "My account"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Saves the picks in the body; names left out keep their value and null forgets a pick. An unknown name or a value over 256 bytes is skipped, never refused. When I pick on two devices, the last pick wins.",
+        "operationId": "putMyViews",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyViews"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyViews"
+                }
+              }
+            },
+            "description": "Saved; every pick on my account now."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The body is not a JSON object."
+          }
+        },
+        "summary": "Save my views",
+        "tags": [
+          "My account"
         ],
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "signed_in",

@@ -96,6 +96,7 @@ var tableOwner = map[string]string{
 	"explore_category_counts": "accounts",
 	"explore_title_counts":    "accounts",
 	"explore_prefs":           "accounts",
+	"user_views":              "accounts",
 
 	// metadata
 	"lookup_cache":   "metadata",

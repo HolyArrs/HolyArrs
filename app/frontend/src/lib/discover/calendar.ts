@@ -2,6 +2,7 @@
 import type { CalendarEntry, TitleView } from '../core/types.ts';
 import { episodeCode as code } from '../core/episodes.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { views } from '#lib/core/views.svelte.ts';
 
 /** Which titles the calendar shows. */
 export type TitlesShown = 'all' | 'movies' | 'shows' | 'music';
@@ -182,8 +183,9 @@ export function viewFromAddress(v: string | null | undefined): CalendarView | nu
 	return null;
 }
 
-/** The view picked earlier in this session, if any. */
-export function readView(store: Pick<Storage, 'getItem'> | undefined = globalThis.sessionStorage): CalendarView | null {
+/** The view picked earlier: the one saved to the account, else this tab's, if any. */
+export function readView(store: Pick<Storage, 'getItem'> | undefined = globalThis.sessionStorage, saved: unknown = views.get('calendar.view')): CalendarView | null {
+	if (saved === 'cards' || saved === 'list') return saved;
 	try {
 		const v = store?.getItem(viewKey);
 		return v === 'cards' || v === 'list' ? v : null;
@@ -290,8 +292,9 @@ export function withFollow<T extends CalendarEntry>(e: T, on: boolean, me: { nam
 
 const followsKey = 'holyarrs.calendar-follows';
 
-/** The Follows choice picked earlier in this session, if any. */
-export function readFollows(store: Pick<Storage, 'getItem'> | undefined = globalThis.sessionStorage): Follows | null {
+/** The Follows choice picked earlier: the one saved to the account, else this tab's, if any. */
+export function readFollows(store: Pick<Storage, 'getItem'> | undefined = globalThis.sessionStorage, saved: unknown = views.get('calendar.follows')): Follows | null {
+	if (saved === 'mine' || saved === 'everyone' || saved === 'library') return saved;
 	try {
 		const v = store?.getItem(followsKey);
 		return v === 'mine' || v === 'everyone' || v === 'library' ? v : null;

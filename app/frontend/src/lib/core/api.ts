@@ -23,6 +23,8 @@ export interface RequestOptions {
 	body?: unknown;
 	raw?: BodyInit;
 	signal?: AbortSignal;
+	/** Lets a small write finish even when the page is closed or reloaded right after it. */
+	keepalive?: boolean;
 }
 
 type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
@@ -118,7 +120,7 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 		if (method !== 'GET' && csrf) headers['X-CSRF-Token'] = csrf;
 		const url = to('/api/v1' + (fresh && method === 'GET' && BROWSING.test(path) ? `${path}${path.includes('?') ? '&' : '?'}fresh=${fresh}` : path));
 		const ahead = method === 'GET' && body === undefined ? takeEarly(url) : undefined;
-		const ask = () => fetchFn(url, { method, headers, body, signal: opts.signal, credentials: 'same-origin' });
+		const ask = () => fetchFn(url, { method, headers, body, signal: opts.signal, credentials: 'same-origin', ...(opts.keepalive ? { keepalive: true } : {}) });
 		let res: Response;
 		try {
 			res = ahead ? await ahead.catch(ask) : await ask();
