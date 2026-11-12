@@ -1,6 +1,7 @@
 package downloads
 
 import (
+	"cmp"
 	"context"
 	"database/sql"
 	"fmt"
@@ -351,14 +352,23 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	// One read per related table for the whole page (no read per row).
 	names := a.downloaderNames(ctx)
-	relIDs, slotIDs := []int64{}, []int64{}
+	relIDs, slotIDs, doneIDs := []int64{}, []int64{}, []int64{}
 	for _, d := range ds {
 		if d.ReleaseID != nil {
 			relIDs = append(relIDs, *d.ReleaseID)
 		}
 		slotIDs = append(slotIDs, d.SlotIDs...)
+		if d.State == "finished" {
+			doneIDs = append(doneIDs, d.ID)
+		}
 	}
 	rels := releaseNames(ctx, db, relIDs)
+	// A finished download whose own import was refused says so, whatever its
+	// Slot did next (kept the copy it had, or looks for another).
+	var refused map[int64]bool
+	if len(doneIDs) > 0 {
+		refused, _ = mediafiles.RefusedDownloads(ctx, db, doneIDs)
+	}
 	slots := slotInfos(ctx, db, slotIDs)
 	waits := clearWaits(ctx, db)
 	rows := make([]DownloadRow, 0, len(ds))
@@ -419,6 +429,16 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 			row.Covers = Covers(row.Episodes)
 			row.Phase = phaseOfMany(d, row.Episodes)
 		}
+		if refused[d.ID] {
+			row.Phase = "import_refused"
+		}
+		// Its Release is gone (deleting a Source deletes its Releases): name
+		// it by what the Downloader held, else its Title, not by a hash.
+		if row.Name == d.ExternalID {
+			if n := cmp.Or(seenName(d.FilesSeen), row.Title); n != "" {
+				row.Name = n
+			}
+		}
 		row.Label = PhaseLabels[row.Phase]
 		row.CanAct = row.Active && manage
 		row.ClientLocked = ReadOnlyFor(n)
@@ -437,6 +457,9 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 			row.Text = "The import could not finish on its own; see Needs a decision."
 		case "import_refused":
 			row.Text = "The files were not what the name said; HolyArrs looks for another copy."
+			if row.SlotState == string(mediafiles.SlotInLibrary) {
+				row.Text = "The files were not what the name said; the copy already in the library stays."
+			}
 		case "done":
 			row.Text = "In the library."
 		}
@@ -582,11 +605,12 @@ func viewTotals(sets ...[]DownloadRow) DownloadTotals {
 const OutsideCap = 200
 
 // outsideMax is the most outside rows one view answer carries (the page asks
-// for 2,000 at a time and more as the list scrolls).
-const outsideMax = 20000
+// for 2,000 at a time and more as the list scrolls). It keeps one answer to a
+// few megabytes; the rest are counted, and reached with the cursor.
+const outsideMax = 5000
 
-// outsideLimit is the page size for outside rows (?outside_limit=, 1-20000;
-// more is held at 20000, so Show more past it never drops back to the first 200).
+// outsideLimit is the page size for outside rows (?outside_limit=, 1-5000;
+// more is held at 5000, so asking past it never drops back to the first 200).
 func outsideLimit(r *http.Request) int {
 	n, err := strconv.Atoi(r.URL.Query().Get("outside_limit"))
 	if err != nil || n <= 0 {

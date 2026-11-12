@@ -18,6 +18,7 @@ type nzbAll struct {
 	groups  []map[string]any
 	history []map[string]any
 	rate    int64
+	paused  bool // the whole download queue is paused
 	calls   []string
 	edits   [][]any
 }
@@ -38,7 +39,7 @@ func (f *nzbAll) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "history":
 		result = f.history
 	case "status":
-		result = map[string]any{"DownloadRateLo": f.rate, "DownloadRateHi": 0, "PostJobCount": 0}
+		result = map[string]any{"DownloadRateLo": f.rate, "DownloadRateHi": 0, "PostJobCount": 0, "DownloadPaused": f.paused}
 	case "listfiles":
 		result = []map[string]any{}
 	case "editqueue":
@@ -98,6 +99,37 @@ func TestNZBGetQueueAndHistoryListEveryJob(t *testing.T) {
 	st, err := n.Status(ctx)
 	if err != nil || st.Speed != 2<<20 || st.TimeLeft != q.Head.TimeLeft {
 		t.Fatalf("status %v %+v", err, st)
+	}
+}
+
+// A whole-queue pause in NZBGet leaves each job QUEUED or DOWNLOADING; the
+// jobs it holds read as paused, while repair and unpack go on.
+func TestNZBGetWholeQueuePauseReadsAsPaused(t *testing.T) {
+	f, n := nzbAllRig(t)
+	f.paused, f.rate = true, 0
+	ctx := context.Background()
+	q, err := n.Queue(ctx)
+	if err != nil || !q.Head.Paused {
+		t.Fatalf("queue %v head %+v", err, q.Head)
+	}
+	by := map[string]Job{}
+	for _, j := range q.Jobs {
+		by[j.ID] = j
+	}
+	if by["nzbid-11"].State != StatePaused || by[ownMarker].State != StatePaused || by["nzbid-12"].State != StatePaused {
+		t.Fatalf("held jobs %+v %+v %+v", by["nzbid-11"], by[ownMarker], by["nzbid-12"])
+	}
+	if by["nzbid-13"].State != StateDownloading {
+		t.Fatalf("a repair is not held: %+v", by["nzbid-13"])
+	}
+	n.Category = "movies"
+	list, err := n.List(ctx, "movies")
+	if err != nil || len(list) != 1 || list[0].State != StatePaused {
+		t.Fatalf("list %v %+v", err, list)
+	}
+	f.paused = false
+	if list, err := n.List(ctx, "movies"); err != nil || len(list) != 1 || list[0].State != StateQueued {
+		t.Fatalf("resumed list %v %+v", err, list)
 	}
 }
 

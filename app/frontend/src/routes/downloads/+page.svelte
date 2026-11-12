@@ -42,8 +42,8 @@
 	let moreOutside = $state(false);
 	// Torrents HolyArrs did not add that this page has not loaded, per Downloader and stage: the tabs count them too.
 	let outsideRest = $state<Rest>({});
-	// The most torrents the server sends that it did not add.
-	const outsideMax = 20000;
+	// The most torrents the server sends that it did not add (outsideMax in routes_downloads.go); the tabs still count the rest.
+	const outsideMax = 5000;
 	const clientNotes = $derived(
 		clientHealth
 			.filter((c) => c.health !== 'ok')

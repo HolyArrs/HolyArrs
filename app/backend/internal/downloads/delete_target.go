@@ -50,10 +50,8 @@ func safeDeleteTarget(a deleteAsk, keep []string) (filesTarget, string) {
 		// A name holding this system's own separator would point elsewhere here.
 		return filesTarget{}, local + " is not named like the torrent here"
 	}
-	for _, k := range keep {
-		if k = strings.TrimSpace(k); k != "" && (underAny(local, []string{k}) || underAny(filepath.Clean(k), []string{local})) {
-			return filesTarget{}, local + " is a Library folder or holds one"
-		}
+	if nearLibrary(local, keep) {
+		return filesTarget{}, local + " is a Library folder or holds one"
 	}
 	roots := []string{}
 	if a.saveRoot != "" {
@@ -88,6 +86,17 @@ func safeDeleteTarget(a deleteAsk, keep []string) (filesTarget, string) {
 		return filesTarget{root: root, rel: rel}, ""
 	}
 	return filesTarget{}, "they are at " + content + " on the " + a.client + " machine, outside HolyArrs's save folder and path pairs; add a path pair to reach them, or delete them by hand"
+}
+
+// nearLibrary reports whether local is in a Library folder or holds one, so
+// HolyArrs never deletes it.
+func nearLibrary(local string, keep []string) bool {
+	for _, k := range keep {
+		if k = strings.TrimSpace(k); k != "" && (underAny(local, []string{k}) || underAny(filepath.Clean(k), []string{local})) {
+			return true
+		}
+	}
+	return false
 }
 
 // remove deletes the target without leaving its root. It says why on failure.
