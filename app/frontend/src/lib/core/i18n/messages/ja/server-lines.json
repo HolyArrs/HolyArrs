@@ -1201,5 +1201,8 @@
 	"server.discover.new-episode-sun": "新しいエピソード · 日",
 	"server.library.is-not-at-the-new-path": "{name} が新しいパスにありません",
 	"server.library.bytes-at-the-new-path-but": "{name} は新しいパスでは {got} バイトですが、ライブラリでは {want} バイトです",
-	"server.library.files-in-this-library-folder-changed": "新しいパスの確認中にこのライブラリフォルダーのファイルが変わりました。もう一度お試しください"
+	"server.library.files-in-this-library-folder-changed": "新しいパスの確認中にこのライブラリフォルダーのファイルが変わりました。もう一度お試しください",
+	"server.library.the-folder-does-not-exist": "フォルダーが存在しません",
+	"server.library.the-path-must-be-an-absolute": "パスはフォルダーの絶対パスにしてください。ドライブ全体や、設定フォルダーの中やその周りは使えません",
+	"server.library.that-folder-or-one-inside-or": "このフォルダー、またはその中や周りのフォルダーは、すでにライブラリフォルダーです"
 }

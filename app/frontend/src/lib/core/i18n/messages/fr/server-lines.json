@@ -1201,5 +1201,8 @@
 	"server.discover.new-episode-sun": "Nouvel épisode · dim.",
 	"server.library.is-not-at-the-new-path": "{name} n’est pas au nouveau chemin",
 	"server.library.bytes-at-the-new-path-but": "{name} fait {got} octets au nouveau chemin, mais {want} octets dans la Bibliothèque",
-	"server.library.files-in-this-library-folder-changed": "des fichiers de ce dossier de la Bibliothèque ont changé pendant la vérification du nouveau chemin ; réessayez"
+	"server.library.files-in-this-library-folder-changed": "des fichiers de ce dossier de la Bibliothèque ont changé pendant la vérification du nouveau chemin ; réessayez",
+	"server.library.the-folder-does-not-exist": "le dossier n’existe pas",
+	"server.library.the-path-must-be-an-absolute": "le chemin doit être un chemin de dossier absolu, pas un disque entier, ni dans ou autour du dossier de configuration",
+	"server.library.that-folder-or-one-inside-or": "ce dossier, ou un dossier dedans ou autour, est déjà un dossier de bibliothèque"
 }

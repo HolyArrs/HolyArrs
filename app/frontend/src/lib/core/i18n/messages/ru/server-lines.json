@@ -1201,5 +1201,8 @@
 	"server.discover.new-episode-sun": "Новая серия · вс",
 	"server.library.is-not-at-the-new-path": "{name} нет по новому пути",
 	"server.library.bytes-at-the-new-path-but": "{name}: {got} байт по новому пути, но {want} байт в Библиотеке",
-	"server.library.files-in-this-library-folder-changed": "файлы в этой папке Библиотеки изменились во время проверки нового пути; попробуйте ещё раз"
+	"server.library.files-in-this-library-folder-changed": "файлы в этой папке Библиотеки изменились во время проверки нового пути; попробуйте ещё раз",
+	"server.library.the-folder-does-not-exist": "папка не существует",
+	"server.library.the-path-must-be-an-absolute": "путь должен быть полным путём к папке, не целым диском и не внутри или вокруг папки настроек",
+	"server.library.that-folder-or-one-inside-or": "эта папка, или папка внутри или вокруг неё, уже папка Медиатеки"
 }

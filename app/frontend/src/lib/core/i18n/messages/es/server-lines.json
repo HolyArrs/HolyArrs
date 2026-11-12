@@ -1201,5 +1201,8 @@
 	"server.discover.new-episode-sun": "Episodio nuevo · dom",
 	"server.library.is-not-at-the-new-path": "{name} no está en la ruta nueva",
 	"server.library.bytes-at-the-new-path-but": "{name} tiene {got} bytes en la ruta nueva, pero {want} bytes en la Biblioteca",
-	"server.library.files-in-this-library-folder-changed": "los archivos de esta carpeta de la Biblioteca cambiaron mientras se comprobaba la ruta nueva; inténtalo de nuevo"
+	"server.library.files-in-this-library-folder-changed": "los archivos de esta carpeta de la Biblioteca cambiaron mientras se comprobaba la ruta nueva; inténtalo de nuevo",
+	"server.library.the-folder-does-not-exist": "la carpeta no existe",
+	"server.library.the-path-must-be-an-absolute": "la ruta debe ser una ruta de carpeta absoluta, no una unidad entera ni dentro o alrededor de la carpeta de configuración",
+	"server.library.that-folder-or-one-inside-or": "esa carpeta, o una dentro o alrededor de ella, ya es una carpeta de la Biblioteca"
 }

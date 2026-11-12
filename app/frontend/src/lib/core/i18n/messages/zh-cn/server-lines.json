@@ -1201,5 +1201,8 @@
 	"server.discover.new-episode-sun": "新单集 · 周日",
 	"server.library.is-not-at-the-new-path": "{name} 不在新路径下",
 	"server.library.bytes-at-the-new-path-but": "{name} 在新路径下为 {got} 字节，但在媒体库中为 {want} 字节",
-	"server.library.files-in-this-library-folder-changed": "检查新路径时，此媒体库文件夹中的文件发生了变化；请重试"
+	"server.library.files-in-this-library-folder-changed": "检查新路径时，此媒体库文件夹中的文件发生了变化；请重试",
+	"server.library.the-folder-does-not-exist": "文件夹不存在",
+	"server.library.the-path-must-be-an-absolute": "路径必须是文件夹的绝对路径，不能是整个磁盘，也不能在配置文件夹之内或周围",
+	"server.library.that-folder-or-one-inside-or": "这个文件夹，或其中或周围的文件夹，已是媒体库文件夹"
 }

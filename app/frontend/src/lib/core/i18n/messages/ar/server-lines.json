@@ -1201,5 +1201,8 @@
 	"server.discover.new-episode-sun": "حلقة جديدة · الأحد",
 	"server.library.is-not-at-the-new-path": "{name} غير موجود في المسار الجديد",
 	"server.library.bytes-at-the-new-path-but": "حجم {name} في المسار الجديد {got} بايت، لكنه {want} بايت في المكتبة",
-	"server.library.files-in-this-library-folder-changed": "تغيّرت ملفات في مجلد المكتبة هذا أثناء فحص المسار الجديد؛ حاول مرة أخرى"
+	"server.library.files-in-this-library-folder-changed": "تغيّرت ملفات في مجلد المكتبة هذا أثناء فحص المسار الجديد؛ حاول مرة أخرى",
+	"server.library.the-folder-does-not-exist": "المجلد غير موجود",
+	"server.library.the-path-must-be-an-absolute": "يجب أن يكون المسار مسار مجلد كاملًا، لا قرصًا كاملًا، ولا داخل مجلد الإعدادات أو حوله",
+	"server.library.that-folder-or-one-inside-or": "هذا المجلد، أو مجلد داخله أو حوله، هو مجلد مكتبة بالفعل"
 }

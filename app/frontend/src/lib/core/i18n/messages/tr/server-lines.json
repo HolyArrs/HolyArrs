@@ -1201,5 +1201,8 @@
 	"server.discover.new-episode-sun": "Yeni bölüm · Paz",
 	"server.library.is-not-at-the-new-path": "{name} yeni yolda değil",
 	"server.library.bytes-at-the-new-path-but": "{name} yeni yolda {got} bayt, ama Kitaplıkta {want} bayt",
-	"server.library.files-in-this-library-folder-changed": "yeni yol kontrol edilirken bu Kitaplık klasöründeki dosyalar değişti; yeniden deneyin"
+	"server.library.files-in-this-library-folder-changed": "yeni yol kontrol edilirken bu Kitaplık klasöründeki dosyalar değişti; yeniden deneyin",
+	"server.library.the-folder-does-not-exist": "klasör yok",
+	"server.library.the-path-must-be-an-absolute": "yol mutlak bir klasör yolu olmalı; tüm bir sürücü olamaz, ayar klasörünün içinde veya çevresinde olamaz",
+	"server.library.that-folder-or-one-inside-or": "bu klasör, ya da içindeki veya çevresindeki bir klasör, zaten bir Kütüphane klasörü"
 }

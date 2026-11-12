@@ -258,7 +258,7 @@
 				{:else}
 					<div class="top"><span class="name">{f.label || f.path}</span><span class="kind" data-testid="folder-kind">{f.kind === 'show' ? t('settings.libraryFolders.forShows') : f.kind === 'music' ? t('settings.libraryFolders.forMusic') : t('settings.libraryFolders.forMovies')}</span></div>
 				{/if}
-				<div class="where">{shortPath(f.path)}</div>
+				<div class="where"><bdi dir="ltr">{shortPath(f.path)}</bdi></div>
 				{#if f.health_reason && rowTone(f) !== 'ok'}<div class="why {rowTone(f)}">{f.health_reason}</div>{/if}
 			</div>
 			<div class="free"><b>{freeNum(f.free_space)[0]}</b><small>{t('settings.libraryFolders.free', { unit: freeNum(f.free_space)[1] ?? '' })}</small></div>
@@ -274,7 +274,7 @@
 				<form class="mv" onsubmit={(e) => (e.preventDefault(), changePath(f))} aria-label={t('settings.libraryFolders.changePath')}>
 					<label for="mv-{f.id}">{t('settings.libraryFolders.newPath')}</label>
 					<div class="mv-row">
-						<input id="mv-{f.id}" class="input mono" bind:value={movePath} autocomplete="off" spellcheck="false" disabled={moveBusy} aria-describedby="mv-{f.id}-hint" />
+						<input id="mv-{f.id}" class="input mono" dir="ltr" bind:value={movePath} autocomplete="off" spellcheck="false" disabled={moveBusy} aria-describedby="mv-{f.id}-hint" />
 						<Button variant="primary" size="sm" type="submit" busy={moveBusy} disabled={moveBusy}>{moveBusy ? t('settings.libraryFolders.checkingFiles') : t('settings.libraryFolders.changePath')}</Button>
 						<Button variant="plain" size="sm" type="button" disabled={moveBusy} onclick={() => (moving = null)}>{t('settings.libraryFolders.cancel')}</Button>
 					</div>

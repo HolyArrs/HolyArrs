@@ -1201,5 +1201,8 @@
 	"server.discover.new-episode-sun": "Nuovo episodio · dom",
 	"server.library.is-not-at-the-new-path": "{name} non è nel nuovo percorso",
 	"server.library.bytes-at-the-new-path-but": "{name} è di {got} byte nel nuovo percorso, ma di {want} byte nella Libreria",
-	"server.library.files-in-this-library-folder-changed": "i file di questa cartella della Libreria sono cambiati durante il controllo del nuovo percorso; riprova"
+	"server.library.files-in-this-library-folder-changed": "i file di questa cartella della Libreria sono cambiati durante il controllo del nuovo percorso; riprova",
+	"server.library.the-folder-does-not-exist": "la cartella non esiste",
+	"server.library.the-path-must-be-an-absolute": "il percorso deve essere un percorso di cartella assoluto, non un intero disco e non dentro o attorno alla cartella di configurazione",
+	"server.library.that-folder-or-one-inside-or": "questa cartella, o una al suo interno o attorno, è già una cartella della Libreria"
 }

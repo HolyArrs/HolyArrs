@@ -1201,5 +1201,8 @@
 	"server.discover.new-episode-sun": "New episode Sun",
 	"server.library.is-not-at-the-new-path": "{name} is not at the new path",
 	"server.library.bytes-at-the-new-path-but": "{name} is {got} bytes at the new path, but {want} bytes in the Library",
-	"server.library.files-in-this-library-folder-changed": "files in this Library folder changed while the new path was checked; try again"
+	"server.library.files-in-this-library-folder-changed": "files in this Library folder changed while the new path was checked; try again",
+	"server.library.the-folder-does-not-exist": "the folder does not exist",
+	"server.library.the-path-must-be-an-absolute": "the path must be an absolute folder path, not a whole drive and not inside or around the config folder",
+	"server.library.that-folder-or-one-inside-or": "that folder, or one inside or around it, is already a Library folder"
 }

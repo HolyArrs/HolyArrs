@@ -1201,5 +1201,8 @@
 	"server.discover.new-episode-sun": "नया एपिसोड · रवि",
 	"server.library.is-not-at-the-new-path": "{name} नए पाथ पर नहीं है",
 	"server.library.bytes-at-the-new-path-but": "{name} नए पाथ पर {got} बाइट है, पर लाइब्रेरी में {want} बाइट",
-	"server.library.files-in-this-library-folder-changed": "नया पाथ जाँचते समय इस लाइब्रेरी फ़ोल्डर की फ़ाइलें बदल गईं; फिर से कोशिश करें"
+	"server.library.files-in-this-library-folder-changed": "नया पाथ जाँचते समय इस लाइब्रेरी फ़ोल्डर की फ़ाइलें बदल गईं; फिर से कोशिश करें",
+	"server.library.the-folder-does-not-exist": "फ़ोल्डर मौजूद नहीं है",
+	"server.library.the-path-must-be-an-absolute": "पाथ पूरा फ़ोल्डर पाथ होना चाहिए, पूरी ड्राइव नहीं, और कॉन्फ़िग फ़ोल्डर के अंदर या आसपास नहीं",
+	"server.library.that-folder-or-one-inside-or": "यह फ़ोल्डर, या इसके अंदर या आसपास का कोई फ़ोल्डर, पहले से लाइब्रेरी फ़ोल्डर है"
 }
