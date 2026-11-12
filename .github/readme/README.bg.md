@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> е едно самостоятелно хоствано приложение за твоите сериали, филми и музика.<br>Разглеждай като в стрийминг приложение, поискай каквото искаш, а то се грижи за останалото.</p>
 
-<p align="center"><b>Около 15 MB за изтегляне · около 140 MB RAM в покой с 10,000 заглавия · amd64, arm64, armv7</b><br><sub>Шестте приложения, които заменя, заедно са 718.2 MB.</sub></p>
+<p align="center"><b>Около 19 MB за изтегляне · около 140 MB RAM в покой с 10,000 заглавия · amd64, arm64, armv7</b><br><sub>Шестте приложения, които заменя, заедно са 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Бърз старт</a> · <a href="#why">Защо</a> · <a href="#what-it-does">Какво прави</a> · <a href="#moving">Преминаване от други приложения</a> · <a href="#manual">Ръководството</a> · <a href="#help">Помощ</a></p>
 
@@ -105,9 +105,9 @@ docker compose up -d
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **И шестте заедно** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Около 48 пъти по-малко. Компресирано изтегляне от регистъра, образи на linuxserver.io, amd64, измерено на 2026-11-08. RAM в покой, измерена с 10,000 заглавия и 55,000 филма и епизода.</sub>
+<sub>Около 37 пъти по-малко. Компресирано изтегляне от регистъра, образи на linuxserver.io, amd64, измерено на 2026-11-08. RAM в покой, измерена с 10,000 заглавия и 55,000 филма и епизода. (HolyArrs 1.1.0: 2026-11-12)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ docker compose up -d
 | | |
 |---|---|
 | 🍿 **Explore** | Разглеждай като в стрийминг приложение. Задръж курсора върху заглавие и трейлърът се пуска. |
-| 🙋 **Requests** | Цял сериал или само един сезон. Ти одобряваш или оставяш доверени хора да прескочат опашката. |
+| 🙋 **Requests** | Цял сериал или само един сезон. Ти одобряваш или оставяш доверени хора да прескочат опашката. Списъците за гледане в Plex и Pulsarr могат да станат заявки. |
 | 🎯 **Правила за избор** | Ти решаваш кое издание печели: размер, качество, език. |
-| 💬 **Субтитри** | На езиците, които избереш, запазени заедно с файла. Търсенето им онлайн идва след 1.0. |
+| 💬 **Субтитри** | На езиците, които избереш, намерени в сайтове за субтитри и запазени заедно с файла. |
 | 📅 **Calendar** | Какво излиза следващо от всичко, което следваш. |
-| 🚚 **Вземи настройките си** | От Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent и SABnzbd. Първо пробвай, после върни, ако поискаш. |
-| 🔌 **API за по-старите приложения** | Prowlarr може да продължи да изпраща Източници към HolyArrs, щом го включиш. |
-| 🗝️ **Не са нужни API ключове** | Заглавията, илюстрациите и класациите идват от сървъра за метаданни на HolyArrs. |
+| 🔔 **Alerts** | Discord, имейл, Telegram, ntfy, Gotify, Pushover или webhook. |
+| 🚚 **Вземи настройките си** | От Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent и SABnzbd. Избери какво да се пренесе и го върни по-късно, ако поискаш. |
+| 🔌 **API за по-старите приложения** | Seerr, Prowlarr, Bazarr, Unpackerr и Homepage продължават да работят, щом го включиш. |
+| 🗝️ **Не са нужни API ключове** | Заглавията, илюстрациите и класациите идват от сървъра за метаданни на HolyArrs. Работят и твои собствени ключове или сървър. |
 | 🔒 **Криптирани ключове** | Запазените пароли и ключове са заключени с главен ключ, който стои в папката ти с конфигурация. |
-| 🪶 **Мъничко** | Образ от около 15 MB, в който има само HolyArrs. |
+| 🪶 **Мъничко** | Образ от около 19 MB, в който има само HolyArrs. |
 
 <details>
 <summary><b>Виж всяка страница в движение</b></summary>
@@ -148,9 +149,9 @@ docker compose up -d
 
 ## 🤝 Работи с каквото вече ползваш
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Програми за изтегляне: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Медийни сървъри: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Програми за изтегляне: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Медийни сървъри: Plex, Jellyfin, Emby." /></picture>
 
-- **Програми за изтегляне:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Програми за изтегляне:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Медийни сървъри:** Plex, Jellyfin, Emby
 - **Източници:** всеки Torznab или Newznab индексатор, или Prowlarr или Jackett
 - **Взема настройките ти от:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -159,7 +160,7 @@ docker compose up -d
 
 ## 🚚 Вземи старите си настройки със себе си
 
-Отвори **Settings > Move from other apps**, добави адреса и API ключа на всяко старо приложение (или резервно копие като zip), избери какво да се прехвърли, пусни **Try it**, после **Move**. По-късно можеш да върнеш преместването.
+Отвори **Settings > Import from other apps**, добави адреса и API ключа на всяко старо приложение (или резервно копие като zip), избери какво да се прехвърли, после избери **Import**. По-късно можеш да върнеш импорта.
 
 | От | Какво се прехвърля |
 |---|---|
@@ -171,12 +172,11 @@ docker compose up -d
 
 HolyArrs само чете по-старите ти приложения и не променя нищо в тях, така че можеш да държиш и двете едновременно, докато му повярваш.
 
-Ключовете и паролите остават назад; въвеждаш ги отново или ги импортираш от файл. Персонализираните формати, таговете и историята не се прехвърлят. Медийните файлове никога не се местят. Стъпка по стъпка: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Ключовете и паролите остават назад; въвеждаш ги отново или ги импортираш от файл. Персонализираните формати, таговете и историята не се прехвърлят. Медийните файлове никога не се местят. Стъпка по стъпка: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Какво още не прави
 
 - **Самостоятелно изтегляне.** HolyArrs се свързва с qBittorrent, SABnzbd и другите. Не ги заменя.
-- **AI или MCP функции.** Не във 1.0.
 - **Приложения за телефон и телевизор.** Не са направени. Уеб приложението работи на телефон.
 - **Музика в Explore** още се доизгражда.
 
@@ -212,6 +212,8 @@ HolyArrs само чете по-старите ти приложения и не
 | armv7 | ✅ | По-стари 32-битови ARM платки |
 
 На NAS ли си? Виж [Unraid, Synology и други NAS устройства](https://docs.HolyArrs.com/run/platforms/).
+
+Предпочиташ собствен пакет? Експериментален пакет за Synology (`.spk`) е приложен към всяко [издание](https://github.com/HolyArrs/HolyArrs/releases). Виж [Пакет за Synology](../../docs/run/synology.md).
 
 ## Тагове на версиите
 
@@ -415,7 +417,7 @@ HolyArrs е безплатен и с отворен код под [GNU AGPL-3.0]
 
 ## Помогни да продължи
 
-HolyArrs е безплатен, но поддръжката му не е. Всяка инсталация говори със сървър за метаданни, който плащам всеки месец. Спонсорите покриват това и купуват повече часове за нещата, за които гласуваш.
+HolyArrs е безплатен, но поддръжката му не е. По подразбиране всяка инсталация говори със сървър за метаданни, който плащам всеки месец. Спонсорите покриват това и купуват повече часове за нещата, за които гласуваш.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Спонсорирай HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Гласувай на пътната карта" /></picture></a></p>
 

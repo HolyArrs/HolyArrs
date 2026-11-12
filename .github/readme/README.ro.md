@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> este o singură aplicație self-hosted pentru serialele, filmele și muzica ta.<br>Răsfoiești ca într-o aplicație de streaming, ceri ce vrei, iar restul îl face ea.</p>
 
-<p align="center"><b>Circa 15 MB de descărcat · circa 140 MB de RAM în repaus cu 10,000 de titluri · amd64, arm64, armv7</b><br><sub>Cele șase aplicații pe care le înlocuiește au împreună 718.2 MB de descărcat.</sub></p>
+<p align="center"><b>Circa 19 MB de descărcat · circa 140 MB de RAM în repaus cu 10,000 de titluri · amd64, arm64, armv7</b><br><sub>Cele șase aplicații pe care le înlocuiește au împreună 718.2 MB de descărcat.</sub></p>
 
 <p align="center"><a href="#quick-start">Pornire rapidă</a> · <a href="#why">De ce</a> · <a href="#what-it-does">Ce face</a> · <a href="#moving">Trecerea de la alte aplicații</a> · <a href="#manual">Manualul</a> · <a href="#help">Ajutor</a></p>
 
@@ -105,9 +105,9 @@ Așa că am făcut-o.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Toate șase la un loc** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>De circa 48 de ori mai mic. Descărcare comprimată din registry, imagini linuxserver.io, amd64, măsurat la 2026-11-08. RAM în repaus măsurat cu 10,000 de titluri și 55,000 de filme și episoade.</sub>
+<sub>De circa 37 de ori mai mic. Descărcare comprimată din registry, imagini linuxserver.io, amd64, măsurat la 2026-11-08. RAM în repaus măsurat cu 10,000 de titluri și 55,000 de filme și episoade. (HolyArrs 1.1.0: 2026-11-12)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Cineva cere un titlu. HolyArrs caută în Sursele tale, alege cea mai bună vari
 | | |
 |---|---|
 | 🍿 **Explore** | Răsfoiești ca într-o aplicație de streaming. Treci cu mouse-ul peste un titlu și pornește trailerul. |
-| 🙋 **Requests** | Un serial întreg sau doar un sezon. Aprobi tu, sau lași oamenii de încredere să sară peste coadă. |
+| 🙋 **Requests** | Un serial întreg sau doar un sezon. Aprobi tu, sau lași oamenii de încredere să sară peste coadă. Listele de vizionare din Plex și Pulsarr pot deveni cereri. |
 | 🎯 **Pick rules** | Tu decizi ce variantă câștigă: mărime, calitate, limbă. |
-| 💬 **Subtitrări** | În limbile pe care le alegi, păstrate împreună cu fișierul. Căutarea lor online vine după 1.0. |
+| 💬 **Subtitrări** | În limbile pe care le alegi, găsite pe site-uri de subtitrări și păstrate împreună cu fișierul. |
 | 📅 **Calendar** | Ce se difuzează în continuare pentru tot ce urmărești. |
-| 🚚 **Adu-ți configurarea cu tine** | De la Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent și SABnzbd. Încearcă întâi, anulează mai târziu. |
-| 🔌 **API pentru aplicațiile mai vechi** | Prowlarr poate să-i trimită în continuare Surse lui HolyArrs, după ce îl pornești. |
-| 🗝️ **Fără chei API** | Titlurile, imaginile și topurile vin de la serverul de metadate HolyArrs. |
+| 🔔 **Alerts** | Discord, e-mail, Telegram, ntfy, Gotify, Pushover sau un webhook. |
+| 🚚 **Adu-ți configurarea cu tine** | De la Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent și SABnzbd. Alege ce aduci, anulează mai târziu. |
+| 🔌 **API pentru aplicațiile mai vechi** | Seerr, Prowlarr, Bazarr, Unpackerr și Homepage funcționează în continuare, după ce îl pornești. |
+| 🗝️ **Fără chei API** | Titlurile, imaginile și topurile vin de la serverul de metadate HolyArrs. Merg și cheile sau serverul tău. |
 | 🔒 **Chei criptate** | Parolele și cheile salvate sunt blocate cu o cheie principală care stă în dosarul tău de configurare. |
-| 🪶 **Minuscul** | O imagine de circa 15 MB, în care nu e nimic în afară de HolyArrs. |
+| 🪶 **Minuscul** | O imagine de circa 19 MB, în care nu e nimic în afară de HolyArrs. |
 
 <details>
 <summary><b>Vezi fiecare pagină în mișcare</b></summary>
@@ -148,9 +149,9 @@ Cineva cere un titlu. HolyArrs caută în Sursele tale, alege cea mai bună vari
 
 ## 🤝 Merge cu ce rulezi deja
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Programe de descărcare: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Servere media: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Programe de descărcare: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Servere media: Plex, Jellyfin, Emby." /></picture>
 
-- **Programe de descărcare:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Programe de descărcare:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Servere media:** Plex, Jellyfin, Emby
 - **Surse:** orice indexer Torznab sau Newznab, sau Prowlarr ori Jackett
 - **Preia configurarea de la:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -159,7 +160,7 @@ Cineva cere un titlu. HolyArrs caută în Sursele tale, alege cea mai bună vari
 
 ## 🚚 Adu-ți vechea configurare cu tine
 
-Deschide **Settings > Move from other apps** (Setări > Mută din alte aplicații), adaugă adresa și cheia API ale fiecărei aplicații vechi (sau un zip de backup), alege ce vrei să treacă, rulează **Try it** (încearcă), apoi **Move** (mută). Poți anula o mutare mai târziu.
+Deschide **Settings > Import from other apps** (Setări > Importă din alte aplicații), adaugă adresa și cheia API ale fiecărei aplicații vechi (sau un zip de backup), alege ce vrei să treacă, apoi alege **Import** (importă). Poți anula un import mai târziu.
 
 | De la | Ce trece |
 |---|---|
@@ -171,12 +172,11 @@ Deschide **Settings > Move from other apps** (Setări > Mută din alte aplicați
 
 HolyArrs doar citește aplicațiile tale vechi și nu schimbă nimic în ele, așa că poți rula ambele în paralel până când ai încredere în el.
 
-Cheile și parolele rămân în urmă; le scrii din nou sau le imporți dintr-un fișier. Formatele personalizate, etichetele și istoricul nu trec. Fișierele media nu se mută niciodată. Pas cu pas: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Cheile și parolele rămân în urmă; le scrii din nou sau le imporți dintr-un fișier. Formatele personalizate, etichetele și istoricul nu trec. Fișierele media nu se mută niciodată. Pas cu pas: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Ce nu face încă
 
 - **Să descarce singur.** HolyArrs se conectează la qBittorrent, SABnzbd și la celelalte. Nu le înlocuiește.
-- **Funcții AI sau MCP.** Nu în 1.0.
 - **Aplicații pentru telefon și TV.** Nu sunt făcute. Aplicația web merge pe telefon.
 - **Muzica în Explore** încă se construiește.
 
@@ -212,6 +212,8 @@ Dacă tragi `holyarrs/holyarrs:latest`, primești imaginea potrivită pentru apa
 | armv7 | ✅ | Plăci ARM de 32 de biți mai vechi |
 
 Ai un NAS? Vezi [Unraid, Synology și alte NAS-uri](https://docs.HolyArrs.com/run/platforms/).
+
+Preferi un pachet nativ? Fiecare [versiune](https://github.com/HolyArrs/HolyArrs/releases) are atașat un pachet Synology experimental (`.spk`). Vezi [Pachet Synology](../../docs/run/synology.md).
 
 ## Etichete de versiune
 
@@ -415,7 +417,7 @@ Vrei să-l integrezi într-un produs închis? Scrie la support@HolyArrs.com pent
 
 ## Ajută-l să continue
 
-HolyArrs este gratuit, dar nu e gratuit de ținut în funcțiune. Fiecare instalare vorbește cu un server de metadate pe care îl plătesc lunar. Sponsorii acoperă asta și cumpără mai multe ore pentru lucrurile pentru care votezi.
+HolyArrs este gratuit, dar nu e gratuit de ținut în funcțiune. Implicit, fiecare instalare vorbește cu un server de metadate pe care îl plătesc lunar. Sponsorii acoperă asta și cumpără mai multe ore pentru lucrurile pentru care votezi.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Sponsorizează HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Votează pe roadmap" /></picture></a></p>
 

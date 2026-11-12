@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> 是一個自架的 App，管理你的影集、電影和音樂。<br>像串流 App 一樣瀏覽，請求你想要的作品，剩下的它來處理。</p>
 
-<p align="center"><b>下載約 15 MB · 有 10,000 部作品時閒置約用 140 MB 記憶體 · amd64、arm64、armv7</b><br><sub>它取代的那六個 App，下載量加起來是 718.2 MB。</sub></p>
+<p align="center"><b>下載約 19 MB · 有 10,000 部作品時閒置約用 140 MB 記憶體 · amd64、arm64、armv7</b><br><sub>它取代的那六個 App，下載量加起來是 718.2 MB。</sub></p>
 
 <p align="center"><a href="#quick-start">快速開始</a> · <a href="#why">為什麼</a> · <a href="#what-it-does">它能做什麼</a> · <a href="#moving">從其他 App 轉移</a> · <a href="#manual">使用手冊</a> · <a href="#help">協助</a></p>
 
@@ -105,9 +105,9 @@ docker compose up -d
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **六個加起來** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>小了約 48 倍。為壓縮後的 registry 下載大小，使用 linuxserver.io 的 image，amd64，2026-11-08 測量。閒置記憶體是在 10,000 部作品、55,000 部電影和集數的情況下測得。</sub>
+<sub>小了約 37 倍。為壓縮後的 registry 下載大小，使用 linuxserver.io 的 image，amd64，2026-11-08 測量。閒置記憶體是在 10,000 部作品、55,000 部電影和集數的情況下測得。 (HolyArrs 1.1.0: 2026-11-12)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ docker compose up -d
 | | |
 |---|---|
 | 🍿 **Explore**（探索） | 像串流 App 一樣瀏覽。游標移到作品上，預告片就會播放。 |
-| 🙋 **Requests**（請求） | 整部影集，或只要某一季。由你核准，也可以讓信任的人直接跳過排隊。 |
+| 🙋 **Requests**（請求） | 整部影集，或只要某一季。由你核准，也可以讓信任的人直接跳過排隊。Plex 和 Pulsarr 的待看清單可以變成請求。 |
 | 🎯 **Pick rules**（挑選規則） | 由你決定哪個發行版勝出：大小、品質、語言。 |
-| 💬 **字幕** | 使用你選的語言，和檔案一起保存。線上尋找字幕會在 1.0 之後推出。 |
+| 💬 **字幕** | 使用你選的語言，從字幕網站尋找，並和檔案一起保存。 |
 | 📅 **Calendar**（行事曆） | 你追蹤的所有作品接下來會播出什麼。 |
-| 🚚 **搬移你的設定** | 從 Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent 和 SABnzbd。先試跑，之後還能復原。 |
-| 🔌 **舊的 App API** | 開啟之後，Prowlarr 可以繼續把來源推送到 HolyArrs。 |
-| 🗝️ **不需要 API 金鑰** | 作品資料、圖片和排行榜都來自 HolyArrs 的 metadata 伺服器。 |
+| 🔔 **Alerts** | Discord、電子郵件、Telegram、ntfy、Gotify、Pushover 或 webhook。 |
+| 🚚 **匯入你的設定** | 從 Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent 和 SABnzbd。可以選擇要匯入的內容，之後還能復原。 |
+| 🔌 **舊的 App API** | 開啟之後，Seerr、Prowlarr、Bazarr、Unpackerr 和 Homepage 都能繼續運作。 |
+| 🗝️ **不需要 API 金鑰** | 作品資料、圖片和排行榜都來自 HolyArrs 的 metadata 伺服器。也可以用你自己的金鑰或伺服器。 |
 | 🔒 **已加密的金鑰** | 儲存的密碼和金鑰都用主金鑰鎖住，主金鑰放在你的設定資料夾裡。 |
-| 🪶 **超小** | image 約 15 MB，裡面只有 HolyArrs。 |
+| 🪶 **超小** | image 約 19 MB，裡面只有 HolyArrs。 |
 
 <details>
 <summary><b>看看每個頁面的動態畫面</b></summary>
@@ -148,18 +149,18 @@ docker compose up -d
 
 ## 🤝 它能搭配你已經在用的東西
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="下載器：qBittorrent、Transmission、Deluge、SABnzbd、NZBGet。媒體伺服器：Plex、Jellyfin、Emby。" /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="下載器：qBittorrent、Transmission、Deluge、rTorrent、aria2、SABnzbd、NZBGet。媒體伺服器：Plex、Jellyfin、Emby。" /></picture>
 
-- **下載器：** qBittorrent、Transmission、Deluge、rTorrent、SABnzbd、NZBGet
+- **下載器：** qBittorrent、Transmission、Deluge、rTorrent、aria2、SABnzbd、NZBGet
 - **媒體伺服器：** Plex、Jellyfin、Emby
 - **來源：** 任何 Torznab 或 Newznab 索引器，或是 Prowlarr、Jackett
-- **可以從這些搬移設定：** Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd
+- **可以從這些匯入設定：** Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd
 
 <a id="moving"></a>
 
 ## 🚚 把舊的設定帶過來
 
-開啟 **Settings > Move from other apps**（設定 > 從其他 App 搬移），加入每個舊 App 的位址和 API 金鑰（或備份 zip），選好要帶過來的項目，先按 **Try it**（試跑），再按 **Move**（搬移）。之後也可以復原搬移。
+開啟 **Settings > Import from other apps**（設定 > 從其他應用程式匯入），加入每個舊 App 的位址和 API 金鑰（或備份 zip），選好要帶過來的項目，再按 **Import**（匯入）。之後也可以復原匯入。
 
 | 來源 | 會帶過來的內容 |
 |---|---|
@@ -171,12 +172,11 @@ docker compose up -d
 
 HolyArrs 只會讀取你的舊 App，不會變更裡面任何東西，所以你可以讓兩邊並行運作，等到你信任它為止。
 
-金鑰和密碼不會帶過來，你要重新輸入，或從檔案匯入。自訂格式、tag 和歷史記錄不會帶過來。媒體檔案絕不會移動。逐步說明：[Move from other apps](https://docs.HolyArrs.com/migrate/)。
+金鑰和密碼不會帶過來，你要重新輸入，或從檔案匯入。自訂格式、tag 和歷史記錄不會帶過來。媒體檔案絕不會移動。逐步說明：[Import from other apps](https://docs.HolyArrs.com/migrate/)。
 
 ## 🧭 目前還做不到的事
 
 - **自己下載。** HolyArrs 是連到 qBittorrent、SABnzbd 和其他下載器，並不取代它們。
-- **AI 或 MCP 功能。** 1.0 沒有。
 - **手機和電視 App。** 還沒做。Web App 可以在手機上使用。
 - **探索頁裡的音樂**還在開發中。
 
@@ -212,6 +212,8 @@ HolyArrs 只會讀取你的舊 App，不會變更裡面任何東西，所以你�
 | armv7 | ✅ | 較舊的 32 位元 ARM 開發板 |
 
 用的是 NAS？請看 [Unraid、Synology 和其他 NAS](https://docs.HolyArrs.com/run/platforms/)。
+
+想要原生套件？每個[版本](https://github.com/HolyArrs/HolyArrs/releases)都附有實驗性的 Synology 套件（`.spk`）。請見 [Synology 套件](../../docs/run/synology.md)。
 
 ## 版本 tag
 
@@ -415,7 +417,7 @@ HolyArrs 以 [GNU AGPL-3.0](../../LICENSE) 免費開源。
 
 ## 讓它持續下去
 
-HolyArrs 是免費的，但運作並不免費。每個安裝都會連到一台 metadata 伺服器，那是我每個月自己付費的。贊助者支付這筆費用，也為你投票支持的功能買到更多開發時數。
+HolyArrs 是免費的，但運作並不免費。預設情況下，每個安裝都會連到一台 metadata 伺服器，那是我每個月自己付費的。贊助者支付這筆費用，也為你投票支持的功能買到更多開發時數。
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="贊助 HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="為發展藍圖投票" /></picture></a></p>
 

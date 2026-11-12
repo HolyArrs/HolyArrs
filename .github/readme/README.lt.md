@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> yra viena savarankiškai talpinama programa tavo serialams, filmams ir muzikai.<br>Naršyk kaip streaming programoje, paprašyk to, ko nori, o visa kita ji padarys pati.</p>
 
-<p align="center"><b>Apie 15 MB atsisiuntimas · apie 140 MB RAM be apkrovos su 10,000 pavadinimų · amd64, arm64, armv7</b><br><sub>Šešios programos, kurias ji pakeičia, kartu atsisiunčiamos 718.2 MB.</sub></p>
+<p align="center"><b>Apie 19 MB atsisiuntimas · apie 140 MB RAM be apkrovos su 10,000 pavadinimų · amd64, arm64, armv7</b><br><sub>Šešios programos, kurias ji pakeičia, kartu atsisiunčiamos 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Greitas startas</a> · <a href="#why">Kodėl</a> · <a href="#what-it-does">Ką ji daro</a> · <a href="#moving">Perėjimas iš kitų programų</a> · <a href="#manual">Vadovas</a> · <a href="#help">Pagalba</a></p>
 
@@ -105,9 +105,9 @@ Taigi ją sukūriau.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Visos šešios kartu** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Apie 48 kartus mažiau. Suspaustas atsisiuntimas iš registry, linuxserver.io image, amd64, išmatuota 2026-11-08. RAM be apkrovos išmatuota su 10,000 pavadinimų ir 55,000 filmų bei serijų.</sub>
+<sub>Apie 37 kartus mažiau. Suspaustas atsisiuntimas iš registry, linuxserver.io image, amd64, išmatuota 2026-11-08. RAM be apkrovos išmatuota su 10,000 pavadinimų ir 55,000 filmų bei serijų. (HolyArrs 1.1.0: 2026-11-12)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Kažkas paprašo pavadinimo. HolyArrs ieško tavo šaltiniuose, pagal tavo parin
 | | |
 |---|---|
 | 🍿 **Explore** | Naršyk kaip streaming programoje. Užvesk žymeklį ant pavadinimo, ir pradedamas rodyti anonsas. |
-| 🙋 **Requests** | Visas serialas arba vienas sezonas. Tu patvirtini arba leidi patikimiems žmonėms aplenkti eilę. |
+| 🙋 **Requests** | Visas serialas arba vienas sezonas. Tu patvirtini arba leidi patikimiems žmonėms aplenkti eilę. Plex ir Pulsarr žiūrėjimo sąrašai gali tapti užklausomis. |
 | 🎯 **Pick rules** | Tu nusprendi, kuris release laimi: dydis, kokybė, kalba. |
-| 💬 **Subtitrai** | Tavo pasirinktomis kalbomis, saugomi kartu su failu. Paieška internete bus po 1.0. |
+| 💬 **Subtitrai** | Tavo pasirinktomis kalbomis, randami subtitrų svetainėse ir saugomi kartu su failu. |
 | 📅 **Calendar** | Kas rodoma toliau iš visko, ką seki. |
-| 🚚 **Perkelk savo sąranką** | Iš Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent ir SABnzbd. Pirma išbandyk, vėliau atšauk. |
-| 🔌 **Ankstesnių programų API** | Prowlarr gali toliau siųsti šaltinius į HolyArrs, kai tai įjungi. |
-| 🗝️ **API raktų nereikia** | Pavadinimai, iliustracijos ir topai ateina iš HolyArrs metaduomenų serverio. |
+| 🔔 **Alerts** | Discord, el. paštas, Telegram, ntfy, Gotify, Pushover arba webhook. |
+| 🚚 **Importuok savo sąranką** | Iš Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent ir SABnzbd. Pasirink, ką perkelti, vėliau atšauk. |
+| 🔌 **Ankstesnių programų API** | Seerr, Prowlarr, Bazarr, Unpackerr ir Homepage toliau veikia, kai tai įjungi. |
+| 🗝️ **API raktų nereikia** | Pavadinimai, iliustracijos ir topai ateina iš HolyArrs metaduomenų serverio. Tinka ir tavo paties raktai ar serveris. |
 | 🔒 **Užšifruoti raktai** | Išsaugoti slaptažodžiai ir raktai užrakinami pagrindiniu raktu, kuris yra tavo konfigūracijos aplanke. |
-| 🪶 **Mažytė** | Apie 15 MB image, kuriame nėra nieko, tik HolyArrs. |
+| 🪶 **Mažytė** | Apie 19 MB image, kuriame nėra nieko, tik HolyArrs. |
 
 <details>
 <summary><b>Pamatyti kiekvieną puslapį judesyje</b></summary>
@@ -148,9 +149,9 @@ Kažkas paprašo pavadinimo. HolyArrs ieško tavo šaltiniuose, pagal tavo parin
 
 ## 🤝 Ji dirba su tuo, ką jau naudoji
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Atsisiuntimo programos: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Medijos serveriai: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Atsisiuntimo programos: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Medijos serveriai: Plex, Jellyfin, Emby." /></picture>
 
-- **Atsisiuntimo programos:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Atsisiuntimo programos:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Medijos serveriai:** Plex, Jellyfin, Emby
 - **Šaltiniai:** bet kuris Torznab arba Newznab indeksuotojas, arba Prowlarr ar Jackett
 - **Perima tavo sąranką iš:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -159,7 +160,7 @@ Kažkas paprašo pavadinimo. HolyArrs ieško tavo šaltiniuose, pagal tavo parin
 
 ## 🚚 Pasiimk savo seną sąranką su savimi
 
-Atidaryk **Settings > Move from other apps**, pridėk kiekvienos senos programos adresą ir API raktą (arba atsarginės kopijos zip), pasirink, kas bus perkelta, paleisk **Try it**, tada **Move**. Perkėlimą vėliau gali atšaukti.
+Atidaryk **Settings > Import from other apps**, pridėk kiekvienos senos programos adresą ir API raktą (arba atsarginės kopijos zip), pasirink, kas bus perkelta, tada pasirink **Import**. Importą vėliau gali atšaukti.
 
 | Iš ko | Kas perkeliama |
 |---|---|
@@ -171,12 +172,11 @@ Atidaryk **Settings > Move from other apps**, pridėk kiekvienos senos programos
 
 HolyArrs tik skaito tavo senas programas ir nieko jose nekeičia, todėl gali jas leisti kartu, kol patikėsi nauja.
 
-Raktai ir slaptažodžiai lieka; juos įvedi iš naujo arba importuoji iš failo. Pasirinktiniai formatai, žymos (tag) ir istorija neperkeliami. Medijos failai niekada neperkeliami. Žingsnis po žingsnio: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Raktai ir slaptažodžiai lieka; juos įvedi iš naujo arba importuoji iš failo. Pasirinktiniai formatai, žymos (tag) ir istorija neperkeliami. Medijos failai niekada neperkeliami. Žingsnis po žingsnio: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Ko ji dar nedaro
 
 - **Pati neatsisiunčia.** HolyArrs jungiasi prie qBittorrent, SABnzbd ir kitų. Ji jų nepakeičia.
-- **DI ar MCP funkcijų.** Ne 1.0 versijoje.
 - **Telefono ir TV programų.** Nesukurta. Žiniatinklio programa veikia telefone.
 - **Muzika skiltyje Explore** dar kuriama.
 
@@ -212,6 +212,8 @@ Atsisiuntus `holyarrs/holyarrs:latest`, gauni image, tinkamą tavo kompiuteriui.
 | armv7 | ✅ | Senesnėse 32 bitų ARM plokštėse |
 
 Naudoji NAS? Žiūrėk [Unraid, Synology ir kiti NAS įrenginiai](https://docs.HolyArrs.com/run/platforms/).
+
+Nori savosios paketo versijos? Prie kiekvienos [laidos](https://github.com/HolyArrs/HolyArrs/releases) pridėtas eksperimentinis Synology paketas (`.spk`). Žr. [Synology paketas](../../docs/run/synology.md).
 
 ## Versijų žymos
 
@@ -415,7 +417,7 @@ Nori įtraukti ją į uždarą produktą? Parašyk support@HolyArrs.com dėl kom
 
 ## Padėk jai gyvuoti
 
-HolyArrs nemokama, bet jos paleidimas nėra nemokamas. Kiekvienas diegimas kreipiasi į metaduomenų serverį, už kurį moku kiekvieną mėnesį. Rėmėjai tai padengia ir nupirkia daugiau valandų tam, už ką balsuoji.
+HolyArrs nemokama, bet jos paleidimas nėra nemokamas. Pagal numatytuosius nustatymus kiekvienas diegimas kreipiasi į metaduomenų serverį, už kurį moku kiekvieną mėnesį. Rėmėjai tai padengia ir nupirkia daugiau valandų tam, už ką balsuoji.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Paremti HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Balsuoti planų žemėlapyje" /></picture></a></p>
 

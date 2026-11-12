@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> ist eine selbst gehostete App für deine Serien, Filme und Musik.<br>Stöbere wie in einer Streaming-App, wünsch dir, was du willst, und den Rest erledigt sie.</p>
 
-<p align="center"><b>Etwa 15 MB Download · etwa 140 MB RAM im Leerlauf mit 10,000 Titeln · amd64, arm64, armv7</b><br><sub>Die sechs Apps, die sie ersetzt, sind zusammen 718.2 MB groß.</sub></p>
+<p align="center"><b>Etwa 19 MB Download · etwa 140 MB RAM im Leerlauf mit 10,000 Titeln · amd64, arm64, armv7</b><br><sub>Die sechs Apps, die sie ersetzt, sind zusammen 718.2 MB groß.</sub></p>
 
 <p align="center"><a href="#quick-start">Schnellstart</a> · <a href="#why">Warum</a> · <a href="#what-it-does">Was sie kann</a> · <a href="#moving">Von anderen Apps wechseln</a> · <a href="#manual">Das Handbuch</a> · <a href="#help">Hilfe</a></p>
 
@@ -105,9 +105,9 @@ Also habe ich sie gebaut.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Alle sechs zusammen** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Etwa 48-mal kleiner. Komprimierter Registry-Download, Images von linuxserver.io, amd64, gemessen am 2026-11-08. RAM im Leerlauf gemessen mit 10,000 Titeln und 55,000 Filmen und Episoden.</sub>
+<sub>Etwa 37-mal kleiner. Komprimierter Registry-Download, Images von linuxserver.io, amd64, gemessen am 2026-11-08. RAM im Leerlauf gemessen mit 10,000 Titeln und 55,000 Filmen und Episoden. (HolyArrs 1.1.0: 2026-11-12)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Jemand wünscht sich einen Titel. HolyArrs durchsucht deine Sources, wählt mit 
 | | |
 |---|---|
 | 🍿 **Explore** | Stöbere wie in einer Streaming-App. Fahr über einen Titel, und der Trailer startet. |
-| 🙋 **Requests** | Eine ganze Serie oder nur eine Staffel. Du gibst frei, oder vertrauenswürdige Leute überspringen die Warteschlange. |
+| 🙋 **Requests** | Eine ganze Serie oder nur eine Staffel. Du gibst frei, oder vertrauenswürdige Leute überspringen die Warteschlange. Watchlists aus Plex und Pulsarr können zu Requests werden. |
 | 🎯 **Pick rules** | Du entscheidest, welches Release gewinnt: Größe, Qualität, Sprache. |
-| 💬 **Untertitel** | In den Sprachen, die du wählst, zusammen mit der Datei gespeichert. Online danach zu suchen kommt nach 1.0. |
+| 💬 **Untertitel** | In den Sprachen, die du wählst, auf Untertitelseiten gefunden und zusammen mit der Datei gespeichert. |
 | 📅 **Calendar** | Was als Nächstes läuft, für alles, dem du folgst. |
-| 🚚 **Setup mitnehmen** | Von Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent und SABnzbd. Erst ausprobieren, später rückgängig machen. |
-| 🔌 **API für alte Apps** | Prowlarr kann weiter Sources an HolyArrs schicken, sobald du das einschaltest. |
-| 🗝️ **Keine API-Keys nötig** | Titel, Artwork und Charts kommen vom HolyArrs-Metadatenserver. |
+| 🔔 **Alerts** | Discord, E-Mail, Telegram, ntfy, Gotify, Pushover oder ein Webhook. |
+| 🚚 **Setup mitnehmen** | Von Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent und SABnzbd. Auswählen, was mitkommt, später rückgängig machen. |
+| 🔌 **API für alte Apps** | Seerr, Prowlarr, Bazarr, Unpackerr und Homepage funktionieren weiter, sobald du das einschaltest. |
+| 🗝️ **Keine API-Keys nötig** | Titel, Artwork und Charts kommen vom HolyArrs-Metadatenserver. Eigene Keys oder ein eigener Server gehen auch. |
 | 🔒 **Verschlüsselte Keys** | Gespeicherte Passwörter und Keys sind mit einem Master-Key gesperrt, der in deinem Config-Ordner liegt. |
-| 🪶 **Winzig** | Ein Image von etwa 15 MB, in dem nur HolyArrs steckt. |
+| 🪶 **Winzig** | Ein Image von etwa 19 MB, in dem nur HolyArrs steckt. |
 
 <details>
 <summary><b>Alle Seiten in Bewegung ansehen</b></summary>
@@ -148,7 +149,7 @@ Jemand wünscht sich einen Titel. HolyArrs durchsucht deine Sources, wählt mit 
 
 ## 🤝 Sie arbeitet mit dem zusammen, was du schon nutzt
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Downloader: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Medienserver: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Downloader: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Medienserver: Plex, Jellyfin, Emby." /></picture>
 
 - **Downloader:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Medienserver:** Plex, Jellyfin, Emby
@@ -159,7 +160,7 @@ Jemand wünscht sich einen Titel. HolyArrs durchsucht deine Sources, wählt mit 
 
 ## 🚚 Nimm dein altes Setup mit
 
-Öffne **Settings > Move from other apps**, füge Adresse und API-Key jeder alten App hinzu (oder eine Backup-Zip), wähle, was übernommen wird, starte **Try it** und dann **Move**. Du kannst einen Umzug später rückgängig machen.
+Öffne **Settings > Import from other apps**, füge Adresse und API-Key jeder alten App hinzu (oder eine Backup-Zip), wähle, was übernommen wird, und wähle dann **Import**. Du kannst einen Import später rückgängig machen.
 
 | Von | Was übernommen wird |
 |---|---|
@@ -171,12 +172,11 @@ Jemand wünscht sich einen Titel. HolyArrs durchsucht deine Sources, wählt mit 
 
 HolyArrs liest deine alten Apps nur und ändert nichts in ihnen. Du kannst also beide nebeneinander laufen lassen, bis du ihm vertraust.
 
-Keys und Passwörter bleiben zurück; du gibst sie neu ein oder importierst sie aus einer Datei. Benutzerdefinierte Formate, Tags und der Verlauf werden nicht übernommen. Mediendateien werden nie verschoben. Schritt für Schritt: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Keys und Passwörter bleiben zurück; du gibst sie neu ein oder importierst sie aus einer Datei. Benutzerdefinierte Formate, Tags und der Verlauf werden nicht übernommen. Mediendateien werden nie verschoben. Schritt für Schritt: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Was sie noch nicht kann
 
 - **Selbst herunterladen.** HolyArrs verbindet sich mit qBittorrent, SABnzbd und den anderen. Es ersetzt sie nicht.
-- **KI- oder MCP-Funktionen.** Nicht in 1.0.
 - **Handy- und TV-Apps.** Nicht gebaut. Die Web-App läuft auf dem Handy.
 - **Musik in Explore** wird noch gebaut.
 
@@ -212,6 +212,8 @@ Wenn du `holyarrs/holyarrs:latest` pullst, bekommst du das passende Image für d
 | armv7 | ✅ | Älteren 32-Bit-ARM-Boards |
 
 Du nutzt ein NAS? Siehe [Unraid, Synology und andere NAS-Geräte](https://docs.HolyArrs.com/run/platforms/).
+
+Lieber ein natives Paket? Jedem [Release](https://github.com/HolyArrs/HolyArrs/releases) liegt ein experimentelles Synology-Paket (`.spk`) bei. Siehe [Synology-Paket](../../docs/run/synology.md).
 
 ## Versions-Tags
 
@@ -415,7 +417,7 @@ Du willst es in ein geschlossenes Produkt einbauen? Schreib an support@HolyArrs.
 
 ## Unterstütze das Projekt
 
-HolyArrs ist kostenlos, aber der Betrieb ist es nicht. Jede Installation spricht mit einem Metadatenserver, den ich jeden Monat bezahle. Sponsoren decken das und kaufen mehr Stunden für die Dinge, über die du abstimmst.
+HolyArrs ist kostenlos, aber der Betrieb ist es nicht. Standardmäßig spricht jede Installation mit einem Metadatenserver, den ich jeden Monat bezahle. Sponsoren decken das und kaufen mehr Stunden für die Dinge, über die du abstimmst.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="HolyArrs sponsern" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Auf der Roadmap abstimmen" /></picture></a></p>
 
