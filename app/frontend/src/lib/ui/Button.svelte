@@ -53,7 +53,7 @@
 	.plain:hover:not(:disabled) { background: var(--surface-2); }
 	.destructive { background: color-mix(in srgb, var(--fail) 12%, transparent); color: var(--fail-text); }
 	.destructive:hover:not(:disabled) { background: color-mix(in srgb, var(--fail) 18%, transparent); }
-	.ui-btn:disabled { opacity: .45; cursor: not-allowed; }
+	.ui-btn:disabled { opacity: var(--disabled-opacity); cursor: not-allowed; }
 	.ui-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; }
 	@keyframes spin { to { transform: rotate(1turn); } }

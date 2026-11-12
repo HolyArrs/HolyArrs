@@ -45,7 +45,7 @@
 	/* Blur keeps the button readable over artwork. */
 	.glass { background: var(--on-art-fill); color: var(--on-art); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); box-shadow: inset 0 0 0 1px var(--on-art-ring); }
 	.glass:hover { background: var(--on-art-fill-hover); }
-	.ui-ibtn:disabled { opacity: .45; cursor: not-allowed; }
+	.ui-ibtn:disabled { opacity: var(--disabled-opacity); cursor: not-allowed; }
 	.ui-ibtn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.ui-ibtn[aria-pressed='true'], .ui-ibtn[aria-expanded='true'] { background: var(--surface-3); color: var(--text); }
 	.count { position: absolute; top: -3px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; display: grid; place-items: center; border-radius: 999px; background: var(--accent-fill); color: var(--text-on-red); font: 600 11px/1 var(--font-ui); box-shadow: 0 0 0 2px var(--bg); }
