@@ -114,11 +114,11 @@ export async function loadDetails(get: Get, kind: DetailKind, tmdb: string, sign
 	const lookup: Promise<TitleDetails | null> =
 		kind === 'movie'
 			? get<{ movies: LookupMovie[] }>(`/titles/lookup?term=${term}`, signal).then((r) => {
-					const m = r.movies.find((x) => x.ids.tmdb === tmdb) ?? r.movies[0];
+					const m = r.movies.find((x) => x.ids.tmdb === tmdb);
 					return m ? fromMovie(m) : null;
 				})
 			: get<{ shows: LookupShow[] }>(`/shows/lookup?term=${term}`, signal).then((r) => {
-					const s = r.shows.find((x) => x.ids.tmdb === tmdb) ?? r.shows[0];
+					const s = r.shows.find((x) => x.ids.tmdb === tmdb);
 					return s ? fromShow(s) : null;
 				});
 	const looked = lookup.then(

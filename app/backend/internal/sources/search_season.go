@@ -74,6 +74,28 @@ func handlesTV(src domain.Source) bool {
 	return len(src.Kinds) == 0 || slices.Contains(src.Kinds, "tv")
 }
 
+// handlesMovies says whether a Source is set up for movies; no kinds means every kind.
+func handlesMovies(src domain.Source) bool {
+	return len(src.Kinds) == 0 || slices.Contains(src.Kinds, "movie")
+}
+
+// movieCategories are the categories a Source uses for movies.
+func movieCategories(src domain.Source) []int {
+	if c := src.Categories["movie"]; len(c) > 0 {
+		return c
+	}
+	return DefaultCategories["movie"]
+}
+
+// movieFeedCategories are the movie categories a feed read asks for: none
+// for a Source not set up for movies.
+func movieFeedCategories(src domain.Source) []int {
+	if !handlesMovies(src) {
+		return nil
+	}
+	return movieCategories(src)
+}
+
 // tvCategories are the categories a Source uses for shows.
 func tvCategories(src domain.Source) []int {
 	if c := src.Categories["tv"]; len(c) > 0 {
