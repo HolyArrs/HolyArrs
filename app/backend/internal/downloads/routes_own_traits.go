@@ -24,7 +24,8 @@ type OwnTraitView struct {
 	// Specs and cannot be edited by hand.
 	Source string               `json:"source,omitempty"`
 	Specs  []mediafiles.OwnSpec `json:"specs,omitempty"`
-	// App is the old app an imported trait ("import") came from.
+	// App is the old app an imported trait ("import") came from, or the
+	// side a trait sent through the arr API ("arrapi") came in on.
 	App string `json:"app,omitempty"`
 }
 
@@ -34,7 +35,7 @@ func viewOfOwnTrait(t mediafiles.OwnTrait) OwnTraitView {
 		terms = []string{}
 	}
 	v := OwnTraitView{ID: t.ID, Key: mediafiles.OwnTraitKey(t.ID), Name: t.Name, Match: t.Match, Terms: terms, Source: t.Source, Specs: t.Specs}
-	if t.Source == "import" {
+	if t.OldApp() {
 		v.App, _, _ = strings.Cut(t.SourceID, ":")
 	}
 	return v

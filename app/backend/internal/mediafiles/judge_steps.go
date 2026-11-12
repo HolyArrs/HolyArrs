@@ -130,7 +130,7 @@ var langNames = map[string]string{"en": "English", "fr": "French", "de": "German
 
 func (v *Verdict) language(p releasename.Result, rules PickRulesBody, t *TitleRef) {
 	langs := p.Languages
-	if len(langs) == 0 && rules.Synced != nil && rules.Synced.From == "import" && t.OriginalLanguage != "" {
+	if len(langs) == 0 && rules.Synced.OldApp() && t.OriginalLanguage != "" {
 		// As the old apps: no language word means the original language.
 		langs = []string{t.OriginalLanguage}
 	}
@@ -180,7 +180,7 @@ func (v *Verdict) better(rel ReleaseFacts, rules PickRulesBody, cur *Current, id
 	if fixCounts && pol.MaxAgeDays > 0 && !cur.ImportedAt.IsZero() && time.Since(cur.ImportedAt) > time.Duration(pol.MaxAgeDays)*24*time.Hour {
 		fixCounts = false
 	}
-	if rules.Synced != nil && rules.Synced.From == "import" {
+	if rules.Synced.OldApp() {
 		v.betterImported(rules, cur, idx, curIdx, points, fixCounts)
 		return
 	}

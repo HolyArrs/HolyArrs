@@ -47,7 +47,7 @@ export interface OwnTrait {
 	match: 'name' | 'group' | 'size';
 	/** Plain words (any case) or /pattern/. */
 	terms: string[];
-	/** "trash" for a trait synced from TRaSH Guides, "import" for one brought from an old app: it tests specs, which only a sync or an import changes. */
+	/** "trash" for a trait synced from TRaSH Guides, "import" for one brought from an old app, "arrapi" for one an app sent through the arr API: it tests specs, which only a sync or an import changes. */
 	source?: string;
 	/** For an imported trait, the old app it came from (sonarr, radarr). */
 	app?: string;

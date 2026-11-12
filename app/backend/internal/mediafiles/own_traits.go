@@ -22,12 +22,21 @@ type OwnTrait struct {
 	Terms []string `db:"terms,json"`
 	// Source and SourceID say where a synced trait came from ("trash",
 	// "sonarr:<trash id>"; "import", "<app>:<address>:<format id>" for one
-	// brought from an old app); empty for a trait a person made. A synced
+	// brought from an old app; "arrapi", "<side>:<format id>" for one sent
+	// through the arr API); empty for a trait a person made. A synced
 	// trait tests Specs instead of Terms.
 	Source   string    `db:"source"`
 	SourceID string    `db:"source_id"`
 	Specs    []OwnSpec `db:"specs,json"`
 }
+
+// SourceArrAPI marks a trait or Pick rules an app sent through the arr API
+// (Profilarr pushing its formats and profiles).
+const SourceArrAPI = "arrapi"
+
+// OldApp reports whether the trait is an old app's format, imported or
+// sent through the arr API: it tests Specs, and none fits every Release.
+func (t OwnTrait) OldApp() bool { return t.Source == "import" || t.Source == SourceArrAPI }
 
 // OwnSpec is one test of a synced or imported trait. Kind is name, group
 // or edition (a pattern), source or modifier (one of the HolyArrs sources,

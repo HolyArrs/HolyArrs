@@ -1744,6 +1744,7 @@ tracks_dropped
 tracks_removed
 trailer_key
 trait
+trait_id
 traits
 trakt
 translate_from
@@ -1804,6 +1805,7 @@ update_check_url
 update_prerelease
 updated
 updated_at
+upgradeAllowed
 upgrade_allowed
 upgrade_min_points
 uploadLength

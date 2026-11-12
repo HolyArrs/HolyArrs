@@ -43,7 +43,7 @@
 	// Traits synced from TRaSH Guides sit apart: there can be dozens, and only a sync changes them.
 	const handMade = $derived((list ?? []).filter((o) => !o.source));
 	const synced = $derived((list ?? []).filter((o) => o.source === 'trash'));
-	const imported = $derived((list ?? []).filter((o) => o.source === 'import'));
+	const imported = $derived((list ?? []).filter((o) => o.source === 'import' || o.source === 'arrapi'));
 	const appWord = (o: OwnTrait) => ({ sonarr: 'Sonarr', radarr: 'Radarr' })[o.app ?? ''] ?? '';
 	const specWord = (k: string) =>
 		({ name: t('downloads.ot.kindName'), group: t('downloads.ot.kindGroup'), source: t('downloads.ot.kindSource'), modifier: t('downloads.ot.kindSource'), resolution: t('downloads.ot.kindResolution'), size: t('downloads.ot.kindSize'), edition: t('downloads.ot.kindEdition'), language: t('downloads.ot.kindLanguage'), release_type: t('downloads.ot.kindReleaseType'), year: t('downloads.ot.kindYear') })[k] ?? k;

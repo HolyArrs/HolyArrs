@@ -70,13 +70,20 @@ type PickRulesBody struct {
 	Synced *SyncedProfile `json:"synced,omitempty"`
 }
 
-// SyncedProfile is a TRaSH Guides profile applied to Pick rules.
+// SyncedProfile is a TRaSH Guides profile applied to Pick rules, or an
+// old app's profile imported or sent through the arr API.
 type SyncedProfile struct {
-	From      string `json:"from"` // trash
+	From      string `json:"from"` // trash, import or arrapi
 	App       string `json:"app"`  // sonarr or radarr
 	ProfileID string `json:"profile_id"`
 	Name      string `json:"name"`
 	At        string `json:"at"`
+}
+
+// OldApp reports whether the rules are an old app's profile, which judge
+// upgrades and missing languages as that app does.
+func (s *SyncedProfile) OldApp() bool {
+	return s != nil && (s.From == "import" || s.From == SourceArrAPI)
 }
 
 // GoodEverydayName is the default preset's name.
