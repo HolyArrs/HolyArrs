@@ -9,12 +9,12 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
-// orphanCandidates lists the running or finished downloads whose Downloader
+// orphanCandidates lists the running, finished or seeding downloads whose Downloader
 // was removed, oldest first.
 func orphanCandidates(ctx context.Context, q database.Lister) ([]orphan, error) {
 	rows, err := q.QueryContext(ctx, `SELECT d.id, d.downloader_id, d.external_id, d.state FROM downloads d
 		LEFT JOIN downloaders r ON r.id = d.downloader_id
-		WHERE (r.id IS NULL OR r.removed = 1) AND (d.state IN (`+activeStates+`) OR d.state = 'finished')
+		WHERE (r.id IS NULL OR r.removed = 1) AND (d.state IN (`+activeStates+`) OR d.state IN ('finished', 'seeding'))
 		ORDER BY d.id`)
 	if err != nil {
 		return nil, err

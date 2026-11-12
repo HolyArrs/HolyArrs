@@ -48,7 +48,7 @@ func (m *Manager) relinkOrphans(ctx context.Context) {
 		if len(due) >= relinkMax {
 			break
 		}
-		if !validHash(o.hash) || o.state == "finished" && !m.waitsForImport(ctx, o.id) {
+		if !validHash(o.hash) {
 			continue
 		}
 		m.mu.Lock()
@@ -61,7 +61,8 @@ func (m *Manager) relinkOrphans(ctx context.Context) {
 			m.relinkTried[o.id] = now
 		}
 		m.mu.Unlock()
-		if fresh {
+		// The throttle comes first so a pile of old finished rows costs no reads each sync.
+		if fresh && (o.state != "finished" || m.waitsForImport(ctx, o.id)) {
 			due = append(due, o)
 		}
 	}
