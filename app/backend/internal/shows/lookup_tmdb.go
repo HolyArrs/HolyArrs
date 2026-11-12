@@ -15,7 +15,7 @@ type tmdbFinder interface {
 
 // fillTMDBIDs gives results from another details source (TVMaze) their
 // tmdb id when TMDB knows the show, so search can offer Add and the
-// details page (#296). Misses are left as they are.
+// details page. Misses are left as they are.
 func fillTMDBIDs(ctx context.Context, f tmdbFinder, list []metadata.Show) {
 	if f == nil {
 		return

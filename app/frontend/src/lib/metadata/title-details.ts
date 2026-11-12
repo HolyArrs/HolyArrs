@@ -45,7 +45,7 @@ export interface TitleDetails {
 	has4k?: boolean;
 	movie?: LookupMovie;
 	show?: LookupShow;
-	/** Hidden from browsing for the viewer (#121). */
+	/** Hidden from browsing for the viewer. */
 	hidden?: boolean;
 	/** The hides that cover it, for owners and admins. */
 	hides?: Hide[];

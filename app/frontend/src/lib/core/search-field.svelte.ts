@@ -33,7 +33,7 @@ export function focusField(select = false): boolean {
 	return false;
 }
 
-// Focus used when Search opens by itself. Touch screens skip it so the keyboard only comes up on a tap (#282).
+// Focus used when Search opens by itself. Touch screens skip it so the keyboard only comes up on a tap.
 export function focusOnOpen(): boolean {
 	if (typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches) return false;
 	return focusField();

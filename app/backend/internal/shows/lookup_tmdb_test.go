@@ -16,7 +16,7 @@ func (f fakeFinder) ShowTMDBID(_ context.Context, id string) (string, error) {
 	return "", metadata.ErrShowNotFound
 }
 
-// #296: TVMaze results get their tmdb id so search can offer Add and details.
+// TVMaze results get their tmdb id so search can offer Add and details.
 func TestFillTMDBIDs(t *testing.T) {
 	list := []metadata.Show{
 		{Name: "A", IDs: map[string]string{"tvmaze": "1", "tvdb": "200"}},

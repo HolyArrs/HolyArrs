@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// #296: a TVMaze search result carries tvdb/imdb ids but no tmdb id; the
+// A TVMaze search result carries tvdb/imdb ids but no tmdb id; the
 // tmdb id is found through TMDB's find without loading the whole show.
 func TestTMDBShowIDFromOtherIDs(t *testing.T) {
 	tm := newTMDB(fakeTMDBTV(t), fakeCred)

@@ -213,7 +213,7 @@ export interface LookupMovie extends Movie {
 	ask?: AskBrief;
 	ask_4k?: AskBrief;
 	has_4k?: boolean;
-	/** Hidden from browsing (#121); managers still find it to add it. */
+	/** Hidden from browsing; managers still find it to add it. */
 	hidden?: boolean;
 }
 
@@ -661,7 +661,7 @@ export interface LookupShow {
 	title_id?: number;
 	never_add?: boolean;
 	ask?: AskBrief;
-	/** Hidden from browsing (#121); managers still find it to add it. */
+	/** Hidden from browsing; managers still find it to add it. */
 	hidden?: boolean;
 }
 
@@ -686,7 +686,7 @@ export interface UpdateInfo {
 	version: string;
 }
 
-/** One hide from GET /api/v1/hidden (#121): a title (tmdb_id, name) or a genre, for everyone (user_id 0) or one person. */
+/** One hide from GET /api/v1/hidden: a title (tmdb_id, name) or a genre, for everyone (user_id 0) or one person. */
 export interface Hide {
 	id: number;
 	kind: 'movie' | 'show';

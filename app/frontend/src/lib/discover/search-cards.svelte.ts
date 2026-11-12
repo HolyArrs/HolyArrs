@@ -16,7 +16,7 @@ export type Card = { key: string; type: Exclude<SearchScope, 'all'>; titleId?: n
 export type LibraryAnswer = { titles: TitleView[]; albums: { id: number; title_id: number; name: string; artist: string; year?: number; image?: string }[]; people: { name: string; titles: { id: number; name: string; kind: string }[] }[] };
 
 export const inLibrary: CardOwned = { state: 'available', get label() { return t('discover.searchCards.inYourLibrary'); } };
-// A result hidden from browsing (#121): managers still find it to add it.
+// A result hidden from browsing: managers still find it to add it.
 const hiddenMark: CardOwned = { state: 'declined', get label() { return t('discover.hidden.pill'); } };
 function askMark(ask: { state: string; mine: boolean } | undefined | null): CardOwned | null {
 	if (!ask || ask.state === 'turned_down') return null;

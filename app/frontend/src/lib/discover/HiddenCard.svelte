@@ -1,4 +1,4 @@
-<!-- Settings > People: every title and genre hidden from browsing, for everyone or one person, with Show again (#121). -->
+<!-- Settings > People: every title and genre hidden from browsing, for everyone or one person, with Show again. -->
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';

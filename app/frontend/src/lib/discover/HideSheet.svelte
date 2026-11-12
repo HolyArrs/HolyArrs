@@ -1,4 +1,4 @@
-<!-- Hide from browsing (#121): a title or one of its genres, for everyone or one person; the hides on it already, with Show again. -->
+<!-- Hide from browsing: a title or one of its genres, for everyone or one person; the hides on it already, with Show again. -->
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';

@@ -1,4 +1,4 @@
-// Hidden from browsing (#121): owners and admins hide a title or a genre from Explore, New & Popular, search and suggestions, for everyone or one person.
+// Hidden from browsing: owners and admins hide a title or a genre from Explore, New & Popular, search and suggestions, for everyone or one person.
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { Hide } from '#lib/core/types.ts';
 

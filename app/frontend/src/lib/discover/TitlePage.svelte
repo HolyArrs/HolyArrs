@@ -83,7 +83,7 @@
 	const ownedFailed = $derived(own.ownedFailed);
 	const moreMenu = $derived(own.moreMenu);
 	const mayReport = $derived(own.mayReport);
-	// Hidden from browsing (#121): owners and admins hide a title or its genre, and see the hides that cover it.
+	// Hidden from browsing: owners and admins hide a title or its genre, and see the hides that cover it.
 	const mayHide = $derived(session.can('users'));
 	let hideOpen = $state(false);
 	let people = $state<ReadonlyMap<number, string>>(new Map());
