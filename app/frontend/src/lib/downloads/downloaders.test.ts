@@ -1,5 +1,5 @@
 import { decisionName, groupDecisions, manyWords, phaseTone, removeBody, removeFilesWords, removeStart, rowName, split, whyWords } from './downloaders.ts';
-import { seedingBody, downloadTone, emptyForm, formBody, formFrom, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
+import { seedingBody, seedingFields, deadRuleOn, downloadTone, emptyForm, formBody, formFrom, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
 import { describe, expect, it } from 'vitest';
 import { type Decision, type DownloadRow } from '../core/types.ts';
 
@@ -250,5 +250,25 @@ describe('after seeding', () => {
 	it('never deletes files when remove is off, and Usenet sends nothing', () => {
 		expect(seedingBody({ ...emptyForm(), seed_delete_files: true }).delete_files).toBe(false);
 		expect(formBody(emptyForm('sabnzbd'))).not.toHaveProperty('after_seeding');
+	});
+});
+
+describe('after seeding fields', () => {
+	it('shows the group on torrent Downloaders only, goals on qBittorrent and rTorrent', () => {
+		expect(seedingFields('qbittorrent')).toBe('goals');
+		expect(seedingFields('rtorrent')).toBe('goals');
+		expect(seedingFields('transmission')).toBe('remove');
+		expect(seedingFields('aria2')).toBe('remove');
+		expect(seedingFields('sabnzbd')).toBe('none');
+		expect(seedingFields('nzbget')).toBe('none');
+	});
+});
+
+describe('dead torrent rule', () => {
+	it('is on when either check has a number, off for zeros or missing', () => {
+		expect(deadRuleOn({ dead_metadata_minutes: 30, crawl_kbps: 0 })).toBe(true);
+		expect(deadRuleOn({ crawl_kbps: 10 })).toBe(true);
+		expect(deadRuleOn({ dead_metadata_minutes: 0, crawl_kbps: 0 })).toBe(false);
+		expect(deadRuleOn({})).toBe(false);
 	});
 });

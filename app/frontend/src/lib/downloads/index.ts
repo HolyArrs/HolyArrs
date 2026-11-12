@@ -27,7 +27,7 @@ export { emptyForm } from './downloaders.ts';
 export { fieldKey } from './pick-rules.ts';
 export { formBody } from './downloaders.ts';
 export { formFrom } from './downloaders.ts';
-export { seedGoalKinds, seedingBody } from './downloaders.ts';
+export { seedGoalKinds, seedingBody, seedingFields, deadRuleOn } from './downloaders.ts';
 export { fromAnswer } from './dl-store.ts';
 export { groupDownloads } from './history.ts';
 export { groupLabel } from './history.ts';

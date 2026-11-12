@@ -237,13 +237,24 @@ export function formBody(f: DownloaderForm): Record<string, unknown> {
 		allow_local_network: f.allow_local_network,
 		writable: f.writable,
 		tags: f.tags,
-		...(f.kind === 'sabnzbd' || f.kind === 'nzbget' ? {} : { after_seeding: seedingBody(f) })
+		...(seedingFields(f.kind) === 'none' ? {} : { after_seeding: seedingBody(f) })
 	};
 }
 
 function goal(v: number | '' | null): number | null {
 	const n = Number(v);
 	return v === '' || v === null || !Number.isFinite(n) || n <= 0 ? null : n;
+}
+
+/** Which After seeding fields a Downloader gets: none for Usenet, goals only where ratio and time are reported. */
+export function seedingFields(kind: DownloaderView['kind']): 'none' | 'remove' | 'goals' {
+	if (kind === 'sabnzbd' || kind === 'nzbget') return 'none';
+	return seedGoalKinds.includes(kind) ? 'goals' : 'remove';
+}
+
+/** The dead torrent rule counts as on while either check has a number. */
+export function deadRuleOn(s: Pick<DownloaderSettings, 'dead_metadata_minutes' | 'crawl_kbps'>): boolean {
+	return !!Number(s.dead_metadata_minutes) || !!Number(s.crawl_kbps);
 }
 
 /** The after_seeding body: goals only where the Downloader can report them. */

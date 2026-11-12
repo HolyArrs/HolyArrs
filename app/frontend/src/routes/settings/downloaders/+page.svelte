@@ -13,7 +13,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { emptyForm, formBody, formFrom, healthTone, kindWords, pendingAttempts, seedGoalKinds, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
+	import { emptyForm, formBody, formFrom, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -52,8 +52,11 @@
 		downloads_sab_outside: true
 	});
 	// The dead torrent rule shows its numbers only while on; off saves zeros.
-	const deadOn = $derived(!!settings.dead_metadata_minutes || !!settings.crawl_kbps);
+	// Kept open while on, so typing a 0 into one box does not hide the boxes mid-edit.
+	let deadOpen = $state(false);
+	const deadOn = $derived(deadOpen || deadRuleOn(settings));
 	function setDead(on: boolean) {
+		deadOpen = on;
 		settings.dead_metadata_minutes = on ? 30 : 0;
 		settings.crawl_kbps = on ? 10 : 0;
 		settings.crawl_hours = on ? 6 : 0;
@@ -405,6 +408,35 @@
 				<input type="checkbox" bind:checked={form.writable} disabled={writableLocked} data-testid="dl-form-writable" />
 				<span><b>{t('settings.downloaders.writable')}</b><br /><span class="hint">{writableLocked ? t('settings.downloaders.writableLocked') : t('settings.downloaders.writableOff')}</span></span>
 			</label>
+			{#if seedingFields(form.kind) !== 'none'}
+				{@const goals = seedingFields(form.kind) === 'goals'}
+				{@const app = kindWords[form.kind]}
+				<fieldset class="defaults" data-testid="dl-after-seeding">
+					<legend>{t('settings.downloaders.afterSeeding')}</legend>
+					<label class="checkline" class:off={!form.writable}>
+						<input type="checkbox" bind:checked={form.seed_remove} disabled={!form.writable} data-testid="dl-seed-remove" />
+						<span><b>{t('settings.downloaders.seedRemove')}</b><br /><span class="hint">{!form.writable ? t('settings.downloaders.seedNeedsWritable') : goals ? t('settings.downloaders.seedRemoveHintGoal', { app }) : t('settings.downloaders.seedRemoveHint', { app })}</span></span>
+					</label>
+					{#if form.seed_remove && form.writable}
+						<div class="dead">
+							{#if goals}
+								<div class="two">
+									<Field id="dl-seed-ratio" label={t('settings.downloaders.seedRatio')} hint={t('settings.downloaders.seedRatioHint', { app })}>
+										<input id="dl-seed-ratio" class="input" type="number" min="0" step="any" inputmode="decimal" bind:value={form.seed_ratio} />
+									</Field>
+									<Field id="dl-seed-hours" label={t('settings.downloaders.seedHours')} hint={t('settings.downloaders.seedHoursHint')}>
+										<input id="dl-seed-hours" class="input" type="number" min="0" step="any" inputmode="decimal" bind:value={form.seed_hours} />
+									</Field>
+								</div>
+							{/if}
+							<label class="checkline">
+								<input type="checkbox" bind:checked={form.seed_delete_files} data-testid="dl-seed-delete" />
+								<span><b>{t('settings.downloaders.seedDelete')}</b><br /><span class="hint">{t('settings.downloaders.seedDeleteHint')}</span></span>
+							</label>
+						</div>
+					{/if}
+				</fieldset>
+			{/if}
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
 				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>{t('settings.downloaders.save')}</Button>
@@ -601,10 +633,11 @@
 	}
 	.defaults > legend + * { clear: both; }
 	.dead {
-		padding: 0 0 var(--s-4) var(--s-5);
+		padding-block-end: var(--s-4);
+		padding-inline-start: var(--s-5);
 	}
 	@media (max-width: 600px) {
-		.dead { padding-left: 0; }
+		.dead { padding-inline-start: 0; }
 	}
 	.head {
 		display: flex;
