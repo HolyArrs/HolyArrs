@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Apagado manualmente",
 	"server.downloads.marked-bad": "Marcado como ruim",
 	"server.suggest.because-you-have": "Porque você tem {name}",
-	"server.health.downloader-save-folder": "Pasta de salvamento do gerenciador de downloads"
+	"server.health.downloader-save-folder": "Pasta de salvamento do gerenciador de downloads",
+	"server.sources.this-kind-of-title-can-t": "este tipo de título não pode ser buscado"
 }

@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Dihapus secara manual",
 	"server.downloads.marked-bad": "Ditandai buruk",
 	"server.suggest.because-you-have": "Karena kamu punya {name}",
-	"server.health.downloader-save-folder": "Folder simpan Pengunduh"
+	"server.health.downloader-save-folder": "Folder simpan Pengunduh",
+	"server.sources.this-kind-of-title-can-t": "jenis judul ini tidak bisa dicari"
 }

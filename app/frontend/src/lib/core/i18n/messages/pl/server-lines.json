@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Usunięto ręcznie",
 	"server.downloads.marked-bad": "Oznaczono jako wadliwe",
 	"server.suggest.because-you-have": "Bo masz {name}",
-	"server.health.downloader-save-folder": "Folder zapisu Downloadera"
+	"server.health.downloader-save-folder": "Folder zapisu Downloadera",
+	"server.sources.this-kind-of-title-can-t": "tego rodzaju tytułu nie można wyszukać"
 }

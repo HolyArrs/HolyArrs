@@ -1,0 +1,15 @@
+{
+  "port-config": {
+    "protocol-file": "conf/holyarrs.sc"
+  },
+  "data-share": {
+    "shares": [
+      {
+        "name": "{{wizard_media_share}}",
+        "permission": {
+          "rw": ["holyarrs"]
+        }
+      }
+    ]
+  }
+}

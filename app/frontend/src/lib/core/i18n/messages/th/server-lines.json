@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "ลบด้วยตนเอง",
 	"server.downloads.marked-bad": "ทำเครื่องหมายว่าเสีย",
 	"server.suggest.because-you-have": "เพราะคุณมี {name}",
-	"server.health.downloader-save-folder": "โฟลเดอร์บันทึกของตัวดาวน์โหลด"
+	"server.health.downloader-save-folder": "โฟลเดอร์บันทึกของตัวดาวน์โหลด",
+	"server.sources.this-kind-of-title-can-t": "ไม่สามารถค้นหาชื่อเรื่องประเภทนี้ได้"
 }

@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "கைமுறையாக நீக்கப்பட்டது",
 	"server.downloads.marked-bad": "மோசமானதாகக் குறிக்கப்பட்டது",
 	"server.suggest.because-you-have": "உங்களிடம் {name} இருப்பதால்",
-	"server.health.downloader-save-folder": "பதிவிறக்கி சேமிக்கும் கோப்புறை"
+	"server.health.downloader-save-folder": "பதிவிறக்கி சேமிக்கும் கோப்புறை",
+	"server.sources.this-kind-of-title-can-t": "இந்த வகைத் தலைப்பைத் தேட முடியாது"
 }

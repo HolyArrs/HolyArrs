@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Slettet manuelt",
 	"server.downloads.marked-bad": "Merket som dårlig",
 	"server.suggest.because-you-have": "Fordi du har {name}",
-	"server.health.downloader-save-folder": "Nedlasterens lagringsmappe"
+	"server.health.downloader-save-folder": "Nedlasterens lagringsmappe",
+	"server.sources.this-kind-of-title-can-t": "denne typen tittel kan ikke søkes etter"
 }

@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Raderad manuellt",
 	"server.downloads.marked-bad": "Markerad som dålig",
 	"server.suggest.because-you-have": "Eftersom du har {name}",
-	"server.health.downloader-save-folder": "Nedladdarens sparmapp"
+	"server.health.downloader-save-folder": "Nedladdarens sparmapp",
+	"server.sources.this-kind-of-title-can-t": "den här typen av titel kan inte sökas"
 }

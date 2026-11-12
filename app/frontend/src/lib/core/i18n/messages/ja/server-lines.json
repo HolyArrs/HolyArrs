@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "手動で削除",
 	"server.downloads.marked-bad": "不良としてマーク",
 	"server.suggest.because-you-have": "{name} を持っているので",
-	"server.health.downloader-save-folder": "ダウンローダーの保存先フォルダー"
+	"server.health.downloader-save-folder": "ダウンローダーの保存先フォルダー",
+	"server.sources.this-kind-of-title-can-t": "この種類のタイトルは検索できません"
 }

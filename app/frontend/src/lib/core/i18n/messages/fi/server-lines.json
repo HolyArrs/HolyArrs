@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Poistettu käsin",
 	"server.downloads.marked-bad": "Merkitty huonoksi",
 	"server.suggest.because-you-have": "Koska sinulla on {name}",
-	"server.health.downloader-save-folder": "Lataajan tallennuskansio"
+	"server.health.downloader-save-folder": "Lataajan tallennuskansio",
+	"server.sources.this-kind-of-title-can-t": "tämäntyyppistä nimikettä ei voi hakea"
 }

@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "به‌صورت دستی حذف شد",
 	"server.downloads.marked-bad": "به‌عنوان خراب علامت خورد",
 	"server.suggest.because-you-have": "چون {name} را دارید",
-	"server.health.downloader-save-folder": "پوشه ذخیره دانلودر"
+	"server.health.downloader-save-folder": "پوشه ذخیره دانلودر",
+	"server.sources.this-kind-of-title-can-t": "این نوع عنوان قابل جستجو نیست"
 }
