@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: rankiniu būdu susieti failai: {n}",
 	"server.library.no-such-file-in-this-title": "tokio failo šiame pavadinime nėra",
 	"server.library.send-1-to-2000-files": "siųskite nuo 1 iki 2000 failų",
-	"server.sources.this-kind-of-title-can-t": "tokio tipo pavadinimo ieškoti negalima"
+	"server.sources.this-kind-of-title-can-t": "tokio tipo pavadinimo ieškoti negalima",
+	"server.health.downloader-for": "Atsisiuntėjas:"
 }

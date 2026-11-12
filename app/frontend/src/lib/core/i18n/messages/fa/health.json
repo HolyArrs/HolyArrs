@@ -264,5 +264,9 @@
 	"health.check.saveFolder": "پوشه ذخیره برای",
 	"health.check.saveFolderWhy": "{app} پوشه ذخیره ندارد، پس HolyArrs نمی‌تواند دانلودهای تمام‌شده‌اش را وارد کند. در تنظیمات › دانلودرها یک جفت مسیر اضافه کنید.",
 	"health.kind.clearWaiting": "دانلودهای منتظر پاک شدن",
-	"health.kind.saveFolder": "پوشه ذخیره دانلودر"
+	"health.kind.saveFolder": "پوشه ذخیره دانلودر",
+	"health.check.usenetDl": "دانلودر Usenet",
+	"health.check.torrentDl": "دانلودر تورنت",
+	"health.check.noUsenetDl": "منابع تو دانلودهای Usenet پیدا می‌کنند، اما هیچ دانلودر Usenet تنظیم نشده، پس هیچ‌کدام فرستاده نمی‌شود. در تنظیمات › دانلودرها یکی اضافه کنید.",
+	"health.check.noTorrentDl": "منابع تو دانلودهای تورنت پیدا می‌کنند، اما هیچ دانلودر تورنت تنظیم نشده، پس هیچ‌کدام فرستاده نمی‌شود. در تنظیمات › دانلودرها یکی اضافه کنید."
 }

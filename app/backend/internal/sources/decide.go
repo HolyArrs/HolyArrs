@@ -178,6 +178,9 @@ func (s *Searcher) pickWinner(ctx context.Context, all []found, vs []mediafiles.
 		order = append(order, i)
 	}
 	for pos, i := range order {
+		if s.noDownloader(ctx, all[i].item.Protocol, &vs[i]) {
+			continue
+		}
 		over, why := s.overGrabLimit(ctx, all[i].src, now)
 		if over {
 			vs[i].Outcome = "passed_over"

@@ -271,5 +271,6 @@
 	"home.noSaveFolder": "pole salvestuskausta",
 	"home.noSaveFolderMany": "pole salvestuskausta",
 	"home.off": "Väljas",
-	"home.sourcesOff": "Moodulites välja lülitatud"
+	"home.sourcesOff": "Moodulites välja lülitatud",
+	"home.noneForSources": "puudub selle jaoks, mida su allikad leiavad"
 }

@@ -36,6 +36,15 @@ func (m *Manager) HandleGrab(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(map[string]any{"not_sent": te.Error()})
 		return nil
 	}
+	var nd *NoDownloaderError
+	if errors.As(err, &nd) {
+		// Nothing can take this protocol. Trying again changes nothing until a person
+		// adds a Downloader, so the Slot goes back to wanted at once with the reason,
+		// never shown as sent.
+		m.giveUp(ctx, r.Job.Subject.ID, int64(relID), nd.Error(), false, domain.Actor{Kind: "job", ID: r.Job.ID})
+		r.SetResult(map[string]any{"not_sent": nd.Error()})
+		return nil
+	}
 	var fe interface{ Final() bool }
 	if errors.As(err, &fe) && fe.Final() {
 		// The Release can never be sent, so it is turned down and the Slot is searched
@@ -165,6 +174,9 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			// Tags apply on a fresh pick only, since a send already on record keeps its
 			// Downloader: use the Downloaders sharing a tag with the title, else the
 			// untagged ones.
+			if len(all) == 0 {
+				return 0, &NoDownloaderError{Protocol: rel.Protocol}
+			}
 			titleTags, kind, err := slotTitleTags(ctx, db, sl.ItemID)
 			if err != nil {
 				return 0, err

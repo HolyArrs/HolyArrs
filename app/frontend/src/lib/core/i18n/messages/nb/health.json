@@ -264,5 +264,9 @@
 	"health.check.saveFolder": "Lagringsmappe for",
 	"health.check.saveFolderWhy": "{app} har ingen lagringsmappe, så HolyArrs kan ikke importere de ferdige nedlastingene. Legg til et stipar under Innstillinger › Nedlastere.",
 	"health.kind.clearWaiting": "Nedlastinger som venter på å bli ryddet bort",
-	"health.kind.saveFolder": "Nedlasterens lagringsmappe"
+	"health.kind.saveFolder": "Nedlasterens lagringsmappe",
+	"health.check.usenetDl": "Usenet-nedlaster",
+	"health.check.torrentDl": "Torrent-nedlaster",
+	"health.check.noUsenetDl": "Kildene dine finner Usenet-nedlastinger, men ingen Usenet-nedlaster er satt opp, så ingen kan sendes. Legg til en under Innstillinger › Nedlastere.",
+	"health.check.noTorrentDl": "Kildene dine finner torrent-nedlastinger, men ingen torrent-nedlaster er satt opp, så ingen kan sendes. Legg til en under Innstillinger › Nedlastere."
 }

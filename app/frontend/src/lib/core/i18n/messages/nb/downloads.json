@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importert",
 	"downloads.row.stillIn": "Fortsatt i {app}",
 	"downloads.dp.openDownloaders": "Åpne Nedlastere",
-	"downloads.hl.notMoved": "Ikke flyttet etter import"
+	"downloads.hl.notMoved": "Ikke flyttet etter import",
+	"downloads.noDl.usenet": "Laster ikke ned: nedlastingene som ble funnet trenger en Usenet-nedlaster, og ingen er satt opp.",
+	"downloads.noDl.torrent": "Laster ikke ned: nedlastingene som ble funnet trenger en torrent-nedlaster, og ingen er satt opp.",
+	"downloads.noDl.add": "Legg til en nedlaster",
+	"downloads.hl.noUsenetDl": "ingen Usenet-nedlaster er satt opp",
+	"downloads.hl.noTorrentDl": "ingen torrent-nedlaster er satt opp"
 }

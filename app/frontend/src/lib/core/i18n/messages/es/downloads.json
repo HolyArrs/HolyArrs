@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importado",
 	"downloads.row.stillIn": "Aún en {app}",
 	"downloads.dp.openDownloaders": "Abrir gestores de descarga",
-	"downloads.hl.notMoved": "No se movió tras importar"
+	"downloads.hl.notMoved": "No se movió tras importar",
+	"downloads.noDl.usenet": "No se descarga: las descargas encontradas necesitan un gestor de descargas Usenet y no hay ninguno configurado.",
+	"downloads.noDl.torrent": "No se descarga: las descargas encontradas necesitan un gestor de descargas de torrents y no hay ninguno configurado.",
+	"downloads.noDl.add": "Añadir un gestor de descargas",
+	"downloads.hl.noUsenetDl": "no hay ningún gestor de descargas Usenet configurado",
+	"downloads.hl.noTorrentDl": "no hay ningún gestor de descargas de torrents configurado"
 }

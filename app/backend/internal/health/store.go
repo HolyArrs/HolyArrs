@@ -32,3 +32,30 @@ func sqliteVersion(ctx context.Context, q database.Querier) string {
 	_ = q.QueryRowContext(ctx, "SELECT sqlite_version()").Scan(&v)
 	return v
 }
+
+// kindGap is a protocol some enabled Source gives and whether a Downloader
+// that is not removed takes it.
+type kindGap struct {
+	Protocol string
+	Has      bool
+}
+
+// downloaderGaps reads, for each protocol the enabled Sources give, whether
+// any Downloader takes it.
+func downloaderGaps(ctx context.Context, q database.Lister) ([]kindGap, error) {
+	rows, err := q.QueryContext(ctx, `SELECT s.protocol, EXISTS (SELECT 1 FROM downloaders d WHERE d.protocol = s.protocol AND d.removed = 0)
+		FROM sources s WHERE s.state = 'enabled' GROUP BY s.protocol ORDER BY s.protocol`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []kindGap
+	for rows.Next() {
+		var g kindGap
+		if err := rows.Scan(&g.Protocol, &g.Has); err != nil {
+			return nil, err
+		}
+		out = append(out, g)
+	}
+	return out, rows.Err()
+}

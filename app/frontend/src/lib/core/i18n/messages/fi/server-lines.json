@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} tiedostoa yhdistetty käsin",
 	"server.library.no-such-file-in-this-title": "tällaista tiedostoa ei ole tässä nimikkeessä",
 	"server.library.send-1-to-2000-files": "lähetä 1–2000 tiedostoa",
-	"server.sources.this-kind-of-title-can-t": "tämäntyyppistä nimikettä ei voi hakea"
+	"server.sources.this-kind-of-title-can-t": "tämäntyyppistä nimikettä ei voi hakea",
+	"server.health.downloader-for": "Lataaja:"
 }

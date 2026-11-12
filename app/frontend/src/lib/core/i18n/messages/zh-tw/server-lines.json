@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}：已手動配對 {n} 個檔案",
 	"server.library.no-such-file-in-this-title": "此作品中沒有該檔案",
 	"server.library.send-1-to-2000-files": "請傳送 1 到 2000 個檔案",
-	"server.sources.this-kind-of-title-can-t": "無法搜尋這類標題"
+	"server.sources.this-kind-of-title-can-t": "無法搜尋這類標題",
+	"server.health.downloader-for": "下載器："
 }

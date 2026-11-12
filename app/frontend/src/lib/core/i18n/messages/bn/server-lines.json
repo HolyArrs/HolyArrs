@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n}টি ফাইল হাতে মেলানো হয়েছে",
 	"server.library.no-such-file-in-this-title": "এই টাইটেলে এমন কোনো ফাইল নেই",
 	"server.library.send-1-to-2000-files": "১ থেকে ২০০০টি ফাইল পাঠান",
-	"server.sources.this-kind-of-title-can-t": "এই ধরনের শিরোনাম খোঁজা যায় না"
+	"server.sources.this-kind-of-title-can-t": "এই ধরনের শিরোনাম খোঁজা যায় না",
+	"server.health.downloader-for": "ডাউনলোডার:"
 }

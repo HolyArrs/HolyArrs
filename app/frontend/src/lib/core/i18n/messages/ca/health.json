@@ -264,5 +264,9 @@
 	"health.check.saveFolder": "Carpeta de desament de",
 	"health.check.saveFolderWhy": "{app} no té carpeta de desament, així que HolyArrs no pot importar les baixades acabades. Afegeix un parell de rutes a Configuració › Gestors de baixades.",
 	"health.kind.clearWaiting": "Baixades que esperen ser netejades",
-	"health.kind.saveFolder": "Carpeta de desament del gestor de baixades"
+	"health.kind.saveFolder": "Carpeta de desament del gestor de baixades",
+	"health.check.usenetDl": "Gestor de baixades Usenet",
+	"health.check.torrentDl": "Gestor de baixades de torrents",
+	"health.check.noUsenetDl": "Les teves fonts troben baixades Usenet, però no hi ha cap gestor de baixades Usenet configurat, així que no se'n pot enviar cap. Afegeix-ne un a Configuració › Gestors de baixades.",
+	"health.check.noTorrentDl": "Les teves fonts troben baixades de torrents, però no hi ha cap gestor de baixades de torrents configurat, així que no se'n pot enviar cap. Afegeix-ne un a Configuració › Gestors de baixades."
 }

@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Innflutt",
 	"downloads.row.stillIn": "Enn í {app}",
 	"downloads.dp.openDownloaders": "Opna Niðurhalara",
-	"downloads.hl.notMoved": "Ekki fært eftir innflutning"
+	"downloads.hl.notMoved": "Ekki fært eftir innflutning",
+	"downloads.noDl.usenet": "Sækir ekki: niðurhölin sem fundust þurfa Usenet-niðurhalara og enginn er uppsettur.",
+	"downloads.noDl.torrent": "Sækir ekki: niðurhölin sem fundust þurfa torrent-niðurhalara og enginn er uppsettur.",
+	"downloads.noDl.add": "Bæta við niðurhalara",
+	"downloads.hl.noUsenetDl": "enginn Usenet-niðurhalari er uppsettur",
+	"downloads.hl.noTorrentDl": "enginn torrent-niðurhalari er uppsettur"
 }

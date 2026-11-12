@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "ইমপোর্ট করা হয়েছে",
 	"downloads.row.stillIn": "এখনও {app}-এ আছে",
 	"downloads.dp.openDownloaders": "ডাউনলোডার খুলুন",
-	"downloads.hl.notMoved": "ইমপোর্টের পরে সরানো হয়নি"
+	"downloads.hl.notMoved": "ইমপোর্টের পরে সরানো হয়নি",
+	"downloads.noDl.usenet": "ডাউনলোড হচ্ছে না: পাওয়া ডাউনলোডগুলোর জন্য একটি Usenet ডাউনলোডার দরকার, কিন্তু কোনোটি সেট আপ করা নেই।",
+	"downloads.noDl.torrent": "ডাউনলোড হচ্ছে না: পাওয়া ডাউনলোডগুলোর জন্য একটি টরেন্ট ডাউনলোডার দরকার, কিন্তু কোনোটি সেট আপ করা নেই।",
+	"downloads.noDl.add": "একটি ডাউনলোডার যোগ করুন",
+	"downloads.hl.noUsenetDl": "কোনো Usenet ডাউনলোডার সেট আপ করা নেই",
+	"downloads.hl.noTorrentDl": "কোনো টরেন্ট ডাউনলোডার সেট আপ করা নেই"
 }

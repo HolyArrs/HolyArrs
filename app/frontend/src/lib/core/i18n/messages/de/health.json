@@ -264,5 +264,9 @@
 	"health.word.broken": "Defekt",
 	"health.word.notSent": "Noch nicht gesendet",
 	"health.word.notSynced": "Noch nicht abgeglichen",
-	"health.word.working": "Läuft"
+	"health.word.working": "Läuft",
+	"health.check.usenetDl": "Usenet-Downloader",
+	"health.check.torrentDl": "Torrent-Downloader",
+	"health.check.noUsenetDl": "Deine Quellen finden Usenet-Downloads, aber kein Usenet-Downloader ist eingerichtet, daher kann keiner gesendet werden. Füge unter Einstellungen › Downloader einen hinzu.",
+	"health.check.noTorrentDl": "Deine Quellen finden Torrent-Downloads, aber kein Torrent-Downloader ist eingerichtet, daher kann keiner gesendet werden. Füge unter Einstellungen › Downloader einen hinzu."
 }

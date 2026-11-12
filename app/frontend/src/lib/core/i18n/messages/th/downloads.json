@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "นำเข้าแล้ว",
 	"downloads.row.stillIn": "ยังอยู่ใน {app}",
 	"downloads.dp.openDownloaders": "เปิดตัวดาวน์โหลด",
-	"downloads.hl.notMoved": "ไม่ได้ย้ายหลังนำเข้า"
+	"downloads.hl.notMoved": "ไม่ได้ย้ายหลังนำเข้า",
+	"downloads.noDl.usenet": "ไม่ได้ดาวน์โหลด: ไฟล์ที่พบต้องใช้ตัวดาวน์โหลด Usenet แต่ยังไม่ได้ตั้งค่าไว้เลย",
+	"downloads.noDl.torrent": "ไม่ได้ดาวน์โหลด: ไฟล์ที่พบต้องใช้ตัวดาวน์โหลดทอร์เรนต์ แต่ยังไม่ได้ตั้งค่าไว้เลย",
+	"downloads.noDl.add": "เพิ่มตัวดาวน์โหลด",
+	"downloads.hl.noUsenetDl": "ยังไม่ได้ตั้งค่าตัวดาวน์โหลด Usenet",
+	"downloads.hl.noTorrentDl": "ยังไม่ได้ตั้งค่าตัวดาวน์โหลดทอร์เรนต์"
 }

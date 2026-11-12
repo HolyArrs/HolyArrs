@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "इम्पोर्ट हुआ",
 	"downloads.row.stillIn": "अभी भी {app} में",
 	"downloads.dp.openDownloaders": "डाउनलोडर खोलें",
-	"downloads.hl.notMoved": "इम्पोर्ट के बाद नहीं हटाया गया"
+	"downloads.hl.notMoved": "इम्पोर्ट के बाद नहीं हटाया गया",
+	"downloads.noDl.usenet": "डाउनलोड नहीं हो रहा: मिले डाउनलोड के लिए Usenet डाउनलोडर चाहिए, और कोई सेट अप नहीं है।",
+	"downloads.noDl.torrent": "डाउनलोड नहीं हो रहा: मिले डाउनलोड के लिए टोरेंट डाउनलोडर चाहिए, और कोई सेट अप नहीं है।",
+	"downloads.noDl.add": "डाउनलोडर जोड़ें",
+	"downloads.hl.noUsenetDl": "कोई Usenet डाउनलोडर सेट अप नहीं है",
+	"downloads.hl.noTorrentDl": "कोई टोरेंट डाउनलोडर सेट अप नहीं है"
 }

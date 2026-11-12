@@ -213,6 +213,7 @@ func (s *services) fill() {
 			}}
 		if s.Downloads != nil {
 			s.Search.PackReady = s.Downloads.PackReady
+			s.Search.HasDownloader = s.Downloads.HasDownloader
 		}
 	}
 }

@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importado",
 	"downloads.row.stillIn": "Ainda no {app}",
 	"downloads.dp.openDownloaders": "Abrir downloaders",
-	"downloads.hl.notMoved": "Não movido após importar"
+	"downloads.hl.notMoved": "Não movido após importar",
+	"downloads.noDl.usenet": "Não está baixando: os downloads encontrados precisam de um gerenciador de downloads Usenet, e nenhum está configurado.",
+	"downloads.noDl.torrent": "Não está baixando: os downloads encontrados precisam de um gerenciador de downloads de torrent, e nenhum está configurado.",
+	"downloads.noDl.add": "Adicionar gerenciador de downloads",
+	"downloads.hl.noUsenetDl": "nenhum gerenciador de downloads Usenet está configurado",
+	"downloads.hl.noTorrentDl": "nenhum gerenciador de downloads de torrent está configurado"
 }

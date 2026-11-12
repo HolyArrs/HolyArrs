@@ -264,5 +264,9 @@
 	"health.word.broken": "Cassé",
 	"health.word.notSent": "Pas encore envoyé",
 	"health.word.notSynced": "Pas encore synchronisé",
-	"health.word.working": "Fonctionne"
+	"health.word.working": "Fonctionne",
+	"health.check.usenetDl": "Client Usenet",
+	"health.check.torrentDl": "Client torrent",
+	"health.check.noUsenetDl": "Vos sources trouvent des téléchargements Usenet, mais aucun client de téléchargement Usenet n'est configuré, donc aucun ne peut être envoyé. Ajoutez-en un dans Paramètres › Clients de téléchargement.",
+	"health.check.noTorrentDl": "Vos sources trouvent des téléchargements torrent, mais aucun client de téléchargement torrent n'est configuré, donc aucun ne peut être envoyé. Ajoutez-en un dans Paramètres › Clients de téléchargement."
 }

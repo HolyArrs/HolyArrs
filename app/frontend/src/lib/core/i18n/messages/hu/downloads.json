@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importálva",
 	"downloads.row.stillIn": "Még a(z) {app} alkalmazásban",
 	"downloads.dp.openDownloaders": "Letöltők megnyitása",
-	"downloads.hl.notMoved": "Importálás után nem lett áthelyezve"
+	"downloads.hl.notMoved": "Importálás után nem lett áthelyezve",
+	"downloads.noDl.usenet": "Nincs letöltés: a talált letöltésekhez Usenet-letöltő kell, de egy sincs beállítva.",
+	"downloads.noDl.torrent": "Nincs letöltés: a talált letöltésekhez torrentletöltő kell, de egy sincs beállítva.",
+	"downloads.noDl.add": "Letöltő hozzáadása",
+	"downloads.hl.noUsenetDl": "nincs beállítva Usenet-letöltő",
+	"downloads.hl.noTorrentDl": "nincs beállítva torrentletöltő"
 }

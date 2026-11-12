@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Imporditud",
 	"downloads.row.stillIn": "Alles rakenduses {app}",
 	"downloads.dp.openDownloaders": "Ava Allalaadijad",
-	"downloads.hl.notMoved": "Pärast importi ei teisaldatud"
+	"downloads.hl.notMoved": "Pärast importi ei teisaldatud",
+	"downloads.noDl.usenet": "Ei laadi alla: leitud allalaadimised vajavad Useneti allalaadijat, aga ühtegi pole seadistatud.",
+	"downloads.noDl.torrent": "Ei laadi alla: leitud allalaadimised vajavad torrentite allalaadijat, aga ühtegi pole seadistatud.",
+	"downloads.noDl.add": "Lisa allalaadija",
+	"downloads.hl.noUsenetDl": "ühtegi Useneti allalaadijat pole seadistatud",
+	"downloads.hl.noTorrentDl": "ühtegi torrentite allalaadijat pole seadistatud"
 }

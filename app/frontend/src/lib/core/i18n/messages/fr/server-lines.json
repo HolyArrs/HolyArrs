@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name} : {n} fichiers associés à la main",
 	"server.library.no-such-file-in-this-title": "aucun fichier de ce type dans ce titre",
 	"server.library.send-1-to-2000-files": "envoyez de 1 à 2000 fichiers",
-	"server.sources.this-kind-of-title-can-t": "ce type de titre ne peut pas être recherché"
+	"server.sources.this-kind-of-title-can-t": "ce type de titre ne peut pas être recherché",
+	"server.health.downloader-for": "Client de téléchargement pour"
 }

@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: ręcznie dopasowane pliki: {n}",
 	"server.library.no-such-file-in-this-title": "nie ma takiego pliku w tym tytule",
 	"server.library.send-1-to-2000-files": "wyślij od 1 do 2000 plików",
-	"server.sources.this-kind-of-title-can-t": "tego rodzaju tytułu nie można wyszukać"
+	"server.sources.this-kind-of-title-can-t": "tego rodzaju tytułu nie można wyszukać",
+	"server.health.downloader-for": "Downloader dla"
 }

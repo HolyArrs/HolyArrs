@@ -264,5 +264,9 @@
 	"health.check.saveFolder": "Folder simpan untuk",
 	"health.check.saveFolderWhy": "{app} tiada folder simpan, jadi HolyArrs tidak dapat mengimport muat turun yang sudah siap. Tambah pasangan laluan dalam Tetapan › Pemuat turun.",
 	"health.kind.clearWaiting": "Muat turun menunggu untuk dibersihkan",
-	"health.kind.saveFolder": "Folder simpan Pemuat turun"
+	"health.kind.saveFolder": "Folder simpan Pemuat turun",
+	"health.check.usenetDl": "Pemuat turun Usenet",
+	"health.check.torrentDl": "Pemuat turun torrent",
+	"health.check.noUsenetDl": "Sumber anda menemui muat turun Usenet, tetapi tiada pemuat turun Usenet disediakan, jadi tiada yang boleh dihantar. Tambah satu dalam Tetapan › Pemuat turun.",
+	"health.check.noTorrentDl": "Sumber anda menemui muat turun torrent, tetapi tiada pemuat turun torrent disediakan, jadi tiada yang boleh dihantar. Tambah satu dalam Tetapan › Pemuat turun."
 }

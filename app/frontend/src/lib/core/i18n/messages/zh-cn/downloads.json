@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "已导入",
 	"downloads.row.stillIn": "仍在 {app} 中",
 	"downloads.dp.openDownloaders": "打开下载器",
-	"downloads.hl.notMoved": "导入后未能移动"
+	"downloads.hl.notMoved": "导入后未能移动",
+	"downloads.noDl.usenet": "未在下载：找到的下载需要 Usenet 下载器，但尚未设置任何下载器。",
+	"downloads.noDl.torrent": "未在下载：找到的下载需要种子下载器，但尚未设置任何下载器。",
+	"downloads.noDl.add": "添加下载器",
+	"downloads.hl.noUsenetDl": "尚未设置 Usenet 下载器",
+	"downloads.hl.noTorrentDl": "尚未设置种子下载器"
 }

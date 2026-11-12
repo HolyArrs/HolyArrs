@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importuota",
 	"downloads.row.stillIn": "Vis dar programoje {app}",
 	"downloads.dp.openDownloaders": "Atidaryti Atsisiuntėjus",
-	"downloads.hl.notMoved": "Po importo neperkelta"
+	"downloads.hl.notMoved": "Po importo neperkelta",
+	"downloads.noDl.usenet": "Nesisiunčiama: rastiems atsisiuntimams reikia Usenet atsisiuntėjo, o nė vienas nenustatytas.",
+	"downloads.noDl.torrent": "Nesisiunčiama: rastiems atsisiuntimams reikia torrentų atsisiuntėjo, o nė vienas nenustatytas.",
+	"downloads.noDl.add": "Pridėti atsisiuntėją",
+	"downloads.hl.noUsenetDl": "nenustatytas joks Usenet atsisiuntėjas",
+	"downloads.hl.noTorrentDl": "nenustatytas joks torrentų atsisiuntėjas"
 }

@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Geïmporteerd",
 	"downloads.row.stillIn": "Nog in {app}",
 	"downloads.dp.openDownloaders": "Downloaders openen",
-	"downloads.hl.notMoved": "Niet verplaatst na import"
+	"downloads.hl.notMoved": "Niet verplaatst na import",
+	"downloads.noDl.usenet": "Downloadt niet: de gevonden downloads hebben een Usenet-downloader nodig, en er is er geen ingesteld.",
+	"downloads.noDl.torrent": "Downloadt niet: de gevonden downloads hebben een torrent-downloader nodig, en er is er geen ingesteld.",
+	"downloads.noDl.add": "Downloader toevoegen",
+	"downloads.hl.noUsenetDl": "geen Usenet-downloader ingesteld",
+	"downloads.hl.noTorrentDl": "geen torrent-downloader ingesteld"
 }

@@ -264,5 +264,9 @@
 	"health.word.broken": "Guasto",
 	"health.word.notSent": "Non ancora inviato",
 	"health.word.notSynced": "Non ancora sincronizzato",
-	"health.word.working": "Funziona"
+	"health.word.working": "Funziona",
+	"health.check.usenetDl": "Downloader Usenet",
+	"health.check.torrentDl": "Downloader torrent",
+	"health.check.noUsenetDl": "Le tue fonti trovano download Usenet, ma nessun downloader Usenet è configurato, quindi non se ne può inviare nessuno. Aggiungine uno in Impostazioni › Downloader.",
+	"health.check.noTorrentDl": "Le tue fonti trovano download torrent, ma nessun downloader torrent è configurato, quindi non se ne può inviare nessuno. Aggiungine uno in Impostazioni › Downloader."
 }

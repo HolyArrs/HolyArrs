@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Увезено",
 	"downloads.row.stillIn": "Још у {app}",
 	"downloads.dp.openDownloaders": "Отвори Преузимаче",
-	"downloads.hl.notMoved": "Није премештено после увоза"
+	"downloads.hl.notMoved": "Није премештено после увоза",
+	"downloads.noDl.usenet": "Не преузима се: пронађена преузимања траже Usenet преузимач, а ниједан није подешен.",
+	"downloads.noDl.torrent": "Не преузима се: пронађена преузимања траже торент преузимач, а ниједан није подешен.",
+	"downloads.noDl.add": "Додај преузимач",
+	"downloads.hl.noUsenetDl": "ниједан Usenet преузимач није подешен",
+	"downloads.hl.noTorrentDl": "ниједан торент преузимач није подешен"
 }

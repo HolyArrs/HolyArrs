@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Імпортовано",
 	"downloads.row.stillIn": "Ще в {app}",
 	"downloads.dp.openDownloaders": "Відкрити завантажувачі",
-	"downloads.hl.notMoved": "Не переміщено після імпорту"
+	"downloads.hl.notMoved": "Не переміщено після імпорту",
+	"downloads.noDl.usenet": "Не завантажується: знайденим завантаженням потрібен завантажувач Usenet, а жодного не налаштовано.",
+	"downloads.noDl.torrent": "Не завантажується: знайденим завантаженням потрібен торент-завантажувач, а жодного не налаштовано.",
+	"downloads.noDl.add": "Додати завантажувач",
+	"downloads.hl.noUsenetDl": "не налаштовано жодного завантажувача Usenet",
+	"downloads.hl.noTorrentDl": "не налаштовано жодного торент-завантажувача"
 }

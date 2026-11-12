@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "インポート済み",
 	"downloads.row.stillIn": "まだ {app} にあります",
 	"downloads.dp.openDownloaders": "ダウンローダーを開く",
-	"downloads.hl.notMoved": "インポート後に移動できませんでした"
+	"downloads.hl.notMoved": "インポート後に移動できませんでした",
+	"downloads.noDl.usenet": "ダウンロードされません: 見つかったダウンロードには Usenet ダウンローダーが必要ですが、設定されていません。",
+	"downloads.noDl.torrent": "ダウンロードされません: 見つかったダウンロードにはトレント ダウンローダーが必要ですが、設定されていません。",
+	"downloads.noDl.add": "ダウンローダーを追加",
+	"downloads.hl.noUsenetDl": "Usenet ダウンローダーが設定されていません",
+	"downloads.hl.noTorrentDl": "トレント ダウンローダーが設定されていません"
 }

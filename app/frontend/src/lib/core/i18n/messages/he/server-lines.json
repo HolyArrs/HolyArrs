@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} קבצים הותאמו ידנית",
 	"server.library.no-such-file-in-this-title": "אין קובץ כזה בכותר הזה",
 	"server.library.send-1-to-2000-files": "יש לשלוח בין 1 ל־2000 קבצים",
-	"server.sources.this-kind-of-title-can-t": "אי אפשר לחפש כותר מהסוג הזה"
+	"server.sources.this-kind-of-title-can-t": "אי אפשר לחפש כותר מהסוג הזה",
+	"server.health.downloader-for": "מוריד עבור"
 }

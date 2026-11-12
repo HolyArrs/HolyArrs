@@ -264,5 +264,9 @@
 	"health.word.broken": "Kapot",
 	"health.word.notSent": "Nog niet verstuurd",
 	"health.word.notSynced": "Nog niet gesynchroniseerd",
-	"health.word.working": "Werkt"
+	"health.word.working": "Werkt",
+	"health.check.usenetDl": "Usenet-downloader",
+	"health.check.torrentDl": "Torrent-downloader",
+	"health.check.noUsenetDl": "Je bronnen vinden Usenet-downloads, maar er is geen Usenet-downloader ingesteld, dus er kan niets worden verstuurd. Voeg er een toe in Instellingen › Downloaders.",
+	"health.check.noTorrentDl": "Je bronnen vinden torrent-downloads, maar er is geen torrent-downloader ingesteld, dus er kan niets worden verstuurd. Voeg er een toe in Instellingen › Downloaders."
 }

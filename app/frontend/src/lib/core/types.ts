@@ -37,6 +37,8 @@ export interface TitleView {
 	stage: string;
 	gate_open: boolean;
 	gate_reason: string;
+	/** The protocol wanted copies could not be sent for: no Downloader takes it. */
+	no_downloader?: 'usenet' | 'torrent';
 	library_folder_id?: number;
 	folder_path?: string;
 	pick_rules_id?: number;
@@ -442,7 +444,7 @@ export interface EventPage {
 export interface HealthCheck {
 	id: number;
 	key: string;
-	kind: 'library_folder' | 'disk_space' | 'source' | 'downloader' | 'backups' | 'update' | 'config_disk' | 'config_folder' | 'waiting_downloads' | 'clear_waiting' | 'save_folder';
+	kind: 'library_folder' | 'disk_space' | 'source' | 'downloader' | 'backups' | 'update' | 'config_disk' | 'config_folder' | 'waiting_downloads' | 'clear_waiting' | 'save_folder' | 'no_downloader';
 	subject: string;
 	state: 'ok' | 'warning' | 'error';
 	message: string;

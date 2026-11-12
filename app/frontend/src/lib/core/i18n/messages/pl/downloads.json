@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Zaimportowano",
 	"downloads.row.stillIn": "Nadal w {app}",
 	"downloads.dp.openDownloaders": "Otwórz klienty pobierania",
-	"downloads.hl.notMoved": "Nie przeniesiono po imporcie"
+	"downloads.hl.notMoved": "Nie przeniesiono po imporcie",
+	"downloads.noDl.usenet": "Nie pobiera: znalezione pobrania wymagają downloadera Usenet, a żaden nie jest skonfigurowany.",
+	"downloads.noDl.torrent": "Nie pobiera: znalezione pobrania wymagają downloadera torrentów, a żaden nie jest skonfigurowany.",
+	"downloads.noDl.add": "Dodaj downloader",
+	"downloads.hl.noUsenetDl": "nie skonfigurowano downloadera Usenet",
+	"downloads.hl.noTorrentDl": "nie skonfigurowano downloadera torrentów"
 }

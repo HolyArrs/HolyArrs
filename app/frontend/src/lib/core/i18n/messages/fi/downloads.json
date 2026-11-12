@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Tuotu",
 	"downloads.row.stillIn": "Vielä sovelluksessa {app}",
 	"downloads.dp.openDownloaders": "Avaa Lataajat",
-	"downloads.hl.notMoved": "Ei siirretty tuonnin jälkeen"
+	"downloads.hl.notMoved": "Ei siirretty tuonnin jälkeen",
+	"downloads.noDl.usenet": "Ei lataa: löydetyt lataukset tarvitsevat Usenet-lataajan, eikä sellaista ole määritetty.",
+	"downloads.noDl.torrent": "Ei lataa: löydetyt lataukset tarvitsevat torrent-lataajan, eikä sellaista ole määritetty.",
+	"downloads.noDl.add": "Lisää lataaja",
+	"downloads.hl.noUsenetDl": "Usenet-lataajaa ei ole määritetty",
+	"downloads.hl.noTorrentDl": "torrent-lataajaa ei ole määritetty"
 }

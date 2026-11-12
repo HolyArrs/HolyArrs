@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "İçe aktarıldı",
 	"downloads.row.stillIn": "Hâlâ {app} içinde",
 	"downloads.dp.openDownloaders": "İndiricileri aç",
-	"downloads.hl.notMoved": "İçe aktarmadan sonra taşınmadı"
+	"downloads.hl.notMoved": "İçe aktarmadan sonra taşınmadı",
+	"downloads.noDl.usenet": "İndirilmiyor: bulunan indirmeler bir Usenet indiricisi gerektiriyor ve hiçbiri kurulu değil.",
+	"downloads.noDl.torrent": "İndirilmiyor: bulunan indirmeler bir torrent indiricisi gerektiriyor ve hiçbiri kurulu değil.",
+	"downloads.noDl.add": "İndirici ekle",
+	"downloads.hl.noUsenetDl": "kurulu bir Usenet indiricisi yok",
+	"downloads.hl.noTorrentDl": "kurulu bir torrent indiricisi yok"
 }

@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importováno",
 	"downloads.row.stillIn": "Stále v {app}",
 	"downloads.dp.openDownloaders": "Otevřít Stahovače",
-	"downloads.hl.notMoved": "Po importu nepřesunuto"
+	"downloads.hl.notMoved": "Po importu nepřesunuto",
+	"downloads.noDl.usenet": "Nestahuje se: nalezená stahování potřebují stahovač pro Usenet a žádný není nastavený.",
+	"downloads.noDl.torrent": "Nestahuje se: nalezená stahování potřebují stahovač torrentů a žádný není nastavený.",
+	"downloads.noDl.add": "Přidat stahovač",
+	"downloads.hl.noUsenetDl": "není nastavený žádný stahovač pro Usenet",
+	"downloads.hl.noTorrentDl": "není nastavený žádný stahovač torrentů"
 }

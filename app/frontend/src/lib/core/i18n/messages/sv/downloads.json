@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importerad",
 	"downloads.row.stillIn": "Finns kvar i {app}",
 	"downloads.dp.openDownloaders": "Öppna Nedladdare",
-	"downloads.hl.notMoved": "Inte flyttad efter import"
+	"downloads.hl.notMoved": "Inte flyttad efter import",
+	"downloads.noDl.usenet": "Laddar inte ned: de hittade nedladdningarna behöver en Usenet-nedladdare, och ingen är inställd.",
+	"downloads.noDl.torrent": "Laddar inte ned: de hittade nedladdningarna behöver en torrent-nedladdare, och ingen är inställd.",
+	"downloads.noDl.add": "Lägg till en nedladdare",
+	"downloads.hl.noUsenetDl": "ingen Usenet-nedladdare är inställd",
+	"downloads.hl.noTorrentDl": "ingen torrent-nedladdare är inställd"
 }

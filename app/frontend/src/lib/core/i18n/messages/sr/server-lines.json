@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: ручно повезане датотеке: {n}",
 	"server.library.no-such-file-in-this-title": "нема такве датотеке у овом наслову",
 	"server.library.send-1-to-2000-files": "пошаљите од 1 до 2000 датотека",
-	"server.sources.this-kind-of-title-can-t": "ова врста наслова не може да се тражи"
+	"server.sources.this-kind-of-title-can-t": "ова врста наслова не може да се тражи",
+	"server.health.downloader-for": "Преузимач за"
 }

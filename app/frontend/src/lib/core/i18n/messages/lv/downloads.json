@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importēts",
 	"downloads.row.stillIn": "Joprojām lietotnē {app}",
 	"downloads.dp.openDownloaders": "Atvērt Lejupielādētājus",
-	"downloads.hl.notMoved": "Pēc importa netika pārvietots"
+	"downloads.hl.notMoved": "Pēc importa netika pārvietots",
+	"downloads.noDl.usenet": "Netiek lejupielādēts: atrastajām lejupielādēm vajag Usenet lejupielādētāju, bet neviens nav iestatīts.",
+	"downloads.noDl.torrent": "Netiek lejupielādēts: atrastajām lejupielādēm vajag torrentu lejupielādētāju, bet neviens nav iestatīts.",
+	"downloads.noDl.add": "Pievienot lejupielādētāju",
+	"downloads.hl.noUsenetDl": "nav iestatīts neviens Usenet lejupielādētājs",
+	"downloads.hl.noTorrentDl": "nav iestatīts neviens torrentu lejupielādētājs"
 }

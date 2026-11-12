@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "تم الاستيراد",
 	"downloads.row.stillIn": "لا يزال في {app}",
 	"downloads.dp.openDownloaders": "فتح برامج التنزيل",
-	"downloads.hl.notMoved": "لم يُنقل بعد الاستيراد"
+	"downloads.hl.notMoved": "لم يُنقل بعد الاستيراد",
+	"downloads.noDl.usenet": "لا يجري التنزيل: التنزيلات التي وُجدت تحتاج إلى برنامج تنزيل Usenet، ولم يُعدّ أي منها.",
+	"downloads.noDl.torrent": "لا يجري التنزيل: التنزيلات التي وُجدت تحتاج إلى برنامج تنزيل تورنت، ولم يُعدّ أي منها.",
+	"downloads.noDl.add": "أضف برنامج تنزيل",
+	"downloads.hl.noUsenetDl": "لم يُعدّ أي برنامج تنزيل Usenet",
+	"downloads.hl.noTorrentDl": "لم يُعدّ أي برنامج تنزيل تورنت"
 }

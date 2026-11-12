@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: файлов сопоставлено вручную: {n}",
 	"server.library.no-such-file-in-this-title": "такого файла у этого тайтла нет",
 	"server.library.send-1-to-2000-files": "отправьте от 1 до 2000 файлов",
-	"server.sources.this-kind-of-title-can-t": "этот вид тайтла нельзя искать"
+	"server.sources.this-kind-of-title-can-t": "этот вид тайтла нельзя искать",
+	"server.health.downloader-for": "Загрузчик для"
 }

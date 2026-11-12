@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} filer koblet for hånd",
 	"server.library.no-such-file-in-this-title": "ingen slik fil i denne tittelen",
 	"server.library.send-1-to-2000-files": "send 1 til 2000 filer",
-	"server.sources.this-kind-of-title-can-t": "denne typen tittel kan ikke søkes etter"
+	"server.sources.this-kind-of-title-can-t": "denne typen tittel kan ikke søkes etter",
+	"server.health.downloader-for": "Nedlaster for"
 }

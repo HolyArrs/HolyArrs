@@ -271,5 +271,6 @@
 	"home.noSaveFolder": "er ekki með vistunarmöppu",
 	"home.noSaveFolderMany": "eru ekki með vistunarmöppu",
 	"home.off": "Af",
-	"home.sourcesOff": "Slökkt í Hlutum"
+	"home.sourcesOff": "Slökkt í Hlutum",
+	"home.noneForSources": "vantar fyrir það sem veiturnar þínar finna"
 }

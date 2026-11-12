@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} file dicocokkan manual",
 	"server.library.no-such-file-in-this-title": "tidak ada file seperti itu di judul ini",
 	"server.library.send-1-to-2000-files": "kirim 1 sampai 2000 file",
-	"server.sources.this-kind-of-title-can-t": "jenis judul ini tidak bisa dicari"
+	"server.sources.this-kind-of-title-can-t": "jenis judul ini tidak bisa dicari",
+	"server.health.downloader-for": "Pengunduh untuk"
 }

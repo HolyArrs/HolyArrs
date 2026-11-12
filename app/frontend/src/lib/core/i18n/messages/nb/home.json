@@ -271,5 +271,6 @@
 	"home.noSaveFolder": "har ingen lagringsmappe",
 	"home.noSaveFolderMany": "har ingen lagringsmappe",
 	"home.off": "Av",
-	"home.sourcesOff": "Slått av i Deler"
+	"home.sourcesOff": "Slått av i Deler",
+	"home.noneForSources": "mangler for det kildene dine finner"
 }

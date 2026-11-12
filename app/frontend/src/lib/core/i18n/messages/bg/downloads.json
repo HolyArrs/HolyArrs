@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Внесено",
 	"downloads.row.stillIn": "Все още в {app}",
 	"downloads.dp.openDownloaders": "Отваряне на Програми за изтегляне",
-	"downloads.hl.notMoved": "Не е преместено след импортиране"
+	"downloads.hl.notMoved": "Не е преместено след импортиране",
+	"downloads.noDl.usenet": "Не се изтегля: намерените изтегляния изискват програма за изтегляне от Usenet, а няма настроена.",
+	"downloads.noDl.torrent": "Не се изтегля: намерените изтегляния изискват програма за изтегляне на торенти, а няма настроена.",
+	"downloads.noDl.add": "Добави програма за изтегляне",
+	"downloads.hl.noUsenetDl": "няма настроена програма за изтегляне от Usenet",
+	"downloads.hl.noTorrentDl": "няма настроена програма за изтегляне на торенти"
 }

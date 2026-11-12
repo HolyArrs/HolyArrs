@@ -264,5 +264,9 @@
 	"health.check.saveFolder": "Priečinok na ukladanie pre",
 	"health.check.saveFolderWhy": "{app} nemá nastavený priečinok na ukladanie, takže HolyArrs nemôže importovať dokončené sťahovania. Pridajte dvojicu ciest v Nastavenia › Sťahovače.",
 	"health.kind.clearWaiting": "Sťahovania čakajúce na vyčistenie",
-	"health.kind.saveFolder": "Priečinok na ukladanie Sťahovača"
+	"health.kind.saveFolder": "Priečinok na ukladanie Sťahovača",
+	"health.check.usenetDl": "Sťahovač pre Usenet",
+	"health.check.torrentDl": "Sťahovač torrentov",
+	"health.check.noUsenetDl": "Vaše zdroje nachádzajú sťahovania z Usenetu, ale nie je nastavený žiadny sťahovač pre Usenet, takže nič nemožno odoslať. Pridajte ho v Nastavenia › Sťahovače.",
+	"health.check.noTorrentDl": "Vaše zdroje nachádzajú torrenty, ale nie je nastavený žiadny sťahovač torrentov, takže nič nemožno odoslať. Pridajte ho v Nastavenia › Sťahovače."
 }

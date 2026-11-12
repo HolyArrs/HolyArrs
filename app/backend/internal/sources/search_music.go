@@ -229,6 +229,9 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 	}
 	if left > 0 {
 		reason := fmt.Sprintf("no Release passed the Pick rules for it (%d found, %d refused)", len(all), refused)
+		if b := blockedWhy(vs); b != "" {
+			reason = b
+		}
 		rest(reason)
 		if chosen+held == 0 {
 			s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchDone, part.Name+": "+reason, nil)

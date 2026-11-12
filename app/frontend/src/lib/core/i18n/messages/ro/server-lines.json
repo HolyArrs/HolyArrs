@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} fișiere potrivite manual",
 	"server.library.no-such-file-in-this-title": "nu există un astfel de fișier în acest titlu",
 	"server.library.send-1-to-2000-files": "trimite între 1 și 2000 de fișiere",
-	"server.sources.this-kind-of-title-can-t": "acest tip de titlu nu poate fi căutat"
+	"server.sources.this-kind-of-title-can-t": "acest tip de titlu nu poate fi căutat",
+	"server.health.downloader-for": "Program de descărcare pentru"
 }

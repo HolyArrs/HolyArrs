@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "가져옴",
 	"downloads.row.stillIn": "아직 {app}에 있음",
 	"downloads.dp.openDownloaders": "다운로더 열기",
-	"downloads.hl.notMoved": "가져온 후 옮기지 못함"
+	"downloads.hl.notMoved": "가져온 후 옮기지 못함",
+	"downloads.noDl.usenet": "다운로드 안 됨: 찾은 다운로드에는 Usenet 다운로더가 필요한데 설정된 것이 없습니다.",
+	"downloads.noDl.torrent": "다운로드 안 됨: 찾은 다운로드에는 토렌트 다운로더가 필요한데 설정된 것이 없습니다.",
+	"downloads.noDl.add": "다운로더 추가",
+	"downloads.hl.noUsenetDl": "설정된 Usenet 다운로더가 없습니다",
+	"downloads.hl.noTorrentDl": "설정된 토렌트 다운로더가 없습니다"
 }

@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "יובא",
 	"downloads.row.stillIn": "עדיין ב-{app}",
 	"downloads.dp.openDownloaders": "פתיחת מורידים",
-	"downloads.hl.notMoved": "לא הועבר אחרי הייבוא"
+	"downloads.hl.notMoved": "לא הועבר אחרי הייבוא",
+	"downloads.noDl.usenet": "לא מוריד: ההורדות שנמצאו צריכות מוריד Usenet, ואף אחד לא הוגדר.",
+	"downloads.noDl.torrent": "לא מוריד: ההורדות שנמצאו צריכות מוריד טורנטים, ואף אחד לא הוגדר.",
+	"downloads.noDl.add": "הוספת מוריד",
+	"downloads.hl.noUsenetDl": "לא הוגדר מוריד Usenet",
+	"downloads.hl.noTorrentDl": "לא הוגדר מוריד טורנטים"
 }

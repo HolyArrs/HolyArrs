@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "已匯入",
 	"downloads.row.stillIn": "仍在 {app} 中",
 	"downloads.dp.openDownloaders": "開啟下載器",
-	"downloads.hl.notMoved": "匯入後未能移動"
+	"downloads.hl.notMoved": "匯入後未能移動",
+	"downloads.noDl.usenet": "未在下載：找到的下載需要 Usenet 下載器，但尚未設定任何下載器。",
+	"downloads.noDl.torrent": "未在下載：找到的下載需要種子下載器，但尚未設定任何下載器。",
+	"downloads.noDl.add": "新增下載器",
+	"downloads.hl.noUsenetDl": "尚未設定 Usenet 下載器",
+	"downloads.hl.noTorrentDl": "尚未設定種子下載器"
 }

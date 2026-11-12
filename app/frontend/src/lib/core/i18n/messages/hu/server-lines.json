@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} fájl kézzel hozzárendelve",
 	"server.library.no-such-file-in-this-title": "nincs ilyen fájl ebben a címben",
 	"server.library.send-1-to-2000-files": "küldj 1–2000 fájlt",
-	"server.sources.this-kind-of-title-can-t": "ilyen típusú címet nem lehet keresni"
+	"server.sources.this-kind-of-title-can-t": "ilyen típusú címet nem lehet keresni",
+	"server.health.downloader-for": "Letöltő ehhez:"
 }

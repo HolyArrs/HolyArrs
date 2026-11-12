@@ -271,5 +271,6 @@
 	"home.noSaveFolder": "no té carpeta de desament",
 	"home.noSaveFolderMany": "no tenen carpeta de desament",
 	"home.off": "Desactivat",
-	"home.sourcesOff": "Desactivat a Parts"
+	"home.sourcesOff": "Desactivat a Parts",
+	"home.noneForSources": "falta per al que troben les teves fonts"
 }

@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importat",
 	"downloads.row.stillIn": "Încă în {app}",
 	"downloads.dp.openDownloaders": "Deschide Programele de descărcare",
-	"downloads.hl.notMoved": "Nu a fost mutat după import"
+	"downloads.hl.notMoved": "Nu a fost mutat după import",
+	"downloads.noDl.usenet": "Nu se descarcă: descărcările găsite au nevoie de un program de descărcare Usenet și nu e configurat niciunul.",
+	"downloads.noDl.torrent": "Nu se descarcă: descărcările găsite au nevoie de un program de descărcare torrent și nu e configurat niciunul.",
+	"downloads.noDl.add": "Adaugă un program de descărcare",
+	"downloads.hl.noUsenetDl": "niciun program de descărcare Usenet nu e configurat",
+	"downloads.hl.noTorrentDl": "niciun program de descărcare torrent nu e configurat"
 }

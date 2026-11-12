@@ -271,5 +271,6 @@
 	"home.noSaveFolder": "ei tallennuskansiota",
 	"home.noSaveFolderMany": "ei tallennuskansiota",
 	"home.off": "Pois",
-	"home.sourcesOff": "Pois päältä Osissa"
+	"home.sourcesOff": "Pois päältä Osissa",
+	"home.noneForSources": "puuttuu siihen, mitä lähteesi löytävät"
 }

@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Uvezeno",
 	"downloads.row.stillIn": "Još u {app}",
 	"downloads.dp.openDownloaders": "Otvori Preuzimatelje",
-	"downloads.hl.notMoved": "Nije premješteno nakon uvoza"
+	"downloads.hl.notMoved": "Nije premješteno nakon uvoza",
+	"downloads.noDl.usenet": "Ne preuzima se: pronađena preuzimanja trebaju Usenet preuzimatelja, a nijedan nije postavljen.",
+	"downloads.noDl.torrent": "Ne preuzima se: pronađena preuzimanja trebaju torrent preuzimatelja, a nijedan nije postavljen.",
+	"downloads.noDl.add": "Dodaj preuzimatelja",
+	"downloads.hl.noUsenetDl": "nijedan Usenet preuzimatelj nije postavljen",
+	"downloads.hl.noTorrentDl": "nijedan torrent preuzimatelj nije postavljen"
 }

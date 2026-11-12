@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} கோப்புகள் கையால் பொருத்தப்பட்டன",
 	"server.library.no-such-file-in-this-title": "இந்தத் தலைப்பில் அப்படி ஒரு கோப்பு இல்லை",
 	"server.library.send-1-to-2000-files": "1 முதல் 2000 கோப்புகளை அனுப்பு",
-	"server.sources.this-kind-of-title-can-t": "இந்த வகைத் தலைப்பைத் தேட முடியாது"
+	"server.sources.this-kind-of-title-can-t": "இந்த வகைத் தலைப்பைத் தேட முடியாது",
+	"server.health.downloader-for": "பதிவிறக்கி:"
 }

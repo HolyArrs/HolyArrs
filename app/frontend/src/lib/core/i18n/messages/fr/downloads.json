@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importé",
 	"downloads.row.stillIn": "Encore dans {app}",
 	"downloads.dp.openDownloaders": "Ouvrir les téléchargeurs",
-	"downloads.hl.notMoved": "Non déplacé après l'import"
+	"downloads.hl.notMoved": "Non déplacé après l'import",
+	"downloads.noDl.usenet": "Pas de téléchargement : les téléchargements trouvés ont besoin d'un client de téléchargement Usenet, et aucun n'est configuré.",
+	"downloads.noDl.torrent": "Pas de téléchargement : les téléchargements trouvés ont besoin d'un client de téléchargement torrent, et aucun n'est configuré.",
+	"downloads.noDl.add": "Ajouter un client de téléchargement",
+	"downloads.hl.noUsenetDl": "aucun client de téléchargement Usenet n'est configuré",
+	"downloads.hl.noTorrentDl": "aucun client de téléchargement torrent n'est configuré"
 }

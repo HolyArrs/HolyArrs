@@ -271,5 +271,6 @@
 	"home.metadataServerOnline": "خادم البيانات الوصفية متصل",
 	"home.homeCouldNotRead3": "تعذّر على الرئيسية قراءة التنزيلات الآن.",
 	"home.off": "متوقف",
-	"home.sourcesOff": "متوقف في الأجزاء"
+	"home.sourcesOff": "متوقف في الأجزاء",
+	"home.noneForSources": "مفقود لما تجده مصادرك"
 }

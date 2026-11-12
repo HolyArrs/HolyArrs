@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} 件を手動で照合しました",
 	"server.library.no-such-file-in-this-title": "このタイトルにそのファイルはありません",
 	"server.library.send-1-to-2000-files": "1〜2000 件のファイルを送ってください",
-	"server.sources.this-kind-of-title-can-t": "この種類のタイトルは検索できません"
+	"server.sources.this-kind-of-title-can-t": "この種類のタイトルは検索できません",
+	"server.health.downloader-for": "ダウンローダー:"
 }

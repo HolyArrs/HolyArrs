@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Đã nhập",
 	"downloads.row.stillIn": "Vẫn còn trong {app}",
 	"downloads.dp.openDownloaders": "Mở Trình tải",
-	"downloads.hl.notMoved": "Không chuyển được sau khi nhập"
+	"downloads.hl.notMoved": "Không chuyển được sau khi nhập",
+	"downloads.noDl.usenet": "Không tải: các bản tải tìm được cần trình tải Usenet, nhưng chưa thiết lập trình nào.",
+	"downloads.noDl.torrent": "Không tải: các bản tải tìm được cần trình tải torrent, nhưng chưa thiết lập trình nào.",
+	"downloads.noDl.add": "Thêm trình tải",
+	"downloads.hl.noUsenetDl": "chưa thiết lập trình tải Usenet nào",
+	"downloads.hl.noTorrentDl": "chưa thiết lập trình tải torrent nào"
 }

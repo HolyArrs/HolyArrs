@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} skrár tengdar handvirkt",
 	"server.library.no-such-file-in-this-title": "engin slík skrá í þessum titli",
 	"server.library.send-1-to-2000-files": "sendu 1 til 2000 skrár",
-	"server.sources.this-kind-of-title-can-t": "ekki er hægt að leita að þessari tegund titils"
+	"server.sources.this-kind-of-title-can-t": "ekki er hægt að leita að þessari tegund titils",
+	"server.health.downloader-for": "Niðurhalari fyrir"
 }

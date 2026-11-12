@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} faili käsitsi seotud",
 	"server.library.no-such-file-in-this-title": "sellist faili selles nimetuses pole",
 	"server.library.send-1-to-2000-files": "saada 1 kuni 2000 faili",
-	"server.sources.this-kind-of-title-can-t": "seda liiki pealkirja ei saa otsida"
+	"server.sources.this-kind-of-title-can-t": "seda liiki pealkirja ei saa otsida",
+	"server.health.downloader-for": "Allalaadija:"
 }

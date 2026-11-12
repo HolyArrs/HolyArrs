@@ -264,5 +264,9 @@
 	"health.word.broken": "Сломано",
 	"health.word.notSent": "Ещё не отправлено",
 	"health.word.notSynced": "Ещё не синхронизировано",
-	"health.word.working": "Работает"
+	"health.word.working": "Работает",
+	"health.check.usenetDl": "Загрузчик Usenet",
+	"health.check.torrentDl": "Торрент-загрузчик",
+	"health.check.noUsenetDl": "Ваши источники находят загрузки из Usenet, но не настроен ни один загрузчик Usenet, поэтому ничего нельзя отправить. Добавьте его в Настройки › Загрузчики.",
+	"health.check.noTorrentDl": "Ваши источники находят торренты, но не настроен ни один торрент-загрузчик, поэтому ничего нельзя отправить. Добавьте его в Настройки › Загрузчики."
 }

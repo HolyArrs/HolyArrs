@@ -1249,5 +1249,10 @@
 	"downloads.row.imported": "Importiert",
 	"downloads.row.stillIn": "Noch in {app}",
 	"downloads.dp.openDownloaders": "Downloader öffnen",
-	"downloads.hl.notMoved": "Nach dem Import nicht verschoben"
+	"downloads.hl.notMoved": "Nach dem Import nicht verschoben",
+	"downloads.noDl.usenet": "Lädt nicht: Die gefundenen Downloads brauchen einen Usenet-Downloader, und keiner ist eingerichtet.",
+	"downloads.noDl.torrent": "Lädt nicht: Die gefundenen Downloads brauchen einen Torrent-Downloader, und keiner ist eingerichtet.",
+	"downloads.noDl.add": "Downloader hinzufügen",
+	"downloads.hl.noUsenetDl": "kein Usenet-Downloader eingerichtet",
+	"downloads.hl.noTorrentDl": "kein Torrent-Downloader eingerichtet"
 }

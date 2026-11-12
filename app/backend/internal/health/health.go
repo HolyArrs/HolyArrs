@@ -200,7 +200,7 @@ func (e *Engine) update(ctx context.Context) ([]Result, error) {
 // Check runs every check once and returns the results, without storing.
 func (e *Engine) Check(ctx context.Context) ([]Result, error) {
 	var out []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.saveFolders, e.waiting, e.clearing, e.backups, e.trailers, e.update} {
+	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.downloaderKinds, e.saveFolders, e.waiting, e.clearing, e.backups, e.trailers, e.update} {
 		rs, err := f(ctx)
 		if err != nil {
 			return nil, err
@@ -377,6 +377,8 @@ func label(kind string) string {
 		return "downloads waiting for their files"
 	case "save_folder":
 		return "Downloader save folder"
+	case "no_downloader":
+		return "Downloader for"
 	case "clear_waiting":
 		return "imported downloads waiting to be cleared"
 	case "backups":
