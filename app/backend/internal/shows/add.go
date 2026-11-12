@@ -602,9 +602,11 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 // switch and the main Version's Slot state.
 func (ss *SeasonSummary) tally(air sql.NullString, keep bool, state string, now time.Time) {
 	ss.Episodes++
+	aired := false
 	if air.Valid {
 		if at, err := time.Parse(database.TimeLayout, air.String); err == nil {
 			if !at.After(now) {
+				aired = true
 				ss.Aired++
 			} else if ss.NextAirDate == nil || at.Before(*ss.NextAirDate) {
 				a := at
@@ -625,7 +627,12 @@ func (ss *SeasonSummary) tally(air sql.NullString, keep bool, state string, now 
 	case mediafiles.SlotFailed, mediafiles.SlotNeedsADecision:
 		ss.Failed++
 	case mediafiles.SlotWanted:
-		if keep {
+		// Missing means aired and still without a file, as in Sonarr; a
+		// wanted episode whose air time has not passed is not out yet.
+		switch {
+		case !aired:
+			ss.NotOutYet++
+		case keep:
 			ss.Missing++
 		}
 	}
