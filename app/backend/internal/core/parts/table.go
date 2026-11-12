@@ -459,6 +459,8 @@ var routeOwners = map[string]Owner{
 	"POST /api/v1/manual-import":              Media,
 	"GET /api/v1/settings/import-folders":     Media,
 	"PUT /api/v1/settings/import-folders":     Media,
+	"GET /api/v1/settings/side-files":         Media,
+	"PUT /api/v1/settings/side-files":         Media,
 
 	// The metadata server's stored title and person pictures.
 	"GET /api/v1/artwork/img/{kind}/{id}/{file}": Media,
