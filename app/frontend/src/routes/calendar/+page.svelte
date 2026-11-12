@@ -391,7 +391,7 @@
 		{:else}
 			<span class="range">{short ? viewWeek.short : viewWeek.long}</span>
 		{/if}
-		<IconButton icon="chevronRight" label={t('discover.calendar.weekAfter')} variant="tinted" onclick={() => scroller.go(1)} />
+		<IconButton icon="chevronRight" tipSide="below-end" label={t('discover.calendar.weekAfter')} variant="tinted" onclick={() => scroller.go(1)} />
 	</div>
 {/snippet}
 
@@ -460,7 +460,7 @@
 	{#snippet actions()}
 		{@render viewSeg(true)}
 		<span class="wide-only">{@render todayBtn('md')}</span>
-		<span class="phone-only"><IconButton icon="calendarDay" label={t('discover.calendar.pickADay2')} variant="tinted" aria-haspopup="dialog" onclick={() => (sheetOpen = true)} /></span>
+		<span class="phone-only"><IconButton icon="calendarDay" tipSide="below-end" label={t('discover.calendar.pickADay2')} variant="tinted" aria-haspopup="dialog" onclick={() => (sheetOpen = true)} /></span>
 	{/snippet}
 </PageHeader>
 
@@ -479,7 +479,7 @@
 		{@render rangeNav(false, true)}
 		<!-- Cards or List stays at hand in the bar once the header has scrolled away. -->
 		<span class="wide-only slim-view">{@render viewSeg(false)}</span>
-		<span class="phone-only"><IconButton icon={view === 'cards' ? 'menu' : 'grid'} label={view === 'cards' ? t('discover.calendar.showAsList') : t('discover.calendar.showAsCards')} variant="tinted" onclick={() => scroller.pickView(view === 'cards' ? 'list' : 'cards')} data-testid="cal-view-slim" /></span>
+		<span class="phone-only"><IconButton icon={view === 'cards' ? 'menu' : 'grid'} tipSide="below-end" label={view === 'cards' ? t('discover.calendar.showAsList') : t('discover.calendar.showAsCards')} variant="tinted" onclick={() => scroller.pickView(view === 'cards' ? 'list' : 'cards')} data-testid="cal-view-slim" /></span>
 		<span class="wide-only slim-seg">{@render typeSeg(false)}</span>
 		<span class="wide-only">{@render followsMenu()}</span>
 		<span class="wide-only">{@render monthBtn(false)}</span>
