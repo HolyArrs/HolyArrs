@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "versio",
 	"downloads.ot.kindLanguage": "kieli",
 	"downloads.ot.kindReleaseType": "julkaisun tyyppi",
-	"downloads.ot.kindYear": "vuosi"
+	"downloads.ot.kindYear": "vuosi",
+	"downloads.hl.notMoved": "Ei siirretty tuonnin jälkeen"
 }

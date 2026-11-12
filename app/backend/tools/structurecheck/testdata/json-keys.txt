@@ -280,6 +280,7 @@ cast
 cat
 categories
 category
+category_after_import
 category_movies
 category_music
 category_shows
@@ -433,6 +434,7 @@ discord_id
 discs
 diskspace1
 diskspace2
+dismissed
 display_name
 display_priorities
 display_priority
@@ -476,6 +478,7 @@ downloads_today
 draft
 dropped
 dropped_at
+dropped_season
 dry
 dry_run
 duplicates
@@ -1124,6 +1127,7 @@ outside_order
 outside_recent
 overview
 own_keys_note
+own_only
 owned
 owned_titles
 owner
@@ -1369,6 +1373,7 @@ remove_search_again
 remove_turn_down
 removed
 rename_on_import
+replace
 replace_vanished
 replaced
 replaces_file_id
@@ -1775,6 +1780,7 @@ tvmaze
 two_factor
 ty
 type
+types
 u
 undo
 undo_job_id

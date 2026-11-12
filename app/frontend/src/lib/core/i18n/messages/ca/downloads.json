@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "edició",
 	"downloads.ot.kindLanguage": "idioma",
 	"downloads.ot.kindReleaseType": "tipus de llançament",
-	"downloads.ot.kindYear": "any"
+	"downloads.ot.kindYear": "any",
+	"downloads.hl.notMoved": "No s'ha mogut després d'importar"
 }

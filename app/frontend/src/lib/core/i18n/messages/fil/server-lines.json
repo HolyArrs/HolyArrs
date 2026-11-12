@@ -1282,5 +1282,11 @@
 	"server.migrate.nothing-in-the-old-app-gives": "walang bagay sa lumang app na nagbibigay dito ng puntos, kaya wala itong binabago rito",
 	"server.migrate.pick-rules-here-still-give-it": "may Mga panuntunan sa pagpili rito na nagbibigay pa rin dito ng puntos, kaya nananatili ito",
 	"server.migrate.pick-rules-hold-at-most-64": "Hanggang 64 na katangian lang ang Mga panuntunan sa pagpili; itinira ang pinakamalalakas na score",
-	"server.migrate.something-here-still-uses-these-pick": "may gumagamit pa rin dito ng Mga panuntunan sa pagpili na ito, kaya nananatili sila"
+	"server.migrate.something-here-still-uses-these-pick": "may gumagamit pa rin dito ng Mga panuntunan sa pagpili na ito, kaya nananatili sila",
+	"server.downloads.could-not-move-the-imported-download": "Hindi nailipat ang na-import na download sa {cat} sa {name}: {error}; susubukan ulit ng HolyArrs sa susunod na import",
+	"server.downloads.moved-to-after-import": "Inilipat sa {cat} pagkatapos ng import",
+	"server.library.files-matched-by-hand": "{name}: {n} file ang itinugma nang manu-mano",
+	"server.library.no-such-file-in-this-title": "walang ganoong file sa title na ito",
+	"server.library.send-1-to-2000-files": "magpadala ng 1 hanggang 2000 file",
+	"server.sources.this-kind-of-title-can-t": "hindi mahahanap ang ganitong uri ng pamagat"
 }

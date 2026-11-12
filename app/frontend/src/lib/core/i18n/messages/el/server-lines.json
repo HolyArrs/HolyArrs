@@ -1282,5 +1282,11 @@
 	"server.migrate.nothing-in-the-old-app-gives": "τίποτα στην παλιά εφαρμογή δεν του δίνει πόντους, οπότε δεν αλλάζει τίποτα εδώ",
 	"server.migrate.pick-rules-here-still-give-it": "Κανόνες επιλογής εδώ του δίνουν ακόμα πόντους, οπότε μένει",
 	"server.migrate.pick-rules-hold-at-most-64": "Οι Κανόνες επιλογής χωρούν έως 64 χαρακτηριστικά· κρατήθηκαν οι ισχυρότερες βαθμολογίες",
-	"server.migrate.something-here-still-uses-these-pick": "κάτι εδώ χρησιμοποιεί ακόμα αυτούς τους Κανόνες επιλογής, οπότε μένουν"
+	"server.migrate.something-here-still-uses-these-pick": "κάτι εδώ χρησιμοποιεί ακόμα αυτούς τους Κανόνες επιλογής, οπότε μένουν",
+	"server.downloads.could-not-move-the-imported-download": "Η εισαγμένη λήψη δεν μεταφέρθηκε στο {cat} στο {name}: {error}· το HolyArrs θα ξαναδοκιμάσει στην επόμενη εισαγωγή",
+	"server.downloads.moved-to-after-import": "Μεταφέρθηκε στο {cat} μετά την εισαγωγή",
+	"server.library.files-matched-by-hand": "{name}: {n} αρχεία αντιστοιχίστηκαν με το χέρι",
+	"server.library.no-such-file-in-this-title": "δεν υπάρχει τέτοιο αρχείο σε αυτόν τον τίτλο",
+	"server.library.send-1-to-2000-files": "στείλε από 1 έως 2000 αρχεία",
+	"server.sources.this-kind-of-title-can-t": "αυτό το είδος τίτλου δεν μπορεί να αναζητηθεί"
 }

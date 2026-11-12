@@ -23,6 +23,9 @@ func (f *recordingQB) saw() string {
 	return strings.Join(f.calls, " ")
 }
 
+// pauseAllHash is the torrent controlSeed's client holds in each category.
+var pauseAllHash = strings.Repeat("c", 40)
+
 func controlSeed(t *testing.T) (*dl41, *recordingQB) {
 	t.Helper()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
@@ -41,6 +44,11 @@ func controlSeed(t *testing.T) (*dl41, *recordingQB) {
 		case "sync/torrentPeers":
 			_, _ = w.Write([]byte(`{"peers":{}}`))
 		case "torrents/info":
+			// One torrent in each category asked for, so Pause all has something of ours.
+			if c := r.Form.Get("category"); c != "" {
+				_, _ = w.Write([]byte(`[{"hash":"` + pauseAllHash + `","category":"` + c + `","state":"downloading"}]`))
+				return
+			}
 			_, _ = w.Write([]byte(`[]`))
 		case "torrents/properties":
 			_, _ = w.Write([]byte(`{"total_size":2000,"total_downloaded":500,"share_ratio":0.25,"seeds":1,"seeds_total":5,"peers":2,"peers_total":8,"addition_date":1700000000,"save_path":"/downloads","is_private":false}`))
@@ -111,7 +119,7 @@ func TestDownloadClientsAndAll(t *testing.T) {
 	do(t, "PUT", x.srv.URL+"/api/v1/downloaders/"+id+"/speed-limit", `{"down":1048576,"up":0}`, 200)
 	do(t, "PUT", x.srv.URL+"/api/v1/downloaders/999/speed-limit", `{"down":0}`, 404)
 	got := f.saw()
-	for _, w := range []string{"torrents/stop=all", "torrents/start=all", "transfer/setDownloadLimit=1048576", "transfer/setUploadLimit=0"} {
+	for _, w := range []string{"torrents/stop=" + pauseAllHash, "torrents/start=" + pauseAllHash, "transfer/setDownloadLimit=1048576", "transfer/setUploadLimit=0"} {
 		if !strings.Contains(got, w) {
 			t.Fatalf("missing %s in %s", w, got)
 		}

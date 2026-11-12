@@ -1282,5 +1282,11 @@
 	"server.migrate.nothing-in-the-old-app-gives": "không có gì trong ứng dụng cũ cho nó điểm, nên nó không đổi gì ở đây",
 	"server.migrate.pick-rules-here-still-give-it": "Quy tắc chọn ở đây vẫn cho nó điểm, nên nó được giữ lại",
 	"server.migrate.pick-rules-hold-at-most-64": "Quy tắc chọn chứa tối đa 64 đặc điểm; đã giữ các điểm cao nhất",
-	"server.migrate.something-here-still-uses-these-pick": "có thứ ở đây vẫn dùng Quy tắc chọn này, nên chúng được giữ lại"
+	"server.migrate.something-here-still-uses-these-pick": "có thứ ở đây vẫn dùng Quy tắc chọn này, nên chúng được giữ lại",
+	"server.downloads.could-not-move-the-imported-download": "Không chuyển được bản tải đã nhập sang {cat} trong {name}: {error}; HolyArrs sẽ thử lại ở lần nhập tiếp theo",
+	"server.downloads.moved-to-after-import": "Đã chuyển sang {cat} sau khi nhập",
+	"server.library.files-matched-by-hand": "{name}: đã ghép {n} tệp bằng tay",
+	"server.library.no-such-file-in-this-title": "không có tệp đó trong mục này",
+	"server.library.send-1-to-2000-files": "gửi từ 1 đến 2000 tệp",
+	"server.sources.this-kind-of-title-can-t": "không thể tìm kiếm loại tựa đề này"
 }

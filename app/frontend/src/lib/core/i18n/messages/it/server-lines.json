@@ -1282,5 +1282,11 @@
 	"server.migrate.nothing-in-the-old-app-gives": "niente nella vecchia app gli dà punti, quindi qui non cambia nulla",
 	"server.migrate.pick-rules-here-still-give-it": "delle Regole di scelta qui gli danno ancora punti, quindi resta",
 	"server.migrate.pick-rules-hold-at-most-64": "le Regole di scelta contengono al massimo 64 tratti; sono stati tenuti i punteggi più forti",
-	"server.migrate.something-here-still-uses-these-pick": "qualcosa qui usa ancora queste Regole di scelta, quindi restano"
+	"server.migrate.something-here-still-uses-these-pick": "qualcosa qui usa ancora queste Regole di scelta, quindi restano",
+	"server.downloads.could-not-move-the-imported-download": "Impossibile spostare il download importato in {cat} su {name}: {error}; HolyArrs riproverà alla prossima importazione",
+	"server.downloads.moved-to-after-import": "Spostato in {cat} dopo l'importazione",
+	"server.library.files-matched-by-hand": "{name}: {n} file abbinati a mano",
+	"server.library.no-such-file-in-this-title": "nessun file del genere in questo titolo",
+	"server.library.send-1-to-2000-files": "invia da 1 a 2000 file",
+	"server.sources.this-kind-of-title-can-t": "questo tipo di titolo non può essere cercato"
 }

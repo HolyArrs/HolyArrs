@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent ja ruTorrent allalaadijana**, ka seedboxides. Valmis Usenet-allalaadimised liiguvad nüüd sinu meediakogusse, mitte ei kopeerita. [Mis uut](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: nüüd 44 keeles**, ka paremalt vasakule. aria2 töötab allalaadijana ja hooajapaketid laaditakse alla paar osa korraga. [Mis uut](https://holyarrs.com/whats-new/)
 
 > Iga poster, treiler ja hinnang sinu HolyArrsis tuleb serverist, mida ma ise pean ja mille eest ise maksan, et see jääks kõigile tasuta. Kui HolyArrs tegi sinu filmiõhtu veidi paremaks, hoiab sponsor tuled meil kõigil põlemas 💛
 >
@@ -222,7 +220,7 @@ Image'id asuvad Docker Hubis kui [`holyarrs/holyarrs`](https://hub.docker.com/r/
 | Silt | Kasuta selleks |
 | :----: | --- |
 | `latest` | Uusim versioon. |
-| `1.0.19` | Üks täpne versioon. See ei liigu kunagi. |
+| `1.1.0` | Üks täpne versioon. See ei liigu kunagi. |
 
 ## Kasutamine
 

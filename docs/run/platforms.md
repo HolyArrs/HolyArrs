@@ -25,6 +25,8 @@ Run HolyArrs on your NAS with the right folders, owner and restart setting. Read
 7. Tick **Enable auto-restart**.
 8. Open `http://your-server:6262`. You should see the first-run wizard. Add `/data/media/movies`, `/data/media/tv` and `/data/media/music` as Library folders.
 
+No Container Manager on your model? Try the experimental [Synology package](synology.md).
+
 ::tab[Unraid]
 There is no Community Applications template yet, so add the container by hand.
 

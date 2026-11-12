@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "έκδοση",
 	"downloads.ot.kindLanguage": "γλώσσα",
 	"downloads.ot.kindReleaseType": "τύπος κυκλοφορίας",
-	"downloads.ot.kindYear": "έτος"
+	"downloads.ot.kindYear": "έτος",
+	"downloads.hl.notMoved": "Δεν μεταφέρθηκε μετά την εισαγωγή"
 }

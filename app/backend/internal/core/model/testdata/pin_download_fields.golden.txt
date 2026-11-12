@@ -45,6 +45,8 @@ Removed bool db="removed" json=""
 Writable bool db="writable" json=""
 ClearFinished bool db="clear_finished" json=""
 Tags []string db="tags,json" json=""
+CategoryAfterImport string db="category_after_import" json=""
+OwnOnly bool db="own_only" json=""
 --
 Name string db="" json="name"
 Size int64 db="" json="size"

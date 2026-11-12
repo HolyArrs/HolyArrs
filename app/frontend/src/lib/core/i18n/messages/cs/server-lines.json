@@ -1282,5 +1282,11 @@
 	"server.migrate.nothing-in-the-old-app-gives": "nic ve staré aplikaci mu nedává body, takže tu nic nemění",
 	"server.migrate.pick-rules-here-still-give-it": "Pravidla výběru tady mu stále dávají body, takže zůstává",
 	"server.migrate.pick-rules-hold-at-most-64": "Pravidla výběru pojmou nejvýše 64 vlastností; ponechána byla nejsilnější skóre",
-	"server.migrate.something-here-still-uses-these-pick": "něco tady tato Pravidla výběru stále používá, takže zůstávají"
+	"server.migrate.something-here-still-uses-these-pick": "něco tady tato Pravidla výběru stále používá, takže zůstávají",
+	"server.downloads.could-not-move-the-imported-download": "Importované stahování se nepodařilo přesunout do {cat} v {name}: {error}; HolyArrs to zkusí znovu při dalším importu",
+	"server.downloads.moved-to-after-import": "Po importu přesunuto do {cat}",
+	"server.library.files-matched-by-hand": "{name}: ručně přiřazené soubory: {n}",
+	"server.library.no-such-file-in-this-title": "takový soubor v tomto titulu není",
+	"server.library.send-1-to-2000-files": "pošlete 1 až 2000 souborů",
+	"server.sources.this-kind-of-title-can-t": "tento druh titulu nelze vyhledat"
 }

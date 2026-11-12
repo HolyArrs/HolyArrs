@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "edisi",
 	"downloads.ot.kindLanguage": "bahasa",
 	"downloads.ot.kindReleaseType": "jenis rilis",
-	"downloads.ot.kindYear": "tahun"
+	"downloads.ot.kindYear": "tahun",
+	"downloads.hl.notMoved": "Tidak dipindahkan setelah impor"
 }

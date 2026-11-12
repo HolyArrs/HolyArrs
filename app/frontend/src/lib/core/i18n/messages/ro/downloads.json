@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "ediție",
 	"downloads.ot.kindLanguage": "limbă",
 	"downloads.ot.kindReleaseType": "tip de lansare",
-	"downloads.ot.kindYear": "an"
+	"downloads.ot.kindYear": "an",
+	"downloads.hl.notMoved": "Nu a fost mutat după import"
 }

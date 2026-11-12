@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 stänger av den här kontrollen; annars 5 till 1440.",
 	"settings.downloaders.crawlKbps": "Långsammare än (KB/s)",
 	"settings.downloaders.crawlHours": "Under (timmar)",
-	"settings.downloaders.crawlHint": "0 i någon av dem stänger av kontrollen för långsam hastighet."
+	"settings.downloaders.crawlHint": "0 i någon av dem stänger av kontrollen för långsam hastighet.",
+	"settings.downloaders.categoryAfterImport": "Kategori efter import",
+	"settings.downloaders.categoryAfterImportHint": "När en torrent har importerats flyttar HolyArrs den till den här kategorin. Lämna tomt för att behålla den i huvudkategorin.",
+	"settings.downloaders.ownOnly": "Visa bara HolyArrs-objekt",
+	"settings.downloaders.ownOnlyHint": "Andra appars objekt i den här nedladdaren döljs, och HolyArrs ändrar dem inte."
 }

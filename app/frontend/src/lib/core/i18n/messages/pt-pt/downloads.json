@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "edição",
 	"downloads.ot.kindLanguage": "idioma",
 	"downloads.ot.kindReleaseType": "tipo de lançamento",
-	"downloads.ot.kindYear": "ano"
+	"downloads.ot.kindYear": "ano",
+	"downloads.hl.notMoved": "Não movido após importar"
 }

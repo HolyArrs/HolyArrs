@@ -1282,5 +1282,11 @@
 	"server.migrate.nothing-in-the-old-app-gives": "nekas vecajā lietotnē tam nedod punktus, tāpēc šeit tas neko nemaina",
 	"server.migrate.pick-rules-here-still-give-it": "šeit esošie Izvēles noteikumi tam vēl dod punktus, tāpēc tas paliek",
 	"server.migrate.pick-rules-hold-at-most-64": "Izvēles noteikumos ietilpst ne vairāk kā 64 pazīmes; paturēti spēcīgākie rezultāti",
-	"server.migrate.something-here-still-uses-these-pick": "kaut kas šeit vēl izmanto šos Izvēles noteikumus, tāpēc tie paliek"
+	"server.migrate.something-here-still-uses-these-pick": "kaut kas šeit vēl izmanto šos Izvēles noteikumus, tāpēc tie paliek",
+	"server.downloads.could-not-move-the-imported-download": "Importēto lejupielādi neizdevās pārvietot uz {cat} klientā {name}: {error}; HolyArrs mēģinās vēlreiz nākamajā importā",
+	"server.downloads.moved-to-after-import": "Pēc importa pārvietots uz {cat}",
+	"server.library.files-matched-by-hand": "{name}: manuāli sasaistīti faili: {n}",
+	"server.library.no-such-file-in-this-title": "šādā nosaukumā tāda faila nav",
+	"server.library.send-1-to-2000-files": "nosūtiet no 1 līdz 2000 failiem",
+	"server.sources.this-kind-of-title-can-t": "šāda veida nosaukumu nevar meklēt"
 }

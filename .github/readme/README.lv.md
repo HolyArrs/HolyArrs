@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent un ruTorrent kā lejupielādētājs**, arī seedbox serveros. Pabeigtās Usenet lejupielādes tagad tiek pārvietotas uz tavu bibliotēku, nevis kopētas. [Skaties, kas jauns](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: tagad 44 valodās**, arī no labās uz kreiso. aria2 darbojas kā lejupielādētājs, un sezonu pakas lejupielādējas pa dažām sērijām. [Skaties, kas jauns](https://holyarrs.com/whats-new/)
 
 > Katrs plakāts, treileris un vērtējums tavā HolyArrs nāk no servera, ko es pats uzturu un apmaksāju, lai tas paliktu bezmaksas visiem. Ja HolyArrs ir padarījis filmu vakaru mazliet labāku, sponsors palīdz mums visiem uzturēt gaismu 💛
 >
@@ -222,7 +220,7 @@ Attēli ir Docker Hub kā [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarr
 | Birka | Kam to lietot |
 | :----: | --- |
 | `latest` | Jaunākā versija. |
-| `1.0.19` | Viena konkrēta versija. Tā nekad nemainās. |
+| `1.1.0` | Viena konkrēta versija. Tā nekad nemainās. |
 
 ## Lietošana
 

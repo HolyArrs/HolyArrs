@@ -2,6 +2,7 @@ package downloads
 
 import (
 	"context"
+	"math"
 	"path"
 	"strings"
 
@@ -262,10 +263,10 @@ func (a *Aria2) job(s a2Status) Job {
 	if done > 0 {
 		ratio = float64(up) / float64(done)
 	}
-	seeds := max(0, a2Num(s.NumSeeders))
+	seeds := min(max(0, a2Num(s.NumSeeders)), math.MaxInt32)
 	return Job{ID: strings.ToLower(s.InfoHash), Name: name, Category: a2Folder(s.Dir), SavePath: s.Dir, ContentPath: content(s),
 		Size: total, Progress: progress, Speed: down, UpSpeed: max(0, a2Num(s.UploadSpeed)), Seeds: int(seeds),
-		Peers: int(max(0, a2Num(s.Connections)-seeds)), ETA: eta, State: state, Detail: detail, Ratio: ratio, Uploaded: up}
+		Peers: int(min(max(0, a2Num(s.Connections)-seeds), math.MaxInt32)), ETA: eta, State: state, Detail: detail, Ratio: ratio, Uploaded: up}
 }
 
 // files are the selected files of a job, named from its folder.

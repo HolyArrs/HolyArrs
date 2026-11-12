@@ -25558,6 +25558,99 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/settings/side-files": {
+      "get": {
+        "description": "Whether subtitle files that come with a download are brought into the Library beside their video, and which file types.",
+        "operationId": "getSideFiles",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "on": {
+                      "description": "Bring subtitle files along on import; off by default.",
+                      "type": "boolean"
+                    },
+                    "types": {
+                      "description": "The file types brought along, such as srt; 1 to 10.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The side files setting."
+          }
+        },
+        "summary": "Read the side files setting",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "operationId": "putSideFiles",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "on": {
+                    "description": "Bring subtitle files along on import; off by default.",
+                    "type": "boolean"
+                  },
+                  "types": {
+                    "description": "The file types brought along, such as srt; 1 to 10.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "on": {
+                      "description": "Bring subtitle files along on import; off by default.",
+                      "type": "boolean"
+                    },
+                    "types": {
+                      "description": "The file types brought along, such as srt; 1 to 10.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The side files setting."
+          },
+          "400": {
+            "description": "A file type list that is empty, too long or names a video type."
+          }
+        },
+        "summary": "Save the side files setting",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/settings/status": {
       "get": {
         "description": "One answer for the Settings home: health checks (warning or error as the check says), failed (error) or stuck (warning) stages, media servers and subtitle sites, Sources and Downloaders not answering (error), the metadata server not answering (warning), no backup or none in 7 days (warning), a newer HolyArrs (info), and saved Movies and TV defaults whose folder or Pick rules are gone (warning, page /settings/title-defaults, group library). The answer is kept 30 seconds for everyone.",

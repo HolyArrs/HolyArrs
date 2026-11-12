@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "ฉบับ",
 	"downloads.ot.kindLanguage": "ภาษา",
 	"downloads.ot.kindReleaseType": "ประเภทการเผยแพร่",
-	"downloads.ot.kindYear": "ปี"
+	"downloads.ot.kindYear": "ปี",
+	"downloads.hl.notMoved": "ไม่ได้ย้ายหลังนำเข้า"
 }

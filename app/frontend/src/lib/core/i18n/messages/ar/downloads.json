@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "الإصدار",
 	"downloads.ot.kindLanguage": "اللغة",
 	"downloads.ot.kindReleaseType": "نوع الإصدار",
-	"downloads.ot.kindYear": "السنة"
+	"downloads.ot.kindYear": "السنة",
+	"downloads.hl.notMoved": "لم يُنقل بعد الاستيراد"
 }
