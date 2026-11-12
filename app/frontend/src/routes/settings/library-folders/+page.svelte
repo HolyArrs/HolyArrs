@@ -341,10 +341,10 @@
 	.free b { font: 600 15px/1 var(--font-ui); }
 	.free small { color: var(--text-muted); font: 400 12px/1 var(--font-ui); }
 	.st { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font: 500 12px/1 var(--font-ui); white-space: nowrap; }
-	.st i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 18%, transparent); }
+	.st i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 18%, transparent); }
 	.st.wait i { background: var(--wait); box-shadow: 0 0 0 3px color-mix(in srgb, var(--wait) 22%, transparent); }
 	.st.fail i { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
-	.st .why-link { color: var(--accent, var(--text)); text-decoration: underline; text-underline-offset: 2px; }
+	.st .why-link { flex: none; color: var(--accent, var(--text)); text-decoration: underline; text-underline-offset: 2px; }
 	.acts { display: flex; align-items: center; gap: 2px; }
 	.ed { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 	.ed .input { max-width: 240px; min-height: 36px; }
@@ -374,8 +374,8 @@
 	.kind { display: none; }
 
 	@media (max-width: 760px) {
-		.folder { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic grow st' 'ic free acts'; row-gap: 6px; }
-		.folder .ic { grid-area: ic; align-self: start; } .folder .grow { grid-area: grow; } .folder .st { grid-area: st; justify-self: end; }
+		.folder { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic grow grow' 'ic st st' 'ic free acts'; row-gap: 6px; }
+		.folder .ic { grid-area: ic; align-self: start; } .folder .grow { grid-area: grow; } .folder .st { grid-area: st; justify-self: start; white-space: normal; line-height: 1.3; }
 		.folder .free { grid-area: free; justify-content: flex-start; } .folder .acts { grid-area: acts; justify-self: end; opacity: 1 !important; }
 		.folder .kind { display: none; }
 		.folder .name { white-space: normal; }
@@ -386,5 +386,10 @@
 	.ic, .k-show .ic, .k-music .ic { width: 24px; height: 24px; background: none; box-shadow: none; border-radius: 0; color: color-mix(in srgb, var(--text) 55%, transparent); }
 	@media (max-width: 760px) { .fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto; } }
 	/* Phones: the buttons take their own line at the row's end (change path, then remove, last), so a long Rename label cannot squeeze the name. */
-	@media (max-width: 480px) { .folder { grid-template-areas: 'ic grow st' 'ic free free' 'ic acts acts'; } .folder .acts { justify-self: end; margin-inline-end: -8px; } }
+	/* The state takes its own line too, so a long state never squeezes the name. */
+	@media (max-width: 480px) {
+		.folder { grid-template-areas: 'ic grow grow' 'ic st st' 'ic free free' 'ic acts acts'; }
+		.folder .st { justify-self: start; white-space: normal; line-height: 1.3; }
+		.folder .acts { justify-self: end; flex-wrap: wrap; justify-content: flex-end; margin-inline-end: -8px; }
+	}
 </style>
