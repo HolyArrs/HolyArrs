@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { finishFirstRun } from '../helpers/helpers.ts';
+import { setUpFresh } from '../helpers/helpers.ts';
 import { dataDir } from '../helpers/data-folder.ts';
 
 // Every page at 360 and 390 wide: no sideways scroll, the bottom menu shows,
@@ -46,22 +46,9 @@ async function measure(page: Page) {
 
 test('phone audit: every page at 360 and 390', async ({ page }) => {
 	test.setTimeout(600_000);
-	// First run: make the owner and one folder.
-	// The first start may show "starting" for a while; reload until set-up shows.
-	await expect(async () => {
-		await page.goto('/');
-		await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible({ timeout: 2_000 });
-	}).toPass({ timeout: 120_000 });
-	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
-	await page.getByLabel('Name').fill('luis');
-	await page.getByLabel('Password', { exact: true }).fill('phone-audit-pw');
-	await page.getByLabel('Password again').fill('phone-audit-pw');
-	await page.getByRole('button', { name: 'Create account' }).click();
-	await page.getByLabel('Music', { exact: true }).check();
-	await page.getByLabel('Yes', { exact: true }).check();
-	await page.getByRole('button', { name: 'Continue' }).click();
-	await finishFirstRun(page, join(tmp, 'movies'));
-	await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
+	// First run: the owner and one folder, with Music and Requests on so their pages open.
+	const pw = `e2e-${Math.random().toString(36).slice(2)}-pw`;
+	await setUpFresh(page, { name: 'luis', password: pw }, join(tmp, 'movies'), { music: true, invite: true });
 
 	const report: Record<string, unknown> = {};
 	const fails: string[] = [];
