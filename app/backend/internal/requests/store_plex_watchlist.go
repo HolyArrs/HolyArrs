@@ -27,3 +27,19 @@ const (
 			ON CONFLICT (user_id) DO UPDATE SET movies = excluded.movies, shows = excluded.shows, chosen = 1`
 	plexLinkNameSQL = "SELECT external_name FROM user_links WHERE provider = 'plex' AND user_id = ? LIMIT 1"
 )
+
+// Statements of plex_friends.go.
+const (
+	friendsSQL = `SELECT u.id, l.external_id FROM users u JOIN user_links l ON l.user_id = u.id AND l.provider = 'plex'
+		LEFT JOIN plex_watchlist_people x ON x.user_id = u.id
+		WHERE u.state = 'active' AND u.role <> 'owner' AND (coalesce(x.chosen, 0) = 0 OR x.movies = 1 OR x.shows = 1) ORDER BY u.id`
+	userRoleSQL   = "SELECT role FROM users WHERE id = ?"
+	friendsDueSQL = `SELECT count(*) FROM users u JOIN user_links l ON l.user_id = u.id AND l.provider = 'plex'
+		LEFT JOIN plex_watchlist_people x ON x.user_id = u.id
+		WHERE u.state = 'active' AND u.role <> 'owner' AND (coalesce(x.chosen, 0) = 0 OR x.movies = 1 OR x.shows = 1)`
+	readPlexFriendsSQL = `SELECT u.id, u.name, l.external_name, u.role = 'member' AND u.max_rating != '', x.checked_at, coalesce(x.error, ''),
+			(SELECT count(*) FROM plex_watchlist_items i WHERE i.user_id = u.id AND i.state IN ('asked', 'joined'))
+		FROM users u JOIN user_links l ON l.user_id = u.id AND l.provider = 'plex'
+		LEFT JOIN plex_watchlist_people x ON x.user_id = u.id
+		WHERE u.state = 'active' AND u.role <> 'owner' ORDER BY u.name COLLATE NOCASE, u.id`
+)

@@ -1219,5 +1219,9 @@
 	"server.library.files-in-this-library-folder-changed": "pliki w tym folderze Biblioteki zmieniły się podczas sprawdzania nowej ścieżki; spróbuj ponownie",
 	"server.library.the-folder-does-not-exist": "folder nie istnieje",
 	"server.library.the-path-must-be-an-absolute": "ścieżka musi być bezwzględną ścieżką folderu, nie całym dyskiem i nie w folderze konfiguracji ani wokół niego",
-	"server.library.that-folder-or-one-inside-or": "ten folder, albo folder w nim lub wokół niego, to już folder biblioteki"
+	"server.library.that-folder-or-one-inside-or": "ten folder, albo folder w nim lub wokół niego, to już folder biblioteki",
+	"server.requests.this-plex-account-no-longer-shares": "To konto Plex nie ma już udostępnionego serwera właściciela, więc jego lista obserwowanych nie jest odczytywana.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex pokazał pustą listę obserwowanych. Jeśli są na niej tytuły, ustawienie prywatności może ukrywać ją przed znajomymi.",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex nie udostępnił tej listy obserwowanych kontu Plex właściciela. Ustawienie prywatności może ukrywać ją przed znajomymi.",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex odrzucił połączenie Plex właściciela. Właściciel może ponownie połączyć Plex w Ustawieniach."
 }

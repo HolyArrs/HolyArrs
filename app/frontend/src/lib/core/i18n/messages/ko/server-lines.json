@@ -1219,5 +1219,9 @@
 	"server.library.files-in-this-library-folder-changed": "새 경로를 확인하는 동안 이 라이브러리 폴더의 파일이 바뀌었습니다. 다시 시도하세요",
 	"server.library.the-folder-does-not-exist": "폴더가 없습니다",
 	"server.library.the-path-must-be-an-absolute": "경로는 폴더의 절대 경로여야 합니다. 드라이브 전체나 설정 폴더 안이나 그 주변은 안 됩니다",
-	"server.library.that-folder-or-one-inside-or": "이 폴더 또는 그 안이나 주변의 폴더가 이미 라이브러리 폴더입니다"
+	"server.library.that-folder-or-one-inside-or": "이 폴더 또는 그 안이나 주변의 폴더가 이미 라이브러리 폴더입니다",
+	"server.requests.this-plex-account-no-longer-shares": "이 Plex 계정은 더 이상 소유자의 서버를 공유하지 않아 워치리스트를 읽지 않습니다.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex가 빈 워치리스트를 보여 주었습니다. 타이틀이 있다면 개인정보 설정 때문에 친구에게 숨겨져 있을 수 있습니다.",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex가 이 워치리스트를 소유자의 Plex 계정과 공유하지 않았습니다. 개인정보 설정 때문에 친구에게 숨겨져 있을 수 있습니다.",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex가 소유자의 Plex 연결을 거부했습니다. 소유자는 설정에서 Plex를 다시 연결할 수 있습니다."
 }

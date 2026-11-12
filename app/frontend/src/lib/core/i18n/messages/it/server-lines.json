@@ -1219,5 +1219,9 @@
 	"server.library.files-in-this-library-folder-changed": "i file di questa cartella della Libreria sono cambiati durante il controllo del nuovo percorso; riprova",
 	"server.library.the-folder-does-not-exist": "la cartella non esiste",
 	"server.library.the-path-must-be-an-absolute": "il percorso deve essere un percorso di cartella assoluto, non un intero disco e non dentro o attorno alla cartella di configurazione",
-	"server.library.that-folder-or-one-inside-or": "questa cartella, o una al suo interno o attorno, è già una cartella della Libreria"
+	"server.library.that-folder-or-one-inside-or": "questa cartella, o una al suo interno o attorno, è già una cartella della Libreria",
+	"server.requests.this-plex-account-no-longer-shares": "Questo account Plex non condivide più il server del proprietario, quindi la sua watchlist non viene letta.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex ha mostrato una watchlist vuota. Se contiene titoli, la sua impostazione di privacy potrebbe nasconderla agli amici.",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex non ha condiviso questa watchlist con l'account Plex del proprietario. La sua impostazione di privacy potrebbe nasconderla agli amici.",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex ha rifiutato il collegamento Plex del proprietario. Il proprietario può collegare di nuovo Plex in Impostazioni."
 }

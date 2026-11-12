@@ -1219,5 +1219,9 @@
 	"server.library.files-in-this-library-folder-changed": "yeni yol kontrol edilirken bu Kitaplık klasöründeki dosyalar değişti; yeniden deneyin",
 	"server.library.the-folder-does-not-exist": "klasör yok",
 	"server.library.the-path-must-be-an-absolute": "yol mutlak bir klasör yolu olmalı; tüm bir sürücü olamaz, ayar klasörünün içinde veya çevresinde olamaz",
-	"server.library.that-folder-or-one-inside-or": "bu klasör, ya da içindeki veya çevresindeki bir klasör, zaten bir Kütüphane klasörü"
+	"server.library.that-folder-or-one-inside-or": "bu klasör, ya da içindeki veya çevresindeki bir klasör, zaten bir Kütüphane klasörü",
+	"server.requests.this-plex-account-no-longer-shares": "Bu Plex hesabı artık sahibin sunucusunu paylaşmıyor, bu yüzden izleme listesi okunmuyor.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex boş bir izleme listesi gösterdi. Listede başlıklar varsa gizlilik ayarı onu arkadaşlardan gizliyor olabilir.",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex bu izleme listesini sahibin Plex hesabıyla paylaşmadı. Gizlilik ayarı onu arkadaşlardan gizliyor olabilir.",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex, sahibin Plex bağlantısını reddetti. Sahip, Plex'i Ayarlar'da yeniden bağlayabilir."
 }

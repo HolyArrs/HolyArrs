@@ -1219,5 +1219,9 @@
 	"server.library.files-in-this-library-folder-changed": "файлы в этой папке Библиотеки изменились во время проверки нового пути; попробуйте ещё раз",
 	"server.library.the-folder-does-not-exist": "папка не существует",
 	"server.library.the-path-must-be-an-absolute": "путь должен быть полным путём к папке, не целым диском и не внутри или вокруг папки настроек",
-	"server.library.that-folder-or-one-inside-or": "эта папка, или папка внутри или вокруг неё, уже папка Медиатеки"
+	"server.library.that-folder-or-one-inside-or": "эта папка, или папка внутри или вокруг неё, уже папка Медиатеки",
+	"server.requests.this-plex-account-no-longer-shares": "Эта учётная запись Plex больше не имеет доступа к серверу владельца, поэтому её список «Смотреть позже» не читается.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex показал пустой список «Смотреть позже». Если он не пуст, настройка приватности может скрывать его от друзей.",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex не показал этот список «Смотреть позже» учётной записи Plex владельца. Настройка приватности может скрывать его от друзей.",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex отклонил связь Plex владельца. Владелец может снова связать Plex в разделе «Настройки»."
 }

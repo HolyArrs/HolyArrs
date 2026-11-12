@@ -183,6 +183,7 @@ ask_albums
 ask_fingerprint
 ask_id
 ask_settings
+asked
 asked_at
 asked_by
 askers
@@ -1052,6 +1053,7 @@ next_try
 next_try_at
 no_limit
 no_release
+nodes
 nominations
 noofslots
 noofslots_total
@@ -1125,6 +1127,7 @@ owner
 owner_active
 owner_api_key
 owner_id
+owner_linked
 p
 pack
 pack_alerts
@@ -1212,6 +1215,7 @@ playabilityStatus
 playerStoryboardSpecRenderer
 plays
 plex
+plex_friends
 plex_name
 plex_watchlists
 plex_watchlists_everyone
@@ -1301,6 +1305,7 @@ ratings
 ratio
 ratio_limit
 read_at
+read_by_owner
 read_token
 reason
 reasons
@@ -1859,6 +1864,7 @@ was_owner
 wasted
 watched_edition
 watching
+watchlist
 webChannel
 webhook
 webhook_auth

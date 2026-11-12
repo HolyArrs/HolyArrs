@@ -1219,5 +1219,9 @@
 	"server.library.files-in-this-library-folder-changed": "नया पाथ जाँचते समय इस लाइब्रेरी फ़ोल्डर की फ़ाइलें बदल गईं; फिर से कोशिश करें",
 	"server.library.the-folder-does-not-exist": "फ़ोल्डर मौजूद नहीं है",
 	"server.library.the-path-must-be-an-absolute": "पाथ पूरा फ़ोल्डर पाथ होना चाहिए, पूरी ड्राइव नहीं, और कॉन्फ़िग फ़ोल्डर के अंदर या आसपास नहीं",
-	"server.library.that-folder-or-one-inside-or": "यह फ़ोल्डर, या इसके अंदर या आसपास का कोई फ़ोल्डर, पहले से लाइब्रेरी फ़ोल्डर है"
+	"server.library.that-folder-or-one-inside-or": "यह फ़ोल्डर, या इसके अंदर या आसपास का कोई फ़ोल्डर, पहले से लाइब्रेरी फ़ोल्डर है",
+	"server.requests.this-plex-account-no-longer-shares": "यह Plex अकाउंट अब ओनर का सर्वर शेयर नहीं करता, इसलिए इसकी वॉचलिस्ट नहीं पढ़ी जाती।",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex ने खाली वॉचलिस्ट दिखाई। अगर इसमें टाइटल हैं, तो इसकी प्राइवेसी सेटिंग इसे दोस्तों से छिपा सकती है।",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex ने यह वॉचलिस्ट ओनर के Plex अकाउंट के साथ शेयर नहीं की। इसकी प्राइवेसी सेटिंग इसे दोस्तों से छिपा सकती है।",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex ने ओनर का Plex लिंक नहीं माना। ओनर सेटिंग में Plex फिर से लिंक कर सकता है।"
 }

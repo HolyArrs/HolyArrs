@@ -1219,5 +1219,9 @@
 	"server.library.files-in-this-library-folder-changed": "新しいパスの確認中にこのライブラリフォルダーのファイルが変わりました。もう一度お試しください",
 	"server.library.the-folder-does-not-exist": "フォルダーが存在しません",
 	"server.library.the-path-must-be-an-absolute": "パスはフォルダーの絶対パスにしてください。ドライブ全体や、設定フォルダーの中やその周りは使えません",
-	"server.library.that-folder-or-one-inside-or": "このフォルダー、またはその中や周りのフォルダーは、すでにライブラリフォルダーです"
+	"server.library.that-folder-or-one-inside-or": "このフォルダー、またはその中や周りのフォルダーは、すでにライブラリフォルダーです",
+	"server.requests.this-plex-account-no-longer-shares": "この Plex アカウントはオーナーのサーバーを共有しなくなったため、ウォッチリストは読み込まれません。",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex は空のウォッチリストを返しました。タイトルがある場合、プライバシー設定でフレンドから隠されている可能性があります。",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex はこのウォッチリストをオーナーの Plex アカウントに共有しませんでした。プライバシー設定でフレンドから隠されている可能性があります。",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex がオーナーの Plex 連携を拒否しました。オーナーは設定で Plex を再度連携できます。"
 }

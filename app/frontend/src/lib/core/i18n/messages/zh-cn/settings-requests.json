@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "从 Plex 想看清单发起请求",
 	"settings.requests.plexOnHint": "每个人在“我的账户”中自行开启，并受其限额约束。",
 	"settings.requests.plexEveryone": "为所有使用 Plex 登录的人开启",
-	"settings.requests.plexEveryoneHint": "每个人都可以在“我的账户”中为自己关闭。"
+	"settings.requests.plexEveryoneHint": "每个人都可以在“我的账户”中为自己关闭。",
+	"settings.requests.plexFriends": "包括 Plex 好友",
+	"settings.requests.plexFriendsHint": "从 Plex 导入的好友。用你的 Plex 关联读取；每位好友的限额照常适用。",
+	"settings.requests.plexFriendsNoLink": "请先在 设置 › 登录 中关联 Plex。",
+	"settings.requests.plexFriendsNone": "还没有从 Plex 导入任何人。",
+	"settings.requests.plexFriendsRead": "{when}读取",
+	"settings.requests.plexFriendsNotYet": "尚未读取",
+	"settings.requests.plexFriendsAsked": "已请求：{n}"
 }

@@ -1219,5 +1219,9 @@
 	"server.library.files-in-this-library-folder-changed": "los archivos de esta carpeta de la Biblioteca cambiaron mientras se comprobaba la ruta nueva; inténtalo de nuevo",
 	"server.library.the-folder-does-not-exist": "la carpeta no existe",
 	"server.library.the-path-must-be-an-absolute": "la ruta debe ser una ruta de carpeta absoluta, no una unidad entera ni dentro o alrededor de la carpeta de configuración",
-	"server.library.that-folder-or-one-inside-or": "esa carpeta, o una dentro o alrededor de ella, ya es una carpeta de la Biblioteca"
+	"server.library.that-folder-or-one-inside-or": "esa carpeta, o una dentro o alrededor de ella, ya es una carpeta de la Biblioteca",
+	"server.requests.this-plex-account-no-longer-shares": "Esta cuenta de Plex ya no comparte el servidor del propietario, así que su lista de seguimiento no se lee.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex mostró una lista de seguimiento vacía. Si tiene títulos, su ajuste de privacidad puede ocultarla a los amigos.",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex no compartió esta lista de seguimiento con la cuenta de Plex del propietario. Su ajuste de privacidad puede ocultarla a los amigos.",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex rechazó la vinculación de Plex del propietario. El propietario puede volver a vincular Plex en Ajustes."
 }

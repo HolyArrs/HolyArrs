@@ -23,6 +23,7 @@ var RouteScopes = map[string]string{
 	"GET /api/v1/downloads/{id}/usenet":                          webserver.ScopeAdmin,
 	"GET /api/v1/downloaders/{id}/attempts":                      webserver.ScopeAdmin,
 	"GET /api/v1/explore/title-stats":                            webserver.ScopeAdmin,
+	"GET /api/v1/settings/asks/plex-friends":                     webserver.ScopeAdmin,
 	"POST /api/v1/downloaders/{id}/attempts/{attemptID}/abandon": webserver.ScopeAdmin,
 	"POST /api/v1/auth/oidc/start":                               webserver.ScopeAdmin,
 	"POST /api/v1/auth/oidc/finish":                              webserver.ScopeAdmin,

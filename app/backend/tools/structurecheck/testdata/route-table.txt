@@ -190,6 +190,7 @@ GET /api/v1/searches auth=manage_library scope=read assurance=false part=media
 GET /api/v1/settings/ai auth=signed_in scope=admin assurance=false part=core
 GET /api/v1/settings/alerts auth=settings scope=read assurance=false part=core
 GET /api/v1/settings/asks auth=settings scope=read assurance=false part=wishlist
+GET /api/v1/settings/asks/plex-friends auth=users scope=admin assurance=false part=wishlist
 GET /api/v1/settings/downloaders auth=settings scope=read assurance=false part=core
 GET /api/v1/settings/files auth=manage_library scope=read assurance=false part=media
 GET /api/v1/settings/health auth=settings scope=read assurance=false part=core

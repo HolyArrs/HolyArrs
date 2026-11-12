@@ -52,6 +52,9 @@ type Settings struct {
 	// PlexWatchlistsEveryone reads the watchlist of everyone with a Plex
 	// sign-in, unless they turned it off themselves.
 	PlexWatchlistsEveryone bool `json:"plex_watchlists_everyone"`
+	// PlexFriends also reads the watchlists of people imported from the
+	// owner's Plex account, with the owner's Plex link (off by default).
+	PlexFriends bool `json:"plex_friends"`
 }
 
 // PerWeekOf is the default weekly limit for one kind.
@@ -66,7 +69,7 @@ func (s Settings) PerWeekOf(kind string) int {
 }
 
 var settingKeys = []string{"ask_movies_per_week", "ask_library_folder_id", "ask_pick_rules_id", "ask_search_on_approve",
-	"ask_show_library_folder_id", "ask_show_pick_rules_id", "ask_shows_per_week", "ask_music_library_folder_id", "ask_music_pick_rules_id", "ask_music_per_week", "ask_plex_watchlists", "ask_plex_watchlists_everyone"}
+	"ask_show_library_folder_id", "ask_show_pick_rules_id", "ask_shows_per_week", "ask_music_library_folder_id", "ask_music_pick_rules_id", "ask_music_per_week", "ask_plex_watchlists", "ask_plex_watchlists_everyone", "ask_plex_friends"}
 
 // ReadSettings reads the Request settings (10 a week of each kind, search
 // on approve).
@@ -110,6 +113,8 @@ func ReadSettings(ctx context.Context, db database.Lister) (Settings, error) {
 			s.PlexWatchlists = v == "true"
 		case "ask_plex_watchlists_everyone":
 			s.PlexWatchlistsEveryone = v == "true"
+		case "ask_plex_friends":
+			s.PlexFriends = v == "true"
 		}
 	}
 	return s, rows.Err()
@@ -173,7 +178,8 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 		now := database.FormatTime(time.Now())
 		vals := []string{strconv.Itoa(s.MoviesPerWeek), strconv.FormatInt(s.LibraryFolderID, 10), strconv.FormatInt(s.PickRulesID, 10), strconv.FormatBool(s.SearchOnApprove),
 			strconv.FormatInt(s.ShowLibraryFolderID, 10), strconv.FormatInt(s.ShowPickRulesID, 10), strconv.Itoa(s.ShowsPerWeek),
-			strconv.FormatInt(s.MusicLibraryFolderID, 10), strconv.FormatInt(s.MusicPickRulesID, 10), strconv.Itoa(s.MusicPerWeek), strconv.FormatBool(s.PlexWatchlists), strconv.FormatBool(s.PlexWatchlistsEveryone)}
+			strconv.FormatInt(s.MusicLibraryFolderID, 10), strconv.FormatInt(s.MusicPickRulesID, 10), strconv.Itoa(s.MusicPerWeek), strconv.FormatBool(s.PlexWatchlists), strconv.FormatBool(s.PlexWatchlistsEveryone),
+			strconv.FormatBool(s.PlexFriends)}
 		for i, k := range settingKeys {
 			_, err := tx.Exec(saveSettingsSQL2,
 				k, vals[i], now, string(who), now, string(who))

@@ -1219,5 +1219,9 @@
 	"server.library.files-in-this-library-folder-changed": "检查新路径时，此媒体库文件夹中的文件发生了变化；请重试",
 	"server.library.the-folder-does-not-exist": "文件夹不存在",
 	"server.library.the-path-must-be-an-absolute": "路径必须是文件夹的绝对路径，不能是整个磁盘，也不能在配置文件夹之内或周围",
-	"server.library.that-folder-or-one-inside-or": "这个文件夹，或其中或周围的文件夹，已是媒体库文件夹"
+	"server.library.that-folder-or-one-inside-or": "这个文件夹，或其中或周围的文件夹，已是媒体库文件夹",
+	"server.requests.this-plex-account-no-longer-shares": "这个 Plex 账户不再共享所有者的服务器，因此不会读取它的想看清单。",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex 显示的想看清单是空的。如果其中有内容，可能是隐私设置对好友隐藏了它。",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex 没有把这个想看清单共享给所有者的 Plex 账户。可能是隐私设置对好友隐藏了它。",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex 拒绝了所有者的 Plex 关联。所有者可以在设置中重新关联 Plex。"
 }

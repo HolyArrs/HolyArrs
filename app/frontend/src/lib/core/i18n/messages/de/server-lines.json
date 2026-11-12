@@ -1219,5 +1219,9 @@
 	"server.library.files-in-this-library-folder-changed": "Dateien in diesem Bibliotheksordner haben sich während der Prüfung des neuen Pfads geändert; versuche es erneut",
 	"server.library.the-folder-does-not-exist": "der Ordner existiert nicht",
 	"server.library.the-path-must-be-an-absolute": "der Pfad muss ein absoluter Ordnerpfad sein, kein ganzes Laufwerk und nicht im oder um den Config-Ordner",
-	"server.library.that-folder-or-one-inside-or": "dieser Ordner, oder einer darin oder darum, ist schon ein Bibliotheksordner"
+	"server.library.that-folder-or-one-inside-or": "dieser Ordner, oder einer darin oder darum, ist schon ein Bibliotheksordner",
+	"server.requests.this-plex-account-no-longer-shares": "Dieses Plex-Konto teilt den Server des Besitzers nicht mehr, daher wird seine Merkliste nicht gelesen.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "Plex hat eine leere Merkliste gezeigt. Wenn sie Titel enthält, verbirgt ihre Datenschutzeinstellung sie vielleicht vor Freunden.",
+	"server.requests.plex-did-not-share-this-watchlist": "Plex hat diese Merkliste nicht mit dem Plex-Konto des Besitzers geteilt. Ihre Datenschutzeinstellung verbirgt sie vielleicht vor Freunden.",
+	"server.requests.plex-refused-the-owner-s-plex": "Plex hat die Plex-Verknüpfung des Besitzers abgelehnt. Der Besitzer kann Plex in den Einstellungen erneut verknüpfen."
 }

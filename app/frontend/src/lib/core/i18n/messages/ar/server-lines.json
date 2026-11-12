@@ -1219,5 +1219,9 @@
 	"server.library.files-in-this-library-folder-changed": "تغيّرت ملفات في مجلد المكتبة هذا أثناء فحص المسار الجديد؛ حاول مرة أخرى",
 	"server.library.the-folder-does-not-exist": "المجلد غير موجود",
 	"server.library.the-path-must-be-an-absolute": "يجب أن يكون المسار مسار مجلد كاملًا، لا قرصًا كاملًا، ولا داخل مجلد الإعدادات أو حوله",
-	"server.library.that-folder-or-one-inside-or": "هذا المجلد، أو مجلد داخله أو حوله، هو مجلد مكتبة بالفعل"
+	"server.library.that-folder-or-one-inside-or": "هذا المجلد، أو مجلد داخله أو حوله، هو مجلد مكتبة بالفعل",
+	"server.requests.this-plex-account-no-longer-shares": "لم يعد حساب Plex هذا يشارك خادم المالك، لذا لا تُقرأ قائمة مشاهدته.",
+	"server.requests.plex-showed-an-empty-watchlist-if": "أظهر Plex قائمة مشاهدة فارغة. إن كانت فيها عناوين، فقد يخفيها إعداد الخصوصية عن الأصدقاء.",
+	"server.requests.plex-did-not-share-this-watchlist": "لم يشارك Plex قائمة المشاهدة هذه مع حساب Plex الخاص بالمالك. قد يخفيها إعداد الخصوصية عن الأصدقاء.",
+	"server.requests.plex-refused-the-owner-s-plex": "رفض Plex ربط Plex الخاص بالمالك. يمكن للمالك ربط Plex مرة أخرى في الإعدادات."
 }
