@@ -599,9 +599,12 @@
 		display: grid;
 		place-items: center;
 		min-height: 40px;
+		padding: 6px 10px;
 		border-radius: 9px;
 		color: var(--text-muted);
-		font: 500 15px/1 var(--font-ui);
+		font: 500 15px/1.2 var(--font-ui);
+		text-align: center;
+		overflow-wrap: anywhere;
 		cursor: pointer;
 		transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 	}
