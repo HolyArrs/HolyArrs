@@ -25,7 +25,8 @@ var (
 	// ErrNoPack means no season pack is being fetched a few episodes at a time.
 	ErrNoPack = errors.New("no season pack of this show is being fetched a few episodes at a time")
 	// ErrPackGone means the Downloader no longer has the season pack.
-	ErrPackGone = errors.New("the Downloader no longer has the season pack; its episodes are searched again")
+	ErrPackChanged = errors.New("the season pack changed while switching on episodes; try again")
+	ErrPackGone    = errors.New("the Downloader no longer has the season pack; its episodes are searched again")
 )
 
 // packWindow is how many episodes ahead a Release is fetched when it is a
@@ -208,7 +209,14 @@ func (m *Manager) buildPack(ctx context.Context, d domain.Download, files []Torr
 // downloading, so the poll follows it again. It never adds the torrent again.
 // A torrent the Downloader no longer has clears pack_files and returns
 // ErrPackGone; the episodes not fetched are still wanted and searched again.
+//
+// Widen calls run one at a time and read the Download afresh under that lock,
+// so two at once never pick the same episodes. The database records which
+// files are switched on first; if the Downloader then refuses, that record
+// is put back.
 func (m *Manager) Widen(ctx context.Context, downloadID int64, n int, by domain.Actor) (int, error) {
+	m.packMu.Lock()
+	defer m.packMu.Unlock()
 	db := m.Store.Read()
 	var d domain.Download
 	if err := database.Get(ctx, db, "downloads", downloadID, &d); err != nil {
@@ -252,12 +260,7 @@ func (m *Manager) Widen(ctx context.Context, downloadID int64, n int, by domain.
 	for k, i := range pick {
 		idx[k] = d.PackFiles[i].I
 	}
-	err = m.ControlEngine(ctx, dr, func(e Engine) error {
-		return asInspector(e, func(t TorrentInspector) error { return t.SetFilePriority(ctx, d.ExternalID, idx, 1) })
-	})
-	if err != nil {
-		return 0, fmt.Errorf("switching on the next episodes in %s: %w", dr.Name, err)
-	}
+	was := slices.Clone(d.PackFiles)
 	var slots []int64
 	for _, i := range pick {
 		d.PackFiles[i].On = true
@@ -267,6 +270,18 @@ func (m *Manager) Widen(ctx context.Context, downloadID int64, n int, by domain.
 				slots = append(slots, s)
 			}
 		}
+	}
+	if err := claimPack(ctx, m.Store, d.ID, was, d.PackFiles); err != nil {
+		return 0, err
+	}
+	err = m.ControlEngine(ctx, dr, func(e Engine) error {
+		return asInspector(e, func(t TorrentInspector) error { return t.SetFilePriority(ctx, d.ExternalID, idx, 1) })
+	})
+	if err != nil {
+		if uerr := claimPack(ctx, m.Store, d.ID, d.PackFiles, was); uerr != nil {
+			err = errors.Join(err, uerr)
+		}
+		return 0, fmt.Errorf("switching on the next episodes in %s: %w", dr.Name, err)
 	}
 	if err := widenPack(ctx, m.Store, &d, slots, m.now(), by); err != nil {
 		return 0, err
