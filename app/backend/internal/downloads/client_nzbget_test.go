@@ -27,6 +27,7 @@ type fakeNZBGet struct {
 	edits           []string
 	rpcError        bool
 	appendHTTPError bool
+	appendRefusal   bool // append answers an RPC error and adds nothing
 	hideAppend      bool
 	hidden          []map[string]any
 	config          []nzbParam // the options "config" answers
@@ -88,6 +89,11 @@ func (f *fakeNZBGet) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			result = f.files[id]
 		}
 	case "append":
+		if f.appendRefusal {
+			_ = json.NewEncoder(w).Encode(map[string]any{"version": "1.1", "id": in.ID,
+				"error": map[string]any{"name": "JSONRPCError", "code": 2, "message": "Invalid parameter (AddTop) " + f.pass}})
+			return
+		}
 		var args []any
 		for _, raw := range in.Params {
 			var v any

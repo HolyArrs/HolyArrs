@@ -541,7 +541,7 @@ type SeasonSummary struct {
 	Missing      int        `json:"missing"`       // aired, kept up to date, no file yet
 	BetterWanted int        `json:"better_wanted"` // in the Library, a better copy is sought
 	NotOutYet    int        `json:"not_out_yet"`
-	Downloading  int        `json:"downloading"` // a copy is on the way (downloading, stalled, importing)
+	Downloading  int        `json:"downloading"` // a Downloader took a copy (downloading, stalled, importing)
 	Failed       int        `json:"failed"`      // the download failed or its import needs a decision
 	NextAirDate  *time.Time `json:"next_air_date,omitempty"`
 	Dropped      bool       `json:"dropped,omitempty"`
@@ -622,11 +622,13 @@ func (ss *SeasonSummary) tally(air sql.NullString, keep bool, state string, now 
 		ss.BetterWanted++
 	case mediafiles.SlotNotOutYet:
 		ss.NotOutYet++
-	case mediafiles.SlotChosen, mediafiles.SlotDownloading, mediafiles.SlotStalled, mediafiles.SlotImporting:
+	case mediafiles.SlotDownloading, mediafiles.SlotStalled, mediafiles.SlotImporting:
+		// Only a copy a Downloader took counts as on the way. A chosen Release not
+		// yet confirmed by a Downloader still counts as missing.
 		ss.Downloading++
 	case mediafiles.SlotFailed, mediafiles.SlotNeedsADecision:
 		ss.Failed++
-	case mediafiles.SlotWanted:
+	case mediafiles.SlotWanted, mediafiles.SlotChosen:
 		// Missing means aired and still without a file, as in Sonarr; a
 		// wanted episode whose air time has not passed is not out yet.
 		switch {

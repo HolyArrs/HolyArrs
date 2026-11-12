@@ -23,7 +23,17 @@ import (
 const (
 	nzbgetMarker = "HolyArrsID"
 	nzbgetMaxNZB = 16 << 20
+	// nzbgetAppendTimeout gives NZBGet time to read a large NZB before it answers;
+	// a season pack on a Raspberry Pi can take longer than the usual 30 seconds.
+	nzbgetAppendTimeout = 3 * time.Minute
 )
+
+// nzbgetReply is a request NZBGet answered without doing it: an error answer,
+// or a reply that is not a result. NZBGet appends before it answers, so after
+// one of these a job that is not in its queue or history was never added.
+type nzbgetReply struct{ method, msg string }
+
+func (e nzbgetReply) Error() string { return "nzbget " + e.method + ": " + e.msg }
 
 var (
 	errNZBGetAmbiguousMarker = errors.New("NZBGet has multiple jobs with the same HolyArrs marker")
@@ -133,7 +143,8 @@ func (n *NZBGet) Add(ctx context.Context, r AddRequest) (string, error) {
 				return id, nil
 			}
 			if r.ReconcileOnly {
-				return "", ErrUncertain
+				// NZBGet answered, and neither its queue nor its history holds the marker.
+				return "", errors.Join(ErrUncertain, ErrNotArrived)
 			}
 			break
 		}
@@ -161,7 +172,7 @@ func (n *NZBGet) Add(ctx context.Context, r AddRequest) (string, error) {
 	params := []any{name, base64.StdEncoding.EncodeToString(payload), r.Category, 0, false, false, "", 0, "SCORE", false,
 		[][]string{{nzbgetMarker, id}}}
 	var native int
-	if err := n.rpc(ctx, "append", params, &native); err != nil {
+	if err := n.appendRPC(ctx, params, &native); err != nil {
 		if ctx.Err() == nil {
 			_, found, getErr := n.lookup(ctx, id, r.Category)
 			if errors.Is(getErr, errNZBGetAmbiguousMarker) || errors.Is(getErr, errNZBGetForeignMarker) {
@@ -170,11 +181,15 @@ func (n *NZBGet) Add(ctx context.Context, r AddRequest) (string, error) {
 			if getErr == nil && found {
 				return id, nil
 			}
+			if getErr == nil && nzbgetAnswered(err) {
+				// NZBGet answered and holds no job with this marker: it said no.
+				return "", fmt.Errorf("NZBGet did not take the NZB: %w", err)
+			}
 		}
 		return "", errors.Join(ErrUncertain, err)
 	}
 	if native <= 0 {
-		return "", errors.New("NZBGet refused the NZB")
+		return "", fmt.Errorf("NZBGet refused the NZB (append answered %d)", native)
 	}
 	return id, nil
 }
@@ -268,6 +283,36 @@ func (n *NZBGet) Remove(ctx context.Context, id string, deleteFiles bool) error 
 	return nil
 }
 
+// appendRPC sends the append with a longer time limit than other calls.
+func (n *NZBGet) appendRPC(ctx context.Context, params []any, out any) error {
+	h := *n.http
+	if h.Timeout != 0 && h.Timeout < nzbgetAppendTimeout {
+		h.Timeout = nzbgetAppendTimeout
+	}
+	return (&NZBGet{base: n.base, user: n.user, pass: n.pass, http: &h}).rpc(ctx, "append", params, out)
+}
+
+// nzbgetAnswered tells whether NZBGet itself answered a request it did not do,
+// as opposed to no answer, a time-out or a proxy in front of it failing.
+func nzbgetAnswered(err error) bool {
+	var reply nzbgetReply
+	var status adapterHTTPError
+	return errors.As(err, &reply) ||
+		errors.As(err, &status) && status.status >= 400 && status.status < 500 && status.status != 408 && status.status != 429
+}
+
+// nzbgetMessage keeps a reply short enough for a log line and never repeats the password.
+func nzbgetMessage(s, pass string) string {
+	s = strings.TrimSpace(s)
+	if pass != "" {
+		s = strings.ReplaceAll(s, pass, "***")
+	}
+	if len(s) > 200 {
+		s = s[:200] + "..."
+	}
+	return s
+}
+
 func (n *NZBGet) rpc(ctx context.Context, method string, params []any, out any) error {
 	in := struct {
 		Version string `json:"version"`
@@ -308,19 +353,19 @@ func (n *NZBGet) rpc(ctx context.Context, method string, params []any, out any) 
 		Error  *nzbgetRPCError `json:"error"`
 	}
 	if err := json.Unmarshal(body, &answer); err != nil {
-		return fmt.Errorf("nzbget %s: the address did not answer like NZBGet", method)
+		return nzbgetReply{method, "the address did not answer like NZBGet"}
 	}
 	if answer.Error != nil {
 		if answer.Error.Code == http.StatusUnauthorized {
 			return ErrAuth
 		}
-		return fmt.Errorf("nzbget %s: RPC error %d", method, answer.Error.Code)
+		return nzbgetReply{method, fmt.Sprintf("NZBGet answered %q (code %d)", nzbgetMessage(answer.Error.Message, n.pass), answer.Error.Code)}
 	}
 	if len(answer.Result) == 0 || string(answer.Result) == "null" {
-		return fmt.Errorf("nzbget %s: empty result", method)
+		return nzbgetReply{method, "empty result"}
 	}
 	if err := json.Unmarshal(answer.Result, out); err != nil {
-		return fmt.Errorf("nzbget %s: invalid result", method)
+		return nzbgetReply{method, "invalid result " + nzbgetMessage(string(answer.Result), n.pass)}
 	}
 	return nil
 }
