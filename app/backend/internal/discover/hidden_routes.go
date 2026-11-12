@@ -3,6 +3,7 @@ package discover
 import (
 	"errors"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -108,6 +109,10 @@ func checkHide(x Hide) string {
 	return ""
 }
 
+// moreGenres are TMDB genres a title page can show that the genre picker
+// leaves out.
+var moreGenres = map[string][]string{"movie": {"TV Movie"}, "show": {"News", "Soap", "Talk"}}
+
 // knownGenre: genre is one of TMDB's genres for kind.
 func knownGenre(kind, genre string) bool {
 	for _, g := range engine.Genres[kind] {
@@ -115,7 +120,7 @@ func knownGenre(kind, genre string) bool {
 			return true
 		}
 	}
-	return false
+	return slices.Contains(moreGenres[kind], genre)
 }
 
 // showAgain answers DELETE /api/v1/hidden/{id} (Undo and Show again).

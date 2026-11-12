@@ -3566,6 +3566,10 @@
       },
       "Movie": {
         "properties": {
+          "hidden": {
+            "description": "Hidden from browsing for the person asking; managers still find it here to add it.",
+            "type": "boolean"
+          },
           "ids": {
             "additionalProperties": {
               "type": "string"
@@ -5295,6 +5299,10 @@
               }
             },
             "type": "object"
+          },
+          "hidden": {
+            "description": "Hidden from browsing for the person asking; managers still find it here to add it.",
+            "type": "boolean"
           },
           "ids": {
             "additionalProperties": {

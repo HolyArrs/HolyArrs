@@ -246,4 +246,43 @@ func TestTitleHidesOnTitlePage(t *testing.T) {
 	if err != nil || hidden || len(hides) != 1 || hides[0].UserID != 3 {
 		t.Fatalf("admin: %v %v %v", hidden, hides, err)
 	}
+	// A read-only API key sees its own mark, not whose hides they are
+	// (the hide list itself needs an admin key).
+	key := webserver.ContextWith(context.Background(), webserver.Caller{UserID: 1, Role: webserver.RoleOwner, Via: "api_key", Scopes: []string{webserver.ScopeRead}})
+	if _, hides, err = h.titleHides(req(key), it); err != nil || hides != nil {
+		t.Fatalf("read key: %v %v", hides, err)
+	}
+}
+
+// Every genre TMDB puts on a title page can be hidden (Talk shows, TV
+// movies), not only the ones the genre picker offers; a genre of the
+// other kind still cannot.
+func TestHideTakesEveryTMDBGenre(t *testing.T) {
+	srv, _, _ := hiddenRig(t)
+	for _, body := range []string{
+		`{"kind": "movie", "genre": "TV Movie"}`,
+		`{"kind": "show", "genre": "Talk"}`,
+		`{"kind": "show", "genre": "News"}`,
+		`{"kind": "show", "genre": "Soap"}`,
+	} {
+		do(t, "POST", srv.URL+"/api/v1/hidden", body, http.StatusCreated)
+	}
+	do(t, "POST", srv.URL+"/api/v1/hidden", `{"kind": "movie", "genre": "Talk"}`, http.StatusBadRequest)
+}
+
+// A genre hide reaches the browse categories and the genre rows: their
+// titles carry their genres to the filter.
+func TestHiddenGenreLeavesBrowseAndGenreRows(t *testing.T) {
+	srv, h, _ := hiddenRig(t)
+	do(t, "POST", srv.URL+"/api/v1/hidden", `{"kind": "movie", "genre": "Horror"}`, http.StatusCreated)
+	ctx := as(1, webserver.RoleOwner)
+	list := []engine.Item{{Kind: "movie", TMDBID: "1", Genres: []string{"Horror"}}, {Kind: "movie", TMDBID: "2", Genres: []string{"Comedy"}}}
+	got, err := h.browseDropNever(ctx, list)
+	if err != nil || len(got) != 1 || got[0].TMDBID != "2" {
+		t.Fatalf("browse = %+v, %v", got, err)
+	}
+	pg, err := GenreRowPage(ctx, engine.Page{Head: []engine.Row{{ID: "r", Items: list}}}, "", h.KidItems, h.DropNeverAdd)
+	if err != nil || len(pg.Head) != 1 || len(pg.Head[0].Items) != 1 || pg.Head[0].Items[0].TMDBID != "2" {
+		t.Fatalf("genre rows = %+v, %v", pg.Head, err)
+	}
 }

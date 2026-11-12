@@ -127,7 +127,8 @@ func (h *Handlers) exploreStrip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := h.stripMemberKey(member) + sw + "|" + max
-	sig := moment.Local.Format("2006-01-02") + "|" + StripRowsHash(rows)
+	// A hide changes the generation, so a kept strip is not reused after it.
+	sig := moment.Local.Format("2006-01-02") + "|" + StripRowsHash(rows) + "|" + fmt.Sprint(hiddenGen(h.Store))
 	if v, ok := stripAnswers.Load(key); ok && v.(stripEntry).sig == sig && time.Since(v.(stripEntry).at) < stripTTL {
 		h.Caching(w, r, "private, no-cache")
 		webserver.WriteJSON(w, http.StatusOK, map[string]any{"type": sw, "tiles": v.(stripEntry).tiles, "partial": false})

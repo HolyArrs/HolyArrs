@@ -228,7 +228,9 @@ func (h *Handlers) titleHides(r *http.Request, it metadata.DiscoverItem) (bool, 
 		return false, nil, err
 	}
 	hidden := rules.hides(it.Kind, it.TMDBID, it.Genres)
-	if who, ok := webserver.From(r.Context()); ok && !who.Has(webserver.NeedUsers) {
+	// Whose hides they are needs what the hide list needs: an owner or
+	// admin, and from an API key the admin scope.
+	if who, ok := webserver.From(r.Context()); ok && !(who.Has(webserver.NeedUsers) && who.HasScope(webserver.ScopeAdmin)) {
 		return hidden, nil, nil
 	}
 	return hidden, hidesOf(set, it.Kind, it.TMDBID, it.Genres), nil
