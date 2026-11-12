@@ -1198,5 +1198,8 @@
 	"server.discover.coming-saturday": "星期六上线",
 	"server.discover.new-episode-sat": "新单集 · 周六",
 	"server.discover.coming-sunday": "星期日上线",
-	"server.discover.new-episode-sun": "新单集 · 周日"
+	"server.discover.new-episode-sun": "新单集 · 周日",
+	"server.library.is-not-at-the-new-path": "{name} 不在新路径下",
+	"server.library.bytes-at-the-new-path-but": "{name} 在新路径下为 {got} 字节，但在媒体库中为 {want} 字节",
+	"server.library.files-in-this-library-folder-changed": "检查新路径时，此媒体库文件夹中的文件发生了变化；请重试"
 }

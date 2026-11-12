@@ -1198,5 +1198,8 @@
 	"server.discover.coming-saturday": "Komt zaterdag",
 	"server.discover.new-episode-sat": "Nieuwe aflevering · za",
 	"server.discover.coming-sunday": "Komt zondag",
-	"server.discover.new-episode-sun": "Nieuwe aflevering · zo"
+	"server.discover.new-episode-sun": "Nieuwe aflevering · zo",
+	"server.library.is-not-at-the-new-path": "{name} staat niet op het nieuwe pad",
+	"server.library.bytes-at-the-new-path-but": "{name} is {got} bytes op het nieuwe pad, maar {want} bytes in de Bibliotheek",
+	"server.library.files-in-this-library-folder-changed": "bestanden in deze Bibliotheekmap zijn veranderd tijdens het controleren van het nieuwe pad; probeer het opnieuw"
 }

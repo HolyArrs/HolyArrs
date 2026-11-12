@@ -1198,5 +1198,8 @@
 	"server.discover.coming-saturday": "Chega sábado",
 	"server.discover.new-episode-sat": "Novo episódio · sáb.",
 	"server.discover.coming-sunday": "Chega domingo",
-	"server.discover.new-episode-sun": "Novo episódio · dom."
+	"server.discover.new-episode-sun": "Novo episódio · dom.",
+	"server.library.is-not-at-the-new-path": "{name} não está no novo caminho",
+	"server.library.bytes-at-the-new-path-but": "{name} tem {got} bytes no novo caminho, mas {want} bytes na Biblioteca",
+	"server.library.files-in-this-library-folder-changed": "arquivos desta pasta da Biblioteca mudaram durante a conferência do novo caminho; tente de novo"
 }

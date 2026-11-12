@@ -1198,5 +1198,8 @@
 	"server.discover.coming-saturday": "土曜日に公開",
 	"server.discover.new-episode-sat": "新しいエピソード · 土",
 	"server.discover.coming-sunday": "日曜日に公開",
-	"server.discover.new-episode-sun": "新しいエピソード · 日"
+	"server.discover.new-episode-sun": "新しいエピソード · 日",
+	"server.library.is-not-at-the-new-path": "{name} が新しいパスにありません",
+	"server.library.bytes-at-the-new-path-but": "{name} は新しいパスでは {got} バイトですが、ライブラリでは {want} バイトです",
+	"server.library.files-in-this-library-folder-changed": "新しいパスの確認中にこのライブラリフォルダーのファイルが変わりました。もう一度お試しください"
 }

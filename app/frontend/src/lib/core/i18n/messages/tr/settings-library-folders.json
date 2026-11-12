@@ -39,5 +39,11 @@
 	"settings.libraryFolders.ownerOnly": "Yalnızca sahip ve yöneticiler",
 	"settings.libraryFolders.copiesExpected": "Kopyalama bekleniyor",
 	"settings.libraryFolders.copiesExpectedState": "Kopyalıyor, beklendiği gibi",
-	"settings.libraryFolders.warnAgain": "Yeniden uyar"
+	"settings.libraryFolders.warnAgain": "Yeniden uyar",
+	"settings.libraryFolders.changePath": "Yolu değiştir",
+	"settings.libraryFolders.changePathOf": "{path} yolunu değiştir",
+	"settings.libraryFolders.newPath": "Yeni yol",
+	"settings.libraryFolders.changePathHint": "Önce dosyaları oraya taşıyın. HolyArrs her dosyayı kontrol eder ve hiçbir şeyi taşımaz.",
+	"settings.libraryFolders.checkingFiles": "Dosyalar kontrol ediliyor…",
+	"settings.libraryFolders.pathChanged": "Yol değiştirildi"
 }

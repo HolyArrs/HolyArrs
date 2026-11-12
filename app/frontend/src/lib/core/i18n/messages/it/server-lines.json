@@ -1198,5 +1198,8 @@
 	"server.discover.coming-saturday": "Arriva sabato",
 	"server.discover.new-episode-sat": "Nuovo episodio · sab",
 	"server.discover.coming-sunday": "Arriva domenica",
-	"server.discover.new-episode-sun": "Nuovo episodio · dom"
+	"server.discover.new-episode-sun": "Nuovo episodio · dom",
+	"server.library.is-not-at-the-new-path": "{name} non è nel nuovo percorso",
+	"server.library.bytes-at-the-new-path-but": "{name} è di {got} byte nel nuovo percorso, ma di {want} byte nella Libreria",
+	"server.library.files-in-this-library-folder-changed": "i file di questa cartella della Libreria sono cambiati durante il controllo del nuovo percorso; riprova"
 }

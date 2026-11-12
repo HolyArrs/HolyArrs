@@ -40,6 +40,42 @@
 	let editLabel = $state('');
 	let busyId = $state<number | null>(null);
 
+	// Change path: the files were already moved; the server checks each one and moves nothing.
+	let moving = $state<number | null>(null);
+	let movePath = $state('');
+	let moveError = $state('');
+	let moveBusy = $state(false);
+	function openMove(f: LibraryFolder) {
+		moving = moving === f.id ? null : f.id;
+		movePath = f.path;
+		moveError = '';
+	}
+	async function changePath(f: LibraryFolder) {
+		moveError = '';
+		const p = movePath.trim();
+		if (!p) {
+			moveError = t('settings.libraryFolders.pathNeeded');
+			return;
+		}
+		if (p === f.path) {
+			moving = null;
+			return;
+		}
+		moveBusy = true;
+		busyId = f.id;
+		try {
+			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}/path`, { path: p });
+			folders = folders.map((x) => (x.id === f.id ? n : x));
+			moving = null;
+			toasts.push(t('settings.libraryFolders.pathChanged'), n.health === 'ok' ? 'ok' : 'info', { body: n.health === 'ok' ? undefined : folderHealth(n.health) });
+		} catch (err) {
+			moveError = message(err);
+		} finally {
+			moveBusy = false;
+			busyId = null;
+		}
+	}
+
 	// Extra import folders: where Import files by hand may also read.
 	let extraText = $state('');
 	let extraLoaded = $state(false);
@@ -231,8 +267,21 @@
 				<IconButton icon="refresh" label={t('settings.libraryFolders.checkAgain', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => recheck(f)} />
 				{#if f.health === 'no_hardlink'}<Button variant="plain" size="sm" type="button" disabled={busyId === f.id} onclick={() => setCopies(f, !f.copies_expected)}>{f.copies_expected ? t('settings.libraryFolders.warnAgain') : t('settings.libraryFolders.copiesExpected')}</Button>{/if}
 				<Button variant="plain" size="sm" type="button" onclick={() => ((editing = f.id), (editLabel = f.label))}>{t('settings.libraryFolders.rename')}</Button>
+				<IconButton icon="folderMove" label={t('settings.libraryFolders.changePathOf', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} aria-expanded={moving === f.id} onclick={() => openMove(f)} />
 				<IconButton icon="trash" label={t('settings.libraryFolders.removePath', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => remove(f)} />
 			</div>
+			{#if moving === f.id}
+				<form class="mv" onsubmit={(e) => (e.preventDefault(), changePath(f))} aria-label={t('settings.libraryFolders.changePath')}>
+					<label for="mv-{f.id}">{t('settings.libraryFolders.newPath')}</label>
+					<div class="mv-row">
+						<input id="mv-{f.id}" class="input mono" bind:value={movePath} autocomplete="off" spellcheck="false" disabled={moveBusy} aria-describedby="mv-{f.id}-hint" />
+						<Button variant="primary" size="sm" type="submit" busy={moveBusy} disabled={moveBusy}>{moveBusy ? t('settings.libraryFolders.checkingFiles') : t('settings.libraryFolders.changePath')}</Button>
+						<Button variant="plain" size="sm" type="button" disabled={moveBusy} onclick={() => (moving = null)}>{t('settings.libraryFolders.cancel')}</Button>
+					</div>
+					<p class="hint" id="mv-{f.id}-hint">{t('settings.libraryFolders.changePathHint')}</p>
+					{#if moveError}<p class="form-error" role="alert">{moveError}</p>{/if}
+				</form>
+			{/if}
 		</li>
 	{/snippet}
 	<div class="fl-groups">
@@ -296,6 +345,13 @@
 	.acts { display: flex; align-items: center; gap: 2px; }
 	.ed { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 	.ed .input { max-width: 240px; min-height: 36px; }
+	/* Change path: a full-width line under the row. */
+	.folder .mv { grid-column: 2 / -1; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-top: 6px; }
+	.mv label { color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); }
+	.mv-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+	.mv-row .input { flex: 1 1 220px; min-width: 0; min-height: 36px; }
+	.mv .hint { margin: 0; color: var(--text-muted); font: 400 12px/1.4 var(--font-ui); }
+	.mv .form-error { margin: 0; overflow-wrap: anywhere; }
 	/* Glass sheet shared by the folder rows. */
 	.fl {
 		border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px;

@@ -1198,5 +1198,8 @@
 	"server.discover.coming-saturday": "Premiera: sobota",
 	"server.discover.new-episode-sat": "Nowy odcinek · sob.",
 	"server.discover.coming-sunday": "Premiera: niedziela",
-	"server.discover.new-episode-sun": "Nowy odcinek · niedz."
+	"server.discover.new-episode-sun": "Nowy odcinek · niedz.",
+	"server.library.is-not-at-the-new-path": "{name} nie ma w nowej ścieżce",
+	"server.library.bytes-at-the-new-path-but": "{name} ma {got} bajtów w nowej ścieżce, ale {want} bajtów w Bibliotece",
+	"server.library.files-in-this-library-folder-changed": "pliki w tym folderze Biblioteki zmieniły się podczas sprawdzania nowej ścieżki; spróbuj ponownie"
 }

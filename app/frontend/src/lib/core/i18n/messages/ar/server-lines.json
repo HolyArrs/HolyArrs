@@ -1198,5 +1198,8 @@
 	"server.discover.coming-saturday": "يصل السبت",
 	"server.discover.new-episode-sat": "حلقة جديدة · السبت",
 	"server.discover.coming-sunday": "يصل الأحد",
-	"server.discover.new-episode-sun": "حلقة جديدة · الأحد"
+	"server.discover.new-episode-sun": "حلقة جديدة · الأحد",
+	"server.library.is-not-at-the-new-path": "{name} غير موجود في المسار الجديد",
+	"server.library.bytes-at-the-new-path-but": "حجم {name} في المسار الجديد {got} بايت، لكنه {want} بايت في المكتبة",
+	"server.library.files-in-this-library-folder-changed": "تغيّرت ملفات في مجلد المكتبة هذا أثناء فحص المسار الجديد؛ حاول مرة أخرى"
 }
