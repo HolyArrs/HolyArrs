@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Ellenőrzés újra",
 	"downloads.act.down": "Lejjebb",
 	"downloads.act.forceStart": "Kényszerített indítás",
+	"downloads.act.importAgain": "Importálás újra",
+	"downloads.act.importQueued": "Az importálás sorba került",
 	"downloads.act.library": "Megnyitás a Médiatárban",
 	"downloads.act.markFailed": "Megjelölés sikertelenként",
 	"downloads.act.moved": "Áthelyezve",

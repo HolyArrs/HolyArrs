@@ -298,6 +298,7 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/downloads/view":                                 Core,
 	"POST /api/v1/downloads/{id}/mark-failed":                    Core,
 	"POST /api/v1/downloads/{id}/remove":                         Core,
+	"POST /api/v1/downloads/{id}/import":                         Core,
 	"POST /api/v1/downloads/clear-now":                           Core,
 	"POST /api/v1/downloads/{id}/pause":                          Core,
 	"POST /api/v1/downloads/{id}/resume":                         Core,

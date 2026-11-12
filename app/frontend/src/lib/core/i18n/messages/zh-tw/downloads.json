@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "重新檢查",
 	"downloads.act.down": "下移",
 	"downloads.act.forceStart": "強制開始",
+	"downloads.act.importAgain": "重新匯入",
+	"downloads.act.importQueued": "已加入匯入佇列",
 	"downloads.act.library": "在媒體庫中開啟",
 	"downloads.act.markFailed": "標記為失敗",
 	"downloads.act.moved": "已移動",

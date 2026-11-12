@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Kiểm tra lại",
 	"downloads.act.down": "Chuyển xuống",
 	"downloads.act.forceStart": "Buộc bắt đầu",
+	"downloads.act.importAgain": "Nhập lại",
+	"downloads.act.importQueued": "Đã xếp hàng nhập",
 	"downloads.act.library": "Mở trong Thư viện",
 	"downloads.act.markFailed": "Đánh dấu thất bại",
 	"downloads.act.moved": "Đã chuyển",

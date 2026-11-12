@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Vérifier à nouveau",
 	"downloads.act.down": "Descendre",
 	"downloads.act.forceStart": "Forcer le démarrage",
+	"downloads.act.importAgain": "Importer à nouveau",
+	"downloads.act.importQueued": "Import mis en file",
 	"downloads.act.library": "Ouvrir dans la Bibliothèque",
 	"downloads.act.markFailed": "Marquer comme échoué",
 	"downloads.act.moved": "Déplacé",

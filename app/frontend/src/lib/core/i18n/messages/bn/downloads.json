@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "আবার চেক করুন",
 	"downloads.act.down": "নিচে সরান",
 	"downloads.act.forceStart": "জোর করে শুরু করুন",
+	"downloads.act.importAgain": "আবার ইমপোর্ট করুন",
+	"downloads.act.importQueued": "ইমপোর্ট সারিতে আছে",
 	"downloads.act.library": "লাইব্রেরিতে খুলুন",
 	"downloads.act.markFailed": "ব্যর্থ চিহ্নিত করুন",
 	"downloads.act.moved": "সরানো হয়েছে",

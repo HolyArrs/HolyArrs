@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Tjek igen",
 	"downloads.act.down": "Flyt ned",
 	"downloads.act.forceStart": "Gennemtving start",
+	"downloads.act.importAgain": "Importér igen",
+	"downloads.act.importQueued": "Import sat i kø",
 	"downloads.act.library": "Åbn i Biblioteket",
 	"downloads.act.markFailed": "Markér som mislykket",
 	"downloads.act.moved": "Flyttet",

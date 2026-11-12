@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Pārbaudīt vēlreiz",
 	"downloads.act.down": "Pārvietot uz leju",
 	"downloads.act.forceStart": "Piespiedu starts",
+	"downloads.act.importAgain": "Importēt vēlreiz",
+	"downloads.act.importQueued": "Imports ir rindā",
 	"downloads.act.library": "Atvērt Bibliotēkā",
 	"downloads.act.markFailed": "Atzīmēt kā neizdevušos",
 	"downloads.act.moved": "Pārvietots",

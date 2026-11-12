@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Skontrolovať znova",
 	"downloads.act.down": "Presunúť nižšie",
 	"downloads.act.forceStart": "Vynútiť spustenie",
+	"downloads.act.importAgain": "Importovať znova",
+	"downloads.act.importQueued": "Import je v poradí",
 	"downloads.act.library": "Otvoriť v Knižnici",
 	"downloads.act.markFailed": "Označiť ako zlyhané",
 	"downloads.act.moved": "Presunuté",

@@ -3,13 +3,14 @@ import { controllable, pausable, retryable } from './usenet.ts';
 import { protocolOf } from './size.ts';
 
 /** One entry in a row's ⋯ menu; the page maps each key to its handler. */
-export type RowItem = 'pause' | 'resume' | 'retry' | 'up' | 'down' | 'top' | 'bottom' | 'priority' | 'library' | 'remove';
+export type RowItem = 'pause' | 'resume' | 'retry' | 'up' | 'down' | 'top' | 'bottom' | 'priority' | 'import' | 'library' | 'remove';
 
 export type Priority = (typeof PRIORITIES)[number]['key'];
 
 type RowBits = Parameters<typeof retryable>[0] & {
 	can_act?: boolean;
 	client_locked?: boolean;
+	can_import?: boolean;
 	state?: string;
 	protocol?: string;
 
@@ -54,6 +55,8 @@ export function rowItems(r: RowBits): RowItem[] {
 		if (!!r.downloader_id && !!r.hash && r.protocol === 'torrent' && (!r.downloader_kind || r.downloader_kind === 'qbittorrent')) out.push('up', 'down', 'top', 'bottom');
 		else if (usenetQueued(r)) out.push('up', 'down', 'top', 'bottom', 'priority');
 	}
+	// A finished download whose import never ran.
+	if (r.can_import) out.push('import');
 	if (lib) out.push('library');
 	if (r.can_act) out.push('remove');
 	return out;

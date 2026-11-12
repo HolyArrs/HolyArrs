@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "다시 확인",
 	"downloads.act.down": "아래로 이동",
 	"downloads.act.forceStart": "강제 시작",
+	"downloads.act.importAgain": "다시 가져오기",
+	"downloads.act.importQueued": "가져오기를 대기열에 추가함",
 	"downloads.act.library": "라이브러리에서 열기",
 	"downloads.act.markFailed": "실패로 표시",
 	"downloads.act.moved": "이동됨",

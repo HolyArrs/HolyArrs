@@ -260,17 +260,14 @@
 		get top() { return t('downloads.act.top'); },
 		get bottom() { return t('downloads.act.bottom'); },
 		get priority() { return t('downloads.act.priority'); },
+		get import() { return t('downloads.act.importAgain'); },
 		get library() { return t('downloads.act.library'); },
 		get remove() { return t('downloads.act.remove'); }
 	};
 	// Usenet jobs move and take a priority one at a time; there is no bulk call.
 	const usenetItem = (r: DownloadRow) => `/downloaders/${r.downloader_id}/items/${encodeURIComponent(r.hash ?? '')}`;
-	const MOVED: Record<string, string> = {
-		get up() { return t('downloads.act.movedUp'); },
-		get down() { return t('downloads.act.movedDown'); },
-		get top() { return t('downloads.act.movedTop'); },
-		get bottom() { return t('downloads.act.movedBottom'); }
-	};
+	const MOVED: Record<string, string> = { get up() { return t('downloads.act.movedUp'); }, get down() { return t('downloads.act.movedDown'); },
+		get top() { return t('downloads.act.movedTop'); }, get bottom() { return t('downloads.act.movedBottom'); } };
 	let queueBusy = $state(0);
 	async function usenetCall(r: DownloadRow, run: () => Promise<unknown>, done: string) {
 		queueBusy = r.id;
@@ -285,6 +282,7 @@
 	}
 	const usenetMove = (r: DownloadRow, k: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/${k}`), MOVED[k] ?? t('downloads.act.moved'));
 	const usenetPriority = (r: DownloadRow, p: Priority, label: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/priority`, { priority: p }), t('downloads.act.prioritySet', { label }));
+	const importAgain = (r: DownloadRow) => usenetCall(r, () => api.post(`/downloads/${r.id}/import`), t('downloads.act.importQueued'));
 	// Shared by the row menu and the pane menu.
 	function menuItems(r: DownloadRow, keys: RowItem[]): MenuItem[] {
 		const off = busy === r.id || queueBusy === r.id;
@@ -294,6 +292,7 @@
 			if ((k === 'up' || k === 'down' || k === 'top' || k === 'bottom') && usenetQueued(r)) return { label, disabled: off, onselect: () => void usenetMove(r, k) };
 			if (k === 'library') return { label, icon: 'film', href: to(`/library/${r.title_id}`) };
 			if (k === 'remove') return { label, icon: 'trash', destructive: true, disabled: off, onselect: () => onremove(r) };
+			if (k === 'import') return { label, icon: 'refresh', disabled: off, onselect: () => void importAgain(r) };
 			if (k === 'pause' || k === 'resume') return { label, icon: k === 'pause' ? 'pause' : 'play', disabled: off, onselect: () => onact?.(r, k) };
 			if (k === 'retry') return { label, icon: 'refresh', disabled: off, onselect: () => (onretry ? onretry([r]) : onact?.(r, 'retry')) };
 			return { label, disabled: off, onselect: () => onbulk?.([r], k) };
@@ -301,7 +300,7 @@
 	}
 	function rowMenu(r: DownloadRow): MenuItem[] {
 		const items = menuItems(r, rowItems(r).filter((k) => k !== 'retry' || mayEdit(r)));
-		if (!r.can_act) items.unshift({ kind: 'heading', label: t('downloads.act.cannotChange') });
+		if (!r.can_act && !r.can_import) items.unshift({ kind: 'heading', label: t('downloads.act.cannotChange') });
 		return items;
 	}
 	// The pane menu is the row's list minus what the pane shows as buttons, plus a torrent's checks, force start, sheets and Mark failed.

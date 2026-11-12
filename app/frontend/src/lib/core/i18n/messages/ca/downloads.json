@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Torna a comprovar",
 	"downloads.act.down": "Mou avall",
 	"downloads.act.forceStart": "Força l'inici",
+	"downloads.act.importAgain": "Torna a importar",
+	"downloads.act.importQueued": "Importació a la cua",
 	"downloads.act.library": "Obre a la Biblioteca",
 	"downloads.act.markFailed": "Marca com a fallida",
 	"downloads.act.moved": "Mogut",

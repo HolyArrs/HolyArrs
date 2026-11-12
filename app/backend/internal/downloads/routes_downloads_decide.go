@@ -73,6 +73,26 @@ func (a *Web) removeDownload(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// importDownload asks again for the import of a finished download that still
+// waits for it.
+func (a *Web) importDownload(w http.ResponseWriter, r *http.Request) {
+	id, ok := idIn(w, r, "download")
+	if !ok {
+		return
+	}
+	err := a.Manager().ImportAgain(r.Context(), id, actor(r))
+	switch {
+	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
+		webserver.Fail(w, http.StatusNotFound, "no such download")
+	case errors.Is(err, ErrNotWaiting):
+		webserver.Fail(w, http.StatusConflict, err.Error())
+	case err != nil:
+		webserver.Internal(w, "api", err)
+	default:
+		w.WriteHeader(http.StatusAccepted)
+	}
+}
+
 // DecisionView is one movie waiting for a person on Needs a decision.
 type DecisionView struct {
 	SlotID      int64     `json:"slot_id"`

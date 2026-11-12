@@ -556,6 +556,10 @@ export interface DownloadRow extends DownloadView {
 	clear_waiting?: { next_try: string; tries: number; reason?: string };
 	can_act: boolean;
 	client_locked?: boolean;
+	/** Its Downloader was removed and no other one holds it: Remove clears HolyArrs' own record only. */
+	downloader_gone?: boolean;
+	/** Finished and still waiting for its import: Import again asks for it. */
+	can_import?: boolean;
 	replaced?: boolean;
 	kind?: 'movie' | 'show' | 'artist';
 	episodes?: EpisodeLine[];

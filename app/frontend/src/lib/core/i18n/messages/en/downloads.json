@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Check again",
 	"downloads.act.down": "Move down",
 	"downloads.act.forceStart": "Force start",
+	"downloads.act.importAgain": "Import again",
+	"downloads.act.importQueued": "Import queued",
 	"downloads.act.library": "Open in Library",
 	"downloads.act.markFailed": "Mark failed",
 	"downloads.act.moved": "Moved",

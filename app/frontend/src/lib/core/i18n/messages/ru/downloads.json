@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "Проверить снова",
 	"downloads.act.down": "Ниже",
 	"downloads.act.forceStart": "Принудительный запуск",
+	"downloads.act.importAgain": "Импортировать снова",
+	"downloads.act.importQueued": "Импорт поставлен в очередь",
 	"downloads.act.library": "Открыть в Медиатеке",
 	"downloads.act.markFailed": "Отметить неудачной",
 	"downloads.act.moved": "Перемещено",

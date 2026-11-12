@@ -34,4 +34,11 @@ describe("the pane's ⋯ menu", () => {
 		expect(paneExtras(own, { steer: true, fail: true })).toEqual(['fail']);
 		expect(rowItems({ ...job, client_locked: true })).toEqual(['remove']);
 	});
+	it('never leaves a row stuck before its import without a way on', () => {
+		const finished = { ...torrent, phase: 'waiting_to_import', state: 'finished', title_id: 7 };
+		// The Downloader was removed: Remove (records only) and Import again.
+		expect(rowItems({ ...finished, can_act: true, client_locked: true, can_import: true })).toEqual(['import', 'library', 'remove']);
+		// Still on a live Downloader: Import again beside Open in Library.
+		expect(rowItems({ ...finished, can_act: false, can_import: true })).toEqual(['import', 'library']);
+	});
 });

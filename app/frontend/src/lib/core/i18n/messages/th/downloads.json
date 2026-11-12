@@ -7,6 +7,8 @@
 	"downloads.act.checkAgain": "ตรวจอีกครั้ง",
 	"downloads.act.down": "ย้ายลง",
 	"downloads.act.forceStart": "บังคับเริ่ม",
+	"downloads.act.importAgain": "นำเข้าอีกครั้ง",
+	"downloads.act.importQueued": "เพิ่มการนำเข้าในคิวแล้ว",
 	"downloads.act.library": "เปิดในไลบรารี",
 	"downloads.act.markFailed": "ทำเครื่องหมายว่าล้มเหลว",
 	"downloads.act.moved": "ย้ายแล้ว",

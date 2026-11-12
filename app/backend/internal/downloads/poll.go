@@ -25,6 +25,7 @@ import (
 func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 	m.retryRemovals(ctx)
 	m.retryClears(ctx)
+	m.relinkOrphans(ctx)
 	db := m.Store.Read()
 	dls, err := database.Select[domain.Download](ctx, db, "downloads", "state IN ("+activeStates+") ORDER BY id")
 	if err != nil || len(dls) == 0 {
