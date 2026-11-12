@@ -40,7 +40,7 @@ func TestImportedTestKinds(t *testing.T) {
 		{1, "Film.2020.German.1080p.WEB-DL-X", "", nil, true},
 		{1, "Film.2020.1080p.WEB-DL-X", "en", nil, false},
 		{1, "Film.2020.1080p.WEB-DL-X", "en", []string{"de"}, true}, // file audio wins
-		{2, "Film.2020.1080p.WEB-DL-X", "en", nil, true},             // no language word: the original
+		{2, "Film.2020.1080p.WEB-DL-X", "en", nil, true},            // no language word: the original
 		{2, "Film.2020.German.1080p.WEB-DL-X", "en", nil, false},
 		{2, "Film.2020.1080p.WEB-DL-X", "", nil, false}, // no list at all never fits
 		{3, "Film.2020.German.1080p.WEB-DL-X", "en", nil, true},
