@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "音乐：",
 	"library.import.progress": "进度",
 	"library.import.reading": "正在读取文件夹，并逐一查询每个{word}。",
+	"library.import.readCount": "已查找 {done}/{total} 个文件夹。",
 	"library.import.adopting": "正在接管。",
 	"library.import.noMatchFiles": "有文件匹配不上任何条目？<a>手动导入文件</a>",
 	"library.import.done": "完成",

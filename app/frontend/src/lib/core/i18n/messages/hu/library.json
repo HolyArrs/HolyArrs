@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Zene:",
 	"library.import.progress": "Előrehaladás",
 	"library.import.reading": "A mappa beolvasása és minden {word} keresése.",
+	"library.import.readCount": "{done} / {total} mappa kikeresve.",
 	"library.import.adopting": "Átvétel.",
 	"library.import.noMatchFiles": "Olyan fájlok, amelyek nem egyeznek egy címmel sem? <a>Fájlok importálása kézzel</a>",
 	"library.import.done": "Kész",

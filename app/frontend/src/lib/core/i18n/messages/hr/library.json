@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Glazba:",
 	"library.import.progress": "Napredak",
 	"library.import.reading": "Čita se mapa i traži se svaki ({word}).",
+	"library.import.readCount": "Pretraženo {done} od {total} mapa.",
 	"library.import.adopting": "Usvajanje.",
 	"library.import.noMatchFiles": "Datoteke koje se ne podudaraju s naslovom? <a>Uvezi datoteke ručno</a>",
 	"library.import.done": "Gotovo",

@@ -290,14 +290,17 @@ func PlanAdoptFrom(ctx context.Context, db Reader, md metadata.Provider, folderI
 		known[strings.ToLower(v.FolderName)] = v.TitleID
 	}
 	p.Warning = MountWarning(ctx, db, lf, len(ents))
+	total := ScanTotal(ents, after, p.Limit)
+	defer func() { ReportScan(ctx, len(p.Folders), total) }()
 	for _, e := range ents {
-		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || NasSystemDir(e.Name()) || (after != "" && e.Name() <= after) {
+		if !ScanWants(e, after) {
 			continue
 		}
 		if len(p.Folders) >= p.Limit {
 			p.More, p.Next = true, p.Folders[len(p.Folders)-1].Folder
 			break
 		}
+		ReportScan(ctx, len(p.Folders), total)
 		c := AdoptCandidate{Folder: e.Name(), Videos: listVideos(lf.Path, e.Name()), Others: []AdoptMatch{}}
 		if len(c.Videos) > 0 {
 			c.Main = c.Videos[0].Path
@@ -358,6 +361,38 @@ func PlanAdoptFrom(ctx context.Context, db Reader, md metadata.Provider, folderI
 		p.Counts[c.Status]++
 	}
 	return p, nil
+}
+
+// ScanWants says whether a scan reads the Library folder entry e: a
+// folder, not hidden or kept by a NAS, sorting after after.
+func ScanWants(e os.DirEntry, after string) bool {
+	return e.IsDir() && !strings.HasPrefix(e.Name(), ".") && !NasSystemDir(e.Name()) && (after == "" || e.Name() > after)
+}
+
+// ScanTotal is how many folders one scan reads: those it wants, at most limit.
+func ScanTotal(ents []os.DirEntry, after string, limit int) int {
+	n := 0
+	for _, e := range ents {
+		if ScanWants(e, after) {
+			n++
+		}
+	}
+	return min(n, limit)
+}
+
+type scanProgressKey struct{}
+
+// WithScanProgress makes the folder scans run under ctx tell f how many
+// folders are read so far out of how many, so a long scan shows progress.
+func WithScanProgress(ctx context.Context, f func(done, total int)) context.Context {
+	return context.WithValue(ctx, scanProgressKey{}, f)
+}
+
+// ReportScan tells the scan's progress hook, if any, how far it is.
+func ReportScan(ctx context.Context, done, total int) {
+	if f, ok := ctx.Value(scanProgressKey{}).(func(done, total int)); ok {
+		f(done, total)
+	}
 }
 
 // AdoptChoice is one folder to adopt as one movie.

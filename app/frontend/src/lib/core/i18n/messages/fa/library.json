@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "موسیقی: ",
 	"library.import.progress": "پیشرفت",
 	"library.import.reading": "در حال خواندن پوشه و جستجوی هر {word}.",
+	"library.import.readCount": "{done} از {total} پوشه جستجو شد.",
 	"library.import.adopting": "در حال در اختیار گرفتن.",
 	"library.import.noMatchFiles": "فایل‌هایی که با هیچ عنوانی نمی‌خوانند؟ <a>ورود دستی فایل‌ها</a>",
 	"library.import.done": "انجام شد",

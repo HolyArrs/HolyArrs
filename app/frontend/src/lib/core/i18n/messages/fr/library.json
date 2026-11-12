@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Musique : ",
 	"library.import.progress": "Progression",
 	"library.import.reading": "Lecture du dossier et recherche de chaque {word}.",
+	"library.import.readCount": "{done} dossiers recherchés sur {total}.",
 	"library.import.adopting": "Adoption en cours.",
 	"library.import.noMatchFiles": "Des fichiers qui ne correspondent à aucun titre ? <a>Importez des fichiers à la main</a>",
 	"library.import.done": "Terminé",

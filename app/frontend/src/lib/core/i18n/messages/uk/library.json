@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Музика: ",
 	"library.import.progress": "Перебіг",
 	"library.import.reading": "Читаємо теку й шукаємо кожен: {word}.",
+	"library.import.readCount": "Перевірено папок: {done} з {total}.",
 	"library.import.adopting": "Приймаємо.",
 	"library.import.noMatchFiles": "Файли, що не збігаються з жодним тайтлом? <a>Імпортуй файли вручну</a>",
 	"library.import.done": "Готово",

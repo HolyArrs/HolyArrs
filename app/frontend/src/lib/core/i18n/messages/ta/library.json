@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "இசை: ",
 	"library.import.progress": "முன்னேற்றம்",
 	"library.import.reading": "கோப்புறையைப் படித்து ஒவ்வொரு {word} ஐயும் தேடுகிறது.",
+	"library.import.readCount": "{total} கோப்புறைகளில் {done} தேடப்பட்டன.",
 	"library.import.adopting": "எடுத்துக்கொள்கிறது.",
 	"library.import.noMatchFiles": "தலைப்புடன் பொருந்தாத கோப்புகளா? <a>கோப்புகளைக் கைமுறையாக இறக்குமதி செய்</a>",
 	"library.import.done": "முடிந்தது",

@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "موسيقى: ",
 	"library.import.progress": "التقدّم",
 	"library.import.reading": "جارٍ قراءة المجلد والبحث عن كل {word}.",
+	"library.import.readCount": "تم البحث عن {done} من {total} مجلد.",
 	"library.import.adopting": "جارٍ الضمّ.",
 	"library.import.noMatchFiles": "ملفات لا تطابق عملًا؟ <a>استورد الملفات يدويًا</a>",
 	"library.import.done": "تم",

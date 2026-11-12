@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "音楽: ",
 	"library.import.progress": "進捗",
 	"library.import.reading": "フォルダーを読み取り、{word}を 1 件ずつ調べています。",
+	"library.import.readCount": "{total} 個中 {done} 個のフォルダーを照会しました。",
 	"library.import.adopting": "管理対象に追加しています。",
 	"library.import.noMatchFiles": "作品に一致しないファイルがありますか?<a>ファイルを手動でインポート</a>",
 	"library.import.done": "完了",

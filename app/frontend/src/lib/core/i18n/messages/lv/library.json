@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Mūzika:",
 	"library.import.progress": "Progress",
 	"library.import.reading": "Lasa mapi un meklē katru: {word}.",
+	"library.import.readCount": "Uzmeklētas {done} no {total} mapēm.",
 	"library.import.adopting": "Pārņem.",
 	"library.import.noMatchFiles": "Faili, kas neatbilst nosaukumam? <a>Importē failus ar roku</a>",
 	"library.import.done": "Gatavs",

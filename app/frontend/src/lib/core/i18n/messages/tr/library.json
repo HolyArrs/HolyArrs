@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Müzik: ",
 	"library.import.progress": "İlerleme",
 	"library.import.reading": "Klasör okunuyor ve her {word} aranıyor.",
+	"library.import.readCount": "{total} klasörden {done} tanesi arandı.",
 	"library.import.adopting": "Sahipleniliyor.",
 	"library.import.noMatchFiles": "Bir başlıkla eşleşmeyen dosyalar mı var? <a>Dosyaları elle içe aktar</a>",
 	"library.import.done": "Bitti",

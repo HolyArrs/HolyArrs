@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Muziek: ",
 	"library.import.progress": "Voortgang",
 	"library.import.reading": "De map wordt gelezen en elke {word} wordt opgezocht.",
+	"library.import.readCount": "{done} van {total} mappen opgezocht.",
 	"library.import.adopting": "Bezig met overnemen.",
 	"library.import.noMatchFiles": "Bestanden die niet bij een titel passen? <a>Bestanden met de hand importeren</a>",
 	"library.import.done": "Klaar",

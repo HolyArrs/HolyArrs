@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Musika: ",
 	"library.import.progress": "Progress",
 	"library.import.reading": "Binabasa ang folder at hinahanap ang bawat {word}.",
+	"library.import.readCount": "Nahanap ang {done} sa {total} na folder.",
 	"library.import.adopting": "Isinasama.",
 	"library.import.noMatchFiles": "May mga file na hindi tumutugma sa title? <a>Mag-import ng mga file nang mano-mano</a>",
 	"library.import.done": "Tapos na",

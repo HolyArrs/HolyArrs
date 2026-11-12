@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Tónlist: ",
 	"library.import.progress": "Framvinda",
 	"library.import.reading": "Les möppuna og fletti upp hverri {word}.",
+	"library.import.readCount": "Flett upp {done} af {total} möppum.",
 	"library.import.adopting": "Tek upp.",
 	"library.import.noMatchFiles": "Skrár sem passa ekki við titil? <a>Flytja inn skrár í höndunum</a>",
 	"library.import.done": "Lokið",

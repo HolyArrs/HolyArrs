@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Hudba: ",
 	"library.import.progress": "Priebeh",
 	"library.import.reading": "Číta sa priečinok a vyhľadáva sa každý prvok ({word}).",
+	"library.import.readCount": "Vyhľadaných {done} z {total} priečinkov.",
 	"library.import.adopting": "Preberá sa.",
 	"library.import.noMatchFiles": "Súbory, ktoré nezodpovedajú titulu? <a>Importovať súbory ručne</a>",
 	"library.import.done": "Hotovo",

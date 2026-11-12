@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Musik:",
 	"library.import.progress": "Kemajuan",
 	"library.import.reading": "Membaca folder dan mencari setiap {word}.",
+	"library.import.readCount": "{done} dari {total} folder sudah dicari.",
 	"library.import.adopting": "Mengambil alih.",
 	"library.import.noMatchFiles": "File yang tidak cocok dengan judul? <a>Impor file secara manual</a>",
 	"library.import.done": "Selesai",

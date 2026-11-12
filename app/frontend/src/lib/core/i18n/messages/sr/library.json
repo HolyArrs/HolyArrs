@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Музика: ",
 	"library.import.progress": "Напредак",
 	"library.import.reading": "Читам фасциклу и тражим сваки наслов: {word}.",
+	"library.import.readCount": "Претражено {done} од {total} фасцикли.",
 	"library.import.adopting": "Усвајам.",
 	"library.import.noMatchFiles": "Датотеке које не одговарају наслову? <a>Увези датотеке ручно</a>",
 	"library.import.done": "Готово",

@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Muusika: ",
 	"library.import.progress": "Edenemine",
 	"library.import.reading": "Loen kausta ja otsin iga ({word}) üles.",
+	"library.import.readCount": "Otsitud {done} kausta {total}-st.",
 	"library.import.adopting": "Võtan üle.",
 	"library.import.noMatchFiles": "Failid, mis ühegi pealkirjaga ei sobi? <a>Impordi failid käsitsi</a>",
 	"library.import.done": "Valmis",

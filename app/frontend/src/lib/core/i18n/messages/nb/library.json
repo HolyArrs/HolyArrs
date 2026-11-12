@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Musikk: ",
 	"library.import.progress": "Fremdrift",
 	"library.import.reading": "Leser mappen og slår opp hver {word}.",
+	"library.import.readCount": "Slått opp {done} av {total} mapper.",
 	"library.import.adopting": "Overtar.",
 	"library.import.noMatchFiles": "Filer som ikke passer til en tittel? <a>Importer filer for hånd</a>",
 	"library.import.done": "Ferdig",
