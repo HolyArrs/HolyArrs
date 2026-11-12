@@ -36,10 +36,22 @@ export interface DownloaderView {
 	writable_locked: boolean;
 	/** Titles with one of these go only to Downloaders that have it. */
 	tags?: string[];
+	/** Remove after seeding (torrents only); ratio and minutes goals only on qBittorrent and rTorrent. */
+	after_seeding?: SeedingChoice;
 	health: DownloaderHealth;
 	checked_at?: string;
 	active_downloads: number;
 }
+
+export interface SeedingChoice {
+	remove: boolean;
+	ratio: number | null;
+	minutes: number | null;
+	delete_files: boolean;
+}
+
+/** Downloaders that report ratio and seeding time reliably enough for a goal. */
+export const seedGoalKinds: DownloaderView['kind'][] = ['qbittorrent', 'rtorrent'];
 
 export interface DownloaderSettings {
 	stalled_after_hours: number;
@@ -56,6 +68,11 @@ export interface DownloaderSettings {
 	downloads_auto_add?: boolean;
 	/** Show Usenet jobs in other apps' categories on Downloads, read-only; never matched. On by default. */
 	downloads_sab_outside?: boolean;
+	/** Dead torrent rule, 0 for off: stuck finding files for N minutes (5 to 1440). */
+	dead_metadata_minutes?: number;
+	/** Crawl rule, 0 for off: slower than N KB/s for H hours. */
+	crawl_kbps?: number;
+	crawl_hours?: number;
 }
 
 /** The public recovery record for one uncertain send. It has no Downloader address, request marker or error text on purpose. */
@@ -84,6 +101,12 @@ export interface DownloaderForm {
 	allow_local_network: boolean;
 	writable: boolean;
 	tags: string[];
+	seed_remove: boolean;
+	/** Empty means no ratio goal. */
+	seed_ratio: number | '' | null;
+	/** Seeding time goal in hours; empty means none. */
+	seed_hours: number | '' | null;
+	seed_delete_files: boolean;
 }
 
 export interface RemoveChoice {
@@ -165,7 +188,11 @@ export function emptyForm(kind: DownloaderView['kind'] = 'qbittorrent'): Downloa
 		path_map: [],
 		allow_local_network: true,
 		writable: true,
-		tags: []
+		tags: [],
+		seed_remove: false,
+		seed_ratio: '',
+		seed_hours: '',
+		seed_delete_files: false
 	};
 }
 
@@ -185,7 +212,11 @@ export function formFrom(d: DownloaderView): DownloaderForm {
 		path_map: d.path_map.map((p) => ({ ...p })),
 		allow_local_network: d.allow_local_network,
 		writable: d.writable,
-		tags: [...(d.tags ?? [])]
+		tags: [...(d.tags ?? [])],
+		seed_remove: !!d.after_seeding?.remove,
+		seed_ratio: d.after_seeding?.ratio ?? '',
+		seed_hours: d.after_seeding?.minutes ? Math.round((d.after_seeding.minutes / 60) * 100) / 100 : '',
+		seed_delete_files: !!d.after_seeding?.delete_files
 	};
 }
 
@@ -205,7 +236,25 @@ export function formBody(f: DownloaderForm): Record<string, unknown> {
 		path_map: f.path_map.map((p) => ({ theirs: p.theirs.trim(), ours: p.ours.trim() })).filter((p) => p.theirs || p.ours),
 		allow_local_network: f.allow_local_network,
 		writable: f.writable,
-		tags: f.tags
+		tags: f.tags,
+		...(f.kind === 'sabnzbd' || f.kind === 'nzbget' ? {} : { after_seeding: seedingBody(f) })
+	};
+}
+
+function goal(v: number | '' | null): number | null {
+	const n = Number(v);
+	return v === '' || v === null || !Number.isFinite(n) || n <= 0 ? null : n;
+}
+
+/** The after_seeding body: goals only where the Downloader can report them. */
+export function seedingBody(f: DownloaderForm): SeedingChoice {
+	const goals = seedGoalKinds.includes(f.kind);
+	const hours = goals ? goal(f.seed_hours) : null;
+	return {
+		remove: f.seed_remove,
+		ratio: goals ? goal(f.seed_ratio) : null,
+		minutes: hours === null ? null : Math.max(1, Math.round(hours * 60)),
+		delete_files: f.seed_remove && f.seed_delete_files
 	};
 }
 

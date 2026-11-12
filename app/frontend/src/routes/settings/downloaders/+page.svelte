@@ -13,7 +13,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { emptyForm, formBody, formFrom, healthTone, kindWords, pendingAttempts, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
+	import { emptyForm, formBody, formFrom, healthTone, kindWords, pendingAttempts, seedGoalKinds, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -51,6 +51,13 @@
 		downloads_auto_add: false,
 		downloads_sab_outside: true
 	});
+	// The dead torrent rule shows its numbers only while on; off saves zeros.
+	const deadOn = $derived(!!settings.dead_metadata_minutes || !!settings.crawl_kbps);
+	function setDead(on: boolean) {
+		settings.dead_metadata_minutes = on ? 30 : 0;
+		settings.crawl_kbps = on ? 10 : 0;
+		settings.crawl_hours = on ? 6 : 0;
+	}
 	let setBusy = $state(false);
 	let saved = $state('');
 	const dirty = $derived(!!saved && JSON.stringify(settings) !== saved);
@@ -245,7 +252,10 @@
 			...settings,
 			stalled_after_hours: Number(settings.stalled_after_hours),
 			stalled_act_hours: Number(settings.stalled_act_hours),
-			grab_spacing_seconds: Number(settings.grab_spacing_seconds)
+			grab_spacing_seconds: Number(settings.grab_spacing_seconds),
+			dead_metadata_minutes: Number(settings.dead_metadata_minutes) || 0,
+			crawl_kbps: Number(settings.crawl_kbps) || 0,
+			crawl_hours: Number(settings.crawl_hours) || 0
 		};
 		if (body.stalled_act_hours < body.stalled_after_hours) {
 			setError = t('settings.downloaders.actSooner');
@@ -516,6 +526,26 @@
 				</Field>
 			</div>
 			<label class="checkline">
+				<input id="dead-rule" type="checkbox" checked={deadOn} onchange={(e) => setDead(e.currentTarget.checked)} />
+				<span><b>{t('settings.downloaders.deadRule')}</b><br /><span class="hint">{t('settings.downloaders.deadRuleHint')}</span></span>
+			</label>
+			{#if deadOn}
+				<div class="dead">
+					<Field id="st-dead-min" label={t('settings.downloaders.deadMinutes')} hint={t('settings.downloaders.deadMinutesHint')}>
+						<input id="st-dead-min" class="input" type="number" min="0" max="1440" step="1" bind:value={settings.dead_metadata_minutes} aria-describedby="st-dead-min-hint" />
+					</Field>
+					<div class="two">
+						<Field id="st-crawl-kbps" label={t('settings.downloaders.crawlKbps')}>
+							<input id="st-crawl-kbps" class="input" type="number" min="0" max="100000" step="1" bind:value={settings.crawl_kbps} />
+						</Field>
+						<Field id="st-crawl-hours" label={t('settings.downloaders.crawlHours')}>
+							<input id="st-crawl-hours" class="input" type="number" min="0" max="168" step="1" bind:value={settings.crawl_hours} />
+						</Field>
+					</div>
+					<p class="hint">{t('settings.downloaders.crawlHint')}</p>
+				</div>
+			{/if}
+			<label class="checkline">
 				<input id="fail-programs" type="checkbox" bind:checked={settings.fail_dangerous} />
 				<span
 					><b>{t('settings.downloaders.failPrograms')}</b><br /><span class="hint"
@@ -570,6 +600,12 @@
 		text-transform: uppercase;
 	}
 	.defaults > legend + * { clear: both; }
+	.dead {
+		padding: 0 0 var(--s-4) var(--s-5);
+	}
+	@media (max-width: 600px) {
+		.dead { padding-left: 0; }
+	}
 	.head {
 		display: flex;
 		align-items: center;

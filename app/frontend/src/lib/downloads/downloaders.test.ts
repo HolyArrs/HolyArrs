@@ -1,5 +1,5 @@
 import { decisionName, groupDecisions, manyWords, phaseTone, removeBody, removeFilesWords, removeStart, rowName, split, whyWords } from './downloaders.ts';
-import { downloadTone, emptyForm, formBody, formFrom, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
+import { seedingBody, downloadTone, emptyForm, formBody, formFrom, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
 import { describe, expect, it } from 'vitest';
 import { type Decision, type DownloadRow } from '../core/types.ts';
 
@@ -235,5 +235,20 @@ describe('removeFilesWords', () => {
 		expect(removeFilesWords(rows)).toBe('Deletes /a, /b, /c and the files of 1 more in qBittorrent.');
 		expect(removeFilesWords([{ downloader: 'A' }, { downloader: 'B' }])).toBe('Deletes their files in A, B.');
 		expect(removeFilesWords([])).toBe('');
+	});
+});
+
+describe('after seeding', () => {
+	it('starts off and sends no goals', () => {
+		expect(formBody(emptyForm('qbittorrent')).after_seeding).toEqual({ remove: false, ratio: null, minutes: null, delete_files: false });
+	});
+	it('turns hours into minutes and keeps goals for qBittorrent and rTorrent only', () => {
+		const f = { ...emptyForm('rtorrent'), seed_remove: true, seed_ratio: 2 as const, seed_hours: 1.5, seed_delete_files: true };
+		expect(seedingBody(f)).toEqual({ remove: true, ratio: 2, minutes: 90, delete_files: true });
+		expect(seedingBody({ ...f, kind: 'transmission' })).toEqual({ remove: true, ratio: null, minutes: null, delete_files: true });
+	});
+	it('never deletes files when remove is off, and Usenet sends nothing', () => {
+		expect(seedingBody({ ...emptyForm(), seed_delete_files: true }).delete_files).toBe(false);
+		expect(formBody(emptyForm('sabnzbd'))).not.toHaveProperty('after_seeding');
 	});
 });
