@@ -265,8 +265,6 @@
 	"health.check.saveFolderWhy": "{app} jaoks pole salvestuskausta määratud, seega ei saa HolyArrs valmis allalaadimisi importida. Lisa teepaar jaotises Seaded › Allalaadijad.",
 	"health.kind.clearWaiting": "Imporditud allalaadimised on veel allalaadijas",
 	"health.kind.saveFolder": "Allalaadija salvestuskaust",
-	"health.kind.clearWaiting": "Tühjendamist ootavad allalaadimised",
-	"health.kind.saveFolder": "Allalaadija salvestuskaust",
 	"health.check.usenetDl": "Useneti allalaadija",
 	"health.check.torrentDl": "Torrentite allalaadija",
 	"health.check.noUsenetDl": "Sinu allikad leiavad Useneti allalaadimisi, aga ühtegi Useneti allalaadijat pole seadistatud, seega ei saa ühtegi saata. Lisa see jaotises Seaded › Allalaadijad.",

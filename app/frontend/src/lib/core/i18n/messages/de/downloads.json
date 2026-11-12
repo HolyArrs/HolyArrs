@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "Sprache",
 	"downloads.ot.kindReleaseType": "Release-Art",
 	"downloads.ot.kindYear": "Jahr",
-	"downloads.hl.notMoved": "Nach dem Import nicht verschoben",
-	"downloads.hl.notMoved": "Nach dem Import nicht verschoben",
 	"downloads.dp.importFile": "Diese Datei importieren",
 	"downloads.dp.askImport": "{file} als {name} importieren?",
 	"downloads.dp.askImportReplace": "{file} als {name} importieren? Sie ersetzt die aktuelle Datei, die in „Kürzlich gelöscht“ kommt.",

@@ -265,8 +265,6 @@
 	"health.check.saveFolderWhy": "ל-{app} אין תיקיית שמירה, ולכן HolyArrs לא יכול לייבא את ההורדות שהסתיימו. הוסיפו זוג נתיבים בהגדרות › מורידים.",
 	"health.kind.clearWaiting": "הורדות שיובאו ועדיין נמצאות במוריד",
 	"health.kind.saveFolder": "תיקיית השמירה של המוריד",
-	"health.kind.clearWaiting": "הורדות הממתינות לניקוי",
-	"health.kind.saveFolder": "תיקיית השמירה של המוריד",
 	"health.check.usenetDl": "מוריד Usenet",
 	"health.check.torrentDl": "מוריד טורנטים",
 	"health.check.noUsenetDl": "המקורות שלך מוצאים הורדות Usenet, אבל לא הוגדר מוריד Usenet, ולכן אי אפשר לשלוח אף אחת. הוסיפו אחד בהגדרות › מורידים.",

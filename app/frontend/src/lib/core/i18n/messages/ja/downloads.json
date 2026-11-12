@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "言語",
 	"downloads.ot.kindReleaseType": "リリースの種類",
 	"downloads.ot.kindYear": "年",
-	"downloads.hl.notMoved": "インポート後に移動できませんでした",
-	"downloads.hl.notMoved": "インポート後に移動できませんでした",
 	"downloads.dp.importFile": "このファイルをインポート",
 	"downloads.dp.askImport": "{file} を {name} としてインポートしますか？",
 	"downloads.dp.askImportReplace": "{file} を {name} としてインポートしますか？今のファイルを置き換え、古いファイルは「最近削除したもの」に移ります。",

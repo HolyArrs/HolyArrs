@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "kieli",
 	"downloads.ot.kindReleaseType": "julkaisun tyyppi",
 	"downloads.ot.kindYear": "vuosi",
-	"downloads.hl.notMoved": "Ei siirretty tuonnin jälkeen",
-	"downloads.hl.notMoved": "Ei siirretty tuonnin jälkeen",
 	"downloads.dp.importFile": "Tuo tämä tiedosto",
 	"downloads.dp.askImport": "Tuodaanko {file} nimellä {name}?",
 	"downloads.dp.askImportReplace": "Tuodaanko {file} nimellä {name}? Se korvaa nykyisen tiedoston, joka siirtyy kohtaan Äskettäin poistetut.",

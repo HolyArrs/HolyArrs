@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "idioma",
 	"downloads.ot.kindReleaseType": "tipo de lanzamiento",
 	"downloads.ot.kindYear": "año",
-	"downloads.hl.notMoved": "No se movió tras importar",
-	"downloads.hl.notMoved": "No se movió tras importar",
 	"downloads.dp.importFile": "Importar este archivo",
 	"downloads.dp.askImport": "¿Importar {file} como {name}?",
 	"downloads.dp.askImportReplace": "¿Importar {file} como {name}? Reemplaza el archivo actual, que va a Eliminados recientemente.",

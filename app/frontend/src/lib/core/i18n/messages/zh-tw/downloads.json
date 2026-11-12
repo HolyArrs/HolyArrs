@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "語言",
 	"downloads.ot.kindReleaseType": "發行類型",
 	"downloads.ot.kindYear": "年份",
-	"downloads.hl.notMoved": "匯入後未能移動",
-	"downloads.hl.notMoved": "匯入後未能移動",
 	"downloads.dp.importFile": "匯入此檔案",
 	"downloads.dp.askImport": "將 {file} 匯入為 {name}？",
 	"downloads.dp.askImportReplace": "將 {file} 匯入為 {name}？它會取代目前的檔案，舊檔案會移到「最近刪除」。",

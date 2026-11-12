@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "kalba",
 	"downloads.ot.kindReleaseType": "išleidimo tipas",
 	"downloads.ot.kindYear": "metai",
-	"downloads.hl.notMoved": "Po importo neperkelta",
-	"downloads.hl.notMoved": "Po importo neperkelta",
 	"downloads.dp.importFile": "Importuoti šį failą",
 	"downloads.dp.askImport": "Importuoti {file} kaip {name}?",
 	"downloads.dp.askImportReplace": "Importuoti {file} kaip {name}? Jis pakeičia dabartinį failą, kuris keliauja į „Neseniai ištrinta“.",

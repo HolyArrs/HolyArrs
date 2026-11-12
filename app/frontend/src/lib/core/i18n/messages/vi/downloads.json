@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "ngôn ngữ",
 	"downloads.ot.kindReleaseType": "kiểu phát hành",
 	"downloads.ot.kindYear": "năm",
-	"downloads.hl.notMoved": "Không chuyển được sau khi nhập",
-	"downloads.hl.notMoved": "Không chuyển được sau khi nhập",
 	"downloads.dp.importFile": "Nhập tệp này",
 	"downloads.dp.askImport": "Nhập {file} thành {name}?",
 	"downloads.dp.askImportReplace": "Nhập {file} thành {name}? Tệp này thay thế tệp hiện tại, tệp đó sẽ chuyển vào Đã xóa gần đây.",

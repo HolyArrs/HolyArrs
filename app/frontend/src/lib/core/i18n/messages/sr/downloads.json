@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "језик",
 	"downloads.ot.kindReleaseType": "врста издања",
 	"downloads.ot.kindYear": "година",
-	"downloads.hl.notMoved": "Није премештено после увоза",
-	"downloads.hl.notMoved": "Није премештено после увоза",
 	"downloads.dp.importFile": "Увези ову датотеку",
 	"downloads.dp.askImport": "Увести {file} као {name}?",
 	"downloads.dp.askImportReplace": "Увести {file} као {name}? Замењује тренутну датотеку, која иде у „Недавно обрисано”.",

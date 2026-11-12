@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "sprog",
 	"downloads.ot.kindReleaseType": "udgivelsestype",
 	"downloads.ot.kindYear": "år",
-	"downloads.hl.notMoved": "Ikke flyttet efter import",
-	"downloads.hl.notMoved": "Ikke flyttet efter import",
 	"downloads.dp.importFile": "Importér denne fil",
 	"downloads.dp.askImport": "Importér {file} som {name}?",
 	"downloads.dp.askImportReplace": "Importér {file} som {name}? Den erstatter den nuværende fil, som flyttes til Slettet for nylig.",

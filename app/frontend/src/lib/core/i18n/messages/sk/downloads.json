@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "jazyk",
 	"downloads.ot.kindReleaseType": "typ vydania",
 	"downloads.ot.kindYear": "rok",
-	"downloads.hl.notMoved": "Po importe nepresunuté",
-	"downloads.hl.notMoved": "Po importe nepresunuté",
 	"downloads.dp.importFile": "Importovať tento súbor",
 	"downloads.dp.askImport": "Importovať {file} ako {name}?",
 	"downloads.dp.askImportReplace": "Importovať {file} ako {name}? Nahradí aktuálny súbor, ktorý pôjde do sekcie Nedávno odstránené.",

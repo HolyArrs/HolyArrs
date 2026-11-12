@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "nyelv",
 	"downloads.ot.kindReleaseType": "kiadás típusa",
 	"downloads.ot.kindYear": "év",
-	"downloads.hl.notMoved": "Importálás után nem lett áthelyezve",
-	"downloads.hl.notMoved": "Importálás után nem lett áthelyezve",
 	"downloads.dp.importFile": "Fájl importálása",
 	"downloads.dp.askImport": "Importálja ezt: {file}, mint {name}?",
 	"downloads.dp.askImportReplace": "Importálja ezt: {file}, mint {name}? Lecseréli a jelenlegi fájlt, amely ide kerül: Nemrég törölt.",

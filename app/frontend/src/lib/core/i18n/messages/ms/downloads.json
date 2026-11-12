@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "bahasa",
 	"downloads.ot.kindReleaseType": "jenis keluaran",
 	"downloads.ot.kindYear": "tahun",
-	"downloads.hl.notMoved": "Tidak dipindahkan selepas import",
-	"downloads.hl.notMoved": "Tidak dipindahkan selepas import",
 	"downloads.dp.importFile": "Import fail ini",
 	"downloads.dp.askImport": "Import {file} sebagai {name}?",
 	"downloads.dp.askImportReplace": "Import {file} sebagai {name}? Ia menggantikan fail semasa, yang pergi ke Baru dipadam.",

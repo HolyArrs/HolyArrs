@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "γλώσσα",
 	"downloads.ot.kindReleaseType": "τύπος κυκλοφορίας",
 	"downloads.ot.kindYear": "έτος",
-	"downloads.hl.notMoved": "Δεν μεταφέρθηκε μετά την εισαγωγή",
-	"downloads.hl.notMoved": "Δεν μεταφέρθηκε μετά την εισαγωγή",
 	"downloads.dp.importFile": "Εισαγωγή αυτού του αρχείου",
 	"downloads.dp.askImport": "Εισαγωγή του {file} ως {name};",
 	"downloads.dp.askImportReplace": "Εισαγωγή του {file} ως {name}; Αντικαθιστά το τρέχον αρχείο, που πηγαίνει στα «Πρόσφατα διαγραμμένα».",

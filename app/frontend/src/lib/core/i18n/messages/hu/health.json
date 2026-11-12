@@ -265,8 +265,6 @@
 	"health.check.saveFolderWhy": "A(z) {app} letöltőnek nincs mentési mappája, így a HolyArrs nem tudja importálni a kész letöltéseket. Adj hozzá egy útvonalpárt itt: Beállítások › Letöltők.",
 	"health.kind.clearWaiting": "Importált letöltések, amelyek még egy Letöltőben vannak",
 	"health.kind.saveFolder": "Letöltő mentési mappája",
-	"health.kind.clearWaiting": "Törlésre váró letöltések",
-	"health.kind.saveFolder": "Letöltő mentési mappája",
 	"health.check.usenetDl": "Usenet-letöltő",
 	"health.check.torrentDl": "Torrentletöltő",
 	"health.check.noUsenetDl": "A forrásaid Usenet-letöltéseket találnak, de nincs beállítva Usenet-letöltő, így egyik sem küldhető el. Adj hozzá egyet itt: Beállítások › Letöltők.",

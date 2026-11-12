@@ -265,8 +265,6 @@
 	"health.check.saveFolderWhy": "{app} har ingen gemmemappe, så HolyArrs kan ikke importere dens færdige downloads. Tilføj et stipar under Indstillinger › Downloadere.",
 	"health.kind.clearWaiting": "Importerede downloads, der stadig ligger i en Downloader",
 	"health.kind.saveFolder": "Downloaderens gemmemappe",
-	"health.kind.clearWaiting": "Downloads der venter på at blive ryddet væk",
-	"health.kind.saveFolder": "Downloaderens gemmemappe",
 	"health.check.usenetDl": "Usenet-downloader",
 	"health.check.torrentDl": "Torrent-downloader",
 	"health.check.noUsenetDl": "Dine kilder finder Usenet-downloads, men ingen Usenet-downloader er sat op, så ingen kan sendes. Tilføj en under Indstillinger › Downloadere.",

@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "भाषा",
 	"downloads.ot.kindReleaseType": "रिलीज़ का प्रकार",
 	"downloads.ot.kindYear": "साल",
-	"downloads.hl.notMoved": "इम्पोर्ट के बाद नहीं हटाया गया",
-	"downloads.hl.notMoved": "इम्पोर्ट के बाद नहीं हटाया गया",
 	"downloads.dp.importFile": "यह फ़ाइल इंपोर्ट करें",
 	"downloads.dp.askImport": "{file} को {name} के रूप में इंपोर्ट करें?",
 	"downloads.dp.askImportReplace": "{file} को {name} के रूप में इंपोर्ट करें? यह मौजूदा फ़ाइल की जगह लेगी, जो हाल में मिटाई गई में जाएगी।",

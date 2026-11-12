@@ -265,8 +265,6 @@
 	"health.check.saveFolderWhy": "{app} нема фасциклу за чување, па HolyArrs не може да увезе завршена преузимања. Додајте пар путања у Подешавања › Преузимачи.",
 	"health.kind.clearWaiting": "Увезена преузимања која су још у Преузимачу",
 	"health.kind.saveFolder": "Фасцикла за чување Преузимача",
-	"health.kind.clearWaiting": "Преузимања која чекају чишћење",
-	"health.kind.saveFolder": "Фасцикла за чување Преузимача",
 	"health.check.usenetDl": "Usenet преузимач",
 	"health.check.torrentDl": "Торент преузимач",
 	"health.check.noUsenetDl": "Твоји извори проналазе Usenet преузимања, али ниједан Usenet преузимач није подешен, па ништа не може да се пошаље. Додајте га у Подешавања › Преузимачи.",

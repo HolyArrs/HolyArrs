@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "språk",
 	"downloads.ot.kindReleaseType": "utgivelsestype",
 	"downloads.ot.kindYear": "år",
-	"downloads.hl.notMoved": "Ikke flyttet etter import",
-	"downloads.hl.notMoved": "Ikke flyttet etter import",
 	"downloads.dp.importFile": "Importer denne filen",
 	"downloads.dp.askImport": "Importere {file} som {name}?",
 	"downloads.dp.askImportReplace": "Importere {file} som {name}? Den erstatter den nåværende filen, som flyttes til Nylig slettet.",

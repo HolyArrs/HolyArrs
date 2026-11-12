@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "taal",
 	"downloads.ot.kindReleaseType": "soort release",
 	"downloads.ot.kindYear": "jaar",
-	"downloads.hl.notMoved": "Niet verplaatst na import",
-	"downloads.hl.notMoved": "Niet verplaatst na import",
 	"downloads.dp.importFile": "Dit bestand importeren",
 	"downloads.dp.askImport": "{file} importeren als {name}?",
 	"downloads.dp.askImportReplace": "{file} importeren als {name}? Het vervangt het huidige bestand, dat naar Onlangs verwijderd gaat.",

@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "wika",
 	"downloads.ot.kindReleaseType": "uri ng release",
 	"downloads.ot.kindYear": "taon",
-	"downloads.hl.notMoved": "Hindi nailipat pagkatapos ng import",
-	"downloads.hl.notMoved": "Hindi nailipat pagkatapos ng import",
 	"downloads.dp.importFile": "I-import ang file na ito",
 	"downloads.dp.askImport": "I-import ang {file} bilang {name}?",
 	"downloads.dp.askImportReplace": "I-import ang {file} bilang {name}? Papalitan nito ang kasalukuyang file, na mapupunta sa Kamakailang na-delete.",

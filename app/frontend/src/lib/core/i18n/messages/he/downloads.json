@@ -1256,8 +1256,6 @@
 	"downloads.ot.kindLanguage": "שפה",
 	"downloads.ot.kindReleaseType": "סוג הוצאה",
 	"downloads.ot.kindYear": "שנה",
-	"downloads.hl.notMoved": "לא הועבר אחרי הייבוא",
-	"downloads.hl.notMoved": "לא הועבר אחרי הייבוא",
 	"downloads.dp.importFile": "ייבוא הקובץ הזה",
 	"downloads.dp.askImport": "לייבא את {file} בתור {name}?",
 	"downloads.dp.askImportReplace": "לייבא את {file} בתור {name}? הוא מחליף את הקובץ הנוכחי, שעובר אל „נמחקו לאחרונה”.",
