@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Automaatne",
 	"accounts.language.hint": "Automaatne järgib sinu brauserit. Salvestatakse sinu kontole.",
 	"accounts.language.saveFailed": "Keele salvestamine ebaõnnestus",
+	"accounts.language.count.one": "1 keel",
+	"accounts.language.count.other": "{n} keelt",
 	"accounts.account.watchEveryone": "Omanik lülitas selle kõigile sisse. Peatamiseks lülita mõlemad välja."
 }

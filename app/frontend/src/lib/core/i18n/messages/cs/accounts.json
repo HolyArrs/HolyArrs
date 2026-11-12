@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Automaticky",
 	"accounts.language.hint": "Automaticky se řídí prohlížečem. Uloženo u vašeho účtu.",
 	"accounts.language.saveFailed": "Jazyk se nepodařilo uložit",
+	"accounts.language.count.one": "1 jazyk",
+	"accounts.language.count.other": "Jazyky: {n}",
 	"accounts.account.watchEveryone": "Vlastník to zapnul pro všechny. Pro vypnutí vypněte obojí."
 }

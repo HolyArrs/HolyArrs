@@ -371,5 +371,7 @@
 	"accounts.language.auto": "خودکار",
 	"accounts.language.hint": "«خودکار» از مرورگرت پیروی می‌کند. در حسابت ذخیره می‌شود.",
 	"accounts.language.saveFailed": "زبان ذخیره نشد",
+	"accounts.language.count.one": "۱ زبان",
+	"accounts.language.count.other": "{n} زبان",
 	"accounts.account.watchEveryone": "مالک این را برای همه روشن کرده. برای متوقف کردنش هر دو را خاموش کن."
 }

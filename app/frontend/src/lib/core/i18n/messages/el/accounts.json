@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Αυτόματα",
 	"accounts.language.hint": "Το Αυτόματα ακολουθεί το πρόγραμμα περιήγησής σας. Αποθηκεύεται στον λογαριασμό σας.",
 	"accounts.language.saveFailed": "Δεν ήταν δυνατή η αποθήκευση της γλώσσας",
+	"accounts.language.count.one": "1 γλώσσα",
+	"accounts.language.count.other": "{n} γλώσσες",
 	"accounts.account.watchEveryone": "Ο ιδιοκτήτης το ενεργοποίησε για όλους. Απενεργοποιήστε και τα δύο για να σταματήσει."
 }

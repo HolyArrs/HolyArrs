@@ -170,10 +170,10 @@
 	.at-drawer[open] { animation: rise-in var(--dur) var(--ease-out) both; }
 	.at-drawer.closing { animation: sink-out var(--dur-fast) var(--ease-in) both; }
 	@media (max-width: 767px) {
-		.at-drawer { width: 100vw; max-height: 92dvh; }
+		.at-drawer { width: 100%; max-height: 92dvh; }
 		.at-drawer .inner::before { content: ''; align-self: center; width: 36px; height: 5px; margin-top: 8px; border-radius: 3px; background: var(--line-strong); }
 		.at-auto, .at-bottom {
-			width: 100vw; max-height: 92dvh; margin: auto 0 0; border-radius: var(--r-modal) var(--r-modal) 0 0;
+			width: 100%; max-height: 92dvh; margin: auto 0 0; border-radius: var(--r-modal) var(--r-modal) 0 0;
 		}
 		.at-auto[open], .at-bottom[open] { animation: rise-in var(--dur) var(--ease-out) both; }
 		.at-auto.closing, .at-bottom.closing { animation: sink-out var(--dur-fast) var(--ease-in) both; }

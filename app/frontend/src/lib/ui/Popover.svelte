@@ -4,6 +4,7 @@
 	import Icon, { type IconName } from './Icon.svelte';
 	import { popIn, popOut } from '../core/transitions.ts';
 	import { press } from '../core/motion.ts';
+	import { placePanel } from './popover-place.ts';
 
 	let {
 		label,
@@ -20,7 +21,9 @@
 		children,
 		onopen,
 		ontriggerkey,
-		tabindex
+		tabindex,
+		portal = false,
+		panelClass = ''
 	}: {
 		label: string;
 		icon?: IconName;
@@ -37,6 +40,9 @@
 		onopen?: (panel: HTMLElement) => void;
 		ontriggerkey?: (e: KeyboardEvent) => void;
 		tabindex?: number;
+		/** Moves the panel to the page's top level so a clipping or blurred parent cannot cut it off. */
+		portal?: boolean;
+		panelClass?: string;
 	} = $props();
 
 	const id = $props.id();
@@ -46,14 +52,16 @@
 	let panel = $state<HTMLElement>();
 	let pos = $state('');
 	let flip = $state(false);
+	let originX = $state<'left' | 'right'>('left');
 
-	const origin = $derived(`${(placement === 'below') !== flip ? 'top' : 'bottom'} ${align === 'start' ? 'left' : 'right'}`);
+	const origin = $derived(`${(placement === 'below') !== flip ? 'top' : 'bottom'} ${originX}`);
+	const inside = (n: Node | null) => !!n && (!!root?.contains(n) || !!panel?.contains(n));
 
 	// Outside click and Escape close it; focus moves into the panel on the next tick.
 	$effect(() => {
 		if (!open) return;
 		const outside = (e: PointerEvent) => {
-			if (root && !root.contains(e.target as Node)) close(false);
+			if (!inside(e.target as Node)) close(false);
 		};
 		const esc = (e: KeyboardEvent) => {
 			if (e.key === 'Escape') {
@@ -98,25 +106,28 @@
 	}
 	function leave(e: FocusEvent) {
 		const to = e.relatedTarget as Node | null;
-		if (to && root && !root.contains(to)) close(false);
+		if (to && !inside(to)) close(false);
 	}
 
-	// Flips to the roomier side, keeps 8px from the edges, and offsets for a positioned parent.
+	function toBody(node: HTMLElement) {
+		if (portal) document.body.appendChild(node);
+		return { destroy: () => portal && node.remove() };
+	}
+
+	// Flips to the roomier side, keeps 8px from the edges, follows the reading direction and offsets for a positioned parent.
 	function place() {
 		if (!button || !panel) return;
 		const b = button.getBoundingClientRect();
-		const vw = document.documentElement.clientWidth;
 		const vh = window.innerHeight;
-		const h = panel.offsetHeight;
-		const w = Math.min(width, vw - 24);
-		const up = placement === 'above' ? b.top - 6 >= h || b.top > vh - b.bottom : vh - b.bottom - 6 < h && b.top > vh - b.bottom;
-		flip = up !== (placement === 'above');
-		let left = align === 'start' ? b.left : b.right - w;
-		left = Math.max(8, Math.min(left, vw - 8 - w));
-		const p = panel.offsetParent;
-		const o = p && p !== document.body && p !== document.documentElement ? p.getBoundingClientRect() : { left: 0, top: 0, bottom: vh };
-		left -= o.left;
-		pos = up ? `left: ${left}px; bottom: ${o.bottom - b.top + 6}px;` : `left: ${left}px; top: ${b.bottom - o.top + 6}px;`;
+		panel.style.maxHeight = '';
+		const rtl = getComputedStyle(button).direction === 'rtl';
+		const p = placePanel(b, width, panel.offsetHeight, { width: document.documentElement.clientWidth, height: vh }, { align, placement, rtl });
+		flip = p.up !== (placement === 'above');
+		originX = p.originX;
+		const op = panel.offsetParent;
+		const o = op && op !== document.body && op !== document.documentElement ? op.getBoundingClientRect() : { left: 0, top: 0, bottom: vh };
+		const cap = p.maxHeight === undefined ? '' : ` max-height: ${p.maxHeight}px;`;
+		pos = (p.up ? `left: ${p.left - o.left}px; bottom: ${o.bottom - b.top + 6}px;` : `left: ${p.left - o.left}px; top: ${b.bottom - o.top + 6}px;`) + cap;
 	}
 </script>
 
@@ -144,7 +155,9 @@
 		<div
 			bind:this={panel}
 			{id}
-			class="panel"
+			use:toBody
+			onfocusout={portal ? leave : undefined}
+			class="panel {panelClass}"
 			role={panelRole === 'none' ? undefined : panelRole}
 			aria-label={label}
 			style="width: {width}px; {pos} transform-origin: {origin}"
@@ -168,7 +181,7 @@
 	.row:hover, .row[aria-expanded='true'] { background: var(--surface-3); }
 	/* Fixed so scroll containers cannot clip it. */
 	.panel {
-		position: fixed; z-index: 70; max-width: calc(100vw - 24px); max-height: min(70dvh, 480px); overflow: auto;
+		position: fixed; z-index: 70; max-width: calc(100vw - 24px); max-height: min(70dvh, 480px); overflow: auto; overscroll-behavior: contain;
 		padding: 6px; border-radius: 14px; background: var(--surface-1); color: var(--text);
 		box-shadow: var(--shadow-lift), 0 0 0 1px light-dark(var(--line), transparent);
 	}

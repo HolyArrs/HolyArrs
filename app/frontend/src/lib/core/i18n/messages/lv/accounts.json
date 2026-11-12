@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Automātiski",
 	"accounts.language.hint": "Automātiski seko tavam pārlūkam. Saglabāts tavā kontā.",
 	"accounts.language.saveFailed": "Neizdevās saglabāt valodu",
+	"accounts.language.count.one": "1 valoda",
+	"accounts.language.count.other": "Valodas: {n}",
 	"accounts.account.watchEveryone": "Īpašnieks to ieslēdza visiem. Lai to apturētu, izslēdz abus."
 }

@@ -369,6 +369,8 @@
 	"accounts.language.auto": "Automático",
 	"accounts.language.hint": "Automático segue o seu navegador. Guardado na sua conta.",
 	"accounts.language.saveFailed": "Não foi possível guardar o idioma",
+	"accounts.language.count.one": "1 idioma",
+	"accounts.language.count.other": "{n} idiomas",
 	"accounts.account.watchEveryone": "O proprietário ativou isso para todos. Desative os dois para parar.",
 	"accounts.language.top": "Mais usados",
 	"accounts.language.more": "Mais idiomas"

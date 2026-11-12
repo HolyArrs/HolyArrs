@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Automatisk",
 	"accounts.language.hint": "Automatisk følger nettleseren din. Lagres på kontoen din.",
 	"accounts.language.saveFailed": "Kunne ikke lagre språket",
+	"accounts.language.count.one": "1 språk",
+	"accounts.language.count.other": "{n} språk",
 	"accounts.account.watchEveryone": "Eieren slo dette på for alle. Slå av begge for å stoppe det."
 }

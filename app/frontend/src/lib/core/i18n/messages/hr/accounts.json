@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Automatski",
 	"accounts.language.hint": "Automatski prati tvoj preglednik. Sprema se na tvom računu.",
 	"accounts.language.saveFailed": "Jezik se nije mogao spremiti",
+	"accounts.language.count.one": "1 jezik",
+	"accounts.language.count.other": "Jezika: {n}",
 	"accounts.account.watchEveryone": "Vlasnik je ovo uključio za sve. Isključi oboje da to zaustaviš."
 }

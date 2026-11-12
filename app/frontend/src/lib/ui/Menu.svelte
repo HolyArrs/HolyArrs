@@ -121,7 +121,7 @@
 
 <style>
 	.ui-menu { display: flex; flex-direction: column; outline: none; }
-	.item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 0 10px 0 8px; border-radius: 8px; color: var(--text); font: var(--t-callout); font-size: 15px; text-align: left; }
+	.item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding-inline: 8px 10px; border-radius: 8px; color: var(--text); font: var(--t-callout); font-size: 15px; text-align: start; }
 	.item:hover, .item:focus-visible { background: var(--surface-3); outline: none; box-shadow: none; }
 	.item:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
 	.item[aria-disabled='true'] { opacity: var(--disabled-opacity); cursor: not-allowed; }
@@ -131,7 +131,7 @@
 	.grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.sep { height: 1px; margin: 5px 8px; background: var(--line); }
 	/* Left padding lines the heading up with item labels past the icon column. */
-	.heading { padding: 8px 10px 4px 38px; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
+	.heading { padding-block: 8px 4px; padding-inline: 38px 10px; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
 	kbd { color: var(--text-muted); font: var(--t-footnote); }
 	/* Minimum touch target size. */
 	@media (pointer: coarse) { .item { min-height: 44px; } }

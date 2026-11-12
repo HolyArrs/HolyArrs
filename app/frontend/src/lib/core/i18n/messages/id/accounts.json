@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Otomatis",
 	"accounts.language.hint": "Otomatis mengikuti browsermu. Disimpan di akunmu.",
 	"accounts.language.saveFailed": "Tidak bisa menyimpan bahasa",
+	"accounts.language.count.one": "1 bahasa",
+	"accounts.language.count.other": "{n} bahasa",
 	"accounts.account.watchEveryone": "Pemilik menyalakan ini untuk semua orang. Matikan keduanya untuk menghentikannya."
 }

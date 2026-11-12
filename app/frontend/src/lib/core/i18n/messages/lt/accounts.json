@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Automatinė",
 	"accounts.language.hint": "Automatinė seka jūsų naršyklę. Išsaugoma jūsų paskyroje.",
 	"accounts.language.saveFailed": "Nepavyko išsaugoti kalbos",
+	"accounts.language.count.one": "1 kalba",
+	"accounts.language.count.other": "Kalbų: {n}",
 	"accounts.account.watchEveryone": "Savininkas tai įjungė visiems. Išjunkite abu, kad tai sustotų."
 }

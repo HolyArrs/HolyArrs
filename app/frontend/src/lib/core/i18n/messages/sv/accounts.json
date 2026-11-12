@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Automatiskt",
 	"accounts.language.hint": "Automatiskt följer din webbläsare. Sparas på ditt konto.",
 	"accounts.language.saveFailed": "Det gick inte att spara språket",
+	"accounts.language.count.one": "1 språk",
+	"accounts.language.count.other": "{n} språk",
 	"accounts.account.watchEveryone": "Ägaren har slagit på det här för alla. Stäng av båda för att stoppa det."
 }

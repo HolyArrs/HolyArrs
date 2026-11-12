@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Automatisk",
 	"accounts.language.hint": "Automatisk følger din browser. Gemmes på din konto.",
 	"accounts.language.saveFailed": "Kunne ikke gemme sproget",
+	"accounts.language.count.one": "1 sprog",
+	"accounts.language.count.other": "{n} sprog",
 	"accounts.account.watchEveryone": "Ejeren har slået dette til for alle. Slå begge fra for at stoppe det."
 }

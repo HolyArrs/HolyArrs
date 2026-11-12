@@ -371,5 +371,7 @@
 	"accounts.language.auto": "אוטומטי",
 	"accounts.language.hint": "אוטומטי עוקב אחרי הדפדפן שלך. נשמר בחשבון שלך.",
 	"accounts.language.saveFailed": "לא ניתן לשמור את השפה",
+	"accounts.language.count.one": "שפה אחת",
+	"accounts.language.count.other": "{n} שפות",
 	"accounts.account.watchEveryone": "הבעלים הפעיל את זה לכולם. כבה את שניהם כדי להפסיק."
 }

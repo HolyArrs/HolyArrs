@@ -371,5 +371,7 @@
 	"accounts.language.auto": "Автоматично",
 	"accounts.language.hint": "„Автоматично“ следва браузъра ви. Запазва се във вашия акаунт.",
 	"accounts.language.saveFailed": "Езикът не можа да се запази",
+	"accounts.language.count.one": "1 език",
+	"accounts.language.count.other": "{n} езика",
 	"accounts.account.watchEveryone": "Собственикът го е включил за всички. Изключете и двете, за да спре."
 }
