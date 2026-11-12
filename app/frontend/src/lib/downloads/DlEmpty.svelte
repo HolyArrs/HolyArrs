@@ -11,7 +11,7 @@
 </script>
 
 {#if loading}
-	<PageLoader loading label={t('downloads.page.loading')} />
+	<div class="wait"><PageLoader loading label={t('downloads.page.loading')} /></div>
 {:else}
 	{#key shown.title}
 		<GhostEmpty title={shown.title} text={shown.text}>
@@ -21,3 +21,8 @@
 		</GhostEmpty>
 	{/key}
 {/if}
+
+<style>
+	/* The loader sits inside the list box: a full-screen height would give the list a scrollbar while it waits. */
+	.wait :global(.pl) { min-height: 240px; }
+</style>
