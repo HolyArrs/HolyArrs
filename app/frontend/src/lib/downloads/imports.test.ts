@@ -18,7 +18,7 @@ describe('placed', () => {
 			Plan: [{ source_file: 'a.mkv', target_path: 'C:\\media\\movies\\Se7en (1995)\\Se7en (1995) 1080p.mkv' }],
 			Result: [{ source_file: 'a.mkv', outcome: 'placed', placed_by: 'hardlink' }]
 		});
-		expect(placed(r)).toEqual({ how: 'Placed by hardlink', where: 'Se7en (1995)' });
+		expect(placed(r)).toEqual({ how: 'Added to the Library (no extra space used)', where: 'Se7en (1995)' });
 	});
 	it('counts the files of a partly done import, leaving out skipped ones', () => {
 		const r = im(5, 12, 'partly_done', {
@@ -28,7 +28,7 @@ describe('placed', () => {
 				{ source_file: 'c', outcome: 'skipped', placed_by: 'none' }
 			]
 		});
-		expect(placed(r)?.how).toBe('1 of 2 files placed by copying');
+		expect(placed(r)?.how).toBe('1 of 2 files added to the Library');
 	});
 	it('is null when nothing was placed', () => {
 		expect(placed(im(1, 8, 'failed', { Result: [{ source_file: 'a', outcome: 'skipped' }] }))).toBeNull();

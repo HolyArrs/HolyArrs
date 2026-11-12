@@ -175,7 +175,6 @@ export type { Kind } from './library.ts';
 export type { LibKind } from './table.ts';
 export type { LibraryCopy } from './copies.ts';
 export type { LibraryCopyPage } from './copies.ts';
-export type { Mode } from './import-files.ts';
 export type { MovieCollection } from './collections.ts';
 export type { MusicExamples } from './organise.ts';
 export type { NamingSettings } from './organise.ts';

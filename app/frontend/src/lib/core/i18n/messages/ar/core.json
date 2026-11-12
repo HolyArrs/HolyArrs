@@ -16,7 +16,7 @@
 	"core.format.healthy": "سليم",
 	"core.format.folderNotFound": "المجلد غير موجود",
 	"core.format.cannotWrite": "لا يمكن الكتابة هنا",
-	"core.format.copiedNoHardlinks": "يعمل، لكن الملفات تُنسخ (بلا روابط ثابتة)",
+	"core.format.copiedNoHardlinks": "كل استيراد يصنع نسخة كاملة (يستهلك مساحة إضافية)",
 	"core.format.notChecked": "لم يُفحص بعد",
 	"core.loader.welcome": "أهلًا، {name}",
 	"core.loader.reconnecting": "جارٍ إعادة الاتصال…",

@@ -16,7 +16,7 @@
 	"core.format.healthy": "정상",
 	"core.format.folderNotFound": "폴더를 찾을 수 없습니다",
 	"core.format.cannotWrite": "여기에는 쓸 수 없습니다",
-	"core.format.copiedNoHardlinks": "작동하지만 파일이 복사됩니다 (하드링크 없음)",
+	"core.format.copiedNoHardlinks": "가져올 때마다 전체 사본을 만듭니다 (공간을 더 씀)",
 	"core.format.notChecked": "아직 확인 안 함",
 	"core.loader.welcome": "{name}님, 환영합니다",
 	"core.loader.reconnecting": "다시 연결하는 중…",

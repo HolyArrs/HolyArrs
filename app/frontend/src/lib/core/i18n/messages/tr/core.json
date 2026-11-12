@@ -16,7 +16,7 @@
 	"core.format.healthy": "Sağlıklı",
 	"core.format.folderNotFound": "Klasör bulunamadı",
 	"core.format.cannotWrite": "Buraya yazılamıyor",
-	"core.format.copiedNoHardlinks": "Çalışıyor, ama dosyalar kopyalanıyor (hardlink yok)",
+	"core.format.copiedNoHardlinks": "Her içe aktarma tam bir kopya oluşturur (fazladan yer kaplar)",
 	"core.format.notChecked": "Henüz denetlenmedi",
 	"core.loader.welcome": "Hoş geldin, {name}",
 	"core.loader.reconnecting": "Yeniden bağlanılıyor…",
