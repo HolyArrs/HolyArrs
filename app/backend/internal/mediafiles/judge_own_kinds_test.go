@@ -28,6 +28,7 @@ func TestImportedTestKinds(t *testing.T) {
 		spec(9, OwnSpec{Name: "Cut", Kind: "edition", Value: `director'?s?[ ._-]?cut`}),
 		spec(10, OwnSpec{Name: "90s", Kind: "year", Value: "1990-1999"}),
 		spec(11),
+		spec(13, OwnSpec{Name: "Title word", Kind: "edition", Value: `dune`}),
 		spec(12, OwnSpec{Name: "German", Kind: "language", Value: "de", Required: true}, OwnSpec{Name: "1080", Kind: "resolution", Value: "1080"}),
 	})
 	cases := []struct {
@@ -56,6 +57,7 @@ func TestImportedTestKinds(t *testing.T) {
 		{8, "Film.2020.1080p.WEB-DL-X", "", nil, false}, // a movie has no release type
 		{9, "Film.2020.Directors.Cut.1080p.BluRay-X", "", nil, true},
 		{9, "Film.2020.1080p.BluRay-X", "", nil, false},
+		{13, "Dune.2021.1080p.BluRay-X", "", nil, false}, // no edition: no fit, the title is not read
 		{10, "Film.1994.1080p.BluRay-X", "", nil, true},
 		{10, "Film.2004.1080p.BluRay-X", "", nil, false},
 		{11, "Anything.At.All", "", nil, true}, // no tests fits everything

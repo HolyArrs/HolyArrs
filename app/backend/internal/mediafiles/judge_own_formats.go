@@ -198,11 +198,10 @@ func (s ownSpec) test(trait string, p releasename.Result) bool {
 			hit = s.match(trait, p.Group.Value)
 		}
 	case "edition":
-		text := strings.Join(p.Edition, " ")
-		if text == "" {
-			text = p.Original
+		// No edition is no fit, as there (the title is not read).
+		if text := strings.Join(p.Edition, " "); text != "" {
+			hit = s.match(trait, text)
 		}
-		hit = s.match(trait, text)
 	case "language":
 		var known bool
 		if hit, known = s.language(p); !known {
