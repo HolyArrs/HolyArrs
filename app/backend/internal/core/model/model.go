@@ -4,6 +4,7 @@ package model
 
 import (
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -197,7 +198,7 @@ func (d Downloader) CategoryFor(kind string) string {
 func (d Downloader) Categories() []string {
 	out := []string{d.Category}
 	for _, c := range []string{d.CategoryMovies, d.CategoryShows, d.CategoryMusic} {
-		if c != "" && !slices.Contains(out, c) {
+		if c != "" && !slices.ContainsFunc(out, func(x string) bool { return strings.EqualFold(x, c) }) {
 			out = append(out, c)
 		}
 	}

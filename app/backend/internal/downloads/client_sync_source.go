@@ -57,7 +57,7 @@ func (m *Manager) storeOn() bool {
 func snapshotJobs(v SyncView, cats []string) []Job {
 	out := make([]Job, 0, len(v.Items))
 	for _, j := range v.Items {
-		if v.Scope == "" && !slices.Contains(cats, "") && !slices.Contains(cats, j.Category) {
+		if v.Scope == "" && !slices.Contains(cats, "") && !hasCategory(cats, j.Category) {
 			continue
 		}
 		out = append(out, j)

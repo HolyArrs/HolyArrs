@@ -614,7 +614,7 @@ func inCategory(jobs []Job, cats []string) []Job {
 	}
 	out := jobs[:0:0]
 	for _, j := range jobs {
-		if slices.Contains(cats, j.Category) {
+		if hasCategory(cats, j.Category) {
 			out = append(out, j)
 		}
 	}

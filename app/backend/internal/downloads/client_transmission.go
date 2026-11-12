@@ -107,7 +107,7 @@ func (tr *Transmission) List(ctx context.Context, category string) ([]Job, error
 	}
 	out := []Job{}
 	for _, t := range ts {
-		if slices.Contains(t.Labels, category) {
+		if hasCategory(t.Labels, category) {
 			out = append(out, t.job(category))
 		}
 	}
@@ -140,7 +140,7 @@ func (tr *Transmission) Add(ctx context.Context, r AddRequest) (string, error) {
 			return "", ErrUncertain
 		}
 		job, err := tr.get(ctx, id, r.Category)
-		if err != nil || job.Category != r.Category || r.Skip[job.ID] {
+		if err != nil || !sameCategory(job.Category, r.Category) || r.Skip[job.ID] {
 			return "", errors.Join(ErrUncertain, err)
 		}
 		return job.ID, nil
@@ -151,7 +151,7 @@ func (tr *Transmission) Add(ctx context.Context, r AddRequest) (string, error) {
 	if id != "" {
 		j, err := tr.get(ctx, id, r.Category)
 		if err == nil {
-			if j.Category != r.Category {
+			if !sameCategory(j.Category, r.Category) {
 				return "", errors.New("the torrent already belongs to another category")
 			}
 			return id, nil
@@ -500,7 +500,7 @@ func (tr *Transmission) get(ctx context.Context, id, category string) (Job, erro
 	for _, t := range ts {
 		if strings.EqualFold(t.Hash, id) {
 			cat := category
-			if cat != "" && !slices.Contains(t.Labels, cat) {
+			if cat != "" && !hasCategory(t.Labels, cat) {
 				return Job{}, errTransmissionForeign
 			}
 			if cat == "" && len(t.Labels) > 0 {

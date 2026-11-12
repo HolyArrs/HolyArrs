@@ -125,6 +125,18 @@ func (m *Manager) Check(ctx context.Context, d domain.Downloader) (Health, error
 	return h, nil
 }
 
+// CheckNow is a person's own test of a Downloader. It goes through even while
+// the breaker holds calls back after failures, so a Downloader that is back
+// (a restarted NZBGet) answers at once, and a good answer ends its rest.
+func (m *Manager) CheckNow(ctx context.Context, d domain.Downloader) (Health, error) {
+	if e, err := m.engine(ctx, d); err == nil {
+		if g, ok := e.(*guardedEngine); ok {
+			outbound.Clear(g.target)
+		}
+	}
+	return m.Check(ctx, d)
+}
+
 // CheckAll asks every Downloader that is not paused or removed, once.
 func (m *Manager) CheckAll(ctx context.Context) {
 	dls, err := database.Select[domain.Downloader](ctx, m.Store.Read(), "downloaders", "removed = 0 AND state != 'disabled' ORDER BY id")
@@ -244,8 +256,13 @@ func (m *Manager) sleep(ctx context.Context, d time.Duration) error {
 }
 
 // downloaderFailed records a failed call: the state in plain words, the error
-// (never a key, since adapters strip addresses) and a back-off.
+// (never a key, since adapters strip addresses) and a back-off. A call the
+// breaker held back never reached the Downloader, so it adds nothing: a short
+// restart must not grow into a long rest.
 func (m *Manager) downloaderFailed(ctx context.Context, d domain.Downloader, cause error) {
+	if errors.Is(cause, outbound.ErrSuppressed) {
+		return
+	}
 	state := "unreachable"
 	if errors.Is(cause, ErrAuth) {
 		state = "auth_failed"

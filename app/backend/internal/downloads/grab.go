@@ -475,7 +475,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	}
 	if hash != "" {
 		if j, err := e.Get(ctx, hash); err == nil {
-			if skip[j.ID] || (d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "aria2") && j.Category != d.Category {
+			if skip[j.ID] || (d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "aria2") && !sameCategory(j.Category, d.Category) {
 				return "", errors.New("the torrent belongs to another download or category")
 			}
 			if j.ID != "" {

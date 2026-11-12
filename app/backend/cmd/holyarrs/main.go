@@ -334,7 +334,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if err := library.LoadOwnTraits(ctx, s); err != nil {
 		return fmt.Errorf("own traits: %w", err)
 	}
-	dm := &downloads.Manager{Store: s, Live: hub, SavePath: c.SavePath,
+	dm := &downloads.Manager{Store: s, Live: hub, SavePath: c.SavePath, ConfigDir: c.ConfigDir,
 		Link: func(ctx context.Context, rel domain.Release) (string, error) {
 			return sources.GrabLink(ctx, s, vault, rel)
 		},

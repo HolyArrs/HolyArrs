@@ -55,6 +55,9 @@ type Manager struct {
 	Live     Publisher                                 // may be nil
 	Engine   func(d domain.Downloader) (Engine, error) // nil means the built-in adapters
 	SavePath string                                    // where the Downloader saves, as it sees it
+	// ConfigDir is HolyArrs's own config folder. A Downloader's save root is
+	// never kept inside it or around it.
+	ConfigDir string
 	// StallAfter and ActAfter override the settings stalled_after_hours and
 	// stalled_act_hours (tests); zero reads the settings.
 	StallAfter  time.Duration
@@ -321,7 +324,7 @@ func (m *Manager) engine(ctx context.Context, d domain.Downloader) (Engine, erro
 func otherCategories(d domain.Downloader) []string {
 	var out []string
 	for _, c := range d.Categories() {
-		if c != d.Category {
+		if !sameCategory(c, d.Category) {
 			out = append(out, c)
 		}
 	}
