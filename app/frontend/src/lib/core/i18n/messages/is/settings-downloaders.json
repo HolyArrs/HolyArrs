@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Slóð niðurhalara",
 	"settings.downloaders.ourPath": "Slóð HolyArrs",
 	"settings.downloaders.addPair": "Bæta við slóðapari",
+	"settings.downloaders.samePair": "Báðar slóðirnar eru eins, svo þetta par breytir engu. Það segir HolyArrs samt hvar skrár þessa niðurhalsforrits eru, svo þú mátt halda því.",
 	"settings.downloaders.change": "Breyta {name}",
 	"settings.downloaders.whichApp": "Hvaða forrit",
 	"settings.downloaders.torrents": "(torrent)",

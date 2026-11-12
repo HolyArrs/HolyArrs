@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "مسیر دانلودر",
 	"settings.downloaders.ourPath": "مسیر HolyArrs",
 	"settings.downloaders.addPair": "افزودن یک جفت مسیر",
+	"settings.downloaders.samePair": "هر دو مسیر یکسان‌اند، پس این جفت چیزی را تغییر نمی‌دهد. ولی به HolyArrs می‌گوید فایل‌های این دانلودر کجاست، پس می‌توانید نگهش دارید.",
 	"settings.downloaders.change": "تغییر {name}",
 	"settings.downloaders.whichApp": "کدام برنامه",
 	"settings.downloaders.torrents": "(تورنت‌ها)",

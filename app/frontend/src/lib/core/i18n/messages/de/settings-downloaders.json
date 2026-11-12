@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Pfad des Downloaders",
 	"settings.downloaders.ourPath": "Pfad von HolyArrs",
 	"settings.downloaders.addPair": "Pfadpaar hinzufügen",
+	"settings.downloaders.samePair": "Beide Pfade sind gleich, dieses Paar ändert also nichts. Es sagt HolyArrs aber, wo die Dateien dieses Download-Clients liegen, du kannst es also behalten.",
 	"settings.downloaders.change": "{name} ändern",
 	"settings.downloaders.whichApp": "Welche App",
 	"settings.downloaders.torrents": "(Torrents)",

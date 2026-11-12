@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Path Pengunduh",
 	"settings.downloaders.ourPath": "Path HolyArrs",
 	"settings.downloaders.addPair": "Tambah pasangan path",
+	"settings.downloaders.samePair": "Kedua jalur sama, jadi pasangan ini tidak mengubah apa pun. Pasangan ini tetap memberi tahu HolyArrs letak file pengunduh ini, jadi Anda boleh menyimpannya.",
 	"settings.downloaders.change": "Ubah {name}",
 	"settings.downloaders.whichApp": "Aplikasi mana",
 	"settings.downloaders.torrents": "(torrent)",

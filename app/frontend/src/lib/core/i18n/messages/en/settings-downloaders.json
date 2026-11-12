@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Downloader's path",
 	"settings.downloaders.ourPath": "HolyArrs' path",
 	"settings.downloaders.addPair": "Add a path pair",
+	"settings.downloaders.samePair": "Both paths are the same, so this pair renames nothing. It still tells HolyArrs where this downloader's files are, so you can keep it.",
 	"settings.downloaders.change": "Change {name}",
 	"settings.downloaders.whichApp": "Which app",
 	"settings.downloaders.torrents": "(torrents)",

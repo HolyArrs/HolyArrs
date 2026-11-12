@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Đường dẫn của Trình tải",
 	"settings.downloaders.ourPath": "Đường dẫn của HolyArrs",
 	"settings.downloaders.addPair": "Thêm một cặp đường dẫn",
+	"settings.downloaders.samePair": "Hai đường dẫn giống nhau nên cặp này không đổi gì. Nó vẫn cho HolyArrs biết tệp của trình tải này nằm ở đâu, nên bạn có thể giữ lại.",
 	"settings.downloaders.change": "Sửa {name}",
 	"settings.downloaders.whichApp": "Ứng dụng nào",
 	"settings.downloaders.torrents": "(torrent)",

@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "הנתיב של המוריד",
 	"settings.downloaders.ourPath": "הנתיב של HolyArrs",
 	"settings.downloaders.addPair": "הוספת זוג נתיבים",
+	"settings.downloaders.samePair": "שני הנתיבים זהים, כך שהזוג הזה לא משנה דבר. הוא עדיין אומר ל-HolyArrs איפה נמצאים הקבצים של לקוח ההורדות הזה, אז אפשר להשאיר אותו.",
 	"settings.downloaders.change": "שינוי {name}",
 	"settings.downloaders.whichApp": "איזו אפליקציה",
 	"settings.downloaders.torrents": "(טורנטים)",

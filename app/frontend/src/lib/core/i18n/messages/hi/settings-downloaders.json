@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "डाउनलोडर का पाथ",
 	"settings.downloaders.ourPath": "HolyArrs का पाथ",
 	"settings.downloaders.addPair": "पाथ की जोड़ी जोड़ें",
+	"settings.downloaders.samePair": "दोनों पाथ एक जैसे हैं, इसलिए यह जोड़ी कुछ नहीं बदलती। फिर भी यह HolyArrs को बताती है कि इस डाउनलोडर की फ़ाइलें कहाँ हैं, इसलिए आप इसे रख सकते हैं।",
 	"settings.downloaders.change": "{name} बदलें",
 	"settings.downloaders.whichApp": "कौन सा ऐप",
 	"settings.downloaders.torrents": "(टोरेंट)",

@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Downloaderens sti",
 	"settings.downloaders.ourPath": "HolyArrs' sti",
 	"settings.downloaders.addPair": "Tilføj et stipar",
+	"settings.downloaders.samePair": "Begge stier er ens, så dette par omdøber ingenting. Det fortæller stadig HolyArrs, hvor denne klients filer ligger, så du kan beholde det.",
 	"settings.downloaders.change": "Ændr {name}",
 	"settings.downloaders.whichApp": "Hvilken app",
 	"settings.downloaders.torrents": "(torrents)",

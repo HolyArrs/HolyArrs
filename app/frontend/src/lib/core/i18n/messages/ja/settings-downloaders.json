@@ -35,6 +35,7 @@
 "settings.downloaders.theirPath": "ダウンローダー側のパス",
 "settings.downloaders.ourPath": "HolyArrs 側のパス",
 "settings.downloaders.addPair": "パスの組を追加",
+"settings.downloaders.samePair": "両方のパスが同じなので、このペアは何も置き換えません。それでもこのダウンローダーのファイルの場所を HolyArrs に伝えるので、残しておけます。",
 "settings.downloaders.change": "{name} を変更",
 "settings.downloaders.whichApp": "アプリ",
 "settings.downloaders.torrents": "(トレント)",

@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Διαδρομή του Προγράμματος λήψης",
 	"settings.downloaders.ourPath": "Διαδρομή του HolyArrs",
 	"settings.downloaders.addPair": "Προσθήκη ζεύγους διαδρομών",
+	"settings.downloaders.samePair": "Οι δύο διαδρομές είναι ίδιες, οπότε αυτό το ζεύγος δεν αλλάζει τίποτα. Λέει όμως στο HolyArrs πού βρίσκονται τα αρχεία αυτού του προγράμματος, οπότε μπορείτε να το κρατήσετε.",
 	"settings.downloaders.change": "Αλλαγή: {name}",
 	"settings.downloaders.whichApp": "Ποια εφαρμογή",
 	"settings.downloaders.torrents": "(torrents)",

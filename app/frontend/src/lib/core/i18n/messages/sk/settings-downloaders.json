@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Cesta Sťahovača",
 	"settings.downloaders.ourPath": "Cesta HolyArrs",
 	"settings.downloaders.addPair": "Pridať dvojicu ciest",
+	"settings.downloaders.samePair": "Obe cesty sú rovnaké, takže tento pár nič nepremenuje. Stále však HolyArrs hovorí, kde sú súbory tohto klienta, takže ho môžete ponechať.",
 	"settings.downloaders.change": "Zmeniť {name}",
 	"settings.downloaders.whichApp": "Ktorá aplikácia",
 	"settings.downloaders.torrents": "(torrenty)",

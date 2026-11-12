@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Ruta del Gestor de baixades",
 	"settings.downloaders.ourPath": "Ruta de HolyArrs",
 	"settings.downloaders.addPair": "Afegeix un parell de rutes",
+	"settings.downloaders.samePair": "Els dos camins són iguals, així que aquest parell no canvia res. Tot i així indica a HolyArrs on són els fitxers d'aquest client, així que el podeu mantenir.",
 	"settings.downloaders.change": "Canvia {name}",
 	"settings.downloaders.whichApp": "Quina app",
 	"settings.downloaders.torrents": "(torrents)",

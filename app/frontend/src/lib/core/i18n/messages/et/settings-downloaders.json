@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Allalaadija tee",
 	"settings.downloaders.ourPath": "HolyArrsi tee",
 	"settings.downloaders.addPair": "Lisa teepaar",
+	"settings.downloaders.samePair": "Mõlemad teed on samad, seega see paar ei muuda midagi. Siiski ütleb see HolyArrsile, kus selle kliendi failid on, nii et võid selle alles jätta.",
 	"settings.downloaders.change": "Muuda: {name}",
 	"settings.downloaders.whichApp": "Milline rakendus",
 	"settings.downloaders.torrents": "(torrentid)",

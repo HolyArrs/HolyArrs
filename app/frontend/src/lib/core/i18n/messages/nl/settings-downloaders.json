@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Pad van de Downloader",
 	"settings.downloaders.ourPath": "Pad van HolyArrs",
 	"settings.downloaders.addPair": "Een paar paden toevoegen",
+	"settings.downloaders.samePair": "Beide paden zijn gelijk, dus dit paar verandert niets. Het vertelt HolyArrs wel waar de bestanden van deze downloader staan, dus je kunt het laten staan.",
 	"settings.downloaders.change": "{name} wijzigen",
 	"settings.downloaders.whichApp": "Welke app",
 	"settings.downloaders.torrents": "(torrents)",

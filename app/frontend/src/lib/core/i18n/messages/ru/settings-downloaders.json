@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Путь загрузчика",
 	"settings.downloaders.ourPath": "Путь HolyArrs",
 	"settings.downloaders.addPair": "Добавить пару путей",
+	"settings.downloaders.samePair": "Оба пути одинаковые, поэтому эта пара ничего не меняет. Но она сообщает HolyArrs, где лежат файлы этого клиента, так что её можно оставить.",
 	"settings.downloaders.change": "Изменить {name}",
 	"settings.downloaders.whichApp": "Какое приложение",
 	"settings.downloaders.torrents": "(торренты)",

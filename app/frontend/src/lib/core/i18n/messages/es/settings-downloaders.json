@@ -35,6 +35,7 @@
 	"settings.downloaders.theirPath": "Ruta del gestor de descargas",
 	"settings.downloaders.ourPath": "Ruta de HolyArrs",
 	"settings.downloaders.addPair": "Añadir un par de rutas",
+	"settings.downloaders.samePair": "Las dos rutas son iguales, así que este par no cambia nada. Aun así le dice a HolyArrs dónde están los archivos de este cliente, así que puedes dejarlo.",
 	"settings.downloaders.change": "Cambiar {name}",
 	"settings.downloaders.whichApp": "Qué app",
 	"settings.downloaders.torrents": "(torrents)",
