@@ -208,6 +208,10 @@ func (r *run) presetID(name, titleKind string) int64 {
 	if name == "" {
 		return 0
 	}
+	// Pick rules this move made from a profile, whatever name they got here.
+	if id := r.ruleIDs[name]; id != 0 {
+		return id
+	}
 	music := `kinds LIKE '%"music"%'`
 	if titleKind != "artist" {
 		music = `kinds NOT LIKE '%"music"%'`
@@ -313,6 +317,13 @@ func (r *run) outsideList(it Item) (string, string) {
 	return result(err, ResCreated, what)
 }
 
+func (r *run) ruleID(name string, id int64) {
+	if r.ruleIDs == nil {
+		r.ruleIDs = map[string]int64{}
+	}
+	r.ruleIDs[name] = id
+}
+
 // importRules makes (or, imported before, updates) Pick rules from an old
 // app's profile, its scored formats as imported traits. Undo removes the
 // Pick rules while nothing uses them, and the traits it made.
@@ -324,6 +335,7 @@ func (r *run) importRules(it Item) (string, string) {
 	}
 	if r.dry {
 		if id := r.id("SELECT id FROM pick_rules WHERE json_extract(body, '$.synced.from') = 'import' AND json_extract(body, '$.synced.profile_id') = ?", rp.ProfileKey); id != 0 {
+			r.ruleID(rp.Name, id)
 			return ResChange, what + " (updates the ones imported before)"
 		}
 		return ResCreate, what
@@ -333,6 +345,7 @@ func (r *run) importRules(it Item) (string, string) {
 	if err != nil {
 		return ResFailed, err.Error()
 	}
+	r.ruleID(rp.Name, res.PickRules.ID)
 	err = r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
 		for _, id := range res.NewTraits {
 			if err := r.markTx(tx, it.Key+":trait:"+strconv.FormatInt(id, 10), "own_trait", id, "", ""); err != nil {

@@ -259,6 +259,9 @@ type run struct {
 	owner        int64
 	// choose is set by one() for the item it just ran (Line.Choose).
 	choose string
+	// ruleIDs are the Pick rules this run made from profiles, by the name
+	// the plan gave them (the name here may differ when it was taken).
+	ruleIDs map[string]int64
 	// prowlarr is the kept Prowlarr address and key, read once.
 	prowlarr *secretsfile.MoveCredential
 }

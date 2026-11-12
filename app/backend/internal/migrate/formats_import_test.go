@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
@@ -280,5 +282,67 @@ func TestModifierIsItsOwnKind(t *testing.T) {
 		CutoffQualities: []string{"Remux-1080p"}, Scores: map[string]int{"Remux": 50}}, f)
 	if len(rp.Traits) != 1 || rp.Traits[0].Specs[0].Kind != "source" || rp.Traits[0].Specs[1].Kind != "modifier" || rp.Traits[0].Specs[1].Value != "remux" {
 		t.Fatalf("traits %+v skipped %+v", rp.Traits, rp.Skipped)
+	}
+}
+
+// TestSameProfileNameInTwoApps: Sonarr's and Radarr's profiles of one
+// name become two Pick rules, and each app's titles name their own; a
+// scored format that cannot be brought says why in the not-moved list.
+func TestSameProfileNameInTwoApps(t *testing.T) {
+	flag := Named{ID: 2, Name: "Freeleech", Items: []map[string]any{{"name": "FL", "kind": "IndexerFlagSpecification", "value.value": float64(1)}}}
+	prof := Profile{ID: 4, Name: "Lab", UpgradeAllowed: true, Qualities: []string{"WEBDL-1080p"}, CutoffQualities: []string{"WEBDL-1080p"},
+		Scores: map[string]int{"x265": 50, "Freeleech": 11}}
+	son := &Snapshot{Kind: Sonarr, Address: "http://son:1", CustomFormats: []Named{oneFormat, flag}, QualityProfiles: []Profile{prof}}
+	rad := &Snapshot{Kind: Radarr, Address: "http://rad:1", CustomFormats: []Named{oneFormat, flag}, QualityProfiles: []Profile{prof}}
+	p := BuildPlan([]Input{{1, son}, {2, rad}}, Choices{})
+	a := item(t, p, GroupRules, "pick_rules:1:sonarr:4").Rules
+	b := item(t, p, GroupRules, "pick_rules:2:radarr:4").Rules
+	if a.Name != "Lab" || b.Name != "Lab (radarr)" {
+		t.Fatalf("names %q %q", a.Name, b.Name)
+	}
+	n, ok := notMoved(p, "sonarr custom_formats[1]")
+	if !ok || !strings.Contains(n.Why, "indexer flag") {
+		t.Fatalf("the left-out format's reason: %+v %v", n, ok)
+	}
+}
+
+// TestTitlesUseTheRulesTheirProfileBecame: when Pick rules of the
+// profile's name are already here, the import makes its own under another
+// name and the profile's titles use those, not the ones of the same name.
+func TestTitlesUseTheRulesTheirProfileBecame(t *testing.T) {
+	l := newMoveLabWith(t, withFormats)
+	mine, err := library.CreatePickRules(context.Background(), l.st, library.PickRulesInput{Name: "Ultra-HD", Kinds: []string{"movie"}, Body: mediafiles.FourK()}, domain.Actor{Kind: "user", ID: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	l.move(t, Choices{})
+	pr, err := database.Select[mediafiles.PickRules](context.Background(), l.st.Read(), "pick_rules", "json_extract(body, '$.synced.from') = 'import'")
+	if err != nil || len(pr) != 1 || pr[0].ID == mine.ID {
+		t.Fatalf("imported rules %+v %v", pr, err)
+	}
+	if n := l.count(t, "SELECT count(*) FROM versions WHERE pick_rules_id = ?", pr[0].ID); n == 0 {
+		t.Fatalf("the title does not use the imported Pick rules %q", pr[0].Name)
+	}
+}
+
+// TestOneIndexerInTwoApps: the same indexer in Sonarr and Radarr becomes
+// one Source that serves shows and movies.
+func TestOneIndexerInTwoApps(t *testing.T) {
+	ix := Provider{Name: "Nyaa", Kind: "Torznab", Enabled: true, Priority: 25, Settings: map[string]any{"baseUrl": "http://prowlarr:9696/1/", "categories": []any{float64(5000)}}}
+	ix2 := ix
+	ix2.Settings = map[string]any{"baseUrl": "http://prowlarr:9696/1/", "categories": []any{float64(2000)}}
+	p := BuildPlan([]Input{{1, &Snapshot{Kind: Sonarr, Indexers: []Provider{ix}}}, {2, &Snapshot{Kind: Radarr, Indexers: []Provider{ix2}}}}, Choices{})
+	sp := item(t, p, GroupSources, "source:nyaa").Source
+	if !slices.Equal(sp.Kinds, []string{"tv", "movie"}) || !slices.Equal(sp.Categories["movie"], []int{2000}) || !slices.Equal(sp.Categories["tv"], []int{5000}) {
+		t.Fatalf("source %+v", sp)
+	}
+	if n, ok := notMoved(p, "radarr indexers[0]"); ok {
+		t.Fatalf("the second copy is listed as not moved: %+v", n)
+	}
+	// Another address under the same name stays a second, unmoved one.
+	ix2.Settings = map[string]any{"baseUrl": "http://other:9696/1/"}
+	p = BuildPlan([]Input{{1, &Snapshot{Kind: Sonarr, Indexers: []Provider{ix}}}, {2, &Snapshot{Kind: Radarr, Indexers: []Provider{ix2}}}}, Choices{})
+	if _, ok := notMoved(p, "radarr indexers[0]"); !ok {
+		t.Fatal("a second address under one name was not listed")
 	}
 }

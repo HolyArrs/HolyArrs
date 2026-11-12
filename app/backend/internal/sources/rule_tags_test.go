@@ -49,3 +49,17 @@ func TestHandle_PickRulesTagsIgnoreCase(t *testing.T) {
 		t.Fatalf("job %s, hits %d", j.State, feedHits(lf))
 	}
 }
+
+// A Source that shares a tag with the Pick rules is asked for a title
+// that carries no tags: the Pick rules' tags pick the Sources on their own.
+func TestHandle_PickRulesTagsAskTaggedSource(t *testing.T) {
+	lf := &liveFeed{}
+	lf.set(duneFeed)
+	f := seed(t, lf.url(t))
+	exec(t, f, `UPDATE pick_rules SET body = json_set(body, '$.tags', json('["anime"]'))`)
+	exec(t, f, `UPDATE sources SET tags = '["anime"]'`)
+	j := runSearch(t, f, &Searcher{Store: f.s})
+	if j.State != "done" || feedHits(lf) == 0 {
+		t.Fatalf("job %s, hits %d", j.State, feedHits(lf))
+	}
+}

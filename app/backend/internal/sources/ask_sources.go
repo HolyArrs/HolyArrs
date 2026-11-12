@@ -14,8 +14,8 @@ import (
 
 // askAll asks every Source used for this kind of search; tv picks the Sources
 // and categories for shows. A Source with tags is asked only for a title that
-// shares one of them; Pick rules with tags (ruleTags) ask only the Sources
-// sharing one of those.
+// shares one of them or whose Pick rules do; Pick rules with tags (ruleTags)
+// ask only the Sources sharing one of those.
 func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bool, titleTags, ruleTags []string) ([]found, []string, int, []skippedSource, error) {
 	ruleTags = mediafiles.CleanTags(ruleTags) // Source tags are stored this way
 	now := time.Now().UTC()
@@ -32,7 +32,7 @@ func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bo
 		if src.Format == "rss" || hand && !src.UseFor.HandSearch || !hand && !src.UseFor.AutoSearch || tv && !handlesTV(src) || q.Music && !handlesMusic(src) || !tv && !q.Music && !handlesMovies(src) {
 			continue
 		}
-		if !mediafiles.SourceServes(src.Tags, titleTags) {
+		if !mediafiles.SourceServes(src.Tags, titleTags) && !mediafiles.Shares(src.Tags, ruleTags) {
 			skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: tagsWhy + strings.Join(src.Tags, ", ") + ") are not on this title"})
 			continue
 		}
