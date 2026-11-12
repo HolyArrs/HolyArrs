@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs can't see {path}. Use the path inside its container: the right side of the Docker volume.",
 	"migrate.foldersItSees": "It can see: {list}",
 	"migrate.sameNewFolder": "Same folder as {list}. Their titles end up together; give 4K or other copies their own folder.",
-	"migrate.doneOfTotal": "{done} of {total}"
+	"migrate.doneOfTotal": "{done} of {total}",
+	"migrate.bringFormats": "Bring formats and scores",
+	"migrate.bringFormatsHint": "Each profile that scores formats becomes its own Pick rules, with those formats as traits.",
+	"migrate.formatTraits": "Traits: {list}",
+	"migrate.formatsLeftOut": "Left out: {list}"
 }

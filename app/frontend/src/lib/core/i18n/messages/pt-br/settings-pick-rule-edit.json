@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} características pontuadas",
 	"settings.pickRuleEdit.trashResult": "{n} características pontuadas · {added} novas · {updated} atualizadas",
 	"settings.pickRuleEdit.trashLeftOut": "{n} deixados de fora",
-	"settings.pickRuleEdit.trashTests": "testa {kinds}"
+	"settings.pickRuleEdit.trashTests": "testa {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Fontes",
+	"settings.pickRuleEdit.sourcesDesc": "Busca só nas Fontes que compartilham uma destas tags. Deixe vazio para buscar em todas as Fontes.",
+	"settings.pickRuleEdit.tags": "Tags"
 }

@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} מאפיינים קיבלו ציון",
 	"settings.pickRuleEdit.trashResult": "{n} מאפיינים קיבלו ציון · {added} חדשים · {updated} עודכנו",
 	"settings.pickRuleEdit.trashLeftOut": "{n} הושמטו",
-	"settings.pickRuleEdit.trashTests": "בודק {kinds}"
+	"settings.pickRuleEdit.trashTests": "בודק {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "מקורות",
+	"settings.pickRuleEdit.sourcesDesc": "חפש רק במקורות שחולקים אחת מהתגיות האלה. השאר ריק כדי לחפש בכל מקור.",
+	"settings.pickRuleEdit.tags": "תגיות"
 }

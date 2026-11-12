@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs ne vidi {path}. Koristi putanju unutar njegova kontejnera: desna strana Docker volumena.",
 	"migrate.foldersItSees": "Vidi: {list}",
 	"migrate.sameNewFolder": "Ista mapa kao {list}. Njihovi naslovi završavaju zajedno; 4K ili druge kopije stavi u vlastitu mapu.",
-	"migrate.doneOfTotal": "{done} od {total}"
+	"migrate.doneOfTotal": "{done} od {total}",
+	"migrate.bringFormats": "Prenesi formate i ocjene",
+	"migrate.bringFormatsHint": "Svaki profil koji boduje formate postaje vlastita Pravila odabira, a ti formati postaju osobine.",
+	"migrate.formatTraits": "Osobine: {list}",
+	"migrate.formatsLeftOut": "Izostavljeno: {list}"
 }

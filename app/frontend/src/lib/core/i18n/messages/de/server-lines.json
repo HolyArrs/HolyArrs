@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Von Hand gelöscht",
 	"server.downloads.marked-bad": "Als fehlerhaft markiert",
 	"server.suggest.because-you-have": "Weil du {name} hast",
-	"server.health.downloader-save-folder": "Speicherordner des Downloaders"
+	"server.health.downloader-save-folder": "Speicherordner des Downloaders",
+	"server.library.edition": "Edition",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} seiner Formate werden zu Merkmalen mit denselben Punkten",
+	"server.migrate.updated-the-ones-imported-before": "{what} (die zuvor importierten aktualisiert)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (aktualisiert die zuvor importierten)",
+	"server.migrate.becomes-pick-rules-traits": "wird zu den Auswahlregeln {name} · {traits} Merkmale",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "es testet {kinds}, was HolyArrs nicht testen kann",
+	"server.migrate.its-format-was-not-read-from": "sein Format wurde aus der alten App nicht gelesen",
+	"server.migrate.nothing-in-the-old-app-gives": "nichts in der alten App gibt ihm Punkte, also ändert es hier nichts",
+	"server.migrate.pick-rules-here-still-give-it": "Auswahlregeln hier geben ihm noch Punkte, also bleibt es",
+	"server.migrate.pick-rules-hold-at-most-64": "Auswahlregeln fassen höchstens 64 Merkmale; die stärksten Punktzahlen wurden behalten",
+	"server.migrate.something-here-still-uses-these-pick": "etwas hier nutzt diese Auswahlregeln noch, also bleiben sie"
 }

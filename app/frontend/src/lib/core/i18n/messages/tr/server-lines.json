@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Elle silindi",
 	"server.downloads.marked-bad": "Bozuk olarak işaretlendi",
 	"server.suggest.because-you-have": "{name} sende olduğu için",
-	"server.health.downloader-save-folder": "İndiricinin kayıt klasörü"
+	"server.health.downloader-save-folder": "İndiricinin kayıt klasörü",
+	"server.library.edition": "sürüm",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} biçimi aynı puanlarla özellik olur",
+	"server.migrate.updated-the-ones-imported-before": "{what} (önceden içe aktarılanlar güncellendi)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (önceden içe aktarılanları günceller)",
+	"server.migrate.becomes-pick-rules-traits": "{name} Seçim kuralları olur · {traits} özellik",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "{kinds} test ediyor, HolyArrs bunu test edemez",
+	"server.migrate.its-format-was-not-read-from": "biçimi eski uygulamadan okunamadı",
+	"server.migrate.nothing-in-the-old-app-gives": "eski uygulamada ona puan veren bir şey yok, bu yüzden burada hiçbir şeyi değiştirmez",
+	"server.migrate.pick-rules-here-still-give-it": "buradaki Seçim kuralları ona hâlâ puan veriyor, bu yüzden kalıyor",
+	"server.migrate.pick-rules-hold-at-most-64": "Seçim kuralları en fazla 64 özellik tutar; en güçlü puanlar tutuldu",
+	"server.migrate.something-here-still-uses-these-pick": "burada bir şey bu Seçim kurallarını hâlâ kullanıyor, bu yüzden kalıyorlar"
 }

@@ -1248,5 +1248,12 @@
 	"downloads.ot.sizeUpTo": "bis {n} GB",
 	"downloads.row.imported": "Importiert",
 	"downloads.row.stillIn": "Noch in {app}",
-	"downloads.dp.openDownloaders": "Downloader öffnen"
+	"downloads.dp.openDownloaders": "Downloader öffnen",
+	"downloads.ot.fromOldApps": "Aus alten Apps ({n})",
+	"downloads.ot.importAgain": "Importiere erneut, um ihre Tests zu aktualisieren; ihre Punkte kannst du in jeden Auswahlregeln ändern",
+	"downloads.ot.fromApp": "Aus {app}",
+	"downloads.ot.kindEdition": "Edition",
+	"downloads.ot.kindLanguage": "Sprache",
+	"downloads.ot.kindReleaseType": "Release-Art",
+	"downloads.ot.kindYear": "Jahr"
 }

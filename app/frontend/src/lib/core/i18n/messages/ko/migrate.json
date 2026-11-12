@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs에서 {path}이(가) 보이지 않습니다. 컨테이너 안의 경로(Docker 볼륨의 오른쪽)를 사용하세요.",
 	"migrate.foldersItSees": "보이는 폴더: {list}",
 	"migrate.sameNewFolder": "{list}과(와) 같은 폴더입니다. 타이틀이 한곳에 모이니 4K 등 다른 사본에는 별도 폴더를 지정하세요.",
-	"migrate.doneOfTotal": "{total}개 중 {done}개"
+	"migrate.doneOfTotal": "{total}개 중 {done}개",
+	"migrate.bringFormats": "포맷과 점수 가져오기",
+	"migrate.bringFormatsHint": "포맷에 점수를 주는 프로필은 각각 자체 선택 규칙이 되고, 그 포맷은 특성이 됩니다.",
+	"migrate.formatTraits": "특성: {list}",
+	"migrate.formatsLeftOut": "제외됨: {list}"
 }

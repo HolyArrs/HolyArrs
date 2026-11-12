@@ -1248,5 +1248,12 @@
 	"downloads.pr.lang.uk": "úkraínska",
 	"downloads.row.imported": "Innflutt",
 	"downloads.row.stillIn": "Enn í {app}",
-	"downloads.dp.openDownloaders": "Opna Niðurhalara"
+	"downloads.dp.openDownloaders": "Opna Niðurhalara",
+	"downloads.ot.fromOldApps": "Úr gömlum öppum ({n})",
+	"downloads.ot.importAgain": "Fluttu inn aftur til að uppfæra prófin þeirra; stigunum má breyta í hverjum Valreglum",
+	"downloads.ot.fromApp": "Úr {app}",
+	"downloads.ot.kindEdition": "útgáfa",
+	"downloads.ot.kindLanguage": "tungumál",
+	"downloads.ot.kindReleaseType": "tegund útgáfu",
+	"downloads.ot.kindYear": "ár"
 }

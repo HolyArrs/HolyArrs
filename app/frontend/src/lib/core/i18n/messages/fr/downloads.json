@@ -1248,5 +1248,12 @@
 	"downloads.ot.sizeUpTo": "jusqu'à {n} Go",
 	"downloads.row.imported": "Importé",
 	"downloads.row.stillIn": "Encore dans {app}",
-	"downloads.dp.openDownloaders": "Ouvrir les téléchargeurs"
+	"downloads.dp.openDownloaders": "Ouvrir les téléchargeurs",
+	"downloads.ot.fromOldApps": "Des anciennes apps ({n})",
+	"downloads.ot.importAgain": "Importez à nouveau pour mettre à jour leurs tests ; leurs points se changent dans chaque Règles de sélection",
+	"downloads.ot.fromApp": "De {app}",
+	"downloads.ot.kindEdition": "édition",
+	"downloads.ot.kindLanguage": "langue",
+	"downloads.ot.kindReleaseType": "type de sortie",
+	"downloads.ot.kindYear": "année"
 }

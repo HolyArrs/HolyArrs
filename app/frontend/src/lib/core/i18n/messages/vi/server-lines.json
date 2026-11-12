@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Đã xóa thủ công",
 	"server.downloads.marked-bad": "Đã đánh dấu hỏng",
 	"server.suggest.because-you-have": "Vì bạn có {name}",
-	"server.health.downloader-save-folder": "Thư mục lưu của trình tải xuống"
+	"server.health.downloader-save-folder": "Thư mục lưu của trình tải xuống",
+	"server.library.edition": "phiên bản",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} định dạng của nó trở thành đặc điểm với cùng số điểm",
+	"server.migrate.updated-the-ones-imported-before": "{what} (đã cập nhật những cái nhập trước đây)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (cập nhật những cái nhập trước đây)",
+	"server.migrate.becomes-pick-rules-traits": "trở thành Quy tắc chọn {name} · {traits} đặc điểm",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "nó thử {kinds}, thứ HolyArrs không thử được",
+	"server.migrate.its-format-was-not-read-from": "không đọc được định dạng của nó từ ứng dụng cũ",
+	"server.migrate.nothing-in-the-old-app-gives": "không có gì trong ứng dụng cũ cho nó điểm, nên nó không đổi gì ở đây",
+	"server.migrate.pick-rules-here-still-give-it": "Quy tắc chọn ở đây vẫn cho nó điểm, nên nó được giữ lại",
+	"server.migrate.pick-rules-hold-at-most-64": "Quy tắc chọn chứa tối đa 64 đặc điểm; đã giữ các điểm cao nhất",
+	"server.migrate.something-here-still-uses-these-pick": "có thứ ở đây vẫn dùng Quy tắc chọn này, nên chúng được giữ lại"
 }

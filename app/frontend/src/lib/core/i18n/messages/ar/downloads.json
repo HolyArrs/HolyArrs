@@ -1248,5 +1248,12 @@
 	"downloads.ot.sizeUpTo": "حتى {n} غيغابايت",
 	"downloads.row.imported": "تم الاستيراد",
 	"downloads.row.stillIn": "لا يزال في {app}",
-	"downloads.dp.openDownloaders": "فتح برامج التنزيل"
+	"downloads.dp.openDownloaders": "فتح برامج التنزيل",
+	"downloads.ot.fromOldApps": "من التطبيقات القديمة ‏({n})",
+	"downloads.ot.importAgain": "استورد مرة أخرى لتحديث اختباراتها؛ يمكن تغيير نقاطها في كل قواعد اختيار",
+	"downloads.ot.fromApp": "من {app}",
+	"downloads.ot.kindEdition": "الإصدار",
+	"downloads.ot.kindLanguage": "اللغة",
+	"downloads.ot.kindReleaseType": "نوع الإصدار",
+	"downloads.ot.kindYear": "السنة"
 }

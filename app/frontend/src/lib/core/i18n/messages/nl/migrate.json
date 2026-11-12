@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs ziet {path} niet. Gebruik het pad in de container: de rechterkant van het Docker-volume.",
 	"migrate.foldersItSees": "Zichtbaar: {list}",
 	"migrate.sameNewFolder": "Zelfde map als {list}. Hun titels komen samen; geef 4K of andere kopieën een eigen map.",
-	"migrate.doneOfTotal": "{done} van {total}"
+	"migrate.doneOfTotal": "{done} van {total}",
+	"migrate.bringFormats": "Formaten en scores meenemen",
+	"migrate.bringFormatsHint": "Elk profiel dat formaten punten geeft, wordt eigen Keuzeregels, met die formaten als kenmerken.",
+	"migrate.formatTraits": "Kenmerken: {list}",
+	"migrate.formatsLeftOut": "Weggelaten: {list}"
 }

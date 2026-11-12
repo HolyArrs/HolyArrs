@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "Ohodnoceno vlastností: {n}",
 	"settings.pickRuleEdit.trashResult": "Ohodnoceno vlastností: {n} · {added} nových · {updated} aktualizovaných",
 	"settings.pickRuleEdit.trashLeftOut": "Vynecháno: {n}",
-	"settings.pickRuleEdit.trashTests": "testuje {kinds}"
+	"settings.pickRuleEdit.trashTests": "testuje {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Zdroje",
+	"settings.pickRuleEdit.sourcesDesc": "Prohledávat jen Zdroje, které sdílejí některý z těchto štítků. Nech prázdné pro prohledání všech Zdrojů.",
+	"settings.pickRuleEdit.tags": "Štítky"
 }

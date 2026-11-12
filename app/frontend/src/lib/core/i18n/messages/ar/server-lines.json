@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "حُذف يدويًا",
 	"server.downloads.marked-bad": "وُسم بأنه تالف",
 	"server.suggest.because-you-have": "لأن لديك {name}",
-	"server.health.downloader-save-folder": "مجلد حفظ برنامج التنزيل"
+	"server.health.downloader-save-folder": "مجلد حفظ برنامج التنزيل",
+	"server.library.edition": "الإصدار",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} من صيغه تصبح سمات بالنقاط نفسها",
+	"server.migrate.updated-the-ones-imported-before": "{what} (حُدّثت التي استُوردت من قبل)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (يحدّث التي استُوردت من قبل)",
+	"server.migrate.becomes-pick-rules-traits": "يصبح قواعد الاختيار {name} · {traits} سمات",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "يختبر {kinds}، وهذا ما لا يستطيع HolyArrs اختباره",
+	"server.migrate.its-format-was-not-read-from": "لم تُقرأ صيغته من التطبيق القديم",
+	"server.migrate.nothing-in-the-old-app-gives": "لا شيء في التطبيق القديم يمنحه نقاطًا، لذا لا يغيّر شيئًا هنا",
+	"server.migrate.pick-rules-here-still-give-it": "ما زالت قواعد اختيار هنا تمنحه نقاطًا، لذا يبقى",
+	"server.migrate.pick-rules-hold-at-most-64": "تحمل قواعد الاختيار 64 سمة على الأكثر؛ احتُفظ بأقوى النقاط",
+	"server.migrate.something-here-still-uses-these-pick": "ما زال شيء هنا يستخدم قواعد الاختيار هذه، لذا تبقى"
 }

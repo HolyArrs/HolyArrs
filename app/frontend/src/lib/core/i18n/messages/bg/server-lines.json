@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Изтрито ръчно",
 	"server.downloads.marked-bad": "Отбелязано като лошо",
 	"server.suggest.because-you-have": "Защото имате {name}",
-	"server.health.downloader-save-folder": "Папка за запис на програмата за изтегляне"
+	"server.health.downloader-save-folder": "Папка за запис на програмата за изтегляне",
+	"server.library.edition": "издание",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} от форматите му стават признаци със същите точки",
+	"server.migrate.updated-the-ones-imported-before": "{what} (обновени са импортираните преди)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (обновява импортираните преди)",
+	"server.migrate.becomes-pick-rules-traits": "става Правила за избор {name} · {traits} признака",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "проверява {kinds}, което HolyArrs не може да проверява",
+	"server.migrate.its-format-was-not-read-from": "форматът му не беше прочетен от старото приложение",
+	"server.migrate.nothing-in-the-old-app-gives": "нищо в старото приложение не му дава точки, така че тук не променя нищо",
+	"server.migrate.pick-rules-here-still-give-it": "Правила за избор тук още му дават точки, така че остава",
+	"server.migrate.pick-rules-hold-at-most-64": "Правилата за избор побират най-много 64 признака; запазени са най-силните точки",
+	"server.migrate.something-here-still-uses-these-pick": "нещо тук още използва тези Правила за избор, така че остават"
 }

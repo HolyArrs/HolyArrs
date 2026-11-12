@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs ei näe polkua {path}. Käytä polkua sen kontin sisällä: Docker-volyymin oikeaa puolta.",
 	"migrate.foldersItSees": "Se näkee: {list}",
 	"migrate.sameNewFolder": "Sama kansio kuin {list}. Niiden nimikkeet päätyvät yhteen; anna 4K- ja muille kopioille oma kansio.",
-	"migrate.doneOfTotal": "{done}/{total}"
+	"migrate.doneOfTotal": "{done}/{total}",
+	"migrate.bringFormats": "Tuo muodot ja pisteytykset",
+	"migrate.bringFormatsHint": "Jokainen muotoja pisteyttävä profiili muuttuu omiksi Valintasäännöikseen, ja niistä muodoista tulee ominaisuuksia.",
+	"migrate.formatTraits": "Ominaisuudet: {list}",
+	"migrate.formatsLeftOut": "Pois jätetty: {list}"
 }

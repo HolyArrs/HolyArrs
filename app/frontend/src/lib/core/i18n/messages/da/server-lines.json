@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Slettet manuelt",
 	"server.downloads.marked-bad": "Markeret som dårlig",
 	"server.suggest.because-you-have": "Fordi du har {name}",
-	"server.health.downloader-save-folder": "Downloaderens gemmemappe"
+	"server.health.downloader-save-folder": "Downloaderens gemmemappe",
+	"server.library.edition": "udgave",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} af dens formater bliver egenskaber med de samme point",
+	"server.migrate.updated-the-ones-imported-before": "{what} (opdaterede dem, der blev importeret før)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (opdaterer dem, der blev importeret før)",
+	"server.migrate.becomes-pick-rules-traits": "bliver Valgregler {name} · {traits} egenskaber",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "den tester {kinds}, som HolyArrs ikke kan teste",
+	"server.migrate.its-format-was-not-read-from": "dens format blev ikke læst fra den gamle app",
+	"server.migrate.nothing-in-the-old-app-gives": "intet i den gamle app giver den point, så den ændrer intet her",
+	"server.migrate.pick-rules-here-still-give-it": "Valgregler her giver den stadig point, så den bliver",
+	"server.migrate.pick-rules-hold-at-most-64": "Valgregler rummer højst 64 egenskaber; de stærkeste point blev beholdt",
+	"server.migrate.something-here-still-uses-these-pick": "noget her bruger stadig disse Valgregler, så de bliver"
 }

@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} traits scored",
 	"settings.pickRuleEdit.trashResult": "{n} traits scored · {added} new · {updated} updated",
 	"settings.pickRuleEdit.trashLeftOut": "{n} left out",
-	"settings.pickRuleEdit.trashTests": "tests {kinds}"
+	"settings.pickRuleEdit.trashTests": "tests {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Sources",
+	"settings.pickRuleEdit.sourcesDesc": "Search only the Sources that share one of these tags. Leave it empty to search every Source.",
+	"settings.pickRuleEdit.tags": "Tags"
 }

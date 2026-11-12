@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Raderad manuellt",
 	"server.downloads.marked-bad": "Markerad som dålig",
 	"server.suggest.because-you-have": "Eftersom du har {name}",
-	"server.health.downloader-save-folder": "Nedladdarens sparmapp"
+	"server.health.downloader-save-folder": "Nedladdarens sparmapp",
+	"server.library.edition": "utgåva",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} av dess format blir egenskaper med samma poäng",
+	"server.migrate.updated-the-ones-imported-before": "{what} (de som importerades förut uppdaterades)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (uppdaterar de som importerades förut)",
+	"server.migrate.becomes-pick-rules-traits": "blir Valreglerna {name} · {traits} egenskaper",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "den testar {kinds}, som HolyArrs inte kan testa",
+	"server.migrate.its-format-was-not-read-from": "dess format lästes inte från den gamla appen",
+	"server.migrate.nothing-in-the-old-app-gives": "inget i den gamla appen ger den poäng, så den ändrar inget här",
+	"server.migrate.pick-rules-here-still-give-it": "Valregler här ger den fortfarande poäng, så den blir kvar",
+	"server.migrate.pick-rules-hold-at-most-64": "Valregler rymmer högst 64 egenskaper; de starkaste poängen behölls",
+	"server.migrate.something-here-still-uses-these-pick": "något här använder fortfarande dessa Valregler, så de blir kvar"
 }

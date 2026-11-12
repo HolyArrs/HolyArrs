@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs nu vede {path}. Folosește calea din interiorul containerului: partea dreaptă a volumului Docker.",
 	"migrate.foldersItSees": "Poate vedea: {list}",
 	"migrate.sameNewFolder": "Același dosar ca {list}. Titlurile lor ajung împreună; dă-le 4K sau altor copii propriul dosar.",
-	"migrate.doneOfTotal": "{done} din {total}"
+	"migrate.doneOfTotal": "{done} din {total}",
+	"migrate.bringFormats": "Adu formatele și scorurile",
+	"migrate.bringFormatsHint": "Fiecare profil care punctează formate devine propriile Reguli de alegere, cu acele formate ca trăsături.",
+	"migrate.formatTraits": "Trăsături: {list}",
+	"migrate.formatsLeftOut": "Lăsate deoparte: {list}"
 }

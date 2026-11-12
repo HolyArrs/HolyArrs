@@ -1248,5 +1248,12 @@
 	"downloads.pr.lang.uk": "ucraineană",
 	"downloads.row.imported": "Importat",
 	"downloads.row.stillIn": "Încă în {app}",
-	"downloads.dp.openDownloaders": "Deschide Programele de descărcare"
+	"downloads.dp.openDownloaders": "Deschide Programele de descărcare",
+	"downloads.ot.fromOldApps": "Din aplicațiile vechi ({n})",
+	"downloads.ot.importAgain": "Importă din nou ca să le actualizezi testele; punctele lor se pot schimba în fiecare Reguli de alegere",
+	"downloads.ot.fromApp": "Din {app}",
+	"downloads.ot.kindEdition": "ediție",
+	"downloads.ot.kindLanguage": "limbă",
+	"downloads.ot.kindReleaseType": "tip de lansare",
+	"downloads.ot.kindYear": "an"
 }

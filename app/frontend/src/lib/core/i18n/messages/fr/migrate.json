@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs ne voit pas {path}. Utilisez le chemin dans son conteneur : la partie droite du volume Docker.",
 	"migrate.foldersItSees": "Il voit : {list}",
 	"migrate.sameNewFolder": "Même dossier que {list}. Leurs titres finissent ensemble ; donnez aux copies 4K ou autres leur propre dossier.",
-	"migrate.doneOfTotal": "{done} sur {total}"
+	"migrate.doneOfTotal": "{done} sur {total}",
+	"migrate.bringFormats": "Reprendre les formats et les scores",
+	"migrate.bringFormatsHint": "Chaque profil qui note des formats devient ses propres Règles de sélection, avec ces formats comme critères.",
+	"migrate.formatTraits": "Critères : {list}",
+	"migrate.formatsLeftOut": "Laissés de côté : {list}"
 }

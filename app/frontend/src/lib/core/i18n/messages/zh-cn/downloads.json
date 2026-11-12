@@ -1248,5 +1248,12 @@
 	"downloads.ot.sizeUpTo": "不超过 {n} GB",
 	"downloads.row.imported": "已导入",
 	"downloads.row.stillIn": "仍在 {app} 中",
-	"downloads.dp.openDownloaders": "打开下载器"
+	"downloads.dp.openDownloaders": "打开下载器",
+	"downloads.ot.fromOldApps": "来自旧应用（{n}）",
+	"downloads.ot.importAgain": "再次导入可更新它们的测试；分数可在每套挑选规则中更改",
+	"downloads.ot.fromApp": "来自 {app}",
+	"downloads.ot.kindEdition": "版本",
+	"downloads.ot.kindLanguage": "语言",
+	"downloads.ot.kindReleaseType": "发布类型",
+	"downloads.ot.kindYear": "年份"
 }

@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Διαγράφηκε χειροκίνητα",
 	"server.downloads.marked-bad": "Σημειώθηκε ως κακό",
 	"server.suggest.because-you-have": "Επειδή έχετε το {name}",
-	"server.health.downloader-save-folder": "Φάκελος αποθήκευσης του Προγράμματος λήψης"
+	"server.health.downloader-save-folder": "Φάκελος αποθήκευσης του Προγράμματος λήψης",
+	"server.library.edition": "έκδοση",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} από τις μορφές του γίνονται χαρακτηριστικά με τους ίδιους πόντους",
+	"server.migrate.updated-the-ones-imported-before": "{what} (ενημερώθηκαν όσα εισήχθησαν πριν)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (ενημερώνει όσα εισήχθησαν πριν)",
+	"server.migrate.becomes-pick-rules-traits": "γίνεται Κανόνες επιλογής {name} · {traits} χαρακτηριστικά",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "ελέγχει {kinds}, που το HolyArrs δεν μπορεί να ελέγξει",
+	"server.migrate.its-format-was-not-read-from": "η μορφή του δεν διαβάστηκε από την παλιά εφαρμογή",
+	"server.migrate.nothing-in-the-old-app-gives": "τίποτα στην παλιά εφαρμογή δεν του δίνει πόντους, οπότε δεν αλλάζει τίποτα εδώ",
+	"server.migrate.pick-rules-here-still-give-it": "Κανόνες επιλογής εδώ του δίνουν ακόμα πόντους, οπότε μένει",
+	"server.migrate.pick-rules-hold-at-most-64": "Οι Κανόνες επιλογής χωρούν έως 64 χαρακτηριστικά· κρατήθηκαν οι ισχυρότερες βαθμολογίες",
+	"server.migrate.something-here-still-uses-these-pick": "κάτι εδώ χρησιμοποιεί ακόμα αυτούς τους Κανόνες επιλογής, οπότε μένουν"
 }

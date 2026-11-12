@@ -1248,5 +1248,12 @@
 	"downloads.pr.lang.uk": "Ουκρανικά",
 	"downloads.row.imported": "Εισήχθη",
 	"downloads.row.stillIn": "Ακόμα στο {app}",
-	"downloads.dp.openDownloaders": "Άνοιγμα Προγραμμάτων λήψης"
+	"downloads.dp.openDownloaders": "Άνοιγμα Προγραμμάτων λήψης",
+	"downloads.ot.fromOldApps": "Από παλιές εφαρμογές ({n})",
+	"downloads.ot.importAgain": "Εισήγαγε ξανά για να ενημερωθούν οι έλεγχοί τους· οι πόντοι τους αλλάζουν σε κάθε Κανόνες επιλογής",
+	"downloads.ot.fromApp": "Από {app}",
+	"downloads.ot.kindEdition": "έκδοση",
+	"downloads.ot.kindLanguage": "γλώσσα",
+	"downloads.ot.kindReleaseType": "τύπος κυκλοφορίας",
+	"downloads.ot.kindYear": "έτος"
 }

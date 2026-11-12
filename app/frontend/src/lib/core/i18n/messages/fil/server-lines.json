@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Binura nang mano-mano",
 	"server.downloads.marked-bad": "Minarkahang sira",
 	"server.suggest.because-you-have": "Dahil mayroon kang {name}",
-	"server.health.downloader-save-folder": "Save folder ng Downloader"
+	"server.health.downloader-save-folder": "Save folder ng Downloader",
+	"server.library.edition": "edisyon",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} sa mga format nito ang nagiging katangian na may parehong puntos",
+	"server.migrate.updated-the-ones-imported-before": "{what} (na-update ang mga na-import dati)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (ina-update ang mga na-import dati)",
+	"server.migrate.becomes-pick-rules-traits": "nagiging Mga panuntunan sa pagpili {name} · {traits} katangian",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "sinusubok nito ang {kinds}, na hindi kayang subukin ng HolyArrs",
+	"server.migrate.its-format-was-not-read-from": "hindi nabasa ang format nito mula sa lumang app",
+	"server.migrate.nothing-in-the-old-app-gives": "walang bagay sa lumang app na nagbibigay dito ng puntos, kaya wala itong binabago rito",
+	"server.migrate.pick-rules-here-still-give-it": "may Mga panuntunan sa pagpili rito na nagbibigay pa rin dito ng puntos, kaya nananatili ito",
+	"server.migrate.pick-rules-hold-at-most-64": "Hanggang 64 na katangian lang ang Mga panuntunan sa pagpili; itinira ang pinakamalalakas na score",
+	"server.migrate.something-here-still-uses-these-pick": "may gumagamit pa rin dito ng Mga panuntunan sa pagpili na ito, kaya nananatili sila"
 }

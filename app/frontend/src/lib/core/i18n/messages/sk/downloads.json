@@ -1248,5 +1248,12 @@
 	"downloads.pr.lang.uk": "ukrajinčina",
 	"downloads.row.imported": "Importované",
 	"downloads.row.stillIn": "Stále v {app}",
-	"downloads.dp.openDownloaders": "Otvoriť Sťahovače"
+	"downloads.dp.openDownloaders": "Otvoriť Sťahovače",
+	"downloads.ot.fromOldApps": "Zo starých aplikácií ({n})",
+	"downloads.ot.importAgain": "Importuj znova, aby sa aktualizovali ich testy; body sa dajú zmeniť v každých Pravidlách výberu",
+	"downloads.ot.fromApp": "Z {app}",
+	"downloads.ot.kindEdition": "edícia",
+	"downloads.ot.kindLanguage": "jazyk",
+	"downloads.ot.kindReleaseType": "typ vydania",
+	"downloads.ot.kindYear": "rok"
 }

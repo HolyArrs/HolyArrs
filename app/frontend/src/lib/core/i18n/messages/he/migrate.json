@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs לא רואה את {path}. השתמש בנתיב בתוך הקונטיינר שלו: הצד הימני של נפח ה־Docker.",
 	"migrate.foldersItSees": "הוא רואה: {list}",
 	"migrate.sameNewFolder": "אותה תיקייה כמו {list}. הכותרים שלהם יתערבבו; תן ל־4K או לעותקים אחרים תיקייה משלהם.",
-	"migrate.doneOfTotal": "{done} מתוך {total}"
+	"migrate.doneOfTotal": "{done} מתוך {total}",
+	"migrate.bringFormats": "להביא פורמטים וציונים",
+	"migrate.bringFormatsHint": "כל פרופיל שנותן ציון לפורמטים הופך לכללי בחירה משלו, והפורמטים האלה הופכים למאפיינים.",
+	"migrate.formatTraits": "מאפיינים: {list}",
+	"migrate.formatsLeftOut": "הושמטו: {list}"
 }

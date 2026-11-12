@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs không thấy {path}. Hãy dùng đường dẫn bên trong container của nó: phía bên phải của volume Docker.",
 	"migrate.foldersItSees": "Nó thấy được: {list}",
 	"migrate.sameNewFolder": "Cùng thư mục với {list}. Các tựa của chúng sẽ gộp lại với nhau; hãy cho bản 4K hoặc các bản sao khác thư mục riêng.",
-	"migrate.doneOfTotal": "{done} trên {total}"
+	"migrate.doneOfTotal": "{done} trên {total}",
+	"migrate.bringFormats": "Mang theo định dạng và điểm",
+	"migrate.bringFormatsHint": "Mỗi hồ sơ chấm điểm định dạng trở thành Quy tắc chọn riêng, với các định dạng đó là đặc điểm.",
+	"migrate.formatTraits": "Đặc điểm: {list}",
+	"migrate.formatsLeftOut": "Bỏ ra: {list}"
 }

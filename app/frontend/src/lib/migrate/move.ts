@@ -37,6 +37,8 @@ export interface PlanItem {
 	needs?: string;
 	person?: PersonPlan;
 	folder?: { old_path: string; path: string; kind: string; label: string };
+	/** Set for a profile; body and traits only when it becomes its own Pick rules. */
+	rules?: { app: string; profile: string; preset: string; name?: string; body?: unknown; traits?: { name: string; points: number }[]; skipped?: { name: string; reason: string }[] };
 }
 
 export type PersonChoice = 'owner' | 'admin' | 'merge' | 'skip';
@@ -95,7 +97,7 @@ export interface Move {
 	id: number;
 	created_at: string;
 	snapshots: number[];
-	choices?: { people?: Record<string, string>; skip?: string[]; path_rules?: PathRule[] };
+	choices?: { people?: Record<string, string>; skip?: string[]; path_rules?: PathRule[]; no_formats?: boolean };
 	state: 'queued' | 'running' | 'done' | 'failed' | 'undone';
 	job_id?: number;
 	report?: Report;

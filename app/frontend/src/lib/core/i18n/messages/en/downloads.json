@@ -1248,5 +1248,12 @@
 	"downloads.why.taken": "Another app took the files before HolyArrs could import them.",
 	"downloads.row.imported": "Imported",
 	"downloads.row.stillIn": "Still in {app}",
-	"downloads.dp.openDownloaders": "Open Downloaders"
+	"downloads.dp.openDownloaders": "Open Downloaders",
+	"downloads.ot.fromOldApps": "From old apps ({n})",
+	"downloads.ot.importAgain": "Import again to update their tests; their points can be changed in each Pick rules",
+	"downloads.ot.fromApp": "From {app}",
+	"downloads.ot.kindEdition": "edition",
+	"downloads.ot.kindLanguage": "language",
+	"downloads.ot.kindReleaseType": "release type",
+	"downloads.ot.kindYear": "year"
 }

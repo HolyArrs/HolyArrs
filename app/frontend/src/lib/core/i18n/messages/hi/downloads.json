@@ -1248,5 +1248,12 @@
 	"downloads.ot.sizeUpTo": "{n} GB तक",
 	"downloads.row.imported": "इम्पोर्ट हुआ",
 	"downloads.row.stillIn": "अभी भी {app} में",
-	"downloads.dp.openDownloaders": "डाउनलोडर खोलें"
+	"downloads.dp.openDownloaders": "डाउनलोडर खोलें",
+	"downloads.ot.fromOldApps": "पुराने ऐप से ({n})",
+	"downloads.ot.importAgain": "इनके टेस्ट अपडेट करने के लिए फिर से इंपोर्ट करें; इनके पॉइंट हर चुनाव के नियम में बदले जा सकते हैं",
+	"downloads.ot.fromApp": "{app} से",
+	"downloads.ot.kindEdition": "संस्करण",
+	"downloads.ot.kindLanguage": "भाषा",
+	"downloads.ot.kindReleaseType": "रिलीज़ का प्रकार",
+	"downloads.ot.kindYear": "साल"
 }

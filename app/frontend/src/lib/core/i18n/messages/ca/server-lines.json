@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Esborrat a mà",
 	"server.downloads.marked-bad": "Marcat com a dolent",
 	"server.suggest.because-you-have": "Perquè tens {name}",
-	"server.health.downloader-save-folder": "Carpeta de desament del gestor de baixades"
+	"server.health.downloader-save-folder": "Carpeta de desament del gestor de baixades",
+	"server.library.edition": "edició",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} dels seus formats esdevenen trets amb els mateixos punts",
+	"server.migrate.updated-the-ones-imported-before": "{what} (s'han actualitzat les importades abans)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (actualitza les importades abans)",
+	"server.migrate.becomes-pick-rules-traits": "esdevé les Regles d'elecció {name} · {traits} trets",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "prova {kinds}, que HolyArrs no pot provar",
+	"server.migrate.its-format-was-not-read-from": "el seu format no s'ha llegit de l'app antiga",
+	"server.migrate.nothing-in-the-old-app-gives": "res de l'app antiga li dona punts, així que aquí no canvia res",
+	"server.migrate.pick-rules-here-still-give-it": "unes Regles d'elecció d'aquí encara li donen punts, així que es queda",
+	"server.migrate.pick-rules-hold-at-most-64": "les Regles d'elecció tenen com a màxim 64 trets; s'han mantingut les puntuacions més fortes",
+	"server.migrate.something-here-still-uses-these-pick": "alguna cosa d'aquí encara fa servir aquestes Regles d'elecció, així que es queden"
 }

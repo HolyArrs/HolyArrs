@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "手動で削除",
 	"server.downloads.marked-bad": "不良としてマーク",
 	"server.suggest.because-you-have": "{name} を持っているので",
-	"server.health.downloader-save-folder": "ダウンローダーの保存先フォルダー"
+	"server.health.downloader-save-folder": "ダウンローダーの保存先フォルダー",
+	"server.library.edition": "エディション",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} 個のフォーマットが同じポイントの特性になります",
+	"server.migrate.updated-the-ones-imported-before": "{what}（前回インポートしたものを更新しました）",
+	"server.migrate.updates-the-ones-imported-before": "{what}（前回インポートしたものを更新します）",
+	"server.migrate.becomes-pick-rules-traits": "選定ルール {name} になります · 特性 {traits} 個",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "{kinds} をテストしますが、HolyArrs ではテストできません",
+	"server.migrate.its-format-was-not-read-from": "フォーマットを古いアプリから読み取れませんでした",
+	"server.migrate.nothing-in-the-old-app-gives": "古いアプリでポイントを与えているものがないため、ここでは何も変わりません",
+	"server.migrate.pick-rules-here-still-give-it": "ここの選定ルールがまだポイントを与えているため、残ります",
+	"server.migrate.pick-rules-hold-at-most-64": "選定ルールの特性は最大 64 個です。最も強いスコアを残しました",
+	"server.migrate.something-here-still-uses-these-pick": "ここでまだこの選定ルールを使っているものがあるため、残ります"
 }

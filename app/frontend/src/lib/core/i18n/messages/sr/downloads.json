@@ -1248,5 +1248,12 @@
 	"downloads.pr.lang.uk": "Украјински",
 	"downloads.row.imported": "Увезено",
 	"downloads.row.stillIn": "Још у {app}",
-	"downloads.dp.openDownloaders": "Отвори Преузимаче"
+	"downloads.dp.openDownloaders": "Отвори Преузимаче",
+	"downloads.ot.fromOldApps": "Из старих апликација ({n})",
+	"downloads.ot.importAgain": "Увези поново да би се ажурирали њихови тестови; бодови им се мењају у сваким Правилима избора",
+	"downloads.ot.fromApp": "Из {app}",
+	"downloads.ot.kindEdition": "издање",
+	"downloads.ot.kindLanguage": "језик",
+	"downloads.ot.kindReleaseType": "врста издања",
+	"downloads.ot.kindYear": "година"
 }

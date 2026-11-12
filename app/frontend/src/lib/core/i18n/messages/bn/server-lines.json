@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "হাতে মুছে ফেলা হয়েছে",
 	"server.downloads.marked-bad": "খারাপ হিসেবে চিহ্নিত",
 	"server.suggest.because-you-have": "কারণ আপনার কাছে {name} আছে",
-	"server.health.downloader-save-folder": "ডাউনলোডারের সেভ ফোল্ডার"
+	"server.health.downloader-save-folder": "ডাউনলোডারের সেভ ফোল্ডার",
+	"server.library.edition": "সংস্করণ",
+	"server.migrate.of-its-formats-become-traits-with": "এর {traits}টি ফরম্যাট একই পয়েন্টসহ বৈশিষ্ট্য হয়",
+	"server.migrate.updated-the-ones-imported-before": "{what} (আগে আমদানি করা গুলো হালনাগাদ হয়েছে)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (আগে আমদানি করা গুলো হালনাগাদ করে)",
+	"server.migrate.becomes-pick-rules-traits": "বাছাইয়ের নিয়ম {name} হয় · {traits}টি বৈশিষ্ট্য",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "এটি {kinds} পরীক্ষা করে, যা HolyArrs পরীক্ষা করতে পারে না",
+	"server.migrate.its-format-was-not-read-from": "পুরোনো অ্যাপ থেকে এর ফরম্যাট পড়া যায়নি",
+	"server.migrate.nothing-in-the-old-app-gives": "পুরোনো অ্যাপে কিছুই একে পয়েন্ট দেয় না, তাই এখানে কিছু বদলায় না",
+	"server.migrate.pick-rules-here-still-give-it": "এখানকার বাছাইয়ের নিয়ম এখনো একে পয়েন্ট দেয়, তাই এটি থাকে",
+	"server.migrate.pick-rules-hold-at-most-64": "বাছাইয়ের নিয়মে সর্বোচ্চ ৬৪টি বৈশিষ্ট্য থাকে; সবচেয়ে বড় স্কোরগুলো রাখা হয়েছে",
+	"server.migrate.something-here-still-uses-these-pick": "এখানে কিছু এখনো এই বাছাইয়ের নিয়ম ব্যবহার করে, তাই এগুলো থাকে"
 }

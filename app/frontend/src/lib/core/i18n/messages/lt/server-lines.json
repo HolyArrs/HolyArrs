@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Ištrinta rankiniu būdu",
 	"server.downloads.marked-bad": "Pažymėta kaip bloga",
 	"server.suggest.because-you-have": "Nes turite {name}",
-	"server.health.downloader-save-folder": "Atsisiuntėjo išsaugojimo aplankas"
+	"server.health.downloader-save-folder": "Atsisiuntėjo išsaugojimo aplankas",
+	"server.library.edition": "leidimas",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} jo formatų tampa ypatybėmis su tais pačiais taškais",
+	"server.migrate.updated-the-ones-imported-before": "{what} (anksčiau importuotos atnaujintos)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (atnaujina anksčiau importuotas)",
+	"server.migrate.becomes-pick-rules-traits": "tampa Pasirinkimo taisyklėmis {name} · {traits} ypatybės",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "jis tikrina {kinds}, ko HolyArrs tikrinti negali",
+	"server.migrate.its-format-was-not-read-from": "jo formatas nebuvo nuskaitytas iš senos programos",
+	"server.migrate.nothing-in-the-old-app-gives": "niekas senoje programoje jam neduoda taškų, todėl čia jis nieko nekeičia",
+	"server.migrate.pick-rules-here-still-give-it": "čia esančios Pasirinkimo taisyklės dar duoda jam taškų, todėl jis lieka",
+	"server.migrate.pick-rules-hold-at-most-64": "Pasirinkimo taisyklėse telpa ne daugiau kaip 64 ypatybės; palikti stipriausi balai",
+	"server.migrate.something-here-still-uses-these-pick": "kažkas čia dar naudoja šias Pasirinkimo taisykles, todėl jos lieka"
 }

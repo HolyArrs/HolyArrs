@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "A HolyArrs nem látja ezt: {path}. Használja a konténeren belüli útvonalat: a Docker-kötet jobb oldalát.",
 	"migrate.foldersItSees": "Ezeket látja: {list}",
 	"migrate.sameNewFolder": "Ugyanaz a mappa, mint: {list}. A címeik együtt végzik; a 4K vagy más másolatoknak adjon külön mappát.",
-	"migrate.doneOfTotal": "{done} / {total}"
+	"migrate.doneOfTotal": "{done} / {total}",
+	"migrate.bringFormats": "Formátumok és pontszámok áthozása",
+	"migrate.bringFormatsHint": "Minden profil, amely pontozza a formátumokat, saját Kiválasztási szabályokká válik, a formátumok pedig jellemzőkké.",
+	"migrate.formatTraits": "Jellemzők: {list}",
+	"migrate.formatsLeftOut": "Kimaradt: {list}"
 }

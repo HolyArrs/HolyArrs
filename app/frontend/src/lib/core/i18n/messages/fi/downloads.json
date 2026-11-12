@@ -1248,5 +1248,12 @@
 	"downloads.pr.lang.uk": "ukraina",
 	"downloads.row.imported": "Tuotu",
 	"downloads.row.stillIn": "Vielä sovelluksessa {app}",
-	"downloads.dp.openDownloaders": "Avaa Lataajat"
+	"downloads.dp.openDownloaders": "Avaa Lataajat",
+	"downloads.ot.fromOldApps": "Vanhoista sovelluksista ({n})",
+	"downloads.ot.importAgain": "Tuo uudelleen päivittääksesi niiden testit; niiden pisteitä voi muuttaa kaikissa Valintasäännöissä",
+	"downloads.ot.fromApp": "Sovelluksesta {app}",
+	"downloads.ot.kindEdition": "versio",
+	"downloads.ot.kindLanguage": "kieli",
+	"downloads.ot.kindReleaseType": "julkaisun tyyppi",
+	"downloads.ot.kindYear": "vuosi"
 }

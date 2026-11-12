@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "لا يستطيع HolyArrs رؤية {path}. استخدم المسار داخل الحاوية: الجانب الأيمن من وحدة تخزين Docker.",
 	"migrate.foldersItSees": "يمكنه رؤية: {list}",
 	"migrate.sameNewFolder": "نفس المجلد مثل {list}. ستنتهي عناوينهما معًا؛ امنح نسخ 4K أو النسخ الأخرى مجلدًا خاصًا بها.",
-	"migrate.doneOfTotal": "{done} من {total}"
+	"migrate.doneOfTotal": "{done} من {total}",
+	"migrate.bringFormats": "إحضار الصيغ والنقاط",
+	"migrate.bringFormatsHint": "كل ملف تعريف يمنح الصيغ نقاطًا يصبح قواعد اختيار خاصة به، وتصبح تلك الصيغ سمات.",
+	"migrate.formatTraits": "السمات: {list}",
+	"migrate.formatsLeftOut": "مستبعد: {list}"
 }

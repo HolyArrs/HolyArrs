@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Handmatig verwijderd",
 	"server.downloads.marked-bad": "Als slecht gemarkeerd",
 	"server.suggest.because-you-have": "Omdat je {name} hebt",
-	"server.health.downloader-save-folder": "Opslagmap van de Downloader"
+	"server.health.downloader-save-folder": "Opslagmap van de Downloader",
+	"server.library.edition": "editie",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} van zijn formaten worden kenmerken met dezelfde punten",
+	"server.migrate.updated-the-ones-imported-before": "{what} (de eerder geïmporteerde bijgewerkt)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (werkt de eerder geïmporteerde bij)",
+	"server.migrate.becomes-pick-rules-traits": "wordt de Keuzeregels {name} · {traits} kenmerken",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "het test {kinds}, wat HolyArrs niet kan testen",
+	"server.migrate.its-format-was-not-read-from": "het formaat werd niet uit de oude app gelezen",
+	"server.migrate.nothing-in-the-old-app-gives": "niets in de oude app geeft het punten, dus het verandert hier niets",
+	"server.migrate.pick-rules-here-still-give-it": "Keuzeregels hier geven het nog punten, dus het blijft",
+	"server.migrate.pick-rules-hold-at-most-64": "Keuzeregels bevatten hoogstens 64 kenmerken; de sterkste scores zijn bewaard",
+	"server.migrate.something-here-still-uses-these-pick": "iets hier gebruikt deze Keuzeregels nog, dus ze blijven"
 }

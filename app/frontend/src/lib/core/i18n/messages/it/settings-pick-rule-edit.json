@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} tratti con punteggio",
 	"settings.pickRuleEdit.trashResult": "{n} tratti con punteggio · {added} nuovi · {updated} aggiornati",
 	"settings.pickRuleEdit.trashLeftOut": "{n} esclusi",
-	"settings.pickRuleEdit.trashTests": "verifica {kinds}"
+	"settings.pickRuleEdit.trashTests": "verifica {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Fonti",
+	"settings.pickRuleEdit.sourcesDesc": "Cerca solo nelle Fonti che condividono uno di questi tag. Lascia vuoto per cercare in ogni Fonte.",
+	"settings.pickRuleEdit.tags": "Tag"
 }

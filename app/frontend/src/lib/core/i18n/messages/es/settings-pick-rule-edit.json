@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} rasgos con puntos",
 	"settings.pickRuleEdit.trashResult": "{n} rasgos con puntos · {added} nuevos · {updated} actualizados",
 	"settings.pickRuleEdit.trashLeftOut": "{n} omitidos",
-	"settings.pickRuleEdit.trashTests": "prueba {kinds}"
+	"settings.pickRuleEdit.trashTests": "prueba {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Fuentes",
+	"settings.pickRuleEdit.sourcesDesc": "Busca solo en las Fuentes que comparten una de estas etiquetas. Déjalo vacío para buscar en todas las Fuentes.",
+	"settings.pickRuleEdit.tags": "Etiquetas"
 }

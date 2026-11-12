@@ -90,6 +90,8 @@
 	let missingPaths = $state<Record<string, string>>({});
 	let seenFolders = $state<string[]>([]);
 	let skip = $state<string[]>([]);
+	// On by default: profiles bring their formats and scores as traits.
+	let noFormats = $state(false);
 	let people = $state<Record<string, PersonChoice>>({});
 	let changes = $state(0);
 	let planTimer: ReturnType<typeof setTimeout> | undefined;
@@ -341,7 +343,7 @@
 	function choices() {
 		// Only rules that check out are sent; a row with a problem is marked on screen and holds the step.
 		const ok = Object.fromEntries(Object.entries(picks).filter(([p, v]) => folderProblem(p, v, others[p]) === ''));
-		return { snapshots: picked, path_rules: rulesFrom(ok, others, extra.filter((_, i) => extraErrors[i] === '')), skip, people };
+		return { snapshots: picked, path_rules: rulesFrom(ok, others, extra.filter((_, i) => extraErrors[i] === '')), skip, people, no_formats: noFormats };
 	}
 
 	function changed() {
@@ -556,6 +558,7 @@
 		people = { ...people, ...((m.choices?.people ?? {}) as Record<string, PersonChoice>) };
 		// The move's other choices too: the groups it left out and its folders.
 		skip = [...(m.choices?.skip ?? skip)];
+		noFormats = !!m.choices?.no_formats;
 		const rules = m.choices?.path_rules ?? [];
 		if (rules.length > 0) {
 			const p = { ...picks };
@@ -655,6 +658,8 @@
 			seen={seenFolders}
 			{skip}
 			{people}
+			{noFormats}
+			onformats={(on) => ((noFormats = !on), changed(), planFlow.replan(true))}
 			onfolder={planFlow.onfolder}
 			onother={planFlow.onother}
 			onextra={planFlow.onextra}

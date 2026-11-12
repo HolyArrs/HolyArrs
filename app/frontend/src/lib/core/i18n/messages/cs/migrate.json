@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs nevidí {path}. Použijte cestu uvnitř jeho kontejneru: pravou stranu svazku Dockeru.",
 	"migrate.foldersItSees": "Vidí: {list}",
 	"migrate.sameNewFolder": "Stejná složka jako {list}. Jejich tituly skončí pohromadě; 4K nebo jiným kopiím dejte vlastní složku.",
-	"migrate.doneOfTotal": "{done} z {total}"
+	"migrate.doneOfTotal": "{done} z {total}",
+	"migrate.bringFormats": "Přenést formáty a skóre",
+	"migrate.bringFormatsHint": "Každý profil, který boduje formáty, se stane vlastními Pravidly výběru a tyto formáty jejich vlastnostmi.",
+	"migrate.formatTraits": "Vlastnosti: {list}",
+	"migrate.formatsLeftOut": "Vynecháno: {list}"
 }

@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Poistettu käsin",
 	"server.downloads.marked-bad": "Merkitty huonoksi",
 	"server.suggest.because-you-have": "Koska sinulla on {name}",
-	"server.health.downloader-save-folder": "Lataajan tallennuskansio"
+	"server.health.downloader-save-folder": "Lataajan tallennuskansio",
+	"server.library.edition": "versio",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} sen muodoista muuttuu ominaisuuksiksi samoin pistein",
+	"server.migrate.updated-the-ones-imported-before": "{what} (aiemmin tuodut päivitettiin)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (päivittää aiemmin tuodut)",
+	"server.migrate.becomes-pick-rules-traits": "muuttuu Valintasäännöiksi {name} · {traits} ominaisuutta",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "se testaa {kinds}, mitä HolyArrs ei osaa testata",
+	"server.migrate.its-format-was-not-read-from": "sen muotoa ei luettu vanhasta sovelluksesta",
+	"server.migrate.nothing-in-the-old-app-gives": "mikään vanhassa sovelluksessa ei anna sille pisteitä, joten se ei muuta täällä mitään",
+	"server.migrate.pick-rules-here-still-give-it": "täkäläiset Valintasäännöt antavat sille yhä pisteitä, joten se jää",
+	"server.migrate.pick-rules-hold-at-most-64": "Valintasäännöissä on enintään 64 ominaisuutta; vahvimmat pisteytykset säilytettiin",
+	"server.migrate.something-here-still-uses-these-pick": "jokin täällä käyttää yhä näitä Valintasääntöjä, joten ne jäävät"
 }

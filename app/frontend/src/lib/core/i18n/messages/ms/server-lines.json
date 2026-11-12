@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Dipadam secara manual",
 	"server.downloads.marked-bad": "Ditanda rosak",
 	"server.suggest.because-you-have": "Kerana anda ada {name}",
-	"server.health.downloader-save-folder": "Folder simpan Pemuat turun"
+	"server.health.downloader-save-folder": "Folder simpan Pemuat turun",
+	"server.library.edition": "edisi",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} formatnya menjadi ciri dengan mata yang sama",
+	"server.migrate.updated-the-ones-imported-before": "{what} (yang diimport sebelum ini dikemas kini)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (mengemas kini yang diimport sebelum ini)",
+	"server.migrate.becomes-pick-rules-traits": "menjadi Peraturan pilihan {name} · {traits} ciri",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "ia menguji {kinds}, yang tidak dapat diuji oleh HolyArrs",
+	"server.migrate.its-format-was-not-read-from": "formatnya tidak dibaca daripada aplikasi lama",
+	"server.migrate.nothing-in-the-old-app-gives": "tiada apa dalam aplikasi lama yang memberinya mata, jadi ia tidak mengubah apa-apa di sini",
+	"server.migrate.pick-rules-here-still-give-it": "Peraturan pilihan di sini masih memberinya mata, jadi ia kekal",
+	"server.migrate.pick-rules-hold-at-most-64": "Peraturan pilihan memuatkan paling banyak 64 ciri; skor terkuat dikekalkan",
+	"server.migrate.something-here-still-uses-these-pick": "sesuatu di sini masih menggunakan Peraturan pilihan ini, jadi ia kekal"
 }

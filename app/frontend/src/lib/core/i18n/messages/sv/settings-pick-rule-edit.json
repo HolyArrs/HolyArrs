@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} egenskaper poängsatta",
 	"settings.pickRuleEdit.trashResult": "{n} egenskaper poängsatta · {added} nya · {updated} uppdaterade",
 	"settings.pickRuleEdit.trashLeftOut": "{n} utelämnade",
-	"settings.pickRuleEdit.trashTests": "testar {kinds}"
+	"settings.pickRuleEdit.trashTests": "testar {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Källor",
+	"settings.pickRuleEdit.sourcesDesc": "Sök bara i de Källor som delar en av dessa taggar. Lämna tomt för att söka i alla Källor.",
+	"settings.pickRuleEdit.tags": "Taggar"
 }

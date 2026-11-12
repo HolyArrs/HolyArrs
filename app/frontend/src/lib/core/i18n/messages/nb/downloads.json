@@ -1248,5 +1248,12 @@
 	"downloads.pr.lang.uk": "Ukrainsk",
 	"downloads.row.imported": "Importert",
 	"downloads.row.stillIn": "Fortsatt i {app}",
-	"downloads.dp.openDownloaders": "Åpne Nedlastere"
+	"downloads.dp.openDownloaders": "Åpne Nedlastere",
+	"downloads.ot.fromOldApps": "Fra gamle apper ({n})",
+	"downloads.ot.importAgain": "Importer igjen for å oppdatere testene deres; poengene kan endres i hvert sett Valgregler",
+	"downloads.ot.fromApp": "Fra {app}",
+	"downloads.ot.kindEdition": "utgave",
+	"downloads.ot.kindLanguage": "språk",
+	"downloads.ot.kindReleaseType": "utgivelsestype",
+	"downloads.ot.kindYear": "år"
 }

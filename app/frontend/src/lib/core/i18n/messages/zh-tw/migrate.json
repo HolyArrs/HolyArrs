@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs 看不到 {path}。請使用它在容器內的路徑：Docker 磁碟區對應的右側。",
 	"migrate.foldersItSees": "它能看到：{list}",
 	"migrate.sameNewFolder": "與 {list} 是同一個資料夾。它們的影片會混在一起；請給 4K 或其他副本單獨的資料夾。",
-	"migrate.doneOfTotal": "{done} / {total}"
+	"migrate.doneOfTotal": "{done} / {total}",
+	"migrate.bringFormats": "帶上格式和分數",
+	"migrate.bringFormatsHint": "每個為格式評分的設定檔會成為自己的挑選規則，這些格式成為特徵。",
+	"migrate.formatTraits": "特徵：{list}",
+	"migrate.formatsLeftOut": "未帶上：{list}"
 }

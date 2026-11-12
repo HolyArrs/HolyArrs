@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Smazáno ručně",
 	"server.downloads.marked-bad": "Označeno jako vadné",
 	"server.suggest.because-you-have": "Protože máte {name}",
-	"server.health.downloader-save-folder": "Složka pro ukládání Stahovače"
+	"server.health.downloader-save-folder": "Složka pro ukládání Stahovače",
+	"server.library.edition": "edice",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} jeho formátů se stane vlastnostmi se stejnými body",
+	"server.migrate.updated-the-ones-imported-before": "{what} (aktualizována ta importovaná dříve)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (aktualizuje ta importovaná dříve)",
+	"server.migrate.becomes-pick-rules-traits": "stane se Pravidly výběru {name} · {traits} vlastností",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "testuje {kinds}, což HolyArrs testovat neumí",
+	"server.migrate.its-format-was-not-read-from": "jeho formát se ze staré aplikace nepřečetl",
+	"server.migrate.nothing-in-the-old-app-gives": "nic ve staré aplikaci mu nedává body, takže tu nic nemění",
+	"server.migrate.pick-rules-here-still-give-it": "Pravidla výběru tady mu stále dávají body, takže zůstává",
+	"server.migrate.pick-rules-hold-at-most-64": "Pravidla výběru pojmou nejvýše 64 vlastností; ponechána byla nejsilnější skóre",
+	"server.migrate.something-here-still-uses-these-pick": "něco tady tato Pravidla výběru stále používá, takže zůstávají"
 }

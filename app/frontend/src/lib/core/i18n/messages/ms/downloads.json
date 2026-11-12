@@ -1248,5 +1248,12 @@
 	"downloads.pr.lang.uk": "Ukraine",
 	"downloads.row.imported": "Diimport",
 	"downloads.row.stillIn": "Masih dalam {app}",
-	"downloads.dp.openDownloaders": "Buka Pemuat turun"
+	"downloads.dp.openDownloaders": "Buka Pemuat turun",
+	"downloads.ot.fromOldApps": "Daripada aplikasi lama ({n})",
+	"downloads.ot.importAgain": "Import sekali lagi untuk mengemas kini ujiannya; matanya boleh ditukar dalam setiap Peraturan pilihan",
+	"downloads.ot.fromApp": "Daripada {app}",
+	"downloads.ot.kindEdition": "edisi",
+	"downloads.ot.kindLanguage": "bahasa",
+	"downloads.ot.kindReleaseType": "jenis keluaran",
+	"downloads.ot.kindYear": "tahun"
 }

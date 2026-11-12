@@ -1248,5 +1248,12 @@
 	"downloads.pr.lang.uk": "ยูเครน",
 	"downloads.row.imported": "นำเข้าแล้ว",
 	"downloads.row.stillIn": "ยังอยู่ใน {app}",
-	"downloads.dp.openDownloaders": "เปิดตัวดาวน์โหลด"
+	"downloads.dp.openDownloaders": "เปิดตัวดาวน์โหลด",
+	"downloads.ot.fromOldApps": "จากแอปเก่า ({n})",
+	"downloads.ot.importAgain": "นำเข้าอีกครั้งเพื่ออัปเดตการทดสอบ ส่วนคะแนนเปลี่ยนได้ในกฎการเลือกแต่ละชุด",
+	"downloads.ot.fromApp": "จาก {app}",
+	"downloads.ot.kindEdition": "ฉบับ",
+	"downloads.ot.kindLanguage": "ภาษา",
+	"downloads.ot.kindReleaseType": "ประเภทการเผยแพร่",
+	"downloads.ot.kindYear": "ปี"
 }

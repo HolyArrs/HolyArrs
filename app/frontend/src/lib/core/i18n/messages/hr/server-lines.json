@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Ručno izbrisano",
 	"server.downloads.marked-bad": "Označeno kao loše",
 	"server.suggest.because-you-have": "Jer imate {name}",
-	"server.health.downloader-save-folder": "Mapa za spremanje preuzimatelja"
+	"server.health.downloader-save-folder": "Mapa za spremanje preuzimatelja",
+	"server.library.edition": "izdanje",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} njegovih formata postaje osobine s istim bodovima",
+	"server.migrate.updated-the-ones-imported-before": "{what} (ažurirana su ona uvezena prije)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (ažurira ona uvezena prije)",
+	"server.migrate.becomes-pick-rules-traits": "postaje Pravila odabira {name} · {traits} osobina",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "testira {kinds}, što HolyArrs ne može testirati",
+	"server.migrate.its-format-was-not-read-from": "njegov format nije pročitan iz stare aplikacije",
+	"server.migrate.nothing-in-the-old-app-gives": "ništa u staroj aplikaciji mu ne daje bodove, pa ovdje ništa ne mijenja",
+	"server.migrate.pick-rules-here-still-give-it": "Pravila odabira ovdje mu još daju bodove, pa ostaje",
+	"server.migrate.pick-rules-hold-at-most-64": "Pravila odabira primaju najviše 64 osobine; zadržane su najjače ocjene",
+	"server.migrate.something-here-still-uses-these-pick": "nešto ovdje još koristi ova Pravila odabira, pa ostaju"
 }

@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs no pot veure {path}. Fes servir la ruta dins del seu contenidor: la part dreta del volum de Docker.",
 	"migrate.foldersItSees": "Pot veure: {list}",
 	"migrate.sameNewFolder": "La mateixa carpeta que {list}. Els seus títols acaben junts; dona a les còpies en 4K o altres la seva pròpia carpeta.",
-	"migrate.doneOfTotal": "{done} de {total}"
+	"migrate.doneOfTotal": "{done} de {total}",
+	"migrate.bringFormats": "Porta els formats i les puntuacions",
+	"migrate.bringFormatsHint": "Cada perfil que puntua formats esdevé les seves pròpies Regles d'elecció, amb aquests formats com a trets.",
+	"migrate.formatTraits": "Trets: {list}",
+	"migrate.formatsLeftOut": "Deixats fora: {list}"
 }

@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Apagado manualmente",
 	"server.downloads.marked-bad": "Marcado como mau",
 	"server.suggest.because-you-have": "Porque tem {name}",
-	"server.health.downloader-save-folder": "Pasta de salvamento do gestor de downloads"
+	"server.health.downloader-save-folder": "Pasta de salvamento do gestor de downloads",
+	"server.library.edition": "edição",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} dos seus formatos passam a características com os mesmos pontos",
+	"server.migrate.updated-the-ones-imported-before": "{what} (as importadas antes foram atualizadas)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (atualiza as importadas antes)",
+	"server.migrate.becomes-pick-rules-traits": "passa a ser as Regras de escolha {name} · {traits} características",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "testa {kinds}, que o HolyArrs não consegue testar",
+	"server.migrate.its-format-was-not-read-from": "o seu formato não foi lido da app antiga",
+	"server.migrate.nothing-in-the-old-app-gives": "nada na app antiga lhe dá pontos, por isso não altera nada aqui",
+	"server.migrate.pick-rules-here-still-give-it": "Regras de escolha daqui ainda lhe dão pontos, por isso fica",
+	"server.migrate.pick-rules-hold-at-most-64": "As Regras de escolha comportam no máximo 64 características; mantiveram-se as pontuações mais fortes",
+	"server.migrate.something-here-still-uses-these-pick": "algo aqui ainda usa estas Regras de escolha, por isso ficam"
 }

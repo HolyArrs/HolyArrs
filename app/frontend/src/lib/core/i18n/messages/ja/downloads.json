@@ -1248,5 +1248,12 @@
 	"downloads.ot.sizeUpTo": "{n} GB 以下",
 	"downloads.row.imported": "インポート済み",
 	"downloads.row.stillIn": "まだ {app} にあります",
-	"downloads.dp.openDownloaders": "ダウンローダーを開く"
+	"downloads.dp.openDownloaders": "ダウンローダーを開く",
+	"downloads.ot.fromOldApps": "古いアプリから（{n}）",
+	"downloads.ot.importAgain": "テストを更新するにはもう一度インポートしてください。ポイントは各選定ルールで変更できます",
+	"downloads.ot.fromApp": "{app} から",
+	"downloads.ot.kindEdition": "エディション",
+	"downloads.ot.kindLanguage": "言語",
+	"downloads.ot.kindReleaseType": "リリースの種類",
+	"downloads.ot.kindYear": "年"
 }

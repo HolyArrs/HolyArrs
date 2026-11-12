@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs не бачить {path}. Вкажи шлях усередині контейнера: праву частину тому Docker.",
 	"migrate.foldersItSees": "Видно теки: {list}",
 	"migrate.sameNewFolder": "Та сама тека, що й у {list}. Їхні назви опиняться разом; дай 4K чи іншим копіям окрему теку.",
-	"migrate.doneOfTotal": "{done} із {total}"
+	"migrate.doneOfTotal": "{done} із {total}",
+	"migrate.bringFormats": "Перенести формати й оцінки",
+	"migrate.bringFormatsHint": "Кожен профіль, що оцінює формати, стає власними Правилами вибору, а ці формати — ознаками.",
+	"migrate.formatTraits": "Ознаки: {list}",
+	"migrate.formatsLeftOut": "Не перенесено: {list}"
 }

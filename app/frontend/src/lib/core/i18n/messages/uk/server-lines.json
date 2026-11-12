@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Видалено вручну",
 	"server.downloads.marked-bad": "Позначено як погане",
 	"server.suggest.because-you-have": "Бо у вас є {name}",
-	"server.health.downloader-save-folder": "Тека збереження завантажувача"
+	"server.health.downloader-save-folder": "Тека збереження завантажувача",
+	"server.library.edition": "видання",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} його форматів стають ознаками з тими самими балами",
+	"server.migrate.updated-the-ones-imported-before": "{what} (імпортовані раніше оновлено)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (оновлює імпортовані раніше)",
+	"server.migrate.becomes-pick-rules-traits": "стає Правилами вибору {name} · ознак: {traits}",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "він перевіряє {kinds}, чого HolyArrs перевіряти не вміє",
+	"server.migrate.its-format-was-not-read-from": "його формат не прочитано зі старого застосунку",
+	"server.migrate.nothing-in-the-old-app-gives": "ніщо в старому застосунку не дає йому балів, тож тут він нічого не змінює",
+	"server.migrate.pick-rules-here-still-give-it": "Правила вибору тут ще дають йому бали, тож він лишається",
+	"server.migrate.pick-rules-hold-at-most-64": "у Правилах вибору щонайбільше 64 ознаки; залишено найсильніші оцінки",
+	"server.migrate.something-here-still-uses-these-pick": "щось тут ще використовує ці Правила вибору, тож вони лишаються"
 }

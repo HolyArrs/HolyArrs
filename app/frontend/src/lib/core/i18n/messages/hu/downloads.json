@@ -1248,5 +1248,12 @@
 	"downloads.pr.lang.uk": "ukrán",
 	"downloads.row.imported": "Importálva",
 	"downloads.row.stillIn": "Még a(z) {app} alkalmazásban",
-	"downloads.dp.openDownloaders": "Letöltők megnyitása"
+	"downloads.dp.openDownloaders": "Letöltők megnyitása",
+	"downloads.ot.fromOldApps": "Régi alkalmazásokból ({n})",
+	"downloads.ot.importAgain": "Importáld újra a tesztjeik frissítéséhez; a pontjaik minden Kiválasztási szabályokban módosíthatók",
+	"downloads.ot.fromApp": "Innen: {app}",
+	"downloads.ot.kindEdition": "kiadás",
+	"downloads.ot.kindLanguage": "nyelv",
+	"downloads.ot.kindReleaseType": "kiadás típusa",
+	"downloads.ot.kindYear": "év"
 }

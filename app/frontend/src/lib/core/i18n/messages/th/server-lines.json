@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "ลบด้วยตนเอง",
 	"server.downloads.marked-bad": "ทำเครื่องหมายว่าเสีย",
 	"server.suggest.because-you-have": "เพราะคุณมี {name}",
-	"server.health.downloader-save-folder": "โฟลเดอร์บันทึกของตัวดาวน์โหลด"
+	"server.health.downloader-save-folder": "โฟลเดอร์บันทึกของตัวดาวน์โหลด",
+	"server.library.edition": "ฉบับ",
+	"server.migrate.of-its-formats-become-traits-with": "รูปแบบ {traits} รายการกลายเป็นคุณสมบัติที่มีคะแนนเท่าเดิม",
+	"server.migrate.updated-the-ones-imported-before": "{what} (อัปเดตรายการที่นำเข้าก่อนหน้าแล้ว)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (อัปเดตรายการที่นำเข้าก่อนหน้า)",
+	"server.migrate.becomes-pick-rules-traits": "กลายเป็นกฎการเลือก {name} · {traits} คุณสมบัติ",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "ทดสอบ {kinds} ซึ่ง HolyArrs ทดสอบไม่ได้",
+	"server.migrate.its-format-was-not-read-from": "อ่านรูปแบบนี้จากแอปเก่าไม่ได้",
+	"server.migrate.nothing-in-the-old-app-gives": "ไม่มีสิ่งใดในแอปเก่าให้คะแนน จึงไม่เปลี่ยนอะไรที่นี่",
+	"server.migrate.pick-rules-here-still-give-it": "กฎการเลือกที่นี่ยังให้คะแนนอยู่ จึงยังคงอยู่",
+	"server.migrate.pick-rules-hold-at-most-64": "กฎการเลือกมีคุณสมบัติได้สูงสุด 64 รายการ จึงเก็บคะแนนที่สูงที่สุดไว้",
+	"server.migrate.something-here-still-uses-these-pick": "ยังมีบางอย่างที่นี่ใช้กฎการเลือกนี้อยู่ จึงยังคงอยู่"
 }

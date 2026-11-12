@@ -296,5 +296,9 @@
 "migrate.notInContainer": "HolyArrs nevidí {path}. Použite cestu vnútri jeho kontajnera: pravú stranu zväzku Docker.",
 "migrate.foldersItSees": "Vidí: {list}",
 "migrate.sameNewFolder": "Rovnaký priečinok ako {list}. Ich tituly skončia spolu; dajte 4K alebo iným kópiám vlastný priečinok.",
-"migrate.doneOfTotal": "{done} z {total}"
+"migrate.doneOfTotal": "{done} z {total}",
+"migrate.bringFormats": "Preniesť formáty a skóre",
+"migrate.bringFormatsHint": "Každý profil, ktorý boduje formáty, sa stane vlastnými Pravidlami výberu a tieto formáty ich vlastnosťami.",
+"migrate.formatTraits": "Vlastnosti: {list}",
+"migrate.formatsLeftOut": "Vynechané: {list}"
 }

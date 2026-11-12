@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Izdzēsts manuāli",
 	"server.downloads.marked-bad": "Atzīmēts kā slikts",
 	"server.suggest.because-you-have": "Jo jums ir {name}",
-	"server.health.downloader-save-folder": "Lejupielādētāja saglabāšanas mape"
+	"server.health.downloader-save-folder": "Lejupielādētāja saglabāšanas mape",
+	"server.library.edition": "izdevums",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} tā formāti kļūst par pazīmēm ar tiem pašiem punktiem",
+	"server.migrate.updated-the-ones-imported-before": "{what} (iepriekš importētie atjaunināti)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (atjaunina iepriekš importētos)",
+	"server.migrate.becomes-pick-rules-traits": "kļūst par Izvēles noteikumiem {name} · {traits} pazīmes",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "tas pārbauda {kinds}, ko HolyArrs nevar pārbaudīt",
+	"server.migrate.its-format-was-not-read-from": "tā formāts netika nolasīts no vecās lietotnes",
+	"server.migrate.nothing-in-the-old-app-gives": "nekas vecajā lietotnē tam nedod punktus, tāpēc šeit tas neko nemaina",
+	"server.migrate.pick-rules-here-still-give-it": "šeit esošie Izvēles noteikumi tam vēl dod punktus, tāpēc tas paliek",
+	"server.migrate.pick-rules-hold-at-most-64": "Izvēles noteikumos ietilpst ne vairāk kā 64 pazīmes; paturēti spēcīgākie rezultāti",
+	"server.migrate.something-here-still-uses-these-pick": "kaut kas šeit vēl izmanto šos Izvēles noteikumus, tāpēc tie paliek"
 }

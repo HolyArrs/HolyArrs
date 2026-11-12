@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "직접 삭제됨",
 	"server.downloads.marked-bad": "불량으로 표시됨",
 	"server.suggest.because-you-have": "{name}을(를) 가지고 있어서",
-	"server.health.downloader-save-folder": "다운로더 저장 폴더"
+	"server.health.downloader-save-folder": "다운로더 저장 폴더",
+	"server.library.edition": "에디션",
+	"server.migrate.of-its-formats-become-traits-with": "포맷 {traits}개가 같은 점수의 특성이 됩니다",
+	"server.migrate.updated-the-ones-imported-before": "{what} (전에 가져온 것을 업데이트함)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (전에 가져온 것을 업데이트함)",
+	"server.migrate.becomes-pick-rules-traits": "선택 규칙 {name}이 됩니다 · 특성 {traits}개",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "{kinds}을(를) 테스트하는데, HolyArrs는 이를 테스트할 수 없습니다",
+	"server.migrate.its-format-was-not-read-from": "이전 앱에서 포맷을 읽지 못했습니다",
+	"server.migrate.nothing-in-the-old-app-gives": "이전 앱에서 점수를 주는 것이 없어 여기서는 바뀌는 것이 없습니다",
+	"server.migrate.pick-rules-here-still-give-it": "여기 선택 규칙이 아직 점수를 주므로 남아 있습니다",
+	"server.migrate.pick-rules-hold-at-most-64": "선택 규칙에는 특성을 최대 64개까지 담을 수 있어 가장 높은 점수를 남겼습니다",
+	"server.migrate.something-here-still-uses-these-pick": "여기서 아직 이 선택 규칙을 사용하는 것이 있어 남아 있습니다"
 }

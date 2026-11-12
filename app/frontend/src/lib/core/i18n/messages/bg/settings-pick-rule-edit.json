@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} признака са оценени",
 	"settings.pickRuleEdit.trashResult": "{n} признака са оценени · {added} нови · {updated} обновени",
 	"settings.pickRuleEdit.trashLeftOut": "{n} са пропуснати",
-	"settings.pickRuleEdit.trashTests": "проверява {kinds}"
+	"settings.pickRuleEdit.trashTests": "проверява {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Източници",
+	"settings.pickRuleEdit.sourcesDesc": "Търси само в Източниците, които споделят някой от тези етикети. Остави празно, за да търсиш във всеки Източник.",
+	"settings.pickRuleEdit.tags": "Етикети"
 }

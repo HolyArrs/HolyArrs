@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs {path} yolunu göremiyor. Konteynerin içindeki yolu kullan: Docker biriminin sağ tarafı.",
 	"migrate.foldersItSees": "Görebildikleri: {list}",
 	"migrate.sameNewFolder": "{list} ile aynı klasör. Başlıkları bir arada kalır; 4K veya diğer kopyalara kendi klasörünü ver.",
-	"migrate.doneOfTotal": "{done}/{total}"
+	"migrate.doneOfTotal": "{done}/{total}",
+	"migrate.bringFormats": "Biçimleri ve puanları getir",
+	"migrate.bringFormatsHint": "Biçimlere puan veren her profil kendi Seçim kuralları olur, o biçimler de özellik olur.",
+	"migrate.formatTraits": "Özellikler: {list}",
+	"migrate.formatsLeftOut": "Dışarıda kalan: {list}"
 }

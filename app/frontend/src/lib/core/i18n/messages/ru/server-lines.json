@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Удалено вручную",
 	"server.downloads.marked-bad": "Помечено как плохое",
 	"server.suggest.because-you-have": "Потому что у вас есть {name}",
-	"server.health.downloader-save-folder": "Папка сохранения загрузчика"
+	"server.health.downloader-save-folder": "Папка сохранения загрузчика",
+	"server.library.edition": "издание",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} его форматов становятся признаками с теми же баллами",
+	"server.migrate.updated-the-ones-imported-before": "{what} (импортированные ранее обновлены)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (обновляет импортированные ранее)",
+	"server.migrate.becomes-pick-rules-traits": "становится Правилами отбора {name} · признаков: {traits}",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "он проверяет {kinds}, чего HolyArrs проверять не умеет",
+	"server.migrate.its-format-was-not-read-from": "его формат не был прочитан из старого приложения",
+	"server.migrate.nothing-in-the-old-app-gives": "ничто в старом приложении не даёт ему баллов, поэтому здесь он ничего не меняет",
+	"server.migrate.pick-rules-here-still-give-it": "Правила отбора здесь ещё дают ему баллы, поэтому он остаётся",
+	"server.migrate.pick-rules-hold-at-most-64": "в Правилах отбора не больше 64 признаков; оставлены самые сильные оценки",
+	"server.migrate.something-here-still-uses-these-pick": "что-то здесь ещё использует эти Правила отбора, поэтому они остаются"
 }

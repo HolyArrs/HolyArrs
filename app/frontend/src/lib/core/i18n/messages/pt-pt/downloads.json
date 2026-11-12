@@ -1248,5 +1248,12 @@
 	"downloads.pr.lang.uk": "Ucraniano",
 	"downloads.row.imported": "Importado",
 	"downloads.row.stillIn": "Ainda em {app}",
-	"downloads.dp.openDownloaders": "Abrir Gestores de downloads"
+	"downloads.dp.openDownloaders": "Abrir Gestores de downloads",
+	"downloads.ot.fromOldApps": "Das apps antigas ({n})",
+	"downloads.ot.importAgain": "Importe novamente para atualizar os testes; os pontos podem ser alterados em cada Regras de escolha",
+	"downloads.ot.fromApp": "Da {app}",
+	"downloads.ot.kindEdition": "edição",
+	"downloads.ot.kindLanguage": "idioma",
+	"downloads.ot.kindReleaseType": "tipo de lançamento",
+	"downloads.ot.kindYear": "ano"
 }

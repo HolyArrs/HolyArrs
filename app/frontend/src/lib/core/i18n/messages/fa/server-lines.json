@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "به‌صورت دستی حذف شد",
 	"server.downloads.marked-bad": "به‌عنوان خراب علامت خورد",
 	"server.suggest.because-you-have": "چون {name} را دارید",
-	"server.health.downloader-save-folder": "پوشه ذخیره دانلودر"
+	"server.health.downloader-save-folder": "پوشه ذخیره دانلودر",
+	"server.library.edition": "نسخه",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} از قالب‌هایش با همان امتیازها ویژگی می‌شوند",
+	"server.migrate.updated-the-ones-imported-before": "{what} (واردشده‌های قبلی به‌روز شدند)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (واردشده‌های قبلی را به‌روز می‌کند)",
+	"server.migrate.becomes-pick-rules-traits": "قوانین انتخاب {name} می‌شود · {traits} ویژگی",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "{kinds} را می‌آزماید که HolyArrs نمی‌تواند بیازماید",
+	"server.migrate.its-format-was-not-read-from": "قالبش از برنامهٔ قدیمی خوانده نشد",
+	"server.migrate.nothing-in-the-old-app-gives": "هیچ چیز در برنامهٔ قدیمی به آن امتیاز نمی‌دهد، پس اینجا چیزی را تغییر نمی‌دهد",
+	"server.migrate.pick-rules-here-still-give-it": "قوانین انتخاب اینجا هنوز به آن امتیاز می‌دهند، پس می‌ماند",
+	"server.migrate.pick-rules-hold-at-most-64": "قوانین انتخاب حداکثر ۶۴ ویژگی دارند؛ قوی‌ترین امتیازها نگه داشته شدند",
+	"server.migrate.something-here-still-uses-these-pick": "چیزی اینجا هنوز از این قوانین انتخاب استفاده می‌کند، پس می‌مانند"
 }

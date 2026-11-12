@@ -1248,5 +1248,12 @@
 	"downloads.ot.sizeUpTo": "до {n} ГБ",
 	"downloads.row.imported": "Импортировано",
 	"downloads.row.stillIn": "Ещё в {app}",
-	"downloads.dp.openDownloaders": "Открыть загрузчики"
+	"downloads.dp.openDownloaders": "Открыть загрузчики",
+	"downloads.ot.fromOldApps": "Из старых приложений ({n})",
+	"downloads.ot.importAgain": "Импортируйте снова, чтобы обновить их проверки; баллы можно менять в каждых Правилах отбора",
+	"downloads.ot.fromApp": "Из {app}",
+	"downloads.ot.kindEdition": "издание",
+	"downloads.ot.kindLanguage": "язык",
+	"downloads.ot.kindReleaseType": "тип релиза",
+	"downloads.ot.kindYear": "год"
 }

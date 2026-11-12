@@ -1248,5 +1248,12 @@
 	"downloads.pr.lang.uk": "ইউক্রেনীয়",
 	"downloads.row.imported": "ইমপোর্ট করা হয়েছে",
 	"downloads.row.stillIn": "এখনও {app}-এ আছে",
-	"downloads.dp.openDownloaders": "ডাউনলোডার খুলুন"
+	"downloads.dp.openDownloaders": "ডাউনলোডার খুলুন",
+	"downloads.ot.fromOldApps": "পুরোনো অ্যাপ থেকে ({n})",
+	"downloads.ot.importAgain": "এদের পরীক্ষা হালনাগাদ করতে আবার আমদানি করুন; এদের পয়েন্ট প্রতিটি বাছাইয়ের নিয়মে বদলানো যায়",
+	"downloads.ot.fromApp": "{app} থেকে",
+	"downloads.ot.kindEdition": "সংস্করণ",
+	"downloads.ot.kindLanguage": "ভাষা",
+	"downloads.ot.kindReleaseType": "রিলিজের ধরন",
+	"downloads.ot.kindYear": "বছর"
 }

@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs neredz {path}. Izmanto ceļu konteinera iekšienē: Docker sējuma labo pusi.",
 	"migrate.foldersItSees": "Tas redz: {list}",
 	"migrate.sameNewFolder": "Tā pati mape kā {list}. Viņu nosaukumi nonāk kopā; dod 4K vai citām kopijām savu mapi.",
-	"migrate.doneOfTotal": "{done} no {total}"
+	"migrate.doneOfTotal": "{done} no {total}",
+	"migrate.bringFormats": "Pārnest formātus un rezultātus",
+	"migrate.bringFormatsHint": "Katrs profils, kas vērtē formātus, kļūst par saviem Izvēles noteikumiem, un šie formāti – par pazīmēm.",
+	"migrate.formatTraits": "Pazīmes: {list}",
+	"migrate.formatsLeftOut": "Izlaists: {list}"
 }

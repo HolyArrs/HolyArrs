@@ -1248,5 +1248,12 @@
 	"downloads.pr.lang.uk": "tiếng Ukraina",
 	"downloads.row.imported": "Đã nhập",
 	"downloads.row.stillIn": "Vẫn còn trong {app}",
-	"downloads.dp.openDownloaders": "Mở Trình tải"
+	"downloads.dp.openDownloaders": "Mở Trình tải",
+	"downloads.ot.fromOldApps": "Từ các ứng dụng cũ ({n})",
+	"downloads.ot.importAgain": "Nhập lại để cập nhật các phép thử; điểm của chúng có thể đổi trong từng Quy tắc chọn",
+	"downloads.ot.fromApp": "Từ {app}",
+	"downloads.ot.kindEdition": "phiên bản",
+	"downloads.ot.kindLanguage": "ngôn ngữ",
+	"downloads.ot.kindReleaseType": "kiểu phát hành",
+	"downloads.ot.kindYear": "năm"
 }

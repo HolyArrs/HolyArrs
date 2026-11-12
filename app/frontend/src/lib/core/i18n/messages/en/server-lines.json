@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Deleted by hand",
 	"server.downloads.marked-bad": "Marked bad",
 	"server.suggest.because-you-have": "Because you have {name}",
-	"server.health.downloader-save-folder": "Downloader save folder"
+	"server.health.downloader-save-folder": "Downloader save folder",
+	"server.library.edition": "edition",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} of its formats become traits with the same points",
+	"server.migrate.updated-the-ones-imported-before": "{what} (updated the ones imported before)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (updates the ones imported before)",
+	"server.migrate.becomes-pick-rules-traits": "becomes Pick rules {name} · {traits} traits",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "it tests {kinds}, which HolyArrs cannot test",
+	"server.migrate.its-format-was-not-read-from": "its format was not read from the old app",
+	"server.migrate.nothing-in-the-old-app-gives": "nothing in the old app gives it points, so it changes nothing here",
+	"server.migrate.pick-rules-here-still-give-it": "Pick rules here still give it points, so it stays",
+	"server.migrate.pick-rules-hold-at-most-64": "Pick rules hold at most 64 traits; the strongest scores were kept",
+	"server.migrate.something-here-still-uses-these-pick": "something here still uses these Pick rules, so they stay"
 }

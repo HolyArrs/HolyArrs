@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs ஆல் {path} ஐப் பார்க்க முடியவில்லை. அதன் கொள்கலனுக்குள் உள்ள பாதையைப் பயன்படுத்துங்கள்: Docker வால்யூமின் வலப்பக்கம்.",
 	"migrate.foldersItSees": "அது பார்க்கக்கூடியவை: {list}",
 	"migrate.sameNewFolder": "{list} போன்ற அதே கோப்புறை. அவற்றின் தலைப்புகள் ஒன்றாகச் சேரும்; 4K அல்லது பிற பிரதிகளுக்குத் தனிக் கோப்புறை கொடுங்கள்.",
-	"migrate.doneOfTotal": "{total} இல் {done}"
+	"migrate.doneOfTotal": "{total} இல் {done}",
+	"migrate.bringFormats": "வடிவங்களையும் மதிப்பெண்களையும் கொண்டு வா",
+	"migrate.bringFormatsHint": "வடிவங்களுக்கு மதிப்பெண் தரும் ஒவ்வொரு சுயவிவரமும் தனக்கென தேர்வு விதிகளாகிறது, அந்த வடிவங்கள் பண்புகளாகின்றன.",
+	"migrate.formatTraits": "பண்புகள்: {list}",
+	"migrate.formatsLeftOut": "விடுபட்டவை: {list}"
 }

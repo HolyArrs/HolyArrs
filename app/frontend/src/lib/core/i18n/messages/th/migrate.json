@@ -296,5 +296,9 @@
 	"migrate.notInContainer": "HolyArrs มองไม่เห็น {path} ใช้พาธภายในคอนเทนเนอร์ คือด้านขวาของ Docker volume",
 	"migrate.foldersItSees": "มองเห็น: {list}",
 	"migrate.sameNewFolder": "โฟลเดอร์เดียวกับ {list} เรื่องของพวกเขาจะอยู่รวมกัน ให้สำเนา 4K หรืออื่น ๆ มีโฟลเดอร์ของตัวเอง",
-	"migrate.doneOfTotal": "{done} จาก {total}"
+	"migrate.doneOfTotal": "{done} จาก {total}",
+	"migrate.bringFormats": "นำรูปแบบและคะแนนมาด้วย",
+	"migrate.bringFormatsHint": "แต่ละโปรไฟล์ที่ให้คะแนนรูปแบบจะกลายเป็นกฎการเลือกของตัวเอง โดยรูปแบบเหล่านั้นเป็นคุณสมบัติ",
+	"migrate.formatTraits": "คุณสมบัติ: {list}",
+	"migrate.formatsLeftOut": "ไม่ได้นำมา: {list}"
 }

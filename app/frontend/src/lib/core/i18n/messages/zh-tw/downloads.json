@@ -1248,5 +1248,12 @@
 	"downloads.pr.lang.uk": "烏克蘭語",
 	"downloads.row.imported": "已匯入",
 	"downloads.row.stillIn": "仍在 {app} 中",
-	"downloads.dp.openDownloaders": "開啟下載器"
+	"downloads.dp.openDownloaders": "開啟下載器",
+	"downloads.ot.fromOldApps": "來自舊應用程式（{n}）",
+	"downloads.ot.importAgain": "再次匯入可更新它們的測試；分數可在每套挑選規則中變更",
+	"downloads.ot.fromApp": "來自 {app}",
+	"downloads.ot.kindEdition": "版本",
+	"downloads.ot.kindLanguage": "語言",
+	"downloads.ot.kindReleaseType": "發行類型",
+	"downloads.ot.kindYear": "年份"
 }

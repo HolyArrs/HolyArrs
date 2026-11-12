@@ -1271,5 +1271,16 @@
 	"server.downloads.deleted-by-hand": "Șters manual",
 	"server.downloads.marked-bad": "Marcat ca defect",
 	"server.suggest.because-you-have": "Pentru că ai {name}",
-	"server.health.downloader-save-folder": "Dosar de salvare al clientului de descărcare"
+	"server.health.downloader-save-folder": "Dosar de salvare al clientului de descărcare",
+	"server.library.edition": "ediție",
+	"server.migrate.of-its-formats-become-traits-with": "{traits} dintre formatele lui devin trăsături cu aceleași puncte",
+	"server.migrate.updated-the-ones-imported-before": "{what} (cele importate înainte au fost actualizate)",
+	"server.migrate.updates-the-ones-imported-before": "{what} (actualizează cele importate înainte)",
+	"server.migrate.becomes-pick-rules-traits": "devine Regulile de alegere {name} · {traits} trăsături",
+	"server.migrate.it-tests-which-holyarrs-cannot-test": "testează {kinds}, ceea ce HolyArrs nu poate testa",
+	"server.migrate.its-format-was-not-read-from": "formatul lui nu a fost citit din aplicația veche",
+	"server.migrate.nothing-in-the-old-app-gives": "nimic din aplicația veche nu îi dă puncte, așa că aici nu schimbă nimic",
+	"server.migrate.pick-rules-here-still-give-it": "Reguli de alegere de aici încă îi dau puncte, așa că rămâne",
+	"server.migrate.pick-rules-hold-at-most-64": "Regulile de alegere cuprind cel mult 64 de trăsături; s-au păstrat cele mai puternice scoruri",
+	"server.migrate.something-here-still-uses-these-pick": "ceva de aici încă folosește aceste Reguli de alegere, așa că rămân"
 }
