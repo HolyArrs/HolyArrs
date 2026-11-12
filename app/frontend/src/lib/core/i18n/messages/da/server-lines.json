@@ -1288,5 +1288,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} filer koblet i hånden",
 	"server.library.no-such-file-in-this-title": "ingen sådan fil i denne titel",
 	"server.library.send-1-to-2000-files": "send 1 til 2000 filer",
-	"server.sources.this-kind-of-title-can-t": "denne slags titel kan ikke søges"
+	"server.sources.this-kind-of-title-can-t": "denne slags titel kan ikke søges",
+	"server.migrate.scored-there-points-here-stop-at": "{name} gav {n} der; point her stopper ved {n2}"
 }

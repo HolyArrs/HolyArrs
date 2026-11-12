@@ -1288,5 +1288,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} dosya elle eşleştirildi",
 	"server.library.no-such-file-in-this-title": "bu başlıkta böyle bir dosya yok",
 	"server.library.send-1-to-2000-files": "1 ile 2000 arasında dosya gönder",
-	"server.sources.this-kind-of-title-can-t": "bu tür başlık aranamaz"
+	"server.sources.this-kind-of-title-can-t": "bu tür başlık aranamaz",
+	"server.migrate.scored-there-points-here-stop-at": "{name} orada {n} aldı; puanlar burada {n2} değerinde durur"
 }

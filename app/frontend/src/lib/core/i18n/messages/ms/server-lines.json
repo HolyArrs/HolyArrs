@@ -1288,5 +1288,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} fail dipadankan secara manual",
 	"server.library.no-such-file-in-this-title": "tiada fail sedemikian dalam tajuk ini",
 	"server.library.send-1-to-2000-files": "hantar 1 hingga 2000 fail",
-	"server.sources.this-kind-of-title-can-t": "tajuk jenis ini tidak boleh dicari"
+	"server.sources.this-kind-of-title-can-t": "tajuk jenis ini tidak boleh dicari",
+	"server.migrate.scored-there-points-here-stop-at": "{name} bernilai {n} di sana; mata di sini berhenti pada {n2}"
 }
