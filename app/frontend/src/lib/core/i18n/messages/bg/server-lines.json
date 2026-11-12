@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Изтрито ръчно",
 	"server.downloads.marked-bad": "Отбелязано като лошо",
 	"server.suggest.because-you-have": "Защото имате {name}",
-	"server.health.downloader-save-folder": "Папка за запис на програмата за изтегляне"
+	"server.health.downloader-save-folder": "Папка за запис на програмата за изтегляне",
+	"server.sources.this-kind-of-title-can-t": "този вид заглавие не може да се търси"
 }

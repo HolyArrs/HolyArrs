@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Διαγράφηκε χειροκίνητα",
 	"server.downloads.marked-bad": "Σημειώθηκε ως κακό",
 	"server.suggest.because-you-have": "Επειδή έχετε το {name}",
-	"server.health.downloader-save-folder": "Φάκελος αποθήκευσης του Προγράμματος λήψης"
+	"server.health.downloader-save-folder": "Φάκελος αποθήκευσης του Προγράμματος λήψης",
+	"server.sources.this-kind-of-title-can-t": "αυτό το είδος τίτλου δεν μπορεί να αναζητηθεί"
 }

@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Borrado a mano",
 	"server.downloads.marked-bad": "Marcado como malo",
 	"server.suggest.because-you-have": "Porque tienes {name}",
-	"server.health.downloader-save-folder": "Carpeta de descarga del gestor"
+	"server.health.downloader-save-folder": "Carpeta de descarga del gestor",
+	"server.sources.this-kind-of-title-can-t": "este tipo de título no se puede buscar"
 }

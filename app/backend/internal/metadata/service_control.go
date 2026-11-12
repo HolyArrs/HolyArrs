@@ -32,6 +32,8 @@ func IsAhead(ctx context.Context) bool { v, _ := ctx.Value(aheadKey{}).(bool); r
 type serviceHold struct {
 	mu    sync.Mutex
 	until time.Time
+	// fails counts failed registrations in a row (regHold only; hosted.go).
+	fails int
 }
 
 // holdMax bounds one Retry-After; a longer one is read as this.

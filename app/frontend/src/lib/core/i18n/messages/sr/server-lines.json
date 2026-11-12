@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Ручно обрисано",
 	"server.downloads.marked-bad": "Означено као лоше",
 	"server.suggest.because-you-have": "Зато што имате {name}",
-	"server.health.downloader-save-folder": "Фасцикла за чување Преузимача"
+	"server.health.downloader-save-folder": "Фасцикла за чување Преузимача",
+	"server.sources.this-kind-of-title-can-t": "ова врста наслова не може да се тражи"
 }

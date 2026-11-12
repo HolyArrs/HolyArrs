@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Ručno izbrisano",
 	"server.downloads.marked-bad": "Označeno kao loše",
 	"server.suggest.because-you-have": "Jer imate {name}",
-	"server.health.downloader-save-folder": "Mapa za spremanje preuzimatelja"
+	"server.health.downloader-save-folder": "Mapa za spremanje preuzimatelja",
+	"server.sources.this-kind-of-title-can-t": "ovu vrstu naslova nije moguće pretražiti"
 }

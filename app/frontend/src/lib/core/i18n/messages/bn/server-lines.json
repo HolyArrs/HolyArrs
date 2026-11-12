@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "হাতে মুছে ফেলা হয়েছে",
 	"server.downloads.marked-bad": "খারাপ হিসেবে চিহ্নিত",
 	"server.suggest.because-you-have": "কারণ আপনার কাছে {name} আছে",
-	"server.health.downloader-save-folder": "ডাউনলোডারের সেভ ফোল্ডার"
+	"server.health.downloader-save-folder": "ডাউনলোডারের সেভ ফোল্ডার",
+	"server.sources.this-kind-of-title-can-t": "এই ধরনের শিরোনাম খোঁজা যায় না"
 }

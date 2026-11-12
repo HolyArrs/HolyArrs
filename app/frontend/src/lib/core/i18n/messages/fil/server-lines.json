@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "Binura nang mano-mano",
 	"server.downloads.marked-bad": "Minarkahang sira",
 	"server.suggest.because-you-have": "Dahil mayroon kang {name}",
-	"server.health.downloader-save-folder": "Save folder ng Downloader"
+	"server.health.downloader-save-folder": "Save folder ng Downloader",
+	"server.sources.this-kind-of-title-can-t": "hindi mahahanap ang ganitong uri ng pamagat"
 }

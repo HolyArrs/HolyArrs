@@ -1271,5 +1271,6 @@
 	"server.downloads.deleted-by-hand": "已手动删除",
 	"server.downloads.marked-bad": "已标记为损坏",
 	"server.suggest.because-you-have": "因为你有{name}",
-	"server.health.downloader-save-folder": "下载器保存文件夹"
+	"server.health.downloader-save-folder": "下载器保存文件夹",
+	"server.sources.this-kind-of-title-can-t": "无法搜索这类标题"
 }
