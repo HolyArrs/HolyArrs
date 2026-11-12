@@ -18,7 +18,7 @@ import (
 // showQuery is the search for one episode (daily: its air day; otherwise
 // the season and episode release names use) or, with ep nil, one season.
 func showQuery(ti mediafiles.Title, season int, ep *epSlot) Query {
-	q := Query{Title: ti.Name, TV: true, Season: season}
+	q := Query{Title: ti.Name, TV: true, Season: season, Aliases: ti.Aliases}
 	q.TVDB, _ = strconv.Atoi(ti.SourceIDs["tvdb"])
 	q.TVMaze, _ = strconv.Atoi(ti.SourceIDs["tvmaze"])
 	order := "aired"

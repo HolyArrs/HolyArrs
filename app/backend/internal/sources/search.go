@@ -277,7 +277,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 
 	now := time.Now().UTC()
 	ti := c.ti
-	q := Query{Title: ti.Name, IMDb: ti.SourceIDs["imdb"]}
+	q := Query{Title: ti.Name, IMDb: ti.SourceIDs["imdb"], Aliases: ti.Aliases}
 	if ti.Year != nil {
 		q.Year = *ti.Year
 	}

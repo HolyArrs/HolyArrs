@@ -426,6 +426,9 @@ type Query struct {
 	Words   string
 	TVDB    int
 	TVMaze  int
+	// Aliases are other names of the title; an id search answered under one
+	// of them is a real answer.
+	Aliases []string
 	// Music makes it an album search by artist and album where the Source takes
 	// them, otherwise a text search of both.
 	Music  bool
@@ -506,9 +509,17 @@ func (c *Client) Search(ctx context.Context, q Query) ([]Item, error) {
 	if len(name) == 0 {
 		return items, nil
 	}
+	names := [][]string{name}
+	for _, a := range q.Aliases {
+		if w := strings.Fields(strings.ToLower(textQuery(Query{Title: a}))); len(w) > 0 {
+			names = append(names, w)
+		}
+	}
 	for _, it := range items {
-		if namesAll(it.Title, name) {
-			return items, nil
+		for _, n := range names {
+			if namesAll(it.Title, n) {
+				return items, nil
+			}
 		}
 	}
 	v, _, err = searchValues(q, *caps, false)
@@ -519,12 +530,9 @@ func (c *Client) Search(ctx context.Context, q Query) ([]Item, error) {
 	if err != nil {
 		return items, nil
 	}
-	for _, it := range byName {
-		if namesAll(it.Title, name) {
-			return byName, nil
-		}
-	}
-	return append(items, byName...), nil
+	// No id answer names the title under any of its names: the site ignored
+	// the id, so its answers are its newest releases. Keep the title search.
+	return byName, nil
 }
 
 // namesAll says whether a release name holds every word of the title.
