@@ -202,8 +202,10 @@ export function posterStatus(t: TitleView, who: Audience): TitleStatus | null {
 }
 
 // Episodes kept up to date that are still wanted or busy.
-export function missingEpisodes<E extends { keep_up_to_date: boolean; slots: { state: string }[] }>(eps: E[]): E[] {
-	return eps.filter((e) => e.keep_up_to_date && e.slots.some((s) => s.state === 'wanted' || busyStates.includes(s.state)));
+export function missingEpisodes<E extends { keep_up_to_date: boolean; air_date?: string; slots: { state: string }[] }>(eps: E[]): E[] {
+	// A wanted episode is missing only once it has aired, as the server counts it.
+	const aired = (e: E) => !!e.air_date && Date.parse(e.air_date) <= Date.now();
+	return eps.filter((e) => e.keep_up_to_date && e.slots.some((s) => (s.state === 'wanted' && aired(e)) || busyStates.includes(s.state)));
 }
 
 export type AddKind = 'movie' | 'show' | 'artist';

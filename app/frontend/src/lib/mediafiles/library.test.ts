@@ -163,8 +163,8 @@ describe('library letters and quiet states', () => {
 	});
 
 	it('lists the missing episodes of a show', () => {
-		const ep = (id: number, keep: boolean, state: string) => ({ id, keep_up_to_date: keep, slots: [{ state }] });
-		expect(missingEpisodes([ep(1, true, 'wanted'), ep(2, true, 'in_library'), ep(3, false, 'wanted'), ep(4, true, 'downloading'), ep(5, true, 'not_out_yet')]).map((e) => e.id)).toEqual([1, 4]);
+		const ep = (id: number, keep: boolean, state: string, air_date: string | undefined = '2020-01-01T00:00:00Z') => ({ id, keep_up_to_date: keep, air_date, slots: [{ state }] });
+		expect(missingEpisodes([ep(1, true, 'wanted'), ep(2, true, 'in_library'), ep(3, false, 'wanted'), ep(4, true, 'downloading'), ep(5, true, 'not_out_yet'), ep(6, true, 'wanted', '2999-01-01T00:00:00Z'), ep(7, true, 'wanted', '')]).map((e) => e.id)).toEqual([1, 4]);
 	});
 });
 
