@@ -73,6 +73,9 @@ func (s *Service) handleSearch(ctx context.Context, r *jobs.Run) error {
 // is unmet and due, and for Files not looked at since their wish changed.
 func (s *Service) handleMissing(ctx context.Context, r *jobs.Run) error {
 	set := ReadSettings(ctx, s.Store.Read())
+	if err := s.dropRemoved(ctx); err != nil {
+		return err
+	}
 	ids, err := s.dueFiles(ctx, set.Batch)
 	if err != nil {
 		return err
@@ -84,6 +87,22 @@ func (s *Service) handleMissing(ctx context.Context, r *jobs.Run) error {
 	}
 	r.SetResult(map[string]any{"queued": len(ids)})
 	return nil
+}
+
+// onRemoved matches the subtitles rows of Files whose title was removed.
+const onRemoved = `file_id IN (SELECT f.id FROM files f JOIN slots sl ON sl.id = json_extract(f.slot_ids, '$[0]')
+		JOIN items i ON i.id = sl.item_id JOIN titles t ON t.id = i.title_id WHERE t.state = 'removed')`
+
+// dropRemoved clears the pending wishes and looks of Files whose title was
+// removed, so no search stays due for them. A restored title is looked at again.
+func (s *Service) dropRemoved(ctx context.Context) error {
+	return s.Store.Write(ctx, func(tx *sql.Tx) error {
+		if _, err := tx.ExecContext(ctx, "DELETE FROM subtitles WHERE place = 'wish' AND "+onRemoved); err != nil {
+			return err
+		}
+		_, err := tx.ExecContext(ctx, "DELETE FROM subtitle_looks WHERE "+onRemoved)
+		return err
+	})
 }
 
 func (s *Service) dueFiles(ctx context.Context, batch int) ([]int64, error) {
@@ -116,8 +135,8 @@ func (s *Service) staleFiles(ctx context.Context, limit int, out []int64, seen m
 	// Files never looked at, or looked at under another wish.
 	rows, err := db.QueryContext(ctx, `SELECT DISTINCT f.id, i.title_id, f.version_id, i.id, l.wish FROM files f
 		JOIN slots s ON s.file_id = f.id JOIN items i ON i.id = s.item_id
-		LEFT JOIN subtitle_looks l ON l.file_id = f.id
-		WHERE f.role = 'main' AND f.state = 'present' AND i.kind IN ('movie', 'episode') ORDER BY l.looked_at IS NOT NULL, l.looked_at, f.id`)
+		JOIN titles t ON t.id = i.title_id LEFT JOIN subtitle_looks l ON l.file_id = f.id
+		WHERE f.role = 'main' AND f.state = 'present' AND t.state != 'removed' AND i.kind IN ('movie', 'episode') ORDER BY l.looked_at IS NOT NULL, l.looked_at, f.id`)
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +391,7 @@ type MissingFilter struct {
 }
 
 const missingFrom = ` FROM subtitles s JOIN files f ON f.id = s.file_id JOIN slots sl ON sl.id = json_extract(f.slot_ids, '$[0]')
-		JOIN items i ON i.id = sl.item_id JOIN titles t ON t.id = i.title_id WHERE s.place = 'wish' AND s.state IN ('wanted', 'none_good_enough') AND f.state = 'present'`
+		JOIN items i ON i.id = sl.item_id JOIN titles t ON t.id = i.title_id WHERE s.place = 'wish' AND s.state IN ('wanted', 'none_good_enough') AND f.state = 'present' AND t.state != 'removed'`
 
 // MissingTitle is a movie or show missing at least one subtitle.
 type MissingTitle struct {
