@@ -1198,5 +1198,16 @@
 	"server.discover.coming-saturday": "Выйдет: суббота",
 	"server.discover.new-episode-sat": "Новая серия · сб",
 	"server.discover.coming-sunday": "Выйдет: воскресенье",
-	"server.discover.new-episode-sun": "Новая серия · вс"
+	"server.discover.new-episode-sun": "Новая серия · вс",
+	"server.accounts.is-too-wide-list-your-home": "«{entry}» слишком широкая: укажите домашнюю сеть, например 192.168.1.0/24",
+	"server.accounts.is-not-a-network-use-one": "«{entry}» — не сеть: укажите, например, 192.168.1.0/24 или адрес вроде 192.168.1.5",
+	"server.accounts.is-not-a-proxy-address-use": "«{entry}» — не адрес прокси: укажите, например, 172.18.0.2 или диапазон 172.18.0.0/16",
+	"server.accounts.is-too-wide-list-only-the": "«{entry}» слишком широкий: укажите только адреса вашего прокси",
+	"server.accounts.list-at-most-proxies": "не больше {n} прокси",
+	"server.accounts.list-at-most-networks": "не больше {n} сетей",
+	"server.accounts.pick-a-person-who-exists-and": "выберите человека, который существует и включён",
+	"server.accounts.pick-a-person-for-local-visitors": "выберите человека для локальных визитов",
+	"server.accounts.there-is-no-owner-yet": "владельца пока нет",
+	"server.accounts.change-trusted-proxies-in-the-browser": "меняйте доверенные прокси в браузере, войдя по паролю",
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "вы заходите в HolyArrs через прокси {ip}; оставьте его в списке"
 }

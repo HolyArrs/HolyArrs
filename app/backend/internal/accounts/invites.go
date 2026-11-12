@@ -86,7 +86,7 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	maxRating, country, err := kidLimit(body.Role, body.MaxRating, body.RatingCountry, perms, a.skipLocal.Load())
+	maxRating, country, err := kidLimit(body.Role, body.MaxRating, body.RatingCountry, perms, a.skipBlocksKids(r.Context()))
 	if err != nil {
 		fail(w, http.StatusBadRequest, err.Error())
 		return

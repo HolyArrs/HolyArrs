@@ -1198,5 +1198,16 @@
 	"server.discover.coming-saturday": "Arriva sabato",
 	"server.discover.new-episode-sat": "Nuovo episodio · sab",
 	"server.discover.coming-sunday": "Arriva domenica",
-	"server.discover.new-episode-sun": "Nuovo episodio · dom"
+	"server.discover.new-episode-sun": "Nuovo episodio · dom",
+	"server.accounts.is-too-wide-list-your-home": "\"{entry}\" è troppo ampia: indica la tua rete di casa, come 192.168.1.0/24",
+	"server.accounts.is-not-a-network-use-one": "\"{entry}\" non è una rete: usane una come 192.168.1.0/24 o un indirizzo come 192.168.1.5",
+	"server.accounts.is-not-a-proxy-address-use": "\"{entry}\" non è un indirizzo proxy: usane uno come 172.18.0.2 o un intervallo come 172.18.0.0/16",
+	"server.accounts.is-too-wide-list-only-the": "\"{entry}\" è troppo ampio: indica solo gli indirizzi del tuo proxy",
+	"server.accounts.list-at-most-proxies": "indica al massimo {n} proxy",
+	"server.accounts.list-at-most-networks": "indica al massimo {n} reti",
+	"server.accounts.pick-a-person-who-exists-and": "scegli una persona che esiste ed è attiva",
+	"server.accounts.pick-a-person-for-local-visitors": "scegli una persona per le visite locali",
+	"server.accounts.there-is-no-owner-yet": "non c'è ancora un proprietario",
+	"server.accounts.change-trusted-proxies-in-the-browser": "cambia i proxy fidati nel browser, con accesso tramite password",
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "raggiungi HolyArrs tramite il proxy {ip}; lascialo nella lista"
 }

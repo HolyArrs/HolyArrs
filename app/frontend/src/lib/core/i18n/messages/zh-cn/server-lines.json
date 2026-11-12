@@ -1198,5 +1198,16 @@
 	"server.discover.coming-saturday": "星期六上线",
 	"server.discover.new-episode-sat": "新单集 · 周六",
 	"server.discover.coming-sunday": "星期日上线",
-	"server.discover.new-episode-sun": "新单集 · 周日"
+	"server.discover.new-episode-sun": "新单集 · 周日",
+	"server.accounts.is-too-wide-list-your-home": "“{entry}”范围太大：请填家庭网络，如 192.168.1.0/24",
+	"server.accounts.is-not-a-network-use-one": "“{entry}”不是网络：请用 192.168.1.0/24 或单个地址如 192.168.1.5",
+	"server.accounts.is-not-a-proxy-address-use": "“{entry}”不是代理地址：请用 172.18.0.2 或网段如 172.18.0.0/16",
+	"server.accounts.is-too-wide-list-only-the": "“{entry}”范围太大：只填代理使用的地址",
+	"server.accounts.list-at-most-proxies": "最多填写 {n} 个代理",
+	"server.accounts.list-at-most-networks": "最多填写 {n} 个网络",
+	"server.accounts.pick-a-person-who-exists-and": "请选择存在且已启用的人",
+	"server.accounts.pick-a-person-for-local-visitors": "请为本地访问者选择一个人",
+	"server.accounts.there-is-no-owner-yet": "还没有所有者",
+	"server.accounts.change-trusted-proxies-in-the-browser": "请在浏览器中用密码登录后更改受信任的代理",
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "你通过 {ip} 的代理访问 HolyArrs；请把它保留在列表中"
 }

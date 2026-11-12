@@ -71,6 +71,8 @@ actor_name
 adaptive
 adaptiveFormats
 addOptions
+add_cgnat
+add_home_ranges
 added
 added_at
 added_names
@@ -873,6 +875,7 @@ local
 local_network_allowed
 local_networks
 local_path
+local_person
 local_recent
 locked
 locked_note
@@ -1733,6 +1736,7 @@ tries
 trigger
 trimmed
 trusted
+trusted_proxies
 try_next_downloader
 turn_down
 turned_down_for

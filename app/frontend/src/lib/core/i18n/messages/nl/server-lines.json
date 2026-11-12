@@ -1198,5 +1198,16 @@
 	"server.discover.coming-saturday": "Komt zaterdag",
 	"server.discover.new-episode-sat": "Nieuwe aflevering · za",
 	"server.discover.coming-sunday": "Komt zondag",
-	"server.discover.new-episode-sun": "Nieuwe aflevering · zo"
+	"server.discover.new-episode-sun": "Nieuwe aflevering · zo",
+	"server.accounts.is-too-wide-list-your-home": "\"{entry}\" is te breed: zet je thuisnetwerk erin, zoals 192.168.1.0/24",
+	"server.accounts.is-not-a-network-use-one": "\"{entry}\" is geen netwerk: gebruik er een zoals 192.168.1.0/24 of één adres zoals 192.168.1.5",
+	"server.accounts.is-not-a-proxy-address-use": "\"{entry}\" is geen proxyadres: gebruik er een zoals 172.18.0.2 of een bereik zoals 172.18.0.0/16",
+	"server.accounts.is-too-wide-list-only-the": "\"{entry}\" is te breed: zet alleen de adressen van je proxy erin",
+	"server.accounts.list-at-most-proxies": "zet er hoogstens {n} proxy's in",
+	"server.accounts.list-at-most-networks": "zet er hoogstens {n} netwerken in",
+	"server.accounts.pick-a-person-who-exists-and": "kies een persoon die bestaat en aan staat",
+	"server.accounts.pick-a-person-for-local-visitors": "kies een persoon voor lokale bezoeken",
+	"server.accounts.there-is-no-owner-yet": "er is nog geen eigenaar",
+	"server.accounts.change-trusted-proxies-in-the-browser": "wijzig vertrouwde proxy's in de browser, ingelogd met je wachtwoord",
+	"server.accounts.you-reach-holyarrs-through-the-proxy": "je bereikt HolyArrs via de proxy op {ip}; laat die in de lijst staan"
 }

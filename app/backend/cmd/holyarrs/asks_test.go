@@ -366,6 +366,7 @@ func TestAlertsPerMomentOverHTTP(t *testing.T) {
 	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8","10.0.0.0/8"]}`, 200)
 	jar, _ := cookiejar.New(nil)
 	bare := &signedIn{t: t, base: r.srv.URL, c: &http.Client{Jar: jar}}
+	bare.csrf = localCSRF(t, r.srv.URL, bare.c)
 	if b := bare.call("DELETE", "/api/v1/alerts/"+itoa(mail.ID), "", 403); !strings.Contains(string(b), "sign in with your password") {
 		t.Fatalf("weak delete %s", b)
 	}
