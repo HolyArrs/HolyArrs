@@ -754,6 +754,27 @@ func widenPack(ctx context.Context, s *database.Store, d *domain.Download, slots
 	})
 }
 
+// claimPack swaps a Download's pack_files from was to next in one write, and
+// fails with ErrPackChanged when the stored list is no longer was. Widen
+// records its choice this way before it changes the Downloader, and swaps
+// back when the Downloader refuses.
+func claimPack(ctx context.Context, s *database.Store, id int64, was, next []domain.PackFile) error {
+	return s.Write(ctx, func(tx *sql.Tx) error {
+		var cur domain.Download
+		if err := database.Get(ctx, tx, "downloads", id, &cur); err != nil {
+			return err
+		}
+		a, _ := json.Marshal(cur.PackFiles)
+		b, _ := json.Marshal(was)
+		if string(a) != string(b) {
+			return ErrPackChanged
+		}
+		n, _ := json.Marshal(next)
+		_, err := tx.ExecContext(ctx, "UPDATE downloads SET pack_files = ? WHERE id = ?", string(n), id)
+		return err
+	})
+}
+
 // partialPacks lists a show's season packs fetched a few episodes at a time
 
 // that are still in the Downloader (newest first), for one season or every

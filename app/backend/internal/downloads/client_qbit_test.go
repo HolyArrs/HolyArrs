@@ -42,9 +42,15 @@ type fakeQbit struct {
 	// makes filePrio answer 500.
 	steps     []string
 	prioFails bool
+	// prioWait, set before the test starts, runs before each filePrio call
+	// takes the lock, so a test can hold a call open.
+	prioWait func()
 }
 
 func (f *fakeQbit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if f.prioWait != nil && r.URL.Path == "/api/v2/torrents/filePrio" {
+		f.prioWait()
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.refuse {

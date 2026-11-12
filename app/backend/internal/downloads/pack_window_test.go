@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -478,5 +479,73 @@ func TestPollKeepsAWidenThatLandedAfterItsRead(t *testing.T) {
 	d := w.download(t, id)
 	if !slices.Equal(d.SlotIDs, slots[:3]) || !d.PackFiles[2].On {
 		t.Fatalf("slots %v pack %+v", d.SlotIDs, d.PackFiles)
+	}
+}
+
+func TestWidenAtOnceNeverPicksTheSameEpisode(t *testing.T) {
+	w, m, slots := packWindowWorld(t, true)
+	ctx := context.Background()
+	id, err := m.Grab(ctx, w.slotID, w.relID, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finishWindow(t, w, id, slots[:2])
+	w.fake.steps = nil
+	// Hold the first filePrio call open so, without the lock, the second
+	// Widen reads the pack before the first records its pick.
+	var first sync.Once
+	w.fake.prioWait = func() { first.Do(func() { time.Sleep(300 * time.Millisecond) }) }
+	var wg sync.WaitGroup
+	got := make([]int, 2)
+	for k := range got {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			n, err := m.Widen(ctx, id, 1, domain.System)
+			if err != nil {
+				t.Errorf("widen: %v", err)
+			}
+			got[k] = n
+		}()
+	}
+	wg.Wait()
+	if got[0]+got[1] != 2 {
+		t.Fatalf("switched on %v", got)
+	}
+	w.fake.mu.Lock()
+	steps := slices.Clone(w.fake.steps)
+	w.fake.mu.Unlock()
+	if !slices.Equal(steps, []string{"prio 2=1", "prio 3=1"}) {
+		t.Fatalf("steps %v", steps)
+	}
+	if d := w.download(t, id); !slices.Equal(d.SlotIDs, slots) || !d.PackFiles[2].On || !d.PackFiles[3].On {
+		t.Fatalf("slots %v pack %+v", d.SlotIDs, d.PackFiles)
+	}
+}
+
+func TestWidenRefusedByTheDownloaderUndoesTheRecord(t *testing.T) {
+	w, m, slots := packWindowWorld(t, true)
+	ctx := context.Background()
+	id, err := m.Grab(ctx, w.slotID, w.relID, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finishWindow(t, w, id, slots[:2])
+	before := w.download(t, id)
+	w.fake.mu.Lock()
+	w.fake.prioFails = true
+	w.fake.mu.Unlock()
+	n, err := m.Widen(ctx, id, 1, domain.System)
+	if err == nil || n != 0 {
+		t.Fatalf("widen %d %v", n, err)
+	}
+	d := w.download(t, id)
+	if d.State != before.State || !slices.Equal(d.SlotIDs, before.SlotIDs) || d.PackFiles[2].On {
+		t.Fatalf("not undone (%v): %s %v %+v", err, d.State, d.SlotIDs, d.PackFiles)
+	}
+	var active sql.NullInt64
+	_ = w.s.Read().QueryRow("SELECT active_download_id FROM slots WHERE id = ?", slots[2]).Scan(&active)
+	if got := slotStates(t, w, slots[2:]); !slices.Equal(got, []string{"wanted", "wanted"}) || active.Valid {
+		t.Fatalf("slot states %v active %v", got, active)
 	}
 }

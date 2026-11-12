@@ -97,6 +97,7 @@ type Manager struct {
 	lastSend         map[string]time.Time
 	missed           map[int64]missCount // downloads missing from their Downloader, by id
 	crawl            map[int64]crawlMark // speed windows of the crawling torrent rule, by download id
+	packMu           sync.Mutex          // one Widen at a time
 }
 
 // missCount is how many syncs in a row a download was missing, the snapshot
