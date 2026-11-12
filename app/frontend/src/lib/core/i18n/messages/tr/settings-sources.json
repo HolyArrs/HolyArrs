@@ -72,5 +72,10 @@
 	"settings.sources.off": "Kaynaklar kapalı",
 	"settings.sources.offText": "HolyArrs arama yapmaz ve indirmez. İndiricine eklediğin indirmeler yine içe aktarılır.",
 	"settings.sources.openParts": "Bölümler'i aç",
-	"settings.sources.offState": "Kapalı"
+	"settings.sources.offState": "Kapalı",
+	"settings.sources.site": "Yerleşik site",
+	"settings.sources.siteLabel": "Site",
+	"settings.sources.addressSite": "Sitenin kendi adresi. Yalnızca site taşındıysa değiştirin.",
+	"settings.sources.siteKeyLabel": "Çerez veya RSS anahtarı",
+	"settings.sources.siteKeyHint": "Kendi hesabınızdan: tarayıcı çerezinden uid ve pass ya da RSS bağlantınızdan u ve tp. Şifreli saklanır."
 }

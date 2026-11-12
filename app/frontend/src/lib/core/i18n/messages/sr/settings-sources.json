@@ -72,5 +72,10 @@
 	"settings.sources.off": "Извори су искључени",
 	"settings.sources.offText": "HolyArrs не претражује и не преузима. Преузимања која додате у свом Преузимачу и даље се увозе.",
 	"settings.sources.openParts": "Отвори Делове",
-	"settings.sources.offState": "Искључено"
+	"settings.sources.offState": "Искључено",
+	"settings.sources.site": "Уграђени сајт",
+	"settings.sources.siteLabel": "Сајт",
+	"settings.sources.addressSite": "Сопствена адреса сајта. Промени је само ако се сајт преселио.",
+	"settings.sources.siteKeyLabel": "Колачић или RSS кључ",
+	"settings.sources.siteKeyHint": "Са сопственог налога: uid и pass из колачића прегледача или u и tp из твог RSS линка. Чува се шифровано."
 }

@@ -72,5 +72,10 @@
 	"settings.sources.off": "Kilder er slået fra",
 	"settings.sources.offText": "HolyArrs søger og henter ikke. Downloads, du tilføjer i din Downloader, bliver stadig importeret.",
 	"settings.sources.openParts": "Åbn Dele",
-	"settings.sources.offState": "Fra"
+	"settings.sources.offState": "Fra",
+	"settings.sources.site": "Indbygget side",
+	"settings.sources.siteLabel": "Side",
+	"settings.sources.addressSite": "Sidens egen adresse. Ret den kun, hvis siden er flyttet.",
+	"settings.sources.siteKeyLabel": "Cookie eller RSS-nøgle",
+	"settings.sources.siteKeyHint": "Fra din egen konto: uid og pass fra browserens cookie, eller u og tp fra dit RSS-link. Gemmes krypteret."
 }

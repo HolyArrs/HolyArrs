@@ -26648,6 +26648,21 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/sources/sites": {
+      "get": {
+        "description": "The sites HolyArrs can read directly as a Source, with no Prowlarr or Jackett: their id, name, address, media types, whether they need your own key, and their polite limits.",
+        "operationId": "listSourceSites",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "List built-in sites",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/sources/{id}": {
       "delete": {
         "description": "Its key, Releases and call record go too. Needs a password sign-in or an API key.",

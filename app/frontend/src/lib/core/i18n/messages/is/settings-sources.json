@@ -72,5 +72,10 @@
 	"settings.sources.off": "Slökkt er á Heimildum",
 	"settings.sources.offText": "HolyArrs leitar ekki og grípur ekki. Niðurhöl sem þú bætir við í Niðurhalaranum þínum eru samt flutt inn.",
 	"settings.sources.openParts": "Opna Hluta",
-	"settings.sources.offState": "Af"
+	"settings.sources.offState": "Af",
+	"settings.sources.site": "Innbyggð síða",
+	"settings.sources.siteLabel": "Síða",
+	"settings.sources.addressSite": "Eigið vistfang síðunnar. Breyttu því aðeins ef síðan hefur flutt.",
+	"settings.sources.siteKeyLabel": "Vafrakaka eða RSS-lykill",
+	"settings.sources.siteKeyHint": "Af þínum eigin aðgangi: uid og pass úr vafrakökunni, eða u og tp úr RSS-tenglinum þínum. Geymt dulkóðað."
 }

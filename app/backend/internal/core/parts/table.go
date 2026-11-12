@@ -266,6 +266,7 @@ var routeOwners = map[string]Owner{
 
 	// Sources, Downloaders and Downloads (linked apps are core).
 	"GET /api/v1/sources":                                        Core,
+	"GET /api/v1/sources/sites":                                  Core,
 	"GET /api/v1/bridges":                                        Core,
 	"POST /api/v1/bridges":                                       Core,
 	"POST /api/v1/bridges/find":                                  Core,

@@ -72,5 +72,10 @@
 	"settings.sources.off": "แหล่งที่มาปิดอยู่",
 	"settings.sources.offText": "HolyArrs ไม่ค้นหาและไม่คว้า ดาวน์โหลดที่คุณเพิ่มในตัวดาวน์โหลดของคุณยังถูกนำเข้า",
 	"settings.sources.openParts": "เปิดส่วนเสริม",
-	"settings.sources.offState": "ปิด"
+	"settings.sources.offState": "ปิด",
+	"settings.sources.site": "เว็บไซต์ในตัว",
+	"settings.sources.siteLabel": "เว็บไซต์",
+	"settings.sources.addressSite": "ที่อยู่ของเว็บไซต์เอง เปลี่ยนเฉพาะเมื่อเว็บไซต์ย้ายไป",
+	"settings.sources.siteKeyLabel": "คุกกี้หรือคีย์ RSS",
+	"settings.sources.siteKeyHint": "จากบัญชีของคุณเอง: uid และ pass จากคุกกี้ของเบราว์เซอร์ หรือ u และ tp จากลิงก์ RSS ของคุณ เก็บแบบเข้ารหัส"
 }

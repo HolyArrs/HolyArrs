@@ -72,5 +72,10 @@
 	"settings.sources.off": "Οι Πηγές είναι απενεργοποιημένες",
 	"settings.sources.offText": "Το HolyArrs δεν αναζητά και δεν πιάνει. Οι λήψεις που προσθέτετε στο Πρόγραμμα λήψης σας εξακολουθούν να εισάγονται.",
 	"settings.sources.openParts": "Άνοιγμα Ενοτήτων",
-	"settings.sources.offState": "Ανενεργό"
+	"settings.sources.offState": "Ανενεργό",
+	"settings.sources.site": "Ενσωματωμένος ιστότοπος",
+	"settings.sources.siteLabel": "Ιστότοπος",
+	"settings.sources.addressSite": "Η διεύθυνση του ίδιου του ιστότοπου. Αλλάξτε τη μόνο αν ο ιστότοπος μετακόμισε.",
+	"settings.sources.siteKeyLabel": "Cookie ή κλειδί RSS",
+	"settings.sources.siteKeyHint": "Από τον δικό σας λογαριασμό: uid και pass από το cookie του προγράμματος περιήγησης ή u και tp από τον σύνδεσμο RSS σας. Φυλάσσεται κρυπτογραφημένο."
 }

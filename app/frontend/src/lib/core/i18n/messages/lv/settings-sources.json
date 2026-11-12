@@ -72,5 +72,10 @@
 	"settings.sources.off": "Avoti ir izslēgti",
 	"settings.sources.offText": "HolyArrs nemeklē un neņem. Lejupielādes, ko pievienojat savā Lejupielādētājā, joprojām tiek importētas.",
 	"settings.sources.openParts": "Atvērt Daļas",
-	"settings.sources.offState": "Izslēgts"
+	"settings.sources.offState": "Izslēgts",
+	"settings.sources.site": "Iebūvēta vietne",
+	"settings.sources.siteLabel": "Vietne",
+	"settings.sources.addressSite": "Vietnes pašas adrese. Maini to tikai tad, ja vietne ir pārvākusies.",
+	"settings.sources.siteKeyLabel": "Sīkdatne vai RSS atslēga",
+	"settings.sources.siteKeyHint": "No sava konta: uid un pass no pārlūka sīkdatnes vai u un tp no tavas RSS saites. Glabājas šifrēti."
 }

@@ -217,6 +217,7 @@ GET /api/v1/settings/url-base auth=settings scope=read assurance=false part=core
 GET /api/v1/settings/watch-history auth=owner scope=admin assurance=false part=media
 GET /api/v1/shows/lookup auth=signed_in scope=read assurance=false part=shows
 GET /api/v1/sources auth=manage_library scope=read assurance=false part=core
+GET /api/v1/sources/sites auth=manage_library scope=read assurance=false part=core
 GET /api/v1/sources/{id}/stats auth=manage_library scope=read assurance=false part=core
 GET /api/v1/subtitle-sites auth=manage_library scope=read assurance=false part=subtitles
 GET /api/v1/subtitle-sites/kinds auth=manage_library scope=read assurance=false part=subtitles

@@ -354,6 +354,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/events":                                         webserver.PermManageLibrary,
 	"GET /api/v1/jobs":                                           webserver.PermManageLibrary,
 	"GET /api/v1/sources":                                        webserver.PermManageLibrary,
+	"GET /api/v1/sources/sites":                                  webserver.PermManageLibrary,
 	"GET /api/v1/sources/{id}/stats":                             webserver.PermManageLibrary,
 	"POST /api/v1/sources":                                       webserver.PermSettings,
 	"PUT /api/v1/sources/{id}":                                   webserver.PermSettings,

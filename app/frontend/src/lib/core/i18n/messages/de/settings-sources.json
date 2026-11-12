@@ -72,5 +72,10 @@
 	"settings.sources.off": "Quellen sind aus",
 	"settings.sources.offText": "HolyArrs sucht und holt nichts. Downloads, die du im Downloader hinzufügst, werden weiter importiert.",
 	"settings.sources.openParts": "Teile öffnen",
-	"settings.sources.offState": "Aus"
+	"settings.sources.offState": "Aus",
+	"settings.sources.site": "Eingebaute Seite",
+	"settings.sources.siteLabel": "Seite",
+	"settings.sources.addressSite": "Die eigene Adresse der Seite. Ändere sie nur, wenn die Seite umgezogen ist.",
+	"settings.sources.siteKeyLabel": "Cookie oder RSS-Schlüssel",
+	"settings.sources.siteKeyHint": "Aus deinem eigenen Konto: uid und pass aus dem Browser-Cookie oder u und tp aus deinem RSS-Link. Wird verschlüsselt gespeichert."
 }

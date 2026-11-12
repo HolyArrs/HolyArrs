@@ -72,5 +72,10 @@
 	"settings.sources.off": "Allikad on väljas",
 	"settings.sources.offText": "HolyArrs ei otsi ega hangi. Allalaadimised, mille lisad oma Allalaadijas, imporditakse endiselt.",
 	"settings.sources.openParts": "Ava Moodulid",
-	"settings.sources.offState": "Väljas"
+	"settings.sources.offState": "Väljas",
+	"settings.sources.site": "Sisseehitatud sait",
+	"settings.sources.siteLabel": "Sait",
+	"settings.sources.addressSite": "Saidi enda aadress. Muuda seda ainult siis, kui sait on kolinud.",
+	"settings.sources.siteKeyLabel": "Küpsis või RSS-võti",
+	"settings.sources.siteKeyHint": "Oma kontolt: uid ja pass brauseri küpsisest või u ja tp oma RSS-lingist. Hoitakse krüpteeritult."
 }
