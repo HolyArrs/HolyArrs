@@ -12,6 +12,7 @@ DELETE /api/v1/downloaders/{id} auth=settings scope=write assurance=false part=c
 DELETE /api/v1/explore/strip/counts auth=signed_in scope=write assurance=false part=media
 DELETE /api/v1/held auth=manage_library scope=write assurance=false part=media
 DELETE /api/v1/held/{id} auth=manage_library scope=write assurance=false part=media
+DELETE /api/v1/hidden/{id} auth=users scope=admin assurance=false part=media
 DELETE /api/v1/library-folders/{id} auth=settings scope=write assurance=false part=core
 DELETE /api/v1/media-servers/{id} auth=settings scope=write assurance=false part=core
 DELETE /api/v1/metadata/album/{mbid}/follow auth=signed_in scope=write assurance=false part=music
@@ -34,9 +35,11 @@ DELETE /api/v1/users/invites/{id} auth=users scope=admin assurance=false part=co
 DELETE /api/v1/users/{id}/sessions/{sid} auth=users scope=admin assurance=false part=core
 DELETE /indexer/{id} auth=unlisted scope=admin assurance=false part=-
 DELETE /movie/{id} auth=unlisted scope=admin assurance=false part=-
+DELETE /notification/{id} auth=unlisted scope=admin assurance=false part=-
 DELETE /radarr/ auth=manage_library scope=compat assurance=false part=movies
 DELETE /series/{id} auth=unlisted scope=admin assurance=false part=-
 DELETE /sonarr/ auth=manage_library scope=compat assurance=false part=shows
+DELETE /tag/{id} auth=unlisted scope=admin assurance=false part=-
 GET / auth=self scope=read assurance=false part=core
 GET /.well-known/oauth-authorization-server auth=public scope=admin assurance=false part=core
 GET /.well-known/oauth-protected-resource auth=public scope=admin assurance=false part=core
@@ -118,6 +121,7 @@ GET /api/v1/health/checks auth=manage_library scope=read assurance=false part=co
 GET /api/v1/health/disks auth=manage_library scope=read assurance=false part=core
 GET /api/v1/health/states auth=manage_library scope=health_read assurance=false part=core
 GET /api/v1/held auth=manage_library scope=read assurance=false part=media
+GET /api/v1/hidden auth=users scope=admin assurance=false part=media
 GET /api/v1/holding auth=manage_library scope=read assurance=false part=media
 GET /api/v1/home auth=signed_in scope=read assurance=false part=media
 GET /api/v1/imports auth=manage_library scope=read assurance=false part=core
@@ -127,6 +131,8 @@ GET /api/v1/jobs/{id} auth=manage_library scope=read assurance=false part=core
 GET /api/v1/library-folders auth=manage_library scope=read assurance=false part=core
 GET /api/v1/library/copies auth=manage_library scope=read assurance=false part=movies
 GET /api/v1/library/search auth=signed_in scope=read assurance=false part=media
+GET /api/v1/library/stats auth=manage_library scope=admin assurance=false part=media
+GET /api/v1/library/stats/watched auth=manage_library scope=admin assurance=false part=media
 GET /api/v1/logs auth=users scope=admin assurance=false part=core
 GET /api/v1/logs/download auth=users scope=admin assurance=false part=core
 GET /api/v1/mcp auth=signed_in scope=mcp assurance=false part=core
@@ -160,6 +166,7 @@ GET /api/v1/my/alerts auth=signed_in scope=read assurance=false part=core
 GET /api/v1/my/follows auth=signed_in scope=read assurance=false part=wishlist
 GET /api/v1/my/plex-watchlist auth=signed_in scope=read assurance=false part=wishlist
 GET /api/v1/my/profile auth=signed_in scope=read assurance=false part=core
+GET /api/v1/my/views auth=signed_in scope=read assurance=false part=core
 GET /api/v1/needs-decision auth=manage_library scope=read assurance=false part=media
 GET /api/v1/never-add auth=manage_library scope=read assurance=false part=media
 GET /api/v1/openapi.json auth=signed_in scope=read assurance=false part=core
@@ -184,10 +191,12 @@ GET /api/v1/searches auth=manage_library scope=read assurance=false part=media
 GET /api/v1/settings/ai auth=signed_in scope=admin assurance=false part=core
 GET /api/v1/settings/alerts auth=settings scope=read assurance=false part=core
 GET /api/v1/settings/asks auth=settings scope=read assurance=false part=wishlist
+GET /api/v1/settings/asks/plex-friends auth=users scope=admin assurance=false part=wishlist
 GET /api/v1/settings/downloaders auth=settings scope=read assurance=false part=core
 GET /api/v1/settings/files auth=manage_library scope=read assurance=false part=media
 GET /api/v1/settings/health auth=settings scope=read assurance=false part=core
 GET /api/v1/settings/import-folders auth=settings scope=read assurance=false part=media
+GET /api/v1/settings/metadata auth=settings scope=read assurance=false part=core
 GET /api/v1/settings/music auth=manage_library scope=read assurance=false part=music
 GET /api/v1/settings/naming auth=manage_library scope=read assurance=false part=media
 GET /api/v1/settings/old-app-api auth=settings scope=admin assurance=false part=core
@@ -196,11 +205,13 @@ GET /api/v1/settings/search auth=settings scope=read assurance=false part=media
 GET /api/v1/settings/shows auth=manage_library scope=read assurance=false part=shows
 GET /api/v1/settings/status auth=settings scope=read assurance=false part=core
 GET /api/v1/settings/subtitles auth=settings scope=read assurance=false part=subtitles
+GET /api/v1/settings/subtitles/translator auth=settings scope=read assurance=false part=subtitles
 GET /api/v1/settings/title-defaults auth=manage_library scope=read assurance=false part=media
 GET /api/v1/settings/trakt-key auth=settings scope=admin assurance=false part=core
 GET /api/v1/settings/trakt-token auth=owner scope=admin assurance=false part=core
 GET /api/v1/settings/ui auth=signed_in scope=read assurance=false part=core
 GET /api/v1/settings/url-base auth=settings scope=read assurance=false part=core
+GET /api/v1/settings/watch-history auth=owner scope=admin assurance=false part=media
 GET /api/v1/shows/lookup auth=signed_in scope=read assurance=false part=shows
 GET /api/v1/sources auth=manage_library scope=read assurance=false part=core
 GET /api/v1/sources/{id}/stats auth=manage_library scope=read assurance=false part=core
@@ -216,6 +227,7 @@ GET /api/v1/titles/owned auth=signed_in scope=read assurance=false part=media
 GET /api/v1/titles/{id} auth=signed_in scope=read assurance=false part=title
 GET /api/v1/titles/{id}/albums auth=signed_in scope=read assurance=false part=music
 GET /api/v1/titles/{id}/copies auth=manage_library scope=read assurance=false part=title
+GET /api/v1/titles/{id}/episode-groups auth=manage_library scope=read assurance=false part=shows
 GET /api/v1/titles/{id}/episodes auth=signed_in scope=read assurance=false part=shows
 GET /api/v1/titles/{id}/follow auth=signed_in scope=read assurance=false part=wishlist
 GET /api/v1/titles/{id}/people auth=signed_in scope=read assurance=false part=title
@@ -239,7 +251,9 @@ GET /api/v1/wiki/{kind}/{id} auth=signed_in scope=read assurance=false part=movi
 GET /calendar auth=unlisted scope=admin assurance=false part=-
 GET /command/{id} auth=unlisted scope=admin assurance=false part=-
 GET /episode auth=unlisted scope=admin assurance=false part=-
+GET /exclusions/paged auth=unlisted scope=admin assurance=false part=-
 GET /healthz auth=unlisted scope=admin assurance=false part=core
+GET /importlistexclusion/paged auth=unlisted scope=admin assurance=false part=-
 GET /indexer auth=unlisted scope=admin assurance=false part=-
 GET /indexer/schema auth=unlisted scope=admin assurance=false part=-
 GET /indexer/{id} auth=unlisted scope=admin assurance=false part=-
@@ -251,6 +265,7 @@ GET /mediacover/{id}/{file} auth=unlisted scope=admin assurance=false part=-
 GET /movie auth=unlisted scope=admin assurance=false part=-
 GET /movie/lookup auth=unlisted scope=admin assurance=false part=-
 GET /movie/{id} auth=unlisted scope=admin assurance=false part=-
+GET /notification auth=unlisted scope=admin assurance=false part=-
 GET /oauth/authorize auth=public scope=admin assurance=false part=core
 GET /qualityprofile auth=unlisted scope=admin assurance=false part=-
 GET /queue auth=unlisted scope=admin assurance=false part=-
@@ -264,6 +279,7 @@ GET /series/{id} auth=unlisted scope=admin assurance=false part=-
 GET /sonarr/ auth=manage_library scope=compat assurance=false part=shows
 GET /system/status auth=unlisted scope=admin assurance=false part=-
 GET /tag auth=unlisted scope=admin assurance=false part=-
+GET /tag/detail auth=unlisted scope=admin assurance=false part=-
 GET /wanted/missing auth=unlisted scope=admin assurance=false part=-
 POST / auth=unlisted scope=admin assurance=false part=-
 POST /api/v1/alerts auth=settings scope=write assurance=false part=core
@@ -349,6 +365,7 @@ POST /api/v1/downloaders/{id}/slow-mode auth=manage_library scope=write assuranc
 POST /api/v1/downloaders/{id}/speed-limits auth=manage_library scope=write assurance=false part=core
 POST /api/v1/downloaders/{id}/test auth=settings scope=write assurance=false part=core
 POST /api/v1/downloaders/{id}/torrents auth=manage_library scope=write assurance=false part=core
+POST /api/v1/downloads/clear-now auth=manage_library scope=write assurance=false part=core
 POST /api/v1/downloads/matches/run auth=manage_library scope=write assurance=false part=core
 POST /api/v1/downloads/matches/{id}/pick auth=manage_library scope=write assurance=false part=core
 POST /api/v1/downloads/pause-all auth=manage_library scope=write assurance=false part=core
@@ -364,7 +381,9 @@ POST /api/v1/explore/counts auth=signed_in scope=write assurance=false part=medi
 POST /api/v1/explore/strip/counts auth=signed_in scope=write assurance=false part=media
 POST /api/v1/files/{id}/subtitles/choices auth=manage_library scope=write assurance=false part=subtitles
 POST /api/v1/files/{id}/subtitles/choose auth=manage_library scope=write assurance=false part=subtitles
+POST /api/v1/files/{id}/subtitles/translate auth=manage_library scope=write assurance=false part=subtitles
 POST /api/v1/health/checks/run auth=manage_library scope=write assurance=false part=core
+POST /api/v1/hidden auth=users scope=admin assurance=false part=media
 POST /api/v1/holding/clean auth=manage_library scope=write assurance=false part=media
 POST /api/v1/holding/restore auth=manage_library scope=write assurance=false part=media
 POST /api/v1/library-folders auth=settings scope=write assurance=false part=core
@@ -410,8 +429,10 @@ POST /api/v1/search/better auth=manage_library scope=write assurance=false part=
 POST /api/v1/search/feed-check auth=manage_library scope=write assurance=false part=media
 POST /api/v1/search/missing auth=manage_library scope=write assurance=false part=media
 POST /api/v1/settings/import-secrets auth=owner scope=admin assurance=false part=core
+POST /api/v1/settings/metadata/test auth=settings scope=write assurance=false part=core
 POST /api/v1/settings/naming/example auth=manage_library scope=write assurance=false part=media
 POST /api/v1/settings/old-app-api/keys/{side} auth=settings scope=admin assurance=true part=core
+POST /api/v1/settings/subtitles/translator/test auth=settings scope=write assurance=false part=subtitles
 POST /api/v1/shows auth=manage_library scope=write assurance=false part=shows
 POST /api/v1/sources auth=settings scope=write assurance=false part=core
 POST /api/v1/sources/check auth=settings scope=write assurance=false part=core
@@ -437,6 +458,7 @@ POST /api/v1/titles/{id}/move auth=manage_library scope=write assurance=false pa
 POST /api/v1/titles/{id}/refresh auth=manage_library scope=write assurance=false part=title
 POST /api/v1/titles/{id}/rename auth=manage_library scope=write assurance=false part=title
 POST /api/v1/titles/{id}/search auth=manage_library scope=write assurance=false part=title
+POST /api/v1/titles/{id}/seasons/{number}/pack-next auth=manage_library scope=write assurance=false part=shows
 POST /api/v1/titles/{id}/versions auth=manage_library scope=write assurance=false part=title
 POST /api/v1/titles/{id}/versions/{vid}/adopt auth=manage_library scope=write assurance=false part=title
 POST /api/v1/users/invites auth=users scope=admin assurance=true part=core
@@ -449,6 +471,8 @@ POST /indexer auth=unlisted scope=admin assurance=false part=-
 POST /indexer/test auth=unlisted scope=admin assurance=false part=-
 POST /mcp auth=signed_in scope=mcp assurance=false part=core
 POST /movie auth=unlisted scope=admin assurance=false part=-
+POST /notification auth=unlisted scope=admin assurance=false part=-
+POST /notification/test auth=unlisted scope=admin assurance=false part=-
 POST /oauth/register auth=public scope=admin assurance=false part=core
 POST /oauth/token auth=public scope=admin assurance=false part=core
 POST /radarr/ auth=manage_library scope=compat assurance=false part=movies
@@ -470,6 +494,7 @@ PUT /api/v1/downloads/{id}/edition auth=manage_library scope=write assurance=fal
 PUT /api/v1/downloads/{id}/files auth=manage_library scope=admin assurance=false part=core
 PUT /api/v1/episodes/{id} auth=manage_library scope=write assurance=false part=shows
 PUT /api/v1/library-folders/{id} auth=settings scope=write assurance=false part=core
+PUT /api/v1/library-folders/{id}/path auth=settings scope=write assurance=false part=core
 PUT /api/v1/media-servers/{id} auth=settings scope=write assurance=false part=core
 PUT /api/v1/metadata/album/{mbid}/follow auth=signed_in scope=write assurance=false part=music
 PUT /api/v1/metadata/movie/{tmdb_id}/follow auth=signed_in scope=write assurance=false part=wishlist
@@ -478,6 +503,7 @@ PUT /api/v1/my/alerts auth=signed_in scope=write assurance=false part=core
 PUT /api/v1/my/language auth=signed_in scope=write assurance=false part=core
 PUT /api/v1/my/plex-watchlist auth=signed_in scope=write assurance=false part=wishlist
 PUT /api/v1/my/profile auth=signed_in scope=write assurance=false part=core
+PUT /api/v1/my/views auth=signed_in scope=write assurance=false part=core
 PUT /api/v1/outside-lists/{id} auth=settings scope=write assurance=false part=media
 PUT /api/v1/own-traits/{id} auth=settings scope=write assurance=false part=media
 PUT /api/v1/pick-rules/{id} auth=settings scope=write assurance=false part=media
@@ -489,6 +515,7 @@ PUT /api/v1/settings/downloaders auth=settings scope=write assurance=false part=
 PUT /api/v1/settings/files auth=settings scope=write assurance=false part=media
 PUT /api/v1/settings/health auth=settings scope=write assurance=false part=core
 PUT /api/v1/settings/import-folders auth=users scope=admin assurance=false part=media
+PUT /api/v1/settings/metadata auth=settings scope=write assurance=false part=core
 PUT /api/v1/settings/music auth=settings scope=write assurance=false part=music
 PUT /api/v1/settings/naming auth=settings scope=write assurance=false part=media
 PUT /api/v1/settings/old-app-api auth=settings scope=write assurance=false part=core
@@ -496,11 +523,13 @@ PUT /api/v1/settings/release-gate auth=settings scope=write assurance=false part
 PUT /api/v1/settings/search auth=settings scope=write assurance=false part=media
 PUT /api/v1/settings/shows auth=settings scope=write assurance=false part=shows
 PUT /api/v1/settings/subtitles auth=settings scope=write assurance=false part=subtitles
+PUT /api/v1/settings/subtitles/translator auth=settings scope=write assurance=false part=subtitles
 PUT /api/v1/settings/title-defaults auth=settings scope=write assurance=false part=media
 PUT /api/v1/settings/trakt-key auth=settings scope=write assurance=false part=core
 PUT /api/v1/settings/trakt-token auth=owner scope=admin assurance=false part=core
 PUT /api/v1/settings/ui auth=settings scope=write assurance=false part=core
 PUT /api/v1/settings/url-base auth=settings scope=write assurance=false part=core
+PUT /api/v1/settings/watch-history auth=owner scope=admin assurance=false part=media
 PUT /api/v1/sources/{id} auth=settings scope=write assurance=false part=core
 PUT /api/v1/subtitle-sites/{id} auth=settings scope=write assurance=false part=subtitles
 PUT /api/v1/titles/{id} auth=manage_library scope=write assurance=false part=title
@@ -515,6 +544,8 @@ PUT /episode/monitor auth=unlisted scope=admin assurance=false part=-
 PUT /indexer/{id} auth=unlisted scope=admin assurance=false part=-
 PUT /movie auth=unlisted scope=admin assurance=false part=-
 PUT /movie/{id} auth=unlisted scope=admin assurance=false part=-
+PUT /notification auth=unlisted scope=admin assurance=false part=-
+PUT /notification/{id} auth=unlisted scope=admin assurance=false part=-
 PUT /radarr/ auth=manage_library scope=compat assurance=false part=movies
 PUT /series auth=unlisted scope=admin assurance=false part=-
 PUT /series/{id} auth=unlisted scope=admin assurance=false part=-

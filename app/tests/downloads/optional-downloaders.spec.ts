@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { plainForm } from '../helpers/helpers.ts';
 
-type Kind = 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge' | 'rtorrent';
+type Kind = 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge' | 'rtorrent' | 'aria2';
 
 const configDir = process.env.HOLYARRS_OPTIONAL_UI_CONFIG;
 const libraryDir = process.env.HOLYARRS_OPTIONAL_UI_LIBRARY;
@@ -16,11 +16,12 @@ test.skip(!process.env.HOLYARRS_OPTIONAL_UI_URL || !configDir || !libraryDir || 
 const owner = { name: 'optional-ui-owner', password: `pw-${crypto.randomUUID()}` };
 const savedSecrets = new Map<Kind, string>();
 
-const kinds: { kind: Kind; label: string; username: boolean; secretLabel: 'Password' | 'API key'; category: string }[] = [
+const kinds: { kind: Kind; label: string; username: boolean; secretLabel: 'Password' | 'API key' | 'Secret token'; category: string }[] = [
 	{ kind: 'qbittorrent', label: 'qBittorrent', username: true, secretLabel: 'Password', category: 'holyarrs' },
 	{ kind: 'transmission', label: 'Transmission', username: true, secretLabel: 'Password', category: 'holyarrs' },
 	{ kind: 'deluge', label: 'Deluge', username: false, secretLabel: 'Password', category: 'holyarrs' },
 	{ kind: 'rtorrent', label: 'rTorrent', username: true, secretLabel: 'Password', category: 'holyarrs' },
+	{ kind: 'aria2', label: 'aria2', username: false, secretLabel: 'Secret token', category: 'holyarrs' },
 	{ kind: 'sabnzbd', label: 'SABnzbd', username: false, secretLabel: 'API key', category: 'movies' },
 	{ kind: 'nzbget', label: 'NZBGet', username: true, secretLabel: 'Password', category: 'holyarrs' }
 ];
@@ -69,6 +70,8 @@ async function bootstrap(page: Page) {
 			if (!response.ok) throw new Error(`first-run API ${path} returned ${response.status}`);
 		}
 		await save('/library-folders', 'POST', { path: folder, kind: 'movie', label: 'Optional UI Library' });
+		// End the first run too, or the wizard gate sends every page to the welcome steps.
+		await save('/auth/setup/done', 'POST', {});
 		return true;
 	}, { folder: libraryDir! });
 	expect(firstRun).toBe(true);
@@ -90,8 +93,14 @@ async function verifyFieldMatrix(page: Page) {
 		await expect(page.getByLabel('Username')).toHaveCount(item.username ? 1 : 0);
 		await expect(page.getByLabel('API key', { exact: true })).toHaveCount(item.secretLabel === 'API key' ? 1 : 0);
 		await expect(page.getByLabel('Password', { exact: true })).toHaveCount(item.secretLabel === 'Password' ? 1 : 0);
+		await expect(page.getByLabel('Secret token', { exact: true })).toHaveCount(item.secretLabel === 'Secret token' ? 1 : 0);
 		if (item.kind === 'deluge') await expect(page.getByText(/connected to a daemon with the Label plugin on/)).toBeVisible();
 		if (item.kind === 'rtorrent') await expect(page.getByText(/plugins\/httprpc\/action\.php/)).toBeVisible();
+		if (item.kind === 'aria2') {
+			await expect(page.getByText(/JSON-RPC address on port 6800 ending in \/jsonrpc/)).toBeVisible();
+			// aria2 can run without an rpc-secret, so the field may stay empty.
+			await expect(page.getByLabel('Secret token', { exact: true })).not.toHaveAttribute('required');
+		}
 	}
 	await noSidewaysScroll(page);
 	await seriousA11y(page, 'desktop add form');

@@ -62,6 +62,17 @@ type ArtworkCache struct {
 	trims   int
 }
 
+// TVMazeImages is TVmaze's picture host (posters for shows whose details
+// come from TVmaze); matched as an exact https prefix.
+const TVMazeImages = "https://static.tvmaze.com/"
+
+// PictureSources is the app's ArtworkCache.Allowed list for the metadata
+// server at server: TMDB, the server's own pictures, its older picture
+// address and TVmaze.
+func PictureSources(server string) []string {
+	return []string{metadata.ImageBase + "/", server + "/v1/img/", metadata.OldPictures(server), TVMazeImages}
+}
+
 // ErrArtworkURL means a picture URL is not from an allowed place.
 var ErrArtworkURL = errors.New("picture URL is not from an allowed host")
 

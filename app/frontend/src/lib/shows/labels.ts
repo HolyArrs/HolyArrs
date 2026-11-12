@@ -34,7 +34,8 @@ export const episodeOrders: [string, string, string][] = [
 
 export const detailsSources: [string, string][] = [
 	['tmdb', 'TMDB'],
-	['tvmaze', 'TVMaze']
+	['tvmaze', 'TVMaze'],
+	['tvdb', 'TheTVDB']
 ];
 
 export function label(list: [string, string, ...string[]][], v: string | undefined): string {
@@ -124,4 +125,12 @@ export function keepOffNote(seasonKept: boolean, showKept: boolean): string {
 // Total aired episodes across all seasons.
 function airedOf(s: ShowInfo): number {
 	return s.seasons.reduce((n, x) => n + x.aired, 0);
+}
+
+// packWindowValue is the episodes-ahead number the server takes: 0 is off,
+// otherwise a whole number from 1 to 10. A blank field while typing counts as 1.
+export function packWindowValue(n: number): number {
+	if (Number.isNaN(n)) return 1;
+	if (n <= 0) return 0;
+	return Math.min(10, Math.max(1, Math.round(n)));
 }

@@ -44,6 +44,8 @@ type AddRequest struct {
 	ReconcileOnly bool
 	// Skip holds ids that belong to other Download rows, so a by-name lookup never takes them for this Release.
 	Skip map[string]bool
+	// Stopped adds the torrent without starting it, so its files can be chosen first (qBittorrent).
+	Stopped bool
 }
 
 // File is one file inside a download.
@@ -53,6 +55,8 @@ type File struct {
 	// Progress runs from 0 to 1.
 	// Speed is bytes per second and ETA is seconds, 0 when unknown.
 	Progress float64 `json:"progress"`
+	// Priority is the client's file priority, 0 when skipped (qBittorrent; other clients leave it 0).
+	Priority int `json:"priority"`
 }
 
 // Job is one download as the engine sees it.
@@ -114,6 +118,13 @@ type Engine interface {
 	List(ctx context.Context, category string) ([]Job, error)
 	Get(ctx context.Context, id string) (Job, error)
 	Remove(ctx context.Context, id string, deleteFiles bool) error
+}
+
+// ActiveLister is the optional read-only part of an engine that lists only what is still
+// downloading, plus the items with the given ids, so a background read does not fetch
+// every finished item. An id the client no longer has is left out.
+type ActiveLister interface {
+	ListActive(ctx context.Context, ids []string) ([]Job, error)
 }
 
 // AllLister is the optional read-only part of a torrent engine that lists every item in the client, whatever its category, for the Downloads screen.

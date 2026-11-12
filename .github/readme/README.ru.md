@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.ar.md">العربية</a> · <a href="README.pt-BR.md">Português</a> · <b>Русский</b> · <a href="README.ja.md">日本語</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ko.md">한국어</a> · <a href="README.it.md">Italiano</a> · <a href="README.pl.md">Polski</a> · <a href="README.nl.md">Nederlands</a> · <a href="README.tr.md">Türkçe</a> · <a href="README.uk.md">Українська</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <b>Русский</b> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="LANGUAGES.md">Другие языки</a></p>
 
 <p align="center">
   <picture>
@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent и ruTorrent как загрузчик**, в том числе на сидбоксе. Готовые загрузки из Usenet теперь перемещаются в библиотеку, а не копируются. [Что нового](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: теперь на 44 языках**, включая письмо справа налево. aria2 работает как загрузчик, а сезонные паки качаются по нескольку серий. [Что нового](https://holyarrs.com/whats-new/)
 
 > Каждый постер, трейлер и оценка в твоём HolyArrs приходят с сервера, который я держу и оплачиваю сам, чтобы он оставался бесплатным для всех. Если HolyArrs сделал твой киновечер чуть лучше, спонсорство помогает держать свет включённым для всех нас 💛
 >
@@ -152,7 +150,7 @@ docker compose up -d
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Загрузчики: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Медиасерверы: Plex, Jellyfin, Emby." /></picture>
 
-- **Загрузчики:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Загрузчики:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Медиасерверы:** Plex, Jellyfin, Emby
 - **Sources:** любой индексер Torznab или Newznab, а также Prowlarr или Jackett
 - **Переносит настройки из:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -222,7 +220,7 @@ HolyArrs только читает ваши старые приложения и
 | Тег | Для чего |
 | :----: | --- |
 | `latest` | Самая новая версия. |
-| `1.0.19` | Одна точная версия. Никогда не сдвигается. |
+| `1.1.0` | Одна точная версия. Никогда не сдвигается. |
 
 ## Использование
 

@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Innstillinger",
+	"settings.layout.home": "Hjem",
+	"settings.layout.sections": "Innstillingsseksjoner",
+	"settings.layout.needsAttention": "Trenger oppmerksomhet",
+	"settings.layout.needsAttentionLower": "trenger oppmerksomhet",
+	"settings.layout.blocked": "Du kan ikke endre dette",
+	"settings.layout.backToSettings": "Tilbake til Innstillinger",
+	"settings.layout.setPasswordFirst": "Sett et passord først",
+	"settings.layout.setPasswordDesc": "Nøkler, passord, personer og sikkerhetskopier krever et HolyArrs-passord. Du har ikke noe ennå.",
+	"settings.layout.setPasswordLabel": "Sett et passord",
+	"settings.layout.confirmPasswordLabel": "Bekreft passordet ditt",
+	"settings.layout.confirmPasswordDesc": "Nøkler, passord, personer og sikkerhetskopier krever passordet ditt. Gjelder i 10 minutter."
+}

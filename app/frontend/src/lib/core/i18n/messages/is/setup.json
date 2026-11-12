@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Tengja aftur",
+	"setup.testNow": "Prófa núna",
+	"setup.movies": "Kvikmyndir",
+	"setup.tvShows": "Sjónvarpsþættir",
+	"setup.music": "Tónlist",
+	"setup.subtitles": "Skjátextar",
+	"setup.fullPath": "Notaðu fulla slóð möppunnar, eins og {path}.",
+	"setup.folderUsed": "Þessi mappa er þegar í notkun eða er inni í möppu sem er það.",
+	"setup.folderMissing": "Þessi mappa er ekki til. Athugaðu slóðina.",
+	"setup.addFolderOrOff": "Bættu við möppu eða slökktu á þessu.",
+	"setup.notAnswering": "HolyArrs svarar ekki. Reyndu aftur eftir augnablik.",
+	"setup.addUserPasswordHint": "Bættu við notandanafni og lykilorði.",
+	"setup.folders": "Möppur",
+	"setup.downloader": "Niðurhalari",
+	"setup.source": "Heimild"
+}

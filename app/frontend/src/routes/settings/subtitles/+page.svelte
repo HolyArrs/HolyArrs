@@ -11,7 +11,7 @@
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
-	import { LanguageWants as WishEditor, accountMissing, accountWords, kindCovers, siteBody, siteForm, siteState, wishProblem, type Language, type SiteForm, type SiteKind, type SiteView, type SubtitleSettings } from '#lib/subtitles/index.ts';
+	import { LanguageWants as WishEditor, accountMissing, accountWords, kindCovers, siteBody, siteForm, siteState, translatorBody, wishProblem, type Language, type Translator, type TranslatorForm, type SiteForm, type SiteKind, type SiteView, type SubtitleSettings } from '#lib/subtitles/index.ts';
 	import { onMount } from 'svelte';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { testCount } from '#lib/core/test-tag.ts';
@@ -31,6 +31,48 @@
 	let error = $state('');
 	let setBusy = $state(false);
 	let setError = $state('');
+
+	// The translator saves on its own: its key never joins the page's draft.
+	let tr = $state<TranslatorForm | null>(null);
+	let trSaved = $state('');
+	const trDirty = $derived(!!tr && !!trSaved && JSON.stringify(tr) !== trSaved);
+	let trBusy = $state(false);
+	let trTesting = $state(false);
+	let trError = $state('');
+	let trResult = $state<{ ok: boolean; message: string; models: string[] } | null>(null);
+	const trReady = $derived(!!tr && JSON.parse(trSaved || '{}').kind !== '' && !!JSON.parse(trSaved || '{}').url);
+
+	function setTranslator(x: Translator) {
+		tr = { ...x, key: '', clear_key: false };
+		trSaved = JSON.stringify(tr);
+	}
+
+	async function saveTranslator(e: SubmitEvent) {
+		e.preventDefault();
+		if (!tr) return;
+		trBusy = true;
+		trError = '';
+		try {
+			setTranslator(await api.put<Translator>('/settings/subtitles/translator', translatorBody(tr)));
+			toasts.push(t('settings.subtitles.trSaved'), 'ok');
+			if (tr.kind) await testTranslator();
+		} catch (err) {
+			trError = message(err);
+		} finally {
+			trBusy = false;
+		}
+	}
+
+	async function testTranslator() {
+		trTesting = true;
+		try {
+			trResult = await api.post<{ ok: boolean; message: string; models: string[] }>('/settings/subtitles/translator/test');
+		} catch (err) {
+			trResult = { ok: false, message: message(err), models: [] };
+		} finally {
+			trTesting = false;
+		}
+	}
 
 	let editing = $state<SiteView | null>(null);
 	let isNew = $state(false);
@@ -60,6 +102,7 @@
 				saved = JSON.stringify(s);
 			}),
 			api.get<{ languages: Language[] }>('/subtitles/languages').then((r) => (langs = r.languages)),
+			api.get<Translator>('/settings/subtitles/translator').then(setTranslator),
 			...(session.held('subtitle_sites')
 				? []
 				: [api.get<{ kinds: SiteKind[] }>('/subtitle-sites/kinds').then((r) => (kinds = r.kinds)), loadSites()])
@@ -194,7 +237,7 @@
 	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
 	<form class="sc-form" id="subtitle-form" onsubmit={saveSettings} aria-label={t('settings.subtitles.defaultLangs')}>
 		<SettingsCard id="lang-card" title={t('settings.subtitles.defaultLangs')} description={t('settings.subtitles.defaultLangsDesc')}>
-			<WishEditor bind:wants={settings.languages} {langs} id="def" />
+			<WishEditor bind:wants={settings.languages} {langs} id="def" translate={trReady} />
 			{#if settings.languages.length}<p class="xs muted hint-block">
 				<b>{t('settings.subtitles.hiLabel')}</b> {t('settings.subtitles.hiText')}
 				<b>{t('settings.subtitles.forcedLabel')}</b> {t('settings.subtitles.forcedText')}
@@ -223,6 +266,53 @@
 		</SettingsCard>
 		{#if setError}<p class="form-error" role="alert">{setError}</p>{/if}
 	</form>
+	{#if tr}
+		<form class="sc-form" onsubmit={saveTranslator} aria-label={t('settings.subtitles.translate')}>
+			<SettingsCard id="translator-card" title={t('settings.subtitles.translate')} description={t('settings.subtitles.translateDesc')}>
+				<Field id="tr-kind" label={t('settings.subtitles.translator')} hint={tr.kind === 'openai' ? t('settings.subtitles.trOpenAIHint') : tr.kind === 'lingarr' ? t('settings.subtitles.trLingarrHint') : ''}>
+					<select id="tr-kind" class="input" bind:value={tr.kind} data-testid="translator-kind">
+						<option value="">{t('settings.subtitles.trOff')}</option>
+						<option value="openai">{t('settings.subtitles.trOpenAI')}</option>
+						<option value="lingarr">Lingarr</option>
+					</select>
+				</Field>
+				{#if tr.kind}
+					<div class="two">
+						<Field id="tr-url" label={t('settings.subtitles.address')}>
+							<input id="tr-url" class="input mono" bind:value={tr.url} autocomplete="off" spellcheck="false" placeholder={tr.kind === 'openai' ? 'http://192.168.1.20:11434/v1' : 'http://192.168.1.20:9876'} required />
+						</Field>
+						{#if tr.kind === 'openai'}
+							<Field id="tr-model" label={t('settings.subtitles.trModel')}>
+								<input id="tr-model" class="input mono" bind:value={tr.model} list="tr-models" autocomplete="off" spellcheck="false" required />
+								<datalist id="tr-models">{#each trResult?.models ?? [] as m (m)}<option value={m}></option>{/each}</datalist>
+							</Field>
+						{/if}
+					</div>
+					<Field id="tr-key" label={t('settings.subtitles.trKey')} hint={tr.has_key ? t('settings.subtitles.trKeyKept') : t('settings.subtitles.trKeyHint')} style="margin-top: var(--s-4)">
+						<input id="tr-key" class="input mono" type="password" bind:value={tr.key} autocomplete="new-password" spellcheck="false" placeholder={tr.has_key ? '••••••••' : t('settings.subtitles.trKeyEmpty')} />
+					</Field>
+					{#if tr.has_key && !tr.key}
+						<label class="checkline">
+							<input type="checkbox" bind:checked={tr.clear_key} />
+							<span><b>{t('settings.subtitles.trClearKey')}</b></span>
+						</label>
+					{/if}
+					<label class="checkline">
+						<input type="checkbox" bind:checked={tr.built_in_auto} data-testid="translator-built-in" />
+						<span><b>{t('settings.subtitles.trBuiltIn')}</b><br /><span class="hint">{t('settings.subtitles.trBuiltInHint')}</span></span>
+					</label>
+				{/if}
+				{#if trResult && !trDirty}
+					<div class="testline" data-testid="translator-test"><TestTag ok={trResult.ok} text={trResult.message} />{#if !trResult.ok}<span class="small bad-text">{trResult.message}</span>{/if}</div>
+				{/if}
+				{#if trError}<p class="form-error" role="alert">{trError}</p>{/if}
+				<div class="row actions">
+					<Button variant="primary" type="submit" disabled={trBusy || !trDirty} busy={trBusy}>{t('settings.subtitles.save')}</Button>
+					{#if tr.kind}<Button type="button" disabled={trTesting || trDirty} busy={trTesting} onclick={testTranslator} data-testid="translator-test-button">{t('settings.subtitles.test')}</Button>{/if}
+				</div>
+			</SettingsCard>
+		</form>
+	{/if}
 	{#if !session.held('subtitle_sites')}
 	<section class="sites-sec" id="sites-card" aria-labelledby="h-sites" tabindex="-1">
 		<div class="sites-head">
@@ -301,6 +391,10 @@
 				<label class="checkline">
 					<input type="checkbox" bind:checked={form.allow_local_network} />
 					<span><b>{t('settings.subtitles.local')}</b><br /><span class="hint">{t('settings.subtitles.localHint')}</span></span>
+				</label>
+				<label class="checkline">
+					<input type="checkbox" bind:checked={form.machine_made} data-testid="site-machine-made" />
+					<span><b>{t('settings.subtitles.machineMade')}</b><br /><span class="hint">{t('settings.subtitles.machineMadeHint')}</span></span>
 				</label>
 				<label class="checkline">
 					<input type="checkbox" bind:checked={form.enabled} />
@@ -529,11 +623,13 @@
 	}
 	.bad-text {
 		color: var(--fail-text);
+		min-width: 0;
+		overflow-wrap: anywhere;
 	}
 	.ok-text {
 		color: var(--ok-text, inherit);
 	}
-	@media (max-width: 600px) {
+	@container settings (max-width: 600px) {
 		.two,
 		.three {
 			grid-template-columns: 1fr;

@@ -19,6 +19,7 @@
 	import { page } from '$app/state';
 	import { personName } from '#lib/core/plain.ts';
 	import { api } from '#lib/core/api.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { session } from '../core/session.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
@@ -364,8 +365,8 @@
 
 <SettingsCard id="preferences-me" title={t('accounts.account.preferences')} icon="appearance">
 	<div class="srow" id="language-row-me">
-		<div class="txt"><label class="label" for="language-me">{t('accounts.language.label')}</label><span class="hint">{t('accounts.language.hint')}</span></div>
-		<div class="ctl"><LanguagePicker id="language-me" /></div>
+		<div class="txt"><span class="label" id="language-me-label">{t('accounts.language.label')}</span><span class="hint">{t('accounts.language.hint')}</span></div>
+		<div class="ctl"><LanguagePicker id="language-me" align="end" /></div>
 	</div>
 	<div class="srow">
 		<div class="txt"><span class="label">{t('accounts.account.trailers')}</span>{#if minimalLook()}<span class="hint">{t('accounts.account.trailersMinimal')}</span>{:else}<span class="hint" title={t('accounts.account.trailersHint')}>{t('accounts.account.trailersHint')}</span>{/if}</div>
@@ -449,7 +450,7 @@
 				</div>
 				<div class="ctl"><Button variant="secondary" disabled={watchBusy || !watch.can_read} onclick={checkWatch}>{t('accounts.account.readNow')}</Button></div>
 			</div>
-			{#if watch.error}<p class="form-error" role="alert" data-testid="watchlist-error">{watch.error}</p>{/if}
+			{#if watch.error}<p class="form-error" role="alert" data-testid="watchlist-error">{serverWords(watch.error)}</p>{/if}
 		{/if}
 		{#if watch.items.length}
 			<ul class="follows" data-testid="watchlist-items" aria-label={t('accounts.account.newest')}>

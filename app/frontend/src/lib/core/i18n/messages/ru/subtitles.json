@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Язык",
 	"subtitles.wants.pick": "Выберите язык",
 	"subtitles.wants.takeOff": "Убрать {name}",
-	"subtitles.wants.thisLanguage": "этот язык"
+	"subtitles.wants.thisLanguage": "этот язык",
+	"subtitles.made.translated": "Переведено",
+	"subtitles.made.partial": "Переведено частично",
+	"subtitles.made.ai": "Переведено ИИ",
+	"subtitles.made.machine": "Машинный перевод",
+	"subtitles.wants.translateFrom": "Переводить с",
+	"subtitles.wants.noTranslate": "Не переводить",
+	"subtitles.panel.picture": "Картинка",
+	"subtitles.panel.pictureTitle": "Субтитры-картинки: перевести нельзя",
+	"subtitles.panel.translate": "Перевести",
+	"subtitles.panel.translateFor": "Перевести субтитры: {name}",
+	"subtitles.panel.translateFrom": "Переводить с",
+	"subtitles.panel.translateQueued": "Перевод идёт",
+	"subtitles.panel.translateQueuedBody": "Субтитры ({name}) появятся здесь, когда будут готовы.",
+	"subtitles.panel.translating": "Ничего не найдено, переводчик делает субтитры."
 }

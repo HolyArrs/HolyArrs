@@ -335,3 +335,17 @@ func letChange(t *testing.T, m *Manager) {
 		t.Fatal(err)
 	}
 }
+
+// With no save root and no path pair the owner set up, the disk is never read,
+// even where the Downloader says the job is: only its own name and size are used.
+func TestReadFinishedWithNoRootNeverReadsTheDisk(t *testing.T) {
+	dir := t.TempDir()
+	job := filepath.Join(dir, "complete", "Landman.S02E08.720p.BluRay.x264-GREASE")
+	if err := os.MkdirAll(job, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	_ = os.WriteFile(filepath.Join(job, "Landman.S02E08.720p.BluRay.x264-GREASE.mkv"), make([]byte, 5), 0o644)
+	if _, files := readFinished(Job{ContentPath: job, SavePath: filepath.Dir(job)}, nil, ""); len(files) != 0 {
+		t.Fatalf("read the disk with no root set up: %+v", files)
+	}
+}

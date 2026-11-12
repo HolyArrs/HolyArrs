@@ -25,6 +25,9 @@
 	"home.lostIfTheContainer": "重新创建容器时会丢失",
 	"home.downloads": "下载",
 	"home.waitingForTheirFiles": "正在等待它们的文件",
+	"home.waitingToBeCleared": "正在等待清理",
+	"home.noSaveFolder": "没有设置保存文件夹",
+	"home.noSaveFolderMany": "没有设置保存文件夹",
 	"home.masterKey": "主密钥",
 	"home.noKeyKitSaved": "还没有保存密钥包",
 	"home.trailers": "预告片",
@@ -266,5 +269,7 @@
 	"home.version": "版本 {version}",
 	"home.metadataServerDown": "元数据服务器已宕机",
 	"home.metadataServerOnline": "元数据服务器在线",
-	"home.homeCouldNotRead3": "首页暂时无法读取下载。"
+	"home.homeCouldNotRead3": "首页暂时无法读取下载。",
+	"home.off": "关闭",
+	"home.sourcesOff": "已在“部分”中关闭"
 }

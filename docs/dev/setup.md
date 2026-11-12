@@ -119,7 +119,6 @@ Then `seed -config ./config` adds the demo library and `seed -config ./config -r
 | `ai_apps` | AI app connections and keys |
 | `row_title_stats` | Explore row statistics for the owner |
 | `trakt_lists` | Trakt lists |
-| `alert_channels_more` | Alert channels beyond Discord and email |
 | `subtitle_sites` | Subtitle sites and subtitle searching |
 | `emby_signin` | Sign in with Emby |
 | `go_back` | Steps to go back to the previous version |

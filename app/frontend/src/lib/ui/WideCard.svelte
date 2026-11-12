@@ -187,7 +187,7 @@
 			{#if tpl && (tpl.variant !== 'titled' || !loaded)}
 				<span class="scrim" aria-hidden="true"></span>
 				{#if !inset}<span class="name" class:lifted={!!strip} aria-hidden="true">
-					{#if coverLogo}<img class="logo" src={cardLogo ?? coverLogo} alt="" loading="lazy" decoding="async" onerror={() => (logoFailed = true)} />{:else}<span class="word">{title}</span>{/if}
+					{#if coverLogo}<img class="logo" src={cardLogo ?? coverLogo} alt="" loading="lazy" decoding="async" onerror={() => (logoFailed = true)} />{:else}<span class="word" dir="auto">{title}</span>{/if}
 				</span>{/if}
 			{/if}
 			{#if badges.length || status}
@@ -203,11 +203,11 @@
 			{/if}
 		</span>
 		{#if !cover}
-			<span class="t" title={title}>{title}</span>
+			<span class="t" title={title} dir="auto">{title}</span>
 			{#if typedWord || sub}<span class="s">{#if typedWord}<span class="ty">{typedWord}</span>{#if sub}<span class="dot" aria-hidden="true">·</span>{/if}{/if}{sub ?? ''}</span>{/if}
 			{#if meta}<span class="m">{meta}</span>{/if}
 		{:else}
-			<span class="t under" title={title} aria-hidden="true">{title}</span>
+			<span class="t under" title={title} aria-hidden="true" dir="auto">{title}</span>
 			{#if typedWord || sub}<span class="s" aria-hidden="true">{#if typedWord}{typedWord}{#if sub}<span class="dot">·</span>{/if}{/if}{sub ?? ''}</span>{/if}
 		{/if}
 	</svelte:element>

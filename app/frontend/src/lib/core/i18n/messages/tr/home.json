@@ -25,6 +25,9 @@
 	"home.lostIfTheContainer": "konteyner yeniden oluşturulursa kaybolur",
 	"home.downloads": "İndirmeler",
 	"home.waitingForTheirFiles": "dosyalarını bekliyor",
+	"home.waitingToBeCleared": "temizlenmeyi bekliyor",
+	"home.noSaveFolder": "kayıt klasörü yok",
+	"home.noSaveFolderMany": "kayıt klasörü yok",
 	"home.masterKey": "Ana anahtar",
 	"home.noKeyKitSaved": "kayıtlı anahtar paketi yok",
 	"home.trailers": "Fragmanlar",
@@ -266,5 +269,7 @@
 	"home.version": "Sürüm {version}",
 	"home.metadataServerDown": "Metadata sunucusu kapalı",
 	"home.metadataServerOnline": "Metadata sunucusu çevrimiçi",
-	"home.homeCouldNotRead3": "Ana sayfa indirmeleri şu an okuyamadı."
+	"home.homeCouldNotRead3": "Ana sayfa indirmeleri şu an okuyamadı.",
+	"home.off": "Kapalı",
+	"home.sourcesOff": "Bölümler'de kapatıldı"
 }

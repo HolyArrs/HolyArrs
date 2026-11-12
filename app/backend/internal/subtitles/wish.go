@@ -27,6 +27,9 @@ type Want struct {
 	Language        string `json:"language"`
 	HearingImpaired string `json:"hearing_impaired"`
 	Forced          bool   `json:"forced"`
+	// TranslateFrom names the language a missing subtitle may be translated
+	// from with the owner's translator, such as en. Empty: never translated.
+	TranslateFrom string `json:"translate_from,omitempty"`
 }
 
 // Errors a wish can be refused with.
@@ -57,6 +60,16 @@ func CleanWants(ws []Want) ([]Want, error) {
 		case HINormal, HIOnly, HIEither:
 		default:
 			return nil, fmt.Errorf("hearing_impaired must be %s, %s or %s", HINormal, HIOnly, HIEither)
+		}
+		if w.TranslateFrom != "" {
+			from := NormLanguage(w.TranslateFrom)
+			switch {
+			case from == "":
+				return nil, fmt.Errorf("%w: %q", ErrBadLanguage, w.TranslateFrom)
+			case from == code:
+				return nil, fmt.Errorf("%s cannot be translated from itself", code)
+			}
+			w.TranslateFrom = from
 		}
 		key := fmt.Sprintf("%s/%v", code, w.Forced)
 		if seen[key] {

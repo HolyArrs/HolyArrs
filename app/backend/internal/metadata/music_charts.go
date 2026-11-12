@@ -63,14 +63,14 @@ func (s *Service) musicGet(ctx context.Context, path string, q url.Values, out a
 	defer cancel()
 	tok, err := s.access(ctx)
 	if err != nil || tok == "" || strings.ContainsAny(tok, "\r\n") {
-		return ErrServiceAccess
+		return accessErr(err)
 	}
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.base+path+"?"+q.Encode(), nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	req.Header.Set("Accept", "application/json")
 	resp, err := s.doPending(ctx, req)
 	if err != nil {
-		return ErrServiceUnavailable
+		return unreached(err)
 	}
 	defer resp.Body.Close()
 	switch {
@@ -122,13 +122,13 @@ func (s *Service) MusicGenreTile(ctx context.Context, slug, version string) ([]b
 	defer cancel()
 	tok, err := s.access(ctx)
 	if err != nil || tok == "" || strings.ContainsAny(tok, "\r\n") {
-		return nil, ErrServiceAccess
+		return nil, accessErr(err)
 	}
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.base+"/v1/music/genres/tile/"+url.PathEscape(slug)+".jpg?"+url.Values{"v": {version}}.Encode(), nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	resp, err := s.doPending(ctx, req)
 	if err != nil {
-		return nil, ErrServiceUnavailable
+		return nil, unreached(err)
 	}
 	defer resp.Body.Close()
 	switch {

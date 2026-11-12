@@ -63,9 +63,9 @@ See [Downloaders](../downloads/downloaders/) and [Sources](../downloads/sources/
 
 **Symptom:** the doctor says hardlinks don't work, or disk use doubles after imports.
 
-**Cause:** downloads and Library folders are on different disks or mounts, or the disk can't hardlink (DrivePool, many NAS and SMB shares, Docker Desktop on Windows). Each file is still written once. Finished Usenet downloads are moved when they share a disk with the Library.
+**Cause:** downloads and Library folders are on different disks or mounts, or the disk can't hardlink (DrivePool, many NAS and SMB shares, Docker Desktop on Windows). Each file is still written once. Finished Usenet downloads are moved when they sit in the same mount and disk as the Library. See [Hardlink, move or copy](../start/folders.md#hardlink-move-or-copy).
 
-**Fix:** mount one shared parent folder into the container instead of separate ones. See [Folders](../start/folders/).
+**Fix:** mount one shared parent folder into the container instead of separate ones. See [Folders](../start/folders/). To switch a running setup without importing again, see [Move to one data folder](../library/move-to-one-folder.md).
 
 ## HolyArrs won't start
 

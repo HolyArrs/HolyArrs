@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Lingua",
 	"subtitles.wants.pick": "Scegli una lingua",
 	"subtitles.wants.takeOff": "Togli {name}",
-	"subtitles.wants.thisLanguage": "questa lingua"
+	"subtitles.wants.thisLanguage": "questa lingua",
+	"subtitles.made.translated": "Tradotto",
+	"subtitles.made.partial": "Tradotto in parte",
+	"subtitles.made.ai": "Tradotto da IA",
+	"subtitles.made.machine": "Traduzione automatica",
+	"subtitles.wants.translateFrom": "Traduci da",
+	"subtitles.wants.noTranslate": "Non tradurre",
+	"subtitles.panel.picture": "Immagine",
+	"subtitles.panel.pictureTitle": "Sottotitolo a immagini: non si può tradurre",
+	"subtitles.panel.translate": "Traduci",
+	"subtitles.panel.translateFor": "Traduci un sottotitolo in {name}",
+	"subtitles.panel.translateFrom": "Traduci da",
+	"subtitles.panel.translateQueued": "Traduzione in corso",
+	"subtitles.panel.translateQueuedBody": "Il sottotitolo in {name} compare qui quando è pronto.",
+	"subtitles.panel.translating": "Nessuno trovato: il tuo traduttore ne sta creando uno."
 }

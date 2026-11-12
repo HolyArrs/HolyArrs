@@ -11,7 +11,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
 	import { setFollow } from '#lib/ui/follow.ts';
-	import { rebaseBar, ComingSoon, MiniMonth, FollowWho, CalBanner, CalListRows, rowWords, DEFAULT_LOOK, type CaptionLook, byDay, entryKey, readMonthHidden, saveMonthHidden, shows, entryHref, weekStart, addDays, entryDay, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, followsOk, withFollow, readFollows, saveFollows, startFollows, type Follows, type MovieFacts, ymd, readView, saveView, startView, type CalendarView, type TitlesShown } from '#lib/discover/index.ts';
+	import { rebaseBar, ComingSoon, MiniMonth, FollowWho, CalBanner, CalListRows, rowWords, DEFAULT_LOOK, type CaptionLook, byDay, entryKey, readMonthHidden, saveMonthHidden, shows, entryHref, weekStart, addDays, entryDay, weekRange, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, followsOk, withFollow, readFollows, saveFollows, startFollows, type Follows, type MovieFacts, ymd, readView, saveView, startView, type CalendarView, type TitlesShown } from '#lib/discover/index.ts';
 	import { libraryBrief, partOff, partOn } from '#lib/mediafiles/index.ts';
 	import { onMount, tick } from 'svelte';
 	import { page } from '$app/state';
@@ -20,6 +20,7 @@
 	import { api, message } from '#lib/core/api.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
+	import { views as savedViews } from '#lib/core/views.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { date } from '#lib/core/format.ts';
 	import { popIn, popOut } from '#lib/core/transitions.ts';
@@ -29,7 +30,7 @@
 	// ?month=October 2026 opens on that month, so a link to a month can be shared.
 	const asked = /^(\d{4})-(\d{2})$/.exec(page.url.searchParams.get('month') ?? '');
 	const askedMonth = asked && Number(asked[2]) >= 1 && Number(asked[2]) <= 12 ? new Date(Number(asked[1]), Number(asked[2]) - 1, 1) : null;
-	// Cards (big pictures, day by day) or List (compact rows): ?view=cards|list, kept for the session. Old layout links (?view=2&span=...) land on Cards.
+	// Cards (big pictures, day by day) or List (compact rows): ?view=cards|list, kept for the session and on the account. Old layout links (?view=2&span=...) land on Cards.
 	let view = $state<CalendarView>(startView(page.url.searchParams.get('view'), readView()));
 	// The days shown run from `start` (a year back, or the first of a linked month) to the day before `end`. Six more weeks load as the end comes near. Both stop a year from today.
 	const today0 = addDays(now, 0);
@@ -87,8 +88,8 @@
 	const viewWeek = $derived.by(() => {
 		const s = weekStart(active ? new Date(active + 'T00:00:00') : (askedMonth ?? now));
 		const e = addDays(s, 6);
-		const f = (d: Date, y: boolean) => d.toLocaleDateString(appLocale(), { day: 'numeric', month: 'short', ...(y ? { year: 'numeric' } : {}) });
-		return { from: ymd(s), long: `${f(s, false)} – ${f(e, true)}`, short: `${f(s, false)} – ${f(e, false)}` };
+		// One short range everywhere ("Nov 24 – 30"); the year only when it is not this year.
+		return { from: ymd(s), long: weekRange(s, e, appLocale(), now) };
 	});
 
 	// The small month starts on the first week's month, pages on its own, and follows the day in view. It is anchored to today (or the linked month), never to the year back where loading starts.
@@ -115,6 +116,7 @@
 		if (f !== follows) keepDay();
 		follows = f;
 		saveFollows(f);
+		savedViews.set('calendar.follows', f);
 	}
 	const clearFilters = () => pickFollows('library');
 	// A filter change keeps the date in view. The day at the top is noted, and after the list changes that day (or the next one with something on it, else the last before it) goes back under the bars. The page never jumps to today.
@@ -385,11 +387,11 @@
 			<h2 class="range" aria-live="polite" data-testid="cal-month" data-week={viewWeek.from}>{viewWeek.long}</h2>
 		{:else if short && narrow}
 			<!-- In the slim bar the dates also open the small month (on phones, where it is not beside the days). -->
-			<button type="button" class="range range-btn" aria-label={t('discover.calendar.pickADay', { long: viewWeek.long })} aria-haspopup="dialog" onclick={() => (sheetOpen = true)}>{viewWeek.short}</button>
+			<button type="button" class="range range-btn" aria-label={t('discover.calendar.pickADay', { long: viewWeek.long })} aria-haspopup="dialog" onclick={() => (sheetOpen = true)}>{viewWeek.long}</button>
 		{:else}
-			<span class="range">{short ? viewWeek.short : viewWeek.long}</span>
+			<span class="range">{viewWeek.long}</span>
 		{/if}
-		<IconButton icon="chevronRight" label={t('discover.calendar.weekAfter')} variant="tinted" onclick={() => scroller.go(1)} />
+		<IconButton icon="chevronRight" tipSide="below-end" label={t('discover.calendar.weekAfter')} variant="tinted" onclick={() => scroller.go(1)} />
 	</div>
 {/snippet}
 
@@ -458,7 +460,7 @@
 	{#snippet actions()}
 		{@render viewSeg(true)}
 		<span class="wide-only">{@render todayBtn('md')}</span>
-		<span class="phone-only"><IconButton icon="calendarDay" label={t('discover.calendar.pickADay2')} variant="tinted" aria-haspopup="dialog" onclick={() => (sheetOpen = true)} /></span>
+		<span class="phone-only"><IconButton icon="calendarDay" tipSide="below-end" label={t('discover.calendar.pickADay2')} variant="tinted" aria-haspopup="dialog" onclick={() => (sheetOpen = true)} /></span>
 	{/snippet}
 </PageHeader>
 
@@ -477,7 +479,7 @@
 		{@render rangeNav(false, true)}
 		<!-- Cards or List stays at hand in the bar once the header has scrolled away. -->
 		<span class="wide-only slim-view">{@render viewSeg(false)}</span>
-		<span class="phone-only"><IconButton icon={view === 'cards' ? 'menu' : 'grid'} label={view === 'cards' ? t('discover.calendar.showAsList') : t('discover.calendar.showAsCards')} variant="tinted" onclick={() => scroller.pickView(view === 'cards' ? 'list' : 'cards')} data-testid="cal-view-slim" /></span>
+		<span class="phone-only"><IconButton icon={view === 'cards' ? 'menu' : 'grid'} tipSide="below-end" label={view === 'cards' ? t('discover.calendar.showAsList') : t('discover.calendar.showAsCards')} variant="tinted" onclick={() => scroller.pickView(view === 'cards' ? 'list' : 'cards')} data-testid="cal-view-slim" /></span>
 		<span class="wide-only slim-seg">{@render typeSeg(false)}</span>
 		<span class="wide-only">{@render followsMenu()}</span>
 		<span class="wide-only">{@render monthBtn(false)}</span>
@@ -544,7 +546,12 @@
 	.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 18px; }
 	.month-nav { margin-right: auto; }
 	.range-nav { display: flex; align-items: center; gap: 8px; min-width: 0; }
-	.range { min-width: 9.5ch; font: var(--t-title2); letter-spacing: var(--t-title2-track); text-align: center; }
+	.range { min-width: 9.5ch; font: var(--t-title2); letter-spacing: var(--t-title2-track); text-align: center; white-space: nowrap; }
+	/* Small phones: Today keeps only its icon (its label stays for screen readers), so the week keeps its room. */
+	@media (max-width: 419px) {
+		.today-btn :global(.ui-btn) { aspect-ratio: 1; padding: 0; justify-content: center; }
+		.today-btn :global(.ui-btn > span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+	}
 	.segs { display: flex; flex-wrap: wrap; gap: 10px; max-width: 100%; }
 	.kinds { display: flex; flex-wrap: wrap; gap: 8px; border: 0; margin: 0; padding: 0; min-width: 0; flex-basis: 100%; }
 	.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; }

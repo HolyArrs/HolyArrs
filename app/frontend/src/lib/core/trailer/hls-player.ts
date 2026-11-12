@@ -43,9 +43,11 @@ export async function attachHLS(video: HTMLVideoElement, url: string, native: bo
 		for (const i of drop) hls.removeLevel(i);
 		avc = hls.levels.map((l) => ({ height: l.height }));
 		if (!avc.length) return;
-		// Starting low stayed low too long, so start at the shown level.
+		// Starting low stayed low too long, so start at the shown level. Only the start
+		// is set: nextLevel or currentLevel would fix that level for the whole play, and
+		// a link slower than it would stall every few seconds instead of stepping down.
 		recap();
-		hls.startLevel = hls.nextLevel = hls.autoLevelCapping;
+		hls.startLevel = hls.autoLevelCapping;
 	});
 	const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(recap);
 	ro?.observe(video);

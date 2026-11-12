@@ -58,9 +58,15 @@ const (
 	MomentSubtitle = "subtitle"       // a subtitle was saved or upgraded, could not be saved, or a Subtitle site rests
 )
 
+// Download moments, told to the staff.
+const (
+	MomentDownloaded     = "downloaded"      // the Downloader finished a download (before the import)
+	MomentDownloadFailed = "download_failed" // a download failed; its Release is turned down
+)
+
 // Moments lists the moments in the order screens show them.
 var Moments = []string{MomentWaiting, MomentApproved, MomentTurnedDown, MomentReady, MomentNewEpisodes, MomentNewAlbums,
-	MomentReported, MomentFixed, MomentGrab, MomentImport, MomentRename, MomentAdd, MomentDelete, MomentHealth, MomentDecision, MomentSubtitle}
+	MomentReported, MomentFixed, MomentGrab, MomentDownloaded, MomentDownloadFailed, MomentImport, MomentRename, MomentAdd, MomentDelete, MomentHealth, MomentDecision, MomentSubtitle}
 
 // Person is someone a message is about, with where Alerts reach them.
 type Person struct {

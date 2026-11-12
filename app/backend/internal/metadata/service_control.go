@@ -32,6 +32,8 @@ func IsAhead(ctx context.Context) bool { v, _ := ctx.Value(aheadKey{}).(bool); r
 type serviceHold struct {
 	mu    sync.Mutex
 	until time.Time
+	// fails counts failed registrations in a row (regHold only; hosted.go).
+	fails int
 }
 
 // holdMax bounds one Retry-After; a longer one is read as this.
@@ -119,7 +121,7 @@ func (s *Service) Control(ctx context.Context) (Control, error) {
 	req.Header.Set("Accept", "application/json")
 	resp, err := s.http.Do(req)
 	if err != nil {
-		return c, ErrServiceUnavailable
+		return c, unreached(err)
 	}
 	defer resp.Body.Close()
 	switch {

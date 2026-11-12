@@ -64,6 +64,14 @@ An episode is looked for only when **Keep up to date** is on for the show, its s
 
 Change these on **Settings > Search**, see the settings reference below.
 
+### Shows that take a few episodes at a time
+
+When a show's **Season packs** is set to **Get a few episodes at a time**, HolyArrs searches only the next few missing episodes of a season, one by one. A season pack is taken only when no single-episode release for that episode passes the Pick rules. HolyArrs then takes just those episodes from the pack. See [Get a season pack a few episodes at a time](downloads.md#get-a-season-pack-a-few-episodes-at-a-time).
+
+- Only qBittorrent can take part of a pack. Usenet and the other Downloaders get the whole season.
+- A release with more than one season is always turned away for these shows.
+- The **A season pack is taken when** and **Season pack or single episodes** settings do not apply.
+
 ### Several Versions
 
 A show kept in HD and 4K is searched once per Version, each with its own Pick rules. An HD pack fills only HD episodes. The 4K Version needs its own pack.
@@ -86,6 +94,10 @@ Fix: turn it on for the show, the season, the episode and the Version.
 **A season pack is turned away.**
 Cause: not every episode has aired, or some episodes already have a copy as good.
 Fix: read the reasons in **Choose a release** on the season. To let packs fill only the gaps, change **A season pack is taken when**.
+
+**A season pack is turned away for a show that takes a few episodes at a time.**
+Cause: a single-episode release passed, the pack holds several seasons, or qBittorrent could not take it.
+Fix: read the reason in **Choose a release** on the episode.
 
 **A release is turned away as early or fake.**
 Cause: posted before the last episode it holds aired, or far too small for its length.

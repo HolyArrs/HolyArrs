@@ -328,3 +328,22 @@ test('desktop pages never scroll sideways', async () => {
 		await noSidewaysScroll(page);
 	}
 });
+
+test('a narrow desktop window with long words: the calendar never scrolls sideways', async () => {
+	// The hover tips on the right-edge buttons used to stick out past the edge.
+	const size = page.viewportSize();
+	const me = await (await page.request.get('/api/v1/auth/me')).json();
+	const lang = (language: string) => page.request.put('/api/v1/my/language', { data: { language }, headers: { 'X-CSRF-Token': me.csrf } });
+	await lang('ru');
+	try {
+		for (const width of [390, 360]) {
+			await page.setViewportSize({ width, height: 800 });
+			await page.goto('/calendar');
+			await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+			await noSidewaysScroll(page);
+		}
+	} finally {
+		await lang('en');
+		if (size) await page.setViewportSize(size);
+	}
+});

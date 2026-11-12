@@ -32,16 +32,12 @@ func TestSwitchTurnsOneFeatureOn(t *testing.T) {
 	}
 }
 
-func TestProvenAlertKinds(t *testing.T) {
+// Every Alert channel is proven end to end, so none is held back: the web
+// app shows them all with no switch set.
+func TestAlertChannelsAreNotHeld(t *testing.T) {
 	RegisterHeldFeatures()
-	for _, k := range []string{"discord", "email"} {
-		if !ProvenAlertKinds[k] {
-			t.Errorf("%s should stay on", k)
-		}
-	}
-	for _, k := range []string{"telegram", "ntfy", "gotify", "pushover", "webhook"} {
-		if ProvenAlertKinds[k] {
-			t.Errorf("%s should be held back", k)
-		}
+	t.Setenv("HOLYARRS_FLAGS", "")
+	if slices.Contains(HeldFeatures(), "alert_channels_more") || slices.Contains(FeaturesOff(), "alert_channels_more") {
+		t.Fatalf("alert channels are still held back: %v", HeldFeatures())
 	}
 }

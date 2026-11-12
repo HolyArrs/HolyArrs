@@ -15,10 +15,10 @@
 	import { askedFor } from './asked-for.ts';
 	import { watchlistLine } from '../accounts/index.ts';
 	import { onDestroy, tick } from 'svelte';
-	import { flip } from 'svelte/animate';
 	import { fade, fly, slide } from 'svelte/transition';
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { agoLong, dateTime } from '../core/format.ts';
+	import { rowGlide } from '../core/transitions.ts';
 	import { to } from '../core/paths.ts';
 	import { proxied } from '../core/tmdb-image.ts';
 	import type { Ask } from '../core/types.ts';
@@ -330,7 +330,7 @@
 		</div>
 		<div class="right">
 			{#if ctx.reports >= 0}
-				<a class="rp-btn" href={to('/requests/reports')} data-testid="reports-link" aria-label={ctx.reports ? t('requests.board.reportsOpen', { n: ctx.reports }) : t('requests.reports.title')}><Icon name="alert" size={16} /><span class="rp-v">{t('requests.reports.title')}</span>{#if ctx.reports}<span class="rp-n" aria-hidden="true">{ctx.reports}</span>{/if}</a>
+				<a class="rp-btn" href={to('/requests/reports')} data-testid="reports-link" aria-label={ctx.reports ? t('requests.board.reportsOpen', { n: ctx.reports }) : t('requests.reports.title')}><Icon name="alert" size={16} /><span class="rp-v">{t('requests.reports.title')}</span>{#if ctx.reports}<span class="rp-n" aria-hidden="true">{ctx.reports > 99 ? '99+' : ctx.reports}</span>{/if}</a>
 			{/if}
 			{#if ctx.approverTab === 'pending' && toApprove.length > 1}
 				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(toApprove)}><Icon name="check" size={16} />{t('requests.board.approveAll')}<span class="aa-n">{toApprove.length}</span></button>
@@ -360,14 +360,16 @@
 				{#if can}{@render stDecline(a)}{/if}
 			{/if}
 		{/snippet}
-		<ul class="cards" aria-label={t('requests.board.requests')} in:fade={{ duration: ms(260) }}>
-			{#each cardsShown as a, i (a.id)}
+		<!-- A new tab swaps the whole list in one quick fade; only an ask that arrives while you look fades in on its own. -->
+		{#key ctx.approverTab}
+		<ul class="cards" aria-label={t('requests.board.requests')} in:fade={{ duration: ms(150) }}>
+			{#each cardsShown as a (a.id)}
 				{@const w = ctx.who(a)}
 				{@const isKid = !!w.kid || /\(kid\)\s*$/i.test(w.name)}
 				{@const life = lifeOf(a)}
 				{@const photo = a.kind === 'artist' ? proxied(artistPhoto(a)) || null : null}
 				{@const wide = proxied(banner(a)) || null}
-				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} class:st-row={!waiting(a) && !ctx.isPending(a.id)} animate:flip={{ duration: ms(340), easing: cubicOut }} in:fly={{ y: 14, duration: ms(420), delay: ms(Math.min(i, 8) * 45), easing: cubicOut }} out:fade={{ duration: ms(220) }}>
+				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} class:st-row={!waiting(a) && !ctx.isPending(a.id)} animate:rowGlide={{ duration: ms(340) }} in:fade={{ duration: ms(150) }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
 					<button type="button" class="open" aria-label={t('requests.board.open', { name: a.name, who: w.name })} aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
 					{#if askHref(a)}<a class="cl-go" href={to(askHref(a))} aria-label={t(a.kind === 'artist' ? 'requests.board.pageForArtist' : a.kind === 'show' ? 'requests.board.pageForShow' : 'requests.board.pageForMovie', { name: a.name })} title={t(a.kind === 'artist' ? 'requests.window.pageArtist' : a.kind === 'show' ? 'requests.window.pageShow' : 'requests.window.pageMovie')}><Icon name="arrowUpRight" size={16} /></a>{/if}
@@ -379,7 +381,7 @@
 					</div>
 					<div class="sheet-b">
 					<div class="body">
-						<span class="who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="gl-id"><span class="gl-n"><b>{w.name.replace(/\s*\(kid\)\s*$/i, '')}</b>{#if isKid}<KidMark label={t('requests.window.kid')} size="sm" />{/if}</span><span class="gl-when">{t('requests.board.asked')} <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{agoLong(a.asked_at)}</time>{#if watchlistLine(a.people, undefined)}<span data-testid="ask-from-watchlist">{` · ${t('requests.board.fromPlex')}`}</span>{/if}</span></span></span>
+						<span class="who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="gl-id"><span class="gl-n"><b>{w.name.replace(/\s*\(kid\)\s*$/i, '')}</b>{#if isKid}<KidMark label={t('requests.window.kid')} size="sm" />{/if}</span><span class="gl-when"><span class="gl-ask">{t('requests.board.asked')}{' '}</span><time datetime={a.asked_at} title={dateTime(a.asked_at)}>{agoLong(a.asked_at)}</time>{#if watchlistLine(a.people, undefined)}<span data-testid="ask-from-watchlist">{` · ${t('requests.board.fromPlex')}`}</span>{/if}</span></span></span>
 					</div>
 					<div class="foot" inert={approving.has(a.id)}>
 						{#if waiting(a)}
@@ -418,6 +420,7 @@
 					</li>
 			{/each}
 		</ul>
+		{/key}
 </div>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
@@ -473,7 +476,7 @@
 	.rp-btn { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); color: var(--text); font: 500 13px/1 var(--font-ui); white-space: nowrap; text-decoration: none; -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); transition: background 160ms var(--ease-out); }
 	.rp-btn:hover { background: var(--surface-2); }
 	.rp-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.rp-n { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--accent-fill); color: var(--text-on-red); font: 600 11px/18px var(--font-ui); text-align: center; font-variant-numeric: tabular-nums; }
+	.rp-n { flex: none; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--accent-fill); color: var(--text-on-red); font: 600 11px/18px var(--font-ui); text-align: center; font-variant-numeric: tabular-nums; }
 	/* Narrow phones: the three toolbar buttons drop their icons together so each word fits. */
 	@media (max-width: 379px) { .right .approve-all :global(svg), .right .rp-btn :global(svg), .right :global(.sf-btn .sf-funnel) { display: none; } }
 	.new-mark { align-self: flex-start; margin-bottom: 4px; padding: 2px 8px; border-radius: var(--r-pill); background: var(--accent-fill); color: var(--text-on-red); font: 600 11px/16px var(--font-ui); }
@@ -598,7 +601,9 @@
 		.ban-f { font-size: 12px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
 		.sheet-b { border-radius: 12px; }
 		.gl-n { font-size: 12.5px; gap: 4px; }
-		.gl-when { font-size: 12px; white-space: normal; text-overflow: clip; }
+		/* One line: the avatar already says who asked, so the time stands alone ("17 days ago"); the date is in its title. */
+		.gl-when { font-size: 12px; }
+		.gl-ask { display: none; }
 		.body { padding: 10px 10px 0; }
 		.who { gap: 7px; font: var(--t-caption); }
 		.foot { gap: 6px; padding: 10px; }

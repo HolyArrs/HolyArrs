@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Újracsatlakozás",
+	"setup.testNow": "Tesztelés most",
+	"setup.movies": "Filmek",
+	"setup.tvShows": "Sorozatok",
+	"setup.music": "Zene",
+	"setup.subtitles": "Feliratok",
+	"setup.fullPath": "Adja meg a teljes mappaútvonalat, például {path}.",
+	"setup.folderUsed": "Ezt a mappát már használja valami, vagy egy használt mappán belül van.",
+	"setup.folderMissing": "Ez a mappa nem létezik. Ellenőrizze az útvonalat.",
+	"setup.addFolderOrOff": "Adjon hozzá egy mappát, vagy kapcsolja ki ezt.",
+	"setup.notAnswering": "A HolyArrs nem válaszol. Próbálja újra egy pillanat múlva.",
+	"setup.addUserPasswordHint": "Adja meg a felhasználónevet és a jelszót.",
+	"setup.folders": "Mappák",
+	"setup.downloader": "Letöltő",
+	"setup.source": "Forrás"
+}

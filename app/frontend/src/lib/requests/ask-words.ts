@@ -85,6 +85,8 @@ export const momentWords: Record<string, [string, string]> = {
 	get report_made() { return [t('requests.moment.report_made.title'), t('requests.moment.report_made.body')] as [string, string]; },
 	get report_fixed() { return [t('requests.moment.report_fixed.title'), t('requests.moment.report_fixed.body')] as [string, string]; },
 	get grab() { return [t('requests.moment.grab.title'), t('requests.moment.grab.body')] as [string, string]; },
+	get downloaded() { return [t('requests.moment.downloaded.title'), t('requests.moment.downloaded.body')] as [string, string]; },
+	get download_failed() { return [t('requests.moment.download_failed.title'), t('requests.moment.download_failed.body')] as [string, string]; },
 	get import() { return [t('requests.moment.import.title'), t('requests.moment.import.body')] as [string, string]; },
 	get rename() { return [t('requests.moment.rename.title'), t('requests.moment.rename.body')] as [string, string]; },
 	get add() { return [t('requests.moment.add.title'), t('requests.moment.add.body')] as [string, string]; },
@@ -97,7 +99,7 @@ export const momentWords: Record<string, [string, string]> = {
 export const askMoments = ['ask_waiting', 'ask_approved', 'ask_turned_down', 'ask_ready', 'new_episodes', 'new_albums', 'report_made', 'report_fixed'] as const;
 
 /** Go to the staff. */
-export const libraryMoments = ['grab', 'import', 'rename', 'add', 'delete', 'health', 'needs_decision'] as const;
+export const libraryMoments = ['grab', 'downloaded', 'download_failed', 'import', 'rename', 'add', 'delete', 'health', 'needs_decision'] as const;
 
 export const askTabs: { tab: AskTab; label: string }[] = [
 	{ tab: 'waiting', get label() { return t('requests.tab.ask.waiting'); } },

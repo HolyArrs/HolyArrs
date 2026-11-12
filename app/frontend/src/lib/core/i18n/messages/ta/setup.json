@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "மீண்டும் இணை",
+	"setup.testNow": "இப்போதே சோதி",
+	"setup.movies": "திரைப்படங்கள்",
+	"setup.tvShows": "தொலைக்காட்சித் தொடர்கள்",
+	"setup.music": "இசை",
+	"setup.subtitles": "வசனங்கள்",
+	"setup.fullPath": "{path} போல முழு கோப்புறைப் பாதையைப் பயன்படுத்துங்கள்.",
+	"setup.folderUsed": "இந்தக் கோப்புறை ஏற்கெனவே பயன்பாட்டில் உள்ளது, அல்லது பயன்பாட்டில் உள்ள ஒன்றுக்குள் உள்ளது.",
+	"setup.folderMissing": "அந்தக் கோப்புறை இல்லை. பாதையைச் சரிபாருங்கள்.",
+	"setup.addFolderOrOff": "ஒரு கோப்புறையைச் சேருங்கள் அல்லது இதை அணையுங்கள்.",
+	"setup.notAnswering": "HolyArrs பதிலளிக்கவில்லை. சிறிது நேரம் கழித்து மீண்டும் முயலுங்கள்.",
+	"setup.addUserPasswordHint": "பயனர் பெயரையும் கடவுச்சொல்லையும் சேருங்கள்.",
+	"setup.folders": "கோப்புறைகள்",
+	"setup.downloader": "பதிவிறக்கி",
+	"setup.source": "மூலம்"
+}

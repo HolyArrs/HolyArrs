@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Indstillinger",
+	"settings.layout.home": "Hjem",
+	"settings.layout.sections": "Indstillingsafsnit",
+	"settings.layout.needsAttention": "Kræver opmærksomhed",
+	"settings.layout.needsAttentionLower": "kræver opmærksomhed",
+	"settings.layout.blocked": "Du kan ikke ændre dette",
+	"settings.layout.backToSettings": "Tilbage til Indstillinger",
+	"settings.layout.setPasswordFirst": "Angiv først en adgangskode",
+	"settings.layout.setPasswordDesc": "Nøgler, adgangskoder, personer og sikkerhedskopier kræver en HolyArrs-adgangskode. Du har ikke en endnu.",
+	"settings.layout.setPasswordLabel": "Angiv en adgangskode",
+	"settings.layout.confirmPasswordLabel": "Bekræft din adgangskode",
+	"settings.layout.confirmPasswordDesc": "Nøgler, adgangskoder, personer og sikkerhedskopier kræver din adgangskode. Gælder i 10 minutter."
+}

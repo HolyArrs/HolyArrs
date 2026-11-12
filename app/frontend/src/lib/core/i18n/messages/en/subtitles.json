@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Language",
 	"subtitles.wants.pick": "Pick a language",
 	"subtitles.wants.takeOff": "Take {name} off",
-	"subtitles.wants.thisLanguage": "this language"
+	"subtitles.wants.thisLanguage": "this language",
+	"subtitles.made.translated": "Translated",
+	"subtitles.made.partial": "Partly translated",
+	"subtitles.made.ai": "AI-translated",
+	"subtitles.made.machine": "Machine-translated",
+	"subtitles.wants.translateFrom": "Translate from",
+	"subtitles.wants.noTranslate": "Don't translate",
+	"subtitles.panel.picture": "Picture",
+	"subtitles.panel.pictureTitle": "A picture subtitle: it can't be translated",
+	"subtitles.panel.translate": "Translate",
+	"subtitles.panel.translateFor": "Translate a {name} subtitle",
+	"subtitles.panel.translateFrom": "Translate from",
+	"subtitles.panel.translateQueued": "Translating",
+	"subtitles.panel.translateQueuedBody": "The {name} subtitle shows here when it's done.",
+	"subtitles.panel.translating": "None found, so your translator is making one."
 }

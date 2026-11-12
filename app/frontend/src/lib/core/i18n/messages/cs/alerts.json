@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Nastavení",
+	"alerts.panel.clearAll": "Vymazat vše",
+	"alerts.panel.empty": "Zatím tu nic není",
+	"alerts.panel.needsAttention": "Vyžaduje pozornost",
+	"alerts.panel.recent": "Nedávné",
+	"alerts.panel.remove": "Odstranit {text}",
+	"alerts.panel.title": "Nedávná upozornění",
+	"alerts.state.manyNeed": "{count} vyžaduje pozornost",
+	"alerts.state.ok": "Vše v pořádku",
+	"alerts.state.oneNeeds": "1 vyžaduje pozornost",
+	"alerts.state.unset": "Není nastaveno",
+	"alerts.time.days": "{n} d",
+	"alerts.time.hours": "{n} h",
+	"alerts.time.minutes": "{n} min",
+	"alerts.time.now": "teď"
+}

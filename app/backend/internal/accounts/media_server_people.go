@@ -471,6 +471,7 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 	}
 	kidPerms := permsJSON([]webserver.Perm{webserver.PermAsk})
 	made, skipped := []string{}, 0
+	blockKids := a.skipBlocksKids(ctx)
 	err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
 		for _, pick := range body.People {
 			p, ok := offer.people[pick.ID]
@@ -507,7 +508,7 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 				kid = *pick.Kid // clearing a restricted flag was confirmed above
 			}
 			if kid {
-				if a.skipLocal.Load() {
+				if blockKids {
 					return errImportKidSkip
 				}
 				u.Perms, u.MaxRating = kidPerms, "PG"

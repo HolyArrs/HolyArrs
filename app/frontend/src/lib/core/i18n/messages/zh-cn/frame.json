@@ -91,5 +91,11 @@
 	"frame.layout.allPlaces": "所有位置",
 	"frame.layout.newWord": "新",
 	"frame.layout.accountName": "账户 · {name}",
-	"frame.layout.hostRefused": "<b>无法在 {host} 上保存更改。</b>HolyArrs 只在你允许的名称上保存。请先用 IP 地址打开一次，然后在 设置 › 登录与安全 › 允许的主机名 中添加 {host}。无需重启。"
+	"frame.layout.hostRefused": "<b>无法在 {host} 上保存更改。</b>HolyArrs 只在你允许的名称上保存。请先用 IP 地址打开一次，然后在 设置 › 登录与安全 › 允许的主机名 中添加 {host}。无需重启。",
+	"frame.feeds.clearOne": "已导入的下载未清除",
+	"frame.feeds.clearMany": "{n} 个已导入的下载未清除",
+	"frame.feeds.clearBody": "HolyArrs 会自动重试",
+	"frame.feeds.clearNow": "立即清除",
+	"frame.feeds.cleared": "已从下载器清除",
+	"frame.feeds.clearStill": "尚未清除"
 }

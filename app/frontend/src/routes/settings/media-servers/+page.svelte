@@ -15,6 +15,7 @@
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { ago } from '#lib/core/format.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 
 	type Kind = MediaServerView['kind'];
 	const kindWord: Record<Kind, string> = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' };
@@ -57,7 +58,41 @@
 			loaded = true;
 		}
 	}
-	onMount(load);
+	onMount(() => {
+		void load();
+		if (isOwner) void loadWatch();
+	});
+
+	// Read watch history: owner only. Turning it off deletes what was read, so it asks first.
+	const isOwner = $derived(session.s.role === 'owner');
+	let watchOn = $state<boolean | null>(null);
+	let watchBusy = $state(false);
+	async function loadWatch() {
+		try {
+			watchOn = (await api.get<{ enabled: boolean }>('/settings/watch-history')).enabled;
+		} catch {
+			watchOn = null;
+		}
+	}
+	async function setWatch(e: Event) {
+		const box = e.currentTarget as HTMLInputElement;
+		const want = box.checked;
+		if (!want && !confirm(t('settings.mediaServers.watchConfirmOff'))) {
+			box.checked = true;
+			return;
+		}
+		watchBusy = true;
+		try {
+			await api.put('/settings/watch-history', { enabled: want });
+			watchOn = want;
+			toasts.push(want ? t('settings.mediaServers.watchTurnedOn') : t('settings.mediaServers.watchTurnedOff'), 'ok');
+		} catch (err) {
+			box.checked = !want;
+			toasts.push(t('settings.mediaServers.watchFailed'), 'fail', { body: message(err) });
+		} finally {
+			watchBusy = false;
+		}
+	}
 
 	function startAdd() {
 		isNew = true;
@@ -227,6 +262,16 @@
 	</ul>
 {/if}
 
+{#if loaded && isOwner && watchOn !== null && !editing}
+	<section class="card watch" data-testid="watch-history">
+		<h2 class="h3">{t('settings.mediaServers.watchTitle')}</h2>
+		<label class="checkline">
+			<input type="checkbox" checked={watchOn} disabled={watchBusy} aria-busy={watchBusy} onchange={setWatch} data-testid="watch-history-switch" />
+			<span><b>{t('settings.mediaServers.watchRead')}</b><br /><span class="hint">{t('settings.mediaServers.watchHint')}</span></span>
+		</label>
+	</section>
+{/if}
+
 <style>
 	.list {
 		display: flex;
@@ -263,6 +308,9 @@
 	}
 	.two :global(.field + .field) {
 		margin-top: 0;
+	}
+	.watch {
+		margin-top: var(--s-4);
 	}
 	.bad-text {
 		color: var(--fail-text);

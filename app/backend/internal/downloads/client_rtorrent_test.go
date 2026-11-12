@@ -32,11 +32,12 @@ type fakeRTorrent struct {
 	items     map[string]*rtItem // by upper-case hash
 	loads     int
 	calls     []string
-	untrusted bool   // refuse write calls the way ruTorrent's plugins do
-	dropLoad  bool   // answer a load with 0 but keep nothing
-	tooLarge  bool   // refuse a load for its size
-	hideFor   int    // lookups that miss a fresh item
-	path      string // where it answers, /RPC2 when empty
+	untrusted bool     // refuse write calls the way ruTorrent's plugins do
+	dropLoad  bool     // answer a load with 0 but keep nothing
+	tooLarge  bool     // refuse a load for its size
+	hideFor   int      // lookups that miss a fresh item
+	path      string   // where it answers, /RPC2 when empty
+	views     []string // the view of each d.multicall2
 }
 
 type rtItem struct {
@@ -156,8 +157,13 @@ func (f *fakeRTorrent) dispatch(method string, params []any) (any, *xmlrpcFault)
 	case "throttle.global_down.max_rate.set", "throttle.global_up.max_rate.set":
 		return int64(0), nil
 	case "d.multicall2":
+		view, _ := params[1].(string)
+		f.views = append(f.views, view)
 		out := []any{}
 		for h, it := range f.items {
+			if view == "incomplete" && it.complete == 1 {
+				continue
+			}
 			row := []any{}
 			for _, field := range params[2:] {
 				row = append(row, f.field(h, it, strings.TrimSuffix(field.(string), "=")))

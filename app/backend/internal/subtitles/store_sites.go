@@ -41,6 +41,10 @@ type SiteRow struct {
 	DownloadsResetAt  *time.Time `db:"downloads_reset_at" json:"downloads_reset_at"`
 	AllowLocalNetwork bool       `db:"allow_local_network" json:"allow_local_network"`
 	Priority          int        `db:"priority" json:"priority"`
+	// MachineMade lets in the files the site marks as AI-translated or
+	// machine-translated. They score low and are used only when no file made
+	// by a person passes, so a person's file always wins and replaces them.
+	MachineMade bool `db:"machine_made" json:"machine_made"`
 	// HasAccount reports that the site's account details are in the vault. The
 	// details themselves are never sent back.
 	HasAccount bool `json:"has_account"`
@@ -77,6 +81,9 @@ type SiteInput struct {
 	Limits            *SiteLimits `json:"limits"`
 	AllowLocalNetwork bool        `json:"allow_local_network"`
 	Priority          int         `json:"priority"`
+	// MachineMade turns the machine-made switch on or off; left out, a new
+	// site starts off and a changed one keeps its switch.
+	MachineMade *bool `json:"machine_made"`
 	// Account details for kinds that need an account. Left empty on a change,
 	// the stored details stay.
 	Username string `json:"username"`
@@ -202,7 +209,8 @@ func AddSite(ctx context.Context, st *database.Store, v *secrets.Vault, in SiteI
 	if k.NeedsAccount && len(missingAccount(k, acct)) > 0 {
 		return SiteRow{}, ErrNeedsAccount
 	}
-	r := SiteRow{Name: in.Name, Kind: in.Kind, URL: in.URL, State: "enabled", Limits: *in.Limits, AllowLocalNetwork: in.AllowLocalNetwork, Priority: in.Priority}
+	r := SiteRow{Name: in.Name, Kind: in.Kind, URL: in.URL, State: "enabled", Limits: *in.Limits, AllowLocalNetwork: in.AllowLocalNetwork, Priority: in.Priority,
+		MachineMade: in.MachineMade != nil && *in.MachineMade}
 	if (in.Enabled != nil && !*in.Enabled) || (in.Enabled == nil && k.DefaultOff) {
 		r.State = "disabled"
 	}
@@ -263,6 +271,9 @@ func EditSite(ctx context.Context, st *database.Store, v *secrets.Vault, id int6
 		return r, errors.New("the address moved to another site: give the account details again")
 	}
 	r.Name, r.URL, r.Limits, r.AllowLocalNetwork, r.Priority = in.Name, in.URL, *in.Limits, in.AllowLocalNetwork, in.Priority
+	if in.MachineMade != nil {
+		r.MachineMade = *in.MachineMade
+	}
 	if in.Enabled != nil {
 		if *in.Enabled {
 			r.State, r.PauseReason, r.PausedUntil, r.Failures = "enabled", nil, nil, 0

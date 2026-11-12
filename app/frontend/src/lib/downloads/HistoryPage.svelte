@@ -265,8 +265,9 @@
 {/if}
 {#if open && phone}
 	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-	<div class="scrim" aria-hidden="true" in:fade={{ duration: ms(300) }} out:fade={{ duration: ms(200) }} onclick={() => close()}></div>
-	<div class="sheet" role="dialog" aria-modal="true" aria-label={t('downloads.hpage.filter')} tabindex="-1" bind:this={pop} onkeydown={keys} in:fly={{ y: 80, duration: ms(420), easing: cubicOut }} out:fly={{ y: 80, duration: ms(200), easing: cubicIn }}>
+	<!-- The sheet rises solid (the rows never show through it) at the shared sheet's pace. -->
+	<div class="scrim" aria-hidden="true" in:fade={{ duration: ms(240) }} out:fade={{ duration: ms(150) }} onclick={() => close()}></div>
+	<div class="sheet" role="dialog" aria-modal="true" aria-label={t('downloads.hpage.filter')} tabindex="-1" bind:this={pop} onkeydown={keys} in:fly={{ y: 80, opacity: 1, duration: ms(240), easing: cubicOut }} out:fly={{ y: 80, opacity: 1, duration: ms(150), easing: cubicIn }}>
 		<div class="sh"><span class="sht">{t('downloads.hpage.filter')}</span><button type="button" class="done" onclick={() => close()}><Icon name="check" size={16} />{t('downloads.hpage.done')}</button></div>
 		{@render fields()}
 	</div>

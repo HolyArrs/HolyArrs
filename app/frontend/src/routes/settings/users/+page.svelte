@@ -21,6 +21,7 @@
 	import { session, type Perm, type Role } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, date } from '#lib/core/format.ts';
+	import { HiddenCard } from '#lib/discover/index.ts';
 
 	interface User {
 		id: number;
@@ -120,6 +121,7 @@
 	let dialog: HTMLDialogElement | undefined = $state();
 
 	const isOwner = $derived(session.s.role === 'owner');
+	const names = $derived(new Map(users.map((u) => [u.id, u.name])));
 	// Admins hand out only what they hold.
 	const grantable = $derived(allPerms.filter((p) => session.can(p)));
 
@@ -405,7 +407,7 @@
 							{#if u.max_rating}<span class="chip" data-testid="kid-label">{kidLabel(u.max_rating)}</span>{/if}
 						</div>
 						<div class="xs muted">
-							{#if u.links.length}{u.links.map((l) => `${providerWord[l.provider] ?? l.provider}: ${l.name}`).join(' · ')} ·
+							{#if u.links.length}{u.links.map((l) => `${providerWord[l.provider] ?? l.provider}: ${l.name}`).join(' · ')}{' · '}
 							{/if}{u.role === 'owner' ? t('settings.users.everything') : u.perms.map((p) => permWord[p]).join(', ') || t('settings.users.nothingYet')} ·
 							{u.last_seen_at ? t('settings.users.seen', { ago: ago(u.last_seen_at) }) : t('settings.users.notSeen')}
 						</div>
@@ -451,6 +453,8 @@
 			{/each}
 		</ul>
 	</SettingsCard>
+
+	{#if hasData}<HiddenCard people={names} />{/if}
 
 	<SettingsCard id="invites-card" title={t('settings.users.inviteLinks')}>
 		{#if invites.length === 0}
@@ -594,6 +598,7 @@
 			{:else if limits[editing.id]?.no_limit}
 				<p class="hint">{t('settings.users.noWeeklyLimit', { name: editing.name })}</p>
 			{/if}
+			<HiddenCard people={names} userId={editing.id} />
 			<div class="row end">
 				<Button variant="plain" type="button" onclick={() => dialog?.close()}>{t('settings.users.cancel')}</Button>
 				<Button variant="primary" type="submit" disabled={saving} aria-busy={saving}>{t('settings.users.save')}</Button>

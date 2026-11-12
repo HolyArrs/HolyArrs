@@ -135,14 +135,14 @@ func (s *Service) wikiGet(ctx context.Context, path string, limit int64, out any
 	defer cancel()
 	tok, err := s.access(ctx)
 	if err != nil || tok == "" || strings.ContainsAny(tok, "\r\n") {
-		return ErrServiceAccess
+		return accessErr(err)
 	}
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.base+path, nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	req.Header.Set("Accept", "application/json")
 	resp, err := s.http.Do(req)
 	if err != nil {
-		return ErrServiceUnavailable
+		return unreached(err)
 	}
 	defer resp.Body.Close()
 	switch {

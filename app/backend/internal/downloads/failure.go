@@ -374,6 +374,14 @@ func (m *Manager) failed(ctx context.Context, dr domain.Downloader, old, next do
 	return true
 }
 
+// failDead fails a download the dead or crawling torrent rule caught. Like a
+// stall, the Release is turned down and the Slots are searched again.
+func (m *Manager) failDead(ctx context.Context, dr domain.Downloader, d domain.Download, reason string, st settings) {
+	next := d
+	next.State, next.StateReason = "failed", &reason
+	m.failed(ctx, dr, d, next, st, domain.System)
+}
+
 // readFinished finds the final files of a finished job. It reads the disk through the path maps and never leaves the save root or the mapped roots, so a client cannot point HolyArrs at other files. If the path is not visible here, it falls back to the name and size the client gave.
 func readFinished(j Job, pm []domain.PathMap, saveRoot string) (string, []File) {
 	content := j.ContentPath
@@ -388,6 +396,8 @@ func readFinished(j Job, pm []domain.PathMap, saveRoot string) (string, []File) 
 	}
 	// Lstat so a symlink is not followed out of the roots.
 	fi, err := os.Lstat(local)
+	// Only inside the save root or a path pair the owner set up: a Downloader
+	// never decides which folders HolyArrs reads.
 	if !underAny(local, roots) {
 		err = fs.ErrPermission
 	}

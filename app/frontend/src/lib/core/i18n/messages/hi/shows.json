@@ -204,5 +204,15 @@
 	"shows.page.mainVersionParen": "(मुख्य वर्ज़न)",
 	"shows.page.keepThem": "अप-टू-डेट रखें",
 	"shows.page.leaveThem": "बंद रहने दें",
-	"shows.page.filesStay": "एपिसोड और फ़ाइलें बनी रहती हैं।"
+	"shows.page.filesStay": "एपिसोड और फ़ाइलें बनी रहती हैं।",
+	"shows.page.seasonPacks": "सीज़न पैक",
+	"shows.page.packWhole": "पूरा सीज़न लें",
+	"shows.page.packFew": "एक बार में कुछ एपिसोड लें",
+	"shows.page.packAhead": "आगे के एपिसोड",
+	"shows.page.packHint": "जब सिर्फ़ पूरे सीज़न का पैक ही रिलीज़ हो, तो qBittorrent अगले {n} एपिसोड लेता है। “अगले एपिसोड लें” दबाने पर या Plex या Jellyfin में कोई एपिसोड देखा हुआ दिखने पर और एपिसोड आते हैं। Usenet और दूसरे डाउनलोडर पूरा सीज़न लेते हैं।",
+	"shows.page.packWholeShort": "पूरा सीज़न",
+	"shows.page.packAtATime": "एक बार में {n} एपिसोड",
+	"shows.tools.packNote": "यह सीज़न अपने पैक से एक बार में {n} एपिसोड करके आता है।",
+	"shows.tools.getNext": "अगले {n} एपिसोड लें",
+	"shows.page.packOneAtATime": "एक बार में 1 एपिसोड"
 }

@@ -46,6 +46,20 @@ func (a *Auth) PlexToken(ctx context.Context, userID int64) (string, error) {
 	return "", nil
 }
 
+// PlexOwnerLink is the owner's Plex link from Settings, which Requests reads
+// Plex friends' watchlists with: its token ("" when none is kept) and the
+// server people must share ("" for any).
+func (a *Auth) PlexOwnerLink(ctx context.Context) (token, server string) {
+	if a.vault == nil {
+		return "", ""
+	}
+	tok, err := a.vault.Setting(ctx, settingsGroup, signInPrefix+keyPlexOwner)
+	if err != nil || tok == "" {
+		return "", ""
+	}
+	return tok, a.way(ctx, ProviderPlex).ServerID
+}
+
 func (a *Auth) plexMineRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/auth/plex/my-link", a.myPlexLink)
 	m.HandleFunc("POST /api/v1/auth/plex/my-link/start", a.myPlexLinkStart)

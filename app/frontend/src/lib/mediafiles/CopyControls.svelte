@@ -248,12 +248,12 @@
 	.cc-row small.mono { font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace); }
 	.cc-row.act { cursor: pointer; }
 	.cc-row.act:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 4%, transparent); }
-	.cc-row.act:disabled { opacity: .55; cursor: default; }
+	.cc-row.act:disabled { opacity: var(--disabled-opacity); cursor: default; }
 	.cc-row :global(svg) { flex: none; color: var(--text-muted); }
 	.cc-check { display: inline-flex; align-items: center; gap: 7px; color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); cursor: pointer; }
 	.cc-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--text); }
 	.cc-btn { flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; }
-	.cc-btn:disabled { opacity: .45; cursor: default; }
+	.cc-btn:disabled { opacity: var(--disabled-opacity); cursor: default; }
 	/* Larger hit areas on touch screens. */
 	@media (pointer: coarse) { .cc-btn { height: 44px; } .cc-check input { width: 20px; height: 20px; } }
 	@media (max-width: 600px) { .cc-row { padding: 12px 16px; } }

@@ -62,7 +62,7 @@
 	"settings.index.title-defaults.td-order.episode-order-for-new-shows.label": "Порядок серій для нових серіалів",
 	"settings.index.title-defaults.td-order.episode-order-for-new-shows.words": "серіали тип серіалу аніме щоденний наскрізний нумерація ефір",
 	"settings.index.title-defaults.td-source.where-show-details-come-from.label": "Звідки беруться подробиці про серіали",
-	"settings.index.title-defaults.td-source.where-show-details-come-from.words": "серіали метадані tmdb tvmaze подробиці джерело",
+	"settings.index.title-defaults.td-source.where-show-details-come-from.words": "серіали метадані tmdb tvmaze tvdb подробиці джерело",
 	"settings.index.naming.file-pattern.movie-file-name-pattern.label": "Шаблон назви файлу фільму",
 	"settings.index.naming.file-pattern.movie-file-name-pattern.words": "назви перейменування формат файл фільму",
 	"settings.index.naming.folder-pattern.movie-folder-name-pattern.label": "Шаблон назви теки фільму",
@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "Шукати зараз",
 	"settings.index.search.search-now.search-now.words": "пошук краща копія стрічки запустити",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "Завантажувачі",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "клієнт завантаження qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget торент-клієнт додати",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "клієнт завантаження qbittorrent sabnzbd transmission deluge rtorrent rutorrent aria2 nzbget торент-клієнт додати",
 	"settings.index.downloaders.st-stall.stalled-after.label": "Зависло після",
 	"settings.index.downloaders.st-stall.stalled-after.words": "зависло застрягло години завантаження",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "Здатися й пробувати наступний реліз через",
@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Сповіщення для мене",
 	"settings.index.account.alerts-me.alerts-for-me.words": "моя пошта discord сповіщення",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Мої пристрої з виконаним входом",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "сеанси пристрої вийти скрізь"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "сеанси пристрої вийти скрізь",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Звідки беруться відомості",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "metadata mode own keys off lookups privacy server independent",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Власні ключі",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart key api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Адреси для вашого брандмауера",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall hosts outside addresses allow list"
 }

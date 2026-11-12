@@ -59,18 +59,21 @@ type DownloaderView struct {
 	Writable       bool `json:"writable"`
 	WritableLocked bool `json:"writable_locked"`
 	// ClearFinished: a Usenet job and its files leave the client once imported.
-	ClearFinished bool       `json:"clear_finished"`
-	Tags          []string   `json:"tags"`
-	Health        HealthView `json:"health"`
-	CheckedAt     *time.Time `json:"checked_at,omitempty"`
-	Active        int        `json:"active_downloads"`
+	ClearFinished bool `json:"clear_finished"`
+	// AfterSeeding: a torrent leaves the client once imported and seeded.
+	AfterSeeding SeedingChoice `json:"after_seeding"`
+	Tags         []string      `json:"tags"`
+	Health       HealthView    `json:"health"`
+	CheckedAt    *time.Time    `json:"checked_at,omitempty"`
+	Active       int           `json:"active_downloads"`
 }
 
 func downloaderView(d domain.Downloader, active int) DownloaderView {
 	v := DownloaderView{ID: d.ID, Name: d.Name, Kind: d.Adapter, Protocol: d.Protocol, URL: d.URL, Username: d.Username, Category: d.Category,
 		CategoryMovies: d.CategoryMovies, CategoryShows: d.CategoryShows, CategoryMusic: d.CategoryMusic,
 		Priority: d.Priority, PathMap: d.PathMap, AllowLocal: d.AllowLocal, Health: HealthOf(d, time.Now()), CheckedAt: d.CheckedAt, Active: active,
-		Writable: d.Writable, WritableLocked: ReadOnlyByEnv(d), ClearFinished: d.ClearFinished, Tags: d.Tags}
+		Writable: d.Writable, WritableLocked: ReadOnlyByEnv(d), ClearFinished: d.ClearFinished, Tags: d.Tags,
+		AfterSeeding: seedingView(d)}
 	if v.Tags == nil {
 		v.Tags = []string{}
 	}
@@ -126,7 +129,7 @@ func (a *Web) listDownloaders(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"downloaders": out})
 }
 
-const downloaderHelp = `send name, kind (qbittorrent, transmission, deluge, rtorrent, sabnzbd or nzbget), url, and if needed secret (an API key or password; qBittorrent takes its API key with no username, or a username and password), category, priority (1 to 50), path_map [{theirs, ours}], allow_local_network, writable, clear_finished`
+const downloaderHelp = `send name, kind (qbittorrent, transmission, deluge, rtorrent, aria2, sabnzbd or nzbget), url, and if needed secret (an API key or password; qBittorrent takes its API key with no username, or a username and password; aria2 takes its RPC secret and no username), category, priority (1 to 50), path_map [{theirs, ours}], allow_local_network, writable, clear_finished`
 
 func downloaderError(w http.ResponseWriter, err error) {
 	switch {
@@ -142,7 +145,7 @@ func downloaderError(w http.ResponseWriter, err error) {
 		webserver.Fail(w, http.StatusServiceUnavailable, err.Error())
 	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
 		webserver.Fail(w, http.StatusNotFound, "no such Downloader")
-	case errors.Is(err, ErrName), errors.Is(err, ErrAdapter), errors.Is(err, ErrURL), errors.Is(err, ErrCategory), errors.Is(err, ErrDelugeLabel),
+	case errors.Is(err, ErrName), errors.Is(err, ErrAdapter), errors.Is(err, ErrURL), errors.Is(err, ErrCategory), errors.Is(err, ErrDelugeLabel), errors.Is(err, ErrAria2Folder), errors.Is(err, ErrSeedGoal), errors.Is(err, ErrSeedTorrent),
 		errors.Is(err, ErrPriority), errors.Is(err, ErrPathMap), errors.Is(err, ErrUsername), errors.Is(err, ErrKeyNeed),
 		errors.Is(err, ErrQbitKey):
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
@@ -190,6 +193,7 @@ func (a *Web) addDownloader(w http.ResponseWriter, r *http.Request) {
 		downloaderError(w, err)
 		return
 	}
+	d, _ = a.Manager().LearnSaveRoot(r.Context(), d, actor(r))
 	a.publishDownloader(d)
 	webserver.WriteJSON(w, http.StatusCreated, downloaderView(d, 0))
 }
@@ -206,12 +210,19 @@ func (a *Web) editDownloader(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// A Downloader that had no path pair gets its save root; pairs the owner
+	// removes in this edit stay removed.
+	var before domain.Downloader
+	_ = database.Get(r.Context(), a.Store.Read(), "downloaders", id, &before)
 	d, err := Change(r.Context(), a.Store, a.Secrets, id, in, actor(r))
 	if err != nil {
 		downloaderError(w, err)
 		return
 	}
 	a.Manager().Forget(id)
+	if len(before.PathMap) == 0 {
+		d, _ = a.Manager().LearnSaveRoot(r.Context(), d, actor(r))
+	}
 	a.publishDownloader(d)
 	webserver.WriteJSON(w, http.StatusOK, downloaderView(d, 0))
 }
@@ -339,6 +350,13 @@ func explainDownloader(err error) string {
 	return "It did not answer: " + msg
 }
 
+// mayKeepSaveRoot says whether a test may store the save root. Like an edit,
+// that takes a browser session or an API key (no sign-in is for tests).
+func mayKeepSaveRoot(r *http.Request) bool {
+	_, signedIn := webserver.From(r.Context())
+	return !signedIn || webserver.Strong(r.Context())
+}
+
 // TestDownloader asks a saved Downloader for its version and says the
 // result in plain words. A working answer ends a rest.
 func (a *Web) TestDownloader(w http.ResponseWriter, r *http.Request) {
@@ -356,7 +374,7 @@ func (a *Web) TestDownloader(w http.ResponseWriter, r *http.Request) {
 	m := a.Manager()
 	m.Forget(id)
 	start := time.Now()
-	h, err := m.Check(ctx, d)
+	h, err := m.CheckNow(ctx, d)
 	out := map[string]any{"ok": err == nil, "ms": time.Since(start).Milliseconds()}
 	if err != nil {
 		out["text"] = explainDownloader(err)
@@ -365,6 +383,12 @@ func (a *Web) TestDownloader(w http.ResponseWriter, r *http.Request) {
 		out["version"] = h.Version
 		if h.Note != "" {
 			out["text"] = out["text"].(string) + " " + h.Note
+		}
+		// A Downloader saved before it had a save root gets it on this test.
+		if len(d.PathMap) == 0 && mayKeepSaveRoot(r) {
+			if _, kept := m.LearnSaveRoot(ctx, d, actor(r)); len(kept) > 0 {
+				out["text"] = out["text"].(string) + " HolyArrs reads its finished downloads from " + strings.Join(kept, ", ") + "."
+			}
 		}
 	}
 	_ = database.Get(r.Context(), a.Store.Read(), "downloaders", id, &d)
@@ -414,6 +438,39 @@ type DownloadView struct {
 	PeersTotal int    `json:"peers_total,omitempty"`
 	ETA        *int64 `json:"eta,omitempty"`
 	Active     bool   `json:"active"`
+	// Pack is set for a season pack fetched a few episodes at a time.
+	Pack *PackRange `json:"pack,omitempty"`
+}
+
+// PackRange is the switched-on episodes of a season pack fetched a few at a
+// time: the first and last episode numbers, how many are on and how many the
+// pack holds.
+type PackRange struct {
+	From  int `json:"from"`
+	To    int `json:"to"`
+	Taken int `json:"taken"`
+	Total int `json:"total"`
+}
+
+func packRangeOf(files []domain.PackFile) *PackRange {
+	if len(files) == 0 {
+		return nil
+	}
+	r := &PackRange{}
+	for _, f := range files {
+		r.Total += len(f.Eps)
+		for _, e := range f.Eps {
+			if !f.On {
+				continue
+			}
+			r.Taken++
+			if r.From == 0 || e < r.From {
+				r.From = e
+			}
+			r.To = max(r.To, e)
+		}
+	}
+	return r
 }
 
 // DownloadLabels are the words people see for Download states.
@@ -423,7 +480,7 @@ var DownloadLabels = map[string]string{
 }
 
 func DownloadViewOf(d domain.Download) DownloadView {
-	v := DownloadView{ID: d.ID, State: d.State, Label: DownloadLabels[d.State], Progress: d.Progress, Speed: d.Speed, UpSpeed: d.UpSpeed, Seeds: d.Seeds, Peers: d.Peers, ETA: d.ETA}
+	v := DownloadView{ID: d.ID, State: d.State, Label: DownloadLabels[d.State], Progress: d.Progress, Speed: d.Speed, UpSpeed: d.UpSpeed, Seeds: d.Seeds, Peers: d.Peers, ETA: d.ETA, Pack: packRangeOf(d.PackFiles)}
 	switch d.State {
 	case "sent":
 		v.Text = "Sent to the Downloader; waiting for it to start."
@@ -469,6 +526,11 @@ type DownloaderSettings struct {
 	// AutoAdd is downloads_auto_add: a sure match of an outside item whose
 	// title is not in the Library adds it (no search). Off by default.
 	AutoAdd *bool `json:"downloads_auto_add,omitempty"`
+	// The dead or crawling torrent rule, 0 for off (the default). Left out of
+	// a save, each stays as it is.
+	DeadMetadataMinutes *float64 `json:"dead_metadata_minutes,omitempty"`
+	CrawlKBps           *float64 `json:"crawl_kbps,omitempty"`
+	CrawlHours          *float64 `json:"crawl_hours,omitempty"`
 }
 
 func (a *Web) readDownloaderSettings(ctx context.Context) (DownloaderSettings, error) {
@@ -512,6 +574,12 @@ func (a *Web) readDownloaderSettings(ctx context.Context) (DownloaderSettings, e
 		case "links/" + settingAutoAdd:
 			on := v == "true"
 			st.AutoAdd = &on
+		case "links/" + SettingDeadMetadata:
+			st.DeadMetadataMinutes = &n
+		case "links/" + SettingCrawlKBps:
+			st.CrawlKBps = &n
+		case "links/" + SettingCrawlHours:
+			st.CrawlHours = &n
 		}
 	}
 	mode := ModeOn // any stored value reads as on
@@ -519,6 +587,11 @@ func (a *Web) readDownloaderSettings(ctx context.Context) (DownloaderSettings, e
 	if st.AutoAdd == nil {
 		off := false
 		st.AutoAdd = &off
+	}
+	for _, p := range []**float64{&st.DeadMetadataMinutes, &st.CrawlKBps, &st.CrawlHours} {
+		if *p == nil {
+			*p = new(float64)
+		}
 	}
 	if st.SABOutside == nil {
 		on := true // shown by default
@@ -553,6 +626,10 @@ func (a *Web) putDownloaderSettings(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusBadRequest, "grab_spacing_seconds is 0 to 60")
 		return
 	}
+	if msg := deadRuleProblem(in); msg != "" {
+		webserver.Fail(w, http.StatusBadRequest, msg)
+		return
+	}
 	by := actor(r)
 	now := database.FormatTime(time.Now())
 	byText := actorJSONText(by)
@@ -574,6 +651,14 @@ func (a *Web) putDownloaderSettings(w http.ResponseWriter, r *http.Request) {
 	if in.AutoAdd != nil {
 		vals = append(vals, struct{ grp, key, value string }{"links", settingAutoAdd, strconv.FormatBool(*in.AutoAdd)})
 	}
+	for _, f := range []struct {
+		key string
+		v   *float64
+	}{{SettingDeadMetadata, in.DeadMetadataMinutes}, {SettingCrawlKBps, in.CrawlKBps}, {SettingCrawlHours, in.CrawlHours}} {
+		if f.v != nil {
+			vals = append(vals, struct{ grp, key, value string }{"links", f.key, strconv.FormatFloat(*f.v, 'f', -1, 64)})
+		}
+	}
 	err := a.Store.Write(r.Context(), func(tx *sql.Tx) error {
 		for _, v := range vals {
 			if _, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -591,4 +676,25 @@ func (a *Web) putDownloaderSettings(w http.ResponseWriter, r *http.Request) {
 	// The change is logged once by logSettingsChanges as an audit Event (area
 	// and who, never the values), so it is not written or sent live here.
 	a.getDownloaderSettings(w, r)
+}
+
+// deadRuleProblem checks the dead or crawling torrent rule numbers; 0 is off.
+func deadRuleProblem(in DownloaderSettings) string {
+	in.DeadMetadataMinutes, in.CrawlKBps, in.CrawlHours = orZero(in.DeadMetadataMinutes), orZero(in.CrawlKBps), orZero(in.CrawlHours)
+	switch {
+	case *in.DeadMetadataMinutes != 0 && (*in.DeadMetadataMinutes < 5 || *in.DeadMetadataMinutes > 1440):
+		return "dead_metadata_minutes is 0 (off) or 5 to 1440"
+	case *in.CrawlKBps < 0 || *in.CrawlKBps > 100000:
+		return "crawl_kbps is 0 (off) to 100000"
+	case *in.CrawlHours != 0 && (*in.CrawlHours < 1 || *in.CrawlHours > 168):
+		return "crawl_hours is 0 (off) or 1 to 168"
+	}
+	return ""
+}
+
+func orZero(p *float64) *float64 {
+	if p == nil {
+		return new(float64)
+	}
+	return p
 }

@@ -131,7 +131,8 @@ func (w *TitleWarmer) warmOne(ctx context.Context, j warmJob) {
 				c.Put(key, e)
 			}
 		}
-		if !cached || e.Details == nil || time.Since(e.At) >= DetailsTTL(e) {
+		// Details kept before titles carried their texts are read again.
+		if !cached || e.Details == nil || time.Since(e.At) >= DetailsTTL(e) || !textKept(ctx, w.Metadata(), j.kind, j.id) {
 			if det, err := d.Details(ctx, j.kind, j.id); err == nil {
 				c.Put(key, Entry{At: time.Now(), Details: &det})
 				metadata.KeepOnDisk(ctx, store, key, det)

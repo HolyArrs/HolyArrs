@@ -1,19 +1,14 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
-	import { LOCALES, lang, setLang, type LocaleChoice } from '#lib/core/i18n/i18n.svelte.ts';
+	import { setLang, type LocaleChoice } from '#lib/core/i18n/i18n.svelte.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
+	import LanguagePicker from './LanguagePicker.svelte';
 	import { setTheme, theme } from './theme.svelte.ts';
 	import { pickBeforeSignIn } from './profile.svelte.ts';
 
 	let { panelEl }: { panelEl: HTMLElement | undefined } = $props();
 
-	// Each language in its own name, so anyone can find theirs; the pick is kept for when they sign in.
-	const languages = $derived<MenuItem[]>([
-		{ label: t('accounts.language.auto'), checked: lang.choice === 'auto', onselect: () => choose('auto') },
-		...LOCALES.map((l) => ({ label: l.name, checked: lang.choice === l.code, onselect: () => choose(l.code) }))
-	]);
-
+	// The pick changes this device's words now and is kept for when they sign in.
 	function choose(c: LocaleChoice) {
 		pickBeforeSignIn();
 		void setLang(c);
@@ -22,7 +17,6 @@
 
 <!-- Language and light or dark, quietly in the top corner; they change this device's words and look. -->
 <span class="mode" data-theme={theme.value}>
-	<Menu label={t('accounts.language.label')} icon="globe" items={languages} width={200} />
 	<IconButton
 		icon={theme.value === 'light' ? 'moon' : 'sun'}
 		variant="glass"
@@ -35,12 +29,17 @@
 			requestAnimationFrame(() => requestAnimationFrame(() => panelEl?.classList.remove('swap')));
 		}}
 	/>
+	<LanguagePicker id="language-signin" variant="signin" align="end" onchoose={choose} />
 </span>
 
 <style>
 	/* The appearance switch: inside the frame's top-right corner, above the art. */
-	.mode { position: absolute; z-index: 3; top: calc(var(--fr) + 14px); inset-inline-end: calc(var(--fr) + 14px); display: flex; gap: 4px; }
+	.mode { position: absolute; z-index: 3; top: calc(var(--fr) + 14px); inset-inline-end: calc(var(--fr) + 14px); display: flex; align-items: center; gap: 8px; }
 	:global(.wrap.leaving) .mode { display: none; }
+	/* Desktop language button: globe and the current language, quiet like the corner links. */
+	.mode :global(.trigger.button) { min-height: 36px; padding: 0 10px; gap: 6px; border-radius: var(--r-sm); background: transparent; color: rgb(255 255 255 / 0.72); font: 500 14px/1 var(--font-ui); filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.35)); transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
+	@media (hover: hover) { .mode :global(.trigger.button:hover), .mode :global(.trigger.button[aria-expanded='true']) { color: #fff; background: rgb(0 0 0 / 0.3); } }
+	.mode :global(.trigger.button:focus-visible) { outline: none; color: #fff; box-shadow: 0 0 0 2px rgb(255 255 255 / 0.85); }
 	/* Barely there, like a watermark: a faint icon with no fill until hover or focus. */
 	.mode :global(.ui-ibtn.glass), .mode :global(.trigger.icon) {
 		color: rgb(255 255 255 / 0.5);

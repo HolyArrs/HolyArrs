@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Cambiar",
 	"settings.sources.removeName": "Quitar {name}",
 	"settings.sources.remove": "Quitar",
-	"settings.sources.bridge": "Vincular Jackett o Prowlarr"
+	"settings.sources.bridge": "Vincular Jackett o Prowlarr",
+	"settings.sources.off": "Las fuentes están apagadas",
+	"settings.sources.offText": "HolyArrs no busca ni descarga. Lo que añadas en tu gestor de descargas se sigue importando.",
+	"settings.sources.openParts": "Abrir Partes",
+	"settings.sources.offState": "Apagado"
 }

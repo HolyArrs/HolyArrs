@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "O HolyArrs está a parar.",
+	"settings.danger.couldnt": "Não foi possível: {action}",
+	"settings.danger.title": "Zona de perigo",
+	"settings.danger.ownerOnly": "Só o proprietário e administradores",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Sim, {action}",
+	"settings.danger.cancel": "Cancelar",
+	"settings.danger.expires": "Expira em 60 s",
+	"settings.danger.wholeApp": "A app inteira",
+	"settings.danger.intro": "Estas ações param o HolyArrs. A política de reinício do Docker o inicia novamente em alguns segundos, a menos que a política seja <code>no</code>; nesse caso, inicie o contentor mesmo. Cada uma pede confirmação antes.",
+	"settings.danger.restart": "Reiniciar o HolyArrs",
+	"settings.danger.safe": "Reiniciar em modo de segurança",
+	"settings.danger.shutdown": "Desligar",
+	"settings.danger.safeNote": "Inicia uma vez só com entrar, Definições e Biblioteca. Use quando uma Parte impedir a inicialização."
+}

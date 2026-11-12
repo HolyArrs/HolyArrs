@@ -38,6 +38,14 @@
 	"settings.libraryFolders.foldersHint": "हर लाइन में एक पाथ, जैसे /data/imports। 32 तक।",
 	"settings.libraryFolders.ownerOnly": "सिर्फ़ ओनर और एडमिन",
 	"settings.libraryFolders.copiesExpected": "कॉपी होना अपेक्षित है",
-	"settings.libraryFolders.copiesExpectedState": "कॉपी, जैसा अपेक्षित",
-	"settings.libraryFolders.warnAgain": "फिर से चेतावनी दें"
+	"settings.libraryFolders.copiesExpectedState": "पूरी कॉपी, जैसा आपने चुना",
+	"settings.libraryFolders.whyCopies": "क्यों?",
+	"settings.libraryFolders.stateInstant": "तुरंत, कोई अतिरिक्त जगह नहीं",
+	"settings.libraryFolders.warnAgain": "फिर से चेतावनी दें",
+	"settings.libraryFolders.changePath": "पाथ बदलें",
+	"settings.libraryFolders.changePathOf": "{path} का पाथ बदलें",
+	"settings.libraryFolders.newPath": "नया पाथ",
+	"settings.libraryFolders.changePathHint": "पहले फ़ाइलें वहाँ ले जाएँ। HolyArrs हर फ़ाइल जाँचता है और कुछ नहीं हिलाता।",
+	"settings.libraryFolders.checkingFiles": "फ़ाइलें जाँची जा रही हैं…",
+	"settings.libraryFolders.pathChanged": "पाथ बदल गया"
 }

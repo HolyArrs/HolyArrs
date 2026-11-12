@@ -418,6 +418,8 @@ func adapterWord(adapter string) string {
 		return "Deluge"
 	case "rtorrent":
 		return "rTorrent"
+	case "aria2":
+		return "aria2"
 	case "sabnzbd":
 		return "SABnzbd"
 	case "nzbget":

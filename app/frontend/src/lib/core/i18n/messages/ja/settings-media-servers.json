@@ -40,5 +40,12 @@
 "settings.mediaServers.test": "テスト",
 "settings.mediaServers.changeButton": "変更",
 "settings.mediaServers.removeName": "{name} を削除",
-"settings.mediaServers.remove": "削除"
+"settings.mediaServers.remove": "削除",
+"settings.mediaServers.watchTitle": "視聴履歴",
+"settings.mediaServers.watchRead": "視聴履歴を読む",
+"settings.mediaServers.watchHint": "ライブラリを管理する人向けに、統計で誰が何を見たかを表示します。オフにすると読み取った内容は削除されます。",
+"settings.mediaServers.watchConfirmOff": "視聴履歴をオフにしますか？これまでに読み取った内容はすべて削除されます。",
+"settings.mediaServers.watchTurnedOn": "視聴履歴をオンにしました。最初の読み取りは30分以内です。",
+"settings.mediaServers.watchTurnedOff": "視聴履歴をオフにしました",
+"settings.mediaServers.watchFailed": "視聴履歴を変更できませんでした"
 }

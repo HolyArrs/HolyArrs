@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "भाषा",
 	"subtitles.wants.pick": "भाषा चुनें",
 	"subtitles.wants.takeOff": "{name} हटाएं",
-	"subtitles.wants.thisLanguage": "यह भाषा"
+	"subtitles.wants.thisLanguage": "यह भाषा",
+	"subtitles.made.translated": "अनुवादित",
+	"subtitles.made.partial": "आंशिक अनुवाद",
+	"subtitles.made.ai": "AI अनुवाद",
+	"subtitles.made.machine": "मशीन अनुवाद",
+	"subtitles.wants.translateFrom": "इससे अनुवाद",
+	"subtitles.wants.noTranslate": "अनुवाद न करें",
+	"subtitles.panel.picture": "चित्र",
+	"subtitles.panel.pictureTitle": "चित्र वाला सबटाइटल: अनुवाद नहीं हो सकता",
+	"subtitles.panel.translate": "अनुवाद करें",
+	"subtitles.panel.translateFor": "{name} सबटाइटल का अनुवाद करें",
+	"subtitles.panel.translateFrom": "इससे अनुवाद",
+	"subtitles.panel.translateQueued": "अनुवाद हो रहा है",
+	"subtitles.panel.translateQueuedBody": "{name} सबटाइटल तैयार होते ही यहां दिखेगा।",
+	"subtitles.panel.translating": "कुछ नहीं मिला, आपका अनुवादक एक बना रहा है।"
 }

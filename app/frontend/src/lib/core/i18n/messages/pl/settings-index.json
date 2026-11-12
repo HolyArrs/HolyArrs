@@ -62,7 +62,7 @@
 	"settings.index.title-defaults.td-order.episode-order-for-new-shows.label": "Kolejność odcinków dla nowych seriali",
 	"settings.index.title-defaults.td-order.episode-order-for-new-shows.words": "seriale typ anime daily absolutna wyemitowana numeracja",
 	"settings.index.title-defaults.td-source.where-show-details-come-from.label": "Skąd pochodzą szczegóły seriali",
-	"settings.index.title-defaults.td-source.where-show-details-come-from.words": "seriale metadane tmdb tvmaze szczegóły źródło",
+	"settings.index.title-defaults.td-source.where-show-details-come-from.words": "seriale metadane tmdb tvmaze tvdb szczegóły źródło",
 	"settings.index.naming.file-pattern.movie-file-name-pattern.label": "Wzorzec nazwy pliku filmu",
 	"settings.index.naming.file-pattern.movie-file-name-pattern.words": "nazewnictwo zmiana nazwy format plik filmu",
 	"settings.index.naming.folder-pattern.movie-folder-name-pattern.label": "Wzorzec nazwy folderu filmu",
@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "Szukaj teraz",
 	"settings.index.search.search-now.search-now.words": "szukaj lepsza kopia kanały uruchom",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "Downloadery",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "download klient qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget torrent klient dodaj",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "download klient qbittorrent sabnzbd transmission deluge rtorrent rutorrent aria2 nzbget torrent klient dodaj",
 	"settings.index.downloaders.st-stall.stalled-after.label": "Zablokowane po",
 	"settings.index.downloaders.st-stall.stalled-after.words": "zablokowane zawieszone godziny pobieranie",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "Zrezygnuj i spróbuj następnego release'u po",
@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Powiadomienia dla mnie",
 	"settings.index.account.alerts-me.alerts-for-me.words": "mój e-mail discord powiadomienia",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Moje zalogowane urządzenia",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "sesje urządzenia wyloguj wszędzie"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "sesje urządzenia wyloguj wszędzie",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Skąd pochodzą szczegóły",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "metadata mode own keys off lookups privacy server independent",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Własne klucze",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart key api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adresy dla zapory",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall hosts outside addresses allow list"
 }

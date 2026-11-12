@@ -38,6 +38,10 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/library/copies":                        webserver.PermManageLibrary,
 	"POST /api/v1/library/copies/search/preview":        webserver.PermManageLibrary,
 	"POST /api/v1/library/copies/search":                webserver.PermManageLibrary,
+	"GET /api/v1/library/stats":                         webserver.PermManageLibrary,
+	"GET /api/v1/library/stats/watched":                 webserver.PermManageLibrary,
+	"GET /api/v1/settings/watch-history":                webserver.NeedOwner,
+	"PUT /api/v1/settings/watch-history":                webserver.NeedOwner,
 
 	// The app's pages and files; the pages themselves ask the API.
 	"GET /":      webserver.NeedSelf,
@@ -108,6 +112,9 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/trailer/stream/{id}/manifest.m3u8":        webserver.NeedSignedIn,
 	"GET /api/v1/trailer/stream/{id}/seg/{n}":              webserver.NeedSignedIn,
 	"GET /api/v1/settings/ui":                              webserver.NeedSignedIn,
+	"GET /api/v1/settings/metadata":                        webserver.PermSettings,
+	"PUT /api/v1/settings/metadata":                        webserver.PermSettings,
+	"POST /api/v1/settings/metadata/test":                  webserver.PermSettings,
 	"PUT /api/v1/settings/ui":                              webserver.PermSettings,
 	"GET /api/v1/discover":                                 webserver.NeedSignedIn,
 	"GET /api/v1/watch-services":                           webserver.NeedSignedIn,
@@ -190,10 +197,13 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/my/plex-watchlist":                  webserver.NeedSignedIn,
 	"PUT /api/v1/my/plex-watchlist":                  webserver.NeedSignedIn,
 	"POST /api/v1/my/plex-watchlist/check":           webserver.NeedSignedIn,
+	"GET /api/v1/settings/asks/plex-friends":         webserver.NeedUsers,
 	"GET /api/v1/asked-by":                           webserver.NeedSignedIn,
 	"GET /api/v1/my/profile":                         webserver.NeedSignedIn,
 	"PUT /api/v1/my/profile":                         webserver.NeedSignedIn,
 	"PUT /api/v1/my/language":                        webserver.NeedSignedIn,
+	"GET /api/v1/my/views":                           webserver.NeedSignedIn,
+	"PUT /api/v1/my/views":                           webserver.NeedSignedIn,
 	"GET /api/v1/my/follows":                         webserver.NeedSignedIn,
 	"GET /api/v1/titles/{id}/follow":                 webserver.NeedSignedIn,
 	"PUT /api/v1/titles/{id}/follow":                 webserver.NeedSignedIn,
@@ -246,10 +256,11 @@ var RoutePerms = map[string]webserver.Perm{
 	"PUT /api/v1/titles/{id}":       webserver.PermManageLibrary,
 	"POST /api/v1/titles/{id}/move": webserver.PermManageLibrary,
 	// Shows.
-	"POST /api/v1/shows":                       webserver.PermManageLibrary,
-	"PUT /api/v1/titles/{id}/seasons/{number}": webserver.PermManageLibrary,
-	"PUT /api/v1/episodes/{id}":                webserver.PermManageLibrary,
-	"PUT /api/v1/settings/shows":               webserver.PermSettings,
+	"POST /api/v1/shows":                                  webserver.PermManageLibrary,
+	"PUT /api/v1/titles/{id}/seasons/{number}":            webserver.PermManageLibrary,
+	"POST /api/v1/titles/{id}/seasons/{number}/pack-next": webserver.PermManageLibrary,
+	"PUT /api/v1/episodes/{id}":                           webserver.PermManageLibrary,
+	"PUT /api/v1/settings/shows":                          webserver.PermSettings,
 	// Music.
 	"POST /api/v1/artists":           webserver.PermManageLibrary,
 	"PUT /api/v1/titles/{id}/artist": webserver.PermManageLibrary,
@@ -258,6 +269,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"PUT /api/v1/settings/music":     webserver.PermSettings,
 	// Organise.
 	"GET /api/v1/titles/{id}/rename":            webserver.PermManageLibrary,
+	"GET /api/v1/titles/{id}/episode-groups":    webserver.PermManageLibrary,
 	"POST /api/v1/titles/{id}/rename":           webserver.PermManageLibrary,
 	"GET /api/v1/rename":                        webserver.PermManageLibrary,
 	"POST /api/v1/rename":                       webserver.PermManageLibrary,
@@ -322,6 +334,9 @@ var RoutePerms = map[string]webserver.Perm{
 	"DELETE /api/v1/own-traits/{id}":                             webserver.PermSettings,
 	"GET /api/v1/trash/profiles":                                 webserver.PermSettings,
 	"POST /api/v1/pick-rules/{id}/trash":                         webserver.PermSettings,
+	"GET /api/v1/hidden":                                         webserver.NeedUsers,
+	"POST /api/v1/hidden":                                        webserver.NeedUsers,
+	"DELETE /api/v1/hidden/{id}":                                 webserver.NeedUsers,
 	"GET /api/v1/never-add":                                      webserver.PermManageLibrary,
 	"POST /api/v1/never-add":                                     webserver.PermManageLibrary,
 	"DELETE /api/v1/never-add/{id}":                              webserver.PermManageLibrary,
@@ -354,6 +369,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/downloads/{id}/mark-failed":                    webserver.PermManageLibrary,
 	"GET /api/v1/downloads/view":                                 webserver.NeedSignedIn, // everyone; non-managers see only their own asks
 	"POST /api/v1/downloads/{id}/remove":                         webserver.PermManageLibrary,
+	"POST /api/v1/downloads/clear-now":                           webserver.PermManageLibrary,
 	"POST /api/v1/downloads/{id}/pause":                          webserver.PermManageLibrary,
 	"POST /api/v1/downloads/{id}/resume":                         webserver.PermManageLibrary,
 	"POST /api/v1/downloads/{id}/top":                            webserver.PermManageLibrary,
@@ -408,6 +424,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/settings/health":                                webserver.PermSettings,
 	"PUT /api/v1/settings/health":                                webserver.PermSettings,
 	"POST /api/v1/library-folders/{id}/check":                    webserver.PermManageLibrary,
+	"PUT /api/v1/library-folders/{id}/path":                      webserver.PermSettings, // a Settings change, like the folder's other edits
 
 	// Settings.
 	"POST /api/v1/library-folders":         webserver.PermSettings,
@@ -530,6 +547,12 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/migrate/moves/{id}":        webserver.NeedUsers,
 	"GET /api/v1/migrate/moves/{id}/report": webserver.NeedUsers,
 	"POST /api/v1/migrate/moves/{id}/undo":  webserver.NeedUsers,
+
+	// Subtitle translation with the owner's own translator.
+	"GET /api/v1/settings/subtitles/translator":       webserver.PermSettings,
+	"PUT /api/v1/settings/subtitles/translator":       webserver.PermSettings,
+	"POST /api/v1/settings/subtitles/translator/test": webserver.PermSettings,
+	"POST /api/v1/files/{id}/subtitles/translate":     webserver.PermManageLibrary,
 
 	// Reports: anyone signed in reports a problem and sees their own;
 	// fixing and opening again needs manage_library.

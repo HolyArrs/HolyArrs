@@ -25,6 +25,9 @@
 	"home.lostIfTheContainer": "perdu si le conteneur est recréé",
 	"home.downloads": "Téléchargements",
 	"home.waitingForTheirFiles": "attendent leurs fichiers",
+	"home.waitingToBeCleared": "en attente de nettoyage",
+	"home.noSaveFolder": "n'a pas de dossier d'enregistrement",
+	"home.noSaveFolderMany": "n'ont pas de dossier d'enregistrement",
 	"home.masterKey": "Clé maîtresse",
 	"home.noKeyKitSaved": "aucun kit de clé enregistré",
 	"home.trailers": "Bandes-annonces",
@@ -266,5 +269,7 @@
 	"home.version": "Version {version}",
 	"home.metadataServerDown": "Serveur de métadonnées hors service",
 	"home.metadataServerOnline": "Serveur de métadonnées en ligne",
-	"home.homeCouldNotRead3": "Accueil n'a pas pu lire les téléchargements pour le moment."
+	"home.homeCouldNotRead3": "Accueil n'a pas pu lire les téléchargements pour le moment.",
+	"home.off": "Désactivé",
+	"home.sourcesOff": "Désactivé dans Parties"
 }

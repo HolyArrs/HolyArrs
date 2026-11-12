@@ -1,0 +1,21 @@
+[
+  {
+    "step_title": "Media folder",
+    "items": [
+      {
+        "type": "textfield",
+        "desc": "Name the shared folder that holds your downloads and media, such as data. HolyArrs gets read and write on it. Type the name only, not a path.",
+        "subitems": [
+          {
+            "key": "wizard_media_share",
+            "desc": "Shared folder",
+            "defaultValue": "data",
+            "validator": {
+              "allowBlank": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

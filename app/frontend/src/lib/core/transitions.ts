@@ -1,7 +1,7 @@
 
 // Shared motion timings, easings and enter/exit transitions, calmer under reduced motion.
 import { fade, fly, scale, slide, type TransitionConfig } from 'svelte/transition';
-import { flip } from 'svelte/animate';
+import { flip, type AnimationConfig } from 'svelte/animate';
 import { reducedMotion } from './motion.ts';
 
 export const DUR = { instant: 90, fast: 150, base: 240, slow: 360, page: 300, glide: 420, hero: 900 } as const;
@@ -75,4 +75,17 @@ export function glideScroll(): ScrollBehavior {
 
 export function glide(node: Element, rects: { from: DOMRect; to: DOMRect }) {
 	return flip(node, rects, { duration: moveMs(), easing: easeOut });
+}
+
+/** Two boxes sit on the same grid row when their tops are within half a box of each other. */
+export function sameRow(a: Pick<DOMRect, 'top' | 'height'>, b: Pick<DOMRect, 'top' | 'height'>): boolean {
+	return Math.abs(a.top - b.top) < Math.min(a.height, b.height) / 2;
+}
+
+/** For card grids: a card that stays in its row slides along it; one that moves to another row fades in where it lands, so cards never fly diagonally across each other. */
+export function rowGlide(node: Element, rects: { from: DOMRect; to: DOMRect }, opts: { duration?: number } = {}): AnimationConfig {
+	const duration = opts.duration ?? moveMs();
+	if (duration <= 0) return { duration: 0 };
+	if (sameRow(rects.from, rects.to)) return flip(node, rects, { duration, easing: easeOut });
+	return { duration: Math.min(duration, DUR.base), easing: easeOut, css: (t) => `opacity: ${t}` };
 }

@@ -7,7 +7,9 @@ sidebar: { order: 2, label: "Step 2 of 5: Folders" }
 
 Set up your folders once so finished downloads land in your Library instantly, without a second copy.
 
-The [Install](install.mdx) example mounts `/movies`, `/tv`, `/music` and `/downloads` one by one. That works, but every import is a full copy. This page swaps those four mounts for one shared parent folder. It is optional.
+The [Install](install.mdx) example already mounts one data folder at `/data`. This page shows the layout inside it and how to give your downloader the same view. Mounting `/movies`, `/tv`, `/music` and `/downloads` one by one also works, but then every import is a full copy.
+
+Already running with separate mounts? See [Move to one data folder](../library/move-to-one-folder.md).
 
 ## The rule
 
@@ -50,6 +52,20 @@ A hardlink is a second name for the same file. It takes no extra space and is ma
 Separate NAS shares or datasets under `/srv/data` are separate filesystems. Files still copy between them. Use folders inside one share.
 :::
 
+## Hardlink, move or copy
+
+When a download finishes, HolyArrs puts each file in your Library in one of three ways:
+
+| Download | Same mount and disk | Different mounts or disks |
+|---|---|---|
+| Torrent | Hardlink. The downloader keeps seeding the same file. | Copy. The torrent keeps its own file. |
+| Usenet, or a file HolyArrs unpacked | Move. | Copy. HolyArrs then clears the finished job, with its files, from SABnzbd or NZBGet. |
+
+- A hardlink or a move is instant and takes no extra space. A copy takes as long as writing the file again, and the file sits on disk twice until the downloader's copy is gone.
+- Before a copy, HolyArrs checks there is room for the file. It writes the copy under a hidden `.holyarrs-` name in the target folder and gives it its real name only when it is complete, so a half-written file never shows in your Library.
+- A copy shows in History as `by copy (hardlink not possible)`.
+- HolyArrs never moves files out of a downloader it may not change (**HolyArrs can change this Downloader** off, or `HOLYARRS_READONLY_DOWNLOADERS`), or out of a Library folder. Those files are hardlinked, or copied.
+
 ## Choices
 
 ### Separate mounts
@@ -64,7 +80,7 @@ If the downloader sees the folder under another name, fill in **Downloader's pat
 
 | You see | Cause | Fix |
 |---|---|---|
-| **No hardlink** on a Library folder | Downloads and media are on different mounts or filesystems | Mount one parent folder, as above |
+| **No hardlink** on a Library folder | Downloads and media are on different mounts or filesystems | Mount one parent folder, as above. Already set up? See [Move to one data folder](../library/move-to-one-folder.md) |
 | **Read only** or **Missing** | The path is wrong, or `PUID` cannot write | Use the path inside the container; fix ownership |
 | A folder is not found | You typed the host path | Type the container path, such as `/data/media/movies` |
 | Import says the path is not allowed | The download folder is not a known place | Set `HOLYARRS_SAVE_PATH`, or add it under **Settings > Library folders > Extra import folders** |
@@ -98,4 +114,5 @@ Test files are removed after the check. **Check again** reruns it.
 
 - [Install](../install/)
 - [Library folders](../../library/folders/)
+- [Move to one data folder](../../library/move-to-one-folder/)
 - [Platforms](../../run/platforms/)

@@ -59,8 +59,8 @@ func TestOpenSubtitlesSearchAndDownload(t *testing.T) {
 	if got[0].Key != "101" || !got[0].MatchedByID || !got[0].Trusted || got[0].ReleaseNames[0] != "The.Lantern.2010.1080p.BluRay.x264-GRP" {
 		t.Errorf("first %+v", got[0])
 	}
-	if got[1].Language != "pt" {
-		t.Errorf("region kept: %+v", got[1])
+	if got[1].Language != "pt-br" {
+		t.Errorf("Brazilian file for a pt wish: %+v", got[1])
 	}
 	if f.Logins != 0 {
 		t.Error("search signed in")
@@ -140,7 +140,8 @@ func TestOpenSubtitlesHostile(t *testing.T) {
 		f.Hostile = body
 		s, _ := osSite(t, f, fakeUser, fakePass)
 		got, err := s.Search(ctx, q)
-		if len(got) != 0 || (err != nil && kindOf(err) != KindUnreadable) {
+		// A machine-made file may come back, but only flagged as such.
+		if len(got) > 1 || (len(got) == 1 && got[0].MachineMade == "") || (err != nil && kindOf(err) != KindUnreadable) {
 			t.Errorf("%s: %+v %v", body, got, err)
 		}
 	}

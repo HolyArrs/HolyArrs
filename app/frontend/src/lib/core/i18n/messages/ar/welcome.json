@@ -49,6 +49,7 @@
 	"welcome.userName": "اسم المستخدم",
 	"welcome.apiKeyLabel": "مفتاح API",
 	"welcome.passwordLabel": "كلمة المرور",
+	"welcome.secretTokenLabel": "الرمز السري",
 	"welcome.save": "حفظ",
 	"welcome.connect": "اربط {name}",
 	"welcome.continue": "متابعة",

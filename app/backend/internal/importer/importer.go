@@ -616,6 +616,55 @@ func candidates(root string, files []domain.SeenFile) ([]Candidate, []mediafiles
 	return cands, bad
 }
 
+// sourcesGone reports whether another app took a finished download's files:
+// every file the plan would read is gone while the download's own folder is
+// still there. For a torrent that folder is the Downloader's save folder, so
+// a missing one is a wrong path map or an empty mount, never proof. A Usenet
+// job folder (ownFolder) belongs to the download alone; it may be gone too
+// when the folder above it is still there.
+func sourcesGone(root string, plan []mediafiles.PlanStep, ownFolder bool) bool {
+	if root == "" {
+		return false
+	}
+	if _, err := os.Stat(root); err != nil {
+		if !ownFolder || !errors.Is(err, fs.ErrNotExist) {
+			return false
+		}
+		if _, err := os.Stat(filepath.Dir(root)); err != nil {
+			return false
+		}
+	}
+	seen := false
+	for _, st := range plan {
+		if !filepath.IsAbs(st.SourceFile) {
+			continue
+		}
+		if _, err := os.Lstat(st.SourceFile); !errors.Is(err, fs.ErrNotExist) {
+			return false
+		}
+		seen = true
+	}
+	if !seen {
+		_, err := os.Lstat(root)
+		return errors.Is(err, fs.ErrNotExist)
+	}
+	return true
+}
+
+// markGone records every step that was not placed as gone, with the reason.
+func markGone(res []mediafiles.PlaceResult) {
+	for i := range res {
+		if res[i].Outcome != "placed" && res[i].Outcome != "skipped" {
+			res[i].Outcome, res[i].Error = "gone", FilesGoneReason
+		}
+	}
+}
+
+// FilesGoneReason is why an import let its download go: every file it would
+// read was already removed, as another app sharing the Downloader does after
+// its own import.
+const FilesGoneReason = "the files were removed by another app before HolyArrs could import them"
+
 // Publisher announces import events.
 type Publisher interface {
 	Publish(topic string, data any) uint64
@@ -623,12 +672,16 @@ type Publisher interface {
 
 // Importer places finished downloads into the library.
 type Importer struct {
-	Store        *database.Store
-	Live         Publisher
-	Ops          Ops
-	SavePath     string
-	OnRejected   func(ctx context.Context, slotID int64)
-	OnImported   func(ctx context.Context, downloadID int64)
+	Store      *database.Store
+	Live       Publisher
+	Ops        Ops
+	SavePath   string
+	OnRejected func(ctx context.Context, slotID int64)
+	OnImported func(ctx context.Context, downloadID int64)
+	// OnFilesGone runs when a finished download's files were all taken by
+	// another app before the import, so a rescan can link the copy that app
+	// placed in the Title's folder.
+	OnFilesGone  func(ctx context.Context, titleID int64)
 	OnLowSpace   func(ctx context.Context, dir string, free, need int64)
 	NoSizeFloors bool
 	// MayMove says whether a Downloader's finished files may be moved out of
@@ -650,6 +703,11 @@ func (im *Importer) publish(topic string, data any) {
 // ErrEpisodeImport is returned when placing episodes is turned off.
 var ErrEpisodeImport = errors.New("placing episodes is turned off; the download stays in the Downloader")
 
+// ErrPackWaiting is returned when every episode a season pack fetched a few
+// at a time waits for is still downloading; the download goes back to
+// downloading.
+var ErrPackWaiting = errors.New("the season pack's episodes are still downloading; the download goes back to downloading")
+
 // ErrAlbumImport is returned when placing albums is turned off.
 var ErrAlbumImport = errors.New("placing albums is turned off; the download stays in the Downloader")
 
@@ -664,7 +722,7 @@ func (im *Importer) RequeueStranded(ctx context.Context, enqueue func(ctx contex
 	}
 	rows, err := im.Store.Read().QueryContext(ctx, `SELECT DISTINCT d.id FROM downloads d, json_each(d.slot_ids) j
 		JOIN slots s ON s.id = j.value JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
-		WHERE d.state = 'finished' AND s.state = 'downloading' AND (t.kind = 'show' OR t.kind = 'artist' AND ?)
+		WHERE d.state = 'finished' AND s.state = 'downloading' AND (s.active_download_id IS NULL OR s.active_download_id = d.id) AND (t.kind = 'show' OR t.kind = 'artist' AND ?)
 		AND NOT EXISTS (SELECT 1 FROM imports x WHERE x.download_id = d.id AND x.state IN ('approved', 'placing', 'done', 'partly_done', 'waiting_for_you'))
 		ORDER BY d.id`, canImportAlbums)
 	if err != nil {
@@ -723,7 +781,7 @@ func (im *Importer) HandleJob(ctx context.Context, r *jobs.Run) error {
 	}
 	dry, _ := r.Job.Params["dry_run"].(bool)
 	imp, err := im.Import(ctx, r.Job.Subject.ID, dry, domain.Actor{Kind: "job", ID: r.Job.ID})
-	if errors.Is(err, ErrEpisodeImport) || errors.Is(err, ErrAlbumImport) {
+	if errors.Is(err, ErrEpisodeImport) || errors.Is(err, ErrAlbumImport) || errors.Is(err, ErrPackWaiting) {
 		r.SetResult(map[string]any{"waiting": err.Error()})
 		return nil
 	}

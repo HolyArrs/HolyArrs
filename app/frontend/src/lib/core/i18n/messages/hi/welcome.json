@@ -49,6 +49,7 @@
 	"welcome.userName": "यूज़र नेम",
 	"welcome.apiKeyLabel": "API कुंजी",
 	"welcome.passwordLabel": "पासवर्ड",
+	"welcome.secretTokenLabel": "सीक्रेट टोकन",
 	"welcome.save": "सेव करें",
 	"welcome.connect": "{name} जोड़ें",
 	"welcome.continue": "आगे बढ़ें",

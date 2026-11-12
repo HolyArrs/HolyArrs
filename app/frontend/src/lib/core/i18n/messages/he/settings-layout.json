@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "הגדרות",
+	"settings.layout.home": "בית",
+	"settings.layout.sections": "אזורי הגדרות",
+	"settings.layout.needsAttention": "דורש תשומת לב",
+	"settings.layout.needsAttentionLower": "דורש תשומת לב",
+	"settings.layout.blocked": "אין לך אפשרות לשנות את זה",
+	"settings.layout.backToSettings": "חזרה להגדרות",
+	"settings.layout.setPasswordFirst": "קודם הגדר סיסמה",
+	"settings.layout.setPasswordDesc": "מפתחות, סיסמאות, אנשים וגיבויים דורשים סיסמה של HolyArrs. עדיין אין לך סיסמה.",
+	"settings.layout.setPasswordLabel": "הגדרת סיסמה",
+	"settings.layout.confirmPasswordLabel": "אימות הסיסמה",
+	"settings.layout.confirmPasswordDesc": "מפתחות, סיסמאות, אנשים וגיבויים דורשים את הסיסמה שלך. תקף ל־10 דקות."
+}

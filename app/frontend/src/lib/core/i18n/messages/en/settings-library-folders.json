@@ -38,6 +38,14 @@
 	"settings.libraryFolders.foldersHint": "One path per line, e.g. /data/imports. Up to 32.",
 	"settings.libraryFolders.ownerOnly": "Owner and admins only",
 	"settings.libraryFolders.copiesExpected": "Copying is expected",
-	"settings.libraryFolders.copiesExpectedState": "Copies, as expected",
-	"settings.libraryFolders.warnAgain": "Warn again"
+	"settings.libraryFolders.copiesExpectedState": "Full copies, as you chose",
+	"settings.libraryFolders.whyCopies": "Why?",
+	"settings.libraryFolders.stateInstant": "Instant, no extra space",
+	"settings.libraryFolders.warnAgain": "Warn again",
+	"settings.libraryFolders.changePath": "Change path",
+	"settings.libraryFolders.changePathOf": "Change the path of {path}",
+	"settings.libraryFolders.newPath": "New path",
+	"settings.libraryFolders.changePathHint": "Move the files there first. HolyArrs checks each file and moves nothing.",
+	"settings.libraryFolders.checkingFiles": "Checking files…",
+	"settings.libraryFolders.pathChanged": "Path changed"
 }

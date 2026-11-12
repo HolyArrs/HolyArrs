@@ -53,6 +53,10 @@ type StatusInput struct {
 	// NewestBackup is the newest backup's time (RFC 3339), "" for none.
 	NewestBackup *string
 	MetadataUp   *bool
+	// MetadataMode is where details come from (full, own or off; "" not
+	// known); MetadataBad is a Docker value that was not understood.
+	MetadataMode string
+	MetadataBad  string
 	UpdateNewer  *bool
 	// GoneDefaults are the plain-words notes for saved Movies and TV
 	// defaults whose folder or Pick rules are gone.
@@ -168,7 +172,8 @@ func SettingsStatus(in StatusInput) StatusAnswer {
 		}
 	}
 	a.MetadataUp = in.MetadataUp == nil || *in.MetadataUp
-	if in.MetadataUp != nil {
+	metadataModeItems(in, known, add)
+	if in.MetadataUp != nil && (in.MetadataMode == "" || in.MetadataMode == string(metadata.ModeServer)) {
 		known("/settings/tmdb")
 		if !*in.MetadataUp {
 			add(StatusItem{"library", "/settings/tmdb", metadata.Down, "warning"}, "metadata")
@@ -283,8 +288,11 @@ type StatusHandlers struct {
 	NewestBackup func() (newest string, ok bool)
 	// MetadataUp says whether the metadata server answers; known false
 	// when that is not known.
-	MetadataUp  func(context.Context) (up, known bool)
-	UpdateNewer func(context.Context) bool
+	MetadataUp func(context.Context) (up, known bool)
+	// MetadataMode says where details come from and any Docker value that
+	// was not understood (nil: not known).
+	MetadataMode func() (mode, bad string)
+	UpdateNewer  func(context.Context) bool
 	// SkipLocal and OutsideJoin are the sign-in settings (nil: no sign-in).
 	SkipLocal   func() bool
 	OutsideJoin func(context.Context) bool
@@ -373,6 +381,10 @@ func (a *StatusHandlers) statusInput(ctx context.Context, now time.Time) (Status
 			}
 		}
 	}
+	if a.Engine.SourcesOn != nil && !a.Engine.SourcesOn() {
+		// The Sources part is off: no Source needs a fix, and none is missing.
+		in.Sources, in.SourcesNear = nil, nil
+	}
 	dls, err := database.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0 ORDER BY priority, name")
 	if err != nil {
 		return in, err
@@ -385,6 +397,9 @@ func (a *StatusHandlers) statusInput(ctx context.Context, now time.Time) (Status
 		if newest, ok := a.NewestBackup(); ok {
 			in.NewestBackup = &newest
 		}
+	}
+	if a.MetadataMode != nil {
+		in.MetadataMode, in.MetadataBad = a.MetadataMode()
 	}
 	if a.MetadataUp != nil {
 		if up, known := a.MetadataUp(ctx); known {

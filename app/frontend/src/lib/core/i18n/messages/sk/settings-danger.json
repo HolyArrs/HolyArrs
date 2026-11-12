@@ -1,0 +1,16 @@
+{
+"settings.danger.stopping": "HolyArrs sa zastavuje.",
+"settings.danger.couldnt": "Nepodarilo sa: {action}",
+"settings.danger.title": "Nebezpečná zóna",
+"settings.danger.ownerOnly": "Iba vlastník a správcovia",
+"settings.danger.ask": "{label}?",
+"settings.danger.yes": "Áno, {action}",
+"settings.danger.cancel": "Zrušiť",
+"settings.danger.expires": "Vyprší o 60 s",
+"settings.danger.wholeApp": "Celá aplikácia",
+"settings.danger.intro": "Tieto akcie zastavia HolyArrs. Reštartovacia politika Dockeru ho o pár sekúnd spustí znova, pokiaľ nie je nastavená na <code>no</code>; vtedy spustite kontajner sami. Každá akcia sa najprv opýta.",
+"settings.danger.restart": "Reštartovať HolyArrs",
+"settings.danger.safe": "Reštartovať v núdzovom režime",
+"settings.danger.shutdown": "Vypnúť",
+"settings.danger.safeNote": "Spustí sa jednorazovo len s prihlásením, Nastaveniami a Knižnicou. Použite, keď Časť blokuje štart."
+}

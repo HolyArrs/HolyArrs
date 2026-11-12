@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Demander depuis les listes à voir Plex",
 	"settings.requests.plexOnHint": "Chaque personne l'active dans Mon compte. Ses limites s'appliquent.",
 	"settings.requests.plexEveryone": "Activer pour tous ceux qui se connectent avec Plex",
-	"settings.requests.plexEveryoneHint": "Chacun peut le désactiver pour soi dans Mon compte."
+	"settings.requests.plexEveryoneHint": "Chacun peut le désactiver pour soi dans Mon compte.",
+	"settings.requests.plexFriends": "Inclure les amis Plex",
+	"settings.requests.plexFriendsHint": "Les amis importés depuis Plex. Lus avec votre lien Plex ; les limites de chaque ami s'appliquent.",
+	"settings.requests.plexFriendsNoLink": "Liez d'abord Plex dans Réglages › Connexion.",
+	"settings.requests.plexFriendsNone": "Personne n'a encore été importé depuis Plex.",
+	"settings.requests.plexFriendsRead": "Lu {when}",
+	"settings.requests.plexFriendsNotYet": "Pas encore lu",
+	"settings.requests.plexFriendsAsked": "Demandés : {n}"
 }

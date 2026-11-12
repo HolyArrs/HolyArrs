@@ -4,9 +4,6 @@ import (
 	"context"
 	"errors"
 	"log"
-	"os"
-	"path"
-	"path/filepath"
 	"slices"
 	"strings"
 )
@@ -72,7 +69,7 @@ func (r *RTorrent) Status(ctx context.Context) (ClientStatus, error) {
 	}
 	st := ClientStatus{Speed: asInt(answers[0]), UpSpeed: asInt(answers[1]), SpeedLimit: max(0, asInt(answers[2])),
 		UpLimit: max(0, asInt(answers[3])), SessionDown: asInt(answers[4]), SessionUp: asInt(answers[5])}
-	rows, err := r.rows(ctx)
+	rows, err := r.rows(ctx, "main")
 	if err != nil {
 		return ClientStatus{}, err
 	}
@@ -90,7 +87,7 @@ func (r *RTorrent) Status(ctx context.Context) (ClientStatus, error) {
 }
 
 func (r *RTorrent) everyOwn(ctx context.Context, start bool) error {
-	rows, err := r.rows(ctx)
+	rows, err := r.rows(ctx, "main")
 	if err != nil {
 		return err
 	}
@@ -144,87 +141,15 @@ func answerErrors(answers []any) error {
 	return errors.Join(errs...)
 }
 
-// filesTarget is a torrent's data that HolyArrs may delete: rel inside root.
-type filesTarget struct{ root, rel string }
-
 // deleteTarget decides whether HolyArrs may delete a torrent's files after
-// rTorrent lets go of it. It only says yes for a file or folder named like the
-// torrent, inside the save folder or a path pair, that no other torrent in
-// rTorrent uses. Otherwise it says why the files stay.
+// rTorrent lets go of it, through the shared rules in safeDeleteTarget.
 func (r *RTorrent) deleteTarget(row rtRow, all []rtRow, keep []string) (filesTarget, string) {
-	content := row.content()
-	if content == "" {
-		return filesTarget{}, "rTorrent did not say where they are"
-	}
-	if row.name == "" || row.name == "." || row.name == ".." || path.Base(content) != row.name {
-		return filesTarget{}, content + " is not named like the torrent"
-	}
+	others := []string{}
 	for _, o := range all {
-		oc := o.content()
-		if o.hash == row.hash || oc == "" {
-			continue
-		}
-		if oc == content || strings.HasPrefix(oc, content+"/") || strings.HasPrefix(content, oc+"/") {
-			return filesTarget{}, "another torrent in rTorrent uses " + content
+		if o.hash != row.hash {
+			others = append(others, o.content())
 		}
 	}
-	local := filepath.Clean(mapLocal(content, r.PathMap))
-	if filepath.Base(local) != row.name {
-		// A name holding this system's own separator would point elsewhere here.
-		return filesTarget{}, local + " is not named like the torrent here"
-	}
-	for _, k := range keep {
-		if k = strings.TrimSpace(k); k != "" && (underAny(local, []string{k}) || underAny(filepath.Clean(k), []string{local})) {
-			return filesTarget{}, local + " is a Library folder or holds one"
-		}
-	}
-	roots := []string{}
-	if r.SaveRoot != "" {
-		roots = append(roots, r.SaveRoot)
-	}
-	for _, m := range r.PathMap {
-		if m.Ours != "" {
-			roots = append(roots, m.Ours)
-		}
-	}
-	for _, root := range roots {
-		root = filepath.Clean(root)
-		if local == root || !underAny(local, []string{root}) {
-			continue
-		}
-		for _, c := range append([]string{r.Category}, r.Others...) {
-			if c != "" && local == filepath.Join(root, c) {
-				return filesTarget{}, local + " is the label's own folder"
-			}
-		}
-		fi, err := os.Lstat(local)
-		if err != nil {
-			return filesTarget{}, "HolyArrs cannot see " + local + "; they stay where rTorrent put them (" + content + ")"
-		}
-		if !fi.Mode().IsRegular() && !fi.IsDir() {
-			return filesTarget{}, local + " is a link or a special file"
-		}
-		rel, err := filepath.Rel(root, local)
-		if err != nil {
-			return filesTarget{}, err.Error()
-		}
-		return filesTarget{root: root, rel: rel}, ""
-	}
-	return filesTarget{}, "they are at " + content + " on the rTorrent machine, outside HolyArrs's save folder and path pairs; add a path pair to reach them, or delete them by hand"
-}
-
-// remove deletes the target without leaving its root. It says why on failure.
-func (t filesTarget) remove() string {
-	if t.root == "" || t.rel == "" || t.rel == "." {
-		return "nothing to delete"
-	}
-	root, err := os.OpenRoot(t.root)
-	if err != nil {
-		return err.Error()
-	}
-	defer root.Close()
-	if err := root.RemoveAll(t.rel); err != nil {
-		return err.Error()
-	}
-	return ""
+	return safeDeleteTarget(deleteAsk{client: "rTorrent", content: row.content(), name: row.name, others: others,
+		pathMap: r.PathMap, saveRoot: r.SaveRoot, cats: append([]string{r.Category}, r.Others...)}, keep)
 }

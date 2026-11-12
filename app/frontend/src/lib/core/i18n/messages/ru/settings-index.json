@@ -62,7 +62,7 @@
 	"settings.index.title-defaults.td-order.episode-order-for-new-shows.label": "Порядок серий для новых сериалов",
 	"settings.index.title-defaults.td-order.episode-order-for-new-shows.words": "сериалы тип аниме ежедневный сквозной нумерация вышедшие",
 	"settings.index.title-defaults.td-source.where-show-details-come-from.label": "Откуда берутся сведения о сериале",
-	"settings.index.title-defaults.td-source.where-show-details-come-from.words": "сериалы метаданные tmdb tvmaze сведения источник",
+	"settings.index.title-defaults.td-source.where-show-details-come-from.words": "сериалы метаданные tmdb tvmaze tvdb сведения источник",
 	"settings.index.naming.file-pattern.movie-file-name-pattern.label": "Шаблон имени файла фильма",
 	"settings.index.naming.file-pattern.movie-file-name-pattern.words": "имена переименование формат файл фильма",
 	"settings.index.naming.folder-pattern.movie-folder-name-pattern.label": "Шаблон имени папки фильма",
@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "Искать сейчас",
 	"settings.index.search.search-now.search-now.words": "поиск копия получше ленты запуск",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "Загрузчики",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "клиент загрузки qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget торрент клиент добавить",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "клиент загрузки qbittorrent sabnzbd transmission deluge rtorrent rutorrent aria2 nzbget торрент клиент добавить",
 	"settings.index.downloaders.st-stall.stalled-after.label": "Считать зависшей через",
 	"settings.index.downloaders.st-stall.stalled-after.words": "завис застряла часы загрузка",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "Отказаться и пробовать следующий релиз через",
@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Оповещения для меня",
 	"settings.index.account.alerts-me.alerts-for-me.words": "моя почта discord уведомления",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Мои устройства с выполненным входом",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "сеансы устройства выйти везде"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "сеансы устройства выйти везде",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Откуда берутся сведения",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "metadata mode own keys off lookups privacy server independent",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Свои ключи",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart key api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Адреса для вашего файрвола",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall hosts outside addresses allow list"
 }

@@ -27,7 +27,9 @@ func pngHeader(w, h uint32) []byte {
 
 func TestDecodeBackdropRefusesHugeClaimedSize(t *testing.T) {
 	t.Parallel()
-	_, err := decodeBackdrop(bytes.NewReader(pngHeader(60000, 60000)))
+	// 10000 x 10000: far past the cap, yet small enough for the PNG reader
+	// of a 32-bit build, which refuses 60000 x 60000 on its own.
+	_, err := decodeBackdrop(bytes.NewReader(pngHeader(10000, 10000)))
 	if !errors.Is(err, errBackdropTooLarge) {
 		t.Fatalf("want errBackdropTooLarge, got %v", err)
 	}

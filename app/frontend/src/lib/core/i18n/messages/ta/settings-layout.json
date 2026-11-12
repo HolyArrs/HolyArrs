@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "அமைப்புகள்",
+	"settings.layout.home": "முகப்பு",
+	"settings.layout.sections": "அமைப்புகள் பிரிவுகள்",
+	"settings.layout.needsAttention": "கவனம் தேவை",
+	"settings.layout.needsAttentionLower": "கவனம் தேவை",
+	"settings.layout.blocked": "இதை உங்களால் மாற்ற முடியாது",
+	"settings.layout.backToSettings": "அமைப்புகளுக்குத் திரும்பு",
+	"settings.layout.setPasswordFirst": "முதலில் கடவுச்சொல்லை அமைத்திடுங்கள்",
+	"settings.layout.setPasswordDesc": "விசைகள், கடவுச்சொற்கள், நபர்கள், காப்புப்பிரதிகளுக்கு HolyArrs கடவுச்சொல் தேவை. உங்களிடம் இன்னும் இல்லை.",
+	"settings.layout.setPasswordLabel": "கடவுச்சொல்லை அமைத்திடுங்கள்",
+	"settings.layout.confirmPasswordLabel": "உங்கள் கடவுச்சொல்லை உறுதிசெய்யுங்கள்",
+	"settings.layout.confirmPasswordDesc": "விசைகள், கடவுச்சொற்கள், நபர்கள், காப்புப்பிரதிகளுக்கு உங்கள் கடவுச்சொல் தேவை. 10 நிமிடங்களுக்குச் செல்லும்."
+}

@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Loggar",
+	"settings.logs.download": "Ladda ned",
+	"settings.logs.filter": "Filtrera loggen",
+	"settings.logs.level": "Nivå",
+	"settings.logs.every": "Varje rad",
+	"settings.logs.warnings": "Varningar och fel",
+	"settings.logs.errors": "Bara fel",
+	"settings.logs.text": "Text",
+	"settings.logs.example": "t.ex. qBittorrent",
+	"settings.logs.from": "Från",
+	"settings.logs.to": "Till",
+	"settings.logs.apply": "Använd",
+	"settings.logs.clear": "Rensa",
+	"settings.logs.lines": "Rader",
+	"settings.logs.newer": "Nyare",
+	"settings.logs.older": "Äldre"
+}

@@ -50,8 +50,9 @@ type LinkView struct {
 	Name     string `json:"name"`
 }
 
-// SkipLocal says sign-in is skipped on the local network.
-func (a *Auth) SkipLocal() bool { return a.skipLocal.Load() }
+// SkipLocal says sign-in is skipped on the local network for someone who is
+// not a Kid, so a Kid account at home would mean nothing.
+func (a *Auth) SkipLocal() bool { return a.skipBlocksKids(context.Background()) }
 
 // OutsideJoinOpen says new people can join by signing in with Plex,
 // Jellyfin, Emby or single sign-on.
@@ -80,7 +81,8 @@ func countryOr(c string) string {
 
 // kidLimit checks an age-rating limit asked for a person of role and
 // returns it as stored, or an error in plain words for a 400. A limit is
-// refused while sign-in is skipped on the local network (skipLocal).
+// refused while sign-in is skipped on the local network for someone who is
+// not a Kid (skipLocal).
 func kidLimit(role, max, country string, perms []webserver.Perm, skipLocal bool) (string, string, error) {
 	max, country = metadata.NormRating(max), countryOr(country)
 	if !metadata.ValidRating(max) {
@@ -259,7 +261,7 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 	if body.RatingCountry != nil {
 		country = *body.RatingCountry
 	}
-	if maxRating, country, err = kidLimit(newRole, maxRating, country, perms, a.skipLocal.Load()); err != nil {
+	if maxRating, country, err = kidLimit(newRole, maxRating, country, perms, a.skipBlocksKids(r.Context())); err != nil {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}

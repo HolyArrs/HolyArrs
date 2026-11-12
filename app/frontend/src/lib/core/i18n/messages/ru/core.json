@@ -16,7 +16,7 @@
 	"core.format.healthy": "Исправно",
 	"core.format.folderNotFound": "Папка не найдена",
 	"core.format.cannotWrite": "Сюда нельзя писать",
-	"core.format.copiedNoHardlinks": "Работает, но файлы копируются (без жёстких ссылок)",
+	"core.format.copiedNoHardlinks": "Каждый импорт делает полную копию (занимает больше места)",
 	"core.format.notChecked": "Ещё не проверено",
 	"core.loader.welcome": "Здравствуйте, {name}",
 	"core.loader.reconnecting": "Переподключение…",
@@ -54,6 +54,8 @@
 	"core.plain.configDiskWarning": "На диске с папкой config заканчивается место.",
 	"core.plain.configFolder": "/config не привязана к папке, поэтому данные HolyArrs пропадут при пересоздании контейнера.",
 	"core.plain.waitingDownloads": "Загрузки ждут, потому что их загрузчик не может использовать файлы.",
+	"core.plain.clearWaiting": "Импортированные загрузки ждут очистки из своего загрузчика.",
+	"core.plain.saveFolder": "У одного загрузчика не задана папка сохранения, поэтому HolyArrs не может импортировать его готовые загрузки.",
 	"core.plain.someone": "Кто-то из вашего дома",
 	"core.plain.keyKitOwner": "Владельцу стоит сохранить набор ключа: резервные копии не содержат главный ключ.",
 	"core.plain.keyKitNone": "Набор ключа не сохранён: резервные копии не содержат главный ключ.",
@@ -142,5 +144,6 @@
 	"core.settings.danger.label": "Опасная зона",
 	"core.settings.danger.about": "Перезапуск или выключение",
 	"core.settings.account.label": "Моя учётная запись",
-	"core.settings.account.about": "Пароль, двухфакторная защита, устройства"
+	"core.settings.account.about": "Пароль, двухфакторная защита, устройства",
+	"core.api.sourceOff": "Некоторые ряды выключены в этой установке."
 }

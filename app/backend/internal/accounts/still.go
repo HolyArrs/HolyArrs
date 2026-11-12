@@ -59,11 +59,15 @@ func (a *Auth) Still(r *http.Request) (webserver.Caller, bool) {
 	case "api_key":
 		return a.checkKey(r.Context(), r.Header.Get(APIKeyHeader))
 	case "local_network":
-		id, _, ok := a.owner(r.Context())
-		if !ok || id != who.UserID || !a.strictLocal(r) {
+		if !a.strictLocal(r) {
 			return webserver.Caller{}, false
 		}
-		return who, true
+		fresh, _, ok := a.localCaller(r.Context())
+		if !ok || fresh.UserID != who.UserID {
+			return webserver.Caller{}, false
+		}
+		fresh.CSRF = who.CSRF
+		return fresh, true
 	}
 	return who, true
 }

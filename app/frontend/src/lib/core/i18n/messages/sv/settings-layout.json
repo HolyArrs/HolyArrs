@@ -1,0 +1,14 @@
+{
+	"settings.layout.settings": "Inställningar",
+	"settings.layout.home": "Hem",
+	"settings.layout.sections": "Inställningsavsnitt",
+	"settings.layout.needsAttention": "Behöver åtgärd",
+	"settings.layout.needsAttentionLower": "behöver åtgärd",
+	"settings.layout.blocked": "Du kan inte ändra det här",
+	"settings.layout.backToSettings": "Tillbaka till Inställningar",
+	"settings.layout.setPasswordFirst": "Sätt först ett lösenord",
+	"settings.layout.setPasswordDesc": "Nycklar, lösenord, personer och säkerhetskopior kräver ett HolyArrs-lösenord. Du har inget ännu.",
+	"settings.layout.setPasswordLabel": "Sätt ett lösenord",
+	"settings.layout.confirmPasswordLabel": "Bekräfta ditt lösenord",
+	"settings.layout.confirmPasswordDesc": "Nycklar, lösenord, personer och säkerhetskopior kräver ditt lösenord. Gäller i 10 minuter."
+}

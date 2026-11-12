@@ -182,9 +182,6 @@ func (r *run) secretIs(ref *int64, plain string) bool {
 
 // --- links settings -----------------------------------------------------
 
-// tvdbOff is the result for a TVDB value: TVDB is not a details source.
-const tvdbOff = "skipped (not used: show details come from TMDB and TVMaze)"
-
 func (r *run) settings() {
 	r.setting("tmdb.read_token", TMDBTokenKey, r.f.TMDB.ReadToken)
 	if empty(r.f.TMDB.APIKey) {
@@ -192,14 +189,10 @@ func (r *run) settings() {
 	} else {
 		r.add("tmdb.api_key", "skipped (not used: HolyArrs uses the TMDB read token)")
 	}
-	if empty(r.f.TVDB.APIKey) {
-		r.add("tvdb", Empty)
-	} else {
-		r.add("tvdb", tvdbOff)
-	}
+	r.setting("tvdb", TVDBKeyKey, r.f.TVDB.APIKey)
 	r.setting("trakt", TraktClientKey, r.f.Trakt.ClientID)
 	if !empty(r.f.TVDB.UniqueUserKey) {
-		r.add("tvdb.unique_user_key", tvdbOff)
+		r.add("tvdb.unique_user_key", "skipped (not used: HolyArrs uses the TVDB api_key)")
 	}
 	if !empty(r.f.Trakt.RedirectURLs) {
 		r.add("trakt.redirect_urls", "skipped (not used: HolyArrs uses the Trakt client_id)")

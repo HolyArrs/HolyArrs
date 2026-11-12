@@ -62,7 +62,7 @@
 	"settings.index.title-defaults.td-order.episode-order-for-new-shows.label": "Yeni diziler için bölüm sıralaması",
 	"settings.index.title-defaults.td-order.episode-order-for-new-shows.words": "diziler dizi türü anime günlük mutlak yayınlanan numaralandırma",
 	"settings.index.title-defaults.td-source.where-show-details-come-from.label": "Dizi ayrıntıları nereden gelir",
-	"settings.index.title-defaults.td-source.where-show-details-come-from.words": "diziler metadata tmdb tvmaze ayrıntılar kaynak",
+	"settings.index.title-defaults.td-source.where-show-details-come-from.words": "diziler metadata tmdb tvmaze tvdb ayrıntılar kaynak",
 	"settings.index.naming.file-pattern.movie-file-name-pattern.label": "Film dosya adı kalıbı",
 	"settings.index.naming.file-pattern.movie-file-name-pattern.words": "adlandırma yeniden adlandır biçim film dosyası",
 	"settings.index.naming.folder-pattern.movie-folder-name-pattern.label": "Film klasörü adı kalıbı",
@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "Şimdi ara",
 	"settings.index.search.search-now.search-now.words": "ara daha iyi kopya feed'ler çalıştır",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "İndiriciler",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "indirme istemcisi qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget torrent istemcisi ekle",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "indirme istemcisi qbittorrent sabnzbd transmission deluge rtorrent rutorrent aria2 nzbget torrent istemcisi ekle",
 	"settings.index.downloaders.st-stall.stalled-after.label": "Şu kadar sonra takıldı say",
 	"settings.index.downloaders.st-stall.stalled-after.words": "takıldı sıkıştı saat indirme",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "Vazgeç ve şu kadar sonra sonraki sürüm adayını dene",
@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "Benim için uyarılar",
 	"settings.index.account.alerts-me.alerts-for-me.words": "e-postam discord bildirimler",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "Giriş yaptığım cihazlar",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "oturumlar cihazlar her yerden çıkış yap"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "oturumlar cihazlar her yerden çıkış yap",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "Ayrıntılar nereden gelir",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "metadata mode own keys off lookups privacy server independent",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Kendi anahtarların",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart key api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Güvenlik duvarın için adresler",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall hosts outside addresses allow list"
 }

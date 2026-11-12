@@ -1,5 +1,5 @@
 import { decisionName, groupDecisions, manyWords, phaseTone, removeBody, removeFilesWords, removeStart, rowName, split, whyWords } from './downloaders.ts';
-import { downloadTone, emptyForm, formBody, formFrom, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
+import { seedingBody, seedingFields, deadRuleOn, downloadTone, emptyForm, formBody, formFrom, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
 import { describe, expect, it } from 'vitest';
 import { type Decision, type DownloadRow } from '../core/types.ts';
 
@@ -52,14 +52,14 @@ describe('downloaders', () => {
 	});
 
 	it('preserves optional Downloader sign-in names and labels', () => {
-		for (const [kind, name] of [['transmission', 'Transmission'], ['nzbget', 'NZBGet'], ['deluge', 'Deluge'], ['rtorrent', 'rTorrent']] as const) {
+		for (const [kind, name] of [['transmission', 'Transmission'], ['nzbget', 'NZBGet'], ['deluge', 'Deluge'], ['rtorrent', 'rTorrent'], ['aria2', 'aria2']] as const) {
 			const form = emptyForm(kind);
 			expect(form.name).toBe(name);
 			expect(form.category).toBe('holyarrs');
 			form.username = 'task-user';
 			form.secret = '••••••••';
 			const body = formBody(form);
-			expect(body.username).toBe(kind === 'deluge' ? '' : 'task-user');
+			expect(body.username).toBe(kind === 'deluge' || kind === 'aria2' ? '' : 'task-user');
 			expect(body.secret).toBe('••••••••');
 		}
 	});
@@ -235,5 +235,40 @@ describe('removeFilesWords', () => {
 		expect(removeFilesWords(rows)).toBe('Deletes /a, /b, /c and the files of 1 more in qBittorrent.');
 		expect(removeFilesWords([{ downloader: 'A' }, { downloader: 'B' }])).toBe('Deletes their files in A, B.');
 		expect(removeFilesWords([])).toBe('');
+	});
+});
+
+describe('after seeding', () => {
+	it('starts off and sends no goals', () => {
+		expect(formBody(emptyForm('qbittorrent')).after_seeding).toEqual({ remove: false, ratio: null, minutes: null, delete_files: false });
+	});
+	it('turns hours into minutes and keeps goals for qBittorrent and rTorrent only', () => {
+		const f = { ...emptyForm('rtorrent'), seed_remove: true, seed_ratio: 2 as const, seed_hours: 1.5, seed_delete_files: true };
+		expect(seedingBody(f)).toEqual({ remove: true, ratio: 2, minutes: 90, delete_files: true });
+		expect(seedingBody({ ...f, kind: 'transmission' })).toEqual({ remove: true, ratio: null, minutes: null, delete_files: true });
+	});
+	it('never deletes files when remove is off, and Usenet sends nothing', () => {
+		expect(seedingBody({ ...emptyForm(), seed_delete_files: true }).delete_files).toBe(false);
+		expect(formBody(emptyForm('sabnzbd'))).not.toHaveProperty('after_seeding');
+	});
+});
+
+describe('after seeding fields', () => {
+	it('shows the group on torrent Downloaders only, goals on qBittorrent and rTorrent', () => {
+		expect(seedingFields('qbittorrent')).toBe('goals');
+		expect(seedingFields('rtorrent')).toBe('goals');
+		expect(seedingFields('transmission')).toBe('remove');
+		expect(seedingFields('aria2')).toBe('remove');
+		expect(seedingFields('sabnzbd')).toBe('none');
+		expect(seedingFields('nzbget')).toBe('none');
+	});
+});
+
+describe('dead torrent rule', () => {
+	it('is on when either check has a number, off for zeros or missing', () => {
+		expect(deadRuleOn({ dead_metadata_minutes: 30, crawl_kbps: 0 })).toBe(true);
+		expect(deadRuleOn({ crawl_kbps: 10 })).toBe(true);
+		expect(deadRuleOn({ dead_metadata_minutes: 0, crawl_kbps: 0 })).toBe(false);
+		expect(deadRuleOn({})).toBe(false);
 	});
 });

@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Свързване отново",
+	"setup.testNow": "Проверка сега",
+	"setup.movies": "Филми",
+	"setup.tvShows": "Сериали",
+	"setup.music": "Музика",
+	"setup.subtitles": "Субтитри",
+	"setup.fullPath": "Въведете пълния път до папката, например {path}.",
+	"setup.folderUsed": "Тази папка вече се използва или е вътре в такава.",
+	"setup.folderMissing": "Тази папка не съществува. Проверете пътя.",
+	"setup.addFolderOrOff": "Добавете папка или изключете това.",
+	"setup.notAnswering": "HolyArrs не отговаря. Опитайте пак след малко.",
+	"setup.addUserPasswordHint": "Въведете потребителско име и парола.",
+	"setup.folders": "Папки",
+	"setup.downloader": "Програма за изтегляне",
+	"setup.source": "Източник"
+}

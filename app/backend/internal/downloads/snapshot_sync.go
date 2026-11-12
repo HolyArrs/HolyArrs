@@ -54,6 +54,7 @@ type Sync struct {
 
 	cursors Cursors
 	sabs    SabCursors
+	rts     rtCursors
 	persist *persister
 	bucket  bucket
 	started atomic.Bool
@@ -494,6 +495,23 @@ func (s *Sync) active(ctx context.Context, id int64) int {
 	return n
 }
 
+// following lists the ids of the client's active HolyArrs Downloads.
+func (s *Sync) following(ctx context.Context, id int64) []string {
+	rows, err := s.DB.Read().QueryContext(ctx, "SELECT external_id FROM downloads WHERE downloader_id = ? AND state IN ("+activeStates+") AND external_id <> ''", id)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var x string
+		if rows.Scan(&x) == nil {
+			out = append(out, x)
+		}
+	}
+	return out
+}
+
 // cadence returns the client's read interval for its current load.
 func (s *Sync) cadence(d domain.Downloader, n int) time.Duration {
 	snap := s.Store.Current(d.ID)
@@ -545,6 +563,10 @@ func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
 		} else {
 			jobs = inCategory(jobs, d.Categories())
 		}
+	case d.Adapter == "rtorrent":
+		// Only what is still downloading, between whole reads on the sweep and
+		// while the Downloads page is open.
+		jobs, err = s.rts.poll(cctx, d.ID, gen, e, d.Categories(), s.following(ctx, d.ID), s.Store.Viewer(), s.now())
 	case d.Protocol == "usenet" && s.SABOutside(ctx):
 		jobs, err = e.List(cctx, "")
 		scope = ""
@@ -592,7 +614,7 @@ func inCategory(jobs []Job, cats []string) []Job {
 	}
 	out := jobs[:0:0]
 	for _, j := range jobs {
-		if slices.Contains(cats, j.Category) {
+		if hasCategory(cats, j.Category) {
 			out = append(out, j)
 		}
 	}

@@ -5,7 +5,7 @@
 	import SettingsTile from '#lib/ui/SettingsTile.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
-	import { entryLabel, searchSettings, settingIndex, type SettingEntry } from './(home)/settings-search.ts';
+	import { entryLabel, resultKey, searchSettings, settingIndex, type SettingEntry } from './(home)/settings-search.ts';
 	import GroupArt from './(home)/GroupArt.svelte';
 	import { homeArt } from './(home)/art.svelte.ts';
 	import { cancelOpen, push, settingsNav, zoomBack, zoomOpen, clearFlight } from './(home)/zoom.ts';
@@ -110,7 +110,7 @@
 	{#if query.trim()}
 		{#if results.length}
 			<ul class="results" id="settings-results" aria-label={t('settings.home.matching')} data-testid="setting-results">
-				{#each results as r (r.href + '#' + r.anchor)}
+				{#each results as r (resultKey(r))}
 					{@const s = sectionOf(r.href)}
 					<li>
 						<a class="row-link" href={link(r)} data-testid="setting-result" onclick={() => (settingsFind.term = '')}>
@@ -156,8 +156,8 @@
 	.lede { margin: -14px 0 22px; color: var(--text-muted); font: var(--t-body); }
 	/* The top bar holds "Search settings" on tablets and desktops; phones have no top bar, so the field lives here. */
 	.find { position: relative; display: none; align-items: center; margin: -8px 0 18px; }
-	.find > :global(.icon) { position: absolute; left: 14px; color: var(--text-muted); pointer-events: none; }
-	.find .input { width: 100%; min-height: 44px; padding-left: 40px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--surface-2) 80%, transparent); border-color: transparent; font: var(--t-body); }
+	.find > :global(.icon) { position: absolute; inset-inline-start: 14px; color: var(--text-muted); pointer-events: none; }
+	.find .input { width: 100%; min-height: 44px; padding-inline-start: 40px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--surface-2) 80%, transparent); border-color: transparent; font: var(--t-body); }
 	@media (max-width: 767px) { .find { display: flex; } }
 
 	.fix { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 6px 0 12px; color: var(--accent-text); font: var(--t-callout); font-weight: 600; }
@@ -205,7 +205,10 @@
 		.lede { margin: -10px 0 16px; }
 		.bento { grid-template-columns: 1fr 1fr; grid-template-rows: 210px; grid-auto-rows: 168px; gap: 12px; min-height: 0; flex: none; height: auto; }
 		.sx-card[data-group='library'] { grid-row: auto; grid-column: span 2; }
-		.sx-face { padding: 16px; }
+		/* Words first, the drawing after them: a long line (Finnish, Hungarian) pushes the drawing down instead of running under it. */
+		.sx-face { display: flex; flex-direction: column; padding: 16px; }
+		.art-hold { position: relative; flex: 1 1 0; min-height: 0; margin: 6px -16px -16px; }
+		.art-hold :global(.sx-art) { top: 0; }
 		.nm { font-size: 19px; }
 		.sx-card[data-group='library'] .nm { font-size: 24px; }
 		.pp { font-size: 13px; }

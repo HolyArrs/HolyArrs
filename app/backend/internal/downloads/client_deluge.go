@@ -14,7 +14,6 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"path"
-	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -129,7 +128,7 @@ func (d *Deluge) Add(ctx context.Context, r AddRequest) (string, error) {
 			return "", ErrUncertain
 		}
 		existing, err := d.Get(ctx, expected)
-		if err != nil || existing.Category != r.Category || r.Skip[existing.ID] {
+		if err != nil || !sameCategory(existing.Category, r.Category) || r.Skip[existing.ID] {
 			return "", errors.Join(ErrUncertain, err)
 		}
 		return existing.ID, nil
@@ -185,7 +184,7 @@ func (d *Deluge) Add(ctx context.Context, r AddRequest) (string, error) {
 		if r.Skip[existing.ID] {
 			return "", errors.New("the torrent belongs to another download")
 		}
-		if existing.Category != r.Category {
+		if !sameCategory(existing.Category, r.Category) {
 			return "", fmt.Errorf("deluge torrent %s already belongs to another category", expected)
 		}
 		return existing.ID, nil
@@ -201,7 +200,7 @@ func (d *Deluge) Add(ctx context.Context, r AddRequest) (string, error) {
 			return "", err
 		}
 		existing, getErr := d.Get(ctx, expected)
-		if getErr == nil && existing.Category == r.Category && !r.Skip[existing.ID] {
+		if getErr == nil && sameCategory(existing.Category, r.Category) && !r.Skip[existing.ID] {
 			return existing.ID, nil
 		}
 		return "", errors.Join(ErrUncertain, err, getErr)
@@ -210,7 +209,7 @@ func (d *Deluge) Add(ctx context.Context, r AddRequest) (string, error) {
 	id = strings.ToLower(id)
 	if !releasename.ValidInfoHash(id) {
 		existing, getErr := d.Get(ctx, expected)
-		if getErr == nil && existing.Category == r.Category && !r.Skip[existing.ID] {
+		if getErr == nil && sameCategory(existing.Category, r.Category) && !r.Skip[existing.ID] {
 			return existing.ID, nil
 		}
 		return "", errors.Join(ErrUncertain, errors.New("Deluge did not return a torrent info hash"), getErr)
@@ -280,7 +279,7 @@ func (d *Deluge) Remove(ctx context.Context, id string, deleteFiles bool) error 
 		if err != nil {
 			return err
 		}
-		if job.Category != d.Category && !slices.Contains(d.Others, job.Category) {
+		if !sameCategory(job.Category, d.Category) && !hasCategory(d.Others, job.Category) {
 			return errors.New("refusing to remove a torrent outside the configured category")
 		}
 	}
@@ -484,7 +483,7 @@ func (d *Deluge) setLabel(ctx context.Context, id, label string) error {
 	set := func() error { return d.write(ctx, "label.set_torrent", []any{id, label}, nil) }
 	err := set()
 	existing, getErr := d.Get(ctx, id)
-	if getErr == nil && existing.Category == label {
+	if getErr == nil && sameCategory(existing.Category, label) {
 		return nil
 	}
 	if getErr == nil && existing.Category != "" {

@@ -91,7 +91,7 @@ async function importTicked(page: Page, label: string): Promise<Result[]> {
 	return ((await (await answer).json()) as { results: Result[] }).results;
 }
 
-test('Import files by hand: Change matches a wrongly named file to another Library movie, and Move puts it there', async ({ page }) => {
+test('Import files by hand: Change matches a wrongly named file to another Library movie and imports it there without asking Copy or Move', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
 	const wrong = await freshMovie(call, 900040, 'Tamarind Quay');
@@ -120,16 +120,17 @@ test('Import files by hand: Change matches a wrongly named file to another Libra
 	await expect(row.locator('.match')).not.toContainText('Tamarind Quay');
 	await expect(row.getByRole('checkbox', { name: `Import ${basename(file)}` })).toBeChecked();
 
-	await page.getByRole('radio', { name: /^Move/ }).check();
+	// No Copy/Move choice: placed like automatic imports.
+	await expect(page.getByRole('radio')).toHaveCount(0);
 	const [res] = await importTicked(page, 'Import 1 file');
 	expect(res.outcome, res.error).toBe('placed');
 	expect(res.title_id).toBe(right);
-	expect(res.placed_by).toBe('move');
+	expect(['hardlink', 'copy']).toContain(res.placed_by);
 	const target = res.target ?? '';
-	await expect(row.getByRole('status')).toHaveText(/^Moved/);
+	await expect(row.getByRole('status')).toHaveText(/^(Added to the Library \(no extra space used\)|Copied to the Library \(uses extra space\))/);
 	await expect(page.getByText('1 file imported')).toBeVisible();
-	// Move: the loose file is gone and the movie's file is in Ochre Bandstand's folder.
-	expect(existsSync(file)).toBe(false);
+	// The loose file stays and the movie's file is in Ochre Bandstand's folder.
+	expect(existsSync(file)).toBe(true);
 	expect(existsSync(target)).toBe(true);
 	const { versions } = (await (await call('GET', `/titles/${right}`)).json()) as { versions: { folder_path: string }[] };
 	expect(target.startsWith(versions[0].folder_path + sep), `${target} is in ${versions[0].folder_path}`).toBe(true);
@@ -175,7 +176,7 @@ test('Import files by hand: two loose episodes of a Library show, one season and
 	await expect(second).not.toContainText('Pick the season and episode.');
 	await expect(second.getByRole('checkbox', { name: `Import ${basename(dated)}` })).toBeChecked();
 
-	// Copy (the default) keeps the loose files.
+	// Importing keeps the loose files.
 	const results = await importTicked(page, 'Import 2 files');
 	const byName = (f: string) => results.find((r) => basename(r.path) === basename(f));
 	for (const f of [named, dated]) {

@@ -132,7 +132,8 @@
 	.go { display: flex; align-items: center; gap: 4px; padding-bottom: 4px; }
 	@media (max-width: 900px) { .row-fields { grid-template-columns: 1fr 1fr; } .row-fields > :global(.grow) { grid-column: 1 / -1; } .go { grid-column: 1 / -1; } }
 	/* Lines: level, time, then the message on one row. */
-	.lines { list-style: none; padding: 0 !important; margin: 0; box-shadow: none !important; }
+	/* The same 18px sides as the filter card, so the level dots sit off the card edge and in line with its text. */
+	.lines { list-style: none; padding: 0 18px !important; margin: 0; box-shadow: none !important; }
 	.lines li { display: grid; grid-template-columns: 84px 128px minmax(0, 1fr); align-items: baseline; column-gap: 12px; padding: 9px 0; }
 	.lines li + li { box-shadow: inset 0 1px 0 var(--line); }
 	.lines li > time { font-family: var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }

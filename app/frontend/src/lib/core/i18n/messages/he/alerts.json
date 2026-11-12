@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "הגדרות",
+	"alerts.panel.clearAll": "ניקוי הכול",
+	"alerts.panel.empty": "אין כאן כלום עדיין",
+	"alerts.panel.needsAttention": "דורש תשומת לב",
+	"alerts.panel.recent": "אחרונות",
+	"alerts.panel.remove": "הסרת {text}",
+	"alerts.panel.title": "התראות אחרונות",
+	"alerts.state.manyNeed": "{count} דורשים תשומת לב",
+	"alerts.state.ok": "הכול מוכן",
+	"alerts.state.oneNeeds": "1 דורש תשומת לב",
+	"alerts.state.unset": "לא הוגדר",
+	"alerts.time.days": "{n} ימ׳",
+	"alerts.time.hours": "{n} שע׳",
+	"alerts.time.minutes": "{n} דק׳",
+	"alerts.time.now": "עכשיו"
+}

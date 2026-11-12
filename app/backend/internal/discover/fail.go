@@ -10,10 +10,13 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// Fail answers a provider error: 501 not set up, 503 rate limited,
-// 404 unknown, 502 anything else.
+// Fail answers a provider error: 200 source_off when lookups are off on
+// this install, 501 not set up, 503 rate limited, 404 unknown, 502
+// anything else.
 func Fail(w http.ResponseWriter, err error) {
 	switch {
+	case metadata.SourceOff(err):
+		metadata.WriteSourceOff(w)
 	case errors.Is(err, metadata.ErrNoAccess):
 		webserver.Fail(w, http.StatusNotImplemented, "Explore is not available here")
 	case errors.Is(err, metadata.ErrRateLimited):

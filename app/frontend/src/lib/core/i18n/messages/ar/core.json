@@ -16,7 +16,7 @@
 	"core.format.healthy": "سليم",
 	"core.format.folderNotFound": "المجلد غير موجود",
 	"core.format.cannotWrite": "لا يمكن الكتابة هنا",
-	"core.format.copiedNoHardlinks": "يعمل، لكن الملفات تُنسخ (بلا روابط ثابتة)",
+	"core.format.copiedNoHardlinks": "كل استيراد يصنع نسخة كاملة (يستهلك مساحة إضافية)",
 	"core.format.notChecked": "لم يُفحص بعد",
 	"core.loader.welcome": "أهلًا، {name}",
 	"core.loader.reconnecting": "جارٍ إعادة الاتصال…",
@@ -54,6 +54,8 @@
 	"core.plain.configDiskWarning": "المساحة على القرص الذي يحوي مجلد config توشك على النفاد.",
 	"core.plain.configFolder": "المسار /config غير مربوط بمجلد، لذلك تضيع بيانات HolyArrs عند إعادة إنشاء الحاوية.",
 	"core.plain.waitingDownloads": "التنزيلات تنتظر لأن برنامج التنزيل الخاص بها لا يستطيع استخدام الملفات.",
+	"core.plain.clearWaiting": "تنزيلات مستوردة تنتظر تنظيفها من برنامج التنزيل الخاص بها.",
+	"core.plain.saveFolder": "لم يُحدَّد مجلد حفظ لأحد برامج التنزيل، لذا لا يستطيع HolyArrs استيراد تنزيلاته المكتملة.",
 	"core.plain.someone": "شخص من أسرتك",
 	"core.plain.keyKitOwner": "على المالك حفظ حزمة المفتاح: النسخ الاحتياطية لا تحتوي المفتاح الرئيسي.",
 	"core.plain.keyKitNone": "لا توجد حزمة مفتاح محفوظة: النسخ الاحتياطية لا تحتوي المفتاح الرئيسي.",
@@ -142,5 +144,6 @@
 	"core.settings.danger.label": "منطقة الخطر",
 	"core.settings.danger.about": "إعادة التشغيل أو الإيقاف",
 	"core.settings.account.label": "حسابي",
-	"core.settings.account.about": "كلمة المرور والمصادقة الثنائية والأجهزة"
+	"core.settings.account.about": "كلمة المرور والمصادقة الثنائية والأجهزة",
+	"core.api.sourceOff": "بعض الصفوف متوقفة في هذا التثبيت."
 }

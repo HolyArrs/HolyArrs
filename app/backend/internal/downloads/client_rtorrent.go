@@ -99,7 +99,7 @@ func (r *RTorrent) Health(ctx context.Context) (Health, error) {
 			return Health{}, fmt.Errorf("rTorrent %s is too old; HolyArrs needs 0.9 or newer", version)
 		}
 	}
-	if _, err := r.rows(ctx); err != nil {
+	if _, err := r.rows(ctx, "incomplete"); err != nil {
 		return Health{}, err
 	}
 	answers, err := r.multicall(ctx, [][]any{{"d.custom1.set", rtorrentNoHash, "holyarrs"}, {"d.stop", rtorrentNoHash}, {"d.erase", rtorrentNoHash}})
@@ -118,7 +118,7 @@ func (r *RTorrent) Health(ctx context.Context) (Health, error) {
 // List returns the torrents with the category's label. An empty category
 // returns every torrent.
 func (r *RTorrent) List(ctx context.Context, category string) ([]Job, error) {
-	rows, err := r.rows(ctx)
+	rows, err := r.rows(ctx, "main")
 	if err != nil {
 		return nil, err
 	}
@@ -127,6 +127,67 @@ func (r *RTorrent) List(ctx context.Context, category string) ([]Job, error) {
 		if category == "" || labelIs(row.label, category) {
 			jobs = append(jobs, r.job(row))
 		}
+	}
+	return jobs, nil
+}
+
+// ListActive returns what rTorrent is still downloading, whatever its label, and
+// the torrents with the given hashes, read by hash in one call. rTorrent's
+// built-in "incomplete" view holds only unfinished torrents, so a seedbox full
+// of finished ones is not read each time. A hash rTorrent no longer has is left
+// out.
+func (r *RTorrent) ListActive(ctx context.Context, ids []string) ([]Job, error) {
+	rows, err := r.rows(ctx, "incomplete")
+	if err != nil {
+		return nil, err
+	}
+	seen := make(map[string]bool, len(rows))
+	jobs := make([]Job, 0, len(rows))
+	for _, row := range rows {
+		seen[row.hash] = true
+		jobs = append(jobs, r.job(row))
+	}
+	var want []string
+	var calls [][]any
+	for _, id := range ids {
+		id = strings.ToLower(id)
+		if seen[id] || !releasename.ValidInfoHash(id) {
+			continue
+		}
+		seen[id] = true
+		want = append(want, id)
+		for _, f := range rtorrentFields {
+			calls = append(calls, []any{strings.TrimSuffix(f, "="), strings.ToUpper(id)})
+		}
+	}
+	if len(want) == 0 {
+		return jobs, nil
+	}
+	answers, err := r.multicall(ctx, calls)
+	if err != nil {
+		return nil, err
+	}
+	n := len(rtorrentFields)
+	for i := range want {
+		cols := answers[i*n : (i+1)*n]
+		var miss error
+		for _, a := range cols {
+			if e, ok := a.(error); ok {
+				miss = rtNotFound(e)
+				break
+			}
+		}
+		if errors.Is(miss, ErrNotFound) {
+			continue
+		}
+		if miss != nil {
+			return nil, miss
+		}
+		row, err := rowOf(cols)
+		if err != nil {
+			return nil, err
+		}
+		jobs = append(jobs, r.job(row))
 	}
 	return jobs, nil
 }
@@ -285,7 +346,7 @@ func (r *RTorrent) Remove(ctx context.Context, id string, deleteFiles bool) erro
 	var target filesTarget
 	why := ""
 	if deleteFiles {
-		others, err := r.rows(ctx)
+		others, err := r.rows(ctx, "main")
 		if err != nil {
 			return err
 		}
@@ -340,8 +401,10 @@ func (r *RTorrent) row(ctx context.Context, id string) (rtRow, error) {
 	return rowOf(answers)
 }
 
-func (r *RTorrent) rows(ctx context.Context) ([]rtRow, error) {
-	args := []any{"", "main"}
+// rows reads every torrent in one rTorrent view: "main" holds them all,
+// "incomplete" only the unfinished ones.
+func (r *RTorrent) rows(ctx context.Context, view string) ([]rtRow, error) {
+	args := []any{"", view}
 	for _, f := range rtorrentFields {
 		args = append(args, f)
 	}
@@ -482,7 +545,7 @@ func labelText(raw string) string {
 // labelIs reports whether a stored label is the category, written plainly (as
 // another app may have) or percent-encoded.
 func labelIs(raw, category string) bool {
-	return category != "" && (raw == category || labelText(raw) == category)
+	return category != "" && (sameCategory(raw, category) || sameCategory(labelText(raw), category))
 }
 
 // rtorrentTooLarge is a call refused for its size before rTorrent took it.

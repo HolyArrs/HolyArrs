@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { moviesDir, newOwner, noSidewaysScroll, owner, signIn, addFromSearch, finishFirstRun } from '../helpers/helpers.ts';
+import { moviesDir, newOwner, noSidewaysScroll, owner, signIn, addFromSearch, setUpFresh } from '../helpers/helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -12,17 +12,8 @@ async function enterApp(page: import('@playwright/test').Page) {
 		await signIn(page, owner());
 		return;
 	}
-	const o = newOwner();
-	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
-	await page.getByLabel('Name').fill(o.name);
-	await page.getByLabel('Password', { exact: true }).fill(o.password);
-	await page.getByLabel('Password again').fill(o.password);
-	await page.getByRole('button', { name: 'Create account' }).click();
-	await page.getByLabel('Music', { exact: true }).check();
-	await page.getByLabel('Subtitles', { exact: true }).check();
-	await page.getByLabel('Yes', { exact: true }).check();
-	await page.getByRole('button', { name: 'Continue' }).click();
-	await finishFirstRun(page, moviesDir);
+	// Run alone on a fresh app: the same first run as the setup project.
+	await setUpFresh(page, newOwner(), moviesDir, { tv: true, music: true, invite: true });
 }
 
 async function paperHarbour(page: import('@playwright/test').Page): Promise<string> {

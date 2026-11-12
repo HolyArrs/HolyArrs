@@ -4,12 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"slices"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // errDryRun rolls back a dry-run edit after its changes were worked out.
@@ -26,6 +29,11 @@ type TitleChange struct {
 	LibraryFolderID *int64  `json:"library_folder_id"`
 	EpisodeOrder    *string `json:"episode_order"`
 	NewSeasons      *string `json:"new_seasons"`
+	// EpisodeGroupID picks one of the show's TMDB episode orders; "" goes
+	// back to TMDB's own numbering.
+	EpisodeGroupID *string `json:"episode_group_id"`
+	// PackWindow takes a season pack a few episodes at a time (0 = off).
+	PackWindow *int `json:"pack_window"`
 	// Tags route the title's grabs and searches (tagset); nil keeps them.
 	Tags *[]string `json:"tags"`
 }
@@ -73,12 +81,19 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 	switch {
 	case show && (c.ReleaseGate != nil || c.GateDelayDays != nil):
 		return res, ErrMovieOnly
-	case !show && (c.EpisodeOrder != nil || c.NewSeasons != nil):
+	case !show && (c.EpisodeOrder != nil || c.NewSeasons != nil || c.EpisodeGroupID != nil || c.PackWindow != nil):
 		return res, ErrShowOnly
+	case c.PackWindow != nil && (*c.PackWindow < 0 || *c.PackWindow > MaxPackWindow):
+		return res, ErrBadPackWindow
 	case c.EpisodeOrder != nil && !ValidOrder(*c.EpisodeOrder):
 		return res, ErrBadOrder
 	case c.NewSeasons != nil && *c.NewSeasons != "all" && *c.NewSeasons != "none":
 		return res, ErrBadNewSeasons
+	}
+	if c.EpisodeGroupID != nil && *c.EpisodeGroupID != "" {
+		if err := s.checkGroup(ctx, cur, *c.EpisodeGroupID); err != nil {
+			return res, err
+		}
 	}
 	var newFolder *mediafiles.LibraryFolder
 	if c.LibraryFolderID != nil {
@@ -126,6 +141,15 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 		}
 		if c.NewSeasons != nil {
 			t.NewPartsPolicy = *c.NewSeasons
+		}
+		if c.PackWindow != nil {
+			t.PackWindow = *c.PackWindow
+		}
+		if c.EpisodeGroupID != nil {
+			t.EpisodeGroupID = nil
+			if g := *c.EpisodeGroupID; g != "" {
+				t.EpisodeGroupID = &g
+			}
 		}
 		if c.Tags != nil {
 			t.Tags = mediafiles.CleanTags(*c.Tags)
@@ -271,4 +295,23 @@ func fileMeetsVersionChoices(v mediafiles.Version, f mediafiles.File) bool {
 		}
 	}
 	return importer.AudioMeets(f.MediaInfo, v.AudioLanguages)
+}
+
+// checkGroup makes sure id is one of the TMDB episode orders of a show
+// that follows TMDB, and that the order itself can be read.
+func (s *Service) checkGroup(ctx context.Context, t mediafiles.Title, id string) error {
+	if s.EpisodeGroups == nil || t.MetadataSource != "tmdb" || t.SourceIDs["tmdb"] == "" || !metadata.ValidGroupID(id) {
+		return ErrBadEpisodeGroup
+	}
+	gs, err := s.EpisodeGroups.EpisodeGroups(ctx, t.SourceIDs["tmdb"])
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrEpisodeGroupUnread, err)
+	}
+	if !slices.ContainsFunc(gs, func(g metadata.EpisodeGroupInfo) bool { return g.ID == id }) {
+		return ErrBadEpisodeGroup
+	}
+	if _, err := s.EpisodeGroups.EpisodeGroup(ctx, id); err != nil {
+		return fmt.Errorf("%w: %v", ErrEpisodeGroupUnread, err)
+	}
+	return nil
 }

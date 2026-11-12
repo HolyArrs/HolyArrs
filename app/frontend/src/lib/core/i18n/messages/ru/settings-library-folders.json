@@ -38,6 +38,14 @@
 	"settings.libraryFolders.foldersHint": "Один путь на строку, например /data/imports. До 32.",
 	"settings.libraryFolders.ownerOnly": "Только владелец и администраторы",
 	"settings.libraryFolders.copiesExpected": "Копирование ожидаемо",
-	"settings.libraryFolders.copiesExpectedState": "Копирует, как задумано",
-	"settings.libraryFolders.warnAgain": "Снова предупреждать"
+	"settings.libraryFolders.copiesExpectedState": "Полные копии, как выбрано",
+	"settings.libraryFolders.whyCopies": "Почему?",
+	"settings.libraryFolders.stateInstant": "Мгновенно, без лишнего места",
+	"settings.libraryFolders.warnAgain": "Снова предупреждать",
+	"settings.libraryFolders.changePath": "Сменить путь",
+	"settings.libraryFolders.changePathOf": "Сменить путь {path}",
+	"settings.libraryFolders.newPath": "Новый путь",
+	"settings.libraryFolders.changePathHint": "Сначала перенесите туда файлы. HolyArrs проверяет каждый файл и ничего не перемещает.",
+	"settings.libraryFolders.checkingFiles": "Проверка файлов…",
+	"settings.libraryFolders.pathChanged": "Путь изменён"
 }

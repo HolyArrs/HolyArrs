@@ -2,6 +2,7 @@
 
 import { api as defaultClient, type Client } from './api';
 import { setHeld } from './settings.ts';
+import { views as accountViews } from './views.svelte.ts';
 
 export type SessionState = 'unknown' | 'signed_out' | 'needs_setup' | 'signed_in';
 export type Role = 'owner' | 'admin' | 'member';
@@ -28,6 +29,7 @@ export interface Me {
 	max_rating?: string;
 	rating_country?: string;
 	held?: string[];
+	views?: Record<string, unknown>;
 }
 
 export interface FoundServer {
@@ -54,8 +56,8 @@ interface AuthState {
 	config_unmapped?: boolean;
 	host_refused?: string;
 }
-// One session store per client; the default one is exported below.
-export function createSession(client: Client = defaultClient) {
+// One session store per client; the default one is exported below. The person's saved page views ride along with the session.
+export function createSession(client: Client = defaultClient, views: Pick<typeof accountViews, 'take' | 'forget'> = accountViews) {
 	// Bumped on every sign-in or sign-out so a slow older response cannot overwrite newer state.
 	let generation = 0;
 	const s = $state<{
@@ -155,6 +157,7 @@ export function createSession(client: Client = defaultClient) {
 		s.safeMode = !!me.safe_mode;
 		s.held = me.held ?? [];
 		setHeld((f) => s.held.includes(f));
+		views.take(me.views);
 		s.state = 'signed_in';
 	}
 
@@ -162,6 +165,7 @@ export function createSession(client: Client = defaultClient) {
 	async function signedOutState(expected: number) {
 		if (expected !== generation) return;
 		client.setCsrf('');
+		views.forget();
 		s.id = undefined;
 		s.name = '';
 		s.via = '';

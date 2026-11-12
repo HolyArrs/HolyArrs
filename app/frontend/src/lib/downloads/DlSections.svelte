@@ -17,7 +17,6 @@
 	import { Downloaders } from './clients.svelte.ts';
 	import { PaneDetail } from './pane-detail.svelte.ts';
 	import { tabsOf, type PaneTab } from './pane-facts.ts';
-	import DlMoreNote from './DlMoreNote.svelte';
 	import DlEmpty from './DlEmpty.svelte';
 	import { reviewCount, reviewWord } from './status-views.ts';
 	import { listEsc, reviewShown, searchShortcut } from './keys.ts';
@@ -106,7 +105,7 @@
 		watch?: boolean;
 		/** Upload speed summed by the server over every sending row; falls back to the rows on hand. */
 		upTotal?: number;
-		outside?: { rest: Rest; canMore: boolean; capMax: number; onmore?: () => void }; // torrents left out of this page (tabs count them too), whether more can load, and how
+		outside?: { rest: Rest; canMore: boolean; capMax: number; onmore?: (all?: boolean) => void }; // torrents left out of this page (tabs count them too), whether more can load, and how
 	} = $props();
 	let kindOn = $state<KindKey>('');
 	const typed = $derived(kindOn ? everyRow.filter((r) => kindOf(r) === kindOn) : everyRow);
@@ -153,6 +152,9 @@
 	const subs = $derived(withRest(subCounts(rows, onTab), onTab?.subs ?? [], mo.extra));
 	const subOn = $derived(subs.some((x) => x.key === sub) ? sub : '');
 	const shown = $derived(pick(rows, tabs, on, subOn));
+	// Near the end of the list (or a list too short to scroll), the next torrents load by themselves.
+	const nearEnd = () => { const b = cols.listEl; if (mo.more && b && b.scrollTop + b.clientHeight > b.scrollHeight - 800) outside.onmore?.(!list.length && restHere > 0); };
+	$effect(() => { void list.length; void mo.more; nearEnd(); });
 	const restHere = $derived((onTab?.subs.find((x) => x.key === subOn)?.stages ?? onTab?.stages ?? []).reduce((a, s) => a + (mo.extra[s] ?? 0), 0)); // not loaded yet, on this tab
 	function choose(k: string) {
 		show = k;
@@ -579,11 +581,10 @@
 <div class="body">
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label={t('downloads.list.status')} aria-describedby={mo.left > 0 ? 'dl-morenote' : undefined}>{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up={noUp ? '' : `${bytes(upSum)}/s`} eta={etaWords} free={dls.freeAll.length ? freeSize(Math.min(...dls.freeAll)) : ''} today={dls.sumOf('day_down') ? bytes(dls.sumOf('day_down')) : ''} session={dls.sumOf('session_down') ? bytes(dls.sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} limit={Number.isFinite(capNow) ? `${bytes(capNow)}/s` : ''} onlimit={watch ? undefined : onlimit} /></div>
-<DlMoreNote {mo} {filtered} loaded={mo.loaded} capMax={outside.capMax} onmore={outside.onmore} />
-<p class="qline" data-testid="dl-qline">{#if onlimit && !watch}<button type="button" class="qd qbtn" onclick={() => onlimit?.()} title={Number.isFinite(capNow) ? t('downloads.list.limitChange', { speed: `${bytes(capNow)}/s` }) : t('downloads.list.setLimit')} data-testid="dl-q-down"><span class="sr">{t('downloads.list.speedSr')} </span>↓ {bytes(sum.speed)}/s{#if Number.isFinite(capNow)}<span class="qcap"><Icon name="gauge" size={12} /><span class="sr">{t('downloads.list.limitSr')} </span>{bytes(capNow)}/s</span>{:else}<span class="sr">. {t('downloads.list.setLimit')}</span>{/if}</button>{:else}<span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{/if}{#if dls.freeAll.length}<span class="qs" aria-hidden="true">·</span><span data-testid="dl-q-free">{t('downloads.list.free', { size: freeSize(Math.min(...dls.freeAll)) })}</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span>{t('downloads.list.left', { time: etaWords })}</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
+<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label={t('downloads.list.status')}>{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up={noUp ? '' : `${bytes(upSum)}/s`} eta={etaWords} free={dls.freeAll.length ? freeSize(Math.min(...dls.freeAll)) : ''} today={dls.sumOf('day_down') ? bytes(dls.sumOf('day_down')) : ''} session={dls.sumOf('session_down') ? bytes(dls.sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} limit={Number.isFinite(capNow) ? `${bytes(capNow)}/s` : ''} onlimit={watch ? undefined : onlimit} /></div>
+<p class="qline" data-testid="dl-qline">{#if onlimit && !watch}<button type="button" class="qd qbtn" onclick={() => onlimit?.()} title={Number.isFinite(capNow) ? t('downloads.list.limitChange', { speed: `${bytes(capNow)}/s` }) : t('downloads.list.setLimit')} data-testid="dl-q-down"><span class="sr">{t('downloads.list.speedSr')} </span>↓ {bytes(sum.speed)}/s{#if Number.isFinite(capNow)}<span class="qcap"><Icon name="gauge" size={12} /><span class="sr">{t('downloads.list.limitSr')} </span>{bytes(capNow)}/s</span>{:else}<span class="sr">. {t('downloads.list.setLimit')}</span>{/if}</button>{:else}<span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{/if}{#if dls.freeAll.length}<span class="qs" aria-hidden="true">·</span><span class="qt" data-testid="dl-q-free">{t('downloads.list.free', { size: freeSize(Math.min(...dls.freeAll)) })}</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span class="qt">{t('downloads.list.left', { time: etaWords })}</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div class="listbox" bind:this={cols.listEl} data-testid="dl-listbox" use:overlayScroll={{ header: ".chead" }}>
+<div class="listbox" bind:this={cols.listEl} onscroll={nearEnd} data-testid="dl-listbox" use:overlayScroll={{ header: ".chead" }}>
 {#if (pickedRows.length || selecting) && !watch}
 	<DlSelBars {pickedRows} {bulkRows} steer={STEER} {startT} {pauseT} {batchBusy} {steerable} {mayEdit} {runOn} {onbulk} {onsteer} {onretry} {onremovemany} onall={() => (picked = new Set(list.map((r) => r.id)))} onclear={clearPicked} />
 {/if}
@@ -593,11 +594,10 @@
 		<ul class="dlrows" class:vw={cols.windowed} bind:this={cols.ulEl} data-testid="dl-list" data-tab={on} data-rows={list.length} style={cols.windowed ? `padding-top: ${cols.span.a * cols.rh}px; padding-bottom: ${(list.length - cols.span.b) * cols.rh}px` : undefined}>
 			{#each cols.shownRows as r (r.id)}<DlRow {r} hist={inHistory(r)} {cols} {watch} {picked} {choosing} {openId} {tabRow} {importOf} {titles} {titlesReady} {rowMenu} onpickone={pickOne} onpickto={pickTo} onrowclick={rowClick} onrowkey={rowKey} onrowfocus={(id) => (rowFocus = id)} />{/each}
 		</ul>
-		<DlMoreNote {mo} loaded={mo.loaded} capMax={outside.capMax} onmore={outside.onmore} end />
 	</div></div>
 {:else}
 	<div class="tw" data-testid="dl-tablebox"><div class="tin">{@render header()}</div></div>
-	<DlEmpty em={emptyOf(on, subOn, q, kindOn, tabs, srcOn)} left={restHere} more={mo.more} onclear={() => (dlScope.term = '')} onall={() => { kindOn = ''; srcOn = ''; }} onmore={outside.onmore} />
+	<DlEmpty em={emptyOf(on, subOn, q, kindOn, tabs, srcOn)} left={restHere} onclear={() => (dlScope.term = '')} onall={() => { kindOn = ''; srcOn = ''; }} />
 {/if}
 </div>
 {#if openRow}
@@ -739,8 +739,8 @@
 		.qline:has(.qbtn) { min-height: 48px; padding-top: 4px; padding-bottom: 0; }
 		.qbtn:focus-visible { outline: none; border-radius: 6px; box-shadow: var(--focus-ring); }
 		.qcap { display: inline-flex; align-items: center; gap: 3px; color: var(--text-muted); font-weight: 400; }
-		.qrv { margin-left: auto; min-height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail-text); font: 600 12px/1 var(--font-ui); }
-		.qrv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+		.qline .qt { min-width: 0; overflow: hidden; text-overflow: ellipsis; } /* Free space and time left give way before the review pill. */
+		.qrv { flex: none; margin-inline-start: auto; min-height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail-text); font: 600 12px/1 var(--font-ui); } .qrv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 		.listbox:has(:global(.psel)) .dlrows { padding-bottom: 140px; }
 		.dline > [data-col='progress'] { height: 4px; align-self: center; }
 	.strip { gap: 4px 14px; }

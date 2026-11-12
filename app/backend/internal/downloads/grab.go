@@ -1,13 +1,11 @@
 package downloads
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"slices"
 	"strings"
 	"time"
@@ -140,6 +138,13 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	} else if len(prior) == 1 {
 		dl = &prior[0]
 	}
+	// A torrent season pack for a show that takes packs a few episodes at a time
+	// goes only to a qBittorrent HolyArrs may change, added stopped; with none,
+	// it is fetched whole as before.
+	window := 0
+	if dl == nil {
+		window = packWindow(ctx, db, rel, sl.ItemID)
+	}
 	var d domain.Downloader
 	if dl != nil {
 		if err := database.Get(ctx, db, "downloaders", dl.DownloaderID, &d); err != nil {
@@ -149,6 +154,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		var dls []domain.Downloader
 		var skipped []string
 		if attempt != nil {
+			window = 0
 			var original domain.Downloader
 			if err := database.Get(ctx, db, "downloaders", attempt.DownloaderID, &original); err != nil {
 				return 0, errors.Join(ErrUncertain, err)
@@ -166,6 +172,11 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			fit := mediafiles.Downloaders(all, titleTags, func(d domain.Downloader) []string { return d.Tags })
 			if len(fit) == 0 && len(all) > 0 {
 				return 0, &TagsError{Protocol: rel.Protocol, Title: titleTags}
+			}
+			if q := packDownloaders(fit); window > 0 && len(q) > 0 {
+				fit = q
+			} else {
+				window = 0
 			}
 			dls, skipped = m.order(fit, now)
 			// Each Downloader sends with its category for the title's kind.
@@ -193,7 +204,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 				break
 			}
 			d = dls[i]
-			ext, err := m.send(ctx, d, rel, slotID, hash)
+			ext, own, err := m.send(ctx, d, rel, slotID, hash, window > 0)
 			if err != nil {
 				if errors.Is(err, ErrUncertain) || errors.Is(err, ErrAttemptStopped) {
 					return 0, err
@@ -203,6 +214,9 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			}
 			dl = &domain.Download{DownloaderID: d.ID, ReleaseID: &rel.ID, SlotIDs: []int64{slotID}, ExternalID: ext, State: "sent",
 				FilesSeen: []domain.SeenFile{}, SavePath: m.SavePath, StartedBy: by, ProgressAt: &now}
+			if window > 0 && own {
+				dl.PackFiles = []domain.PackFile{}
+			}
 		}
 		if dl == nil {
 			return 0, grabFailed(fails)
@@ -303,16 +317,19 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		}
 		if dl.ID == 0 {
 			// The Downloader may return the id of an old Download that was not reused (its
-			// Import was rejected), so that row starts afresh. A row another Slot still
-			// follows is never taken over.
-			var old int64
-			var oldState string
-			if tx.QueryRow("SELECT id, state FROM downloads WHERE downloader_id = ? AND external_id = ?", dl.DownloaderID, dl.ExternalID).Scan(&old, &oldState) == nil {
-				if isActive(oldState) {
-					return fmt.Errorf("%s gave the id of Download %d, which is still active", d.Name, old)
-				}
+			// Import was rejected, or the same torrent is sent again), so that row starts
+			// afresh. A row still active, followed by another Slot or waiting on a removal
+			// is never taken over.
+			old, inUse, err := heldBy(ctx, tx, dl.DownloaderID, dl.ExternalID)
+			if err != nil {
+				return err
+			}
+			if inUse {
+				return fmt.Errorf("%s gave the id of Download %d, which is still in use", d.Name, old)
+			}
+			if old > 0 {
 				dl.ID = old
-				if err := database.Update(tx, "downloads", dl, by); err != nil {
+				if err := updateReused(tx, dl, by); err != nil {
 					return err
 				}
 			} else if _, err := database.Insert(tx, "downloads", dl, by); err != nil {
@@ -340,6 +357,9 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		m.publish("slot", map[string]any{"id": id, "state": mediafiles.SlotDownloading})
 	}
 	m.publish("download", dl)
+	if window > 0 && dl.PackFiles != nil {
+		m.packPending(ctx, d, *dl) // only a torrent HolyArrs added, never another app's
+	}
 	m.Poke()
 	m.Kick(d.ID)
 	return dl.ID, nil
@@ -378,249 +398,6 @@ func (m *Manager) giveUp(ctx context.Context, slotID, releaseID int64, reason st
 	}
 }
 
-// send hands a Release to one Downloader and returns its id there.
-func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Release, slotID int64, hash string) (ext string, err error) {
-	a, err := m.claimAttempt(ctx, d, rel.ID, slotID)
-	if err != nil {
-		return "", err
-	}
-	if a != nil {
-		if a.State == "resolved" {
-			return a.marker, nil
-		}
-		d.Category = a.category
-		defer func() {
-			if err == nil {
-				return // Grab resolves it atomically with the Download row.
-			}
-			if !a.created || errors.Is(err, ErrUncertain) {
-				err = errors.Join(ErrUncertain, err)
-				return
-			}
-			// A definite refusal before the append may be retried. A failed cleanup is
-			// treated conservatively: keep the intent and suppress failover.
-			cleanupErr := m.Store.Write(ctx, func(tx *sql.Tx) error {
-				res, e := tx.ExecContext(ctx, "UPDATE downloader_attempts SET state = 'resolved', updated_at = ? WHERE id = ? AND state = 'pending'", m.now().Format(time.RFC3339Nano), a.ID)
-				if e != nil {
-					return e
-				}
-				n, e := res.RowsAffected()
-				if e == nil && n != 1 {
-					return ErrAttemptStopped
-				}
-				return e
-			})
-			if cleanupErr != nil {
-				err = errors.Join(ErrUncertain, err, cleanupErr)
-			}
-		}()
-	}
-	e, err := m.engine(ctx, d)
-	if err != nil {
-		return "", fmt.Errorf("%s: %w", d.Name, err)
-	}
-	// A job found again by name is taken as this Release only when no other
-	// Download row holds its id. A failed or vanished one must not come back, and a
-	// row for another Release or Slot is not this one.
-	skip := map[string]bool{}
-	rows, err := m.Store.Read().QueryContext(ctx, `SELECT external_id FROM downloads WHERE downloader_id = ? AND NOT (release_id IS ?
-		AND state IN (`+activeStates+`, 'finished') AND EXISTS (SELECT 1 FROM json_each(slot_ids) WHERE value = ?))`, d.ID, rel.ID, slotID)
-	if err != nil {
-		return "", err
-	}
-	for rows.Next() {
-		var id string
-		if rows.Scan(&id) == nil {
-			skip[id] = true
-		}
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		return "", err
-	}
-	if a != nil && !a.created {
-		// A recovery is only a lookup. It needs neither the original Source nor a
-		// send-spacing reservation, and may never fetch or append.
-		ext, err = e.Add(ctx, AddRequest{Name: rel.Name, Category: a.category, Skip: skip, AttemptMarker: a.marker, InfoHash: a.expectedID, ReconcileOnly: true})
-		if err != nil {
-			if unreachable(err) {
-				m.downloaderFailed(ctx, d, err)
-			}
-			return "", err
-		}
-		if ext == "" {
-			return "", ErrUncertain
-		}
-		m.downloaderOK(ctx, d)
-		return ext, nil
-	}
-	if hash != "" {
-		if j, err := e.Get(ctx, hash); err == nil {
-			if skip[j.ID] || (d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent") && j.Category != d.Category {
-				return "", errors.New("the torrent belongs to another download or category")
-			}
-			if j.ID != "" {
-				return j.ID, nil
-			}
-			return hash, nil
-		}
-	}
-	link := rel.LinkRef
-	if m.Link != nil {
-		if link, err = m.Link(ctx, rel); err != nil {
-			return "", err
-		}
-	}
-	var src domain.Source
-	if err := database.Get(ctx, m.Store.Read(), "sources", rel.SourceID, &src); err != nil {
-		return "", errors.New("the Release's Source could not be read")
-	}
-	allowLocal := src.AllowLocal
-	if d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "nzbget" {
-		if !strings.HasPrefix(link, "magnet:") && src.ProxyURL != "" {
-			return "", errors.New("this Downloader cannot yet fetch Release files through a Source proxy")
-		}
-	}
-	if link, err = grabLinkAllowed(d.Adapter, link, allowLocal); err != nil {
-		return "", err
-	}
-	// qBittorrent and SABnzbd would fetch a link themselves from inside the home
-	// network, where a name leading home is never checked. Without local network
-	// access HolyArrs fetches the file and hands it over; a link that redirects to a
-	// magnet sends the magnet. A Source with a proxy is fetched through it, with the
-	// same checks. A qBittorrent Release with no info hash at all (an http link to a
-	// .torrent, as private sites through Jackett or Prowlarr give) is fetched the
-	// same way, even from a local Source: the hash comes from the file, so the
-	// download can be followed.
-	var file []byte
-	noHash := d.Adapter == "qbittorrent" && hash == "" && linkHash(link) == ""
-	if (d.Adapter == "qbittorrent" || d.Adapter == "sabnzbd") && (!allowLocal || noHash) && !strings.HasPrefix(link, "magnet:") {
-		var rt http.RoundTripper
-		if src.ProxyURL != "" {
-			if m.SourceTransport == nil {
-				return "", errors.New("this Downloader cannot yet fetch Release files through a Source proxy")
-			}
-			if rt, err = m.SourceTransport(ctx, src); err != nil {
-				return "", err
-			}
-		}
-		limit := addFetchMax
-		if d.Adapter == "sabnzbd" {
-			limit = sabMaxNZB
-		}
-		var magnet string
-		if file, magnet, err = fetchGrabLink(ctx, link, limit, rt, sourceLocalHost(src.URL, allowLocal)); err == nil && magnet != "" {
-			link, _, err = safeMagnet(magnet, allowLocal)
-		}
-		if err != nil {
-			return "", err
-		}
-	}
-	// Prowlarr and Jackett answer magnet-only sites with a redirect to a magnet,
-	// which Transmission, Deluge, rTorrent and some qBittorrent stand-ins cannot follow. A
-	// torrent link not read above (a home Source whose Release has a hash) is read
-	// here and the magnet or file is sent; if that fails the link is sent as before.
-	torrentAdapter := d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "qbittorrent" && src.ProxyURL == ""
-	if torrentAdapter && file == nil && !strings.HasPrefix(link, "magnet:") {
-		link, file = prefetchTorrent(ctx, link, allowLocal, sourceLocalHost(src.URL, allowLocal))
-		if hash == "" {
-			hash = linkHash(link)
-		}
-	}
-	if d.Adapter == "qbittorrent" && file != nil {
-		// Some trackers print a newline after the file; qBittorrent reads past it.
-		file = bytes.TrimRight(file, " \t\r\n")
-		// Trackers, web seeds and DHT nodes in the file that point at home are left
-		// out, and the info hash stays the same. A Source allowed on the local network
-		// keeps them: its file is fetched only to learn the hash, and a tracker at home
-		// is then the user's own.
-		if !allowLocal {
-			if file, err = safeTorrent(file); err != nil {
-				return "", errors.New("the Release file is not a torrent")
-			}
-		}
-		h, err := torrentFileHash(file)
-		if err != nil {
-			// Often a one-off page (a limit or a check) instead of the file, so try again
-			// and do not turn the Release down.
-			return "", errors.New("the Release file is not a torrent")
-		}
-		if hash != "" && !strings.EqualFold(hash, h) {
-			return "", releaseRefused{"the torrent file does not match its info hash"}
-		}
-		if hash == "" {
-			// The hash came from the file, so the earlier look for it in qBittorrent did
-			// not run, and adding a torrent it already has would fail.
-			if j, err := e.Get(ctx, h); err == nil {
-				if skip[j.ID] {
-					return "", errors.New("the torrent belongs to another download or category")
-				}
-				if j.ID != "" {
-					return j.ID, nil
-				}
-				return h, nil
-			}
-		}
-		hash = h
-	}
-	// qBittorrent answers an add without an id, so HolyArrs follows the torrent by
-	// its info hash, from the Release or its magnet link. Without one the torrent
-	// would download unseen, so it is not sent.
-	if d.Adapter == "qbittorrent" && hash == "" {
-		if hash = linkHash(link); hash == "" {
-			return "", releaseRefused{"the Release has no info hash, so " + d.Name + "'s download of it could not be followed"}
-		}
-	}
-	done, err := m.space(ctx, d.URL)
-	if err != nil {
-		return "", err
-	}
-	req := AddRequest{URL: link, File: file, Name: rel.Name, Category: d.Category, SavePath: m.SavePath, InfoHash: hash, Skip: skip,
-		AllowLocal: allowLocal, OperationKey: fmt.Sprintf("%d:%d:%d", d.ID, rel.ID, slotID)}
-	if a != nil {
-		req.AttemptMarker, req.ReconcileOnly = a.marker, !a.created
-	}
-	ext, err = e.Add(ctx, req)
-	done()
-	if err != nil {
-		// Only a Downloader that did not answer, or turned down the sign-in, rests. One
-		// that answered and refused this Release (a bad link, no category) stays ready
-		// for the next one.
-		if unreachable(err) {
-			m.downloaderFailed(ctx, d, err)
-		}
-		return "", fmt.Errorf("sending to %s: %w", d.Name, err)
-	}
-	if ext == "" {
-		if a != nil {
-			return "", ErrUncertain
-		}
-		return "", fmt.Errorf("%s gave no id for the Release (no info hash)", d.Name)
-	}
-	m.downloaderOK(ctx, d)
-	return ext, nil
-}
-
-func jsonIDs(ids []int64) string {
-	b, _ := json.Marshal(ids)
-	return string(b)
-}
-
-// grabLinkAllowed applies the Source's network rule to a feed link before a
-// Downloader gets it. Magnets are rebuilt by safeMagnet, and an address that
-// qBittorrent or SABnzbd would fetch itself may not name a literal local,
-// link-local or metadata host unless the Source may reach the local network.
-func grabLinkAllowed(adapter, link string, allowLocal bool) (string, error) {
-	if len(link) >= 7 && strings.EqualFold(link[:7], "magnet:") {
-		clean, _, err := safeMagnet(link, allowLocal)
-		return clean, err
-	}
-	if (adapter == "qbittorrent" || adapter == "sabnzbd") && !trackerAllowed(link, allowLocal) {
-		return "", errors.New("the Release link points at a local or blocked address")
-	}
-	return link, nil
-}
-
 // slotTitleTags reads the tags and kind of the title a Slot's Item belongs to.
 func slotTitleTags(ctx context.Context, db database.Querier, itemID int64) ([]string, string, error) {
 	var raw, kind string
@@ -634,4 +411,167 @@ func slotTitleTags(ctx context.Context, db database.Querier, itemID int64) ([]st
 	var tags []string
 	_ = json.Unmarshal([]byte(raw), &tags)
 	return tags, kind, nil
+}
+
+// titlePackWindow reads pack_window of the title an Item belongs to.
+func titlePackWindow(ctx context.Context, db database.Querier, itemID int64) (int, error) {
+	var n int
+	err := db.QueryRowContext(ctx, "SELECT t.pack_window FROM items i JOIN titles t ON t.id = i.title_id WHERE i.id = ? AND t.kind = 'show'", itemID).Scan(&n)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
+	return n, err
+}
+
+// packEp is one episode of a pack's season with its Slot in the Version.
+type packEp struct {
+	ref    mediafiles.EpisodeRef
+	slotID int64
+}
+
+// packEpisodes lists the episodes of the season a Slot belongs to, with their
+
+// Slots in its Version, and the show's episode order.
+func packEpisodes(ctx context.Context, db *sql.DB, slotID int64) ([]packEp, string, error) {
+	var titleID, versionID int64
+	var season sql.NullInt64
+	var order string
+	if err := db.QueryRowContext(ctx, `SELECT i.title_id, s.version_id, json_extract(i.numbers, '$.season'), COALESCE(t.episode_order, '')
+		FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id WHERE s.id = ?`, slotID).Scan(&titleID, &versionID, &season, &order); err != nil {
+		return nil, "", err
+	}
+	if order == "" {
+		order = mediafiles.OrderAired
+	}
+	rows, err := db.QueryContext(ctx, `SELECT i.id, COALESCE(json_extract(i.numbers, '$.episode'), 0), COALESCE(json_extract(i.numbers, '$.absolute'), 0),
+		COALESCE(i.air_day, ''), COALESCE(s.id, 0) FROM items i LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = ?
+		WHERE i.title_id = ? AND i.kind = 'episode' AND i.dropped_at IS NULL AND json_extract(i.numbers, '$.season') IS ?`, versionID, titleID, season)
+	if err != nil {
+		return nil, "", err
+	}
+	defer rows.Close()
+	var out []packEp
+	for rows.Next() {
+		e := packEp{ref: mediafiles.EpisodeRef{Season: int(season.Int64)}}
+		if err := rows.Scan(&e.ref.ItemID, &e.ref.Episode, &e.ref.Absolute, &e.ref.AirDay, &e.slotID); err != nil {
+			return nil, "", err
+		}
+		out = append(out, e)
+	}
+	return out, order, rows.Err()
+}
+
+// savePackFiles writes a Download's pack_files; nil writes NULL, a normal
+// download again.
+func savePackFiles(ctx context.Context, s *database.Store, id int64, files []domain.PackFile) error {
+	var v any
+	if files != nil {
+		b, _ := json.Marshal(files)
+		v = string(b)
+	}
+	return s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, "UPDATE downloads SET pack_files = ? WHERE id = ?", v, id)
+		return err
+	})
+}
+
+// packSlotsWanted says every Slot of a pack file is wanted and its episode
+
+// and season are kept up to date.
+func packSlotsWanted(ctx context.Context, db *sql.DB, slotIDs []int64) (bool, error) {
+	if len(slotIDs) == 0 {
+		return false, nil
+	}
+	var n int
+	err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM slots s JOIN items i ON i.id = s.item_id LEFT JOIN parts p ON p.id = i.part_id
+		WHERE s.id IN (SELECT value FROM json_each(?)) AND s.state = 'wanted' AND i.keep_up_to_date = 1 AND (p.id IS NULL OR p.keep_up_to_date = 1)`, jsonIDs(slotIDs)).Scan(&n)
+	return n == len(slotIDs), err
+}
+
+// widenPack records switched-on pack files in one write: the new Slots move
+
+// to downloading for this Download, and the Download goes back to
+
+// downloading.
+func widenPack(ctx context.Context, s *database.Store, d *domain.Download, slots []int64, now time.Time, by domain.Actor) error {
+	return s.Write(ctx, func(tx *sql.Tx) error {
+		for _, id := range slots {
+			if _, err := tx.ExecContext(ctx, "UPDATE slots SET chosen_release_id = ? WHERE id = ?", *d.ReleaseID, id); err != nil {
+				return err
+			}
+			for _, to := range []mediafiles.SlotState{mediafiles.SlotSearching, mediafiles.SlotChosen, mediafiles.SlotDownloading} {
+				if err := mediafiles.MoveSlotTx(tx, id, to, "the next episode of the season pack", by); err != nil {
+					return err
+				}
+			}
+			if _, err := tx.ExecContext(ctx, "UPDATE slots SET active_download_id = ? WHERE id = ?", d.ID, id); err != nil {
+				return err
+			}
+		}
+		b, _ := json.Marshal(d.PackFiles)
+		at := database.FormatTime(now)
+		if _, err := tx.ExecContext(ctx, `UPDATE downloads SET pack_files = ?, slot_ids = ?, state = CASE WHEN state IN (`+activeStates+`) THEN state ELSE 'downloading' END,
+			progress = 0, progress_at = ?, finished_at = NULL, state_reason = NULL, updated_at = ? WHERE id = ?`, string(b), jsonIDs(d.SlotIDs), at, at, d.ID); err != nil {
+			return err
+		}
+		return database.Get(ctx, tx, "downloads", d.ID, d)
+	})
+}
+
+// claimPack swaps a Download's pack_files from was to next in one write, and
+// fails with ErrPackChanged when the stored list is no longer was. Widen
+// records its choice this way before it changes the Downloader, and swaps
+// back when the Downloader refuses.
+func claimPack(ctx context.Context, s *database.Store, id int64, was, next []domain.PackFile) error {
+	return s.Write(ctx, func(tx *sql.Tx) error {
+		var cur domain.Download
+		if err := database.Get(ctx, tx, "downloads", id, &cur); err != nil {
+			return err
+		}
+		a, _ := json.Marshal(cur.PackFiles)
+		b, _ := json.Marshal(was)
+		if string(a) != string(b) {
+			return ErrPackChanged
+		}
+		n, _ := json.Marshal(next)
+		_, err := tx.ExecContext(ctx, "UPDATE downloads SET pack_files = ? WHERE id = ?", string(n), id)
+		return err
+	})
+}
+
+// partialPacks lists a show's season packs fetched a few episodes at a time
+
+// that are still in the Downloader (newest first), for one season or every
+
+// season when season is 0, with the show's pack_window.
+func partialPacks(ctx context.Context, db *sql.DB, titleID int64, season int) ([]domain.Download, int, error) {
+	var window int
+	if err := db.QueryRowContext(ctx, "SELECT pack_window FROM titles WHERE id = ?", titleID).Scan(&window); err != nil {
+		return nil, 0, err
+	}
+	ds, err := database.Select[domain.Download](ctx, db, "downloads", `json_array_length(pack_files) > 0 AND state IN (`+activeStates+`, 'finished', 'seeding')
+		AND EXISTS (SELECT 1 FROM json_each(pack_files) f, json_each(json_extract(f.value, '$.items')) it JOIN items i ON i.id = it.value
+		WHERE i.title_id = ? AND (? = 0 OR json_extract(i.numbers, '$.season') = ?)) ORDER BY id DESC`, titleID, season, season)
+	return ds, window, err
+}
+
+// PackTitles lists the shows that take season packs a few episodes at a
+// time and have such a pack still in the Downloader.
+func PackTitles(ctx context.Context, db *sql.DB) ([]int64, error) {
+	rows, err := db.QueryContext(ctx, `SELECT t.id FROM titles t WHERE t.pack_window > 0 AND EXISTS (SELECT 1 FROM downloads d,
+		json_each(d.pack_files) f, json_each(json_extract(f.value, '$.items')) it JOIN items i ON i.id = it.value
+		WHERE json_array_length(d.pack_files) > 0 AND d.state IN (`+activeStates+`, 'finished', 'seeding') AND i.title_id = t.id) ORDER BY t.id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
 }

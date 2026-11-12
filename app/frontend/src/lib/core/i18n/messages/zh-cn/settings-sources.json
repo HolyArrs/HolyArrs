@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "更改",
 	"settings.sources.removeName": "移除 {name}",
 	"settings.sources.remove": "移除",
-	"settings.sources.bridge": "关联 Jackett 或 Prowlarr"
+	"settings.sources.bridge": "关联 Jackett 或 Prowlarr",
+	"settings.sources.off": "来源已关闭",
+	"settings.sources.offText": "HolyArrs 不会搜索或抓取。你在下载器里添加的下载仍会导入。",
+	"settings.sources.openParts": "打开“部分”",
+	"settings.sources.offState": "关闭"
 }

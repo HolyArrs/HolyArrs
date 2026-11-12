@@ -204,5 +204,15 @@
 	"shows.page.mainVersionParen": "(основний Варіант)",
 	"shows.page.keepThem": "Стежити за оновленнями",
 	"shows.page.leaveThem": "Не вмикати їх",
-	"shows.page.filesStay": "Серії й файли лишаються."
+	"shows.page.filesStay": "Серії й файли лишаються.",
+	"shows.page.seasonPacks": "Пакети сезону",
+	"shows.page.packWhole": "Завантажувати весь сезон",
+	"shows.page.packFew": "Завантажувати по кілька серій",
+	"shows.page.packAhead": "Серій наперед",
+	"shows.page.packHint": "Якщо єдиний реліз — пакет усього сезону, qBittorrent завантажує наступні серії, по {n} за раз. Нові приходять після натискання «Завантажити наступні серії» або коли Plex чи Jellyfin показує серію як переглянуту. Usenet та інші завантажувачі завантажують весь сезон.",
+	"shows.page.packWholeShort": "Весь сезон",
+	"shows.page.packAtATime": "Серій за раз: {n}",
+	"shows.tools.packNote": "Цей сезон приходить із пакета, по {n} за раз.",
+	"shows.tools.getNext": "Завантажити наступні серії ({n})",
+	"shows.page.packOneAtATime": "По 1 серії за раз"
 }

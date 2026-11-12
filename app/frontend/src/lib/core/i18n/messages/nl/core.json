@@ -16,7 +16,7 @@
 	"core.format.healthy": "Gezond",
 	"core.format.folderNotFound": "Map niet gevonden",
 	"core.format.cannotWrite": "Hier kan niet worden geschreven",
-	"core.format.copiedNoHardlinks": "Werkt, maar bestanden worden gekopieerd (geen hardlinks)",
+	"core.format.copiedNoHardlinks": "Elke import maakt een volledige kopie (kost extra ruimte)",
 	"core.format.notChecked": "Nog niet gecontroleerd",
 	"core.loader.welcome": "Welkom, {name}",
 	"core.loader.reconnecting": "Opnieuw verbinden…",
@@ -54,6 +54,8 @@
 	"core.plain.configDiskWarning": "De schijf met de configuratiemap raakt zonder ruimte.",
 	"core.plain.configFolder": "/config is niet toegewezen aan een map, dus de gegevens van HolyArrs gaan verloren als de container opnieuw wordt aangemaakt.",
 	"core.plain.waitingDownloads": "Downloads wachten omdat hun Downloader de bestanden niet kan gebruiken.",
+	"core.plain.clearWaiting": "Geïmporteerde downloads wachten tot ze uit hun Downloader worden opgeruimd.",
+	"core.plain.saveFolder": "Een Downloader heeft geen opslagmap, dus HolyArrs kan de voltooide downloads niet importeren.",
 	"core.plain.someone": "Iemand in je huishouden",
 	"core.plain.keyKitOwner": "De eigenaar moet het sleutelpakket opslaan: backups bevatten de hoofdsleutel niet.",
 	"core.plain.keyKitNone": "Er is geen sleutelpakket opgeslagen: backups bevatten de hoofdsleutel niet.",
@@ -142,5 +144,6 @@
 	"core.settings.danger.label": "Gevarenzone",
 	"core.settings.danger.about": "Herstarten of afsluiten",
 	"core.settings.account.label": "Mijn account",
-	"core.settings.account.about": "Wachtwoord, tweestapsverificatie, apparaten"
+	"core.settings.account.about": "Wachtwoord, tweestapsverificatie, apparaten",
+	"core.api.sourceOff": "Sommige rijen staan uit op deze installatie."
 }

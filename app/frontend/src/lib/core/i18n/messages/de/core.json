@@ -16,7 +16,7 @@
 	"core.format.healthy": "In Ordnung",
 	"core.format.folderNotFound": "Ordner nicht gefunden",
 	"core.format.cannotWrite": "Hier kann nicht geschrieben werden",
-	"core.format.copiedNoHardlinks": "Funktioniert, aber Dateien werden kopiert (keine harten Verknüpfungen)",
+	"core.format.copiedNoHardlinks": "Jeder Import legt eine volle Kopie an (braucht mehr Platz)",
 	"core.format.notChecked": "Noch nicht geprüft",
 	"core.loader.welcome": "Willkommen, {name}",
 	"core.loader.reconnecting": "Verbindet neu …",
@@ -54,6 +54,8 @@
 	"core.plain.configDiskWarning": "Auf dem Datenträger mit dem config-Ordner wird der Platz knapp.",
 	"core.plain.configFolder": "/config ist keinem Ordner zugeordnet, deshalb gehen die HolyArrs-Daten verloren, wenn der Container neu erstellt wird.",
 	"core.plain.waitingDownloads": "Downloads warten, weil ihr Downloader die Dateien nicht nutzen kann.",
+	"core.plain.clearWaiting": "Importierte Downloads warten darauf, aus ihrem Downloader aufgeräumt zu werden.",
+	"core.plain.saveFolder": "Ein Downloader hat keinen Speicherordner, daher kann HolyArrs seine fertigen Downloads nicht importieren.",
 	"core.plain.someone": "Jemand in deinem Haushalt",
 	"core.plain.keyKitOwner": "Der Besitzer sollte das Schlüssel-Set speichern: Backups enthalten den Hauptschlüssel nicht.",
 	"core.plain.keyKitNone": "Es ist kein Schlüssel-Set gespeichert: Backups enthalten den Hauptschlüssel nicht.",
@@ -142,5 +144,6 @@
 	"core.settings.danger.label": "Gefahrenbereich",
 	"core.settings.danger.about": "Neu starten oder herunterfahren",
 	"core.settings.account.label": "Mein Konto",
-	"core.settings.account.about": "Passwort, Zwei-Faktor, Geräte"
+	"core.settings.account.about": "Passwort, Zwei-Faktor, Geräte",
+	"core.api.sourceOff": "Einige Reihen sind in dieser Installation aus."
 }

@@ -24,7 +24,7 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 | Sources | [Sources, Jackett and Prowlarr](downloads/sources.md), [find titles in the Library](downloads/library-search.md) |
 | Downloads | [Downloaders](downloads/downloaders.md), [history](downloads/history.md) |
 | Subtitles | [Subtitles](library/subtitles.md) |
-| Files and folders | [Library folders](library/folders.md), [codecs and media inspection](library/codecs-inspection.md), [audio versions](library/audio-versions.md), [protected copies](library/protected-copies.md) |
+| Files and folders | [Library folders](library/folders.md), [move to one data folder](library/move-to-one-folder.md), [codecs and media inspection](library/codecs-inspection.md), [audio versions](library/audio-versions.md), [protected copies](library/protected-copies.md) |
 | Media servers | [Plex, Jellyfin and Emby](library/media-servers.md) |
 | Metadata | [Metadata and privacy](library/metadata.md), [trailers](library/trailers.md), [data packs](library/data-packs.md), [TRaSH Guides scores](library/trash-guides.md) |
 | Accounts | [Sign-in and passwords](users/sign-in.md), [users and roles](users/roles.md), [kid accounts](users/kids.md), [signed-in devices](users/sessions.md) |
@@ -40,6 +40,7 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 
 - [NAS, Synology and Unraid](run/platforms.md)
 - [Portable archives (no Docker)](run/portable.md)
+- [Synology package (experimental)](run/synology.md)
 
 ## Help
 

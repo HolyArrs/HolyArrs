@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.ar.md">العربية</a> · <a href="README.pt-BR.md">Português</a> · <a href="README.ru.md">Русский</a> · <b>日本語</b> · <a href="README.de.md">Deutsch</a> · <a href="README.ko.md">한국어</a> · <a href="README.it.md">Italiano</a> · <a href="README.pl.md">Polski</a> · <a href="README.nl.md">Nederlands</a> · <a href="README.tr.md">Türkçe</a> · <a href="README.uk.md">Українська</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <b>日本語</b> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="LANGUAGES.md">その他の言語</a></p>
 
 <p align="center">
   <picture>
@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: ダウンローダーとして rTorrent と ruTorrent に対応。** シードボックスも使えます。完了した Usenet のダウンロードは、コピーではなくライブラリへ移動するようになりました。 [新着情報](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0：44 言語に対応**、右から左の言語も。aria2 をダウンローダーとして使え、シーズンパックは数話ずつダウンロードされます。[新機能を見る](https://holyarrs.com/whats-new/)
 
 > HolyArrs のポスター、予告編、スコアはすべて、私が自分で運営し費用を払っているサーバーから届いています。だから誰でも無料で使えます。HolyArrs で映画の夜が少しでも楽しくなったなら、スポンサーになってみんなの明かりを灯し続けてください 💛
 >
@@ -152,7 +150,7 @@ docker compose up -d
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="ダウンローダー: qBittorrent、Transmission、Deluge、SABnzbd、NZBGet。メディアサーバー: Plex、Jellyfin、Emby。" /></picture>
 
-- **ダウンローダー:** qBittorrent、Transmission、Deluge、rTorrent、SABnzbd、NZBGet
+- **ダウンローダー:** qBittorrent、Transmission、Deluge、rTorrent、aria2、SABnzbd、NZBGet
 - **メディアサーバー:** Plex、Jellyfin、Emby
 - **Sources:** Torznab または Newznab のインデクサー、あるいは Prowlarr や Jackett
 - **設定を引き継げる元:** Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd
@@ -222,7 +220,7 @@ NAS をお使いですか。[Unraid、Synology などの NAS](https://docs.HolyA
 | タグ | 用途 |
 | :----: | --- |
 | `latest` | 最新のリリース。 |
-| `1.0.19` | 特定の1つのバージョンです。動くことはありません。 |
+| `1.1.0` | 特定の1つのバージョンです。動くことはありません。 |
 
 ## 使い方
 

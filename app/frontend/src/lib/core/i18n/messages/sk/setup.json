@@ -1,0 +1,17 @@
+{
+"setup.reconnect": "Pripojiť znova",
+"setup.testNow": "Otestovať",
+"setup.movies": "Filmy",
+"setup.tvShows": "Seriály",
+"setup.music": "Hudba",
+"setup.subtitles": "Titulky",
+"setup.fullPath": "Použite úplnú cestu k priečinku, napríklad {path}.",
+"setup.folderUsed": "Tento priečinok sa už používa alebo je vnútri takého, ktorý sa používa.",
+"setup.folderMissing": "Tento priečinok neexistuje. Skontrolujte cestu.",
+"setup.addFolderOrOff": "Pridajte priečinok alebo to vypnite.",
+"setup.notAnswering": "HolyArrs neodpovedá. Skúste to o chvíľu znova.",
+"setup.addUserPasswordHint": "Zadajte meno používateľa a heslo.",
+"setup.folders": "Priečinky",
+"setup.downloader": "Sťahovač",
+"setup.source": "Zdroj"
+}

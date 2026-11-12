@@ -45,6 +45,9 @@
 	import { bytes, ago } from '#lib/core/format.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { date } from '#lib/core/format.ts';
+	import type { MenuItem } from '#lib/ui/Menu.svelte';
+	import HideSheet from './HideSheet.svelte';
+	import { hiddenPill, type Hide } from './hidden.ts';
 
 	// The one title page for a movie or show, wherever it is opened from (/title/<kind>/<tmdb> and /library/<id> both render it). Not in the Library: Add (people who manage it) or Ask (members). In the Library: the same page with its Library tab.
 	let { kind, tmdb, libraryId, backHref }: { kind: string; tmdb: string; libraryId?: number; backHref?: string } = $props();
@@ -80,6 +83,30 @@
 	const ownedFailed = $derived(own.ownedFailed);
 	const moreMenu = $derived(own.moreMenu);
 	const mayReport = $derived(own.mayReport);
+	// Hidden from browsing: owners and admins hide a title or its genre, and see the hides that cover it.
+	const mayHide = $derived(session.can('users'));
+	let hideOpen = $state(false);
+	let people = $state<ReadonlyMap<number, string>>(new Map());
+	let peopleAsked = false;
+	function loadPeople() {
+		if (peopleAsked || !mayHide) return;
+		peopleAsked = true;
+		api.get<{ users: { id: number; name: string }[] }>('/users').then(
+			(r) => (people = new Map(r.users.map((u) => [u.id, u.name]))),
+			() => (peopleAsked = false)
+		);
+	}
+	// Fetched with the page so the Hide sheet opens with its For choice already there.
+	$effect(() => {
+		if (mayHide) loadPeople();
+	});
+	const hideItem = $derived<MenuItem>({ label: t('discover.hidden.menu'), icon: 'eyeOff', onselect: () => { loadPeople(); hideOpen = true; } });
+	const titleMenu = $derived<MenuItem[]>(mayHide ? [...moreMenu, ...(moreMenu.length ? [{ kind: 'separator' as const }] : []), hideItem] : moreMenu);
+	const hiddenShown = (d: TitleDetails) => mayHide && !!(d.hides?.length || d.hidden);
+	function hidesChanged(next: Hide[]) {
+		if (!details) return;
+		details = { ...details, hides: next, hidden: next.some((h) => !h.user_id || h.user_id === session.s.id) };
+	}
 	// The short facts about the copy you have: quality, size, kept up to date.
 	let rules = $state<PickRulesView[]>([]);
 	let folders = $state<LibraryFolder[]>([]);
@@ -365,15 +392,15 @@
 			tagline={info?.tagline}
 			certification={rich?.certification ?? certOf(d.rating)}
 			score={rich?.score ?? scoreOf(d.rating)}
-			status={d.neverAdd || d.ask ? heroPill(d).kind : undefined}
-			statusLabel={d.neverAdd || d.ask ? heroPill(d).label : undefined}
+			status={hiddenShown(d) ? 'turned_down' : d.neverAdd || d.ask ? heroPill(d).kind : undefined}
+			statusLabel={hiddenShown(d) ? hiddenPill(d.hides ?? [], people) : d.neverAdd || d.ask ? heroPill(d).label : undefined}
 			vtName={tmdbArtName(d.kind, d.tmdb)}
 		>
 			{#snippet byline()}{#if owned}<AskedByLine {askers} />{#if ownState.kind !== 'have' && ownState.kind !== 'downloading'}<SearchOutcomeLine titleId={owned.id} />{/if}{/if}{/snippet}
 			{#snippet actions()}
 				{#if owned}
 					<ActionButton icon={ownState.kind === 'have' ? 'check' : ownState.kind === 'failed' ? 'refresh' : ownState.kind === 'downloading' ? 'download' : 'search'} label={ownState.label} caption={ownState.kind === 'failed' && manage ? t('discover.titlePage.retry') : ownState.kind === 'missing' && manage ? t('discover.titlePage.searchNow') : ownState.label} primary onclick={() => (manage && (ownState.kind === 'failed' || ownState.kind === 'missing') ? own.ownRun('search') : own.setTab('library'))} data-testid="hero-library" />
-					{#if manage || mayReport}<ActionMenu label={t('discover.titlePage.moreActions')} caption={t('discover.titlePage.more')} icon="more" items={moreMenu} />{/if}
+					{#if manage || mayReport || mayHide}<ActionMenu label={t('discover.titlePage.moreActions')} caption={t('discover.titlePage.more')} icon="more" items={titleMenu} />{/if}
 					{#if mayAsk}{@render ask4kButton(d)}{/if}
 				{:else if manage && !d.neverAdd}
 					{#if d.kind === 'movie' && d.movie}
@@ -390,6 +417,7 @@
 					{/if}
 				{/if}
 				{#if d.kind === 'show' || d.kind === 'movie'}<FollowButton titleId={owned?.id} tmdb={d.tmdb} kind={d.kind} />{/if}
+				{#if mayHide && !owned}<ActionMenu label={t('discover.titlePage.moreActions')} caption={t('discover.titlePage.more')} icon="more" items={[hideItem]} />{/if}
 			{/snippet}
 		</TitleHero>
 
@@ -412,7 +440,7 @@
 			{#each list.slice(0, max) as p, i (p.name + i)}{#if i}{', '}{/if}{#if personHref(p.id)}<a href={personHref(p.id)}>{p.name}</a>{:else}{p.name}{/if}{/each}
 		{/snippet}
 		{#snippet story()}
-			{#if d.overview}<p class="lead" data-testid="title-story">{d.overview}</p>{/if}
+			{#if d.overview}<p class="lead" data-testid="title-story" dir="auto">{d.overview}</p>{/if}
 		{/snippet}
 		{#snippet trailers()}
 			<TitleTrailers kind={d.kind} tmdb={d.tmdb} title={d.name} videos={rich?.videos ?? []} art={[d.backdrop, ...(rich?.backdrops ?? [])]} />
@@ -504,6 +532,7 @@
 			</section>
 
 		{/if}
+		{#if mayHide}<HideSheet bind:open={hideOpen} kind={d.kind} tmdb={d.tmdb} name={d.name} genres={d.genres} hides={d.hides ?? []} {people} onchange={hidesChanged} />{/if}
 		<Sheet bind:open={allCast} title={t('discover.titlePage.castAndCrew')} size="lg">
 			<ul class="all-grid people">
 				{#each d.cast as p, i (p.name + i)}

@@ -38,6 +38,14 @@
 	"settings.libraryFolders.foldersHint": "Un chemin par ligne, ex. /data/imports. 32 au plus.",
 	"settings.libraryFolders.ownerOnly": "Propriétaire et administrateurs seulement",
 	"settings.libraryFolders.copiesExpected": "La copie est voulue",
-	"settings.libraryFolders.copiesExpectedState": "Copie, comme prévu",
-	"settings.libraryFolders.warnAgain": "Avertir à nouveau"
+	"settings.libraryFolders.copiesExpectedState": "Copies complètes, comme choisi",
+	"settings.libraryFolders.whyCopies": "Pourquoi ?",
+	"settings.libraryFolders.stateInstant": "Instantané, sans place en plus",
+	"settings.libraryFolders.warnAgain": "Avertir à nouveau",
+	"settings.libraryFolders.changePath": "Changer le chemin",
+	"settings.libraryFolders.changePathOf": "Changer le chemin de {path}",
+	"settings.libraryFolders.newPath": "Nouveau chemin",
+	"settings.libraryFolders.changePathHint": "Déplacez d’abord les fichiers à cet endroit. HolyArrs vérifie chaque fichier et ne déplace rien.",
+	"settings.libraryFolders.checkingFiles": "Vérification des fichiers…",
+	"settings.libraryFolders.pathChanged": "Chemin changé"
 }

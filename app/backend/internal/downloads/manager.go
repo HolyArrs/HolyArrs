@@ -55,6 +55,9 @@ type Manager struct {
 	Live     Publisher                                 // may be nil
 	Engine   func(d domain.Downloader) (Engine, error) // nil means the built-in adapters
 	SavePath string                                    // where the Downloader saves, as it sees it
+	// ConfigDir is HolyArrs's own config folder. A Downloader's save root is
+	// never kept inside it or around it.
+	ConfigDir string
 	// StallAfter and ActAfter override the settings stalled_after_hours and
 	// stalled_act_hours (tests); zero reads the settings.
 	StallAfter  time.Duration
@@ -93,6 +96,8 @@ type Manager struct {
 	hosts            map[string]chan struct{} // one send at a time per host (a slot of one)
 	lastSend         map[string]time.Time
 	missed           map[int64]missCount // downloads missing from their Downloader, by id
+	crawl            map[int64]crawlMark // speed windows of the crawling torrent rule, by download id
+	packMu           sync.Mutex          // one Widen at a time
 }
 
 // missCount is how many syncs in a row a download was missing, the snapshot
@@ -194,12 +199,18 @@ func (m *Manager) EngineFor(ctx context.Context, d domain.Downloader) (Engine, e
 		e.PathMap, e.SaveRoot = d.PathMap, m.SavePath
 		e.Keep = m.libraryFolders
 		return e, nil
+	case "aria2":
+		e := NewAria2(d.URL, secret, h)
+		e.Category, e.Others = d.Category, otherCategories(d)
+		e.PathMap, e.SaveRoot = d.PathMap, m.SavePath
+		e.Keep = m.libraryFolders
+		return e, nil
 	}
 	return nil, fmt.Errorf("no engine for adapter %q", d.Adapter)
 }
 
-// libraryFolders are the Library folders' paths. An rTorrent remove never
-// deletes in or around them, whatever path rTorrent reports.
+// libraryFolders are the Library folders' paths. An rTorrent or aria2 remove
+// never deletes in or around them, whatever path the Downloader reports.
 func (m *Manager) libraryFolders(ctx context.Context) ([]string, error) {
 	if m.Store == nil {
 		return nil, errors.New("no database")
@@ -315,7 +326,7 @@ func (m *Manager) engine(ctx context.Context, d domain.Downloader) (Engine, erro
 func otherCategories(d domain.Downloader) []string {
 	var out []string
 	for _, c := range d.Categories() {
-		if c != d.Category {
+		if !sameCategory(c, d.Category) {
 			out = append(out, c)
 		}
 	}

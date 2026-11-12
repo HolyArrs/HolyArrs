@@ -366,8 +366,12 @@
 	"accounts.invite.confirm": "Confirm password",
 	"accounts.invite.joinSignIn": "Join and sign in",
 	"accounts.language.label": "Language",
+	"accounts.language.top": "Most used",
+	"accounts.language.more": "More languages",
 	"accounts.language.auto": "Automatic",
 	"accounts.language.hint": "Automatic follows your browser. Saved on your account.",
 	"accounts.language.saveFailed": "Couldn't save the language",
+	"accounts.language.count.one": "1 language",
+	"accounts.language.count.other": "{n} languages",
 	"accounts.account.watchEveryone": "The owner turned this on for everyone. Turn both off to stop it."
 }

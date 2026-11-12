@@ -204,5 +204,15 @@
 	"shows.page.mainVersionParen": "(hoofdvariant)",
 	"shows.page.keepThem": "Actueel houden",
 	"shows.page.leaveThem": "Uit laten",
-	"shows.page.filesStay": "Afleveringen en bestanden blijven."
+	"shows.page.filesStay": "Afleveringen en bestanden blijven.",
+	"shows.page.seasonPacks": "Seizoenspakketten",
+	"shows.page.packWhole": "Het hele seizoen ophalen",
+	"shows.page.packFew": "Een paar afleveringen tegelijk ophalen",
+	"shows.page.packAhead": "Afleveringen vooruit",
+	"shows.page.packHint": "Als een pakket met het hele seizoen de enige release is, haalt qBittorrent de volgende {n} afleveringen op. Er komen er meer als je op ‘Volgende afleveringen ophalen’ drukt of als Plex of Jellyfin er een als bekeken toont. Usenet en andere Downloaders halen het hele seizoen op.",
+	"shows.page.packWholeShort": "Heel seizoen",
+	"shows.page.packAtATime": "{n} afleveringen tegelijk",
+	"shows.tools.packNote": "Dit seizoen komt uit zijn pakket, {n} afleveringen tegelijk.",
+	"shows.tools.getNext": "Volgende {n} afleveringen ophalen",
+	"shows.page.packOneAtATime": "1 aflevering tegelijk"
 }

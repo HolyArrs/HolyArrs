@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Plex वॉचलिस्ट से रिक्वेस्ट करें",
 	"settings.requests.plexOnHint": "हर व्यक्ति इसे मेरा अकाउंट में चालू करता है। उन पर उनकी सीमा लागू होती है।",
 	"settings.requests.plexEveryone": "Plex से साइन इन करने वाले सभी के लिए चालू करें",
-	"settings.requests.plexEveryoneHint": "कोई भी मेरा खाता में अपने लिए इसे बंद कर सकता है।"
+	"settings.requests.plexEveryoneHint": "कोई भी मेरा खाता में अपने लिए इसे बंद कर सकता है।",
+	"settings.requests.plexFriends": "Plex दोस्तों को शामिल करें",
+	"settings.requests.plexFriendsHint": "Plex से इंपोर्ट किए गए दोस्त। आपके Plex लिंक से पढ़े जाते हैं; हर दोस्त की अपनी सीमाएँ लागू होती हैं।",
+	"settings.requests.plexFriendsNoLink": "पहले सेटिंग्स › साइन-इन में Plex लिंक करें।",
+	"settings.requests.plexFriendsNone": "Plex से अभी तक कोई इंपोर्ट नहीं हुआ।",
+	"settings.requests.plexFriendsRead": "पढ़ा गया {when}",
+	"settings.requests.plexFriendsNotYet": "अभी पढ़ा नहीं गया",
+	"settings.requests.plexFriendsAsked": "माँगे गए: {n}"
 }

@@ -421,7 +421,8 @@ func TestOldAppServerTestFields(t *testing.T) {
 		var status any
 		_ = json.Unmarshal([]byte(b), &status)
 		m := fields(t, side.name+" status", status, []string{"appName", "version", "urlBase", "isDocker"})
-		if m["appName"] != "HolyArrs" || m["version"] != side.version || m["urlBase"] != "/"+side.name {
+		// The app name is the old app's, which Pulsarr checks; HolyArrs is the instance name.
+		if m["appName"] != map[string]string{"sonarr": "Sonarr", "radarr": "Radarr"}[side.name] || m["instanceName"] != "HolyArrs" || m["version"] != side.version || m["urlBase"] != "/"+side.name {
 			t.Errorf("status: %v", m)
 		}
 		// Seerr calls the quality profiles with a capital P.
@@ -456,8 +457,8 @@ func TestOldAppServerTestFields(t *testing.T) {
 		if st, _, _ := f.arr(side.key, "PUT", p+"tag/999", `{"label":"x"}`); st != 404 {
 			t.Errorf("unknown tag: %d", st)
 		}
-		if st, _, _ := f.arr(side.key, "DELETE", p+"tag/1", ""); st != 404 {
-			t.Errorf("a route not answered: %d", st)
+		if st, _, _ := f.arr(side.key, "DELETE", p+"tag/999", ""); st != 404 {
+			t.Errorf("unknown tag delete: %d", st)
 		}
 		if st, _, _ := f.arr(side.key, "GET", "/"+side.name+"/api/system/status", ""); st != 404 {
 			t.Errorf("no /api/v3: %d", st)

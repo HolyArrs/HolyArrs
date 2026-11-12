@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Lisäasetukset",
+	"settings.home.page": "{group} · sivu",
+	"settings.home.title": "Asetukset",
+	"settings.home.search": "Hae asetuksia",
+	"settings.home.matching": "Hakua vastaavat asetukset",
+	"settings.home.noMatch": "Ei vastaavia asetuksia",
+	"settings.home.noMatchText": "Kokeile toista sanaa, esimerkiksi kansio, avain tai salasana.",
+	"settings.home.clear": "Tyhjennä haku"
+}

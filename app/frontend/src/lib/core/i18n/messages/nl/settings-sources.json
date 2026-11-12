@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Wijzigen",
 	"settings.sources.removeName": "{name} verwijderen",
 	"settings.sources.remove": "Verwijderen",
-	"settings.sources.bridge": "Jackett of Prowlarr koppelen"
+	"settings.sources.bridge": "Jackett of Prowlarr koppelen",
+	"settings.sources.off": "Bronnen staan uit",
+	"settings.sources.offText": "HolyArrs zoekt en pakt niets. Downloads die je in je downloader toevoegt, worden nog steeds geïmporteerd.",
+	"settings.sources.openParts": "Onderdelen openen",
+	"settings.sources.offState": "Uit"
 }

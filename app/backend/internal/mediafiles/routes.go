@@ -52,6 +52,7 @@ type Handlers struct {
 func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/library/search", h.librarySearch)
 	m.HandleFunc("GET /api/v1/library/copies", h.listLibraryCopies)
+	m.HandleFunc("GET /api/v1/library/stats", h.libraryStats)
 	m.HandleFunc("POST /api/v1/library/copies/search/preview", h.previewLibraryCopySearch)
 	m.HandleFunc("POST /api/v1/library/copies/search", h.searchLibraryCopies)
 }

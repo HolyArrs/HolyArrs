@@ -204,5 +204,15 @@
 	"shows.page.mainVersionParen": "（主版本）",
 	"shows.page.keepThem": "持续追踪",
 	"shows.page.leaveThem": "不追踪",
-	"shows.page.filesStay": "单集和文件会保留。"
+	"shows.page.filesStay": "单集和文件会保留。",
+	"shows.page.seasonPacks": "整季包",
+	"shows.page.packWhole": "获取整季",
+	"shows.page.packFew": "每次获取几集",
+	"shows.page.packAhead": "提前获取的集数",
+	"shows.page.packHint": "当唯一的资源是整季包时，qBittorrent 会获取接下来的 {n} 集。点击“获取接下来的几集”，或 Plex、Jellyfin 显示某集已看过时，会继续获取。Usenet 和其他下载器会获取整季。",
+	"shows.page.packWholeShort": "整季",
+	"shows.page.packAtATime": "每次 {n} 集",
+	"shows.tools.packNote": "本季从整季包中每次获取 {n} 集。",
+	"shows.tools.getNext": "获取接下来的 {n} 集",
+	"shows.page.packOneAtATime": "每次 1 集"
 }

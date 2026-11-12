@@ -64,7 +64,7 @@
 	button[aria-checked='true'] { color: var(--text); font-weight: 600; }
 	.sm button { min-height: 28px; padding: 0 10px; font-size: 13px; }
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	@media (pointer: coarse) { button { min-height: 40px; } }
+	@media (pointer: coarse) { button, .sm button { min-height: 40px; } }
 	/* Larger invisible hit area for touch. */
 	@media (max-width: 767px) and (pointer: coarse) {
 		button { position: relative; }

@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <b>العربية</b> · <a href="README.pt-BR.md">Português</a> · <a href="README.ru.md">Русский</a> · <a href="README.ja.md">日本語</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ko.md">한국어</a> · <a href="README.it.md">Italiano</a> · <a href="README.pl.md">Polski</a> · <a href="README.nl.md">Nederlands</a> · <a href="README.tr.md">Türkçe</a> · <a href="README.uk.md">Українська</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <b>العربية</b> · <a href="LANGUAGES.md">لغات أخرى</a></p>
 
 <p align="center">
   <picture>
@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent وruTorrent كبرنامج تنزيل**، وعلى خوادم seedbox أيضًا. تنزيلات Usenet المكتملة تُنقل الآن إلى مكتبتك بدل نسخها. [ما الجديد](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: الآن بـ 44 لغة**، ومنها اللغات من اليمين إلى اليسار. يعمل aria2 كبرنامج تنزيل، وتُنزَّل حزم المواسم بضع حلقات في كل مرة. [ما الجديد](https://holyarrs.com/whats-new/)
 
 > كل ملصق وإعلان وتقييم في HolyArrs لديك يأتي من خادم أشغّله وأدفع تكلفته بنفسي، ليبقى مجانيًا للجميع. إذا جعل HolyArrs سهرة الأفلام عندك أجمل قليلًا، فرعايتك تُبقي الأنوار مضاءة لنا جميعًا 💛
 >
@@ -154,7 +152,7 @@ docker compose up -d
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="المُنزِّلات: qBittorrent وTransmission وDeluge وSABnzbd وNZBGet. خوادم الوسائط: Plex وJellyfin وEmby." /></picture>
 
-- **المُنزِّلات:** qBittorrent، Transmission، Deluge، rTorrent، SABnzbd، NZBGet
+- **المُنزِّلات:** qBittorrent، Transmission، Deluge، rTorrent، aria2، SABnzbd، NZBGet
 - **خوادم الوسائط:** Plex، Jellyfin، Emby
 - **Sources:** أي مفهرس (indexer) من نوع Torznab أو Newznab، أو Prowlarr أو Jackett
 - **ينقل إعدادك من:** Sonarr، Radarr، Lidarr، Prowlarr، Bazarr، Seerr، Overseerr، qBittorrent، SABnzbd
@@ -224,7 +222,7 @@ docker compose up -d
 | الوسم | استخدمه لـ |
 | :----: | --- |
 | `latest` | أحدث إصدار. |
-| `1.0.19` | إصدار واحد بعينه. لا يتحرك أبدًا. |
+| `1.1.0` | إصدار واحد بعينه. لا يتحرك أبدًا. |
 
 ## الاستخدام
 

@@ -75,7 +75,14 @@ export function agoLong(s: string | null | undefined, now = Date.now()): string 
 	const [n, unit] = sec < 3600 ? [Math.round(sec / 60), 'minute'] : sec < 86400 ? [Math.round(sec / 3600), 'hour'] : [Math.round(sec / 86400), 'day'];
 	if (unit === 'minute') return n === 1 ? t('core.format.minuteAgoOne') : t('core.format.minuteAgoOther', { n });
 	if (unit === 'hour') return n === 1 ? t('core.format.hourAgoOne') : t('core.format.hourAgoOther', { n });
-	return n === 1 ? t('core.format.dayAgoOne') : t('core.format.dayAgoOther', { n });
+	if (n < 30) return n === 1 ? t('core.format.dayAgoOne') : t('core.format.dayAgoOther', { n });
+	// From a month on: "3 months ago", "4 years ago", in the app's language (never "1409 days ago").
+	const [m, big] = n < 365 ? [Math.max(1, Math.round(n / 30.44)), 'month' as const] : [Math.round(n / 365.25), 'year' as const];
+	try {
+		return new Intl.RelativeTimeFormat(appLocale(), { numeric: 'always' }).format(-m, big);
+	} catch {
+		return t('core.format.dayAgoOther', { n });
+	}
 }
 
 // Maps a state to ok, wait, fail or idle for colour.

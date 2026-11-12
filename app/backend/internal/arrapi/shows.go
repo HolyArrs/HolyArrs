@@ -221,9 +221,17 @@ func (h *handler) loadSeries(ctx context.Context, where string, args ...any) ([]
 	if err != nil {
 		return nil, err
 	}
+	tags, err := tagsOf(ctx, db, ids)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]series, 0, len(ts))
 	for _, t := range ts {
-		out = append(out, h.librarySeries(ctx, t, seasonsOf[t.ID], mains[t.ID], folders, counts[t.ID]))
+		s := h.librarySeries(ctx, t, seasonsOf[t.ID], mains[t.ID], folders, counts[t.ID])
+		if l := tags[t.ID]; l != nil {
+			s.Tags = l
+		}
+		out = append(out, s)
 	}
 	return out, nil
 }

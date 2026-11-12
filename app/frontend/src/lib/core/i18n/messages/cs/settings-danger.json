@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs se zastavuje.",
+	"settings.danger.couldnt": "Nepodařilo se: {action}",
+	"settings.danger.title": "Nebezpečná zóna",
+	"settings.danger.ownerOnly": "Jen vlastník a správci",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Ano, {action}",
+	"settings.danger.cancel": "Zrušit",
+	"settings.danger.expires": "Vyprší za 60 s",
+	"settings.danger.wholeApp": "Celá aplikace",
+	"settings.danger.intro": "Tato volba zastaví HolyArrs. Restartovací zásada Dockeru ho za pár sekund spustí znovu, pokud není nastavená na <code>no</code>; pak spusťte kontejner sami. Každá akce se nejdřív zeptá.",
+	"settings.danger.restart": "Restartovat HolyArrs",
+	"settings.danger.safe": "Restartovat v nouzovém režimu",
+	"settings.danger.shutdown": "Vypnout",
+	"settings.danger.safeNote": "Spustí se jednou jen s přihlášením, Nastavením a Knihovnou. Použijte to, když Část brání spuštění."
+}

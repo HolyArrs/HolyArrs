@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.ar.md">العربية</a> · <a href="README.pt-BR.md">Português</a> · <a href="README.ru.md">Русский</a> · <a href="README.ja.md">日本語</a> · <b>Deutsch</b> · <a href="README.ko.md">한국어</a> · <a href="README.it.md">Italiano</a> · <a href="README.pl.md">Polski</a> · <a href="README.nl.md">Nederlands</a> · <a href="README.tr.md">Türkçe</a> · <a href="README.uk.md">Українська</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <b>Deutsch</b> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="LANGUAGES.md">Weitere Sprachen</a></p>
 
 <p align="center">
   <picture>
@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent und ruTorrent als Downloader**, auch auf Seedboxen. Fertige Usenet-Downloads werden jetzt in deine Bibliothek verschoben statt kopiert. [Was ist neu](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: jetzt in 44 Sprachen**, auch von rechts nach links. aria2 läuft als Downloader, und Staffelpakete laden ein paar Folgen auf einmal. [Was ist neu](https://holyarrs.com/whats-new/)
 
 > Jedes Poster, jeder Trailer und jede Bewertung in deinem HolyArrs kommt von einem Server, den ich selbst betreibe und bezahle, damit es für alle kostenlos bleibt. Wenn HolyArrs deinen Filmabend ein bisschen schöner gemacht hat, hält ein Sponsoring für uns alle das Licht an 💛
 >
@@ -152,7 +150,7 @@ Jemand wünscht sich einen Titel. HolyArrs durchsucht deine Sources, wählt mit 
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Downloader: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Medienserver: Plex, Jellyfin, Emby." /></picture>
 
-- **Downloader:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Downloader:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Medienserver:** Plex, Jellyfin, Emby
 - **Sources:** jeder Torznab- oder Newznab-Indexer, oder Prowlarr oder Jackett
 - **Übernimmt dein Setup von:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -222,7 +220,7 @@ Die Images liegen auf Docker Hub als [`holyarrs/holyarrs`](https://hub.docker.co
 | Tag | Dafür nutzen |
 | :----: | --- |
 | `latest` | Die neueste Version. |
-| `1.0.19` | Eine genaue Version. Sie ändert sich nie. |
+| `1.1.0` | Eine genaue Version. Sie ändert sich nie. |
 
 ## Verwendung
 

@@ -37,6 +37,15 @@ describe('title details', () => {
 		expect(d?.movie?.ids.tmdb).toBe('438631');
 	});
 
+	it('never takes another title from the lookup when the id does not match', async () => {
+		const get = async <T,>(path: string): Promise<T> => {
+			if (path.startsWith('/metadata/')) throw new ApiError('not found', 404);
+			return (path.startsWith('/titles/') ? { movies: [{ name: 'The Cabin in the Woods', year: 2011, ids: { tmdb: '22970' }, title_id: 3 }] } : { shows: [{ source: 'tmdb', name: 'Other', ids: { tmdb: '9' }, title_id: 4 }] }) as T;
+		};
+		expect(await loadDetails(get, 'movie', '1')).toBeNull();
+		expect(await loadDetails(get, 'show', '2')).toBeNull();
+	});
+
 	it('keeps the lookup Library facts over the metadata answer', async () => {
 		const get = async <T,>(path: string): Promise<T> =>
 			(path.startsWith('/metadata/') ? { name: 'Fargo', backdrop: 'https://x/b.jpg', genres: ['Crime'] } : { shows: [{ source: 'tmdb', name: 'Fargo', status: 'running', ids: { tmdb: '60622' }, title_id: 160 }] }) as T;

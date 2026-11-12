@@ -13,12 +13,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
-
-	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain.Downloader, dryRun bool, by domain.Actor) (*mediafiles.Import, error) {
@@ -56,12 +54,28 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		if ss.sl.VersionID != ver.ID || ss.it.TitleID != ti.ID {
 			return nil, fmt.Errorf("download %d fills Slots of more than one show or Version", d.ID)
 		}
-		ss.live = ss.sl.State == mediafiles.SlotDownloading || ss.sl.State == mediafiles.SlotImporting
+		// A Slot another download now fills (a replacement grab) does not wait for this one.
+		ss.live = (ss.sl.State == mediafiles.SlotDownloading || ss.sl.State == mediafiles.SlotImporting) &&
+			(ss.sl.ActiveDownloadID == nil || *ss.sl.ActiveDownloadID == d.ID)
 		slots[id] = ss
+	}
+	files, waiting := packReady(d)
+	for id := range waiting {
+		if ss := slots[id]; ss != nil && ss.live && !dryRun {
+			ss.live = false // its file is switched on but not finished: it stays downloading
+		} else {
+			delete(waiting, id)
+		}
 	}
 	liveAny := false
 	for _, ss := range slots {
 		liveAny = liveAny || ss.live
+	}
+	if !dryRun && !liveAny && len(waiting) > 0 {
+		if err := reopenPack(ctx, im.Store, d.ID); err != nil {
+			return nil, err
+		}
+		return nil, ErrPackWaiting
 	}
 	if !dryRun && !liveAny {
 		return nil, fmt.Errorf("no Slot of download %d waits for it; nothing to import", d.ID)
@@ -114,7 +128,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		_ = db.QueryRowContext(ctx, "SELECT name FROM releases WHERE id = ?", *d.ReleaseID).Scan(&relName)
 	}
 	t := ShowTarget{LibraryPath: lf.Path, Show: mediafiles.TitleRef{ID: ti.ID, Name: ti.Name, Aliases: ti.Aliases, Year: year, Kind: "show"},
-		IDs: ti.SourceIDs, Order: mediafiles.OrderAired, ReleaseName: relName, Naming: &ns}
+		IDs: ti.SourceIDs, Order: mediafiles.OrderAired, ReleaseName: relName, Naming: &ns, ByOrder: ti.EpisodeGroupID != nil && *ti.EpisodeGroupID != ""}
 	if ti.EpisodeOrder != nil && *ti.EpisodeOrder != "" {
 		t.Order = *ti.EpisodeOrder
 	}
@@ -148,7 +162,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		t.Episodes = append(t.Episodes, e)
 	}
 	root, rootOK := domain.MapPath(d.SavePath, dr.PathMap)
-	cands, bad := candidates(root, d.FilesSeen)
+	cands, bad := candidates(root, files)
 	if !rootOK {
 		cands, bad = nil, []mediafiles.PlanStep{unpackStep(d.SavePath, "the Downloader reported a folder with \"..\" in it")}
 	}
@@ -176,6 +190,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		plan = PlanEpisodes(cands, t)
 	}
 	plan = append(plan, bad...)
+	gone := sourcesGone(root, plan, dr.Protocol == "usenet")
 	lowSpace, release := im.guard(plan, lf.Path, cands, rules)
 	defer release()
 	if music {
@@ -197,7 +212,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	if d.ReleaseID != nil {
 		_ = db.QueryRowContext(ctx, "SELECT COALESCE(size, 0) FROM releases WHERE id = ?", *d.ReleaseID).Scan(&claimed)
 	}
-	mismatch := fakes.claimMismatch(claimed, d.FilesSeen)
+	mismatch := fakes.claimMismatch(claimed, claimSet(d, cands))
 	for i := range plan {
 		if plan[i].Method != "hardlink" {
 			continue
@@ -481,6 +496,10 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		switch {
 		case ss.step >= 0 && imp.Result[ss.step].Outcome == "placed":
 			ss.outcome = "placed"
+		case gone:
+			// Another app imported the files and removed them: let the
+			// download go, as Sonarr does, and keep the episode wanted.
+			ss.outcome, ss.reason = "gone", FilesGoneReason
 		case ss.lie != "":
 			ss.outcome, ss.reason = "lied", ss.lie
 		case ss.step >= 0:
@@ -494,10 +513,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				}
 			}
 		default:
-			ss.outcome, ss.reason = "stuck", "nothing in the download could be matched to an episode; look at the import plan"
-			if music {
-				ss.reason = "nothing in the download could be matched to a track; look at the import plan"
-			}
+			ss.outcome, ss.reason = "stuck", im.nothingMatched(dr, files, music)
 			if unpackWhy != "" {
 				ss.reason = unpackWhy
 			}
@@ -507,6 +523,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				}
 			}
 		}
+	}
+	if gone {
+		markGone(imp.Result)
 	}
 	kept := func(ss *showSlot) bool { return ver.KeepUpToDate && ss.it.KeepUpToDate && ti.KeepUpToDate }
 	placed, failed := 0, 0
@@ -658,6 +677,17 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				if ss.to != mediafiles.SlotInLibrary {
 					lookAgain = append(lookAgain, id)
 				}
+			case "gone":
+				if err := mediafiles.ClearSlotDownloadTx(tx, id); err != nil {
+					return err
+				}
+				ss.to = mediafiles.SlotWanted
+				if hasFile {
+					ss.to = mediafiles.SlotBetterWanted
+				}
+				if err := mediafiles.MoveSlotTx(tx, id, ss.to, ss.reason, by); err != nil {
+					return err
+				}
 			default:
 				ss.to = mediafiles.SlotNeedsADecision
 				if err := mediafiles.MoveSlotTx(tx, id, ss.to, ss.reason, by); err != nil {
@@ -745,6 +775,11 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		}
 	}
 	im.publish("import", imp)
+	if len(waiting) > 0 {
+		if err := reopenPack(ctx, im.Store, d.ID); err != nil {
+			log.Printf("importer: download %d back to downloading: %v", d.ID, err)
+		}
+	}
 	if imp.State == "done" && !dryRun && im.OnImported != nil {
 		im.OnImported(ctx, d.ID)
 	}
@@ -752,6 +787,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		for _, id := range lookAgain {
 			im.OnRejected(ctx, id)
 		}
+	}
+	if gone && im.OnFilesGone != nil {
+		im.OnFilesGone(ctx, ti.ID)
 	}
 	return imp, nil
 }

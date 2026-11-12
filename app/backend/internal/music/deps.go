@@ -50,6 +50,14 @@ type Deps struct {
 	MusicDeezerAlbum func(ctx context.Context, id int64) (metadata.DeezerAlbumInfo, error)
 	// MusicArtistBio reads an artist bio from the metadata server, so installs never call Wikipedia. Nil leaves the bio out.
 	MusicArtistBio func(ctx context.Context, mbid string) (*metadata.WikiSummary, error)
+	// OwnPictures is Deezer and Wikipedia asked directly, used in place of
+	// MusicDeezer, MusicDeezerAlbum and MusicArtistBio while OwnMode says
+	// Your own keys is picked. Nil keeps the metadata server's.
+	OwnPictures *metadata.ArtistImages
+	OwnMode     func() bool
 	// MusicPictures reads stored picture records (version, size, main color) for a row's artists and albums in one call. Nil answers none.
 	MusicPictures func(ctx context.Context, artists, albums []string) (metadata.MusicPictures, error)
 }
+
+// own says Deezer and Wikipedia are asked directly now (Your own keys).
+func (d *Deps) own() bool { return d != nil && d.OwnPictures != nil && d.OwnMode != nil && d.OwnMode() }

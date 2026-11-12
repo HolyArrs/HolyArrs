@@ -6,9 +6,10 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
+	import Poster from '#lib/ui/Poster.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { reaskWhileFilling } from '#lib/music/index.ts';
-	import { LibraryToolPage, albumFolderLine, cutFilesLine, canAdopt, choices, episodeFileLine, musicFolderLine, trackFileLine, fileName, followJob, groupPlan, matchKey, score, showFolderLine, showIdOf, startPicks, type AdoptCandidate, type AdoptPlan, type AdoptResult, type JobView } from '#lib/mediafiles/index.ts';
+	import { LibraryToolPage, albumFolderLine, cutFilesLine, canAdopt, choices, episodeFileLine, musicFolderLine, trackFileLine, fileName, followJob, groupPlan, scanCount, matchKey, pickedPoster, score, showFolderLine, showIdOf, startPicks, type AdoptCandidate, type AdoptPlan, type AdoptResult, type JobView } from '#lib/mediafiles/index.ts';
 	import type { LookupArtist } from '#lib/music/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
@@ -20,7 +21,7 @@
 	import type { LibraryFolder, LookupMovie } from '#lib/core/types.ts';
 	import { unit } from '#lib/mediafiles/index.ts';
 	import type { LookupShow } from '#lib/core/types.ts';
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { appLocale, t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	let folders = $state<LibraryFolder[]>([]);
 	let loaded = $state(false);
@@ -55,6 +56,8 @@
 	const ws = $derived(t(`library.import.words.${word}`));
 	const groups = $derived(plan ? groupPlan(plan.folders, word) : []);
 	const picks = $derived(choices(Object.fromEntries(Object.entries(ticked).filter(([, on]) => on).map(([f]) => [f, sel[f] ?? ''])), kind));
+	// A scan's note says how many folders are read: shown in the person's words.
+	const scanned = $derived(scanning ? scanCount(job?.ProgressNote) : null);
 	const running = $derived(!!job && !['done', 'failed', 'cancelled'].includes(job.State));
 	const okCount = $derived(results ? results.filter((r) => r.title_id).length : 0);
 
@@ -99,6 +102,7 @@
 		plan = null;
 		results = null;
 		restFrom = '';
+		near = {};
 		try {
 			const r = await api.post<{ job_id: number }>(`/library-folders/${folderId}/scan`, after ? { after } : undefined);
 			const end = await follow(r.job_id);
@@ -167,6 +171,30 @@
 		lookFor = null;
 	}
 
+	// Posters mount only for rows near the screen, so a scan of thousands of folders stays fast.
+	let near = $state<Record<string, boolean>>({});
+	let seen: IntersectionObserver | undefined;
+	function whenNear(node: HTMLElement, folder: string) {
+		if (typeof IntersectionObserver === 'undefined') {
+			near[folder] = true;
+			return {};
+		}
+		seen ??= new IntersectionObserver(
+			(es) => {
+				for (const e of es) {
+					if (!e.isIntersecting) continue;
+					const el = e.target as HTMLElement;
+					near[el.dataset.folder ?? ''] = true;
+					seen?.unobserve(el);
+				}
+			},
+			{ rootMargin: '600px 0px' }
+		);
+		node.dataset.folder = folder;
+		seen.observe(node);
+		return { destroy: () => seen?.unobserve(node) };
+	}
+
 	function movieLabel(f: AdoptCandidate): string {
 		const id = sel[f.folder];
 		if (!id) return t('library.import.nonePicked', { word: w });
@@ -227,7 +255,7 @@
 		{#if running}
 			<div aria-live="polite">
 				<div class="bar"><ProgressBar value={(job?.Progress ?? 0) * 100} label={t('library.import.progress')} /></div>
-				<p class="xs muted">{job?.ProgressNote || (scanning ? t('library.import.reading', { word: w }) : t('library.import.adopting'))}</p>
+				<p class="xs muted">{scanned ? t('library.import.readCount', { done: scanned.done.toLocaleString(appLocale()), total: scanned.total.toLocaleString(appLocale()) }) : job?.ProgressNote || (scanning ? t('library.import.reading', { word: w }) : t('library.import.adopting'))}</p>
 			</div>
 		{/if}
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
@@ -294,7 +322,11 @@
 									{#if f.match && canAdopt(f)}<Badge label={score(f.match.score)} />{/if}
 								</div>
 								{#if canAdopt(f)}
-									<p class="small"><b>{movieLabel(f)}</b></p>
+									{@const art = pickedPoster(f, sel[f.folder])}
+									<div class="matchline">
+										{#if art}<div class="art" data-testid="import-poster" use:whenNear={f.folder}>{#if near[f.folder]}<Poster src={art} name={movieLabel(f)} />{/if}</div>{/if}
+										<p class="small"><b>{movieLabel(f)}</b></p>
+									</div>
 									{#if f.others.length && f.status !== 'matched'}
 										<div class="field other">
 											<label class="xs" for="o-{f.folder}">{t('library.import.orOne')}</label>
@@ -445,6 +477,9 @@
 		border-radius: 0;
 		background: transparent;
 	}
+	.matchline { display: flex; align-items: center; gap: var(--s-3); min-width: 0; }
+	.matchline p { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+	.art { flex: none; width: 40px; aspect-ratio: var(--poster-ratio); }
 	.list > li + li {
 		margin-top: 0;
 		border-top: 1px solid var(--line);

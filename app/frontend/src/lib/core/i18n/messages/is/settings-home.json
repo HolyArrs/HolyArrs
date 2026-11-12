@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Ítarlegt",
+	"settings.home.page": "{group} · síða",
+	"settings.home.title": "Stillingar",
+	"settings.home.search": "Leita í stillingum",
+	"settings.home.matching": "Samsvarandi stillingar",
+	"settings.home.noMatch": "Engar samsvarandi stillingar",
+	"settings.home.noMatchText": "Prófaðu annað orð, eins og mappa, lykill eða lykilorð.",
+	"settings.home.clear": "Hreinsa leitina"
+}

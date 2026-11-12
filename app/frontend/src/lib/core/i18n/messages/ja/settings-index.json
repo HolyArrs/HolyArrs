@@ -62,7 +62,7 @@
 	"settings.index.title-defaults.td-order.episode-order-for-new-shows.label": "新しい番組のエピソードの並び順",
 	"settings.index.title-defaults.td-order.episode-order-for-new-shows.words": "番組 シリーズ アニメ 日付 通し番号 放送順 shows series type anime daily absolute aired numbering",
 	"settings.index.title-defaults.td-source.where-show-details-come-from.label": "番組の詳細の取得元",
-	"settings.index.title-defaults.td-source.where-show-details-come-from.words": "番組 メタデータ 詳細 取得元 shows metadata tmdb tvmaze details source",
+	"settings.index.title-defaults.td-source.where-show-details-come-from.words": "番組 メタデータ 詳細 取得元 shows metadata tmdb tvmaze tvdb details source",
 	"settings.index.naming.file-pattern.movie-file-name-pattern.label": "映画のファイル名のパターン",
 	"settings.index.naming.file-pattern.movie-file-name-pattern.words": "命名 名前の変更 形式 映画 ファイル naming rename format movie file",
 	"settings.index.naming.folder-pattern.movie-folder-name-pattern.label": "映画のフォルダー名のパターン",
@@ -206,7 +206,7 @@
 	"settings.index.search.search-now.search-now.label": "今すぐ検索",
 	"settings.index.search.search-now.search-now.words": "検索 より良いコピー フィード 実行 search better copy feeds run",
 	"settings.index.downloaders.downloaders-card.downloaders.label": "ダウンローダー",
-	"settings.index.downloaders.downloaders-card.downloaders.words": "ダウンロードクライアント qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget トレント 追加 download client qbittorrent sabnzbd transmission deluge rtorrent rutorrent nzbget torrent client add",
+	"settings.index.downloaders.downloaders-card.downloaders.words": "ダウンロードクライアント qbittorrent sabnzbd transmission deluge rtorrent rutorrent aria2 nzbget トレント 追加 download client qbittorrent sabnzbd transmission deluge rtorrent rutorrent aria2 nzbget torrent client add",
 	"settings.index.downloaders.st-stall.stalled-after.label": "停止とみなす時間",
 	"settings.index.downloaders.st-stall.stalled-after.words": "停止 止まった 時間 ダウンロード stalled stuck hours download",
 	"settings.index.downloaders.st-act.give-up-and-try-the-next-release-after.label": "あきらめて次のリリースを試すまでの時間",
@@ -328,5 +328,11 @@
 	"settings.index.account.alerts-me.alerts-for-me.label": "自分用の通知",
 	"settings.index.account.alerts-me.alerts-for-me.words": "自分 メール discord 通知 my email discord notifications",
 	"settings.index.account.sessions-me.my-signed-in-devices.label": "自分のサインイン中のデバイス",
-	"settings.index.account.sessions-me.my-signed-in-devices.words": "セッション デバイス サインアウト すべて sessions devices sign out everywhere"
+	"settings.index.account.sessions-me.my-signed-in-devices.words": "セッション デバイス サインアウト すべて sessions devices sign out everywhere",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.label": "詳細の取得元",
+	"settings.index.tmdb.metadata-mode.where-details-come-from.words": "metadata mode own keys off lookups privacy server independent",
+	"settings.index.tmdb.metadata-keys.your-own-keys.label": "自分のキー",
+	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart key api",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "ファイアウォール用のアドレス",
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall hosts outside addresses allow list"
 }

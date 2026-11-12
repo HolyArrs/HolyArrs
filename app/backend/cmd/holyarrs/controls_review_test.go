@@ -17,6 +17,7 @@ func TestControlsNeedAPasswordSignIn(t *testing.T) {
 	jar, _ := cookiejar.New(nil)
 	bare := &signedIn{t: t, base: r.srv.URL, c: &http.Client{Jar: jar}}
 	bare.call("GET", "/api/v1/parts", "", 200) // signed in through the skip
+	bare.csrf = localCSRF(t, r.srv.URL, bare.c)
 	for _, p := range []string{
 		"/api/v1/parts/music/on", "/api/v1/parts/music/off", "/api/v1/parts/music/restart",
 		"/api/v1/stages/gates/pause", "/api/v1/stages/gates/resume", "/api/v1/stages/gates/restart",

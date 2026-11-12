@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Asetukset",
+	"alerts.panel.clearAll": "Tyhjennä kaikki",
+	"alerts.panel.empty": "Ei vielä mitään",
+	"alerts.panel.needsAttention": "Vaatii huomiota",
+	"alerts.panel.recent": "Viimeaikaiset",
+	"alerts.panel.remove": "Poista {text}",
+	"alerts.panel.title": "Viimeisimmät ilmoitukset",
+	"alerts.state.manyNeed": "{count} vaatii huomiota",
+	"alerts.state.ok": "Kaikki kunnossa",
+	"alerts.state.oneNeeds": "1 vaatii huomiota",
+	"alerts.state.unset": "Ei määritetty",
+	"alerts.time.days": "{n} pv",
+	"alerts.time.hours": "{n} t",
+	"alerts.time.minutes": "{n} min",
+	"alerts.time.now": "nyt"
+}

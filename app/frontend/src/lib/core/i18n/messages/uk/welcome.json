@@ -49,6 +49,7 @@
 	"welcome.userName": "Ім’я користувача",
 	"welcome.apiKeyLabel": "Ключ API",
 	"welcome.passwordLabel": "Пароль",
+	"welcome.secretTokenLabel": "Секретний токен",
 	"welcome.save": "Зберегти",
 	"welcome.connect": "Підключити {name}",
 	"welcome.continue": "Продовжити",

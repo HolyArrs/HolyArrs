@@ -39,6 +39,10 @@ type Sub struct {
 	// Echoed marks a subtitle invented from the query in Echo mode. Its release
 	// name is derived from the one asked for.
 	Echoed bool `json:"echoed,omitempty"`
+	// AITranslated and MachineTranslated are the machine-made flags the
+	// OpenSubtitles fake sends.
+	AITranslated      bool `json:"-"`
+	MachineTranslated bool `json:"-"`
 }
 
 // Site serves a catalog. With Echo set it also answers unknown titles with

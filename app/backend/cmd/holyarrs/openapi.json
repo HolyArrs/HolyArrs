@@ -596,20 +596,27 @@
             "type": "string"
           },
           "moments": {
-            "description": "Ask moments go to the staff or the people who asked; grab, import, rename, add, delete, health and needs_decision go to the staff (email: staff_to).",
+            "description": "Ask moments go to the staff or the people who asked; grab, downloaded, download_failed, import, rename, add, delete, health, needs_decision and subtitle go to the staff (email: staff_to).",
             "items": {
               "enum": [
                 "ask_waiting",
                 "ask_approved",
                 "ask_turned_down",
                 "ask_ready",
+                "new_episodes",
+                "new_albums",
+                "report_made",
+                "report_fixed",
                 "grab",
+                "downloaded",
+                "download_failed",
                 "import",
                 "rename",
                 "add",
                 "delete",
                 "health",
-                "needs_decision"
+                "needs_decision",
+                "subtitle"
               ],
               "type": "string"
             },
@@ -619,7 +626,7 @@
             "type": "string"
           },
           "secret": {
-            "description": "Webhook secret; kept encrypted. Signs each message (X-HolyArrs-Signature: sha256= HMAC-SHA256 of the X-HolyArrs-Timestamp value, a dot and the body) or is sent as a bearer token. Empty or masked keeps the stored one, but must be sent again when the link points to another host.",
+            "description": "Webhook secret; kept encrypted. Signs each message (X-HolyArrs-Signature: sha256= HMAC-SHA256 of the X-HolyArrs-Timestamp value, a dot, the X-HolyArrs-Delivery value, a dot and the body) or is sent as a bearer token. Empty or masked keeps the stored one, but must be sent again when the link points to another host.",
             "type": "string"
           },
           "server_url": {
@@ -717,20 +724,27 @@
             "type": "string"
           },
           "moments": {
-            "description": "Ask moments go to the staff or the people who asked; grab, import, rename, add, delete, health and needs_decision go to the staff (email: staff_to).",
+            "description": "Ask moments go to the staff or the people who asked; grab, downloaded, download_failed, import, rename, add, delete, health, needs_decision and subtitle go to the staff (email: staff_to).",
             "items": {
               "enum": [
                 "ask_waiting",
                 "ask_approved",
                 "ask_turned_down",
                 "ask_ready",
+                "new_episodes",
+                "new_albums",
+                "report_made",
+                "report_fixed",
                 "grab",
+                "downloaded",
+                "download_failed",
                 "import",
                 "rename",
                 "add",
                 "delete",
                 "health",
-                "needs_decision"
+                "needs_decision",
+                "subtitle"
               ],
               "type": "string"
             },
@@ -740,7 +754,7 @@
             "type": "string"
           },
           "secret": {
-            "description": "Webhook secret; kept encrypted. Signs each message (X-HolyArrs-Signature: sha256= HMAC-SHA256 of the X-HolyArrs-Timestamp value, a dot and the body) or is sent as a bearer token. Empty or masked keeps the stored one, but must be sent again when the link points to another host.",
+            "description": "Webhook secret; kept encrypted. Signs each message (X-HolyArrs-Signature: sha256= HMAC-SHA256 of the X-HolyArrs-Timestamp value, a dot, the X-HolyArrs-Delivery value, a dot and the body) or is sent as a bearer token. Empty or masked keeps the stored one, but must be sent again when the link points to another host.",
             "type": "string"
           },
           "server_url": {
@@ -1336,6 +1350,10 @@
           "pick_rules_id": {
             "description": "Pick rules for approved asks; 0 takes the folder's own.",
             "type": "integer"
+          },
+          "plex_friends": {
+            "description": "While plex_watchlists is on, also read the watchlists of people imported from the owner's Plex account, with the owner's Plex link, and ask for them as those people. Only people already in HolyArrs who still share the chosen Plex server; anyone who turned their watchlist off is left alone. Default off.",
+            "type": "boolean"
           },
           "plex_watchlists": {
             "description": "People may have their Plex watchlist asked for as them (each turns it on in My account). Default off.",
@@ -2081,7 +2099,8 @@
               "transmission",
               "nzbget",
               "deluge",
-              "rtorrent"
+              "rtorrent",
+              "aria2"
             ],
             "type": "string"
           },
@@ -2103,7 +2122,7 @@
             "type": "integer"
           },
           "secret": {
-            "description": "the SABnzbd API key or the qBittorrent, Transmission, Deluge, rTorrent or NZBGet password; the masked value or empty keeps the stored one. Needed again when the address moves to another host.",
+            "description": "the SABnzbd API key, the aria2 RPC secret, or the qBittorrent, Transmission, Deluge, rTorrent or NZBGet password; the masked value or empty keeps the stored one. Needed again when the address moves to another host.",
             "type": "string"
           },
           "tags": {
@@ -2249,6 +2268,10 @@
           "name": {
             "type": "string"
           },
+          "outside_order": {
+            "description": "The show's chosen episode order leaves this episode out; it keeps TMDB's numbers.",
+            "type": "boolean"
+          },
           "runtime": {
             "type": "integer"
           },
@@ -2286,6 +2309,14 @@
               "type": "object"
             },
             "type": "array"
+          },
+          "tmdb_episode": {
+            "description": "TMDB's episode number, set with tmdb_season.",
+            "type": "integer"
+          },
+          "tmdb_season": {
+            "description": "TMDB's season, when the chosen episode order numbers the episode differently (season and episode then hold the order's numbers).",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -2659,6 +2690,42 @@
               "$ref": "#/components/schemas/StageState"
             },
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "Hide": {
+        "properties": {
+          "created_at": {
+            "type": "string"
+          },
+          "genre": {
+            "description": "Set for a genre hide: the English TMDB genre name for kind.",
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "movie",
+              "show"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "description": "The title's name when it was hidden.",
+            "type": "string"
+          },
+          "tmdb_id": {
+            "description": "Set for a title hide.",
+            "type": "string"
+          },
+          "user_id": {
+            "description": "The person it is hidden for; 0 for everyone.",
+            "format": "int64",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -3517,6 +3584,10 @@
       },
       "Movie": {
         "properties": {
+          "hidden": {
+            "description": "Hidden from browsing for the person asking; managers still find it here to add it.",
+            "type": "boolean"
+          },
           "ids": {
             "additionalProperties": {
               "type": "string"
@@ -3659,6 +3730,17 @@
           "display_name",
           "username"
         ],
+        "type": "object"
+      },
+      "MyViews": {
+        "additionalProperties": {
+          "description": "Short JSON, up to 256 bytes; the page checks it when it reads it."
+        },
+        "description": "The view picks saved on my account, by name: library.view.all, library.view.movie, library.view.show and library.view.artist (rows, posters, overview or table), calendar.view (cards or list) and calendar.follows (mine, everyone or library). A name never picked is left out.",
+        "example": {
+          "calendar.follows": "everyone",
+          "library.view.movie": "posters"
+        },
         "type": "object"
       },
       "NamingSettings": {
@@ -3970,7 +4052,8 @@
               "shows",
               "music",
               "subtitles",
-              "wishlist"
+              "wishlist",
+              "sources"
             ],
             "type": "string"
           },
@@ -4155,6 +4238,55 @@
           },
           "wishlist": {
             "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "PlexFriends": {
+        "properties": {
+          "on": {
+            "description": "Plex watchlists and Include Plex friends are both on.",
+            "type": "boolean"
+          },
+          "owner_linked": {
+            "description": "The owner's Plex link is kept, so friends' watchlists can be read.",
+            "type": "boolean"
+          },
+          "people": {
+            "description": "The active people with a Plex link, the owner left out, by name.",
+            "items": {
+              "properties": {
+                "asked": {
+                  "description": "Watchlist entries asked for or joined as them.",
+                  "type": "integer"
+                },
+                "checked_at": {
+                  "description": "When their watchlist was last read.",
+                  "format": "date-time",
+                  "type": "string"
+                },
+                "error": {
+                  "description": "Why the last read did not work, in plain words.",
+                  "type": "string"
+                },
+                "kid": {
+                  "description": "A Kid: their age-rating limit applies to what their watchlist asks for.",
+                  "type": "boolean"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "plex_name": {
+                  "description": "Their Plex account name.",
+                  "type": "string"
+                },
+                "user_id": {
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
           }
         },
         "type": "object"
@@ -5155,6 +5287,22 @@
           "details_source": {
             "type": "string"
           },
+          "episode_group": {
+            "description": "The TMDB episode order the show follows; null for TMDB's own numbering.",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
           "episode_order": {
             "type": "string"
           },
@@ -5230,6 +5378,10 @@
               }
             },
             "type": "object"
+          },
+          "hidden": {
+            "description": "Hidden from browsing for the person asking; managers still find it here to add it.",
+            "type": "boolean"
           },
           "ids": {
             "additionalProperties": {
@@ -5844,6 +5996,16 @@
           "language": {
             "type": "string"
           },
+          "made": {
+            "description": "What made the subtitle when a person did not: HolyArrs's own translation (whole or partial) or a site's machine-made file. Left out: a person.",
+            "enum": [
+              "translated",
+              "translated_partial",
+              "ai_translated",
+              "machine_translated"
+            ],
+            "type": "string"
+          },
           "next_try_at": {
             "format": "date-time",
             "type": "string"
@@ -5855,6 +6017,10 @@
               "by_hand"
             ],
             "type": "string"
+          },
+          "picture": {
+            "description": "A built-in track stored as pictures (PGS, VobSub), which cannot be translated.",
+            "type": "boolean"
           },
           "place": {
             "enum": [
@@ -6279,6 +6445,10 @@
           "limits": {
             "$ref": "#/components/schemas/SubtitleSiteLimits"
           },
+          "machine_made": {
+            "description": "Lets in the files the site marks as AI-translated or machine-translated. They score low and stand in only when no file made by a person passes.",
+            "type": "boolean"
+          },
           "name": {
             "type": "string"
           },
@@ -6339,6 +6509,10 @@
           },
           "limits": {
             "$ref": "#/components/schemas/SubtitleSiteLimits"
+          },
+          "machine_made": {
+            "description": "Left out: a new site starts off and a changed one keeps its switch.",
+            "type": "boolean"
           },
           "name": {
             "type": "string"
@@ -6429,6 +6603,68 @@
         },
         "type": "object"
       },
+      "SubtitleTranslator": {
+        "description": "The owner's own translator. The key is never sent back; has_key only says one is kept in the vault.",
+        "properties": {
+          "built_in_auto": {
+            "description": "The timed search translates text tracks inside the video without asking. Off, they are translated by hand only.",
+            "type": "boolean"
+          },
+          "has_key": {
+            "type": "boolean"
+          },
+          "kind": {
+            "description": "openai: any server with the OpenAI chat API (OpenRouter, OpenAI, Ollama, LM Studio and the like); lingarr: a Lingarr server; empty: off.",
+            "enum": [
+              "",
+              "openai",
+              "lingarr"
+            ],
+            "type": "string"
+          },
+          "model": {
+            "description": "The model name, for openai.",
+            "type": "string"
+          },
+          "url": {
+            "description": "The API base, such as https://openrouter.ai/api/v1 or http://ollama:11434/v1. A bare host gets /v1. It may be on the local network.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "url",
+          "model",
+          "has_key",
+          "built_in_auto"
+        ],
+        "type": "object"
+      },
+      "SubtitleTranslatorInput": {
+        "description": "Fields left out keep their value. An empty key keeps the stored one; clear_key removes it. A kept key never follows the address to another host.",
+        "properties": {
+          "built_in_auto": {
+            "type": "boolean"
+          },
+          "clear_key": {
+            "type": "boolean"
+          },
+          "key": {
+            "description": "Sealed in the vault, never logged or sent back.",
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "SubtitleWant": {
         "properties": {
           "forced": {
@@ -6444,6 +6680,10 @@
           },
           "language": {
             "description": "two-letter code",
+            "type": "string"
+          },
+          "translate_from": {
+            "description": "When no subtitle in this language is found, translate one from this language with the owner's translator. Empty: never translated.",
             "type": "string"
           }
         },
@@ -6502,6 +6742,10 @@
               "tmdb",
               "tvmaze"
             ],
+            "type": "string"
+          },
+          "episode_group_id": {
+            "description": "Shows on TMDB: one of the show's TMDB episode orders (from /titles/{id}/episode-groups), or \"\" for TMDB's own numbering. The show is refreshed by it after saving.",
             "type": "string"
           },
           "episode_order": {
@@ -6949,6 +7193,9 @@
           "rating_country": {
             "description": "The country whose ratings apply; US for now.",
             "type": "string"
+          },
+          "views": {
+            "$ref": "#/components/schemas/MyViews"
           }
         },
         "type": "object"
@@ -11017,7 +11264,7 @@
     },
     "/api/v1/auth/settings": {
       "get": {
-        "description": "Sign-in ways, local-network sign-in (skip_login_local_network and the local_networks it covers), two-factor rules and min_password_length (the shortest new password allowed; 4 by default). plex_owner says whether the owner's Plex account is linked (never the token).",
+        "description": "Sign-in ways, local-network sign-in (skip_login_local_network and the local_networks it covers), two-factor rules and min_password_length (the shortest new password allowed; 4 by default). plex_owner says whether the owner's Plex account is linked (never the token). local_person is who local visitors become (0: the owner); local_skip_off says why the skip lets nobody in now (\"kid\" or \"person_gone\", \"\" when it works); media_sign_in lists the Plex, Jellyfin and Emby sign-in ways that are on; home_ranges and cgnat_range are what add_home_ranges and add_cgnat add; trusted_proxies are the ones saved here and trusted_proxies_fixed the locked ones from HOLYARRS_TRUSTED_PROXIES.",
         "operationId": "getAuthSettings",
         "responses": {
           "200": {
@@ -11040,7 +11287,7 @@
         "x-holyarrs-scope": "admin"
       },
       "put": {
-        "description": "Owner only. local_networks takes up to 32 CIDRs or single addresses (400 names a bad entry); skip_login_local_network cannot be on with an empty list (400). min_password_length takes 4 to 64; it counts for new passwords (setup, invites, password changes, reset-owner). Turning a sign-in way to join \"everyone\" when it was not already needs confirm_everyone: true (409 otherwise).",
+        "description": "Owner only. local_networks takes up to 32 CIDRs or single addresses (400 names a bad entry); skip_login_local_network cannot be on with an empty list (400). min_password_length takes 4 to 64; it counts for new passwords (setup, invites, password changes, reset-owner). Turning a sign-in way to join \"everyone\" when it was not already needs confirm_everyone: true (409 otherwise). local_person must be 0 (the owner) or a person who is turned on; while any Kid or open age-limited invite exists, the skip can only be on for a Kid (400). add_home_ranges adds 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 and fc00::/7, add_cgnat adds 100.64.0.0/10. trusted_proxies (browser session only) takes up to 32 addresses or ranges, added to HOLYARRS_TRUSTED_PROXIES; dropping the proxy this request came through answers 409. Local visits get a CSRF token from /api/v1/auth/me that every change must send.",
         "operationId": "putAuthSettings",
         "requestBody": {
           "content": {
@@ -11979,7 +12226,7 @@
     },
     "/api/v1/backups/settings": {
       "put": {
-        "description": "preset is balanced, light or careful.",
+        "description": "preset is balanced, light, careful or off (off makes no scheduled backups; manual backups and the copies taken around an update are still made).",
         "operationId": "putBackupSettings",
         "requestBody": {
           "content": {
@@ -11990,7 +12237,8 @@
                     "enum": [
                       "balanced",
                       "light",
-                      "careful"
+                      "careful",
+                      "off"
                     ],
                     "type": "string"
                   }
@@ -13101,7 +13349,7 @@
         "x-holyarrs-scope": "read"
       },
       "post": {
-        "description": "Adds qBittorrent, Transmission, Deluge or rTorrent for torrents, or SABnzbd or NZBGet for Usenet. The key or password goes to the vault. Needs a recent sign-in.",
+        "description": "Adds qBittorrent, Transmission, Deluge, rTorrent or aria2 for torrents, or SABnzbd or NZBGet for Usenet. The key or password goes to the vault. Needs a recent sign-in.",
         "operationId": "addDownloader",
         "requestBody": {
           "content": {
@@ -14806,6 +15054,36 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/downloads/clear-now": {
+      "post": {
+        "description": "Tries at once every imported download still waiting to be cleared from its Downloader, instead of at its next try. left is how many still wait.",
+        "operationId": "clearDownloadsNow",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "left": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Tried."
+          }
+        },
+        "summary": "Clear waiting downloads now",
+        "tags": [
+          "Downloaders"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
       }
     },
     "/api/v1/downloads/clients": {
@@ -16526,6 +16804,124 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/files/{id}/subtitles/translate": {
+      "post": {
+        "description": "Queues a translation of one subtitle of a File with the owner's translator. Without a source, it takes a text file beside the video, then a text track inside it, then the best site file in the from language; picture tracks are skipped. A subtitle made by a person is never replaced. The Job saves a .LANG.srt with the same timings, marked as a translation.",
+        "operationId": "translateSubtitle",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "forced": {
+                    "type": "boolean"
+                  },
+                  "from": {
+                    "description": "The language to translate from; left out, the wish's rule, else any text subtitle, English first.",
+                    "type": "string"
+                  },
+                  "language": {
+                    "description": "The language to make, such as pt-br.",
+                    "type": "string"
+                  },
+                  "path": {
+                    "description": "For beside: the subtitle's path relative to the Library folder.",
+                    "type": "string"
+                  },
+                  "source": {
+                    "enum": [
+                      "",
+                      "beside",
+                      "built_in"
+                    ],
+                    "type": "string"
+                  },
+                  "track": {
+                    "description": "For built_in: the track number.",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "language"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "job_id": {
+                      "type": "integer"
+                    },
+                    "queued": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "queued"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Queued."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad input."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such File."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No translator is set up, the track holds pictures, or the File cannot have subtitles."
+          }
+        },
+        "summary": "Translate a subtitle",
+        "tags": [
+          "Subtitles"
+        ],
+        "x-holyarrs-part": "subtitles",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/health": {
       "get": {
         "description": "Version, schema, uptime, write waits, Sources, Downloaders and live clients. The health checks are at /health/checks.",
@@ -16755,6 +17151,179 @@
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/hidden": {
+      "get": {
+        "description": "Oldest first. Hidden titles stay out of Explore, New & Popular, genre pages, browse, search, suggestions, More like this and people pages; links, the Library and asks still work.",
+        "operationId": "listHidden",
+        "parameters": [
+          {
+            "description": "0 keeps the hides for everyone, a person's id keeps that person's.",
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "hidden": {
+                      "items": {
+                        "$ref": "#/components/schemas/Hide"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Hides."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "user_id is not a number."
+          }
+        },
+        "summary": "Titles and genres hidden from browsing",
+        "tags": [
+          "Hidden from browsing"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "description": "Send tmdb_id for a title or genre for a whole genre of kind, and user_id to hide it for one person only. Sending the same hide again answers 200 with the stored one.",
+        "operationId": "addHidden",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "genre": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "enum": [
+                      "movie",
+                      "show"
+                    ],
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "tmdb_id": {
+                    "type": "string"
+                  },
+                  "user_id": {
+                    "format": "int64",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Hide"
+                }
+              }
+            },
+            "description": "Already hidden."
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Hide"
+                }
+              }
+            },
+            "description": "Hidden."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A field is missing or wrong, or no such person."
+          }
+        },
+        "summary": "Hide a title or a genre from browsing",
+        "tags": [
+          "Hidden from browsing"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/hidden/{id}": {
+      "delete": {
+        "description": "Undo and Show again.",
+        "operationId": "deleteHidden",
+        "parameters": [
+          {
+            "description": "The hide's id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Shown again."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such hide."
+          }
+        },
+        "summary": "Show a hidden title or genre again",
+        "tags": [
+          "Hidden from browsing"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/holding": {
@@ -17465,6 +18034,97 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/library-folders/{id}/path": {
+      "put": {
+        "description": "For files already moved to a new place (a new mount point, a renamed share). The new path is checked like a new folder's. Then every present file (titles deleted from the Library left out) must be at the new path with a size the Library knows for it, recorded at import or read by the last rescan; the first that is not stops the change, and the 409 answer names it in file. Only then is the path saved and the folder checked again. Nothing on disk is moved.",
+        "operationId": "changeFolderPath",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Folder"
+                }
+              }
+            },
+            "description": "Changed and checked."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not a full folder path, the config folder, or a folder that does not exist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such folder."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "file": {
+                      "description": "The first file missing at the new path or of another size, under the folder.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Inside or around another Library folder, files changed during the check, or a file is not at the new path (file names it)."
+          }
+        },
+        "summary": "Change a Library folder's path",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/library-folders/{id}/scan": {
       "post": {
         "description": "Queues a dry run that matches each folder to a TMDB movie with a confidence score; nothing is written. GET /api/v1/jobs/{id} then holds result.plan (an AdoptPlan). At most adopt_scan_limit folders (default 5000) are read, in name order; when plan.more is true, scan again with after set to plan.next for the rest. A folder whose TMDB lookup fails is unmatched with the reason instead of stopping the scan. A {tmdb-N} tag in a folder name wins over the name and year. A show Library folder (5.2.2) matches each folder to a show at the show details source (a {tvdb-N}, {tmdb-N}, {tvmaze-N} or {imdb-ttN} tag wins), and lists each video under files with the episodes its name gives (S01E02, multi-episode names, an air day or a running number) or why it gives none; plan.kind says movie or show, and plan.warning is set when the Library folder is empty while the Library knows files in it (a drive or share not mounted). A music Library folder reads at most music_adopt_scan_limit artist folders (default 200); its MusicBrainz lookups wait behind album imports, searches and staff, each artist folder's result is saved to the Job as it is done (plan.partial), and each album lists at most 40 files (album.cut).",
@@ -17703,6 +18363,34 @@
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/library/stats": {
+      "get": {
+        "description": "Counts present main files per kind (movies, shows, music; only kinds whose part is on): titles, files and bytes split by video codec, resolution, HDR, container, audio codec and audio channels. Values outside the known list come back as \"other\", files not read yet as \"unchecked\", files that could not be read as \"unknown\". Music has no video facts.",
+        "responses": {
+          "200": {
+            "description": "The counts per kind and fact."
+          }
+        },
+        "summary": "Library files by fact",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/library/stats/watched": {
+      "get": {
+        "description": "Watched movies, shows and episodes per account on each Plex, Jellyfin or Emby server, from the last watch history read. An account linked to a person here carries that person; any other is shown by its media-server name with linked false. Empty while watch history is off.",
+        "responses": {
+          "200": {
+            "description": "Whether watch history is on, when it was last read, and each account's counts."
+          }
+        },
+        "summary": "Who watched what",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/links/{kind}/{id}/restart": {
@@ -20911,6 +21599,74 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/my/views": {
+      "get": {
+        "description": "The Library and Calendar views I picked last, kept on my account so every device opens on them. The same picks come with Who am I.",
+        "operationId": "getMyViews",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyViews"
+                }
+              }
+            },
+            "description": "My saved views."
+          }
+        },
+        "summary": "My saved views",
+        "tags": [
+          "My account"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Saves the picks in the body; names left out keep their value and null forgets a pick. An unknown name or a value over 256 bytes is skipped, never refused. When I pick on two devices, the last pick wins.",
+        "operationId": "putMyViews",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MyViews"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyViews"
+                }
+              }
+            },
+            "description": "Saved; every pick on my account now."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The body is not a JSON object."
+          }
+        },
+        "summary": "Save my views",
+        "tags": [
+          "My account"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/needs-decision": {
       "get": {
         "description": "Movies where HolyArrs ran out of Releases or hit a conflict, newest first, with the reason in plain words. count feeds the badge in the menu.",
@@ -21727,7 +22483,7 @@
     },
     "/api/v1/parts/{part}/off": {
       "post": {
-        "description": "Two steps (confirm). Turns the part off and saves it: its screens hide, its routes answer \"this part is off\", its stages stop, its scheduled work is not queued and its Jobs wait in the queue (Jobs already running finish; nothing is cut off). Its data is kept. Refused when Subtitles or the Requests still need it (turn those off first), and in safe mode. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",
+        "description": "Two steps (confirm). Turns the part off and saves it: its screens hide, its routes answer \"this part is off\", its stages stop, its scheduled work is not queued and its Jobs wait in the queue (Jobs already running finish; nothing is cut off). Its data is kept. Refused when Subtitles or the Requests still need it (turn those off first), and in safe mode. Sources is the exception: it owns no screen or route, and off it only stops the searches HolyArrs starts on its own, while Downloaders and imports keep working. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",
         "operationId": "partOff",
         "parameters": [
           {
@@ -21740,7 +22496,8 @@
                 "shows",
                 "music",
                 "subtitles",
-                "wishlist"
+                "wishlist",
+                "sources"
               ],
               "type": "string"
             }
@@ -21822,7 +22579,8 @@
                 "shows",
                 "music",
                 "subtitles",
-                "wishlist"
+                "wishlist",
+                "sources"
               ],
               "type": "string"
             }
@@ -21884,7 +22642,8 @@
                 "shows",
                 "music",
                 "subtitles",
-                "wishlist"
+                "wishlist",
+                "sources"
               ],
               "type": "string"
             }
@@ -23743,6 +24502,31 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/settings/asks/plex-friends": {
+      "get": {
+        "description": "The people Include Plex friends reads: each person with a Plex link, whether they are a Kid, when their watchlist was last read, what went wrong and how many entries were asked for. Reads nothing from Plex.",
+        "operationId": "getPlexFriends",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlexFriends"
+                }
+              }
+            },
+            "description": "Plex friends."
+          }
+        },
+        "summary": "Plex friends for Requests",
+        "tags": [
+          "Requests"
+        ],
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/settings/downloaders": {
       "get": {
         "description": "Stall times, removing failed downloads, dangerous files, replacing downloads removed outside HolyArrs, grab spacing and trying the next Downloader.",
@@ -24167,6 +24951,129 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/settings/metadata": {
+      "get": {
+        "description": "The mode (full: the HolyArrs metadata server, own: your own keys, off: no lookups), whether the Docker settings lock it, which own keys are saved (never the keys), each kind of detail on or off, and the outside addresses the mode uses.",
+        "operationId": "getMetadataSettings",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Settings."
+          }
+        },
+        "summary": "Where details come from",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Sets the mode and saves own keys (an empty key removes it, a left-out key stays). A mode change applies at once.",
+        "operationId": "putMetadataSettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Saved."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A value is not valid."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The Docker settings set the mode."
+          }
+        },
+        "summary": "Change where details come from",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/metadata/test": {
+      "post": {
+        "description": "Checks a TMDB, TheTVDB (with its PIN), MDBList or fanart.tv key, given or saved. Answers ok and a short line either way.",
+        "operationId": "testMetadataKey",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The result."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Unknown key name."
+          }
+        },
+        "summary": "Test an own key",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
       }
     },
     "/api/v1/settings/music": {
@@ -24744,6 +25651,128 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/settings/subtitles/translator": {
+      "get": {
+        "description": "The translator HolyArrs uses for subtitles no site has. The key itself is never sent.",
+        "operationId": "getSubtitleTranslator",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubtitleTranslator"
+                }
+              }
+            },
+            "description": "The translator."
+          }
+        },
+        "summary": "Read the subtitle translator",
+        "tags": [
+          "Subtitles"
+        ],
+        "x-holyarrs-part": "subtitles",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Fields left out keep their value. Moving the address to another host while a key is kept needs the key again or clear_key.",
+        "operationId": "putSubtitleTranslator",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubtitleTranslatorInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubtitleTranslator"
+                }
+              }
+            },
+            "description": "Saved."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad input."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The key would follow the address to another host, or the vault is not set up."
+          }
+        },
+        "summary": "Change the subtitle translator",
+        "tags": [
+          "Subtitles"
+        ],
+        "x-holyarrs-part": "subtitles",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/subtitles/translator/test": {
+      "post": {
+        "description": "Lists the server's models where it can and translates two short lines, then says in plain words how it went. It changes nothing.",
+        "operationId": "testSubtitleTranslator",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "models": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "message",
+                    "models"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "How it went."
+          }
+        },
+        "summary": "Test the subtitle translator",
+        "tags": [
+          "Subtitles"
+        ],
+        "x-holyarrs-part": "subtitles",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/settings/title-defaults": {
       "get": {
         "description": "What a new movie or show gets when POST /titles or POST /shows leaves a field out. Built-in values: keep_up_to_date on for both, search_on_add on for movies and off for shows, folder and Pick rules 0. A built-in value is only shown; adds use a default only after it has been saved.",
@@ -25167,6 +26196,38 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/watch-history": {
+      "get": {
+        "description": "Whether HolyArrs reads watch history from the media servers. Off by default.",
+        "responses": {
+          "200": {
+            "description": "{\"enabled\": true or false}."
+          }
+        },
+        "summary": "Watch history switch",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Body {\"enabled\": true or false}. Turning it off deletes every watch history row read so far. Needs a password sign-in or an API key.",
+        "responses": {
+          "200": {
+            "description": "Saved."
+          },
+          "400": {
+            "description": "The body is not {\"enabled\": true or false}."
+          },
+          "403": {
+            "description": "Only the owner, signed in with a password or an API key, may change it."
+          }
+        },
+        "summary": "Turn watch history on or off",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/shows": {
@@ -27299,6 +28360,10 @@
                     "changes": {
                       "type": "object"
                     },
+                    "rename_suggested": {
+                      "description": "Sent when episode_group_id changed the order: true when episode numbers moved, so a rename preview is worth offering.",
+                      "type": "boolean"
+                    },
                     "title": {
                       "$ref": "#/components/schemas/TitleView"
                     }
@@ -27628,6 +28693,93 @@
         "x-holyarrs-part": "title",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/titles/{id}/episode-groups": {
+      "get": {
+        "description": "The TMDB episode orders (episode groups) the show can follow, and the one it follows. Empty for a show without a TMDB id or one not on TMDB.",
+        "operationId": "listEpisodeGroups",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "chosen": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "groups": {
+                      "items": {
+                        "properties": {
+                          "episodes": {
+                            "type": "integer"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "seasons": {
+                            "type": "integer"
+                          },
+                          "type": {
+                            "description": "TMDB's type: 1 original air, 2 absolute, 3 DVD, 4 digital, 5 story arc, 6 production, 7 TV.",
+                            "type": "integer"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Episode orders."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such show."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "TMDB could not be read."
+          }
+        },
+        "summary": "A show's TMDB episode orders",
+        "tags": [
+          "Shows"
+        ],
+        "x-holyarrs-part": "shows",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
       }
     },
     "/api/v1/titles/{id}/episodes": {
@@ -28635,6 +29787,43 @@
         "tags": [
           "Shows"
         ],
+        "x-holyarrs-part": "shows",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/titles/{id}/seasons/{number}/pack-next": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The next episodes were switched on: download_id and added (how many)."
+          },
+          "404": {
+            "description": "No season pack of this season is fetched a few episodes at a time."
+          },
+          "409": {
+            "description": "The Downloader no longer has the season pack; its episodes are searched again."
+          }
+        },
+        "summary": "Fetch the next episodes of a season pack",
         "x-holyarrs-part": "shows",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"

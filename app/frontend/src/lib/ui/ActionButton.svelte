@@ -62,7 +62,7 @@
 	.round[aria-pressed='true']:hover { background: #fff; }
 	.cap { overflow: hidden; text-overflow: ellipsis; }
 	.ui-act:focus-visible { outline: none; box-shadow: 0 0 0 2px #111, 0 0 0 4px #fff; }
-	.ui-act:disabled { cursor: not-allowed; opacity: .55; }
+	.ui-act:disabled { cursor: not-allowed; opacity: var(--disabled-opacity); }
 	.ui-act[aria-busy='true'] { animation: ui-act-busy 1.2s var(--ease-in-out) infinite; }
 	/* Hover label for the icon-only form. */
 	.tip {

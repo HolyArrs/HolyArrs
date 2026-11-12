@@ -161,8 +161,8 @@
 	.chips :global(.ui-chip) { flex: none; }
 	/* The column is the poster (68%, as wide as other rows' posters) plus the number (32%); the poster overlaps the number's right edge a little. */
 	.ranked { position: relative; container-type: inline-size; }
-	.rank { position: absolute; left: 0; top: 0; width: 37%; height: 102cqw; display: flex; align-items: flex-end; justify-content: flex-end; font-size: 50cqw; font-weight: 800; line-height: 0.76; letter-spacing: -0.06em; color: var(--bg, #000); -webkit-text-stroke: 3px var(--text-muted); paint-order: stroke; user-select: none; z-index: 0; }
+	.rank { position: absolute; inset-inline-start: 0; top: 0; width: 37%; height: 102cqw; display: flex; align-items: flex-end; justify-content: flex-end; font-size: 50cqw; font-weight: 800; line-height: 0.76; letter-spacing: -0.06em; color: var(--bg, #000); -webkit-text-stroke: 3px var(--text-muted); paint-order: stroke; user-select: none; z-index: 0; }
 	.rank.two { font-size: 36cqw; letter-spacing: -0.12em; }
-	.pc { position: relative; z-index: 1; margin-left: 32%; width: 68%; min-width: 0; }
+	.pc { position: relative; z-index: 1; margin-inline-start: 32%; width: 68%; min-width: 0; }
 	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>

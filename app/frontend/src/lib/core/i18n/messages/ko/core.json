@@ -16,7 +16,7 @@
 	"core.format.healthy": "정상",
 	"core.format.folderNotFound": "폴더를 찾을 수 없습니다",
 	"core.format.cannotWrite": "여기에는 쓸 수 없습니다",
-	"core.format.copiedNoHardlinks": "작동하지만 파일이 복사됩니다 (하드링크 없음)",
+	"core.format.copiedNoHardlinks": "가져올 때마다 전체 사본을 만듭니다 (공간을 더 씀)",
 	"core.format.notChecked": "아직 확인 안 함",
 	"core.loader.welcome": "{name}님, 환영합니다",
 	"core.loader.reconnecting": "다시 연결하는 중…",
@@ -54,6 +54,8 @@
 	"core.plain.configDiskWarning": "설정 폴더가 있는 디스크의 공간이 얼마 남지 않았습니다.",
 	"core.plain.configFolder": "/config가 폴더에 연결되어 있지 않아 컨테이너를 다시 만들면 HolyArrs 데이터가 사라집니다.",
 	"core.plain.waitingDownloads": "다운로더가 파일을 사용할 수 없어 다운로드가 대기 중입니다.",
+	"core.plain.clearWaiting": "가져온 다운로드가 다운로더에서 정리되기를 기다리고 있습니다.",
+	"core.plain.saveFolder": "저장 폴더가 설정되지 않은 다운로더가 있어 HolyArrs가 완료된 다운로드를 가져올 수 없습니다.",
 	"core.plain.someone": "가족 중 누군가",
 	"core.plain.keyKitOwner": "소유자가 키 키트를 저장해야 합니다. 백업에는 마스터 키가 들어 있지 않습니다.",
 	"core.plain.keyKitNone": "저장된 키 키트가 없습니다. 백업에는 마스터 키가 들어 있지 않습니다.",
@@ -142,5 +144,6 @@
 	"core.settings.danger.label": "위험 구역",
 	"core.settings.danger.about": "다시 시작 또는 종료",
 	"core.settings.account.label": "내 계정",
-	"core.settings.account.about": "비밀번호, 2단계 인증, 기기"
+	"core.settings.account.about": "비밀번호, 2단계 인증, 기기",
+	"core.api.sourceOff": "이 설치에서는 일부 줄이 꺼져 있습니다."
 }

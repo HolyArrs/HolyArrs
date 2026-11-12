@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { noSidewaysScroll, signIn, finishFirstRun } from '../helpers/helpers.ts';
+import { noSidewaysScroll, signIn, setUpFresh } from '../helpers/helpers.ts';
 import { dataDir } from '../helpers/data-folder.ts';
 
 // Status: every tab at desktop width and at
@@ -17,21 +17,8 @@ const owner = () => ({ name: 'luis', password: pw });
 test.beforeAll(async ({ browser }) => {
 	test.setTimeout(240_000);
 	const page = await browser.newPage();
-	// The first start may show "starting" for a while; reload until set-up shows.
-	await expect(async () => {
-		await page.goto('/');
-		await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible({ timeout: 2_000 });
-	}).toPass({ timeout: 120_000 });
-	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
-	await page.getByLabel('Name').fill(owner().name);
-	await page.getByLabel('Password', { exact: true }).fill(owner().password);
-	await page.getByLabel('Password again').fill(owner().password);
-	await page.getByRole('button', { name: 'Create account' }).click();
-	await page.getByLabel('Music', { exact: true }).check();
-	await page.getByLabel('Yes', { exact: true }).check();
-	await page.getByRole('button', { name: 'Continue' }).click();
-	await finishFirstRun(page, join(tmp, 'movies'));
-	await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
+	// Music and Requests on, as the main suite's first run has them.
+	await setUpFresh(page, owner(), join(tmp, 'movies'), { music: true, invite: true });
 	await page.context().close();
 });
 

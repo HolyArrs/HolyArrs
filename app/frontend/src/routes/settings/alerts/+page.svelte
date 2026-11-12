@@ -12,7 +12,6 @@
 	import { switchKind } from '#lib/alerts/index.ts';
 	import { askMoments, libraryMoments, momentWords } from '#lib/requests/index.ts';
 	import { onMount } from 'svelte';
-	import { session } from '#lib/core/session.svelte.ts';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { ago } from '#lib/core/format.ts';
@@ -218,12 +217,12 @@
 				<Field id="al-kind" label={t('settings.alerts.kind')}>
 					<select id="al-kind" class="input" bind:value={() => form.kind, (k) => (form = switchKind(form, k))}>
 						<option value="discord">Discord</option>
-						{#if !session.held('alert_channels_more')}<option value="telegram">Telegram</option>{/if}
-						{#if !session.held('alert_channels_more')}<option value="ntfy">ntfy</option>{/if}
-						{#if !session.held('alert_channels_more')}<option value="gotify">Gotify</option>{/if}
-						{#if !session.held('alert_channels_more')}<option value="pushover">Pushover</option>{/if}
+						<option value="telegram">Telegram</option>
+						<option value="ntfy">ntfy</option>
+						<option value="gotify">Gotify</option>
+						<option value="pushover">Pushover</option>
 						<option value="email">{t('settings.alerts.email')}</option>
-						{#if !session.held('alert_channels_more')}<option value="webhook">{t('settings.alerts.webhookJson')}</option>{/if}
+						<option value="webhook">{t('settings.alerts.webhookJson')}</option>
 					</select>
 				</Field>
 			{/if}
@@ -345,7 +344,7 @@
 {#if !loaded}
 	<SkSettings rows={2} />
 {:else if !hasData}
-	<LoadError hasData={false} message={error} onretry={load} />
+	<LoadError hasData={false} message={error} onretry={() => { load(); if (packError) loadPack(); }} />
 {:else if alerts.length === 0 && !editing}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<EmptyState icon="bell" title={t('settings.alerts.none2')} text={t('settings.alerts.noneText')} action={{ label: t('settings.alerts.add'), onclick: startAdd, icon: 'plus' }} />
@@ -378,6 +377,8 @@
 	</ul>
 {/if}
 
+<!-- when both loads fail, the one error above retries both -->
+{#if !(loaded && !hasData && packError)}
 <section class="card packs" id="pack-alerts" tabindex="-1" aria-labelledby="h-packs" data-testid="pack-alerts">
 	<h2 id="h-packs" class="h2">{t('settings.alerts.packs')}</h2>
 	<p class="small muted">{t('settings.alerts.packsNote')}</p>
@@ -401,6 +402,7 @@
 	</fieldset>
 	{/if}
 </section>
+{/if}
 
 <style>
 	.packs {

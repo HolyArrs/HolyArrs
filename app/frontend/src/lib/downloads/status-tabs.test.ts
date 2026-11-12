@@ -184,3 +184,22 @@ describe('client hints', () => {
 		expect(pick([{ ...base, phase: 'stalled' }], TABS, 'progress', 'downloading')).toHaveLength(1);
 	});
 });
+
+import { packLine } from './status-tabs.ts';
+describe('a season pack taken a few episodes at a time', () => {
+	const pack = { from: 1, to: 2, taken: 2, total: 9 };
+	it('names the episodes switched on', () => {
+		expect(packLine({ pack })).toBe('Season pack: episodes 1–2 (2 of 9 taken)');
+		expect(packLine({ pack: { from: 3, to: 3, taken: 1, total: 9 } })).toBe('Season pack: episode 3 (1 of 9 taken)');
+		expect(packLine({})).toBe('');
+	});
+	it('reads Waiting for next episodes once the taken ones are in', () => {
+		expect(statusWord({ phase: 'done', state: 'seeding', progress: 1, pack })).toBe('Waiting for next episodes');
+		expect(statusWord({ phase: 'done', state: 'finished', progress: 1, pack })).toBe('Waiting for next episodes');
+		expect(stageOf({ phase: 'done', state: 'seeding', progress: 1, pack })).toBe('seeding');
+	});
+	it('reads as usual while downloading or once every episode is taken', () => {
+		expect(statusWord({ phase: 'downloading', state: 'downloading', progress: 0.3, pack })).toBe('Downloading');
+		expect(statusWord({ phase: 'done', state: 'seeding', progress: 1, pack: { from: 1, to: 9, taken: 9, total: 9 } })).toBe('Seeding');
+	});
+});

@@ -82,6 +82,9 @@ func (s *Searcher) Register(q *jobs.Queue) {
 // A feed Release is looked at once: a name already stored by the feed check, or still waiting as judged, is skipped. Names stored and settled by other searches are looked at again.
 // Held Releases whose wait is over are chosen at the end.
 func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
+	if s.sourcesOff(r) {
+		return nil
+	}
 	by := jobActor(r)
 	jobID := r.Job.ID
 	now := time.Now().UTC()
@@ -139,7 +142,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			cl, err := s.client(ctx, src)
 			var items []Item
 			if err == nil {
-				cats := src.Categories["movie"]
+				cats := movieFeedCategories(src)
 				if handlesTV(src) && showsWanted {
 
 					// One feed read serves movies and shows.
@@ -334,14 +337,20 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	return nil
 }
 
-// ProbeGrabHeld reports whether the scheduled held-Release Job can change a Slot. It only runs the due check that grabHeld uses.
+// ProbeGrabHeld reports whether the scheduled held-Release Job can change a Slot. It only runs the due check that grabHeld uses, and finds nothing while the Sources part is off.
 func (s *Searcher) ProbeGrabHeld(ctx context.Context, now time.Time) (bool, any, error) {
+	if !s.on() {
+		return false, nil, nil
+	}
 	due, err := mediafiles.HeldSlotDue(ctx, s.Store.Read(), now.UTC())
 	return due, nil, err
 }
 
 // HandleGrabHeld chooses every Held Release whose wait is over.
 func (s *Searcher) HandleGrabHeld(ctx context.Context, r *jobs.Run) error {
+	if s.sourcesOff(r) {
+		return nil
+	}
 	jobID := r.Job.ID
 	n, err := s.grabHeld(ctx, jobActor(r), &jobID, time.Now().UTC())
 	if err != nil {
@@ -354,6 +363,9 @@ func (s *Searcher) HandleGrabHeld(ctx context.Context, r *jobs.Run) error {
 // HandleSearchMissing queues a search for Slots still looking, least recently searched first.
 // The scheduled run takes up to missing_search_count wanted Slots, plus better_wanted ones when missing_search_better is on. A person can pass which ("missing" or "better") to search the whole list up to bulk_search_cap. Slots not out yet are skipped while bulk_search_respects_gate is on.
 func (s *Searcher) HandleSearchMissing(ctx context.Context, r *jobs.Run) error {
+	if s.sourcesOff(r) {
+		return nil
+	}
 	db := s.Store.Read()
 	if s.Queue == nil {
 		return fmt.Errorf("search_missing needs the job queue")

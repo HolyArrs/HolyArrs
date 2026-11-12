@@ -67,6 +67,11 @@ textarea {
 	font: inherit;
 	color: inherit;
 }
+/* Placeholders read at 4.5:1 on a field in both themes; some browsers fade them further on their own. */
+::placeholder {
+	color: var(--text-muted);
+	opacity: 1;
+}
 /* Some browsers draw a drop-down's list with system colours; give its rows the page's own. */
 select option,
 select optgroup {
@@ -256,7 +261,7 @@ select.input {
 	transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
 .input::placeholder {
-	color: var(--text-faint);
+	color: var(--text-muted);
 }
 .input:hover {
 	border-color: var(--line-strong);
@@ -446,7 +451,7 @@ input[type='checkbox'], input[type='radio'], progress { accent-color: var(--acce
 :where(h1, h2, h3, p, label, dd, .notice, .form-error, .hint) { overflow-wrap: anywhere; }
 :where(.row, .card-head) > * { min-width: 0; }
 .notice > .icon { flex: none; }
-:where(button, input, select, textarea):disabled { opacity: .6; }
+:where(button, input, select, textarea):disabled { opacity: var(--disabled-opacity); }
 :where(dialog) { max-width: calc(100vw - 2rem); max-height: calc(100dvh - 2rem); overflow: auto; }
 :where(dialog)::backdrop { background: var(--scrim); }
 :where(table) { font-variant-numeric: tabular-nums; }

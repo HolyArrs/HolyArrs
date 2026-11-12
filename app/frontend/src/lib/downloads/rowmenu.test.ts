@@ -36,6 +36,11 @@ describe('row actions menu', () => {
 		expect(rowItems({ ...tor, downloader_kind: 'rtorrent', state: 'paused' })).toEqual(['resume', 'remove']);
 		expect(rowItems({ ...tor, downloader_kind: 'rtorrent', can_act: false })).toEqual([]);
 	});
+	it('gives aria2 rows pause or resume and remove only', () => {
+		expect(rowItems({ ...tor, downloader_kind: 'aria2' })).toEqual(['pause', 'remove']);
+		expect(rowItems({ ...tor, downloader_kind: 'aria2', state: 'paused' })).toEqual(['resume', 'remove']);
+		expect(rowItems({ ...tor, downloader_kind: 'aria2', can_act: false })).toEqual([]);
+	});
 	it('never offers a client change on a read-only row', () => {
 		expect(rowItems({ ...tor, can_act: false, title_id: 4 })).toEqual(['library']);
 		expect(rowItems({ ...tor, can_act: false })).toEqual([]);

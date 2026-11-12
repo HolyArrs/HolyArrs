@@ -64,6 +64,12 @@ type services struct {
 	// MetadataUp reports whether the metadata server answers (cached
 	// about a minute); nil counts as up.
 	MetadataUp func(context.Context) bool
+	// MetadataModes is where details come from (Settings > Metadata);
+	// MetadataTest checks an own key and MetadataEnvKey says a TMDB key
+	// comes from the Docker settings. nil Modes: the metadata server.
+	MetadataModes  *metadata.Modes
+	MetadataTest   func(ctx context.Context, key, value, pin string) error
+	MetadataEnvKey bool
 	// ServiceTop reads every streaming service's top list for a region
 	// from the metadata server; nil leaves the row empty.
 	ServiceTop func(ctx context.Context, region string) (metadata.ServiceTop, error)
@@ -132,7 +138,7 @@ type services struct {
 	States *jobs.Registry
 	// SafeMode says the app started with only the core.
 	SafeMode bool
-	// Parts switches the five parts and the stages (nil: every part on,
+	// Parts switches the parts and the stages (nil: every part on,
 	// no controls).
 	Parts *parts.Control
 	// Mover runs moves from the old apps; made on first use when nil.
@@ -205,6 +211,9 @@ func (s *services) fill() {
 					log.Printf("queue grab: %v", err)
 				}
 			}}
+		if s.Downloads != nil {
+			s.Search.PackReady = s.Downloads.PackReady
+		}
 	}
 }
 

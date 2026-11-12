@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Seaded",
+	"alerts.panel.clearAll": "Tühjenda kõik",
+	"alerts.panel.empty": "Siin pole veel midagi",
+	"alerts.panel.needsAttention": "Vajab tähelepanu",
+	"alerts.panel.recent": "Hiljutised",
+	"alerts.panel.remove": "Eemalda {text}",
+	"alerts.panel.title": "Hiljutised teavitused",
+	"alerts.state.manyNeed": "{count} vajavad tähelepanu",
+	"alerts.state.ok": "Kõik korras",
+	"alerts.state.oneNeeds": "1 vajab tähelepanu",
+	"alerts.state.unset": "Seadistamata",
+	"alerts.time.days": "{n} p",
+	"alerts.time.hours": "{n} t",
+	"alerts.time.minutes": "{n} min",
+	"alerts.time.now": "praegu"
+}

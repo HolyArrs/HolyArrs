@@ -42,6 +42,7 @@
 		seasonWords,
 		searchWord,
 		showProgress,
+		packWindowValue,
 	} from './labels.ts';
 	import type { AskShowSheet } from './types.ts';
 	import { tick } from 'svelte';
@@ -97,6 +98,8 @@
 	let eRules = $state(0);
 	let eOrder = $state('aired');
 	let eNew = $state('all');
+	// Season packs: 0 gets the whole season, 1 to 10 that many episodes ahead.
+	let ePack = $state(0);
 	let eSource = $state('tmdb');
 	let editError = $state('');
 	let saving = $state(false);
@@ -386,6 +389,7 @@
 		eRules = title.pick_rules_id ?? 0;
 		eOrder = show?.episode_order ?? 'aired';
 		eNew = show?.new_seasons ?? 'all';
+		ePack = show?.pack_window ?? 0;
 		eSource = show?.details_source ?? 'tmdb';
 		editDialog?.showModal();
 		if (!rules.length) {
@@ -403,7 +407,7 @@
 		saving = true;
 		editError = '';
 		try {
-			const body: Record<string, unknown> = { episode_order: eOrder, new_seasons: eNew, details_source: eSource };
+			const body: Record<string, unknown> = { episode_order: eOrder, new_seasons: eNew, pack_window: packWindowValue(ePack), details_source: eSource };
 			if (eRules) body.pick_rules_id = eRules;
 			onchange((await api.put<{ title: TitleView }>(`/titles/${title.id}`, body)).title);
 			editDialog?.close();
@@ -582,6 +586,8 @@
 					<dd>{label(seasonChoices, show.season_choice)}</dd>{/if}
 				<dt>{t('shows.page.newSeasons')}</dt>
 				<dd>{show?.new_seasons === 'none' ? t('shows.page.leftOff') : t('shows.page.keptUp')}</dd>
+				<dt>{t('shows.page.seasonPacks')}</dt>
+				<dd>{show?.pack_window === 1 ? t('shows.page.packOneAtATime') : show?.pack_window ? t('shows.page.packAtATime', { n: show.pack_window }) : t('shows.page.packWholeShort')}</dd>
 				{#if title.pick_rules_name}<dt>{t('shows.page.pickRules')}</dt>
 					<dd>{title.pick_rules_name}</dd>{/if}
 				{#if title.refreshed_at}<dt>{t('shows.page.refreshed')}</dt>
@@ -656,6 +662,19 @@
 			</select>
 		</div>
 		<div class="field">
+			<label for="e-pack">{t('shows.page.seasonPacks')}</label>
+			<select id="e-pack" class="input" value={ePack > 0 ? 'few' : 'whole'} onchange={(e) => (ePack = e.currentTarget.value === 'few' ? 2 : 0)}>
+				<option value="whole">{t('shows.page.packWhole')}</option>
+				<option value="few">{t('shows.page.packFew')}</option>
+			</select>
+			{#if ePack > 0}
+				<label class="pack-ahead" for="e-pack-n">{t('shows.page.packAhead')}
+					<input id="e-pack-n" class="input" type="number" inputmode="numeric" min="1" max="10" bind:value={ePack} />
+				</label>
+				<span class="hint">{t('shows.page.packHint', { n: packWindowValue(ePack) })}</span>
+			{/if}
+		</div>
+		<div class="field">
 			<label for="e-source">{t('shows.page.detailsFrom')}</label>
 			<select id="e-source" class="input" bind:value={eSource}>
 				{#each detailsSources as [v, l] (v)}<option value={v}>{l}</option>{/each}
@@ -680,4 +699,6 @@
 	.modal::backdrop { background: var(--scrim); }
 	.modal-actions { justify-content: flex-end; margin-top: var(--s-6); }
 	.hist { display: grid; gap: 2px; }
+	.pack-ahead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: var(--s-2); }
+	.pack-ahead .input { width: 88px; }
 </style>

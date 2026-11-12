@@ -16,7 +16,7 @@
 	"core.format.healthy": "正常",
 	"core.format.folderNotFound": "フォルダーが見つかりません",
 	"core.format.cannotWrite": "ここには書き込めません",
-	"core.format.copiedNoHardlinks": "動作しますが、ファイルはコピーされます(ハードリンクなし)",
+	"core.format.copiedNoHardlinks": "取り込むたびに完全なコピーを作ります(容量を余分に使います)",
 	"core.format.notChecked": "まだ確認していません",
 	"core.loader.welcome": "ようこそ、{name}",
 	"core.loader.reconnecting": "再接続中…",
@@ -54,6 +54,8 @@
 	"core.plain.configDiskWarning": "config フォルダーのあるディスクの空き容量が少なくなっています。",
 	"core.plain.configFolder": "/config がフォルダーに割り当てられていないため、コンテナーを再作成すると HolyArrs のデータが失われます。",
 	"core.plain.waitingDownloads": "ダウンローダーがファイルを使えないため、ダウンロードが待機しています。",
+	"core.plain.clearWaiting": "インポート済みのダウンロードが、ダウンローダーから整理されるのを待っています。",
+	"core.plain.saveFolder": "保存先フォルダーが設定されていないダウンローダーがあるため、HolyArrs は完了したダウンロードを取り込めません。",
 	"core.plain.someone": "ご家庭の誰か",
 	"core.plain.keyKitOwner": "オーナーはキーキットを保存してください。バックアップにはマスターキーが含まれません。",
 	"core.plain.keyKitNone": "キーキットが保存されていません。バックアップにはマスターキーが含まれません。",
@@ -142,5 +144,6 @@
 	"core.settings.danger.label": "危険な操作",
 	"core.settings.danger.about": "再起動またはシャットダウン",
 	"core.settings.account.label": "マイアカウント",
-	"core.settings.account.about": "パスワード、二要素認証、デバイス"
+	"core.settings.account.about": "パスワード、二要素認証、デバイス",
+	"core.api.sourceOff": "このインストールでは一部の行がオフです。"
 }

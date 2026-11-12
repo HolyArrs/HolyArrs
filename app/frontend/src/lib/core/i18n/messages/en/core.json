@@ -16,7 +16,7 @@
 	"core.format.healthy": "Healthy",
 	"core.format.folderNotFound": "Folder not found",
 	"core.format.cannotWrite": "Cannot write here",
-	"core.format.copiedNoHardlinks": "Works, but files are copied (no hardlinks)",
+	"core.format.copiedNoHardlinks": "Each import makes a full copy (uses extra space)",
 	"core.format.notChecked": "Not checked yet",
 	"core.loader.welcome": "Welcome, {name}",
 	"core.loader.reconnecting": "Reconnecting…",
@@ -54,6 +54,8 @@
 	"core.plain.configDiskWarning": "The disk that holds the config folder is running low on space.",
 	"core.plain.configFolder": "/config is not mapped to a folder, so HolyArrs data is lost when the container is recreated.",
 	"core.plain.waitingDownloads": "Downloads are waiting because their Downloader can't use the files.",
+	"core.plain.clearWaiting": "Imported downloads are waiting to be cleared from their Downloader.",
+	"core.plain.saveFolder": "A Downloader has no save folder set, so HolyArrs can't import its finished downloads.",
 	"core.plain.someone": "Someone in your household",
 	"core.plain.keyKitOwner": "The owner should save the key kit: backups do not hold the master key.",
 	"core.plain.keyKitNone": "No key kit is saved: backups do not hold the master key.",
@@ -142,5 +144,6 @@
 	"core.settings.danger.label": "Danger zone",
 	"core.settings.danger.about": "Restart or shut down",
 	"core.settings.account.label": "My account",
-	"core.settings.account.about": "Password, two-factor, devices"
+	"core.settings.account.about": "Password, two-factor, devices",
+	"core.api.sourceOff": "Some rows are off on this install."
 }

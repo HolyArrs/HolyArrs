@@ -18,6 +18,7 @@ FinishedAt *time.Time db="finished_at" json=""
 StartedBy database.Actor db="started_by,json" json=""
 ProgressAt *time.Time db="progress_at" json=""
 ConfirmedEdition string db="confirmed_edition" json=""
+PackFiles []model.PackFile db="pack_files,json" json=""
 --
 embed Meta
 Name string db="name" json=""
@@ -47,9 +48,12 @@ Tags []string db="tags,json" json=""
 --
 Name string db="" json="name"
 Size int64 db="" json="size"
+Progress float64 db="" json="progress,omitempty"
+Priority int db="" json="priority,omitempty"
 --
 Theirs string db="" json="theirs"
 Ours string db="" json="ours"
 --
 Ratio *float64 db="" json="ratio,omitempty"
 Minutes *int db="" json="minutes,omitempty"
+DeleteFiles bool db="" json="delete_files,omitempty"

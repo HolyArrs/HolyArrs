@@ -27,7 +27,7 @@ func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bo
 	var skipped []skippedSource
 	answered := 0
 	for i, src := range srcs {
-		if src.Format == "rss" || hand && !src.UseFor.HandSearch || !hand && !src.UseFor.AutoSearch || tv && !handlesTV(src) || q.Music && !handlesMusic(src) {
+		if src.Format == "rss" || hand && !src.UseFor.HandSearch || !hand && !src.UseFor.AutoSearch || tv && !handlesTV(src) || q.Music && !handlesMusic(src) || !tv && !q.Music && !handlesMovies(src) {
 			continue
 		}
 		if !mediafiles.SourceServes(src.Tags, titleTags) {
@@ -55,7 +55,7 @@ func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bo
 		} else if tv {
 			qq.Categories = tvCategories(src)
 		} else {
-			qq.Categories = src.Categories["movie"]
+			qq.Categories = movieCategories(src)
 		}
 		cl, err := s.client(ctx, src)
 		var items []Item
@@ -65,6 +65,11 @@ func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bo
 		if err != nil {
 			if ctx.Err() != nil {
 				return nil, nil, 0, nil, ctx.Err()
+			}
+			if errors.Is(err, ErrNothingToSearch) {
+				failures = append(failures, src.Name+": "+err.Error())
+				skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: "nothing to search for"})
+				continue
 			}
 			failures = append(failures, src.Name+": "+err.Error())
 			skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: failWhy(err)})

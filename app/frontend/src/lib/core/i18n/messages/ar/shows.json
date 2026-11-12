@@ -204,5 +204,15 @@
 	"shows.page.mainVersionParen": "(النسخة الرئيسية)",
 	"shows.page.keepThem": "أبقِها محدّثة",
 	"shows.page.leaveThem": "اتركها متوقفة",
-	"shows.page.filesStay": "تبقى الحلقات والملفات."
+	"shows.page.filesStay": "تبقى الحلقات والملفات.",
+	"shows.page.seasonPacks": "حزم المواسم",
+	"shows.page.packWhole": "جلب الموسم كاملًا",
+	"shows.page.packFew": "جلب بضع حلقات في كل مرة",
+	"shows.page.packAhead": "عدد الحلقات المسبقة",
+	"shows.page.packHint": "عندما يكون الإصدار الوحيد حزمة للموسم كاملًا، يجلب qBittorrent الحلقات التالية، {n} في كل مرة. تأتي حلقات أخرى عند الضغط على «جلب الحلقات التالية» أو عندما يُظهر Plex أو Jellyfin حلقة على أنها شوهدت. يجلب Usenet وبرامج التنزيل الأخرى الموسم كاملًا.",
+	"shows.page.packWholeShort": "الموسم كاملًا",
+	"shows.page.packAtATime": "{n} حلقات في كل مرة",
+	"shows.tools.packNote": "يأتي هذا الموسم من حزمته، {n} حلقات في كل مرة.",
+	"shows.tools.getNext": "جلب الحلقات التالية ({n})",
+	"shows.page.packOneAtATime": "حلقة واحدة في كل مرة"
 }

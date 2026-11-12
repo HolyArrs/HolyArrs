@@ -7,6 +7,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // Info is what a show's page needs besides the shared Title fields.
@@ -15,6 +16,7 @@ type Info struct {
 	EpisodeOrder  string          `json:"episode_order"`
 	SeasonChoice  string          `json:"season_choice,omitempty"`
 	NewSeasons    string          `json:"new_seasons"`
+	PackWindow    int             `json:"pack_window"`
 	Status        string          `json:"status"`
 	Network       string          `json:"network,omitempty"`
 	AirTime       string          `json:"air_time,omitempty"`
@@ -32,6 +34,33 @@ type Info struct {
 	// is the most recent episode that has aired.
 	SeasonCount int        `json:"season_count"`
 	LastAirDate *time.Time `json:"last_air_date,omitempty"`
+	// EpisodeGroup is the TMDB episode order the show follows; nil: TMDB's own.
+	EpisodeGroup *EpisodeGroupRef `json:"episode_group"`
+}
+
+// EpisodeGroupRef names a show's chosen TMDB episode order. Name is ""
+// and Type 0 while TMDB cannot be read.
+type EpisodeGroupRef struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Type int    `json:"type"`
+}
+
+// NameEpisodeGroup fills in the name and type of the show's chosen
+// episode order from TMDB's list; best effort.
+func NameEpisodeGroup(ctx context.Context, src metadata.EpisodeGroupSource, t mediafiles.Title, si *Info) {
+	if si == nil || si.EpisodeGroup == nil || src == nil || t.SourceIDs["tmdb"] == "" {
+		return
+	}
+	gs, err := src.EpisodeGroups(ctx, t.SourceIDs["tmdb"])
+	if err != nil {
+		return
+	}
+	for _, g := range gs {
+		if g.ID == si.EpisodeGroup.ID {
+			si.EpisodeGroup.Name, si.EpisodeGroup.Type = g.Name, g.Type
+		}
+	}
 }
 
 // InfoOf builds a show's Info from its seasons and episodes.
@@ -40,8 +69,11 @@ func InfoOf(ctx context.Context, db database.Lister, t mediafiles.Title) (*Info,
 	if err != nil {
 		return nil, err
 	}
-	si := &Info{DetailsSource: t.MetadataSource, EpisodeOrder: strOrEmpty(t.EpisodeOrder), SeasonChoice: strOrEmpty(t.SeasonChoice), NewSeasons: t.NewPartsPolicy,
+	si := &Info{DetailsSource: t.MetadataSource, EpisodeOrder: strOrEmpty(t.EpisodeOrder), SeasonChoice: strOrEmpty(t.SeasonChoice), NewSeasons: t.NewPartsPolicy, PackWindow: t.PackWindow,
 		Status: t.Status, Network: strOrEmpty(t.Network), AirTime: strOrEmpty(t.AirTime), TimeZone: strOrEmpty(t.TimeZone), Seasons: ss}
+	if g := strOrEmpty(t.EpisodeGroupID); g != "" {
+		si.EpisodeGroup = &EpisodeGroupRef{ID: g}
+	}
 	for _, s := range ss {
 		if s.Number > 0 {
 			si.SeasonCount++

@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "테스트",
 	"settings.mediaServers.changeButton": "변경",
 	"settings.mediaServers.removeName": "{name} 삭제",
-	"settings.mediaServers.remove": "삭제"
+	"settings.mediaServers.remove": "삭제",
+	"settings.mediaServers.watchTitle": "시청 기록",
+	"settings.mediaServers.watchRead": "시청 기록 읽기",
+	"settings.mediaServers.watchHint": "라이브러리를 관리하는 사람에게 통계에서 누가 무엇을 봤는지 보여 줘요. 끄면 읽은 기록이 삭제돼요.",
+	"settings.mediaServers.watchConfirmOff": "시청 기록을 끌까요? 지금까지 읽은 기록이 모두 삭제돼요.",
+	"settings.mediaServers.watchTurnedOn": "시청 기록을 켰어요. 첫 읽기는 30분 안에 이뤄져요.",
+	"settings.mediaServers.watchTurnedOff": "시청 기록을 껐어요",
+	"settings.mediaServers.watchFailed": "시청 기록을 바꾸지 못했어요"
 }

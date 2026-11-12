@@ -67,6 +67,22 @@ type showSet struct {
 	notOut map[int64]bool
 	// single is an episode search, where season packs are refused.
 	single bool
+	// window is set when the show takes season packs that many episodes ahead
+	// (qBittorrent only): an episode search may take a pack for its next
+	// episodes when no single episode passes. packed holds the episode Items of
+	// a pack already being fetched that way.
+	window int
+	packed map[int64]bool
+}
+
+// packWindow is how many episodes ahead the show takes season packs, or 0
+// when it takes whole seasons (the setting is off, or no qBittorrent HolyArrs
+// may change takes its torrents).
+func (s *Searcher) packWindow(ctx context.Context, ti mediafiles.Title) int {
+	if ti.Kind != "show" || ti.PackWindow <= 0 || s.PackReady == nil || !s.PackReady(ctx, ti.Tags) {
+		return 0
+	}
+	return ti.PackWindow
 }
 
 // EpisodeLabel names an episode item: S01E02, or its air day for a daily show.
@@ -286,8 +302,12 @@ func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand
 		turned[slotID] = l
 		return l
 	}
+	if set.window > 0 {
+		rules.packAny = false // every episode of the window must gain
+	}
 	tref := set.ref()
 	checks := Checks(ctx, s.Store.Read())
+	body := withVersionAudio(set.pr.Body, set.ver.AudioLanguages)
 	rels := make([]mediafiles.ReleaseFacts, len(all))
 	vs := make([]mediafiles.Verdict, len(all))
 	for i, f := range all {
@@ -299,12 +319,29 @@ func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand
 		if ss.Match.Title != nil {
 			set.lines(&ss, rels[i], refs, byItem, rules, turnedFor)
 		}
-		vs[i] = mediafiles.Judge(rels[i], ss, set.pr.Body)
+		vs[i] = copyChoiceVerdict(set.ti, set.ver, rels[i], mediafiles.Judge(rels[i], ss, body))
+	}
+	if set.window > 0 {
+		// A pack is taken only when no single episode passes for its episodes.
+		single := map[int64]bool{}
+		for i := range vs {
+			if vs[i].Passed && !mediafiles.IsPack(rels[i].Parse) {
+				for _, id := range vs[i].SlotIDs {
+					single[id] = true
+				}
+			}
+		}
+		for i := range vs {
+			if vs[i].Passed && mediafiles.IsPack(rels[i].Parse) && slices.ContainsFunc(vs[i].SlotIDs, func(id int64) bool { return single[id] }) {
+				vs[i].Passed, vs[i].Outcome = false, "refused"
+				vs[i].Reasons = append(vs[i].Reasons, matchFail("pack_window", "a season pack; a single episode passed, so it is taken instead"))
+			}
+		}
 	}
 	if rules.packsFirst {
-		mediafiles.RankPacksFirst(rels, vs, set.pr.Body)
+		mediafiles.RankPacksFirst(rels, vs, body)
 	} else {
-		mediafiles.Rank(rels, vs, set.pr.Body)
+		mediafiles.Rank(rels, vs, body)
 	}
 	return rels, vs, nil
 }
@@ -333,7 +370,12 @@ func (set showSet) lines(ss *mediafiles.SlotSet, rel mediafiles.ReleaseFacts, re
 		ss.MatchReasons = append(ss.MatchReasons, matchFail("several_seasons", "holds more than one season; Releases with several seasons are not taken (Settings > Search)"))
 		return
 	}
-	if set.single && pack {
+	partial := pack && set.window > 0 && rel.Protocol == "torrent"
+	if partial && (p.Kind.Value == releasename.KindMultiSeason || p.Kind.Value == releasename.KindComplete) {
+		ss.MatchReasons = append(ss.MatchReasons, matchFail("several_seasons", "holds more than one season; a season pack a few episodes at a time must hold one"))
+		return
+	}
+	if set.single && pack && !partial {
 		ss.MatchReasons = append(ss.MatchReasons, matchFail("season_pack", "a season pack; an episode search takes only that episode"))
 		return
 	}
@@ -360,6 +402,10 @@ func (set showSet) lines(ss *mediafiles.SlotSet, rel mediafiles.ReleaseFacts, re
 		}
 	}
 
+	if partial {
+		set.windowLines(ss, rel, covered, turnedFor)
+		return
+	}
 	if len(covered) == 1 {
 		e := covered[0]
 		ss.SlotIDs = []int64{e.sl.ID}
@@ -481,4 +527,51 @@ func (s *Searcher) pickShow(ctx context.Context, all []found, vs []mediafiles.Ve
 		out = append(out, showPick{idx: i, slots: vs[i].SlotIDs, held: held})
 	}
 	return out
+}
+
+// windowLines fills a season pack's Slots for an episode search or a feed check of a show
+// that takes packs a few episodes at a time: the next wanted episodes of the
+// pack, from the earliest, as many as the window. The searched episode must be
+// among them.
+func (set showSet) windowLines(ss *mediafiles.SlotSet, rel mediafiles.ReleaseFacts, covered []*epSlot, turnedFor func(int64) []string) {
+	for _, e := range covered {
+		if set.packed[e.it.ID] {
+			ss.MatchReasons = append(ss.MatchReasons, matchFail("pack_window", "this season pack is already being fetched a few episodes at a time"))
+			return
+		}
+	}
+	eps := slices.Clone(covered)
+	slices.SortStableFunc(eps, func(a, b *epSlot) int {
+		if a.ref.Season != b.ref.Season {
+			return a.ref.Season - b.ref.Season
+		}
+		return a.ref.Episode - b.ref.Episode
+	})
+	var win []*epSlot
+	for _, e := range eps {
+		if len(win) < set.window && e.sl != nil && e.soon && (set.target[e.sl.ID] || e.kept && e.sl.State == mediafiles.SlotWanted) {
+			win = append(win, e)
+		}
+	}
+	var target *epSlot
+	for _, e := range win {
+		if set.target[e.sl.ID] {
+			target = e
+		}
+	}
+	if target == nil {
+		ss.MatchReasons = append(ss.MatchReasons, matchFail("pack_window", "a season pack; it is taken for its earliest wanted episodes, and this one is not among them"))
+		return
+	}
+	ss.TurnedDown = turnedFor(target.sl.ID)
+	ss.Out = !set.notOut[target.sl.ID]
+	labels := make([]string, len(win))
+	for i, e := range win {
+		ss.SlotIDs = append(ss.SlotIDs, e.sl.ID)
+		labels[i] = e.ref.Label()
+		if !mediafiles.Gains(rel, set.pr.Body, e.cur) {
+			ss.MatchReasons = append(ss.MatchReasons, matchFail("no_gain", e.ref.Label()+" already has a copy as good"))
+		}
+	}
+	ss.GateDetail = "season pack, " + strings.Join(labels, ", ") + " only"
 }

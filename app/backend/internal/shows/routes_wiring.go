@@ -32,16 +32,20 @@ func (h *Handlers) Error(w http.ResponseWriter, err error) {
 func ShowError(w http.ResponseWriter, err error, other func(http.ResponseWriter, error)) {
 	var dup *ShowAlreadyAddedError
 	switch {
+	case metadata.SourceOff(err):
+		metadata.WriteSourceOff(w)
 	case errors.As(err, &dup):
 		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "title_id": dup.TitleID})
 	case errors.Is(err, library.ErrNoShowFolder), errors.Is(err, ErrShowNeverAdd):
 		webserver.Fail(w, http.StatusConflict, err.Error())
-	case errors.Is(err, library.ErrBadSeasonChoice), errors.Is(err, library.ErrBadNewSeasons), errors.Is(err, library.ErrBadOrder),
+	case errors.Is(err, library.ErrBadSeasonChoice), errors.Is(err, library.ErrBadNewSeasons), errors.Is(err, library.ErrBadOrder), errors.Is(err, library.ErrBadEpisodeGroup), errors.Is(err, library.ErrBadPackWindow),
 		errors.Is(err, library.ErrBadWait), errors.Is(err, library.ErrNotShowFolder), errors.Is(err, library.ErrMovieOnly),
 		errors.Is(err, library.ErrShowOnly), errors.Is(err, metadata.ErrUnknownSource):
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, library.ErrNotShow), errors.Is(err, library.ErrNoSuchSeason), errors.Is(err, metadata.ErrShowNotFound):
 		webserver.Fail(w, http.StatusNotFound, err.Error())
+	case errors.Is(err, library.ErrEpisodeGroupUnread):
+		webserver.Fail(w, http.StatusBadGateway, err.Error())
 	case errors.Is(err, metadata.ErrNoTVDBKey), errors.Is(err, library.ErrNoShowSources):
 		webserver.Fail(w, http.StatusServiceUnavailable, err.Error())
 	default:

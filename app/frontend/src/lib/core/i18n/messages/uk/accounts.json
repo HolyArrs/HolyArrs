@@ -366,8 +366,12 @@
 	"accounts.invite.confirm": "Підтвердь пароль",
 	"accounts.invite.joinSignIn": "Приєднатися й увійти",
 	"accounts.language.label": "Мова",
+	"accounts.language.top": "Найпоширеніші",
+	"accounts.language.more": "Інші мови",
 	"accounts.language.auto": "Автоматично",
 	"accounts.language.hint": "Автоматично — за твоїм браузером. Зберігається в обліковому записі.",
 	"accounts.language.saveFailed": "Не вдалося зберегти мову",
+	"accounts.language.count.one": "1 мова",
+	"accounts.language.count.other": "Мов: {n}",
 	"accounts.account.watchEveryone": "Власник увімкнув це для всіх. Вимкніть обидва, щоб зупинити."
 }

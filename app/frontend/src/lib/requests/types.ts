@@ -40,6 +40,8 @@ export interface AskSettings {
 	/** People may have their Plex watchlist asked for as them. */
 	plex_watchlists?: boolean;
 	plex_watchlists_everyone?: boolean;
+	/** Also read the watchlists of people imported from Plex, with the owner's Plex link. */
+	plex_friends?: boolean;
 }
 
 /** A TMDB or Trakt list whose movies are added on a schedule. */

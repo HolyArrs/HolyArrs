@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Mga Log",
+	"settings.logs.download": "I-download",
+	"settings.logs.filter": "I-filter ang log",
+	"settings.logs.level": "Antas",
+	"settings.logs.every": "Lahat ng linya",
+	"settings.logs.warnings": "Mga babala at error",
+	"settings.logs.errors": "Mga error lang",
+	"settings.logs.text": "Teksto",
+	"settings.logs.example": "hal. qBittorrent",
+	"settings.logs.from": "Mula",
+	"settings.logs.to": "Hanggang",
+	"settings.logs.apply": "Ilapat",
+	"settings.logs.clear": "I-clear",
+	"settings.logs.lines": "Mga linya",
+	"settings.logs.newer": "Mas bago",
+	"settings.logs.older": "Mas luma"
+}

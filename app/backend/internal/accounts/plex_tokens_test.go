@@ -321,3 +321,29 @@ func TestPlexLinkToAnotherAccountSignsOutTheOld(t *testing.T) {
 		t.Fatalf("kept %q (%d)", got, keptPlex(t, f))
 	}
 }
+
+// The owner's Settings link is what Plex friends are read with: its token
+// and chosen server, and nothing once it is unlinked.
+func TestPlexOwnerLinkForFriends(t *testing.T) {
+	p := fakePlexOwner(t)
+	f := gated(t, Options{PlexURL: p.URL, PlexAppURL: "https://app.example.test"})
+	ctx := context.Background()
+	if tok, server := f.a.PlexOwnerLink(ctx); tok != "" || server != "" {
+		t.Fatalf("before linking: %q %q", tok, server)
+	}
+	own := ownerOf(t, f)
+	own.do(t, f, "POST", "/api/v1/auth/plex/link/start", "")
+	if resp, out := own.do(t, f, "POST", "/api/v1/auth/plex/link/finish", `{"id":901}`); resp.StatusCode != 200 {
+		t.Fatalf("link: %d %s", resp.StatusCode, out)
+	}
+	own.do(t, f, "PUT", "/api/v1/auth/settings", `{"plex":{"on":false,"server_id":"mine-1","join":"nobody"}}`)
+	if tok, server := f.a.PlexOwnerLink(ctx); tok != ownerPlexTok || server != "mine-1" {
+		t.Fatalf("linked: %q %q", tok, server)
+	}
+	if resp, _ := own.do(t, f, "DELETE", "/api/v1/auth/plex/link", ""); resp.StatusCode != 200 {
+		t.Fatalf("unlink: %d", resp.StatusCode)
+	}
+	if tok, _ := f.a.PlexOwnerLink(ctx); tok != "" {
+		t.Fatalf("after unlink: %q", tok)
+	}
+}

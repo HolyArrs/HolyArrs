@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Prisijungti iš naujo",
+	"setup.testNow": "Tikrinti dabar",
+	"setup.movies": "Filmai",
+	"setup.tvShows": "TV serialai",
+	"setup.music": "Muzika",
+	"setup.subtitles": "Subtitrai",
+	"setup.fullPath": "Naudokite visą aplanko kelią, pavyzdžiui {path}.",
+	"setup.folderUsed": "Šis aplankas jau naudojamas arba yra naudojamame aplanke.",
+	"setup.folderMissing": "Tokio aplanko nėra. Patikrinkite kelią.",
+	"setup.addFolderOrOff": "Pridėkite aplanką arba išjunkite tai.",
+	"setup.notAnswering": "HolyArrs neatsako. Pabandykite dar kartą po akimirkos.",
+	"setup.addUserPasswordHint": "Įveskite naudotojo vardą ir slaptažodį.",
+	"setup.folders": "Aplankai",
+	"setup.downloader": "Atsisiuntėjas",
+	"setup.source": "Šaltinis"
+}

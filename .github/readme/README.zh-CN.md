@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <b>简体中文</b> · <a href="README.hi.md">हिन्दी</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.ar.md">العربية</a> · <a href="README.pt-BR.md">Português</a> · <a href="README.ru.md">Русский</a> · <a href="README.ja.md">日本語</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ko.md">한국어</a> · <a href="README.it.md">Italiano</a> · <a href="README.pl.md">Polski</a> · <a href="README.nl.md">Nederlands</a> · <a href="README.tr.md">Türkçe</a> · <a href="README.uk.md">Українська</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <b>简体中文</b> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="LANGUAGES.md">更多语言</a></p>
 
 <p align="center">
   <picture>
@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19：支持 rTorrent 和 ruTorrent 作为下载器**，种子盒也可以。完成的 Usenet 下载现在会移动到媒体库，而不是复制。 [新功能](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0：现已支持 44 种语言**，包括从右到左的语言。aria2 可作为下载器使用，整季资源包每次只下载几集。[查看新功能](https://holyarrs.com/whats-new/)
 
 > 你的 HolyArrs 里每一张海报、每一段预告片和每一个评分，都来自我自己运营、自己付费的服务器，所以它对所有人都免费。如果 HolyArrs 让你的电影之夜更好了一点，赞助一下，就能为我们所有人留着这盏灯 💛
 >
@@ -152,7 +150,7 @@ docker compose up -d
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="下载器：qBittorrent、Transmission、Deluge、SABnzbd、NZBGet。媒体服务器：Plex、Jellyfin、Emby。" /></picture>
 
-- **下载器：** qBittorrent、Transmission、Deluge、rTorrent、SABnzbd、NZBGet
+- **下载器：** qBittorrent、Transmission、Deluge、rTorrent、aria2、SABnzbd、NZBGet
 - **媒体服务器：** Plex、Jellyfin、Emby
 - **Sources：** 任何 Torznab 或 Newznab 索引器，或者 Prowlarr、Jackett
 - **可从这些应用迁移设置：** Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd
@@ -222,7 +220,7 @@ HolyArrs 只读取你的旧应用，不会改动它们里面的任何东西，�
 | 标签 | 用途 |
 | :----: | --- |
 | `latest` | 最新版本。 |
-| `1.0.19` | 固定的某一个版本，永远不会变。 |
+| `1.1.0` | 固定的某一个版本，永远不会变。 |
 
 ## 用法
 

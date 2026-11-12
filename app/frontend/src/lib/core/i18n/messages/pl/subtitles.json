@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Język",
 	"subtitles.wants.pick": "Wybierz język",
 	"subtitles.wants.takeOff": "Usuń: {name}",
-	"subtitles.wants.thisLanguage": "ten język"
+	"subtitles.wants.thisLanguage": "ten język",
+	"subtitles.made.translated": "Przetłumaczone",
+	"subtitles.made.partial": "Częściowo przetłumaczone",
+	"subtitles.made.ai": "Przetłumaczone przez AI",
+	"subtitles.made.machine": "Tłumaczenie maszynowe",
+	"subtitles.wants.translateFrom": "Tłumacz z",
+	"subtitles.wants.noTranslate": "Nie tłumacz",
+	"subtitles.panel.picture": "Obraz",
+	"subtitles.panel.pictureTitle": "Napisy obrazkowe: nie da się ich przetłumaczyć",
+	"subtitles.panel.translate": "Przetłumacz",
+	"subtitles.panel.translateFor": "Przetłumacz napisy: {name}",
+	"subtitles.panel.translateFrom": "Tłumacz z",
+	"subtitles.panel.translateQueued": "Tłumaczenie",
+	"subtitles.panel.translateQueuedBody": "Napisy ({name}) pojawią się tu po zakończeniu.",
+	"subtitles.panel.translating": "Nic nie znaleziono, więc tłumacz tworzy napisy."
 }

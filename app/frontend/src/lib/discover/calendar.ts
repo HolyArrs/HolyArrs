@@ -2,6 +2,7 @@
 import type { CalendarEntry, TitleView } from '../core/types.ts';
 import { episodeCode as code } from '../core/episodes.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { views } from '#lib/core/views.svelte.ts';
 
 /** Which titles the calendar shows. */
 export type TitlesShown = 'all' | 'movies' | 'shows' | 'music';
@@ -159,6 +160,19 @@ export function weekStart(d: Date): Date {
 	return new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
 }
 
+/** A week as one short range in the language's own order ("Nov 24 – 30", "24.–30. Nov."); the year shows only when it is not this year. */
+export function weekRange(from: Date, to: Date, locale: string | undefined, now = new Date()): string {
+	const year = from.getFullYear() !== now.getFullYear() || to.getFullYear() !== now.getFullYear();
+	const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', ...(year ? { year: 'numeric' } : {}) };
+	let f: Intl.DateTimeFormat;
+	try {
+		f = new Intl.DateTimeFormat(locale, opts);
+	} catch {
+		f = new Intl.DateTimeFormat(undefined, opts);
+	}
+	return typeof f.formatRange === 'function' ? f.formatRange(from, to) : `${f.format(from)} – ${f.format(to)}`;
+}
+
 const viewKey = 'holyarrs.calendar-view';
 
 /** Reads ?view=: cards or list. Old layout links still land somewhere sensible (now or 0, the old page, opens List; 1 to 5 open Cards). */
@@ -169,8 +183,9 @@ export function viewFromAddress(v: string | null | undefined): CalendarView | nu
 	return null;
 }
 
-/** The view picked earlier in this session, if any. */
-export function readView(store: Pick<Storage, 'getItem'> | undefined = globalThis.sessionStorage): CalendarView | null {
+/** The view picked earlier: the one saved to the account, else this tab's, if any. */
+export function readView(store: Pick<Storage, 'getItem'> | undefined = globalThis.sessionStorage, saved: unknown = views.get('calendar.view')): CalendarView | null {
+	if (saved === 'cards' || saved === 'list') return saved;
 	try {
 		const v = store?.getItem(viewKey);
 		return v === 'cards' || v === 'list' ? v : null;
@@ -277,8 +292,9 @@ export function withFollow<T extends CalendarEntry>(e: T, on: boolean, me: { nam
 
 const followsKey = 'holyarrs.calendar-follows';
 
-/** The Follows choice picked earlier in this session, if any. */
-export function readFollows(store: Pick<Storage, 'getItem'> | undefined = globalThis.sessionStorage): Follows | null {
+/** The Follows choice picked earlier: the one saved to the account, else this tab's, if any. */
+export function readFollows(store: Pick<Storage, 'getItem'> | undefined = globalThis.sessionStorage, saved: unknown = views.get('calendar.follows')): Follows | null {
+	if (saved === 'mine' || saved === 'everyone' || saved === 'library') return saved;
 	try {
 		const v = store?.getItem(followsKey);
 		return v === 'mine' || v === 'everyone' || v === 'library' ? v : null;

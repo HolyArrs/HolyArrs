@@ -209,6 +209,28 @@ func absolutes(eps []metadata.Episode) map[[2]int]int {
 	return out
 }
 
+// groupAbsolutes counts the episodes of a chosen episode order in that
+// order. Episodes the order leaves out get none.
+func groupAbsolutes(eps []metadata.Episode) map[[2]int]int {
+	var in []metadata.Episode
+	for _, e := range eps {
+		if e.AltSeason > 0 && e.AltEpisode > 0 {
+			in = append(in, e)
+		}
+	}
+	sort.SliceStable(in, func(i, j int) bool {
+		if in[i].AltSeason != in[j].AltSeason {
+			return in[i].AltSeason < in[j].AltSeason
+		}
+		return in[i].AltEpisode < in[j].AltEpisode
+	})
+	out := map[[2]int]int{}
+	for i, e := range in {
+		out[[2]int{e.Season, e.Number}] = i + 1
+	}
+	return out
+}
+
 // ShowSync says what one sync of a show's seasons and episodes did.
 type ShowSync struct {
 	SeasonsAdded    int     `json:"seasons_added"`
@@ -333,6 +355,9 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, sh metadata
 		return out, err
 	}
 	abs := absolutes(sh.Episodes)
+	if sh.Grouped {
+		abs = groupAbsolutes(sh.Episodes)
+	}
 	wait := time.Duration(defs.WaitMinutes) * time.Minute
 	seen := map[[2]int]bool{}
 	var eps []metadata.Episode
@@ -456,6 +481,9 @@ func syncShowTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, sh metadata
 		if it := match[key]; it != nil {
 			if sh.AltStale {
 				altS, altE = it.Numbers.AltSeason, it.Numbers.AltEpisode
+				if t.EpisodeGroupID != nil && *t.EpisodeGroupID != "" {
+					absolute = it.Numbers.Absolute // the order's own count stays too
+				}
 			}
 			ids := map[string]string{}
 			for k, v := range it.SourceIDs {

@@ -38,6 +38,14 @@
 	"settings.libraryFolders.foldersHint": "مسار واحد في كل سطر، مثل /data/imports. حتى 32.",
 	"settings.libraryFolders.ownerOnly": "للمالك والمشرفين فقط",
 	"settings.libraryFolders.copiesExpected": "النسخ أمر متوقع",
-	"settings.libraryFolders.copiesExpectedState": "ينسخ، كما هو متوقع",
-	"settings.libraryFolders.warnAgain": "التنبيه مجددًا"
+	"settings.libraryFolders.copiesExpectedState": "نسخ كاملة، كما اخترت",
+	"settings.libraryFolders.whyCopies": "لماذا؟",
+	"settings.libraryFolders.stateInstant": "فوري، بلا مساحة إضافية",
+	"settings.libraryFolders.warnAgain": "التنبيه مجددًا",
+	"settings.libraryFolders.changePath": "تغيير المسار",
+	"settings.libraryFolders.changePathOf": "تغيير مسار {path}",
+	"settings.libraryFolders.newPath": "المسار الجديد",
+	"settings.libraryFolders.changePathHint": "انقل الملفات إلى هناك أولًا. يفحص HolyArrs كل ملف ولا ينقل شيئًا.",
+	"settings.libraryFolders.checkingFiles": "جارٍ فحص الملفات…",
+	"settings.libraryFolders.pathChanged": "تم تغيير المسار"
 }

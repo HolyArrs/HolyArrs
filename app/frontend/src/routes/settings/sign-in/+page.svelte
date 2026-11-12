@@ -8,32 +8,22 @@
 	import SettingsLinks from '#lib/ui/SettingsLinks.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import Icon from '#lib/ui/Icon.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { SsoCard } from '#lib/accounts/index.ts';
+	import { LocalSkipCard, SsoCard, type LocalSkip } from '#lib/accounts/index.ts';
 	import { onMount } from 'svelte';
 	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 
-	let skipLocal = $state(false);
 	let loaded = $state(false);
 	let error = $state('');
 	let settingsOk = $state(false);
 	let settingsLoading = $state(false);
-	let savingSkip = $state(false);
-	// Networks where sign-in may be skipped, one per line.
-	let nets = $state('');
-	let seenAddress = $state('');
-	let proxyUntrusted = $state(false);
-	let gatewayNets = $state<string[]>([]);
-	let savingNets = $state(false);
 	let hostNames = $state('');
 	let savingHosts = $state(false);
-	const netList = () => nets.split(/[\s,]+/).filter(Boolean);
 	let savingRequire = $state(false);
 
 	function strongNote(e: unknown): string {
@@ -48,12 +38,7 @@
 		allow: string;
 	}
 	type WayName = 'plex' | 'jellyfin' | 'emby';
-	interface SignInSettings {
-		skip_login_local_network: boolean;
-		local_networks?: string[];
-		seen_address?: string;
-		gateway_networks?: string[];
-		proxy_untrusted?: boolean;
+	interface SignInSettings extends LocalSkip {
 		allowed_hosts?: string[];
 		require_two_factor_admins: boolean;
 		min_password_length: number;
@@ -220,12 +205,9 @@
 		return t('settings.signIn.everyoneText', { who, count });
 	}
 
+	let local = $state<LocalSkip>({ skip_login_local_network: false });
 	function took(r: SignInSettings) {
-		skipLocal = r.skip_login_local_network;
-		nets = (r.local_networks ?? []).join('\n');
-		seenAddress = r.seen_address ?? '';
-		gatewayNets = r.gateway_networks ?? [];
-		proxyUntrusted = r.proxy_untrusted === true;
+		local = r;
 		hostNames = (r.allowed_hosts ?? []).join('\n');
 		requireAdmins = r.require_two_factor_admins;
 		minLength = r.min_password_length ?? 8;
@@ -308,36 +290,6 @@
 		await loadSettings();
 		loaded = true;
 	});
-
-	async function setSkip(v: boolean) {
-		if (savingSkip) return;
-		const before = skipLocal;
-		skipLocal = v;
-		savingSkip = true;
-		try {
-			// Turning it on saves the networks typed below with it.
-			took(await api.put<SignInSettings>('/auth/settings', v ? { skip_login_local_network: v, local_networks: netList() } : { skip_login_local_network: v }));
-			toasts.push(skipLocal ? t('settings.signIn.skips') : t('settings.signIn.neededEverywhere'), 'ok');
-		} catch (e) {
-			skipLocal = before;
-			toasts.push(t('settings.signIn.couldntSave'), 'fail', { body: strongNote(e) });
-		} finally {
-			savingSkip = false;
-		}
-	}
-
-	async function saveNets(e: SubmitEvent) {
-		e.preventDefault();
-		savingNets = true;
-		try {
-			took(await api.put<SignInSettings>('/auth/settings', { local_networks: netList() }));
-			toasts.push(t('settings.signIn.netsSaved'), 'ok');
-		} catch (err) {
-			toasts.push(t('settings.signIn.couldntSave'), 'fail', { body: strongNote(err) });
-		} finally {
-			savingNets = false;
-		}
-	}
 
 	async function saveHosts(e: SubmitEvent) {
 		e.preventDefault();
@@ -478,36 +430,9 @@
 		</SettingsCard>
 	{/each}
 	{#if isOwner}<SsoCard id="sso-card" />{/if}
-	<SettingsCard id="local-card" title={t('settings.signIn.local')}>
-			<label class="switch" style="margin-top: var(--s-3)">
-				<input type="checkbox" checked={skipLocal} disabled={savingSkip} aria-busy={savingSkip} onchange={(e) => setSkip(e.currentTarget.checked)} />
-				<span class="sw" aria-hidden="true"></span>
-				<span>{t('settings.signIn.skipLocal')}</span>
-			</label>
-			<p class="hint">
-				{t('settings.signIn.skipNote')}
-			</p>
-			<p class="hint">{t('settings.signIn.directOnly')}</p>
-			<p class="hint">{t('settings.signIn.keysNeed')}</p>
-			<form class="nets" onsubmit={saveNets}>
-				<Field id="local-nets" label={t('settings.signIn.nets')} hint={t('settings.signIn.netsHint')}>
-					<textarea id="local-nets" class="input" rows="3" bind:value={nets} spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
-				</Field>
-				<Button type="submit" disabled={savingNets} aria-busy={savingNets}>{t('settings.signIn.save')}</Button>
-			</form>
-			{#if seenAddress}<p class="hint" data-testid="seen-address">{t('settings.signIn.seesAs')} <span class="mono">{seenAddress}</span>.</p>{/if}
-			{#if proxyUntrusted}<p class="hint" data-testid="proxy-untrusted">
-					{t('settings.signIn.proxyA')}
-					<span class="mono">HOLYARRS_TRUSTED_PROXIES</span> {t('settings.signIn.proxyB')}
-				</p>{/if}
-			{#if gatewayNets.length}
-				<p class="notice warn" role="status" data-testid="gateway-warn">
-					<Icon name="info" size={18} /><span
-						>{t(gatewayNets.length === 1 ? 'settings.signIn.gatewayOne' : 'settings.signIn.gatewayMany', { nets: gatewayNets.join(', ') })}</span
-					>
-				</p>
-			{/if}
-	</SettingsCard>
+	{#if !local.media_sign_in?.length || local.skip_login_local_network}
+		<LocalSkipCard settings={local} {isOwner} {strongNote} onsaved={(r) => took(r as SignInSettings)} />
+	{/if}
 
 	{/if}
 
@@ -624,13 +549,11 @@
 		margin: 0;
 		display: grid;
 		gap: var(--s-3);
-		max-width: 520px;
 	}
 	.nets {
 		display: grid;
 		gap: var(--s-3);
 		margin-top: var(--s-3);
-		max-width: 520px;
 	}
 	.way :global(button),
 	.nets :global(button),

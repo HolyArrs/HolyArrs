@@ -29,6 +29,7 @@ type fakeNZBGet struct {
 	appendHTTPError bool
 	hideAppend      bool
 	hidden          []map[string]any
+	config          []nzbParam // the options "config" answers
 }
 
 func (f *fakeNZBGet) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -62,6 +63,8 @@ func (f *fakeNZBGet) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch in.Method {
 	case "version":
 		result = "26.3"
+	case "config":
+		result = f.config
 	case "listgroups":
 		if f.groups == nil {
 			result = []map[string]any{}

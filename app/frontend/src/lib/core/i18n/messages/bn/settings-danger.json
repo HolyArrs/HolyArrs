@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs বন্ধ হচ্ছে।",
+	"settings.danger.couldnt": "{action} করা যায়নি",
+	"settings.danger.title": "ডেঞ্জার জোন",
+	"settings.danger.ownerOnly": "শুধু ওনার ও অ্যাডমিন",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "হ্যাঁ, {action}",
+	"settings.danger.cancel": "বাতিল",
+	"settings.danger.expires": "৬০ সেকেন্ডে মেয়াদ শেষ",
+	"settings.danger.wholeApp": "পুরো অ্যাপ",
+	"settings.danger.intro": "এগুলো HolyArrs বন্ধ করে। Docker-এর রিস্টার্ট নীতি কয়েক সেকেন্ডে আবার চালু করে, যদি নীতিটি <code>no</code> না হয়; হলে কন্টেইনার নিজে চালু করুন। প্রতিটির আগে জিজ্ঞেস করা হয়।",
+	"settings.danger.restart": "HolyArrs রিস্টার্ট করুন",
+	"settings.danger.safe": "সেফ মোডে রিস্টার্ট করুন",
+	"settings.danger.shutdown": "বন্ধ করুন",
+	"settings.danger.safeNote": "শুধু সাইন ইন, সেটিংস ও লাইব্রেরি নিয়ে একবার চালু হয়। কোনো অংশ চালু হতে বাধা দিলে এটি ব্যবহার করুন।"
+}

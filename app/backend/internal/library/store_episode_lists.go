@@ -2,12 +2,14 @@ package library
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
@@ -234,4 +236,90 @@ func MissingEpisodes(ctx context.Context, q MissingReader, kept bool, sortColumn
 		out.IDs = append(out.IDs, id)
 	}
 	return out, rows.Err()
+}
+
+// EpisodeNamedNumbers maps each episode of a show to the season and number
+// release names use for it: the release-name numbers when set, else TMDB's.
+func EpisodeNamedNumbers(ctx context.Context, q database.Lister, titleID int64) (map[int64][2]int, error) {
+	rows, err := q.QueryContext(ctx, `SELECT id, COALESCE(json_extract(numbers, '$.alt_season'), json_extract(numbers, '$.season'), 0),
+		COALESCE(json_extract(numbers, '$.alt_episode'), json_extract(numbers, '$.episode'), 0) FROM items WHERE title_id = ? AND kind = 'episode'`, titleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[int64][2]int{}
+	for rows.Next() {
+		var id int64
+		var n [2]int
+		if err := rows.Scan(&id, &n[0], &n[1]); err != nil {
+			return nil, err
+		}
+		out[id] = n
+	}
+	return out, rows.Err()
+}
+
+// HasEpisodeGroup reports whether a show follows a chosen TMDB episode order.
+func HasEpisodeGroup(ctx context.Context, q database.Lister, titleID int64) (bool, error) {
+	rows, err := q.QueryContext(ctx, `SELECT COALESCE(episode_group_id, '') != '' FROM titles WHERE id = ?`, titleID)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	grouped := false
+	for rows.Next() {
+		if err := rows.Scan(&grouped); err != nil {
+			return false, err
+		}
+	}
+	return grouped, rows.Err()
+}
+
+// OrderEpisodeRow is one episode of a show as season counts by a chosen
+// episode order read it. AltSeason is 0 when the episode has no
+// release-name season.
+type OrderEpisodeRow struct {
+	PartID    int64
+	AltSeason int
+	AirDate   sql.NullString
+	Keep      bool
+	State     string // the main Version's Slot state, "" when none
+}
+
+// OrderEpisodeRows reads every episode of a show with its release-name
+// season and the main Version's Slot state, in that season's order.
+func OrderEpisodeRows(ctx context.Context, q database.Lister, titleID int64) ([]OrderEpisodeRow, error) {
+	rows, err := q.QueryContext(ctx, `SELECT COALESCE(i.part_id, 0), COALESCE(json_extract(i.numbers, '$.alt_season'), 0) AS sn, i.air_date, i.keep_up_to_date, COALESCE(s.state, '') FROM items i
+		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1)
+		WHERE i.title_id = ? AND i.kind = 'episode' ORDER BY sn`, titleID, titleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []OrderEpisodeRow
+	for rows.Next() {
+		var r OrderEpisodeRow
+		if err := rows.Scan(&r.PartID, &r.AltSeason, &r.AirDate, &r.Keep, &r.State); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
+// SetEpisodeGroup puts a show back on the episode order id; nil or ""
+// is TMDB's own numbering.
+func SetEpisodeGroup(ctx context.Context, st *database.Store, titleID int64, id *string, by domain.Actor) error {
+	return st.Write(ctx, func(tx *sql.Tx) error {
+		var t mediafiles.Title
+		if err := database.Get(ctx, tx, "titles", titleID, &t); err != nil {
+			return err
+		}
+		t.EpisodeGroupID = nil
+		if id != nil && *id != "" {
+			g := *id
+			t.EpisodeGroupID = &g
+		}
+		return database.Update(tx, "titles", &t, by)
+	})
 }

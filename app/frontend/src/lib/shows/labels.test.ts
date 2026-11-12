@@ -112,3 +112,15 @@ describe('the season a show opens on', () => {
 		expect(keepOffNote(true, true)).toBe('');
 	});
 });
+
+describe('packWindowValue', () => {
+	it('keeps a season pack window between 1 and 10, and 0 when off', async () => {
+		const { packWindowValue } = await import('./labels.ts');
+		expect(packWindowValue(0)).toBe(0);
+		expect(packWindowValue(2)).toBe(2);
+		expect(packWindowValue(14)).toBe(10);
+		expect(packWindowValue(-3)).toBe(0);
+		expect(packWindowValue(2.6)).toBe(3);
+		expect(packWindowValue(Number.NaN)).toBe(1);
+	});
+});

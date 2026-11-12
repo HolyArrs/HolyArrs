@@ -23,6 +23,7 @@ Aliases []string `db:"aliases,json"`
 SourceIDs map[string]string `db:"source_ids,json"`
 MetadataSource string `db:"metadata_source"`
 EpisodeOrder *string `db:"episode_order"`
+EpisodeGroupID *string `db:"episode_group_id"`
 KeepUpToDate bool `db:"keep_up_to_date"`
 NewPartsPolicy string `db:"new_parts_policy"`
 ReleaseGate string `db:"release_gate"`
@@ -41,6 +42,7 @@ GateOpensAt *time.Time `db:"gate_opens_at"`
 DroppedAt *time.Time `db:"dropped_at"`
 SeasonChoice *string `db:"season_choice"`
 FutureFrom *time.Time `db:"future_from"`
+PackWindow int `db:"pack_window"`
 Network *string `db:"network"`
 AirTime *string `db:"air_time"`
 TimeZone *string `db:"time_zone"`

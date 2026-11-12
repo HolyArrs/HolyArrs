@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Pengaturan",
+	"alerts.panel.clearAll": "Hapus semua",
+	"alerts.panel.empty": "Belum ada apa-apa",
+	"alerts.panel.needsAttention": "Perlu perhatian",
+	"alerts.panel.recent": "Terbaru",
+	"alerts.panel.remove": "Hapus {text}",
+	"alerts.panel.title": "Peringatan terbaru",
+	"alerts.state.manyNeed": "{count} perlu perhatian",
+	"alerts.state.ok": "Semua beres",
+	"alerts.state.oneNeeds": "1 perlu perhatian",
+	"alerts.state.unset": "Belum diatur",
+	"alerts.time.days": "{n} hr",
+	"alerts.time.hours": "{n} j",
+	"alerts.time.minutes": "{n} m",
+	"alerts.time.now": "baru saja"
+}

@@ -116,7 +116,7 @@ async function deleteWithFiles(page: Page, name: string) {
 }
 
 // Import files by hand.
-test('Import files by hand: the scan guesses the movie, Copy imports it and its Library tab shows the file', async ({ page }) => {
+test('Import files by hand: the scan guesses the movie, Import adds it and its Library tab shows the file', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
 	const id = await freshMovie(call, 900007, 'Northern Kettle');
@@ -132,17 +132,16 @@ test('Import files by hand: the scan guesses the movie, Copy imports it and its 
 	// Scanning only reads: the file is still where it was.
 	expect(existsSync(file)).toBe(true);
 
-	await page.getByRole('radio', { name: /^Copy/ }).check();
 	const answer = page.waitForResponse((r) => r.request().method() === 'POST' && r.url().endsWith('/api/v1/manual-import'));
 	await page.getByRole('button', { name: 'Import 1 file' }).click();
 	const [res] = ((await (await answer).json()) as { results: { outcome: string; target?: string; title_id?: number }[] }).results;
 	expect(res.outcome).toBe('placed');
 	expect(res.title_id).toBe(id);
 	const target = res.target ?? '';
-	await expect(row.getByRole('status')).toContainText(/^(Copied|Linked \(no extra space\))/);
+	await expect(row.getByRole('status')).toContainText(/^(Added to the Library \(no extra space used\)|Copied to the Library \(uses extra space\))/);
 	await expect(page.getByText('1 file imported')).toBeVisible();
 	await expect(row.getByRole('checkbox')).not.toBeChecked();
-	// Copy keeps the original and puts a copy (or a link) in the Library folder.
+	// Importing keeps the original and puts a link (or a real copy) in the Library folder.
 	expect(existsSync(file)).toBe(true);
 	expect(existsSync(target)).toBe(true);
 

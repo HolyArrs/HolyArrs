@@ -68,5 +68,9 @@
 	"settings.sources.changeButton": "Modifica",
 	"settings.sources.removeName": "Rimuovi {name}",
 	"settings.sources.remove": "Rimuovi",
-	"settings.sources.bridge": "Collega Jackett o Prowlarr"
+	"settings.sources.bridge": "Collega Jackett o Prowlarr",
+	"settings.sources.off": "Le fonti sono spente",
+	"settings.sources.offText": "HolyArrs non cerca né scarica. I download aggiunti nel downloader vengono comunque importati.",
+	"settings.sources.openParts": "Apri Parti",
+	"settings.sources.offState": "Spento"
 }

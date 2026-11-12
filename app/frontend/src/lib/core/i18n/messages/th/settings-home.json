@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "ขั้นสูง",
+	"settings.home.page": "{group} · หน้า",
+	"settings.home.title": "ตั้งค่า",
+	"settings.home.search": "ค้นหาการตั้งค่า",
+	"settings.home.matching": "การตั้งค่าที่ตรงกัน",
+	"settings.home.noMatch": "ไม่พบการตั้งค่าที่ตรงกัน",
+	"settings.home.noMatchText": "ลองคำอื่น เช่น โฟลเดอร์ คีย์ หรือรหัสผ่าน",
+	"settings.home.clear": "ล้างการค้นหา"
+}

@@ -467,8 +467,11 @@ type rssXML struct {
 }
 
 func textQuery(q Query) string {
-	words := strings.FieldsFunc(q.Title, func(r rune) bool {
-		return r != '\'' && !unicode.IsLetter(r) && !unicode.IsDigit(r)
+	// Apostrophes go without a space (Schitt's -> Schitts): most sites find
+	// nothing when the term keeps them. Other punctuation splits words.
+	title := strings.NewReplacer("'", "", "’", "", "‘", "", "`", "").Replace(q.Title)
+	words := strings.FieldsFunc(title, func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
 	})
 	if q.Year > 0 {
 		words = append(words, strconv.Itoa(q.Year))
@@ -489,7 +492,65 @@ func (c *Client) Search(ctx context.Context, q Query) ([]Item, error) {
 		}
 		caps = &got
 	}
+	v, ids, err := searchValues(q, *caps, true)
+	if err != nil {
+		return nil, err
+	}
+	items, err := c.searchWith(ctx, q, *caps, v)
+	if err != nil || !ids || len(items) == 0 {
+		return items, err
+	}
+	// A site that lists an id but ignores it answers with its newest
+	// releases. When none of them names the title, ask again by title.
+	name := strings.Fields(strings.ToLower(textQuery(Query{Title: q.Title})))
+	if len(name) == 0 {
+		return items, nil
+	}
+	for _, it := range items {
+		if namesAll(it.Title, name) {
+			return items, nil
+		}
+	}
+	v, _, err = searchValues(q, *caps, false)
+	if err != nil {
+		return items, nil
+	}
+	byName, err := c.searchWith(ctx, q, *caps, v)
+	if err != nil {
+		return items, nil
+	}
+	for _, it := range byName {
+		if namesAll(it.Title, name) {
+			return byName, nil
+		}
+	}
+	return append(items, byName...), nil
+}
+
+// namesAll says whether a release name holds every word of the title.
+func namesAll(release string, words []string) bool {
+	got := map[string]bool{}
+	for _, w := range strings.Fields(strings.ToLower(textQuery(Query{Title: release}))) {
+		got[w] = true
+	}
+	for _, w := range words {
+		if !got[w] {
+			return false
+		}
+	}
+	return true
+}
+
+// ErrNothingToSearch is a search with no title and no id the Source takes. It
+// is the title's fault, not the Source's, so it never pauses a Source.
+var ErrNothingToSearch = errors.New("nothing to search for: no title and no id the Source takes")
+
+// searchValues builds a search. withIDs false sends the title even where the
+// Source takes an id. It refuses a search with neither a title nor an id the
+// Source takes: a site answers that with its newest releases.
+func searchValues(q Query, caps Caps, withIDs bool) (url.Values, bool, error) {
 	v := url.Values{}
+	ids := false
 	switch {
 	case q.Music && caps.MusicSearch:
 		v.Set("t", "music")
@@ -510,15 +571,14 @@ func (c *Client) Search(ctx context.Context, q Query) ([]Item, error) {
 		v.Set("t", "search")
 		v.Set("q", textQuery(Query{Title: q.Artist + " " + q.Album}))
 	case q.Music:
-		return nil, &Error{Kind: KindBroken, Msg: "the Source offers no music search"}
+		return nil, false, &Error{Kind: KindBroken, Msg: "the Source offers no music search"}
 	case q.TV && caps.TVSearch:
 		v.Set("t", "tvsearch")
-		ids := false
-		if q.TVDB > 0 && caps.Supports("tv", "tvdbid") {
+		if withIDs && q.TVDB > 0 && caps.Supports("tv", "tvdbid") {
 			v.Set("tvdbid", strconv.Itoa(q.TVDB))
 			ids = true
 		}
-		if q.TVMaze > 0 && caps.Supports("tv", "tvmazeid") {
+		if withIDs && q.TVMaze > 0 && caps.Supports("tv", "tvmazeid") {
 			v.Set("tvmazeid", strconv.Itoa(q.TVMaze))
 			ids = true
 		}
@@ -533,29 +593,39 @@ func (c *Client) Search(ctx context.Context, q Query) ([]Item, error) {
 		}
 	case q.TV && caps.Search:
 		v.Set("t", "search")
-		v.Set("q", strings.TrimSpace(textQuery(Query{Title: q.Title})+" "+q.Words))
+		if t := textQuery(Query{Title: q.Title}); t != "" {
+			v.Set("q", strings.TrimSpace(t+" "+q.Words))
+		}
 	case q.TV:
-		return nil, &Error{Kind: KindBroken, Msg: "the Source offers no show search"}
+		return nil, false, &Error{Kind: KindBroken, Msg: "the Source offers no show search"}
 	case caps.MovieSearch:
 		v.Set("t", "movie")
-		ids := false
-		if q.IMDb != "" && caps.Supports("movie", "imdbid") {
-			v.Set("imdbid", strings.TrimPrefix(q.IMDb, "tt"))
+		if id := strings.TrimPrefix(q.IMDb, "tt"); withIDs && id != "" && caps.Supports("movie", "imdbid") {
+			v.Set("imdbid", id)
 			ids = true
 		}
-		if q.TMDb > 0 && caps.Supports("movie", "tmdbid") {
+		if withIDs && q.TMDb > 0 && caps.Supports("movie", "tmdbid") {
 			v.Set("tmdbid", strconv.Itoa(q.TMDb))
 			ids = true
 		}
-		if !ids {
+		if !ids && textQuery(Query{Title: q.Title}) != "" {
 			v.Set("q", textQuery(q))
 		}
 	case caps.Search:
 		v.Set("t", "search")
-		v.Set("q", textQuery(q))
+		if textQuery(Query{Title: q.Title}) != "" {
+			v.Set("q", textQuery(q))
+		}
 	default:
-		return nil, &Error{Kind: KindBroken, Msg: "the Source offers no search"}
+		return nil, false, &Error{Kind: KindBroken, Msg: "the Source offers no search"}
 	}
+	if !ids && strings.TrimSpace(v.Get("q")) == "" && v.Get("artist") == "" && v.Get("album") == "" {
+		return nil, false, ErrNothingToSearch
+	}
+	return v, ids, nil
+}
+
+func (c *Client) searchWith(ctx context.Context, q Query, caps Caps, v url.Values) ([]Item, error) {
 	if len(q.Categories) > 0 {
 		cs := make([]string, len(q.Categories))
 		for i, n := range q.Categories {

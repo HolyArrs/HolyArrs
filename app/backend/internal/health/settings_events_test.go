@@ -13,6 +13,8 @@ func TestSettingsChangeAreas(t *testing.T) {
 		{"GET", "/api/v1/auth/settings", "", "", false},
 		{"POST", "/api/v1/pick-rules", "pick-rules", "added", true},
 		{"PUT", "/api/v1/library-folders/3", "library-folders", "changed", true},
+		{"PUT", "/api/v1/library-folders/3/path", "library-folders", "changed", true},
+		{"PUT", "/api/v1/downloaders/3/path", "", "", false},
 		{"DELETE", "/api/v1/sources/4", "sources", "deleted", true},
 		{"PUT", "/api/v1/outside-lists/5", "outside-lists", "changed", true},
 		{"POST", "/api/v1/downloaders", "downloaders", "added", true},

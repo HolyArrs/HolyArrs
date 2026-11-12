@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Plex izleme listelerinden iste",
 	"settings.requests.plexOnHint": "Herkes bunu Hesabım'da açar. Limitleri geçerlidir.",
 	"settings.requests.plexEveryone": "Plex ile giriş yapan herkes için aç",
-	"settings.requests.plexEveryoneHint": "Herkes bunu Hesabım bölümünden kendisi için kapatabilir."
+	"settings.requests.plexEveryoneHint": "Herkes bunu Hesabım bölümünden kendisi için kapatabilir.",
+	"settings.requests.plexFriends": "Plex arkadaşlarını dahil et",
+	"settings.requests.plexFriendsHint": "Plex'ten içe aktardığın arkadaşlar. Plex bağlantınla okunur; her arkadaşın kendi sınırları geçerlidir.",
+	"settings.requests.plexFriendsNoLink": "Önce Ayarlar › Giriş'te Plex'i bağla.",
+	"settings.requests.plexFriendsNone": "Plex'ten henüz kimse içe aktarılmadı.",
+	"settings.requests.plexFriendsRead": "Okundu: {when}",
+	"settings.requests.plexFriendsNotYet": "Henüz okunmadı",
+	"settings.requests.plexFriendsAsked": "İstenen: {n}"
 }

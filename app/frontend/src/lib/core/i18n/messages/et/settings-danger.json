@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs peatub.",
+	"settings.danger.couldnt": "Ei õnnestunud: {action}",
+	"settings.danger.title": "Ohutsoon",
+	"settings.danger.ownerOnly": "Ainult omanikule ja administraatoritele",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Jah, {action}",
+	"settings.danger.cancel": "Tühista",
+	"settings.danger.expires": "Aegub 60 s pärast",
+	"settings.danger.wholeApp": "Kogu rakendus",
+	"settings.danger.intro": "Need peatavad HolyArrsi. Dockeri taaskäivituspoliitika käivitab selle mõne sekundi pärast uuesti, välja arvatud juhul, kui poliitika on <code>no</code>; siis käivita konteiner ise. Iga toiming küsib enne kinnitust.",
+	"settings.danger.restart": "Taaskäivita HolyArrs",
+	"settings.danger.safe": "Taaskäivita turvarežiimis",
+	"settings.danger.shutdown": "Lülita välja",
+	"settings.danger.safeNote": "Käivitub üks kord, kuvades ainult sisselogimise, seaded ja meediakogu. Kasuta seda, kui moodul takistab käivitumist."
+}

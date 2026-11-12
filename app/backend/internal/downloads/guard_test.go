@@ -73,7 +73,7 @@ func TestDownloaderGuardClassifiesTemporaryHTTPFailures(t *testing.T) {
 }
 
 func TestOptionalPolicyRefusalDoesNotTripDownloaderGuard(t *testing.T) {
-	for _, kind := range []string{"transmission", "nzbget", "deluge", "rtorrent"} {
+	for _, kind := range []string{"transmission", "nzbget", "deluge", "rtorrent", "aria2"} {
 		t.Run(kind, func(t *testing.T) {
 			e, err := (&Manager{}).EngineFor(context.Background(), domain.Downloader{Adapter: kind, URL: "http://127.0.0.1:1"})
 			if err != nil {

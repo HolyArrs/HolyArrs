@@ -75,6 +75,8 @@ type Service struct {
 	access func(context.Context) (string, error)
 	http   *http.Client
 	hold   serviceHold
+	// regHold is the wait after a failed registration (hosted.go).
+	regHold serviceHold
 	// local answers music from the packages kept on disk (SetLocalMusic).
 	local atomic.Pointer[localHolder]
 }
@@ -118,7 +120,7 @@ func serviceContext(ctx context.Context) (context.Context, context.CancelFunc) {
 }
 
 func serviceFallback(ctx context.Context, err error) bool {
-	return ctx.Err() == nil && (errors.Is(err, ErrServiceUnavailable) || errors.Is(err, ErrServiceBusy) || errors.Is(err, ErrServicePending) || errors.Is(err, ErrServiceIncomplete) || errors.Is(err, outbound.ErrSuppressed))
+	return ctx.Err() == nil && (errors.Is(err, ErrServiceUnavailable) || errors.Is(err, ErrServiceBusy) || errors.Is(err, ErrServicePending) || errors.Is(err, ErrServiceIncomplete) || errors.Is(err, outbound.ErrSuppressed) || errors.Is(err, ErrSourceOff))
 }
 
 type serviceEnvelope struct {
@@ -307,7 +309,7 @@ func (s *Service) get(ctx context.Context, path, provider, id string, q url.Valu
 		if ctx.Err() != nil {
 			return out, ctx.Err()
 		}
-		return out, ErrServiceAccess
+		return out, accessErr(e)
 	}
 	// Fetch-ahead has its own breaker, so failing warm-ups never hold back
 	// a person's page.
@@ -329,7 +331,7 @@ func (s *Service) get(ctx context.Context, path, provider, id string, q url.Valu
 			result = outbound.Success
 		case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 			result = outbound.Canceled
-		case errors.Is(err, ErrServiceBusy):
+		case errors.Is(err, ErrServiceBusy), errors.Is(err, ErrSourceOff):
 			// "Slow down" (from the server or our own pacing) says nothing about the server being down.
 			result = outbound.Canceled
 		case errors.Is(err, ErrServiceUnavailable):
@@ -352,7 +354,7 @@ func (s *Service) get(ctx context.Context, path, provider, id string, q url.Valu
 				if ctx.Err() != nil {
 					return out, ctx.Err()
 				}
-				return out, ErrServiceAccess
+				return out, accessErr(e)
 			}
 		}
 		rctx, stop := op.AttemptContext(ctx, 16*time.Second)
@@ -367,7 +369,7 @@ func (s *Service) get(ctx context.Context, path, provider, id string, q url.Valu
 			if ctx.Err() != nil {
 				return out, ctx.Err()
 			}
-			return out, ErrServiceUnavailable
+			return out, unreached(e)
 		}
 		body, e := io.ReadAll(io.LimitReader(resp.Body, (8<<20)+1))
 		_ = resp.Body.Close()

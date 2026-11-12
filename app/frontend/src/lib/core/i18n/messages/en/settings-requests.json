@@ -31,5 +31,12 @@
 	"settings.requests.plexOn": "Request from Plex watchlists",
 	"settings.requests.plexOnHint": "Each person turns it on in My account. Their Limits apply.",
 	"settings.requests.plexEveryone": "Turn on for everyone who signs in with Plex",
-	"settings.requests.plexEveryoneHint": "Anyone can turn it off for themselves in My account."
+	"settings.requests.plexEveryoneHint": "Anyone can turn it off for themselves in My account.",
+	"settings.requests.plexFriends": "Include Plex friends",
+	"settings.requests.plexFriendsHint": "Friends you imported from Plex. Their watchlists are read through your Plex link, and each friend's Limits apply.",
+	"settings.requests.plexFriendsNoLink": "Link Plex in Settings › Sign-in first.",
+	"settings.requests.plexFriendsNone": "No one imported from Plex yet.",
+	"settings.requests.plexFriendsRead": "Watchlist checked {when}",
+	"settings.requests.plexFriendsNotYet": "Watchlist not checked yet",
+	"settings.requests.plexFriendsAsked": "Requests: {n}"
 }

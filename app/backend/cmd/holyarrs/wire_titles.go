@@ -56,7 +56,11 @@ func (a *handlers) titleView(ctx context.Context, t mediafiles.Title) (TitleView
 
 // tv is the title view builder over this API's services.
 func (a *handlers) tv() *discover.ViewHandlers {
-	return discover.NewView(discover.ViewDeps{Store: a.s.Store, Asks: a.s.Asks, Live: a.s.Live})
+	d := discover.ViewDeps{Store: a.s.Store, Asks: a.s.Asks, Live: a.s.Live}
+	if a.s.Library != nil {
+		d.Groups = a.s.Library.EpisodeGroups
+	}
+	return discover.NewView(d)
 }
 
 // publishTitle sends the changed title to live pages (discover.PublishTitle).
