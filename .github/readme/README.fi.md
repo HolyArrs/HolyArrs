@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent ja ruTorrent latausohjelmana**, myös seedboxeissa. Valmistuneet Usenet-lataukset siirretään nyt kirjastoosi kopioinnin sijaan. [Katso, mitä uutta](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: nyt 44 kielellä**, myös oikealta vasemmalle. aria2 toimii lataajana, ja kausipaketit latautuvat muutama jakso kerrallaan. [Katso mitä uutta](https://holyarrs.com/whats-new/)
 
 > Jokainen julisteesi, traileri ja arvosana HolyArrsissa tulee palvelimelta, jota ylläpidän ja maksan itse, jotta se pysyy kaikille ilmaisena. Jos HolyArrs paransi elokuvailtaasi edes vähän, sponsorointi pitää valot päällä meille kaikille 💛
 >
@@ -222,7 +220,7 @@ Imaget ovat Docker Hubissa nimellä [`holyarrs/holyarrs`](https://hub.docker.com
 | Tagi | Käyttötarkoitus |
 | :----: | --- |
 | `latest` | Uusin versio. |
-| `1.0.19` | Yksi tietty versio. Se ei koskaan muutu. |
+| `1.1.0` | Yksi tietty versio. Se ei koskaan muutu. |
 
 ## Käyttö
 

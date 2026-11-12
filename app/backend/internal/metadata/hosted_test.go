@@ -187,3 +187,42 @@ func TestHealthCachedForTTL(t *testing.T) {
 		t.Fatal("down not seen after TTL")
 	}
 }
+
+type offTransport struct{}
+
+func (offTransport) RoundTrip(*http.Request) (*http.Response, error) { return nil, ErrSourceOff }
+
+// With lookups off the server is never asked, so nothing failed: no hold,
+// and each call keeps the quiet "off" answer instead of the busy one.
+func TestServiceRegisterOffStartsNoHold(t *testing.T) {
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(500) })
+	s.http = &http.Client{Transport: offTransport{}}
+	for range 2 {
+		if _, err := s.Register(context.Background()); !errors.Is(err, ErrSourceOff) {
+			t.Fatalf("off: %v", err)
+		}
+	}
+	if s.regHold.held(time.Now()) {
+		t.Fatal("lookups off started a hold")
+	}
+}
+
+// Picking a mode in Settings starts the registration wait over, so turning
+// the server back on asks it straight away.
+func TestModeChangeEndsTheRegistrationWait(t *testing.T) {
+	var calls atomic.Int32
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) { calls.Add(1); w.WriteHeader(500) })
+	_, _ = s.Register(context.Background())
+	m := NewModes(func(string) string { return "" })
+	m.OnSet = s.ResetRegisterWait
+	if err := m.Set(ModeOff); err != nil {
+		t.Fatal(err)
+	}
+	if err := m.Set(ModeServer); err != nil {
+		t.Fatal(err)
+	}
+	n := calls.Load()
+	if _, err := s.Register(context.Background()); errors.Is(err, ErrServiceBusy) || calls.Load() != n+1 {
+		t.Fatalf("after the mode change the server was not asked: %v", err)
+	}
+}

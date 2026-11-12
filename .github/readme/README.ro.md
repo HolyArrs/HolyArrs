@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent și ruTorrent ca program de descărcare**, inclusiv pe seedbox-uri. Descărcările Usenet terminate se mută acum în Biblioteca ta, în loc să fie copiate. [Vezi ce e nou](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: acum în 44 de limbi**, inclusiv de la dreapta la stânga. aria2 merge ca program de descărcare, iar pachetele de sezon se descarcă câteva episoade odată. [Vezi ce e nou](https://holyarrs.com/whats-new/)
 
 > Fiecare poster, trailer și scor din HolyArrs-ul tău vine de la un server pe care îl țin și îl plătesc eu, ca să rămână gratuit pentru toată lumea. Dacă HolyArrs ți-a făcut seara de film puțin mai frumoasă, un sponsor ține luminile aprinse pentru noi toți 💛
 >
@@ -222,7 +220,7 @@ Imaginile stau pe Docker Hub ca [`holyarrs/holyarrs`](https://hub.docker.com/r/h
 | Etichetă | Folosește-o pentru |
 | :----: | --- |
 | `latest` | Cea mai nouă versiune. |
-| `1.0.19` | O versiune exactă. Nu se mișcă niciodată. |
+| `1.1.0` | O versiune exactă. Nu se mișcă niciodată. |
 
 ## Utilizare
 
