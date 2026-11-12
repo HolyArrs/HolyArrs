@@ -58,6 +58,8 @@ type Modes struct {
 	envSet bool
 	bad    string
 	cur    atomic.Value // Mode
+	// OnSet runs after a mode is picked in Settings; set once at start.
+	OnSet func()
 }
 
 // NewModes reads the Docker settings with getenv: EnvMode, else
@@ -115,6 +117,9 @@ func (m *Modes) Set(v Mode) error {
 		return errors.New("mode must be full, own or off")
 	}
 	m.cur.Store(v)
+	if m.OnSet != nil {
+		m.OnSet()
+	}
 	return nil
 }
 
