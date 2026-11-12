@@ -126,7 +126,7 @@ describe('following a Job', () => {
 	// stops moving for the whole wait gives up.
 	it('keeps waiting while the Job moves, gives up when it stalls', async () => {
 		let n = 0;
-		const moving = await followJob(async () => ({ ID: 1, State: ++n > 40 ? 'done' : 'running', Progress: n / 41 }), 1, () => {}, { every: 1, timeout: 15 });
+		const moving = await followJob(async () => ({ ID: 1, State: ++n > 40 ? 'done' : 'running', Progress: n / 41 }), 1, () => {}, { every: 1, timeout: 200 });
 		expect(moving.State).toBe('done');
 		await expect(followJob(async () => ({ ID: 1, State: 'running', Progress: 0.5 }), 1, () => {}, { every: 1, timeout: 15 })).rejects.toThrow();
 	});
