@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "இந்தத் திரைப்படத்துக்கு ஏற்கெனவே கோப்பு உள்ளது; இதை அதன் இடத்தில் வைக்க replace அனுப்புங்கள்",
 	"server.importer.replaced-by-hand": "{path} கைமுறையாக மாற்றப்பட்டது",
 	"server.health.downloader-for": "பதிவிறக்கி:",
-	"server.health.downloader-added-twice": "இருமுறை சேர்க்கப்பட்ட பதிவிறக்கி"
+	"server.health.downloader-added-twice": "இருமுறை சேர்க்கப்பட்ட பதிவிறக்கி",
+	"server.sources.no-downloader-has-confirmed-this-release": "எந்தப் பதிவிறக்கியும் இந்த வெளியீட்டை இன்னும் உறுதிப்படுத்தவில்லை. வேறொன்றைத் தேர்வு செய்யலாம்."
 }

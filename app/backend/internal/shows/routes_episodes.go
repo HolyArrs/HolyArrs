@@ -11,6 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // EpisodeSlot is one episode in one Version.
@@ -164,6 +165,7 @@ func (h *EpisodeHandlers) listEpisodes(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	byItem := map[int64][]EpisodeSlot{}
+	now := time.Now()
 	for _, s := range slots {
 		es := EpisodeSlot{ID: s.ID, Version: label[s.VersionID], VersionID: s.VersionID, State: string(s.State), StateLabel: h.StateLabels[s.State], FileID: s.FileID}
 		if s.FileID != nil {
@@ -171,6 +173,9 @@ func (h *EpisodeHandlers) listEpisodes(w http.ResponseWriter, r *http.Request) {
 		}
 		if s.LastReason != nil {
 			es.Reason = *s.LastReason
+		}
+		if sources.StuckChoice(s, now) {
+			es.Reason = sources.StuckChoiceReason
 		}
 		byItem[s.ItemID] = append(byItem[s.ItemID], es)
 	}

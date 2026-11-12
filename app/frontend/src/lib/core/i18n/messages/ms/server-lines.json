@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "filem ini sudah mempunyai fail; hantar replace untuk meletakkan yang ini di tempatnya",
 	"server.importer.replaced-by-hand": "{path} digantikan dengan tangan",
 	"server.health.downloader-for": "Pemuat turun untuk",
-	"server.health.downloader-added-twice": "Pemuat turun ditambah dua kali"
+	"server.health.downloader-added-twice": "Pemuat turun ditambah dua kali",
+	"server.sources.no-downloader-has-confirmed-this-release": "Belum ada Pemuat turun yang mengesahkan Keluaran ini. Anda boleh memilih yang lain."
 }

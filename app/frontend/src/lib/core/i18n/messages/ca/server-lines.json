@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "aquesta pel·lícula ja té un fitxer; envia replace per posar aquest al seu lloc",
 	"server.importer.replaced-by-hand": "{path} substituït a mà",
 	"server.health.downloader-for": "Gestor de baixades per a",
-	"server.health.downloader-added-twice": "Gestor de baixades afegit dues vegades"
+	"server.health.downloader-added-twice": "Gestor de baixades afegit dues vegades",
+	"server.sources.no-downloader-has-confirmed-this-release": "Cap Gestor de baixades ha confirmat encara aquest Llançament. Pots triar-ne un altre."
 }

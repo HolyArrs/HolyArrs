@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "šai filmai jau ir fails; nosūti replace, lai šis stātos tā vietā",
 	"server.importer.replaced-by-hand": "{path} aizstāts ar roku",
 	"server.health.downloader-for": "Lejupielādētājs:",
-	"server.health.downloader-added-twice": "Lejupielādētājs pievienots divreiz"
+	"server.health.downloader-added-twice": "Lejupielādētājs pievienots divreiz",
+	"server.sources.no-downloader-has-confirmed-this-release": "Neviens Lejupielādētājs vēl nav apstiprinājis šo Izlaidumu. Vari izvēlēties citu."
 }

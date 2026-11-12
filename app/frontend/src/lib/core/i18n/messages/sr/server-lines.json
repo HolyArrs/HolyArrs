@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "овај филм већ има датотеку; пошаљи replace да ову ставиш на њено место",
 	"server.importer.replaced-by-hand": "{path} замењено ручно",
 	"server.health.downloader-for": "Преузимач за",
-	"server.health.downloader-added-twice": "Преузимач додат двапут"
+	"server.health.downloader-added-twice": "Преузимач додат двапут",
+	"server.sources.no-downloader-has-confirmed-this-release": "Ниједан Преузимач још није потврдио ово Издање. Можеш да изабереш друго."
 }

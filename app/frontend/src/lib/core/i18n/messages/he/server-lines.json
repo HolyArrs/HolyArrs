@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "לסרט הזה כבר יש קובץ; שלח replace כדי לשים את זה במקומו",
 	"server.importer.replaced-by-hand": "{path} הוחלף ידנית",
 	"server.health.downloader-for": "מוריד עבור",
-	"server.health.downloader-added-twice": "מוריד שנוסף פעמיים"
+	"server.health.downloader-added-twice": "מוריד שנוסף פעמיים",
+	"server.sources.no-downloader-has-confirmed-this-release": "אף מוריד עדיין לא אישר את הריליז הזה. אפשר לבחור ריליז אחר."
 }

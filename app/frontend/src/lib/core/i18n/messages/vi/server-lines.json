@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "phim này đã có tệp; gửi replace để đặt tệp này vào chỗ của nó",
 	"server.importer.replaced-by-hand": "Đã thay thế {path} thủ công",
 	"server.health.downloader-for": "Trình tải cho",
-	"server.health.downloader-added-twice": "Trình tải được thêm hai lần"
+	"server.health.downloader-added-twice": "Trình tải được thêm hai lần",
+	"server.sources.no-downloader-has-confirmed-this-release": "Chưa có Trình tải nào xác nhận Bản phát hành này. Bạn có thể chọn bản khác."
 }

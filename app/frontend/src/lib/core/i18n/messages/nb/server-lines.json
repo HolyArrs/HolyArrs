@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "denne filmen har allerede en fil; send replace for å sette denne i stedet",
 	"server.importer.replaced-by-hand": "{path} erstattet for hånd",
 	"server.health.downloader-for": "Nedlaster for",
-	"server.health.downloader-added-twice": "Nedlaster lagt til to ganger"
+	"server.health.downloader-added-twice": "Nedlaster lagt til to ganger",
+	"server.sources.no-downloader-has-confirmed-this-release": "Ingen nedlaster har bekreftet denne utgivelsen ennå. Du kan velge en annen."
 }

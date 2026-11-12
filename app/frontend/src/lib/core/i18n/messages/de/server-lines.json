@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "dieser Film hat schon eine Datei; sende replace, um diese an ihre Stelle zu setzen",
 	"server.importer.replaced-by-hand": "{path} von Hand ersetzt",
 	"server.health.downloader-for": "Downloader für",
-	"server.health.downloader-added-twice": "Downloader doppelt hinzugefügt"
+	"server.health.downloader-added-twice": "Downloader doppelt hinzugefügt",
+	"server.sources.no-downloader-has-confirmed-this-release": "Noch kein Downloader hat dieses Release bestätigt. Du kannst ein anderes wählen."
 }

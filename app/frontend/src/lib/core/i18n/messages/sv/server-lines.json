@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "den här filmen har redan en fil; skicka replace för att sätta den här i dess ställe",
 	"server.importer.replaced-by-hand": "{path} ersattes manuellt",
 	"server.health.downloader-for": "Nedladdare för",
-	"server.health.downloader-added-twice": "Nedladdare tillagd två gånger"
+	"server.health.downloader-added-twice": "Nedladdare tillagd två gånger",
+	"server.sources.no-downloader-has-confirmed-this-release": "Ingen nedladdare har bekräftat den här releasen än. Du kan välja en annan."
 }

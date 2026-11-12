@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "šis filmas jau turi failą; siųskite replace, kad šis atsidurtų jo vietoje",
 	"server.importer.replaced-by-hand": "{path} pakeistas ranka",
 	"server.health.downloader-for": "Atsisiuntėjas:",
-	"server.health.downloader-added-twice": "Atsisiuntėjas pridėtas du kartus"
+	"server.health.downloader-added-twice": "Atsisiuntėjas pridėtas du kartus",
+	"server.sources.no-downloader-has-confirmed-this-release": "Joks Atsisiuntėjas dar nepatvirtino šio Leidimo. Gali pasirinkti kitą."
 }
