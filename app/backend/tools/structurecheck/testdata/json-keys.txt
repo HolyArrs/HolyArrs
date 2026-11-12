@@ -748,6 +748,7 @@ imdbId
 imdb_id
 implementation
 import_file
+import_folder
 import_lists
 import_min_track_kb
 import_min_video_mb

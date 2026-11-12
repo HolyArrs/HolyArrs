@@ -631,6 +631,8 @@ export interface Decision {
 	artwork?: string;
 	// The one video a movie's finished download holds; Review can import it.
 	import_file?: string;
+	// The finished download's folder; Import files by hand opens there.
+	import_folder?: string;
 }
 
 export interface SearchView {

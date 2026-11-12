@@ -58,6 +58,43 @@ func (im *Importer) ReviewFile(ctx context.Context, downloadID int64) string {
 	return found
 }
 
+// ReviewFolder returns a finished download's own folder as HolyArrs sees it
+// (its one top folder, or the save folder when its files sit loose), for
+// Review's Match files by hand; "" when it can't be read.
+func (im *Importer) ReviewFolder(ctx context.Context, downloadID int64) string {
+	db := im.Store.Read()
+	var d domain.Download
+	if database.Get(ctx, db, "downloads", downloadID, &d) != nil || (d.State != "finished" && d.State != "seeding") {
+		return ""
+	}
+	var dr domain.Downloader
+	if database.Get(ctx, db, "downloaders", d.DownloaderID, &dr) != nil {
+		return ""
+	}
+	root, ok := domain.MapPath(d.SavePath, dr.PathMap)
+	if !ok || strings.TrimSpace(root) == "" {
+		return ""
+	}
+	top := ""
+	for _, f := range d.FilesSeen {
+		name := strings.ReplaceAll(f.Name, `\`, "/")
+		head, _, inDir := strings.Cut(name, "/")
+		if !inDir || head == "" || head == ".." || (top != "" && head != top) {
+			top = ""
+			break
+		}
+		top = head
+	}
+	dir := root
+	if top != "" {
+		dir = filepath.Join(root, top)
+	}
+	if fi, err := os.Stat(dir); err != nil || !fi.IsDir() {
+		return ""
+	}
+	return dir
+}
+
 // ImportReviewFile imports the one video of a download into the Slot it was
 // grabbed for, the way a by-hand import does. With replace, the Slot's file
 // goes to the holding folder (Recently deleted) first.

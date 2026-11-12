@@ -25,7 +25,7 @@ func TestDecideImportsTheDownloadedFile(t *testing.T) {
 	}
 	exec41(t, x.s, `UPDATE downloads SET save_path = ?, files_seen = ? WHERE id = ?`, save,
 		`[{"name":"Ein.Anderer.Name.2020.German.DL.1080p.BluRay.x264-GROUP/grp-ean.mkv","size":4096}]`, x.dlID)
-	exec41(t, x.s, "UPDATE slots SET last_reason = 'nothing could be placed; look at the import plan' WHERE id = ?", x.slotID)
+	exec41(t, x.s, "UPDATE slots SET last_reason = 'no file in the download matched this movie; match the files by hand' WHERE id = ?", x.slotID)
 
 	var out struct {
 		Items []DecisionView `json:"items"`
@@ -49,7 +49,7 @@ func TestDecideImportsTheDownloadedFile(t *testing.T) {
 	do(t, "POST", u, `{"action":"import"}`, 404)
 
 	// A movie that has a file keeps it unless replace is sent.
-	exec41(t, x.s, "UPDATE slots SET state = 'needs_a_decision', last_reason = 'nothing could be placed; look at the import plan' WHERE id = ?", x.slotID)
+	exec41(t, x.s, "UPDATE slots SET state = 'needs_a_decision', last_reason = 'no file in the download matched this movie; match the files by hand' WHERE id = ?", x.slotID)
 	_ = os.Remove(filepath.Join(dir, "grp-ean.mkv")) // a hardlink of the Library file: a new copy, not the same one
 	if err := os.WriteFile(filepath.Join(dir, "grp-ean.mkv"), make([]byte, 8192), 0o644); err != nil {
 		t.Fatal(err)
