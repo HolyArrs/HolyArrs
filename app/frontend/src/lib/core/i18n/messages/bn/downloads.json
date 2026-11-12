@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "সংস্করণ",
 	"downloads.ot.kindLanguage": "ভাষা",
 	"downloads.ot.kindReleaseType": "রিলিজের ধরন",
-	"downloads.ot.kindYear": "বছর"
+	"downloads.ot.kindYear": "বছর",
+	"downloads.hl.notMoved": "ইমপোর্টের পরে সরানো হয়নি"
 }

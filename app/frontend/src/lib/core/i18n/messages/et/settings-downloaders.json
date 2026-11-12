@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 lülitab selle kontrolli välja; muidu 5 kuni 1440.",
 	"settings.downloaders.crawlKbps": "Aeglasem kui (KB/s)",
 	"settings.downloaders.crawlHours": "Kestus (tundi)",
-	"settings.downloaders.crawlHint": "0 kummaski väljas lülitab aeglasuse kontrolli välja."
+	"settings.downloaders.crawlHint": "0 kummaski väljas lülitab aeglasuse kontrolli välja.",
+	"settings.downloaders.categoryAfterImport": "Kategooria pärast importi",
+	"settings.downloaders.categoryAfterImportHint": "Kui torrent on imporditud, viib HolyArrs selle sellesse kategooriasse. Jäta tühjaks, et see jääks põhikategooriasse.",
+	"settings.downloaders.ownOnly": "Näita ainult HolyArrsi üksusi",
+	"settings.downloaders.ownOnlyHint": "Teiste rakenduste üksused selles allalaadijas on peidetud ja HolyArrs neid ei muuda."
 }

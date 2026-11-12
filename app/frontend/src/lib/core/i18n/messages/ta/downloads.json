@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "பதிப்பு",
 	"downloads.ot.kindLanguage": "மொழி",
 	"downloads.ot.kindReleaseType": "வெளியீட்டு வகை",
-	"downloads.ot.kindYear": "ஆண்டு"
+	"downloads.ot.kindYear": "ஆண்டு",
+	"downloads.hl.notMoved": "இறக்குமதிக்குப் பின் நகர்த்தப்படவில்லை"
 }

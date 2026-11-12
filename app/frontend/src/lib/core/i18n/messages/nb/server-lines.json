@@ -1282,5 +1282,11 @@
 	"server.migrate.nothing-in-the-old-app-gives": "ingenting i den gamle appen gir den poeng, så den endrer ingenting her",
 	"server.migrate.pick-rules-here-still-give-it": "Valgregler her gir den fortsatt poeng, så den blir",
 	"server.migrate.pick-rules-hold-at-most-64": "Valgregler rommer høyst 64 egenskaper; de sterkeste poengene ble beholdt",
-	"server.migrate.something-here-still-uses-these-pick": "noe her bruker fortsatt disse Valgreglene, så de blir"
+	"server.migrate.something-here-still-uses-these-pick": "noe her bruker fortsatt disse Valgreglene, så de blir",
+	"server.downloads.could-not-move-the-imported-download": "Den importerte nedlastingen kunne ikke flyttes til {cat} i {name}: {error}; HolyArrs prøver igjen ved neste import",
+	"server.downloads.moved-to-after-import": "Flyttet til {cat} etter import",
+	"server.library.files-matched-by-hand": "{name}: {n} filer koblet for hånd",
+	"server.library.no-such-file-in-this-title": "ingen slik fil i denne tittelen",
+	"server.library.send-1-to-2000-files": "send 1 til 2000 filer",
+	"server.sources.this-kind-of-title-can-t": "denne typen tittel kan ikke søkes etter"
 }

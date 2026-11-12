@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 izslēdz šo pārbaudi; citādi 5 līdz 1440.",
 	"settings.downloaders.crawlKbps": "Lēnāk nekā (KB/s)",
 	"settings.downloaders.crawlHours": "Ilgums (stundas)",
-	"settings.downloaders.crawlHint": "0 jebkurā no abiem izslēdz lēnuma pārbaudi."
+	"settings.downloaders.crawlHint": "0 jebkurā no abiem izslēdz lēnuma pārbaudi.",
+	"settings.downloaders.categoryAfterImport": "Kategorija pēc importa",
+	"settings.downloaders.categoryAfterImportHint": "Kad torrents ir importēts, HolyArrs to pārvieto uz šo kategoriju. Atstājiet tukšu, lai tas paliktu galvenajā kategorijā.",
+	"settings.downloaders.ownOnly": "Rādīt tikai HolyArrs vienumus",
+	"settings.downloaders.ownOnlyHint": "Citu lietotņu vienumi šajā lejupielādētājā ir paslēpti, un HolyArrs tos nemaina."
 }

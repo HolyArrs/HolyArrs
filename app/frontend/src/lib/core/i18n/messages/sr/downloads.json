@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "издање",
 	"downloads.ot.kindLanguage": "језик",
 	"downloads.ot.kindReleaseType": "врста издања",
-	"downloads.ot.kindYear": "година"
+	"downloads.ot.kindYear": "година",
+	"downloads.hl.notMoved": "Није премештено после увоза"
 }

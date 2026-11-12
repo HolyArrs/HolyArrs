@@ -75,6 +75,8 @@ type Service struct {
 	access func(context.Context) (string, error)
 	http   *http.Client
 	hold   serviceHold
+	// regHold is the wait after a failed registration (hosted.go).
+	regHold serviceHold
 	// local answers music from the packages kept on disk (SetLocalMusic).
 	local atomic.Pointer[localHolder]
 }

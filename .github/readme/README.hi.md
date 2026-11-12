@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: डाउनलोडर के तौर पर rTorrent और ruTorrent**, सीडबॉक्स पर भी। पूरे हुए Usenet डाउनलोड अब कॉपी होने के बजाय आपकी लाइब्रेरी में मूव होते हैं। [क्या नया है](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: अब 44 भाषाओं में**, दाएँ से बाएँ वाली भी। aria2 डाउनलोडर के रूप में चलता है, और सीज़न पैक कुछ एपिसोड एक बार में डाउनलोड होते हैं। [नया क्या है](https://holyarrs.com/whats-new/)
 
 > आपके HolyArrs का हर पोस्टर, ट्रेलर और स्कोर एक ऐसे सर्वर से आता है जिसे मैं खुद चलाता हूँ और जिसका खर्च खुद उठाता हूँ, ताकि यह सबके लिए मुफ़्त रहे। अगर HolyArrs ने आपकी मूवी नाइट थोड़ी बेहतर बनाई है, तो स्पॉन्सर बनकर हम सबके लिए यह रोशनी जलाए रखिए 💛
 >
@@ -222,7 +220,7 @@ NAS पर चला रहे हैं? देखिए [Unraid, Synology औ�
 | टैग | किसके लिए |
 | :----: | --- |
 | `latest` | नवीनतम रिलीज़। |
-| `1.0.19` | एक तय वर्ज़न। यह कभी नहीं बदलता। |
+| `1.1.0` | एक तय वर्ज़न। यह कभी नहीं बदलता। |
 
 ## इस्तेमाल
 

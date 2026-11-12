@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "editie",
 	"downloads.ot.kindLanguage": "taal",
 	"downloads.ot.kindReleaseType": "soort release",
-	"downloads.ot.kindYear": "jaar"
+	"downloads.ot.kindYear": "jaar",
+	"downloads.hl.notMoved": "Niet verplaatst na import"
 }

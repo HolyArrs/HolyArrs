@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "phiên bản",
 	"downloads.ot.kindLanguage": "ngôn ngữ",
 	"downloads.ot.kindReleaseType": "kiểu phát hành",
-	"downloads.ot.kindYear": "năm"
+	"downloads.ot.kindYear": "năm",
+	"downloads.hl.notMoved": "Không chuyển được sau khi nhập"
 }

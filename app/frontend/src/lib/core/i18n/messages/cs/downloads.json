@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "edice",
 	"downloads.ot.kindLanguage": "jazyk",
 	"downloads.ot.kindReleaseType": "typ vydání",
-	"downloads.ot.kindYear": "rok"
+	"downloads.ot.kindYear": "rok",
+	"downloads.hl.notMoved": "Po importu nepřesunuto"
 }

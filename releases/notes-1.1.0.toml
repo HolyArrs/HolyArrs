@@ -1,0 +1,117 @@
+version = "1.1.0"
+theme = "HolyArrs in 44 languages, with aria2 and phone alerts."
+images = [
+  {registry = "Docker Hub", name = "holyarrs/holyarrs"},
+]
+docs_url = ""
+known_issues = []
+security = []
+credits = [
+  {name = "tekhop", issues = [204]},
+  {name = "u/left_on_read_by_gpt", link = "https://www.reddit.com/r/HolyArrs/comments/1xeji08/", issues = [121]},
+  {github = "SSD2019", link = "https://github.com/HolyArrs/HolyArrs/issues/193", issues = [193]},
+  {github = "jt196", link = "https://github.com/HolyArrs/HolyArrs/issues/196", issues = [196]},
+  {github = "forkymcforkface", link = "https://github.com/HolyArrs/HolyArrs/issues/200", issues = [200]},
+  {github = "Megamannen", link = "https://github.com/HolyArrs/HolyArrs/issues/202", issues = [202]},
+  {github = "pedrosousa13", link = "https://github.com/HolyArrs/HolyArrs/issues/206", issues = [206]},
+  {github = "xfalcox", link = "https://github.com/HolyArrs/HolyArrs/issues/218", issues = [218]},
+  {github = "Greminn", link = "https://github.com/HolyArrs/HolyArrs/issues/222", issues = [222]},
+  {github = "JulianAtkins", link = "https://github.com/HolyArrs/HolyArrs/issues/224", issues = [260, 261]},
+  {github = "zhu327", link = "https://github.com/HolyArrs/HolyArrs/issues/233", issues = [233]},
+  {github = "ir1141", link = "https://github.com/HolyArrs/HolyArrs/issues/249", issues = [249]},
+  {github = "GreyJoshy94", link = "https://github.com/HolyArrs/HolyArrs/issues/264#issuecomment-6795133305", issues = [264]},
+  {github = "AldoLopez", link = "https://github.com/HolyArrs/HolyArrs/issues/266", issues = [266]},
+  {github = "rxolve", link = "https://github.com/HolyArrs/HolyArrs/issues/267", issues = [267]},
+  {github = "Drak-dAmral", link = "https://github.com/HolyArrs/HolyArrs/issues/268", issues = [268, 269, 272]},
+  {github = "xino222", link = "https://github.com/HolyArrs/HolyArrs/issues/270", issues = [270]},
+  {github = "Nviviri", link = "https://github.com/HolyArrs/HolyArrs/issues/271", issues = [271]},
+  {github = "eddoww", link = "https://github.com/HolyArrs/HolyArrs/issues/285", issues = [285, 300]},
+  {github = "jidkj", link = "https://github.com/HolyArrs/HolyArrs/issues/297", issues = [297]},
+  {github = "rossreicks", link = "https://github.com/HolyArrs/HolyArrs/issues/304", issues = [304]},
+  {github = "nevpeek", link = "https://github.com/HolyArrs/HolyArrs/issues/305", issues = [305, 306]},
+  {github = "roychassi", link = "https://github.com/HolyArrs/HolyArrs/issues/307", issues = [307]},
+  {github = "arthurhov1985", link = "https://github.com/HolyArrs/HolyArrs/issues/282", issues = [282]},
+  {github = "lemsayblam", link = "https://github.com/HolyArrs/HolyArrs/issues/283", issues = [283]},
+  {github = "jprisant", link = "https://github.com/HolyArrs/HolyArrs/issues/294", issues = [294]},
+]
+
+[[highlights]]
+line = "HolyArrs speaks 44 languages, right-to-left included."
+issues = [280]
+shot = "Home in Arabic and German side by side (phone)"
+
+[[highlights]]
+line = "aria2 works as a Downloader for torrents and magnets."
+issues = [233]
+shot = "Downloader screen with aria2 picked"
+
+[[highlights]]
+line = "Alerts reach Telegram, ntfy, Gotify, Pushover or a webhook."
+issues = [151, 203]
+shot = "Alerts kind list with the five new kinds"
+
+[groups]
+Requests = [
+  "Pulsarr and Plex friends' watchlists can become requests. (#200)",
+  "Hide titles and genres you pick from Explore and search. (#121)",
+  "Titles and synopses show in each person's language. (#270)",
+  "Fixed: Tapping Explore on a phone no longer opens the keyboard. (#282)",
+]
+Library = [
+  "Pick a show's episode order: aired, DVD or original. (#204)",
+  "A Library stats page shows file types and who watched what. (#214)",
+  "Change a Library folder's path without importing again. (#275)",
+  "Library and Calendar views follow you to every device. (#273)",
+  "Library import shows posters while it scans. (#305)",
+  "Fixed: Clearly named episode files import. (#272)",
+  "Fixed: A second movie copy by quality imports. (#274)",
+  "Fixed: Music releases with disc counts in the name are read right. (#269)",
+  "Fixed: Adding a show links the files already in its folder. (#298)",
+  "Fixed: Shows added from TVMaze work. (#296)",
+  "Fixed: TVMaze posters load. (#297)",
+  "Fixed: Big Library imports, 2,700+ folders, show their results. (#306)",
+]
+Downloads = [
+  "Season packs download a few episodes at a time, in order. (#193)",
+  "Remove torrents after seeding, with an optional dead torrent rule. (#196)",
+  "Fixed: RAR releases with a Sample folder are no longer called fake. (#249)",
+  "Fixed: Downloads let go once another app took the files. (#257)",
+  "Fixed: Failed Usenet clears after import are tried again. (#276)",
+  "Fixed: A by-hand move says copied when the file was copied. (#277)",
+  "Changed: Big rTorrent seedboxes get much lighter background reads. (#266)",
+]
+Indexers = [
+  "Search follows each Version's audio languages and reads 18 more. (#202)",
+  "Sources can be turned off if you add downloads by hand. (#278)",
+  "Fixed: Searches drop apostrophes, so \"Schitt's Creek\" finds releases. (#271)",
+  "Fixed: A search with no title never reaches a Source. (#307)",
+]
+Accounts = [
+  "Skip sign-in on your home network or listed addresses. (#262)",
+  "Fixed: Key kit and backup downloads explain a missing password. (#283)",
+]
+Setup = [
+  "Run without the HolyArrs metadata server. (#206)",
+  "Use your own metadata keys or server. (#222)",
+  "Backups can be turned off. (#261)",
+  "The qBittorrent step takes an API key or a user name. (#260)",
+  "Fixed: Placeholders and turned-off controls are easier to read. (#300)",
+  "Fixed: Settings pages no longer squeeze their columns. (#304)",
+  "Fixed: Settings search no longer crashes. (#268)",
+]
+Subtitles = [
+  "Three more subtitle sites: YIFY Subtitles, TVsubtitles and BSPlayer. (#290)",
+  "Translate subtitles with your own AI key. (#218)",
+  "Fixed: Subtitles stop looking for titles removed from the Library. (#285)",
+]
+Install = [
+  "A smaller download, even with 44 languages. (#281)",
+  "An experimental native Synology package is attached to this release. (#294)",
+  "Docs: The install guide starts with one /data folder. (#264)",
+  "Docs: Proxy variables and why HolyArrs ignores them. (#267)",
+]
+
+[stats]
+issues_done = 47
+still_building = 10
+people_credited = 26

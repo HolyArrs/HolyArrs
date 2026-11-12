@@ -80,6 +80,7 @@ func NewHosted(v *secrets.Vault) (*Hosted, error) {
 		return nil, err
 	}
 	h.Service, h.Health = service, &Health{Service: service}
+	modes.OnSet = service.ResetRegisterWait
 	// HOLYARRS_TMDB_URL points at a stand-in TMDB (browser tests); it
 	// serves pictures too.
 	stand := strings.TrimRight(os.Getenv("HOLYARRS_TMDB_URL"), "/")

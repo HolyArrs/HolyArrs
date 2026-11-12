@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "útgáfa",
 	"downloads.ot.kindLanguage": "tungumál",
 	"downloads.ot.kindReleaseType": "tegund útgáfu",
-	"downloads.ot.kindYear": "ár"
+	"downloads.ot.kindYear": "ár",
+	"downloads.hl.notMoved": "Ekki fært eftir innflutning"
 }

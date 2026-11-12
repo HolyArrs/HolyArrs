@@ -1282,5 +1282,11 @@
 	"server.migrate.nothing-in-the-old-app-gives": "ничто в старом приложении не даёт ему баллов, поэтому здесь он ничего не меняет",
 	"server.migrate.pick-rules-here-still-give-it": "Правила отбора здесь ещё дают ему баллы, поэтому он остаётся",
 	"server.migrate.pick-rules-hold-at-most-64": "в Правилах отбора не больше 64 признаков; оставлены самые сильные оценки",
-	"server.migrate.something-here-still-uses-these-pick": "что-то здесь ещё использует эти Правила отбора, поэтому они остаются"
+	"server.migrate.something-here-still-uses-these-pick": "что-то здесь ещё использует эти Правила отбора, поэтому они остаются",
+	"server.downloads.could-not-move-the-imported-download": "Не удалось переместить импортированную загрузку в {cat} в {name}: {error}; HolyArrs попробует снова при следующем импорте",
+	"server.downloads.moved-to-after-import": "Перемещено в {cat} после импорта",
+	"server.library.files-matched-by-hand": "{name}: файлов сопоставлено вручную: {n}",
+	"server.library.no-such-file-in-this-title": "такого файла у этого тайтла нет",
+	"server.library.send-1-to-2000-files": "отправьте от 1 до 2000 файлов",
+	"server.sources.this-kind-of-title-can-t": "этот вид тайтла нельзя искать"
 }

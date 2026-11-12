@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0でオフ。それ以外は5〜1440。",
 	"settings.downloaders.crawlKbps": "この速度未満（KB/s）",
 	"settings.downloaders.crawlHours": "継続時間（時間）",
-	"settings.downloaders.crawlHint": "どちらかが0なら低速チェックはオフ。"
+	"settings.downloaders.crawlHint": "どちらかが0なら低速チェックはオフ。",
+	"settings.downloaders.categoryAfterImport": "インポート後のカテゴリー",
+	"settings.downloaders.categoryAfterImportHint": "トレントのインポートが終わると、HolyArrs はこのカテゴリーへ移します。空のままにするとメインのカテゴリーに残ります。",
+	"settings.downloaders.ownOnly": "HolyArrs の項目だけを表示",
+	"settings.downloaders.ownOnlyHint": "このダウンローダー上の他のアプリの項目は非表示になり、HolyArrs は変更しません。"
 }

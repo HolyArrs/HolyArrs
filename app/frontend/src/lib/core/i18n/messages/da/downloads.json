@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "udgave",
 	"downloads.ot.kindLanguage": "sprog",
 	"downloads.ot.kindReleaseType": "udgivelsestype",
-	"downloads.ot.kindYear": "år"
+	"downloads.ot.kindYear": "år",
+	"downloads.hl.notMoved": "Ikke flyttet efter import"
 }

@@ -1282,5 +1282,11 @@
 	"server.migrate.nothing-in-the-old-app-gives": "舊應用程式中沒有任何東西給它分數，所以這裡不會改變什麼",
 	"server.migrate.pick-rules-here-still-give-it": "這裡的挑選規則仍在給它分數，所以它保留",
 	"server.migrate.pick-rules-hold-at-most-64": "挑選規則最多容納 64 個特徵；保留了分數最高的",
-	"server.migrate.something-here-still-uses-these-pick": "這裡仍有東西在使用這些挑選規則，所以它們保留"
+	"server.migrate.something-here-still-uses-these-pick": "這裡仍有東西在使用這些挑選規則，所以它們保留",
+	"server.downloads.could-not-move-the-imported-download": "無法把已匯入的下載移到 {name} 中的 {cat}：{error}；HolyArrs 會在下次匯入時再試",
+	"server.downloads.moved-to-after-import": "匯入後已移到 {cat}",
+	"server.library.files-matched-by-hand": "{name}：已手動配對 {n} 個檔案",
+	"server.library.no-such-file-in-this-title": "此作品中沒有該檔案",
+	"server.library.send-1-to-2000-files": "請傳送 1 到 2000 個檔案",
+	"server.sources.this-kind-of-title-can-t": "無法搜尋這類標題"
 }

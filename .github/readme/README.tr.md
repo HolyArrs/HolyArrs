@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: İndirici olarak rTorrent ve ruTorrent**, seedbox'lar dahil. Biten Usenet indirmeleri artık kitaplığına kopyalanmak yerine taşınıyor. [Yenilikler](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: artık 44 dilde**, sağdan sola diller de dahil. aria2 indirici olarak çalışır, sezon paketleri birkaç bölüm halinde iner. [Yenilikler](https://holyarrs.com/whats-new/)
 
 > HolyArrs'ındaki her afiş, fragman ve puan, kendim çalıştırıp ödediğim bir sunucudan geliyor; böylece herkes için ücretsiz kalıyor. HolyArrs film gecene biraz güzellik kattıysa, sponsor olmak hepimiz için ışıkları açık tutar 💛
 >
@@ -222,7 +220,7 @@ NAS mı kullanıyorsun? [Unraid, Synology ve diğer NAS cihazları](https://docs
 | Etiket | Ne için kullanılır |
 | :----: | --- |
 | `latest` | En yeni sürüm. |
-| `1.0.19` | Tam olarak tek bir sürüm. Asla değişmez. |
+| `1.1.0` | Tam olarak tek bir sürüm. Asla değişmez. |
 
 ## Kullanım
 

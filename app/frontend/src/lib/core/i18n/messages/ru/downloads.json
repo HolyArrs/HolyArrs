@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "издание",
 	"downloads.ot.kindLanguage": "язык",
 	"downloads.ot.kindReleaseType": "тип релиза",
-	"downloads.ot.kindYear": "год"
+	"downloads.ot.kindYear": "год",
+	"downloads.hl.notMoved": "Не перемещено после импорта"
 }

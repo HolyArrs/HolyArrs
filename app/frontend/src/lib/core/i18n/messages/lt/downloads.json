@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "leidimas",
 	"downloads.ot.kindLanguage": "kalba",
 	"downloads.ot.kindReleaseType": "išleidimo tipas",
-	"downloads.ot.kindYear": "metai"
+	"downloads.ot.kindYear": "metai",
+	"downloads.hl.notMoved": "Po importo neperkelta"
 }

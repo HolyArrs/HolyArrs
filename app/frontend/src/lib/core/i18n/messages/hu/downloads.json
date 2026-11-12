@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "kiadás",
 	"downloads.ot.kindLanguage": "nyelv",
 	"downloads.ot.kindReleaseType": "kiadás típusa",
-	"downloads.ot.kindYear": "év"
+	"downloads.ot.kindYear": "év",
+	"downloads.hl.notMoved": "Importálás után nem lett áthelyezve"
 }

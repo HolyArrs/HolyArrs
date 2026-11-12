@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "видання",
 	"downloads.ot.kindLanguage": "мова",
 	"downloads.ot.kindReleaseType": "тип релізу",
-	"downloads.ot.kindYear": "рік"
+	"downloads.ot.kindYear": "рік",
+	"downloads.hl.notMoved": "Не переміщено після імпорту"
 }

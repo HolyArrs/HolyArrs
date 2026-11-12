@@ -1282,5 +1282,11 @@
 	"server.migrate.nothing-in-the-old-app-gives": "ไม่มีสิ่งใดในแอปเก่าให้คะแนน จึงไม่เปลี่ยนอะไรที่นี่",
 	"server.migrate.pick-rules-here-still-give-it": "กฎการเลือกที่นี่ยังให้คะแนนอยู่ จึงยังคงอยู่",
 	"server.migrate.pick-rules-hold-at-most-64": "กฎการเลือกมีคุณสมบัติได้สูงสุด 64 รายการ จึงเก็บคะแนนที่สูงที่สุดไว้",
-	"server.migrate.something-here-still-uses-these-pick": "ยังมีบางอย่างที่นี่ใช้กฎการเลือกนี้อยู่ จึงยังคงอยู่"
+	"server.migrate.something-here-still-uses-these-pick": "ยังมีบางอย่างที่นี่ใช้กฎการเลือกนี้อยู่ จึงยังคงอยู่",
+	"server.downloads.could-not-move-the-imported-download": "ย้ายการดาวน์โหลดที่นำเข้าแล้วไปยัง {cat} ใน {name} ไม่ได้: {error}; HolyArrs จะลองอีกครั้งในการนำเข้าครั้งถัดไป",
+	"server.downloads.moved-to-after-import": "ย้ายไปยัง {cat} หลังนำเข้า",
+	"server.library.files-matched-by-hand": "{name}: จับคู่ด้วยมือ {n} ไฟล์",
+	"server.library.no-such-file-in-this-title": "ไม่มีไฟล์นี้ในรายการนี้",
+	"server.library.send-1-to-2000-files": "ส่ง 1 ถึง 2000 ไฟล์",
+	"server.sources.this-kind-of-title-can-t": "ไม่สามารถค้นหาชื่อเรื่องประเภทนี้ได้"
 }

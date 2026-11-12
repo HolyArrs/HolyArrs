@@ -205,6 +205,7 @@ GET /api/v1/settings/old-app-api auth=settings scope=admin assurance=false part=
 GET /api/v1/settings/release-gate auth=manage_library scope=read assurance=false part=movies
 GET /api/v1/settings/search auth=settings scope=read assurance=false part=media
 GET /api/v1/settings/shows auth=manage_library scope=read assurance=false part=shows
+GET /api/v1/settings/side-files auth=settings scope=read assurance=false part=media
 GET /api/v1/settings/status auth=settings scope=read assurance=false part=core
 GET /api/v1/settings/subtitles auth=settings scope=read assurance=false part=subtitles
 GET /api/v1/settings/subtitles/translator auth=settings scope=read assurance=false part=subtitles
@@ -232,6 +233,7 @@ GET /api/v1/titles/{id}/copies auth=manage_library scope=read assurance=false pa
 GET /api/v1/titles/{id}/episode-groups auth=manage_library scope=read assurance=false part=shows
 GET /api/v1/titles/{id}/episodes auth=signed_in scope=read assurance=false part=shows
 GET /api/v1/titles/{id}/follow auth=signed_in scope=read assurance=false part=wishlist
+GET /api/v1/titles/{id}/leftovers auth=manage_library scope=read assurance=false part=title
 GET /api/v1/titles/{id}/people auth=signed_in scope=read assurance=false part=title
 GET /api/v1/titles/{id}/releases auth=manage_library scope=read assurance=false part=title
 GET /api/v1/titles/{id}/rename auth=manage_library scope=read assurance=false part=title
@@ -458,9 +460,12 @@ POST /api/v1/titles auth=manage_library scope=write assurance=false part=movies
 POST /api/v1/titles/refresh auth=manage_library scope=write assurance=false part=media
 POST /api/v1/titles/{id}/delete auth=manage_library scope=write assurance=false part=title
 POST /api/v1/titles/{id}/files/{fid}/keep-and-add auth=manage_library scope=write assurance=false part=title
+POST /api/v1/titles/{id}/leftovers/match auth=manage_library scope=write assurance=false part=title
+POST /api/v1/titles/{id}/leftovers/unmatch auth=manage_library scope=write assurance=false part=title
 POST /api/v1/titles/{id}/move auth=manage_library scope=write assurance=false part=title
 POST /api/v1/titles/{id}/refresh auth=manage_library scope=write assurance=false part=title
 POST /api/v1/titles/{id}/rename auth=manage_library scope=write assurance=false part=title
+POST /api/v1/titles/{id}/rescan auth=manage_library scope=write assurance=false part=title
 POST /api/v1/titles/{id}/search auth=manage_library scope=write assurance=false part=title
 POST /api/v1/titles/{id}/seasons/{number}/pack-next auth=manage_library scope=write assurance=false part=shows
 POST /api/v1/titles/{id}/versions auth=manage_library scope=write assurance=false part=title
@@ -528,6 +533,7 @@ PUT /api/v1/settings/old-app-api auth=settings scope=write assurance=false part=
 PUT /api/v1/settings/release-gate auth=settings scope=write assurance=false part=movies
 PUT /api/v1/settings/search auth=settings scope=write assurance=false part=media
 PUT /api/v1/settings/shows auth=settings scope=write assurance=false part=shows
+PUT /api/v1/settings/side-files auth=settings scope=write assurance=false part=media
 PUT /api/v1/settings/subtitles auth=settings scope=write assurance=false part=subtitles
 PUT /api/v1/settings/subtitles/translator auth=settings scope=write assurance=false part=subtitles
 PUT /api/v1/settings/title-defaults auth=settings scope=write assurance=false part=media
@@ -542,6 +548,7 @@ PUT /api/v1/titles/{id} auth=manage_library scope=write assurance=false part=tit
 PUT /api/v1/titles/{id}/artist auth=manage_library scope=write assurance=false part=music
 PUT /api/v1/titles/{id}/files/{fid}/choices auth=manage_library scope=write assurance=false part=title
 PUT /api/v1/titles/{id}/follow auth=signed_in scope=write assurance=false part=wishlist
+PUT /api/v1/titles/{id}/leftovers/{fid} auth=manage_library scope=write assurance=false part=title
 PUT /api/v1/titles/{id}/seasons/{number} auth=manage_library scope=write assurance=false part=shows
 PUT /api/v1/titles/{id}/subtitle-wish auth=manage_library scope=write assurance=false part=subtitles
 PUT /api/v1/titles/{id}/versions/{vid} auth=manage_library scope=write assurance=false part=title

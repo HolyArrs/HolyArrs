@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "väljaanne",
 	"downloads.ot.kindLanguage": "keel",
 	"downloads.ot.kindReleaseType": "väljalaske tüüp",
-	"downloads.ot.kindYear": "aasta"
+	"downloads.ot.kindYear": "aasta",
+	"downloads.hl.notMoved": "Pärast importi ei teisaldatud"
 }

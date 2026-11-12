@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "版本",
 	"downloads.ot.kindLanguage": "语言",
 	"downloads.ot.kindReleaseType": "发布类型",
-	"downloads.ot.kindYear": "年份"
+	"downloads.ot.kindYear": "年份",
+	"downloads.hl.notMoved": "导入后未能移动"
 }

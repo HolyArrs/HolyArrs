@@ -277,6 +277,9 @@ func (a *Web) onItem(r *http.Request, write bool, call func(e Engine, id string)
 	if err != nil {
 		return ErrNoDownloader
 	}
+	if write && a.notOurs(r.Context(), id, []string{r.PathValue("hash")}) {
+		return ErrNotOurs
+	}
 	err = a.Manager().ControlItem(r.Context(), id, r.PathValue("hash"), write, call)
 	if err == nil && write {
 		a.Manager().Kick(id) // the reader shows the change at once

@@ -47,5 +47,11 @@
 	"settings.libraryFolders.newPath": "พาธใหม่",
 	"settings.libraryFolders.changePathHint": "ย้ายไฟล์ไปที่นั่นก่อน HolyArrs ตรวจสอบทุกไฟล์และไม่ย้ายอะไรเลย",
 	"settings.libraryFolders.checkingFiles": "กำลังตรวจสอบไฟล์…",
-	"settings.libraryFolders.pathChanged": "เปลี่ยนพาธแล้ว"
+	"settings.libraryFolders.pathChanged": "เปลี่ยนพาธแล้ว",
+	"settings.libraryFolders.sideFiles": "ไฟล์คำบรรยาย",
+	"settings.libraryFolders.sideFilesDesc": "คำบรรยายที่มากับการดาวน์โหลดสามารถนำเข้าคลังไว้ข้างวิดีโอได้",
+	"settings.libraryFolders.sideOn": "นำไฟล์คำบรรยายมาด้วย",
+	"settings.libraryFolders.sideOnHint": "ไฟล์ที่อยู่ในคลังแล้วจะไม่ถูกแทนที่",
+	"settings.libraryFolders.sideTypes": "ชนิดไฟล์",
+	"settings.libraryFolders.sideTypesHint": "คั่นชนิดด้วยจุลภาค เช่น srt, ass"
 }

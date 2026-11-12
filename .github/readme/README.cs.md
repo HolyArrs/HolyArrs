@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent a ruTorrent jako stahovač**, i na seedboxech. Dokončená usenetová stahování se teď do tvé knihovny přesouvají místo kopírování. [Podívej se, co je nového](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: nyní ve 44 jazycích**, i zprava doleva. aria2 funguje jako stahovač a balíčky sérií se stahují po několika dílech. [Co je nového](https://holyarrs.com/whats-new/)
 
 > Každý plakát, trailer i hodnocení ve tvém HolyArrs pochází ze serveru, který sám provozuji a platím, aby zůstal zdarma pro všechny. Pokud ti HolyArrs udělal filmový večer o něco lepší, sponzorství nám všem udrží světla zapnutá 💛
 >
@@ -222,7 +220,7 @@ Image jsou na Docker Hubu jako [`holyarrs/holyarrs`](https://hub.docker.com/r/ho
 | Tag | K čemu ho použít |
 | :----: | --- |
 | `latest` | Nejnovější verze. |
-| `1.0.19` | Jedna přesná verze. Nikdy se nemění. |
+| `1.1.0` | Jedna přesná verze. Nikdy se nemění. |
 
 ## Použití
 

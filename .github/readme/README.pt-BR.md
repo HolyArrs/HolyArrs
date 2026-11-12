@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent e ruTorrent como gerenciador de downloads**, inclusive em seedbox. Downloads da Usenet concluídos agora são movidos para sua biblioteca em vez de copiados. [Novidades](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: agora em 44 idiomas**, incluindo os da direita para a esquerda. O aria2 funciona como downloader, e pacotes de temporada baixam alguns episódios por vez. [Veja as novidades](https://holyarrs.com/whats-new/)
 
 > Cada pôster, trailer e nota do seu HolyArrs vem de um servidor que eu mantenho e pago do meu bolso, para que continue grátis para todo mundo. Se o HolyArrs deixou sua noite de filme um pouco melhor, patrocinar mantém as luzes acesas para todos nós 💛
 >
@@ -222,7 +220,7 @@ As imagens ficam no Docker Hub como [`holyarrs/holyarrs`](https://hub.docker.com
 | Tag | Use para |
 | :----: | --- |
 | `latest` | A versão mais recente. |
-| `1.0.19` | Uma versão exata. Nunca muda. |
+| `1.1.0` | Uma versão exata. Nunca muda. |
 
 ## Uso
 

@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "エディション",
 	"downloads.ot.kindLanguage": "言語",
 	"downloads.ot.kindReleaseType": "リリースの種類",
-	"downloads.ot.kindYear": "年"
+	"downloads.ot.kindYear": "年",
+	"downloads.hl.notMoved": "インポート後に移動できませんでした"
 }

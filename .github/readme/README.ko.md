@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: 다운로더로 rTorrent와 ruTorrent 지원.** 시드박스도 돼요. 다 받은 Usenet 다운로드는 이제 복사하지 않고 라이브러리로 옮겨요. [새 소식](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: 이제 44개 언어 지원**, 오른쪽에서 왼쪽 언어도 포함. aria2를 다운로더로 쓸 수 있고, 시즌 팩은 몇 화씩 나눠 받습니다. [새로운 기능](https://holyarrs.com/whats-new/)
 
 > HolyArrs의 모든 포스터, 예고편, 평점은 제가 직접 운영하고 비용을 내는 서버에서 와요. 그래서 모두에게 무료로 유지돼요. HolyArrs 덕분에 영화 보는 밤이 조금 더 즐거워졌다면, 후원으로 우리 모두의 불을 계속 밝혀 주세요 💛
 >
@@ -222,7 +220,7 @@ NAS를 쓰세요? [Unraid, Synology 및 기타 NAS](https://docs.HolyArrs.com/ru
 | 태그 | 용도 |
 | :----: | --- |
 | `latest` | 최신 릴리스. |
-| `1.0.19` | 정확히 한 버전이에요. 절대 움직이지 않아요. |
+| `1.1.0` | 정확히 한 버전이에요. 절대 움직이지 않아요. |
 
 ## 사용법
 

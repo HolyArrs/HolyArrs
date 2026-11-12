@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19：支援 rTorrent 和 ruTorrent 作為下載器**，seedbox 也可以用。下載完成的 Usenet 檔案現在會移進你的媒體庫，不再複製。[看看新功能](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0：現已支援 44 種語言**，包括由右至左的語言。aria2 可作為下載器使用，整季資源包每次只下載幾集。[查看新功能](https://holyarrs.com/whats-new/)
 
 > 你的 HolyArrs 裡每一張海報、每一支預告片和每一個評分，都來自我自己架設、自己付費的伺服器，所以它能對所有人保持免費。如果 HolyArrs 讓你的電影夜好過了一點，贊助能讓我們大家的燈一直亮著 💛
 >
@@ -222,7 +220,7 @@ image 放在 Docker Hub，名稱是 [`holyarrs/holyarrs`](https://hub.docker.com
 | Tag | 用途 |
 | :----: | --- |
 | `latest` | 最新的新版。 |
-| `1.0.19` | 固定的某一個版本。它永遠不會變。 |
+| `1.1.0` | 固定的某一個版本。它永遠不會變。 |
 
 ## 使用方式
 

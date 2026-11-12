@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "sürüm",
 	"downloads.ot.kindLanguage": "dil",
 	"downloads.ot.kindReleaseType": "yayın türü",
-	"downloads.ot.kindYear": "yıl"
+	"downloads.ot.kindYear": "yıl",
+	"downloads.hl.notMoved": "İçe aktarmadan sonra taşınmadı"
 }

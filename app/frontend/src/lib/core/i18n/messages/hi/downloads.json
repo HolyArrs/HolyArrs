@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "संस्करण",
 	"downloads.ot.kindLanguage": "भाषा",
 	"downloads.ot.kindReleaseType": "रिलीज़ का प्रकार",
-	"downloads.ot.kindYear": "साल"
+	"downloads.ot.kindYear": "साल",
+	"downloads.hl.notMoved": "इम्पोर्ट के बाद नहीं हटाया गया"
 }

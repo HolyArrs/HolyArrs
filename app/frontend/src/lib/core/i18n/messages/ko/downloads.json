@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "에디션",
 	"downloads.ot.kindLanguage": "언어",
 	"downloads.ot.kindReleaseType": "릴리스 유형",
-	"downloads.ot.kindYear": "연도"
+	"downloads.ot.kindYear": "연도",
+	"downloads.hl.notMoved": "가져온 후 옮기지 못함"
 }

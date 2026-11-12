@@ -1282,5 +1282,11 @@
 	"server.migrate.nothing-in-the-old-app-gives": "nic w starej aplikacji nie daje mu punktów, więc niczego tu nie zmienia",
 	"server.migrate.pick-rules-here-still-give-it": "Reguły wyboru tutaj wciąż dają mu punkty, więc zostaje",
 	"server.migrate.pick-rules-hold-at-most-64": "Reguły wyboru mieszczą najwyżej 64 cechy; zachowano najsilniejsze wyniki",
-	"server.migrate.something-here-still-uses-these-pick": "coś tutaj wciąż używa tych Reguł wyboru, więc zostają"
+	"server.migrate.something-here-still-uses-these-pick": "coś tutaj wciąż używa tych Reguł wyboru, więc zostają",
+	"server.downloads.could-not-move-the-imported-download": "Nie udało się przenieść zaimportowanego pobrania do {cat} w {name}: {error}; HolyArrs spróbuje ponownie przy następnym imporcie",
+	"server.downloads.moved-to-after-import": "Przeniesiono do {cat} po imporcie",
+	"server.library.files-matched-by-hand": "{name}: ręcznie dopasowane pliki: {n}",
+	"server.library.no-such-file-in-this-title": "nie ma takiego pliku w tym tytule",
+	"server.library.send-1-to-2000-files": "wyślij od 1 do 2000 plików",
+	"server.sources.this-kind-of-title-can-t": "tego rodzaju tytułu nie można wyszukać"
 }

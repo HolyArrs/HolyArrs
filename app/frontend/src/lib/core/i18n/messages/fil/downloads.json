@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "edisyon",
 	"downloads.ot.kindLanguage": "wika",
 	"downloads.ot.kindReleaseType": "uri ng release",
-	"downloads.ot.kindYear": "taon"
+	"downloads.ot.kindYear": "taon",
+	"downloads.hl.notMoved": "Hindi nailipat pagkatapos ng import"
 }

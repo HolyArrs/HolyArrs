@@ -1282,5 +1282,11 @@
 	"server.migrate.nothing-in-the-old-app-gives": "பழைய செயலியில் எதுவும் இதற்குப் புள்ளிகள் தரவில்லை, எனவே இங்கே எதையும் மாற்றாது",
 	"server.migrate.pick-rules-here-still-give-it": "இங்குள்ள தேர்வு விதிகள் இன்னும் இதற்குப் புள்ளிகள் தருகின்றன, எனவே இது இருக்கிறது",
 	"server.migrate.pick-rules-hold-at-most-64": "தேர்வு விதிகளில் அதிகபட்சம் 64 பண்புகள்; வலுவான மதிப்பெண்கள் வைக்கப்பட்டன",
-	"server.migrate.something-here-still-uses-these-pick": "இங்கே ஏதோ ஒன்று இன்னும் இந்தத் தேர்வு விதிகளைப் பயன்படுத்துகிறது, எனவே அவை இருக்கின்றன"
+	"server.migrate.something-here-still-uses-these-pick": "இங்கே ஏதோ ஒன்று இன்னும் இந்தத் தேர்வு விதிகளைப் பயன்படுத்துகிறது, எனவே அவை இருக்கின்றன",
+	"server.downloads.could-not-move-the-imported-download": "இறக்குமதியான பதிவிறக்கத்தை {name} இல் {cat} க்கு நகர்த்த முடியவில்லை: {error}; அடுத்த இறக்குமதியில் HolyArrs மீண்டும் முயலும்",
+	"server.downloads.moved-to-after-import": "இறக்குமதிக்குப் பின் {cat} க்கு நகர்த்தப்பட்டது",
+	"server.library.files-matched-by-hand": "{name}: {n} கோப்புகள் கையால் பொருத்தப்பட்டன",
+	"server.library.no-such-file-in-this-title": "இந்தத் தலைப்பில் அப்படி ஒரு கோப்பு இல்லை",
+	"server.library.send-1-to-2000-files": "1 முதல் 2000 கோப்புகளை அனுப்பு",
+	"server.sources.this-kind-of-title-can-t": "இந்த வகைத் தலைப்பைத் தேட முடியாது"
 }

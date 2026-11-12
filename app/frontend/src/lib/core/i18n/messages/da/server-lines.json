@@ -1282,5 +1282,11 @@
 	"server.migrate.nothing-in-the-old-app-gives": "intet i den gamle app giver den point, så den ændrer intet her",
 	"server.migrate.pick-rules-here-still-give-it": "Valgregler her giver den stadig point, så den bliver",
 	"server.migrate.pick-rules-hold-at-most-64": "Valgregler rummer højst 64 egenskaber; de stærkeste point blev beholdt",
-	"server.migrate.something-here-still-uses-these-pick": "noget her bruger stadig disse Valgregler, så de bliver"
+	"server.migrate.something-here-still-uses-these-pick": "noget her bruger stadig disse Valgregler, så de bliver",
+	"server.downloads.could-not-move-the-imported-download": "Den importerede download kunne ikke flyttes til {cat} i {name}: {error}; HolyArrs prøver igen ved næste import",
+	"server.downloads.moved-to-after-import": "Flyttet til {cat} efter import",
+	"server.library.files-matched-by-hand": "{name}: {n} filer koblet i hånden",
+	"server.library.no-such-file-in-this-title": "ingen sådan fil i denne titel",
+	"server.library.send-1-to-2000-files": "send 1 til 2000 filer",
+	"server.sources.this-kind-of-title-can-t": "denne slags titel kan ikke søges"
 }

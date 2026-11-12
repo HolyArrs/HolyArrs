@@ -1282,5 +1282,11 @@
 	"server.migrate.nothing-in-the-old-app-gives": "পুরোনো অ্যাপে কিছুই একে পয়েন্ট দেয় না, তাই এখানে কিছু বদলায় না",
 	"server.migrate.pick-rules-here-still-give-it": "এখানকার বাছাইয়ের নিয়ম এখনো একে পয়েন্ট দেয়, তাই এটি থাকে",
 	"server.migrate.pick-rules-hold-at-most-64": "বাছাইয়ের নিয়মে সর্বোচ্চ ৬৪টি বৈশিষ্ট্য থাকে; সবচেয়ে বড় স্কোরগুলো রাখা হয়েছে",
-	"server.migrate.something-here-still-uses-these-pick": "এখানে কিছু এখনো এই বাছাইয়ের নিয়ম ব্যবহার করে, তাই এগুলো থাকে"
+	"server.migrate.something-here-still-uses-these-pick": "এখানে কিছু এখনো এই বাছাইয়ের নিয়ম ব্যবহার করে, তাই এগুলো থাকে",
+	"server.downloads.could-not-move-the-imported-download": "ইমপোর্ট করা ডাউনলোড {name}-এ {cat}-তে সরানো যায়নি: {error}; পরের ইমপোর্টে HolyArrs আবার চেষ্টা করবে",
+	"server.downloads.moved-to-after-import": "ইমপোর্টের পরে {cat}-তে সরানো হয়েছে",
+	"server.library.files-matched-by-hand": "{name}: {n}টি ফাইল হাতে মেলানো হয়েছে",
+	"server.library.no-such-file-in-this-title": "এই টাইটেলে এমন কোনো ফাইল নেই",
+	"server.library.send-1-to-2000-files": "১ থেকে ২০০০টি ফাইল পাঠান",
+	"server.sources.this-kind-of-title-can-t": "এই ধরনের শিরোনাম খোঁজা যায় না"
 }

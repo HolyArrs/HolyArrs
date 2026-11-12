@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "izdevums",
 	"downloads.ot.kindLanguage": "valoda",
 	"downloads.ot.kindReleaseType": "izlaiduma veids",
-	"downloads.ot.kindYear": "gads"
+	"downloads.ot.kindYear": "gads",
+	"downloads.hl.notMoved": "Pēc importa netika pārvietots"
 }

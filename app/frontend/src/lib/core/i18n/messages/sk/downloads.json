@@ -1255,5 +1255,6 @@
 	"downloads.ot.kindEdition": "edícia",
 	"downloads.ot.kindLanguage": "jazyk",
 	"downloads.ot.kindReleaseType": "typ vydania",
-	"downloads.ot.kindYear": "rok"
+	"downloads.ot.kindYear": "rok",
+	"downloads.hl.notMoved": "Po importe nepresunuté"
 }
