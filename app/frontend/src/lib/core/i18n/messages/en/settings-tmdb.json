@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Couldn't save",
 	"settings.tmdb.locked": "Set by your Docker settings",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE is \"{value}\", which isn't full, own or off, so lookups are off.",
-	"settings.tmdb.ownNote": "Your own keys asks each source yourself. Music charts, new music rows, streaming Top 10s, Wikipedia facts and anime maps come only from the HolyArrs server, so they are off.",
+	"settings.tmdb.ownNote": "With your own keys, HolyArrs asks each source directly. Music charts, new music rows, streaming Top 10s, Wikipedia facts and anime maps come only from the HolyArrs server, so they are off.",
 	"settings.tmdb.keysTitle": "Your keys",
 	"settings.tmdb.keysDesc": "Only the TMDB read token is needed",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

@@ -13,7 +13,7 @@ import (
 
 // When HolyArrs runs on a Docker bridge, a browser that opens the host's LAN
 // IP shows up as the container's default gateway. While the owner has the
-// local skip on, that one address counts as local (#262). It is read from
+// local skip on, that one address counts as local. It is read from
 // the container's own routing table, never guessed from the address shape.
 
 // readGateways returns the default gateways of this machine; tests swap it.

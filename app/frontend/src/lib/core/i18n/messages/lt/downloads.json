@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Nuskaitymai",
 	"downloads.ht.routine.searches.hint": "Leidimų paieškos ir srauto patikros.",
 	"downloads.ht.routine.searches.label": "Paieškos",
-	"downloads.import.copy": "kopijuojama",
+	"downloads.import.copy": "Nukopijuota",
 	"downloads.import.hardlink": "kietoji nuoroda",
 	"downloads.import.move": "perkeliama",
 	"downloads.import.noFile": "nepavyko padėti jokio failo",

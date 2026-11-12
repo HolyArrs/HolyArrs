@@ -344,7 +344,7 @@
 {#if !loaded}
 	<SkSettings rows={2} />
 {:else if !hasData}
-	<LoadError hasData={false} message={error} onretry={load} />
+	<LoadError hasData={false} message={error} onretry={() => { load(); if (packError) loadPack(); }} />
 {:else if alerts.length === 0 && !editing}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<EmptyState icon="bell" title={t('settings.alerts.none2')} text={t('settings.alerts.noneText')} action={{ label: t('settings.alerts.add'), onclick: startAdd, icon: 'plus' }} />
@@ -377,6 +377,8 @@
 	</ul>
 {/if}
 
+<!-- when both loads fail, the one error above retries both -->
+{#if !(loaded && !hasData && packError)}
 <section class="card packs" id="pack-alerts" tabindex="-1" aria-labelledby="h-packs" data-testid="pack-alerts">
 	<h2 id="h-packs" class="h2">{t('settings.alerts.packs')}</h2>
 	<p class="small muted">{t('settings.alerts.packsNote')}</p>
@@ -400,6 +402,7 @@
 	</fieldset>
 	{/if}
 </section>
+{/if}
 
 <style>
 	.packs {

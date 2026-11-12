@@ -127,7 +127,7 @@ test('Import files by hand: Change matches a wrongly named file to another Libra
 	expect(res.title_id).toBe(right);
 	expect(['hardlink', 'copy']).toContain(res.placed_by);
 	const target = res.target ?? '';
-	await expect(row.getByRole('status')).toHaveText(/^(Added to the Library, no extra space used|Copied to the Library, uses extra space)/);
+	await expect(row.getByRole('status')).toHaveText(/^(Added to the Library \(no extra space used\)|Copied to the Library \(uses extra space\))/);
 	await expect(page.getByText('1 file imported')).toBeVisible();
 	// The loose file stays and the movie's file is in Ochre Bandstand's folder.
 	expect(existsSync(file)).toBe(true);

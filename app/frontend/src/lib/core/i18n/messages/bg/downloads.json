@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Сканирания",
 	"downloads.ht.routine.searches.hint": "Търсения на релийзи и проверки на емисии.",
 	"downloads.ht.routine.searches.label": "Търсения",
-	"downloads.import.copy": "копиране",
+	"downloads.import.copy": "Копирано",
 	"downloads.import.hardlink": "хардлинк",
 	"downloads.import.move": "преместване",
 	"downloads.import.noFile": "никой файл не можа да се постави",

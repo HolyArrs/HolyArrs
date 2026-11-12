@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Сканирования",
 	"downloads.ht.routine.searches.hint": "Поиски релизов и проверки лент.",
 	"downloads.ht.routine.searches.label": "Поиски",
-	"downloads.import.copy": "Скопировано в Медиатеку",
+	"downloads.import.copy": "Скопировано в Медиатеку, занимает лишнее место",
 	"downloads.import.hardlink": "Добавлено в Медиатеку (без лишнего места)",
 	"downloads.import.move": "Перемещено в Медиатеку",
 	"downloads.import.noFile": "ни один файл не удалось разместить",

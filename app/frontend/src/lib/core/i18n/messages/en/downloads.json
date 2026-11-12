@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Scans",
 	"downloads.ht.routine.searches.hint": "Searches for Releases and feed checks.",
 	"downloads.ht.routine.searches.label": "Searches",
-	"downloads.import.copy": "Copied to the Library",
+	"downloads.import.copy": "Copied to the Library (uses extra space)",
 	"downloads.import.hardlink": "Added to the Library (no extra space used)",
 	"downloads.import.move": "Moved to the Library",
 	"downloads.import.noFile": "no file could be placed",

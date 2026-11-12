@@ -14,7 +14,7 @@
 	"health.check.waiting": "फ़ाइलों का इंतज़ार करते डाउनलोड",
 	"health.check.clearWaiting": "साफ़ होने का इंतज़ार करते डाउनलोड",
 	"health.check.saveFolder": "सेव फ़ोल्डर:",
-	"health.check.saveFolderWhy": "{app} का सेव फ़ोल्डर सेट नहीं है, इसलिए HolyArrs उसके पूरे हुए डाउनलोड इंपोर्ट नहीं कर सकता। सेटिंग > डाउनलोडर में पाथ की जोड़ी जोड़ें।",
+	"health.check.saveFolderWhy": "{app} का सेव फ़ोल्डर सेट नहीं है, इसलिए HolyArrs उसके पूरे हुए डाउनलोड इंपोर्ट नहीं कर सकता। सेटिंग › डाउनलोडर में पाथ की जोड़ी जोड़ें।",
 	"health.day.ahead": "{count} आगे",
 	"health.day.cancelled": "रद्द किया गया",
 	"health.day.due": "बाकी है",

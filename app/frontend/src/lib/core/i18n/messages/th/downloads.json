@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "การสแกน",
 	"downloads.ht.routine.searches.hint": "การค้นหารีลีสและการตรวจฟีด",
 	"downloads.ht.routine.searches.label": "การค้นหา",
-	"downloads.import.copy": "การคัดลอก",
+	"downloads.import.copy": "คัดลอกแล้ว",
 	"downloads.import.hardlink": "ฮาร์ดลิงก์",
 	"downloads.import.move": "การย้าย",
 	"downloads.import.noFile": "ไม่มีไฟล์ที่วางได้",

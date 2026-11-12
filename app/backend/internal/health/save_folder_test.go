@@ -7,7 +7,7 @@ import (
 
 // A Usenet Downloader gives no file list, so with no save folder
 // (HOLYARRS_SAVE_PATH) and no path pair HolyArrs never imports its finished
-// jobs (#272). Health names that Downloader and how to fix it; a path pair or
+// jobs. Health names that Downloader and how to fix it; a path pair or
 // the save folder makes the warning go.
 func TestSaveFolderCheck(t *testing.T) {
 	w := newWorld(t)

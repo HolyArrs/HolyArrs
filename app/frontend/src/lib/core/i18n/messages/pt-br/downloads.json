@@ -640,7 +640,7 @@
 	"downloads.ht.routine.scans.label": "Varreduras",
 	"downloads.ht.routine.searches.hint": "Buscas de lançamentos e verificações de feed.",
 	"downloads.ht.routine.searches.label": "Buscas",
-	"downloads.import.copy": "Copiado para a Biblioteca",
+	"downloads.import.copy": "Copiado para a Biblioteca, usa espaço extra",
 	"downloads.import.hardlink": "Adicionado à Biblioteca (sem espaço extra)",
 	"downloads.import.move": "Movido para a Biblioteca",
 	"downloads.import.noFile": "nenhum arquivo pôde ser colocado",
