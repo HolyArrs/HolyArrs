@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "음악: ",
 	"library.import.progress": "진행 상황",
 	"library.import.reading": "폴더를 읽고 {word}을(를) 하나씩 찾는 중입니다.",
+	"library.import.readCount": "폴더 {total}개 중 {done}개를 찾아봤습니다.",
 	"library.import.adopting": "편입 중입니다.",
 	"library.import.noMatchFiles": "작품과 일치하지 않는 파일이 있나요? <a>파일 직접 가져오기</a>",
 	"library.import.done": "완료",

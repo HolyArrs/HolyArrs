@@ -33,6 +33,7 @@ func (s *Service) handleScanLibrary(ctx context.Context, r *jobs.Run) error {
 	if err := database.Get(ctx, s.Store.Read(), "library_folders", r.Job.Subject.ID, &lf); err != nil {
 		return ErrNoFolder
 	}
+	ctx = WithScanProgress(ctx, scanProgress(ctx, r, time.Now))
 	var p AdoptPlan
 	var err error
 	switch lf.Kind {
@@ -62,6 +63,23 @@ func (s *Service) handleScanLibrary(ctx context.Context, r *jobs.Run) error {
 		Summary: fmt.Sprintf("Scanned %s: %d matched, %d unsure, %d unmatched", p.Path, p.Counts["matched"], p.Counts["unsure"], p.Counts["unmatched"]),
 		Data:    map[string]any{"library_folder_id": p.LibraryFolderID, "counts": p.Counts}})
 	return nil
+}
+
+// scanProgressEvery is the least time between two progress saves of a scan.
+const scanProgressEvery = 2 * time.Second
+
+// scanProgress saves a scan's progress as "done/total" on its Job, at most
+// every scanProgressEvery and always when it ends, so the page shows a long
+// scan moving (and keeps waiting for it) without a write per folder.
+func scanProgress(ctx context.Context, r *jobs.Run, now func() time.Time) func(done, total int) {
+	var last time.Time
+	return func(done, total int) {
+		if total <= 0 || (done < total && done > 0 && now().Sub(last) < scanProgressEvery) {
+			return
+		}
+		last = now()
+		_ = r.Progress(ctx, float64(done)/float64(total), strconv.Itoa(done)+"/"+strconv.Itoa(total))
+	}
 }
 
 func (s *Service) handleAdopt(ctx context.Context, r *jobs.Run) error {

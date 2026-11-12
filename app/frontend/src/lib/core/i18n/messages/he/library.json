@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "מוזיקה:",
 	"library.import.progress": "התקדמות",
 	"library.import.reading": "קורא את התיקייה ומחפש כל {word}.",
+	"library.import.readCount": "נבדקו {done} מתוך {total} תיקיות.",
 	"library.import.adopting": "קולט.",
 	"library.import.noMatchFiles": "קבצים שלא תואמים לכותר? <a>ייבוא קבצים ידנית</a>",
 	"library.import.done": "סיום",

@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "เพลง:",
 	"library.import.progress": "ความคืบหน้า",
 	"library.import.reading": "กำลังอ่านโฟลเดอร์และค้นหา{word}แต่ละรายการ",
+	"library.import.readCount": "ค้นหาแล้ว {done} จาก {total} โฟลเดอร์",
 	"library.import.adopting": "กำลังรับมาดูแล",
 	"library.import.noMatchFiles": "ไฟล์ที่ไม่ตรงกับเรื่องใด <a>นำเข้าไฟล์ด้วยตัวเอง</a>",
 	"library.import.done": "เสร็จแล้ว",

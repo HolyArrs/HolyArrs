@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Music: ",
 	"library.import.progress": "Progress",
 	"library.import.reading": "Reading the folder and looking each {word} up.",
+	"library.import.readCount": "Looked up {done} of {total} folders.",
 	"library.import.adopting": "Adopting.",
 	"library.import.noMatchFiles": "Files that don't match a title? <a>Import files by hand</a>",
 	"library.import.done": "Done",

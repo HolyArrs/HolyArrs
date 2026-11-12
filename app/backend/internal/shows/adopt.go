@@ -173,14 +173,17 @@ func PlanShowAdoptFrom(ctx context.Context, db library.Reader, shows metadata.Sh
 		known[library.FolderKey(v.FolderName, fold)] = v.TitleID
 	}
 	p.Warning = library.MountWarning(ctx, db, lf, len(ents))
+	total := library.ScanTotal(ents, after, p.Limit)
+	defer func() { library.ReportScan(ctx, len(p.Folders), total) }()
 	for _, e := range ents {
-		if !e.IsDir() || strings.HasPrefix(e.Name(), ".") || library.NasSystemDir(e.Name()) || (after != "" && e.Name() <= after) {
+		if !library.ScanWants(e, after) {
 			continue
 		}
 		if len(p.Folders) >= p.Limit {
 			p.More, p.Next = true, p.Folders[len(p.Folders)-1].Folder
 			break
 		}
+		library.ReportScan(ctx, len(p.Folders), total)
 		vids := library.ListVideosN(lf.Path, e.Name(), maxShowVideos)
 		c := library.AdoptCandidate{Folder: e.Name(), Videos: vids, Others: []library.AdoptMatch{}}
 		if id, ok := known[library.FolderKey(e.Name(), fold)]; ok {

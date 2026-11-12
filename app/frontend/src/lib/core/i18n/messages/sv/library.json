@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Musik: ",
 	"library.import.progress": "Förlopp",
 	"library.import.reading": "Läser mappen och slår upp varje {word}.",
+	"library.import.readCount": "Slog upp {done} av {total} mappar.",
 	"library.import.adopting": "Övertar.",
 	"library.import.noMatchFiles": "Filer som inte matchar en titel? <a>Importera filer manuellt</a>",
 	"library.import.done": "Klart",

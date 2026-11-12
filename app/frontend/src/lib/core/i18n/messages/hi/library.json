@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "संगीत: ",
 	"library.import.progress": "प्रगति",
 	"library.import.reading": "फ़ोल्डर पढ़ा जा रहा है और हर {word} खोजा जा रहा है।",
+	"library.import.readCount": "{total} में से {done} फ़ोल्डर खोजे गए।",
 	"library.import.adopting": "अपनाया जा रहा है।",
 	"library.import.noMatchFiles": "ऐसी फ़ाइलें जो किसी टाइटल से मेल नहीं खातीं? <a>फ़ाइलें हाथ से इंपोर्ट करें</a>",
 	"library.import.done": "पूरा हुआ",

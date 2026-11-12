@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Muzică: ",
 	"library.import.progress": "Progres",
 	"library.import.reading": "Se citește dosarul și se caută fiecare {word}.",
+	"library.import.readCount": "Căutate {done} din {total} dosare.",
 	"library.import.adopting": "Se preiau.",
 	"library.import.noMatchFiles": "Fișiere care nu se potrivesc cu un titlu? <a>Importă fișiere manual</a>",
 	"library.import.done": "Gata",

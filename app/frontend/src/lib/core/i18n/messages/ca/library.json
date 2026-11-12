@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Música:",
 	"library.import.progress": "Progrés",
 	"library.import.reading": "Llegint la carpeta i cercant cada {word}.",
+	"library.import.readCount": "S'han cercat {done} de {total} carpetes.",
 	"library.import.adopting": "Adoptant.",
 	"library.import.noMatchFiles": "Fitxers que no coincideixen amb cap títol? <a>Importa fitxers a mà</a>",
 	"library.import.done": "Fet",

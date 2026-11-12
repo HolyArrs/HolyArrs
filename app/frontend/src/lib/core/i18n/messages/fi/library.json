@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Musiikki:",
 	"library.import.progress": "Edistyminen",
 	"library.import.reading": "Luetaan kansiota ja haetaan jokaista kohdetta: {word}.",
+	"library.import.readCount": "Haettu {done}/{total} kansiota.",
 	"library.import.adopting": "Otetaan haltuun.",
 	"library.import.noMatchFiles": "Tiedostoja, jotka eivät vastaa nimikettä? <a>Tuo tiedostot käsin</a>",
 	"library.import.done": "Valmis",

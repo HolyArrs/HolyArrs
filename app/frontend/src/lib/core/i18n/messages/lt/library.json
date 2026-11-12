@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Muzika: ",
 	"library.import.progress": "Eiga",
 	"library.import.reading": "Skaitomas aplankas ir ieškoma kiekvieno: {word}.",
+	"library.import.readCount": "Peržiūrėta {done} iš {total} aplankų.",
 	"library.import.adopting": "Perimama.",
 	"library.import.noMatchFiles": "Failai, kurie neatitinka kūrinio? <a>Importuokite failus ranka</a>",
 	"library.import.done": "Atlikta",

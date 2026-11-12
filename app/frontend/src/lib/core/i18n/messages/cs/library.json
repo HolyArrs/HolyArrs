@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Hudba: ",
 	"library.import.progress": "Průběh",
 	"library.import.reading": "Čte se složka a vyhledává se každý z nich {word}.",
+	"library.import.readCount": "Vyhledáno {done} z {total} složek.",
 	"library.import.adopting": "Přebírá se.",
 	"library.import.noMatchFiles": "Soubory, které se neshodují s žádným titulem? <a>Importujte soubory ručně</a>",
 	"library.import.done": "Hotovo",

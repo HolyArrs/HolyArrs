@@ -138,6 +138,7 @@
 	"library.import.musicPrefix": "Μουσική: ",
 	"library.import.progress": "Πρόοδος",
 	"library.import.reading": "Ανάγνωση του φακέλου και αναζήτηση κάθε στοιχείου ({word}).",
+	"library.import.readCount": "Αναζητήθηκαν {done} από {total} φακέλους.",
 	"library.import.adopting": "Υιοθέτηση.",
 	"library.import.noMatchFiles": "Αρχεία που δεν ταιριάζουν με κάποιον τίτλο; <a>Εισαγωγή αρχείων με το χέρι</a>",
 	"library.import.done": "Ολοκληρώθηκε",
