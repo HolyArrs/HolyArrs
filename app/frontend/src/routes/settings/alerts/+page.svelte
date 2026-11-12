@@ -12,7 +12,6 @@
 	import { switchKind } from '#lib/alerts/index.ts';
 	import { askMoments, libraryMoments, momentWords } from '#lib/requests/index.ts';
 	import { onMount } from 'svelte';
-	import { session } from '#lib/core/session.svelte.ts';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { ago } from '#lib/core/format.ts';
@@ -218,12 +217,12 @@
 				<Field id="al-kind" label={t('settings.alerts.kind')}>
 					<select id="al-kind" class="input" bind:value={() => form.kind, (k) => (form = switchKind(form, k))}>
 						<option value="discord">Discord</option>
-						{#if !session.held('alert_channels_more')}<option value="telegram">Telegram</option>{/if}
-						{#if !session.held('alert_channels_more')}<option value="ntfy">ntfy</option>{/if}
-						{#if !session.held('alert_channels_more')}<option value="gotify">Gotify</option>{/if}
-						{#if !session.held('alert_channels_more')}<option value="pushover">Pushover</option>{/if}
+						<option value="telegram">Telegram</option>
+						<option value="ntfy">ntfy</option>
+						<option value="gotify">Gotify</option>
+						<option value="pushover">Pushover</option>
 						<option value="email">{t('settings.alerts.email')}</option>
-						{#if !session.held('alert_channels_more')}<option value="webhook">{t('settings.alerts.webhookJson')}</option>{/if}
+						<option value="webhook">{t('settings.alerts.webhookJson')}</option>
 					</select>
 				</Field>
 			{/if}
