@@ -394,20 +394,21 @@
 	.top :global(.ui-head) { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 	.greet { font: var(--t-large-title); letter-spacing: var(--t-large-title-track); text-wrap: balance; overflow-wrap: anywhere; }
 	.top-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; min-height: 44px; }
-	.top-row :global(.ui-seg button) { padding: 0 16px; }
+	/* Wider pads only where there is room; small phones keep the control's own 8px, so long words (Finnish, Hungarian) fit. */
+	@media (min-width: 421px) { .top-row :global(.ui-seg button) { padding: 0 16px; } }
 	.note { min-width: 0; flex: 1 1 120px; color: var(--text-muted); font: var(--t-callout); line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
-	.note .dot { display: inline-block; width: 8px; height: 8px; margin-right: 8px; vertical-align: 1px; border-radius: 50%; background: var(--text-faint); }
+	.note .dot { display: inline-block; width: 8px; height: 8px; margin-inline-end: 8px; vertical-align: 1px; border-radius: 50%; background: var(--text-faint); }
 	.note .dot.ok { background: var(--ok); }
 	.note .dot.wait { background: var(--wait); }
 	.note .dot.fail { background: var(--fail); }
-	.acts { margin-left: auto; display: flex; }
+	.acts { margin-inline-start: auto; display: flex; }
 	.wide-only { display: flex; gap: 8px; }
 	.phone-only { display: none; gap: 8px; }
 
 	/* The tile is the Requests card's sheet on its own: lit from above, a hairline, and one long soft shadow. A whisper of grain keeps the flat colour from looking printed. */
 	.tile {
 		position: relative; isolation: isolate; min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 16px 18px; border: 0; border-radius: 20px; overflow: hidden;
-		color: var(--text); text-align: left; font: inherit; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: var(--edge), var(--drop);
+		color: var(--text); text-align: start; font: inherit; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: var(--edge), var(--drop);
 		transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 	}
 	a.tile { cursor: pointer; }
@@ -427,16 +428,17 @@
 	.pic::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgb(0 0 0 / 80%), rgb(0 0 0 / 30%) 38%, transparent 62%); }
 	/* The bright edge sits over the picture. */
 	.pic::before { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; pointer-events: none; box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%), inset 0 0 0 1px rgb(255 255 255 / 10%); }
-	.pill { position: absolute; top: 12px; left: 12px; display: flex; }
+	.pill { position: absolute; top: 12px; inset-inline-start: 12px; display: flex; }
 	.pic .nm { font: 800 22px / 1.1 var(--font-display); letter-spacing: -0.02em; overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
 	.pic.big .nm { font-size: 32px; letter-spacing: -0.03em; }
 	.pic .logo { width: auto; height: auto; max-width: 55%; max-height: 72px; margin: 4px 0 2px; object-fit: contain; object-position: left bottom; filter: drop-shadow(0 2px 10px rgb(0 0 0 / 50%)); }
+	:global([dir='rtl']) .pic .logo { object-position: right bottom; }
 	.pic.big .logo { max-height: 104px; }
 	/* A dark wordmark (black letters made for light posters) is drawn white, its shape unchanged, like on the title page. */
 	.pic .logo:global(.dark) { filter: brightness(0) invert(1) drop-shadow(0 2px 10px rgb(0 0 0 / 50%)); }
 	.pic .sm { color: rgb(255 255 255 / 86%); font: 600 12px / 1.3 var(--font-ui); -webkit-line-clamp: 1; line-clamp: 1; }
-	.ask-stack img { width: 38px; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 7px; margin-left: -12px; background: var(--surface-3); box-shadow: 0 0 0 2.5px var(--sheet-b), 0 6px 14px -4px rgb(0 0 0 / 35%); }
-	.ask-stack img:first-child { margin-left: 0; }
+	.ask-stack img { width: 38px; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 7px; margin-inline-start: -12px; background: var(--surface-3); box-shadow: 0 0 0 2.5px var(--sheet-b), 0 6px 14px -4px rgb(0 0 0 / 35%); }
+	.ask-stack img:first-child { margin-inline-start: 0; }
 	.flow span { font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.dl-list span { color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 	.ft > span:last-child { font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -446,12 +448,12 @@
 		.tile.tall { grid-row: span 1; }
 		.tile.fill { grid-column: span 2; }
 		.tile { padding: 12px 14px; border-radius: 18px; }
-		.pill { top: 10px; left: 10px; }
+		.pill { top: 10px; inset-inline-start: 10px; }
 		.pic .nm { font-size: 18px; }
 		.pic.big .nm { font-size: 26px; }
 		.pic.big .logo { max-height: 72px; }
 		.sm { line-height: 1.3; }
-		.ask-stack img { width: 32px; margin-left: -10px; border-radius: 6px; }
+		.ask-stack img { width: 32px; margin-inline-start: -10px; border-radius: 6px; }
 }
 	/* Phones: the big tiles have less room, so two downloads show and the problem rows keep only their arrow. */
 	@container home (max-width: 560px) {
@@ -475,7 +477,7 @@
 	.up { display: flex; flex-direction: column; gap: 12px; }
 	.up-head { display: flex; align-items: baseline; gap: 12px; }
 	.up-head h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
-	.up-more { position: relative; margin-left: auto; display: inline-flex; align-items: center; gap: 2px; min-height: 32px; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; border-radius: 8px; }
+	.up-more { position: relative; margin-inline-start: auto; display: inline-flex; align-items: center; gap: 2px; min-height: 32px; color: var(--accent-text); font: var(--t-subhead); font-weight: 600; border-radius: 8px; }
 	.up-more::after { content: ''; position: absolute; inset: -6px 0; }
 	.up-more:hover { text-decoration: underline; text-underline-offset: 3px; }
 	.up-list { list-style: none; margin: 0; padding: 6px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 6px; border-radius: 20px; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: var(--edge), var(--drop); }

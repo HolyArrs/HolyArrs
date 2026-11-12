@@ -68,7 +68,7 @@
 	{#snippet fold()}
 		<!-- The title box and overview keep their space while the details load. -->
 		<div class="about">
-			{#if rich?.overview}<p class="bb-desc" title={rich.overview}>{shortSynopsis(rich.overview, 220)}</p>{/if}
+			{#if rich?.overview}<p class="bb-desc" title={rich.overview} dir="auto">{shortSynopsis(rich.overview, 220)}</p>{/if}
 		</div>
 	{/snippet}
 	{#snippet actions()}

@@ -284,6 +284,9 @@
 		.content { width: 100%; padding: 64px var(--gutter) 24px; }
 		.top { left: var(--gutter); }
 		.actions :global(.ui-act.primary) { flex: 1 1 100%; }
+		/* The buttons after the menu share one row in long languages too: they split the room and cut their words if they must. */
+		.actions :global(.ui-act:not(.primary):not(.round)) { flex: 1 1 96px; min-width: 0; padding-inline: 12px; }
+		.actions :global(.ui-act:not(.primary):not(.round) .cap) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 	}
 	/* Minimal look: a compact flat card with a small poster instead of the big art. */
 	.ui-billboard.minimal { --hero-ink: #161618; min-height: 0; overflow: visible; flex-direction: row; align-items: center; justify-content: flex-start; gap: clamp(16px, 2vw, 28px); padding: clamp(16px, 2vw, 28px); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%); }

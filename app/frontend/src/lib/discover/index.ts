@@ -127,6 +127,7 @@ export { topBar } from './scroll-bar.svelte.ts';
 export { typeHref } from './explore-type.ts';
 export { understood } from './search-plain.ts';
 export { visibleChips } from './people-shelves.ts';
+export { weekRange } from './calendar.ts';
 export { weekStart } from './calendar.ts';
 export { whyShown } from './why-shown.ts';
 export { withFollow } from './calendar.ts';

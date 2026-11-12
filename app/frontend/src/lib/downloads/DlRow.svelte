@@ -66,9 +66,9 @@
 		<span class="pcell" class:ph class:named={cols.srcName} data-col="proto">{#if p}{@const cm = clientMark(r.downloader_kind)}{@const pw = p === 'torrent' ? 'Torrent' : 'Usenet'}{@const logo = CLIENT_ICONS.has(r.downloader_kind ?? '')}<span class="pm" class:logo class:cmk={!logo && !!cm.mark} data-tone={logo ? undefined : cm.tone || undefined} data-testid="dl-protocol" data-protocol={p} data-kind={r.downloader_kind} use:tip={`${dlName(r)} · ${pw}`} role="img" aria-label="{dlName(r)} · {pw}">{#if logo}<img class="cico" src={to(`/clients/${r.downloader_kind}.svg`)} alt="" width="24" height="24" decoding="async" />{:else if cm.mark}{cm.mark}{:else}<Icon name={p === 'torrent' ? 'torrent' : 'usenet'} size={14} />{/if}</span>{#if cols.srcName}<span class="pnm" title={dlName(r)}>{dlKind(r) || dlName(r)}</span>{/if}{/if}</span>
 	{:else if id === 'title'}
 		<span class="nm" class:ph data-col="title">
-			<span class="tt" title={rowName(r)}><span class="tn">{rowName(r)}</span><span class="tphone">{phoneTitle(r)}</span>{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
+			<span class="tt" title={rowName(r)}><span class="tn" dir="auto">{rowName(r)}</span><span class="tphone" dir="auto">{phoneTitle(r)}</span>{#if r.version && r.version !== 'Main'}<span class="ver">{r.version}</span>{/if}</span>
 			<!-- A season pack taken a few episodes at a time says which ones, ahead of the Release name. -->
-			<span class="rel" title={r.name}>{#if r.pack}<span class="pkc" data-testid="dl-pack">{packLine(r)}</span>{/if}{sub2(r)}</span>
+			<span class="rel" title={r.name}>{#if r.pack}<span class="pkc" data-testid="dl-pack">{packLine(r)}</span>{/if}<bdi>{sub2(r)}</bdi></span>
 			{#if r.pack || subLine(r)}<span class="ep" data-testid="dl-epline">{r.pack ? packLine(r) : subLine(r)}</span>{/if}
 		</span>
 	{:else if id === 'progress'}
@@ -178,7 +178,7 @@
 	.tt .tn, .tt .tphone { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 	.tt .ver { flex: none; }
 	.rel { color: var(--text-muted); font: var(--t-caption); }
-	.pkc { margin-right: 6px; padding: 0 5px; border-radius: 4px; background: var(--surface-3); color: var(--text); }
+	.pkc { margin-inline-end: 6px; padding: 0 5px; border-radius: 4px; background: var(--surface-3); color: var(--text); }
 	.ver { margin-left: 6px; padding: 0 5px; border-radius: 4px; background: var(--surface-3); color: var(--text-muted); font: var(--t-caption); }
 	.prg { position: relative; display: flex; align-items: center; height: 14px; white-space: nowrap; padding: 0 6px; border-radius: 4px; overflow: hidden; background: var(--surface-3); color: var(--text); font-size: 10px; line-height: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
 	.prg i { position: absolute; inset: 0; background: var(--ok); opacity: 0.5; transition: transform var(--dur-slow) var(--ease-out); }
@@ -289,7 +289,7 @@
 		.prg i, .tg :global(svg), .bin, .post { transition: none; }
 	}
 	@media (max-width: 640px) {
-	.dline { grid-template-columns: 8px 36px minmax(0, 1fr) 40px auto 44px; grid-template-areas: 'tg post nm nm nm mn' 'tg post st bar time mn'; grid-template-rows: auto 18px; column-gap: 10px; row-gap: 2px; height: auto; min-height: 64px; padding: 4px 12px 4px 0; box-sizing: border-box; align-items: center; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background-color 160ms var(--ease-out), transform 160ms var(--ease-out); }
+	.dline { grid-template-columns: 8px 36px minmax(0, 1fr) 40px auto 44px; grid-template-areas: 'tg post nm nm nm mn' 'tg post st bar time mn'; grid-template-rows: auto 18px; column-gap: 10px; row-gap: 2px; height: auto; min-height: 64px; padding-block: 4px; padding-inline: 0 12px; box-sizing: border-box; align-items: center; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; transition: background-color 160ms var(--ease-out), transform 160ms var(--ease-out); }
 		.dline:global([data-pressing]) { transform: scale(0.985); background: color-mix(in srgb, var(--text) 7%, transparent); transition-duration: 450ms; }
 		.drow.picked > .dline { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 		.dline > [data-col] { display: none; }
@@ -310,6 +310,13 @@
 		.dline > [data-col='title'] .rel { display: none; }
 		.dline > [data-col='title'] .tt { font: 600 15px/19px var(--font-ui); }
 		.dline > [data-col='status'] { font: 400 12px/16px var(--font-ui); }
+		/* One line in the row's 18px slot: "Failed · Deleted by hand", the reason cut first (the full text is in the title). */
+		.dline > [data-col='status'], .dline > [data-col='status'].two { align-items: center; }
+		.dline > [data-col='status'].two .dot { margin-top: 0; }
+		.dline > [data-col='status'] .tx { flex-direction: row; align-items: baseline; gap: 4px; }
+		.dline > [data-col='status'] .sw { flex: 0 1 auto; }
+		.dline > [data-col='status'] .why { flex: 1 1 0%; min-width: 3ch; font: inherit; }
+		.dline > [data-col='status'] .why::before { content: '· '; }
 		.dline > [data-col='time'] { font-variant-numeric: tabular-nums; white-space: nowrap; }
 		.tg { align-self: center; }
 		.tg .pk.any { width: 20px; height: 20px; margin-left: 4px; }

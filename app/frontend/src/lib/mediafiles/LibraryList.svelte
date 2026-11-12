@@ -407,7 +407,7 @@
 												<Poster src={t.artwork[0]} name={t.name} />
 											</span>
 											<span class="lt">
-												<a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>
+												<a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>
 												{#if !phone && t.year}<small>{t.year}</small>{/if}
 												{#if phone}{@const fc = rowCols.find((c) => !isProgressCol(c)) ?? rowCols[0]}<span class="lsub">{[ls?.label, fc ? rowCell(t, fc, p, seriesOf(t)) : ''].filter(Boolean).join(' · ')}</span>{/if}
 											</span>
@@ -434,7 +434,7 @@
 												{:else}<span class="keep" class:on={t.keep_up_to_date} aria-label={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')} role="img"><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={16} /></span>{/if}
 											</span>
 											<span class="name">
-												<a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>
+												<a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>
 												<span class="sub">
 													{#if kind === 'all'}{kindLabel(t.kind)}{#if t.year} · {t.year}{/if}{#if sort.key === 'score' && !phone && scoreText(t)} · ★ {scoreText(t)}{/if}{/if}
 													{#if ls && (kind === 'all' || phone || !shownCols.some((c) => c.id === 'status'))}<span class="ls {ls.tone}" data-testid="library-status" data-state={ls.key}><i class="dot" aria-hidden="true"></i>{ls.label}</span>{/if}
@@ -476,11 +476,11 @@
 										<div class="ov" class:music={t.kind === 'artist'}>
 											<a class="ov-poster" style:--poster-ratio={posterRatio(t.kind)} href={openLink(t)} tabindex="-1" aria-hidden="true"><Poster src={t.artwork[0]} name={t.name} /></a>
 											<div class="ov-main">
-												<h2><a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}<span class="keep ov-keep" class:on={t.keep_up_to_date} role="img" aria-label={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')} title={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={15} /></span></h2>
+												<h2><a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}<span class="keep ov-keep" class:on={t.keep_up_to_date} role="img" aria-label={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')} title={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={15} /></span></h2>
 												{#if t.kind === 'artist'}
 													{#if t.artist?.bio}<p class="ov-text ov-bio">{t.artist.bio}</p>{/if}
 												{:else}
-													<p class="ov-text">{t.overview || tr('mediafiles.list.noDescription')}</p>
+													<p class="ov-text" dir="auto">{t.overview || tr('mediafiles.list.noDescription')}</p>
 												{/if}
 												{#if t.kind !== 'movie'}
 													<span class="ov-prog">
@@ -543,12 +543,12 @@
 	/* Rows: a ledger. 54 px a title, a small poster, the name and year, the status with its colour dot, three facts, the actions. */
 	.lh, .lr { display: grid; grid-template-columns: 52px minmax(120px, 1fr) 168px var(--facts, 150px) var(--acts-w, 96px); align-items: center; gap: 0 12px; }
 	.rows.has-select .lh, .rows.has-select .lr { grid-template-columns: 28px 52px minmax(120px, 1fr) 168px var(--facts, 150px) var(--acts-w, 96px); }
-	.lsel { display: grid; place-items: center; padding-left: 10px; }
+	.lsel { display: grid; place-items: center; padding-inline-start: 10px; }
 	.lr { position: relative; }
-	.lh { position: relative; height: 40px; padding-right: 10px; background: color-mix(in srgb, var(--text) 3%, transparent); border-bottom: 1px solid var(--line); }
-	.lr { height: var(--row-h, 54px); padding-right: 10px; }
+	.lh { position: relative; height: 40px; padding-inline-end: 10px; background: color-mix(in srgb, var(--text) 3%, transparent); border-bottom: 1px solid var(--line); }
+	.lr { height: var(--row-h, 54px); padding-inline-end: 10px; }
 	.rows.v-rows .entry::before { left: 0; right: 0; }
-	.lp { position: relative; display: block; width: 32px; margin-left: 10px; border-radius: 5px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
+	.lp { position: relative; display: block; width: 32px; margin-inline-start: 10px; border-radius: 5px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
 	.lp.round { border-radius: 50%; }
 	.lpick { display: block; margin: 0 auto; }
 	.lt { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
@@ -566,9 +566,9 @@
 	.lc { min-width: 0; color: var(--text-muted); font: var(--t-callout); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lr .acts { top: 50%; }
 	/* Phone rows (chosen by the list's own width): the poster, the name over "status · fact", the year at the right. */
-	.lr.ph { grid-template-columns: 50px minmax(0, 1fr) auto; height: 60px; padding-right: 12px; }
+	.lr.ph { grid-template-columns: 50px minmax(0, 1fr) auto; height: 60px; padding-inline-end: 12px; }
 	.rows.has-select .lr.ph { grid-template-columns: 28px 50px minmax(0, 1fr) auto; }
-	.lr.ph .lp { width: 36px; margin-left: 8px; }
+	.lr.ph .lp { width: 36px; margin-inline-start: 8px; }
 	.lr.ph .lt { flex-direction: column; align-items: flex-start; gap: 3px; }
 	.lr.ph .lt a { max-width: 100%; }
 	.lsub { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
@@ -665,15 +665,16 @@
 	.ov-poster { display: block; border-radius: 8px; overflow: hidden; }
 	.ov-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 	.ov h2 { margin: 0; font: var(--t-title3); display: flex; align-items: baseline; gap: 10px; }
-	.ov h2 a { color: var(--text); text-decoration: none; }
-	.yr { color: var(--text-muted); font: var(--t-callout); }
+	/* A long name wraps (up to three lines) beside the year and the bell, which never break. */
+	.ov h2 a { flex: 0 1 auto; min-width: 0; color: var(--text); text-decoration: none; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; overflow-wrap: break-word; }
+	.yr { flex: none; white-space: nowrap; color: var(--text-muted); font: var(--t-callout); font-variant-numeric: tabular-nums; }
 	.ov-text { margin: 0; color: var(--text-muted); font: var(--t-callout); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 	/* A description reads best at a book's line length; the rest of the row is the facts'. */
 	.ov-text { max-width: 68ch; }
 	.ov-prog { display: flex; align-items: center; gap: 10px; margin-top: auto; }
 	.ov .meter { flex: 0 1 280px; }
 	.ov-count { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.ov-keep { flex: none; align-self: center; width: 24px; height: 24px; }
+	.ov-keep { flex: none; align-self: flex-start; width: 24px; height: 24px; }
 	.ov-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; margin: 0; align-content: start; font: var(--t-footnote); }
 	.ov-facts dt { color: var(--text-muted); }
 	.ov-facts dd { margin: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -109,4 +109,11 @@ describe('agoLong', () => {
 		expect(agoLong('2026-10-31T11:59:50Z', now)).toBe('just now');
 		expect(agoLong(null, now)).toBe('');
 	});
+	it('moves on to months and years after a month', () => {
+		const now = Date.parse('2026-10-31T12:00:00Z');
+		expect(agoLong('2026-10-02T12:00:00Z', now)).toBe('29 days ago');
+		expect(agoLong('2026-10-01T12:00:00Z', now)).toBe('1 month ago');
+		expect(agoLong('2026-08-01T12:00:00Z', now)).toBe('3 months ago');
+		expect(agoLong('2022-12-22T12:00:00Z', now)).toBe('4 years ago');
+	});
 });

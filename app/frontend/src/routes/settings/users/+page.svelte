@@ -405,7 +405,7 @@
 							{#if u.max_rating}<span class="chip" data-testid="kid-label">{kidLabel(u.max_rating)}</span>{/if}
 						</div>
 						<div class="xs muted">
-							{#if u.links.length}{u.links.map((l) => `${providerWord[l.provider] ?? l.provider}: ${l.name}`).join(' · ')} ·
+							{#if u.links.length}{u.links.map((l) => `${providerWord[l.provider] ?? l.provider}: ${l.name}`).join(' · ')}{' · '}
 							{/if}{u.role === 'owner' ? t('settings.users.everything') : u.perms.map((p) => permWord[p]).join(', ') || t('settings.users.nothingYet')} ·
 							{u.last_seen_at ? t('settings.users.seen', { ago: ago(u.last_seen_at) }) : t('settings.users.notSeen')}
 						</div>

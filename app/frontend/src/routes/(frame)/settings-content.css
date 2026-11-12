@@ -82,7 +82,11 @@
 	.settings-content { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 600px) {
-	.settings-content .srow > .ctl > .input { width: min(260px, 46vw); height: 40px; min-height: 40px; }
+	/* A wide control (text field, picker, segmented choice) goes under its words and takes the row's width, so the words keep theirs in every language; switches and short buttons stay beside them. */
+	.settings-content .srow:has(> .ctl > :is(.input, .ui-seg)) { grid-template-columns: minmax(0, 1fr); row-gap: 8px; padding-block: 10px; }
+	.settings-content .srow:has(> .ctl > :is(.input, .ui-seg)) > .ctl { justify-self: stretch; }
+	.settings-content .srow > .ctl > .ui-seg { flex: 1 1 auto; }
+	.settings-content .srow > .ctl > .input { flex: 1 1 auto; width: auto; min-width: 0; height: 40px; min-height: 40px; }
 	.settings-content .ui-btn.md { min-height: 40px; }
 	.settings-content .ui-ibtn.ui-ibtn.md { width: 40px; height: 40px; }
 	.settings-content .srow > .ctl .ui-btn { min-height: 40px; }

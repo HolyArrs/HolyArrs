@@ -631,7 +631,8 @@
 }
 	.title { font: var(--t-title1); letter-spacing: var(--t-title1-track); text-align: center; color: #fff; text-wrap: balance; }
 	.lead { margin: 8px 0 20px; color: rgb(255 255 255 / 0.68); font: var(--t-callout); text-align: center; text-wrap: pretty; }
-	.title + :not(.lead) { margin-top: 26px; }
+	/* Global: the next element often belongs to a child form component, which a scoped selector never matches. */
+	.title:not(.sr-only) + :global(:not(.lead)) { margin-top: 26px; }
 	.panel :global(.field + .field) { margin-top: 12px; }
 	/* Labels, hints and errors centre like the title and button; typing stays left. */
 	.panel :global(.field) { text-align: center; }
@@ -724,7 +725,7 @@
 		}
 		.title { font-size: 20px; line-height: 1.15; }
 		.lead { margin: 4px 0 10px; }
-		.title + :not(.lead) { margin-top: 16px; }
+		.title:not(.sr-only) + :global(:not(.lead)) { margin-top: 16px; }
 		.corner { top: 6px; left: 16px; }
 		.panel :global(.field) { gap: 2px; }
 		.panel :global(.field label) { font-size: 14px; line-height: 1.25; }

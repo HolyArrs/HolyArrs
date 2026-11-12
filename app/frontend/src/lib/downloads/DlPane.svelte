@@ -334,7 +334,8 @@
 		.pb .big { width: 140px; height: 210px; }
 		.pb .big.square { height: 140px; }
 	}
-	@media (max-width: 767px) {
+	/* Tablets only: phones (640px and under) hide the poster, so a 56px poster column there would squeeze the facts into it. */
+	@media (min-width: 641px) and (max-width: 767px) {
 		.pb { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; }
 		.pb .big { width: 56px; height: 84px; border-radius: var(--r-poster); }
 		.pb .big.square { height: 56px; }
