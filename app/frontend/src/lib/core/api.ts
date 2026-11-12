@@ -81,10 +81,15 @@ export function isIncomplete(v: unknown): boolean {
 	return !!v && typeof v === 'object' && (v as { incomplete?: unknown }).incomplete === true;
 }
 
+// Browsing answers that leave out hidden titles.
+const BROWSING = /^\/(explore|discover|search|metadata|titles\/lookup|shows\/lookup)/;
+
 // One shared client per page; same-path GETs in flight or fresh are answered from one request.
 export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: () => EarlyAsks | undefined = bootAsks) {
 	let csrf = '';
 	let signedOut: (() => void) | null = null;
+	// Set after a hide or its Undo: browsing answers are kept by the browser for minutes, so they are asked for again with a fresh address.
+	let fresh = 0;
 
 	function takeEarly(url: string): Promise<Response> | undefined {
 		const e = early();
@@ -110,7 +115,7 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 			headers['Content-Type'] = 'application/json';
 		}
 		if (method !== 'GET' && csrf) headers['X-CSRF-Token'] = csrf;
-		const url = to('/api/v1' + path);
+		const url = to('/api/v1' + (fresh && method === 'GET' && BROWSING.test(path) ? `${path}${path.includes('?') ? '&' : '?'}fresh=${fresh}` : path));
 		const ahead = method === 'GET' && body === undefined ? takeEarly(url) : undefined;
 		const ask = () => fetchFn(url, { method, headers, body, signal: opts.signal, credentials: 'same-origin' });
 		let res: Response;
@@ -191,6 +196,11 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 			csrf = v;
 		},
 		csrf: () => csrf,
+		/** After a hide or its Undo: Explore, New & Popular and search are asked for again, not taken from the browser's copy. */
+		freshBrowsing() {
+			fresh = Date.now();
+			shared.clear();
+		},
 		forget: () => {
 			shared.clear();
 			dropEarly();
