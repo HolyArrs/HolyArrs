@@ -17,6 +17,7 @@ import (
 // shares one of them; Pick rules with tags (ruleTags) ask only the Sources
 // sharing one of those.
 func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bool, titleTags, ruleTags []string) ([]found, []string, int, []skippedSource, error) {
+	ruleTags = mediafiles.CleanTags(ruleTags) // Source tags are stored this way
 	now := time.Now().UTC()
 	srcs, err := database.Select[domain.Source](ctx, s.Store.Read(), "sources",
 		"state IN ('enabled', 'paused') ORDER BY priority, id")

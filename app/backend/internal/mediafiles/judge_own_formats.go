@@ -119,9 +119,15 @@ var timedOut sync.Map
 
 // match runs a pattern; a pattern out of time counts as no match.
 func (s ownSpec) match(trait, text string) bool {
+	// A pattern that ran out of time once is not run again, so a slow
+	// imported pattern costs its timeout once, not on every Release.
+	key := trait + "|" + s.Value
+	if _, slow := timedOut.Load(key); slow {
+		return false
+	}
 	hit, err := s.re.MatchString(text)
 	if err != nil {
-		if _, seen := timedOut.LoadOrStore(trait, true); !seen {
+		if _, seen := timedOut.LoadOrStore(key, true); !seen {
 			slog.Warn("a trait test ran out of time and counts as not fitting", "trait", trait, "test", s.Name)
 		}
 		return false

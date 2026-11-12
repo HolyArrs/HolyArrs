@@ -34,3 +34,18 @@ func TestHandle_PickRulesTagsLimitSources(t *testing.T) {
 		t.Fatalf("job %s, hits %d", j.State, feedHits(lf))
 	}
 }
+
+// Pick rules tags are read the way Source tags are stored (lowercase), so
+// "Anime" on the Pick rules still asks a Source tagged "anime".
+func TestHandle_PickRulesTagsIgnoreCase(t *testing.T) {
+	lf := &liveFeed{}
+	lf.set(duneFeed)
+	f := seed(t, lf.url(t))
+	exec(t, f, `UPDATE pick_rules SET body = json_set(body, '$.tags', json('[" Anime "]'))`)
+	exec(t, f, `UPDATE sources SET tags = '["anime"]'`)
+	exec(t, f, `UPDATE titles SET tags = '["anime"]'`)
+	j := runSearch(t, f, &Searcher{Store: f.s})
+	if j.State != "done" || feedHits(lf) == 0 {
+		t.Fatalf("job %s, hits %d", j.State, feedHits(lf))
+	}
+}
