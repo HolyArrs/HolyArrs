@@ -123,6 +123,7 @@ func (s *Searcher) judgeAll(ctx context.Context, c slotCtx, all []found, out, ha
 	if c.ti.Kind == "" || c.ti.Kind == "movie" {
 		outSince = movieOut(c.ti)
 	}
+	body := withVersionAudio(c.pr.Body, c.ver.AudioLanguages)
 	rels := make([]mediafiles.ReleaseFacts, len(all))
 	vs := make([]mediafiles.Verdict, len(all))
 	for i, f := range all {
@@ -135,9 +136,9 @@ func (s *Searcher) judgeAll(ctx context.Context, c slotCtx, all []found, out, ha
 		if m.Title != nil {
 			set.SlotIDs = []int64{c.sl.ID}
 		}
-		vs[i] = copyChoiceVerdict(c, rels[i], mediafiles.Judge(rels[i], set, c.pr.Body))
+		vs[i] = copyChoiceVerdict(c.ti, c.ver, rels[i], mediafiles.Judge(rels[i], set, body))
 	}
-	mediafiles.Rank(rels, vs, c.pr.Body)
+	mediafiles.Rank(rels, vs, body)
 	return rels, vs, nil
 }
 
