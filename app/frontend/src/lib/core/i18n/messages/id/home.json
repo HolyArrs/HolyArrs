@@ -271,5 +271,7 @@
 	"home.noSaveFolder": "belum punya folder simpan",
 	"home.noSaveFolderMany": "belum punya folder simpan",
 	"home.off": "Mati",
-	"home.sourcesOff": "Dimatikan di Bagian"
+	"home.sourcesOff": "Dimatikan di Bagian",
+	"home.addedTwice": "ditambahkan dua kali",
+	"home.addedTwiceMany": "ditambahkan dua kali"
 }

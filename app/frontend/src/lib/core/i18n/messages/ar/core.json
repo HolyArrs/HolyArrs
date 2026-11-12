@@ -145,5 +145,6 @@
 	"core.settings.danger.about": "إعادة التشغيل أو الإيقاف",
 	"core.settings.account.label": "حسابي",
 	"core.settings.account.about": "كلمة المرور والمصادقة الثنائية والأجهزة",
-	"core.api.sourceOff": "بعض الصفوف متوقفة في هذا التثبيت."
+	"core.api.sourceOff": "بعض الصفوف متوقفة في هذا التثبيت.",
+	"core.plain.sameDownloader": "إعدادان يصلان إلى برنامج التنزيل نفسه، لذا قد تظهر التنزيلات مرتين."
 }

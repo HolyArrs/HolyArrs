@@ -264,5 +264,8 @@
 	"health.word.broken": "معطّل",
 	"health.word.notSent": "لم يُرسل بعد",
 	"health.word.notSynced": "لم يُزامن بعد",
-	"health.word.working": "يعمل"
+	"health.word.working": "يعمل",
+	"health.check.sameDownloader": "مضاف مرتين:",
+	"health.check.sameDownloaderWhy": "يصل {app} إلى برنامج التنزيل نفسه مثل إعداد آخر، لذا قد تظهر تنزيلاته مرتين. احذف أحدهما في الإعدادات › برامج التنزيل.",
+	"health.kind.sameDownloader": "برنامج تنزيل مضاف مرتين"
 }

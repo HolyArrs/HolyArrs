@@ -264,5 +264,8 @@
 	"health.check.saveFolder": "Фасцикла за чување за",
 	"health.check.saveFolderWhy": "{app} нема фасциклу за чување, па HolyArrs не може да увезе завршена преузимања. Додајте пар путања у Подешавања › Преузимачи.",
 	"health.kind.clearWaiting": "Преузимања која чекају чишћење",
-	"health.kind.saveFolder": "Фасцикла за чување Преузимача"
+	"health.kind.saveFolder": "Фасцикла за чување Преузимача",
+	"health.check.sameDownloader": "Додато двапут:",
+	"health.check.sameDownloaderWhy": "{app} води до исте апликације за преузимање као други преузимач, па се његова преузимања могу приказати двапут. Уклоните један у Подешавања › Преузимачи.",
+	"health.kind.sameDownloader": "Преузимач додат двапут"
 }

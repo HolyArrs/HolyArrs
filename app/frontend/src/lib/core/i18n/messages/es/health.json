@@ -264,5 +264,8 @@
 	"health.word.broken": "Roto",
 	"health.word.notSent": "Aún no enviado",
 	"health.word.notSynced": "Aún no sincronizado",
-	"health.word.working": "Funcionando"
+	"health.word.working": "Funcionando",
+	"health.check.sameDownloader": "Añadido dos veces:",
+	"health.check.sameDownloaderWhy": "{app} llega a la misma aplicación de descargas que otro gestor, así que sus descargas pueden aparecer dos veces. Quita uno en Ajustes › Gestores de descargas.",
+	"health.kind.sameDownloader": "Gestor de descargas añadido dos veces"
 }

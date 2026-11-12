@@ -264,5 +264,8 @@
 	"health.word.broken": "Сломано",
 	"health.word.notSent": "Ещё не отправлено",
 	"health.word.notSynced": "Ещё не синхронизировано",
-	"health.word.working": "Работает"
+	"health.word.working": "Работает",
+	"health.check.sameDownloader": "Добавлен дважды:",
+	"health.check.sameDownloaderWhy": "{app} ведёт к тому же приложению загрузки, что и другой загрузчик, поэтому его загрузки могут показываться дважды. Удалите один в Настройки › Загрузчики.",
+	"health.kind.sameDownloader": "Загрузчик добавлен дважды"
 }

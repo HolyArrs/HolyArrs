@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} فایل به‌صورت دستی تطبیق یافت",
 	"server.library.no-such-file-in-this-title": "چنین فایلی در این عنوان نیست",
 	"server.library.send-1-to-2000-files": "۱ تا ۲۰۰۰ فایل بفرستید",
-	"server.sources.this-kind-of-title-can-t": "این نوع عنوان قابل جستجو نیست"
+	"server.sources.this-kind-of-title-can-t": "این نوع عنوان قابل جستجو نیست",
+	"server.health.downloader-added-twice": "دانلودر دو بار افزوده شده"
 }

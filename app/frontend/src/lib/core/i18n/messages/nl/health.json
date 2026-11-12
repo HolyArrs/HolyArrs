@@ -264,5 +264,8 @@
 	"health.word.broken": "Kapot",
 	"health.word.notSent": "Nog niet verstuurd",
 	"health.word.notSynced": "Nog niet gesynchroniseerd",
-	"health.word.working": "Werkt"
+	"health.word.working": "Werkt",
+	"health.check.sameDownloader": "Twee keer toegevoegd:",
+	"health.check.sameDownloaderWhy": "{app} bereikt dezelfde download-app als een andere Downloader, dus de downloads kunnen dubbel verschijnen. Verwijder er een in Instellingen › Downloaders.",
+	"health.kind.sameDownloader": "Downloader twee keer toegevoegd"
 }

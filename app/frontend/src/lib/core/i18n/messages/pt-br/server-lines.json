@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} arquivos associados à mão",
 	"server.library.no-such-file-in-this-title": "não existe esse arquivo neste título",
 	"server.library.send-1-to-2000-files": "envie de 1 a 2000 arquivos",
-	"server.sources.this-kind-of-title-can-t": "este tipo de título não pode ser buscado"
+	"server.sources.this-kind-of-title-can-t": "este tipo de título não pode ser buscado",
+	"server.health.downloader-added-twice": "Gerenciador de downloads adicionado duas vezes"
 }

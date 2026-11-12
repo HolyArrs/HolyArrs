@@ -264,5 +264,8 @@
 	"health.check.saveFolder": "Dosar de salvare pentru",
 	"health.check.saveFolderWhy": "{app} nu are dosar de salvare, așa că HolyArrs nu poate importa descărcările terminate. Adaugă o pereche de căi în Setări › Programe de descărcare.",
 	"health.kind.clearWaiting": "Descărcări care așteaptă ștergerea",
-	"health.kind.saveFolder": "Dosar de salvare al clientului de descărcare"
+	"health.kind.saveFolder": "Dosar de salvare al clientului de descărcare",
+	"health.check.sameDownloader": "Adăugat de două ori:",
+	"health.check.sameDownloaderWhy": "{app} ajunge la aceeași aplicație de descărcare ca alt program, așa că descărcările lui pot apărea de două ori. Elimină unul din Setări › Programe de descărcare.",
+	"health.kind.sameDownloader": "Program de descărcare adăugat de două ori"
 }

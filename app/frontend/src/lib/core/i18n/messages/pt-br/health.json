@@ -264,5 +264,8 @@
 	"health.word.broken": "Quebrado",
 	"health.word.notSent": "Ainda não enviado",
 	"health.word.notSynced": "Ainda não sincronizado",
-	"health.word.working": "Funcionando"
+	"health.word.working": "Funcionando",
+	"health.check.sameDownloader": "Adicionado duas vezes:",
+	"health.check.sameDownloaderWhy": "{app} chega ao mesmo app de download que outro gerenciador, então os downloads dele podem aparecer duas vezes. Remova um em Configurações › Gerenciadores de downloads.",
+	"health.kind.sameDownloader": "Gerenciador de downloads adicionado duas vezes"
 }

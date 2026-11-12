@@ -264,5 +264,8 @@
 	"health.check.saveFolder": "Salvestuskaust:",
 	"health.check.saveFolderWhy": "{app} jaoks pole salvestuskausta määratud, seega ei saa HolyArrs valmis allalaadimisi importida. Lisa teepaar jaotises Seaded › Allalaadijad.",
 	"health.kind.clearWaiting": "Tühjendamist ootavad allalaadimised",
-	"health.kind.saveFolder": "Allalaadija salvestuskaust"
+	"health.kind.saveFolder": "Allalaadija salvestuskaust",
+	"health.check.sameDownloader": "Lisatud kaks korda:",
+	"health.check.sameDownloaderWhy": "{app} jõuab samasse allalaadimisrakendusse nagu teine allalaadija, seega võivad selle allalaadimised näha kaks korda. Eemalda üks: Seaded › Allalaadijad.",
+	"health.kind.sameDownloader": "Allalaadija lisatud kaks korda"
 }

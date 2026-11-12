@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}：已手动匹配 {n} 个文件",
 	"server.library.no-such-file-in-this-title": "此作品中没有该文件",
 	"server.library.send-1-to-2000-files": "请发送 1 到 2000 个文件",
-	"server.sources.this-kind-of-title-can-t": "无法搜索这类标题"
+	"server.sources.this-kind-of-title-can-t": "无法搜索这类标题",
+	"server.health.downloader-added-twice": "下载器重复添加"
 }

@@ -264,5 +264,8 @@
 	"health.check.saveFolder": "Pasta de salvamento de",
 	"health.check.saveFolderWhy": "{app} não tem pasta de salvamento, por isso o HolyArrs não consegue importar as transferências concluídas. Adicione um par de caminhos em Definições › Gestores de downloads.",
 	"health.kind.clearWaiting": "Downloads à espera de limpeza",
-	"health.kind.saveFolder": "Pasta de salvamento do gestor de downloads"
+	"health.kind.saveFolder": "Pasta de salvamento do gestor de downloads",
+	"health.check.sameDownloader": "Adicionado duas vezes:",
+	"health.check.sameDownloaderWhy": "{app} chega à mesma aplicação de downloads que outro gestor, por isso os seus downloads podem aparecer duas vezes. Remova um em Definições › Gestores de downloads.",
+	"health.kind.sameDownloader": "Gestor de downloads adicionado duas vezes"
 }

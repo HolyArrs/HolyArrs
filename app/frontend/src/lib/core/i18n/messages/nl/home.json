@@ -271,5 +271,7 @@
 	"home.metadataServerOnline": "Metadataserver online",
 	"home.homeCouldNotRead3": "Start kon downloads nu niet lezen.",
 	"home.off": "Uit",
-	"home.sourcesOff": "Uitgezet in Onderdelen"
+	"home.sourcesOff": "Uitgezet in Onderdelen",
+	"home.addedTwice": "is twee keer toegevoegd",
+	"home.addedTwiceMany": "zijn twee keer toegevoegd"
 }

@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: จับคู่ด้วยมือ {n} ไฟล์",
 	"server.library.no-such-file-in-this-title": "ไม่มีไฟล์นี้ในรายการนี้",
 	"server.library.send-1-to-2000-files": "ส่ง 1 ถึง 2000 ไฟล์",
-	"server.sources.this-kind-of-title-can-t": "ไม่สามารถค้นหาชื่อเรื่องประเภทนี้ได้"
+	"server.sources.this-kind-of-title-can-t": "ไม่สามารถค้นหาชื่อเรื่องประเภทนี้ได้",
+	"server.health.downloader-added-twice": "ตัวดาวน์โหลดที่เพิ่มซ้ำ"
 }

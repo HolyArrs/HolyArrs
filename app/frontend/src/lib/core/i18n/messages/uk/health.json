@@ -264,5 +264,8 @@
 	"health.word.broken": "Зламано",
 	"health.word.notSent": "Ще не надіслано",
 	"health.word.notSynced": "Ще не синхронізовано",
-	"health.word.working": "Працює"
+	"health.word.working": "Працює",
+	"health.check.sameDownloader": "Додано двічі:",
+	"health.check.sameDownloaderWhy": "{app} веде до того самого застосунку завантаження, що й інший завантажувач, тож його завантаження можуть показуватися двічі. Видаліть один у Налаштування › Завантажувачі.",
+	"health.kind.sameDownloader": "Завантажувач додано двічі"
 }

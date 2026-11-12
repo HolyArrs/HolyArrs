@@ -264,5 +264,8 @@
 	"health.check.saveFolder": "پوشه ذخیره برای",
 	"health.check.saveFolderWhy": "{app} پوشه ذخیره ندارد، پس HolyArrs نمی‌تواند دانلودهای تمام‌شده‌اش را وارد کند. در تنظیمات › دانلودرها یک جفت مسیر اضافه کنید.",
 	"health.kind.clearWaiting": "دانلودهای منتظر پاک شدن",
-	"health.kind.saveFolder": "پوشه ذخیره دانلودر"
+	"health.kind.saveFolder": "پوشه ذخیره دانلودر",
+	"health.check.sameDownloader": "دو بار افزوده شده:",
+	"health.check.sameDownloaderWhy": "{app} به همان برنامه دانلودی می‌رسد که دانلودر دیگری می‌رسد، پس دانلودهایش ممکن است دو بار نشان داده شوند. یکی را در تنظیمات › دانلودرها حذف کنید.",
+	"health.kind.sameDownloader": "دانلودر دو بار افزوده شده"
 }

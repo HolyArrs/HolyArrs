@@ -264,5 +264,8 @@
 	"health.word.broken": "खराब",
 	"health.word.notSent": "अभी भेजा नहीं गया",
 	"health.word.notSynced": "अभी सिंक नहीं हुआ",
-	"health.word.working": "चल रहा है"
+	"health.word.working": "चल रहा है",
+	"health.check.sameDownloader": "दो बार जोड़ा गया:",
+	"health.check.sameDownloaderWhy": "{app} उसी डाउनलोड ऐप तक पहुँचता है जिस तक कोई दूसरा डाउनलोडर, इसलिए इसके डाउनलोड दो बार दिख सकते हैं। सेटिंग्स › डाउनलोडर में एक हटा दें।",
+	"health.kind.sameDownloader": "डाउनलोडर दो बार जोड़ा गया"
 }

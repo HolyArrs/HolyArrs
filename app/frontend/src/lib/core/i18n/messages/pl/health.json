@@ -264,5 +264,8 @@
 	"health.word.broken": "Zepsute",
 	"health.word.notSent": "Jeszcze niewysłane",
 	"health.word.notSynced": "Jeszcze niezsynchronizowane",
-	"health.word.working": "Działa"
+	"health.word.working": "Działa",
+	"health.check.sameDownloader": "Dodany dwa razy:",
+	"health.check.sameDownloaderWhy": "{app} łączy się z tą samą aplikacją do pobierania co inny Downloader, więc jego pobrania mogą pojawiać się podwójnie. Usuń jeden w Ustawienia › Downloadery.",
+	"health.kind.sameDownloader": "Downloader dodany dwa razy"
 }

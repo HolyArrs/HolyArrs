@@ -145,5 +145,6 @@
 	"core.settings.account.about": "Parolă, autentificare în doi pași, dispozitive",
 	"core.plain.clearWaiting": "Descărcările importate așteaptă să fie șterse din Programul lor de descărcare.",
 	"core.plain.saveFolder": "Un program de descărcare nu are dosar de salvare, așa că HolyArrs nu poate importa descărcările lui terminate.",
-	"core.api.sourceOff": "Unele rânduri sunt oprite pe această instalare."
+	"core.api.sourceOff": "Unele rânduri sunt oprite pe această instalare.",
+	"core.plain.sameDownloader": "Două programe de descărcare ajung la aceeași aplicație, așa că descărcările pot apărea de două ori."
 }

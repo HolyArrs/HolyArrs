@@ -264,5 +264,8 @@
 	"health.word.broken": "故障",
 	"health.word.notSent": "尚未发送",
 	"health.word.notSynced": "尚未同步",
-	"health.word.working": "正常"
+	"health.word.working": "正常",
+	"health.check.sameDownloader": "重复添加：",
+	"health.check.sameDownloaderWhy": "{app} 与另一个下载器连接到同一个下载应用，因此它的下载可能显示两次。请在 设置 › 下载器 中删除其中一个。",
+	"health.kind.sameDownloader": "下载器重复添加"
 }

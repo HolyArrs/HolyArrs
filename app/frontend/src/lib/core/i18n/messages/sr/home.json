@@ -271,5 +271,7 @@
 	"home.noSaveFolder": "нема фасциклу за чување",
 	"home.noSaveFolderMany": "немају фасциклу за чување",
 	"home.off": "Искључено",
-	"home.sourcesOff": "Искључено у Деловима"
+	"home.sourcesOff": "Искључено у Деловима",
+	"home.addedTwice": "је додат двапут",
+	"home.addedTwiceMany": "су додати двапут"
 }

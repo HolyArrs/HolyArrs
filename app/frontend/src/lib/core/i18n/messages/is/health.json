@@ -264,5 +264,8 @@
 	"health.check.saveFolder": "Vistunarmappa fyrir",
 	"health.check.saveFolderWhy": "{app} er ekki með vistunarmöppu, svo HolyArrs getur ekki flutt inn niðurhöl sem eru búin. Bættu við slóðapari í Stillingar › Niðurhalarar.",
 	"health.kind.clearWaiting": "Niðurhöl sem bíða hreinsunar",
-	"health.kind.saveFolder": "Vistunarmappa niðurhalara"
+	"health.kind.saveFolder": "Vistunarmappa niðurhalara",
+	"health.check.sameDownloader": "Bætt við tvisvar:",
+	"health.check.sameDownloaderWhy": "{app} nær í sama niðurhalsforrit og annar niðurhalari, svo niðurhöl hans geta birst tvisvar. Fjarlægðu annan í Stillingar › Niðurhalarar.",
+	"health.kind.sameDownloader": "Niðurhalara bætt við tvisvar"
 }

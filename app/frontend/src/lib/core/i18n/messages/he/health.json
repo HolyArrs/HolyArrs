@@ -264,5 +264,8 @@
 	"health.check.saveFolder": "תיקיית שמירה עבור",
 	"health.check.saveFolderWhy": "ל-{app} אין תיקיית שמירה, ולכן HolyArrs לא יכול לייבא את ההורדות שהסתיימו. הוסיפו זוג נתיבים בהגדרות › מורידים.",
 	"health.kind.clearWaiting": "הורדות הממתינות לניקוי",
-	"health.kind.saveFolder": "תיקיית השמירה של המוריד"
+	"health.kind.saveFolder": "תיקיית השמירה של המוריד",
+	"health.check.sameDownloader": "נוסף פעמיים:",
+	"health.check.sameDownloaderWhy": "{app} מגיע לאותה אפליקציית הורדות כמו מוריד אחר, לכן ההורדות שלו עלולות להופיע פעמיים. הסירו אחד בהגדרות › מורידים.",
+	"health.kind.sameDownloader": "מוריד שנוסף פעמיים"
 }

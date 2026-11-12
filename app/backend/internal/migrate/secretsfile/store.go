@@ -3,8 +3,10 @@ package secretsfile
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // The move credential statements are this package's own. The lookups of an
@@ -63,7 +65,24 @@ func downloaderID(ctx context.Context, q database.Querier, adapter, addr, name s
 	var id int64
 	err := q.QueryRowContext(ctx, `SELECT id FROM downloaders WHERE removed = 0 AND adapter = ? AND (url = ? OR name = ? COLLATE NOCASE)
 		ORDER BY url = ? DESC, id LIMIT 1`, adapter, addr, name, addr).Scan(&id)
-	return id, err
+	if !errors.Is(err, sql.ErrNoRows) {
+		return id, err
+	}
+	// The same app at another path (http://sab:8080/sabnzbd) is the same Downloader.
+	l, ok := q.(database.Lister)
+	if !ok {
+		return 0, err
+	}
+	have, serr := database.Select[domain.Downloader](ctx, l, "downloaders", "removed = 0 AND adapter = ? ORDER BY id", adapter)
+	if serr != nil {
+		return 0, serr
+	}
+	for _, h := range have {
+		if domain.SameClient(h, domain.Downloader{Adapter: adapter, URL: addr}) {
+			return h.ID, nil
+		}
+	}
+	return 0, err
 }
 
 func mediaServerID(ctx context.Context, q database.Querier, kind, addr, name string) (int64, error) {

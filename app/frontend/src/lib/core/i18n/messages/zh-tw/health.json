@@ -264,5 +264,8 @@
 	"health.check.saveFolder": "儲存資料夾：",
 	"health.check.saveFolderWhy": "{app} 沒有設定儲存資料夾，所以 HolyArrs 無法匯入已完成的下載。請在 設定 › 下載器 中新增一組路徑。",
 	"health.kind.clearWaiting": "等待清除的下載",
-	"health.kind.saveFolder": "下載器儲存資料夾"
+	"health.kind.saveFolder": "下載器儲存資料夾",
+	"health.check.sameDownloader": "重複新增：",
+	"health.check.sameDownloaderWhy": "{app} 與另一個下載器連到同一個下載應用程式，因此它的下載可能顯示兩次。請在 設定 › 下載器 中移除其中一個。",
+	"health.kind.sameDownloader": "下載器重複新增"
 }

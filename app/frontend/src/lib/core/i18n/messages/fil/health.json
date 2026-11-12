@@ -264,5 +264,8 @@
 	"health.check.saveFolder": "Save folder ng",
 	"health.check.saveFolderWhy": "Walang save folder ang {app}, kaya hindi ma-import ng HolyArrs ang mga tapos na download nito. Magdagdag ng pares ng path sa Mga Setting › Mga Downloader.",
 	"health.kind.clearWaiting": "Mga download na naghihintay ma-clear",
-	"health.kind.saveFolder": "Save folder ng Downloader"
+	"health.kind.saveFolder": "Save folder ng Downloader",
+	"health.check.sameDownloader": "Dalawang beses idinagdag:",
+	"health.check.sameDownloaderWhy": "Naaabot ng {app} ang parehong download app ng isa pang Downloader, kaya puwedeng dalawang beses lumabas ang mga download nito. Alisin ang isa sa Settings › Downloaders.",
+	"health.kind.sameDownloader": "Downloader na dalawang beses idinagdag"
 }

@@ -264,5 +264,8 @@
 	"health.check.saveFolder": "Tallennuskansio:",
 	"health.check.saveFolderWhy": "Lataajalla {app} ei ole tallennuskansiota, joten HolyArrs ei voi tuoda valmiita latauksia. Lisää polkupari kohdassa Asetukset › Lataajat.",
 	"health.kind.clearWaiting": "Poistamista odottavat lataukset",
-	"health.kind.saveFolder": "Lataajan tallennuskansio"
+	"health.kind.saveFolder": "Lataajan tallennuskansio",
+	"health.check.sameDownloader": "Lisätty kahdesti:",
+	"health.check.sameDownloaderWhy": "{app} yltää samaan lataussovellukseen kuin toinen lataaja, joten sen lataukset voivat näkyä kahdesti. Poista toinen kohdassa Asetukset › Lataajat.",
+	"health.kind.sameDownloader": "Lataaja lisätty kahdesti"
 }

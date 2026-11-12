@@ -264,5 +264,8 @@
 	"health.word.broken": "고장",
 	"health.word.notSent": "아직 전송 안 됨",
 	"health.word.notSynced": "아직 동기화 안 됨",
-	"health.word.working": "정상 작동"
+	"health.word.working": "정상 작동",
+	"health.check.sameDownloader": "두 번 추가됨:",
+	"health.check.sameDownloaderWhy": "{app}이(가) 다른 다운로더와 같은 다운로드 앱에 연결되어 다운로드가 두 번 보일 수 있습니다. 설정 › 다운로더에서 하나를 삭제하세요.",
+	"health.kind.sameDownloader": "두 번 추가된 다운로더"
 }

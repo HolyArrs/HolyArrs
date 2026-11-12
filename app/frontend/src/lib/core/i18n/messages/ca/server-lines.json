@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} fitxers assignats a mà",
 	"server.library.no-such-file-in-this-title": "no hi ha aquest fitxer en aquest títol",
 	"server.library.send-1-to-2000-files": "envia d'1 a 2000 fitxers",
-	"server.sources.this-kind-of-title-can-t": "aquest tipus de títol no es pot cercar"
+	"server.sources.this-kind-of-title-can-t": "aquest tipus de títol no es pot cercar",
+	"server.health.downloader-added-twice": "Gestor de baixades afegit dues vegades"
 }

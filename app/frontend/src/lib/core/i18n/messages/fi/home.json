@@ -271,5 +271,7 @@
 	"home.noSaveFolder": "ei tallennuskansiota",
 	"home.noSaveFolderMany": "ei tallennuskansiota",
 	"home.off": "Pois",
-	"home.sourcesOff": "Pois päältä Osissa"
+	"home.sourcesOff": "Pois päältä Osissa",
+	"home.addedTwice": "on lisätty kahdesti",
+	"home.addedTwiceMany": "on lisätty kahdesti"
 }

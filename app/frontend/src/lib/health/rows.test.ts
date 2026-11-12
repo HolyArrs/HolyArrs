@@ -97,6 +97,15 @@ describe('status rows', () => {
 		]);
 	});
 
+	it('names a Downloader added twice, fixed in Settings > Downloaders', () => {
+		const rows = buildRows({
+			checks: [{ key: 'same_downloader:2', kind: 'same_downloader', subject: 'SABnzbd (moved)', state: 'warning', message: 'SABnzbd (moved) reaches the same app as SABnzbd' } as never]
+		});
+		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason, r.fix])).toEqual([
+			['Added twice: SABnzbd (moved)', 'downloaders', 'wait', 'SABnzbd (moved) reaches the same download app as another Downloader, so its downloads can show twice. Remove one in Settings › Downloaders.', '/settings/downloaders']
+		]);
+	});
+
 	it('does not count a starting part as a problem', () => {
 		expect(needsAttention(buildRows({ states: [link('source', 1, 'starting')] }))).toEqual([]);
 	});

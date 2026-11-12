@@ -145,5 +145,6 @@
 	"core.settings.danger.about": "Herstarten of afsluiten",
 	"core.settings.account.label": "Mijn account",
 	"core.settings.account.about": "Wachtwoord, tweestapsverificatie, apparaten",
-	"core.api.sourceOff": "Sommige rijen staan uit op deze installatie."
+	"core.api.sourceOff": "Sommige rijen staan uit op deze installatie.",
+	"core.plain.sameDownloader": "Twee Downloaders bereiken dezelfde download-app, dus downloads kunnen dubbel verschijnen."
 }

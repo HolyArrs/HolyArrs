@@ -271,5 +271,7 @@
 	"home.noSaveFolder": "nema mapu za spremanje",
 	"home.noSaveFolderMany": "nemaju mapu za spremanje",
 	"home.off": "Isključeno",
-	"home.sourcesOff": "Isključeno u Dijelovima"
+	"home.sourcesOff": "Isključeno u Dijelovima",
+	"home.addedTwice": "je dodan dvaput",
+	"home.addedTwiceMany": "su dodani dvaput"
 }

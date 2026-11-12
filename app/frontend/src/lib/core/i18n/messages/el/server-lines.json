@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: {n} αρχεία αντιστοιχίστηκαν με το χέρι",
 	"server.library.no-such-file-in-this-title": "δεν υπάρχει τέτοιο αρχείο σε αυτόν τον τίτλο",
 	"server.library.send-1-to-2000-files": "στείλε από 1 έως 2000 αρχεία",
-	"server.sources.this-kind-of-title-can-t": "αυτό το είδος τίτλου δεν μπορεί να αναζητηθεί"
+	"server.sources.this-kind-of-title-can-t": "αυτό το είδος τίτλου δεν μπορεί να αναζητηθεί",
+	"server.health.downloader-added-twice": "Πρόγραμμα λήψης προστέθηκε δύο φορές"
 }

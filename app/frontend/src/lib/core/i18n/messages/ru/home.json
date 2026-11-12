@@ -271,5 +271,7 @@
 	"home.metadataServerOnline": "Сервер метаданных работает",
 	"home.homeCouldNotRead3": "Главной сейчас не удалось прочитать загрузки.",
 	"home.off": "Выкл.",
-	"home.sourcesOff": "Выключено в разделе «Части»"
+	"home.sourcesOff": "Выключено в разделе «Части»",
+	"home.addedTwice": "добавлен дважды",
+	"home.addedTwiceMany": "добавлены дважды"
 }

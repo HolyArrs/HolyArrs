@@ -264,5 +264,8 @@
 	"health.check.saveFolder": "সেভ ফোল্ডার:",
 	"health.check.saveFolderWhy": "{app}-এর সেভ ফোল্ডার সেট করা নেই, তাই HolyArrs এর শেষ হওয়া ডাউনলোড ইমপোর্ট করতে পারে না। সেটিংস › ডাউনলোডার-এ একটি পাথ জোড়া যোগ করুন।",
 	"health.kind.clearWaiting": "মোছার অপেক্ষায় থাকা ডাউনলোড",
-	"health.kind.saveFolder": "ডাউনলোডারের সেভ ফোল্ডার"
+	"health.kind.saveFolder": "ডাউনলোডারের সেভ ফোল্ডার",
+	"health.check.sameDownloader": "দুবার যোগ করা:",
+	"health.check.sameDownloaderWhy": "{app} অন্য একটি ডাউনলোডারের মতো একই ডাউনলোড অ্যাপে পৌঁছায়, তাই এর ডাউনলোড দুবার দেখা যেতে পারে। সেটিংস › ডাউনলোডার-এ একটি সরিয়ে দিন।",
+	"health.kind.sameDownloader": "ডাউনলোডার দুবার যোগ করা"
 }

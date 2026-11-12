@@ -271,5 +271,7 @@
 	"home.noSaveFolder": "אין תיקיית שמירה",
 	"home.noSaveFolderMany": "אין תיקיית שמירה",
 	"home.off": "כבוי",
-	"home.sourcesOff": "כבוי ב\"רכיבים\""
+	"home.sourcesOff": "כבוי ב\"רכיבים\"",
+	"home.addedTwice": "נוסף פעמיים",
+	"home.addedTwiceMany": "נוספו פעמיים"
 }

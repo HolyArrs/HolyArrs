@@ -264,5 +264,8 @@
 	"health.word.broken": "Bozuk",
 	"health.word.notSent": "Henüz gönderilmedi",
 	"health.word.notSynced": "Henüz eşitlenmedi",
-	"health.word.working": "Çalışıyor"
+	"health.word.working": "Çalışıyor",
+	"health.check.sameDownloader": "İki kez eklendi:",
+	"health.check.sameDownloaderWhy": "{app}, başka bir indiriciyle aynı indirme uygulamasına ulaşıyor; bu yüzden indirmeleri iki kez görünebilir. Birini Ayarlar › İndiriciler bölümünden kaldırın.",
+	"health.kind.sameDownloader": "İki kez eklenmiş indirici"
 }

@@ -264,5 +264,8 @@
 	"health.word.broken": "Defekt",
 	"health.word.notSent": "Noch nicht gesendet",
 	"health.word.notSynced": "Noch nicht abgeglichen",
-	"health.word.working": "Läuft"
+	"health.word.working": "Läuft",
+	"health.check.sameDownloader": "Doppelt hinzugefügt:",
+	"health.check.sameDownloaderWhy": "{app} erreicht dieselbe Download-App wie ein anderer Downloader, daher können seine Downloads doppelt erscheinen. Entferne einen unter Einstellungen › Downloader.",
+	"health.kind.sameDownloader": "Downloader doppelt hinzugefügt"
 }

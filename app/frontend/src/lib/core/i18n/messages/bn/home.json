@@ -271,5 +271,7 @@
 	"home.noSaveFolder": "সেভ ফোল্ডার সেট নেই",
 	"home.noSaveFolderMany": "সেভ ফোল্ডার সেট নেই",
 	"home.off": "বন্ধ",
-	"home.sourcesOff": "অংশে বন্ধ করা আছে"
+	"home.sourcesOff": "অংশে বন্ধ করা আছে",
+	"home.addedTwice": "দুবার যোগ করা",
+	"home.addedTwiceMany": "দুবার যোগ করা"
 }

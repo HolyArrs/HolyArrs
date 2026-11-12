@@ -271,5 +271,7 @@
 	"home.metadataServerOnline": "Metadata server online",
 	"home.homeCouldNotRead3": "Home could not read downloads right now.",
 	"home.off": "Off",
-	"home.sourcesOff": "Turned off in Parts"
+	"home.sourcesOff": "Turned off in Parts",
+	"home.addedTwice": "is added twice",
+	"home.addedTwiceMany": "are added twice"
 }

@@ -271,5 +271,7 @@
 	"home.noSaveFolder": "chưa có thư mục lưu",
 	"home.noSaveFolderMany": "chưa có thư mục lưu",
 	"home.off": "Tắt",
-	"home.sourcesOff": "Đã tắt trong Các Phần"
+	"home.sourcesOff": "Đã tắt trong Các Phần",
+	"home.addedTwice": "được thêm hai lần",
+	"home.addedTwiceMany": "được thêm hai lần"
 }

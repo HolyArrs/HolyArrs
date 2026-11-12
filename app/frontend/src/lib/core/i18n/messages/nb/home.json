@@ -271,5 +271,7 @@
 	"home.noSaveFolder": "har ingen lagringsmappe",
 	"home.noSaveFolderMany": "har ingen lagringsmappe",
 	"home.off": "Av",
-	"home.sourcesOff": "Slått av i Deler"
+	"home.sourcesOff": "Slått av i Deler",
+	"home.addedTwice": "er lagt til to ganger",
+	"home.addedTwiceMany": "er lagt til to ganger"
 }

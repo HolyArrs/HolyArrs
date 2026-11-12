@@ -264,5 +264,8 @@
 	"health.check.saveFolder": "Mapa za spremanje za",
 	"health.check.saveFolderWhy": "{app} nema mapu za spremanje, pa HolyArrs ne može uvesti završena preuzimanja. Dodajte par putanja u Postavke › Preuzimatelji.",
 	"health.kind.clearWaiting": "Preuzimanja koja čekaju čišćenje",
-	"health.kind.saveFolder": "Mapa za spremanje preuzimatelja"
+	"health.kind.saveFolder": "Mapa za spremanje preuzimatelja",
+	"health.check.sameDownloader": "Dodano dvaput:",
+	"health.check.sameDownloaderWhy": "{app} vodi do iste aplikacije za preuzimanje kao drugi preuzimatelj, pa se njegova preuzimanja mogu prikazati dvaput. Uklonite jedan u Postavke › Preuzimatelji.",
+	"health.kind.sameDownloader": "Preuzimatelj dodan dvaput"
 }

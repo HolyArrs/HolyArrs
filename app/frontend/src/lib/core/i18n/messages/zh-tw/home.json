@@ -271,5 +271,7 @@
 	"home.noSaveFolder": "沒有設定儲存資料夾",
 	"home.noSaveFolderMany": "沒有設定儲存資料夾",
 	"home.off": "關閉",
-	"home.sourcesOff": "已在功能模組中關閉"
+	"home.sourcesOff": "已在功能模組中關閉",
+	"home.addedTwice": "被重複新增",
+	"home.addedTwiceMany": "被重複新增"
 }

@@ -264,5 +264,8 @@
 	"health.check.saveFolder": "Gemmemappe for",
 	"health.check.saveFolderWhy": "{app} har ingen gemmemappe, så HolyArrs kan ikke importere dens færdige downloads. Tilføj et stipar under Indstillinger › Downloadere.",
 	"health.kind.clearWaiting": "Downloads der venter på at blive ryddet væk",
-	"health.kind.saveFolder": "Downloaderens gemmemappe"
+	"health.kind.saveFolder": "Downloaderens gemmemappe",
+	"health.check.sameDownloader": "Tilføjet to gange:",
+	"health.check.sameDownloaderWhy": "{app} når den samme download-app som en anden Downloader, så dens downloads kan blive vist to gange. Fjern den ene under Indstillinger › Downloadere.",
+	"health.kind.sameDownloader": "Downloader tilføjet to gange"
 }

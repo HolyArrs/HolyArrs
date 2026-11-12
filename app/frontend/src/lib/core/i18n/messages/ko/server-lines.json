@@ -1277,5 +1277,6 @@
 	"server.library.files-matched-by-hand": "{name}: 파일 {n}개를 직접 연결했어요",
 	"server.library.no-such-file-in-this-title": "이 타이틀에 그런 파일이 없어요",
 	"server.library.send-1-to-2000-files": "파일을 1~2000개 보내세요",
-	"server.sources.this-kind-of-title-can-t": "이 종류의 타이틀은 검색할 수 없습니다"
+	"server.sources.this-kind-of-title-can-t": "이 종류의 타이틀은 검색할 수 없습니다",
+	"server.health.downloader-added-twice": "두 번 추가된 다운로더"
 }
