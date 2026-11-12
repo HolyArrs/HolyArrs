@@ -123,6 +123,7 @@ func Radarr(d Deps) http.Handler {
 func (h *handler) common(mux *http.ServeMux) {
 	mux.HandleFunc("GET /system/status", h.status)
 	mux.HandleFunc("GET /qualityprofile", h.qualityProfiles)
+	mux.HandleFunc("GET /qualityprofile/{id}", h.qualityProfile)
 	mux.HandleFunc("POST /qualityprofile", h.addProfile)
 	mux.HandleFunc("PUT /qualityprofile/{id}", h.putProfile)
 	mux.HandleFunc("DELETE /qualityprofile/{id}", h.deleteProfile)

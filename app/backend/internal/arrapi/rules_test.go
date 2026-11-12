@@ -292,6 +292,12 @@ func TestProfiles_PushBecomesPickRules(t *testing.T) {
 	}
 	l := h.list("radarr", "qualityprofile")
 	got := byName(l, "HD Bluray + WEB")
+	if st, one := h.do("radarr", "GET", fmt.Sprintf("qualityprofile/%d", id), ""); st != 200 || !strings.Contains(one, `"HD Bluray + WEB"`) {
+		t.Fatalf("get one: %d %s", st, one)
+	}
+	if st, _ := h.do("radarr", "GET", "qualityprofile/999999", ""); st != 404 {
+		t.Fatalf("get missing: %d", st)
+	}
 	if got == nil || int64(got["id"].(float64)) != id || got["cutoff"] != float64(1001) || got["minFormatScore"] != float64(-50) ||
 		got["language"].(map[string]any)["name"] != "French" {
 		t.Fatalf("listed: %v", got)

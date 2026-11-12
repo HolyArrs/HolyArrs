@@ -257,6 +257,38 @@ func (h *handler) qualityProfiles(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
+// qualityProfile answers one profile as the list shows it; apps such as
+// Seerr and Recyclarr read a single profile by id.
+func (h *handler) qualityProfile(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	ctx := r.Context()
+	ps, pushed, err := h.listedProfiles(ctx)
+	if err != nil {
+		internalError(w, err)
+		return
+	}
+	for _, p := range ps {
+		if p.ID != id {
+			continue
+		}
+		formats, err := listFormatRows(ctx, h.Store.Read(), h.side)
+		if err != nil {
+			internalError(w, err)
+			return
+		}
+		if pp, ok := pushed[p.ID]; ok {
+			writeJSON(w, http.StatusOK, profileShape(p.ID, pp, formats))
+			return
+		}
+		writeJSON(w, http.StatusOK, h.rulesShape(p, formats))
+		return
+	}
+	notFound(w)
+}
+
 // profileShape is a sent profile as listed: as sent, under its Pick rules
 // id, with a raw score for every format this side has (0 when it gave none).
 func profileShape(id int64, pp pushedProfile, formats []pushedFormat) map[string]any {
