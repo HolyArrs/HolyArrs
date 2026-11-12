@@ -1248,5 +1248,6 @@
 	"downloads.ot.sizeUpTo": "不超过 {n} GB",
 	"downloads.row.imported": "已导入",
 	"downloads.row.stillIn": "仍在 {app} 中",
-	"downloads.dp.openDownloaders": "打开下载器"
+	"downloads.dp.openDownloaders": "打开下载器",
+	"downloads.hl.notMoved": "导入后未能移动"
 }

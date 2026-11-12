@@ -1248,5 +1248,6 @@
 	"downloads.ot.sizeUpTo": "{n} GB 以下",
 	"downloads.row.imported": "インポート済み",
 	"downloads.row.stillIn": "まだ {app} にあります",
-	"downloads.dp.openDownloaders": "ダウンローダーを開く"
+	"downloads.dp.openDownloaders": "ダウンローダーを開く",
+	"downloads.hl.notMoved": "インポート後に移動できませんでした"
 }

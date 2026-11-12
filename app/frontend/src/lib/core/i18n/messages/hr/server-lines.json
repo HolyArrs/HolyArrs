@@ -1271,5 +1271,7 @@
 	"server.downloads.deleted-by-hand": "Ručno izbrisano",
 	"server.downloads.marked-bad": "Označeno kao loše",
 	"server.suggest.because-you-have": "Jer imate {name}",
-	"server.health.downloader-save-folder": "Mapa za spremanje preuzimatelja"
+	"server.health.downloader-save-folder": "Mapa za spremanje preuzimatelja",
+	"server.downloads.could-not-move-the-imported-download": "Uvezeno preuzimanje nije se moglo premjestiti u {cat} u {name}: {error}; HolyArrs će pokušati ponovno pri sljedećem uvozu",
+	"server.downloads.moved-to-after-import": "Premješteno u {cat} nakon uvoza"
 }

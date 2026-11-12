@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "Ουκρανικά",
 	"downloads.row.imported": "Εισήχθη",
 	"downloads.row.stillIn": "Ακόμα στο {app}",
-	"downloads.dp.openDownloaders": "Άνοιγμα Προγραμμάτων λήψης"
+	"downloads.dp.openDownloaders": "Άνοιγμα Προγραμμάτων λήψης",
+	"downloads.hl.notMoved": "Δεν μεταφέρθηκε μετά την εισαγωγή"
 }

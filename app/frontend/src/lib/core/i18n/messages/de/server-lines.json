@@ -1271,5 +1271,7 @@
 	"server.downloads.deleted-by-hand": "Von Hand gelöscht",
 	"server.downloads.marked-bad": "Als fehlerhaft markiert",
 	"server.suggest.because-you-have": "Weil du {name} hast",
-	"server.health.downloader-save-folder": "Speicherordner des Downloaders"
+	"server.health.downloader-save-folder": "Speicherordner des Downloaders",
+	"server.downloads.could-not-move-the-imported-download": "Der importierte Download ließ sich in {name} nicht nach {cat} verschieben: {error}; HolyArrs versucht es beim nächsten Import erneut",
+	"server.downloads.moved-to-after-import": "Nach dem Import nach {cat} verschoben"
 }

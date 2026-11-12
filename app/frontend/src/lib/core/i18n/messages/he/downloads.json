@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "אוקראינית",
 	"downloads.row.imported": "יובא",
 	"downloads.row.stillIn": "עדיין ב-{app}",
-	"downloads.dp.openDownloaders": "פתיחת מורידים"
+	"downloads.dp.openDownloaders": "פתיחת מורידים",
+	"downloads.hl.notMoved": "לא הועבר אחרי הייבוא"
 }

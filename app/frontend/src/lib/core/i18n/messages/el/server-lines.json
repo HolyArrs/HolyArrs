@@ -1271,5 +1271,7 @@
 	"server.downloads.deleted-by-hand": "Διαγράφηκε χειροκίνητα",
 	"server.downloads.marked-bad": "Σημειώθηκε ως κακό",
 	"server.suggest.because-you-have": "Επειδή έχετε το {name}",
-	"server.health.downloader-save-folder": "Φάκελος αποθήκευσης του Προγράμματος λήψης"
+	"server.health.downloader-save-folder": "Φάκελος αποθήκευσης του Προγράμματος λήψης",
+	"server.downloads.could-not-move-the-imported-download": "Η εισαγμένη λήψη δεν μεταφέρθηκε στο {cat} στο {name}: {error}· το HolyArrs θα ξαναδοκιμάσει στην επόμενη εισαγωγή",
+	"server.downloads.moved-to-after-import": "Μεταφέρθηκε στο {cat} μετά την εισαγωγή"
 }

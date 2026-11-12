@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 desactiva aquesta comprovació; si no, de 5 a 1440.",
 	"settings.downloaders.crawlKbps": "Més lent que (KB/s)",
 	"settings.downloaders.crawlHours": "Durant (hores)",
-	"settings.downloaders.crawlHint": "0 en qualsevol dels dos desactiva la comprovació de lentitud."
+	"settings.downloaders.crawlHint": "0 en qualsevol dels dos desactiva la comprovació de lentitud.",
+	"settings.downloaders.categoryAfterImport": "Categoria després d'importar",
+	"settings.downloaders.categoryAfterImportHint": "Quan un torrent s'ha importat, HolyArrs el mou a aquesta categoria. Deixa-ho buit per mantenir-lo a la categoria principal.",
+	"settings.downloaders.ownOnly": "Mostra només els elements d'HolyArrs",
+	"settings.downloaders.ownOnlyHint": "Els elements d'altres aplicacions en aquest gestor de baixades queden amagats i HolyArrs no els canvia."
 }

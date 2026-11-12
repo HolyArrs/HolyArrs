@@ -1271,5 +1271,7 @@
 	"server.downloads.deleted-by-hand": "Изтрито ръчно",
 	"server.downloads.marked-bad": "Отбелязано като лошо",
 	"server.suggest.because-you-have": "Защото имате {name}",
-	"server.health.downloader-save-folder": "Папка за запис на програмата за изтегляне"
+	"server.health.downloader-save-folder": "Папка за запис на програмата за изтегляне",
+	"server.downloads.could-not-move-the-imported-download": "Импортираното сваляне не можа да се премести в {cat} в {name}: {error}; HolyArrs ще опита пак при следващото импортиране",
+	"server.downloads.moved-to-after-import": "Преместено в {cat} след импортиране"
 }

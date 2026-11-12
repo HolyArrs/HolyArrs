@@ -1271,5 +1271,7 @@
 	"server.downloads.deleted-by-hand": "Smazáno ručně",
 	"server.downloads.marked-bad": "Označeno jako vadné",
 	"server.suggest.because-you-have": "Protože máte {name}",
-	"server.health.downloader-save-folder": "Složka pro ukládání Stahovače"
+	"server.health.downloader-save-folder": "Složka pro ukládání Stahovače",
+	"server.downloads.could-not-move-the-imported-download": "Importované stahování se nepodařilo přesunout do {cat} v {name}: {error}; HolyArrs to zkusí znovu při dalším importu",
+	"server.downloads.moved-to-after-import": "Po importu přesunuto do {cat}"
 }

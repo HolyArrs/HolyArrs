@@ -1248,5 +1248,6 @@
 	"downloads.ot.sizeUpTo": "bis {n} GB",
 	"downloads.row.imported": "Importiert",
 	"downloads.row.stillIn": "Noch in {app}",
-	"downloads.dp.openDownloaders": "Downloader öffnen"
+	"downloads.dp.openDownloaders": "Downloader öffnen",
+	"downloads.hl.notMoved": "Nach dem Import nicht verschoben"
 }

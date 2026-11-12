@@ -1248,5 +1248,6 @@
 	"downloads.ot.sizeUpTo": "{n} GB तक",
 	"downloads.row.imported": "इम्पोर्ट हुआ",
 	"downloads.row.stillIn": "अभी भी {app} में",
-	"downloads.dp.openDownloaders": "डाउनलोडर खोलें"
+	"downloads.dp.openDownloaders": "डाउनलोडर खोलें",
+	"downloads.hl.notMoved": "इम्पोर्ट के बाद नहीं हटाया गया"
 }

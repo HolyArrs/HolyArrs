@@ -1248,5 +1248,6 @@
 	"downloads.ot.sizeUpTo": "до {n} ГБ",
 	"downloads.row.imported": "Імпортовано",
 	"downloads.row.stillIn": "Ще в {app}",
-	"downloads.dp.openDownloaders": "Відкрити завантажувачі"
+	"downloads.dp.openDownloaders": "Відкрити завантажувачі",
+	"downloads.hl.notMoved": "Не переміщено після імпорту"
 }

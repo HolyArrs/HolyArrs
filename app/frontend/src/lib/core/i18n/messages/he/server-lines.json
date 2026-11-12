@@ -1271,5 +1271,7 @@
 	"server.downloads.deleted-by-hand": "נמחק ידנית",
 	"server.downloads.marked-bad": "סומן כפגום",
 	"server.suggest.because-you-have": "כי יש לך את {name}",
-	"server.health.downloader-save-folder": "תיקיית השמירה של המוריד"
+	"server.health.downloader-save-folder": "תיקיית השמירה של המוריד",
+	"server.downloads.could-not-move-the-imported-download": "לא ניתן היה להעביר את ההורדה שיובאה אל {cat} ב־{name}: {error}; HolyArrs ינסה שוב בייבוא הבא",
+	"server.downloads.moved-to-after-import": "הועבר אל {cat} אחרי הייבוא"
 }

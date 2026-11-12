@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "Ukrainian",
 	"downloads.row.imported": "Na-import",
 	"downloads.row.stillIn": "Nasa {app} pa rin",
-	"downloads.dp.openDownloaders": "Buksan ang Mga Downloader"
+	"downloads.dp.openDownloaders": "Buksan ang Mga Downloader",
+	"downloads.hl.notMoved": "Hindi nailipat pagkatapos ng import"
 }

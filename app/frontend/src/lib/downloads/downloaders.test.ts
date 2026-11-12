@@ -272,3 +272,15 @@ describe('dead torrent rule', () => {
 		expect(deadRuleOn({})).toBe(false);
 	});
 });
+
+describe('category after import and own items only', () => {
+	it('sends the category after import for qBittorrent only, and own_only for torrent clients', () => {
+		const q = { ...emptyForm('qbittorrent'), category_after_import: ' holyarrs-done ', own_only: true };
+		expect(formBody(q)).toMatchObject({ category_after_import: 'holyarrs-done', own_only: true });
+		const tr = { ...emptyForm('transmission'), category_after_import: 'x', own_only: true };
+		expect(formBody(tr)).not.toHaveProperty('category_after_import');
+		expect(formBody(tr)).toMatchObject({ own_only: true });
+		expect(formBody({ ...emptyForm('sabnzbd'), own_only: true })).not.toHaveProperty('own_only');
+		expect(emptyForm()).toMatchObject({ category_after_import: '', own_only: false });
+	});
+});

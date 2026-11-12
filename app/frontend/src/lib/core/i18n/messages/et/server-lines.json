@@ -1271,5 +1271,7 @@
 	"server.downloads.deleted-by-hand": "Käsitsi kustutatud",
 	"server.downloads.marked-bad": "Märgitud vigaseks",
 	"server.suggest.because-you-have": "Sest sul on {name}",
-	"server.health.downloader-save-folder": "Allalaadija salvestuskaust"
+	"server.health.downloader-save-folder": "Allalaadija salvestuskaust",
+	"server.downloads.could-not-move-the-imported-download": "Imporditud allalaadimist ei saanud teisaldada kategooriasse {cat} kliendis {name}: {error}; HolyArrs proovib järgmisel impordil uuesti",
+	"server.downloads.moved-to-after-import": "Pärast importi teisaldatud kategooriasse {cat}"
 }

@@ -1271,5 +1271,7 @@
 	"server.downloads.deleted-by-hand": "Видалено вручну",
 	"server.downloads.marked-bad": "Позначено як погане",
 	"server.suggest.because-you-have": "Бо у вас є {name}",
-	"server.health.downloader-save-folder": "Тека збереження завантажувача"
+	"server.health.downloader-save-folder": "Тека збереження завантажувача",
+	"server.downloads.could-not-move-the-imported-download": "Не вдалося перемістити імпортоване завантаження до {cat} у {name}: {error}; HolyArrs спробує знову під час наступного імпорту",
+	"server.downloads.moved-to-after-import": "Переміщено до {cat} після імпорту"
 }

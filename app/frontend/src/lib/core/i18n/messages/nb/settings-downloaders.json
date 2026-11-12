@@ -133,5 +133,9 @@
   "settings.downloaders.deadMinutesHint": "0 slår av denne sjekken; ellers 5 til 1440.",
   "settings.downloaders.crawlKbps": "Tregere enn (KB/s)",
   "settings.downloaders.crawlHours": "I (timer)",
-  "settings.downloaders.crawlHint": "0 i en av dem slår av sjekken for lav fart."
+  "settings.downloaders.crawlHint": "0 i en av dem slår av sjekken for lav fart.",
+  "settings.downloaders.categoryAfterImport": "Kategori etter import",
+  "settings.downloaders.categoryAfterImportHint": "Når en torrent er importert, flytter HolyArrs den til denne kategorien. La feltet stå tomt for å beholde den i hovedkategorien.",
+  "settings.downloaders.ownOnly": "Vis bare HolyArrs-elementer",
+  "settings.downloaders.ownOnlyHint": "Andre apper sine elementer på denne nedlasteren skjules, og HolyArrs endrer dem ikke."
 }

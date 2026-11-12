@@ -246,6 +246,7 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'download_failed': return t(TAG.failed, plainWhy(str(d.reason)) || say('downloads.hl.dlFailed'));
 		case 'download_vanished': return t(TAG.failed, say('downloads.hl.vanished'));
 		case 'download_not_removed': return t(TAG.failed, say('downloads.hl.notRemoved'));
+		case 'download_not_moved': return t(TAG.failed, say('downloads.hl.notMoved'));
 		case 'import_done': return t(TAG.came, join(resolutionOf(releaseOf([e])), sizeOf(d)));
 		case 'import_partly_done': return t({ ...TAG.came, tone: 'wait' }, join(say('downloads.hl.partly'), say('downloads.hl.needLook')));
 		case 'import_failed':

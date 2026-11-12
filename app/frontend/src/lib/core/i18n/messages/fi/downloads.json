@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "ukraina",
 	"downloads.row.imported": "Tuotu",
 	"downloads.row.stillIn": "Vielä sovelluksessa {app}",
-	"downloads.dp.openDownloaders": "Avaa Lataajat"
+	"downloads.dp.openDownloaders": "Avaa Lataajat",
+	"downloads.hl.notMoved": "Ei siirretty tuonnin jälkeen"
 }
