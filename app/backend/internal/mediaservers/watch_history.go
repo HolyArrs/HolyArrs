@@ -125,7 +125,7 @@ func Watched(ctx context.Context, q watchReader) (WatchedSummary, error) {
 			links[p.ServerKind] = byID
 		}
 		lp, ok := byID[p.account]
-		if !ok && p.ServerKind == "plex" {
+		if !ok && p.ServerKind == "plex" && p.account == "1" {
 			// The server's own owner is account 1 there, not the plex.tv id
 			// the link keeps; their Plex name still matches.
 			lp, ok = byPlexName(byID, p.Name)
