@@ -545,7 +545,7 @@ func labelText(raw string) string {
 // labelIs reports whether a stored label is the category, written plainly (as
 // another app may have) or percent-encoded.
 func labelIs(raw, category string) bool {
-	return category != "" && (raw == category || labelText(raw) == category)
+	return category != "" && (sameCategory(raw, category) || sameCategory(labelText(raw), category))
 }
 
 // rtorrentTooLarge is a call refused for its size before rTorrent took it.

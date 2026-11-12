@@ -190,6 +190,7 @@ func (a *Web) addDownloader(w http.ResponseWriter, r *http.Request) {
 		downloaderError(w, err)
 		return
 	}
+	d, _ = a.Manager().LearnSaveRoot(r.Context(), d, actor(r))
 	a.publishDownloader(d)
 	webserver.WriteJSON(w, http.StatusCreated, downloaderView(d, 0))
 }
@@ -206,12 +207,19 @@ func (a *Web) editDownloader(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// A Downloader that had no path pair gets its save root; pairs the owner
+	// removes in this edit stay removed.
+	var before domain.Downloader
+	_ = database.Get(r.Context(), a.Store.Read(), "downloaders", id, &before)
 	d, err := Change(r.Context(), a.Store, a.Secrets, id, in, actor(r))
 	if err != nil {
 		downloaderError(w, err)
 		return
 	}
 	a.Manager().Forget(id)
+	if len(before.PathMap) == 0 {
+		d, _ = a.Manager().LearnSaveRoot(r.Context(), d, actor(r))
+	}
 	a.publishDownloader(d)
 	webserver.WriteJSON(w, http.StatusOK, downloaderView(d, 0))
 }
@@ -339,6 +347,13 @@ func explainDownloader(err error) string {
 	return "It did not answer: " + msg
 }
 
+// mayKeepSaveRoot says whether a test may store the save root. Like an edit,
+// that takes a browser session or an API key (no sign-in is for tests).
+func mayKeepSaveRoot(r *http.Request) bool {
+	_, signedIn := webserver.From(r.Context())
+	return !signedIn || webserver.Strong(r.Context())
+}
+
 // TestDownloader asks a saved Downloader for its version and says the
 // result in plain words. A working answer ends a rest.
 func (a *Web) TestDownloader(w http.ResponseWriter, r *http.Request) {
@@ -356,7 +371,7 @@ func (a *Web) TestDownloader(w http.ResponseWriter, r *http.Request) {
 	m := a.Manager()
 	m.Forget(id)
 	start := time.Now()
-	h, err := m.Check(ctx, d)
+	h, err := m.CheckNow(ctx, d)
 	out := map[string]any{"ok": err == nil, "ms": time.Since(start).Milliseconds()}
 	if err != nil {
 		out["text"] = explainDownloader(err)
@@ -365,6 +380,12 @@ func (a *Web) TestDownloader(w http.ResponseWriter, r *http.Request) {
 		out["version"] = h.Version
 		if h.Note != "" {
 			out["text"] = out["text"].(string) + " " + h.Note
+		}
+		// A Downloader saved before it had a save root gets it on this test.
+		if len(d.PathMap) == 0 && mayKeepSaveRoot(r) {
+			if _, kept := m.LearnSaveRoot(ctx, d, actor(r)); len(kept) > 0 {
+				out["text"] = out["text"].(string) + " HolyArrs reads its finished downloads from " + strings.Join(kept, ", ") + "."
+			}
 		}
 	}
 	_ = database.Get(r.Context(), a.Store.Read(), "downloaders", id, &d)

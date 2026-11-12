@@ -469,13 +469,13 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			return "", false, errors.New("the torrent belongs to another download")
 		}
 		if j, err := e.Get(ctx, hash); err == nil {
-			if skip[j.ID] || (d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "aria2") && j.Category != d.Category {
+			if skip[j.ID] || (d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "aria2") && !sameCategory(j.Category, d.Category) {
 				return "", false, errors.New("the torrent belongs to another download or category")
 			}
 			if j.ID != "" {
 				hash = j.ID
 			}
-			return hash, d.Category != "" && j.Category == d.Category, nil
+			return hash, d.Category != "" && sameCategory(j.Category, d.Category), nil
 		}
 	}
 	link := rel.LinkRef

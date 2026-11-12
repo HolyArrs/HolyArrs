@@ -116,7 +116,7 @@ func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, 
 		if err := fill(in, &d, false); err != nil {
 			return err
 		}
-		if hostOf(d.URL) != oldHost || strings.Join(d.Categories(), "/") != oldCat {
+		if hostOf(d.URL) != oldHost || !sameCategory(strings.Join(d.Categories(), "/"), oldCat) {
 			n, err := activeCount(tx, id)
 			if err != nil {
 				return err

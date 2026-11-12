@@ -325,6 +325,52 @@ func (n *NZBGet) rpc(ctx context.Context, method string, params []any, out any) 
 	return nil
 }
 
+// finishedFolders tells where NZBGet puts finished jobs, as it sees them:
+// its main folder for them first, then for each of cats the category's own
+// folder, or the main one with the category's name added when NZBGet adds it.
+func (n *NZBGet) finishedFolders(ctx context.Context, cats []string) ([]string, error) {
+	var opts []nzbParam
+	if err := n.rpc(ctx, "config", nil, &opts); err != nil {
+		return nil, err
+	}
+	o := make(map[string]string, len(opts))
+	for _, p := range opts {
+		o[strings.ToLower(p.Name)] = p.Value
+	}
+	main := nzbgetExpand(o["destdir"], o["maindir"])
+	var out []string
+	if main != "" {
+		out = append(out, main)
+	}
+	appendName := !strings.EqualFold(strings.TrimSpace(o["appendcategorydir"]), "no")
+	for i := 1; i < 1000; i++ {
+		key := "category" + strconv.Itoa(i)
+		name, ok := o[key+".name"]
+		if !ok {
+			break
+		}
+		if !hasCategory(cats, name) {
+			continue
+		}
+		if dir := nzbgetExpand(o[key+".destdir"], o["maindir"]); dir != "" {
+			out = append(out, dir)
+		} else if appendName && main != "" {
+			out = append(out, joinFolder(main, name))
+		}
+	}
+	return out, nil
+}
+
+// nzbgetExpand puts the main folder in for ${MainDir}, as NZBGet does.
+func nzbgetExpand(v, mainDir string) string {
+	v = strings.TrimSpace(v)
+	const key = "${maindir}"
+	if i := strings.Index(strings.ToLower(v), key); i >= 0 {
+		v = v[:i] + strings.TrimSpace(mainDir) + v[i+len(key):]
+	}
+	return v
+}
+
 func nzbgetID(r AddRequest, attempt int) string {
 	if r.AttemptMarker != "" {
 		return r.AttemptMarker

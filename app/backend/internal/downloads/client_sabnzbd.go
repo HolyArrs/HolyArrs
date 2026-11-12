@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -110,7 +109,51 @@ func (s *Sabnzbd) HasCategory(ctx context.Context, cat string) (bool, error) {
 	if err := json.Unmarshal(b, &c); err != nil {
 		return false, fmt.Errorf("sabnzbd get_cats: %w", err)
 	}
-	return slices.Contains(c.Categories, cat), nil
+	return hasCategory(c.Categories, cat), nil
+}
+
+// finishedFolders tells where SABnzbd puts finished jobs, as it sees them: its
+// completed folder (a full path in fullstatus, while its settings may hold a
+// relative one), then each of cats' folder that is a full path of its own.
+// Other category folders sit inside the completed one.
+func (s *Sabnzbd) finishedFolders(ctx context.Context, cats []string) ([]string, error) {
+	b, err := s.call(ctx, "fullstatus", url.Values{"skip_dashboard": {"1"}}, true)
+	if err != nil {
+		return nil, err
+	}
+	var st struct {
+		Status map[string]json.RawMessage `json:"status"`
+	}
+	if err := json.Unmarshal(b, &st); err != nil {
+		return nil, fmt.Errorf("sabnzbd fullstatus: %w", err)
+	}
+	var out []string
+	var done string
+	if json.Unmarshal(st.Status["completedir"], &done) == nil && strings.TrimSpace(done) != "" {
+		out = append(out, strings.TrimSpace(done))
+	}
+	b, err = s.call(ctx, "get_config", url.Values{"section": {"categories"}}, true)
+	if err != nil {
+		return out, nil // the completed folder alone still helps
+	}
+	var c struct {
+		Config struct {
+			Categories []struct {
+				Name string `json:"name"`
+				Dir  string `json:"dir"`
+			} `json:"categories"`
+		} `json:"config"`
+	}
+	if json.Unmarshal(b, &c) != nil {
+		return out, nil
+	}
+	for _, x := range c.Config.Categories {
+		// A trailing * only says SABnzbd adds no job folder.
+		if dir := strings.TrimSuffix(strings.TrimSpace(x.Dir), "*"); hasCategory(cats, x.Name) && absPath(dir) {
+			out = append(out, dir)
+		}
+	}
+	return out, nil
 }
 
 // Add queues an NZB and returns its job id.
