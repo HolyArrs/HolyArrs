@@ -134,6 +134,7 @@ var jobOwners = map[string]Owner{
 	"import_download":     ByTitle,
 	"refresh_title":       ByTitle,
 	"scan_title":          ByTitle,
+	"rescan_title":        ByTitle,
 	"move_title":          ByTitle,
 	"scan_library_folder": ByTitle,
 	"adopt_library":       ByTitle,
