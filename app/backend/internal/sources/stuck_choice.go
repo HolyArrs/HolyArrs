@@ -7,7 +7,7 @@ import (
 )
 
 // ChoiceWait is how long a chosen Slot waits for a Downloader to take its
-// Release before a person may choose another one for it (#307).
+// Release before a person may choose another one for it.
 var ChoiceWait = 10 * time.Minute
 
 // StuckChoiceReason is shown on a Slot whose chosen Release no Downloader has

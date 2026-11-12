@@ -14,7 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// #307: a season pack chosen but never taken by a Downloader keeps its
+// A season pack chosen but never taken by a Downloader keeps its
 // episodes chosen. Right away they stay busy; after ChoiceWait another
 // Release can be chosen for them by hand.
 func TestChoose_StuckChoiceCanBeReplaced(t *testing.T) {

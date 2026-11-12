@@ -9,7 +9,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// #307: a season with one episode already in the Library still asks each
+// A season with one episode already in the Library still asks each
 // Source for the whole season, so season packs come back.
 func TestHandleSeason_AsksSeasonWithAnEpisodeInLibrary(t *testing.T) {
 	ts := &tvServer{answer: func(q url.Values) []string {
