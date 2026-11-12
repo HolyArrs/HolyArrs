@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "ukrainiečių",
 	"downloads.row.imported": "Importuota",
 	"downloads.row.stillIn": "Vis dar programoje {app}",
-	"downloads.dp.openDownloaders": "Atidaryti Atsisiuntėjus"
+	"downloads.dp.openDownloaders": "Atidaryti Atsisiuntėjus",
+	"downloads.hl.notMoved": "Po importo neperkelta"
 }

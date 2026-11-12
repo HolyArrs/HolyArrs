@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0이면 꺼짐, 아니면 5~1440.",
 	"settings.downloaders.crawlKbps": "이보다 느림(KB/s)",
 	"settings.downloaders.crawlHours": "동안(시간)",
-	"settings.downloaders.crawlHint": "둘 중 하나가 0이면 느림 확인은 꺼집니다."
+	"settings.downloaders.crawlHint": "둘 중 하나가 0이면 느림 확인은 꺼집니다.",
+	"settings.downloaders.categoryAfterImport": "가져온 후 카테고리",
+	"settings.downloaders.categoryAfterImportHint": "토렌트를 가져오면 HolyArrs가 이 카테고리로 옮깁니다. 기본 카테고리에 두려면 비워 두세요.",
+	"settings.downloaders.ownOnly": "HolyArrs 항목만 보기",
+	"settings.downloaders.ownOnlyHint": "이 다운로더에 있는 다른 앱의 항목은 숨겨지며 HolyArrs가 바꾸지 않습니다."
 }

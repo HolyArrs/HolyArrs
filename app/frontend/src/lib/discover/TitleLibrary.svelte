@@ -6,7 +6,7 @@
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { OwnedTitle } from './title-owned.svelte.ts';
-	import { dayWords, epFile, epQuality, epTone } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte';
+	import { dayWords, epFile, epQuality, epTone } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte'; import TitleLeftovers from './TitleLeftovers.svelte';
 	import { ShowVersions, SeasonToolsSheet, EpisodeSheet, type SheetEpisode } from '#lib/shows/index.ts';
 	import { HistoryLine as CompactRow, isRoutine, groupDownloads, downloadTone } from '#lib/downloads/index.ts';
 	import { qualityBadges, ShowDeleteDialog, splitSteps, type RenameStep } from '#lib/mediafiles/index.ts';
@@ -579,6 +579,7 @@
 							</div>
 						</div>
 					</div>
+					<TitleLeftovers {own} />
 					{#if renameCount}
 						<button type="button" class="lib-row" data-testid="rename-row" onclick={() => (own.renameOpen = true)}><span><b>{t('discover.titleLibrary.renameFiles')}</b><small>{renameCount === 1 ? t('discover.titleLibrary.renameOne') : t('discover.titleLibrary.renameOther', { n: renameCount })}</small></span><Icon name="chevronRight" size={16} /></button>
 					{/if}

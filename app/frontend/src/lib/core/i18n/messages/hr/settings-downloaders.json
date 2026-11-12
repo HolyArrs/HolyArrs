@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 isključuje ovu provjeru; inače 5 do 1440.",
 	"settings.downloaders.crawlKbps": "Sporije od (KB/s)",
 	"settings.downloaders.crawlHours": "Tijekom (sati)",
-	"settings.downloaders.crawlHint": "0 u bilo kojem od ta dva isključuje provjeru sporosti."
+	"settings.downloaders.crawlHint": "0 u bilo kojem od ta dva isključuje provjeru sporosti.",
+	"settings.downloaders.categoryAfterImport": "Kategorija nakon uvoza",
+	"settings.downloaders.categoryAfterImportHint": "Kad je torrent uvezen, HolyArrs ga premješta u ovu kategoriju. Ostavite prazno da ostane u glavnoj kategoriji.",
+	"settings.downloaders.ownOnly": "Prikaži samo stavke HolyArrsa",
+	"settings.downloaders.ownOnlyHint": "Stavke drugih aplikacija u ovom preuzimaču skrivene su i HolyArrs ih ne mijenja."
 }

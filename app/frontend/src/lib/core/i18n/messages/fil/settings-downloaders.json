@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "Ino-off ng 0 ang pagsusuring ito; kung hindi, 5 hanggang 1440.",
 	"settings.downloaders.crawlKbps": "Mas mabagal sa (KB/s)",
 	"settings.downloaders.crawlHours": "Sa loob ng (oras)",
-	"settings.downloaders.crawlHint": "Ino-off ng 0 sa alinman sa dalawa ang pagsusuri sa bagal."
+	"settings.downloaders.crawlHint": "Ino-off ng 0 sa alinman sa dalawa ang pagsusuri sa bagal.",
+	"settings.downloaders.categoryAfterImport": "Kategorya pagkatapos ng import",
+	"settings.downloaders.categoryAfterImportHint": "Kapag na-import na ang torrent, ililipat ito ng HolyArrs sa kategoryang ito. Iwanang blangko para manatili ito sa pangunahing kategorya.",
+	"settings.downloaders.ownOnly": "Ipakita lang ang mga item ng HolyArrs",
+	"settings.downloaders.ownOnlyHint": "Nakatago ang mga item ng ibang app sa Downloader na ito, at hindi ito binabago ng HolyArrs."
 }

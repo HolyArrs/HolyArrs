@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent ו-ruTorrent כמוריד**, גם ב-seedbox. הורדות Usenet שהסתיימו עוברות עכשיו לספרייה שלך במקום להעתיק. [מה חדש](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: עכשיו ב-44 שפות**, כולל מימין לשמאל. aria2 עובד כמוריד, וחבילות עונה יורדות כמה פרקים בכל פעם. [מה חדש](https://holyarrs.com/whats-new/)
 
 > כל פוסטר, טריילר וציון ב-HolyArrs שלך מגיעים משרת שאני מפעיל ומשלם עליו בעצמי, כדי שישאר חינמי לכולם. אם HolyArrs שיפר קצת את ערב הסרט שלך, תמיכה כספית שומרת על האור דלוק בשבילנו כולנו 💛
 >
@@ -222,7 +220,7 @@ HolyArrs רק קורא את האפליקציות הישנות שלך ולא מש
 | תגית | מתאימה ל |
 | :----: | --- |
 | `latest` | הגרסה החדשה ביותר. |
-| `1.0.19` | גרסה מדויקת אחת. היא אף פעם לא זזה. |
+| `1.1.0` | גרסה מדויקת אחת. היא אף פעם לא זזה. |
 
 ## שימוש
 

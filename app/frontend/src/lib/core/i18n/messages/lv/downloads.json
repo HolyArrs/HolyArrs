@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "ukraiņu",
 	"downloads.row.imported": "Importēts",
 	"downloads.row.stillIn": "Joprojām lietotnē {app}",
-	"downloads.dp.openDownloaders": "Atvērt Lejupielādētājus"
+	"downloads.dp.openDownloaders": "Atvērt Lejupielādētājus",
+	"downloads.hl.notMoved": "Pēc importa netika pārvietots"
 }

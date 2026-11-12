@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "Ukrainsk",
 	"downloads.row.imported": "Importeret",
 	"downloads.row.stillIn": "Stadig i {app}",
-	"downloads.dp.openDownloaders": "Åbn Downloadere"
+	"downloads.dp.openDownloaders": "Åbn Downloadere",
+	"downloads.hl.notMoved": "Ikke flyttet efter import"
 }

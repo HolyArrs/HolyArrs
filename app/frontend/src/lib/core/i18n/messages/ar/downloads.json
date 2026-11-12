@@ -1248,5 +1248,6 @@
 	"downloads.ot.sizeUpTo": "حتى {n} غيغابايت",
 	"downloads.row.imported": "تم الاستيراد",
 	"downloads.row.stillIn": "لا يزال في {app}",
-	"downloads.dp.openDownloaders": "فتح برامج التنزيل"
+	"downloads.dp.openDownloaders": "فتح برامج التنزيل",
+	"downloads.hl.notMoved": "لم يُنقل بعد الاستيراد"
 }

@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 यह जाँच बंद करता है; वरना 5 से 1440।",
 	"settings.downloaders.crawlKbps": "इससे धीमा (KB/s)",
 	"settings.downloaders.crawlHours": "इतने समय (घंटे)",
-	"settings.downloaders.crawlHint": "किसी में भी 0 धीमेपन की जाँच बंद करता है।"
+	"settings.downloaders.crawlHint": "किसी में भी 0 धीमेपन की जाँच बंद करता है।",
+	"settings.downloaders.categoryAfterImport": "इम्पोर्ट के बाद कैटेगरी",
+	"settings.downloaders.categoryAfterImportHint": "टोरेंट इम्पोर्ट होने पर HolyArrs उसे इस कैटेगरी में ले जाता है। मुख्य कैटेगरी में रखने के लिए खाली छोड़ें।",
+	"settings.downloaders.ownOnly": "सिर्फ़ HolyArrs के आइटम दिखाएँ",
+	"settings.downloaders.ownOnlyHint": "इस डाउनलोडर पर दूसरे ऐप के आइटम छिपे रहते हैं, और HolyArrs उन्हें नहीं बदलता।"
 }

@@ -369,8 +369,13 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 		enqueue(ctx, jobs.KindSearchSlot, domain.Subject{Type: "slot", ID: slotID}, nil, fmt.Sprintf("search_slot:%d", slotID))
 	}
-	// A finished Import: clear a Usenet download out of its Downloader.
-	im.OnImported = dm.ClearFinished
+	// A finished Import: clear a Usenet download out of its Downloader, and
+	// move a torrent to its category after import. ClearFinished acts only on
+	// Usenet, so the two never meet.
+	im.OnImported = func(ctx context.Context, downloadID int64) {
+		dm.ClearFinished(ctx, downloadID)
+		dm.MoveAfterImport(ctx, downloadID)
+	}
 	// Another app took a download's files before its import: a Library
 	// rescan links the copy that app placed in the Title's folder (one found
 	// movie video, or episode files by their numbers).

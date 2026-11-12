@@ -1248,5 +1248,6 @@
 	"downloads.ot.sizeUpTo": "{n} GB 이하",
 	"downloads.row.imported": "가져옴",
 	"downloads.row.stillIn": "아직 {app}에 있음",
-	"downloads.dp.openDownloaders": "다운로더 열기"
+	"downloads.dp.openDownloaders": "다운로더 열기",
+	"downloads.hl.notMoved": "가져온 후 옮기지 못함"
 }

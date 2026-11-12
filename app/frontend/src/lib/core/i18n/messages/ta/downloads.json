@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "உக்ரைனியன்",
 	"downloads.row.imported": "இறக்குமதி செய்யப்பட்டது",
 	"downloads.row.stillIn": "இன்னும் {app} இல் உள்ளது",
-	"downloads.dp.openDownloaders": "பதிவிறக்கிகளைத் திற"
+	"downloads.dp.openDownloaders": "பதிவிறக்கிகளைத் திற",
+	"downloads.hl.notMoved": "இறக்குமதிக்குப் பின் நகர்த்தப்படவில்லை"
 }

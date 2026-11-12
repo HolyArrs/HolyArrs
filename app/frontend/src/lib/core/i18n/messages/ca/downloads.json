@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "Ucraïnès",
 	"downloads.row.imported": "Importat",
 	"downloads.row.stillIn": "Encara a {app}",
-	"downloads.dp.openDownloaders": "Obre Gestors de baixades"
+	"downloads.dp.openDownloaders": "Obre Gestors de baixades",
+	"downloads.hl.notMoved": "No s'ha mogut després d'importar"
 }

@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "úkraínska",
 	"downloads.row.imported": "Innflutt",
 	"downloads.row.stillIn": "Enn í {app}",
-	"downloads.dp.openDownloaders": "Opna Niðurhalara"
+	"downloads.dp.openDownloaders": "Opna Niðurhalara",
+	"downloads.hl.notMoved": "Ekki fært eftir innflutning"
 }

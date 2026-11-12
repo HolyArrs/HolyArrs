@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent மற்றும் ruTorrent பதிவிறக்கியாக**, seedbox-களிலும். முடிந்த Usenet பதிவிறக்கங்கள் இனி நகலெடுக்கப்படாமல் உங்கள் நூலகத்துக்கு நகர்த்தப்படும். [புதியவை என்ன](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: இப்போது 44 மொழிகளில்**, வலமிருந்து இடமாக எழுதும் மொழிகளும். aria2 பதிவிறக்கியாக இயங்கும், சீசன் தொகுப்புகள் ஒரு நேரத்தில் சில எபிசோடுகளாக பதிவிறங்கும். [புதியவை என்ன](https://holyarrs.com/whats-new/)
 
 > உங்கள் HolyArrs-இல் உள்ள ஒவ்வொரு போஸ்டர், ட்ரெய்லர், மதிப்பெண்ணும் நானே நடத்தி, நானே பணம் செலுத்தும் ஒரு server-இலிருந்து வருகிறது. அதனால் இது எல்லோருக்கும் இலவசமாகவே இருக்கிறது. HolyArrs உங்கள் திரைப்பட இரவை இன்னும் கொஞ்சம் இனிமையாக்கியிருந்தால், ஒரு sponsor நம் எல்லோருக்கும் விளக்கை எரிய வைக்கிறார் 💛
 >
@@ -222,7 +220,7 @@ Images Docker Hub-இல் [`holyarrs/holyarrs`](https://hub.docker.com/r/holya
 | Tag | எதற்குப் பயன்படுத்த |
 | :----: | --- |
 | `latest` | புதிய பதிப்பு. |
-| `1.0.19` | ஒரு குறிப்பிட்ட பதிப்பு. இது ஒருபோதும் மாறாது. |
+| `1.1.0` | ஒரு குறிப்பிட்ட பதிப்பு. இது ஒருபோதும் மாறாது. |
 
 ## பயன்பாடு
 

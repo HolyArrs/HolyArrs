@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 oprește această verificare; altfel 5 până la 1440.",
 	"settings.downloaders.crawlKbps": "Mai lent de (KB/s)",
 	"settings.downloaders.crawlHours": "Timp de (ore)",
-	"settings.downloaders.crawlHint": "0 la oricare dintre ele oprește verificarea vitezei mici."
+	"settings.downloaders.crawlHint": "0 la oricare dintre ele oprește verificarea vitezei mici.",
+	"settings.downloaders.categoryAfterImport": "Categorie după import",
+	"settings.downloaders.categoryAfterImportHint": "După ce un torrent este importat, HolyArrs îl mută în această categorie. Lăsați gol ca să rămână în categoria principală.",
+	"settings.downloaders.ownOnly": "Arată doar elementele HolyArrs",
+	"settings.downloaders.ownOnlyHint": "Elementele altor aplicații din acest client de descărcare sunt ascunse, iar HolyArrs nu le schimbă."
 }

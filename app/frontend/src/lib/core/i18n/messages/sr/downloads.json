@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "Украјински",
 	"downloads.row.imported": "Увезено",
 	"downloads.row.stillIn": "Још у {app}",
-	"downloads.dp.openDownloaders": "Отвори Преузимаче"
+	"downloads.dp.openDownloaders": "Отвори Преузимаче",
+	"downloads.hl.notMoved": "Није премештено после увоза"
 }

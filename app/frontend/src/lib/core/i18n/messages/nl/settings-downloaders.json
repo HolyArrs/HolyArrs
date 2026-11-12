@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 zet deze controle uit; anders 5 tot 1440.",
 	"settings.downloaders.crawlKbps": "Trager dan (KB/s)",
 	"settings.downloaders.crawlHours": "Gedurende (uren)",
-	"settings.downloaders.crawlHint": "0 in een van beide zet de traagheidscontrole uit."
+	"settings.downloaders.crawlHint": "0 in een van beide zet de traagheidscontrole uit.",
+	"settings.downloaders.categoryAfterImport": "Categorie na import",
+	"settings.downloaders.categoryAfterImportHint": "Zodra een torrent is geïmporteerd, verplaatst HolyArrs hem naar deze categorie. Laat leeg om hem in de hoofdcategorie te houden.",
+	"settings.downloaders.ownOnly": "Alleen HolyArrs-items tonen",
+	"settings.downloaders.ownOnlyHint": "Items van andere apps op deze downloader worden verborgen en HolyArrs wijzigt ze niet."
 }

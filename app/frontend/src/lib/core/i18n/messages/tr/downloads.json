@@ -1248,5 +1248,6 @@
 	"downloads.why.taken": "HolyArrs içe aktaramadan önce başka bir uygulama dosyaları aldı.",
 	"downloads.row.imported": "İçe aktarıldı",
 	"downloads.row.stillIn": "Hâlâ {app} içinde",
-	"downloads.dp.openDownloaders": "İndiricileri aç"
+	"downloads.dp.openDownloaders": "İndiricileri aç",
+	"downloads.hl.notMoved": "İçe aktarmadan sonra taşınmadı"
 }

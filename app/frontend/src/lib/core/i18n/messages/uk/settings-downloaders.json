@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 вимикає перевірку; інакше від 5 до 1440.",
 	"settings.downloaders.crawlKbps": "Повільніше за (КБ/с)",
 	"settings.downloaders.crawlHours": "Протягом (години)",
-	"settings.downloaders.crawlHint": "0 у будь-якому полі вимикає перевірку швидкості."
+	"settings.downloaders.crawlHint": "0 у будь-якому полі вимикає перевірку швидкості.",
+	"settings.downloaders.categoryAfterImport": "Категорія після імпорту",
+	"settings.downloaders.categoryAfterImportHint": "Після імпорту HolyArrs переносить торент у цю категорію. Залиште порожнім, щоб він лишився в основній категорії.",
+	"settings.downloaders.ownOnly": "Показувати лише елементи HolyArrs",
+	"settings.downloaders.ownOnlyHint": "Елементи інших застосунків у цьому завантажувачі приховано, і HolyArrs їх не змінює."
 }

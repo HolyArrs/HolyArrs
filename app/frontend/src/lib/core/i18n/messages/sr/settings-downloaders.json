@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 искључује ову проверу; иначе 5 до 1440.",
 	"settings.downloaders.crawlKbps": "Спорије од (KB/s)",
 	"settings.downloaders.crawlHours": "Током (сати)",
-	"settings.downloaders.crawlHint": "0 у било ком од та два искључује проверу спорости."
+	"settings.downloaders.crawlHint": "0 у било ком од та два искључује проверу спорости.",
+	"settings.downloaders.categoryAfterImport": "Категорија после увоза",
+	"settings.downloaders.categoryAfterImportHint": "Када је торент увезен, HolyArrs га премешта у ову категорију. Оставите празно да остане у главној категорији.",
+	"settings.downloaders.ownOnly": "Прикажи само ставке HolyArrs-а",
+	"settings.downloaders.ownOnlyHint": "Ставке других апликација у овом преузимачу су скривене и HolyArrs их не мења."
 }

@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent ir ruTorrent kaip atsisiuntimo programa**, taip pat ir seedbox serveriuose. Baigti Usenet atsisiuntimai dabar perkeliami į tavo biblioteką, o ne kopijuojami. [Žiūrėti, kas naujo](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: dabar 44 kalbomis**, ir iš dešinės į kairę. aria2 veikia kaip atsisiuntimo programa, o sezonų paketai siunčiami po kelias serijas. [Žiūrėti, kas naujo](https://holyarrs.com/whats-new/)
 
 > Kiekvienas tavo HolyArrs plakatas, anonsas ir įvertinimas ateina iš serverio, kurį pats laikau ir apmoku, todėl visiems tai lieka nemokama. Jei HolyArrs padarė tavo filmų vakarą šiek tiek geresnį, rėmėjas padeda mums visiems išlaikyti šviesą 💛
 >
@@ -222,7 +220,7 @@ Image yra Docker Hub kaip [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarr
 | Tag | Kam naudoti |
 | :----: | --- |
 | `latest` | Naujausia versija. |
-| `1.0.19` | Viena tiksli versija. Ji niekada nesikeičia. |
+| `1.1.0` | Viena tiksli versija. Ji niekada nesikeičia. |
 
 ## Naudojimas
 

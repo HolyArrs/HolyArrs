@@ -1248,5 +1248,6 @@
 	"downloads.ot.sizeUpTo": "до {n} ГБ",
 	"downloads.row.imported": "Импортировано",
 	"downloads.row.stillIn": "Ещё в {app}",
-	"downloads.dp.openDownloaders": "Открыть загрузчики"
+	"downloads.dp.openDownloaders": "Открыть загрузчики",
+	"downloads.hl.notMoved": "Не перемещено после импорта"
 }

@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "ukrajinski",
 	"downloads.row.imported": "Uvezeno",
 	"downloads.row.stillIn": "Još u {app}",
-	"downloads.dp.openDownloaders": "Otvori Preuzimatelje"
+	"downloads.dp.openDownloaders": "Otvori Preuzimatelje",
+	"downloads.hl.notMoved": "Nije premješteno nakon uvoza"
 }

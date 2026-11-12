@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "tiếng Ukraina",
 	"downloads.row.imported": "Đã nhập",
 	"downloads.row.stillIn": "Vẫn còn trong {app}",
-	"downloads.dp.openDownloaders": "Mở Trình tải"
+	"downloads.dp.openDownloaders": "Mở Trình tải",
+	"downloads.hl.notMoved": "Không chuyển được sau khi nhập"
 }

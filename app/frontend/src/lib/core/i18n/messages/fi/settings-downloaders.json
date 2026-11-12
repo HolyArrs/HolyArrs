@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 poistaa tämän tarkistuksen käytöstä; muuten 5–1440.",
 	"settings.downloaders.crawlKbps": "Hitaampi kuin (KB/s)",
 	"settings.downloaders.crawlHours": "Ajan (tuntia)",
-	"settings.downloaders.crawlHint": "0 jommassakummassa poistaa hitauden tarkistuksen käytöstä."
+	"settings.downloaders.crawlHint": "0 jommassakummassa poistaa hitauden tarkistuksen käytöstä.",
+	"settings.downloaders.categoryAfterImport": "Luokka tuonnin jälkeen",
+	"settings.downloaders.categoryAfterImportHint": "Kun torrent on tuotu, HolyArrs siirtää sen tähän luokkaan. Jätä tyhjäksi, niin se pysyy pääluokassa.",
+	"settings.downloaders.ownOnly": "Näytä vain HolyArrsin kohteet",
+	"settings.downloaders.ownOnlyHint": "Muiden sovellusten kohteet tässä lataajassa piilotetaan, eikä HolyArrs muuta niitä."
 }

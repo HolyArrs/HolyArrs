@@ -1248,5 +1248,6 @@
 	"downloads.pr.lang.uk": "ยูเครน",
 	"downloads.row.imported": "นำเข้าแล้ว",
 	"downloads.row.stillIn": "ยังอยู่ใน {app}",
-	"downloads.dp.openDownloaders": "เปิดตัวดาวน์โหลด"
+	"downloads.dp.openDownloaders": "เปิดตัวดาวน์โหลด",
+	"downloads.hl.notMoved": "ไม่ได้ย้ายหลังนำเข้า"
 }

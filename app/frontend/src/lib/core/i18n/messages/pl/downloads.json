@@ -1248,5 +1248,6 @@
 	"downloads.why.taken": "Inna aplikacja zabrała pliki, zanim HolyArrs zdążył je zaimportować.",
 	"downloads.row.imported": "Zaimportowano",
 	"downloads.row.stillIn": "Nadal w {app}",
-	"downloads.dp.openDownloaders": "Otwórz klienty pobierania"
+	"downloads.dp.openDownloaders": "Otwórz klienty pobierania",
+	"downloads.hl.notMoved": "Nie przeniesiono po imporcie"
 }

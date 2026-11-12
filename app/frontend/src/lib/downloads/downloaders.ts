@@ -38,6 +38,10 @@ export interface DownloaderView {
 	tags?: string[];
 	/** Remove after seeding (torrents only); ratio and minutes goals only on qBittorrent and rTorrent. */
 	after_seeding?: SeedingChoice;
+	/** qBittorrent only: a torrent moves to this category once imported; empty keeps it. */
+	category_after_import?: string;
+	/** Shows and changes only items in this Downloader's own categories. */
+	own_only?: boolean;
 	health: DownloaderHealth;
 	checked_at?: string;
 	active_downloads: number;
@@ -107,6 +111,8 @@ export interface DownloaderForm {
 	/** Seeding time goal in hours; empty means none. */
 	seed_hours: number | '' | null;
 	seed_delete_files: boolean;
+	category_after_import: string;
+	own_only: boolean;
 }
 
 export interface RemoveChoice {
@@ -192,7 +198,9 @@ export function emptyForm(kind: DownloaderView['kind'] = 'qbittorrent'): Downloa
 		seed_remove: false,
 		seed_ratio: '',
 		seed_hours: '',
-		seed_delete_files: false
+		seed_delete_files: false,
+		category_after_import: '',
+		own_only: false
 	};
 }
 
@@ -216,7 +224,9 @@ export function formFrom(d: DownloaderView): DownloaderForm {
 		seed_remove: !!d.after_seeding?.remove,
 		seed_ratio: d.after_seeding?.ratio ?? '',
 		seed_hours: d.after_seeding?.minutes ? Math.round((d.after_seeding.minutes / 60) * 100) / 100 : '',
-		seed_delete_files: !!d.after_seeding?.delete_files
+		seed_delete_files: !!d.after_seeding?.delete_files,
+		category_after_import: d.category_after_import ?? '',
+		own_only: !!d.own_only
 	};
 }
 
@@ -237,6 +247,8 @@ export function formBody(f: DownloaderForm): Record<string, unknown> {
 		allow_local_network: f.allow_local_network,
 		writable: f.writable,
 		tags: f.tags,
+		...(f.kind === 'qbittorrent' ? { category_after_import: f.category_after_import.trim() } : {}),
+		...(f.kind === 'sabnzbd' || f.kind === 'nzbget' ? {} : { own_only: f.own_only }),
 		...(seedingFields(f.kind) === 'none' ? {} : { after_seeding: seedingBody(f) })
 	};
 }

@@ -175,10 +175,12 @@ func (m *Manager) EngineFor(ctx context.Context, d domain.Downloader) (Engine, e
 	h := Client(d.URL, d.AllowLocal)
 	switch d.Adapter {
 	case "qbittorrent":
+		q := NewQbittorrentKey(d.URL, secret, h)
 		if d.Username != "" {
-			return NewQbittorrentLogin(d.URL, d.Username, secret, h), nil
+			q = NewQbittorrentLogin(d.URL, d.Username, secret, h)
 		}
-		return NewQbittorrentKey(d.URL, secret, h), nil
+		q.cats = d.Categories()
+		return q, nil
 	case "sabnzbd":
 		return NewSabnzbd(d.URL, secret, h), nil
 	case "transmission":

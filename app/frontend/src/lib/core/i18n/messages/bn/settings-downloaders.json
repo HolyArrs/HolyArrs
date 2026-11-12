@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "০ এই পরীক্ষা বন্ধ করে; নইলে ৫ থেকে ১৪৪০।",
 	"settings.downloaders.crawlKbps": "এর চেয়ে ধীর (KB/s)",
 	"settings.downloaders.crawlHours": "সময়কাল (ঘণ্টা)",
-	"settings.downloaders.crawlHint": "দুটির যেকোনোটিতে ০ হলে ধীর গতির পরীক্ষা বন্ধ হয়।"
+	"settings.downloaders.crawlHint": "দুটির যেকোনোটিতে ০ হলে ধীর গতির পরীক্ষা বন্ধ হয়।",
+	"settings.downloaders.categoryAfterImport": "ইমপোর্টের পরে ক্যাটাগরি",
+	"settings.downloaders.categoryAfterImportHint": "টরেন্ট ইমপোর্ট হলে HolyArrs সেটিকে এই ক্যাটাগরিতে সরায়। মূল ক্যাটাগরিতে রাখতে ফাঁকা রাখুন।",
+	"settings.downloaders.ownOnly": "শুধু HolyArrs-এর আইটেম দেখান",
+	"settings.downloaders.ownOnlyHint": "এই ডাউনলোডারে অন্য অ্যাপের আইটেম লুকানো থাকে, আর HolyArrs সেগুলো বদলায় না।"
 }

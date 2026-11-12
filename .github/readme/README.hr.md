@@ -21,9 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.0.19: rTorrent i ruTorrent kao preuzimatelj**, i na seedboxovima. Gotova Usenet preuzimanja sada se premještaju u tvoju biblioteku umjesto da se kopiraju. [Pogledaj što je novo](https://holyarrs.com/whats-new/)
->
-> <img src="https://github.com/user-attachments/assets/3f087371-bae1-496e-bda8-77b9a97c59bf" alt="HolyArrs 1.0.19" width="100%">
+> **HolyArrs 1.1.0: sada na 44 jezika**, i zdesna nalijevo. aria2 radi kao preuzimatelj, a paketi sezona preuzimaju se po nekoliko epizoda. [Pogledaj što je novo](https://holyarrs.com/whats-new/)
 
 > Svaki poster, trailer i ocjena u tvom HolyArrsu dolazi sa servera koji sâm vodim i plaćam, da ostane besplatan za sve. Ako ti je HolyArrs malo uljepšao filmsku večer, sponzorstvo drži svjetla upaljenima za sve nas 💛
 >
@@ -222,7 +220,7 @@ Imagei se nalaze na Docker Hubu kao [`holyarrs/holyarrs`](https://hub.docker.com
 | Oznaka | Za što je koristiti |
 | :----: | --- |
 | `latest` | Najnovija verzija. |
-| `1.0.19` | Jedna točna verzija. Nikad se ne mijenja. |
+| `1.1.0` | Jedna točna verzija. Nikad se ne mijenja. |
 
 ## Korištenje
 

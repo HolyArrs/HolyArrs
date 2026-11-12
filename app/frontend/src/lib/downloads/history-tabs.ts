@@ -58,7 +58,7 @@ export const historyTabs: HistoryTab[] = [
 		get hint() { return say('downloads.ht.problems.hint'); },
 		get empty() { return say('downloads.ht.problems.empty'); },
 		subs: [
-			{ key: 'downloads', get label() { return say('downloads.ht.problems.downloads.label'); }, get hint() { return say('downloads.ht.problems.downloads.hint'); }, kinds: ['download_failed', 'download_vanished', 'download_not_removed'] },
+			{ key: 'downloads', get label() { return say('downloads.ht.problems.downloads.label'); }, get hint() { return say('downloads.ht.problems.downloads.hint'); }, kinds: ['download_failed', 'download_vanished', 'download_not_removed', 'download_not_moved'] },
 			{ key: 'imports', get label() { return say('downloads.ht.problems.imports.label'); }, get hint() { return say('downloads.ht.problems.imports.hint'); }, kinds: ['import_failed', 'import_rejected', 'file_hold_failed', 'free_space_low'] },
 			{ key: 'decide', get label() { return say('downloads.ht.problems.decide.label'); }, get hint() { return say('downloads.ht.problems.decide.hint'); }, kinds: ['needs_decision', 'stopped_looking'] },
 			{ key: 'health', get label() { return say('downloads.ht.problems.health.label'); }, get hint() { return say('downloads.ht.problems.health.hint'); }, kinds: ['health_broken', 'library_folder_*', 'file_missing', 'search_failed', 'alert_failed', 'media_server_failed'] },

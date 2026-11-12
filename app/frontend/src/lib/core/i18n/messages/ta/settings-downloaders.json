@@ -133,5 +133,9 @@
 	"settings.downloaders.deadMinutesHint": "0 இந்தச் சரிபார்ப்பை அணைக்கும்; இல்லையெனில் 5 முதல் 1440 வரை.",
 	"settings.downloaders.crawlKbps": "இதைவிட மெதுவாக (KB/s)",
 	"settings.downloaders.crawlHours": "கால அளவு (மணி)",
-	"settings.downloaders.crawlHint": "இரண்டில் எதிலாவது 0 என்றால் மெதுவான வேகச் சரிபார்ப்பு அணைக்கப்படும்."
+	"settings.downloaders.crawlHint": "இரண்டில் எதிலாவது 0 என்றால் மெதுவான வேகச் சரிபார்ப்பு அணைக்கப்படும்.",
+	"settings.downloaders.categoryAfterImport": "இறக்குமதிக்குப் பின் வகை",
+	"settings.downloaders.categoryAfterImportHint": "டோரன்ட் இறக்குமதியானதும் HolyArrs அதை இந்த வகைக்கு நகர்த்தும். முதன்மை வகையிலேயே வைக்க காலியாக விடுங்கள்.",
+	"settings.downloaders.ownOnly": "HolyArrs உருப்படிகளை மட்டும் காட்டு",
+	"settings.downloaders.ownOnlyHint": "இந்த டவுன்லோடரில் உள்ள மற்ற ஆப்களின் உருப்படிகள் மறைக்கப்படும்; HolyArrs அவற்றை மாற்றாது."
 }

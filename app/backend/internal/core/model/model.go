@@ -178,6 +178,11 @@ type Downloader struct {
 	ClearFinished bool `db:"clear_finished"`
 	// Tags: titles with one of these go only to Downloaders that have it.
 	Tags []string `db:"tags,json"`
+	// CategoryAfterImport: a torrent moves to this category once it is
+	// fully imported (qBittorrent only); empty leaves it where it is.
+	CategoryAfterImport string `db:"category_after_import"`
+	// OwnOnly shows and changes only items in this Downloader's categories.
+	OwnOnly bool `db:"own_only"`
 }
 
 // CategoryFor returns the category for a title kind (movie, show, artist).
@@ -200,7 +205,7 @@ func (d Downloader) CategoryFor(kind string) string {
 // Categories returns the main category and every set kind category, once each.
 func (d Downloader) Categories() []string {
 	out := []string{d.Category}
-	for _, c := range []string{d.CategoryMovies, d.CategoryShows, d.CategoryMusic} {
+	for _, c := range []string{d.CategoryMovies, d.CategoryShows, d.CategoryMusic, d.CategoryAfterImport} {
 		if c != "" && !slices.ContainsFunc(out, func(x string) bool { return strings.EqualFold(x, c) }) {
 			out = append(out, c)
 		}
