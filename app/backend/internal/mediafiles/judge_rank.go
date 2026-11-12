@@ -139,8 +139,15 @@ func ReachesGoodEnough(releaseName string, rules PickRulesBody) bool {
 // is the File's own size in bytes (0: not known), so size traits score it
 // the way they score a new Release.
 func CurrentOf(releaseName string, size int64, importedAt time.Time, rules PickRulesBody) Current {
+	return CurrentOfFile(releaseName, size, importedAt, nil, rules)
+}
+
+// CurrentOfFile is CurrentOf for a File whose audio languages are known
+// (FileLanguages): language trait tests read them before the name.
+func CurrentOfFile(releaseName string, size int64, importedAt time.Time, audio []string, rules PickRulesBody) Current {
 	p := releasename.Parse(releaseName, hintsFor(rules))
 	p.Size = size
+	p.AudioLanguages = audio
 	return Current{Step: StepFor(p), Points: sumPoints(p, rules), Group: p.Group.Value, Fix: p.Fix, ImportedAt: importedAt}
 }
 

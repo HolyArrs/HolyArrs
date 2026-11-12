@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
@@ -111,7 +112,10 @@ func currentOf(ctx context.Context, db *sql.DB, sl mediafiles.Slot, pr mediafile
 	if f.ReleaseName != nil && *f.ReleaseName != "" {
 		name = *f.ReleaseName
 	}
-	if cur := mediafiles.CurrentOf(mediafiles.JudgeName(name, f.MediaInfo), f.Size, f.AddedAt, pr.Body); cur.Step != "" {
+	var ver mediafiles.Version
+	_ = database.Get(ctx, db, "versions", sl.VersionID, &ver)
+	audio := mediafiles.FileLanguages(f.MediaInfo, ver.AudioLanguages)
+	if cur := mediafiles.CurrentOfFile(mediafiles.JudgeName(name, f.MediaInfo), f.Size, f.AddedAt, audio, pr.Body); cur.Step != "" {
 		return &cur
 	}
 	if mediafiles.IsMusicRules(pr.Body) {
