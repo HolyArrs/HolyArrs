@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Hâlâ {app} içinde",
 	"downloads.dp.openDownloaders": "İndiricileri aç",
 	"downloads.ot.fromOldApps": "Eski uygulamalardan ({n})",
-	"downloads.ot.importAgain": "Testlerini güncellemek için yeniden içe aktar; puanları her Seçim kurallarında değiştirilebilir",
+	"downloads.ot.importAgain": "Testlerini güncellemek için yeniden içe aktar; puanları Seçim kurallarında değiştirilebilir",
 	"downloads.ot.fromApp": "{app} uygulamasından",
 	"downloads.ot.kindEdition": "sürüm",
 	"downloads.ot.kindLanguage": "dil",

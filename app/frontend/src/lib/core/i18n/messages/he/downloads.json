@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "עדיין ב-{app}",
 	"downloads.dp.openDownloaders": "פתיחת מורידים",
 	"downloads.ot.fromOldApps": "מאפליקציות ישנות ({n})",
-	"downloads.ot.importAgain": "ייבא שוב כדי לעדכן את הבדיקות שלהם; את הנקודות שלהם אפשר לשנות בכל כללי בחירה",
+	"downloads.ot.importAgain": "ייבא שוב כדי לעדכן את הבדיקות שלהם; את הנקודות שלהם אפשר לשנות בכללי בחירה",
 	"downloads.ot.fromApp": "מ־{app}",
 	"downloads.ot.kindEdition": "מהדורה",
 	"downloads.ot.kindLanguage": "שפה",

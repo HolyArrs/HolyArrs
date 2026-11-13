@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Alles rakenduses {app}",
 	"downloads.dp.openDownloaders": "Ava Allalaadijad",
 	"downloads.ot.fromOldApps": "Vanadest rakendustest ({n})",
-	"downloads.ot.importAgain": "Impordi uuesti, et nende teste uuendada; nende punkte saab muuta igas Valikureeglites",
+	"downloads.ot.importAgain": "Impordi uuesti, et nende teste uuendada; nende punkte saab muuta Valikureeglites",
 	"downloads.ot.fromApp": "Rakendusest {app}",
 	"downloads.ot.kindEdition": "väljaanne",
 	"downloads.ot.kindLanguage": "keel",

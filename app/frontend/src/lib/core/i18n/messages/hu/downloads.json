@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Még a(z) {app} alkalmazásban",
 	"downloads.dp.openDownloaders": "Letöltők megnyitása",
 	"downloads.ot.fromOldApps": "Régi alkalmazásokból ({n})",
-	"downloads.ot.importAgain": "Importáld újra a tesztjeik frissítéséhez; a pontjaik minden Kiválasztási szabályokban módosíthatók",
+	"downloads.ot.importAgain": "Importáld újra a tesztjeik frissítéséhez; a pontjaik a Kiválasztási szabályokban módosíthatók",
 	"downloads.ot.fromApp": "Innen: {app}",
 	"downloads.ot.kindEdition": "kiadás",
 	"downloads.ot.kindLanguage": "nyelv",

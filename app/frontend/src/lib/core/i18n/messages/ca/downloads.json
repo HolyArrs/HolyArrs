@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Encara a {app}",
 	"downloads.dp.openDownloaders": "Obre Gestors de baixades",
 	"downloads.ot.fromOldApps": "De les apps antigues ({n})",
-	"downloads.ot.importAgain": "Torna a importar per actualitzar-ne les proves; els punts es poden canviar a cada Regles d'elecció",
+	"downloads.ot.importAgain": "Torna a importar per actualitzar-ne les proves; els punts es poden canviar a les Regles d'elecció",
 	"downloads.ot.fromApp": "De {app}",
 	"downloads.ot.kindEdition": "edició",
 	"downloads.ot.kindLanguage": "idioma",

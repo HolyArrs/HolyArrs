@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "لا يزال في {app}",
 	"downloads.dp.openDownloaders": "فتح برامج التنزيل",
 	"downloads.ot.fromOldApps": "من التطبيقات القديمة ‏({n})",
-	"downloads.ot.importAgain": "استورد مرة أخرى لتحديث اختباراتها؛ يمكن تغيير نقاطها في كل قواعد اختيار",
+	"downloads.ot.importAgain": "استورد مرة أخرى لتحديث اختباراتها؛ يمكن تغيير نقاطها في قواعد اختيار",
 	"downloads.ot.fromApp": "من {app}",
 	"downloads.ot.kindEdition": "الإصدار",
 	"downloads.ot.kindLanguage": "اللغة",
