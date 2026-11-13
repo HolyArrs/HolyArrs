@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: built-in na ang Knaben, TorrentsCSV, SubsPlease at IPTorrents**, hindi na kailangan ng Prowlarr. Humiling ng mga palabas sa 4K, at puwedeng ipadala ng Profilarr ang mga format at profile nito. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: built-in na ang Knaben, TorrentsCSV, SubsPlease at IPTorrents**, hindi na kailangan ng Prowlarr. Humiling ng mga palabas sa 4K, at puwedeng ipadala ng Profilarr ang mga format at profile nito. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
 
 > Ang bawat poster, trailer at score sa HolyArrs mo ay galing sa server na ako mismo ang nagpapatakbo at nagbabayad, kaya nananatili itong libre para sa lahat. Kung napaganda nang kaunti ng HolyArrs ang movie night mo, ang sponsor ang nagpapanatiling bukas ang ilaw para sa ating lahat 💛
 >
@@ -107,7 +107,7 @@ Kaya ginawa ko ito.
 | **Anim na magkakasama** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Mga 37 beses na mas maliit. Naka-compress na registry download, mga image ng linuxserver.io, amd64, sinukat noong 2026-11-08. Sinukat ang RAM kapag idle na may 10,000 pamagat at 55,000 pelikula at episode. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>Mga 37 beses na mas maliit. Naka-compress na registry download, mga image ng linuxserver.io, amd64, sinukat noong 2026-11-08. Sinukat ang RAM kapag idle na may 10,000 pamagat at 55,000 pelikula at episode. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Nasa Docker Hub ang mga image bilang [`holyarrs/holyarrs`](https://hub.docker.co
 | Tag | Gamitin para sa |
 | :----: | --- |
 | `latest` | Ang pinakabagong bersyon. |
-| `1.1.1` | Isang eksaktong bersyon. Hindi ito kailanman gumagalaw. |
+| `1.1.2` | Isang eksaktong bersyon. Hindi ito kailanman gumagalaw. |
 
 ## Paggamit
 

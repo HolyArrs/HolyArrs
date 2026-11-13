@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: beépített Knaben, TorrentsCSV, SubsPlease és IPTorrents**, Prowlarr nélkül. Kérj sorozatokat 4K-ban, és a Profilarr elküldheti a formátumait és profiljait. [Újdonságok](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: beépített Knaben, TorrentsCSV, SubsPlease és IPTorrents**, Prowlarr nélkül. Kérj sorozatokat 4K-ban, és a Profilarr elküldheti a formátumait és profiljait. [Újdonságok](https://holyarrs.com/whats-new/)
 
 > A HolyArrsodban minden poszter, trailer és értékelés egy általam üzemeltetett és fizetett szerverről jön, hogy mindenkinek ingyenes maradhasson. Ha a HolyArrs egy kicsit jobbá tette a filmes estédet, egy szponzoráció mindannyiunk számára életben tartja a projektet 💛
 >
@@ -107,7 +107,7 @@ Egy appot akartam. Egy bejelentkezést, egy portot, egy helyet, ahol körülnéz
 | **Mind a hat együtt** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Kb. 37-szor kisebb. Tömörített registry-letöltés, linuxserver.io image-ek, amd64, mérve 2026-11-08-án. A RAM üresjáratban 10,000 címmel, valamint 55,000 filmmel és epizóddal mérve. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>Kb. 37-szor kisebb. Tömörített registry-letöltés, linuxserver.io image-ek, amd64, mérve 2026-11-08-án. A RAM üresjáratban 10,000 címmel, valamint 55,000 filmmel és epizóddal mérve. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Az image-ek a Docker Hubon vannak, [`holyarrs/holyarrs`](https://hub.docker.com/
 | Címke | Mire használd |
 | :----: | --- |
 | `latest` | A legújabb verzió. |
-| `1.1.1` | Egy pontos verzió. Sosem változik. |
+| `1.1.2` | Egy pontos verzió. Sosem változik. |
 
 ## Használat
 

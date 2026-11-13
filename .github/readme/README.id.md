@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease, dan IPTorrents bawaan**, tanpa Prowlarr. Minta serial dalam 4K, dan Profilarr bisa mengirim format dan profilnya. [Lihat yang baru](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease, dan IPTorrents bawaan**, tanpa Prowlarr. Minta serial dalam 4K, dan Profilarr bisa mengirim format dan profilnya. [Lihat yang baru](https://holyarrs.com/whats-new/)
 
 > Setiap poster, trailer, dan skor di HolyArrs kamu berasal dari server yang saya jalankan dan bayar sendiri, supaya tetap gratis untuk semua orang. Kalau HolyArrs membuat malam nonton kamu sedikit lebih menyenangkan, sponsor membantu menjaga semuanya tetap menyala untuk kita semua 💛
 >
@@ -107,7 +107,7 @@ Jadi saya membuatnya.
 | **Keenamnya sekaligus** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Sekitar 37 kali lebih kecil. Unduhan registry terkompresi, image linuxserver.io, amd64, diukur pada 2026-11-08. RAM saat idle diukur dengan 10,000 judul dan 55,000 film dan episode. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>Sekitar 37 kali lebih kecil. Unduhan registry terkompresi, image linuxserver.io, amd64, diukur pada 2026-11-08. RAM saat idle diukur dengan 10,000 judul dan 55,000 film dan episode. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Image tersedia di Docker Hub sebagai [`holyarrs/holyarrs`](https://hub.docker.co
 | Tag | Dipakai untuk |
 | :----: | --- |
 | `latest` | Versi terbaru. |
-| `1.1.1` | Satu versi tertentu. Tidak pernah berpindah. |
+| `1.1.2` | Satu versi tertentu. Tidak pernah berpindah. |
 
 ## Penggunaan
 

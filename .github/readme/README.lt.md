@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease ir IPTorrents įtaisyti**, be Prowlarr. Prašyk serialų 4K kokybe, o Profilarr gali atsiųsti savo formatus ir profilius. [Žiūrėti, kas naujo](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease ir IPTorrents įtaisyti**, be Prowlarr. Prašyk serialų 4K kokybe, o Profilarr gali atsiųsti savo formatus ir profilius. [Žiūrėti, kas naujo](https://holyarrs.com/whats-new/)
 
 > Kiekvienas tavo HolyArrs plakatas, anonsas ir įvertinimas ateina iš serverio, kurį pats laikau ir apmoku, todėl visiems tai lieka nemokama. Jei HolyArrs padarė tavo filmų vakarą šiek tiek geresnį, rėmėjas padeda mums visiems išlaikyti šviesą 💛
 >
@@ -107,7 +107,7 @@ Taigi ją sukūriau.
 | **Visos šešios kartu** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Apie 37 kartus mažiau. Suspaustas atsisiuntimas iš registry, linuxserver.io image, amd64, išmatuota 2026-11-08. RAM be apkrovos išmatuota su 10,000 pavadinimų ir 55,000 filmų bei serijų. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>Apie 37 kartus mažiau. Suspaustas atsisiuntimas iš registry, linuxserver.io image, amd64, išmatuota 2026-11-08. RAM be apkrovos išmatuota su 10,000 pavadinimų ir 55,000 filmų bei serijų. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Image yra Docker Hub kaip [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarr
 | Tag | Kam naudoti |
 | :----: | --- |
 | `latest` | Naujausia versija. |
-| `1.1.1` | Viena tiksli versija. Ji niekada nesikeičia. |
+| `1.1.2` | Viena tiksli versija. Ji niekada nesikeičia. |
 
 ## Naudojimas
 

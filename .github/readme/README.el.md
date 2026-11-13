@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: ενσωματωμένα Knaben, TorrentsCSV, SubsPlease και IPTorrents**, χωρίς Prowlarr. Ζήτα σειρές σε 4K, και το Profilarr μπορεί να στέλνει τα formats και τα προφίλ του. [Δες τι νέο υπάρχει](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: ενσωματωμένα Knaben, TorrentsCSV, SubsPlease και IPTorrents**, χωρίς Prowlarr. Ζήτα σειρές σε 4K, και το Profilarr μπορεί να στέλνει τα formats και τα προφίλ του. [Δες τι νέο υπάρχει](https://holyarrs.com/whats-new/)
 
 > Κάθε αφίσα, τρέιλερ και βαθμολογία στο HolyArrs σου έρχεται από έναν διακομιστή που τρέχω και πληρώνω ο ίδιος, για να μένει δωρεάν για όλους. Αν το HolyArrs έκανε τη βραδιά ταινίας λίγο καλύτερη, ένας χορηγός κρατά τα φώτα αναμμένα για όλους μας 💛
 >
@@ -107,7 +107,7 @@ docker compose up -d
 | **Και οι έξι μαζί** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Περίπου 37 φορές μικρότερο. Συμπιεσμένη λήψη από registry, images της linuxserver.io, amd64, μετρημένο στις 2026-11-08. Η RAM σε αδράνεια μετρήθηκε με 10,000 τίτλους και 55,000 ταινίες και επεισόδια. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>Περίπου 37 φορές μικρότερο. Συμπιεσμένη λήψη από registry, images της linuxserver.io, amd64, μετρημένο στις 2026-11-08. Η RAM σε αδράνεια μετρήθηκε με 10,000 τίτλους και 55,000 ταινίες και επεισόδια. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ docker compose up -d
 | Tag | Χρησιμοποίησέ το για |
 | :----: | --- |
 | `latest` | Την πιο πρόσφατη έκδοση. |
-| `1.1.1` | Μία συγκεκριμένη έκδοση. Δεν αλλάζει ποτέ. |
+| `1.1.2` | Μία συγκεκριμένη έκδοση. Δεν αλλάζει ποτέ. |
 
 ## Χρήση
 
