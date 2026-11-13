@@ -160,3 +160,34 @@ func TestDownloadDetailAndFiles(t *testing.T) {
 	}
 	do(t, "GET", base+"/files", "", 409)
 }
+
+// A download a person picked, sent by a background job, names that person in
+// the list and in the pane alike; "HolyArrs" shows only when no person did.
+func TestRequestedByAgreesInListAndPane(t *testing.T) {
+	t.Parallel()
+	x, _ := controlSeed(t)
+	exec41(t, x.s, `INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES (2, 't', '{}', 't', '{}', 'ana', 'member', 'x')`)
+	exec41(t, x.s, `UPDATE downloads SET started_by = '{"kind":"job","id":7}'`)
+	both := func() (string, string) {
+		var d DownloadDetailView
+		_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/"+itoa(x.dlID)+"/detail", "", 200), &d)
+		var v viewRows
+		_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view", "", 200), &v)
+		if len(v.Downloads) == 0 {
+			t.Fatal("no list row")
+		}
+		return v.Downloads[0].RequestedBy, d.RequestedBy
+	}
+	if list, pane := both(); list != "" || pane != "HolyArrs" {
+		t.Fatalf("nobody picked it: list %q pane %q", list, pane)
+	}
+	exec41(t, x.s, `UPDATE titles SET created_by = '{"kind":"user","id":2}'`)
+	if list, pane := both(); list != "ana" || pane != "ana" {
+		t.Fatalf("title owner: list %q pane %q", list, pane)
+	}
+	exec41(t, x.s, `INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES (3, 't', '{}', 't', '{}', 'bo', 'member', 'x')`)
+	exec41(t, x.s, `UPDATE downloads SET started_by = '{"kind":"user","id":3}'`)
+	if list, pane := both(); list != "bo" || pane != "bo" {
+		t.Fatalf("person who picked it: list %q pane %q", list, pane)
+	}
+}
