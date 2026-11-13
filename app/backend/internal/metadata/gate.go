@@ -227,6 +227,9 @@ func (g *Gate) RoundTrip(req *http.Request) (*http.Response, error) {
 		g.count(req, ahead, "off")
 		return nil, ErrSourceOff
 	}
+	if passed, ok := req.Context().Value(gatePassedKey{}).(func()); ok {
+		passed()
+	}
 	if g.countryOff.Load() {
 		req = req.Clone(req.Context())
 		req.Header.Set(CountryCountHeader, "off")
@@ -244,6 +247,24 @@ func (g *Gate) RoundTrip(req *http.Request) (*http.Response, error) {
 		g.refused(resp.StatusCode, resp.Header.Get("Retry-After"))
 	}
 	return resp, nil
+}
+
+type gatePassedKey struct{}
+
+// afterGate limits one attempt (the request and the read of its answer) to
+// timeout, counted again from when the Gate lets the request go: waiting for
+// our own turn is not the server being slow. The wait at the Gate itself is
+// held to timeout too; without a Gate the clock simply runs from now. When
+// the time runs out, context.Cause of the returned context is
+// context.DeadlineExceeded.
+func afterGate(parent context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancelCause(parent)
+	clock := time.AfterFunc(timeout, func() { cancel(context.DeadlineExceeded) })
+	ctx = context.WithValue(ctx, gatePassedKey{}, func() { clock.Reset(timeout) })
+	return ctx, func() {
+		clock.Stop()
+		cancel(context.Canceled)
+	}
 }
 
 // EnvCountRequests turns on a debug-only counter of the requests to the
