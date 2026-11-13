@@ -54,5 +54,9 @@
 	"settings.libraryFolders.sideOnHint": "Un archivo que ya está en la biblioteca nunca se reemplaza.",
 	"settings.libraryFolders.sideTypes": "Tipos de archivo",
 	"settings.libraryFolders.sideTypesHint": "Separa los tipos con comas, como srt, ass.",
-	"settings.libraryFolders.notMounted": "HolyArrs no ve {path}. Solo ve las carpetas montadas en su contenedor. Añade un volumen como {path}:{inside} y luego usa {inside} aquí."
+	"settings.libraryFolders.notMounted": "HolyArrs no ve {path}. Solo ve las carpetas montadas en su contenedor. Añade un volumen como {path}:{inside} y luego usa {inside} aquí.",
+	"settings.libraryFolders.quality": "Calidad",
+	"settings.libraryFolders.qualityNone": "Usar la predeterminada",
+	"settings.libraryFolders.qualityHint": "Los títulos nuevos de esta carpeta empiezan con esta calidad.",
+	"settings.libraryFolders.qualityOf": "Calidad de {path}"
 }

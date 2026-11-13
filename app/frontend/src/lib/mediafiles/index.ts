@@ -217,3 +217,4 @@ export { unit } from './organise.ts';
 export { factOrder as statFacts, valueLabel as statValue, unitWord as statUnit, type KindStats, type Watched } from './library-stats.ts';
 export { shelfEntries, type ShelfEntry } from './shelf.ts';
 export { folderMissing } from './folder-missing.ts';
+export { qualityFor, qualityBody } from './folder-quality.ts';
