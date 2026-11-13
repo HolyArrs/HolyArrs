@@ -73,7 +73,8 @@
 	const tickNow = $derived(tickCounts(shown, sel, ticked));
 	const allTicked = $derived(tickNow.can > 0 && tickNow.on === tickNow.can);
 	function tickShown() {
-		for (const f of shown) if (canTick(f, sel)) ticked[f.folder] = !allTicked;
+		const on = !allTicked;
+		for (const f of shown) if (canTick(f, sel)) ticked[f.folder] = on;
 	}
 	const filters = $derived<{ value: ImportFilter; label: string; n: number }[]>([
 		{ value: 'all', label: t('mediafiles.filter.all'), n: plan?.folders.length ?? 0 },
