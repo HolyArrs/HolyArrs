@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease ו-IPTorrents מובנים**, בלי צורך ב-Prowlarr. בקשו סדרות ב-4K, ו-Profilarr יכול לשלוח את הפורמטים והפרופילים שלו. [מה חדש](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease ו-IPTorrents מובנים**, בלי צורך ב-Prowlarr. בקשו סדרות ב-4K, ו-Profilarr יכול לשלוח את הפורמטים והפרופילים שלו. [מה חדש](https://holyarrs.com/whats-new/)
 
 > כל פוסטר, טריילר וציון ב-HolyArrs שלך מגיעים משרת שאני מפעיל ומשלם עליו בעצמי, כדי שישאר חינמי לכולם. אם HolyArrs שיפר קצת את ערב הסרט שלך, תמיכה כספית שומרת על האור דלוק בשבילנו כולנו 💛
 >
@@ -107,7 +107,7 @@ docker compose up -d
 | **שש יחד** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>קטנה פי 37 בערך. הורדה דחוסה מה-registry, אימג'ים של linuxserver.io, amd64, נמדד ב-2026-11-08. RAM במצב סרק נמדד עם 10,000 כותרים ו-55,000 סרטים ופרקים. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>קטנה פי 37 בערך. הורדה דחוסה מה-registry, אימג'ים של linuxserver.io, amd64, נמדד ב-2026-11-08. RAM במצב סרק נמדד עם 10,000 כותרים ו-55,000 סרטים ופרקים. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ HolyArrs רק קורא את האפליקציות הישנות שלך ולא מש
 | תגית | מתאימה ל |
 | :----: | --- |
 | `latest` | הגרסה החדשה ביותר. |
-| `1.1.1` | גרסה מדויקת אחת. היא אף פעם לא זזה. |
+| `1.1.2` | גרסה מדויקת אחת. היא אף פעם לא זזה. |
 
 ## שימוש
 

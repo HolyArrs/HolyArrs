@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease a IPTorrents zabudované**, bez Prowlarru. Žiadaj seriály v 4K a Profilarr môže poslať svoje formáty a profily. [Pozri, čo je nové](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease a IPTorrents zabudované**, bez Prowlarru. Žiadaj seriály v 4K a Profilarr môže poslať svoje formáty a profily. [Pozri, čo je nové](https://holyarrs.com/whats-new/)
 
 > Každý plagát, trailer a hodnotenie v tvojom HolyArrs pochádza zo servera, ktorý prevádzkujem a platím sám, aby zostal zadarmo pre všetkých. Ak HolyArrs spravil tvoj filmový večer o trochu lepším, sponzorstvo nám všetkým udrží svetlá zapnuté 💛
 >
@@ -107,7 +107,7 @@ Tak som ju postavil.
 | **Všetkých šesť spolu** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Približne 37-krát menšie. Komprimované stiahnutie z registra, image z linuxserver.io, amd64, odmerané 2026-11-08. RAM v nečinnosti odmeraná s 10,000 titulmi a 55,000 filmami a epizódami. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>Približne 37-krát menšie. Komprimované stiahnutie z registra, image z linuxserver.io, amd64, odmerané 2026-11-08. RAM v nečinnosti odmeraná s 10,000 titulmi a 55,000 filmami a epizódami. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Image sú na Docker Hube ako [`holyarrs/holyarrs`](https://hub.docker.com/r/holy
 | Tag | Na čo ho použiť |
 | :----: | --- |
 | `latest` | Najnovšia verzia. |
-| `1.1.1` | Jedna presná verzia. Nikdy sa nemení. |
+| `1.1.2` | Jedna presná verzia. Nikdy sa nemení. |
 
 ## Použitie
 

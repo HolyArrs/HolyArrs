@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease, IPTorrents உள்ளமைக்கப்பட்டவை**, Prowlarr தேவையில்லை. தொடர்களை 4K-இல் கேளுங்கள், Profilarr தன் formats மற்றும் profiles-ஐ அனுப்பலாம். [புதியவை என்ன](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease, IPTorrents உள்ளமைக்கப்பட்டவை**, Prowlarr தேவையில்லை. தொடர்களை 4K-இல் கேளுங்கள், Profilarr தன் formats மற்றும் profiles-ஐ அனுப்பலாம். [புதியவை என்ன](https://holyarrs.com/whats-new/)
 
 > உங்கள் HolyArrs-இல் உள்ள ஒவ்வொரு போஸ்டர், ட்ரெய்லர், மதிப்பெண்ணும் நானே நடத்தி, நானே பணம் செலுத்தும் ஒரு server-இலிருந்து வருகிறது. அதனால் இது எல்லோருக்கும் இலவசமாகவே இருக்கிறது. HolyArrs உங்கள் திரைப்பட இரவை இன்னும் கொஞ்சம் இனிமையாக்கியிருந்தால், ஒரு sponsor நம் எல்லோருக்கும் விளக்கை எரிய வைக்கிறார் 💛
 >
@@ -107,7 +107,7 @@ docker compose up -d
 | **ஆறும் சேர்ந்து** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>சுமார் 37 மடங்கு சிறியது. சுருக்கப்பட்ட registry பதிவிறக்கம், linuxserver.io images, amd64, 2026-11-08 அன்று அளக்கப்பட்டது. சும்மா இருக்கும்போதான RAM, 10,000 தலைப்புகள் மற்றும் 55,000 திரைப்படங்கள், அத்தியாயங்களுடன் அளக்கப்பட்டது. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>சுமார் 37 மடங்கு சிறியது. சுருக்கப்பட்ட registry பதிவிறக்கம், linuxserver.io images, amd64, 2026-11-08 அன்று அளக்கப்பட்டது. சும்மா இருக்கும்போதான RAM, 10,000 தலைப்புகள் மற்றும் 55,000 திரைப்படங்கள், அத்தியாயங்களுடன் அளக்கப்பட்டது. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Images Docker Hub-இல் [`holyarrs/holyarrs`](https://hub.docker.com/r/holya
 | Tag | எதற்குப் பயன்படுத்த |
 | :----: | --- |
 | `latest` | புதிய பதிப்பு. |
-| `1.1.1` | ஒரு குறிப்பிட்ட பதிப்பு. இது ஒருபோதும் மாறாது. |
+| `1.1.2` | ஒரு குறிப்பிட்ட பதிப்பு. இது ஒருபோதும் மாறாது. |
 
 ## பயன்பாடு
 

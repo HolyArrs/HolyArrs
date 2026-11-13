@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease un IPTorrents iebūvēti**, bez Prowlarr. Pieprasi seriālus 4K kvalitātē, un Profilarr var nosūtīt savus formātus un profilus. [Skaties, kas jauns](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease un IPTorrents iebūvēti**, bez Prowlarr. Pieprasi seriālus 4K kvalitātē, un Profilarr var nosūtīt savus formātus un profilus. [Skaties, kas jauns](https://holyarrs.com/whats-new/)
 
 > Katrs plakāts, treileris un vērtējums tavā HolyArrs nāk no servera, ko es pats uzturu un apmaksāju, lai tas paliktu bezmaksas visiem. Ja HolyArrs ir padarījis filmu vakaru mazliet labāku, sponsors palīdz mums visiem uzturēt gaismu 💛
 >
@@ -107,7 +107,7 @@ Tāpēc es to uzbūvēju.
 | **Visas sešas kopā** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Aptuveni 37 reizes mazāk. Saspiesta lejupielāde no reģistra, linuxserver.io attēli, amd64, izmērīts 2026-11-08. RAM dīkstāvē izmērīts ar 10,000 nosaukumiem un 55,000 filmu un epizožu. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>Aptuveni 37 reizes mazāk. Saspiesta lejupielāde no reģistra, linuxserver.io attēli, amd64, izmērīts 2026-11-08. RAM dīkstāvē izmērīts ar 10,000 nosaukumiem un 55,000 filmu un epizožu. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Attēli ir Docker Hub kā [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarr
 | Birka | Kam to lietot |
 | :----: | --- |
 | `latest` | Jaunākā versija. |
-| `1.1.1` | Viena konkrēta versija. Tā nekad nemainās. |
+| `1.1.2` | Viena konkrēta versija. Tā nekad nemainās. |
 
 ## Lietošana
 

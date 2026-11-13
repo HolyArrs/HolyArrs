@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1：Knaben、TorrentsCSV、SubsPlease、IPTorrents を内蔵**、Prowlarr は不要です。番組を 4K でリクエストでき、Profilarr からフォーマットとプロファイルを送れます。[新機能を見る](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2：Knaben、TorrentsCSV、SubsPlease、IPTorrents を内蔵**、Prowlarr は不要です。番組を 4K でリクエストでき、Profilarr からフォーマットとプロファイルを送れます。[新機能を見る](https://holyarrs.com/whats-new/)
 
 > HolyArrs のポスター、予告編、スコアはすべて、私が自分で運営し費用を払っているサーバーから届いています。だから誰でも無料で使えます。HolyArrs で映画の夜が少しでも楽しくなったなら、スポンサーになってみんなの明かりを灯し続けてください 💛
 >
@@ -107,7 +107,7 @@ docker compose up -d
 | **6つの合計** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>約37分の1のサイズです。レジストリからの圧縮ダウンロードサイズで、linuxserver.io のイメージ、amd64、2026-11-08 に測定しました。アイドル時の RAM は、10,000 タイトルと、映画とエピソード合計 55,000 件で測定しています。 (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>約37分の1のサイズです。レジストリからの圧縮ダウンロードサイズで、linuxserver.io のイメージ、amd64、2026-11-08 に測定しました。アイドル時の RAM は、10,000 タイトルと、映画とエピソード合計 55,000 件で測定しています。 (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ NAS をお使いですか。[Unraid、Synology などの NAS](https://docs.HolyA
 | タグ | 用途 |
 | :----: | --- |
 | `latest` | 最新のリリース。 |
-| `1.1.1` | 特定の1つのバージョンです。動くことはありません。 |
+| `1.1.2` | 特定の1つのバージョンです。動くことはありません。 |
 
 ## 使い方
 

@@ -26,7 +26,7 @@
 	import { NoDownloaderNote } from '#lib/downloads/index.ts';
 	import TitleLibrary from './TitleLibrary.svelte';
 	import TitleOwnedSheets from './TitleOwnedSheets.svelte';
-	import { SearchOutcomeLine, QuickAsk, AddMovieDialog, AddShowDialog, AskShowDialog, AskMovieDialog, fourKReady } from '#lib/requests/index.ts';
+	import { SearchOutcomeLine, keptSeasons, seasonsToAsk, QuickAsk, AddMovieDialog, AddShowDialog, AskShowDialog, AskMovieDialog, fourKReady } from '#lib/requests/index.ts';
 	import { seasonWords, SeasonFolds } from '#lib/shows/index.ts';
 	import { detailPath, fourKOffer, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/metadata/index.ts';
 	import type { GateDefaults } from '#lib/mediafiles/index.ts';
@@ -121,6 +121,9 @@
 	});
 	const askers = $derived(owned ? (askedBy.titles[String(owned.id)]?.askers ?? []) : []);
 	const mayAsk = $derived(session.can('ask') && !manage);
+	// A show in the Library can still be asked for the seasons it does not keep up to date.
+	const kept = $derived(owned ? keptSeasons(owned) : []);
+	const askable = $derived(owned ? seasonsToAsk(details?.show?.seasons, kept) : []);
 	// The 4K request button shows only when 4K quality is set up for movies.
 	let fourKMovies = $state(false);
 	$effect(() => {
@@ -418,6 +421,9 @@
 					<ActionButton icon={ownState.kind === 'have' ? 'check' : ownState.kind === 'failed' ? 'refresh' : ownState.kind === 'downloading' ? 'download' : 'search'} label={ownState.label} caption={ownState.kind === 'failed' && manage ? t('discover.titlePage.retry') : ownState.kind === 'missing' && manage ? t('discover.titlePage.searchNow') : ownState.label} primary onclick={() => (manage && (ownState.kind === 'failed' || ownState.kind === 'missing') ? own.ownRun('search') : own.setTab('library'))} data-testid="hero-library" />
 					{#if manage || mayReport || mayHide}<ActionMenu label={t('discover.titlePage.moreActions')} caption={t('discover.titlePage.more')} icon="more" items={titleMenu} />{/if}
 					{#if mayAsk}{@render ask4kButton(d)}{/if}
+					{#if mayAsk && d.kind === 'show' && d.show && !d.neverAdd && askable.length > 0}
+						<ActionButton icon="wish" pill label={t('discover.titlePage.askFor', { name: d.name })} caption={t('discover.titlePage.request')} onclick={() => askShow?.open(d.show as LookupShow, kept)} data-testid="hero-ask-seasons" />
+					{/if}
 				{:else if manage && !d.neverAdd}
 					{#if d.kind === 'movie' && d.movie}
 						<ActionButton icon="plus" label={t('discover.titlePage.addToTheLibrary', { name: d.name })} caption={t('discover.titlePage.addToLibrary')} primary onclick={() => addMovie?.open(d.movie as LookupMovie)} />

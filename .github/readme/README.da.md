@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease og IPTorrents indbygget**, uden Prowlarr. Bed om serier i 4K, og Profilarr kan sende sine formater og profiler. [Se hvad der er nyt](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease og IPTorrents indbygget**, uden Prowlarr. Bed om serier i 4K, og Profilarr kan sende sine formater og profiler. [Se hvad der er nyt](https://holyarrs.com/whats-new/)
 
 > Hver eneste plakat, trailer og score i dit HolyArrs kommer fra en server, som jeg selv kører og betaler for, så det forbliver gratis for alle. Hvis HolyArrs har gjort din filmaften lidt bedre, holder en sponsor lyset tændt for os alle sammen 💛
 >
@@ -107,7 +107,7 @@ Så jeg byggede den.
 | **Alle seks tilsammen** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Cirka 37 gange mindre. Komprimeret registry-download, images fra linuxserver.io, amd64, målt 2026-11-08. RAM i hvile målt med 10,000 titler og 55,000 film og afsnit. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>Cirka 37 gange mindre. Komprimeret registry-download, images fra linuxserver.io, amd64, målt 2026-11-08. RAM i hvile målt med 10,000 titler og 55,000 film og afsnit. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Images ligger på Docker Hub som [`holyarrs/holyarrs`](https://hub.docker.com/r/
 | Tag | Brug det til |
 | :----: | --- |
 | `latest` | Den nyeste version. |
-| `1.1.1` | Én bestemt version. Den flytter sig aldrig. |
+| `1.1.2` | Én bestemt version. Den flytter sig aldrig. |
 
 ## Brug
 
