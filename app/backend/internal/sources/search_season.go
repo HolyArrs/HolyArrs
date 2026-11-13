@@ -155,6 +155,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 	if err != nil {
 		return err
 	}
+	set.listing = show
 	var looking, kept []*epSlot
 	whole := true
 	for i := range set.eps {

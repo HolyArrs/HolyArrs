@@ -74,6 +74,8 @@ type showSet struct {
 	// a pack already being fetched that way.
 	window int
 	packed map[int64]bool
+	// listing is a search that only lists Releases for a person to pick from.
+	listing bool
 }
 
 // packWindow is how many episodes ahead the show takes season packs, or 0
@@ -318,7 +320,7 @@ func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand
 		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Show: true})
 		rels[i] = mediafiles.ReleaseFacts{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
-		ss := mediafiles.SlotSet{Match: mediafiles.MatchTitle(p, []mediafiles.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, SkipGate: skipGate, Out: true,
+		ss := mediafiles.SlotSet{Match: mediafiles.MatchTitle(p, []mediafiles.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, Listing: set.listing, SkipGate: skipGate, Out: true,
 			Checks: checks}
 		if ss.Match.Title != nil {
 			set.lines(&ss, rels[i], refs, byItem, rules, turnedFor)

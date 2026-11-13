@@ -70,6 +70,7 @@ type SlotSet struct {
 	TurnedDown     []string // names or info hashes turned down for these Slots
 	Current        *Current
 	HandSearch     bool // a person started a single-Item search
+	Listing        bool // the search only lists Releases; a person picks one, nothing is chosen on its own
 	SkipGate       bool // a bulk search with bulk_search_respects_gate off
 	// GateDetail replaces the gate's words (an episode or a season that has
 	// not aired yet).

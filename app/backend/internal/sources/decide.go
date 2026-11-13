@@ -45,6 +45,8 @@ type slotCtx struct {
 	ti  mediafiles.Title
 	pr  mediafiles.PickRules
 	cur *mediafiles.Current
+	// listing is a search that only lists Releases for a person to pick from.
+	listing bool
 }
 
 // loadSlot reads one Slot with everything judging needs.
@@ -138,7 +140,7 @@ func (s *Searcher) judgeAll(ctx context.Context, c slotCtx, all []found, out, ha
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
 		m := mediafiles.MatchTitle(p, []mediafiles.TitleRef{ref})
 		set := mediafiles.SlotSet{Match: m, RuntimeMinutes: ref.Runtime, Out: out, MinSeeders: f.src.MinSeeders, TurnedDown: turned,
-			HandSearch: hand, SkipGate: skipGate, Current: c.cur, OutSince: outSince, Checks: checks}
+			HandSearch: hand, Listing: c.listing, SkipGate: skipGate, Current: c.cur, OutSince: outSince, Checks: checks}
 		if m.Title != nil {
 			set.SlotIDs = []int64{c.sl.ID}
 		}

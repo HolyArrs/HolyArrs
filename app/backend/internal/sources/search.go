@@ -325,6 +325,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	out := from != mediafiles.SlotNotOutYet
 	var rels []mediafiles.ReleaseFacts
 	var vs []mediafiles.Verdict
+	c.listing, shows.listing = show, show
 	if isShow {
 		rels, vs, err = s.judgeShow(ctx, shows, all, handSearch, skipGate, s.showRules(ctx))
 	} else {
