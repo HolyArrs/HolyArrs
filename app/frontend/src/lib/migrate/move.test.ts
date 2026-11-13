@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanPath, cleanRules, countWord, countWords, extraProblems, folderOutcome, folderProblem, LEAVE, leaveFolders, moveCounts, moveStateWord, moveTotal, needsGroups, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, sharedTargets, stepGate, summary, tone, unseenFolder, type Plan, type Report } from './move.ts';
+import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanPath, cleanRules, countWord, countWords, extraProblems, folderOutcome, folderProblem, LEAVE, leaveFolders, moveCounts, moveStateWord, moveTotal, needsGroups, noFolderCount, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, sharedTargets, stepGate, summary, tone, unseenFolder, type Plan, type Report } from './move.ts';
 
 describe('move helpers', () => {
 	it('names apps, with what they bring and their usual port', () => {
@@ -211,6 +211,19 @@ describe('folderOutcome', () => {
 			{ group: 'folders', key: 'g', name: 'G', result: 'skipped', attention: 'unchecked', folder: '/data/tv-extra' }
 		]);
 		expect(o).toEqual({ came: 1, attention: 1, attentionFolders: ['/old'], unchecked: 2, uncheckedFolders: ['/data/movies', '/data/tv-extra'] });
+	});
+});
+
+describe('noFolderCount', () => {
+	it('counts only what really has no folder here', () => {
+		const lines = [
+			// The old Library folder is not here, but its titles came over as wanted.
+			{ group: 'folders', key: 'folder:/old', name: 'old', result: 'not_found' },
+			{ group: 'titles', key: 'b', name: 'B', result: 'created', attention: 'unreachable' as const, folder: '/old' },
+			{ group: 'pick_rules', key: 'r', name: 'R', result: 'not_found' }
+		];
+		expect(noFolderCount(lines)).toBe(0);
+		expect(noFolderCount([...lines, { group: 'folders', key: 'folder:/gone', name: 'gone', result: 'not_found' }])).toBe(1);
 	});
 });
 

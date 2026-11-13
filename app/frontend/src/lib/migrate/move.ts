@@ -112,6 +112,12 @@ export function folderOutcome(lines: Line[]): FolderOutcome {
 	return out;
 }
 
+/** Items with no folder on this server: not-found lines, less the Pick rules (no folder of theirs) and the Library folders whose titles came over anyway (they show as needing attention). */
+export function noFolderCount(lines: Line[]): number {
+	const came = folderOutcome(lines).attentionFolders;
+	return lines.filter((l) => l.result === 'not_found' && l.group !== 'pick_rules' && !(l.group === 'folders' && came.includes(l.key.replace(/^folder:/, '')))).length;
+}
+
 export interface Report {
 	move?: number;
 	dry: boolean;
