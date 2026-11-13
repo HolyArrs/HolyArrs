@@ -278,8 +278,26 @@ func (h *Handlers) runTest(w http.ResponseWriter, r *http.Request, x domain.Sour
 			if database.Get(r.Context(), h.Store.Read(), "sources", x.ID, &x) == nil {
 				h.PublishSource(x)
 			}
+		} else if x.State == "enabled" {
+			// Keep why it failed, so the Source does not read as working
+			// once the page is opened again.
+			kind, detail := KindDown, ""
+			var se *Error
+			if errors.As(err, &se) {
+				kind, detail = se.Kind, se.Detail
+			}
+			if h.Store.Write(r.Context(), func(tx *sql.Tx) error { return markTestFailedTx(tx, r.Context(), x.ID, kind, detail) }) == nil &&
+				database.Get(r.Context(), h.Store.Read(), "sources", x.ID, &x) == nil {
+				h.PublishSource(x)
+			}
 		}
 	} else {
+		if x.Extra[extraTestFailed] != "" {
+			if h.Store.Write(r.Context(), func(tx *sql.Tx) error { return recoverSourceTx(tx, r.Context(), x.ID) }) == nil &&
+				database.Get(r.Context(), h.Store.Read(), "sources", x.ID, &x) == nil {
+				h.PublishSource(x)
+			}
+		}
 		out["text"] = "The Source answered."
 		if x.Format == "rss" {
 			out["text"] = "The feed answered with " + strconv.Itoa(items) + " Releases."

@@ -522,7 +522,7 @@
 						<div class="ban-cap">
 							{#if fresh.has(a.id)}<span class="new-mark" data-testid="ask-new">{t('requests.board.new')}</span>{/if}
 							<h2 class="ban-t"><a href={to(askHref(a))}>{a.name}</a></h2>
-							<span class="ban-f">{#if a.kind === 'show'}<span data-testid="ask-kind">{t('requests.kind.show')}</span>{:else if a.kind === 'artist'}<span data-testid="ask-kind">{t('requests.kind.artist')}</span>{:else}{t('requests.kind.movie')}{/if}{#if a.year}{' · '}{a.year}{/if}</span>
+							<span class="ban-f">{#if a.four_k}<span class="ap4k-tag" title={t('requests.board.fourKTitle')}>4K</span>{/if}{#if a.kind === 'show'}<span data-testid="ask-kind">{t('requests.kind.show')}</span>{:else if a.kind === 'artist'}<span data-testid="ask-kind">{t('requests.kind.artist')}</span>{:else}{t('requests.kind.movie')}{/if}{#if a.year}{' · '}{a.year}{/if}</span>
 						</div>
 					</div>
 					<div class="sheet-b">
@@ -751,6 +751,7 @@
 	.ban-t a:focus-visible { outline: none; }
 	.mc:has(.ban-t a:focus-visible) { box-shadow: 0 0 0 2px var(--text), 0 24px 48px -24px rgb(0 0 0 / 0.6); }
 	.ban-f { font: 600 12px/1.3 var(--font-ui); color: rgb(255 255 255 / 0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.ap4k-tag { display: inline-block; margin-right: 6px; padding: 0 5px; border: 1px solid rgb(255 255 255 / 0.7); border-radius: 4px; background: rgb(0 0 0 / 0.35); color: #fff; font: 800 10.5px/1.5 var(--font-ui); letter-spacing: 0.04em; vertical-align: 1px; }
 	/* The glass panel redefines --text, --text-muted and --bg so the ink reads on the blurred art. */
 	.sheet-b { --blur: blur(22px) saturate(1.3); --text: light-dark(#14161c, #f5f5f7); --text-muted: light-dark(#1c2029, rgb(235 235 245 / 0.8)); --bg: light-dark(#eef0f5, #17171b); --gl-fail: light-dark(#86160b, #ff8f8a); --g1: light-dark(rgb(255 255 255 / 0.72), rgb(34 34 40 / 0.7)); --g2: light-dark(rgb(246 248 252 / 0.7), rgb(10 10 13 / 0.8)); --g3: light-dark(rgb(255 255 255 / 0.06), transparent); --edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.16)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 0.07), rgb(255 255 255 / 0.05)); --st-wait: light-dark(#8a5a00, #ffb340); --st-wait-ink: light-dark(#5c3b00, #ffd699); --st-ok: light-dark(#18843f, #34c26a); --st-ok-ink: light-dark(#073d1b, #a6efc0); --st-go: light-dark(#1d5fd6, #4b8dff); --st-go-ink: light-dark(#072a6b, #b5d1ff); --st-bad: light-dark(#a3170c, #ff6b63); --st-bad-ink: light-dark(#5e0e06, #ffb3ae); --st-soft: light-dark(#5a6070, #9aa0ad); --st-soft-ink: var(--text); position: relative; z-index: 1; display: flex; flex-direction: column; gap: 10px; flex: 1; margin: 0 var(--gap) var(--gap); padding: 12px; border-radius: calc(20px - var(--gap)); background: linear-gradient(180deg, var(--g1), var(--g2)), linear-gradient(var(--g3), var(--g3)); color: var(--text); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--edge); }
 	:global(:root[data-theme='light']) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); }
