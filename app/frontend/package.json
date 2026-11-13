@@ -6,7 +6,7 @@
 	"license": "AGPL-3.0-only",
 	"scripts": {
 		"dev": "node scripts/pack-lang.mjs && vite dev",
-		"build": "node scripts/vendor-hls.mjs && node scripts/pack-lang.mjs && vite build && node scripts/check-words.mjs",
+		"build": "node scripts/vendor-hls.mjs && node scripts/pack-lang.mjs && vite build && node scripts/check-words.mjs && node scripts/precompress.mjs",
 		"postbuild": "node -e \"require('node:fs').writeFileSync('dist/.gitkeep', '')\"",
 		"lint": "eslint src",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && svelte-check --tsconfig ../tests/tsconfig.check.json --fail-on-warnings",

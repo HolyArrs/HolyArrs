@@ -1,0 +1,9 @@
+/* Anton, the tall headline face of the category tiles. Only the woff2 file:
+   every browser the app supports reads it, so the older woff copy stays out. */
+@font-face {
+	font-family: 'Anton';
+	font-style: normal;
+	font-display: swap;
+	font-weight: 400;
+	src: url('@fontsource/anton/files/anton-latin-400-normal.woff2') format('woff2');
+}
