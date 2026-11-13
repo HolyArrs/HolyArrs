@@ -1260,7 +1260,7 @@
 	"downloads.ot.kindYear": "Jahr",
 	"downloads.dp.importFile": "Diese Datei importieren",
 	"downloads.dp.importByHand": "Dateien von Hand importieren",
-	"downloads.dp.noMatchEpisode": "Keine Datei im Download passt zu einer Episode.",
+	"downloads.dp.noMatchEpisode": "Keine Datei im Download passt zu einer Folge.",
 	"downloads.dp.noMatchMovie": "Keine Datei im Download passt zu diesem Film.",
 	"downloads.dp.noMatchTrack": "Keine Datei im Download passt zu einem Track.",
 	"downloads.dp.askImport": "{file} als {name} importieren?",
