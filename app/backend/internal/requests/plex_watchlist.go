@@ -489,6 +489,8 @@ var (
 	// errPlexForbidden is ErrPlexRefused from a 403, which for one friend's
 	// watchlist means it is kept from friends rather than a dead sign-in.
 	errPlexForbidden = fmt.Errorf("%w", ErrPlexRefused)
+	// errPlexGone is Plex answering that a list it used to give is gone.
+	errPlexGone = errors.New("Plex no longer offers the list of people your server is shared with")
 )
 
 func (w *Watchlists) get(ctx context.Context, tok, path string, into any) error {
@@ -498,9 +500,21 @@ func (w *Watchlists) get(ctx context.Context, tok, path string, into any) error 
 // call sends one request to Plex with tok in the header and reads its JSON
 // answer into into. identity names the endpoint for the outbound guard.
 func (w *Watchlists) call(ctx context.Context, method, addr, tok string, body []byte, into any, identity ...string) error {
+	answer, err := w.send(ctx, method, addr, tok, body, "application/json", identity...)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(answer, into); err != nil {
+		return errors.New("Plex sent a watchlist HolyArrs could not read")
+	}
+	return nil
+}
+
+// send is call without the reading: it returns Plex's answer as it came.
+func (w *Watchlists) send(ctx context.Context, method, addr, tok string, body []byte, accept string, identity ...string) ([]byte, error) {
 	op, err := outbound.Begin(ctx, outbound.Target{Kind: "plex_watchlist", Identity: identity})
 	if err != nil {
-		return ErrPlexDown
+		return nil, ErrPlexDown
 	}
 	result := outbound.Canceled
 	defer func() { op.Finish(result) }()
@@ -513,12 +527,12 @@ func (w *Watchlists) call(ctx context.Context, method, addr, tok string, body []
 	req, err := http.NewRequestWithContext(rctx, method, addr, rd)
 	if err != nil {
 		result = outbound.TerminalFailure
-		return err
+		return nil, err
 	}
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept", accept)
 	req.Header.Set("X-Plex-Token", tok)
 	req.Header.Set("X-Plex-Product", "HolyArrs")
 	if w.ClientID != nil {
@@ -529,25 +543,23 @@ func (w *Watchlists) call(ctx context.Context, method, addr, tok string, body []
 	resp, err := w.client().Do(req)
 	if err != nil {
 		result = outbound.HTTPOutcome(0, err, ctx)
-		return ErrPlexDown
+		return nil, ErrPlexDown
 	}
 	defer resp.Body.Close()
 	answer, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
 	result = outbound.HTTPOutcome(resp.StatusCode, err, ctx)
 	switch {
 	case resp.StatusCode == http.StatusForbidden:
-		return errPlexForbidden
+		return nil, errPlexForbidden
 	case resp.StatusCode == http.StatusUnauthorized:
-		return ErrPlexRefused
+		return nil, ErrPlexRefused
+	case resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusGone:
+		return nil, errPlexGone
 	case resp.StatusCode != http.StatusOK || err != nil:
-		return fmt.Errorf("Plex answered %d; HolyArrs tries again at the next check", resp.StatusCode)
-	}
-	if err := json.Unmarshal(answer, into); err != nil {
-		result = outbound.TerminalFailure
-		return errors.New("Plex sent a watchlist HolyArrs could not read")
+		return nil, fmt.Errorf("Plex answered %d; HolyArrs tries again at the next check", resp.StatusCode)
 	}
 	result = outbound.Success
-	return nil
+	return answer, nil
 }
 
 // plexContainer is the part of Plex's answer HolyArrs reads. Fields are

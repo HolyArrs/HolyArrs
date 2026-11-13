@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"log"
 	"net/http"
@@ -37,9 +38,14 @@ var friendWords = map[string]string{
 	"empty":   "Plex showed an empty watchlist. If it has titles, its privacy setting may hide it from friends.",
 	"hidden":  "Plex did not share this watchlist with the owner's Plex account. Its privacy setting may hide it from friends.",
 	"refused": "Plex refused the owner's Plex link. The owner can link Plex again in Settings.",
+	"nocode":  "Plex gave no account code for this person, so their watchlist is not read.",
 }
 
 var errFriendHidden = errors.New(friendWords["hidden"])
+
+// plexAvatarUUID finds the account uuid in a user's picture address, which
+// Plex gives as https://plex.tv/users/<uuid>/avatar.
+var plexAvatarUUID = regexp.MustCompile(`/users/([A-Za-z0-9-]{1,64})/avatar`)
 
 // plexUUID is the shape of a Plex account's uuid; nothing else goes into a
 // watchlist query.
@@ -124,14 +130,32 @@ func (w *Watchlists) friendsPass(ctx context.Context, covered map[int64]bool) (f
 	if len(todo) == 0 {
 		return out, nil
 	}
-	listed, err := w.fetchFriends(ctx, tok, server)
+	listed, found, err := w.fetchFriends(ctx, tok, server)
 	if err != nil {
+		note := err.Error()
+		if errors.Is(err, ErrPlexRefused) {
+			note = friendWords["refused"]
+		}
+		for _, f := range todo {
+			if err := w.checked(ctx, f.userID, note); err != nil {
+				return out, err
+			}
+		}
+		log.Printf("plex watchlist: friends check: source=/api/users failed")
 		return out, err
 	}
+	skipped := 0
 	for _, f := range todo {
 		uuid, ok := listed[f.plexID]
 		if !ok {
 			if err := w.noteGone(ctx, f.userID); err != nil {
+				return out, err
+			}
+			continue
+		}
+		if uuid == "" {
+			skipped++
+			if err := w.checked(ctx, f.userID, friendWords["nocode"]); err != nil {
 				return out, err
 			}
 			continue
@@ -145,6 +169,7 @@ func (w *Watchlists) friendsPass(ctx context.Context, covered map[int64]bool) (f
 		out.Read += res.Read
 		out.Asked += res.Asked
 	}
+	log.Printf("plex watchlist: friends check: source=/api/users listed=%d with_uuid=%d without_uuid=%d watchlists_read=%d items=%d", found, found-skipped, skipped, out.People-out.Failed, out.Read)
 	return out, nil
 }
 
@@ -223,41 +248,54 @@ func (w *Watchlists) friendPass(ctx context.Context, userID int64, uuid, tok str
 }
 
 // fetchFriends maps each Plex friend's account id to their uuid, keeping
-// only those who share server ("" for any). With a server chosen, a friend
-// Plex lists without servers is kept only when they are in the owner's Plex
-// Home: a friend whose share was removed can be listed that way too.
-func (w *Watchlists) fetchFriends(ctx context.Context, tok, server string) (map[string]string, error) {
-	var got []struct {
-		ID     flexText `json:"id"`
-		UUID   string   `json:"uuid"`
-		Home   bool     `json:"home"`
-		Shared []struct {
-			MachineIdentifier string `json:"machineIdentifier"`
-		} `json:"sharedServers"`
+// only those who share server ("" for any). Plex's list of people (/api/users)
+// has no uuid field, so it is read from the picture address; a person without
+// one maps to "". With a server chosen, a person Plex lists without servers
+// is kept only when they are in the owner's Plex Home: a friend whose share
+// was removed can be listed that way too. found counts the people kept.
+func (w *Watchlists) fetchFriends(ctx context.Context, tok, server string) (out map[string]string, found int, err error) {
+	var list struct {
+		Users []struct {
+			ID      string `xml:"id,attr"`
+			Thumb   string `xml:"thumb,attr"`
+			Home    string `xml:"home,attr"`
+			Servers []struct {
+				MachineIdentifier string `xml:"machineIdentifier,attr"`
+			} `xml:"Server"`
+		} `xml:"User"`
 	}
 	base := w.plexTV()
-	if err := w.call(ctx, http.MethodGet, base+"/api/v2/friends", tok, nil, &got, base, tok); err != nil {
-		return nil, err
+	raw, err := w.send(ctx, http.MethodGet, base+"/api/users", tok, nil, "application/xml", base, tok)
+	if err != nil {
+		return nil, 0, err
 	}
-	out := map[string]string{}
-	for _, f := range got {
-		id, uuid := strings.TrimSpace(string(f.ID)), strings.TrimSpace(f.UUID)
-		if id == "" || !plexUUID.MatchString(uuid) {
+	if err := xml.Unmarshal(raw, &list); err != nil {
+		return nil, 0, ErrPlexDown
+	}
+	out = map[string]string{}
+	for _, f := range list.Users {
+		id := strings.TrimSpace(f.ID)
+		if id == "" {
 			continue
 		}
-		if server != "" && len(f.Shared) == 0 && !f.Home {
+		home := f.Home == "1" || strings.EqualFold(f.Home, "true")
+		if server != "" && len(f.Servers) == 0 && !home {
 			continue
 		}
-		if server != "" && len(f.Shared) > 0 && !slices.ContainsFunc(f.Shared, func(s struct {
-			MachineIdentifier string `json:"machineIdentifier"`
+		if server != "" && len(f.Servers) > 0 && !slices.ContainsFunc(f.Servers, func(s struct {
+			MachineIdentifier string `xml:"machineIdentifier,attr"`
 		}) bool {
 			return s.MachineIdentifier == server
 		}) {
 			continue
 		}
-		out[id] = uuid
+		found++
+		out[id] = ""
+		if m := plexAvatarUUID.FindStringSubmatch(f.Thumb); m != nil {
+			out[id] = m[1]
+		}
 	}
-	return out, nil
+	return out, found, nil
 }
 
 // fetchFriendList reads the newest entries of a friend's watchlist. The
