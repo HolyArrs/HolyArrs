@@ -117,7 +117,8 @@ func TestMoveTwoRootsToOneFolder(t *testing.T) {
 
 // A root folder left at "Don't bring them" that is on this server keeps
 // its titles behind, wanted ones too, and the folder is not added; one
-// this server cannot see still sends its titles over as wanted.
+// this server cannot see sends its titles over as wanted only while it is
+// not set to "Don't bring them".
 func TestMoveLeaveFolderKeepsTitlesBehind(t *testing.T) {
 	l := newMoveLabWith(t, func(radarr, _, _ *Snapshot) {
 		radarr.Folders = append(radarr.Folders, Folder{Path: "/movies-gone"})
@@ -141,7 +142,7 @@ func TestMoveLeaveFolderKeepsTitlesBehind(t *testing.T) {
 	if _, err := library.AddFolder(context.Background(), l.st, library.FolderInput{Path: other, Kind: "movie", Label: "other"}, nil, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	ch := Choices{PathRules: l.rules, People: l.people, LeaveFolders: []string{"/movies/", "/movies-gone"}}
+	ch := Choices{PathRules: l.rules, People: l.people, LeaveFolders: []string{"/movies/"}}
 	check := func(stage string, rep *Report, dry bool) {
 		t.Helper()
 		for _, key := range []string{"title:movie:tmdb:603", reloaded} {

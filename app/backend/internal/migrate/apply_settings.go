@@ -193,12 +193,12 @@ func (r *run) folder(it Item) (string, string) {
 	if r.id("SELECT id FROM library_folders WHERE path = ?", filepath.Clean(p)) != 0 {
 		return ResAlready, "already a Library folder"
 	}
-	if !filepath.IsAbs(p) || !isDir(p) {
-		return ResNotFound, "no folder at " + f.Path + " on this server; add a path rule"
-	}
 	if f.Left {
 		r.attn, r.attnFolder = AttnUnchecked, f.Path
 		return ResSkipped, "left out: " + f.Path + " is set to \"Don't bring them\"; pick a folder for it and import again"
+	}
+	if !filepath.IsAbs(p) || !isDir(p) {
+		return ResNotFound, "no folder at " + f.Path + " on this server; add a path rule"
 	}
 	if r.dry {
 		return ResCreate, "a " + f.Kind + " Library folder at " + f.Path

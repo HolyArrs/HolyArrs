@@ -43,6 +43,18 @@ export function createMovePassword(ctx: any) {
 	let pwStale = $state(false);
 	let pwSheet = $state(false);
 	let resumeMove = $state(false);
+	/** Import stopped for a password check: it goes on once the password is confirmed (Settings and the wizard each show the box). */
+	function waitForCheck() {
+		session.s.localRecent = false;
+		resumeMove = true;
+	}
+	/** After a password check: a set password clears the card, and an Import that stopped for the check goes on with the same choices. */
+	function settle() {
+		if (mustSetPw && session.s.hasPassword) mustSetPw = false;
+		if (!resumeMove || !session.s.hasPassword || !session.s.localRecent) return;
+		resumeMove = false;
+		if (ctx.step === 'choose') void ctx.runFlow.start();
+	}
 	async function signInAgain() {
 		const back = location.pathname + location.search;
 		await session.logout();
@@ -57,6 +69,8 @@ export function createMovePassword(ctx: any) {
 		get pwSheet() { return pwSheet; },
 		set pwSheet(v) { pwSheet = v; },
 		setFirstPw,
+		settle,
+		waitForCheck,
 		get pwA() { return pwA; },
 		set pwA(v) { pwA = v; },
 		get pwB() { return pwB; },

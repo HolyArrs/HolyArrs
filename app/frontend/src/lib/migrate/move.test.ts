@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanPath, cleanRules, countWord, countWords, extraProblems, folderOutcome, folderProblem, moveCounts, moveStateWord, moveTotal, needsGroups, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, sharedTargets, stepGate, summary, tone, type Report } from './move.ts';
+import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanPath, cleanRules, countWord, countWords, extraProblems, folderOutcome, folderProblem, LEAVE, leaveFolders, moveCounts, moveStateWord, moveTotal, needsGroups, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, sharedTargets, stepGate, summary, tone, unseenFolder, type Plan, type Report } from './move.ts';
 
 describe('move helpers', () => {
 	it('names apps, with what they bring and their usual port', () => {
@@ -211,5 +211,43 @@ describe('folderOutcome', () => {
 			{ group: 'folders', key: 'g', name: 'G', result: 'skipped', attention: 'unchecked', folder: '/data/tv-extra' }
 		]);
 		expect(o).toEqual({ came: 1, attention: 1, attentionFolders: ['/old'], unchecked: 2, uncheckedFolders: ['/data/movies', '/data/tv-extra'] });
+	});
+});
+
+describe('folders this server cannot see', () => {
+	const plan = {
+		snapshots: [1],
+		apps: ['sonarr'],
+		old_paths: ['/old/tv', '/old/movies', '/tv-here', '/data/media/tv'],
+		groups: [
+			{
+				name: 'folders',
+				label: 'Library folders',
+				skipped: false,
+				items: [
+					{ key: 'folder:/old/tv', name: 'tv', from: 'sonarr', folder: { old_path: '/old/tv', path: '/old/tv', kind: 'show', label: 'tv', unseen: true } },
+					{ key: 'folder:/old/movies', name: 'movies', from: 'radarr', folder: { old_path: '/old/movies', path: '/old/movies', kind: 'movie', label: 'movies', unseen: true } },
+					{ key: 'folder:/tv-here', name: 'tv-here', from: 'sonarr', folder: { old_path: '/tv-here', path: '/tv-here', kind: 'show', label: 'tv-here' } }
+				]
+			}
+		],
+		not_moved: [],
+		needs_input: []
+	} as unknown as Plan;
+	const here = [{ path: '/data/media/tv' }];
+
+	it('leave out only what is set to "Don\'t bring them"', () => {
+		expect(unseenFolder(plan, '/old/tv')).toBe(true);
+		expect(unseenFolder(plan, '/tv-here')).toBe(false);
+		// Defaults: a folder it cannot see comes over (needs attention); one it sees stays behind.
+		expect(leaveFolders(plan, here, {})).toEqual(['/tv-here']);
+		// "Don't bring them" on a folder it cannot see leaves it out; a picked folder is not left out.
+		expect(leaveFolders(plan, here, { '/old/tv': LEAVE, '/old/movies': '/data/media/movies', '/tv-here': '/data/media/tv' })).toEqual(['/old/tv']);
+	});
+
+	it('never turn "Don\'t bring them" into a path rule or a problem', () => {
+		expect(folderProblem('/old/tv', LEAVE, undefined)).toBe('');
+		expect(rulesFrom({ '/old/tv': LEAVE, '/old/movies': '/data/media/movies' }, {}, [])).toEqual([{ from: '/old/movies', to: '/data/media/movies' }]);
+		expect(sharedTargets({ '/old/tv': LEAVE, '/old/movies': LEAVE }, {})).toEqual({});
 	});
 });

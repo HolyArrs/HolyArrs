@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"slices"
@@ -112,6 +113,11 @@ func (r *run) title(it Item) (string, string) {
 		}
 		noFiles = true
 	}
+	if lfID == 0 && r.left[filepath.Clean(lib)] {
+		// Set to "Don't bring them" although this server cannot see it.
+		r.attn, r.attnFolder = AttnUnchecked, filepath.ToSlash(filepath.Clean(lib))
+		return ResSkipped, "left out: " + r.attnFolder + " is set to \"Don't bring them\"; pick a folder for it and import again"
+	}
 	if lfID == 0 {
 		var here string
 		_ = r.m.Store.Read().QueryRowContext(r.ctx, "SELECT id, path FROM library_folders WHERE kind = ? ORDER BY id LIMIT 1", t.Kind).Scan(&lfID, &here)
@@ -124,6 +130,12 @@ func (r *run) title(it Item) (string, string) {
 		noFiles = true
 		r.attn, r.attnFolder = AttnUnreachable, filepath.ToSlash(filepath.Clean(lib))
 		fallback = filepath.ToSlash(here)
+	}
+	// Brought into a folder here that holds none of the titles of an old
+	// folder this server cannot see: wanted, and it needs attention too.
+	if old := r.unseen[filepath.Clean(lib)]; fallback == "" && noFiles && old != "" {
+		r.attn, r.attnFolder = AttnUnreachable, old
+		fallback, dir = filepath.ToSlash(lib), filepath.FromSlash(path.Join(old, t.Folder))
 	}
 	if r.dry {
 		if fallback != "" {
