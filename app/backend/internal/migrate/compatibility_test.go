@@ -1745,3 +1745,42 @@ func TestCompatibilityMusicRestoreRollsBackWhenExpectedRowDisappears(t *testing.
 		t.Fatal("partial music restore committed before the missing-row failure")
 	}
 }
+
+func TestUndoReportDoesNotCountRequestsTheImportOnlyFound(t *testing.T) {
+	l := newMoveLab(t)
+	ctx := context.Background()
+	actor := domain.Actor{Kind: "user", ID: 1}
+	newMove := func() int64 {
+		var id int64
+		if err := l.st.Write(ctx, func(tx *sql.Tx) error {
+			res, err := tx.Exec("INSERT INTO moves (created_at, owner_id, state) VALUES (?,1,'done')", database.FormatTime(time.Now().UTC()))
+			if err == nil {
+				id, err = res.LastInsertId()
+			}
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
+		return id
+	}
+	item := Item{Key: "ask:seerr:found", Name: "found", Ask: &AskPlan{App: "seerr", Kind: "movie", Ref: "tmdb:700090", IDs: map[string]string{"tmdb": "700090"}}}
+	first, second := newMove(), newMove()
+	r1 := &run{m: l.mv, ctx: ctx, move: first, by: actor, owner: 1, people: map[string]int64{}, rep: &Report{Counts: map[string]int{}}}
+	if got, why := r1.one(GroupRequests, item); got != ResCreated {
+		t.Fatalf("first import %s: %s", got, why)
+	}
+	r2 := &run{m: l.mv, ctx: ctx, move: second, by: actor, owner: 1, people: map[string]int64{}, rep: &Report{Counts: map[string]int{}}}
+	if got, why := r2.one(GroupRequests, item); got != ResAlready {
+		t.Fatalf("second import %s: %s", got, why)
+	}
+	rep, err := l.mv.Undo(ctx, second, actor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.Counts[ResRemoved] != 0 || len(rep.Lines) != 0 {
+		t.Fatalf("undo reported things it never added: counts %v lines %+v", rep.Counts, rep.Lines)
+	}
+	if n := l.count(t, "SELECT count(*) FROM asks WHERE ref='tmdb:700090'"); n != 1 {
+		t.Fatal("the request the first import made is gone")
+	}
+}
