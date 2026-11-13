@@ -53,5 +53,6 @@
 	"settings.libraryFolders.sideOn": "นำไฟล์คำบรรยายมาด้วย",
 	"settings.libraryFolders.sideOnHint": "ไฟล์ที่อยู่ในคลังแล้วจะไม่ถูกแทนที่",
 	"settings.libraryFolders.sideTypes": "ชนิดไฟล์",
-	"settings.libraryFolders.sideTypesHint": "คั่นชนิดด้วยจุลภาค เช่น srt, ass"
+	"settings.libraryFolders.sideTypesHint": "คั่นชนิดด้วยจุลภาค เช่น srt, ass",
+	"settings.libraryFolders.notMounted": "HolyArrs มองไม่เห็น {path} เพราะเห็นเฉพาะโฟลเดอร์ที่เมานต์เข้าคอนเทนเนอร์เท่านั้น เพิ่มวอลุ่มเช่น {path}:{inside} แล้วใช้ {inside} ที่นี่"
 }

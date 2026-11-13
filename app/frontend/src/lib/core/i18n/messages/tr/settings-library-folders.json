@@ -53,5 +53,6 @@
 	"settings.libraryFolders.sideOn": "Altyazı dosyalarını da getir",
 	"settings.libraryFolders.sideOnHint": "Kitaplıkta zaten olan bir dosya asla değiştirilmez.",
 	"settings.libraryFolders.sideTypes": "Dosya türleri",
-	"settings.libraryFolders.sideTypesHint": "Türleri virgülle ayırın, örneğin srt, ass."
+	"settings.libraryFolders.sideTypesHint": "Türleri virgülle ayırın, örneğin srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs {path} klasörünü göremiyor. Yalnızca kapsayıcısına bağlanan klasörleri görür. {path}:{inside} gibi bir birim ekleyin, sonra burada {inside} kullanın."
 }

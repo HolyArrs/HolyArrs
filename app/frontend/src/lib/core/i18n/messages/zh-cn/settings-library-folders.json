@@ -53,5 +53,6 @@
 	"settings.libraryFolders.sideOn": "一并带入字幕文件",
 	"settings.libraryFolders.sideOnHint": "媒体库中已有的文件永远不会被替换。",
 	"settings.libraryFolders.sideTypes": "文件类型",
-	"settings.libraryFolders.sideTypesHint": "用逗号分隔类型，例如 srt, ass。"
+	"settings.libraryFolders.sideTypesHint": "用逗号分隔类型，例如 srt, ass。",
+	"settings.libraryFolders.notMounted": "HolyArrs 看不到 {path}。它只能看到挂载到其容器中的文件夹。添加类似 {path}:{inside} 的卷，然后在这里填写 {inside}。"
 }

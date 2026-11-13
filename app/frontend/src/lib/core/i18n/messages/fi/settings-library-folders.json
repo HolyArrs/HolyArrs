@@ -53,5 +53,6 @@
 	"settings.libraryFolders.sideOn": "Tuo myös tekstitystiedostot",
 	"settings.libraryFolders.sideOnHint": "Kirjastossa jo olevaa tiedostoa ei koskaan korvata.",
 	"settings.libraryFolders.sideTypes": "Tiedostotyypit",
-	"settings.libraryFolders.sideTypesHint": "Erota tyypit pilkuilla, esim. srt, ass."
+	"settings.libraryFolders.sideTypesHint": "Erota tyypit pilkuilla, esim. srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs ei näe kansiota {path}. Se näkee vain konttiinsa liitetyt kansiot. Lisää taltio, kuten {path}:{inside}, ja käytä sitten tässä polkua {inside}."
 }

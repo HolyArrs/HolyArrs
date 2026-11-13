@@ -53,5 +53,6 @@
 	"settings.libraryFolders.sideOn": "Taka skjátextaskrár með",
 	"settings.libraryFolders.sideOnHint": "Skrá sem er þegar í safninu er aldrei skipt út.",
 	"settings.libraryFolders.sideTypes": "Skráagerðir",
-	"settings.libraryFolders.sideTypesHint": "Aðskildu gerðir með kommum, t.d. srt, ass."
+	"settings.libraryFolders.sideTypesHint": "Aðskildu gerðir með kommum, t.d. srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs sér ekki {path}. Það sér aðeins möppur sem eru tengdar inn í gáminn þess. Bættu við volume eins og {path}:{inside} og notaðu svo {inside} hér."
 }

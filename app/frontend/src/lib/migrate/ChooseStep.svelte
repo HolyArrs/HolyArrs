@@ -246,7 +246,9 @@
 					<input id="{id}-other" class="input mono wide" value={others[p] ?? ''} placeholder="/data/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `${id}-err` : undefined} oninput={(e) => onother(p, e.currentTarget.value)} onblur={oncommit} onkeydown={keyDone} />
 				{/if}
 				{#if err}<p class="form-error" id="{id}-err">{err}</p>{/if}
-				{#if gone}<p class="sub warn note" data-testid="folder-not-here">{t('migrate.notInContainer', { path: gone })}{#if seen.length} {t('migrate.foldersItSees', { list: seen.join(', ') })}{/if}</p>{/if}
+				{#if gone}<p class="sub warn note" data-testid="folder-not-here">{t('migrate.notInContainer', { path: gone })}{#if seen.length} {t('migrate.foldersItSees', { list: seen.join(', ') })}{/if}</p>
+					{#if oldRows.length > 0 && !extra.some((r) => r.from === p)}<Button icon="plus" variant="plain" data-testid="folder-not-here-rule" onclick={() => (onextra([...extra, { from: p, to: '' }]), (advOpen = true))}>{t('migrate.addAPathRule')}</Button>{/if}
+				{/if}
 				{#if twins.length}<p class="sub warn note" data-testid="folder-shared">{t('migrate.sameNewFolder', { list: twins.join(', ') })}</p>{/if}
 			</div>
 		{/if}
