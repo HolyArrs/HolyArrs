@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "நீங்கள் தேர்ந்தெடுத்த தரம் பயன்படுத்தப்படவில்லை: இந்தத் தலைப்பில் அந்தப் பிரதி ஏற்கெனவே உள்ளது.",
 	"server.accounts.plex-no-longer-offers-the-list": "உங்கள் சேவையகம் பகிரப்பட்டவர்களின் பட்டியலை Plex இனி வழங்குவதில்லை",
 	"server.accounts.plex-refused-your-linked-plex-account": "இணைக்கப்பட்ட உங்கள் Plex கணக்கை Plex மறுத்தது; மீண்டும் இணையுங்கள்",
-	"server.migrate.the-show-could-not-be-found": "நிகழ்ச்சியை அதன் ஐடிகள் அல்லது பெயர் மூலம் கண்டுபிடிக்க முடியவில்லை"
+	"server.migrate.the-show-could-not-be-found": "நிகழ்ச்சியை அதன் ஐடிகள் அல்லது பெயர் மூலம் கண்டுபிடிக்க முடியவில்லை",
+	"server.downloads.the-downloader-already-has-this-torrent": "பதிவிறக்கியிடம் இந்த டொரண்ட் ஏற்கெனவே HolyArrs-க்கு வெளியே உள்ளது, மேலும் «HolyArrs உருப்படிகளை மட்டும் காட்டு» இயக்கத்தில் உள்ளது: அங்கே அதை HolyArrs வகைக்கு நகர்த்து, அல்லது அந்த அமைப்பை அணை",
+	"server.downloads.the-release-has-no-info-hash": "வெளியீட்டில் தகவல் ஹாஷ் இல்லை, அதனால் {name} பதிவிறக்கத்தைப் பின்தொடர முடியவில்லை",
+	"server.downloads.the-release-link-leads-to-a": "வெளியீட்டின் இணைப்பு உள்ளூர் அல்லது தடுக்கப்பட்ட முகவரிக்குச் செல்கிறது; இந்த மூலம் உன் வீட்டு நெட்வொர்க்கில் இருந்தால், அதற்கு «உள்ளூர் நெட்வொர்க்கை அடையலாம்» என்பதை இயக்கு",
+	"server.downloads.the-source-has-no-such-release": "மூலத்தில் அந்த வெளியீட்டுக் கோப்பு இல்லை",
+	"server.downloads.the-torrent-file-does-not-match": "டொரண்ட் கோப்பு அதன் தகவல் ஹாஷுடன் பொருந்தவில்லை",
+	"server.sources.it-was-judged-for-another-slot": "அது வேறொரு Slot-க்காக மதிப்பிடப்பட்டது",
+	"server.sources.it-was-turned-down": "அது நிராகரிக்கப்பட்டது",
+	"server.sources.it-was-turned-down-2": "அது நிராகரிக்கப்பட்டது: {d}",
+	"server.sources.it-was-turned-down-for-this": "இந்த அத்தியாயத்துக்காக அது நிராகரிக்கப்பட்டது",
+	"server.sources.it-was-turned-down-for-this-2": "இந்த அத்தியாயத்துக்காக அது நிராகரிக்கப்பட்டது: {d}",
+	"server.sources.left-out": "விடப்பட்டது: {skipped}",
+	"server.sources.sent-although-it-failed": "தோல்வியடைந்தாலும் அனுப்பப்பட்டது: {overridden}",
+	"server.sources.the-album-would-mix-copies": "ஆல்பம் பிரதிகளைக் கலந்துவிடும்: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "வெளியீட்டு வாயில் தவிர்க்கப்படுகிறது: இந்தத் திரைப்படம் இன்னும் வெளியானதாகக் கணக்கில் இல்லை",
+	"server.sources.this-version-already-has-a-good": "இந்தப் பதிப்புக்கு ஏற்கெனவே போதுமான தரத்தில் ஒரு பிரதி உள்ளது; புதியது அதை மாற்றும்"
 }

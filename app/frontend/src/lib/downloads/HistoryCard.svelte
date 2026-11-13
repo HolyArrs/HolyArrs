@@ -2,6 +2,7 @@
 	// One History row: time, a dot on the rail, a small poster, the title with its part, and one line only when it adds something. Ends in the step mark.
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import VerbMark from './HistoryVerb.svelte';
 	import { artOf, clock } from './history-kinds.ts';
 	import { filterVerb, partOf, rowExtra, rowStep, sameWords } from './history-search.ts';
@@ -53,17 +54,17 @@
 	const s = $derived(rowStep(row, w.tag.word));
 	// A routine run is neutral: its own icon and no step word.
 	const verb = $derived(label !== undefined ? { word: '', icon: 'settings' as const, tone: 'idle' as const } : filterVerb(row, w.tag));
-	const extra = $derived(rowExtra(row, s, who, w.line));
+	const extra = $derived(serverWords(rowExtra(row, s, who, w.line)));
 	const part = $derived(partOf(row));
 	const version = $derived(w.bits.find((b) => b.kind === 'version')?.text ?? '');
 	// Rows with no title (sign-ins, health, backups) use the line as the name, with an icon instead of a poster. An ask keeps its title even when it is not in the Library yet.
 	const bare = $derived(label !== undefined || (!e.title_name && w.name === 'HolyArrs'));
 	const split = $derived(bare && label === undefined ? sysSplit(row, { ...ctx, titles: titleById }) : null);
-	const name = $derived(label ?? (bare ? split?.name || w.line || extra || w.name : w.name));
+	const name = $derived(label ?? (bare ? serverWords(split?.name || w.line) || extra || w.name : w.name));
 	// The second line shows the Filter's step word when it differs, then the extra.
 	const second = $derived.by(() => {
 		if (note !== undefined) return note;
-		if (bare) return split?.line ?? '';
+		if (bare) return serverWords(split?.line ?? '');
 		const own = s.label && s.label !== verb.word && !sameWords.has(s.label) ? s.label : '';
 		return [own, extra].filter(Boolean).join(' · ');
 	});

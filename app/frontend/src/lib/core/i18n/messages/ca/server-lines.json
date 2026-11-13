@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "La qualitat triada no s'ha fet servir: aquest títol ja té aquesta còpia.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex ja no ofereix la llista de persones amb qui es comparteix el teu servidor",
 	"server.accounts.plex-refused-your-linked-plex-account": "Plex ha rebutjat el teu compte de Plex vinculat; torna a vincular-lo",
-	"server.migrate.the-show-could-not-be-found": "no s'ha trobat la sèrie pels seus identificadors ni pel seu nom"
+	"server.migrate.the-show-could-not-be-found": "no s'ha trobat la sèrie pels seus identificadors ni pel seu nom",
+	"server.downloads.the-downloader-already-has-this-torrent": "el Gestor de baixades ja té aquest torrent fora d'HolyArrs, i «Mostra només els elements d'HolyArrs» està activat: mou-lo allà a la categoria d'HolyArrs, o desactiva aquest ajust",
+	"server.downloads.the-release-has-no-info-hash": "el Llançament no té hash d'informació, així que no s'ha pogut seguir la baixada de {name}",
+	"server.downloads.the-release-link-leads-to-a": "l'enllaç del Llançament porta a una adreça local o bloquejada; si aquesta Font és a la teva xarxa domèstica, activa «Pot accedir a la xarxa local» per a ella",
+	"server.downloads.the-source-has-no-such-release": "la Font no té aquest fitxer del Llançament",
+	"server.downloads.the-torrent-file-does-not-match": "el fitxer torrent no coincideix amb el seu hash d'informació",
+	"server.sources.it-was-judged-for-another-slot": "es va jutjar per a una altra Ranura",
+	"server.sources.it-was-turned-down": "es va rebutjar",
+	"server.sources.it-was-turned-down-2": "es va rebutjar: {d}",
+	"server.sources.it-was-turned-down-for-this": "es va rebutjar per a aquest episodi",
+	"server.sources.it-was-turned-down-for-this-2": "es va rebutjar per a aquest episodi: {d}",
+	"server.sources.left-out": "omès: {skipped}",
+	"server.sources.sent-although-it-failed": "enviat tot i que va fallar: {overridden}",
+	"server.sources.the-album-would-mix-copies": "l'àlbum barrejaria còpies: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "L'Umbral d'estrena s'omet: aquesta pel·lícula encara no es considera estrenada",
+	"server.sources.this-version-already-has-a-good": "Aquesta Versió ja té una còpia prou bona; la nova la substituirà"
 }

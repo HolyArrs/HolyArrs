@@ -1,5 +1,6 @@
 // The words for a History row. Line 1 says what it is (the title, the episode or the kind of title), a status tag says what kind of thing happened, and line 2 says what happened in plain words, never repeating the title.
 import { t as say, lang, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { dayKey } from './history-kinds.ts';
 import type { HistoryRow } from './history.ts';
@@ -123,6 +124,8 @@ export function resolutionOf(release: string): string {
 
 export function plainWhy(reason: string): string {
 	let s = reason.trim().replace(/[.;]\s*$/, '');
+	const known = serverWords(s);
+	if (known !== s) return known;
 	const dl = /^the downloader says (.+)$/i.exec(s);
 	if (dl) s = dl[1].toLowerCase() === 'error' ? say('downloads.hl.dlError') : say('downloads.hl.dlSays', { says: dl[1] });
 	s = s.replace(/[;,]?\s*(look at the import plan|match the files by hand)$/i, '');

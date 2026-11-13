@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "Η ποιότητα που επιλέξατε δεν χρησιμοποιήθηκε: ο τίτλος έχει ήδη αυτό το αντίγραφο.",
 	"server.accounts.plex-no-longer-offers-the-list": "το Plex δεν προσφέρει πλέον τη λίστα με τα άτομα με τα οποία μοιράζεται ο διακομιστής σας",
 	"server.accounts.plex-refused-your-linked-plex-account": "το Plex απέρριψε τον συνδεδεμένο λογαριασμό σας στο Plex· συνδέστε τον ξανά",
-	"server.migrate.the-show-could-not-be-found": "η σειρά δεν βρέθηκε ούτε με τα αναγνωριστικά ούτε με το όνομά της"
+	"server.migrate.the-show-could-not-be-found": "η σειρά δεν βρέθηκε ούτε με τα αναγνωριστικά ούτε με το όνομά της",
+	"server.downloads.the-downloader-already-has-this-torrent": "το Πρόγραμμα λήψης έχει ήδη αυτό το torrent εκτός HolyArrs, και η «Εμφάνιση μόνο στοιχείων του HolyArrs» είναι ενεργή: μετακίνησέ το εκεί στην κατηγορία του HolyArrs ή απενεργοποίησε αυτή τη ρύθμιση",
+	"server.downloads.the-release-has-no-info-hash": "η κυκλοφορία δεν έχει info hash, οπότε η λήψη του {name} δεν μπόρεσε να παρακολουθηθεί",
+	"server.downloads.the-release-link-leads-to-a": "ο σύνδεσμος της κυκλοφορίας οδηγεί σε τοπική ή αποκλεισμένη διεύθυνση· αν αυτή η Πηγή είναι στο οικιακό σου δίκτυο, ενεργοποίησε γι' αυτήν το «Πρόσβαση στο τοπικό δίκτυο»",
+	"server.downloads.the-source-has-no-such-release": "η Πηγή δεν έχει αυτό το αρχείο κυκλοφορίας",
+	"server.downloads.the-torrent-file-does-not-match": "το αρχείο torrent δεν ταιριάζει με το info hash του",
+	"server.sources.it-was-judged-for-another-slot": "κρίθηκε για άλλη θέση",
+	"server.sources.it-was-turned-down": "απορρίφθηκε",
+	"server.sources.it-was-turned-down-2": "απορρίφθηκε: {d}",
+	"server.sources.it-was-turned-down-for-this": "απορρίφθηκε για αυτό το επεισόδιο",
+	"server.sources.it-was-turned-down-for-this-2": "απορρίφθηκε για αυτό το επεισόδιο: {d}",
+	"server.sources.left-out": "παραλείφθηκε: {skipped}",
+	"server.sources.sent-although-it-failed": "στάλθηκε παρότι απέτυχε: {overridden}",
+	"server.sources.the-album-would-mix-copies": "το άλμπουμ θα ανέμιγνε αντίγραφα: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "Το Όριο κυκλοφορίας παραλείπεται: αυτή η ταινία δεν θεωρείται ακόμη κυκλοφορημένη",
+	"server.sources.this-version-already-has-a-good": "Αυτή η παραλλαγή έχει ήδη αρκετά καλό αντίγραφο· το νέο θα το αντικαταστήσει"
 }

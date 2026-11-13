@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "ไม่ได้ใช้คุณภาพที่คุณเลือก: รายการนี้มีสำเนานั้นอยู่แล้ว",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex ไม่มีรายชื่อคนที่เซิร์ฟเวอร์ของคุณแชร์ให้อีกต่อไป",
 	"server.accounts.plex-refused-your-linked-plex-account": "Plex ปฏิเสธบัญชี Plex ที่คุณเชื่อมโยงไว้ เชื่อมโยงใหม่อีกครั้ง",
-	"server.migrate.the-show-could-not-be-found": "ไม่พบซีรีส์ด้วยรหัสหรือชื่อของมัน"
+	"server.migrate.the-show-could-not-be-found": "ไม่พบซีรีส์ด้วยรหัสหรือชื่อของมัน",
+	"server.downloads.the-downloader-already-has-this-torrent": "ตัวดาวน์โหลดมีทอร์เรนต์นี้อยู่แล้วนอก HolyArrs และ «แสดงเฉพาะรายการของ HolyArrs» เปิดอยู่: ย้ายมันไปที่หมวดหมู่ของ HolyArrs ที่นั่น หรือปิดการตั้งค่านั้น",
+	"server.downloads.the-release-has-no-info-hash": "รีลีสไม่มีอินโฟแฮช จึงติดตามการดาวน์โหลดของ {name} ไม่ได้",
+	"server.downloads.the-release-link-leads-to-a": "ลิงก์ของรีลีสไปยังที่อยู่ภายในหรือที่ถูกบล็อก ถ้าแหล่งที่มานี้อยู่ในเครือข่ายบ้านของคุณ ให้เปิด «อนุญาตให้เข้าถึงเครือข่ายภายใน» ให้มัน",
+	"server.downloads.the-source-has-no-such-release": "แหล่งที่มาไม่มีไฟล์รีลีสนั้น",
+	"server.downloads.the-torrent-file-does-not-match": "ไฟล์ทอร์เรนต์ไม่ตรงกับอินโฟแฮชของมัน",
+	"server.sources.it-was-judged-for-another-slot": "ถูกตัดสินสำหรับช่องอื่น",
+	"server.sources.it-was-turned-down": "ถูกปฏิเสธ",
+	"server.sources.it-was-turned-down-2": "ถูกปฏิเสธ: {d}",
+	"server.sources.it-was-turned-down-for-this": "ถูกปฏิเสธสำหรับตอนนี้",
+	"server.sources.it-was-turned-down-for-this-2": "ถูกปฏิเสธสำหรับตอนนี้: {d}",
+	"server.sources.left-out": "ถูกตัดออก: {skipped}",
+	"server.sources.sent-although-it-failed": "ส่งไปแม้จะไม่ผ่าน: {overridden}",
+	"server.sources.the-album-would-mix-copies": "อัลบั้มจะปนสำเนากัน: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "ข้ามเกณฑ์วันวางจำหน่าย: ภาพยนตร์เรื่องนี้ยังนับว่าไม่ออก",
+	"server.sources.this-version-already-has-a-good": "เวอร์ชันนี้มีสำเนาที่ดีพอแล้ว ตัวใหม่จะมาแทนที่"
 }
