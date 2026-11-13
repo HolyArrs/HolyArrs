@@ -22,7 +22,8 @@ import (
 
 // applyRenameLocked requires the Store file lock. Keeping the proof, journal,
 // disk move and File update under one lock excludes imports and removals.
-func (s *Service) applyRenameLocked(ctx context.Context, plan []RenameStep, jobID int64, by domain.Actor) (int, error) {
+// progress, when set, hears after each File how many of all are through.
+func (s *Service) applyRenameLocked(ctx context.Context, plan []RenameStep, jobID int64, by domain.Actor, progress func(done, total int)) (int, error) {
 	type row struct {
 		id        int64
 		st        RenameStep
@@ -32,9 +33,9 @@ func (s *Service) applyRenameLocked(ctx context.Context, plan []RenameStep, jobI
 		prepErr   error   // this File failed before its journal rows were written
 	}
 	var rows []row
-	// Hashing a large video can take time. Prepare every durable recovery
-	// proof before opening the sole write transaction, then make only cheap
-	// identity/metadata checks while inserting the journal rows.
+	// Prepare every durable recovery proof (size and time, never a read of
+	// the file) before opening the sole write transaction, then check each
+	// file is still the same while inserting the journal rows.
 	for _, st := range plan {
 		if st.Skip != "" || st.To == "" {
 			continue
@@ -125,7 +126,10 @@ func (s *Service) applyRenameLocked(ctx context.Context, plan []RenameStep, jobI
 	done, failed := 0, 0
 	var firstErr error
 	emptied := map[[2]string]bool{} // root and old path of each moved file
-	for _, r := range rows {
+	for i, r := range rows {
+		if progress != nil && i > 0 {
+			progress(i, len(rows))
+		}
 		if r.prepErr != nil {
 			plan[idx[r.st.FileID]].Result = "failed: " + r.prepErr.Error()
 			failed++
@@ -183,6 +187,9 @@ func (s *Service) applyRenameLocked(ctx context.Context, plan []RenameStep, jobI
 			}
 			step.Subtitles[i].Result = "renamed"
 		}
+	}
+	if progress != nil && len(rows) > 0 {
+		progress(len(rows), len(rows))
 	}
 	for k := range emptied {
 		removeEmptiedFolders(k[0], k[1])
@@ -490,7 +497,9 @@ func (s *Service) handleRename(ctx context.Context, r *jobs.Run) error {
 		}
 		plan = sub
 	}
-	n, err := s.applyRenameLocked(ctx, plan, r.Job.ID, by)
+	n, err := s.applyRenameLocked(ctx, plan, r.Job.ID, by, func(done, total int) {
+		_ = r.Progress(ctx, float64(done)/float64(total), "")
+	})
 	res := map[string]any{"renamed": n, "steps": plan}
 	if recoverErr != nil {
 		res["recovery_error"] = recoverErr.Error()

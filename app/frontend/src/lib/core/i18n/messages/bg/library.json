@@ -166,6 +166,13 @@
 	"library.import.followHint": "Показване в моя календар.",
 	"library.import.adoptOne": "Поемане на 1 {word}",
 	"library.import.adoptMany": "Поемане на {n} {words}",
+	"library.import.searchFolders": "Търсене в папките",
+	"library.import.folderCountOne": "1 папка",
+	"library.import.folderCountMany": "{n} папки",
+	"library.import.titleAndFolder": "Заглавие и папка",
+	"library.import.matchFor": "Съвпадение за {folder}",
+	"library.import.seeLarge": "Покажи плаката на {name} в голям размер",
+	"library.import.noneMatch": "Няма съвпадащи папки.",
 	"library.report.keep.one": "{n} заглавие се поддържа актуално",
 	"library.report.keep.many": "{n} заглавия се поддържат актуални",
 	"library.report.keep.partOne": "{ok} от {total} заглавие се поддържа актуално",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Първото четене става до 30 минути.",
 	"library.stats.watchedHelp": "От историята на възпроизвеждане на Plex, Jellyfin и Emby. Plex брои само възпроизвеждания, така че заглавия, отбелязани ръчно като гледани, не се показват.",
 	"library.stats.lastRead": "Последно прочетено {ago}.",
-	"library.stats.noMatch": "Последно прочетено {ago}. Нищо от гледаното още не съвпада с вашата Библиотека.",
+	"library.stats.noMatch": "Историята на гледане е проверена {ago}. Нищо от гледаното още не съвпада с вашата Библиотека.",
 	"library.stats.notLinked": "Не е свързано",
 	"library.stats.lastWatched": "Последно гледано {ago}",
 	"library.stats.unit.movie.one": "{n} филм",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} епизод",
 	"library.stats.unit.episode.other": "{n} епизода",
 	"library.stats.unit.play.one": "{n} възпроизвеждане",
-	"library.stats.unit.play.other": "{n} възпроизвеждания"
+	"library.stats.unit.play.other": "{n} възпроизвеждания",
+	"library.byHand.askReplaceOne": "1 файл заменя файл, който вече е в Библиотеката. Старият файл отива в „Наскоро изтрити“. Импорт?",
+	"library.byHand.askReplaceMany": "{n} файла заменят файлове, които вече са в Библиотеката. Старите файлове отиват в „Наскоро изтрити“. Импорт?"
 }

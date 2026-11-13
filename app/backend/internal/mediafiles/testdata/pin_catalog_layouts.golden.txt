@@ -121,6 +121,7 @@ KeepUpToDate bool `db:"keep_up_to_date"`
 IsMain bool `db:"is_main"`
 Edition string `db:"edition"`
 AudioLanguages []string `db:"audio_languages,json"`
+FourK bool `db:"four_k"`
 == Slot
 Meta Meta ``
 ItemID int64 `db:"item_id"`
@@ -196,6 +197,8 @@ CheckedAt *time.Time `db:"checked_at"`
 Role string `db:"role"`
 ParentFileID *int64 `db:"parent_file_id"`
 State string `db:"state"`
+LeftoverReason *string `db:"leftover_reason"`
+LeftoverDismissed bool `db:"leftover_dismissed"`
 == PickRulesBody
 Steps []Step `json:"steps"`
 GoodEnoughAt string `json:"good_enough_at"`
@@ -210,6 +213,7 @@ Language LanguageRule `json:"language"`
 Order string `json:"order"`
 UpgradeMinPoints int `json:"upgrade_min_points"`
 ProperPolicy ProperPolicy `json:"proper_policy"`
+Tags []string `json:"tags,omitempty"`
 Synced *SyncedProfile `json:"synced,omitempty"`
 == OwnTrait
 Meta Meta ``

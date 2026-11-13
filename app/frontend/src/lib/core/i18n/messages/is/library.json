@@ -166,6 +166,13 @@
 	"library.import.followHint": "Sýna þau á dagatalinu mínu.",
 	"library.import.adoptOne": "Taka upp 1 {word}",
 	"library.import.adoptMany": "Taka upp {n} {words}",
+	"library.import.searchFolders": "Leita í möppum",
+	"library.import.folderCountOne": "1 mappa",
+	"library.import.folderCountMany": "Möppur: {n}",
+	"library.import.titleAndFolder": "Titill og mappa",
+	"library.import.matchFor": "Samsvörun fyrir {folder}",
+	"library.import.seeLarge": "Sjá veggspjald {name} stórt",
+	"library.import.noneMatch": "Engar möppur passa.",
 	"library.report.keep.one": "{n} titli haldið uppfærðum",
 	"library.report.keep.many": "{n} titlum haldið uppfærðum",
 	"library.report.keep.partOne": "{ok} af {total} titli haldið uppfærðum",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Fyrsti lestur fer fram innan 30 mínútna.",
 	"library.stats.watchedHelp": "Úr spilunarsögu Plex, Jellyfin og Emby. Plex telur aðeins spilanir, svo titlar sem merktir eru handvirkt sem séðir birtast ekki.",
 	"library.stats.lastRead": "Síðast lesið {ago}.",
-	"library.stats.noMatch": "Síðast lesið {ago}. Ekkert af því sem horft var á passar enn við Safnið þitt.",
+	"library.stats.noMatch": "Áhorfsferill athugaður {ago}. Ekkert af því sem horft var á passar enn við Safnið þitt.",
 	"library.stats.notLinked": "Ekki tengt",
 	"library.stats.lastWatched": "Síðast horft {ago}",
 	"library.stats.unit.movie.one": "{n} kvikmynd",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} þáttur",
 	"library.stats.unit.episode.other": "{n} þættir",
 	"library.stats.unit.play.one": "{n} spilun",
-	"library.stats.unit.play.other": "{n} spilanir"
+	"library.stats.unit.play.other": "{n} spilanir",
+	"library.byHand.askReplaceOne": "1 skrá kemur í stað skrár sem er þegar í Safninu. Gamla skráin fer í „Nýlega eytt“. Flytja inn?",
+	"library.byHand.askReplaceMany": "{n} skrár koma í stað skráa sem eru þegar í Safninu. Gömlu skrárnar fara í „Nýlega eytt“. Flytja inn?"
 }

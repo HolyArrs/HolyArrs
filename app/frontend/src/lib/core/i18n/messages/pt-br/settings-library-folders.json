@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Novo caminho",
 	"settings.libraryFolders.changePathHint": "Mova os arquivos para lá primeiro. O HolyArrs confere cada arquivo e não move nada.",
 	"settings.libraryFolders.checkingFiles": "Conferindo arquivos…",
-	"settings.libraryFolders.pathChanged": "Caminho alterado"
+	"settings.libraryFolders.pathChanged": "Caminho alterado",
+	"settings.libraryFolders.sideFiles": "Arquivos de legenda",
+	"settings.libraryFolders.sideFilesDesc": "Legendas que vêm com um download podem ir para a biblioteca ao lado do vídeo.",
+	"settings.libraryFolders.sideOn": "Trazer também as legendas",
+	"settings.libraryFolders.sideOnHint": "Um arquivo que já está na biblioteca nunca é substituído.",
+	"settings.libraryFolders.sideTypes": "Tipos de arquivo",
+	"settings.libraryFolders.sideTypesHint": "Separe os tipos com vírgulas, como srt, ass.",
+	"settings.libraryFolders.notMounted": "O HolyArrs não vê {path}. Ele só vê pastas montadas no contêiner dele. Adicione um volume como {path}:{inside} e depois use {inside} aqui."
 }

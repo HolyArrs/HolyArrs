@@ -72,5 +72,10 @@
 	"settings.sources.off": "来源已关闭",
 	"settings.sources.offText": "HolyArrs 不会搜索或抓取。你在下载器里添加的下载仍会导入。",
 	"settings.sources.openParts": "打开“部分”",
-	"settings.sources.offState": "关闭"
+	"settings.sources.offState": "关闭",
+	"settings.sources.site": "内置站点",
+	"settings.sources.siteLabel": "站点",
+	"settings.sources.addressSite": "站点自身的地址。仅在站点迁移后才更改。",
+	"settings.sources.siteKeyLabel": "Cookie 或 RSS 密钥",
+	"settings.sources.siteKeyHint": "来自你自己的账号：浏览器 Cookie 中的 uid 和 pass，或 RSS 链接中的 u 和 tp。加密保存。"
 }

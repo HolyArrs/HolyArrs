@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Aplicațiile AI sunt oprite. Permiterea le pornește.",
 	"arrapi.ai.offOther": "Aplicațiile AI sunt oprite. Roagă proprietarul să le pornească, apoi încearcă din nou.",
 	"arrapi.ai.allow": "Permite",
-	"arrapi.ai.cancel": "Anulează"
+	"arrapi.ai.cancel": "Anulează",
+	"arrapi.seerr.sentTitle": "Trimis de alte aplicații",
+	"arrapi.seerr.sentHint": "Formate și profiluri trimise de aplicații precum Profilarr. Aici doar pentru citire.",
+	"arrapi.seerr.sentFormat": "Format",
+	"arrapi.seerr.sentProfile": "Profil",
+	"arrapi.seerr.sentUpdated": "actualizat {ago}"
 }

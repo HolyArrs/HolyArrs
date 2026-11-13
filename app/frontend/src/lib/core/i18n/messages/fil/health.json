@@ -260,9 +260,16 @@
 	"health.word.notSent": "Hindi pa naipapadala",
 	"health.word.notSynced": "Hindi pa na-sync",
 	"health.word.working": "Gumagana",
-	"health.check.clearWaiting": "Mga download na naghihintay ma-clear",
+	"health.check.clearWaiting": "Mga na-import na download na nasa Downloader pa",
 	"health.check.saveFolder": "Save folder ng",
 	"health.check.saveFolderWhy": "Walang save folder ang {app}, kaya hindi ma-import ng HolyArrs ang mga tapos na download nito. Magdagdag ng pares ng path sa Mga Setting › Mga Downloader.",
-	"health.kind.clearWaiting": "Mga download na naghihintay ma-clear",
-	"health.kind.saveFolder": "Save folder ng Downloader"
+	"health.kind.clearWaiting": "Mga na-import na download na nasa Downloader pa",
+	"health.kind.saveFolder": "Save folder ng Downloader",
+	"health.check.usenetDl": "Usenet Downloader",
+	"health.check.torrentDl": "Torrent Downloader",
+	"health.check.noUsenetDl": "Nakakahanap ang mga Source mo ng Usenet download, pero walang naka-set up na Usenet Downloader, kaya walang maipapadala. Magdagdag sa Mga Setting › Mga Downloader.",
+	"health.check.noTorrentDl": "Nakakahanap ang mga Source mo ng torrent download, pero walang naka-set up na torrent Downloader, kaya walang maipapadala. Magdagdag sa Mga Setting › Mga Downloader.",
+	"health.check.sameDownloader": "Dalawang beses idinagdag:",
+	"health.check.sameDownloaderWhy": "Naaabot ng {app} ang parehong download app ng isa pang Downloader, kaya puwedeng dalawang beses lumabas ang mga download nito. Alisin ang isa sa Settings › Downloaders.",
+	"health.kind.sameDownloader": "Downloader na dalawang beses idinagdag"
 }

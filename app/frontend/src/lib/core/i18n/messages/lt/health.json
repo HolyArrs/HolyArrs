@@ -260,9 +260,16 @@
 	"health.word.notSent": "Dar neišsiųsta",
 	"health.word.notSynced": "Dar nesinchronizuota",
 	"health.word.working": "Veikia",
-	"health.check.clearWaiting": "Atsisiuntimai, laukiantys išvalymo",
+	"health.check.clearWaiting": "Importuoti atsisiuntimai vis dar Atsisiuntėjuje",
 	"health.check.saveFolder": "Išsaugojimo aplankas:",
 	"health.check.saveFolderWhy": "{app} neturi išsaugojimo aplanko, todėl HolyArrs negali importuoti baigtų atsisiuntimų. Pridėkite kelių porą skiltyje Nustatymai › Atsisiuntėjai.",
-	"health.kind.clearWaiting": "Atsisiuntimai, laukiantys išvalymo",
-	"health.kind.saveFolder": "Atsisiuntėjo išsaugojimo aplankas"
+	"health.kind.clearWaiting": "Importuoti atsisiuntimai vis dar Atsisiuntėjuje",
+	"health.kind.saveFolder": "Atsisiuntėjo išsaugojimo aplankas",
+	"health.check.usenetDl": "Usenet atsisiuntėjas",
+	"health.check.torrentDl": "Torrentų atsisiuntėjas",
+	"health.check.noUsenetDl": "Jūsų šaltiniai randa Usenet atsisiuntimų, bet nenustatytas joks Usenet atsisiuntėjas, todėl nieko negalima išsiųsti. Pridėkite jį skiltyje Nustatymai › Atsisiuntėjai.",
+	"health.check.noTorrentDl": "Jūsų šaltiniai randa torrentų, bet nenustatytas joks torrentų atsisiuntėjas, todėl nieko negalima išsiųsti. Pridėkite jį skiltyje Nustatymai › Atsisiuntėjai.",
+	"health.check.sameDownloader": "Pridėta du kartus:",
+	"health.check.sameDownloaderWhy": "{app} pasiekia tą pačią atsisiuntimo programą kaip kitas atsisiuntėjas, todėl jo atsisiuntimai gali būti rodomi du kartus. Pašalinkite vieną: Nustatymai › Atsisiuntėjai.",
+	"health.kind.sameDownloader": "Atsisiuntėjas pridėtas du kartus"
 }

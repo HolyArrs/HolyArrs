@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "Оценено признаков: {n}",
 	"settings.pickRuleEdit.trashResult": "Оценено признаков: {n} · новых {added} · обновлено {updated}",
 	"settings.pickRuleEdit.trashLeftOut": "Пропущено: {n}",
-	"settings.pickRuleEdit.trashTests": "проверяет: {kinds}"
+	"settings.pickRuleEdit.trashTests": "проверяет: {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Источники",
+	"settings.pickRuleEdit.sourcesDesc": "Искать только в Источниках, у которых есть один из этих тегов. Оставьте пустым, чтобы искать во всех Источниках.",
+	"settings.pickRuleEdit.tags": "Теги"
 }

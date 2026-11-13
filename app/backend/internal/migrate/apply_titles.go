@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -81,28 +83,68 @@ func (r *run) title(it Item) (string, string) {
 	if !filepath.IsLocal(t.Folder) || strings.ContainsAny(t.Folder, `/\`) {
 		return ResFailed, "its folder name is not one folder"
 	}
+	// A folder that is on this server but left out of this import (the
+	// Library folders group unchecked) keeps its titles behind: they are
+	// not added somewhere else, so nothing is downloaded twice. The dry run
+	// says the same.
+	lfID := r.id("SELECT id FROM library_folders WHERE path = ?", filepath.Clean(lib))
+	if lfID == 0 && isDir(lib) {
+		if r.dry && !r.foldersOff && slices.Contains(r.coming[t.Kind], filepath.Clean(lib)) {
+			lfID = -1 // the folder itself comes over in this same run
+		} else {
+			r.attn, r.attnFolder = AttnUnchecked, filepath.ToSlash(filepath.Clean(lib))
+			return ResSkipped, "left out: " + r.attnFolder + " is set to \"Don't bring them\"; pick a folder for it and import again"
+		}
+	}
 	// A title whose own folder is missing (wanted, never downloaded) still
 	// comes over, with no files, as Radarr and Sonarr keep it; only a
 	// missing Library folder means the paths are wrong.
 	noFiles := false
+	// fallback is the Library folder here a title goes to when its old one
+	// is not on this server at all: it comes over as wanted, of the same
+	// kind, and the report says to fix its folder.
+	fallback := ""
 	if fi, err := os.Lstat(dir); err != nil || !fi.IsDir() {
-		if !errors.Is(err, fs.ErrNotExist) {
+		if err != nil && !errors.Is(err, fs.ErrNotExist) && isDir(lib) {
 			return ResNotFound, "no folder at " + filepath.ToSlash(dir) + " on this server; add a path rule"
 		}
-		if !isDir(lib) {
-			return ResNotFound, "no folder at " + filepath.ToSlash(lib) + " on this server; add a path rule"
+		if err == nil && isDir(lib) {
+			return ResNotFound, "no folder at " + filepath.ToSlash(dir) + " on this server; add a path rule"
 		}
 		noFiles = true
 	}
+	if lfID == 0 && r.left[filepath.Clean(lib)] {
+		// Set to "Don't bring them" although this server cannot see it.
+		r.attn, r.attnFolder = AttnUnchecked, filepath.ToSlash(filepath.Clean(lib))
+		return ResSkipped, "left out: " + r.attnFolder + " is set to \"Don't bring them\"; pick a folder for it and import again"
+	}
+	if lfID == 0 {
+		var here string
+		_ = r.m.Store.Read().QueryRowContext(r.ctx, "SELECT id, path FROM library_folders WHERE kind = ? ORDER BY id LIMIT 1", t.Kind).Scan(&lfID, &here)
+		if lfID == 0 && r.dry && len(r.coming[t.Kind]) > 0 {
+			lfID, here = -1, r.coming[t.Kind][0] // added earlier in this same run
+		}
+		if lfID == 0 {
+			return ResNotFound, "its Library folder " + t.Library + " is not on this server, and there is no " + t.Kind + " Library folder here to add it to; add one and import again"
+		}
+		noFiles = true
+		r.attn, r.attnFolder = AttnUnreachable, filepath.ToSlash(filepath.Clean(lib))
+		fallback = filepath.ToSlash(here)
+	}
+	// Brought into a folder here that holds none of the titles of an old
+	// folder this server cannot see: wanted, and it needs attention too.
+	if old := r.unseen[filepath.Clean(lib)]; fallback == "" && noFiles && old != "" {
+		r.attn, r.attnFolder = AttnUnreachable, old
+		fallback, dir = filepath.ToSlash(lib), filepath.FromSlash(path.Join(old, t.Folder))
+	}
 	if r.dry {
+		if fallback != "" {
+			return ResCreate, "will be added to " + fallback + " as wanted with no files; needs attention: its old folder " + filepath.ToSlash(dir) + " is not on this server; fix its folder or add a path rule"
+		}
 		if noFiles {
 			return ResCreate, "will be added with no files yet; there is no folder at " + filepath.ToSlash(dir)
 		}
 		return ResAdopt, "uses the folder " + filepath.ToSlash(dir) + " where it is; no file is moved or renamed"
-	}
-	lfID := r.id("SELECT id FROM library_folders WHERE path = ?", filepath.Clean(lib))
-	if lfID == 0 {
-		return ResNotFound, "its Library folder " + t.Library + " is not here (not imported, or left out)"
 	}
 	var res []library.AdoptResult
 	var err error
@@ -176,6 +218,9 @@ func (r *run) title(it Item) (string, string) {
 	d := "uses the folder " + filepath.ToSlash(dir) + " where it is"
 	if noFiles {
 		d = "added with no files yet; there is no folder at " + filepath.ToSlash(dir)
+	}
+	if fallback != "" {
+		d = "added to " + fallback + " as wanted with no files; needs attention: its old folder " + filepath.ToSlash(dir) + " is not on this server; fix its folder or add a path rule"
 	}
 	if res[0].File != "" {
 		d += ", with " + res[0].File

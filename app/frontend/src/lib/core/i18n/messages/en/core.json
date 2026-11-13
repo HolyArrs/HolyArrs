@@ -145,5 +145,7 @@
 	"core.settings.danger.about": "Restart or shut down",
 	"core.settings.account.label": "My account",
 	"core.settings.account.about": "Password, two-factor, devices",
-	"core.api.sourceOff": "Some rows are off on this install."
+	"core.api.sourceOff": "Some rows are off on this install.",
+	"core.plain.noDownloader": "Your Sources find downloads that no Downloader you set up can take, so none can be sent.",
+	"core.plain.sameDownloader": "Two Downloaders reach the same download app, so downloads can show twice."
 }

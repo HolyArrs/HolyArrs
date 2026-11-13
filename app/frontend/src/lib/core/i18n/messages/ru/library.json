@@ -166,6 +166,13 @@
 	"library.import.followHint": "Показывать их в моём календаре.",
 	"library.import.adoptOne": "Принять 1 {word}",
 	"library.import.adoptMany": "Принять {words}: {n}",
+	"library.import.searchFolders": "Поиск по папкам",
+	"library.import.folderCountOne": "1 папка",
+	"library.import.folderCountMany": "Папок: {n}",
+	"library.import.titleAndFolder": "Название и папка",
+	"library.import.matchFor": "Совпадение для {folder}",
+	"library.import.seeLarge": "Открыть постер «{name}» крупно",
+	"library.import.noneMatch": "Подходящих папок нет.",
 	"library.report.keep.one": "{n} тайтл держится актуальным",
 	"library.report.keep.many": "Тайтлов держится актуальными: {n}",
 	"library.report.keep.partOne": "{ok} из {total}: тайтл держится актуальным",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Первое чтение — в течение 30 минут.",
 	"library.stats.watchedHelp": "По истории воспроизведения Plex, Jellyfin и Emby. Plex считает только просмотры, поэтому отмеченные вручную тайтлы не видны.",
 	"library.stats.lastRead": "Прочитано {ago}.",
-	"library.stats.noMatch": "Прочитано {ago}. Ничего из просмотренного пока не совпадает с вашей медиатекой.",
+	"library.stats.noMatch": "История просмотров проверена {ago}. Ничего из просмотренного пока не совпадает с вашей медиатекой.",
 	"library.stats.notLinked": "Не связан",
 	"library.stats.lastWatched": "Смотрел {ago}",
 	"library.stats.unit.movie.one": "Фильмов: {n}",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "Серий: {n}",
 	"library.stats.unit.episode.other": "Серий: {n}",
 	"library.stats.unit.play.one": "Просмотров: {n}",
-	"library.stats.unit.play.other": "Просмотров: {n}"
+	"library.stats.unit.play.other": "Просмотров: {n}",
+	"library.byHand.askReplaceOne": "1 файл заменит файл, который уже есть в Библиотеке. Старый файл попадёт в «Недавно удалённые». Импортировать?",
+	"library.byHand.askReplaceMany": "Файлы ({n}) заменят файлы, которые уже есть в Библиотеке. Старые файлы попадут в «Недавно удалённые». Импортировать?"
 }

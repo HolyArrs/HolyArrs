@@ -98,6 +98,12 @@ img {
 .mono {
 	font-family: var(--font-mono);
 }
+/* Paths, addresses and keys read left to right in every language, so
+   slashes and dots stay in place on right-to-left pages. */
+input.mono,
+textarea.mono {
+	direction: ltr;
+}
 /* Browsers default code text to a monospace face; HolyArrs uses the app font everywhere. */
 code, kbd, pre, samp {
 	font-family: var(--font-mono);

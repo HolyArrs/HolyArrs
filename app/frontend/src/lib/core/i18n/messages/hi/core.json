@@ -145,5 +145,7 @@
 	"core.settings.danger.about": "रीस्टार्ट या बंद करें",
 	"core.settings.account.label": "मेरा अकाउंट",
 	"core.settings.account.about": "पासवर्ड, टू-फ़ैक्टर, डिवाइस",
-	"core.api.sourceOff": "इस इंस्टॉल पर कुछ पंक्तियाँ बंद हैं।"
+	"core.api.sourceOff": "इस इंस्टॉल पर कुछ पंक्तियाँ बंद हैं।",
+	"core.plain.noDownloader": "आपके सोर्स ऐसे डाउनलोड ढूँढते हैं जिन्हें आपका कोई डाउनलोडर नहीं ले सकता, इसलिए कोई भी भेजा नहीं जा सकता।",
+	"core.plain.sameDownloader": "दो डाउनलोडर एक ही डाउनलोड ऐप तक पहुँचते हैं, इसलिए डाउनलोड दो बार दिख सकते हैं।"
 }

@@ -216,7 +216,9 @@ export function usedWords(use: PickRulesUse | number | undefined): string {
 	return parts.length ? say('downloads.pr.usedBy', { list: joinWords(parts) }) : say('downloads.pr.notUsed');
 }
 
-const inPoints = (n: number) => Number.isInteger(n) && n >= -10000 && n <= 10000;
+/** The server's bound for any points value, both ways: a 32-bit number, as the old apps keep scores. */
+export const maxPoints = 2147483647;
+const inPoints = (n: number) => Number.isInteger(n) && n >= -maxPoints && n <= maxPoints;
 const pointsText = () => say('downloads.pr.err.points');
 const waitText = () => say('downloads.pr.err.wait');
 
@@ -296,6 +298,7 @@ export function tidyBody(body: PickRulesBody): PickRulesBody {
 	else b.good_enough_points = whole(gep);
 	b.protocol.wait_minutes_torrent = whole(b.protocol.wait_minutes_torrent);
 	b.protocol.wait_minutes_usenet = whole(b.protocol.wait_minutes_usenet);
+	if (!b.tags?.length) delete b.tags;
 	const days = whole(b.proper_policy.max_age_days);
 	if (days) b.proper_policy.max_age_days = days;
 	else delete b.proper_policy.max_age_days;

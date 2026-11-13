@@ -8,8 +8,12 @@
 		ask?: AskBrief;
 		/** The open 4K ask, if someone asked for a 4K copy. */
 		ask4k?: AskBrief;
-		/** Only a 4K copy can be asked (the movie is in the Library, or I asked for the regular one). */
+		/** Opened from the 4K button: start on the 4K line. */
 		fourKOnly?: boolean;
+		/** The movie is in the Library (its main copy is there). */
+		inLibrary?: boolean;
+		/** The movie has its 4K copy. */
+		has4k?: boolean;
 	}
 </script>
 
@@ -21,6 +25,10 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { api, message, ApiError } from '../core/api.ts';
 	import type { Ask } from '../core/types.ts';
+	import { askQualities } from './four-k-ready.ts';
+	import QualityPills from './QualityPills.svelte';
+	import { FOUR_K, STANDARD, memberRow } from './quality-row.ts';
+	import type { QualityChoice } from './types.ts';
 
 	let {
 		onasked,
@@ -34,18 +42,42 @@
 	let picked = $state<AskMovie | null>(null);
 	// Follow puts it on my calendar (ticked by default).
 	let follow = $state(true);
-	// Ask for a 4K copy instead; it is its own ask, approved on its own.
-	let fourK = $state(false);
+	// The Quality row: the lines of what people can ask for that I may use (one line or none hides it).
+	let choices = $state<QualityChoice[]>([]);
+	let quality = $state('');
+	// Each opening reads the lines again; an answer for an earlier opening is dropped.
+	let opened = 0;
 	let busy = $state(false);
 	let error = $state('');
+
+	const briefs = $derived<Record<string, AskBrief | undefined>>({ [STANDARD]: picked?.ask, [FOUR_K]: picked?.ask4k });
+	const row = $derived(
+		memberRow(choices, {
+			inLibrary: picked?.inLibrary,
+			has4k: picked?.has4k,
+			mine: Object.keys(briefs).filter((k) => briefs[k]?.mine),
+			open: Object.keys(briefs).filter((k) => briefs[k] && !briefs[k]?.mine),
+			prefer: picked?.fourKOnly ? FOUR_K : undefined
+		})
+	);
+	// Someone else asked for the picked line already: asking joins their ask.
+	const theirs = $derived(quality ? briefs[quality] : undefined);
 
 	/** Shows the dialog for one movie. */
 	export function open(m: AskMovie) {
 		follow = true;
-		fourK = !!m.fourKOnly;
+		choices = [];
+		// Until the lines arrive, the 4K button still asks for 4K.
+		quality = m.fourKOnly ? FOUR_K : '';
 		picked = m;
 		error = '';
 		sheetOpen = true;
+		const asked = ++opened;
+		void askQualities().then((q) => {
+			if (asked !== opened) return;
+			choices = q.movie;
+			quality = row.selected || quality;
+		});
 	}
 
 	async function ask(e: SubmitEvent) {
@@ -54,7 +86,7 @@
 		busy = true;
 		error = '';
 		try {
-			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', { id: `tmdb:${picked.tmdb}`, follow, ...(fourK ? { four_k: true } : {}) });
+			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', { id: `tmdb:${picked.tmdb}`, follow, ...(quality ? { quality } : {}) });
 			sheetOpen = false;
 			onasked(picked, r);
 		} catch (err) {
@@ -69,31 +101,18 @@
 <Sheet bind:open={sheetOpen} size="sm" title={picked ? t('requests.ask.title', { name: `${picked.name}${picked.year ? ` (${picked.year})` : ''}` }) : t('requests.askMovie.titleBare')}>
 	{#if picked}
 		<form id="ask-movie-title" class="sheet-form" onsubmit={ask}>
-			<p class="small muted">
-				{fourK && picked.ask4k
-					? t('requests.askMovie.already4k', { state: serverWords(picked.ask4k.state_label) })
-					: fourK
-					? t('requests.askMovie.own4k')
-					: picked.ask
-					? t('requests.askMovie.already', { state: serverWords(picked.ask.state_label) })
-					: t('requests.askMovie.hear')}
-			</p>
+			<p class="small muted">{theirs ? t('requests.askMovie.already', { state: serverWords(theirs.state_label) }) : t('requests.askMovie.hear')}</p>
+			{#if row.shown}<QualityPills pills={row.pills} bind:selected={quality} stacked />{/if}
 			<label class="checkline" data-testid="follow-box">
 				<input type="checkbox" bind:checked={follow} />
 				<span><b>{t('requests.add.follow')}</b><br /><span class="hint">{t('requests.add.followHint')}</span></span>
 			</label>
-			{#if !picked.fourKOnly}
-				<label class="checkline" data-testid="four-k-box">
-					<input type="checkbox" bind:checked={fourK} />
-					<span><b>{t('requests.askMovie.fourK')}</b><br /><span class="hint">{t('requests.askMovie.fourKHint')}</span></span>
-				</label>
-			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		</form>
 	{/if}
 	{#snippet footer()}
 		<Button variant="plain" onclick={() => (sheetOpen = false)}>{t('requests.add.cancel')}</Button>
-		<Button variant="primary" type="submit" form="ask-movie-title" {busy}>{picked ? t(fourK ? 'requests.askMovie.submit4k' : 'requests.ask.title', { name: picked.name }) : t('requests.ask.bare')}</Button>
+		<Button variant="primary" type="submit" form="ask-movie-title" {busy} disabled={row.shown && !quality}>{picked ? t('requests.ask.title', { name: picked.name }) : t('requests.ask.bare')}</Button>
 	{/snippet}
 </Sheet>
 

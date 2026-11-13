@@ -28,7 +28,8 @@ import (
 var (
 	ErrName     = errors.New("give the Source a name of 1 to 80 characters")
 	ErrNameUsed = errors.New("another Source has that name")
-	ErrFormat   = errors.New("format must be torznab, newznab or rss")
+	ErrFormat   = errors.New("format must be torznab, newznab, rss or site")
+	ErrSite     = errors.New("site must be one of the built-in sites: knaben, torrentscsv, subsplease or iptorrents")
 	ErrProtocol = errors.New("protocol must be torrent or usenet")
 	ErrURL      = errors.New("the address must start with http:// or https:// and name a host")
 	// ErrQuery matches ErrURL under errors.Is, so callers that check ErrURL treat it the same.
@@ -56,8 +57,11 @@ var DefaultCategories = map[string][]int{"movie": {2000}, "tv": {5000}, "music":
 // APIKey and ProxyPassword change only when sent, and empty keeps the stored value.
 // Nil fields keep the stored value, or the default for a new Source.
 type Input struct {
-	Name            string               `json:"name"`
-	Format          string               `json:"format"`
+	Name   string `json:"name"`
+	Format string `json:"format"`
+	// Site names the built-in site a site-format Source reads (knaben,
+	// torrentscsv, subsplease, iptorrents). It is set when the Source is added.
+	Site            string               `json:"site,omitempty"`
 	Protocol        string               `json:"protocol"`
 	URL             string               `json:"url"`
 	APIKey          string               `json:"api_key"`
@@ -256,7 +260,7 @@ func SetPaused(ctx context.Context, s *database.Store, id int64, paused bool, by
 
 // ConfigFor builds the Client settings for a Source and opens its key, passkey and proxy password.
 func ConfigFor(ctx context.Context, src domain.Source, sec SecretReader) (Config, error) {
-	cfg := Config{URL: src.URL, AllowLocal: src.AllowLocal, Protocol: src.Protocol, Format: src.Format,
+	cfg := Config{Site: src.Extra[extraSiteKind], URL: src.URL, AllowLocal: src.AllowLocal, Protocol: src.Protocol, Format: src.Format,
 		GapMS: src.Limits.GapMS, PerWindow: src.Limits.SearchesPerWindow, ProxyAllowLocal: src.ProxyAllowLocal,
 		Window: time.Duration(src.Limits.WindowSeconds) * time.Second, Timeout: time.Duration(src.Limits.TimeoutMS) * time.Millisecond}
 	open := func(ref *int64) (string, error) {
@@ -410,10 +414,33 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 	}
 	src.Name = name
 	if isNew || in.Format != "" {
-		if !slices.Contains([]string{"torznab", "newznab", "rss"}, in.Format) {
+		if !slices.Contains([]string{"torznab", "newznab", "rss", "site"}, in.Format) {
 			return "", "", ErrFormat
 		}
 		src.Format = in.Format
+	}
+	var site Site
+	if src.Format == "site" {
+		id := in.Site
+		if id == "" {
+			id = src.Extra[extraSiteKind]
+		}
+		var ok bool
+		if site, ok = SiteByID(id); !ok {
+			return "", "", ErrSite
+		}
+		if in.Protocol != "" && in.Protocol != "torrent" {
+			return "", "", ErrProtocol
+		}
+		if isNew && strings.TrimSpace(in.URL) == "" {
+			in.URL = site.URL
+		}
+		if isNew && in.Limits == nil {
+			in.Limits = &domain.SourceLimits{GapMS: site.GapMS, SearchesPerWindow: site.PerHour, WindowSeconds: 3600, TimeoutMS: site.TimeoutMS}
+		}
+		if isNew && in.Kinds == nil {
+			in.Kinds = site.Kinds
+		}
 	}
 	proto := in.Protocol
 	if proto == "" && isNew {
@@ -453,6 +480,10 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 		src.UseFor = *in.UseFor
 	} else if isNew {
 		src.UseFor = domain.SourceUse{Feed: true, AutoSearch: src.Format != "rss", HandSearch: src.Format != "rss"}
+		if site.ID == "torrentscsv" {
+			// TorrentsCSV only searches; it has no newest list to watch.
+			src.UseFor.Feed = false
+		}
 	}
 	if src.Format == "rss" && (src.UseFor.AutoSearch || src.UseFor.HandSearch) {
 		return "", "", ErrUse
@@ -523,6 +554,12 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 	if isNew {
 		src.State = "enabled"
 		src.Extra = map[string]string{}
+	}
+	if site.ID != "" {
+		if src.Extra == nil {
+			src.Extra = map[string]string{}
+		}
+		src.Extra[extraSiteKind] = site.ID
 	}
 	return key, proxyPass, nil
 }

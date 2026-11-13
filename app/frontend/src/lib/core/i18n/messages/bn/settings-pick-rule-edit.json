@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n}টি বৈশিষ্ট্যে স্কোর দেওয়া হয়েছে",
 	"settings.pickRuleEdit.trashResult": "{n}টি বৈশিষ্ট্যে স্কোর · {added}টি নতুন · {updated}টি আপডেট",
 	"settings.pickRuleEdit.trashLeftOut": "{n}টি বাদ পড়েছে",
-	"settings.pickRuleEdit.trashTests": "পরীক্ষা করে {kinds}"
+	"settings.pickRuleEdit.trashTests": "পরীক্ষা করে {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "সোর্স",
+	"settings.pickRuleEdit.sourcesDesc": "শুধু সেই সোর্সগুলোতে খুঁজুন যেগুলোর এই ট্যাগগুলোর একটি আছে। সব সোর্সে খুঁজতে ফাঁকা রাখুন।",
+	"settings.pickRuleEdit.tags": "ট্যাগ"
 }

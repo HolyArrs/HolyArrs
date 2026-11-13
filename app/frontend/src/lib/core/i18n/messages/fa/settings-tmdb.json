@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "ذخیره نشد",
 	"settings.tmdb.locked": "توسط تنظیمات Docker شما تعیین شده",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE برابر «{value}» است که full، own یا off نیست، پس جست‌وجوها خاموش هستند.",
-	"settings.tmdb.ownNote": "«کلیدهای خودتان» از هر منبع خودش می‌پرسد. نمودارهای موسیقی، ردیف‌های موسیقی تازه، ۱۰ برتر پخش آنلاین، حقایق ویکی‌پدیا و نقشه‌های انیمه فقط از سرور HolyArrs می‌آیند، پس خاموش هستند.",
+	"settings.tmdb.ownNote": "با کلیدهای خودتان، HolyArrs مستقیماً از هر منبع می‌پرسد. نمودارهای موسیقی، ردیف‌های موسیقی تازه، ۱۰ برتر پخش آنلاین، حقایق ویکی‌پدیا و نقشه‌های انیمه فقط از سرور HolyArrs می‌آیند، پس خاموش هستند.",
 	"settings.tmdb.keysTitle": "کلیدهای شما",
 	"settings.tmdb.keysDesc": "فقط توکن خواندن TMDB لازم است",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

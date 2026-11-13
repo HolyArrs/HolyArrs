@@ -32,6 +32,16 @@ func TestSwitchTurnsOneFeatureOn(t *testing.T) {
 	}
 }
 
+// Subtitle sites and subtitle searching ship on in 1.1.1, so they are no
+// longer held back.
+func TestSubtitleSitesAreNotHeld(t *testing.T) {
+	RegisterHeldFeatures()
+	t.Setenv("HOLYARRS_FLAGS", "")
+	if slices.Contains(HeldFeatures(), "subtitle_sites") || slices.Contains(FeaturesOff(), "subtitle_sites") {
+		t.Fatalf("subtitle sites are still held back: %v", HeldFeatures())
+	}
+}
+
 // Every Alert channel is proven end to end, so none is held back: the web
 // app shows them all with no switch set.
 func TestAlertChannelsAreNotHeld(t *testing.T) {

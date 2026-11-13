@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Νέα διαδρομή",
 	"settings.libraryFolders.changePathHint": "Μετακινήστε πρώτα εκεί τα αρχεία. Το HolyArrs ελέγχει κάθε αρχείο και δεν μετακινεί τίποτα.",
 	"settings.libraryFolders.checkingFiles": "Έλεγχος αρχείων…",
-	"settings.libraryFolders.pathChanged": "Η διαδρομή άλλαξε"
+	"settings.libraryFolders.pathChanged": "Η διαδρομή άλλαξε",
+	"settings.libraryFolders.sideFiles": "Αρχεία υποτίτλων",
+	"settings.libraryFolders.sideFilesDesc": "Οι υπότιτλοι που έρχονται με μια λήψη μπορούν να μπουν στη βιβλιοθήκη δίπλα στο βίντεό τους.",
+	"settings.libraryFolders.sideOn": "Μεταφορά και των αρχείων υποτίτλων",
+	"settings.libraryFolders.sideOnHint": "Ένα αρχείο που υπάρχει ήδη στη βιβλιοθήκη δεν αντικαθίσταται ποτέ.",
+	"settings.libraryFolders.sideTypes": "Τύποι αρχείων",
+	"settings.libraryFolders.sideTypesHint": "Χωρίστε τους τύπους με κόμματα, π.χ. srt, ass.",
+	"settings.libraryFolders.notMounted": "Το HolyArrs δεν βλέπει το {path}. Βλέπει μόνο φακέλους που έχουν προσαρτηθεί στο κοντέινερ του. Προσθέστε ένα volume όπως {path}:{inside} και μετά χρησιμοποιήστε εδώ το {inside}."
 }

@@ -11,13 +11,18 @@ import (
 
 // builder carries a plan being built.
 type builder struct {
-	p          *Plan
-	rules      []PathRule
-	skip       map[string]bool
-	items      map[string]*Group
-	keys       map[string]bool
-	folders    []FolderPlan      // every folder planned (for title placement)
-	presets    map[string]string // app + profile id -> preset
+	p        *Plan
+	rules    []PathRule
+	leave    map[string]bool // old folders left out, cleaned
+	skip     map[string]bool
+	items    map[string]*Group
+	keys     map[string]bool
+	folders  []FolderPlan      // every folder planned (for title placement)
+	presets  map[string]string // app + profile id -> preset
+	imported map[string]bool   // Pick rules names made from a profile, not ready-made
+	// snapRules are the Pick rules made from the current Snapshot's
+	// profiles; its default wait goes into them.
+	snapRules  []*RulesPlan
 	titles     map[string]string // kind:id -> name (asks take names from here)
 	planned    map[string]bool   // person keys planned
 	personRefs map[string]string // app/source id -> stable person key
@@ -29,6 +34,7 @@ type builder struct {
 	listNames map[string]bool // Outside list names planned (lower case)
 	app       Kind
 	snapID    int64
+	noFormats bool
 	// label names the app's address after its rule names when more than
 	// one copy of that app is imported ("" otherwise).
 	label string
@@ -149,10 +155,16 @@ func (e *RuleError) Error() string { return e.Text }
 func BuildPlan(in []Input, ch Choices) *Plan {
 	p := &Plan{covered: map[string]bool{}, Snapshots: []int64{}, Apps: []string{}, NotMoved: []NotMoved{}, NeedsInput: []string{}, Paths: []string{}}
 	b := &builder{p: p, rules: ch.PathRules, skip: map[string]bool{}, items: map[string]*Group{}, keys: map[string]bool{},
-		presets: map[string]string{}, titles: map[string]string{}, planned: map[string]bool{}, personRefs: map[string]string{}, choices: ch.People,
+		presets: map[string]string{}, imported: map[string]bool{}, noFormats: ch.NoFormats, titles: map[string]string{}, planned: map[string]bool{}, personRefs: map[string]string{}, choices: ch.People,
 		waits: map[string][]waitFrom{}, listNames: map[string]bool{}}
 	for _, s := range ch.Skip {
 		b.skip[s] = true
+	}
+	b.leave = map[string]bool{}
+	for _, f := range ch.LeaveFolders {
+		if op := oldPath(f); op != "" {
+			b.leave[op] = true
+		}
 	}
 	for _, name := range GroupOrder {
 		p.Groups = append(p.Groups, Group{Name: name, Label: GroupLabels[name], Skipped: b.skip[name], Items: []Item{}})

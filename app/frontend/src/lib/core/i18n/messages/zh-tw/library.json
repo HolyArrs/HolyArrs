@@ -166,6 +166,13 @@
 	"library.import.followHint": "顯示在我的日曆上。",
 	"library.import.adoptOne": "接管 1 個{word}",
 	"library.import.adoptMany": "接管 {n} 個{words}",
+	"library.import.searchFolders": "搜尋資料夾",
+	"library.import.folderCountOne": "1 個資料夾",
+	"library.import.folderCountMany": "{n} 個資料夾",
+	"library.import.titleAndFolder": "標題與資料夾",
+	"library.import.matchFor": "{folder} 的符合項目",
+	"library.import.seeLarge": "放大檢視《{name}》的海報",
+	"library.import.noneMatch": "沒有符合的資料夾。",
 	"library.report.keep.one": "{n} 個項目已持續追蹤",
 	"library.report.keep.many": "{n} 個項目已持續追蹤",
 	"library.report.keep.partOne": "{total} 個項目中有 {ok} 個已持續追蹤",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "第一次讀取會在 30 分鐘內進行。",
 	"library.stats.watchedHelp": "來自 Plex、Jellyfin 與 Emby 的播放紀錄。Plex 只計算播放，因此手動標示為已看的片名不會顯示。",
 	"library.stats.lastRead": "上次讀取：{ago}。",
-	"library.stats.noMatch": "上次讀取：{ago}。觀看紀錄中還沒有與你的媒體庫相符的內容。",
+	"library.stats.noMatch": "觀看紀錄上次檢查：{ago}。看過的內容中還沒有與你的媒體庫相符的。",
 	"library.stats.notLinked": "未連結",
 	"library.stats.lastWatched": "上次觀看：{ago}",
 	"library.stats.unit.movie.one": "{n} 部電影",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} 集",
 	"library.stats.unit.episode.other": "{n} 集",
 	"library.stats.unit.play.one": "播放 {n} 次",
-	"library.stats.unit.play.other": "播放 {n} 次"
+	"library.stats.unit.play.other": "播放 {n} 次",
+	"library.byHand.askReplaceOne": "1 個檔案將取代媒體庫中已有的檔案。舊檔案會移到「最近刪除」。要匯入嗎？",
+	"library.byHand.askReplaceMany": "{n} 個檔案將取代媒體庫中已有的檔案。舊檔案會移到「最近刪除」。要匯入嗎？"
 }

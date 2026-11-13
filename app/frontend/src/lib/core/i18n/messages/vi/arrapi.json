@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Ứng dụng AI đang tắt. Cho phép sẽ bật chúng.",
 	"arrapi.ai.offOther": "Ứng dụng AI đang tắt. Hãy nhờ chủ sở hữu bật rồi thử lại.",
 	"arrapi.ai.allow": "Cho phép",
-	"arrapi.ai.cancel": "Hủy"
+	"arrapi.ai.cancel": "Hủy",
+	"arrapi.seerr.sentTitle": "Do ứng dụng khác gửi",
+	"arrapi.seerr.sentHint": "Định dạng và hồ sơ do các ứng dụng như Profilarr gửi. Ở đây chỉ để xem.",
+	"arrapi.seerr.sentFormat": "Định dạng",
+	"arrapi.seerr.sentProfile": "Hồ sơ",
+	"arrapi.seerr.sentUpdated": "cập nhật {ago}"
 }

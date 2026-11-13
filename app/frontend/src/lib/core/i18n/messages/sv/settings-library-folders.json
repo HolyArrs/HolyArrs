@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Ny sökväg",
 	"settings.libraryFolders.changePathHint": "Flytta filerna dit först. HolyArrs kontrollerar varje fil och flyttar ingenting.",
 	"settings.libraryFolders.checkingFiles": "Kontrollerar filer…",
-	"settings.libraryFolders.pathChanged": "Sökvägen ändrad"
+	"settings.libraryFolders.pathChanged": "Sökvägen ändrad",
+	"settings.libraryFolders.sideFiles": "Undertextfiler",
+	"settings.libraryFolders.sideFilesDesc": "Undertexter som följer med en nedladdning kan tas in i biblioteket bredvid sin video.",
+	"settings.libraryFolders.sideOn": "Ta med undertextfiler",
+	"settings.libraryFolders.sideOnHint": "En fil som redan finns i biblioteket ersätts aldrig.",
+	"settings.libraryFolders.sideTypes": "Filtyper",
+	"settings.libraryFolders.sideTypesHint": "Skilj typer åt med kommatecken, till exempel srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs ser inte {path}. Den ser bara mappar som är monterade i dess container. Lägg till en volym som {path}:{inside} och använd sedan {inside} här."
 }

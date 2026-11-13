@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Новый путь",
 	"settings.libraryFolders.changePathHint": "Сначала перенесите туда файлы. HolyArrs проверяет каждый файл и ничего не перемещает.",
 	"settings.libraryFolders.checkingFiles": "Проверка файлов…",
-	"settings.libraryFolders.pathChanged": "Путь изменён"
+	"settings.libraryFolders.pathChanged": "Путь изменён",
+	"settings.libraryFolders.sideFiles": "Файлы субтитров",
+	"settings.libraryFolders.sideFilesDesc": "Субтитры, пришедшие с загрузкой, можно перенести в библиотеку рядом с их видео.",
+	"settings.libraryFolders.sideOn": "Переносить и файлы субтитров",
+	"settings.libraryFolders.sideOnHint": "Файл, который уже есть в библиотеке, никогда не заменяется.",
+	"settings.libraryFolders.sideTypes": "Типы файлов",
+	"settings.libraryFolders.sideTypesHint": "Разделяйте типы запятыми, например srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs не видит {path}. Он видит только папки, подключённые к его контейнеру. Добавьте том, например {path}:{inside}, а затем укажите здесь {inside}."
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanPath, cleanRules, countWord, countWords, extraProblems, folderProblem, moveCounts, moveStateWord, moveTotal, needsGroups, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, sharedTargets, stepGate, summary, tone, type Report } from './move.ts';
+import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanPath, cleanRules, countWord, countWords, extraProblems, folderOutcome, folderProblem, LEAVE, leaveFolders, moveCounts, moveStateWord, moveTotal, needsGroups, noFolderCount, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, sharedTargets, stepGate, summary, tone, unseenFolder, usedByMoves, type Plan, type Report } from './move.ts';
 
 describe('move helpers', () => {
 	it('names apps, with what they bring and their usual port', () => {
@@ -197,5 +197,81 @@ describe('reads per copy of an app', () => {
 		expect(cleanPath('/data//movies')).toBe('/data/movies');
 		expect(cleanPath('/')).toBe('/');
 		expect(cleanPath('')).toBe('');
+	});
+});
+
+describe('folderOutcome', () => {
+	it('splits titles into came over, need attention and left out', () => {
+		const o = folderOutcome([
+			{ group: 'titles', key: 'a', name: 'A', result: 'adopted' },
+			{ group: 'titles', key: 'b', name: 'B', result: 'created', attention: 'unreachable', folder: '/old' },
+			{ group: 'titles', key: 'c', name: 'C', result: 'skipped', attention: 'unchecked', folder: '/data/movies' },
+			{ group: 'titles', key: 'd', name: 'D', result: 'skipped', attention: 'unchecked', folder: '/data/movies' },
+			{ group: 'folders', key: 'f', name: 'F', result: 'created' },
+			{ group: 'folders', key: 'g', name: 'G', result: 'skipped', attention: 'unchecked', folder: '/data/tv-extra' }
+		]);
+		expect(o).toEqual({ came: 1, attention: 1, attentionFolders: ['/old'], unchecked: 2, uncheckedFolders: ['/data/movies', '/data/tv-extra'] });
+	});
+});
+
+describe('noFolderCount', () => {
+	it('counts only what really has no folder here', () => {
+		const lines = [
+			// The old Library folder is not here, but its titles came over as wanted.
+			{ group: 'folders', key: 'folder:/old', name: 'old', result: 'not_found' },
+			{ group: 'titles', key: 'b', name: 'B', result: 'created', attention: 'unreachable' as const, folder: '/old' },
+			{ group: 'pick_rules', key: 'r', name: 'R', result: 'not_found' }
+		];
+		expect(noFolderCount(lines)).toBe(0);
+		expect(noFolderCount([...lines, { group: 'folders', key: 'folder:/gone', name: 'gone', result: 'not_found' }])).toBe(1);
+	});
+});
+
+describe('folders this server cannot see', () => {
+	const plan = {
+		snapshots: [1],
+		apps: ['sonarr'],
+		old_paths: ['/old/tv', '/old/movies', '/tv-here', '/data/media/tv'],
+		groups: [
+			{
+				name: 'folders',
+				label: 'Library folders',
+				skipped: false,
+				items: [
+					{ key: 'folder:/old/tv', name: 'tv', from: 'sonarr', folder: { old_path: '/old/tv', path: '/old/tv', kind: 'show', label: 'tv', unseen: true } },
+					{ key: 'folder:/old/movies', name: 'movies', from: 'radarr', folder: { old_path: '/old/movies', path: '/old/movies', kind: 'movie', label: 'movies', unseen: true } },
+					{ key: 'folder:/tv-here', name: 'tv-here', from: 'sonarr', folder: { old_path: '/tv-here', path: '/tv-here', kind: 'show', label: 'tv-here' } }
+				]
+			}
+		],
+		not_moved: [],
+		needs_input: []
+	} as unknown as Plan;
+	const here = [{ path: '/data/media/tv' }];
+
+	it('leave out only what is set to "Don\'t bring them"', () => {
+		expect(unseenFolder(plan, '/old/tv')).toBe(true);
+		expect(unseenFolder(plan, '/tv-here')).toBe(false);
+		// Defaults: a folder it cannot see comes over (needs attention); one it sees stays behind.
+		expect(leaveFolders(plan, here, {})).toEqual(['/tv-here']);
+		// "Don't bring them" on a folder it cannot see leaves it out; a picked folder is not left out.
+		expect(leaveFolders(plan, here, { '/old/tv': LEAVE, '/old/movies': '/data/media/movies', '/tv-here': '/data/media/tv' })).toEqual(['/old/tv']);
+	});
+
+	it('never turn "Don\'t bring them" into a path rule or a problem', () => {
+		expect(folderProblem('/old/tv', LEAVE, undefined)).toBe('');
+		expect(rulesFrom({ '/old/tv': LEAVE, '/old/movies': '/data/media/movies' }, {}, [])).toEqual([{ from: '/old/movies', to: '/data/media/movies' }]);
+		expect(sharedTargets({ '/old/tv': LEAVE, '/old/movies': LEAVE }, {})).toEqual({});
+	});
+});
+
+describe('usedByMoves', () => {
+	it('never labels a read made after the import with that import', () => {
+		const snap = (id: number, created_at: string) => ({ id, created_at }) as Parameters<typeof usedByMoves>[1][number];
+		const move = (id: number, created_at: string, snapshots: number[]) => ({ id, created_at, state: 'done', snapshots }) as Parameters<typeof usedByMoves>[0][number];
+		const moves = [move(4, '2026-11-12T10:00:00Z', [7, 8])];
+		// Read 8 was removed after Import 4 and its number given to a new read.
+		const m = usedByMoves(moves, [snap(7, '2026-11-12T09:00:00Z'), snap(8, '2026-11-13T08:00:00Z')]);
+		expect([m.get(7), m.get(8)]).toEqual([4, undefined]);
 	});
 });

@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Bagong path",
 	"settings.libraryFolders.changePathHint": "Ilipat muna roon ang mga file. Sinusuri ng HolyArrs ang bawat file at walang inililipat.",
 	"settings.libraryFolders.checkingFiles": "Sinusuri ang mga file…",
-	"settings.libraryFolders.pathChanged": "Napalitan ang path"
+	"settings.libraryFolders.pathChanged": "Napalitan ang path",
+	"settings.libraryFolders.sideFiles": "Mga file ng subtitle",
+	"settings.libraryFolders.sideFilesDesc": "Puwedeng dalhin sa Library, katabi ng video, ang mga subtitle na kasama ng download.",
+	"settings.libraryFolders.sideOn": "Isama ang mga file ng subtitle",
+	"settings.libraryFolders.sideOnHint": "Hindi kailanman pinapalitan ang file na nasa Library na.",
+	"settings.libraryFolders.sideTypes": "Mga uri ng file",
+	"settings.libraryFolders.sideTypesHint": "Paghiwalayin ang mga uri gamit ang kuwit, gaya ng srt, ass.",
+	"settings.libraryFolders.notMounted": "Hindi makita ng HolyArrs ang {path}. Ang nakikita lang nito ay mga folder na naka-mount sa container nito. Magdagdag ng volume gaya ng {path}:{inside}, saka gamitin ang {inside} dito."
 }

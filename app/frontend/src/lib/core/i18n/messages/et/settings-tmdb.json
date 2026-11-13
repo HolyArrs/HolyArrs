@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Salvestamine ebaõnnestus",
 	"settings.tmdb.locked": "Määratud sinu Dockeri seadetes",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE on „{value}“, mis pole full, own ega off, seega on päringud väljas.",
-	"settings.tmdb.ownNote": "Sinu enda võtmed küsib iga allika käest ise. Muusika edetabelid, uue muusika read, voogedastuse Top 10, Vikipeedia faktid ja anime kaardid tulevad ainult HolyArrsi serverist, nii et need on väljas.",
+	"settings.tmdb.ownNote": "Oma võtmetega küsib HolyArrs igalt allikalt otse. Muusika edetabelid, uue muusika read, voogedastuse Top 10, Vikipeedia faktid ja anime kaardid tulevad ainult HolyArrsi serverist, nii et need on väljas.",
 	"settings.tmdb.keysTitle": "Sinu võtmed",
 	"settings.tmdb.keysDesc": "Vaja on ainult TMDB lugemistunnust",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

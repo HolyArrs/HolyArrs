@@ -145,5 +145,7 @@
 	"core.settings.danger.about": "다시 시작 또는 종료",
 	"core.settings.account.label": "내 계정",
 	"core.settings.account.about": "비밀번호, 2단계 인증, 기기",
-	"core.api.sourceOff": "이 설치에서는 일부 줄이 꺼져 있습니다."
+	"core.api.sourceOff": "이 설치에서는 일부 줄이 꺼져 있습니다.",
+	"core.plain.noDownloader": "소스가 찾은 다운로드를 받을 수 있는 다운로더가 없어 아무것도 보낼 수 없습니다.",
+	"core.plain.sameDownloader": "두 다운로더가 같은 다운로드 앱에 연결되어 다운로드가 두 번 보일 수 있습니다."
 }

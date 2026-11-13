@@ -100,5 +100,6 @@
 	"settings.users.note": "Poznámka pro sebe",
 	"settings.users.noteExample": "např. Máma",
 	"settings.users.days": "Počet dnů platnosti odkazu",
-	"settings.users.makeInvite": "Vytvořit pozvánkový odkaz"
+	"settings.users.makeInvite": "Vytvořit pozvánkový odkaz",
+	"settings.users.permAuto4k": "Žádosti ve 4K se schvalují bez čekání"
 }

@@ -118,7 +118,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	unpacked, cleanup, unpackWhy := unpackRars(ctx, d.ID, root, cands, rules, dryRun)
 	defer cleanup()
 	cands = append(cands, unpacked...)
-	t := Target{LibraryPath: lf.Path, FolderName: folder, TitleID: ti.ID, TitleName: ti.Name, Year: year, SlotIDs: d.SlotIDs, IDs: ti.SourceIDs, Naming: &ns, Edition: ver.Edition}
+	t := Target{LibraryPath: lf.Path, FolderName: folder, TitleID: ti.ID, TitleName: ti.Name, Aliases: OtherNames(ti), Year: year, SlotIDs: d.SlotIDs, IDs: ti.SourceIDs, Naming: &ns, Edition: ver.Edition}
 	plan := append(Plan(cands, t), bad...)
 	if unpackWhy != "" {
 		plan = append(plan, unpackStep(root, unpackWhy))
@@ -251,6 +251,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	proof := imp.Result
 	imp.Result = execute(plan, im.Ops, resumable)
 	keepProof(imp.Result, proof)
+	im.placeSideFiles(ctx, imp.FromPath, plan, imp.Result, false)
 	if heldEarly != "" {
 		imp.Result[sameIdx].HeldAside = heldEarly
 	}
@@ -398,6 +399,9 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			}
 			if g := p.Group.Value; g != "" {
 				f.Group = &g
+			}
+			if f.Protected, err = mediafiles.TakeNotesAtTx(ctx, tx, ver.ID, f.RelativePath); err != nil {
+				return err
 			}
 			id, err := database.Insert(tx, "files", f, by)
 			if err != nil {

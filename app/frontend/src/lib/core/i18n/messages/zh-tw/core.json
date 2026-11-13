@@ -145,5 +145,7 @@
 	"core.settings.account.about": "密碼、雙重驗證、裝置",
 	"core.plain.clearWaiting": "已匯入的下載正等待從其下載器中清除。",
 	"core.plain.saveFolder": "有一個下載器沒有設定儲存資料夾，所以 HolyArrs 無法匯入它已完成的下載。",
-	"core.api.sourceOff": "此安裝中有些列已關閉。"
+	"core.api.sourceOff": "此安裝中有些列已關閉。",
+	"core.plain.noDownloader": "你的來源找到的下載沒有任何已設定的下載器能接收，所以無法傳送任何下載。",
+	"core.plain.sameDownloader": "兩個下載器連到同一個下載應用程式，因此下載可能顯示兩次。"
 }

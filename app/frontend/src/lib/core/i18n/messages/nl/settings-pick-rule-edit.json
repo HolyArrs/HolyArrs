@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} kenmerken gescoord",
 	"settings.pickRuleEdit.trashResult": "{n} kenmerken gescoord · {added} nieuw · {updated} bijgewerkt",
 	"settings.pickRuleEdit.trashLeftOut": "{n} weggelaten",
-	"settings.pickRuleEdit.trashTests": "test {kinds}"
+	"settings.pickRuleEdit.trashTests": "test {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Bronnen",
+	"settings.pickRuleEdit.sourcesDesc": "Zoek alleen in de Bronnen die een van deze tags delen. Laat leeg om in elke Bron te zoeken.",
+	"settings.pickRuleEdit.tags": "Tags"
 }

@@ -166,6 +166,13 @@
 	"library.import.followHint": "Näytä ne kalenterissani.",
 	"library.import.adoptOne": "Ota haltuun 1 {word}",
 	"library.import.adoptMany": "Ota haltuun {n} {words}",
+	"library.import.searchFolders": "Hae kansioista",
+	"library.import.folderCountOne": "1 kansio",
+	"library.import.folderCountMany": "Kansioita: {n}",
+	"library.import.titleAndFolder": "Nimi ja kansio",
+	"library.import.matchFor": "Vastine kansiolle {folder}",
+	"library.import.seeLarge": "Näytä kohteen {name} juliste suurena",
+	"library.import.noneMatch": "Mikään kansio ei täsmää.",
 	"library.report.keep.one": "{n} nimike pidetään ajan tasalla",
 	"library.report.keep.many": "{n} nimikettä pidetään ajan tasalla",
 	"library.report.keep.partOne": "{ok}/{total} nimikettä pidetään ajan tasalla",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Ensimmäinen luku tehdään 30 minuutin kuluessa.",
 	"library.stats.watchedHelp": "Plexin, Jellyfinin ja Embyn toistohistoriasta. Plex laskee vain toistot, joten käsin katsotuiksi merkityt nimekkeet eivät näy.",
 	"library.stats.lastRead": "Viimeksi luettu {ago}.",
-	"library.stats.noMatch": "Viimeksi luettu {ago}. Mikään katsottu ei vielä vastaa Kirjastoasi.",
+	"library.stats.noMatch": "Katseluhistoria tarkistettu {ago}. Mikään katsottu ei vielä vastaa Kirjastoasi.",
 	"library.stats.notLinked": "Ei linkitetty",
 	"library.stats.lastWatched": "Viimeksi katsottu {ago}",
 	"library.stats.unit.movie.one": "{n} elokuva",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} jakso",
 	"library.stats.unit.episode.other": "{n} jaksoa",
 	"library.stats.unit.play.one": "{n} toisto",
-	"library.stats.unit.play.other": "{n} toistoa"
+	"library.stats.unit.play.other": "{n} toistoa",
+	"library.byHand.askReplaceOne": "1 tiedosto korvaa Kirjastossa jo olevan tiedoston. Vanha tiedosto siirtyy kohtaan Äskettäin poistetut. Tuodaanko?",
+	"library.byHand.askReplaceMany": "{n} tiedostoa korvaa Kirjastossa jo olevia tiedostoja. Vanhat tiedostot siirtyvät kohtaan Äskettäin poistetut. Tuodaanko?"
 }

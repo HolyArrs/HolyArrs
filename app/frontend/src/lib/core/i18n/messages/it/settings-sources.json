@@ -72,5 +72,10 @@
 	"settings.sources.off": "Le fonti sono spente",
 	"settings.sources.offText": "HolyArrs non cerca né scarica. I download aggiunti nel downloader vengono comunque importati.",
 	"settings.sources.openParts": "Apri Parti",
-	"settings.sources.offState": "Spento"
+	"settings.sources.offState": "Spento",
+	"settings.sources.site": "Sito integrato",
+	"settings.sources.siteLabel": "Sito",
+	"settings.sources.addressSite": "L’indirizzo del sito. Cambialo solo se il sito si è spostato.",
+	"settings.sources.siteKeyLabel": "Cookie o chiave RSS",
+	"settings.sources.siteKeyHint": "Dal tuo account: uid e pass dal cookie del browser, oppure u e tp dal tuo link RSS. Conservato cifrato."
 }

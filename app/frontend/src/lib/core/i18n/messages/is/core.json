@@ -145,5 +145,7 @@
 	"core.settings.account.about": "Lykilorð, tveggja þátta, tæki",
 	"core.plain.clearWaiting": "Innflutt niðurhöl bíða þess að verða hreinsuð úr Niðurhalaranum sínum.",
 	"core.plain.saveFolder": "Einn niðurhalari er ekki með vistunarmöppu, svo HolyArrs getur ekki flutt inn niðurhöl hans sem eru búin.",
-	"core.api.sourceOff": "Sumar raðir eru slökktar í þessari uppsetningu."
+	"core.api.sourceOff": "Sumar raðir eru slökktar í þessari uppsetningu.",
+	"core.plain.noDownloader": "Veiturnar þínar finna niðurhöl sem enginn niðurhalari þinn getur tekið við, svo ekkert er hægt að senda.",
+	"core.plain.sameDownloader": "Tveir niðurhalarar ná í sama niðurhalsforrit, svo niðurhöl geta birst tvisvar."
 }

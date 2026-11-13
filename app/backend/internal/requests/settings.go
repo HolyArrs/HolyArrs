@@ -46,6 +46,14 @@ type Settings struct {
 	// defaults).
 	MusicLibraryFolderID int64 `json:"music_library_folder_id"`
 	MusicPickRulesID     int64 `json:"music_pick_rules_id"`
+	// FourKLibraryFolderID and FourKPickRulesID are where an approved 4K
+	// movie ask's copy goes and how it is picked; ShowFourK... the same for
+	// shows. 0: the Pick rules named 4K, and the plain ask folder (then the
+	// title's own folder).
+	FourKLibraryFolderID     int64 `json:"four_k_library_folder_id"`
+	FourKPickRulesID         int64 `json:"four_k_pick_rules_id"`
+	ShowFourKLibraryFolderID int64 `json:"show_four_k_library_folder_id"`
+	ShowFourKPickRulesID     int64 `json:"show_four_k_pick_rules_id"`
 	// PlexWatchlists lets people have their Plex watchlist asked for as
 	// them (each turns it on for themselves; off by default).
 	PlexWatchlists bool `json:"plex_watchlists"`
@@ -55,6 +63,10 @@ type Settings struct {
 	// PlexFriends also reads the watchlists of people imported from the
 	// owner's Plex account, with the owner's Plex link (off by default).
 	PlexFriends bool `json:"plex_friends"`
+	// Qualities are what people can ask for, per kind (qualities.go). The
+	// API answers them filled from the settings above; only names and
+	// hidden are kept from what is sent.
+	Qualities QualityLists `json:"qualities"`
 }
 
 // PerWeekOf is the default weekly limit for one kind.
@@ -69,12 +81,13 @@ func (s Settings) PerWeekOf(kind string) int {
 }
 
 var settingKeys = []string{"ask_movies_per_week", "ask_library_folder_id", "ask_pick_rules_id", "ask_search_on_approve",
-	"ask_show_library_folder_id", "ask_show_pick_rules_id", "ask_shows_per_week", "ask_music_library_folder_id", "ask_music_pick_rules_id", "ask_music_per_week", "ask_plex_watchlists", "ask_plex_watchlists_everyone", "ask_plex_friends"}
+	"ask_show_library_folder_id", "ask_show_pick_rules_id", "ask_shows_per_week", "ask_music_library_folder_id", "ask_music_pick_rules_id", "ask_music_per_week", "ask_plex_watchlists", "ask_plex_watchlists_everyone", "ask_plex_friends",
+	"ask_four_k_library_folder_id", "ask_four_k_pick_rules_id", "ask_show_four_k_library_folder_id", "ask_show_four_k_pick_rules_id", "ask_qualities"}
 
 // ReadSettings reads the Request settings (10 a week of each kind, search
 // on approve).
 func ReadSettings(ctx context.Context, db database.Lister) (Settings, error) {
-	s := Settings{MoviesPerWeek: DefaultPerWeek, ShowsPerWeek: DefaultPerWeek, MusicPerWeek: DefaultPerWeek, SearchOnApprove: true}
+	s := Settings{MoviesPerWeek: DefaultPerWeek, ShowsPerWeek: DefaultPerWeek, MusicPerWeek: DefaultPerWeek, SearchOnApprove: true, Qualities: defaultQualities()}
 	args := make([]any, len(settingKeys))
 	for i, k := range settingKeys {
 		args[i] = k
@@ -115,6 +128,16 @@ func ReadSettings(ctx context.Context, db database.Lister) (Settings, error) {
 			s.PlexWatchlistsEveryone = v == "true"
 		case "ask_plex_friends":
 			s.PlexFriends = v == "true"
+		case "ask_four_k_library_folder_id":
+			s.FourKLibraryFolderID = n
+		case "ask_four_k_pick_rules_id":
+			s.FourKPickRulesID = n
+		case "ask_show_four_k_library_folder_id":
+			s.ShowFourKLibraryFolderID = n
+		case "ask_show_four_k_pick_rules_id":
+			s.ShowFourKPickRulesID = n
+		case "ask_qualities":
+			s.Qualities = parseQualities(v)
 		}
 	}
 	return s, rows.Err()
@@ -161,7 +184,25 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 			return library.ErrNotMusicFolder
 		}
 	}
-	for _, id := range []int64{s.PickRulesID, s.ShowPickRulesID, s.MusicPickRulesID} {
+	for _, f := range []struct {
+		id   int64
+		kind string
+		bad  error
+	}{{s.FourKLibraryFolderID, "movie", library.ErrNotMovieFolder}, {s.ShowFourKLibraryFolderID, "show", library.ErrNotShowFolder}} {
+		if f.id == 0 {
+			continue
+		}
+		var lf mediafiles.LibraryFolder
+		if err := database.Get(ctx, db, "library_folders", f.id, &lf); errors.Is(err, database.ErrNotFound) {
+			return library.ErrNoFolder
+		} else if err != nil {
+			return err
+		}
+		if lf.Kind != f.kind {
+			return f.bad
+		}
+	}
+	for _, id := range []int64{s.PickRulesID, s.ShowPickRulesID, s.MusicPickRulesID, s.FourKPickRulesID, s.ShowFourKPickRulesID} {
 		if id == 0 {
 			continue
 		}
@@ -173,13 +214,18 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 			return library.ErrNoPickRules
 		}
 	}
+	q, err := checkQualities(s.Qualities)
+	if err != nil {
+		return err
+	}
 	who, _ := json.Marshal(by)
 	return st.Write(ctx, func(tx *sql.Tx) error {
 		now := database.FormatTime(time.Now())
 		vals := []string{strconv.Itoa(s.MoviesPerWeek), strconv.FormatInt(s.LibraryFolderID, 10), strconv.FormatInt(s.PickRulesID, 10), strconv.FormatBool(s.SearchOnApprove),
 			strconv.FormatInt(s.ShowLibraryFolderID, 10), strconv.FormatInt(s.ShowPickRulesID, 10), strconv.Itoa(s.ShowsPerWeek),
 			strconv.FormatInt(s.MusicLibraryFolderID, 10), strconv.FormatInt(s.MusicPickRulesID, 10), strconv.Itoa(s.MusicPerWeek), strconv.FormatBool(s.PlexWatchlists), strconv.FormatBool(s.PlexWatchlistsEveryone),
-			strconv.FormatBool(s.PlexFriends)}
+			strconv.FormatBool(s.PlexFriends), strconv.FormatInt(s.FourKLibraryFolderID, 10), strconv.FormatInt(s.FourKPickRulesID, 10),
+			strconv.FormatInt(s.ShowFourKLibraryFolderID, 10), strconv.FormatInt(s.ShowFourKPickRulesID, 10), storeQualities(q)}
 		for i, k := range settingKeys {
 			_, err := tx.Exec(saveSettingsSQL2,
 				k, vals[i], now, string(who), now, string(who))

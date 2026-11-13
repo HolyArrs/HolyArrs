@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} tunnust hinnatud",
 	"settings.pickRuleEdit.trashResult": "{n} tunnust hinnatud · {added} uut · {updated} uuendatud",
 	"settings.pickRuleEdit.trashLeftOut": "{n} jäetud välja",
-	"settings.pickRuleEdit.trashTests": "testib {kinds}"
+	"settings.pickRuleEdit.trashTests": "testib {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Allikad",
+	"settings.pickRuleEdit.sourcesDesc": "Otsi ainult Allikatest, millel on mõni neist siltidest. Jäta tühjaks, et otsida kõigist Allikatest.",
+	"settings.pickRuleEdit.tags": "Sildid"
 }

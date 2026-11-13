@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <b>Català</b> · <a href="LANGUAGES.md">Més idiomes</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">Més idiomes</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0: ara en 44 llengües**, també de dreta a esquerra. aria2 funciona com a gestor de baixades, i els paquets de temporada baixen uns quants episodis cada cop. [Mira què hi ha de nou](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease i IPTorrents integrats**, sense Prowlarr. Demana sèries en 4K, i Profilarr pot enviar els seus formats i perfils. [Mira què hi ha de nou](https://holyarrs.com/whats-new/)
 
 > Cada pòster, tràiler i puntuació del teu HolyArrs ve d'un servidor que porto i pago jo mateix, perquè segueixi sent gratuït per a tothom. Si HolyArrs t'ha fet la nit de pel·lícula una mica millor, un patrocini ens manté els llums encesos a tots 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> és una sola app autoallotjada per a les teves sèries, pel·lícules i música.<br>Explora com en una app de streaming, demana el que vulguis i ella s'encarrega de la resta.</p>
 
-<p align="center"><b>Uns 15 MB de baixada · uns 140 MB de RAM en repòs amb 10,000 títols · amd64, arm64, armv7</b><br><sub>Les sis apps que substitueix pesen 718.2 MB en total.</sub></p>
+<p align="center"><b>Uns 19.5 MB de baixada · uns 95 MiB de RAM en repòs en una instal·lació nova · amd64, arm64, armv7</b><br><sub>Les sis apps que substitueix pesen 718.2 MB en total.</sub></p>
 
 <p align="center"><a href="#quick-start">Inici ràpid</a> · <a href="#why">Per què</a> · <a href="#what-it-does">Què fa</a> · <a href="#moving">Importar des d'altres apps</a> · <a href="#manual">El manual</a> · <a href="#help">Ajuda</a></p>
 
@@ -105,9 +105,9 @@ Així que la vaig fer.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Les sis juntes** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Unes 48 vegades més petita. Baixada comprimida del registre, imatges de linuxserver.io, amd64, mesurat el 2026-11-08. RAM en repòs mesurada amb 10,000 títols i 55,000 pel·lícules i episodis.</sub>
+<sub>Unes 37 vegades més petita. Baixada comprimida del registre, imatges de linuxserver.io, amd64, mesurat el 2026-11-08. RAM en repòs mesurada amb 10,000 títols i 55,000 pel·lícules i episodis. (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Algú demana un títol. HolyArrs cerca a les teves Fonts, tria el millor llança
 | | |
 |---|---|
 | 🍿 **Explore** | Explora com en una app de streaming. Passa el ratolí per sobre d'un títol i s'inicia el tràiler. |
-| 🙋 **Requests** | Una sèrie sencera o només una temporada. Tu aproves, o deixes que la gent de confiança es salti la cua. |
+| 🙋 **Requests** | Una sèrie sencera o només una temporada. Tu aproves, o deixes que la gent de confiança es salti la cua. Les llistes de seguiment de Plex i Pulsarr poden esdevenir peticions. |
 | 🎯 **Pick rules** | Tu decideixes quin llançament guanya: mida, qualitat, idioma. |
-| 💬 **Subtítols** | En els idiomes que triïs, conservats amb el fitxer. Cercar-los en línia arribarà després de l'1.0. |
+| 💬 **Subtítols** | En els idiomes que triïs, trobats en webs de subtítols i conservats amb el fitxer. |
 | 📅 **Calendar** | Què s'emet a continuació de tot el que segueixes. |
-| 🚚 **Importa la teva configuració** | Des de Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent i SABnzbd. Prova-ho primer, desfés-ho després. |
-| 🔌 **API d'apps anteriors** | Prowlarr pot seguir enviant Fonts a HolyArrs quan ho activis. |
-| 🗝️ **Sense claus d'API** | Els títols, les il·lustracions i les llistes d'èxits vénen del servidor de metadades d'HolyArrs. |
+| 🔔 **Alerts** | Discord, correu, Telegram, ntfy, Gotify, Pushover o un webhook. |
+| 🚚 **Importa la teva configuració** | Des de Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent i SABnzbd. Tria què es porta, desfés-ho després. |
+| 🔌 **API d'apps anteriors** | Seerr, Prowlarr, Bazarr, Unpackerr i Homepage continuen funcionant quan ho activis. |
+| 🗝️ **Sense claus d'API** | Els títols, les il·lustracions i les llistes d'èxits vénen del servidor de metadades d'HolyArrs. També funcionen les teves pròpies claus o el teu servidor. |
 | 🔒 **Claus xifrades** | Les contrasenyes i claus desades queden tancades amb una clau mestra que viu a la teva carpeta de configuració. |
-| 🪶 **Minúscula** | Una imatge d'uns 15 MB amb només HolyArrs a dins. |
+| 🪶 **Minúscula** | Una imatge d'uns 19.5 MB amb només HolyArrs a dins. |
 
 <details>
 <summary><b>Mira totes les pàgines en moviment</b></summary>
@@ -148,9 +149,9 @@ Algú demana un títol. HolyArrs cerca a les teves Fonts, tria el millor llança
 
 ## 🤝 Funciona amb el que ja tens
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Gestors de baixades: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Servidors multimèdia: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Gestors de baixades: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Servidors multimèdia: Plex, Jellyfin, Emby." /></picture>
 
-- **Gestors de baixades:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Gestors de baixades:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Servidors multimèdia:** Plex, Jellyfin, Emby
 - **Fonts:** qualsevol indexador Torznab o Newznab, o Prowlarr o Jackett
 - **Importa la teva configuració des de:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -159,7 +160,7 @@ Algú demana un títol. HolyArrs cerca a les teves Fonts, tria el millor llança
 
 ## 🚚 Porta la teva configuració antiga
 
-Obre **Settings > Move from other apps**, afegeix l'adreça i la clau d'API de cada app anterior (o un zip de còpia de seguretat), tria què vols importar, executa **Try it** i després **Move**. Pots desfer una importació més endavant.
+Obre **Settings > Import from other apps**, afegeix l'adreça i la clau d'API de cada app anterior (o un zip de còpia de seguretat), tria què vols importar i després tria **Import**. Pots desfer una importació més endavant.
 
 | Des de | Què s'importa |
 |---|---|
@@ -171,12 +172,11 @@ Obre **Settings > Move from other apps**, afegeix l'adreça i la clau d'API de c
 
 HolyArrs només llegeix les teves apps anteriors i no hi canvia res, així que pots tenir-les en marxa totes dues alhora fins que hi confiïs.
 
-Les claus i les contrasenyes es queden enrere; les tornes a escriure o les importes des d'un fitxer. Els formats personalitzats, les etiquetes i l'historial no s'importen. Els fitxers multimèdia no es mouen mai. Pas a pas: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Les claus i les contrasenyes es queden enrere; les tornes a escriure o les importes des d'un fitxer. Els formats personalitzats, les etiquetes i l'historial no s'importen. Els fitxers multimèdia no es mouen mai. Pas a pas: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Què no fa encara
 
 - **Baixar per si sola.** HolyArrs es connecta a qBittorrent, SABnzbd i la resta. No els substitueix.
-- **Funcions d'IA o MCP.** No a l'1.0.
 - **Apps per a mòbil i TV.** No fetes. L'app web funciona al mòbil.
 - **Música a Explore** encara s'està fent.
 
@@ -213,6 +213,8 @@ Si fas pull de `holyarrs/holyarrs:latest`, obtens la imatge adequada per al teu 
 
 Tens un NAS? Mira [Unraid, Synology i altres NAS](https://docs.HolyArrs.com/run/platforms/).
 
+Prefereixes un paquet natiu? Cada [versió](https://github.com/HolyArrs/HolyArrs/releases) porta un paquet experimental per a Synology (`.spk`). Consulta [Paquet per a Synology](../../docs/run/synology.md).
+
 ## Etiquetes de versió
 
 Les imatges són a Docker Hub com a [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs).
@@ -220,7 +222,7 @@ Les imatges són a Docker Hub com a [`holyarrs/holyarrs`](https://hub.docker.com
 | Etiqueta | Fes-la servir per a |
 | :----: | --- |
 | `latest` | La versió més nova. |
-| `1.1.0` | Una versió exacta. No es mou mai. |
+| `1.1.1` | Una versió exacta. No es mou mai. |
 
 ## Ús
 
@@ -415,7 +417,7 @@ Vols integrar-lo en un producte tancat? Escriu a support@HolyArrs.com per demana
 
 ## Fes que continuï
 
-HolyArrs és gratuït, però mantenir-lo no ho és. Cada instal·lació parla amb un servidor de metadades que pago cada mes. Els patrocinadors ho cobreixen i compren més hores per a les coses que votes.
+HolyArrs és gratuït, però mantenir-lo no ho és. Per defecte, cada instal·lació parla amb un servidor de metadades que pago cada mes. Els patrocinadors ho cobreixen i compren més hores per a les coses que votes.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Patrocina HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Vota al full de ruta" /></picture></a></p>
 

@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <b>Français</b> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="LANGUAGES.md">Plus de langues</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <b>Français</b> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">Plus de langues</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0 : maintenant en 44 langues**, de droite à gauche aussi. aria2 sert de client de téléchargement, et les packs de saison arrivent quelques épisodes à la fois. [Quoi de neuf](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1 : Knaben, TorrentsCSV, SubsPlease et IPTorrents intégrés**, sans Prowlarr. Demandez des séries en 4K, et Profilarr peut envoyer ses formats et ses profils. [Quoi de neuf](https://holyarrs.com/whats-new/)
 
 > Chaque affiche, bande-annonce et note de ton HolyArrs vient d'un serveur que je fais tourner et que je paie moi-même, pour qu'il reste gratuit pour tout le monde. Si HolyArrs a rendu ta soirée film un peu meilleure, un sponsor garde la lumière allumée pour nous tous 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> est une application auto-hébergée pour vos séries, vos films et votre musique.<br>Parcourez le catalogue comme sur une application de streaming, demandez ce que vous voulez, et elle s'occupe du reste.</p>
 
-<p align="center"><b>Environ 15 MB à télécharger · environ 140 MB de RAM au repos avec 10,000 titres · amd64, arm64, armv7</b><br><sub>Les six applications qu'elle remplace pèsent 718.2 MB au total.</sub></p>
+<p align="center"><b>Environ 19.5 MB à télécharger · environ 95 MiB de RAM au repos sur une installation neuve · amd64, arm64, armv7</b><br><sub>Les six applications qu'elle remplace pèsent 718.2 MB au total.</sub></p>
 
 <p align="center"><a href="#quick-start">Démarrage rapide</a> · <a href="#why">Pourquoi</a> · <a href="#what-it-does">Ce qu'elle fait</a> · <a href="#moving">Venir d'autres applications</a> · <a href="#manual">Le manuel</a> · <a href="#help">Aide</a></p>
 
@@ -105,9 +105,9 @@ Alors je l'ai créée.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Les six ensemble** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Environ 48 fois plus petite. Téléchargement compressé depuis le registre, images linuxserver.io, amd64, mesuré le 2026-11-08. La RAM au repos a été mesurée avec 10,000 titres et 55,000 films et épisodes.</sub>
+<sub>Environ 37 fois plus petite. Téléchargement compressé depuis le registre, images linuxserver.io, amd64, mesuré le 2026-11-08. La RAM au repos a été mesurée avec 10,000 titres et 55,000 films et épisodes. (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Quelqu'un demande un titre. HolyArrs cherche dans vos Sources, choisit la meille
 | | |
 |---|---|
 | 🍿 **Explore** | Parcourez le catalogue comme sur une application de streaming. Survolez un titre et la bande-annonce se lance. |
-| 🙋 **Requests** | Une série entière ou une seule saison. Vous approuvez, ou vous laissez les personnes de confiance passer devant. |
+| 🙋 **Requests** | Une série entière ou une seule saison. Vous approuvez, ou vous laissez les personnes de confiance passer devant. Les listes de suivi de Plex et de Pulsarr peuvent devenir des demandes. |
 | 🎯 **Pick rules** | Vous décidez quelle version l'emporte : taille, qualité, langue. |
-| 💬 **Sous-titres** | Dans les langues que vous choisissez, conservés avec le fichier. La recherche en ligne arrive après la 1.0. |
+| 💬 **Sous-titres** | Dans les langues que vous choisissez, trouvés sur des sites de sous-titres et conservés avec le fichier. |
 | 📅 **Calendar** | Ce qui passe bientôt pour tout ce que vous suivez. |
-| 🚚 **Reprenez votre configuration** | Depuis Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent et SABnzbd. Essayez d'abord, annulez plus tard. |
-| 🔌 **API des anciennes applications** | Prowlarr peut continuer à envoyer des Sources à HolyArrs une fois que vous l'activez. |
-| 🗝️ **Aucune clé d'API nécessaire** | Les titres, les visuels et les classements viennent du serveur de métadonnées de HolyArrs. |
+| 🔔 **Alerts** | Discord, e-mail, Telegram, ntfy, Gotify, Pushover ou un webhook. |
+| 🚚 **Reprenez votre configuration** | Depuis Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent et SABnzbd. Choisissez ce qui est repris, annulez plus tard. |
+| 🔌 **API des anciennes applications** | Seerr, Prowlarr, Bazarr, Unpackerr et Homepage continuent de fonctionner une fois que vous l'activez. |
+| 🗝️ **Aucune clé d'API nécessaire** | Les titres, les visuels et les classements viennent du serveur de métadonnées de HolyArrs. Vos propres clés ou votre propre serveur fonctionnent aussi. |
 | 🔒 **Clés chiffrées** | Les mots de passe et les clés enregistrés sont verrouillés par une clé maître qui reste dans votre dossier de configuration. |
-| 🪶 **Minuscule** | Une image d'environ 15 MB qui ne contient que HolyArrs. |
+| 🪶 **Minuscule** | Une image d'environ 19.5 MB qui ne contient que HolyArrs. |
 
 <details>
 <summary><b>Voir chaque page en mouvement</b></summary>
@@ -148,7 +149,7 @@ Quelqu'un demande un titre. HolyArrs cherche dans vos Sources, choisit la meille
 
 ## 🤝 Elle fonctionne avec ce que vous utilisez déjà
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Outils de téléchargement : qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Serveurs multimédias : Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Outils de téléchargement : qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Serveurs multimédias : Plex, Jellyfin, Emby." /></picture>
 
 - **Outils de téléchargement :** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Serveurs multimédias :** Plex, Jellyfin, Emby
@@ -159,7 +160,7 @@ Quelqu'un demande un titre. HolyArrs cherche dans vos Sources, choisit la meille
 
 ## 🚚 Reprenez votre ancienne configuration
 
-Ouvrez **Settings > Move from other apps**, ajoutez l'adresse et la clé d'API de chaque ancienne application (ou un zip de sauvegarde), choisissez ce qui doit venir, lancez **Try it**, puis **Move**. Vous pourrez annuler un transfert plus tard.
+Ouvrez **Settings > Import from other apps**, ajoutez l'adresse et la clé d'API de chaque ancienne application (ou un zip de sauvegarde), choisissez ce qui doit venir, puis choisissez **Import**. Vous pourrez annuler une importation plus tard.
 
 | Depuis | Ce qui est repris |
 |---|---|
@@ -171,12 +172,11 @@ Ouvrez **Settings > Move from other apps**, ajoutez l'adresse et la clé d'API d
 
 HolyArrs ne fait que lire vos anciennes applications et n'y change rien, donc vous pouvez faire tourner les deux côte à côte jusqu'à ce que vous lui fassiez confiance.
 
-Les clés et les mots de passe restent sur place ; vous les saisissez de nouveau ou vous les importez depuis un fichier. Les formats personnalisés, les étiquettes et l'historique ne sont pas repris. Les fichiers multimédias ne bougent jamais. Pas à pas : [Venir d'autres applications](https://docs.HolyArrs.com/migrate/).
+Les clés et les mots de passe restent sur place ; vous les saisissez de nouveau ou vous les importez depuis un fichier. Les formats personnalisés, les étiquettes et l'historique ne sont pas repris. Les fichiers multimédias ne bougent jamais. Pas à pas : [Importer depuis d'autres applications](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Ce qu'elle ne fait pas encore
 
 - **Télécharger toute seule.** HolyArrs se connecte à qBittorrent, SABnzbd et aux autres. Elle ne les remplace pas.
-- **Fonctions d'IA ou de MCP.** Pas dans la 1.0.
 - **Applications mobile et TV.** Pas créées. L'application web fonctionne sur un téléphone.
 - **La musique dans Explore** est encore en construction.
 
@@ -213,6 +213,8 @@ En récupérant `holyarrs/holyarrs:latest`, vous obtenez l'image qui convient à
 
 Vous avez un NAS ? Voir [Unraid, Synology et autres NAS](https://docs.HolyArrs.com/run/platforms/).
 
+Vous préférez un paquet natif ? Un paquet Synology expérimental (`.spk`) est joint à chaque [version](https://github.com/HolyArrs/HolyArrs/releases). Voir [Paquet Synology](../../docs/run/synology.md).
+
 ## Étiquettes de version
 
 Les images sont sur Docker Hub sous le nom [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs).
@@ -220,7 +222,7 @@ Les images sont sur Docker Hub sous le nom [`holyarrs/holyarrs`](https://hub.doc
 | Étiquette | À utiliser pour |
 | :----: | --- |
 | `latest` | La version la plus récente. |
-| `1.1.0` | Une version précise. Elle ne bouge jamais. |
+| `1.1.1` | Une version précise. Elle ne bouge jamais. |
 
 ## Utilisation
 
@@ -415,7 +417,7 @@ Vous voulez l'intégrer à un produit fermé ? Écrivez à support@HolyArrs.com 
 
 ## Pour qu'elle continue
 
-HolyArrs est gratuite, mais la faire tourner ne l'est pas. Chaque installation parle à un serveur de métadonnées que je paie tous les mois. Les sponsors couvrent ce coût et m'offrent plus d'heures pour ce que vous votez.
+HolyArrs est gratuite, mais la faire tourner ne l'est pas. Par défaut, chaque installation parle à un serveur de métadonnées que je paie tous les mois. Les sponsors couvrent ce coût et m'offrent plus d'heures pour ce que vous votez.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Parrainer HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Votez pour la feuille de route" /></picture></a></p>
 

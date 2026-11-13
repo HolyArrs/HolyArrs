@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Ny sti",
 	"settings.libraryFolders.changePathHint": "Flyt filerne derhen først. HolyArrs tjekker hver fil og flytter ingenting.",
 	"settings.libraryFolders.checkingFiles": "Tjekker filer…",
-	"settings.libraryFolders.pathChanged": "Sti ændret"
+	"settings.libraryFolders.pathChanged": "Sti ændret",
+	"settings.libraryFolders.sideFiles": "Undertekstfiler",
+	"settings.libraryFolders.sideFilesDesc": "Undertekster, der følger med en download, kan hentes ind i biblioteket ved siden af videoen.",
+	"settings.libraryFolders.sideOn": "Tag undertekstfiler med",
+	"settings.libraryFolders.sideOnHint": "En fil, der allerede er i biblioteket, bliver aldrig erstattet.",
+	"settings.libraryFolders.sideTypes": "Filtyper",
+	"settings.libraryFolders.sideTypesHint": "Adskil typer med kommaer, fx srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs kan ikke se {path}. Den ser kun mapper, der er monteret i dens container. Tilføj et volume som {path}:{inside}, og brug så {inside} her."
 }

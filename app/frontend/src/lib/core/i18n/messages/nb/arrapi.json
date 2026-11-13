@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "KI-apper er av. Å tillate slår dem på.",
 	"arrapi.ai.offOther": "KI-apper er av. Be eieren slå dem på, og prøv igjen.",
 	"arrapi.ai.allow": "Tillat",
-	"arrapi.ai.cancel": "Avbryt"
+	"arrapi.ai.cancel": "Avbryt",
+	"arrapi.seerr.sentTitle": "Sendt fra andre apper",
+	"arrapi.seerr.sentHint": "Formater og profiler som apper som Profilarr har sendt. Vises her bare for lesing.",
+	"arrapi.seerr.sentFormat": "Format",
+	"arrapi.seerr.sentProfile": "Profil",
+	"arrapi.seerr.sentUpdated": "oppdatert {ago}"
 }

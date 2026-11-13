@@ -104,6 +104,8 @@ export function healthFix(kind: HealthCheck['kind']): string {
 			return '/settings/sources';
 		case 'downloader':
 		case 'save_folder':
+		case 'no_downloader':
+		case 'same_downloader':
 			return '/settings/downloaders';
 		case 'backups':
 			return '/settings/backups';
@@ -135,6 +137,8 @@ const healthWords = (): Record<HealthKind, { one: string; many: string; error: [
 	waiting_downloads: { one: t('home.downloads'), many: t('home.downloads'), error: [t('home.waitingForTheirFiles'), t('home.waitingForTheirFiles')], warning: [t('home.waitingForTheirFiles'), t('home.waitingForTheirFiles')] },
 	clear_waiting: { one: t('home.downloads'), many: t('home.downloads'), error: [t('home.waitingToBeCleared'), t('home.waitingToBeCleared')], warning: [t('home.waitingToBeCleared'), t('home.waitingToBeCleared')] },
 	save_folder: { one: t('home.downloader'), many: t('home.downloaders'), error: [t('home.noSaveFolder'), t('home.noSaveFolderMany')], warning: [t('home.noSaveFolder'), t('home.noSaveFolderMany')] },
+	no_downloader: { one: t('home.downloader'), many: t('home.downloaders'), error: [t('home.noneForSources'), t('home.noneForSources')], warning: [t('home.noneForSources'), t('home.noneForSources')] },
+	same_downloader: { one: t('home.downloader'), many: t('home.downloaders'), error: [t('home.addedTwice'), t('home.addedTwiceMany')], warning: [t('home.addedTwice'), t('home.addedTwiceMany')] },
 	// The backups:key check: no key kit saved for the current master key.
 	key_kit: { one: t('home.masterKey'), many: t('home.masterKey'), error: [t('home.noKeyKitSaved'), t('home.noKeyKitSaved')], warning: [t('home.noKeyKitSaved'), t('home.noKeyKitSaved')] },
 	trailers: { one: t('home.trailers'), many: t('home.trailers'), error: [t('home.notLoading'), t('home.notLoading')], warning: [t('home.lookupsFailing'), t('home.lookupsFailing')] }

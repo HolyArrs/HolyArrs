@@ -28,6 +28,16 @@ var (
 	ErrServicePending = errors.New("metadata service is still fetching this; try again shortly")
 )
 
+// ErrServiceSlow means the server did not answer in time: it is slow, not
+// down. errors.Is(err, ErrServiceUnavailable) holds for it too, so code that
+// falls back or waits on a down server does the same.
+var ErrServiceSlow error = serviceSlow{}
+
+type serviceSlow struct{}
+
+func (serviceSlow) Error() string   { return Slow }
+func (serviceSlow) Is(t error) bool { return t == ErrServiceUnavailable }
+
 // PendingError is ErrServicePending with what the server said about the wait:
 // state ("fetching" or "queued"), the place in line and the words to show.
 // errors.Is(err, ErrServicePending) holds for it.
@@ -331,8 +341,8 @@ func (s *Service) get(ctx context.Context, path, provider, id string, q url.Valu
 			result = outbound.Success
 		case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 			result = outbound.Canceled
-		case errors.Is(err, ErrServiceBusy), errors.Is(err, ErrSourceOff):
-			// "Slow down" (from the server or our own pacing) says nothing about the server being down.
+		case errors.Is(err, ErrServiceBusy), errors.Is(err, ErrSourceOff), errors.Is(err, ErrServiceSlow):
+			// "Slow down" (from the server or our own pacing), or a slow answer, says nothing about the server being down.
 			result = outbound.Canceled
 		case errors.Is(err, ErrServiceUnavailable):
 			result = outbound.TransientFailure

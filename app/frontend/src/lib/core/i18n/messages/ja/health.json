@@ -12,7 +12,7 @@
 	"health.check.freeSpace": "空き容量",
 	"health.check.update": "アップデート",
 	"health.check.waiting": "ファイル待ちのダウンロード",
-	"health.check.clearWaiting": "整理待ちのダウンロード",
+	"health.check.clearWaiting": "取り込み済みでダウンローダーに残っているダウンロード",
 	"health.check.saveFolder": "保存先フォルダー:",
 	"health.check.saveFolderWhy": "{app} に保存先フォルダーが設定されていないため、HolyArrs は完了したダウンロードを取り込めません。設定 › ダウンローダー でパスの組を追加してください。",
 	"health.day.ahead": "あと {count} 件",
@@ -88,7 +88,7 @@
 	"health.kind.trailers": "予告編リーダー",
 	"health.kind.update": "アップデート",
 	"health.kind.waitingDownloads": "ファイル待ちのダウンロード",
-	"health.kind.clearWaiting": "整理待ちのダウンロード",
+	"health.kind.clearWaiting": "取り込み済みでダウンローダーに残っているダウンロード",
 	"health.kind.saveFolder": "ダウンローダーの保存先フォルダー",
 	"health.link.downloader": "ダウンローダー",
 	"health.link.mediaServer": "メディアサーバー",
@@ -264,5 +264,12 @@
 	"health.word.broken": "異常",
 	"health.word.notSent": "未送信",
 	"health.word.notSynced": "未同期",
-	"health.word.working": "正常"
+	"health.word.working": "正常",
+	"health.check.usenetDl": "Usenet ダウンローダー",
+	"health.check.torrentDl": "トレント ダウンローダー",
+	"health.check.noUsenetDl": "ソースは Usenet のダウンロードを見つけますが、Usenet ダウンローダーが設定されていないため、送信できません。設定 › ダウンローダー で追加してください。",
+	"health.check.noTorrentDl": "ソースはトレントのダウンロードを見つけますが、トレント ダウンローダーが設定されていないため、送信できません。設定 › ダウンローダー で追加してください。",
+	"health.check.sameDownloader": "二重に追加:",
+	"health.check.sameDownloaderWhy": "{app} は別のダウンローダーと同じダウンロードアプリにつながっているため、ダウンロードが二重に表示されることがあります。設定 › ダウンローダーでどちらかを削除してください。",
+	"health.kind.sameDownloader": "二重に追加されたダウンローダー"
 }

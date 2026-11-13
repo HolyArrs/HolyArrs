@@ -56,6 +56,7 @@ func (b *builder) people(s *Snapshot) {
 		}
 		add("ask", has("REQUEST") || pp.Role != "member")
 		add("auto_approve", has("AUTO_APPROVE"))
+		add("auto_approve_four_k", has("AUTO_APPROVE_4K") || has("AUTO_APPROVE_4K_MOVIE") && has("AUTO_APPROVE_4K_TV"))
 		add("approve", has("MANAGE_REQUESTS"))
 		add("settings", has("MANAGE_SETTINGS") && pp.Role == "admin")
 		if has("MANAGE_SETTINGS") && pp.Role != "admin" {
@@ -64,8 +65,13 @@ func (b *builder) people(s *Snapshot) {
 		var dropped []string
 		for _, p := range u.Permissions {
 			switch p {
-			case "ADMIN", "REQUEST", "AUTO_APPROVE", "MANAGE_REQUESTS", "MANAGE_SETTINGS":
+			case "ADMIN", "REQUEST", "AUTO_APPROVE", "MANAGE_REQUESTS", "MANAGE_SETTINGS", "AUTO_APPROVE_4K":
 				continue
+			case "AUTO_APPROVE_4K_MOVIE", "AUTO_APPROVE_4K_TV":
+				// Both halves together became the 4K permission above.
+				if has("AUTO_APPROVE_4K_MOVIE") && has("AUTO_APPROVE_4K_TV") {
+					continue
+				}
 			}
 			dropped = append(dropped, clip(p, 40))
 		}
@@ -88,7 +94,16 @@ func (b *builder) people(s *Snapshot) {
 		} else if u.ShowLimit > 0 && pp.ShowsPerWeek == nil {
 			b.not(GroupPeople, from+".show_quota", name, "only an exact seven-day quota can be imported without changing its access window")
 		}
+		// A Plex, Jellyfin or Emby person keeps that sign-in.
+		if kind := strings.ToLower(u.Kind); key != legacyKey && signInWay(kind) != "" {
+			pp.SignIn, pp.SignInID, pp.SignInName = kind, clip(u.ExternalID, 100), clip(u.ExtName, 200)
+		}
 		detail := "Comes over turned off as a " + pp.Role + ". Invite them to sign in; their password stays behind."
+		needs := "an invite"
+		if way := signInWay(pp.SignIn); way != "" {
+			detail = "Comes over as a " + pp.Role + ", linked to their " + way + " account. Their first sign-in with it turns them on; no password comes over."
+			needs = ""
+		}
 		why := ""
 		switch {
 		case owner:
@@ -112,8 +127,10 @@ func (b *builder) people(s *Snapshot) {
 		if legacyKey != key {
 			legacy = []string{legacyKey}
 		}
-		b.add(GroupPeople, Item{Key: key, LegacyKeys: legacy, Name: name, From: from, Detail: detail, Why: why, Person: pp,
-			Needs: map[bool]string{true: "", false: "an invite"}[owner]})
+		if owner {
+			needs = ""
+		}
+		b.add(GroupPeople, Item{Key: key, LegacyKeys: legacy, Name: name, From: from, Detail: detail, Why: why, Person: pp, Needs: needs})
 	}
 	recognized := map[string]bool{}
 	movies := defaultWeekly(s.Settings, "movie")
@@ -176,6 +193,12 @@ func (b *builder) people(s *Snapshot) {
 	}
 }
 
+// signInWays are the sign-in kinds a person can keep, by product name.
+var signInWays = map[string]string{"plex": "Plex", "jellyfin": "Jellyfin", "emby": "Emby"}
+
+// signInWay names a sign-in kind a person can keep, or "".
+func signInWay(kind string) string { return signInWays[kind] }
+
 func (b *builder) asks(s *Snapshot) {
 	b.cover("requests")
 	for i, r := range s.Requests {
@@ -216,7 +239,7 @@ func (b *builder) asks(s *Snapshot) {
 			}
 		}
 		if name == "" {
-			name = strings.ToUpper(ref[:strings.IndexByte(ref, ':')]) + " " + ref[strings.IndexByte(ref, ':')+1:]
+			name = requests.PlaceholderName(ref) // the real name is looked up when it is imported
 		}
 		byKey := b.personRefs[personKey(s.Kind, r.By)]
 		ap := &AskPlan{App: string(s.Kind), Kind: kind, Ref: ref, IDs: ids, Approved: r.State == "approved",
@@ -260,9 +283,7 @@ func (b *builder) asks(s *Snapshot) {
 				ap.Seasons = append(ap.Seasons, n)
 			}
 		}
-		if r.FourK {
-			ap.Note = "asked for 4K in " + string(s.Kind)
-		}
+		ap.FourK = r.FourK
 		state := "waiting"
 		if ap.Approved {
 			state = "approved"

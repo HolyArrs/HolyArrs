@@ -260,9 +260,16 @@
 	"health.word.notSent": "尚未傳送",
 	"health.word.notSynced": "尚未同步",
 	"health.word.working": "正常",
-	"health.check.clearWaiting": "等待清除的下載",
+	"health.check.clearWaiting": "已匯入但仍留在下載器中的下載",
 	"health.check.saveFolder": "儲存資料夾：",
 	"health.check.saveFolderWhy": "{app} 沒有設定儲存資料夾，所以 HolyArrs 無法匯入已完成的下載。請在 設定 › 下載器 中新增一組路徑。",
-	"health.kind.clearWaiting": "等待清除的下載",
-	"health.kind.saveFolder": "下載器儲存資料夾"
+	"health.kind.clearWaiting": "已匯入但仍留在下載器中的下載",
+	"health.kind.saveFolder": "下載器儲存資料夾",
+	"health.check.usenetDl": "Usenet 下載器",
+	"health.check.torrentDl": "種子下載器",
+	"health.check.noUsenetDl": "你的來源找到了 Usenet 下載，但尚未設定 Usenet 下載器，所以無法傳送任何下載。請在 設定 › 下載器 中新增一個。",
+	"health.check.noTorrentDl": "你的來源找到了種子下載，但尚未設定種子下載器，所以無法傳送任何下載。請在 設定 › 下載器 中新增一個。",
+	"health.check.sameDownloader": "重複新增：",
+	"health.check.sameDownloaderWhy": "{app} 與另一個下載器連到同一個下載應用程式，因此它的下載可能顯示兩次。請在 設定 › 下載器 中移除其中一個。",
+	"health.kind.sameDownloader": "下載器重複新增"
 }

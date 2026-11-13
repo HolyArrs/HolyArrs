@@ -100,5 +100,6 @@
 	"settings.users.note": "Notiz für dich",
 	"settings.users.noteExample": "z. B. Mama",
 	"settings.users.days": "Tage, die der Link gilt",
-	"settings.users.makeInvite": "Einladungslink erstellen"
+	"settings.users.makeInvite": "Einladungslink erstellen",
+	"settings.users.permAuto4k": "4K-Anfragen ohne Warten genehmigt"
 }

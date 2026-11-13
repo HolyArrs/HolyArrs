@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} ویژگی امتیاز گرفت",
 	"settings.pickRuleEdit.trashResult": "{n} ویژگی امتیاز گرفت · {added} جدید · {updated} به‌روز",
 	"settings.pickRuleEdit.trashLeftOut": "{n} کنار گذاشته شد",
-	"settings.pickRuleEdit.trashTests": "آزمایش {kinds}"
+	"settings.pickRuleEdit.trashTests": "آزمایش {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "منبع‌ها",
+	"settings.pickRuleEdit.sourcesDesc": "فقط در منبع‌هایی جست‌وجو کن که یکی از این برچسب‌ها را دارند. برای جست‌وجو در همهٔ منبع‌ها خالی بگذارید.",
+	"settings.pickRuleEdit.tags": "برچسب‌ها"
 }

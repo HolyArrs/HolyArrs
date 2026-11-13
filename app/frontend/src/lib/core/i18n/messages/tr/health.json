@@ -12,7 +12,7 @@
 	"health.check.freeSpace": "Boş alan",
 	"health.check.update": "Güncelleme",
 	"health.check.waiting": "Dosya bekleyen indirmeler",
-	"health.check.clearWaiting": "Temizlenmeyi bekleyen indirmeler",
+	"health.check.clearWaiting": "İçe aktarılmış ama hâlâ bir indiricide duran indirmeler",
 	"health.check.saveFolder": "Kayıt klasörü:",
 	"health.check.saveFolderWhy": "{app} için kayıt klasörü yok, bu yüzden HolyArrs biten indirmeleri içe aktaramıyor. Ayarlar › İndiriciler bölümünde bir yol çifti ekleyin.",
 	"health.day.ahead": "{count} sırada",
@@ -88,7 +88,7 @@
 	"health.kind.trailers": "Fragman okuyucusu",
 	"health.kind.update": "Güncelleme",
 	"health.kind.waitingDownloads": "Dosya bekleyen indirmeler",
-	"health.kind.clearWaiting": "Temizlenmeyi bekleyen indirmeler",
+	"health.kind.clearWaiting": "İçe aktarılmış ama hâlâ bir indiricide duran indirmeler",
 	"health.kind.saveFolder": "İndiricinin kayıt klasörü",
 	"health.link.downloader": "İndirici",
 	"health.link.mediaServer": "Medya sunucusu",
@@ -264,5 +264,12 @@
 	"health.word.broken": "Bozuk",
 	"health.word.notSent": "Henüz gönderilmedi",
 	"health.word.notSynced": "Henüz eşitlenmedi",
-	"health.word.working": "Çalışıyor"
+	"health.word.working": "Çalışıyor",
+	"health.check.usenetDl": "Usenet indiricisi",
+	"health.check.torrentDl": "Torrent indiricisi",
+	"health.check.noUsenetDl": "Kaynakların Usenet indirmeleri buluyor ama kurulu bir Usenet indiricisi yok, bu yüzden hiçbiri gönderilemiyor. Ayarlar › İndiriciler bölümünden bir tane ekleyin.",
+	"health.check.noTorrentDl": "Kaynakların torrent indirmeleri buluyor ama kurulu bir torrent indiricisi yok, bu yüzden hiçbiri gönderilemiyor. Ayarlar › İndiriciler bölümünden bir tane ekleyin.",
+	"health.check.sameDownloader": "İki kez eklendi:",
+	"health.check.sameDownloaderWhy": "{app}, başka bir indiriciyle aynı indirme uygulamasına ulaşıyor; bu yüzden indirmeleri iki kez görünebilir. Birini Ayarlar › İndiriciler bölümünden kaldırın.",
+	"health.kind.sameDownloader": "İki kez eklenmiş indirici"
 }

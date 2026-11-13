@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Nowa ścieżka",
 	"settings.libraryFolders.changePathHint": "Najpierw przenieś tam pliki. HolyArrs sprawdza każdy plik i niczego nie przenosi.",
 	"settings.libraryFolders.checkingFiles": "Sprawdzanie plików…",
-	"settings.libraryFolders.pathChanged": "Ścieżka zmieniona"
+	"settings.libraryFolders.pathChanged": "Ścieżka zmieniona",
+	"settings.libraryFolders.sideFiles": "Pliki napisów",
+	"settings.libraryFolders.sideFilesDesc": "Napisy dołączone do pobrania można przenieść do biblioteki obok ich wideo.",
+	"settings.libraryFolders.sideOn": "Przenoś też pliki napisów",
+	"settings.libraryFolders.sideOnHint": "Plik, który jest już w bibliotece, nigdy nie jest zastępowany.",
+	"settings.libraryFolders.sideTypes": "Typy plików",
+	"settings.libraryFolders.sideTypesHint": "Oddziel typy przecinkami, np. srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs nie widzi {path}. Widzi tylko foldery zamontowane w swoim kontenerze. Dodaj wolumin, np. {path}:{inside}, a potem wpisz tu {inside}."
 }

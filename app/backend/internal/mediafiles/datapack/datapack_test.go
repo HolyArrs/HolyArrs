@@ -87,7 +87,7 @@ func TestDecodeRejectsNumericAndCollectionCaps(t *testing.T) {
 	tests := []Pack{base, base, base}
 	tests[0].PickRules = slices.Clone(base.PickRules)
 	tests[0].PickRules[0].Rules.Traits = slices.Clone(base.PickRules[0].Rules.Traits)
-	tests[0].PickRules[0].Rules.Traits[0].Points = 10001
+	tests[0].PickRules[0].Rules.Traits[0].Points = -mediafiles.MaxPoints - 1
 	tests[1].PickRules = slices.Clone(base.PickRules)
 	limits := maps.Clone(base.PickRules[0].Rules.SizeLimits)
 	limits["1080p_web"] = mediafiles.SizeLimit{Min: 10, Max: -1}

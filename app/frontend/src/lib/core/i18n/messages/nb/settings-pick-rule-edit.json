@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} egenskaper med poeng",
 	"settings.pickRuleEdit.trashResult": "{n} egenskaper med poeng · {added} nye · {updated} oppdatert",
 	"settings.pickRuleEdit.trashLeftOut": "{n} utelatt",
-	"settings.pickRuleEdit.trashTests": "tester {kinds}"
+	"settings.pickRuleEdit.trashTests": "tester {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Kilder",
+	"settings.pickRuleEdit.sourcesDesc": "Søk bare i Kildene som deler en av disse merkelappene. La feltet stå tomt for å søke i alle Kilder.",
+	"settings.pickRuleEdit.tags": "Merkelapper"
 }

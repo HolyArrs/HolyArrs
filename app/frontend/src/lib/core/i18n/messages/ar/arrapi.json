@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "تطبيقات الذكاء الاصطناعي متوقفة. السماح يشغّلها.",
 	"arrapi.ai.offOther": "تطبيقات الذكاء الاصطناعي متوقفة. اطلب من المالك تشغيلها ثم حاول مرة أخرى.",
 	"arrapi.ai.allow": "سماح",
-	"arrapi.ai.cancel": "إلغاء"
+	"arrapi.ai.cancel": "إلغاء",
+	"arrapi.seerr.sentTitle": "أرسلتها تطبيقات أخرى",
+	"arrapi.seerr.sentHint": "صيغ وملفات تعريف أرسلتها تطبيقات مثل Profilarr. معروضة هنا للقراءة فقط.",
+	"arrapi.seerr.sentFormat": "صيغة",
+	"arrapi.seerr.sentProfile": "ملف تعريف",
+	"arrapi.seerr.sentUpdated": "حُدّث {ago}"
 }

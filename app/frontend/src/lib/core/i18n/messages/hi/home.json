@@ -271,5 +271,8 @@
 	"home.metadataServerOnline": "मेटाडेटा सर्वर चालू है",
 	"home.homeCouldNotRead3": "होम अभी डाउनलोड नहीं पढ़ सका।",
 	"home.off": "बंद",
-	"home.sourcesOff": "हिस्सों में बंद"
+	"home.sourcesOff": "हिस्सों में बंद",
+	"home.noneForSources": "आपके सोर्स जो ढूँढते हैं उसके लिए नहीं है",
+	"home.addedTwice": "दो बार जोड़ा गया है",
+	"home.addedTwiceMany": "दो बार जोड़े गए हैं"
 }

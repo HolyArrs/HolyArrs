@@ -58,9 +58,21 @@ type Line struct {
 	// ChooseMergeGone. It stays after a choice is made, so the screen keeps
 	// the row and the choice can be changed.
 	Choose string `json:"choose,omitempty"`
+	// Attention marks a title whose old Library folder is not here as one:
+	// AttnUnreachable (it came over as wanted into another folder) or
+	// AttnUnchecked (its folder is on this server but was left out, so the
+	// title stays behind). Folder names that old folder.
+	Attention string `json:"attention,omitempty"`
+	Folder    string `json:"folder,omitempty"`
 	// open says the choice is still missing (the person stays behind).
 	open bool
 }
+
+// Why a title's line needs a look (Line.Attention).
+const (
+	AttnUnreachable = "unreachable"
+	AttnUnchecked   = "unchecked"
+)
 
 // Why a person needs the owner's choice (Line.Choose).
 const (
@@ -204,11 +216,39 @@ func SuggestRules(ctx context.Context, st *database.Store, p *Plan) []PathRule {
 				found = same[0]
 			}
 		}
-		if found != "" {
+		if found != "" && holdsTitles(p, old, found) {
 			out = append(out, PathRule{From: old, To: filepath.ToSlash(found)})
 		}
 	}
 	return out
+}
+
+// holdsTitles says whether a Library folder here holds the folder of at
+// least one title from the old folder, or the old folder has no titles. A
+// folder that holds none of them is not the same folder seen another way,
+// so it is not suggested: those titles come over as wanted and need
+// attention instead of quietly getting a folder they are not in.
+func holdsTitles(p *Plan, old, here string) bool {
+	libs := map[string]bool{}
+	for _, g := range p.Groups {
+		for _, it := range g.Items {
+			if f := it.Folder; f != nil && f.OldPath == old {
+				libs[f.Path] = true
+			}
+		}
+	}
+	seen := false
+	for _, g := range p.Groups {
+		for _, it := range g.Items {
+			if t := it.Title; t != nil && t.Folder != "" && libs[t.Library] {
+				seen = true
+				if isDir(filepath.Join(here, t.Folder)) {
+					return true
+				}
+			}
+		}
+	}
+	return !seen
 }
 
 func isDir(p string) bool {
@@ -257,8 +297,27 @@ type run struct {
 	// this run (or fall back to the current owner), never by an older mark.
 	personMarked map[string]bool
 	owner        int64
+	// noLookup stops request name lookups for the rest of the run once
+	// one fails; the Requests fill-in finds those names later.
+	noLookup bool
+	// found is the real name askDetails found for the item it just ran.
+	found string
 	// choose is set by one() for the item it just ran (Line.Choose).
 	choose string
+	// ruleIDs are the Pick rules this run made from profiles, by the name
+	// the plan gave them (the name here may differ when it was taken).
+	ruleIDs map[string]int64
+	// attn and attnFolder are set by title() for the item it just ran.
+	attn, attnFolder string
+	// foldersOff says the Library folders group was left out; coming lists,
+	// per kind, the planned Library folders on this server that this run adds.
+	foldersOff bool
+	coming     map[string][]string
+	// left names the planned Library folders set to "Don't bring them";
+	// unseen, by the folder here a path rule points at, an old folder this
+	// server cannot see whose titles are not in that folder.
+	left   map[string]bool
+	unseen map[string]string
 	// prowlarr is the kept Prowlarr address and key, read once.
 	prowlarr *secretsfile.MoveCredential
 }
@@ -289,12 +348,60 @@ func (r *run) sourceOrMoveTime(source string) (time.Time, error) {
 	return r.referenceTime()
 }
 
+// folderGroup reads the Library folders group: whether it was left out,
+// and the folders on this server it adds.
+func (r *run) folderGroup(p *Plan) {
+	r.coming, r.left, r.unseen = map[string][]string{}, map[string]bool{}, map[string]string{}
+	for _, g := range p.Groups {
+		if g.Name != GroupFolders {
+			continue
+		}
+		r.foldersOff = g.Skipped
+		for _, it := range g.Items {
+			if f := it.Folder; f != nil && f.Left {
+				r.left[filepath.Clean(filepath.FromSlash(f.Path))] = true
+			}
+			if f := it.Folder; f != nil && f.Path != f.OldPath && !isDir(filepath.FromSlash(f.OldPath)) && !holdsTitles(p, f.OldPath, f.Path) {
+				r.unseen[filepath.Clean(filepath.FromSlash(f.Path))] = f.OldPath
+			}
+			if f := it.Folder; f != nil && !g.Skipped && !f.Left && isDir(filepath.FromSlash(f.Path)) {
+				r.coming[f.Kind] = append(r.coming[f.Kind], filepath.Clean(filepath.FromSlash(f.Path)))
+			}
+		}
+	}
+}
+
+// PreviewTitles makes a title's plan line say what the import will do
+// with it whenever that is not "uses the folder where it is": left out
+// with its folder at "Don't bring them", wanted and needing attention, or
+// added with no files. It asks the same check the dry run makes.
+func (m *Mover) PreviewTitles(ctx context.Context, p *Plan) {
+	r := &run{m: m, ctx: ctx, dry: true}
+	r.folderGroup(p)
+	for gi := range p.Groups {
+		g := &p.Groups[gi]
+		if g.Name != GroupTitles || g.Skipped {
+			continue
+		}
+		for i := range g.Items {
+			it := &g.Items[i]
+			if it.Title == nil || (partOf(*it) != "" && !m.partOn(partOf(*it))) {
+				continue
+			}
+			if res, detail := r.title(*it); res != ResAdopt {
+				it.Detail = detail
+			}
+		}
+	}
+}
+
 // Run dry-runs (dry) or applies a Plan. progress, when set, hears how far
 // it is.
 func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by domain.Actor, progress func(done, total int)) *Report {
 	r := &run{m: m, ctx: ctx, move: moveID, dry: dry, by: by, people: map[string]int64{}, personStable: map[string]bool{}, personMarked: map[string]bool{},
 		rep: &Report{Move: moveID, Dry: dry, Apps: p.Apps, At: m.now(), Lines: []Line{}, Counts: map[string]int{},
 			NotMoved: append([]NotMoved{}, p.NotMoved...), NeedsInput: append([]string{}, p.NeedsInput...), Notes: p.Notes}}
+	r.folderGroup(p)
 	for _, g := range p.Groups {
 		for _, it := range g.Items {
 			if it.Person != nil {
@@ -320,6 +427,7 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 			}
 			var res, detail string
 			r.choose = ""
+			r.attn, r.attnFolder, r.found = "", "", ""
 			switch {
 			case g.Skipped:
 				res, detail = ResSkipped, "you left "+strings.ToLower(GroupLabels[g.Name])+" out"
@@ -333,6 +441,13 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 				needs = it.Needs
 			}
 			r.line(g.Name, it, res, detail, needs)
+			if r.found != "" {
+				r.rep.Lines[len(r.rep.Lines)-1].Name = r.found
+			}
+			if r.attn != "" {
+				l := &r.rep.Lines[len(r.rep.Lines)-1]
+				l.Attention, l.Folder = r.attn, r.attnFolder
+			}
 			if r.choose != "" {
 				l := &r.rep.Lines[len(r.rep.Lines)-1]
 				l.Choose = r.choose
@@ -364,7 +479,7 @@ func next(rep *Report) []string {
 	if len(rep.NeedsInput) > 0 {
 		out = append(out, "Type the keys and passwords listed under \"needs your input\": Sources, Downloaders, Alerts and subtitle sites stay paused until then.")
 	}
-	links, people, same, outside, trakt := false, false, false, false, false
+	links, people, linked, same, outside, trakt := false, false, false, false, false, false
 	for _, l := range rep.Lines {
 		made := l.Result == ResCreated || l.Result == ResCreate
 		switch {
@@ -373,8 +488,10 @@ func next(rep *Report) []string {
 			trakt = trakt || strings.HasPrefix(l.Key, "outside_list:"+requests.ListTrakt+":")
 		case (l.Group == GroupSources || l.Group == GroupDownloaders) && made:
 			links = true
-		case l.Group == GroupPeople && made:
+		case l.Group == GroupPeople && made && l.Needs != "":
 			people = true
+		case l.Group == GroupPeople && (made || l.Result == ResChanged || l.Result == ResChange):
+			linked = true
 		case l.Group == GroupPeople && l.Choose != "" && l.open:
 			same = true
 		}
@@ -390,6 +507,9 @@ func next(rep *Report) []string {
 	}
 	if people {
 		out = append(out, "People came over turned off, as members (admin or owner only where you confirmed it): invite them from Settings > Users and roles.")
+	}
+	if linked {
+		out = append(out, "People who signed in to the old app with Plex, Jellyfin or Emby turn on at their first sign-in that way, once it is on under Settings > Sign-in and security.")
 	}
 	if same {
 		out = append(out, "Some people need a choice: pick Same person or Leave out for each, then try and import again.")
@@ -488,6 +608,7 @@ var natural = map[string][2]string{
 	"ask": {"asks", "name"}, "user": {"users", "name"}, "alert": {"alerts", "name"}, "subtitle_site": {"subtitle_sites", "name"},
 	"source": {"sources", "name"}, "downloader": {"downloaders", "name"}, "never_add": {"never_add", "name"},
 	"title": {"titles", "kind"}, "folder": {"library_folders", "path"}, "outside_list": {"outside_lists", "name"},
+	"pick_rules": {"pick_rules", "name"}, "own_trait": {"own_traits", "name"},
 }
 
 type rowQuerier interface {
@@ -588,6 +709,9 @@ func (r *run) one(group string, it Item) (string, string) {
 		(it.Person == nil || it.Person.StableIdentity && it.Person.Choice != PersonSkip && it.Person.Choice != PersonMerge && it.Person.Role != "owner") {
 		if it.Person != nil {
 			r.people[it.Key] = id
+			if it.Person.SignIn != "" {
+				return r.keepSignIn(it, id)
+			}
 		}
 		// A title moved before still takes the quality the old app recorded
 		// for each file, so moving again after reading the old app updates it.

@@ -165,7 +165,8 @@ func (h *Health) ask(ctx context.Context) error {
 	if h.Service == nil {
 		return errors.New("no metadata server")
 	}
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	// Waiting at our own Gate is not the server being down.
+	ctx, cancel := afterGate(ctx, 5*time.Second)
 	defer cancel()
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, h.Service.base+"/readyz", nil)
 	resp, err := h.Service.http.Do(req)

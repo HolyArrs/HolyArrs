@@ -271,5 +271,8 @@
 	"home.metadataServerOnline": "Server dei metadati online",
 	"home.homeCouldNotRead3": "Home non riesce a leggere i download in questo momento.",
 	"home.off": "Spento",
-	"home.sourcesOff": "Spento in Parti"
+	"home.sourcesOff": "Spento in Parti",
+	"home.noneForSources": "manca per ciò che trovano le tue fonti",
+	"home.addedTwice": "è aggiunto due volte",
+	"home.addedTwiceMany": "sono aggiunti due volte"
 }

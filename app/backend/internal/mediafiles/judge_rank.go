@@ -139,9 +139,41 @@ func ReachesGoodEnough(releaseName string, rules PickRulesBody) bool {
 // is the File's own size in bytes (0: not known), so size traits score it
 // the way they score a new Release.
 func CurrentOf(releaseName string, size int64, importedAt time.Time, rules PickRulesBody) Current {
+	return CurrentOfFile(releaseName, size, importedAt, nil, rules)
+}
+
+// CurrentOfFile is CurrentOf for a File whose audio languages are known
+// (FileLanguages): language trait tests read them before the name.
+func CurrentOfFile(releaseName string, size int64, importedAt time.Time, audio []string, rules PickRulesBody) Current {
 	p := releasename.Parse(releaseName, hintsFor(rules))
 	p.Size = size
-	return Current{Step: StepFor(p), Points: sumPoints(p, rules), Group: p.Group.Value, Fix: p.Fix, ImportedAt: importedAt}
+	p.AudioLanguages = audio
+	return Current{Step: StepFor(p), Points: sumPoints(p, rules), Group: p.Group.Value, Fix: p.Fix, ImportedAt: importedAt, parse: &p}
+}
+
+// currentWithTitle scores the current file again with what the Release's
+// match says of the title (original language, year) when the file's own
+// name lacks them, so language and year trait tests read the file as they
+// read a Release. Without those tests the points are the same.
+func currentWithTitle(cur *Current, rel releasename.Result, rules PickRulesBody) *Current {
+	if cur.parse == nil {
+		return cur
+	}
+	p := *cur.parse
+	lang := p.OriginalLanguage == "" && rel.OriginalLanguage != ""
+	year := p.Year.Value <= 0 && p.TitleYear == 0 && rel.TitleYear > 0
+	if !lang && !year {
+		return cur
+	}
+	if p.OriginalLanguage == "" {
+		p.OriginalLanguage = rel.OriginalLanguage
+	}
+	if p.TitleYear == 0 {
+		p.TitleYear = rel.TitleYear
+	}
+	c := *cur
+	c.Points = sumPoints(p, rules)
+	return &c
 }
 
 // StepOf is the ladder step a name parses to and its place in the rules'

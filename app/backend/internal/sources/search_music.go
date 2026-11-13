@@ -45,6 +45,8 @@ type albumSet struct {
 	tracks []trackSlot
 	target map[int64]bool
 	notOut map[int64]bool
+	// listing is a search that only lists Releases for a person to pick from.
+	listing bool
 }
 
 // trackSlot is a track with its Slot in the Version being searched, the copy it holds, and whether it is kept up to date.
@@ -99,6 +101,7 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 	if err != nil {
 		return err
 	}
+	set.listing = show
 	var looking []*trackSlot
 	for i := range set.tracks {
 		t := &set.tracks[i]
@@ -157,7 +160,7 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(result)
 		return nil
 	}
-	fs, failures, answered, skipped, err := s.askAll(ctx, r, albumQuery(ti, part), hand, false, ti.Tags)
+	fs, failures, answered, skipped, err := s.askAll(ctx, r, albumQuery(ti, part), hand, false, ti.Tags, set.pr.Body.Tags)
 	if err != nil {
 		return err
 	}
@@ -229,6 +232,9 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 	}
 	if left > 0 {
 		reason := fmt.Sprintf("no Release passed the Pick rules for it (%d found, %d refused)", len(all), refused)
+		if b := blockedWhy(vs); b != "" {
+			reason = b
+		}
 		rest(reason)
 		if chosen+held == 0 {
 			s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchDone, part.Name+": "+reason, nil)
@@ -364,7 +370,7 @@ func (s *Searcher) judgeAlbum(ctx context.Context, set albumSet, all []found, ha
 		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Music: true})
 		rels[i] = mediafiles.ReleaseFacts{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
-		ss := mediafiles.SlotSet{Match: mediafiles.MatchTitle(p, []mediafiles.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, SkipGate: skipGate, Out: true,
+		ss := mediafiles.SlotSet{Match: mediafiles.MatchTitle(p, []mediafiles.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, Listing: set.listing, SkipGate: skipGate, Out: true,
 			OutSince: outSince, Checks: checks}
 		if ss.Match.Title != nil {
 			set.lines(&ss, rels[i], f.item.Files, rules, turnedFor)
@@ -602,7 +608,7 @@ func (s *Searcher) feedArtist(ctx context.Context, by domain.Actor, jobID *int64
 			}
 		}
 		heldNow := map[int64]int64{}
-		cands := append([]found(nil), fs...)
+		cands := rulesTake(group[0].pr.Body.Tags, fs)
 		for _, c := range group {
 			if !kept[c.sl.ID] {
 				continue

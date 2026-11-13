@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Gervigreindarforrit eru óvirk. Að leyfa kveikir á þeim.",
 	"arrapi.ai.offOther": "Gervigreindarforrit eru óvirk. Biddu eigandann að kveikja á þeim og reyndu svo aftur.",
 	"arrapi.ai.allow": "Leyfa",
-	"arrapi.ai.cancel": "Hætta við"
+	"arrapi.ai.cancel": "Hætta við",
+	"arrapi.seerr.sentTitle": "Sent frá öðrum öppum",
+	"arrapi.seerr.sentHint": "Snið og prófílar sem öpp eins og Profilarr sendu. Hér aðeins til lestrar.",
+	"arrapi.seerr.sentFormat": "Snið",
+	"arrapi.seerr.sentProfile": "Prófíll",
+	"arrapi.seerr.sentUpdated": "uppfært {ago}"
 }

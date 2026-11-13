@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <b>Magyar</b> · <a href="LANGUAGES.md">További nyelvek</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">További nyelvek</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0: már 44 nyelven**, jobbról balra is. Az aria2 letöltőként működik, az évadcsomagok pedig néhány részenként töltődnek le. [Újdonságok](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1: beépített Knaben, TorrentsCSV, SubsPlease és IPTorrents**, Prowlarr nélkül. Kérj sorozatokat 4K-ban, és a Profilarr elküldheti a formátumait és profiljait. [Újdonságok](https://holyarrs.com/whats-new/)
 
 > A HolyArrsodban minden poszter, trailer és értékelés egy általam üzemeltetett és fizetett szerverről jön, hogy mindenkinek ingyenes maradhasson. Ha a HolyArrs egy kicsit jobbá tette a filmes estédet, egy szponzoráció mindannyiunk számára életben tartja a projektet 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center">A <b>HolyArrs</b> egy saját szerveren futtatott app a sorozataidhoz, filmjeidhez és zenéidhez.<br>Böngéssz benne, mint egy streaming appban, kérd, amit szeretnél, a többit pedig elintézi.</p>
 
-<p align="center"><b>Kb. 15 MB letöltés · kb. 140 MB RAM üresjáratban 10,000 címmel · amd64, arm64, armv7</b><br><sub>A hat app, amelyet kivált, együtt 718.2 MB.</sub></p>
+<p align="center"><b>Kb. 19.5 MB letöltés · kb. 95 MiB RAM üresjáratban friss telepítésen · amd64, arm64, armv7</b><br><sub>A hat app, amelyet kivált, együtt 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Gyors indítás</a> · <a href="#why">Miért</a> · <a href="#what-it-does">Mit tud</a> · <a href="#moving">Átállás más appokról</a> · <a href="#manual">A kézikönyv</a> · <a href="#help">Segítség</a></p>
 
@@ -105,9 +105,9 @@ Egy appot akartam. Egy bejelentkezést, egy portot, egy helyet, ahol körülnéz
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Mind a hat együtt** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Kb. 48-szor kisebb. Tömörített registry-letöltés, linuxserver.io image-ek, amd64, mérve 2026-11-08-án. A RAM üresjáratban 10,000 címmel, valamint 55,000 filmmel és epizóddal mérve.</sub>
+<sub>Kb. 37-szor kisebb. Tömörített registry-letöltés, linuxserver.io image-ek, amd64, mérve 2026-11-08-án. A RAM üresjáratban 10,000 címmel, valamint 55,000 filmmel és epizóddal mérve. (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Valaki kér egy címet. A HolyArrs végigkeresi a Forrásaidat, a Választási s
 | | |
 |---|---|
 | 🍿 **Explore** (Felfedezés) | Böngéssz, mint egy streaming appban. Vidd az egeret egy cím fölé, és elindul a trailer. |
-| 🙋 **Requests** (Kérések) | Egy egész sorozat vagy csak egy évad. Te hagyod jóvá, vagy a megbízható embereket átengeded a sorban. |
+| 🙋 **Requests** (Kérések) | Egy egész sorozat vagy csak egy évad. Te hagyod jóvá, vagy a megbízható embereket átengeded a sorban. A Plex és a Pulsarr megnézendő listáiból kérések lehetnek. |
 | 🎯 **Pick rules** (Választási szabályok) | Te döntöd el, melyik Release nyer: méret, minőség, nyelv. |
-| 💬 **Feliratok** | Az általad választott nyelveken, a fájllal együtt tárolva. Az online keresésük az 1.0 után jön. |
+| 💬 **Feliratok** | Az általad választott nyelveken, feliratoldalakról keresve és a fájllal együtt tárolva. |
 | 📅 **Calendar** (Naptár) | Mi következik mindenből, amit követsz. |
-| 🚚 **Vidd magaddal a beállításaidat** | Sonarrból, Radarrból, Lidarrból, Prowlarrból, Bazarrból, Seerrből, Overseerrből, qBittorrentből és SABnzbdból. Előbb próbáld ki, később visszavonhatod. |
-| 🔌 **API a korábbi appokhoz** | A Prowlarr tovább küldhet Forrásokat a HolyArrsnak, ha bekapcsolod. |
-| 🗝️ **Nem kellenek API-kulcsok** | A címek, a borítók és a toplisták a HolyArrs metaadat-szerveréről jönnek. |
+| 🔔 **Alerts** | Discord, e-mail, Telegram, ntfy, Gotify, Pushover vagy egy webhook. |
+| 🚚 **Vidd magaddal a beállításaidat** | Sonarrból, Radarrból, Lidarrból, Prowlarrból, Bazarrból, Seerrből, Overseerrből, qBittorrentből és SABnzbdból. Válaszd ki, mi jöjjön át, később visszavonhatod. |
+| 🔌 **API a korábbi appokhoz** | A Seerr, a Prowlarr, a Bazarr, az Unpackerr és a Homepage tovább működik, ha bekapcsolod. |
+| 🗝️ **Nem kellenek API-kulcsok** | A címek, a borítók és a toplisták a HolyArrs metaadat-szerveréről jönnek. Saját kulcsokkal vagy saját szerverrel is megy. |
 | 🔒 **Titkosított kulcsok** | A tárolt jelszavakat és kulcsokat egy főkulcs zárja le, amely a konfigurációs mappádban van. |
-| 🪶 **Apró** | Egy kb. 15 MB-os image, amelyben csak a HolyArrs van. |
+| 🪶 **Apró** | Egy kb. 19.5 MB-os image, amelyben csak a HolyArrs van. |
 
 <details>
 <summary><b>Nézd meg az összes oldalt mozgásban</b></summary>
@@ -148,9 +149,9 @@ Valaki kér egy címet. A HolyArrs végigkeresi a Forrásaidat, a Választási s
 
 ## 🤝 Együttműködik azzal, amit már futtatsz
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Letöltők: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Médiaszerverek: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Letöltők: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Médiaszerverek: Plex, Jellyfin, Emby." /></picture>
 
-- **Letöltők:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Letöltők:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Médiaszerverek:** Plex, Jellyfin, Emby
 - **Források:** bármely Torznab- vagy Newznab-indexer, illetve Prowlarr vagy Jackett
 - **Átveszi a beállításaidat innen:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -159,7 +160,7 @@ Valaki kér egy címet. A HolyArrs végigkeresi a Forrásaidat, a Választási s
 
 ## 🚚 Hozd magaddal a régi beállításaidat
 
-Nyisd meg a **Settings > Move from other apps** (Beállítások > Importálás más appokból) menüt, add meg minden régi app címét és API-kulcsát (vagy egy backup zipet), válaszd ki, mi jöjjön át, futtasd a **Try it** (próbáld ki) műveletet, majd a **Move** (áthelyezés) műveletet. Az áthelyezést később visszavonhatod.
+Nyisd meg a **Settings > Import from other apps** (Beállítások > Importálás más alkalmazásokból) menüt, add meg minden régi app címét és API-kulcsát (vagy egy backup zipet), válaszd ki, mi jöjjön át, majd válaszd az **Import** (importálás) gombot. Az importálást később visszavonhatod.
 
 | Innen | Mi jön át |
 |---|---|
@@ -171,12 +172,11 @@ Nyisd meg a **Settings > Move from other apps** (Beállítások > Importálás m
 
 A HolyArrs csak olvassa a régi appjaidat, és semmit nem módosít bennük, így addig futtathatod őket egymás mellett, amíg meg nem bízol benne.
 
-A kulcsok és a jelszavak nem jönnek át; újra beírod őket, vagy fájlból importálod. Az egyéni formátumok, a tagek és az előzmények nem jönnek át. A médiafájlok soha nem mozognak. Lépésről lépésre: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+A kulcsok és a jelszavak nem jönnek át; újra beírod őket, vagy fájlból importálod. Az egyéni formátumok, a tagek és az előzmények nem jönnek át. A médiafájlok soha nem mozognak. Lépésről lépésre: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Amit még nem tud
 
 - **Önálló letöltés.** A HolyArrs csatlakozik a qBittorrenthez, a SABnzbdhez és a többihez. Nem váltja ki őket.
-- **MI- vagy MCP-funkciók.** Nincsenek az 1.0-ban.
 - **Telefonos és TV-s appok.** Nincsenek megépítve. A webes app működik telefonon.
 - **A zene az Explore-ban** még készül.
 
@@ -213,6 +213,8 @@ Ha lehúzod a `holyarrs/holyarrs:latest` image-et, a géped architektúrájának
 
 NAS-t használsz? Nézd meg: [Unraid, Synology és más NAS-ok](https://docs.HolyArrs.com/run/platforms/).
 
+Natív csomagot szeretnél? Minden [kiadáshoz](https://github.com/HolyArrs/HolyArrs/releases) mellékelünk egy kísérleti Synology csomagot (`.spk`). Lásd: [Synology csomag](../../docs/run/synology.md).
+
 ## Verziócímkék
 
 Az image-ek a Docker Hubon vannak, [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs) néven.
@@ -220,7 +222,7 @@ Az image-ek a Docker Hubon vannak, [`holyarrs/holyarrs`](https://hub.docker.com/
 | Címke | Mire használd |
 | :----: | --- |
 | `latest` | A legújabb verzió. |
-| `1.1.0` | Egy pontos verzió. Sosem változik. |
+| `1.1.1` | Egy pontos verzió. Sosem változik. |
 
 ## Használat
 
@@ -415,7 +417,7 @@ Zárt termékbe szeretnéd építeni? Írj a support@HolyArrs.com címre kereske
 
 ## Tartsd életben
 
-A HolyArrs ingyenes, de nem ingyen üzemel. Minden telepítés egy metaadat-szerverrel beszél, amelyet havonta fizetek. A szponzorok ezt fedezik, és több órát vásárolnak azokra a dolgokra, amelyekre szavazol.
+A HolyArrs ingyenes, de nem ingyen üzemel. Alapból minden telepítés egy metaadat-szerverrel beszél, amelyet havonta fizetek. A szponzorok ezt fedezik, és több órát vásárolnak azokra a dolgokra, amelyekre szavazol.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="HolyArrs szponzorálása" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Szavazz az útitervre" /></picture></a></p>
 

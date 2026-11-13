@@ -97,6 +97,28 @@ describe('status rows', () => {
 		]);
 	});
 
+	it('warns when the Sources find downloads no Downloader can take', () => {
+		const rows = buildRows({
+			checks: [
+				{ key: 'no_downloader:usenet', kind: 'no_downloader', subject: 'usenet', state: 'warning', message: 'x' } as never,
+				{ key: 'no_downloader:torrent', kind: 'no_downloader', subject: 'torrent', state: 'ok', message: '' } as never
+			]
+		});
+		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason, r.fix])).toEqual([
+			['Usenet Downloader', 'downloaders', 'wait', 'Your Sources find Usenet downloads, but no Usenet Downloader is set up, so none can be sent. Add one in Settings › Downloaders.', '/settings/downloaders'],
+			['Torrent Downloader', 'downloaders', 'ok', '', '/settings/downloaders']
+		]);
+	});
+
+	it('names a Downloader added twice, fixed in Settings > Downloaders', () => {
+		const rows = buildRows({
+			checks: [{ key: 'same_downloader:2', kind: 'same_downloader', subject: 'SABnzbd (moved)', state: 'warning', message: 'SABnzbd (moved) reaches the same app as SABnzbd' } as never]
+		});
+		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason, r.fix])).toEqual([
+			['Added twice: SABnzbd (moved)', 'downloaders', 'wait', 'SABnzbd (moved) reaches the same download app as another Downloader, so its downloads can show twice. Remove one in Settings › Downloaders.', '/settings/downloaders']
+		]);
+	});
+
 	it('does not count a starting part as a problem', () => {
 		expect(needsAttention(buildRows({ states: [link('source', 1, 'starting')] }))).toEqual([]);
 	});

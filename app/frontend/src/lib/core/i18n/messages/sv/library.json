@@ -166,6 +166,13 @@
 	"library.import.followHint": "Visa dem i min kalender.",
 	"library.import.adoptOne": "Överta 1 {word}",
 	"library.import.adoptMany": "Överta {n} {words}",
+	"library.import.searchFolders": "Sök i mappar",
+	"library.import.folderCountOne": "1 mapp",
+	"library.import.folderCountMany": "{n} mappar",
+	"library.import.titleAndFolder": "Titel och mapp",
+	"library.import.matchFor": "Matchning för {folder}",
+	"library.import.seeLarge": "Visa affischen för {name} i stort format",
+	"library.import.noneMatch": "Inga mappar matchar.",
 	"library.report.keep.one": "{n} titel hålls uppdaterad",
 	"library.report.keep.many": "{n} titlar hålls uppdaterade",
 	"library.report.keep.partOne": "{ok} av {total} titel hålls uppdaterad",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Den första avläsningen sker inom 30 minuter.",
 	"library.stats.watchedHelp": "Från uppspelningshistoriken i Plex, Jellyfin och Emby. Plex räknar bara uppspelningar, så titlar som markerats som sedda för hand syns inte.",
 	"library.stats.lastRead": "Senast avläst {ago}.",
-	"library.stats.noMatch": "Senast avläst {ago}. Inget av det som har setts matchar ditt Bibliotek än.",
+	"library.stats.noMatch": "Tittarhistorik kollad {ago}. Inget av det som har setts matchar ditt Bibliotek än.",
 	"library.stats.notLinked": "Inte länkad",
 	"library.stats.lastWatched": "Senast sedd {ago}",
 	"library.stats.unit.movie.one": "{n} film",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} avsnitt",
 	"library.stats.unit.episode.other": "{n} avsnitt",
 	"library.stats.unit.play.one": "{n} uppspelning",
-	"library.stats.unit.play.other": "{n} uppspelningar"
+	"library.stats.unit.play.other": "{n} uppspelningar",
+	"library.byHand.askReplaceOne": "1 fil ersätter en fil som redan finns i Biblioteket. Den gamla filen hamnar i Nyligen raderade. Importera?",
+	"library.byHand.askReplaceMany": "{n} filer ersätter filer som redan finns i Biblioteket. De gamla filerna hamnar i Nyligen raderade. Importera?"
 }

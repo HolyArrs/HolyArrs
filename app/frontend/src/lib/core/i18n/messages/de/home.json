@@ -271,5 +271,8 @@
 	"home.metadataServerOnline": "Metadatenserver online",
 	"home.homeCouldNotRead3": "Start konnte Downloads gerade nicht lesen.",
 	"home.off": "Aus",
-	"home.sourcesOff": "In Teile ausgeschaltet"
+	"home.sourcesOff": "In Teile ausgeschaltet",
+	"home.noneForSources": "fehlt für das, was deine Quellen finden",
+	"home.addedTwice": "ist doppelt hinzugefügt",
+	"home.addedTwiceMany": "sind doppelt hinzugefügt"
 }

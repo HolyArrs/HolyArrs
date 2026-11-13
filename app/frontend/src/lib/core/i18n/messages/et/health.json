@@ -260,9 +260,16 @@
 	"health.word.notSent": "Pole veel saadetud",
 	"health.word.notSynced": "Pole veel sünkroonitud",
 	"health.word.working": "Töötab",
-	"health.check.clearWaiting": "Tühjendamist ootavad allalaadimised",
+	"health.check.clearWaiting": "Imporditud allalaadimised on veel allalaadijas",
 	"health.check.saveFolder": "Salvestuskaust:",
 	"health.check.saveFolderWhy": "{app} jaoks pole salvestuskausta määratud, seega ei saa HolyArrs valmis allalaadimisi importida. Lisa teepaar jaotises Seaded › Allalaadijad.",
-	"health.kind.clearWaiting": "Tühjendamist ootavad allalaadimised",
-	"health.kind.saveFolder": "Allalaadija salvestuskaust"
+	"health.kind.clearWaiting": "Imporditud allalaadimised on veel allalaadijas",
+	"health.kind.saveFolder": "Allalaadija salvestuskaust",
+	"health.check.usenetDl": "Useneti allalaadija",
+	"health.check.torrentDl": "Torrentite allalaadija",
+	"health.check.noUsenetDl": "Sinu allikad leiavad Useneti allalaadimisi, aga ühtegi Useneti allalaadijat pole seadistatud, seega ei saa ühtegi saata. Lisa see jaotises Seaded › Allalaadijad.",
+	"health.check.noTorrentDl": "Sinu allikad leiavad torrenteid, aga ühtegi torrentite allalaadijat pole seadistatud, seega ei saa ühtegi saata. Lisa see jaotises Seaded › Allalaadijad.",
+	"health.check.sameDownloader": "Lisatud kaks korda:",
+	"health.check.sameDownloaderWhy": "{app} jõuab samasse allalaadimisrakendusse nagu teine allalaadija, seega võivad selle allalaadimised näha kaks korda. Eemalda üks: Seaded › Allalaadijad.",
+	"health.kind.sameDownloader": "Allalaadija lisatud kaks korda"
 }

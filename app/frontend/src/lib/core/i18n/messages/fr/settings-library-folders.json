@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Nouveau chemin",
 	"settings.libraryFolders.changePathHint": "Déplacez d’abord les fichiers à cet endroit. HolyArrs vérifie chaque fichier et ne déplace rien.",
 	"settings.libraryFolders.checkingFiles": "Vérification des fichiers…",
-	"settings.libraryFolders.pathChanged": "Chemin changé"
+	"settings.libraryFolders.pathChanged": "Chemin changé",
+	"settings.libraryFolders.sideFiles": "Fichiers de sous-titres",
+	"settings.libraryFolders.sideFilesDesc": "Les sous-titres fournis avec un téléchargement peuvent être placés dans la bibliothèque à côté de leur vidéo.",
+	"settings.libraryFolders.sideOn": "Prendre aussi les sous-titres",
+	"settings.libraryFolders.sideOnHint": "Un fichier déjà dans la bibliothèque n'est jamais remplacé.",
+	"settings.libraryFolders.sideTypes": "Types de fichiers",
+	"settings.libraryFolders.sideTypesHint": "Séparez les types par des virgules, par exemple srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs ne voit pas {path}. Il ne voit que les dossiers montés dans son conteneur. Ajoutez un volume comme {path}:{inside}, puis utilisez {inside} ici."
 }

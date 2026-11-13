@@ -100,5 +100,6 @@
 	"settings.users.note": "Kendine not",
 	"settings.users.noteExample": "örn. Annem",
 	"settings.users.days": "Bağlantının geçerli olacağı gün",
-	"settings.users.makeInvite": "Davet bağlantısı oluştur"
+	"settings.users.makeInvite": "Davet bağlantısı oluştur",
+	"settings.users.permAuto4k": "Beklemeden onaylanan 4K istekleri"
 }

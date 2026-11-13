@@ -271,5 +271,8 @@
 	"home.noSaveFolder": "nav saglabāšanas mapes",
 	"home.noSaveFolderMany": "nav saglabāšanas mapes",
 	"home.off": "Izslēgts",
-	"home.sourcesOff": "Izslēgts sadaļā Daļas"
+	"home.sourcesOff": "Izslēgts sadaļā Daļas",
+	"home.noneForSources": "trūkst tam, ko atrod tavi avoti",
+	"home.addedTwice": "ir pievienots divreiz",
+	"home.addedTwiceMany": "ir pievienoti divreiz"
 }

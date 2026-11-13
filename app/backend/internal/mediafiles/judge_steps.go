@@ -23,15 +23,21 @@ func hasFail(v Verdict, step, prefix string) bool {
 	return false
 }
 
+// sumPoints adds in 64 bits and stops at MaxPoints either way, so many
+// large scores cannot wrap around where int is 32 bits (armv7).
 func sumPoints(p releasename.Result, rules PickRulesBody) int {
-	n := 0
+	var n int64
 	for _, tp := range rules.Traits {
 		if ok, _ := traitMatches(tp.Trait, p); ok {
-			n += tp.Points
+			n += int64(tp.Points)
 		}
 	}
-	return n
+	return int(max(-MaxPoints, min(MaxPoints, n)))
 }
+
+// gainOver reports whether points beat cur by at least step, worked out in
+// 64 bits so the difference of two large totals cannot wrap around.
+func gainOver(points, cur, step int) bool { return int64(points)-int64(cur) >= int64(step) }
 
 func (v *Verdict) safety(rel ReleaseFacts, rules PickRulesBody, step string, set SlotSet) {
 	p := rel.Parse
@@ -130,6 +136,10 @@ var langNames = map[string]string{"en": "English", "fr": "French", "de": "German
 
 func (v *Verdict) language(p releasename.Result, rules PickRulesBody, t *TitleRef) {
 	langs := p.Languages
+	if len(langs) == 0 && rules.Synced.OldApp() && t.OriginalLanguage != "" {
+		// As the old apps: no language word means the original language.
+		langs = []string{t.OriginalLanguage}
+	}
 	if len(langs) == 0 {
 		v.add("hard", "language", "warn", "no language in the name; assumed the original language", 0)
 		return
@@ -176,6 +186,10 @@ func (v *Verdict) better(rel ReleaseFacts, rules PickRulesBody, cur *Current, id
 	if fixCounts && pol.MaxAgeDays > 0 && !cur.ImportedAt.IsZero() && time.Since(cur.ImportedAt) > time.Duration(pol.MaxAgeDays)*24*time.Hour {
 		fixCounts = false
 	}
+	if rules.Synced.OldApp() {
+		v.betterImported(rules, cur, idx, curIdx, points, fixCounts)
+		return
+	}
 	ge := curIdx >= stepIndex(rules, rules.GoodEnoughAt) && (rules.GoodEnoughPoints == nil || cur.Points >= *rules.GoodEnoughPoints)
 	switch {
 	case idx < curIdx:
@@ -185,17 +199,40 @@ func (v *Verdict) better(rel ReleaseFacts, rules PickRulesBody, cur *Current, id
 	case ge:
 		v.add("better", "good_enough_already", "fail", "the current file is already good enough", 0)
 	case rules.Order == "points_then_quality":
-		if points-cur.Points >= rules.UpgradeMinPoints || (points == cur.Points && idx > curIdx) {
+		if gainOver(points, cur.Points, rules.UpgradeMinPoints) || (points == cur.Points && idx > curIdx) {
 			v.add("better", "points", "pass", fmt.Sprintf("%d points over the current %d", points, cur.Points), 0)
 		} else {
 			v.add("better", "not_better", "fail", "not better than the current file", 0)
 		}
 	default:
-		if idx > curIdx || points-cur.Points >= rules.UpgradeMinPoints {
+		if idx > curIdx || gainOver(points, cur.Points, rules.UpgradeMinPoints) {
 			v.add("better", "higher", "pass", "better than the current file", 0)
 		} else {
 			v.add("better", "not_better", "fail", "not better than the current file", 0)
 		}
+	}
+}
+
+// betterImported is the check for Pick rules brought from an old app, in
+// its order: a higher step counts only while the file is below the Good
+// enough step, and more points only while the file is below the Good
+// enough points, each on its own.
+func (v *Verdict) betterImported(rules PickRulesBody, cur *Current, idx, curIdx, points int, fixCounts bool) {
+	switch {
+	case idx < curIdx:
+		v.add("better", "lower_step", "fail", fmt.Sprintf("%s is lower than the current file (%s)", rules.Steps[idx].Quality, cur.Step), 0)
+	case fixCounts:
+		v.add("better", "fix", "pass", "a fixed copy of the same step", 0)
+	case idx > curIdx && curIdx < stepIndex(rules, rules.GoodEnoughAt):
+		v.add("better", "higher", "pass", "better than the current file", 0)
+	case idx > curIdx:
+		v.add("better", "good_enough_already", "fail", "the current file's step is already good enough", 0)
+	case rules.GoodEnoughPoints != nil && cur.Points >= *rules.GoodEnoughPoints:
+		v.add("better", "good_enough_already", "fail", "the current file's points are already good enough", 0)
+	case points > cur.Points && gainOver(points, cur.Points, rules.UpgradeMinPoints):
+		v.add("better", "points", "pass", fmt.Sprintf("%d points over the current %d", points, cur.Points), 0)
+	default:
+		v.add("better", "not_better", "fail", "not better than the current file", 0)
 	}
 }
 

@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} பண்புகளுக்கு மதிப்பெண்",
 	"settings.pickRuleEdit.trashResult": "{n} பண்புகளுக்கு மதிப்பெண் · {added} புதியவை · {updated} புதுப்பிக்கப்பட்டவை",
 	"settings.pickRuleEdit.trashLeftOut": "{n} விடுபட்டன",
-	"settings.pickRuleEdit.trashTests": "சோதிப்பது {kinds}"
+	"settings.pickRuleEdit.trashTests": "சோதிப்பது {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "மூலங்கள்",
+	"settings.pickRuleEdit.sourcesDesc": "இந்தக் குறிச்சொற்களில் ஒன்றைக் கொண்ட மூலங்களில் மட்டும் தேடவும். எல்லா மூலங்களிலும் தேட காலியாக விடவும்.",
+	"settings.pickRuleEdit.tags": "குறிச்சொற்கள்"
 }

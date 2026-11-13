@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "Ocenionych cech: {n}",
 	"settings.pickRuleEdit.trashResult": "Ocenionych cech: {n} · nowych: {added} · zaktualizowanych: {updated}",
 	"settings.pickRuleEdit.trashLeftOut": "Pominiętych: {n}",
-	"settings.pickRuleEdit.trashTests": "testuje {kinds}"
+	"settings.pickRuleEdit.trashTests": "testuje {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Źródła",
+	"settings.pickRuleEdit.sourcesDesc": "Szukaj tylko w Źródłach, które mają jeden z tych tagów. Zostaw puste, aby szukać we wszystkich Źródłach.",
+	"settings.pickRuleEdit.tags": "Tagi"
 }

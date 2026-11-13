@@ -200,7 +200,7 @@ func (e *Engine) update(ctx context.Context) ([]Result, error) {
 // Check runs every check once and returns the results, without storing.
 func (e *Engine) Check(ctx context.Context) ([]Result, error) {
 	var out []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.saveFolders, e.waiting, e.clearing, e.backups, e.trailers, e.update} {
+	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.downloaderKinds, e.sameDownloaders, e.saveFolders, e.waiting, e.clearing, e.backups, e.trailers, e.update} {
 		rs, err := f(ctx)
 		if err != nil {
 			return nil, err
@@ -226,7 +226,7 @@ func (e *Engine) Probe(ctx context.Context, now time.Time) (bool, any, error) {
 		return true, nil, nil
 	}
 	var rs []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.saveFolders, e.waiting, e.clearing, e.backups, e.trailers} {
+	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.sameDownloaders, e.saveFolders, e.waiting, e.clearing, e.backups, e.trailers} {
 		got, err := f(ctx)
 		if err != nil {
 			return true, nil, err
@@ -377,6 +377,10 @@ func label(kind string) string {
 		return "downloads waiting for their files"
 	case "save_folder":
 		return "Downloader save folder"
+	case "no_downloader":
+		return "Downloader for"
+	case "same_downloader":
+		return "Downloader added twice"
 	case "clear_waiting":
 		return "imported downloads waiting to be cleared"
 	case "backups":

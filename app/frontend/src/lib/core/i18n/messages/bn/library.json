@@ -166,6 +166,13 @@
 	"library.import.followHint": "আমার ক্যালেন্ডারে দেখান।",
 	"library.import.adoptOne": "১টি {word} গ্রহণ করুন",
 	"library.import.adoptMany": "{n}টি {words} গ্রহণ করুন",
+	"library.import.searchFolders": "ফোল্ডার খুঁজুন",
+	"library.import.folderCountOne": "১টি ফোল্ডার",
+	"library.import.folderCountMany": "{n}টি ফোল্ডার",
+	"library.import.titleAndFolder": "শিরোনাম ও ফোল্ডার",
+	"library.import.matchFor": "{folder}-এর মিল",
+	"library.import.seeLarge": "{name}-এর পোস্টার বড় করে দেখুন",
+	"library.import.noneMatch": "কোনো ফোল্ডার মেলেনি।",
 	"library.report.keep.one": "{n}টি টাইটেল আপ-টু-ডেট রাখা হচ্ছে",
 	"library.report.keep.many": "{n}টি টাইটেল আপ-টু-ডেট রাখা হচ্ছে",
 	"library.report.keep.partOne": "{total}টি টাইটেলের মধ্যে {ok}টি আপ-টু-ডেট রাখা হচ্ছে",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "প্রথম পড়া ৩০ মিনিটের মধ্যে হয়।",
 	"library.stats.watchedHelp": "Plex, Jellyfin ও Emby-র প্লে ইতিহাস থেকে। Plex শুধু প্লে গোনে, তাই হাতে দেখা হিসেবে চিহ্নিত টাইটেল দেখা যায় না।",
 	"library.stats.lastRead": "সর্বশেষ পড়া {ago}।",
-	"library.stats.noMatch": "সর্বশেষ পড়া {ago}। দেখা কিছুই এখনও আপনার লাইব্রেরির সঙ্গে মেলেনি।",
+	"library.stats.noMatch": "দেখার ইতিহাস যাচাই হয়েছে {ago}। দেখা কিছুই এখনও আপনার লাইব্রেরির সঙ্গে মেলেনি।",
 	"library.stats.notLinked": "লিংক করা নেই",
 	"library.stats.lastWatched": "সর্বশেষ দেখা {ago}",
 	"library.stats.unit.movie.one": "{n}টি মুভি",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n}টি এপিসোড",
 	"library.stats.unit.episode.other": "{n}টি এপিসোড",
 	"library.stats.unit.play.one": "{n}বার প্লে",
-	"library.stats.unit.play.other": "{n}বার প্লে"
+	"library.stats.unit.play.other": "{n}বার প্লে",
+	"library.byHand.askReplaceOne": "১টি ফাইল লাইব্রেরিতে থাকা একটি ফাইলের জায়গা নেবে। পুরোনো ফাইলটি সম্প্রতি মোছা-এ যাবে। ইমপোর্ট করবেন?",
+	"library.byHand.askReplaceMany": "{n}টি ফাইল লাইব্রেরিতে থাকা ফাইলগুলোর জায়গা নেবে। পুরোনো ফাইলগুলো সম্প্রতি মোছা-এ যাবে। ইমপোর্ট করবেন?"
 }

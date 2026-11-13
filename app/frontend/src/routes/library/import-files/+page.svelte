@@ -11,6 +11,8 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import type { EpisodeView, TitleView } from '#lib/core/types.ts';
 	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
+	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 
 	let path = $state('');
 	let scanning = $state(false);
@@ -37,6 +39,15 @@
 	const items = $derived(itemsFor(files, picks, ticked));
 	const seasons = $derived([...new Set(episodes.map((e) => e.season))].sort((a, b) => a - b));
 	const seasonEps = $derived(episodes.filter((e) => e.season === season));
+
+	// Review's Import files by hand sends ?path= (the download's folder): look in it straight away.
+	onMount(() => {
+		const asked = page.url.searchParams.get('path')?.trim();
+		if (asked) {
+			path = asked;
+			void doScan();
+		}
+	});
 
 	async function doScan(e?: SubmitEvent) {
 		e?.preventDefault();
@@ -132,8 +143,17 @@
 		editFor = null;
 	}
 
+	function setReplace(f: ByHandFile, on: boolean) {
+		const p = picks[f.path];
+		if (!p) return;
+		picks[f.path] = { ...p, replace: on };
+		ticked[f.path] = !blocker(f, picks[f.path]);
+	}
+
 	async function doImport() {
 		if (!items.length) return;
+		const swaps = items.filter((x) => x.replace).length;
+		if (swaps && !confirm(tr(swaps === 1 ? 'library.byHand.askReplaceOne' : 'library.byHand.askReplaceMany', { n: swaps }))) return;
 		importing = true;
 		error = '';
 		try {
@@ -144,7 +164,7 @@
 				if (x.outcome === 'placed') {
 					ticked[x.path] = false;
 					const p = picks[x.path];
-					if (p) picks[x.path] = { ...p, has_file: true };
+					if (p) picks[x.path] = { ...p, has_file: true, replace: false };
 				}
 			}
 			results = next;
@@ -207,6 +227,12 @@
 									{#if p && f.guess.title_id === p.title_id && f.guess.confidence > 0 && f.guess.confidence < 1}<Badge label={f.guess.confidence >= 0.7 ? tr('library.byHand.likely') : tr('library.byHand.guess')} />{/if}
 									{#if !f.in_library && editFor !== f.path}<Button variant="plain" size="sm" onclick={() => openEditor(f)} disabled={importing}>{tr('shows.versions.change')}</Button>{/if}
 								</div>
+							{/if}
+							{#if p?.has_file && f.kind === 'video' && !f.in_library && !done}
+								<label class="tick swap">
+									<input type="checkbox" checked={!!p.replace} onchange={(e) => setReplace(f, e.currentTarget.checked)} disabled={importing} />
+									<span class="small">{tr('mediafiles.byHand.replace')}</span>
+								</label>
 							{/if}
 							{#if why}<p class="xs muted">{why}</p>{:else if f.note}<p class="xs muted">{f.note}</p>{/if}
 							{#if done}

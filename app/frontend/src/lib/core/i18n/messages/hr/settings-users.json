@@ -100,5 +100,6 @@
 	"settings.users.note": "Bilješka za sebe",
 	"settings.users.noteExample": "npr. Mama",
 	"settings.users.days": "Dana važenja poveznice",
-	"settings.users.makeInvite": "Napravi poveznicu pozivnice"
+	"settings.users.makeInvite": "Napravi poveznicu pozivnice",
+	"settings.users.permAuto4k": "4K zahtjevi odobreni bez čekanja"
 }

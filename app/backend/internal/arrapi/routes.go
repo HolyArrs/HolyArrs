@@ -123,6 +123,15 @@ func Radarr(d Deps) http.Handler {
 func (h *handler) common(mux *http.ServeMux) {
 	mux.HandleFunc("GET /system/status", h.status)
 	mux.HandleFunc("GET /qualityprofile", h.qualityProfiles)
+	mux.HandleFunc("GET /qualityprofile/{id}", h.qualityProfile)
+	mux.HandleFunc("POST /qualityprofile", h.addProfile)
+	mux.HandleFunc("PUT /qualityprofile/{id}", h.putProfile)
+	mux.HandleFunc("DELETE /qualityprofile/{id}", h.deleteProfile)
+	mux.HandleFunc("GET /customformat", h.listFormats)
+	mux.HandleFunc("GET /customformat/{id}", h.getFormat)
+	mux.HandleFunc("POST /customformat", h.addFormat)
+	mux.HandleFunc("PUT /customformat/{id}", h.putFormat)
+	mux.HandleFunc("DELETE /customformat/{id}", h.deleteFormat)
 	mux.HandleFunc("GET /rootfolder", h.rootFolders)
 	mux.HandleFunc("GET /tag", h.listTags)
 	mux.HandleFunc("POST /tag", h.addTag)
@@ -147,6 +156,7 @@ func (h *handler) common(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /notification/{id}", h.putHook)
 	mux.HandleFunc("DELETE /notification/{id}", h.deleteHook)
 	mux.HandleFunc("POST /notification/test", h.testHook)
+	h.configRoutes(mux)
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) { notFound(w) })
 }
 

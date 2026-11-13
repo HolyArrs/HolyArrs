@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} jellemző pontozva",
 	"settings.pickRuleEdit.trashResult": "{n} jellemző pontozva · {added} új · {updated} frissítve",
 	"settings.pickRuleEdit.trashLeftOut": "{n} kihagyva",
-	"settings.pickRuleEdit.trashTests": "teszteli: {kinds}"
+	"settings.pickRuleEdit.trashTests": "teszteli: {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Források",
+	"settings.pickRuleEdit.sourcesDesc": "Csak azokban a Forrásokban keres, amelyek osztoznak valamelyik címkén. Hagyd üresen, hogy minden Forrásban keressen.",
+	"settings.pickRuleEdit.tags": "Címkék"
 }

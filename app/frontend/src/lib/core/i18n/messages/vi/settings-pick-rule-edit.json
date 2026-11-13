@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "Đã chấm điểm {n} đặc điểm",
 	"settings.pickRuleEdit.trashResult": "Đã chấm điểm {n} đặc điểm · {added} mới · {updated} đã cập nhật",
 	"settings.pickRuleEdit.trashLeftOut": "{n} bị bỏ qua",
-	"settings.pickRuleEdit.trashTests": "kiểm tra {kinds}"
+	"settings.pickRuleEdit.trashTests": "kiểm tra {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Nguồn",
+	"settings.pickRuleEdit.sourcesDesc": "Chỉ tìm trong các Nguồn có một trong các thẻ này. Để trống để tìm trong mọi Nguồn.",
+	"settings.pickRuleEdit.tags": "Thẻ"
 }

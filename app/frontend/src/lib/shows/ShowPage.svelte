@@ -21,7 +21,7 @@
 	import '#lib/ui/title-page.css';
 	import { RenamePreview, ShowDeleteDialog, ShowReleases, CopyControls, artName, crumbFor, qualityBadges, slotKind, type ReleaseScope } from '../mediafiles/index.ts';
 	import { SubtitlePanel } from '../subtitles/index.ts';
-	import { groupDownloads, HistoryLine as CompactRow, isRoutine } from '../downloads/index.ts';
+	import { groupDownloads, HistoryLine as CompactRow, isRoutine, NoDownloaderNote } from '../downloads/index.ts';
 	import ShowVersions from './ShowVersions.svelte';
 	import EpisodeList, { type EpisodeRow } from './EpisodeList.svelte';
 	import SeasonPicker from './SeasonPicker.svelte';
@@ -514,10 +514,10 @@
 					{#snippet after(i: number)}
 						{@const ep = eps[i]}
 						{@const why = staff ? episodeWhy(ep, s.keep_up_to_date, title.keep_up_to_date) : ''}
-						{#if why && why !== off}<p class="xs muted ep-why" data-testid="episode-why">{why}</p>{/if}
+						{#if why && why !== off}<p class="xs muted ep-why" data-testid="episode-why">{serverWords(why)}</p>{/if}
 						{#if staff}
 							{#each ep.slots.filter((x) => x.reason && ep.slots.length > 1) as sl (sl.id)}
-								<p class="xs muted ep-why">{sl.version}: {sl.reason}</p>
+								<p class="xs muted ep-why">{sl.version}: {serverWords(sl.reason)}</p>
 							{/each}
 						{/if}
 					{/snippet}
@@ -593,7 +593,7 @@
 				{#if title.refreshed_at}<dt>{t('shows.page.refreshed')}</dt>
 					<dd>{date(title.refreshed_at)}</dd>{/if}
 			</dl>
-			<p class="tp-why" data-testid="gate-reason">{title.gate_reason}</p>
+			<p class="tp-why" data-testid="gate-reason">{title.gate_reason}</p><NoDownloaderNote kind={title.no_downloader} manage={staff} />
 			{#if title.folder_path}<details class="tp-details"><summary>{t('shows.versions.details')}</summary><ul><li>{t('shows.page.folder', { path: shortFolder(title.folder_path) })}</li></ul></details>{/if}
 		</TitleSection>
 		<TitleSection id="h-show-history" title={t('shows.tools.history')} testid="title-history">

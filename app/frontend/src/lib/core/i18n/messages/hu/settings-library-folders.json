@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Új útvonal",
 	"settings.libraryFolders.changePathHint": "Előbb oda mozgasd a fájlokat. A HolyArrs minden fájlt ellenőriz, és semmit nem mozgat.",
 	"settings.libraryFolders.checkingFiles": "Fájlok ellenőrzése…",
-	"settings.libraryFolders.pathChanged": "Útvonal módosítva"
+	"settings.libraryFolders.pathChanged": "Útvonal módosítva",
+	"settings.libraryFolders.sideFiles": "Feliratfájlok",
+	"settings.libraryFolders.sideFilesDesc": "A letöltéssel érkező feliratok a videó mellé kerülhetnek a könyvtárba.",
+	"settings.libraryFolders.sideOn": "Feliratfájlok átvétele is",
+	"settings.libraryFolders.sideOnHint": "A könyvtárban már meglévő fájlt soha nem cseréli le.",
+	"settings.libraryFolders.sideTypes": "Fájltípusok",
+	"settings.libraryFolders.sideTypesHint": "A típusokat vesszővel válassza el, például srt, ass.",
+	"settings.libraryFolders.notMounted": "A HolyArrs nem látja ezt: {path}. Csak a konténerébe csatolt mappákat látja. Adjon hozzá egy kötetet, például {path}:{inside}, majd itt használja ezt: {inside}."
 }

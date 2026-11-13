@@ -42,12 +42,22 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 		quality[num(m["quality"])] = str(m["title"])
 	}
 	formatName := map[int64]string{}
+	langName := map[int64]string{}
+	for _, m := range in.sets["languages"] {
+		langName[num(m["id"])] = str(m["name"])
+	}
 	for _, m := range in.sets["formats"] {
 		n := Named{ID: num(m["id"]), Name: str(m["name"])}
 		formatName[n.ID] = n.Name
 		n.Settings = map[string]any{"include_when_renaming": boolean(m["includecustomformatwhenrenaming"])}
 		for _, sp := range list(m["specifications"]) {
-			n.Items = append(n.Items, specItem(sp))
+			it := specItem(sp)
+			if it["kind"] == "LanguageSpecification" {
+				if l, ok := langName[num(itemValue(it, "value"))]; ok {
+					it["language"] = l
+				}
+			}
+			n.Items = append(n.Items, it)
 		}
 		s.CustomFormats = append(s.CustomFormats, n)
 	}
@@ -281,8 +291,13 @@ func folderOf(path string, folders []Folder) string {
 // named through QualityDefinitions.
 func profile(m map[string]any, quality, formatName map[int64]string) Profile {
 	p := Profile{ID: num(m["id"]), Name: str(m["name"]), UpgradeAllowed: boolean(m["upgradeallowed"]),
-		MinScore: int(num(m["minformatscore"])), CutoffScore: int(num(m["cutoffformatscore"]))}
+		MinScore: int(num(m["minformatscore"])), CutoffScore: int(num(m["cutoffformatscore"])),
+		MinUpgradeScore: int(num(m["minupgradeformatscore"]))}
+	if l := obj(m["language"]); l != nil {
+		p.Language = str(lower(l)["name"])
+	}
 	cutoff := num(m["cutoff"])
+	p.Qualities, p.CutoffQualities = openQualities(list(m["items"]), quality, cutoff)
 	var walk func(items []any)
 	walk = func(items []any) {
 		for _, it := range items {
@@ -448,4 +463,61 @@ func provider(m map[string]any, labels func(any) []string) Provider {
 	p.Enabled = enabled || !seen
 	p.Settings, p.NeedsReentry = providerSettings(set)
 	return p
+}
+
+// itemQuality is one profile item's quality name and id (a group gives its
+// own name and id, from 1000 up).
+func itemQuality(im map[string]any, quality map[int64]string) (string, int64) {
+	q := im["quality"]
+	if q == nil {
+		return str(im["name"]), num(im["id"])
+	}
+	if qm := obj(q); qm != nil {
+		qm = lower(qm)
+		return str(qm["name"]), num(qm["id"])
+	}
+	id := num(q)
+	name := quality[id]
+	if name == "" {
+		name = "quality " + strconv.FormatInt(id, 10)
+	}
+	return name, id
+}
+
+// openQualities lists a profile's allowed qualities with groups opened up
+// (every quality in an allowed group counts), and the cutoff's: a group's
+// cutoff is matched by the group's id, never a quality's.
+func openQualities(items []any, quality map[int64]string, cutoff int64) (allowed, cut []string) {
+	for _, it := range items {
+		im := lower(obj(it))
+		name, id := itemQuality(im, quality)
+		var names []string
+		if sub := list(im["items"]); len(sub) > 0 {
+			for _, s := range sub {
+				if n, _ := itemQuality(lower(obj(s)), quality); n != "" {
+					names = append(names, n)
+				}
+			}
+		} else if name != "" {
+			names = []string{name}
+		}
+		if boolean(im["allowed"]) {
+			allowed = append(allowed, names...)
+		}
+		if id == cutoff && cut == nil {
+			cut = names
+		}
+	}
+	return allowed, cut
+}
+
+// itemValue reads a condition's field (value, min, max, exceptlanguage)
+// whatever case the app gave it.
+func itemValue(it map[string]any, field string) any {
+	for k, v := range it {
+		if strings.EqualFold(k, "value."+field) {
+			return v
+		}
+	}
+	return nil
 }

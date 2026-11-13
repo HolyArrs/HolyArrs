@@ -72,5 +72,10 @@
 	"settings.sources.off": "A Források ki vannak kapcsolva",
 	"settings.sources.offText": "A HolyArrs nem keres és nem tölt le. A Letöltődben hozzáadott letöltések továbbra is importálódnak.",
 	"settings.sources.openParts": "Modulok megnyitása",
-	"settings.sources.offState": "Ki"
+	"settings.sources.offState": "Ki",
+	"settings.sources.site": "Beépített oldal",
+	"settings.sources.siteLabel": "Oldal",
+	"settings.sources.addressSite": "Az oldal saját címe. Csak akkor módosítsd, ha az oldal elköltözött.",
+	"settings.sources.siteKeyLabel": "Süti vagy RSS-kulcs",
+	"settings.sources.siteKeyHint": "A saját fiókodból: uid és pass a böngésző sütijéből, vagy u és tp az RSS-linkedből. Titkosítva tároljuk."
 }

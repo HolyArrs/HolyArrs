@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"slices"
 	"strings"
 	"time"
@@ -28,12 +29,29 @@ func (m *Manager) HandleGrab(ctx context.Context, r *jobs.Run) error {
 	relID, _ := r.Job.Params["release_id"].(float64)
 	id, err := m.Grab(ctx, r.Job.Subject.ID, int64(relID), domain.Actor{Kind: "job", ID: r.Job.ID})
 	var te *TagsError
-	if errors.As(err, &te) {
-		// No Downloader takes the title's tags. Trying again changes nothing until a
-		// person changes tags, so the Slot waits on a decision. A Slot that moved on
-		// meanwhile refuses the change; nothing is left to do then.
-		_ = mediafiles.MoveSlot(ctx, m.Store, r.Job.Subject.ID, mediafiles.SlotNeedsADecision, te.Error(), domain.Actor{Kind: "job", ID: r.Job.ID})
-		r.SetResult(map[string]any{"not_sent": te.Error()})
+	if errors.As(err, &te) || errors.Is(err, ErrOutsideTorrent) {
+		// No Downloader takes the title's tags, or the torrent sits in the Downloader
+		// outside HolyArrs's category where HolyArrs may not take it. Trying again
+		// changes nothing until a person acts, so the Slot waits on a decision. A Slot
+		// that moved on meanwhile refuses the change; nothing is left to do then.
+		_ = mediafiles.MoveSlot(ctx, m.Store, r.Job.Subject.ID, mediafiles.SlotNeedsADecision, err.Error(), domain.Actor{Kind: "job", ID: r.Job.ID})
+		r.SetResult(map[string]any{"not_sent": err.Error()})
+		return nil
+	}
+	var nd *NoDownloaderError
+	if errors.As(err, &nd) {
+		// Nothing can take this protocol. Trying again changes nothing until a person
+		// adds a Downloader, so the Slot goes back to wanted at once with the reason,
+		// never shown as sent.
+		m.giveUp(ctx, r.Job.Subject.ID, int64(relID), nd.Error(), false, domain.Actor{Kind: "job", ID: r.Job.ID})
+		r.SetResult(map[string]any{"not_sent": nd.Error()})
+		return nil
+	}
+	var sg staleGrab
+	if errors.As(err, &sg) {
+		// The choice this Job was made for was replaced (or its title deleted): the
+		// new choice has its own Job, so this one ends without touching the Slot.
+		r.SetResult(map[string]any{"not_sent": sg.Error()})
 		return nil
 	}
 	var fe interface{ Final() bool }
@@ -56,6 +74,14 @@ func (m *Manager) HandleGrab(ctx context.Context, r *jobs.Run) error {
 	r.SetResult(map[string]any{"download_id": id})
 	return nil
 }
+
+// staleGrab is a grab whose choice is gone: the Slot is no longer chosen for
+// the Release. Retrying never helps.
+type staleGrab struct{ msg string }
+
+func (e staleGrab) Error() string { return e.msg }
+
+func (staleGrab) Final() bool { return true }
 
 func (e releaseRefused) Error() string { return e.msg }
 
@@ -85,11 +111,18 @@ func (g grabFailed) Final() bool {
 func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.Actor) (int64, error) {
 	db := m.Store.Read()
 	var rel domain.Release
+	// A Release or Slot gone (its title was deleted) leaves nothing to send.
 	if err := database.Get(ctx, db, "releases", releaseID, &rel); err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return 0, staleGrab{fmt.Sprintf("release %d is gone", releaseID)}
+		}
 		return 0, fmt.Errorf("release %d: %w", releaseID, err)
 	}
 	var sl mediafiles.Slot
 	if err := database.Get(ctx, db, "slots", slotID, &sl); err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return 0, staleGrab{fmt.Sprintf("slot %d is gone", slotID)}
+		}
 		return 0, fmt.Errorf("slot %d: %w", slotID, err)
 	}
 	// A stopped semantic pair stays terminal even after abandonment returns its
@@ -108,10 +141,10 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 				return prior.ID, nil
 			}
 		}
-		return 0, fmt.Errorf("slot %d is %s, not chosen", slotID, sl.State)
+		return 0, staleGrab{fmt.Sprintf("slot %d is %s, not chosen", slotID, sl.State)}
 	}
 	if sl.ChosenReleaseID == nil || *sl.ChosenReleaseID != releaseID {
-		return 0, errors.New("the Slot is no longer chosen for this Release")
+		return 0, staleGrab{"the Slot is no longer chosen for this Release"}
 	}
 	all, err := database.Select[domain.Downloader](ctx, db, "downloaders", "protocol = ? AND removed = 0 ORDER BY priority, id", rel.Protocol)
 	if err != nil {
@@ -145,6 +178,17 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	if dl == nil {
 		window = packWindow(ctx, db, rel, sl.ItemID)
 	}
+	if attempt != nil && dl == nil {
+		// A send pinned to a Downloader that was removed can never be confirmed:
+		// close it and pick from the Downloaders there are now.
+		var gone bool
+		if err := db.QueryRowContext(ctx, "SELECT removed FROM downloaders WHERE id = ?", attempt.DownloaderID).Scan(&gone); err == nil && gone {
+			if err := m.resolveAttempt(ctx, attempt.ID); err != nil {
+				return 0, errors.Join(ErrUncertain, err)
+			}
+			attempt = nil
+		}
+	}
 	var d domain.Downloader
 	if dl != nil {
 		if err := database.Get(ctx, db, "downloaders", dl.DownloaderID, &d); err != nil {
@@ -159,12 +203,16 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			if err := database.Get(ctx, db, "downloaders", attempt.DownloaderID, &original); err != nil {
 				return 0, errors.Join(ErrUncertain, err)
 			}
+
 			original.Category = attempt.category
 			dls = []domain.Downloader{original}
 		} else {
 			// Tags apply on a fresh pick only, since a send already on record keeps its
 			// Downloader: use the Downloaders sharing a tag with the title, else the
 			// untagged ones.
+			if len(all) == 0 {
+				return 0, &NoDownloaderError{Protocol: rel.Protocol}
+			}
 			titleTags, kind, err := slotTitleTags(ctx, db, sl.ItemID)
 			if err != nil {
 				return 0, err
@@ -206,7 +254,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			d = dls[i]
 			ext, own, err := m.send(ctx, d, rel, slotID, hash, window > 0)
 			if err != nil {
-				if errors.Is(err, ErrUncertain) || errors.Is(err, ErrAttemptStopped) {
+				if errors.Is(err, ErrUncertain) || errors.Is(err, ErrAttemptStopped) || errors.Is(err, ErrOutsideTorrent) {
 					return 0, err
 				}
 				fails = append(fails, err)
@@ -393,6 +441,7 @@ func (m *Manager) giveUp(ctx context.Context, slotID, releaseID int64, reason st
 		return
 	}
 	m.publish("slot", map[string]any{"id": slotID, "state": mediafiles.SlotWanted, "reason": reason})
+	m.notSentEvent(ctx, slotID, releaseID, reason, by)
 	if turnDown && m.OnFailed != nil {
 		m.OnFailed(ctx, slotID)
 	}
@@ -574,4 +623,44 @@ func PackTitles(ctx context.Context, db *sql.DB) ([]int64, error) {
 		out = append(out, id)
 	}
 	return out, rows.Err()
+}
+
+// settleLostChoices frees chosen Slots that nothing will ever send: no grab Job
+// waits for the choice, no Download follows it and no send to a Downloader is
+// pending. Pending sends to a Downloader that was removed are closed first, so
+// their Slots are freed too. Each goes back to wanted with the reason.
+func (m *Manager) settleLostChoices(ctx context.Context) {
+	now := m.now()
+	if err := m.Store.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, `UPDATE downloader_attempts SET state = 'resolved', updated_at = ?
+			WHERE state = 'pending' AND downloader_id IN (SELECT id FROM downloaders WHERE removed = 1)`, now.Format(time.RFC3339Nano))
+		return err
+	}); err != nil {
+		log.Printf("downloads: could not close sends to removed Downloaders: %v", err)
+	}
+	rows, err := m.Store.Read().QueryContext(ctx, `SELECT s.id, s.chosen_release_id FROM slots s
+		WHERE s.state = 'chosen' AND s.chosen_release_id IS NOT NULL AND s.active_download_id IS NULL AND s.updated_at <= ?
+		AND NOT EXISTS (SELECT 1 FROM jobs j WHERE j.kind = 'grab' AND j.state IN ('queued', 'running')
+			AND json_extract(j.subject, '$.id') = s.id AND json_extract(j.params, '$.release_id') = s.chosen_release_id)
+		AND NOT EXISTS (SELECT 1 FROM downloader_attempts a WHERE a.state = 'pending' AND a.release_id = s.chosen_release_id
+			AND EXISTS (SELECT 1 FROM json_each(a.slot_snapshots) x WHERE json_extract(x.value, '$.id') = s.id))
+		AND NOT EXISTS (SELECT 1 FROM downloads d WHERE d.release_id = s.chosen_release_id AND d.state IN (`+activeStates+`)
+			AND EXISTS (SELECT 1 FROM json_each(d.slot_ids) x WHERE x.value = s.id))
+		ORDER BY s.id LIMIT 200`, database.FormatTime(now.Add(-lostChoiceWait)))
+	if err != nil {
+		log.Printf("downloads: could not read chosen Slots: %v", err)
+		return
+	}
+	var lost [][2]int64
+	for rows.Next() {
+		var p [2]int64
+		if rows.Scan(&p[0], &p[1]) == nil {
+			lost = append(lost, p)
+		}
+	}
+	rows.Close()
+	for _, p := range lost {
+		log.Printf("downloads: warning: Release %d chosen for Slot %d was never sent to a Downloader; the Slot goes back to wanted", p[1], p[0])
+		m.giveUp(ctx, p[0], p[1], lostChoiceReason, false, domain.System)
+	}
 }

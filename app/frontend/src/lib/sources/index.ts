@@ -3,6 +3,7 @@ export { barHeight } from './api.ts';
 export { default as ConnectBridge } from './ConnectBridge.svelte';
 export { default as SourceCheck } from './SourceCheck.svelte';
 export { emptyForm } from './api.ts';
+export { builtInSites, pickSite } from './api.ts';
 export { formBody } from './api.ts';
 export { formFrom } from './api.ts';
 export { healthTone } from './health.ts';

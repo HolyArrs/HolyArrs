@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Aplikacje AI są wyłączone. Zezwolenie je włączy.",
 	"arrapi.ai.offOther": "Aplikacje AI są wyłączone. Poproś właściciela o ich włączenie, potem spróbuj ponownie.",
 	"arrapi.ai.allow": "Zezwól",
-	"arrapi.ai.cancel": "Anuluj"
+	"arrapi.ai.cancel": "Anuluj",
+	"arrapi.seerr.sentTitle": "Wysłane przez inne aplikacje",
+	"arrapi.seerr.sentHint": "Formaty i profile wysłane przez aplikacje takie jak Profilarr. Tutaj tylko do odczytu.",
+	"arrapi.seerr.sentFormat": "Format",
+	"arrapi.seerr.sentProfile": "Profil",
+	"arrapi.seerr.sentUpdated": "zaktualizowano {ago}"
 }

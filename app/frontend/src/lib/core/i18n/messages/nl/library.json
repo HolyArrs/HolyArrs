@@ -166,6 +166,13 @@
 	"library.import.followHint": "Toon ze in mijn agenda.",
 	"library.import.adoptOne": "1 {word} overnemen",
 	"library.import.adoptMany": "{n} {words} overnemen",
+	"library.import.searchFolders": "Mappen doorzoeken",
+	"library.import.folderCountOne": "1 map",
+	"library.import.folderCountMany": "{n} mappen",
+	"library.import.titleAndFolder": "Titel en map",
+	"library.import.matchFor": "Overeenkomst voor {folder}",
+	"library.import.seeLarge": "Bekijk de poster van {name} groot",
+	"library.import.noneMatch": "Geen mappen gevonden.",
 	"library.report.keep.one": "{n} titel actueel gehouden",
 	"library.report.keep.many": "{n} titels actueel gehouden",
 	"library.report.keep.partOne": "{ok} van {total} titel actueel gehouden",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "De eerste keer lezen volgt binnen 30 minuten.",
 	"library.stats.watchedHelp": "Uit de kijkgeschiedenis van Plex, Jellyfin en Emby. Plex telt alleen afspelen, dus titels die met de hand als bekeken zijn gemarkeerd ontbreken.",
 	"library.stats.lastRead": "Laatst gelezen {ago}.",
-	"library.stats.noMatch": "Laatst gelezen {ago}. Niets van wat is gekeken komt al overeen met je bibliotheek.",
+	"library.stats.noMatch": "Kijkgeschiedenis {ago} gecontroleerd. Niets van wat is gekeken komt al overeen met je bibliotheek.",
 	"library.stats.notLinked": "Niet gekoppeld",
 	"library.stats.lastWatched": "Laatst gekeken {ago}",
 	"library.stats.unit.movie.one": "{n} film",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} aflevering",
 	"library.stats.unit.episode.other": "{n} afleveringen",
 	"library.stats.unit.play.one": "{n} keer afgespeeld",
-	"library.stats.unit.play.other": "{n} keer afgespeeld"
+	"library.stats.unit.play.other": "{n} keer afgespeeld",
+	"library.byHand.askReplaceOne": "1 bestand vervangt een bestand dat al in de Bibliotheek staat. Het oude bestand gaat naar Onlangs verwijderd. Importeren?",
+	"library.byHand.askReplaceMany": "{n} bestanden vervangen bestanden die al in de Bibliotheek staan. De oude bestanden gaan naar Onlangs verwijderd. Importeren?"
 }

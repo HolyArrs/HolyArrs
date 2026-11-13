@@ -12,7 +12,7 @@
 	"health.check.freeSpace": "可用空间",
 	"health.check.update": "更新",
 	"health.check.waiting": "下载在等待文件",
-	"health.check.clearWaiting": "等待清理的下载",
+	"health.check.clearWaiting": "已导入但仍留在下载器中的下载",
 	"health.check.saveFolder": "保存文件夹：",
 	"health.check.saveFolderWhy": "{app} 没有设置保存文件夹，所以 HolyArrs 无法导入已完成的下载。请在 设置 › 下载器 中添加一组路径。",
 	"health.day.ahead": "还有 {count} 个",
@@ -88,7 +88,7 @@
 	"health.kind.trailers": "预告片读取器",
 	"health.kind.update": "更新",
 	"health.kind.waitingDownloads": "下载在等待文件",
-	"health.kind.clearWaiting": "等待清理的下载",
+	"health.kind.clearWaiting": "已导入但仍留在下载器中的下载",
 	"health.kind.saveFolder": "下载器保存文件夹",
 	"health.link.downloader": "下载器",
 	"health.link.mediaServer": "媒体服务器",
@@ -264,5 +264,12 @@
 	"health.word.broken": "故障",
 	"health.word.notSent": "尚未发送",
 	"health.word.notSynced": "尚未同步",
-	"health.word.working": "正常"
+	"health.word.working": "正常",
+	"health.check.usenetDl": "Usenet 下载器",
+	"health.check.torrentDl": "种子下载器",
+	"health.check.noUsenetDl": "你的来源找到了 Usenet 下载，但尚未设置 Usenet 下载器，所以无法发送任何下载。请在 设置 › 下载器 中添加一个。",
+	"health.check.noTorrentDl": "你的来源找到了种子下载，但尚未设置种子下载器，所以无法发送任何下载。请在 设置 › 下载器 中添加一个。",
+	"health.check.sameDownloader": "重复添加：",
+	"health.check.sameDownloaderWhy": "{app} 与另一个下载器连接到同一个下载应用，因此它的下载可能显示两次。请在 设置 › 下载器 中删除其中一个。",
+	"health.kind.sameDownloader": "下载器重复添加"
 }

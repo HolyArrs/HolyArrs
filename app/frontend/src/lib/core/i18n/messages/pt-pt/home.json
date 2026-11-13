@@ -271,5 +271,8 @@
 	"home.noSaveFolder": "não tem pasta de salvamento",
 	"home.noSaveFolderMany": "não têm pasta de salvamento",
 	"home.off": "Desativado",
-	"home.sourcesOff": "Desativado em Partes"
+	"home.sourcesOff": "Desativado em Partes",
+	"home.noneForSources": "falta para o que as suas fontes encontram",
+	"home.addedTwice": "está adicionado duas vezes",
+	"home.addedTwiceMany": "estão adicionados duas vezes"
 }

@@ -260,9 +260,16 @@
 	"health.word.notSent": "Ikke sendt ennå",
 	"health.word.notSynced": "Ikke synkronisert ennå",
 	"health.word.working": "Fungerer",
-	"health.check.clearWaiting": "Nedlastinger som venter på å bli ryddet bort",
+	"health.check.clearWaiting": "Importerte nedlastinger som fortsatt ligger i en nedlaster",
 	"health.check.saveFolder": "Lagringsmappe for",
 	"health.check.saveFolderWhy": "{app} har ingen lagringsmappe, så HolyArrs kan ikke importere de ferdige nedlastingene. Legg til et stipar under Innstillinger › Nedlastere.",
-	"health.kind.clearWaiting": "Nedlastinger som venter på å bli ryddet bort",
-	"health.kind.saveFolder": "Nedlasterens lagringsmappe"
+	"health.kind.clearWaiting": "Importerte nedlastinger som fortsatt ligger i en nedlaster",
+	"health.kind.saveFolder": "Nedlasterens lagringsmappe",
+	"health.check.usenetDl": "Usenet-nedlaster",
+	"health.check.torrentDl": "Torrent-nedlaster",
+	"health.check.noUsenetDl": "Kildene dine finner Usenet-nedlastinger, men ingen Usenet-nedlaster er satt opp, så ingen kan sendes. Legg til en under Innstillinger › Nedlastere.",
+	"health.check.noTorrentDl": "Kildene dine finner torrent-nedlastinger, men ingen torrent-nedlaster er satt opp, så ingen kan sendes. Legg til en under Innstillinger › Nedlastere.",
+	"health.check.sameDownloader": "Lagt til to ganger:",
+	"health.check.sameDownloaderWhy": "{app} når samme nedlastingsapp som en annen nedlaster, så nedlastingene kan vises to ganger. Fjern den ene under Innstillinger › Nedlastere.",
+	"health.kind.sameDownloader": "Nedlaster lagt til to ganger"
 }

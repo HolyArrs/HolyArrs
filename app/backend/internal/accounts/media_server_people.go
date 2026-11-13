@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -323,30 +324,46 @@ func (a *Auth) plexPeople(w http.ResponseWriter, r *http.Request) ([]importPerso
 	server := a.way(ctx, ProviderPlex).ServerID
 	hdr := a.plexHeaders(ctx)
 	hdr["X-Plex-Token"] = tok
-	var friends []struct {
-		ID         int64  `json:"id"`
-		Username   string `json:"username"`
-		Title      string `json:"title"`
-		Email      string `json:"email"`
-		Restricted bool   `json:"restricted"`
-		Home       bool   `json:"home"`
-		Shared     []struct {
-			MachineIdentifier string `json:"machineIdentifier"`
-		} `json:"sharedServers"`
+	// Plex answers 410 at /api/v2/friends now; /api/users lists the same
+	// people (friends and Plex Home) in XML, with the servers shared with each.
+	hdr["Accept"] = "application/xml"
+	var raw []byte
+	code, err := a.fetch(ctx, http.MethodGet, a.plexURL+"/api/users", hdr, nil, &raw)
+	var list struct {
+		Users []struct {
+			ID         int64  `xml:"id,attr"`
+			Username   string `xml:"username,attr"`
+			Title      string `xml:"title,attr"`
+			Email      string `xml:"email,attr"`
+			Restricted string `xml:"restricted,attr"`
+			Servers    []struct {
+				MachineIdentifier string `xml:"machineIdentifier,attr"`
+			} `xml:"Server"`
+		} `xml:"User"`
 	}
-	code, err := a.fetch(ctx, http.MethodGet, a.plexURL+"/api/v2/friends", hdr, nil, &friends)
-	if err != nil || code/100 != 2 {
-		log.Printf("auth: plex friends: status %d: %v", code, err)
+	if err == nil && code/100 == 2 {
+		err = xml.Unmarshal(raw, &list)
+	}
+	log.Printf("auth: plex people: /api/users answered %d (%d people): %v", code, len(list.Users), err)
+	switch {
+	case err == nil && code/100 == 2:
+	case code == http.StatusUnauthorized || code == http.StatusForbidden:
+		fail(w, http.StatusBadGateway, "Plex refused your linked Plex account; link it again")
+		return nil, false
+	case code == http.StatusNotFound || code == http.StatusGone:
+		fail(w, http.StatusBadGateway, "Plex no longer offers the list of people your server is shared with")
+		return nil, false
+	default:
 		fail(w, http.StatusBadGateway, "Plex did not list the people your server is shared with; try again")
 		return nil, false
 	}
 	out := []importPerson{}
-	for _, f := range friends {
-		if f.ID == 0 {
+	for _, f := range list.Users {
+		if f.ID <= 0 {
 			continue
 		}
-		if server != "" && len(f.Shared) > 0 && !slices.ContainsFunc(f.Shared, func(s struct {
-			MachineIdentifier string `json:"machineIdentifier"`
+		if server != "" && len(f.Servers) > 0 && !slices.ContainsFunc(f.Servers, func(s struct {
+			MachineIdentifier string `xml:"machineIdentifier,attr"`
 		}) bool {
 			return s.MachineIdentifier == server
 		}) {
@@ -356,7 +373,8 @@ func (a *Auth) plexPeople(w http.ResponseWriter, r *http.Request) ([]importPerso
 		if name == "" {
 			name = f.Title
 		}
-		out = append(out, importPerson{ID: strconv.FormatInt(f.ID, 10), Name: truncate(name, 56), Email: truncate(f.Email, 200), Kid: f.Restricted})
+		kid := f.Restricted == "1" || strings.EqualFold(f.Restricted, "true")
+		out = append(out, importPerson{ID: strconv.FormatInt(f.ID, 10), Name: truncate(name, 56), Email: truncate(f.Email, 200), Kid: kid})
 	}
 	return out, true
 }

@@ -14,3 +14,4 @@ export { seasonName } from './labels.ts';
 export { seasonWords } from './labels.ts';
 export { showProgress } from './labels.ts';
 export type { SheetEpisode } from './EpisodeSheet.svelte';
+export { chosenWhy } from './labels.ts';

@@ -166,6 +166,13 @@
 	"library.import.followHint": "Mostra-les al meu calendari.",
 	"library.import.adoptOne": "Adopta 1 {word}",
 	"library.import.adoptMany": "Adopta {n} {words}",
+	"library.import.searchFolders": "Cerca carpetes",
+	"library.import.folderCountOne": "1 carpeta",
+	"library.import.folderCountMany": "{n} carpetes",
+	"library.import.titleAndFolder": "Títol i carpeta",
+	"library.import.matchFor": "Coincidència per a {folder}",
+	"library.import.seeLarge": "Mostra el pòster de {name} en gran",
+	"library.import.noneMatch": "Cap carpeta coincideix.",
 	"library.report.keep.one": "{n} títol mantingut al dia",
 	"library.report.keep.many": "{n} títols mantinguts al dia",
 	"library.report.keep.partOne": "{ok} de {total} títol mantingut al dia",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "La primera lectura es fa en un termini de 30 minuts.",
 	"library.stats.watchedHelp": "De l'historial de reproducció de Plex, Jellyfin i Emby. Plex només compta reproduccions, així que els títols marcats com a vistos a mà no es mostren.",
 	"library.stats.lastRead": "Última lectura {ago}.",
-	"library.stats.noMatch": "Última lectura {ago}. Res del que s'ha vist coincideix encara amb la teva Biblioteca.",
+	"library.stats.noMatch": "Historial revisat {ago}. Res del que s'ha vist coincideix encara amb la teva Biblioteca.",
 	"library.stats.notLinked": "No enllaçat",
 	"library.stats.lastWatched": "Vist per última vegada {ago}",
 	"library.stats.unit.movie.one": "{n} pel·lícula",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} episodi",
 	"library.stats.unit.episode.other": "{n} episodis",
 	"library.stats.unit.play.one": "{n} reproducció",
-	"library.stats.unit.play.other": "{n} reproduccions"
+	"library.stats.unit.play.other": "{n} reproduccions",
+	"library.byHand.askReplaceOne": "1 fitxer substitueix un fitxer que ja és a la Biblioteca. El fitxer antic va a Suprimits recentment. Vols importar?",
+	"library.byHand.askReplaceMany": "{n} fitxers substitueixen fitxers que ja són a la Biblioteca. Els fitxers antics van a Suprimits recentment. Vols importar?"
 }

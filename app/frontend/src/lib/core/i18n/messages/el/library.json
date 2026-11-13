@@ -166,6 +166,13 @@
 	"library.import.followHint": "Εμφάνιση στο ημερολόγιό μου.",
 	"library.import.adoptOne": "Υιοθέτηση 1 ({word})",
 	"library.import.adoptMany": "Υιοθέτηση {n} ({words})",
+	"library.import.searchFolders": "Αναζήτηση φακέλων",
+	"library.import.folderCountOne": "1 φάκελος",
+	"library.import.folderCountMany": "{n} φάκελοι",
+	"library.import.titleAndFolder": "Τίτλος και φάκελος",
+	"library.import.matchFor": "Αντιστοίχιση για {folder}",
+	"library.import.seeLarge": "Δείτε την αφίσα του {name} σε μεγάλο μέγεθος",
+	"library.import.noneMatch": "Κανένας φάκελος δεν ταιριάζει.",
 	"library.report.keep.one": "{n} τίτλος διατηρείται ενημερωμένος",
 	"library.report.keep.many": "{n} τίτλοι διατηρούνται ενημερωμένοι",
 	"library.report.keep.partOne": "{ok} από {total} τίτλο διατηρείται ενημερωμένος",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Η πρώτη ανάγνωση γίνεται εντός 30 λεπτών.",
 	"library.stats.watchedHelp": "Από το ιστορικό αναπαραγωγής των Plex, Jellyfin και Emby. Το Plex μετρά μόνο αναπαραγωγές, οπότε οι τίτλοι που σημειώθηκαν χειροκίνητα ως προβεβλημένοι δεν εμφανίζονται.",
 	"library.stats.lastRead": "Τελευταία ανάγνωση {ago}.",
-	"library.stats.noMatch": "Τελευταία ανάγνωση {ago}. Τίποτα από όσα προβλήθηκαν δεν ταιριάζει ακόμα με τη Βιβλιοθήκη σας.",
+	"library.stats.noMatch": "Το ιστορικό προβολής ελέγχθηκε {ago}. Τίποτα από όσα προβλήθηκαν δεν ταιριάζει ακόμα με τη Βιβλιοθήκη σας.",
 	"library.stats.notLinked": "Δεν είναι συνδεδεμένο",
 	"library.stats.lastWatched": "Τελευταία προβολή {ago}",
 	"library.stats.unit.movie.one": "{n} ταινία",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} επεισόδιο",
 	"library.stats.unit.episode.other": "{n} επεισόδια",
 	"library.stats.unit.play.one": "{n} αναπαραγωγή",
-	"library.stats.unit.play.other": "{n} αναπαραγωγές"
+	"library.stats.unit.play.other": "{n} αναπαραγωγές",
+	"library.byHand.askReplaceOne": "1 αρχείο αντικαθιστά ένα αρχείο που υπάρχει ήδη στη Βιβλιοθήκη. Το παλιό αρχείο πηγαίνει στα «Πρόσφατα διαγραμμένα». Εισαγωγή;",
+	"library.byHand.askReplaceMany": "{n} αρχεία αντικαθιστούν αρχεία που υπάρχουν ήδη στη Βιβλιοθήκη. Τα παλιά αρχεία πηγαίνουν στα «Πρόσφατα διαγραμμένα». Εισαγωγή;"
 }

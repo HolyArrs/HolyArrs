@@ -17,6 +17,8 @@
   ],
   "future_only": true,
   "four_k": true,
+  "quality": "s",
+  "quality_name": "s",
   "albums": [
     {
       "mbid": "s",

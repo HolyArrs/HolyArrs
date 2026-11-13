@@ -271,5 +271,8 @@
 	"home.metadataServerOnline": "Сервер метаданих онлайн",
 	"home.homeCouldNotRead3": "Головна зараз не змогла прочитати завантаження.",
 	"home.off": "Вимк.",
-	"home.sourcesOff": "Вимкнено в розділі «Частини»"
+	"home.sourcesOff": "Вимкнено в розділі «Частини»",
+	"home.noneForSources": "немає для того, що знаходять твої джерела",
+	"home.addedTwice": "додано двічі",
+	"home.addedTwiceMany": "додано двічі"
 }

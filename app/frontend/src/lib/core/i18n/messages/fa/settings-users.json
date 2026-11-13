@@ -100,5 +100,6 @@
 	"settings.users.note": "یادداشت برای خودت",
 	"settings.users.noteExample": "مثلاً مامان",
 	"settings.users.days": "چند روز پیوند معتبر باشد",
-	"settings.users.makeInvite": "ساخت پیوند دعوت"
+	"settings.users.makeInvite": "ساخت پیوند دعوت",
+	"settings.users.permAuto4k": "درخواست‌های 4K بدون انتظار تأیید می‌شوند"
 }

@@ -100,5 +100,6 @@
 	"settings.users.note": "Nota para si",
 	"settings.users.noteExample": "ex.: Mãe",
 	"settings.users.days": "Dias de validade do link",
-	"settings.users.makeInvite": "Criar um link de convite"
+	"settings.users.makeInvite": "Criar um link de convite",
+	"settings.users.permAuto4k": "Pedidos 4K aprovados sem esperar"
 }

@@ -145,5 +145,7 @@
 	"core.settings.account.about": "Heslo, dvoufázové ověření, zařízení",
 	"core.plain.clearWaiting": "Importovaná stahování čekají na vyčištění ze svého Stahovače.",
 	"core.plain.saveFolder": "Jeden Stahovač nemá nastavenou složku pro ukládání, takže HolyArrs nemůže importovat jeho dokončená stahování.",
-	"core.api.sourceOff": "Některé řádky jsou v této instalaci vypnuté."
+	"core.api.sourceOff": "Některé řádky jsou v této instalaci vypnuté.",
+	"core.plain.noDownloader": "Vaše zdroje nacházejí stahování, která žádný z vašich stahovačů nemůže převzít, takže nic nelze odeslat.",
+	"core.plain.sameDownloader": "Dva stahovače vedou na stejnou stahovací aplikaci, takže se stahování může zobrazit dvakrát."
 }

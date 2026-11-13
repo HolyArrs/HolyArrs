@@ -166,6 +166,13 @@
 	"library.import.followHint": "自分のカレンダーに表示します。",
 	"library.import.adoptOne": "1 件の{word}を管理対象に追加",
 	"library.import.adoptMany": "{n} 件の{words}を管理対象に追加",
+	"library.import.searchFolders": "フォルダーを検索",
+	"library.import.folderCountOne": "1 個のフォルダー",
+	"library.import.folderCountMany": "{n} 個のフォルダー",
+	"library.import.titleAndFolder": "タイトルとフォルダー",
+	"library.import.matchFor": "{folder} の一致",
+	"library.import.seeLarge": "{name} のポスターを大きく表示",
+	"library.import.noneMatch": "一致するフォルダーはありません。",
 	"library.report.keep.one": "{n} 作品を最新に保ちます",
 	"library.report.keep.many": "{n} 作品を最新に保ちます",
 	"library.report.keep.partOne": "{total} 作品中 {ok} 作品を最新に保ちます",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "最初の読み取りは30分以内に行われます。",
 	"library.stats.watchedHelp": "Plex、Jellyfin、Emby の再生履歴から。Plex は再生のみを数えるため、手動で視聴済みにしたタイトルは表示されません。",
 	"library.stats.lastRead": "最終読み取り {ago}。",
-	"library.stats.noMatch": "最終読み取り {ago}。視聴されたものの中に、ライブラリと一致するものはまだありません。",
+	"library.stats.noMatch": "視聴履歴の確認: {ago}。視聴されたものの中に、ライブラリと一致するものはまだありません。",
 	"library.stats.notLinked": "未リンク",
 	"library.stats.lastWatched": "最終視聴 {ago}",
 	"library.stats.unit.movie.one": "映画 {n}本",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "エピソード {n}話",
 	"library.stats.unit.episode.other": "エピソード {n}話",
 	"library.stats.unit.play.one": "再生 {n}回",
-	"library.stats.unit.play.other": "再生 {n}回"
+	"library.stats.unit.play.other": "再生 {n}回",
+	"library.byHand.askReplaceOne": "1 件のファイルがライブラリにあるファイルを置き換えます。古いファイルは「最近削除したもの」に移ります。インポートしますか？",
+	"library.byHand.askReplaceMany": "{n} 件のファイルがライブラリにあるファイルを置き換えます。古いファイルは「最近削除したもの」に移ります。インポートしますか？"
 }

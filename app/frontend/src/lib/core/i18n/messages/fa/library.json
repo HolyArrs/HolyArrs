@@ -166,6 +166,13 @@
 	"library.import.followHint": "در تقویمم نشانشان بده.",
 	"library.import.adoptOne": "در اختیار گرفتن 1 {word}",
 	"library.import.adoptMany": "در اختیار گرفتن {n} {words}",
+	"library.import.searchFolders": "جستجو در پوشه‌ها",
+	"library.import.folderCountOne": "۱ پوشه",
+	"library.import.folderCountMany": "{n} پوشه",
+	"library.import.titleAndFolder": "عنوان و پوشه",
+	"library.import.matchFor": "مطابقت برای {folder}",
+	"library.import.seeLarge": "پوستر {name} را بزرگ ببین",
+	"library.import.noneMatch": "هیچ پوشه‌ای مطابقت ندارد.",
 	"library.report.keep.one": "{n} عنوان به‌روز نگه داشته شد",
 	"library.report.keep.many": "{n} عنوان به‌روز نگه داشته شد",
 	"library.report.keep.partOne": "{ok} از {total} عنوان به‌روز نگه داشته شد",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "اولین خواندن ظرف ۳۰ دقیقه انجام می‌شود.",
 	"library.stats.watchedHelp": "از تاریخچه پخش Plex، Jellyfin و Emby. Plex فقط پخش‌ها را می‌شمارد، پس عنوان‌هایی که دستی به‌عنوان دیده‌شده علامت خورده‌اند نشان داده نمی‌شوند.",
 	"library.stats.lastRead": "آخرین خواندن {ago}.",
-	"library.stats.noMatch": "آخرین خواندن {ago}. هنوز هیچ‌یک از موارد تماشاشده با کتابخانهٔ شما مطابقت ندارد.",
+	"library.stats.noMatch": "تاریخچه تماشا {ago} بررسی شد. هنوز هیچ‌یک از موارد تماشاشده با کتابخانهٔ شما مطابقت ندارد.",
 	"library.stats.notLinked": "پیوند نشده",
 	"library.stats.lastWatched": "آخرین تماشا {ago}",
 	"library.stats.unit.movie.one": "{n} فیلم",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} قسمت",
 	"library.stats.unit.episode.other": "{n} قسمت",
 	"library.stats.unit.play.one": "{n} پخش",
-	"library.stats.unit.play.other": "{n} پخش"
+	"library.stats.unit.play.other": "{n} پخش",
+	"library.byHand.askReplaceOne": "۱ فایل جای فایلی را می‌گیرد که در کتابخانه هست. فایل قدیمی به «اخیراً حذف‌شده» می‌رود. وارد شود؟",
+	"library.byHand.askReplaceMany": "{n} فایل جای فایل‌هایی را می‌گیرند که در کتابخانه هستند. فایل‌های قدیمی به «اخیراً حذف‌شده» می‌روند. وارد شود؟"
 }

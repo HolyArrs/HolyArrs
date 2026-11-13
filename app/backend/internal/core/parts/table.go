@@ -266,6 +266,7 @@ var routeOwners = map[string]Owner{
 
 	// Sources, Downloaders and Downloads (linked apps are core).
 	"GET /api/v1/sources":                                        Core,
+	"GET /api/v1/sources/sites":                                  Core,
 	"GET /api/v1/bridges":                                        Core,
 	"POST /api/v1/bridges":                                       Core,
 	"POST /api/v1/bridges/find":                                  Core,
@@ -298,6 +299,7 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/downloads/view":                                 Core,
 	"POST /api/v1/downloads/{id}/mark-failed":                    Core,
 	"POST /api/v1/downloads/{id}/remove":                         Core,
+	"POST /api/v1/downloads/{id}/import":                         Core,
 	"POST /api/v1/downloads/clear-now":                           Core,
 	"POST /api/v1/downloads/{id}/pause":                          Core,
 	"POST /api/v1/downloads/{id}/resume":                         Core,
@@ -459,23 +461,30 @@ var routeOwners = map[string]Owner{
 	"POST /api/v1/manual-import":              Media,
 	"GET /api/v1/settings/import-folders":     Media,
 	"PUT /api/v1/settings/import-folders":     Media,
+	"GET /api/v1/settings/side-files":         Media,
+	"PUT /api/v1/settings/side-files":         Media,
 
 	// The metadata server's stored title and person pictures.
 	"GET /api/v1/artwork/img/{kind}/{id}/{file}": Media,
 
 	// One title: its kind decides.
-	"GET /api/v1/titles/{id}":                   ByTitle,
-	"PUT /api/v1/titles/{id}":                   ByTitle,
-	"POST /api/v1/titles/{id}/move":             ByTitle,
-	"POST /api/v1/titles/{id}/versions":         ByTitle,
-	"PUT /api/v1/titles/{id}/versions/{vid}":    ByTitle,
-	"DELETE /api/v1/titles/{id}/versions/{vid}": ByTitle,
-	"POST /api/v1/titles/{id}/refresh":          ByTitle,
-	"POST /api/v1/titles/{id}/search":           ByTitle,
-	"GET /api/v1/titles/{id}/releases":          ByTitle,
-	"GET /api/v1/titles/{id}/rename":            ByTitle,
-	"POST /api/v1/titles/{id}/rename":           ByTitle,
-	"POST /api/v1/titles/{id}/delete":           ByTitle,
+	"GET /api/v1/titles/{id}":                    ByTitle,
+	"PUT /api/v1/titles/{id}":                    ByTitle,
+	"POST /api/v1/titles/{id}/move":              ByTitle,
+	"POST /api/v1/titles/{id}/versions":          ByTitle,
+	"PUT /api/v1/titles/{id}/versions/{vid}":     ByTitle,
+	"DELETE /api/v1/titles/{id}/versions/{vid}":  ByTitle,
+	"POST /api/v1/titles/{id}/refresh":           ByTitle,
+	"POST /api/v1/titles/{id}/search":            ByTitle,
+	"GET /api/v1/titles/{id}/releases":           ByTitle,
+	"GET /api/v1/titles/{id}/rename":             ByTitle,
+	"POST /api/v1/titles/{id}/rename":            ByTitle,
+	"GET /api/v1/titles/{id}/leftovers":          ByTitle,
+	"POST /api/v1/titles/{id}/leftovers/match":   ByTitle,
+	"POST /api/v1/titles/{id}/leftovers/unmatch": ByTitle,
+	"PUT /api/v1/titles/{id}/leftovers/{fid}":    ByTitle,
+	"POST /api/v1/titles/{id}/rescan":            ByTitle,
+	"POST /api/v1/titles/{id}/delete":            ByTitle,
 
 	// Movies.
 	"POST /api/v1/titles":                                  movies,

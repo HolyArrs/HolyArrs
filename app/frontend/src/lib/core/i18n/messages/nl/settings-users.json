@@ -100,5 +100,6 @@
 	"settings.users.note": "Notitie voor jezelf",
 	"settings.users.noteExample": "bijv. Mama",
 	"settings.users.days": "Dagen dat de link geldig is",
-	"settings.users.makeInvite": "Een uitnodigingslink maken"
+	"settings.users.makeInvite": "Een uitnodigingslink maken",
+	"settings.users.permAuto4k": "4K-aanvragen zonder wachten goedgekeurd"
 }

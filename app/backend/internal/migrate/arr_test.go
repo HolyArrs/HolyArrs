@@ -515,7 +515,7 @@ func TestArrReleaseWords(t *testing.T) {
 	if fmt.Sprint(rw["required"]) != "[x265 hevc]" || fmt.Sprint(rw["ignored"]) != "[cam ts]" || fmt.Sprint(rw["tags"]) != "[kids]" || fmt.Sprint(rw["indexer_ids"]) != "[2]" {
 		t.Fatalf("radarr backup %+v", rw)
 	}
-	p = BuildPlan([]Input{{1, s}}, Choices{})
+	p = BuildPlan([]Input{{1, s}}, Choices{NoFormats: true})
 	n, ok := notMoved(p, "radarr release_profiles[0]")
 	if !ok || n.What != "release words: must contain x265, hevc / must not contain cam, ts (tags: kids)" || !strings.Contains(n.Why, "fixed list of traits, not free words") {
 		t.Fatalf("radarr rule line %+v", n)
@@ -640,7 +640,7 @@ func TestRadarrWaitSkipsAndListsRead(t *testing.T) {
 	if d := s.DelayProfiles[0]; !d.BypassIfHighestQuality || !d.BypassIfAboveScore || d.TorrentDelay != 120 {
 		t.Fatalf("api wait %+v", d)
 	}
-	p := BuildPlan([]Input{{1, s}}, Choices{})
+	p := BuildPlan([]Input{{1, s}}, Choices{NoFormats: true})
 	if w := item(t, p, GroupRules, "pick_rules_protocol:Standard").Protocol; *w != (ProtocolPlan{Preset: "Standard", Prefer: "torrent", WaitTorrent: 120, SkipAtGoodEnough: true, Part: "movies"}) {
 		t.Fatalf("api wait plan %+v", w)
 	}

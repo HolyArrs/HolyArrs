@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Uus tee",
 	"settings.libraryFolders.changePathHint": "Teisalda failid kõigepealt sinna. HolyArrs kontrollib iga faili ega teisalda midagi.",
 	"settings.libraryFolders.checkingFiles": "Failide kontrollimine…",
-	"settings.libraryFolders.pathChanged": "Tee muudetud"
+	"settings.libraryFolders.pathChanged": "Tee muudetud",
+	"settings.libraryFolders.sideFiles": "Subtiitrifailid",
+	"settings.libraryFolders.sideFilesDesc": "Allalaadimisega kaasa tulnud subtiitrid saab tuua teeki video kõrvale.",
+	"settings.libraryFolders.sideOn": "Too ka subtiitrifailid",
+	"settings.libraryFolders.sideOnHint": "Teegis juba olevat faili ei asendata kunagi.",
+	"settings.libraryFolders.sideTypes": "Failitüübid",
+	"settings.libraryFolders.sideTypesHint": "Eralda tüübid komadega, näiteks srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs ei näe kausta {path}. See näeb ainult kaustu, mis on tema konteinerisse ühendatud. Lisa köide nagu {path}:{inside} ja kasuta siin siis {inside}."
 }

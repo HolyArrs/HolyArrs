@@ -25,6 +25,7 @@ import (
 func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 	m.retryRemovals(ctx)
 	m.retryClears(ctx)
+	m.relinkOrphans(ctx)
 	db := m.Store.Read()
 	dls, err := database.Select[domain.Download](ctx, db, "downloads", "state IN ("+activeStates+") ORDER BY id")
 	if err != nil || len(dls) == 0 {
@@ -53,8 +54,9 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 		// fromStore: this tick reads the reader's snapshot taken at readAt.
 		fromStore := false
 		var readAt time.Time
+		var v SyncView
 		if useStore {
-			v := m.Sync.View(dr.ID)
+			v = m.Sync.View(dr.ID)
 			switch {
 			case v.Fresh:
 				m.Sync.Fallback(dr.ID, false)
@@ -84,6 +86,9 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 		}
 		for _, d := range list {
 			j, ok := have[d.ExternalID]
+			if !ok {
+				j, ok = outsideJob(ctx, e, dr, v, fromStore, d.ExternalID)
+			}
 			if fromStore && !ok && !readAt.After(d.UpdatedAt) {
 				// Missing from a snapshot no newer than the row means unknown, so a grab the
 				// client has not listed yet is never marked vanished.
@@ -178,6 +183,8 @@ func (m *Manager) Run(ctx context.Context) {
 		if time.Since(checked) >= every {
 			m.CheckAll(ctx)
 			m.tidy(ctx)
+			m.settleAttempts(ctx)
+			m.settleLostChoices(ctx)
 			checked = time.Now()
 		}
 		n, _ := m.SyncOnce(ctx)

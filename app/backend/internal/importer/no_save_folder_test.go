@@ -44,7 +44,7 @@ func TestShowImportWithSaveFolderKeepsNothingMatched(t *testing.T) {
 	if _, err := (&Importer{Store: w.s, SavePath: w.dl}).Import(context.Background(), w.dlID, false, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	if sl := w.slot(t, 1); sl.LastReason == nil || !strings.Contains(*sl.LastReason, "could be matched to an episode") {
+	if sl := w.slot(t, 1); sl.LastReason == nil || !strings.Contains(*sl.LastReason, "matched an episode") {
 		t.Fatalf("slot %+v", sl)
 	}
 }
@@ -66,7 +66,7 @@ func TestMovieImportWithNoSaveFolderSaysWhereToSetIt(t *testing.T) {
 	if !strings.Contains(why, "HOLYARRS_SAVE_PATH") || !strings.Contains(why, "Settings > Downloaders") || strings.Contains(why, "import plan") {
 		t.Fatalf("reason %q", why)
 	}
-	// A path pair is set up: the folder was read, so the plan is the answer.
+	// A path pair is set up: the folder was read, so matching by hand is the answer.
 	if err := execSQL(w.s, "UPDATE downloaders SET path_map = ?", `[{"theirs":"/downloads","ours":"`+strings.ReplaceAll(w.dl, `\`, `\\`)+`"}]`); err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestMovieImportWithNoSaveFolderSaysWhereToSetIt(t *testing.T) {
 	if err := w.s.Read().QueryRowContext(ctx, "SELECT last_reason FROM slots WHERE id = ?", w.slotID).Scan(&why); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(why, "import plan") {
+	if !strings.Contains(why, "match the files by hand") {
 		t.Fatalf("with a path pair, reason %q", why)
 	}
 }

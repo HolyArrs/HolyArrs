@@ -82,7 +82,8 @@ func TestSourcesAddTestPauseDelete(t *testing.T) {
 		t.Fatalf("paused %+v", x.Health)
 	}
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/sources/"+id+"/resume", "", 200), &x)
-	if x.Health.State != "working" {
+	// The key is still wrong, so the last failed test still shows.
+	if x.Health.State != "auth_failed" {
 		t.Fatalf("resumed %+v", x.Health)
 	}
 

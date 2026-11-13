@@ -166,6 +166,13 @@
 	"library.import.followHint": "என் நாட்காட்டியில் காட்டு.",
 	"library.import.adoptOne": "1 {word} ஐ எடுத்துக்கொள்",
 	"library.import.adoptMany": "{n} {words} ஐ எடுத்துக்கொள்",
+	"library.import.searchFolders": "கோப்புறைகளில் தேடு",
+	"library.import.folderCountOne": "1 கோப்புறை",
+	"library.import.folderCountMany": "{n} கோப்புறைகள்",
+	"library.import.titleAndFolder": "தலைப்பும் கோப்புறையும்",
+	"library.import.matchFor": "{folder} க்கான பொருத்தம்",
+	"library.import.seeLarge": "{name} சுவரொட்டியைப் பெரிதாகப் பார்",
+	"library.import.noneMatch": "பொருந்தும் கோப்புறை எதுவும் இல்லை.",
 	"library.report.keep.one": "{n} தலைப்பு புதுப்பித்தபடி வைக்கப்படுகிறது",
 	"library.report.keep.many": "{n} தலைப்புகள் புதுப்பித்தபடி வைக்கப்படுகின்றன",
 	"library.report.keep.partOne": "{total} இல் {ok} தலைப்பு புதுப்பித்தபடி வைக்கப்படுகிறது",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "முதல் வாசிப்பு 30 நிமிடங்களுக்குள் நடக்கும்.",
 	"library.stats.watchedHelp": "Plex, Jellyfin மற்றும் Emby இன் இயக்க வரலாற்றிலிருந்து. Plex இயக்கங்களை மட்டுமே எண்ணுகிறது, எனவே கையால் பார்த்ததாகக் குறிக்கப்பட்ட தலைப்புகள் தோன்றாது.",
 	"library.stats.lastRead": "கடைசியாகப் படித்தது {ago}.",
-	"library.stats.noMatch": "கடைசியாகப் படித்தது {ago}. பார்த்தவற்றில் எதுவும் இன்னும் உங்கள் நூலகத்துடன் பொருந்தவில்லை.",
+	"library.stats.noMatch": "பார்த்த வரலாறு சரிபார்க்கப்பட்டது {ago}. பார்த்தவற்றில் எதுவும் இன்னும் உங்கள் நூலகத்துடன் பொருந்தவில்லை.",
 	"library.stats.notLinked": "இணைக்கப்படவில்லை",
 	"library.stats.lastWatched": "கடைசியாகப் பார்த்தது {ago}",
 	"library.stats.unit.movie.one": "{n} திரைப்படம்",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} எபிசோட்",
 	"library.stats.unit.episode.other": "{n} எபிசோட்கள்",
 	"library.stats.unit.play.one": "{n} முறை இயக்கம்",
-	"library.stats.unit.play.other": "{n} முறை இயக்கம்"
+	"library.stats.unit.play.other": "{n} முறை இயக்கம்",
+	"library.byHand.askReplaceOne": "1 கோப்பு நூலகத்தில் ஏற்கெனவே உள்ள ஒரு கோப்பை மாற்றும். பழைய கோப்பு சமீபத்தில் நீக்கியவை பகுதிக்குச் செல்லும். இறக்குமதி செய்யவா?",
+	"library.byHand.askReplaceMany": "{n} கோப்புகள் நூலகத்தில் ஏற்கெனவே உள்ள கோப்புகளை மாற்றும். பழைய கோப்புகள் சமீபத்தில் நீக்கியவை பகுதிக்குச் செல்லும். இறக்குமதி செய்யவா?"
 }

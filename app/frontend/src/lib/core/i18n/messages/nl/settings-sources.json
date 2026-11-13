@@ -72,5 +72,10 @@
 	"settings.sources.off": "Bronnen staan uit",
 	"settings.sources.offText": "HolyArrs zoekt en pakt niets. Downloads die je in je downloader toevoegt, worden nog steeds geïmporteerd.",
 	"settings.sources.openParts": "Onderdelen openen",
-	"settings.sources.offState": "Uit"
+	"settings.sources.offState": "Uit",
+	"settings.sources.site": "Ingebouwde site",
+	"settings.sources.siteLabel": "Site",
+	"settings.sources.addressSite": "Het eigen adres van de site. Wijzig het alleen als de site is verhuisd.",
+	"settings.sources.siteKeyLabel": "Cookie of RSS-sleutel",
+	"settings.sources.siteKeyHint": "Uit je eigen account: uid en pass uit je browsercookie, of u en tp uit je RSS-link. Versleuteld bewaard."
 }

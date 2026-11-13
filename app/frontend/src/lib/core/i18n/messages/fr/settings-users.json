@@ -100,5 +100,6 @@
 	"settings.users.note": "Note pour vous",
 	"settings.users.noteExample": "ex. Maman",
 	"settings.users.days": "Durée de validité du lien (jours)",
-	"settings.users.makeInvite": "Créer un lien d'invitation"
+	"settings.users.makeInvite": "Créer un lien d'invitation",
+	"settings.users.permAuto4k": "Demandes 4K approuvées sans attendre"
 }

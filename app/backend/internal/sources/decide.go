@@ -45,6 +45,8 @@ type slotCtx struct {
 	ti  mediafiles.Title
 	pr  mediafiles.PickRules
 	cur *mediafiles.Current
+	// listing is a search that only lists Releases for a person to pick from.
+	listing bool
 }
 
 // loadSlot reads one Slot with everything judging needs.
@@ -87,7 +89,10 @@ func (c slotCtx) ref() mediafiles.TitleRef {
 }
 
 // dedupe drops repeats of one Release across Sources, matching on the lower-cased name or on the info hash.
-func dedupe(all []found) []found {
+func dedupe(all []found) []found { return dedupeEach(all, nil) }
+
+// dedupeEach is dedupe that tells dropped about each repeat it leaves out.
+func dedupeEach(all []found, dropped func(found)) []found {
 	seen := map[string]bool{}
 	var out []found
 	for _, f := range all {
@@ -100,6 +105,9 @@ func dedupe(all []found) []found {
 			dup = dup || seen[k]
 		}
 		if dup {
+			if dropped != nil {
+				dropped(f)
+			}
 			continue
 		}
 		for _, k := range keys {
@@ -132,7 +140,7 @@ func (s *Searcher) judgeAll(ctx context.Context, c slotCtx, all []found, out, ha
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
 		m := mediafiles.MatchTitle(p, []mediafiles.TitleRef{ref})
 		set := mediafiles.SlotSet{Match: m, RuntimeMinutes: ref.Runtime, Out: out, MinSeeders: f.src.MinSeeders, TurnedDown: turned,
-			HandSearch: hand, SkipGate: skipGate, Current: c.cur, OutSince: outSince, Checks: checks}
+			HandSearch: hand, Listing: c.listing, SkipGate: skipGate, Current: c.cur, OutSince: outSince, Checks: checks}
 		if m.Title != nil {
 			set.SlotIDs = []int64{c.sl.ID}
 		}
@@ -178,6 +186,9 @@ func (s *Searcher) pickWinner(ctx context.Context, all []found, vs []mediafiles.
 		order = append(order, i)
 	}
 	for pos, i := range order {
+		if s.noDownloader(ctx, all[i].item.Protocol, &vs[i]) {
+			continue
+		}
 		over, why := s.overGrabLimit(ctx, all[i].src, now)
 		if over {
 			vs[i].Outcome = "passed_over"
@@ -229,6 +240,10 @@ func (s *Searcher) storeAll(ctx context.Context, by domain.Actor, jobID *int64, 
 			if f.relID > 0 {
 				ids[i] = f.relID
 				if err := updateJudgedTx(tx, f.relID, state, hold, v, bySlot, by); err != nil {
+					return err
+				}
+				// A Release judged again keeps the counts it was judged with.
+				if err := updateCountsTx(tx, f.relID, f.item.Seeders, f.item.Peers); err != nil {
 					return err
 				}
 				continue

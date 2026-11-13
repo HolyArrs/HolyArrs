@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Jauns ceļš",
 	"settings.libraryFolders.changePathHint": "Vispirms pārvietojiet failus turp. HolyArrs pārbauda katru failu un neko nepārvieto.",
 	"settings.libraryFolders.checkingFiles": "Pārbauda failus…",
-	"settings.libraryFolders.pathChanged": "Ceļš mainīts"
+	"settings.libraryFolders.pathChanged": "Ceļš mainīts",
+	"settings.libraryFolders.sideFiles": "Subtitru faili",
+	"settings.libraryFolders.sideFilesDesc": "Subtitrus, kas nāk līdzi lejupielādei, var ienest bibliotēkā blakus to video.",
+	"settings.libraryFolders.sideOn": "Ienest arī subtitru failus",
+	"settings.libraryFolders.sideOnHint": "Fails, kas jau ir bibliotēkā, nekad netiek aizstāts.",
+	"settings.libraryFolders.sideTypes": "Failu tipi",
+	"settings.libraryFolders.sideTypesHint": "Atdaliet tipus ar komatiem, piemēram, srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs neredz {path}. Tas redz tikai mapes, kas pievienotas tā konteinerā. Pievienojiet sējumu, piemēram, {path}:{inside}, un pēc tam šeit izmantojiet {inside}."
 }

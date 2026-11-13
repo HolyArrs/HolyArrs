@@ -166,6 +166,13 @@
 	"library.import.followHint": "Pokaż je w moim kalendarzu.",
 	"library.import.adoptOne": "Przejmij 1 ({word})",
 	"library.import.adoptMany": "Przejmij {n} ({words})",
+	"library.import.searchFolders": "Szukaj w folderach",
+	"library.import.folderCountOne": "1 folder",
+	"library.import.folderCountMany": "Folderów: {n}",
+	"library.import.titleAndFolder": "Tytuł i folder",
+	"library.import.matchFor": "Dopasowanie dla {folder}",
+	"library.import.seeLarge": "Pokaż duży plakat: {name}",
+	"library.import.noneMatch": "Żaden folder nie pasuje.",
 	"library.report.keep.one": "{n} tytuł śledzony",
 	"library.report.keep.many": "Tytuły śledzone: {n}",
 	"library.report.keep.partOne": "Tytuły śledzone: {ok} z {total}",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Pierwszy odczyt nastąpi w ciągu 30 minut.",
 	"library.stats.watchedHelp": "Z historii odtwarzania Plex, Jellyfin i Emby. Plex liczy tylko odtworzenia, więc tytuły oznaczone ręcznie jako obejrzane się nie pojawiają.",
 	"library.stats.lastRead": "Ostatni odczyt {ago}.",
-	"library.stats.noMatch": "Ostatni odczyt {ago}. Nic z obejrzanych pozycji nie pasuje jeszcze do Twojej Biblioteki.",
+	"library.stats.noMatch": "Historia oglądania sprawdzona {ago}. Nic z obejrzanych pozycji nie pasuje jeszcze do Twojej Biblioteki.",
 	"library.stats.notLinked": "Niepołączone",
 	"library.stats.lastWatched": "Ostatnio oglądane {ago}",
 	"library.stats.unit.movie.one": "Filmy: {n}",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "Odcinki: {n}",
 	"library.stats.unit.episode.other": "Odcinki: {n}",
 	"library.stats.unit.play.one": "Odtworzenia: {n}",
-	"library.stats.unit.play.other": "Odtworzenia: {n}"
+	"library.stats.unit.play.other": "Odtworzenia: {n}",
+	"library.byHand.askReplaceOne": "1 plik zastąpi plik, który już jest w Bibliotece. Stary plik trafi do „Ostatnio usunięte”. Importować?",
+	"library.byHand.askReplaceMany": "Pliki ({n}) zastąpią pliki, które już są w Bibliotece. Stare pliki trafią do „Ostatnio usunięte”. Importować?"
 }

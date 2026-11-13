@@ -26,6 +26,8 @@ export interface PersonPlan {
 	was_owner?: boolean;
 	choice?: 'merge' | 'skip';
 	email?: string;
+	/** Set when they come over linked to this sign-in, turned on with no invite. */
+	sign_in?: 'plex' | 'jellyfin' | 'emby';
 }
 
 export interface PlanItem {
@@ -36,7 +38,9 @@ export interface PlanItem {
 	why?: string;
 	needs?: string;
 	person?: PersonPlan;
-	folder?: { old_path: string; path: string; kind: string; label: string };
+	folder?: { old_path: string; path: string; kind: string; label: string; unseen?: boolean };
+	/** Set for a profile; body and traits only when it becomes its own Pick rules. */
+	rules?: { app: string; profile: string; preset: string; name?: string; body?: unknown; traits?: { name: string; points: number }[]; skipped?: { name: string; reason: string }[] };
 }
 
 export type PersonChoice = 'owner' | 'admin' | 'merge' | 'skip';
@@ -75,6 +79,52 @@ export interface Line {
 	detail?: string;
 	needs?: string;
 	choose?: ChooseWhy;
+	/** unreachable: came over as wanted into another folder; unchecked: its folder was left out, so the title stayed behind. */
+	attention?: 'unreachable' | 'unchecked';
+	folder?: string;
+}
+
+export interface FolderOutcome {
+	came: number;
+	attention: number;
+	attentionFolders: string[];
+	unchecked: number;
+	uncheckedFolders: string[];
+}
+
+/** Titles split three ways: came over, came over but need attention, left out because their folder was unchecked. */
+export function folderOutcome(lines: Line[]): FolderOutcome {
+	const out: FolderOutcome = { came: 0, attention: 0, attentionFolders: [], unchecked: 0, uncheckedFolders: [] };
+	const add = (list: string[], f?: string) => {
+		if (f && !list.includes(f)) list.push(f);
+	};
+	for (const l of lines) {
+		if (l.group === 'folders' && l.attention === 'unchecked') add(out.uncheckedFolders, l.folder);
+		if (l.group !== 'titles') continue;
+		if (l.attention === 'unchecked') {
+			out.unchecked++;
+			add(out.uncheckedFolders, l.folder);
+		} else if (l.attention === 'unreachable') {
+			out.attention++;
+			add(out.attentionFolders, l.folder);
+		} else if (['create', 'created', 'adopt', 'adopted'].includes(l.result)) out.came++;
+	}
+	return out;
+}
+
+/** Each read's newest done import that used it. A read made after an import is never one it used: a removed read's number can be given to a new one. */
+export function usedByMoves(moves: Move[], snapshots: Snapshot[]): Map<number, number> {
+	const m = new Map<number, number>();
+	const made = new Map(snapshots.map((s) => [s.id, Date.parse(s.created_at)]));
+	// Newest first: the newest done move that used a read names it.
+	for (const mv of moves) if (mv.state === 'done') for (const id of mv.snapshots ?? []) if (!m.has(id) && !((made.get(id) ?? 0) > Date.parse(mv.created_at))) m.set(id, mv.id);
+	return m;
+}
+
+/** Items with no folder on this server: not-found lines, less the Pick rules (no folder of theirs) and the Library folders whose titles came over anyway (they show as needing attention). */
+export function noFolderCount(lines: Line[]): number {
+	const came = folderOutcome(lines).attentionFolders;
+	return lines.filter((l) => l.result === 'not_found' && l.group !== 'pick_rules' && !(l.group === 'folders' && came.includes(l.key.replace(/^folder:/, '')))).length;
 }
 
 export interface Report {
@@ -95,7 +145,7 @@ export interface Move {
 	id: number;
 	created_at: string;
 	snapshots: number[];
-	choices?: { people?: Record<string, string>; skip?: string[]; path_rules?: PathRule[] };
+	choices?: { people?: Record<string, string>; skip?: string[]; path_rules?: PathRule[]; no_formats?: boolean; leave_folders?: string[] };
 	state: 'queued' | 'running' | 'done' | 'failed' | 'undone';
 	job_id?: number;
 	report?: Report;
@@ -229,6 +279,19 @@ const bestKeys: Record<string, string[]> = {
 const titleWord: Record<string, [string, string]> = { radarr: ['migrate.movie', 'migrate.movies'], sonarr: ['migrate.show', 'migrate.shows'], lidarr: ['migrate.artist', 'migrate.artists'] };
 
 export const OTHER = '\u0000other';
+// "Don't bring them" on an old folder this server cannot see, where no pick
+// means its titles come over as wanted and need attention.
+export const LEAVE = '\u0000leave';
+
+/** Says whether this server cannot see an old root folder as it is. */
+export function unseenFolder(plan: Plan | null, p: string): boolean {
+	return !!plan?.groups.some((g) => g.items.some((it) => it.folder?.old_path === p && it.folder.unseen));
+}
+
+/** The old folders set to "Don't bring them": no pick on one this server sees, or the explicit choice on one it cannot. */
+export function leaveFolders(plan: Plan | null, here: { path: string }[], picks: Record<string, string>): string[] {
+	return (plan?.old_paths ?? []).filter((p) => !here.some((f) => f.path === p) && (picks[p] === LEAVE || (!picks[p] && !unseenFolder(plan, p))));
+}
 
 const stepIds: Step[] = ['read', 'choose', 'move', 'done'];
 
@@ -458,7 +521,7 @@ export function ruleProblem(r: PathRule): string {
 }
 
 export function folderTo(pick: string | undefined, other: string | undefined): string {
-	if (!pick) return '';
+	if (!pick || pick === LEAVE) return '';
 	return pick === OTHER ? (other ?? '').trim() : pick;
 }
 
@@ -470,7 +533,7 @@ export function cleanPath(p: string): string {
 }
 
 export function folderProblem(from: string, pick: string | undefined, other: string | undefined): string {
-	if (!pick) return '';
+	if (!pick || pick === LEAVE) return '';
 	if (pick === OTHER && !(other ?? '').trim()) return t('migrate.typeThePathHere');
 	return ruleProblem({ from, to: folderTo(pick, other) });
 }

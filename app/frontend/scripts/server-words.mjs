@@ -21,9 +21,22 @@ const notWords = new Set(['dash', 'each', 'range', 'smart', 'remove', 'normal', 
 	'podnapisi', 'gestdown', 'yifysubtitles', 'tvsubtitles', 'bsplayer', 'qBittorrent', 'subtitles:languages', 'subtitle site ', 'tmdb:{v}', 'mbid:{v}']);
 // Lines the scan cannot put together: a control's Event starts with the person's name (setup ControlEvent)
 // and takes its verb from a map; a removal's reason may name who removed it.
-const handLines = { 'Because you have {name}': 'suggest', 'Deleted by hand': 'downloads', 'Marked bad': 'downloads',
+const handLines = { 'Because you have {name}': 'suggest', 'No Downloader has confirmed this Release yet. You can choose another one.': 'sources', 'Deleted by hand': 'downloads', 'Marked bad': 'downloads',
 	'{name} paused the stage {stage}': 'accounts', '{name} resumed the stage {stage}': 'accounts',
-	'{name} restarted the stage {stage}': 'accounts', 'Download removed': 'downloads', 'Download removed by {name}': 'downloads' };
+	'{name} restarted the stage {stage}': 'accounts', 'Download removed': 'downloads', 'Download removed by {name}': 'downloads',
+	// metadata.ErrServiceSlow, answered through library.ServiceError.
+	'The metadata server is slow right now. This comes back on its own.': 'metadata',
+	// requests.ErrNotAddedSlow, answered when an approval could not add its title.
+	'The metadata server did not answer in time. It is back in Waiting; approve it again.': 'requests',
+	// importer.PlaceError, the refusal of a folder Import by hand may not read.
+	"Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders, and none is set up yet. Add one in Settings > Library folders.": 'importer',
+	"Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders in Settings > Library folders: {all}": 'importer',
+	// Two lines of a Release's reasons (mediafiles judge, sources search_shows), shown in the Release lists.
+	'holds {covered}, not what was searched for': 'sources', 'no Title in the library is called {value}': 'mediafiles',
+	// requests: the Quality row's refusals and the approver's note (qualities.go, approve.go CopyKept).
+	'a quality name can be at most 30 characters': 'requests', 'keep at least one quality shown for movies and one for shows': 'requests',
+	'that quality cannot be asked for': 'requests', 'someone already asked for this movie in that quality; decide their ask instead': 'requests',
+	'The quality you picked was not used: this title already has that copy.': 'requests' };
 // Files whose fmt.Sprintf lines are display text (card lines, labels).
 const display = /(accounts[\\/]events|discover[\\/](home|explore_np|title_view)|shows[\\/]episode_labels|requests[\\/](episodes|follows\w*|reports)|health[\\/](health|routes_settings_status)|migrate[\\/]plan_\w+|metadata[\\/]moods)\.go$/;
 

@@ -12,7 +12,7 @@
 	"health.check.freeSpace": "Espacio libre",
 	"health.check.update": "Actualización",
 	"health.check.waiting": "Descargas esperando archivos",
-	"health.check.clearWaiting": "Descargas esperando la limpieza",
+	"health.check.clearWaiting": "Descargas importadas que siguen en un gestor de descargas",
 	"health.check.saveFolder": "Carpeta de descarga de",
 	"health.check.saveFolderWhy": "{app} no tiene carpeta de descarga, así que HolyArrs no puede importar sus descargas terminadas. Añade un par de rutas en Ajustes › Gestores de descargas.",
 	"health.day.ahead": "{count} por delante",
@@ -88,7 +88,7 @@
 	"health.kind.trailers": "Lector de tráileres",
 	"health.kind.update": "Actualización",
 	"health.kind.waitingDownloads": "Descargas esperando archivos",
-	"health.kind.clearWaiting": "Descargas esperando la limpieza",
+	"health.kind.clearWaiting": "Descargas importadas que siguen en un gestor de descargas",
 	"health.kind.saveFolder": "Carpeta de descarga del gestor",
 	"health.link.downloader": "Gestor de descargas",
 	"health.link.mediaServer": "Servidor multimedia",
@@ -264,5 +264,12 @@
 	"health.word.broken": "Roto",
 	"health.word.notSent": "Aún no enviado",
 	"health.word.notSynced": "Aún no sincronizado",
-	"health.word.working": "Funcionando"
+	"health.word.working": "Funcionando",
+	"health.check.usenetDl": "Gestor de descargas Usenet",
+	"health.check.torrentDl": "Gestor de descargas de torrents",
+	"health.check.noUsenetDl": "Tus fuentes encuentran descargas Usenet, pero no hay ningún gestor de descargas Usenet configurado, así que no se puede enviar ninguna. Añade uno en Ajustes › Gestores de descargas.",
+	"health.check.noTorrentDl": "Tus fuentes encuentran descargas de torrents, pero no hay ningún gestor de descargas de torrents configurado, así que no se puede enviar ninguna. Añade uno en Ajustes › Gestores de descargas.",
+	"health.check.sameDownloader": "Añadido dos veces:",
+	"health.check.sameDownloaderWhy": "{app} llega a la misma aplicación de descargas que otro gestor, así que sus descargas pueden aparecer dos veces. Quita uno en Ajustes › Gestores de descargas.",
+	"health.kind.sameDownloader": "Gestor de descargas añadido dos veces"
 }

@@ -98,8 +98,12 @@ func (h *Handlers) movePlan(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"plan": p, "counts": p.Counts(), "suggested_path_rules": SuggestRules(r.Context(), h.Store, p),
-		"missing_paths": missingTargets(p), "seen_folders": SeenFolders(), "plan_hash": PlanHash(p)})
+	hash, rules, missing := PlanHash(p), SuggestRules(r.Context(), h.Store, p), missingTargets(p)
+	// The titles list says what the import will do, as the dry run would.
+	h.mover().PreviewTitles(r.Context(), p)
+	MarkUnseen(p)
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"plan": p, "counts": p.Counts(), "suggested_path_rules": rules,
+		"missing_paths": missing, "seen_folders": SeenFolders(), "plan_hash": hash})
 }
 
 func (h *Handlers) moveDryRun(w http.ResponseWriter, r *http.Request) {

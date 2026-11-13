@@ -155,6 +155,7 @@ func (a *handlers) statusHandlers() *health.StatusHandlers {
 			}
 			return newest, true
 		}
+		h.BackupsOff = a.s.Backups.Off
 	}
 	if a.s.Auth != nil {
 		h.SkipLocal, h.OutsideJoin = a.s.Auth.SkipLocal, a.s.Auth.OutsideJoinOpen

@@ -72,5 +72,10 @@
 	"settings.sources.off": "Lähteet ovat pois päältä",
 	"settings.sources.offText": "HolyArrs ei hae eikä nappaa. Lataukset, jotka lisäät Lataajaasi, tuodaan silti.",
 	"settings.sources.openParts": "Avaa Osat",
-	"settings.sources.offState": "Pois"
+	"settings.sources.offState": "Pois",
+	"settings.sources.site": "Sisäänrakennettu sivusto",
+	"settings.sources.siteLabel": "Sivusto",
+	"settings.sources.addressSite": "Sivuston oma osoite. Muuta sitä vain, jos sivusto on muuttanut.",
+	"settings.sources.siteKeyLabel": "Eväste tai RSS-avain",
+	"settings.sources.siteKeyHint": "Omalta tililtäsi: uid ja pass selaimen evästeestä tai u ja tp RSS-linkistäsi. Tallennetaan salattuna."
 }

@@ -17,6 +17,7 @@
 	import { plainReason } from '#lib/core/plain.ts';
 	import type { ReleasePage, ReleaseView } from '#lib/core/types.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 	let { list, from = 'library' }: { list: 'held' | 'turned-down'; from?: 'library' | 'downloads' } = $props();
 	let rows = $state<ReleaseView[]>([]);
@@ -146,7 +147,7 @@
 				</div>
 				{#if key.length}
 					<ul class="reasons">
-						{#each key as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
+						{#each key as x, i (i)}<li class={x.effect}>{serverWords(x.text)}</li>{/each}
 					</ul>
 				{/if}
 			</li>

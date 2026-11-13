@@ -145,5 +145,7 @@
 	"core.settings.danger.about": "Yeniden başlat ya da kapat",
 	"core.settings.account.label": "Hesabım",
 	"core.settings.account.about": "Parola, iki adımlı giriş, cihazlar",
-	"core.api.sourceOff": "Bu kurulumda bazı satırlar kapalı."
+	"core.api.sourceOff": "Bu kurulumda bazı satırlar kapalı.",
+	"core.plain.noDownloader": "Kaynakların, hiçbir indiricinin alamayacağı indirmeler buluyor, bu yüzden hiçbiri gönderilemiyor.",
+	"core.plain.sameDownloader": "İki indirici aynı indirme uygulamasına ulaşıyor; bu yüzden indirmeler iki kez görünebilir."
 }

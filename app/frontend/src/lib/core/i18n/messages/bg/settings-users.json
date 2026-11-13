@@ -100,5 +100,6 @@
 	"settings.users.note": "Бележка за себе си",
 	"settings.users.noteExample": "напр. Мама",
 	"settings.users.days": "Дни, през които връзката важи",
-	"settings.users.makeInvite": "Създаване на връзка за покана"
+	"settings.users.makeInvite": "Създаване на връзка за покана",
+	"settings.users.permAuto4k": "4K заявки, одобрени без чакане"
 }

@@ -145,5 +145,7 @@
 	"core.settings.danger.about": "Restart lub wyłączenie",
 	"core.settings.account.label": "Moje konto",
 	"core.settings.account.about": "Hasło, uwierzytelnianie dwuskładnikowe, urządzenia",
-	"core.api.sourceOff": "Niektóre rzędy są wyłączone w tej instalacji."
+	"core.api.sourceOff": "Niektóre rzędy są wyłączone w tej instalacji.",
+	"core.plain.noDownloader": "Twoje źródła znajdują pobrania, których nie może przyjąć żaden z twoich downloaderów, więc nic nie może zostać wysłane.",
+	"core.plain.sameDownloader": "Dwa Downloadery łączą się z tą samą aplikacją do pobierania, więc pobrania mogą pojawiać się podwójnie."
 }

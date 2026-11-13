@@ -373,7 +373,7 @@ func personOf(id int64, name, role, perms, maxRating string) *Person {
 	if !has("ask") {
 		return nil
 	}
-	p := &Person{UserID: id, Name: name, AutoApprove: has("auto_approve"), NoLimit: has("approve")}
+	p := &Person{UserID: id, Name: name, AutoApprove: has("auto_approve"), AutoApproveFourK: has("auto_approve_four_k"), NoLimit: has("approve")}
 	if role == "member" {
 		p.MaxRating = maxRating
 	}

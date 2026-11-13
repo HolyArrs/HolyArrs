@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -66,6 +67,13 @@ type ByHandItem struct {
 	Season    *int   `json:"season"`
 	Episode   *int   `json:"episode"`
 	Mode      string `json:"mode"`
+	// Replace puts the file in place of the one the Slot has; the old file
+	// goes to the holding folder (Recently deleted).
+	Replace bool `json:"replace"`
+
+	// fromDownload is the download Review imports from: its file is read
+	// where the download is, and the import is linked to it.
+	fromDownload int64
 }
 
 // ByHandResult is the outcome of importing one by-hand item.
@@ -219,7 +227,7 @@ func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, er
 		if t.Year != nil {
 			year = *t.Year
 		}
-		refs = append(refs, mediafiles.TitleRef{ID: t.ID, Name: t.Name, Aliases: t.Aliases, Year: year, Kind: t.Kind})
+		refs = append(refs, mediafiles.TitleRef{ID: t.ID, Name: t.Name, Aliases: OtherNames(t), Year: year, Kind: t.Kind})
 	}
 	cache := map[int64]*byHandTitle{}
 	err = filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
@@ -395,9 +403,12 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 	if mode != "copy" && mode != "move" {
 		return refuse("mode is copy or move")
 	}
-	src, err := CleanByHandPath(it.Path, places)
-	if err != nil {
-		return refuse(err.Error())
+	src := filepath.Clean(it.Path)
+	if it.fromDownload == 0 {
+		var err error
+		if src, err = CleanByHandPath(it.Path, places); err != nil {
+			return refuse(err.Error())
+		}
 	}
 	r.Path = src
 	sfi, err := os.Lstat(src)
@@ -448,8 +459,21 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 		return refuse("music is not imported by hand yet")
 	case sl.State == mediafiles.SlotDownloading || sl.State == mediafiles.SlotImporting || sl.State == mediafiles.SlotChosen:
 		return refuse("a download is on its way for this; wait for it or remove it first")
-	case sl.FileID != nil:
-		return refuse("this already has a file; delete it first or pick another Version")
+	case sl.FileID != nil && !it.Replace:
+		return refuse("this already has a file; replace it or pick another Version")
+	}
+	var old *mediafiles.File
+	if sl.FileID != nil {
+		old = &mediafiles.File{}
+		if err := database.Get(ctx, db, "files", *sl.FileID, old); err != nil {
+			return r, err
+		}
+		if old.Protected {
+			return refuse("the current file is protected; turn its protection off first")
+		}
+		if len(old.SlotIDs) > 1 {
+			return refuse("the current file holds more than one episode, so it is not replaced from here")
+		}
 	}
 	year := 0
 	if ti.Year != nil {
@@ -486,6 +510,26 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 		return refuse(long)
 	}
 	r.Target = target
+	// The current file goes to the holding folder first, so the new one may take its name.
+	held, oldRel := "", ""
+	if old != nil {
+		oldRel = old.RelativePath
+		if filepath.Clean(filepath.Join(lf.Path, filepath.FromSlash(oldRel))) == src {
+			return refuse("this is the file it already has")
+		}
+		h, err := holdAside(lf.Path, oldRel, time.Now())
+		if err != nil {
+			return refuse("the current file could not be moved to the holding folder: " + err.Error())
+		}
+		held = h
+	}
+	putBack := func() {
+		if held != "" {
+			if err := moveFile(held, filepath.Join(lf.Path, filepath.FromSlash(oldRel))); err != nil {
+				log.Printf("importer: putting the current file back from %s: %v", held, err)
+			}
+		}
+	}
 	placedBy, fellBack, srcGone := "none", false, false
 	if filepath.Clean(target) != src {
 		ops := im.Ops
@@ -497,10 +541,12 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 		}
 		res := place(mediafiles.PlanStep{SourceFile: src, TargetPath: target, Method: "hardlink"}, ops, time.Time{})
 		if res.Outcome != "placed" {
+			putBack()
 			r.Outcome, r.Error = res.Outcome, res.Error
 			return r, nil
 		}
 		placedBy, fellBack = res.PlacedBy, res.FellBack
+		im.placeSideFiles(ctx, "", []mediafiles.PlanStep{{SourceFile: src, TargetPath: target}}, []mediafiles.PlaceResult{res}, item.Kind == "episode")
 		if mode == "move" {
 			if err := os.Remove(src); err != nil {
 				r.Error = "placed, but the original could not be removed: " + err.Error()
@@ -514,17 +560,27 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 		}
 	}
 	r.Outcome, r.PlacedBy, r.FellBack = "placed", placedBy, fellBack
-	if err := im.recordByHand(ctx, &r, src, target, lf, ver, item, ti, sl, p, by); err != nil {
+	rec := byHandRecord{old: old, held: held, download: it.fromDownload}
+	if err := im.recordByHand(ctx, &r, src, target, lf, ver, item, ti, sl, p, rec, by); err != nil {
 		if !srcGone && (placedBy == "hardlink" || placedBy == "copy") {
 			_ = os.Remove(target)
 		}
+		putBack()
 		return r, err
 	}
 	return r, nil
 }
 
+// byHandRecord is what a by-hand import records beside the new file: the
+// file it replaced and where that went, and the download it came from.
+type byHandRecord struct {
+	old      *mediafiles.File
+	held     string
+	download int64
+}
+
 func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, target string, lf mediafiles.LibraryFolder, ver mediafiles.Version, item mediafiles.Item,
-	ti mediafiles.Title, sl mediafiles.Slot, p releasename.Result, by domain.Actor) error {
+	ti mediafiles.Title, sl mediafiles.Slot, p releasename.Result, rec byHandRecord, by domain.Actor) error {
 	rel, err := filepath.Rel(lf.Path, target)
 	if err != nil {
 		return err
@@ -553,9 +609,33 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 	if item.Kind == "episode" {
 		kind = "episodes"
 	}
+	heldRel := ""
+	if rec.old != nil {
+		heldRel = rec.old.RelativePath + "#replaced-" + strconv.FormatInt(rec.old.ID, 10)
+		if rec.held != "" {
+			if hr, err := filepath.Rel(lf.Path, rec.held); err == nil {
+				heldRel = filepath.ToSlash(hr)
+			}
+		}
+	}
 	imp := &mediafiles.Import{FromPath: filepath.Dir(src), Kind: kind, Plan: []mediafiles.PlanStep{step}, Mode: "by_hand", DecidedBy: &by, State: "done",
-		Result: []mediafiles.PlaceResult{{SourceFile: src, Outcome: "placed", PlacedBy: r.PlacedBy, FellBack: r.FellBack}}}
+		Result: []mediafiles.PlaceResult{{SourceFile: src, Outcome: "placed", PlacedBy: r.PlacedBy, FellBack: r.FellBack, HeldAside: rec.held}}}
+	if rec.download > 0 {
+		imp.DownloadID = &rec.download
+	}
 	err = im.Store.Write(ctx, func(tx *sql.Tx) error {
+		// The replaced file is deleted the usual way: it waits in the holding folder (Recently deleted).
+		if rec.old != nil {
+			now := database.FormatTime(time.Now())
+			if _, err := tx.Exec("UPDATE files SET state = 'gone', relative_path = ?, updated_at = ?, updated_by = ? WHERE id = ?",
+				heldRel, now, actorText(by), rec.old.ID); err != nil {
+				return err
+			}
+			if _, err := tx.Exec("UPDATE subtitles SET state = 'gone', updated_at = ? WHERE file_id = ? AND state = 'present' AND place <> 'beside'",
+				now, rec.old.ID); err != nil {
+				return err
+			}
+		}
 		f := &mediafiles.File{SlotIDs: []int64{sl.ID}, VersionID: ver.ID, RelativePath: filepath.ToSlash(rel), Size: size, AddedAt: time.Now().UTC(),
 			Quality:   mediafiles.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
 			Languages: InspectedLanguages(facts), MediaInfo: info, ReleaseName: &release, Origin: "imported", PlacedBy: r.PlacedBy,
@@ -600,6 +680,23 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 		GroupKey: "slot:" + strconv.FormatInt(slotID, 10)}
 	if im.Store.AddEvent(ctx, e) == nil {
 		im.publish("event", e)
+	}
+	if rec.old != nil {
+		path := filepath.Base(rec.old.RelativePath)
+		replaced := &domain.Event{Actor: by, Kind: "file_replaced", TitleID: &titleID, SlotID: &slotID,
+			Summary:  "Replaced " + path + " by hand",
+			Data:     map[string]any{"old_file_id": rec.old.ID, "new_file_id": r.FileID, "moved_to": rec.held, "by_hand": true},
+			GroupKey: "slot:" + strconv.FormatInt(slotID, 10)}
+		if im.Store.AddEvent(ctx, replaced) == nil {
+			im.publish("event", replaced)
+		}
+		if rec.held != "" {
+			held := &domain.Event{Actor: by, Kind: domain.EventFileHeld, TitleID: &titleID, Summary: "Moved " + path + " to the holding folder",
+				Data: map[string]any{"file_id": rec.old.ID, "from": rec.old.RelativePath, "to": heldRel}, GroupKey: "title:" + strconv.FormatInt(titleID, 10)}
+			if im.Store.AddEvent(ctx, held) == nil {
+				im.publish("event", held)
+			}
+		}
 	}
 	im.publish("import", imp)
 	return nil

@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Ný slóð",
 	"settings.libraryFolders.changePathHint": "Færðu skrárnar þangað fyrst. HolyArrs athugar hverja skrá og færir ekkert.",
 	"settings.libraryFolders.checkingFiles": "Athuga skrár…",
-	"settings.libraryFolders.pathChanged": "Slóð breytt"
+	"settings.libraryFolders.pathChanged": "Slóð breytt",
+	"settings.libraryFolders.sideFiles": "Skjátextaskrár",
+	"settings.libraryFolders.sideFilesDesc": "Skjátexta sem fylgja niðurhali má færa í safnið við hlið myndbandsins.",
+	"settings.libraryFolders.sideOn": "Taka skjátextaskrár með",
+	"settings.libraryFolders.sideOnHint": "Skrá sem er þegar í safninu er aldrei skipt út.",
+	"settings.libraryFolders.sideTypes": "Skráagerðir",
+	"settings.libraryFolders.sideTypesHint": "Aðskildu gerðir með kommum, t.d. srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs sér ekki {path}. Það sér aðeins möppur sem eru tengdar inn í gáminn þess. Bættu við volume eins og {path}:{inside} og notaðu svo {inside} hér."
 }

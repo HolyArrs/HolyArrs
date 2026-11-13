@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Ruta nueva",
 	"settings.libraryFolders.changePathHint": "Mueve primero los archivos allí. HolyArrs comprueba cada archivo y no mueve nada.",
 	"settings.libraryFolders.checkingFiles": "Comprobando archivos…",
-	"settings.libraryFolders.pathChanged": "Ruta cambiada"
+	"settings.libraryFolders.pathChanged": "Ruta cambiada",
+	"settings.libraryFolders.sideFiles": "Archivos de subtítulos",
+	"settings.libraryFolders.sideFilesDesc": "Los subtítulos que vienen con una descarga pueden llevarse a la biblioteca junto a su vídeo.",
+	"settings.libraryFolders.sideOn": "Traer también los subtítulos",
+	"settings.libraryFolders.sideOnHint": "Un archivo que ya está en la biblioteca nunca se reemplaza.",
+	"settings.libraryFolders.sideTypes": "Tipos de archivo",
+	"settings.libraryFolders.sideTypesHint": "Separa los tipos con comas, como srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs no ve {path}. Solo ve las carpetas montadas en su contenedor. Añade un volumen como {path}:{inside} y luego usa {inside} aquí."
 }

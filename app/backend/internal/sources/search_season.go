@@ -18,7 +18,7 @@ import (
 // showQuery is the search for one episode (daily: its air day; otherwise
 // the season and episode release names use) or, with ep nil, one season.
 func showQuery(ti mediafiles.Title, season int, ep *epSlot) Query {
-	q := Query{Title: ti.Name, TV: true, Season: season}
+	q := Query{Title: ti.Name, TV: true, Season: season, Aliases: ti.Aliases}
 	q.TVDB, _ = strconv.Atoi(ti.SourceIDs["tvdb"])
 	q.TVMaze, _ = strconv.Atoi(ti.SourceIDs["tvmaze"])
 	order := "aired"
@@ -106,9 +106,10 @@ func tvCategories(src domain.Source) []int {
 
 // HandleSeason searches one season of a show for one Version.
 //
-// When every kept episode of the season has aired and is missing, the season
-// is searched as a whole so a season pack can fill every Slot with one
-// Download, and episodes nothing covered are then searched one by one.
+// When every kept episode of the season has aired and more than one is
+// looking, the season is searched as a whole so a season pack can fill the
+// looking Slots with one Download, and episodes nothing covered are then
+// searched one by one.
 // Otherwise each looking episode gets its own search.
 //
 // Params: version_id (required), by_hand, choose (false only judges and
@@ -154,6 +155,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 	if err != nil {
 		return err
 	}
+	set.listing = show
 	var looking, kept []*epSlot
 	whole := true
 	for i := range set.eps {
@@ -171,8 +173,10 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		if ok && (e.kept || anyEp || show) {
 			looking = append(looking, e)
 		}
-		missing := e.sl.State == mediafiles.SlotWanted || e.cur == nil && (e.sl.State == mediafiles.SlotFailed || e.sl.State == mediafiles.SlotRejected)
-		if e.kept && !e.placeholder && (!missing || !e.soon) {
+		// Episodes already in the Library do not stop the season query: a
+		// pack can still fill the ones looking, the way a season search
+		// elsewhere asks for the season whenever more than one is looking.
+		if e.kept && !e.placeholder && !e.soon {
 			whole = false
 		}
 	}
@@ -265,7 +269,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		}
 	}
 
-	found, failures, answered, skipped, err := s.askAll(ctx, r, showQuery(ti, season, nil), hand, true, ti.Tags)
+	found, failures, answered, skipped, err := s.askAll(ctx, r, showQuery(ti, season, nil), hand, true, ti.Tags, set.pr.Body.Tags)
 	if err != nil {
 		return err
 	}
@@ -278,7 +282,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 			continue
 		}
 		asked[named] = true
-		more, _, n, _, err := s.askAll(ctx, r, showQuery(ti, named, nil), hand, true, ti.Tags)
+		more, _, n, _, err := s.askAll(ctx, r, showQuery(ti, named, nil), hand, true, ti.Tags, set.pr.Body.Tags)
 		if err != nil {
 			return err
 		}

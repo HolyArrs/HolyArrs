@@ -58,6 +58,7 @@ describe('failReason and statusDetail', () => {
 		expect(statusDetail({ phase: 'done', state: 'finished', progress: 1 }, im(2, 9, 'done'))).toBe('');
 		expect(statusDetail({ phase: 'vanished', state: 'vanished', progress: 0 }, undefined)).toBe('removed outside HolyArrs');
 		expect(statusDetail({ phase: 'import_refused', state: 'finished', progress: 1 }, undefined)).toBe('the files did not match');
+		expect(statusDetail({ phase: 'import_refused', state: 'finished', progress: 1, refused_why: 'the file is 50 MB, too small to be the full video; likely a fake' }, undefined)).toBe('the file is 50 MB, too small to be the full video; likely a fake');
 		expect(statusDetail({ phase: 'done', state: 'seeding', progress: 1, ratio: 1.5 }, undefined)).toBe('ratio 1.50');
 	});
 });

@@ -34,7 +34,7 @@ func (im *Importer) nothingPlaced(dr domain.Downloader, files []domain.SeenFile)
 	if why := im.unreadReason(dr, files); why != "" {
 		return why
 	}
-	return "nothing could be placed; look at the import plan"
+	return "no file in the download matched this movie; match the files by hand"
 }
 
 // nothingMatched is an episode or album import's reason when no file
@@ -44,7 +44,7 @@ func (im *Importer) nothingMatched(dr domain.Downloader, files []domain.SeenFile
 		return why
 	}
 	if music {
-		return "nothing in the download could be matched to a track; look at the import plan"
+		return "no file in the download matched a track; match the files by hand"
 	}
-	return "nothing in the download could be matched to an episode; look at the import plan"
+	return "no file in the download matched an episode; match the files by hand"
 }

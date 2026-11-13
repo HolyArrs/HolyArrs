@@ -191,6 +191,7 @@ asks
 at
 atmos
 attemptedValue
+attention
 attributes
 attribution
 audio
@@ -269,6 +270,7 @@ callback_url
 calls
 calls_24h
 can_act
+can_import
 can_read
 candidate
 candidates
@@ -280,6 +282,7 @@ cast
 cat
 categories
 category
+category_after_import
 category_movies
 category_music
 category_shows
@@ -373,6 +376,7 @@ crawl_kbps
 created
 created_at
 created_by
+created_unix
 credits
 crew
 current
@@ -381,6 +385,7 @@ custom_formats
 cut
 cutoff
 cutoffFormatScore
+cutoff_qualities
 cutoff_score
 cw
 d
@@ -413,6 +418,7 @@ department
 description
 desktop
 detail
+details
 details_source
 device
 died
@@ -432,6 +438,7 @@ discord_id
 discs
 diskspace1
 diskspace2
+dismissed
 display_name
 display_priorities
 display_priority
@@ -461,6 +468,7 @@ download_payload_rate
 downloaded
 downloader
 downloader_folders
+downloader_gone
 downloader_id
 downloader_kind
 downloaders
@@ -475,6 +483,7 @@ downloads_today
 draft
 dropped
 dropped_at
+dropped_season
 dry
 dry_run
 duplicates
@@ -549,6 +558,7 @@ expected
 expires_at
 explicit
 explicit_lyrics
+ext_name
 external_id
 external_ids
 externals
@@ -622,6 +632,8 @@ forward
 found
 found_by
 four_k
+four_k_library_folder_id
+four_k_pick_rules_id
 fps
 free_bytes
 free_space
@@ -713,6 +725,7 @@ hints
 history
 history_other_days
 history_routine_days
+hits
 hlsManifestUrl
 hold
 hold_unknown_releases
@@ -739,6 +752,8 @@ imdb
 imdbId
 imdb_id
 implementation
+import_file
+import_folder
 import_lists
 import_min_track_kb
 import_min_video_mb
@@ -759,6 +774,7 @@ indexers
 indexes
 info
 infoHash
+infohash
 inherit
 inspection_status
 instanceName
@@ -842,6 +858,8 @@ later
 latest
 layer
 leans
+leave_folders
+leechers
 left
 left_out
 left_until_done
@@ -896,6 +914,8 @@ machine_made
 machine_translated
 made
 made_by
+magnet
+magnetUrl
 main
 mal
 mapped
@@ -940,6 +960,7 @@ min_points
 min_s
 min_score
 min_seeders
+min_upgrade_score
 mine
 minimumAvailability
 minutes
@@ -1051,6 +1072,8 @@ next_run
 next_search
 next_try
 next_try_at
+no_downloader
+no_formats
 no_limit
 no_release
 nodes
@@ -1121,6 +1144,7 @@ outside_order
 outside_recent
 overview
 own_keys_note
+own_only
 owned
 owned_titles
 owner
@@ -1177,6 +1201,7 @@ pending
 pending_count
 pending_downloads
 people
+per_hour
 per_minute
 per_week
 per_window
@@ -1255,6 +1280,7 @@ problem
 production_companies
 profile
 profile_id
+profile_key
 profile_path
 profiles
 progress
@@ -1284,6 +1310,7 @@ qualities
 quality
 qualityProfileId
 qualityVersion
+quality_name
 quality_profiles
 query
 queue
@@ -1307,6 +1334,7 @@ ratio_limit
 read_at
 read_by_owner
 read_token
+ready
 reason
 reasons
 recent
@@ -1324,6 +1352,7 @@ refs
 refuse_early_releases
 refuse_tiny_releases
 refused
+refused_why
 region
 regions
 related
@@ -1365,6 +1394,7 @@ remove_search_again
 remove_turn_down
 removed
 rename_on_import
+replace
 replace_vanished
 replaced
 replaces_file_id
@@ -1375,6 +1405,7 @@ requested_by
 requests
 require_two_factor_admins
 required
+res
 reset_time_utc
 resolution
 resource
@@ -1502,6 +1533,8 @@ shelf
 show
 show_days
 show_folder_pattern
+show_four_k_library_folder_id
+show_four_k_pick_rules_id
 show_library_folder_id
 show_limit
 show_limit_set
@@ -1511,6 +1544,9 @@ shown
 shows
 shows_per_week
 side
+sign_in
+sign_in_id
+sign_in_name
 signatureCipher
 signin_library_art
 signing_secret
@@ -1740,6 +1776,7 @@ tracks_dropped
 tracks_removed
 trailer_key
 trait
+trait_id
 traits
 trakt
 translate_from
@@ -1771,6 +1808,7 @@ tvmaze
 two_factor
 ty
 type
+types
 u
 undo
 undo_job_id
@@ -1781,6 +1819,7 @@ unique_user_key
 unknown
 unreachable
 unresolved
+unseen
 unset
 until
 unverifiedSceneNumbering
@@ -1800,6 +1839,7 @@ update_check_url
 update_prerelease
 updated
 updated_at
+upgradeAllowed
 upgrade_allowed
 upgrade_min_points
 uploadLength

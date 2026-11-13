@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Neizdevās saglabāt",
 	"settings.tmdb.locked": "Noteikts jūsu Docker iestatījumos",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE ir “{value}”, kas nav full, own vai off, tāpēc meklēšana ir izslēgta.",
-	"settings.tmdb.ownNote": "Jūsu paša atslēgas pats vaicā katram avotam. Mūzikas topi, jaunās mūzikas rindas, straumēšanas Top 10, Vikipēdijas fakti un anime kartes nāk tikai no HolyArrs servera, tāpēc tie ir izslēgti.",
+	"settings.tmdb.ownNote": "Ar savām atslēgām HolyArrs vaicā katram avotam tieši. Mūzikas topi, jaunās mūzikas rindas, straumēšanas Top 10, Vikipēdijas fakti un anime kartes nāk tikai no HolyArrs servera, tāpēc tie ir izslēgti.",
 	"settings.tmdb.keysTitle": "Jūsu atslēgas",
 	"settings.tmdb.keysDesc": "Vajadzīga tikai TMDB lasīšanas pilnvara",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

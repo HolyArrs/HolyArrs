@@ -271,5 +271,8 @@
 	"home.noSaveFolder": "nincs mentési mappája",
 	"home.noSaveFolderMany": "nincs mentési mappájuk",
 	"home.off": "Ki",
-	"home.sourcesOff": "Kikapcsolva a Modulokban"
+	"home.sourcesOff": "Kikapcsolva a Modulokban",
+	"home.noneForSources": "hiányzik ahhoz, amit a forrásaid találnak",
+	"home.addedTwice": "kétszer van hozzáadva",
+	"home.addedTwiceMany": "kétszer vannak hozzáadva"
 }

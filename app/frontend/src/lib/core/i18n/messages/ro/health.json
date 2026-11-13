@@ -260,9 +260,16 @@
 	"health.word.notSent": "Încă netrimis",
 	"health.word.notSynced": "Încă nesincronizat",
 	"health.word.working": "Funcționează",
-	"health.check.clearWaiting": "Descărcări care așteaptă ștergerea",
+	"health.check.clearWaiting": "Descărcări importate încă într-un Program de descărcare",
 	"health.check.saveFolder": "Dosar de salvare pentru",
 	"health.check.saveFolderWhy": "{app} nu are dosar de salvare, așa că HolyArrs nu poate importa descărcările terminate. Adaugă o pereche de căi în Setări › Programe de descărcare.",
-	"health.kind.clearWaiting": "Descărcări care așteaptă ștergerea",
-	"health.kind.saveFolder": "Dosar de salvare al clientului de descărcare"
+	"health.kind.clearWaiting": "Descărcări importate încă într-un Program de descărcare",
+	"health.kind.saveFolder": "Dosar de salvare al clientului de descărcare",
+	"health.check.usenetDl": "Program de descărcare Usenet",
+	"health.check.torrentDl": "Program de descărcare torrent",
+	"health.check.noUsenetDl": "Sursele tale găsesc descărcări Usenet, dar niciun program de descărcare Usenet nu e configurat, așa că nu se poate trimite nimic. Adaugă unul în Setări › Programe de descărcare.",
+	"health.check.noTorrentDl": "Sursele tale găsesc torrente, dar niciun program de descărcare torrent nu e configurat, așa că nu se poate trimite nimic. Adaugă unul în Setări › Programe de descărcare.",
+	"health.check.sameDownloader": "Adăugat de două ori:",
+	"health.check.sameDownloaderWhy": "{app} ajunge la aceeași aplicație de descărcare ca alt program, așa că descărcările lui pot apărea de două ori. Elimină unul din Setări › Programe de descărcare.",
+	"health.kind.sameDownloader": "Program de descărcare adăugat de două ori"
 }

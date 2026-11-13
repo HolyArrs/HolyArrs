@@ -260,9 +260,16 @@
 	"health.word.notSent": "Još nije poslano",
 	"health.word.notSynced": "Još nije sinkronizirano",
 	"health.word.working": "Radi",
-	"health.check.clearWaiting": "Preuzimanja koja čekaju čišćenje",
+	"health.check.clearWaiting": "Uvezena preuzimanja koja su još u preuzimatelju",
 	"health.check.saveFolder": "Mapa za spremanje za",
 	"health.check.saveFolderWhy": "{app} nema mapu za spremanje, pa HolyArrs ne može uvesti završena preuzimanja. Dodajte par putanja u Postavke › Preuzimatelji.",
-	"health.kind.clearWaiting": "Preuzimanja koja čekaju čišćenje",
-	"health.kind.saveFolder": "Mapa za spremanje preuzimatelja"
+	"health.kind.clearWaiting": "Uvezena preuzimanja koja su još u preuzimatelju",
+	"health.kind.saveFolder": "Mapa za spremanje preuzimatelja",
+	"health.check.usenetDl": "Usenet preuzimatelj",
+	"health.check.torrentDl": "Torrent preuzimatelj",
+	"health.check.noUsenetDl": "Tvoji izvori pronalaze Usenet preuzimanja, ali nijedan Usenet preuzimatelj nije postavljen, pa se ništa ne može poslati. Dodajte ga u Postavke › Preuzimatelji.",
+	"health.check.noTorrentDl": "Tvoji izvori pronalaze torrent preuzimanja, ali nijedan torrent preuzimatelj nije postavljen, pa se ništa ne može poslati. Dodajte ga u Postavke › Preuzimatelji.",
+	"health.check.sameDownloader": "Dodano dvaput:",
+	"health.check.sameDownloaderWhy": "{app} vodi do iste aplikacije za preuzimanje kao drugi preuzimatelj, pa se njegova preuzimanja mogu prikazati dvaput. Uklonite jedan u Postavke › Preuzimatelji.",
+	"health.kind.sameDownloader": "Preuzimatelj dodan dvaput"
 }

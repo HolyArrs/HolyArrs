@@ -166,6 +166,13 @@
 	"library.import.followHint": "Tampilkan di kalenderku.",
 	"library.import.adoptOne": "Ambil alih 1 {word}",
 	"library.import.adoptMany": "Ambil alih {n} {words}",
+	"library.import.searchFolders": "Cari folder",
+	"library.import.folderCountOne": "1 folder",
+	"library.import.folderCountMany": "{n} folder",
+	"library.import.titleAndFolder": "Judul dan folder",
+	"library.import.matchFor": "Kecocokan untuk {folder}",
+	"library.import.seeLarge": "Lihat poster {name} dalam ukuran besar",
+	"library.import.noneMatch": "Tidak ada folder yang cocok.",
 	"library.report.keep.one": "{n} judul dijaga tetap mutakhir",
 	"library.report.keep.many": "{n} judul dijaga tetap mutakhir",
 	"library.report.keep.partOne": "{ok} dari {total} judul dijaga tetap mutakhir",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Pembacaan pertama dilakukan dalam 30 menit.",
 	"library.stats.watchedHelp": "Dari riwayat pemutaran Plex, Jellyfin, dan Emby. Plex hanya menghitung pemutaran, jadi judul yang ditandai sudah ditonton secara manual tidak muncul.",
 	"library.stats.lastRead": "Terakhir dibaca {ago}.",
-	"library.stats.noMatch": "Terakhir dibaca {ago}. Belum ada tontonan yang cocok dengan Pustaka Anda.",
+	"library.stats.noMatch": "Riwayat tontonan diperiksa {ago}. Belum ada tontonan yang cocok dengan Pustaka Anda.",
 	"library.stats.notLinked": "Belum terhubung",
 	"library.stats.lastWatched": "Terakhir ditonton {ago}",
 	"library.stats.unit.movie.one": "{n} film",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} episode",
 	"library.stats.unit.episode.other": "{n} episode",
 	"library.stats.unit.play.one": "{n} pemutaran",
-	"library.stats.unit.play.other": "{n} pemutaran"
+	"library.stats.unit.play.other": "{n} pemutaran",
+	"library.byHand.askReplaceOne": "1 file menggantikan file yang sudah ada di Pustaka. File lama masuk ke Baru dihapus. Impor?",
+	"library.byHand.askReplaceMany": "{n} file menggantikan file yang sudah ada di Pustaka. File lama masuk ke Baru dihapus. Impor?"
 }

@@ -271,5 +271,8 @@
 	"home.metadataServerOnline": "Servidor de metadados no ar",
 	"home.homeCouldNotRead3": "O Início não conseguiu ler os downloads agora.",
 	"home.off": "Desligado",
-	"home.sourcesOff": "Desligado em Partes"
+	"home.sourcesOff": "Desligado em Partes",
+	"home.noneForSources": "falta para o que suas fontes encontram",
+	"home.addedTwice": "está adicionado duas vezes",
+	"home.addedTwiceMany": "estão adicionados duas vezes"
 }

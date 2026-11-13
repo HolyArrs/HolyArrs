@@ -166,6 +166,13 @@
 	"library.import.followHint": "הצגתם בלוח השנה שלי.",
 	"library.import.adoptOne": "קליטת {word} אחד",
 	"library.import.adoptMany": "קליטת {n} {words}",
+	"library.import.searchFolders": "חיפוש בתיקיות",
+	"library.import.folderCountOne": "תיקייה אחת",
+	"library.import.folderCountMany": "{n} תיקיות",
+	"library.import.titleAndFolder": "כותרת ותיקייה",
+	"library.import.matchFor": "התאמה עבור {folder}",
+	"library.import.seeLarge": "הצג את הפוסטר של {name} בגדול",
+	"library.import.noneMatch": "אין תיקיות מתאימות.",
 	"library.report.keep.one": "{n} כותר נשמר מעודכן",
 	"library.report.keep.many": "{n} כותרים נשמרים מעודכנים",
 	"library.report.keep.partOne": "{ok} מתוך {total} כותר נשמר מעודכן",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "הקריאה הראשונה תתבצע תוך 30 דקות.",
 	"library.stats.watchedHelp": "מהיסטוריית ההפעלות של Plex, ‏Jellyfin ו-Emby. Plex סופר רק הפעלות, ולכן כותרות שסומנו ידנית כנצפו לא יופיעו.",
 	"library.stats.lastRead": "נקרא לאחרונה {ago}.",
-	"library.stats.noMatch": "נקרא לאחרונה {ago}. שום דבר ממה שנצפה עדיין לא תואם לספרייה שלך.",
+	"library.stats.noMatch": "היסטוריית הצפייה נבדקה {ago}. שום דבר ממה שנצפה עדיין לא תואם לספרייה שלך.",
 	"library.stats.notLinked": "לא מקושר",
 	"library.stats.lastWatched": "נצפה לאחרונה {ago}",
 	"library.stats.unit.movie.one": "{n} סרט",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} פרק",
 	"library.stats.unit.episode.other": "{n} פרקים",
 	"library.stats.unit.play.one": "{n} הפעלה",
-	"library.stats.unit.play.other": "{n} הפעלות"
+	"library.stats.unit.play.other": "{n} הפעלות",
+	"library.byHand.askReplaceOne": "קובץ אחד מחליף קובץ שכבר בספרייה. הקובץ הישן עובר אל „נמחקו לאחרונה”. לייבא?",
+	"library.byHand.askReplaceMany": "{n} קבצים מחליפים קבצים שכבר בספרייה. הקבצים הישנים עוברים אל „נמחקו לאחרונה”. לייבא?"
 }

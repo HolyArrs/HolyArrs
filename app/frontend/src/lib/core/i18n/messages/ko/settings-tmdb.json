@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "저장하지 못했습니다",
 	"settings.tmdb.locked": "Docker 설정에서 지정됨",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE 값이 \"{value}\"(으)로 full, own, off가 아니어서 조회가 꺼져 있습니다.",
-	"settings.tmdb.ownNote": "내 키를 쓰면 각 출처에 직접 묻습니다. 음악 차트, 새 음악 줄, 스트리밍 톱 10, 위키백과 정보, 애니메이션 매핑은 HolyArrs 서버에서만 오므로 꺼집니다.",
+	"settings.tmdb.ownNote": "내 키를 쓰면 HolyArrs가 각 출처에 직접 묻습니다. 음악 차트, 새 음악 줄, 스트리밍 톱 10, 위키백과 정보, 애니메이션 매핑은 HolyArrs 서버에서만 오므로 꺼집니다.",
 	"settings.tmdb.keysTitle": "내 키",
 	"settings.tmdb.keysDesc": "TMDB 읽기 토큰만 있으면 됩니다",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

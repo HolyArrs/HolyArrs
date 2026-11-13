@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "AI-appar är avstängda. Om du tillåter slås de på.",
 	"arrapi.ai.offOther": "AI-appar är avstängda. Be ägaren slå på dem och försök sedan igen.",
 	"arrapi.ai.allow": "Tillåt",
-	"arrapi.ai.cancel": "Avbryt"
+	"arrapi.ai.cancel": "Avbryt",
+	"arrapi.seerr.sentTitle": "Skickat av andra appar",
+	"arrapi.seerr.sentHint": "Format och profiler som appar som Profilarr har skickat. Visas här bara för läsning.",
+	"arrapi.seerr.sentFormat": "Format",
+	"arrapi.seerr.sentProfile": "Profil",
+	"arrapi.seerr.sentUpdated": "uppdaterad {ago}"
 }

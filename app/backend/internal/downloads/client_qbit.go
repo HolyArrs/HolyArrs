@@ -44,6 +44,9 @@ type Qbittorrent struct {
 	verMu      sync.Mutex
 	ver        [3]int
 	verAt      time.Time
+	// cats are the Downloader's own categories; Pause all and Resume all
+	// touch only torrents in them.
+	cats []string
 }
 
 // qbitTorrent is one row of torrents/info. Pointer fields are the ones older clients leave out.

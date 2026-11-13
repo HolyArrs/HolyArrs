@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { keepOffNote, newSeason, newestSeason, episodeCode, searchWord, seasonLooking, episodeLabel, episodeWhy, label, seasonChoices, seasonLine, seasonName, seasonWords, showProgress } from './labels.ts';
+import { keepOffNote, newSeason, newestSeason, episodeCode, searchWord, seasonLooking, episodeLabel, episodeWhy, chosenWhy, label, seasonChoices, seasonLine, seasonName, seasonWords, showProgress } from './labels.ts';
 import { counts, matches, ofKind } from '../mediafiles/library.ts';
+import { airedEpisodes, progressOf } from '../mediafiles/table.ts';
 import type { EpisodeView, SeasonSummary, ShowInfo, TitleView } from '../core/types.ts';
 
 function season(number: number, o: Partial<SeasonSummary> = {}): SeasonSummary {
@@ -45,6 +46,13 @@ describe('show words', () => {
 		expect(seasonLine(season(1, { in_library: 2, missing: 1 }))).toBe('2 of 3 aired in the Library · 1 missing');
 		const s = info([season(1, { in_library: 3 }), season(2, { aired: 1, episodes: 2, missing: 1, not_out_yet: 1 })]);
 		expect(showProgress(s)).toBe('3 of 4 aired episodes in the Library');
+	});
+	it('counts aired episodes the same way in the list, its tooltip and the show page', () => {
+		// Specials not kept up to date count nowhere; an episode not aired yet (one with no Slot too) is not counted.
+		const s = info([season(0, { keep_up_to_date: false, aired: 80, episodes: 80 }), season(1, { aired: 3 }), season(2, { aired: 1, episodes: 3, not_out_yet: 1 })]);
+		expect(airedEpisodes(s)).toBe(4);
+		expect(progressOf({ kind: 'show', show: s } as TitleView).total).toBe(4);
+		expect(showProgress(s)).toBe('0 of 4 aired episodes in the Library');
 	});
 	it('says why an episode is or is not looked for', () => {
 		expect(episodeWhy(ep(), true, false)).toBe('Keep up to date is off for the show.');
@@ -122,5 +130,16 @@ describe('packWindowValue', () => {
 		expect(packWindowValue(-3)).toBe(0);
 		expect(packWindowValue(2.6)).toBe(3);
 		expect(packWindowValue(Number.NaN)).toBe(1);
+	});
+});
+
+describe('chosenWhy', () => {
+	it('gives the reason under a chosen episode', () => {
+		expect(chosenWhy({ state: 'chosen', reason: 'No Downloader has confirmed this Release yet. You can choose another one.' })).toBe('No Downloader has confirmed this Release yet. You can choose another one.');
+	});
+	it('stays empty for other states or no reason', () => {
+		expect(chosenWhy({ state: 'chosen' })).toBe('');
+		expect(chosenWhy({ state: 'wanted', reason: 'x' })).toBe('');
+		expect(chosenWhy(undefined)).toBe('');
 	});
 });

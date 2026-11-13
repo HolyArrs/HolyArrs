@@ -345,7 +345,7 @@
 								{#if r.saved && !r.editing}
 									<div class="fsaved"><span class="path">{r.saved}</span><button type="button" class="quiet" disabled={busy} onclick={async () => { r.path = r.saved; r.editing = true; await tick(); document.getElementById(`folder-${r.kind}`)?.focus(); }} aria-label={t('welcome.changeFolder', { name: r.label })}>{t('welcome.change')}</button></div>
 								{:else}
-									<input id="folder-{r.kind}" class="input" bind:value={r.path} oninput={() => (r.error = '')} aria-label={t('welcome.folder', { name: r.label })} placeholder={r.hint} autocomplete="off" spellcheck="false" aria-invalid={r.error ? 'true' : undefined} aria-describedby={r.error ? `folder-${r.kind}-error` : undefined} />
+									<input id="folder-{r.kind}" class="input" dir="ltr" bind:value={r.path} oninput={() => (r.error = '')} aria-label={t('welcome.folder', { name: r.label })} placeholder={r.hint} autocomplete="off" spellcheck="false" aria-invalid={r.error ? 'true' : undefined} aria-describedby={r.error ? `folder-${r.kind}-error` : undefined} />
 									{#if r.error}<p class="form-error" id="folder-{r.kind}-error" role="alert">{r.error}</p>{/if}
 									{#if r.editing && r.saved}<button type="button" class="quiet keep" disabled={busy} onclick={() => { r.path = r.saved; r.editing = false; r.error = ''; }}>{t('welcome.keep', { path: r.saved })}</button>{/if}
 								{/if}
@@ -398,7 +398,7 @@
 				</div>
 				<div class="field">
 					<label for="dl-url">{t('welcome.address')}</label>
-					<input id="dl-url" class="input" type="text" inputmode="url" bind:value={downloaderStep.dl.url} oninput={() => (downloaderStep.dlError = '')} placeholder="192.168.1.10:{downloaderStep.dlPorts[downloaderStep.dl.kind]}" autocomplete="off" spellcheck="false" aria-invalid={downloaderStep.dlError ? 'true' : undefined} aria-describedby={downloaderStep.dlError ? 'dl-url-error' : undefined} />
+					<input id="dl-url" class="input" dir="ltr" type="text" inputmode="url" bind:value={downloaderStep.dl.url} oninput={() => (downloaderStep.dlError = '')} placeholder="192.168.1.10:{downloaderStep.dlPorts[downloaderStep.dl.kind]}" autocomplete="off" spellcheck="false" aria-invalid={downloaderStep.dlError ? 'true' : undefined} aria-describedby={downloaderStep.dlError ? 'dl-url-error' : undefined} />
 					{#if downloaderStep.dlError}<p class="form-error" id="dl-url-error" role="alert">{downloaderStep.dlError}</p>{/if}
 				</div>
 				{#if downloaderStep.dl.kind === 'qbittorrent'}

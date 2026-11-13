@@ -214,6 +214,8 @@ var (
 	checkSpace = importer.CheckSpace
 	// caseCrash lets tests stop a case-only rename between its two steps.
 	caseCrash func() error
+	// openToRead opens a file to read its content (tests count the reads).
+	openToRead = os.Open
 )
 
 // caseTempSuffix marks the file of a case-only rename between its two
@@ -266,40 +268,53 @@ func moveLink(from, to, target string, src os.FileInfo) error {
 	return os.Remove(from)
 }
 
+// prepareFileProof records how a cut-off move knows its file again: the size
+// and modification time (a link: where it points). A rename and a hard link
+// keep both, and a copy is given the old time, so the file is never read.
 func prepareFileProof(name string) (preparedFileProof, error) {
-	// A link's proof is where it points; its file is not read.
 	if target, fi, ok := linkTarget(name); ok {
 		return preparedFileProof{value: "link:" + target, info: fi, link: true}, nil
 	}
-	f, err := os.Open(name)
+	fi, err := os.Stat(name)
 	if err != nil {
 		return preparedFileProof{}, err
 	}
-	defer f.Close()
-	before, err := f.Stat()
-	if err != nil {
-		return preparedFileProof{}, err
-	}
-	if !before.Mode().IsRegular() {
+	if !fi.Mode().IsRegular() {
 		return preparedFileProof{}, fmt.Errorf("%s is not a plain file", name)
 	}
-	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return preparedFileProof{}, err
-	}
-	after, err := f.Stat()
-	if err != nil {
-		return preparedFileProof{}, err
-	}
-	if !os.SameFile(before, after) || before.Size() != after.Size() || !before.ModTime().Equal(after.ModTime()) {
-		return preparedFileProof{}, fmt.Errorf("%s changed while its rename proof was prepared", name)
-	}
-	return preparedFileProof{value: strconv.FormatInt(after.Size(), 10) + ":" + hex.EncodeToString(h.Sum(nil)), info: after}, nil
+	return preparedFileProof{value: statProof(fi), info: fi}, nil
+}
+
+// statProof is a file's size and modification time in whole seconds, so a
+// disk that keeps coarser times still matches.
+func statProof(fi os.FileInfo) string {
+	return "stat:" + strconv.FormatInt(fi.Size(), 10) + ":" + strconv.FormatInt(fi.ModTime().Unix(), 10)
 }
 
 func fileProof(name string) (string, error) {
 	p, err := prepareFileProof(name)
 	return p.value, err
+}
+
+// proofMatches reports whether name is the file a step recorded. Steps from
+// earlier versions hold the size and a SHA-256 of the content; those are
+// still read in full, only when such a step is finished.
+func proofMatches(name, proof string) bool {
+	if strings.HasPrefix(proof, "stat:") {
+		fi, err := os.Stat(name)
+		return err == nil && fi.Mode().IsRegular() && statProof(fi) == proof
+	}
+	if proof == "" || strings.HasPrefix(proof, "link:") {
+		return false
+	}
+	f, err := openToRead(name)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+	h := sha256.New()
+	n, err := io.Copy(h, f)
+	return err == nil && strconv.FormatInt(n, 10)+":"+hex.EncodeToString(h.Sum(nil)) == proof
 }
 
 func proofSourceUnchanged(name string, p preparedFileProof) bool {
@@ -349,8 +364,7 @@ func moveFileDistinctWithProof(from, to, proof string) error {
 	src, err := os.Stat(from)
 	if err != nil {
 		if dst, derr := os.Stat(to); proof != "" && derr == nil && errors.Is(err, os.ErrNotExist) && dst.Mode().IsRegular() {
-			got, ferr := fileProof(to)
-			if ferr == nil && got == proof {
+			if proofMatches(to, proof) {
 				return nil
 			}
 			return fmt.Errorf("%s is gone and %s does not match the recorded file", from, to)
@@ -388,6 +402,8 @@ func moveFileDistinctWithProof(from, to, proof string) error {
 		if err := copyFile(from, to); err != nil {
 			return err
 		}
+		// The copy keeps the old time, as a rename does; the proof needs it.
+		_ = os.Chtimes(to, src.ModTime(), src.ModTime())
 	}
 	return os.Remove(from)
 }
@@ -413,8 +429,7 @@ func caseRename(from, to, proof string) error {
 		if _, err := os.Lstat(to); err == nil {
 			return fmt.Errorf("%s and %s both exist; HolyArrs leaves them for a look", tmp, to)
 		}
-		got, err := fileProof(tmp)
-		if proof == "" || err != nil || got != proof {
+		if !proofMatches(tmp, proof) {
 			return fmt.Errorf("%s does not match the recorded case-only rename", tmp)
 		}
 		return os.Rename(tmp, to)
@@ -422,8 +437,7 @@ func caseRename(from, to, proof string) error {
 	src, err := os.Lstat(from)
 	if err != nil {
 		if dst, derr := os.Stat(to); proof != "" && derr == nil && errors.Is(err, os.ErrNotExist) && dst.Mode().IsRegular() {
-			got, ferr := fileProof(to)
-			if ferr == nil && got == proof {
+			if proofMatches(to, proof) {
 				return nil
 			}
 			return fmt.Errorf("%s is gone and %s does not match the recorded file", from, to)

@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Đường dẫn mới",
 	"settings.libraryFolders.changePathHint": "Hãy chuyển tệp đến đó trước. HolyArrs kiểm tra từng tệp và không chuyển gì cả.",
 	"settings.libraryFolders.checkingFiles": "Đang kiểm tra tệp…",
-	"settings.libraryFolders.pathChanged": "Đã đổi đường dẫn"
+	"settings.libraryFolders.pathChanged": "Đã đổi đường dẫn",
+	"settings.libraryFolders.sideFiles": "Tệp phụ đề",
+	"settings.libraryFolders.sideFilesDesc": "Phụ đề đi kèm bản tải có thể được đưa vào thư viện cạnh video của nó.",
+	"settings.libraryFolders.sideOn": "Mang theo tệp phụ đề",
+	"settings.libraryFolders.sideOnHint": "Tệp đã có trong thư viện không bao giờ bị thay thế.",
+	"settings.libraryFolders.sideTypes": "Loại tệp",
+	"settings.libraryFolders.sideTypesHint": "Ngăn cách các loại bằng dấu phẩy, ví dụ srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs không thấy {path}. Nó chỉ thấy các thư mục được gắn vào container của nó. Thêm một volume như {path}:{inside}, rồi dùng {inside} ở đây."
 }

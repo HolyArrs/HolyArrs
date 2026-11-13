@@ -166,6 +166,13 @@
 	"library.import.followHint": "Mostrar no meu calendário.",
 	"library.import.adoptOne": "Adotar 1 {word}",
 	"library.import.adoptMany": "Adotar {n} {words}",
+	"library.import.searchFolders": "Buscar pastas",
+	"library.import.folderCountOne": "1 pasta",
+	"library.import.folderCountMany": "{n} pastas",
+	"library.import.titleAndFolder": "Título e pasta",
+	"library.import.matchFor": "Correspondência para {folder}",
+	"library.import.seeLarge": "Ver o pôster de {name} em tamanho grande",
+	"library.import.noneMatch": "Nenhuma pasta corresponde.",
 	"library.report.keep.one": "{n} título mantido em dia",
 	"library.report.keep.many": "{n} títulos mantidos em dia",
 	"library.report.keep.partOne": "{ok} de {total} título mantido em dia",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "A primeira leitura chega em até 30 minutos.",
 	"library.stats.watchedHelp": "Do histórico do Plex, Jellyfin e Emby. O Plex conta só reproduções, então títulos marcados como assistidos à mão não aparecem.",
 	"library.stats.lastRead": "Última leitura {ago}.",
-	"library.stats.noMatch": "Última leitura {ago}. Nada do que foi assistido corresponde à sua biblioteca ainda.",
+	"library.stats.noMatch": "Histórico verificado {ago}. Nada do que foi assistido corresponde à sua biblioteca ainda.",
 	"library.stats.notLinked": "Não vinculado",
 	"library.stats.lastWatched": "Assistido {ago}",
 	"library.stats.unit.movie.one": "{n} filme",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} episódio",
 	"library.stats.unit.episode.other": "{n} episódios",
 	"library.stats.unit.play.one": "{n} reprodução",
-	"library.stats.unit.play.other": "{n} reproduções"
+	"library.stats.unit.play.other": "{n} reproduções",
+	"library.byHand.askReplaceOne": "1 arquivo substitui um arquivo que já está na Biblioteca. O arquivo antigo vai para Apagados recentemente. Importar?",
+	"library.byHand.askReplaceMany": "{n} arquivos substituem arquivos que já estão na Biblioteca. Os arquivos antigos vão para Apagados recentemente. Importar?"
 }

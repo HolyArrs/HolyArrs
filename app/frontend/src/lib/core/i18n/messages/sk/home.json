@@ -271,5 +271,8 @@
 	"home.noSaveFolder": "nemá priečinok na ukladanie",
 	"home.noSaveFolderMany": "nemajú priečinok na ukladanie",
 	"home.off": "Vypnuté",
-	"home.sourcesOff": "Vypnuté v Častiach"
+	"home.sourcesOff": "Vypnuté v Častiach",
+	"home.noneForSources": "chýba pre to, čo nachádzajú vaše zdroje",
+	"home.addedTwice": "je pridaný dvakrát",
+	"home.addedTwiceMany": "sú pridané dvakrát"
 }

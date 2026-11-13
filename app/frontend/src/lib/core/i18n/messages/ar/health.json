@@ -12,7 +12,7 @@
 	"health.check.freeSpace": "المساحة الحرة",
 	"health.check.update": "التحديث",
 	"health.check.waiting": "تنزيلات بانتظار الملفات",
-	"health.check.clearWaiting": "تنزيلات بانتظار التنظيف",
+	"health.check.clearWaiting": "تنزيلات مستوردة ما زالت في برنامج التنزيل",
 	"health.check.saveFolder": "مجلد الحفظ لـ",
 	"health.check.saveFolderWhy": "لم يُحدَّد مجلد حفظ لـ {app}، لذا لا يستطيع HolyArrs استيراد تنزيلاته المكتملة. أضف زوج مسارات في الإعدادات › برامج التنزيل.",
 	"health.day.ahead": "{count} قادمة",
@@ -88,7 +88,7 @@
 	"health.kind.trailers": "قارئ الإعلانات التشويقية",
 	"health.kind.update": "التحديث",
 	"health.kind.waitingDownloads": "تنزيلات بانتظار الملفات",
-	"health.kind.clearWaiting": "تنزيلات بانتظار التنظيف",
+	"health.kind.clearWaiting": "تنزيلات مستوردة ما زالت في برنامج التنزيل",
 	"health.kind.saveFolder": "مجلد حفظ برنامج التنزيل",
 	"health.link.downloader": "برنامج التنزيل",
 	"health.link.mediaServer": "خادم الوسائط",
@@ -264,5 +264,12 @@
 	"health.word.broken": "معطّل",
 	"health.word.notSent": "لم يُرسل بعد",
 	"health.word.notSynced": "لم يُزامن بعد",
-	"health.word.working": "يعمل"
+	"health.word.working": "يعمل",
+	"health.check.usenetDl": "برنامج تنزيل Usenet",
+	"health.check.torrentDl": "برنامج تنزيل تورنت",
+	"health.check.noUsenetDl": "مصادرك تجد تنزيلات Usenet، لكن لم يُعدّ أي برنامج تنزيل Usenet، لذا لا يمكن إرسال أي منها. أضف واحدًا في الإعدادات › برامج التنزيل.",
+	"health.check.noTorrentDl": "مصادرك تجد تنزيلات تورنت، لكن لم يُعدّ أي برنامج تنزيل تورنت، لذا لا يمكن إرسال أي منها. أضف واحدًا في الإعدادات › برامج التنزيل.",
+	"health.check.sameDownloader": "مضاف مرتين:",
+	"health.check.sameDownloaderWhy": "يصل {app} إلى برنامج التنزيل نفسه مثل إعداد آخر، لذا قد تظهر تنزيلاته مرتين. احذف أحدهما في الإعدادات › برامج التنزيل.",
+	"health.kind.sameDownloader": "برنامج تنزيل مضاف مرتين"
 }

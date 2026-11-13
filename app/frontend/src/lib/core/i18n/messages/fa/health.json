@@ -260,9 +260,16 @@
 	"health.word.notSent": "هنوز ارسال نشده",
 	"health.word.notSynced": "هنوز همگام نشده",
 	"health.word.working": "کار می‌کند",
-	"health.check.clearWaiting": "دانلودهای منتظر پاک شدن",
+	"health.check.clearWaiting": "دانلودهای واردشده که هنوز در دانلودر هستند",
 	"health.check.saveFolder": "پوشه ذخیره برای",
 	"health.check.saveFolderWhy": "{app} پوشه ذخیره ندارد، پس HolyArrs نمی‌تواند دانلودهای تمام‌شده‌اش را وارد کند. در تنظیمات › دانلودرها یک جفت مسیر اضافه کنید.",
-	"health.kind.clearWaiting": "دانلودهای منتظر پاک شدن",
-	"health.kind.saveFolder": "پوشه ذخیره دانلودر"
+	"health.kind.clearWaiting": "دانلودهای واردشده که هنوز در دانلودر هستند",
+	"health.kind.saveFolder": "پوشه ذخیره دانلودر",
+	"health.check.usenetDl": "دانلودر Usenet",
+	"health.check.torrentDl": "دانلودر تورنت",
+	"health.check.noUsenetDl": "منابع تو دانلودهای Usenet پیدا می‌کنند، اما هیچ دانلودر Usenet تنظیم نشده، پس هیچ‌کدام فرستاده نمی‌شود. در تنظیمات › دانلودرها یکی اضافه کنید.",
+	"health.check.noTorrentDl": "منابع تو دانلودهای تورنت پیدا می‌کنند، اما هیچ دانلودر تورنت تنظیم نشده، پس هیچ‌کدام فرستاده نمی‌شود. در تنظیمات › دانلودرها یکی اضافه کنید.",
+	"health.check.sameDownloader": "دو بار افزوده شده:",
+	"health.check.sameDownloaderWhy": "{app} به همان برنامه دانلودی می‌رسد که دانلودر دیگری می‌رسد، پس دانلودهایش ممکن است دو بار نشان داده شوند. یکی را در تنظیمات › دانلودرها حذف کنید.",
+	"health.kind.sameDownloader": "دانلودر دو بار افزوده شده"
 }

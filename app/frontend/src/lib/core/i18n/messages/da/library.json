@@ -166,6 +166,13 @@
 	"library.import.followHint": "Vis dem i min kalender.",
 	"library.import.adoptOne": "Overtag 1 {word}",
 	"library.import.adoptMany": "Overtag {n} {words}",
+	"library.import.searchFolders": "Søg i mapper",
+	"library.import.folderCountOne": "1 mappe",
+	"library.import.folderCountMany": "{n} mapper",
+	"library.import.titleAndFolder": "Titel og mappe",
+	"library.import.matchFor": "Match for {folder}",
+	"library.import.seeLarge": "Se plakaten for {name} i stort format",
+	"library.import.noneMatch": "Ingen mapper passer.",
 	"library.report.keep.one": "{n} titel holdes opdateret",
 	"library.report.keep.many": "{n} titler holdes opdateret",
 	"library.report.keep.partOne": "{ok} af {total} titel holdes opdateret",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Den første aflæsning sker inden for 30 minutter.",
 	"library.stats.watchedHelp": "Fra afspilningshistorikken i Plex, Jellyfin og Emby. Plex tæller kun afspilninger, så titler markeret som set i hånden vises ikke.",
 	"library.stats.lastRead": "Sidst læst {ago}.",
-	"library.stats.noMatch": "Sidst læst {ago}. Intet af det sete matcher dit Bibliotek endnu.",
+	"library.stats.noMatch": "Afspilningshistorik tjekket {ago}. Intet af det sete matcher dit Bibliotek endnu.",
 	"library.stats.notLinked": "Ikke forbundet",
 	"library.stats.lastWatched": "Sidst set {ago}",
 	"library.stats.unit.movie.one": "{n} film",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} afsnit",
 	"library.stats.unit.episode.other": "{n} afsnit",
 	"library.stats.unit.play.one": "{n} afspilning",
-	"library.stats.unit.play.other": "{n} afspilninger"
+	"library.stats.unit.play.other": "{n} afspilninger",
+	"library.byHand.askReplaceOne": "1 fil erstatter en fil, der allerede er i Biblioteket. Den gamle fil flyttes til Slettet for nylig. Importér?",
+	"library.byHand.askReplaceMany": "{n} filer erstatter filer, der allerede er i Biblioteket. De gamle filer flyttes til Slettet for nylig. Importér?"
 }

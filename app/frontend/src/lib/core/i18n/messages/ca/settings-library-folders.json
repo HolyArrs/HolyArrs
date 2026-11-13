@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Ruta nova",
 	"settings.libraryFolders.changePathHint": "Mou primer els fitxers allà. HolyArrs comprova cada fitxer i no mou res.",
 	"settings.libraryFolders.checkingFiles": "Comprovant fitxers…",
-	"settings.libraryFolders.pathChanged": "Ruta canviada"
+	"settings.libraryFolders.pathChanged": "Ruta canviada",
+	"settings.libraryFolders.sideFiles": "Fitxers de subtítols",
+	"settings.libraryFolders.sideFilesDesc": "Els subtítols que vénen amb una baixada es poden portar a la biblioteca al costat del vídeo.",
+	"settings.libraryFolders.sideOn": "Porta també els fitxers de subtítols",
+	"settings.libraryFolders.sideOnHint": "Un fitxer que ja és a la biblioteca no se substitueix mai.",
+	"settings.libraryFolders.sideTypes": "Tipus de fitxer",
+	"settings.libraryFolders.sideTypesHint": "Separa els tipus amb comes, com ara srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs no veu {path}. Només veu les carpetes muntades al seu contenidor. Afegeix un volum com {path}:{inside} i després fes servir {inside} aquí."
 }

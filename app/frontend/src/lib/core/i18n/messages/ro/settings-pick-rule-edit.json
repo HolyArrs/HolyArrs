@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} trăsături punctate",
 	"settings.pickRuleEdit.trashResult": "{n} trăsături punctate · {added} noi · {updated} actualizate",
 	"settings.pickRuleEdit.trashLeftOut": "{n} lăsate deoparte",
-	"settings.pickRuleEdit.trashTests": "testează {kinds}"
+	"settings.pickRuleEdit.trashTests": "testează {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Surse",
+	"settings.pickRuleEdit.sourcesDesc": "Caută doar în Sursele care au una dintre aceste etichete. Lasă gol ca să cauți în toate Sursele.",
+	"settings.pickRuleEdit.tags": "Etichete"
 }

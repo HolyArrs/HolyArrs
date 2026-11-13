@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Laluan baharu",
 	"settings.libraryFolders.changePathHint": "Alihkan fail ke sana dahulu. HolyArrs menyemak setiap fail dan tidak mengalihkan apa-apa.",
 	"settings.libraryFolders.checkingFiles": "Menyemak fail…",
-	"settings.libraryFolders.pathChanged": "Laluan ditukar"
+	"settings.libraryFolders.pathChanged": "Laluan ditukar",
+	"settings.libraryFolders.sideFiles": "Fail sari kata",
+	"settings.libraryFolders.sideFilesDesc": "Sari kata yang datang bersama muat turun boleh dibawa ke Library di sebelah videonya.",
+	"settings.libraryFolders.sideOn": "Bawa fail sari kata bersama",
+	"settings.libraryFolders.sideOnHint": "Fail yang sudah ada dalam Library tidak pernah diganti.",
+	"settings.libraryFolders.sideTypes": "Jenis fail",
+	"settings.libraryFolders.sideTypesHint": "Pisahkan jenis dengan koma, seperti srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs tidak dapat melihat {path}. Ia hanya melihat folder yang di-mount ke dalam bekasnya. Tambah volume seperti {path}:{inside}, kemudian guna {inside} di sini."
 }

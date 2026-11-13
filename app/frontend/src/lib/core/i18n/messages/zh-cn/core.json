@@ -145,5 +145,7 @@
 	"core.settings.danger.about": "重启或关闭",
 	"core.settings.account.label": "我的账户",
 	"core.settings.account.about": "密码、双重验证、设备",
-	"core.api.sourceOff": "此安装中部分行已关闭。"
+	"core.api.sourceOff": "此安装中部分行已关闭。",
+	"core.plain.noDownloader": "你的来源找到的下载没有任何已设置的下载器能接收，所以无法发送任何下载。",
+	"core.plain.sameDownloader": "两个下载器连接到同一个下载应用，因此下载可能显示两次。"
 }

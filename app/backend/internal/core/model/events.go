@@ -26,12 +26,13 @@ const (
 	EventAskApproved   = "ask_approved"    // approved by hand or by auto-approve
 	EventAskTurnedDown = "ask_turned_down" // turned down with a note
 	EventAskAvailable  = "ask_available"   // the movie is in the Library
+	EventAskNotAdded   = "ask_not_added"   // approved, but the title could not be added: back in Waiting
 	EventAlertFailed   = "alert_failed"    // an Alert could not be sent
 )
 
 // AskEventKinds are the asks' Event kinds. They name who asked and who
 // decided, so only people who approve asks read them.
-var AskEventKinds = []string{EventAskMade, EventAskJoined, EventAskWithdrawn, EventAskApproved, EventAskTurnedDown, EventAskAvailable, "ai_ask_made"}
+var AskEventKinds = []string{EventAskMade, EventAskJoined, EventAskWithdrawn, EventAskApproved, EventAskTurnedDown, EventAskAvailable, EventAskNotAdded, "ai_ask_made"}
 
 // Event kinds for Reports (problems people report with titles).
 const (

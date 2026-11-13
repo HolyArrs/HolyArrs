@@ -162,11 +162,15 @@ func (g modeGuard) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 // unreached is the error for a request to the metadata server that did not
-// get an answer: ErrSourceOff when the mode kept it in, else
-// ErrServiceUnavailable.
+// get an answer: ErrSourceOff when the mode kept it in, ErrServiceSlow when
+// it ran out of time, else ErrServiceUnavailable.
 func unreached(err error) error {
 	if errors.Is(err, ErrSourceOff) {
 		return ErrSourceOff
+	}
+	var te interface{ Timeout() bool }
+	if errors.As(err, &te) && te.Timeout() {
+		return ErrServiceSlow
 	}
 	return ErrServiceUnavailable
 }

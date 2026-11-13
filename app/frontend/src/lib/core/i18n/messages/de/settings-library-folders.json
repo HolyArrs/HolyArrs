@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Neuer Pfad",
 	"settings.libraryFolders.changePathHint": "Verschiebe die Dateien zuerst dorthin. HolyArrs prüft jede Datei und verschiebt nichts.",
 	"settings.libraryFolders.checkingFiles": "Dateien werden geprüft…",
-	"settings.libraryFolders.pathChanged": "Pfad geändert"
+	"settings.libraryFolders.pathChanged": "Pfad geändert",
+	"settings.libraryFolders.sideFiles": "Untertiteldateien",
+	"settings.libraryFolders.sideFilesDesc": "Untertitel, die mit einem Download kommen, können neben ihrem Video in die Bibliothek übernommen werden.",
+	"settings.libraryFolders.sideOn": "Untertiteldateien mitnehmen",
+	"settings.libraryFolders.sideOnHint": "Eine Datei, die schon in der Bibliothek liegt, wird nie ersetzt.",
+	"settings.libraryFolders.sideTypes": "Dateitypen",
+	"settings.libraryFolders.sideTypesHint": "Typen mit Kommas trennen, etwa srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs sieht {path} nicht. Es sieht nur Ordner, die in seinen Container eingebunden sind. Füge ein Volume wie {path}:{inside} hinzu und nimm dann hier {inside}."
 }

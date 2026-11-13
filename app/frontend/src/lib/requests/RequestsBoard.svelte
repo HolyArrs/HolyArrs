@@ -13,6 +13,7 @@
 	import { lifecycle, upcoming, type Life } from './lifecycle.ts';
 	import { approverTabs, askTab, approverTab as tabOfAsk, type ApproverTab } from './ask-words.ts';
 	import { askedFor } from './asked-for.ts';
+	import { qualityTag } from './quality-row.ts';
 	import { watchlistLine } from '../accounts/index.ts';
 	import { onDestroy, tick } from 'svelte';
 	import { fade, fly, slide } from 'svelte/transition';
@@ -377,7 +378,7 @@
 						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if photo}<span class="ban-img" aria-hidden="true" style:background-image={`url("${photo}")`}></span>{:else if a.poster}<span class="ban-img soft" aria-hidden="true" style:background-image={`url("${proxied(a.poster)}")`}></span>{/if}
 					</div>
 					<div class="top">
-						<div class="ban-cap">{#if ctx.isNew(a.id)}<span class="new-mark" data-testid="ask-new">{t('requests.board.new')}</span>{/if}<h2 class="ban-t">{a.name}</h2><span class="ban-f">{#if a.four_k}<span class="ap4k-tag" title={t('requests.board.fourKTitle')}>4K</span>{/if}{[kindOf(a), a.year, wants(a)].filter(Boolean).join(' · ')}</span></div>
+						<div class="ban-cap">{#if ctx.isNew(a.id)}<span class="new-mark" data-testid="ask-new">{t('requests.board.new')}</span>{/if}<h2 class="ban-t">{a.name}</h2><span class="ban-f">{#if qualityTag(a)}<span class="ap4k-tag" title={t('requests.board.qualityTitle', { quality: qualityTag(a) })}>{qualityTag(a)}</span>{/if}{[kindOf(a), a.year, wants(a)].filter(Boolean).join(' · ')}</span></div>
 					</div>
 					<div class="sheet-b">
 					<div class="body">

@@ -145,5 +145,7 @@
 	"core.settings.danger.about": "再起動またはシャットダウン",
 	"core.settings.account.label": "マイアカウント",
 	"core.settings.account.about": "パスワード、二要素認証、デバイス",
-	"core.api.sourceOff": "このインストールでは一部の行がオフです。"
+	"core.api.sourceOff": "このインストールでは一部の行がオフです。",
+	"core.plain.noDownloader": "ソースが見つけたダウンロードを受け取れるダウンローダーが設定されていないため、送信できません。",
+	"core.plain.sameDownloader": "2つのダウンローダーが同じダウンロードアプリにつながっているため、ダウンロードが二重に表示されることがあります。"
 }

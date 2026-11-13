@@ -72,5 +72,10 @@
 	"settings.sources.off": "Naka-off ang mga Source",
 	"settings.sources.offText": "Hindi naghahanap o kumukuha ang HolyArrs. Na-i-import pa rin ang mga download na idinagdag mo sa iyong Downloader.",
 	"settings.sources.openParts": "Buksan ang Mga Bahagi",
-	"settings.sources.offState": "Off"
+	"settings.sources.offState": "Off",
+	"settings.sources.site": "Built-in na site",
+	"settings.sources.siteLabel": "Site",
+	"settings.sources.addressSite": "Ang sariling address ng site. Palitan lang kung lumipat ang site.",
+	"settings.sources.siteKeyLabel": "Cookie o RSS key",
+	"settings.sources.siteKeyHint": "Mula sa sarili mong account: uid at pass mula sa cookie ng browser, o u at tp mula sa iyong RSS link. Naka-encrypt ang pagkakatago."
 }

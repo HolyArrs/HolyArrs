@@ -13,7 +13,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { emptyForm, formBody, formFrom, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
+	import { emptyForm, samePathPair, formBody, formFrom, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -321,6 +321,17 @@
 <Field id="dl-tags" label={t('settings.downloaders.tags')} hint={t('settings.downloaders.tagsHint')}>
 	<TagInput id="dl-tags" bind:value={form.tags} describedby="dl-tags-hint" testid="dl-tags" />
 </Field>
+{#if form.kind === 'qbittorrent'}
+	<Field id="dl-cat-after" label={t('settings.downloaders.categoryAfterImport')} hint={t('settings.downloaders.categoryAfterImportHint')}>
+		<input id="dl-cat-after" class="input" bind:value={form.category_after_import} maxlength="64" aria-describedby="dl-cat-after-hint" data-testid="dl-cat-after" />
+	</Field>
+{/if}
+{#if form.kind !== 'sabnzbd' && form.kind !== 'nzbget'}
+	<label class="checkline">
+		<input type="checkbox" bind:checked={form.own_only} data-testid="dl-own-only" />
+		<span><b>{t('settings.downloaders.ownOnly')}</b><br /><span class="hint">{t('settings.downloaders.ownOnlyHint')}</span></span>
+	</label>
+{/if}
 <details class="more" open={form.path_map.length > 0}>
 	<summary>{t('settings.downloaders.folderNames')}</summary>
 	<p class="hint">{t('settings.downloaders.folderNamesHint')}</p>
@@ -333,6 +344,7 @@
 				<input id="pm-ours-{i}" class="input mono" bind:value={p.ours} placeholder="/downloads" />
 			</Field>
 		</div>
+		{#if samePathPair(p)}<p class="hint" data-testid="pm-same-{i}">{t('settings.downloaders.samePair')}</p>{/if}
 	{/each}
 	<Button variant="plain" type="button" style="margin-top: var(--s-3)" onclick={() => form.path_map.push({ theirs: '', ours: '' })}>{t('settings.downloaders.addPair')}</Button>
 </details>

@@ -145,5 +145,7 @@
 	"core.settings.account.about": "Palavra-passe, duas etapas, dispositivos",
 	"core.plain.clearWaiting": "Os downloads importados estão à espera de ser limpos do seu Gestor de downloads.",
 	"core.plain.saveFolder": "Um gestor de downloads não tem pasta de salvamento, por isso o HolyArrs não consegue importar as transferências concluídas.",
-	"core.api.sourceOff": "Algumas linhas estão desligadas nesta instalação."
+	"core.api.sourceOff": "Algumas linhas estão desligadas nesta instalação.",
+	"core.plain.noDownloader": "As suas fontes encontram transferências que nenhum dos seus gestores de downloads aceita, por isso nenhuma pode ser enviada.",
+	"core.plain.sameDownloader": "Dois gestores de downloads chegam à mesma aplicação, por isso os downloads podem aparecer duas vezes."
 }

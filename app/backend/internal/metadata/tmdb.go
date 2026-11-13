@@ -46,7 +46,7 @@ type TMDB struct {
 	BaseURL string                                    // default https://api.themoviedb.org/3
 	Access  func(ctx context.Context) (string, error) // the read access token, read on each request; never logged
 	HTTP    *http.Client
-	Timeout time.Duration // per request, default 10s
+	Timeout time.Duration // per request, default tmdbAttempt
 	Gap     time.Duration // least time between requests, default 50ms
 	// AheadGap is the least time between fetch-ahead requests, default
 	// 250ms (the server's per-install budget leaves room for pages).
@@ -281,6 +281,11 @@ func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 	return body, err
 }
 
+// tmdbAttempt is how long one request may take once the Gate lets it go. An
+// answer the server has not kept yet can take 20 s or more: it waits its
+// turn upstream, then keeps the answer for the next ask.
+const tmdbAttempt = 25 * time.Second
+
 // fetch makes one request (one retry after a 429).
 func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	ahead := IsAhead(ctx)
@@ -322,13 +327,13 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	}
 	timeout := t.Timeout
 	if timeout <= 0 {
-		timeout = 10 * time.Second
+		timeout = tmdbAttempt
 	}
 	for try := 0; ; try++ {
 		if err := t.wait(ctx); err != nil {
 			return nil, err
 		}
-		rctx, cancel := op.AttemptContext(ctx, timeout)
+		rctx, cancel := afterGate(ctx, timeout)
 		req, _ := http.NewRequestWithContext(rctx, http.MethodGet, u, nil)
 		req.Header.Set("Authorization", "Bearer "+tok)
 		req.Header.Set("Accept", "application/json")
@@ -336,8 +341,12 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 		resp, err := cl.Do(req)
 		if err != nil {
 			outcome = outbound.HTTPOutcome(0, err, ctx)
+			why := ErrServiceUnavailable
+			if timedOut(ctx, rctx) {
+				outcome, why = outbound.Canceled, ErrServiceSlow // slow, or our own Gate's wait: not down
+			}
 			cancel()
-			return nil, fmt.Errorf("TMDB: %w (%w)", ErrServiceUnavailable, stripURL(err))
+			return nil, fmt.Errorf("TMDB: %w (%w)", why, stripURL(err))
 		}
 		body, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
 		if closeErr := resp.Body.Close(); err == nil {
@@ -346,6 +355,10 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 		cancel()
 		if err != nil {
 			outcome = outbound.HTTPOutcome(resp.StatusCode, err, ctx)
+			if timedOut(ctx, rctx) {
+				outcome = outbound.Canceled
+				return nil, fmt.Errorf("TMDB: %w (%w)", ErrServiceSlow, stripURL(err))
+			}
 			return nil, fmt.Errorf("TMDB: %w", stripURL(err))
 		}
 		switch {
@@ -369,6 +382,9 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 			// Fetch-ahead does not wait inside the call: it holds back instead.
 			t.hold.set(resp.Header.Get("Retry-After"), body, time.Now())
 			outcome = outbound.TransientFailure
+			if resp.Header.Get(GateHeld) != "" {
+				outcome = outbound.Canceled // held by our own Gate, never sent
+			}
 			return nil, ErrRateLimited
 		default:
 			outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)

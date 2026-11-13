@@ -100,5 +100,6 @@
 	"settings.users.note": "Ghi chú cho riêng bạn",
 	"settings.users.noteExample": "ví dụ Mẹ",
 	"settings.users.days": "Số ngày liên kết có hiệu lực",
-	"settings.users.makeInvite": "Tạo một liên kết mời"
+	"settings.users.makeInvite": "Tạo một liên kết mời",
+	"settings.users.permAuto4k": "Yêu cầu 4K được duyệt không cần chờ"
 }

@@ -271,5 +271,8 @@
 	"home.metadataServerOnline": "元数据服务器在线",
 	"home.homeCouldNotRead3": "首页暂时无法读取下载。",
 	"home.off": "关闭",
-	"home.sourcesOff": "已在“部分”中关闭"
+	"home.sourcesOff": "已在“部分”中关闭",
+	"home.noneForSources": "缺少能处理来源所找内容的下载器",
+	"home.addedTwice": "被重复添加",
+	"home.addedTwiceMany": "被重复添加"
 }

@@ -72,5 +72,10 @@
 	"settings.sources.off": "Sumber dimatikan",
 	"settings.sources.offText": "HolyArrs tidak mencari dan tidak mengambil. Muat turun yang anda tambah dalam Pemuat turun anda masih diimport.",
 	"settings.sources.openParts": "Buka Bahagian",
-	"settings.sources.offState": "Mati"
+	"settings.sources.offState": "Mati",
+	"settings.sources.site": "Laman terbina dalam",
+	"settings.sources.siteLabel": "Laman",
+	"settings.sources.addressSite": "Alamat laman itu sendiri. Tukar hanya jika laman telah berpindah.",
+	"settings.sources.siteKeyLabel": "Kuki atau kunci RSS",
+	"settings.sources.siteKeyHint": "Daripada akaun anda sendiri: uid dan pass daripada kuki pelayar, atau u dan tp daripada pautan RSS anda. Disimpan secara tersulit."
 }

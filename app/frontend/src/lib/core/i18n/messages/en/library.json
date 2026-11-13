@@ -166,6 +166,13 @@
 	"library.import.followHint": "Show them on my calendar.",
 	"library.import.adoptOne": "Adopt 1 {word}",
 	"library.import.adoptMany": "Adopt {n} {words}",
+	"library.import.searchFolders": "Search folders",
+	"library.import.folderCountOne": "1 folder",
+	"library.import.folderCountMany": "{n} folders",
+	"library.import.titleAndFolder": "Title and folder",
+	"library.import.matchFor": "Match for {folder}",
+	"library.import.seeLarge": "See the poster of {name} large",
+	"library.import.noneMatch": "No folders match.",
 	"library.report.keep.one": "{n} title kept up to date",
 	"library.report.keep.many": "{n} titles kept up to date",
 	"library.report.keep.partOne": "{ok} of {total} title kept up to date",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} episode",
 	"library.stats.unit.episode.other": "{n} episodes",
 	"library.stats.unit.play.one": "{n} play",
-	"library.stats.unit.play.other": "{n} plays"
+	"library.stats.unit.play.other": "{n} plays",
+	"library.byHand.askReplaceOne": "1 file replaces a file already in the Library. The old file goes to Recently deleted. Import?",
+	"library.byHand.askReplaceMany": "{n} files replace files already in the Library. The old files go to Recently deleted. Import?"
 }

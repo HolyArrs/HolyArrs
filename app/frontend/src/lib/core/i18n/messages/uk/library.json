@@ -166,6 +166,13 @@
 	"library.import.followHint": "Показувати їх у моєму календарі.",
 	"library.import.adoptOne": "Прийняти 1, {word}",
 	"library.import.adoptMany": "Прийняти: {n}, {words}",
+	"library.import.searchFolders": "Пошук у теках",
+	"library.import.folderCountOne": "1 тека",
+	"library.import.folderCountMany": "Тек: {n}",
+	"library.import.titleAndFolder": "Назва і тека",
+	"library.import.matchFor": "Збіг для {folder}",
+	"library.import.seeLarge": "Переглянути постер «{name}» великим",
+	"library.import.noneMatch": "Відповідних тек немає.",
 	"library.report.keep.one": "Стежимо за оновленнями: {n} тайтл",
 	"library.report.keep.many": "Стежимо за оновленнями: {n}",
 	"library.report.keep.partOne": "Стежимо за оновленнями: {ok} із {total}",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Перше читання — протягом 30 хвилин.",
 	"library.stats.watchedHelp": "З історії відтворення Plex, Jellyfin і Emby. Plex рахує лише перегляди, тож позначені вручну тайтли не видно.",
 	"library.stats.lastRead": "Прочитано {ago}.",
-	"library.stats.noMatch": "Прочитано {ago}. Ніщо з переглянутого поки не збігається з вашою бібліотекою.",
+	"library.stats.noMatch": "Історію переглядів перевірено {ago}. Ніщо з переглянутого поки не збігається з вашою бібліотекою.",
 	"library.stats.notLinked": "Не пов’язано",
 	"library.stats.lastWatched": "Дивився {ago}",
 	"library.stats.unit.movie.one": "Фільмів: {n}",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "Серій: {n}",
 	"library.stats.unit.episode.other": "Серій: {n}",
 	"library.stats.unit.play.one": "Переглядів: {n}",
-	"library.stats.unit.play.other": "Переглядів: {n}"
+	"library.stats.unit.play.other": "Переглядів: {n}",
+	"library.byHand.askReplaceOne": "1 файл замінить файл, який уже є в Бібліотеці. Старий файл потрапить до «Нещодавно видалені». Імпортувати?",
+	"library.byHand.askReplaceMany": "Файли ({n}) замінять файли, які вже є в Бібліотеці. Старі файли потраплять до «Нещодавно видалені». Імпортувати?"
 }

@@ -79,7 +79,9 @@ export function buildNav(input: NavInput): NavSection[] {
 			label: t('frame.nav.library'),
 			items: [
 				// Movie series live in the Library's Filter menu and its Group by series choice.
-				...input.kinds.filter((k) => !(input.kid && k === 'artist')).map((k) => kindItem(k))
+				...input.kinds.filter((k) => !(input.kid && k === 'artist')).map((k) => kindItem(k)),
+				// Library stats, for people who look after the Library (also linked from the Sort and filter panel).
+				{ href: '/library/stats', label: t('frame.nav.stats'), icon: 'gauge', need: 'manage_library' }
 			]
 		},
 		{

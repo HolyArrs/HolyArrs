@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <b>ไทย</b> · <a href="LANGUAGES.md">ภาษาอื่น</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">ภาษาอื่น</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0: ตอนนี้มี 44 ภาษา** รวมถึงภาษาที่เขียนจากขวาไปซ้าย aria2 ใช้เป็นตัวดาวน์โหลดได้ และแพ็กซีซันจะดาวน์โหลดทีละไม่กี่ตอน [ดูว่ามีอะไรใหม่](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1: มี Knaben, TorrentsCSV, SubsPlease และ IPTorrents ในตัว** ไม่ต้องใช้ Prowlarr ขอซีรีส์แบบ 4K ได้ และ Profilarr ส่ง format และโปรไฟล์ของมันมาได้ [ดูว่ามีอะไรใหม่](https://holyarrs.com/whats-new/)
 
 > โปสเตอร์ ตัวอย่าง และคะแนนทุกอย่างใน HolyArrs ของคุณมาจากเซิร์ฟเวอร์ที่ผมดูแลและจ่ายเงินเอง เพื่อให้ใช้ฟรีได้สำหรับทุกคน ถ้า HolyArrs ทำให้คืนดูหนังของคุณดีขึ้นอีกนิด การเป็นผู้สนับสนุนช่วยให้ไฟยังติดอยู่สำหรับพวกเราทุกคน 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> คือแอปโฮสต์เองตัวเดียวสำหรับซีรีส์ ภาพยนตร์ และเพลงของคุณ<br>เลือกดูได้เหมือนแอปสตรีมมิง ขอสิ่งที่อยากดู แล้วที่เหลือมันจัดการให้</p>
 
-<p align="center"><b>ดาวน์โหลดประมาณ 15 MB · ใช้ RAM ประมาณ 140 MB ตอนว่างพร้อม 10,000 รายการ · amd64, arm64, armv7</b><br><sub>หกแอปที่มันมาแทนที่ดาวน์โหลดรวมกัน 718.2 MB</sub></p>
+<p align="center"><b>ดาวน์โหลดประมาณ 19.5 MB · ใช้ RAM ประมาณ 95 MiB ตอนว่างบนการติดตั้งใหม่ · amd64, arm64, armv7</b><br><sub>หกแอปที่มันมาแทนที่ดาวน์โหลดรวมกัน 718.2 MB</sub></p>
 
 <p align="center"><a href="#quick-start">เริ่มต้นเร็ว</a> · <a href="#why">ทำไม</a> · <a href="#what-it-does">ทำอะไรได้บ้าง</a> · <a href="#moving">ย้ายจากแอปอื่น</a> · <a href="#manual">คู่มือ</a> · <a href="#help">ความช่วยเหลือ</a></p>
 
@@ -105,9 +105,9 @@ docker compose up -d
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **หกแอปรวมกัน** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>เล็กกว่าประมาณ 48 เท่า ขนาดดาวน์โหลดจาก registry แบบบีบอัด อิมเมจจาก linuxserver.io, amd64 วัดเมื่อ 2026-11-08 วัด RAM ตอนว่างโดยมี 10,000 รายการ และภาพยนตร์กับตอนรวม 55,000 รายการ</sub>
+<sub>เล็กกว่าประมาณ 37 เท่า ขนาดดาวน์โหลดจาก registry แบบบีบอัด อิมเมจจาก linuxserver.io, amd64 วัดเมื่อ 2026-11-08 วัด RAM ตอนว่างโดยมี 10,000 รายการ และภาพยนตร์กับตอนรวม 55,000 รายการ (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ docker compose up -d
 | | |
 |---|---|
 | 🍿 **Explore** | เลือกดูได้เหมือนแอปสตรีมมิง เลื่อนเมาส์ไปที่รายการ แล้วตัวอย่างจะเล่น |
-| 🙋 **Requests** | ทั้งซีรีส์หรือแค่ซีซันเดียว คุณอนุมัติเอง หรือให้คนที่ไว้ใจข้ามคิวได้ |
+| 🙋 **Requests** | ทั้งซีรีส์หรือแค่ซีซันเดียว คุณอนุมัติเอง หรือให้คนที่ไว้ใจข้ามคิวได้ วอตช์ลิสต์ของ Plex และ Pulsarr กลายเป็นคำขอได้ |
 | 🎯 **Pick rules** | คุณกำหนดเองว่ารีลีสไหนชนะ: ขนาด คุณภาพ ภาษา |
-| 💬 **คำบรรยาย** | ในภาษาที่คุณเลือก เก็บไว้พร้อมกับไฟล์ การหาคำบรรยายทางออนไลน์จะมาหลัง 1.0 |
+| 💬 **คำบรรยาย** | ในภาษาที่คุณเลือก หาจากเว็บคำบรรยาย และเก็บไว้พร้อมกับไฟล์ |
 | 📅 **Calendar** | รายการที่จะออกอากาศต่อไปของทุกอย่างที่คุณติดตาม |
-| 🚚 **ย้ายระบบเดิมมาด้วย** | จาก Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent และ SABnzbd ลองก่อนได้ ยกเลิกทีหลังได้ |
-| 🔌 **API สำหรับแอปรุ่นเดิม** | Prowlarr ส่งแหล่งค้นหามาให้ HolyArrs ต่อไปได้ เมื่อคุณเปิดใช้ |
-| 🗝️ **ไม่ต้องใช้ API key** | รายการ ภาพ และชาร์ตมาจากเซิร์ฟเวอร์ข้อมูลของ HolyArrs |
+| 🔔 **Alerts** | Discord, อีเมล, Telegram, ntfy, Gotify, Pushover หรือ webhook |
+| 🚚 **นำเข้าระบบเดิม** | จาก Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent และ SABnzbd เลือกได้ว่าจะย้ายอะไรมา ยกเลิกทีหลังได้ |
+| 🔌 **API สำหรับแอปรุ่นเดิม** | Seerr, Prowlarr, Bazarr, Unpackerr และ Homepage ใช้งานต่อได้ เมื่อคุณเปิดใช้ |
+| 🗝️ **ไม่ต้องใช้ API key** | รายการ ภาพ และชาร์ตมาจากเซิร์ฟเวอร์ข้อมูลของ HolyArrs ใช้คีย์หรือเซิร์ฟเวอร์ของคุณเองก็ได้ |
 | 🔒 **คีย์เข้ารหัส** | รหัสผ่านและคีย์ที่เก็บไว้ถูกล็อกด้วยคีย์หลักที่อยู่ในโฟลเดอร์คอนฟิกของคุณ |
-| 🪶 **เล็กมาก** | อิมเมจขนาดประมาณ 15 MB ข้างในมีแต่ HolyArrs |
+| 🪶 **เล็กมาก** | อิมเมจขนาดประมาณ 19.5 MB ข้างในมีแต่ HolyArrs |
 
 <details>
 <summary><b>ดูทุกหน้าแบบเคลื่อนไหว</b></summary>
@@ -148,18 +149,18 @@ docker compose up -d
 
 ## 🤝 ใช้งานร่วมกับสิ่งที่คุณรันอยู่แล้ว
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="ตัวดาวน์โหลด: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet มีเดียเซิร์ฟเวอร์: Plex, Jellyfin, Emby" /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="ตัวดาวน์โหลด: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet มีเดียเซิร์ฟเวอร์: Plex, Jellyfin, Emby" /></picture>
 
-- **ตัวดาวน์โหลด:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **ตัวดาวน์โหลด:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **มีเดียเซิร์ฟเวอร์:** Plex, Jellyfin, Emby
 - **แหล่งค้นหา:** อินเด็กซ์เซอร์ Torznab หรือ Newznab ตัวใดก็ได้ หรือ Prowlarr หรือ Jackett
-- **ย้ายระบบเดิมมาจาก:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
+- **นำเข้าระบบเดิมจาก:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
 
 <a id="moving"></a>
 
 ## 🚚 ย้ายระบบเดิมมาด้วย
 
-เปิด **Settings > Move from other apps** เพิ่มที่อยู่และ API key ของแต่ละแอปเดิม (หรือไฟล์ zip สำรองข้อมูล) เลือกสิ่งที่จะนำมา กด **Try it** แล้วกด **Move** ยกเลิกการย้ายทีหลังได้
+เปิด **Settings > Import from other apps** เพิ่มที่อยู่และ API key ของแต่ละแอปเดิม (หรือไฟล์ zip สำรองข้อมูล) เลือกสิ่งที่จะนำมา แล้วเลือก **Import** ยกเลิกการนำเข้าทีหลังได้
 
 | จาก | สิ่งที่ย้ายมาด้วย |
 |---|---|
@@ -171,12 +172,11 @@ docker compose up -d
 
 HolyArrs แค่อ่านแอปเดิมของคุณและไม่แก้ไขอะไรในนั้น คุณจึงรันทั้งสองแอปคู่กันได้จนกว่าจะไว้ใจ
 
-คีย์และรหัสผ่านจะไม่ถูกย้ายมา คุณพิมพ์ใหม่หรือนำเข้าจากไฟล์ รูปแบบกำหนดเอง แท็ก และประวัติจะไม่ถูกย้ายมา ไฟล์สื่อไม่เคยถูกย้าย ดูทีละขั้น: [Move from other apps](https://docs.HolyArrs.com/migrate/)
+คีย์และรหัสผ่านจะไม่ถูกย้ายมา คุณพิมพ์ใหม่หรือนำเข้าจากไฟล์ รูปแบบกำหนดเอง แท็ก และประวัติจะไม่ถูกย้ายมา ไฟล์สื่อไม่เคยถูกย้าย ดูทีละขั้น: [Import from other apps](https://docs.HolyArrs.com/migrate/)
 
 ## 🧭 สิ่งที่ยังทำไม่ได้
 
 - **ดาวน์โหลดเอง** HolyArrs เชื่อมต่อกับ qBittorrent, SABnzbd และตัวอื่นๆ ไม่ได้มาแทนที่พวกมัน
-- **ฟีเจอร์ AI หรือ MCP** ยังไม่มีใน 1.0
 - **แอปมือถือและแอป TV** ยังไม่ได้สร้าง เว็บแอปใช้งานบนมือถือได้
 - **เพลงใน Explore** ยังอยู่ระหว่างสร้าง
 
@@ -213,6 +213,8 @@ HolyArrs แค่อ่านแอปเดิมของคุณและ�
 
 ใช้ NAS อยู่ใช่ไหม ดู [Unraid, Synology และ NAS อื่นๆ](https://docs.HolyArrs.com/run/platforms/)
 
+อยากได้แพ็กเกจแบบเนทีฟ? แต่ละ[รุ่น](https://github.com/HolyArrs/HolyArrs/releases)มีแพ็กเกจ Synology แบบทดลอง (`.spk`) แนบไว้ ดู[แพ็กเกจ Synology](../../docs/run/synology.md)
+
 ## แท็กเวอร์ชัน
 
 อิมเมจอยู่บน Docker Hub ในชื่อ [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs)
@@ -220,7 +222,7 @@ HolyArrs แค่อ่านแอปเดิมของคุณและ�
 | แท็ก | ใช้สำหรับ |
 | :----: | --- |
 | `latest` | เวอร์ชันล่าสุด |
-| `1.1.0` | เวอร์ชันที่ระบุตรงตัว ไม่เปลี่ยนแปลง |
+| `1.1.1` | เวอร์ชันที่ระบุตรงตัว ไม่เปลี่ยนแปลง |
 
 ## การใช้งาน
 
@@ -415,7 +417,7 @@ HolyArrs ใช้ฟรีและเป็นโอเพนซอร์ส�
 
 ## ช่วยให้โปรเจกต์ไปต่อ
 
-HolyArrs ใช้ฟรี แต่การรันไม่ฟรี ทุกการติดตั้งคุยกับเซิร์ฟเวอร์ข้อมูลที่ผมจ่ายเงินทุกเดือน ผู้สนับสนุนช่วยจ่ายส่วนนั้น และซื้อเวลาเพิ่มให้กับสิ่งที่คุณโหวต
+HolyArrs ใช้ฟรี แต่การรันไม่ฟรี โดยค่าเริ่มต้น ทุกการติดตั้งคุยกับเซิร์ฟเวอร์ข้อมูลที่ผมจ่ายเงินทุกเดือน ผู้สนับสนุนช่วยจ่ายส่วนนั้น และซื้อเวลาเพิ่มให้กับสิ่งที่คุณโหวต
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="สนับสนุน HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="โหวตบนโรดแมป" /></picture></a></p>
 

@@ -61,3 +61,17 @@ func missingTargets(p *Plan) map[string]string {
 	}
 	return out
 }
+
+// MarkUnseen marks each old root folder this server cannot see as it is,
+// so the folder step words its choices for what they do there: by default
+// its titles come over as wanted and need attention, and "Don't bring them"
+// keeps them behind.
+func MarkUnseen(p *Plan) {
+	for gi := range p.Groups {
+		for i := range p.Groups[gi].Items {
+			if f := p.Groups[gi].Items[i].Folder; f != nil {
+				f.Unseen = !isDir(filepath.FromSlash(f.OldPath))
+			}
+		}
+	}
+}

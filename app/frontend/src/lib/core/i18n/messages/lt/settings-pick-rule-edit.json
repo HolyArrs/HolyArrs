@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "Įvertintų ypatybių: {n}",
 	"settings.pickRuleEdit.trashResult": "Įvertintų ypatybių: {n} · naujų: {added} · atnaujintų: {updated}",
 	"settings.pickRuleEdit.trashLeftOut": "Praleista: {n}",
-	"settings.pickRuleEdit.trashTests": "tikrina: {kinds}"
+	"settings.pickRuleEdit.trashTests": "tikrina: {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Šaltiniai",
+	"settings.pickRuleEdit.sourcesDesc": "Ieškoti tik Šaltiniuose, kurie turi vieną iš šių žymų. Palik tuščią, kad ieškotum visuose Šaltiniuose.",
+	"settings.pickRuleEdit.tags": "Žymos"
 }

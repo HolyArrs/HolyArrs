@@ -186,6 +186,18 @@ func (s *services) fill() {
 	if s.Updates == nil {
 		s.Updates = &updates.Checker{Store: s.Store, Version: s.Version}
 	}
+	if s.Backups != nil && s.Backups.OnPreset == nil {
+		h := s.Health
+		// A new preset runs the checks again, so turning backups off clears
+		// their warnings now instead of at the next scheduled run.
+		s.Backups.OnPreset = func(backups.Preset) {
+			go func() {
+				if _, err := h.Run(context.Background()); err != nil {
+					log.Printf("health: %v", err)
+				}
+			}()
+		}
+	}
 	if s.Health.UpdateCheck == nil {
 		WireUpdateChecks(s.Health, s.Updates)
 	}
@@ -207,12 +219,13 @@ func (s *services) fill() {
 					return
 				}
 				if _, _, err := q.Enqueue(ctx, downloads.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID},
-					"grab:"+itoa(slotID), domain.System); err != nil {
+					downloads.GrabKey(slotID, releaseID), domain.System); err != nil {
 					log.Printf("queue grab: %v", err)
 				}
 			}}
 		if s.Downloads != nil {
 			s.Search.PackReady = s.Downloads.PackReady
+			s.Search.HasDownloader = s.Downloads.HasDownloader
 		}
 	}
 }

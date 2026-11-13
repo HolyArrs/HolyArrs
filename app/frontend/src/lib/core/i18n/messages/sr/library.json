@@ -166,6 +166,13 @@
 	"library.import.followHint": "Прикажи их на мом календару.",
 	"library.import.adoptOne": "Усвој 1 ({word})",
 	"library.import.adoptMany": "Усвој {n} ({words})",
+	"library.import.searchFolders": "Претражи фасцикле",
+	"library.import.folderCountOne": "1 фасцикла",
+	"library.import.folderCountMany": "Фасцикли: {n}",
+	"library.import.titleAndFolder": "Наслов и фасцикла",
+	"library.import.matchFor": "Подударање за {folder}",
+	"library.import.seeLarge": "Погледај постер за {name} у великом",
+	"library.import.noneMatch": "Ниједна фасцикла не одговара.",
 	"library.report.keep.one": "{n} наслов се одржава ажурним",
 	"library.report.keep.many": "{n} наслова се одржава ажурним",
 	"library.report.keep.partOne": "{ok} од {total} наслова се одржава ажурним",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Прво читање се обавља у року од 30 минута.",
 	"library.stats.watchedHelp": "Из историје репродукције у Plex-у, Jellyfin-у и Emby-ју. Plex броји само репродукције, па се наслови ручно означени као гледани не приказују.",
 	"library.stats.lastRead": "Последње читање {ago}.",
-	"library.stats.noMatch": "Последње читање {ago}. Ништа од гледаног се још не поклапа са вашом Библиотеком.",
+	"library.stats.noMatch": "Историја гледања проверена {ago}. Ништа од гледаног се још не поклапа са вашом Библиотеком.",
 	"library.stats.notLinked": "Није повезано",
 	"library.stats.lastWatched": "Последње гледано {ago}",
 	"library.stats.unit.movie.one": "{n} филм",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} епизода",
 	"library.stats.unit.episode.other": "{n} епизода",
 	"library.stats.unit.play.one": "{n} репродукција",
-	"library.stats.unit.play.other": "{n} репродукција"
+	"library.stats.unit.play.other": "{n} репродукција",
+	"library.byHand.askReplaceOne": "1 датотека замењује датотеку која је већ у Библиотеци. Стара датотека иде у „Недавно обрисано”. Увести?",
+	"library.byHand.askReplaceMany": "Датотеке ({n}) замењују датотеке које су већ у Библиотеци. Старе датотеке иду у „Недавно обрисано”. Увести?"
 }

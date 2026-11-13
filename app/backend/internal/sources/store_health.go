@@ -130,10 +130,17 @@ func recentCalls(ctx context.Context, db *sql.DB, sourceID int64) ([]Call, error
 }
 
 // releaseSeen says whether a Release of that name from the Source came from
-// the feed or is still waiting to be picked.
-func releaseSeen(ctx context.Context, q database.Querier, sourceID int64, name string) (bool, error) {
+// the feed or is still waiting to be picked. A feed Release that was refused
+// is not seen: seeders, age and size change, so each feed check judges it
+// again. Its id comes back so the new verdict updates the same record.
+func releaseSeen(ctx context.Context, q database.Querier, sourceID int64, name string) (bool, int64, error) {
 	var seen bool
-	err := q.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM releases
-				WHERE source_id = ? AND name = ? AND (found_by = 'feed' OR state = 'judged'))`, sourceID, name).Scan(&seen)
-	return seen, err
+	var refused int64
+	err := q.QueryRowContext(ctx, `SELECT
+				EXISTS (SELECT 1 FROM releases WHERE source_id = ? AND name = ?
+					AND ((found_by = 'feed' AND state <> 'refused') OR state = 'judged')),
+				COALESCE((SELECT MAX(id) FROM releases WHERE source_id = ? AND name = ?
+					AND found_by = 'feed' AND state = 'refused'), 0)`,
+		sourceID, name, sourceID, name).Scan(&seen, &refused)
+	return seen, refused, err
 }

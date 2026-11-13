@@ -145,5 +145,7 @@
 	"core.settings.account.about": "Jelszó, kétlépcsős azonosítás, eszközök",
 	"core.plain.clearWaiting": "Az importált letöltések arra várnak, hogy törlődjenek a Letöltőből.",
 	"core.plain.saveFolder": "Egy letöltőnek nincs mentési mappája, így a HolyArrs nem tudja importálni a kész letöltéseit.",
-	"core.api.sourceOff": "Néhány sor ki van kapcsolva ezen a telepítésen."
+	"core.api.sourceOff": "Néhány sor ki van kapcsolva ezen a telepítésen.",
+	"core.plain.noDownloader": "A forrásaid olyan letöltéseket találnak, amelyeket egyik letöltőd sem tud fogadni, így egyik sem küldhető el.",
+	"core.plain.sameDownloader": "Két letöltő ugyanahhoz a letöltő alkalmazáshoz kapcsolódik, így a letöltések kétszer is megjelenhetnek."
 }

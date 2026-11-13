@@ -13,7 +13,7 @@
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import { ConnectBridge } from '#lib/sources/index.ts';
 	import { partOff } from '#lib/mediafiles/index.ts';
-	import { healthTone, healthWord, pausedUntil, SourceCheck, emptyForm, formBody, formFrom, ms, uses, type SourceForm } from '#lib/sources/index.ts';
+	import { healthTone, healthWord, pausedUntil, SourceCheck, emptyForm, formBody, formFrom, ms, uses, builtInSites, pickSite, type SourceForm } from '#lib/sources/index.ts';
 	import type { SourceHealth, SourceView } from '#lib/sources/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
@@ -61,6 +61,13 @@
 		formError = '';
 	}
 
+	const siteNeedsKey = $derived(builtInSites.find((x) => x.id === form.site)?.key ?? false);
+
+	function setFormat(v: string) {
+		form.format = v as SourceForm['format'];
+		if (form.format === 'site' && !form.site) pickSite(form, builtInSites[0].id);
+	}
+
 	function toggleKind(k: string, on: boolean) {
 		form.kinds = on ? [...new Set([...form.kinds, k])] : form.kinds.filter((x) => x !== k);
 	}
@@ -76,7 +83,8 @@
 			forgetTags();
 			editing = null;
 			await load();
-			if (isNew) await test(saved);
+			// A changed Source is tested again, so its state never rests on an old test.
+			await test(saved);
 		} catch (err) {
 			formError = message(err);
 		} finally {
@@ -142,26 +150,41 @@
 			</Field>
 			<div class="two">
 				<Field id="so-format" label={t('settings.sources.feedKind')}>
-					<select id="so-format" class="input" bind:value={form.format}>
+					<select id="so-format" class="input" value={form.format} disabled={!isNew && form.format === 'site'} onchange={(e) => setFormat(e.currentTarget.value)}>
 						<option value="torznab">{t('settings.sources.torznab')}</option>
 						<option value="newznab">{t('settings.sources.newznab')}</option>
 						<option value="rss">{t('settings.sources.rss')}</option>
+						{#if isNew || form.format === 'site'}<option value="site">{t('settings.sources.site')}</option>{/if}
 					</select>
 				</Field>
-				<Field id="so-proto" label={t('settings.sources.downloads')}>
-					<select id="so-proto" class="input" bind:value={form.protocol}>
-						<option value="torrent">{t('settings.sources.torrents')}</option>
-						<option value="usenet">{t('settings.sources.usenet')}</option>
-					</select>
-				</Field>
+				{#if form.format === 'site'}
+					<Field id="so-site" label={t('settings.sources.siteLabel')}>
+						<select id="so-site" class="input" value={form.site} disabled={!isNew} onchange={(e) => pickSite(form, e.currentTarget.value)}>
+							{#each builtInSites as s (s.id)}<option value={s.id}>{s.name}</option>{/each}
+						</select>
+					</Field>
+				{:else}
+					<Field id="so-proto" label={t('settings.sources.downloads')}>
+						<select id="so-proto" class="input" bind:value={form.protocol}>
+							<option value="torrent">{t('settings.sources.torrents')}</option>
+							<option value="usenet">{t('settings.sources.usenet')}</option>
+						</select>
+					</Field>
+				{/if}
 			</div>
 			<Field id="so-url" label={t('settings.sources.address')}>
 				<input id="so-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={form.format === 'rss' ? 'https://example.org/rss?passkey=…' : 'https://example.org/api'} />
 				<span class="hint">
-					{#if form.format === 'rss'}{t('settings.sources.addressRss')}{:else}{t('settings.sources.addressFeed')}{/if}
+					{#if form.format === 'rss'}{t('settings.sources.addressRss')}{:else if form.format === 'site'}{t('settings.sources.addressSite')}{:else}{t('settings.sources.addressFeed')}{/if}
 				</span>
 			</Field>
-			{#if form.format !== 'rss'}
+			{#if form.format === 'site'}
+				{#if siteNeedsKey}
+					<Field id="so-key" label={t('settings.sources.siteKeyLabel')} hint={t('settings.sources.siteKeyHint')}>
+						<input id="so-key" class="input mono" type="password" bind:value={form.api_key} autocomplete="new-password" spellcheck="false" />
+					</Field>
+				{/if}
+			{:else if form.format !== 'rss'}
 				<Field id="so-key" label={t('settings.sources.apiKeyLabel')} hint={t('settings.sources.apiKeyHint')}>
 					<input id="so-key" class="input mono" type="password" bind:value={form.api_key} autocomplete="new-password" spellcheck="false" />
 				</Field>
@@ -260,7 +283,7 @@
 					<span class="ic"><Icon name="source" size={20} /></span>
 					<div class="grow">
 						<div class="top"><a class="name" href={to(`/settings/sources/${s.id}`)}>{s.name}</a></div>
-						<div class="sub">{s.format === 'rss' ? 'RSS' : words(s.format)} · {words(s.protocol)}</div>
+						<div class="sub">{s.format === 'rss' ? 'RSS' : s.format === 'site' ? (builtInSites.find((x) => x.id === s.site)?.name ?? t('settings.sources.site')) : words(s.format)} · {words(s.protocol)}</div>
 						<div class="sr-only">{s.url}{#if s.format === 'rss' && s.api_key}?{s.api_key}{/if} · 
 							{t('settings.sources.priorityUses', { priority: s.priority, uses: uses(s) })}
 							{#if s.api_key && s.format !== 'rss'} · {t('settings.sources.keyIs', { key: s.api_key })}{/if}

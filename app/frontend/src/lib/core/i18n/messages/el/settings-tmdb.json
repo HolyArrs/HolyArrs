@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Δεν ήταν δυνατή η αποθήκευση",
 	"settings.tmdb.locked": "Καθορίζεται από τις ρυθμίσεις του Docker σας",
 	"settings.tmdb.dockerValue": "Το HOLYARRS_METADATA_MODE είναι «{value}», που δεν είναι full, own ή off, οπότε οι αναζητήσεις είναι ανενεργές.",
-	"settings.tmdb.ownNote": "Τα δικά σας κλειδιά ρωτά κάθε πηγή μόνο του. Τα charts μουσικής, οι γραμμές νέας μουσικής, τα Top 10 streaming, τα στοιχεία της Wikipedia και οι χάρτες anime προέρχονται μόνο από τον διακομιστή HolyArrs, οπότε είναι ανενεργά.",
+	"settings.tmdb.ownNote": "Με τα δικά σας κλειδιά, το HolyArrs ρωτά απευθείας κάθε πηγή. Τα charts μουσικής, οι γραμμές νέας μουσικής, τα Top 10 streaming, τα στοιχεία της Wikipedia και οι χάρτες anime προέρχονται μόνο από τον διακομιστή HolyArrs, οπότε είναι ανενεργά.",
 	"settings.tmdb.keysTitle": "Τα κλειδιά σας",
 	"settings.tmdb.keysDesc": "Χρειάζεται μόνο το διακριτικό ανάγνωσης TMDB",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

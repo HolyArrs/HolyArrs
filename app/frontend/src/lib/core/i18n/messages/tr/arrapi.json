@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Yapay zekâ uygulamaları kapalı. İzin vermek onları açar.",
 	"arrapi.ai.offOther": "Yapay zekâ uygulamaları kapalı. Sahipten açmasını iste, sonra tekrar dene.",
 	"arrapi.ai.allow": "İzin ver",
-	"arrapi.ai.cancel": "Vazgeç"
+	"arrapi.ai.cancel": "Vazgeç",
+	"arrapi.seerr.sentTitle": "Başka uygulamaların gönderdikleri",
+	"arrapi.seerr.sentHint": "Profilarr gibi uygulamaların gönderdiği biçimler ve profiller. Burada yalnızca okunur.",
+	"arrapi.seerr.sentFormat": "Biçim",
+	"arrapi.seerr.sentProfile": "Profil",
+	"arrapi.seerr.sentUpdated": "güncellendi {ago}"
 }

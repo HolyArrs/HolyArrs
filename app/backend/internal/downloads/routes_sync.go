@@ -42,7 +42,7 @@ func (a *Web) storeRows(ctx context.Context, names map[int64]domain.Downloader, 
 		health = append(health, syncHealth(d, snap))
 		out := make([]DownloadRow, 0, len(snap.Items))
 		for _, j := range snap.Items {
-			if j.ID == "" || shown[clientKey{d.ID, strings.ToLower(j.ID)}] {
+			if j.ID == "" || shown[clientKey{d.ID, strings.ToLower(j.ID)}] || hiddenItem(d, j) {
 				continue
 			}
 			out = append(out, clientRow(d, j))
@@ -112,6 +112,15 @@ func (a *Web) storeRatio(downloaderID int64, hash string) *float64 {
 	}
 	r := j.Ratio
 	return &r
+}
+
+// storeSize is the size the reader's snapshot saw for one of HolyArrs' own
+// torrents; 0 when it has none.
+func (a *Web) storeSize(downloaderID int64, hash string) int64 {
+	if hash == "" {
+		return 0
+	}
+	return a.DLSync.Store.Current(downloaderID).Items[strings.ToLower(hash)].Size
 }
 
 func sortDownloaders(ds []domain.Downloader) {
@@ -248,10 +257,11 @@ func (a *Web) MatchLinkOnly(ctx context.Context, downloaderID int64, key, name, 
 const matchOtherApp = "other"
 
 // otherApp reports whether category belongs to another app on d: d is a
-// Usenet client with categories of its own and category is none of them.
-// A client with no category, "" or "*" has every job as its own.
+// Usenet client, or one set to show only its own items, with categories of
+// its own and category is none of them. A client with no category, "" or
+// "*" has every job as its own.
 func otherApp(d domain.Downloader, category string) bool {
-	if d.Protocol != "usenet" {
+	if d.Protocol != "usenet" && !d.OwnOnly {
 		return false
 	}
 	cats := d.Categories()

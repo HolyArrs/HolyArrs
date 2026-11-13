@@ -72,5 +72,10 @@
 	"settings.sources.off": "Sursele sunt oprite",
 	"settings.sources.offText": "HolyArrs nu caută și nu apucă. Descărcările pe care le adaugi în Programul tău de descărcare se importă în continuare.",
 	"settings.sources.openParts": "Deschide Modulele",
-	"settings.sources.offState": "Oprit"
+	"settings.sources.offState": "Oprit",
+	"settings.sources.site": "Site integrat",
+	"settings.sources.siteLabel": "Site",
+	"settings.sources.addressSite": "Adresa proprie a site-ului. Schimb-o doar dacă site-ul s-a mutat.",
+	"settings.sources.siteKeyLabel": "Cookie sau cheie RSS",
+	"settings.sources.siteKeyHint": "Din contul tău: uid și pass din cookie-ul browserului, sau u și tp din linkul tău RSS. Păstrat criptat."
 }

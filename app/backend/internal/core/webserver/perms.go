@@ -17,11 +17,14 @@ type Perm string
 
 // Permissions a person can be given.
 const (
-	PermAsk           Perm = "ask"            // ask for titles
-	PermAutoApprove   Perm = "auto_approve"   // their asks are approved without waiting
-	PermApprove       Perm = "approve"        // approve or turn down other people's asks
-	PermManageLibrary Perm = "manage_library" // add, edit, search and download titles
-	PermSettings      Perm = "settings"       // change settings
+	PermAsk         Perm = "ask"          // ask for titles
+	PermAutoApprove Perm = "auto_approve" // their asks are approved without waiting
+	// PermAutoApproveFourK: their 4K asks are approved without waiting too
+	// (with PermAutoApprove).
+	PermAutoApproveFourK Perm = "auto_approve_four_k"
+	PermApprove          Perm = "approve"        // approve or turn down other people's asks
+	PermManageLibrary    Perm = "manage_library" // add, edit, search and download titles
+	PermSettings         Perm = "settings"       // change settings
 )
 
 // Needs a route can declare besides the permissions above.
@@ -38,7 +41,7 @@ const (
 )
 
 // AllPerms lists the permissions in the order screens show them.
-var AllPerms = []Perm{PermAsk, PermAutoApprove, PermApprove, PermManageLibrary, PermSettings}
+var AllPerms = []Perm{PermAsk, PermAutoApprove, PermAutoApproveFourK, PermApprove, PermManageLibrary, PermSettings}
 
 // Authenticator turns a request into its Caller. Accounts implements it, so
 // no module has to import accounts to ask who is calling.

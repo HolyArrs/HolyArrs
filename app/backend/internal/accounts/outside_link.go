@@ -19,12 +19,13 @@ import (
 
 // linkedUser finds or makes the user for an outside account. A new person
 // the server limits (kid) joins as a Kid, as an import would make them.
-func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, mayJoin, kid bool) (int64, string, error) {
+// onServer says whether the account still reaches the owner's server; nil
+// when signing in through that server proved it already.
+func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, mayJoin, kid bool, onServer func() (bool, error)) (int64, string, error) {
 	id, name, state, err := linkedUserRow(ctx, a.s.Read(), provider, extID)
 	if err == nil {
 		if state != "active" {
-			// The member's name goes with the refusal, for the audit row only.
-			return 0, name, errDisabled
+			return a.firstSignIn(ctx, provider, id, name, kid, onServer)
 		}
 		return id, name, nil
 	}
@@ -60,6 +61,51 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 		log.Printf("auth: %s account joined as member %q (%d), kid %t", provider, name, id, kid)
 	}
 	return id, name, err
+}
+
+// firstSignIn turns on a person an import brought over linked to this
+// outside account, at their first sign-in with it, once the account still
+// reaches the owner's server; a Kid there gets Kid limits here. Anyone else
+// turned off stays off.
+func (a *Auth) firstSignIn(ctx context.Context, provider string, id int64, name string, kid bool, onServer func() (bool, error)) (int64, string, error) {
+	waiting, err := waitsForSignIn(ctx, a.s.Read(), id)
+	if err != nil {
+		return 0, "", err
+	}
+	if !waiting {
+		// The member's name goes with the refusal, for the audit row only.
+		return 0, name, errDisabled
+	}
+	if onServer != nil {
+		ok, err := onServer()
+		if err != nil {
+			return 0, "", err
+		}
+		if !ok {
+			return 0, name, errNotAllowed
+		}
+	}
+	kidPerms := ""
+	if kid {
+		if a.skipBlocksKids(ctx) {
+			return 0, "", errKidSkipLocal
+		}
+		kidPerms = permsJSON([]webserver.Perm{webserver.PermAsk})
+	}
+	var on bool
+	err = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
+		var err error
+		on, err = turnOnImported(ctx, tx, id, kidPerms, database.FormatTime(a.now()), domain.System)
+		return err
+	})
+	switch {
+	case err != nil:
+		return 0, "", err
+	case !on:
+		return 0, name, errDisabled
+	}
+	log.Printf("auth: imported member %q (%d) turned on by their first %s sign-in, kid %t", name, id, provider, kid)
+	return id, name, nil
 }
 
 // outsideBase is the name a new user from an outside account starts from.
@@ -169,7 +215,9 @@ func (a *Auth) call(ctx context.Context, c *http.Client, method, u string, hdr m
 	if err != nil {
 		return resp.StatusCode, err
 	}
-	if out != nil && resp.StatusCode/100 == 2 && len(data) > 0 {
+	if raw, ok := out.(*[]byte); ok && resp.StatusCode/100 == 2 {
+		*raw = data // an answer that is not JSON, read by the caller
+	} else if out != nil && resp.StatusCode/100 == 2 && len(data) > 0 {
 		if err := json.Unmarshal(data, out); err != nil {
 			return resp.StatusCode, fmt.Errorf("unreadable answer: %w", err)
 		}

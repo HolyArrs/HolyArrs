@@ -271,5 +271,8 @@
 	"home.noSaveFolder": "har ingen sparmapp",
 	"home.noSaveFolderMany": "har ingen sparmapp",
 	"home.off": "Av",
-	"home.sourcesOff": "Avstängd i Delar"
+	"home.sourcesOff": "Avstängd i Delar",
+	"home.noneForSources": "saknas för det dina källor hittar",
+	"home.addedTwice": "är tillagd två gånger",
+	"home.addedTwiceMany": "är tillagda två gånger"
 }

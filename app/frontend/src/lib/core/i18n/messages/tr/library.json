@@ -166,6 +166,13 @@
 	"library.import.followHint": "Takvimimde göster.",
 	"library.import.adoptOne": "1 {word} sahiplen",
 	"library.import.adoptMany": "{n} {words} sahiplen",
+	"library.import.searchFolders": "Klasörlerde ara",
+	"library.import.folderCountOne": "1 klasör",
+	"library.import.folderCountMany": "{n} klasör",
+	"library.import.titleAndFolder": "Başlık ve klasör",
+	"library.import.matchFor": "{folder} için eşleşme",
+	"library.import.seeLarge": "{name} afişini büyük gör",
+	"library.import.noneMatch": "Eşleşen klasör yok.",
 	"library.report.keep.one": "{n} başlık güncel tutuluyor",
 	"library.report.keep.many": "{n} başlık güncel tutuluyor",
 	"library.report.keep.partOne": "{total} başlığın {ok} tanesi güncel tutuluyor",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "İlk okuma 30 dakika içinde gelir.",
 	"library.stats.watchedHelp": "Plex, Jellyfin ve Emby oynatma geçmişinden. Plex yalnızca oynatmaları sayar, elle izlendi işaretlenen başlıklar görünmez.",
 	"library.stats.lastRead": "Son okuma {ago}.",
-	"library.stats.noMatch": "Son okuma {ago}. İzlenenlerin hiçbiri henüz Kütüphanenizle eşleşmiyor.",
+	"library.stats.noMatch": "İzleme geçmişi kontrol edildi: {ago}. İzlenenlerin hiçbiri henüz Kütüphanenizle eşleşmiyor.",
 	"library.stats.notLinked": "Bağlı değil",
 	"library.stats.lastWatched": "Son izleme {ago}",
 	"library.stats.unit.movie.one": "{n} film",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} bölüm",
 	"library.stats.unit.episode.other": "{n} bölüm",
 	"library.stats.unit.play.one": "{n} oynatma",
-	"library.stats.unit.play.other": "{n} oynatma"
+	"library.stats.unit.play.other": "{n} oynatma",
+	"library.byHand.askReplaceOne": "1 dosya, Kitaplıkta zaten olan bir dosyanın yerini alır. Eski dosya Yakında silinenler bölümüne gider. İçe aktarılsın mı?",
+	"library.byHand.askReplaceMany": "{n} dosya, Kitaplıkta zaten olan dosyaların yerini alır. Eski dosyalar Yakında silinenler bölümüne gider. İçe aktarılsın mı?"
 }

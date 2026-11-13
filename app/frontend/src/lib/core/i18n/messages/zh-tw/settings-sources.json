@@ -72,5 +72,10 @@
 	"settings.sources.off": "來源已關閉",
 	"settings.sources.offText": "HolyArrs 不會搜尋或抓取。你在下載器中新增的下載仍會匯入。",
 	"settings.sources.openParts": "開啟功能模組",
-	"settings.sources.offState": "關閉"
+	"settings.sources.offState": "關閉",
+	"settings.sources.site": "內建網站",
+	"settings.sources.siteLabel": "網站",
+	"settings.sources.addressSite": "網站本身的位址。只有在網站搬家時才變更。",
+	"settings.sources.siteKeyLabel": "Cookie 或 RSS 金鑰",
+	"settings.sources.siteKeyHint": "來自你自己的帳號：瀏覽器 Cookie 中的 uid 和 pass，或 RSS 連結中的 u 和 tp。加密保存。"
 }

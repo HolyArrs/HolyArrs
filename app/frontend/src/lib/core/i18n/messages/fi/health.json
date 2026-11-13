@@ -260,9 +260,16 @@
 	"health.word.notSent": "Ei vielä lähetetty",
 	"health.word.notSynced": "Ei vielä synkronoitu",
 	"health.word.working": "Toimii",
-	"health.check.clearWaiting": "Poistamista odottavat lataukset",
+	"health.check.clearWaiting": "Tuodut lataukset ovat yhä lataajassa",
 	"health.check.saveFolder": "Tallennuskansio:",
 	"health.check.saveFolderWhy": "Lataajalla {app} ei ole tallennuskansiota, joten HolyArrs ei voi tuoda valmiita latauksia. Lisää polkupari kohdassa Asetukset › Lataajat.",
-	"health.kind.clearWaiting": "Poistamista odottavat lataukset",
-	"health.kind.saveFolder": "Lataajan tallennuskansio"
+	"health.kind.clearWaiting": "Tuodut lataukset ovat yhä lataajassa",
+	"health.kind.saveFolder": "Lataajan tallennuskansio",
+	"health.check.usenetDl": "Usenet-lataaja",
+	"health.check.torrentDl": "Torrent-lataaja",
+	"health.check.noUsenetDl": "Lähteesi löytävät Usenet-latauksia, mutta Usenet-lataajaa ei ole määritetty, joten mitään ei voi lähettää. Lisää sellainen kohdassa Asetukset › Lataajat.",
+	"health.check.noTorrentDl": "Lähteesi löytävät torrent-latauksia, mutta torrent-lataajaa ei ole määritetty, joten mitään ei voi lähettää. Lisää sellainen kohdassa Asetukset › Lataajat.",
+	"health.check.sameDownloader": "Lisätty kahdesti:",
+	"health.check.sameDownloaderWhy": "{app} yltää samaan lataussovellukseen kuin toinen lataaja, joten sen lataukset voivat näkyä kahdesti. Poista toinen kohdassa Asetukset › Lataajat.",
+	"health.kind.sameDownloader": "Lataaja lisätty kahdesti"
 }

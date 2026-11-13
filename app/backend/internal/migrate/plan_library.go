@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 func (b *builder) folderList(s *Snapshot) {
@@ -28,7 +30,7 @@ func (b *builder) folderList(s *Snapshot) {
 			detail = op + " becomes " + np
 		}
 		b.add(GroupFolders, Item{Key: "folder:" + np, Name: label, From: from, Detail: detail,
-			Folder: &FolderPlan{OldPath: op, Path: np, Kind: kind, Label: clip(label, 100)}})
+			Folder: &FolderPlan{OldPath: op, Path: np, Kind: kind, Label: clip(label, 100), Left: b.leave[op]}})
 		keys := make([]string, 0, len(f.Extra))
 		for k := range f.Extra {
 			keys = append(keys, k)
@@ -75,14 +77,46 @@ func matchPreset(k Kind, p Profile) (string, string) {
 
 func (b *builder) profiles(s *Snapshot) {
 	b.cover("quality_profiles", "custom_formats", "release_profiles", "delay_profiles", "language_profiles", "metadata_profiles")
+	scored := map[string]bool{}
+	leftOut := map[string]string{}
+	b.snapRules = nil
 	for i, p := range s.QualityProfiles {
 		preset, why := matchPreset(s.Kind, p)
+		key := fmt.Sprintf("pick_rules:%d:%s:%d", b.snapID, s.Kind, p.ID)
+		if rp, ok := b.importedRules(s, p, preset); ok {
+			b.ownRulesName(rp, leftOut)
+			b.presets[b.presetKey(s.Kind, p.ID)] = rp.Name
+			b.imported[rp.Name] = true
+			b.snapRules = append(b.snapRules, rp)
+			for _, t := range rp.Traits {
+				scored[t.Name] = true
+			}
+			why := fmt.Sprintf("%d of its formats become traits with the same points", len(rp.Traits))
+			if len(rp.Skipped) > 0 {
+				why += fmt.Sprintf("; %d could not be brought", len(rp.Skipped))
+			}
+			if len(rp.Notes) > 0 {
+				why += "; " + strings.Join(rp.Notes, "; ")
+			}
+			b.add(GroupRules, Item{Key: key, Name: b.named(p.Name), From: b.from("quality_profiles", i),
+				Detail: fmt.Sprintf("becomes Pick rules %s · %d traits", rp.Name, len(rp.Traits)), Why: why, Rules: rp})
+			continue
+		}
 		b.presets[b.presetKey(s.Kind, p.ID)] = preset
-		b.add(GroupRules, Item{Key: fmt.Sprintf("pick_rules:%d:%s:%d", b.snapID, s.Kind, p.ID), Name: b.named(p.Name), From: b.from("quality_profiles", i),
+		b.add(GroupRules, Item{Key: key, Name: b.named(p.Name), From: b.from("quality_profiles", i),
 			Detail: "becomes " + preset, Why: why, Rules: &RulesPlan{App: string(s.Kind), Profile: clip(b.named(p.Name), maxName), Preset: preset}})
 	}
 	for i, f := range s.CustomFormats {
-		b.not(GroupRules, b.from("custom_formats", i), f.Name, "format scoring rules are not imported; Pick rules score a fixed list of traits")
+		switch {
+		case scored[clip(f.Name, 60)]:
+			b.p.Mapped = append(b.p.Mapped, b.from("custom_formats", i))
+		case leftOut[f.Name] != "":
+			b.not(GroupRules, b.from("custom_formats", i), f.Name, leftOut[f.Name])
+		case !b.noFormats && (s.Kind == Sonarr || s.Kind == Radarr):
+			b.not(GroupRules, b.from("custom_formats", i), f.Name, "nothing in the old app gives it points, so it changes nothing here")
+		default:
+			b.not(GroupRules, b.from("custom_formats", i), f.Name, "format scoring rules are not imported; Pick rules score a fixed list of traits")
+		}
 	}
 	for i, rw := range s.ReleaseProfiles {
 		name := rw.Name
@@ -173,7 +207,7 @@ func (b *builder) waitRules(s *Snapshot) {
 	}
 	var presets []string
 	for _, p := range s.QualityProfiles {
-		if pr := b.presets[b.presetKey(s.Kind, p.ID)]; pr != "" && !slices.Contains(presets, pr) {
+		if pr := b.presets[b.presetKey(s.Kind, p.ID)]; pr != "" && !b.imported[pr] && !slices.Contains(presets, pr) {
 			presets = append(presets, pr)
 		}
 	}
@@ -233,7 +267,15 @@ func (b *builder) waitRules(s *Snapshot) {
 		case !d.EnableTorrent && !d.EnableUsenet:
 			b.not(GroupRules, from+".enable_usenet", "Usenet and torrent off", "Pick rules cannot turn a protocol off, so pause those Sources instead")
 		}
+		// Pick rules made from this app's profiles take its default wait as is.
+		for _, rp := range b.snapRules {
+			rp.Body.Protocol = mediafiles.ProtocolRule{Prefer: w.Prefer, WaitMinutesUsenet: w.WaitUsenet, WaitMinutesTorrent: w.WaitTorrent, SkipWaitAtGoodEnough: w.SkipAtGoodEnough}
+		}
 		if len(presets) == 0 {
+			if len(b.snapRules) > 0 {
+				b.p.Mapped = append(b.p.Mapped, from)
+				continue
+			}
 			b.not(GroupRules, from, what, "no quality profile came over to carry it: "+values+"; set them under Pick rules")
 			continue
 		}

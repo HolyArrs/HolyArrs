@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <b>Ελληνικά</b> · <a href="LANGUAGES.md">Περισσότερες γλώσσες</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">Περισσότερες γλώσσες</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0: τώρα σε 44 γλώσσες**, και από δεξιά προς τα αριστερά. Το aria2 λειτουργεί ως πρόγραμμα λήψεων και τα πακέτα σεζόν κατεβαίνουν λίγα επεισόδια τη φορά. [Δες τι νέο υπάρχει](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1: ενσωματωμένα Knaben, TorrentsCSV, SubsPlease και IPTorrents**, χωρίς Prowlarr. Ζήτα σειρές σε 4K, και το Profilarr μπορεί να στέλνει τα formats και τα προφίλ του. [Δες τι νέο υπάρχει](https://holyarrs.com/whats-new/)
 
 > Κάθε αφίσα, τρέιλερ και βαθμολογία στο HolyArrs σου έρχεται από έναν διακομιστή που τρέχω και πληρώνω ο ίδιος, για να μένει δωρεάν για όλους. Αν το HolyArrs έκανε τη βραδιά ταινίας λίγο καλύτερη, ένας χορηγός κρατά τα φώτα αναμμένα για όλους μας 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>Το HolyArrs</b> είναι μία εφαρμογή self-hosted για τις σειρές, τις ταινίες και τη μουσική σου.<br>Περιηγήσου όπως σε εφαρμογή streaming, ζήτησε ό,τι θες, και τα υπόλοιπα τα αναλαμβάνει εκείνο.</p>
 
-<p align="center"><b>Περίπου 15 MB λήψη · περίπου 140 MB RAM σε αδράνεια με 10,000 τίτλους · amd64, arm64, armv7</b><br><sub>Οι έξι εφαρμογές που αντικαθιστά ζυγίζουν μαζί 718.2 MB.</sub></p>
+<p align="center"><b>Περίπου 19.5 MB λήψη · περίπου 95 MiB RAM σε αδράνεια σε νέα εγκατάσταση · amd64, arm64, armv7</b><br><sub>Οι έξι εφαρμογές που αντικαθιστά ζυγίζουν μαζί 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Γρήγορη εκκίνηση</a> · <a href="#why">Γιατί</a> · <a href="#what-it-does">Τι κάνει</a> · <a href="#moving">Μετάβαση από άλλες εφαρμογές</a> · <a href="#manual">Το εγχειρίδιο</a> · <a href="#help">Βοήθεια</a></p>
 
@@ -105,9 +105,9 @@ docker compose up -d
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Και οι έξι μαζί** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Περίπου 48 φορές μικρότερο. Συμπιεσμένη λήψη από registry, images της linuxserver.io, amd64, μετρημένο στις 2026-11-08. Η RAM σε αδράνεια μετρήθηκε με 10,000 τίτλους και 55,000 ταινίες και επεισόδια.</sub>
+<sub>Περίπου 37 φορές μικρότερο. Συμπιεσμένη λήψη από registry, images της linuxserver.io, amd64, μετρημένο στις 2026-11-08. Η RAM σε αδράνεια μετρήθηκε με 10,000 τίτλους και 55,000 ταινίες και επεισόδια. (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ docker compose up -d
 | | |
 |---|---|
 | 🍿 **Explore** | Περιηγήσου όπως σε εφαρμογή streaming. Πέρασε το ποντίκι πάνω από έναν τίτλο και παίζει το τρέιλερ. |
-| 🙋 **Requests** | Μια ολόκληρη σειρά ή μία σεζόν. Εσύ εγκρίνεις, ή αφήνεις τους έμπιστους να προσπεράσουν την ουρά. |
+| 🙋 **Requests** | Μια ολόκληρη σειρά ή μία σεζόν. Εσύ εγκρίνεις, ή αφήνεις τους έμπιστους να προσπεράσουν την ουρά. Οι λίστες παρακολούθησης του Plex και του Pulsarr μπορούν να γίνουν αιτήματα. |
 | 🎯 **Pick rules** | Εσύ αποφασίζεις ποια κυκλοφορία κερδίζει: μέγεθος, ποιότητα, γλώσσα. |
-| 💬 **Υπότιτλοι** | Στις γλώσσες που διαλέγεις, αποθηκευμένοι μαζί με το αρχείο. Η αναζήτησή τους online έρχεται μετά το 1.0. |
+| 💬 **Υπότιτλοι** | Στις γλώσσες που διαλέγεις, βρίσκονται σε ιστότοπους υποτίτλων και αποθηκεύονται μαζί με το αρχείο. |
 | 📅 **Calendar** | Τι προβάλλεται στη συνέχεια για ό,τι παρακολουθείς. |
-| 🚚 **Φέρε τη ρύθμισή σου** | Από Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent και SABnzbd. Δοκίμασέ το πρώτα, αναίρεσέ το αργότερα. |
-| 🔌 **API παλαιότερων εφαρμογών** | Το Prowlarr μπορεί να συνεχίσει να στέλνει Πηγές στο HolyArrs μόλις το ενεργοποιήσεις. |
-| 🗝️ **Δεν χρειάζονται κλειδιά API** | Οι τίτλοι, τα εικαστικά και τα charts έρχονται από τον διακομιστή μεταδεδομένων του HolyArrs. |
+| 🔔 **Alerts** | Discord, email, Telegram, ntfy, Gotify, Pushover ή ένα webhook. |
+| 🚚 **Φέρε τη ρύθμισή σου** | Από Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent και SABnzbd. Διάλεξε τι θα μεταφερθεί, αναίρεσέ το αργότερα. |
+| 🔌 **API παλαιότερων εφαρμογών** | Τα Seerr, Prowlarr, Bazarr, Unpackerr και Homepage συνεχίζουν να δουλεύουν μόλις το ενεργοποιήσεις. |
+| 🗝️ **Δεν χρειάζονται κλειδιά API** | Οι τίτλοι, τα εικαστικά και τα charts έρχονται από τον διακομιστή μεταδεδομένων του HolyArrs. Δουλεύουν και δικά σου κλειδιά ή δικός σου διακομιστής. |
 | 🔒 **Κρυπτογραφημένα κλειδιά** | Οι αποθηκευμένοι κωδικοί και τα κλειδιά κλειδώνονται με ένα κύριο κλειδί που βρίσκεται στον φάκελο ρυθμίσεών σου. |
-| 🪶 **Μικροσκοπικό** | Μια image περίπου 15 MB που μέσα της δεν έχει τίποτα άλλο εκτός από το HolyArrs. |
+| 🪶 **Μικροσκοπικό** | Μια image περίπου 19.5 MB που μέσα της δεν έχει τίποτα άλλο εκτός από το HolyArrs. |
 
 <details>
 <summary><b>Δες κάθε σελίδα σε κίνηση</b></summary>
@@ -148,9 +149,9 @@ docker compose up -d
 
 ## 🤝 Δουλεύει με ό,τι ήδη τρέχεις
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Προγράμματα λήψεων: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Διακομιστές πολυμέσων: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Προγράμματα λήψεων: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Διακομιστές πολυμέσων: Plex, Jellyfin, Emby." /></picture>
 
-- **Προγράμματα λήψεων:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Προγράμματα λήψεων:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Διακομιστές πολυμέσων:** Plex, Jellyfin, Emby
 - **Πηγές:** οποιοσδήποτε indexer Torznab ή Newznab, ή Prowlarr ή Jackett
 - **Φέρνει τη ρύθμισή σου από:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -159,7 +160,7 @@ docker compose up -d
 
 ## 🚚 Φέρε μαζί σου την παλιά σου ρύθμιση
 
-Άνοιξε **Settings > Move from other apps**, πρόσθεσε τη διεύθυνση και το κλειδί API κάθε παλιάς εφαρμογής (ή ένα zip αντιγράφου ασφαλείας), διάλεξε τι θα έρθει, τρέξε **Try it** και μετά **Move**. Μπορείς να αναιρέσεις μια μετακίνηση αργότερα.
+Άνοιξε **Settings > Import from other apps**, πρόσθεσε τη διεύθυνση και το κλειδί API κάθε παλιάς εφαρμογής (ή ένα zip αντιγράφου ασφαλείας), διάλεξε τι θα έρθει και μετά επίλεξε **Import**. Μπορείς να αναιρέσεις μια εισαγωγή αργότερα.
 
 | Από | Τι έρχεται |
 |---|---|
@@ -171,12 +172,11 @@ docker compose up -d
 
 Το HolyArrs μόνο διαβάζει τις παλιές σου εφαρμογές και δεν αλλάζει τίποτα μέσα τους, οπότε μπορείς να τρέχεις και τα δύο δίπλα-δίπλα μέχρι να το εμπιστευτείς.
 
-Τα κλειδιά και οι κωδικοί μένουν πίσω· τα γράφεις ξανά ή τα εισάγεις από αρχείο. Τα προσαρμοσμένα formats, οι ετικέτες και το ιστορικό δεν έρχονται. Τα αρχεία πολυμέσων δεν μετακινούνται ποτέ. Βήμα βήμα: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Τα κλειδιά και οι κωδικοί μένουν πίσω· τα γράφεις ξανά ή τα εισάγεις από αρχείο. Τα προσαρμοσμένα formats, οι ετικέτες και το ιστορικό δεν έρχονται. Τα αρχεία πολυμέσων δεν μετακινούνται ποτέ. Βήμα βήμα: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Τι δεν κάνει ακόμα
 
 - **Λήψη από μόνο του.** Το HolyArrs συνδέεται με το qBittorrent, το SABnzbd και τα υπόλοιπα. Δεν τα αντικαθιστά.
-- **Λειτουργίες AI ή MCP.** Όχι στο 1.0.
 - **Εφαρμογές για κινητό και τηλεόραση.** Δεν έχουν φτιαχτεί. Η διαδικτυακή εφαρμογή δουλεύει σε κινητό.
 - **Η μουσική στο Explore** είναι ακόμα υπό κατασκευή.
 
@@ -213,6 +213,8 @@ docker compose up -d
 
 Έχεις NAS; Δες [Unraid, Synology και άλλες συσκευές NAS](https://docs.HolyArrs.com/run/platforms/).
 
+Προτιμάς εγγενές πακέτο; Ένα πειραματικό πακέτο Synology (`.spk`) συνοδεύει κάθε [έκδοση](https://github.com/HolyArrs/HolyArrs/releases). Δες [Πακέτο Synology](../../docs/run/synology.md).
+
 ## Tags εκδόσεων
 
 Οι images βρίσκονται στο Docker Hub ως [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs).
@@ -220,7 +222,7 @@ docker compose up -d
 | Tag | Χρησιμοποίησέ το για |
 | :----: | --- |
 | `latest` | Την πιο πρόσφατη έκδοση. |
-| `1.1.0` | Μία συγκεκριμένη έκδοση. Δεν αλλάζει ποτέ. |
+| `1.1.1` | Μία συγκεκριμένη έκδοση. Δεν αλλάζει ποτέ. |
 
 ## Χρήση
 
@@ -415,7 +417,7 @@ docker compose up -d
 
 ## Κράτα το ζωντανό
 
-Το HolyArrs είναι δωρεάν, αλλά δεν είναι δωρεάν να λειτουργεί. Κάθε εγκατάσταση μιλά με έναν διακομιστή μεταδεδομένων που πληρώνω κάθε μήνα. Οι χορηγοί τον καλύπτουν και αγοράζουν περισσότερες ώρες για όσα ψηφίζεις.
+Το HolyArrs είναι δωρεάν, αλλά δεν είναι δωρεάν να λειτουργεί. Από προεπιλογή, κάθε εγκατάσταση μιλά με έναν διακομιστή μεταδεδομένων που πληρώνω κάθε μήνα. Οι χορηγοί τον καλύπτουν και αγοράζουν περισσότερες ώρες για όσα ψηφίζεις.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Χορηγία στο HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Ψήφισε στον οδικό χάρτη" /></picture></a></p>
 

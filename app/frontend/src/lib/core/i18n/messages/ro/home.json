@@ -271,5 +271,8 @@
 	"home.noSaveFolder": "nu are dosar de salvare",
 	"home.noSaveFolderMany": "nu au dosar de salvare",
 	"home.off": "Oprit",
-	"home.sourcesOff": "Oprit în Module"
+	"home.sourcesOff": "Oprit în Module",
+	"home.noneForSources": "lipsește pentru ce găsesc sursele tale",
+	"home.addedTwice": "este adăugat de două ori",
+	"home.addedTwiceMany": "sunt adăugate de două ori"
 }

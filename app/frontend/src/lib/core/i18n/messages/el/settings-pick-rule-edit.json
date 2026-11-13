@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} χαρακτηριστικά βαθμολογήθηκαν",
 	"settings.pickRuleEdit.trashResult": "{n} χαρακτηριστικά βαθμολογήθηκαν · {added} νέα · {updated} ενημερώθηκαν",
 	"settings.pickRuleEdit.trashLeftOut": "{n} εξαιρέθηκαν",
-	"settings.pickRuleEdit.trashTests": "ελέγχει {kinds}"
+	"settings.pickRuleEdit.trashTests": "ελέγχει {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Πηγές",
+	"settings.pickRuleEdit.sourcesDesc": "Αναζήτηση μόνο στις Πηγές που μοιράζονται μία από αυτές τις ετικέτες. Άφησέ το κενό για αναζήτηση σε κάθε Πηγή.",
+	"settings.pickRuleEdit.tags": "Ετικέτες"
 }

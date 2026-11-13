@@ -166,6 +166,13 @@
 	"library.import.followHint": "Prikaži ih u mom kalendaru.",
 	"library.import.adoptOne": "Usvoji 1 ({word})",
 	"library.import.adoptMany": "Usvoji {n} ({words})",
+	"library.import.searchFolders": "Pretraži mape",
+	"library.import.folderCountOne": "1 mapa",
+	"library.import.folderCountMany": "Mapa: {n}",
+	"library.import.titleAndFolder": "Naslov i mapa",
+	"library.import.matchFor": "Podudaranje za {folder}",
+	"library.import.seeLarge": "Pogledaj plakat za {name} u velikom",
+	"library.import.noneMatch": "Nijedna mapa ne odgovara.",
 	"library.report.keep.one": "{n} naslov drži se ažurnim",
 	"library.report.keep.many": "Naslova koji se drže ažurnima: {n}",
 	"library.report.keep.partOne": "{ok} od {total} naslova drži se ažurnim",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Prvo čitanje obavlja se u roku od 30 minuta.",
 	"library.stats.watchedHelp": "Iz povijesti reprodukcije u Plexu, Jellyfinu i Embyju. Plex broji samo reprodukcije, pa se naslovi ručno označeni kao gledani ne prikazuju.",
 	"library.stats.lastRead": "Zadnje čitanje {ago}.",
-	"library.stats.noMatch": "Zadnje čitanje {ago}. Ništa od gledanog još se ne podudara s vašom Bibliotekom.",
+	"library.stats.noMatch": "Povijest gledanja provjerena {ago}. Ništa od gledanog još se ne podudara s vašom Bibliotekom.",
 	"library.stats.notLinked": "Nije povezano",
 	"library.stats.lastWatched": "Zadnje gledano {ago}",
 	"library.stats.unit.movie.one": "{n} film",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} epizoda",
 	"library.stats.unit.episode.other": "{n} epizoda",
 	"library.stats.unit.play.one": "{n} reprodukcija",
-	"library.stats.unit.play.other": "{n} reprodukcija"
+	"library.stats.unit.play.other": "{n} reprodukcija",
+	"library.byHand.askReplaceOne": "1 datoteka zamjenjuje datoteku koja je već u Biblioteci. Stara datoteka ide u Nedavno obrisano. Uvesti?",
+	"library.byHand.askReplaceMany": "Datoteke ({n}) zamjenjuju datoteke koje su već u Biblioteci. Stare datoteke idu u Nedavno obrisano. Uvesti?"
 }

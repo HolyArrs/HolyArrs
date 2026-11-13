@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <b>Русский</b> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="LANGUAGES.md">Другие языки</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <b>Русский</b> · <a href="LANGUAGES.md">Другие языки</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0: теперь на 44 языках**, включая письмо справа налево. aria2 работает как загрузчик, а сезонные паки качаются по нескольку серий. [Что нового](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1: встроенные Knaben, TorrentsCSV, SubsPlease и IPTorrents**, без Prowlarr. Запрашивайте сериалы в 4K, а Profilarr может присылать свои форматы и профили. [Что нового](https://holyarrs.com/whats-new/)
 
 > Каждый постер, трейлер и оценка в твоём HolyArrs приходят с сервера, который я держу и оплачиваю сам, чтобы он оставался бесплатным для всех. Если HolyArrs сделал твой киновечер чуть лучше, спонсорство помогает держать свет включённым для всех нас 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> - одно приложение для самостоятельного хостинга: ваши сериалы, фильмы и музыка.<br>Листайте как в стриминговом сервисе, просите, что хотите, а остальное он сделает сам.</p>
 
-<p align="center"><b>Около 15 MB на загрузку · около 140 MB RAM в простое при 10,000 тайтлов · amd64, arm64, armv7</b><br><sub>Шесть приложений, которые он заменяет, вместе весят 718.2 MB.</sub></p>
+<p align="center"><b>Около 19.5 MB на загрузку · около 95 MiB RAM в простое на свежей установке · amd64, arm64, armv7</b><br><sub>Шесть приложений, которые он заменяет, вместе весят 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Быстрый старт</a> · <a href="#why">Зачем</a> · <a href="#what-it-does">Что он умеет</a> · <a href="#moving">Переезд с других приложений</a> · <a href="#manual">Руководство</a> · <a href="#help">Помощь</a></p>
 
@@ -105,9 +105,9 @@ docker compose up -d
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Все шесть вместе** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Примерно в 48 раз меньше. Сжатая загрузка из реестра, образы linuxserver.io, amd64, замер 2026-11-08. RAM в простое замерена при 10,000 тайтлов и 55,000 фильмов и серий.</sub>
+<sub>Примерно в 37 раз меньше. Сжатая загрузка из реестра, образы linuxserver.io, amd64, замер 2026-11-08. RAM в простое замерена при 10,000 тайтлов и 55,000 фильмов и серий. (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ docker compose up -d
 | | |
 |---|---|
 | 🍿 **Explore** | Листайте как в стриминговом сервисе. Наведите на тайтл, и запустится трейлер. |
-| 🙋 **Requests** | Весь сериал или один сезон. Вы одобряете или даёте доверенным людям пропускать очередь. |
+| 🙋 **Requests** | Весь сериал или один сезон. Вы одобряете или даёте доверенным людям пропускать очередь. Списки «буду смотреть» из Plex и Pulsarr могут становиться запросами. |
 | 🎯 **Pick rules** | Вы решаете, какой релиз победит: размер, качество, язык. |
-| 💬 **Субтитры** | На выбранных вами языках, хранятся рядом с файлом. Поиск в интернете появится после 1.0. |
+| 💬 **Субтитры** | На выбранных вами языках, находятся на сайтах субтитров и хранятся рядом с файлом. |
 | 📅 **Calendar** | Что выходит дальше из всего, за чем вы следите. |
-| 🚚 **Переезд настроек** | Из Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent и SABnzbd. Сначала пробный запуск, отменить можно потом. |
-| 🔌 **API старых приложений** | Prowlarr сможет и дальше отправлять Sources в HolyArrs, когда вы это включите. |
-| 🗝️ **API-ключи не нужны** | Тайтлы, обложки и чарты приходят с сервера метаданных HolyArrs. |
+| 🔔 **Alerts** | Discord, почта, Telegram, ntfy, Gotify, Pushover или webhook. |
+| 🚚 **Импорт настроек** | Из Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent и SABnzbd. Выберите, что перенести, отменить можно потом. |
+| 🔌 **API старых приложений** | Seerr, Prowlarr, Bazarr, Unpackerr и Homepage продолжают работать, когда вы это включите. |
+| 🗝️ **API-ключи не нужны** | Тайтлы, обложки и чарты приходят с сервера метаданных HolyArrs. Свои ключи или свой сервер тоже подойдут. |
 | 🔒 **Зашифрованные ключи** | Сохранённые пароли и ключи закрыты мастер-ключом, который лежит в вашей папке config. |
-| 🪶 **Крошечный** | Образ около 15 MB, внутри только HolyArrs. |
+| 🪶 **Крошечный** | Образ около 19.5 MB, внутри только HolyArrs. |
 
 <details>
 <summary><b>Посмотреть каждую страницу в движении</b></summary>
@@ -148,18 +149,18 @@ docker compose up -d
 
 ## 🤝 Он работает с тем, что у вас уже есть
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Загрузчики: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Медиасерверы: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Загрузчики: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Медиасерверы: Plex, Jellyfin, Emby." /></picture>
 
 - **Загрузчики:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Медиасерверы:** Plex, Jellyfin, Emby
 - **Sources:** любой индексер Torznab или Newznab, а также Prowlarr или Jackett
-- **Переносит настройки из:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
+- **Импортирует настройки из:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
 
 <a id="moving"></a>
 
 ## 🚚 Возьмите старые настройки с собой
 
-Откройте **Settings > Move from other apps**, добавьте адрес и API-ключ каждого старого приложения (или zip с бэкапом), выберите, что переносить, запустите **Try it**, затем **Move**. Позже перенос можно отменить.
+Откройте **Settings > Import from other apps**, добавьте адрес и API-ключ каждого старого приложения (или zip с бэкапом), выберите, что переносить, затем выберите **Import**. Позже импорт можно отменить.
 
 | Откуда | Что переносится |
 |---|---|
@@ -171,12 +172,11 @@ docker compose up -d
 
 HolyArrs только читает ваши старые приложения и ничего в них не меняет, так что оба можно держать рядом, пока не убедитесь, что ему можно доверять.
 
-Ключи и пароли не переносятся: вы вводите их заново или импортируете из файла. Пользовательские форматы, теги и история не переносятся. Медиафайлы не двигаются никогда. По шагам: [Переезд с других приложений](https://docs.HolyArrs.com/migrate/).
+Ключи и пароли не переносятся: вы вводите их заново или импортируете из файла. Пользовательские форматы, теги и история не переносятся. Медиафайлы не двигаются никогда. По шагам: [Импорт из других приложений](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Чего он пока не умеет
 
 - **Загружать сам.** HolyArrs подключается к qBittorrent, SABnzbd и другим. Он их не заменяет.
-- **Функции ИИ и MCP.** В 1.0 их нет.
 - **Приложения для телефона и ТВ.** Не сделаны. Веб-версия работает на телефоне.
 - **Музыка в Explore** ещё в разработке.
 
@@ -213,6 +213,8 @@ HolyArrs только читает ваши старые приложения и
 
 Используете NAS? Смотрите [Unraid, Synology и другие NAS](https://docs.HolyArrs.com/run/platforms/).
 
+Нужен нативный пакет? К каждому [релизу](https://github.com/HolyArrs/HolyArrs/releases) приложен экспериментальный пакет для Synology (`.spk`). См. [Пакет для Synology](../../docs/run/synology.md).
+
 ## Теги версий
 
 Образы лежат на Docker Hub: [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs).
@@ -220,7 +222,7 @@ HolyArrs только читает ваши старые приложения и
 | Тег | Для чего |
 | :----: | --- |
 | `latest` | Самая новая версия. |
-| `1.1.0` | Одна точная версия. Никогда не сдвигается. |
+| `1.1.1` | Одна точная версия. Никогда не сдвигается. |
 
 ## Использование
 
@@ -415,7 +417,7 @@ HolyArrs бесплатен и имеет открытый код по лице�
 
 ## Поддержать проект
 
-HolyArrs бесплатен, но его работа бесплатной не бывает. Каждая установка обращается к серверу метаданных, за который я плачу каждый месяц. Спонсоры покрывают эти расходы и добавляют часов на то, за что вы голосуете.
+HolyArrs бесплатен, но его работа бесплатной не бывает. По умолчанию каждая установка обращается к серверу метаданных, за который я плачу каждый месяц. Спонсоры покрывают эти расходы и добавляют часов на то, за что вы голосуете.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Поддержать HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Голосовать за дорожную карту" /></picture></a></p>
 

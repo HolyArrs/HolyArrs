@@ -1,6 +1,8 @@
 package downloads
 
 import (
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
+
 	"context"
 	"database/sql"
 	"errors"
@@ -80,6 +82,11 @@ type Manager struct {
 	// through the proxy with every address checked. Nil refuses such a send to
 	// qBittorrent or SABnzbd.
 	SourceTransport func(ctx context.Context, src domain.Source) (http.RoundTripper, error)
+	// SourceHeader gives headers a Source's own site needs to hand out a
+	// Release file, such as a sign-in cookie; nil or empty needs none. With
+	// one, HolyArrs fetches the file itself and sends it, so the Downloader
+	// never needs the cookie and it is never stored in a link.
+	SourceHeader func(ctx context.Context, src domain.Source) (http.Header, error)
 	// FromVault reads a Downloader's key or password from the vault.
 	FromVault func(ctx context.Context, id int64) (string, error)
 	// Sync, when set and on (downloads.sync = on), is the background reader.
@@ -97,6 +104,7 @@ type Manager struct {
 	lastSend         map[string]time.Time
 	missed           map[int64]missCount // downloads missing from their Downloader, by id
 	crawl            map[int64]crawlMark // speed windows of the crawling torrent rule, by download id
+	relinkTried      map[int64]time.Time // last look for a removed Downloader's download in the others, by download id
 	packMu           sync.Mutex          // one Widen at a time
 }
 
@@ -116,6 +124,11 @@ type releaseRefused struct{ msg string }
 // grabFailed holds each Downloader's refusal of one grab, in the order tried.
 // It is final only when every refusal was the Release's own.
 type grabFailed []error
+
+// NoDownloaderError says no Downloader takes the Release's protocol at all.
+type NoDownloaderError struct{ Protocol string }
+
+func (e *NoDownloaderError) Error() string { return sources.NoDownloader(e.Protocol) }
 
 // TagsError says no Downloader of the protocol takes the title's tags.
 type TagsError struct {
@@ -175,10 +188,12 @@ func (m *Manager) EngineFor(ctx context.Context, d domain.Downloader) (Engine, e
 	h := Client(d.URL, d.AllowLocal)
 	switch d.Adapter {
 	case "qbittorrent":
+		q := NewQbittorrentKey(d.URL, secret, h)
 		if d.Username != "" {
-			return NewQbittorrentLogin(d.URL, d.Username, secret, h), nil
+			q = NewQbittorrentLogin(d.URL, d.Username, secret, h)
 		}
-		return NewQbittorrentKey(d.URL, secret, h), nil
+		q.cats = d.Categories()
+		return q, nil
 	case "sabnzbd":
 		return NewSabnzbd(d.URL, secret, h), nil
 	case "transmission":

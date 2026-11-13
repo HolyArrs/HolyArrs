@@ -36,3 +36,17 @@ describe('problem', () => {
 		expect(problem(row({ protocol: 'torrent', tracker_problem: 'error', pack }))?.text).toBe('tracker error');
 	});
 });
+
+describe('problem words', () => {
+	it('gives every problem a message key in every language', async () => {
+		const { readdirSync, readFileSync } = await import('node:fs');
+		const { PROBLEM_KEY } = await import('./problem.ts');
+		const src = readFileSync('src/lib/downloads/problem.ts', 'utf8');
+		const texts = [...src.matchAll(/text: '([^']+)'/g)].map((m) => m[1]);
+		const dir = 'src/lib/core/i18n/messages';
+		for (const l of readdirSync(dir)) {
+			const words = JSON.parse(readFileSync(`${dir}/${l}/downloads.json`, 'utf8'));
+			for (const t of texts) expect(typeof words[PROBLEM_KEY[t]], `${l} ${t}`).toBe('string');
+		}
+	});
+});

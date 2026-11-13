@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "ให้คะแนน {n} คุณสมบัติ",
 	"settings.pickRuleEdit.trashResult": "ให้คะแนน {n} คุณสมบัติ · ใหม่ {added} · อัปเดต {updated}",
 	"settings.pickRuleEdit.trashLeftOut": "ละไว้ {n}",
-	"settings.pickRuleEdit.trashTests": "ทดสอบ {kinds}"
+	"settings.pickRuleEdit.trashTests": "ทดสอบ {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "แหล่ง",
+	"settings.pickRuleEdit.sourcesDesc": "ค้นหาเฉพาะแหล่งที่มีแท็กใดแท็กหนึ่งเหล่านี้ เว้นว่างไว้เพื่อค้นหาทุกแหล่ง",
+	"settings.pickRuleEdit.tags": "แท็ก"
 }

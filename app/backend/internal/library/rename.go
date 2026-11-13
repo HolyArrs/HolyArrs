@@ -462,5 +462,5 @@ func planRename(ctx context.Context, db Reader, ns mediafiles.NamingSettings, ti
 func (s *Service) ApplyRename(ctx context.Context, plan []RenameStep, jobID int64, by domain.Actor) (int, error) {
 	unlock := s.Store.LockFiles()
 	defer unlock()
-	return s.applyRenameLocked(ctx, plan, jobID, by)
+	return s.applyRenameLocked(ctx, plan, jobID, by, nil)
 }

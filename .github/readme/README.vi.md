@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <b>Tiếng Việt</b> · <a href="LANGUAGES.md">Ngôn ngữ khác</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">Ngôn ngữ khác</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0: nay có 44 ngôn ngữ**, kể cả viết từ phải sang trái. aria2 dùng được làm trình tải xuống, và gói mùa tải vài tập mỗi lần. [Xem có gì mới](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1: tích hợp sẵn Knaben, TorrentsCSV, SubsPlease và IPTorrents**, không cần Prowlarr. Yêu cầu phim bộ ở 4K, và Profilarr có thể gửi định dạng và hồ sơ của nó. [Xem có gì mới](https://holyarrs.com/whats-new/)
 
 > Mọi poster, trailer và điểm đánh giá trong HolyArrs của bạn đều đến từ một máy chủ do chính tôi vận hành và trả tiền, để nó luôn miễn phí cho mọi người. Nếu HolyArrs làm buổi xem phim của bạn vui hơn một chút, một lượt tài trợ sẽ giúp giữ đèn sáng cho tất cả chúng ta 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> là một ứng dụng tự lưu trữ cho phim bộ, phim lẻ và nhạc của bạn.<br>Duyệt như một ứng dụng xem phim trực tuyến, yêu cầu thứ bạn muốn, phần còn lại cứ để nó lo.</p>
 
-<p align="center"><b>Khoảng 15 MB để tải xuống · khoảng 140 MB RAM khi rảnh với 10,000 mục · amd64, arm64, armv7</b><br><sub>Sáu ứng dụng mà nó thay thế có dung lượng tải xuống tổng cộng 718.2 MB.</sub></p>
+<p align="center"><b>Khoảng 19.5 MB để tải xuống · khoảng 95 MiB RAM khi rảnh trên bản cài mới · amd64, arm64, armv7</b><br><sub>Sáu ứng dụng mà nó thay thế có dung lượng tải xuống tổng cộng 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Bắt đầu nhanh</a> · <a href="#why">Vì sao</a> · <a href="#what-it-does">Nó làm được gì</a> · <a href="#moving">Chuyển từ các ứng dụng khác</a> · <a href="#manual">Sổ tay</a> · <a href="#help">Trợ giúp</a></p>
 
@@ -105,9 +105,9 @@ Nên tôi đã xây dựng nó.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Cả sáu cộng lại** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Nhỏ hơn khoảng 48 lần. Dung lượng tải xuống đã nén từ registry, image của linuxserver.io, amd64, đo ngày 2026-11-08. RAM khi rảnh được đo với 10,000 mục và 55,000 phim lẻ và tập phim.</sub>
+<sub>Nhỏ hơn khoảng 37 lần. Dung lượng tải xuống đã nén từ registry, image của linuxserver.io, amd64, đo ngày 2026-11-08. RAM khi rảnh được đo với 10,000 mục và 55,000 phim lẻ và tập phim. (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Có người yêu cầu một mục. HolyArrs tìm trong các Nguồn của bạ
 | | |
 |---|---|
 | 🍿 **Explore** | Duyệt như một ứng dụng xem phim trực tuyến. Rê chuột lên một mục và trailer sẽ phát. |
-| 🙋 **Requests** | Cả một bộ phim bộ hoặc chỉ một mùa. Bạn duyệt, hoặc để những người đáng tin bỏ qua hàng chờ. |
+| 🙋 **Requests** | Cả một bộ phim bộ hoặc chỉ một mùa. Bạn duyệt, hoặc để những người đáng tin bỏ qua hàng chờ. Danh sách xem của Plex và Pulsarr có thể trở thành yêu cầu. |
 | 🎯 **Pick rules** | Bạn quyết định bản phát hành nào thắng: dung lượng, chất lượng, ngôn ngữ. |
-| 💬 **Phụ đề** | Theo các ngôn ngữ bạn chọn, được giữ cùng với tệp. Tìm phụ đề online sẽ có sau bản 1.0. |
+| 💬 **Phụ đề** | Theo các ngôn ngữ bạn chọn, được tìm trên các trang phụ đề và giữ cùng với tệp. |
 | 📅 **Calendar** | Những gì sắp phát sóng tiếp theo của mọi thứ bạn theo dõi. |
-| 🚚 **Mang theo thiết lập của bạn** | Từ Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent và SABnzbd. Thử trước, hoàn tác sau. |
-| 🔌 **API của ứng dụng cũ** | Prowlarr có thể tiếp tục đẩy các Nguồn sang HolyArrs khi bạn bật tính năng này. |
-| 🗝️ **Không cần khóa API** | Tên mục, ảnh bìa và bảng xếp hạng đến từ máy chủ metadata của HolyArrs. |
+| 🔔 **Alerts** | Discord, email, Telegram, ntfy, Gotify, Pushover hoặc một webhook. |
+| 🚚 **Mang theo thiết lập của bạn** | Từ Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent và SABnzbd. Chọn những gì mang sang, hoàn tác sau. |
+| 🔌 **API của ứng dụng cũ** | Seerr, Prowlarr, Bazarr, Unpackerr và Homepage vẫn chạy tiếp khi bạn bật tính năng này. |
+| 🗝️ **Không cần khóa API** | Tên mục, ảnh bìa và bảng xếp hạng đến từ máy chủ metadata của HolyArrs. Khóa hoặc máy chủ riêng của bạn cũng dùng được. |
 | 🔒 **Khóa được mã hóa** | Mật khẩu và khóa đã lưu được khóa bằng một khóa chính nằm trong thư mục cấu hình của bạn. |
-| 🪶 **Siêu nhỏ** | Một image khoảng 15 MB, bên trong chỉ có HolyArrs. |
+| 🪶 **Siêu nhỏ** | Một image khoảng 19.5 MB, bên trong chỉ có HolyArrs. |
 
 <details>
 <summary><b>Xem mọi trang khi chuyển động</b></summary>
@@ -148,9 +149,9 @@ Có người yêu cầu một mục. HolyArrs tìm trong các Nguồn của bạ
 
 ## 🤝 Nó hoạt động cùng những gì bạn đang chạy
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Trình tải xuống: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Máy chủ media: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Trình tải xuống: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Máy chủ media: Plex, Jellyfin, Emby." /></picture>
 
-- **Trình tải xuống:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Trình tải xuống:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Máy chủ media:** Plex, Jellyfin, Emby
 - **Nguồn:** mọi indexer Torznab hoặc Newznab, hoặc Prowlarr hoặc Jackett
 - **Nhập thiết lập từ:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -159,7 +160,7 @@ Có người yêu cầu một mục. HolyArrs tìm trong các Nguồn của bạ
 
 ## 🚚 Mang thiết lập cũ của bạn theo
 
-Mở **Settings > Move from other apps**, thêm địa chỉ và khóa API của từng ứng dụng cũ (hoặc một tệp zip sao lưu), chọn những gì sẽ được đưa sang, chạy **Try it**, rồi **Move**. Bạn có thể hoàn tác một lần chuyển sau đó.
+Mở **Settings > Import from other apps**, thêm địa chỉ và khóa API của từng ứng dụng cũ (hoặc một tệp zip sao lưu), chọn những gì sẽ được đưa sang, rồi chọn **Import**. Bạn có thể hoàn tác một lần nhập sau đó.
 
 | Từ | Những gì được đưa sang |
 |---|---|
@@ -171,12 +172,11 @@ Mở **Settings > Move from other apps**, thêm địa chỉ và khóa API của
 
 HolyArrs chỉ đọc các ứng dụng cũ của bạn và không thay đổi gì trong đó, nên bạn có thể chạy cả hai song song cho đến khi tin tưởng nó.
 
-Khóa và mật khẩu được để lại; bạn nhập lại hoặc nhập từ một tệp. Định dạng tùy chỉnh, thẻ và lịch sử không được đưa sang. Tệp media không bao giờ bị di chuyển. Từng bước: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Khóa và mật khẩu được để lại; bạn nhập lại hoặc nhập từ một tệp. Định dạng tùy chỉnh, thẻ và lịch sử không được đưa sang. Tệp media không bao giờ bị di chuyển. Từng bước: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Những gì nó chưa làm được
 
 - **Tự tải xuống.** HolyArrs kết nối với qBittorrent, SABnzbd và các trình khác. Nó không thay thế chúng.
-- **Tính năng AI hoặc MCP.** Không có trong 1.0.
 - **Ứng dụng điện thoại và TV.** Chưa xây dựng. Ứng dụng web chạy được trên điện thoại.
 - **Nhạc trong Explore** vẫn đang được xây dựng.
 
@@ -213,6 +213,8 @@ Khi pull `holyarrs/holyarrs:latest`, bạn nhận được image phù hợp vớ
 
 Dùng NAS? Xem [Unraid, Synology và các thiết bị NAS khác](https://docs.HolyArrs.com/run/platforms/).
 
+Muốn một gói cài đặt gốc? Mỗi [bản phát hành](https://github.com/HolyArrs/HolyArrs/releases) có kèm một gói Synology thử nghiệm (`.spk`). Xem [Gói Synology](../../docs/run/synology.md).
+
 ## Tag phiên bản
 
 Các image nằm trên Docker Hub với tên [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs).
@@ -220,7 +222,7 @@ Các image nằm trên Docker Hub với tên [`holyarrs/holyarrs`](https://hub.d
 | Tag | Dùng cho |
 | :----: | --- |
 | `latest` | Phiên bản mới nhất. |
-| `1.1.0` | Một phiên bản chính xác. Nó không bao giờ thay đổi. |
+| `1.1.1` | Một phiên bản chính xác. Nó không bao giờ thay đổi. |
 
 ## Cách dùng
 
@@ -415,7 +417,7 @@ Muốn tích hợp nó vào một sản phẩm đóng? Gửi email đến suppor
 
 ## Giúp dự án tiếp tục
 
-HolyArrs miễn phí, nhưng vận hành nó thì không. Mỗi bản cài đặt đều trao đổi với một máy chủ metadata mà tôi trả tiền hằng tháng. Các nhà tài trợ lo khoản đó, và mua thêm giờ làm cho những thứ bạn bỏ phiếu.
+HolyArrs miễn phí, nhưng vận hành nó thì không. Theo mặc định, mỗi bản cài đặt đều trao đổi với một máy chủ metadata mà tôi trả tiền hằng tháng. Các nhà tài trợ lo khoản đó, và mua thêm giờ làm cho những thứ bạn bỏ phiếu.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Tài trợ HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Bỏ phiếu trên lộ trình" /></picture></a></p>
 

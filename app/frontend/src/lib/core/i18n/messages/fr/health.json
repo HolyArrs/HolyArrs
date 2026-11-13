@@ -12,7 +12,7 @@
 	"health.check.freeSpace": "Espace libre",
 	"health.check.update": "Mise à jour",
 	"health.check.waiting": "Téléchargements en attente de fichiers",
-	"health.check.clearWaiting": "Téléchargements en attente de nettoyage",
+	"health.check.clearWaiting": "Téléchargements importés encore dans un client de téléchargement",
 	"health.check.saveFolder": "Dossier d'enregistrement de",
 	"health.check.saveFolderWhy": "{app} n'a pas de dossier d'enregistrement, donc HolyArrs ne peut pas importer ses téléchargements terminés. Ajoutez une paire de chemins dans Paramètres › Clients de téléchargement.",
 	"health.day.ahead": "{count} à venir",
@@ -88,7 +88,7 @@
 	"health.kind.trailers": "Lecteur de bandes-annonces",
 	"health.kind.update": "Mise à jour",
 	"health.kind.waitingDownloads": "Téléchargements en attente de fichiers",
-	"health.kind.clearWaiting": "Téléchargements en attente de nettoyage",
+	"health.kind.clearWaiting": "Téléchargements importés encore dans un client de téléchargement",
 	"health.kind.saveFolder": "Dossier d'enregistrement du client de téléchargement",
 	"health.link.downloader": "Client de téléchargement",
 	"health.link.mediaServer": "Serveur multimédia",
@@ -264,5 +264,12 @@
 	"health.word.broken": "Cassé",
 	"health.word.notSent": "Pas encore envoyé",
 	"health.word.notSynced": "Pas encore synchronisé",
-	"health.word.working": "Fonctionne"
+	"health.word.working": "Fonctionne",
+	"health.check.usenetDl": "Client Usenet",
+	"health.check.torrentDl": "Client torrent",
+	"health.check.noUsenetDl": "Vos sources trouvent des téléchargements Usenet, mais aucun client de téléchargement Usenet n'est configuré, donc aucun ne peut être envoyé. Ajoutez-en un dans Paramètres › Clients de téléchargement.",
+	"health.check.noTorrentDl": "Vos sources trouvent des téléchargements torrent, mais aucun client de téléchargement torrent n'est configuré, donc aucun ne peut être envoyé. Ajoutez-en un dans Paramètres › Clients de téléchargement.",
+	"health.check.sameDownloader": "Ajouté deux fois :",
+	"health.check.sameDownloaderWhy": "{app} atteint la même application de téléchargement qu’un autre client, ses téléchargements peuvent donc apparaître deux fois. Retirez-en un dans Réglages › Clients de téléchargement.",
+	"health.kind.sameDownloader": "Client de téléchargement ajouté deux fois"
 }

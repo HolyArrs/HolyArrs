@@ -12,7 +12,7 @@
 	"health.check.freeSpace": "Свободное место",
 	"health.check.update": "Обновление",
 	"health.check.waiting": "Загрузки ждут файлы",
-	"health.check.clearWaiting": "Загрузки ждут очистки",
+	"health.check.clearWaiting": "Импортированные загрузки всё ещё в загрузчике",
 	"health.check.saveFolder": "Папка сохранения для",
 	"health.check.saveFolderWhy": "У {app} не задана папка сохранения, поэтому HolyArrs не может импортировать готовые загрузки. Добавьте пару путей в Настройки › Загрузчики.",
 	"health.day.ahead": "Впереди: {count}",
@@ -88,7 +88,7 @@
 	"health.kind.trailers": "Чтение трейлеров",
 	"health.kind.update": "Обновление",
 	"health.kind.waitingDownloads": "Загрузки ждут файлы",
-	"health.kind.clearWaiting": "Загрузки ждут очистки",
+	"health.kind.clearWaiting": "Импортированные загрузки всё ещё в загрузчике",
 	"health.kind.saveFolder": "Папка сохранения загрузчика",
 	"health.link.downloader": "Загрузчик",
 	"health.link.mediaServer": "Медиасервер",
@@ -264,5 +264,12 @@
 	"health.word.broken": "Сломано",
 	"health.word.notSent": "Ещё не отправлено",
 	"health.word.notSynced": "Ещё не синхронизировано",
-	"health.word.working": "Работает"
+	"health.word.working": "Работает",
+	"health.check.usenetDl": "Загрузчик Usenet",
+	"health.check.torrentDl": "Торрент-загрузчик",
+	"health.check.noUsenetDl": "Ваши источники находят загрузки из Usenet, но не настроен ни один загрузчик Usenet, поэтому ничего нельзя отправить. Добавьте его в Настройки › Загрузчики.",
+	"health.check.noTorrentDl": "Ваши источники находят торренты, но не настроен ни один торрент-загрузчик, поэтому ничего нельзя отправить. Добавьте его в Настройки › Загрузчики.",
+	"health.check.sameDownloader": "Добавлен дважды:",
+	"health.check.sameDownloaderWhy": "{app} ведёт к тому же приложению загрузки, что и другой загрузчик, поэтому его загрузки могут показываться дважды. Удалите один в Настройки › Загрузчики.",
+	"health.kind.sameDownloader": "Загрузчик добавлен дважды"
 }

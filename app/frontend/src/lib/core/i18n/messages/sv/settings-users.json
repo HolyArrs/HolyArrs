@@ -100,5 +100,6 @@
 	"settings.users.note": "Anteckning till dig själv",
 	"settings.users.noteExample": "t.ex. Mamma",
 	"settings.users.days": "Dagar länken gäller",
-	"settings.users.makeInvite": "Skapa en inbjudningslänk"
+	"settings.users.makeInvite": "Skapa en inbjudningslänk",
+	"settings.users.permAuto4k": "4K-förfrågningar godkänns utan att vänta"
 }

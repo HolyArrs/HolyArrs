@@ -1,6 +1,6 @@
 import { type MenuItem } from '#lib/ui/Menu.svelte';
 import { ShowVersions } from '#lib/shows/index.ts';
-import { qualityBadges } from '#lib/mediafiles/index.ts';
+import { airedEpisodes, qualityBadges } from '#lib/mediafiles/index.ts';
 import { MovieVersions } from '#lib/movies/index.ts';
 import { replaceState } from '$app/navigation';
 import { page } from '$app/state';
@@ -75,8 +75,8 @@ export function createOwnedTitle() {
 				const sh = o.show;
 				if ((sh.downloading ?? 0) > 0) return { kind: 'downloading', label: sh.downloading === 1 ? t('discover.titleOwned.downloadingEpisodeOne') : t('discover.titleOwned.downloadingEpisodeOther', { n: sh.downloading ?? 0 }) };
 				if ((sh.failed ?? 0) > 0) return { kind: 'failed', label: t('discover.titleOwned.failedCount', { n: sh.failed ?? 0 }) };
-				if (sh.episodes && sh.in_library >= sh.episodes - (sh.not_out_yet ?? 0)) return { kind: 'have', label: t('discover.titleOwned.inLibrary') };
-				return { kind: sh.in_library ? 'have' : 'missing', label: t('discover.titleOwned.episodesOf', { have: sh.in_library, total: sh.episodes }) };
+				if (sh.episodes && sh.in_library >= airedEpisodes(sh)) return { kind: 'have', label: t('discover.titleOwned.inLibrary') };
+				return { kind: sh.in_library ? 'have' : 'missing', label: t('discover.titleOwned.episodesOf', { have: sh.in_library, total: airedEpisodes(sh) }) };
 			}
 			if (ownDownload) return { kind: 'downloading', label: ownDownload.download ? t('discover.titleOwned.downloadingPercent', { percent: Math.floor(Math.min(Math.max(ownDownload.download.progress, 0), 1) * 100) }) : t('discover.titleOwned.downloading') };
 			if (ownFiles.length) return { kind: 'have', label: t('discover.titleOwned.inLibrary') };

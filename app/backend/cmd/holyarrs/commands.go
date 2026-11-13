@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -41,7 +42,25 @@ func healthcheckCmd() int {
 	}
 	// The root /healthz answers under any URL base, also one set by flag or
 	// in Settings, which the probe cannot see.
-	return healthcheck(env("HOLYARRS_HEALTH_URL", "http://127.0.0.1:"+defaultPort))
+	if u := os.Getenv("HOLYARRS_HEALTH_URL"); u != "" {
+		return healthcheck(u)
+	}
+	addr, err := envListenAddr()
+	if err != nil {
+		log.Printf("holyarrs: %v", err)
+		return 1
+	}
+	return healthcheck(healthBase(addr))
+}
+
+// healthBase is the address the health check calls for a listen address:
+// this machine when the address names no host or every host.
+func healthBase(addr string) string {
+	host, port, _ := net.SplitHostPort(addr)
+	if ip := net.ParseIP(host); host == "" || (ip != nil && ip.IsUnspecified()) {
+		host = "127.0.0.1"
+	}
+	return "http://" + net.JoinHostPort(host, port)
 }
 
 // logFolderCheck logs one line on the Library and download folders, and a

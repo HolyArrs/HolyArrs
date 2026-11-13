@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Apl AI dimatikan. Membenarkan akan menghidupkannya.",
 	"arrapi.ai.offOther": "Apl AI dimatikan. Minta pemilik menghidupkannya, kemudian cuba lagi.",
 	"arrapi.ai.allow": "Benarkan",
-	"arrapi.ai.cancel": "Batal"
+	"arrapi.ai.cancel": "Batal",
+	"arrapi.seerr.sentTitle": "Dihantar oleh apl lain",
+	"arrapi.seerr.sentHint": "Format dan profil yang dihantar oleh apl seperti Profilarr. Di sini untuk dibaca sahaja.",
+	"arrapi.seerr.sentFormat": "Format",
+	"arrapi.seerr.sentProfile": "Profil",
+	"arrapi.seerr.sentUpdated": "dikemas kini {ago}"
 }

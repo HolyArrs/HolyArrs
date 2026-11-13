@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <b>한국어</b> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="LANGUAGES.md">다른 언어</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <b>한국어</b> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">다른 언어</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0: 이제 44개 언어 지원**, 오른쪽에서 왼쪽 언어도 포함. aria2를 다운로더로 쓸 수 있고, 시즌 팩은 몇 화씩 나눠 받습니다. [새로운 기능](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease, IPTorrents 내장**, Prowlarr 없이도 됩니다. 시리즈를 4K로 요청할 수 있고, Profilarr가 형식과 프로필을 보낼 수 있습니다. [새로운 기능](https://holyarrs.com/whats-new/)
 
 > HolyArrs의 모든 포스터, 예고편, 평점은 제가 직접 운영하고 비용을 내는 서버에서 와요. 그래서 모두에게 무료로 유지돼요. HolyArrs 덕분에 영화 보는 밤이 조금 더 즐거워졌다면, 후원으로 우리 모두의 불을 계속 밝혀 주세요 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b>는 드라마, 영화, 음악을 위한 셀프 호스팅 앱 하나예요.<br>스트리밍 앱처럼 둘러보고, 원하는 걸 요청하면 나머지는 알아서 처리해요.</p>
 
-<p align="center"><b>다운로드 약 15 MB · 10,000개 타이틀 기준 유휴 RAM 약 140 MB · amd64, arm64, armv7</b><br><sub>대신하는 앱 여섯 개는 합쳐서 718.2 MB를 받아야 해요.</sub></p>
+<p align="center"><b>다운로드 약 19.5 MB · 새로 설치한 상태의 유휴 RAM 약 95 MiB · amd64, arm64, armv7</b><br><sub>대신하는 앱 여섯 개는 합쳐서 718.2 MB를 받아야 해요.</sub></p>
 
 <p align="center"><a href="#quick-start">빠른 시작</a> · <a href="#why">만든 이유</a> · <a href="#what-it-does">기능</a> · <a href="#moving">다른 앱에서 옮기기</a> · <a href="#manual">매뉴얼</a> · <a href="#help">도움말</a></p>
 
@@ -105,9 +105,9 @@ docker compose up -d
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **여섯 개 합계** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>약 48배 작아요. 압축된 레지스트리 다운로드 기준이고, linuxserver.io 이미지, amd64, 2026-11-08에 측정했어요. 유휴 RAM은 타이틀 10,000개와 영화 및 에피소드 55,000개로 측정했어요.</sub>
+<sub>약 37배 작아요. 압축된 레지스트리 다운로드 기준이고, linuxserver.io 이미지, amd64, 2026-11-08에 측정했어요. 유휴 RAM은 타이틀 10,000개와 영화 및 에피소드 55,000개로 측정했어요. (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ docker compose up -d
 | | |
 |---|---|
 | 🍿 **Explore** | 스트리밍 앱처럼 둘러보세요. 타이틀에 마우스를 올리면 예고편이 재생돼요. |
-| 🙋 **Requests** | 시리즈 전체도, 한 시즌만도 가능해요. 직접 승인하거나, 믿는 사람은 대기열을 건너뛰게 할 수 있어요. |
+| 🙋 **Requests** | 시리즈 전체도, 한 시즌만도 가능해요. 직접 승인하거나, 믿는 사람은 대기열을 건너뛰게 할 수 있어요. Plex와 Pulsarr 워치리스트가 요청이 될 수 있어요. |
 | 🎯 **Pick rules** | 어떤 릴리스를 고를지 직접 정해요. 크기, 화질, 언어로요. |
-| 💬 **자막** | 고른 언어로, 파일과 함께 보관해요. 온라인에서 찾는 기능은 1.0 이후에 나와요. |
+| 💬 **자막** | 고른 언어로 자막 사이트에서 찾아, 파일과 함께 보관해요. |
 | 📅 **Calendar** | 팔로우하는 모든 작품의 다음 방영 일정이에요. |
-| 🚚 **설정 옮기기** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd에서 옮겨 와요. 먼저 시험해 보고, 나중에 되돌릴 수 있어요. |
-| 🔌 **기존 앱용 API** | 켜 두면 Prowlarr가 계속 HolyArrs에 Sources를 보낼 수 있어요. |
-| 🗝️ **API 키 필요 없음** | 타이틀, 아트워크, 차트는 HolyArrs 메타데이터 서버에서 가져와요. |
+| 🔔 **Alerts** | Discord, 이메일, Telegram, ntfy, Gotify, Pushover 또는 webhook. |
+| 🚚 **설정 가져오기** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd에서 옮겨 와요. 옮길 항목을 고르고, 나중에 되돌릴 수 있어요. |
+| 🔌 **기존 앱용 API** | 켜 두면 Seerr, Prowlarr, Bazarr, Unpackerr, Homepage가 계속 동작해요. |
+| 🗝️ **API 키 필요 없음** | 타이틀, 아트워크, 차트는 HolyArrs 메타데이터 서버에서 가져와요. 직접 가진 키나 서버도 쓸 수 있어요. |
 | 🔒 **암호화된 키** | 저장된 비밀번호와 키는 config 폴더에 있는 마스터 키로 잠겨요. |
-| 🪶 **아주 작아요** | HolyArrs만 들어 있는 약 15 MB짜리 이미지예요. |
+| 🪶 **아주 작아요** | HolyArrs만 들어 있는 약 19.5 MB짜리 이미지예요. |
 
 <details>
 <summary><b>모든 페이지의 움직임 보기</b></summary>
@@ -148,18 +149,18 @@ docker compose up -d
 
 ## 🤝 지금 쓰는 앱과 함께 작동해요
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="다운로더: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. 미디어 서버: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="다운로더: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. 미디어 서버: Plex, Jellyfin, Emby." /></picture>
 
 - **다운로더:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **미디어 서버:** Plex, Jellyfin, Emby
 - **Sources:** Torznab이나 Newznab 인덱서, 또는 Prowlarr나 Jackett
-- **설정을 옮겨 올 수 있는 앱:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
+- **설정을 가져올 수 있는 앱:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
 
 <a id="moving"></a>
 
 ## 🚚 예전 설정을 그대로 가져가요
 
-**Settings > Move from other apps**를 열고, 기존 앱마다 주소와 API 키(또는 백업 zip)를 추가하세요. 가져올 항목을 고르고 **Try it**을 실행한 다음 **Move**를 누르면 돼요. 옮긴 뒤에도 되돌릴 수 있어요.
+**Settings > Import from other apps**를 열고, 기존 앱마다 주소와 API 키(또는 백업 zip)를 추가하세요. 가져올 항목을 고른 다음 **Import**를 누르면 돼요. 가져온 뒤에도 되돌릴 수 있어요.
 
 | 출처 | 가져오는 항목 |
 |---|---|
@@ -171,12 +172,11 @@ docker compose up -d
 
 HolyArrs는 기존 앱을 읽기만 하고 아무것도 바꾸지 않아요. 믿을 수 있을 때까지 둘을 나란히 돌려도 돼요.
 
-키와 비밀번호는 옮겨지지 않아요. 다시 입력하거나 파일에서 가져와야 해요. 커스텀 포맷, 태그, 기록도 옮겨지지 않아요. 미디어 파일은 절대 이동하지 않아요. 단계별 안내는 [Move from other apps](https://docs.HolyArrs.com/migrate/)에 있어요.
+키와 비밀번호는 옮겨지지 않아요. 다시 입력하거나 파일에서 가져와야 해요. 커스텀 포맷, 태그, 기록도 옮겨지지 않아요. 미디어 파일은 절대 이동하지 않아요. 단계별 안내는 [Import from other apps](https://docs.HolyArrs.com/migrate/)에 있어요.
 
 ## 🧭 아직 못 하는 것
 
 - **직접 다운로드.** HolyArrs는 qBittorrent, SABnzbd 등에 연결해요. 이들을 대체하지는 않아요.
-- **AI나 MCP 기능.** 1.0에는 없어요.
 - **휴대폰과 TV 앱.** 만들지 않았어요. 웹 앱은 휴대폰에서 작동해요.
 - **Explore의 음악**은 아직 만드는 중이에요.
 
@@ -213,6 +213,8 @@ HolyArrs는 기존 앱을 읽기만 하고 아무것도 바꾸지 않아요. 믿
 
 NAS를 쓰세요? [Unraid, Synology 및 기타 NAS](https://docs.HolyArrs.com/run/platforms/)를 보세요.
 
+네이티브 패키지가 좋다면, 실험용 Synology 패키지(`.spk`)가 각 [릴리스](https://github.com/HolyArrs/HolyArrs/releases)에 첨부돼 있어요. [Synology 패키지](../../docs/run/synology.md)를 참고하세요.
+
 ## 버전 태그
 
 이미지는 Docker Hub에 [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs)로 올라가 있어요.
@@ -220,7 +222,7 @@ NAS를 쓰세요? [Unraid, Synology 및 기타 NAS](https://docs.HolyArrs.com/ru
 | 태그 | 용도 |
 | :----: | --- |
 | `latest` | 최신 릴리스. |
-| `1.1.0` | 정확히 한 버전이에요. 절대 움직이지 않아요. |
+| `1.1.1` | 정확히 한 버전이에요. 절대 움직이지 않아요. |
 
 ## 사용법
 
@@ -415,7 +417,7 @@ HolyArrs는 [GNU AGPL-3.0](../../LICENSE)에 따른 무료 오픈 소스예요.
 
 ## 계속 이어가려면
 
-HolyArrs는 무료지만, 운영하는 데는 돈이 들어요. 모든 설치본이 제가 매달 비용을 내는 메타데이터 서버와 통신해요. 후원이 그 비용을 메우고, 여러분이 투표한 항목에 쓸 시간도 더 살 수 있게 해 줘요.
+HolyArrs는 무료지만, 운영하는 데는 돈이 들어요. 기본적으로 모든 설치본이 제가 매달 비용을 내는 메타데이터 서버와 통신해요. 후원이 그 비용을 메우고, 여러분이 투표한 항목에 쓸 시간도 더 살 수 있게 해 줘요.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="HolyArrs 후원하기" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="로드맵에 투표하기" /></picture></a></p>
 

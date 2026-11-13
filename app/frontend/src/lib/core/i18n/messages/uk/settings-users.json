@@ -100,5 +100,6 @@
 	"settings.users.note": "Примітка для себе",
 	"settings.users.noteExample": "напр., Мама",
 	"settings.users.days": "Днів дії посилання",
-	"settings.users.makeInvite": "Створити посилання-запрошення"
+	"settings.users.makeInvite": "Створити посилання-запрошення",
+	"settings.users.permAuto4k": "Запити в 4K схвалюються без очікування"
 }

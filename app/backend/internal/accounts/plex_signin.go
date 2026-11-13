@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -21,6 +22,9 @@ const (
 	outsideMax = 1 << 20 // bytes read from an outside answer
 	product    = "HolyArrs"
 )
+
+// errPlexServers says Plex did not list a person's servers.
+var errPlexServers = errors.New("plex did not list the servers")
 
 const (
 	pinOwner = "owner"
@@ -133,8 +137,8 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 	}
 	extID := strconv.FormatInt(user.ID, 10)
 	mayJoin := allowed(v, user.Username, user.Email)
-	if mayJoin && v.ServerID != "" {
-		// Only people who share the owner's server may join.
+	// shares says whether the person shares the owner's server.
+	shares := func() (bool, error) {
 		var res []struct {
 			ClientIdentifier string `json:"clientIdentifier"`
 			Provides         string `json:"provides"`
@@ -143,10 +147,9 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 		code, err := a.fetch(ctx, http.MethodGet, a.plexURL+"/api/v2/resources?includeHttps=1", hdr, nil, &res)
 		if err != nil || code/100 != 2 {
 			log.Printf("auth: plex resources: status %d: %v", code, err)
-			fail(w, http.StatusBadGateway, "Plex did not list your servers; try again")
-			return
+			return false, errPlexServers
 		}
-		mayJoin = slices.ContainsFunc(res, func(x struct {
+		return slices.ContainsFunc(res, func(x struct {
 			ClientIdentifier string `json:"clientIdentifier"`
 			Provides         string `json:"provides"`
 			Owned            bool   `json:"owned"`
@@ -154,9 +157,27 @@ func (a *Auth) plexFinish(w http.ResponseWriter, r *http.Request) {
 			// A server the joiner owns is their own, not a share: anyone
 			// can copy the owner's server id onto a server they run.
 			return x.ClientIdentifier == v.ServerID && !x.Owned
-		})
+		}), nil
 	}
-	id, name, err := a.linkedUser(ctx, ProviderPlex, extID, user.Username, mayJoin, user.Restricted)
+	if mayJoin && v.ServerID != "" {
+		// Only people who share the owner's server may join.
+		var err error
+		if mayJoin, err = shares(); err != nil {
+			fail(w, http.StatusBadGateway, "Plex did not list your servers; try again")
+			return
+		}
+	}
+	// An imported person's first sign-in passes the same server check; with
+	// no server picked, the join rule decides as for anyone new.
+	onServer := func() (bool, error) { return mayJoin, nil }
+	if v.ServerID != "" {
+		onServer = shares
+	}
+	id, name, err := a.linkedUser(ctx, ProviderPlex, extID, user.Username, mayJoin, user.Restricted, onServer)
+	if errors.Is(err, errPlexServers) {
+		fail(w, http.StatusBadGateway, "Plex did not list your servers; try again")
+		return
+	}
 	if err == nil {
 		a.keepPlexToken(ctx, id, extID, tok) // for their Plex watchlist
 	}
