@@ -12,7 +12,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
@@ -42,9 +41,6 @@ func (a *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("PUT /api/v1/settings/subtitles/translator", a.putTranslator)
 	m.HandleFunc("POST /api/v1/settings/subtitles/translator/test", a.testTranslator)
 	m.HandleFunc("POST /api/v1/files/{id}/subtitles/translate", a.translateSubtitle)
-	if !startup.FeatureOn(startup.SubtitleSites) {
-		return
-	}
 	m.HandleFunc("POST /api/v1/subtitles/search", a.searchSubtitles)
 	m.HandleFunc("GET /api/v1/subtitles/missing", a.missingSubtitles)
 	m.HandleFunc("POST /api/v1/subtitles/missing/search", a.searchMissingSubtitles)

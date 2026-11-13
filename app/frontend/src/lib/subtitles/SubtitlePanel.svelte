@@ -283,9 +283,9 @@
 <section class="card subs" aria-labelledby="{idp}-h" data-testid="subtitles">
 	<div class="card-head" class:bare>
 		<h2 id="{idp}-h" class="h2" class:sr-only={bare}>{label ? t('subtitles.panel.titleOf', { label }) : t('subtitles.panel.title')}</h2>
-		{#if !session.held('subtitle_sites')}<Button size="sm" icon="search" onclick={search} disabled={searching} busy={searching} data-testid="subtitle-search">
+		<Button size="sm" icon="search" onclick={search} disabled={searching} busy={searching} data-testid="subtitle-search">
 			{t('subtitles.panel.look')}
-		</Button>{/if}
+		</Button>
 	</div>
 	{#if error}
 		<p class="notice bad" role="alert">{error}</p>
@@ -353,8 +353,8 @@
 										</span>
 										{#if ours(s)}
 											<span class="row sub-actions">
-												{#if !session.held('subtitle_sites')}<Button variant="plain" size="sm" onclick={() => openSync(s)} aria-label={t('subtitles.panel.syncFor', { name: langName(s.language, langs) })} data-testid="subtitle-sync">{t('subtitles.panel.syncFix')}</Button>{/if}
-												{#if !session.held('subtitle_sites')}<Button variant="plain" size="sm" onclick={() => openTurn(s)} aria-label={t('subtitles.panel.turnDownFor', { name: langName(s.language, langs) })} data-testid="subtitle-turn-down">{t('subtitles.panel.turnDown')}</Button>{/if}
+												<Button variant="plain" size="sm" onclick={() => openSync(s)} aria-label={t('subtitles.panel.syncFor', { name: langName(s.language, langs) })} data-testid="subtitle-sync">{t('subtitles.panel.syncFix')}</Button>
+												<Button variant="plain" size="sm" onclick={() => openTurn(s)} aria-label={t('subtitles.panel.turnDownFor', { name: langName(s.language, langs) })} data-testid="subtitle-turn-down">{t('subtitles.panel.turnDown')}</Button>
 											</span>
 										{/if}
 									</div>
@@ -443,9 +443,9 @@
 						</ul>
 					{/if}
 					<div class="row file-actions">
-						{#if !session.held('subtitle_sites')}<Button size="sm" onclick={() => (choosing === f.file_id ? (choosing = 0) : openChoose(f.file_id))} aria-expanded={choosing === f.file_id} data-testid="subtitle-choose">
+						<Button size="sm" onclick={() => (choosing === f.file_id ? (choosing = 0) : openChoose(f.file_id))} aria-expanded={choosing === f.file_id} data-testid="subtitle-choose">
 							{t('subtitles.panel.chooseOne')}
-						</Button>{/if}
+						</Button>
 					</div>
 					{#if choosing === f.file_id}
 						<div class="choices" aria-live="polite" data-testid="subtitle-choices">
