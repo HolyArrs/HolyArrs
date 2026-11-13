@@ -509,11 +509,7 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 					WHERE mm.what = 'ask_claim' AND mm.row_id = asks.id AND mv.state != 'undone' AND mm.move_id != ?)`,
 				"another person joined this ask or its ownership changed since, so it stays", baseline.UserID, baseline.AskedAt, baseline.UserID, baseline.UserFingerprint, x.move)
 		case "user":
-			// One who came over turned on with their Plex, Jellyfin or Emby
-			// sign-in goes too while they have no session and no requests.
-			return del(` AND password_hash = '' AND role != 'owner' AND NOT EXISTS (SELECT 1 FROM sessions WHERE user_id = users.id)
-				AND (state = 'disabled' OR state = 'active' AND EXISTS (SELECT 1 FROM user_links WHERE user_id = users.id)
-					AND NOT EXISTS (SELECT 1 FROM ask_people WHERE user_id = users.id))`,
+			return del(" AND state = 'disabled' AND password_hash = '' AND role != 'owner' AND NOT EXISTS (SELECT 1 FROM sessions WHERE user_id = users.id)",
 				"this person was turned on since, so they stay")
 		case "alert":
 			return del(" AND url_secret_id IS NULL AND password_secret_id IS NULL", "you typed its secret since, so it stays; remove it under Settings > Alerts")

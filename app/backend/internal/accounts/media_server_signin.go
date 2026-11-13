@@ -26,7 +26,7 @@ func (a *Auth) mediaServerLogin(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, name, err := a.linkedUser(r.Context(), kind, got.ID, got.Name, allowed(v, got.Name), got.Limited)
+	id, name, err := a.linkedUser(r.Context(), kind, got.ID, got.Name, allowed(v, got.Name), got.Limited, nil)
 	a.outsideDone(w, r, kind, id, name, err, pl)
 }
 

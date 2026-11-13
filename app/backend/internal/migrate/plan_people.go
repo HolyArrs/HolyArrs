@@ -101,7 +101,7 @@ func (b *builder) people(s *Snapshot) {
 		detail := "Comes over turned off as a " + pp.Role + ". Invite them to sign in; their password stays behind."
 		needs := "an invite"
 		if way := signInWay(pp.SignIn); way != "" {
-			detail = "Comes over turned on as a " + pp.Role + ". They sign in with their " + way + " account; no password comes over."
+			detail = "Comes over as a " + pp.Role + ", linked to their " + way + " account. Their first " + way + " sign-in turns them on; no password comes over."
 			needs = ""
 		}
 		why := ""

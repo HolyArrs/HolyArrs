@@ -490,7 +490,7 @@ func next(rep *Report) []string {
 		out = append(out, "People came over turned off, as members (admin or owner only where you confirmed it): invite them from Settings > Users and roles.")
 	}
 	if linked {
-		out = append(out, "People who signed in to the old app with Plex, Jellyfin or Emby came over turned on: they sign in that way once it is on under Settings > Sign-in and security.")
+		out = append(out, "People who signed in to the old app with Plex, Jellyfin or Emby turn on at their first sign-in that way, once it is on under Settings > Sign-in and security.")
 	}
 	if same {
 		out = append(out, "Some people need a choice: pick Same person or Leave out for each, then try and import again.")

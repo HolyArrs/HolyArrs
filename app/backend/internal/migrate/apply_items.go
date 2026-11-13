@@ -296,12 +296,13 @@ func (r *run) person(it Item) (string, string) {
 	if r.dry {
 		r.people[it.Key] = -1
 		if way != "" {
-			return ResCreate, "comes over turned on as a " + pp.Role + "; signs in with " + way
+			return ResCreate, "comes over as a " + pp.Role + "; turns on at their first " + way + " sign-in"
 		}
 		return ResCreate, "comes over turned off as a " + pp.Role + " until you invite them"
 	}
 	perms, _ := json.Marshal(pp.Perms)
-	// Made turned off; the sign-in link, when there is one, turns them on.
+	// Made turned off; with a sign-in link, their first sign-in through it
+	// turns them on after that sign-in's checks (accounts.LinkImported).
 	u := domain.User{Name: it.Name, Role: pp.Role, PasswordHash: "", State: "disabled", Perms: string(perms)}
 	var id int64
 	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
@@ -314,7 +315,7 @@ func (r *run) person(it Item) (string, string) {
 			return err
 		}
 		if way != "" {
-			if _, _, err = accounts.LinkImported(r.ctx, tx, id, pp.SignIn, pp.SignInID, pp.SignInName, time.Now(), r.by); err != nil {
+			if _, _, err = accounts.LinkImported(r.ctx, tx, id, pp.SignIn, pp.SignInID, pp.SignInName, time.Now()); err != nil {
 				return err
 			}
 		}
@@ -324,15 +325,15 @@ func (r *run) person(it Item) (string, string) {
 		r.people[it.Key] = id
 	}
 	if way != "" {
-		return result(err, ResCreated, "came over turned on as a "+pp.Role+"; signs in with "+way)
+		return result(err, ResCreated, "came over as a "+pp.Role+"; turns on at their first "+way+" sign-in")
 	}
 	return result(err, ResCreated, "came over turned off as a "+pp.Role+" until you invite them")
 }
 
 // keepSignIn gives a person an earlier import made the Plex, Jellyfin or
 // Emby sign-in they had in the old app, when they have none yet: imports
-// before this kept it back. A person still turned off with no password is
-// turned on with it. Their requests stay as they are.
+// before this kept it back. Their state and requests stay as they are: a
+// person nobody changed since the import turns on at that first sign-in.
 func (r *run) keepSignIn(it Item, id int64) (string, string) {
 	pp := it.Person
 	way := signInWay(pp.SignIn)
@@ -349,7 +350,7 @@ func (r *run) keepSignIn(it Item, id int64) (string, string) {
 	var how string
 	err = r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
 		var err error
-		how, _, err = accounts.LinkImported(r.ctx, tx, id, pp.SignIn, pp.SignInID, pp.SignInName, time.Now(), r.by)
+		how, _, err = accounts.LinkImported(r.ctx, tx, id, pp.SignIn, pp.SignInID, pp.SignInName, time.Now())
 		return err
 	})
 	if err == nil && how != accounts.LinkAdded {

@@ -311,11 +311,11 @@ func LinkedTo(ctx context.Context, q database.Querier, provider, extID string) (
 
 // LinkImported links an outside account to a person an import made, the
 // way a sign-in with it links it, unless the account is linked already or
-// the person has another account of that kind. A person who gets the link
-// now, has no password and is still turned off is turned on: that sign-in
-// is then their only way in. It returns how the account was left and the
-// person it is linked to.
-func LinkImported(ctx context.Context, tx *sql.Tx, userID int64, provider, extID, extName string, at time.Time, by database.Actor) (string, int64, error) {
+// the person has another account of that kind. It never turns anyone on:
+// the person's first sign-in with that account does, after its checks
+// (waitsForSignIn). It returns how the account was left and the person it
+// is linked to.
+func LinkImported(ctx context.Context, tx *sql.Tx, userID int64, provider, extID, extName string, at time.Time) (string, int64, error) {
 	other, _, err := LinkedTo(ctx, tx, provider, extID)
 	switch {
 	case err == nil && other == userID:
@@ -329,14 +329,37 @@ func LinkImported(ctx context.Context, tx *sql.Tx, userID int64, provider, extID
 	if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM user_links WHERE user_id = ? AND provider = ?", userID, provider).Scan(&n); err != nil || n > 0 {
 		return LinkTaken, userID, err
 	}
-	now := database.FormatTime(at)
-	if err := insertUserLink(ctx, tx, userID, provider, extID, truncate(extName, 200), now); err != nil {
+	if err := insertUserLink(ctx, tx, userID, provider, extID, truncate(extName, 200), database.FormatTime(at)); err != nil {
 		return "", 0, err
 	}
+	return LinkAdded, userID, nil
+}
+
+// waitsForSignIn says a turned-off person is one an import made and nobody
+// has changed since: no password, never updated after it was made, and
+// linked to an outside account. Only such a person is turned on by their
+// first sign-in; one the owner turned off, or changed in any way, is not.
+func waitsForSignIn(ctx context.Context, q conn, userID int64) (bool, error) {
+	var n int
+	err := q.QueryRowContext(ctx, `SELECT count(*) FROM users u WHERE u.id = ? AND u.state = 'disabled' AND u.password_hash = ''
+		AND u.role != 'owner' AND u.updated_at = u.created_at AND EXISTS (SELECT 1 FROM user_links WHERE user_id = u.id)`, userID).Scan(&n)
+	return n > 0, err
+}
+
+// turnOnImported turns on a person waitsForSignIn found, with Kid limits
+// when kidPerms is set; false when they were changed in between.
+func turnOnImported(ctx context.Context, q conn, userID int64, kidPerms, now string, by database.Actor) (bool, error) {
 	who, _ := json.Marshal(by)
-	_, err = tx.ExecContext(ctx, `UPDATE users SET state = 'active', updated_at = ?, updated_by = ?
-		WHERE id = ? AND state = 'disabled' AND password_hash = '' AND role != 'owner'`, now, string(who), userID)
-	return LinkAdded, userID, err
+	res, err := q.ExecContext(ctx, `UPDATE users SET state = 'active',
+			role = CASE WHEN ? != '' THEN 'member' ELSE role END, perms = CASE WHEN ? != '' THEN ? ELSE perms END,
+			max_rating = CASE WHEN ? != '' THEN 'PG' ELSE max_rating END, updated_at = ?, updated_by = ?
+		WHERE id = ? AND state = 'disabled' AND password_hash = '' AND role != 'owner' AND updated_at = created_at`,
+		kidPerms, kidPerms, kidPerms, kidPerms, now, string(who), userID)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n == 1, err
 }
 
 // LinkedPerson is the person a media server account is linked to, and the

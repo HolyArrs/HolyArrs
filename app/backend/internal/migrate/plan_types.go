@@ -322,7 +322,8 @@ type PersonPlan struct {
 	Choice string `json:"choice,omitempty"`
 	// SignIn is plex, jellyfin or emby when the person signed in to the old
 	// app that way: they come over linked to that account (SignInID, named
-	// SignInName there) and turned on, with no password.
+	// SignInName there), with no password, and turn on at their first sign-in
+	// with it once that sign-in's checks pass.
 	SignIn     string `json:"sign_in,omitempty"`
 	SignInID   string `json:"sign_in_id,omitempty"`
 	SignInName string `json:"sign_in_name,omitempty"`
