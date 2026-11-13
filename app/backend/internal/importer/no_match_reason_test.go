@@ -7,7 +7,7 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
-// #312: the reason says what happened and what to do, with no "import plan".
+// The no-match reason says what happened and what to do, with no "import plan".
 func TestNoMatchReasonSaysWhatToDo(t *testing.T) {
 	im := &Importer{SavePath: "/data"}
 	files := []domain.SeenFile{{Name: "x.mkv"}}

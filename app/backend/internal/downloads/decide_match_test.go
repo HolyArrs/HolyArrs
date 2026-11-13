@@ -9,7 +9,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// #312: a download where nothing matched gives the folder Import files by
+// A download where nothing matched gives the folder Import files by
 // hand opens with, and its reason still sorts as an import problem.
 func TestDecisionGivesTheDownloadFolder(t *testing.T) {
 	t.Parallel()
