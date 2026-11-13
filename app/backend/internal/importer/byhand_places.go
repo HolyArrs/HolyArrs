@@ -126,6 +126,9 @@ type ByHandPlaces struct {
 	Library     []string `json:"library_folders"`
 	Downloaders []string `json:"downloader_folders"`
 	Extra       []string `json:"extra_folders"`
+	// Downloads are the own folders (or one loose file) of finished downloads
+	// HolyArrs sent: each may be read, never the save folder around it.
+	Downloads []string `json:"-"`
 }
 
 func (ps ByHandPlaces) all() []string {
@@ -143,7 +146,7 @@ func (ps ByHandPlaces) all() []string {
 }
 
 func (ps ByHandPlaces) within(p string) string {
-	for _, root := range ps.all() {
+	for _, root := range append(ps.all(), ps.Downloads...) {
 		if !filepath.IsAbs(root) || strings.HasPrefix(filepath.VolumeName(root), `\\`) {
 			continue
 		}
@@ -225,9 +228,24 @@ func (im *Importer) byHandPlaces(ctx context.Context, db database.Lister, folder
 		}
 	}
 	add(im.SavePath)
+	byID := map[int64]domain.Downloader{}
 	for _, d := range dls {
+		byID[d.ID] = d
 		for _, m := range d.PathMap {
 			add(m.Ours)
+		}
+	}
+	// Import files by hand on a download HolyArrs sent opens its own folder,
+	// which may sit in a save folder HolyArrs knows only from the Downloader.
+	done, err := database.Select[domain.Download](ctx, db, "downloads", "state IN ('finished', 'seeding') AND release_id IS NOT NULL")
+	if err != nil {
+		return ps, err
+	}
+	for _, d := range done {
+		if dr, ok := byID[d.DownloaderID]; ok {
+			if p := im.downloadContent(d, dr); p != "" {
+				ps.Downloads = append(ps.Downloads, p)
+			}
 		}
 	}
 	ps.Extra, err = ReadImportFolders(ctx, db)

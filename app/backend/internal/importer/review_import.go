@@ -59,8 +59,8 @@ func (im *Importer) ReviewFile(ctx context.Context, downloadID int64) string {
 }
 
 // ReviewFolder returns a finished download's own folder as HolyArrs sees it
-// (its one top folder, or the save folder when its files sit loose), for
-// Review's Match files by hand; "" when it can't be read.
+// (its one top folder, or its one file when it holds a single loose file),
+// for Review's Match files by hand; "" when it can't be read.
 func (im *Importer) ReviewFolder(ctx context.Context, downloadID int64) string {
 	db := im.Store.Read()
 	var d domain.Download
@@ -68,31 +68,33 @@ func (im *Importer) ReviewFolder(ctx context.Context, downloadID int64) string {
 		return ""
 	}
 	var dr domain.Downloader
-	if database.Get(ctx, db, "downloaders", d.DownloaderID, &dr) != nil {
+	if database.Get(ctx, db, "downloaders", d.DownloaderID, &dr) != nil || dr.Removed {
 		return ""
 	}
+	return im.downloadContent(d, dr)
+}
+
+// downloadContent is the own folder (or one loose file) of a download
+// HolyArrs sent, after path pairs; "" for a download it did not send, files
+// in more than one place, a missing path, a whole disk or the data folder.
+func (im *Importer) downloadContent(d domain.Download, dr domain.Downloader) string {
 	root, ok := domain.MapPath(d.SavePath, dr.PathMap)
-	if !ok || strings.TrimSpace(root) == "" {
+	if d.ReleaseID == nil || !ok || !filepath.IsAbs(root) || len(d.FilesSeen) == 0 {
 		return ""
 	}
 	top := ""
 	for _, f := range d.FilesSeen {
-		name := strings.ReplaceAll(f.Name, `\`, "/")
-		head, _, inDir := strings.Cut(name, "/")
-		if !inDir || head == "" || head == ".." || (top != "" && head != top) {
-			top = ""
-			break
+		head, _, inDir := strings.Cut(strings.ReplaceAll(f.Name, `\`, "/"), "/")
+		if !inDir && len(d.FilesSeen) > 1 || head == "" || head == "." || head == ".." || (top != "" && head != top) {
+			return ""
 		}
 		top = head
 	}
-	dir := root
-	if top != "" {
-		dir = filepath.Join(root, top)
-	}
-	if fi, err := os.Stat(dir); err != nil || !fi.IsDir() {
+	p := filepath.Join(root, top)
+	if _, err := os.Stat(p); err != nil || wholeDisk(p) || im.Store != nil && UnsafeFolder(p, im.Store.Dir()) {
 		return ""
 	}
-	return dir
+	return p
 }
 
 // ImportReviewFile imports the one video of a download into the Slot it was
