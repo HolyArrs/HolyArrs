@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "未使用你選擇的畫質：這部作品已經有該副本。",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex 不再提供與你的伺服器共享的成員清單",
 	"server.accounts.plex-refused-your-linked-plex-account": "Plex 拒絕了你已關聯的 Plex 帳號；請重新關聯",
-	"server.migrate.the-show-could-not-be-found": "無法透過編號或名稱找到該影集"
+	"server.migrate.the-show-could-not-be-found": "無法透過編號或名稱找到該影集",
+	"server.downloads.the-downloader-already-has-this-torrent": "下載器裡已經有這個種子，且在 HolyArrs 之外，而「只顯示 HolyArrs 的項目」已開啟：請在那邊把它移到 HolyArrs 的分類，或關閉這個設定",
+	"server.downloads.the-release-has-no-info-hash": "這個資源沒有資訊雜湊，所以無法追蹤 {name} 的下載",
+	"server.downloads.the-release-link-leads-to-a": "這個資源的連結指向本機或被攔截的位址；如果這個來源在你的家用網路裡，請為它開啟「可存取區域網路」",
+	"server.downloads.the-source-has-no-such-release": "這個來源沒有這個資源檔",
+	"server.downloads.the-torrent-file-does-not-match": "種子檔與它的資訊雜湊不符",
+	"server.sources.it-was-judged-for-another-slot": "它是為另一個槽位評判的",
+	"server.sources.it-was-turned-down": "它被拒絕了",
+	"server.sources.it-was-turned-down-2": "它被拒絕了：{d}",
+	"server.sources.it-was-turned-down-for-this": "它在這一集上被拒絕了",
+	"server.sources.it-was-turned-down-for-this-2": "它在這一集上被拒絕了：{d}",
+	"server.sources.left-out": "已略過：{skipped}",
+	"server.sources.sent-although-it-failed": "雖未通過仍已送出：{overridden}",
+	"server.sources.the-album-would-mix-copies": "專輯會混入多份副本：{skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "已跳過發行門檻：這部電影還不算已上映",
+	"server.sources.this-version-already-has-a-good": "這個版本已有足夠好的副本；新的會替換它"
 }

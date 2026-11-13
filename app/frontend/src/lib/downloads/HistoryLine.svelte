@@ -2,6 +2,7 @@
 	// Compact History row: small poster, title and time, then the step and one extra piece. Used by the Search view and the title pages.
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { artOf } from './history-kinds.ts';
 	import { agoShort, partOf, rowExtra, rowStep } from './history-search.ts';
 	import { rowText, type LineContext } from './history-lines.ts';
@@ -34,7 +35,7 @@
 	const w = $derived(rowText(row, ctx));
 	const t = $derived(titleById.get(e.TitleID ?? 0));
 	const s = $derived(rowStep(row, w.tag.word));
-	const x = $derived(rowExtra(row, s, who, w.line));
+	const x = $derived(serverWords(rowExtra(row, s, who, w.line)));
 	const part = $derived(partOf(row));
 	// Shows the Version (HD, 4K) when the title has more than one, so its rows tell them apart.
 	const version = $derived(w.bits.find((b) => b.kind === 'version')?.text ?? '');

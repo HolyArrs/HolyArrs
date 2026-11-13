@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "האיכות שבחרת לא שימשה: לכותר הזה כבר יש את העותק הזה.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex כבר לא מציע את רשימת האנשים שהשרת שלך משותף איתם",
 	"server.accounts.plex-refused-your-linked-plex-account": "Plex דחה את חשבון ה־Plex המקושר שלך; קשר אותו שוב",
-	"server.migrate.the-show-could-not-be-found": "לא ניתן היה למצוא את הסדרה לפי המזהים או השם שלה"
+	"server.migrate.the-show-could-not-be-found": "לא ניתן היה למצוא את הסדרה לפי המזהים או השם שלה",
+	"server.downloads.the-downloader-already-has-this-torrent": "למוריד כבר יש את הטורנט הזה מחוץ ל-HolyArrs, והאפשרות «להציג רק פריטים של HolyArrs» פועלת: העבר אותו שם לקטגוריה של HolyArrs, או כבה את ההגדרה",
+	"server.downloads.the-release-has-no-info-hash": "לריליז אין האש מידע, ולכן אי אפשר היה לעקוב אחרי ההורדה של {name}",
+	"server.downloads.the-release-link-leads-to-a": "קישור הריליז מוביל לכתובת מקומית או חסומה; אם המקור הזה ברשת הביתית שלך, הפעל לו «יכול לגשת לרשת המקומית»",
+	"server.downloads.the-source-has-no-such-release": "למקור אין את קובץ הריליז הזה",
+	"server.downloads.the-torrent-file-does-not-match": "קובץ הטורנט לא תואם להאש המידע שלו",
+	"server.sources.it-was-judged-for-another-slot": "הוא נשפט עבור משבצת אחרת",
+	"server.sources.it-was-turned-down": "הוא נדחה",
+	"server.sources.it-was-turned-down-2": "הוא נדחה: {d}",
+	"server.sources.it-was-turned-down-for-this": "הוא נדחה עבור הפרק הזה",
+	"server.sources.it-was-turned-down-for-this-2": "הוא נדחה עבור הפרק הזה: {d}",
+	"server.sources.left-out": "הושמט: {skipped}",
+	"server.sources.sent-although-it-failed": "נשלח למרות שנכשל: {overridden}",
+	"server.sources.the-album-would-mix-copies": "האלבום היה מערבב עותקים: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "שער היציאה מדולג: הסרט הזה עדיין לא נחשב כיצא",
+	"server.sources.this-version-already-has-a-good": "לגרסה הזו כבר יש עותק מספיק טוב; החדש יחליף אותו"
 }

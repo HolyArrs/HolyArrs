@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "Kvaliteten du valde användes inte: titeln har redan den kopian.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex erbjuder inte längre listan över personerna som din server delas med",
 	"server.accounts.plex-refused-your-linked-plex-account": "Plex avvisade ditt länkade Plex-konto; länka det igen",
-	"server.migrate.the-show-could-not-be-found": "serien hittades varken via sina id eller sitt namn"
+	"server.migrate.the-show-could-not-be-found": "serien hittades varken via sina id eller sitt namn",
+	"server.downloads.the-downloader-already-has-this-torrent": "nedladdaren har redan den här torrenten utanför HolyArrs, och «Visa bara HolyArrs-objekt» är på: flytta den dit till HolyArrs kategori, eller stäng av inställningen",
+	"server.downloads.the-release-has-no-info-hash": "releasen har ingen info-hash, så nedladdningen av {name} kunde inte följas",
+	"server.downloads.the-release-link-leads-to-a": "releasens länk leder till en lokal eller blockerad adress; ligger den här källan på ditt hemnätverk, slå på «Får nå det lokala nätverket» för den",
+	"server.downloads.the-source-has-no-such-release": "källan har inte den här releasefilen",
+	"server.downloads.the-torrent-file-does-not-match": "torrentfilen stämmer inte med sin info-hash",
+	"server.sources.it-was-judged-for-another-slot": "den bedömdes för en annan plats",
+	"server.sources.it-was-turned-down": "den avvisades",
+	"server.sources.it-was-turned-down-2": "den avvisades: {d}",
+	"server.sources.it-was-turned-down-for-this": "den avvisades för det här avsnittet",
+	"server.sources.it-was-turned-down-for-this-2": "den avvisades för det här avsnittet: {d}",
+	"server.sources.left-out": "utelämnat: {skipped}",
+	"server.sources.sent-although-it-failed": "skickad trots att den föll: {overridden}",
+	"server.sources.the-album-would-mix-copies": "albumet skulle blanda kopior: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "Släppgränsen hoppas över: den här filmen räknas inte som utgiven ännu",
+	"server.sources.this-version-already-has-a-good": "Den här versionen har redan en tillräckligt bra kopia; den nya ersätter den"
 }

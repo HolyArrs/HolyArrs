@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "Wybrana jakość nie została użyta: ten tytuł ma już tę kopię.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex nie udostępnia już listy osób, którym udostępniono twój serwer",
 	"server.accounts.plex-refused-your-linked-plex-account": "Plex odrzucił twoje połączone konto Plex; połącz je ponownie",
-	"server.migrate.the-show-could-not-be-found": "nie znaleziono serialu ani po jego identyfikatorach, ani po nazwie"
+	"server.migrate.the-show-could-not-be-found": "nie znaleziono serialu ani po jego identyfikatorach, ani po nazwie",
+	"server.downloads.the-downloader-already-has-this-torrent": "Downloader ma już ten torrent poza HolyArrs, a „Pokazuj tylko elementy HolyArrs” jest włączone: przenieś go tam do kategorii HolyArrs albo wyłącz to ustawienie",
+	"server.downloads.the-release-has-no-info-hash": "release nie ma info hasha, więc nie dało się śledzić pobierania {name}",
+	"server.downloads.the-release-link-leads-to-a": "link release'u prowadzi do adresu lokalnego lub zablokowanego; jeśli to Źródło jest w twojej sieci domowej, włącz dla niego „Dostęp do sieci lokalnej”",
+	"server.downloads.the-source-has-no-such-release": "Źródło nie ma takiego pliku release'u",
+	"server.downloads.the-torrent-file-does-not-match": "plik torrent nie pasuje do swojego info hasha",
+	"server.sources.it-was-judged-for-another-slot": "został oceniony dla innego slotu",
+	"server.sources.it-was-turned-down": "został odrzucony",
+	"server.sources.it-was-turned-down-2": "został odrzucony: {d}",
+	"server.sources.it-was-turned-down-for-this": "został odrzucony dla tego odcinka",
+	"server.sources.it-was-turned-down-for-this-2": "został odrzucony dla tego odcinka: {d}",
+	"server.sources.left-out": "pominięto: {skipped}",
+	"server.sources.sent-although-it-failed": "wysłano mimo niepowodzenia: {overridden}",
+	"server.sources.the-album-would-mix-copies": "album mieszałby kopie: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "Próg premiery jest pominięty: ten film nie liczy się jeszcze jako wydany",
+	"server.sources.this-version-already-has-a-good": "Ta Odmiana ma już wystarczająco dobrą kopię; nowa ją zastąpi"
 }

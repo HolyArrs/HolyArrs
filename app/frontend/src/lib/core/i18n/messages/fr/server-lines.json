@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "La qualité choisie n'a pas été utilisée : ce titre a déjà cette copie.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex ne propose plus la liste des personnes avec qui votre serveur est partagé",
 	"server.accounts.plex-refused-your-linked-plex-account": "Plex a refusé votre compte Plex lié ; liez-le à nouveau",
-	"server.migrate.the-show-could-not-be-found": "la série est introuvable par ses identifiants comme par son nom"
+	"server.migrate.the-show-could-not-be-found": "la série est introuvable par ses identifiants comme par son nom",
+	"server.downloads.the-downloader-already-has-this-torrent": "le client de téléchargement a déjà ce torrent en dehors d'HolyArrs, et « N'afficher que les éléments d'HolyArrs » est activé : déplace-le dans la catégorie d'HolyArrs là-bas, ou désactive ce réglage",
+	"server.downloads.the-release-has-no-info-hash": "la release n'a pas de hash d'information, donc le téléchargement de {name} n'a pas pu être suivi",
+	"server.downloads.the-release-link-leads-to-a": "le lien de la release mène à une adresse locale ou bloquée ; si cette source est sur ton réseau domestique, active « Joindre le réseau local » pour elle",
+	"server.downloads.the-source-has-no-such-release": "la source n'a pas ce fichier de release",
+	"server.downloads.the-torrent-file-does-not-match": "le fichier torrent ne correspond pas à son hash d'information",
+	"server.sources.it-was-judged-for-another-slot": "elle a été jugée pour un autre emplacement",
+	"server.sources.it-was-turned-down": "elle a été refusée",
+	"server.sources.it-was-turned-down-2": "elle a été refusée: {d}",
+	"server.sources.it-was-turned-down-for-this": "elle a été refusée pour cet épisode",
+	"server.sources.it-was-turned-down-for-this-2": "elle a été refusée pour cet épisode: {d}",
+	"server.sources.left-out": "laissé de côté: {skipped}",
+	"server.sources.sent-although-it-failed": "envoyée malgré son échec: {overridden}",
+	"server.sources.the-album-would-mix-copies": "l'album mélangerait des copies: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "Le seuil de sortie est sauté : ce film ne compte pas encore comme sorti",
+	"server.sources.this-version-already-has-a-good": "Cette version a déjà une copie suffisante ; la nouvelle la remplacera"
 }

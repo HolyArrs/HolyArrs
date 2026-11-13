@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "Vybraná kvalita nebyla použita: tento titul už tu kopii má.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex už nenabízí seznam lidí, se kterými je váš server sdílen",
 	"server.accounts.plex-refused-your-linked-plex-account": "Plex odmítl váš propojený účet Plex; propojte ho znovu",
-	"server.migrate.the-show-could-not-be-found": "seriál se nepodařilo najít podle jeho id ani názvu"
+	"server.migrate.the-show-could-not-be-found": "seriál se nepodařilo najít podle jeho id ani názvu",
+	"server.downloads.the-downloader-already-has-this-torrent": "Stahovač už má tento torrent mimo HolyArrs a je zapnuto „Zobrazit jen položky HolyArrs“: přesuň ho tam do kategorie HolyArrs, nebo to nastavení vypni",
+	"server.downloads.the-release-has-no-info-hash": "release nemá info hash, takže stahování {name} nešlo sledovat",
+	"server.downloads.the-release-link-leads-to-a": "odkaz release vede na místní nebo blokovanou adresu; pokud je tento Zdroj v tvé domácí síti, zapni pro něj „Smí dosáhnout na místní síť“",
+	"server.downloads.the-source-has-no-such-release": "Zdroj takový soubor release nemá",
+	"server.downloads.the-torrent-file-does-not-match": "soubor torrentu neodpovídá svému info hashi",
+	"server.sources.it-was-judged-for-another-slot": "byl posouzen pro jiný Slot",
+	"server.sources.it-was-turned-down": "byl odmítnut",
+	"server.sources.it-was-turned-down-2": "byl odmítnut: {d}",
+	"server.sources.it-was-turned-down-for-this": "byl odmítnut pro tuto epizodu",
+	"server.sources.it-was-turned-down-for-this-2": "byl odmítnut pro tuto epizodu: {d}",
+	"server.sources.left-out": "vynecháno: {skipped}",
+	"server.sources.sent-although-it-failed": "odesláno, přestože neprošel: {overridden}",
+	"server.sources.the-album-would-mix-copies": "album by smíchalo kopie: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "Práh vydání se přeskočí: tento film se ještě nepočítá jako vydaný",
+	"server.sources.this-version-already-has-a-good": "Tato Verze už má dost dobrou kopii; nová ji nahradí"
 }

@@ -3,6 +3,7 @@ import { chooseWarnings } from './releases.ts';
 import { api, message, ApiError } from '#lib/core/api.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 import type { Choice, ReleaseView, TitleView } from '#lib/core/types.ts';
 
 export function createTitleChoose(ctx: { slotPick: number; title: TitleView | null; load: (which?: 'all' | 'title' | 'releases') => Promise<void>; relOffset: number }) {
@@ -35,7 +36,7 @@ export function createTitleChoose(ctx: { slotPick: number; title: TitleView | nu
 			if (targetSlotId) body.slot_id = targetSlotId;
 			const ch = await api.post<Choice>(`/releases/${target.id}/choose`, body);
 			chooseDialog?.close();
-			toasts.push(t('mediafiles.title.sent'), 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : t('mediafiles.title.warnings', { n: ch.warnings.length }) } : undefined);
+			toasts.push(t('mediafiles.title.sent'), 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? serverWords(ch.warnings[0]) : t('mediafiles.title.warnings', { n: ch.warnings.length }) } : undefined);
 			await ctx.load();
 		} catch (e) {
 			if (e instanceof ApiError && e.status === 409 && e.body.needs_force) {
