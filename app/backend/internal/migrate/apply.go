@@ -297,6 +297,11 @@ type run struct {
 	// this run (or fall back to the current owner), never by an older mark.
 	personMarked map[string]bool
 	owner        int64
+	// noLookup stops request name lookups for the rest of the run once
+	// one fails; the Requests fill-in finds those names later.
+	noLookup bool
+	// found is the real name askDetails found for the item it just ran.
+	found string
 	// choose is set by one() for the item it just ran (Line.Choose).
 	choose string
 	// ruleIDs are the Pick rules this run made from profiles, by the name
@@ -422,7 +427,7 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 			}
 			var res, detail string
 			r.choose = ""
-			r.attn, r.attnFolder = "", ""
+			r.attn, r.attnFolder, r.found = "", "", ""
 			switch {
 			case g.Skipped:
 				res, detail = ResSkipped, "you left "+strings.ToLower(GroupLabels[g.Name])+" out"
@@ -436,6 +441,9 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 				needs = it.Needs
 			}
 			r.line(g.Name, it, res, detail, needs)
+			if r.found != "" {
+				r.rep.Lines[len(r.rep.Lines)-1].Name = r.found
+			}
 			if r.attn != "" {
 				l := &r.rep.Lines[len(r.rep.Lines)-1]
 				l.Attention, l.Folder = r.attn, r.attnFolder

@@ -1,6 +1,7 @@
 package migrate
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/url"
@@ -15,6 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate/secretsfile"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
@@ -529,6 +531,7 @@ func (r *run) ask(it Item) (string, string) {
 	if titleID != 0 {
 		row.TitleID = &titleID
 	}
+	r.askDetails(&row)
 	var decidedBy int64
 	var expectedDeciderFP string
 	if state == "approved" {
@@ -549,6 +552,29 @@ func (r *run) ask(it Item) (string, string) {
 	}
 	_, err := r.createAsk(it, &row, by, asked, expectedAskerFP, decidedBy, expectedDeciderFP)
 	return result(err, ResCreated, what)
+}
+
+// askDetails gives a request its name, year and poster from the details
+// source, as a request made here has them. A failed lookup keeps the
+// stand-in name and stops lookups for this run.
+func (r *run) askDetails(row *domain.Ask) {
+	if r.noLookup || r.m.Library == nil || r.m.Library.Metadata == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.ctx, 15*time.Second)
+	d, err := requests.LookupAskDetails(ctx, r.m.Library, row.Kind, row.Ref)
+	cancel()
+	if err != nil || d.Name == "" {
+		r.noLookup = true
+		return
+	}
+	if row.Name == "" || row.Name == requests.PlaceholderName(row.Ref) {
+		row.Name, r.found = d.Name, d.Name
+	}
+	if d.Year > 0 {
+		row.Year = &d.Year
+	}
+	row.Poster = d.Poster
 }
 
 func (r *run) alert(it Item) (string, string) {

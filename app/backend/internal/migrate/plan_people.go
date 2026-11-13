@@ -239,7 +239,7 @@ func (b *builder) asks(s *Snapshot) {
 			}
 		}
 		if name == "" {
-			name = strings.ToUpper(ref[:strings.IndexByte(ref, ':')]) + " " + ref[strings.IndexByte(ref, ':')+1:]
+			name = requests.PlaceholderName(ref) // the real name is looked up when it is imported
 		}
 		byKey := b.personRefs[personKey(s.Kind, r.By)]
 		ap := &AskPlan{App: string(s.Kind), Kind: kind, Ref: ref, IDs: ids, Approved: r.State == "approved",

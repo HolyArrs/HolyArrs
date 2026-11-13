@@ -669,6 +669,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	requestsSvc := &requests.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
 	readyCheck.Store(requestsSvc)
 	optional(jobs.Loop{Name: "wishlist", Label: "Requests ready check", Every: 30 * time.Second, Run: func(ctx context.Context) error {
+		requestsSvc.FillAskDetailsLater() // imported asks' names, until found
 		if _, err := requestsSvc.CheckReady(ctx); err != nil {
 			return err
 		}
