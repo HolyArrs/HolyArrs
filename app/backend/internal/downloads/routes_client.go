@@ -370,8 +370,8 @@ func (a *Web) titleOwner(ctx context.Context, titleID int64) string {
 	return name
 }
 
-// rowOwners fills each row's Requested by from its Library title, in one
-// read: the person who added the title, else "Added in <client>" for an
+// rowOwners fills each row's Requested by, in one read: the person who
+// picked the download, else the person who added the title, else "Added in <client>" for an
 // outside item (nobody asked HolyArrs for it).
 func (a *Web) rowOwners(ctx context.Context, rows []DownloadRow) {
 	ids := []int64{}
@@ -399,12 +399,38 @@ func (a *Web) rowOwners(ctx context.Context, rows []DownloadRow) {
 			}
 		}
 	})
+	pickers := map[int64]string{}
+	dids := []int64{}
+	for _, r := range rows {
+		if r.ID != 0 {
+			dids = append(dids, r.ID)
+		}
+	}
+	inChunks(dids, func(part []any, marks string) {
+		rs, err := a.read().QueryContext(ctx, `SELECT d.id, u.name FROM downloads d JOIN users u ON u.id = json_extract(d.started_by, '$.id')
+			WHERE d.id IN (`+marks+`) AND json_extract(d.started_by, '$.kind') = 'user'`, part...)
+		if err != nil {
+			return
+		}
+		defer rs.Close()
+		for rs.Next() {
+			var id int64
+			var name string
+			if rs.Scan(&id, &name) == nil {
+				pickers[id] = name
+			}
+		}
+	})
 	for i := range rows {
 		r := &rows[i]
 		if r.TitleID == 0 {
 			continue
 		}
-		if r.RequestedBy = who[r.TitleID]; r.RequestedBy == "" && r.Outside {
+		// The person who picked the release comes first, as in the pane.
+		if r.RequestedBy = pickers[r.ID]; r.RequestedBy == "" {
+			r.RequestedBy = who[r.TitleID]
+		}
+		if r.RequestedBy == "" && r.Outside {
 			r.RequestedBy = "Added in " + adapterWord(r.DownloaderKind)
 		}
 	}

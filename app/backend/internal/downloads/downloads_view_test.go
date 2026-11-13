@@ -214,7 +214,7 @@ func TestDownloadsViewQueryCount(t *testing.T) {
 	v := view(t, x.srv.URL+"/api/v1/downloads/view")
 	n := countReads.Load() - before
 	t.Logf("%d queries for %d rows", n, len(v.Downloads))
-	if n > 6 {
+	if n > 7 {
 		t.Fatalf("%d queries for %d rows", n, len(v.Downloads))
 	}
 	if len(v.Downloads) != 100 || v.Downloads[50].Title != "Salt Choir" || v.Downloads[50].Version != "HD" {
