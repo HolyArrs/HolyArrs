@@ -454,11 +454,13 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 		serverError(w, "password", err)
 		return
 	}
-	// People who only sign in through a media server have no password yet
-	// and may set one. Changing one that exists needs a recent local proof,
-	// on purpose also for API keys: a key never changes its user's password.
+	// Every password change, the first one too, needs a recent proof in the
+	// browser: a local password sign-in, the first-run setup session, or for
+	// someone with no password yet a fresh Plex, Jellyfin or Emby sign-in. API
+	// keys and home-network visits never pass, so a key never sets or changes
+	// its user's password.
 	first := cur == ""
-	if !first && !RecentLocal(r) {
+	if !RecentLocal(r) {
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": "confirm your local password again before using this route", "code": "reauth"})
 		return
 	}

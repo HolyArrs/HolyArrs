@@ -143,9 +143,9 @@ func recentLocalExempt(pattern string, who webserver.Caller) bool {
 		return true
 	case "POST /api/v1/auth/two-factor/setup", "POST /api/v1/auth/two-factor/enable":
 		return who.MustTwoFactor
-	// Someone who joined through a media server has no password to confirm,
-	// so their own sign-in may set a first one. changePassword still asks
-	// for a local proof and the current password when one already exists.
+	// changePassword checks the proof itself (RecentLocal, which also takes a
+	// fresh outside sign-in of someone with no password) and the current
+	// password when one exists, so the gate lets it through to that check.
 	case "POST /api/v1/auth/password":
 		return true
 	default:
