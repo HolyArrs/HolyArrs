@@ -83,6 +83,13 @@ func TestHomeLibraryCounts(t *testing.T) {
 		// item adds one item with its main-copy slot; state in_library gets a file of size bytes.
 		item := func(t mediafiles.Title, v mediafiles.Version, kind string, part *int64, state string, size int64, dropped bool) error {
 			it := mediafiles.Item{TitleID: t.ID, PartID: part, Kind: kind, KeepUpToDate: true}
+			if kind == "episode" {
+				aired := time.Now().Add(-48 * time.Hour)
+				if state == "wanted_tomorrow" {
+					aired, state = time.Now().Add(26*time.Hour), "wanted"
+				}
+				it.AirDate = &aired
+			}
 			if dropped {
 				now := time.Now()
 				it.DroppedAt = &now
@@ -139,7 +146,7 @@ func TestHomeLibraryCounts(t *testing.T) {
 			part    *int64
 			state   string
 			dropped bool
-		}{{specials, "in_library", false}, {s1, "in_library", false}, {s1, "in_library", false}, {s2, "wanted", false}, {s2, "not_out_yet", false}, {s2, "wanted", true}} {
+		}{{specials, "in_library", false}, {s1, "in_library", false}, {s1, "in_library", false}, {s2, "wanted", false}, {s2, "not_out_yet", false}, {s2, "wanted", true}, {s2, "wanted_tomorrow", false}} {
 			if err := item(sh, sv, "episode", e.part, e.state, 500, e.dropped); err != nil {
 				return err
 			}
@@ -166,13 +173,13 @@ func TestHomeLibraryCounts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := homeLibraryCounts(ctx, s.Read(), "t.state != 'removed' AND t.kind IN ('movie', 'show', 'artist')", nil, []string{"movie", "show", "artist"})
+	got, err := homeLibraryCounts(ctx, s.Read(), "t.state != 'removed' AND t.kind IN ('movie', 'show', 'artist')", nil, time.Now(), []string{"movie", "show", "artist"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := map[string]homeLibraryKind{
 		"movie":  {Titles: 3, Items: 3, OnDisk: 1, Missing: 1, Downloading: 1, Size: 1000},
-		"show":   {Titles: 1, Parts: 2, Items: 5, OnDisk: 3, Missing: 1, Size: 1500},
+		"show":   {Titles: 1, Parts: 2, Items: 6, OnDisk: 3, Missing: 1, Size: 1500},
 		"artist": {Titles: 1, Parts: 1, Items: 2, OnDisk: 1, Missing: 1, Size: 10},
 	}
 	for k, w := range want {
@@ -181,7 +188,7 @@ func TestHomeLibraryCounts(t *testing.T) {
 		}
 	}
 	// Only the kinds asked for, and one with nothing in the filter is zeros.
-	got, err = homeLibraryCounts(ctx, s.Read(), "t.state != 'removed' AND t.kind IN ('movie')", nil, []string{"movie", "show"})
+	got, err = homeLibraryCounts(ctx, s.Read(), "t.state != 'removed' AND t.kind IN ('movie')", nil, time.Now(), []string{"movie", "show"})
 	if err != nil {
 		t.Fatal(err)
 	}
