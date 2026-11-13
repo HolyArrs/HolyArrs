@@ -724,8 +724,8 @@ func (im *Importer) RequeueStranded(ctx context.Context, enqueue func(ctx contex
 	}
 	rows, err := im.Store.Read().QueryContext(ctx, `SELECT DISTINCT d.id FROM downloads d, json_each(d.slot_ids) j
 		JOIN slots s ON s.id = j.value JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
-		WHERE d.state = 'finished' AND s.state = 'downloading' AND (s.active_download_id IS NULL OR s.active_download_id = d.id) AND (t.kind = 'show' OR t.kind = 'artist' AND ?)
-		AND NOT EXISTS (SELECT 1 FROM imports x WHERE x.download_id = d.id AND x.state IN ('approved', 'placing', 'done', 'partly_done', 'waiting_for_you'))
+		WHERE d.state = 'finished' AND (s.state = 'downloading' AND NOT EXISTS (SELECT 1 FROM imports x WHERE x.download_id = d.id AND x.state IN ('approved', 'placing', 'done', 'partly_done', 'waiting_for_you'))
+		OR s.state = 'importing' AND (SELECT x.state FROM imports x WHERE x.download_id = d.id ORDER BY x.id DESC LIMIT 1) = 'placing') AND (s.active_download_id IS NULL OR s.active_download_id = d.id) AND (t.kind = 'show' OR t.kind = 'artist' AND ?)
 		ORDER BY d.id`, canImportAlbums)
 	if err != nil {
 		return 0, err

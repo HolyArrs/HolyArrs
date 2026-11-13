@@ -224,10 +224,8 @@ func TestByHandPlacesIgnoreWholeDisk(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, p := range ps.Downloaders {
-		if wholeDisk(p) {
-			t.Fatalf("a disk root counts as a Downloader place: %v", ps.Downloaders)
-		}
+	if len(ps.Downloaders) != 0 {
+		t.Fatalf("a disk root counts as a Downloader place: %v", ps.Downloaders)
 	}
 	if ps.Holds(filepath.Join(t.TempDir(), "x.mkv")) {
 		t.Fatal("a path outside every place passes through a disk-root mapping")
