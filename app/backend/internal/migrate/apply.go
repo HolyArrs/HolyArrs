@@ -460,7 +460,7 @@ func next(rep *Report) []string {
 	if len(rep.NeedsInput) > 0 {
 		out = append(out, "Type the keys and passwords listed under \"needs your input\": Sources, Downloaders, Alerts and subtitle sites stay paused until then.")
 	}
-	links, people, same, outside, trakt := false, false, false, false, false
+	links, people, linked, same, outside, trakt := false, false, false, false, false, false
 	for _, l := range rep.Lines {
 		made := l.Result == ResCreated || l.Result == ResCreate
 		switch {
@@ -469,8 +469,10 @@ func next(rep *Report) []string {
 			trakt = trakt || strings.HasPrefix(l.Key, "outside_list:"+requests.ListTrakt+":")
 		case (l.Group == GroupSources || l.Group == GroupDownloaders) && made:
 			links = true
-		case l.Group == GroupPeople && made:
+		case l.Group == GroupPeople && made && l.Needs != "":
 			people = true
+		case l.Group == GroupPeople && (made || l.Result == ResChanged || l.Result == ResChange):
+			linked = true
 		case l.Group == GroupPeople && l.Choose != "" && l.open:
 			same = true
 		}
@@ -486,6 +488,9 @@ func next(rep *Report) []string {
 	}
 	if people {
 		out = append(out, "People came over turned off, as members (admin or owner only where you confirmed it): invite them from Settings > Users and roles.")
+	}
+	if linked {
+		out = append(out, "People who signed in to the old app with Plex, Jellyfin or Emby came over turned on: they sign in that way once it is on under Settings > Sign-in and security.")
 	}
 	if same {
 		out = append(out, "Some people need a choice: pick Same person or Leave out for each, then try and import again.")
@@ -685,6 +690,9 @@ func (r *run) one(group string, it Item) (string, string) {
 		(it.Person == nil || it.Person.StableIdentity && it.Person.Choice != PersonSkip && it.Person.Choice != PersonMerge && it.Person.Role != "owner") {
 		if it.Person != nil {
 			r.people[it.Key] = id
+			if it.Person.SignIn != "" {
+				return r.keepSignIn(it, id)
+			}
 		}
 		// A title moved before still takes the quality the old app recorded
 		// for each file, so moving again after reading the old app updates it.

@@ -94,7 +94,16 @@ func (b *builder) people(s *Snapshot) {
 		} else if u.ShowLimit > 0 && pp.ShowsPerWeek == nil {
 			b.not(GroupPeople, from+".show_quota", name, "only an exact seven-day quota can be imported without changing its access window")
 		}
+		// A Plex, Jellyfin or Emby person keeps that sign-in.
+		if kind := strings.ToLower(u.Kind); key != legacyKey && signInWay(kind) != "" {
+			pp.SignIn, pp.SignInID, pp.SignInName = kind, clip(u.ExternalID, 100), clip(u.ExtName, 200)
+		}
 		detail := "Comes over turned off as a " + pp.Role + ". Invite them to sign in; their password stays behind."
+		needs := "an invite"
+		if way := signInWay(pp.SignIn); way != "" {
+			detail = "Comes over turned on as a " + pp.Role + ". They sign in with their " + way + " account; no password comes over."
+			needs = ""
+		}
 		why := ""
 		switch {
 		case owner:
@@ -118,8 +127,10 @@ func (b *builder) people(s *Snapshot) {
 		if legacyKey != key {
 			legacy = []string{legacyKey}
 		}
-		b.add(GroupPeople, Item{Key: key, LegacyKeys: legacy, Name: name, From: from, Detail: detail, Why: why, Person: pp,
-			Needs: map[bool]string{true: "", false: "an invite"}[owner]})
+		if owner {
+			needs = ""
+		}
+		b.add(GroupPeople, Item{Key: key, LegacyKeys: legacy, Name: name, From: from, Detail: detail, Why: why, Person: pp, Needs: needs})
 	}
 	recognized := map[string]bool{}
 	movies := defaultWeekly(s.Settings, "movie")
@@ -181,6 +192,12 @@ func (b *builder) people(s *Snapshot) {
 		b.not(GroupPeople, b.from("settings", -1)+"."+k, k, "app-wide settings of the old app are not imported; set the Request defaults under Settings > Request rules")
 	}
 }
+
+// signInWays are the sign-in kinds a person can keep, by product name.
+var signInWays = map[string]string{"plex": "Plex", "jellyfin": "Jellyfin", "emby": "Emby"}
+
+// signInWay names a sign-in kind a person can keep, or "".
+func signInWay(kind string) string { return signInWays[kind] }
 
 func (b *builder) asks(s *Snapshot) {
 	b.cover("requests")

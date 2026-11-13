@@ -253,10 +253,12 @@ type Category struct {
 type User struct {
 	SourceID int64 `json:"source_id"`
 	// ExternalID is the stable identity supplied by the person's sign-in
-	// provider. It is used only to keep move references stable; a move never
-	// creates a sign-in link or grants access.
+	// provider (Kind). It keeps move references stable, and for a Plex,
+	// Jellyfin or Emby person it becomes their sign-in link here.
 	ExternalID string `json:"external_id,omitempty"`
-	Name       string `json:"name"`
+	// ExtName is their name on that provider.
+	ExtName string `json:"ext_name,omitempty"`
+	Name    string `json:"name"`
 	Email      string `json:"email,omitempty"`
 	Kind       string `json:"kind,omitempty"` // plex, jellyfin, local, emby
 	Admin      bool   `json:"admin"`

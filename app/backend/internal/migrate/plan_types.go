@@ -320,6 +320,12 @@ type PersonPlan struct {
 	// Choice is the owner's choice for them (merge or skip when a person
 	// with the same name is here).
 	Choice string `json:"choice,omitempty"`
+	// SignIn is plex, jellyfin or emby when the person signed in to the old
+	// app that way: they come over linked to that account (SignInID, named
+	// SignInName there) and turned on, with no password.
+	SignIn     string `json:"sign_in,omitempty"`
+	SignInID   string `json:"sign_in_id,omitempty"`
+	SignInName string `json:"sign_in_name,omitempty"`
 }
 
 // AskPlan is one open request.

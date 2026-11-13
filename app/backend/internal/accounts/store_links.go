@@ -3,6 +3,9 @@ package accounts
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"errors"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
@@ -287,6 +290,53 @@ func deleteSSOLink(ctx context.Context, q conn, userID int64, kind, issuer strin
 		return 0, err
 	}
 	return res.RowsAffected()
+}
+
+// How LinkImported left an outside account.
+const (
+	LinkAdded = "added" // linked to the person now
+	LinkHad   = "had"   // the person had this link already
+	LinkTaken = "taken" // linked to someone else (returned), or the person has another one of this kind
+)
+
+// LinkedTo is the person an outside account (plex, jellyfin, emby) is linked
+// to, with their name; sql.ErrNoRows when it is linked to no one.
+func LinkedTo(ctx context.Context, q database.Querier, provider, extID string) (int64, string, error) {
+	var id int64
+	var name string
+	err := q.QueryRowContext(ctx, `SELECT u.id, u.name FROM user_links l JOIN users u ON u.id = l.user_id
+		WHERE l.provider = ? AND l.external_id = ?`, provider, extID).Scan(&id, &name)
+	return id, name, err
+}
+
+// LinkImported links an outside account to a person an import made, the
+// way a sign-in with it links it, unless the account is linked already or
+// the person has another account of that kind. A person who gets the link
+// now, has no password and is still turned off is turned on: that sign-in
+// is then their only way in. It returns how the account was left and the
+// person it is linked to.
+func LinkImported(ctx context.Context, tx *sql.Tx, userID int64, provider, extID, extName string, at time.Time, by database.Actor) (string, int64, error) {
+	other, _, err := LinkedTo(ctx, tx, provider, extID)
+	switch {
+	case err == nil && other == userID:
+		return LinkHad, userID, nil
+	case err == nil:
+		return LinkTaken, other, nil
+	case !errors.Is(err, sql.ErrNoRows):
+		return "", 0, err
+	}
+	var n int
+	if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM user_links WHERE user_id = ? AND provider = ?", userID, provider).Scan(&n); err != nil || n > 0 {
+		return LinkTaken, userID, err
+	}
+	now := database.FormatTime(at)
+	if err := insertUserLink(ctx, tx, userID, provider, extID, truncate(extName, 200), now); err != nil {
+		return "", 0, err
+	}
+	who, _ := json.Marshal(by)
+	_, err = tx.ExecContext(ctx, `UPDATE users SET state = 'active', updated_at = ?, updated_by = ?
+		WHERE id = ? AND state = 'disabled' AND password_hash = '' AND role != 'owner'`, now, string(who), userID)
+	return LinkAdded, userID, err
 }
 
 // LinkedPerson is the person a media server account is linked to, and the
