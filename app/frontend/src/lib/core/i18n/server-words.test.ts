@@ -24,6 +24,14 @@ describe('serverWords', () => {
 		for (const [line, want] of [['New movie', 'Nuovo film'], ['New show', 'Nuova serie'], ['New episode Mon', 'Nuovo episodio · lun'], ['Coming Friday', 'Arriva venerdì'], ['New season', 'Nuova stagione']]) expect(serverWords(line)).toBe(want);
 	});
 
+	it('says the Import by hand folder refusal in the picked language', async () => {
+		const de = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>('./messages/de/server-lines.json', { eager: true })).map((f) => f.default));
+		speak(de);
+		expect(serverWords("Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders in Settings > Library folders: /data/tv, /downloads")).toBe(
+			'Der Import von Hand liest nur aus den Bibliotheksordnern, den Ordnern der Downloader und den zusätzlichen Import-Ordnern unter Einstellungen > Bibliotheksordner: /data/tv, /downloads'
+		);
+	});
+
 	it('shows the Because you have row and the short download reasons in the picked language', async () => {
 		const de = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>('./messages/de/server-lines.json', { eager: true })).map((f) => f.default));
 		speak(de);

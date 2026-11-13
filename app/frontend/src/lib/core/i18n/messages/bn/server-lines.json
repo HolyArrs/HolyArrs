@@ -1314,5 +1314,7 @@
 	"server.sources.this-release-does-not-match-an": "এই রিলিজটি HolyArrs যে পর্ব খুঁজছে তার কোনোটির সাথে মেলে না। তবুও ব্যবহার করতে চাইলে, যে পর্বের জন্য এটি, সেখান থেকে এটি বেছে নাও।",
 	"server.metadata.the-metadata-server-is-slow-right": "মেটাডেটা সার্ভার এখন ধীর। এটা নিজে থেকেই ঠিক হয়ে যাবে।",
 	"server.requests.could-not-add-it-back-in": "{before}: যোগ করা যায়নি, আবার অপেক্ষায়",
-	"server.requests.the-metadata-server-did-not-answer": "মেটাডেটা সার্ভার সময়মতো সাড়া দেয়নি। এটি আবার অপেক্ষায় আছে; আবার অনুমোদন করুন।"
+	"server.requests.the-metadata-server-did-not-answer": "মেটাডেটা সার্ভার সময়মতো সাড়া দেয়নি। এটি আবার অপেক্ষায় আছে; আবার অনুমোদন করুন।",
+	"server.importer.import-by-hand-reads-only-from": "হাতে ইমপোর্ট শুধু লাইব্রেরি ফোল্ডার, ডাউনলোডারের ফোল্ডার আর সেটিংস > লাইব্রেরি ফোল্ডার-এর অতিরিক্ত ইমপোর্ট ফোল্ডার থেকে পড়ে: {all}",
+	"server.importer.import-by-hand-reads-only-from-2": "হাতে ইমপোর্ট শুধু লাইব্রেরি ফোল্ডার, ডাউনলোডারের ফোল্ডার আর অতিরিক্ত ইমপোর্ট ফোল্ডার থেকে পড়ে, আর এখনও কোনোটি সেট করা নেই। সেটিংস > লাইব্রেরি ফোল্ডার-এ একটি যোগ করুন।"
 }

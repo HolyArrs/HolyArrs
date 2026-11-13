@@ -1314,5 +1314,7 @@
 	"server.sources.this-release-does-not-match-an": "Цей реліз не відповідає жодній серії, яку шукає HolyArrs. Щоб усе одно його використати, виберіть його в серії, до якої він належить.",
 	"server.metadata.the-metadata-server-is-slow-right": "Сервер метаданих зараз працює повільно. Це мине саме.",
 	"server.requests.could-not-add-it-back-in": "{before}: не вдалося додати, знову очікує",
-	"server.requests.the-metadata-server-did-not-answer": "Сервер метаданих не відповів вчасно. Запит знову очікує; схваліть його ще раз."
+	"server.requests.the-metadata-server-did-not-answer": "Сервер метаданих не відповів вчасно. Запит знову очікує; схваліть його ще раз.",
+	"server.importer.import-by-hand-reads-only-from": "Імпорт вручну читає лише з тек бібліотеки, тек завантажувачів і додаткових тек імпорту в Налаштування > Теки бібліотеки: {all}",
+	"server.importer.import-by-hand-reads-only-from-2": "Імпорт вручну читає лише з тек бібліотеки, тек завантажувачів і додаткових тек імпорту, а жодної ще не налаштовано. Додайте одну в Налаштування > Теки бібліотеки."
 }

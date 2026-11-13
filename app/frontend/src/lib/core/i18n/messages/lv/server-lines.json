@@ -1314,5 +1314,7 @@
 	"server.sources.this-release-does-not-match-an": "Šis Izlaidums neatbilst nevienai sērijai, ko HolyArrs meklē. Ja tomēr vēlies to izmantot, izvēlies to pie sērijas, kurai tas paredzēts.",
 	"server.metadata.the-metadata-server-is-slow-right": "Metadatu serveris pašlaik ir lēns. Tas atrisināsies pats no sevis.",
 	"server.requests.could-not-add-it-back-in": "{before}: neizdevās pievienot, atkal gaida",
-	"server.requests.the-metadata-server-did-not-answer": "Metadatu serveris neatbildēja laikā. Pieprasījums atkal gaida; apstiprini to vēlreiz."
+	"server.requests.the-metadata-server-did-not-answer": "Metadatu serveris neatbildēja laikā. Pieprasījums atkal gaida; apstiprini to vēlreiz.",
+	"server.importer.import-by-hand-reads-only-from": "Imports ar roku lasa tikai no bibliotēkas mapēm, lejupielādētāju mapēm un papildu importa mapēm sadaļā Iestatījumi > Bibliotēkas mapes: {all}",
+	"server.importer.import-by-hand-reads-only-from-2": "Imports ar roku lasa tikai no bibliotēkas mapēm, lejupielādētāju mapēm un papildu importa mapēm, un vēl neviena nav iestatīta. Pievienojiet vienu sadaļā Iestatījumi > Bibliotēkas mapes."
 }

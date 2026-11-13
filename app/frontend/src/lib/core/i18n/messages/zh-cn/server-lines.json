@@ -1314,5 +1314,7 @@
 	"server.sources.this-release-does-not-match-an": "这个资源与 HolyArrs 正在寻找的任何一集都不匹配。如果仍要使用，请在它所属的那一集中选择它。",
 	"server.metadata.the-metadata-server-is-slow-right": "元数据服务器现在较慢。会自行恢复。",
 	"server.requests.could-not-add-it-back-in": "{before}：无法添加，已回到等待中",
-	"server.requests.the-metadata-server-did-not-answer": "元数据服务器没有及时响应。请求已回到等待中，请再次批准。"
+	"server.requests.the-metadata-server-did-not-answer": "元数据服务器没有及时响应。请求已回到等待中，请再次批准。",
+	"server.importer.import-by-hand-reads-only-from": "手动导入只读取媒体库文件夹、下载器的文件夹以及 设置 > 媒体库文件夹 中额外的导入文件夹：{all}",
+	"server.importer.import-by-hand-reads-only-from-2": "手动导入只读取媒体库文件夹、下载器的文件夹以及额外的导入文件夹，但目前一个都还没有设置。请在 设置 > 媒体库文件夹 中添加一个。"
 }

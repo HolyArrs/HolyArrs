@@ -27,7 +27,10 @@ const handLines = { 'Because you have {name}': 'suggest', 'No Downloader has con
 	// metadata.ErrServiceSlow, answered through library.ServiceError.
 	'The metadata server is slow right now. This comes back on its own.': 'metadata',
 	// requests.ErrNotAddedSlow, answered when an approval could not add its title.
-	'The metadata server did not answer in time. It is back in Waiting; approve it again.': 'requests' };
+	'The metadata server did not answer in time. It is back in Waiting; approve it again.': 'requests',
+	// importer.PlaceError, the refusal of a folder Import by hand may not read.
+	"Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders, and none is set up yet. Add one in Settings > Library folders.": 'importer',
+	"Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders in Settings > Library folders: {all}": 'importer' };
 // Files whose fmt.Sprintf lines are display text (card lines, labels).
 const display = /(accounts[\\/]events|discover[\\/](home|explore_np|title_view)|shows[\\/]episode_labels|requests[\\/](episodes|follows\w*|reports)|health[\\/](health|routes_settings_status)|migrate[\\/]plan_\w+|metadata[\\/]moods)\.go$/;
 
