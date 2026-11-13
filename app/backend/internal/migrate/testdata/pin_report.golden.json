@@ -14,7 +14,9 @@
       "result": "s",
       "detail": "s",
       "needs": "s",
-      "choose": "s"
+      "choose": "s",
+      "attention": "s",
+      "folder": "s"
     }
   ],
   "counts": {

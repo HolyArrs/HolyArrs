@@ -1295,5 +1295,9 @@
 	"server.downloads.this-movie-already-has-a-file": "ten film ma już plik; wyślij replace, aby ten trafił na jego miejsce",
 	"server.importer.replaced-by-hand": "Zastąpiono {path} ręcznie",
 	"server.health.downloader-for": "Downloader dla",
-	"server.health.downloader-added-twice": "Downloader dodany dwa razy"
+	"server.health.downloader-added-twice": "Downloader dodany dwa razy",
+	"server.migrate.added-to-as-wanted-with-no": "dodano do {fallback} jako poszukiwany, bez plików; wymaga uwagi: stary folder {dir} nie istnieje na tym serwerze; popraw folder lub dodaj regułę ścieżki",
+	"server.migrate.will-be-added-to-as-wanted": "zostanie dodany do {fallback} jako poszukiwany, bez plików; wymaga uwagi: stary folder {dir} nie istnieje na tym serwerze; popraw folder lub dodaj regułę ścieżki",
+	"server.migrate.its-library-folder-is-not-on": "folderu biblioteki {library} nie ma na tym serwerze i nie ma tu folderu biblioteki dla {kind}; dodaj go i zaimportuj ponownie",
+	"server.migrate.left-out-was-left-unchecked-check": "pominięto: {attnfolder} nie został zaznaczony; zaznacz go i zaimportuj ponownie"
 }

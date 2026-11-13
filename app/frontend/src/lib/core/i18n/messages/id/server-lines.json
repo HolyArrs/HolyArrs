@@ -1295,5 +1295,9 @@
 	"server.downloads.this-movie-already-has-a-file": "film ini sudah punya file; kirim replace untuk menaruh yang ini di tempatnya",
 	"server.importer.replaced-by-hand": "{path} diganti secara manual",
 	"server.health.downloader-for": "Pengunduh untuk",
-	"server.health.downloader-added-twice": "Pengunduh ditambahkan dua kali"
+	"server.health.downloader-added-twice": "Pengunduh ditambahkan dua kali",
+	"server.migrate.added-to-as-wanted-with-no": "ditambahkan ke {fallback} sebagai dicari tanpa file; perlu perhatian: folder lamanya {dir} tidak ada di server ini; perbaiki foldernya atau tambahkan aturan jalur",
+	"server.migrate.will-be-added-to-as-wanted": "akan ditambahkan ke {fallback} sebagai dicari tanpa file; perlu perhatian: folder lamanya {dir} tidak ada di server ini; perbaiki foldernya atau tambahkan aturan jalur",
+	"server.migrate.its-library-folder-is-not-on": "folder Pustaka {library} tidak ada di server ini, dan di sini tidak ada folder Pustaka untuk {kind}; tambahkan satu lalu impor lagi",
+	"server.migrate.left-out-was-left-unchecked-check": "ditinggalkan: {attnfolder} tidak dicentang; centang lalu impor lagi"
 }

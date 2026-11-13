@@ -1295,5 +1295,9 @@
 	"server.downloads.this-movie-already-has-a-file": "acest film are deja un fișier; trimite replace ca să pui acesta în locul lui",
 	"server.importer.replaced-by-hand": "{path} înlocuit manual",
 	"server.health.downloader-for": "Program de descărcare pentru",
-	"server.health.downloader-added-twice": "Program de descărcare adăugat de două ori"
+	"server.health.downloader-added-twice": "Program de descărcare adăugat de două ori",
+	"server.migrate.added-to-as-wanted-with-no": "adăugat în {fallback} ca dorit, fără fișiere; necesită atenție: vechiul dosar {dir} nu este pe acest server; corectează dosarul sau adaugă o regulă de cale",
+	"server.migrate.will-be-added-to-as-wanted": "va fi adăugat în {fallback} ca dorit, fără fișiere; necesită atenție: vechiul dosar {dir} nu este pe acest server; corectează dosarul sau adaugă o regulă de cale",
+	"server.migrate.its-library-folder-is-not-on": "dosarul bibliotecii {library} nu este pe acest server și aici nu există niciun dosar de bibliotecă pentru {kind}; adaugă unul și importă din nou",
+	"server.migrate.left-out-was-left-unchecked-check": "lăsat deoparte: {attnfolder} a rămas nebifat; bifează-l și importă din nou"
 }

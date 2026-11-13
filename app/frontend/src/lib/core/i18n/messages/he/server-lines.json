@@ -1295,5 +1295,9 @@
 	"server.downloads.this-movie-already-has-a-file": "לסרט הזה כבר יש קובץ; שלח replace כדי לשים את זה במקומו",
 	"server.importer.replaced-by-hand": "{path} הוחלף ידנית",
 	"server.health.downloader-for": "מוריד עבור",
-	"server.health.downloader-added-twice": "מוריד שנוסף פעמיים"
+	"server.health.downloader-added-twice": "מוריד שנוסף פעמיים",
+	"server.migrate.added-to-as-wanted-with-no": "נוסף אל {fallback} כמבוקש, בלי קבצים; דורש תשומת לב: התיקייה הישנה {dir} לא נמצאת בשרת הזה; תקן את התיקייה או הוסף כלל נתיב",
+	"server.migrate.will-be-added-to-as-wanted": "יתווסף אל {fallback} כמבוקש, בלי קבצים; דורש תשומת לב: התיקייה הישנה {dir} לא נמצאת בשרת הזה; תקן את התיקייה או הוסף כלל נתיב",
+	"server.migrate.its-library-folder-is-not-on": "תיקיית הספרייה {library} לא נמצאת בשרת הזה, ואין כאן תיקיית ספרייה עבור {kind}; הוסף אחת וייבא שוב",
+	"server.migrate.left-out-was-left-unchecked-check": "הושמט: {attnfolder} לא סומנה; סמן אותה וייבא שוב"
 }

@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Пренеси формати и точки",
 	"migrate.bringFormatsHint": "Всеки профил, който дава точки на формати, става свои Правила за избор, с тези формати като признаци.",
 	"migrate.formatTraits": "Признаци: {list}",
-	"migrate.formatsLeftOut": "Пропуснати: {list}"
+	"migrate.formatsLeftOut": "Пропуснати: {list}",
+	"migrate.titleFolders": "Заглавия по папка",
+	"migrate.willComeOverN": "Ще бъдат пренесени: {n}",
+	"migrate.cameOverN": "Пренесени: {n}",
+	"migrate.needAttentionN": "Изискват внимание: {n}",
+	"migrate.needAttentionWhy": "Старата им папка я няма на този сървър, затова идват като желани в папка тук. Поправете папката или добавете правило за път: {list}",
+	"migrate.leftOutUncheckedN": "Пропуснати, папката не е отметната: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} остана неотметната; отметнете я и импортирайте отново"
 }

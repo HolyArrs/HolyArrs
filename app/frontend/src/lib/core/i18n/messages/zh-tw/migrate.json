@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "帶上格式和分數",
 	"migrate.bringFormatsHint": "每個為格式評分的設定檔會成為自己的挑選規則，這些格式成為特徵。",
 	"migrate.formatTraits": "特徵：{list}",
-	"migrate.formatsLeftOut": "未帶上：{list}"
+	"migrate.formatsLeftOut": "未帶上：{list}",
+	"migrate.titleFolders": "依資料夾的項目",
+	"migrate.willComeOverN": "將移轉：{n}",
+	"migrate.cameOverN": "已移轉：{n}",
+	"migrate.needAttentionN": "需要注意：{n}",
+	"migrate.needAttentionWhy": "它們的舊資料夾不在此伺服器上，所以會作為想要的項目進入這裡的一個資料夾。請修正資料夾或新增路徑規則：{list}",
+	"migrate.leftOutUncheckedN": "未包含（資料夾未勾選）：{n}",
+	"migrate.leftOutUncheckedWhy": "{folder} 未勾選；勾選後再次匯入"
 }

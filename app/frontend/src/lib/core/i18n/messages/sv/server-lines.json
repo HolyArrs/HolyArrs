@@ -1295,5 +1295,9 @@
 	"server.downloads.this-movie-already-has-a-file": "den här filmen har redan en fil; skicka replace för att sätta den här i dess ställe",
 	"server.importer.replaced-by-hand": "{path} ersattes manuellt",
 	"server.health.downloader-for": "Nedladdare för",
-	"server.health.downloader-added-twice": "Nedladdare tillagd två gånger"
+	"server.health.downloader-added-twice": "Nedladdare tillagd två gånger",
+	"server.migrate.added-to-as-wanted-with-no": "tillagd i {fallback} som önskad utan filer; behöver åtgärd: den gamla mappen {dir} finns inte på den här servern; rätta mappen eller lägg till en sökvägsregel",
+	"server.migrate.will-be-added-to-as-wanted": "läggs till i {fallback} som önskad utan filer; behöver åtgärd: den gamla mappen {dir} finns inte på den här servern; rätta mappen eller lägg till en sökvägsregel",
+	"server.migrate.its-library-folder-is-not-on": "biblioteksmappen {library} finns inte på den här servern, och här finns ingen biblioteksmapp för {kind}; lägg till en och importera igen",
+	"server.migrate.left-out-was-left-unchecked-check": "utelämnad: {attnfolder} var inte markerad; markera den och importera igen"
 }

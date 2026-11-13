@@ -1295,5 +1295,9 @@
 	"server.downloads.this-movie-already-has-a-file": "এই সিনেমার আগেই একটি ফাইল আছে; এটির জায়গায় বসাতে replace পাঠান",
 	"server.importer.replaced-by-hand": "{path} হাতে বদলানো হয়েছে",
 	"server.health.downloader-for": "ডাউনলোডার:",
-	"server.health.downloader-added-twice": "ডাউনলোডার দুবার যোগ করা"
+	"server.health.downloader-added-twice": "ডাউনলোডার দুবার যোগ করা",
+	"server.migrate.added-to-as-wanted-with-no": "ফাইল ছাড়া 'চাই' হিসেবে {fallback}-এ যোগ করা হয়েছে; মনোযোগ দরকার: পুরোনো ফোল্ডার {dir} এই সার্ভারে নেই; ফোল্ডার ঠিক করুন বা একটি পাথ নিয়ম যোগ করুন",
+	"server.migrate.will-be-added-to-as-wanted": "ফাইল ছাড়া 'চাই' হিসেবে {fallback}-এ যোগ করা হবে; মনোযোগ দরকার: পুরোনো ফোল্ডার {dir} এই সার্ভারে নেই; ফোল্ডার ঠিক করুন বা একটি পাথ নিয়ম যোগ করুন",
+	"server.migrate.its-library-folder-is-not-on": "লাইব্রেরি ফোল্ডার {library} এই সার্ভারে নেই, আর এখানে {kind}-এর কোনো লাইব্রেরি ফোল্ডার নেই; একটি যোগ করে আবার ইমপোর্ট করুন",
+	"server.migrate.left-out-was-left-unchecked-check": "বাদ রাখা হয়েছে: {attnfolder} টিক দেওয়া ছিল না; টিক দিয়ে আবার ইমপোর্ট করুন"
 }

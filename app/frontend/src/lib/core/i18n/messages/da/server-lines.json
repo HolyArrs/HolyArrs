@@ -1295,5 +1295,9 @@
 	"server.downloads.this-movie-already-has-a-file": "denne film har allerede en fil; send replace for at sætte denne i stedet",
 	"server.importer.replaced-by-hand": "{path} erstattet manuelt",
 	"server.health.downloader-for": "Downloader til",
-	"server.health.downloader-added-twice": "Downloader tilføjet to gange"
+	"server.health.downloader-added-twice": "Downloader tilføjet to gange",
+	"server.migrate.added-to-as-wanted-with-no": "tilføjet til {fallback} som ønsket uden filer; kræver opmærksomhed: den gamle mappe {dir} findes ikke på denne server; ret mappen eller tilføj en stiregel",
+	"server.migrate.will-be-added-to-as-wanted": "tilføjes til {fallback} som ønsket uden filer; kræver opmærksomhed: den gamle mappe {dir} findes ikke på denne server; ret mappen eller tilføj en stiregel",
+	"server.migrate.its-library-folder-is-not-on": "biblioteksmappen {library} findes ikke på denne server, og her er ingen biblioteksmappe til {kind}; tilføj en og importér igen",
+	"server.migrate.left-out-was-left-unchecked-check": "udeladt: {attnfolder} var ikke afkrydset; afkryds den og importér igen"
 }

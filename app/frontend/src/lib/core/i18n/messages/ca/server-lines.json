@@ -1295,5 +1295,9 @@
 	"server.downloads.this-movie-already-has-a-file": "aquesta pel·lícula ja té un fitxer; envia replace per posar aquest al seu lloc",
 	"server.importer.replaced-by-hand": "{path} substituït a mà",
 	"server.health.downloader-for": "Gestor de baixades per a",
-	"server.health.downloader-added-twice": "Gestor de baixades afegit dues vegades"
+	"server.health.downloader-added-twice": "Gestor de baixades afegit dues vegades",
+	"server.migrate.added-to-as-wanted-with-no": "afegit a {fallback} com a desitjat, sense fitxers; cal revisar-ho: la carpeta antiga {dir} no és en aquest servidor; corregeix la carpeta o afegeix una regla de camí",
+	"server.migrate.will-be-added-to-as-wanted": "s'afegirà a {fallback} com a desitjat, sense fitxers; cal revisar-ho: la carpeta antiga {dir} no és en aquest servidor; corregeix la carpeta o afegeix una regla de camí",
+	"server.migrate.its-library-folder-is-not-on": "la carpeta de la biblioteca {library} no és en aquest servidor i aquí no hi ha cap carpeta de biblioteca de {kind}; afegeix-ne una i importa de nou",
+	"server.migrate.left-out-was-left-unchecked-check": "deixat fora: {attnfolder} ha quedat sense marcar; marca-la i importa de nou"
 }

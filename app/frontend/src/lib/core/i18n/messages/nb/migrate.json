@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Ta med formater og poeng",
 	"migrate.bringFormatsHint": "Hver profil som gir formater poeng, blir sine egne Valgregler med de formatene som egenskaper.",
 	"migrate.formatTraits": "Egenskaper: {list}",
-	"migrate.formatsLeftOut": "Utelatt: {list}"
+	"migrate.formatsLeftOut": "Utelatt: {list}",
+	"migrate.titleFolders": "Titler etter mappe",
+	"migrate.willComeOverN": "Kommer over: {n}",
+	"migrate.cameOverN": "Kom over: {n}",
+	"migrate.needAttentionN": "Trenger oppmerksomhet: {n}",
+	"migrate.needAttentionWhy": "Den gamle mappen deres finnes ikke på denne serveren, så de kommer som ønsket til en mappe her. Rett mappen eller legg til en baneregel: {list}",
+	"migrate.leftOutUncheckedN": "Utelatt, mappen ikke avkrysset: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} var ikke avkrysset; kryss den av og importer på nytt"
 }

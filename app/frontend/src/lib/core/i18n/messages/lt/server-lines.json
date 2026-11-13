@@ -1295,5 +1295,9 @@
 	"server.downloads.this-movie-already-has-a-file": "šis filmas jau turi failą; siųskite replace, kad šis atsidurtų jo vietoje",
 	"server.importer.replaced-by-hand": "{path} pakeistas ranka",
 	"server.health.downloader-for": "Atsisiuntėjas:",
-	"server.health.downloader-added-twice": "Atsisiuntėjas pridėtas du kartus"
+	"server.health.downloader-added-twice": "Atsisiuntėjas pridėtas du kartus",
+	"server.migrate.added-to-as-wanted-with-no": "pridėta į {fallback} kaip norima, be failų; reikia dėmesio: senojo aplanko {dir} šiame serveryje nėra; pataisykite aplanką arba pridėkite kelio taisyklę",
+	"server.migrate.will-be-added-to-as-wanted": "bus pridėta į {fallback} kaip norima, be failų; reikia dėmesio: senojo aplanko {dir} šiame serveryje nėra; pataisykite aplanką arba pridėkite kelio taisyklę",
+	"server.migrate.its-library-folder-is-not-on": "bibliotekos aplanko {library} šiame serveryje nėra, ir čia nėra bibliotekos aplanko tipui {kind}; pridėkite jį ir importuokite iš naujo",
+	"server.migrate.left-out-was-left-unchecked-check": "praleista: {attnfolder} liko nepažymėtas; pažymėkite jį ir importuokite iš naujo"
 }

@@ -1295,5 +1295,9 @@
 	"server.downloads.this-movie-already-has-a-file": "இந்தத் திரைப்படத்துக்கு ஏற்கெனவே கோப்பு உள்ளது; இதை அதன் இடத்தில் வைக்க replace அனுப்புங்கள்",
 	"server.importer.replaced-by-hand": "{path} கைமுறையாக மாற்றப்பட்டது",
 	"server.health.downloader-for": "பதிவிறக்கி:",
-	"server.health.downloader-added-twice": "இருமுறை சேர்க்கப்பட்ட பதிவிறக்கி"
+	"server.health.downloader-added-twice": "இருமுறை சேர்க்கப்பட்ட பதிவிறக்கி",
+	"server.migrate.added-to-as-wanted-with-no": "கோப்புகள் இல்லாமல் 'வேண்டியது' என {fallback}-இல் சேர்க்கப்பட்டது; கவனம் தேவை: பழைய கோப்புறை {dir} இந்த சர்வரில் இல்லை; கோப்புறையைச் சரிசெய்யுங்கள் அல்லது பாதை விதியைச் சேருங்கள்",
+	"server.migrate.will-be-added-to-as-wanted": "கோப்புகள் இல்லாமல் 'வேண்டியது' என {fallback}-இல் சேர்க்கப்படும்; கவனம் தேவை: பழைய கோப்புறை {dir} இந்த சர்வரில் இல்லை; கோப்புறையைச் சரிசெய்யுங்கள் அல்லது பாதை விதியைச் சேருங்கள்",
+	"server.migrate.its-library-folder-is-not-on": "நூலகக் கோப்புறை {library} இந்த சர்வரில் இல்லை, இங்கே {kind}-க்கான நூலகக் கோப்புறையும் இல்லை; ஒன்றைச் சேர்த்து மீண்டும் இறக்குமதி செய்யுங்கள்",
+	"server.migrate.left-out-was-left-unchecked-check": "விடப்பட்டது: {attnfolder} தேர்வுசெய்யப்படவில்லை; தேர்வுசெய்து மீண்டும் இறக்குமதி செய்யுங்கள்"
 }

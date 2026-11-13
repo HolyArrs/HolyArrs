@@ -1295,5 +1295,9 @@
 	"server.downloads.this-movie-already-has-a-file": "この映画にはすでにファイルがあります。置き換えるには replace を送ってください",
 	"server.importer.replaced-by-hand": "{path} を手動で置き換えました",
 	"server.health.downloader-for": "ダウンローダー:",
-	"server.health.downloader-added-twice": "二重に追加されたダウンローダー"
+	"server.health.downloader-added-twice": "二重に追加されたダウンローダー",
+	"server.migrate.added-to-as-wanted-with-no": "欲しいものとしてファイルなしで {fallback} に追加しました。要確認: 古いフォルダー {dir} がこのサーバーにありません。フォルダーを直すか、パスルールを追加してください",
+	"server.migrate.will-be-added-to-as-wanted": "欲しいものとしてファイルなしで {fallback} に追加します。要確認: 古いフォルダー {dir} がこのサーバーにありません。フォルダーを直すか、パスルールを追加してください",
+	"server.migrate.its-library-folder-is-not-on": "ライブラリフォルダー {library} がこのサーバーになく、ここには {kind} のライブラリフォルダーもありません。追加してからもう一度インポートしてください",
+	"server.migrate.left-out-was-left-unchecked-check": "対象外: {attnfolder} のチェックが外れていました。チェックしてもう一度インポートしてください"
 }

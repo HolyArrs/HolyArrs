@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Tag formater og point med",
 	"migrate.bringFormatsHint": "Hver profil, der giver formater point, bliver sine egne Valgregler med de formater som egenskaber.",
 	"migrate.formatTraits": "Egenskaber: {list}",
-	"migrate.formatsLeftOut": "Udeladt: {list}"
+	"migrate.formatsLeftOut": "Udeladt: {list}",
+	"migrate.titleFolders": "Titler efter mappe",
+	"migrate.willComeOverN": "Kommer over: {n}",
+	"migrate.cameOverN": "Kom over: {n}",
+	"migrate.needAttentionN": "Kræver opmærksomhed: {n}",
+	"migrate.needAttentionWhy": "Deres gamle mappe findes ikke på denne server, så de kommer over som ønsket i en mappe her. Ret mappen eller tilføj en stiregel: {list}",
+	"migrate.leftOutUncheckedN": "Udeladt, mappe ikke afkrydset: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} var ikke afkrydset; afkryds den og importér igen"
 }

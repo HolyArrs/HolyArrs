@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanPath, cleanRules, countWord, countWords, extraProblems, folderProblem, moveCounts, moveStateWord, moveTotal, needsGroups, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, sharedTargets, stepGate, summary, tone, type Report } from './move.ts';
+import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanPath, cleanRules, countWord, countWords, extraProblems, folderOutcome, folderProblem, moveCounts, moveStateWord, moveTotal, needsGroups, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, sharedTargets, stepGate, summary, tone, type Report } from './move.ts';
 
 describe('move helpers', () => {
 	it('names apps, with what they bring and their usual port', () => {
@@ -197,5 +197,18 @@ describe('reads per copy of an app', () => {
 		expect(cleanPath('/data//movies')).toBe('/data/movies');
 		expect(cleanPath('/')).toBe('/');
 		expect(cleanPath('')).toBe('');
+	});
+});
+
+describe('folderOutcome', () => {
+	it('splits titles into came over, need attention and left out', () => {
+		const o = folderOutcome([
+			{ group: 'titles', key: 'a', name: 'A', result: 'adopted' },
+			{ group: 'titles', key: 'b', name: 'B', result: 'created', attention: 'unreachable', folder: '/old' },
+			{ group: 'titles', key: 'c', name: 'C', result: 'skipped', attention: 'unchecked', folder: '/data/movies' },
+			{ group: 'titles', key: 'd', name: 'D', result: 'skipped', attention: 'unchecked', folder: '/data/movies' },
+			{ group: 'folders', key: 'f', name: 'F', result: 'created' }
+		]);
+		expect(o).toEqual({ came: 1, attention: 1, attentionFolders: ['/old'], unchecked: 2, uncheckedFolders: ['/data/movies'] });
 	});
 });

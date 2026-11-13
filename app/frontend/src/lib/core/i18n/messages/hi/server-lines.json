@@ -1295,5 +1295,9 @@
 	"server.downloads.this-movie-already-has-a-file": "इस फ़िल्म की फ़ाइल पहले से है; इसे उसकी जगह रखने के लिए replace भेजें",
 	"server.importer.replaced-by-hand": "{path} हाथ से बदली गई",
 	"server.health.downloader-for": "डाउनलोडर:",
-	"server.health.downloader-added-twice": "डाउनलोडर दो बार जोड़ा गया"
+	"server.health.downloader-added-twice": "डाउनलोडर दो बार जोड़ा गया",
+	"server.migrate.added-to-as-wanted-with-no": "{fallback} में बिना फ़ाइलों के 'चाहिए' के रूप में जोड़ा गया; ध्यान चाहिए: पुराना फ़ोल्डर {dir} इस सर्वर पर नहीं है; फ़ोल्डर ठीक करें या पाथ नियम जोड़ें",
+	"server.migrate.will-be-added-to-as-wanted": "{fallback} में बिना फ़ाइलों के 'चाहिए' के रूप में जोड़ा जाएगा; ध्यान चाहिए: पुराना फ़ोल्डर {dir} इस सर्वर पर नहीं है; फ़ोल्डर ठीक करें या पाथ नियम जोड़ें",
+	"server.migrate.its-library-folder-is-not-on": "लाइब्रेरी फ़ोल्डर {library} इस सर्वर पर नहीं है, और यहाँ {kind} के लिए कोई लाइब्रेरी फ़ोल्डर नहीं है; एक जोड़ें और फिर से इम्पोर्ट करें",
+	"server.migrate.left-out-was-left-unchecked-check": "छोड़ा गया: {attnfolder} पर निशान नहीं था; निशान लगाएँ और फिर से इम्पोर्ट करें"
 }

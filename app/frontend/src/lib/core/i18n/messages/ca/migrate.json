@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Porta els formats i les puntuacions",
 	"migrate.bringFormatsHint": "Cada perfil que puntua formats esdevé les seves pròpies Regles d'elecció, amb aquests formats com a trets.",
 	"migrate.formatTraits": "Trets: {list}",
-	"migrate.formatsLeftOut": "Deixats fora: {list}"
+	"migrate.formatsLeftOut": "Deixats fora: {list}",
+	"migrate.titleFolders": "Títols per carpeta",
+	"migrate.willComeOverN": "S'importaran: {n}",
+	"migrate.cameOverN": "Importats: {n}",
+	"migrate.needAttentionN": "Cal revisar: {n}",
+	"migrate.needAttentionWhy": "La seva carpeta antiga no és en aquest servidor, així que arriben com a desitjats a una carpeta d'aquí. Corregeix la carpeta o afegeix una regla de camí: {list}",
+	"migrate.leftOutUncheckedN": "Deixats fora, carpeta sense marcar: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} ha quedat sense marcar; marca-la i importa de nou"
 }

@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "آوردن قالب‌ها و امتیازها",
 	"migrate.bringFormatsHint": "هر نمایه‌ای که به قالب‌ها امتیاز می‌دهد، قوانین انتخاب خودش می‌شود و آن قالب‌ها ویژگی‌هایش.",
 	"migrate.formatTraits": "ویژگی‌ها: {list}",
-	"migrate.formatsLeftOut": "کنار گذاشته شد: {list}"
+	"migrate.formatsLeftOut": "کنار گذاشته شد: {list}",
+	"migrate.titleFolders": "عنوان‌ها بر اساس پوشه",
+	"migrate.willComeOverN": "منتقل می‌شوند: {n}",
+	"migrate.cameOverN": "منتقل شدند: {n}",
+	"migrate.needAttentionN": "نیاز به توجه: {n}",
+	"migrate.needAttentionWhy": "پوشهٔ قدیمی آن‌ها روی این سرور نیست، پس به‌عنوان خواسته‌شده به پوشه‌ای در اینجا می‌آیند. پوشه را درست کنید یا یک قاعدهٔ مسیر بیفزایید: {list}",
+	"migrate.leftOutUncheckedN": "کنار گذاشته شدند، پوشه علامت نخورده: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} علامت نخورده بود؛ علامتش بزنید و دوباره وارد کنید"
 }

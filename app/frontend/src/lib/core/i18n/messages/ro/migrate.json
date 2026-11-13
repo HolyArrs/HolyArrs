@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Adu formatele și scorurile",
 	"migrate.bringFormatsHint": "Fiecare profil care punctează formate devine propriile Reguli de alegere, cu acele formate ca trăsături.",
 	"migrate.formatTraits": "Trăsături: {list}",
-	"migrate.formatsLeftOut": "Lăsate deoparte: {list}"
+	"migrate.formatsLeftOut": "Lăsate deoparte: {list}",
+	"migrate.titleFolders": "Titluri după dosar",
+	"migrate.willComeOverN": "Vor veni: {n}",
+	"migrate.cameOverN": "Au venit: {n}",
+	"migrate.needAttentionN": "Necesită atenție: {n}",
+	"migrate.needAttentionWhy": "Vechiul lor dosar nu este pe acest server, așa că vin ca dorite într-un dosar de aici. Corectează dosarul sau adaugă o regulă de cale: {list}",
+	"migrate.leftOutUncheckedN": "Lăsate deoparte, dosar nebifat: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} a rămas nebifat; bifează-l și importă din nou"
 }

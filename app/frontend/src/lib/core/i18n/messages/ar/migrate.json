@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "إحضار الصيغ والنقاط",
 	"migrate.bringFormatsHint": "كل ملف تعريف يمنح الصيغ نقاطًا يصبح قواعد اختيار خاصة به، وتصبح تلك الصيغ سمات.",
 	"migrate.formatTraits": "السمات: {list}",
-	"migrate.formatsLeftOut": "مستبعد: {list}"
+	"migrate.formatsLeftOut": "مستبعد: {list}",
+	"migrate.titleFolders": "العناوين حسب المجلد",
+	"migrate.willComeOverN": "ستنتقل: {n}",
+	"migrate.cameOverN": "انتقلت: {n}",
+	"migrate.needAttentionN": "تحتاج إلى انتباه: {n}",
+	"migrate.needAttentionWhy": "مجلدها القديم غير موجود على هذا الخادم، لذا تنتقل كمطلوبة إلى مجلد هنا. أصلح المجلد أو أضف قاعدة مسار: {list}",
+	"migrate.leftOutUncheckedN": "مستبعدة، المجلد غير محدد: {n}",
+	"migrate.leftOutUncheckedWhy": "لم يُحدَّد {folder}؛ حدِّده واستورد مجددًا"
 }

@@ -300,5 +300,12 @@
 "migrate.bringFormats": "Preniesť formáty a skóre",
 "migrate.bringFormatsHint": "Každý profil, ktorý boduje formáty, sa stane vlastnými Pravidlami výberu a tieto formáty ich vlastnosťami.",
 "migrate.formatTraits": "Vlastnosti: {list}",
-"migrate.formatsLeftOut": "Vynechané: {list}"
+"migrate.formatsLeftOut": "Vynechané: {list}",
+	"migrate.titleFolders": "Tituly podľa priečinka",
+	"migrate.willComeOverN": "Prejdú: {n}",
+	"migrate.cameOverN": "Prešlo: {n}",
+	"migrate.needAttentionN": "Vyžadujú pozornosť: {n}",
+	"migrate.needAttentionWhy": "Ich starý priečinok na tomto serveri nie je, takže prichádzajú ako hľadané do priečinka tu. Opravte priečinok alebo pridajte pravidlo cesty: {list}",
+	"migrate.leftOutUncheckedN": "Vynechané, priečinok nezačiarknutý: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} zostal nezačiarknutý; začiarknite ho a importujte znova"
 }

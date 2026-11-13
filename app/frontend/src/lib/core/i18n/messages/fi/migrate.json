@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Tuo muodot ja pisteytykset",
 	"migrate.bringFormatsHint": "Jokainen muotoja pisteyttävä profiili muuttuu omiksi Valintasäännöikseen, ja niistä muodoista tulee ominaisuuksia.",
 	"migrate.formatTraits": "Ominaisuudet: {list}",
-	"migrate.formatsLeftOut": "Pois jätetty: {list}"
+	"migrate.formatsLeftOut": "Pois jätetty: {list}",
+	"migrate.titleFolders": "Nimikkeet kansioittain",
+	"migrate.willComeOverN": "Tulevat mukaan: {n}",
+	"migrate.cameOverN": "Tulivat mukaan: {n}",
+	"migrate.needAttentionN": "Vaativat huomiota: {n}",
+	"migrate.needAttentionWhy": "Niiden vanhaa kansiota ei ole tällä palvelimella, joten ne tulevat toivottuina täällä olevaan kansioon. Korjaa kansio tai lisää polkusääntö: {list}",
+	"migrate.leftOutUncheckedN": "Jätetty pois, kansio valitsematta: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} jätettiin valitsematta; valitse se ja tuo uudelleen"
 }

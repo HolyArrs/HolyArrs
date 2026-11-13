@@ -1295,5 +1295,9 @@
 	"server.downloads.this-movie-already-has-a-file": "dieser Film hat schon eine Datei; sende replace, um diese an ihre Stelle zu setzen",
 	"server.importer.replaced-by-hand": "{path} von Hand ersetzt",
 	"server.health.downloader-for": "Downloader für",
-	"server.health.downloader-added-twice": "Downloader doppelt hinzugefügt"
+	"server.health.downloader-added-twice": "Downloader doppelt hinzugefügt",
+	"server.migrate.added-to-as-wanted-with-no": "als gesucht ohne Dateien zu {fallback} hinzugefügt; braucht Aufmerksamkeit: der alte Ordner {dir} ist nicht auf diesem Server; Ordner korrigieren oder eine Pfadregel hinzufügen",
+	"server.migrate.will-be-added-to-as-wanted": "wird als gesucht ohne Dateien zu {fallback} hinzugefügt; braucht Aufmerksamkeit: der alte Ordner {dir} ist nicht auf diesem Server; Ordner korrigieren oder eine Pfadregel hinzufügen",
+	"server.migrate.its-library-folder-is-not-on": "der Bibliotheksordner {library} ist nicht auf diesem Server, und hier gibt es keinen Bibliotheksordner für {kind}; lege einen an und importiere erneut",
+	"server.migrate.left-out-was-left-unchecked-check": "ausgelassen: {attnfolder} wurde nicht angehakt; hake ihn an und importiere erneut"
 }

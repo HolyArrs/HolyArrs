@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Formaten en scores meenemen",
 	"migrate.bringFormatsHint": "Elk profiel dat formaten punten geeft, wordt eigen Keuzeregels, met die formaten als kenmerken.",
 	"migrate.formatTraits": "Kenmerken: {list}",
-	"migrate.formatsLeftOut": "Weggelaten: {list}"
+	"migrate.formatsLeftOut": "Weggelaten: {list}",
+	"migrate.titleFolders": "Titels per map",
+	"migrate.willComeOverN": "Komen over: {n}",
+	"migrate.cameOverN": "Overgekomen: {n}",
+	"migrate.needAttentionN": "Vragen aandacht: {n}",
+	"migrate.needAttentionWhy": "Hun oude map staat niet op deze server, dus komen ze als gewenst in een map hier. Corrigeer de map of voeg een padregel toe: {list}",
+	"migrate.leftOutUncheckedN": "Weggelaten, map niet aangevinkt: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} was niet aangevinkt; vink hem aan en importeer opnieuw"
 }
