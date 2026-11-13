@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "tätä laatua ei voi pyytää",
 	"server.requests.the-quality-you-picked-was-not": "Valitsemaasi laatua ei käytetty: nimikkeellä on jo tämä kopio.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex ei enää tarjoa listaa ihmisistä, joiden kanssa palvelimesi on jaettu",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex hylkäsi yhdistetyn Plex-tilisi; yhdistä se uudelleen"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex hylkäsi yhdistetyn Plex-tilisi; yhdistä se uudelleen",
+	"server.migrate.the-show-could-not-be-found": "sarjaa ei löytynyt sen tunnisteilla eikä nimellä"
 }

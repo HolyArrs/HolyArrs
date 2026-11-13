@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "এই কোয়ালিটি রিকোয়েস্ট করা যায় না",
 	"server.requests.the-quality-you-picked-was-not": "আপনার বেছে নেওয়া কোয়ালিটি ব্যবহার হয়নি: এই টাইটেলে ওই কপি আগেই আছে।",
 	"server.accounts.plex-no-longer-offers-the-list": "আপনার সার্ভার যাদের সঙ্গে শেয়ার করা, Plex আর তাদের তালিকা দেয় না",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex আপনার লিংক করা Plex অ্যাকাউন্ট গ্রহণ করেনি; আবার লিংক করুন"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex আপনার লিংক করা Plex অ্যাকাউন্ট গ্রহণ করেনি; আবার লিংক করুন",
+	"server.migrate.the-show-could-not-be-found": "শোটি তার আইডি বা নাম দিয়ে খুঁজে পাওয়া যায়নি"
 }

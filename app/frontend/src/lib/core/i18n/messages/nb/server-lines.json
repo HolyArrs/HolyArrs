@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "den kvaliteten kan ikke forespørres",
 	"server.requests.the-quality-you-picked-was-not": "Kvaliteten du valgte ble ikke brukt: tittelen har allerede den kopien.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex tilbyr ikke lenger listen over folkene serveren din er delt med",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex avviste den tilkoblede Plex-kontoen din; koble den til på nytt"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex avviste den tilkoblede Plex-kontoen din; koble den til på nytt",
+	"server.migrate.the-show-could-not-be-found": "serien ble ikke funnet verken med id-ene eller navnet"
 }

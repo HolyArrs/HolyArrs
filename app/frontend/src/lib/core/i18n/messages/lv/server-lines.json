@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "šo kvalitāti nevar pieprasīt",
 	"server.requests.the-quality-you-picked-was-not": "Izvēlētā kvalitāte netika izmantota: šim nosaukumam jau ir šī kopija.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex vairs nepiedāvā sarakstu ar cilvēkiem, ar kuriem koplietots tavs serveris",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex noraidīja tavu sasaistīto Plex kontu; sasaisti to vēlreiz"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex noraidīja tavu sasaistīto Plex kontu; sasaisti to vēlreiz",
+	"server.migrate.the-show-could-not-be-found": "seriālu neizdevās atrast ne pēc tā id, ne pēc nosaukuma"
 }

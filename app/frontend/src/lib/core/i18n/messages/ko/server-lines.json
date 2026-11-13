@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "그 품질은 요청할 수 없습니다",
 	"server.requests.the-quality-you-picked-was-not": "선택한 품질은 사용되지 않았습니다: 이 타이틀에 이미 그 사본이 있습니다.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex가 서버를 공유받은 사용자 목록을 더 이상 제공하지 않습니다",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex가 연결된 Plex 계정을 거부했습니다. 다시 연결하세요"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex가 연결된 Plex 계정을 거부했습니다. 다시 연결하세요",
+	"server.migrate.the-show-could-not-be-found": "ID로도 이름으로도 이 쇼를 찾지 못했습니다"
 }

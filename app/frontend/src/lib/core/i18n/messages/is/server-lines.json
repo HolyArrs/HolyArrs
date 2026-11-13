@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "ekki er hægt að biðja um þessi gæði",
 	"server.requests.the-quality-you-picked-was-not": "Gæðin sem þú valdir voru ekki notuð: þessi titill er þegar með það eintak.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex býður ekki lengur upp á lista yfir fólkið sem þjónninn þinn er deilt með",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex hafnaði tengda Plex-aðganginum þínum; tengdu hann aftur"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex hafnaði tengda Plex-aðganginum þínum; tengdu hann aftur",
+	"server.migrate.the-show-could-not-be-found": "þáttaröðin fannst hvorki með auðkennum sínum né nafni"
 }

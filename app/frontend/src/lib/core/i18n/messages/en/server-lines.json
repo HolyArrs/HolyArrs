@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "that quality cannot be asked for",
 	"server.requests.the-quality-you-picked-was-not": "The quality you picked was not used: this title already has that copy.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex no longer offers the list of people your server is shared with",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex refused your linked Plex account; link it again"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex refused your linked Plex account; link it again",
+	"server.migrate.the-show-could-not-be-found": "the show could not be found by its ids or its name"
 }

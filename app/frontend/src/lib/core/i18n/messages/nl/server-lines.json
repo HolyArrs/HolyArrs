@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "die kwaliteit kan niet worden aangevraagd",
 	"server.requests.the-quality-you-picked-was-not": "De gekozen kwaliteit is niet gebruikt: deze titel heeft die kopie al.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex biedt de lijst met mensen met wie je server wordt gedeeld niet meer aan",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex heeft je gekoppelde Plex-account geweigerd; koppel het opnieuw"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex heeft je gekoppelde Plex-account geweigerd; koppel het opnieuw",
+	"server.migrate.the-show-could-not-be-found": "de serie is niet gevonden met haar id's of haar naam"
 }

@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "bu kalite istenemez",
 	"server.requests.the-quality-you-picked-was-not": "Seçtiğiniz kalite kullanılmadı: bu başlıkta o kopya zaten var.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex, sunucunun paylaşıldığı kişilerin listesini artık sunmuyor",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex bağlı Plex hesabını reddetti; yeniden bağla"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex bağlı Plex hesabını reddetti; yeniden bağla",
+	"server.migrate.the-show-could-not-be-found": "dizi ne kimlikleriyle ne de adıyla bulunabildi"
 }
