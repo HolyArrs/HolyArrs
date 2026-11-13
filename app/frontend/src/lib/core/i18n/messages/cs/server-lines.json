@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "importováno dříve; dostane přihlášení přes {way}",
 	"server.migrate.imported-before-got-their-sign-in": "importováno dříve; dostalo přihlášení přes {way}",
 	"server.migrate.imported-before-their-account-signs-in": "importováno dříve; jejich účet {way} se tu přihlašuje jako {name}, takže to zůstane tak",
-	"server.migrate.people-who-signed-in-to-the": "Lidé, kteří se do staré aplikace přihlašovali přes Plex, Jellyfin nebo Emby, se zapnou při prvním přihlášení tímto způsobem, jakmile to zapnete v Nastavení > Přihlášení a zabezpečení."
+	"server.migrate.people-who-signed-in-to-the": "Lidé, kteří se do staré aplikace přihlašovali přes Plex, Jellyfin nebo Emby, se zapnou při prvním přihlášení tímto způsobem, jakmile to zapnete v Nastavení > Přihlášení a zabezpečení.",
+	"server.sources.this-release-does-not-match-an": "Toto release neodpovídá žádnému dílu, který HolyArrs hledá. Pokud ho chceš přesto použít, vyber ho u dílu, ke kterému patří."
 }

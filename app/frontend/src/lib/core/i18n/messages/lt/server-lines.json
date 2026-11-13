@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "importuota anksčiau; gauna prisijungimą per {way}",
 	"server.migrate.imported-before-got-their-sign-in": "importuota anksčiau; gavo prisijungimą per {way}",
 	"server.migrate.imported-before-their-account-signs-in": "importuota anksčiau; jo {way} paskyra čia jungiasi kaip {name}, todėl taip ir lieka",
-	"server.migrate.people-who-signed-in-to-the": "Žmonės, kurie į senąją programą jungdavosi per Plex, Jellyfin ar Emby, įsijungia pirmą kartą taip prisijungę, kai tai įjungta skiltyje Nustatymai > Prisijungimas ir sauga."
+	"server.migrate.people-who-signed-in-to-the": "Žmonės, kurie į senąją programą jungdavosi per Plex, Jellyfin ar Emby, įsijungia pirmą kartą taip prisijungę, kai tai įjungta skiltyje Nustatymai > Prisijungimas ir sauga.",
+	"server.sources.this-release-does-not-match-an": "Šis Leidimas neatitinka jokios serijos, kurios ieško HolyArrs. Jei vis tiek nori jį naudoti, pasirink jį iš serijos, kuriai jis skirtas."
 }

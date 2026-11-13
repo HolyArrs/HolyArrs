@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "imporditud varem; saab oma {way} sisselogimise",
 	"server.migrate.imported-before-got-their-sign-in": "imporditud varem; sai oma {way} sisselogimise",
 	"server.migrate.imported-before-their-account-signs-in": "imporditud varem; nende {way} konto logib siin sisse kui {name}, nii et see jääb nii",
-	"server.migrate.people-who-signed-in-to-the": "Inimesed, kes logisid vanasse rakendusse sisse Plexi, Jellyfini või Embyga, lülituvad sisse esimesel sel viisil sisselogimisel, kui see on sisse lülitatud jaotises Seaded > Sisselogimine ja turvalisus."
+	"server.migrate.people-who-signed-in-to-the": "Inimesed, kes logisid vanasse rakendusse sisse Plexi, Jellyfini või Embyga, lülituvad sisse esimesel sel viisil sisselogimisel, kui see on sisse lülitatud jaotises Seaded > Sisselogimine ja turvalisus.",
+	"server.sources.this-release-does-not-match-an": "See väljalase ei vasta ühelegi osale, mida HolyArrs otsib. Kui soovid seda ikkagi kasutada, vali see osa juurest, millele see kuulub."
 }

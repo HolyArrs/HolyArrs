@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "na-import na dati; makukuha ang kanilang {way} sign-in",
 	"server.migrate.imported-before-got-their-sign-in": "na-import na dati; nakuha ang kanilang {way} sign-in",
 	"server.migrate.imported-before-their-account-signs-in": "na-import na dati; ang kanilang {way} account ay nagsa-sign in bilang {name} dito, kaya mananatili ito",
-	"server.migrate.people-who-signed-in-to-the": "Ang mga taong nagsa-sign in sa lumang app gamit ang Plex, Jellyfin o Emby ay mao-on sa una nilang sign-in sa ganoong paraan, kapag naka-on ito sa Settings > Sign-in at seguridad."
+	"server.migrate.people-who-signed-in-to-the": "Ang mga taong nagsa-sign in sa lumang app gamit ang Plex, Jellyfin o Emby ay mao-on sa una nilang sign-in sa ganoong paraan, kapag naka-on ito sa Settings > Sign-in at seguridad.",
+	"server.sources.this-release-does-not-match-an": "Hindi tugma ang Release na ito sa anumang episode na hinahanap ng HolyArrs. Para gamitin pa rin ito, piliin ito mula sa episode na para rito."
 }

@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "पहले इंपोर्ट हो चुका; उन्हें {way} साइन इन मिलता है",
 	"server.migrate.imported-before-got-their-sign-in": "पहले इंपोर्ट हो चुका; उन्हें {way} साइन इन मिल गया",
 	"server.migrate.imported-before-their-account-signs-in": "पहले इंपोर्ट हो चुका; उनका {way} खाता यहां {name} के रूप में साइन इन करता है, इसलिए वैसा ही रहता है",
-	"server.migrate.people-who-signed-in-to-the": "जो लोग पुराने ऐप में Plex, Jellyfin या Emby से साइन इन करते थे, वे उसी तरह पहली बार साइन इन करने पर चालू होते हैं, जब सेटिंग > साइन इन और सुरक्षा में इसे चालू किया गया हो।"
+	"server.migrate.people-who-signed-in-to-the": "जो लोग पुराने ऐप में Plex, Jellyfin या Emby से साइन इन करते थे, वे उसी तरह पहली बार साइन इन करने पर चालू होते हैं, जब सेटिंग > साइन इन और सुरक्षा में इसे चालू किया गया हो।",
+	"server.sources.this-release-does-not-match-an": "यह रिलीज़ किसी ऐसे एपिसोड से मेल नहीं खाती जिसे HolyArrs ढूँढ रहा है। फिर भी इस्तेमाल करना हो, तो इसे उसी एपिसोड से चुनो जिसके लिए यह है।"
 }

@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "εισήχθη νωρίτερα· παίρνει τη σύνδεση με {way}",
 	"server.migrate.imported-before-got-their-sign-in": "εισήχθη νωρίτερα· πήρε τη σύνδεση με {way}",
 	"server.migrate.imported-before-their-account-signs-in": "εισήχθη νωρίτερα· ο λογαριασμός {way} του συνδέεται εδώ ως {name}, οπότε μένει έτσι",
-	"server.migrate.people-who-signed-in-to-the": "Τα άτομα που συνδέονταν στην παλιά εφαρμογή με Plex, Jellyfin ή Emby ενεργοποιούνται στην πρώτη τους σύνδεση με αυτόν τον τρόπο, μόλις τον ενεργοποιήσετε στις Ρυθμίσεις > Σύνδεση και ασφάλεια."
+	"server.migrate.people-who-signed-in-to-the": "Τα άτομα που συνδέονταν στην παλιά εφαρμογή με Plex, Jellyfin ή Emby ενεργοποιούνται στην πρώτη τους σύνδεση με αυτόν τον τρόπο, μόλις τον ενεργοποιήσετε στις Ρυθμίσεις > Σύνδεση και ασφάλεια.",
+	"server.sources.this-release-does-not-match-an": "Αυτή η κυκλοφορία δεν ταιριάζει με επεισόδιο που αναζητά το HolyArrs. Για να τη χρησιμοποιήσεις παρ' όλα αυτά, διάλεξέ τη από το επεισόδιο στο οποίο ανήκει."
 }

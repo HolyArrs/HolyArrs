@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "pernah diimpor; mendapat cara masuk {way} mereka",
 	"server.migrate.imported-before-got-their-sign-in": "pernah diimpor; sudah mendapat cara masuk {way} mereka",
 	"server.migrate.imported-before-their-account-signs-in": "pernah diimpor; akun {way} mereka masuk sebagai {name} di sini, jadi tetap begitu",
-	"server.migrate.people-who-signed-in-to-the": "Orang yang masuk ke aplikasi lama dengan Plex, Jellyfin, atau Emby menyala saat pertama kali masuk dengan cara itu, setelah kamu menyalakannya di Pengaturan > Masuk dan keamanan."
+	"server.migrate.people-who-signed-in-to-the": "Orang yang masuk ke aplikasi lama dengan Plex, Jellyfin, atau Emby menyala saat pertama kali masuk dengan cara itu, setelah kamu menyalakannya di Pengaturan > Masuk dan keamanan.",
+	"server.sources.this-release-does-not-match-an": "Rilis ini tidak cocok dengan episode mana pun yang sedang dicari HolyArrs. Untuk tetap memakainya, pilih dari episode yang sesuai."
 }

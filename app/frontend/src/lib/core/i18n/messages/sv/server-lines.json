@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "importerad tidigare; får sin inloggning med {way}",
 	"server.migrate.imported-before-got-their-sign-in": "importerad tidigare; fick sin inloggning med {way}",
 	"server.migrate.imported-before-their-account-signs-in": "importerad tidigare; deras {way}-konto loggar in som {name} här, så det förblir så",
-	"server.migrate.people-who-signed-in-to-the": "Personer som loggade in i den gamla appen med Plex, Jellyfin eller Emby slås på vid sin första inloggning på det sättet, när det är påslaget under Inställningar > Inloggning och säkerhet."
+	"server.migrate.people-who-signed-in-to-the": "Personer som loggade in i den gamla appen med Plex, Jellyfin eller Emby slås på vid sin första inloggning på det sättet, när det är påslaget under Inställningar > Inloggning och säkerhet.",
+	"server.sources.this-release-does-not-match-an": "Den här releasen passar inte något avsnitt som HolyArrs letar efter. Vill du ändå använda den, välj den från avsnittet den hör till."
 }

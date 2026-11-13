@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "قبلاً وارد شده؛ ورود با {way} را می‌گیرد",
 	"server.migrate.imported-before-got-their-sign-in": "قبلاً وارد شده؛ ورود با {way} را گرفت",
 	"server.migrate.imported-before-their-account-signs-in": "قبلاً وارد شده؛ حساب {way} او اینجا با نام {name} وارد می‌شود، پس همین‌طور می‌ماند",
-	"server.migrate.people-who-signed-in-to-the": "افرادی که در برنامهٔ قدیمی با Plex، Jellyfin یا Emby وارد می‌شدند، با اولین ورودشان از همین راه روشن می‌شوند، وقتی آن را در تنظیمات > ورود و امنیت روشن کنی."
+	"server.migrate.people-who-signed-in-to-the": "افرادی که در برنامهٔ قدیمی با Plex، Jellyfin یا Emby وارد می‌شدند، با اولین ورودشان از همین راه روشن می‌شوند، وقتی آن را در تنظیمات > ورود و امنیت روشن کنی.",
+	"server.sources.this-release-does-not-match-an": "این ریلیز با هیچ قسمتی که HolyArrs دنبالش است جور نیست. برای استفاده از آن به هر حال، آن را از همان قسمتی که مال آن است انتخاب کن."
 }

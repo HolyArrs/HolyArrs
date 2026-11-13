@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "importado antes; recebe o login com {way}",
 	"server.migrate.imported-before-got-their-sign-in": "importado antes; recebeu o login com {way}",
 	"server.migrate.imported-before-their-account-signs-in": "importado antes; a conta do {way} dessa pessoa entra aqui como {name}, então fica assim",
-	"server.migrate.people-who-signed-in-to-the": "As pessoas que entravam no app antigo com Plex, Jellyfin ou Emby são ativadas no primeiro login desse jeito, quando isso estiver ativado em Configurações > Login e segurança."
+	"server.migrate.people-who-signed-in-to-the": "As pessoas que entravam no app antigo com Plex, Jellyfin ou Emby são ativadas no primeiro login desse jeito, quando isso estiver ativado em Configurações > Login e segurança.",
+	"server.sources.this-release-does-not-match-an": "Este lançamento não corresponde a nenhum episódio que o HolyArrs esteja procurando. Para usá-lo mesmo assim, escolha-o a partir do episódio a que ele pertence."
 }
