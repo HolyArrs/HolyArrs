@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Одвојите врсте зарезима, нпр. srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs не види {path}. Види само фасцикле монтиране у свој контејнер. Додајте волумен као {path}:{inside}, па овде користите {inside}.",
 	"settings.libraryFolders.quality": "Квалитет",
-	"settings.libraryFolders.qualityNone": "Користи подразумевано",
 	"settings.libraryFolders.qualityHint": "Нови наслови у овој фасцикли почињу са овим квалитетом.",
-	"settings.libraryFolders.qualityOf": "Квалитет за {path}"
+	"settings.libraryFolders.qualityDefault": "Подразумевано",
+	"settings.libraryFolders.qualityDefaultNamed": "Подразумевано ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · подразумевано",
+	"settings.libraryFolders.qualityFor": "Квалитет за {name}: {value}"
 }

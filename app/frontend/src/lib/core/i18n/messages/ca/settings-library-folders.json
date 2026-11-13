@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Separa els tipus amb comes, com ara srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs no veu {path}. Només veu les carpetes muntades al seu contenidor. Afegeix un volum com {path}:{inside} i després fes servir {inside} aquí.",
 	"settings.libraryFolders.quality": "Qualitat",
-	"settings.libraryFolders.qualityNone": "Utilitza el valor per defecte",
 	"settings.libraryFolders.qualityHint": "Els títols nous d'aquesta carpeta comencen amb aquesta qualitat.",
-	"settings.libraryFolders.qualityOf": "Qualitat de {path}"
+	"settings.libraryFolders.qualityDefault": "Per defecte",
+	"settings.libraryFolders.qualityDefaultNamed": "Per defecte ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · per defecte",
+	"settings.libraryFolders.qualityFor": "Qualitat de {name}: {value}"
 }

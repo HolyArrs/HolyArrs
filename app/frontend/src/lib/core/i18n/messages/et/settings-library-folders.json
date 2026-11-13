@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Eralda tüübid komadega, näiteks srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs ei näe kausta {path}. See näeb ainult kaustu, mis on tema konteinerisse ühendatud. Lisa köide nagu {path}:{inside} ja kasuta siin siis {inside}.",
 	"settings.libraryFolders.quality": "Kvaliteet",
-	"settings.libraryFolders.qualityNone": "Kasuta vaikimisi valikut",
 	"settings.libraryFolders.qualityHint": "Selle kausta uued pealkirjad algavad selle kvaliteediga.",
-	"settings.libraryFolders.qualityOf": "Kausta {path} kvaliteet"
+	"settings.libraryFolders.qualityDefault": "Vaikimisi",
+	"settings.libraryFolders.qualityDefaultNamed": "Vaikimisi ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · vaikimisi",
+	"settings.libraryFolders.qualityFor": "Kvaliteet – {name}: {value}"
 }

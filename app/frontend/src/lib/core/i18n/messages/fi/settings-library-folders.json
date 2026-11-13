@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Erota tyypit pilkuilla, esim. srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs ei näe kansiota {path}. Se näkee vain konttiinsa liitetyt kansiot. Lisää taltio, kuten {path}:{inside}, ja käytä sitten tässä polkua {inside}.",
 	"settings.libraryFolders.quality": "Laatu",
-	"settings.libraryFolders.qualityNone": "Käytä oletusta",
 	"settings.libraryFolders.qualityHint": "Tämän kansion uudet nimikkeet alkavat tällä laadulla.",
-	"settings.libraryFolders.qualityOf": "Kansion {path} laatu"
+	"settings.libraryFolders.qualityDefault": "Oletus",
+	"settings.libraryFolders.qualityDefaultNamed": "Oletus ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · oletus",
+	"settings.libraryFolders.qualityFor": "Laatu – {name}: {value}"
 }

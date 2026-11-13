@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Atdaliet tipus ar komatiem, piemēram, srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs neredz {path}. Tas redz tikai mapes, kas pievienotas tā konteinerā. Pievienojiet sējumu, piemēram, {path}:{inside}, un pēc tam šeit izmantojiet {inside}.",
 	"settings.libraryFolders.quality": "Kvalitāte",
-	"settings.libraryFolders.qualityNone": "Izmantot noklusējumu",
 	"settings.libraryFolders.qualityHint": "Jauni nosaukumi šajā mapē sāksies ar šo kvalitāti.",
-	"settings.libraryFolders.qualityOf": "Mapes {path} kvalitāte"
+	"settings.libraryFolders.qualityDefault": "Noklusējums",
+	"settings.libraryFolders.qualityDefaultNamed": "Noklusējums ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · noklusējums",
+	"settings.libraryFolders.qualityFor": "Kvalitāte – {name}: {value}"
 }
