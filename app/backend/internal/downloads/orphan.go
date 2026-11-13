@@ -30,9 +30,10 @@ type orphan struct {
 }
 
 // relinkOrphans moves the downloads of a removed Downloader to a Downloader
-// that holds the same torrent, found by its hash. Removing a Downloader and
-// adding it again otherwise leaves them on the removed one for good. A
-// finished one whose import never ran has its import asked for again.
+// that holds the same torrent, found by its hash, imported ones too.
+// Removing a Downloader and adding it again otherwise leaves them on the
+// removed one for good. A finished one whose import never ran has its
+// import asked for again.
 func (m *Manager) relinkOrphans(ctx context.Context) {
 	if m.Store == nil {
 		return
@@ -61,8 +62,9 @@ func (m *Manager) relinkOrphans(ctx context.Context) {
 			m.relinkTried[o.id] = now
 		}
 		m.mu.Unlock()
-		// The throttle comes first so a pile of old finished rows costs no reads each sync.
-		if fresh && (o.state != "finished" || m.waitsForImport(ctx, o.id)) {
+		// The throttle comes first so a pile of old finished rows costs no reads each
+		// sync. Imported ones move over too, so the torrent stays HolyArrs' own.
+		if fresh {
 			due = append(due, o)
 		}
 	}
@@ -94,7 +96,7 @@ func (m *Manager) relinkOrphans(ctx context.Context) {
 // its import asked for.
 func (m *Manager) relink(ctx context.Context, o orphan, to int64) bool {
 	var d domain.Download
-	moved := false
+	moved, woke := false, 0
 	err := m.Store.Write(ctx, func(tx *sql.Tx) error {
 		ok, err := relinkTx(ctx, tx, o, to, m.now())
 		if err != nil || !ok {
@@ -105,7 +107,7 @@ func (m *Manager) relink(ctx context.Context, o orphan, to int64) bool {
 			return err
 		}
 		if d.State == "finished" {
-			_, err = wakeSlots(ctx, tx, d, domain.System)
+			woke, err = wakeSlots(ctx, tx, d, domain.System)
 		}
 		return err
 	})
@@ -116,7 +118,8 @@ func (m *Manager) relink(ctx context.Context, o orphan, to int64) bool {
 	delete(m.relinkTried, o.id)
 	m.mu.Unlock()
 	m.publish("download", d)
-	if d.State == "finished" && m.OnFinished != nil {
+	// Only a download whose Slots still wait for it is imported; an imported one just moves.
+	if d.State == "finished" && woke > 0 && m.OnFinished != nil {
 		m.OnFinished(ctx, d.ID)
 	}
 	return true
@@ -171,26 +174,6 @@ func (m *Manager) ImportAgain(ctx context.Context, id int64, by domain.Actor) er
 		m.OnFinished(ctx, id)
 	}
 	return nil
-}
-
-// waitsForImport reports whether a finished download still has a Slot that
-// waits for its files.
-func (m *Manager) waitsForImport(ctx context.Context, id int64) bool {
-	db := m.Store.Read()
-	var d domain.Download
-	if database.Get(ctx, db, "downloads", id, &d) != nil {
-		return false
-	}
-	for _, sid := range d.SlotIDs {
-		var sl mediafiles.Slot
-		if mediafiles.LoadSlot(ctx, db, sid, &sl) != nil {
-			continue
-		}
-		if (sl.ActiveDownloadID == nil || *sl.ActiveDownloadID == id) && (sl.State == mediafiles.SlotDownloading || sl.State == mediafiles.SlotStalled) {
-			return true
-		}
-	}
-	return false
 }
 
 // downloaderGone reports whether a download's Downloader was removed.

@@ -65,6 +65,10 @@ type DownloadRow struct {
 	// CanImport says a finished download still waits for its import, which
 	// Import again asks for.
 	CanImport bool `json:"can_import,omitempty"`
+	// A refused import: why, in the importer's words, and the download's
+	// folder Import files by hand opens on (managers only; "" when unread).
+	RefusedWhy   string `json:"refused_why,omitempty"`
+	ImportFolder string `json:"import_folder,omitempty"`
 	// Replaced says a failed copy was turned down and HolyArrs moved on (it
 	// searches again or already has another copy), so it is no problem.
 	Replaced bool `json:"replaced,omitempty"`
@@ -373,7 +377,7 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 	rels := releaseNames(ctx, db, relIDs)
 	// A finished download whose own import was refused says so, whatever its
 	// Slot did next (kept the copy it had, or looks for another).
-	var refused map[int64]bool
+	var refused map[int64]string
 	if len(doneIDs) > 0 {
 		refused, _ = mediafiles.RefusedDownloads(ctx, db, doneIDs)
 	}
@@ -437,8 +441,11 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 			row.Covers = Covers(row.Episodes)
 			row.Phase = phaseOfMany(d, row.Episodes)
 		}
-		if refused[d.ID] {
-			row.Phase = "import_refused"
+		if why, ok := refused[d.ID]; ok {
+			row.Phase, row.RefusedWhy = "import_refused", why
+			if manage {
+				row.ImportFolder = a.importer().ReviewFolder(ctx, d.ID)
+			}
 		}
 		// Its Release is gone (deleting a Source deletes its Releases): name
 		// it by what the Downloader held, else its Title, not by a hash.

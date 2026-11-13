@@ -85,6 +85,46 @@ func TestReplacedDownloaderRelinksFinished(t *testing.T) {
 	}
 }
 
+// An imported download is known by its hash too: once the same Downloader is
+// added again it moves over (no import asked for), and the Downloads page
+// shows it once, as HolyArrs' own, not a second time as an outside torrent.
+func TestReplacedDownloaderRelinksImported(t *testing.T) {
+	w, m := setup(t)
+	id := grabbed(t, w, m)
+	w.exec(t, "UPDATE downloads SET state = 'finished', progress = 1 WHERE id = ?", id)
+	w.exec(t, "UPDATE slots SET state = 'in_library', active_download_id = NULL WHERE id = ?", w.slotID)
+	nid := replaceDownloader(t, w, true)
+	w.fake.set(hash, map[string]any{"name": "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", "category": "holyarrs", "progress": 1.0, "state": "stoppedUP", "save_path": "/data/downloads/complete"})
+	if _, err := m.SyncOnce(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if d := w.download(t, id); d.DownloaderID != nid || d.State != "finished" {
+		t.Fatalf("download on Downloader %d (%s), want %d", d.DownloaderID, d.State, nid)
+	}
+	if len(w.finshed) != 0 {
+		t.Fatalf("import asked for again: %v", w.finshed)
+	}
+	a := &Web{Store: w.s, Downloads: m}
+	feedStore(t, a)
+	rec := httptest.NewRecorder()
+	a.DownloadsView(rec, httptest.NewRequest("GET", "/api/v1/downloads/view", nil))
+	var out struct {
+		Downloads []DownloadRow `json:"downloads"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	var mine []DownloadRow
+	for _, r := range out.Downloads {
+		if r.Hash == hash {
+			mine = append(mine, r)
+		}
+	}
+	if len(mine) != 1 || mine[0].ID != id || mine[0].Outside || mine[0].DownloaderGone {
+		t.Fatalf("rows for the torrent: %+v", mine)
+	}
+}
+
 // A new Downloader that does not hold the torrent takes nothing over, and a
 // download already there under the same hash is left alone.
 func TestReplacedDownloaderKeepsRowWithoutHash(t *testing.T) {

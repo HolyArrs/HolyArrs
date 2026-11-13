@@ -18,6 +18,14 @@ describe('healthLine', () => {
 		expect(healthLine({ phase: 'failed', progress: 0.5, client_hint: 'errored' })).toBe('Failed · 50%');
 		expect(healthLine({ phase: 'done', state: 'paused', ratio: 1 })).toBe('Done, paused · ratio 1.00');
 	});
+	it('says what the list says once the download is in, never Downloading', () => {
+		const why = 'the file is 50 MB, too small to be the full video; likely a fake';
+		expect(healthLine({ phase: 'import_refused', state: 'finished', progress: 1, refused_why: why })).toBe(`Failed · ${why}`);
+		expect(healthLine({ phase: 'import_refused', state: 'finished', progress: 1 })).toBe('Failed · 100%');
+		expect(healthLine({ phase: 'waiting_to_import', state: 'finished', progress: 1 })).toBe('Importing · 100%');
+		expect(healthLine({ phase: 'needs_a_decision', state: 'finished', progress: 1 })).toBe('Review · 100%');
+		expect(healthLine({ phase: 'vanished', state: 'vanished', progress: 0.4 })).toBe('Failed · 40%');
+	});
 });
 
 describe('quietPeers', () => {

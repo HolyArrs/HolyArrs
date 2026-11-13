@@ -1,5 +1,7 @@
 import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 import { size as bytes } from './size.ts';
+import { statusWord } from './status-tabs.ts';
 import { STEP_WORD } from './usenet.ts';
 import { duration, percent } from '../core/format.ts';
 
@@ -14,6 +16,7 @@ export type HealthIn = {
 	client_hint?: string;
 	done_at?: string;
 	seeding_time?: number;
+	refused_why?: string;
 };
 
 export type LogLine = { at: string; kind: string; summary: string };
@@ -38,6 +41,8 @@ export function healthLine(h: HealthIn, now = Date.now()): string {
 	if (h.phase === 'paused') return t('downloads.health.paused', { pc });
 	if (h.phase === 'stalled') return t('downloads.health.stalled', { pc });
 	if (h.phase === 'waiting') return t('downloads.health.waiting', { pc });
+	// Past the Downloader (importing, refused, in Review, gone): the list's own word, and a refused import's reason.
+	if (h.phase && h.phase !== 'downloading') return [statusWord({ phase: h.phase, state: h.state ?? '', progress: h.progress ?? 0 }), h.phase === 'import_refused' && h.refused_why ? serverWords(h.refused_why) : pc].join(' · ');
 	const parts = [t('downloads.health.downloading'), pc];
 	if (h.speed) parts.push(`${bytes(h.speed)}/s`);
 	if (h.eta) parts.push(t('downloads.list.left', { time: duration(h.eta) }));

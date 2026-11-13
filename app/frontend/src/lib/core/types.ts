@@ -562,6 +562,9 @@ export interface DownloadRow extends DownloadView {
 	downloader_gone?: boolean;
 	/** Finished and still waiting for its import: Import again asks for it. */
 	can_import?: boolean;
+	/** A refused import: why (the importer's words) and the folder Import files by hand opens on. */
+	refused_why?: string;
+	import_folder?: string;
 	replaced?: boolean;
 	kind?: 'movie' | 'show' | 'artist';
 	episodes?: EpisodeLine[];
