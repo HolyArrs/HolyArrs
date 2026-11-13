@@ -2,6 +2,32 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.1.3
+
+### Added
+
+- Each Library folder can have its own quality. ([#344](https://github.com/HolyArrs/HolyArrs/issues/344))
+- Import a library has Select all. ([#346](https://github.com/HolyArrs/HolyArrs/issues/346))
+
+### Changed
+
+- Library stats says "Unreadable files" and explains why.
+
+### Fixed
+
+- Skip sign-in at home: the password prompt has a way to a real sign-in. ([#353](https://github.com/HolyArrs/HolyArrs/issues/353))
+- The size on the Library list drops when a smaller copy replaces a file. ([#347](https://github.com/HolyArrs/HolyArrs/issues/347))
+- A show no longer picks up another show's picture, name or episodes. ([#342](https://github.com/HolyArrs/HolyArrs/issues/342))
+- Shows from Sonarr with a wrong TMDB number import by their IMDb id or name. ([#339](https://github.com/HolyArrs/HolyArrs/issues/339))
+- A season's Next date matches its episode in every time zone. ([#355](https://github.com/HolyArrs/HolyArrs/issues/355))
+- Undo this import counts only what that import added. ([#349](https://github.com/HolyArrs/HolyArrs/issues/349))
+- Downloads names the same person in the list and the side pane. ([#350](https://github.com/HolyArrs/HolyArrs/issues/350))
+- A toast over an open sheet stays readable. ([#351](https://github.com/HolyArrs/HolyArrs/issues/351))
+
+### Thanks
+
+Thanks to [@zaldev](https://github.com/HolyArrs/HolyArrs/issues/339), Lunim, Killjoy.69 and Bastien on Discord, and u/Agreeable_Mirror2257 on Reddit.
+
 ## 1.1.2
 
 ### Changed

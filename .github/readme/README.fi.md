@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease ja IPTorrents sisäänrakennettuina**, ilman Prowlarria. Pyydä sarjoja 4K-laatuisina, ja Profilarr voi lähettää formaattinsa ja profiilinsa. [Katso mitä uutta](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease ja IPTorrents sisäänrakennettuina**, ilman Prowlarria. Pyydä sarjoja 4K-laatuisina, ja Profilarr voi lähettää formaattinsa ja profiilinsa. [Katso mitä uutta](https://holyarrs.com/whats-new/)
 
 > Jokainen julisteesi, traileri ja arvosana HolyArrsissa tulee palvelimelta, jota ylläpidän ja maksan itse, jotta se pysyy kaikille ilmaisena. Jos HolyArrs paransi elokuvailtaasi edes vähän, sponsorointi pitää valot päällä meille kaikille 💛
 >
@@ -107,7 +107,7 @@ Joten tein sen.
 | **Kuusi yhteensä** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Noin 43 kertaa pienempi. Pakattu lataus rekisteristä, linuxserver.io:n imaget, amd64, mitattu 2026-11-08. RAM joutilaana mitattu 10,000 nimikkeellä ja 55,000 elokuvalla ja jaksolla. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>Noin 43 kertaa pienempi. Pakattu lataus rekisteristä, linuxserver.io:n imaget, amd64, mitattu 2026-11-08. RAM joutilaana mitattu 10,000 nimikkeellä ja 55,000 elokuvalla ja jaksolla. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Imaget ovat Docker Hubissa nimellä [`holyarrs/holyarrs`](https://hub.docker.com
 | Tagi | Käyttötarkoitus |
 | :----: | --- |
 | `latest` | Uusin versio. |
-| `1.1.2` | Yksi tietty versio. Se ei koskaan muutu. |
+| `1.1.3` | Yksi tietty versio. Se ei koskaan muutu. |
 
 ## Käyttö
 

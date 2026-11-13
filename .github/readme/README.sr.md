@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease и IPTorrents уграђени**, без Prowlarr-а. Тражи серије у 4K, а Profilarr може да пошаље своје формате и профиле. [Погледај шта је ново](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease и IPTorrents уграђени**, без Prowlarr-а. Тражи серије у 4K, а Profilarr може да пошаље своје формате и профиле. [Погледај шта је ново](https://holyarrs.com/whats-new/)
 
 > Сваки постер, трејлер и оцена у твом HolyArrs-у долази са сервера који сам водим и плаћам сâм, да би остао бесплатан за све. Ако је HolyArrs учинио твоје филмске вечери мало лепшим, спонзор држи светло упаљеним за све нас 💛
 >
@@ -107,7 +107,7 @@ docker compose up -d
 | **Свих шест заједно** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Око 43 пута мањи. Компримовано преузимање из registry-ја, linuxserver.io image-и, amd64, измерено 2026-11-08. RAM у мировању измерен са 10,000 наслова и 55,000 филмова и епизода. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>Око 43 пута мањи. Компримовано преузимање из registry-ја, linuxserver.io image-и, amd64, измерено 2026-11-08. RAM у мировању измерен са 10,000 наслова и 55,000 филмова и епизода. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Image-и су на Docker Hub-у као [`holyarrs/holyarrs`](https://hub.docker
 | Таг | За шта га користити |
 | :----: | --- |
 | `latest` | Најновија верзија. |
-| `1.1.2` | Једна тачна верзија. Никад се не мења. |
+| `1.1.3` | Једна тачна верзија. Никад се не мења. |
 
 ## Употреба
 

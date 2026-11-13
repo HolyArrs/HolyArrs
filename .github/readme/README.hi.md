@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease और IPTorrents अब बिल्ट-इन**, Prowlarr की ज़रूरत नहीं। शो 4K में मांगें, और Profilarr अपने फ़ॉर्मैट और प्रोफ़ाइल भेज सकता है। [नया क्या है](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease और IPTorrents अब बिल्ट-इन**, Prowlarr की ज़रूरत नहीं। शो 4K में मांगें, और Profilarr अपने फ़ॉर्मैट और प्रोफ़ाइल भेज सकता है। [नया क्या है](https://holyarrs.com/whats-new/)
 
 > आपके HolyArrs का हर पोस्टर, ट्रेलर और स्कोर एक ऐसे सर्वर से आता है जिसे मैं खुद चलाता हूँ और जिसका खर्च खुद उठाता हूँ, ताकि यह सबके लिए मुफ़्त रहे। अगर HolyArrs ने आपकी मूवी नाइट थोड़ी बेहतर बनाई है, तो स्पॉन्सर बनकर हम सबके लिए यह रोशनी जलाए रखिए 💛
 >
@@ -107,7 +107,7 @@ docker compose up -d
 | **छहों मिलाकर** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>करीब 43 गुना छोटा। रजिस्ट्री से कंप्रेस्ड डाउनलोड, linuxserver.io इमेज, amd64, 2026-11-08 को नापा गया। खाली RAM 10,000 टाइटल और 55,000 फ़िल्मों व एपिसोड के साथ नापी गई। (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>करीब 43 गुना छोटा। रजिस्ट्री से कंप्रेस्ड डाउनलोड, linuxserver.io इमेज, amd64, 2026-11-08 को नापा गया। खाली RAM 10,000 टाइटल और 55,000 फ़िल्मों व एपिसोड के साथ नापी गई। (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ NAS पर चला रहे हैं? देखिए [Unraid, Synology औ�
 | टैग | किसके लिए |
 | :----: | --- |
 | `latest` | नवीनतम रिलीज़। |
-| `1.1.2` | एक तय वर्ज़न। यह कभी नहीं बदलता। |
+| `1.1.3` | एक तय वर्ज़न। यह कभी नहीं बदलता। |
 
 ## इस्तेमाल
 

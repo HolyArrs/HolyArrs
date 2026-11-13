@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease i IPTorrents ugrađeni**, bez Prowlarra. Traži serije u 4K, a Profilarr može poslati svoje formate i profile. [Pogledaj što je novo](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease i IPTorrents ugrađeni**, bez Prowlarra. Traži serije u 4K, a Profilarr može poslati svoje formate i profile. [Pogledaj što je novo](https://holyarrs.com/whats-new/)
 
 > Svaki poster, trailer i ocjena u tvom HolyArrsu dolazi sa servera koji sâm vodim i plaćam, da ostane besplatan za sve. Ako ti je HolyArrs malo uljepšao filmsku večer, sponzorstvo drži svjetla upaljenima za sve nas 💛
 >
@@ -107,7 +107,7 @@ Pa sam je napravio.
 | **Svih šest zajedno** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Oko 43 puta manji. Komprimirano preuzimanje iz registryja, linuxserver.io imagei, amd64, izmjereno 2026-11-08. RAM u mirovanju izmjeren s 10,000 naslova i 55,000 filmova i epizoda. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>Oko 43 puta manji. Komprimirano preuzimanje iz registryja, linuxserver.io imagei, amd64, izmjereno 2026-11-08. RAM u mirovanju izmjeren s 10,000 naslova i 55,000 filmova i epizoda. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Imagei se nalaze na Docker Hubu kao [`holyarrs/holyarrs`](https://hub.docker.com
 | Oznaka | Za što je koristiti |
 | :----: | --- |
 | `latest` | Najnovija verzija. |
-| `1.1.2` | Jedna točna verzija. Nikad se ne mijenja. |
+| `1.1.3` | Jedna točna verzija. Nikad se ne mijenja. |
 
 ## Korištenje
 

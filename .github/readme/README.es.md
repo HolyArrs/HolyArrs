@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease e IPTorrents integrados**, sin Prowlarr. Pide series en 4K, y Profilarr puede enviar sus formatos y perfiles. [Novedades](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease e IPTorrents integrados**, sin Prowlarr. Pide series en 4K, y Profilarr puede enviar sus formatos y perfiles. [Novedades](https://holyarrs.com/whats-new/)
 
 > Cada póster, tráiler y puntuación de tu HolyArrs viene de un servidor que mantengo y pago yo mismo, para que siga siendo gratis para todos. Si HolyArrs hizo tu noche de películas un poco mejor, patrocinarlo mantiene las luces encendidas para todos 💛
 >
@@ -107,7 +107,7 @@ Así que la hice.
 | **Las seis juntas** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Unas 43 veces más pequeña. Descarga comprimida del registro, imágenes de linuxserver.io, amd64, medido el 2026-11-08. La RAM en reposo se midió con 10,000 títulos y 55,000 películas y episodios. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>Unas 43 veces más pequeña. Descarga comprimida del registro, imágenes de linuxserver.io, amd64, medido el 2026-11-08. La RAM en reposo se midió con 10,000 títulos y 55,000 películas y episodios. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Las imágenes están en Docker Hub como [`holyarrs/holyarrs`](https://hub.docker
 | Etiqueta | Para qué sirve |
 | :----: | --- |
 | `latest` | La versión más reciente. |
-| `1.1.2` | Una versión exacta. Nunca se mueve. |
+| `1.1.3` | Una versión exacta. Nunca se mueve. |
 
 ## Uso
 

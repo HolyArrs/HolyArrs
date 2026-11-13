@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.2: มี Knaben, TorrentsCSV, SubsPlease และ IPTorrents ในตัว** ไม่ต้องใช้ Prowlarr ขอซีรีส์แบบ 4K ได้ และ Profilarr ส่ง format และโปรไฟล์ของมันมาได้ [ดูว่ามีอะไรใหม่](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.3: มี Knaben, TorrentsCSV, SubsPlease และ IPTorrents ในตัว** ไม่ต้องใช้ Prowlarr ขอซีรีส์แบบ 4K ได้ และ Profilarr ส่ง format และโปรไฟล์ของมันมาได้ [ดูว่ามีอะไรใหม่](https://holyarrs.com/whats-new/)
 
 > โปสเตอร์ ตัวอย่าง และคะแนนทุกอย่างใน HolyArrs ของคุณมาจากเซิร์ฟเวอร์ที่ผมดูแลและจ่ายเงินเอง เพื่อให้ใช้ฟรีได้สำหรับทุกคน ถ้า HolyArrs ทำให้คืนดูหนังของคุณดีขึ้นอีกนิด การเป็นผู้สนับสนุนช่วยให้ไฟยังติดอยู่สำหรับพวกเราทุกคน 💛
 >
@@ -107,7 +107,7 @@ docker compose up -d
 | **หกแอปรวมกัน** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>เล็กกว่าประมาณ 43 เท่า ขนาดดาวน์โหลดจาก registry แบบบีบอัด อิมเมจจาก linuxserver.io, amd64 วัดเมื่อ 2026-11-08 วัด RAM ตอนว่างโดยมี 10,000 รายการ และภาพยนตร์กับตอนรวม 55,000 รายการ (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>เล็กกว่าประมาณ 43 เท่า ขนาดดาวน์โหลดจาก registry แบบบีบอัด อิมเมจจาก linuxserver.io, amd64 วัดเมื่อ 2026-11-08 วัด RAM ตอนว่างโดยมี 10,000 รายการ และภาพยนตร์กับตอนรวม 55,000 รายการ (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ HolyArrs แค่อ่านแอปเดิมของคุณและ�
 | แท็ก | ใช้สำหรับ |
 | :----: | --- |
 | `latest` | เวอร์ชันล่าสุด |
-| `1.1.2` | เวอร์ชันที่ระบุตรงตัว ไม่เปลี่ยนแปลง |
+| `1.1.3` | เวอร์ชันที่ระบุตรงตัว ไม่เปลี่ยนแปลง |
 
 ## การใช้งาน
 
