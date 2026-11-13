@@ -59,7 +59,7 @@ export { createDeclineDialog } from './decline-dialog.svelte.ts';
 export { createAskChoices } from './ask-choices.svelte.ts';
 export { artistSheets, askShowSheet, quickAskSheet } from './sheets.ts';
 export { fourKReady } from './four-k-ready.ts';
-export { keptSeasons, seasonsToAsk } from './ask-parts.ts';
+export { keptSeasons, completeSeasons, seasonsToAsk } from './ask-parts.ts';
 export { default as QualityPills } from './QualityPills.svelte';
 export { memberRow, ownerRow, qualityName, qualityTag, askedQuality } from './quality-row.ts';
 export type { QualityPill } from './quality-row.ts';

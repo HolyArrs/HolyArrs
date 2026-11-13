@@ -26,10 +26,11 @@ All notable changes to HolyArrs are listed here. The format follows [Keep a Chan
 - A toast over an open sheet stays readable. ([#351](https://github.com/HolyArrs/HolyArrs/issues/351))
 - Sort & filter on the Library works in Safari. ([#340](https://github.com/HolyArrs/HolyArrs/issues/340))
 - More toast and History lines show in your language. ([#352](https://github.com/HolyArrs/HolyArrs/issues/352))
+- The request sheet turns off seasons that are already fully in the Library. ([#360](https://github.com/HolyArrs/HolyArrs/issues/360))
 
 ### Thanks
 
-Thanks to [@zaldev](https://github.com/HolyArrs/HolyArrs/issues/339), [@ArBohe](https://github.com/HolyArrs/HolyArrs/issues/340), [@stormbyte](https://github.com/HolyArrs/HolyArrs/issues/358), Lunim, Killjoy.69 and Bastien on Discord, and u/Agreeable_Mirror2257 on Reddit.
+Thanks to [@zaldev](https://github.com/HolyArrs/HolyArrs/issues/339), [@ArBohe](https://github.com/HolyArrs/HolyArrs/issues/340), [@stormbyte](https://github.com/HolyArrs/HolyArrs/issues/358), [@johngully](https://github.com/HolyArrs/HolyArrs/issues/360), Lunim, Killjoy.69 and Bastien on Discord, and u/Agreeable_Mirror2257 on Reddit.
 
 ## 1.1.2
 
