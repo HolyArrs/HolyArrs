@@ -13,7 +13,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { appName, cleanPath, folderProblem, folderTo, OTHER, sharedTargets, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from './move.ts';
+	import { appName, cleanPath, folderProblem, folderTo, LEAVE, OTHER, sharedTargets, unseenFolder, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from './move.ts';
 
 	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
 
@@ -241,7 +241,9 @@
 		</div>
 		<span class="arrow" aria-hidden="true">→</span>
 		<select {id} class="input pick" value={pick} aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `${id}-err` : undefined} onchange={(e) => onfolder(p, e.currentTarget.value)}>
-			<option value="">{t('migrate.donTBringThem')}</option>
+			<!-- A folder this server cannot see brings its titles over as wanted unless set to "Don't bring them". -->
+			{#if unseenFolder(plan, p)}<option value="">{t('migrate.bringWithoutFiles')}</option><option value={LEAVE}>{t('migrate.donTBringThem')}</option>
+			{:else}<option value="">{t('migrate.donTBringThem')}</option>{/if}
 			{#each choicesFor(p) as o (o.value)}<option value={o.value}>{ltr(o.label)}</option>{/each}
 			<option value={OTHER}>{t('migrate.otherPath')}</option>
 		</select>

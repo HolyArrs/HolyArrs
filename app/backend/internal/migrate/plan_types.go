@@ -73,8 +73,8 @@ type Choices struct {
 	// their formats and scores behind (off: they are brought).
 	NoFormats bool `json:"no_formats,omitempty"`
 	// LeaveFolders are old root folders the owner left at "Don't bring
-	// them". One that is on this server keeps its titles behind; one this
-	// server cannot see changes nothing.
+	// them": their titles stay behind, whether or not this server can see
+	// the folder.
 	LeaveFolders []string `json:"leave_folders,omitempty"`
 }
 
@@ -165,6 +165,9 @@ type FolderPlan struct {
 	Label   string `json:"label"`
 	// Left says the owner left this folder out ("Don't bring them").
 	Left bool `json:"left,omitempty"`
+	// Unseen says this server cannot see OldPath as it is (set for the
+	// folder step only; the plan hash never covers it).
+	Unseen bool `json:"unseen,omitempty"`
 }
 
 // RulesPlan matches one of their profiles to our Pick rules.

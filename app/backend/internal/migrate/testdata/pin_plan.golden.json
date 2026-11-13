@@ -26,7 +26,8 @@
             "path": "s",
             "kind": "s",
             "label": "s",
-            "left": true
+            "left": true,
+            "unseen": true
           },
           "rules": {
             "app": "s",

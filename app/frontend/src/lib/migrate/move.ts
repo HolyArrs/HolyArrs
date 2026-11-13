@@ -38,7 +38,7 @@ export interface PlanItem {
 	why?: string;
 	needs?: string;
 	person?: PersonPlan;
-	folder?: { old_path: string; path: string; kind: string; label: string };
+	folder?: { old_path: string; path: string; kind: string; label: string; unseen?: boolean };
 	/** Set for a profile; body and traits only when it becomes its own Pick rules. */
 	rules?: { app: string; profile: string; preset: string; name?: string; body?: unknown; traits?: { name: string; points: number }[]; skipped?: { name: string; reason: string }[] };
 }
@@ -264,6 +264,19 @@ const bestKeys: Record<string, string[]> = {
 const titleWord: Record<string, [string, string]> = { radarr: ['migrate.movie', 'migrate.movies'], sonarr: ['migrate.show', 'migrate.shows'], lidarr: ['migrate.artist', 'migrate.artists'] };
 
 export const OTHER = '\u0000other';
+// "Don't bring them" on an old folder this server cannot see, where no pick
+// means its titles come over as wanted and need attention.
+export const LEAVE = '\u0000leave';
+
+/** Says whether this server cannot see an old root folder as it is. */
+export function unseenFolder(plan: Plan | null, p: string): boolean {
+	return !!plan?.groups.some((g) => g.items.some((it) => it.folder?.old_path === p && it.folder.unseen));
+}
+
+/** The old folders set to "Don't bring them": no pick on one this server sees, or the explicit choice on one it cannot. */
+export function leaveFolders(plan: Plan | null, here: { path: string }[], picks: Record<string, string>): string[] {
+	return (plan?.old_paths ?? []).filter((p) => !here.some((f) => f.path === p) && (picks[p] === LEAVE || (!picks[p] && !unseenFolder(plan, p))));
+}
 
 const stepIds: Step[] = ['read', 'choose', 'move', 'done'];
 
@@ -493,7 +506,7 @@ export function ruleProblem(r: PathRule): string {
 }
 
 export function folderTo(pick: string | undefined, other: string | undefined): string {
-	if (!pick) return '';
+	if (!pick || pick === LEAVE) return '';
 	return pick === OTHER ? (other ?? '').trim() : pick;
 }
 
@@ -505,7 +518,7 @@ export function cleanPath(p: string): string {
 }
 
 export function folderProblem(from: string, pick: string | undefined, other: string | undefined): string {
-	if (!pick) return '';
+	if (!pick || pick === LEAVE) return '';
 	if (pick === OTHER && !(other ?? '').trim()) return t('migrate.typeThePathHere');
 	return ruleProblem({ from, to: folderTo(pick, other) });
 }

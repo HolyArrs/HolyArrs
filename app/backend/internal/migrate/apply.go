@@ -308,6 +308,8 @@ type run struct {
 	// per kind, the planned Library folders on this server that this run adds.
 	foldersOff bool
 	coming     map[string][]string
+	// left names the planned Library folders set to "Don't bring them".
+	left map[string]bool
 	// prowlarr is the kept Prowlarr address and key, read once.
 	prowlarr *secretsfile.MoveCredential
 }
@@ -341,13 +343,16 @@ func (r *run) sourceOrMoveTime(source string) (time.Time, error) {
 // folderGroup reads the Library folders group: whether it was left out,
 // and the folders on this server it adds.
 func (r *run) folderGroup(p *Plan) {
-	r.coming = map[string][]string{}
+	r.coming, r.left = map[string][]string{}, map[string]bool{}
 	for _, g := range p.Groups {
 		if g.Name != GroupFolders {
 			continue
 		}
 		r.foldersOff = g.Skipped
 		for _, it := range g.Items {
+			if f := it.Folder; f != nil && f.Left {
+				r.left[filepath.Clean(filepath.FromSlash(f.Path))] = true
+			}
 			if f := it.Folder; f != nil && !g.Skipped && !f.Left && isDir(filepath.FromSlash(f.Path)) {
 				r.coming[f.Kind] = append(r.coming[f.Kind], filepath.Clean(filepath.FromSlash(f.Path)))
 			}

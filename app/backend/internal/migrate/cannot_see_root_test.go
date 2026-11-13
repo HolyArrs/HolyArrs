@@ -35,9 +35,10 @@ func cannotSeeLab(t *testing.T) (*moveLab, string) {
 	return l, here
 }
 
-// The page fills each suggested folder in and leaves the rest at "Don't
-// bring them"; a folder the titles are not in is not suggested, so they come
-// over as wanted and need attention instead of "added with no files".
+// The page fills each suggested folder in; a folder the titles are not in
+// is not suggested, so a folder this server cannot see, left at its
+// default, sends them over as wanted needing attention instead of "added
+// with no files".
 func TestRootServerCannotSeeComesOverNeedingAttention(t *testing.T) {
 	l, _ := cannotSeeLab(t)
 	ctx := context.Background()
@@ -45,7 +46,7 @@ func TestRootServerCannotSeeComesOverNeedingAttention(t *testing.T) {
 	if len(sug) != 0 {
 		t.Fatalf("suggested %v for a folder that holds none of the titles", sug)
 	}
-	ch := Choices{PathRules: sug, People: l.people, LeaveFolders: []string{oldMovies}}
+	ch := Choices{PathRules: sug, People: l.people}
 	check := func(stage string, rep *Report, want string) {
 		t.Helper()
 		for _, key := range []string{"title:movie:tmdb:603", reloaded} {
@@ -74,7 +75,8 @@ func TestSuggestRulesKeepsAFolderHoldingTheTitles(t *testing.T) {
 
 // The plan's titles list says what the import then does: a title under a
 // folder left at "Don't bring them" that is on this server is left out, one
-// under a folder this server cannot see needs attention.
+// under a folder this server cannot see, left at its default, needs
+// attention.
 func TestPreviewTitlesMatchesTheImport(t *testing.T) {
 	ctx := context.Background()
 	// /movies is on this server (through the rule); the second old root is not.
@@ -91,7 +93,7 @@ func TestPreviewTitlesMatchesTheImport(t *testing.T) {
 	if _, err := library.AddFolder(ctx, l2.st, library.FolderInput{Path: other, Kind: "movie", Label: "other"}, nil, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	ch := Choices{PathRules: l2.rules, People: l2.people, LeaveFolders: []string{"/movies", oldMovies}}
+	ch := Choices{PathRules: l2.rules, People: l2.people, LeaveFolders: []string{"/movies"}}
 	p := l2.planWith(t, ch)
 	l2.mv.PreviewTitles(ctx, p)
 	rep := l2.mv.Run(ctx, 0, l2.planWith(t, ch), true, domain.Actor{Kind: "user", ID: 1}, nil)
