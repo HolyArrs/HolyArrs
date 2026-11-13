@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Codi de dos passos",
 	"ui.confirm.confirm": "Confirma",
 	"ui.confirm.cancel": "Cancel·la",
+	"ui.confirm.localVisit": "Aquesta visita s'ha saltat l'inici de sessió, així que no pot confirmar la teva contrasenya. Inicia la sessió primer amb la contrasenya i tornaràs aquí.",
+	"ui.confirm.signInFirst": "Inicia la sessió amb la meva contrasenya",
 	"ui.growCard.preview": "Previsualització de {title}",
 	"ui.growCard.goTo": "Ves a {title}",
 	"ui.growCard.moreInfoAbout": "Més informació sobre {title}",

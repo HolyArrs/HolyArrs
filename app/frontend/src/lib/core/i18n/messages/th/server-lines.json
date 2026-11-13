@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "ส่ง {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "ส่ง {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "เข้าสู่ระบบก่อน",
-	"server.accounts.sign-in-in-the-browser-before": "เข้าสู่ระบบในเบราว์เซอร์ก่อนยืนยันรหัสผ่านของคุณ",
+	"server.accounts.sign-in-in-the-browser-before": "เข้าสู่ระบบด้วยรหัสผ่านที่หน้าเข้าสู่ระบบก่อน แล้วค่อยยืนยันที่นี่",
 	"server.accounts.sign-in-in-the-browser-first": "เข้าสู่ระบบในเบราว์เซอร์ก่อน",
 	"server.accounts.sign-in-locally-again-before-linking": "เข้าสู่ระบบในเครื่องอีกครั้งก่อนเชื่อมโยง",
 	"server.accounts.sign-in-add-holyarrs-in-your": "เข้าสู่ระบบ: เพิ่ม HolyArrs ในแอป AI ของคุณและอนุญาตในเบราว์เซอร์",

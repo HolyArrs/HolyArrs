@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "saada {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "saada {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "logi esmalt sisse",
-	"server.accounts.sign-in-in-the-browser-before": "logi brauseris sisse enne parooli kinnitamist",
+	"server.accounts.sign-in-in-the-browser-before": "logi esmalt sisselogimislehel parooliga sisse ja kinnita see siin",
 	"server.accounts.sign-in-in-the-browser-first": "logi esmalt brauseris sisse",
 	"server.accounts.sign-in-locally-again-before-linking": "logi enne sidumist uuesti kohalikult sisse",
 	"server.accounts.sign-in-add-holyarrs-in-your": "logi sisse: lisa HolyArrs oma tehisintellekti rakendusse ja luba see brauseris",

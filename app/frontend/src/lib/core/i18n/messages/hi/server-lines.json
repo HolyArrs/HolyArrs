@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "भेजें {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "भेजें {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "पहले साइन इन करें",
-	"server.accounts.sign-in-in-the-browser-before": "पासवर्ड पक्का करने से पहले ब्राउज़र में साइन इन करें",
+	"server.accounts.sign-in-in-the-browser-before": "पहले साइन-इन पेज पर अपने पासवर्ड से साइन इन करें, फिर यहाँ पुष्टि करें",
 	"server.accounts.sign-in-in-the-browser-first": "पहले ब्राउज़र में साइन इन करें",
 	"server.accounts.sign-in-locally-again-before-linking": "लिंक करने से पहले लोकल तौर पर दोबारा साइन इन करें",
 	"server.accounts.sign-in-add-holyarrs-in-your": "साइन-इन: अपने AI ऐप में HolyArrs जोड़ें और ब्राउज़र में उसे इजाज़त दें",

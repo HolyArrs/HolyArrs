@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { needsConfirm } from './sensitive.ts';
+import { needsConfirm, signInFirst } from './sensitive.ts';
 
 describe('needsConfirm', () => {
 	it('asks before a password change or a link without a recent local sign-in', () => {
@@ -21,6 +21,11 @@ describe('needsConfirm', () => {
 	});
 	it('lets an administrator who must enroll set up two-factor straight away', () => {
 		expect(needsConfirm('two-factor', { localRecent: false, via: 'session', mustTwoFactor: true })).toBe(false);
+	});
+	it('sends a visit that skipped sign-in to the sign-in page and back', () => {
+		expect(signInFirst({ via: 'local_network' }, '/settings/sign-in')).toBe('/login?next=%2Fsettings%2Fsign-in');
+		expect(signInFirst({ via: 'local_network' }, '/settings/users?tab=a&b=1')).toBe('/login?next=%2Fsettings%2Fusers%3Ftab%3Da%26b%3D1');
+		expect(signInFirst({ via: 'session' }, '/settings/sign-in')).toBe('');
 	});
 });
 

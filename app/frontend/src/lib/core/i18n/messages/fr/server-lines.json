@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "envoyez {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "envoyez {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "connectez-vous d'abord",
-	"server.accounts.sign-in-in-the-browser-before": "connectez-vous dans le navigateur avant de confirmer votre mot de passe",
+	"server.accounts.sign-in-in-the-browser-before": "connecte-toi d'abord avec ton mot de passe sur la page de connexion, puis confirme-le ici",
 	"server.accounts.sign-in-in-the-browser-first": "connectez-vous d'abord dans le navigateur",
 	"server.accounts.sign-in-locally-again-before-linking": "reconnectez-vous en local avant de lier",
 	"server.accounts.sign-in-add-holyarrs-in-your": "connexion : ajoutez HolyArrs dans votre application d'IA et autorisez-le dans le navigateur",

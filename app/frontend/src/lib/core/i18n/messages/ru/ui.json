@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Код двухфакторной защиты",
 	"ui.confirm.confirm": "Подтвердить",
 	"ui.confirm.cancel": "Отмена",
+	"ui.confirm.localVisit": "Это посещение пропускает вход, поэтому не может подтвердить ваш пароль. Сначала войдите по паролю, и вы вернётесь сюда.",
+	"ui.confirm.signInFirst": "Войти по моему паролю",
 	"ui.growCard.preview": "Предпросмотр: {title}",
 	"ui.growCard.goTo": "Перейти: {title}",
 	"ui.growCard.moreInfoAbout": "Подробнее: {title}",

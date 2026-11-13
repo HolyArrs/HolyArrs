@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Tveggja þátta kóði",
 	"ui.confirm.confirm": "Staðfesta",
 	"ui.confirm.cancel": "Hætta við",
+	"ui.confirm.localVisit": "Þessi heimsókn sleppir innskráningu og getur því ekki staðfest lykilorðið þitt. Skráðu þig fyrst inn með lykilorðinu þínu og þú kemur aftur hingað.",
+	"ui.confirm.signInFirst": "Skrá inn með lykilorðinu mínu",
 	"ui.growCard.preview": "Forskoðun {title}",
 	"ui.growCard.goTo": "Fara á {title}",
 	"ui.growCard.moreInfoAbout": "Meira um {title}",

@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Dvofaktorski kod",
 	"ui.confirm.confirm": "Potvrdi",
 	"ui.confirm.cancel": "Odustani",
+	"ui.confirm.localVisit": "Ovaj posjet preskače prijavu pa ne može potvrditi tvoju lozinku. Prvo se prijavi lozinkom i vratit ćeš se ovamo.",
+	"ui.confirm.signInFirst": "Prijava mojom lozinkom",
 	"ui.growCard.preview": "Pregled: {title}",
 	"ui.growCard.goTo": "Idi na {title}",
 	"ui.growCard.moreInfoAbout": "Više informacija o: {title}",

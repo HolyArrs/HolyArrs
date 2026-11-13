@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "pošlite {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "pošlite {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "najprv sa prihláste",
-	"server.accounts.sign-in-in-the-browser-before": "pred potvrdením hesla sa prihláste v prehliadači",
+	"server.accounts.sign-in-in-the-browser-before": "najprv sa na prihlasovacej stránke prihláste heslom a potom ho tu potvrďte",
 	"server.accounts.sign-in-in-the-browser-first": "najprv sa prihláste v prehliadači",
 	"server.accounts.sign-in-locally-again-before-linking": "pred prepojením sa znova prihláste lokálne",
 	"server.accounts.sign-in-add-holyarrs-in-your": "prihlásenie: pridajte HolyArrs vo svojej aplikácii AI a povoľte ho v prehliadači",

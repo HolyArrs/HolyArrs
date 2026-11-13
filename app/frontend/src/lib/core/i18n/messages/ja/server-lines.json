@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "{\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"} を送信してください",
 	"server.accounts.send-url-http": "{\"url\": \"http://...\"} を送信してください",
 	"server.accounts.sign-in-first": "先にサインインしてください",
-	"server.accounts.sign-in-in-the-browser-before": "パスワードを確認する前に、ブラウザーでサインインしてください",
+	"server.accounts.sign-in-in-the-browser-before": "先にサインインページでパスワードを使ってサインインし、そのあとここで確認してください",
 	"server.accounts.sign-in-in-the-browser-first": "先にブラウザーでサインインしてください",
 	"server.accounts.sign-in-locally-again-before-linking": "連携する前に、もう一度ローカルでサインインしてください",
 	"server.accounts.sign-in-add-holyarrs-in-your": "サインイン: AI アプリに HolyArrs を追加し、ブラウザーで許可してください",

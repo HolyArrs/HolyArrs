@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Двофакторски код",
 	"ui.confirm.confirm": "Потврди",
 	"ui.confirm.cancel": "Откажи",
+	"ui.confirm.localVisit": "Ова посета прескаче пријаву, па не може да потврди твоју лозинку. Прво се пријави лозинком и вратићеш се овде.",
+	"ui.confirm.signInFirst": "Пријава мојом лозинком",
 	"ui.growCard.preview": "Преглед: {title}",
 	"ui.growCard.goTo": "Иди на {title}",
 	"ui.growCard.moreInfoAbout": "Више информација о: {title}",

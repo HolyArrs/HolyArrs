@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "请发送 {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "请发送 {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "请先登录",
-	"server.accounts.sign-in-in-the-browser-before": "确认密码之前，请先在浏览器中登录",
+	"server.accounts.sign-in-in-the-browser-before": "请先在登录页用密码登录，然后在这里确认",
 	"server.accounts.sign-in-in-the-browser-first": "请先在浏览器中登录",
 	"server.accounts.sign-in-locally-again-before-linking": "关联之前，请重新进行本地登录",
 	"server.accounts.sign-in-add-holyarrs-in-your": "登录：请在你的 AI 应用中添加 HolyArrs，并在浏览器中允许",

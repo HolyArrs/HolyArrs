@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "İki adımlı giriş kodu",
 	"ui.confirm.confirm": "Onayla",
 	"ui.confirm.cancel": "Vazgeç",
+	"ui.confirm.localVisit": "Bu ziyaret girişi atladığı için parolanı onaylayamaz. Önce parolanla giriş yap, buraya geri döneceksin.",
+	"ui.confirm.signInFirst": "Parolamla giriş yap",
 	"ui.growCard.preview": "{title} önizleme",
 	"ui.growCard.goTo": "{title} sayfasına git",
 	"ui.growCard.moreInfoAbout": "{title} hakkında daha fazla bilgi",

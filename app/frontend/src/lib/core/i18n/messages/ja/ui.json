@@ -5,6 +5,8 @@
 "ui.confirm.twoFactorCode": "二要素認証コード",
 "ui.confirm.confirm": "確認",
 "ui.confirm.cancel": "キャンセル",
+"ui.confirm.localVisit": "この訪問ではサインインが省略されているため、パスワードを確認できません。先にパスワードでサインインすると、ここに戻ってきます。",
+"ui.confirm.signInFirst": "パスワードでサインイン",
 "ui.growCard.preview": "{title} のプレビュー",
 "ui.growCard.goTo": "{title} へ移動",
 "ui.growCard.moreInfoAbout": "{title} の詳細",

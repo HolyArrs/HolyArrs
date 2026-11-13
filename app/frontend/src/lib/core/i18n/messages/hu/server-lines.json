@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "küldje: {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "küldje: {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "előbb jelentkezzen be",
-	"server.accounts.sign-in-in-the-browser-before": "a jelszava megerősítése előtt jelentkezzen be a böngészőben",
+	"server.accounts.sign-in-in-the-browser-before": "előbb jelentkezz be a jelszavaddal a bejelentkezési oldalon, aztán erősítsd meg itt",
 	"server.accounts.sign-in-in-the-browser-first": "előbb jelentkezzen be a böngészőben",
 	"server.accounts.sign-in-locally-again-before-linking": "az összekapcsolás előtt jelentkezzen be újra helyileg",
 	"server.accounts.sign-in-add-holyarrs-in-your": "bejelentkezés: adja hozzá a HolyArrst az AI-alkalmazásában, és engedélyezze a böngészőben",

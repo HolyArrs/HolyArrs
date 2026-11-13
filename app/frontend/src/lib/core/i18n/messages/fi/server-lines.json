@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "lähetä {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "lähetä {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "kirjaudu ensin",
-	"server.accounts.sign-in-in-the-browser-before": "kirjaudu selaimessa ennen salasanasi vahvistamista",
+	"server.accounts.sign-in-in-the-browser-before": "kirjaudu ensin salasanallasi kirjautumissivulla ja vahvista se sitten tässä",
 	"server.accounts.sign-in-in-the-browser-first": "kirjaudu ensin selaimessa",
 	"server.accounts.sign-in-locally-again-before-linking": "kirjaudu paikallisesti uudelleen ennen yhdistämistä",
 	"server.accounts.sign-in-add-holyarrs-in-your": "kirjaudu: lisää HolyArrs tekoälysovellukseesi ja salli se selaimessa",

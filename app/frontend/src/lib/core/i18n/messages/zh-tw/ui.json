@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "雙重驗證碼",
 	"ui.confirm.confirm": "確認",
 	"ui.confirm.cancel": "取消",
+	"ui.confirm.localVisit": "這次造訪略過了登入，因此無法確認你的密碼。請先以密碼登入，之後會回到這裡。",
+	"ui.confirm.signInFirst": "以我的密碼登入",
 	"ui.growCard.preview": "{title} 預覽",
 	"ui.growCard.goTo": "前往 {title}",
 	"ui.growCard.moreInfoAbout": "{title} 的更多資訊",

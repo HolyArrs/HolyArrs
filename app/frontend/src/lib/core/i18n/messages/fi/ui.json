@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Kaksivaiheisen tunnistuksen koodi",
 	"ui.confirm.confirm": "Vahvista",
 	"ui.confirm.cancel": "Peruuta",
+	"ui.confirm.localVisit": "Tämä käynti ohittaa kirjautumisen, joten se ei voi vahvistaa salasanaasi. Kirjaudu ensin salasanallasi, niin palaat tänne.",
+	"ui.confirm.signInFirst": "Kirjaudu omalla salasanallani",
 	"ui.growCard.preview": "{title}: esikatselu",
 	"ui.growCard.goTo": "Siirry: {title}",
 	"ui.growCard.moreInfoAbout": "Lisätietoja: {title}",

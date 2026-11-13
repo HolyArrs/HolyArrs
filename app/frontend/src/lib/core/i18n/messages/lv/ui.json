@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Divfaktoru kods",
 	"ui.confirm.confirm": "Apstiprināt",
 	"ui.confirm.cancel": "Atcelt",
+	"ui.confirm.localVisit": "Šis apmeklējums izlaiž pieteikšanos, tāpēc nevar apstiprināt tavu paroli. Vispirms piesakies ar paroli, un tu atgriezīsies šeit.",
+	"ui.confirm.signInFirst": "Pieteikties ar manu paroli",
 	"ui.growCard.preview": "{title} priekšskatījums",
 	"ui.growCard.goTo": "Atvērt: {title}",
 	"ui.growCard.moreInfoAbout": "Vairāk par: {title}",

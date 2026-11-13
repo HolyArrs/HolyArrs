@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Zwei-Faktor-Code",
 	"ui.confirm.confirm": "Bestätigen",
 	"ui.confirm.cancel": "Abbrechen",
+	"ui.confirm.localVisit": "Dieser Besuch überspringt die Anmeldung und kann dein Passwort deshalb nicht bestätigen. Melde dich zuerst mit deinem Passwort an, dann kommst du hierher zurück.",
+	"ui.confirm.signInFirst": "Mit meinem Passwort anmelden",
 	"ui.growCard.preview": "Vorschau: {title}",
 	"ui.growCard.goTo": "Zu {title} gehen",
 	"ui.growCard.moreInfoAbout": "Mehr Infos zu {title}",

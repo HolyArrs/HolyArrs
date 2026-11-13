@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "ipadala ang {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "ipadala ang {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "mag-sign in muna",
-	"server.accounts.sign-in-in-the-browser-before": "mag-sign in sa browser bago kumpirmahin ang password mo",
+	"server.accounts.sign-in-in-the-browser-before": "mag-sign in muna gamit ang password mo sa sign-in page, saka kumpirmahin dito",
 	"server.accounts.sign-in-in-the-browser-first": "mag-sign in muna sa browser",
 	"server.accounts.sign-in-locally-again-before-linking": "mag-sign in ulit nang lokal bago mag-link",
 	"server.accounts.sign-in-add-holyarrs-in-your": "mag-sign in: idagdag ang HolyArrs sa AI app mo at payagan ito sa browser",

@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "รหัสยืนยันสองขั้นตอน",
 	"ui.confirm.confirm": "ยืนยัน",
 	"ui.confirm.cancel": "ยกเลิก",
+	"ui.confirm.localVisit": "การเข้าใช้ครั้งนี้ข้ามการเข้าสู่ระบบ จึงยืนยันรหัสผ่านของคุณไม่ได้ เข้าสู่ระบบด้วยรหัสผ่านก่อน แล้วคุณจะกลับมาที่นี่",
+	"ui.confirm.signInFirst": "เข้าสู่ระบบด้วยรหัสผ่านของฉัน",
 	"ui.growCard.preview": "ตัวอย่าง {title}",
 	"ui.growCard.goTo": "ไปที่ {title}",
 	"ui.growCard.moreInfoAbout": "ข้อมูลเพิ่มเติมเกี่ยวกับ {title}",

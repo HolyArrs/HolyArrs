@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "hantar {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "hantar {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "log masuk dahulu",
-	"server.accounts.sign-in-in-the-browser-before": "log masuk dalam pelayar sebelum mengesahkan kata laluan anda",
+	"server.accounts.sign-in-in-the-browser-before": "log masuk dahulu dengan kata laluan anda di halaman log masuk, kemudian sahkan di sini",
 	"server.accounts.sign-in-in-the-browser-first": "log masuk dalam pelayar dahulu",
 	"server.accounts.sign-in-locally-again-before-linking": "log masuk semula secara setempat sebelum memautkan",
 	"server.accounts.sign-in-add-holyarrs-in-your": "log masuk: tambah HolyArrs dalam apl AI anda dan benarkannya dalam pelayar",

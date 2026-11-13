@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Two-factor code",
 	"ui.confirm.confirm": "Kumpirmahin",
 	"ui.confirm.cancel": "Kanselahin",
+	"ui.confirm.localVisit": "Nilalaktawan ng pagbisitang ito ang pag-sign in, kaya hindi nito makumpirma ang password mo. Mag-sign in muna gamit ang password mo at babalik ka rito.",
+	"ui.confirm.signInFirst": "Mag-sign in gamit ang password ko",
 	"ui.growCard.preview": "Preview ng {title}",
 	"ui.growCard.goTo": "Pumunta sa {title}",
 	"ui.growCard.moreInfoAbout": "Higit pang info tungkol sa {title}",

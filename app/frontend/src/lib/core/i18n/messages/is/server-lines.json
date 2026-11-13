@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "sendu {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "sendu {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "skráðu þig fyrst inn",
-	"server.accounts.sign-in-in-the-browser-before": "skráðu þig inn í vafranum áður en þú staðfestir lykilorðið þitt",
+	"server.accounts.sign-in-in-the-browser-before": "skráðu þig fyrst inn með lykilorðinu þínu á innskráningarsíðunni og staðfestu það svo hér",
 	"server.accounts.sign-in-in-the-browser-first": "skráðu þig fyrst inn í vafranum",
 	"server.accounts.sign-in-locally-again-before-linking": "skráðu þig aftur inn staðbundið áður en þú tengir",
 	"server.accounts.sign-in-add-holyarrs-in-your": "skráðu þig inn: bættu HolyArrs við í gervigreindarforritinu þínu og leyfðu það í vafranum",
