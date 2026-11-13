@@ -12,7 +12,6 @@ func TestMetadataModeHealthLines(t *testing.T) {
 		mode, bad, want, severity string
 	}{
 		{"off", "ful", `"ful"`, "error"},
-		{"off", "", "Lookups are off on this install", "info"},
 		{"own", "", "your own keys", "info"},
 	}
 	for _, c := range cases {
@@ -29,6 +28,10 @@ func TestMetadataModeHealthLines(t *testing.T) {
 		if !found {
 			t.Errorf("%s %q: want %q as %s, got %+v", c.mode, c.bad, c.want, c.severity, a.Items)
 		}
+	}
+	off := SettingsStatus(StatusInput{MetadataMode: "off", MetadataUp: &down, Now: time.Now()})
+	if len(off.Items) != 0 {
+		t.Fatalf("off is a choice, nothing needs attention: %+v", off.Items)
 	}
 	a := SettingsStatus(StatusInput{MetadataMode: "full", MetadataUp: &down, Now: time.Now()})
 	if len(a.Items) != 1 || !strings.Contains(a.Items[0].Text, "down") {
