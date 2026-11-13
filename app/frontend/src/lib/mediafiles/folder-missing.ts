@@ -1,7 +1,7 @@
 import { ApiError } from '#lib/core/api.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
-// The server's English line for a Library folder path it can't find (#238).
+// The server's English line for a Library folder path it can't find.
 const ABSENT = 'the folder does not exist';
 
 /** For a "folder does not exist" answer: how to mount the typed folder into the container; null for any other error. */
