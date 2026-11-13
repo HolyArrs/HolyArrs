@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
@@ -120,4 +122,59 @@ func wantRefused(t *testing.T, f fixture, name, rule string) {
 	if r.State == "chosen" || !hasCode(r, "hard.safety:"+rule) {
 		t.Fatalf("%s: %s %v", name, r.State, reasonCodes(r))
 	}
+}
+
+// TestReleaseSafety_SearchNowKeepsTheChecks checks that a search a person
+// starts with Search now, which chooses on its own, refuses a likely fake the
+// same way an automatic search does, for a whole season and for one episode.
+// Only a search that lists Releases for a person to pick from shows it, with a
+// warning.
+func TestReleaseSafety_SearchNowKeepsTheChecks(t *testing.T) {
+	aired := time.Now().UTC().AddDate(0, -3, 0)
+	early, real := "Copper.Valley.S01E01.1080p.WEB-DL.H.264-EARLY", "Copper.Valley.S01E01.720p.WEB-DL.H.264-QUILL"
+	items := []safeItem{{early, 1200 << 20, aired.AddDate(0, 0, -30)}, {real, 1200 << 20, aired.AddDate(0, 0, 1)}}
+	for _, c := range []struct {
+		name   string
+		kind   string
+		params map[string]any
+	}{
+		{"season", jobs.KindSearchSeason, map[string]any{"by_hand": true}},
+		{"episode", jobs.KindSearchSlot, map[string]any{"by_hand": true}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			f := seedShow(t, safeServer(t, items), nil)
+			subj := &domain.Subject{Type: "slot", ID: f.slots["S01E01"]}
+			if c.kind == jobs.KindSearchSeason {
+				subj = &domain.Subject{Type: "part", ID: f.parts[1]}
+				c.params["version_id"] = f.verID
+			}
+			if j := runKind(t, f.fixture, &Searcher{Store: f.s}, c.kind, subj, c.params); j.State != "done" {
+				t.Fatalf("job %s %+v", j.State, j.Error)
+			}
+			// The season search queues searches for the other episodes, which store
+			// the same Releases again; the first row is the one this search judged.
+			rs, err := database.Select[domain.Release](context.Background(), f.s.Read(), "releases", "name IN (?, ?) ORDER BY id LIMIT 2", early, real)
+			if err != nil || len(rs) != 2 {
+				t.Fatalf("releases %v %d", err, len(rs))
+			}
+			for _, r := range rs {
+				switch {
+				case r.Name == early && (r.State == "chosen" || !slices.Contains(reasonCodes(r), "hard.safety:posted_early:fail")):
+					t.Fatalf("the early Release is %s %v", r.State, reasonCodes(r))
+				case r.Name == real && r.State != "chosen":
+					t.Fatalf("the real Release is %s %v", r.State, reasonCodes(r))
+				}
+			}
+		})
+	}
+	t.Run("list", func(t *testing.T) {
+		f := seedShow(t, safeServer(t, items), nil)
+		if j := runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S01E01"]},
+			map[string]any{"by_hand": true, "choose": false}); j.State != "done" {
+			t.Fatalf("job %s %+v", j.State, j.Error)
+		}
+		if r := relByName(t, f.fixture, early); !slices.Contains(reasonCodes(r), "hard.safety:posted_early:warn") {
+			t.Fatalf("a person's list should show the early Release with a warning: %s %v", r.State, reasonCodes(r))
+		}
+	})
 }

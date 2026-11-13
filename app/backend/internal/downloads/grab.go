@@ -440,6 +440,7 @@ func (m *Manager) giveUp(ctx context.Context, slotID, releaseID int64, reason st
 		return
 	}
 	m.publish("slot", map[string]any{"id": slotID, "state": mediafiles.SlotWanted, "reason": reason})
+	m.notSentEvent(ctx, slotID, releaseID, reason, by)
 	if turnDown && m.OnFailed != nil {
 		m.OnFailed(ctx, slotID)
 	}
