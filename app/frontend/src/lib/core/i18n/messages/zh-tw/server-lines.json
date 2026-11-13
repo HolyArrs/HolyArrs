@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "請傳送 {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "請傳送 {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "請先登入",
-	"server.accounts.sign-in-in-the-browser-before": "確認密碼之前，請先在瀏覽器中登入",
+	"server.accounts.sign-in-in-the-browser-before": "請先在登入頁以密碼登入，然後在這裡確認",
 	"server.accounts.sign-in-in-the-browser-first": "請先在瀏覽器中登入",
 	"server.accounts.sign-in-locally-again-before-linking": "關聯之前，請重新進行本機登入",
 	"server.accounts.sign-in-add-holyarrs-in-your": "登入：請在你的 AI 應用程式中新增 HolyArrs，並在瀏覽器中允許",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "無法請求該畫質",
 	"server.requests.the-quality-you-picked-was-not": "未使用你選擇的畫質：這部作品已經有該副本。",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex 不再提供與你的伺服器共享的成員清單",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex 拒絕了你已關聯的 Plex 帳號；請重新關聯"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex 拒絕了你已關聯的 Plex 帳號；請重新關聯",
+	"server.migrate.the-show-could-not-be-found": "無法透過編號或名稱找到該影集"
 }

@@ -54,5 +54,9 @@
 	"settings.libraryFolders.sideOnHint": "লাইব্রেরিতে আগে থেকে থাকা ফাইল কখনো বদলানো হয় না।",
 	"settings.libraryFolders.sideTypes": "ফাইলের ধরন",
 	"settings.libraryFolders.sideTypesHint": "ধরনগুলো কমা দিয়ে আলাদা করুন, যেমন srt, ass।",
-	"settings.libraryFolders.notMounted": "HolyArrs {path} দেখতে পাচ্ছে না। এটি শুধু তার কন্টেইনারে মাউন্ট করা ফোল্ডার দেখে। {path}:{inside} এর মতো একটি ভলিউম যোগ করুন, তারপর এখানে {inside} ব্যবহার করুন।"
+	"settings.libraryFolders.notMounted": "HolyArrs {path} দেখতে পাচ্ছে না। এটি শুধু তার কন্টেইনারে মাউন্ট করা ফোল্ডার দেখে। {path}:{inside} এর মতো একটি ভলিউম যোগ করুন, তারপর এখানে {inside} ব্যবহার করুন।",
+	"settings.libraryFolders.quality": "কোয়ালিটি",
+	"settings.libraryFolders.qualityNone": "ডিফল্ট ব্যবহার করুন",
+	"settings.libraryFolders.qualityHint": "এই ফোল্ডারের নতুন শিরোনামগুলো এই মান দিয়ে শুরু হয়।",
+	"settings.libraryFolders.qualityOf": "{path}-এর মান"
 }

@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "envoyez {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "envoyez {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "connectez-vous d'abord",
-	"server.accounts.sign-in-in-the-browser-before": "connectez-vous dans le navigateur avant de confirmer votre mot de passe",
+	"server.accounts.sign-in-in-the-browser-before": "connecte-toi d'abord avec ton mot de passe sur la page de connexion, puis confirme-le ici",
 	"server.accounts.sign-in-in-the-browser-first": "connectez-vous d'abord dans le navigateur",
 	"server.accounts.sign-in-locally-again-before-linking": "reconnectez-vous en local avant de lier",
 	"server.accounts.sign-in-add-holyarrs-in-your": "connexion : ajoutez HolyArrs dans votre application d'IA et autorisez-le dans le navigateur",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "cette qualité ne peut pas être demandée",
 	"server.requests.the-quality-you-picked-was-not": "La qualité choisie n'a pas été utilisée : ce titre a déjà cette copie.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex ne propose plus la liste des personnes avec qui votre serveur est partagé",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex a refusé votre compte Plex lié ; liez-le à nouveau"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex a refusé votre compte Plex lié ; liez-le à nouveau",
+	"server.migrate.the-show-could-not-be-found": "la série est introuvable par ses identifiants comme par son nom"
 }

@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "sūti {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "sūti {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "vispirms piesakies",
-	"server.accounts.sign-in-in-the-browser-before": "pirms paroles apstiprināšanas piesakies pārlūkā",
+	"server.accounts.sign-in-in-the-browser-before": "vispirms pieteicies ar paroli pieteikšanās lapā, tad apstiprini to šeit",
 	"server.accounts.sign-in-in-the-browser-first": "vispirms piesakies pārlūkā",
 	"server.accounts.sign-in-locally-again-before-linking": "pirms sasaistīšanas vēlreiz piesakies lokāli",
 	"server.accounts.sign-in-add-holyarrs-in-your": "pieteikšanās: pievieno HolyArrs savā MI lietotnē un atļauj to pārlūkā",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "šo kvalitāti nevar pieprasīt",
 	"server.requests.the-quality-you-picked-was-not": "Izvēlētā kvalitāte netika izmantota: šim nosaukumam jau ir šī kopija.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex vairs nepiedāvā sarakstu ar cilvēkiem, ar kuriem koplietots tavs serveris",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex noraidīja tavu sasaistīto Plex kontu; sasaisti to vēlreiz"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex noraidīja tavu sasaistīto Plex kontu; sasaisti to vēlreiz",
+	"server.migrate.the-show-could-not-be-found": "seriālu neizdevās atrast ne pēc tā id, ne pēc nosaukuma"
 }

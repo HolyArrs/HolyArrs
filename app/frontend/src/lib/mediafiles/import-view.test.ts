@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bannerTitle, canTick, findFolders, matchOptions, pickedOf, readImportView, sortFolders, statusCounts, tickState } from './import-view.ts';
+import { bannerTitle, canTick, findFolders, matchOptions, pickedOf, readImportView, sortFolders, statusCounts, tickCounts, tickState } from './import-view.ts';
 import type { AdoptCandidate } from './organise.ts';
 
 const f = (folder: string, over: Partial<AdoptCandidate> = {}): AdoptCandidate => ({
@@ -89,6 +89,11 @@ describe('ticks', () => {
 		expect(tickState([heat, alien, notes], sel, {})).toBe('none');
 		expect(tickState([heat, alien, notes], sel, { 'Heat (1995)': true })).toBe('some');
 		expect(tickState([heat, alien, notes], sel, { 'Heat (1995)': true, 'Alien (1979)': true })).toBe('all');
+	});
+	it('counts the shown folders that can be ticked and how many of them are', () => {
+		const sel = { 'Heat (1995)': '949', 'Alien (1979)': '348' };
+		expect(tickCounts([heat, alien, notes, owned], sel, { 'Heat (1995)': true, 'Notes': true })).toEqual({ can: 2, on: 1 });
+		expect(tickCounts([], sel, {})).toEqual({ can: 0, on: 0 });
 	});
 });
 

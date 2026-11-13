@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "şunu gönder: {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "şunu gönder: {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "önce giriş yap",
-	"server.accounts.sign-in-in-the-browser-before": "parolanı doğrulamadan önce tarayıcıda giriş yap",
+	"server.accounts.sign-in-in-the-browser-before": "önce giriş sayfasında parolanla giriş yap, sonra burada onayla",
 	"server.accounts.sign-in-in-the-browser-first": "önce tarayıcıda giriş yap",
 	"server.accounts.sign-in-locally-again-before-linking": "bağlamadan önce yerel olarak tekrar giriş yap",
 	"server.accounts.sign-in-add-holyarrs-in-your": "giriş: HolyArrs'ı yapay zekâ uygulamana ekle ve tarayıcıda izin ver",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "bu kalite istenemez",
 	"server.requests.the-quality-you-picked-was-not": "Seçtiğiniz kalite kullanılmadı: bu başlıkta o kopya zaten var.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex, sunucunun paylaşıldığı kişilerin listesini artık sunmuyor",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex bağlı Plex hesabını reddetti; yeniden bağla"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex bağlı Plex hesabını reddetti; yeniden bağla",
+	"server.migrate.the-show-could-not-be-found": "dizi ne kimlikleriyle ne de adıyla bulunabildi"
 }

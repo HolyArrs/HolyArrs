@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "ipadala ang {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "ipadala ang {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "mag-sign in muna",
-	"server.accounts.sign-in-in-the-browser-before": "mag-sign in sa browser bago kumpirmahin ang password mo",
+	"server.accounts.sign-in-in-the-browser-before": "mag-sign in muna gamit ang password mo sa sign-in page, saka kumpirmahin dito",
 	"server.accounts.sign-in-in-the-browser-first": "mag-sign in muna sa browser",
 	"server.accounts.sign-in-locally-again-before-linking": "mag-sign in ulit nang lokal bago mag-link",
 	"server.accounts.sign-in-add-holyarrs-in-your": "mag-sign in: idagdag ang HolyArrs sa AI app mo at payagan ito sa browser",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "hindi puwedeng hilingin ang kalidad na iyon",
 	"server.requests.the-quality-you-picked-was-not": "Hindi nagamit ang kalidad na pinili mo: mayroon na ng kopyang iyon ang title na ito.",
 	"server.accounts.plex-no-longer-offers-the-list": "hindi na ibinibigay ng Plex ang listahan ng mga taong pinagbahagian ng server mo",
-	"server.accounts.plex-refused-your-linked-plex-account": "tinanggihan ng Plex ang naka-link mong Plex account; i-link ito ulit"
+	"server.accounts.plex-refused-your-linked-plex-account": "tinanggihan ng Plex ang naka-link mong Plex account; i-link ito ulit",
+	"server.migrate.the-show-could-not-be-found": "hindi nahanap ang palabas gamit ang mga id o pangalan nito"
 }

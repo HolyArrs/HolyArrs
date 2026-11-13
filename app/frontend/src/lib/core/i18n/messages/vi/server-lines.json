@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "gửi {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "gửi {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "hãy đăng nhập trước",
-	"server.accounts.sign-in-in-the-browser-before": "hãy đăng nhập trong trình duyệt trước khi xác nhận mật khẩu của bạn",
+	"server.accounts.sign-in-in-the-browser-before": "hãy đăng nhập bằng mật khẩu ở trang đăng nhập trước, rồi xác nhận tại đây",
 	"server.accounts.sign-in-in-the-browser-first": "hãy đăng nhập trong trình duyệt trước",
 	"server.accounts.sign-in-locally-again-before-linking": "hãy đăng nhập cục bộ lại trước khi liên kết",
 	"server.accounts.sign-in-add-holyarrs-in-your": "đăng nhập: hãy thêm HolyArrs trong ứng dụng AI của bạn và cho phép nó trong trình duyệt",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "không thể yêu cầu chất lượng đó",
 	"server.requests.the-quality-you-picked-was-not": "Chất lượng bạn chọn không được dùng: tựa này đã có bản đó.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex không còn cung cấp danh sách những người được chia sẻ máy chủ của bạn",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex đã từ chối tài khoản Plex đã liên kết của bạn; hãy liên kết lại"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex đã từ chối tài khoản Plex đã liên kết của bạn; hãy liên kết lại",
+	"server.migrate.the-show-could-not-be-found": "không tìm thấy chương trình theo id hay theo tên"
 }

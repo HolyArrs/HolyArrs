@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Κωδικός δύο παραγόντων",
 	"ui.confirm.confirm": "Επιβεβαίωση",
 	"ui.confirm.cancel": "Ακύρωση",
+	"ui.confirm.localVisit": "Αυτή η επίσκεψη παρακάμπτει τη σύνδεση, οπότε δεν μπορεί να επιβεβαιώσει τον κωδικό σας. Συνδεθείτε πρώτα με τον κωδικό σας και θα επιστρέψετε εδώ.",
+	"ui.confirm.signInFirst": "Σύνδεση με τον κωδικό μου",
 	"ui.growCard.preview": "Προεπισκόπηση: {title}",
 	"ui.growCard.goTo": "Μετάβαση: {title}",
 	"ui.growCard.moreInfoAbout": "Περισσότερες πληροφορίες: {title}",

@@ -54,5 +54,9 @@
 	"settings.libraryFolders.sideOnHint": "لا يُستبدل أبدًا ملف موجود في المكتبة.",
 	"settings.libraryFolders.sideTypes": "أنواع الملفات",
 	"settings.libraryFolders.sideTypesHint": "افصل الأنواع بفواصل، مثل srt, ass.",
-	"settings.libraryFolders.notMounted": "لا يستطيع HolyArrs رؤية {path}. فهو يرى فقط المجلدات الموصولة بحاويته. أضف وحدة تخزين مثل {path}:{inside}، ثم استخدم {inside} هنا."
+	"settings.libraryFolders.notMounted": "لا يستطيع HolyArrs رؤية {path}. فهو يرى فقط المجلدات الموصولة بحاويته. أضف وحدة تخزين مثل {path}:{inside}، ثم استخدم {inside} هنا.",
+	"settings.libraryFolders.quality": "الجودة",
+	"settings.libraryFolders.qualityNone": "استخدم الافتراضي",
+	"settings.libraryFolders.qualityHint": "العناوين الجديدة في هذا المجلد تبدأ بهذه الجودة.",
+	"settings.libraryFolders.qualityOf": "جودة {path}"
 }

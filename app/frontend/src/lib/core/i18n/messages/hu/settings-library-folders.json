@@ -54,5 +54,9 @@
 	"settings.libraryFolders.sideOnHint": "A könyvtárban már meglévő fájlt soha nem cseréli le.",
 	"settings.libraryFolders.sideTypes": "Fájltípusok",
 	"settings.libraryFolders.sideTypesHint": "A típusokat vesszővel válassza el, például srt, ass.",
-	"settings.libraryFolders.notMounted": "A HolyArrs nem látja ezt: {path}. Csak a konténerébe csatolt mappákat látja. Adjon hozzá egy kötetet, például {path}:{inside}, majd itt használja ezt: {inside}."
+	"settings.libraryFolders.notMounted": "A HolyArrs nem látja ezt: {path}. Csak a konténerébe csatolt mappákat látja. Adjon hozzá egy kötetet, például {path}:{inside}, majd itt használja ezt: {inside}.",
+	"settings.libraryFolders.quality": "Minőség",
+	"settings.libraryFolders.qualityNone": "Az alapértelmezett használata",
+	"settings.libraryFolders.qualityHint": "A mappa új címei ezzel a minőséggel indulnak.",
+	"settings.libraryFolders.qualityOf": "{path} minősége"
 }

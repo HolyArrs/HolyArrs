@@ -54,5 +54,9 @@
 	"settings.libraryFolders.sideOnHint": "Datoteka koja je već u knjižnici nikad se ne zamjenjuje.",
 	"settings.libraryFolders.sideTypes": "Vrste datoteka",
 	"settings.libraryFolders.sideTypesHint": "Odvojite vrste zarezima, npr. srt, ass.",
-	"settings.libraryFolders.notMounted": "HolyArrs ne vidi {path}. Vidi samo mape montirane u svoj kontejner. Dodajte volumen poput {path}:{inside}, a zatim ovdje upotrijebite {inside}."
+	"settings.libraryFolders.notMounted": "HolyArrs ne vidi {path}. Vidi samo mape montirane u svoj kontejner. Dodajte volumen poput {path}:{inside}, a zatim ovdje upotrijebite {inside}.",
+	"settings.libraryFolders.quality": "Kvaliteta",
+	"settings.libraryFolders.qualityNone": "Koristi zadano",
+	"settings.libraryFolders.qualityHint": "Novi naslovi u ovoj mapi počinju s ovom kvalitetom.",
+	"settings.libraryFolders.qualityOf": "Kvaliteta mape {path}"
 }

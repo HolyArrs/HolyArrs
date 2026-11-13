@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "trimite {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "trimite {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "autentifică-te mai întâi",
-	"server.accounts.sign-in-in-the-browser-before": "autentifică-te în browser înainte de a-ți confirma parola",
+	"server.accounts.sign-in-in-the-browser-before": "conectează-te mai întâi cu parola ta pe pagina de conectare, apoi confirm-o aici",
 	"server.accounts.sign-in-in-the-browser-first": "autentifică-te mai întâi în browser",
 	"server.accounts.sign-in-locally-again-before-linking": "autentifică-te din nou local înainte de asociere",
 	"server.accounts.sign-in-add-holyarrs-in-your": "autentificare: adaugă HolyArrs în aplicația ta AI și permite-l în browser",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "această calitate nu poate fi cerută",
 	"server.requests.the-quality-you-picked-was-not": "Calitatea aleasă nu a fost folosită: titlul are deja această copie.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex nu mai oferă lista persoanelor cu care e partajat serverul tău",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex a refuzat contul tău Plex asociat; asociază-l din nou"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex a refuzat contul tău Plex asociat; asociază-l din nou",
+	"server.migrate.the-show-could-not-be-found": "serialul nu a fost găsit nici după id-uri, nici după nume"
 }

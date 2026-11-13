@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "שלח {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "שלח {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "התחבר קודם",
-	"server.accounts.sign-in-in-the-browser-before": "התחבר בדפדפן לפני שתאשר את הסיסמה שלך",
+	"server.accounts.sign-in-in-the-browser-before": "התחבר קודם עם הסיסמה שלך בדף ההתחברות, ואז אשר אותה כאן",
 	"server.accounts.sign-in-in-the-browser-first": "התחבר בדפדפן קודם",
 	"server.accounts.sign-in-locally-again-before-linking": "התחבר שוב באופן מקומי לפני הקישור",
 	"server.accounts.sign-in-add-holyarrs-in-your": "התחברות: הוסף את HolyArrs באפליקציית ה־AI שלך ואשר אותו בדפדפן",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "אי אפשר לבקש את האיכות הזו",
 	"server.requests.the-quality-you-picked-was-not": "האיכות שבחרת לא שימשה: לכותר הזה כבר יש את העותק הזה.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex כבר לא מציע את רשימת האנשים שהשרת שלך משותף איתם",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex דחה את חשבון ה־Plex המקושר שלך; קשר אותו שוב"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex דחה את חשבון ה־Plex המקושר שלך; קשר אותו שוב",
+	"server.migrate.the-show-could-not-be-found": "לא ניתן היה למצוא את הסדרה לפי המזהים או השם שלה"
 }

@@ -54,5 +54,9 @@
 	"settings.libraryFolders.sideOnHint": "File yang sudah ada di Library tidak pernah diganti.",
 	"settings.libraryFolders.sideTypes": "Jenis file",
 	"settings.libraryFolders.sideTypesHint": "Pisahkan jenis dengan koma, misalnya srt, ass.",
-	"settings.libraryFolders.notMounted": "HolyArrs tidak bisa melihat {path}. HolyArrs hanya melihat folder yang di-mount ke kontainernya. Tambahkan volume seperti {path}:{inside}, lalu gunakan {inside} di sini."
+	"settings.libraryFolders.notMounted": "HolyArrs tidak bisa melihat {path}. HolyArrs hanya melihat folder yang di-mount ke kontainernya. Tambahkan volume seperti {path}:{inside}, lalu gunakan {inside} di sini.",
+	"settings.libraryFolders.quality": "Kualitas",
+	"settings.libraryFolders.qualityNone": "Gunakan bawaan",
+	"settings.libraryFolders.qualityHint": "Judul baru di folder ini dimulai dengan kualitas ini.",
+	"settings.libraryFolders.qualityOf": "Kualitas {path}"
 }

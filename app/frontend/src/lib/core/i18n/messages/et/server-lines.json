@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "saada {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "saada {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "logi esmalt sisse",
-	"server.accounts.sign-in-in-the-browser-before": "logi brauseris sisse enne parooli kinnitamist",
+	"server.accounts.sign-in-in-the-browser-before": "logi esmalt sisselogimislehel parooliga sisse ja kinnita see siin",
 	"server.accounts.sign-in-in-the-browser-first": "logi esmalt brauseris sisse",
 	"server.accounts.sign-in-locally-again-before-linking": "logi enne sidumist uuesti kohalikult sisse",
 	"server.accounts.sign-in-add-holyarrs-in-your": "logi sisse: lisa HolyArrs oma tehisintellekti rakendusse ja luba see brauseris",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "seda kvaliteeti ei saa taotleda",
 	"server.requests.the-quality-you-picked-was-not": "Valitud kvaliteeti ei kasutatud: sellel pealkirjal on see koopia juba olemas.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex ei paku enam nimekirja inimestest, kellega sinu serverit jagatakse",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex lükkas sinu seotud Plexi konto tagasi; seo see uuesti"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex lükkas sinu seotud Plexi konto tagasi; seo see uuesti",
+	"server.migrate.the-show-could-not-be-found": "sarja ei leitud ei oma id-de ega nime järgi"
 }

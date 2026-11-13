@@ -151,7 +151,7 @@ func recentLocalExempt(pattern string, who webserver.Caller) bool {
 func (a *Auth) reauth(w http.ResponseWriter, r *http.Request) {
 	who, ok := webserver.From(r.Context())
 	if !ok || who.Via != "session" {
-		fail(w, http.StatusForbidden, "sign in in the browser before confirming your password")
+		fail(w, http.StatusForbidden, "sign in with your password on the sign-in page first, then confirm it here")
 		return
 	}
 	var body reauthBody

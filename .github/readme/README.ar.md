@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.2: Knaben وTorrentsCSV وSubsPlease وIPTorrents مدمجة**، بلا حاجة إلى Prowlarr. اطلب المسلسلات بدقة 4K، ويستطيع Profilarr إرسال صيغه وملفات التعريف الخاصة به. [ما الجديد](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.3: Knaben وTorrentsCSV وSubsPlease وIPTorrents مدمجة**، بلا حاجة إلى Prowlarr. اطلب المسلسلات بدقة 4K، ويستطيع Profilarr إرسال صيغه وملفات التعريف الخاصة به. [ما الجديد](https://holyarrs.com/whats-new/)
 
 > كل ملصق وإعلان وتقييم في HolyArrs لديك يأتي من خادم أشغّله وأدفع تكلفته بنفسي، ليبقى مجانيًا للجميع. إذا جعل HolyArrs سهرة الأفلام عندك أجمل قليلًا، فرعايتك تُبقي الأنوار مضاءة لنا جميعًا 💛
 >
@@ -109,7 +109,7 @@ docker compose up -d
 | **الستة معًا** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>أصغر بحوالي 43 مرة. التنزيل المضغوط من السجل (registry)، صور linuxserver.io، amd64، قيس في 2026-11-08. قيست الذاكرة وهو خامل مع 10,000 عنوان و55,000 فيلم وحلقة. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>أصغر بحوالي 43 مرة. التنزيل المضغوط من السجل (registry)، صور linuxserver.io، amd64، قيس في 2026-11-08. قيست الذاكرة وهو خامل مع 10,000 عنوان و55,000 فيلم وحلقة. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -224,7 +224,7 @@ docker compose up -d
 | الوسم | استخدمه لـ |
 | :----: | --- |
 | `latest` | أحدث إصدار. |
-| `1.1.2` | إصدار واحد بعينه. لا يتحرك أبدًا. |
+| `1.1.3` | إصدار واحد بعينه. لا يتحرك أبدًا. |
 
 ## الاستخدام
 

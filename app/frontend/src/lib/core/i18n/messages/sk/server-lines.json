@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "pošlite {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "pošlite {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "najprv sa prihláste",
-	"server.accounts.sign-in-in-the-browser-before": "pred potvrdením hesla sa prihláste v prehliadači",
+	"server.accounts.sign-in-in-the-browser-before": "najprv sa na prihlasovacej stránke prihláste heslom a potom ho tu potvrďte",
 	"server.accounts.sign-in-in-the-browser-first": "najprv sa prihláste v prehliadači",
 	"server.accounts.sign-in-locally-again-before-linking": "pred prepojením sa znova prihláste lokálne",
 	"server.accounts.sign-in-add-holyarrs-in-your": "prihlásenie: pridajte HolyArrs vo svojej aplikácii AI a povoľte ho v prehliadači",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "o túto kvalitu nemožno žiadať",
 	"server.requests.the-quality-you-picked-was-not": "Vybraná kvalita nebola použitá: tento titul už túto kópiu má.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex už neposkytuje zoznam ľudí, s ktorými je váš server zdieľaný",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex odmietol váš prepojený účet Plex; prepojte ho znova"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex odmietol váš prepojený účet Plex; prepojte ho znova",
+	"server.migrate.the-show-could-not-be-found": "seriál sa nepodarilo nájsť podľa jeho id ani názvu"
 }

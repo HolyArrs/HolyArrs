@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "send {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "send {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "sign in first",
-	"server.accounts.sign-in-in-the-browser-before": "sign in in the browser before confirming your password",
+	"server.accounts.sign-in-in-the-browser-before": "sign in with your password on the sign-in page first, then confirm it here",
 	"server.accounts.sign-in-in-the-browser-first": "sign in in the browser first",
 	"server.accounts.sign-in-locally-again-before-linking": "sign in locally again before linking",
 	"server.accounts.sign-in-add-holyarrs-in-your": "sign in: add HolyArrs in your AI app and allow it in the browser",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "that quality cannot be asked for",
 	"server.requests.the-quality-you-picked-was-not": "The quality you picked was not used: this title already has that copy.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex no longer offers the list of people your server is shared with",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex refused your linked Plex account; link it again"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex refused your linked Plex account; link it again",
+	"server.migrate.the-show-could-not-be-found": "the show could not be found by its ids or its name"
 }

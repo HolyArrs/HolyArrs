@@ -27,7 +27,12 @@ func (m *Manager) HandleGrab(ctx context.Context, r *jobs.Run) error {
 		return errors.New("grab needs a slot subject")
 	}
 	relID, _ := r.Job.Params["release_id"].(float64)
-	id, err := m.Grab(ctx, r.Job.Subject.ID, int64(relID), domain.Actor{Kind: "job", ID: r.Job.ID})
+	by := domain.Actor{Kind: "job", ID: r.Job.ID}
+	if r.Job.AskedBy.Kind == "user" {
+		// The person who picked it is who the download is for.
+		by = r.Job.AskedBy
+	}
+	id, err := m.Grab(ctx, r.Job.Subject.ID, int64(relID), by)
 	var te *TagsError
 	if errors.As(err, &te) || errors.Is(err, ErrOutsideTorrent) {
 		// No Downloader takes the title's tags, or the torrent sits in the Downloader

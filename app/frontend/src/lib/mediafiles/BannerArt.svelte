@@ -37,7 +37,7 @@
 
 <script lang="ts">
 	import type { TitleView } from '../core/types.ts';
-	import { bannerAspect, bannerSrc } from '#lib/ui/library-art.ts';
+	import { bannerAspect, bannerSrc, extrasIdOf } from '#lib/ui/library-art.ts';
 
 	let { title, eager = false, width = 0 }: { title: Pick<TitleView, 'kind' | 'name' | 'ids' | 'artist' | 'artwork' | 'backdrop' | 'logo'>; eager?: boolean; width?: number } = $props();
 
@@ -49,7 +49,7 @@
 	let cw = $state(0);
 
 	const extrasKind = $derived(title.kind === 'artist' ? 'artist' : title.kind === 'show' ? 'show' : 'movie');
-	const extrasId = $derived(title.kind === 'artist' ? (title.artist?.mbid ?? '') : (title.ids?.tmdb ?? ''));
+	const extrasId = $derived(extrasIdOf(title));
 	const fallback = $derived(title.backdrop || title.artwork[0] || '');
 	const shown = $derived(width || cw);
 	const src = $derived(bannerSrc(banner && !broken ? banner : fallback, shown));

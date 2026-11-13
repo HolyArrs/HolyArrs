@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "küldje: {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "küldje: {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "előbb jelentkezzen be",
-	"server.accounts.sign-in-in-the-browser-before": "a jelszava megerősítése előtt jelentkezzen be a böngészőben",
+	"server.accounts.sign-in-in-the-browser-before": "előbb jelentkezz be a jelszavaddal a bejelentkezési oldalon, aztán erősítsd meg itt",
 	"server.accounts.sign-in-in-the-browser-first": "előbb jelentkezzen be a böngészőben",
 	"server.accounts.sign-in-locally-again-before-linking": "az összekapcsolás előtt jelentkezzen be újra helyileg",
 	"server.accounts.sign-in-add-holyarrs-in-your": "bejelentkezés: adja hozzá a HolyArrst az AI-alkalmazásában, és engedélyezze a böngészőben",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "ez a minőség nem kérhető",
 	"server.requests.the-quality-you-picked-was-not": "A választott minőség nem lett felhasználva: ennek a címnek már megvan ez a másolata.",
 	"server.accounts.plex-no-longer-offers-the-list": "a Plex már nem adja ki azoknak a személyeknek a listáját, akikkel a szerverét megosztották",
-	"server.accounts.plex-refused-your-linked-plex-account": "a Plex elutasította az összekapcsolt Plex-fiókját; kapcsolja össze újra"
+	"server.accounts.plex-refused-your-linked-plex-account": "a Plex elutasította az összekapcsolt Plex-fiókját; kapcsolja össze újra",
+	"server.migrate.the-show-could-not-be-found": "a sorozatot sem az azonosítói, sem a neve alapján nem sikerült megtalálni"
 }

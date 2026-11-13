@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "sende {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "sende {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "melde dich zuerst an",
-	"server.accounts.sign-in-in-the-browser-before": "melde dich im Browser an, bevor du dein Passwort bestätigst",
+	"server.accounts.sign-in-in-the-browser-before": "melde dich zuerst auf der Anmeldeseite mit deinem Passwort an und bestätige es dann hier",
 	"server.accounts.sign-in-in-the-browser-first": "melde dich zuerst im Browser an",
 	"server.accounts.sign-in-locally-again-before-linking": "melde dich vor dem Verknüpfen noch einmal lokal an",
 	"server.accounts.sign-in-add-holyarrs-in-your": "Anmeldung: Füge HolyArrs in deiner KI-App hinzu und erlaube es im Browser",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "diese Qualität kann nicht angefragt werden",
 	"server.requests.the-quality-you-picked-was-not": "Die gewählte Qualität wurde nicht verwendet: Dieser Titel hat diese Kopie schon.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex bietet die Liste der Personen, mit denen dein Server geteilt ist, nicht mehr an",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex hat dein verknüpftes Plex-Konto abgelehnt; verknüpfe es erneut"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex hat dein verknüpftes Plex-Konto abgelehnt; verknüpfe es erneut",
+	"server.migrate.the-show-could-not-be-found": "die Serie wurde weder über ihre IDs noch über ihren Namen gefunden"
 }

@@ -37,6 +37,7 @@
     "not_out_yet": 0,
     "downloading": 1,
     "failed": 1,
-    "next_air_date": "2026-10-19T02:00:00Z"
+    "next_air_date": "2026-10-19T02:00:00Z",
+    "next_air_day": "2026-10-18"
   }
 ]

@@ -98,6 +98,12 @@ export function tickState(folders: AdoptCandidate[], sel: Record<string, string>
 	return on === 0 ? 'none' : on === can.length ? 'all' : 'some';
 }
 
+// How many of the shown folders can be ticked, and how many of those are.
+export function tickCounts(folders: AdoptCandidate[], sel: Record<string, string>, ticked: Record<string, boolean>): { can: number; on: number } {
+	const can = folders.filter((f) => canTick(f, sel));
+	return { can: can.length, on: can.filter((f) => ticked[f.folder]).length };
+}
+
 // Enough of a title for the Library's banner art: the id it asks the extras for, and the poster as the fallback.
 export function bannerTitle(kind: 'movie' | 'show' | 'music', id: string | undefined, p: Picked): BannerTitle {
 	const [src, raw] = id?.includes(':') ? [id.slice(0, id.indexOf(':')), id.slice(id.indexOf(':') + 1)] : ['tmdb', id ?? ''];

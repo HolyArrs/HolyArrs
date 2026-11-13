@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "send {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "send {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "logg inn først",
-	"server.accounts.sign-in-in-the-browser-before": "logg inn i nettleseren før du bekrefter passordet ditt",
+	"server.accounts.sign-in-in-the-browser-before": "logg først inn med passordet ditt på innloggingssiden, og bekreft det så her",
 	"server.accounts.sign-in-in-the-browser-first": "logg inn i nettleseren først",
 	"server.accounts.sign-in-locally-again-before-linking": "logg inn lokalt igjen før du kobler til",
 	"server.accounts.sign-in-add-holyarrs-in-your": "logg inn: legg til HolyArrs i KI-appen din og tillat den i nettleseren",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "den kvaliteten kan ikke forespørres",
 	"server.requests.the-quality-you-picked-was-not": "Kvaliteten du valgte ble ikke brukt: tittelen har allerede den kopien.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex tilbyr ikke lenger listen over folkene serveren din er delt med",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex avviste den tilkoblede Plex-kontoen din; koble den til på nytt"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex avviste den tilkoblede Plex-kontoen din; koble den til på nytt",
+	"server.migrate.the-show-could-not-be-found": "serien ble ikke funnet verken med id-ene eller navnet"
 }

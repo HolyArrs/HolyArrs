@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Mã xác thực hai lớp",
 	"ui.confirm.confirm": "Xác nhận",
 	"ui.confirm.cancel": "Hủy",
+	"ui.confirm.localVisit": "Lượt truy cập này bỏ qua bước đăng nhập nên không thể xác nhận mật khẩu của bạn. Hãy đăng nhập bằng mật khẩu trước, bạn sẽ quay lại đây.",
+	"ui.confirm.signInFirst": "Đăng nhập bằng mật khẩu của tôi",
 	"ui.growCard.preview": "Xem trước {title}",
 	"ui.growCard.goTo": "Đi tới {title}",
 	"ui.growCard.moreInfoAbout": "Thêm thông tin về {title}",

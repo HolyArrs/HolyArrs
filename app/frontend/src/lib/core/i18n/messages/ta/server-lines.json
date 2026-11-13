@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "{\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"} அனுப்புங்கள்",
 	"server.accounts.send-url-http": "{\"url\": \"http://...\"} அனுப்புங்கள்",
 	"server.accounts.sign-in-first": "முதலில் உள்நுழையுங்கள்",
-	"server.accounts.sign-in-in-the-browser-before": "கடவுச்சொல்லை உறுதிசெய்வதற்கு முன் உலாவியில் உள்நுழையுங்கள்",
+	"server.accounts.sign-in-in-the-browser-before": "முதலில் உள்நுழைவு பக்கத்தில் உங்கள் கடவுச்சொல்லுடன் உள்நுழையுங்கள், பிறகு இங்கே உறுதிப்படுத்துங்கள்",
 	"server.accounts.sign-in-in-the-browser-first": "முதலில் உலாவியில் உள்நுழையுங்கள்",
 	"server.accounts.sign-in-locally-again-before-linking": "இணைப்பதற்கு முன் மீண்டும் உள்ளூரில் உள்நுழையுங்கள்",
 	"server.accounts.sign-in-add-holyarrs-in-your": "உள்நுழைவு: உங்கள் AI ஆப்பில் HolyArrs ஐச் சேர்த்து, உலாவியில் அனுமதியுங்கள்",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "அந்தத் தரத்தைக் கோர முடியாது",
 	"server.requests.the-quality-you-picked-was-not": "நீங்கள் தேர்ந்தெடுத்த தரம் பயன்படுத்தப்படவில்லை: இந்தத் தலைப்பில் அந்தப் பிரதி ஏற்கெனவே உள்ளது.",
 	"server.accounts.plex-no-longer-offers-the-list": "உங்கள் சேவையகம் பகிரப்பட்டவர்களின் பட்டியலை Plex இனி வழங்குவதில்லை",
-	"server.accounts.plex-refused-your-linked-plex-account": "இணைக்கப்பட்ட உங்கள் Plex கணக்கை Plex மறுத்தது; மீண்டும் இணையுங்கள்"
+	"server.accounts.plex-refused-your-linked-plex-account": "இணைக்கப்பட்ட உங்கள் Plex கணக்கை Plex மறுத்தது; மீண்டும் இணையுங்கள்",
+	"server.migrate.the-show-could-not-be-found": "நிகழ்ச்சியை அதன் ஐடிகள் அல்லது பெயர் மூலம் கண்டுபிடிக்க முடியவில்லை"
 }

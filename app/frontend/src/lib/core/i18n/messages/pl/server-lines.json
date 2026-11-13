@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "wyślij {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "wyślij {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "najpierw się zaloguj",
-	"server.accounts.sign-in-in-the-browser-before": "zaloguj się w przeglądarce przed potwierdzeniem hasła",
+	"server.accounts.sign-in-in-the-browser-before": "najpierw zaloguj się hasłem na stronie logowania, a potem potwierdź je tutaj",
 	"server.accounts.sign-in-in-the-browser-first": "najpierw zaloguj się w przeglądarce",
 	"server.accounts.sign-in-locally-again-before-linking": "zaloguj się lokalnie jeszcze raz przed połączeniem",
 	"server.accounts.sign-in-add-holyarrs-in-your": "logowanie: dodaj HolyArrs w swojej aplikacji AI i zezwól na to w przeglądarce",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "o tę jakość nie można prosić",
 	"server.requests.the-quality-you-picked-was-not": "Wybrana jakość nie została użyta: ten tytuł ma już tę kopię.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex nie udostępnia już listy osób, którym udostępniono twój serwer",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex odrzucił twoje połączone konto Plex; połącz je ponownie"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex odrzucił twoje połączone konto Plex; połącz je ponownie",
+	"server.migrate.the-show-could-not-be-found": "nie znaleziono serialu ani po jego identyfikatorach, ani po nazwie"
 }

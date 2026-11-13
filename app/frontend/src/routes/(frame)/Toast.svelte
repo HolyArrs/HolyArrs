@@ -115,7 +115,7 @@
 		position: relative;
 		pointer-events: auto;
 		color: #f5f5f7;
-		background: rgb(28 28 32 / 82%);
+		background: rgb(28 28 32 / 96%);
 		-webkit-backdrop-filter: blur(40px) saturate(180%);
 		backdrop-filter: blur(40px) saturate(180%);
 		box-shadow: 0 18px 50px rgb(0 0 0 / 42%), 0 2px 6px rgb(0 0 0 / 22%), inset 0 1px 0 rgb(255 255 255 / 9%), inset 0 0 0 0.5px rgb(255 255 255 / 7%);

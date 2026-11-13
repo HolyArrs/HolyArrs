@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "envía {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "envía {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "inicia sesión primero",
-	"server.accounts.sign-in-in-the-browser-before": "inicia sesión en el navegador antes de confirmar tu contraseña",
+	"server.accounts.sign-in-in-the-browser-before": "inicia sesión con tu contraseña en la página de inicio de sesión y luego confírmala aquí",
 	"server.accounts.sign-in-in-the-browser-first": "inicia sesión primero en el navegador",
 	"server.accounts.sign-in-locally-again-before-linking": "inicia sesión de nuevo en local antes de vincular",
 	"server.accounts.sign-in-add-holyarrs-in-your": "iniciar sesión: añade HolyArrs en tu app de IA y permítelo en el navegador",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "esa calidad no se puede pedir",
 	"server.requests.the-quality-you-picked-was-not": "No se usó la calidad elegida: este título ya tiene esa copia.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex ya no ofrece la lista de personas con las que se comparte tu servidor",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex rechazó tu cuenta de Plex vinculada; vuelve a vincularla"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex rechazó tu cuenta de Plex vinculada; vuelve a vincularla",
+	"server.migrate.the-show-could-not-be-found": "no se encontró la serie ni por sus ids ni por su nombre"
 }

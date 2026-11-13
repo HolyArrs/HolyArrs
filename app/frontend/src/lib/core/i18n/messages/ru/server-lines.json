@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "отправьте {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "отправьте {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "сначала войдите",
-	"server.accounts.sign-in-in-the-browser-before": "войдите в браузере, прежде чем подтверждать пароль",
+	"server.accounts.sign-in-in-the-browser-before": "сначала войдите по паролю на странице входа, затем подтвердите его здесь",
 	"server.accounts.sign-in-in-the-browser-first": "сначала войдите в браузере",
 	"server.accounts.sign-in-locally-again-before-linking": "перед связыванием войдите локально ещё раз",
 	"server.accounts.sign-in-add-holyarrs-in-your": "вход: добавьте HolyArrs в своё ИИ-приложение и разрешите его в браузере",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "это качество нельзя запросить",
 	"server.requests.the-quality-you-picked-was-not": "Выбранное качество не применено: у этого тайтла уже есть такая копия.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex больше не отдаёт список людей, с которыми открыт доступ к вашему серверу",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex отклонил вашу связанную учётную запись Plex; свяжите её заново"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex отклонил вашу связанную учётную запись Plex; свяжите её заново",
+	"server.migrate.the-show-could-not-be-found": "сериал не найден ни по идентификаторам, ни по названию"
 }

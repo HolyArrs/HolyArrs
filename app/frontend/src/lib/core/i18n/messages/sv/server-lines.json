@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "skicka {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "skicka {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "logga in först",
-	"server.accounts.sign-in-in-the-browser-before": "logga in i webbläsaren innan du bekräftar ditt lösenord",
+	"server.accounts.sign-in-in-the-browser-before": "logga först in med ditt lösenord på inloggningssidan och bekräfta det sedan här",
 	"server.accounts.sign-in-in-the-browser-first": "logga in i webbläsaren först",
 	"server.accounts.sign-in-locally-again-before-linking": "logga in lokalt igen innan du länkar",
 	"server.accounts.sign-in-add-holyarrs-in-your": "logga in: lägg till HolyArrs i din AI-app och tillåt det i webbläsaren",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "den kvaliteten kan inte efterfrågas",
 	"server.requests.the-quality-you-picked-was-not": "Kvaliteten du valde användes inte: titeln har redan den kopian.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex erbjuder inte längre listan över personerna som din server delas med",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex avvisade ditt länkade Plex-konto; länka det igen"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex avvisade ditt länkade Plex-konto; länka det igen",
+	"server.migrate.the-show-could-not-be-found": "serien hittades varken via sina id eller sitt namn"
 }

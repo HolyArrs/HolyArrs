@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "இரு-காரணி குறியீடு",
 	"ui.confirm.confirm": "உறுதிப்படுத்து",
 	"ui.confirm.cancel": "ரத்துசெய்",
+	"ui.confirm.localVisit": "இந்த வருகை உள்நுழைவைத் தவிர்க்கிறது, அதனால் உங்கள் கடவுச்சொல்லை உறுதிப்படுத்த முடியாது. முதலில் உங்கள் கடவுச்சொல்லுடன் உள்நுழையுங்கள், இங்கே திரும்பி வருவீர்கள்.",
+	"ui.confirm.signInFirst": "என் கடவுச்சொல்லுடன் உள்நுழை",
 	"ui.growCard.preview": "{title} முன்னோட்டம்",
 	"ui.growCard.goTo": "{title} க்குச் செல்",
 	"ui.growCard.moreInfoAbout": "{title} பற்றிய கூடுதல் தகவல்",

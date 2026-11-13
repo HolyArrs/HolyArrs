@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease ve IPTorrents yerleşik**, Prowlarr gerekmeden. Dizileri 4K olarak iste, Profilarr da formatlarını ve profillerini gönderebilir. [Yenilikler](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease ve IPTorrents yerleşik**, Prowlarr gerekmeden. Dizileri 4K olarak iste, Profilarr da formatlarını ve profillerini gönderebilir. [Yenilikler](https://holyarrs.com/whats-new/)
 
 > HolyArrs'ındaki her afiş, fragman ve puan, kendim çalıştırıp ödediğim bir sunucudan geliyor; böylece herkes için ücretsiz kalıyor. HolyArrs film gecene biraz güzellik kattıysa, sponsor olmak hepimiz için ışıkları açık tutar 💛
 >
@@ -107,7 +107,7 @@ Ben de yaptım.
 | **Altısı birlikte** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Yaklaşık 43 kat küçük. Sıkıştırılmış registry indirmesi, linuxserver.io imajları, amd64, 2026-11-08'de ölçüldü. Boşta RAM, 10,000 başlık ve 55,000 film ve bölümle ölçüldü. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>Yaklaşık 43 kat küçük. Sıkıştırılmış registry indirmesi, linuxserver.io imajları, amd64, 2026-11-08'de ölçüldü. Boşta RAM, 10,000 başlık ve 55,000 film ve bölümle ölçüldü. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Yerel bir paket mi istersin? Her [sürüme](https://github.com/HolyArrs/HolyArrs
 | Etiket | Ne için kullanılır |
 | :----: | --- |
 | `latest` | En yeni sürüm. |
-| `1.1.2` | Tam olarak tek bir sürüm. Asla değişmez. |
+| `1.1.3` | Tam olarak tek bir sürüm. Asla değişmez. |
 
 ## Kullanım
 

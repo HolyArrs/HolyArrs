@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Kaheastmelise autentimise kood",
 	"ui.confirm.confirm": "Kinnita",
 	"ui.confirm.cancel": "Tühista",
+	"ui.confirm.localVisit": "See külastus jätab sisselogimise vahele, seega ei saa see sinu parooli kinnitada. Logi esmalt parooliga sisse ja jõuad siia tagasi.",
+	"ui.confirm.signInFirst": "Logi sisse oma parooliga",
 	"ui.growCard.preview": "{title} eelvaade",
 	"ui.growCard.goTo": "Mine: {title}",
 	"ui.growCard.moreInfoAbout": "Rohkem teavet: {title}",

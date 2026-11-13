@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "надішли {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "надішли {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "спершу увійди",
-	"server.accounts.sign-in-in-the-browser-before": "увійди в браузері, перш ніж підтверджувати пароль",
+	"server.accounts.sign-in-in-the-browser-before": "спочатку увійдіть із паролем на сторінці входу, потім підтвердьте його тут",
 	"server.accounts.sign-in-in-the-browser-first": "спершу увійди в браузері",
 	"server.accounts.sign-in-locally-again-before-linking": "увійди локально ще раз перед підключенням",
 	"server.accounts.sign-in-add-holyarrs-in-your": "вхід: додай HolyArrs у своєму ШІ-застосунку й дозволь його в браузері",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "цю якість не можна запросити",
 	"server.requests.the-quality-you-picked-was-not": "Вибрану якість не застосовано: у цього тайтлу вже є така копія.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex більше не надає список людей, яким надано доступ до твого сервера",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex відхилив твій підключений обліковий запис Plex; підключи його ще раз"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex відхилив твій підключений обліковий запис Plex; підключи його ще раз",
+	"server.migrate.the-show-could-not-be-found": "серіал не знайдено ні за ідентифікаторами, ні за назвою"
 }

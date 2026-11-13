@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.2：內建 Knaben、TorrentsCSV、SubsPlease 和 IPTorrents**，不再需要 Prowlarr。可以要求 4K 影集，Profilarr 也能送來它的格式和設定檔。[查看新功能](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.3：內建 Knaben、TorrentsCSV、SubsPlease 和 IPTorrents**，不再需要 Prowlarr。可以要求 4K 影集，Profilarr 也能送來它的格式和設定檔。[查看新功能](https://holyarrs.com/whats-new/)
 
 > 你的 HolyArrs 裡每一張海報、每一支預告片和每一個評分，都來自我自己架設、自己付費的伺服器，所以它能對所有人保持免費。如果 HolyArrs 讓你的電影夜好過了一點，贊助能讓我們大家的燈一直亮著 💛
 >
@@ -107,7 +107,7 @@ docker compose up -d
 | **六個加起來** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>小了約 43 倍。為壓縮後的 registry 下載大小，使用 linuxserver.io 的 image，amd64，2026-11-08 測量。閒置記憶體是在 10,000 部作品、55,000 部電影和集數的情況下測得。 (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>小了約 43 倍。為壓縮後的 registry 下載大小，使用 linuxserver.io 的 image，amd64，2026-11-08 測量。閒置記憶體是在 10,000 部作品、55,000 部電影和集數的情況下測得。 (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ image 放在 Docker Hub，名稱是 [`holyarrs/holyarrs`](https://hub.docker.com
 | Tag | 用途 |
 | :----: | --- |
 | `latest` | 最新的新版。 |
-| `1.1.2` | 固定的某一個版本。它永遠不會變。 |
+| `1.1.3` | 固定的某一個版本。它永遠不會變。 |
 
 ## 使用方式
 

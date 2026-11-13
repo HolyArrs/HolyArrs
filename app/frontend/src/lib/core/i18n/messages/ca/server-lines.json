@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "envia {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "envia {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "inicia primer la sessió",
-	"server.accounts.sign-in-in-the-browser-before": "inicia la sessió al navegador abans de confirmar la teva contrasenya",
+	"server.accounts.sign-in-in-the-browser-before": "inicia la sessió amb la contrasenya a la pàgina d'inici de sessió i després confirma-la aquí",
 	"server.accounts.sign-in-in-the-browser-first": "inicia primer la sessió al navegador",
 	"server.accounts.sign-in-locally-again-before-linking": "torna a iniciar la sessió localment abans de vincular",
 	"server.accounts.sign-in-add-holyarrs-in-your": "inicia la sessió: afegeix HolyArrs a la teva app d'IA i permet-ho al navegador",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "aquesta qualitat no es pot sol·licitar",
 	"server.requests.the-quality-you-picked-was-not": "La qualitat triada no s'ha fet servir: aquest títol ja té aquesta còpia.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex ja no ofereix la llista de persones amb qui es comparteix el teu servidor",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex ha rebutjat el teu compte de Plex vinculat; torna a vincular-lo"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex ha rebutjat el teu compte de Plex vinculat; torna a vincular-lo",
+	"server.migrate.the-show-could-not-be-found": "no s'ha trobat la sèrie pels seus identificadors ni pel seu nom"
 }

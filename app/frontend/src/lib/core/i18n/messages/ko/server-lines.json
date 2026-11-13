@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "{\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}를 보내세요",
 	"server.accounts.send-url-http": "{\"url\": \"http://...\"}를 보내세요",
 	"server.accounts.sign-in-first": "먼저 로그인하세요",
-	"server.accounts.sign-in-in-the-browser-before": "비밀번호를 확인하기 전에 브라우저에서 로그인하세요",
+	"server.accounts.sign-in-in-the-browser-before": "먼저 로그인 페이지에서 비밀번호로 로그인한 다음 여기서 확인하세요",
 	"server.accounts.sign-in-in-the-browser-first": "먼저 브라우저에서 로그인하세요",
 	"server.accounts.sign-in-locally-again-before-linking": "연결하기 전에 로컬로 다시 로그인하세요",
 	"server.accounts.sign-in-add-holyarrs-in-your": "로그인: AI 앱에 HolyArrs를 추가하고 브라우저에서 허용하세요",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "그 품질은 요청할 수 없습니다",
 	"server.requests.the-quality-you-picked-was-not": "선택한 품질은 사용되지 않았습니다: 이 타이틀에 이미 그 사본이 있습니다.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex가 서버를 공유받은 사용자 목록을 더 이상 제공하지 않습니다",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex가 연결된 Plex 계정을 거부했습니다. 다시 연결하세요"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex가 연결된 Plex 계정을 거부했습니다. 다시 연결하세요",
+	"server.migrate.the-show-could-not-be-found": "ID로도 이름으로도 이 쇼를 찾지 못했습니다"
 }

@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "بفرست {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "بفرست {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "اول وارد شو",
-	"server.accounts.sign-in-in-the-browser-before": "پیش از تأیید رمز عبورت، در مرورگر وارد شو",
+	"server.accounts.sign-in-in-the-browser-before": "ابتدا در صفحهٔ ورود با گذرواژهٔ خود وارد شوید و سپس آن را اینجا تأیید کنید",
 	"server.accounts.sign-in-in-the-browser-first": "اول در مرورگر وارد شو",
 	"server.accounts.sign-in-locally-again-before-linking": "پیش از اتصال، دوباره به‌صورت محلی وارد شو",
 	"server.accounts.sign-in-add-holyarrs-in-your": "ورود: HolyArrs را در برنامه هوش مصنوعی‌ات اضافه کن و در مرورگر اجازه بده",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "این کیفیت قابل درخواست نیست",
 	"server.requests.the-quality-you-picked-was-not": "کیفیتی که انتخاب کردی استفاده نشد: این عنوان آن کپی را از قبل دارد.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex دیگر فهرست افرادی را که سرورت با آن‌ها به اشتراک گذاشته شده ارائه نمی‌کند",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex حساب Plex وصل‌شده‌ات را رد کرد؛ دوباره وصلش کن"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex حساب Plex وصل‌شده‌ات را رد کرد؛ دوباره وصلش کن",
+	"server.migrate.the-show-could-not-be-found": "سریال نه با شناسه‌هایش پیدا شد و نه با نامش"
 }

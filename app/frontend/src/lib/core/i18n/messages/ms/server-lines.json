@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "hantar {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "hantar {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "log masuk dahulu",
-	"server.accounts.sign-in-in-the-browser-before": "log masuk dalam pelayar sebelum mengesahkan kata laluan anda",
+	"server.accounts.sign-in-in-the-browser-before": "log masuk dahulu dengan kata laluan anda di halaman log masuk, kemudian sahkan di sini",
 	"server.accounts.sign-in-in-the-browser-first": "log masuk dalam pelayar dahulu",
 	"server.accounts.sign-in-locally-again-before-linking": "log masuk semula secara setempat sebelum memautkan",
 	"server.accounts.sign-in-add-holyarrs-in-your": "log masuk: tambah HolyArrs dalam apl AI anda dan benarkannya dalam pelayar",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "kualiti itu tidak boleh diminta",
 	"server.requests.the-quality-you-picked-was-not": "Kualiti yang anda pilih tidak digunakan: tajuk ini sudah mempunyai salinan itu.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex tidak lagi menyediakan senarai orang yang dikongsi pelayan anda",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex menolak akaun Plex anda yang dipautkan; pautkannya semula"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex menolak akaun Plex anda yang dipautkan; pautkannya semula",
+	"server.migrate.the-show-could-not-be-found": "siri tidak ditemui melalui id atau namanya"
 }

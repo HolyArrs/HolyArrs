@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "siųskite {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "siųskite {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "pirmiausia prisijunkite",
-	"server.accounts.sign-in-in-the-browser-before": "prieš patvirtindami slaptažodį prisijunkite naršyklėje",
+	"server.accounts.sign-in-in-the-browser-before": "pirmiausia prisijunkite slaptažodžiu prisijungimo puslapyje, tada patvirtinkite jį čia",
 	"server.accounts.sign-in-in-the-browser-first": "pirmiausia prisijunkite naršyklėje",
 	"server.accounts.sign-in-locally-again-before-linking": "prieš susiedami vėl prisijunkite vietoje",
 	"server.accounts.sign-in-add-holyarrs-in-your": "prisijungimas: pridėkite HolyArrs savo DI programoje ir leiskite naršyklėje",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "šios kokybės užsakyti negalima",
 	"server.requests.the-quality-you-picked-was-not": "Pasirinkta kokybė nepanaudota: šis pavadinimas jau turi tą kopiją.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex nebeteikia sąrašo žmonių, su kuriais bendrinamas jūsų serveris",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex atmetė jūsų susietą Plex paskyrą; susiekite ją iš naujo"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex atmetė jūsų susietą Plex paskyrą; susiekite ją iš naujo",
+	"server.migrate.the-show-could-not-be-found": "serialo nepavyko rasti nei pagal jo id, nei pagal pavadinimą"
 }

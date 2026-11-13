@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "lähetä {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "lähetä {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "kirjaudu ensin",
-	"server.accounts.sign-in-in-the-browser-before": "kirjaudu selaimessa ennen salasanasi vahvistamista",
+	"server.accounts.sign-in-in-the-browser-before": "kirjaudu ensin salasanallasi kirjautumissivulla ja vahvista se sitten tässä",
 	"server.accounts.sign-in-in-the-browser-first": "kirjaudu ensin selaimessa",
 	"server.accounts.sign-in-locally-again-before-linking": "kirjaudu paikallisesti uudelleen ennen yhdistämistä",
 	"server.accounts.sign-in-add-holyarrs-in-your": "kirjaudu: lisää HolyArrs tekoälysovellukseesi ja salli se selaimessa",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "tätä laatua ei voi pyytää",
 	"server.requests.the-quality-you-picked-was-not": "Valitsemaasi laatua ei käytetty: nimikkeellä on jo tämä kopio.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex ei enää tarjoa listaa ihmisistä, joiden kanssa palvelimesi on jaettu",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex hylkäsi yhdistetyn Plex-tilisi; yhdistä se uudelleen"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex hylkäsi yhdistetyn Plex-tilisi; yhdistä se uudelleen",
+	"server.migrate.the-show-could-not-be-found": "sarjaa ei löytynyt sen tunnisteilla eikä nimellä"
 }

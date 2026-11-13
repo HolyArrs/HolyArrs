@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "pošalji {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "pošalji {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "prvo se prijavi",
-	"server.accounts.sign-in-in-the-browser-before": "prijavi se u pregledniku prije potvrde lozinke",
+	"server.accounts.sign-in-in-the-browser-before": "prvo se prijavi lozinkom na stranici za prijavu, a zatim je potvrdi ovdje",
 	"server.accounts.sign-in-in-the-browser-first": "prvo se prijavi u pregledniku",
 	"server.accounts.sign-in-locally-again-before-linking": "ponovno se prijavi lokalno prije povezivanja",
 	"server.accounts.sign-in-add-holyarrs-in-your": "prijava: dodaj HolyArrs u svojoj AI aplikaciji i dopusti ga u pregledniku",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "ta se kvaliteta ne može zatražiti",
 	"server.requests.the-quality-you-picked-was-not": "Odabrana kvaliteta nije iskorištena: ovaj naslov već ima tu kopiju.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex više ne nudi popis osoba s kojima je tvoj poslužitelj podijeljen",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex je odbio tvoj povezani Plex račun; poveži ga ponovno"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex je odbio tvoj povezani Plex račun; poveži ga ponovno",
+	"server.migrate.the-show-could-not-be-found": "serija nije pronađena ni po svojim id-jevima ni po nazivu"
 }

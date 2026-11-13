@@ -54,5 +54,9 @@
 	"settings.libraryFolders.sideOnHint": "நூலகத்தில் ஏற்கனவே உள்ள கோப்பு ஒருபோதும் மாற்றப்படாது.",
 	"settings.libraryFolders.sideTypes": "கோப்பு வகைகள்",
 	"settings.libraryFolders.sideTypesHint": "வகைகளைக் காற்புள்ளியால் பிரிக்கவும், எ.கா. srt, ass.",
-	"settings.libraryFolders.notMounted": "HolyArrs-க்கு {path} தெரியவில்லை. அதன் கண்டெய்னரில் மவுண்ட் செய்த கோப்புறைகள் மட்டுமே அதற்குத் தெரியும். {path}:{inside} போன்ற ஒரு வால்யூமைச் சேர்த்து, இங்கே {inside} ஐப் பயன்படுத்துங்கள்."
+	"settings.libraryFolders.notMounted": "HolyArrs-க்கு {path} தெரியவில்லை. அதன் கண்டெய்னரில் மவுண்ட் செய்த கோப்புறைகள் மட்டுமே அதற்குத் தெரியும். {path}:{inside} போன்ற ஒரு வால்யூமைச் சேர்த்து, இங்கே {inside} ஐப் பயன்படுத்துங்கள்.",
+	"settings.libraryFolders.quality": "தரம்",
+	"settings.libraryFolders.qualityNone": "இயல்புநிலையைப் பயன்படுத்து",
+	"settings.libraryFolders.qualityHint": "இந்தக் கோப்புறையில் புதிய தலைப்புகள் இந்தத் தரத்துடன் தொடங்கும்.",
+	"settings.libraryFolders.qualityOf": "{path} இன் தரம்"
 }

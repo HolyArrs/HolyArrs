@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "পাঠান {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "পাঠান {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "আগে সাইন ইন করুন",
-	"server.accounts.sign-in-in-the-browser-before": "পাসওয়ার্ড নিশ্চিত করার আগে ব্রাউজারে সাইন ইন করুন",
+	"server.accounts.sign-in-in-the-browser-before": "প্রথমে সাইন-ইন পেজে আপনার পাসওয়ার্ড দিয়ে সাইন ইন করুন, তারপর এখানে নিশ্চিত করুন",
 	"server.accounts.sign-in-in-the-browser-first": "আগে ব্রাউজারে সাইন ইন করুন",
 	"server.accounts.sign-in-locally-again-before-linking": "লিংক করার আগে লোকালভাবে আবার সাইন ইন করুন",
 	"server.accounts.sign-in-add-holyarrs-in-your": "সাইন ইন: আপনার AI অ্যাপে HolyArrs যোগ করুন এবং ব্রাউজারে অনুমতি দিন",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "এই কোয়ালিটি রিকোয়েস্ট করা যায় না",
 	"server.requests.the-quality-you-picked-was-not": "আপনার বেছে নেওয়া কোয়ালিটি ব্যবহার হয়নি: এই টাইটেলে ওই কপি আগেই আছে।",
 	"server.accounts.plex-no-longer-offers-the-list": "আপনার সার্ভার যাদের সঙ্গে শেয়ার করা, Plex আর তাদের তালিকা দেয় না",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex আপনার লিংক করা Plex অ্যাকাউন্ট গ্রহণ করেনি; আবার লিংক করুন"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex আপনার লিংক করা Plex অ্যাকাউন্ট গ্রহণ করেনি; আবার লিংক করুন",
+	"server.migrate.the-show-could-not-be-found": "শোটি তার আইডি বা নাম দিয়ে খুঁজে পাওয়া যায়নি"
 }

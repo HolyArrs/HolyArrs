@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "sendu {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "sendu {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "skráðu þig fyrst inn",
-	"server.accounts.sign-in-in-the-browser-before": "skráðu þig inn í vafranum áður en þú staðfestir lykilorðið þitt",
+	"server.accounts.sign-in-in-the-browser-before": "skráðu þig fyrst inn með lykilorðinu þínu á innskráningarsíðunni og staðfestu það svo hér",
 	"server.accounts.sign-in-in-the-browser-first": "skráðu þig fyrst inn í vafranum",
 	"server.accounts.sign-in-locally-again-before-linking": "skráðu þig aftur inn staðbundið áður en þú tengir",
 	"server.accounts.sign-in-add-holyarrs-in-your": "skráðu þig inn: bættu HolyArrs við í gervigreindarforritinu þínu og leyfðu það í vafranum",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "ekki er hægt að biðja um þessi gæði",
 	"server.requests.the-quality-you-picked-was-not": "Gæðin sem þú valdir voru ekki notuð: þessi titill er þegar með það eintak.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex býður ekki lengur upp á lista yfir fólkið sem þjónninn þinn er deilt með",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex hafnaði tengda Plex-aðganginum þínum; tengdu hann aftur"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex hafnaði tengda Plex-aðganginum þínum; tengdu hann aftur",
+	"server.migrate.the-show-could-not-be-found": "þáttaröðin fannst hvorki með auðkennum sínum né nafni"
 }

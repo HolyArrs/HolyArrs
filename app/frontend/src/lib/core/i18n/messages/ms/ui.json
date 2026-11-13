@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Kod dua faktor",
 	"ui.confirm.confirm": "Sahkan",
 	"ui.confirm.cancel": "Batal",
+	"ui.confirm.localVisit": "Lawatan ini melangkau log masuk, jadi ia tidak dapat mengesahkan kata laluan anda. Log masuk dahulu dengan kata laluan anda dan anda akan kembali ke sini.",
+	"ui.confirm.signInFirst": "Log masuk dengan kata laluan saya",
 	"ui.growCard.preview": "Pratonton {title}",
 	"ui.growCard.goTo": "Pergi ke {title}",
 	"ui.growCard.moreInfoAbout": "Maklumat lanjut tentang {title}",

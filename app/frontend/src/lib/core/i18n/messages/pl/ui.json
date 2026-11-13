@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Kod dwuskładnikowy",
 	"ui.confirm.confirm": "Potwierdź",
 	"ui.confirm.cancel": "Anuluj",
+	"ui.confirm.localVisit": "Ta wizyta pomija logowanie, więc nie może potwierdzić Twojego hasła. Najpierw zaloguj się hasłem, a wrócisz tutaj.",
+	"ui.confirm.signInFirst": "Zaloguj się moim hasłem",
 	"ui.growCard.preview": "Podgląd: {title}",
 	"ui.growCard.goTo": "Przejdź do: {title}",
 	"ui.growCard.moreInfoAbout": "Więcej informacji o: {title}",

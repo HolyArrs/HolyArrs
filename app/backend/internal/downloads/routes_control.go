@@ -170,17 +170,16 @@ func (a *Web) downloadDetail(w http.ResponseWriter, r *http.Request) {
 	if database.Get(ctx, db, "downloaders", d.DownloaderID, &dr) == nil {
 		out.Downloader = dr.Name
 	}
-	switch d.StartedBy.Kind {
-	case "user":
+	if d.StartedBy.Kind == "user" {
 		_ = db.QueryRowContext(ctx, "SELECT name FROM users WHERE id = ?", d.StartedBy.ID).Scan(&out.RequestedBy)
-	case "", "system":
-		// No asker: name the person who added the Library title, if a person did.
-		if len(d.SlotIDs) > 0 {
-			var titleID int64
-			_ = db.QueryRowContext(ctx, "SELECT i.title_id FROM slots s JOIN items i ON i.id = s.item_id WHERE s.id = ?", d.SlotIDs[0]).Scan(&titleID)
-			out.RequestedBy = a.titleOwner(ctx, titleID)
-		}
-	default:
+	}
+	if out.RequestedBy == "" && len(d.SlotIDs) > 0 {
+		// No person picked it: name the person who added the Library title, if a person did.
+		var titleID int64
+		_ = db.QueryRowContext(ctx, "SELECT i.title_id FROM slots s JOIN items i ON i.id = s.item_id WHERE s.id = ?", d.SlotIDs[0]).Scan(&titleID)
+		out.RequestedBy = a.titleOwner(ctx, titleID)
+	}
+	if out.RequestedBy == "" {
 		out.RequestedBy = "HolyArrs"
 	}
 	rows, err := a.Store.ReadEvents().QueryContext(ctx, "SELECT at, kind, summary FROM events WHERE download_id = ? ORDER BY at DESC, id DESC LIMIT 200", id)

@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "{\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"} を送信してください",
 	"server.accounts.send-url-http": "{\"url\": \"http://...\"} を送信してください",
 	"server.accounts.sign-in-first": "先にサインインしてください",
-	"server.accounts.sign-in-in-the-browser-before": "パスワードを確認する前に、ブラウザーでサインインしてください",
+	"server.accounts.sign-in-in-the-browser-before": "先にサインインページでパスワードを使ってサインインし、そのあとここで確認してください",
 	"server.accounts.sign-in-in-the-browser-first": "先にブラウザーでサインインしてください",
 	"server.accounts.sign-in-locally-again-before-linking": "連携する前に、もう一度ローカルでサインインしてください",
 	"server.accounts.sign-in-add-holyarrs-in-your": "サインイン: AI アプリに HolyArrs を追加し、ブラウザーで許可してください",
@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "その品質はリクエストできません",
 	"server.requests.the-quality-you-picked-was-not": "選んだ品質は使われませんでした。このタイトルにはそのコピーがすでにあります。",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex は、サーバーを共有している人の一覧を提供しなくなりました",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex が連携済みの Plex アカウントを拒否しました。もう一度連携してください"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex が連携済みの Plex アカウントを拒否しました。もう一度連携してください",
+	"server.migrate.the-show-could-not-be-found": "IDでも名前でも、この番組は見つかりませんでした"
 }

@@ -54,5 +54,9 @@
 	"settings.libraryFolders.sideOnHint": "Een bestand dat al in de bibliotheek staat, wordt nooit vervangen.",
 	"settings.libraryFolders.sideTypes": "Bestandstypen",
 	"settings.libraryFolders.sideTypesHint": "Scheid typen met komma's, zoals srt, ass.",
-	"settings.libraryFolders.notMounted": "HolyArrs ziet {path} niet. Het ziet alleen mappen die in de container zijn gekoppeld. Voeg een volume toe zoals {path}:{inside} en gebruik hier dan {inside}."
+	"settings.libraryFolders.notMounted": "HolyArrs ziet {path} niet. Het ziet alleen mappen die in de container zijn gekoppeld. Voeg een volume toe zoals {path}:{inside} en gebruik hier dan {inside}.",
+	"settings.libraryFolders.quality": "Kwaliteit",
+	"settings.libraryFolders.qualityNone": "Standaard gebruiken",
+	"settings.libraryFolders.qualityHint": "Nieuwe titels in deze map starten met deze kwaliteit.",
+	"settings.libraryFolders.qualityOf": "Kwaliteit van {path}"
 }

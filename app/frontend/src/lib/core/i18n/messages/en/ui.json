@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Two-factor code",
 	"ui.confirm.confirm": "Confirm",
 	"ui.confirm.cancel": "Cancel",
+	"ui.confirm.localVisit": "This visit skips sign-in, so it can't confirm your password. Sign in with your password first and you'll come back here.",
+	"ui.confirm.signInFirst": "Sign in with my password",
 	"ui.growCard.preview": "{title} preview",
 	"ui.growCard.goTo": "Go to {title}",
 	"ui.growCard.moreInfoAbout": "More info about {title}",
