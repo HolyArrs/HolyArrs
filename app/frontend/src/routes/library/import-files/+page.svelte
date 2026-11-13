@@ -11,6 +11,8 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import type { EpisodeView, TitleView } from '#lib/core/types.ts';
 	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
+	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 
 	let path = $state('');
 	let scanning = $state(false);
@@ -37,6 +39,15 @@
 	const items = $derived(itemsFor(files, picks, ticked));
 	const seasons = $derived([...new Set(episodes.map((e) => e.season))].sort((a, b) => a - b));
 	const seasonEps = $derived(episodes.filter((e) => e.season === season));
+
+	// Review's Import files by hand sends ?path= (the download's folder): look in it straight away.
+	onMount(() => {
+		const asked = page.url.searchParams.get('path')?.trim();
+		if (asked) {
+			path = asked;
+			void doScan();
+		}
+	});
 
 	async function doScan(e?: SubmitEvent) {
 		e?.preventDefault();

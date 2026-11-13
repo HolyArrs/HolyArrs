@@ -122,6 +122,9 @@ type DecisionView struct {
 	// ImportFile names the one video a movie's finished download holds:
 	// Review can import it into this movie (the "import" action).
 	ImportFile string `json:"import_file,omitempty"`
+	// ImportFolder is the finished download's folder as HolyArrs sees it:
+	// Review opens Import files by hand there to match the files.
+	ImportFolder string `json:"import_folder,omitempty"`
 }
 
 // why sorts a Slot's last reason into the ways it ends up waiting.
@@ -136,7 +139,7 @@ func why(reason string) string {
 		// No Downloader takes the title's tags.
 		return "not_sent"
 	case strings.HasPrefix(reason, "nothing could be placed"), strings.Contains(reason, "import"),
-		strings.Contains(reason, "could not be placed"), strings.HasPrefix(reason, "nothing in the download could be matched"),
+		strings.Contains(reason, "could not be placed"), strings.HasPrefix(reason, "nothing in the download could be matched"), strings.HasPrefix(reason, "no file in the download matched"),
 		// The unpack reasons (importer/unpack.go): the import could not finish, Releases did not run out.
 		strings.Contains(reason, "RAR file"), strings.Contains(reason, "archive file"), strings.HasPrefix(reason, "Packed in "), strings.HasPrefix(reason, "Not enough free space to unpack"),
 		// The file was refused in place of the copy, or its edition was not settled (importer/upgrade.go, copyfacts.go).
@@ -228,6 +231,9 @@ func (a *Web) decisions(ctx context.Context, slotID int64) ([]DecisionView, erro
 			if f := a.importer().ReviewFile(ctx, *out[i].DownloadID); f != "" {
 				out[i].ImportFile = filepath.Base(f)
 			}
+		}
+		if out[i].DownloadID != nil {
+			out[i].ImportFolder = a.importer().ReviewFolder(ctx, *out[i].DownloadID)
 		}
 		if out[i].Reason != "" {
 			out[i].Reason = upperFirst(out[i].Reason) + "."

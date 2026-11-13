@@ -125,7 +125,7 @@ export function plainWhy(reason: string): string {
 	let s = reason.trim().replace(/[.;]\s*$/, '');
 	const dl = /^the downloader says (.+)$/i.exec(s);
 	if (dl) s = dl[1].toLowerCase() === 'error' ? say('downloads.hl.dlError') : say('downloads.hl.dlSays', { says: dl[1] });
-	s = s.replace(/[;,]?\s*look at the import plan$/i, '');
+	s = s.replace(/[;,]?\s*(look at the import plan|match the files by hand)$/i, '');
 	s = s.replace(/\bno Usenet Downloader is set up\b/i, say('downloads.hl.noUsenetDl')).replace(/\bno torrent Downloader is set up\b/i, say('downloads.hl.noTorrentDl'));
 	s = s.replace(/\bno Release passed the Pick rules\b/i, say('downloads.hl.nothingGood')).replace(/\bRelease(s?)\b/g, 'download$1').replace(/\bPick rules\b/g, say('downloads.hl.qualityRules'));
 	return s;

@@ -55,6 +55,7 @@ describe('line 2', () => {
 			expect(eventText(ev(k, { Data: { ...d } }), ctx).line, k).not.toMatch(/will look|brings it|sending it|bringing it|in the Library$|^Sent to download|^Downloaded/);
 		expect(eventText(ev('download_sent', { Data: { release: 'Dune.2021.1080p.WEB' } }), ctx).line).toBe('1080p');
 		expect(eventText(ev('needs_decision', { Data: { reason: 'nothing could be placed; look at the import plan' } }), ctx).line).toBe('Nothing could be placed');
+		expect(eventText(ev('needs_decision', { Data: { reason: 'no file in the download matched an episode; match the files by hand' } }), ctx).line).toBe('No file in the download matched an episode');
 	});
 	it('never repeats the title', () => {
 		for (const k of ['title_added', 'gate_opened', 'title_refreshed', 'folder_scanned', 'ask_approved', 'album_changed', 'search_done', 'download_sent', 'import_done', 'title_removed', 'needs_decision', 'renamed', 'something_new'])
