@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { keepOffNote, newSeason, newestSeason, episodeCode, searchWord, seasonLooking, episodeLabel, episodeWhy, label, seasonChoices, seasonLine, seasonName, seasonWords, showProgress } from './labels.ts';
+import { keepOffNote, newSeason, newestSeason, episodeCode, searchWord, seasonLooking, episodeLabel, episodeWhy, chosenWhy, label, seasonChoices, seasonLine, seasonName, seasonWords, showProgress } from './labels.ts';
 import { counts, matches, ofKind } from '../mediafiles/library.ts';
 import type { EpisodeView, SeasonSummary, ShowInfo, TitleView } from '../core/types.ts';
 
@@ -122,5 +122,16 @@ describe('packWindowValue', () => {
 		expect(packWindowValue(-3)).toBe(0);
 		expect(packWindowValue(2.6)).toBe(3);
 		expect(packWindowValue(Number.NaN)).toBe(1);
+	});
+});
+
+describe('chosenWhy', () => {
+	it('gives the reason under a chosen episode', () => {
+		expect(chosenWhy({ state: 'chosen', reason: 'No Downloader has confirmed this Release yet. You can choose another one.' })).toBe('No Downloader has confirmed this Release yet. You can choose another one.');
+	});
+	it('stays empty for other states or no reason', () => {
+		expect(chosenWhy({ state: 'chosen' })).toBe('');
+		expect(chosenWhy({ state: 'wanted', reason: 'x' })).toBe('');
+		expect(chosenWhy(undefined)).toBe('');
 	});
 });

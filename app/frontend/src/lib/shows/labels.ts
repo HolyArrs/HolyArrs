@@ -134,3 +134,8 @@ export function packWindowValue(n: number): number {
 	if (n <= 0) return 0;
 	return Math.min(10, Math.max(1, Math.round(n)));
 }
+
+// Why a chosen episode is still waiting (for example no Downloader has taken the Release yet).
+export function chosenWhy(s: { state: string; reason?: string } | undefined): string {
+	return s?.state === 'chosen' && s.reason ? s.reason : '';
+}
