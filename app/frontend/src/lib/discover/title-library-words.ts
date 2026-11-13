@@ -5,7 +5,7 @@ import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 // "Yesterday", "Tomorrow", "Sat, Oct 31" this year, else the date with its year.
 export function dayWords(iso: string): string {
 	const d = new Date(iso);
-	// A bare day ("2026-11-15") is the same day everywhere; a full time is the viewer's own day.
+	// A bare day (no time) is the same day everywhere; a full time is the viewer's own day.
 	const bare = /^\d{4}-\d{2}-\d{2}(T00:00:00(\.0+)?Z)?$/.test(iso);
 	const y = bare ? d.getUTCFullYear() : d.getFullYear();
 	const day = Date.UTC(y, bare ? d.getUTCMonth() : d.getMonth(), bare ? d.getUTCDate() : d.getDate());
