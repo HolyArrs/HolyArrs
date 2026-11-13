@@ -307,7 +307,7 @@ func newLabMovie(t *testing.T, o labMovieOpts) *labMovie {
 	im := &importer.Importer{Store: s}
 	q := x.q
 	sr := &sources.Searcher{Store: s, Queue: q, Secrets: vault, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
-		_, _, _ = q.Enqueue(ctx, downloads.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID), domain.System)
+		_, _, _ = q.Enqueue(ctx, downloads.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, downloads.GrabKey(slotID, releaseID), domain.System)
 	}}
 	x.m.OnFailed = func(ctx context.Context, slotID int64) { _ = sr.QueueAfterFailure(ctx, slotID, domain.System) }
 	x.m.OnFinished = func(ctx context.Context, id int64) {

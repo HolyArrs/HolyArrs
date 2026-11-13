@@ -219,7 +219,7 @@ func (s *services) fill() {
 					return
 				}
 				if _, _, err := q.Enqueue(ctx, downloads.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID},
-					"grab:"+itoa(slotID), domain.System); err != nil {
+					downloads.GrabKey(slotID, releaseID), domain.System); err != nil {
 					log.Printf("queue grab: %v", err)
 				}
 			}}
