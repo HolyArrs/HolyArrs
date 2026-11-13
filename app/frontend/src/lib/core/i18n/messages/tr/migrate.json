@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Biçimleri ve puanları getir",
 	"migrate.bringFormatsHint": "Biçimlere puan veren her profil kendi Seçim kuralları olur, o biçimler de özellik olur.",
 	"migrate.formatTraits": "Özellikler: {list}",
-	"migrate.formatsLeftOut": "Dışarıda kalan: {list}"
+	"migrate.formatsLeftOut": "Dışarıda kalan: {list}",
+	"migrate.titleFolders": "Klasöre göre başlıklar",
+	"migrate.willComeOverN": "Aktarılacak: {n}",
+	"migrate.cameOverN": "Aktarıldı: {n}",
+	"migrate.needAttentionN": "İlgi gerekiyor: {n}",
+	"migrate.needAttentionWhy": "Eski klasörleri bu sunucuda yok, bu yüzden buradaki bir klasöre istenen olarak geliyorlar. Klasörü düzeltin veya bir yol kuralı ekleyin: {list}",
+	"migrate.leftOutUncheckedN": "Dışarıda bırakıldı, klasör işaretlenmedi: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} işaretlenmedi; işaretleyip yeniden içe aktarın"
 }

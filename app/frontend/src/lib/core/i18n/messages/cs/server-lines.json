@@ -1296,5 +1296,9 @@
 	"server.importer.replaced-by-hand": "{path} nahrazeno ručně",
 	"server.health.downloader-for": "Stahovač pro",
 	"server.health.downloader-added-twice": "Stahovač přidán dvakrát",
-	"server.sources.no-downloader-has-confirmed-this-release": "Žádný Stahovač toto release zatím nepotvrdil. Můžeš vybrat jiné."
+	"server.sources.no-downloader-has-confirmed-this-release": "Žádný Stahovač toto release zatím nepotvrdil. Můžeš vybrat jiné.",
+	"server.migrate.added-to-as-wanted-with-no": "přidáno do {fallback} jako hledané bez souborů; vyžaduje pozornost: stará složka {dir} na tomto serveru není; opravte složku nebo přidejte pravidlo cesty",
+	"server.migrate.will-be-added-to-as-wanted": "bude přidáno do {fallback} jako hledané bez souborů; vyžaduje pozornost: stará složka {dir} na tomto serveru není; opravte složku nebo přidejte pravidlo cesty",
+	"server.migrate.its-library-folder-is-not-on": "složka knihovny {library} na tomto serveru není a není tu žádná složka knihovny pro {kind}; přidejte ji a importujte znovu",
+	"server.migrate.left-out-was-left-unchecked-check": "vynecháno: {attnfolder} zůstala nezaškrtnutá; zaškrtněte ji a importujte znovu"
 }

@@ -1296,5 +1296,9 @@
 	"server.importer.replaced-by-hand": "{path} nahradené ručne",
 	"server.health.downloader-for": "Sťahovač pre",
 	"server.health.downloader-added-twice": "Sťahovač pridaný dvakrát",
-	"server.sources.no-downloader-has-confirmed-this-release": "Žiadny Sťahovač ešte nepotvrdil toto Vydanie. Môžeš vybrať iné."
+	"server.sources.no-downloader-has-confirmed-this-release": "Žiadny Sťahovač ešte nepotvrdil toto Vydanie. Môžeš vybrať iné.",
+	"server.migrate.added-to-as-wanted-with-no": "pridané do {fallback} ako hľadané bez súborov; vyžaduje pozornosť: starý priečinok {dir} na tomto serveri nie je; opravte priečinok alebo pridajte pravidlo cesty",
+	"server.migrate.will-be-added-to-as-wanted": "bude pridané do {fallback} ako hľadané bez súborov; vyžaduje pozornosť: starý priečinok {dir} na tomto serveri nie je; opravte priečinok alebo pridajte pravidlo cesty",
+	"server.migrate.its-library-folder-is-not-on": "priečinok knižnice {library} na tomto serveri nie je a nie je tu žiadny priečinok knižnice pre {kind}; pridajte ho a importujte znova",
+	"server.migrate.left-out-was-left-unchecked-check": "vynechané: {attnfolder} zostal nezačiarknutý; začiarknite ho a importujte znova"
 }

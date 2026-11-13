@@ -58,9 +58,21 @@ type Line struct {
 	// ChooseMergeGone. It stays after a choice is made, so the screen keeps
 	// the row and the choice can be changed.
 	Choose string `json:"choose,omitempty"`
+	// Attention marks a title whose old Library folder is not here as one:
+	// AttnUnreachable (it came over as wanted into another folder) or
+	// AttnUnchecked (its folder is on this server but was left out, so the
+	// title stays behind). Folder names that old folder.
+	Attention string `json:"attention,omitempty"`
+	Folder    string `json:"folder,omitempty"`
 	// open says the choice is still missing (the person stays behind).
 	open bool
 }
+
+// Why a title's line needs a look (Line.Attention).
+const (
+	AttnUnreachable = "unreachable"
+	AttnUnchecked   = "unchecked"
+)
 
 // Why a person needs the owner's choice (Line.Choose).
 const (
@@ -262,6 +274,12 @@ type run struct {
 	// ruleIDs are the Pick rules this run made from profiles, by the name
 	// the plan gave them (the name here may differ when it was taken).
 	ruleIDs map[string]int64
+	// attn and attnFolder are set by title() for the item it just ran.
+	attn, attnFolder string
+	// foldersOff says the Library folders group was left out; coming lists,
+	// per kind, the planned Library folders on this server that this run adds.
+	foldersOff bool
+	coming     map[string][]string
 	// prowlarr is the kept Prowlarr address and key, read once.
 	prowlarr *secretsfile.MoveCredential
 }
@@ -298,7 +316,16 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 	r := &run{m: m, ctx: ctx, move: moveID, dry: dry, by: by, people: map[string]int64{}, personStable: map[string]bool{}, personMarked: map[string]bool{},
 		rep: &Report{Move: moveID, Dry: dry, Apps: p.Apps, At: m.now(), Lines: []Line{}, Counts: map[string]int{},
 			NotMoved: append([]NotMoved{}, p.NotMoved...), NeedsInput: append([]string{}, p.NeedsInput...), Notes: p.Notes}}
+	r.coming = map[string][]string{}
 	for _, g := range p.Groups {
+		if g.Name == GroupFolders {
+			r.foldersOff = g.Skipped
+			for _, it := range g.Items {
+				if f := it.Folder; f != nil && !g.Skipped && !f.Left && isDir(filepath.FromSlash(f.Path)) {
+					r.coming[f.Kind] = append(r.coming[f.Kind], filepath.Clean(filepath.FromSlash(f.Path)))
+				}
+			}
+		}
 		for _, it := range g.Items {
 			if it.Person != nil {
 				r.personStable[it.Key] = it.Person.StableIdentity
@@ -323,6 +350,7 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 			}
 			var res, detail string
 			r.choose = ""
+			r.attn, r.attnFolder = "", ""
 			switch {
 			case g.Skipped:
 				res, detail = ResSkipped, "you left "+strings.ToLower(GroupLabels[g.Name])+" out"
@@ -336,6 +364,10 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 				needs = it.Needs
 			}
 			r.line(g.Name, it, res, detail, needs)
+			if r.attn != "" {
+				l := &r.rep.Lines[len(r.rep.Lines)-1]
+				l.Attention, l.Folder = r.attn, r.attnFolder
+			}
 			if r.choose != "" {
 				l := &r.rep.Lines[len(r.rep.Lines)-1]
 				l.Choose = r.choose

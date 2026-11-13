@@ -1296,5 +1296,9 @@
 	"server.importer.replaced-by-hand": "{path} diganti secara manual",
 	"server.health.downloader-for": "Pengunduh untuk",
 	"server.health.downloader-added-twice": "Pengunduh ditambahkan dua kali",
-	"server.sources.no-downloader-has-confirmed-this-release": "Belum ada Pengunduh yang mengonfirmasi Rilis ini. Kamu bisa memilih yang lain."
+	"server.sources.no-downloader-has-confirmed-this-release": "Belum ada Pengunduh yang mengonfirmasi Rilis ini. Kamu bisa memilih yang lain.",
+	"server.migrate.added-to-as-wanted-with-no": "ditambahkan ke {fallback} sebagai dicari tanpa file; perlu perhatian: folder lamanya {dir} tidak ada di server ini; perbaiki foldernya atau tambahkan aturan jalur",
+	"server.migrate.will-be-added-to-as-wanted": "akan ditambahkan ke {fallback} sebagai dicari tanpa file; perlu perhatian: folder lamanya {dir} tidak ada di server ini; perbaiki foldernya atau tambahkan aturan jalur",
+	"server.migrate.its-library-folder-is-not-on": "folder Pustaka {library} tidak ada di server ini, dan di sini tidak ada folder Pustaka untuk {kind}; tambahkan satu lalu impor lagi",
+	"server.migrate.left-out-was-left-unchecked-check": "ditinggalkan: {attnfolder} tidak dicentang; centang lalu impor lagi"
 }

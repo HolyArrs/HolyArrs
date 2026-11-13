@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Ta med format och poäng",
 	"migrate.bringFormatsHint": "Varje profil som ger format poäng blir egna Valregler, med de formaten som egenskaper.",
 	"migrate.formatTraits": "Egenskaper: {list}",
-	"migrate.formatsLeftOut": "Utelämnade: {list}"
+	"migrate.formatsLeftOut": "Utelämnade: {list}",
+	"migrate.titleFolders": "Titlar per mapp",
+	"migrate.willComeOverN": "Kommer över: {n}",
+	"migrate.cameOverN": "Kom över: {n}",
+	"migrate.needAttentionN": "Behöver åtgärd: {n}",
+	"migrate.needAttentionWhy": "Deras gamla mapp finns inte på den här servern, så de kommer som önskade till en mapp här. Rätta mappen eller lägg till en sökvägsregel: {list}",
+	"migrate.leftOutUncheckedN": "Utelämnade, mappen inte markerad: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} var inte markerad; markera den och importera igen"
 }

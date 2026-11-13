@@ -1296,5 +1296,9 @@
 	"server.importer.replaced-by-hand": "{path} замінено вручну",
 	"server.health.downloader-for": "Завантажувач для",
 	"server.health.downloader-added-twice": "Завантажувач додано двічі",
-	"server.sources.no-downloader-has-confirmed-this-release": "Жоден завантажувач ще не підтвердив цей реліз. Можна вибрати інший."
+	"server.sources.no-downloader-has-confirmed-this-release": "Жоден завантажувач ще не підтвердив цей реліз. Можна вибрати інший.",
+	"server.migrate.added-to-as-wanted-with-no": "додано до {fallback} як бажане, без файлів; потребує уваги: старої теки {dir} немає на цьому сервері; виправте теку або додайте правило шляху",
+	"server.migrate.will-be-added-to-as-wanted": "буде додано до {fallback} як бажане, без файлів; потребує уваги: старої теки {dir} немає на цьому сервері; виправте теку або додайте правило шляху",
+	"server.migrate.its-library-folder-is-not-on": "теки бібліотеки {library} немає на цьому сервері, і тут немає теки бібліотеки для {kind}; додайте її та імпортуйте знову",
+	"server.migrate.left-out-was-left-unchecked-check": "пропущено: теку {attnfolder} не позначено; позначте її та імпортуйте знову"
 }

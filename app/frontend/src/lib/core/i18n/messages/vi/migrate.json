@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Mang theo định dạng và điểm",
 	"migrate.bringFormatsHint": "Mỗi hồ sơ chấm điểm định dạng trở thành Quy tắc chọn riêng, với các định dạng đó là đặc điểm.",
 	"migrate.formatTraits": "Đặc điểm: {list}",
-	"migrate.formatsLeftOut": "Bỏ ra: {list}"
+	"migrate.formatsLeftOut": "Bỏ ra: {list}",
+	"migrate.titleFolders": "Tựa theo thư mục",
+	"migrate.willComeOverN": "Sẽ chuyển sang: {n}",
+	"migrate.cameOverN": "Đã chuyển sang: {n}",
+	"migrate.needAttentionN": "Cần chú ý: {n}",
+	"migrate.needAttentionWhy": "Thư mục cũ của chúng không có trên máy chủ này, nên chúng được đưa vào một thư mục ở đây dưới dạng cần tìm. Hãy sửa thư mục hoặc thêm quy tắc đường dẫn: {list}",
+	"migrate.leftOutUncheckedN": "Bị bỏ ra, thư mục chưa được chọn: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} chưa được chọn; hãy chọn rồi nhập lại"
 }

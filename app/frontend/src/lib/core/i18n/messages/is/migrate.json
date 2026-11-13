@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Taka snið og stig með",
 	"migrate.bringFormatsHint": "Hver prófíll sem gefur sniðum stig verður að eigin Valreglum, með þau snið sem eiginleika.",
 	"migrate.formatTraits": "Eiginleikar: {list}",
-	"migrate.formatsLeftOut": "Sleppt: {list}"
+	"migrate.formatsLeftOut": "Sleppt: {list}",
+	"migrate.titleFolders": "Titlar eftir möppu",
+	"migrate.willComeOverN": "Koma yfir: {n}",
+	"migrate.cameOverN": "Komu yfir: {n}",
+	"migrate.needAttentionN": "Þarfnast athygli: {n}",
+	"migrate.needAttentionWhy": "Gamla mappan þeirra er ekki á þessum þjóni, svo þeir koma sem óskaðir í möppu hér. Lagaðu möppuna eða bættu við slóðarreglu: {list}",
+	"migrate.leftOutUncheckedN": "Sleppt, ekki hakað við möppu: {n}",
+	"migrate.leftOutUncheckedWhy": "Ekki var hakað við {folder}; hakaðu við hana og fluttu inn aftur"
 }

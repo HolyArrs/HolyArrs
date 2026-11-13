@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Пренеси формате и оцене",
 	"migrate.bringFormatsHint": "Сваки профил који бодује формате постаје сопствена Правила избора, а ти формати постају особине.",
 	"migrate.formatTraits": "Особине: {list}",
-	"migrate.formatsLeftOut": "Изостављено: {list}"
+	"migrate.formatsLeftOut": "Изостављено: {list}",
+	"migrate.titleFolders": "Naslovi po fascikli",
+	"migrate.willComeOverN": "Biće preneto: {n}",
+	"migrate.cameOverN": "Preneto: {n}",
+	"migrate.needAttentionN": "Traže pažnju: {n}",
+	"migrate.needAttentionWhy": "Njihova stara fascikla nije na ovom serveru, pa dolaze kao željeni u fasciklu ovde. Ispravite fasciklu ili dodajte pravilo putanje: {list}",
+	"migrate.leftOutUncheckedN": "Izostavljeno, fascikla nije označena: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} nije označena; označite je i uvezite ponovo"
 }

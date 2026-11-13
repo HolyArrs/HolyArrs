@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Bring formats and scores",
 	"migrate.bringFormatsHint": "Each profile that scores formats becomes its own Pick rules, with those formats as traits.",
 	"migrate.formatTraits": "Traits: {list}",
-	"migrate.formatsLeftOut": "Left out: {list}"
+	"migrate.formatsLeftOut": "Left out: {list}",
+	"migrate.titleFolders": "Titles by folder",
+	"migrate.willComeOverN": "Will come over: {n}",
+	"migrate.cameOverN": "Came over: {n}",
+	"migrate.needAttentionN": "Need attention: {n}",
+	"migrate.needAttentionWhy": "Their old folder is not on this server, so they come over as wanted into a folder here. Fix the folder or add a path rule: {list}",
+	"migrate.leftOutUncheckedN": "Left out, folder unchecked: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} was left unchecked; check it and import again"
 }

@@ -1296,5 +1296,9 @@
 	"server.importer.replaced-by-hand": "Το {path} αντικαταστάθηκε με το χέρι",
 	"server.health.downloader-for": "Πρόγραμμα λήψης για",
 	"server.health.downloader-added-twice": "Πρόγραμμα λήψης προστέθηκε δύο φορές",
-	"server.sources.no-downloader-has-confirmed-this-release": "Κανένα Πρόγραμμα λήψης δεν έχει επιβεβαιώσει ακόμα αυτή την κυκλοφορία. Μπορείς να διαλέξεις άλλη."
+	"server.sources.no-downloader-has-confirmed-this-release": "Κανένα Πρόγραμμα λήψης δεν έχει επιβεβαιώσει ακόμα αυτή την κυκλοφορία. Μπορείς να διαλέξεις άλλη.",
+	"server.migrate.added-to-as-wanted-with-no": "προστέθηκε στο {fallback} ως επιθυμητό, χωρίς αρχεία· χρειάζεται προσοχή: ο παλιός φάκελος {dir} δεν υπάρχει σε αυτόν τον διακομιστή· διορθώστε τον φάκελο ή προσθέστε κανόνα διαδρομής",
+	"server.migrate.will-be-added-to-as-wanted": "θα προστεθεί στο {fallback} ως επιθυμητό, χωρίς αρχεία· χρειάζεται προσοχή: ο παλιός φάκελος {dir} δεν υπάρχει σε αυτόν τον διακομιστή· διορθώστε τον φάκελο ή προσθέστε κανόνα διαδρομής",
+	"server.migrate.its-library-folder-is-not-on": "ο φάκελος βιβλιοθήκης {library} δεν υπάρχει σε αυτόν τον διακομιστή και δεν υπάρχει εδώ φάκελος βιβλιοθήκης για {kind}· προσθέστε έναν και εισαγάγετε ξανά",
+	"server.migrate.left-out-was-left-unchecked-check": "παραλείφθηκε: το {attnfolder} έμεινε χωρίς επιλογή· επιλέξτε το και εισαγάγετε ξανά"
 }

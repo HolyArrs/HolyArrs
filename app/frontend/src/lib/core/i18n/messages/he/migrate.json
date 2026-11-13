@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "להביא פורמטים וציונים",
 	"migrate.bringFormatsHint": "כל פרופיל שנותן ציון לפורמטים הופך לכללי בחירה משלו, והפורמטים האלה הופכים למאפיינים.",
 	"migrate.formatTraits": "מאפיינים: {list}",
-	"migrate.formatsLeftOut": "הושמטו: {list}"
+	"migrate.formatsLeftOut": "הושמטו: {list}",
+	"migrate.titleFolders": "כותרים לפי תיקייה",
+	"migrate.willComeOverN": "יעברו: {n}",
+	"migrate.cameOverN": "עברו: {n}",
+	"migrate.needAttentionN": "דורשים תשומת לב: {n}",
+	"migrate.needAttentionWhy": "התיקייה הישנה שלהם לא נמצאת בשרת הזה, ולכן הם עוברים כמבוקשים לתיקייה כאן. תקן את התיקייה או הוסף כלל נתיב: {list}",
+	"migrate.leftOutUncheckedN": "הושמטו, התיקייה לא סומנה: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} לא סומנה; סמן אותה וייבא שוב"
 }

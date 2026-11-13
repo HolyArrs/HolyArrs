@@ -1296,5 +1296,9 @@
 	"server.importer.replaced-by-hand": "{path} met de hand vervangen",
 	"server.health.downloader-for": "Downloader voor",
 	"server.health.downloader-added-twice": "Downloader twee keer toegevoegd",
-	"server.sources.no-downloader-has-confirmed-this-release": "Nog geen Downloader heeft deze release bevestigd. Je kunt een andere kiezen."
+	"server.sources.no-downloader-has-confirmed-this-release": "Nog geen Downloader heeft deze release bevestigd. Je kunt een andere kiezen.",
+	"server.migrate.added-to-as-wanted-with-no": "als gewenst zonder bestanden toegevoegd aan {fallback}; vraagt aandacht: de oude map {dir} staat niet op deze server; corrigeer de map of voeg een padregel toe",
+	"server.migrate.will-be-added-to-as-wanted": "wordt als gewenst zonder bestanden toegevoegd aan {fallback}; vraagt aandacht: de oude map {dir} staat niet op deze server; corrigeer de map of voeg een padregel toe",
+	"server.migrate.its-library-folder-is-not-on": "de bibliotheekmap {library} staat niet op deze server en er is hier geen bibliotheekmap voor {kind}; voeg er een toe en importeer opnieuw",
+	"server.migrate.left-out-was-left-unchecked-check": "weggelaten: {attnfolder} was niet aangevinkt; vink hem aan en importeer opnieuw"
 }

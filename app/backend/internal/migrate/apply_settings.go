@@ -196,6 +196,10 @@ func (r *run) folder(it Item) (string, string) {
 	if !filepath.IsAbs(p) || !isDir(p) {
 		return ResNotFound, "no folder at " + f.Path + " on this server; add a path rule"
 	}
+	if f.Left {
+		r.attn, r.attnFolder = AttnUnchecked, f.Path
+		return ResSkipped, "left out: " + f.Path + " was left unchecked; check it and import again"
+	}
 	if r.dry {
 		return ResCreate, "a " + f.Kind + " Library folder at " + f.Path
 	}

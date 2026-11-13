@@ -5,8 +5,9 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import StepCapsule from './StepCapsule.svelte';
+	import FolderOutcome from './FolderOutcome.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { needsGroups, progressWords, type Report } from './move.ts';
+	import { folderOutcome, needsGroups, progressWords, type Report } from './move.ts';
 	import { to } from '../core/paths.ts';
 
 	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
@@ -35,6 +36,7 @@
 	const newPeople = $derived(lines.filter((l) => l.group === 'people' && made(l)).length);
 	const needs = $derived(needsGroups(dry?.needs_input ?? []).flatMap((g) => g.items.map((t, i) => ({ key: `${g.label}-${i}`, name: t, hint: g.label }))));
 	const detail = $derived(progressWords(note));
+	const fo = $derived(folderOutcome(lines));
 </script>
 
 <SettingsCard id="move-step" title={countSteps ? t('migrate.step3Of4') : t('migrate.move')} description={running ? undefined : t('migrate.beforeYouMove')}>
@@ -55,6 +57,9 @@
 	{:else}
 		{#if safeMode}
 			<p class="notice warn" role="alert"><Words key="migrate.holyarrsStartedInSafe2" links={{ a: to('/settings/danger') }} /></p>
+		{/if}
+		{#if fo.attention > 0 || fo.unchecked > 0}
+			<div class="srow"><div class="cap"><FolderOutcome {lines} /></div></div>
 		{/if}
 		{#if links}
 			<div class="srow">

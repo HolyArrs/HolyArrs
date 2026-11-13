@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Перенести форматы и оценки",
 	"migrate.bringFormatsHint": "Каждый профиль, который оценивает форматы, становится своими Правилами отбора, а эти форматы — признаками.",
 	"migrate.formatTraits": "Признаки: {list}",
-	"migrate.formatsLeftOut": "Не перенесено: {list}"
+	"migrate.formatsLeftOut": "Не перенесено: {list}",
+	"migrate.titleFolders": "Названия по папкам",
+	"migrate.willComeOverN": "Будут перенесены: {n}",
+	"migrate.cameOverN": "Перенесены: {n}",
+	"migrate.needAttentionN": "Требуют внимания: {n}",
+	"migrate.needAttentionWhy": "Их старой папки нет на этом сервере, поэтому они переносятся как желаемые в папку здесь. Исправьте папку или добавьте правило пути: {list}",
+	"migrate.leftOutUncheckedN": "Исключены, папка не отмечена: {n}",
+	"migrate.leftOutUncheckedWhy": "Папка {folder} не отмечена; отметьте её и импортируйте снова"
 }

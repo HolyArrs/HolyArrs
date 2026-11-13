@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Μεταφορά μορφών και βαθμολογιών",
 	"migrate.bringFormatsHint": "Κάθε προφίλ που βαθμολογεί μορφές γίνεται δικοί του Κανόνες επιλογής, με αυτές τις μορφές ως χαρακτηριστικά.",
 	"migrate.formatTraits": "Χαρακτηριστικά: {list}",
-	"migrate.formatsLeftOut": "Παραλείφθηκαν: {list}"
+	"migrate.formatsLeftOut": "Παραλείφθηκαν: {list}",
+	"migrate.titleFolders": "Τίτλοι ανά φάκελο",
+	"migrate.willComeOverN": "Θα μεταφερθούν: {n}",
+	"migrate.cameOverN": "Μεταφέρθηκαν: {n}",
+	"migrate.needAttentionN": "Χρειάζονται προσοχή: {n}",
+	"migrate.needAttentionWhy": "Ο παλιός τους φάκελος δεν υπάρχει σε αυτόν τον διακομιστή, οπότε έρχονται ως επιθυμητοί σε φάκελο εδώ. Διορθώστε τον φάκελο ή προσθέστε κανόνα διαδρομής: {list}",
+	"migrate.leftOutUncheckedN": "Παραλείφθηκαν, φάκελος χωρίς επιλογή: {n}",
+	"migrate.leftOutUncheckedWhy": "Το {folder} έμεινε χωρίς επιλογή· επιλέξτε το και εισαγάγετε ξανά"
 }

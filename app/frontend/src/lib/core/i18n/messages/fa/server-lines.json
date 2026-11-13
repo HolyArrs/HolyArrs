@@ -1296,5 +1296,9 @@
 	"server.importer.replaced-by-hand": "{path} به‌صورت دستی جایگزین شد",
 	"server.health.downloader-for": "دانلودر برای",
 	"server.health.downloader-added-twice": "دانلودر دو بار افزوده شده",
-	"server.sources.no-downloader-has-confirmed-this-release": "هنوز هیچ دانلودری این ریلیز را تأیید نکرده است. می‌توانی یکی دیگر را انتخاب کنی."
+	"server.sources.no-downloader-has-confirmed-this-release": "هنوز هیچ دانلودری این ریلیز را تأیید نکرده است. می‌توانی یکی دیگر را انتخاب کنی.",
+	"server.migrate.added-to-as-wanted-with-no": "به‌عنوان خواسته‌شده و بدون فایل به {fallback} افزوده شد؛ نیاز به توجه: پوشهٔ قدیمی {dir} روی این سرور نیست؛ پوشه را درست کنید یا یک قاعدهٔ مسیر بیفزایید",
+	"server.migrate.will-be-added-to-as-wanted": "به‌عنوان خواسته‌شده و بدون فایل به {fallback} افزوده می‌شود؛ نیاز به توجه: پوشهٔ قدیمی {dir} روی این سرور نیست؛ پوشه را درست کنید یا یک قاعدهٔ مسیر بیفزایید",
+	"server.migrate.its-library-folder-is-not-on": "پوشهٔ کتابخانهٔ {library} روی این سرور نیست و اینجا هیچ پوشهٔ کتابخانه‌ای برای {kind} نیست؛ یکی بیفزایید و دوباره وارد کنید",
+	"server.migrate.left-out-was-left-unchecked-check": "کنار گذاشته شد: {attnfolder} علامت نخورده بود؛ علامتش بزنید و دوباره وارد کنید"
 }

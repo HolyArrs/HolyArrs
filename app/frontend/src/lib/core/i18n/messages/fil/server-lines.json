@@ -1296,5 +1296,9 @@
 	"server.importer.replaced-by-hand": "Pinalitan nang mano-mano ang {path}",
 	"server.health.downloader-for": "Downloader para sa",
 	"server.health.downloader-added-twice": "Downloader na dalawang beses idinagdag",
-	"server.sources.no-downloader-has-confirmed-this-release": "Wala pang Downloader na nagkumpirma sa Release na ito. Puwede kang pumili ng iba."
+	"server.sources.no-downloader-has-confirmed-this-release": "Wala pang Downloader na nagkumpirma sa Release na ito. Puwede kang pumili ng iba.",
+	"server.migrate.added-to-as-wanted-with-no": "idinagdag sa {fallback} bilang hinahanap, walang file; kailangang tingnan: wala sa server na ito ang lumang folder na {dir}; ayusin ang folder o magdagdag ng path rule",
+	"server.migrate.will-be-added-to-as-wanted": "idaragdag sa {fallback} bilang hinahanap, walang file; kailangang tingnan: wala sa server na ito ang lumang folder na {dir}; ayusin ang folder o magdagdag ng path rule",
+	"server.migrate.its-library-folder-is-not-on": "wala sa server na ito ang Library folder na {library}, at walang Library folder para sa {kind} dito; magdagdag ng isa at mag-import muli",
+	"server.migrate.left-out-was-left-unchecked-check": "hindi isinama: hindi na-check ang {attnfolder}; i-check ito at mag-import muli"
 }

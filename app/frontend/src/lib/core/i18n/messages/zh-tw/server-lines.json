@@ -1296,5 +1296,9 @@
 	"server.importer.replaced-by-hand": "已手動取代 {path}",
 	"server.health.downloader-for": "下載器：",
 	"server.health.downloader-added-twice": "下載器重複新增",
-	"server.sources.no-downloader-has-confirmed-this-release": "還沒有下載器確認這個資源。你可以選擇另一個。"
+	"server.sources.no-downloader-has-confirmed-this-release": "還沒有下載器確認這個資源。你可以選擇另一個。",
+	"server.migrate.added-to-as-wanted-with-no": "已作為想要的項目加入 {fallback}，暫無檔案；需要注意：舊資料夾 {dir} 不在此伺服器上；請修正資料夾或新增路徑規則",
+	"server.migrate.will-be-added-to-as-wanted": "將作為想要的項目加入 {fallback}，暫無檔案；需要注意：舊資料夾 {dir} 不在此伺服器上；請修正資料夾或新增路徑規則",
+	"server.migrate.its-library-folder-is-not-on": "媒體庫資料夾 {library} 不在此伺服器上，這裡也沒有 {kind} 的媒體庫資料夾；請新增一個後再次匯入",
+	"server.migrate.left-out-was-left-unchecked-check": "未包含：{attnfolder} 未勾選；勾選後再次匯入"
 }

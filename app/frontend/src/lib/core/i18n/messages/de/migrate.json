@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Formate und Punktzahlen mitnehmen",
 	"migrate.bringFormatsHint": "Jedes Profil, das Formate bewertet, wird zu eigenen Auswahlregeln, mit diesen Formaten als Merkmale.",
 	"migrate.formatTraits": "Merkmale: {list}",
-	"migrate.formatsLeftOut": "Ausgelassen: {list}"
+	"migrate.formatsLeftOut": "Ausgelassen: {list}",
+	"migrate.titleFolders": "Titel nach Ordner",
+	"migrate.willComeOverN": "Kommen herüber: {n}",
+	"migrate.cameOverN": "Herübergekommen: {n}",
+	"migrate.needAttentionN": "Brauchen Aufmerksamkeit: {n}",
+	"migrate.needAttentionWhy": "Ihr alter Ordner ist nicht auf diesem Server, daher kommen sie als gesucht in einen Ordner hier. Ordner korrigieren oder eine Pfadregel hinzufügen: {list}",
+	"migrate.leftOutUncheckedN": "Ausgelassen, Ordner nicht angehakt: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} wurde nicht angehakt; hake ihn an und importiere erneut"
 }

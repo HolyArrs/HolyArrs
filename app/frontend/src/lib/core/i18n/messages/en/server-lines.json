@@ -1296,5 +1296,9 @@
 	"server.importer.replaced-by-hand": "Replaced {path} by hand",
 	"server.health.downloader-for": "Downloader for",
 	"server.health.downloader-added-twice": "Downloader added twice",
-	"server.sources.no-downloader-has-confirmed-this-release": "No Downloader has confirmed this Release yet. You can choose another one."
+	"server.sources.no-downloader-has-confirmed-this-release": "No Downloader has confirmed this Release yet. You can choose another one.",
+	"server.migrate.added-to-as-wanted-with-no": "added to {fallback} as wanted with no files; needs attention: its old folder {dir} is not on this server; fix its folder or add a path rule",
+	"server.migrate.its-library-folder-is-not-on": "its Library folder {library} is not on this server, and there is no {kind} Library folder here to add it to; add one and import again",
+	"server.migrate.left-out-was-left-unchecked-check": "left out: {attnfolder} was left unchecked; check it and import again",
+	"server.migrate.will-be-added-to-as-wanted": "will be added to {fallback} as wanted with no files; needs attention: its old folder {dir} is not on this server; fix its folder or add a path rule"
 }

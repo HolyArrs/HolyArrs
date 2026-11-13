@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Přenést formáty a skóre",
 	"migrate.bringFormatsHint": "Každý profil, který boduje formáty, se stane vlastními Pravidly výběru a tyto formáty jejich vlastnostmi.",
 	"migrate.formatTraits": "Vlastnosti: {list}",
-	"migrate.formatsLeftOut": "Vynecháno: {list}"
+	"migrate.formatsLeftOut": "Vynecháno: {list}",
+	"migrate.titleFolders": "Tituly podle složky",
+	"migrate.willComeOverN": "Přejdou: {n}",
+	"migrate.cameOverN": "Přešlo: {n}",
+	"migrate.needAttentionN": "Vyžadují pozornost: {n}",
+	"migrate.needAttentionWhy": "Jejich stará složka na tomto serveru není, takže přicházejí jako hledané do složky zde. Opravte složku nebo přidejte pravidlo cesty: {list}",
+	"migrate.leftOutUncheckedN": "Vynecháno, složka nezaškrtnutá: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} zůstala nezaškrtnutá; zaškrtněte ji a importujte znovu"
 }

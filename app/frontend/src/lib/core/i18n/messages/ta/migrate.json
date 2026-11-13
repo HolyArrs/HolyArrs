@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "வடிவங்களையும் மதிப்பெண்களையும் கொண்டு வா",
 	"migrate.bringFormatsHint": "வடிவங்களுக்கு மதிப்பெண் தரும் ஒவ்வொரு சுயவிவரமும் தனக்கென தேர்வு விதிகளாகிறது, அந்த வடிவங்கள் பண்புகளாகின்றன.",
 	"migrate.formatTraits": "பண்புகள்: {list}",
-	"migrate.formatsLeftOut": "விடுபட்டவை: {list}"
+	"migrate.formatsLeftOut": "விடுபட்டவை: {list}",
+	"migrate.titleFolders": "கோப்புறை வாரியான தலைப்புகள்",
+	"migrate.willComeOverN": "வரும்: {n}",
+	"migrate.cameOverN": "வந்தவை: {n}",
+	"migrate.needAttentionN": "கவனம் தேவை: {n}",
+	"migrate.needAttentionWhy": "இவற்றின் பழைய கோப்புறை இந்த சர்வரில் இல்லை, எனவே இவை 'வேண்டியது' என இங்குள்ள ஒரு கோப்புறைக்கு வருகின்றன. கோப்புறையைச் சரிசெய்யுங்கள் அல்லது பாதை விதியைச் சேருங்கள்: {list}",
+	"migrate.leftOutUncheckedN": "விடப்பட்டவை, கோப்புறை தேர்வுசெய்யப்படவில்லை: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} தேர்வுசெய்யப்படவில்லை; தேர்வுசெய்து மீண்டும் இறக்குமதி செய்யுங்கள்"
 }

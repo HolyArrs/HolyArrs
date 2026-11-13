@@ -1296,5 +1296,9 @@
 	"server.importer.replaced-by-hand": "{path} asendati käsitsi",
 	"server.health.downloader-for": "Allalaadija:",
 	"server.health.downloader-added-twice": "Allalaadija lisatud kaks korda",
-	"server.sources.no-downloader-has-confirmed-this-release": "Ükski allalaadija pole seda väljalaset veel kinnitanud. Võid valida teise."
+	"server.sources.no-downloader-has-confirmed-this-release": "Ükski allalaadija pole seda väljalaset veel kinnitanud. Võid valida teise.",
+	"server.migrate.added-to-as-wanted-with-no": "lisatud kausta {fallback} soovituna, ilma failideta; vajab tähelepanu: vana kausta {dir} selles serveris pole; paranda kaust või lisa teereegel",
+	"server.migrate.will-be-added-to-as-wanted": "lisatakse kausta {fallback} soovituna, ilma failideta; vajab tähelepanu: vana kausta {dir} selles serveris pole; paranda kaust või lisa teereegel",
+	"server.migrate.its-library-folder-is-not-on": "teegikausta {library} selles serveris pole ja siin pole teegikausta tüübile {kind}; lisa üks ja impordi uuesti",
+	"server.migrate.left-out-was-left-unchecked-check": "välja jäetud: {attnfolder} jäi märkimata; märgi see ja impordi uuesti"
 }

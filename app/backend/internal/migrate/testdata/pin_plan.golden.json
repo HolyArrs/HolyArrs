@@ -25,7 +25,8 @@
             "old_path": "s",
             "path": "s",
             "kind": "s",
-            "label": "s"
+            "label": "s",
+            "left": true
           },
           "rules": {
             "app": "s",

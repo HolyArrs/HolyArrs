@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Reprendre les formats et les scores",
 	"migrate.bringFormatsHint": "Chaque profil qui note des formats devient ses propres Règles de sélection, avec ces formats comme critères.",
 	"migrate.formatTraits": "Critères : {list}",
-	"migrate.formatsLeftOut": "Laissés de côté : {list}"
+	"migrate.formatsLeftOut": "Laissés de côté : {list}",
+	"migrate.titleFolders": "Titres par dossier",
+	"migrate.willComeOverN": "Seront importés : {n}",
+	"migrate.cameOverN": "Importés : {n}",
+	"migrate.needAttentionN": "À vérifier : {n}",
+	"migrate.needAttentionWhy": "Leur ancien dossier n'est pas sur ce serveur, ils arrivent donc comme souhaités dans un dossier d'ici. Corrigez le dossier ou ajoutez une règle de chemin : {list}",
+	"migrate.leftOutUncheckedN": "Laissés de côté, dossier non coché : {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} n'a pas été coché ; cochez-le et importez à nouveau"
 }

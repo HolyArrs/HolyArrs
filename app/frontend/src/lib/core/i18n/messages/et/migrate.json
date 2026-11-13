@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Too vormingud ja skoorid kaasa",
 	"migrate.bringFormatsHint": "Iga profiil, mis annab vormingutele punkte, saab omaenda Valikureegliteks ja need vormingud tunnusteks.",
 	"migrate.formatTraits": "Tunnused: {list}",
-	"migrate.formatsLeftOut": "Välja jäetud: {list}"
+	"migrate.formatsLeftOut": "Välja jäetud: {list}",
+	"migrate.titleFolders": "Pealkirjad kaustade kaupa",
+	"migrate.willComeOverN": "Tulevad üle: {n}",
+	"migrate.cameOverN": "Tulid üle: {n}",
+	"migrate.needAttentionN": "Vajavad tähelepanu: {n}",
+	"migrate.needAttentionWhy": "Nende vana kausta selles serveris pole, seega tulevad nad soovituna siinsesse kausta. Paranda kaust või lisa teereegel: {list}",
+	"migrate.leftOutUncheckedN": "Välja jäetud, kaust märkimata: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} jäi märkimata; märgi see ja impordi uuesti"
 }

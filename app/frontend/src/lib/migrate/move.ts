@@ -77,6 +77,37 @@ export interface Line {
 	detail?: string;
 	needs?: string;
 	choose?: ChooseWhy;
+	/** unreachable: came over as wanted into another folder; unchecked: its folder was left out, so the title stayed behind. */
+	attention?: 'unreachable' | 'unchecked';
+	folder?: string;
+}
+
+export interface FolderOutcome {
+	came: number;
+	attention: number;
+	attentionFolders: string[];
+	unchecked: number;
+	uncheckedFolders: string[];
+}
+
+/** Titles split three ways: came over, came over but need attention, left out because their folder was unchecked. */
+export function folderOutcome(lines: Line[]): FolderOutcome {
+	const out: FolderOutcome = { came: 0, attention: 0, attentionFolders: [], unchecked: 0, uncheckedFolders: [] };
+	const add = (list: string[], f?: string) => {
+		if (f && !list.includes(f)) list.push(f);
+	};
+	for (const l of lines) {
+		if (l.group === 'folders' && l.attention === 'unchecked') add(out.uncheckedFolders, l.folder);
+		if (l.group !== 'titles') continue;
+		if (l.attention === 'unchecked') {
+			out.unchecked++;
+			add(out.uncheckedFolders, l.folder);
+		} else if (l.attention === 'unreachable') {
+			out.attention++;
+			add(out.attentionFolders, l.folder);
+		} else if (['create', 'created', 'adopt', 'adopted'].includes(l.result)) out.came++;
+	}
+	return out;
 }
 
 export interface Report {
@@ -97,7 +128,7 @@ export interface Move {
 	id: number;
 	created_at: string;
 	snapshots: number[];
-	choices?: { people?: Record<string, string>; skip?: string[]; path_rules?: PathRule[]; no_formats?: boolean };
+	choices?: { people?: Record<string, string>; skip?: string[]; path_rules?: PathRule[]; no_formats?: boolean; leave_folders?: string[] };
 	state: 'queued' | 'running' | 'done' | 'failed' | 'undone';
 	job_id?: number;
 	report?: Report;

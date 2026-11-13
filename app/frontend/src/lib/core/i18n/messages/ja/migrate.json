@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "フォーマットとスコアを持ってくる",
 	"migrate.bringFormatsHint": "フォーマットにスコアを付けているプロファイルはそれぞれ独自の選定ルールになり、そのフォーマットは特性になります。",
 	"migrate.formatTraits": "特性：{list}",
-	"migrate.formatsLeftOut": "除外：{list}"
+	"migrate.formatsLeftOut": "除外：{list}",
+	"migrate.titleFolders": "フォルダー別のタイトル",
+	"migrate.willComeOverN": "移行予定: {n}",
+	"migrate.cameOverN": "移行済み: {n}",
+	"migrate.needAttentionN": "要確認: {n}",
+	"migrate.needAttentionWhy": "古いフォルダーがこのサーバーにないため、欲しいものとしてここのフォルダーに入ります。フォルダーを直すか、パスルールを追加してください: {list}",
+	"migrate.leftOutUncheckedN": "対象外 (フォルダー未チェック): {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} のチェックが外れていました。チェックしてもう一度インポートしてください"
 }

@@ -1296,5 +1296,9 @@
 	"server.importer.replaced-by-hand": "{path} elle değiştirildi",
 	"server.health.downloader-for": "İndirici:",
 	"server.health.downloader-added-twice": "İki kez eklenmiş indirici",
-	"server.sources.no-downloader-has-confirmed-this-release": "Henüz hiçbir İndirici bu sürüm adayını onaylamadı. Başka birini seçebilirsin."
+	"server.sources.no-downloader-has-confirmed-this-release": "Henüz hiçbir İndirici bu sürüm adayını onaylamadı. Başka birini seçebilirsin.",
+	"server.migrate.added-to-as-wanted-with-no": "{fallback} klasörüne dosyasız, istenen olarak eklendi; ilgi gerekiyor: eski klasörü {dir} bu sunucuda yok; klasörü düzeltin veya bir yol kuralı ekleyin",
+	"server.migrate.will-be-added-to-as-wanted": "{fallback} klasörüne dosyasız, istenen olarak eklenecek; ilgi gerekiyor: eski klasörü {dir} bu sunucuda yok; klasörü düzeltin veya bir yol kuralı ekleyin",
+	"server.migrate.its-library-folder-is-not-on": "{library} kütüphane klasörü bu sunucuda yok ve burada {kind} için kütüphane klasörü yok; bir tane ekleyip yeniden içe aktarın",
+	"server.migrate.left-out-was-left-unchecked-check": "dışarıda bırakıldı: {attnfolder} işaretlenmedi; işaretleyip yeniden içe aktarın"
 }

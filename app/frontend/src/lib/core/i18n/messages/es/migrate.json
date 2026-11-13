@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Traer formatos y puntuaciones",
 	"migrate.bringFormatsHint": "Cada perfil que puntúa formatos se convierte en sus propias Reglas de elección, con esos formatos como rasgos.",
 	"migrate.formatTraits": "Rasgos: {list}",
-	"migrate.formatsLeftOut": "Fuera: {list}"
+	"migrate.formatsLeftOut": "Fuera: {list}",
+	"migrate.titleFolders": "Títulos por carpeta",
+	"migrate.willComeOverN": "Se importarán: {n}",
+	"migrate.cameOverN": "Importados: {n}",
+	"migrate.needAttentionN": "Requieren atención: {n}",
+	"migrate.needAttentionWhy": "Su carpeta antigua no está en este servidor, así que llegan como deseados a una carpeta de aquí. Corrige la carpeta o añade una regla de ruta: {list}",
+	"migrate.leftOutUncheckedN": "Omitidos, carpeta sin marcar: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} quedó sin marcar; márcala e importa de nuevo"
 }

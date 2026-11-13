@@ -1296,5 +1296,9 @@
 	"server.importer.replaced-by-hand": "{path} замењено ручно",
 	"server.health.downloader-for": "Преузимач за",
 	"server.health.downloader-added-twice": "Преузимач додат двапут",
-	"server.sources.no-downloader-has-confirmed-this-release": "Ниједан Преузимач још није потврдио ово Издање. Можеш да изабереш друго."
+	"server.sources.no-downloader-has-confirmed-this-release": "Ниједан Преузимач још није потврдио ово Издање. Можеш да изабереш друго.",
+	"server.migrate.added-to-as-wanted-with-no": "dodato u {fallback} kao željeno, bez fajlova; traži pažnju: stara fascikla {dir} nije na ovom serveru; ispravite fasciklu ili dodajte pravilo putanje",
+	"server.migrate.will-be-added-to-as-wanted": "biće dodato u {fallback} kao željeno, bez fajlova; traži pažnju: stara fascikla {dir} nije na ovom serveru; ispravite fasciklu ili dodajte pravilo putanje",
+	"server.migrate.its-library-folder-is-not-on": "fascikla biblioteke {library} nije na ovom serveru i ovde nema fascikle biblioteke za {kind}; dodajte jednu i uvezite ponovo",
+	"server.migrate.left-out-was-left-unchecked-check": "izostavljeno: {attnfolder} nije označena; označite je i uvezite ponovo"
 }

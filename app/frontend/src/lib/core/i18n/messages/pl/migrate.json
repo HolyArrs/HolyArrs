@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Przenieś formaty i wyniki",
 	"migrate.bringFormatsHint": "Każdy profil, który punktuje formaty, staje się własnymi Regułami wyboru, a te formaty – cechami.",
 	"migrate.formatTraits": "Cechy: {list}",
-	"migrate.formatsLeftOut": "Pominięte: {list}"
+	"migrate.formatsLeftOut": "Pominięte: {list}",
+	"migrate.titleFolders": "Tytuły według folderu",
+	"migrate.willComeOverN": "Zostaną przeniesione: {n}",
+	"migrate.cameOverN": "Przeniesione: {n}",
+	"migrate.needAttentionN": "Wymagają uwagi: {n}",
+	"migrate.needAttentionWhy": "Ich starego folderu nie ma na tym serwerze, więc trafiają jako poszukiwane do folderu tutaj. Popraw folder lub dodaj regułę ścieżki: {list}",
+	"migrate.leftOutUncheckedN": "Pominięte, folder niezaznaczony: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} nie został zaznaczony; zaznacz go i zaimportuj ponownie"
 }

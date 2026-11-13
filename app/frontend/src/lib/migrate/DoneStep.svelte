@@ -6,6 +6,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import StepCapsule from './StepCapsule.svelte';
 	import ResultGroups from './ResultGroups.svelte';
+	import FolderOutcome from './FolderOutcome.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
 	import { moveCounts, progressWords, running as isRunning, type Bucket, type Move } from './move.ts';
 	import { to } from '../core/paths.ts';
@@ -95,6 +96,7 @@
 	{/if}
 	{#if groups.length > 0}
 		<SettingsCard id="move-results" title={t('migrate.results')}>
+			{#if !rep.undo}<div class="fo-gap"><FolderOutcome {lines} after /></div>{/if}
 			<ResultGroups report={rep} {groups} after {onshow} />
 		</SettingsCard>
 	{/if}
@@ -102,6 +104,7 @@
 
 <style>
 	.cap { grid-column: 1 / -1; min-width: 0; }
+	.fo-gap :global(ul) { margin-bottom: 10px; }
 	.when { grid-column: 1 / -1; padding-top: 6px; }
 	p.txt { margin: 0; grid-column: 1 / -1; font: var(--t-callout); }
 	.cards { display: grid; gap: 10px; }

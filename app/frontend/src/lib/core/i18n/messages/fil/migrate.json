@@ -2,5 +2,12 @@
 	"migrate.bringFormats": "Dalhin ang mga format at score",
 	"migrate.bringFormatsHint": "Bawat profile na nagbibigay ng score sa mga format ay nagiging sarili nitong Mga panuntunan sa pagpili, at ang mga format na iyon ay nagiging katangian.",
 	"migrate.formatTraits": "Mga katangian: {list}",
-	"migrate.formatsLeftOut": "Hindi isinama: {list}"
+	"migrate.formatsLeftOut": "Hindi isinama: {list}",
+	"migrate.titleFolders": "Mga title ayon sa folder",
+	"migrate.willComeOverN": "Ililipat: {n}",
+	"migrate.cameOverN": "Nailipat: {n}",
+	"migrate.needAttentionN": "Kailangang tingnan: {n}",
+	"migrate.needAttentionWhy": "Wala sa server na ito ang luma nilang folder, kaya pumapasok sila bilang hinahanap sa isang folder dito. Ayusin ang folder o magdagdag ng path rule: {list}",
+	"migrate.leftOutUncheckedN": "Hindi isinama, hindi na-check ang folder: {n}",
+	"migrate.leftOutUncheckedWhy": "Hindi na-check ang {folder}; i-check ito at mag-import muli"
 }

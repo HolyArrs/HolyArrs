@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Bawa format dan skor",
 	"migrate.bringFormatsHint": "Setiap profil yang memberi skor pada format menjadi Aturan pilihannya sendiri, dengan format itu sebagai ciri.",
 	"migrate.formatTraits": "Ciri: {list}",
-	"migrate.formatsLeftOut": "Ditinggalkan: {list}"
+	"migrate.formatsLeftOut": "Ditinggalkan: {list}",
+	"migrate.titleFolders": "Judul per folder",
+	"migrate.willComeOverN": "Akan dipindahkan: {n}",
+	"migrate.cameOverN": "Dipindahkan: {n}",
+	"migrate.needAttentionN": "Perlu perhatian: {n}",
+	"migrate.needAttentionWhy": "Folder lamanya tidak ada di server ini, jadi masuk sebagai dicari ke folder di sini. Perbaiki foldernya atau tambahkan aturan jalur: {list}",
+	"migrate.leftOutUncheckedN": "Ditinggalkan, folder tidak dicentang: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} tidak dicentang; centang lalu impor lagi"
 }

@@ -300,5 +300,12 @@
 	"migrate.bringFormats": "Trazer formatos e pontuações",
 	"migrate.bringFormatsHint": "Cada perfil que pontua formatos vira suas próprias Regras de escolha, com esses formatos como características.",
 	"migrate.formatTraits": "Características: {list}",
-	"migrate.formatsLeftOut": "Deixados de fora: {list}"
+	"migrate.formatsLeftOut": "Deixados de fora: {list}",
+	"migrate.titleFolders": "Títulos por pasta",
+	"migrate.willComeOverN": "Serão importados: {n}",
+	"migrate.cameOverN": "Importados: {n}",
+	"migrate.needAttentionN": "Precisam de atenção: {n}",
+	"migrate.needAttentionWhy": "A pasta antiga deles não está neste servidor, então chegam como desejados numa pasta daqui. Corrija a pasta ou adicione uma regra de caminho: {list}",
+	"migrate.leftOutUncheckedN": "Deixados de fora, pasta desmarcada: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} ficou desmarcada; marque-a e importe de novo"
 }

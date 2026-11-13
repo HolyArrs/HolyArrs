@@ -343,7 +343,9 @@
 	function choices() {
 		// Only rules that check out are sent; a row with a problem is marked on screen and holds the step.
 		const ok = Object.fromEntries(Object.entries(picks).filter(([p, v]) => folderProblem(p, v, others[p]) === ''));
-		return { snapshots: picked, path_rules: rulesFrom(ok, others, extra.filter((_, i) => extraErrors[i] === '')), skip, people, no_formats: noFormats };
+		// Old folders left at "Don't bring them": their titles stay behind when the folder is on this server.
+		const leave = (plan?.old_paths ?? []).filter((p) => !folders.some((f) => f.path === p) && !picks[p]);
+		return { snapshots: picked, path_rules: rulesFrom(ok, others, extra.filter((_, i) => extraErrors[i] === '')), skip, people, no_formats: noFormats, leave_folders: leave };
 	}
 
 	function changed() {
