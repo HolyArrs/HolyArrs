@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "this movie already has a file; send replace to put this one in its place",
 	"server.importer.replaced-by-hand": "Replaced {path} by hand",
 	"server.health.downloader-for": "Downloader for",
-	"server.health.downloader-added-twice": "Downloader added twice"
+	"server.health.downloader-added-twice": "Downloader added twice",
+	"server.sources.no-downloader-has-confirmed-this-release": "No Downloader has confirmed this Release yet. You can choose another one."
 }

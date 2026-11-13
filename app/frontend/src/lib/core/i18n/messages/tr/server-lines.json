@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "bu filmin zaten bir dosyası var; bunu yerine koymak için replace gönder",
 	"server.importer.replaced-by-hand": "{path} elle değiştirildi",
 	"server.health.downloader-for": "İndirici:",
-	"server.health.downloader-added-twice": "İki kez eklenmiş indirici"
+	"server.health.downloader-added-twice": "İki kez eklenmiş indirici",
+	"server.sources.no-downloader-has-confirmed-this-release": "Henüz hiçbir İndirici bu sürüm adayını onaylamadı. Başka birini seçebilirsin."
 }

@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "لهذا الفيلم ملف بالفعل؛ أرسل replace لوضع هذا الملف مكانه",
 	"server.importer.replaced-by-hand": "تم استبدال {path} يدويًا",
 	"server.health.downloader-for": "برنامج تنزيل لـ",
-	"server.health.downloader-added-twice": "برنامج تنزيل مضاف مرتين"
+	"server.health.downloader-added-twice": "برنامج تنزيل مضاف مرتين",
+	"server.sources.no-downloader-has-confirmed-this-release": "لم يؤكد أي برنامج تنزيل هذا الإصدار بعد. يمكنك اختيار إصدار آخر."
 }

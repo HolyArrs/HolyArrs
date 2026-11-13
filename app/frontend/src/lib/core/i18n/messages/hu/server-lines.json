@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "ennek a filmnek már van fájlja; küldjön replace-t, hogy ez kerüljön a helyére",
 	"server.importer.replaced-by-hand": "{path} kézzel lecserélve",
 	"server.health.downloader-for": "Letöltő ehhez:",
-	"server.health.downloader-added-twice": "Kétszer hozzáadott letöltő"
+	"server.health.downloader-added-twice": "Kétszer hozzáadott letöltő",
+	"server.sources.no-downloader-has-confirmed-this-release": "Egyetlen Letöltő sem erősítette még meg ezt a release-t. Választhatsz másikat."
 }

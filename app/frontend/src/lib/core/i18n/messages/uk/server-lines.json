@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "цей фільм уже має файл; надішли replace, щоб поставити цей на його місце",
 	"server.importer.replaced-by-hand": "{path} замінено вручну",
 	"server.health.downloader-for": "Завантажувач для",
-	"server.health.downloader-added-twice": "Завантажувач додано двічі"
+	"server.health.downloader-added-twice": "Завантажувач додано двічі",
+	"server.sources.no-downloader-has-confirmed-this-release": "Жоден завантажувач ще не підтвердив цей реліз. Можна вибрати інший."
 }

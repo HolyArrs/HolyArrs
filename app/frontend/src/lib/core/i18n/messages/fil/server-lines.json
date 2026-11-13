@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "may file na ang pelikulang ito; ipadala ang replace para ilagay ito sa puwesto nito",
 	"server.importer.replaced-by-hand": "Pinalitan nang mano-mano ang {path}",
 	"server.health.downloader-for": "Downloader para sa",
-	"server.health.downloader-added-twice": "Downloader na dalawang beses idinagdag"
+	"server.health.downloader-added-twice": "Downloader na dalawang beses idinagdag",
+	"server.sources.no-downloader-has-confirmed-this-release": "Wala pang Downloader na nagkumpirma sa Release na ito. Puwede kang pumili ng iba."
 }

@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "এই সিনেমার আগেই একটি ফাইল আছে; এটির জায়গায় বসাতে replace পাঠান",
 	"server.importer.replaced-by-hand": "{path} হাতে বদলানো হয়েছে",
 	"server.health.downloader-for": "ডাউনলোডার:",
-	"server.health.downloader-added-twice": "ডাউনলোডার দুবার যোগ করা"
+	"server.health.downloader-added-twice": "ডাউনলোডার দুবার যোগ করা",
+	"server.sources.no-downloader-has-confirmed-this-release": "কোনো ডাউনলোডার এখনো এই রিলিজটি নিশ্চিত করেনি। তুমি অন্য একটি বেছে নিতে পারো।"
 }

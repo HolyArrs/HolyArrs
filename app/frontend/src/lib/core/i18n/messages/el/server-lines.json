@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "αυτή η ταινία έχει ήδη αρχείο· στείλτε replace για να μπει αυτό στη θέση του",
 	"server.importer.replaced-by-hand": "Το {path} αντικαταστάθηκε με το χέρι",
 	"server.health.downloader-for": "Πρόγραμμα λήψης για",
-	"server.health.downloader-added-twice": "Πρόγραμμα λήψης προστέθηκε δύο φορές"
+	"server.health.downloader-added-twice": "Πρόγραμμα λήψης προστέθηκε δύο φορές",
+	"server.sources.no-downloader-has-confirmed-this-release": "Κανένα Πρόγραμμα λήψης δεν έχει επιβεβαιώσει ακόμα αυτή την κυκλοφορία. Μπορείς να διαλέξεις άλλη."
 }

@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "この映画にはすでにファイルがあります。置き換えるには replace を送ってください",
 	"server.importer.replaced-by-hand": "{path} を手動で置き換えました",
 	"server.health.downloader-for": "ダウンローダー:",
-	"server.health.downloader-added-twice": "二重に追加されたダウンローダー"
+	"server.health.downloader-added-twice": "二重に追加されたダウンローダー",
+	"server.sources.no-downloader-has-confirmed-this-release": "まだどのダウンローダーもこのリリースを確認していません。別のリリースを選べます。"
 }

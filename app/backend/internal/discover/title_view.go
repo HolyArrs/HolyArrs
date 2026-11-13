@@ -17,6 +17,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // ViewDeps are the services the views read; field names match api.Server.
@@ -257,6 +258,9 @@ func (h *ViewHandlers) View(ctx context.Context, t mediafiles.Title) (TitleView,
 		sv := SlotView{ID: s.ID, Version: ver.Label, VersionID: ver.ID, State: string(s.State), StateLabel: mediafiles.StateLabels[s.State], DownloadID: s.ActiveDownloadID}
 		if s.LastReason != nil {
 			sv.Reason = *s.LastReason
+		}
+		if sources.StuckChoice(s, time.Now()) {
+			sv.Reason = sources.StuckChoiceReason
 		}
 		if s.ActiveDownloadID != nil {
 			var d domain.Download

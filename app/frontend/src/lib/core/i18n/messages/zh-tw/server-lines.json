@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "這部電影已經有檔案；傳送 replace 即可用這個檔案取代它",
 	"server.importer.replaced-by-hand": "已手動取代 {path}",
 	"server.health.downloader-for": "下載器：",
-	"server.health.downloader-added-twice": "下載器重複新增"
+	"server.health.downloader-added-twice": "下載器重複新增",
+	"server.sources.no-downloader-has-confirmed-this-release": "還沒有下載器確認這個資源。你可以選擇另一個。"
 }

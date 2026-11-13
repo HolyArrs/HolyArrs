@@ -514,10 +514,10 @@
 					{#snippet after(i: number)}
 						{@const ep = eps[i]}
 						{@const why = staff ? episodeWhy(ep, s.keep_up_to_date, title.keep_up_to_date) : ''}
-						{#if why && why !== off}<p class="xs muted ep-why" data-testid="episode-why">{why}</p>{/if}
+						{#if why && why !== off}<p class="xs muted ep-why" data-testid="episode-why">{serverWords(why)}</p>{/if}
 						{#if staff}
 							{#each ep.slots.filter((x) => x.reason && ep.slots.length > 1) as sl (sl.id)}
-								<p class="xs muted ep-why">{sl.version}: {sl.reason}</p>
+								<p class="xs muted ep-why">{sl.version}: {serverWords(sl.reason)}</p>
 							{/each}
 						{/if}
 					{/snippet}

@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "deze film heeft al een bestand; stuur replace om dit bestand ervoor in de plaats te zetten",
 	"server.importer.replaced-by-hand": "{path} met de hand vervangen",
 	"server.health.downloader-for": "Downloader voor",
-	"server.health.downloader-added-twice": "Downloader twee keer toegevoegd"
+	"server.health.downloader-added-twice": "Downloader twee keer toegevoegd",
+	"server.sources.no-downloader-has-confirmed-this-release": "Nog geen Downloader heeft deze release bevestigd. Je kunt een andere kiezen."
 }

@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "þessi kvikmynd hefur þegar skrá; sendu replace til að setja þessa í hennar stað",
 	"server.importer.replaced-by-hand": "{path} skipt út í höndunum",
 	"server.health.downloader-for": "Niðurhalari fyrir",
-	"server.health.downloader-added-twice": "Niðurhalara bætt við tvisvar"
+	"server.health.downloader-added-twice": "Niðurhalara bætt við tvisvar",
+	"server.sources.no-downloader-has-confirmed-this-release": "Enginn niðurhalari hefur enn staðfest þessa útgáfu. Þú getur valið aðra."
 }

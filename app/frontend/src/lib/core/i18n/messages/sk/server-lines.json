@@ -1295,5 +1295,6 @@
 	"server.downloads.this-movie-already-has-a-file": "tento film už má súbor; pošlite replace, aby tento zaujal jeho miesto",
 	"server.importer.replaced-by-hand": "{path} nahradené ručne",
 	"server.health.downloader-for": "Sťahovač pre",
-	"server.health.downloader-added-twice": "Sťahovač pridaný dvakrát"
+	"server.health.downloader-added-twice": "Sťahovač pridaný dvakrát",
+	"server.sources.no-downloader-has-confirmed-this-release": "Žiadny Sťahovač ešte nepotvrdil toto Vydanie. Môžeš vybrať iné."
 }
