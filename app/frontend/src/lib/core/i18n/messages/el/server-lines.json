@@ -1314,5 +1314,10 @@
 	"server.sources.this-release-does-not-match-an": "Αυτή η κυκλοφορία δεν ταιριάζει με επεισόδιο που αναζητά το HolyArrs. Για να τη χρησιμοποιήσεις παρ' όλα αυτά, διάλεξέ τη από το επεισόδιο στο οποίο ανήκει.",
 	"server.metadata.the-metadata-server-is-slow-right": "Ο διακομιστής μεταδεδομένων είναι αργός αυτή τη στιγμή. Θα επανέλθει μόνος του.",
 	"server.requests.could-not-add-it-back-in": "{before}: δεν ήταν δυνατή η προσθήκη, ξανά σε αναμονή",
-	"server.requests.the-metadata-server-did-not-answer": "Ο διακομιστής μεταδεδομένων δεν απάντησε εγκαίρως. Είναι ξανά σε αναμονή· εγκρίνετέ το ξανά."
+	"server.requests.the-metadata-server-did-not-answer": "Ο διακομιστής μεταδεδομένων δεν απάντησε εγκαίρως. Είναι ξανά σε αναμονή· εγκρίνετέ το ξανά.",
+	"server.requests.a-quality-name-can-be-at": "το όνομα μιας ποιότητας μπορεί να έχει έως 30 χαρακτήρες",
+	"server.requests.keep-at-least-one-quality-shown": "αφήστε ορατή τουλάχιστον μία ποιότητα για ταινίες και μία για σειρές",
+	"server.requests.someone-already-asked-for-this-movie": "κάποιος έχει ήδη ζητήσει αυτή την ταινία σε αυτή την ποιότητα· αποφασίστε για το δικό του αίτημα",
+	"server.requests.that-quality-cannot-be-asked-for": "αυτή η ποιότητα δεν μπορεί να ζητηθεί",
+	"server.requests.the-quality-you-picked-was-not": "Η ποιότητα που επιλέξατε δεν χρησιμοποιήθηκε: ο τίτλος έχει ήδη αυτό το αντίγραφο."
 }

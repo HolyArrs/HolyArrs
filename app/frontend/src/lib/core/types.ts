@@ -253,6 +253,9 @@ export interface Ask {
 	episodes?: { season: number; episodes: number[] }[];
 	future_only?: boolean;
 	four_k?: boolean;
+	/** The line of what people can ask for that was picked (standard, 4k), and the owner's name for it now ('' is the built-in name). */
+	quality?: string;
+	quality_name?: string;
 	albums?: AskAlbum[];
 	album_words?: string;
 	artist_id?: string;

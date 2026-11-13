@@ -1314,5 +1314,10 @@
 	"server.sources.this-release-does-not-match-an": "这个资源与 HolyArrs 正在寻找的任何一集都不匹配。如果仍要使用，请在它所属的那一集中选择它。",
 	"server.metadata.the-metadata-server-is-slow-right": "元数据服务器现在较慢。会自行恢复。",
 	"server.requests.could-not-add-it-back-in": "{before}：无法添加，已回到等待中",
-	"server.requests.the-metadata-server-did-not-answer": "元数据服务器没有及时响应。请求已回到等待中，请再次批准。"
+	"server.requests.the-metadata-server-did-not-answer": "元数据服务器没有及时响应。请求已回到等待中，请再次批准。",
+	"server.requests.a-quality-name-can-be-at": "画质名称最多 30 个字符",
+	"server.requests.keep-at-least-one-quality-shown": "电影和剧集各至少保留一个显示的画质",
+	"server.requests.someone-already-asked-for-this-movie": "已经有人以该画质请求了这部电影；请改为处理他们的请求",
+	"server.requests.that-quality-cannot-be-asked-for": "无法请求该画质",
+	"server.requests.the-quality-you-picked-was-not": "未使用你选择的画质：这部作品已经有该副本。"
 }

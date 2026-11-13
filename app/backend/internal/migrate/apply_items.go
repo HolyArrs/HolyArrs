@@ -15,6 +15,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate/secretsfile"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
@@ -526,6 +527,7 @@ func (r *run) ask(it Item) (string, string) {
 	if a.Kind == "movie" {
 		row.Seasons = []int{}
 	}
+	requests.ImportedQuality(&row)
 	if titleID != 0 {
 		row.TitleID = &titleID
 	}

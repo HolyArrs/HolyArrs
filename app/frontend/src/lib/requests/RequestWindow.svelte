@@ -15,6 +15,8 @@
 	import { askTab } from './ask-words.ts';
 	import { askHref } from './board.ts';
 	import { askedFor } from './asked-for.ts';
+	import QualityPills from './QualityPills.svelte';
+	import { qualityTag } from './quality-row.ts';
 	import type { PartsPick } from './ask-parts.ts';
 	import { watchlistLine } from '../accounts/index.ts';
 	import { tick, untrack } from 'svelte';
@@ -156,15 +158,18 @@
 	// Where the sheet starts: just under the lifted title block.
 	let sheetTop = $state(180);
 	let pick = $state<PartsPick>({ seasons: null, albums: null, empty: false });
-	let rulesId = $state(0);
-	const rules = $derived(ctx.rulesFor(picked));
+	// The Quality row: the line that was asked is picked; the approver may change it before approving.
+	const row = $derived(ctx.qualityRow(picked));
+	let quality = $state('');
+	const chosen = $derived(row.pills.find((p) => p.key === quality) ?? row.pills.find((p) => p.key === row.asked));
+	const askedLabel = $derived(row.pills.find((p) => p.key === row.asked)?.label ?? '');
 	// Keyed on the id value only: a list refresh hands a new object for the same ask and must not throw away the ticks and the Quality pick.
 	const pid = $derived(picked.id);
 	$effect(() => {
 		void pid;
 		untrack(() => {
 			pick = { seasons: null, albums: null, empty: false };
-			rulesId = 0;
+			quality = row.asked;
 			// Stepping from one waiting ask to the next keeps What to add open (no half close).
 			if (!(choosing && waiting(picked) && !status)) choosing = false;
 		});
@@ -222,7 +227,8 @@
 	function approveChosen() {
 		if (pick.empty) return;
 		ctx.approveWith(picked, {
-			rulesId,
+			...(chosen ? { quality: chosen.quality } : {}),
+			rulesId: chosen?.rulesId ?? 0,
 			langs: [],
 			note: '',
 			...(pick.seasons ? { seasons: pick.seasons } : {}),
@@ -238,7 +244,7 @@
 		// Hide drops the ticks with the list, so the Quality pick goes with them: reopening always starts from what was asked, never half of an earlier choice.
 		if (!status) {
 			pick = { seasons: null, albums: null, empty: false };
-			rulesId = 0;
+			quality = row.asked;
 		}
 		choosing = false;
 		void tick().then(() => {
@@ -276,7 +282,7 @@
 				>
 					{#snippet heading()}<h2 class="bb-name" id="stage-title-{picked.id}">{picked.name}</h2>{/snippet}
 					{#snippet meta()}
-						<p class="facts"><span>{kindOf(picked)}</span>{#if picked.four_k}<span>{t('requests.askMovie.fourK')}</span>{/if}{#if year}<span>{year}</span>{/if}{#if count(picked)}<span>{count(picked)}</span>{/if}</p>
+						<p class="facts"><span>{kindOf(picked)}</span>{#if qualityTag(picked)}<span>{qualityTag(picked)}</span>{/if}{#if year}<span>{year}</span>{/if}{#if count(picked)}<span>{count(picked)}</span>{/if}</p>
 						{#each [ctx.who(picked)] as w (w.id)}
 							<p class="asker"><Avatar name={w.name} src={w.avatar} size={22} /><span><b>{w.name}</b> {t('requests.window.asked')} <time datetime={picked.asked_at} title={dateTime(picked.asked_at)}>{agoLong(picked.asked_at)}</time>{#if watchlistLine(picked.people, undefined)}{' '}{t('requests.window.fromPlex')}{/if}</span>{#if w.kid}<KidMark label={t('requests.window.kid')} size="sm" />{/if}</p>
 						{/each}
@@ -342,13 +348,10 @@
 								<AskParts {ctx} a={picked} editable unfolded layout="split" bind:pick />
 							{/if}
 						{/if}
-						{#if rules.length && !status}
-							<div class="rules" role="group" aria-label={t('requests.window.quality')}>
-								<span class="rl">{t('requests.window.quality')}</span>
-								<button type="button" class="rule" aria-pressed={rulesId === 0} onclick={() => (rulesId = 0)}>{#if ctx.defaultRule(picked)}{ctx.defaultRule(picked)}<span class="dim">{t('requests.window.defaultParen')}</span>{:else}{t('requests.window.default')}{/if}</button>
-								{#each rules as r (r.id)}
-									<button type="button" class="rule" aria-pressed={rulesId === r.id} onclick={() => (rulesId = r.id)}>{r.name}</button>
-								{/each}
+						{#if row.pills.length && !status}
+							<div class="quality">
+								<QualityPills pills={row.pills} bind:selected={quality} />
+								<p class="q-line" data-testid="quality-asked">{t('requests.window.askedFor', { name: ctx.who(picked).name, quality: askedLabel })}{#if chosen?.extra}{' '}{t('requests.window.addsOnly', { quality: chosen.label })}{/if}</p>
 							</div>
 						{/if}
 					</div>
@@ -460,17 +463,12 @@
 	.sh-body { flex: 1; min-height: 0; overflow: hidden; padding: 0 16px 10px; display: flex; flex-direction: column; gap: 10px; }
 	.sh-body > :global(.split) { flex: 1; min-height: 0; }
 	.sh-body > :global(.parts) { flex: none; }
-	.rules { flex: none; }
+	.quality { flex: none; display: flex; flex-direction: column; gap: 8px; }
+	.q-line { color: var(--text-muted); font: var(--t-footnote); }
 	.one { display: flex; align-items: center; gap: 14px; padding: 10px; border-radius: 14px; background: var(--surface-2); }
 	.one-pic { width: 44px; border-radius: 6px; overflow: hidden; --poster-ratio: 2 / 3; }
 	.one div { flex: 1; display: flex; flex-direction: column; font: var(--t-callout); }
 	.one div span { color: var(--text-muted); font: var(--t-footnote); }
-	.rules { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-	.rl { margin-right: 6px; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
-	.rule { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 0; border-radius: var(--r-pill); background: var(--surface-2); font: var(--t-subhead); font-weight: 600; cursor: pointer; transition: background 200ms var(--ease-out), color 200ms var(--ease-out); }
-	.rule:hover { background: var(--surface-3); }
-	.rule[aria-pressed='true'] { background: var(--text); color: var(--bg); }
-	.dim { opacity: 0.6; font-weight: 400; }
 	.sh-f { display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 16px; border-top: 1px solid var(--line); }
 	.sum { flex: 1; color: var(--text-muted); font: var(--t-footnote); }
 	.sh-f .act.primary { background: var(--text); color: var(--bg); height: 40px; padding: 0 18px; font: var(--t-subhead); font-weight: 600; }
@@ -513,15 +511,11 @@
 		.facts { flex-wrap: wrap; white-space: normal; row-gap: 2px; }
 		.act { height: 46px; padding: 0 18px; }
 		.tl-link { height: 44px; }
-		.rules { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; margin: 0 -16px; padding: 0 16px; }
-		.rules::-webkit-scrollbar { display: none; }
-		.rule, .rl { flex: none; white-space: nowrap; }
 		.sh-f { flex-wrap: wrap; }
 		.sum { flex: 1 0 100%; }
 		.sh-f .act.ghost { margin-left: auto; }
 	}
 	@media (pointer: coarse) {
-		.rule { min-height: 44px; }
 		.st-hide, .tl-link { height: 44px; }
 		.sheet :global(.line), .sheet :global(.season) { min-height: 44px; }
 		.sh-f .act.primary, .sh-f .act.ghost { height: 44px; }

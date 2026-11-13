@@ -12,9 +12,12 @@ describe('quality offered when approving', () => {
 		const c = createAskChoices({ rules, folders: [] });
 		expect(c.rulesOf({ kind: 'show' } as Ask).map((r) => r.id)).toEqual([1, 2]);
 	});
-	it('offers none for a 4K copy, which always uses the 4K quality from the request settings', () => {
+	it('offers the lines with the other rules between them for a 4K copy too, the 4K line picked', () => {
 		const c = createAskChoices({ rules, folders: [] });
-		expect(c.rulesOf({ kind: 'show', four_k: true } as Ask)).toEqual([]);
-		expect(c.rulesOf({ kind: 'movie', four_k: true } as Ask)).toEqual([]);
+		c.lines = { movie: [{ id: 'standard', name: '', extra: false, pick_rules_id: 1 }, { id: '4k', name: '', extra: true, pick_rules_id: 2 }], show: [] };
+		const row = c.qualityRowOf({ kind: 'movie', quality: '4k', four_k: true } as Ask);
+		expect(row.pills.map((p) => p.label)).toEqual(['Standard', '4K']);
+		expect(row.asked).toBe('4k');
+		expect(c.qualityRowOf({ kind: 'artist' } as Ask).pills).toEqual([]);
 	});
 });

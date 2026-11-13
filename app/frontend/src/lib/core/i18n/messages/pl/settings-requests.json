@@ -42,5 +42,11 @@
 	"settings.requests.fourK": "Kopia 4K",
 	"settings.requests.fourKDesc": "Gdzie trafiają zatwierdzone prośby o 4K i jak są wybierane",
 	"settings.requests.fourKSameFolder": "Tak jak inne prośby",
-	"settings.requests.fourKNamedRules": "Jakość o nazwie 4K"
+	"settings.requests.fourKNamedRules": "Jakość o nazwie 4K",
+	"settings.requests.choices": "O co mogą prosić użytkownicy",
+	"settings.requests.choicesDesc": "Przyciski jakości w oknach próśb, w tej kolejności. Tu zmień ich nazwy lub je ukryj; dzieci dostają pierwszy widoczny.",
+	"settings.requests.choiceShown": "Pokaż użytkownikom",
+	"settings.requests.choiceMain": "{rules} · główna kopia tytułu",
+	"settings.requests.choiceOwn": "{rules} · trzymana jako osobna kopia",
+	"settings.requests.choiceNotReady": "Dostępne, gdy powyżej zostanie ustawiona jakość 4K"
 }

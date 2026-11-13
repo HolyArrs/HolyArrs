@@ -1314,5 +1314,10 @@
 	"server.sources.this-release-does-not-match-an": "Този релийз не отговаря на епизод, който HolyArrs търси. За да го използваш все пак, избери го от епизода, за който е.",
 	"server.metadata.the-metadata-server-is-slow-right": "Сървърът за метаданни е бавен в момента. Това ще се оправи от само себе си.",
 	"server.requests.could-not-add-it-back-in": "{before}: не можа да се добави, отново чака",
-	"server.requests.the-metadata-server-did-not-answer": "Сървърът за метаданни не отговори навреме. Заявката отново чака; одобрете я пак."
+	"server.requests.the-metadata-server-did-not-answer": "Сървърът за метаданни не отговори навреме. Заявката отново чака; одобрете я пак.",
+	"server.requests.a-quality-name-can-be-at": "името на качество може да е най-много 30 знака",
+	"server.requests.keep-at-least-one-quality-shown": "оставете поне едно видимо качество за филми и едно за сериали",
+	"server.requests.someone-already-asked-for-this-movie": "някой вече е заявил този филм в това качество; решете неговата заявка",
+	"server.requests.that-quality-cannot-be-asked-for": "това качество не може да бъде заявено",
+	"server.requests.the-quality-you-picked-was-not": "Избраното качество не беше използвано: това заглавие вече има това копие."
 }

@@ -1314,5 +1314,10 @@
 	"server.sources.this-release-does-not-match-an": "Keluaran ini tidak sepadan dengan mana-mana episod yang sedang dicari oleh HolyArrs. Untuk menggunakannya juga, pilih ia daripada episod yang berkenaan.",
 	"server.metadata.the-metadata-server-is-slow-right": "Pelayan metadata perlahan sekarang. Ia akan pulih dengan sendirinya.",
 	"server.requests.could-not-add-it-back-in": "{before}: tidak dapat ditambah, kembali menunggu",
-	"server.requests.the-metadata-server-did-not-answer": "Pelayan metadata tidak menjawab tepat pada masanya. Ia kembali menunggu; luluskan sekali lagi."
+	"server.requests.the-metadata-server-did-not-answer": "Pelayan metadata tidak menjawab tepat pada masanya. Ia kembali menunggu; luluskan sekali lagi.",
+	"server.requests.a-quality-name-can-be-at": "nama kualiti boleh mempunyai paling banyak 30 aksara",
+	"server.requests.keep-at-least-one-quality-shown": "biarkan sekurang-kurangnya satu kualiti dipaparkan untuk filem dan satu untuk rancangan",
+	"server.requests.someone-already-asked-for-this-movie": "seseorang sudah meminta filem ini dalam kualiti itu; putuskan permintaan mereka sahaja",
+	"server.requests.that-quality-cannot-be-asked-for": "kualiti itu tidak boleh diminta",
+	"server.requests.the-quality-you-picked-was-not": "Kualiti yang anda pilih tidak digunakan: tajuk ini sudah mempunyai salinan itu."
 }

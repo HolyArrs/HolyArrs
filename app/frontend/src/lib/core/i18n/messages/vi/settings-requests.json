@@ -42,5 +42,11 @@
 	"settings.requests.fourK": "Bản 4K",
 	"settings.requests.fourKDesc": "Yêu cầu 4K đã duyệt được lưu ở đâu và chọn thế nào",
 	"settings.requests.fourKSameFolder": "Giống các yêu cầu khác",
-	"settings.requests.fourKNamedRules": "Chất lượng tên 4K"
+	"settings.requests.fourKNamedRules": "Chất lượng tên 4K",
+	"settings.requests.choices": "Những gì mọi người có thể yêu cầu",
+	"settings.requests.choicesDesc": "Các nút Chất lượng trên trang yêu cầu, theo thứ tự này. Đổi tên hoặc ẩn chúng ở đây; tài khoản trẻ em nhận nút hiển thị đầu tiên.",
+	"settings.requests.choiceShown": "Hiện cho mọi người",
+	"settings.requests.choiceMain": "{rules} · bản chính của tựa",
+	"settings.requests.choiceOwn": "{rules} · giữ thành một bản riêng",
+	"settings.requests.choiceNotReady": "Sẽ có khi đã thiết lập chất lượng 4K ở trên"
 }

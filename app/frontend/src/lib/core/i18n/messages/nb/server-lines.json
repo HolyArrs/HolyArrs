@@ -1314,5 +1314,10 @@
 	"server.sources.this-release-does-not-match-an": "Denne utgivelsen passer ikke til noen episode HolyArrs leter etter. Vil du bruke den likevel, velger du den fra episoden den hører til.",
 	"server.metadata.the-metadata-server-is-slow-right": "Metadataserveren er treg akkurat nå. Det går over av seg selv.",
 	"server.requests.could-not-add-it-back-in": "{before}: kunne ikke legges til, venter igjen",
-	"server.requests.the-metadata-server-did-not-answer": "Metadataserveren svarte ikke i tide. Den venter igjen; godkjenn den på nytt."
+	"server.requests.the-metadata-server-did-not-answer": "Metadataserveren svarte ikke i tide. Den venter igjen; godkjenn den på nytt.",
+	"server.requests.a-quality-name-can-be-at": "et kvalitetsnavn kan være på høyst 30 tegn",
+	"server.requests.keep-at-least-one-quality-shown": "behold minst én kvalitet synlig for filmer og én for serier",
+	"server.requests.someone-already-asked-for-this-movie": "noen har allerede bedt om denne filmen i den kvaliteten; avgjør forespørselen deres i stedet",
+	"server.requests.that-quality-cannot-be-asked-for": "den kvaliteten kan ikke forespørres",
+	"server.requests.the-quality-you-picked-was-not": "Kvaliteten du valgte ble ikke brukt: tittelen har allerede den kopien."
 }

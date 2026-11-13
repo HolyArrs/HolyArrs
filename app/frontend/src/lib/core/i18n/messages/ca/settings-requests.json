@@ -42,5 +42,11 @@
 	"settings.requests.fourK": "Còpia 4K",
 	"settings.requests.fourKDesc": "On van les sol·licituds 4K aprovades i com es trien",
 	"settings.requests.fourKSameFolder": "Igual que les altres sol·licituds",
-	"settings.requests.fourKNamedRules": "La qualitat anomenada 4K"
+	"settings.requests.fourKNamedRules": "La qualitat anomenada 4K",
+	"settings.requests.choices": "Què pot demanar la gent",
+	"settings.requests.choicesDesc": "Els botons de qualitat de les fitxes de sol·licitud, en aquest ordre. Canvia'ls el nom o amaga'ls aquí; els nens reben el primer visible.",
+	"settings.requests.choiceShown": "Mostra a la gent",
+	"settings.requests.choiceMain": "{rules} · la còpia principal del títol",
+	"settings.requests.choiceOwn": "{rules} · es desa com a còpia pròpia",
+	"settings.requests.choiceNotReady": "Es mostra quan hi hagi una qualitat 4K configurada a dalt"
 }

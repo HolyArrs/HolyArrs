@@ -42,5 +42,11 @@
 	"settings.requests.fourK": "4K 副本",
 	"settings.requests.fourKDesc": "获批的 4K 请求存放在哪里、如何挑选",
 	"settings.requests.fourKSameFolder": "与其他请求相同",
-	"settings.requests.fourKNamedRules": "名为 4K 的画质"
+	"settings.requests.fourKNamedRules": "名为 4K 的画质",
+	"settings.requests.choices": "可以请求的内容",
+	"settings.requests.choicesDesc": "请求窗口中的画质按钮，按此顺序显示。可在这里改名或隐藏；儿童账户只获得第一个显示的按钮。",
+	"settings.requests.choiceShown": "向大家显示",
+	"settings.requests.choiceMain": "{rules} · 作品的主副本",
+	"settings.requests.choiceOwn": "{rules} · 作为单独副本保留",
+	"settings.requests.choiceNotReady": "在上方设置 4K 画质后才会提供"
 }

@@ -243,6 +243,11 @@ func label(a domain.Ask) string {
 	if a.Year != nil {
 		l += " (" + strconv.Itoa(*a.Year) + ")"
 	}
+	// Asked for in another line than the first (4K): say so, so two alerts
+	// for one title tell apart.
+	if a.Quality != "" && a.Quality != QualityStandard && a.QualityName != "" {
+		l += " in " + a.QualityName
+	}
 	if a.Kind == "show" && !wholeShow(a) && !a.FutureOnly {
 		l += ", " + askSeasonWords(a)
 	}

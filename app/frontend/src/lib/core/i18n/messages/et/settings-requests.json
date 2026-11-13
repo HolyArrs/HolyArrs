@@ -42,5 +42,11 @@
 	"settings.requests.fourK": "4K koopia",
 	"settings.requests.fourKDesc": "Kuhu heakskiidetud 4K taotlused lähevad ja kuidas need valitakse",
 	"settings.requests.fourKSameFolder": "Nagu teised taotlused",
-	"settings.requests.fourKNamedRules": "Kvaliteet nimega 4K"
+	"settings.requests.fourKNamedRules": "Kvaliteet nimega 4K",
+	"settings.requests.choices": "Mida inimesed saavad taotleda",
+	"settings.requests.choicesDesc": "Kvaliteedinupud taotlusakendes, selles järjekorras. Nimeta need siin ümber või peida; lapsed saavad esimese nähtava.",
+	"settings.requests.choiceShown": "Näita inimestele",
+	"settings.requests.choiceMain": "{rules} · pealkirja põhikoopia",
+	"settings.requests.choiceOwn": "{rules} · hoitakse eraldi koopiana",
+	"settings.requests.choiceNotReady": "Pakutakse, kui ülal on 4K kvaliteet seadistatud"
 }

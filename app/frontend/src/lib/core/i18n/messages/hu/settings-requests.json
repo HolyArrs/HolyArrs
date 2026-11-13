@@ -42,5 +42,11 @@
 	"settings.requests.fourK": "4K másolat",
 	"settings.requests.fourKDesc": "Hová kerülnek a jóváhagyott 4K kérések, és hogyan választódnak",
 	"settings.requests.fourKSameFolder": "Mint a többi kérés",
-	"settings.requests.fourKNamedRules": "A 4K nevű minőség"
+	"settings.requests.fourKNamedRules": "A 4K nevű minőség",
+	"settings.requests.choices": "Mit kérhetnek az emberek",
+	"settings.requests.choicesDesc": "A minőséggombok a kérésablakokban, ebben a sorrendben. Itt nevezheti át vagy rejtheti el őket; a gyerekek az első láthatót kapják.",
+	"settings.requests.choiceShown": "Megjelenítés az embereknek",
+	"settings.requests.choiceMain": "{rules} · a cím fő másolata",
+	"settings.requests.choiceOwn": "{rules} · külön másolatként megtartva",
+	"settings.requests.choiceNotReady": "Akkor kérhető, ha fent be van állítva egy 4K minőség"
 }

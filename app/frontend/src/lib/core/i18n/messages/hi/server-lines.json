@@ -1314,5 +1314,10 @@
 	"server.sources.this-release-does-not-match-an": "यह रिलीज़ किसी ऐसे एपिसोड से मेल नहीं खाती जिसे HolyArrs ढूँढ रहा है। फिर भी इस्तेमाल करना हो, तो इसे उसी एपिसोड से चुनो जिसके लिए यह है।",
 	"server.metadata.the-metadata-server-is-slow-right": "मेटाडेटा सर्वर अभी धीमा है। यह अपने आप ठीक हो जाएगा।",
 	"server.requests.could-not-add-it-back-in": "{before}: जोड़ा नहीं जा सका, फिर से इंतज़ार में",
-	"server.requests.the-metadata-server-did-not-answer": "मेटाडेटा सर्वर ने समय पर जवाब नहीं दिया। यह फिर से इंतज़ार में है; इसे फिर से मंज़ूर करें।"
+	"server.requests.the-metadata-server-did-not-answer": "मेटाडेटा सर्वर ने समय पर जवाब नहीं दिया। यह फिर से इंतज़ार में है; इसे फिर से मंज़ूर करें।",
+	"server.requests.a-quality-name-can-be-at": "क्वालिटी का नाम ज़्यादा से ज़्यादा 30 अक्षरों का हो सकता है",
+	"server.requests.keep-at-least-one-quality-shown": "फ़िल्मों के लिए कम से कम एक और सीरीज़ के लिए एक क्वालिटी दिखती रहने दें",
+	"server.requests.someone-already-asked-for-this-movie": "किसी ने यह फ़िल्म इस क्वालिटी में पहले ही रिक्वेस्ट की है; उसकी रिक्वेस्ट पर फ़ैसला करें",
+	"server.requests.that-quality-cannot-be-asked-for": "यह क्वालिटी रिक्वेस्ट नहीं की जा सकती",
+	"server.requests.the-quality-you-picked-was-not": "आपकी चुनी क्वालिटी इस्तेमाल नहीं हुई: इस टाइटल में वह कॉपी पहले से है।"
 }

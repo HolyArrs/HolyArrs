@@ -42,5 +42,11 @@
 	"settings.requests.fourK": "Αντίγραφο 4K",
 	"settings.requests.fourKDesc": "Πού πηγαίνουν τα εγκεκριμένα αιτήματα 4K και πώς επιλέγονται",
 	"settings.requests.fourKSameFolder": "Όπως τα άλλα αιτήματα",
-	"settings.requests.fourKNamedRules": "Η ποιότητα με όνομα 4K"
+	"settings.requests.fourKNamedRules": "Η ποιότητα με όνομα 4K",
+	"settings.requests.choices": "Τι μπορούν να ζητήσουν οι χρήστες",
+	"settings.requests.choicesDesc": "Τα κουμπιά ποιότητας στα παράθυρα αιτήματος, με αυτή τη σειρά. Μετονομάστε ή κρύψτε τα εδώ· τα παιδιά παίρνουν το πρώτο ορατό.",
+	"settings.requests.choiceShown": "Εμφάνιση στους χρήστες",
+	"settings.requests.choiceMain": "{rules} · το κύριο αντίγραφο του τίτλου",
+	"settings.requests.choiceOwn": "{rules} · κρατιέται ως ξεχωριστό αντίγραφο",
+	"settings.requests.choiceNotReady": "Προσφέρεται μόλις οριστεί ποιότητα 4K παραπάνω"
 }

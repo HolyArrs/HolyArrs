@@ -27,7 +27,11 @@ const handLines = { 'Because you have {name}': 'suggest', 'No Downloader has con
 	// metadata.ErrServiceSlow, answered through library.ServiceError.
 	'The metadata server is slow right now. This comes back on its own.': 'metadata',
 	// requests.ErrNotAddedSlow, answered when an approval could not add its title.
-	'The metadata server did not answer in time. It is back in Waiting; approve it again.': 'requests' };
+	'The metadata server did not answer in time. It is back in Waiting; approve it again.': 'requests',
+	// requests: the Quality row's refusals and the approver's note (qualities.go, approve.go CopyKept).
+	'a quality name can be at most 30 characters': 'requests', 'keep at least one quality shown for movies and one for shows': 'requests',
+	'that quality cannot be asked for': 'requests', 'someone already asked for this movie in that quality; decide their ask instead': 'requests',
+	'The quality you picked was not used: this title already has that copy.': 'requests' };
 // Files whose fmt.Sprintf lines are display text (card lines, labels).
 const display = /(accounts[\\/]events|discover[\\/](home|explore_np|title_view)|shows[\\/]episode_labels|requests[\\/](episodes|follows\w*|reports)|health[\\/](health|routes_settings_status)|migrate[\\/]plan_\w+|metadata[\\/]moods)\.go$/;
 

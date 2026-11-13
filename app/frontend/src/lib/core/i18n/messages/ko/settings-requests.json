@@ -42,5 +42,11 @@
 	"settings.requests.fourK": "4K 사본",
 	"settings.requests.fourKDesc": "승인된 4K 요청이 저장되는 곳과 고르는 방식",
 	"settings.requests.fourKSameFolder": "다른 요청과 같음",
-	"settings.requests.fourKNamedRules": "4K라는 이름의 품질"
+	"settings.requests.fourKNamedRules": "4K라는 이름의 품질",
+	"settings.requests.choices": "요청할 수 있는 항목",
+	"settings.requests.choicesDesc": "요청 화면의 품질 버튼이 이 순서로 표시됩니다. 여기서 이름을 바꾸거나 숨길 수 있으며, 어린이 계정은 처음 보이는 버튼을 받습니다.",
+	"settings.requests.choiceShown": "사용자에게 표시",
+	"settings.requests.choiceMain": "{rules} · 타이틀의 기본 사본",
+	"settings.requests.choiceOwn": "{rules} · 별도 사본으로 보관",
+	"settings.requests.choiceNotReady": "위에서 4K 품질을 설정하면 제공됩니다"
 }
