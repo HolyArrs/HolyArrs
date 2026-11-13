@@ -12,7 +12,7 @@
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
-	import { folderMissing } from '#lib/mediafiles/folder-missing.ts';
+	import { folderMissing } from '#lib/mediafiles/index.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { bytes, dateTime, folderHealth, tone } from '#lib/core/format.ts';
