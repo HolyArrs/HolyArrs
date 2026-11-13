@@ -1300,5 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "добавлен в {fallback} как желаемый, без файлов; требует внимания: старой папки {dir} нет на этом сервере; исправьте папку или добавьте правило пути",
 	"server.migrate.will-be-added-to-as-wanted": "будет добавлен в {fallback} как желаемый, без файлов; требует внимания: старой папки {dir} нет на этом сервере; исправьте папку или добавьте правило пути",
 	"server.migrate.its-library-folder-is-not-on": "папки Медиатеки {library} нет на этом сервере, и здесь нет папки Медиатеки для {kind}; добавьте её и импортируйте снова",
-	"server.migrate.left-out-was-left-unchecked-check": "исключено: папка {attnfolder} не отмечена; отметьте её и импортируйте снова"
+	"server.migrate.left-out-was-left-unchecked-check": "исключено: папка {attnfolder} не отмечена; отметьте её и импортируйте снова",
+	"server.migrate.left-out-was-left-unchecked-check-2": "исключено: папка {path} не отмечена; отметьте её и импортируйте снова"
 }

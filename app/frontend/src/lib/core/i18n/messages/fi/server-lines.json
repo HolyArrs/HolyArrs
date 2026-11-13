@@ -1300,5 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "lisätty kohteeseen {fallback} toivottuna ilman tiedostoja; vaatii huomiota: vanhaa kansiota {dir} ei ole tällä palvelimella; korjaa kansio tai lisää polkusääntö",
 	"server.migrate.will-be-added-to-as-wanted": "lisätään kohteeseen {fallback} toivottuna ilman tiedostoja; vaatii huomiota: vanhaa kansiota {dir} ei ole tällä palvelimella; korjaa kansio tai lisää polkusääntö",
 	"server.migrate.its-library-folder-is-not-on": "kirjastokansiota {library} ei ole tällä palvelimella, eikä täällä ole kirjastokansiota tyypille {kind}; lisää sellainen ja tuo uudelleen",
-	"server.migrate.left-out-was-left-unchecked-check": "jätetty pois: {attnfolder} jätettiin valitsematta; valitse se ja tuo uudelleen"
+	"server.migrate.left-out-was-left-unchecked-check": "jätetty pois: {attnfolder} jätettiin valitsematta; valitse se ja tuo uudelleen",
+	"server.migrate.left-out-was-left-unchecked-check-2": "jätetty pois: {path} jätettiin valitsematta; valitse se ja tuo uudelleen"
 }

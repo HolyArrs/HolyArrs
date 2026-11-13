@@ -1300,5 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "bætt í {fallback} sem óskað án skráa; þarfnast athygli: gamla mappan {dir} er ekki á þessum þjóni; lagaðu möppuna eða bættu við slóðarreglu",
 	"server.migrate.will-be-added-to-as-wanted": "verður bætt í {fallback} sem óskað án skráa; þarfnast athygli: gamla mappan {dir} er ekki á þessum þjóni; lagaðu möppuna eða bættu við slóðarreglu",
 	"server.migrate.its-library-folder-is-not-on": "safnmappan {library} er ekki á þessum þjóni og hér er engin safnmappa fyrir {kind}; bættu einni við og fluttu inn aftur",
-	"server.migrate.left-out-was-left-unchecked-check": "sleppt: ekki var hakað við {attnfolder}; hakaðu við hana og fluttu inn aftur"
+	"server.migrate.left-out-was-left-unchecked-check": "sleppt: ekki var hakað við {attnfolder}; hakaðu við hana og fluttu inn aftur",
+	"server.migrate.left-out-was-left-unchecked-check-2": "sleppt: ekki var hakað við {path}; hakaðu við hana og fluttu inn aftur"
 }

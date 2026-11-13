@@ -1300,5 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "pievienots mapē {fallback} kā vēlams, bez failiem; prasa uzmanību: vecās mapes {dir} šajā serverī nav; izlabo mapi vai pievieno ceļa kārtulu",
 	"server.migrate.will-be-added-to-as-wanted": "tiks pievienots mapē {fallback} kā vēlams, bez failiem; prasa uzmanību: vecās mapes {dir} šajā serverī nav; izlabo mapi vai pievieno ceļa kārtulu",
 	"server.migrate.its-library-folder-is-not-on": "bibliotēkas mapes {library} šajā serverī nav, un šeit nav bibliotēkas mapes veidam {kind}; pievieno to un importē vēlreiz",
-	"server.migrate.left-out-was-left-unchecked-check": "izlaists: {attnfolder} netika atzīmēta; atzīmē to un importē vēlreiz"
+	"server.migrate.left-out-was-left-unchecked-check": "izlaists: {attnfolder} netika atzīmēta; atzīmē to un importē vēlreiz",
+	"server.migrate.left-out-was-left-unchecked-check-2": "izlaists: {path} netika atzīmēta; atzīmē to un importē vēlreiz"
 }

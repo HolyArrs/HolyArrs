@@ -1300,5 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "已作为想要的条目添加到 {fallback}，暂无文件；需要注意：旧文件夹 {dir} 不在此服务器上；请修正文件夹或添加路径规则",
 	"server.migrate.will-be-added-to-as-wanted": "将作为想要的条目添加到 {fallback}，暂无文件；需要注意：旧文件夹 {dir} 不在此服务器上；请修正文件夹或添加路径规则",
 	"server.migrate.its-library-folder-is-not-on": "媒体库文件夹 {library} 不在此服务器上，这里也没有 {kind} 的媒体库文件夹；请添加一个后再次导入",
-	"server.migrate.left-out-was-left-unchecked-check": "未包含：{attnfolder} 未勾选；勾选后再次导入"
+	"server.migrate.left-out-was-left-unchecked-check": "未包含：{attnfolder} 未勾选；勾选后再次导入",
+	"server.migrate.left-out-was-left-unchecked-check-2": "未包含：{path} 未勾选；勾选后再次导入"
 }

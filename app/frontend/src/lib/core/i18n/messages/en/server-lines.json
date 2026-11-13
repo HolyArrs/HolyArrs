@@ -1300,5 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "added to {fallback} as wanted with no files; needs attention: its old folder {dir} is not on this server; fix its folder or add a path rule",
 	"server.migrate.its-library-folder-is-not-on": "its Library folder {library} is not on this server, and there is no {kind} Library folder here to add it to; add one and import again",
 	"server.migrate.left-out-was-left-unchecked-check": "left out: {attnfolder} was left unchecked; check it and import again",
-	"server.migrate.will-be-added-to-as-wanted": "will be added to {fallback} as wanted with no files; needs attention: its old folder {dir} is not on this server; fix its folder or add a path rule"
+	"server.migrate.will-be-added-to-as-wanted": "will be added to {fallback} as wanted with no files; needs attention: its old folder {dir} is not on this server; fix its folder or add a path rule",
+	"server.migrate.left-out-was-left-unchecked-check-2": "left out: {path} was left unchecked; check it and import again"
 }

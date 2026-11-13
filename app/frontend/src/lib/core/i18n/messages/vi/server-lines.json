@@ -1300,5 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "đã thêm vào {fallback} dưới dạng cần tìm, chưa có tệp; cần chú ý: thư mục cũ {dir} không có trên máy chủ này; hãy sửa thư mục hoặc thêm quy tắc đường dẫn",
 	"server.migrate.will-be-added-to-as-wanted": "sẽ được thêm vào {fallback} dưới dạng cần tìm, chưa có tệp; cần chú ý: thư mục cũ {dir} không có trên máy chủ này; hãy sửa thư mục hoặc thêm quy tắc đường dẫn",
 	"server.migrate.its-library-folder-is-not-on": "thư mục Thư viện {library} không có trên máy chủ này và ở đây không có thư mục Thư viện nào cho {kind}; hãy thêm một thư mục rồi nhập lại",
-	"server.migrate.left-out-was-left-unchecked-check": "bị bỏ ra: {attnfolder} chưa được chọn; hãy chọn rồi nhập lại"
+	"server.migrate.left-out-was-left-unchecked-check": "bị bỏ ra: {attnfolder} chưa được chọn; hãy chọn rồi nhập lại",
+	"server.migrate.left-out-was-left-unchecked-check-2": "bị bỏ ra: {path} chưa được chọn; hãy chọn rồi nhập lại"
 }

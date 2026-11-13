@@ -1300,5 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "hozzáadva ide: {fallback}, kívántként, fájlok nélkül; figyelmet igényel: a régi mappa ({dir}) nincs ezen a szerveren; javítsd a mappát, vagy adj hozzá útvonalszabályt",
 	"server.migrate.will-be-added-to-as-wanted": "hozzá lesz adva ide: {fallback}, kívántként, fájlok nélkül; figyelmet igényel: a régi mappa ({dir}) nincs ezen a szerveren; javítsd a mappát, vagy adj hozzá útvonalszabályt",
 	"server.migrate.its-library-folder-is-not-on": "a(z) {library} könyvtármappa nincs ezen a szerveren, és itt nincs {kind} könyvtármappa; adj hozzá egyet, és importálj újra",
-	"server.migrate.left-out-was-left-unchecked-check": "kihagyva: a(z) {attnfolder} nem volt bejelölve; jelöld be, és importálj újra"
+	"server.migrate.left-out-was-left-unchecked-check": "kihagyva: a(z) {attnfolder} nem volt bejelölve; jelöld be, és importálj újra",
+	"server.migrate.left-out-was-left-unchecked-check-2": "kihagyva: a(z) {path} nem volt bejelölve; jelöld be, és importálj újra"
 }

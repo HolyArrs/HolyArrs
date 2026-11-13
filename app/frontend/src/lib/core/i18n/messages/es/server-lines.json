@@ -1300,5 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "añadido a {fallback} como deseado, sin archivos; requiere atención: su carpeta antigua {dir} no está en este servidor; corrige su carpeta o añade una regla de ruta",
 	"server.migrate.will-be-added-to-as-wanted": "se añadirá a {fallback} como deseado, sin archivos; requiere atención: su carpeta antigua {dir} no está en este servidor; corrige su carpeta o añade una regla de ruta",
 	"server.migrate.its-library-folder-is-not-on": "su carpeta de biblioteca {library} no está en este servidor y aquí no hay ninguna carpeta de biblioteca de {kind}; añade una e importa de nuevo",
-	"server.migrate.left-out-was-left-unchecked-check": "omitido: {attnfolder} quedó sin marcar; márcala e importa de nuevo"
+	"server.migrate.left-out-was-left-unchecked-check": "omitido: {attnfolder} quedó sin marcar; márcala e importa de nuevo",
+	"server.migrate.left-out-was-left-unchecked-check-2": "omitido: {path} quedó sin marcar; márcala e importa de nuevo"
 }
