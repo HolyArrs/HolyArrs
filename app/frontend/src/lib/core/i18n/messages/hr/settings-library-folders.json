@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Odvojite vrste zarezima, npr. srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs ne vidi {path}. Vidi samo mape montirane u svoj kontejner. Dodajte volumen poput {path}:{inside}, a zatim ovdje upotrijebite {inside}.",
 	"settings.libraryFolders.quality": "Kvaliteta",
-	"settings.libraryFolders.qualityNone": "Koristi zadano",
 	"settings.libraryFolders.qualityHint": "Novi naslovi u ovoj mapi počinju s ovom kvalitetom.",
-	"settings.libraryFolders.qualityOf": "Kvaliteta mape {path}"
+	"settings.libraryFolders.qualityDefault": "Zadano",
+	"settings.libraryFolders.qualityDefaultNamed": "Zadano ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · zadano",
+	"settings.libraryFolders.qualityFor": "Kvaliteta za {name}: {value}"
 }

@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Pisahkan jenis dengan koma, seperti srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs tidak dapat melihat {path}. Ia hanya melihat folder yang di-mount ke dalam bekasnya. Tambah volume seperti {path}:{inside}, kemudian guna {inside} di sini.",
 	"settings.libraryFolders.quality": "Kualiti",
-	"settings.libraryFolders.qualityNone": "Guna lalai",
 	"settings.libraryFolders.qualityHint": "Tajuk baharu dalam folder ini bermula dengan kualiti ini.",
-	"settings.libraryFolders.qualityOf": "Kualiti {path}"
+	"settings.libraryFolders.qualityDefault": "Lalai",
+	"settings.libraryFolders.qualityDefaultNamed": "Lalai ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · lalai",
+	"settings.libraryFolders.qualityFor": "Kualiti untuk {name}: {value}"
 }

@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Χωρίστε τους τύπους με κόμματα, π.χ. srt, ass.",
 	"settings.libraryFolders.notMounted": "Το HolyArrs δεν βλέπει το {path}. Βλέπει μόνο φακέλους που έχουν προσαρτηθεί στο κοντέινερ του. Προσθέστε ένα volume όπως {path}:{inside} και μετά χρησιμοποιήστε εδώ το {inside}.",
 	"settings.libraryFolders.quality": "Ποιότητα",
-	"settings.libraryFolders.qualityNone": "Χρήση προεπιλογής",
 	"settings.libraryFolders.qualityHint": "Οι νέοι τίτλοι σε αυτόν τον φάκελο ξεκινούν με αυτή την ποιότητα.",
-	"settings.libraryFolders.qualityOf": "Ποιότητα του {path}"
+	"settings.libraryFolders.qualityDefault": "Προεπιλογή",
+	"settings.libraryFolders.qualityDefaultNamed": "Προεπιλογή ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · προεπιλογή",
+	"settings.libraryFolders.qualityFor": "Ποιότητα για {name}: {value}"
 }

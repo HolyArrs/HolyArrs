@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Türleri virgülle ayırın, örneğin srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs {path} klasörünü göremiyor. Yalnızca kapsayıcısına bağlanan klasörleri görür. {path}:{inside} gibi bir birim ekleyin, sonra burada {inside} kullanın.",
 	"settings.libraryFolders.quality": "Kalite",
-	"settings.libraryFolders.qualityNone": "Varsayılanı kullan",
 	"settings.libraryFolders.qualityHint": "Bu klasördeki yeni başlıklar bu kaliteyle başlar.",
-	"settings.libraryFolders.qualityOf": "{path} kalitesi"
+	"settings.libraryFolders.qualityDefault": "Varsayılan",
+	"settings.libraryFolders.qualityDefaultNamed": "Varsayılan ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · varsayılan",
+	"settings.libraryFolders.qualityFor": "{name} kalitesi: {value}"
 }

@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Разделяйте типы запятыми, например srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs не видит {path}. Он видит только папки, подключённые к его контейнеру. Добавьте том, например {path}:{inside}, а затем укажите здесь {inside}.",
 	"settings.libraryFolders.quality": "Качество",
-	"settings.libraryFolders.qualityNone": "Использовать по умолчанию",
 	"settings.libraryFolders.qualityHint": "Новые тайтлы в этой папке начинают с такого качества.",
-	"settings.libraryFolders.qualityOf": "Качество для {path}"
+	"settings.libraryFolders.qualityDefault": "По умолчанию",
+	"settings.libraryFolders.qualityDefaultNamed": "По умолчанию ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · по умолчанию",
+	"settings.libraryFolders.qualityFor": "Качество для {name}: {value}"
 }

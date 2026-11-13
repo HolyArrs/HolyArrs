@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "प्रकारों को कॉमा से अलग करें, जैसे srt, ass।",
 	"settings.libraryFolders.notMounted": "HolyArrs को {path} नहीं दिखता। उसे सिर्फ़ वही फ़ोल्डर दिखते हैं जो उसके कंटेनर में माउंट हैं। {path}:{inside} जैसा एक वॉल्यूम जोड़ें, फिर यहाँ {inside} इस्तेमाल करें।",
 	"settings.libraryFolders.quality": "क्वालिटी",
-	"settings.libraryFolders.qualityNone": "डिफ़ॉल्ट इस्तेमाल करें",
 	"settings.libraryFolders.qualityHint": "इस फ़ोल्डर के नए शीर्षक इसी गुणवत्ता से शुरू होते हैं।",
-	"settings.libraryFolders.qualityOf": "{path} की गुणवत्ता"
+	"settings.libraryFolders.qualityDefault": "डिफ़ॉल्ट",
+	"settings.libraryFolders.qualityDefaultNamed": "डिफ़ॉल्ट ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · डिफ़ॉल्ट",
+	"settings.libraryFolders.qualityFor": "{name} की क्वालिटी: {value}"
 }

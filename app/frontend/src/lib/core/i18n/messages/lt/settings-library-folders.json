@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Tipus atskirkite kableliais, pvz., srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs nemato {path}. Jis mato tik į savo konteinerį prijungtus aplankus. Pridėkite tomą, pvz., {path}:{inside}, tada čia naudokite {inside}.",
 	"settings.libraryFolders.quality": "Kokybė",
-	"settings.libraryFolders.qualityNone": "Naudoti numatytąją",
 	"settings.libraryFolders.qualityHint": "Nauji šio aplanko pavadinimai prasideda su šia kokybe.",
-	"settings.libraryFolders.qualityOf": "Aplanko {path} kokybė"
+	"settings.libraryFolders.qualityDefault": "Numatytoji",
+	"settings.libraryFolders.qualityDefaultNamed": "Numatytoji ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · numatytoji",
+	"settings.libraryFolders.qualityFor": "Kokybė – {name}: {value}"
 }

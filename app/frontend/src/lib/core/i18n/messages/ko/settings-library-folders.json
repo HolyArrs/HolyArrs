@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "형식은 쉼표로 구분하세요(예: srt, ass).",
 	"settings.libraryFolders.notMounted": "HolyArrs에서 {path}이(가) 보이지 않습니다. 컨테이너에 마운트된 폴더만 볼 수 있습니다. {path}:{inside} 같은 볼륨을 추가한 다음 여기에 {inside}을(를) 입력하세요.",
 	"settings.libraryFolders.quality": "품질",
-	"settings.libraryFolders.qualityNone": "기본값 사용",
 	"settings.libraryFolders.qualityHint": "이 폴더의 새 작품은 이 화질로 시작합니다.",
-	"settings.libraryFolders.qualityOf": "{path}의 화질"
+	"settings.libraryFolders.qualityDefault": "기본값",
+	"settings.libraryFolders.qualityDefaultNamed": "기본값 ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · 기본값",
+	"settings.libraryFolders.qualityFor": "{name} 품질: {value}"
 }
