@@ -128,6 +128,7 @@ export interface SeasonSummary {
 	downloading?: number;
 	failed?: number;
 	next_air_date?: string;
+	next_air_day?: string;
 	dropped?: boolean;
 }
 
