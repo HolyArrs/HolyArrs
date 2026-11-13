@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "استُورد من قبل؛ يحصل على تسجيل الدخول عبر {way}",
 	"server.migrate.imported-before-got-their-sign-in": "استُورد من قبل؛ حصل على تسجيل الدخول عبر {way}",
 	"server.migrate.imported-before-their-account-signs-in": "استُورد من قبل؛ حساب {way} الخاص به يسجّل الدخول باسم {name} هنا، فيبقى كما هو",
-	"server.migrate.people-who-signed-in-to-the": "الأشخاص الذين سجّلوا الدخول إلى التطبيق القديم عبر Plex أو Jellyfin أو Emby يُفعَّلون عند أول تسجيل دخول لهم بهذه الطريقة، بمجرد تشغيلها من الإعدادات > تسجيل الدخول والأمان."
+	"server.migrate.people-who-signed-in-to-the": "الأشخاص الذين سجّلوا الدخول إلى التطبيق القديم عبر Plex أو Jellyfin أو Emby يُفعَّلون عند أول تسجيل دخول لهم بهذه الطريقة، بمجرد تشغيلها من الإعدادات > تسجيل الدخول والأمان.",
+	"server.sources.this-release-does-not-match-an": "لا يطابق هذا الإصدار أي حلقة يبحث عنها HolyArrs. لاستخدامه على أي حال، اختره من الحلقة التي يخصها."
 }

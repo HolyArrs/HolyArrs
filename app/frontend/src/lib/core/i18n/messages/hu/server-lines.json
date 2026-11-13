@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "korábban importálva; megkapja a {way}-bejelentkezését",
 	"server.migrate.imported-before-got-their-sign-in": "korábban importálva; megkapta a {way}-bejelentkezését",
 	"server.migrate.imported-before-their-account-signs-in": "korábban importálva; a {way}-fiókja itt {name} néven jelentkezik be, így ez marad",
-	"server.migrate.people-who-signed-in-to-the": "Akik a régi alkalmazásba Plex, Jellyfin vagy Emby fiókkal jelentkeztek be, az első így történő bejelentkezésükkor kapcsolnak be, amint ez be van kapcsolva a Beállítások > Bejelentkezés és biztonság alatt."
+	"server.migrate.people-who-signed-in-to-the": "Akik a régi alkalmazásba Plex, Jellyfin vagy Emby fiókkal jelentkeztek be, az első így történő bejelentkezésükkor kapcsolnak be, amint ez be van kapcsolva a Beállítások > Bejelentkezés és biztonság alatt.",
+	"server.sources.this-release-does-not-match-an": "Ez a release nem felel meg egyetlen olyan epizódnak sem, amelyet a HolyArrs keres. Ha mégis használni szeretnéd, annál az epizódnál válaszd ki, amelyhez tartozik."
 }

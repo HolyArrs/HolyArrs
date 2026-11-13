@@ -400,6 +400,9 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			if g := p.Group.Value; g != "" {
 				f.Group = &g
 			}
+			if f.Protected, err = mediafiles.TakeNotesAtTx(ctx, tx, ver.ID, f.RelativePath); err != nil {
+				return err
+			}
 			id, err := database.Insert(tx, "files", f, by)
 			if err != nil {
 				return err

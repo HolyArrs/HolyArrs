@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "importat abans; rep el seu inici de sessió amb {way}",
 	"server.migrate.imported-before-got-their-sign-in": "importat abans; ha rebut el seu inici de sessió amb {way}",
 	"server.migrate.imported-before-their-account-signs-in": "importat abans; el seu compte de {way} inicia la sessió com a {name} aquí, així que es queda així",
-	"server.migrate.people-who-signed-in-to-the": "Les persones que iniciaven la sessió a l'aplicació antiga amb Plex, Jellyfin o Emby s'activen en el seu primer inici de sessió d'aquesta manera, quan ho activis a Configuració > Inici de sessió i seguretat."
+	"server.migrate.people-who-signed-in-to-the": "Les persones que iniciaven la sessió a l'aplicació antiga amb Plex, Jellyfin o Emby s'activen en el seu primer inici de sessió d'aquesta manera, quan ho activis a Configuració > Inici de sessió i seguretat.",
+	"server.sources.this-release-does-not-match-an": "Aquest Llançament no coincideix amb cap episodi que HolyArrs estigui buscant. Per fer-lo servir igualment, tria'l des de l'episodi al qual correspon."
 }

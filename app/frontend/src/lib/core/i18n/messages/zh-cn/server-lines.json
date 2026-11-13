@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "之前已导入；会获得 {way} 登录",
 	"server.migrate.imported-before-got-their-sign-in": "之前已导入；已获得 {way} 登录",
 	"server.migrate.imported-before-their-account-signs-in": "之前已导入；他们的 {way} 账户在这里以 {name} 的身份登录，所以保持不变",
-	"server.migrate.people-who-signed-in-to-the": "在旧应用中用 Plex、Jellyfin 或 Emby 登录的成员，在 设置 > 登录与安全 中开启该方式后，首次用这种方式登录时启用。"
+	"server.migrate.people-who-signed-in-to-the": "在旧应用中用 Plex、Jellyfin 或 Emby 登录的成员，在 设置 > 登录与安全 中开启该方式后，首次用这种方式登录时启用。",
+	"server.sources.this-release-does-not-match-an": "这个资源与 HolyArrs 正在寻找的任何一集都不匹配。如果仍要使用，请在它所属的那一集中选择它。"
 }

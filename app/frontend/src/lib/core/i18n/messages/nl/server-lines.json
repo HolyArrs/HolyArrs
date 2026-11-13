@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "eerder geïmporteerd; krijgt de aanmelding met {way}",
 	"server.migrate.imported-before-got-their-sign-in": "eerder geïmporteerd; kreeg de aanmelding met {way}",
 	"server.migrate.imported-before-their-account-signs-in": "eerder geïmporteerd; hun {way}-account meldt hier aan als {name}, dus dat blijft zo",
-	"server.migrate.people-who-signed-in-to-the": "Mensen die in de oude app aanmeldden met Plex, Jellyfin of Emby gaan aan bij hun eerste aanmelding op die manier, zodra die aan staat onder Instellingen > Aanmelden en beveiliging."
+	"server.migrate.people-who-signed-in-to-the": "Mensen die in de oude app aanmeldden met Plex, Jellyfin of Emby gaan aan bij hun eerste aanmelding op die manier, zodra die aan staat onder Instellingen > Aanmelden en beveiliging.",
+	"server.sources.this-release-does-not-match-an": "Deze release past bij geen aflevering waar HolyArrs naar zoekt. Wil je hem toch gebruiken, kies hem dan bij de aflevering waar hij bij hoort."
 }

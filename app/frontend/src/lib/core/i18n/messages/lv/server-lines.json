@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "importēts iepriekš; saņem pieteikšanos ar {way}",
 	"server.migrate.imported-before-got-their-sign-in": "importēts iepriekš; saņēma pieteikšanos ar {way}",
 	"server.migrate.imported-before-their-account-signs-in": "importēts iepriekš; viņa {way} konts šeit piesakās kā {name}, tāpēc tā arī paliek",
-	"server.migrate.people-who-signed-in-to-the": "Cilvēki, kas vecajā lietotnē pieteicās ar Plex, Jellyfin vai Emby, ieslēdzas pirmajā šādā pieteikšanās reizē, tiklīdz tas ir ieslēgts sadaļā Iestatījumi > Pieteikšanās un drošība."
+	"server.migrate.people-who-signed-in-to-the": "Cilvēki, kas vecajā lietotnē pieteicās ar Plex, Jellyfin vai Emby, ieslēdzas pirmajā šādā pieteikšanās reizē, tiklīdz tas ir ieslēgts sadaļā Iestatījumi > Pieteikšanās un drošība.",
+	"server.sources.this-release-does-not-match-an": "Šis Izlaidums neatbilst nevienai sērijai, ko HolyArrs meklē. Ja tomēr vēlies to izmantot, izvēlies to pie sērijas, kurai tas paredzēts."
 }

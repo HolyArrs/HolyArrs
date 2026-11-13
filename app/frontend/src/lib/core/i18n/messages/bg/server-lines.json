@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "импортирано преди; получава вход с {way}",
 	"server.migrate.imported-before-got-their-sign-in": "импортирано преди; получи вход с {way}",
 	"server.migrate.imported-before-their-account-signs-in": "импортирано преди; акаунтът му в {way} влиза като {name} тук, така че остава така",
-	"server.migrate.people-who-signed-in-to-the": "Хората, които влизаха в старото приложение с Plex, Jellyfin или Emby, се включват при първия си вход по този начин, щом го включите от Настройки > Вход и сигурност."
+	"server.migrate.people-who-signed-in-to-the": "Хората, които влизаха в старото приложение с Plex, Jellyfin или Emby, се включват при първия си вход по този начин, щом го включите от Настройки > Вход и сигурност.",
+	"server.sources.this-release-does-not-match-an": "Този релийз не отговаря на епизод, който HolyArrs търси. За да го използваш все пак, избери го от епизода, за който е."
 }

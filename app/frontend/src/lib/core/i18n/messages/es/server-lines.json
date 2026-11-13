@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "ya importado antes; recibe su inicio de sesión con {way}",
 	"server.migrate.imported-before-got-their-sign-in": "ya importado antes; recibió su inicio de sesión con {way}",
 	"server.migrate.imported-before-their-account-signs-in": "ya importado antes; su cuenta de {way} inicia sesión como {name} aquí, así que se queda así",
-	"server.migrate.people-who-signed-in-to-the": "Las personas que iniciaban sesión en la app antigua con Plex, Jellyfin o Emby se activan en su primer inicio de sesión de esa forma, cuando la actives en Ajustes > Inicio de sesión y seguridad."
+	"server.migrate.people-who-signed-in-to-the": "Las personas que iniciaban sesión en la app antigua con Plex, Jellyfin o Emby se activan en su primer inicio de sesión de esa forma, cuando la actives en Ajustes > Inicio de sesión y seguridad.",
+	"server.sources.this-release-does-not-match-an": "Este lanzamiento no coincide con ningún episodio que HolyArrs esté buscando. Para usarlo de todos modos, elígelo desde el episodio al que corresponde."
 }

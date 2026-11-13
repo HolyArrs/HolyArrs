@@ -503,11 +503,15 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 	health := []ClientHealth{}
 	if manage {
 		outside, health = a.clientRows(ctx, names, shown)
-		// HolyArrs' own torrents take the ratio the reader's snapshot saw.
+		// HolyArrs' own torrents take the ratio and the real size the reader's
+		// snapshot saw (the pane shows that size too).
 		if a.DLSync != nil {
 			for i := range rows {
 				if rows[i].Ratio == nil && rows[i].Protocol == "torrent" {
 					rows[i].Ratio = a.storeRatio(rows[i].DownloaderID, rows[i].Hash)
+				}
+				if s := a.storeSize(rows[i].DownloaderID, rows[i].Hash); s > 0 && rows[i].Protocol == "torrent" {
+					rows[i].Size = s
 				}
 			}
 		}

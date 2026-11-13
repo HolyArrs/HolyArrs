@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "уже імпортовано раніше; отримує вхід через {way}",
 	"server.migrate.imported-before-got-their-sign-in": "уже імпортовано раніше; отримав вхід через {way}",
 	"server.migrate.imported-before-their-account-signs-in": "уже імпортовано раніше; його обліковий запис {way} входить тут як {name}, тож так і лишається",
-	"server.migrate.people-who-signed-in-to-the": "Люди, які входили в старий застосунок через Plex, Jellyfin або Emby, увімкнуться під час першого входу цим способом, щойно ти його ввімкнеш у Налаштування > Вхід і безпека."
+	"server.migrate.people-who-signed-in-to-the": "Люди, які входили в старий застосунок через Plex, Jellyfin або Emby, увімкнуться під час першого входу цим способом, щойно ти його ввімкнеш у Налаштування > Вхід і безпека.",
+	"server.sources.this-release-does-not-match-an": "Цей реліз не відповідає жодній серії, яку шукає HolyArrs. Щоб усе одно його використати, виберіть його в серії, до якої він належить."
 }

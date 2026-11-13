@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "раније увезено; добија пријаву преко {way}",
 	"server.migrate.imported-before-got-their-sign-in": "раније увезено; добио је пријаву преко {way}",
 	"server.migrate.imported-before-their-account-signs-in": "раније увезено; његов {way} налог се овде пријављује као {name}, па остаје тако",
-	"server.migrate.people-who-signed-in-to-the": "Људи који су се у стару апликацију пријављивали преко Plex, Jellyfin или Emby укључују се при првој пријави на тај начин, чим то укључиш у Подешавања > Пријава и безбедност."
+	"server.migrate.people-who-signed-in-to-the": "Људи који су се у стару апликацију пријављивали преко Plex, Jellyfin или Emby укључују се при првој пријави на тај начин, чим то укључиш у Подешавања > Пријава и безбедност.",
+	"server.sources.this-release-does-not-match-an": "Ово Издање не одговара ниједној епизоди коју HolyArrs тражи. Ако ипак желиш да га користиш, изабери га код епизоде којој припада."
 }

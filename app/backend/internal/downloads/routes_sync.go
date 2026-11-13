@@ -114,6 +114,15 @@ func (a *Web) storeRatio(downloaderID int64, hash string) *float64 {
 	return &r
 }
 
+// storeSize is the size the reader's snapshot saw for one of HolyArrs' own
+// torrents; 0 when it has none.
+func (a *Web) storeSize(downloaderID int64, hash string) int64 {
+	if hash == "" {
+		return 0
+	}
+	return a.DLSync.Store.Current(downloaderID).Items[strings.ToLower(hash)].Size
+}
+
 func sortDownloaders(ds []domain.Downloader) {
 	sort.Slice(ds, func(i, j int) bool {
 		if ds[i].Priority != ds[j].Priority {
