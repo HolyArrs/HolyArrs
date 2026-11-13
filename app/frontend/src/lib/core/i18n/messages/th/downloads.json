@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "ไม่ได้ดาวน์โหลด: ไฟล์ที่พบต้องใช้ตัวดาวน์โหลดทอร์เรนต์ แต่ยังไม่ได้ตั้งค่าไว้เลย",
 	"downloads.noDl.add": "เพิ่มตัวดาวน์โหลด",
 	"downloads.hl.noUsenetDl": "ยังไม่ได้ตั้งค่าตัวดาวน์โหลด Usenet",
-	"downloads.hl.noTorrentDl": "ยังไม่ได้ตั้งค่าตัวดาวน์โหลดทอร์เรนต์"
+	"downloads.hl.noTorrentDl": "ยังไม่ได้ตั้งค่าตัวดาวน์โหลดทอร์เรนต์",
+	"downloads.problem.importBlocked": "การนำเข้าถูกบล็อก",
+	"downloads.problem.missingArticles": "บทความขาดหาย",
+	"downloads.problem.noFullCopy": "ไม่มีสำเนาเต็ม",
+	"downloads.problem.noPeers": "ไม่มีเพียร์",
+	"downloads.problem.repairNeeded": "ต้องซ่อมแซม"
 }

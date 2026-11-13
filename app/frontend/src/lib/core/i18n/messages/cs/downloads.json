@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Nestahuje se: nalezená stahování potřebují stahovač torrentů a žádný není nastavený.",
 	"downloads.noDl.add": "Přidat stahovač",
 	"downloads.hl.noUsenetDl": "není nastavený žádný stahovač pro Usenet",
-	"downloads.hl.noTorrentDl": "není nastavený žádný stahovač torrentů"
+	"downloads.hl.noTorrentDl": "není nastavený žádný stahovač torrentů",
+	"downloads.problem.importBlocked": "Import zablokován",
+	"downloads.problem.missingArticles": "Chybějící články",
+	"downloads.problem.noFullCopy": "Žádná úplná kopie",
+	"downloads.problem.noPeers": "Žádní peeři",
+	"downloads.problem.repairNeeded": "Nutná oprava"
 }

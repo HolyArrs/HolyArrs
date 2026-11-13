@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Nesisiunčiama: rastiems atsisiuntimams reikia torrentų atsisiuntėjo, o nė vienas nenustatytas.",
 	"downloads.noDl.add": "Pridėti atsisiuntėją",
 	"downloads.hl.noUsenetDl": "nenustatytas joks Usenet atsisiuntėjas",
-	"downloads.hl.noTorrentDl": "nenustatytas joks torrentų atsisiuntėjas"
+	"downloads.hl.noTorrentDl": "nenustatytas joks torrentų atsisiuntėjas",
+	"downloads.problem.importBlocked": "Importavimas užblokuotas",
+	"downloads.problem.missingArticles": "Trūksta straipsnių",
+	"downloads.problem.noFullCopy": "Nėra pilnos kopijos",
+	"downloads.problem.noPeers": "Nėra siuntėjų",
+	"downloads.problem.repairNeeded": "Reikia taisymo"
 }

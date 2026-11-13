@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Vẫn còn trong {app}",
 	"downloads.dp.openDownloaders": "Mở Trình tải",
 	"downloads.ot.fromOldApps": "Từ các ứng dụng cũ ({n})",
-	"downloads.ot.importAgain": "Nhập lại để cập nhật các phép thử; điểm của chúng có thể đổi trong từng Quy tắc chọn",
+	"downloads.ot.importAgain": "Nhập lại để cập nhật các phép thử; điểm của chúng có thể đổi trong Quy tắc chọn",
 	"downloads.ot.fromApp": "Từ {app}",
 	"downloads.ot.kindEdition": "phiên bản",
 	"downloads.ot.kindLanguage": "ngôn ngữ",
@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Không tải: các bản tải tìm được cần trình tải torrent, nhưng chưa thiết lập trình nào.",
 	"downloads.noDl.add": "Thêm trình tải",
 	"downloads.hl.noUsenetDl": "chưa thiết lập trình tải Usenet nào",
-	"downloads.hl.noTorrentDl": "chưa thiết lập trình tải torrent nào"
+	"downloads.hl.noTorrentDl": "chưa thiết lập trình tải torrent nào",
+	"downloads.problem.importBlocked": "Nhập bị chặn",
+	"downloads.problem.missingArticles": "Thiếu bài",
+	"downloads.problem.noFullCopy": "Không có bản đầy đủ",
+	"downloads.problem.noPeers": "Không có peer",
+	"downloads.problem.repairNeeded": "Cần sửa chữa"
 }

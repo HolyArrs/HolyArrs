@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Aún en {app}",
 	"downloads.dp.openDownloaders": "Abrir gestores de descarga",
 	"downloads.ot.fromOldApps": "De las apps antiguas ({n})",
-	"downloads.ot.importAgain": "Vuelve a importar para actualizar sus pruebas; sus puntos se pueden cambiar en cada Reglas de elección",
+	"downloads.ot.importAgain": "Vuelve a importar para actualizar sus pruebas; sus puntos se pueden cambiar en Reglas de elección",
 	"downloads.ot.fromApp": "De {app}",
 	"downloads.ot.kindEdition": "edición",
 	"downloads.ot.kindLanguage": "idioma",
@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "No se descarga: las descargas encontradas necesitan un gestor de descargas de torrents y no hay ninguno configurado.",
 	"downloads.noDl.add": "Añadir un gestor de descargas",
 	"downloads.hl.noUsenetDl": "no hay ningún gestor de descargas Usenet configurado",
-	"downloads.hl.noTorrentDl": "no hay ningún gestor de descargas de torrents configurado"
+	"downloads.hl.noTorrentDl": "no hay ningún gestor de descargas de torrents configurado",
+	"downloads.problem.importBlocked": "Importación bloqueada",
+	"downloads.problem.missingArticles": "Faltan artículos",
+	"downloads.problem.noFullCopy": "Sin copia completa",
+	"downloads.problem.noPeers": "Sin pares",
+	"downloads.problem.repairNeeded": "Requiere reparación"
 }

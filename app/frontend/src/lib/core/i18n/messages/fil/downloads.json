@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Nasa {app} pa rin",
 	"downloads.dp.openDownloaders": "Buksan ang Mga Downloader",
 	"downloads.ot.fromOldApps": "Mula sa mga lumang app ({n})",
-	"downloads.ot.importAgain": "Mag-import ulit para ma-update ang kanilang mga test; mapapalitan ang kanilang puntos sa bawat Mga panuntunan sa pagpili",
+	"downloads.ot.importAgain": "Mag-import ulit para ma-update ang kanilang mga test; mapapalitan ang kanilang puntos sa Mga panuntunan sa pagpili",
 	"downloads.ot.fromApp": "Mula sa {app}",
 	"downloads.ot.kindEdition": "edisyon",
 	"downloads.ot.kindLanguage": "wika",
@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Hindi nagda-download: kailangan ng mga nahanap na download ang isang torrent Downloader, at walang naka-set up.",
 	"downloads.noDl.add": "Magdagdag ng Downloader",
 	"downloads.hl.noUsenetDl": "walang naka-set up na Usenet Downloader",
-	"downloads.hl.noTorrentDl": "walang naka-set up na torrent Downloader"
+	"downloads.hl.noTorrentDl": "walang naka-set up na torrent Downloader",
+	"downloads.problem.importBlocked": "Naka-block ang import",
+	"downloads.problem.missingArticles": "Kulang na mga article",
+	"downloads.problem.noFullCopy": "Walang buong kopya",
+	"downloads.problem.noPeers": "Walang peer",
+	"downloads.problem.repairNeeded": "Kailangang ayusin"
 }

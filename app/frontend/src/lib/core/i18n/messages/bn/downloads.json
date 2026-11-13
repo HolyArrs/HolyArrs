@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "ডাউনলোড হচ্ছে না: পাওয়া ডাউনলোডগুলোর জন্য একটি টরেন্ট ডাউনলোডার দরকার, কিন্তু কোনোটি সেট আপ করা নেই।",
 	"downloads.noDl.add": "একটি ডাউনলোডার যোগ করুন",
 	"downloads.hl.noUsenetDl": "কোনো Usenet ডাউনলোডার সেট আপ করা নেই",
-	"downloads.hl.noTorrentDl": "কোনো টরেন্ট ডাউনলোডার সেট আপ করা নেই"
+	"downloads.hl.noTorrentDl": "কোনো টরেন্ট ডাউনলোডার সেট আপ করা নেই",
+	"downloads.problem.importBlocked": "ইমপোর্ট আটকে আছে",
+	"downloads.problem.missingArticles": "আর্টিকেল অনুপস্থিত",
+	"downloads.problem.noFullCopy": "পূর্ণ কপি নেই",
+	"downloads.problem.noPeers": "কোনো পিয়ার নেই",
+	"downloads.problem.repairNeeded": "মেরামত দরকার"
 }

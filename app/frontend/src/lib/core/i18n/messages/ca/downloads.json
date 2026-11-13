@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Encara a {app}",
 	"downloads.dp.openDownloaders": "Obre Gestors de baixades",
 	"downloads.ot.fromOldApps": "De les apps antigues ({n})",
-	"downloads.ot.importAgain": "Torna a importar per actualitzar-ne les proves; els punts es poden canviar a cada Regles d'elecció",
+	"downloads.ot.importAgain": "Torna a importar per actualitzar-ne les proves; els punts es poden canviar a les Regles d'elecció",
 	"downloads.ot.fromApp": "De {app}",
 	"downloads.ot.kindEdition": "edició",
 	"downloads.ot.kindLanguage": "idioma",
@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "No es baixa: les baixades trobades necessiten un gestor de baixades de torrents i no n'hi ha cap de configurat.",
 	"downloads.noDl.add": "Afegeix un gestor de baixades",
 	"downloads.hl.noUsenetDl": "no hi ha cap gestor de baixades Usenet configurat",
-	"downloads.hl.noTorrentDl": "no hi ha cap gestor de baixades de torrents configurat"
+	"downloads.hl.noTorrentDl": "no hi ha cap gestor de baixades de torrents configurat",
+	"downloads.problem.importBlocked": "Importació bloquejada",
+	"downloads.problem.missingArticles": "Falten articles",
+	"downloads.problem.noFullCopy": "Cap còpia completa",
+	"downloads.problem.noPeers": "Cap parell",
+	"downloads.problem.repairNeeded": "Cal reparar"
 }

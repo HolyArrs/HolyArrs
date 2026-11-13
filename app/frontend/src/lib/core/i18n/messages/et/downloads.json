@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Alles rakenduses {app}",
 	"downloads.dp.openDownloaders": "Ava Allalaadijad",
 	"downloads.ot.fromOldApps": "Vanadest rakendustest ({n})",
-	"downloads.ot.importAgain": "Impordi uuesti, et nende teste uuendada; nende punkte saab muuta igas Valikureeglites",
+	"downloads.ot.importAgain": "Impordi uuesti, et nende teste uuendada; nende punkte saab muuta Valikureeglites",
 	"downloads.ot.fromApp": "Rakendusest {app}",
 	"downloads.ot.kindEdition": "väljaanne",
 	"downloads.ot.kindLanguage": "keel",
@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Ei laadi alla: leitud allalaadimised vajavad torrentite allalaadijat, aga ühtegi pole seadistatud.",
 	"downloads.noDl.add": "Lisa allalaadija",
 	"downloads.hl.noUsenetDl": "ühtegi Useneti allalaadijat pole seadistatud",
-	"downloads.hl.noTorrentDl": "ühtegi torrentite allalaadijat pole seadistatud"
+	"downloads.hl.noTorrentDl": "ühtegi torrentite allalaadijat pole seadistatud",
+	"downloads.problem.importBlocked": "Import blokeeritud",
+	"downloads.problem.missingArticles": "Puuduvad artiklid",
+	"downloads.problem.noFullCopy": "Täielikku koopiat pole",
+	"downloads.problem.noPeers": "Partnereid pole",
+	"downloads.problem.repairNeeded": "Vajab parandamist"
 }

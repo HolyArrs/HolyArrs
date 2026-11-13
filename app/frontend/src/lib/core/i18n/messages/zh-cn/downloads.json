@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "未在下载：找到的下载需要种子下载器，但尚未设置任何下载器。",
 	"downloads.noDl.add": "添加下载器",
 	"downloads.hl.noUsenetDl": "尚未设置 Usenet 下载器",
-	"downloads.hl.noTorrentDl": "尚未设置种子下载器"
+	"downloads.hl.noTorrentDl": "尚未设置种子下载器",
+	"downloads.problem.importBlocked": "导入被阻止",
+	"downloads.problem.missingArticles": "缺少文章",
+	"downloads.problem.noFullCopy": "没有完整副本",
+	"downloads.problem.noPeers": "没有对等方",
+	"downloads.problem.repairNeeded": "需要修复"
 }

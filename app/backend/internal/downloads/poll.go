@@ -179,6 +179,7 @@ func (m *Manager) Run(ctx context.Context) {
 		if time.Since(checked) >= every {
 			m.CheckAll(ctx)
 			m.tidy(ctx)
+			m.settleAttempts(ctx)
 			m.settleLostChoices(ctx)
 			checked = time.Now()
 		}

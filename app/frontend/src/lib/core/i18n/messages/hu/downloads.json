@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Még a(z) {app} alkalmazásban",
 	"downloads.dp.openDownloaders": "Letöltők megnyitása",
 	"downloads.ot.fromOldApps": "Régi alkalmazásokból ({n})",
-	"downloads.ot.importAgain": "Importáld újra a tesztjeik frissítéséhez; a pontjaik minden Kiválasztási szabályokban módosíthatók",
+	"downloads.ot.importAgain": "Importáld újra a tesztjeik frissítéséhez; a pontjaik a Kiválasztási szabályokban módosíthatók",
 	"downloads.ot.fromApp": "Innen: {app}",
 	"downloads.ot.kindEdition": "kiadás",
 	"downloads.ot.kindLanguage": "nyelv",
@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Nincs letöltés: a talált letöltésekhez torrentletöltő kell, de egy sincs beállítva.",
 	"downloads.noDl.add": "Letöltő hozzáadása",
 	"downloads.hl.noUsenetDl": "nincs beállítva Usenet-letöltő",
-	"downloads.hl.noTorrentDl": "nincs beállítva torrentletöltő"
+	"downloads.hl.noTorrentDl": "nincs beállítva torrentletöltő",
+	"downloads.problem.importBlocked": "Importálás letiltva",
+	"downloads.problem.missingArticles": "Hiányzó cikkek",
+	"downloads.problem.noFullCopy": "Nincs teljes másolat",
+	"downloads.problem.noPeers": "Nincsenek peerek",
+	"downloads.problem.repairNeeded": "Javítás szükséges"
 }

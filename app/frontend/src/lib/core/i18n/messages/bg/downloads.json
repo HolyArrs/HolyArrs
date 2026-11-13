@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Все още в {app}",
 	"downloads.dp.openDownloaders": "Отваряне на Програми за изтегляне",
 	"downloads.ot.fromOldApps": "От старите приложения ({n})",
-	"downloads.ot.importAgain": "Импортирай отново, за да обновиш проверките им; точките им могат да се сменят във всеки Правила за избор",
+	"downloads.ot.importAgain": "Импортирай отново, за да обновиш проверките им; точките им могат да се сменят в Правила за избор",
 	"downloads.ot.fromApp": "От {app}",
 	"downloads.ot.kindEdition": "издание",
 	"downloads.ot.kindLanguage": "език",
@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Не се изтегля: намерените изтегляния изискват програма за изтегляне на торенти, а няма настроена.",
 	"downloads.noDl.add": "Добави програма за изтегляне",
 	"downloads.hl.noUsenetDl": "няма настроена програма за изтегляне от Usenet",
-	"downloads.hl.noTorrentDl": "няма настроена програма за изтегляне на торенти"
+	"downloads.hl.noTorrentDl": "няма настроена програма за изтегляне на торенти",
+	"downloads.problem.importBlocked": "Импортът е блокиран",
+	"downloads.problem.missingArticles": "Липсващи статии",
+	"downloads.problem.noFullCopy": "Няма пълно копие",
+	"downloads.problem.noPeers": "Няма пиъри",
+	"downloads.problem.repairNeeded": "Нужен е ремонт"
 }

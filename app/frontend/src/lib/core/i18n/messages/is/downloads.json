@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Sækir ekki: niðurhölin sem fundust þurfa torrent-niðurhalara og enginn er uppsettur.",
 	"downloads.noDl.add": "Bæta við niðurhalara",
 	"downloads.hl.noUsenetDl": "enginn Usenet-niðurhalari er uppsettur",
-	"downloads.hl.noTorrentDl": "enginn torrent-niðurhalari er uppsettur"
+	"downloads.hl.noTorrentDl": "enginn torrent-niðurhalari er uppsettur",
+	"downloads.problem.importBlocked": "Innflutningur lokaður",
+	"downloads.problem.missingArticles": "Greinar vantar",
+	"downloads.problem.noFullCopy": "Engin heil afrit",
+	"downloads.problem.noPeers": "Engir jafningjar",
+	"downloads.problem.repairNeeded": "Viðgerðar þörf"
 }

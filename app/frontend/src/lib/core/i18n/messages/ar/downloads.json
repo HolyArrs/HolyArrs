@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "لا يزال في {app}",
 	"downloads.dp.openDownloaders": "فتح برامج التنزيل",
 	"downloads.ot.fromOldApps": "من التطبيقات القديمة ‏({n})",
-	"downloads.ot.importAgain": "استورد مرة أخرى لتحديث اختباراتها؛ يمكن تغيير نقاطها في كل قواعد اختيار",
+	"downloads.ot.importAgain": "استورد مرة أخرى لتحديث اختباراتها؛ يمكن تغيير نقاطها في قواعد اختيار",
 	"downloads.ot.fromApp": "من {app}",
 	"downloads.ot.kindEdition": "الإصدار",
 	"downloads.ot.kindLanguage": "اللغة",
@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "لا يجري التنزيل: التنزيلات التي وُجدت تحتاج إلى برنامج تنزيل تورنت، ولم يُعدّ أي منها.",
 	"downloads.noDl.add": "أضف برنامج تنزيل",
 	"downloads.hl.noUsenetDl": "لم يُعدّ أي برنامج تنزيل Usenet",
-	"downloads.hl.noTorrentDl": "لم يُعدّ أي برنامج تنزيل تورنت"
+	"downloads.hl.noTorrentDl": "لم يُعدّ أي برنامج تنزيل تورنت",
+	"downloads.problem.importBlocked": "الاستيراد متوقف",
+	"downloads.problem.missingArticles": "مقالات مفقودة",
+	"downloads.problem.noFullCopy": "لا توجد نسخة كاملة",
+	"downloads.problem.noPeers": "لا يوجد نظراء",
+	"downloads.problem.repairNeeded": "يلزم الإصلاح"
 }

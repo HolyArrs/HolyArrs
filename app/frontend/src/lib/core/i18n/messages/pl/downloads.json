@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Nie pobiera: znalezione pobrania wymagają downloadera torrentów, a żaden nie jest skonfigurowany.",
 	"downloads.noDl.add": "Dodaj downloader",
 	"downloads.hl.noUsenetDl": "nie skonfigurowano downloadera Usenet",
-	"downloads.hl.noTorrentDl": "nie skonfigurowano downloadera torrentów"
+	"downloads.hl.noTorrentDl": "nie skonfigurowano downloadera torrentów",
+	"downloads.problem.importBlocked": "Import zablokowany",
+	"downloads.problem.missingArticles": "Brakujące artykuły",
+	"downloads.problem.noFullCopy": "Brak pełnej kopii",
+	"downloads.problem.noPeers": "Brak peerów",
+	"downloads.problem.repairNeeded": "Wymaga naprawy"
 }

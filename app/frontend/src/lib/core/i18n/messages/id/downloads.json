@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Masih di {app}",
 	"downloads.dp.openDownloaders": "Buka Pengunduh",
 	"downloads.ot.fromOldApps": "Dari aplikasi lama ({n})",
-	"downloads.ot.importAgain": "Impor lagi untuk memperbarui pengujiannya; poinnya bisa diubah di setiap Aturan pilihan",
+	"downloads.ot.importAgain": "Impor lagi untuk memperbarui pengujiannya; poinnya bisa diubah di Aturan pilihan",
 	"downloads.ot.fromApp": "Dari {app}",
 	"downloads.ot.kindEdition": "edisi",
 	"downloads.ot.kindLanguage": "bahasa",
@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Tidak mengunduh: unduhan yang ditemukan butuh pengunduh torrent, dan belum ada yang disiapkan.",
 	"downloads.noDl.add": "Tambah pengunduh",
 	"downloads.hl.noUsenetDl": "belum ada pengunduh Usenet yang disiapkan",
-	"downloads.hl.noTorrentDl": "belum ada pengunduh torrent yang disiapkan"
+	"downloads.hl.noTorrentDl": "belum ada pengunduh torrent yang disiapkan",
+	"downloads.problem.importBlocked": "Impor diblokir",
+	"downloads.problem.missingArticles": "Artikel hilang",
+	"downloads.problem.noFullCopy": "Tidak ada salinan lengkap",
+	"downloads.problem.noPeers": "Tidak ada peer",
+	"downloads.problem.repairNeeded": "Perlu perbaikan"
 }

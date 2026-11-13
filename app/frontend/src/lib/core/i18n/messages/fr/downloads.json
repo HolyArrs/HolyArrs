@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Encore dans {app}",
 	"downloads.dp.openDownloaders": "Ouvrir les téléchargeurs",
 	"downloads.ot.fromOldApps": "Des anciennes apps ({n})",
-	"downloads.ot.importAgain": "Importez à nouveau pour mettre à jour leurs tests ; leurs points se changent dans chaque Règles de sélection",
+	"downloads.ot.importAgain": "Importez à nouveau pour mettre à jour leurs tests ; leurs points se changent dans Règles de sélection",
 	"downloads.ot.fromApp": "De {app}",
 	"downloads.ot.kindEdition": "édition",
 	"downloads.ot.kindLanguage": "langue",
@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Pas de téléchargement : les téléchargements trouvés ont besoin d'un client de téléchargement torrent, et aucun n'est configuré.",
 	"downloads.noDl.add": "Ajouter un client de téléchargement",
 	"downloads.hl.noUsenetDl": "aucun client de téléchargement Usenet n'est configuré",
-	"downloads.hl.noTorrentDl": "aucun client de téléchargement torrent n'est configuré"
+	"downloads.hl.noTorrentDl": "aucun client de téléchargement torrent n'est configuré",
+	"downloads.problem.importBlocked": "Import bloqué",
+	"downloads.problem.missingArticles": "Articles manquants",
+	"downloads.problem.noFullCopy": "Aucune copie complète",
+	"downloads.problem.noPeers": "Aucun pair",
+	"downloads.problem.repairNeeded": "Réparation nécessaire"
 }

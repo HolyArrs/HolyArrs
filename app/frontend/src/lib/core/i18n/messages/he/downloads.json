@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "עדיין ב-{app}",
 	"downloads.dp.openDownloaders": "פתיחת מורידים",
 	"downloads.ot.fromOldApps": "מאפליקציות ישנות ({n})",
-	"downloads.ot.importAgain": "ייבא שוב כדי לעדכן את הבדיקות שלהם; את הנקודות שלהם אפשר לשנות בכל כללי בחירה",
+	"downloads.ot.importAgain": "ייבא שוב כדי לעדכן את הבדיקות שלהם; את הנקודות שלהם אפשר לשנות בכללי בחירה",
 	"downloads.ot.fromApp": "מ־{app}",
 	"downloads.ot.kindEdition": "מהדורה",
 	"downloads.ot.kindLanguage": "שפה",
@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "לא מוריד: ההורדות שנמצאו צריכות מוריד טורנטים, ואף אחד לא הוגדר.",
 	"downloads.noDl.add": "הוספת מוריד",
 	"downloads.hl.noUsenetDl": "לא הוגדר מוריד Usenet",
-	"downloads.hl.noTorrentDl": "לא הוגדר מוריד טורנטים"
+	"downloads.hl.noTorrentDl": "לא הוגדר מוריד טורנטים",
+	"downloads.problem.importBlocked": "הייבוא נחסם",
+	"downloads.problem.missingArticles": "מאמרים חסרים",
+	"downloads.problem.noFullCopy": "אין עותק מלא",
+	"downloads.problem.noPeers": "אין עמיתים",
+	"downloads.problem.repairNeeded": "נדרש תיקון"
 }

@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Nog in {app}",
 	"downloads.dp.openDownloaders": "Downloaders openen",
 	"downloads.ot.fromOldApps": "Uit oude apps ({n})",
-	"downloads.ot.importAgain": "Importeer opnieuw om hun tests bij te werken; hun punten kun je in elke Keuzeregels wijzigen",
+	"downloads.ot.importAgain": "Importeer opnieuw om hun tests bij te werken; hun punten kun je in de Keuzeregels wijzigen",
 	"downloads.ot.fromApp": "Uit {app}",
 	"downloads.ot.kindEdition": "editie",
 	"downloads.ot.kindLanguage": "taal",
@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "Downloadt niet: de gevonden downloads hebben een torrent-downloader nodig, en er is er geen ingesteld.",
 	"downloads.noDl.add": "Downloader toevoegen",
 	"downloads.hl.noUsenetDl": "geen Usenet-downloader ingesteld",
-	"downloads.hl.noTorrentDl": "geen torrent-downloader ingesteld"
+	"downloads.hl.noTorrentDl": "geen torrent-downloader ingesteld",
+	"downloads.problem.importBlocked": "Import geblokkeerd",
+	"downloads.problem.missingArticles": "Ontbrekende artikelen",
+	"downloads.problem.noFullCopy": "Geen volledige kopie",
+	"downloads.problem.noPeers": "Geen peers",
+	"downloads.problem.repairNeeded": "Reparatie nodig"
 }

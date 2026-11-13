@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Hâlâ {app} içinde",
 	"downloads.dp.openDownloaders": "İndiricileri aç",
 	"downloads.ot.fromOldApps": "Eski uygulamalardan ({n})",
-	"downloads.ot.importAgain": "Testlerini güncellemek için yeniden içe aktar; puanları her Seçim kurallarında değiştirilebilir",
+	"downloads.ot.importAgain": "Testlerini güncellemek için yeniden içe aktar; puanları Seçim kurallarında değiştirilebilir",
 	"downloads.ot.fromApp": "{app} uygulamasından",
 	"downloads.ot.kindEdition": "sürüm",
 	"downloads.ot.kindLanguage": "dil",
@@ -1268,5 +1268,10 @@
 	"downloads.noDl.torrent": "İndirilmiyor: bulunan indirmeler bir torrent indiricisi gerektiriyor ve hiçbiri kurulu değil.",
 	"downloads.noDl.add": "İndirici ekle",
 	"downloads.hl.noUsenetDl": "kurulu bir Usenet indiricisi yok",
-	"downloads.hl.noTorrentDl": "kurulu bir torrent indiricisi yok"
+	"downloads.hl.noTorrentDl": "kurulu bir torrent indiricisi yok",
+	"downloads.problem.importBlocked": "İçe aktarma engellendi",
+	"downloads.problem.missingArticles": "Eksik makaleler",
+	"downloads.problem.noFullCopy": "Tam kopya yok",
+	"downloads.problem.noPeers": "Eş yok",
+	"downloads.problem.repairNeeded": "Onarım gerekli"
 }

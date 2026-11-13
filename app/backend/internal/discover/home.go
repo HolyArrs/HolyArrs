@@ -274,8 +274,8 @@ func homeLibraryCounts(ctx context.Context, db *sql.DB, where string, args []any
 			count(DISTINCT CASE WHEN (p.kind = 'season' AND p.number > 0) OR p.kind = 'album' THEN p.id END),
 			count(i.id),
 			COALESCE(sum(s.state IN ('in_library', 'better_wanted')), 0),
-			COALESCE(sum((s.state = 'wanted' AND i.keep_up_to_date = 1 AND (i.kind != 'episode' OR i.air_date <= ?)) OR s.state IN ('searching', 'held', 'failed', 'needs_a_decision', 'rejected')), 0),
-			COALESCE(sum(s.state IN ('chosen', 'downloading', 'stalled', 'importing')), 0),
+			COALESCE(sum((s.state IN ('wanted', 'chosen') AND i.keep_up_to_date = 1 AND (i.kind != 'episode' OR i.air_date <= ?)) OR s.state IN ('searching', 'held', 'failed', 'needs_a_decision', 'rejected')), 0),
+			COALESCE(sum(s.state IN ('downloading', 'stalled', 'importing')), 0),
 			COALESCE(sum(CASE WHEN f.state = 'present' AND s.state IN ('in_library', 'better_wanted') THEN f.size END), 0)
 		FROM titles t
 		LEFT JOIN gi i ON i.title_id = t.id

@@ -27,6 +27,7 @@ type fakeNZBGet struct {
 	edits           []string
 	rpcError        bool
 	appendHTTPError bool
+	appendRefusal   bool // append answers an RPC error and adds nothing
 	hideAppend      bool
 	hidden          []map[string]any
 	config          []nzbParam // the options "config" answers
@@ -88,6 +89,11 @@ func (f *fakeNZBGet) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			result = f.files[id]
 		}
 	case "append":
+		if f.appendRefusal {
+			_ = json.NewEncoder(w).Encode(map[string]any{"version": "1.1", "id": in.ID,
+				"error": map[string]any{"name": "JSONRPCError", "code": 2, "message": "Invalid parameter (AddTop) " + f.pass}})
+			return
+		}
 		var args []any
 		for _, raw := range in.Params {
 			var v any
@@ -312,7 +318,7 @@ func TestNZBGetDedupesQueueHistoryTransitionByNativeID(t *testing.T) {
 	}
 }
 
-func TestNZBGetTransitionRejectsForeignCategoryRow(t *testing.T) {
+func TestNZBGetTransitionKeepsARenamedCategoryRow(t *testing.T) {
 	f, base := startNZBGet(t)
 	n := NewNZBGet(base, f.user, f.pass, nil)
 	n.Category = "movies"
@@ -329,26 +335,65 @@ func TestNZBGetTransitionRejectsForeignCategoryRow(t *testing.T) {
 	h["Category"], h["Status"] = "music", "SUCCESS/ALL"
 	f.history = []map[string]any{h}
 	f.mu.Unlock()
-	if _, err := n.Get(context.Background(), id); !errors.Is(err, errNZBGetForeignMarker) {
-		t.Fatalf("transition foreign get = %v", err)
+	// The marker is ours, so a category change on the way to history keeps the job.
+	if j, err := n.Get(context.Background(), id); err != nil || j.State != StateFinished {
+		t.Fatalf("transition renamed get = %+v, %v", j, err)
 	}
-	if _, err := n.List(context.Background(), "movies"); !errors.Is(err, errNZBGetForeignMarker) {
-		t.Fatalf("transition foreign list = %v", err)
+	if jobs, err := n.List(context.Background(), "movies"); err != nil || len(jobs) != 1 {
+		t.Fatalf("transition renamed list = %+v, %v", jobs, err)
 	}
 }
 
-func TestNZBGetDoesNotAdoptAMarkerMovedToAnotherCategory(t *testing.T) {
+// NZBGet renames the category of a job when the category has an Alias (lab:
+// tv becomes Series). The HolyArrsID marker still makes the job ours.
+func TestNZBGetAdoptsItsMarkerAfterACategoryAliasRename(t *testing.T) {
 	f, base := startNZBGet(t)
 	n := NewNZBGet(base, f.user, f.pass, nil)
-	r := AddRequest{URL: nzbSource(t), Name: "moved", Category: "movies", OperationKey: "moved", AllowLocal: true}
-	if _, err := n.Add(context.Background(), r); err != nil {
+	n.Category = "tv"
+	r := AddRequest{URL: nzbSource(t), Name: "renamed", Category: "tv", OperationKey: "renamed", AllowLocal: true}
+	id, err := n.Add(context.Background(), r)
+	if err != nil {
 		t.Fatal(err)
 	}
 	f.mu.Lock()
-	f.groups[0]["Category"] = "music"
+	f.groups[0]["Category"] = "Series"
+	f.groups = append(f.groups, map[string]any{"NZBID": 9001, "NZBName": "other-app", "Category": "Series", "Status": "QUEUED"})
 	f.mu.Unlock()
-	if _, err := n.Add(context.Background(), r); !errors.Is(err, errNZBGetForeignMarker) || f.adds != 1 {
-		t.Fatalf("foreign category: %v adds=%d", err, f.adds)
+
+	// Queue.
+	jobs, err := n.List(context.Background(), "tv")
+	if err != nil || len(jobs) != 1 || jobs[0].ID != id {
+		t.Fatalf("queue list = %+v, %v", jobs, err)
+	}
+	if j, err := n.Get(context.Background(), id); err != nil || j.ID != id {
+		t.Fatalf("queue get = %+v, %v", j, err)
+	}
+	// Same send again: no second copy.
+	if got, err := n.Add(context.Background(), r); err != nil || got != id || f.adds != 1 {
+		t.Fatalf("resend = %q, %v adds=%d", got, err, f.adds)
+	}
+	// Unknown-send recheck.
+	if got, err := n.Add(context.Background(), AddRequest{Name: r.Name, Category: "tv", AttemptMarker: id, ReconcileOnly: true}); err != nil || got != id {
+		t.Fatalf("recheck = %q, %v", got, err)
+	}
+
+	// History (where imports read the finished job).
+	f.mu.Lock()
+	h := f.groups[0]
+	f.groups = f.groups[1:]
+	h["NZBID"], h["Status"], h["FinalDir"] = 812, "SUCCESS/ALL", "/downloads/Series/renamed"
+	f.history = []map[string]any{h}
+	f.mu.Unlock()
+	jobs, err = n.List(context.Background(), "tv")
+	if err != nil || len(jobs) != 1 || jobs[0].ID != id || jobs[0].State != StateFinished {
+		t.Fatalf("history list = %+v, %v", jobs, err)
+	}
+	j, err := n.Get(context.Background(), id)
+	if err != nil || j.State != StateFinished || j.ContentPath != "/downloads/Series/renamed" {
+		t.Fatalf("history get = %+v, %v", j, err)
+	}
+	if got, err := n.Add(context.Background(), AddRequest{Name: r.Name, Category: "tv", AttemptMarker: id, ReconcileOnly: true}); err != nil || got != id {
+		t.Fatalf("history recheck = %q, %v", got, err)
 	}
 }
 
@@ -444,7 +489,7 @@ func TestNZBGetRemovesHistoryWithTheHistoryCommand(t *testing.T) {
 	}
 }
 
-func TestNZBGetRemoveStaysInsideItsConfiguredCategory(t *testing.T) {
+func TestNZBGetRemoveFollowsTheMarkerAcrossCategories(t *testing.T) {
 	f, base := startNZBGet(t)
 	n := NewNZBGet(base, f.user, f.pass, nil)
 	id, err := n.Add(context.Background(), AddRequest{URL: nzbSource(t), Name: "owned", Category: "music", OperationKey: "owned", AllowLocal: true})
@@ -452,7 +497,8 @@ func TestNZBGetRemoveStaysInsideItsConfiguredCategory(t *testing.T) {
 		t.Fatal(err)
 	}
 	n.Category = "movies"
-	if err := n.Remove(context.Background(), id, true); !errors.Is(err, errNZBGetForeignMarker) || len(f.edits) != 0 {
+	// The marker is ours, so a job in another category is still ours to remove.
+	if err := n.Remove(context.Background(), id, true); err != nil || len(f.edits) != 1 {
 		t.Fatalf("cross-category removal: %v edits=%v", err, f.edits)
 	}
 }
