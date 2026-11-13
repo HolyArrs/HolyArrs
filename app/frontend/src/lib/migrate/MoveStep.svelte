@@ -33,7 +33,9 @@
 	const lines = $derived(dry?.lines ?? []);
 	const made = (l: { result: string }) => l.result === 'create' || l.result === 'created';
 	const links = $derived(lines.some((l) => (l.group === 'sources' || l.group === 'downloaders') && made(l)));
-	const newPeople = $derived(lines.filter((l) => l.group === 'people' && made(l)).length);
+	// Only people without a Plex, Jellyfin or Emby sign-in wait for an invite.
+	const newPeople = $derived(lines.filter((l) => l.group === 'people' && made(l) && l.needs).length);
+	const linkedPeople = $derived(lines.filter((l) => l.group === 'people' && made(l) && !l.needs).length);
 	const needs = $derived(needsGroups(dry?.needs_input ?? []).flatMap((g) => g.items.map((t, i) => ({ key: `${g.label}-${i}`, name: t, hint: g.label }))));
 	const detail = $derived(progressWords(note));
 	const fo = $derived(folderOutcome(lines));
@@ -75,6 +77,11 @@
 		{#if newPeople > 0}
 			<div class="srow">
 				<p class="txt">{newPeople === 1 ? t('migrate.personArrivesTurnedOff', { n: newPeople }) : t('migrate.peopleArriveTurnedOff', { n: newPeople })}</p>
+			</div>
+		{/if}
+		{#if linkedPeople > 0}
+			<div class="srow">
+				<p class="txt">{linkedPeople === 1 ? t('migrate.personTurnsOnAtSignIn', { n: linkedPeople }) : t('migrate.peopleTurnOnAtSignIn', { n: linkedPeople })}</p>
 			</div>
 		{/if}
 		<div class="srow">

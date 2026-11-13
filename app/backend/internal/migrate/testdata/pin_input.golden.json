@@ -398,6 +398,7 @@
       {
         "source_id": 7,
         "external_id": "s",
+        "ext_name": "s",
         "name": "s",
         "email": "s",
         "kind": "s",

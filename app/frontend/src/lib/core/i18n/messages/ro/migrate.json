@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Arată Cheile de adăugat din nou",
 	"migrate.personArrivesTurnedOff": "{n} persoană sosește oprită până o inviți.",
 	"migrate.peopleArriveTurnedOff": "{n} persoane sosesc oprite până le inviți.",
+	"migrate.personTurnsOnAtSignIn": "{n} persoană pornește la prima autentificare prin Plex, Jellyfin sau Emby.",
+	"migrate.peopleTurnOnAtSignIn": "{n} persoane pornesc la prima autentificare prin Plex, Jellyfin sau Emby.",
 	"migrate.yourOldAppsAren": "Aplicațiile tale vechi nu sunt schimbate. Poți anula acest import.",
 	"migrate.step4Of4": "Pasul 4 din 4 · Gata",
 	"migrate.undoProgress": "Progresul anulării",

@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Mostra les Claus per tornar a afegir",
 	"migrate.personArrivesTurnedOff": "{n} persona arriba desactivada fins que la convidis.",
 	"migrate.peopleArriveTurnedOff": "{n} persones arriben desactivades fins que les convidis.",
+	"migrate.personTurnsOnAtSignIn": "{n} persona s'activa en el seu primer inici de sessió amb Plex, Jellyfin o Emby.",
+	"migrate.peopleTurnOnAtSignIn": "{n} persones s'activen en el seu primer inici de sessió amb Plex, Jellyfin o Emby.",
 	"migrate.yourOldAppsAren": "Les teves apps antigues no canvien. Pots desfer aquesta importació.",
 	"migrate.step4Of4": "Pas 4 de 4 · Fet",
 	"migrate.undoProgress": "Progrés del desfer",

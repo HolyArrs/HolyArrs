@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Sleutels om opnieuw toe te voegen tonen",
 	"migrate.personArrivesTurnedOff": "{n} persoon komt uitgezet binnen tot je die uitnodigt.",
 	"migrate.peopleArriveTurnedOff": "{n} mensen komen uitgezet binnen tot je ze uitnodigt.",
+	"migrate.personTurnsOnAtSignIn": "{n} persoon gaat aan bij de eerste aanmelding met Plex, Jellyfin of Emby.",
+	"migrate.peopleTurnOnAtSignIn": "{n} mensen gaan aan bij hun eerste aanmelding met Plex, Jellyfin of Emby.",
 	"migrate.yourOldAppsAren": "Je oude apps worden niet gewijzigd. Je kunt deze import ongedaan maken.",
 	"migrate.step4Of4": "Stap 4 van 4 · Klaar",
 	"migrate.undoProgress": "Voortgang van ongedaan maken",

@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "سيُضاف إلى {fallback} كمطلوب بلا ملفات؛ يحتاج إلى انتباه: المجلد القديم {dir} غير موجود على هذا الخادم؛ أصلح المجلد أو أضف قاعدة مسار",
 	"server.migrate.its-library-folder-is-not-on": "مجلد المكتبة {library} غير موجود على هذا الخادم، ولا يوجد هنا مجلد مكتبة لـ {kind}؛ أضف واحدًا واستورد مجددًا",
 	"server.migrate.left-out-was-left-unchecked-check": "مستبعد: {attnfolder} مضبوط على \"لا تنقلهم\"؛ اختر له مجلدًا واستورد مجددًا",
-	"server.migrate.left-out-was-left-unchecked-check-2": "مستبعد: {path} مضبوط على \"لا تنقلهم\"؛ اختر له مجلدًا واستورد مجددًا"
+	"server.migrate.left-out-was-left-unchecked-check-2": "مستبعد: {path} مضبوط على \"لا تنقلهم\"؛ اختر له مجلدًا واستورد مجددًا",
+	"server.migrate.already-here-as-who-signs-in": "موجود هنا بالفعل باسم {name}، الذي يسجّل الدخول بحساب {way} هذا؛ طلباته تبقى له",
+	"server.migrate.an-invite": "دعوة",
+	"server.migrate.came-over-as-a-turns-on": "جاء بصفة {role}؛ يُفعَّل عند أول تسجيل دخول له عبر {way}",
+	"server.migrate.comes-over-as-a-turns-on": "يأتي بصفة {role}؛ يُفعَّل عند أول تسجيل دخول له عبر {way}",
+	"server.migrate.comes-over-as-a-linked-to": "يأتي بصفة {role}، مربوطًا بحسابه في {way}. أول تسجيل دخول به يفعّله؛ لا تأتي أي كلمة مرور.",
+	"server.migrate.imported-before-gets-their-sign-in": "استُورد من قبل؛ يحصل على تسجيل الدخول عبر {way}",
+	"server.migrate.imported-before-got-their-sign-in": "استُورد من قبل؛ حصل على تسجيل الدخول عبر {way}",
+	"server.migrate.imported-before-their-account-signs-in": "استُورد من قبل؛ حساب {way} الخاص به يسجّل الدخول باسم {name} هنا، فيبقى كما هو",
+	"server.migrate.people-who-signed-in-to-the": "الأشخاص الذين سجّلوا الدخول إلى التطبيق القديم عبر Plex أو Jellyfin أو Emby يُفعَّلون عند أول تسجيل دخول لهم بهذه الطريقة، بمجرد تشغيلها من الإعدادات > تسجيل الدخول والأمان."
 }

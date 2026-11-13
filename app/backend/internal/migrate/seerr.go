@@ -235,8 +235,10 @@ func seerrUser(m map[string]any) User {
 	switch u.Kind {
 	case "plex":
 		u.ExternalID = str(first(m, "plexId", "plexUserId"))
+		u.ExtName = str(m["plexUsername"])
 	case "jellyfin", "emby":
 		u.ExternalID = str(first(m, "jellyfinUserId", "embyUserId"))
+		u.ExtName = str(m["jellyfinUsername"])
 	}
 	for _, k := range []string{"displayName", "username", "plexUsername", "jellyfinUsername", "email"} {
 		if u.Name = str(m[k]); u.Name != "" {

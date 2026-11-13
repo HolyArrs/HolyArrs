@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "再追加するキーを表示",
 	"migrate.personArrivesTurnedOff": "{n} 人は、招待するまでオフの状態で届きます。",
 	"migrate.peopleArriveTurnedOff": "{n} 人は、招待するまでオフの状態で届きます。",
+	"migrate.personTurnsOnAtSignIn": "{n} 人は Plex、Jellyfin、Emby で初めてサインインするとオンになります。",
+	"migrate.peopleTurnOnAtSignIn": "{n} 人は Plex、Jellyfin、Emby で初めてサインインするとオンになります。",
 	"migrate.yourOldAppsAren": "古いアプリは変更されません。このインポートは取り消せます。",
 	"migrate.step4Of4": "ステップ 4/4 · 完了",
 	"migrate.undoProgress": "取り消しの進捗",

@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Schlüssel zum erneuten Hinzufügen anzeigen",
 	"migrate.personArrivesTurnedOff": "{n} Person kommt ausgeschaltet an, bis du sie einlädst.",
 	"migrate.peopleArriveTurnedOff": "{n} Personen kommen ausgeschaltet an, bis du sie einlädst.",
+	"migrate.personTurnsOnAtSignIn": "{n} Person wird bei der ersten Anmeldung mit Plex, Jellyfin oder Emby eingeschaltet.",
+	"migrate.peopleTurnOnAtSignIn": "{n} Personen werden bei ihrer ersten Anmeldung mit Plex, Jellyfin oder Emby eingeschaltet.",
 	"migrate.yourOldAppsAren": "Deine alten Apps werden nicht verändert. Du kannst diesen Import rückgängig machen.",
 	"migrate.step4Of4": "Schritt 4 von 4 · Fertig",
 	"migrate.undoProgress": "Fortschritt beim Rückgängigmachen",

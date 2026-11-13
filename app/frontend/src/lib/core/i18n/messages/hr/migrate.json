@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Prikaži ključeve za ponovno dodavanje",
 	"migrate.personArrivesTurnedOff": "{n} osoba stiže isključena dok je ne pozoveš.",
 	"migrate.peopleArriveTurnedOff": "Osoba koje stižu isključene dok ih ne pozoveš: {n}.",
+	"migrate.personTurnsOnAtSignIn": "{n} osoba uključuje se pri prvoj prijavi putem Plexa, Jellyfina ili Embyja.",
+	"migrate.peopleTurnOnAtSignIn": "Osoba koje se uključuju pri prvoj prijavi putem Plexa, Jellyfina ili Embyja: {n}.",
 	"migrate.yourOldAppsAren": "Tvoje stare aplikacije nisu promijenjene. Ovaj uvoz možeš poništiti.",
 	"migrate.step4Of4": "Korak 4 od 4 · Gotovo",
 	"migrate.undoProgress": "Napredak poništavanja",

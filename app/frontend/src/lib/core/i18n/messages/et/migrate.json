@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Näita võtmeid, mis tuleb uuesti lisada",
 	"migrate.personArrivesTurnedOff": "{n} inimene saabub välja lülitatuna, kuni kutsud ta.",
 	"migrate.peopleArriveTurnedOff": "{n} inimest saabub välja lülitatuna, kuni kutsud nad.",
+	"migrate.personTurnsOnAtSignIn": "{n} inimene lülitub sisse esimesel sisselogimisel Plexi, Jellyfini või Embyga.",
+	"migrate.peopleTurnOnAtSignIn": "{n} inimest lülitub sisse esimesel sisselogimisel Plexi, Jellyfini või Embyga.",
 	"migrate.yourOldAppsAren": "Sinu vanu rakendusi ei muudeta. Selle impordi saad tagasi võtta.",
 	"migrate.step4Of4": "Samm 4 / 4 · Valmis",
 	"migrate.undoProgress": "Tagasivõtmise edenemine",

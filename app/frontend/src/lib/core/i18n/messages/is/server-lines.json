@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "verður bætt í {fallback} sem óskað án skráa; þarfnast athygli: gamla mappan {dir} er ekki á þessum þjóni; lagaðu möppuna eða bættu við slóðarreglu",
 	"server.migrate.its-library-folder-is-not-on": "safnmappan {library} er ekki á þessum þjóni og hér er engin safnmappa fyrir {kind}; bættu einni við og fluttu inn aftur",
 	"server.migrate.left-out-was-left-unchecked-check": "sleppt: {attnfolder} er stillt á „Ekki koma með þau“; veldu möppu fyrir hana og fluttu inn aftur",
-	"server.migrate.left-out-was-left-unchecked-check-2": "sleppt: {path} er stillt á „Ekki koma með þau“; veldu möppu fyrir hana og fluttu inn aftur"
+	"server.migrate.left-out-was-left-unchecked-check-2": "sleppt: {path} er stillt á „Ekki koma með þau“; veldu möppu fyrir hana og fluttu inn aftur",
+	"server.migrate.already-here-as-who-signs-in": "er þegar hér sem {name}, sem skráir sig inn með þessum {way}-aðgangi; beiðnir viðkomandi eru áfram þeirra",
+	"server.migrate.an-invite": "boð",
+	"server.migrate.came-over-as-a-turns-on": "kom yfir sem {role}; verður virkt við fyrstu innskráningu með {way}",
+	"server.migrate.comes-over-as-a-turns-on": "kemur yfir sem {role}; verður virkt við fyrstu innskráningu með {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Kemur yfir sem {role}, tengt {way}-aðgangi viðkomandi. Fyrsta innskráning með honum gerir viðkomandi virkan; ekkert lykilorð kemur með.",
+	"server.migrate.imported-before-gets-their-sign-in": "flutt inn áður; fær innskráningu með {way}",
+	"server.migrate.imported-before-got-their-sign-in": "flutt inn áður; fékk innskráningu með {way}",
+	"server.migrate.imported-before-their-account-signs-in": "flutt inn áður; {way}-aðgangur viðkomandi skráir sig hér inn sem {name}, svo það helst þannig",
+	"server.migrate.people-who-signed-in-to-the": "Fólk sem skráði sig inn í gamla forritið með Plex, Jellyfin eða Emby verður virkt við fyrstu innskráningu á þann hátt, um leið og kveikt er á því undir Stillingar > Innskráning og öryggi."
 }

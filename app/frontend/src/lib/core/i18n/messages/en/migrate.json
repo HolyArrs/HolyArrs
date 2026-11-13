@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Show Keys to add again",
 	"migrate.personArrivesTurnedOff": "{n} person arrives turned off until you invite them.",
 	"migrate.peopleArriveTurnedOff": "{n} people arrive turned off until you invite them.",
+	"migrate.personTurnsOnAtSignIn": "{n} person turns on at their first sign-in with Plex, Jellyfin or Emby.",
+	"migrate.peopleTurnOnAtSignIn": "{n} people turn on at their first sign-in with Plex, Jellyfin or Emby.",
 	"migrate.yourOldAppsAren": "Your old apps aren't changed. You can undo this import.",
 	"migrate.step4Of4": "Step 4 of 4 · Done",
 	"migrate.undoProgress": "Undo progress",

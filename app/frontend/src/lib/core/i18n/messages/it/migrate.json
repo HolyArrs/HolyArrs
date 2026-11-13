@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Mostra Chiavi da aggiungere di nuovo",
 	"migrate.personArrivesTurnedOff": "{n} persona arriva disattivata finché non la inviti.",
 	"migrate.peopleArriveTurnedOff": "{n} persone arrivano disattivate finché non le inviti.",
+	"migrate.personTurnsOnAtSignIn": "{n} persona si attiva al suo primo accesso con Plex, Jellyfin o Emby.",
+	"migrate.peopleTurnOnAtSignIn": "{n} persone si attivano al loro primo accesso con Plex, Jellyfin o Emby.",
 	"migrate.yourOldAppsAren": "Le tue app precedenti non vengono modificate. Puoi annullare questa importazione.",
 	"migrate.step4Of4": "Passaggio 4 di 4 · Fatto",
 	"migrate.undoProgress": "Avanzamento dell'annullamento",

@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "lisätään kohteeseen {fallback} toivottuna ilman tiedostoja; vaatii huomiota: vanhaa kansiota {dir} ei ole tällä palvelimella; korjaa kansio tai lisää polkusääntö",
 	"server.migrate.its-library-folder-is-not-on": "kirjastokansiota {library} ei ole tällä palvelimella, eikä täällä ole kirjastokansiota tyypille {kind}; lisää sellainen ja tuo uudelleen",
 	"server.migrate.left-out-was-left-unchecked-check": "jätetty pois: {attnfolder} on asetettu tilaan \"Älä tuo heitä\"; valitse sille kansio ja tuo uudelleen",
-	"server.migrate.left-out-was-left-unchecked-check-2": "jätetty pois: {path} on asetettu tilaan \"Älä tuo heitä\"; valitse sille kansio ja tuo uudelleen"
+	"server.migrate.left-out-was-left-unchecked-check-2": "jätetty pois: {path} on asetettu tilaan \"Älä tuo heitä\"; valitse sille kansio ja tuo uudelleen",
+	"server.migrate.already-here-as-who-signs-in": "on jo täällä nimellä {name}, joka kirjautuu tällä {way}-tilillä; hänen pyyntönsä pysyvät hänen ominaan",
+	"server.migrate.an-invite": "kutsu",
+	"server.migrate.came-over-as-a-turns-on": "tuli roolina {role}; menee päälle ensimmäisellä {way}-kirjautumisella",
+	"server.migrate.comes-over-as-a-turns-on": "tulee roolina {role}; menee päälle ensimmäisellä {way}-kirjautumisella",
+	"server.migrate.comes-over-as-a-linked-to": "Tulee roolina {role}, linkitettynä hänen {way}-tiliinsä. Ensimmäinen kirjautuminen sillä laittaa hänet päälle; salasanaa ei tule mukana.",
+	"server.migrate.imported-before-gets-their-sign-in": "tuotu aiemmin; saa {way}-kirjautumisensa",
+	"server.migrate.imported-before-got-their-sign-in": "tuotu aiemmin; sai {way}-kirjautumisensa",
+	"server.migrate.imported-before-their-account-signs-in": "tuotu aiemmin; hänen {way}-tilinsä kirjautuu täällä nimellä {name}, joten se pysyy niin",
+	"server.migrate.people-who-signed-in-to-the": "Vanhaan sovellukseen Plexillä, Jellyfinillä tai Embyllä kirjautuneet menevät päälle ensimmäisellä kirjautumisellaan sitä kautta, kun se on päällä kohdassa Asetukset > Kirjautuminen ja turvallisuus."
 }

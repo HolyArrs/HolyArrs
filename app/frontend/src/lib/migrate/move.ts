@@ -26,6 +26,8 @@ export interface PersonPlan {
 	was_owner?: boolean;
 	choice?: 'merge' | 'skip';
 	email?: string;
+	/** Set when they come over linked to this sign-in, turned on with no invite. */
+	sign_in?: 'plex' | 'jellyfin' | 'emby';
 }
 
 export interface PlanItem {

@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "θα προστεθεί στο {fallback} ως επιθυμητό, χωρίς αρχεία· χρειάζεται προσοχή: ο παλιός φάκελος {dir} δεν υπάρχει σε αυτόν τον διακομιστή· διορθώστε τον φάκελο ή προσθέστε κανόνα διαδρομής",
 	"server.migrate.its-library-folder-is-not-on": "ο φάκελος βιβλιοθήκης {library} δεν υπάρχει σε αυτόν τον διακομιστή και δεν υπάρχει εδώ φάκελος βιβλιοθήκης για {kind}· προσθέστε έναν και εισαγάγετε ξανά",
 	"server.migrate.left-out-was-left-unchecked-check": "παραλείφθηκε: το {attnfolder} έχει οριστεί σε «Να μην εισαχθούν»· επιλέξτε φάκελο για αυτό και εισαγάγετε ξανά",
-	"server.migrate.left-out-was-left-unchecked-check-2": "παραλείφθηκε: το {path} έχει οριστεί σε «Να μην εισαχθούν»· επιλέξτε φάκελο για αυτό και εισαγάγετε ξανά"
+	"server.migrate.left-out-was-left-unchecked-check-2": "παραλείφθηκε: το {path} έχει οριστεί σε «Να μην εισαχθούν»· επιλέξτε φάκελο για αυτό και εισαγάγετε ξανά",
+	"server.migrate.already-here-as-who-signs-in": "υπάρχει ήδη εδώ ως {name}, που συνδέεται με αυτόν τον λογαριασμό {way}· τα αιτήματά του μένουν δικά του",
+	"server.migrate.an-invite": "μια πρόσκληση",
+	"server.migrate.came-over-as-a-turns-on": "μεταφέρθηκε ως {role}· ενεργοποιείται στην πρώτη σύνδεσή του με {way}",
+	"server.migrate.comes-over-as-a-turns-on": "μεταφέρεται ως {role}· ενεργοποιείται στην πρώτη σύνδεσή του με {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Μεταφέρεται ως {role}, συνδεδεμένο με τον λογαριασμό {way} του. Η πρώτη σύνδεση με αυτόν το ενεργοποιεί· δεν μεταφέρεται κωδικός.",
+	"server.migrate.imported-before-gets-their-sign-in": "εισήχθη νωρίτερα· παίρνει τη σύνδεση με {way}",
+	"server.migrate.imported-before-got-their-sign-in": "εισήχθη νωρίτερα· πήρε τη σύνδεση με {way}",
+	"server.migrate.imported-before-their-account-signs-in": "εισήχθη νωρίτερα· ο λογαριασμός {way} του συνδέεται εδώ ως {name}, οπότε μένει έτσι",
+	"server.migrate.people-who-signed-in-to-the": "Τα άτομα που συνδέονταν στην παλιά εφαρμογή με Plex, Jellyfin ή Emby ενεργοποιούνται στην πρώτη τους σύνδεση με αυτόν τον τρόπο, μόλις τον ενεργοποιήσετε στις Ρυθμίσεις > Σύνδεση και ασφάλεια."
 }

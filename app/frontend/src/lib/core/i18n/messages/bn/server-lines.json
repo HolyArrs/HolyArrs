@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "ফাইল ছাড়া 'চাই' হিসেবে {fallback}-এ যোগ করা হবে; মনোযোগ দরকার: পুরোনো ফোল্ডার {dir} এই সার্ভারে নেই; ফোল্ডার ঠিক করুন বা একটি পাথ নিয়ম যোগ করুন",
 	"server.migrate.its-library-folder-is-not-on": "লাইব্রেরি ফোল্ডার {library} এই সার্ভারে নেই, আর এখানে {kind}-এর কোনো লাইব্রেরি ফোল্ডার নেই; একটি যোগ করে আবার ইমপোর্ট করুন",
 	"server.migrate.left-out-was-left-unchecked-check": "বাদ রাখা হয়েছে: {attnfolder}-এ \"তাদের আনবেন না\" বেছে নেওয়া আছে; এর জন্য একটি ফোল্ডার বেছে নিয়ে আবার ইমপোর্ট করুন",
-	"server.migrate.left-out-was-left-unchecked-check-2": "বাদ রাখা হয়েছে: {path}-এ \"তাদের আনবেন না\" বেছে নেওয়া আছে; এর জন্য একটি ফোল্ডার বেছে নিয়ে আবার ইমপোর্ট করুন"
+	"server.migrate.left-out-was-left-unchecked-check-2": "বাদ রাখা হয়েছে: {path}-এ \"তাদের আনবেন না\" বেছে নেওয়া আছে; এর জন্য একটি ফোল্ডার বেছে নিয়ে আবার ইমপোর্ট করুন",
+	"server.migrate.already-here-as-who-signs-in": "ইতিমধ্যে {name} হিসেবে এখানে আছেন, যিনি এই {way} অ্যাকাউন্ট দিয়ে সাইন ইন করেন; তাদের অনুরোধ তাদেরই থাকে",
+	"server.migrate.an-invite": "একটি আমন্ত্রণ",
+	"server.migrate.came-over-as-a-turns-on": "{role} হিসেবে এসেছে; প্রথমবার {way} দিয়ে সাইন ইন করলে চালু হয়",
+	"server.migrate.comes-over-as-a-turns-on": "{role} হিসেবে আসে; প্রথমবার {way} দিয়ে সাইন ইন করলে চালু হয়",
+	"server.migrate.comes-over-as-a-linked-to": "{role} হিসেবে আসে, তাদের {way} অ্যাকাউন্টের সাথে যুক্ত। সেটি দিয়ে প্রথম সাইন ইন তাদের চালু করে; কোনো পাসওয়ার্ড আসে না।",
+	"server.migrate.imported-before-gets-their-sign-in": "আগে ইমপোর্ট হয়েছে; তাদের {way} সাইন ইন পাবে",
+	"server.migrate.imported-before-got-their-sign-in": "আগে ইমপোর্ট হয়েছে; তাদের {way} সাইন ইন পেয়েছে",
+	"server.migrate.imported-before-their-account-signs-in": "আগে ইমপোর্ট হয়েছে; তাদের {way} অ্যাকাউন্ট এখানে {name} হিসেবে সাইন ইন করে, তাই সেভাবেই থাকে",
+	"server.migrate.people-who-signed-in-to-the": "যারা পুরোনো অ্যাপে Plex, Jellyfin বা Emby দিয়ে সাইন ইন করতেন, সেটিংস > সাইন ইন ও নিরাপত্তা থেকে সেটি চালু হলে সেভাবে প্রথম সাইন ইনে তারা চালু হন।"
 }

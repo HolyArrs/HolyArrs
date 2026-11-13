@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "மீண்டும் சேர்க்க வேண்டிய விசைகளைக் காட்டு",
 	"migrate.personArrivesTurnedOff": "{n} நபர் அழைக்கும் வரை அணைந்த நிலையில் வருவார்.",
 	"migrate.peopleArriveTurnedOff": "{n} நபர்கள் அழைக்கும் வரை அணைந்த நிலையில் வருவார்கள்.",
+	"migrate.personTurnsOnAtSignIn": "{n} நபர் Plex, Jellyfin அல்லது Emby மூலம் முதல் முறை உள்நுழையும்போது இயங்குவார்.",
+	"migrate.peopleTurnOnAtSignIn": "{n} நபர்கள் Plex, Jellyfin அல்லது Emby மூலம் முதல் முறை உள்நுழையும்போது இயங்குவார்கள்.",
 	"migrate.yourOldAppsAren": "உங்கள் பழைய ஆப்கள் மாறாது. இந்த இறக்குமதியைச் செயல்தவிர்க்கலாம்.",
 	"migrate.step4Of4": "படி 4 / 4 · முடிந்தது",
 	"migrate.undoProgress": "செயல்தவிர்ப்பு முன்னேற்றம்",

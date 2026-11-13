@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "將作為想要的項目加入 {fallback}，暫無檔案；需要注意：舊資料夾 {dir} 不在此伺服器上；請修正資料夾或新增路徑規則",
 	"server.migrate.its-library-folder-is-not-on": "媒體庫資料夾 {library} 不在此伺服器上，這裡也沒有 {kind} 的媒體庫資料夾；請新增一個後再次匯入",
 	"server.migrate.left-out-was-left-unchecked-check": "未包含：{attnfolder} 設為「不遷入」；為它選擇一個資料夾後再次匯入",
-	"server.migrate.left-out-was-left-unchecked-check-2": "未包含：{path} 設為「不遷入」；為它選擇一個資料夾後再次匯入"
+	"server.migrate.left-out-was-left-unchecked-check-2": "未包含：{path} 設為「不遷入」；為它選擇一個資料夾後再次匯入",
+	"server.migrate.already-here-as-who-signs-in": "已以 {name} 的身分在這裡，他用這個 {way} 帳戶登入；他的請求仍歸他",
+	"server.migrate.an-invite": "邀請",
+	"server.migrate.came-over-as-a-turns-on": "已作為{role}遷入；首次用 {way} 登入時啟用",
+	"server.migrate.comes-over-as-a-turns-on": "會作為{role}遷入；首次用 {way} 登入時啟用",
+	"server.migrate.comes-over-as-a-linked-to": "會作為{role}遷入，並連結到他們的 {way} 帳戶。首次用該帳戶登入時啟用；不會帶過來任何密碼。",
+	"server.migrate.imported-before-gets-their-sign-in": "之前已匯入；會取得 {way} 登入",
+	"server.migrate.imported-before-got-their-sign-in": "之前已匯入；已取得 {way} 登入",
+	"server.migrate.imported-before-their-account-signs-in": "之前已匯入；他們的 {way} 帳戶在這裡以 {name} 的身分登入，所以保持不變",
+	"server.migrate.people-who-signed-in-to-the": "在舊應用程式中用 Plex、Jellyfin 或 Emby 登入的成員，在 設定 > 登入與安全 中開啟該方式後，首次用這種方式登入時啟用。"
 }

@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "va fi adăugat în {fallback} ca dorit, fără fișiere; necesită atenție: vechiul dosar {dir} nu este pe acest server; corectează dosarul sau adaugă o regulă de cale",
 	"server.migrate.its-library-folder-is-not-on": "dosarul bibliotecii {library} nu este pe acest server și aici nu există niciun dosar de bibliotecă pentru {kind}; adaugă unul și importă din nou",
 	"server.migrate.left-out-was-left-unchecked-check": "lăsat deoparte: {attnfolder} este setat pe „Nu-i aduce”; alege un dosar pentru el și importă din nou",
-	"server.migrate.left-out-was-left-unchecked-check-2": "lăsat deoparte: {path} este setat pe „Nu-i aduce”; alege un dosar pentru el și importă din nou"
+	"server.migrate.left-out-was-left-unchecked-check-2": "lăsat deoparte: {path} este setat pe „Nu-i aduce”; alege un dosar pentru el și importă din nou",
+	"server.migrate.already-here-as-who-signs-in": "este deja aici ca {name}, care se autentifică cu acest cont {way}; cererile lui rămân ale lui",
+	"server.migrate.an-invite": "o invitație",
+	"server.migrate.came-over-as-a-turns-on": "a venit ca {role}; pornește la prima autentificare prin {way}",
+	"server.migrate.comes-over-as-a-turns-on": "vine ca {role}; pornește la prima autentificare prin {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Vine ca {role}, legat de contul său {way}. Prima autentificare cu el îl pornește; nu vine nicio parolă.",
+	"server.migrate.imported-before-gets-their-sign-in": "importat înainte; primește autentificarea prin {way}",
+	"server.migrate.imported-before-got-their-sign-in": "importat înainte; a primit autentificarea prin {way}",
+	"server.migrate.imported-before-their-account-signs-in": "importat înainte; contul lui {way} se autentifică aici ca {name}, așa că rămâne așa",
+	"server.migrate.people-who-signed-in-to-the": "Persoanele care se autentificau în aplicația veche prin Plex, Jellyfin sau Emby pornesc la prima autentificare în acest fel, imediat ce pornești asta din Setări > Autentificare și securitate."
 }

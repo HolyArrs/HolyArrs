@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "จะเพิ่มลงใน {fallback} เป็นรายการที่ต้องการ ยังไม่มีไฟล์; ต้องตรวจสอบ: ไม่มีโฟลเดอร์เดิม {dir} บนเซิร์ฟเวอร์นี้; แก้โฟลเดอร์หรือเพิ่มกฎเส้นทาง",
 	"server.migrate.its-library-folder-is-not-on": "ไม่มีโฟลเดอร์คลัง {library} บนเซิร์ฟเวอร์นี้ และที่นี่ไม่มีโฟลเดอร์คลังสำหรับ {kind}; เพิ่มหนึ่งโฟลเดอร์แล้วนำเข้าอีกครั้ง",
 	"server.migrate.left-out-was-left-unchecked-check": "ไม่ได้รวม: {attnfolder} ตั้งไว้เป็น \"ไม่นำเขามา\"; เลือกโฟลเดอร์ให้แล้วนำเข้าอีกครั้ง",
-	"server.migrate.left-out-was-left-unchecked-check-2": "ไม่ได้รวม: {path} ตั้งไว้เป็น \"ไม่นำเขามา\"; เลือกโฟลเดอร์ให้แล้วนำเข้าอีกครั้ง"
+	"server.migrate.left-out-was-left-unchecked-check-2": "ไม่ได้รวม: {path} ตั้งไว้เป็น \"ไม่นำเขามา\"; เลือกโฟลเดอร์ให้แล้วนำเข้าอีกครั้ง",
+	"server.migrate.already-here-as-who-signs-in": "มีอยู่แล้วในชื่อ {name} ซึ่งเข้าสู่ระบบด้วยบัญชี {way} นี้ คำขอของเขายังเป็นของเขา",
+	"server.migrate.an-invite": "คำเชิญ",
+	"server.migrate.came-over-as-a-turns-on": "มาในฐานะ {role} จะเปิดเมื่อเข้าสู่ระบบด้วย {way} ครั้งแรก",
+	"server.migrate.comes-over-as-a-turns-on": "มาในฐานะ {role} จะเปิดเมื่อเข้าสู่ระบบด้วย {way} ครั้งแรก",
+	"server.migrate.comes-over-as-a-linked-to": "มาในฐานะ {role} โดยเชื่อมกับบัญชี {way} ของเขา การเข้าสู่ระบบครั้งแรกด้วยบัญชีนั้นจะเปิดเขา ไม่มีรหัสผ่านถูกนำมา",
+	"server.migrate.imported-before-gets-their-sign-in": "นำเข้าไปแล้วก่อนหน้านี้ ได้รับการเข้าสู่ระบบด้วย {way}",
+	"server.migrate.imported-before-got-their-sign-in": "นำเข้าไปแล้วก่อนหน้านี้ ได้รับการเข้าสู่ระบบด้วย {way} แล้ว",
+	"server.migrate.imported-before-their-account-signs-in": "นำเข้าไปแล้วก่อนหน้านี้ บัญชี {way} ของเขาเข้าสู่ระบบที่นี่ในชื่อ {name} จึงคงไว้แบบนั้น",
+	"server.migrate.people-who-signed-in-to-the": "ผู้ที่เคยเข้าสู่ระบบแอปเก่าด้วย Plex, Jellyfin หรือ Emby จะเปิดเมื่อเข้าสู่ระบบด้วยวิธีนั้นครั้งแรก เมื่อเปิดไว้ในการตั้งค่า > การเข้าสู่ระบบและความปลอดภัย"
 }

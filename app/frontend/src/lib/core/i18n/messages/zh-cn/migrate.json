@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "显示需要重新添加的密钥",
 	"migrate.personArrivesTurnedOff": "{n} 位成员迁入后处于停用状态，直到你邀请他们。",
 	"migrate.peopleArriveTurnedOff": "{n} 位成员迁入后处于停用状态，直到你邀请他们。",
+	"migrate.personTurnsOnAtSignIn": "{n} 位成员首次用 Plex、Jellyfin 或 Emby 登录时启用。",
+	"migrate.peopleTurnOnAtSignIn": "{n} 位成员首次用 Plex、Jellyfin 或 Emby 登录时启用。",
 	"migrate.yourOldAppsAren": "你的旧应用不会被改动。你可以撤销这次导入。",
 	"migrate.step4Of4": "第 4 步，共 4 步 · 完成",
 	"migrate.undoProgress": "撤销进度",

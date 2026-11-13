@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Rodyti Raktus, kuriuos reikia pridėti iš naujo",
 	"migrate.personArrivesTurnedOff": "{n} žmogus atkeliauja išjungtas, kol jo nepakviesite.",
 	"migrate.peopleArriveTurnedOff": "Žmonių, kurie atkeliauja išjungti, kol jų nepakviesite: {n}.",
+	"migrate.personTurnsOnAtSignIn": "{n} žmogus įsijungia pirmą kartą prisijungęs per Plex, Jellyfin ar Emby.",
+	"migrate.peopleTurnOnAtSignIn": "Žmonių, kurie įsijungia pirmą kartą prisijungę per Plex, Jellyfin ar Emby: {n}.",
 	"migrate.yourOldAppsAren": "Jūsų senosios programos nekeičiamos. Šį importą galite atšaukti.",
 	"migrate.step4Of4": "4 žingsnis iš 4 · Atlikta",
 	"migrate.undoProgress": "Atšaukimo eiga",

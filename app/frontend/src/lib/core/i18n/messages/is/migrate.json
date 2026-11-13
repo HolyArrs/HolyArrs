@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Sýna lykla til að bæta við aftur",
 	"migrate.personArrivesTurnedOff": "{n} manneskja kemur slökkt þar til þú býður henni.",
 	"migrate.peopleArriveTurnedOff": "{n} manns koma slökkt þar til þú býður þeim.",
+	"migrate.personTurnsOnAtSignIn": "{n} manneskja verður virk við fyrstu innskráningu með Plex, Jellyfin eða Emby.",
+	"migrate.peopleTurnOnAtSignIn": "{n} manns verða virk við fyrstu innskráningu með Plex, Jellyfin eða Emby.",
 	"migrate.yourOldAppsAren": "Gömlu forritin þín breytast ekki. Þú getur afturkallað þennan innflutning.",
 	"migrate.step4Of4": "Skref 4 af 4 · Lokið",
 	"migrate.undoProgress": "Framvinda afturköllunar",

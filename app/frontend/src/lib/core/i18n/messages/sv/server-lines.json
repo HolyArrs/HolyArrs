@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "läggs till i {fallback} som önskad utan filer; behöver åtgärd: den gamla mappen {dir} finns inte på den här servern; rätta mappen eller lägg till en sökvägsregel",
 	"server.migrate.its-library-folder-is-not-on": "biblioteksmappen {library} finns inte på den här servern, och här finns ingen biblioteksmapp för {kind}; lägg till en och importera igen",
 	"server.migrate.left-out-was-left-unchecked-check": "utelämnad: {attnfolder} står på \"Ta inte med dem\"; välj en mapp för den och importera igen",
-	"server.migrate.left-out-was-left-unchecked-check-2": "utelämnad: {path} står på \"Ta inte med dem\"; välj en mapp för den och importera igen"
+	"server.migrate.left-out-was-left-unchecked-check-2": "utelämnad: {path} står på \"Ta inte med dem\"; välj en mapp för den och importera igen",
+	"server.migrate.already-here-as-who-signs-in": "finns redan här som {name}, som loggar in med det här {way}-kontot; deras förfrågningar förblir deras",
+	"server.migrate.an-invite": "en inbjudan",
+	"server.migrate.came-over-as-a-turns-on": "kom över som {role}; slås på vid första inloggningen med {way}",
+	"server.migrate.comes-over-as-a-turns-on": "kommer över som {role}; slås på vid första inloggningen med {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Kommer över som {role}, kopplad till sitt {way}-konto. Första inloggningen med det slår på dem; inget lösenord följer med.",
+	"server.migrate.imported-before-gets-their-sign-in": "importerad tidigare; får sin inloggning med {way}",
+	"server.migrate.imported-before-got-their-sign-in": "importerad tidigare; fick sin inloggning med {way}",
+	"server.migrate.imported-before-their-account-signs-in": "importerad tidigare; deras {way}-konto loggar in som {name} här, så det förblir så",
+	"server.migrate.people-who-signed-in-to-the": "Personer som loggade in i den gamla appen med Plex, Jellyfin eller Emby slås på vid sin första inloggning på det sättet, när det är påslaget under Inställningar > Inloggning och säkerhet."
 }

@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "יתווסף אל {fallback} כמבוקש, בלי קבצים; דורש תשומת לב: התיקייה הישנה {dir} לא נמצאת בשרת הזה; תקן את התיקייה או הוסף כלל נתיב",
 	"server.migrate.its-library-folder-is-not-on": "תיקיית הספרייה {library} לא נמצאת בשרת הזה, ואין כאן תיקיית ספרייה עבור {kind}; הוסף אחת וייבא שוב",
 	"server.migrate.left-out-was-left-unchecked-check": "הושמט: {attnfolder} מוגדרת ל\"לא להעביר אותם\"; בחר עבורה תיקייה וייבא שוב",
-	"server.migrate.left-out-was-left-unchecked-check-2": "הושמט: {path} מוגדרת ל\"לא להעביר אותם\"; בחר עבורה תיקייה וייבא שוב"
+	"server.migrate.left-out-was-left-unchecked-check-2": "הושמט: {path} מוגדרת ל\"לא להעביר אותם\"; בחר עבורה תיקייה וייבא שוב",
+	"server.migrate.already-here-as-who-signs-in": "כבר נמצא כאן בתור {name}, שמתחבר עם חשבון {way} הזה; הבקשות שלו נשארות שלו",
+	"server.migrate.an-invite": "הזמנה",
+	"server.migrate.came-over-as-a-turns-on": "הגיע בתור {role}; מופעל בהתחברות הראשונה שלו עם {way}",
+	"server.migrate.comes-over-as-a-turns-on": "מגיע בתור {role}; מופעל בהתחברות הראשונה שלו עם {way}",
+	"server.migrate.comes-over-as-a-linked-to": "מגיע בתור {role}, מקושר לחשבון {way} שלו. ההתחברות הראשונה איתו מפעילה אותו; שום סיסמה לא עוברת.",
+	"server.migrate.imported-before-gets-their-sign-in": "יובא בעבר; מקבל את ההתחברות עם {way}",
+	"server.migrate.imported-before-got-their-sign-in": "יובא בעבר; קיבל את ההתחברות עם {way}",
+	"server.migrate.imported-before-their-account-signs-in": "יובא בעבר; חשבון {way} שלו מתחבר כאן בתור {name}, אז זה נשאר כך",
+	"server.migrate.people-who-signed-in-to-the": "אנשים שהתחברו לאפליקציה הישנה עם Plex, Jellyfin או Emby מופעלים בהתחברות הראשונה שלהם בדרך הזו, ברגע שהיא מופעלת בהגדרות > התחברות ואבטחה."
 }

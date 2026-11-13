@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "biće dodato u {fallback} kao željeno, bez fajlova; traži pažnju: stara fascikla {dir} nije na ovom serveru; ispravite fasciklu ili dodajte pravilo putanje",
 	"server.migrate.its-library-folder-is-not-on": "fascikla biblioteke {library} nije na ovom serveru i ovde nema fascikle biblioteke za {kind}; dodajte jednu i uvezite ponovo",
 	"server.migrate.left-out-was-left-unchecked-check": "изостављено: {attnfolder} је подешена на „Не преносити их“; изаберите јој фасциклу и увезите поново",
-	"server.migrate.left-out-was-left-unchecked-check-2": "изостављено: {path} је подешена на „Не преносити их“; изаберите јој фасциклу и увезите поново"
+	"server.migrate.left-out-was-left-unchecked-check-2": "изостављено: {path} је подешена на „Не преносити их“; изаберите јој фасциклу и увезите поново",
+	"server.migrate.already-here-as-who-signs-in": "већ је овде као {name}, који се пријављује овим {way} налогом; његови захтеви остају његови",
+	"server.migrate.an-invite": "позивница",
+	"server.migrate.came-over-as-a-turns-on": "пренето као {role}; укључује се при првој пријави преко {way}",
+	"server.migrate.comes-over-as-a-turns-on": "преноси се као {role}; укључује се при првој пријави преко {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Преноси се као {role}, повезано са његовим {way} налогом. Прва пријава њиме га укључује; лозинка се не преноси.",
+	"server.migrate.imported-before-gets-their-sign-in": "раније увезено; добија пријаву преко {way}",
+	"server.migrate.imported-before-got-their-sign-in": "раније увезено; добио је пријаву преко {way}",
+	"server.migrate.imported-before-their-account-signs-in": "раније увезено; његов {way} налог се овде пријављује као {name}, па остаје тако",
+	"server.migrate.people-who-signed-in-to-the": "Људи који су се у стару апликацију пријављивали преко Plex, Jellyfin или Emby укључују се при првој пријави на тај начин, чим то укључиш у Подешавања > Пријава и безбедност."
 }

@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Εμφάνιση των Κλειδιών προς εκ νέου προσθήκη",
 	"migrate.personArrivesTurnedOff": "{n} άτομο έρχεται απενεργοποιημένο μέχρι να το προσκαλέσετε.",
 	"migrate.peopleArriveTurnedOff": "{n} άτομα έρχονται απενεργοποιημένα μέχρι να τα προσκαλέσετε.",
+	"migrate.personTurnsOnAtSignIn": "{n} άτομο ενεργοποιείται στην πρώτη του σύνδεση με Plex, Jellyfin ή Emby.",
+	"migrate.peopleTurnOnAtSignIn": "{n} άτομα ενεργοποιούνται στην πρώτη τους σύνδεση με Plex, Jellyfin ή Emby.",
 	"migrate.yourOldAppsAren": "Οι παλιές σας εφαρμογές δεν αλλάζουν. Μπορείτε να αναιρέσετε αυτή την εισαγωγή.",
 	"migrate.step4Of4": "Βήμα 4 από 4 · Ολοκληρώθηκε",
 	"migrate.undoProgress": "Πρόοδος αναίρεσης",

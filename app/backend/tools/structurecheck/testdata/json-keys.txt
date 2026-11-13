@@ -558,6 +558,7 @@ expected
 expires_at
 explicit
 explicit_lyrics
+ext_name
 external_id
 external_ids
 externals
@@ -1541,6 +1542,9 @@ shown
 shows
 shows_per_week
 side
+sign_in
+sign_in_id
+sign_in_name
 signatureCipher
 signin_library_art
 signing_secret

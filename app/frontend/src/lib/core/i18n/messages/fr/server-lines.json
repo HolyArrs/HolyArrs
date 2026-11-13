@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "sera ajouté à {fallback} comme souhaité, sans fichiers ; à vérifier : son ancien dossier {dir} n'est pas sur ce serveur ; corrigez son dossier ou ajoutez une règle de chemin",
 	"server.migrate.its-library-folder-is-not-on": "son dossier de bibliothèque {library} n'est pas sur ce serveur et il n'y a ici aucun dossier de bibliothèque {kind} ; ajoutez-en un et importez à nouveau",
 	"server.migrate.left-out-was-left-unchecked-check": "laissé de côté : {attnfolder} est réglé sur « Ne pas les importer » ; choisissez-lui un dossier et importez à nouveau",
-	"server.migrate.left-out-was-left-unchecked-check-2": "laissé de côté : {path} est réglé sur « Ne pas les importer » ; choisissez-lui un dossier et importez à nouveau"
+	"server.migrate.left-out-was-left-unchecked-check-2": "laissé de côté : {path} est réglé sur « Ne pas les importer » ; choisissez-lui un dossier et importez à nouveau",
+	"server.migrate.already-here-as-who-signs-in": "déjà ici sous le nom {name}, qui se connecte avec ce compte {way} ; ses demandes restent les siennes",
+	"server.migrate.an-invite": "une invitation",
+	"server.migrate.came-over-as-a-turns-on": "arrivé comme {role} ; s'active à sa première connexion avec {way}",
+	"server.migrate.comes-over-as-a-turns-on": "arrive comme {role} ; s'active à sa première connexion avec {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Arrive comme {role}, lié à son compte {way}. Sa première connexion avec ce compte l'active ; aucun mot de passe ne suit.",
+	"server.migrate.imported-before-gets-their-sign-in": "déjà importé ; reçoit sa connexion {way}",
+	"server.migrate.imported-before-got-their-sign-in": "déjà importé ; a reçu sa connexion {way}",
+	"server.migrate.imported-before-their-account-signs-in": "déjà importé ; son compte {way} se connecte ici en tant que {name}, donc rien ne change",
+	"server.migrate.people-who-signed-in-to-the": "Les personnes qui se connectaient à l'ancienne app avec Plex, Jellyfin ou Emby s'activent à leur première connexion de cette façon, dès que c'est activé dans Paramètres > Connexion et sécurité."
 }
