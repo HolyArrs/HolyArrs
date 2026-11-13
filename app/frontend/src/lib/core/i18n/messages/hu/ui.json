@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Kétlépcsős kód",
 	"ui.confirm.confirm": "Megerősítés",
 	"ui.confirm.cancel": "Mégse",
+	"ui.confirm.localVisit": "Ez a látogatás kihagyja a bejelentkezést, ezért nem tudja megerősíteni a jelszavadat. Jelentkezz be előbb a jelszavaddal, és visszatérsz ide.",
+	"ui.confirm.signInFirst": "Bejelentkezés a jelszavammal",
 	"ui.growCard.preview": "{title} előnézete",
 	"ui.growCard.goTo": "Ugrás ide: {title}",
 	"ui.growCard.moreInfoAbout": "További információ: {title}",

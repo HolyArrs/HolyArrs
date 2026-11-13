@@ -204,6 +204,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		return 0, 0, err
 	}
 	s.addAirTimes(ctx, &sh)
+	s.fixCopiedTMDB(ctx, &sh)
 	aliases := s.AnimeAliases(ctx, "show", sh.IDs["tmdb"], sh.Name)
 	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
@@ -544,6 +545,7 @@ type SeasonSummary struct {
 	Downloading  int        `json:"downloading"` // a Downloader took a copy (downloading, stalled, importing)
 	Failed       int        `json:"failed"`      // the download failed or its import needs a decision
 	NextAirDate  *time.Time `json:"next_air_date,omitempty"`
+	NextAirDay   string     `json:"next_air_day,omitempty"` // the show's own air day of that episode
 	Dropped      bool       `json:"dropped,omitempty"`
 }
 
@@ -571,7 +573,7 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 	}
 	// One query for every season of the show instead of one per season. The
 	// main Version is looked up once (by the show's id), not once per episode.
-	rows, err := db.QueryContext(ctx, `SELECT i.part_id, i.air_date, i.keep_up_to_date, COALESCE(s.state, '') FROM items i
+	rows, err := db.QueryContext(ctx, `SELECT i.part_id, i.air_date, COALESCE(i.air_day, ''), i.keep_up_to_date, COALESCE(s.state, ''), s.file_id IS NOT NULL FROM items i
 		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1)
 		WHERE i.part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'season')`, titleID, titleID)
 	if err != nil {
@@ -581,16 +583,18 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 	for rows.Next() {
 		var part int64
 		var air sql.NullString
+		var day string
 		var keep bool
 		var state string
-		if err := rows.Scan(&part, &air, &keep, &state); err != nil {
+		var hasFile bool
+		if err := rows.Scan(&part, &air, &day, &keep, &state, &hasFile); err != nil {
 			return nil, err
 		}
 		idx, ok := index[part]
 		if !ok {
 			continue
 		}
-		out[idx].tally(air, keep, state, now)
+		out[idx].tally(air, day, keep, state, hasFile, now)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -599,8 +603,10 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 }
 
 // tally counts one episode of a season: its air date, its Keep up to date
-// switch and the main Version's Slot state.
-func (ss *SeasonSummary) tally(air sql.NullString, keep bool, state string, now time.Time) {
+// switch, the main Version's Slot state and whether the Slot holds a File.
+// An episode with a File is in the Library whatever its state or air time
+// says (a search or a better copy on the way, an air time later today).
+func (ss *SeasonSummary) tally(air sql.NullString, day string, keep bool, state string, hasFile bool, now time.Time) {
 	ss.Episodes++
 	aired := false
 	if air.Valid {
@@ -610,11 +616,19 @@ func (ss *SeasonSummary) tally(air sql.NullString, keep bool, state string, now 
 				ss.Aired++
 			} else if ss.NextAirDate == nil || at.Before(*ss.NextAirDate) {
 				a := at
-				ss.NextAirDate = &a
+				ss.NextAirDate, ss.NextAirDay = &a, day
 			}
 		}
 	}
-	switch mediafiles.SlotState(state) {
+	st := mediafiles.SlotState(state)
+	if hasFile && st != mediafiles.SlotInLibrary && st != mediafiles.SlotBetterWanted {
+		ss.InLibrary++
+		switch st {
+		case mediafiles.SlotNotOutYet, mediafiles.SlotWanted, mediafiles.SlotChosen:
+			return
+		}
+	}
+	switch st {
 	case mediafiles.SlotInLibrary:
 		ss.InLibrary++
 	case mediafiles.SlotBetterWanted:

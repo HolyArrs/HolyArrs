@@ -36,7 +36,9 @@ const handLines = { 'Because you have {name}': 'suggest', 'No Downloader has con
 	// requests: the Quality row's refusals and the approver's note (qualities.go, approve.go CopyKept).
 	'a quality name can be at most 30 characters': 'requests', 'keep at least one quality shown for movies and one for shows': 'requests',
 	'that quality cannot be asked for': 'requests', 'someone already asked for this movie in that quality; decide their ask instead': 'requests',
-	'The quality you picked was not used: this title already has that copy.': 'requests' };
+	'The quality you picked was not used: this title already has that copy.': 'requests',
+	// sources choose.go: a forced pick's reasons, each ending in the verdict text.
+	'it was turned down: {d}': 'sources', 'it was turned down for this episode: {d}': 'sources' };
 // Files whose fmt.Sprintf lines are display text (card lines, labels).
 const display = /(accounts[\\/]events|discover[\\/](home|explore_np|title_view)|shows[\\/]episode_labels|requests[\\/](episodes|follows\w*|reports)|health[\\/](health|routes_settings_status)|migrate[\\/]plan_\w+|metadata[\\/]moods)\.go$/;
 
@@ -271,6 +273,17 @@ for (const file of walk(root)) {
 	for (const m of src.matchAll(/var\s+\w*Kinds\s*=\s*map\[[^\]]+\]string\s*\{([\s\S]*?)\n\}/g))
 		for (const v of m[1].matchAll(/:\s*("(?:[^"\\]|\\.)*")/g)) add(file, str(v[1], 0).text, true);
 	for (const v of src.matchAll(/\bbad\["([a-z][a-z ]+)"\]\s*=\s*true/g)) add(file, v[1], true);
+	// What a pick warns about (the toast and the pick sheet) and why a send is refused (a stored reason shown in History).
+	at(/\bWarnings\s*=\s*append\(\s*[\w.]+,\s*/g, (i) => add(file, template(expr(src, i)), true));
+	if (/[\\/]downloads[\\/]/.test(file)) {
+		at(/\breleaseRefused\{\s*/g, (i) => add(file, template(expr(src, i)), true));
+		at(/\bvar\s+ErrOutsideTorrent\s*=\s*errors\.New\(\s*/g, (i) => add(file, template(expr(src, i)), true));
+	}
+	// The reasons inside a pick's "sent although it failed" warning.
+	if (/[\\/]sources[\\/]choose\.go$/.test(file)) {
+		at(/\boverridden\s*=\s*append\(\s*overridden,\s*(?=")/g, (i) => add(file, template(expr(src, i)), true));
+		at(/\bwhy\s*(?::=|\+=)\s*(?=")/g, (i) => add(file, template(expr(src, i)), true));
+	}
 	// Health lines.
 	at(/\bStatusItem\{\s*[^,]+,\s*[^,]+,\s*/g, (i) => add(file, template(expr(src, i))));
 	if (migrateFile.test(file)) migratePass(file, src, (t) => t && migrateKeep(t) && add(file, t, true));

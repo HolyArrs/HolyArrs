@@ -11,7 +11,7 @@
 	import { densityLabels, loadDensity, loadPosterSize, posterLabels, saveDensity, savePosterSize, type Density, type PosterSize } from '#lib/ui/library-art.ts';
 	import { reaskWhileFilling } from '#lib/music/index.ts';
 	import { DlFind } from '#lib/downloads/index.ts';
-	import { ImportList, ImportToolbar, LibraryToolPage, PosterLightbox, choices, fileName, findFolders, followJob, scanCount, matchKey, pickedOf, readImportView, showIdOf, sortFolders, startPicks, statusCounts, statusLabel, type AdoptCandidate, type AdoptPlan, type AdoptResult, type ImportFilter, type ImportView, type JobView, type Named } from '#lib/mediafiles/index.ts';
+	import { ImportList, ImportToolbar, LibraryToolPage, PosterLightbox, choices, fileName, findFolders, followJob, scanCount, matchKey, canTick, pickedOf, readImportView, showIdOf, sortFolders, startPicks, statusCounts, statusLabel, tickCounts, type AdoptCandidate, type AdoptPlan, type AdoptResult, type ImportFilter, type ImportView, type JobView, type Named } from '#lib/mediafiles/index.ts';
 	import type { LookupArtist } from '#lib/music/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
@@ -70,6 +70,12 @@
 	let zoom = $state<AdoptCandidate | null>(null);
 	const sorted = $derived(plan ? sortFolders(plan.folders, appLocale()) : []);
 	const shown = $derived(findFolders(sorted, q, filter));
+	const tickNow = $derived(tickCounts(shown, sel, ticked));
+	const allTicked = $derived(tickNow.can > 0 && tickNow.on === tickNow.can);
+	function tickShown() {
+		const on = !allTicked;
+		for (const f of shown) if (canTick(f, sel)) ticked[f.folder] = on;
+	}
 	const filters = $derived<{ value: ImportFilter; label: string; n: number }[]>([
 		{ value: 'all', label: t('mediafiles.filter.all'), n: plan?.folders.length ?? 0 },
 		...statusCounts(plan?.folders ?? []).map((c) => ({ value: c.status, label: statusLabel(c.status, kind), n: c.n }))
@@ -319,6 +325,10 @@
 						{#snippet find()}<DlFind bind:term={q} shown={shown.length} total={plan?.folders.length ?? 0} searchKey="" placeholder={t('library.import.searchFolders')} note={t(shown.length === 1 ? 'library.import.folderCountOne' : 'library.import.folderCountMany', { n: shown.length.toLocaleString(appLocale()) })} testid="import-find" />{/snippet}
 					</ImportToolbar>
 					{#if shown.length}
+						<div class="tickbar" data-testid="import-tickbar">
+							<span class="count" aria-live="polite">{t('mediafiles.select.count', { n: tickNow.on.toLocaleString(appLocale()) })}</span>
+							<Button variant="plain" size="md" disabled={!tickNow.can} onclick={tickShown} data-testid="import-select-all">{allTicked ? t('mediafiles.select.none') : t('mediafiles.select.all', { n: tickNow.can.toLocaleString(appLocale()) })}</Button>
+						</div>
 						<ImportList folders={shown} {view} size={posterSize} {density} {kind} {phone} bind:sel bind:ticked {named} onlook={openLookup} onzoom={(f) => (zoom = f)} />
 					{:else}
 						<p class="notice" data-testid="import-none">{t('library.import.noneMatch')}</p>
@@ -396,6 +406,9 @@
 	}
 	/* The toolbar and the folders sit a step under the intro, as on the Library page. */
 	.checkbar { display: flex; flex-direction: column; gap: 12px; min-width: 0; margin-top: 14px; }
+	.tickbar { display: flex; align-items: center; gap: 6px; min-width: 0; }
+	.tickbar .count { padding: 0 8px; font: var(--t-subhead); font-weight: 600; font-variant-numeric: tabular-nums; }
+	.tickbar :global(.ui-btn.plain) { padding-inline: 6px; }
 	.list,
 	.found {
 		list-style: none;

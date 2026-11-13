@@ -2,6 +2,7 @@
 	// Side sheet for one season: files on disk, rename preview and history.
 	import { seasonName } from './labels.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { RenamePreview } from '#lib/mediafiles/index.ts';
 	import type { SheetEpisode } from './EpisodeSheet.svelte';
@@ -116,7 +117,7 @@
 			{#key season}<RenamePreview {titleId} {season} onDone={() => onchange?.()} />{/key}
 		{:else}
 			<ol class="st-tl">
-				{#each events as e (e.ID)}<li><span>{(e.Summary ?? e.Kind ?? '').replace(/^./, (c) => c.toUpperCase())}</span><span class="muted">{e.At ? ago(e.At) : ''}</span></li>
+				{#each events as e (e.ID)}<li><span>{serverWords(e.Summary ?? e.Kind ?? '').replace(/^./, (c) => c.toUpperCase())}</span><span class="muted">{e.At ? ago(e.At) : ''}</span></li>
 				{:else}<li class="muted">{loadingEvents ? t('shows.tools.loading') : t('shows.tools.nothingYet')}</li>{/each}
 			</ol>
 		{/if}

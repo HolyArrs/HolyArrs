@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "टू-फ़ैक्टर कोड",
 	"ui.confirm.confirm": "पक्का करें",
 	"ui.confirm.cancel": "रद्द करें",
+	"ui.confirm.localVisit": "यह विज़िट साइन-इन छोड़ देती है, इसलिए आपके पासवर्ड की पुष्टि नहीं कर सकती। पहले अपने पासवर्ड से साइन इन करें, फिर आप यहीं लौट आएँगे।",
+	"ui.confirm.signInFirst": "मेरे पासवर्ड से साइन इन करें",
 	"ui.growCard.preview": "{title} प्रीव्यू",
 	"ui.growCard.goTo": "{title} पर जाएं",
 	"ui.growCard.moreInfoAbout": "{title} के बारे में और जानकारी",

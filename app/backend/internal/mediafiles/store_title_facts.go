@@ -40,7 +40,7 @@ func TitleActivity(ctx context.Context, db database.Lister, titleID int64) (*tim
 // Versions, for the Library's size column.
 func TitleSize(ctx context.Context, db database.Lister, titleID int64) (int64, error) {
 	rows, err := db.QueryContext(ctx, `SELECT COALESCE(SUM(size), 0) FROM files
-		WHERE version_id IN (SELECT id FROM versions WHERE title_id = ?)`, titleID)
+		WHERE state = 'present' AND version_id IN (SELECT id FROM versions WHERE title_id = ?)`, titleID)
 	if err != nil {
 		return 0, err
 	}

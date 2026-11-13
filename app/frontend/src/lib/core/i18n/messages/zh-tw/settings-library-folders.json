@@ -54,5 +54,9 @@
 	"settings.libraryFolders.sideOnHint": "媒體庫中已有的檔案永遠不會被取代。",
 	"settings.libraryFolders.sideTypes": "檔案類型",
 	"settings.libraryFolders.sideTypesHint": "用逗號分隔類型，例如 srt, ass。",
-	"settings.libraryFolders.notMounted": "HolyArrs 看不到 {path}。它只看得到掛載到其容器中的資料夾。請新增類似 {path}:{inside} 的磁碟區，然後在這裡填入 {inside}。"
+	"settings.libraryFolders.notMounted": "HolyArrs 看不到 {path}。它只看得到掛載到其容器中的資料夾。請新增類似 {path}:{inside} 的磁碟區，然後在這裡填入 {inside}。",
+	"settings.libraryFolders.quality": "畫質",
+	"settings.libraryFolders.qualityNone": "使用預設值",
+	"settings.libraryFolders.qualityHint": "此資料夾中的新內容將以這個畫質開始。",
+	"settings.libraryFolders.qualityOf": "{path} 的畫質"
 }

@@ -221,7 +221,8 @@
 	// Right after the owner is made, the first-run step asks which parts to use.
 	let firstRun = false;
 	$effect(() => {
-		if (session.s.state !== 'signed_in') return;
+		// A visit let in by the local-network skip is not signed in: this page stays, so a password sign-in can follow.
+		if (session.s.state !== 'signed_in' || session.s.via === 'local_network') return;
 		if (left) return;
 		left = true;
 		// Remember who signed in here, and how (the trusted proxy signs in by itself).

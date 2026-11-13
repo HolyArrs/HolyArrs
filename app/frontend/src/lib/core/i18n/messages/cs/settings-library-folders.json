@@ -54,5 +54,9 @@
 	"settings.libraryFolders.sideOnHint": "Soubor, který už v knihovně je, se nikdy nenahradí.",
 	"settings.libraryFolders.sideTypes": "Typy souborů",
 	"settings.libraryFolders.sideTypesHint": "Typy oddělte čárkami, například srt, ass.",
-	"settings.libraryFolders.notMounted": "HolyArrs nevidí {path}. Vidí jen složky připojené do svého kontejneru. Přidejte svazek jako {path}:{inside} a pak zde použijte {inside}."
+	"settings.libraryFolders.notMounted": "HolyArrs nevidí {path}. Vidí jen složky připojené do svého kontejneru. Přidejte svazek jako {path}:{inside} a pak zde použijte {inside}.",
+	"settings.libraryFolders.quality": "Kvalita",
+	"settings.libraryFolders.qualityNone": "Použít výchozí",
+	"settings.libraryFolders.qualityHint": "Nové tituly v této složce začnou s touto kvalitou.",
+	"settings.libraryFolders.qualityOf": "Kvalita složky {path}"
 }

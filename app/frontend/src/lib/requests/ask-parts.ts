@@ -245,6 +245,11 @@ export function keptSeasons(t: { keep_up_to_date: boolean; show?: { seasons: { n
 	return t.keep_up_to_date ? (t.show?.seasons ?? []).filter((s) => s.keep_up_to_date).map((s) => s.number) : [];
 }
 
+/** The seasons of a Library show that already hold every aired episode (a season with nothing aired yet is not complete). */
+export function completeSeasons(t: { show?: { seasons: { number: number; aired: number; in_library: number }[] } }): number[] {
+	return (t.show?.seasons ?? []).filter((s) => s.number > 0 && s.aired > 0 && s.in_library >= s.aired).map((s) => s.number);
+}
+
 /** The regular seasons of a show that are not kept yet: what a member can still ask for. */
 export function seasonsToAsk(all: { number: number }[] | undefined, kept: number[]): number[] {
 	return (all ?? []).map((s) => s.number).filter((n) => n > 0 && !kept.includes(n)).sort((a, b) => a - b);

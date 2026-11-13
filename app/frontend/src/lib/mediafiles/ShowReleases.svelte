@@ -108,7 +108,7 @@
 			const ch = await api.post<Choice>(`/releases/${target.id}/choose`, body);
 			chooseDialog?.close();
 			const n = ch.slot_ids?.length ?? 1;
-			toasts.push(t('mediafiles.title.sent'), 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : t('mediafiles.title.warnings', { n: ch.warnings.length }) } : n > 1 ? { body: t('mediafiles.showReleases.forMany', { n, noun }) } : undefined);
+			toasts.push(t('mediafiles.title.sent'), 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? serverWords(ch.warnings[0]) : t('mediafiles.title.warnings', { n: ch.warnings.length }) } : n > 1 ? { body: t('mediafiles.showReleases.forMany', { n, noun }) } : undefined);
 			onchange();
 			await load();
 		} catch (e) {
@@ -214,7 +214,7 @@
 		{#if warnings.length || forceReasons.length}
 			<ul class="warns" data-testid="choose-warnings">
 				{#each warnings as w (w)}<li>{w}</li>{/each}
-				{#each forceReasons as w (w)}<li>{t('mediafiles.showReleases.didNotPass', { why: w })}</li>{/each}
+				{#each forceReasons as w (w)}<li>{t('mediafiles.showReleases.didNotPass', { why: serverWords(w) })}</li>{/each}
 			</ul>
 		{/if}
 		{#if chooseError}<p class="form-error" role="alert">{chooseError}</p>{/if}

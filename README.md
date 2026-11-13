@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease and IPTorrents built in**, no Prowlarr needed. Ask for shows in 4K, and Profilarr can send its formats and profiles. [See what's new](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease and IPTorrents built in**, no Prowlarr needed. Ask for shows in 4K, and Profilarr can send its formats and profiles. [See what's new](https://holyarrs.com/whats-new/)
 
 > Every poster, trailer and score in your HolyArrs comes from a server I run and pay for myself, so it stays free for everyone. If HolyArrs made movie night a little better, a sponsor keeps the lights on for all of us 💛
 >
@@ -222,7 +222,7 @@ Images live on Docker Hub as [`holyarrs/holyarrs`](https://hub.docker.com/r/holy
 | Tag | Use it for |
 | :----: | --- |
 | `latest` | The newest release. |
-| `1.1.2` | One exact version. It never moves. |
+| `1.1.3` | One exact version. It never moves. |
 
 ## Usage
 

@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease și IPTorrents incluse**, fără Prowlarr. Cere seriale în 4K, iar Profilarr își poate trimite formatele și profilurile. [Vezi ce e nou](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease și IPTorrents incluse**, fără Prowlarr. Cere seriale în 4K, iar Profilarr își poate trimite formatele și profilurile. [Vezi ce e nou](https://holyarrs.com/whats-new/)
 
 > Fiecare poster, trailer și scor din HolyArrs-ul tău vine de la un server pe care îl țin și îl plătesc eu, ca să rămână gratuit pentru toată lumea. Dacă HolyArrs ți-a făcut seara de film puțin mai frumoasă, un sponsor ține luminile aprinse pentru noi toți 💛
 >
@@ -107,7 +107,7 @@ Așa că am făcut-o.
 | **Toate șase la un loc** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>De circa 43 de ori mai mic. Descărcare comprimată din registry, imagini linuxserver.io, amd64, măsurat la 2026-11-08. RAM în repaus măsurat cu 10,000 de titluri și 55,000 de filme și episoade. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>De circa 43 de ori mai mic. Descărcare comprimată din registry, imagini linuxserver.io, amd64, măsurat la 2026-11-08. RAM în repaus măsurat cu 10,000 de titluri și 55,000 de filme și episoade. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Imaginile stau pe Docker Hub ca [`holyarrs/holyarrs`](https://hub.docker.com/r/h
 | Etichetă | Folosește-o pentru |
 | :----: | --- |
 | `latest` | Cea mai nouă versiune. |
-| `1.1.2` | O versiune exactă. Nu se mișcă niciodată. |
+| `1.1.3` | O versiune exactă. Nu se mișcă niciodată. |
 
 ## Utilizare
 

@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease dan IPTorrents terbina dalam**, tanpa Prowlarr. Minta siri dalam 4K, dan Profilarr boleh menghantar format dan profilnya. [Lihat perkara baharu](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease dan IPTorrents terbina dalam**, tanpa Prowlarr. Minta siri dalam 4K, dan Profilarr boleh menghantar format dan profilnya. [Lihat perkara baharu](https://holyarrs.com/whats-new/)
 
 > Setiap poster, treler dan skor dalam HolyArrs anda datang daripada pelayan yang saya jalankan dan bayar sendiri, supaya ia kekal percuma untuk semua orang. Jika HolyArrs menjadikan malam menonton filem anda sedikit lebih baik, seorang penaja membantu menghidupkan lampu untuk kita semua 💛
 >
@@ -107,7 +107,7 @@ Jadi saya membinanya.
 | **Enam app digabungkan** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Kira-kira 43 kali lebih kecil. Muat turun registri termampat, imej linuxserver.io, amd64, diukur pada 2026-11-08. RAM ketika melahu diukur dengan 10,000 judul dan 55,000 filem dan episod. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>Kira-kira 43 kali lebih kecil. Muat turun registri termampat, imej linuxserver.io, amd64, diukur pada 2026-11-08. RAM ketika melahu diukur dengan 10,000 judul dan 55,000 filem dan episod. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Imej berada di Docker Hub sebagai [`holyarrs/holyarrs`](https://hub.docker.com/r
 | Teg | Gunakan untuk |
 | :----: | --- |
 | `latest` | Keluaran terbaharu. |
-| `1.1.2` | Satu versi tepat. Ia tidak pernah berubah. |
+| `1.1.3` | Satu versi tepat. Ia tidak pernah berubah. |
 
 ## Penggunaan
 

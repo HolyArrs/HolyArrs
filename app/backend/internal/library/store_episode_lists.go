@@ -282,14 +282,16 @@ type OrderEpisodeRow struct {
 	PartID    int64
 	AltSeason int
 	AirDate   sql.NullString
+	AirDay    string
 	Keep      bool
 	State     string // the main Version's Slot state, "" when none
+	HasFile   bool   // the Slot holds a File
 }
 
 // OrderEpisodeRows reads every episode of a show with its release-name
 // season and the main Version's Slot state, in that season's order.
 func OrderEpisodeRows(ctx context.Context, q database.Lister, titleID int64) ([]OrderEpisodeRow, error) {
-	rows, err := q.QueryContext(ctx, `SELECT COALESCE(i.part_id, 0), COALESCE(json_extract(i.numbers, '$.alt_season'), 0) AS sn, i.air_date, i.keep_up_to_date, COALESCE(s.state, '') FROM items i
+	rows, err := q.QueryContext(ctx, `SELECT COALESCE(i.part_id, 0), COALESCE(json_extract(i.numbers, '$.alt_season'), 0) AS sn, i.air_date, COALESCE(i.air_day, ''), i.keep_up_to_date, COALESCE(s.state, ''), s.file_id IS NOT NULL FROM items i
 		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1)
 		WHERE i.title_id = ? AND i.kind = 'episode' ORDER BY sn`, titleID, titleID)
 	if err != nil {
@@ -299,7 +301,7 @@ func OrderEpisodeRows(ctx context.Context, q database.Lister, titleID int64) ([]
 	var out []OrderEpisodeRow
 	for rows.Next() {
 		var r OrderEpisodeRow
-		if err := rows.Scan(&r.PartID, &r.AltSeason, &r.AirDate, &r.Keep, &r.State); err != nil {
+		if err := rows.Scan(&r.PartID, &r.AltSeason, &r.AirDate, &r.AirDay, &r.Keep, &r.State, &r.HasFile); err != nil {
 			return nil, err
 		}
 		out = append(out, r)

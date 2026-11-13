@@ -5,6 +5,8 @@
 "ui.confirm.twoFactorCode": "Dvojfaktorový kód",
 "ui.confirm.confirm": "Potvrdiť",
 "ui.confirm.cancel": "Zrušiť",
+"ui.confirm.localVisit": "Táto návšteva preskočila prihlásenie, a preto nemôže potvrdiť vaše heslo. Najprv sa prihláste heslom a vrátite sa sem.",
+"ui.confirm.signInFirst": "Prihlásiť sa heslom",
 "ui.growCard.preview": "Náhľad: {title}",
 "ui.growCard.goTo": "Prejsť na {title}",
 "ui.growCard.moreInfoAbout": "Viac informácií o {title}",

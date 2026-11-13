@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Tofaktorkode",
 	"ui.confirm.confirm": "Bekreft",
 	"ui.confirm.cancel": "Avbryt",
+	"ui.confirm.localVisit": "Dette besøket hopper over innlogging, så det kan ikke bekrefte passordet ditt. Logg først inn med passordet ditt, så kommer du tilbake hit.",
+	"ui.confirm.signInFirst": "Logg inn med passordet mitt",
 	"ui.growCard.preview": "Forhåndsvisning av {title}",
 	"ui.growCard.goTo": "Gå til {title}",
 	"ui.growCard.moreInfoAbout": "Mer info om {title}",

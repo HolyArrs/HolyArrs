@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "رمز المصادقة الثنائية",
 	"ui.confirm.confirm": "تأكيد",
 	"ui.confirm.cancel": "إلغاء",
+	"ui.confirm.localVisit": "هذه الزيارة تتخطى تسجيل الدخول، لذلك لا يمكنها تأكيد كلمة مرورك. سجّل الدخول بكلمة مرورك أولًا وستعود إلى هنا.",
+	"ui.confirm.signInFirst": "تسجيل الدخول بكلمة مروري",
 	"ui.growCard.preview": "معاينة {title}",
 	"ui.growCard.goTo": "انتقل إلى {title}",
 	"ui.growCard.moreInfoAbout": "مزيد من المعلومات عن {title}",

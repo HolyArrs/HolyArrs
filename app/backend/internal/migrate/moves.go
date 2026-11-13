@@ -407,6 +407,11 @@ func (m *Mover) undo(ctx context.Context, id int64, by domain.Actor, progress fu
 			return rep, ctx.Err()
 		}
 		res, detail := m.undoOne(ctx, x, by)
+		if x.what == "ask_claim" {
+			// A claim only noted a request this import found already here: it
+			// added nothing, so the undo neither counts nor names it.
+			continue
+		}
 		line := Line{Group: x.what, Key: x.key, Name: x.key, Result: res, Detail: detail}
 		if l, ok := moved[x.key]; ok {
 			line.Group, line.Name = l.Group, l.Name

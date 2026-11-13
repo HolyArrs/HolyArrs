@@ -84,6 +84,18 @@ describe('serverWords', () => {
 		expect(serverWords('Download removed')).toBe('Téléchargement retiré');
 	});
 
+	it('shows a pick warning, a refused send and a system line in German', () => {
+		const de = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>('./messages/de/server-lines.json', { eager: true })).map((f) => f.default));
+		speak(de);
+		expect(serverWords('sent although it failed: it was turned down for this episode: no Release passed')).toContain('trotzdem gesendet, obwohl es durchgefallen ist: es wurde für diese Folge abgelehnt: ');
+		expect(serverWords('this Version already has a good enough copy; the new one will replace it')).toBe('Diese Variante hat schon eine gut genügende Kopie; die neue ersetzt sie');
+		expect(serverWords('the Source has no such Release file')).toBe('die Quelle hat diese Release-Datei nicht');
+		// A History row capitalises the stored line first.
+		expect(serverWords('The Source has no such Release file')).toBe('Die Quelle hat diese Release-Datei nicht');
+		expect(serverWords('The Downloader already has this torrent outside HolyArrs, and Show only HolyArrs items is on: move it to HolyArrs\'s category there, or turn that setting off')).toMatch(/^Der Downloader hat diesen Torrent schon außerhalb von HolyArrs/);
+		expect(serverWords('Luis signed in')).toBe('Luis hat sich angemeldet');
+	});
+
 	it('has every line the server sends (scripts/server-words.mjs --check)', () => {
 		const web = fileURLToPath(new URL('../../../../', import.meta.url));
 		const file = fileURLToPath(new URL('./messages/en/server-lines.json', import.meta.url));

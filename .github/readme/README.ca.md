@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease i IPTorrents integrats**, sense Prowlarr. Demana sèries en 4K, i Profilarr pot enviar els seus formats i perfils. [Mira què hi ha de nou](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease i IPTorrents integrats**, sense Prowlarr. Demana sèries en 4K, i Profilarr pot enviar els seus formats i perfils. [Mira què hi ha de nou](https://holyarrs.com/whats-new/)
 
 > Cada pòster, tràiler i puntuació del teu HolyArrs ve d'un servidor que porto i pago jo mateix, perquè segueixi sent gratuït per a tothom. Si HolyArrs t'ha fet la nit de pel·lícula una mica millor, un patrocini ens manté els llums encesos a tots 💛
 >
@@ -107,7 +107,7 @@ Així que la vaig fer.
 | **Les sis juntes** | **718.2 MB** | | **6** | **6** |
 | **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Unes 43 vegades més petita. Baixada comprimida del registre, imatges de linuxserver.io, amd64, mesurat el 2026-11-08. RAM en repòs mesurada amb 10,000 títols i 55,000 pel·lícules i episodis. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>Unes 43 vegades més petita. Baixada comprimida del registre, imatges de linuxserver.io, amd64, mesurat el 2026-11-08. RAM en repòs mesurada amb 10,000 títols i 55,000 pel·lícules i episodis. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -222,7 +222,7 @@ Les imatges són a Docker Hub com a [`holyarrs/holyarrs`](https://hub.docker.com
 | Etiqueta | Fes-la servir per a |
 | :----: | --- |
 | `latest` | La versió més nova. |
-| `1.1.2` | Una versió exacta. No es mou mai. |
+| `1.1.3` | Una versió exacta. No es mou mai. |
 
 ## Ús
 

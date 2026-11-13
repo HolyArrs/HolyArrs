@@ -50,6 +50,11 @@ func TestLibraryFacts(t *testing.T) {
 					ts, by, ts, by, ver, "e"+lbItoa(int64(i))+".mkv", int64(1000*(i+1)), ts)
 			}
 		}
+		// Copies that were replaced or deleted stay as rows but no longer count.
+		for _, st := range []string{"replaced", "gone"} {
+			ex(`INSERT INTO files (created_at, created_by, updated_at, updated_by, slot_ids, version_id, relative_path, size, added_at, origin, placed_by, state) VALUES (?, ?, ?, ?, '[]', ?, ?, 90000, ?, 'imported', 'copy', ?)`,
+				ts, by, ts, by, ver, "old-"+st+".mkv", ts, st)
+		}
 		return nil
 	})
 	if err != nil {

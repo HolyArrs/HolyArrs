@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Code voor tweestapsverificatie",
 	"ui.confirm.confirm": "Bevestigen",
 	"ui.confirm.cancel": "Annuleren",
+	"ui.confirm.localVisit": "Dit bezoek slaat het aanmelden over en kan je wachtwoord dus niet bevestigen. Meld je eerst aan met je wachtwoord, dan kom je hier terug.",
+	"ui.confirm.signInFirst": "Aanmelden met mijn wachtwoord",
 	"ui.growCard.preview": "Voorbeeld van {title}",
 	"ui.growCard.goTo": "Ga naar {title}",
 	"ui.growCard.moreInfoAbout": "Meer info over {title}",

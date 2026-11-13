@@ -54,5 +54,9 @@
 	"settings.libraryFolders.sideOnHint": "Um ficheiro que já está na biblioteca nunca é substituído.",
 	"settings.libraryFolders.sideTypes": "Tipos de ficheiro",
 	"settings.libraryFolders.sideTypesHint": "Separe os tipos com vírgulas, como srt, ass.",
-	"settings.libraryFolders.notMounted": "O HolyArrs não vê {path}. Só vê pastas montadas no seu contentor. Adicione um volume como {path}:{inside} e depois use {inside} aqui."
+	"settings.libraryFolders.notMounted": "O HolyArrs não vê {path}. Só vê pastas montadas no seu contentor. Adicione um volume como {path}:{inside} e depois use {inside} aqui.",
+	"settings.libraryFolders.quality": "Qualidade",
+	"settings.libraryFolders.qualityNone": "Usar o predefinido",
+	"settings.libraryFolders.qualityHint": "Os títulos novos desta pasta começam com esta qualidade.",
+	"settings.libraryFolders.qualityOf": "Qualidade de {path}"
 }

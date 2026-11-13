@@ -58,6 +58,59 @@ func fillTMDBIDs(ctx context.Context, f tmdbFinder, list []metadata.Show) {
 	wg.Wait()
 }
 
+// copiedTMDB says a show's TMDB id is its own TVDB or TVmaze id: a number
+// copied into the wrong field, which on TMDB names another show.
+func copiedTMDB(ids map[string]string) bool {
+	v := ids["tmdb"]
+	return v != "" && (v == ids["tvdb"] || v == ids["tvmaze"])
+}
+
+// fixCopiedTMDB drops such an id from an answer of another source and
+// looks the show's real TMDB id up on TMDB by its TVDB or IMDb id. TMDB's
+// own answers are left as they are.
+func (s *Service) fixCopiedTMDB(ctx context.Context, sh *metadata.Show) {
+	if sh.Source == "tmdb" || !copiedTMDB(sh.IDs) {
+		return
+	}
+	delete(sh.IDs, "tmdb")
+	p, err := s.showSource("tmdb")
+	if err != nil {
+		return
+	}
+	for _, k := range []string{"tvdb", "imdb"} {
+		if v := sh.IDs[k]; v != "" {
+			if m, err := p.Show(ctx, k+":"+v); err == nil && m.IDs["tmdb"] != "" && metadata.SameShow(*sh, m) {
+				sh.IDs["tmdb"] = m.IDs["tmdb"]
+				return
+			}
+		}
+	}
+}
+
+// lookupKnown is lookupShow for a show already stored. A stored TMDB id
+// that is a copied TVDB or TVmaze id is not used, and a TMDB answer whose
+// TVDB id is not the stored one (the stored TMDB id is another show's) is
+// replaced by the show found by its other ids, so a wrong TMDB id never
+// turns the show into another one.
+func (s *Service) lookupKnown(ctx context.Context, p metadata.ShowProvider, source string, ids map[string]string) (metadata.Show, error) {
+	others := map[string]string{}
+	for k, v := range ids {
+		if k != "tmdb" {
+			others[k] = v
+		}
+	}
+	if copiedTMDB(ids) {
+		return lookupShow(ctx, p, source, others)
+	}
+	sh, err := lookupShow(ctx, p, source, ids)
+	if err == nil && sh.Source == "tmdb" && ids["tmdb"] != "" && ids["tvdb"] != "" && sh.IDs["tvdb"] != "" && sh.IDs["tvdb"] != ids["tvdb"] {
+		if alt, err := lookupShow(ctx, p, source, others); err == nil && alt.IDs["tmdb"] != "" {
+			return alt, nil
+		}
+	}
+	return sh, err
+}
+
 // finderFor is the TMDB source when the lookup used another one.
 func (h *AddHandlers) finderFor(source string) tmdbFinder {
 	if source == "tmdb" || h.Lib == nil || h.Lib.Shows == nil {

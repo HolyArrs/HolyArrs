@@ -3,6 +3,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import Popover from '#lib/ui/Popover.svelte';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { api, message } from '#lib/core/api.ts';
@@ -93,7 +94,11 @@
 					<ul>
 						{#each shown.facts[f] as b (b.value)}
 							<li>
-								<span class="nm">{valueLabel(f, b.value, t)}</span>
+								{#if b.value === 'unknown'}
+									<span class="nm hinted"><span class="tx">{valueLabel(f, b.value, t)}</span><Popover label={t('library.stats.value.unknown')} icon="info" width={260} portal><p class="hint">{t('library.stats.value.unknownHint')}</p></Popover></span>
+								{:else}
+									<span class="nm">{valueLabel(f, b.value, t)}</span>
+								{/if}
 								<span class="bar" aria-hidden="true"><i style="transform: scaleX({shown.files ? b.files / shown.files : 0})"></i></span>
 								<span class="num">{b.files.toLocaleString()} · {bytes(b.bytes)}</span>
 							</li>
@@ -161,6 +166,12 @@
 		.fact li .bar { grid-column: 1 / -1; order: 3; }
 	}
 	.nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.nm.hinted { display: flex; align-items: center; gap: 2px; overflow: visible; }
+	.nm.hinted .tx { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+	/* The info button keeps its full tap area but does not make its row taller than the others. */
+	.nm.hinted :global(.trigger) { flex: none; margin-block: -8px; }
+	@media (pointer: coarse) { .nm.hinted :global(.trigger) { margin-block: -12px; } }
+	.hint { margin: 0; padding: 4px 2px; font: var(--t-callout); }
 	.bar { height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--text) 8%, transparent); overflow: hidden; }
 	.bar i { display: block; height: 100%; background: var(--accent); transform-origin: left; transition: transform var(--dur-slow) var(--ease-out); }
 	:global([dir='rtl']) .bar i { transform-origin: right; }

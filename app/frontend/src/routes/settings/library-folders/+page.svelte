@@ -12,11 +12,11 @@
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
-	import { folderMissing } from '#lib/mediafiles/index.ts';
+	import { folderMissing, qualityFor, qualityBody } from '#lib/mediafiles/index.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { bytes, dateTime, folderHealth, tone } from '#lib/core/format.ts';
-	import type { LibraryFolder } from '#lib/core/types.ts';
+	import type { LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 
 	// Grouped list with a plain line icon per folder.
 	const kindWord = (k: string) => (k === 'show' ? t('settings.libraryFolders.shows') : k === 'music' ? t('settings.libraryFolders.music') : t('settings.libraryFolders.movies'));
@@ -28,12 +28,16 @@
 
 	let folders = $state<LibraryFolder[]>([]);
 	let loaded = $state(false);
+	// Quality sets, for each folder's own quality. Left empty (and the choice hidden) when they cannot be read.
+	let rules = $state<PickRulesView[]>([]);
+	const canEdit = $derived(session.can('settings'));
 	let error = $state('');
 
 	let adding = $state(false);
 	let path = $state('');
 	let label = $state('');
 	let kind = $state<'movie' | 'show' | 'music'>('movie');
+	let quality = $state('');
 	let formError = $state('');
 	let saving = $state(false);
 
@@ -124,6 +128,13 @@
 			loaded = true;
 		}
 	}
+	async function loadRules() {
+		try {
+			rules = (await api.get<{ pick_rules: PickRulesView[] }>('/pick-rules')).pick_rules;
+		} catch {
+			rules = [];
+		}
+	}
 	async function loadExtra() {
 		try {
 			extraText = (await api.get<{ extra_folders: string[] }>('/settings/import-folders')).extra_folders.join('\n');
@@ -134,6 +145,7 @@
 	}
 	onMount(() => {
 		void load();
+		void loadRules();
 		void loadExtra();
 		void loadSide();
 	});
@@ -162,11 +174,12 @@
 		}
 		saving = true;
 		try {
-			const f = await api.post<LibraryFolder>('/library-folders', { path: path.trim(), kind, label: label.trim() });
+			const f = await api.post<LibraryFolder>('/library-folders', { path: path.trim(), kind, label: label.trim(), ...(quality ? qualityBody(quality) : {}) });
 			folders = [...folders, f];
 			path = '';
 			label = '';
 			kind = 'movie';
+			quality = '';
 			adding = false;
 			toasts.push(t('settings.libraryFolders.added'), f.health === 'ok' ? 'ok' : 'info', { body: f.health === 'ok' ? undefined : folderHealth(f.health) });
 		} catch (err) {
@@ -195,6 +208,18 @@
 			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}`, { label: editLabel.trim() });
 			folders = folders.map((x) => (x.id === f.id ? n : x));
 			editing = null;
+		} catch (err) {
+			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
+		} finally {
+			busyId = null;
+		}
+	}
+
+	async function setQuality(f: LibraryFolder, value: string) {
+		busyId = f.id;
+		try {
+			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}`, qualityBody(value));
+			folders = folders.map((x) => (x.id === f.id ? n : x));
 		} catch (err) {
 			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
 		} finally {
@@ -249,7 +274,7 @@
 	<form class="sc-form" onsubmit={add} aria-label={t('settings.libraryFolders.addFolder')}>
 		<SettingsCard title={t('settings.libraryFolders.addFolder')}>
 			<Field id="lf-kind" label={t('settings.libraryFolders.holds')} hint={t('settings.libraryFolders.holdsHint')}>
-				<select id="lf-kind" class="input" bind:value={kind}>
+				<select id="lf-kind" class="input" bind:value={kind} onchange={() => (quality = '')}>
 					<option value="movie">{t('settings.libraryFolders.movies')}</option>
 					<option value="show">{t('settings.libraryFolders.shows')}</option>
 					<option value="music">{t('settings.libraryFolders.music')}</option>
@@ -262,6 +287,14 @@
 				<label for="lf-label">{t('settings.libraryFolders.name')} <span class="muted">{t('settings.libraryFolders.optional')}</span></label>
 				<input id="lf-label" class="input" bind:value={label} placeholder={kindWord(kind)} maxlength="64" />
 			</div>
+			{#if rules.length}
+				<Field id="lf-quality" label={t('settings.libraryFolders.quality')} hint={t('settings.libraryFolders.qualityHint')}>
+					<select id="lf-quality" class="input" bind:value={quality} disabled={!canEdit}>
+						<option value="">{t('settings.libraryFolders.qualityNone')}</option>
+						{#each qualityFor(rules, kind) as r (r.id)}<option value={String(r.id)}>{r.name}</option>{/each}
+					</select>
+				</Field>
+			{/if}
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
 				<Button variant="primary" type="submit" disabled={saving} aria-busy={saving}>{t('settings.libraryFolders.addButton')}</Button>
@@ -293,6 +326,15 @@
 					<div class="top"><span class="name">{f.label || f.path}</span><span class="kind" data-testid="folder-kind">{f.kind === 'show' ? t('settings.libraryFolders.forShows') : f.kind === 'music' ? t('settings.libraryFolders.forMusic') : t('settings.libraryFolders.forMovies')}</span></div>
 				{/if}
 				<div class="where"><bdi dir="ltr">{shortPath(f.path)}</bdi></div>
+				{#if rules.length}
+					<div class="qual">
+						<label for="q-{f.id}">{t('settings.libraryFolders.quality')}</label>
+						<select id="q-{f.id}" class="input" aria-label={t('settings.libraryFolders.qualityOf', { path: f.path })} value={f.default_pick_rules_id ? String(f.default_pick_rules_id) : ''} disabled={!canEdit || busyId === f.id} onchange={(e) => setQuality(f, e.currentTarget.value)}>
+							<option value="">{t('settings.libraryFolders.qualityNone')}</option>
+							{#each qualityFor(rules, f.kind, f.default_pick_rules_id) as r (r.id)}<option value={String(r.id)}>{r.name}</option>{/each}
+						</select>
+					</div>
+				{/if}
 				{#if f.health_reason && rowTone(f) !== 'ok'}<div class="why {rowTone(f)}">{f.health_reason}</div>{/if}
 			</div>
 			<div class="free"><b>{freeNum(f.free_space)[0]}</b><small>{t('settings.libraryFolders.free', { unit: freeNum(f.free_space)[1] ?? '' })}</small></div>
@@ -388,6 +430,9 @@
 	.name { font: 600 15px/1.3 var(--font-ui); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.kind { flex: none; color: var(--text-muted); font: 500 12px/1 var(--font-ui); }
 	.where { margin-top: 3px; color: var(--text-muted); font: 400 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.qual { display: flex; align-items: center; gap: 8px; margin-top: 6px; min-width: 0; }
+	.qual label { flex: none; color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); }
+	.qual .input { flex: 0 1 240px; min-width: 0; min-height: 36px; }
 	.why { margin-top: 3px; font: 500 12px/1.3 var(--font-ui); color: var(--fail-text, var(--fail)); }
 	.why.wait { color: var(--wait-text, var(--wait)); }
 	.free { display: flex; align-items: baseline; gap: 4px; justify-content: flex-end; white-space: nowrap; font-variant-numeric: tabular-nums; }

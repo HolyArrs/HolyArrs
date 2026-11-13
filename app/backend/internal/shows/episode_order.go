@@ -54,7 +54,7 @@ func groupSeasons(ctx context.Context, db database.Lister, titleID int64, now ti
 		default:
 			continue
 		}
-		out[add(n, r.Keep)].tally(r.AirDate, r.Keep, r.State, now)
+		out[add(n, r.Keep)].tally(r.AirDate, r.AirDay, r.Keep, r.State, r.HasFile, now)
 	}
 	return out, nil
 }

@@ -54,5 +54,9 @@
 	"settings.libraryFolders.sideOnHint": "Un fișier aflat deja în bibliotecă nu este înlocuit niciodată.",
 	"settings.libraryFolders.sideTypes": "Tipuri de fișiere",
 	"settings.libraryFolders.sideTypesHint": "Separați tipurile prin virgule, de exemplu srt, ass.",
-	"settings.libraryFolders.notMounted": "HolyArrs nu vede {path}. Vede doar folderele montate în containerul său. Adaugă un volum ca {path}:{inside}, apoi folosește {inside} aici."
+	"settings.libraryFolders.notMounted": "HolyArrs nu vede {path}. Vede doar folderele montate în containerul său. Adaugă un volum ca {path}:{inside}, apoi folosește {inside} aici.",
+	"settings.libraryFolders.quality": "Calitate",
+	"settings.libraryFolders.qualityNone": "Folosește valoarea implicită",
+	"settings.libraryFolders.qualityHint": "Titlurile noi din acest dosar încep cu această calitate.",
+	"settings.libraryFolders.qualityOf": "Calitatea pentru {path}"
 }

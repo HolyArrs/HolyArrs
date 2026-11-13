@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Kod för tvåstegsverifiering",
 	"ui.confirm.confirm": "Bekräfta",
 	"ui.confirm.cancel": "Avbryt",
+	"ui.confirm.localVisit": "Det här besöket hoppar över inloggningen och kan därför inte bekräfta ditt lösenord. Logga först in med ditt lösenord, så kommer du tillbaka hit.",
+	"ui.confirm.signInFirst": "Logga in med mitt lösenord",
 	"ui.growCard.preview": "Förhandsvisning av {title}",
 	"ui.growCard.goTo": "Gå till {title}",
 	"ui.growCard.moreInfoAbout": "Mer information om {title}",

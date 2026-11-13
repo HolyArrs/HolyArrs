@@ -54,5 +54,9 @@
 	"settings.libraryFolders.sideOnHint": "A file already in the Library is never replaced.",
 	"settings.libraryFolders.sideTypes": "File types",
 	"settings.libraryFolders.sideTypesHint": "Separate types with commas, such as srt, ass.",
-	"settings.libraryFolders.notMounted": "HolyArrs can't see {path}. It only sees folders mounted into its container. Add a volume like {path}:{inside}, then use {inside} here."
+	"settings.libraryFolders.notMounted": "HolyArrs can't see {path}. It only sees folders mounted into its container. Add a volume like {path}:{inside}, then use {inside} here.",
+	"settings.libraryFolders.quality": "Quality",
+	"settings.libraryFolders.qualityNone": "Use the default",
+	"settings.libraryFolders.qualityHint": "New titles in this folder start with this quality.",
+	"settings.libraryFolders.qualityOf": "Quality of {path}"
 }
