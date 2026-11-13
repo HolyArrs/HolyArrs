@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "оставьте видимым хотя бы одно качество для фильмов и одно для сериалов",
 	"server.requests.someone-already-asked-for-this-movie": "кто-то уже запросил этот фильм в этом качестве; лучше решите по его запросу",
 	"server.requests.that-quality-cannot-be-asked-for": "это качество нельзя запросить",
-	"server.requests.the-quality-you-picked-was-not": "Выбранное качество не применено: у этого тайтла уже есть такая копия."
+	"server.requests.the-quality-you-picked-was-not": "Выбранное качество не применено: у этого тайтла уже есть такая копия.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex больше не отдаёт список людей, с которыми открыт доступ к вашему серверу",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex отклонил вашу связанную учётную запись Plex; свяжите её заново"
 }

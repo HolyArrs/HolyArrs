@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "영화와 시리즈에 각각 최소 한 개의 품질을 표시해 두세요",
 	"server.requests.someone-already-asked-for-this-movie": "누군가 이미 이 영화를 그 품질로 요청했습니다. 그 요청을 결정해 주세요",
 	"server.requests.that-quality-cannot-be-asked-for": "그 품질은 요청할 수 없습니다",
-	"server.requests.the-quality-you-picked-was-not": "선택한 품질은 사용되지 않았습니다: 이 타이틀에 이미 그 사본이 있습니다."
+	"server.requests.the-quality-you-picked-was-not": "선택한 품질은 사용되지 않았습니다: 이 타이틀에 이미 그 사본이 있습니다.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex가 서버를 공유받은 사용자 목록을 더 이상 제공하지 않습니다",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex가 연결된 Plex 계정을 거부했습니다. 다시 연결하세요"
 }

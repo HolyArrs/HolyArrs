@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "映画とシリーズでそれぞれ 1 つ以上の品質を表示したままにしてください",
 	"server.requests.someone-already-asked-for-this-movie": "この映画はすでにその品質で誰かがリクエストしています。そちらのリクエストを判断してください",
 	"server.requests.that-quality-cannot-be-asked-for": "その品質はリクエストできません",
-	"server.requests.the-quality-you-picked-was-not": "選んだ品質は使われませんでした。このタイトルにはそのコピーがすでにあります。"
+	"server.requests.the-quality-you-picked-was-not": "選んだ品質は使われませんでした。このタイトルにはそのコピーがすでにあります。",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex は、サーバーを共有している人の一覧を提供しなくなりました",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex が連携済みの Plex アカウントを拒否しました。もう一度連携してください"
 }

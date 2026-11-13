@@ -215,7 +215,9 @@ func (a *Auth) call(ctx context.Context, c *http.Client, method, u string, hdr m
 	if err != nil {
 		return resp.StatusCode, err
 	}
-	if out != nil && resp.StatusCode/100 == 2 && len(data) > 0 {
+	if raw, ok := out.(*[]byte); ok && resp.StatusCode/100 == 2 {
+		*raw = data // an answer that is not JSON, read by the caller
+	} else if out != nil && resp.StatusCode/100 == 2 && len(data) > 0 {
 		if err := json.Unmarshal(data, out); err != nil {
 			return resp.StatusCode, fmt.Errorf("unreadable answer: %w", err)
 		}

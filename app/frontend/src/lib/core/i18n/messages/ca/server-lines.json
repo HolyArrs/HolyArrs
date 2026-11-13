@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "deixa almenys una qualitat visible per a pel·lícules i una per a sèries",
 	"server.requests.someone-already-asked-for-this-movie": "algú ja ha sol·licitat aquesta pel·lícula en aquesta qualitat; decideix la seva sol·licitud",
 	"server.requests.that-quality-cannot-be-asked-for": "aquesta qualitat no es pot sol·licitar",
-	"server.requests.the-quality-you-picked-was-not": "La qualitat triada no s'ha fet servir: aquest títol ja té aquesta còpia."
+	"server.requests.the-quality-you-picked-was-not": "La qualitat triada no s'ha fet servir: aquest títol ja té aquesta còpia.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex ja no ofereix la llista de persones amb qui es comparteix el teu servidor",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex ha rebutjat el teu compte de Plex vinculat; torna a vincular-lo"
 }

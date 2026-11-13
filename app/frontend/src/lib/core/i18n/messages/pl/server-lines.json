@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "zostaw widoczną co najmniej jedną jakość dla filmów i jedną dla seriali",
 	"server.requests.someone-already-asked-for-this-movie": "ktoś już poprosił o ten film w tej jakości; zdecyduj zamiast tego o jego prośbie",
 	"server.requests.that-quality-cannot-be-asked-for": "o tę jakość nie można prosić",
-	"server.requests.the-quality-you-picked-was-not": "Wybrana jakość nie została użyta: ten tytuł ma już tę kopię."
+	"server.requests.the-quality-you-picked-was-not": "Wybrana jakość nie została użyta: ten tytuł ma już tę kopię.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex nie udostępnia już listy osób, którym udostępniono twój serwer",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex odrzucił twoje połączone konto Plex; połącz je ponownie"
 }

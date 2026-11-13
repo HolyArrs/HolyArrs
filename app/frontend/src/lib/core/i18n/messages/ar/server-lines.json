@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "أبقِ جودة واحدة على الأقل ظاهرة للأفلام وواحدة للمسلسلات",
 	"server.requests.someone-already-asked-for-this-movie": "طلب شخص ما هذا الفيلم بهذه الجودة بالفعل؛ قرّر في طلبه بدلًا من ذلك",
 	"server.requests.that-quality-cannot-be-asked-for": "لا يمكن طلب هذه الجودة",
-	"server.requests.the-quality-you-picked-was-not": "لم تُستخدم الجودة التي اخترتها: هذا العنوان لديه تلك النسخة بالفعل."
+	"server.requests.the-quality-you-picked-was-not": "لم تُستخدم الجودة التي اخترتها: هذا العنوان لديه تلك النسخة بالفعل.",
+	"server.accounts.plex-no-longer-offers-the-list": "لم يعد Plex يقدّم قائمة الأشخاص الذين يشاركهم خادمك",
+	"server.accounts.plex-refused-your-linked-plex-account": "رفض Plex حساب Plex المرتبط بك؛ اربطه مرة أخرى"
 }

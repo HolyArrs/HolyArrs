@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "jäta nähtavaks vähemalt üks kvaliteet filmidele ja üks sarjadele",
 	"server.requests.someone-already-asked-for-this-movie": "keegi on seda filmi selles kvaliteedis juba taotlenud; otsusta hoopis tema taotlus",
 	"server.requests.that-quality-cannot-be-asked-for": "seda kvaliteeti ei saa taotleda",
-	"server.requests.the-quality-you-picked-was-not": "Valitud kvaliteeti ei kasutatud: sellel pealkirjal on see koopia juba olemas."
+	"server.requests.the-quality-you-picked-was-not": "Valitud kvaliteeti ei kasutatud: sellel pealkirjal on see koopia juba olemas.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex ei paku enam nimekirja inimestest, kellega sinu serverit jagatakse",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex lükkas sinu seotud Plexi konto tagasi; seo see uuesti"
 }

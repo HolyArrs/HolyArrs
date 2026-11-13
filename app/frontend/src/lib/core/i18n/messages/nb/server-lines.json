@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "behold minst én kvalitet synlig for filmer og én for serier",
 	"server.requests.someone-already-asked-for-this-movie": "noen har allerede bedt om denne filmen i den kvaliteten; avgjør forespørselen deres i stedet",
 	"server.requests.that-quality-cannot-be-asked-for": "den kvaliteten kan ikke forespørres",
-	"server.requests.the-quality-you-picked-was-not": "Kvaliteten du valgte ble ikke brukt: tittelen har allerede den kopien."
+	"server.requests.the-quality-you-picked-was-not": "Kvaliteten du valgte ble ikke brukt: tittelen har allerede den kopien.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex tilbyr ikke lenger listen over folkene serveren din er delt med",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex avviste den tilkoblede Plex-kontoen din; koble den til på nytt"
 }

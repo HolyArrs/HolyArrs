@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "השאר לפחות איכות אחת מוצגת לסרטים ואחת לסדרות",
 	"server.requests.someone-already-asked-for-this-movie": "מישהו כבר ביקש את הסרט הזה באיכות הזו; החלט על הבקשה שלו במקום",
 	"server.requests.that-quality-cannot-be-asked-for": "אי אפשר לבקש את האיכות הזו",
-	"server.requests.the-quality-you-picked-was-not": "האיכות שבחרת לא שימשה: לכותר הזה כבר יש את העותק הזה."
+	"server.requests.the-quality-you-picked-was-not": "האיכות שבחרת לא שימשה: לכותר הזה כבר יש את העותק הזה.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex כבר לא מציע את רשימת האנשים שהשרת שלך משותף איתם",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex דחה את חשבון ה־Plex המקושר שלך; קשר אותו שוב"
 }

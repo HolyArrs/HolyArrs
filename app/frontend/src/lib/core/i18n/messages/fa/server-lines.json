@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "دست‌کم یک کیفیت برای فیلم‌ها و یکی برای سریال‌ها نمایان بماند",
 	"server.requests.someone-already-asked-for-this-movie": "یک نفر قبلاً این فیلم را با این کیفیت درخواست کرده؛ به‌جای آن دربارهٔ درخواست او تصمیم بگیر",
 	"server.requests.that-quality-cannot-be-asked-for": "این کیفیت قابل درخواست نیست",
-	"server.requests.the-quality-you-picked-was-not": "کیفیتی که انتخاب کردی استفاده نشد: این عنوان آن کپی را از قبل دارد."
+	"server.requests.the-quality-you-picked-was-not": "کیفیتی که انتخاب کردی استفاده نشد: این عنوان آن کپی را از قبل دارد.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex دیگر فهرست افرادی را که سرورت با آن‌ها به اشتراک گذاشته شده ارائه نمی‌کند",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex حساب Plex وصل‌شده‌ات را رد کرد؛ دوباره وصلش کن"
 }

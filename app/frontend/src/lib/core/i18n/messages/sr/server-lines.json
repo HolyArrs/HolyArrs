@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "остави видљив бар један квалитет за филмове и један за серије",
 	"server.requests.someone-already-asked-for-this-movie": "неко је већ затражио овај филм у том квалитету; одлучи о његовом захтеву",
 	"server.requests.that-quality-cannot-be-asked-for": "тај квалитет не може да се затражи",
-	"server.requests.the-quality-you-picked-was-not": "Изабрани квалитет није искоришћен: овај наслов већ има ту копију."
+	"server.requests.the-quality-you-picked-was-not": "Изабрани квалитет није искоришћен: овај наслов већ има ту копију.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex више не нуди списак људи са којима је твој сервер подељен",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex је одбио твој повезани Plex налог; повежи га поново"
 }

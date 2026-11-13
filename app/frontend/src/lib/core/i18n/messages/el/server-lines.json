@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "αφήστε ορατή τουλάχιστον μία ποιότητα για ταινίες και μία για σειρές",
 	"server.requests.someone-already-asked-for-this-movie": "κάποιος έχει ήδη ζητήσει αυτή την ταινία σε αυτή την ποιότητα· αποφασίστε για το δικό του αίτημα",
 	"server.requests.that-quality-cannot-be-asked-for": "αυτή η ποιότητα δεν μπορεί να ζητηθεί",
-	"server.requests.the-quality-you-picked-was-not": "Η ποιότητα που επιλέξατε δεν χρησιμοποιήθηκε: ο τίτλος έχει ήδη αυτό το αντίγραφο."
+	"server.requests.the-quality-you-picked-was-not": "Η ποιότητα που επιλέξατε δεν χρησιμοποιήθηκε: ο τίτλος έχει ήδη αυτό το αντίγραφο.",
+	"server.accounts.plex-no-longer-offers-the-list": "το Plex δεν προσφέρει πλέον τη λίστα με τα άτομα με τα οποία μοιράζεται ο διακομιστής σας",
+	"server.accounts.plex-refused-your-linked-plex-account": "το Plex απέρριψε τον συνδεδεμένο λογαριασμό σας στο Plex· συνδέστε τον ξανά"
 }

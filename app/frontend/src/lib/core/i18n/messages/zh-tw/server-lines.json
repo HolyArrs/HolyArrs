@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "電影和影集各至少保留一個顯示的畫質",
 	"server.requests.someone-already-asked-for-this-movie": "已經有人以該畫質請求了這部電影；請改為處理他們的請求",
 	"server.requests.that-quality-cannot-be-asked-for": "無法請求該畫質",
-	"server.requests.the-quality-you-picked-was-not": "未使用你選擇的畫質：這部作品已經有該副本。"
+	"server.requests.the-quality-you-picked-was-not": "未使用你選擇的畫質：這部作品已經有該副本。",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex 不再提供與你的伺服器共享的成員清單",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex 拒絕了你已關聯的 Plex 帳號；請重新關聯"
 }

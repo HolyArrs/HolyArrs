@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "palikite rodomą bent vieną kokybę filmams ir vieną serialams",
 	"server.requests.someone-already-asked-for-this-movie": "kažkas jau užsakė šį filmą ta kokybe; geriau nuspręskite dėl jo užsakymo",
 	"server.requests.that-quality-cannot-be-asked-for": "šios kokybės užsakyti negalima",
-	"server.requests.the-quality-you-picked-was-not": "Pasirinkta kokybė nepanaudota: šis pavadinimas jau turi tą kopiją."
+	"server.requests.the-quality-you-picked-was-not": "Pasirinkta kokybė nepanaudota: šis pavadinimas jau turi tą kopiją.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex nebeteikia sąrašo žmonių, su kuriais bendrinamas jūsų serveris",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex atmetė jūsų susietą Plex paskyrą; susiekite ją iš naujo"
 }
