@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "zaimportowano wcześniej; dostaje logowanie przez {way}",
 	"server.migrate.imported-before-got-their-sign-in": "zaimportowano wcześniej; dostało logowanie przez {way}",
 	"server.migrate.imported-before-their-account-signs-in": "zaimportowano wcześniej; jego konto {way} loguje się tu jako {name}, więc tak zostaje",
-	"server.migrate.people-who-signed-in-to-the": "Osoby, które logowały się do starej aplikacji przez Plex, Jellyfin lub Emby, włączą się przy pierwszym logowaniu w ten sposób, gdy włączysz to w Ustawienia > Logowanie i bezpieczeństwo."
+	"server.migrate.people-who-signed-in-to-the": "Osoby, które logowały się do starej aplikacji przez Plex, Jellyfin lub Emby, włączą się przy pierwszym logowaniu w ten sposób, gdy włączysz to w Ustawienia > Logowanie i bezpieczeństwo.",
+	"server.metadata.the-metadata-server-is-slow-right": "Serwer metadanych jest teraz wolny. To minie samo."
 }

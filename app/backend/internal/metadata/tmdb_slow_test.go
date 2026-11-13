@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -134,5 +135,24 @@ func TestTMDBSlowIsNotDown(t *testing.T) {
 	}
 	if _, err := p.Movie(ctx, "tmdb:5"); !errors.Is(err, outbound.ErrSuppressed) {
 		t.Fatalf("after three broken answers the next call should wait: %v", err)
+	}
+}
+
+// A timeout says the server is slow; a refused connection still says down.
+func TestTMDBSlowOrDownWords(t *testing.T) {
+	p := newTMDB(slowTMDB(t, time.Second), fakeCred)
+	p.Timeout = 50 * time.Millisecond
+	_, err := p.Movie(context.Background(), "tmdb:5")
+	if !errors.Is(err, ErrServiceSlow) || !errors.Is(err, ErrServiceUnavailable) || !strings.Contains(err.Error(), Slow) {
+		t.Fatalf("timeout: %v", err)
+	}
+	gone := httptest.NewServer(http.NotFoundHandler())
+	gone.Close()
+	_, err = newTMDB(gone, fakeCred).Movie(context.Background(), "tmdb:5")
+	if errors.Is(err, ErrServiceSlow) || !errors.Is(err, ErrServiceUnavailable) || !strings.Contains(err.Error(), Down) {
+		t.Fatalf("refused: %v", err)
+	}
+	if unreached(context.DeadlineExceeded) != ErrServiceSlow || unreached(errors.New("connection refused")) != ErrServiceUnavailable {
+		t.Fatal("unreached should tell slow from down")
 	}
 }

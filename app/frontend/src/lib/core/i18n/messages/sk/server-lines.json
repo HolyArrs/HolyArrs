@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "importované predtým; dostane prihlásenie cez {way}",
 	"server.migrate.imported-before-got-their-sign-in": "importované predtým; dostalo prihlásenie cez {way}",
 	"server.migrate.imported-before-their-account-signs-in": "importované predtým; jeho účet {way} sa tu prihlasuje ako {name}, takže to zostane tak",
-	"server.migrate.people-who-signed-in-to-the": "Ľudia, ktorí sa do starej aplikácie prihlasovali cez Plex, Jellyfin alebo Emby, sa zapnú pri prvom prihlásení týmto spôsobom, keď to zapnete v Nastavenia > Prihlásenie a zabezpečenie."
+	"server.migrate.people-who-signed-in-to-the": "Ľudia, ktorí sa do starej aplikácie prihlasovali cez Plex, Jellyfin alebo Emby, sa zapnú pri prvom prihlásení týmto spôsobom, keď to zapnete v Nastavenia > Prihlásenie a zabezpečenie.",
+	"server.metadata.the-metadata-server-is-slow-right": "Server metadát je teraz pomalý. Napraví sa to samo."
 }

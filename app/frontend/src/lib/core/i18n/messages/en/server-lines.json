@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "imported before; gets their {way} sign-in",
 	"server.migrate.imported-before-got-their-sign-in": "imported before; got their {way} sign-in",
 	"server.migrate.imported-before-their-account-signs-in": "imported before; their {way} account signs in as {name} here, so it stays that way",
-	"server.migrate.people-who-signed-in-to-the": "People who signed in to the old app with Plex, Jellyfin or Emby turn on at their first sign-in that way, once it is on under Settings > Sign-in and security."
+	"server.migrate.people-who-signed-in-to-the": "People who signed in to the old app with Plex, Jellyfin or Emby turn on at their first sign-in that way, once it is on under Settings > Sign-in and security.",
+	"server.metadata.the-metadata-server-is-slow-right": "The metadata server is slow right now. This comes back on its own."
 }

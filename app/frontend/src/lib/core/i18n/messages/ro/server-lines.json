@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "importat înainte; primește autentificarea prin {way}",
 	"server.migrate.imported-before-got-their-sign-in": "importat înainte; a primit autentificarea prin {way}",
 	"server.migrate.imported-before-their-account-signs-in": "importat înainte; contul lui {way} se autentifică aici ca {name}, așa că rămâne așa",
-	"server.migrate.people-who-signed-in-to-the": "Persoanele care se autentificau în aplicația veche prin Plex, Jellyfin sau Emby pornesc la prima autentificare în acest fel, imediat ce pornești asta din Setări > Autentificare și securitate."
+	"server.migrate.people-who-signed-in-to-the": "Persoanele care se autentificau în aplicația veche prin Plex, Jellyfin sau Emby pornesc la prima autentificare în acest fel, imediat ce pornești asta din Setări > Autentificare și securitate.",
+	"server.metadata.the-metadata-server-is-slow-right": "Serverul de metadate este lent acum. Își revine singur."
 }

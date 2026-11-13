@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "déjà importé ; reçoit sa connexion {way}",
 	"server.migrate.imported-before-got-their-sign-in": "déjà importé ; a reçu sa connexion {way}",
 	"server.migrate.imported-before-their-account-signs-in": "déjà importé ; son compte {way} se connecte ici en tant que {name}, donc rien ne change",
-	"server.migrate.people-who-signed-in-to-the": "Les personnes qui se connectaient à l'ancienne app avec Plex, Jellyfin ou Emby s'activent à leur première connexion de cette façon, dès que c'est activé dans Paramètres > Connexion et sécurité."
+	"server.migrate.people-who-signed-in-to-the": "Les personnes qui se connectaient à l'ancienne app avec Plex, Jellyfin ou Emby s'activent à leur première connexion de cette façon, dès que c'est activé dans Paramètres > Connexion et sécurité.",
+	"server.metadata.the-metadata-server-is-slow-right": "Le serveur de métadonnées est lent en ce moment. Cela revient tout seul."
 }

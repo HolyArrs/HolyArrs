@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "diimport sebelum ini; mendapat log masuk {way} mereka",
 	"server.migrate.imported-before-got-their-sign-in": "diimport sebelum ini; telah mendapat log masuk {way} mereka",
 	"server.migrate.imported-before-their-account-signs-in": "diimport sebelum ini; akaun {way} mereka log masuk sebagai {name} di sini, jadi ia kekal begitu",
-	"server.migrate.people-who-signed-in-to-the": "Orang yang log masuk ke apl lama dengan Plex, Jellyfin atau Emby dihidupkan semasa log masuk pertama mereka dengan cara itu, sebaik sahaja ia dihidupkan di Tetapan > Log masuk dan keselamatan."
+	"server.migrate.people-who-signed-in-to-the": "Orang yang log masuk ke apl lama dengan Plex, Jellyfin atau Emby dihidupkan semasa log masuk pertama mereka dengan cara itu, sebaik sahaja ia dihidupkan di Tetapan > Log masuk dan keselamatan.",
+	"server.metadata.the-metadata-server-is-slow-right": "Pelayan metadata perlahan sekarang. Ia akan pulih dengan sendirinya."
 }

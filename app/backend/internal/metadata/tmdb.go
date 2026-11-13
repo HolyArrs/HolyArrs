@@ -341,11 +341,12 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 		resp, err := cl.Do(req)
 		if err != nil {
 			outcome = outbound.HTTPOutcome(0, err, ctx)
+			why := ErrServiceUnavailable
 			if timedOut(ctx, rctx) {
-				outcome = outbound.Canceled // slow, or our own Gate's wait: not down
+				outcome, why = outbound.Canceled, ErrServiceSlow // slow, or our own Gate's wait: not down
 			}
 			cancel()
-			return nil, fmt.Errorf("TMDB: %w (%w)", ErrServiceUnavailable, stripURL(err))
+			return nil, fmt.Errorf("TMDB: %w (%w)", why, stripURL(err))
 		}
 		body, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
 		if closeErr := resp.Body.Close(); err == nil {
@@ -356,6 +357,7 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 			outcome = outbound.HTTPOutcome(resp.StatusCode, err, ctx)
 			if timedOut(ctx, rctx) {
 				outcome = outbound.Canceled
+				return nil, fmt.Errorf("TMDB: %w (%w)", ErrServiceSlow, stripURL(err))
 			}
 			return nil, fmt.Errorf("TMDB: %w", stripURL(err))
 		}

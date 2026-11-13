@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "daha önce içe aktarıldı; {way} girişini alır",
 	"server.migrate.imported-before-got-their-sign-in": "daha önce içe aktarıldı; {way} girişini aldı",
 	"server.migrate.imported-before-their-account-signs-in": "daha önce içe aktarıldı; {way} hesabı burada {name} olarak giriş yapıyor, bu yüzden öyle kalır",
-	"server.migrate.people-who-signed-in-to-the": "Eski uygulamaya Plex, Jellyfin ya da Emby ile giriş yapan kişiler, Ayarlar > Giriş ve güvenlik altından açıldığında bu yolla ilk girişlerinde açılır."
+	"server.migrate.people-who-signed-in-to-the": "Eski uygulamaya Plex, Jellyfin ya da Emby ile giriş yapan kişiler, Ayarlar > Giriş ve güvenlik altından açıldığında bu yolla ilk girişlerinde açılır.",
+	"server.metadata.the-metadata-server-is-slow-right": "Metadata sunucusu şu an yavaş. Bu kendiliğinden düzelir."
 }

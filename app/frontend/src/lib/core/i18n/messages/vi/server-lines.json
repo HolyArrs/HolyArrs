@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "đã nhập trước đó; nhận cách đăng nhập bằng {way}",
 	"server.migrate.imported-before-got-their-sign-in": "đã nhập trước đó; đã nhận cách đăng nhập bằng {way}",
 	"server.migrate.imported-before-their-account-signs-in": "đã nhập trước đó; tài khoản {way} của họ đăng nhập ở đây với tên {name}, nên giữ nguyên như vậy",
-	"server.migrate.people-who-signed-in-to-the": "Những người từng đăng nhập ứng dụng cũ bằng Plex, Jellyfin hoặc Emby được bật khi đăng nhập lần đầu theo cách đó, khi bạn bật nó trong Cài đặt > Đăng nhập và bảo mật."
+	"server.migrate.people-who-signed-in-to-the": "Những người từng đăng nhập ứng dụng cũ bằng Plex, Jellyfin hoặc Emby được bật khi đăng nhập lần đầu theo cách đó, khi bạn bật nó trong Cài đặt > Đăng nhập và bảo mật.",
+	"server.metadata.the-metadata-server-is-slow-right": "Máy chủ metadata đang chậm. Việc này sẽ tự trở lại bình thường."
 }

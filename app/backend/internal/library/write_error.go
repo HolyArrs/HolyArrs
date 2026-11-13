@@ -55,6 +55,8 @@ func ServiceError(w http.ResponseWriter, err error) bool {
 		return true
 	case errors.Is(err, metadata.ErrServiceAccess):
 		message = metadata.ErrServiceAccess.Error()
+	case errors.Is(err, metadata.ErrServiceSlow):
+		message = metadata.ErrServiceSlow.Error()
 	case errors.Is(err, metadata.ErrServiceUnavailable):
 		message = metadata.ErrServiceUnavailable.Error()
 	case errors.Is(err, metadata.ErrServiceBusy):

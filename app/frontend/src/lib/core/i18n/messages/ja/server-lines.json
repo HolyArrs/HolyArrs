@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "以前にインポート済み。{way} でのサインインを受け取ります",
 	"server.migrate.imported-before-got-their-sign-in": "以前にインポート済み。{way} でのサインインを受け取りました",
 	"server.migrate.imported-before-their-account-signs-in": "以前にインポート済み。この {way} アカウントはここで {name} としてサインインするため、そのままにします",
-	"server.migrate.people-who-signed-in-to-the": "旧アプリに Plex、Jellyfin、Emby でサインインしていたユーザーは、設定 > サインインとセキュリティ でその方法がオンなら、その方法で初めてサインインしたときにオンになります。"
+	"server.migrate.people-who-signed-in-to-the": "旧アプリに Plex、Jellyfin、Emby でサインインしていたユーザーは、設定 > サインインとセキュリティ でその方法がオンなら、その方法で初めてサインインしたときにオンになります。",
+	"server.metadata.the-metadata-server-is-slow-right": "メタデータサーバーの応答が今遅くなっています。自然に元に戻ります。"
 }

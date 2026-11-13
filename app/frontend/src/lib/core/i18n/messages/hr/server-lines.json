@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "već uvezeno; dobiva prijavu putem {way}",
 	"server.migrate.imported-before-got-their-sign-in": "već uvezeno; dobio je prijavu putem {way}",
 	"server.migrate.imported-before-their-account-signs-in": "već uvezeno; njegov {way} račun ovdje se prijavljuje kao {name}, pa ostaje tako",
-	"server.migrate.people-who-signed-in-to-the": "Osobe koje su se u staru aplikaciju prijavljivale putem Plexa, Jellyfina ili Embyja uključuju se pri prvoj prijavi na taj način, čim to uključiš u Postavke > Prijava i sigurnost."
+	"server.migrate.people-who-signed-in-to-the": "Osobe koje su se u staru aplikaciju prijavljivale putem Plexa, Jellyfina ili Embyja uključuju se pri prvoj prijavi na taj način, čim to uključiš u Postavke > Prijava i sigurnost.",
+	"server.metadata.the-metadata-server-is-slow-right": "Poslužitelj metapodataka trenutačno je spor. To će proći samo od sebe."
 }

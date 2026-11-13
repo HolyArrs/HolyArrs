@@ -1310,5 +1310,6 @@
 	"server.migrate.imported-before-gets-their-sign-in": "tuotu aiemmin; saa {way}-kirjautumisensa",
 	"server.migrate.imported-before-got-their-sign-in": "tuotu aiemmin; sai {way}-kirjautumisensa",
 	"server.migrate.imported-before-their-account-signs-in": "tuotu aiemmin; hänen {way}-tilinsä kirjautuu täällä nimellä {name}, joten se pysyy niin",
-	"server.migrate.people-who-signed-in-to-the": "Vanhaan sovellukseen Plexillä, Jellyfinillä tai Embyllä kirjautuneet menevät päälle ensimmäisellä kirjautumisellaan sitä kautta, kun se on päällä kohdassa Asetukset > Kirjautuminen ja turvallisuus."
+	"server.migrate.people-who-signed-in-to-the": "Vanhaan sovellukseen Plexillä, Jellyfinillä tai Embyllä kirjautuneet menevät päälle ensimmäisellä kirjautumisellaan sitä kautta, kun se on päällä kohdassa Asetukset > Kirjautuminen ja turvallisuus.",
+	"server.metadata.the-metadata-server-is-slow-right": "Metatietopalvelin on nyt hidas. Tilanne korjaantuu itsestään."
 }
