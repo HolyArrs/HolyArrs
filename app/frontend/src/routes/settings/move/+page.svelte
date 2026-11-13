@@ -34,7 +34,7 @@
 
 	// What the page knows. An owner who signs in another way has no password to confirm: moving asks for one, so the step shows how to set it (Settings and the wizard).
 	const passwordFlowCtx = {
-		get runFlow() { return runFlow; },
+		get runFlow() { return runFlow; }, get step() { return step; },
 	};
 	const passwordFlow = createMovePassword(passwordFlowCtx);
 	onMount(() => {
@@ -49,13 +49,13 @@
 					passwordFlow.resumeMove = true;
 					passwordFlow.pwSheet = true;
 				}
-			}
+			} else if (path === '/migrate/moves') passwordFlow.waitForCheck();
 		};
 		window.addEventListener('holyarrs:reauth', onReauth);
 		return () => window.removeEventListener('holyarrs:reauth', onReauth);
 	});
 	$effect(() => {
-		if (passwordFlow.mustSetPw && session.s.hasPassword) passwordFlow.mustSetPw = false;
+		passwordFlow.settle();
 	});
 	let loaded = $state(false);
 	let loadError = $state('');
