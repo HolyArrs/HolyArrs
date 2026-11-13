@@ -29,12 +29,13 @@ func (m *Manager) HandleGrab(ctx context.Context, r *jobs.Run) error {
 	relID, _ := r.Job.Params["release_id"].(float64)
 	id, err := m.Grab(ctx, r.Job.Subject.ID, int64(relID), domain.Actor{Kind: "job", ID: r.Job.ID})
 	var te *TagsError
-	if errors.As(err, &te) {
-		// No Downloader takes the title's tags. Trying again changes nothing until a
-		// person changes tags, so the Slot waits on a decision. A Slot that moved on
-		// meanwhile refuses the change; nothing is left to do then.
-		_ = mediafiles.MoveSlot(ctx, m.Store, r.Job.Subject.ID, mediafiles.SlotNeedsADecision, te.Error(), domain.Actor{Kind: "job", ID: r.Job.ID})
-		r.SetResult(map[string]any{"not_sent": te.Error()})
+	if errors.As(err, &te) || errors.Is(err, ErrOutsideTorrent) {
+		// No Downloader takes the title's tags, or the torrent sits in the Downloader
+		// outside HolyArrs's category where HolyArrs may not take it. Trying again
+		// changes nothing until a person acts, so the Slot waits on a decision. A Slot
+		// that moved on meanwhile refuses the change; nothing is left to do then.
+		_ = mediafiles.MoveSlot(ctx, m.Store, r.Job.Subject.ID, mediafiles.SlotNeedsADecision, err.Error(), domain.Actor{Kind: "job", ID: r.Job.ID})
+		r.SetResult(map[string]any{"not_sent": err.Error()})
 		return nil
 	}
 	var nd *NoDownloaderError
@@ -253,7 +254,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 			d = dls[i]
 			ext, own, err := m.send(ctx, d, rel, slotID, hash, window > 0)
 			if err != nil {
-				if errors.Is(err, ErrUncertain) || errors.Is(err, ErrAttemptStopped) {
+				if errors.Is(err, ErrUncertain) || errors.Is(err, ErrAttemptStopped) || errors.Is(err, ErrOutsideTorrent) {
 					return 0, err
 				}
 				fails = append(fails, err)

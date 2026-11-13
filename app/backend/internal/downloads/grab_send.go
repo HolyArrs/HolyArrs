@@ -89,6 +89,9 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			if skip[j.ID] || (d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "aria2") && !sameCategory(j.Category, d.Category) {
 				return "", false, errors.New("the torrent belongs to another download or category")
 			}
+			if hiddenItem(d, j) {
+				return "", false, ErrOutsideTorrent
+			}
 			if j.ID != "" {
 				hash = j.ID
 			}
@@ -196,6 +199,9 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			if j, err := e.Get(ctx, h); err == nil {
 				if skip[j.ID] {
 					return "", false, errors.New("the torrent belongs to another download or category")
+				}
+				if hiddenItem(d, j) {
+					return "", false, ErrOutsideTorrent
 				}
 				if j.ID != "" {
 					h = j.ID

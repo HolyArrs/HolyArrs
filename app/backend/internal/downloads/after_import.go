@@ -35,9 +35,16 @@ func (m *Manager) MoveAfterImport(ctx context.Context, downloadID int64) {
 		if !ok {
 			return ErrNotSupported
 		}
+		// A torrent the client held in another category before it was picked keeps
+		// the category its owner gave it.
+		if j, err := e.Get(ctx, d.ExternalID); err == nil && !ownCategory(dr.Categories(), j.Category) {
+			return outsideKept
+		}
 		return mv.SetCategory(ctx, d.ExternalID, cat)
 	})
 	switch {
+	case errors.Is(err, outsideKept):
+		_ = m.markCategoryMoved(ctx, d.ID)
 	case err == nil:
 		if m.markCategoryMoved(ctx, d.ID) == nil {
 			m.event(ctx, &d, "download_changed", "Moved to "+cat+" after import")
