@@ -64,7 +64,7 @@ func (s *Service) refreshShow(ctx context.Context, titleID int64, switchTo strin
 		return out, err
 	}
 	now := s.Clock()
-	sh, err := lookupShow(metadata.NoCache(ctx), p, source, t.SourceIDs)
+	sh, err := s.lookupKnown(metadata.NoCache(ctx), p, source, t.SourceIDs)
 	if errors.Is(err, metadata.ErrShowNotFound) {
 		if switchTo != "" && switchTo != t.MetadataSource {
 			return out, fmt.Errorf("%s does not know this show: %w", sourceName(switchTo), err)
@@ -91,6 +91,7 @@ func (s *Service) refreshShow(ctx context.Context, titleID int64, switchTo strin
 		}
 	}
 	s.addAirTimes(metadata.NoCache(ctx), &sh)
+	s.fixCopiedTMDB(ctx, &sh)
 	s.applyEpisodeGroup(metadata.NoCache(ctx), t, &sh)
 	out.AltStale = sh.AltStale
 	was := t.MetadataSource
