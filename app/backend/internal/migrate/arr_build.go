@@ -1,6 +1,7 @@
 package migrate
 
 import (
+	"math"
 	"strconv"
 	"strings"
 )
@@ -286,13 +287,18 @@ func folderOf(path string, folders []Folder) string {
 	return best
 }
 
+// score reads a format score, held inside what a 32-bit build can count.
+func score(v any) int {
+	return int(min(max(num(v), math.MinInt32), math.MaxInt32))
+}
+
 // profile builds a quality profile from API or backup rows. The API gives
 // each quality as an object with its name; a backup gives only its id,
 // named through QualityDefinitions.
 func profile(m map[string]any, quality, formatName map[int64]string) Profile {
 	p := Profile{ID: num(m["id"]), Name: str(m["name"]), UpgradeAllowed: boolean(m["upgradeallowed"]),
-		MinScore: int(num(m["minformatscore"])), CutoffScore: int(num(m["cutoffformatscore"])),
-		MinUpgradeScore: int(num(m["minupgradeformatscore"]))}
+		MinScore: score(m["minformatscore"]), CutoffScore: score(m["cutoffformatscore"]),
+		MinUpgradeScore: score(m["minupgradeformatscore"])}
 	if l := obj(m["language"]); l != nil {
 		p.Language = str(lower(l)["name"])
 	}
