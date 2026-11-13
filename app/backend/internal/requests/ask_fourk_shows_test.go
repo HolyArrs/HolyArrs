@@ -11,6 +11,7 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // copyRow is one Version as the 4K tests read it.
@@ -158,23 +159,120 @@ func TestFourKShowAskAddsFourKVersion(t *testing.T) {
 	}
 }
 
-// A show first added by a 4K ask has its main copy marked 4K; a later plain
-// ask is not done on those files, and approving it adds a plain copy.
-func TestPlainShowAskBesideFourKOnlyShow(t *testing.T) {
+// A 4K ask for a show not in the Library adds it with both copies of what
+// was asked: the plain main copy on the plain ask's rules and folder, and
+// the 4K copy beside it. The ask is one ask, done only on the 4K files.
+func TestFourKShowAskOnNewShowAddsBothCopies(t *testing.T) {
 	r := showRig(t)
 	ctx := context.Background()
 	uhd, err := r.svc.AskShowFourK(ctx, r.ana, "tmdb:100", []int{1}, nil, false)
 	if err != nil {
 		t.Fatal(err)
 	}
+	var mine int
+	_ = r.st.Read().QueryRow("SELECT count(*) FROM asks WHERE asked_by = ?", r.ana.UserID).Scan(&mine)
+	if mine != 1 {
+		t.Fatalf("a 4K show ask counts as %d asks", mine)
+	}
 	got, err := r.svc.Approve(ctx, uhd.Ask.ID, r.luis, ApproveOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	cs := copies(t, r, *got.TitleID)
+	p, okP := plainOf(cs)
+	k, okK := fourKOf(cs)
+	fourKRules := rulesID(t, r, mediafiles.FourKName)
+	if len(cs) != 2 || !okP || !okK || !p.main || k.main || p.rules == fourKRules || p.label == mediafiles.FourKName || k.rules != fourKRules {
+		t.Fatalf("copies %+v", cs)
+	}
+	// The plain copy is where a plain ask would have put the show.
+	set, _ := ReadSettings(ctx, r.st.Read())
+	if set.ShowLibraryFolderID != 0 && p.folder != set.ShowLibraryFolderID {
+		t.Fatalf("plain folder %d, want %d", p.folder, set.ShowLibraryFolderID)
+	}
+	if keeps := seasonKeeps(t, r.st, *got.TitleID); !keeps[1] || keeps[2] {
+		t.Fatalf("kept seasons %v", keeps)
+	}
+	// Plain files alone do not finish the 4K ask; the 4K files do.
+	fillCopy(t, r, p.id, "in_library")
+	if _, err := r.svc.CheckReady(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if a, _ := get(ctx, r.st.Read(), uhd.Ask.ID); a.State != domain.AskApproved {
+		t.Fatalf("4K done on plain files: %s", a.State)
+	}
+	fillCopy(t, r, k.id, "in_library")
+	if _, err := r.svc.CheckReady(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if a, _ := get(ctx, r.st.Read(), uhd.Ask.ID); a.State != domain.AskAvailable {
+		t.Fatalf("4K %s", a.State)
+	}
+	// The plain copy holds season 1 too: a plain ask for it is in the Library.
+	var in *InLibraryError
+	if _, err := r.svc.AskShow(ctx, r.bo, "tmdb:100", []int{1}); !errors.As(err, &in) || !in.Ready {
+		t.Fatalf("plain ask after both copies %v", err)
+	}
+	// A later 4K ask for season 2 keeps it up to date for both copies and
+	// adds no third one.
+	more, err := r.svc.AskShowFourK(ctx, r.ana, "tmdb:100", []int{2}, nil, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.svc.Approve(ctx, more.Ask.ID, r.luis, ApproveOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if cs := copies(t, r, *got.TitleID); len(cs) != 2 {
+		t.Fatalf("copies after season 2 %+v", cs)
+	}
+	if keeps := seasonKeeps(t, r.st, *got.TitleID); !keeps[2] {
+		t.Fatalf("season 2 not kept %v", keeps)
+	}
+}
+
+// A 4K ask for the whole show or future seasons only adds both copies too.
+func TestFourKWholeAndFutureShowAskAddBothCopies(t *testing.T) {
+	for _, future := range []bool{false, true} {
+		r := showRig(t)
+		ctx := context.Background()
+		uhd, err := r.svc.AskShowFourK(ctx, r.ana, "tmdb:100", nil, nil, future)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := r.svc.Approve(ctx, uhd.Ask.ID, r.luis, ApproveOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		cs := copies(t, r, *got.TitleID)
+		p, okP := plainOf(cs)
+		if _, okK := fourKOf(cs); len(cs) != 2 || !okP || !okK || !p.main {
+			t.Fatalf("future %v copies %+v", future, cs)
+		}
+	}
+}
+
+// A show whose only copy is the 4K one (added that way before 4K asks got
+// both copies): a 4K ask adds no copy, a plain ask adds the plain one and
+// is not done on the 4K files.
+func TestPlainShowAskBesideFourKOnlyShow(t *testing.T) {
+	r := showRig(t)
+	ctx := context.Background()
+	tid, _, err := shows.New(r.svc.Library).AddShow(ctx, "tmdb:100", shows.ShowAddOptions{Seasons: "none", MainFourK: true, PickRulesID: rulesID(t, r, mediafiles.FourKName)}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	uhd, err := r.svc.AskShowFourK(ctx, r.ana, "tmdb:100", []int{1}, nil, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.svc.Approve(ctx, uhd.Ask.ID, r.luis, ApproveOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	cs := copies(t, r, tid)
 	if len(cs) != 1 || !cs[0].fourK || !cs[0].main || cs[0].label != mediafiles.FourKName || cs[0].rules != rulesID(t, r, mediafiles.FourKName) {
 		t.Fatalf("4K-only copies %+v", cs)
 	}
+	got := domain.Ask{TitleID: &tid}
 	fillCopy(t, r, cs[0].id, "in_library")
 	plain, err := r.svc.AskShow(ctx, r.bo, "tmdb:100", []int{1})
 	if err != nil || plain.Ask.FourK || plain.Ask.State != domain.AskAsked {
@@ -218,8 +316,9 @@ func TestFourKShowAskEpisodesAndFutureOnly(t *testing.T) {
 	if _, err := r.svc.Approve(ctx, fut.Ask.ID, r.luis, ApproveOptions{}); err != nil {
 		t.Fatal(err)
 	}
+	// The episodes ask added the show with both copies; the future one adds none.
 	a, _ := get(ctx, r.st.Read(), fut.Ask.ID)
-	if cs := copies(t, r, *a.TitleID); len(cs) != 1 || !cs[0].fourK {
+	if cs := copies(t, r, *a.TitleID); len(cs) != 2 || cs[0].fourK || !cs[1].fourK {
 		t.Fatalf("copies %+v", cs)
 	}
 }

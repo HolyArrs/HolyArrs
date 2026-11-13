@@ -14,6 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
@@ -460,7 +461,15 @@ func (s *Service) addShowForAsk(ctx context.Context, a domain.Ask, set Settings,
 		}
 	}
 	if tid == 0 {
-		o := shows.ShowAddOptions{LibraryFolderID: opt.LibraryFolderID, PickRulesID: opt.PickRulesID, Seasons: "all", WhyAdded: "ask", MainFourK: a.FourK}
+		o := shows.ShowAddOptions{LibraryFolderID: opt.LibraryFolderID, PickRulesID: opt.PickRulesID, Seasons: "all", WhyAdded: "ask"}
+		if a.FourK {
+			// A new show asked for in 4K gets both copies of what was asked:
+			// the plain main copy where a plain ask puts it, and the 4K copy
+			// beside it on the 4K rules and folder.
+			o.LibraryFolderID, o.PickRulesID = 0, 0
+			o.MoreVersions = []library.VersionInput{{Label: mediafiles.FourKName, PickRulesID: opt.PickRulesID, LibraryFolderID: opt.LibraryFolderID,
+				AudioLanguages: opt.AudioLanguages, FourK: true}}
+		}
 		if !wholeShow(a) {
 			o.Seasons = "none"
 		}
