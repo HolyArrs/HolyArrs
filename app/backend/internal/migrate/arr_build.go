@@ -289,7 +289,14 @@ func folderOf(path string, folders []Folder) string {
 
 // score reads a format score, held inside what a 32-bit build can count.
 func score(v any) int {
-	return int(min(max(num(v), math.MinInt32), math.MaxInt32))
+	n := num(v)
+	if n > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if n < math.MinInt32 {
+		return math.MinInt32
+	}
+	return int(n)
 }
 
 // profile builds a quality profile from API or backup rows. The API gives
