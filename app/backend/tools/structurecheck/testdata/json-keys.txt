@@ -1061,6 +1061,7 @@ newer
 next
 nextAiring
 next_air_date
+next_air_day
 next_announce
 next_check
 next_cursor

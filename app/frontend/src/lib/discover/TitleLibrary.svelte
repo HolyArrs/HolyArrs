@@ -436,7 +436,7 @@
 									<span class="lib-count" class:full class:part={!full && se.in_library > 0} class:none={!se.in_library && se.missing > 0}>{se.in_library} / {se.episodes}</span>
 									{#if se.downloading}<span class="lib-sr-note dl">{t('discover.titleLibrary.downloading', { downloading: se.downloading })}</span>{/if}
 									{#if se.failed}<span class="lib-sr-note fail">{t('discover.titleLibrary.failed', { failed: se.failed })}</span>{/if}
-									{#if se.next_air_date}<span class="lib-sr-note">{t('discover.titleLibrary.next', { v: dayWords(se.next_air_date) })}</span>{/if}
+									{#if se.next_air_date}<span class="lib-sr-note">{t('discover.titleLibrary.next', { v: dayWords(se.next_air_day || se.next_air_date) })}</span>{/if}
 									<span class="lib-chev" aria-hidden="true"><Icon name="chevronDown" size={16} /></span>
 								</button>
 								{#if manage}
