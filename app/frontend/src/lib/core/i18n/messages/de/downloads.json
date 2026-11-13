@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Keine Peers",
 	"downloads.problem.repairNeeded": "Reparatur nötig",
 	"downloads.hl.notAdded": "Nicht hinzugefügt; wartet wieder",
-	"downloads.hl.notAddedSlow": "der Metadaten-Server hat nicht rechtzeitig geantwortet"
+	"downloads.hl.notAddedSlow": "der Metadaten-Server hat nicht rechtzeitig geantwortet",
+	"downloads.hl.notAddedDown": "der Metadaten-Server war nicht erreichbar"
 }

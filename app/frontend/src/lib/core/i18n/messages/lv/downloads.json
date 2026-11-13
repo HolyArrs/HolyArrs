@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Nav vienādranga",
 	"downloads.problem.repairNeeded": "Nepieciešams labojums",
 	"downloads.hl.notAdded": "Nav pievienots; atkal gaida",
-	"downloads.hl.notAddedSlow": "metadatu serveris neatbildēja laikā"
+	"downloads.hl.notAddedSlow": "metadatu serveris neatbildēja laikā",
+	"downloads.hl.notAddedDown": "metadatu serveris nebija sasniedzams"
 }

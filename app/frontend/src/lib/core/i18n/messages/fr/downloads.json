@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Aucun pair",
 	"downloads.problem.repairNeeded": "Réparation nécessaire",
 	"downloads.hl.notAdded": "Pas ajouté ; de nouveau en attente",
-	"downloads.hl.notAddedSlow": "le serveur de métadonnées n'a pas répondu à temps"
+	"downloads.hl.notAddedSlow": "le serveur de métadonnées n'a pas répondu à temps",
+	"downloads.hl.notAddedDown": "le serveur de métadonnées était injoignable"
 }

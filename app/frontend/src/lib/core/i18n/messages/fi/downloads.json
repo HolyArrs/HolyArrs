@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Ei vertaisia",
 	"downloads.problem.repairNeeded": "Korjaus tarvitaan",
 	"downloads.hl.notAdded": "Ei lisätty; odottaa taas",
-	"downloads.hl.notAddedSlow": "metatietopalvelin ei vastannut ajoissa"
+	"downloads.hl.notAddedSlow": "metatietopalvelin ei vastannut ajoissa",
+	"downloads.hl.notAddedDown": "metatietopalvelimeen ei saatu yhteyttä"
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"log"
+	"net"
 	"strings"
 	"time"
 
@@ -234,13 +235,20 @@ func (s *Service) notAdded(ctx context.Context, before domain.Ask, by Person, er
 		log.Printf("asks: put back ask %d: %v", before.ID, rerr)
 	}
 	slow := errors.Is(err, metadata.ErrServiceSlow) || errors.Is(err, context.DeadlineExceeded)
+	// A connection failure keeps its raw text (with the address) in the
+	// log only; History says it in plain words.
+	var ne net.Error
+	down := !slow && (errors.Is(err, metadata.ErrServiceUnavailable) || errors.As(err, &ne) || strings.Contains(err.Error(), "dial tcp"))
 	why := err.Error()
-	if slow {
+	switch {
+	case slow:
 		why = "the metadata server did not answer in time"
+	case down:
+		why = "the metadata server could not be reached"
 	}
 	log.Printf("asks: %s was approved by %s but could not be added, so it is back in Waiting: %v", label(before), by.Name, err)
 	s.event(ctx, &domain.Event{Actor: by.actor(), Kind: domain.EventAskNotAdded, Summary: label(before) + ": could not add it, back in Waiting",
-		Data: map[string]any{"ask_id": before.ID, "approved_by": by.Name, "reason": why, "slow": slow}, GroupKey: groupKey(before.ID)})
+		Data: map[string]any{"ask_id": before.ID, "approved_by": by.Name, "reason": why, "slow": slow, "down": down}, GroupKey: groupKey(before.ID)})
 	s.changed(ctx, before.ID)
 	if slow {
 		return ErrNotAddedSlow

@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Không có peer",
 	"downloads.problem.repairNeeded": "Cần sửa chữa",
 	"downloads.hl.notAdded": "Chưa thêm; quay lại đang chờ",
-	"downloads.hl.notAddedSlow": "máy chủ metadata không phản hồi kịp"
+	"downloads.hl.notAddedSlow": "máy chủ metadata không phản hồi kịp",
+	"downloads.hl.notAddedDown": "không thể kết nối tới máy chủ metadata"
 }

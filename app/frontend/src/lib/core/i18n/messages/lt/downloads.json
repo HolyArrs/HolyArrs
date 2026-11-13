@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Nėra siuntėjų",
 	"downloads.problem.repairNeeded": "Reikia taisymo",
 	"downloads.hl.notAdded": "Nepridėta; vėl laukia",
-	"downloads.hl.notAddedSlow": "metaduomenų serveris neatsakė laiku"
+	"downloads.hl.notAddedSlow": "metaduomenų serveris neatsakė laiku",
+	"downloads.hl.notAddedDown": "nepavyko pasiekti metaduomenų serverio"
 }

@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "همتایی نیست",
 	"downloads.problem.repairNeeded": "نیاز به تعمیر",
 	"downloads.hl.notAdded": "اضافه نشد؛ دوباره در انتظار",
-	"downloads.hl.notAddedSlow": "سرور متادیتا به‌موقع پاسخ نداد"
+	"downloads.hl.notAddedSlow": "سرور متادیتا به‌موقع پاسخ نداد",
+	"downloads.hl.notAddedDown": "دسترسی به سرور متادیتا ممکن نبود"
 }

@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Нет пиров",
 	"downloads.problem.repairNeeded": "Нужно восстановление",
 	"downloads.hl.notAdded": "Не добавлено; снова ожидает",
-	"downloads.hl.notAddedSlow": "сервер метаданных не ответил вовремя"
+	"downloads.hl.notAddedSlow": "сервер метаданных не ответил вовремя",
+	"downloads.hl.notAddedDown": "не удалось связаться с сервером метаданных"
 }

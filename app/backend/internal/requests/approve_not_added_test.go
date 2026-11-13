@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -139,5 +140,26 @@ func TestApproveAddOutlivesTheRequest(t *testing.T) {
 	}
 	if tid, err := library.TitleByTMDB(context.Background(), r.st.Read(), "693134"); err != nil || tid != *got.TitleID {
 		t.Fatalf("title %d %v, ask points at %d", tid, err, *got.TitleID)
+	}
+}
+
+// A metadata server that cannot be reached is said in plain words in
+// History; the raw error with its address stays in the log.
+func TestApproveNotAddedUnreachableSaysItPlainly(t *testing.T) {
+	r := newRig(t)
+	ctx := context.Background()
+	res, err := r.svc.Ask(ctx, r.ana, "693134")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.svc.Metadata = lookups{Provider: r.svc.Metadata, movie: func(context.Context, string) (metadata.Movie, error) {
+		return metadata.Movie{}, fmt.Errorf("TMDB: %w", &net.OpError{Op: "dial", Net: "tcp", Err: errors.New("address refused by the network policy")})
+	}}
+	if _, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{}); err == nil {
+		t.Fatal("approved without its title")
+	}
+	e := hasEvent(r.events(t), domain.EventAskNotAdded)
+	if e == nil || e.Data["reason"] != "the metadata server could not be reached" || e.Data["down"] != true || e.Data["slow"] != false {
+		t.Fatalf("event: %+v", e)
 	}
 }

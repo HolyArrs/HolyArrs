@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "لا يوجد نظراء",
 	"downloads.problem.repairNeeded": "يلزم الإصلاح",
 	"downloads.hl.notAdded": "لم تتم الإضافة؛ عاد إلى الانتظار",
-	"downloads.hl.notAddedSlow": "لم يرد خادم البيانات الوصفية في الوقت المناسب"
+	"downloads.hl.notAddedSlow": "لم يرد خادم البيانات الوصفية في الوقت المناسب",
+	"downloads.hl.notAddedDown": "تعذّر الوصول إلى خادم البيانات الوصفية"
 }

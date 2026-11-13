@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "没有对等方",
 	"downloads.problem.repairNeeded": "需要修复",
 	"downloads.hl.notAdded": "未添加，已回到等待中",
-	"downloads.hl.notAddedSlow": "元数据服务器没有及时响应"
+	"downloads.hl.notAddedSlow": "元数据服务器没有及时响应",
+	"downloads.hl.notAddedDown": "无法连接到元数据服务器"
 }

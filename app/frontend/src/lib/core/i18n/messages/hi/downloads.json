@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "कोई पीयर नहीं",
 	"downloads.problem.repairNeeded": "मरम्मत ज़रूरी",
 	"downloads.hl.notAdded": "नहीं जोड़ा गया; फिर से इंतज़ार में",
-	"downloads.hl.notAddedSlow": "मेटाडेटा सर्वर ने समय पर जवाब नहीं दिया"
+	"downloads.hl.notAddedSlow": "मेटाडेटा सर्वर ने समय पर जवाब नहीं दिया",
+	"downloads.hl.notAddedDown": "मेटाडेटा सर्वर तक पहुँचा नहीं जा सका"
 }

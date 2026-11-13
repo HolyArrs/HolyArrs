@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Geen peers",
 	"downloads.problem.repairNeeded": "Reparatie nodig",
 	"downloads.hl.notAdded": "Niet toegevoegd; wacht weer",
-	"downloads.hl.notAddedSlow": "de metadataserver antwoordde niet op tijd"
+	"downloads.hl.notAddedSlow": "de metadataserver antwoordde niet op tijd",
+	"downloads.hl.notAddedDown": "de metadataserver was niet bereikbaar"
 }

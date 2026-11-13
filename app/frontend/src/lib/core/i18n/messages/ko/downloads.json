@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "피어 없음",
 	"downloads.problem.repairNeeded": "복구 필요",
 	"downloads.hl.notAdded": "추가되지 않음, 다시 대기 중",
-	"downloads.hl.notAddedSlow": "메타데이터 서버가 제때 응답하지 않았습니다"
+	"downloads.hl.notAddedSlow": "메타데이터 서버가 제때 응답하지 않았습니다",
+	"downloads.hl.notAddedDown": "메타데이터 서버에 연결할 수 없었습니다"
 }

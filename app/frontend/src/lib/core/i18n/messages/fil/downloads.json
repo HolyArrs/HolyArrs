@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Walang peer",
 	"downloads.problem.repairNeeded": "Kailangang ayusin",
 	"downloads.hl.notAdded": "Hindi naidagdag; naghihintay ulit",
-	"downloads.hl.notAddedSlow": "hindi sumagot sa oras ang metadata server"
+	"downloads.hl.notAddedSlow": "hindi sumagot sa oras ang metadata server",
+	"downloads.hl.notAddedDown": "hindi maabot ang metadata server"
 }

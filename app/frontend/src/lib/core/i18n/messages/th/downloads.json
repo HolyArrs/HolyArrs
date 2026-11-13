@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "ไม่มีเพียร์",
 	"downloads.problem.repairNeeded": "ต้องซ่อมแซม",
 	"downloads.hl.notAdded": "ไม่ได้เพิ่ม กลับไปรออีกครั้ง",
-	"downloads.hl.notAddedSlow": "เซิร์ฟเวอร์เมทาดาทาไม่ตอบทันเวลา"
+	"downloads.hl.notAddedSlow": "เซิร์ฟเวอร์เมทาดาทาไม่ตอบทันเวลา",
+	"downloads.hl.notAddedDown": "ไม่สามารถติดต่อเซิร์ฟเวอร์เมทาดาทาได้"
 }
