@@ -29,7 +29,7 @@ Open **Settings > Users and roles**, change the person and set their weekly asks
 
 ### Where approved titles go
 
-These apply when an approver leaves folder or quality on **Default**.
+These decide where approved titles go and which Pick rules they get.
 
 | Setting | What it does | Default |
 |---|---|---|
@@ -37,6 +37,18 @@ These apply when an approver leaves folder or quality on **Default**.
 | **Show folder**, **Show quality** | The same for shows | First show Library folder, and that folder's quality |
 | **Music folder**, **Music quality** | The same for artists and albums | First music Library folder, and that folder's quality |
 | **Search when approved** | Search as soon as a request is approved. Movies at once, shows at the next feed check | On |
+| **4K copy** | Folder and Pick rules for approved 4K requests, kept as their own copy | Same folder as other requests, and the quality named 4K |
+
+### What people can ask for
+
+These are the buttons in the **Quality** row on the request sheet, one list for movies and one for shows.
+
+| Line | What it asks for |
+|---|---|
+| **Standard** | The movie or show quality above, as the title's main copy |
+| **4K** | The **4K copy** above, kept as its own copy. Offered once a 4K quality is set up |
+
+Rename a line or switch off **Show to people** to hide it. Kid accounts always get the first line shown. With only one line shown, the request sheet has no Quality row.
 
 ## If it does not work
 

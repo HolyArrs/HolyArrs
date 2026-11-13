@@ -10,7 +10,7 @@ Decide on requests as the owner or an admin.
 
 1. Open **Requests**. The menu badge shows how many wait.
 2. Open a request. You see what was asked and who asked.
-3. Pick the **Library folder** and **Quality**, or leave both on **Default** to use the [Request rules](settings.md#where-approved-titles-go).
+3. The **Quality** row shows the copy they asked for. Pick another line to approve that copy instead. Folders and Pick rules come from the [Request rules](settings.md#where-approved-titles-go).
 4. For a show or artist, untick seasons or albums you do not want.
 5. Add a note if you want, and press **Approve**.
 

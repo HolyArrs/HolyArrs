@@ -3,7 +3,6 @@ title: Built-in sites
 description: "Add Knaben, TorrentsCSV, SubsPlease or IPTorrents as a Source, with no Jackett or Prowlarr in between."
 level: Setup
 sidebar: { order: 4 }
-draft: true
 ---
 
 HolyArrs can read 4 torrent sites itself. You do not need Jackett or Prowlarr for them.

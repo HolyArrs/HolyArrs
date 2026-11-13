@@ -3,7 +3,6 @@ title: Profilarr
 description: Let Profilarr push its formats, profiles and settings into HolyArrs, or import your Sonarr and Radarr formats one to one.
 level: Setup
 sidebar: { order: 7 }
-draft: true
 ---
 
 Keep using Profilarr to manage how releases are picked. HolyArrs takes what it pushes as if it were Sonarr and Radarr.
@@ -72,8 +71,8 @@ No Profilarr? Bring the formats and profiles over once.
 | Limit | What happens |
 | --- | --- |
 | A format tests something HolyArrs cannot check | It is kept but becomes no trait. |
-| More than 64 scored formats in one profile | Pick rules hold at most 64 traits. The strongest scores are kept. |
-| A score above what Pick rules allow | It is capped. |
+| More than 64 scored formats in one profile | Pick rules hold at most 64 traits. The strongest scores are kept and the weakest are left out. |
+| Very large scores | Kept exactly, over the same range Sonarr and Radarr allow. |
 | Extra delay profiles | Kept and listed back, but they change nothing. Only the default one is used. |
 | Rename patterns | Kept and listed back, but HolyArrs names files its own way. |
 | Other media management settings | Kept and listed back, but they change nothing. |
