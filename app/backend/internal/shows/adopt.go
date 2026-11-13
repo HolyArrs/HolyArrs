@@ -379,6 +379,9 @@ func (s *Service) adoptShowOne(ctx context.Context, lf mediafiles.LibraryFolder,
 		return r, err
 	}
 	r.TitleID, r.Episodes, r.Unknown = id, a.Episodes, a.Unknown
+	if len(a.Unknown) > 0 {
+		s.noteLeftAlone(ctx, lf, id, by)
+	}
 	var name string
 	_ = s.Store.Read().QueryRowContext(ctx, "SELECT name FROM titles WHERE id = ?", id).Scan(&name)
 	summary := fmt.Sprintf("Adopted %s from %s: %d episodes in %d files", name, c.Folder, a.Episodes, a.Adopted)
@@ -389,6 +392,31 @@ func (s *Service) adoptShowOne(ctx context.Context, lf mediafiles.LibraryFolder,
 		Data:     map[string]any{"library_folder_id": lf.ID, "folder": c.Folder, "id": c.ID, "files": a.Adopted, "episodes": a.Episodes, "left_alone": a.Unknown},
 		GroupKey: library.GroupKey(id)})
 	return r, nil
+}
+
+// noteLeftAlone records the files adopting left alone as found Files, so
+// the show lists them as leftovers at once instead of after the next
+// rescan. A failure only delays that to the rescan.
+func (s *Service) noteLeftAlone(ctx context.Context, lf mediafiles.LibraryFolder, titleID int64, by domain.Actor) {
+	vs, err := database.Select[mediafiles.Version](ctx, s.Store.Read(), "versions", "title_id = ? AND library_folder_id = ? ORDER BY id", titleID, lf.ID)
+	if err != nil {
+		return
+	}
+	for _, v := range vs {
+		known := map[string]bool{}
+		rows, err := s.Store.Read().QueryContext(ctx, "SELECT relative_path FROM files WHERE version_id = ?", v.ID)
+		if err != nil {
+			return
+		}
+		for rows.Next() {
+			var rel string
+			if rows.Scan(&rel) == nil {
+				known[strings.ToLower(rel)] = true
+			}
+		}
+		_ = rows.Close()
+		_, _ = s.recordFoundEpisodes(ctx, lf, v, known, by)
+	}
 }
 
 var errNotLinked = errors.New("not linked")
@@ -538,7 +566,11 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 				continue
 			}
 		}
+		reason := leftoverReason(af, len(slotIDs))
 		if note != 0 {
+			if err := s.Store.Write(ctx, func(tx *sql.Tx) error { return mediafiles.SetLeftoverReason(ctx, tx, note, reason) }); err != nil {
+				return n, err
+			}
 			continue
 		}
 		release := strings.TrimSuffix(path.Base(af.Path), path.Ext(af.Path))
@@ -547,7 +579,7 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 			info = map[string]any{}
 		}
 		f := &mediafiles.File{SlotIDs: slotIDs, VersionID: v.ID, RelativePath: af.Path, Size: af.Size, AddedAt: s.Clock(), Languages: []string{},
-			MediaInfo: info, ReleaseName: &release, Origin: "found", PlacedBy: "none", Role: "main", State: "present"}
+			MediaInfo: info, ReleaseName: &release, Origin: "found", PlacedBy: "none", Role: "main", State: "present", LeftoverReason: &reason}
 		f.Languages = library.InspectedLanguages(info)
 		if err := s.Store.Write(ctx, func(tx *sql.Tx) error { _, err := database.Insert(tx, "files", f, by); return err }); err != nil {
 			return n, err
@@ -556,4 +588,22 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 		known[strings.ToLower(af.Path)] = true
 	}
 	return n, nil
+}
+
+// leftoverReason is the short key the app translates for why a found file
+// fills no episode; slots is how many of its episodes have a Slot.
+func leftoverReason(af library.AdoptEpisodeFile, slots int) string {
+	switch {
+	case len(af.Keys) > 0 && slots == len(af.Keys):
+		return "episode_has_file"
+	case len(af.Keys) > 0:
+		return "episode_not_listed"
+	case strings.Contains(af.Why, "no episode numbers"):
+		return "no_episode_numbers"
+	case strings.Contains(af.Why, "whole seasons"):
+		return "whole_season"
+	case strings.Contains(af.Why, "bigger file"):
+		return "bigger_file_same_episode"
+	}
+	return "episode_not_listed"
 }

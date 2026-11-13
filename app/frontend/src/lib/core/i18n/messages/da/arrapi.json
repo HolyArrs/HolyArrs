@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "AI-apps er slået fra. Tillad slår dem til.",
 	"arrapi.ai.offOther": "AI-apps er slået fra. Bed ejeren slå dem til, og prøv igen.",
 	"arrapi.ai.allow": "Tillad",
-	"arrapi.ai.cancel": "Annuller"
+	"arrapi.ai.cancel": "Annuller",
+	"arrapi.seerr.sentTitle": "Sendt af andre apps",
+	"arrapi.seerr.sentHint": "Formater og profiler, som apps som Profilarr har sendt. Vises her kun til læsning.",
+	"arrapi.seerr.sentFormat": "Format",
+	"arrapi.seerr.sentProfile": "Profil",
+	"arrapi.seerr.sentUpdated": "opdateret {ago}"
 }

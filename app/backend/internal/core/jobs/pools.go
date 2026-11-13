@@ -54,6 +54,7 @@ var kindPools = map[string]Pool{
 	// heavy disk work
 	"import_download":     PoolHeavy,
 	"scan_title":          PoolHeavy,
+	"rescan_title":        PoolHeavy,
 	"move_title":          PoolHeavy,
 	"rename_files":        PoolHeavy,
 	"clean_holding":       PoolHeavy,

@@ -166,6 +166,13 @@
 	"library.import.followHint": "Ipakita sila sa kalendaryo ko.",
 	"library.import.adoptOne": "Isama ang 1 {word}",
 	"library.import.adoptMany": "Isama ang {n} {words}",
+	"library.import.searchFolders": "Maghanap sa mga folder",
+	"library.import.folderCountOne": "1 folder",
+	"library.import.folderCountMany": "{n} folder",
+	"library.import.titleAndFolder": "Pamagat at folder",
+	"library.import.matchFor": "Tugma para sa {folder}",
+	"library.import.seeLarge": "Tingnan nang malaki ang poster ng {name}",
+	"library.import.noneMatch": "Walang tugmang folder.",
 	"library.report.keep.one": "{n} title ang pinananatiling napapanahon",
 	"library.report.keep.many": "{n} title ang pinananatiling napapanahon",
 	"library.report.keep.partOne": "{ok} sa {total} title ang pinananatiling napapanahon",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Ang unang pagbasa ay gagawin sa loob ng 30 minuto.",
 	"library.stats.watchedHelp": "Mula sa kasaysayan ng pag-play ng Plex, Jellyfin, at Emby. Pag-play lang ang binibilang ng Plex, kaya hindi lumalabas ang mga title na minarkahang napanood nang mano-mano.",
 	"library.stats.lastRead": "Huling nabasa {ago}.",
-	"library.stats.noMatch": "Huling nabasa {ago}. Wala pang napanood na tumutugma sa Library mo.",
+	"library.stats.noMatch": "Na-check ang history ng panonood {ago}. Wala pang napanood na tumutugma sa Library mo.",
 	"library.stats.notLinked": "Hindi naka-link",
 	"library.stats.lastWatched": "Huling napanood {ago}",
 	"library.stats.unit.movie.one": "{n} pelikula",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} episode",
 	"library.stats.unit.episode.other": "{n} episode",
 	"library.stats.unit.play.one": "{n} play",
-	"library.stats.unit.play.other": "{n} play"
+	"library.stats.unit.play.other": "{n} play",
+	"library.byHand.askReplaceOne": "Papalitan ng 1 file ang isang file na nasa Library na. Mapupunta ang lumang file sa Kamakailang na-delete. I-import?",
+	"library.byHand.askReplaceMany": "Papalitan ng {n} file ang mga file na nasa Library na. Mapupunta ang mga lumang file sa Kamakailang na-delete. I-import?"
 }

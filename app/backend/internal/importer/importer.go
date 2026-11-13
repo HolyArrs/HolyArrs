@@ -42,6 +42,7 @@ type Target struct {
 	FolderName  string
 	TitleID     int64
 	TitleName   string
+	Aliases     []string // other names (alternative and original titles); they match too
 	Year        int
 	SlotIDs     []int64
 	Edition     string
@@ -186,7 +187,7 @@ const MinConfidence = 0.7
 
 // Plan turns candidate files into copy steps for a movie.
 func Plan(cands []Candidate, t Target) []mediafiles.PlanStep {
-	ref := mediafiles.TitleRef{ID: t.TitleID, Name: t.TitleName, Year: t.Year}
+	ref := mediafiles.TitleRef{ID: t.TitleID, Name: t.TitleName, Aliases: t.Aliases, Year: t.Year}
 	var steps []mediafiles.PlanStep
 	var mains []int
 	for _, c := range cands {
@@ -205,7 +206,8 @@ func Plan(cands []Candidate, t Target) []mediafiles.PlanStep {
 			s.Method, s.Why = "refuse", []string{"a sample, not the full video"}
 		default:
 			m := mediafiles.MatchTitle(p, []mediafiles.TitleRef{ref})
-			if m.Title == nil && p.Year.Value == 0 {
+			// A file name that names nothing (an odd short name) falls back to its folder's name.
+			if m.Title == nil {
 				if fp := releasename.Parse(filepath.Base(filepath.Dir(c.Path)), releasename.Hints{Size: c.Size}); fp.Title.Value != "" {
 					if fm := mediafiles.MatchTitle(fp, []mediafiles.TitleRef{ref}); fm.Title != nil {
 						m = fm
@@ -722,8 +724,8 @@ func (im *Importer) RequeueStranded(ctx context.Context, enqueue func(ctx contex
 	}
 	rows, err := im.Store.Read().QueryContext(ctx, `SELECT DISTINCT d.id FROM downloads d, json_each(d.slot_ids) j
 		JOIN slots s ON s.id = j.value JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
-		WHERE d.state = 'finished' AND s.state = 'downloading' AND (s.active_download_id IS NULL OR s.active_download_id = d.id) AND (t.kind = 'show' OR t.kind = 'artist' AND ?)
-		AND NOT EXISTS (SELECT 1 FROM imports x WHERE x.download_id = d.id AND x.state IN ('approved', 'placing', 'done', 'partly_done', 'waiting_for_you'))
+		WHERE d.state = 'finished' AND (s.state = 'downloading' AND NOT EXISTS (SELECT 1 FROM imports x WHERE x.download_id = d.id AND x.state IN ('approved', 'placing', 'done', 'partly_done', 'waiting_for_you'))
+		OR s.state = 'importing' AND (SELECT x.state FROM imports x WHERE x.download_id = d.id ORDER BY x.id DESC LIMIT 1) = 'placing') AND (s.active_download_id IS NULL OR s.active_download_id = d.id) AND (t.kind = 'show' OR t.kind = 'artist' AND ?)
 		ORDER BY d.id`, canImportAlbums)
 	if err != nil {
 		return 0, err

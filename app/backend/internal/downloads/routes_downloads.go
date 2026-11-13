@@ -24,6 +24,7 @@ import (
 func (a *Web) downloadsRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/downloads/view", a.DownloadsView)
 	m.HandleFunc("POST /api/v1/downloads/{id}/remove", a.removeDownload)
+	m.HandleFunc("POST /api/v1/downloads/{id}/import", a.importDownload)
 	m.HandleFunc("POST /api/v1/downloads/clear-now", a.clearNow)
 	m.HandleFunc("GET /api/v1/needs-decision", a.needsDecision)
 	a.downloadControlRoutes(m)
@@ -58,6 +59,16 @@ type DownloadRow struct {
 	// is off, or it is listed read only): pause, queue and torrent controls are off,
 	// Mark failed and Remove (HolyArrs' own records) still work.
 	ClientLocked bool `json:"client_locked,omitempty"`
+	// DownloaderGone says the row's Downloader was removed and no other one
+	// holds it: Remove clears HolyArrs' own record only.
+	DownloaderGone bool `json:"downloader_gone,omitempty"`
+	// CanImport says a finished download still waits for its import, which
+	// Import again asks for.
+	CanImport bool `json:"can_import,omitempty"`
+	// A refused import: why, in the importer's words, and the download's
+	// folder Import files by hand opens on (managers only; "" when unread).
+	RefusedWhy   string `json:"refused_why,omitempty"`
+	ImportFolder string `json:"import_folder,omitempty"`
 	// Replaced says a failed copy was turned down and HolyArrs moved on (it
 	// searches again or already has another copy), so it is no problem.
 	Replaced bool `json:"replaced,omitempty"`
@@ -366,7 +377,7 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 	rels := releaseNames(ctx, db, relIDs)
 	// A finished download whose own import was refused says so, whatever its
 	// Slot did next (kept the copy it had, or looks for another).
-	var refused map[int64]bool
+	var refused map[int64]string
 	if len(doneIDs) > 0 {
 		refused, _ = mediafiles.RefusedDownloads(ctx, db, doneIDs)
 	}
@@ -430,8 +441,11 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 			row.Covers = Covers(row.Episodes)
 			row.Phase = phaseOfMany(d, row.Episodes)
 		}
-		if refused[d.ID] {
-			row.Phase = "import_refused"
+		if why, ok := refused[d.ID]; ok {
+			row.Phase, row.RefusedWhy = "import_refused", why
+			if manage {
+				row.ImportFolder = a.importer().ReviewFolder(ctx, d.ID)
+			}
 		}
 		// Its Release is gone (deleting a Source deletes its Releases): name
 		// it by what the Downloader held, else its Title, not by a hash.
@@ -443,6 +457,15 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 		row.Label = PhaseLabels[row.Phase]
 		row.CanAct = row.Active && manage
 		row.ClientLocked = ReadOnlyFor(n)
+		ended := d.State == "finished" || d.State == "seeding"
+		if n.ID == 0 || n.Removed {
+			// Its Downloader was removed: only HolyArrs' own record can change,
+			// and a finished one can still be removed.
+			row.DownloaderGone = row.Active || ended
+			row.CanAct = manage && row.DownloaderGone
+			row.ClientLocked = true
+		}
+		row.CanImport = manage && ended && row.Phase == "waiting_to_import"
 		if (d.State == "failed" || d.State == "vanished") && row.SlotState != "" && row.SlotState != string(mediafiles.SlotFailed) && row.SlotState != string(mediafiles.SlotNeedsADecision) {
 			row.Replaced = true
 		}
@@ -480,11 +503,15 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 	health := []ClientHealth{}
 	if manage {
 		outside, health = a.clientRows(ctx, names, shown)
-		// HolyArrs' own torrents take the ratio the reader's snapshot saw.
+		// HolyArrs' own torrents take the ratio and the real size the reader's
+		// snapshot saw (the pane shows that size too).
 		if a.DLSync != nil {
 			for i := range rows {
 				if rows[i].Ratio == nil && rows[i].Protocol == "torrent" {
 					rows[i].Ratio = a.storeRatio(rows[i].DownloaderID, rows[i].Hash)
+				}
+				if s := a.storeSize(rows[i].DownloaderID, rows[i].Hash); s > 0 && rows[i].Protocol == "torrent" {
+					rows[i].Size = s
 				}
 			}
 		}

@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "AI アプリはオフです。許可するとオンになります。",
 	"arrapi.ai.offOther": "AI アプリはオフです。オーナーにオンにしてもらってから、もう一度お試しください。",
 	"arrapi.ai.allow": "許可",
-	"arrapi.ai.cancel": "キャンセル"
+	"arrapi.ai.cancel": "キャンセル",
+	"arrapi.seerr.sentTitle": "ほかのアプリから送信",
+	"arrapi.seerr.sentHint": "Profilarr などのアプリが送ったフォーマットとプロファイル。ここでは表示のみです。",
+	"arrapi.seerr.sentFormat": "フォーマット",
+	"arrapi.seerr.sentProfile": "プロファイル",
+	"arrapi.seerr.sentUpdated": "更新 {ago}"
 }

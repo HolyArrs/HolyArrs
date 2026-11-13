@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "新路徑",
 	"settings.libraryFolders.changePathHint": "請先將檔案移到那裡。HolyArrs 會檢查每個檔案，且不會移動任何東西。",
 	"settings.libraryFolders.checkingFiles": "正在檢查檔案…",
-	"settings.libraryFolders.pathChanged": "路徑已變更"
+	"settings.libraryFolders.pathChanged": "路徑已變更",
+	"settings.libraryFolders.sideFiles": "字幕檔案",
+	"settings.libraryFolders.sideFilesDesc": "隨下載一起來的字幕檔案可以放進媒體庫，放在影片旁邊。",
+	"settings.libraryFolders.sideOn": "一併帶入字幕檔案",
+	"settings.libraryFolders.sideOnHint": "媒體庫中已有的檔案永遠不會被取代。",
+	"settings.libraryFolders.sideTypes": "檔案類型",
+	"settings.libraryFolders.sideTypesHint": "用逗號分隔類型，例如 srt, ass。",
+	"settings.libraryFolders.notMounted": "HolyArrs 看不到 {path}。它只看得到掛載到其容器中的資料夾。請新增類似 {path}:{inside} 的磁碟區，然後在這裡填入 {inside}。"
 }

@@ -16,8 +16,8 @@ func metadataModeItems(in StatusInput, known func(string), add func(StatusItem, 
 		}
 		add(StatusItem{"library", page, metadata.EnvMode + " is \"" + v + "\", which is not full, own or off, so lookups are off on this install", "error"}, "metadata-mode")
 	case in.MetadataMode == string(metadata.ModeOff):
+		// Off is the owner's choice, not something to fix: no item.
 		known(page)
-		add(StatusItem{"library", page, "Lookups are off on this install", "info"}, "metadata-mode")
 	case in.MetadataMode == string(metadata.ModeOwn):
 		known(page)
 		add(StatusItem{"library", page, "Details come from your own keys; some rows are off on this install", "info"}, "metadata-mode")

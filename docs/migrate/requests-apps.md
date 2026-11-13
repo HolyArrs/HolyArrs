@@ -16,8 +16,8 @@ Bring over the people who ask for titles, their limits and their open requests, 
 
 1. In **Settings > Import from other apps**, click **Add an app** and pick **Seerr** or **Overseerr**.
 2. Read it. You should see a count of people and requests.
-3. In **Choose**, turn on **This is me** if the Seerr owner is you. Turn on **Keep as admin** for each admin who should stay one.
-4. Click **Try it**. Answer any row under **Needs a choice** (see [People with the same name](#people-with-the-same-name)).
+3. In **What to import**, turn on **This is me** if the Seerr owner is you. Turn on **Keep as admin** for each admin who should stay one.
+4. Go to **Import**. HolyArrs checks what will be added. Answer any row under **Needs a choice** (see [People with the same name](#people-with-the-same-name)).
 5. Click **Import**. Then invite each person from **Settings > Users and roles**. You should see them listed, turned off until invited.
 
 ## What comes over
@@ -37,14 +37,14 @@ Stays behind: request tags, avatars and finished or turned-down requests (only c
 
 ### People with the same name
 
-When someone here already has the name of a person from Seerr, the import never joins them by itself. **Try it** lists that person under **Needs a choice**:
+When someone here already has the name of a person from Seerr, the import never joins them by itself. The **Import** step lists that person under **Needs a choice**:
 
 | Choice | Result |
 | --- | --- |
 | **Same person** | Their requests go to the person here. |
 | **Leave out** | Their requests come over as yours. |
 
-The same choice shows when HolyArrs cannot tell if a person is one an earlier import brought, and when the person you picked is gone. Your choice reruns the test right away. The row stays, so you can change it. Until you choose, that person stays behind; **Done** says how many still need a choice.
+The same choice shows when HolyArrs cannot tell if a person is one an earlier import brought, and when the person you picked is gone. Your choice reruns the check right away. The row stays, so you can change it. Until you choose, that person stays behind; **Done** says how many still need a choice.
 
 ## If it does not work
 

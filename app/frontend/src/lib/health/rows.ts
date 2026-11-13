@@ -80,7 +80,9 @@ const checkFix: Record<string, string> = {
 	config_folder: '/settings/backups',
 	waiting_downloads: '/downloads?show=waiting.paused',
 	clear_waiting: '/downloads',
-	save_folder: '/settings/downloaders'
+	save_folder: '/settings/downloaders',
+	no_downloader: '/settings/downloaders',
+	same_downloader: '/settings/downloaders'
 };
 const checkName: Record<string, string> = {
 	get library_folder() { return t('health.check.folder'); },
@@ -91,7 +93,8 @@ const checkName: Record<string, string> = {
 	get config_folder() { return t('health.check.configFolder'); },
 	get waiting_downloads() { return t('health.check.waiting'); },
 	get clear_waiting() { return t('health.check.clearWaiting'); },
-	get save_folder() { return t('health.check.saveFolder'); }
+	get save_folder() { return t('health.check.saveFolder'); },
+	get same_downloader() { return t('health.check.sameDownloader'); }
 };
 
 // The server's own steps need a shell, so say what a container screen can do.
@@ -190,12 +193,12 @@ export function buildRows(i: StatusInput): StatusRow[] {
 		if (typeof checkFix[c.kind] !== 'string') continue;
 		const tone: Tone = c.state === 'ok' ? 'ok' : c.state === 'warning' ? 'wait' : 'fail';
 		rows.push({
-			group: c.kind === 'update' ? 'app' : c.kind === 'save_folder' ? 'downloaders' : 'library',
+			group: c.kind === 'update' ? 'app' : c.kind === 'save_folder' || c.kind === 'no_downloader' || c.kind === 'same_downloader' ? 'downloaders' : 'library',
 			key: c.key,
 			name: checkTitle(c),
 			tone,
 			word: tone === 'ok' ? t('health.word.working') : tone === 'wait' ? t('health.state.warning') : t('health.word.broken'),
-			reason: c.kind === 'config_folder' && c.state !== 'ok' ? t('health.check.configSteps') : c.kind === 'save_folder' && c.state !== 'ok' ? t('health.check.saveFolderWhy', { app: c.subject }) : c.message,
+			reason: c.kind === 'config_folder' && c.state !== 'ok' ? t('health.check.configSteps') : c.kind === 'save_folder' && c.state !== 'ok' ? t('health.check.saveFolderWhy', { app: c.subject }) : c.kind === 'no_downloader' && c.state !== 'ok' ? t(c.subject === 'usenet' ? 'health.check.noUsenetDl' : 'health.check.noTorrentDl') : c.kind === 'same_downloader' && c.state !== 'ok' ? t('health.check.sameDownloaderWhy', { app: c.subject }) : c.message,
 			at: c.checked_at || c.since,
 			fix: checkFix[c.kind] || undefined,
 			check: { kind: 'checks' }
@@ -286,6 +289,7 @@ export function stopped(r: Pick<StatusRow, 'word'>): boolean {
 // Avoids saying the same word twice, like "Backups Backups".
 function checkTitle(c: Pick<HealthCheck, 'kind' | 'subject'>): string {
 	const n = checkName[c.kind];
+	if (c.kind === 'no_downloader') return c.subject === 'usenet' ? t('health.check.usenetDl') : t('health.check.torrentDl');
 	if (!c.subject || c.subject === n || c.kind === 'waiting_downloads' || c.kind === 'clear_waiting' || c.kind.startsWith('config_')) return n;
 	return c.kind === 'update' ? c.subject : `${n} ${c.subject}`;
 }

@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} Merkmale bewertet",
 	"settings.pickRuleEdit.trashResult": "{n} Merkmale bewertet · {added} neu · {updated} aktualisiert",
 	"settings.pickRuleEdit.trashLeftOut": "{n} ausgelassen",
-	"settings.pickRuleEdit.trashTests": "prüft {kinds}"
+	"settings.pickRuleEdit.trashTests": "prüft {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Quellen",
+	"settings.pickRuleEdit.sourcesDesc": "Nur die Quellen durchsuchen, die eines dieser Tags teilen. Leer lassen, um jede Quelle zu durchsuchen.",
+	"settings.pickRuleEdit.tags": "Tags"
 }

@@ -145,5 +145,7 @@
 	"core.settings.account.about": "Passord, tofaktor, enheter",
 	"core.plain.clearWaiting": "Importerte nedlastinger venter på å bli ryddet bort fra Nedlasteren sin.",
 	"core.plain.saveFolder": "En nedlaster har ingen lagringsmappe, så HolyArrs kan ikke importere de ferdige nedlastingene.",
-	"core.api.sourceOff": "Noen rader er av på denne installasjonen."
+	"core.api.sourceOff": "Noen rader er av på denne installasjonen.",
+	"core.plain.noDownloader": "Kildene dine finner nedlastinger som ingen av nedlasterne dine kan ta imot, så ingen kan sendes.",
+	"core.plain.sameDownloader": "To nedlastere når samme nedlastingsapp, så nedlastinger kan vises to ganger."
 }

@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} विशेषताओं को पॉइंट मिले",
 	"settings.pickRuleEdit.trashResult": "{n} विशेषताओं को पॉइंट मिले · {added} नई · {updated} अपडेट",
 	"settings.pickRuleEdit.trashLeftOut": "{n} छोड़े गए",
-	"settings.pickRuleEdit.trashTests": "{kinds} जाँचता है"
+	"settings.pickRuleEdit.trashTests": "{kinds} जाँचता है",
+	"settings.pickRuleEdit.sourcesTitle": "सोर्स",
+	"settings.pickRuleEdit.sourcesDesc": "सिर्फ़ उन सोर्स में खोजें जिनमें इनमें से कोई टैग हो। हर सोर्स में खोजने के लिए खाली छोड़ें।",
+	"settings.pickRuleEdit.tags": "टैग"
 }

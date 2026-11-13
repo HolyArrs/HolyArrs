@@ -1,5 +1,5 @@
 import { decisionName, groupDecisions, manyWords, phaseTone, removeBody, removeFilesWords, removeStart, rowName, split, whyWords } from './downloaders.ts';
-import { seedingBody, seedingFields, deadRuleOn, downloadTone, emptyForm, formBody, formFrom, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
+import { samePathPair, seedingBody, seedingFields, deadRuleOn, downloadTone, emptyForm, formBody, formFrom, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
 import { describe, expect, it } from 'vitest';
 import { type Decision, type DownloadRow } from '../core/types.ts';
 
@@ -270,5 +270,28 @@ describe('dead torrent rule', () => {
 		expect(deadRuleOn({ crawl_kbps: 10 })).toBe(true);
 		expect(deadRuleOn({ dead_metadata_minutes: 0, crawl_kbps: 0 })).toBe(false);
 		expect(deadRuleOn({})).toBe(false);
+	});
+});
+
+describe('category after import and own items only', () => {
+	it('sends the category after import for qBittorrent only, and own_only for torrent clients', () => {
+		const q = { ...emptyForm('qbittorrent'), category_after_import: ' holyarrs-done ', own_only: true };
+		expect(formBody(q)).toMatchObject({ category_after_import: 'holyarrs-done', own_only: true });
+		const tr = { ...emptyForm('transmission'), category_after_import: 'x', own_only: true };
+		expect(formBody(tr)).not.toHaveProperty('category_after_import');
+		expect(formBody(tr)).toMatchObject({ own_only: true });
+		expect(formBody({ ...emptyForm('sabnzbd'), own_only: true })).not.toHaveProperty('own_only');
+		expect(emptyForm()).toMatchObject({ category_after_import: '', own_only: false });
+	});
+});
+
+describe('same path pair', () => {
+	it('spots a pair with the same folder on both sides', () => {
+		expect(samePathPair({ theirs: '/mnt/Torrents', ours: '/mnt/Torrents' })).toBe(true);
+		expect(samePathPair({ theirs: ' /mnt/Torrents/ ', ours: '/mnt/Torrents' })).toBe(true);
+		expect(samePathPair({ theirs: 'D:\\Torrents\\', ours: 'd:/torrents' })).toBe(true);
+		expect(samePathPair({ theirs: '/mnt/torrents', ours: '/mnt/Torrents' })).toBe(false);
+		expect(samePathPair({ theirs: '/data/downloads', ours: '/downloads' })).toBe(false);
+		expect(samePathPair({ theirs: '', ours: '' })).toBe(false);
 	});
 });

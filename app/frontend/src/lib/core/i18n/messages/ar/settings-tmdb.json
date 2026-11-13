@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "تعذّر الحفظ",
 	"settings.tmdb.locked": "محدد من إعدادات Docker",
 	"settings.tmdb.dockerValue": "قيمة HOLYARRS_METADATA_MODE هي \"{value}\"، وهي ليست full أو own أو off، لذا البحث متوقف.",
-	"settings.tmdb.ownNote": "بمفاتيحك الخاصة تسأل كل مصدر بنفسك. قوائم الموسيقى وصفوف الموسيقى الجديدة وأفضل 10 في البث ومعلومات ويكيبيديا وخرائط الأنمي تأتي فقط من خادم HolyArrs، لذا هي متوقفة.",
+	"settings.tmdb.ownNote": "بمفاتيحك الخاصة، يسأل HolyArrs كل مصدر مباشرةً. قوائم الموسيقى وصفوف الموسيقى الجديدة وأفضل 10 في البث ومعلومات ويكيبيديا وخرائط الأنمي تأتي فقط من خادم HolyArrs، لذا هي متوقفة.",
 	"settings.tmdb.keysTitle": "مفاتيحك",
 	"settings.tmdb.keysDesc": "يلزم رمز القراءة من TMDB فقط",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

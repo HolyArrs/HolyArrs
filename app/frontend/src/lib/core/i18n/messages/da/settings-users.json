@@ -100,5 +100,6 @@
 	"settings.users.note": "Note til dig selv",
 	"settings.users.noteExample": "f.eks. Mor",
 	"settings.users.days": "Dage linket gælder",
-	"settings.users.makeInvite": "Lav et invitationslink"
+	"settings.users.makeInvite": "Lav et invitationslink",
+	"settings.users.permAuto4k": "4K-anmodninger godkendt uden ventetid"
 }

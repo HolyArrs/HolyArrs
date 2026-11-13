@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "新路径",
 	"settings.libraryFolders.changePathHint": "请先把文件移到那里。HolyArrs 只检查每个文件，不移动任何东西。",
 	"settings.libraryFolders.checkingFiles": "正在检查文件…",
-	"settings.libraryFolders.pathChanged": "路径已更改"
+	"settings.libraryFolders.pathChanged": "路径已更改",
+	"settings.libraryFolders.sideFiles": "字幕文件",
+	"settings.libraryFolders.sideFilesDesc": "随下载一起来的字幕文件可以放进媒体库，放在视频旁边。",
+	"settings.libraryFolders.sideOn": "一并带入字幕文件",
+	"settings.libraryFolders.sideOnHint": "媒体库中已有的文件永远不会被替换。",
+	"settings.libraryFolders.sideTypes": "文件类型",
+	"settings.libraryFolders.sideTypesHint": "用逗号分隔类型，例如 srt, ass。",
+	"settings.libraryFolders.notMounted": "HolyArrs 看不到 {path}。它只能看到挂载到其容器中的文件夹。添加类似 {path}:{inside} 的卷，然后在这里填写 {inside}。"
 }

@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "Оцінено ознак: {n}",
 	"settings.pickRuleEdit.trashResult": "Оцінено ознак: {n} · нових {added} · оновлено {updated}",
 	"settings.pickRuleEdit.trashLeftOut": "Пропущено: {n}",
-	"settings.pickRuleEdit.trashTests": "перевіряє: {kinds}"
+	"settings.pickRuleEdit.trashTests": "перевіряє: {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Джерела",
+	"settings.pickRuleEdit.sourcesDesc": "Шукати лише в Джерелах, що мають один із цих тегів. Залиште порожнім, щоб шукати в усіх Джерелах.",
+	"settings.pickRuleEdit.tags": "Теги"
 }

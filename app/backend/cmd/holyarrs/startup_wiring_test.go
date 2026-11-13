@@ -46,9 +46,8 @@ func TestStartup_SubtitleEventsQueueSearch(t *testing.T) {
 		partOn  bool
 		wantJob bool
 	}{
-		{"part and feature on", "subtitle_sites", true, true},
-		{"part off", "subtitle_sites", false, false},
-		{"feature off", "", true, false},
+		{"part on, no switch", "", true, true},
+		{"part off", "", false, false},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

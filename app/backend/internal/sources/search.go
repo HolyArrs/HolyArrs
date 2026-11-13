@@ -35,6 +35,8 @@ type Searcher struct {
 	// SourcesOn says the Sources part is on. Off, only searches a person asks
 	// for run (see sourcesOff). Nil means on.
 	SourcesOn func() bool
+	// HasDownloader says a Downloader takes the protocol. Nil means yes.
+	HasDownloader func(ctx context.Context, protocol string) bool
 
 	mu         sync.Mutex
 	clients    map[int64]*Client
@@ -82,7 +84,7 @@ func sameConfig(a, b Config) bool {
 	}
 	return a.URL == b.URL && a.APIKey == b.APIKey && a.AllowLocal == b.AllowLocal && a.Format == b.Format && a.Protocol == b.Protocol &&
 		a.GapMS == b.GapMS && a.PerWindow == b.PerWindow && a.Window == b.Window && a.Timeout == b.Timeout &&
-		proxy(a) == proxy(b) && a.ProxyAllowLocal == b.ProxyAllowLocal
+		proxy(a) == proxy(b) && a.ProxyAllowLocal == b.ProxyAllowLocal && a.Site == b.Site
 }
 
 // hidden marks where a Source key was taken out of a stored link. The number
@@ -98,7 +100,7 @@ func secretValues(cfg Config) []string {
 		return nil
 	}
 	var out []string
-	if cfg.Format != "rss" {
+	if cfg.Format != "rss" && cfg.Format != "site" {
 		if cfg.APIKey != "" {
 			out = append(out, cfg.APIKey)
 		}
@@ -275,7 +277,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 
 	now := time.Now().UTC()
 	ti := c.ti
-	q := Query{Title: ti.Name, IMDb: ti.SourceIDs["imdb"]}
+	q := Query{Title: ti.Name, IMDb: ti.SourceIDs["imdb"], Aliases: ti.Aliases}
 	if ti.Year != nil {
 		q.Year = *ti.Year
 	}
@@ -293,14 +295,14 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 		}
 		q = showQuery(ti, ep.ref.Season, ep)
 	}
-	all, failures, answered, skipped, err := s.askAll(ctx, r, q, handSearch, isShow, ti.Tags)
+	all, failures, answered, skipped, err := s.askAll(ctx, r, q, handSearch, isShow, ti.Tags, c.pr.Body.Tags)
 	if err != nil {
 		return err
 	}
 	// Absolute order also searches by title and running number; a Source
 	// that failed or was skipped is said once.
 	if aq, ok := absoluteQuery(ti, ep); isShow && ok {
-		more, _, n, _, err := s.askAll(ctx, r, aq, handSearch, true, ti.Tags)
+		more, _, n, _, err := s.askAll(ctx, r, aq, handSearch, true, ti.Tags, c.pr.Body.Tags)
 		if err != nil {
 			return err
 		}
@@ -323,6 +325,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	out := from != mediafiles.SlotNotOutYet
 	var rels []mediafiles.ReleaseFacts
 	var vs []mediafiles.Verdict
+	c.listing, shows.listing = show, show
 	if isShow {
 		rels, vs, err = s.judgeShow(ctx, shows, all, handSearch, skipGate, s.showRules(ctx))
 	} else {
@@ -396,15 +399,21 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(result)
 	default:
 		reason := fmt.Sprintf("no Release passed the Pick rules (%d found, %d refused)", len(all), refused)
+		blocked := blockedWhy(vs)
+		if blocked != "" {
+			reason = blocked
+		}
 		if from != mediafiles.SlotHeld {
 			to := restState(c, from)
 			// A failed download with no other release and no copy in place goes to a person. With a copy it keeps looking for a better one.
-			if from == mediafiles.SlotFailed && c.cur == nil {
+			if from == mediafiles.SlotFailed && c.cur == nil && blocked == "" {
 				to = mediafiles.SlotNeedsADecision
 				reason = "the download failed and no other Release passed the Pick rules (" + strconv.Itoa(len(all)) + " found, " + strconv.Itoa(refused) + " refused)"
 			}
 			if from == mediafiles.SlotNeedsADecision {
 				to = mediafiles.SlotNeedsADecision
+			}
+			if from == mediafiles.SlotNeedsADecision && blocked == "" {
 				reason = "searched again and no Release passed the Pick rules (" + strconv.Itoa(len(all)) + " found, " + strconv.Itoa(refused) + " refused)"
 			}
 			if err := mediafiles.MoveSlot(ctx, s.Store, slotID, to, reason, by); err != nil {

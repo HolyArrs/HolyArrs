@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Aplikasi AI mati. Mengizinkan akan menyalakannya.",
 	"arrapi.ai.offOther": "Aplikasi AI mati. Minta pemilik menyalakannya, lalu coba lagi.",
 	"arrapi.ai.allow": "Izinkan",
-	"arrapi.ai.cancel": "Batal"
+	"arrapi.ai.cancel": "Batal",
+	"arrapi.seerr.sentTitle": "Dikirim aplikasi lain",
+	"arrapi.seerr.sentHint": "Format dan profil yang dikirim aplikasi seperti Profilarr. Di sini hanya untuk dibaca.",
+	"arrapi.seerr.sentFormat": "Format",
+	"arrapi.seerr.sentProfile": "Profil",
+	"arrapi.seerr.sentUpdated": "diperbarui {ago}"
 }

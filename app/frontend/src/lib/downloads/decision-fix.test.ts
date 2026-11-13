@@ -1,4 +1,4 @@
-import { decisionFix, reasonKind } from './decision-fix.ts';
+import { decisionFix, noMatchKind, reasonKind } from './decision-fix.ts';
 import { describe, expect, it } from 'vitest';
 
 const dec = (o: Record<string, unknown>) => ({ kind: 'movie', why: 'conflict', download_id: 7, reason: '', ...o }) as Parameters<typeof decisionFix>[0];
@@ -17,14 +17,39 @@ describe('decision fix', () => {
 		}
 	});
 	it('never offers Set edition for another conflict', () => {
-		expect(decisionFix(dec({ reason: 'nothing could be placed; look at the import plan' }))).toBe('hand');
-		expect(reasonKind(dec({ reason: 'nothing could be placed; look at the import plan' }))).toBe('plain');
+		expect(decisionFix(dec({ reason: 'No file in the download matched this movie; match the files by hand.' }))).toBe('hand');
+		expect(reasonKind(dec({ reason: 'No file in the download matched this movie; match the files by hand.' }))).toBe('nomatch');
+		expect(reasonKind(dec({ reason: 'nothing could be placed: not enough free space in the Library folder' }))).toBe('plain');
 	});
 	it('points a copy in place reason to another Version', () => {
 		for (const reason of ['the copy in place is protected; choose another Version for an upgrade', 'the new edition differs from the copy in place; choose another Version', "file is 1080p web, which this Version's Pick rules don't allow, so it can't replace the copy in place; choose another Version"]) {
 			expect(decisionFix(dec({ reason }))).toBe('version');
 			expect(reasonKind(dec({ reason }))).toBe('copy');
 		}
+	});
+	it('leads with Import this file when the movie download holds one video', () => {
+		const reason = 'No file in the download matched this movie; match the files by hand.';
+		expect(decisionFix(dec({ reason, import_file: 'grp-ean.mkv' }))).toBe('import');
+		expect(reasonKind(dec({ reason, import_file: 'grp-ean.mkv' }))).toBe('nomatch');
+		expect(decisionFix(dec({ reason: 'edition is unknown', import_file: 'x.mkv' }))).toBe('edition');
+		expect(decisionFix(dec({ kind: 'show', reason, import_file: 'x.mkv' }))).toBe('hand');
+	});
+	it('leads with Import files by hand when nothing matched and the folder is known (#312)', () => {
+		const reason = 'No file in the download matched an episode; match the files by hand.';
+		expect(decisionFix(dec({ kind: 'show', reason, import_folder: '/data/x' }))).toBe('match');
+		expect(decisionFix(dec({ kind: 'show', reason }))).toBe('hand');
+		expect(decisionFix(dec({ reason: 'nothing could be placed; look at the import plan', import_folder: '/d' }))).toBe('match');
+		expect(decisionFix(dec({ reason: 'No file in the download matched this movie; match the files by hand.', import_folder: '/d', import_file: 'a.mkv' }))).toBe('import');
+		expect(reasonKind(dec({ kind: 'show', reason, import_folder: '/d' }))).toBe('nomatch');
+	});
+	it('names what did not match, old reasons too', () => {
+		expect(noMatchKind('No file in the download matched this movie; match the files by hand.')).toBe('movie');
+		expect(noMatchKind('no file in the download matched an episode; match the files by hand')).toBe('episode');
+		expect(noMatchKind('No file in the download matched a track; match the files by hand.')).toBe('track');
+		expect(noMatchKind('Nothing could be placed; look at the import plan.')).toBe('movie');
+		expect(noMatchKind('nothing in the download could be matched to an episode; look at the import plan')).toBe('episode');
+		expect(noMatchKind('nothing in the download could be matched to a track; look at the import plan')).toBe('track');
+		expect(noMatchKind('nothing could be placed: not enough free space in the Library folder')).toBe('');
 	});
 	it('keeps shows and missing downloads off the movie fixes', () => {
 		expect(decisionFix(dec({ kind: 'show', reason: 'edition is unknown' }))).toBe('hand');

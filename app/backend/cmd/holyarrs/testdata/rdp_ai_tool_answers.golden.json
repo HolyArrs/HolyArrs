@@ -42,6 +42,10 @@
   "my_asks": {
     "asks": [],
     "limit": {
+      "four_k": {
+        "movie": "bool",
+        "show": "bool"
+      },
       "movies": {
         "left": "number",
         "no_limit": "bool",
@@ -55,6 +59,24 @@
         "used": "number"
       },
       "no_limit": "bool",
+      "qualities": {
+        "movie": [
+          {
+            "extra": "bool",
+            "id": "string",
+            "name": "string",
+            "pick_rules_id": "number"
+          }
+        ],
+        "show": [
+          {
+            "extra": "bool",
+            "id": "string",
+            "name": "string",
+            "pick_rules_id": "number"
+          }
+        ]
+      },
       "shows": {
         "left": "number",
         "no_limit": "bool",

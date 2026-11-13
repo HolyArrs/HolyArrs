@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <b>Svenska</b> · <a href="LANGUAGES.md">Fler språk</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">Fler språk</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0: nu på 44 språk**, även höger till vänster. aria2 fungerar som nedladdare, och säsongspaket laddas ner några avsnitt i taget. [Se vad som är nytt](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease och IPTorrents inbyggda**, utan Prowlarr. Be om serier i 4K, och Profilarr kan skicka sina format och profiler. [Se vad som är nytt](https://holyarrs.com/whats-new/)
 
 > Varje affisch, trailer och betyg i ditt HolyArrs kommer från en server som jag driver och betalar själv, så att det förblir gratis för alla. Om HolyArrs har gjort filmkvällen lite bättre håller en sponsor lamporna tända för oss alla 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> är en egenhostad app för dina serier, filmer och din musik.<br>Bläddra som i en streamingapp, be om det du vill ha, så sköter den resten.</p>
 
-<p align="center"><b>Cirka 15 MB att ladda ner · cirka 140 MB RAM i viloläge med 10,000 titlar · amd64, arm64, armv7</b><br><sub>De sex appar den ersätter är tillsammans 718.2 MB att ladda ner.</sub></p>
+<p align="center"><b>Cirka 19.5 MB att ladda ner · cirka 95 MiB RAM i viloläge på en ny installation · amd64, arm64, armv7</b><br><sub>De sex appar den ersätter är tillsammans 718.2 MB att ladda ner.</sub></p>
 
 <p align="center"><a href="#quick-start">Snabbstart</a> · <a href="#why">Varför</a> · <a href="#what-it-does">Vad den gör</a> · <a href="#moving">Byta från andra appar</a> · <a href="#manual">Manualen</a> · <a href="#help">Hjälp</a></p>
 
@@ -105,9 +105,9 @@ Så jag byggde den.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Alla sex tillsammans** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Cirka 48 gånger mindre. Komprimerad nedladdning från registret, images från linuxserver.io, amd64, uppmätt 2026-11-08. RAM i viloläge uppmätt med 10,000 titlar och 55,000 filmer och avsnitt.</sub>
+<sub>Cirka 37 gånger mindre. Komprimerad nedladdning från registret, images från linuxserver.io, amd64, uppmätt 2026-11-08. RAM i viloläge uppmätt med 10,000 titlar och 55,000 filmer och avsnitt. (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Någon ber om en titel. HolyArrs söker igenom dina källor, väljer den bästa 
 | | |
 |---|---|
 | 🍿 **Explore** | Bläddra som i en streamingapp. Håll muspekaren över en titel så spelas trailern upp. |
-| 🙋 **Requests** | En hel serie eller bara en säsong. Du godkänner, eller låter betrodda personer gå före i kön. |
+| 🙋 **Requests** | En hel serie eller bara en säsong. Du godkänner, eller låter betrodda personer gå före i kön. Bevakningslistor från Plex och Pulsarr kan bli förfrågningar. |
 | 🎯 **Pick rules** | Du bestämmer vilken release som vinner: storlek, kvalitet, språk. |
-| 💬 **Undertexter** | På de språk du väljer, sparade tillsammans med filen. Att hitta dem på nätet kommer efter 1.0. |
+| 💬 **Undertexter** | På de språk du väljer, hittade på undertextsajter och sparade tillsammans med filen. |
 | 📅 **Calendar** | Vad som sänds härnäst för allt du följer. |
-| 🚚 **Ta med din konfiguration** | Från Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent och SABnzbd. Prova först, ångra senare. |
-| 🔌 **API för tidigare appar** | Prowlarr kan fortsätta skicka källor till HolyArrs när du har slagit på det. |
-| 🗝️ **Inga API-nycklar behövs** | Titlar, bilder och topplistor kommer från HolyArrs metadataserver. |
+| 🔔 **Alerts** | Discord, e-post, Telegram, ntfy, Gotify, Pushover eller en webhook. |
+| 🚚 **Ta med din konfiguration** | Från Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent och SABnzbd. Välj vad som följer med, ångra senare. |
+| 🔌 **API för tidigare appar** | Seerr, Prowlarr, Bazarr, Unpackerr och Homepage fortsätter att fungera när du har slagit på det. |
+| 🗝️ **Inga API-nycklar behövs** | Titlar, bilder och topplistor kommer från HolyArrs metadataserver. Egna nycklar eller en egen server fungerar också. |
 | 🔒 **Krypterade nycklar** | Sparade lösenord och nycklar låses med en huvudnyckel som ligger i din konfigurationsmapp. |
-| 🪶 **Pytteliten** | En image på cirka 15 MB med inget annat än HolyArrs i. |
+| 🪶 **Pytteliten** | En image på cirka 19.5 MB med inget annat än HolyArrs i. |
 
 <details>
 <summary><b>Se alla sidor i rörelse</b></summary>
@@ -148,9 +149,9 @@ Någon ber om en titel. HolyArrs söker igenom dina källor, väljer den bästa 
 
 ## 🤝 Den fungerar med det du redan kör
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Nedladdare: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Mediaservrar: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Nedladdare: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Mediaservrar: Plex, Jellyfin, Emby." /></picture>
 
-- **Nedladdare:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Nedladdare:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Mediaservrar:** Plex, Jellyfin, Emby
 - **Källor:** valfri Torznab- eller Newznab-indexerare, eller Prowlarr eller Jackett
 - **Tar över din konfiguration från:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -159,7 +160,7 @@ Någon ber om en titel. HolyArrs söker igenom dina källor, väljer den bästa 
 
 ## 🚚 Ta med din gamla konfiguration
 
-Öppna **Settings > Move from other apps**, lägg till varje gammal apps adress och API-nyckel (eller en backup-zip), välj vad som ska följa med, kör **Try it** och sedan **Move**. Du kan ångra en flytt senare.
+Öppna **Settings > Import from other apps**, lägg till varje gammal apps adress och API-nyckel (eller en backup-zip), välj vad som ska följa med och välj sedan **Import**. Du kan ångra en import senare.
 
 | Från | Vad som följer med |
 |---|---|
@@ -171,12 +172,11 @@ Någon ber om en titel. HolyArrs söker igenom dina källor, väljer den bästa 
 
 HolyArrs läser bara dina gamla appar och ändrar ingenting i dem, så du kan köra båda sida vid sida tills du litar på det.
 
-Nycklar och lösenord stannar kvar; du skriver in dem igen eller importerar dem från en fil. Anpassade format, taggar och historik följer inte med. Mediefiler flyttas aldrig. Steg för steg: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Nycklar och lösenord stannar kvar; du skriver in dem igen eller importerar dem från en fil. Anpassade format, taggar och historik följer inte med. Mediefiler flyttas aldrig. Steg för steg: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Vad den inte gör ännu
 
 - **Ladda ner själv.** HolyArrs ansluter till qBittorrent, SABnzbd och de andra. Den ersätter dem inte.
-- **AI- eller MCP-funktioner.** Inte i 1.0.
 - **Mobil- och TV-appar.** Inte byggda. Webbappen fungerar på en mobil.
 - **Musik i Explore** byggs fortfarande.
 
@@ -213,6 +213,8 @@ När du kör pull på `holyarrs/holyarrs:latest` får du rätt image för din ma
 
 Har du en NAS? Se [Unraid, Synology och andra NAS-enheter](https://docs.HolyArrs.com/run/platforms/).
 
+Hellre ett eget paket? Ett experimentellt Synology-paket (`.spk`) finns med i varje [release](https://github.com/HolyArrs/HolyArrs/releases). Se [Synology-paket](../../docs/run/synology.md).
+
 ## Versionstaggar
 
 Imagerna finns på Docker Hub som [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs).
@@ -220,7 +222,7 @@ Imagerna finns på Docker Hub som [`holyarrs/holyarrs`](https://hub.docker.com/r
 | Tagg | Använd den till |
 | :----: | --- |
 | `latest` | Den senaste versionen. |
-| `1.1.0` | En exakt version. Den flyttas aldrig. |
+| `1.1.1` | En exakt version. Den flyttas aldrig. |
 
 ## Användning
 
@@ -415,7 +417,7 @@ Vill du bygga in den i en sluten produkt? Skriv till support@HolyArrs.com för e
 
 ## Håll det igång
 
-HolyArrs är gratis, men det är inte gratis att driva. Varje installation pratar med en metadataserver som jag betalar för varje månad. Sponsorer täcker det och köper fler timmar till det du röstar på.
+HolyArrs är gratis, men det är inte gratis att driva. Som standard pratar varje installation med en metadataserver som jag betalar för varje månad. Sponsorer täcker det och köper fler timmar till det du röstar på.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Sponsra HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Rösta på roadmapen" /></picture></a></p>
 

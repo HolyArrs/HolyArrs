@@ -145,5 +145,7 @@
 	"core.settings.account.about": "Salasana, kaksivaiheinen tunnistus, laitteet",
 	"core.plain.clearWaiting": "Tuodut lataukset odottavat poistamista Lataajastaan.",
 	"core.plain.saveFolder": "Yhdellä lataajalla ei ole tallennuskansiota, joten HolyArrs ei voi tuoda sen valmiita latauksia.",
-	"core.api.sourceOff": "Jotkin rivit ovat pois päältä tässä asennuksessa."
+	"core.api.sourceOff": "Jotkin rivit ovat pois päältä tässä asennuksessa.",
+	"core.plain.noDownloader": "Lähteesi löytävät latauksia, joita mikään lataajistasi ei voi ottaa vastaan, joten mitään ei voi lähettää.",
+	"core.plain.sameDownloader": "Kaksi lataajaa yltää samaan lataussovellukseen, joten lataukset voivat näkyä kahdesti."
 }

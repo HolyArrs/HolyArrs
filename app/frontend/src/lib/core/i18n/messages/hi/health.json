@@ -12,7 +12,7 @@
 	"health.check.freeSpace": "खाली जगह",
 	"health.check.update": "अपडेट",
 	"health.check.waiting": "फ़ाइलों का इंतज़ार करते डाउनलोड",
-	"health.check.clearWaiting": "साफ़ होने का इंतज़ार करते डाउनलोड",
+	"health.check.clearWaiting": "इम्पोर्ट हो चुके डाउनलोड जो अभी भी डाउनलोडर में हैं",
 	"health.check.saveFolder": "सेव फ़ोल्डर:",
 	"health.check.saveFolderWhy": "{app} का सेव फ़ोल्डर सेट नहीं है, इसलिए HolyArrs उसके पूरे हुए डाउनलोड इंपोर्ट नहीं कर सकता। सेटिंग › डाउनलोडर में पाथ की जोड़ी जोड़ें।",
 	"health.day.ahead": "{count} आगे",
@@ -88,7 +88,7 @@
 	"health.kind.trailers": "ट्रेलर रीडर",
 	"health.kind.update": "अपडेट",
 	"health.kind.waitingDownloads": "फ़ाइलों का इंतज़ार करते डाउनलोड",
-	"health.kind.clearWaiting": "साफ़ होने का इंतज़ार करते डाउनलोड",
+	"health.kind.clearWaiting": "इम्पोर्ट हो चुके डाउनलोड जो अभी भी डाउनलोडर में हैं",
 	"health.kind.saveFolder": "डाउनलोडर का सेव फ़ोल्डर",
 	"health.link.downloader": "डाउनलोडर",
 	"health.link.mediaServer": "मीडिया सर्वर",
@@ -264,5 +264,12 @@
 	"health.word.broken": "खराब",
 	"health.word.notSent": "अभी भेजा नहीं गया",
 	"health.word.notSynced": "अभी सिंक नहीं हुआ",
-	"health.word.working": "चल रहा है"
+	"health.word.working": "चल रहा है",
+	"health.check.usenetDl": "Usenet डाउनलोडर",
+	"health.check.torrentDl": "टोरेंट डाउनलोडर",
+	"health.check.noUsenetDl": "आपके सोर्स Usenet डाउनलोड ढूँढते हैं, पर कोई Usenet डाउनलोडर सेट अप नहीं है, इसलिए कोई भी भेजा नहीं जा सकता। सेटिंग › डाउनलोडर में एक जोड़ें।",
+	"health.check.noTorrentDl": "आपके सोर्स टोरेंट डाउनलोड ढूँढते हैं, पर कोई टोरेंट डाउनलोडर सेट अप नहीं है, इसलिए कोई भी भेजा नहीं जा सकता। सेटिंग › डाउनलोडर में एक जोड़ें।",
+	"health.check.sameDownloader": "दो बार जोड़ा गया:",
+	"health.check.sameDownloaderWhy": "{app} उसी डाउनलोड ऐप तक पहुँचता है जिस तक कोई दूसरा डाउनलोडर, इसलिए इसके डाउनलोड दो बार दिख सकते हैं। सेटिंग्स › डाउनलोडर में एक हटा दें।",
+	"health.kind.sameDownloader": "डाउनलोडर दो बार जोड़ा गया"
 }

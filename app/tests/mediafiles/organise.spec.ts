@@ -43,26 +43,29 @@ test('import: scan shows matched, unsure and unmatched; fix the unsure one; adop
 
 	const plan = page.getByTestId('adopt-plan');
 	await expect(plan).toBeVisible({ timeout: 30_000 });
-	const matched = page.getByTestId('group-matched');
-	await expect(matched).toContainText('Marble Comet (2014)');
-	await expect(matched).toContainText('Willow Signal {tmdb-900013}');
-	await expect(matched.getByRole('checkbox', { name: 'Adopt Marble Comet (2014)' })).toBeChecked();
-	const unsure = page.getByTestId('group-unsure');
-	await expect(unsure).toContainText('Cinder (2012)');
+	const item = (status: string, folder: string) => plan.locator(`[data-testid="import-item"][data-status="${status}"]`).filter({ hasText: folder });
+	await expect(item('matched', 'Marble Comet (2014)')).toBeVisible();
+	await expect(item('matched', 'Willow Signal {tmdb-900013}')).toBeVisible();
+	await expect(plan.getByRole('checkbox', { name: 'Adopt Marble Comet (2014)' })).toBeChecked();
+	const unsure = item('unsure', 'Cinder (2012)');
+	await expect(unsure).toBeVisible();
 	await expect(unsure.getByRole('checkbox')).not.toBeChecked();
-	await expect(page.getByTestId('group-unmatched')).toContainText('Home Videos');
-	await expect(page.getByTestId('group-unmatched')).toContainText('Notes');
+	// The folders to check come first.
+	await expect(plan.getByTestId('import-item').first()).toHaveAttribute('data-status', 'unsure');
+	await expect(item('unmatched', 'Home Videos')).toBeVisible();
+	await expect(item('unmatched', 'Notes')).toBeVisible();
 	await expect(page.getByRole('checkbox', { name: 'Adopt Notes' })).toBeDisabled();
 	// Nothing has changed on disk.
 	expect(existsSync(join(oldLib, 'Marble Comet (2014)', 'Marble.Comet.2014.1080p.WEB-DL.H264-HOLYARRS.mkv'))).toBe(true);
 
 	// Fix the unsure one with a lookup.
-	await unsure.getByRole('button', { name: 'Look up' }).click();
-	await unsure.getByLabel('Look up a movie for Cinder (2012)').fill('Cinder Waltz');
-	await unsure.getByRole('button', { name: 'Look up', exact: true }).click();
-	await unsure.locator('.found li', { hasText: 'Cinder Waltz (2012)' }).getByRole('button', { name: 'Use this' }).click();
+	await unsure.getByRole('combobox', { name: 'Match for Cinder (2012)' }).selectOption({ label: 'Not this one? Look up' });
+	const look = page.getByTestId('import-lookup');
+	await look.getByRole('textbox').fill('Cinder Waltz');
+	await look.getByRole('button', { name: 'Look up', exact: true }).click();
+	await page.locator('.found li', { hasText: 'Cinder Waltz (2012)' }).getByRole('button', { name: 'Use this' }).click();
 	await expect(unsure.getByRole('checkbox', { name: 'Adopt Cinder (2012)' })).toBeChecked();
-	await expect(unsure).toContainText('Cinder Waltz (2012)');
+	await expect(unsure).toContainText('Cinder Waltz');
 
 	await page.getByRole('button', { name: 'Adopt 3 movies' }).click();
 	const done = page.getByTestId('adopt-results');

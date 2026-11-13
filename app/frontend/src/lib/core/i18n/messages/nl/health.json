@@ -12,7 +12,7 @@
 	"health.check.freeSpace": "Vrije ruimte",
 	"health.check.update": "Update",
 	"health.check.waiting": "Downloads die op bestanden wachten",
-	"health.check.clearWaiting": "Downloads die op opruimen wachten",
+	"health.check.clearWaiting": "Geïmporteerde downloads nog in een Downloader",
 	"health.check.saveFolder": "Opslagmap voor",
 	"health.check.saveFolderWhy": "{app} heeft geen opslagmap, dus HolyArrs kan de voltooide downloads niet importeren. Voeg een paar paden toe in Instellingen › Downloaders.",
 	"health.day.ahead": "{count} vooruit",
@@ -88,7 +88,7 @@
 	"health.kind.trailers": "Trailerlezer",
 	"health.kind.update": "Update",
 	"health.kind.waitingDownloads": "Downloads die op bestanden wachten",
-	"health.kind.clearWaiting": "Downloads die op opruimen wachten",
+	"health.kind.clearWaiting": "Geïmporteerde downloads nog in een Downloader",
 	"health.kind.saveFolder": "Opslagmap van de Downloader",
 	"health.link.downloader": "Downloader",
 	"health.link.mediaServer": "Mediaserver",
@@ -264,5 +264,12 @@
 	"health.word.broken": "Kapot",
 	"health.word.notSent": "Nog niet verstuurd",
 	"health.word.notSynced": "Nog niet gesynchroniseerd",
-	"health.word.working": "Werkt"
+	"health.word.working": "Werkt",
+	"health.check.usenetDl": "Usenet-downloader",
+	"health.check.torrentDl": "Torrent-downloader",
+	"health.check.noUsenetDl": "Je bronnen vinden Usenet-downloads, maar er is geen Usenet-downloader ingesteld, dus er kan niets worden verstuurd. Voeg er een toe in Instellingen › Downloaders.",
+	"health.check.noTorrentDl": "Je bronnen vinden torrent-downloads, maar er is geen torrent-downloader ingesteld, dus er kan niets worden verstuurd. Voeg er een toe in Instellingen › Downloaders.",
+	"health.check.sameDownloader": "Twee keer toegevoegd:",
+	"health.check.sameDownloaderWhy": "{app} bereikt dezelfde download-app als een andere Downloader, dus de downloads kunnen dubbel verschijnen. Verwijder er een in Instellingen › Downloaders.",
+	"health.kind.sameDownloader": "Downloader twee keer toegevoegd"
 }

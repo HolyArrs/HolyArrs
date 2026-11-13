@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Нова путања",
 	"settings.libraryFolders.changePathHint": "Прво тамо преместите датотеке. HolyArrs проверава сваку датотеку и ништа не премешта.",
 	"settings.libraryFolders.checkingFiles": "Проверавам датотеке…",
-	"settings.libraryFolders.pathChanged": "Путања промењена"
+	"settings.libraryFolders.pathChanged": "Путања промењена",
+	"settings.libraryFolders.sideFiles": "Датотеке титлова",
+	"settings.libraryFolders.sideFilesDesc": "Титлови који стигну уз преузимање могу се донети у библиотеку поред свог видеа.",
+	"settings.libraryFolders.sideOn": "Донеси и датотеке титлова",
+	"settings.libraryFolders.sideOnHint": "Датотека која је већ у библиотеци никада се не замењује.",
+	"settings.libraryFolders.sideTypes": "Врсте датотека",
+	"settings.libraryFolders.sideTypesHint": "Одвојите врсте зарезима, нпр. srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs не види {path}. Види само фасцикле монтиране у свој контејнер. Додајте волумен као {path}:{inside}, па овде користите {inside}."
 }

@@ -62,10 +62,14 @@ type DownloaderView struct {
 	ClearFinished bool `json:"clear_finished"`
 	// AfterSeeding: a torrent leaves the client once imported and seeded.
 	AfterSeeding SeedingChoice `json:"after_seeding"`
-	Tags         []string      `json:"tags"`
-	Health       HealthView    `json:"health"`
-	CheckedAt    *time.Time    `json:"checked_at,omitempty"`
-	Active       int           `json:"active_downloads"`
+	// CategoryAfterImport: a torrent moves here once imported (qBittorrent).
+	CategoryAfterImport string `json:"category_after_import"`
+	// OwnOnly: other apps' items are hidden and cannot be changed.
+	OwnOnly   bool       `json:"own_only"`
+	Tags      []string   `json:"tags"`
+	Health    HealthView `json:"health"`
+	CheckedAt *time.Time `json:"checked_at,omitempty"`
+	Active    int        `json:"active_downloads"`
 }
 
 func downloaderView(d domain.Downloader, active int) DownloaderView {
@@ -73,7 +77,7 @@ func downloaderView(d domain.Downloader, active int) DownloaderView {
 		CategoryMovies: d.CategoryMovies, CategoryShows: d.CategoryShows, CategoryMusic: d.CategoryMusic,
 		Priority: d.Priority, PathMap: d.PathMap, AllowLocal: d.AllowLocal, Health: HealthOf(d, time.Now()), CheckedAt: d.CheckedAt, Active: active,
 		Writable: d.Writable, WritableLocked: ReadOnlyByEnv(d), ClearFinished: d.ClearFinished, Tags: d.Tags,
-		AfterSeeding: seedingView(d)}
+		AfterSeeding: seedingView(d), CategoryAfterImport: d.CategoryAfterImport, OwnOnly: d.OwnOnly}
 	if v.Tags == nil {
 		v.Tags = []string{}
 	}

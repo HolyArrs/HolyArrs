@@ -72,5 +72,10 @@
   "settings.sources.off": "Kilder er av",
   "settings.sources.offText": "HolyArrs søker ikke og henter ikke. Nedlastinger du legger til i Nedlasteren din blir fortsatt importert.",
   "settings.sources.openParts": "Åpne Deler",
-  "settings.sources.offState": "Av"
+  "settings.sources.offState": "Av",
+"settings.sources.site": "Innebygd side",
+"settings.sources.siteLabel": "Side",
+"settings.sources.addressSite": "Sidens egen adresse. Endre den bare hvis siden har flyttet.",
+"settings.sources.siteKeyLabel": "Informasjonskapsel eller RSS-nøkkel",
+"settings.sources.siteKeyHint": "Fra din egen konto: uid og pass fra nettleserens informasjonskapsel, eller u og tp fra RSS-lenken din. Lagres kryptert."
 }

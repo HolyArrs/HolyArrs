@@ -145,5 +145,7 @@
 	"core.settings.danger.about": "Reiniciar o apagar",
 	"core.settings.account.label": "Mi cuenta",
 	"core.settings.account.about": "Contraseña, dos pasos, dispositivos",
-	"core.api.sourceOff": "Algunas filas están desactivadas en esta instalación."
+	"core.api.sourceOff": "Algunas filas están desactivadas en esta instalación.",
+	"core.plain.noDownloader": "Tus fuentes encuentran descargas que ninguno de tus gestores de descargas puede aceptar, así que no se puede enviar ninguna.",
+	"core.plain.sameDownloader": "Dos gestores de descargas llegan a la misma aplicación, así que las descargas pueden aparecer dos veces."
 }

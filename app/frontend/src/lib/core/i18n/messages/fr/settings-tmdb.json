@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Enregistrement impossible",
 	"settings.tmdb.locked": "Défini par vos réglages Docker",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE vaut \"{value}\", ni full, ni own, ni off : les recherches sont donc désactivées.",
-	"settings.tmdb.ownNote": "Avec vos propres clés, vous interrogez chaque source vous-même. Les classements musicaux, les rangées de nouveautés musicales, les Top 10 du streaming, les infos Wikipédia et les correspondances d'anime ne viennent que du serveur HolyArrs, ils sont donc désactivés.",
+	"settings.tmdb.ownNote": "Avec vos propres clés, HolyArrs interroge chaque source directement. Les classements musicaux, les rangées de nouveautés musicales, les Top 10 du streaming, les infos Wikipédia et les correspondances d'anime ne viennent que du serveur HolyArrs, ils sont donc désactivés.",
 	"settings.tmdb.keysTitle": "Vos clés",
 	"settings.tmdb.keysDesc": "Seul le jeton de lecture TMDB est nécessaire",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

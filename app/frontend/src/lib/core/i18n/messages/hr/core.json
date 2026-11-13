@@ -145,5 +145,7 @@
 	"core.settings.account.about": "Lozinka, dvofaktorska prijava, uređaji",
 	"core.plain.clearWaiting": "Uvezena preuzimanja čekaju da budu očišćena iz svog Preuzimatelja.",
 	"core.plain.saveFolder": "Jedan preuzimatelj nema mapu za spremanje, pa HolyArrs ne može uvesti njegova završena preuzimanja.",
-	"core.api.sourceOff": "Neki su retci isključeni na ovoj instalaciji."
+	"core.api.sourceOff": "Neki su retci isključeni na ovoj instalaciji.",
+	"core.plain.noDownloader": "Tvoji izvori pronalaze preuzimanja koja nijedan tvoj preuzimatelj ne može primiti, pa se ništa ne može poslati.",
+	"core.plain.sameDownloader": "Dva preuzimatelja vode do iste aplikacije za preuzimanje, pa se preuzimanja mogu prikazati dvaput."
 }

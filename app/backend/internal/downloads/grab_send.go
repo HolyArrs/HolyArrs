@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
@@ -16,6 +18,7 @@ import (
 // send hands a Release to one Downloader and returns its id there. own is false for a torrent
 // another app added (same info hash, not in HolyArrs's category), which HolyArrs never changes.
 func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Release, slotID int64, hash string, stopped bool) (ext string, own bool, err error) {
+	settled := false
 	a, err := m.claimAttempt(ctx, d, rel.ID, slotID)
 	if err != nil {
 		return "", false, err
@@ -26,8 +29,8 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		}
 		d.Category = a.category
 		defer func() {
-			if err == nil {
-				return // Grab resolves it atomically with the Download row.
+			if err == nil || settled {
+				return // Grab resolves it atomically with the Download row; a settled one is closed.
 			}
 			if !a.created || errors.Is(err, ErrUncertain) {
 				err = errors.Join(ErrUncertain, err)
@@ -59,6 +62,17 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			if unreachable(err) {
 				m.downloaderFailed(ctx, d, err)
 			}
+			if errors.Is(err, ErrNotArrived) && m.attemptOld(a) {
+				// The Downloader answered and still has no such job long after the send:
+				// it never arrived. Close the record so the Release can be sent again.
+				if rerr := m.resolveAttempt(ctx, a.ID); rerr != nil {
+					return "", false, errors.Join(ErrUncertain, err, rerr)
+				}
+				settled = true
+				log.Printf("downloads: warning: %q never arrived in %s (not in its queue or history after %s); it will be sent again", rel.Name, d.Name, notArrivedGrace)
+				return "", false, fmt.Errorf("%s does not have it in its queue or history, so the send never arrived", d.Name)
+			}
+			log.Printf("downloads: warning: could not confirm %q in %s: %s", rel.Name, d.Name, firstLine(err.Error()))
 			return "", false, err
 		}
 		if ext == "" {
@@ -74,6 +88,9 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		if j, err := e.Get(ctx, hash); err == nil {
 			if skip[j.ID] || (d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "aria2") && !sameCategory(j.Category, d.Category) {
 				return "", false, errors.New("the torrent belongs to another download or category")
+			}
+			if hiddenItem(d, j) {
+				return "", false, ErrOutsideTorrent
 			}
 			if j.ID != "" {
 				hash = j.ID
@@ -92,6 +109,14 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		return "", false, errors.New("the Release's Source could not be read")
 	}
 	allowLocal := src.AllowLocal
+	var hdr http.Header
+	if m.SourceHeader != nil {
+		h, err := m.SourceHeader(ctx, src)
+		if err != nil {
+			return "", false, err
+		}
+		hdr = sourceHeaderFor(src.URL, link, h)
+	}
 	if d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "aria2" || d.Adapter == "nzbget" {
 		if !strings.HasPrefix(link, "magnet:") && src.ProxyURL != "" {
 			return "", false, errors.New("this Downloader cannot yet fetch Release files through a Source proxy")
@@ -110,7 +135,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	// download can be followed.
 	var file []byte
 	noHash := d.Adapter == "qbittorrent" && hash == "" && linkHash(link) == ""
-	if (d.Adapter == "qbittorrent" || d.Adapter == "sabnzbd") && (!allowLocal || noHash) && !strings.HasPrefix(link, "magnet:") {
+	if (d.Adapter == "qbittorrent" || d.Adapter == "sabnzbd") && (!allowLocal || noHash || hdr != nil) && !strings.HasPrefix(link, "magnet:") {
 		var rt http.RoundTripper
 		if src.ProxyURL != "" {
 			if m.SourceTransport == nil {
@@ -125,7 +150,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 			limit = sabMaxNZB
 		}
 		var magnet string
-		if file, magnet, err = fetchGrabLink(ctx, link, limit, rt, sourceLocalHost(src.URL, allowLocal)); err == nil && magnet != "" {
+		if file, magnet, err = fetchGrabLinkHeader(ctx, link, limit, rt, sourceLocalHost(src.URL, allowLocal), hdr); err == nil && magnet != "" {
 			link, _, err = safeMagnet(magnet, allowLocal)
 		}
 		if err != nil {
@@ -138,7 +163,11 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	// here and the magnet or file is sent; if that fails the link is sent as before.
 	torrentAdapter := d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "aria2" || d.Adapter == "qbittorrent" && src.ProxyURL == ""
 	if torrentAdapter && file == nil && !strings.HasPrefix(link, "magnet:") {
-		link, file = prefetchTorrent(ctx, link, allowLocal, sourceLocalHost(src.URL, allowLocal))
+		link, file = prefetchTorrentHeader(ctx, link, allowLocal, sourceLocalHost(src.URL, allowLocal), hdr)
+		if hdr != nil && file == nil && !strings.HasPrefix(link, "magnet:") {
+			// The Downloader has no cookie, so the bare link would fail there.
+			return "", false, errors.New("the Release file could not be read from its Source")
+		}
 		if hash == "" {
 			hash = linkHash(link)
 		}
@@ -171,6 +200,9 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 				if skip[j.ID] {
 					return "", false, errors.New("the torrent belongs to another download or category")
 				}
+				if hiddenItem(d, j) {
+					return "", false, ErrOutsideTorrent
+				}
 				if j.ID != "" {
 					h = j.ID
 				}
@@ -199,6 +231,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	ext, err = e.Add(ctx, req)
 	done()
 	if err != nil {
+		log.Printf("downloads: warning: sending %q to %s did not go through: %s", rel.Name, d.Name, sendReply(err))
 		// Only a Downloader that did not answer, or turned down the sign-in, rests. One
 		// that answered and refused this Release (a bad link, no category) stays ready
 		// for the next one.
@@ -235,4 +268,28 @@ func grabLinkAllowed(adapter, link string, allowLocal bool) (string, error) {
 		return "", errors.New("the Release link points at a local or blocked address")
 	}
 	return link, nil
+}
+
+// notArrivedGrace is how long a send with an unknown outcome may stay missing
+// from a Downloader that answers before HolyArrs takes it as never arrived. A
+// Downloader still reading a large file shows the job well within it.
+const notArrivedGrace = 10 * time.Minute
+
+func (m *Manager) attemptOld(a *sendAttempt) bool {
+	at, err := time.Parse(time.RFC3339Nano, a.CreatedAt)
+	return err == nil && m.now().Sub(at) >= notArrivedGrace
+}
+
+// sendReply is the Downloader's answer for the log, on one line, with the
+// unknown-outcome note last when there is one.
+func sendReply(err error) string {
+	s := err.Error()
+	if errors.Is(err, ErrUncertain) {
+		s = strings.Trim(strings.ReplaceAll(s, ErrUncertain.Error(), ""), "\n")
+		if s == "" {
+			s = "no reply"
+		}
+		s += " (outcome unknown; HolyArrs checks the Downloader's queue and history again)"
+	}
+	return strings.ReplaceAll(s, "\n", "; ")
 }

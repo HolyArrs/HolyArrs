@@ -166,6 +166,13 @@
 	"library.import.followHint": "इन्हें मेरे कैलेंडर में दिखाएं।",
 	"library.import.adoptOne": "1 {word} अपनाएं",
 	"library.import.adoptMany": "{n} {words} अपनाएं",
+	"library.import.searchFolders": "फ़ोल्डर खोजें",
+	"library.import.folderCountOne": "1 फ़ोल्डर",
+	"library.import.folderCountMany": "{n} फ़ोल्डर",
+	"library.import.titleAndFolder": "शीर्षक और फ़ोल्डर",
+	"library.import.matchFor": "{folder} के लिए मेल",
+	"library.import.seeLarge": "{name} का पोस्टर बड़ा देखें",
+	"library.import.noneMatch": "कोई फ़ोल्डर मेल नहीं खाता।",
 	"library.report.keep.one": "{n} टाइटल अप-टू-डेट रखा जाएगा",
 	"library.report.keep.many": "{n} टाइटल अप-टू-डेट रखे जाएँगे",
 	"library.report.keep.partOne": "{total} में से {ok} टाइटल अप-टू-डेट रखा जाएगा",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "पहली बार पढ़ना 30 मिनट के अंदर होगा।",
 	"library.stats.watchedHelp": "Plex, Jellyfin और Emby के प्ले इतिहास से। Plex सिर्फ़ प्ले गिनता है, इसलिए हाथ से देखा हुआ चिह्नित टाइटल नहीं दिखते।",
 	"library.stats.lastRead": "आख़िरी बार पढ़ा {ago}।",
-	"library.stats.noMatch": "आख़िरी बार पढ़ा {ago}। देखी गई कोई भी चीज़ अभी आपकी लाइब्रेरी से मेल नहीं खाती।",
+	"library.stats.noMatch": "देखने का इतिहास जाँचा गया {ago}। देखी गई कोई भी चीज़ अभी आपकी लाइब्रेरी से मेल नहीं खाती।",
 	"library.stats.notLinked": "जुड़ा नहीं",
 	"library.stats.lastWatched": "आख़िरी बार देखा {ago}",
 	"library.stats.unit.movie.one": "{n} फ़िल्म",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} एपिसोड",
 	"library.stats.unit.episode.other": "{n} एपिसोड",
 	"library.stats.unit.play.one": "{n} प्ले",
-	"library.stats.unit.play.other": "{n} प्ले"
+	"library.stats.unit.play.other": "{n} प्ले",
+	"library.byHand.askReplaceOne": "1 फ़ाइल लाइब्रेरी में पहले से मौजूद एक फ़ाइल की जगह लेगी। पुरानी फ़ाइल हाल में मिटाई गई में जाएगी। इंपोर्ट करें?",
+	"library.byHand.askReplaceMany": "{n} फ़ाइलें लाइब्रेरी में पहले से मौजूद फ़ाइलों की जगह लेंगी। पुरानी फ़ाइलें हाल में मिटाई गई में जाएँगी। इंपोर्ट करें?"
 }

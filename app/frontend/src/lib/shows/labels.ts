@@ -3,6 +3,7 @@ import type { EpisodeView, SeasonSummary, ShowInfo } from '../core/types.ts';
 import { date } from '../core/format.ts';
 import { t } from '../core/i18n/i18n.svelte.ts';
 import { episodeCode } from '../core/episodes.ts';
+import { airedEpisodes } from '#lib/mediafiles/index.ts';
 
 export { episodeCode };
 
@@ -70,7 +71,7 @@ export function seasonLine(s: SeasonSummary): string {
 
 export function showProgress(s: ShowInfo | undefined): string {
 	if (!s) return '';
-	return t('shows.progress', { in: s.in_library, aired: airedOf(s) });
+	return t('shows.progress', { in: s.in_library, aired: airedEpisodes(s) });
 }
 
 export function mainSlot(e: EpisodeView) {
@@ -122,15 +123,15 @@ export function keepOffNote(seasonKept: boolean, showKept: boolean): string {
 	return '';
 }
 
-// Total aired episodes across all seasons.
-function airedOf(s: ShowInfo): number {
-	return s.seasons.reduce((n, x) => n + x.aired, 0);
-}
-
 // packWindowValue is the episodes-ahead number the server takes: 0 is off,
 // otherwise a whole number from 1 to 10. A blank field while typing counts as 1.
 export function packWindowValue(n: number): number {
 	if (Number.isNaN(n)) return 1;
 	if (n <= 0) return 0;
 	return Math.min(10, Math.max(1, Math.round(n)));
+}
+
+// Why a chosen episode is still waiting (for example no Downloader has taken the Release yet).
+export function chosenWhy(s: { state: string; reason?: string } | undefined): string {
+	return s?.state === 'chosen' && s.reason ? s.reason : '';
 }

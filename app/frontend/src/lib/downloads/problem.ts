@@ -8,6 +8,19 @@ export type Problem = { text: string; tone: 'fail' | 'wait' };
 type Bits = Pick<DownloadRow, 'phase' | 'state' | 'progress' | 'text'> &
 	Partial<Pick<DownloadRow, 'protocol' | 'downloader_kind' | 'tracker_problem' | 'availability' | 'seeds' | 'peers' | 'client_hint' | 'replaced' | 'pack'>>;
 
+/** The message key that shows each problem's words in the picked language. */
+export const PROBLEM_KEY: Record<string, string> = {
+	'import blocked': 'downloads.problem.importBlocked',
+	'missing articles': 'downloads.problem.missingArticles',
+	'no full copy': 'downloads.problem.noFullCopy',
+	'no peers': 'downloads.problem.noPeers',
+	'repair needed': 'downloads.problem.repairNeeded',
+	repairing: 'downloads.step.repairing',
+	'tracker error': 'downloads.tracker.error',
+	'tracker warning': 'downloads.tracker.warning',
+	'no tracker reply': 'downloads.tracker.announce'
+};
+
 /** The row's visible reason, or null when nothing is wrong. */
 export function problem(r: Bits): Problem | null {
 	const stage = stageOf(r);

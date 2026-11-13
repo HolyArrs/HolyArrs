@@ -271,5 +271,8 @@
 	"home.metadataServerOnline": "메타데이터 서버 정상",
 	"home.homeCouldNotRead3": "홈에서 지금 다운로드를 읽지 못했습니다.",
 	"home.off": "꺼짐",
-	"home.sourcesOff": "부분에서 꺼짐"
+	"home.sourcesOff": "부분에서 꺼짐",
+	"home.noneForSources": "소스가 찾는 항목에 맞는 것이 없음",
+	"home.addedTwice": "두 번 추가됨",
+	"home.addedTwiceMany": "두 번 추가됨"
 }

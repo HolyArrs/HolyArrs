@@ -100,5 +100,6 @@
 	"settings.users.note": "Tala para sa sarili",
 	"settings.users.noteExample": "hal. Nanay",
 	"settings.users.days": "Mga araw na tatagal ang link",
-	"settings.users.makeInvite": "Gumawa ng link ng imbitasyon"
+	"settings.users.makeInvite": "Gumawa ng link ng imbitasyon",
+	"settings.users.permAuto4k": "Mga 4K request na naaprubahan nang hindi naghihintay"
 }

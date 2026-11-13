@@ -42,5 +42,7 @@
   "ClearFinished": true,
   "Tags": [
     "4k"
-  ]
+  ],
+  "CategoryAfterImport": "",
+  "OwnOnly": false
 }

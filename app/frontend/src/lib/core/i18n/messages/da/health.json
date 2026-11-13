@@ -260,9 +260,16 @@
 	"health.word.notSent": "Ikke sendt endnu",
 	"health.word.notSynced": "Ikke synkroniseret endnu",
 	"health.word.working": "Virker",
-	"health.check.clearWaiting": "Downloads der venter på at blive ryddet væk",
+	"health.check.clearWaiting": "Importerede downloads, der stadig ligger i en Downloader",
 	"health.check.saveFolder": "Gemmemappe for",
 	"health.check.saveFolderWhy": "{app} har ingen gemmemappe, så HolyArrs kan ikke importere dens færdige downloads. Tilføj et stipar under Indstillinger › Downloadere.",
-	"health.kind.clearWaiting": "Downloads der venter på at blive ryddet væk",
-	"health.kind.saveFolder": "Downloaderens gemmemappe"
+	"health.kind.clearWaiting": "Importerede downloads, der stadig ligger i en Downloader",
+	"health.kind.saveFolder": "Downloaderens gemmemappe",
+	"health.check.usenetDl": "Usenet-downloader",
+	"health.check.torrentDl": "Torrent-downloader",
+	"health.check.noUsenetDl": "Dine kilder finder Usenet-downloads, men ingen Usenet-downloader er sat op, så ingen kan sendes. Tilføj en under Indstillinger › Downloadere.",
+	"health.check.noTorrentDl": "Dine kilder finder torrent-downloads, men ingen torrent-downloader er sat op, så ingen kan sendes. Tilføj en under Indstillinger › Downloadere.",
+	"health.check.sameDownloader": "Tilføjet to gange:",
+	"health.check.sameDownloaderWhy": "{app} når den samme download-app som en anden Downloader, så dens downloads kan blive vist to gange. Fjern den ene under Indstillinger › Downloadere.",
+	"health.kind.sameDownloader": "Downloader tilføjet to gange"
 }

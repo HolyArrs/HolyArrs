@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Uusi polku",
 	"settings.libraryFolders.changePathHint": "Siirrä tiedostot sinne ensin. HolyArrs tarkistaa jokaisen tiedoston eikä siirrä mitään.",
 	"settings.libraryFolders.checkingFiles": "Tarkistetaan tiedostoja…",
-	"settings.libraryFolders.pathChanged": "Polku vaihdettu"
+	"settings.libraryFolders.pathChanged": "Polku vaihdettu",
+	"settings.libraryFolders.sideFiles": "Tekstitystiedostot",
+	"settings.libraryFolders.sideFilesDesc": "Latauksen mukana tulleet tekstitykset voi tuoda kirjastoon videon viereen.",
+	"settings.libraryFolders.sideOn": "Tuo myös tekstitystiedostot",
+	"settings.libraryFolders.sideOnHint": "Kirjastossa jo olevaa tiedostoa ei koskaan korvata.",
+	"settings.libraryFolders.sideTypes": "Tiedostotyypit",
+	"settings.libraryFolders.sideTypesHint": "Erota tyypit pilkuilla, esim. srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs ei näe kansiota {path}. Se näkee vain konttiinsa liitetyt kansiot. Lisää taltio, kuten {path}:{inside}, ja käytä sitten tässä polkua {inside}."
 }

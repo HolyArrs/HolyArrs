@@ -27,7 +27,7 @@ func (s ExploreSource) List(ctx context.Context, q engine.Request) ([]engine.Ite
 	if ok && time.Since(got.at) < ttl {
 		return got.items, nil
 	}
-	if s.CacheOnly || s.Lister == nil {
+	if s.CacheOnly || s.Lister == nil || e.lookupsOff() || e.hold.held(time.Now()) {
 		if ok {
 			return got.items, nil
 		}
@@ -69,8 +69,11 @@ func (s ExploreSource) List(ctx context.Context, q engine.Request) ([]engine.Ite
 	}()
 	s.Calls.Add(q)
 	f.items, f.err = p.List(ctx, q)
+	if f.err != nil && ctx.Err() == nil && serverDown(f.err) {
+		e.hold.note(f.err, time.Now())
+	}
 	if f.err != nil {
-		if ctx.Err() == nil && s.noteListDown(key, true) && (!errors.Is(f.err, metadata.ErrNoAccess) || listLogDue(f.err, time.Now())) {
+		if ctx.Err() == nil && !serverDown(f.err) && !metadata.SourceOff(f.err) && s.noteListDown(key, true) && (!errors.Is(f.err, metadata.ErrNoAccess) || listLogDue(f.err, time.Now())) {
 			log.Printf("explore: list %s failed: %v", q.List, f.err)
 		}
 		if ok {
@@ -79,6 +82,7 @@ func (s ExploreSource) List(ctx context.Context, q engine.Request) ([]engine.Ite
 		return nil, f.err
 	}
 	s.noteListDown(key, false)
+	e.hold.note(nil, time.Now())
 	now := time.Now()
 	s.keepList(key, exploreList{at: now, items: f.items})
 	if s.E.Store() != nil {

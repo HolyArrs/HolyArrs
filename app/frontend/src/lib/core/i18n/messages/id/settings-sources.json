@@ -72,5 +72,10 @@
 	"settings.sources.off": "Sumber mati",
 	"settings.sources.offText": "HolyArrs tidak mencari dan tidak mengambil. Unduhan yang Anda tambahkan di Pengunduh tetap diimpor.",
 	"settings.sources.openParts": "Buka Bagian",
-	"settings.sources.offState": "Mati"
+	"settings.sources.offState": "Mati",
+	"settings.sources.site": "Situs bawaan",
+	"settings.sources.siteLabel": "Situs",
+	"settings.sources.addressSite": "Alamat situs itu sendiri. Ubah hanya jika situsnya pindah.",
+	"settings.sources.siteKeyLabel": "Cookie atau kunci RSS",
+	"settings.sources.siteKeyHint": "Dari akun Anda sendiri: uid dan pass dari cookie browser, atau u dan tp dari tautan RSS Anda. Disimpan terenkripsi."
 }

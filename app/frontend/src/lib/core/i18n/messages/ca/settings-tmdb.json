@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "No s'ha pogut desar",
 	"settings.tmdb.locked": "Establert per la teva configuració de Docker",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE és «{value}», que no és full, own ni off, així que les consultes estan desactivades.",
-	"settings.tmdb.ownNote": "Les teves pròpies claus pregunta a cada font per compte seu. Les llistes de música, les files de música nova, els Top 10 de streaming, els fets de la Viquipèdia i els mapes d'anime només vénen del servidor de HolyArrs, així que estan desactivats.",
+	"settings.tmdb.ownNote": "Amb les teves pròpies claus, HolyArrs pregunta directament a cada font. Les llistes de música, les files de música nova, els Top 10 de streaming, els fets de la Viquipèdia i els mapes d'anime només vénen del servidor de HolyArrs, així que estan desactivats.",
 	"settings.tmdb.keysTitle": "Les teves claus",
 	"settings.tmdb.keysDesc": "Només cal el token de lectura de TMDB",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

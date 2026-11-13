@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "已为 {n} 个特征打分",
 	"settings.pickRuleEdit.trashResult": "已为 {n} 个特征打分 · 新增 {added} · 更新 {updated}",
 	"settings.pickRuleEdit.trashLeftOut": "{n} 个未纳入",
-	"settings.pickRuleEdit.trashTests": "检测 {kinds}"
+	"settings.pickRuleEdit.trashTests": "检测 {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "来源",
+	"settings.pickRuleEdit.sourcesDesc": "只搜索带有其中某个标签的来源。留空则搜索所有来源。",
+	"settings.pickRuleEdit.tags": "标签"
 }

@@ -12,7 +12,7 @@
 	"health.check.freeSpace": "Spazio libero",
 	"health.check.update": "Aggiornamento",
 	"health.check.waiting": "Download in attesa dei file",
-	"health.check.clearWaiting": "Download in attesa di pulizia",
+	"health.check.clearWaiting": "Download importati ancora in un downloader",
 	"health.check.saveFolder": "Cartella di salvataggio per",
 	"health.check.saveFolderWhy": "{app} non ha una cartella di salvataggio, quindi HolyArrs non può importare i download finiti. Aggiungi una coppia di percorsi in Impostazioni › Downloader.",
 	"health.day.ahead": "{count} avanti",
@@ -88,7 +88,7 @@
 	"health.kind.trailers": "Lettore dei trailer",
 	"health.kind.update": "Aggiornamento",
 	"health.kind.waitingDownloads": "Download in attesa dei file",
-	"health.kind.clearWaiting": "Download in attesa di pulizia",
+	"health.kind.clearWaiting": "Download importati ancora in un downloader",
 	"health.kind.saveFolder": "Cartella di salvataggio del downloader",
 	"health.link.downloader": "Downloader",
 	"health.link.mediaServer": "Server multimediale",
@@ -264,5 +264,12 @@
 	"health.word.broken": "Guasto",
 	"health.word.notSent": "Non ancora inviato",
 	"health.word.notSynced": "Non ancora sincronizzato",
-	"health.word.working": "Funziona"
+	"health.word.working": "Funziona",
+	"health.check.usenetDl": "Downloader Usenet",
+	"health.check.torrentDl": "Downloader torrent",
+	"health.check.noUsenetDl": "Le tue fonti trovano download Usenet, ma nessun downloader Usenet è configurato, quindi non se ne può inviare nessuno. Aggiungine uno in Impostazioni › Downloader.",
+	"health.check.noTorrentDl": "Le tue fonti trovano download torrent, ma nessun downloader torrent è configurato, quindi non se ne può inviare nessuno. Aggiungine uno in Impostazioni › Downloader.",
+	"health.check.sameDownloader": "Aggiunto due volte:",
+	"health.check.sameDownloaderWhy": "{app} raggiunge la stessa app di download di un altro Downloader, quindi i suoi download possono comparire due volte. Rimuovine uno in Impostazioni › Downloader.",
+	"health.kind.sameDownloader": "Downloader aggiunto due volte"
 }

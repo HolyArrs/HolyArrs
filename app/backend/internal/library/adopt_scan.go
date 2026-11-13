@@ -169,83 +169,94 @@ func (s *Service) Rescan(ctx context.Context, by domain.Actor) (RescanResult, er
 	}
 	for _, lf := range lfs {
 		res.Folders++
-		files, err := database.Select[mediafiles.File](ctx, db, "files", `state IN ('present', 'missing') AND version_id IN
-			(SELECT v.id FROM versions v JOIN titles t ON t.id = v.title_id WHERE v.library_folder_id = ? AND t.state != 'removed') ORDER BY id`, lf.ID)
-		if err != nil {
+		if err := s.rescanFolder(ctx, lf, 0, &res, &backfillLeft, by); err != nil {
 			return res, err
 		}
-		if why := unreachable(lf.Path, len(files)); why != "" {
-			res.Unreachable++
-			s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventFolderUnreachable,
-				Summary: "Library folder " + lf.Label + " cannot be reached (" + why + "); no file was marked missing",
-				Data:    map[string]any{"library_folder_id": lf.ID, "path": lf.Path, "reason": why}})
-			continue
-		}
-		knownPaths := map[string]bool{}
-		type change struct {
-			f  mediafiles.File
-			to string
-		}
-		var changes []change
-		present, gone := 0, 0
-		for _, f := range files {
-			knownPaths[strings.ToLower(f.RelativePath)] = true
-			_, statErr := os.Stat(filepath.Join(lf.Path, filepath.FromSlash(f.RelativePath)))
-			if lf.Kind != "music" && f.Role == "main" && statErr == nil {
-				backfill := backfillLeft > 0 && importer.NeedsFacts(f.MediaInfo)
-				if info, changed := InspectLibraryVideo(lf.Path, f.RelativePath, f.MediaInfo, backfill); changed {
-					if err := s.updateFileInspection(ctx, f.ID, info, by); err != nil {
-						return res, err
-					}
-					if backfill {
-						backfillLeft--
-					}
-				}
-			}
-			if f.State == "present" {
-				present++
-			}
-			switch {
-			case f.State == "present" && errors.Is(statErr, os.ErrNotExist):
-				gone++
-				changes = append(changes, change{f, "missing"})
-			case f.State == "missing" && statErr == nil:
-				changes = append(changes, change{f, "present"})
-			}
-		}
-		// A mount that dropped while leaving something in the folder, or a
-		// pool that lost a disk: every known file, or most of many, gone at
-		// once. None becomes missing; the person looks first.
-		massGone := (gone >= 2 && gone == present) || (gone >= massGoneMin && gone*2 > present)
-		if massGone {
-			res.Unreachable++
-			s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventFolderUnreachable,
-				Summary: fmt.Sprintf("Library folder %s: %d of %d files are gone at once; is a drive or share not mounted? No file was marked missing", lf.Label, gone, present),
-				Data:    map[string]any{"library_folder_id": lf.ID, "path": lf.Path, "reason": "most files gone at once", "gone": gone, "known": present}})
-		}
-		for _, c := range changes {
-			if c.to == "missing" && massGone {
-				continue
-			}
-			if c.to == "missing" {
-				res.Missing++
-			} else {
-				res.Back++
-			}
-			if err := s.setFileState(ctx, c.f, c.to, by); err != nil {
-				return res, err
-			}
-		}
-		n, err := s.recordFound(ctx, lf, knownPaths, by)
-		if err != nil {
-			return res, err
-		}
-		res.Found += n
 	}
 	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventLibraryRescanned,
 		Summary: fmt.Sprintf("Rescanned %d Library folders: %d missing, %d back, %d found, %d not reachable", res.Folders, res.Missing, res.Back, res.Found, res.Unreachable),
 		Data:    map[string]any{"folders": res.Folders, "missing": res.Missing, "back": res.Back, "found": res.Found, "unreachable": res.Unreachable}})
 	return res, nil
+}
+
+// rescanFolder is one Library folder's part of a rescan, or only titleID's
+// files in it when titleID is set. The unreachable and mass-gone guards
+// hold the same way either way.
+func (s *Service) rescanFolder(ctx context.Context, lf mediafiles.LibraryFolder, titleID int64, res *RescanResult, backfillLeft *int, by domain.Actor) error {
+	db := s.Store.Read()
+	files, err := database.Select[mediafiles.File](ctx, db, "files", `state IN ('present', 'missing') AND version_id IN
+		(SELECT v.id FROM versions v JOIN titles t ON t.id = v.title_id WHERE v.library_folder_id = ? AND t.state != 'removed' AND (? = 0 OR t.id = ?)) ORDER BY id`, lf.ID, titleID, titleID)
+	if err != nil {
+		return err
+	}
+	if why := unreachable(lf.Path, len(files)); why != "" {
+		res.Unreachable++
+		s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventFolderUnreachable,
+			Summary: "Library folder " + lf.Label + " cannot be reached (" + why + "); no file was marked missing",
+			Data:    map[string]any{"library_folder_id": lf.ID, "path": lf.Path, "reason": why}})
+		return nil
+	}
+	knownPaths := map[string]bool{}
+	type change struct {
+		f  mediafiles.File
+		to string
+	}
+	var changes []change
+	present, gone := 0, 0
+	for _, f := range files {
+		knownPaths[strings.ToLower(f.RelativePath)] = true
+		_, statErr := os.Stat(filepath.Join(lf.Path, filepath.FromSlash(f.RelativePath)))
+		if lf.Kind != "music" && f.Role == "main" && statErr == nil {
+			backfill := *backfillLeft > 0 && importer.NeedsFacts(f.MediaInfo)
+			if info, changed := InspectLibraryVideo(lf.Path, f.RelativePath, f.MediaInfo, backfill); changed {
+				if err := s.updateFileInspection(ctx, f.ID, info, by); err != nil {
+					return err
+				}
+				if backfill {
+					(*backfillLeft)--
+				}
+			}
+		}
+		if f.State == "present" {
+			present++
+		}
+		switch {
+		case f.State == "present" && errors.Is(statErr, os.ErrNotExist):
+			gone++
+			changes = append(changes, change{f, "missing"})
+		case f.State == "missing" && statErr == nil:
+			changes = append(changes, change{f, "present"})
+		}
+	}
+	// A mount that dropped while leaving something in the folder, or a
+	// pool that lost a disk: every known file, or most of many, gone at
+	// once. None becomes missing; the person looks first.
+	massGone := (gone >= 2 && gone == present) || (gone >= massGoneMin && gone*2 > present)
+	if massGone {
+		res.Unreachable++
+		s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventFolderUnreachable,
+			Summary: fmt.Sprintf("Library folder %s: %d of %d files are gone at once; is a drive or share not mounted? No file was marked missing", lf.Label, gone, present),
+			Data:    map[string]any{"library_folder_id": lf.ID, "path": lf.Path, "reason": "most files gone at once", "gone": gone, "known": present}})
+	}
+	for _, c := range changes {
+		if c.to == "missing" && massGone {
+			continue
+		}
+		if c.to == "missing" {
+			res.Missing++
+		} else {
+			res.Back++
+		}
+		if err := s.setFileState(ctx, c.f, c.to, by); err != nil {
+			return err
+		}
+	}
+	n, err := s.recordFound(ctx, lf, titleID, knownPaths, by)
+	if err != nil {
+		return err
+	}
+	res.Found += n
+	return nil
 }
 
 func inspectionSize(v any) (int64, bool) {
@@ -400,9 +411,9 @@ func (s *Service) setFileState(ctx context.Context, f mediafiles.File, to string
 
 // recordFound records unknown videos in the movies' own folders as found
 // Files: shown, never renamed, moved or deleted.
-func (s *Service) recordFound(ctx context.Context, lf mediafiles.LibraryFolder, known map[string]bool, by domain.Actor) (int, error) {
+func (s *Service) recordFound(ctx context.Context, lf mediafiles.LibraryFolder, titleID int64, known map[string]bool, by domain.Actor) (int, error) {
 	vs, err := database.Select[mediafiles.Version](ctx, s.Store.Read(), "versions",
-		"library_folder_id = ? AND title_id IN (SELECT id FROM titles WHERE state != 'removed') ORDER BY id", lf.ID)
+		"library_folder_id = ? AND title_id IN (SELECT id FROM titles WHERE state != 'removed') AND (? = 0 OR title_id = ?) ORDER BY id", lf.ID, titleID, titleID)
 	if err != nil {
 		return 0, err
 	}
@@ -472,14 +483,33 @@ func (s *Service) linkFoundMovie(ctx context.Context, v mediafiles.Version, by d
 			only = append(only, f)
 		}
 	}
+	if len(only) > 1 {
+		return s.markLeftovers(ctx, only, "movie_more_than_one")
+	}
 	if len(only) != 1 {
 		return nil
 	}
 	_, err = s.adoptMovieCopy(ctx, v.TitleID, v.ID, CopyAdoption{RelativePath: only[0].RelativePath}, true, by)
 	if errors.Is(err, ErrCopyChoice) {
-		return nil
+		reason := "movie_copy_choice"
+		if strings.Contains(err.Error(), "already has a copy") {
+			reason = "movie_has_file"
+		}
+		return s.markLeftovers(ctx, only, reason)
 	}
 	return err
+}
+
+// markLeftovers stores why found files stay notes.
+func (s *Service) markLeftovers(ctx context.Context, fs []mediafiles.File, reason string) error {
+	return s.Store.Write(ctx, func(tx *sql.Tx) error {
+		for _, f := range fs {
+			if err := mediafiles.SetLeftoverReason(ctx, tx, f.ID, reason); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (s *Service) handleRescan(ctx context.Context, r *jobs.Run) error {

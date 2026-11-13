@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <b>Slovenčina</b> · <a href="LANGUAGES.md">Ďalšie jazyky</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">Ďalšie jazyky</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0: teraz v 44 jazykoch**, aj sprava doľava. aria2 funguje ako sťahovač a balíky sérií sa sťahujú po niekoľkých dieloch. [Pozri, čo je nové](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease a IPTorrents zabudované**, bez Prowlarru. Žiadaj seriály v 4K a Profilarr môže poslať svoje formáty a profily. [Pozri, čo je nové](https://holyarrs.com/whats-new/)
 
 > Každý plagát, trailer a hodnotenie v tvojom HolyArrs pochádza zo servera, ktorý prevádzkujem a platím sám, aby zostal zadarmo pre všetkých. Ak HolyArrs spravil tvoj filmový večer o trochu lepším, sponzorstvo nám všetkým udrží svetlá zapnuté 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> je jedna self-hosted aplikácia pre tvoje seriály, filmy a hudbu.<br>Prehliadaj ako v streamovacej aplikácii, požiadaj o to, čo chceš, a zvyšok vybaví sama.</p>
 
-<p align="center"><b>Približne 15 MB na stiahnutie · približne 140 MB RAM v nečinnosti s 10,000 titulmi · amd64, arm64, armv7</b><br><sub>Šesť aplikácií, ktoré nahrádza, má dokopy na stiahnutie 718.2 MB.</sub></p>
+<p align="center"><b>Približne 19.5 MB na stiahnutie · približne 95 MiB RAM v nečinnosti na čerstvej inštalácii · amd64, arm64, armv7</b><br><sub>Šesť aplikácií, ktoré nahrádza, má dokopy na stiahnutie 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Rýchly štart</a> · <a href="#why">Prečo</a> · <a href="#what-it-does">Čo dokáže</a> · <a href="#moving">Prechod z iných aplikácií</a> · <a href="#manual">Príručka</a> · <a href="#help">Pomoc</a></p>
 
@@ -105,9 +105,9 @@ Tak som ju postavil.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Všetkých šesť spolu** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Približne 48-krát menšie. Komprimované stiahnutie z registra, image z linuxserver.io, amd64, odmerané 2026-11-08. RAM v nečinnosti odmeraná s 10,000 titulmi a 55,000 filmami a epizódami.</sub>
+<sub>Približne 37-krát menšie. Komprimované stiahnutie z registra, image z linuxserver.io, amd64, odmerané 2026-11-08. RAM v nečinnosti odmeraná s 10,000 titulmi a 55,000 filmami a epizódami. (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Niekto požiada o titul. HolyArrs prehľadá tvoje zdroje, podľa tvojich pravid
 | | |
 |---|---|
 | 🍿 **Explore** | Prehliadaj ako v streamovacej aplikácii. Prejdi myšou na titul a spustí sa trailer. |
-| 🙋 **Requests** | Celý seriál alebo len jedna séria. Ty schvaľuješ, alebo nechaš dôveryhodných ľudí predbehnúť rad. |
+| 🙋 **Requests** | Celý seriál alebo len jedna séria. Ty schvaľuješ, alebo nechaš dôveryhodných ľudí predbehnúť rad. Zoznamy na pozretie z Plexu a Pulsarru sa môžu stať požiadavkami. |
 | 🎯 **Pick rules** | Ty rozhoduješ, ktorý release vyhrá: veľkosť, kvalita, jazyk. |
-| 💬 **Titulky** | V jazykoch, ktoré vyberieš, uložené spolu so súborom. Hľadanie titulkov online príde po 1.0. |
+| 💬 **Titulky** | V jazykoch, ktoré vyberieš, nájdené na weboch s titulkami a uložené spolu so súborom. |
 | 📅 **Calendar** | Čo sa vysiela ako ďalšie pri všetkom, čo sleduješ. |
-| 🚚 **Prenes svoje nastavenie** | Zo Sonarru, Radarru, Lidarru, Prowlarru, Bazarru, Seerru, Overseerru, qBittorrentu a SABnzbd. Najprv to vyskúšaj, neskôr to vráť späť. |
-| 🔌 **API pre staršie aplikácie** | Prowlarr môže ďalej posielať zdroje do HolyArrs, keď to zapneš. |
-| 🗝️ **Žiadne kľúče API netreba** | Tituly, obrázky a rebríčky prichádzajú z metadátového servera HolyArrs. |
+| 🔔 **Alerts** | Discord, e-mail, Telegram, ntfy, Gotify, Pushover alebo webhook. |
+| 🚚 **Importuj svoje nastavenie** | Zo Sonarru, Radarru, Lidarru, Prowlarru, Bazarru, Seerru, Overseerru, qBittorrentu a SABnzbd. Vyber, čo sa prenesie, neskôr to vráť späť. |
+| 🔌 **API pre staršie aplikácie** | Seerr, Prowlarr, Bazarr, Unpackerr a Homepage fungujú ďalej, keď to zapneš. |
+| 🗝️ **Žiadne kľúče API netreba** | Tituly, obrázky a rebríčky prichádzajú z metadátového servera HolyArrs. Fungujú aj tvoje vlastné kľúče alebo server. |
 | 🔒 **Šifrované kľúče** | Uložené heslá a kľúče sú zamknuté hlavným kľúčom, ktorý leží v tvojom konfiguračnom priečinku. |
-| 🪶 **Drobné** | Image s veľkosťou približne 15 MB, v ktorom je len HolyArrs. |
+| 🪶 **Drobné** | Image s veľkosťou približne 19.5 MB, v ktorom je len HolyArrs. |
 
 <details>
 <summary><b>Pozri si každú stránku v pohybe</b></summary>
@@ -148,18 +149,18 @@ Niekto požiada o titul. HolyArrs prehľadá tvoje zdroje, podľa tvojich pravid
 
 ## 🤝 Funguje s tým, čo už používaš
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Sťahovače: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Mediálne servery: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Sťahovače: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Mediálne servery: Plex, Jellyfin, Emby." /></picture>
 
-- **Sťahovače:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Sťahovače:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Mediálne servery:** Plex, Jellyfin, Emby
 - **Zdroje:** akýkoľvek indexer s Torznabom alebo Newznabom, alebo Prowlarr či Jackett
-- **Prenesie tvoje nastavenie z:** Sonarru, Radarru, Lidarru, Prowlarru, Bazarru, Seerru, Overseerru, qBittorrentu, SABnzbd
+- **Importuje tvoje nastavenie z:** Sonarru, Radarru, Lidarru, Prowlarru, Bazarru, Seerru, Overseerru, qBittorrentu, SABnzbd
 
 <a id="moving"></a>
 
 ## 🚚 Vezmi si staré nastavenie so sebou
 
-Otvor **Settings > Move from other apps**, pridaj adresu a kľúč API každej starej aplikácie (alebo zip so zálohou), vyber, čo sa má preniesť, spusti **Try it** a potom **Move**. Presun môžeš neskôr vrátiť späť.
+Otvor **Settings > Import from other apps**, pridaj adresu a kľúč API každej starej aplikácie (alebo zip so zálohou), vyber, čo sa má preniesť, a potom zvoľ **Import**. Import môžeš neskôr vrátiť späť.
 
 | Z | Čo sa prenesie |
 |---|---|
@@ -171,12 +172,11 @@ Otvor **Settings > Move from other apps**, pridaj adresu a kľúč API každej s
 
 HolyArrs tvoje staré aplikácie iba číta a nič v nich nemení, takže ich môžeš prevádzkovať vedľa seba, kým mu nezačneš dôverovať.
 
-Kľúče a heslá zostanú pozadu; zadáš ich znova alebo ich importuješ zo súboru. Vlastné formáty, tagy a história sa neprenášajú. Mediálne súbory sa nikdy nepresúvajú. Krok za krokom: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Kľúče a heslá zostanú pozadu; zadáš ich znova alebo ich importuješ zo súboru. Vlastné formáty, tagy a história sa neprenášajú. Mediálne súbory sa nikdy nepresúvajú. Krok za krokom: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Čo zatiaľ nerobí
 
 - **Sťahovanie vlastnými silami.** HolyArrs sa pripája na qBittorrent, SABnzbd a ďalšie. Nenahrádza ich.
-- **Funkcie s AI alebo MCP.** Nie v 1.0.
 - **Aplikácie pre telefón a TV.** Nie sú postavené. Webová aplikácia funguje na telefóne.
 - **Hudba v Explore** sa ešte stavia.
 
@@ -213,6 +213,8 @@ Keď stiahneš `holyarrs/holyarrs:latest`, dostaneš správny image pre svoj po�
 
 Máš NAS? Pozri [Unraid, Synology a ďalšie zariadenia NAS](https://docs.HolyArrs.com/run/platforms/).
 
+Chceš natívny balík? Ku každému [vydaniu](https://github.com/HolyArrs/HolyArrs/releases) je priložený experimentálny balík pre Synology (`.spk`). Pozri [Balík pre Synology](../../docs/run/synology.md).
+
 ## Tagy verzií
 
 Image sú na Docker Hube ako [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs).
@@ -220,7 +222,7 @@ Image sú na Docker Hube ako [`holyarrs/holyarrs`](https://hub.docker.com/r/holy
 | Tag | Na čo ho použiť |
 | :----: | --- |
 | `latest` | Najnovšia verzia. |
-| `1.1.0` | Jedna presná verzia. Nikdy sa nemení. |
+| `1.1.1` | Jedna presná verzia. Nikdy sa nemení. |
 
 ## Použitie
 
@@ -415,7 +417,7 @@ Chceš ho zabudovať do uzavretého produktu? Napíš na support@HolyArrs.com a 
 
 ## Udrž to v chode
 
-HolyArrs je zadarmo, ale jeho prevádzka zadarmo nie je. Každá inštalácia komunikuje s metadátovým serverom, ktorý platím každý mesiac. Sponzori to pokrývajú a kupujú viac hodín na veci, o ktorých hlasuješ.
+HolyArrs je zadarmo, ale jeho prevádzka zadarmo nie je. Predvolene každá inštalácia komunikuje s metadátovým serverom, ktorý platím každý mesiac. Sponzori to pokrývajú a kupujú viac hodín na veci, o ktorých hlasuješ.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Sponzoruj HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Hlasuj na roadmape" /></picture></a></p>
 

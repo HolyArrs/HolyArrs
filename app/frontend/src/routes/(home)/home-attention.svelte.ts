@@ -90,7 +90,7 @@ export function createHomeAttention(ctx: Pick<HomeContext, 'checks' | 'health' |
 	const fixShown = $derived(fixRows.slice(0, 4));
 	const fixHidden = $derived(moreLink(fixRows.slice(4), ctx.admin));
 	// What passed, for the all-good state: each kind of check that has no problem, once.
-	const checkWords = (): Record<string, string> => ({ library_folder: t('home.libraryFolders'), disk_space: t('home.diskSpace'), source: t('home.sources'), downloader: t('home.downloaders'), backups: t('home.backups'), update: t('home.updates'), config_disk: t('home.configFolder'), config_folder: t('home.configFolder'), waiting_downloads: t('home.downloads'), clear_waiting: t('home.downloads'), save_folder: t('home.downloaders'), trailers: t('home.trailers') });
+	const checkWords = (): Record<string, string> => ({ library_folder: t('home.libraryFolders'), disk_space: t('home.diskSpace'), source: t('home.sources'), downloader: t('home.downloaders'), backups: t('home.backups'), update: t('home.updates'), config_disk: t('home.configFolder'), config_folder: t('home.configFolder'), waiting_downloads: t('home.downloads'), clear_waiting: t('home.downloads'), save_folder: t('home.downloaders'), same_downloader: t('home.downloaders'), trailers: t('home.trailers') });
 	const passedCount = $derived((ctx.checks?.checks ?? []).filter((c) => shownState(c) === 'ok').length);
 	const passed = $derived.by(() => {
 		const words = checkWords();

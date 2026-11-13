@@ -57,6 +57,9 @@ type Manager struct {
 	// Stop, when set, ends with HolyArrs (shutdown). A manual backup stops
 	// only then, never because the browser or a proxy dropped the request.
 	Stop context.Context
+	// OnPreset, when set, is told about each saved preset (the health
+	// checks run again so backup warnings go away when backups are off).
+	OnPreset func(p Preset)
 
 	mu      sync.Mutex
 	lastErr string // the last scheduled backup's error, "" after a good one

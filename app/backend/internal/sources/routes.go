@@ -45,6 +45,7 @@ func (h *Handlers) Routes(m *webserver.Router) {
 
 func (h *Handlers) sourceRoutes(m *webserver.Router) {
 	m.Handle("GET /api/v1/sources", webserver.PermManageLibrary, http.HandlerFunc(h.listSources))
+	m.Handle("GET /api/v1/sources/sites", webserver.PermManageLibrary, http.HandlerFunc(h.listSites))
 	m.Handle("POST /api/v1/sources", webserver.PermSettings, http.HandlerFunc(h.addSource))
 	m.Handle("PUT /api/v1/sources/{id}", webserver.PermSettings, http.HandlerFunc(h.editSource))
 	m.Handle("DELETE /api/v1/sources/{id}", webserver.PermSettings, http.HandlerFunc(h.deleteSource))

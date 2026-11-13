@@ -145,5 +145,7 @@
 	"core.settings.account.about": "Kata laluan, dua faktor, peranti",
 	"core.plain.clearWaiting": "Muat turun yang diimport sedang menunggu untuk dibersihkan daripada Pemuat turunnya.",
 	"core.plain.saveFolder": "Satu Pemuat turun tiada folder simpan, jadi HolyArrs tidak dapat mengimport muat turunnya yang sudah siap.",
-	"core.api.sourceOff": "Sesetengah baris dimatikan pada pemasangan ini."
+	"core.api.sourceOff": "Sesetengah baris dimatikan pada pemasangan ini.",
+	"core.plain.noDownloader": "Sumber anda menemui muat turun yang tidak boleh diterima oleh mana-mana pemuat turun anda, jadi tiada yang boleh dihantar.",
+	"core.plain.sameDownloader": "Dua pemuat turun sampai ke aplikasi muat turun yang sama, jadi muat turun boleh muncul dua kali."
 }

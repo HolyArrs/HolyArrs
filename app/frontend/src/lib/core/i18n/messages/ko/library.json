@@ -166,6 +166,13 @@
 	"library.import.followHint": "내 캘린더에 표시합니다.",
 	"library.import.adoptOne": "{word} 1개 편입",
 	"library.import.adoptMany": "{words} {n}개 편입",
+	"library.import.searchFolders": "폴더 검색",
+	"library.import.folderCountOne": "폴더 1개",
+	"library.import.folderCountMany": "폴더 {n}개",
+	"library.import.titleAndFolder": "제목 및 폴더",
+	"library.import.matchFor": "{folder}의 일치 항목",
+	"library.import.seeLarge": "{name} 포스터 크게 보기",
+	"library.import.noneMatch": "일치하는 폴더가 없습니다.",
 	"library.report.keep.one": "작품 {n}개를 최신 상태로 유지합니다",
 	"library.report.keep.many": "작품 {n}개를 최신 상태로 유지합니다",
 	"library.report.keep.partOne": "작품 {total}개 중 {ok}개를 최신 상태로 유지합니다",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "첫 읽기는 30분 안에 이뤄져요.",
 	"library.stats.watchedHelp": "Plex, Jellyfin, Emby 재생 기록 기준. Plex는 재생만 세므로 직접 시청 표시한 타이틀은 보이지 않아요.",
 	"library.stats.lastRead": "마지막 읽기 {ago}.",
-	"library.stats.noMatch": "마지막 읽기 {ago}. 시청한 항목 중 아직 라이브러리와 일치하는 것이 없어요.",
+	"library.stats.noMatch": "시청 기록 확인 {ago}. 시청한 항목 중 아직 라이브러리와 일치하는 것이 없어요.",
 	"library.stats.notLinked": "연결 안 됨",
 	"library.stats.lastWatched": "마지막 시청 {ago}",
 	"library.stats.unit.movie.one": "영화 {n}편",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "에피소드 {n}개",
 	"library.stats.unit.episode.other": "에피소드 {n}개",
 	"library.stats.unit.play.one": "재생 {n}회",
-	"library.stats.unit.play.other": "재생 {n}회"
+	"library.stats.unit.play.other": "재생 {n}회",
+	"library.byHand.askReplaceOne": "파일 1개가 라이브러리에 있는 파일을 바꿉니다. 이전 파일은 '최근 삭제됨'(으)로 갑니다. 가져올까요?",
+	"library.byHand.askReplaceMany": "파일 {n}개가 라이브러리에 있는 파일을 바꿉니다. 이전 파일은 '최근 삭제됨'(으)로 갑니다. 가져올까요?"
 }

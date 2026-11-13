@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Yeni yol",
 	"settings.libraryFolders.changePathHint": "Önce dosyaları oraya taşıyın. HolyArrs her dosyayı kontrol eder ve hiçbir şeyi taşımaz.",
 	"settings.libraryFolders.checkingFiles": "Dosyalar kontrol ediliyor…",
-	"settings.libraryFolders.pathChanged": "Yol değiştirildi"
+	"settings.libraryFolders.pathChanged": "Yol değiştirildi",
+	"settings.libraryFolders.sideFiles": "Altyazı dosyaları",
+	"settings.libraryFolders.sideFilesDesc": "İndirmeyle gelen altyazılar, videolarının yanına kitaplığa getirilebilir.",
+	"settings.libraryFolders.sideOn": "Altyazı dosyalarını da getir",
+	"settings.libraryFolders.sideOnHint": "Kitaplıkta zaten olan bir dosya asla değiştirilmez.",
+	"settings.libraryFolders.sideTypes": "Dosya türleri",
+	"settings.libraryFolders.sideTypesHint": "Türleri virgülle ayırın, örneğin srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs {path} klasörünü göremiyor. Yalnızca kapsayıcısına bağlanan klasörleri görür. {path}:{inside} gibi bir birim ekleyin, sonra burada {inside} kullanın."
 }

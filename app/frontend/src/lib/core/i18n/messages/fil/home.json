@@ -271,5 +271,8 @@
 	"home.noSaveFolder": "walang save folder",
 	"home.noSaveFolderMany": "walang save folder",
 	"home.off": "Off",
-	"home.sourcesOff": "Naka-off sa Mga Bahagi"
+	"home.sourcesOff": "Naka-off sa Mga Bahagi",
+	"home.noneForSources": "wala para sa nahahanap ng mga Source mo",
+	"home.addedTwice": "ay dalawang beses idinagdag",
+	"home.addedTwiceMany": "ay dalawang beses idinagdag"
 }

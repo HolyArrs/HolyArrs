@@ -145,5 +145,7 @@
 	"core.settings.danger.about": "Redémarrer ou éteindre",
 	"core.settings.account.label": "Mon compte",
 	"core.settings.account.about": "Mot de passe, double authentification, appareils",
-	"core.api.sourceOff": "Certaines rangées sont désactivées sur cette installation."
+	"core.api.sourceOff": "Certaines rangées sont désactivées sur cette installation.",
+	"core.plain.noDownloader": "Vos sources trouvent des téléchargements qu'aucun de vos clients de téléchargement ne peut prendre, donc aucun ne peut être envoyé.",
+	"core.plain.sameDownloader": "Deux clients de téléchargement atteignent la même application, les téléchargements peuvent donc apparaître deux fois."
 }

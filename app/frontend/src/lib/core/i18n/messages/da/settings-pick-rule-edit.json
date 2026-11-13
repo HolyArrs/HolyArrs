@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} egenskaber scoret",
 	"settings.pickRuleEdit.trashResult": "{n} egenskaber scoret · {added} nye · {updated} opdateret",
 	"settings.pickRuleEdit.trashLeftOut": "{n} udeladt",
-	"settings.pickRuleEdit.trashTests": "tester {kinds}"
+	"settings.pickRuleEdit.trashTests": "tester {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Kilder",
+	"settings.pickRuleEdit.sourcesDesc": "Søg kun i de Kilder, der deler et af disse mærker. Lad feltet være tomt for at søge i alle Kilder.",
+	"settings.pickRuleEdit.tags": "Mærker"
 }

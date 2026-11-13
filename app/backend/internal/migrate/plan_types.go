@@ -2,6 +2,8 @@ package migrate
 
 import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 // A Plan says what a move would bring over from one or more Snapshots:
@@ -67,6 +69,13 @@ type Choices struct {
 	// preview. A queued move must reproduce this exact canonical plan before
 	// it may change domain data.
 	ApprovedHash string `json:"approved_hash,omitempty"`
+	// NoFormats keeps profiles as ready-made Pick rules matches, leaving
+	// their formats and scores behind (off: they are brought).
+	NoFormats bool `json:"no_formats,omitempty"`
+	// LeaveFolders are old root folders the owner left at "Don't bring
+	// them": their titles stay behind, whether or not this server can see
+	// the folder.
+	LeaveFolders []string `json:"leave_folders,omitempty"`
 }
 
 // Person choices on the move screen.
@@ -154,6 +163,11 @@ type FolderPlan struct {
 	Path    string `json:"path"`
 	Kind    string `json:"kind"` // movie, show, music
 	Label   string `json:"label"`
+	// Left says the owner left this folder out ("Don't bring them").
+	Left bool `json:"left,omitempty"`
+	// Unseen says this server cannot see OldPath as it is (set for the
+	// folder step only; the plan hash never covers it).
+	Unseen bool `json:"unseen,omitempty"`
 }
 
 // RulesPlan matches one of their profiles to our Pick rules.
@@ -161,6 +175,15 @@ type RulesPlan struct {
 	App     string `json:"app"`
 	Profile string `json:"profile"`
 	Preset  string `json:"preset"`
+	// Body is set when the profile becomes its own Pick rules (Name, with
+	// Traits from the formats it scores) instead of a ready-made match.
+	Name       string                    `json:"name,omitempty"`
+	ProfileKey string                    `json:"profile_key,omitempty"`
+	Kinds      []string                  `json:"kinds,omitempty"`
+	Body       *mediafiles.PickRulesBody `json:"body,omitempty"`
+	Traits     []library.ImportedTrait   `json:"traits,omitempty"`
+	Skipped    []ImportSkipped           `json:"skipped,omitempty"`
+	Notes      []string                  `json:"notes,omitempty"`
 }
 
 // ProtocolPlan is the wait an old app's untagged default wait rule gives a
@@ -300,6 +323,13 @@ type PersonPlan struct {
 	// Choice is the owner's choice for them (merge or skip when a person
 	// with the same name is here).
 	Choice string `json:"choice,omitempty"`
+	// SignIn is plex, jellyfin or emby when the person signed in to the old
+	// app that way: they come over linked to that account (SignInID, named
+	// SignInName there), with no password, and turn on at their first sign-in
+	// with it once that sign-in's checks pass.
+	SignIn     string `json:"sign_in,omitempty"`
+	SignInID   string `json:"sign_in_id,omitempty"`
+	SignInName string `json:"sign_in_name,omitempty"`
 }
 
 // AskPlan is one open request.
@@ -317,6 +347,8 @@ type AskPlan struct {
 	AskedAt   string `json:"asked_at,omitempty"`
 	DecidedAt string `json:"decided_at,omitempty"`
 	Note      string `json:"note,omitempty"`
+	// FourK: a request for a 4K copy, its own ask here too.
+	FourK bool `json:"four_k,omitempty"`
 }
 
 // AskSettingsPlan is the subset of the old app's default quotas represented

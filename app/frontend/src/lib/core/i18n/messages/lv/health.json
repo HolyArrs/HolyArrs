@@ -260,9 +260,16 @@
 	"health.word.notSent": "Vēl nav nosūtīts",
 	"health.word.notSynced": "Vēl nav sinhronizēts",
 	"health.word.working": "Darbojas",
-	"health.check.clearWaiting": "Lejupielādes, kas gaida notīrīšanu",
+	"health.check.clearWaiting": "Importētas lejupielādes, kas vēl ir Lejupielādētājā",
 	"health.check.saveFolder": "Saglabāšanas mape:",
 	"health.check.saveFolderWhy": "{app} nav saglabāšanas mapes, tāpēc HolyArrs nevar importēt pabeigtās lejupielādes. Pievienojiet ceļu pāri sadaļā Iestatījumi › Lejupielādētāji.",
-	"health.kind.clearWaiting": "Lejupielādes, kas gaida notīrīšanu",
-	"health.kind.saveFolder": "Lejupielādētāja saglabāšanas mape"
+	"health.kind.clearWaiting": "Importētas lejupielādes, kas vēl ir Lejupielādētājā",
+	"health.kind.saveFolder": "Lejupielādētāja saglabāšanas mape",
+	"health.check.usenetDl": "Usenet lejupielādētājs",
+	"health.check.torrentDl": "Torrentu lejupielādētājs",
+	"health.check.noUsenetDl": "Tavi avoti atrod Usenet lejupielādes, bet nav iestatīts neviens Usenet lejupielādētājs, tāpēc neko nevar nosūtīt. Pievienojiet to sadaļā Iestatījumi › Lejupielādētāji.",
+	"health.check.noTorrentDl": "Tavi avoti atrod torrentus, bet nav iestatīts neviens torrentu lejupielādētājs, tāpēc neko nevar nosūtīt. Pievienojiet to sadaļā Iestatījumi › Lejupielādētāji.",
+	"health.check.sameDownloader": "Pievienots divreiz:",
+	"health.check.sameDownloaderWhy": "{app} sasniedz to pašu lejupielādes lietotni kā cits lejupielādētājs, tāpēc tā lejupielādes var parādīties divreiz. Noņemiet vienu sadaļā Iestatījumi › Lejupielādētāji.",
+	"health.kind.sameDownloader": "Lejupielādētājs pievienots divreiz"
 }

@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "{n} 個の特性にポイント",
 	"settings.pickRuleEdit.trashResult": "{n} 個の特性にポイント · 新規 {added} · 更新 {updated}",
 	"settings.pickRuleEdit.trashLeftOut": "{n} 個は対象外",
-	"settings.pickRuleEdit.trashTests": "{kinds} を判定"
+	"settings.pickRuleEdit.trashTests": "{kinds} を判定",
+	"settings.pickRuleEdit.sourcesTitle": "ソース",
+	"settings.pickRuleEdit.sourcesDesc": "これらのタグのいずれかを持つソースだけを検索します。空のままにするとすべてのソースを検索します。",
+	"settings.pickRuleEdit.tags": "タグ"
 }

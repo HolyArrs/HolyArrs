@@ -260,9 +260,16 @@
 	"health.word.notSent": "Belum dihantar",
 	"health.word.notSynced": "Belum disegerakkan",
 	"health.word.working": "Berfungsi",
-	"health.check.clearWaiting": "Muat turun menunggu untuk dibersihkan",
+	"health.check.clearWaiting": "Muat turun yang diimport masih dalam Pemuat turun",
 	"health.check.saveFolder": "Folder simpan untuk",
 	"health.check.saveFolderWhy": "{app} tiada folder simpan, jadi HolyArrs tidak dapat mengimport muat turun yang sudah siap. Tambah pasangan laluan dalam Tetapan › Pemuat turun.",
-	"health.kind.clearWaiting": "Muat turun menunggu untuk dibersihkan",
-	"health.kind.saveFolder": "Folder simpan Pemuat turun"
+	"health.kind.clearWaiting": "Muat turun yang diimport masih dalam Pemuat turun",
+	"health.kind.saveFolder": "Folder simpan Pemuat turun",
+	"health.check.usenetDl": "Pemuat turun Usenet",
+	"health.check.torrentDl": "Pemuat turun torrent",
+	"health.check.noUsenetDl": "Sumber anda menemui muat turun Usenet, tetapi tiada pemuat turun Usenet disediakan, jadi tiada yang boleh dihantar. Tambah satu dalam Tetapan › Pemuat turun.",
+	"health.check.noTorrentDl": "Sumber anda menemui muat turun torrent, tetapi tiada pemuat turun torrent disediakan, jadi tiada yang boleh dihantar. Tambah satu dalam Tetapan › Pemuat turun.",
+	"health.check.sameDownloader": "Ditambah dua kali:",
+	"health.check.sameDownloaderWhy": "{app} sampai ke aplikasi muat turun yang sama dengan pemuat turun lain, jadi muat turunnya boleh muncul dua kali. Buang satu dalam Tetapan › Pemuat turun.",
+	"health.kind.sameDownloader": "Pemuat turun ditambah dua kali"
 }

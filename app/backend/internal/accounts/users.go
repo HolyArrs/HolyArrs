@@ -101,7 +101,7 @@ func kidLimit(role, max, country string, perms []webserver.Perm, skipLocal bool)
 		// A Kid may only ask: any other permission would open routes
 		// (live events, downloads, history, jobs) the limit does not cover.
 		for _, p := range perms {
-			if p != webserver.PermAsk && p != webserver.PermAutoApprove {
+			if p != webserver.PermAsk && p != webserver.PermAutoApprove && p != webserver.PermAutoApproveFourK {
 				return "", "", errors.New("A Kid account can only ask for titles.")
 			}
 		}

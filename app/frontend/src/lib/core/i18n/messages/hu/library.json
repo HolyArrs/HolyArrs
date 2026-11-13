@@ -166,6 +166,13 @@
 	"library.import.followHint": "Megjelenítés a naptáramon.",
 	"library.import.adoptOne": "1 {word} átvétele",
 	"library.import.adoptMany": "{n} {words} átvétele",
+	"library.import.searchFolders": "Keresés a mappákban",
+	"library.import.folderCountOne": "1 mappa",
+	"library.import.folderCountMany": "{n} mappa",
+	"library.import.titleAndFolder": "Cím és mappa",
+	"library.import.matchFor": "Egyezés ehhez: {folder}",
+	"library.import.seeLarge": "{name} plakátjának megtekintése nagyban",
+	"library.import.noneMatch": "Nincs egyező mappa.",
 	"library.report.keep.one": "{n} cím naprakészen tartva",
 	"library.report.keep.many": "{n} cím naprakészen tartva",
 	"library.report.keep.partOne": "{ok} / {total} cím naprakészen tartva",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Az első beolvasás 30 percen belül megtörténik.",
 	"library.stats.watchedHelp": "A Plex, a Jellyfin és az Emby lejátszási előzményeiből. A Plex csak a lejátszásokat számolja, ezért a kézzel megtekintettnek jelölt címek nem látszanak.",
 	"library.stats.lastRead": "Utoljára olvasva: {ago}.",
-	"library.stats.noMatch": "Utoljára olvasva: {ago}. A megnézettek közül még semmi sem egyezik a Médiatáraddal.",
+	"library.stats.noMatch": "Lejátszási előzmények ellenőrizve: {ago}. A megnézettek közül még semmi sem egyezik a Médiatáraddal.",
 	"library.stats.notLinked": "Nincs összekapcsolva",
 	"library.stats.lastWatched": "Utoljára nézte: {ago}",
 	"library.stats.unit.movie.one": "{n} film",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} epizód",
 	"library.stats.unit.episode.other": "{n} epizód",
 	"library.stats.unit.play.one": "{n} lejátszás",
-	"library.stats.unit.play.other": "{n} lejátszás"
+	"library.stats.unit.play.other": "{n} lejátszás",
+	"library.byHand.askReplaceOne": "1 fájl lecserél egy fájlt, amely már a Könyvtárban van. A régi fájl ide kerül: Nemrég törölt. Importálja?",
+	"library.byHand.askReplaceMany": "{n} fájl lecserél fájlokat, amelyek már a Könyvtárban vannak. A régi fájlok ide kerülnek: Nemrég törölt. Importálja?"
 }

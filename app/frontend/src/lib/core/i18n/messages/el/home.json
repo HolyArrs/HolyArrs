@@ -271,5 +271,8 @@
 	"home.noSaveFolder": "δεν έχει φάκελο αποθήκευσης",
 	"home.noSaveFolderMany": "δεν έχουν φάκελο αποθήκευσης",
 	"home.off": "Ανενεργό",
-	"home.sourcesOff": "Απενεργοποιημένο στις Ενότητες"
+	"home.sourcesOff": "Απενεργοποιημένο στις Ενότητες",
+	"home.noneForSources": "λείπει για ό,τι βρίσκουν οι πηγές σας",
+	"home.addedTwice": "προστέθηκε δύο φορές",
+	"home.addedTwiceMany": "προστέθηκαν δύο φορές"
 }

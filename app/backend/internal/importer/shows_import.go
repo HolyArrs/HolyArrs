@@ -127,7 +127,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	if d.ReleaseID != nil {
 		_ = db.QueryRowContext(ctx, "SELECT name FROM releases WHERE id = ?", *d.ReleaseID).Scan(&relName)
 	}
-	t := ShowTarget{LibraryPath: lf.Path, Show: mediafiles.TitleRef{ID: ti.ID, Name: ti.Name, Aliases: ti.Aliases, Year: year, Kind: "show"},
+	t := ShowTarget{LibraryPath: lf.Path, Show: mediafiles.TitleRef{ID: ti.ID, Name: ti.Name, Aliases: OtherNames(ti), Year: year, Kind: "show"},
 		IDs: ti.SourceIDs, Order: mediafiles.OrderAired, ReleaseName: relName, Naming: &ns, ByOrder: ti.EpisodeGroupID != nil && *ti.EpisodeGroupID != ""}
 	if ti.EpisodeOrder != nil && *ti.EpisodeOrder != "" {
 		t.Order = *ti.EpisodeOrder
@@ -428,6 +428,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	proof := imp.Result
 	imp.Result = execute(plan, im.Ops, resumable)
 	keepProof(imp.Result, proof)
+	im.placeSideFiles(ctx, imp.FromPath, plan, imp.Result, true)
 	for i, to := range heldFirst {
 		imp.Result[i].HeldAside = to
 	}
@@ -609,6 +610,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			}
 			if g := p.Group.Value; g != "" {
 				f.Group = &g
+			}
+			if f.Protected, err = mediafiles.TakeNotesAtTx(ctx, tx, ver.ID, f.RelativePath); err != nil {
+				return err
 			}
 			id, err := database.Insert(tx, "files", f, by)
 			if err != nil {

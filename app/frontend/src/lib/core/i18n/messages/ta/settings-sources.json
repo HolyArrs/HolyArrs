@@ -72,5 +72,10 @@
 	"settings.sources.off": "மூலங்கள் அணைக்கப்பட்டுள்ளன",
 	"settings.sources.offText": "HolyArrs தேடாது, பிடிக்காது. உங்கள் பதிவிறக்கியில் நீங்கள் சேர்க்கும் பதிவிறக்கங்கள் இன்னும் இறக்குமதி செய்யப்படும்.",
 	"settings.sources.openParts": "பகுதிகளைத் திற",
-	"settings.sources.offState": "அணை"
+	"settings.sources.offState": "அணை",
+	"settings.sources.site": "உள்ளமைந்த தளம்",
+	"settings.sources.siteLabel": "தளம்",
+	"settings.sources.addressSite": "தளத்தின் சொந்த முகவரி. தளம் இடம் மாறினால் மட்டும் மாற்றவும்.",
+	"settings.sources.siteKeyLabel": "குக்கி அல்லது RSS விசை",
+	"settings.sources.siteKeyHint": "உங்கள் சொந்த கணக்கிலிருந்து: உலாவி குக்கியிலிருந்து uid மற்றும் pass, அல்லது உங்கள் RSS இணைப்பிலிருந்து u மற்றும் tp. மறையாக்கமாக வைக்கப்படும்."
 }

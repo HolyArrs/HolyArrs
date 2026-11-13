@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "नया पाथ",
 	"settings.libraryFolders.changePathHint": "पहले फ़ाइलें वहाँ ले जाएँ। HolyArrs हर फ़ाइल जाँचता है और कुछ नहीं हिलाता।",
 	"settings.libraryFolders.checkingFiles": "फ़ाइलें जाँची जा रही हैं…",
-	"settings.libraryFolders.pathChanged": "पाथ बदल गया"
+	"settings.libraryFolders.pathChanged": "पाथ बदल गया",
+	"settings.libraryFolders.sideFiles": "सबटाइटल फ़ाइलें",
+	"settings.libraryFolders.sideFilesDesc": "डाउनलोड के साथ आई सबटाइटल फ़ाइलें वीडियो के बगल में लाइब्रेरी में लाई जा सकती हैं।",
+	"settings.libraryFolders.sideOn": "सबटाइटल फ़ाइलें भी साथ लाएँ",
+	"settings.libraryFolders.sideOnHint": "लाइब्रेरी में पहले से मौजूद फ़ाइल कभी नहीं बदली जाती।",
+	"settings.libraryFolders.sideTypes": "फ़ाइल प्रकार",
+	"settings.libraryFolders.sideTypesHint": "प्रकारों को कॉमा से अलग करें, जैसे srt, ass।",
+	"settings.libraryFolders.notMounted": "HolyArrs को {path} नहीं दिखता। उसे सिर्फ़ वही फ़ोल्डर दिखते हैं जो उसके कंटेनर में माउंट हैं। {path}:{inside} जैसा एक वॉल्यूम जोड़ें, फिर यहाँ {inside} इस्तेमाल करें।"
 }

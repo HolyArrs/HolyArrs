@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Las apps de IA están desactivadas. Al permitir se activan.",
 	"arrapi.ai.offOther": "Las apps de IA están desactivadas. Pide al propietario que las active y vuelve a intentarlo.",
 	"arrapi.ai.allow": "Permitir",
-	"arrapi.ai.cancel": "Cancelar"
+	"arrapi.ai.cancel": "Cancelar",
+	"arrapi.seerr.sentTitle": "Enviado por otras apps",
+	"arrapi.seerr.sentHint": "Formatos y perfiles que enviaron apps como Profilarr. Aquí solo se pueden leer.",
+	"arrapi.seerr.sentFormat": "Formato",
+	"arrapi.seerr.sentProfile": "Perfil",
+	"arrapi.seerr.sentUpdated": "actualizado {ago}"
 }

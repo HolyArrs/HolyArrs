@@ -166,6 +166,13 @@
 	"library.import.followHint": "Zobraziť ich v mojom kalendári.",
 	"library.import.adoptOne": "Prevziať 1 prvok ({word})",
 	"library.import.adoptMany": "Prevziať ({words}): {n}",
+	"library.import.searchFolders": "Hľadať v priečinkoch",
+	"library.import.folderCountOne": "1 priečinok",
+	"library.import.folderCountMany": "Priečinkov: {n}",
+	"library.import.titleAndFolder": "Názov a priečinok",
+	"library.import.matchFor": "Zhoda pre {folder}",
+	"library.import.seeLarge": "Zobraziť plagát {name} vo veľkom",
+	"library.import.noneMatch": "Žiadny priečinok nezodpovedá.",
 	"library.report.keep.one": "{n} titul udržiavaný aktuálny",
 	"library.report.keep.many": "Titulov udržiavaných aktuálne: {n}",
 	"library.report.keep.partOne": "{ok} z {total} titulov udržiavaný aktuálny",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Prvé čítanie prebehne do 30 minút.",
 	"library.stats.watchedHelp": "Z histórie prehrávania v Plexe, Jellyfine a Embym. Plex počíta len prehratia, takže tituly ručne označené ako pozreté sa nezobrazia.",
 	"library.stats.lastRead": "Naposledy prečítané {ago}.",
-	"library.stats.noMatch": "Naposledy prečítané {ago}. Nič z pozretého zatiaľ nezodpovedá vašej Knižnici.",
+	"library.stats.noMatch": "História pozerania skontrolovaná {ago}. Nič z pozretého zatiaľ nezodpovedá vašej Knižnici.",
 	"library.stats.notLinked": "Nepripojené",
 	"library.stats.lastWatched": "Naposledy pozerané {ago}",
 	"library.stats.unit.movie.one": "{n} film",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} epizóda",
 	"library.stats.unit.episode.other": "{n} epizód",
 	"library.stats.unit.play.one": "{n} prehratie",
-	"library.stats.unit.play.other": "{n} prehratí"
+	"library.stats.unit.play.other": "{n} prehratí",
+	"library.byHand.askReplaceOne": "1 súbor nahradí súbor, ktorý už je v Knižnici. Starý súbor pôjde do sekcie Nedávno odstránené. Importovať?",
+	"library.byHand.askReplaceMany": "Súbory ({n}) nahradia súbory, ktoré už sú v Knižnici. Staré súbory pôjdu do sekcie Nedávno odstránené. Importovať?"
 }

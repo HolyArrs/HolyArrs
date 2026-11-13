@@ -260,9 +260,16 @@
 	"health.word.notSent": "Inte skickad ännu",
 	"health.word.notSynced": "Inte synkad ännu",
 	"health.word.working": "Fungerar",
-	"health.check.clearWaiting": "Nedladdningar som väntar på att rensas",
+	"health.check.clearWaiting": "Importerade nedladdningar som fortfarande ligger i en nedladdare",
 	"health.check.saveFolder": "Sparmapp för",
 	"health.check.saveFolderWhy": "{app} har ingen sparmapp, så HolyArrs kan inte importera de färdiga nedladdningarna. Lägg till ett sökvägspar under Inställningar › Nedladdare.",
-	"health.kind.clearWaiting": "Nedladdningar som väntar på att rensas",
-	"health.kind.saveFolder": "Nedladdarens sparmapp"
+	"health.kind.clearWaiting": "Importerade nedladdningar som fortfarande ligger i en nedladdare",
+	"health.kind.saveFolder": "Nedladdarens sparmapp",
+	"health.check.usenetDl": "Usenet-nedladdare",
+	"health.check.torrentDl": "Torrent-nedladdare",
+	"health.check.noUsenetDl": "Dina källor hittar Usenet-nedladdningar, men ingen Usenet-nedladdare är inställd, så ingen kan skickas. Lägg till en under Inställningar › Nedladdare.",
+	"health.check.noTorrentDl": "Dina källor hittar torrent-nedladdningar, men ingen torrent-nedladdare är inställd, så ingen kan skickas. Lägg till en under Inställningar › Nedladdare.",
+	"health.check.sameDownloader": "Tillagd två gånger:",
+	"health.check.sameDownloaderWhy": "{app} når samma nedladdningsapp som en annan nedladdare, så dess nedladdningar kan visas två gånger. Ta bort en under Inställningar › Nedladdare.",
+	"health.kind.sameDownloader": "Nedladdare tillagd två gånger"
 }

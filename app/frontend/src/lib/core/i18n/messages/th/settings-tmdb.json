@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "บันทึกไม่ได้",
 	"settings.tmdb.locked": "กำหนดโดยการตั้งค่า Docker ของคุณ",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE คือ \"{value}\" ซึ่งไม่ใช่ full, own หรือ off การค้นหาจึงปิดอยู่",
-	"settings.tmdb.ownNote": "คีย์ของคุณเอง จะถามแต่ละแหล่งเอง ชาร์ตเพลง แถวเพลงใหม่ Top 10 สตรีมมิง ข้อมูลจาก Wikipedia และแผนที่อนิเมะ มาจากเซิร์ฟเวอร์ HolyArrs เท่านั้น จึงปิดอยู่",
+	"settings.tmdb.ownNote": "เมื่อใช้คีย์ของคุณเอง HolyArrs จะถามแต่ละแหล่งโดยตรง ชาร์ตเพลง แถวเพลงใหม่ Top 10 สตรีมมิง ข้อมูลจาก Wikipedia และแผนที่อนิเมะ มาจากเซิร์ฟเวอร์ HolyArrs เท่านั้น จึงปิดอยู่",
 	"settings.tmdb.keysTitle": "คีย์ของคุณ",
 	"settings.tmdb.keysDesc": "ต้องใช้เฉพาะโทเคนอ่านของ TMDB",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

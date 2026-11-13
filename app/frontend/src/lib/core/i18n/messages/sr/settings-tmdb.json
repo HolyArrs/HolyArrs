@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Није могло да се сачува",
 	"settings.tmdb.locked": "Одређено вашим Docker подешавањима",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE је „{value}“, што није full, own ни off, па су претраге искључене.",
-	"settings.tmdb.ownNote": "Ваши сопствени кључеви питају сваки извор сами. Музичке листе, редови нове музике, Топ 10 на стримингу, чињенице са Википедије и мапе анимеа долазе само са HolyArrs сервера, па су искључени.",
+	"settings.tmdb.ownNote": "Са сопственим кључевима HolyArrs директно пита сваки извор. Музичке листе, редови нове музике, Топ 10 на стримингу, чињенице са Википедије и мапе анимеа долазе само са HolyArrs сервера, па су искључени.",
 	"settings.tmdb.keysTitle": "Ваши кључеви",
 	"settings.tmdb.keysDesc": "Потребан је само TMDB токен за читање",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

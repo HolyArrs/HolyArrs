@@ -260,9 +260,16 @@
 	"health.word.notSent": "Још није послато",
 	"health.word.notSynced": "Још није синхронизовано",
 	"health.word.working": "Ради",
-	"health.check.clearWaiting": "Преузимања која чекају чишћење",
+	"health.check.clearWaiting": "Увезена преузимања која су још у Преузимачу",
 	"health.check.saveFolder": "Фасцикла за чување за",
 	"health.check.saveFolderWhy": "{app} нема фасциклу за чување, па HolyArrs не може да увезе завршена преузимања. Додајте пар путања у Подешавања › Преузимачи.",
-	"health.kind.clearWaiting": "Преузимања која чекају чишћење",
-	"health.kind.saveFolder": "Фасцикла за чување Преузимача"
+	"health.kind.clearWaiting": "Увезена преузимања која су још у Преузимачу",
+	"health.kind.saveFolder": "Фасцикла за чување Преузимача",
+	"health.check.usenetDl": "Usenet преузимач",
+	"health.check.torrentDl": "Торент преузимач",
+	"health.check.noUsenetDl": "Твоји извори проналазе Usenet преузимања, али ниједан Usenet преузимач није подешен, па ништа не може да се пошаље. Додајте га у Подешавања › Преузимачи.",
+	"health.check.noTorrentDl": "Твоји извори проналазе торенте, али ниједан торент преузимач није подешен, па ништа не може да се пошаље. Додајте га у Подешавања › Преузимачи.",
+	"health.check.sameDownloader": "Додато двапут:",
+	"health.check.sameDownloaderWhy": "{app} води до исте апликације за преузимање као други преузимач, па се његова преузимања могу приказати двапут. Уклоните један у Подешавања › Преузимачи.",
+	"health.kind.sameDownloader": "Преузимач додат двапут"
 }

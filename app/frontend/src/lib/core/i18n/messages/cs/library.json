@@ -166,6 +166,13 @@
 	"library.import.followHint": "Zobrazit je v mém kalendáři.",
 	"library.import.adoptOne": "Převzít 1 {word}",
 	"library.import.adoptMany": "Převzít {n} {words}",
+	"library.import.searchFolders": "Hledat ve složkách",
+	"library.import.folderCountOne": "1 složka",
+	"library.import.folderCountMany": "Složek: {n}",
+	"library.import.titleAndFolder": "Název a složka",
+	"library.import.matchFor": "Shoda pro {folder}",
+	"library.import.seeLarge": "Zobrazit plakát {name} ve velkém",
+	"library.import.noneMatch": "Žádná složka neodpovídá.",
 	"library.report.keep.one": "Udržováno aktuální: {n}",
 	"library.report.keep.many": "Udržováno aktuální: {n}",
 	"library.report.keep.partOne": "Udržováno aktuální: {ok} z {total}",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "První čtení proběhne do 30 minut.",
 	"library.stats.watchedHelp": "Z historie přehrávání v Plexu, Jellyfinu a Embym. Plex počítá jen přehrání, takže tituly ručně označené jako zhlédnuté se nezobrazí.",
 	"library.stats.lastRead": "Naposledy přečteno {ago}.",
-	"library.stats.noMatch": "Naposledy přečteno {ago}. Nic ze zhlédnutého zatím neodpovídá vaší Knihovně.",
+	"library.stats.noMatch": "Historie sledování zkontrolována {ago}. Nic ze zhlédnutého zatím neodpovídá vaší Knihovně.",
 	"library.stats.notLinked": "Nepropojeno",
 	"library.stats.lastWatched": "Naposledy sledováno {ago}",
 	"library.stats.unit.movie.one": "{n} film",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} epizoda",
 	"library.stats.unit.episode.other": "{n} epizod",
 	"library.stats.unit.play.one": "{n} přehrání",
-	"library.stats.unit.play.other": "{n} přehrání"
+	"library.stats.unit.play.other": "{n} přehrání",
+	"library.byHand.askReplaceOne": "1 soubor nahradí soubor, který už je v Knihovně. Starý soubor půjde do sekce Nedávno smazané. Importovat?",
+	"library.byHand.askReplaceMany": "Soubory ({n}) nahradí soubory, které už jsou v Knihovně. Staré soubory půjdou do sekce Nedávno smazané. Importovat?"
 }

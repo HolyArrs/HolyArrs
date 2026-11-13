@@ -145,5 +145,7 @@
 	"core.settings.danger.about": "Neu starten oder herunterfahren",
 	"core.settings.account.label": "Mein Konto",
 	"core.settings.account.about": "Passwort, Zwei-Faktor, Geräte",
-	"core.api.sourceOff": "Einige Reihen sind in dieser Installation aus."
+	"core.api.sourceOff": "Einige Reihen sind in dieser Installation aus.",
+	"core.plain.noDownloader": "Deine Quellen finden Downloads, die keiner deiner Downloader annehmen kann, daher kann keiner gesendet werden.",
+	"core.plain.sameDownloader": "Zwei Downloader erreichen dieselbe Download-App, daher können Downloads doppelt erscheinen."
 }

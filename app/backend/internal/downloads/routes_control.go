@@ -65,6 +65,8 @@ func clientControlError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
 		webserver.Fail(w, http.StatusNotFound, "no such download")
+	case errors.Is(err, ErrNotOurs):
+		webserver.Fail(w, http.StatusForbidden, err.Error())
 	case errors.Is(err, ErrNotActive), errors.Is(err, ErrNotSupported), errors.Is(err, ErrReadOnly):
 		webserver.Fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, ErrNotFound):

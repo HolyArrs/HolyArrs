@@ -166,6 +166,13 @@
 	"library.import.followHint": "Tunjukkan dalam kalendar saya.",
 	"library.import.adoptOne": "Ambil alih 1 {word}",
 	"library.import.adoptMany": "Ambil alih {n} {words}",
+	"library.import.searchFolders": "Cari folder",
+	"library.import.folderCountOne": "1 folder",
+	"library.import.folderCountMany": "{n} folder",
+	"library.import.titleAndFolder": "Tajuk dan folder",
+	"library.import.matchFor": "Padanan untuk {folder}",
+	"library.import.seeLarge": "Lihat poster {name} dalam saiz besar",
+	"library.import.noneMatch": "Tiada folder yang sepadan.",
 	"library.report.keep.one": "{n} tajuk dikekalkan terkini",
 	"library.report.keep.many": "{n} tajuk dikekalkan terkini",
 	"library.report.keep.partOne": "{ok} daripada {total} tajuk dikekalkan terkini",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Bacaan pertama dibuat dalam masa 30 minit.",
 	"library.stats.watchedHelp": "Daripada sejarah main Plex, Jellyfin dan Emby. Plex hanya mengira main, jadi tajuk yang ditandakan telah ditonton secara manual tidak dipaparkan.",
 	"library.stats.lastRead": "Dibaca kali terakhir {ago}.",
-	"library.stats.noMatch": "Dibaca kali terakhir {ago}. Belum ada tontonan yang sepadan dengan Pustaka anda.",
+	"library.stats.noMatch": "Sejarah tontonan disemak {ago}. Belum ada tontonan yang sepadan dengan Pustaka anda.",
 	"library.stats.notLinked": "Tidak dipautkan",
 	"library.stats.lastWatched": "Ditonton kali terakhir {ago}",
 	"library.stats.unit.movie.one": "{n} filem",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} episod",
 	"library.stats.unit.episode.other": "{n} episod",
 	"library.stats.unit.play.one": "{n} main",
-	"library.stats.unit.play.other": "{n} main"
+	"library.stats.unit.play.other": "{n} main",
+	"library.byHand.askReplaceOne": "1 fail menggantikan fail yang sudah ada dalam Pustaka. Fail lama pergi ke Baru dipadam. Import?",
+	"library.byHand.askReplaceMany": "{n} fail menggantikan fail yang sudah ada dalam Pustaka. Fail lama pergi ke Baru dipadam. Import?"
 }

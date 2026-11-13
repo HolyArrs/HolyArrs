@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Cale nouă",
 	"settings.libraryFolders.changePathHint": "Mută mai întâi fișierele acolo. HolyArrs verifică fiecare fișier și nu mută nimic.",
 	"settings.libraryFolders.checkingFiles": "Se verifică fișierele…",
-	"settings.libraryFolders.pathChanged": "Cale schimbată"
+	"settings.libraryFolders.pathChanged": "Cale schimbată",
+	"settings.libraryFolders.sideFiles": "Fișiere de subtitrare",
+	"settings.libraryFolders.sideFilesDesc": "Subtitrările care vin cu o descărcare pot fi aduse în bibliotecă lângă videoclipul lor.",
+	"settings.libraryFolders.sideOn": "Adu și fișierele de subtitrare",
+	"settings.libraryFolders.sideOnHint": "Un fișier aflat deja în bibliotecă nu este înlocuit niciodată.",
+	"settings.libraryFolders.sideTypes": "Tipuri de fișiere",
+	"settings.libraryFolders.sideTypesHint": "Separați tipurile prin virgule, de exemplu srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs nu vede {path}. Vede doar folderele montate în containerul său. Adaugă un volum ca {path}:{inside}, apoi folosește {inside} aici."
 }

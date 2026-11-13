@@ -145,5 +145,7 @@
 	"core.settings.account.about": "Adgangskode, tofaktor, enheder",
 	"core.plain.clearWaiting": "Importerede downloads venter på at blive ryddet væk fra deres Downloader.",
 	"core.plain.saveFolder": "En downloader har ingen gemmemappe, så HolyArrs kan ikke importere dens færdige downloads.",
-	"core.api.sourceOff": "Nogle rækker er slået fra på denne installation."
+	"core.api.sourceOff": "Nogle rækker er slået fra på denne installation.",
+	"core.plain.noDownloader": "Dine kilder finder downloads, som ingen af dine downloadere kan tage imod, så ingen kan sendes.",
+	"core.plain.sameDownloader": "To Downloadere når den samme download-app, så downloads kan blive vist to gange."
 }

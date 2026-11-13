@@ -347,7 +347,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			}
 			return sources.Transport(cfg), nil
 		},
-		FromVault: vault.Get}
+		SourceHeader: sources.FileHeaders(vault),
+		FromVault:    vault.Get}
 	// Background download reader: one reader per Downloader inside the
 	// "downloads" loop; the Manager and the Downloads view read its snapshots.
 	dls := &downloads.Sync{Store: &downloads.Store{}, DB: s, Manager: dm, Lines: downloads.TorrentLines}
@@ -355,8 +356,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	im := &importer.Importer{Store: s, Live: hub, SavePath: c.SavePath}
 	// Safe mode holds every part's work already; it says nothing about Sources.
 	sourcesOn := func() bool { return c.SafeMode || pc.On(parts.Sources) }
-	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, PackReady: dm.PackReady, SourcesOn: sourcesOn, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
-		enqueue(ctx, downloads.KindGrab, domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID))
+	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, PackReady: dm.PackReady, HasDownloader: dm.HasDownloader, SourcesOn: sourcesOn, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
+		enqueue(ctx, downloads.KindGrab, domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, downloads.GrabKey(slotID, releaseID))
 	}}
 	// A rejected Import turned its Release down: remove the Download from
 	// its Downloader and search that Slot again.
@@ -369,8 +370,13 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 		enqueue(ctx, jobs.KindSearchSlot, domain.Subject{Type: "slot", ID: slotID}, nil, fmt.Sprintf("search_slot:%d", slotID))
 	}
-	// A finished Import: clear a Usenet download out of its Downloader.
-	im.OnImported = dm.ClearFinished
+	// A finished Import: clear a Usenet download out of its Downloader, and
+	// move a torrent to its category after import. ClearFinished acts only on
+	// Usenet, so the two never meet.
+	im.OnImported = func(ctx context.Context, downloadID int64) {
+		dm.ClearFinished(ctx, downloadID)
+		dm.MoveAfterImport(ctx, downloadID)
+	}
 	// Another app took a download's files before its import: a Library
 	// rescan links the copy that app placed in the Title's folder (one found
 	// movie video, or episode files by their numbers).
@@ -558,7 +564,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	subs.Register(q)
 	if !c.SafeMode {
 		s.OnEvent(func(e domain.Event) {
-			if pc.On(parts.Subtitles) && startup.FeatureOn(startup.SubtitleSites) {
+			if pc.On(parts.Subtitles) {
 				subs.OnEvent(e)
 			}
 		})
@@ -663,6 +669,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	requestsSvc := &requests.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
 	readyCheck.Store(requestsSvc)
 	optional(jobs.Loop{Name: "wishlist", Label: "Requests ready check", Every: 30 * time.Second, Run: func(ctx context.Context) error {
+		requestsSvc.FillAskDetailsLater() // imported asks' names, until found
 		if _, err := requestsSvc.CheckReady(ctx); err != nil {
 			return err
 		}

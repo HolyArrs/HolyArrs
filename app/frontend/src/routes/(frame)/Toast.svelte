@@ -121,11 +121,12 @@
 		box-shadow: 0 18px 50px rgb(0 0 0 / 42%), 0 2px 6px rgb(0 0 0 / 22%), inset 0 1px 0 rgb(255 255 255 / 9%), inset 0 0 0 0.5px rgb(255 255 255 / 7%);
 		border-radius: 999px;
 	}
-	.card { display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 9px 18px 9px 14px; touch-action: pan-x; transition: transform var(--dur) var(--ease-spring), opacity var(--dur) var(--ease-out); }
+	/* A one-line card is the full pill; a longer line wraps into a rounded card rather than being cut off. */
+	.card { border-radius: 29px; display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 9px 18px 9px 14px; touch-action: pan-x; transition: transform var(--dur) var(--ease-spring), opacity var(--dur) var(--ease-out); }
 	.card.drag { transition: none; }
 	.body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-	.title { font: var(--t-callout); font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
-	.text { font: var(--t-subhead); font-size: 12.5px; color: rgb(245 245 247 / 62%); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
+	.title { font: var(--t-callout); font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; overflow-wrap: anywhere; }
+	.text { font: var(--t-subhead); font-size: 12.5px; color: rgb(245 245 247 / 62%); overflow-wrap: anywhere; }
 	.pill { align-self: flex-end; display: inline-flex; align-items: center; gap: 8px; height: 36px; max-width: 100%; padding: 0 14px 0 8px; font: var(--t-subhead); font-weight: 600; cursor: pointer; }
 	.pill-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.pill:focus-visible { outline: none; box-shadow: var(--focus-ring); }

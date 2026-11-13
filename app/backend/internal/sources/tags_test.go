@@ -85,3 +85,43 @@ func TestFeed_TaggedReleaseNeverLandsOnLookAlike(t *testing.T) {
 		t.Fatalf("the release landed on a title: %+v", rs[0].MatchedSlotIDs)
 	}
 }
+
+// The feed takes a tagged Source the way Search does: a title whose Pick
+// rules share the Source's tag gets its releases even without the tag itself.
+func TestFeed_TaggedSourceServesTitleThroughPickRulesTags(t *testing.T) {
+	lf := &liveFeed{}
+	lf.set(feedOf(item(web1080, time.Now().Add(-2*time.Hour), 50, "")))
+	f := seed(t, lf.url(t))
+	feedOn(t, f)
+	exec(t, f, `UPDATE sources SET tags = '["kids"]'`)
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindFeedCheck, nil, nil)
+	if rs, _ := database.Select[domain.Release](context.Background(), f.s.Read(), "releases", "name = ?", web1080); len(rs) != 0 {
+		t.Fatalf("a tagged Source's release went to a title with no tags anywhere: %d", len(rs))
+	}
+	exec(t, f, `UPDATE pick_rules SET body = json_set(body, '$.tags', json('[" Kids "]'))`)
+	lf.set(feedOf(item(web1080, time.Now().Add(-time.Hour), 50, "")))
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindFeedCheck, nil, nil)
+	if rs, _ := database.Select[domain.Release](context.Background(), f.s.Read(), "releases", "name = ?", web1080); len(rs) != 1 {
+		t.Fatalf("with the tag on the Pick rules: %d releases", len(rs))
+	}
+}
+
+// Pick rules with tags take feed Releases only from Sources sharing one, as
+// Search asks only those: an untagged Source's release does not fill the Slot.
+func TestFeed_PickRulesTagsSkipUntaggedSource(t *testing.T) {
+	lf := &liveFeed{}
+	lf.set(feedOf(item(web1080, time.Now().Add(-2*time.Hour), 50, "")))
+	f := seed(t, lf.url(t))
+	feedOn(t, f)
+	exec(t, f, `UPDATE pick_rules SET body = json_set(body, '$.tags', json('["kids"]'))`)
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindFeedCheck, nil, nil)
+	if rs, _ := database.Select[domain.Release](context.Background(), f.s.Read(), "releases", "name = ?", web1080); len(rs) != 0 {
+		t.Fatalf("an untagged Source's release was used by Pick rules with tags: %d", len(rs))
+	}
+	exec(t, f, `UPDATE sources SET tags = '["kids"]'`)
+	lf.set(feedOf(item(web1080, time.Now().Add(-time.Hour), 50, "")))
+	runKind(t, f, &Searcher{Store: f.s}, jobs.KindFeedCheck, nil, nil)
+	if rs, _ := database.Select[domain.Release](context.Background(), f.s.Read(), "releases", "name = ?", web1080); len(rs) != 1 {
+		t.Fatalf("with the tag on the Source: %d releases", len(rs))
+	}
+}

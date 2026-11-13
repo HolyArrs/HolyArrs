@@ -166,6 +166,13 @@
 	"library.import.followHint": "Arată-le în calendarul meu.",
 	"library.import.adoptOne": "Preia 1 {word}",
 	"library.import.adoptMany": "Preia {n} {words}",
+	"library.import.searchFolders": "Caută în dosare",
+	"library.import.folderCountOne": "1 dosar",
+	"library.import.folderCountMany": "Dosare: {n}",
+	"library.import.titleAndFolder": "Titlu și dosar",
+	"library.import.matchFor": "Potrivire pentru {folder}",
+	"library.import.seeLarge": "Vezi afișul pentru {name} mare",
+	"library.import.noneMatch": "Niciun dosar nu se potrivește.",
 	"library.report.keep.one": "{n} titlu ținut la zi",
 	"library.report.keep.many": "{n} titluri ținute la zi",
 	"library.report.keep.partOne": "{ok} din {total} titlu ținut la zi",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Prima citire are loc în 30 de minute.",
 	"library.stats.watchedHelp": "Din istoricul de redare Plex, Jellyfin și Emby. Plex numără doar redările, deci titlurile marcate manual ca vizionate nu apar.",
 	"library.stats.lastRead": "Citit ultima dată {ago}.",
-	"library.stats.noMatch": "Citit ultima dată {ago}. Nimic din ce s-a vizionat nu se potrivește încă cu Biblioteca ta.",
+	"library.stats.noMatch": "Istoricul de vizionare verificat {ago}. Nimic din ce s-a vizionat nu se potrivește încă cu Biblioteca ta.",
 	"library.stats.notLinked": "Neconectat",
 	"library.stats.lastWatched": "Vizionat ultima dată {ago}",
 	"library.stats.unit.movie.one": "{n} film",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} episod",
 	"library.stats.unit.episode.other": "{n} episoade",
 	"library.stats.unit.play.one": "{n} redare",
-	"library.stats.unit.play.other": "{n} redări"
+	"library.stats.unit.play.other": "{n} redări",
+	"library.byHand.askReplaceOne": "1 fișier înlocuiește un fișier aflat deja în Bibliotecă. Fișierul vechi merge în Șterse recent. Importi?",
+	"library.byHand.askReplaceMany": "{n} fișiere înlocuiesc fișiere aflate deja în Bibliotecă. Fișierele vechi merg în Șterse recent. Importi?"
 }

@@ -100,5 +100,6 @@
 	"settings.users.note": "Notă pentru tine",
 	"settings.users.noteExample": "ex.: Mama",
 	"settings.users.days": "Zile de valabilitate a linkului",
-	"settings.users.makeInvite": "Creează un link de invitație"
+	"settings.users.makeInvite": "Creează un link de invitație",
+	"settings.users.permAuto4k": "Cererile 4K sunt aprobate fără așteptare"
 }

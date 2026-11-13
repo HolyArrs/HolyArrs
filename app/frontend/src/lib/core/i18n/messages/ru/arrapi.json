@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "ИИ-приложения выключены. Если разрешить, они включатся.",
 	"arrapi.ai.offOther": "ИИ-приложения выключены. Попросите владельца включить их и попробуйте снова.",
 	"arrapi.ai.allow": "Разрешить",
-	"arrapi.ai.cancel": "Отмена"
+	"arrapi.ai.cancel": "Отмена",
+	"arrapi.seerr.sentTitle": "Прислано другими приложениями",
+	"arrapi.seerr.sentHint": "Форматы и профили, которые прислали приложения вроде Profilarr. Здесь только для чтения.",
+	"arrapi.seerr.sentFormat": "Формат",
+	"arrapi.seerr.sentProfile": "Профиль",
+	"arrapi.seerr.sentUpdated": "обновлено {ago}"
 }

@@ -11,7 +11,7 @@ const (
 	notKeptSQL2       = "SELECT keep_up_to_date FROM parts WHERE title_id = ? AND kind = 'season' AND number = ?"
 	showReadySQL      = `SELECT count(*), coalesce(sum(CASE WHEN s.state IN ('in_library', 'better_wanted') THEN 1 ELSE 0 END), 0)
 		FROM items i JOIN parts p ON p.id = i.part_id
-		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = i.title_id ORDER BY is_main DESC, id LIMIT 1)
+		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = ?
 		WHERE i.title_id = ? AND i.kind = 'episode' AND i.dropped_at IS NULL AND (`
 	addShowForAskSQL  = "SELECT keep_up_to_date FROM titles WHERE id = ?"
 	addShowForAskSQL2 = "SELECT keep_up_to_date FROM parts WHERE title_id = ? AND kind = 'season' AND number = ?"

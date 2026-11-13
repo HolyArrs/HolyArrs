@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Nieuw pad",
 	"settings.libraryFolders.changePathHint": "Zet de bestanden er eerst neer. HolyArrs controleert elk bestand en verplaatst niets.",
 	"settings.libraryFolders.checkingFiles": "Bestanden controleren…",
-	"settings.libraryFolders.pathChanged": "Pad gewijzigd"
+	"settings.libraryFolders.pathChanged": "Pad gewijzigd",
+	"settings.libraryFolders.sideFiles": "Ondertitelbestanden",
+	"settings.libraryFolders.sideFilesDesc": "Ondertitels die bij een download horen, kunnen naast hun video in de bibliotheek worden gezet.",
+	"settings.libraryFolders.sideOn": "Ondertitelbestanden meenemen",
+	"settings.libraryFolders.sideOnHint": "Een bestand dat al in de bibliotheek staat, wordt nooit vervangen.",
+	"settings.libraryFolders.sideTypes": "Bestandstypen",
+	"settings.libraryFolders.sideTypesHint": "Scheid typen met komma's, zoals srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs ziet {path} niet. Het ziet alleen mappen die in de container zijn gekoppeld. Voeg een volume toe zoals {path}:{inside} en gebruik hier dan {inside}."
 }

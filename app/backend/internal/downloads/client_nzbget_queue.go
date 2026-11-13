@@ -175,14 +175,7 @@ func (r nzbgetRow) anyJob(history bool) Job {
 func (n *NZBGet) find(ctx context.Context, id string) (nzbgetMatch, bool, error) {
 	num, ok := strings.CutPrefix(id, nzbgetOutside)
 	if !ok {
-		m, found, err := n.lookup(ctx, id, n.Category)
-		for _, c := range n.Others {
-			if !errors.Is(err, errNZBGetForeignMarker) {
-				break
-			}
-			m, found, err = n.lookup(ctx, id, c)
-		}
-		return m, found, err
+		return n.lookup(ctx, id, n.Category)
 	}
 	want, err := strconv.Atoi(num)
 	if err != nil || want <= 0 {

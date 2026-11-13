@@ -240,6 +240,8 @@ func (roMover) SetLocation(context.Context, []string, string) error { return Err
 
 func (roMover) SetTorrentLimits(context.Context, []string, int64, int64) error { return ErrReadOnly }
 
+func (roMover) SetCategory(context.Context, string, string) error { return ErrReadOnly }
+
 func (r roMainSyncer) SyncMain(ctx context.Context, rid int64) (MainData, error) {
 	return r.c.inner.(MainSyncer).SyncMain(ctx, rid)
 }

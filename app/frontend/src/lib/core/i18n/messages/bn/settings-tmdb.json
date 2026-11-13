@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "সেভ করা যায়নি",
 	"settings.tmdb.locked": "আপনার Docker সেটিংস দ্বারা নির্ধারিত",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE হলো \"{value}\", যা full, own বা off নয়, তাই লুকআপ বন্ধ আছে।",
-	"settings.tmdb.ownNote": "আপনার নিজের কী প্রতিটি সোর্সকে নিজেই জিজ্ঞেস করে। সংগীত চার্ট, নতুন সংগীতের সারি, স্ট্রিমিং টপ ১০, উইকিপিডিয়ার তথ্য ও অ্যানিমে ম্যাপ শুধু HolyArrs সার্ভার থেকে আসে, তাই এগুলো বন্ধ আছে।",
+	"settings.tmdb.ownNote": "নিজের কী দিয়ে HolyArrs প্রতিটি সোর্সকে সরাসরি জিজ্ঞেস করে। সংগীত চার্ট, নতুন সংগীতের সারি, স্ট্রিমিং টপ ১০, উইকিপিডিয়ার তথ্য ও অ্যানিমে ম্যাপ শুধু HolyArrs সার্ভার থেকে আসে, তাই এগুলো বন্ধ আছে।",
 	"settings.tmdb.keysTitle": "আপনার কী",
 	"settings.tmdb.keysDesc": "শুধু TMDB রিড টোকেন লাগে",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

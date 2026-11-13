@@ -9,7 +9,6 @@ const (
 	AIApps        = "ai_apps"         // AI connector, AI keys, AI app guides
 	RowTitleStats = "row_title_stats" // Explore row titles statistics (owner table)
 	TraktLists    = "trakt_lists"     // Trakt key, Trakt lists, VIP token
-	SubtitleSites = "subtitle_sites"  // Subtitle sites and subtitle searching
 	EmbySignIn    = "emby_signin"     // Sign in with Emby
 	GoBack        = "go_back"         // Go back to the previous version steps
 )
@@ -18,7 +17,7 @@ const (
 // wiring calls it once; calling it again does nothing.
 func RegisterHeldFeatures() {
 	registerOnce.Do(func() {
-		for _, n := range []string{AIApps, RowTitleStats, TraktLists, SubtitleSites, EmbySignIn, GoBack} {
+		for _, n := range []string{AIApps, RowTitleStats, TraktLists, EmbySignIn, GoBack} {
 			RegisterFeature(n)
 		}
 	})

@@ -72,5 +72,10 @@
 	"settings.sources.off": "Källor är av",
 	"settings.sources.offText": "HolyArrs söker inte och hämtar inte. Nedladdningar som du lägger till i din Nedladdare importeras fortfarande.",
 	"settings.sources.openParts": "Öppna Delar",
-	"settings.sources.offState": "Av"
+	"settings.sources.offState": "Av",
+	"settings.sources.site": "Inbyggd webbplats",
+	"settings.sources.siteLabel": "Webbplats",
+	"settings.sources.addressSite": "Webbplatsens egen adress. Ändra den bara om webbplatsen har flyttat.",
+	"settings.sources.siteKeyLabel": "Cookie eller RSS-nyckel",
+	"settings.sources.siteKeyHint": "Från ditt eget konto: uid och pass från webbläsarens cookie, eller u och tp från din RSS-länk. Sparas krypterad."
 }

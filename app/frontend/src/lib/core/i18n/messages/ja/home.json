@@ -271,5 +271,8 @@
 	"home.metadataServerOnline": "メタデータサーバー稼働中",
 	"home.homeCouldNotRead3": "ホームは今、ダウンロードを読み取れませんでした。",
 	"home.off": "オフ",
-	"home.sourcesOff": "パーツでオフ"
+	"home.sourcesOff": "パーツでオフ",
+	"home.noneForSources": "ソースが見つけるものに対応するものがありません",
+	"home.addedTwice": "が二重に追加されています",
+	"home.addedTwiceMany": "が二重に追加されています"
 }

@@ -40,8 +40,10 @@ func (v *Verdict) earlyAndTiny(rel ReleaseFacts, set SlotSet) {
 	}
 	if c.Early && set.OutSince != nil && !rel.PublishedAt.IsZero() && rel.PublishedAt.Add(c.Grace).Before(*set.OutSince) {
 		detail := fmt.Sprintf("posted %s, before it came out (%s)", day(rel.PublishedAt), day(*set.OutSince))
-		if set.HandSearch {
-			// A person searched for it: said plainly, the choice is theirs.
+		if set.HandSearch && (set.Listing || !set.Out) {
+			// A person picks from the list, or searched for what is not out yet (the
+			// gate skipped): said plainly, the choice is theirs. A search a person
+			// started for what is out and that chooses on its own keeps the refusal.
 			v.add("hard", "safety:posted_early", "warn", detail+"; it may be a fake, shown because a person searched for it", 0)
 		} else {
 			v.add("hard", "safety:posted_early", "fail", detail+"; likely a fake", 0)

@@ -166,6 +166,13 @@
 	"library.import.followHint": "Hiện chúng trên lịch của tôi.",
 	"library.import.adoptOne": "Tiếp nhận 1 {word}",
 	"library.import.adoptMany": "Tiếp nhận {n} {words}",
+	"library.import.searchFolders": "Tìm thư mục",
+	"library.import.folderCountOne": "1 thư mục",
+	"library.import.folderCountMany": "{n} thư mục",
+	"library.import.titleAndFolder": "Tiêu đề và thư mục",
+	"library.import.matchFor": "Kết quả khớp cho {folder}",
+	"library.import.seeLarge": "Xem áp phích của {name} cỡ lớn",
+	"library.import.noneMatch": "Không có thư mục nào khớp.",
 	"library.report.keep.one": "{n} tựa được giữ cập nhật",
 	"library.report.keep.many": "{n} tựa được giữ cập nhật",
 	"library.report.keep.partOne": "{ok} trên {total} tựa được giữ cập nhật",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Lần đọc đầu tiên diễn ra trong vòng 30 phút.",
 	"library.stats.watchedHelp": "Từ lịch sử phát của Plex, Jellyfin và Emby. Plex chỉ đếm lượt phát, nên các tựa đánh dấu đã xem thủ công sẽ không hiện.",
 	"library.stats.lastRead": "Đọc lần cuối {ago}.",
-	"library.stats.noMatch": "Đọc lần cuối {ago}. Chưa có nội dung đã xem nào khớp với Thư viện của bạn.",
+	"library.stats.noMatch": "Đã kiểm tra lịch sử xem {ago}. Chưa có nội dung đã xem nào khớp với Thư viện của bạn.",
 	"library.stats.notLinked": "Chưa liên kết",
 	"library.stats.lastWatched": "Xem lần cuối {ago}",
 	"library.stats.unit.movie.one": "{n} phim",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} tập",
 	"library.stats.unit.episode.other": "{n} tập",
 	"library.stats.unit.play.one": "{n} lượt phát",
-	"library.stats.unit.play.other": "{n} lượt phát"
+	"library.stats.unit.play.other": "{n} lượt phát",
+	"library.byHand.askReplaceOne": "1 tệp sẽ thay thế một tệp đã có trong Thư viện. Tệp cũ sẽ chuyển vào Đã xóa gần đây. Nhập?",
+	"library.byHand.askReplaceMany": "{n} tệp sẽ thay thế các tệp đã có trong Thư viện. Các tệp cũ sẽ chuyển vào Đã xóa gần đây. Nhập?"
 }

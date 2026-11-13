@@ -37,6 +37,8 @@ type TitleRef struct {
 	Kind             string // "show" for a show, "artist" for an artist; "" or "movie" for a movie
 	// Tags are the title's; a feed matches a tagged Source's releases only to titles sharing one.
 	Tags []string
+	// RuleTags are the tags of the Pick rules its looking Slots use; a tagged Source sharing one also serves the title.
+	RuleTags []string
 }
 
 // Match is the result of matching a parse to the library.
@@ -53,6 +55,9 @@ type Current struct {
 	Group      string
 	Fix        int
 	ImportedAt time.Time
+	// parse is the file's name as read, kept so Judge can score it again
+	// once it knows the title (its original language and year).
+	parse *releasename.Result
 }
 
 // SlotSet is the Slots a Release matched, with what judging needs about them.
@@ -65,6 +70,7 @@ type SlotSet struct {
 	TurnedDown     []string // names or info hashes turned down for these Slots
 	Current        *Current
 	HandSearch     bool // a person started a single-Item search
+	Listing        bool // the search only lists Releases; a person picks one, nothing is chosen on its own
 	SkipGate       bool // a bulk search with bulk_search_respects_gate off
 	// GateDetail replaces the gate's words (an episode or a season that has
 	// not aired yet).
@@ -331,6 +337,12 @@ func sizeMidpoint(lo, hi int64) int64 { return lo + (hi-lo)/2 }
 // Judge runs the pipeline of pick-rules.md section 3.1 for one Release.
 // Hard steps all run so every refusal is reported at once.
 func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
+	if set.Match.Title != nil && rel.Parse.OriginalLanguage == "" {
+		rel.Parse.OriginalLanguage = set.Match.Title.OriginalLanguage
+	}
+	if set.Match.Title != nil && rel.Parse.TitleYear == 0 {
+		rel.Parse.TitleYear = set.Match.Title.Year
+	}
 	p := rel.Parse
 	if rel.Size > 0 {
 		p.Size = rel.Size
@@ -439,6 +451,7 @@ func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 	// 4. Better than what we have.
 	points := sumPoints(p, rules)
 	if set.Current != nil && v.Step != nil {
+		set.Current = currentWithTitle(set.Current, p, rules)
 		v.better(rel, rules, set.Current, idx, points)
 	}
 	if v.failed() {

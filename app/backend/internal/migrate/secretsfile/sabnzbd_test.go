@@ -121,3 +121,20 @@ func TestUnusedMetadataAccountFields(t *testing.T) {
 		t.Fatal("unused account fields changed repeat-import behavior")
 	}
 }
+
+// The secrets file names SABnzbd at its /sabnzbd path while the same SABnzbd
+// is already here at the bare address: it is the same Downloader, not a twin.
+func TestSABnzbdSameAppAtAnotherPath(t *testing.T) {
+	ctx := context.Background()
+	d := deps(t)
+	if !AllOK(Apply(ctx, d, parse(t, "version: 1\nsabnzbd:\n  address: http://sabnzbd:8080\n  api_key: your-sab-full-key\n"), false)) {
+		t.Fatal("first import")
+	}
+	ls := Apply(ctx, d, parse(t, "version: 1\nsabnzbd:\n  address: http://sabnzbd:8080/sabnzbd\n  api_key: your-sab-full-key\n"), false)
+	if !AllOK(ls) {
+		t.Fatalf("second import: %v", ls)
+	}
+	if n := count(t, d, "SELECT count(*) FROM downloaders WHERE adapter = 'sabnzbd'"); n != 1 {
+		t.Fatalf("SABnzbd Downloaders: %d, want 1", n)
+	}
+}

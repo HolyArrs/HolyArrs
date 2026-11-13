@@ -12,7 +12,7 @@
 	"health.check.freeSpace": "Вільне місце",
 	"health.check.update": "Оновлення",
 	"health.check.waiting": "Завантаження чекають на файли",
-	"health.check.clearWaiting": "Завантаження чекають на очищення",
+	"health.check.clearWaiting": "Імпортовані завантаження досі в завантажувачі",
 	"health.check.saveFolder": "Тека збереження для",
 	"health.check.saveFolderWhy": "У {app} не задано теку збереження, тому HolyArrs не може імпортувати готові завантаження. Додайте пару шляхів у Налаштування › Завантажувачі.",
 	"health.day.ahead": "Попереду: {count}",
@@ -88,7 +88,7 @@
 	"health.kind.trailers": "Зчитувач трейлерів",
 	"health.kind.update": "Оновлення",
 	"health.kind.waitingDownloads": "Завантаження чекають на файли",
-	"health.kind.clearWaiting": "Завантаження чекають на очищення",
+	"health.kind.clearWaiting": "Імпортовані завантаження досі в завантажувачі",
 	"health.kind.saveFolder": "Тека збереження завантажувача",
 	"health.link.downloader": "Завантажувач",
 	"health.link.mediaServer": "Медіасервер",
@@ -264,5 +264,12 @@
 	"health.word.broken": "Зламано",
 	"health.word.notSent": "Ще не надіслано",
 	"health.word.notSynced": "Ще не синхронізовано",
-	"health.word.working": "Працює"
+	"health.word.working": "Працює",
+	"health.check.usenetDl": "Завантажувач Usenet",
+	"health.check.torrentDl": "Торент-завантажувач",
+	"health.check.noUsenetDl": "Твої джерела знаходять завантаження з Usenet, але не налаштовано жодного завантажувача Usenet, тож нічого не можна надіслати. Додайте його в Налаштування › Завантажувачі.",
+	"health.check.noTorrentDl": "Твої джерела знаходять торенти, але не налаштовано жодного торент-завантажувача, тож нічого не можна надіслати. Додайте його в Налаштування › Завантажувачі.",
+	"health.check.sameDownloader": "Додано двічі:",
+	"health.check.sameDownloaderWhy": "{app} веде до того самого застосунку завантаження, що й інший завантажувач, тож його завантаження можуть показуватися двічі. Видаліть один у Налаштування › Завантажувачі.",
+	"health.kind.sameDownloader": "Завантажувач додано двічі"
 }

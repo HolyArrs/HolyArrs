@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Hindi ma-save",
 	"settings.tmdb.locked": "Itinakda ng iyong mga setting ng Docker",
 	"settings.tmdb.dockerValue": "Ang HOLYARRS_METADATA_MODE ay \"{value}\", na hindi full, own, o off, kaya naka-off ang mga lookup.",
-	"settings.tmdb.ownNote": "Ang Sarili mong mga key ay nagtatanong sa bawat source nang mag-isa. Ang mga music chart, row ng bagong musika, streaming Top 10, facts mula sa Wikipedia, at anime map ay galing lang sa HolyArrs server, kaya naka-off ang mga ito.",
+	"settings.tmdb.ownNote": "Gamit ang sarili mong mga key, direktang nagtatanong ang HolyArrs sa bawat source. Ang mga music chart, row ng bagong musika, streaming Top 10, facts mula sa Wikipedia, at anime map ay galing lang sa HolyArrs server, kaya naka-off ang mga ito.",
 	"settings.tmdb.keysTitle": "Ang iyong mga key",
 	"settings.tmdb.keysDesc": "TMDB read token lang ang kailangan",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

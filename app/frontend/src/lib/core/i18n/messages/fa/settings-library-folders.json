@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "مسیر جدید",
 	"settings.libraryFolders.changePathHint": "ابتدا فایل‌ها را به آنجا منتقل کنید. HolyArrs هر فایل را بررسی می‌کند و چیزی را جابه‌جا نمی‌کند.",
 	"settings.libraryFolders.checkingFiles": "در حال بررسی فایل‌ها…",
-	"settings.libraryFolders.pathChanged": "مسیر تغییر کرد"
+	"settings.libraryFolders.pathChanged": "مسیر تغییر کرد",
+	"settings.libraryFolders.sideFiles": "فایل‌های زیرنویس",
+	"settings.libraryFolders.sideFilesDesc": "زیرنویس‌هایی که همراه دانلود می‌آیند می‌توانند کنار ویدیوی خود به کتابخانه آورده شوند.",
+	"settings.libraryFolders.sideOn": "فایل‌های زیرنویس را هم بیاور",
+	"settings.libraryFolders.sideOnHint": "فایلی که از قبل در کتابخانه هست هرگز جایگزین نمی‌شود.",
+	"settings.libraryFolders.sideTypes": "نوع فایل‌ها",
+	"settings.libraryFolders.sideTypesHint": "نوع‌ها را با ویرگول جدا کنید، مانند srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs نمی‌تواند {path} را ببیند. فقط پوشه‌هایی را می‌بیند که در کانتینرش mount شده‌اند. یک volume مثل {path}:{inside} اضافه کنید و بعد اینجا از {inside} استفاده کنید."
 }

@@ -166,6 +166,13 @@
 	"library.import.followHint": "Rādīt tos manā kalendārā.",
 	"library.import.adoptOne": "Pārņemt 1: {word}",
 	"library.import.adoptMany": "Pārņemt: {n} {words}",
+	"library.import.searchFolders": "Meklēt mapēs",
+	"library.import.folderCountOne": "1 mape",
+	"library.import.folderCountMany": "Mapes: {n}",
+	"library.import.titleAndFolder": "Nosaukums un mape",
+	"library.import.matchFor": "Atbilstība mapei {folder}",
+	"library.import.seeLarge": "Skatīt “{name}” plakātu lielā izmērā",
+	"library.import.noneMatch": "Neviena mape neatbilst.",
 	"library.report.keep.one": "Aktuāli tiek uzturēts nosaukums: {n}",
 	"library.report.keep.many": "Aktuāli tiek uzturēti nosaukumi: {n}",
 	"library.report.keep.partOne": "Aktuāli tiek uzturēts nosaukums: {ok} no {total}",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Pirmā nolasīšana notiek 30 minūšu laikā.",
 	"library.stats.watchedHelp": "No Plex, Jellyfin un Emby atskaņošanas vēstures. Plex skaita tikai atskaņošanas, tāpēc nosaukumi, kas ar roku atzīmēti kā noskatīti, netiek rādīti.",
 	"library.stats.lastRead": "Pēdējoreiz nolasīts {ago}.",
-	"library.stats.noMatch": "Pēdējoreiz nolasīts {ago}. Nekas no skatītā vēl neatbilst jūsu Bibliotēkai.",
+	"library.stats.noMatch": "Skatīšanās vēsture pārbaudīta {ago}. Nekas no skatītā vēl neatbilst jūsu Bibliotēkai.",
 	"library.stats.notLinked": "Nav saistīts",
 	"library.stats.lastWatched": "Pēdējoreiz skatīts {ago}",
 	"library.stats.unit.movie.one": "{n} filma",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} epizode",
 	"library.stats.unit.episode.other": "{n} epizodes",
 	"library.stats.unit.play.one": "{n} atskaņošana",
-	"library.stats.unit.play.other": "{n} atskaņošanas"
+	"library.stats.unit.play.other": "{n} atskaņošanas",
+	"library.byHand.askReplaceOne": "1 fails aizstāj failu, kas jau ir Bibliotēkā. Vecais fails nonāk sadaļā “Nesen dzēstie”. Importēt?",
+	"library.byHand.askReplaceMany": "Faili ({n}) aizstāj failus, kas jau ir Bibliotēkā. Vecie faili nonāk sadaļā “Nesen dzēstie”. Importēt?"
 }

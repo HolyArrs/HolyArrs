@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "נתיב חדש",
 	"settings.libraryFolders.changePathHint": "העבירו את הקבצים לשם קודם. HolyArrs בודק כל קובץ ולא מעביר דבר.",
 	"settings.libraryFolders.checkingFiles": "בודק קבצים…",
-	"settings.libraryFolders.pathChanged": "הנתיב שונה"
+	"settings.libraryFolders.pathChanged": "הנתיב שונה",
+	"settings.libraryFolders.sideFiles": "קובצי כתוביות",
+	"settings.libraryFolders.sideFilesDesc": "אפשר להביא כתוביות שמגיעות עם הורדה אל הספרייה, ליד הווידאו שלהן.",
+	"settings.libraryFolders.sideOn": "להביא גם קובצי כתוביות",
+	"settings.libraryFolders.sideOnHint": "קובץ שכבר נמצא בספרייה לעולם לא מוחלף.",
+	"settings.libraryFolders.sideTypes": "סוגי קבצים",
+	"settings.libraryFolders.sideTypesHint": "הפרידו סוגים בפסיקים, למשל srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs לא רואה את {path}. הוא רואה רק תיקיות שמחוברות לקונטיינר שלו. הוסיפו volume כמו {path}:{inside}, ואז השתמשו כאן ב-{inside}."
 }

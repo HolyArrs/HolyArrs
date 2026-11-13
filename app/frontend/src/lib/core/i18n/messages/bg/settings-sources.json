@@ -72,5 +72,10 @@
 	"settings.sources.off": "Източниците са изключени",
 	"settings.sources.offText": "HolyArrs не търси и не хваща. Изтеглянията, които добавяте в своята Програма за изтегляне, все още се внасят.",
 	"settings.sources.openParts": "Отваряне на Части",
-	"settings.sources.offState": "Изключено"
+	"settings.sources.offState": "Изключено",
+	"settings.sources.site": "Вграден сайт",
+	"settings.sources.siteLabel": "Сайт",
+	"settings.sources.addressSite": "Собственият адрес на сайта. Променяй го само ако сайтът се е преместил.",
+	"settings.sources.siteKeyLabel": "Бисквитка или RSS ключ",
+	"settings.sources.siteKeyHint": "От собствения ти профил: uid и pass от бисквитката в браузъра или u и tp от RSS връзката ти. Пази се шифровано."
 }

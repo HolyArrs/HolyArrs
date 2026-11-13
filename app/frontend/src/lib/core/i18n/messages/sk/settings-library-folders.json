@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Nová cesta",
 	"settings.libraryFolders.changePathHint": "Najprv tam presuňte súbory. HolyArrs skontroluje každý súbor a nič nepresúva.",
 	"settings.libraryFolders.checkingFiles": "Kontrolujú sa súbory…",
-	"settings.libraryFolders.pathChanged": "Cesta zmenená"
+	"settings.libraryFolders.pathChanged": "Cesta zmenená",
+	"settings.libraryFolders.sideFiles": "Súbory titulkov",
+	"settings.libraryFolders.sideFilesDesc": "Titulky, ktoré prišli so stiahnutím, možno preniesť do knižnice vedľa ich videa.",
+	"settings.libraryFolders.sideOn": "Preniesť aj súbory titulkov",
+	"settings.libraryFolders.sideOnHint": "Súbor, ktorý už v knižnici je, sa nikdy nenahradí.",
+	"settings.libraryFolders.sideTypes": "Typy súborov",
+	"settings.libraryFolders.sideTypesHint": "Typy oddeľte čiarkami, napríklad srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs nevidí {path}. Vidí len priečinky pripojené do svojho kontajnera. Pridajte zväzok ako {path}:{inside} a potom tu použite {inside}."
 }

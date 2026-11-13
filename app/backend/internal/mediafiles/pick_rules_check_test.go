@@ -2,6 +2,7 @@ package mediafiles
 
 import (
 	"errors"
+	"math"
 	"strings"
 	"testing"
 )
@@ -44,16 +45,16 @@ func TestCheckPickRules(t *testing.T) {
 		{"good enough not allowed", "x", video, func(b *PickRulesBody) { b.GoodEnoughAt = "cam" }, "body.good_enough_at"},
 		{"unknown trait", "x", video, func(b *PickRulesBody) { b.Traits = append(b.Traits, TraitPoints{Trait: "glitter"}) }, "body.traits"},
 		{"music trait on video", "x", video, func(b *PickRulesBody) { b.Traits = append(b.Traits, TraitPoints{Trait: "flac"}) }, "body.traits"},
-		{"points too high", "x", video, func(b *PickRulesBody) { b.Traits = []TraitPoints{{Trait: "hevc", Points: 10001}} }, "body.traits"},
+		{"points too high", "x", video, func(b *PickRulesBody) { b.Traits = []TraitPoints{{Trait: "hevc", Points: pastPoints}} }, "body.traits"},
 		{"repeated trait", "x", video, func(b *PickRulesBody) {
 			b.Traits = []TraitPoints{{Trait: "hevc", Points: 1}, {Trait: "hevc", Points: 2}}
 		}, "body.traits"},
 		{"safety trait in must have", "x", video, func(b *PickRulesBody) { b.MustHave = []string{"sample"} }, "body.must_have"},
 		{"safety trait in never is fine", "x", video, func(b *PickRulesBody) { b.Never = []string{"sample", "cam"} }, ""},
 		{"unknown never", "x", video, func(b *PickRulesBody) { b.Never = []string{"glitter"} }, "body.never"},
-		{"min points", "x", video, func(b *PickRulesBody) { b.MinPoints = -10001 }, "body.min_points"},
-		{"upgrade points", "x", video, func(b *PickRulesBody) { b.UpgradeMinPoints = 20000 }, "body.upgrade_min_points"},
-		{"good enough points", "x", video, func(b *PickRulesBody) { n := 10001; b.GoodEnoughPoints = &n }, "body.good_enough_points"},
+		{"min points", "x", video, func(b *PickRulesBody) { b.MinPoints = -pastPoints }, "body.min_points"},
+		{"upgrade points", "x", video, func(b *PickRulesBody) { b.UpgradeMinPoints = pastPoints }, "body.upgrade_min_points"},
+		{"good enough points", "x", video, func(b *PickRulesBody) { n := pastPoints; b.GoodEnoughPoints = &n }, "body.good_enough_points"},
 		{"size min above max", "x", video, func(b *PickRulesBody) { b.SizeLimits = map[string]SizeLimit{"*": {Min: 5, Max: 4}} }, "body.size_limits"},
 		{"size negative", "x", video, func(b *PickRulesBody) { b.SizeLimits = map[string]SizeLimit{"*": {Min: -1, Max: 4}} }, "body.size_limits"},
 		{"size too big", "x", video, func(b *PickRulesBody) { b.SizeLimits = map[string]SizeLimit{"*": {Max: 1<<50 + 1}} }, "body.size_limits"},
@@ -94,3 +95,7 @@ func TestCheckPickRules(t *testing.T) {
 		}
 	}
 }
+
+// pastPoints is one past the points bound (where int is 64 bits; a 32-bit
+// int cannot hold it, so there it stays at the bound).
+var pastPoints = int(min(int64(math.MaxInt), int64(MaxPoints)+1))

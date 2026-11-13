@@ -15,7 +15,7 @@ export interface SettingEntry {
 }
 
 /** Search entries for features held back from this release, by anchor. */
-const heldAnchors: Record<string, string> = { 'row-titles-card': 'row_title_stats', 'sites-card': 'subtitle_sites', 'trakt-card': 'trakt_lists', 'emby-card': 'emby_signin' };
+const heldAnchors: Record<string, string> = { 'row-titles-card': 'row_title_stats', 'trakt-card': 'trakt_lists', 'emby-card': 'emby_signin' };
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
 

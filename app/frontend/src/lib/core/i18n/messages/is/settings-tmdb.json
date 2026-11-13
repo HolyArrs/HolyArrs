@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Gat ekki vistað",
 	"settings.tmdb.locked": "Ákveðið af Docker-stillingunum þínum",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE er „{value}“, sem er hvorki full, own né off, svo uppflettingar eru slökktar.",
-	"settings.tmdb.ownNote": "Þínir eigin lyklar spyr hverja heimild sjálft. Tónlistarlistar, raðir með nýrri tónlist, Topp 10 á streymi, staðreyndir af Wikipedia og anime-kort koma aðeins frá HolyArrs-þjóninum, svo slökkt er á þeim.",
+	"settings.tmdb.ownNote": "Með þínum eigin lyklum spyr HolyArrs hverja heimild beint. Tónlistarlistar, raðir með nýrri tónlist, Topp 10 á streymi, staðreyndir af Wikipedia og anime-kort koma aðeins frá HolyArrs-þjóninum, svo slökkt er á þeim.",
 	"settings.tmdb.keysTitle": "Lyklarnir þínir",
 	"settings.tmdb.keysDesc": "Aðeins þarf TMDB lesmerki",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

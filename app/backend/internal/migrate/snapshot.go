@@ -150,6 +150,14 @@ type Profile struct {
 	Allowed        []string `json:"allowed,omitempty"`
 	MinScore       int      `json:"min_score,omitempty"`
 	CutoffScore    int      `json:"cutoff_score,omitempty"`
+	// MinUpgradeScore is the least score gain an upgrade needs.
+	MinUpgradeScore int `json:"min_upgrade_score,omitempty"`
+	// Qualities are the allowed qualities with groups opened up, and
+	// CutoffQualities the cutoff's (several when it is a group).
+	Qualities       []string `json:"qualities,omitempty"`
+	CutoffQualities []string `json:"cutoff_qualities,omitempty"`
+	// Language is the profile's wanted language by name (Radarr).
+	Language string `json:"language,omitempty"`
 	// Scores maps custom format names to their score in this profile.
 	Scores map[string]int `json:"scores,omitempty"`
 }
@@ -245,13 +253,15 @@ type Category struct {
 type User struct {
 	SourceID int64 `json:"source_id"`
 	// ExternalID is the stable identity supplied by the person's sign-in
-	// provider. It is used only to keep move references stable; a move never
-	// creates a sign-in link or grants access.
+	// provider (Kind). It keeps move references stable, and for a Plex,
+	// Jellyfin or Emby person it becomes their sign-in link here.
 	ExternalID string `json:"external_id,omitempty"`
-	Name       string `json:"name"`
-	Email      string `json:"email,omitempty"`
-	Kind       string `json:"kind,omitempty"` // plex, jellyfin, local, emby
-	Admin      bool   `json:"admin"`
+	// ExtName is their name on that provider.
+	ExtName string `json:"ext_name,omitempty"`
+	Name    string `json:"name"`
+	Email   string `json:"email,omitempty"`
+	Kind    string `json:"kind,omitempty"` // plex, jellyfin, local, emby
+	Admin   bool   `json:"admin"`
 	// Owner says the app marks this person as its owner.
 	Owner       bool     `json:"owner,omitempty"`
 	Permissions []string `json:"permissions,omitempty"`

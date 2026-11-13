@@ -76,6 +76,12 @@ export function t(key: string, vars?: Record<string, string | number>): string {
 	return vars ? line.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m)) : line;
 }
 
+/** A path or other left-to-right text kept in its own order inside a right-to-left line (Arabic, Hebrew, Persian); unchanged elsewhere. */
+export function ltr(s: string): string {
+	// Left-to-right isolate (U+2066) ... pop directional isolate (U+2069).
+	return RTL.has(lang.value) ? String.fromCharCode(0x2066) + s + String.fromCharCode(0x2069) : s;
+}
+
 /** The BCP-47 tag for dates and numbers in the app's language. English keeps the browser's own English (en-GB stays en-GB), or `en` when given. */
 export function appLocale(en?: string): string | undefined {
 	if (lang.value === 'en') {

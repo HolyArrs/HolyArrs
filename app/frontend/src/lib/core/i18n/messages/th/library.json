@@ -166,6 +166,13 @@
 	"library.import.followHint": "แสดงในปฏิทินของฉัน",
 	"library.import.adoptOne": "รับ {word} 1 รายการมาดูแล",
 	"library.import.adoptMany": "รับ {words} {n} รายการมาดูแล",
+	"library.import.searchFolders": "ค้นหาโฟลเดอร์",
+	"library.import.folderCountOne": "1 โฟลเดอร์",
+	"library.import.folderCountMany": "{n} โฟลเดอร์",
+	"library.import.titleAndFolder": "ชื่อเรื่องและโฟลเดอร์",
+	"library.import.matchFor": "รายการที่ตรงกันสำหรับ {folder}",
+	"library.import.seeLarge": "ดูโปสเตอร์ของ {name} แบบขยาย",
+	"library.import.noneMatch": "ไม่มีโฟลเดอร์ที่ตรงกัน",
 	"library.report.keep.one": "อัปเดตให้ทันสมัย {n} เรื่อง",
 	"library.report.keep.many": "อัปเดตให้ทันสมัย {n} เรื่อง",
 	"library.report.keep.partOne": "อัปเดตให้ทันสมัย {ok} จาก {total} เรื่อง",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "การอ่านครั้งแรกจะเกิดขึ้นภายใน 30 นาที",
 	"library.stats.watchedHelp": "จากประวัติการเล่นของ Plex, Jellyfin และ Emby Plex นับเฉพาะการเล่น ดังนั้นรายการที่ทำเครื่องหมายว่าดูแล้วด้วยตนเองจะไม่แสดง",
 	"library.stats.lastRead": "อ่านล่าสุด {ago}",
-	"library.stats.noMatch": "อ่านล่าสุด {ago} ยังไม่มีรายการที่ดูแล้วตรงกับไลบรารีของคุณ",
+	"library.stats.noMatch": "ตรวจประวัติการดูเมื่อ {ago} ยังไม่มีรายการที่ดูแล้วตรงกับไลบรารีของคุณ",
 	"library.stats.notLinked": "ยังไม่ได้เชื่อมโยง",
 	"library.stats.lastWatched": "ดูล่าสุด {ago}",
 	"library.stats.unit.movie.one": "{n} เรื่อง",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} ตอน",
 	"library.stats.unit.episode.other": "{n} ตอน",
 	"library.stats.unit.play.one": "เล่น {n} ครั้ง",
-	"library.stats.unit.play.other": "เล่น {n} ครั้ง"
+	"library.stats.unit.play.other": "เล่น {n} ครั้ง",
+	"library.byHand.askReplaceOne": "1 ไฟล์จะแทนที่ไฟล์ที่อยู่ในคลังแล้ว ไฟล์เก่าจะไปที่ ลบล่าสุด นำเข้าไหม?",
+	"library.byHand.askReplaceMany": "{n} ไฟล์จะแทนที่ไฟล์ที่อยู่ในคลังแล้ว ไฟล์เก่าจะไปที่ ลบล่าสุด นำเข้าไหม?"
 }

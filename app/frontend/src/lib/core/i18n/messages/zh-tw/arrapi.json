@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "AI 應用程式已關閉。允許後會將其開啟。",
 	"arrapi.ai.offOther": "AI 應用程式已關閉。請讓擁有者開啟，然後重試。",
 	"arrapi.ai.allow": "允許",
-	"arrapi.ai.cancel": "取消"
+	"arrapi.ai.cancel": "取消",
+	"arrapi.seerr.sentTitle": "其他應用程式傳送的",
+	"arrapi.seerr.sentHint": "Profilarr 等應用程式傳送的格式與設定檔。此處僅供檢視。",
+	"arrapi.seerr.sentFormat": "格式",
+	"arrapi.seerr.sentProfile": "設定檔",
+	"arrapi.seerr.sentUpdated": "更新於 {ago}"
 }

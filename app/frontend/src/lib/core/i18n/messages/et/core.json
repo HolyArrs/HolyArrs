@@ -145,5 +145,7 @@
 	"core.settings.account.about": "Parool, kaheastmeline autentimine, seadmed",
 	"core.plain.clearWaiting": "Imporditud allalaadimised ootavad oma Allalaadijast tühjendamist.",
 	"core.plain.saveFolder": "Ühel allalaadijal pole salvestuskausta, seega ei saa HolyArrs selle valmis allalaadimisi importida.",
-	"core.api.sourceOff": "Mõned read on selles paigalduses välja lülitatud."
+	"core.api.sourceOff": "Mõned read on selles paigalduses välja lülitatud.",
+	"core.plain.noDownloader": "Sinu allikad leiavad allalaadimisi, mida ükski sinu allalaadija vastu võtta ei saa, seega ei saa ühtegi saata.",
+	"core.plain.sameDownloader": "Kaks allalaadijat jõuavad samasse rakendusse, seega võivad allalaadimised näha kaks korda."
 }

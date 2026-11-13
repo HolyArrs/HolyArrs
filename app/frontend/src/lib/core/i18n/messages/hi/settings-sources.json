@@ -72,5 +72,10 @@
 	"settings.sources.off": "सोर्स बंद हैं",
 	"settings.sources.offText": "HolyArrs न खोजता है न डाउनलोड लेता है। आप डाउनलोडर में जो डाउनलोड जोड़ते हैं, वे इम्पोर्ट होते रहते हैं।",
 	"settings.sources.openParts": "हिस्से खोलें",
-	"settings.sources.offState": "बंद"
+	"settings.sources.offState": "बंद",
+	"settings.sources.site": "अंतर्निहित साइट",
+	"settings.sources.siteLabel": "साइट",
+	"settings.sources.addressSite": "साइट का अपना पता। इसे तभी बदलें जब साइट कहीं और चली गई हो।",
+	"settings.sources.siteKeyLabel": "कुकी या RSS कुंजी",
+	"settings.sources.siteKeyHint": "अपने ही खाते से: ब्राउज़र कुकी से uid और pass, या अपने RSS लिंक से u और tp। एन्क्रिप्ट करके रखा जाता है।"
 }

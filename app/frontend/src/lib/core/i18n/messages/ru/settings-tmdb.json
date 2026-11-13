@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Не удалось сохранить",
 	"settings.tmdb.locked": "Задано в настройках Docker",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE равно \"{value}\", а не full, own или off, поэтому запросы выключены.",
-	"settings.tmdb.ownNote": "Со своими ключами вы обращаетесь к каждому источнику сами. Музыкальные чарты, ряды новой музыки, топ-10 стримингов, факты из Википедии и карты аниме приходят только с сервера HolyArrs, поэтому они выключены.",
+	"settings.tmdb.ownNote": "Со своими ключами HolyArrs обращается к каждому источнику напрямую. Музыкальные чарты, ряды новой музыки, топ-10 стримингов, факты из Википедии и карты аниме приходят только с сервера HolyArrs, поэтому они выключены.",
 	"settings.tmdb.keysTitle": "Ваши ключи",
 	"settings.tmdb.keysDesc": "Нужен только токен чтения TMDB",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

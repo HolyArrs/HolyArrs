@@ -166,6 +166,13 @@
 	"library.import.followHint": "Näita neid minu kalendris.",
 	"library.import.adoptOne": "Võta üle 1 ({word})",
 	"library.import.adoptMany": "Võta üle {n} ({words})",
+	"library.import.searchFolders": "Otsi kaustu",
+	"library.import.folderCountOne": "1 kaust",
+	"library.import.folderCountMany": "Kaustu: {n}",
+	"library.import.titleAndFolder": "Pealkiri ja kaust",
+	"library.import.matchFor": "Vaste kaustale {folder}",
+	"library.import.seeLarge": "Vaata teose {name} plakatit suurelt",
+	"library.import.noneMatch": "Ükski kaust ei sobi.",
 	"library.report.keep.one": "{n} pealkiri hoitakse ajakohasena",
 	"library.report.keep.many": "{n} pealkirja hoitakse ajakohasena",
 	"library.report.keep.partOne": "{ok} / {total} pealkirja hoitakse ajakohasena",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Esimene lugemine toimub 30 minuti jooksul.",
 	"library.stats.watchedHelp": "Plexi, Jellyfini ja Emby esitusajaloost. Plex loeb ainult esitusi, nii et käsitsi vaadatuks märgitud pealkirju ei näidata.",
 	"library.stats.lastRead": "Viimati loetud {ago}.",
-	"library.stats.noMatch": "Viimati loetud {ago}. Miski vaadatust ei kattu veel sinu Meediakoguga.",
+	"library.stats.noMatch": "Vaatamisajalugu kontrollitud {ago}. Miski vaadatust ei kattu veel sinu Meediakoguga.",
 	"library.stats.notLinked": "Linkimata",
 	"library.stats.lastWatched": "Viimati vaadatud {ago}",
 	"library.stats.unit.movie.one": "{n} film",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} episood",
 	"library.stats.unit.episode.other": "{n} episoodi",
 	"library.stats.unit.play.one": "{n} esitus",
-	"library.stats.unit.play.other": "{n} esitust"
+	"library.stats.unit.play.other": "{n} esitust",
+	"library.byHand.askReplaceOne": "1 fail asendab faili, mis on juba Kogus. Vana fail läheb jaotisse „Hiljuti kustutatud“. Kas importida?",
+	"library.byHand.askReplaceMany": "{n} faili asendavad faile, mis on juba Kogus. Vanad failid lähevad jaotisse „Hiljuti kustutatud“. Kas importida?"
 }

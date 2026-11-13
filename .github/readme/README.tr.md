@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <b>Türkçe</b> · <a href="LANGUAGES.md">Diğer diller</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">Diğer diller</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0: artık 44 dilde**, sağdan sola diller de dahil. aria2 indirici olarak çalışır, sezon paketleri birkaç bölüm halinde iner. [Yenilikler](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease ve IPTorrents yerleşik**, Prowlarr gerekmeden. Dizileri 4K olarak iste, Profilarr da formatlarını ve profillerini gönderebilir. [Yenilikler](https://holyarrs.com/whats-new/)
 
 > HolyArrs'ındaki her afiş, fragman ve puan, kendim çalıştırıp ödediğim bir sunucudan geliyor; böylece herkes için ücretsiz kalıyor. HolyArrs film gecene biraz güzellik kattıysa, sponsor olmak hepimiz için ışıkları açık tutar 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b>, dizilerin, filmlerin ve müziğin için kendi sunucunda çalışan tek bir uygulama.<br>Bir yayın uygulaması gibi gez, istediğini iste, gerisini o halleder.</p>
 
-<p align="center"><b>Yaklaşık 15 MB indirme · 10,000 başlıkla boştayken yaklaşık 140 MB RAM · amd64, arm64, armv7</b><br><sub>Yerine geçtiği altı uygulamanın indirme boyutu birlikte 718.2 MB.</sub></p>
+<p align="center"><b>Yaklaşık 19.5 MB indirme · yeni kurulumda boştayken yaklaşık 95 MiB RAM · amd64, arm64, armv7</b><br><sub>Yerine geçtiği altı uygulamanın indirme boyutu birlikte 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Hızlı başlangıç</a> · <a href="#why">Neden</a> · <a href="#what-it-does">Ne yapar</a> · <a href="#moving">Diğer uygulamalardan geçiş</a> · <a href="#manual">El kitabı</a> · <a href="#help">Yardım</a></p>
 
@@ -105,9 +105,9 @@ Ben de yaptım.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Altısı birlikte** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Yaklaşık 48 kat küçük. Sıkıştırılmış registry indirmesi, linuxserver.io imajları, amd64, 2026-11-08'de ölçüldü. Boşta RAM, 10,000 başlık ve 55,000 film ve bölümle ölçüldü.</sub>
+<sub>Yaklaşık 37 kat küçük. Sıkıştırılmış registry indirmesi, linuxserver.io imajları, amd64, 2026-11-08'de ölçüldü. Boşta RAM, 10,000 başlık ve 55,000 film ve bölümle ölçüldü. (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Biri bir başlık ister. HolyArrs Kaynaklarını arar, Seçim kurallarınla en i
 | | |
 |---|---|
 | 🍿 **Explore** | Bir yayın uygulaması gibi gez. Bir başlığın üzerine gel, fragman oynasın. |
-| 🙋 **Requests** | Bir dizinin tamamı ya da tek bir sezon. Sen onaylarsın ya da güvendiğin kişilerin sırayı atlamasına izin verirsin. |
+| 🙋 **Requests** | Bir dizinin tamamı ya da tek bir sezon. Sen onaylarsın ya da güvendiğin kişilerin sırayı atlamasına izin verirsin. Plex ve Pulsarr izleme listeleri isteğe dönüşebilir. |
 | 🎯 **Pick rules** | Hangi sürüm adayının kazanacağına sen karar verirsin: boyut, kalite, dil. |
-| 💬 **Altyazı** | Seçtiğin dillerde, dosyayla birlikte saklanır. İnternette altyazı aramak 1.0'dan sonra gelecek. |
+| 💬 **Altyazı** | Seçtiğin dillerde, altyazı sitelerinden bulunur ve dosyayla birlikte saklanır. |
 | 📅 **Calendar** | Takip ettiğin her şey için sıradaki yayınlar. |
-| 🚚 **Kurulumunu taşı** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent ve SABnzbd'den. Önce dene, sonra istersen geri al. |
-| 🔌 **Eski uygulama API'si** | Sen açtıktan sonra Prowlarr, HolyArrs'a Kaynak göndermeye devam edebilir. |
-| 🗝️ **API anahtarı gerekmez** | Başlıklar, görseller ve listeler HolyArrs metadata sunucusundan gelir. |
+| 🔔 **Alerts** | Discord, e-posta, Telegram, ntfy, Gotify, Pushover ya da bir webhook. |
+| 🚚 **Kurulumunu içe aktar** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent ve SABnzbd'den. Neyin geleceğini seç, sonra istersen geri al. |
+| 🔌 **Eski uygulama API'si** | Sen açtıktan sonra Seerr, Prowlarr, Bazarr, Unpackerr ve Homepage çalışmaya devam eder. |
+| 🗝️ **API anahtarı gerekmez** | Başlıklar, görseller ve listeler HolyArrs metadata sunucusundan gelir. Kendi anahtarların veya kendi sunucun da çalışır. |
 | 🔒 **Şifreli anahtarlar** | Saklanan parolalar ve anahtarlar, yapılandırma klasöründe duran bir ana anahtarla kilitlenir. |
-| 🪶 **Minicik** | İçinde sadece HolyArrs olan, yaklaşık 15 MB'lık bir imaj. |
+| 🪶 **Minicik** | İçinde sadece HolyArrs olan, yaklaşık 19.5 MB'lık bir imaj. |
 
 <details>
 <summary><b>Bütün sayfaları hareket halinde gör</b></summary>
@@ -148,18 +149,18 @@ Biri bir başlık ister. HolyArrs Kaynaklarını arar, Seçim kurallarınla en i
 
 ## 🤝 Zaten kullandıklarınla birlikte çalışır
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="İndiriciler: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Medya sunucuları: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="İndiriciler: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Medya sunucuları: Plex, Jellyfin, Emby." /></picture>
 
 - **İndiriciler:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Medya sunucuları:** Plex, Jellyfin, Emby
 - **Kaynaklar:** herhangi bir Torznab ya da Newznab indeksleyicisi, ya da Prowlarr veya Jackett
-- **Kurulumunu şuradan taşır:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
+- **Kurulumunu şuradan içe aktarır:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
 
 <a id="moving"></a>
 
 ## 🚚 Eski kurulumunu yanında getir
 
-**Settings > Move from other apps** yolunu aç, her eski uygulamanın adresini ve API anahtarını (ya da bir yedek zip'ini) ekle, nelerin geleceğini seç, **Try it** ile dene, sonra **Move**'a bas. Taşımayı sonradan geri alabilirsin.
+**Settings > Import from other apps** yolunu aç, her eski uygulamanın adresini ve API anahtarını (ya da bir yedek zip'ini) ekle, nelerin geleceğini seç, sonra **Import**'u seç. İçe aktarmayı sonradan geri alabilirsin.
 
 | Kaynak | Neler gelir |
 |---|---|
@@ -171,12 +172,11 @@ Biri bir başlık ister. HolyArrs Kaynaklarını arar, Seçim kurallarınla en i
 
 HolyArrs eski uygulamalarını sadece okur, içlerinde hiçbir şeyi değiştirmez. Güvenene kadar ikisini yan yana çalıştırabilirsin.
 
-Anahtarlar ve parolalar geride kalır; onları yeniden yazarsın ya da bir dosyadan içe aktarırsın. Özel formatlar, etiketler ve geçmiş gelmez. Medya dosyaları asla taşınmaz. Adım adım: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Anahtarlar ve parolalar geride kalır; onları yeniden yazarsın ya da bir dosyadan içe aktarırsın. Özel formatlar, etiketler ve geçmiş gelmez. Medya dosyaları asla taşınmaz. Adım adım: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Henüz yapmadıkları
 
 - **Kendi başına indirme.** HolyArrs, qBittorrent, SABnzbd ve diğerlerine bağlanır. Onların yerini almaz.
-- **Yapay zeka ya da MCP özellikleri.** 1.0'da yok.
 - **Telefon ve TV uygulamaları.** Yapılmadı. Web uygulaması telefonda çalışır.
 - **Explore'daki müzik** hâlâ yapım aşamasında.
 
@@ -213,6 +213,8 @@ Aşağıdaki her şey başvuru bilgisi. Tam rehberler [docs.HolyArrs.com](https:
 
 NAS mı kullanıyorsun? [Unraid, Synology ve diğer NAS cihazları](https://docs.HolyArrs.com/run/platforms/) sayfasına bak.
 
+Yerel bir paket mi istersin? Her [sürüme](https://github.com/HolyArrs/HolyArrs/releases) deneysel bir Synology paketi (`.spk`) eklenir. Bkz. [Synology paketi](../../docs/run/synology.md).
+
 ## Sürüm etiketleri
 
 İmajlar Docker Hub'da [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs) adıyla duruyor.
@@ -220,7 +222,7 @@ NAS mı kullanıyorsun? [Unraid, Synology ve diğer NAS cihazları](https://docs
 | Etiket | Ne için kullanılır |
 | :----: | --- |
 | `latest` | En yeni sürüm. |
-| `1.1.0` | Tam olarak tek bir sürüm. Asla değişmez. |
+| `1.1.1` | Tam olarak tek bir sürüm. Asla değişmez. |
 
 ## Kullanım
 
@@ -415,7 +417,7 @@ Kapalı bir ürünün içine mi koymak istiyorsun? Ticari lisans için support@H
 
 ## Devam etmesini sağla
 
-HolyArrs ücretsiz ama çalıştırması ücretsiz değil. Her kurulum, her ay parasını ödediğim bir metadata sunucusuyla konuşuyor. Sponsorlar bunu karşılıyor ve oy verdiğin şeyler için daha fazla saat satın alıyor.
+HolyArrs ücretsiz ama çalıştırması ücretsiz değil. Varsayılan olarak her kurulum, her ay parasını ödediğim bir metadata sunucusuyla konuşuyor. Sponsorlar bunu karşılıyor ve oy verdiğin şeyler için daha fazla saat satın alıyor.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="HolyArrs'a sponsor ol" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Yol haritasında oy ver" /></picture></a></p>
 

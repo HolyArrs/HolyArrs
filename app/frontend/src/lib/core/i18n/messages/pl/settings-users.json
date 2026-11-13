@@ -100,5 +100,6 @@
 	"settings.users.note": "Notatka dla ciebie",
 	"settings.users.noteExample": "np. Mama",
 	"settings.users.days": "Ile dni działa link",
-	"settings.users.makeInvite": "Utwórz link zaproszenia"
+	"settings.users.makeInvite": "Utwórz link zaproszenia",
+	"settings.users.permAuto4k": "Prośby o 4K zatwierdzane bez czekania"
 }

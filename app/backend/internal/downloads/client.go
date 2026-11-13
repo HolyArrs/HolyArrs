@@ -21,6 +21,9 @@ var (
 	ErrAuth      = errors.New("the Downloader wants a sign-in")
 	ErrTooLarge  = errors.New("the Downloader's answer is too large to read")
 	ErrUncertain = errors.New("the Downloader send outcome is unknown; inspect it before choosing another Release")
+	// ErrNotArrived comes with ErrUncertain when the Downloader answered and holds
+	// no job with the send's marker in its queue or history.
+	ErrNotArrived = errors.New("the Downloader has no job for this send in its queue or history")
 )
 
 // AddRequest is one Release to send to an engine.

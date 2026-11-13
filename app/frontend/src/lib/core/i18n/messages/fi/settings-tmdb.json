@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Tallennus epäonnistui",
 	"settings.tmdb.locked": "Docker-asetustesi määräämä",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE on \"{value}\", joka ei ole full, own eikä off, joten haut ovat pois päältä.",
-	"settings.tmdb.ownNote": "Omat avaimesi kysyy jokaiselta lähteeltä itse. Musiikkilistat, uuden musiikin rivit, suoratoiston Top 10 -listat, Wikipedia-faktat ja animekartat tulevat vain HolyArrs-palvelimelta, joten ne ovat pois päältä.",
+	"settings.tmdb.ownNote": "Omilla avaimilla HolyArrs kysyy jokaiselta lähteeltä suoraan. Musiikkilistat, uuden musiikin rivit, suoratoiston Top 10 -listat, Wikipedia-faktat ja animekartat tulevat vain HolyArrs-palvelimelta, joten ne ovat pois päältä.",
 	"settings.tmdb.keysTitle": "Avaimesi",
 	"settings.tmdb.keysDesc": "Vain TMDB:n lukutunnus tarvitaan",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

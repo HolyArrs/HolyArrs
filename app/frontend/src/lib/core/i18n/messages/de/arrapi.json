@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "KI-Apps sind aus. Mit Erlauben schaltest du sie ein.",
 	"arrapi.ai.offOther": "KI-Apps sind aus. Bitte den Besitzer, sie einzuschalten, und versuch es dann noch einmal.",
 	"arrapi.ai.allow": "Erlauben",
-	"arrapi.ai.cancel": "Abbrechen"
+	"arrapi.ai.cancel": "Abbrechen",
+	"arrapi.seerr.sentTitle": "Von anderen Apps gesendet",
+	"arrapi.seerr.sentHint": "Formate und Profile, die Apps wie Profilarr gesendet haben. Hier nur zum Lesen.",
+	"arrapi.seerr.sentFormat": "Format",
+	"arrapi.seerr.sentProfile": "Profil",
+	"arrapi.seerr.sentUpdated": "aktualisiert {ago}"
 }

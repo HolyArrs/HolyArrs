@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "Ocijenjenih osobina: {n}",
 	"settings.pickRuleEdit.trashResult": "Ocijenjenih osobina: {n} · novih {added} · ažuriranih {updated}",
 	"settings.pickRuleEdit.trashLeftOut": "Izostavljeno: {n}",
-	"settings.pickRuleEdit.trashTests": "testira {kinds}"
+	"settings.pickRuleEdit.trashTests": "testira {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "Izvori",
+	"settings.pickRuleEdit.sourcesDesc": "Pretraži samo Izvore koji dijele jednu od ovih oznaka. Ostavi prazno za pretraživanje svih Izvora.",
+	"settings.pickRuleEdit.tags": "Oznake"
 }

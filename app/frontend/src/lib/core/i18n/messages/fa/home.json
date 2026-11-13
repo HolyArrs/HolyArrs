@@ -271,5 +271,8 @@
 	"home.noSaveFolder": "پوشه ذخیره ندارد",
 	"home.noSaveFolderMany": "پوشه ذخیره ندارند",
 	"home.off": "خاموش",
-	"home.sourcesOff": "در بخش‌ها خاموش است"
+	"home.sourcesOff": "در بخش‌ها خاموش است",
+	"home.noneForSources": "برای چیزی که منابعت پیدا می‌کنند وجود ندارد",
+	"home.addedTwice": "دو بار افزوده شده",
+	"home.addedTwiceMany": "دو بار افزوده شده‌اند"
 }

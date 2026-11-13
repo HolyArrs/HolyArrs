@@ -124,7 +124,7 @@
 		</label>
 		<label class="fl">
 			<span class="lb">{t('downloads.pf.folder')}</span>
-			<input type="text" bind:value={folder} placeholder={t('downloads.ss.folderPh')} spellcheck="false" data-testid="steer-folder" />
+			<input type="text" dir="ltr" bind:value={folder} placeholder={t('downloads.ss.folderPh')} spellcheck="false" data-testid="steer-folder" />
 		</label>
 	{:else if mode === 'speed'}
 		<p class="lead">{t('downloads.ss.leadSpeed', { noun })}</p>

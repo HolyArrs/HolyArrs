@@ -34,6 +34,8 @@ type ShowAddOptions struct {
 	SearchOnAdd bool `json:"search_on_add"`
 	// MoreVersions are extra wanted copies (for example 4K) next to the main one.
 	MoreVersions []library.VersionInput `json:"more_versions"`
+	// MainFourK adds the main copy as the 4K copy, labelled 4K (a 4K ask).
+	MainFourK bool `json:"-"`
 	// WhyAdded records why the show was added (by_hand when empty).
 	WhyAdded string `json:"-"`
 	// Adopt keeps a show folder found on disk as it is, with its files.
@@ -272,7 +274,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 			}
 			folder = library.ExistingFolder(lf.Path, folder, t.Name, year, func(d string) bool { return taken[strings.ToLower(d)] })
 		}
-		v := &mediafiles.Version{TitleID: t.ID, Label: "Main", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: folder, KeepUpToDate: keep, IsMain: true}
+		v := &mediafiles.Version{TitleID: t.ID, Label: library.MainLabel(opt.MainFourK), PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: folder, KeepUpToDate: keep, IsMain: true, FourK: opt.MainFourK}
 		if _, err := database.Insert(tx, "versions", v, by); err != nil {
 			return err
 		}
@@ -539,7 +541,7 @@ type SeasonSummary struct {
 	Missing      int        `json:"missing"`       // aired, kept up to date, no file yet
 	BetterWanted int        `json:"better_wanted"` // in the Library, a better copy is sought
 	NotOutYet    int        `json:"not_out_yet"`
-	Downloading  int        `json:"downloading"` // a copy is on the way (downloading, stalled, importing)
+	Downloading  int        `json:"downloading"` // a Downloader took a copy (downloading, stalled, importing)
 	Failed       int        `json:"failed"`      // the download failed or its import needs a decision
 	NextAirDate  *time.Time `json:"next_air_date,omitempty"`
 	Dropped      bool       `json:"dropped,omitempty"`
@@ -600,9 +602,11 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 // switch and the main Version's Slot state.
 func (ss *SeasonSummary) tally(air sql.NullString, keep bool, state string, now time.Time) {
 	ss.Episodes++
+	aired := false
 	if air.Valid {
 		if at, err := time.Parse(database.TimeLayout, air.String); err == nil {
 			if !at.After(now) {
+				aired = true
 				ss.Aired++
 			} else if ss.NextAirDate == nil || at.Before(*ss.NextAirDate) {
 				a := at
@@ -618,12 +622,19 @@ func (ss *SeasonSummary) tally(air sql.NullString, keep bool, state string, now 
 		ss.BetterWanted++
 	case mediafiles.SlotNotOutYet:
 		ss.NotOutYet++
-	case mediafiles.SlotChosen, mediafiles.SlotDownloading, mediafiles.SlotStalled, mediafiles.SlotImporting:
+	case mediafiles.SlotDownloading, mediafiles.SlotStalled, mediafiles.SlotImporting:
+		// Only a copy a Downloader took counts as on the way. A chosen Release not
+		// yet confirmed by a Downloader still counts as missing.
 		ss.Downloading++
 	case mediafiles.SlotFailed, mediafiles.SlotNeedsADecision:
 		ss.Failed++
-	case mediafiles.SlotWanted:
-		if keep {
+	case mediafiles.SlotWanted, mediafiles.SlotChosen:
+		// Missing means aired and still without a file, as in Sonarr; a
+		// wanted episode whose air time has not passed is not out yet.
+		switch {
+		case !aired:
+			ss.NotOutYet++
+		case keep:
 			ss.Missing++
 		}
 	}

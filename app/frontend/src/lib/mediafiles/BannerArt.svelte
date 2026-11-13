@@ -39,7 +39,7 @@
 	import type { TitleView } from '../core/types.ts';
 	import { bannerAspect, bannerSrc } from '#lib/ui/library-art.ts';
 
-	let { title, eager = false, width = 0 }: { title: TitleView; eager?: boolean; width?: number } = $props();
+	let { title, eager = false, width = 0 }: { title: Pick<TitleView, 'kind' | 'name' | 'ids' | 'artist' | 'artwork' | 'backdrop' | 'logo'>; eager?: boolean; width?: number } = $props();
 
 	let host = $state<HTMLElement | null>(null);
 	let near = $state(false);

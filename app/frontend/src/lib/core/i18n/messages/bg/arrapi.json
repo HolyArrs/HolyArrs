@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "AI приложенията са изключени. Разрешаването ги включва.",
 	"arrapi.ai.offOther": "AI приложенията са изключени. Помолете собственика да ги включи и опитайте пак.",
 	"arrapi.ai.allow": "Разрешаване",
-	"arrapi.ai.cancel": "Отказ"
+	"arrapi.ai.cancel": "Отказ",
+	"arrapi.seerr.sentTitle": "Изпратено от други приложения",
+	"arrapi.seerr.sentHint": "Формати и профили, изпратени от приложения като Profilarr. Показани тук само за четене.",
+	"arrapi.seerr.sentFormat": "Формат",
+	"arrapi.seerr.sentProfile": "Профил",
+	"arrapi.seerr.sentUpdated": "обновено {ago}"
 }

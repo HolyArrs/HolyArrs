@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <b>বাংলা</b> · <a href="LANGUAGES.md">আরও ভাষা</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">আরও ভাষা</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0: এখন ৪৪টি ভাষায়**, ডান থেকে বাঁয়ের ভাষাও। aria2 ডাউনলোডার হিসেবে চলে, আর সিজন প্যাক একবারে কয়েকটি এপিসোড করে ডাউনলোড হয়। [নতুন কী আছে দেখুন](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease আর IPTorrents এখন বিল্ট-ইন**, Prowlarr লাগবে না। শো 4K-তে চাইতে পারেন, আর Profilarr তার ফরম্যাট ও প্রোফাইল পাঠাতে পারে। [নতুন কী আছে দেখুন](https://holyarrs.com/whats-new/)
 
 > আপনার HolyArrs-এর প্রতিটি পোস্টার, ট্রেলার আর স্কোর আসে এমন একটি সার্ভার থেকে, যেটা আমি নিজে চালাই আর নিজের টাকায় চালাই, যাতে এটা সবার জন্য বিনামূল্যে থাকে। HolyArrs আপনার মুভি নাইট একটু ভালো করে থাকলে, একজন স্পনসর আমাদের সবার জন্য আলোটা জ্বালিয়ে রাখে 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> আপনার সিরিজ, মুভি আর গানের জন্য একটাই সেলফ-হোস্টেড অ্যাপ।<br>স্ট্রিমিং অ্যাপের মতো ঘুরে দেখুন, যা চান তা চেয়ে নিন, বাকিটা সে সামলে নেয়।</p>
 
-<p align="center"><b>ডাউনলোড প্রায় 15 MB · 10,000 টাইটেল নিয়ে চুপচাপ থাকলে প্রায় 140 MB RAM · amd64, arm64, armv7</b><br><sub>যে ছয়টা অ্যাপের জায়গা নেয়, সেগুলো মিলিয়ে ডাউনলোড 718.2 MB।</sub></p>
+<p align="center"><b>ডাউনলোড প্রায় 19.5 MB · নতুন ইনস্টলে চুপচাপ থাকলে প্রায় 95 MiB RAM · amd64, arm64, armv7</b><br><sub>যে ছয়টা অ্যাপের জায়গা নেয়, সেগুলো মিলিয়ে ডাউনলোড 718.2 MB।</sub></p>
 
 <p align="center"><a href="#quick-start">দ্রুত শুরু</a> · <a href="#why">কেন</a> · <a href="#what-it-does">কী করে</a> · <a href="#moving">অন্য অ্যাপ থেকে আসা</a> · <a href="#manual">ম্যানুয়াল</a> · <a href="#help">সাহায্য</a></p>
 
@@ -105,9 +105,9 @@ docker compose up -d
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **ছয়টা একসঙ্গে** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>প্রায় 48 গুণ ছোট। কমপ্রেসড রেজিস্ট্রি ডাউনলোড, linuxserver.io-এর ইমেজ, amd64, মাপা হয়েছে 2026-11-08-এ। নিষ্ক্রিয় অবস্থায় RAM মাপা হয়েছে 10,000 টাইটেল এবং 55,000 মুভি ও পর্ব নিয়ে।</sub>
+<sub>প্রায় 37 গুণ ছোট। কমপ্রেসড রেজিস্ট্রি ডাউনলোড, linuxserver.io-এর ইমেজ, amd64, মাপা হয়েছে 2026-11-08-এ। নিষ্ক্রিয় অবস্থায় RAM মাপা হয়েছে 10,000 টাইটেল এবং 55,000 মুভি ও পর্ব নিয়ে। (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ docker compose up -d
 | | |
 |---|---|
 | 🍿 **Explore** | স্ট্রিমিং অ্যাপের মতো ঘুরে দেখুন। কোনো টাইটেলের ওপর মাউস নিন, ট্রেলার চলতে শুরু করে। |
-| 🙋 **Requests** | পুরো একটা সিরিজ বা শুধু একটা সিজন। আপনি অনুমোদন দেন, অথবা বিশ্বাসী মানুষদের লাইন টপকে যেতে দেন। |
+| 🙋 **Requests** | পুরো একটা সিরিজ বা শুধু একটা সিজন। আপনি অনুমোদন দেন, অথবা বিশ্বাসী মানুষদের লাইন টপকে যেতে দেন। Plex আর Pulsarr-এর ওয়াচলিস্ট অনুরোধ হয়ে যেতে পারে। |
 | 🎯 **Pick rules** | কোন রিলিজ জিতবে, সেটা আপনি ঠিক করেন: সাইজ, কোয়ালিটি, ভাষা। |
-| 💬 **সাবটাইটেল** | আপনার বেছে নেওয়া ভাষায়, ফাইলের সঙ্গেই রাখা। ইন্টারনেটে খুঁজে আনা আসবে 1.0-এর পরে। |
+| 💬 **সাবটাইটেল** | আপনার বেছে নেওয়া ভাষায়, সাবটাইটেল সাইট থেকে খুঁজে আনা আর ফাইলের সঙ্গেই রাখা। |
 | 📅 **Calendar** | আপনি যা যা ফলো করেন, তার মধ্যে এরপর কী আসছে। |
-| 🚚 **সেটআপ সঙ্গে নিন** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent আর SABnzbd থেকে। আগে চেষ্টা করে দেখুন, পরে চাইলে ফিরিয়ে নিন। |
-| 🔌 **আগের অ্যাপের API** | চালু করলে Prowlarr HolyArrs-এ সোর্স পাঠাতে থাকতে পারে। |
-| 🗝️ **কোনো API কী লাগে না** | টাইটেল, আর্টওয়ার্ক আর চার্ট আসে HolyArrs মেটাডেটা সার্ভার থেকে। |
+| 🔔 **Alerts** | Discord, ইমেল, Telegram, ntfy, Gotify, Pushover বা একটা webhook। |
+| 🚚 **সেটআপ ইমপোর্ট করুন** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent আর SABnzbd থেকে। কী কী আসবে বেছে নিন, পরে চাইলে ফিরিয়ে নিন। |
+| 🔌 **আগের অ্যাপের API** | চালু করলে Seerr, Prowlarr, Bazarr, Unpackerr আর Homepage আগের মতোই কাজ করে। |
+| 🗝️ **কোনো API কী লাগে না** | টাইটেল, আর্টওয়ার্ক আর চার্ট আসে HolyArrs মেটাডেটা সার্ভার থেকে। নিজের কী বা নিজের সার্ভারও চলে। |
 | 🔒 **এনক্রিপ্টেড কী** | সেভ করা পাসওয়ার্ড আর কী একটা মাস্টার কী দিয়ে তালাবন্ধ থাকে, যেটা আপনার কনফিগ ফোল্ডারেই থাকে। |
-| 🪶 **ছোট্ট** | প্রায় 15 MB-এর একটা ইমেজ, ভেতরে শুধু HolyArrs। |
+| 🪶 **ছোট্ট** | প্রায় 19.5 MB-এর একটা ইমেজ, ভেতরে শুধু HolyArrs। |
 
 <details>
 <summary><b>প্রতিটি পেজ চলমান অবস্থায় দেখুন</b></summary>
@@ -148,18 +149,18 @@ docker compose up -d
 
 ## 🤝 আপনি যা চালাচ্ছেন, তার সঙ্গেই কাজ করে
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="ডাউনলোডার: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet। মিডিয়া সার্ভার: Plex, Jellyfin, Emby।" /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="ডাউনলোডার: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet। মিডিয়া সার্ভার: Plex, Jellyfin, Emby।" /></picture>
 
-- **ডাউনলোডার:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **ডাউনলোডার:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **মিডিয়া সার্ভার:** Plex, Jellyfin, Emby
 - **সোর্স:** যেকোনো Torznab বা Newznab ইনডেক্সার, অথবা Prowlarr বা Jackett
-- **এই অ্যাপগুলো থেকে সেটআপ নিয়ে আসে:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
+- **এই অ্যাপগুলো থেকে সেটআপ ইমপোর্ট করে:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
 
 <a id="moving"></a>
 
 ## 🚚 আগের সেটআপ সঙ্গে নিয়ে আসুন
 
-**Settings > Move from other apps** খুলুন, প্রতিটি আগের অ্যাপের ঠিকানা আর API কী যোগ করুন (অথবা একটা ব্যাকআপ zip), কী কী আসবে বেছে নিন, **Try it** চালান, তারপর **Move**। পরে চাইলে একটা মুভ ফিরিয়ে নিতে পারবেন।
+**Settings > Import from other apps** খুলুন, প্রতিটি আগের অ্যাপের ঠিকানা আর API কী যোগ করুন (অথবা একটা ব্যাকআপ zip), কী কী আসবে বেছে নিন, তারপর **Import** বেছে নিন। পরে চাইলে একটা ইমপোর্ট ফিরিয়ে নিতে পারবেন।
 
 | যেখান থেকে | যা যা আসে |
 |---|---|
@@ -171,12 +172,11 @@ docker compose up -d
 
 HolyArrs আপনার আগের অ্যাপগুলো শুধু পড়ে, তাদের ভেতরে কিছুই বদলায় না। তাই ভরসা না আসা পর্যন্ত দুটোই পাশাপাশি চালাতে পারেন।
 
-কী আর পাসওয়ার্ড পেছনে থেকে যায়; সেগুলো আবার লিখে দিন বা একটা ফাইল থেকে ইমপোর্ট করুন। কাস্টম ফরম্যাট, ট্যাগ আর হিস্ট্রি আসে না। মিডিয়া ফাইল কখনো সরে না। ধাপে ধাপে: [Move from other apps](https://docs.HolyArrs.com/migrate/)।
+কী আর পাসওয়ার্ড পেছনে থেকে যায়; সেগুলো আবার লিখে দিন বা একটা ফাইল থেকে ইমপোর্ট করুন। কাস্টম ফরম্যাট, ট্যাগ আর হিস্ট্রি আসে না। মিডিয়া ফাইল কখনো সরে না। ধাপে ধাপে: [Import from other apps](https://docs.HolyArrs.com/migrate/)।
 
 ## 🧭 যা এখনো পারে না
 
 - **নিজে নিজে ডাউনলোড করা।** HolyArrs qBittorrent, SABnzbd আর বাকিগুলোর সঙ্গে যুক্ত হয়। সেগুলোর জায়গা নেয় না।
-- **AI বা MCP ফিচার।** 1.0-এ নেই।
 - **ফোন আর টিভি অ্যাপ।** বানানো হয়নি। ওয়েব অ্যাপ ফোনে চলে।
 - **Explore-এ গান** এখনো বানানো হচ্ছে।
 
@@ -213,6 +213,8 @@ HolyArrs আপনার আগের অ্যাপগুলো শুধু �
 
 NAS ব্যবহার করছেন? দেখুন [Unraid, Synology আর অন্যান্য NAS বক্স](https://docs.HolyArrs.com/run/platforms/)।
 
+নেটিভ প্যাকেজ চান? প্রতিটি [রিলিজে](https://github.com/HolyArrs/HolyArrs/releases) একটা পরীক্ষামূলক Synology প্যাকেজ (`.spk`) যুক্ত থাকে। দেখুন [Synology প্যাকেজ](../../docs/run/synology.md)।
+
 ## ভার্সন ট্যাগ
 
 ইমেজগুলো Docker Hub-এ [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs) নামে আছে।
@@ -220,7 +222,7 @@ NAS ব্যবহার করছেন? দেখুন [Unraid, Synology আ
 | ট্যাগ | কীসের জন্য |
 | :----: | --- |
 | `latest` | সবচেয়ে নতুন ভার্সন। |
-| `1.1.0` | একটা নির্দিষ্ট ভার্সন। এটা কখনো সরে না। |
+| `1.1.1` | একটা নির্দিষ্ট ভার্সন। এটা কখনো সরে না। |
 
 ## ব্যবহার
 
@@ -415,7 +417,7 @@ HolyArrs বিনামূল্যে আর ওপেন সোর্স, [GN
 
 ## চালু রাখতে সাহায্য করুন
 
-HolyArrs বিনামূল্যে, কিন্তু চালাতে খরচ আছে। প্রতিটি ইনস্টল একটা মেটাডেটা সার্ভারের সঙ্গে কথা বলে, যার খরচ আমি প্রতি মাসে দিই। স্পনসররা সেটা মেটান, আর আপনি যেসব বিষয়ে ভোট দেন সেগুলোর জন্য আরও ঘণ্টা কিনে দেন।
+HolyArrs বিনামূল্যে, কিন্তু চালাতে খরচ আছে। ডিফল্টভাবে প্রতিটি ইনস্টল একটা মেটাডেটা সার্ভারের সঙ্গে কথা বলে, যার খরচ আমি প্রতি মাসে দিই। স্পনসররা সেটা মেটান, আর আপনি যেসব বিষয়ে ভোট দেন সেগুলোর জন্য আরও ঘণ্টা কিনে দেন।
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="HolyArrs-কে স্পনসর করুন" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="রোডম্যাপে ভোট দিন" /></picture></a></p>
 

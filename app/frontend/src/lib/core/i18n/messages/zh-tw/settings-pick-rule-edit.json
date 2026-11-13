@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "已為 {n} 個特徵評分",
 	"settings.pickRuleEdit.trashResult": "已為 {n} 個特徵評分 · 新增 {added} · 更新 {updated}",
 	"settings.pickRuleEdit.trashLeftOut": "{n} 個未納入",
-	"settings.pickRuleEdit.trashTests": "檢測 {kinds}"
+	"settings.pickRuleEdit.trashTests": "檢測 {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "來源",
+	"settings.pickRuleEdit.sourcesDesc": "只搜尋帶有其中某個標籤的來源。留空則搜尋所有來源。",
+	"settings.pickRuleEdit.tags": "標籤"
 }

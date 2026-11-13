@@ -10,9 +10,10 @@
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
+	import TagInput from '#lib/ui/TagInput.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { applySize, blankBody, checkBody, copyName, fieldKey, isMusic, isOwnTrait, kindChoices, languages, neverChoices, orderChoices, preferChoices, properChoices, sizeFields, stepLabel, tidyBody, toggleKind, traitLabel, traitsFor, usedWords, type RulesKind, type SizeFields } from '#lib/downloads/index.ts';
+	import { applySize, blankBody, checkBody, copyName, fieldKey, isMusic, isOwnTrait, kindChoices, languages, maxPoints, neverChoices, orderChoices, preferChoices, properChoices, sizeFields, stepLabel, tidyBody, toggleKind, traitLabel, traitsFor, usedWords, type RulesKind, type SizeFields } from '#lib/downloads/index.ts';
 	import type { OwnTrait, PickRulesBody, PickRulesDetail, PickRulesUse, TrashProfile, TrashResult } from '#lib/downloads/index.ts';
 	import { tick, untrack } from 'svelte';
 	import { page } from '$app/state';
@@ -72,6 +73,7 @@
 	const kindWords = $derived(form.kinds.map((k) => kindChoices.find(([c]) => c === k)?.[1] ?? k).join(', '));
 
 	function start(f: Form) {
+		f.body.tags ??= [];
 		form = f;
 		sizeStart = { ...f.size };
 		saved = JSON.stringify(f);
@@ -352,7 +354,7 @@
 				</select>
 			</Field>
 			<Field id="pr-good-enough-points" label={t('settings.pickRuleEdit.goodEnoughPoints')} hint={t('settings.pickRuleEdit.goodEnoughPointsHint')} error={errors.good_enough_points}>
-				<input id="pr-good-enough-points" class="input narrow" type="number" min="-10000" max="10000" step="1" bind:value={form.body.good_enough_points} {...bad('good_enough_points')} />
+				<input id="pr-good-enough-points" class="input narrow" type="number" min={-maxPoints} max={maxPoints} step="1" bind:value={form.body.good_enough_points} {...bad('good_enough_points')} />
 			</Field>
 		</SettingsCard>
 
@@ -372,7 +374,7 @@
 								{@render options(own.filter((x) => x === tr.trait || !form.body.traits.some((y) => y.trait === x)))}
 							</select>
 							<label class="sr-only" for="points-{i}">{t('settings.pickRuleEdit.pointsFor', { trait: label(tr.trait) })}</label>
-							<input id="points-{i}" class="input points" type="number" min="-10000" max="10000" step="1" bind:value={tr.points} />
+							<input id="points-{i}" class="input points" type="number" min={-maxPoints} max={maxPoints} step="1" bind:value={tr.points} />
 							<IconButton icon="trash" label={t('settings.pickRuleEdit.removeTrait', { trait: label(tr.trait) })} tooltip={false} onclick={() => removeTrait(i)} />
 						</li>
 					{/each}
@@ -388,10 +390,10 @@
 					</select>
 				</Field>
 				<Field id="pr-upgrade" label={t('settings.pickRuleEdit.upgrade')} hint={t('settings.pickRuleEdit.upgradeHint')} error={errors.upgrade_min_points}>
-					<input id="pr-upgrade" class="input narrow" type="number" min="-10000" max="10000" step="1" bind:value={form.body.upgrade_min_points} {...bad('upgrade_min_points')} />
+					<input id="pr-upgrade" class="input narrow" type="number" min={-maxPoints} max={maxPoints} step="1" bind:value={form.body.upgrade_min_points} {...bad('upgrade_min_points')} />
 				</Field>
 				<Field id="pr-min-points" label={t('settings.pickRuleEdit.minPoints')} error={errors.min_points}>
-					<input id="pr-min-points" class="input narrow" type="number" min="-10000" max="10000" step="1" bind:value={form.body.min_points} {...bad('min_points')} />
+					<input id="pr-min-points" class="input narrow" type="number" min={-maxPoints} max={maxPoints} step="1" bind:value={form.body.min_points} {...bad('min_points')} />
 				</Field>
 				<Field id="pr-proper" label={t('settings.pickRuleEdit.fixedCopies')} hint={properChoices.find(([v]) => v === form.body.proper_policy.mode)?.[2]} error={errors.proper_policy}>
 					<select id="pr-proper" class="input" bind:value={form.body.proper_policy.mode}>
@@ -515,6 +517,14 @@
 			</label>
 		</SettingsCard>
 
+		{#if !music}
+			<SettingsCard id="rules-sources" title={t('settings.pickRuleEdit.sourcesTitle')} description={t('settings.pickRuleEdit.sourcesDesc')}>
+				<Field id="pr-tags" label={t('settings.pickRuleEdit.tags')}>
+					<TagInput id="pr-tags" bind:value={form.body.tags} testid="pr-tags" />
+				</Field>
+			</SettingsCard>
+		{/if}
+
 		<SettingsCard id="rules-language" title={t('settings.pickRuleEdit.language')} description={t('settings.pickRuleEdit.languageDesc')}>
 			<div class="field">
 				<span class="label" id="lang-label">{t('settings.pickRuleEdit.languages')}</span>
@@ -560,7 +570,7 @@
 	.traits select { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 	/* One control height per row: select, points and the remove button. */
 	.traits .input { height: 32px; min-height: 32px; padding-block: 0; }
-	.points { width: 110px; flex: none; }
+	.points { width: 140px; flex: none; }
 	.narrow { max-width: 180px; }
 	.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
 	.pair :global(.field + .field) { margin-top: 0; }
@@ -569,7 +579,7 @@
 	/* Phones: points stay on the trait's row, narrower. */
 	@media (max-width: 600px) {
 		.traits .input { height: 40px; min-height: 40px; }
-		.points { width: 72px; }
+		.points { width: 96px; }
 	}
 	@media (pointer: coarse) { .traits .input { height: 44px; min-height: 44px; } }
 </style>

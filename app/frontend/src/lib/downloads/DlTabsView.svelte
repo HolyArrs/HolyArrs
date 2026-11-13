@@ -181,7 +181,7 @@
 					{#if chosen}
 						<p class="tl"><b>{chosen.url}</b> <span class="k">{t('downloads.tv.hidden')}</span></p>
 						<div class="trow">
-							<input type="text" class="tfld" placeholder={t('downloads.tv.newAddress')} bind:value={pane.trUrl} spellcheck="false" aria-label={t('downloads.tv.newTracker')} data-testid="dl-tracker-url" />
+							<input type="text" dir="ltr" class="tfld" placeholder={t('downloads.tv.newAddress')} bind:value={pane.trUrl} spellcheck="false" aria-label={t('downloads.tv.newTracker')} data-testid="dl-tracker-url" />
 							<input type="number" class="tfld tier" min="0" max="255" bind:value={pane.trTier} aria-label={t('downloads.tv.tier')} data-testid="dl-tracker-tier" />
 							<button type="button" class="xbn" disabled={pane.trBusy} onclick={() => pane.saveTracker(r, chosen)} data-testid="dl-tracker-save">{t('downloads.tv.save')}</button>
 							<button type="button" class="xbn" disabled={pane.trBusy} onclick={() => pane.removeTracker(r, chosen)} data-testid="dl-tracker-remove">{t('downloads.act.remove')}</button>

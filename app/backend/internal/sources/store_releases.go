@@ -3,6 +3,8 @@ package sources
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 
@@ -215,6 +217,15 @@ func updateJudgedTx(tx *sql.Tx, releaseID int64, state string, hold *time.Time, 
 	return err
 }
 
+// updateCountsTx sets a Release's seeders and peers when the Source sent them.
+func updateCountsTx(tx *sql.Tx, releaseID int64, seeders, peers *int) error {
+	if seeders == nil && peers == nil {
+		return nil
+	}
+	_, err := tx.Exec(`UPDATE releases SET seeders = COALESCE(?, seeders), peers = COALESCE(?, peers) WHERE id = ?`, seeders, peers, releaseID)
+	return err
+}
+
 // insertReleaseTx stores a new Release and returns its id.
 func insertReleaseTx(tx *sql.Tx, rel *domain.Release, by domain.Actor) (int64, error) {
 	return database.Insert(tx, "releases", rel, by)
@@ -408,4 +419,45 @@ func packFetchingItems(ctx context.Context, db *sql.DB, titleID int64) (map[int6
 		out[id] = true
 	}
 	return out, rows.Err()
+}
+
+// freeStuckChoiceTx puts a stuck chosen Slot back to wanted so a Release can
+// be chosen for it by hand. A Download still active for the Slot keeps it. It
+// reports whether the Slot was freed.
+func freeStuckChoiceTx(ctx context.Context, tx *sql.Tx, slotID int64, by domain.Actor) (bool, error) {
+	var sl mediafiles.Slot
+	if err := database.Get(ctx, tx, "slots", slotID, &sl); err != nil {
+		return false, err
+	}
+	if !StuckChoice(sl, time.Now()) {
+		return false, nil
+	}
+	var n int
+	if err := tx.QueryRow(`SELECT count(*) FROM downloads WHERE state IN ('sent', 'queued', 'downloading', 'stalled', 'paused')
+		AND EXISTS (SELECT 1 FROM json_each(slot_ids) WHERE value = ?)`, slotID).Scan(&n); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return false, err
+	}
+	if n > 0 {
+		return false, nil
+	}
+	// A send of the old Release still waiting for an answer is abandoned, so a
+	// late answer never fills the Slot and the Downloader is not held by it.
+	if sl.ChosenReleaseID != nil {
+		actor, err := json.Marshal(by)
+		if err != nil {
+			return false, err
+		}
+		if _, err := tx.Exec(`UPDATE downloader_attempts SET state = 'abandoned', abandoned_by = ?, updated_at = ? WHERE state = 'pending' AND release_id = ?
+			AND EXISTS (SELECT 1 FROM json_each(slot_snapshots) j WHERE json_extract(j.value, '$.id') = ?)`,
+			string(actor), time.Now().UTC().Format(time.RFC3339Nano), *sl.ChosenReleaseID, slotID); err != nil {
+			return false, err
+		}
+	}
+	if _, err := tx.Exec("UPDATE slots SET chosen_release_id = NULL WHERE id = ? AND state = 'chosen'", slotID); err != nil {
+		return false, err
+	}
+	if err := mediafiles.MoveSlotTx(tx, slotID, mediafiles.SlotWanted, "", by); err != nil {
+		return false, err
+	}
+	return true, nil
 }

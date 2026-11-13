@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Nie udało się zapisać",
 	"settings.tmdb.locked": "Ustawione w ustawieniach Dockera",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE ma wartość \"{value}\", która nie jest full, own ani off, więc wyszukiwania są wyłączone.",
-	"settings.tmdb.ownNote": "Z własnymi kluczami sam pytasz każde źródło. Listy przebojów, rzędy nowej muzyki, Top 10 serwisów streamingowych, fakty z Wikipedii i mapy anime pochodzą tylko z serwera HolyArrs, więc są wyłączone.",
+	"settings.tmdb.ownNote": "Z własnymi kluczami HolyArrs pyta każde źródło bezpośrednio. Listy przebojów, rzędy nowej muzyki, Top 10 serwisów streamingowych, fakty z Wikipedii i mapy anime pochodzą tylko z serwera HolyArrs, więc są wyłączone.",
 	"settings.tmdb.keysTitle": "Twoje klucze",
 	"settings.tmdb.keysDesc": "Potrzebny jest tylko token odczytu TMDB",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

@@ -291,7 +291,8 @@ func (c *CardArt) drain(ctx context.Context) {
 		case errors.Is(err, metadata.ErrNotFound):
 			im = metadata.CardImages{}
 		case err != nil:
-			if errors.Is(err, metadata.ErrRateLimited) || errors.Is(err, metadata.ErrNoAccess) {
+			if errors.Is(err, metadata.ErrRateLimited) || errors.Is(err, metadata.ErrNoAccess) || serverDown(err) || metadata.SourceOff(err) {
+				// The rest would fail the same way; the next pool build asks again.
 				c.dropWants()
 				return
 			}

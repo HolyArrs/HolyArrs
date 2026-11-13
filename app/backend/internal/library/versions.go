@@ -27,6 +27,8 @@ var (
 	ErrVersionBusy     = errors.New("this Version has a download or import under way; wait for it to finish or stop it first")
 	// ErrVersionFolder says the folder a Version would get is another
 	// title's folder in the same Library folder.
+	// ErrFourKTaken says the title already has its 4K copy.
+	ErrFourKTaken = errors.New("this title already has a 4K Version")
 	ErrVersionFolder = errors.New("another title in that Library folder already uses the folder this Version would get; choose another label or Library folder")
 )
 
@@ -40,6 +42,9 @@ type VersionInput struct {
 	KeepUpToDate    *bool    `json:"keep_up_to_date"`
 	Edition         string   `json:"edition"`
 	AudioLanguages  []string `json:"audio_languages"`
+	// FourK makes it the title's 4K copy. A copy labelled 4K or on Pick
+	// rules named 4K is the 4K copy too when the title has none yet.
+	FourK bool `json:"four_k"`
 }
 
 // VersionChange is an edit of one Version.
@@ -174,8 +179,12 @@ func AddVersionTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, in Versio
 	if clash > 0 {
 		return v, ErrVersionFolder
 	}
+	fourK, err := fourKFor(tx, t.ID, label, in.PickRulesID, in.FourK)
+	if err != nil {
+		return v, err
+	}
 	v = mediafiles.Version{TitleID: t.ID, Label: label, PickRulesID: in.PickRulesID, LibraryFolderID: in.LibraryFolderID,
-		FolderName: folder, KeepUpToDate: keep, Edition: edition, AudioLanguages: audio}
+		FolderName: folder, KeepUpToDate: keep, Edition: edition, AudioLanguages: audio, FourK: fourK}
 	if _, err := database.Insert(tx, "versions", &v, by); err != nil {
 		return v, err
 	}
@@ -416,4 +425,44 @@ func (s *Service) VersionEvent(ctx context.Context, t mediafiles.Title, summary 
 	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventVersionChanged, TitleID: &t.ID, Summary: summary + " of " + t.Name,
 		Data:     map[string]any{"version_id": v.ID, "label": v.Label, "pick_rules_id": v.PickRulesID, "library_folder_id": v.LibraryFolderID},
 		GroupKey: GroupKey(t.ID)})
+}
+
+// fourKFor says whether a new Version of the title is its 4K copy: asked
+// for (an error when the title has one), or labelled 4K or on Pick rules
+// named 4K while the title has none yet.
+func fourKFor(tx *sql.Tx, titleID int64, label string, rulesID int64, want bool) (bool, error) {
+	var taken int
+	if err := tx.QueryRow(fourKTakenSQL, titleID).Scan(&taken); err != nil {
+		return false, err
+	}
+	if want {
+		if taken > 0 {
+			return false, ErrFourKTaken
+		}
+		return true, nil
+	}
+	if taken > 0 {
+		return false, nil
+	}
+	if strings.EqualFold(label, mediafiles.FourKName) {
+		return true, nil
+	}
+	var named int
+	if err := tx.QueryRow(fourKRulesNamedSQL, rulesID, mediafiles.FourKName).Scan(&named); err != nil {
+		return false, err
+	}
+	return named > 0, nil
+}
+
+const (
+	fourKTakenSQL      = "SELECT count(*) FROM versions WHERE title_id = ? AND four_k = 1"
+	fourKRulesNamedSQL = "SELECT count(*) FROM pick_rules WHERE id = ? AND name = ?"
+)
+
+// MainLabel is a new title's main copy label: 4K when it is the 4K copy.
+func MainLabel(fourK bool) string {
+	if fourK {
+		return mediafiles.FourKName
+	}
+	return "Main"
 }

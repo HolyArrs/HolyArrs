@@ -260,9 +260,16 @@
 	"health.word.notSent": "Zatím neodesláno",
 	"health.word.notSynced": "Zatím nesynchronizováno",
 	"health.word.working": "Funguje",
-	"health.check.clearWaiting": "Stahování čekající na vyčištění",
+	"health.check.clearWaiting": "Importovaná stahování, která jsou stále ve Stahovači",
 	"health.check.saveFolder": "Složka pro ukládání pro",
 	"health.check.saveFolderWhy": "{app} nemá nastavenou složku pro ukládání, takže HolyArrs nemůže importovat jeho dokončená stahování. Přidejte dvojici cest v Nastavení › Stahovače.",
-	"health.kind.clearWaiting": "Stahování čekající na vyčištění",
-	"health.kind.saveFolder": "Složka pro ukládání Stahovače"
+	"health.kind.clearWaiting": "Importovaná stahování, která jsou stále ve Stahovači",
+	"health.kind.saveFolder": "Složka pro ukládání Stahovače",
+	"health.check.usenetDl": "Stahovač pro Usenet",
+	"health.check.torrentDl": "Stahovač torrentů",
+	"health.check.noUsenetDl": "Vaše zdroje nacházejí stahování z Usenetu, ale není nastavený žádný stahovač pro Usenet, takže nic nelze odeslat. Přidejte ho v Nastavení › Stahovače.",
+	"health.check.noTorrentDl": "Vaše zdroje nacházejí torrenty, ale není nastavený žádný stahovač torrentů, takže nic nelze odeslat. Přidejte ho v Nastavení › Stahovače.",
+	"health.check.sameDownloader": "Přidáno dvakrát:",
+	"health.check.sameDownloaderWhy": "{app} vede na stejnou stahovací aplikaci jako jiný stahovač, takže se jeho stahování může zobrazit dvakrát. Jeden odeberte v Nastavení › Stahovače.",
+	"health.kind.sameDownloader": "Stahovač přidán dvakrát"
 }

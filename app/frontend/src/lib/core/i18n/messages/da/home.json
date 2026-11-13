@@ -271,5 +271,8 @@
 	"home.noSaveFolder": "har ingen gemmemappe",
 	"home.noSaveFolderMany": "har ingen gemmemappe",
 	"home.off": "Fra",
-	"home.sourcesOff": "Slået fra i Dele"
+	"home.sourcesOff": "Slået fra i Dele",
+	"home.noneForSources": "mangler til det, dine kilder finder",
+	"home.addedTwice": "er tilføjet to gange",
+	"home.addedTwiceMany": "er tilføjet to gange"
 }

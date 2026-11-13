@@ -113,7 +113,7 @@ func TestLabAskLiveProgress(t *testing.T) {
 	m := &downloads.Manager{Store: s, SavePath: filepath.Join("/data/downloads/incomplete", cat)}
 	im := &importer.Importer{Store: s}
 	sr := &sources.Searcher{Store: s, Queue: q, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
-		_, _, _ = q.Enqueue(ctx, downloads.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, fmt.Sprintf("grab:%d", slotID), domain.System)
+		_, _, _ = q.Enqueue(ctx, downloads.KindGrab, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, downloads.GrabKey(slotID, releaseID), domain.System)
 	}}
 	m.OnFinished = func(ctx context.Context, id int64) {
 		_, _, _ = q.Enqueue(ctx, importer.KindImport, &domain.Subject{Type: "download", ID: id}, nil, fmt.Sprintf("import:%d", id), domain.System)

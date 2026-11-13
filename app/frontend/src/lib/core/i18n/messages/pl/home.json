@@ -271,5 +271,8 @@
 	"home.metadataServerOnline": "Serwer metadanych działa",
 	"home.homeCouldNotRead3": "Start nie mógł teraz odczytać pobrań.",
 	"home.off": "Wyłączone",
-	"home.sourcesOff": "Wyłączone w Częściach"
+	"home.sourcesOff": "Wyłączone w Częściach",
+	"home.noneForSources": "brak dla tego, co znajdują twoje źródła",
+	"home.addedTwice": "jest dodany dwa razy",
+	"home.addedTwiceMany": "są dodane dwa razy"
 }

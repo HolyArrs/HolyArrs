@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "المسار الجديد",
 	"settings.libraryFolders.changePathHint": "انقل الملفات إلى هناك أولًا. يفحص HolyArrs كل ملف ولا ينقل شيئًا.",
 	"settings.libraryFolders.checkingFiles": "جارٍ فحص الملفات…",
-	"settings.libraryFolders.pathChanged": "تم تغيير المسار"
+	"settings.libraryFolders.pathChanged": "تم تغيير المسار",
+	"settings.libraryFolders.sideFiles": "ملفات الترجمة",
+	"settings.libraryFolders.sideFilesDesc": "يمكن إحضار ملفات الترجمة المرفقة بالتنزيل إلى المكتبة بجانب الفيديو.",
+	"settings.libraryFolders.sideOn": "إحضار ملفات الترجمة معه",
+	"settings.libraryFolders.sideOnHint": "لا يُستبدل أبدًا ملف موجود في المكتبة.",
+	"settings.libraryFolders.sideTypes": "أنواع الملفات",
+	"settings.libraryFolders.sideTypesHint": "افصل الأنواع بفواصل، مثل srt, ass.",
+	"settings.libraryFolders.notMounted": "لا يستطيع HolyArrs رؤية {path}. فهو يرى فقط المجلدات الموصولة بحاويته. أضف وحدة تخزين مثل {path}:{inside}، ثم استخدم {inside} هنا."
 }

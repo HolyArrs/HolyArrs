@@ -100,5 +100,6 @@
 	"settings.users.note": "Notat til deg selv",
 	"settings.users.noteExample": "f.eks. Mamma",
 	"settings.users.days": "Dager lenken varer",
-	"settings.users.makeInvite": "Lag en invitasjonslenke"
+	"settings.users.makeInvite": "Lag en invitasjonslenke",
+	"settings.users.permAuto4k": "4K-forespørsler godkjennes uten å vente"
 }

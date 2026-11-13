@@ -271,5 +271,8 @@
 	"home.metadataServerOnline": "Serveur de métadonnées en ligne",
 	"home.homeCouldNotRead3": "Accueil n'a pas pu lire les téléchargements pour le moment.",
 	"home.off": "Désactivé",
-	"home.sourcesOff": "Désactivé dans Parties"
+	"home.sourcesOff": "Désactivé dans Parties",
+	"home.noneForSources": "manquant pour ce que trouvent vos sources",
+	"home.addedTwice": "est ajouté deux fois",
+	"home.addedTwiceMany": "sont ajoutés deux fois"
 }

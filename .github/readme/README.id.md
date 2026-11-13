@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <b>Bahasa Indonesia</b> · <a href="LANGUAGES.md">Bahasa lainnya</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">Bahasa lainnya</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0: kini dalam 44 bahasa**, termasuk kanan ke kiri. aria2 bisa dipakai sebagai Downloader, dan paket musim diunduh beberapa episode sekaligus. [Lihat yang baru](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease, dan IPTorrents bawaan**, tanpa Prowlarr. Minta serial dalam 4K, dan Profilarr bisa mengirim format dan profilnya. [Lihat yang baru](https://holyarrs.com/whats-new/)
 
 > Setiap poster, trailer, dan skor di HolyArrs kamu berasal dari server yang saya jalankan dan bayar sendiri, supaya tetap gratis untuk semua orang. Kalau HolyArrs membuat malam nonton kamu sedikit lebih menyenangkan, sponsor membantu menjaga semuanya tetap menyala untuk kita semua 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> adalah satu aplikasi self-hosted untuk serial, film, dan musik kamu.<br>Jelajahi seperti aplikasi streaming, minta apa yang kamu mau, dan sisanya diurus HolyArrs.</p>
 
-<p align="center"><b>Unduhan sekitar 15 MB · sekitar 140 MB RAM saat idle dengan 10,000 judul · amd64, arm64, armv7</b><br><sub>Enam aplikasi yang digantikannya totalnya 718.2 MB untuk diunduh.</sub></p>
+<p align="center"><b>Unduhan sekitar 19.5 MB · sekitar 95 MiB RAM saat idle pada instalasi baru · amd64, arm64, armv7</b><br><sub>Enam aplikasi yang digantikannya totalnya 718.2 MB untuk diunduh.</sub></p>
 
 <p align="center"><a href="#quick-start">Mulai cepat</a> · <a href="#why">Kenapa</a> · <a href="#what-it-does">Apa yang bisa dilakukan</a> · <a href="#moving">Pindah dari aplikasi lain</a> · <a href="#manual">Manual</a> · <a href="#help">Bantuan</a></p>
 
@@ -105,9 +105,9 @@ Jadi saya membuatnya.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Keenamnya sekaligus** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Sekitar 48 kali lebih kecil. Unduhan registry terkompresi, image linuxserver.io, amd64, diukur pada 2026-11-08. RAM saat idle diukur dengan 10,000 judul dan 55,000 film dan episode.</sub>
+<sub>Sekitar 37 kali lebih kecil. Unduhan registry terkompresi, image linuxserver.io, amd64, diukur pada 2026-11-08. RAM saat idle diukur dengan 10,000 judul dan 55,000 film dan episode. (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Seseorang meminta sebuah judul. HolyArrs mencarinya di sumber kamu, memilih rili
 | | |
 |---|---|
 | 🍿 **Explore** | Jelajahi seperti aplikasi streaming. Arahkan kursor ke sebuah judul dan trailer langsung diputar. |
-| 🙋 **Requests** | Satu serial penuh atau satu musim saja. Kamu yang menyetujui, atau biarkan orang tepercaya melewati antrean. |
+| 🙋 **Requests** | Satu serial penuh atau satu musim saja. Kamu yang menyetujui, atau biarkan orang tepercaya melewati antrean. Watchlist Plex dan Pulsarr bisa menjadi permintaan. |
 | 🎯 **Pick rules** | Kamu yang menentukan rilis mana yang menang: ukuran, kualitas, bahasa. |
-| 💬 **Subtitle** | Dalam bahasa yang kamu pilih, disimpan bersama filenya. Mencarinya di internet menyusul setelah 1.0. |
+| 💬 **Subtitle** | Dalam bahasa yang kamu pilih, dicari di situs subtitle dan disimpan bersama filenya. |
 | 📅 **Calendar** | Apa yang tayang berikutnya untuk semua yang kamu ikuti. |
-| 🚚 **Bawa penyiapan lama** | Dari Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, dan SABnzbd. Coba dulu, batalkan nanti. |
-| 🔌 **API aplikasi lama** | Prowlarr bisa terus mengirim sumber ke HolyArrs setelah kamu mengaktifkannya. |
-| 🗝️ **Tanpa API key** | Judul, artwork, dan chart berasal dari server metadata HolyArrs. |
+| 🔔 **Alerts** | Discord, email, Telegram, ntfy, Gotify, Pushover, atau webhook. |
+| 🚚 **Bawa penyiapan lama** | Dari Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, dan SABnzbd. Pilih apa yang dibawa, batalkan nanti. |
+| 🔌 **API aplikasi lama** | Seerr, Prowlarr, Bazarr, Unpackerr, dan Homepage tetap berjalan setelah kamu mengaktifkannya. |
+| 🗝️ **Tanpa API key** | Judul, artwork, dan chart berasal dari server metadata HolyArrs. Key atau server milikmu sendiri juga bisa. |
 | 🔒 **Kunci terenkripsi** | Kata sandi dan kunci yang tersimpan dikunci dengan kunci utama yang ada di folder konfigurasi kamu. |
-| 🪶 **Mungil** | Image sekitar 15 MB yang isinya hanya HolyArrs. |
+| 🪶 **Mungil** | Image sekitar 19.5 MB yang isinya hanya HolyArrs. |
 
 <details>
 <summary><b>Lihat setiap halaman bergerak</b></summary>
@@ -148,9 +149,9 @@ Seseorang meminta sebuah judul. HolyArrs mencarinya di sumber kamu, memilih rili
 
 ## 🤝 Bekerja dengan apa yang sudah kamu jalankan
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Downloader: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Server media: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Downloader: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Server media: Plex, Jellyfin, Emby." /></picture>
 
-- **Downloader:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Downloader:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Server media:** Plex, Jellyfin, Emby
 - **Sumber:** indexer Torznab atau Newznab apa pun, atau Prowlarr atau Jackett
 - **Memindahkan penyiapan kamu dari:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -159,7 +160,7 @@ Seseorang meminta sebuah judul. HolyArrs mencarinya di sumber kamu, memilih rili
 
 ## 🚚 Bawa penyiapan lama kamu
 
-Buka **Settings > Move from other apps**, tambahkan alamat dan API key setiap aplikasi lama (atau zip backup), pilih apa yang mau dibawa, jalankan **Try it**, lalu **Move**. Kamu bisa membatalkan pemindahan nanti.
+Buka **Settings > Import from other apps**, tambahkan alamat dan API key setiap aplikasi lama (atau zip backup), pilih apa yang mau dibawa, lalu pilih **Import**. Kamu bisa membatalkan impor nanti.
 
 | Dari | Yang ikut terbawa |
 |---|---|
@@ -171,12 +172,11 @@ Buka **Settings > Move from other apps**, tambahkan alamat dan API key setiap ap
 
 HolyArrs hanya membaca aplikasi lama kamu dan tidak mengubah apa pun di dalamnya, jadi kamu bisa menjalankan keduanya berdampingan sampai kamu percaya.
 
-Kunci dan kata sandi tidak ikut terbawa; kamu mengetiknya lagi atau mengimpornya dari file. Custom format, tag, dan riwayat tidak ikut terbawa. File media tidak pernah dipindahkan. Langkah demi langkah: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Kunci dan kata sandi tidak ikut terbawa; kamu mengetiknya lagi atau mengimpornya dari file. Custom format, tag, dan riwayat tidak ikut terbawa. File media tidak pernah dipindahkan. Langkah demi langkah: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Yang belum bisa dilakukan
 
 - **Mengunduh sendiri.** HolyArrs terhubung ke qBittorrent, SABnzbd, dan yang lainnya. HolyArrs tidak menggantikan mereka.
-- **Fitur AI atau MCP.** Belum ada di 1.0.
 - **Aplikasi HP dan TV.** Belum dibuat. Aplikasi web berjalan di HP.
 - **Musik di Explore** masih dibuat.
 
@@ -213,6 +213,8 @@ Dengan menarik `holyarrs/holyarrs:latest`, kamu mendapatkan image yang cocok unt
 
 Pakai NAS? Lihat [Unraid, Synology, dan NAS lainnya](https://docs.HolyArrs.com/run/platforms/).
 
+Lebih suka paket bawaan? Paket Synology eksperimental (`.spk`) dilampirkan di setiap [rilis](https://github.com/HolyArrs/HolyArrs/releases). Lihat [Paket Synology](../../docs/run/synology.md).
+
 ## Tag versi
 
 Image tersedia di Docker Hub sebagai [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs).
@@ -220,7 +222,7 @@ Image tersedia di Docker Hub sebagai [`holyarrs/holyarrs`](https://hub.docker.co
 | Tag | Dipakai untuk |
 | :----: | --- |
 | `latest` | Versi terbaru. |
-| `1.1.0` | Satu versi tertentu. Tidak pernah berpindah. |
+| `1.1.1` | Satu versi tertentu. Tidak pernah berpindah. |
 
 ## Penggunaan
 
@@ -415,7 +417,7 @@ Mau menyertakannya ke dalam produk tertutup? Kirim email ke support@HolyArrs.com
 
 ## Bantu terus berjalan
 
-HolyArrs gratis, tapi menjalankannya tidak gratis. Setiap pemasangan berbicara dengan server metadata yang saya bayar setiap bulan. Sponsor menutup biayanya, dan menambah jam kerja untuk hal-hal yang kamu pilih lewat voting.
+HolyArrs gratis, tapi menjalankannya tidak gratis. Secara bawaan, setiap pemasangan berbicara dengan server metadata yang saya bayar setiap bulan. Sponsor menutup biayanya, dan menambah jam kerja untuk hal-hal yang kamu pilih lewat voting.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Sponsori HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Beri suara di roadmap" /></picture></a></p>
 

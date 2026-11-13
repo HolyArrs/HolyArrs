@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
+	import { chosenWhy } from './labels.ts';
 	// Side sheet for one episode: status, file facts, subtitles and history.
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -22,11 +23,12 @@
 		episode: number;
 		name?: string;
 		air_date?: string;
+		air_day?: string;
 		runtime_minutes?: number;
 		still?: string;
 		keep_up_to_date?: boolean;
 		outside_order?: boolean;
-		slots: { id: number; state: string; state_label: string; file?: Record<string, any> | null }[];
+		slots: { id: number; state: string; state_label: string; reason?: string; file?: Record<string, any> | null }[];
 	};
 
 	let {
@@ -184,7 +186,7 @@
 
 			{#if tone !== 'have'}
 				<section class="es-status {tone}">
-					<span class="es-st"><span class="es-dot" aria-hidden="true"></span>{serverWords(slot?.state_label) ?? t('shows.sheet.missing')}</span>
+					<span class="es-st-wrap"><span class="es-st"><span class="es-dot" aria-hidden="true"></span>{serverWords(slot?.state_label) ?? t('shows.sheet.missing')}</span>{#if manage && chosenWhy(slot)}<small class="es-why" data-testid="episode-chosen-why">{serverWords(chosenWhy(slot))}</small>{/if}</span>
 					{#if manage && slot && tone !== 'downloading'}<button type="button" class="es-btn primary" disabled={busy === 'look'} onclick={look}><Icon name="search" size={15} />{t('shows.sheet.lookForIt')}</button>{/if}
 				</section>
 			{/if}
@@ -262,6 +264,8 @@
 	.es-cap p { margin: 4px 0 0; color: rgb(255 255 255 / 80%); font: 500 13px/1.3 var(--font-ui); }
 	.es-story { margin: 0; color: var(--text-muted); font: 500 14px/1.5 var(--font-ui); display: -webkit-box; -webkit-line-clamp: 4; line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 	.es-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--surface-2); }
+	.es-st-wrap { display: grid; gap: 6px; min-width: 0; }
+	.es-why { color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
 	.es-st { display: inline-flex; align-items: center; gap: 8px; font: 600 15px/1 var(--font-ui); }
 	.es-dot { width: 9px; height: 9px; border-radius: 99px; background: var(--text-muted); }
 	.es-status.have .es-dot { background: var(--ok); }

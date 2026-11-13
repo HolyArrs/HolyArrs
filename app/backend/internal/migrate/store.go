@@ -61,8 +61,10 @@ func SaveTx(ctx context.Context, tx *sql.Tx, owner int64, s *Snapshot) (Saved, e
 	row := Saved{CreatedAt: time.Now().UTC().Truncate(time.Second), OwnerID: owner, Kind: s.Kind, Via: s.Via, Address: s.Address,
 		AppVersion: s.Version, Counts: counts, Size: len(data)}
 	err = func() error {
-		res, err := tx.ExecContext(ctx, `INSERT INTO migrate_snapshots (created_at, owner_id, app_kind, via, address, app_version, counts, size, data)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, row.CreatedAt.Format(time.RFC3339), owner, string(s.Kind), s.Via, s.Address, s.Version, string(cj), len(data), string(data))
+		// A new read never takes the number of a removed one an import still names.
+		res, err := tx.ExecContext(ctx, `INSERT INTO migrate_snapshots (id, created_at, owner_id, app_kind, via, address, app_version, counts, size, data)
+			VALUES (max(coalesce((SELECT max(id) FROM migrate_snapshots), 0), coalesce((SELECT max(CAST(j.value AS INTEGER)) FROM moves, json_each(moves.snapshots) j), 0)) + 1,
+			?, ?, ?, ?, ?, ?, ?, ?, ?)`, row.CreatedAt.Format(time.RFC3339), owner, string(s.Kind), s.Via, s.Address, s.Version, string(cj), len(data), string(data))
 		if err != nil {
 			return err
 		}

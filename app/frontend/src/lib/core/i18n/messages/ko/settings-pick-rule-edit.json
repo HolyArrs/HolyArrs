@@ -86,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "특성 {n}개에 점수 부여",
 	"settings.pickRuleEdit.trashResult": "특성 {n}개 점수 부여 · 새로 {added} · 업데이트 {updated}",
 	"settings.pickRuleEdit.trashLeftOut": "{n}개 제외됨",
-	"settings.pickRuleEdit.trashTests": "{kinds} 검사"
+	"settings.pickRuleEdit.trashTests": "{kinds} 검사",
+	"settings.pickRuleEdit.sourcesTitle": "소스",
+	"settings.pickRuleEdit.sourcesDesc": "이 태그 중 하나를 가진 소스에서만 검색합니다. 비워 두면 모든 소스에서 검색합니다.",
+	"settings.pickRuleEdit.tags": "태그"
 }

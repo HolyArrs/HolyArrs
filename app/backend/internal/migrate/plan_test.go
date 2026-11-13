@@ -257,7 +257,7 @@ func notMoved(p *Plan, from string) (NotMoved, bool) {
 }
 
 func TestPlanMapsEachGroup(t *testing.T) {
-	p := planOf(t, Choices{PathRules: []PathRule{{From: `D:\TV`, To: "/tv"}, {From: "/movies", To: "/data/movies"}}, People: map[string]string{"person:seerr:1": PersonOwner}})
+	p := planOf(t, Choices{NoFormats: true, PathRules: []PathRule{{From: `D:\TV`, To: "/tv"}, {From: "/movies", To: "/data/movies"}}, People: map[string]string{"person:seerr:1": PersonOwner}})
 	// Folders follow the path rules.
 	if f := item(t, p, GroupFolders, "folder:/data/movies").Folder; f.Kind != "movie" || f.OldPath != "/movies" {
 		t.Fatalf("movie folder %+v", f)
@@ -360,7 +360,7 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	if ask.Name != "The Matrix" || ask.Ask.By != "person:seerr:2" || ask.Ask.Approved {
 		t.Fatalf("ask %+v", ask)
 	}
-	if sh := item(t, p, GroupRequests, "ask:seerr:8").Ask; !sh.Approved || sh.Ref != "tvdb:73739" || sh.Decider != "person:seerr:1" || sh.Note == "" {
+	if sh := item(t, p, GroupRequests, "ask:seerr:8").Ask; !sh.Approved || sh.Ref != "tvdb:73739" || sh.Decider != "person:seerr:1" || !sh.FourK {
 		t.Fatalf("show ask %+v", sh)
 	}
 	// Alerts: Discord and email (off until their secret), others listed.

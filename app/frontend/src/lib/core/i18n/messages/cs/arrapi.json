@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Aplikace AI jsou vypnuté. Povolením se zapnou.",
 	"arrapi.ai.offOther": "Aplikace AI jsou vypnuté. Požádejte vlastníka o zapnutí a zkuste to znovu.",
 	"arrapi.ai.allow": "Povolit",
-	"arrapi.ai.cancel": "Zrušit"
+	"arrapi.ai.cancel": "Zrušit",
+	"arrapi.seerr.sentTitle": "Posláno jinými aplikacemi",
+	"arrapi.seerr.sentHint": "Formáty a profily, které poslaly aplikace jako Profilarr. Zde jen ke čtení.",
+	"arrapi.seerr.sentFormat": "Formát",
+	"arrapi.seerr.sentProfile": "Profil",
+	"arrapi.seerr.sentUpdated": "upraveno {ago}"
 }

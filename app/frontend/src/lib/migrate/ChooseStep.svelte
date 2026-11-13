@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { ltr, t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	let keepOpen = false;
 </script>
@@ -13,7 +13,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { appName, cleanPath, folderProblem, folderTo, OTHER, sharedTargets, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from './move.ts';
+	import { appName, cleanPath, folderProblem, folderTo, LEAVE, OTHER, sharedTargets, unseenFolder, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from './move.ts';
 
 	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
 
@@ -30,6 +30,8 @@
 		seen = [],
 		skip,
 		people,
+		noFormats = false,
+		onformats,
 		onfolder,
 		onother,
 		onextra,
@@ -50,6 +52,8 @@
 		seen?: string[];
 		skip: string[];
 		people: Record<string, PersonChoice>;
+		noFormats?: boolean;
+		onformats?: (on: boolean) => void;
 		onfolder: (from: string, pick: string) => void;
 		onother: (from: string, to: string) => void;
 		onextra: (rules: PathRule[]) => void;
@@ -83,6 +87,9 @@
 	const on = $derived(shown.filter((g) => g.items.length > 0 && !skip.includes(g.name)));
 	const peopleItems = $derived(plan?.groups.find((g) => g.name === 'people')?.items ?? []);
 	const peopleOn = $derived(peopleItems.length > 0 && !skip.includes('people'));
+	// People who keep their Plex, Jellyfin or Emby sign-in need no invite.
+	const invitees = $derived(peopleItems.filter((it) => !it.person?.sign_in));
+	const inviteOn = $derived(peopleOn && invitees.length > 0);
 	const asked = $derived(peopleItems.filter((it) => it.person?.was_owner || it.person?.was_admin));
 	const pathRules = $derived(!!plan && oldRows.length === 0 && (extra.length > 0 || plan.not_moved.some((n) => n.group === 'titles')));
 	const needFolders = $derived(oldRows.filter((p) => held.includes(p) || !picks[p]));
@@ -185,16 +192,24 @@
 		return { text: '', warn: false };
 	}
 	function itemRow(it: PlanItem) {
-		const hint = [serverWords(it.why || it.detail), it.needs ? t('migrate.needs', { what: serverWords(it.needs) }) : ''].filter(Boolean).join(' · ');
+		const traits = it.rules?.traits?.length ? t('migrate.formatTraits', { list: it.rules.traits.map((x) => `${x.name} ${x.points > 0 ? '+' : ''}${x.points}`).join(', ') }) : '';
+		const left = it.rules?.skipped?.length ? t('migrate.formatsLeftOut', { list: it.rules.skipped.map((x) => `${x.name} (${serverWords(x.reason)})`).join('; ') }) : '';
+		const lead = it.rules?.body ? [serverWords(it.detail), serverWords(it.why)] : [serverWords(it.why || it.detail)];
+		const hint = [...lead, traits, left, it.needs ? t('migrate.needs', { what: serverWords(it.needs) }) : ''].filter(Boolean).join(' · ');
 		return { key: it.key, name: serverWords(it.name), hint };
 	}
+	// Profiles that score formats can bring them as traits; the switch shows while any could.
+	const formatsAsk = $derived(noFormats || (plan?.groups.find((g) => g.name === 'pick_rules')?.items ?? []).some((it) => !!it.rules?.body));
 	function openKeys(k: 'sources' | 'downloaders') {
 		keysOf = k;
 		keysOpen = true;
 	}
+	const signInNames = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' };
 	function personRow(it: PlanItem) {
 		const me = people[it.key] === 'owner';
-		return { key: it.key, name: it.name, pill: me ? { word: t('migrate.you'), tone: 'ok' as const } : { word: t('migrate.invite'), tone: 'quiet' as const } };
+		const way = it.person?.sign_in;
+		const pill = me ? { word: t('migrate.you'), tone: 'ok' as const } : way ? { word: signInNames[way], tone: 'ok' as const } : { word: t('migrate.invite'), tone: 'quiet' as const };
+		return { key: it.key, name: it.name, pill };
 	}
 	function personHint(it: PlanItem): string {
 		const app = appName(it.person?.app ?? it.from.split(' ')[0] ?? '');
@@ -221,24 +236,28 @@
 	{@const twins = shared[p] ?? []}
 	<li class="mrow wrap" data-testid={testid}>
 		<div class="txt">
-			<label for={id} class="mono path one" title={p}><span aria-hidden="true">{clipMiddle(p)}</span><span class="sr-only">{p}</span></label>
+			<label for={id} class="mono path one" title={p}><span aria-hidden="true" dir="ltr">{clipMiddle(p)}</span><span class="sr-only">{p}</span></label>
 			{#if note && pick && pick === suggested[p]}<span class="sub">{t('migrate.suggested')}</span>{/if}
 		</div>
 		<span class="arrow" aria-hidden="true">→</span>
 		<select {id} class="input pick" value={pick} aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `${id}-err` : undefined} onchange={(e) => onfolder(p, e.currentTarget.value)}>
-			<option value="">{t('migrate.donTBringThem')}</option>
-			{#each choicesFor(p) as o (o.value)}<option value={o.value}>{o.label}</option>{/each}
+			<!-- A folder this server cannot see brings its titles over as wanted unless set to "Don't bring them". -->
+			{#if unseenFolder(plan, p)}<option value="">{t('migrate.bringWithoutFiles')}</option><option value={LEAVE}>{t('migrate.donTBringThem')}</option>
+			{:else}<option value="">{t('migrate.donTBringThem')}</option>{/if}
+			{#each choicesFor(p) as o (o.value)}<option value={o.value}>{ltr(o.label)}</option>{/each}
 			<option value={OTHER}>{t('migrate.otherPath')}</option>
 		</select>
 		{#if pick === OTHER || err || gone || twins.length}
 			<div class="below">
 				{#if pick === OTHER}
 					<label class="sr-only" for="{id}-other">{t('migrate.pathHereFor', { path: p })}</label>
-					<input id="{id}-other" class="input mono wide" value={others[p] ?? ''} placeholder="/data/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `${id}-err` : undefined} oninput={(e) => onother(p, e.currentTarget.value)} onblur={oncommit} onkeydown={keyDone} />
+					<input id="{id}-other" dir="ltr" class="input mono wide" value={others[p] ?? ''} placeholder="/data/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `${id}-err` : undefined} oninput={(e) => onother(p, e.currentTarget.value)} onblur={oncommit} onkeydown={keyDone} />
 				{/if}
 				{#if err}<p class="form-error" id="{id}-err">{err}</p>{/if}
-				{#if gone}<p class="sub warn note" data-testid="folder-not-here">{t('migrate.notInContainer', { path: gone })}{#if seen.length} {t('migrate.foldersItSees', { list: seen.join(', ') })}{/if}</p>{/if}
-				{#if twins.length}<p class="sub warn note" data-testid="folder-shared">{t('migrate.sameNewFolder', { list: twins.join(', ') })}</p>{/if}
+				{#if gone}<p class="sub warn note" data-testid="folder-not-here">{t('migrate.notInContainer', { path: ltr(gone) })}{#if seen.length}{' ' + t('migrate.foldersItSees', { list: seen.map(ltr).join(', ') })}{/if}</p>
+					{#if oldRows.length > 0 && !extra.some((r) => r.from === p)}<Button icon="plus" variant="plain" data-testid="folder-not-here-rule" onclick={() => (onextra([...extra, { from: p, to: '' }]), (advOpen = true))}>{t('migrate.addAPathRule')}</Button>{/if}
+				{/if}
+				{#if twins.length}<p class="sub warn note" data-testid="folder-shared">{t('migrate.sameNewFolder', { list: twins.map(ltr).join(', ') })}</p>{/if}
 			</div>
 		{/if}
 	</li>
@@ -250,10 +269,10 @@
 		<li class="mrow wrap rule">
 			<span class="sr-only">{t('migrate.pathRule', { n: i + 1 })}</span>
 			<label class="sr-only" for="move-rule-from-{i}">{t('migrate.oldAppSPath')}</label>
-			<input id="move-rule-from-{i}" class="input mono half" value={r.from} placeholder="/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `move-rule-${i}-err` : undefined} oninput={(e) => onextra(extra.map((x, j) => (j === i ? { ...x, from: e.currentTarget.value } : x)))} onblur={oncommit} onkeydown={keyDone} />
+			<input id="move-rule-from-{i}" dir="ltr" class="input mono half" value={r.from} placeholder="/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `move-rule-${i}-err` : undefined} oninput={(e) => onextra(extra.map((x, j) => (j === i ? { ...x, from: e.currentTarget.value } : x)))} onblur={oncommit} onkeydown={keyDone} />
 			<span class="arrow" aria-hidden="true">→</span>
 			<label class="sr-only" for="move-rule-to-{i}">{t('migrate.pathHere')}</label>
-			<input id="move-rule-to-{i}" class="input mono half" value={r.to} placeholder="/data/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `move-rule-${i}-err` : undefined} oninput={(e) => onextra(extra.map((x, j) => (j === i ? { ...x, to: e.currentTarget.value } : x)))} onblur={oncommit} onkeydown={keyDone} />
+			<input id="move-rule-to-{i}" dir="ltr" class="input mono half" value={r.to} placeholder="/data/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `move-rule-${i}-err` : undefined} oninput={(e) => onextra(extra.map((x, j) => (j === i ? { ...x, to: e.currentTarget.value } : x)))} onblur={oncommit} onkeydown={keyDone} />
 			<IconButton icon="x" label={t('migrate.removePathRule', { n: i + 1 })} onclick={() => (onextra(extra.filter((_, j) => j !== i)), oncommit())} />
 			{#if err}<div class="below"><p class="form-error" id="move-rule-{i}-err">{err}</p></div>{/if}
 		</li>
@@ -314,7 +333,7 @@
 				</ul>
 			{/if}
 
-			{#if keyCount.sources || keyCount.downloaders || peopleOn}
+			{#if keyCount.sources || keyCount.downloaders || inviteOn}
 				<h3 class="head">{t('migrate.afterTheMove')}</h3>
 				<div class="cards">
 					{#if keyCount.sources}
@@ -329,9 +348,9 @@
 							<button type="button" class="quiet" onclick={() => openKeys('downloaders')}>{t('migrate.show2')}</button>
 						</div>
 					{/if}
-					{#if peopleOn}
+					{#if inviteOn}
 						<div class="box card1">
-							<span class="txt"><b>{peopleItems.length === 1 ? t('migrate.invite1User') : t('migrate.inviteUsers', { n: peopleItems.length })}</b><span class="sub">{t('migrate.theirAccountsComeOver')}</span></span>
+							<span class="txt"><b>{invitees.length === 1 ? t('migrate.invite1User') : t('migrate.inviteUsers', { n: invitees.length })}</b><span class="sub">{t('migrate.theirAccountsComeOver')}</span></span>
 							<button type="button" class="quiet" onclick={() => onshow(t('migrate.people'), peopleItems, personRow)}>{t('migrate.show2')}</button>
 						</div>
 					{/if}
@@ -360,6 +379,15 @@
 										<span class="sw" aria-hidden="true"></span>
 									</label>
 								</li>
+								{#if g.name === 'pick_rules' && formatsAsk && onformats && !skip.includes(g.name)}
+									<li class="mrow" data-testid="formats-row">
+										<span class="txt"><label class="name" for="move-formats">{t('migrate.bringFormats')}</label><span class="sub">{t('migrate.bringFormatsHint')}</span></span>
+										<label class="switch">
+											<input id="move-formats" type="checkbox" checked={!noFormats} onchange={(e) => onformats(e.currentTarget.checked)} />
+											<span class="sw" aria-hidden="true"></span>
+										</label>
+									</li>
+								{/if}
 							{/each}
 						</ul>
 					{/if}
@@ -471,6 +499,8 @@
 	.arrow { flex: none; color: var(--text-muted); }
 	.sw-word { color: var(--text-muted); font: var(--t-footnote); white-space: nowrap; }
 	.switch { flex: none; }
+	/* Settings pages stretch a switch that sits straight in a list row; here the row's words take that room. */
+	.list > .mrow > label.switch { width: auto; }
 
 	select.pick { flex: none; width: 240px; min-height: 36px; height: 36px; }
 	.half { flex: 1 1 0; min-width: 0; min-height: 36px; height: 36px; }

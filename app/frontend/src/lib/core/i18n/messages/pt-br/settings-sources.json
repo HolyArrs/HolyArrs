@@ -72,5 +72,10 @@
 	"settings.sources.off": "As fontes estão desligadas",
 	"settings.sources.offText": "O HolyArrs não busca nem baixa nada. Downloads que você adiciona no downloader continuam sendo importados.",
 	"settings.sources.openParts": "Abrir Partes",
-	"settings.sources.offState": "Desligado"
+	"settings.sources.offState": "Desligado",
+	"settings.sources.site": "Site integrado",
+	"settings.sources.siteLabel": "Site",
+	"settings.sources.addressSite": "O endereço do próprio site. Mude só se o site tiver mudado.",
+	"settings.sources.siteKeyLabel": "Cookie ou chave RSS",
+	"settings.sources.siteKeyHint": "Da sua própria conta: uid e pass do cookie do navegador, ou u e tp do seu link RSS. Guardado criptografado."
 }

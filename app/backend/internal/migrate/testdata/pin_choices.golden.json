@@ -11,5 +11,9 @@
   "people": {
     "s": "s"
   },
-  "approved_hash": "s"
+  "approved_hash": "s",
+  "no_formats": true,
+  "leave_folders": [
+    "s"
+  ]
 }

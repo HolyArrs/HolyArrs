@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "AI অ্যাপ বন্ধ আছে। অনুমতি দিলে সেগুলো চালু হবে।",
 	"arrapi.ai.offOther": "AI অ্যাপ বন্ধ আছে। ওনারকে চালু করতে বলুন, তারপর আবার চেষ্টা করুন।",
 	"arrapi.ai.allow": "অনুমতি দিন",
-	"arrapi.ai.cancel": "বাতিল"
+	"arrapi.ai.cancel": "বাতিল",
+	"arrapi.seerr.sentTitle": "অন্য অ্যাপ পাঠিয়েছে",
+	"arrapi.seerr.sentHint": "Profilarr-এর মতো অ্যাপ যে ফরম্যাট ও প্রোফাইল পাঠিয়েছে। এখানে শুধু দেখার জন্য।",
+	"arrapi.seerr.sentFormat": "ফরম্যাট",
+	"arrapi.seerr.sentProfile": "প্রোফাইল",
+	"arrapi.seerr.sentUpdated": "হালনাগাদ {ago}"
 }

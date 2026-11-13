@@ -166,6 +166,13 @@
 	"library.import.followHint": "Mostrarlas en mi calendario.",
 	"library.import.adoptOne": "Adoptar 1 {word}",
 	"library.import.adoptMany": "Adoptar {n} {words}",
+	"library.import.searchFolders": "Buscar carpetas",
+	"library.import.folderCountOne": "1 carpeta",
+	"library.import.folderCountMany": "{n} carpetas",
+	"library.import.titleAndFolder": "Título y carpeta",
+	"library.import.matchFor": "Coincidencia para {folder}",
+	"library.import.seeLarge": "Ver el póster de {name} en grande",
+	"library.import.noneMatch": "Ninguna carpeta coincide.",
 	"library.report.keep.one": "{n} título se mantiene al día",
 	"library.report.keep.many": "{n} títulos se mantienen al día",
 	"library.report.keep.partOne": "{ok} de {total} título se mantiene al día",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "La primera lectura llega en menos de 30 minutos.",
 	"library.stats.watchedHelp": "Del historial de Plex, Jellyfin y Emby. Plex solo cuenta reproducciones, así que no salen los títulos marcados como vistos a mano.",
 	"library.stats.lastRead": "Última lectura {ago}.",
-	"library.stats.noMatch": "Última lectura {ago}. Nada de lo visto coincide todavía con tu biblioteca.",
+	"library.stats.noMatch": "Historial revisado {ago}. Nada de lo visto coincide todavía con tu biblioteca.",
 	"library.stats.notLinked": "Sin vincular",
 	"library.stats.lastWatched": "Visto por última vez {ago}",
 	"library.stats.unit.movie.one": "{n} película",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} episodio",
 	"library.stats.unit.episode.other": "{n} episodios",
 	"library.stats.unit.play.one": "{n} reproducción",
-	"library.stats.unit.play.other": "{n} reproducciones"
+	"library.stats.unit.play.other": "{n} reproducciones",
+	"library.byHand.askReplaceOne": "1 archivo reemplaza un archivo que ya está en la Biblioteca. El archivo antiguo va a Eliminados recientemente. ¿Importar?",
+	"library.byHand.askReplaceMany": "{n} archivos reemplazan archivos que ya están en la Biblioteca. Los archivos antiguos van a Eliminados recientemente. ¿Importar?"
 }

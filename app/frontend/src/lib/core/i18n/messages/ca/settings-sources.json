@@ -72,5 +72,10 @@
 	"settings.sources.off": "Les Fonts estan desactivades",
 	"settings.sources.offText": "HolyArrs no cerca ni captura. Les baixades que afegeixes al teu Gestor de baixades continuen important-se.",
 	"settings.sources.openParts": "Obre Parts",
-	"settings.sources.offState": "Desactivat"
+	"settings.sources.offState": "Desactivat",
+	"settings.sources.site": "Lloc integrat",
+	"settings.sources.siteLabel": "Lloc",
+	"settings.sources.addressSite": "L’adreça pròpia del lloc. Canvia-la només si el lloc s’ha traslladat.",
+	"settings.sources.siteKeyLabel": "Galeta o clau RSS",
+	"settings.sources.siteKeyHint": "Del teu propi compte: uid i pass de la galeta del navegador, o u i tp del teu enllaç RSS. Es desa xifrada."
 }

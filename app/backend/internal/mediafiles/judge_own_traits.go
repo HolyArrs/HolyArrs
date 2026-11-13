@@ -34,9 +34,14 @@ func SetOwnTraits(ts []OwnTrait) {
 	m := make(map[int64]ownTrait, len(ts))
 	for _, t := range ts {
 		o := ownTrait{name: t.Name, group: t.Match == "group"}
-		if len(t.Specs) > 0 {
-			o.specs, o.bad = compileSpecs(t.Specs)
-			o.bad = !o.bad
+		if len(t.Specs) > 0 || t.OldApp() {
+			// An imported trait with no tests fits every Release, as there.
+			if len(t.Specs) == 0 {
+				o.specs = []ownSpec{}
+			} else {
+				o.specs, o.bad = compileSpecs(t.Specs)
+				o.bad = !o.bad
+			}
 			m[t.ID] = o
 			continue
 		}

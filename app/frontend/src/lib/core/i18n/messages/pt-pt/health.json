@@ -260,9 +260,16 @@
 	"health.word.notSent": "Ainda não enviado",
 	"health.word.notSynced": "Ainda não sincronizado",
 	"health.word.working": "A funcionar",
-	"health.check.clearWaiting": "Downloads à espera de limpeza",
+	"health.check.clearWaiting": "Downloads importados ainda num gestor de downloads",
 	"health.check.saveFolder": "Pasta de salvamento de",
 	"health.check.saveFolderWhy": "{app} não tem pasta de salvamento, por isso o HolyArrs não consegue importar as transferências concluídas. Adicione um par de caminhos em Definições › Gestores de downloads.",
-	"health.kind.clearWaiting": "Downloads à espera de limpeza",
-	"health.kind.saveFolder": "Pasta de salvamento do gestor de downloads"
+	"health.kind.clearWaiting": "Downloads importados ainda num gestor de downloads",
+	"health.kind.saveFolder": "Pasta de salvamento do gestor de downloads",
+	"health.check.usenetDl": "Gestor Usenet",
+	"health.check.torrentDl": "Gestor de torrents",
+	"health.check.noUsenetDl": "As suas fontes encontram transferências Usenet, mas nenhum gestor de downloads Usenet está configurado, por isso nenhuma pode ser enviada. Adicione um em Definições › Gestores de downloads.",
+	"health.check.noTorrentDl": "As suas fontes encontram torrents, mas nenhum gestor de downloads de torrents está configurado, por isso nenhuma pode ser enviada. Adicione um em Definições › Gestores de downloads.",
+	"health.check.sameDownloader": "Adicionado duas vezes:",
+	"health.check.sameDownloaderWhy": "{app} chega à mesma aplicação de downloads que outro gestor, por isso os seus downloads podem aparecer duas vezes. Remova um em Definições › Gestores de downloads.",
+	"health.kind.sameDownloader": "Gestor de downloads adicionado duas vezes"
 }

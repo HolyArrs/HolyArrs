@@ -279,7 +279,7 @@ var (
 )
 
 // TrashMaxPoints is the Pick rules points bound; TRaSH scores past it are cut.
-const TrashMaxPoints = 10000
+const TrashMaxPoints = mediafiles.MaxPoints
 
 // Build plans applying profile p: its own formats plus the required and
 // default formats of the default groups that include it.
@@ -348,79 +348,19 @@ func (d *TrashData) Build(p TrashProfile) TrashPlan {
 	return plan
 }
 
-// trashConvert turns a format's tests into synced trait tests; kinds lists the
-// test kinds it could not take (then the whole format is skipped, since a
-// half-tested format would match the wrong Releases).
+// trashConvert turns a TRaSH format's tests into trait tests (see ConvertFormat).
 func trashConvert(app string, in []TrashSpec) ([]mediafiles.OwnSpec, []string) {
-	var out []mediafiles.OwnSpec
-	bad := map[string]bool{}
+	specs := make([]FormatSpec, 0, len(in))
 	for _, s := range in {
-		o := mediafiles.OwnSpec{Name: s.Name, Negate: s.Negate, Required: s.Required}
 		var str string
 		var num int
-		if json.Unmarshal(s.Fields.Value, &num) != nil {
+		if json.Unmarshal(s.Fields.Value, &num) == nil {
+			str = strconv.Itoa(num)
+		} else {
 			_ = json.Unmarshal(s.Fields.Value, &str)
-			num, _ = strconv.Atoi(str)
 		}
-		switch s.Implementation {
-		case "ReleaseTitleSpecification", "ReleaseGroupSpecification":
-			o.Kind = "name"
-			if s.Implementation == "ReleaseGroupSpecification" {
-				o.Kind = "group"
-			}
-			if _, err := mediafiles.CompileSpecPattern(str); err != nil || str == "" {
-				bad["unreadable pattern"] = true
-				continue
-			}
-			o.Value = str
-		case "SourceSpecification":
-			m := trashSonarrSources
-			if app == "radarr" {
-				m = trashRadarrSources
-			}
-			v, ok := m[num]
-			if !ok {
-				bad["source"] = true
-				continue
-			}
-			o.Kind, o.Value = "source", v
-		case "ResolutionSpecification":
-			if num <= 0 {
-				bad["resolution"] = true
-				continue
-			}
-			o.Kind, o.Value = "resolution", strconv.Itoa(num)
-		case "SizeSpecification":
-			if _, _, ok := mediafiles.ParseSizeRange(mediafiles.SizeRangeValue(s.Fields.Min, s.Fields.Max)); !ok {
-				bad["size"] = true
-				continue
-			}
-			o.Kind, o.Value = "size", mediafiles.SizeRangeValue(s.Fields.Min, s.Fields.Max)
-		case "QualityModifierSpecification":
-			// Movies: 4 is a full disc, 5 a remux; the rest have no match here.
-			switch num {
-			case 4:
-				o.Kind, o.Value = "source", "disc_image"
-			case 5:
-				o.Kind, o.Value = "source", "remux"
-			default:
-				bad["quality modifier"] = true
-				continue
-			}
-		default:
-			w := trashSkippedKinds[s.Implementation]
-			if w == "" {
-				w = strings.ToLower(strings.TrimSuffix(s.Implementation, "Specification"))
-			}
-			bad[w] = true
-			continue
-		}
-		out = append(out, o)
+		specs = append(specs, FormatSpec{Name: s.Name, Implementation: s.Implementation, Negate: s.Negate, Required: s.Required,
+			Value: str, Min: s.Fields.Min, Max: s.Fields.Max})
 	}
-	kinds := make([]string, 0, len(bad))
-	for k := range bad {
-		kinds = append(kinds, k)
-	}
-	sort.Strings(kinds)
-	return out, kinds
+	return ConvertFormat(app, specs, ConvertOptions{})
 }

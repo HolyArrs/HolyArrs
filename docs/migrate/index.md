@@ -17,12 +17,11 @@ HolyArrs only reads the old apps. Nothing in them changes, and your media files 
 
 ## Import your setup
 
-1. Open **Settings > Import from other apps**. You should see five steps in a row at the top.
-2. **Read:** click **Add an app** for each old app. You should see each app listed with a switch.
-3. **Choose:** turn on the groups you want to bring over.
-4. **Try it:** check what will be added. Nothing changes yet.
-5. **Import:** click **Import** and confirm. You can leave the page while it runs.
-6. **Done:** you should see the results per group and **Undo this import**.
+1. Open **Settings > Import from other apps**. You should see four steps in a row at the top.
+2. **Read your apps:** click **Add an app** for each old app. You should see each app listed with a switch.
+3. **What to import:** turn on the groups you want to bring over.
+4. **Import:** HolyArrs checks what will be added first. Nothing changes yet. Answer any row under **Needs a choice**, then click **Import** and confirm. You can leave the page while it runs.
+5. **Done:** you should see the results per group and **Undo this import**.
 
 Keys and passwords never come over. See [After the import](#after-the-import).
 
@@ -66,8 +65,8 @@ To type many keys at once, see [Import keys from a file](import-secrets.md).
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| Titles show as not found | Their folder does not match a Library folder here. | Add a path rule under **Advanced** in **Choose**, then import again. |
-| Import says the plan changed | Something changed since the test. | Run **Try it** again, then import. |
+| Titles show as not found | Their folder does not match a Library folder here. | Add a path rule under **Advanced** in **What to import**, then import again. |
+| Import says something changed | Something changed since the check. | HolyArrs checks again by itself. Look over the list, then import. |
 | The Import button is greyed out | A person needs a choice, or HolyArrs is in safe mode. | Read the text next to the button. |
 | Some items failed | For example, the metadata server was down. | Wait, then import again. Your old-app keys are kept. |
 
@@ -77,9 +76,9 @@ To type many keys at once, see [Import keys from a file](import-secrets.md).
 
 **Import again.** An import remembers what it added. Importing again adds only what is new and says **already here** for the rest. One import or undo runs at a time. If HolyArrs stops mid-import, the import is marked failed at the next start, or resumes if its job is still queued. It never blocks the next import.
 
-**Earlier imports**, under the reads, lists every import and its state. **Open** shows an import at step 5, or step 4 while it runs.
+**Earlier imports**, under the reads, lists every import and its state. **Open** shows an import at step 4, or step 3 while it runs.
 
-**Undo.** Click **Undo this import** at step 5 (for an older import, **Open** it first). The undo runs in the background and removes only what that import added, newest first:
+**Undo.** Click **Undo this import** at step 4 (for an older import, **Open** it first). The undo runs in the background and removes only what that import added, newest first:
 
 - titles leave the Library; their files stay where they are,
 - Sources, Downloaders, Alerts, subtitle sites, people, requests and Never-add entries it added are removed,
@@ -90,7 +89,7 @@ What you set up or changed after the import stays, and the undo report lists it:
 
 **Parts.** A part that is off is left out. Movies off: no movie folder, movie or Outside list. Subtitles off: no subtitle setting. Requests off: no requests.
 
-**Safe mode.** You can read, choose and try, but not import or undo.
+**Safe mode.** You can read your apps and pick what to import, but not import or undo.
 
 </details>
 

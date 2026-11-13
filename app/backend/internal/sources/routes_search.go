@@ -197,7 +197,7 @@ func SearchError(w http.ResponseWriter, err error) {
 	case errors.Is(err, ErrState):
 		webserver.Fail(w, http.StatusNotFound, err.Error())
 	case errors.Is(err, ErrNoSlot):
-		webserver.Fail(w, http.StatusBadRequest, err.Error())
+		webserver.Fail(w, http.StatusBadRequest, "This release does not match an episode HolyArrs is looking for. To use it anyway, pick it from the episode it is for.")
 	case errors.Is(err, ErrBusy):
 		webserver.Fail(w, http.StatusConflict, err.Error())
 	default:

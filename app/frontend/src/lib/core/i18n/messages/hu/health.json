@@ -260,9 +260,16 @@
 	"health.word.notSent": "Még nincs elküldve",
 	"health.word.notSynced": "Még nincs szinkronizálva",
 	"health.word.working": "Működik",
-	"health.check.clearWaiting": "Törlésre váró letöltések",
+	"health.check.clearWaiting": "Importált letöltések, amelyek még egy Letöltőben vannak",
 	"health.check.saveFolder": "Mentési mappa:",
 	"health.check.saveFolderWhy": "A(z) {app} letöltőnek nincs mentési mappája, így a HolyArrs nem tudja importálni a kész letöltéseket. Adj hozzá egy útvonalpárt itt: Beállítások › Letöltők.",
-	"health.kind.clearWaiting": "Törlésre váró letöltések",
-	"health.kind.saveFolder": "Letöltő mentési mappája"
+	"health.kind.clearWaiting": "Importált letöltések, amelyek még egy Letöltőben vannak",
+	"health.kind.saveFolder": "Letöltő mentési mappája",
+	"health.check.usenetDl": "Usenet-letöltő",
+	"health.check.torrentDl": "Torrentletöltő",
+	"health.check.noUsenetDl": "A forrásaid Usenet-letöltéseket találnak, de nincs beállítva Usenet-letöltő, így egyik sem küldhető el. Adj hozzá egyet itt: Beállítások › Letöltők.",
+	"health.check.noTorrentDl": "A forrásaid torrenteket találnak, de nincs beállítva torrentletöltő, így egyik sem küldhető el. Adj hozzá egyet itt: Beállítások › Letöltők.",
+	"health.check.sameDownloader": "Kétszer hozzáadva:",
+	"health.check.sameDownloaderWhy": "A(z) {app} ugyanahhoz a letöltő alkalmazáshoz kapcsolódik, mint egy másik letöltő, így a letöltései kétszer is megjelenhetnek. Távolítsd el az egyiket: Beállítások › Letöltők.",
+	"health.kind.sameDownloader": "Kétszer hozzáadott letöltő"
 }

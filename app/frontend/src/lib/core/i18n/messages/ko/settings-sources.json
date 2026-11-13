@@ -72,5 +72,10 @@
 	"settings.sources.off": "소스가 꺼져 있습니다",
 	"settings.sources.offText": "HolyArrs는 검색하거나 가져오지 않습니다. 다운로더에 직접 추가한 다운로드는 계속 가져옵니다.",
 	"settings.sources.openParts": "부분 열기",
-	"settings.sources.offState": "꺼짐"
+	"settings.sources.offState": "꺼짐",
+	"settings.sources.site": "내장 사이트",
+	"settings.sources.siteLabel": "사이트",
+	"settings.sources.addressSite": "사이트 자체의 주소입니다. 사이트가 옮겨진 경우에만 바꾸세요.",
+	"settings.sources.siteKeyLabel": "쿠키 또는 RSS 키",
+	"settings.sources.siteKeyHint": "내 계정에서: 브라우저 쿠키의 uid와 pass, 또는 RSS 링크의 u와 tp. 암호화되어 보관됩니다."
 }

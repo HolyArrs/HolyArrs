@@ -260,9 +260,16 @@
 	"health.word.notSent": "Belum terkirim",
 	"health.word.notSynced": "Belum disinkronkan",
 	"health.word.working": "Berfungsi",
-	"health.check.clearWaiting": "Unduhan yang menunggu dibersihkan",
+	"health.check.clearWaiting": "Unduhan yang sudah diimpor masih ada di Pengunduh",
 	"health.check.saveFolder": "Folder simpan untuk",
 	"health.check.saveFolderWhy": "{app} belum punya folder simpan, jadi HolyArrs tidak bisa mengimpor unduhan yang sudah selesai. Tambahkan pasangan path di Pengaturan › Pengunduh.",
-	"health.kind.clearWaiting": "Unduhan yang menunggu dibersihkan",
-	"health.kind.saveFolder": "Folder simpan Pengunduh"
+	"health.kind.clearWaiting": "Unduhan yang sudah diimpor masih ada di Pengunduh",
+	"health.kind.saveFolder": "Folder simpan Pengunduh",
+	"health.check.usenetDl": "Pengunduh Usenet",
+	"health.check.torrentDl": "Pengunduh torrent",
+	"health.check.noUsenetDl": "Sumbermu menemukan unduhan Usenet, tapi belum ada pengunduh Usenet yang disiapkan, jadi tidak ada yang bisa dikirim. Tambahkan di Pengaturan › Pengunduh.",
+	"health.check.noTorrentDl": "Sumbermu menemukan unduhan torrent, tapi belum ada pengunduh torrent yang disiapkan, jadi tidak ada yang bisa dikirim. Tambahkan di Pengaturan › Pengunduh.",
+	"health.check.sameDownloader": "Ditambahkan dua kali:",
+	"health.check.sameDownloaderWhy": "{app} terhubung ke aplikasi unduhan yang sama dengan pengunduh lain, jadi unduhannya bisa muncul dua kali. Hapus salah satunya di Pengaturan › Pengunduh.",
+	"health.kind.sameDownloader": "Pengunduh ditambahkan dua kali"
 }

@@ -72,5 +72,10 @@
 	"settings.sources.off": "Джерела вимкнено",
 	"settings.sources.offText": "HolyArrs нічого не шукає і не завантажує. Завантаження, додані в завантажувачі, і далі імпортуються.",
 	"settings.sources.openParts": "Відкрити «Частини»",
-	"settings.sources.offState": "Вимк."
+	"settings.sources.offState": "Вимк.",
+	"settings.sources.site": "Вбудований сайт",
+	"settings.sources.siteLabel": "Сайт",
+	"settings.sources.addressSite": "Власна адреса сайту. Змінюйте її, лише якщо сайт переїхав.",
+	"settings.sources.siteKeyLabel": "Cookie або ключ RSS",
+	"settings.sources.siteKeyHint": "З вашого облікового запису: uid і pass із cookie браузера або u і tp із вашого посилання RSS. Зберігається зашифрованим."
 }

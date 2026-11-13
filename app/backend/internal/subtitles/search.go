@@ -82,8 +82,14 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 		targets = append(targets, target{want: m, beat: -1, isNew: true})
 	}
 	if opt.Better || opt.Show {
+		// A person choosing by hand may swap their own earlier pick too; timed
+		// better searches leave hand picks alone.
+		origins := "origin = 'fetched'"
+		if opt.Show {
+			origins = "origin IN ('fetched', 'by_hand')"
+		}
 		saved, err := database.Select[Subtitle](ctx, s.Store.Read(), "subtitles",
-			"file_id = ? AND place = 'beside' AND state = 'present' AND origin = 'fetched' AND score IS NOT NULL", fileID)
+			"file_id = ? AND place = 'beside' AND state = 'present' AND "+origins+" AND score IS NOT NULL", fileID)
 		if err != nil {
 			return res, err
 		}

@@ -72,5 +72,10 @@
 	"settings.sources.off": "Sources are off",
 	"settings.sources.offText": "HolyArrs doesn't search or grab. Downloads you add in your Downloader still import.",
 	"settings.sources.openParts": "Open Parts",
-	"settings.sources.offState": "Off"
+	"settings.sources.offState": "Off",
+	"settings.sources.site": "Built-in site",
+	"settings.sources.siteLabel": "Site",
+	"settings.sources.addressSite": "The site's own address. Change it only if the site moved.",
+	"settings.sources.siteKeyLabel": "Cookie or RSS key",
+	"settings.sources.siteKeyHint": "From your own account: uid and pass from your browser cookie, or u and tp from your RSS link. Kept encrypted."
 }

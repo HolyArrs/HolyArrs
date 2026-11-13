@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <b>עברית</b> · <a href="LANGUAGES.md">שפות נוספות</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">שפות נוספות</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0: עכשיו ב-44 שפות**, כולל מימין לשמאל. aria2 עובד כמוריד, וחבילות עונה יורדות כמה פרקים בכל פעם. [מה חדש](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease ו-IPTorrents מובנים**, בלי צורך ב-Prowlarr. בקשו סדרות ב-4K, ו-Profilarr יכול לשלוח את הפורמטים והפרופילים שלו. [מה חדש](https://holyarrs.com/whats-new/)
 
 > כל פוסטר, טריילר וציון ב-HolyArrs שלך מגיעים משרת שאני מפעיל ומשלם עליו בעצמי, כדי שישאר חינמי לכולם. אם HolyArrs שיפר קצת את ערב הסרט שלך, תמיכה כספית שומרת על האור דלוק בשבילנו כולנו 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> היא אפליקציה אחת באחסון עצמי לסדרות, לסרטים ולמוזיקה שלך.<br>גלוש כמו באפליקציית סטרימינג, בקש מה שאתה רוצה, והיא מטפלת בשאר.</p>
 
-<p align="center"><b>כ-15 MB להורדה · כ-140 MB של RAM במצב סרק עם 10,000 כותרים · amd64, arm64, armv7</b><br><sub>שש האפליקציות שהיא מחליפה שוקלות יחד 718.2 MB להורדה.</sub></p>
+<p align="center"><b>כ-19.5 MB להורדה · כ-95 MiB של RAM במצב סרק בהתקנה חדשה · amd64, arm64, armv7</b><br><sub>שש האפליקציות שהיא מחליפה שוקלות יחד 718.2 MB להורדה.</sub></p>
 
 <p align="center"><a href="#quick-start">התחלה מהירה</a> · <a href="#why">למה</a> · <a href="#what-it-does">מה היא עושה</a> · <a href="#moving">ייבוא מאפליקציות אחרות</a> · <a href="#manual">המדריך</a> · <a href="#help">עזרה</a></p>
 
@@ -105,9 +105,9 @@ docker compose up -d
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **שש יחד** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>קטנה פי 48 בערך. הורדה דחוסה מה-registry, אימג'ים של linuxserver.io, amd64, נמדד ב-2026-11-08. RAM במצב סרק נמדד עם 10,000 כותרים ו-55,000 סרטים ופרקים.</sub>
+<sub>קטנה פי 37 בערך. הורדה דחוסה מה-registry, אימג'ים של linuxserver.io, amd64, נמדד ב-2026-11-08. RAM במצב סרק נמדד עם 10,000 כותרים ו-55,000 סרטים ופרקים. (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ docker compose up -d
 | | |
 |---|---|
 | 🍿 **Explore** (גילוי) | גלוש כמו באפליקציית סטרימינג. רחף מעל כותר, והטריילר מתחיל לרוץ. |
-| 🙋 **Requests** (בקשות) | סדרה שלמה או עונה אחת. אתה מאשר, או נותן לאנשים שאתה סומך עליהם לדלג על התור. |
+| 🙋 **Requests** (בקשות) | סדרה שלמה או עונה אחת. אתה מאשר, או נותן לאנשים שאתה סומך עליהם לדלג על התור. רשימות צפייה מ-Plex ומ-Pulsarr יכולות להפוך לבקשות. |
 | 🎯 **Pick rules** (כללי בחירה) | אתה מחליט איזו גרסת הפצה מנצחת: גודל, איכות, שפה. |
-| 💬 **כתוביות** | בשפות שאתה בוחר, נשמרות עם הקובץ. חיפוש כתוביות באינטרנט יגיע אחרי 1.0. |
+| 💬 **כתוביות** | בשפות שאתה בוחר, נמצאות באתרי כתוביות ונשמרות עם הקובץ. |
 | 📅 **Calendar** (לוח שנה) | מה משודר בקרוב, לכל מה שאתה עוקב אחריו. |
-| 🚚 **לייבא את ההגדרות שלך** | מ-Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent ו-SABnzbd. קודם מנסים, אפשר לבטל אחר כך. |
-| 🔌 **API של אפליקציות קודמות** | Prowlarr יכול להמשיך לדחוף מקורות ל-HolyArrs ברגע שתפעיל את זה. |
-| 🗝️ **בלי מפתחות API** | כותרים, תמונות ותרשימים מגיעים משרת המטא-דאטה של HolyArrs. |
+| 🔔 **Alerts** | Discord, אימייל, Telegram, ntfy, Gotify, Pushover או webhook. |
+| 🚚 **לייבא את ההגדרות שלך** | מ-Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent ו-SABnzbd. בוחרים מה עובר, אפשר לבטל אחר כך. |
+| 🔌 **API של אפליקציות קודמות** | Seerr, Prowlarr, Bazarr, Unpackerr ו-Homepage ממשיכים לעבוד ברגע שתפעיל את זה. |
+| 🗝️ **בלי מפתחות API** | כותרים, תמונות ותרשימים מגיעים משרת המטא-דאטה של HolyArrs. גם מפתחות או שרת משלך עובדים. |
 | 🔒 **מפתחות מוצפנים** | סיסמאות ומפתחות שמורים נעולים במפתח ראשי שנמצא בתיקיית ההגדרות שלך. |
-| 🪶 **זעירה** | אימג' של כ-15 MB שאין בו כלום חוץ מ-HolyArrs. |
+| 🪶 **זעירה** | אימג' של כ-19.5 MB שאין בו כלום חוץ מ-HolyArrs. |
 
 <details>
 <summary><b>ראה כל עמוד בתנועה</b></summary>
@@ -148,9 +149,9 @@ docker compose up -d
 
 ## 🤝 היא עובדת עם מה שכבר מותקן אצלך
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="מורידים: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. שרתי מדיה: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="מורידים: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. שרתי מדיה: Plex, Jellyfin, Emby." /></picture>
 
-- **מורידים:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **מורידים:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **שרתי מדיה:** Plex, Jellyfin, Emby
 - **מקורות:** כל אינדקסר Torznab או Newznab, או Prowlarr או Jackett
 - **מייבאת את ההגדרות שלך מ:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -159,7 +160,7 @@ docker compose up -d
 
 ## 🚚 קח איתך את ההגדרות הישנות
 
-פתח את **Settings > Move from other apps** (הגדרות > ייבוא מאפליקציות אחרות), הוסף את הכתובת ומפתח ה-API של כל אפליקציה ישנה (או קובץ zip של גיבוי), בחר מה עובר, הרץ **Try it** ואז **Move**. אפשר לבטל ייבוא מאוחר יותר.
+פתח את **Settings > Import from other apps** (הגדרות > ייבוא מאפליקציות אחרות), הוסף את הכתובת ומפתח ה-API של כל אפליקציה ישנה (או קובץ zip של גיבוי), בחר מה עובר, ואז בחר **Import**. אפשר לבטל ייבוא מאוחר יותר.
 
 | מאיפה | מה עובר |
 |---|---|
@@ -171,12 +172,11 @@ docker compose up -d
 
 HolyArrs רק קורא את האפליקציות הישנות שלך ולא משנה בהן כלום, אז אפשר להריץ את שתיהן במקביל עד שתסמוך עליו.
 
-מפתחות וסיסמאות נשארים מאחור; אתה מקליד אותם מחדש או מייבא אותם מקובץ. פורמטים מותאמים, תגיות והיסטוריה לא עוברים. קבצי מדיה אף פעם לא זזים. צעד אחר צעד: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+מפתחות וסיסמאות נשארים מאחור; אתה מקליד אותם מחדש או מייבא אותם מקובץ. פורמטים מותאמים, תגיות והיסטוריה לא עוברים. קבצי מדיה אף פעם לא זזים. צעד אחר צעד: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 מה היא עדיין לא עושה
 
 - **להוריד בעצמה.** HolyArrs מתחבר ל-qBittorrent, ל-SABnzbd ולאחרים. היא לא מחליפה אותם.
-- **יכולות AI או MCP.** לא ב-1.0.
 - **אפליקציות לטלפון ולטלוויזיה.** לא נבנו. אפליקציית הווב עובדת בטלפון.
 - **מוזיקה ב-Explore** עדיין בבנייה.
 
@@ -213,6 +213,8 @@ HolyArrs רק קורא את האפליקציות הישנות שלך ולא מש
 
 יש לך NAS? ראה [Unraid, Synology ו-NAS אחרים](https://docs.HolyArrs.com/run/platforms/).
 
+מעדיף חבילה מקורית? חבילת Synology ניסיונית (`.spk`) מצורפת לכל [גרסה](https://github.com/HolyArrs/HolyArrs/releases). ראה [חבילת Synology](../../docs/run/synology.md).
+
 ## תגיות גרסה
 
 האימג'ים נמצאים ב-Docker Hub בשם [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs).
@@ -220,7 +222,7 @@ HolyArrs רק קורא את האפליקציות הישנות שלך ולא מש
 | תגית | מתאימה ל |
 | :----: | --- |
 | `latest` | הגרסה החדשה ביותר. |
-| `1.1.0` | גרסה מדויקת אחת. היא אף פעם לא זזה. |
+| `1.1.1` | גרסה מדויקת אחת. היא אף פעם לא זזה. |
 
 ## שימוש
 
@@ -415,7 +417,7 @@ HolyArrs חינמי ובקוד פתוח תחת [GNU AGPL-3.0](../../LICENSE).
 
 ## בוא נמשיך
 
-HolyArrs חינמי, אבל להפעיל אותו לא חינמי. כל התקנה מדברת עם שרת מטא-דאטה שאני משלם עליו כל חודש. תומכים מכסים את זה, וקונים עוד שעות לדברים שאתה מצביע עליהם.
+HolyArrs חינמי, אבל להפעיל אותו לא חינמי. כברירת מחדל, כל התקנה מדברת עם שרת מטא-דאטה שאני משלם עליו כל חודש. תומכים מכסים את זה, וקונים עוד שעות לדברים שאתה מצביע עליהם.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="לתמוך ב-HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="להצביע במפת הדרכים" /></picture></a></p>
 

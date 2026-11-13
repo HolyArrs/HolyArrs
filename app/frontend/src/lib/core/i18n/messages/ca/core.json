@@ -145,5 +145,7 @@
 	"core.settings.account.about": "Contrasenya, verificació en dos passos, dispositius",
 	"core.plain.clearWaiting": "Les baixades importades esperen ser netejades del seu Gestor de baixades.",
 	"core.plain.saveFolder": "Un gestor de baixades no té carpeta de desament, així que HolyArrs no pot importar les baixades acabades.",
-	"core.api.sourceOff": "Algunes files estan desactivades en aquesta instal·lació."
+	"core.api.sourceOff": "Algunes files estan desactivades en aquesta instal·lació.",
+	"core.plain.noDownloader": "Les teves fonts troben baixades que cap dels teus gestors de baixades pot agafar, així que no se'n pot enviar cap.",
+	"core.plain.sameDownloader": "Dos gestors de baixades arriben a la mateixa aplicació, així que les baixades poden sortir dues vegades."
 }

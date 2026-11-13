@@ -260,9 +260,16 @@
 	"health.word.notSent": "ยังไม่ได้ส่ง",
 	"health.word.notSynced": "ยังไม่ได้ซิงก์",
 	"health.word.working": "ทำงานอยู่",
-	"health.check.clearWaiting": "ดาวน์โหลดที่รอการล้าง",
+	"health.check.clearWaiting": "ดาวน์โหลดที่นำเข้าแล้วแต่ยังอยู่ในตัวดาวน์โหลด",
 	"health.check.saveFolder": "โฟลเดอร์บันทึกของ",
 	"health.check.saveFolderWhy": "{app} ยังไม่ได้ตั้งโฟลเดอร์บันทึก HolyArrs จึงนำเข้าไฟล์ที่ดาวน์โหลดเสร็จแล้วไม่ได้ เพิ่มคู่พาธใน ตั้งค่า › ตัวดาวน์โหลด",
-	"health.kind.clearWaiting": "ดาวน์โหลดที่รอการล้าง",
-	"health.kind.saveFolder": "โฟลเดอร์บันทึกของตัวดาวน์โหลด"
+	"health.kind.clearWaiting": "ดาวน์โหลดที่นำเข้าแล้วแต่ยังอยู่ในตัวดาวน์โหลด",
+	"health.kind.saveFolder": "โฟลเดอร์บันทึกของตัวดาวน์โหลด",
+	"health.check.usenetDl": "ตัวดาวน์โหลด Usenet",
+	"health.check.torrentDl": "ตัวดาวน์โหลดทอร์เรนต์",
+	"health.check.noUsenetDl": "แหล่งที่มาของคุณพบไฟล์ Usenet แต่ยังไม่ได้ตั้งค่าตัวดาวน์โหลด Usenet จึงส่งไม่ได้เลย เพิ่มได้ใน ตั้งค่า › ตัวดาวน์โหลด",
+	"health.check.noTorrentDl": "แหล่งที่มาของคุณพบไฟล์ทอร์เรนต์ แต่ยังไม่ได้ตั้งค่าตัวดาวน์โหลดทอร์เรนต์ จึงส่งไม่ได้เลย เพิ่มได้ใน ตั้งค่า › ตัวดาวน์โหลด",
+	"health.check.sameDownloader": "เพิ่มซ้ำ:",
+	"health.check.sameDownloaderWhy": "{app} เชื่อมไปยังแอปดาวน์โหลดเดียวกับตัวดาวน์โหลดอีกตัว การดาวน์โหลดจึงอาจแสดงซ้ำสองครั้ง ลบตัวหนึ่งออกใน การตั้งค่า › ตัวดาวน์โหลด",
+	"health.kind.sameDownloader": "ตัวดาวน์โหลดที่เพิ่มซ้ำ"
 }

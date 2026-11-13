@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <b>Íslenska</b> · <a href="LANGUAGES.md">Fleiri tungumál</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">Fleiri tungumál</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0: nú á 44 tungumálum**, líka frá hægri til vinstri. aria2 virkar sem niðurhalsforrit og þáttaraðapakkar sækjast nokkrir þættir í einu. [Sjáðu hvað er nýtt](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease og IPTorrents innbyggð**, án Prowlarr. Biddu um þætti í 4K, og Profilarr getur sent sniðin sín og prófíla. [Sjáðu hvað er nýtt](https://holyarrs.com/whats-new/)
 
 > Hvert veggspjald, hver stikla og hver einkunn í HolyArrs kemur frá server sem ég rek og borga sjálfur, svo að það haldist ókeypis fyrir alla. Ef HolyArrs gerði bíókvöldið aðeins betra heldur styrktaraðili ljósunum kveiktum fyrir okkur öll 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> er eitt forrit fyrir þættina þína, kvikmyndir og tónlist sem keyrir á þinni eigin vél.<br>Flettu eins og í streymisforriti, biddu um það sem þú vilt og forritið sér um restina.</p>
 
-<p align="center"><b>Um 15 MB niðurhal · um 140 MB af minni í lausagangi með 10,000 titla · amd64, arm64, armv7</b><br><sub>Forritin sex sem það leysir af hólmi eru samtals 718.2 MB í niðurhali.</sub></p>
+<p align="center"><b>Um 19.5 MB niðurhal · um 95 MiB af minni í lausagangi á nýrri uppsetningu · amd64, arm64, armv7</b><br><sub>Forritin sex sem það leysir af hólmi eru samtals 718.2 MB í niðurhali.</sub></p>
 
 <p align="center"><a href="#quick-start">Fljótleg byrjun</a> · <a href="#why">Af hverju</a> · <a href="#what-it-does">Hvað það gerir</a> · <a href="#moving">Flytja úr öðrum forritum</a> · <a href="#manual">Handbókin</a> · <a href="#help">Hjálp</a></p>
 
@@ -105,9 +105,9 @@ Venjulegur margmiðlunarþjónn keyrir sex forrit: Sonarr, Radarr, Lidarr, Bazar
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Öll sex saman** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Um 48 sinnum minna. Þjappað niðurhal úr registry, image frá linuxserver.io, amd64, mælt 2026-11-08. Minni í lausagangi mælt með 10,000 titlum og 55,000 kvikmyndum og þáttum.</sub>
+<sub>Um 37 sinnum minna. Þjappað niðurhal úr registry, image frá linuxserver.io, amd64, mælt 2026-11-08. Minni í lausagangi mælt með 10,000 titlum og 55,000 kvikmyndum og þáttum. (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ Einhver biður um titil. HolyArrs leitar í uppsprettunum þínum, velur bestu �
 | | |
 |---|---|
 | 🍿 **Explore** | Flettu eins og í streymisforriti. Færðu bendilinn yfir titil og stiklan spilast. |
-| 🙋 **Requests** | Heil þáttaröð eða bara ein. Þú samþykkir, eða leyfir fólki sem þú treystir að fara fram fyrir í röðinni. |
+| 🙋 **Requests** | Heil þáttaröð eða bara ein. Þú samþykkir, eða leyfir fólki sem þú treystir að fara fram fyrir í röðinni. Áhorfslistar úr Plex og Pulsarr geta orðið að beiðnum. |
 | 🎯 **Pick rules** | Þú ákveður hvaða útgáfa vinnur: stærð, gæði, tungumál. |
-| 💬 **Skjátextar** | Á tungumálunum sem þú velur, geymdir með skránni. Að finna þá á netinu kemur eftir 1.0. |
+| 💬 **Skjátextar** | Á tungumálunum sem þú velur, sóttir af skjátextasíðum og geymdir með skránni. |
 | 📅 **Calendar** | Hvað er næst á dagskrá hjá öllu sem þú fylgir. |
-| 🚚 **Taktu uppsetninguna með** | Frá Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent og SABnzbd. Prófaðu fyrst, afturkallaðu síðar. |
-| 🔌 **API fyrir eldri forrit** | Prowlarr getur haldið áfram að senda uppsprettur til HolyArrs þegar þú kveikir á því. |
-| 🗝️ **Engir API-lyklar nauðsynlegir** | Titlar, myndefni og vinsældalistar koma frá metadata-server HolyArrs. |
+| 🔔 **Alerts** | Discord, tölvupóstur, Telegram, ntfy, Gotify, Pushover eða webhook. |
+| 🚚 **Taktu uppsetninguna með** | Frá Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent og SABnzbd. Veldu hvað kemur með, afturkallaðu síðar. |
+| 🔌 **API fyrir eldri forrit** | Seerr, Prowlarr, Bazarr, Unpackerr og Homepage halda áfram að virka þegar þú kveikir á því. |
+| 🗝️ **Engir API-lyklar nauðsynlegir** | Titlar, myndefni og vinsældalistar koma frá metadata-server HolyArrs. Þínir eigin lyklar eða þjónn virka líka. |
 | 🔒 **Dulkóðaðir lyklar** | Vistuð lykilorð og lyklar eru læstir með aðallykli sem liggur í stillingamöppunni þinni. |
-| 🪶 **Örlítið** | Image upp á um 15 MB þar sem ekkert er inni nema HolyArrs. |
+| 🪶 **Örlítið** | Image upp á um 19.5 MB þar sem ekkert er inni nema HolyArrs. |
 
 <details>
 <summary><b>Sjáðu hverja síðu á hreyfingu</b></summary>
@@ -148,9 +149,9 @@ Einhver biður um titil. HolyArrs leitar í uppsprettunum þínum, velur bestu �
 
 ## 🤝 Það vinnur með því sem þú keyrir nú þegar
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Niðurhalsforrit: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Margmiðlunarþjónar: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Niðurhalsforrit: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Margmiðlunarþjónar: Plex, Jellyfin, Emby." /></picture>
 
-- **Niðurhalsforrit:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Niðurhalsforrit:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Margmiðlunarþjónar:** Plex, Jellyfin, Emby
 - **Uppsprettur:** hvaða Torznab- eða Newznab-indexer sem er, eða Prowlarr eða Jackett
 - **Tekur uppsetninguna yfir frá:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -159,7 +160,7 @@ Einhver biður um titil. HolyArrs leitar í uppsprettunum þínum, velur bestu �
 
 ## 🚚 Taktu gömlu uppsetninguna með þér
 
-Opnaðu **Settings > Move from other apps**, bættu við vistfangi og API-lykli hvers gamals forrits (eða afritunar-zip), veldu hvað flyst yfir, keyrðu **Try it** og svo **Move**. Þú getur afturkallað flutning síðar.
+Opnaðu **Settings > Import from other apps**, bættu við vistfangi og API-lykli hvers gamals forrits (eða afritunar-zip), veldu hvað flyst yfir og veldu svo **Import**. Þú getur afturkallað innflutning síðar.
 
 | Frá | Hvað flyst yfir |
 |---|---|
@@ -171,12 +172,11 @@ Opnaðu **Settings > Move from other apps**, bættu við vistfangi og API-lykli 
 
 HolyArrs les aðeins gömlu forritin þín og breytir engu í þeim, svo þú getur keyrt bæði hlið við hlið þar til þú treystir því.
 
-Lyklar og lykilorð verða eftir; þú slærð þau inn aftur eða flytur þau inn úr skrá. Sérsniðin snið, tög og saga flytjast ekki yfir. Miðlunarskrár eru aldrei fluttar. Skref fyrir skref: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Lyklar og lykilorð verða eftir; þú slærð þau inn aftur eða flytur þau inn úr skrá. Sérsniðin snið, tög og saga flytjast ekki yfir. Miðlunarskrár eru aldrei fluttar. Skref fyrir skref: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Það sem það gerir ekki enn
 
 - **Að sækja sjálft.** HolyArrs tengist qBittorrent, SABnzbd og hinum. Það kemur ekki í staðinn fyrir þau.
-- **Gervigreindar- eða MCP-eiginleikar.** Ekki í 1.0.
 - **Símaforrit og sjónvarpsforrit.** Ekki smíðuð. Vefforritið virkar í síma.
 - **Tónlist í Explore** er enn í smíðum.
 
@@ -213,6 +213,8 @@ Ef þú sækir `holyarrs/holyarrs:latest` færðu rétta image fyrir tölvuna þ
 
 Ertu með NAS? Sjá [Unraid, Synology og önnur NAS-tæki](https://docs.HolyArrs.com/run/platforms/).
 
+Viltu frekar innbyggðan pakka? Tilraunapakki fyrir Synology (`.spk`) fylgir hverri [útgáfu](https://github.com/HolyArrs/HolyArrs/releases). Sjá [Synology-pakki](../../docs/run/synology.md).
+
 ## Útgáfumerki
 
 Image eru á Docker Hub sem [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs).
@@ -220,7 +222,7 @@ Image eru á Docker Hub sem [`holyarrs/holyarrs`](https://hub.docker.com/r/holya
 | Tag | Notaðu það fyrir |
 | :----: | --- |
 | `latest` | Nýjustu útgáfuna. |
-| `1.1.0` | Eina tiltekna útgáfu. Hún breytist aldrei. |
+| `1.1.1` | Eina tiltekna útgáfu. Hún breytist aldrei. |
 
 ## Notkun
 
@@ -415,7 +417,7 @@ Viltu byggja það inn í lokaða vöru? Sendu póst á support@HolyArrs.com og 
 
 ## Haltu því gangandi
 
-HolyArrs er ókeypis, en það er ekki ókeypis að reka það. Hver uppsetning talar við metadata-server sem ég borga fyrir í hverjum mánuði. Styrktaraðilar standa straum af því og kaupa fleiri klukkustundir fyrir það sem þú kýst um.
+HolyArrs er ókeypis, en það er ekki ókeypis að reka það. Sjálfgefið talar hver uppsetning við metadata-server sem ég borga fyrir í hverjum mánuði. Styrktaraðilar standa straum af því og kaupa fleiri klukkustundir fyrir það sem þú kýst um.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Styrktu HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Kjóstu á vegvísinum" /></picture></a></p>
 

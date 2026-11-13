@@ -145,5 +145,7 @@
 	"core.settings.account.about": "Slaptažodis, dviejų veiksnių patvirtinimas, įrenginiai",
 	"core.plain.clearWaiting": "Importuoti atsisiuntimai laukia, kol bus išvalyti iš savo Atsisiuntėjo.",
 	"core.plain.saveFolder": "Vienas atsisiuntėjas neturi išsaugojimo aplanko, todėl HolyArrs negali importuoti jo baigtų atsisiuntimų.",
-	"core.api.sourceOff": "Kai kurios eilutės šioje diegtyje išjungtos."
+	"core.api.sourceOff": "Kai kurios eilutės šioje diegtyje išjungtos.",
+	"core.plain.noDownloader": "Jūsų šaltiniai randa atsisiuntimų, kurių negali priimti nė vienas jūsų atsisiuntėjas, todėl nieko negalima išsiųsti.",
+	"core.plain.sameDownloader": "Du atsisiuntėjai pasiekia tą pačią atsisiuntimo programą, todėl atsisiuntimai gali būti rodomi du kartus."
 }

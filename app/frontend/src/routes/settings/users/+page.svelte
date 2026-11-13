@@ -56,6 +56,7 @@
 	const permWord = $derived<Record<Perm, string>>({
 		ask: t('settings.users.permAsk'),
 		auto_approve: t('settings.users.permAuto'),
+		auto_approve_four_k: t('settings.users.permAuto4k'),
 		approve: t('settings.users.permApprove'),
 		manage_library: t('settings.users.permLibrary'),
 		settings: t('settings.users.permSettings')
@@ -98,7 +99,7 @@
 
 	let users = $state<User[]>([]);
 	let invites = $state<Invite[]>([]);
-	let allPerms = $state<Perm[]>(['ask', 'auto_approve', 'approve', 'manage_library', 'settings']);
+	let allPerms = $state<Perm[]>(['ask', 'auto_approve', 'auto_approve_four_k', 'approve', 'manage_library', 'settings']);
 	let loaded = $state(false);
 	let error = $state('');
 	let hasData = $state(false);

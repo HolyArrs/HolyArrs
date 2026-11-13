@@ -5,7 +5,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { COL, MAX_W, MIN_W, move, quality, sortRows, visible, type ColId } from './columns.ts';
-	import { PRIORITIES, clientOk, paneExtras, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
+	import { PRIORITIES, byHandPath, clientOk, paneExtras, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
 	import DlBar from './DlBar.svelte';
 	import DlStatus from './DlStatus.svelte';
 	import DlMorePop from './DlMorePop.svelte';
@@ -70,6 +70,7 @@
 		changeOutside = true,
 		batchBusy = false,
 		watch = false,
+		loading = false,
 		upTotal,
 		outside = { rest: {}, canMore: false, capMax: 0 }
 	}: {
@@ -103,6 +104,7 @@
 		batchBusy?: boolean;
 		/** Someone who may not manage the Library sees only their own downloads, with no actions. */
 		watch?: boolean;
+		loading?: boolean; // the first read is on its way: the bar, tabs and column heads stay, the list shows the page loader
 		/** Upload speed summed by the server over every sending row; falls back to the rows on hand. */
 		upTotal?: number;
 		outside?: { rest: Rest; canMore: boolean; capMax: number; onmore?: (all?: boolean) => void }; // torrents left out of this page (tabs count them too), whether more can load, and how
@@ -260,17 +262,14 @@
 		get top() { return t('downloads.act.top'); },
 		get bottom() { return t('downloads.act.bottom'); },
 		get priority() { return t('downloads.act.priority'); },
-		get library() { return t('downloads.act.library'); },
+		get import() { return t('downloads.act.importAgain'); },
+		get library() { return t('downloads.act.library'); }, get byhand() { return t('downloads.dp.importByHand'); },
 		get remove() { return t('downloads.act.remove'); }
 	};
 	// Usenet jobs move and take a priority one at a time; there is no bulk call.
 	const usenetItem = (r: DownloadRow) => `/downloaders/${r.downloader_id}/items/${encodeURIComponent(r.hash ?? '')}`;
-	const MOVED: Record<string, string> = {
-		get up() { return t('downloads.act.movedUp'); },
-		get down() { return t('downloads.act.movedDown'); },
-		get top() { return t('downloads.act.movedTop'); },
-		get bottom() { return t('downloads.act.movedBottom'); }
-	};
+	const MOVED: Record<string, string> = { get up() { return t('downloads.act.movedUp'); }, get down() { return t('downloads.act.movedDown'); },
+		get top() { return t('downloads.act.movedTop'); }, get bottom() { return t('downloads.act.movedBottom'); } };
 	let queueBusy = $state(0);
 	async function usenetCall(r: DownloadRow, run: () => Promise<unknown>, done: string) {
 		queueBusy = r.id;
@@ -285,6 +284,7 @@
 	}
 	const usenetMove = (r: DownloadRow, k: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/${k}`), MOVED[k] ?? t('downloads.act.moved'));
 	const usenetPriority = (r: DownloadRow, p: Priority, label: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/priority`, { priority: p }), t('downloads.act.prioritySet', { label }));
+	const importAgain = (r: DownloadRow) => usenetCall(r, () => api.post(`/downloads/${r.id}/import`), t('downloads.act.importQueued'));
 	// Shared by the row menu and the pane menu.
 	function menuItems(r: DownloadRow, keys: RowItem[]): MenuItem[] {
 		const off = busy === r.id || queueBusy === r.id;
@@ -292,8 +292,9 @@
 			const label = ROW_WORD[k];
 			if (k === 'priority') return [{ kind: 'heading', label }, ...PRIORITIES.map((p): MenuItem => ({ label: p.label, disabled: off, onselect: () => void usenetPriority(r, p.key, p.label) }))];
 			if ((k === 'up' || k === 'down' || k === 'top' || k === 'bottom') && usenetQueued(r)) return { label, disabled: off, onselect: () => void usenetMove(r, k) };
-			if (k === 'library') return { label, icon: 'film', href: to(`/library/${r.title_id}`) };
+			if (k === 'library' || k === 'byhand') return { label, icon: k === 'library' ? 'film' : 'folder', href: to(k === 'library' ? `/library/${r.title_id}` : byHandPath(r.import_folder ?? '')) };
 			if (k === 'remove') return { label, icon: 'trash', destructive: true, disabled: off, onselect: () => onremove(r) };
+			if (k === 'import') return { label, icon: 'refresh', disabled: off, onselect: () => void importAgain(r) };
 			if (k === 'pause' || k === 'resume') return { label, icon: k === 'pause' ? 'pause' : 'play', disabled: off, onselect: () => onact?.(r, k) };
 			if (k === 'retry') return { label, icon: 'refresh', disabled: off, onselect: () => (onretry ? onretry([r]) : onact?.(r, 'retry')) };
 			return { label, disabled: off, onselect: () => onbulk?.([r], k) };
@@ -301,11 +302,11 @@
 	}
 	function rowMenu(r: DownloadRow): MenuItem[] {
 		const items = menuItems(r, rowItems(r).filter((k) => k !== 'retry' || mayEdit(r)));
-		if (!r.can_act) items.unshift({ kind: 'heading', label: t('downloads.act.cannotChange') });
+		if (!r.can_act && !r.can_import && !r.import_folder) items.unshift({ kind: 'heading', label: t('downloads.act.cannotChange') });
 		return items;
 	}
 	// The pane menu is the row's list minus what the pane shows as buttons, plus a torrent's checks, force start, sheets and Mark failed.
-	const PANE_BUTTONS = new Set<RowItem>(['pause', 'resume', 'retry', 'library', 'remove']);
+	const PANE_BUTTONS = new Set<RowItem>(['pause', 'resume', 'retry', 'byhand', 'library', 'remove']);
 	function paneMenu(r: DownloadRow): MenuItem[] {
 		if (!r.can_act) return [];
 		const off = busy === r.id || queueBusy === r.id;
@@ -552,7 +553,7 @@
 		{@const so = t ? withRest(subCounts(rows, t), t.subs, mo.extra) : []}
 		{@const open = on === c.key && so.length > 0}
 		<div class="pw" class:on={on === c.key} class:open class:leaf={on === c.key && !subOn} data-key={c.key}>
-			<button type="button" role="tab" class="tab" class:zero={c.count === 0} aria-selected={on === c.key} tabindex={on === c.key ? 0 : -1} data-nav data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="lb">{c.label}</span><b class="n">{c.count}</b></button>
+			<button type="button" role="tab" class="tab" class:zero={c.count === 0} aria-selected={on === c.key} tabindex={on === c.key ? 0 : -1} data-nav data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="lb">{c.label}</span>{#if !loading}<b class="n">{c.count}</b>{/if}</button>
 			{#if so.length}
 				<div class="subwrap" inert={!open}>
 					<div class="subin" data-testid={open ? 'dl-subseg' : undefined}>
@@ -588,7 +589,7 @@
 {#if (pickedRows.length || selecting) && !watch}
 	<DlSelBars {pickedRows} {bulkRows} steer={STEER} {startT} {pauseT} {batchBusy} {steerable} {mayEdit} {runOn} {onbulk} {onsteer} {onretry} {onremovemany} onall={() => (picked = new Set(list.map((r) => r.id)))} onclear={clearPicked} />
 {/if}
-{#if list.length}
+{#if list.length && !loading}
 	<div class="tw" onscroll={cols.sync} data-testid="dl-tablebox"><div class="tin">
 		{@render header()}
 		<ul class="dlrows" class:vw={cols.windowed} bind:this={cols.ulEl} data-testid="dl-list" data-tab={on} data-rows={list.length} style={cols.windowed ? `padding-top: ${cols.span.a * cols.rh}px; padding-bottom: ${(list.length - cols.span.b) * cols.rh}px` : undefined}>
@@ -597,22 +598,20 @@
 	</div></div>
 {:else}
 	<div class="tw" data-testid="dl-tablebox"><div class="tin">{@render header()}</div></div>
-	<DlEmpty em={emptyOf(on, subOn, q, kindOn, tabs, srcOn)} left={restHere} onclear={() => (dlScope.term = '')} onall={() => { kindOn = ''; srcOn = ''; }} />
+	<DlEmpty {loading} em={emptyOf(on, subOn, q, kindOn, tabs, srcOn)} left={restHere} onclear={() => (dlScope.term = '')} onall={() => { kindOn = ''; srcOn = ''; }} />
 {/if}
 </div>
 {#if openRow}
 	<DlPane r={openRow} bind:paneOpen bind:openId tab={tabNow(openRow)} ontab={(id, t) => (xtabOn[id] = t)} {pane} {importOf} {titles} {titlesReady} {watch} {busy} {decisionsOf} {ondone} {onact} {onretry} {onremove} {mayEdit} {paneMenu} {maxPane} />
 {/if}
-</div>
-</div>
+</div></div>
 {#snippet morePop()}<DlMorePop {notes} {dls} {watch} />{/snippet}
 <div class="vh"><span data-testid="sb-health">{dls.health}</span></div>
 </div>
 <DlColumnPicker {cols} />
 </div>
 <style>
-	.ch[data-col='proto']:has(:global(svg)) { justify-content: center; }
-	.ch[data-col='kind']:has(:global(svg)) { justify-content: center; }
+	.ch[data-col='proto']:has(:global(svg)), .ch[data-col='kind']:has(:global(svg)) { justify-content: center; }
 	.ch[data-col='proto'] .lbl, .ch[data-col='kind'] .lbl { display: flex; }
 	.ch[data-col='poster'] { justify-content: center; }
 	.ch[data-col='poster'] .lbl { display: flex; }

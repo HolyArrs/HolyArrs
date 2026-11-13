@@ -30,6 +30,7 @@ func (a *handlers) wireExplore() {
 	e.KnownRating = a.knownRating
 	e.LookupRating = a.lookupRating
 	e.QueueCardArt = e.Cards.QueuePool
+	e.LookupsOff = func() bool { return a.s.MetadataModes != nil && a.s.MetadataModes.Current() == metadata.ModeOff }
 }
 
 // StartExplore starts the Explore pool job (discover.Explore) and the

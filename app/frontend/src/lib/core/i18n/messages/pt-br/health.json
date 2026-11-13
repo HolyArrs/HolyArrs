@@ -12,7 +12,7 @@
 	"health.check.freeSpace": "Espaço livre",
 	"health.check.update": "Atualização",
 	"health.check.waiting": "Downloads esperando arquivos",
-	"health.check.clearWaiting": "Downloads esperando a limpeza",
+	"health.check.clearWaiting": "Downloads importados ainda em um gerenciador de downloads",
 	"health.check.saveFolder": "Pasta de salvamento de",
 	"health.check.saveFolderWhy": "{app} não tem pasta de salvamento, então o HolyArrs não consegue importar os downloads concluídos. Adicione um par de caminhos em Configurações › Gerenciadores de downloads.",
 	"health.day.ahead": "{count} à frente",
@@ -88,7 +88,7 @@
 	"health.kind.trailers": "Leitor de trailers",
 	"health.kind.update": "Atualização",
 	"health.kind.waitingDownloads": "Downloads esperando arquivos",
-	"health.kind.clearWaiting": "Downloads esperando a limpeza",
+	"health.kind.clearWaiting": "Downloads importados ainda em um gerenciador de downloads",
 	"health.kind.saveFolder": "Pasta de salvamento do gerenciador de downloads",
 	"health.link.downloader": "Gerenciador de downloads",
 	"health.link.mediaServer": "Servidor de mídia",
@@ -264,5 +264,12 @@
 	"health.word.broken": "Quebrado",
 	"health.word.notSent": "Ainda não enviado",
 	"health.word.notSynced": "Ainda não sincronizado",
-	"health.word.working": "Funcionando"
+	"health.word.working": "Funcionando",
+	"health.check.usenetDl": "Gerenciador Usenet",
+	"health.check.torrentDl": "Gerenciador de torrent",
+	"health.check.noUsenetDl": "Suas fontes encontram downloads Usenet, mas nenhum gerenciador de downloads Usenet está configurado, então nenhum pode ser enviado. Adicione um em Configurações › Gerenciadores de downloads.",
+	"health.check.noTorrentDl": "Suas fontes encontram downloads de torrent, mas nenhum gerenciador de downloads de torrent está configurado, então nenhum pode ser enviado. Adicione um em Configurações › Gerenciadores de downloads.",
+	"health.check.sameDownloader": "Adicionado duas vezes:",
+	"health.check.sameDownloaderWhy": "{app} chega ao mesmo app de download que outro gerenciador, então os downloads dele podem aparecer duas vezes. Remova um em Configurações › Gerenciadores de downloads.",
+	"health.kind.sameDownloader": "Gerenciador de downloads adicionado duas vezes"
 }

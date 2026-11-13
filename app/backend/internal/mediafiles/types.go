@@ -179,6 +179,8 @@ type Version struct {
 	IsMain          bool     `db:"is_main"`
 	Edition         string   `db:"edition"`
 	AudioLanguages  []string `db:"audio_languages,json"`
+	// FourK marks the title's 4K copy (at most one a title).
+	FourK bool `db:"four_k"`
 }
 
 // Slot is one Item in one Version; the core loop state lives here.
@@ -281,6 +283,10 @@ type File struct {
 	Role         string         `db:"role"` // main, subtitle, artwork, info, lyrics
 	ParentFileID *int64         `db:"parent_file_id"`
 	State        string         `db:"state"` // present, missing, gone, replaced
+	// LeftoverReason says why a found file fills no episode (a key the app
+	// translates); LeftoverDismissed keeps it out of the way.
+	LeftoverReason    *string `db:"leftover_reason"`
+	LeftoverDismissed bool    `db:"leftover_dismissed"`
 }
 
 // Pressing is one specific release of an album.

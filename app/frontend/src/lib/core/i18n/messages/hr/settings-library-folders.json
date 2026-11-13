@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Nova putanja",
 	"settings.libraryFolders.changePathHint": "Najprije premjestite datoteke tamo. HolyArrs provjerava svaku datoteku i ništa ne premješta.",
 	"settings.libraryFolders.checkingFiles": "Provjera datoteka…",
-	"settings.libraryFolders.pathChanged": "Putanja promijenjena"
+	"settings.libraryFolders.pathChanged": "Putanja promijenjena",
+	"settings.libraryFolders.sideFiles": "Datoteke titlova",
+	"settings.libraryFolders.sideFilesDesc": "Titlovi koji dođu s preuzimanjem mogu se donijeti u knjižnicu pokraj videa.",
+	"settings.libraryFolders.sideOn": "Donesi i datoteke titlova",
+	"settings.libraryFolders.sideOnHint": "Datoteka koja je već u knjižnici nikad se ne zamjenjuje.",
+	"settings.libraryFolders.sideTypes": "Vrste datoteka",
+	"settings.libraryFolders.sideTypesHint": "Odvojite vrste zarezima, npr. srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs ne vidi {path}. Vidi samo mape montirane u svoj kontejner. Dodajte volumen poput {path}:{inside}, a zatim ovdje upotrijebite {inside}."
 }

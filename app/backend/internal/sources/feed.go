@@ -15,7 +15,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
 const (
@@ -79,7 +78,7 @@ func (s *Searcher) Register(q *jobs.Queue) {
 }
 
 // HandleFeed reads the newest Releases of every feed Source, matches them to Titles whose Slots want one, judges them per Slot, and chooses or holds the best.
-// A feed Release is looked at once: a name already stored by the feed check, or still waiting as judged, is skipped. Names stored and settled by other searches are looked at again.
+// A feed Release is looked at once: a name already stored by the feed check, or still waiting as judged, is skipped. Names stored and settled by other searches, and feed Releases refused before, are looked at again.
 // Held Releases whose wait is over are chosen at the end.
 func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	if s.sourcesOff(r) {
@@ -97,6 +96,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	var all []found
 	var failures []string
 	read := 0
+	drops := newFeedDrops()
 	var showsWanted, musicWanted bool
 	musicWanted = mediafiles.KindWanted(ctx, db, "artist")
 	showsWanted = mediafiles.KindWanted(ctx, db, "show")
@@ -121,12 +121,14 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			read++
 			s.recovered(ctx, src)
 			for _, it := range answer.items {
-				seen, err := releaseSeen(ctx, db, src.ID, it.Title)
+				seen, refused, err := releaseSeen(ctx, db, src.ID, it.Title)
 				if err != nil {
 					return err
 				}
 				if !seen {
-					all = append(all, found{src: src, item: it, keys: answer.keys})
+					all = append(all, found{src: src, item: it, keys: answer.keys, relID: refused})
+				} else {
+					drops.add(src, it.Title, dropSeen)
 				}
 			}
 		}
@@ -166,17 +168,19 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			read++
 			s.recovered(ctx, src)
 			for _, it := range items {
-				seen, err := releaseSeen(ctx, db, src.ID, it.Title)
+				seen, refused, err := releaseSeen(ctx, db, src.ID, it.Title)
 				if err != nil {
 					return err
 				}
 				if !seen {
-					all = append(all, found{src: src, item: it, keys: secretValues(cl.cfg)})
+					all = append(all, found{src: src, item: it, keys: secretValues(cl.cfg), relID: refused})
+				} else {
+					drops.add(src, it.Title, dropSeen)
 				}
 			}
 		}
 	}
-	all = dedupe(all)
+	all = dedupeEach(all, func(f found) { drops.add(f.src, f.item.Title, dropSame) })
 	// Nothing to match: skip loading Slots, which at library scale costs one record per episode or track.
 	if len(all) == 0 {
 
@@ -185,6 +189,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			return err
 		}
 		result := map[string]any{"sources_read": read, "releases_new": 0, "releases_stored": 0, "chosen": 0, "held": 0, "held_chosen": grabbed}
+		drops.into(result)
 		if len(failures) > 0 {
 			result["failures"] = failures
 		}
@@ -207,23 +212,22 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	hasShow := slices.ContainsFunc(refs, func(r mediafiles.TitleRef) bool { return r.Kind == "show" })
 	hasArtist := slices.ContainsFunc(refs, func(r mediafiles.TitleRef) bool { return r.Kind == "artist" })
 	byTitle := map[int64][]found{}
+	var unmatched []found
 	for _, f := range all {
-		m := mediafiles.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size}), refs)
-		if m.Title == nil && hasShow {
+		m := matchFeedItem(f.item, refs, hasShow, hasArtist)
+		switch {
+		case m.Title == nil:
+			unmatched = append(unmatched, f)
 
-			// Read again as a show name ("Part 2" before tags, "- 12").
-			m = mediafiles.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Show: true}), refs)
-		}
-		if m.Title == nil && hasArtist {
-
-			// Read again as an album name ("Artist - Album (Year) [FLAC]").
-			m = mediafiles.MatchTitle(releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Music: true}), refs)
-		}
-
-		// A tagged Source's Release goes only to a Title sharing a tag. It is matched against every wanted Title first, so it never lands on a look-alike because the right one was left out.
-		if m.Title != nil && mediafiles.SourceServes(f.src.Tags, m.Title.Tags) {
+		// A tagged Source's Release goes only to a Title sharing a tag, on the Title or its Pick rules. It is matched against every wanted Title first, so it never lands on a look-alike because the right one was left out.
+		case mediafiles.SourceTakesTitle(f.src.Tags, m.Title.Tags, m.Title.RuleTags):
 			byTitle[m.Title.ID] = append(byTitle[m.Title.ID], f)
+		default:
+			drops.add(f.src, f.item.Title, dropSourceTags)
 		}
+	}
+	if err := s.dropUnmatched(ctx, unmatched, drops); err != nil {
+		return err
 	}
 	ctxs := make(map[int64][]slotCtx, len(byTitle))
 	for titleID := range byTitle {
@@ -245,8 +249,14 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	storedID := map[string]int64{}
 	keyOf := func(f found) string { return strconv.FormatInt(f.src.ID, 10) + "|" + f.item.Title }
 	for titleID, fs := range byTitle {
+		if len(ctxs[titleID]) == 0 {
+			for _, f := range fs {
+				drops.add(f.src, f.item.Title, dropNoSlot)
+			}
+			continue
+		}
 		if cs := ctxs[titleID]; len(cs) > 0 && cs[0].ti.Kind == "show" {
-			c1, h1, n, err := s.feedShow(ctx, by, &jobID, cs, fs, storedID, keyOf)
+			c1, h1, n, err := s.feedShow(ctx, by, &jobID, cs, fs, storedID, keyOf, drops)
 			if err != nil {
 				return err
 			}
@@ -262,7 +272,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			continue
 		}
 		for _, c := range ctxs[titleID] {
-			cands := append([]found(nil), fs...)
+			cands := rulesTake(c.pr.Body.Tags, fs)
 			for k := range cands {
 				if id := storedID[keyOf(cands[k])]; id > 0 {
 					cands[k].relID = id
@@ -323,6 +333,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 		return err
 	}
 	result := map[string]any{"sources_read": read, "releases_new": len(all), "releases_stored": stored, "chosen": chosen, "held": held, "held_chosen": grabbed}
+	drops.into(result)
 	if len(failures) > 0 {
 		result["failures"] = failures
 	}
@@ -534,21 +545,39 @@ func (s *Searcher) wantedTitleRefs(ctx context.Context) ([]mediafiles.TitleRef, 
 	if err != nil {
 		return nil, err
 	}
-	refs := make([]mediafiles.TitleRef, 0, len(titles))
-	for _, title := range titles {
-		ref := mediafiles.TitleRef{ID: title.ID, Name: title.Name, Aliases: title.Aliases, Tags: title.Tags}
-		if title.Year != nil {
-			ref.Year = *title.Year
-		}
-		if title.OriginalLanguage != nil {
-			ref.OriginalLanguage = *title.OriginalLanguage
-		}
-		if title.Kind == "show" || title.Kind == "artist" {
-			ref.Kind = title.Kind
-		}
-		refs = append(refs, ref)
+	ruleTags, err := mediafiles.LookingRuleTags(ctx, s.Store.Read(), lookingStateNames())
+	if err != nil {
+		return nil, err
+	}
+	refs := titleRefs(titles)
+	for i := range refs {
+		refs[i].RuleTags = ruleTags[refs[i].ID]
 	}
 	return refs, nil
+}
+
+// dropUnmatched records the Releases that matched no looking Title. Those
+// naming a Title in the Library with nothing wanted are told apart from
+// names the Library does not have, so a missed episode can be traced.
+func (s *Searcher) dropUnmatched(ctx context.Context, fs []found, drops *feedDrops) error {
+	if len(fs) == 0 {
+		return nil
+	}
+	titles, err := database.Select[mediafiles.Title](ctx, s.Store.Read(), "titles", "state = 'active'")
+	if err != nil {
+		return err
+	}
+	refs := titleRefs(titles)
+	hasShow := slices.ContainsFunc(refs, func(r mediafiles.TitleRef) bool { return r.Kind == "show" })
+	hasArtist := slices.ContainsFunc(refs, func(r mediafiles.TitleRef) bool { return r.Kind == "artist" })
+	for _, f := range fs {
+		why := dropNoTitle
+		if matchFeedItem(f.item, refs, hasShow, hasArtist).Title != nil {
+			why = dropTitleNotLooking
+		}
+		drops.add(f.src, f.item.Title, why)
+	}
+	return nil
 }
 
 // storedFound turns a held Release back into a candidate. Its link is already stored without keys.
@@ -648,4 +677,16 @@ func movieOut(t mediafiles.Title) *time.Time {
 // lookingStateNames is lookingStates as the strings the store compares with.
 func lookingStateNames() [3]string {
 	return [3]string{string(lookingStates[0]), string(lookingStates[1]), string(lookingStates[2])}
+}
+
+// rulesTake keeps the feed Releases whose Source these Pick rules may use,
+// the same rule Search follows when it picks Sources to ask.
+func rulesTake(rules []string, fs []found) []found {
+	out := make([]found, 0, len(fs))
+	for _, f := range fs {
+		if mediafiles.RulesTakeSource(f.src.Tags, rules) {
+			out = append(out, f)
+		}
+	}
+	return out
 }

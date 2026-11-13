@@ -222,7 +222,7 @@
 	<form id="adopt-copy-form" class="sheet-form" onsubmit={adopt}>
 		<p class="small muted"><Words key="mediafiles.copy.adoptNote" vars={{ folder: shortFolder(adoptVersion?.folder_path) }} /></p>
 		{#if session.can('manage_library')}<details class="small muted"><summary>{t('mediafiles.copy.details')}</summary><span class="mono path">{adoptVersion?.folder_path}</span></details>{/if}
-		<div class="field"><label for="adopt-path">{t('mediafiles.copy.relativePath')}</label><input id="adopt-path" class="input" bind:value={adoptPath} required /></div>
+		<div class="field"><label for="adopt-path">{t('mediafiles.copy.relativePath')}</label><input id="adopt-path" class="input" dir="ltr" bind:value={adoptPath} required /></div>
 
 		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 	</form>

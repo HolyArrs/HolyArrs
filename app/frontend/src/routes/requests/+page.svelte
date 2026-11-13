@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { createAskChoices } from '#lib/requests/index.ts';
+	import { createAskChoices, qualityTag } from '#lib/requests/index.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { createDeclineDialog } from '#lib/requests/index.ts';
 	import { createAskLive } from '#lib/requests/index.ts';
 	import { createTakeBack } from '#lib/requests/index.ts';
@@ -45,7 +46,7 @@
 	let person = $state(0);
 	const ofKind = $derived((kind === 'all' ? asks : asks.filter((a) => a.kind === kind)).filter((a) => !person || askedByOne(a, person)));
 	// A decision waiting out its Undo time already shows in its new tab.
-	type Pending = { mode: 'approve' | 'turn_down'; note: string; rulesId: number; langs: string[]; seasons?: number[]; episodes?: { season: number; episodes: number[] }[]; albums?: string[]; songs?: { album: string; recordings: string[] }[]; timer: ReturnType<typeof setTimeout>; sending?: boolean };
+	type Pending = { mode: 'approve' | 'turn_down'; note: string; rulesId: number; quality?: string; langs: string[]; seasons?: number[]; episodes?: { season: number; episodes: number[] }[]; albums?: string[]; songs?: { album: string; recordings: string[] }[]; timer: ReturnType<typeof setTimeout>; sending?: boolean };
 	let pending = $state<Record<number, Pending>>({});
 	const viewOf = (a: Ask): Ask => {
 		const p = pending[a.id];
@@ -80,12 +81,14 @@
 		p.sending = true;
 		try {
 			const path = `/asks/${id}/${p.mode === 'approve' ? 'approve' : 'turn-down'}`;
-			const body = p.mode === 'approve' ? { note: p.note, library_folder_id: 0, pick_rules_id: p.rulesId, ...(p.langs.length ? { audio_languages: p.langs } : {}), ...(p.seasons?.length || p.episodes?.length ? { seasons: p.seasons ?? [] } : {}), ...(p.episodes?.length ? { episodes: p.episodes } : {}), ...(p.albums?.length ? { albums: p.albums } : {}), ...(p.songs?.length ? { songs: p.songs } : {}) } : { note: p.note };
-			const r = await api.post<{ ask: Ask }>(path, body);
+			const body = p.mode === 'approve' ? { note: p.note, library_folder_id: 0, pick_rules_id: p.rulesId, ...(p.quality ? { quality: p.quality } : {}), ...(p.langs.length ? { audio_languages: p.langs } : {}), ...(p.seasons?.length || p.episodes?.length ? { seasons: p.seasons ?? [] } : {}), ...(p.episodes?.length ? { episodes: p.episodes } : {}), ...(p.albums?.length ? { albums: p.albums } : {}), ...(p.songs?.length ? { songs: p.songs } : {}) } : { note: p.note };
+			const r = await api.post<{ ask: Ask; notice?: string }>(path, body);
 			// A list load that started before this answer is older than it; drop that load.
 			loadGen++;
 			const i = asks.findIndex((x) => x.id === r.ask.id);
 			if (i >= 0) asks[i] = r.ask;
+			// The quality picked could not be used (that copy was there): say so.
+			if (r.notice) toasts.push(t('requests.page.approvedToast', { one: r.ask.name }), 'info', { body: serverWords(r.notice) });
 			void refreshInbox();
 		} catch (err) {
 			const a = asks.find((x) => x.id === id);
@@ -117,7 +120,7 @@
 			if (list.length && !list.some((a) => pending[a.id])) toasts.push(t(mode === 'approve' ? 'requests.page.couldNotApprove' : 'requests.page.couldNotDecline', { name: list.length === 1 ? list[0].name : t('requests.page.nRequests', { n: list.length }) }), 'fail', { body: t('requests.page.answeredAlready') });
 			return;
 		}
-		for (const id of ids) pending[id] = { mode, note: why, rulesId: opt?.rulesId ?? 0, langs: opt?.langs ?? [], seasons: opt?.seasons, episodes: opt?.episodes, albums: opt?.albums, songs: opt?.songs, timer: setTimeout(() => void commit(id), UNDO_MS) };
+		for (const id of ids) pending[id] = { mode, note: why, rulesId: opt?.rulesId ?? 0, quality: opt?.quality, langs: opt?.langs ?? [], seasons: opt?.seasons, episodes: opt?.episodes, albums: opt?.albums, songs: opt?.songs, timer: setTimeout(() => void commit(id), UNDO_MS) };
 		chosen = new Set();
 		// Words follow the asks actually decided (some in the list may be answered already).
 		const one = ids.length === 1 ? (list.find((a) => a.id === ids[0])?.name ?? t('requests.page.theRequest')) : t('requests.page.nRequests', { n: ids.length });
@@ -157,21 +160,9 @@
 	let takingBack = $state<Set<number>>(new Set());
 	let myReports = $state(0);
 
-	// Approve and turn down dialogs.
-	let decideOpen = $state(false);
-	let picked = $state<Ask | null>(null);
-	let mode = $state<'approve' | 'turn_down'>('approve');
-	let note = $state('');
+	// The folders and Pick rules the request window offers.
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
-	let folderId = $state(0);
-	let rulesId = $state(0);
-	let busy = $state(false);
-	let dialogError = $state('');
-	// The approve dialog offers the folders and Pick rules for the ask's kind.
-	const pickKind = $derived(picked?.kind === 'show' ? 'show' : picked?.kind === 'artist' ? 'music' : 'movie');
-	const kindFolders = $derived(folders.filter((f) => f.kind === pickKind));
-	const kindRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes(pickKind)));
 
 	let loadGen = 0;
 	/** Reads the list; quiet (a poll) keeps a failed read to itself. */
@@ -225,11 +216,11 @@
 				.then((r) => (rules = r.pick_rules))
 				.catch(() => {});
 		}
-		// The Requests page's own Pick rules, to name the default rule (settings people only).
-		if (session.can('settings')) {
+		// The lines of what people can ask for, for the Quality row when approving.
+		if (approver) {
 			api
-				.get<Record<string, unknown>>('/settings/asks')
-				.then((r) => (askChoices.askSettings = r))
+				.get<AskLimit>('/asks/limit')
+				.then((r) => (askChoices.lines = r.qualities ?? { movie: [], show: [] }))
 				.catch(() => {});
 		}
 		void askLive.loadLive();
@@ -257,44 +248,6 @@
 		load,
 	};
 	const askLive = createAskLive(askLiveCtx);
-
-	function open(a: Ask, m: 'approve' | 'turn_down') {
-		picked = a;
-		mode = m;
-		note = '';
-		dialogError = '';
-		folderId = 0;
-		rulesId = 0;
-		decideOpen = true;
-	}
-
-	async function decide(e: SubmitEvent) {
-		e.preventDefault();
-		if (!picked) return;
-		busy = true;
-		dialogError = await decideNow(picked, mode, note, folderId, rulesId);
-		if (!dialogError) decideOpen = false;
-		busy = false;
-	}
-
-	/** Approves (with a Library folder and Pick rules) or turns down one ask straight away; '' when done, else the error. */
-	async function decideNow(a: Ask, mode: 'approve' | 'turn_down', note: string, folderId: number, rulesId: number): Promise<string> {
-		try {
-			const path = `/asks/${a.id}/${mode === 'approve' ? 'approve' : 'turn-down'}`;
-			const body = mode === 'approve' ? { note, library_folder_id: folderId, pick_rules_id: rulesId } : { note };
-			const r = await api.post<{ ask: Ask }>(path, body);
-			// A list load that started before this answer is older than it; drop that load.
-			loadGen++;
-			const i = asks.findIndex((x) => x.id === r.ask.id);
-			if (i >= 0) asks[i] = r.ask;
-			// Short, like the card: what happens next is on the Processing tab.
-			toasts.push(t(mode === 'approve' ? 'requests.page.approvedToast' : 'requests.page.declinedToast', { one: r.ask.name }), 'ok');
-			void refreshInbox();
-			return '';
-		} catch (err) {
-			return message(err);
-		}
-	}
 
 	// Take back asks first in a confirm sheet.
 	const takeBackFlowCtx = {
@@ -380,12 +333,10 @@
 		approveWith: (a, opt) => act([a], 'approve', opt.note ?? '', opt),
 		turnDown: (list) => declineFlow.askDecline(list),
 		turnDownWith: (a, note) => act([a], 'turn_down', note),
-		withOptions: (a) => open(a, 'approve'),
 		review: () => {},
 		takeBack: (a) => takeBackFlow.askTakeBack(a),
-		decideNow,
 		foldersFor: askChoices.foldersOf,
-		rulesFor: askChoices.rulesOf,
+		qualityRow: askChoices.qualityRowOf,
 		who: (a) => {
 			const p = a.people[0] ?? a.asked_by;
 			const m = askChoices.members[p.id];
@@ -407,7 +358,6 @@
 		want: wantDetails,
 		info: askInfo,
 		episodes: seasonEpisodes,
-		defaultRule: askChoices.defaultRuleOf,
 		get kind() { return kind; },
 		setKind: (k) => ((kind = k), (chosen = new Set())),
 		get person() { return person; },
@@ -522,7 +472,7 @@
 						<div class="ban-cap">
 							{#if fresh.has(a.id)}<span class="new-mark" data-testid="ask-new">{t('requests.board.new')}</span>{/if}
 							<h2 class="ban-t"><a href={to(askHref(a))}>{a.name}</a></h2>
-							<span class="ban-f">{#if a.kind === 'show'}<span data-testid="ask-kind">{t('requests.kind.show')}</span>{:else if a.kind === 'artist'}<span data-testid="ask-kind">{t('requests.kind.artist')}</span>{:else}{t('requests.kind.movie')}{/if}{#if a.year}{' · '}{a.year}{/if}</span>
+							<span class="ban-f">{#if qualityTag(a)}<span class="ap4k-tag" title={t('requests.board.qualityTitle', { quality: qualityTag(a) })}>{qualityTag(a)}</span>{/if}{#if a.kind === 'show'}<span data-testid="ask-kind">{t('requests.kind.show')}</span>{:else if a.kind === 'artist'}<span data-testid="ask-kind">{t('requests.kind.artist')}</span>{:else}{t('requests.kind.movie')}{/if}{#if a.year}{' · '}{a.year}{/if}</span>
 						</div>
 					</div>
 					<div class="sheet-b">
@@ -592,57 +542,6 @@
 {/if}
 
 <Sheet
-	bind:open={decideOpen}
-	title={picked ? t(mode === 'approve' ? 'requests.page.approveTitle' : 'requests.page.declineTitle', { name: `${picked.name}${askCards.year(picked)}` }) : t('requests.page.approveOrDecline')}
-	description={picked ? (askCards.what(picked) ? t('requests.page.descFor', { by: askCards.askedBy(picked), what: askCards.what(picked) }) : t('requests.page.desc', { by: askCards.askedBy(picked) })) : undefined}
->
-	{#if picked}
-		<form class="decide" onsubmit={decide}>
-			{#if mode === 'approve' && kindFolders.length > 0}
-				<div class="field">
-					<label for="ap-folder">{t('requests.add.folder')}</label>
-					<select id="ap-folder" class="input" bind:value={folderId}>
-						<option value={0}>{t('requests.window.default')}</option>
-						{#each kindFolders as f (f.id)}
-							<option value={f.id}>{f.label || f.path} ({f.path})</option>
-						{/each}
-					</select>
-				</div>
-				<div class="field">
-					<label for="ap-rules">{t('requests.window.quality')}</label>
-					<select id="ap-rules" class="input" bind:value={rulesId}>
-						<option value={0}>{t('requests.window.default')}</option>
-						{#each kindRules as r (r.id)}
-							<option value={r.id}>{r.name}</option>
-						{/each}
-					</select>
-				</div>
-			{/if}
-			<div class="field">
-				<label for="ap-note">{mode === 'approve' ? t('requests.page.noteOptional') : t('requests.page.reasonSeen')}</label>
-				<textarea id="ap-note" class="input" rows="3" maxlength="500" bind:value={note}></textarea>
-			</div>
-			{#if mode === 'approve'}
-				<p class="hint">
-					{picked.kind === 'show'
-						? t('requests.page.hintShow', { what: askCards.what(picked) })
-						: picked.kind === 'artist'
-							? t('requests.page.hintArtist', { what: askCards.what(picked) })
-							: t('requests.page.hintMovie')}
-				</p>
-			{/if}
-			{#if dialogError}<p class="form-error" role="alert">{dialogError}</p>{/if}
-			<div class="decide-actions">
-				<Button variant="plain" type="button" onclick={() => (decideOpen = false)}>{t('requests.add.cancel')}</Button>
-				<Button variant={mode === 'approve' ? 'primary' : 'destructive'} type="submit" {busy}>
-					{mode === 'approve' ? t('requests.window.approve') : t('requests.window.decline')}
-				</Button>
-			</div>
-		</form>
-	{/if}
-</Sheet>
-
-<Sheet
 	bind:open={declineFlow.declineOpen}
 	size="sm"
 	title={declineFlow.declineList.length === 1 ? t('requests.page.declineOne', { name: `${declineFlow.declineList[0].name}${askCards.year(declineFlow.declineList[0])}` }) : t('requests.page.declineMany', { n: declineFlow.declineList.length })}
@@ -684,7 +583,6 @@
 	.tick-all input { margin-top: 0; }
 	.pending { font: var(--t-footnote); }
 	.decide { display: flex; flex-direction: column; gap: 14px; }
-	.decide .field + .field { margin-top: 0; }
 	textarea.input { height: auto; padding-top: 10px; resize: vertical; }
 	.why-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 	.why-chip { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--text); font: var(--t-footnote); font-weight: 600; cursor: pointer; transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); }
@@ -751,6 +649,7 @@
 	.ban-t a:focus-visible { outline: none; }
 	.mc:has(.ban-t a:focus-visible) { box-shadow: 0 0 0 2px var(--text), 0 24px 48px -24px rgb(0 0 0 / 0.6); }
 	.ban-f { font: 600 12px/1.3 var(--font-ui); color: rgb(255 255 255 / 0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.ap4k-tag { display: inline-block; margin-right: 6px; padding: 0 5px; border: 1px solid rgb(255 255 255 / 0.7); border-radius: 4px; background: rgb(0 0 0 / 0.35); color: #fff; font: 800 10.5px/1.5 var(--font-ui); letter-spacing: 0.04em; vertical-align: 1px; }
 	/* The glass panel redefines --text, --text-muted and --bg so the ink reads on the blurred art. */
 	.sheet-b { --blur: blur(22px) saturate(1.3); --text: light-dark(#14161c, #f5f5f7); --text-muted: light-dark(#1c2029, rgb(235 235 245 / 0.8)); --bg: light-dark(#eef0f5, #17171b); --gl-fail: light-dark(#86160b, #ff8f8a); --g1: light-dark(rgb(255 255 255 / 0.72), rgb(34 34 40 / 0.7)); --g2: light-dark(rgb(246 248 252 / 0.7), rgb(10 10 13 / 0.8)); --g3: light-dark(rgb(255 255 255 / 0.06), transparent); --edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.16)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 0.07), rgb(255 255 255 / 0.05)); --st-wait: light-dark(#8a5a00, #ffb340); --st-wait-ink: light-dark(#5c3b00, #ffd699); --st-ok: light-dark(#18843f, #34c26a); --st-ok-ink: light-dark(#073d1b, #a6efc0); --st-go: light-dark(#1d5fd6, #4b8dff); --st-go-ink: light-dark(#072a6b, #b5d1ff); --st-bad: light-dark(#a3170c, #ff6b63); --st-bad-ink: light-dark(#5e0e06, #ffb3ae); --st-soft: light-dark(#5a6070, #9aa0ad); --st-soft-ink: var(--text); position: relative; z-index: 1; display: flex; flex-direction: column; gap: 10px; flex: 1; margin: 0 var(--gap) var(--gap); padding: 12px; border-radius: calc(20px - var(--gap)); background: linear-gradient(180deg, var(--g1), var(--g2)), linear-gradient(var(--g3), var(--g3)); color: var(--text); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--edge); }
 	:global(:root[data-theme='light']) .sheet-b { --blur: blur(30px) saturate(1.3) brightness(1.14); }

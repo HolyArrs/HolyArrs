@@ -8,7 +8,7 @@
 	import type { TrackView } from './types.ts';
 	import { albumCover, albumStateOf, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle as toggleKind } from './labels.ts';
 	import { ReleaseSheet, DeleteSheet, splitSteps, type RenameStep, RenamePreview } from '#lib/mediafiles/index.ts';
-	import { HistoryLine as CompactRow, isRoutine, groupDownloads } from '#lib/downloads/index.ts';
+	import { HistoryLine as CompactRow, isRoutine, groupDownloads, NoDownloaderNote } from '#lib/downloads/index.ts';
 	import { goto } from '$app/navigation';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { api, message } from '#lib/core/api.ts';
@@ -255,7 +255,7 @@
 					<p class="al-st-title"><span class="dot {missing ? 'part' : 'have'}" aria-hidden="true"></span>{t('music.ofTracks', { have, total })}</p>
 					<p class="al-st-sub">{fullAlbums === 1 ? t('music.fullRelease', { n: fullAlbums }) : t('music.fullReleases', { n: fullAlbums })}</p>
 					<!-- Why nothing is searched yet (gate, kinds, keep off), as on movie and show pages. -->
-					{#if ti.gate_reason}<p class="al-why" data-testid="gate-reason">{ti.gate_reason}</p>{/if}
+					{#if ti.gate_reason}<p class="al-why" data-testid="gate-reason">{ti.gate_reason}</p>{/if}<NoDownloaderNote kind={ti.no_downloader} {manage} />
 					<p class="al-facts">{#each facts as f (f.k)}<span class="al-fact" title={f.title ?? f.v}><Icon name={f.icon} size={13} />{f.v}</span>{/each}</p>
 				</div>
 				{#if manage}

@@ -30,6 +30,7 @@ describe('import files by hand', () => {
 		expect(blocker(show({ kind: 'audio', note: 'music is not imported by hand yet' }), null)).toMatch(/music/);
 		expect(blocker(f, { ...startPick(f)!, episode: undefined })).toMatch(/season and episode/);
 		expect(blocker(f, { ...startPick(f)!, has_file: true })).toMatch(/already has a file/);
+		expect(blocker(f, { ...startPick(f)!, has_file: true, replace: true })).toBe('');
 		expect(blocker(show({ in_library: true }), startPick(f))).toMatch(/Library/);
 	});
 
@@ -50,6 +51,17 @@ describe('import files by hand', () => {
 			{ path: a.path, title_id: 7, version_id: 3, season: 1, episode: 2 },
 			{ path: b.path, title_id: 9 }
 		]);
+	});
+
+	it('sends replace only for a file that has one', () => {
+		const a = show({ path: '/dl/movie.mkv', guess: { title_id: 9, title_name: 'Dune', title_kind: 'movie', confidence: 1, has_file: true } });
+		const b = show({ path: '/dl/other.mkv', guess: { title_id: 8, title_name: 'Arrival', title_kind: 'movie', confidence: 1 } });
+		const picks = { [a.path]: { ...startPick(a)!, replace: true }, [b.path]: { ...startPick(b)!, replace: true } };
+		expect(itemsFor([a, b], picks, { [a.path]: true, [b.path]: true })).toEqual([
+			{ path: a.path, title_id: 9, replace: true },
+			{ path: b.path, title_id: 8 }
+		]);
+		expect(itemsFor([a], { [a.path]: startPick(a) }, { [a.path]: true })).toEqual([]);
 	});
 
 	it('words results', () => {

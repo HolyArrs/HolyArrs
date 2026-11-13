@@ -6,12 +6,14 @@ import type { AskInfo, EpisodeInfo } from './inbox.ts';
 import type { LifeFacts } from './lifecycle.ts';
 import type { TitleDetails } from '../metadata/index.ts';
 import type { Ask } from '../core/types.ts';
-import type { LibraryFolder, PickRulesView } from '../core/types.ts';
+import type { LibraryFolder } from '../core/types.ts';
+import type { QualityPill } from './quality-row.ts';
 import { detailPath } from '../metadata/index.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
-/** The approver's choices for one ask: Pick rules (0 is the default), audio languages (empty is any), a note, and the seasons or albums kept (absent means all of the ask). */
+/** The approver's choices for one ask: the line of what people can ask for (absent: as asked), other Pick rules on the main copy (0: the line's), audio languages (empty is any), a note, and the seasons or albums kept (absent means all of the ask). */
 export interface DecideOptions {
+	quality?: string;
 	rulesId: number;
 	langs: string[];
 	note?: string;
@@ -75,16 +77,13 @@ export interface BoardCtx {
 	turnDown(list: Ask[]): void;
 	/** Turn down one ask with this note straight into the Undo toast. */
 	turnDownWith(a: Ask, note: string): void;
-	/** The Approve with options dialog. */
-	withOptions(a: Ask): void;
 	/** The review sheet for one ask. */
 	review(a: Ask, trigger?: HTMLElement): void;
 	/** Take back one of my own waiting asks (confirm sheet). */
 	takeBack(a: Ask): void;
-	/** Decide straight away with options and a note; resolves to an error message, or '' when done. */
-	decideNow(a: Ask, mode: 'approve' | 'turn_down', note: string, folderId: number, rulesId: number): Promise<string>;
 	foldersFor(a: Ask): LibraryFolder[];
-	rulesFor(a: Ask): PickRulesView[];
+	/** The Quality row when approving: the lines, other Pick rules and the 4K line, with the asked line. */
+	qualityRow(a: Ask): { pills: QualityPill[]; asked: string };
 	who(a: Ask): Asker;
 	what(a: Ask): string;
 	year(a: Ask): string;
@@ -103,8 +102,6 @@ export interface BoardCtx {
 	info(a: Ask): AskInfo | null;
 	/** One season's episodes (null until known); asks once. */
 	episodes(tmdb: string, season: number): EpisodeInfo[] | null;
-	/** The Requests page's default Pick rules for the ask's kind, by name ('' when unknown). */
-	defaultRule(a: Ask): string;
 	readonly kind: 'all' | 'movie' | 'show' | 'artist';
 	setKind(k: 'all' | 'movie' | 'show' | 'artist'): void;
 	/** Asked by: a person's id, 0 for everyone. */

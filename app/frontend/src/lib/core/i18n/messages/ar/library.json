@@ -166,6 +166,13 @@
 	"library.import.followHint": "اعرضها في تقويمي.",
 	"library.import.adoptOne": "ضمّ {word} واحد",
 	"library.import.adoptMany": "ضمّ {n} من {words}",
+	"library.import.searchFolders": "ابحث في المجلدات",
+	"library.import.folderCountOne": "مجلد واحد",
+	"library.import.folderCountMany": "المجلدات: {n}",
+	"library.import.titleAndFolder": "العنوان والمجلد",
+	"library.import.matchFor": "المطابقة لـ {folder}",
+	"library.import.seeLarge": "اعرض ملصق {name} بحجم كبير",
+	"library.import.noneMatch": "لا توجد مجلدات مطابقة.",
 	"library.report.keep.one": "{n} عمل مواكَب للجديد",
 	"library.report.keep.many": "{n} أعمال مواكَبة للجديد",
 	"library.report.keep.partOne": "{ok} من {total} عمل مواكَب للجديد",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "تأتي أول قراءة خلال 30 دقيقة.",
 	"library.stats.watchedHelp": "من سجل التشغيل في Plex وJellyfin وEmby. يعدّ Plex مرات التشغيل فقط، فلا تظهر العناوين المعلَّمة كمشاهدة يدويًا.",
 	"library.stats.lastRead": "آخر قراءة {ago}.",
-	"library.stats.noMatch": "آخر قراءة {ago}. لا شيء مما شوهد يطابق مكتبتك بعد.",
+	"library.stats.noMatch": "فُحص سجل المشاهدة {ago}. لا شيء مما شوهد يطابق مكتبتك بعد.",
 	"library.stats.notLinked": "غير مرتبط",
 	"library.stats.lastWatched": "آخر مشاهدة {ago}",
 	"library.stats.unit.movie.one": "الأفلام: {n}",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "الحلقات: {n}",
 	"library.stats.unit.episode.other": "الحلقات: {n}",
 	"library.stats.unit.play.one": "مرات التشغيل: {n}",
-	"library.stats.unit.play.other": "مرات التشغيل: {n}"
+	"library.stats.unit.play.other": "مرات التشغيل: {n}",
+	"library.byHand.askReplaceOne": "ملف واحد يحل محل ملف موجود في المكتبة. ينتقل الملف القديم إلى المحذوف حديثًا. هل تريد الاستيراد؟",
+	"library.byHand.askReplaceMany": "{n} ملفات تحل محل ملفات موجودة في المكتبة. تنتقل الملفات القديمة إلى المحذوف حديثًا. هل تريد الاستيراد؟"
 }

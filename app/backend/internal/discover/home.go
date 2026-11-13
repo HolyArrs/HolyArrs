@@ -177,7 +177,7 @@ func (h *Handlers) home(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 	}
-	run(func() (err error) { library, err = homeLibraryCounts(ctx, db, where, args, kinds); return })
+	run(func() (err error) { library, err = homeLibraryCounts(ctx, db, where, args, now, kinds); return })
 	wg.Wait()
 	if firstErr != nil {
 		webserver.Internal(w, "discover", firstErr)
@@ -241,7 +241,7 @@ func (h *Handlers) homeKinds() []string {
 // or included albums; Items are movies, episodes or tracks. OnDisk,
 // Missing and Downloading count items of the main copy: on disk has a
 // file, missing is out (kept up to date) with no file and nothing on the
-// way, downloading is on its way. Size is the bytes of those files.
+// way (an episode is out once its air time has passed, as on the show page), downloading is on its way. Size is the bytes of those files.
 type homeLibraryKind struct {
 	Titles      int   `json:"titles"`
 	Parts       int   `json:"parts"`
@@ -255,7 +255,7 @@ type homeLibraryKind struct {
 // homeLibraryCounts counts the Library per kind in one query, for the kinds
 // that are on (a kind that is on but empty is all zeros). Dropped seasons,
 // albums and episodes, and albums left out of an artist, are not counted.
-func homeLibraryCounts(ctx context.Context, db *sql.DB, where string, args []any, kinds []string) (map[string]homeLibraryKind, error) {
+func homeLibraryCounts(ctx context.Context, db *sql.DB, where string, args []any, now time.Time, kinds []string) (map[string]homeLibraryKind, error) {
 	out := map[string]homeLibraryKind{}
 	for _, k := range kinds {
 		out[k] = homeLibraryKind{}
@@ -268,14 +268,14 @@ func homeLibraryCounts(ctx context.Context, db *sql.DB, where string, args []any
 	rows, err := db.QueryContext(ctx, `WITH mv AS (
 			SELECT title_id, id FROM (SELECT v.title_id, v.id, row_number() OVER (PARTITION BY v.title_id ORDER BY v.is_main DESC, v.id) AS rn FROM versions v) WHERE rn = 1),
 		gi AS (
-			SELECT i.id, i.title_id, i.part_id, i.keep_up_to_date FROM items i
+			SELECT i.id, i.title_id, i.part_id, i.kind, i.air_date, i.keep_up_to_date FROM items i
 			WHERE i.dropped_at IS NULL AND (i.part_id IS NULL OR EXISTS (SELECT 1 FROM parts x WHERE x.id = i.part_id AND x.title_id = i.title_id AND x.dropped_at IS NULL AND (x.kind != 'album' OR x.included = 1))))
 		SELECT t.kind, count(DISTINCT t.id),
 			count(DISTINCT CASE WHEN (p.kind = 'season' AND p.number > 0) OR p.kind = 'album' THEN p.id END),
 			count(i.id),
 			COALESCE(sum(s.state IN ('in_library', 'better_wanted')), 0),
-			COALESCE(sum((s.state = 'wanted' AND i.keep_up_to_date = 1) OR s.state IN ('searching', 'held', 'failed', 'needs_a_decision', 'rejected')), 0),
-			COALESCE(sum(s.state IN ('chosen', 'downloading', 'stalled', 'importing')), 0),
+			COALESCE(sum((s.state IN ('wanted', 'chosen') AND i.keep_up_to_date = 1 AND (i.kind != 'episode' OR i.air_date <= ?)) OR s.state IN ('searching', 'held', 'failed', 'needs_a_decision', 'rejected')), 0),
+			COALESCE(sum(s.state IN ('downloading', 'stalled', 'importing')), 0),
 			COALESCE(sum(CASE WHEN f.state = 'present' AND s.state IN ('in_library', 'better_wanted') THEN f.size END), 0)
 		FROM titles t
 		LEFT JOIN gi i ON i.title_id = t.id
@@ -284,7 +284,7 @@ func homeLibraryCounts(ctx context.Context, db *sql.DB, where string, args []any
 		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = mv.id
 		LEFT JOIN files f ON f.id = s.file_id
 		WHERE `+where+`
-		GROUP BY t.kind`, args...)
+		GROUP BY t.kind`, append([]any{database.FormatTime(now)}, args...)...)
 	if err != nil {
 		return nil, err
 	}

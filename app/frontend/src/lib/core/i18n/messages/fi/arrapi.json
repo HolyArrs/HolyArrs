@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Tekoälysovellukset ovat pois käytöstä. Salliminen ottaa ne käyttöön.",
 	"arrapi.ai.offOther": "Tekoälysovellukset ovat pois käytöstä. Pyydä omistajaa ottamaan ne käyttöön ja yritä sitten uudelleen.",
 	"arrapi.ai.allow": "Salli",
-	"arrapi.ai.cancel": "Peruuta"
+	"arrapi.ai.cancel": "Peruuta",
+	"arrapi.seerr.sentTitle": "Muiden sovellusten lähettämät",
+	"arrapi.seerr.sentHint": "Muodot ja profiilit, jotka Profilarrin kaltaiset sovellukset lähettivät. Täällä vain luettavissa.",
+	"arrapi.seerr.sentFormat": "Muoto",
+	"arrapi.seerr.sentProfile": "Profiili",
+	"arrapi.seerr.sentUpdated": "päivitetty {ago}"
 }

@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "புதிய பாதை",
 	"settings.libraryFolders.changePathHint": "முதலில் கோப்புகளை அங்கே நகர்த்துங்கள். HolyArrs ஒவ்வொரு கோப்பையும் சரிபார்க்கும்; எதையும் நகர்த்தாது.",
 	"settings.libraryFolders.checkingFiles": "கோப்புகளைச் சரிபார்க்கிறது…",
-	"settings.libraryFolders.pathChanged": "பாதை மாற்றப்பட்டது"
+	"settings.libraryFolders.pathChanged": "பாதை மாற்றப்பட்டது",
+	"settings.libraryFolders.sideFiles": "வசனக் கோப்புகள்",
+	"settings.libraryFolders.sideFilesDesc": "பதிவிறக்கத்துடன் வரும் வசனக் கோப்புகளை வீடியோவின் அருகில் நூலகத்திற்குக் கொண்டுவரலாம்.",
+	"settings.libraryFolders.sideOn": "வசனக் கோப்புகளையும் கொண்டுவா",
+	"settings.libraryFolders.sideOnHint": "நூலகத்தில் ஏற்கனவே உள்ள கோப்பு ஒருபோதும் மாற்றப்படாது.",
+	"settings.libraryFolders.sideTypes": "கோப்பு வகைகள்",
+	"settings.libraryFolders.sideTypesHint": "வகைகளைக் காற்புள்ளியால் பிரிக்கவும், எ.கா. srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs-க்கு {path} தெரியவில்லை. அதன் கண்டெய்னரில் மவுண்ட் செய்த கோப்புறைகள் மட்டுமே அதற்குத் தெரியும். {path}:{inside} போன்ற ஒரு வால்யூமைச் சேர்த்து, இங்கே {inside} ஐப் பயன்படுத்துங்கள்."
 }

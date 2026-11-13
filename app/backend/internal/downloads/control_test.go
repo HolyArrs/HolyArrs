@@ -36,6 +36,7 @@ func TestQbitControlsSendTheRightActions(t *testing.T) {
 	for _, f := range []func() error{
 		func() error { return q.PauseItem(ctx, strings.ToUpper(hashA)) },
 		func() error { return q.ResumeItem(ctx, hashA) },
+		// No category known: Pause all and Resume all touch nothing.
 		func() error { return q.PauseAll(ctx) },
 		func() error { return q.ResumeAll(ctx) },
 		func() error { return q.Recheck(ctx, hashA) },
@@ -49,7 +50,6 @@ func TestQbitControlsSendTheRightActions(t *testing.T) {
 	}
 	rc.saw(t,
 		"torrents/stop?hashes="+hashA, "torrents/start?hashes="+hashA,
-		"torrents/stop?hashes=all", "torrents/start?hashes=all",
 		"torrents/recheck?hashes="+hashA, "torrents/reannounce?hashes="+hashA,
 		"torrents/topPrio?hashes="+hashA,
 		"transfer/setDownloadLimit?limit=1048576", "transfer/setUploadLimit?limit=0")
@@ -72,10 +72,10 @@ func TestQbitOldServerFallsBackToPauseResume(t *testing.T) {
 	if err := q.PauseItem(context.Background(), hashA); err != nil {
 		t.Fatal(err)
 	}
-	if err := q.ResumeAll(context.Background()); err != nil {
+	if err := q.ResumeItem(context.Background(), hashA); err != nil {
 		t.Fatal(err)
 	}
-	rc.saw(t, "torrents/stop?hashes="+hashA, "torrents/pause?hashes="+hashA, "torrents/start?hashes=all", "torrents/resume?hashes=all")
+	rc.saw(t, "torrents/stop?hashes="+hashA, "torrents/pause?hashes="+hashA, "torrents/start?hashes="+hashA, "torrents/resume?hashes="+hashA)
 }
 
 func TestQbitMoveTopWithQueueOff(t *testing.T) {

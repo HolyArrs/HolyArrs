@@ -50,7 +50,8 @@ func TestDownloadersKeptByRTorrentMigration(t *testing.T) {
 	attempts := downloaderRows(t, old.Read(), "SELECT * FROM downloader_attempts ORDER BY id")
 	_ = old.Close()
 
-	s, err := Open(dir, Options{})
+	// Up to 0116: later migrations may add Downloader columns of their own.
+	s, err := Open(dir, Options{MainMigrations: upTo(t, 116)})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -12,7 +12,7 @@
 	"health.check.freeSpace": "Freier Platz",
 	"health.check.update": "Update",
 	"health.check.waiting": "Downloads warten auf Dateien",
-	"health.check.clearWaiting": "Downloads warten aufs Aufräumen",
+	"health.check.clearWaiting": "Importierte Downloads noch in einem Downloader",
 	"health.check.saveFolder": "Speicherordner für",
 	"health.check.saveFolderWhy": "{app} hat keinen Speicherordner, daher kann HolyArrs die fertigen Downloads nicht importieren. Füge unter Einstellungen › Downloader ein Pfadpaar hinzu.",
 	"health.day.ahead": "{count} voraus",
@@ -88,7 +88,7 @@
 	"health.kind.trailers": "Trailer-Leser",
 	"health.kind.update": "Update",
 	"health.kind.waitingDownloads": "Downloads warten auf Dateien",
-	"health.kind.clearWaiting": "Downloads warten aufs Aufräumen",
+	"health.kind.clearWaiting": "Importierte Downloads noch in einem Downloader",
 	"health.kind.saveFolder": "Speicherordner des Downloaders",
 	"health.link.downloader": "Downloader",
 	"health.link.mediaServer": "Medienserver",
@@ -264,5 +264,12 @@
 	"health.word.broken": "Defekt",
 	"health.word.notSent": "Noch nicht gesendet",
 	"health.word.notSynced": "Noch nicht abgeglichen",
-	"health.word.working": "Läuft"
+	"health.word.working": "Läuft",
+	"health.check.usenetDl": "Usenet-Downloader",
+	"health.check.torrentDl": "Torrent-Downloader",
+	"health.check.noUsenetDl": "Deine Quellen finden Usenet-Downloads, aber kein Usenet-Downloader ist eingerichtet, daher kann keiner gesendet werden. Füge unter Einstellungen › Downloader einen hinzu.",
+	"health.check.noTorrentDl": "Deine Quellen finden Torrent-Downloads, aber kein Torrent-Downloader ist eingerichtet, daher kann keiner gesendet werden. Füge unter Einstellungen › Downloader einen hinzu.",
+	"health.check.sameDownloader": "Doppelt hinzugefügt:",
+	"health.check.sameDownloaderWhy": "{app} erreicht dieselbe Download-App wie ein anderer Downloader, daher können seine Downloads doppelt erscheinen. Entferne einen unter Einstellungen › Downloader.",
+	"health.kind.sameDownloader": "Downloader doppelt hinzugefügt"
 }

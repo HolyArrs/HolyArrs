@@ -15585,6 +15585,51 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/downloads/{id}/import": {
+      "post": {
+        "description": "Asks again for the import of a finished download that still waits for it.",
+        "operationId": "importDownload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "The import is queued."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such download."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The download is not waiting for an import."
+          }
+        },
+        "summary": "Import a waiting download",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/downloads/{id}/mark-failed": {
       "post": {
         "description": "The active download fails with your name as the reason: its Release is turned down, it is removed from the Downloader (setting remove_failed) and the movie is searched for the next Release, or needs a decision when nothing else passes.",
@@ -25558,6 +25603,99 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/settings/side-files": {
+      "get": {
+        "description": "Whether subtitle files that come with a download are brought into the Library beside their video, and which file types.",
+        "operationId": "getSideFiles",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "on": {
+                      "description": "Bring subtitle files along on import; off by default.",
+                      "type": "boolean"
+                    },
+                    "types": {
+                      "description": "The file types brought along, such as srt; 1 to 10.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The side files setting."
+          }
+        },
+        "summary": "Read the side files setting",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "operationId": "putSideFiles",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "on": {
+                    "description": "Bring subtitle files along on import; off by default.",
+                    "type": "boolean"
+                  },
+                  "types": {
+                    "description": "The file types brought along, such as srt; 1 to 10.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "on": {
+                      "description": "Bring subtitle files along on import; off by default.",
+                      "type": "boolean"
+                    },
+                    "types": {
+                      "description": "The file types brought along, such as srt; 1 to 10.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The side files setting."
+          },
+          "400": {
+            "description": "A file type list that is empty, too long or names a video type."
+          }
+        },
+        "summary": "Save the side files setting",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/settings/status": {
       "get": {
         "description": "One answer for the Settings home: health checks (warning or error as the check says), failed (error) or stuck (warning) stages, media servers and subtitle sites, Sources and Downloaders not answering (error), the metadata server not answering (warning), no backup or none in 7 days (warning), a newer HolyArrs (info), and saved Movies and TV defaults whose folder or Pick rules are gone (warning, page /settings/title-defaults, group library). The answer is kept 30 seconds for everyone.",
@@ -26508,6 +26646,21 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/sources/sites": {
+      "get": {
+        "description": "The sites HolyArrs can read directly as a Source, with no Prowlarr or Jackett: their id, name, address, media types, whether they need your own key, and their polite limits.",
+        "operationId": "listSourceSites",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "List built-in sites",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
       }
     },
     "/api/v1/sources/{id}": {
@@ -29083,6 +29236,202 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/titles/{id}/leftovers": {
+      "get": {
+        "description": "Video files in the title's folder that fill no listed episode.",
+        "operationId": "listLeftovers",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The leftover files."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such title."
+          }
+        },
+        "summary": "Lists a title's leftover files",
+        "x-holyarrs-part": "title",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/titles/{id}/leftovers/match": {
+      "post": {
+        "description": "Links each file to the given episodes (a movie sends none); replace drops the old links first.",
+        "operationId": "matchLeftovers",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "One result per file."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad body, or not 1 to 2000 files."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such title."
+          }
+        },
+        "summary": "Matches leftover files by hand",
+        "x-holyarrs-part": "title",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/titles/{id}/leftovers/unmatch": {
+      "post": {
+        "description": "Removes hand-made links so the files show as leftovers again.",
+        "operationId": "unmatchLeftovers",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "How many files were unmatched."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad body, or not 1 to 2000 files."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such title."
+          }
+        },
+        "summary": "Unmatches files",
+        "x-holyarrs-part": "title",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/titles/{id}/leftovers/{fid}": {
+      "put": {
+        "description": "Sets whether one leftover file is dismissed from the list.",
+        "operationId": "dismissLeftover",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "fid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The file and its new state."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such title or file."
+          }
+        },
+        "summary": "Hides or shows a leftover file",
+        "x-holyarrs-part": "title",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/titles/{id}/move": {
       "post": {
         "description": "Plans (apply false) or carries out (apply true) moving the main Version to another Library folder.",
@@ -29512,6 +29861,54 @@
         "tags": [
           "Organise"
         ],
+        "x-holyarrs-part": "title",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/titles/{id}/rescan": {
+      "post": {
+        "description": "Queues a Job that refreshes the episode list, then looks at the title's files again; GET /api/v1/jobs/{id} gives the counts.",
+        "operationId": "rescanTitle",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "job_id": {
+                      "format": "int64",
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Queued."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such title."
+          }
+        },
+        "summary": "Rescans one title",
         "x-holyarrs-part": "title",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"

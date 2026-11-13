@@ -283,7 +283,7 @@
 				</Field>
 			{:else}
 				<Field id="al-host" label={t('settings.alerts.mailServer')}>
-					<input id="al-host" class="input" bind:value={form.smtp_host} placeholder="smtp.example.com" autocomplete="off" />
+					<input id="al-host" class="input" dir="ltr" bind:value={form.smtp_host} placeholder="smtp.example.com" autocomplete="off" />
 				</Field>
 				<div class="two">
 					<Field id="al-port" label={t('settings.alerts.port')}>

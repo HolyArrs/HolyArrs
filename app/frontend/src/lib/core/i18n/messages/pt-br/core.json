@@ -145,5 +145,7 @@
 	"core.settings.danger.about": "Reiniciar ou desligar",
 	"core.settings.account.label": "Minha conta",
 	"core.settings.account.about": "Senha, duas etapas, dispositivos",
-	"core.api.sourceOff": "Algumas linhas estão desligadas nesta instalação."
+	"core.api.sourceOff": "Algumas linhas estão desligadas nesta instalação.",
+	"core.plain.noDownloader": "Suas fontes encontram downloads que nenhum dos seus gerenciadores de downloads aceita, então nenhum pode ser enviado.",
+	"core.plain.sameDownloader": "Dois gerenciadores de downloads chegam ao mesmo app, então os downloads podem aparecer duas vezes."
 }

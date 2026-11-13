@@ -55,6 +55,7 @@ export function verbOf(kind: string): Verb {
 		case 'ask_made': return { get word() { return say('downloads.hk.asked'); }, icon: 'wish', tone: 'info' };
 		case 'ask_approved': return { get word() { return say('downloads.hk.approved'); }, icon: 'check', tone: 'ok' };
 		case 'ask_turned_down': return { get word() { return say('downloads.hk.turnedDown'); }, icon: 'declined', tone: 'idle' };
+		case 'ask_not_added': return { get word() { return say('downloads.hk.failed'); }, icon: 'x', tone: 'fail' };
 		case 'report_made': return { get word() { return say('downloads.hk.reported'); }, icon: 'alert', tone: 'wait' };
 		case 'report_fixed': return { get word() { return say('downloads.hk.fixed'); }, icon: 'check', tone: 'ok' };
 		case 'report_reopened': return { get word() { return say('downloads.hk.reopened'); }, icon: 'alert', tone: 'wait' };

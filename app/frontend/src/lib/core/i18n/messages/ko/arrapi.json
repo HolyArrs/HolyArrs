@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "AI 앱이 꺼져 있습니다. 허용하면 켜집니다.",
 	"arrapi.ai.offOther": "AI 앱이 꺼져 있습니다. 소유자에게 켜 달라고 요청한 뒤 다시 시도하세요.",
 	"arrapi.ai.allow": "허용",
-	"arrapi.ai.cancel": "취소"
+	"arrapi.ai.cancel": "취소",
+	"arrapi.seerr.sentTitle": "다른 앱이 보낸 항목",
+	"arrapi.seerr.sentHint": "Profilarr 같은 앱이 보낸 형식과 프로필입니다. 여기서는 보기만 할 수 있어요.",
+	"arrapi.seerr.sentFormat": "형식",
+	"arrapi.seerr.sentProfile": "프로필",
+	"arrapi.seerr.sentUpdated": "{ago} 업데이트"
 }

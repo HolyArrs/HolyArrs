@@ -34,7 +34,7 @@
 	"settings.tmdb.couldntSave": "Kaydedilemedi",
 	"settings.tmdb.locked": "Docker ayarlarınla belirlendi",
 	"settings.tmdb.dockerValue": "HOLYARRS_METADATA_MODE değeri \"{value}\"; full, own veya off olmadığı için aramalar kapalı.",
-	"settings.tmdb.ownNote": "Kendi anahtarlarınla her kaynağa kendin sorarsın. Müzik listeleri, yeni müzik satırları, yayın Top 10'ları, Wikipedia bilgileri ve anime eşlemeleri yalnızca HolyArrs sunucusundan gelir, bu yüzden kapalıdır.",
+	"settings.tmdb.ownNote": "Kendi anahtarlarınla HolyArrs her kaynağa doğrudan sorar. Müzik listeleri, yeni müzik satırları, yayın Top 10'ları, Wikipedia bilgileri ve anime eşlemeleri yalnızca HolyArrs sunucusundan gelir, bu yüzden kapalıdır.",
 	"settings.tmdb.keysTitle": "Anahtarların",
 	"settings.tmdb.keysDesc": "Yalnızca TMDB okuma belirteci gerekir",
 	"settings.tmdb.tvdbTitle": "TheTVDB",

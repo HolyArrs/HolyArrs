@@ -37,6 +37,8 @@ export interface TitleView {
 	stage: string;
 	gate_open: boolean;
 	gate_reason: string;
+	/** The protocol wanted copies could not be sent for: no Downloader takes it. */
+	no_downloader?: 'usenet' | 'torrent';
 	library_folder_id?: number;
 	folder_path?: string;
 	pick_rules_id?: number;
@@ -251,6 +253,9 @@ export interface Ask {
 	episodes?: { season: number; episodes: number[] }[];
 	future_only?: boolean;
 	four_k?: boolean;
+	/** The line of what people can ask for that was picked (standard, 4k), and the owner's name for it now ('' is the built-in name). */
+	quality?: string;
+	quality_name?: string;
 	albums?: AskAlbum[];
 	album_words?: string;
 	artist_id?: string;
@@ -442,7 +447,7 @@ export interface EventPage {
 export interface HealthCheck {
 	id: number;
 	key: string;
-	kind: 'library_folder' | 'disk_space' | 'source' | 'downloader' | 'backups' | 'update' | 'config_disk' | 'config_folder' | 'waiting_downloads' | 'clear_waiting' | 'save_folder';
+	kind: 'library_folder' | 'disk_space' | 'source' | 'downloader' | 'backups' | 'update' | 'config_disk' | 'config_folder' | 'waiting_downloads' | 'clear_waiting' | 'save_folder' | 'no_downloader' | 'same_downloader';
 	subject: string;
 	state: 'ok' | 'warning' | 'error';
 	message: string;
@@ -556,6 +561,13 @@ export interface DownloadRow extends DownloadView {
 	clear_waiting?: { next_try: string; tries: number; reason?: string };
 	can_act: boolean;
 	client_locked?: boolean;
+	/** Its Downloader was removed and no other one holds it: Remove clears HolyArrs' own record only. */
+	downloader_gone?: boolean;
+	/** Finished and still waiting for its import: Import again asks for it. */
+	can_import?: boolean;
+	/** A refused import: why (the importer's words) and the folder Import files by hand opens on. */
+	refused_why?: string;
+	import_folder?: string;
 	replaced?: boolean;
 	kind?: 'movie' | 'show' | 'artist';
 	episodes?: EpisodeLine[];
@@ -623,6 +635,10 @@ export interface Decision {
 	pack_slot_ids?: number[];
 	pack?: EpisodeLine[];
 	artwork?: string;
+	// The one video a movie's finished download holds; Review can import it.
+	import_file?: string;
+	// The finished download's folder; Import files by hand opens there.
+	import_folder?: string;
 }
 
 export interface SearchView {

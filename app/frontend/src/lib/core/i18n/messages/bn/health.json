@@ -260,9 +260,16 @@
 	"health.word.notSent": "এখনো পাঠানো হয়নি",
 	"health.word.notSynced": "এখনো সিঙ্ক হয়নি",
 	"health.word.working": "কাজ করছে",
-	"health.check.clearWaiting": "মোছার অপেক্ষায় থাকা ডাউনলোড",
+	"health.check.clearWaiting": "ইমপোর্ট হওয়া ডাউনলোড এখনও ডাউনলোডারে আছে",
 	"health.check.saveFolder": "সেভ ফোল্ডার:",
 	"health.check.saveFolderWhy": "{app}-এর সেভ ফোল্ডার সেট করা নেই, তাই HolyArrs এর শেষ হওয়া ডাউনলোড ইমপোর্ট করতে পারে না। সেটিংস › ডাউনলোডার-এ একটি পাথ জোড়া যোগ করুন।",
-	"health.kind.clearWaiting": "মোছার অপেক্ষায় থাকা ডাউনলোড",
-	"health.kind.saveFolder": "ডাউনলোডারের সেভ ফোল্ডার"
+	"health.kind.clearWaiting": "ইমপোর্ট হওয়া ডাউনলোড এখনও ডাউনলোডারে আছে",
+	"health.kind.saveFolder": "ডাউনলোডারের সেভ ফোল্ডার",
+	"health.check.usenetDl": "Usenet ডাউনলোডার",
+	"health.check.torrentDl": "টরেন্ট ডাউনলোডার",
+	"health.check.noUsenetDl": "আপনার সোর্সগুলো Usenet ডাউনলোড খুঁজে পায়, কিন্তু কোনো Usenet ডাউনলোডার সেট আপ করা নেই, তাই কোনোটিই পাঠানো যায় না। সেটিংস › ডাউনলোডার-এ একটি যোগ করুন।",
+	"health.check.noTorrentDl": "আপনার সোর্সগুলো টরেন্ট ডাউনলোড খুঁজে পায়, কিন্তু কোনো টরেন্ট ডাউনলোডার সেট আপ করা নেই, তাই কোনোটিই পাঠানো যায় না। সেটিংস › ডাউনলোডার-এ একটি যোগ করুন।",
+	"health.check.sameDownloader": "দুবার যোগ করা:",
+	"health.check.sameDownloaderWhy": "{app} অন্য একটি ডাউনলোডারের মতো একই ডাউনলোড অ্যাপে পৌঁছায়, তাই এর ডাউনলোড দুবার দেখা যেতে পারে। সেটিংস › ডাউনলোডার-এ একটি সরিয়ে দিন।",
+	"health.kind.sameDownloader": "ডাউনলোডার দুবার যোগ করা"
 }

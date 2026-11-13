@@ -177,6 +177,14 @@ type Result struct {
 	// Size is the whole Release's size in bytes when the judge knows it
 	// (0: not known). Parse leaves it unset.
 	Size int64 `json:"-"`
+	// OriginalLanguage is the matched title's original language and
+	// AudioLanguages a library file's audio track languages, when the judge
+	// knows them; Parse leaves both unset.
+	OriginalLanguage string   `json:"-"`
+	AudioLanguages   []string `json:"-"`
+	// TitleYear is the matched title's year when the judge knows it (0:
+	// not known); a year trait test reads it when the name has no year.
+	TitleYear int `json:"-"`
 }
 
 // ShowNumbers are the numbers a show Release names.

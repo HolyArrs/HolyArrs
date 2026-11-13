@@ -99,6 +99,12 @@ func UpdateOwnTrait(ctx context.Context, st *database.Store, id int64, in OwnTra
 		if err := database.Get(ctx, tx, "own_traits", id, &t); err != nil {
 			return err
 		}
+		if t.Source == "import" {
+			return &mediafiles.FieldError{Field: "terms", Text: "This trait came from an old app; import again to update its tests."}
+		}
+		if t.Source == mediafiles.SourceArrAPI {
+			return &mediafiles.FieldError{Field: "terms", Text: "This trait came in through the arr API; change its tests in the app that sent it."}
+		}
 		if t.Source != "" {
 			return &mediafiles.FieldError{Field: "terms", Text: "This trait comes from TRaSH Guides; sync the Pick rules again to update it."}
 		}

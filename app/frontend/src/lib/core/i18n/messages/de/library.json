@@ -166,6 +166,13 @@
 	"library.import.followHint": "In meinem Kalender anzeigen.",
 	"library.import.adoptOne": "1 {word} übernehmen",
 	"library.import.adoptMany": "{n} {words} übernehmen",
+	"library.import.searchFolders": "Ordner durchsuchen",
+	"library.import.folderCountOne": "1 Ordner",
+	"library.import.folderCountMany": "{n} Ordner",
+	"library.import.titleAndFolder": "Titel und Ordner",
+	"library.import.matchFor": "Zuordnung für {folder}",
+	"library.import.seeLarge": "Poster von {name} groß ansehen",
+	"library.import.noneMatch": "Keine passenden Ordner.",
 	"library.report.keep.one": "{n} Titel wird aktuell gehalten",
 	"library.report.keep.many": "{n} Titel werden aktuell gehalten",
 	"library.report.keep.partOne": "{ok} von {total} Titel wird aktuell gehalten",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "Das erste Lesen folgt innerhalb von 30 Minuten.",
 	"library.stats.watchedHelp": "Aus dem Wiedergabeverlauf von Plex, Jellyfin und Emby. Plex zählt nur Wiedergaben, von Hand als gesehen markierte Titel fehlen also.",
 	"library.stats.lastRead": "Zuletzt gelesen {ago}.",
-	"library.stats.noMatch": "Zuletzt gelesen {ago}. Nichts vom Gesehenen passt bisher zu deiner Bibliothek.",
+	"library.stats.noMatch": "Wiedergabeverlauf {ago} geprüft. Nichts vom Gesehenen passt bisher zu deiner Bibliothek.",
 	"library.stats.notLinked": "Nicht verknüpft",
 	"library.stats.lastWatched": "Zuletzt gesehen {ago}",
 	"library.stats.unit.movie.one": "{n} Film",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} Folge",
 	"library.stats.unit.episode.other": "{n} Folgen",
 	"library.stats.unit.play.one": "{n} Wiedergabe",
-	"library.stats.unit.play.other": "{n} Wiedergaben"
+	"library.stats.unit.play.other": "{n} Wiedergaben",
+	"library.byHand.askReplaceOne": "1 Datei ersetzt eine Datei, die schon in der Bibliothek ist. Die alte Datei kommt in „Kürzlich gelöscht“. Importieren?",
+	"library.byHand.askReplaceMany": "{n} Dateien ersetzen Dateien, die schon in der Bibliothek sind. Die alten Dateien kommen in „Kürzlich gelöscht“. Importieren?"
 }

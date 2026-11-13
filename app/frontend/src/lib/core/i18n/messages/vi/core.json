@@ -145,5 +145,7 @@
 	"core.settings.account.about": "Mật khẩu, xác thực hai lớp, thiết bị",
 	"core.plain.clearWaiting": "Các bản tải đã nhập đang chờ được dọn khỏi Trình tải của chúng.",
 	"core.plain.saveFolder": "Một trình tải chưa có thư mục lưu, nên HolyArrs không thể nhập các bản tải đã xong của nó.",
-	"core.api.sourceOff": "Một số hàng đang tắt trên bản cài đặt này."
+	"core.api.sourceOff": "Một số hàng đang tắt trên bản cài đặt này.",
+	"core.plain.noDownloader": "Nguồn của bạn tìm được bản tải mà không trình tải nào của bạn nhận được, nên không gửi được bản nào.",
+	"core.plain.sameDownloader": "Hai trình tải kết nối tới cùng một ứng dụng tải xuống, nên các lượt tải có thể hiện hai lần."
 }

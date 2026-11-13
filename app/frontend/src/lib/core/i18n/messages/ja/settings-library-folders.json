@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "新しいパス",
 	"settings.libraryFolders.changePathHint": "先にファイルをそこへ移してください。HolyArrs は各ファイルを確認するだけで、何も移動しません。",
 	"settings.libraryFolders.checkingFiles": "ファイルを確認中…",
-	"settings.libraryFolders.pathChanged": "パスを変更しました"
+	"settings.libraryFolders.pathChanged": "パスを変更しました",
+	"settings.libraryFolders.sideFiles": "字幕ファイル",
+	"settings.libraryFolders.sideFilesDesc": "ダウンロードに含まれる字幕ファイルを、動画の横にライブラリへ持ち込めます。",
+	"settings.libraryFolders.sideOn": "字幕ファイルも一緒に持ち込む",
+	"settings.libraryFolders.sideOnHint": "ライブラリにすでにあるファイルが置き換えられることはありません。",
+	"settings.libraryFolders.sideTypes": "ファイルの種類",
+	"settings.libraryFolders.sideTypesHint": "種類はカンマで区切ります（例: srt, ass）。",
+"settings.libraryFolders.notMounted": "HolyArrs から {path} が見えません。見えるのはコンテナーにマウントしたフォルダーだけです。{path}:{inside} のようなボリュームを追加して、ここでは {inside} を使ってください。"
 }

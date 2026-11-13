@@ -42,14 +42,82 @@ func fakePlexOwner(t *testing.T) *httptest.Server {
 			{"name":"Friend","clientIdentifier":"theirs","provides":"server","owned":false},
 			{"name":"Phone","clientIdentifier":"p","provides":"player","owned":true}]`))
 	}))
-	m.HandleFunc("GET /api/v2/friends", authed(func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte(`[{"id":21,"username":"ana","email":"ana@example.test","sharedServers":[{"machineIdentifier":"mine-1"}]},
-			{"id":22,"title":"Little","restricted":true,"sharedServers":[{"machineIdentifier":"mine-1"}]},
-			{"id":23,"username":"elsewhere","sharedServers":[{"machineIdentifier":"other"}]}]`))
+	// Plex answers 410 here for everyone now, token or not.
+	m.HandleFunc("GET /api/v2/friends", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusGone) })
+	// The list of people the owner shares with, in XML as plex.tv sends it.
+	m.HandleFunc("GET /api/users", authed(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/xml")
+		_, _ = w.Write([]byte(plexUsersXML))
 	}))
 	s := httptest.NewServer(webserver.RecordRouteHits(m))
 	t.Cleanup(s.Close)
 	return s
+}
+
+const plexUsersXML = `<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer friendlyName="myPlex" identifier="com.plexapp.plugins.myplex" totalSize="4" size="4">
+  <User id="21" title="ana" username="ana" email="ana@example.test" restricted="0" home="0" thumb="https://plex.tv/users/a1/avatar">
+    <Server id="1" serverId="9" machineIdentifier="mine-1" name="Home" owned="1"/>
+  </User>
+  <User id="22" title="Little" username="" email="" restricted="1" home="1" thumb="https://plex.tv/users/b2/avatar"/>
+  <User id="23" title="elsewhere" username="elsewhere" restricted="0" home="0">
+    <Server id="2" serverId="8" machineIdentifier="other" name="Theirs" owned="0"/>
+  </User>
+  <User id="0" title="no id"/>
+</MediaContainer>`
+
+// fakePlexPeople answers the people list with code and body; the rest of
+// the owner's link works as in fakePlexOwner.
+func fakePlexPeople(t *testing.T, code int, body string) *httptest.Server {
+	m := http.NewServeMux()
+	m.HandleFunc("POST /api/v2/pins", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(`{"id":901,"code":"LINK"}`)) })
+	m.HandleFunc("GET /api/v2/pins/{id}", func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{"authToken": ownerPlexTok})
+	})
+	m.HandleFunc("GET /api/v2/user", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(`{"id":1,"username":"boss"}`)) })
+	m.HandleFunc("GET /api/v2/resources", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(`[]`)) })
+	m.HandleFunc("GET /api/v2/friends", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusGone) })
+	m.HandleFunc("GET /api/users", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(code)
+		_, _ = w.Write([]byte(body))
+	})
+	s := httptest.NewServer(m)
+	t.Cleanup(s.Close)
+	return s
+}
+
+// The owner's Plex link reads the people list; each way it can fail says
+// what happened instead of always asking to try again.
+func TestPlexImportSaysWhatPlexDid(t *testing.T) {
+	cases := []struct {
+		name, body, want string
+		code, status     int
+	}{
+		{"empty", `<MediaContainer size="0"></MediaContainer>`, `"people":[]`, 200, 200},
+		{"gone", "", "Plex no longer offers the list of people your server is shared with", 410, 502},
+		{"missing", "", "Plex no longer offers the list of people your server is shared with", 404, 502},
+		{"refused", "", "Plex refused your linked Plex account; link it again", 401, 502},
+		{"forbidden", "", "Plex refused your linked Plex account; link it again", 403, 502},
+		{"busy", "", "Plex did not list the people your server is shared with; try again", 503, 502},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			p := fakePlexPeople(t, c.code, c.body)
+			f := gated(t, Options{PlexURL: p.URL, PlexAppURL: "https://app.example.test"})
+			own := ownerOf(t, f)
+			own.do(t, f, "POST", "/api/v1/auth/plex/link/start", "")
+			if resp, out := own.do(t, f, "POST", "/api/v1/auth/plex/link/finish", `{"id":901}`); resp.StatusCode != 200 {
+				t.Fatalf("link: %d %s", resp.StatusCode, out)
+			}
+			resp, out := own.do(t, f, "POST", "/api/v1/auth/import/plex/preview", "{}")
+			if resp.StatusCode != c.status || !strings.Contains(out, c.want) {
+				t.Fatalf("preview: %d %s", resp.StatusCode, out)
+			}
+			if c.code != 503 && strings.Contains(out, "try again") {
+				t.Fatalf("asks to try again when that cannot help: %s", out)
+			}
+		})
+	}
 }
 
 // route: POST /api/v1/auth/plex/link/start
@@ -109,6 +177,10 @@ func TestOwnerLinksPlexAndImports(t *testing.T) {
 	own.do(t, f, "POST", "/api/v1/auth/import/plex/preview", "{}")
 	if _, out := own.do(t, f, "POST", "/api/v1/auth/import/plex", `{"people":[{"id":"21"}]}`); !strings.Contains(out, `"skipped":1`) {
 		t.Fatalf("again: %s", out)
+	}
+	// The preview names who each already-linked person is.
+	if _, out := own.do(t, f, "POST", "/api/v1/auth/import/plex/preview", "{}"); !strings.Contains(out, `"id":"21","name":"ana","email":"ana@example.test","kid":false,"server_admin":false,"linked_to":"ana"`) {
+		t.Fatalf("linked person: %s", out)
 	}
 	resp, out = own.do(t, f, "DELETE", "/api/v1/auth/plex/link", "")
 	if resp.StatusCode != 200 || !strings.Contains(out, `"linked":false`) || !strings.Contains(out, `"can_import":false`) {

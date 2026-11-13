@@ -166,6 +166,13 @@
 	"library.import.followHint": "Mostrar no meu calendário.",
 	"library.import.adoptOne": "Adotar 1 {word}",
 	"library.import.adoptMany": "Adotar {n} {words}",
+	"library.import.searchFolders": "Procurar pastas",
+	"library.import.folderCountOne": "1 pasta",
+	"library.import.folderCountMany": "{n} pastas",
+	"library.import.titleAndFolder": "Título e pasta",
+	"library.import.matchFor": "Correspondência para {folder}",
+	"library.import.seeLarge": "Ver o cartaz de {name} em tamanho grande",
+	"library.import.noneMatch": "Nenhuma pasta corresponde.",
 	"library.report.keep.one": "{n} título mantido em dia",
 	"library.report.keep.many": "{n} títulos mantidos em dia",
 	"library.report.keep.partOne": "{ok} de {total} título mantido em dia",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "A primeira leitura ocorre nos próximos 30 minutos.",
 	"library.stats.watchedHelp": "Do histórico de reprodução do Plex, Jellyfin e Emby. O Plex só conta reproduções, por isso os títulos marcados como vistos à mão não aparecem.",
 	"library.stats.lastRead": "Última leitura {ago}.",
-	"library.stats.noMatch": "Última leitura {ago}. Nada do que foi visto corresponde ainda à sua Biblioteca.",
+	"library.stats.noMatch": "Histórico verificado {ago}. Nada do que foi visto corresponde ainda à sua Biblioteca.",
 	"library.stats.notLinked": "Não ligado",
 	"library.stats.lastWatched": "Visto pela última vez {ago}",
 	"library.stats.unit.movie.one": "{n} filme",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} episódio",
 	"library.stats.unit.episode.other": "{n} episódios",
 	"library.stats.unit.play.one": "{n} reprodução",
-	"library.stats.unit.play.other": "{n} reproduções"
+	"library.stats.unit.play.other": "{n} reproduções",
+	"library.byHand.askReplaceOne": "1 ficheiro substitui um ficheiro que já está na Biblioteca. O ficheiro antigo vai para Apagados recentemente. Importar?",
+	"library.byHand.askReplaceMany": "{n} ficheiros substituem ficheiros que já estão na Biblioteca. Os ficheiros antigos vão para Apagados recentemente. Importar?"
 }

@@ -63,17 +63,27 @@ type PickRulesBody struct {
 	Order            string               `json:"order"` // quality_then_points, points_then_quality
 	UpgradeMinPoints int                  `json:"upgrade_min_points"`
 	ProperPolicy     ProperPolicy         `json:"proper_policy"`
+	// Tags limit the Sources these rules search: with any, only Sources
+	// sharing one of them are asked (nil: no limit).
+	Tags []string `json:"tags,omitempty"`
 	// Synced names the TRaSH Guides profile last applied, for re-syncing.
 	Synced *SyncedProfile `json:"synced,omitempty"`
 }
 
-// SyncedProfile is a TRaSH Guides profile applied to Pick rules.
+// SyncedProfile is a TRaSH Guides profile applied to Pick rules, or an
+// old app's profile imported or sent through the arr API.
 type SyncedProfile struct {
-	From      string `json:"from"` // trash
+	From      string `json:"from"` // trash, import or arrapi
 	App       string `json:"app"`  // sonarr or radarr
 	ProfileID string `json:"profile_id"`
 	Name      string `json:"name"`
 	At        string `json:"at"`
+}
+
+// OldApp reports whether the rules are an old app's profile, which judge
+// upgrades and missing languages as that app does.
+func (s *SyncedProfile) OldApp() bool {
+	return s != nil && (s.From == "import" || s.From == SourceArrAPI)
 }
 
 // GoodEverydayName is the default preset's name.

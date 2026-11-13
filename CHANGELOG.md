@@ -2,6 +2,58 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.1.1
+
+### Added
+
+- Knaben, TorrentsCSV, SubsPlease and IPTorrents work without Prowlarr. ([#289](https://github.com/HolyArrs/HolyArrs/issues/289))
+- Ask for shows in 4K, and pick a quality when you ask. ([#293](https://github.com/HolyArrs/HolyArrs/issues/293)) ([#335](https://github.com/HolyArrs/HolyArrs/issues/335))
+- Profilarr can send its formats, profiles and settings to HolyArrs. ([#279](https://github.com/HolyArrs/HolyArrs/issues/279))
+- Leftover files show up, and you can match them to episodes. ([#284](https://github.com/HolyArrs/HolyArrs/issues/284))
+- Import a library has the Library's four views and big posters. ([#324](https://github.com/HolyArrs/HolyArrs/issues/324))
+- Library stats sits in the Library menu. ([#321](https://github.com/HolyArrs/HolyArrs/issues/321))
+- qBittorrent: category after import, others' torrents left alone, subtitles come along. ([#292](https://github.com/HolyArrs/HolyArrs/issues/292))
+- Old-app formats come over with exact scores; tags pick each title's Sources. ([#291](https://github.com/HolyArrs/HolyArrs/issues/291))
+- Set the listen port with HOLYARRS_PORT or HOLYARRS_ADDR. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+
+### Fixed
+
+- People from Seerr keep their Plex, Jellyfin or Emby sign-in. ([#334](https://github.com/HolyArrs/HolyArrs/issues/334))
+- Import members reads people from Plex again. ([#341](https://github.com/HolyArrs/HolyArrs/issues/341))
+- Requests from Seerr show real names, years and posters. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- An approval that adds nothing says why. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- Posters view stays light in big libraries, Safari too. ([#328](https://github.com/HolyArrs/HolyArrs/issues/328))
+- Rename files no longer reads every file first. ([#332](https://github.com/HolyArrs/HolyArrs/issues/332))
+- Episodes count as missing only after they air. ([#320](https://github.com/HolyArrs/HolyArrs/issues/320))
+- Movies under a translated name import; by-hand import can replace files. ([#308](https://github.com/HolyArrs/HolyArrs/issues/308))
+- Downloads left on a removed Downloader re-link, or can be removed. ([#309](https://github.com/HolyArrs/HolyArrs/issues/309))
+- A grab that never reaches a Downloader says so, never Sent. ([#310](https://github.com/HolyArrs/HolyArrs/issues/310))
+- SABnzbd downloads import with the episodes they were grabbed for. ([#312](https://github.com/HolyArrs/HolyArrs/issues/312))
+- A path pair with the same folder twice gets a note. ([#265](https://github.com/HolyArrs/HolyArrs/issues/265))
+- A torrent the client already holds is followed when picked. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- A refused import shows why and offers Import files by hand. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- Downloads keeps its bar and tabs while the list loads. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- Season packs are found, likely fakes skipped, stuck choices replaceable. ([#307](https://github.com/HolyArrs/HolyArrs/issues/307))
+- Feed checks grab date-named daily episodes and say what they skip. ([#314](https://github.com/HolyArrs/HolyArrs/issues/314))
+- A failed Source test stays failed after a reload. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- Backup alerts stop once backups are off. ([#318](https://github.com/HolyArrs/HolyArrs/issues/318))
+- Metadata set to Off raises no alerts. ([#326](https://github.com/HolyArrs/HolyArrs/issues/326))
+- A slow metadata server reads as slow, not down. ([#325](https://github.com/HolyArrs/HolyArrs/issues/325))
+- Folders HolyArrs can't see come over as wanted, or stay behind. ([#238](https://github.com/HolyArrs/HolyArrs/issues/238))
+- Confirming your password goes on with the import. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- Settings tabs wrap on phones instead of hiding. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- The sign-in language button is bigger on touch screens. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- Long toasts wrap instead of being cut off. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- Reworded hints are updated in all 44 languages. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+
+### Changed
+
+- Subtitle sites and subtitle searching start turned on. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+
+### Thanks
+
+Thanks to everyone who reported, tested and asked for these: [@eddoww](https://github.com/HolyArrs/HolyArrs/issues/289), [@JulianAtkins](https://github.com/HolyArrs/HolyArrs/issues/318), [@stormbyte](https://github.com/HolyArrs/HolyArrs/issues/284), GreyJoshy94 on Discord, [@mandopatriot](https://github.com/HolyArrs/HolyArrs/issues/279), [@mimedo](https://github.com/HolyArrs/HolyArrs/issues/291#issuecomment-6816138650), [@danielbaercgn](https://github.com/HolyArrs/HolyArrs/issues/308), [@stevelucky](https://github.com/HolyArrs/HolyArrs/issues/309), [@Nviviri](https://github.com/HolyArrs/HolyArrs/issues/314), [@zhu327](https://github.com/HolyArrs/HolyArrs/issues/325#issuecomment-6854023071), [@nevpeek](https://github.com/HolyArrs/HolyArrs/issues/324), [@p5y6ry52pt-hue](https://github.com/HolyArrs/HolyArrs/issues/328), [@sparecycles-dev](https://github.com/HolyArrs/HolyArrs/issues/332), Lunim, Mr_Mennens_Tech, roychassi and tekhop on Discord, and u/Blegrand15 on Reddit.
+
 ## 1.1.0
 
 ### Added

@@ -118,7 +118,7 @@
 		</div>
 		<label class="fl">
 			<span class="lb">{t('downloads.at.saveIn')} <span class="opt">{t('downloads.at.optional')}</span></span>
-			<input type="text" bind:value={savePath} placeholder={t('downloads.at.savePh')} spellcheck="false" data-testid="dl-add-path" />
+			<input type="text" dir="ltr" bind:value={savePath} placeholder={t('downloads.at.savePh')} spellcheck="false" data-testid="dl-add-path" />
 		</label>
 		<label class="ck"><input type="checkbox" bind:checked={paused} data-testid="dl-add-paused" /><span>{t('downloads.at.paused')}</span></label>
 		{#if error}<p class="err" role="alert">{error}</p>{/if}

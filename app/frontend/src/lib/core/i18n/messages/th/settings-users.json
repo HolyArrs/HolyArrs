@@ -100,5 +100,6 @@
 	"settings.users.note": "บันทึกส่วนตัว",
 	"settings.users.noteExample": "เช่น แม่",
 	"settings.users.days": "จำนวนวันที่ลิงก์ใช้ได้",
-	"settings.users.makeInvite": "สร้างลิงก์เชิญ"
+	"settings.users.makeInvite": "สร้างลิงก์เชิญ",
+	"settings.users.permAuto4k": "คำขอ 4K ได้รับอนุมัติโดยไม่ต้องรอ"
 }

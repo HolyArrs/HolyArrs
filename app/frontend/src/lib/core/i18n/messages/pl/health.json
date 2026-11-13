@@ -12,7 +12,7 @@
 	"health.check.freeSpace": "Wolne miejsce",
 	"health.check.update": "Aktualizacja",
 	"health.check.waiting": "Pobierania czekające na pliki",
-	"health.check.clearWaiting": "Pobierania czekające na wyczyszczenie",
+	"health.check.clearWaiting": "Zaimportowane pobrania wciąż w Downloaderze",
 	"health.check.saveFolder": "Folder zapisu dla",
 	"health.check.saveFolderWhy": "{app} nie ma folderu zapisu, więc HolyArrs nie może zaimportować ukończonych pobrań. Dodaj parę ścieżek w Ustawienia › Downloadery.",
 	"health.day.ahead": "jeszcze: {count}",
@@ -88,7 +88,7 @@
 	"health.kind.trailers": "Czytnik zwiastunów",
 	"health.kind.update": "Aktualizacja",
 	"health.kind.waitingDownloads": "Pobierania czekające na pliki",
-	"health.kind.clearWaiting": "Pobierania czekające na wyczyszczenie",
+	"health.kind.clearWaiting": "Zaimportowane pobrania wciąż w Downloaderze",
 	"health.kind.saveFolder": "Folder zapisu Downloadera",
 	"health.link.downloader": "Downloader",
 	"health.link.mediaServer": "Serwer multimediów",
@@ -264,5 +264,12 @@
 	"health.word.broken": "Zepsute",
 	"health.word.notSent": "Jeszcze niewysłane",
 	"health.word.notSynced": "Jeszcze niezsynchronizowane",
-	"health.word.working": "Działa"
+	"health.word.working": "Działa",
+	"health.check.usenetDl": "Downloader Usenet",
+	"health.check.torrentDl": "Downloader torrentów",
+	"health.check.noUsenetDl": "Twoje źródła znajdują pobrania z Usenetu, ale nie skonfigurowano downloadera Usenet, więc nic nie może zostać wysłane. Dodaj go w Ustawienia › Downloadery.",
+	"health.check.noTorrentDl": "Twoje źródła znajdują torrenty, ale nie skonfigurowano downloadera torrentów, więc nic nie może zostać wysłane. Dodaj go w Ustawienia › Downloadery.",
+	"health.check.sameDownloader": "Dodany dwa razy:",
+	"health.check.sameDownloaderWhy": "{app} łączy się z tą samą aplikacją do pobierania co inny Downloader, więc jego pobrania mogą pojawiać się podwójnie. Usuń jeden w Ustawienia › Downloadery.",
+	"health.kind.sameDownloader": "Downloader dodany dwa razy"
 }

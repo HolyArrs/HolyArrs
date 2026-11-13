@@ -1,5 +1,5 @@
 // Library table: column layout, sorting, filtering and saved views.
-import type { TitleView } from '../core/types.ts';
+import type { ShowInfo, TitleView } from '../core/types.ts';
 import { matches, type Filter } from './library.ts';
 import { libraryState } from './library-state.ts';
 import { shownScore } from '../core/rating.ts';
@@ -213,9 +213,15 @@ export function sortName(name: string): string {
 	return name.trim().replace(/^(the|a|an)\s+/i, '').toLocaleLowerCase();
 }
 
+// A show's aired episodes, one rule for every count: specials only when kept up to date (as the episodes in the Library count them), and an episode whose air time has not passed is not aired yet.
+export function airedEpisodes(s: ShowInfo): number {
+	if (!s.seasons?.length) return Math.max(0, s.episodes - s.not_out_yet);
+	return s.seasons.reduce((n, x) => n + (x.number > 0 || x.keep_up_to_date ? x.aired : 0), 0);
+}
+
 // Episodes and tracks not out yet do not count against completeness.
 export function progressOf(t: TitleView): { have: number; total: number } {
-	if (t.kind === 'show' && t.show) return { have: t.show.in_library, total: Math.max(0, t.show.episodes - t.show.not_out_yet) };
+	if (t.kind === 'show' && t.show) return { have: t.show.in_library, total: airedEpisodes(t.show) };
 	if (t.kind === 'artist' && t.artist) return { have: t.artist.in_library, total: Math.max(0, t.artist.tracks - t.artist.not_out_yet) };
 	const have = t.slots.some((s) => s.state === 'in_library' || s.state === 'better_wanted') ? 1 : 0;
 	return { have, total: 1 };

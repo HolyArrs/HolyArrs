@@ -17,6 +17,28 @@ export interface AskLimit {
 	movies: AskKindLimit;
 	shows: AskKindLimit;
 	music: AskKindLimit;
+	/** Which kinds can take a 4K request (4K quality set up). */
+	four_k?: { movie: boolean; show: boolean };
+	/** The lines of what people can ask for that this person may use, per kind, in order. */
+	qualities?: { movie: QualityChoice[]; show: QualityChoice[] };
+}
+
+/** One Quality button: a line of what people can ask for. */
+export interface QualityChoice {
+	id: string;
+	/** The owner's name for it; '' shows the built-in name (Standard, 4K). */
+	name: string;
+	/** Kept as its own copy (4K), not the title's main copy. */
+	extra: boolean;
+	pick_rules_id: number;
+}
+
+/** A line of what people can ask for, as Request rules edits it. */
+export interface QualityLine extends QualityChoice {
+	hidden: boolean;
+	library_folder_id: number;
+	/** It can be asked for now (the 4K line needs 4K quality set up). */
+	ready: boolean;
 }
 
 /** A person's own weekly limit per kind; null takes that kind's default. */
@@ -37,11 +59,18 @@ export interface AskSettings {
 	show_pick_rules_id: number;
 	music_library_folder_id: number;
 	music_pick_rules_id: number;
+	/** Where approved 4K requests go and how they are picked (0: the plain folder, the quality named 4K). */
+	four_k_library_folder_id: number;
+	four_k_pick_rules_id: number;
+	show_four_k_library_folder_id: number;
+	show_four_k_pick_rules_id: number;
 	/** People may have their Plex watchlist asked for as them. */
 	plex_watchlists?: boolean;
 	plex_watchlists_everyone?: boolean;
 	/** Also read the watchlists of people imported from Plex, with the owner's Plex link. */
 	plex_friends?: boolean;
+	/** What people can ask for: the Quality buttons, per kind. Only names and hidden are saved. */
+	qualities?: { movie: QualityLine[]; show: QualityLine[] };
 }
 
 /** A TMDB or Trakt list whose movies are added on a schedule. */

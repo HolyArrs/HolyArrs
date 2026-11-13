@@ -6,13 +6,12 @@
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { OwnedTitle } from './title-owned.svelte.ts';
-	import { dayWords, epFile, epQuality, epTone } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte';
-	import { ShowVersions, SeasonToolsSheet, EpisodeSheet, type SheetEpisode } from '#lib/shows/index.ts';
+	import { dayWords, epFile, epQuality, epTone } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte'; import TitleLeftovers from './TitleLeftovers.svelte';
+	import { ShowVersions, SeasonToolsSheet, EpisodeSheet, chosenWhy, type SheetEpisode } from '#lib/shows/index.ts';
 	import { HistoryLine as CompactRow, isRoutine, groupDownloads, downloadTone } from '#lib/downloads/index.ts';
 	import { qualityBadges, ShowDeleteDialog, splitSteps, type RenameStep } from '#lib/mediafiles/index.ts';
 	import { MovieVersions } from '#lib/movies/index.ts';
-	import { SubtitlePanel } from '#lib/subtitles/index.ts';
-	import type { TitleSubtitles } from '#lib/subtitles/index.ts';
+	import { SubtitlePanel, type TitleSubtitles } from '#lib/subtitles/index.ts';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -20,8 +19,7 @@
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import type { LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
-	import { bytes, ago } from '#lib/core/format.ts';
-	import { date } from '#lib/core/format.ts';
+	import { bytes, ago, date } from '#lib/core/format.ts';
 	import { orderLabel, splitOutside } from './episode-groups.ts';
 	import { EpisodeOrder } from './episode-order.svelte.ts';
 
@@ -462,7 +460,8 @@
 											<span class="lib-ep-still">{#if e.still}<img src={e.still.replace('/w780/', '/w300/')} alt="" loading="lazy" decoding="async" />{/if}<span class="lib-ep-n">{e.episode}</span></span>
 											<button type="button" class="lib-ep-text" aria-label={t('discover.titleLibrary.episodeNamed', { episode: e.episode, name: e.name ?? '' })} onclick={() => { epPicked = e; epOpen = true; }}>
 												<b>{e.name ?? t('discover.titleLibrary.episodeN', { episode: e.episode })}{#if e.episode === (seasonEps[se.number]?.length ?? 0) && se.episodes > 1}<span class="lib-tag">{t('discover.titleLibrary.finale')}</span>{/if}</b>
-												<small>{[e.air_date ? dayWords(e.air_date) : '', e.runtime_minutes ? t('discover.titleLibrary.runtimeMin', { n: e.runtime_minutes }) : '', epFile(e)].filter(Boolean).join(' · ')}</small>
+												<small>{[e.air_day || e.air_date ? dayWords(e.air_day || e.air_date || '') : '', e.runtime_minutes ? t('discover.titleLibrary.runtimeMin', { n: e.runtime_minutes }) : '', epFile(e)].filter(Boolean).join(' · ')}</small>
+												{#if manage && chosenWhy(st)}<small class="lib-ep-why" data-testid="episode-chosen-why">{serverWords(chosenWhy(st))}</small>{/if}
 											</button>
 											<span class="lib-ep-st {aired ? tone : 'future'}"><span class="own-dot {tone}" aria-hidden="true"></span>{aired ? epQuality(e) || serverWords(st?.state_label) || t('discover.titleLibrary.missing') : t('discover.titleLibrary.notOutYet')}</span>
 											{#if manage && st}
@@ -579,6 +578,7 @@
 							</div>
 						</div>
 					</div>
+					<TitleLeftovers {own} />
 					{#if renameCount}
 						<button type="button" class="lib-row" data-testid="rename-row" onclick={() => (own.renameOpen = true)}><span><b>{t('discover.titleLibrary.renameFiles')}</b><small>{renameCount === 1 ? t('discover.titleLibrary.renameOne') : t('discover.titleLibrary.renameOther', { n: renameCount })}</small></span><Icon name="chevronRight" size={16} /></button>
 					{/if}
@@ -715,6 +715,7 @@
 	.lib-ep-text { display: grid; gap: 4px; min-width: 0; }
 	.lib-ep-text b { font: 600 15px/1.25 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lib-ep-text small { color: var(--text-muted); font: 500 13px/1.2 var(--font-ui); }
+	.lib-ep-text small.lib-ep-why { line-height: 1.35; white-space: normal; }
 	.lib-ep-st { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px; border-radius: 99px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); font: 600 12px/1 var(--font-ui); white-space: nowrap; }
 	.lib-ep-st.have { color: var(--ok-text); background: color-mix(in srgb, var(--ok) 12%, transparent); }
 	.lib-ep-st.downloading { color: var(--info-text); background: color-mix(in srgb, var(--info) 12%, transparent); }

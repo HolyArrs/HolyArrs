@@ -9,7 +9,35 @@
   "show_pick_rules_id": 7,
   "music_library_folder_id": 7,
   "music_pick_rules_id": 7,
+  "four_k_library_folder_id": 7,
+  "four_k_pick_rules_id": 7,
+  "show_four_k_library_folder_id": 7,
+  "show_four_k_pick_rules_id": 7,
   "plex_watchlists": true,
   "plex_watchlists_everyone": true,
-  "plex_friends": true
+  "plex_friends": true,
+  "qualities": {
+    "movie": [
+      {
+        "id": "s",
+        "name": "s",
+        "hidden": true,
+        "pick_rules_id": 7,
+        "library_folder_id": 7,
+        "extra": true,
+        "ready": true
+      }
+    ],
+    "show": [
+      {
+        "id": "s",
+        "name": "s",
+        "hidden": true,
+        "pick_rules_id": 7,
+        "library_folder_id": 7,
+        "extra": true,
+        "ready": true
+      }
+    ]
+  }
 }

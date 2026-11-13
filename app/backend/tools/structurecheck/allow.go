@@ -193,4 +193,6 @@ var tableOwner = map[string]string{
 	"compat_tags":       "arrapi",
 	"compat_title_tags": "arrapi",
 	"compat_hooks":      "arrapi",
+	"compat_formats":    "arrapi",
+	"compat_profiles":   "arrapi",
 }

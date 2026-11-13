@@ -166,6 +166,13 @@
 	"library.import.followHint": "Les afficher dans mon calendrier.",
 	"library.import.adoptOne": "Adopter 1 {word}",
 	"library.import.adoptMany": "Adopter {n} {words}",
+	"library.import.searchFolders": "Rechercher dans les dossiers",
+	"library.import.folderCountOne": "1 dossier",
+	"library.import.folderCountMany": "{n} dossiers",
+	"library.import.titleAndFolder": "Titre et dossier",
+	"library.import.matchFor": "Correspondance pour {folder}",
+	"library.import.seeLarge": "Voir l'affiche de {name} en grand",
+	"library.import.noneMatch": "Aucun dossier ne correspond.",
 	"library.report.keep.one": "{n} titre tenu à jour",
 	"library.report.keep.many": "{n} titres tenus à jour",
 	"library.report.keep.partOne": "{ok} titre sur {total} tenu à jour",
@@ -349,7 +356,7 @@
 	"library.stats.firstText": "La première lecture arrive sous 30 minutes.",
 	"library.stats.watchedHelp": "D’après l’historique de Plex, Jellyfin et Emby. Plex ne compte que les lectures : les titres marqués vus à la main n’apparaissent pas.",
 	"library.stats.lastRead": "Dernière lecture {ago}.",
-	"library.stats.noMatch": "Dernière lecture {ago}. Rien de ce qui a été regardé ne correspond encore à votre bibliothèque.",
+	"library.stats.noMatch": "Historique vérifié {ago}. Rien de ce qui a été regardé ne correspond encore à votre bibliothèque.",
 	"library.stats.notLinked": "Non lié",
 	"library.stats.lastWatched": "Vu {ago}",
 	"library.stats.unit.movie.one": "{n} film",
@@ -357,5 +364,7 @@
 	"library.stats.unit.episode.one": "{n} épisode",
 	"library.stats.unit.episode.other": "{n} épisodes",
 	"library.stats.unit.play.one": "{n} lecture",
-	"library.stats.unit.play.other": "{n} lectures"
+	"library.stats.unit.play.other": "{n} lectures",
+	"library.byHand.askReplaceOne": "1 fichier remplace un fichier déjà dans la Bibliothèque. L'ancien fichier va dans Supprimés récemment. Importer ?",
+	"library.byHand.askReplaceMany": "{n} fichiers remplacent des fichiers déjà dans la Bibliothèque. Les anciens fichiers vont dans Supprimés récemment. Importer ?"
 }

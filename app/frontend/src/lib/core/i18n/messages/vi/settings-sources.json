@@ -72,5 +72,10 @@
 	"settings.sources.off": "Nguồn đang tắt",
 	"settings.sources.offText": "HolyArrs không tìm kiếm và không lấy. Các bản tải bạn thêm trong Trình tải vẫn được nhập.",
 	"settings.sources.openParts": "Mở Các Phần",
-	"settings.sources.offState": "Tắt"
+	"settings.sources.offState": "Tắt",
+	"settings.sources.site": "Trang tích hợp",
+	"settings.sources.siteLabel": "Trang",
+	"settings.sources.addressSite": "Địa chỉ riêng của trang. Chỉ đổi khi trang đã chuyển đi.",
+	"settings.sources.siteKeyLabel": "Cookie hoặc khóa RSS",
+	"settings.sources.siteKeyHint": "Từ tài khoản của bạn: uid và pass trong cookie trình duyệt, hoặc u và tp trong liên kết RSS. Được lưu đã mã hóa."
 }

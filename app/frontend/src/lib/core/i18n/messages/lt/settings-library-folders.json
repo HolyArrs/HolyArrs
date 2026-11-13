@@ -47,5 +47,12 @@
 	"settings.libraryFolders.newPath": "Naujas kelias",
 	"settings.libraryFolders.changePathHint": "Pirmiausia perkelkite failus ten. HolyArrs patikrina kiekvieną failą ir nieko neperkelia.",
 	"settings.libraryFolders.checkingFiles": "Tikrinami failai…",
-	"settings.libraryFolders.pathChanged": "Kelias pakeistas"
+	"settings.libraryFolders.pathChanged": "Kelias pakeistas",
+	"settings.libraryFolders.sideFiles": "Subtitrų failai",
+	"settings.libraryFolders.sideFilesDesc": "Su atsisiuntimu atėjusius subtitrus galima perkelti į biblioteką šalia jų vaizdo įrašo.",
+	"settings.libraryFolders.sideOn": "Perkelti ir subtitrų failus",
+	"settings.libraryFolders.sideOnHint": "Bibliotekoje jau esantis failas niekada nepakeičiamas.",
+	"settings.libraryFolders.sideTypes": "Failų tipai",
+	"settings.libraryFolders.sideTypesHint": "Tipus atskirkite kableliais, pvz., srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs nemato {path}. Jis mato tik į savo konteinerį prijungtus aplankus. Pridėkite tomą, pvz., {path}:{inside}, tada čia naudokite {inside}."
 }

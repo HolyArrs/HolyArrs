@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.fr.md">Français</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ru.md">Русский</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <b>Filipino</b> · <a href="LANGUAGES.md">Iba pang wika</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">Iba pang wika</a></p>
 
 <p align="center">
   <picture>
@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.0: nasa 44 wika na**, pati kanan-pakaliwa. Gumagana ang aria2 bilang Downloader, at ilang episode lang ang dina-download ng season pack kada beses. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.1: built-in na ang Knaben, TorrentsCSV, SubsPlease at IPTorrents**, hindi na kailangan ng Prowlarr. Humiling ng mga palabas sa 4K, at puwedeng ipadala ng Profilarr ang mga format at profile nito. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
 
 > Ang bawat poster, trailer at score sa HolyArrs mo ay galing sa server na ako mismo ang nagpapatakbo at nagbabayad, kaya nananatili itong libre para sa lahat. Kung napaganda nang kaunti ng HolyArrs ang movie night mo, ang sponsor ang nagpapanatiling bukas ang ilaw para sa ating lahat 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> ay isang self-hosted na app para sa mga palabas, pelikula at musika mo.<br>Mag-browse na parang streaming app, humiling ng gusto mo, at ito na ang bahala sa iba.</p>
 
-<p align="center"><b>Mga 15 MB ang download · mga 140 MB ng RAM kapag idle na may 10,000 pamagat · amd64, arm64, armv7</b><br><sub>Ang anim na app na pinapalitan nito ay 718.2 MB kapag pinagsama.</sub></p>
+<p align="center"><b>Mga 19.5 MB ang download · mga 95 MiB ng RAM kapag idle sa bagong install · amd64, arm64, armv7</b><br><sub>Ang anim na app na pinapalitan nito ay 718.2 MB kapag pinagsama.</sub></p>
 
 <p align="center"><a href="#quick-start">Mabilis na simula</a> · <a href="#why">Bakit</a> · <a href="#what-it-does">Ano ang kaya nito</a> · <a href="#moving">Paglipat mula sa ibang app</a> · <a href="#manual">Ang manual</a> · <a href="#help">Tulong</a></p>
 
@@ -105,9 +105,9 @@ Kaya ginawa ko ito.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Anim na magkakasama** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Mga 48 beses na mas maliit. Naka-compress na registry download, mga image ng linuxserver.io, amd64, sinukat noong 2026-11-08. Sinukat ang RAM kapag idle na may 10,000 pamagat at 55,000 pelikula at episode.</sub>
+<sub>Mga 37 beses na mas maliit. Naka-compress na registry download, mga image ng linuxserver.io, amd64, sinukat noong 2026-11-08. Sinukat ang RAM kapag idle na may 10,000 pamagat at 55,000 pelikula at episode. (HolyArrs 1.1.1: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -120,15 +120,16 @@ May humiling ng pamagat. Hahanapin ng HolyArrs ang mga Pinagkukunan mo, pipiliin
 | | |
 |---|---|
 | 🍿 **Explore** | Mag-browse na parang streaming app. Ilagay ang cursor sa isang pamagat at magpe-play ang trailer. |
-| 🙋 **Requests** | Buong palabas o isang season lang. Ikaw ang aaprub, o hayaang laktawan ng mga pinagkakatiwalaan mo ang pila. |
+| 🙋 **Requests** | Buong palabas o isang season lang. Ikaw ang aaprub, o hayaang laktawan ng mga pinagkakatiwalaan mo ang pila. Puwedeng maging request ang mga watchlist sa Plex at Pulsarr. |
 | 🎯 **Pick rules** | Ikaw ang magpapasya kung aling release ang mananalo: laki, kalidad, wika. |
-| 💬 **Mga subtitle** | Sa mga wikang pipiliin mo, naka-save kasama ng file. Ang paghahanap sa mga ito online ay darating pagkatapos ng 1.0. |
+| 💬 **Mga subtitle** | Sa mga wikang pipiliin mo, hinahanap sa mga subtitle site at naka-save kasama ng file. |
 | 📅 **Calendar** | Ang susunod na ipapalabas sa lahat ng sinusundan mo. |
-| 🚚 **Dalhin ang setup mo** | Mula sa Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent at SABnzbd. Subukan muna, i-undo mamaya. |
-| 🔌 **API ng mga naunang app** | Makakapagtuloy ang Prowlarr sa pagtulak ng mga Pinagkukunan sa HolyArrs kapag in-on mo ito. |
-| 🗝️ **Hindi kailangan ng API key** | Ang mga pamagat, artwork at chart ay galing sa metadata server ng HolyArrs. |
+| 🔔 **Alerts** | Discord, email, Telegram, ntfy, Gotify, Pushover o isang webhook. |
+| 🚚 **I-import ang setup mo** | Mula sa Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent at SABnzbd. Piliin kung ano ang ililipat, i-undo mamaya. |
+| 🔌 **API ng mga naunang app** | Patuloy na gagana ang Seerr, Prowlarr, Bazarr, Unpackerr at Homepage kapag in-on mo ito. |
+| 🗝️ **Hindi kailangan ng API key** | Ang mga pamagat, artwork at chart ay galing sa metadata server ng HolyArrs. Gumagana rin ang sarili mong mga key o server. |
 | 🔒 **Naka-encrypt na key** | Ang mga naka-save na password at key ay naka-lock gamit ang master key na nasa config folder mo. |
-| 🪶 **Napakaliit** | Isang image na mga 15 MB na HolyArrs lang ang laman. |
+| 🪶 **Napakaliit** | Isang image na mga 19.5 MB na HolyArrs lang ang laman. |
 
 <details>
 <summary><b>Tingnan ang bawat pahina habang gumagalaw</b></summary>
@@ -148,18 +149,18 @@ May humiling ng pamagat. Hahanapin ng HolyArrs ang mga Pinagkukunan mo, pipiliin
 
 ## 🤝 Gumagana ito sa mga gamit mo na
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Mga downloader: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet. Mga media server: Plex, Jellyfin, Emby." /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="Mga downloader: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet. Mga media server: Plex, Jellyfin, Emby." /></picture>
 
-- **Mga downloader:** qBittorrent, Transmission, Deluge, rTorrent, SABnzbd, NZBGet
+- **Mga downloader:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **Mga media server:** Plex, Jellyfin, Emby
 - **Mga Pinagkukunan:** anumang Torznab o Newznab indexer, o Prowlarr o Jackett
-- **Inililipat ang setup mo mula sa:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
+- **Ini-import ang setup mo mula sa:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
 
 <a id="moving"></a>
 
 ## 🚚 Dalhin ang dati mong setup
 
-Buksan ang **Settings > Move from other apps**, idagdag ang address at API key ng bawat lumang app (o isang backup zip), piliin kung ano ang ililipat, patakbuhin ang **Try it**, saka **Move**. Maaari mong i-undo ang paglipat mamaya.
+Buksan ang **Settings > Import from other apps**, idagdag ang address at API key ng bawat lumang app (o isang backup zip), piliin kung ano ang dadalhin, saka piliin ang **Import**. Maaari mong i-undo ang isang import mamaya.
 
 | Mula sa | Ano ang nailalipat |
 |---|---|
@@ -171,12 +172,11 @@ Buksan ang **Settings > Move from other apps**, idagdag ang address at API key n
 
 Binabasa lang ng HolyArrs ang mga lumang app mo at walang binabago sa mga ito, kaya maaari mong patakbuhin ang dalawa nang magkatabi hanggang pagkatiwalaan mo ito.
 
-Naiiwan ang mga key at password; i-type mo ulit ang mga ito o i-import mula sa isang file. Hindi nailalipat ang mga custom format, tag at kasaysayan. Hindi kailanman inililipat ang mga media file. Hakbang-hakbang: [Move from other apps](https://docs.HolyArrs.com/migrate/).
+Naiiwan ang mga key at password; i-type mo ulit ang mga ito o i-import mula sa isang file. Hindi nailalipat ang mga custom format, tag at kasaysayan. Hindi kailanman inililipat ang mga media file. Hakbang-hakbang: [Import from other apps](https://docs.HolyArrs.com/migrate/).
 
 ## 🧭 Ano ang hindi pa nito kaya
 
 - **Pag-download nang mag-isa.** Kumokonekta ang HolyArrs sa qBittorrent, SABnzbd at sa iba pa. Hindi nito pinapalitan ang mga ito.
-- **Mga tampok na AI o MCP.** Wala sa 1.0.
 - **Mga app para sa telepono at TV.** Hindi pa ginagawa. Gumagana ang web app sa telepono.
 - **Musika sa Explore** ay ginagawa pa.
 
@@ -213,6 +213,8 @@ Kapag na-pull mo ang `holyarrs/holyarrs:latest`, makukuha mo ang tamang image pa
 
 Naka-NAS ka ba? Tingnan ang [Unraid, Synology at iba pang NAS](https://docs.HolyArrs.com/run/platforms/).
 
+Mas gusto mo ng native na package? May kalakip na experimental na Synology package (`.spk`) ang bawat [release](https://github.com/HolyArrs/HolyArrs/releases). Tingnan ang [Synology package](../../docs/run/synology.md).
+
 ## Mga version tag
 
 Nasa Docker Hub ang mga image bilang [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs).
@@ -220,7 +222,7 @@ Nasa Docker Hub ang mga image bilang [`holyarrs/holyarrs`](https://hub.docker.co
 | Tag | Gamitin para sa |
 | :----: | --- |
 | `latest` | Ang pinakabagong bersyon. |
-| `1.1.0` | Isang eksaktong bersyon. Hindi ito kailanman gumagalaw. |
+| `1.1.1` | Isang eksaktong bersyon. Hindi ito kailanman gumagalaw. |
 
 ## Paggamit
 
@@ -415,7 +417,7 @@ Gusto mo bang isama ito sa isang saradong produkto? Mag-email sa support@HolyArr
 
 ## Ipagpatuloy ito
 
-Libre ang HolyArrs, pero hindi libre ang pagpapatakbo nito. Bawat install ay kumakausap sa metadata server na binabayaran ko bawat buwan. Sinasagot ito ng mga sponsor, at nagdaragdag pa sila ng oras para sa mga bagay na binoboto mo.
+Libre ang HolyArrs, pero hindi libre ang pagpapatakbo nito. Bilang default, bawat install ay kumakausap sa metadata server na binabayaran ko bawat buwan. Sinasagot ito ng mga sponsor, at nagdaragdag pa sila ng oras para sa mga bagay na binoboto mo.
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="I-sponsor ang HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Bumoto sa roadmap" /></picture></a></p>
 
