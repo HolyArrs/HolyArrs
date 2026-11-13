@@ -26,7 +26,7 @@
 	import { NoDownloaderNote } from '#lib/downloads/index.ts';
 	import TitleLibrary from './TitleLibrary.svelte';
 	import TitleOwnedSheets from './TitleOwnedSheets.svelte';
-	import { SearchOutcomeLine, keptSeasons, seasonsToAsk, QuickAsk, AddMovieDialog, AddShowDialog, AskShowDialog, AskMovieDialog, fourKReady } from '#lib/requests/index.ts';
+	import { SearchOutcomeLine, keptSeasons, completeSeasons, seasonsToAsk, QuickAsk, AddMovieDialog, AddShowDialog, AskShowDialog, AskMovieDialog, fourKReady } from '#lib/requests/index.ts';
 	import { seasonWords, SeasonFolds } from '#lib/shows/index.ts';
 	import { detailPath, fourKOffer, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/metadata/index.ts';
 	import type { GateDefaults } from '#lib/mediafiles/index.ts';
@@ -123,7 +123,8 @@
 	const mayAsk = $derived(session.can('ask') && !manage);
 	// A show in the Library can still be asked for the seasons it does not keep up to date.
 	const kept = $derived(owned ? keptSeasons(owned) : []);
-	const askable = $derived(owned ? seasonsToAsk(details?.show?.seasons, kept) : []);
+	const complete = $derived(owned ? completeSeasons(owned) : []);
+	const askable = $derived(owned ? seasonsToAsk(details?.show?.seasons, [...kept, ...complete]) : []);
 	// The 4K request button shows only when 4K quality is set up for movies.
 	let fourKMovies = $state(false);
 	$effect(() => {
@@ -422,7 +423,7 @@
 					{#if manage || mayReport || mayHide}<ActionMenu label={t('discover.titlePage.moreActions')} caption={t('discover.titlePage.more')} icon="more" items={titleMenu} />{/if}
 					{#if mayAsk}{@render ask4kButton(d)}{/if}
 					{#if mayAsk && d.kind === 'show' && d.show && !d.neverAdd && askable.length > 0}
-						<ActionButton icon="wish" pill label={t('discover.titlePage.askFor', { name: d.name })} caption={t('discover.titlePage.request')} onclick={() => askShow?.open(d.show as LookupShow, kept)} data-testid="hero-ask-seasons" />
+						<ActionButton icon="wish" pill label={t('discover.titlePage.askFor', { name: d.name })} caption={t('discover.titlePage.request')} onclick={() => askShow?.open(d.show as LookupShow, kept, complete)} data-testid="hero-ask-seasons" />
 					{/if}
 				{:else if manage && !d.neverAdd}
 					{#if d.kind === 'movie' && d.movie}

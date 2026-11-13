@@ -25,6 +25,8 @@
 	let picked = $state<LookupShow | null>(null);
 	// Seasons a Library show already keeps up to date: shown as kept, not ticked.
 	let kept = $state<number[]>([]);
+	// Seasons a Library show already holds in full: shown as in the Library, not ticked.
+	let complete = $state<number[]>([]);
 	// Follow puts it on my calendar (ticked by default).
 	let follow = $state(true);
 	// The Quality row: the lines of what people can ask for that I may use (one line or none hides it).
@@ -48,8 +50,9 @@
 	const seasons = $derived((picked?.seasons ?? []).map((s) => s.number).sort((a, b) => a - b));
 
 	/** Shows the dialog for one looked-up show. */
-	export function open(s: LookupShow, keptSeasons: number[] = []) {
+	export function open(s: LookupShow, keptSeasons: number[] = [], completeSeasons: number[] = []) {
 		kept = keptSeasons;
+		complete = completeSeasons;
 		follow = true;
 		choices = [];
 		quality = '';
@@ -133,7 +136,7 @@
 					<span><b>{t('requests.askShow.all')}</b><br /><span class="hint">{t('requests.askShow.allHint')}</span></span>
 				</label>
 				<label class="checkline">
-					<input type="radio" name="what" checked={mode === 'choose'} onchange={() => (mode = 'choose')} disabled={seasons.every((n) => kept.includes(n))} />
+					<input type="radio" name="what" checked={mode === 'choose'} onchange={() => (mode = 'choose')} disabled={seasons.every((n) => kept.includes(n) || complete.includes(n))} />
 					<span><b>{t('requests.askShow.choose')}</b><br /><span class="hint">{t('requests.askShow.chooseHint')}</span></span>
 				</label>
 				<label class="checkline">
@@ -147,12 +150,12 @@
 					{#each seasons as n (n)}
 						{@const whole = chosen.includes(n)}
 						{@const list = eps[n]}
-						{@const have = kept.includes(n)}
+						{@const have = kept.includes(n) || complete.includes(n)}
 						<div class="row" class:on={whole || (epPicks[n]?.length ?? 0) > 0}>
 							<label class="pickrow" class:have>
 								<input type="checkbox" checked={whole} disabled={have} onchange={(e) => toggle(n, e.currentTarget.checked)} />
 								<span class="nm">{seasonName(n)}</span>
-								{#if have}<span class="xs muted">{t('discover.titleLibrary.keptUpToDate')}</span>{/if}
+								{#if have}<span class="xs muted">{kept.includes(n) ? t('discover.titleLibrary.keptUpToDate') : t('requests.askArtist.inLibrary')}</span>{/if}
 								{#if epPicks[n]?.length}<span class="xs muted">{t('requests.askShow.picked', { n: epPicks[n].length })}</span>{/if}
 							</label>
 							<button type="button" class="more" aria-expanded={openSeason === n} aria-label={t('requests.askShow.episodesOf', { season: seasonName(n) })} disabled={whole || have} onclick={() => expand(n)}>{openSeason === n ? t('requests.askShow.hide') : t('requests.askShow.episodes')}</button>
