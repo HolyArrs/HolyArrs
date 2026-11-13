@@ -1,4 +1,4 @@
-import { albumCounts, albumGroups, askAlbums, askSeasons, askedWords, songsHead, picksChanged, picksHead, seasonPick, baseName, keptByDefault, keptSeasons, keptWords, seasonsToAsk, kindOf, type ArtistAlbum } from './ask-parts.ts';
+import { albumCounts, albumGroups, askAlbums, askSeasons, askedWords, songsHead, picksChanged, picksHead, seasonPick, baseName, keptByDefault, keptSeasons, completeSeasons, keptWords, seasonsToAsk, kindOf, type ArtistAlbum } from './ask-parts.ts';
 import { describe, expect, it } from 'vitest';
 
 const al = (mbid: string, name: string, date: string, extra: Partial<ArtistAlbum> = {}): ArtistAlbum => ({ mbid, name, type: 'album', secondary_types: [], release_date: date, shelf: 'albums', image: `/art/${mbid}`, ...extra });
@@ -104,5 +104,18 @@ describe('seasons a Library show keeps', () => {
 		expect(seasonsToAsk(all, [2])).toEqual([1, 3]);
 		expect(seasonsToAsk(all, [1, 2, 3])).toEqual([]);
 		expect(seasonsToAsk(undefined, [])).toEqual([]);
+	});
+});
+
+describe('complete seasons', () => {
+	const se = (number: number, aired: number, in_library: number) => ({ number, aired, in_library });
+	it('lists the seasons with every aired episode in the Library', () => {
+		expect(completeSeasons({ show: { seasons: [se(0, 2, 2), se(1, 8, 8), se(2, 8, 5), se(3, 0, 0), se(4, 10, 10)] } })).toEqual([1, 4]);
+		expect(completeSeasons({})).toEqual([]);
+	});
+	it('leaves nothing to ask when every season is kept or complete', () => {
+		const all = [{ number: 1 }, { number: 2 }, { number: 3 }];
+		expect(seasonsToAsk(all, [2, ...completeSeasons({ show: { seasons: [se(1, 4, 4), se(3, 6, 6)] } })])).toEqual([]);
+		expect(seasonsToAsk(all, [2, ...completeSeasons({ show: { seasons: [se(1, 4, 4), se(3, 6, 5)] } })])).toEqual([3]);
 	});
 });
