@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Les applications d'IA sont désactivées. Autoriser les active.",
 	"arrapi.ai.offOther": "Les applications d'IA sont désactivées. Demandez au propriétaire de les activer, puis réessayez.",
 	"arrapi.ai.allow": "Autoriser",
-	"arrapi.ai.cancel": "Annuler"
+	"arrapi.ai.cancel": "Annuler",
+	"arrapi.seerr.sentTitle": "Envoyé par d'autres apps",
+	"arrapi.seerr.sentHint": "Formats et profils envoyés par des apps comme Profilarr. Affichés ici en lecture seule.",
+	"arrapi.seerr.sentFormat": "Format",
+	"arrapi.seerr.sentProfile": "Profil",
+	"arrapi.seerr.sentUpdated": "mis à jour {ago}"
 }

@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "AI ஆப்கள் அணைந்துள்ளன. அனுமதித்தால் அவை இயங்கும்.",
 	"arrapi.ai.offOther": "AI ஆப்கள் அணைந்துள்ளன. உரிமையாளரிடம் இயக்கச் சொல்லி, மீண்டும் முயலுங்கள்.",
 	"arrapi.ai.allow": "அனுமதி",
-	"arrapi.ai.cancel": "ரத்துசெய்"
+	"arrapi.ai.cancel": "ரத்துசெய்",
+	"arrapi.seerr.sentTitle": "பிற ஆப்கள் அனுப்பியவை",
+	"arrapi.seerr.sentHint": "Profilarr போன்ற ஆப்கள் அனுப்பிய வடிவங்களும் சுயவிவரங்களும். இங்கே படிக்க மட்டும்.",
+	"arrapi.seerr.sentFormat": "வடிவம்",
+	"arrapi.seerr.sentProfile": "சுயவிவரம்",
+	"arrapi.seerr.sentUpdated": "புதுப்பிக்கப்பட்டது {ago}"
 }

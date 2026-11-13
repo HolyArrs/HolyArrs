@@ -19,6 +19,7 @@ type pushedFormat struct {
 	Body    string
 	TraitID int64 // 0 when it became no trait
 	Skipped string
+	Updated string
 }
 
 // pushedProfile is a profile an app sent to a side, and the Pick rules it became.
@@ -28,14 +29,15 @@ type pushedProfile struct {
 	Name        string
 	Body        string
 	Notes       []string
+	Updated     string
 }
 
-const formatColumns = "id, side, name, body, trait_id, skipped"
+const formatColumns = "id, side, name, body, trait_id, skipped, updated_at"
 
 func scanFormat(sc interface{ Scan(...any) error }) (pushedFormat, error) {
 	var f pushedFormat
 	var trait sql.NullInt64
-	err := sc.Scan(&f.ID, &f.Side, &f.Name, &f.Body, &trait, &f.Skipped)
+	err := sc.Scan(&f.ID, &f.Side, &f.Name, &f.Body, &trait, &f.Skipped, &f.Updated)
 	f.TraitID = trait.Int64
 	return f, err
 }
@@ -127,12 +129,12 @@ func deleteFormatRow(ctx context.Context, st *database.Store, side string, id in
 	})
 }
 
-const profileColumns = "pick_rules_id, side, name, body, notes"
+const profileColumns = "pick_rules_id, side, name, body, notes, updated_at"
 
 func scanProfile(sc interface{ Scan(...any) error }) (pushedProfile, error) {
 	var p pushedProfile
 	var notes string
-	err := sc.Scan(&p.PickRulesID, &p.Side, &p.Name, &p.Body, &notes)
+	err := sc.Scan(&p.PickRulesID, &p.Side, &p.Name, &p.Body, &notes, &p.Updated)
 	_ = json.Unmarshal([]byte(notes), &p.Notes)
 	return p, err
 }

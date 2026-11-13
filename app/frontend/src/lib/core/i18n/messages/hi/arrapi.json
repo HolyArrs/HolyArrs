@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "AI ऐप बंद हैं। मंज़ूरी देने पर वे चालू हो जाएंगे।",
 	"arrapi.ai.offOther": "AI ऐप बंद हैं। ओनर से उन्हें चालू करने को कहें, फिर कोशिश करें।",
 	"arrapi.ai.allow": "मंज़ूरी दें",
-	"arrapi.ai.cancel": "रद्द करें"
+	"arrapi.ai.cancel": "रद्द करें",
+	"arrapi.seerr.sentTitle": "दूसरे ऐप ने भेजा",
+	"arrapi.seerr.sentHint": "Profilarr जैसे ऐप ने जो फ़ॉर्मैट और प्रोफ़ाइल भेजे। यहाँ सिर्फ़ पढ़ने के लिए।",
+	"arrapi.seerr.sentFormat": "फ़ॉर्मैट",
+	"arrapi.seerr.sentProfile": "प्रोफ़ाइल",
+	"arrapi.seerr.sentUpdated": "अपडेट {ago}"
 }

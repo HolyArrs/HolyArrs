@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "برنامه‌های هوش مصنوعی خاموش‌اند. اجازه دادن آن‌ها را روشن می‌کند.",
 	"arrapi.ai.offOther": "برنامه‌های هوش مصنوعی خاموش‌اند. از مالک بخواه روشنشان کند، بعد دوباره امتحان کن.",
 	"arrapi.ai.allow": "اجازه بده",
-	"arrapi.ai.cancel": "انصراف"
+	"arrapi.ai.cancel": "انصراف",
+	"arrapi.seerr.sentTitle": "ارسال‌شده از برنامه‌های دیگر",
+	"arrapi.seerr.sentHint": "قالب‌ها و نمایه‌هایی که برنامه‌هایی مانند Profilarr فرستاده‌اند. اینجا فقط برای خواندن.",
+	"arrapi.seerr.sentFormat": "قالب",
+	"arrapi.seerr.sentProfile": "نمایه",
+	"arrapi.seerr.sentUpdated": "به‌روزشده {ago}"
 }

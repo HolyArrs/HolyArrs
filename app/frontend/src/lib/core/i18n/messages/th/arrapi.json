@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "แอป AI ปิดอยู่ การอนุญาตจะเปิดให้",
 	"arrapi.ai.offOther": "แอป AI ปิดอยู่ ขอให้เจ้าของเปิด แล้วลองอีกครั้ง",
 	"arrapi.ai.allow": "อนุญาต",
-	"arrapi.ai.cancel": "ยกเลิก"
+	"arrapi.ai.cancel": "ยกเลิก",
+	"arrapi.seerr.sentTitle": "ส่งมาจากแอปอื่น",
+	"arrapi.seerr.sentHint": "รูปแบบและโปรไฟล์ที่แอปอย่าง Profilarr ส่งมา แสดงไว้ให้อ่านอย่างเดียว",
+	"arrapi.seerr.sentFormat": "รูปแบบ",
+	"arrapi.seerr.sentProfile": "โปรไฟล์",
+	"arrapi.seerr.sentUpdated": "อัปเดต {ago}"
 }

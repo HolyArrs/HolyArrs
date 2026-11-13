@@ -221,7 +221,7 @@ func TestFormats_KindsAndSkips(t *testing.T) {
 	}
 	var found bool
 	for _, f := range pushed["formats"].([]PushedFormat) {
-		found = found || f.Side == "sonarr" && f.Name == "Old" && strings.Contains(f.Skipped, "year") && f.TraitID == 0
+		found = found || f.Side == "sonarr" && f.Name == "Old" && strings.Contains(f.Skipped, "year") && f.TraitID == 0 && f.UpdatedAt != ""
 	}
 	if !found {
 		t.Fatalf("settings answer: %+v", pushed)

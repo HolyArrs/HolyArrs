@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "DI programos išjungtos. Leidus jos įjungiamos.",
 	"arrapi.ai.offOther": "DI programos išjungtos. Paprašykite savininko jas įjungti ir bandykite dar kartą.",
 	"arrapi.ai.allow": "Leisti",
-	"arrapi.ai.cancel": "Atšaukti"
+	"arrapi.ai.cancel": "Atšaukti",
+	"arrapi.seerr.sentTitle": "Atsiuntė kitos programos",
+	"arrapi.seerr.sentHint": "Formatai ir profiliai, kuriuos atsiuntė programos, pvz., Profilarr. Čia tik skaitymui.",
+	"arrapi.seerr.sentFormat": "Formatas",
+	"arrapi.seerr.sentProfile": "Profilis",
+	"arrapi.seerr.sentUpdated": "atnaujinta {ago}"
 }

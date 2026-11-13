@@ -161,10 +161,11 @@ func (h *Handlers) answer(r *http.Request) (map[string]any, error) {
 // PushedFormat is a format an app sent to a side: whether it became a
 // trait, and why not when it did not.
 type PushedFormat struct {
-	Side    string `json:"side"`
-	Name    string `json:"name"`
-	TraitID int64  `json:"trait_id,omitempty"`
-	Skipped string `json:"skipped,omitempty"`
+	Side      string `json:"side"`
+	Name      string `json:"name"`
+	TraitID   int64  `json:"trait_id,omitempty"`
+	Skipped   string `json:"skipped,omitempty"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 // PushedProfile is a profile an app sent to a side, the Pick rules it
@@ -174,6 +175,7 @@ type PushedProfile struct {
 	Name        string   `json:"name"`
 	PickRulesID int64    `json:"pick_rules_id"`
 	Notes       []string `json:"notes"`
+	UpdatedAt   string   `json:"updated_at"`
 }
 
 // pushed lists what apps such as Profilarr sent to both sides.
@@ -185,7 +187,7 @@ func (h *Handlers) pushed(ctx context.Context) (map[string]any, error) {
 			return nil, err
 		}
 		for _, f := range fs {
-			formats = append(formats, PushedFormat{Side: side, Name: f.Name, TraitID: f.TraitID, Skipped: f.Skipped})
+			formats = append(formats, PushedFormat{Side: side, Name: f.Name, TraitID: f.TraitID, Skipped: f.Skipped, UpdatedAt: f.Updated})
 		}
 	}
 	rows, err := listProfileRows(ctx, h.Store.Read())
@@ -194,7 +196,7 @@ func (h *Handlers) pushed(ctx context.Context) (map[string]any, error) {
 	}
 	profiles := []PushedProfile{}
 	for _, p := range rows {
-		profiles = append(profiles, PushedProfile{Side: p.Side, Name: p.Name, PickRulesID: p.PickRulesID, Notes: append([]string{}, p.Notes...)})
+		profiles = append(profiles, PushedProfile{Side: p.Side, Name: p.Name, PickRulesID: p.PickRulesID, Notes: append([]string{}, p.Notes...), UpdatedAt: p.Updated})
 	}
 	sort.Slice(profiles, func(i, j int) bool { return profiles[i].PickRulesID < profiles[j].PickRulesID })
 	return map[string]any{"formats": formats, "profiles": profiles}, nil

@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "MI lietotnes ir izslēgtas. Atļaujot tās tiek ieslēgtas.",
 	"arrapi.ai.offOther": "MI lietotnes ir izslēgtas. Palūdz īpašniekam tās ieslēgt, tad mēģini vēlreiz.",
 	"arrapi.ai.allow": "Atļaut",
-	"arrapi.ai.cancel": "Atcelt"
+	"arrapi.ai.cancel": "Atcelt",
+	"arrapi.seerr.sentTitle": "Nosūtīja citas lietotnes",
+	"arrapi.seerr.sentHint": "Formāti un profili, ko nosūtīja lietotnes, piemēram, Profilarr. Šeit tikai lasīšanai.",
+	"arrapi.seerr.sentFormat": "Formāts",
+	"arrapi.seerr.sentProfile": "Profils",
+	"arrapi.seerr.sentUpdated": "atjaunināts {ago}"
 }
