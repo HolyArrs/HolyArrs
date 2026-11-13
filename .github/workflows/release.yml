@@ -85,7 +85,9 @@ jobs:
           context: .
           file: deploy/Dockerfile
           platforms: ${{ env.DOCKER_PLATFORMS }}
-          push: true
+          # Pushed with the strongest gzip setting: a slightly smaller download
+          # that every Docker version can still pull.
+          outputs: type=image,push=true,compression=gzip,compression-level=9,force-compression=true
           build-args: VERSION=${{ env.VERSION }}
           tags: |
             ${{ env.DOCKERHUB_IMAGE }}:${{ env.VERSION }}

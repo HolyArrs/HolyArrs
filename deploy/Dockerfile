@@ -25,11 +25,14 @@ COPY . .
 # The pages just built are what the program embeds.
 RUN rm -rf app/frontend/dist
 COPY --from=web /src/app/frontend/dist ./app/frontend/dist
+# -gcflags turns inlining off in HolyArrs's own packages only (about 1 MB less
+# to download, same measured speed); Go's library and the database keep it,
+# where it matters for speed.
 RUN set -eu; \
     ldflags="-s -w"; \
     if [ -n "${VERSION:-}" ]; then ldflags="$ldflags -X main.version=$VERSION"; fi; \
     GOARM="${TARGETVARIANT#v}" CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
-    go build -trimpath -ldflags="$ldflags" -o /out/holyarrs ./app/backend/cmd/holyarrs
+    go build -trimpath -gcflags="github.com/HolyArrs/holyarrs/...=-l" -ldflags="$ldflags" -o /out/holyarrs ./app/backend/cmd/holyarrs
 # The folders the bare image needs: /config for the owner (1000:1000) and a
 # /tmp anyone may write (Move's working copies, temporary files).
 RUN mkdir -p /out/config /out/tmp && chown 1000:1000 /out/config && chmod 1777 /out/tmp
