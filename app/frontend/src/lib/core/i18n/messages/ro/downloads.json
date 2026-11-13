@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Niciun peer",
 	"downloads.problem.repairNeeded": "Necesită reparare",
 	"downloads.hl.notAdded": "Nu a fost adăugat; din nou în așteptare",
-	"downloads.hl.notAddedSlow": "serverul de metadate nu a răspuns la timp"
+	"downloads.hl.notAddedSlow": "serverul de metadate nu a răspuns la timp",
+	"downloads.hl.notAddedDown": "serverul de metadate nu a putut fi contactat"
 }

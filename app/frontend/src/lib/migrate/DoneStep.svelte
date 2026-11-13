@@ -8,7 +8,7 @@
 	import ResultGroups from './ResultGroups.svelte';
 	import FolderOutcome from './FolderOutcome.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { moveCounts, progressWords, running as isRunning, type Bucket, type Move } from './move.ts';
+	import { moveCounts, noFolderCount, progressWords, running as isRunning, type Bucket, type Move } from './move.ts';
 	import { to } from '../core/paths.ts';
 	import { dateTime } from '../core/format.ts';
 
@@ -42,6 +42,7 @@
 	const lines = $derived(rep?.lines ?? []);
 	const detail = $derived(progressWords(note));
 	const plainNext = $derived(!rep || !!rep.undo || rep.lines.length === 0);
+	const noFolder = $derived(noFolderCount(lines));
 </script>
 
 <SettingsCard id="move-step" title={countSteps ? t('migrate.step4Of4') : t('migrate.done')}>
@@ -67,7 +68,7 @@
 </SettingsCard>
 
 {#if rep && !busy}
-	{#if plainNext || (counts.not_found ?? 0) > 0 || openChoices > 0 || (counts.failed ?? 0) > 0}
+	{#if plainNext || noFolder > 0 || openChoices > 0 || (counts.failed ?? 0) > 0}
 	<SettingsCard id="move-todo" title={t('migrate.needsYou')}>
 		{#if plainNext}
 			{#each rep.next as n (n)}
@@ -81,8 +82,8 @@
 						{#if !act}{:else if typeof go === 'string'}<a class="quiet" href={go}>{act}</a>{:else}<button type="button" class="quiet" onclick={go}>{act}</button>{/if}
 					</div>
 				{/snippet}
-				{#if (counts.not_found ?? 0) > 0}
-					{@render card((counts.not_found ?? 0) === 1 ? t('migrate.titleHaveNoFolder', { n: counts.not_found ?? 0 }) : t('migrate.titlesHaveNoFolder', { n: counts.not_found ?? 0 }), t('migrate.addTheirFolderThen'), t('migrate.folders'), to('/settings/library-folders'))}
+				{#if noFolder > 0}
+					{@render card(noFolder === 1 ? t('migrate.titleHaveNoFolder', { n: noFolder }) : t('migrate.titlesHaveNoFolder', { n: noFolder }), t('migrate.addTheirFolderThen'), t('migrate.folders'), to('/settings/library-folders'))}
 				{/if}
 				{#if openChoices > 0}
 					{@render card(openChoices === 1 ? t('migrate.chooseForPerson', { n: openChoices }) : t('migrate.chooseForPeople', { n: openChoices }), t('migrate.theyStayBehindUntil'), t('migrate.choose'), onchoose)}

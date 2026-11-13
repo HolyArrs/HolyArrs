@@ -1314,5 +1314,9 @@
 	"server.sources.this-release-does-not-match-an": "Denne utgivelsen passer ikke til noen episode HolyArrs leter etter. Vil du bruke den likevel, velger du den fra episoden den hører til.",
 	"server.metadata.the-metadata-server-is-slow-right": "Metadataserveren er treg akkurat nå. Det går over av seg selv.",
 	"server.requests.could-not-add-it-back-in": "{before}: kunne ikke legges til, venter igjen",
-	"server.requests.the-metadata-server-did-not-answer": "Metadataserveren svarte ikke i tide. Den venter igjen; godkjenn den på nytt."
+	"server.requests.the-metadata-server-did-not-answer": "Metadataserveren svarte ikke i tide. Den venter igjen; godkjenn den på nytt.",
+	"server.importer.import-by-hand-reads-only-from": "Import for hånd leser bare fra bibliotekmappene, nedlasternes mapper og de ekstra importmappene under Innstillinger > Bibliotekmapper: {all}",
+	"server.importer.import-by-hand-reads-only-from-2": "Import for hånd leser bare fra bibliotekmappene, nedlasternes mapper og de ekstra importmappene, og ingen er satt opp ennå. Legg til en under Innstillinger > Bibliotekmapper.",
+	"server.sources.holds-not-what-was-searched-for": "inneholder {covered}, ikke det som ble søkt etter",
+	"server.mediafiles.no-title-in-the-library-is": "ingen Tittel i biblioteket heter {value}"
 }

@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "沒有對等方",
 	"downloads.problem.repairNeeded": "需要修復",
 	"downloads.hl.notAdded": "未新增，已回到等待中",
-	"downloads.hl.notAddedSlow": "中繼資料伺服器沒有及時回應"
+	"downloads.hl.notAddedSlow": "中繼資料伺服器沒有及時回應",
+	"downloads.hl.notAddedDown": "無法連線到中繼資料伺服器"
 }

@@ -1314,5 +1314,9 @@
 	"server.sources.this-release-does-not-match-an": "Deze release past bij geen aflevering waar HolyArrs naar zoekt. Wil je hem toch gebruiken, kies hem dan bij de aflevering waar hij bij hoort.",
 	"server.metadata.the-metadata-server-is-slow-right": "De metadataserver is op dit moment traag. Dit komt vanzelf weer goed.",
 	"server.requests.could-not-add-it-back-in": "{before}: kon niet worden toegevoegd, wacht weer",
-	"server.requests.the-metadata-server-did-not-answer": "De metadataserver antwoordde niet op tijd. Het verzoek wacht weer; keur het opnieuw goed."
+	"server.requests.the-metadata-server-did-not-answer": "De metadataserver antwoordde niet op tijd. Het verzoek wacht weer; keur het opnieuw goed.",
+	"server.importer.import-by-hand-reads-only-from": "Importeren met de hand leest alleen uit de bibliotheekmappen, de mappen van de downloaders en de extra importmappen onder Instellingen > Bibliotheekmappen: {all}",
+	"server.importer.import-by-hand-reads-only-from-2": "Importeren met de hand leest alleen uit de bibliotheekmappen, de mappen van de downloaders en de extra importmappen, en er is er nog geen ingesteld. Voeg er een toe onder Instellingen > Bibliotheekmappen.",
+	"server.sources.holds-not-what-was-searched-for": "bevat {covered}, niet wat er gezocht werd",
+	"server.mediafiles.no-title-in-the-library-is": "geen Titel in de bibliotheek heet {value}"
 }

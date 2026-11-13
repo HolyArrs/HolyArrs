@@ -46,7 +46,7 @@
 		)
 	);
 	function lineRow(l: Line, i: number) {
-		return { key: l.key + ':' + i, name: serverWords(l.name), hint: l.result === 'not_found' ? undefined : serverWords(l.detail), pill: { word: resultWords(l.result), tone: tone(l.result) }, look: needsLook(l.result) };
+		return { key: l.key + ':' + i, name: serverWords(l.name), hint: l.result === 'not_found' ? undefined : serverWords(l.detail), pill: { word: resultWords(l.result), tone: tone(l.result) }, look: needsLook(l.result) || !!l.attention };
 	}
 </script>
 

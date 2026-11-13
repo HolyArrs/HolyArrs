@@ -271,7 +271,7 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'ask_made': return named(TAG.asked, who(e, ctx) || str(d.asked_by) || say('downloads.hl.aMember'), cap(str(d.albums) || str(d.seasons)));
 		case 'ask_approved': return d.auto === true ? t(TAG.approved, join(say('downloads.hl.automatic'), str(d.note))) : named(TAG.approved, str(d.approved_by) || who(e, ctx), str(d.note));
 		case 'ask_turned_down': return named(TAG.declined, str(d.turned_down_by) || who(e, ctx), str(d.note));
-		case 'ask_not_added': return t(TAG.failed, join(say('downloads.hl.notAdded'), d.slow === true ? say('downloads.hl.notAddedSlow') : plainWhy(str(d.reason))));
+		case 'ask_not_added': return t(TAG.failed, join(say('downloads.hl.notAdded'), d.slow === true ? say('downloads.hl.notAddedSlow') : d.down === true || /dial tcp|connection refused|no such host/.test(str(d.reason)) ? say('downloads.hl.notAddedDown') : plainWhy(str(d.reason))));
 		case 'report_made': return t(TAG.reported, join(problem(d.kind), str(d.note)));
 		case 'report_fixed': return t(TAG.fixed, join(problem(d.kind), str(d.reply)));
 		case 'report_reopened': return t(TAG.reopened, join(problem(d.kind), str(d.note)));

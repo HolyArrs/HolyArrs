@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Sem pares",
 	"downloads.problem.repairNeeded": "Precisa de reparo",
 	"downloads.hl.notAdded": "Não adicionado; voltou a aguardar",
-	"downloads.hl.notAddedSlow": "o servidor de metadados não respondeu a tempo"
+	"downloads.hl.notAddedSlow": "o servidor de metadados não respondeu a tempo",
+	"downloads.hl.notAddedDown": "não foi possível conectar ao servidor de metadados"
 }

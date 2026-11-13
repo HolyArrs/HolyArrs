@@ -10,7 +10,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
-	import { MoveSteps, StepFoot, ReadSheet, type ReadAnswer, type SavedKey, ItemsSheet, type SheetRow, type ShowList, ReadStep, ChooseStep, BeforeSheet, MoveStep, DoneStep, createFollower, appName, asStep, leaveFolders, latestPerInstance, buckets, countWords, extraProblems, folderProblem, moveTotal, plural, rulesFrom, running, stepGate, type AppKind, type Line, type Move, type PathRule, type PersonChoice, type Plan, type Report, type Snapshot, type Step } from '#lib/migrate/index.ts';
+	import { MoveSteps, StepFoot, ReadSheet, type ReadAnswer, type SavedKey, ItemsSheet, type SheetRow, type ShowList, ReadStep, ChooseStep, BeforeSheet, MoveStep, DoneStep, createFollower, appName, asStep, leaveFolders, latestPerInstance, buckets, countWords, extraProblems, folderProblem, moveTotal, plural, rulesFrom, running, stepGate, usedByMoves, type AppKind, type Line, type Move, type PathRule, type PersonChoice, type Plan, type Report, type Snapshot, type Step } from '#lib/migrate/index.ts';
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -160,12 +160,7 @@
 		tryCtrl?.abort();
 	});
 
-	const usedBy = $derived.by(() => {
-		const m = new Map<number, number>();
-		// Newest first: the newest done move that used a read names it.
-		for (const mv of moves) if (mv.state === 'done') for (const id of mv.snapshots ?? []) if (!m.has(id)) m.set(id, mv.id);
-		return m;
-	});
+	const usedBy = $derived(usedByMoves(moves, snapshots));
 	// Only rows on screen count: a folder from a read switched off is not marked anywhere.
 	const folderErrors = $derived(Object.keys(picks).filter((p) => (plan?.old_paths ?? []).includes(p) && folderProblem(p, picks[p], others[p]) !== '').length);
 	const extraErrors = $derived(extraProblems(extra));

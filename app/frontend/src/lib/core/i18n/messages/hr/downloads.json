@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Nema peerova",
 	"downloads.problem.repairNeeded": "Potreban popravak",
 	"downloads.hl.notAdded": "Nije dodano; opet čeka",
-	"downloads.hl.notAddedSlow": "poslužitelj metapodataka nije odgovorio na vrijeme"
+	"downloads.hl.notAddedSlow": "poslužitelj metapodataka nije odgovorio na vrijeme",
+	"downloads.hl.notAddedDown": "poslužitelj metapodataka nije bio dostupan"
 }

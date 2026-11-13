@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Tiada rakan",
 	"downloads.problem.repairNeeded": "Perlu dibaiki",
 	"downloads.hl.notAdded": "Tidak ditambah; kembali menunggu",
-	"downloads.hl.notAddedSlow": "pelayan metadata tidak menjawab tepat pada masanya"
+	"downloads.hl.notAddedSlow": "pelayan metadata tidak menjawab tepat pada masanya",
+	"downloads.hl.notAddedDown": "pelayan metadata tidak dapat dihubungi"
 }

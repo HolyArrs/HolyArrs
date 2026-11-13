@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Engir jafningjar",
 	"downloads.problem.repairNeeded": "Viðgerðar þörf",
 	"downloads.hl.notAdded": "Ekki bætt við; bíður aftur",
-	"downloads.hl.notAddedSlow": "lýsigagnaþjónninn svaraði ekki í tæka tíð"
+	"downloads.hl.notAddedSlow": "lýsigagnaþjónninn svaraði ekki í tæka tíð",
+	"downloads.hl.notAddedDown": "ekki náðist samband við lýsigagnaþjóninn"
 }

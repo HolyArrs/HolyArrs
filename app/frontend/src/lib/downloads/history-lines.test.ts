@@ -98,6 +98,10 @@ describe('asks', () => {
 	it('an approval that added nothing says so, with why', () => {
 		const slow = eventText(ev('ask_not_added', { title_name: undefined, TitleID: undefined, Summary: 'Dune (2021): could not add it, back in Waiting', Data: { slow: true, reason: 'the metadata server did not answer in time' } }), ctx);
 		expect([slow.name, slow.tag.word, slow.line]).toEqual(['Dune', 'Failed', 'Not added; back in Waiting · the metadata server did not answer in time']);
+		// Never the raw error with its address, also on lines written before.
+		const down = 'Not added; back in Waiting · the metadata server could not be reached';
+		expect(eventText(ev('ask_not_added', { Data: { down: true, reason: 'the metadata server could not be reached' } }), ctx).line).toBe(down);
+		expect(eventText(ev('ask_not_added', { Data: { slow: false, reason: 'TMDB: dial tcp 10.0.0.5:443: address refused by the network policy' } }), ctx).line).toBe(down);
 	});
 });
 

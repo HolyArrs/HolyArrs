@@ -1314,5 +1314,9 @@
 	"server.sources.this-release-does-not-match-an": "Ten release nie pasuje do żadnego odcinka, którego szuka HolyArrs. Aby mimo to go użyć, wybierz go z odcinka, którego dotyczy.",
 	"server.metadata.the-metadata-server-is-slow-right": "Serwer metadanych jest teraz wolny. To minie samo.",
 	"server.requests.could-not-add-it-back-in": "{before}: nie udało się dodać, znowu czeka",
-	"server.requests.the-metadata-server-did-not-answer": "Serwer metadanych nie odpowiedział na czas. Prośba znowu czeka; zatwierdź ją ponownie."
+	"server.requests.the-metadata-server-did-not-answer": "Serwer metadanych nie odpowiedział na czas. Prośba znowu czeka; zatwierdź ją ponownie.",
+	"server.importer.import-by-hand-reads-only-from": "Import ręczny czyta tylko z folderów biblioteki, folderów downloaderów i dodatkowych folderów importu w Ustawienia > Foldery biblioteki: {all}",
+	"server.importer.import-by-hand-reads-only-from-2": "Import ręczny czyta tylko z folderów biblioteki, folderów downloaderów i dodatkowych folderów importu, a żaden nie jest jeszcze ustawiony. Dodaj jeden w Ustawienia > Foldery biblioteki.",
+	"server.sources.holds-not-what-was-searched-for": "zawiera {covered}, a nie to, czego szukano",
+	"server.mediafiles.no-title-in-the-library-is": "żaden Tytuł w bibliotece nie nazywa się {value}"
 }

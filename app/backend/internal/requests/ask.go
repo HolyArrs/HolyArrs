@@ -149,6 +149,7 @@ type Service struct {
 	// background when it is asked for (off in tests).
 	PrefetchParts bool
 
+	fill     askFill
 	sendMu   sync.Mutex
 	sendTail <-chan struct{}
 	sending  sync.WaitGroup

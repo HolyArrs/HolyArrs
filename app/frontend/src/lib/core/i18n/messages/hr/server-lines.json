@@ -1314,5 +1314,9 @@
 	"server.sources.this-release-does-not-match-an": "Ovo izdanje ne odgovara nijednoj epizodi koju HolyArrs traži. Ako ga ipak želiš koristiti, odaberi ga kod epizode kojoj pripada.",
 	"server.metadata.the-metadata-server-is-slow-right": "Poslužitelj metapodataka trenutačno je spor. To će proći samo od sebe.",
 	"server.requests.could-not-add-it-back-in": "{before}: nije se moglo dodati, opet čeka",
-	"server.requests.the-metadata-server-did-not-answer": "Poslužitelj metapodataka nije odgovorio na vrijeme. Zahtjev opet čeka; odobri ga ponovno."
+	"server.requests.the-metadata-server-did-not-answer": "Poslužitelj metapodataka nije odgovorio na vrijeme. Zahtjev opet čeka; odobri ga ponovno.",
+	"server.importer.import-by-hand-reads-only-from": "Ručni uvoz čita samo iz mapa biblioteke, mapa preuzimatelja i dodatnih mapa za uvoz u Postavke > Mape biblioteke: {all}",
+	"server.importer.import-by-hand-reads-only-from-2": "Ručni uvoz čita samo iz mapa biblioteke, mapa preuzimatelja i dodatnih mapa za uvoz, a još nijedna nije postavljena. Dodajte jednu u Postavke > Mape biblioteke.",
+	"server.sources.holds-not-what-was-searched-for": "sadrži {covered}, a ne ono što se tražilo",
+	"server.mediafiles.no-title-in-the-library-is": "nijedan Naslov u biblioteci ne zove se {value}"
 }

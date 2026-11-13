@@ -3,6 +3,7 @@ import type { EpisodeView, SeasonSummary, ShowInfo } from '../core/types.ts';
 import { date } from '../core/format.ts';
 import { t } from '../core/i18n/i18n.svelte.ts';
 import { episodeCode } from '../core/episodes.ts';
+import { airedEpisodes } from '#lib/mediafiles/index.ts';
 
 export { episodeCode };
 
@@ -70,7 +71,7 @@ export function seasonLine(s: SeasonSummary): string {
 
 export function showProgress(s: ShowInfo | undefined): string {
 	if (!s) return '';
-	return t('shows.progress', { in: s.in_library, aired: airedOf(s) });
+	return t('shows.progress', { in: s.in_library, aired: airedEpisodes(s) });
 }
 
 export function mainSlot(e: EpisodeView) {
@@ -120,11 +121,6 @@ export function keepOffNote(seasonKept: boolean, showKept: boolean): string {
 	if (!showKept) return t('shows.keepOff.show');
 	if (!seasonKept) return t('shows.keepOff.season');
 	return '';
-}
-
-// Total aired episodes across all seasons.
-function airedOf(s: ShowInfo): number {
-	return s.seasons.reduce((n, x) => n + x.aired, 0);
 }
 
 // packWindowValue is the episodes-ahead number the server takes: 0 is off,

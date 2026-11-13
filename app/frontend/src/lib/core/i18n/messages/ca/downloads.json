@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Cap parell",
 	"downloads.problem.repairNeeded": "Cal reparar",
 	"downloads.hl.notAdded": "No s'ha afegit; torna a estar en espera",
-	"downloads.hl.notAddedSlow": "el servidor de metadades no ha respost a temps"
+	"downloads.hl.notAddedSlow": "el servidor de metadades no ha respost a temps",
+	"downloads.hl.notAddedDown": "no s'ha pogut connectar amb el servidor de metadades"
 }

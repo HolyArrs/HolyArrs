@@ -1314,5 +1314,9 @@
 	"server.sources.this-release-does-not-match-an": "Keluaran ini tidak sepadan dengan mana-mana episod yang sedang dicari oleh HolyArrs. Untuk menggunakannya juga, pilih ia daripada episod yang berkenaan.",
 	"server.metadata.the-metadata-server-is-slow-right": "Pelayan metadata perlahan sekarang. Ia akan pulih dengan sendirinya.",
 	"server.requests.could-not-add-it-back-in": "{before}: tidak dapat ditambah, kembali menunggu",
-	"server.requests.the-metadata-server-did-not-answer": "Pelayan metadata tidak menjawab tepat pada masanya. Ia kembali menunggu; luluskan sekali lagi."
+	"server.requests.the-metadata-server-did-not-answer": "Pelayan metadata tidak menjawab tepat pada masanya. Ia kembali menunggu; luluskan sekali lagi.",
+	"server.importer.import-by-hand-reads-only-from": "Import dengan tangan hanya membaca daripada folder pustaka, folder pemuat turun dan folder import tambahan dalam Tetapan > Folder pustaka: {all}",
+	"server.importer.import-by-hand-reads-only-from-2": "Import dengan tangan hanya membaca daripada folder pustaka, folder pemuat turun dan folder import tambahan, dan belum ada yang disediakan. Tambah satu dalam Tetapan > Folder pustaka.",
+	"server.sources.holds-not-what-was-searched-for": "mengandungi {covered}, bukan yang dicari",
+	"server.mediafiles.no-title-in-the-library-is": "tiada Tajuk dalam pustaka bernama {value}"
 }

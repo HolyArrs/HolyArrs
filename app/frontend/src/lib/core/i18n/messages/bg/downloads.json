@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Няма пиъри",
 	"downloads.problem.repairNeeded": "Нужен е ремонт",
 	"downloads.hl.notAdded": "Не е добавено; отново чака",
-	"downloads.hl.notAddedSlow": "сървърът за метаданни не отговори навреме"
+	"downloads.hl.notAddedSlow": "сървърът за метаданни не отговори навреме",
+	"downloads.hl.notAddedDown": "сървърът за метаданни не беше достъпен"
 }

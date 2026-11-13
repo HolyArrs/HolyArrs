@@ -473,14 +473,14 @@
 									<div class="xs muted">{facts(r, bytes)}{title.slots.length > 1 && r.version ? ` · ${r.version}` : ''}</div>
 									{#if key.length}
 										<ul class="reasons">
-											{#each key as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
+											{#each key as x, i (i)}<li class={x.effect}>{serverWords(x.text)}</li>{/each}
 										</ul>
 									{/if}
 									{#if r.reasons.length}
 										<details>
 											<summary class="xs muted">{tr('mediafiles.showReleases.allReasons', { n: r.reasons.length })}</summary>
 											<ul class="reasons">
-												{#each r.reasons as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
+												{#each r.reasons as x, i (i)}<li class={x.effect}>{serverWords(x.text)}</li>{/each}
 											</ul>
 										</details>
 									{/if}

@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Žádní peeři",
 	"downloads.problem.repairNeeded": "Nutná oprava",
 	"downloads.hl.notAdded": "Nepřidáno; znovu čeká",
-	"downloads.hl.notAddedSlow": "server metadat neodpověděl včas"
+	"downloads.hl.notAddedSlow": "server metadat neodpověděl včas",
+	"downloads.hl.notAddedDown": "server metadat nebyl dostupný"
 }

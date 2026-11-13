@@ -197,9 +197,9 @@ func (e *PlaceError) Error() string { return e.msg }
 func (ps ByHandPlaces) Refusal() error {
 	all := ps.all()
 	if len(all) == 0 {
-		return &PlaceError{"import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders, and none is set up yet; add one in Settings > Library folders"}
+		return &PlaceError{"Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders, and none is set up yet. Add one in Settings > Library folders."}
 	}
-	return &PlaceError{"import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders in Settings > Library folders: " + strings.Join(all, ", ")}
+	return &PlaceError{"Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders in Settings > Library folders: " + strings.Join(all, ", ")}
 }
 
 func samePath(a, b string) bool {

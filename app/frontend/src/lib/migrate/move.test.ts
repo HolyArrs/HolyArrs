@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanPath, cleanRules, countWord, countWords, extraProblems, folderOutcome, folderProblem, LEAVE, leaveFolders, moveCounts, moveStateWord, moveTotal, needsGroups, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, sharedTargets, stepGate, summary, tone, unseenFolder, type Plan, type Report } from './move.ts';
+import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanPath, cleanRules, countWord, countWords, extraProblems, folderOutcome, folderProblem, LEAVE, leaveFolders, moveCounts, moveStateWord, moveTotal, needsGroups, noFolderCount, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, sharedTargets, stepGate, summary, tone, unseenFolder, usedByMoves, type Plan, type Report } from './move.ts';
 
 describe('move helpers', () => {
 	it('names apps, with what they bring and their usual port', () => {
@@ -214,6 +214,19 @@ describe('folderOutcome', () => {
 	});
 });
 
+describe('noFolderCount', () => {
+	it('counts only what really has no folder here', () => {
+		const lines = [
+			// The old Library folder is not here, but its titles came over as wanted.
+			{ group: 'folders', key: 'folder:/old', name: 'old', result: 'not_found' },
+			{ group: 'titles', key: 'b', name: 'B', result: 'created', attention: 'unreachable' as const, folder: '/old' },
+			{ group: 'pick_rules', key: 'r', name: 'R', result: 'not_found' }
+		];
+		expect(noFolderCount(lines)).toBe(0);
+		expect(noFolderCount([...lines, { group: 'folders', key: 'folder:/gone', name: 'gone', result: 'not_found' }])).toBe(1);
+	});
+});
+
 describe('folders this server cannot see', () => {
 	const plan = {
 		snapshots: [1],
@@ -249,5 +262,16 @@ describe('folders this server cannot see', () => {
 		expect(folderProblem('/old/tv', LEAVE, undefined)).toBe('');
 		expect(rulesFrom({ '/old/tv': LEAVE, '/old/movies': '/data/media/movies' }, {}, [])).toEqual([{ from: '/old/movies', to: '/data/media/movies' }]);
 		expect(sharedTargets({ '/old/tv': LEAVE, '/old/movies': LEAVE }, {})).toEqual({});
+	});
+});
+
+describe('usedByMoves', () => {
+	it('never labels a read made after the import with that import', () => {
+		const snap = (id: number, created_at: string) => ({ id, created_at }) as Parameters<typeof usedByMoves>[1][number];
+		const move = (id: number, created_at: string, snapshots: number[]) => ({ id, created_at, state: 'done', snapshots }) as Parameters<typeof usedByMoves>[0][number];
+		const moves = [move(4, '2026-11-12T10:00:00Z', [7, 8])];
+		// Read 8 was removed after Import 4 and its number given to a new read.
+		const m = usedByMoves(moves, [snap(7, '2026-11-12T09:00:00Z'), snap(8, '2026-11-13T08:00:00Z')]);
+		expect([m.get(7), m.get(8)]).toEqual([4, undefined]);
 	});
 });

@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Нема пирова",
 	"downloads.problem.repairNeeded": "Потребна поправка",
 	"downloads.hl.notAdded": "Није додато; поново чека",
-	"downloads.hl.notAddedSlow": "сервер метаподатака није одговорио на време"
+	"downloads.hl.notAddedSlow": "сервер метаподатака није одговорио на време",
+	"downloads.hl.notAddedDown": "сервер метаподатака није био доступан"
 }

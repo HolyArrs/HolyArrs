@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "Partnereid pole",
 	"downloads.problem.repairNeeded": "Vajab parandamist",
 	"downloads.hl.notAdded": "Ei lisatud; jälle ootel",
-	"downloads.hl.notAddedSlow": "metaandmete server ei vastanud õigel ajal"
+	"downloads.hl.notAddedSlow": "metaandmete server ei vastanud õigel ajal",
+	"downloads.hl.notAddedDown": "metaandmete serveriga ei saadud ühendust"
 }

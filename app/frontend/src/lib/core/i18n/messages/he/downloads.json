@@ -1279,5 +1279,6 @@
 	"downloads.problem.noPeers": "אין עמיתים",
 	"downloads.problem.repairNeeded": "נדרש תיקון",
 	"downloads.hl.notAdded": "לא נוסף; שוב ממתין",
-	"downloads.hl.notAddedSlow": "שרת המטא־דאטה לא ענה בזמן"
+	"downloads.hl.notAddedSlow": "שרת המטא־דאטה לא ענה בזמן",
+	"downloads.hl.notAddedDown": "לא ניתן היה להגיע לשרת המטא־דאטה"
 }

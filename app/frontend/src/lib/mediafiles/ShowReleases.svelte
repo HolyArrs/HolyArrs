@@ -10,6 +10,7 @@
 	import { toasts } from '../core/toasts.svelte.ts';
 	import type { Choice, ReleasePage, ReleaseView } from '../core/types.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 	let {
 		titleId,
@@ -172,14 +173,14 @@
 					<div class="xs muted">{facts(r, bytes)}{r.episode ? ` · ${r.episode}` : ''}{music && r.slot_ids?.length ? ` · ${unit('track', r.slot_ids.length)}` : ''}{r.version && r.version !== 'Main' ? ` · ${r.version}` : ''}</div>
 					{#if key.length}
 						<ul class="reasons">
-							{#each key as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
+							{#each key as x, i (i)}<li class={x.effect}>{serverWords(x.text)}</li>{/each}
 						</ul>
 					{/if}
 					{#if r.reasons.length}
 						<details>
 							<summary class="xs muted">{t('mediafiles.showReleases.allReasons', { n: r.reasons.length })}</summary>
 							<ul class="reasons">
-								{#each r.reasons as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
+								{#each r.reasons as x, i (i)}<li class={x.effect}>{serverWords(x.text)}</li>{/each}
 							</ul>
 						</details>
 					{/if}

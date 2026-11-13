@@ -460,7 +460,7 @@
 											<span class="lib-ep-still">{#if e.still}<img src={e.still.replace('/w780/', '/w300/')} alt="" loading="lazy" decoding="async" />{/if}<span class="lib-ep-n">{e.episode}</span></span>
 											<button type="button" class="lib-ep-text" aria-label={t('discover.titleLibrary.episodeNamed', { episode: e.episode, name: e.name ?? '' })} onclick={() => { epPicked = e; epOpen = true; }}>
 												<b>{e.name ?? t('discover.titleLibrary.episodeN', { episode: e.episode })}{#if e.episode === (seasonEps[se.number]?.length ?? 0) && se.episodes > 1}<span class="lib-tag">{t('discover.titleLibrary.finale')}</span>{/if}</b>
-												<small>{[e.air_date ? dayWords(e.air_date) : '', e.runtime_minutes ? t('discover.titleLibrary.runtimeMin', { n: e.runtime_minutes }) : '', epFile(e)].filter(Boolean).join(' · ')}</small>
+												<small>{[e.air_day || e.air_date ? dayWords(e.air_day || e.air_date || '') : '', e.runtime_minutes ? t('discover.titleLibrary.runtimeMin', { n: e.runtime_minutes }) : '', epFile(e)].filter(Boolean).join(' · ')}</small>
 												{#if manage && chosenWhy(st)}<small class="lib-ep-why" data-testid="episode-chosen-why">{serverWords(chosenWhy(st))}</small>{/if}
 											</button>
 											<span class="lib-ep-st {aired ? tone : 'future'}"><span class="own-dot {tone}" aria-hidden="true"></span>{aired ? epQuality(e) || serverWords(st?.state_label) || t('discover.titleLibrary.missing') : t('discover.titleLibrary.notOutYet')}</span>

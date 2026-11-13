@@ -25,6 +25,7 @@ export { rulesFrom } from './move.ts';
 export { running } from './move.ts';
 export { setChoice } from './move.ts';
 export { stepGate } from './move.ts';
+export { usedByMoves } from './move.ts';
 export type { AppKind } from './move.ts';
 export type { Line } from './move.ts';
 export type { Move } from './move.ts';
