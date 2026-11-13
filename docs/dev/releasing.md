@@ -113,11 +113,12 @@ Body order: theme, Highlights, places (Requests, Library, Downloads, Indexers, A
 
 <details class="ha-more"><summary>The image workflow</summary>
 
-The `HolyArrs - Release` workflow starts when a version tag is pushed. It has three steps:
+The `HolyArrs - Release` workflow starts when a version tag is pushed. It has four steps:
 
 1. Build and push the image for `linux/amd64`, `linux/arm64` and `linux/arm/v7`, with the version tag and `latest`.
-2. Update the Docker Hub description from `README.md`.
-3. Publish the GitHub release with this version's `CHANGELOG.md` section.
+2. Build the portable archives for `linux-amd64`, `linux-arm64`, `linux-armv7` and `windows-amd64`, including the source archive and `SHA256SUMS`.
+3. Update the Docker Hub description from `README.md`.
+4. Publish the GitHub release with this version's `CHANGELOG.md` section and the portable archives as assets.
 
 </details>
 

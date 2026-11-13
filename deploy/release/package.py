@@ -101,7 +101,9 @@ def build_ui(source: Path, node_modules: Path) -> Path:
     """
     work = source.parent / "ui"
     shutil.copytree(source / "app/frontend", work, ignore=shutil.ignore_patterns("dist", "node_modules", ".svelte-kit"))
-    shutil.copytree(node_modules, work / "node_modules")
+    # npm puts symlinks in .bin on POSIX; dereferencing them breaks the
+    # relative imports inside vite and the other launchers.
+    shutil.copytree(node_modules, work / "node_modules", symlinks=os.name != "nt")
     npm = "npm.cmd" if os.name == "nt" else "npm"
     run([npm, "run", "build"], cwd=work)
     return work / "dist"
@@ -161,14 +163,20 @@ def build(args: argparse.Namespace) -> None:
                   if args.low_resource else [])
         go_environment = (["-e", "GOMAXPROCS=1", "-e", "GOMEMLIMIT=768MiB", "-e", "GOGC=50",
                            "-e", "GOFLAGS=-p=1"] if args.low_resource else [])
+        # Built files stay owned by the calling user, so the temporary tree can
+        # be removed without root and the archives are readable by the caller.
+        container_user = [] if os.name == "nt" else ["--user", f"{os.getuid()}:{os.getgid()}"]
+        cache = temp / "gocache"
+        cache.mkdir()
 
         def go(command: list[str], target: tuple[str, str, str] = ("linux", "amd64", "")) -> bytes:
             goos, goarch, goarm = target
             return run(["docker", "run", "--rm", "--pull", "never", "--network", "none",
-                        *limits, *go_environment,
+                        *limits, *go_environment, *container_user,
                         "-v", f"{source}:/src", "-v", f"{args.module_cache}:/go/pkg/mod:ro",
-                        "-v", "holyarrs-packaging-gocache:/root/.cache/go-build",
-                        "-w", "/src", "-e", "GOTOOLCHAIN=local", "-e", "GOPROXY=off",
+                        "-v", f"{cache}:/gocache",
+                        "-w", "/src", "-e", "HOME=/tmp", "-e", "GOCACHE=/gocache",
+                        "-e", "GOTOOLCHAIN=local", "-e", "GOPROXY=off",
                         "-e", "GOSUMDB=off", "-e", "CGO_ENABLED=0", "-e", f"GOOS={goos}",
                         "-e", f"GOARCH={goarch}", "-e", f"GOARM={goarm}",
                         "-e", "GOAMD64=v1", "-e", "GOARM64=v8.0", GO_IMAGE, *command])
