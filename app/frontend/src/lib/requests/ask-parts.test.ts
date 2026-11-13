@@ -1,4 +1,4 @@
-import { albumCounts, albumGroups, askAlbums, askSeasons, askedWords, songsHead, picksChanged, picksHead, seasonPick, baseName, keptByDefault, keptWords, kindOf, type ArtistAlbum } from './ask-parts.ts';
+import { albumCounts, albumGroups, askAlbums, askSeasons, askedWords, songsHead, picksChanged, picksHead, seasonPick, baseName, keptByDefault, keptSeasons, keptWords, seasonsToAsk, kindOf, type ArtistAlbum } from './ask-parts.ts';
 import { describe, expect, it } from 'vitest';
 
 const al = (mbid: string, name: string, date: string, extra: Partial<ArtistAlbum> = {}): ArtistAlbum => ({ mbid, name, type: 'album', secondary_types: [], release_date: date, shelf: 'albums', image: `/art/${mbid}`, ...extra });
@@ -89,5 +89,20 @@ describe('bootleg names (#135)', () => {
 	it('a bootleg on the albums shelf is not an album', () => {
 		expect(kindOf({ type: 'album', secondary_types: [], shelf: 'albums', name: 'Unreleased Demos 2009' })).toBe('other');
 		expect(kindOf({ type: 'album', secondary_types: [], shelf: 'albums', name: 'Views' })).toBe('albums');
+	});
+});
+
+describe('seasons a Library show keeps', () => {
+	const owned = (keep: boolean, seasons: [number, boolean][]) => ({ keep_up_to_date: keep, show: { seasons: seasons.map(([number, keep_up_to_date]) => ({ number, keep_up_to_date })) } });
+	it('lists the seasons whose own switch and the show switch are on', () => {
+		expect(keptSeasons(owned(true, [[0, false], [1, false], [2, true], [3, false]]))).toEqual([2]);
+		expect(keptSeasons(owned(false, [[1, true], [2, true]]))).toEqual([]);
+		expect(keptSeasons({ keep_up_to_date: true })).toEqual([]);
+	});
+	it('finds the regular seasons left to ask for', () => {
+		const all = [{ number: 0 }, { number: 1 }, { number: 2 }, { number: 3 }];
+		expect(seasonsToAsk(all, [2])).toEqual([1, 3]);
+		expect(seasonsToAsk(all, [1, 2, 3])).toEqual([]);
+		expect(seasonsToAsk(undefined, [])).toEqual([]);
 	});
 });

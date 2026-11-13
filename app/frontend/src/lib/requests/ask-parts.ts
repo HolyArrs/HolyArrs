@@ -239,3 +239,13 @@ export function songsHead(albums: string, rows: { all: number | null; ticked: nu
 	const words = kept === all ? t(`requests.parts.songs.${all === 1 ? 'one' : 'other'}`, { n: all }) : t('requests.parts.someSongs', { kept, all });
 	return albums ? `${albums} · ${words}` : words;
 }
+
+/** The seasons a Library show keeps up to date: its own switch and the season's both on (what the server counts as already kept). */
+export function keptSeasons(t: { keep_up_to_date: boolean; show?: { seasons: { number: number; keep_up_to_date: boolean }[] } }): number[] {
+	return t.keep_up_to_date ? (t.show?.seasons ?? []).filter((s) => s.keep_up_to_date).map((s) => s.number) : [];
+}
+
+/** The regular seasons of a show that are not kept yet: what a member can still ask for. */
+export function seasonsToAsk(all: { number: number }[] | undefined, kept: number[]): number[] {
+	return (all ?? []).map((s) => s.number).filter((n) => n > 0 && !kept.includes(n)).sort((a, b) => a - b);
+}
