@@ -17,6 +17,7 @@
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
+	import { outsideWay } from '#lib/ui/sensitive.ts';
 
 	let loaded = $state(false);
 	let error = $state('');
@@ -27,7 +28,10 @@
 	let savingRequire = $state(false);
 
 	function strongNote(e: unknown): string {
-		return e instanceof ApiError && e.status === 403 ? t('settings.signIn.signInToChange') : message(e);
+		if (!(e instanceof ApiError && e.status === 403)) return message(e);
+		// Someone with no password signs in again with their own way instead.
+		const way = outsideWay(session.s);
+		return way ? t('ui.confirm.outsideAgain', { method: way }) : t('settings.signIn.signInToChange');
 	}
 
 	interface Way {

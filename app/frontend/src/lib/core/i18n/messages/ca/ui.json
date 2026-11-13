@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Cancel·la",
 	"ui.confirm.localVisit": "Aquesta visita s'ha saltat l'inici de sessió, així que no pot confirmar la teva contrasenya. Inicia la sessió primer amb la contrasenya i tornaràs aquí.",
 	"ui.confirm.signInFirst": "Inicia la sessió amb la meva contrasenya",
+	"ui.confirm.outsideAgain": "Per confirmar que ets tu, torna a iniciar la sessió amb {method}. Tornaràs aquí. També pots definir una contrasenya de HolyArrs a El meu compte.",
+	"ui.confirm.signInAgainWith": "Torna a iniciar la sessió amb {method}",
 	"ui.growCard.preview": "Previsualització de {title}",
 	"ui.growCard.goTo": "Ves a {title}",
 	"ui.growCard.moreInfoAbout": "Més informació sobre {title}",

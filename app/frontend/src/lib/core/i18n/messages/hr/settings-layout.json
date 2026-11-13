@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Prvo postavi lozinku",
 	"settings.layout.setPasswordDesc": "Ključevi, lozinke, osobe i sigurnosne kopije traže HolyArrs lozinku. Još je nemaš.",
 	"settings.layout.setPasswordLabel": "Postavi lozinku",
+	"settings.layout.signInAgainTitle": "Najprije se ponovno prijavite",
 	"settings.layout.confirmPasswordLabel": "Potvrdi lozinku",
 	"settings.layout.confirmPasswordDesc": "Ključevi, lozinke, osobe i sigurnosne kopije traže tvoju lozinku. Vrijedi 10 minuta."
 }

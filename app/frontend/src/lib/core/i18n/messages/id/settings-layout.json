@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Atur kata sandi dulu",
 	"settings.layout.setPasswordDesc": "Kunci, kata sandi, pengguna, dan cadangan memerlukan kata sandi HolyArrs. Kamu belum punya.",
 	"settings.layout.setPasswordLabel": "Atur kata sandi",
+	"settings.layout.signInAgainTitle": "Masuk lagi dulu",
 	"settings.layout.confirmPasswordLabel": "Konfirmasi kata sandimu",
 	"settings.layout.confirmPasswordDesc": "Kunci, kata sandi, pengguna, dan cadangan memerlukan kata sandimu. Berlaku 10 menit."
 }

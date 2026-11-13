@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Setează mai întâi o parolă",
 	"settings.layout.setPasswordDesc": "Cheile, parolele, utilizatorii și copiile de siguranță necesită o parolă HolyArrs. Încă nu ai una.",
 	"settings.layout.setPasswordLabel": "Setează o parolă",
+	"settings.layout.signInAgainTitle": "Conectează-te mai întâi din nou",
 	"settings.layout.confirmPasswordLabel": "Confirmă-ți parola",
 	"settings.layout.confirmPasswordDesc": "Cheile, parolele, utilizatorii și copiile de siguranță necesită parola ta. Valabilă 10 minute."
 }

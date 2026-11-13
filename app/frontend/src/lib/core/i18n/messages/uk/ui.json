@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Скасувати",
 	"ui.confirm.localVisit": "Цей візит пропускає вхід, тому не може підтвердити ваш пароль. Спочатку увійдіть із паролем, і ви повернетеся сюди.",
 	"ui.confirm.signInFirst": "Увійти з моїм паролем",
+	"ui.confirm.outsideAgain": "Щоб підтвердити, що це ви, увійдіть знову через {method}. Ви повернетеся сюди. Пароль HolyArrs також можна задати в розділі «Мій обліковий запис».",
+	"ui.confirm.signInAgainWith": "Увійти знову через {method}",
 	"ui.growCard.preview": "Попередній перегляд: {title}",
 	"ui.growCard.goTo": "Перейти до {title}",
 	"ui.growCard.moreInfoAbout": "Докладніше про {title}",

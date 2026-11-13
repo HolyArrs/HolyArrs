@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Pirmiausia nustatykite slaptažodį",
 	"settings.layout.setPasswordDesc": "Raktams, slaptažodžiams, žmonėms ir atsarginėms kopijoms reikia HolyArrs slaptažodžio. Jo dar neturite.",
 	"settings.layout.setPasswordLabel": "Nustatyti slaptažodį",
+	"settings.layout.signInAgainTitle": "Pirmiausia vėl prisijunkite",
 	"settings.layout.confirmPasswordLabel": "Patvirtinkite slaptažodį",
 	"settings.layout.confirmPasswordDesc": "Raktams, slaptažodžiams, žmonėms ir atsarginėms kopijoms reikia jūsų slaptažodžio. Galioja 10 minučių."
 }

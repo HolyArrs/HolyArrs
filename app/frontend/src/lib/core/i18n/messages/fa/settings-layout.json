@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "اول یک رمز عبور بگذار",
 	"settings.layout.setPasswordDesc": "کلیدها، رمزهای عبور، افراد و پشتیبان‌ها به رمز عبور HolyArrs نیاز دارند. هنوز رمزی نداری.",
 	"settings.layout.setPasswordLabel": "تنظیم رمز عبور",
+	"settings.layout.signInAgainTitle": "اول دوباره وارد شوید",
 	"settings.layout.confirmPasswordLabel": "رمز عبورت را تأیید کن",
 	"settings.layout.confirmPasswordDesc": "کلیدها، رمزهای عبور، افراد و پشتیبان‌ها به رمز عبور تو نیاز دارند. تا 10 دقیقه معتبر است."
 }

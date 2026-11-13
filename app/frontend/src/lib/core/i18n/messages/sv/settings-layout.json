@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Sätt först ett lösenord",
 	"settings.layout.setPasswordDesc": "Nycklar, lösenord, personer och säkerhetskopior kräver ett HolyArrs-lösenord. Du har inget ännu.",
 	"settings.layout.setPasswordLabel": "Sätt ett lösenord",
+	"settings.layout.signInAgainTitle": "Logga in igen först",
 	"settings.layout.confirmPasswordLabel": "Bekräfta ditt lösenord",
 	"settings.layout.confirmPasswordDesc": "Nycklar, lösenord, personer och säkerhetskopior kräver ditt lösenord. Gäller i 10 minuter."
 }

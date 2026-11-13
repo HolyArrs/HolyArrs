@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Tühista",
 	"ui.confirm.localVisit": "See külastus jätab sisselogimise vahele, seega ei saa see sinu parooli kinnitada. Logi esmalt parooliga sisse ja jõuad siia tagasi.",
 	"ui.confirm.signInFirst": "Logi sisse oma parooliga",
+	"ui.confirm.outsideAgain": "Et kinnitada, et see oled sina, logi uuesti sisse {method} kaudu. Jõuad siia tagasi. HolyArrsi parooli saad määrata ka jaotises Minu konto.",
+	"ui.confirm.signInAgainWith": "Logi uuesti sisse {method} kaudu",
 	"ui.growCard.preview": "{title} eelvaade",
 	"ui.growCard.goTo": "Mine: {title}",
 	"ui.growCard.moreInfoAbout": "Rohkem teavet: {title}",

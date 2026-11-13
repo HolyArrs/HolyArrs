@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Batal",
 	"ui.confirm.localVisit": "Kunjungan ini melewati proses masuk, jadi tidak bisa mengonfirmasi kata sandimu. Masuk dulu dengan kata sandimu, lalu kamu akan kembali ke sini.",
 	"ui.confirm.signInFirst": "Masuk dengan kata sandi saya",
+	"ui.confirm.outsideAgain": "Untuk memastikan ini kamu, masuk lagi dengan {method}. Kamu akan kembali ke sini. Kamu juga bisa membuat kata sandi HolyArrs di Akun saya.",
+	"ui.confirm.signInAgainWith": "Masuk lagi dengan {method}",
 	"ui.growCard.preview": "Pratinjau {title}",
 	"ui.growCard.goTo": "Buka {title}",
 	"ui.growCard.moreInfoAbout": "Info lebih lanjut tentang {title}",

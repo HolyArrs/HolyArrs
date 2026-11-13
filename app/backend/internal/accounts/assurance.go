@@ -97,10 +97,17 @@ type reauthBody struct {
 // RecentLocal reports whether this request is an authenticated browser
 // session with a recent local password proof (or a first-run setup session
 // before the wizard is done, see setupRecentFor) and no unfinished two-factor
-// enrollment requirement. Other outside sign-ins and API keys never satisfy it.
+// enrollment requirement. API keys never satisfy it.
 func RecentLocal(r *http.Request) bool {
 	who, ok := webserver.From(r.Context())
-	return ok && who.Via == "session" && (who.LocalRecent || who.SetupRecent) && !who.MustTwoFactor
+	return ok && who.Via == "session" && (who.LocalRecent || who.SetupRecent || outsideCounts(who)) && !who.MustTwoFactor
+}
+
+// outsideCounts says whether a fresh Plex, Jellyfin or Emby sign-in stands in
+// for the local password proof: only for a person who has no password, so it
+// can never get round a password someone has set.
+func outsideCounts(who webserver.Caller) bool {
+	return who.OutsideRecent && who.NoPassword
 }
 
 // needsRecentLocal says whether a signed-in request must show a recent local
@@ -136,9 +143,9 @@ func recentLocalExempt(pattern string, who webserver.Caller) bool {
 		return true
 	case "POST /api/v1/auth/two-factor/setup", "POST /api/v1/auth/two-factor/enable":
 		return who.MustTwoFactor
-	// Someone who joined through a media server has no password to confirm,
-	// so their own sign-in may set a first one. changePassword still asks
-	// for a local proof and the current password when one already exists.
+	// changePassword checks the proof itself (RecentLocal, which also takes a
+	// fresh outside sign-in of someone with no password) and the current
+	// password when one exists, so the gate lets it through to that check.
 	case "POST /api/v1/auth/password":
 		return true
 	default:
