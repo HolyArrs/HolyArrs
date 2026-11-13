@@ -8,3 +8,8 @@ export function needsConfirm(action: Sensitive, s: { localRecent: boolean; via: 
 	if (action === 'password' && s.hasPassword === false) return false;
 	return !s.localRecent;
 }
+
+// A visit let in by the local-network skip is no sign-in, so a password box here can never confirm it. Gives the sign-in page link that comes back to `back` (an app path), or '' when this visit can confirm in place.
+export function signInFirst(s: { via: string }, back: string): string {
+	return s.via === 'local_network' ? `/login?next=${encodeURIComponent(back)}` : '';
+}

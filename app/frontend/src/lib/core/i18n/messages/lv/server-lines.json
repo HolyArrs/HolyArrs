@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "sūti {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "sūti {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "vispirms piesakies",
-	"server.accounts.sign-in-in-the-browser-before": "pirms paroles apstiprināšanas piesakies pārlūkā",
+	"server.accounts.sign-in-in-the-browser-before": "vispirms pieteicies ar paroli pieteikšanās lapā, tad apstiprini to šeit",
 	"server.accounts.sign-in-in-the-browser-first": "vispirms piesakies pārlūkā",
 	"server.accounts.sign-in-locally-again-before-linking": "pirms sasaistīšanas vēlreiz piesakies lokāli",
 	"server.accounts.sign-in-add-holyarrs-in-your": "pieteikšanās: pievieno HolyArrs savā MI lietotnē un atļauj to pārlūkā",

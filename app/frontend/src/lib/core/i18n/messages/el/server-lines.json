@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "στείλτε {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "στείλτε {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "συνδεθείτε πρώτα",
-	"server.accounts.sign-in-in-the-browser-before": "συνδεθείτε στο πρόγραμμα περιήγησης πριν επιβεβαιώσετε τον κωδικό σας",
+	"server.accounts.sign-in-in-the-browser-before": "συνδεθείτε πρώτα με τον κωδικό σας στη σελίδα σύνδεσης και μετά επιβεβαιώστε τον εδώ",
 	"server.accounts.sign-in-in-the-browser-first": "συνδεθείτε πρώτα στο πρόγραμμα περιήγησης",
 	"server.accounts.sign-in-locally-again-before-linking": "συνδεθείτε ξανά τοπικά πριν τη σύνδεση",
 	"server.accounts.sign-in-add-holyarrs-in-your": "σύνδεση: προσθέστε το HolyArrs στην εφαρμογή AI σας και επιτρέψτε το στο πρόγραμμα περιήγησης",

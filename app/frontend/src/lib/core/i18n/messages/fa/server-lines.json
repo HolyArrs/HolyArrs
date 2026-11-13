@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "بفرست {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "بفرست {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "اول وارد شو",
-	"server.accounts.sign-in-in-the-browser-before": "پیش از تأیید رمز عبورت، در مرورگر وارد شو",
+	"server.accounts.sign-in-in-the-browser-before": "ابتدا در صفحهٔ ورود با گذرواژهٔ خود وارد شوید و سپس آن را اینجا تأیید کنید",
 	"server.accounts.sign-in-in-the-browser-first": "اول در مرورگر وارد شو",
 	"server.accounts.sign-in-locally-again-before-linking": "پیش از اتصال، دوباره به‌صورت محلی وارد شو",
 	"server.accounts.sign-in-add-holyarrs-in-your": "ورود: HolyArrs را در برنامه هوش مصنوعی‌ات اضافه کن و در مرورگر اجازه بده",

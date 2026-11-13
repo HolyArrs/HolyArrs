@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "کد دومرحله‌ای",
 	"ui.confirm.confirm": "تأیید",
 	"ui.confirm.cancel": "انصراف",
+	"ui.confirm.localVisit": "این بازدید ورود را رد می‌کند و به همین دلیل نمی‌تواند گذرواژهٔ شما را تأیید کند. ابتدا با گذرواژهٔ خود وارد شوید تا به اینجا برگردید.",
+	"ui.confirm.signInFirst": "ورود با گذرواژهٔ من",
 	"ui.growCard.preview": "پیش‌نمایش {title}",
 	"ui.growCard.goTo": "رفتن به {title}",
 	"ui.growCard.moreInfoAbout": "اطلاعات بیشتر درباره {title}",

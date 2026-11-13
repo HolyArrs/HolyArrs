@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "pošalji {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "pošalji {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "prvo se prijavi",
-	"server.accounts.sign-in-in-the-browser-before": "prijavi se u pregledniku prije potvrde lozinke",
+	"server.accounts.sign-in-in-the-browser-before": "prvo se prijavi lozinkom na stranici za prijavu, a zatim je potvrdi ovdje",
 	"server.accounts.sign-in-in-the-browser-first": "prvo se prijavi u pregledniku",
 	"server.accounts.sign-in-locally-again-before-linking": "ponovno se prijavi lokalno prije povezivanja",
 	"server.accounts.sign-in-add-holyarrs-in-your": "prijava: dodaj HolyArrs u svojoj AI aplikaciji i dopusti ga u pregledniku",

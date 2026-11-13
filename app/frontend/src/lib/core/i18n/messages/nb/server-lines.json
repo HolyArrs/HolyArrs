@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "send {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "send {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "logg inn først",
-	"server.accounts.sign-in-in-the-browser-before": "logg inn i nettleseren før du bekrefter passordet ditt",
+	"server.accounts.sign-in-in-the-browser-before": "logg først inn med passordet ditt på innloggingssiden, og bekreft det så her",
 	"server.accounts.sign-in-in-the-browser-first": "logg inn i nettleseren først",
 	"server.accounts.sign-in-locally-again-before-linking": "logg inn lokalt igjen før du kobler til",
 	"server.accounts.sign-in-add-holyarrs-in-your": "logg inn: legg til HolyArrs i KI-appen din og tillat den i nettleseren",

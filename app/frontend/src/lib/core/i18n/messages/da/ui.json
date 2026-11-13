@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Tofaktorkode",
 	"ui.confirm.confirm": "Bekræft",
 	"ui.confirm.cancel": "Annullér",
+	"ui.confirm.localVisit": "Dette besøg springer login over, så det kan ikke bekræfte din adgangskode. Log først ind med din adgangskode, så kommer du tilbage hertil.",
+	"ui.confirm.signInFirst": "Log ind med min adgangskode",
 	"ui.growCard.preview": "Forhåndsvisning af {title}",
 	"ui.growCard.goTo": "Gå til {title}",
 	"ui.growCard.moreInfoAbout": "Mere info om {title}",

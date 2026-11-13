@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "双重验证码",
 	"ui.confirm.confirm": "确认",
 	"ui.confirm.cancel": "取消",
+	"ui.confirm.localVisit": "这次访问跳过了登录，因此无法确认你的密码。请先用密码登录，之后会回到这里。",
+	"ui.confirm.signInFirst": "用我的密码登录",
 	"ui.growCard.preview": "{title} 预览",
 	"ui.growCard.goTo": "前往 {title}",
 	"ui.growCard.moreInfoAbout": "{title} 的更多信息",

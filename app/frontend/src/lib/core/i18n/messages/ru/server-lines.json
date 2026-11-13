@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "отправьте {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "отправьте {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "сначала войдите",
-	"server.accounts.sign-in-in-the-browser-before": "войдите в браузере, прежде чем подтверждать пароль",
+	"server.accounts.sign-in-in-the-browser-before": "сначала войдите по паролю на странице входа, затем подтвердите его здесь",
 	"server.accounts.sign-in-in-the-browser-first": "сначала войдите в браузере",
 	"server.accounts.sign-in-locally-again-before-linking": "перед связыванием войдите локально ещё раз",
 	"server.accounts.sign-in-add-holyarrs-in-your": "вход: добавьте HolyArrs в своё ИИ-приложение и разрешите его в браузере",

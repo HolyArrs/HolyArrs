@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Código de duas etapas",
 	"ui.confirm.confirm": "Confirmar",
 	"ui.confirm.cancel": "Cancelar",
+	"ui.confirm.localVisit": "Esta visita pula o login, então não consegue confirmar sua senha. Entre primeiro com sua senha e você volta para cá.",
+	"ui.confirm.signInFirst": "Entrar com minha senha",
 	"ui.growCard.preview": "Prévia de {title}",
 	"ui.growCard.goTo": "Ir para {title}",
 	"ui.growCard.moreInfoAbout": "Mais informações sobre {title}",

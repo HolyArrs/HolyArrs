@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Cod în doi pași",
 	"ui.confirm.confirm": "Confirmă",
 	"ui.confirm.cancel": "Anulează",
+	"ui.confirm.localVisit": "Această vizită sare peste conectare, așa că nu îți poate confirma parola. Conectează-te mai întâi cu parola și te vei întoarce aici.",
+	"ui.confirm.signInFirst": "Conectează-te cu parola mea",
 	"ui.growCard.preview": "Previzualizare {title}",
 	"ui.growCard.goTo": "Mergi la {title}",
 	"ui.growCard.moreInfoAbout": "Mai multe informații despre {title}",

@@ -5,6 +5,8 @@
 	"ui.confirm.twoFactorCode": "Codice a due fattori",
 	"ui.confirm.confirm": "Conferma",
 	"ui.confirm.cancel": "Annulla",
+	"ui.confirm.localVisit": "Questa visita salta l'accesso, quindi non può confermare la tua password. Accedi prima con la tua password e tornerai qui.",
+	"ui.confirm.signInFirst": "Accedi con la mia password",
 	"ui.growCard.preview": "Anteprima di {title}",
 	"ui.growCard.goTo": "Vai a {title}",
 	"ui.growCard.moreInfoAbout": "Altre info su {title}",

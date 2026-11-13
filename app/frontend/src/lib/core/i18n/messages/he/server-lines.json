@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "שלח {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "שלח {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "התחבר קודם",
-	"server.accounts.sign-in-in-the-browser-before": "התחבר בדפדפן לפני שתאשר את הסיסמה שלך",
+	"server.accounts.sign-in-in-the-browser-before": "התחבר קודם עם הסיסמה שלך בדף ההתחברות, ואז אשר אותה כאן",
 	"server.accounts.sign-in-in-the-browser-first": "התחבר בדפדפן קודם",
 	"server.accounts.sign-in-locally-again-before-linking": "התחבר שוב באופן מקומי לפני הקישור",
 	"server.accounts.sign-in-add-holyarrs-in-your": "התחברות: הוסף את HolyArrs באפליקציית ה־AI שלך ואשר אותו בדפדפן",

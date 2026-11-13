@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "siųskite {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "siųskite {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "pirmiausia prisijunkite",
-	"server.accounts.sign-in-in-the-browser-before": "prieš patvirtindami slaptažodį prisijunkite naršyklėje",
+	"server.accounts.sign-in-in-the-browser-before": "pirmiausia prisijunkite slaptažodžiu prisijungimo puslapyje, tada patvirtinkite jį čia",
 	"server.accounts.sign-in-in-the-browser-first": "pirmiausia prisijunkite naršyklėje",
 	"server.accounts.sign-in-locally-again-before-linking": "prieš susiedami vėl prisijunkite vietoje",
 	"server.accounts.sign-in-add-holyarrs-in-your": "prisijungimas: pridėkite HolyArrs savo DI programoje ir leiskite naršyklėje",

@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "أرسل {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "أرسل {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "سجّل الدخول أولًا",
-	"server.accounts.sign-in-in-the-browser-before": "سجّل الدخول في المتصفح قبل تأكيد كلمة مرورك",
+	"server.accounts.sign-in-in-the-browser-before": "سجّل الدخول بكلمة مرورك في صفحة تسجيل الدخول أولًا، ثم أكّدها هنا",
 	"server.accounts.sign-in-in-the-browser-first": "سجّل الدخول في المتصفح أولًا",
 	"server.accounts.sign-in-locally-again-before-linking": "سجّل الدخول محليًا من جديد قبل الربط",
 	"server.accounts.sign-in-add-holyarrs-in-your": "تسجيل الدخول: أضف HolyArrs في تطبيق الذكاء الاصطناعي لديك واسمح به في المتصفح",

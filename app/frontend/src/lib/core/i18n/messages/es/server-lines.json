@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "envía {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "envía {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "inicia sesión primero",
-	"server.accounts.sign-in-in-the-browser-before": "inicia sesión en el navegador antes de confirmar tu contraseña",
+	"server.accounts.sign-in-in-the-browser-before": "inicia sesión con tu contraseña en la página de inicio de sesión y luego confírmala aquí",
 	"server.accounts.sign-in-in-the-browser-first": "inicia sesión primero en el navegador",
 	"server.accounts.sign-in-locally-again-before-linking": "inicia sesión de nuevo en local antes de vincular",
 	"server.accounts.sign-in-add-holyarrs-in-your": "iniciar sesión: añade HolyArrs en tu app de IA y permítelo en el navegador",

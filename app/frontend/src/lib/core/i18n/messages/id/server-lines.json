@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "kirim {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "kirim {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "masuk dulu",
-	"server.accounts.sign-in-in-the-browser-before": "masuk di browser sebelum mengonfirmasi kata sandimu",
+	"server.accounts.sign-in-in-the-browser-before": "masuk dulu dengan kata sandimu di halaman masuk, lalu konfirmasi di sini",
 	"server.accounts.sign-in-in-the-browser-first": "masuk di browser dulu",
 	"server.accounts.sign-in-locally-again-before-linking": "masuk lagi secara lokal sebelum menautkan",
 	"server.accounts.sign-in-add-holyarrs-in-your": "masuk: tambahkan HolyArrs di aplikasi AI-mu dan izinkan di browser",

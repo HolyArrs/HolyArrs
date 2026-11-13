@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "send {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "send {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "log ind først",
-	"server.accounts.sign-in-in-the-browser-before": "log ind i browseren, før du bekræfter din adgangskode",
+	"server.accounts.sign-in-in-the-browser-before": "log først ind med din adgangskode på loginsiden, og bekræft den så her",
 	"server.accounts.sign-in-in-the-browser-first": "log ind i browseren først",
 	"server.accounts.sign-in-locally-again-before-linking": "log ind lokalt igen, før du forbinder",
 	"server.accounts.sign-in-add-holyarrs-in-your": "log ind: tilføj HolyArrs i din AI-app, og tillad den i browseren",

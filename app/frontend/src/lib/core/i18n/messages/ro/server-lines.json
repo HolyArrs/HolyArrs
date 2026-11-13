@@ -81,7 +81,7 @@
 	"server.accounts.send-url-name-password-line": "trimite {\"url\": \"...\", \"name\": \"...\", \"password\": \"...\"}",
 	"server.accounts.send-url-http": "trimite {\"url\": \"http://...\"}",
 	"server.accounts.sign-in-first": "autentifică-te mai întâi",
-	"server.accounts.sign-in-in-the-browser-before": "autentifică-te în browser înainte de a-ți confirma parola",
+	"server.accounts.sign-in-in-the-browser-before": "conectează-te mai întâi cu parola ta pe pagina de conectare, apoi confirm-o aici",
 	"server.accounts.sign-in-in-the-browser-first": "autentifică-te mai întâi în browser",
 	"server.accounts.sign-in-locally-again-before-linking": "autentifică-te din nou local înainte de asociere",
 	"server.accounts.sign-in-add-holyarrs-in-your": "autentificare: adaugă HolyArrs în aplicația ta AI și permite-l în browser",
