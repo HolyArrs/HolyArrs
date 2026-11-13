@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { dayWords } from './title-library-words.ts';
+import { dayWords, epTone } from './title-library-words.ts';
 
 describe('dayWords', () => {
 	const zone = process.env.TZ;
@@ -42,5 +42,15 @@ describe('season header next day', () => {
 		expect(header).toBe(row);
 		expect(header).toContain('15');
 		expect(dayWords(season.next_air_date)).not.toBe(row);
+	});
+});
+
+describe('episode row tone with a file', () => {
+	it('shows a file the episode holds as have, whatever the state says', () => {
+		expect(epTone('not_out_yet', true)).toBe('have');
+		expect(epTone('better_wanted', true)).toBe('have');
+		expect(epTone('wanted', true)).toBe('have');
+		expect(epTone('not_out_yet')).toBe('missing');
+		expect(epTone('searching', true)).toBe('downloading');
 	});
 });

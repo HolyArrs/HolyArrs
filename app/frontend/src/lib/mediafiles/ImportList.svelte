@@ -5,7 +5,7 @@
 	import BannerArt from './BannerArt.svelte';
 	import ImportFolderFiles from './ImportFolderFiles.svelte';
 	import { canAdopt, fileName, score, type AdoptCandidate } from './organise.ts';
-	import { bannerTitle, canTick, matchOptions, needsLook, pickedOf, statusLabel, tickState, type ImportView, type Named } from './import-view.ts';
+	import { bannerTitle, matchOptions, needsLook, pickedOf, statusLabel, type ImportView, type Named } from './import-view.ts';
 	import { bytes } from '../core/format.ts';
 	import { to } from '../core/paths.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
@@ -40,7 +40,6 @@
 	const word = $derived(kind === 'show' ? 'show' : kind === 'music' ? 'artist' : 'movie');
 	const w = $derived(t(`library.import.word.${word}`));
 	const artKind = $derived(kind === 'music' ? 'artist' : kind);
-	const all = $derived(tickState(folders, sel, ticked));
 	const bannerW = $derived({ large: 380, comfortable: 300, compact: 220 }[density] ?? 380);
 
 	// Art and pickers mount only for folders near the screen, so a scan of thousands stays fast.
@@ -67,10 +66,6 @@
 		return { destroy: () => seen?.unobserve(node) };
 	}
 
-	function tickAll(on: boolean) {
-		for (const f of folders) if (canTick(f, sel)) ticked[f.folder] = on;
-	}
-
 	function choose(f: AdoptCandidate, el: HTMLSelectElement) {
 		if (el.value === LOOK) {
 			el.value = sel[f.folder] ?? '';
@@ -93,10 +88,6 @@
 	{:else}
 		<span class="tk" aria-hidden="true"></span>
 	{/if}
-{/snippet}
-
-{#snippet tickAllBox()}
-	<input class="tk" type="checkbox" checked={all === 'all'} indeterminate={all === 'some'} disabled={!folders.some((f) => canTick(f, sel))} onchange={(e) => tickAll(e.currentTarget.checked)} aria-label={t('downloads.list.selectAllTitle')} data-testid="import-tick-all" />
 {/snippet}
 
 {#snippet pill(f: AdoptCandidate)}
@@ -141,7 +132,6 @@
 
 <div class="il v-{view}" class:phone style:--poster-ratio={posterRatio(artKind)} style:--pmin="{posterMinFor(size, artKind)}px" style:--bw="{bannerW}px" style:--bratio={kind === 'music' ? 2.5 : 5.405} data-testid="import-list" data-view={view}>
 	{#if view === 'posters'}
-		<label class="allline">{@render tickAllBox()}<span>{t('downloads.list.selectAllTitle')}</span></label>
 		<ul class="grid sz-{size}">
 			{#each folders as f (f.folder)}
 				<li class="card" class:unr={needsLook(f) && !ticked[f.folder]} data-testid="import-item" data-status={f.status} use:whenNear={f.folder}>
@@ -161,13 +151,11 @@
 		<div class="sheet">
 			{#if !phone && view !== 'overview'}
 				<div class="hd row">
-					<span>{@render tickAllBox()}</span>
+					<span></span>
 					{#if view === 'rows'}<span></span><span>{t('mediafiles.list.title')}</span><span class="c-fd">{t('mediafiles.col.path')}</span>{:else}<span>{t('mediafiles.list.banner')}</span><span>{t('library.import.titleAndFolder')}</span>{/if}
 					<span>{t('mediafiles.col.status')}</span>
 					<span>{t('discover.leftovers.match')}</span>
 				</div>
-			{:else}
-				<label class="hd allline">{@render tickAllBox()}<span>{t('downloads.list.selectAllTitle')}</span></label>
 			{/if}
 			{#each folders as f (f.folder)}
 				{@const p = pickedOf(f, sel[f.folder], named)}
@@ -217,8 +205,6 @@
 	.il { --unbg: color-mix(in srgb, var(--wait) 7%, transparent); container-type: inline-size; min-width: 0; font: var(--t-callout); color: var(--text); }
 	.sheet { position: relative; border-radius: 20px; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b) 420px); box-shadow: var(--edge), var(--drop); overflow: clip; }
 	.hd { min-height: 40px; align-items: center; background: color-mix(in srgb, var(--text) 3%, transparent); border-bottom: 1px solid var(--line); color: color-mix(in srgb, var(--text) 78%, transparent); font: 600 12px/1 var(--font-ui); }
-	.allline { display: flex; align-items: center; gap: 10px; min-height: 40px; padding-inline: 14px; cursor: pointer; }
-	.v-posters > .allline { padding-inline: 2px; margin-bottom: 6px; color: var(--text-muted); font: 600 12px/1 var(--font-ui); }
 	.item { position: relative; transition: background-color var(--dur-fast) var(--ease-out); }
 	.item + .item::before { content: ''; position: absolute; top: 0; inset-inline: 14px; height: 1px; background: var(--line); }
 	.unr { background: var(--unbg); }
@@ -295,7 +281,6 @@
 
 	/* Overview: a bigger poster, the facts, and the match at the side. */
 	.v-overview .row { display: grid; grid-template-columns: 28px 104px minmax(0, 1fr) minmax(220px, 280px); gap: 0 18px; align-items: start; padding-block: 16px; padding-inline: 14px 18px; }
-	.v-overview .hd.allline { padding-inline: 14px; }
 	.v-overview .row > .tk { margin-top: 6px; }
 	.op { width: 104px; border-radius: 10px; box-shadow: 0 1px 2px rgb(20 24 40 / 12%), 0 10px 18px -12px rgb(20 24 40 / 50%); }
 	.tline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-width: 0; }

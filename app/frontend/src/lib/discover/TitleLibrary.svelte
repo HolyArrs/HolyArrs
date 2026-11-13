@@ -452,8 +452,8 @@
 									{#if seasonFailed.has(se.number) && !seasonEps[se.number]}<p class="form-error" role="alert">{t('discover.titleLibrary.couldnTLoadThis')} <button type="button" class="lib-link" onclick={() => loadSeason(o.id, se.number)}>{t('discover.titleLibrary.retry')}</button></p>{/if}
 									{#each splitOutside(seasonEps[se.number] ?? []).inside as e (e.id)}
 										{@const st = e.slots[0]}
-										{@const tone = epTone(st?.state ?? '')}
-										{@const aired = !e.air_date || Date.parse(e.air_date) <= Date.now()}
+										{@const tone = epTone(st?.state ?? '', !!st?.file)}
+										{@const aired = !e.air_date || Date.parse(e.air_date) <= Date.now() || !!st?.file}
 										<!-- The row is not a button itself, since it holds buttons: the title button opens the episode and stretches over the row. -->
 										<div class="lib-ep {tone}" class:future={!aired}>
 											{#if manage}<button type="button" class="lib-keep sm" class:on={e.keep_up_to_date !== false} aria-pressed={e.keep_up_to_date !== false} title={e.keep_up_to_date !== false ? t('discover.titleLibrary.keptUpToDate') : t('discover.titleLibrary.notKeptUpToDate')} aria-label={t('discover.titleLibrary.keepEpisodeUpTo', { episode: e.episode })} onclick={(ev) => { ev.stopPropagation(); void keepEpisode(e, se.number); }}><Icon name="check" size={11} /></button>{/if}

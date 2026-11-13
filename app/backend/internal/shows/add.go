@@ -573,7 +573,7 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 	}
 	// One query for every season of the show instead of one per season. The
 	// main Version is looked up once (by the show's id), not once per episode.
-	rows, err := db.QueryContext(ctx, `SELECT i.part_id, i.air_date, COALESCE(i.air_day, ''), i.keep_up_to_date, COALESCE(s.state, '') FROM items i
+	rows, err := db.QueryContext(ctx, `SELECT i.part_id, i.air_date, COALESCE(i.air_day, ''), i.keep_up_to_date, COALESCE(s.state, ''), s.file_id IS NOT NULL FROM items i
 		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1)
 		WHERE i.part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'season')`, titleID, titleID)
 	if err != nil {
@@ -586,14 +586,15 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 		var day string
 		var keep bool
 		var state string
-		if err := rows.Scan(&part, &air, &day, &keep, &state); err != nil {
+		var hasFile bool
+		if err := rows.Scan(&part, &air, &day, &keep, &state, &hasFile); err != nil {
 			return nil, err
 		}
 		idx, ok := index[part]
 		if !ok {
 			continue
 		}
-		out[idx].tally(air, day, keep, state, now)
+		out[idx].tally(air, day, keep, state, hasFile, now)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -602,8 +603,10 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 }
 
 // tally counts one episode of a season: its air date, its Keep up to date
-// switch and the main Version's Slot state.
-func (ss *SeasonSummary) tally(air sql.NullString, day string, keep bool, state string, now time.Time) {
+// switch, the main Version's Slot state and whether the Slot holds a File.
+// An episode with a File is in the Library whatever its state or air time
+// says (a search or a better copy on the way, an air time later today).
+func (ss *SeasonSummary) tally(air sql.NullString, day string, keep bool, state string, hasFile bool, now time.Time) {
 	ss.Episodes++
 	aired := false
 	if air.Valid {
@@ -617,7 +620,15 @@ func (ss *SeasonSummary) tally(air sql.NullString, day string, keep bool, state 
 			}
 		}
 	}
-	switch mediafiles.SlotState(state) {
+	st := mediafiles.SlotState(state)
+	if hasFile && st != mediafiles.SlotInLibrary && st != mediafiles.SlotBetterWanted {
+		ss.InLibrary++
+		switch st {
+		case mediafiles.SlotNotOutYet, mediafiles.SlotWanted, mediafiles.SlotChosen:
+			return
+		}
+	}
+	switch st {
 	case mediafiles.SlotInLibrary:
 		ss.InLibrary++
 	case mediafiles.SlotBetterWanted:
