@@ -15,6 +15,8 @@ Every variable the HolyArrs container reads. Most installs set only `PUID`, `PGI
 | `TZ` | Time zone for schedules and logs. | `Etc/UTC` | `TZ=Europe/Amsterdam` |
 | `UMASK` | Permission bits new files leave out. Affects new files only. | `022` | `UMASK=002` |
 | `HOLYARRS_SAVE_PATH` | The downloader's save folder, as the downloader sees it. Sent with every download. | none | `/data/downloads` |
+| `HOLYARRS_PORT` | Port HolyArrs listens on, 1 to 65535. Change the container side of your port mapping to match. | `6262` | `8080` |
+| `HOLYARRS_ADDR` | Full listen address. Wins over `HOLYARRS_PORT`; the `-addr` start option wins over both. A bad value stops the start. | `:6262` | `0.0.0.0:8080` |
 | `HOLYARRS_URL_BASE` | Serve HolyArrs under a path behind a reverse proxy. `/` ignores a path saved in Settings. | none | `/holyarrs` |
 | `HOLYARRS_ALLOWED_HOSTS` | Extra host names people use to reach HolyArrs, comma separated. | IPs and `localhost` | `holyarrs.example.com` |
 | `HOLYARRS_TRUSTED_PROXIES` | Your reverse proxy's address or network, comma separated. Needed for real client addresses. | none | `172.18.0.0/16` |
@@ -43,7 +45,7 @@ HolyArrs drops one newline at the end of the file. If the file is missing, HolyA
 | `HOLYARRS_CONFIG_IN_MEMORY` | Allow `/config` on a memory-backed folder. For test boxes; data is lost on restart. | off | `yes` |
 | `HOLYARRS_ALLOW_DESKTOP_FOLDER` | Start with `/config` in a Docker Desktop shared folder on a Mac, after you check file locks work there. HolyArrs warns on every start. | off | `1` |
 | `HOLYARRS_READONLY_DOWNLOADERS` | Downloaders HolyArrs must never change, by id or address, comma separated. | none | `3,http://qbit:8080` |
-| `HOLYARRS_HEALTH_URL` | Address the container health check calls. | `http://127.0.0.1:6262` | `http://127.0.0.1:6262/holyarrs` |
+| `HOLYARRS_HEALTH_URL` | Address the container health check calls. | `http://127.0.0.1:` and the port from `HOLYARRS_ADDR` or `HOLYARRS_PORT`, else `6262` | `http://127.0.0.1:6262/holyarrs` |
 
 On/off variables accept `1`, `true`, `yes` or `on`.
 

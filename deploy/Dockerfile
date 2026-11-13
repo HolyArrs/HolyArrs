@@ -66,4 +66,5 @@ EXPOSE 6262
 VOLUME ["/config"]
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 CMD ["/holyarrs", "-healthcheck"]
 ENTRYPOINT ["/holyarrs"]
-CMD ["-config", "/config", "-addr", ":6262"]
+# No -addr here, so HOLYARRS_ADDR or HOLYARRS_PORT can move the port (default 6262).
+CMD ["-config", "/config"]
