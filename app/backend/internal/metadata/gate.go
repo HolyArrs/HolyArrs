@@ -267,6 +267,13 @@ func afterGate(parent context.Context, timeout time.Duration) (context.Context, 
 	}
 }
 
+// timedOut reports whether an afterGate attempt ran out of its own time
+// while the caller still waited: the server was slow (or our own Gate held
+// the request), which is not the server being down.
+func timedOut(caller, attempt context.Context) bool {
+	return caller.Err() == nil && context.Cause(attempt) == context.DeadlineExceeded
+}
+
 // EnvCountRequests turns on a debug-only counter of the requests to the
 // metadata server, by lane, path and caller, written to the log every 30 s.
 const EnvCountRequests = "HOLYARRS_METADATA_COUNT"

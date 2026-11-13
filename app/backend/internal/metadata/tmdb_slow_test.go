@@ -2,10 +2,13 @@ package metadata
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 // slowTMDB answers every request after delay, as the metadata server does
@@ -90,5 +93,46 @@ func TestTMDBDeadServerFailsInTime(t *testing.T) {
 	}
 	if d := time.Since(start); d > 2*time.Second {
 		t.Fatalf("Gate wait took %v", d)
+	}
+}
+
+// Slow answers do not count as the server being down: after three timeouts
+// in a row the next call is still sent and answered. Refused or broken
+// answers (5xx) still count, and the third one stops the next call.
+func TestTMDBSlowIsNotDown(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/3/movie/1", "/3/movie/2", "/3/movie/3":
+			select {
+			case <-time.After(time.Second):
+			case <-r.Context().Done():
+				return
+			}
+		case "/3/movie/11", "/3/movie/12", "/3/movie/13":
+			w.WriteHeader(http.StatusBadGateway)
+			return
+		}
+		_, _ = w.Write([]byte(`{"id":4,"title":"Fast"}`))
+	}))
+	t.Cleanup(srv.Close)
+	p := newTMDB(srv, fakeCred)
+	p.Timeout = 50 * time.Millisecond
+	ctx := context.Background()
+	for _, id := range []string{"1", "2", "3"} {
+		if _, err := p.Movie(ctx, "tmdb:"+id); err == nil {
+			t.Fatalf("slow %s answered", id)
+		}
+	}
+	if m, err := p.Movie(ctx, "tmdb:4"); err != nil || m.Name != "Fast" {
+		t.Fatalf("after three slow answers: %+v %v", m, err)
+	}
+
+	for _, id := range []string{"11", "12", "13"} {
+		if _, err := p.Movie(ctx, "tmdb:"+id); err == nil {
+			t.Fatalf("broken %s answered", id)
+		}
+	}
+	if _, err := p.Movie(ctx, "tmdb:5"); !errors.Is(err, outbound.ErrSuppressed) {
+		t.Fatalf("after three broken answers the next call should wait: %v", err)
 	}
 }
