@@ -112,6 +112,15 @@ export function folderOutcome(lines: Line[]): FolderOutcome {
 	return out;
 }
 
+/** Each read's newest done import that used it. A read made after an import is never one it used: a removed read's number can be given to a new one. */
+export function usedByMoves(moves: Move[], snapshots: Snapshot[]): Map<number, number> {
+	const m = new Map<number, number>();
+	const made = new Map(snapshots.map((s) => [s.id, Date.parse(s.created_at)]));
+	// Newest first: the newest done move that used a read names it.
+	for (const mv of moves) if (mv.state === 'done') for (const id of mv.snapshots ?? []) if (!m.has(id) && !((made.get(id) ?? 0) > Date.parse(mv.created_at))) m.set(id, mv.id);
+	return m;
+}
+
 /** Items with no folder on this server: not-found lines, less the Pick rules (no folder of theirs) and the Library folders whose titles came over anyway (they show as needing attention). */
 export function noFolderCount(lines: Line[]): number {
 	const came = folderOutcome(lines).attentionFolders;
