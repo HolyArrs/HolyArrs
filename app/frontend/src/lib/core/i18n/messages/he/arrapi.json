@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "אפליקציות AI כבויות. האישור מפעיל אותן.",
 	"arrapi.ai.offOther": "אפליקציות AI כבויות. בקש מהבעלים להפעיל אותן, ואז נסה שוב.",
 	"arrapi.ai.allow": "אישור",
-	"arrapi.ai.cancel": "ביטול"
+	"arrapi.ai.cancel": "ביטול",
+	"arrapi.seerr.sentTitle": "נשלח מאפליקציות אחרות",
+	"arrapi.seerr.sentHint": "פורמטים ופרופילים שאפליקציות כמו Profilarr שלחו. מוצגים כאן לקריאה בלבד.",
+	"arrapi.seerr.sentFormat": "פורמט",
+	"arrapi.seerr.sentProfile": "פרופיל",
+	"arrapi.seerr.sentUpdated": "עודכן {ago}"
 }

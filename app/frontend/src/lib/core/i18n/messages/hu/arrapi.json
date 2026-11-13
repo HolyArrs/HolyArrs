@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Az AI-alkalmazások ki vannak kapcsolva. Az engedélyezés bekapcsolja őket.",
 	"arrapi.ai.offOther": "Az AI-alkalmazások ki vannak kapcsolva. Kérje meg a tulajdonost, hogy kapcsolja be őket, majd próbálja újra.",
 	"arrapi.ai.allow": "Engedélyezés",
-	"arrapi.ai.cancel": "Mégse"
+	"arrapi.ai.cancel": "Mégse",
+	"arrapi.seerr.sentTitle": "Más appok küldték",
+	"arrapi.seerr.sentHint": "Formátumok és profilok, amelyeket például a Profilarr küldött. Itt csak olvashatók.",
+	"arrapi.seerr.sentFormat": "Formátum",
+	"arrapi.seerr.sentProfile": "Profil",
+	"arrapi.seerr.sentUpdated": "frissítve {ago}"
 }

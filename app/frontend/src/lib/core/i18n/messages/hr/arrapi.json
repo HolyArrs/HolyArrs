@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "AI aplikacije su isključene. Dopuštanjem se uključuju.",
 	"arrapi.ai.offOther": "AI aplikacije su isključene. Zamoli vlasnika da ih uključi, pa pokušaj ponovno.",
 	"arrapi.ai.allow": "Dopusti",
-	"arrapi.ai.cancel": "Odustani"
+	"arrapi.ai.cancel": "Odustani",
+	"arrapi.seerr.sentTitle": "Poslale druge aplikacije",
+	"arrapi.seerr.sentHint": "Formati i profili koje su poslale aplikacije poput Profilarra. Ovdje samo za čitanje.",
+	"arrapi.seerr.sentFormat": "Format",
+	"arrapi.seerr.sentProfile": "Profil",
+	"arrapi.seerr.sentUpdated": "ažurirano {ago}"
 }

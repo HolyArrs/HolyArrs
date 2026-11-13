@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Le app di IA sono spente. Consentendo le attivi.",
 	"arrapi.ai.offOther": "Le app di IA sono spente. Chiedi al proprietario di attivarle, poi riprova.",
 	"arrapi.ai.allow": "Consenti",
-	"arrapi.ai.cancel": "Annulla"
+	"arrapi.ai.cancel": "Annulla",
+	"arrapi.seerr.sentTitle": "Inviato da altre app",
+	"arrapi.seerr.sentHint": "Formati e profili inviati da app come Profilarr. Qui sono solo da leggere.",
+	"arrapi.seerr.sentFormat": "Formato",
+	"arrapi.seerr.sentProfile": "Profilo",
+	"arrapi.seerr.sentUpdated": "aggiornato {ago}"
 }

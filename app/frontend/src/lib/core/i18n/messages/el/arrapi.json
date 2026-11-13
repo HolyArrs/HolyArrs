@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Οι εφαρμογές AI είναι απενεργοποιημένες. Με την Αποδοχή ενεργοποιούνται.",
 	"arrapi.ai.offOther": "Οι εφαρμογές AI είναι απενεργοποιημένες. Ζητήστε από τον ιδιοκτήτη να τις ενεργοποιήσει και δοκιμάστε ξανά.",
 	"arrapi.ai.allow": "Αποδοχή",
-	"arrapi.ai.cancel": "Ακύρωση"
+	"arrapi.ai.cancel": "Ακύρωση",
+	"arrapi.seerr.sentTitle": "Στάλθηκαν από άλλες εφαρμογές",
+	"arrapi.seerr.sentHint": "Μορφές και προφίλ που έστειλαν εφαρμογές όπως το Profilarr. Εδώ μόνο για ανάγνωση.",
+	"arrapi.seerr.sentFormat": "Μορφή",
+	"arrapi.seerr.sentProfile": "Προφίλ",
+	"arrapi.seerr.sentUpdated": "ενημερώθηκε {ago}"
 }

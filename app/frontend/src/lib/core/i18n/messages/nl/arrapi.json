@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "AI-apps staan uit. Toestaan zet ze aan.",
 	"arrapi.ai.offOther": "AI-apps staan uit. Vraag de eigenaar ze aan te zetten en probeer het dan opnieuw.",
 	"arrapi.ai.allow": "Toestaan",
-	"arrapi.ai.cancel": "Annuleren"
+	"arrapi.ai.cancel": "Annuleren",
+	"arrapi.seerr.sentTitle": "Verstuurd door andere apps",
+	"arrapi.seerr.sentHint": "Formaten en profielen die apps zoals Profilarr stuurden. Hier alleen om te lezen.",
+	"arrapi.seerr.sentFormat": "Formaat",
+	"arrapi.seerr.sentProfile": "Profiel",
+	"arrapi.seerr.sentUpdated": "bijgewerkt {ago}"
 }

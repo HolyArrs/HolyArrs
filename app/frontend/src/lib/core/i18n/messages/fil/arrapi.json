@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Naka-off ang mga AI app. Ang pagpayag ay mag-o-on sa mga ito.",
 	"arrapi.ai.offOther": "Naka-off ang mga AI app. Hilingin sa owner na i-on ang mga ito, pagkatapos ay subukan ulit.",
 	"arrapi.ai.allow": "Payagan",
-	"arrapi.ai.cancel": "Kanselahin"
+	"arrapi.ai.cancel": "Kanselahin",
+	"arrapi.seerr.sentTitle": "Ipinadala ng ibang app",
+	"arrapi.seerr.sentHint": "Mga format at profile na ipinadala ng mga app gaya ng Profilarr. Pang-basa lang dito.",
+	"arrapi.seerr.sentFormat": "Format",
+	"arrapi.seerr.sentProfile": "Profile",
+	"arrapi.seerr.sentUpdated": "na-update {ago}"
 }

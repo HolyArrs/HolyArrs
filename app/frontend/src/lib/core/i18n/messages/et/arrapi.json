@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "Tehisintellekti rakendused on välja lülitatud. Lubamine lülitab need sisse.",
 	"arrapi.ai.offOther": "Tehisintellekti rakendused on välja lülitatud. Palu omanikul need sisse lülitada ja proovi siis uuesti.",
 	"arrapi.ai.allow": "Luba",
-	"arrapi.ai.cancel": "Tühista"
+	"arrapi.ai.cancel": "Tühista",
+	"arrapi.seerr.sentTitle": "Saadetud teistest rakendustest",
+	"arrapi.seerr.sentHint": "Vormingud ja profiilid, mille saatsid rakendused nagu Profilarr. Siin ainult lugemiseks.",
+	"arrapi.seerr.sentFormat": "Vorming",
+	"arrapi.seerr.sentProfile": "Profiil",
+	"arrapi.seerr.sentUpdated": "uuendatud {ago}"
 }

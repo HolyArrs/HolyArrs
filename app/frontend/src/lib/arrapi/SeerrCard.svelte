@@ -10,12 +10,13 @@
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { ago } from '#lib/core/format.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { pushedRows, type Pushed } from './pushed.ts';
 
 	// Seerr and Overseerr send approved requests to Sonarr and Radarr; this card switches on HolyArrs's small API that answers them in their place. Each side gets its own key, shown once.
 	type Side = 'sonarr' | 'radarr';
 	interface Key { side: Side; hint: string; owner: string; owner_active: boolean; created_at: string; last_used_at?: string }
 	interface SideView { side: Side; path: string; url: string; key?: Key }
-	interface Answer { enabled: boolean; delete_files: boolean; sides: SideView[] }
+	interface Answer { enabled: boolean; delete_files: boolean; sides: SideView[]; pushed?: Pushed }
 
 	const sideWord: Record<Side, { app: string }> = {
 		sonarr: { app: 'Sonarr' },
@@ -25,6 +26,7 @@
 	const sideWhatLower = (side: Side) => t(side === 'sonarr' ? 'arrapi.seerr.showsLower' : 'arrapi.seerr.moviesLower');
 
 	let a = $state<Answer | null>(null);
+	const sent = $derived(pushedRows(a?.pushed));
 	let gone = $state(false); // An older server without this API: no card.
 	let error = $state('');
 	let busy = $state('');
@@ -145,6 +147,19 @@
 						{/if}
 					</div>
 				{/each}
+				{#if sent.length}
+					<div class="srow" data-testid="seerr-sent">
+						<div class="txt">
+							<span class="label">{t('arrapi.seerr.sentTitle')}</span>
+							<span class="hint">{t('arrapi.seerr.sentHint')}</span>
+						</div>
+						<ul class="below sent">
+							{#each sent as r (r.key)}
+								<li data-testid="seerr-sent-row"><span class="small">{r.name}</span><span class="hint">{[t(r.kind === 'format' ? 'arrapi.seerr.sentFormat' : 'arrapi.seerr.sentProfile'), sideWord[r.side].app, r.updated ? t('arrapi.seerr.sentUpdated', { ago: ago(r.updated) }) : ''].filter(Boolean).join(' · ')}</span></li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
 				<div class="srow">
 					<div class="txt"><label for="seerr-delete">{t('arrapi.seerr.deleteFiles')}</label><span class="hint">{t('arrapi.seerr.deleteFilesHint')}</span></div>
 					<div class="ctl">
@@ -165,6 +180,8 @@
 	.fresh { display: flex; flex-direction: column; gap: 8px; padding: var(--s-4); border: 1px solid var(--ha-red); background: var(--ha-red-soft); border-radius: var(--r-btn); }
 	.key { word-break: break-all; font-size: 14px; }
 	.acts { gap: 8px; }
+	.sent { grid-column: 1 / -1; list-style: none; margin: 8px 0 4px; padding: 0; display: grid; gap: 8px; }
+	.sent li { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
 	@media (max-width: 600px) {
 		.side { grid-template-columns: minmax(0, 1fr); }
 		.side .ctl { justify-self: start; justify-content: flex-start; }
