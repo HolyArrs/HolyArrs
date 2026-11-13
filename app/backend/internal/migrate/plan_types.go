@@ -72,6 +72,10 @@ type Choices struct {
 	// NoFormats keeps profiles as ready-made Pick rules matches, leaving
 	// their formats and scores behind (off: they are brought).
 	NoFormats bool `json:"no_formats,omitempty"`
+	// LeaveFolders are old root folders the owner left at "Don't bring
+	// them". One that is on this server keeps its titles behind; one this
+	// server cannot see changes nothing.
+	LeaveFolders []string `json:"leave_folders,omitempty"`
 }
 
 // Person choices on the move screen.
@@ -159,6 +163,8 @@ type FolderPlan struct {
 	Path    string `json:"path"`
 	Kind    string `json:"kind"` // movie, show, music
 	Label   string `json:"label"`
+	// Left says the owner left this folder out ("Don't bring them").
+	Left bool `json:"left,omitempty"`
 }
 
 // RulesPlan matches one of their profiles to our Pick rules.

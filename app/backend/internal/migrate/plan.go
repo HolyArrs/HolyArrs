@@ -13,6 +13,7 @@ import (
 type builder struct {
 	p        *Plan
 	rules    []PathRule
+	leave    map[string]bool // old folders left out, cleaned
 	skip     map[string]bool
 	items    map[string]*Group
 	keys     map[string]bool
@@ -158,6 +159,12 @@ func BuildPlan(in []Input, ch Choices) *Plan {
 		waits: map[string][]waitFrom{}, listNames: map[string]bool{}}
 	for _, s := range ch.Skip {
 		b.skip[s] = true
+	}
+	b.leave = map[string]bool{}
+	for _, f := range ch.LeaveFolders {
+		if op := oldPath(f); op != "" {
+			b.leave[op] = true
+		}
 	}
 	for _, name := range GroupOrder {
 		p.Groups = append(p.Groups, Group{Name: name, Label: GroupLabels[name], Skipped: b.skip[name], Items: []Item{}})

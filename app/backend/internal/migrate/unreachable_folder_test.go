@@ -2,11 +2,13 @@ package migrate
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -110,5 +112,60 @@ func TestMoveTwoRootsToOneFolder(t *testing.T) {
 	}
 	if n := l.count(t, "SELECT count(*) FROM library_folders"); n != 1 {
 		t.Fatalf("%d library folders", n)
+	}
+}
+
+// A root folder left at "Don't bring them" that is on this server keeps
+// its titles behind, wanted ones too, and the folder is not added; one
+// this server cannot see still sends its titles over as wanted.
+func TestMoveLeaveFolderKeepsTitlesBehind(t *testing.T) {
+	l := newMoveLabWith(t, func(radarr, _, _ *Snapshot) {
+		radarr.Folders = append(radarr.Folders, Folder{Path: "/movies-gone"})
+		radarr.Titles = append(radarr.Titles,
+			Title{SourceID: 2, Kind: "movie", Name: "The Matrix Reloaded", Year: 2003, IDs: map[string]string{"tmdb": "604"},
+				Path: "/movies/The Matrix Reloaded (2003)", Monitored: true, ProfileID: 2},
+			Title{SourceID: 3, Kind: "movie", Name: "The Matrix Revolutions", Year: 2003, IDs: map[string]string{"tmdb": "605"},
+				Path: "/movies-gone/The Matrix Revolutions (2003)", Monitored: true, ProfileID: 2})
+	})
+	l.mv.Library.Metadata = &metadata.Static{Movies: []metadata.Movie{
+		{Name: "The Matrix", Year: 1999, IDs: map[string]string{"tmdb": "603"}},
+		{Name: "The Matrix Reloaded", Year: 2003, IDs: map[string]string{"tmdb": "604"}},
+		{Name: "The Matrix Revolutions", Year: 2003, IDs: map[string]string{"tmdb": "605"}},
+	}}
+	// /movies is on this server (through the rule) and left out; a second
+	// movie folder here gives the unreachable one somewhere to go.
+	other := filepath.Join(t.TempDir(), "other")
+	if err := os.MkdirAll(other, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := library.AddFolder(context.Background(), l.st, library.FolderInput{Path: other, Kind: "movie", Label: "other"}, nil, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	ch := Choices{PathRules: l.rules, People: l.people, LeaveFolders: []string{"/movies/", "/movies-gone"}}
+	check := func(stage string, rep *Report, dry bool) {
+		t.Helper()
+		for _, key := range []string{"title:movie:tmdb:603", reloaded} {
+			if got := lineOf(t, rep, key); got.Result != ResSkipped || got.Attention != AttnUnchecked || !strings.Contains(got.Detail, "left unchecked") {
+				t.Fatalf("%s %s %+v", stage, key, got)
+			}
+		}
+		if got := lineOf(t, rep, "folder:"+filepath.ToSlash(l.movies)); got.Result != ResSkipped || got.Attention != AttnUnchecked {
+			t.Fatalf("%s folder %+v", stage, got)
+		}
+		want := ResCreated
+		if dry {
+			want = ResCreate
+		}
+		if got := lineOf(t, rep, "title:movie:tmdb:605"); got.Result != want || got.Attention != AttnUnreachable || !strings.Contains(got.Detail, filepath.ToSlash(other)) {
+			t.Fatalf("%s unreachable %+v", stage, got)
+		}
+	}
+	check("dry", l.mv.Run(context.Background(), 0, l.planWith(t, ch), true, domain.Actor{Kind: "user", ID: 1}, nil), true)
+	check("move", l.move(t, ch).Report, false)
+	if n := l.count(t, "SELECT count(*) FROM titles WHERE state = 'active'"); n != 1 {
+		t.Fatalf("%d titles, want only the unreachable one", n)
+	}
+	if n := l.count(t, "SELECT count(*) FROM library_folders WHERE path = ?", filepath.Clean(l.movies)); n != 0 {
+		t.Fatal("the left-out folder was added")
 	}
 }

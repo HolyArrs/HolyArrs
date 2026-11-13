@@ -207,8 +207,9 @@ describe('folderOutcome', () => {
 			{ group: 'titles', key: 'b', name: 'B', result: 'created', attention: 'unreachable', folder: '/old' },
 			{ group: 'titles', key: 'c', name: 'C', result: 'skipped', attention: 'unchecked', folder: '/data/movies' },
 			{ group: 'titles', key: 'd', name: 'D', result: 'skipped', attention: 'unchecked', folder: '/data/movies' },
-			{ group: 'folders', key: 'f', name: 'F', result: 'created' }
+			{ group: 'folders', key: 'f', name: 'F', result: 'created' },
+			{ group: 'folders', key: 'g', name: 'G', result: 'skipped', attention: 'unchecked', folder: '/data/tv-extra' }
 		]);
-		expect(o).toEqual({ came: 1, attention: 1, attentionFolders: ['/old'], unchecked: 2, uncheckedFolders: ['/data/movies'] });
+		expect(o).toEqual({ came: 1, attention: 1, attentionFolders: ['/old'], unchecked: 2, uncheckedFolders: ['/data/movies', '/data/tv-extra'] });
 	});
 });

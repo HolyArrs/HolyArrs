@@ -321,7 +321,7 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 		if g.Name == GroupFolders {
 			r.foldersOff = g.Skipped
 			for _, it := range g.Items {
-				if f := it.Folder; f != nil && !g.Skipped && isDir(filepath.FromSlash(f.Path)) {
+				if f := it.Folder; f != nil && !g.Skipped && !f.Left && isDir(filepath.FromSlash(f.Path)) {
 					r.coming[f.Kind] = append(r.coming[f.Kind], filepath.Clean(filepath.FromSlash(f.Path)))
 				}
 			}

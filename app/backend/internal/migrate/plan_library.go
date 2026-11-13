@@ -30,7 +30,7 @@ func (b *builder) folderList(s *Snapshot) {
 			detail = op + " becomes " + np
 		}
 		b.add(GroupFolders, Item{Key: "folder:" + np, Name: label, From: from, Detail: detail,
-			Folder: &FolderPlan{OldPath: op, Path: np, Kind: kind, Label: clip(label, 100)}})
+			Folder: &FolderPlan{OldPath: op, Path: np, Kind: kind, Label: clip(label, 100), Left: b.leave[op]}})
 		keys := make([]string, 0, len(f.Extra))
 		for k := range f.Extra {
 			keys = append(keys, k)

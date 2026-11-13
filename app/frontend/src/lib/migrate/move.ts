@@ -97,6 +97,7 @@ export function folderOutcome(lines: Line[]): FolderOutcome {
 		if (f && !list.includes(f)) list.push(f);
 	};
 	for (const l of lines) {
+		if (l.group === 'folders' && l.attention === 'unchecked') add(out.uncheckedFolders, l.folder);
 		if (l.group !== 'titles') continue;
 		if (l.attention === 'unchecked') {
 			out.unchecked++;
@@ -127,7 +128,7 @@ export interface Move {
 	id: number;
 	created_at: string;
 	snapshots: number[];
-	choices?: { people?: Record<string, string>; skip?: string[]; path_rules?: PathRule[]; no_formats?: boolean };
+	choices?: { people?: Record<string, string>; skip?: string[]; path_rules?: PathRule[]; no_formats?: boolean; leave_folders?: string[] };
 	state: 'queued' | 'running' | 'done' | 'failed' | 'undone';
 	job_id?: number;
 	report?: Report;

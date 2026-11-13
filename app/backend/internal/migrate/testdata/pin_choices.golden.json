@@ -12,5 +12,8 @@
     "s": "s"
   },
   "approved_hash": "s",
-  "no_formats": true
+  "no_formats": true,
+  "leave_folders": [
+    "s"
+  ]
 }

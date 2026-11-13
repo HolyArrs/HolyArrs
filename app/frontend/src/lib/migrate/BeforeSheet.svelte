@@ -5,6 +5,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
+	import FolderOutcome from './FolderOutcome.svelte';
 	import { chooseHint, needsLook, resultWords, tone, type Bucket, type Line, type PersonChoice } from './move.ts';
 
 	let {
@@ -52,6 +53,7 @@
 <Sheet bind:open title={t('migrate.beforeYouMove')} description={t('migrate.willMoveTheseWon', { total })} size="md" placement="auto">
 	<div data-testid="before-sheet">
 		{#if notice}<p class="notice warn" role="status">{notice}</p>{/if}
+		<div class="fo-gap"><FolderOutcome lines={groups.flatMap((g) => g.lines)} /></div>
 		{#if problems.length > 0}
 			<ul class="rg">
 				{#each problems as p (p.key)}
@@ -82,6 +84,7 @@
 </Sheet>
 
 <style>
+	.fo-gap :global(ul) { margin-bottom: 12px; }
 	.rg { list-style: none; margin: 0 0 12px; padding: 0 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
 	.rg-row { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 0; border-top: 1px solid var(--line); }
 	.rg-row:first-child { border-top: 0; }
