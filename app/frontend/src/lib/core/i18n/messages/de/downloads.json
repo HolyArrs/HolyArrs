@@ -1252,7 +1252,7 @@
 	"downloads.row.stillIn": "Noch in {app}",
 	"downloads.dp.openDownloaders": "Downloader öffnen",
 	"downloads.ot.fromOldApps": "Aus alten Apps ({n})",
-	"downloads.ot.importAgain": "Importiere erneut, um ihre Tests zu aktualisieren; ihre Punkte kannst du in jeden Auswahlregeln ändern",
+	"downloads.ot.importAgain": "Importiere erneut, um ihre Tests zu aktualisieren; ihre Punkte kannst du in den Auswahlregeln ändern",
 	"downloads.ot.fromApp": "Aus {app}",
 	"downloads.ot.kindEdition": "Edition",
 	"downloads.ot.kindLanguage": "Sprache",
