@@ -1,5 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { bannerHeight, bannerRatio, posterMinFor, posterRatio, bannerSrc, bannerWidth, loadDensity, loadPosterSize, saveDensity, savePosterSize, posterSrc, tmdbFor } from './library-art.ts';
+import { bannerHeight, bannerRatio, extrasIdOf, posterMinFor, posterRatio, bannerSrc, bannerWidth, loadDensity, loadPosterSize, saveDensity, savePosterSize, posterSrc, tmdbFor } from './library-art.ts';
+
+describe('extras id', () => {
+	it('is the TMDB id of a movie or show', () => {
+		expect(extrasIdOf({ kind: 'show', ids: { tmdb: '24285', tvdb: '82817', tvmaze: '7201' } })).toBe('24285');
+		expect(extrasIdOf({ kind: 'movie', ids: { tmdb: '949', imdb: 'tt0113277' } })).toBe('949');
+	});
+	it('is none for a show known only by its TVDB or TVmaze id', () => {
+		expect(extrasIdOf({ kind: 'show', ids: { tvdb: '82817' } })).toBe('');
+		expect(extrasIdOf({ kind: 'show', ids: { tvmaze: '7201' } })).toBe('');
+		expect(extrasIdOf({ kind: 'show', ids: null })).toBe('');
+	});
+	it('is none when the TMDB id is the TVDB or TVmaze id copied over', () => {
+		expect(extrasIdOf({ kind: 'show', ids: { tmdb: '82817', tvdb: '82817' } })).toBe('');
+		expect(extrasIdOf({ kind: 'show', ids: { tmdb: '7201', tvmaze: '7201' } })).toBe('');
+	});
+	it('is the MusicBrainz id of an artist', () => {
+		expect(extrasIdOf({ kind: 'artist', ids: { tmdb: '1' }, artist: { mbid: 'abc' } })).toBe('abc');
+		expect(extrasIdOf({ kind: 'artist', ids: null })).toBe('');
+	});
+});
 
 function mem() {
 	const m = new Map<string, string>();

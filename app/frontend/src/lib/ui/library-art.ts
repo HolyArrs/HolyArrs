@@ -58,6 +58,15 @@ export const TMDB_SIZES = {
 // Matches TMDB and our proxied artwork paths so the size part can be swapped.
 const anyTmdb = /^(.*?\/(?:t\/p|api\/v1\/artwork\/tmdb))\/(?:w\d+|h\d+|original)\/([A-Za-z0-9_-]+\.(?:jpg|png|webp))$/;
 
+// The id a title's extra art is asked by: an artist's MusicBrainz id, else only a real TMDB id.
+// A TMDB id equal to the TVDB or TVmaze id was copied over and names another title, so it gives none.
+export function extrasIdOf(title: { kind: ArtKind; ids?: Record<string, string> | null; artist?: { mbid?: string } | null }): string {
+	if (title.kind === 'artist') return title.artist?.mbid ?? '';
+	const ids = title.ids ?? {};
+	const tmdb = ids.tmdb ?? '';
+	return /^\d+$/.test(tmdb) && tmdb !== ids.tvdb && tmdb !== ids.tvmaze ? tmdb : '';
+}
+
 export function bannerRatio(kind?: ArtKind): number {
 	return kind === 'artist' ? MUSIC_BANNER_RATIO : BANNER_RATIO;
 }

@@ -147,6 +147,11 @@ func applyShow(t *mediafiles.Title, sh metadata.Show) {
 			ids[k] = v
 		}
 	}
+	// A stored TMDB id that is the show's own TVDB or TVmaze id names
+	// another show on TMDB; this answer did not confirm it, so it goes.
+	if sh.Source != "tmdb" && sh.IDs["tmdb"] == "" && copiedTMDB(ids) {
+		delete(ids, "tmdb")
+	}
 	t.SourceIDs = ids
 	str := func(v string) *string {
 		if v == "" {

@@ -204,6 +204,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		return 0, 0, err
 	}
 	s.addAirTimes(ctx, &sh)
+	s.fixCopiedTMDB(ctx, &sh)
 	aliases := s.AnimeAliases(ctx, "show", sh.IDs["tmdb"], sh.Name)
 	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
