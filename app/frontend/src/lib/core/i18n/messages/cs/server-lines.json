@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "nechte zobrazenou aspoň jednu kvalitu pro filmy a jednu pro seriály",
 	"server.requests.someone-already-asked-for-this-movie": "někdo už o tento film v této kvalitě požádal; rozhodněte jeho žádost",
 	"server.requests.that-quality-cannot-be-asked-for": "o tuto kvalitu nelze žádat",
-	"server.requests.the-quality-you-picked-was-not": "Vybraná kvalita nebyla použita: tento titul už tu kopii má."
+	"server.requests.the-quality-you-picked-was-not": "Vybraná kvalita nebyla použita: tento titul už tu kopii má.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex už nenabízí seznam lidí, se kterými je váš server sdílen",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex odmítl váš propojený účet Plex; propojte ho znovu"
 }

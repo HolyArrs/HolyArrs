@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "电影和剧集各至少保留一个显示的画质",
 	"server.requests.someone-already-asked-for-this-movie": "已经有人以该画质请求了这部电影；请改为处理他们的请求",
 	"server.requests.that-quality-cannot-be-asked-for": "无法请求该画质",
-	"server.requests.the-quality-you-picked-was-not": "未使用你选择的画质：这部作品已经有该副本。"
+	"server.requests.the-quality-you-picked-was-not": "未使用你选择的画质：这部作品已经有该副本。",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex 不再提供与你的服务器共享的成员列表",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex 拒绝了你已关联的 Plex 账户；请重新关联"
 }

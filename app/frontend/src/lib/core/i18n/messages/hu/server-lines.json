@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "hagyjon láthatóan legalább egy minőséget a filmekhez és egyet a sorozatokhoz",
 	"server.requests.someone-already-asked-for-this-movie": "valaki már kérte ezt a filmet ebben a minőségben; inkább az ő kéréséről döntsön",
 	"server.requests.that-quality-cannot-be-asked-for": "ez a minőség nem kérhető",
-	"server.requests.the-quality-you-picked-was-not": "A választott minőség nem lett felhasználva: ennek a címnek már megvan ez a másolata."
+	"server.requests.the-quality-you-picked-was-not": "A választott minőség nem lett felhasználva: ennek a címnek már megvan ez a másolata.",
+	"server.accounts.plex-no-longer-offers-the-list": "a Plex már nem adja ki azoknak a személyeknek a listáját, akikkel a szerverét megosztották",
+	"server.accounts.plex-refused-your-linked-plex-account": "a Plex elutasította az összekapcsolt Plex-fiókját; kapcsolja össze újra"
 }

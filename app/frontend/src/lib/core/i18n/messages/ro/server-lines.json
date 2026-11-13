@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "lasă afișată cel puțin o calitate pentru filme și una pentru seriale",
 	"server.requests.someone-already-asked-for-this-movie": "cineva a cerut deja acest film în această calitate; decide în schimb cererea lui",
 	"server.requests.that-quality-cannot-be-asked-for": "această calitate nu poate fi cerută",
-	"server.requests.the-quality-you-picked-was-not": "Calitatea aleasă nu a fost folosită: titlul are deja această copie."
+	"server.requests.the-quality-you-picked-was-not": "Calitatea aleasă nu a fost folosită: titlul are deja această copie.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex nu mai oferă lista persoanelor cu care e partajat serverul tău",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex a refuzat contul tău Plex asociat; asociază-l din nou"
 }

@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "filmler için en az bir, diziler için en az bir kaliteyi görünür bırakın",
 	"server.requests.someone-already-asked-for-this-movie": "biri bu filmi o kalitede zaten istedi; bunun yerine onun isteğine karar verin",
 	"server.requests.that-quality-cannot-be-asked-for": "bu kalite istenemez",
-	"server.requests.the-quality-you-picked-was-not": "Seçtiğiniz kalite kullanılmadı: bu başlıkta o kopya zaten var."
+	"server.requests.the-quality-you-picked-was-not": "Seçtiğiniz kalite kullanılmadı: bu başlıkta o kopya zaten var.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex, sunucunun paylaşıldığı kişilerin listesini artık sunmuyor",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex bağlı Plex hesabını reddetti; yeniden bağla"
 }

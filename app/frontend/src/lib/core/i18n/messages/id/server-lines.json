@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "biarkan setidaknya satu kualitas tampil untuk film dan satu untuk serial",
 	"server.requests.someone-already-asked-for-this-movie": "seseorang sudah meminta film ini dalam kualitas itu; putuskan permintaannya saja",
 	"server.requests.that-quality-cannot-be-asked-for": "kualitas itu tidak bisa diminta",
-	"server.requests.the-quality-you-picked-was-not": "Kualitas yang kamu pilih tidak dipakai: judul ini sudah punya salinan itu."
+	"server.requests.the-quality-you-picked-was-not": "Kualitas yang kamu pilih tidak dipakai: judul ini sudah punya salinan itu.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex tidak lagi menyediakan daftar orang yang berbagi server denganmu",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex menolak akun Plex yang kamu tautkan; tautkan lagi"
 }

@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "atstāj redzamu vismaz vienu kvalitāti filmām un vienu seriāliem",
 	"server.requests.someone-already-asked-for-this-movie": "kāds jau pieprasīja šo filmu šajā kvalitātē; tā vietā izlem par viņa pieprasījumu",
 	"server.requests.that-quality-cannot-be-asked-for": "šo kvalitāti nevar pieprasīt",
-	"server.requests.the-quality-you-picked-was-not": "Izvēlētā kvalitāte netika izmantota: šim nosaukumam jau ir šī kopija."
+	"server.requests.the-quality-you-picked-was-not": "Izvēlētā kvalitāte netika izmantota: šim nosaukumam jau ir šī kopija.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex vairs nepiedāvā sarakstu ar cilvēkiem, ar kuriem koplietots tavs serveris",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex noraidīja tavu sasaistīto Plex kontu; sasaisti to vēlreiz"
 }

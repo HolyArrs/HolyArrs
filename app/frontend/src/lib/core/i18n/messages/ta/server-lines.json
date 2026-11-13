@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "திரைப்படங்களுக்கு ஒன்றும் தொடர்களுக்கு ஒன்றும் என குறைந்தது ஒரு தரத்தைக் காட்டியே வைக்கவும்",
 	"server.requests.someone-already-asked-for-this-movie": "இந்தத் திரைப்படத்தை அந்தத் தரத்தில் ஒருவர் ஏற்கெனவே கோரியுள்ளார்; அவர்களின் கோரிக்கையை முடிவு செய்யவும்",
 	"server.requests.that-quality-cannot-be-asked-for": "அந்தத் தரத்தைக் கோர முடியாது",
-	"server.requests.the-quality-you-picked-was-not": "நீங்கள் தேர்ந்தெடுத்த தரம் பயன்படுத்தப்படவில்லை: இந்தத் தலைப்பில் அந்தப் பிரதி ஏற்கெனவே உள்ளது."
+	"server.requests.the-quality-you-picked-was-not": "நீங்கள் தேர்ந்தெடுத்த தரம் பயன்படுத்தப்படவில்லை: இந்தத் தலைப்பில் அந்தப் பிரதி ஏற்கெனவே உள்ளது.",
+	"server.accounts.plex-no-longer-offers-the-list": "உங்கள் சேவையகம் பகிரப்பட்டவர்களின் பட்டியலை Plex இனி வழங்குவதில்லை",
+	"server.accounts.plex-refused-your-linked-plex-account": "இணைக்கப்பட்ட உங்கள் Plex கணக்கை Plex மறுத்தது; மீண்டும் இணையுங்கள்"
 }

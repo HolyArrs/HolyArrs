@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "оставете поне едно видимо качество за филми и едно за сериали",
 	"server.requests.someone-already-asked-for-this-movie": "някой вече е заявил този филм в това качество; решете неговата заявка",
 	"server.requests.that-quality-cannot-be-asked-for": "това качество не може да бъде заявено",
-	"server.requests.the-quality-you-picked-was-not": "Избраното качество не беше използвано: това заглавие вече има това копие."
+	"server.requests.the-quality-you-picked-was-not": "Избраното качество не беше използвано: това заглавие вече има това копие.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex вече не предоставя списъка с хората, с които е споделен сървърът ви",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex отказа свързания ви акаунт в Plex; свържете го отново"
 }

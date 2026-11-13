@@ -1323,5 +1323,7 @@
 	"server.requests.keep-at-least-one-quality-shown": "giữ ít nhất một chất lượng hiển thị cho phim lẻ và một cho phim bộ",
 	"server.requests.someone-already-asked-for-this-movie": "đã có người yêu cầu phim này ở chất lượng đó; hãy quyết định yêu cầu của họ",
 	"server.requests.that-quality-cannot-be-asked-for": "không thể yêu cầu chất lượng đó",
-	"server.requests.the-quality-you-picked-was-not": "Chất lượng bạn chọn không được dùng: tựa này đã có bản đó."
+	"server.requests.the-quality-you-picked-was-not": "Chất lượng bạn chọn không được dùng: tựa này đã có bản đó.",
+	"server.accounts.plex-no-longer-offers-the-list": "Plex không còn cung cấp danh sách những người được chia sẻ máy chủ của bạn",
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex đã từ chối tài khoản Plex đã liên kết của bạn; hãy liên kết lại"
 }
