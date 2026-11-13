@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease ja IPTorrents on sisse ehitatud**, ilma Prowlarrita. Küsi sarju 4K-s ja Profilarr saab saata oma formaadid ja profiilid. [Mis uut](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease ja IPTorrents on sisse ehitatud**, ilma Prowlarrita. Küsi sarju 4K-s ja Profilarr saab saata oma formaadid ja profiilid. [Mis uut](https://holyarrs.com/whats-new/)
 
 > Iga poster, treiler ja hinnang sinu HolyArrsis tuleb serverist, mida ma ise pean ja mille eest ise maksan, et see jääks kõigile tasuta. Kui HolyArrs tegi sinu filmiõhtu veidi paremaks, hoiab sponsor tuled meil kõigil põlemas 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> on üks isehostitav rakendus sinu sarjade, filmide ja muusika jaoks.<br>Sirvi nagu voogedastusrakenduses, soovi, mida tahad, ja ülejäänu teeb ta ise.</p>
 
-<p align="center"><b>Umbes 19.5 MB allalaadimist · umbes 95 MiB RAM-i tühikäigul värskel paigaldusel · amd64, arm64, armv7</b><br><sub>Kuus rakendust, mille ta asendab, on kokku 718.2 MB.</sub></p>
+<p align="center"><b>Umbes 16.9 MB allalaadimist · umbes 95 MiB RAM-i tühikäigul värskel paigaldusel · amd64, arm64, armv7</b><br><sub>Kuus rakendust, mille ta asendab, on kokku 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Kiirstart</a> · <a href="#why">Miks</a> · <a href="#what-it-does">Mida ta teeb</a> · <a href="#moving">Import teistest rakendustest</a> · <a href="#manual">Käsiraamat</a> · <a href="#help">Abi</a></p>
 
@@ -105,9 +105,9 @@ Nii ma selle ehitasin.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Kõik kuus kokku** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Umbes 37 korda väiksem. Pakitud registry allalaadimine, linuxserver.io image'id, amd64, mõõdetud 2026-11-08. RAM tühikäigul mõõdetud 10,000 pealkirja ning 55,000 filmi ja episoodiga. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>Umbes 43 korda väiksem. Pakitud registry allalaadimine, linuxserver.io image'id, amd64, mõõdetud 2026-11-08. RAM tühikäigul mõõdetud 10,000 pealkirja ning 55,000 filmi ja episoodiga. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Keegi soovib pealkirja. HolyArrs otsib sinu allikatest, valib sinu valikureeglit
 | 🔌 **Vanade rakenduste API** | Seerr, Prowlarr, Bazarr, Unpackerr ja Homepage töötavad edasi, kui selle sisse lülitad. |
 | 🗝️ **API-võtmeid pole vaja** | Pealkirjad, pildid ja edetabelid tulevad HolyArrsi metaandmete serverist. Töötavad ka sinu enda võtmed või server. |
 | 🔒 **Krüpteeritud võtmed** | Salvestatud paroolid ja võtmed on lukustatud peavõtmega, mis asub sinu seadete kaustas. |
-| 🪶 **Pisike** | Umbes 19.5 MB suurune image, milles pole muud kui HolyArrs. |
+| 🪶 **Pisike** | Umbes 16.9 MB suurune image, milles pole muud kui HolyArrs. |
 
 <details>
 <summary><b>Vaata kõiki lehti liikumises</b></summary>
@@ -222,7 +222,7 @@ Image'id asuvad Docker Hubis kui [`holyarrs/holyarrs`](https://hub.docker.com/r/
 | Silt | Kasuta selleks |
 | :----: | --- |
 | `latest` | Uusim versioon. |
-| `1.1.1` | Üks täpne versioon. See ei liigu kunagi. |
+| `1.1.2` | Üks täpne versioon. See ei liigu kunagi. |
 
 ## Kasutamine
 

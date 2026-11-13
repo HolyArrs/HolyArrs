@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease and IPTorrents built in**, no Prowlarr needed. Ask for shows in 4K, and Profilarr can send its formats and profiles. [See what's new](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease and IPTorrents built in**, no Prowlarr needed. Ask for shows in 4K, and Profilarr can send its formats and profiles. [See what's new](https://holyarrs.com/whats-new/)
 
 > Every poster, trailer and score in your HolyArrs comes from a server I run and pay for myself, so it stays free for everyone. If HolyArrs made movie night a little better, a sponsor keeps the lights on for all of us 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> is one self-hosted app for your shows, movies and music.<br>Browse like a streaming app, ask for what you want, and it handles the rest.</p>
 
-<p align="center"><b>About 19.5 MB to download · about 95 MiB of RAM idle on a fresh install · amd64, arm64, armv7</b><br><sub>The six apps it replaces download 718.2 MB together.</sub></p>
+<p align="center"><b>About 16.9 MB to download · about 95 MiB of RAM idle on a fresh install · amd64, arm64, armv7</b><br><sub>The six apps it replaces download 718.2 MB together.</sub></p>
 
 <p align="center"><a href="#quick-start">Quick start</a> · <a href="#why">Why</a> · <a href="#what-it-does">What it does</a> · <a href="#moving">Moving from other apps</a> · <a href="#manual">The manual</a> · <a href="#help">Help</a></p>
 
@@ -105,9 +105,9 @@ So I built it.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Six together** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>About 37 times smaller. Compressed registry download, linuxserver.io images, amd64, measured 2026-11-08 (HolyArrs size measured on 1.1.1, 2026-11-13). Idle RAM measured 2026-11-08 with 10,000 titles and 55,000 movies and episodes.</sub>
+<sub>About 43 times smaller. Compressed registry download, linuxserver.io images, amd64, measured 2026-11-08 (HolyArrs size measured on 1.1.2, 2026-11-13). Idle RAM measured 2026-11-08 with 10,000 titles and 55,000 movies and episodes.</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Someone asks for a title. HolyArrs searches your Sources, picks the best release
 | 🔌 **Old-app API** | Seerr, Prowlarr, Bazarr, Unpackerr and Homepage keep working once you turn it on. |
 | 🗝️ **No API keys needed** | Titles, artwork and charts come from the HolyArrs metadata server. Your own keys or server work too. |
 | 🔒 **Encrypted keys** | Stored passwords and keys are locked with a master key that lives in your config folder. |
-| 🪶 **Tiny** | An image of about 19.5 MB with nothing but HolyArrs inside. |
+| 🪶 **Tiny** | An image of about 16.9 MB with nothing but HolyArrs inside. |
 
 <details>
 <summary><b>See every page in motion</b></summary>
@@ -222,7 +222,7 @@ Images live on Docker Hub as [`holyarrs/holyarrs`](https://hub.docker.com/r/holy
 | Tag | Use it for |
 | :----: | --- |
 | `latest` | The newest release. |
-| `1.1.1` | One exact version. It never moves. |
+| `1.1.2` | One exact version. It never moves. |
 
 ## Usage
 

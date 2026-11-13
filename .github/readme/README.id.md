@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease, dan IPTorrents bawaan**, tanpa Prowlarr. Minta serial dalam 4K, dan Profilarr bisa mengirim format dan profilnya. [Lihat yang baru](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease, dan IPTorrents bawaan**, tanpa Prowlarr. Minta serial dalam 4K, dan Profilarr bisa mengirim format dan profilnya. [Lihat yang baru](https://holyarrs.com/whats-new/)
 
 > Setiap poster, trailer, dan skor di HolyArrs kamu berasal dari server yang saya jalankan dan bayar sendiri, supaya tetap gratis untuk semua orang. Kalau HolyArrs membuat malam nonton kamu sedikit lebih menyenangkan, sponsor membantu menjaga semuanya tetap menyala untuk kita semua 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> adalah satu aplikasi self-hosted untuk serial, film, dan musik kamu.<br>Jelajahi seperti aplikasi streaming, minta apa yang kamu mau, dan sisanya diurus HolyArrs.</p>
 
-<p align="center"><b>Unduhan sekitar 19.5 MB · sekitar 95 MiB RAM saat idle pada instalasi baru · amd64, arm64, armv7</b><br><sub>Enam aplikasi yang digantikannya totalnya 718.2 MB untuk diunduh.</sub></p>
+<p align="center"><b>Unduhan sekitar 16.9 MB · sekitar 95 MiB RAM saat idle pada instalasi baru · amd64, arm64, armv7</b><br><sub>Enam aplikasi yang digantikannya totalnya 718.2 MB untuk diunduh.</sub></p>
 
 <p align="center"><a href="#quick-start">Mulai cepat</a> · <a href="#why">Kenapa</a> · <a href="#what-it-does">Apa yang bisa dilakukan</a> · <a href="#moving">Pindah dari aplikasi lain</a> · <a href="#manual">Manual</a> · <a href="#help">Bantuan</a></p>
 
@@ -105,9 +105,9 @@ Jadi saya membuatnya.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Keenamnya sekaligus** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Sekitar 37 kali lebih kecil. Unduhan registry terkompresi, image linuxserver.io, amd64, diukur pada 2026-11-08. RAM saat idle diukur dengan 10,000 judul dan 55,000 film dan episode. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>Sekitar 43 kali lebih kecil. Unduhan registry terkompresi, image linuxserver.io, amd64, diukur pada 2026-11-08. RAM saat idle diukur dengan 10,000 judul dan 55,000 film dan episode. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Seseorang meminta sebuah judul. HolyArrs mencarinya di sumber kamu, memilih rili
 | 🔌 **API aplikasi lama** | Seerr, Prowlarr, Bazarr, Unpackerr, dan Homepage tetap berjalan setelah kamu mengaktifkannya. |
 | 🗝️ **Tanpa API key** | Judul, artwork, dan chart berasal dari server metadata HolyArrs. Key atau server milikmu sendiri juga bisa. |
 | 🔒 **Kunci terenkripsi** | Kata sandi dan kunci yang tersimpan dikunci dengan kunci utama yang ada di folder konfigurasi kamu. |
-| 🪶 **Mungil** | Image sekitar 19.5 MB yang isinya hanya HolyArrs. |
+| 🪶 **Mungil** | Image sekitar 16.9 MB yang isinya hanya HolyArrs. |
 
 <details>
 <summary><b>Lihat setiap halaman bergerak</b></summary>
@@ -222,7 +222,7 @@ Image tersedia di Docker Hub sebagai [`holyarrs/holyarrs`](https://hub.docker.co
 | Tag | Dipakai untuk |
 | :----: | --- |
 | `latest` | Versi terbaru. |
-| `1.1.1` | Satu versi tertentu. Tidak pernah berpindah. |
+| `1.1.2` | Satu versi tertentu. Tidak pernah berpindah. |
 
 ## Penggunaan
 

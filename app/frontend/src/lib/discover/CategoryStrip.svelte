@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
-	import '@fontsource/anton/latin-400.css';
+	import './anton.css';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { browseHref, type BrowseTile } from './search-browse.ts';

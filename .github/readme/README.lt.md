@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease ir IPTorrents įtaisyti**, be Prowlarr. Prašyk serialų 4K kokybe, o Profilarr gali atsiųsti savo formatus ir profilius. [Žiūrėti, kas naujo](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease ir IPTorrents įtaisyti**, be Prowlarr. Prašyk serialų 4K kokybe, o Profilarr gali atsiųsti savo formatus ir profilius. [Žiūrėti, kas naujo](https://holyarrs.com/whats-new/)
 
 > Kiekvienas tavo HolyArrs plakatas, anonsas ir įvertinimas ateina iš serverio, kurį pats laikau ir apmoku, todėl visiems tai lieka nemokama. Jei HolyArrs padarė tavo filmų vakarą šiek tiek geresnį, rėmėjas padeda mums visiems išlaikyti šviesą 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> yra viena savarankiškai talpinama programa tavo serialams, filmams ir muzikai.<br>Naršyk kaip streaming programoje, paprašyk to, ko nori, o visa kita ji padarys pati.</p>
 
-<p align="center"><b>Apie 19.5 MB atsisiuntimas · apie 95 MiB RAM be apkrovos naujame diegime · amd64, arm64, armv7</b><br><sub>Šešios programos, kurias ji pakeičia, kartu atsisiunčiamos 718.2 MB.</sub></p>
+<p align="center"><b>Apie 16.9 MB atsisiuntimas · apie 95 MiB RAM be apkrovos naujame diegime · amd64, arm64, armv7</b><br><sub>Šešios programos, kurias ji pakeičia, kartu atsisiunčiamos 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Greitas startas</a> · <a href="#why">Kodėl</a> · <a href="#what-it-does">Ką ji daro</a> · <a href="#moving">Perėjimas iš kitų programų</a> · <a href="#manual">Vadovas</a> · <a href="#help">Pagalba</a></p>
 
@@ -105,9 +105,9 @@ Taigi ją sukūriau.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Visos šešios kartu** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Apie 37 kartus mažiau. Suspaustas atsisiuntimas iš registry, linuxserver.io image, amd64, išmatuota 2026-11-08. RAM be apkrovos išmatuota su 10,000 pavadinimų ir 55,000 filmų bei serijų. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>Apie 43 kartus mažiau. Suspaustas atsisiuntimas iš registry, linuxserver.io image, amd64, išmatuota 2026-11-08. RAM be apkrovos išmatuota su 10,000 pavadinimų ir 55,000 filmų bei serijų. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Kažkas paprašo pavadinimo. HolyArrs ieško tavo šaltiniuose, pagal tavo parin
 | 🔌 **Ankstesnių programų API** | Seerr, Prowlarr, Bazarr, Unpackerr ir Homepage toliau veikia, kai tai įjungi. |
 | 🗝️ **API raktų nereikia** | Pavadinimai, iliustracijos ir topai ateina iš HolyArrs metaduomenų serverio. Tinka ir tavo paties raktai ar serveris. |
 | 🔒 **Užšifruoti raktai** | Išsaugoti slaptažodžiai ir raktai užrakinami pagrindiniu raktu, kuris yra tavo konfigūracijos aplanke. |
-| 🪶 **Mažytė** | Apie 19.5 MB image, kuriame nėra nieko, tik HolyArrs. |
+| 🪶 **Mažytė** | Apie 16.9 MB image, kuriame nėra nieko, tik HolyArrs. |
 
 <details>
 <summary><b>Pamatyti kiekvieną puslapį judesyje</b></summary>
@@ -222,7 +222,7 @@ Image yra Docker Hub kaip [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarr
 | Tag | Kam naudoti |
 | :----: | --- |
 | `latest` | Naujausia versija. |
-| `1.1.1` | Viena tiksli versija. Ji niekada nesikeičia. |
+| `1.1.2` | Viena tiksli versija. Ji niekada nesikeičia. |
 
 ## Naudojimas
 

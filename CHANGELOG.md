@@ -2,6 +2,20 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.1.2
+
+### Changed
+
+- The image is smaller to download: about 16.9 MB, down from 19.5 MB.
+
+### Fixed
+
+- Members can request seasons of a show that is already in the Library. ([#338](https://github.com/HolyArrs/HolyArrs/issues/338))
+
+### Thanks
+
+Thanks to [@johngully](https://github.com/HolyArrs/HolyArrs/issues/338) for the report.
+
 ## 1.1.1
 
 ### Added

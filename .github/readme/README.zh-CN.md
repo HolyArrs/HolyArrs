@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1：内置 Knaben、TorrentsCSV、SubsPlease 和 IPTorrents**，不再需要 Prowlarr。剧集可以按 4K 请求，Profilarr 也能推送它的格式和配置。[查看新功能](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2：内置 Knaben、TorrentsCSV、SubsPlease 和 IPTorrents**，不再需要 Prowlarr。剧集可以按 4K 请求，Profilarr 也能推送它的格式和配置。[查看新功能](https://holyarrs.com/whats-new/)
 
 > 你的 HolyArrs 里每一张海报、每一段预告片和每一个评分，都来自我自己运营、自己付费的服务器，所以它对所有人都免费。如果 HolyArrs 让你的电影之夜更好了一点，赞助一下，就能为我们所有人留着这盏灯 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> 是一个自托管应用，管理你的剧集、电影和音乐。<br>像用流媒体应用一样浏览，想看什么就提出请求，剩下的交给它。</p>
 
-<p align="center"><b>下载约 19.5 MB · 全新安装时空闲内存约 95 MiB · amd64、arm64、armv7</b><br><sub>它所取代的六个应用，加起来要下载 718.2 MB。</sub></p>
+<p align="center"><b>下载约 16.9 MB · 全新安装时空闲内存约 95 MiB · amd64、arm64、armv7</b><br><sub>它所取代的六个应用，加起来要下载 718.2 MB。</sub></p>
 
 <p align="center"><a href="#quick-start">快速开始</a> · <a href="#why">为什么</a> · <a href="#what-it-does">功能</a> · <a href="#moving">从其他应用迁移</a> · <a href="#manual">手册</a> · <a href="#help">帮助</a></p>
 
@@ -105,9 +105,9 @@ docker compose up -d
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **六个合计** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>体积小约 37 倍。数据为注册表压缩后的下载大小，来自 linuxserver.io 镜像，amd64，2026-11-08 测量。空闲内存在 10,000 个标题、55,000 部电影和剧集的条件下测量。 (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>体积小约 43 倍。数据为注册表压缩后的下载大小，来自 linuxserver.io 镜像，amd64，2026-11-08 测量。空闲内存在 10,000 个标题、55,000 部电影和剧集的条件下测量。 (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ docker compose up -d
 | 🔌 **旧应用 API** | 开启后，Seerr、Prowlarr、Bazarr、Unpackerr 和 Homepage 都能继续工作。 |
 | 🗝️ **不需要 API 密钥** | 标题、海报和榜单都来自 HolyArrs 元数据服务器。也可以用你自己的密钥或服务器。 |
 | 🔒 **加密保存密钥** | 保存的密码和密钥由主密钥锁定，主密钥放在你的配置文件夹里。 |
-| 🪶 **很小** | 镜像约 19.5 MB，里面只有 HolyArrs。 |
+| 🪶 **很小** | 镜像约 16.9 MB，里面只有 HolyArrs。 |
 
 <details>
 <summary><b>查看每个页面的动态效果</b></summary>
@@ -222,7 +222,7 @@ HolyArrs 只读取你的旧应用，不会改动它们里面的任何东西，�
 | 标签 | 用途 |
 | :----: | --- |
 | `latest` | 最新版本。 |
-| `1.1.1` | 固定的某一个版本，永远不会变。 |
+| `1.1.2` | 固定的某一个版本，永远不会变。 |
 
 ## 用法
 

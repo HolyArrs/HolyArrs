@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease och IPTorrents inbyggda**, utan Prowlarr. Be om serier i 4K, och Profilarr kan skicka sina format och profiler. [Se vad som är nytt](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease och IPTorrents inbyggda**, utan Prowlarr. Be om serier i 4K, och Profilarr kan skicka sina format och profiler. [Se vad som är nytt](https://holyarrs.com/whats-new/)
 
 > Varje affisch, trailer och betyg i ditt HolyArrs kommer från en server som jag driver och betalar själv, så att det förblir gratis för alla. Om HolyArrs har gjort filmkvällen lite bättre håller en sponsor lamporna tända för oss alla 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> är en egenhostad app för dina serier, filmer och din musik.<br>Bläddra som i en streamingapp, be om det du vill ha, så sköter den resten.</p>
 
-<p align="center"><b>Cirka 19.5 MB att ladda ner · cirka 95 MiB RAM i viloläge på en ny installation · amd64, arm64, armv7</b><br><sub>De sex appar den ersätter är tillsammans 718.2 MB att ladda ner.</sub></p>
+<p align="center"><b>Cirka 16.9 MB att ladda ner · cirka 95 MiB RAM i viloläge på en ny installation · amd64, arm64, armv7</b><br><sub>De sex appar den ersätter är tillsammans 718.2 MB att ladda ner.</sub></p>
 
 <p align="center"><a href="#quick-start">Snabbstart</a> · <a href="#why">Varför</a> · <a href="#what-it-does">Vad den gör</a> · <a href="#moving">Byta från andra appar</a> · <a href="#manual">Manualen</a> · <a href="#help">Hjälp</a></p>
 
@@ -105,9 +105,9 @@ Så jag byggde den.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Alla sex tillsammans** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Cirka 37 gånger mindre. Komprimerad nedladdning från registret, images från linuxserver.io, amd64, uppmätt 2026-11-08. RAM i viloläge uppmätt med 10,000 titlar och 55,000 filmer och avsnitt. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>Cirka 43 gånger mindre. Komprimerad nedladdning från registret, images från linuxserver.io, amd64, uppmätt 2026-11-08. RAM i viloläge uppmätt med 10,000 titlar och 55,000 filmer och avsnitt. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Någon ber om en titel. HolyArrs söker igenom dina källor, väljer den bästa 
 | 🔌 **API för tidigare appar** | Seerr, Prowlarr, Bazarr, Unpackerr och Homepage fortsätter att fungera när du har slagit på det. |
 | 🗝️ **Inga API-nycklar behövs** | Titlar, bilder och topplistor kommer från HolyArrs metadataserver. Egna nycklar eller en egen server fungerar också. |
 | 🔒 **Krypterade nycklar** | Sparade lösenord och nycklar låses med en huvudnyckel som ligger i din konfigurationsmapp. |
-| 🪶 **Pytteliten** | En image på cirka 19.5 MB med inget annat än HolyArrs i. |
+| 🪶 **Pytteliten** | En image på cirka 16.9 MB med inget annat än HolyArrs i. |
 
 <details>
 <summary><b>Se alla sidor i rörelse</b></summary>
@@ -222,7 +222,7 @@ Imagerna finns på Docker Hub som [`holyarrs/holyarrs`](https://hub.docker.com/r
 | Tagg | Använd den till |
 | :----: | --- |
 | `latest` | Den senaste versionen. |
-| `1.1.1` | En exakt version. Den flyttas aldrig. |
+| `1.1.2` | En exakt version. Den flyttas aldrig. |
 
 ## Användning
 

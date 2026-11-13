@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: Knaben, TorrentsCSV, SubsPlease i IPTorrents integrats**, sense Prowlarr. Demana sèries en 4K, i Profilarr pot enviar els seus formats i perfils. [Mira què hi ha de nou](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: Knaben, TorrentsCSV, SubsPlease i IPTorrents integrats**, sense Prowlarr. Demana sèries en 4K, i Profilarr pot enviar els seus formats i perfils. [Mira què hi ha de nou](https://holyarrs.com/whats-new/)
 
 > Cada pòster, tràiler i puntuació del teu HolyArrs ve d'un servidor que porto i pago jo mateix, perquè segueixi sent gratuït per a tothom. Si HolyArrs t'ha fet la nit de pel·lícula una mica millor, un patrocini ens manté els llums encesos a tots 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> és una sola app autoallotjada per a les teves sèries, pel·lícules i música.<br>Explora com en una app de streaming, demana el que vulguis i ella s'encarrega de la resta.</p>
 
-<p align="center"><b>Uns 19.5 MB de baixada · uns 95 MiB de RAM en repòs en una instal·lació nova · amd64, arm64, armv7</b><br><sub>Les sis apps que substitueix pesen 718.2 MB en total.</sub></p>
+<p align="center"><b>Uns 16.9 MB de baixada · uns 95 MiB de RAM en repòs en una instal·lació nova · amd64, arm64, armv7</b><br><sub>Les sis apps que substitueix pesen 718.2 MB en total.</sub></p>
 
 <p align="center"><a href="#quick-start">Inici ràpid</a> · <a href="#why">Per què</a> · <a href="#what-it-does">Què fa</a> · <a href="#moving">Importar des d'altres apps</a> · <a href="#manual">El manual</a> · <a href="#help">Ajuda</a></p>
 
@@ -105,9 +105,9 @@ Així que la vaig fer.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Les sis juntes** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Unes 37 vegades més petita. Baixada comprimida del registre, imatges de linuxserver.io, amd64, mesurat el 2026-11-08. RAM en repòs mesurada amb 10,000 títols i 55,000 pel·lícules i episodis. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>Unes 43 vegades més petita. Baixada comprimida del registre, imatges de linuxserver.io, amd64, mesurat el 2026-11-08. RAM en repòs mesurada amb 10,000 títols i 55,000 pel·lícules i episodis. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Algú demana un títol. HolyArrs cerca a les teves Fonts, tria el millor llança
 | 🔌 **API d'apps anteriors** | Seerr, Prowlarr, Bazarr, Unpackerr i Homepage continuen funcionant quan ho activis. |
 | 🗝️ **Sense claus d'API** | Els títols, les il·lustracions i les llistes d'èxits vénen del servidor de metadades d'HolyArrs. També funcionen les teves pròpies claus o el teu servidor. |
 | 🔒 **Claus xifrades** | Les contrasenyes i claus desades queden tancades amb una clau mestra que viu a la teva carpeta de configuració. |
-| 🪶 **Minúscula** | Una imatge d'uns 19.5 MB amb només HolyArrs a dins. |
+| 🪶 **Minúscula** | Una imatge d'uns 16.9 MB amb només HolyArrs a dins. |
 
 <details>
 <summary><b>Mira totes les pàgines en moviment</b></summary>
@@ -222,7 +222,7 @@ Les imatges són a Docker Hub com a [`holyarrs/holyarrs`](https://hub.docker.com
 | Etiqueta | Fes-la servir per a |
 | :----: | --- |
 | `latest` | La versió més nova. |
-| `1.1.1` | Una versió exacta. No es mou mai. |
+| `1.1.2` | Una versió exacta. No es mou mai. |
 
 ## Ús
 

@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.1: beépített Knaben, TorrentsCSV, SubsPlease és IPTorrents**, Prowlarr nélkül. Kérj sorozatokat 4K-ban, és a Profilarr elküldheti a formátumait és profiljait. [Újdonságok](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.2: beépített Knaben, TorrentsCSV, SubsPlease és IPTorrents**, Prowlarr nélkül. Kérj sorozatokat 4K-ban, és a Profilarr elküldheti a formátumait és profiljait. [Újdonságok](https://holyarrs.com/whats-new/)
 
 > A HolyArrsodban minden poszter, trailer és értékelés egy általam üzemeltetett és fizetett szerverről jön, hogy mindenkinek ingyenes maradhasson. Ha a HolyArrs egy kicsit jobbá tette a filmes estédet, egy szponzoráció mindannyiunk számára életben tartja a projektet 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center">A <b>HolyArrs</b> egy saját szerveren futtatott app a sorozataidhoz, filmjeidhez és zenéidhez.<br>Böngéssz benne, mint egy streaming appban, kérd, amit szeretnél, a többit pedig elintézi.</p>
 
-<p align="center"><b>Kb. 19.5 MB letöltés · kb. 95 MiB RAM üresjáratban friss telepítésen · amd64, arm64, armv7</b><br><sub>A hat app, amelyet kivált, együtt 718.2 MB.</sub></p>
+<p align="center"><b>Kb. 16.9 MB letöltés · kb. 95 MiB RAM üresjáratban friss telepítésen · amd64, arm64, armv7</b><br><sub>A hat app, amelyet kivált, együtt 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Gyors indítás</a> · <a href="#why">Miért</a> · <a href="#what-it-does">Mit tud</a> · <a href="#moving">Átállás más appokról</a> · <a href="#manual">A kézikönyv</a> · <a href="#help">Segítség</a></p>
 
@@ -105,9 +105,9 @@ Egy appot akartam. Egy bejelentkezést, egy portot, egy helyet, ahol körülnéz
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Mind a hat együtt** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Kb. 37-szor kisebb. Tömörített registry-letöltés, linuxserver.io image-ek, amd64, mérve 2026-11-08-án. A RAM üresjáratban 10,000 címmel, valamint 55,000 filmmel és epizóddal mérve. (HolyArrs 1.1.1: 2026-11-13)</sub>
+<sub>Kb. 43-szor kisebb. Tömörített registry-letöltés, linuxserver.io image-ek, amd64, mérve 2026-11-08-án. A RAM üresjáratban 10,000 címmel, valamint 55,000 filmmel és epizóddal mérve. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Valaki kér egy címet. A HolyArrs végigkeresi a Forrásaidat, a Választási s
 | 🔌 **API a korábbi appokhoz** | A Seerr, a Prowlarr, a Bazarr, az Unpackerr és a Homepage tovább működik, ha bekapcsolod. |
 | 🗝️ **Nem kellenek API-kulcsok** | A címek, a borítók és a toplisták a HolyArrs metaadat-szerveréről jönnek. Saját kulcsokkal vagy saját szerverrel is megy. |
 | 🔒 **Titkosított kulcsok** | A tárolt jelszavakat és kulcsokat egy főkulcs zárja le, amely a konfigurációs mappádban van. |
-| 🪶 **Apró** | Egy kb. 19.5 MB-os image, amelyben csak a HolyArrs van. |
+| 🪶 **Apró** | Egy kb. 16.9 MB-os image, amelyben csak a HolyArrs van. |
 
 <details>
 <summary><b>Nézd meg az összes oldalt mozgásban</b></summary>
@@ -222,7 +222,7 @@ Az image-ek a Docker Hubon vannak, [`holyarrs/holyarrs`](https://hub.docker.com/
 | Címke | Mire használd |
 | :----: | --- |
 | `latest` | A legújabb verzió. |
-| `1.1.1` | Egy pontos verzió. Sosem változik. |
+| `1.1.2` | Egy pontos verzió. Sosem változik. |
 
 ## Használat
 
