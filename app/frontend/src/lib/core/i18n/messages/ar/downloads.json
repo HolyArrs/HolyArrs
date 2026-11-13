@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "مقالات مفقودة",
 	"downloads.problem.noFullCopy": "لا توجد نسخة كاملة",
 	"downloads.problem.noPeers": "لا يوجد نظراء",
-	"downloads.problem.repairNeeded": "يلزم الإصلاح"
+	"downloads.problem.repairNeeded": "يلزم الإصلاح",
+	"downloads.hl.notAdded": "لم تتم الإضافة؛ عاد إلى الانتظار",
+	"downloads.hl.notAddedSlow": "لم يرد خادم البيانات الوصفية في الوقت المناسب"
 }

@@ -1311,5 +1311,7 @@
 	"server.migrate.imported-before-got-their-sign-in": "importuota anksčiau; gavo prisijungimą per {way}",
 	"server.migrate.imported-before-their-account-signs-in": "importuota anksčiau; jo {way} paskyra čia jungiasi kaip {name}, todėl taip ir lieka",
 	"server.migrate.people-who-signed-in-to-the": "Žmonės, kurie į senąją programą jungdavosi per Plex, Jellyfin ar Emby, įsijungia pirmą kartą taip prisijungę, kai tai įjungta skiltyje Nustatymai > Prisijungimas ir sauga.",
-	"server.metadata.the-metadata-server-is-slow-right": "Metaduomenų serveris dabar lėtas. Tai praeis savaime."
+	"server.metadata.the-metadata-server-is-slow-right": "Metaduomenų serveris dabar lėtas. Tai praeis savaime.",
+	"server.requests.could-not-add-it-back-in": "{before}: nepavyko pridėti, vėl laukia",
+	"server.requests.the-metadata-server-did-not-answer": "Metaduomenų serveris neatsakė laiku. Prašymas vėl laukia; patvirtinkite jį dar kartą."
 }

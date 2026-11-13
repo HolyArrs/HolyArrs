@@ -271,6 +271,7 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'ask_made': return named(TAG.asked, who(e, ctx) || str(d.asked_by) || say('downloads.hl.aMember'), cap(str(d.albums) || str(d.seasons)));
 		case 'ask_approved': return d.auto === true ? t(TAG.approved, join(say('downloads.hl.automatic'), str(d.note))) : named(TAG.approved, str(d.approved_by) || who(e, ctx), str(d.note));
 		case 'ask_turned_down': return named(TAG.declined, str(d.turned_down_by) || who(e, ctx), str(d.note));
+		case 'ask_not_added': return t(TAG.failed, join(say('downloads.hl.notAdded'), d.slow === true ? say('downloads.hl.notAddedSlow') : plainWhy(str(d.reason))));
 		case 'report_made': return t(TAG.reported, join(problem(d.kind), str(d.note)));
 		case 'report_fixed': return t(TAG.fixed, join(problem(d.kind), str(d.reply)));
 		case 'report_reopened': return t(TAG.reopened, join(problem(d.kind), str(d.note)));
@@ -379,5 +380,5 @@ function askedName(e: EventRecord): string | undefined {
 	if (!e.Kind.startsWith('ask_')) return undefined;
 	const made = /asked for (.+?)(?:\s*\(\d{4}\))?(?:,\s.*)?$/.exec(e.Summary)?.[1];
 	if (e.Kind === 'ask_made') return made?.trim() || undefined;
-	return /^(.+?)(?:\s*\(\d{4}\))?:\s(?:approved|turned down)\b/i.exec(e.Summary)?.[1]?.trim() || undefined;
+	return /^(.+?)(?:\s*\(\d{4}\))?:\s(?:approved|turned down|could not add)\b/i.exec(e.Summary)?.[1]?.trim() || undefined;
 }

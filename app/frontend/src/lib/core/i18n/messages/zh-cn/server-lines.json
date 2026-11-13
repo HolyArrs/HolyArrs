@@ -1311,5 +1311,7 @@
 	"server.migrate.imported-before-got-their-sign-in": "之前已导入；已获得 {way} 登录",
 	"server.migrate.imported-before-their-account-signs-in": "之前已导入；他们的 {way} 账户在这里以 {name} 的身份登录，所以保持不变",
 	"server.migrate.people-who-signed-in-to-the": "在旧应用中用 Plex、Jellyfin 或 Emby 登录的成员，在 设置 > 登录与安全 中开启该方式后，首次用这种方式登录时启用。",
-	"server.metadata.the-metadata-server-is-slow-right": "元数据服务器现在较慢。会自行恢复。"
+	"server.metadata.the-metadata-server-is-slow-right": "元数据服务器现在较慢。会自行恢复。",
+	"server.requests.could-not-add-it-back-in": "{before}：无法添加，已回到等待中",
+	"server.requests.the-metadata-server-did-not-answer": "元数据服务器没有及时响应。请求已回到等待中，请再次批准。"
 }

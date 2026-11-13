@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Hiányzó cikkek",
 	"downloads.problem.noFullCopy": "Nincs teljes másolat",
 	"downloads.problem.noPeers": "Nincsenek peerek",
-	"downloads.problem.repairNeeded": "Javítás szükséges"
+	"downloads.problem.repairNeeded": "Javítás szükséges",
+	"downloads.hl.notAdded": "Nincs hozzáadva; újra várakozik",
+	"downloads.hl.notAddedSlow": "a metaadat-szerver nem válaszolt időben"
 }

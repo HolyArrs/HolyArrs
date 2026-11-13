@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "記事が欠落しています",
 	"downloads.problem.noFullCopy": "完全なコピーがありません",
 	"downloads.problem.noPeers": "ピアがいません",
-	"downloads.problem.repairNeeded": "修復が必要です"
+	"downloads.problem.repairNeeded": "修復が必要です",
+	"downloads.hl.notAdded": "追加されませんでした。待機中に戻りました",
+	"downloads.hl.notAddedSlow": "メタデータサーバーが時間内に応答しませんでした"
 }

@@ -25,7 +25,9 @@ const handLines = { 'Because you have {name}': 'suggest', 'No Downloader has con
 	'{name} paused the stage {stage}': 'accounts', '{name} resumed the stage {stage}': 'accounts',
 	'{name} restarted the stage {stage}': 'accounts', 'Download removed': 'downloads', 'Download removed by {name}': 'downloads',
 	// metadata.ErrServiceSlow, answered through library.ServiceError.
-	'The metadata server is slow right now. This comes back on its own.': 'metadata' };
+	'The metadata server is slow right now. This comes back on its own.': 'metadata',
+	// requests.ErrNotAddedSlow, answered when an approval could not add its title.
+	'The metadata server did not answer in time. It is back in Waiting; approve it again.': 'requests' };
 // Files whose fmt.Sprintf lines are display text (card lines, labels).
 const display = /(accounts[\\/]events|discover[\\/](home|explore_np|title_view)|shows[\\/]episode_labels|requests[\\/](episodes|follows\w*|reports)|health[\\/](health|routes_settings_status)|migrate[\\/]plan_\w+|metadata[\\/]moods)\.go$/;
 

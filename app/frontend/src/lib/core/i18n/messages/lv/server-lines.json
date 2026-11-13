@@ -1311,5 +1311,7 @@
 	"server.migrate.imported-before-got-their-sign-in": "importēts iepriekš; saņēma pieteikšanos ar {way}",
 	"server.migrate.imported-before-their-account-signs-in": "importēts iepriekš; viņa {way} konts šeit piesakās kā {name}, tāpēc tā arī paliek",
 	"server.migrate.people-who-signed-in-to-the": "Cilvēki, kas vecajā lietotnē pieteicās ar Plex, Jellyfin vai Emby, ieslēdzas pirmajā šādā pieteikšanās reizē, tiklīdz tas ir ieslēgts sadaļā Iestatījumi > Pieteikšanās un drošība.",
-	"server.metadata.the-metadata-server-is-slow-right": "Metadatu serveris pašlaik ir lēns. Tas atrisināsies pats no sevis."
+	"server.metadata.the-metadata-server-is-slow-right": "Metadatu serveris pašlaik ir lēns. Tas atrisināsies pats no sevis.",
+	"server.requests.could-not-add-it-back-in": "{before}: neizdevās pievienot, atkal gaida",
+	"server.requests.the-metadata-server-did-not-answer": "Metadatu serveris neatbildēja laikā. Pieprasījums atkal gaida; apstiprini to vēlreiz."
 }

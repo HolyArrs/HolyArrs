@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "缺少文章",
 	"downloads.problem.noFullCopy": "沒有完整副本",
 	"downloads.problem.noPeers": "沒有對等方",
-	"downloads.problem.repairNeeded": "需要修復"
+	"downloads.problem.repairNeeded": "需要修復",
+	"downloads.hl.notAdded": "未新增，已回到等待中",
+	"downloads.hl.notAddedSlow": "中繼資料伺服器沒有及時回應"
 }

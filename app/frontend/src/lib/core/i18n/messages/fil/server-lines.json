@@ -1311,5 +1311,7 @@
 	"server.migrate.imported-before-got-their-sign-in": "na-import na dati; nakuha ang kanilang {way} sign-in",
 	"server.migrate.imported-before-their-account-signs-in": "na-import na dati; ang kanilang {way} account ay nagsa-sign in bilang {name} dito, kaya mananatili ito",
 	"server.migrate.people-who-signed-in-to-the": "Ang mga taong nagsa-sign in sa lumang app gamit ang Plex, Jellyfin o Emby ay mao-on sa una nilang sign-in sa ganoong paraan, kapag naka-on ito sa Settings > Sign-in at seguridad.",
-	"server.metadata.the-metadata-server-is-slow-right": "Mabagal ang metadata server ngayon. Kusa itong babalik sa normal."
+	"server.metadata.the-metadata-server-is-slow-right": "Mabagal ang metadata server ngayon. Kusa itong babalik sa normal.",
+	"server.requests.could-not-add-it-back-in": "{before}: hindi naidagdag, naghihintay ulit",
+	"server.requests.the-metadata-server-did-not-answer": "Hindi sumagot sa oras ang metadata server. Naghihintay ulit ito; aprubahan ulit."
 }

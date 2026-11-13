@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "आर्टिकल गायब",
 	"downloads.problem.noFullCopy": "पूरी कॉपी नहीं",
 	"downloads.problem.noPeers": "कोई पीयर नहीं",
-	"downloads.problem.repairNeeded": "मरम्मत ज़रूरी"
+	"downloads.problem.repairNeeded": "मरम्मत ज़रूरी",
+	"downloads.hl.notAdded": "नहीं जोड़ा गया; फिर से इंतज़ार में",
+	"downloads.hl.notAddedSlow": "मेटाडेटा सर्वर ने समय पर जवाब नहीं दिया"
 }

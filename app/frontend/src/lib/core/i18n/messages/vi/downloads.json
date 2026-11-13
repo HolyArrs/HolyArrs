@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Thiếu bài",
 	"downloads.problem.noFullCopy": "Không có bản đầy đủ",
 	"downloads.problem.noPeers": "Không có peer",
-	"downloads.problem.repairNeeded": "Cần sửa chữa"
+	"downloads.problem.repairNeeded": "Cần sửa chữa",
+	"downloads.hl.notAdded": "Chưa thêm; quay lại đang chờ",
+	"downloads.hl.notAddedSlow": "máy chủ metadata không phản hồi kịp"
 }

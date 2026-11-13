@@ -1311,5 +1311,7 @@
 	"server.migrate.imported-before-got-their-sign-in": "раније увезено; добио је пријаву преко {way}",
 	"server.migrate.imported-before-their-account-signs-in": "раније увезено; његов {way} налог се овде пријављује као {name}, па остаје тако",
 	"server.migrate.people-who-signed-in-to-the": "Људи који су се у стару апликацију пријављивали преко Plex, Jellyfin или Emby укључују се при првој пријави на тај начин, чим то укључиш у Подешавања > Пријава и безбедност.",
-	"server.metadata.the-metadata-server-is-slow-right": "Сервер метаподатака је тренутно спор. То ће проћи само од себе."
+	"server.metadata.the-metadata-server-is-slow-right": "Сервер метаподатака је тренутно спор. То ће проћи само од себе.",
+	"server.requests.could-not-add-it-back-in": "{before}: није могло да се дода, поново чека",
+	"server.requests.the-metadata-server-did-not-answer": "Сервер метаподатака није одговорио на време. Захтев поново чека; одобри га поново."
 }

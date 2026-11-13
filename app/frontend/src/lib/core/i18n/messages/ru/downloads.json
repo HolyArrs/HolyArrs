@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Отсутствуют статьи",
 	"downloads.problem.noFullCopy": "Нет полной копии",
 	"downloads.problem.noPeers": "Нет пиров",
-	"downloads.problem.repairNeeded": "Нужно восстановление"
+	"downloads.problem.repairNeeded": "Нужно восстановление",
+	"downloads.hl.notAdded": "Не добавлено; снова ожидает",
+	"downloads.hl.notAddedSlow": "сервер метаданных не ответил вовремя"
 }

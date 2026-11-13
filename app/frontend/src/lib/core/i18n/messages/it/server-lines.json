@@ -1311,5 +1311,7 @@
 	"server.migrate.imported-before-got-their-sign-in": "importato prima; ha ricevuto l'accesso con {way}",
 	"server.migrate.imported-before-their-account-signs-in": "importato prima; il suo account {way} accede qui come {name}, quindi resta così",
 	"server.migrate.people-who-signed-in-to-the": "Le persone che accedevano alla vecchia app con Plex, Jellyfin o Emby si attivano al loro primo accesso in quel modo, appena lo attivi in Impostazioni > Accesso e sicurezza.",
-	"server.metadata.the-metadata-server-is-slow-right": "Il server dei metadati ora è lento. Si risolve da solo."
+	"server.metadata.the-metadata-server-is-slow-right": "Il server dei metadati ora è lento. Si risolve da solo.",
+	"server.requests.could-not-add-it-back-in": "{before}: non è stato possibile aggiungerlo, di nuovo in attesa",
+	"server.requests.the-metadata-server-did-not-answer": "Il server dei metadati non ha risposto in tempo. La richiesta è di nuovo in attesa; approvala di nuovo."
 }

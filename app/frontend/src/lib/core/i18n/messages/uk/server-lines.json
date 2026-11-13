@@ -1311,5 +1311,7 @@
 	"server.migrate.imported-before-got-their-sign-in": "уже імпортовано раніше; отримав вхід через {way}",
 	"server.migrate.imported-before-their-account-signs-in": "уже імпортовано раніше; його обліковий запис {way} входить тут як {name}, тож так і лишається",
 	"server.migrate.people-who-signed-in-to-the": "Люди, які входили в старий застосунок через Plex, Jellyfin або Emby, увімкнуться під час першого входу цим способом, щойно ти його ввімкнеш у Налаштування > Вхід і безпека.",
-	"server.metadata.the-metadata-server-is-slow-right": "Сервер метаданих зараз працює повільно. Це мине саме."
+	"server.metadata.the-metadata-server-is-slow-right": "Сервер метаданих зараз працює повільно. Це мине саме.",
+	"server.requests.could-not-add-it-back-in": "{before}: не вдалося додати, знову очікує",
+	"server.requests.the-metadata-server-did-not-answer": "Сервер метаданих не відповів вчасно. Запит знову очікує; схваліть його ще раз."
 }

@@ -1311,5 +1311,7 @@
 	"server.migrate.imported-before-got-their-sign-in": "imporditud varem; sai oma {way} sisselogimise",
 	"server.migrate.imported-before-their-account-signs-in": "imporditud varem; nende {way} konto logib siin sisse kui {name}, nii et see jääb nii",
 	"server.migrate.people-who-signed-in-to-the": "Inimesed, kes logisid vanasse rakendusse sisse Plexi, Jellyfini või Embyga, lülituvad sisse esimesel sel viisil sisselogimisel, kui see on sisse lülitatud jaotises Seaded > Sisselogimine ja turvalisus.",
-	"server.metadata.the-metadata-server-is-slow-right": "Metaandmete server on praegu aeglane. See läheb ise üle."
+	"server.metadata.the-metadata-server-is-slow-right": "Metaandmete server on praegu aeglane. See läheb ise üle.",
+	"server.requests.could-not-add-it-back-in": "{before}: lisada ei õnnestunud, jälle ootel",
+	"server.requests.the-metadata-server-did-not-answer": "Metaandmete server ei vastanud õigel ajal. See on jälle ootel; kiida see uuesti heaks."
 }

@@ -1311,5 +1311,7 @@
 	"server.migrate.imported-before-got-their-sign-in": "pernah diimpor; sudah mendapat cara masuk {way} mereka",
 	"server.migrate.imported-before-their-account-signs-in": "pernah diimpor; akun {way} mereka masuk sebagai {name} di sini, jadi tetap begitu",
 	"server.migrate.people-who-signed-in-to-the": "Orang yang masuk ke aplikasi lama dengan Plex, Jellyfin, atau Emby menyala saat pertama kali masuk dengan cara itu, setelah kamu menyalakannya di Pengaturan > Masuk dan keamanan.",
-	"server.metadata.the-metadata-server-is-slow-right": "Server metadata sedang lambat. Ini akan pulih dengan sendirinya."
+	"server.metadata.the-metadata-server-is-slow-right": "Server metadata sedang lambat. Ini akan pulih dengan sendirinya.",
+	"server.requests.could-not-add-it-back-in": "{before}: tidak bisa ditambahkan, kembali menunggu",
+	"server.requests.the-metadata-server-did-not-answer": "Server metadata tidak menjawab tepat waktu. Permintaan kembali menunggu; setujui lagi."
 }

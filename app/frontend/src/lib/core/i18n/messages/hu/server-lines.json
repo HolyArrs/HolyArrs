@@ -1311,5 +1311,7 @@
 	"server.migrate.imported-before-got-their-sign-in": "korábban importálva; megkapta a {way}-bejelentkezését",
 	"server.migrate.imported-before-their-account-signs-in": "korábban importálva; a {way}-fiókja itt {name} néven jelentkezik be, így ez marad",
 	"server.migrate.people-who-signed-in-to-the": "Akik a régi alkalmazásba Plex, Jellyfin vagy Emby fiókkal jelentkeztek be, az első így történő bejelentkezésükkor kapcsolnak be, amint ez be van kapcsolva a Beállítások > Bejelentkezés és biztonság alatt.",
-	"server.metadata.the-metadata-server-is-slow-right": "A metaadat-szerver most lassú. Ez magától rendbe jön."
+	"server.metadata.the-metadata-server-is-slow-right": "A metaadat-szerver most lassú. Ez magától rendbe jön.",
+	"server.requests.could-not-add-it-back-in": "{before}: nem sikerült hozzáadni, újra várakozik",
+	"server.requests.the-metadata-server-did-not-answer": "A metaadat-szerver nem válaszolt időben. A kérés újra várakozik; hagyja jóvá újra."
 }

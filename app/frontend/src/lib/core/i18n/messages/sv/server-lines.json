@@ -1311,5 +1311,7 @@
 	"server.migrate.imported-before-got-their-sign-in": "importerad tidigare; fick sin inloggning med {way}",
 	"server.migrate.imported-before-their-account-signs-in": "importerad tidigare; deras {way}-konto loggar in som {name} här, så det förblir så",
 	"server.migrate.people-who-signed-in-to-the": "Personer som loggade in i den gamla appen med Plex, Jellyfin eller Emby slås på vid sin första inloggning på det sättet, när det är påslaget under Inställningar > Inloggning och säkerhet.",
-	"server.metadata.the-metadata-server-is-slow-right": "Metadataservern är långsam just nu. Det ordnar sig av sig självt."
+	"server.metadata.the-metadata-server-is-slow-right": "Metadataservern är långsam just nu. Det ordnar sig av sig självt.",
+	"server.requests.could-not-add-it-back-in": "{before}: kunde inte läggas till, väntar igen",
+	"server.requests.the-metadata-server-did-not-answer": "Metadataservern svarade inte i tid. Förfrågan väntar igen; godkänn den på nytt."
 }

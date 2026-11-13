@@ -1311,5 +1311,7 @@
 	"server.migrate.imported-before-got-their-sign-in": "قبلاً وارد شده؛ ورود با {way} را گرفت",
 	"server.migrate.imported-before-their-account-signs-in": "قبلاً وارد شده؛ حساب {way} او اینجا با نام {name} وارد می‌شود، پس همین‌طور می‌ماند",
 	"server.migrate.people-who-signed-in-to-the": "افرادی که در برنامهٔ قدیمی با Plex، Jellyfin یا Emby وارد می‌شدند، با اولین ورودشان از همین راه روشن می‌شوند، وقتی آن را در تنظیمات > ورود و امنیت روشن کنی.",
-	"server.metadata.the-metadata-server-is-slow-right": "سرور متادیتا الان کند است. خودش درست می‌شود."
+	"server.metadata.the-metadata-server-is-slow-right": "سرور متادیتا الان کند است. خودش درست می‌شود.",
+	"server.requests.could-not-add-it-back-in": "{before}: اضافه نشد، دوباره در انتظار است",
+	"server.requests.the-metadata-server-did-not-answer": "سرور متادیتا به‌موقع پاسخ نداد. دوباره در انتظار است؛ دوباره تأییدش کن."
 }

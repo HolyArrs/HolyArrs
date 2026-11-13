@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Липсващи статии",
 	"downloads.problem.noFullCopy": "Няма пълно копие",
 	"downloads.problem.noPeers": "Няма пиъри",
-	"downloads.problem.repairNeeded": "Нужен е ремонт"
+	"downloads.problem.repairNeeded": "Нужен е ремонт",
+	"downloads.hl.notAdded": "Не е добавено; отново чака",
+	"downloads.hl.notAddedSlow": "сървърът за метаданни не отговори навреме"
 }

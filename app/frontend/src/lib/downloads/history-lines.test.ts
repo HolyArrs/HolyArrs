@@ -95,6 +95,10 @@ describe('asks', () => {
 		const no = eventText(ev('ask_turned_down', { Actor: { kind: 'user', id: 2 }, Data: { turned_down_by: 'home', note: 'already have it' } }), ctx);
 		expect([no.tag.word, no.line]).toEqual(['Turned down', 'home · Already have it']);
 	});
+	it('an approval that added nothing says so, with why', () => {
+		const slow = eventText(ev('ask_not_added', { title_name: undefined, TitleID: undefined, Summary: 'Dune (2021): could not add it, back in Waiting', Data: { slow: true, reason: 'the metadata server did not answer in time' } }), ctx);
+		expect([slow.name, slow.tag.word, slow.line]).toEqual(['Dune', 'Failed', 'Not added; back in Waiting · the metadata server did not answer in time']);
+	});
 });
 
 describe('system rows', () => {

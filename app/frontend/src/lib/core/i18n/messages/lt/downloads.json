@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Trūksta straipsnių",
 	"downloads.problem.noFullCopy": "Nėra pilnos kopijos",
 	"downloads.problem.noPeers": "Nėra siuntėjų",
-	"downloads.problem.repairNeeded": "Reikia taisymo"
+	"downloads.problem.repairNeeded": "Reikia taisymo",
+	"downloads.hl.notAdded": "Nepridėta; vėl laukia",
+	"downloads.hl.notAddedSlow": "metaduomenų serveris neatsakė laiku"
 }

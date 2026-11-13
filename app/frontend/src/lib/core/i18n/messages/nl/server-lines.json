@@ -1311,5 +1311,7 @@
 	"server.migrate.imported-before-got-their-sign-in": "eerder geïmporteerd; kreeg de aanmelding met {way}",
 	"server.migrate.imported-before-their-account-signs-in": "eerder geïmporteerd; hun {way}-account meldt hier aan als {name}, dus dat blijft zo",
 	"server.migrate.people-who-signed-in-to-the": "Mensen die in de oude app aanmeldden met Plex, Jellyfin of Emby gaan aan bij hun eerste aanmelding op die manier, zodra die aan staat onder Instellingen > Aanmelden en beveiliging.",
-	"server.metadata.the-metadata-server-is-slow-right": "De metadataserver is op dit moment traag. Dit komt vanzelf weer goed."
+	"server.metadata.the-metadata-server-is-slow-right": "De metadataserver is op dit moment traag. Dit komt vanzelf weer goed.",
+	"server.requests.could-not-add-it-back-in": "{before}: kon niet worden toegevoegd, wacht weer",
+	"server.requests.the-metadata-server-did-not-answer": "De metadataserver antwoordde niet op tijd. Het verzoek wacht weer; keur het opnieuw goed."
 }

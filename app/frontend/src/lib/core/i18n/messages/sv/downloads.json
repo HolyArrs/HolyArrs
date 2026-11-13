@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Saknade artiklar",
 	"downloads.problem.noFullCopy": "Ingen fullständig kopia",
 	"downloads.problem.noPeers": "Inga peers",
-	"downloads.problem.repairNeeded": "Reparation behövs"
+	"downloads.problem.repairNeeded": "Reparation behövs",
+	"downloads.hl.notAdded": "Inte tillagd; väntar igen",
+	"downloads.hl.notAddedSlow": "metadataservern svarade inte i tid"
 }

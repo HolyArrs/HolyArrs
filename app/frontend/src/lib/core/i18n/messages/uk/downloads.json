@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Бракує статей",
 	"downloads.problem.noFullCopy": "Немає повної копії",
 	"downloads.problem.noPeers": "Немає пірів",
-	"downloads.problem.repairNeeded": "Потрібне відновлення"
+	"downloads.problem.repairNeeded": "Потрібне відновлення",
+	"downloads.hl.notAdded": "Не додано; знову очікує",
+	"downloads.hl.notAddedSlow": "сервер метаданих не відповів вчасно"
 }

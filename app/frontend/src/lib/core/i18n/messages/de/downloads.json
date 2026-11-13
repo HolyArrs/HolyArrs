@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Fehlende Artikel",
 	"downloads.problem.noFullCopy": "Keine vollständige Kopie",
 	"downloads.problem.noPeers": "Keine Peers",
-	"downloads.problem.repairNeeded": "Reparatur nötig"
+	"downloads.problem.repairNeeded": "Reparatur nötig",
+	"downloads.hl.notAdded": "Nicht hinzugefügt; wartet wieder",
+	"downloads.hl.notAddedSlow": "der Metadaten-Server hat nicht rechtzeitig geantwortet"
 }

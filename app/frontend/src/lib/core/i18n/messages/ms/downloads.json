@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Artikel hilang",
 	"downloads.problem.noFullCopy": "Tiada salinan penuh",
 	"downloads.problem.noPeers": "Tiada rakan",
-	"downloads.problem.repairNeeded": "Perlu dibaiki"
+	"downloads.problem.repairNeeded": "Perlu dibaiki",
+	"downloads.hl.notAdded": "Tidak ditambah; kembali menunggu",
+	"downloads.hl.notAddedSlow": "pelayan metadata tidak menjawab tepat pada masanya"
 }

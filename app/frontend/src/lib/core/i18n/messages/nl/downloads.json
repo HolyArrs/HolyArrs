@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Ontbrekende artikelen",
 	"downloads.problem.noFullCopy": "Geen volledige kopie",
 	"downloads.problem.noPeers": "Geen peers",
-	"downloads.problem.repairNeeded": "Reparatie nodig"
+	"downloads.problem.repairNeeded": "Reparatie nodig",
+	"downloads.hl.notAdded": "Niet toegevoegd; wacht weer",
+	"downloads.hl.notAddedSlow": "de metadataserver antwoordde niet op tijd"
 }

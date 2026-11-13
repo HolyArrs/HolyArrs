@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Articole lipsă",
 	"downloads.problem.noFullCopy": "Nicio copie completă",
 	"downloads.problem.noPeers": "Niciun peer",
-	"downloads.problem.repairNeeded": "Necesită reparare"
+	"downloads.problem.repairNeeded": "Necesită reparare",
+	"downloads.hl.notAdded": "Nu a fost adăugat; din nou în așteptare",
+	"downloads.hl.notAddedSlow": "serverul de metadate nu a răspuns la timp"
 }

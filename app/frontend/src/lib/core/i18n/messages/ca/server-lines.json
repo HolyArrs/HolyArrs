@@ -1311,5 +1311,7 @@
 	"server.migrate.imported-before-got-their-sign-in": "importat abans; ha rebut el seu inici de sessió amb {way}",
 	"server.migrate.imported-before-their-account-signs-in": "importat abans; el seu compte de {way} inicia la sessió com a {name} aquí, així que es queda així",
 	"server.migrate.people-who-signed-in-to-the": "Les persones que iniciaven la sessió a l'aplicació antiga amb Plex, Jellyfin o Emby s'activen en el seu primer inici de sessió d'aquesta manera, quan ho activis a Configuració > Inici de sessió i seguretat.",
-	"server.metadata.the-metadata-server-is-slow-right": "El servidor de metadades va lent ara mateix. Es recuperarà tot sol."
+	"server.metadata.the-metadata-server-is-slow-right": "El servidor de metadades va lent ara mateix. Es recuperarà tot sol.",
+	"server.requests.could-not-add-it-back-in": "{before}: no s'ha pogut afegir, torna a estar en espera",
+	"server.requests.the-metadata-server-did-not-answer": "El servidor de metadades no ha respost a temps. Torna a estar en espera; aprova-la de nou."
 }

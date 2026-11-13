@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Artigos em falta",
 	"downloads.problem.noFullCopy": "Nenhuma cópia completa",
 	"downloads.problem.noPeers": "Sem pares",
-	"downloads.problem.repairNeeded": "Precisa de reparação"
+	"downloads.problem.repairNeeded": "Precisa de reparação",
+	"downloads.hl.notAdded": "Não adicionado; voltou a aguardar",
+	"downloads.hl.notAddedSlow": "o servidor de metadados não respondeu a tempo"
 }

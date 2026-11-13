@@ -1311,5 +1311,7 @@
 	"server.migrate.imported-before-got-their-sign-in": "импортирано преди; получи вход с {way}",
 	"server.migrate.imported-before-their-account-signs-in": "импортирано преди; акаунтът му в {way} влиза като {name} тук, така че остава така",
 	"server.migrate.people-who-signed-in-to-the": "Хората, които влизаха в старото приложение с Plex, Jellyfin или Emby, се включват при първия си вход по този начин, щом го включите от Настройки > Вход и сигурност.",
-	"server.metadata.the-metadata-server-is-slow-right": "Сървърът за метаданни е бавен в момента. Това ще се оправи от само себе си."
+	"server.metadata.the-metadata-server-is-slow-right": "Сървърът за метаданни е бавен в момента. Това ще се оправи от само себе си.",
+	"server.requests.could-not-add-it-back-in": "{before}: не можа да се добави, отново чака",
+	"server.requests.the-metadata-server-did-not-answer": "Сървърът за метаданни не отговори навреме. Заявката отново чака; одобрете я пак."
 }
