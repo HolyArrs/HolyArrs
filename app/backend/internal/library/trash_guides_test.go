@@ -29,7 +29,7 @@ func TestBuild(t *testing.T) {
 			t.Errorf("trait %+v lacks its source or tests", pl.Trait)
 		}
 	}
-	want := map[string]int{"HEVC": -500, "Good group": 1700, "LQ": -10000}
+	want := map[string]int{"HEVC": -500, "Good group": 1700, "LQ": -20000}
 	if len(got) != len(want) {
 		t.Fatalf("traits %v, want %v", got, want)
 	}

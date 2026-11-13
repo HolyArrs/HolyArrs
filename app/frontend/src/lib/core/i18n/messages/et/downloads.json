@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "Nimi võib olla kuni 60 märki.",
 	"downloads.pr.err.notTrait": "{bad} ei ole nende liikide tunnus.",
 	"downloads.pr.err.ownRemoved": "Sinu eemaldatud tunnus on endiselt loetletud; eemalda see.",
-	"downloads.pr.err.points": "Punktid on vahemikus -10000 kuni 10000.",
+	"downloads.pr.err.points": "Punktid on vahemikus -2147483647 kuni 2147483647.",
 	"downloads.pr.err.rulesName": "Anna neile valikureeglitele nimi.",
 	"downloads.pr.err.sizeBig": "Suurim suurus on liiga suur.",
 	"downloads.pr.err.sizeNeg": "Suurused ei saa olla alla 0.",

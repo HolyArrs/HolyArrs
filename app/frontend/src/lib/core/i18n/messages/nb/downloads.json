@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "Et navn kan være på høyst 60 tegn.",
 	"downloads.pr.err.notTrait": "{bad} er ikke en egenskap for disse typene.",
 	"downloads.pr.err.ownRemoved": "En egenskap du har fjernet, er fortsatt listet. Ta den ut.",
-	"downloads.pr.err.points": "Poeng går fra -10000 til 10000.",
+	"downloads.pr.err.points": "Poeng går fra -2147483647 til 2147483647.",
 	"downloads.pr.err.rulesName": "Gi disse valgreglene et navn.",
 	"downloads.pr.err.sizeBig": "Den største størrelsen er for stor.",
 	"downloads.pr.err.sizeNeg": "Størrelser kan ikke være under 0.",

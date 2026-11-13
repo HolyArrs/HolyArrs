@@ -889,7 +889,7 @@
 	"downloads.pr.err.name60": "Назва може містити щонайбільше 60 символів.",
 	"downloads.pr.err.notTrait": "{bad} — не ознака для цих типів.",
 	"downloads.pr.err.ownRemoved": "Видалена твоя ознака все ще в списку; прибери її.",
-	"downloads.pr.err.points": "Бали — від -10000 до 10000.",
+	"downloads.pr.err.points": "Бали — від -2147483647 до 2147483647.",
 	"downloads.pr.err.rulesName": "Дай цим правилам вибору назву.",
 	"downloads.pr.err.sizeBig": "Найбільший розмір завеликий.",
 	"downloads.pr.err.sizeNeg": "Розміри не можуть бути менші за 0.",

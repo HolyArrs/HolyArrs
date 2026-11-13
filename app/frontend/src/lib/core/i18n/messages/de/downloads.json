@@ -889,7 +889,7 @@
 	"downloads.pr.err.name60": "Ein Name darf höchstens 60 Zeichen lang sein.",
 	"downloads.pr.err.notTrait": "{bad} ist kein Merkmal für diese Arten.",
 	"downloads.pr.err.ownRemoved": "Ein entferntes eigenes Merkmal steht noch in der Liste; nimm es heraus.",
-	"downloads.pr.err.points": "Punkte gehen von -10000 bis 10000.",
+	"downloads.pr.err.points": "Punkte gehen von -2147483647 bis 2147483647.",
 	"downloads.pr.err.rulesName": "Gib diesen Auswahlregeln einen Namen.",
 	"downloads.pr.err.sizeBig": "Die größte Größe ist zu groß.",
 	"downloads.pr.err.sizeNeg": "Größen dürfen nicht unter 0 liegen.",

@@ -889,7 +889,7 @@
 	"downloads.pr.err.name60": "नाम ज़्यादा से ज़्यादा 60 अक्षर का हो सकता है।",
 	"downloads.pr.err.notTrait": "{bad} इन प्रकारों की विशेषता नहीं है।",
 	"downloads.pr.err.ownRemoved": "आपकी एक हटाई गई विशेषता अब भी सूची में है; उसे निकालें।",
-	"downloads.pr.err.points": "पॉइंट -10000 से 10000 तक हो सकते हैं।",
+	"downloads.pr.err.points": "पॉइंट -2147483647 से 2147483647 तक हो सकते हैं।",
 	"downloads.pr.err.rulesName": "इन चुनाव के नियमों को एक नाम दें।",
 	"downloads.pr.err.sizeBig": "सबसे बड़ा साइज़ बहुत ज़्यादा है।",
 	"downloads.pr.err.sizeNeg": "साइज़ 0 से कम नहीं हो सकता।",

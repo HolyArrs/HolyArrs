@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "Nimi voi olla enintään 60 merkkiä.",
 	"downloads.pr.err.notTrait": "{bad} ei ole ominaisuus näille lajeille.",
 	"downloads.pr.err.ownRemoved": "Poistettu oma ominaisuutesi on yhä listalla; poista se.",
-	"downloads.pr.err.points": "Pisteet ovat välillä -10000–10000.",
+	"downloads.pr.err.points": "Pisteet ovat välillä -2147483647–2147483647.",
 	"downloads.pr.err.rulesName": "Anna näille valintasäännöille nimi.",
 	"downloads.pr.err.sizeBig": "Suurin koko on liian suuri.",
 	"downloads.pr.err.sizeNeg": "Koot eivät voi olla alle 0.",

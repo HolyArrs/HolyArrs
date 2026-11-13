@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "Nafn getur verið í mesta lagi 60 stafir.",
 	"downloads.pr.err.notTrait": "{bad} er ekki eiginleiki fyrir þessar tegundir.",
 	"downloads.pr.err.ownRemoved": "Eiginleiki frá þér sem var fjarlægður er enn skráður; taktu hann út.",
-	"downloads.pr.err.points": "Stig eru frá -10000 til 10000.",
+	"downloads.pr.err.points": "Stig eru frá -2147483647 til 2147483647.",
 	"downloads.pr.err.rulesName": "Gefðu þessum valreglum nafn.",
 	"downloads.pr.err.sizeBig": "Mesta stærðin er of stór.",
 	"downloads.pr.err.sizeNeg": "Stærðir mega ekki vera undir 0.",

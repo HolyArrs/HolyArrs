@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "A név legfeljebb 60 karakter lehet.",
 	"downloads.pr.err.notTrait": "A(z) {bad} nem jellemző ezekhez a fajtákhoz.",
 	"downloads.pr.err.ownRemoved": "Egy eltávolított saját jellemzője még listázva van; vegye ki.",
-	"downloads.pr.err.points": "A pontok -10000 és 10000 között lehetnek.",
+	"downloads.pr.err.points": "A pontok -2147483647 és 2147483647 között lehetnek.",
 	"downloads.pr.err.rulesName": "Adjon nevet ezeknek a Kiválasztási szabályoknak.",
 	"downloads.pr.err.sizeBig": "A legnagyobb méret túl nagy.",
 	"downloads.pr.err.sizeNeg": "A méretek nem lehetnek 0 alatt.",

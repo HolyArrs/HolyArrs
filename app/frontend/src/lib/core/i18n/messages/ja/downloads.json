@@ -889,7 +889,7 @@
 	"downloads.pr.err.name60": "名前は 60 文字までです。",
 	"downloads.pr.err.notTrait": "{bad} は、これらの種類で使える特性ではありません。",
 	"downloads.pr.err.ownRemoved": "削除された自分の特性がまだ一覧にあります。取り除いてください。",
-	"downloads.pr.err.points": "ポイントは -10000 ~ 10000 です。",
+	"downloads.pr.err.points": "ポイントは -2147483647 ~ 2147483647 です。",
 	"downloads.pr.err.rulesName": "この選定ルールに名前を付けてください。",
 	"downloads.pr.err.sizeBig": "最大サイズが大きすぎます。",
 	"downloads.pr.err.sizeNeg": "サイズは 0 未満にできません。",

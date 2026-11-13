@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "A name can be at most 60 characters.",
 	"downloads.pr.err.notTrait": "{bad} is not a trait for these kinds.",
 	"downloads.pr.err.ownRemoved": "A trait of yours that was removed is still listed; take it out.",
-	"downloads.pr.err.points": "Points go from -10000 to 10000.",
+	"downloads.pr.err.points": "Points go from -2147483647 to 2147483647.",
 	"downloads.pr.err.rulesName": "Give these Pick rules a name.",
 	"downloads.pr.err.sizeBig": "The largest size is too big.",
 	"downloads.pr.err.sizeNeg": "Sizes cannot be below 0.",

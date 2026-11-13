@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "Nama boleh sehingga 60 aksara.",
 	"downloads.pr.err.notTrait": "{bad} bukan ciri untuk jenis ini.",
 	"downloads.pr.err.ownRemoved": "Ciri anda yang telah dibuang masih disenaraikan; keluarkannya.",
-	"downloads.pr.err.points": "Mata daripada -10000 hingga 10000.",
+	"downloads.pr.err.points": "Mata daripada -2147483647 hingga 2147483647.",
 	"downloads.pr.err.rulesName": "Beri Peraturan pilihan ini nama.",
 	"downloads.pr.err.sizeBig": "Saiz terbesar terlalu besar.",
 	"downloads.pr.err.sizeNeg": "Saiz tidak boleh di bawah 0.",

@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "Ett namn får vara högst 60 tecken.",
 	"downloads.pr.err.notTrait": "{bad} är ingen egenskap för de här sorterna.",
 	"downloads.pr.err.ownRemoved": "En egenskap av dig som tagits bort finns kvar i listan; ta bort den.",
-	"downloads.pr.err.points": "Poäng går från -10000 till 10000.",
+	"downloads.pr.err.points": "Poäng går från -2147483647 till 2147483647.",
 	"downloads.pr.err.rulesName": "Ge de här valreglerna ett namn.",
 	"downloads.pr.err.sizeBig": "Den största storleken är för stor.",
 	"downloads.pr.err.sizeNeg": "Storlekar kan inte vara under 0.",

@@ -889,7 +889,7 @@
 	"downloads.pr.err.name60": "Un nom peut faire 60 caractères au plus.",
 	"downloads.pr.err.notTrait": "{bad} n'est pas un critère pour ces types.",
 	"downloads.pr.err.ownRemoved": "Un de vos critères qui a été retiré est encore listé ; enlevez-le.",
-	"downloads.pr.err.points": "Les points vont de -10000 à 10000.",
+	"downloads.pr.err.points": "Les points vont de -2147483647 à 2147483647.",
 	"downloads.pr.err.rulesName": "Donnez un nom à ces règles de sélection.",
 	"downloads.pr.err.sizeBig": "La plus grande taille est trop grande.",
 	"downloads.pr.err.sizeNeg": "Les tailles ne peuvent pas être inférieures à 0.",

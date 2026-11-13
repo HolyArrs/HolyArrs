@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "Името може да е най-много 60 знака.",
 	"downloads.pr.err.notTrait": "{bad} не е признак за тези видове.",
 	"downloads.pr.err.ownRemoved": "Ваш признак, който е бил премахнат, още е изброен; махнете го.",
-	"downloads.pr.err.points": "Точките са от -10000 до 10000.",
+	"downloads.pr.err.points": "Точките са от -2147483647 до 2147483647.",
 	"downloads.pr.err.rulesName": "Дайте име на тези правила за избор.",
 	"downloads.pr.err.sizeBig": "Най-големият размер е твърде голям.",
 	"downloads.pr.err.sizeNeg": "Размерите не могат да са под 0.",

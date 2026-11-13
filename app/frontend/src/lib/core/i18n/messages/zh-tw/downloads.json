@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "名稱最多 60 個字元。",
 	"downloads.pr.err.notTrait": "{bad} 不是這些類型可用的特徵。",
 	"downloads.pr.err.ownRemoved": "清單中仍有你已移除的特徵；請把它去掉。",
-	"downloads.pr.err.points": "分數範圍為 -10000 到 10000。",
+	"downloads.pr.err.points": "分數範圍為 -2147483647 到 2147483647。",
 	"downloads.pr.err.rulesName": "請給這套挑選規則起個名字。",
 	"downloads.pr.err.sizeBig": "最大大小太大了。",
 	"downloads.pr.err.sizeNeg": "大小不能小於 0。",

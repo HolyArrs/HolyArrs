@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "Názov môže mať najviac 60 znakov.",
 	"downloads.pr.err.notTrait": "{bad} nie je vlastnosť pre tieto druhy.",
 	"downloads.pr.err.ownRemoved": "Vaša odstránená vlastnosť je stále uvedená; odstráňte ju.",
-	"downloads.pr.err.points": "Body sú od -10000 do 10000.",
+	"downloads.pr.err.points": "Body sú od -2147483647 do 2147483647.",
 	"downloads.pr.err.rulesName": "Dajte týmto Pravidlám výberu názov.",
 	"downloads.pr.err.sizeBig": "Najväčšia veľkosť je príliš veľká.",
 	"downloads.pr.err.sizeNeg": "Veľkosti nemôžu byť pod 0.",

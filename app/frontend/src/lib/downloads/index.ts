@@ -41,6 +41,7 @@ export { kindChoices } from './pick-rules.ts';
 export { kindTone } from './history.ts';
 export { kindWords } from './downloaders.ts';
 export { languages } from './pick-rules.ts';
+export { maxPoints } from './pick-rules.ts';
 export { manyWords } from './downloaders.ts';
 export { mergeClient } from './dl-store.ts';
 export { neverChoices } from './pick-rules.ts';

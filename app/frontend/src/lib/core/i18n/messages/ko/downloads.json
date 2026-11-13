@@ -889,7 +889,7 @@
 	"downloads.pr.err.name60": "이름은 60자까지 입력할 수 있습니다.",
 	"downloads.pr.err.notTrait": "{bad}은(는) 이 종류에 쓸 수 있는 특성이 아닙니다.",
 	"downloads.pr.err.ownRemoved": "제거된 내 특성이 아직 목록에 있습니다. 빼 주세요.",
-	"downloads.pr.err.points": "점수는 -10000에서 10000까지입니다.",
+	"downloads.pr.err.points": "점수는 -2147483647에서 2147483647까지입니다.",
 	"downloads.pr.err.rulesName": "이 선택 규칙의 이름을 입력하세요.",
 	"downloads.pr.err.sizeBig": "최대 크기가 너무 큽니다.",
 	"downloads.pr.err.sizeNeg": "크기는 0보다 작을 수 없습니다.",

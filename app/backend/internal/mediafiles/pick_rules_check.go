@@ -2,6 +2,7 @@ package mediafiles
 
 import (
 	"fmt"
+	"math"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -21,10 +22,13 @@ func fieldErr(field, format string, args ...any) error {
 	return &FieldError{Field: field, Text: fmt.Sprintf(format, args...)}
 }
 
+// MaxPoints bounds every points value in Pick rules, both ways: a 32-bit
+// number, as Sonarr and Radarr keep format scores.
+const MaxPoints = math.MaxInt32
+
 const (
 	pickMaxText   = 200
 	pickMaxNested = 64
-	pickMaxPoints = 10000
 	pickMaxWait   = 10080
 	pickMaxAge    = 36500
 )
@@ -56,7 +60,7 @@ func traitSet(values ...string) map[string]bool {
 	return m
 }
 
-func inPickPoints(n int) bool { return n >= -pickMaxPoints && n <= pickMaxPoints }
+func inPickPoints(n int) bool { return n >= -MaxPoints && n <= MaxPoints }
 
 // CheckPickRules checks a Pick rules name, kinds and body: the rules a data
 // pack and the editing API share. It answers a *FieldError.
@@ -114,7 +118,7 @@ func CheckPickRules(name string, kinds []string, b PickRulesBody) error {
 			return fieldErr("body.traits", "Unknown or repeated trait %q.", tp.Trait)
 		}
 		if !inPickPoints(tp.Points) {
-			return fieldErr("body.traits", "Points for %q must be from -10000 to 10000.", tp.Trait)
+			return fieldErr("body.traits", "Points for %q must be from %d to %d.", tp.Trait, -MaxPoints, MaxPoints)
 		}
 		seen[tp.Trait] = true
 	}
@@ -144,13 +148,13 @@ func CheckPickRules(name string, kinds []string, b PickRulesBody) error {
 		}
 	}
 	if !inPickPoints(b.MinPoints) {
-		return fieldErr("body.min_points", "Minimum points must be from -10000 to 10000.")
+		return fieldErr("body.min_points", "Minimum points must be from %d to %d.", -MaxPoints, MaxPoints)
 	}
 	if !inPickPoints(b.UpgradeMinPoints) {
-		return fieldErr("body.upgrade_min_points", "Upgrade points must be from -10000 to 10000.")
+		return fieldErr("body.upgrade_min_points", "Upgrade points must be from %d to %d.", -MaxPoints, MaxPoints)
 	}
 	if b.GoodEnoughPoints != nil && !inPickPoints(*b.GoodEnoughPoints) {
-		return fieldErr("body.good_enough_points", "Good enough points must be from -10000 to 10000.")
+		return fieldErr("body.good_enough_points", "Good enough points must be from %d to %d.", -MaxPoints, MaxPoints)
 	}
 	if len(b.SizeLimits) > pickMaxNested {
 		return fieldErr("body.size_limits", "List at most 64 size limits.")

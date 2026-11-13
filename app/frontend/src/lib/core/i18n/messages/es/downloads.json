@@ -889,7 +889,7 @@
 	"downloads.pr.err.name60": "Un nombre puede tener como máximo 60 caracteres.",
 	"downloads.pr.err.notTrait": "{bad} no es un rasgo para estos tipos.",
 	"downloads.pr.err.ownRemoved": "Un rasgo tuyo que se quitó sigue en la lista; sácalo.",
-	"downloads.pr.err.points": "Los puntos van de -10000 a 10000.",
+	"downloads.pr.err.points": "Los puntos van de -2147483647 a 2147483647.",
 	"downloads.pr.err.rulesName": "Ponle un nombre a estas Reglas de elección.",
 	"downloads.pr.err.sizeBig": "El tamaño máximo es demasiado grande.",
 	"downloads.pr.err.sizeNeg": "Los tamaños no pueden ser inferiores a 0.",

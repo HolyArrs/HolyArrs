@@ -889,7 +889,7 @@
 	"downloads.pr.err.name60": "名称最多 60 个字符。",
 	"downloads.pr.err.notTrait": "{bad} 不是这些类型可用的特征。",
 	"downloads.pr.err.ownRemoved": "列表中仍有你已移除的特征；请把它去掉。",
-	"downloads.pr.err.points": "分数范围为 -10000 到 10000。",
+	"downloads.pr.err.points": "分数范围为 -2147483647 到 2147483647。",
 	"downloads.pr.err.rulesName": "请给这套挑选规则起个名字。",
 	"downloads.pr.err.sizeBig": "最大大小太大了。",
 	"downloads.pr.err.sizeNeg": "大小不能小于 0。",

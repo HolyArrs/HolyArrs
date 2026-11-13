@@ -889,7 +889,7 @@
 	"downloads.pr.err.name60": "Название может содержать не больше 60 символов.",
 	"downloads.pr.err.notTrait": "{bad} не признак для этих видов.",
 	"downloads.pr.err.ownRemoved": "В списке всё ещё есть ваш удалённый признак; уберите его.",
-	"downloads.pr.err.points": "Баллы от -10000 до 10000.",
+	"downloads.pr.err.points": "Баллы от -2147483647 до 2147483647.",
 	"downloads.pr.err.rulesName": "Дайте этим правилам отбора название.",
 	"downloads.pr.err.sizeBig": "Наибольший размер слишком велик.",
 	"downloads.pr.err.sizeNeg": "Размеры не могут быть меньше 0.",
