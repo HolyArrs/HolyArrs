@@ -54,7 +54,8 @@ func pauseSourceTx(tx *sql.Tx, ctx context.Context, sourceID int64, kind, detail
 // failure count or block note.
 func sourceNeedsRecovery(ctx context.Context, q database.Querier, sourceID int64) (bool, error) {
 	var need bool
-	err := q.QueryRowContext(ctx, `SELECT state = 'paused' OR json_extract(extra, '$.failures') IS NOT NULL OR json_extract(extra, '$.block') IS NOT NULL FROM sources WHERE id = ?`,
+	err := q.QueryRowContext(ctx, `SELECT state = 'paused' OR json_extract(extra, '$.failures') IS NOT NULL OR json_extract(extra, '$.block') IS NOT NULL
+		OR json_extract(extra, '$.test_failed') IS NOT NULL FROM sources WHERE id = ?`,
 		sourceID).Scan(&need)
 	return need, err
 }
@@ -67,8 +68,20 @@ func recoverSourceTx(tx *sql.Tx, ctx context.Context, sourceID int64) error {
 			updated_at = ?, updated_by = ? WHERE id = ? AND state = 'paused'`, now, systemActor(), sourceID); err != nil {
 		return err
 	}
-	_, err := tx.ExecContext(ctx, `UPDATE sources SET extra = json_remove(extra, '$.failures', '$.block'), updated_at = ?, updated_by = ?
-			WHERE id = ? AND (json_extract(extra, '$.failures') IS NOT NULL OR json_extract(extra, '$.block') IS NOT NULL)`, now, systemActor(), sourceID)
+	_, err := tx.ExecContext(ctx, `UPDATE sources SET extra = json_remove(extra, '$.failures', '$.block', '$.test_failed'), updated_at = ?, updated_by = ?
+			WHERE id = ? AND (json_extract(extra, '$.failures') IS NOT NULL OR json_extract(extra, '$.block') IS NOT NULL
+			OR json_extract(extra, '$.test_failed') IS NOT NULL)`, now, systemActor(), sourceID)
+	return err
+}
+
+// markTestFailedTx notes why a test of an enabled Source failed, and the
+// kind of block when a site's protection stopped it. A paused or turned-off
+// Source keeps the state it has.
+func markTestFailedTx(tx *sql.Tx, ctx context.Context, sourceID int64, kind, detail string) error {
+	_, err := tx.ExecContext(ctx, `UPDATE sources SET
+			extra = CASE WHEN ? = '' THEN json_remove(json_set(extra, '$.test_failed', ?), '$.block') ELSE json_set(extra, '$.test_failed', ?, '$.block', ?) END,
+			updated_at = ?, updated_by = ? WHERE id = ? AND state = 'enabled'`,
+		detail, kind, kind, detail, database.FormatTime(time.Now().UTC()), systemActor(), sourceID)
 	return err
 }
 

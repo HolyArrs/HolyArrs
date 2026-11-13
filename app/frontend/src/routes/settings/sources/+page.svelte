@@ -83,7 +83,8 @@
 			forgetTags();
 			editing = null;
 			await load();
-			if (isNew) await test(saved);
+			// A changed Source is tested again, so its state never rests on an old test.
+			await test(saved);
 		} catch (err) {
 			formError = message(err);
 		} finally {
