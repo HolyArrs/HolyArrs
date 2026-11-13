@@ -53,5 +53,6 @@
 	"settings.libraryFolders.sideOn": "Preniesť aj súbory titulkov",
 	"settings.libraryFolders.sideOnHint": "Súbor, ktorý už v knižnici je, sa nikdy nenahradí.",
 	"settings.libraryFolders.sideTypes": "Typy súborov",
-	"settings.libraryFolders.sideTypesHint": "Typy oddeľte čiarkami, napríklad srt, ass."
+	"settings.libraryFolders.sideTypesHint": "Typy oddeľte čiarkami, napríklad srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs nevidí {path}. Vidí len priečinky pripojené do svojho kontajnera. Pridajte zväzok ako {path}:{inside} a potom tu použite {inside}."
 }

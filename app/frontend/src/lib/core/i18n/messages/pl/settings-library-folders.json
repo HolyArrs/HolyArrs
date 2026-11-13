@@ -53,5 +53,6 @@
 	"settings.libraryFolders.sideOn": "Przenoś też pliki napisów",
 	"settings.libraryFolders.sideOnHint": "Plik, który jest już w bibliotece, nigdy nie jest zastępowany.",
 	"settings.libraryFolders.sideTypes": "Typy plików",
-	"settings.libraryFolders.sideTypesHint": "Oddziel typy przecinkami, np. srt, ass."
+	"settings.libraryFolders.sideTypesHint": "Oddziel typy przecinkami, np. srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs nie widzi {path}. Widzi tylko foldery zamontowane w swoim kontenerze. Dodaj wolumin, np. {path}:{inside}, a potem wpisz tu {inside}."
 }

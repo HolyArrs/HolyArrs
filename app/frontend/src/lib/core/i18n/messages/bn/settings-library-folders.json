@@ -53,5 +53,6 @@
 	"settings.libraryFolders.sideOn": "সাবটাইটেল ফাইলও সাথে আনুন",
 	"settings.libraryFolders.sideOnHint": "লাইব্রেরিতে আগে থেকে থাকা ফাইল কখনো বদলানো হয় না।",
 	"settings.libraryFolders.sideTypes": "ফাইলের ধরন",
-	"settings.libraryFolders.sideTypesHint": "ধরনগুলো কমা দিয়ে আলাদা করুন, যেমন srt, ass।"
+	"settings.libraryFolders.sideTypesHint": "ধরনগুলো কমা দিয়ে আলাদা করুন, যেমন srt, ass।",
+	"settings.libraryFolders.notMounted": "HolyArrs {path} দেখতে পাচ্ছে না। এটি শুধু তার কন্টেইনারে মাউন্ট করা ফোল্ডার দেখে। {path}:{inside} এর মতো একটি ভলিউম যোগ করুন, তারপর এখানে {inside} ব্যবহার করুন।"
 }

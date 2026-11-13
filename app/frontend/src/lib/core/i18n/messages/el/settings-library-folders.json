@@ -53,5 +53,6 @@
 	"settings.libraryFolders.sideOn": "Μεταφορά και των αρχείων υποτίτλων",
 	"settings.libraryFolders.sideOnHint": "Ένα αρχείο που υπάρχει ήδη στη βιβλιοθήκη δεν αντικαθίσταται ποτέ.",
 	"settings.libraryFolders.sideTypes": "Τύποι αρχείων",
-	"settings.libraryFolders.sideTypesHint": "Χωρίστε τους τύπους με κόμματα, π.χ. srt, ass."
+	"settings.libraryFolders.sideTypesHint": "Χωρίστε τους τύπους με κόμματα, π.χ. srt, ass.",
+	"settings.libraryFolders.notMounted": "Το HolyArrs δεν βλέπει το {path}. Βλέπει μόνο φακέλους που έχουν προσαρτηθεί στο κοντέινερ του. Προσθέστε ένα volume όπως {path}:{inside} και μετά χρησιμοποιήστε εδώ το {inside}."
 }

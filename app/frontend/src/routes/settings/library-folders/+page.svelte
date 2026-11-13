@@ -12,6 +12,7 @@
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { folderMissing } from '#lib/mediafiles/folder-missing.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { bytes, dateTime, folderHealth, tone } from '#lib/core/format.ts';
@@ -69,7 +70,7 @@
 			moving = null;
 			toasts.push(t('settings.libraryFolders.pathChanged'), n.health === 'ok' ? 'ok' : 'info', { body: n.health === 'ok' ? undefined : folderHealth(n.health) });
 		} catch (err) {
-			moveError = message(err);
+			moveError = folderMissing(err, p, f.kind) ?? message(err);
 		} finally {
 			moveBusy = false;
 			busyId = null;
@@ -169,7 +170,7 @@
 			adding = false;
 			toasts.push(t('settings.libraryFolders.added'), f.health === 'ok' ? 'ok' : 'info', { body: f.health === 'ok' ? undefined : folderHealth(f.health) });
 		} catch (err) {
-			formError = message(err);
+			formError = folderMissing(err, path, kind) ?? message(err);
 		} finally {
 			saving = false;
 		}

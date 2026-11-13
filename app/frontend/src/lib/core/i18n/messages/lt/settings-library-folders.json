@@ -53,5 +53,6 @@
 	"settings.libraryFolders.sideOn": "Perkelti ir subtitrų failus",
 	"settings.libraryFolders.sideOnHint": "Bibliotekoje jau esantis failas niekada nepakeičiamas.",
 	"settings.libraryFolders.sideTypes": "Failų tipai",
-	"settings.libraryFolders.sideTypesHint": "Tipus atskirkite kableliais, pvz., srt, ass."
+	"settings.libraryFolders.sideTypesHint": "Tipus atskirkite kableliais, pvz., srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs nemato {path}. Jis mato tik į savo konteinerį prijungtus aplankus. Pridėkite tomą, pvz., {path}:{inside}, tada čia naudokite {inside}."
 }

@@ -53,5 +53,6 @@
 	"settings.libraryFolders.sideOn": "إحضار ملفات الترجمة معه",
 	"settings.libraryFolders.sideOnHint": "لا يُستبدل أبدًا ملف موجود في المكتبة.",
 	"settings.libraryFolders.sideTypes": "أنواع الملفات",
-	"settings.libraryFolders.sideTypesHint": "افصل الأنواع بفواصل، مثل srt, ass."
+	"settings.libraryFolders.sideTypesHint": "افصل الأنواع بفواصل، مثل srt, ass.",
+	"settings.libraryFolders.notMounted": "لا يستطيع HolyArrs رؤية {path}. فهو يرى فقط المجلدات الموصولة بحاويته. أضف وحدة تخزين مثل {path}:{inside}، ثم استخدم {inside} هنا."
 }

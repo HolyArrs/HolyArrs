@@ -53,5 +53,6 @@
 	"settings.libraryFolders.sideOn": "Tag undertekstfiler med",
 	"settings.libraryFolders.sideOnHint": "En fil, der allerede er i biblioteket, bliver aldrig erstattet.",
 	"settings.libraryFolders.sideTypes": "Filtyper",
-	"settings.libraryFolders.sideTypesHint": "Adskil typer med kommaer, fx srt, ass."
+	"settings.libraryFolders.sideTypesHint": "Adskil typer med kommaer, fx srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs kan ikke se {path}. Den ser kun mapper, der er monteret i dens container. Tilføj et volume som {path}:{inside}, og brug så {inside} her."
 }

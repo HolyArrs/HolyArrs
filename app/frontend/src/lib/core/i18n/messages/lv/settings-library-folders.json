@@ -53,5 +53,6 @@
 	"settings.libraryFolders.sideOn": "Ienest arī subtitru failus",
 	"settings.libraryFolders.sideOnHint": "Fails, kas jau ir bibliotēkā, nekad netiek aizstāts.",
 	"settings.libraryFolders.sideTypes": "Failu tipi",
-	"settings.libraryFolders.sideTypesHint": "Atdaliet tipus ar komatiem, piemēram, srt, ass."
+	"settings.libraryFolders.sideTypesHint": "Atdaliet tipus ar komatiem, piemēram, srt, ass.",
+	"settings.libraryFolders.notMounted": "HolyArrs neredz {path}. Tas redz tikai mapes, kas pievienotas tā konteinerā. Pievienojiet sējumu, piemēram, {path}:{inside}, un pēc tam šeit izmantojiet {inside}."
 }
