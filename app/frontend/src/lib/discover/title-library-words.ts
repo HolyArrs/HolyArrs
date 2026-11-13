@@ -32,4 +32,4 @@ export function epFile(e: SheetEpisode): string {
 	return f?.Size ? bytes(f.Size as number) : '';
 }
 
-export const epTone = (st: string) => (st === 'have' || st === 'imported' || st === 'in_library' || st === 'kept' ? 'have' : st === 'downloading' || st === 'importing' || st === 'searching' ? 'downloading' : st === 'failed' ? 'failed' : 'missing');
+export const epTone = (st: string, hasFile = false) => (st === 'have' || st === 'imported' || st === 'in_library' || st === 'kept' || (hasFile && st !== 'downloading' && st !== 'importing' && st !== 'searching') ? 'have' : st === 'downloading' || st === 'importing' || st === 'searching' ? 'downloading' : st === 'failed' ? 'failed' : 'missing');
