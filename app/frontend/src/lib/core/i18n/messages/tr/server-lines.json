@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "{fallback} klasörüne dosyasız, istenen olarak eklenecek; ilgi gerekiyor: eski klasörü {dir} bu sunucuda yok; klasörü düzeltin veya bir yol kuralı ekleyin",
 	"server.migrate.its-library-folder-is-not-on": "{library} kütüphane klasörü bu sunucuda yok ve burada {kind} için kütüphane klasörü yok; bir tane ekleyip yeniden içe aktarın",
 	"server.migrate.left-out-was-left-unchecked-check": "dışarıda bırakıldı: {attnfolder} \"Getirme\" olarak ayarlı; bunun için bir klasör seçip yeniden içe aktarın",
-	"server.migrate.left-out-was-left-unchecked-check-2": "dışarıda bırakıldı: {path} \"Getirme\" olarak ayarlı; bunun için bir klasör seçip yeniden içe aktarın"
+	"server.migrate.left-out-was-left-unchecked-check-2": "dışarıda bırakıldı: {path} \"Getirme\" olarak ayarlı; bunun için bir klasör seçip yeniden içe aktarın",
+	"server.migrate.already-here-as-who-signs-in": "zaten burada {name} olarak var, bu {way} hesabıyla giriş yapıyor; istekleri onun olarak kalır",
+	"server.migrate.an-invite": "bir davet",
+	"server.migrate.came-over-as-a-turns-on": "{role} olarak geldi; {way} ile ilk girişinde açılır",
+	"server.migrate.comes-over-as-a-turns-on": "{role} olarak gelir; {way} ile ilk girişinde açılır",
+	"server.migrate.comes-over-as-a-linked-to": "{role} olarak gelir ve kendi {way} hesabına bağlanır. Onunla ilk girişi onu açar; parola gelmez.",
+	"server.migrate.imported-before-gets-their-sign-in": "daha önce içe aktarıldı; {way} girişini alır",
+	"server.migrate.imported-before-got-their-sign-in": "daha önce içe aktarıldı; {way} girişini aldı",
+	"server.migrate.imported-before-their-account-signs-in": "daha önce içe aktarıldı; {way} hesabı burada {name} olarak giriş yapıyor, bu yüzden öyle kalır",
+	"server.migrate.people-who-signed-in-to-the": "Eski uygulamaya Plex, Jellyfin ya da Emby ile giriş yapan kişiler, Ayarlar > Giriş ve güvenlik altından açıldığında bu yolla ilk girişlerinde açılır."
 }

@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Az újra hozzáadandó kulcsok megjelenítése",
 	"migrate.personArrivesTurnedOff": "{n} személy kikapcsolva érkezik, amíg meg nem hívja.",
 	"migrate.peopleArriveTurnedOff": "{n} személy kikapcsolva érkezik, amíg meg nem hívja őket.",
+	"migrate.personTurnsOnAtSignIn": "{n} személy az első Plex, Jellyfin vagy Emby bejelentkezésekor kapcsol be.",
+	"migrate.peopleTurnOnAtSignIn": "{n} személy az első Plex, Jellyfin vagy Emby bejelentkezésekor kapcsol be.",
 	"migrate.yourOldAppsAren": "A régi alkalmazásai nem módosulnak. Ezt az importálást visszavonhatja.",
 	"migrate.step4Of4": "4. lépés / 4 · Kész",
 	"migrate.undoProgress": "Visszavonás előrehaladása",

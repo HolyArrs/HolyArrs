@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "lisatakse kausta {fallback} soovituna, ilma failideta; vajab tähelepanu: vana kausta {dir} selles serveris pole; paranda kaust või lisa teereegel",
 	"server.migrate.its-library-folder-is-not-on": "teegikausta {library} selles serveris pole ja siin pole teegikausta tüübile {kind}; lisa üks ja impordi uuesti",
 	"server.migrate.left-out-was-left-unchecked-check": "välja jäetud: {attnfolder} on seatud valikule \"Ära too neid\"; vali sellele kaust ja impordi uuesti",
-	"server.migrate.left-out-was-left-unchecked-check-2": "välja jäetud: {path} on seatud valikule \"Ära too neid\"; vali sellele kaust ja impordi uuesti"
+	"server.migrate.left-out-was-left-unchecked-check-2": "välja jäetud: {path} on seatud valikule \"Ära too neid\"; vali sellele kaust ja impordi uuesti",
+	"server.migrate.already-here-as-who-signs-in": "on juba siin kui {name}, kes logib sisse selle {way} kontoga; nende soovid jäävad nende omaks",
+	"server.migrate.an-invite": "kutse",
+	"server.migrate.came-over-as-a-turns-on": "tuli üle rollis {role}; lülitub sisse esimesel {way} kaudu sisselogimisel",
+	"server.migrate.comes-over-as-a-turns-on": "tuleb üle rollis {role}; lülitub sisse esimesel {way} kaudu sisselogimisel",
+	"server.migrate.comes-over-as-a-linked-to": "Tuleb üle rollis {role}, seotuna nende {way} kontoga. Esimene sisselogimine sellega lülitab nad sisse; parooli üle ei tule.",
+	"server.migrate.imported-before-gets-their-sign-in": "imporditud varem; saab oma {way} sisselogimise",
+	"server.migrate.imported-before-got-their-sign-in": "imporditud varem; sai oma {way} sisselogimise",
+	"server.migrate.imported-before-their-account-signs-in": "imporditud varem; nende {way} konto logib siin sisse kui {name}, nii et see jääb nii",
+	"server.migrate.people-who-signed-in-to-the": "Inimesed, kes logisid vanasse rakendusse sisse Plexi, Jellyfini või Embyga, lülituvad sisse esimesel sel viisil sisselogimisel, kui see on sisse lülitatud jaotises Seaded > Sisselogimine ja turvalisus."
 }

@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "verrà aggiunto a {fallback} come desiderato, senza file; richiede attenzione: la sua vecchia cartella {dir} non è su questo server; correggi la cartella o aggiungi una regola di percorso",
 	"server.migrate.its-library-folder-is-not-on": "la sua cartella della libreria {library} non è su questo server e qui non c'è nessuna cartella della libreria per {kind}; aggiungine una e importa di nuovo",
 	"server.migrate.left-out-was-left-unchecked-check": "escluso: {attnfolder} è impostata su \"Non importarli\"; scegli una cartella e importa di nuovo",
-	"server.migrate.left-out-was-left-unchecked-check-2": "escluso: {path} è impostata su \"Non importarli\"; scegli una cartella e importa di nuovo"
+	"server.migrate.left-out-was-left-unchecked-check-2": "escluso: {path} è impostata su \"Non importarli\"; scegli una cartella e importa di nuovo",
+	"server.migrate.already-here-as-who-signs-in": "è già qui come {name}, che accede con questo account {way}; le sue richieste restano sue",
+	"server.migrate.an-invite": "un invito",
+	"server.migrate.came-over-as-a-turns-on": "arrivato come {role}; si attiva al suo primo accesso con {way}",
+	"server.migrate.comes-over-as-a-turns-on": "arriva come {role}; si attiva al suo primo accesso con {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Arriva come {role}, collegato al suo account {way}. Il primo accesso con quell'account lo attiva; nessuna password arriva.",
+	"server.migrate.imported-before-gets-their-sign-in": "importato prima; riceve l'accesso con {way}",
+	"server.migrate.imported-before-got-their-sign-in": "importato prima; ha ricevuto l'accesso con {way}",
+	"server.migrate.imported-before-their-account-signs-in": "importato prima; il suo account {way} accede qui come {name}, quindi resta così",
+	"server.migrate.people-who-signed-in-to-the": "Le persone che accedevano alla vecchia app con Plex, Jellyfin o Emby si attivano al loro primo accesso in quel modo, appena lo attivi in Impostazioni > Accesso e sicurezza."
 }

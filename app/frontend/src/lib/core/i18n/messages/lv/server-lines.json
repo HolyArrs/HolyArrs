@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "tiks pievienots mapē {fallback} kā vēlams, bez failiem; prasa uzmanību: vecās mapes {dir} šajā serverī nav; izlabo mapi vai pievieno ceļa kārtulu",
 	"server.migrate.its-library-folder-is-not-on": "bibliotēkas mapes {library} šajā serverī nav, un šeit nav bibliotēkas mapes veidam {kind}; pievieno to un importē vēlreiz",
 	"server.migrate.left-out-was-left-unchecked-check": "izlaists: {attnfolder} ir iestatīta uz \"Neienest\"; izvēlies tai mapi un importē vēlreiz",
-	"server.migrate.left-out-was-left-unchecked-check-2": "izlaists: {path} ir iestatīta uz \"Neienest\"; izvēlies tai mapi un importē vēlreiz"
+	"server.migrate.left-out-was-left-unchecked-check-2": "izlaists: {path} ir iestatīta uz \"Neienest\"; izvēlies tai mapi un importē vēlreiz",
+	"server.migrate.already-here-as-who-signs-in": "jau ir šeit kā {name}, kas piesakās ar šo {way} kontu; viņa pieprasījumi paliek viņa",
+	"server.migrate.an-invite": "uzaicinājums",
+	"server.migrate.came-over-as-a-turns-on": "pārnāca kā {role}; ieslēdzas pirmajā pieteikšanās reizē ar {way}",
+	"server.migrate.comes-over-as-a-turns-on": "pārnāk kā {role}; ieslēdzas pirmajā pieteikšanās reizē ar {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Pārnāk kā {role}, piesaistīts viņa {way} kontam. Pirmā pieteikšanās ar to viņu ieslēdz; parole nepārnāk.",
+	"server.migrate.imported-before-gets-their-sign-in": "importēts iepriekš; saņem pieteikšanos ar {way}",
+	"server.migrate.imported-before-got-their-sign-in": "importēts iepriekš; saņēma pieteikšanos ar {way}",
+	"server.migrate.imported-before-their-account-signs-in": "importēts iepriekš; viņa {way} konts šeit piesakās kā {name}, tāpēc tā arī paliek",
+	"server.migrate.people-who-signed-in-to-the": "Cilvēki, kas vecajā lietotnē pieteicās ar Plex, Jellyfin vai Emby, ieslēdzas pirmajā šādā pieteikšanās reizē, tiklīdz tas ir ieslēgts sadaļā Iestatījumi > Pieteikšanās un drošība."
 }

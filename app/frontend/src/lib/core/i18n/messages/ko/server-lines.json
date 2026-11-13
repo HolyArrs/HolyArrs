@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "원하는 항목으로 파일 없이 {fallback}에 추가됩니다. 확인 필요: 이전 폴더 {dir}이(가) 이 서버에 없습니다. 폴더를 고치거나 경로 규칙을 추가하세요",
 	"server.migrate.its-library-folder-is-not-on": "라이브러리 폴더 {library}이(가) 이 서버에 없고, 여기에 {kind} 라이브러리 폴더도 없습니다. 하나를 추가한 뒤 다시 가져오세요",
 	"server.migrate.left-out-was-left-unchecked-check": "제외됨: {attnfolder}이(가) \"가져오지 않음\"으로 설정되어 있습니다. 폴더를 고른 뒤 다시 가져오세요",
-	"server.migrate.left-out-was-left-unchecked-check-2": "제외됨: {path}이(가) \"가져오지 않음\"으로 설정되어 있습니다. 폴더를 고른 뒤 다시 가져오세요"
+	"server.migrate.left-out-was-left-unchecked-check-2": "제외됨: {path}이(가) \"가져오지 않음\"으로 설정되어 있습니다. 폴더를 고른 뒤 다시 가져오세요",
+	"server.migrate.already-here-as-who-signs-in": "이 {way} 계정으로 로그인하는 {name}(으)로 이미 있습니다. 요청은 그 사람의 것으로 남습니다",
+	"server.migrate.an-invite": "초대",
+	"server.migrate.came-over-as-a-turns-on": "{role}(으)로 가져왔습니다. 처음 {way}(으)로 로그인하면 켜집니다",
+	"server.migrate.comes-over-as-a-turns-on": "{role}(으)로 가져옵니다. 처음 {way}(으)로 로그인하면 켜집니다",
+	"server.migrate.comes-over-as-a-linked-to": "{role}(으)로 가져오며 자신의 {way} 계정에 연결됩니다. 그 계정으로 처음 로그인하면 켜집니다. 비밀번호는 가져오지 않습니다.",
+	"server.migrate.imported-before-gets-their-sign-in": "이전에 가져옴. {way} 로그인을 받습니다",
+	"server.migrate.imported-before-got-their-sign-in": "이전에 가져옴. {way} 로그인을 받았습니다",
+	"server.migrate.imported-before-their-account-signs-in": "이전에 가져옴. 이 {way} 계정은 여기서 {name}(으)로 로그인하므로 그대로 둡니다",
+	"server.migrate.people-who-signed-in-to-the": "이전 앱에 Plex, Jellyfin 또는 Emby로 로그인하던 사람은 설정 > 로그인 및 보안에서 그 방법을 켜면, 그 방법으로 처음 로그인할 때 켜집니다."
 }

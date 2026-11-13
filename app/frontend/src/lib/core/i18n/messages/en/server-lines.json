@@ -1301,5 +1301,14 @@
 	"server.migrate.its-library-folder-is-not-on": "its Library folder {library} is not on this server, and there is no {kind} Library folder here to add it to; add one and import again",
 	"server.migrate.left-out-was-left-unchecked-check": "left out: {attnfolder} is set to \"Don't bring them\"; pick a folder for it and import again",
 	"server.migrate.will-be-added-to-as-wanted": "will be added to {fallback} as wanted with no files; needs attention: its old folder {dir} is not on this server; fix its folder or add a path rule",
-	"server.migrate.left-out-was-left-unchecked-check-2": "left out: {path} is set to \"Don't bring them\"; pick a folder for it and import again"
+	"server.migrate.left-out-was-left-unchecked-check-2": "left out: {path} is set to \"Don't bring them\"; pick a folder for it and import again",
+	"server.migrate.already-here-as-who-signs-in": "already here as {name}, who signs in with this {way} account; their requests are theirs",
+	"server.migrate.an-invite": "an invite",
+	"server.migrate.came-over-as-a-turns-on": "came over as a {role}; turns on at their first {way} sign-in",
+	"server.migrate.comes-over-as-a-linked-to": "Comes over as a {role}, linked to their {way} account. Their first sign-in with it turns them on; no password comes over.",
+	"server.migrate.comes-over-as-a-turns-on": "comes over as a {role}; turns on at their first {way} sign-in",
+	"server.migrate.imported-before-gets-their-sign-in": "imported before; gets their {way} sign-in",
+	"server.migrate.imported-before-got-their-sign-in": "imported before; got their {way} sign-in",
+	"server.migrate.imported-before-their-account-signs-in": "imported before; their {way} account signs in as {name} here, so it stays that way",
+	"server.migrate.people-who-signed-in-to-the": "People who signed in to the old app with Plex, Jellyfin or Emby turn on at their first sign-in that way, once it is on under Settings > Sign-in and security."
 }

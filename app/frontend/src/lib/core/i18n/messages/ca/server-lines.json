@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "s'afegirà a {fallback} com a desitjat, sense fitxers; cal revisar-ho: la carpeta antiga {dir} no és en aquest servidor; corregeix la carpeta o afegeix una regla de camí",
 	"server.migrate.its-library-folder-is-not-on": "la carpeta de la biblioteca {library} no és en aquest servidor i aquí no hi ha cap carpeta de biblioteca de {kind}; afegeix-ne una i importa de nou",
 	"server.migrate.left-out-was-left-unchecked-check": "deixat fora: {attnfolder} està a \"No els incorporis\"; tria-hi una carpeta i importa de nou",
-	"server.migrate.left-out-was-left-unchecked-check-2": "deixat fora: {path} està a \"No els incorporis\"; tria-hi una carpeta i importa de nou"
+	"server.migrate.left-out-was-left-unchecked-check-2": "deixat fora: {path} està a \"No els incorporis\"; tria-hi una carpeta i importa de nou",
+	"server.migrate.already-here-as-who-signs-in": "ja és aquí com a {name}, que inicia la sessió amb aquest compte de {way}; les seves peticions són seves",
+	"server.migrate.an-invite": "una invitació",
+	"server.migrate.came-over-as-a-turns-on": "ha entrat com a {role}; s'activa en el seu primer inici de sessió amb {way}",
+	"server.migrate.comes-over-as-a-turns-on": "entra com a {role}; s'activa en el seu primer inici de sessió amb {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Entra com a {role}, enllaçat al seu compte de {way}. El primer inici de sessió amb aquest compte l'activa; no ve cap contrasenya.",
+	"server.migrate.imported-before-gets-their-sign-in": "importat abans; rep el seu inici de sessió amb {way}",
+	"server.migrate.imported-before-got-their-sign-in": "importat abans; ha rebut el seu inici de sessió amb {way}",
+	"server.migrate.imported-before-their-account-signs-in": "importat abans; el seu compte de {way} inicia la sessió com a {name} aquí, així que es queda així",
+	"server.migrate.people-who-signed-in-to-the": "Les persones que iniciaven la sessió a l'aplicació antiga amb Plex, Jellyfin o Emby s'activen en el seu primer inici de sessió d'aquesta manera, quan ho activis a Configuració > Inici de sessió i seguretat."
 }

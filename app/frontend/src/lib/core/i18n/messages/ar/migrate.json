@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "اعرض المفاتيح التي تُضاف من جديد",
 	"migrate.personArrivesTurnedOff": "{n} شخص يصل متوقفًا حتى تدعوه.",
 	"migrate.peopleArriveTurnedOff": "{n} أشخاص يصلون متوقفين حتى تدعوهم.",
+	"migrate.personTurnsOnAtSignIn": "{n} شخص يُفعَّل عند أول تسجيل دخول له عبر Plex أو Jellyfin أو Emby.",
+	"migrate.peopleTurnOnAtSignIn": "{n} أشخاص يُفعَّلون عند أول تسجيل دخول لهم عبر Plex أو Jellyfin أو Emby.",
 	"migrate.yourOldAppsAren": "لا تتغير تطبيقاتك القديمة. يمكنك التراجع عن هذا الاستيراد.",
 	"migrate.step4Of4": "الخطوة 4 من 4 · تم",
 	"migrate.undoProgress": "تقدّم التراجع",

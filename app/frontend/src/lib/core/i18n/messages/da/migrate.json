@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Vis Nøgler at tilføje igen",
 	"migrate.personArrivesTurnedOff": "{n} person kommer ind slået fra, til du inviterer vedkommende.",
 	"migrate.peopleArriveTurnedOff": "{n} personer kommer ind slået fra, til du inviterer dem.",
+	"migrate.personTurnsOnAtSignIn": "{n} person slås til ved sit første login med Plex, Jellyfin eller Emby.",
+	"migrate.peopleTurnOnAtSignIn": "{n} personer slås til ved deres første login med Plex, Jellyfin eller Emby.",
 	"migrate.yourOldAppsAren": "Dine gamle apps ændres ikke. Du kan fortryde denne import.",
 	"migrate.step4Of4": "Trin 4 af 4 · Færdig",
 	"migrate.undoProgress": "Fortrydelsesfremdrift",

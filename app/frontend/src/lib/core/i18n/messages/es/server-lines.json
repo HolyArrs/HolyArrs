@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "se añadirá a {fallback} como deseado, sin archivos; requiere atención: su carpeta antigua {dir} no está en este servidor; corrige su carpeta o añade una regla de ruta",
 	"server.migrate.its-library-folder-is-not-on": "su carpeta de biblioteca {library} no está en este servidor y aquí no hay ninguna carpeta de biblioteca de {kind}; añade una e importa de nuevo",
 	"server.migrate.left-out-was-left-unchecked-check": "omitido: {attnfolder} está en \"No traerlos\"; elige una carpeta para ella e importa de nuevo",
-	"server.migrate.left-out-was-left-unchecked-check-2": "omitido: {path} está en \"No traerlos\"; elige una carpeta para ella e importa de nuevo"
+	"server.migrate.left-out-was-left-unchecked-check-2": "omitido: {path} está en \"No traerlos\"; elige una carpeta para ella e importa de nuevo",
+	"server.migrate.already-here-as-who-signs-in": "ya está aquí como {name}, que inicia sesión con esta cuenta de {way}; sus peticiones siguen siendo suyas",
+	"server.migrate.an-invite": "una invitación",
+	"server.migrate.came-over-as-a-turns-on": "llegó como {role}; se activa en su primer inicio de sesión con {way}",
+	"server.migrate.comes-over-as-a-turns-on": "llega como {role}; se activa en su primer inicio de sesión con {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Llega como {role}, vinculada a su cuenta de {way}. Su primer inicio de sesión con ella la activa; no llega ninguna contraseña.",
+	"server.migrate.imported-before-gets-their-sign-in": "ya importado antes; recibe su inicio de sesión con {way}",
+	"server.migrate.imported-before-got-their-sign-in": "ya importado antes; recibió su inicio de sesión con {way}",
+	"server.migrate.imported-before-their-account-signs-in": "ya importado antes; su cuenta de {way} inicia sesión como {name} aquí, así que se queda así",
+	"server.migrate.people-who-signed-in-to-the": "Las personas que iniciaban sesión en la app antigua con Plex, Jellyfin o Emby se activan en su primer inicio de sesión de esa forma, cuando la actives en Ajustes > Inicio de sesión y seguridad."
 }

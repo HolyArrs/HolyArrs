@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "הצגת מפתחות להוספה מחדש",
 	"migrate.personArrivesTurnedOff": "{n} אדם מגיע כבוי עד שתזמין אותו.",
 	"migrate.peopleArriveTurnedOff": "{n} אנשים מגיעים כבויים עד שתזמין אותם.",
+	"migrate.personTurnsOnAtSignIn": "{n} אדם מופעל בהתחברות הראשונה שלו עם Plex, Jellyfin או Emby.",
+	"migrate.peopleTurnOnAtSignIn": "{n} אנשים מופעלים בהתחברות הראשונה שלהם עם Plex, Jellyfin או Emby.",
 	"migrate.yourOldAppsAren": "האפליקציות הישנות שלך לא משתנות. אפשר לבטל את הייבוא הזה.",
 	"migrate.step4Of4": "שלב 4 מתוך 4 · סיום",
 	"migrate.undoProgress": "התקדמות הביטול",

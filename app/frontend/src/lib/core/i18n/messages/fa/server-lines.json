@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "به‌عنوان خواسته‌شده و بدون فایل به {fallback} افزوده می‌شود؛ نیاز به توجه: پوشهٔ قدیمی {dir} روی این سرور نیست؛ پوشه را درست کنید یا یک قاعدهٔ مسیر بیفزایید",
 	"server.migrate.its-library-folder-is-not-on": "پوشهٔ کتابخانهٔ {library} روی این سرور نیست و اینجا هیچ پوشهٔ کتابخانه‌ای برای {kind} نیست؛ یکی بیفزایید و دوباره وارد کنید",
 	"server.migrate.left-out-was-left-unchecked-check": "کنار گذاشته شد: {attnfolder} روی «آن‌ها را نیاور» است؛ برایش پوشه‌ای انتخاب کنید و دوباره وارد کنید",
-	"server.migrate.left-out-was-left-unchecked-check-2": "کنار گذاشته شد: {path} روی «آن‌ها را نیاور» است؛ برایش پوشه‌ای انتخاب کنید و دوباره وارد کنید"
+	"server.migrate.left-out-was-left-unchecked-check-2": "کنار گذاشته شد: {path} روی «آن‌ها را نیاور» است؛ برایش پوشه‌ای انتخاب کنید و دوباره وارد کنید",
+	"server.migrate.already-here-as-who-signs-in": "از قبل اینجا با نام {name} هست که با این حساب {way} وارد می‌شود؛ درخواست‌هایش مال خودش می‌ماند",
+	"server.migrate.an-invite": "یک دعوت",
+	"server.migrate.came-over-as-a-turns-on": "به‌عنوان {role} آمد؛ با اولین ورودش با {way} روشن می‌شود",
+	"server.migrate.comes-over-as-a-turns-on": "به‌عنوان {role} می‌آید؛ با اولین ورودش با {way} روشن می‌شود",
+	"server.migrate.comes-over-as-a-linked-to": "به‌عنوان {role} می‌آید و به حساب {way} خودش وصل است. اولین ورود با آن روشنش می‌کند؛ هیچ رمز عبوری نمی‌آید.",
+	"server.migrate.imported-before-gets-their-sign-in": "قبلاً وارد شده؛ ورود با {way} را می‌گیرد",
+	"server.migrate.imported-before-got-their-sign-in": "قبلاً وارد شده؛ ورود با {way} را گرفت",
+	"server.migrate.imported-before-their-account-signs-in": "قبلاً وارد شده؛ حساب {way} او اینجا با نام {name} وارد می‌شود، پس همین‌طور می‌ماند",
+	"server.migrate.people-who-signed-in-to-the": "افرادی که در برنامهٔ قدیمی با Plex، Jellyfin یا Emby وارد می‌شدند، با اولین ورودشان از همین راه روشن می‌شوند، وقتی آن را در تنظیمات > ورود و امنیت روشن کنی."
 }

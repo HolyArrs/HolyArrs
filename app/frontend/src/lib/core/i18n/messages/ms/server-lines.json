@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "akan ditambah ke {fallback} sebagai dikehendaki tanpa fail; perlu perhatian: folder lamanya {dir} tiada di pelayan ini; betulkan folder atau tambah peraturan laluan",
 	"server.migrate.its-library-folder-is-not-on": "folder Pustaka {library} tiada di pelayan ini, dan di sini tiada folder Pustaka untuk {kind}; tambah satu dan import semula",
 	"server.migrate.left-out-was-left-unchecked-check": "ditinggalkan: {attnfolder} ditetapkan kepada \"Jangan bawa mereka\"; pilih folder untuknya dan import semula",
-	"server.migrate.left-out-was-left-unchecked-check-2": "ditinggalkan: {path} ditetapkan kepada \"Jangan bawa mereka\"; pilih folder untuknya dan import semula"
+	"server.migrate.left-out-was-left-unchecked-check-2": "ditinggalkan: {path} ditetapkan kepada \"Jangan bawa mereka\"; pilih folder untuknya dan import semula",
+	"server.migrate.already-here-as-who-signs-in": "sudah ada di sini sebagai {name}, yang log masuk dengan akaun {way} ini; permintaan mereka kekal milik mereka",
+	"server.migrate.an-invite": "jemputan",
+	"server.migrate.came-over-as-a-turns-on": "dibawa masuk sebagai {role}; dihidupkan semasa log masuk pertama dengan {way}",
+	"server.migrate.comes-over-as-a-turns-on": "dibawa masuk sebagai {role}; dihidupkan semasa log masuk pertama dengan {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Dibawa masuk sebagai {role}, dipautkan ke akaun {way} mereka. Log masuk pertama dengannya menghidupkan mereka; tiada kata laluan dibawa.",
+	"server.migrate.imported-before-gets-their-sign-in": "diimport sebelum ini; mendapat log masuk {way} mereka",
+	"server.migrate.imported-before-got-their-sign-in": "diimport sebelum ini; telah mendapat log masuk {way} mereka",
+	"server.migrate.imported-before-their-account-signs-in": "diimport sebelum ini; akaun {way} mereka log masuk sebagai {name} di sini, jadi ia kekal begitu",
+	"server.migrate.people-who-signed-in-to-the": "Orang yang log masuk ke apl lama dengan Plex, Jellyfin atau Emby dihidupkan semasa log masuk pertama mereka dengan cara itu, sebaik sahaja ia dihidupkan di Tetapan > Log masuk dan keselamatan."
 }

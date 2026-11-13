@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "zostanie dodany do {fallback} jako poszukiwany, bez plików; wymaga uwagi: stary folder {dir} nie istnieje na tym serwerze; popraw folder lub dodaj regułę ścieżki",
 	"server.migrate.its-library-folder-is-not-on": "folderu biblioteki {library} nie ma na tym serwerze i nie ma tu folderu biblioteki dla {kind}; dodaj go i zaimportuj ponownie",
 	"server.migrate.left-out-was-left-unchecked-check": "pominięto: {attnfolder} ma ustawione „Nie przenoś ich”; wybierz dla niego folder i zaimportuj ponownie",
-	"server.migrate.left-out-was-left-unchecked-check-2": "pominięto: {path} ma ustawione „Nie przenoś ich”; wybierz dla niego folder i zaimportuj ponownie"
+	"server.migrate.left-out-was-left-unchecked-check-2": "pominięto: {path} ma ustawione „Nie przenoś ich”; wybierz dla niego folder i zaimportuj ponownie",
+	"server.migrate.already-here-as-who-signs-in": "już tu jest jako {name}, kto loguje się tym kontem {way}; jego prośby pozostają jego",
+	"server.migrate.an-invite": "zaproszenie",
+	"server.migrate.came-over-as-a-turns-on": "przeszło jako {role}; włączy się przy pierwszym logowaniu przez {way}",
+	"server.migrate.comes-over-as-a-turns-on": "przejdzie jako {role}; włączy się przy pierwszym logowaniu przez {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Przejdzie jako {role}, połączone z kontem {way} tej osoby. Pierwsze logowanie nim ją włączy; hasło nie przechodzi.",
+	"server.migrate.imported-before-gets-their-sign-in": "zaimportowano wcześniej; dostaje logowanie przez {way}",
+	"server.migrate.imported-before-got-their-sign-in": "zaimportowano wcześniej; dostało logowanie przez {way}",
+	"server.migrate.imported-before-their-account-signs-in": "zaimportowano wcześniej; jego konto {way} loguje się tu jako {name}, więc tak zostaje",
+	"server.migrate.people-who-signed-in-to-the": "Osoby, które logowały się do starej aplikacji przez Plex, Jellyfin lub Emby, włączą się przy pierwszym logowaniu w ten sposób, gdy włączysz to w Ustawienia > Logowanie i bezpieczeństwo."
 }

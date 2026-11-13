@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Показати «Ключі для повторного додавання»",
 	"migrate.personArrivesTurnedOff": "{n} людина приходить вимкненою, доки ти її не запросиш.",
 	"migrate.peopleArriveTurnedOff": "Людей, що приходять вимкненими, доки ти їх не запросиш: {n}.",
+	"migrate.personTurnsOnAtSignIn": "{n} людина увімкнеться під час першого входу через Plex, Jellyfin або Emby.",
+	"migrate.peopleTurnOnAtSignIn": "Людей, які увімкнуться під час першого входу через Plex, Jellyfin або Emby: {n}.",
 	"migrate.yourOldAppsAren": "Старі застосунки не змінюються. Цей імпорт можна скасувати.",
 	"migrate.step4Of4": "Крок 4 із 4 · Готово",
 	"migrate.undoProgress": "Перебіг скасування",

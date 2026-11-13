@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "sẽ được thêm vào {fallback} dưới dạng cần tìm, chưa có tệp; cần chú ý: thư mục cũ {dir} không có trên máy chủ này; hãy sửa thư mục hoặc thêm quy tắc đường dẫn",
 	"server.migrate.its-library-folder-is-not-on": "thư mục Thư viện {library} không có trên máy chủ này và ở đây không có thư mục Thư viện nào cho {kind}; hãy thêm một thư mục rồi nhập lại",
 	"server.migrate.left-out-was-left-unchecked-check": "bị bỏ ra: {attnfolder} đang đặt là \"Không đưa họ vào\"; hãy chọn thư mục cho nó rồi nhập lại",
-	"server.migrate.left-out-was-left-unchecked-check-2": "bị bỏ ra: {path} đang đặt là \"Không đưa họ vào\"; hãy chọn thư mục cho nó rồi nhập lại"
+	"server.migrate.left-out-was-left-unchecked-check-2": "bị bỏ ra: {path} đang đặt là \"Không đưa họ vào\"; hãy chọn thư mục cho nó rồi nhập lại",
+	"server.migrate.already-here-as-who-signs-in": "đã có ở đây với tên {name}, người đăng nhập bằng tài khoản {way} này; yêu cầu của họ vẫn là của họ",
+	"server.migrate.an-invite": "một lời mời",
+	"server.migrate.came-over-as-a-turns-on": "đã chuyển sang với vai trò {role}; được bật khi đăng nhập lần đầu bằng {way}",
+	"server.migrate.comes-over-as-a-turns-on": "chuyển sang với vai trò {role}; được bật khi đăng nhập lần đầu bằng {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Chuyển sang với vai trò {role}, được liên kết với tài khoản {way} của họ. Lần đăng nhập đầu tiên bằng tài khoản đó sẽ bật họ; không có mật khẩu nào được chuyển sang.",
+	"server.migrate.imported-before-gets-their-sign-in": "đã nhập trước đó; nhận cách đăng nhập bằng {way}",
+	"server.migrate.imported-before-got-their-sign-in": "đã nhập trước đó; đã nhận cách đăng nhập bằng {way}",
+	"server.migrate.imported-before-their-account-signs-in": "đã nhập trước đó; tài khoản {way} của họ đăng nhập ở đây với tên {name}, nên giữ nguyên như vậy",
+	"server.migrate.people-who-signed-in-to-the": "Những người từng đăng nhập ứng dụng cũ bằng Plex, Jellyfin hoặc Emby được bật khi đăng nhập lần đầu theo cách đó, khi bạn bật nó trong Cài đặt > Đăng nhập và bảo mật."
 }

@@ -193,6 +193,8 @@
 "migrate.showKeysToAdd": "Zobraziť Kľúče na opätovné pridanie",
 "migrate.personArrivesTurnedOff": "{n} osoba príde vypnutá, kým ju nepozvete.",
 "migrate.peopleArriveTurnedOff": "Osoby prídu vypnuté, kým ich nepozvete: {n}.",
+	"migrate.personTurnsOnAtSignIn": "{n} osoba sa zapne pri prvom prihlásení cez Plex, Jellyfin alebo Emby.",
+	"migrate.peopleTurnOnAtSignIn": "Osoby, ktoré sa zapnú pri prvom prihlásení cez Plex, Jellyfin alebo Emby: {n}.",
 "migrate.yourOldAppsAren": "Vaše staré aplikácie sa nemenia. Tento import môžete vrátiť.",
 "migrate.step4Of4": "Krok 4 zo 4 · Hotovo",
 "migrate.undoProgress": "Priebeh vrátenia",

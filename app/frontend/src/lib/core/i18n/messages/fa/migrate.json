@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "نمایش کلیدهایی که باید دوباره اضافه شوند",
 	"migrate.personArrivesTurnedOff": "{n} نفر خاموش می‌رسد تا وقتی دعوتش کنی.",
 	"migrate.peopleArriveTurnedOff": "{n} نفر خاموش می‌رسند تا وقتی دعوتشان کنی.",
+	"migrate.personTurnsOnAtSignIn": "{n} نفر با اولین ورودش با Plex، Jellyfin یا Emby روشن می‌شود.",
+	"migrate.peopleTurnOnAtSignIn": "{n} نفر با اولین ورودشان با Plex، Jellyfin یا Emby روشن می‌شوند.",
 	"migrate.yourOldAppsAren": "برنامه‌های قدیمی‌ات تغییری نمی‌کنند. می‌توانی این ورود را برگردانی.",
 	"migrate.step4Of4": "مرحله 4 از 4 · انجام شد",
 	"migrate.undoProgress": "پیشرفت برگرداندن",

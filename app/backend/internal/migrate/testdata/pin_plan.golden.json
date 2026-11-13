@@ -239,7 +239,10 @@
             "shows_per_week": 7,
             "was_admin": true,
             "was_owner": true,
-            "choice": "s"
+            "choice": "s",
+            "sign_in": "s",
+            "sign_in_id": "s",
+            "sign_in_name": "s"
           },
           "ask_settings": {
             "movies_per_week": 7,

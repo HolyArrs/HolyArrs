@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "दोबारा जोड़ने वाली कुंजियां दिखाएं",
 	"migrate.personArrivesTurnedOff": "{n} व्यक्ति बंद होकर आता है, जब तक आप उसे न्योता न दें।",
 	"migrate.peopleArriveTurnedOff": "{n} लोग बंद होकर आते हैं, जब तक आप उन्हें न्योता न दें।",
+	"migrate.personTurnsOnAtSignIn": "{n} व्यक्ति पहली बार Plex, Jellyfin या Emby से साइन इन करने पर चालू होता है।",
+	"migrate.peopleTurnOnAtSignIn": "{n} लोग पहली बार Plex, Jellyfin या Emby से साइन इन करने पर चालू होते हैं।",
 	"migrate.yourOldAppsAren": "आपके पुराने ऐप नहीं बदलते। आप यह इंपोर्ट वापस ले सकते हैं।",
 	"migrate.step4Of4": "चरण 4 / 4 · पूरा",
 	"migrate.undoProgress": "वापस करने की प्रगति",

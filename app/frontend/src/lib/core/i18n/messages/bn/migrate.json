@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "আবার যোগ করার কী দেখান",
 	"migrate.personArrivesTurnedOff": "{n} জন আপনি আমন্ত্রণ না জানানো পর্যন্ত বন্ধ অবস্থায় আসে।",
 	"migrate.peopleArriveTurnedOff": "{n} জন আপনি আমন্ত্রণ না জানানো পর্যন্ত বন্ধ অবস্থায় আসে।",
+	"migrate.personTurnsOnAtSignIn": "{n} জন প্রথমবার Plex, Jellyfin বা Emby দিয়ে সাইন ইন করলে চালু হয়।",
+	"migrate.peopleTurnOnAtSignIn": "{n} জন প্রথমবার Plex, Jellyfin বা Emby দিয়ে সাইন ইন করলে চালু হয়।",
 	"migrate.yourOldAppsAren": "আপনার পুরোনো অ্যাপ বদলায় না। আপনি এই ইমপোর্ট আনডু করতে পারেন।",
 	"migrate.step4Of4": "ধাপ ৪/৪ · হয়ে গেছে",
 	"migrate.undoProgress": "আনডু অগ্রগতি",

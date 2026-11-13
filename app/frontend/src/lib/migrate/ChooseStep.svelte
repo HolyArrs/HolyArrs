@@ -87,6 +87,9 @@
 	const on = $derived(shown.filter((g) => g.items.length > 0 && !skip.includes(g.name)));
 	const peopleItems = $derived(plan?.groups.find((g) => g.name === 'people')?.items ?? []);
 	const peopleOn = $derived(peopleItems.length > 0 && !skip.includes('people'));
+	// People who keep their Plex, Jellyfin or Emby sign-in need no invite.
+	const invitees = $derived(peopleItems.filter((it) => !it.person?.sign_in));
+	const inviteOn = $derived(peopleOn && invitees.length > 0);
 	const asked = $derived(peopleItems.filter((it) => it.person?.was_owner || it.person?.was_admin));
 	const pathRules = $derived(!!plan && oldRows.length === 0 && (extra.length > 0 || plan.not_moved.some((n) => n.group === 'titles')));
 	const needFolders = $derived(oldRows.filter((p) => held.includes(p) || !picks[p]));
@@ -201,9 +204,12 @@
 		keysOf = k;
 		keysOpen = true;
 	}
+	const signInNames = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' };
 	function personRow(it: PlanItem) {
 		const me = people[it.key] === 'owner';
-		return { key: it.key, name: it.name, pill: me ? { word: t('migrate.you'), tone: 'ok' as const } : { word: t('migrate.invite'), tone: 'quiet' as const } };
+		const way = it.person?.sign_in;
+		const pill = me ? { word: t('migrate.you'), tone: 'ok' as const } : way ? { word: signInNames[way], tone: 'ok' as const } : { word: t('migrate.invite'), tone: 'quiet' as const };
+		return { key: it.key, name: it.name, pill };
 	}
 	function personHint(it: PlanItem): string {
 		const app = appName(it.person?.app ?? it.from.split(' ')[0] ?? '');
@@ -325,7 +331,7 @@
 				</ul>
 			{/if}
 
-			{#if keyCount.sources || keyCount.downloaders || peopleOn}
+			{#if keyCount.sources || keyCount.downloaders || inviteOn}
 				<h3 class="head">{t('migrate.afterTheMove')}</h3>
 				<div class="cards">
 					{#if keyCount.sources}
@@ -340,9 +346,9 @@
 							<button type="button" class="quiet" onclick={() => openKeys('downloaders')}>{t('migrate.show2')}</button>
 						</div>
 					{/if}
-					{#if peopleOn}
+					{#if inviteOn}
 						<div class="box card1">
-							<span class="txt"><b>{peopleItems.length === 1 ? t('migrate.invite1User') : t('migrate.inviteUsers', { n: peopleItems.length })}</b><span class="sub">{t('migrate.theirAccountsComeOver')}</span></span>
+							<span class="txt"><b>{invitees.length === 1 ? t('migrate.invite1User') : t('migrate.inviteUsers', { n: invitees.length })}</b><span class="sub">{t('migrate.theirAccountsComeOver')}</span></span>
 							<button type="button" class="quiet" onclick={() => onshow(t('migrate.people'), peopleItems, personRow)}>{t('migrate.show2')}</button>
 						</div>
 					{/if}

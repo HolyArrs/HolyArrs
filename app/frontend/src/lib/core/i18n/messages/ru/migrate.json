@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Показать «Ключи, которые нужно добавить заново»",
 	"migrate.personArrivesTurnedOff": "{n} человек приходит выключенным, пока вы его не пригласите.",
 	"migrate.peopleArriveTurnedOff": "Людей приходит выключенными, пока вы их не пригласите: {n}.",
+	"migrate.personTurnsOnAtSignIn": "{n} человек включится при первом входе через Plex, Jellyfin или Emby.",
+	"migrate.peopleTurnOnAtSignIn": "Людей, которые включатся при первом входе через Plex, Jellyfin или Emby: {n}.",
 	"migrate.yourOldAppsAren": "Старые приложения не меняются. Этот импорт можно отменить.",
 	"migrate.step4Of4": "Шаг 4 из 4 · Готово",
 	"migrate.undoProgress": "Ход отмены",

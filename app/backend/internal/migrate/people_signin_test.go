@@ -37,7 +37,7 @@ func TestPlexPersonComesOverLinked(t *testing.T) {
 	l := newMoveLabWith(t, withPlexBea)
 	p := l.plan(t)
 	bea := item(t, p, GroupPeople, beaKey)
-	if bea.Needs != "" || !strings.Contains(bea.Detail, "first Plex sign-in") || bea.Person.SignIn != "plex" || bea.Person.SignInID != "4242" {
+	if bea.Needs != "" || !strings.Contains(bea.Detail, "Plex account. Their first sign-in") || bea.Person.SignIn != "plex" || bea.Person.SignInID != "4242" {
 		t.Fatalf("plan for a Plex person: %+v %+v", bea, bea.Person)
 	}
 	if ana := item(t, p, GroupPeople, "person:seerr:2"); ana.Needs != "an invite" || ana.Person.SignIn != "" {

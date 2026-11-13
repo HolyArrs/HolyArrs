@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "wordt als gewenst zonder bestanden toegevoegd aan {fallback}; vraagt aandacht: de oude map {dir} staat niet op deze server; corrigeer de map of voeg een padregel toe",
 	"server.migrate.its-library-folder-is-not-on": "de bibliotheekmap {library} staat niet op deze server en er is hier geen bibliotheekmap voor {kind}; voeg er een toe en importeer opnieuw",
 	"server.migrate.left-out-was-left-unchecked-check": "weggelaten: {attnfolder} staat op \"Niet overnemen\"; kies er een map voor en importeer opnieuw",
-	"server.migrate.left-out-was-left-unchecked-check-2": "weggelaten: {path} staat op \"Niet overnemen\"; kies er een map voor en importeer opnieuw"
+	"server.migrate.left-out-was-left-unchecked-check-2": "weggelaten: {path} staat op \"Niet overnemen\"; kies er een map voor en importeer opnieuw",
+	"server.migrate.already-here-as-who-signs-in": "is er al als {name}, die aanmeldt met dit {way}-account; hun verzoeken blijven van hen",
+	"server.migrate.an-invite": "een uitnodiging",
+	"server.migrate.came-over-as-a-turns-on": "kwam mee als {role}; gaat aan bij de eerste aanmelding met {way}",
+	"server.migrate.comes-over-as-a-turns-on": "komt mee als {role}; gaat aan bij de eerste aanmelding met {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Komt mee als {role}, gekoppeld aan het eigen {way}-account. De eerste aanmelding daarmee zet de persoon aan; er komt geen wachtwoord mee.",
+	"server.migrate.imported-before-gets-their-sign-in": "eerder geïmporteerd; krijgt de aanmelding met {way}",
+	"server.migrate.imported-before-got-their-sign-in": "eerder geïmporteerd; kreeg de aanmelding met {way}",
+	"server.migrate.imported-before-their-account-signs-in": "eerder geïmporteerd; hun {way}-account meldt hier aan als {name}, dus dat blijft zo",
+	"server.migrate.people-who-signed-in-to-the": "Mensen die in de oude app aanmeldden met Plex, Jellyfin of Emby gaan aan bij hun eerste aanmelding op die manier, zodra die aan staat onder Instellingen > Aanmelden en beveiliging."
 }

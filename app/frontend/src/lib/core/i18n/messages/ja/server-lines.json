@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "欲しいものとしてファイルなしで {fallback} に追加します。要確認: 古いフォルダー {dir} がこのサーバーにありません。フォルダーを直すか、パスルールを追加してください",
 	"server.migrate.its-library-folder-is-not-on": "ライブラリフォルダー {library} がこのサーバーになく、ここには {kind} のライブラリフォルダーもありません。追加してからもう一度インポートしてください",
 	"server.migrate.left-out-was-left-unchecked-check": "対象外: {attnfolder} は「引き継がない」になっています。フォルダーを選んでもう一度インポートしてください",
-	"server.migrate.left-out-was-left-unchecked-check-2": "対象外: {path} は「引き継がない」になっています。フォルダーを選んでもう一度インポートしてください"
+	"server.migrate.left-out-was-left-unchecked-check-2": "対象外: {path} は「引き継がない」になっています。フォルダーを選んでもう一度インポートしてください",
+	"server.migrate.already-here-as-who-signs-in": "この {way} アカウントでサインインする {name} としてすでにいます。リクエストはその人のままです",
+	"server.migrate.an-invite": "招待",
+	"server.migrate.came-over-as-a-turns-on": "{role} として届きました。初めて {way} でサインインするとオンになります",
+	"server.migrate.comes-over-as-a-turns-on": "{role} として届きます。初めて {way} でサインインするとオンになります",
+	"server.migrate.comes-over-as-a-linked-to": "{role} として届き、本人の {way} アカウントにリンクされます。そのアカウントで初めてサインインするとオンになります。パスワードは引き継がれません。",
+	"server.migrate.imported-before-gets-their-sign-in": "以前にインポート済み。{way} でのサインインを受け取ります",
+	"server.migrate.imported-before-got-their-sign-in": "以前にインポート済み。{way} でのサインインを受け取りました",
+	"server.migrate.imported-before-their-account-signs-in": "以前にインポート済み。この {way} アカウントはここで {name} としてサインインするため、そのままにします",
+	"server.migrate.people-who-signed-in-to-the": "旧アプリに Plex、Jellyfin、Emby でサインインしていたユーザーは、設定 > サインインとセキュリティ でその方法がオンなら、その方法で初めてサインインしたときにオンになります。"
 }

@@ -259,9 +259,9 @@ type User struct {
 	// ExtName is their name on that provider.
 	ExtName string `json:"ext_name,omitempty"`
 	Name    string `json:"name"`
-	Email      string `json:"email,omitempty"`
-	Kind       string `json:"kind,omitempty"` // plex, jellyfin, local, emby
-	Admin      bool   `json:"admin"`
+	Email   string `json:"email,omitempty"`
+	Kind    string `json:"kind,omitempty"` // plex, jellyfin, local, emby
+	Admin   bool   `json:"admin"`
 	// Owner says the app marks this person as its owner.
 	Owner       bool     `json:"owner,omitempty"`
 	Permissions []string `json:"permissions,omitempty"`

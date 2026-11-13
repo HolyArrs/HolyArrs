@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "bus pridėta į {fallback} kaip norima, be failų; reikia dėmesio: senojo aplanko {dir} šiame serveryje nėra; pataisykite aplanką arba pridėkite kelio taisyklę",
 	"server.migrate.its-library-folder-is-not-on": "bibliotekos aplanko {library} šiame serveryje nėra, ir čia nėra bibliotekos aplanko tipui {kind}; pridėkite jį ir importuokite iš naujo",
 	"server.migrate.left-out-was-left-unchecked-check": "praleista: {attnfolder} nustatytas į „Neįtraukti jų“; pasirinkite jam aplanką ir importuokite iš naujo",
-	"server.migrate.left-out-was-left-unchecked-check-2": "praleista: {path} nustatytas į „Neįtraukti jų“; pasirinkite jam aplanką ir importuokite iš naujo"
+	"server.migrate.left-out-was-left-unchecked-check-2": "praleista: {path} nustatytas į „Neįtraukti jų“; pasirinkite jam aplanką ir importuokite iš naujo",
+	"server.migrate.already-here-as-who-signs-in": "jau yra čia kaip {name}, kuris jungiasi šia {way} paskyra; jo užklausos lieka jo",
+	"server.migrate.an-invite": "kvietimas",
+	"server.migrate.came-over-as-a-turns-on": "atkeliavo kaip {role}; įsijungia pirmą kartą prisijungus per {way}",
+	"server.migrate.comes-over-as-a-turns-on": "atkeliauja kaip {role}; įsijungia pirmą kartą prisijungus per {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Atkeliauja kaip {role}, susietas su jo {way} paskyra. Pirmas prisijungimas ja jį įjungia; slaptažodis neatkeliauja.",
+	"server.migrate.imported-before-gets-their-sign-in": "importuota anksčiau; gauna prisijungimą per {way}",
+	"server.migrate.imported-before-got-their-sign-in": "importuota anksčiau; gavo prisijungimą per {way}",
+	"server.migrate.imported-before-their-account-signs-in": "importuota anksčiau; jo {way} paskyra čia jungiasi kaip {name}, todėl taip ir lieka",
+	"server.migrate.people-who-signed-in-to-the": "Žmonės, kurie į senąją programą jungdavosi per Plex, Jellyfin ar Emby, įsijungia pirmą kartą taip prisijungę, kai tai įjungta skiltyje Nustatymai > Prisijungimas ir sauga."
 }

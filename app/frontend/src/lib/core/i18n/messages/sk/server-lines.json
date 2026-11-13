@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "bude pridané do {fallback} ako hľadané bez súborov; vyžaduje pozornosť: starý priečinok {dir} na tomto serveri nie je; opravte priečinok alebo pridajte pravidlo cesty",
 	"server.migrate.its-library-folder-is-not-on": "priečinok knižnice {library} na tomto serveri nie je a nie je tu žiadny priečinok knižnice pre {kind}; pridajte ho a importujte znova",
 	"server.migrate.left-out-was-left-unchecked-check": "vynechané: {attnfolder} má nastavené „Neprenášať ich“; vyberte preň priečinok a importujte znova",
-	"server.migrate.left-out-was-left-unchecked-check-2": "vynechané: {path} má nastavené „Neprenášať ich“; vyberte preň priečinok a importujte znova"
+	"server.migrate.left-out-was-left-unchecked-check-2": "vynechané: {path} má nastavené „Neprenášať ich“; vyberte preň priečinok a importujte znova",
+	"server.migrate.already-here-as-who-signs-in": "už je tu ako {name}, kto sa prihlasuje týmto účtom {way}; jeho žiadosti zostávajú jeho",
+	"server.migrate.an-invite": "pozvánka",
+	"server.migrate.came-over-as-a-turns-on": "prenieslo sa ako {role}; zapne sa pri prvom prihlásení cez {way}",
+	"server.migrate.comes-over-as-a-turns-on": "prenesie sa ako {role}; zapne sa pri prvom prihlásení cez {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Prenesie sa ako {role}, prepojené s jeho účtom {way}. Prvé prihlásenie ním ho zapne; žiadne heslo sa neprenesie.",
+	"server.migrate.imported-before-gets-their-sign-in": "importované predtým; dostane prihlásenie cez {way}",
+	"server.migrate.imported-before-got-their-sign-in": "importované predtým; dostalo prihlásenie cez {way}",
+	"server.migrate.imported-before-their-account-signs-in": "importované predtým; jeho účet {way} sa tu prihlasuje ako {name}, takže to zostane tak",
+	"server.migrate.people-who-signed-in-to-the": "Ľudia, ktorí sa do starej aplikácie prihlasovali cez Plex, Jellyfin alebo Emby, sa zapnú pri prvom prihlásení týmto spôsobom, keď to zapnete v Nastavenia > Prihlásenie a zabezpečenie."
 }

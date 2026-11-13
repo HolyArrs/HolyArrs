@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "wird als gesucht ohne Dateien zu {fallback} hinzugefügt; braucht Aufmerksamkeit: der alte Ordner {dir} ist nicht auf diesem Server; Ordner korrigieren oder eine Pfadregel hinzufügen",
 	"server.migrate.its-library-folder-is-not-on": "der Bibliotheksordner {library} ist nicht auf diesem Server, und hier gibt es keinen Bibliotheksordner für {kind}; lege einen an und importiere erneut",
 	"server.migrate.left-out-was-left-unchecked-check": "ausgelassen: {attnfolder} steht auf „Nicht übernehmen“; wähle einen Ordner dafür und importiere erneut",
-	"server.migrate.left-out-was-left-unchecked-check-2": "ausgelassen: {path} steht auf „Nicht übernehmen“; wähle einen Ordner dafür und importiere erneut"
+	"server.migrate.left-out-was-left-unchecked-check-2": "ausgelassen: {path} steht auf „Nicht übernehmen“; wähle einen Ordner dafür und importiere erneut",
+	"server.migrate.already-here-as-who-signs-in": "ist schon da als {name}, die sich mit diesem {way}-Konto anmeldet; ihre Anfragen bleiben ihre",
+	"server.migrate.an-invite": "eine Einladung",
+	"server.migrate.came-over-as-a-turns-on": "kam als {role} herüber; wird bei der ersten Anmeldung mit {way} eingeschaltet",
+	"server.migrate.comes-over-as-a-turns-on": "kommt als {role} herüber; wird bei der ersten Anmeldung mit {way} eingeschaltet",
+	"server.migrate.comes-over-as-a-linked-to": "Kommt als {role} herüber, verknüpft mit dem eigenen {way}-Konto. Die erste Anmeldung damit schaltet sie ein; kein Passwort kommt mit.",
+	"server.migrate.imported-before-gets-their-sign-in": "schon früher importiert; bekommt die Anmeldung mit {way}",
+	"server.migrate.imported-before-got-their-sign-in": "schon früher importiert; hat die Anmeldung mit {way} bekommen",
+	"server.migrate.imported-before-their-account-signs-in": "schon früher importiert; ihr {way}-Konto meldet sich hier als {name} an, also bleibt es so",
+	"server.migrate.people-who-signed-in-to-the": "Personen, die sich in der alten App mit Plex, Jellyfin oder Emby angemeldet haben, werden bei ihrer ersten Anmeldung auf diesem Weg eingeschaltet, sobald er unter Einstellungen > Anmeldung und Sicherheit an ist."
 }

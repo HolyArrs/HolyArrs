@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "tilføjes til {fallback} som ønsket uden filer; kræver opmærksomhed: den gamle mappe {dir} findes ikke på denne server; ret mappen eller tilføj en stiregel",
 	"server.migrate.its-library-folder-is-not-on": "biblioteksmappen {library} findes ikke på denne server, og her er ingen biblioteksmappe til {kind}; tilføj en og importér igen",
 	"server.migrate.left-out-was-left-unchecked-check": "udeladt: {attnfolder} står til \"Tag dem ikke med\"; vælg en mappe til den og importér igen",
-	"server.migrate.left-out-was-left-unchecked-check-2": "udeladt: {path} står til \"Tag dem ikke med\"; vælg en mappe til den og importér igen"
+	"server.migrate.left-out-was-left-unchecked-check-2": "udeladt: {path} står til \"Tag dem ikke med\"; vælg en mappe til den og importér igen",
+	"server.migrate.already-here-as-who-signs-in": "er her allerede som {name}, der logger ind med denne {way}-konto; deres anmodninger er deres",
+	"server.migrate.an-invite": "en invitation",
+	"server.migrate.came-over-as-a-turns-on": "kom med som {role}; slås til ved deres første login med {way}",
+	"server.migrate.comes-over-as-a-turns-on": "kommer med som {role}; slås til ved deres første login med {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Kommer med som {role}, knyttet til deres {way}-konto. Deres første login med den slår dem til; ingen adgangskode kommer med.",
+	"server.migrate.imported-before-gets-their-sign-in": "importeret før; får deres {way}-login",
+	"server.migrate.imported-before-got-their-sign-in": "importeret før; fik deres {way}-login",
+	"server.migrate.imported-before-their-account-signs-in": "importeret før; deres {way}-konto logger ind som {name} her, så det forbliver sådan",
+	"server.migrate.people-who-signed-in-to-the": "Personer, der loggede ind i den gamle app med Plex, Jellyfin eller Emby, slås til ved deres første login på den måde, når det er slået til under Indstillinger > Login og sikkerhed."
 }

@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "ще бъде добавено в {fallback} като желано, без файлове; изисква внимание: старата папка {dir} я няма на този сървър; поправете папката или добавете правило за път",
 	"server.migrate.its-library-folder-is-not-on": "папката на библиотеката {library} я няма на този сървър и тук няма папка на библиотеката за {kind}; добавете такава и импортирайте отново",
 	"server.migrate.left-out-was-left-unchecked-check": "пропуснато: {attnfolder} е зададена на „Не ги внасяй“; изберете папка за нея и импортирайте отново",
-	"server.migrate.left-out-was-left-unchecked-check-2": "пропуснато: {path} е зададена на „Не ги внасяй“; изберете папка за нея и импортирайте отново"
+	"server.migrate.left-out-was-left-unchecked-check-2": "пропуснато: {path} е зададена на „Не ги внасяй“; изберете папка за нея и импортирайте отново",
+	"server.migrate.already-here-as-who-signs-in": "вече е тук като {name}, който влиза с този акаунт в {way}; заявките му остават негови",
+	"server.migrate.an-invite": "покана",
+	"server.migrate.came-over-as-a-turns-on": "дойде като {role}; включва се при първия си вход с {way}",
+	"server.migrate.comes-over-as-a-turns-on": "идва като {role}; включва се при първия си вход с {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Идва като {role}, свързан с акаунта си в {way}. Първият вход с него го включва; парола не идва.",
+	"server.migrate.imported-before-gets-their-sign-in": "импортирано преди; получава вход с {way}",
+	"server.migrate.imported-before-got-their-sign-in": "импортирано преди; получи вход с {way}",
+	"server.migrate.imported-before-their-account-signs-in": "импортирано преди; акаунтът му в {way} влиза като {name} тук, така че остава така",
+	"server.migrate.people-who-signed-in-to-the": "Хората, които влизаха в старото приложение с Plex, Jellyfin или Emby, се включват при първия си вход по този начин, щом го включите от Настройки > Вход и сигурност."
 }

@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "hozzá lesz adva ide: {fallback}, kívántként, fájlok nélkül; figyelmet igényel: a régi mappa ({dir}) nincs ezen a szerveren; javítsd a mappát, vagy adj hozzá útvonalszabályt",
 	"server.migrate.its-library-folder-is-not-on": "a(z) {library} könyvtármappa nincs ezen a szerveren, és itt nincs {kind} könyvtármappa; adj hozzá egyet, és importálj újra",
 	"server.migrate.left-out-was-left-unchecked-check": "kihagyva: a(z) {attnfolder} beállítása „Ne hozza át őket”; válassz hozzá mappát, és importálj újra",
-	"server.migrate.left-out-was-left-unchecked-check-2": "kihagyva: a(z) {path} beállítása „Ne hozza át őket”; válassz hozzá mappát, és importálj újra"
+	"server.migrate.left-out-was-left-unchecked-check-2": "kihagyva: a(z) {path} beállítása „Ne hozza át őket”; válassz hozzá mappát, és importálj újra",
+	"server.migrate.already-here-as-who-signs-in": "már itt van {name} néven, aki ezzel a {way}-fiókkal jelentkezik be; a kérései az övéi maradnak",
+	"server.migrate.an-invite": "egy meghívó",
+	"server.migrate.came-over-as-a-turns-on": "átjött {role} szerepkörrel; az első {way}-bejelentkezésekor kapcsol be",
+	"server.migrate.comes-over-as-a-turns-on": "átjön {role} szerepkörrel; az első {way}-bejelentkezésekor kapcsol be",
+	"server.migrate.comes-over-as-a-linked-to": "Átjön {role} szerepkörrel, a saját {way}-fiókjához kötve. Az első bejelentkezése vele bekapcsolja; jelszó nem jön át.",
+	"server.migrate.imported-before-gets-their-sign-in": "korábban importálva; megkapja a {way}-bejelentkezését",
+	"server.migrate.imported-before-got-their-sign-in": "korábban importálva; megkapta a {way}-bejelentkezését",
+	"server.migrate.imported-before-their-account-signs-in": "korábban importálva; a {way}-fiókja itt {name} néven jelentkezik be, így ez marad",
+	"server.migrate.people-who-signed-in-to-the": "Akik a régi alkalmazásba Plex, Jellyfin vagy Emby fiókkal jelentkeztek be, az első így történő bejelentkezésükkor kapcsolnak be, amint ez be van kapcsolva a Beállítások > Bejelentkezés és biztonság alatt."
 }

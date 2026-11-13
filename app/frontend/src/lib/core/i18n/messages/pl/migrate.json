@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Pokaż Klucze do ponownego dodania",
 	"migrate.personArrivesTurnedOff": "{n} osoba pojawia się wyłączona, dopóki jej nie zaprosisz.",
 	"migrate.peopleArriveTurnedOff": "Osoby wyłączone do czasu zaproszenia: {n}.",
+	"migrate.personTurnsOnAtSignIn": "{n} osoba włączy się przy pierwszym logowaniu przez Plex, Jellyfin lub Emby.",
+	"migrate.peopleTurnOnAtSignIn": "Osoby, które włączą się przy pierwszym logowaniu przez Plex, Jellyfin lub Emby: {n}.",
 	"migrate.yourOldAppsAren": "Twoje dotychczasowe aplikacje nie zostały zmienione. Możesz cofnąć ten import.",
 	"migrate.step4Of4": "Krok 4 z 4 · Gotowe",
 	"migrate.undoProgress": "Postęp cofania",

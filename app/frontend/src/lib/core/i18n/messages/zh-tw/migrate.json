@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "顯示需要重新新增的金鑰",
 	"migrate.personArrivesTurnedOff": "{n} 位成員遷入後處於停用狀態，直到你邀請他們。",
 	"migrate.peopleArriveTurnedOff": "{n} 位成員遷入後處於停用狀態，直到你邀請他們。",
+	"migrate.personTurnsOnAtSignIn": "{n} 位成員首次用 Plex、Jellyfin 或 Emby 登入時啟用。",
+	"migrate.peopleTurnOnAtSignIn": "{n} 位成員首次用 Plex、Jellyfin 或 Emby 登入時啟用。",
 	"migrate.yourOldAppsAren": "你的舊應用程式不會被改動。你可以復原這次匯入。",
 	"migrate.step4Of4": "第 4 步，共 4 步 · 完成",
 	"migrate.undoProgress": "復原進度",

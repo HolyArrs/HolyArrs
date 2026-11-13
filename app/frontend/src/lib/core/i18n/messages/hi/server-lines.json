@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "{fallback} में बिना फ़ाइलों के 'चाहिए' के रूप में जोड़ा जाएगा; ध्यान चाहिए: पुराना फ़ोल्डर {dir} इस सर्वर पर नहीं है; फ़ोल्डर ठीक करें या पाथ नियम जोड़ें",
 	"server.migrate.its-library-folder-is-not-on": "लाइब्रेरी फ़ोल्डर {library} इस सर्वर पर नहीं है, और यहाँ {kind} के लिए कोई लाइब्रेरी फ़ोल्डर नहीं है; एक जोड़ें और फिर से इम्पोर्ट करें",
 	"server.migrate.left-out-was-left-unchecked-check": "छोड़ा गया: {attnfolder} पर \"इन्हें न लाएं\" चुना है; इसके लिए एक फ़ोल्डर चुनें और फिर से इम्पोर्ट करें",
-	"server.migrate.left-out-was-left-unchecked-check-2": "छोड़ा गया: {path} पर \"इन्हें न लाएं\" चुना है; इसके लिए एक फ़ोल्डर चुनें और फिर से इम्पोर्ट करें"
+	"server.migrate.left-out-was-left-unchecked-check-2": "छोड़ा गया: {path} पर \"इन्हें न लाएं\" चुना है; इसके लिए एक फ़ोल्डर चुनें और फिर से इम्पोर्ट करें",
+	"server.migrate.already-here-as-who-signs-in": "पहले से यहां {name} के रूप में है, जो इस {way} खाते से साइन इन करता है; उनके अनुरोध उन्हीं के रहते हैं",
+	"server.migrate.an-invite": "एक न्योता",
+	"server.migrate.came-over-as-a-turns-on": "{role} बनकर आया; पहली बार {way} से साइन इन करने पर चालू होता है",
+	"server.migrate.comes-over-as-a-turns-on": "{role} बनकर आता है; पहली बार {way} से साइन इन करने पर चालू होता है",
+	"server.migrate.comes-over-as-a-linked-to": "{role} बनकर आता है, उनके {way} खाते से जुड़ा हुआ। उससे पहला साइन इन उन्हें चालू करता है; कोई पासवर्ड नहीं आता।",
+	"server.migrate.imported-before-gets-their-sign-in": "पहले इंपोर्ट हो चुका; उन्हें {way} साइन इन मिलता है",
+	"server.migrate.imported-before-got-their-sign-in": "पहले इंपोर्ट हो चुका; उन्हें {way} साइन इन मिल गया",
+	"server.migrate.imported-before-their-account-signs-in": "पहले इंपोर्ट हो चुका; उनका {way} खाता यहां {name} के रूप में साइन इन करता है, इसलिए वैसा ही रहता है",
+	"server.migrate.people-who-signed-in-to-the": "जो लोग पुराने ऐप में Plex, Jellyfin या Emby से साइन इन करते थे, वे उसी तरह पहली बार साइन इन करने पर चालू होते हैं, जब सेटिंग > साइन इन और सुरक्षा में इसे चालू किया गया हो।"
 }

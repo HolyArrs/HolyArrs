@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Tunjuk Kunci untuk ditambah semula",
 	"migrate.personArrivesTurnedOff": "{n} orang tiba dalam keadaan dimatikan sehingga anda menjemput mereka.",
 	"migrate.peopleArriveTurnedOff": "{n} orang tiba dalam keadaan dimatikan sehingga anda menjemput mereka.",
+	"migrate.personTurnsOnAtSignIn": "{n} orang dihidupkan semasa log masuk pertama dengan Plex, Jellyfin atau Emby.",
+	"migrate.peopleTurnOnAtSignIn": "{n} orang dihidupkan semasa log masuk pertama dengan Plex, Jellyfin atau Emby.",
 	"migrate.yourOldAppsAren": "Apl lama anda tidak diubah. Anda boleh membuat asal import ini.",
 	"migrate.step4Of4": "Langkah 4 daripada 4 · Selesai",
 	"migrate.undoProgress": "Kemajuan buat asal",

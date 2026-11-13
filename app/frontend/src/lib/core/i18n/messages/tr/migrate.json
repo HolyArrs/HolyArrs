@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Yeniden eklenecek anahtarları göster",
 	"migrate.personArrivesTurnedOff": "{n} kişi, onu davet edene kadar kapalı gelir.",
 	"migrate.peopleArriveTurnedOff": "{n} kişi, onları davet edene kadar kapalı gelir.",
+	"migrate.personTurnsOnAtSignIn": "{n} kişi Plex, Jellyfin ya da Emby ile ilk girişinde açılır.",
+	"migrate.peopleTurnOnAtSignIn": "{n} kişi Plex, Jellyfin ya da Emby ile ilk girişinde açılır.",
 	"migrate.yourOldAppsAren": "Eski uygulamaların değişmez. Bu içe aktarmayı geri alabilirsin.",
 	"migrate.step4Of4": "Adım 4/4 · Bitti",
 	"migrate.undoProgress": "Geri alma ilerlemesi",

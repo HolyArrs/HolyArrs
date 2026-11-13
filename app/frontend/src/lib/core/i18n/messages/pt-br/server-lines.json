@@ -1301,5 +1301,14 @@
 	"server.migrate.will-be-added-to-as-wanted": "será adicionado a {fallback} como desejado, sem arquivos; precisa de atenção: a pasta antiga {dir} não está neste servidor; corrija a pasta ou adicione uma regra de caminho",
 	"server.migrate.its-library-folder-is-not-on": "a pasta da biblioteca {library} não está neste servidor e aqui não há nenhuma pasta da biblioteca de {kind}; adicione uma e importe de novo",
 	"server.migrate.left-out-was-left-unchecked-check": "deixado de fora: {attnfolder} está em \"Não trazer\"; escolha uma pasta para ela e importe de novo",
-	"server.migrate.left-out-was-left-unchecked-check-2": "deixado de fora: {path} está em \"Não trazer\"; escolha uma pasta para ela e importe de novo"
+	"server.migrate.left-out-was-left-unchecked-check-2": "deixado de fora: {path} está em \"Não trazer\"; escolha uma pasta para ela e importe de novo",
+	"server.migrate.already-here-as-who-signs-in": "já está aqui como {name}, que entra com esta conta do {way}; os pedidos continuam sendo dessa pessoa",
+	"server.migrate.an-invite": "um convite",
+	"server.migrate.came-over-as-a-turns-on": "veio como {role}; é ativado no primeiro login com {way}",
+	"server.migrate.comes-over-as-a-turns-on": "vem como {role}; é ativado no primeiro login com {way}",
+	"server.migrate.comes-over-as-a-linked-to": "Vem como {role}, vinculado à própria conta do {way}. O primeiro login com ela ativa a pessoa; nenhuma senha vem junto.",
+	"server.migrate.imported-before-gets-their-sign-in": "importado antes; recebe o login com {way}",
+	"server.migrate.imported-before-got-their-sign-in": "importado antes; recebeu o login com {way}",
+	"server.migrate.imported-before-their-account-signs-in": "importado antes; a conta do {way} dessa pessoa entra aqui como {name}, então fica assim",
+	"server.migrate.people-who-signed-in-to-the": "As pessoas que entravam no app antigo com Plex, Jellyfin ou Emby são ativadas no primeiro login desse jeito, quando isso estiver ativado em Configurações > Login e segurança."
 }

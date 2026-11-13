@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Näytä Avaimet lisättäväksi uudelleen",
 	"migrate.personArrivesTurnedOff": "{n} henkilö saapuu pois päältä, kunnes kutsut hänet.",
 	"migrate.peopleArriveTurnedOff": "{n} henkilöä saapuu pois päältä, kunnes kutsut heidät.",
+	"migrate.personTurnsOnAtSignIn": "{n} henkilö menee päälle ensimmäisellä kirjautumisellaan Plexillä, Jellyfinillä tai Embyllä.",
+	"migrate.peopleTurnOnAtSignIn": "{n} henkilöä menee päälle ensimmäisellä kirjautumisellaan Plexillä, Jellyfinillä tai Embyllä.",
 	"migrate.yourOldAppsAren": "Vanhoja sovelluksiasi ei muuteta. Voit perua tämän tuonnin.",
 	"migrate.step4Of4": "Vaihe 4/4 · Valmis",
 	"migrate.undoProgress": "Perumisen eteneminen",

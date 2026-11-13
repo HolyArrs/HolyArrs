@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "แสดงคีย์ที่ต้องเพิ่มใหม่",
 	"migrate.personArrivesTurnedOff": "{n} คนมาแบบปิดอยู่จนกว่าคุณจะเชิญ",
 	"migrate.peopleArriveTurnedOff": "{n} คนมาแบบปิดอยู่จนกว่าคุณจะเชิญ",
+	"migrate.personTurnsOnAtSignIn": "{n} คนจะเปิดเมื่อเข้าสู่ระบบด้วย Plex, Jellyfin หรือ Emby ครั้งแรก",
+	"migrate.peopleTurnOnAtSignIn": "{n} คนจะเปิดเมื่อเข้าสู่ระบบด้วย Plex, Jellyfin หรือ Emby ครั้งแรก",
 	"migrate.yourOldAppsAren": "แอปเก่าของคุณไม่ถูกเปลี่ยน คุณย้อนการนำเข้านี้ได้",
 	"migrate.step4Of4": "ขั้นตอนที่ 4 จาก 4 · เสร็จแล้ว",
 	"migrate.undoProgress": "ความคืบหน้าการย้อนกลับ",

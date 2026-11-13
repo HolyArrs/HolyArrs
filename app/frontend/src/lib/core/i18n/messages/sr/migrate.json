@@ -193,6 +193,8 @@
 	"migrate.showKeysToAdd": "Прикажи Кључеве за поновно додавање",
 	"migrate.personArrivesTurnedOff": "{n} особа стиже искључена док је не позовеш.",
 	"migrate.peopleArriveTurnedOff": "{n} особа стиже искључено док их не позовеш.",
+	"migrate.personTurnsOnAtSignIn": "{n} особа се укључује при првој пријави преко Plex, Jellyfin или Emby.",
+	"migrate.peopleTurnOnAtSignIn": "{n} особа се укључује при првој пријави преко Plex, Jellyfin или Emby.",
 	"migrate.yourOldAppsAren": "Твоје старе апликације нису измењене. Овај увоз можеш да поништиш.",
 	"migrate.step4Of4": "Корак 4 од 4 · Готово",
 	"migrate.undoProgress": "Напредак поништавања",
