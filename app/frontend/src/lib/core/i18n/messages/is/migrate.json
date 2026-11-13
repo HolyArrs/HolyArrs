@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Komu yfir: {n}",
 	"migrate.needAttentionN": "Þarfnast athygli: {n}",
 	"migrate.needAttentionWhy": "Gamla mappan þeirra er ekki á þessum þjóni, svo þeir koma sem óskaðir í möppu hér. Lagaðu möppuna eða bættu við slóðarreglu: {list}",
-	"migrate.leftOutUncheckedN": "Sleppt, ekki hakað við möppu: {n}",
-	"migrate.leftOutUncheckedWhy": "Ekki var hakað við {folder}; hakaðu við hana og fluttu inn aftur"
+	"migrate.leftOutUncheckedN": "Sleppt: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} er stillt á „Ekki koma með þau“; veldu möppu fyrir hana og fluttu inn aftur"
 }

@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Tulivat mukaan: {n}",
 	"migrate.needAttentionN": "Vaativat huomiota: {n}",
 	"migrate.needAttentionWhy": "Niiden vanhaa kansiota ei ole tällä palvelimella, joten ne tulevat toivottuina täällä olevaan kansioon. Korjaa kansio tai lisää polkusääntö: {list}",
-	"migrate.leftOutUncheckedN": "Jätetty pois, kansio valitsematta: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} jätettiin valitsematta; valitse se ja tuo uudelleen"
+	"migrate.leftOutUncheckedN": "Jätetty pois: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} on asetettu tilaan \"Älä tuo heitä\"; valitse sille kansio ja tuo uudelleen"
 }

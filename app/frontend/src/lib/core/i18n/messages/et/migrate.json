@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Tulid üle: {n}",
 	"migrate.needAttentionN": "Vajavad tähelepanu: {n}",
 	"migrate.needAttentionWhy": "Nende vana kausta selles serveris pole, seega tulevad nad soovituna siinsesse kausta. Paranda kaust või lisa teereegel: {list}",
-	"migrate.leftOutUncheckedN": "Välja jäetud, kaust märkimata: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} jäi märkimata; märgi see ja impordi uuesti"
+	"migrate.leftOutUncheckedN": "Välja jäetud: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} on seatud valikule \"Ära too neid\"; vali sellele kaust ja impordi uuesti"
 }

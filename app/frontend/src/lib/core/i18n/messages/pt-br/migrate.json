@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Importados: {n}",
 	"migrate.needAttentionN": "Precisam de atenção: {n}",
 	"migrate.needAttentionWhy": "A pasta antiga deles não está neste servidor, então chegam como desejados numa pasta daqui. Corrija a pasta ou adicione uma regra de caminho: {list}",
-	"migrate.leftOutUncheckedN": "Deixados de fora, pasta desmarcada: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} ficou desmarcada; marque-a e importe de novo"
+	"migrate.leftOutUncheckedN": "Deixados de fora: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} está em \"Não trazer\"; escolha uma pasta para ela e importe de novo"
 }

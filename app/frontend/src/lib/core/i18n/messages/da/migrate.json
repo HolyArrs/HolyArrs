@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Kom over: {n}",
 	"migrate.needAttentionN": "Kræver opmærksomhed: {n}",
 	"migrate.needAttentionWhy": "Deres gamle mappe findes ikke på denne server, så de kommer over som ønsket i en mappe her. Ret mappen eller tilføj en stiregel: {list}",
-	"migrate.leftOutUncheckedN": "Udeladt, mappe ikke afkrydset: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} var ikke afkrydset; afkryds den og importér igen"
+	"migrate.leftOutUncheckedN": "Udeladt: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} står til \"Tag dem ikke med\"; vælg en mappe til den og importér igen"
 }

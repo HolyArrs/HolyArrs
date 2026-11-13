@@ -60,7 +60,7 @@ func TestMoveTitleUnderUncheckedFolderIsLeftOut(t *testing.T) {
 	rep := l.mv.Run(context.Background(), 0, l.planWith(t, ch), true, domain.Actor{Kind: "user", ID: 1}, nil)
 	for _, key := range []string{"title:movie:tmdb:603", reloaded} {
 		got := lineOf(t, rep, key)
-		if got.Result != ResSkipped || got.Attention != AttnUnchecked || got.Folder != filepath.ToSlash(l.movies) || !strings.Contains(got.Detail, "left unchecked") {
+		if got.Result != ResSkipped || got.Attention != AttnUnchecked || got.Folder != filepath.ToSlash(l.movies) || !strings.Contains(got.Detail, `set to "Don't bring them"`) {
 			t.Fatalf("dry %s %+v", key, got)
 		}
 	}
@@ -145,7 +145,7 @@ func TestMoveLeaveFolderKeepsTitlesBehind(t *testing.T) {
 	check := func(stage string, rep *Report, dry bool) {
 		t.Helper()
 		for _, key := range []string{"title:movie:tmdb:603", reloaded} {
-			if got := lineOf(t, rep, key); got.Result != ResSkipped || got.Attention != AttnUnchecked || !strings.Contains(got.Detail, "left unchecked") {
+			if got := lineOf(t, rep, key); got.Result != ResSkipped || got.Attention != AttnUnchecked || !strings.Contains(got.Detail, `set to "Don't bring them"`) {
 				t.Fatalf("%s %s %+v", stage, key, got)
 			}
 		}

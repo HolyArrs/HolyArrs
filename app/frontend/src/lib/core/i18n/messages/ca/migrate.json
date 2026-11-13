@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Importats: {n}",
 	"migrate.needAttentionN": "Cal revisar: {n}",
 	"migrate.needAttentionWhy": "La seva carpeta antiga no és en aquest servidor, així que arriben com a desitjats a una carpeta d'aquí. Corregeix la carpeta o afegeix una regla de camí: {list}",
-	"migrate.leftOutUncheckedN": "Deixats fora, carpeta sense marcar: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} ha quedat sense marcar; marca-la i importa de nou"
+	"migrate.leftOutUncheckedN": "Deixats fora: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} està a \"No els incorporis\"; tria-hi una carpeta i importa de nou"
 }

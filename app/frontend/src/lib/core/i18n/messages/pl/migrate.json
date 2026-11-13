@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Przeniesione: {n}",
 	"migrate.needAttentionN": "Wymagają uwagi: {n}",
 	"migrate.needAttentionWhy": "Ich starego folderu nie ma na tym serwerze, więc trafiają jako poszukiwane do folderu tutaj. Popraw folder lub dodaj regułę ścieżki: {list}",
-	"migrate.leftOutUncheckedN": "Pominięte, folder niezaznaczony: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} nie został zaznaczony; zaznacz go i zaimportuj ponownie"
+	"migrate.leftOutUncheckedN": "Pominięte: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} ma ustawione „Nie przenoś ich”; wybierz dla niego folder i zaimportuj ponownie"
 }

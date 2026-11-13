@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "עברו: {n}",
 	"migrate.needAttentionN": "דורשים תשומת לב: {n}",
 	"migrate.needAttentionWhy": "התיקייה הישנה שלהם לא נמצאת בשרת הזה, ולכן הם עוברים כמבוקשים לתיקייה כאן. תקן את התיקייה או הוסף כלל נתיב: {list}",
-	"migrate.leftOutUncheckedN": "הושמטו, התיקייה לא סומנה: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} לא סומנה; סמן אותה וייבא שוב"
+	"migrate.leftOutUncheckedN": "הושמטו: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} מוגדרת ל\"לא להעביר אותם\"; בחר עבורה תיקייה וייבא שוב"
 }

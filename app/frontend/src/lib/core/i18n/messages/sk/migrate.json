@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Prešlo: {n}",
 	"migrate.needAttentionN": "Vyžadujú pozornosť: {n}",
 	"migrate.needAttentionWhy": "Ich starý priečinok na tomto serveri nie je, takže prichádzajú ako hľadané do priečinka tu. Opravte priečinok alebo pridajte pravidlo cesty: {list}",
-	"migrate.leftOutUncheckedN": "Vynechané, priečinok nezačiarknutý: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} zostal nezačiarknutý; začiarknite ho a importujte znova"
+	"migrate.leftOutUncheckedN": "Vynechané: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} má nastavené „Neprenášať ich“; vyberte preň priečinok a importujte znova"
 }

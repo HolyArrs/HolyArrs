@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "ย้ายมาแล้ว: {n}",
 	"migrate.needAttentionN": "ต้องตรวจสอบ: {n}",
 	"migrate.needAttentionWhy": "ไม่มีโฟลเดอร์เดิมของรายการเหล่านี้บนเซิร์ฟเวอร์นี้ จึงย้ายมาเป็นรายการที่ต้องการในโฟลเดอร์ที่นี่ แก้โฟลเดอร์หรือเพิ่มกฎเส้นทาง: {list}",
-	"migrate.leftOutUncheckedN": "ไม่ได้รวม โฟลเดอร์ไม่ได้ถูกเลือก: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} ไม่ได้ถูกเลือก; เลือกแล้วนำเข้าอีกครั้ง"
+	"migrate.leftOutUncheckedN": "ไม่ได้รวม: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} ตั้งไว้เป็น \"ไม่นำเขามา\"; เลือกโฟลเดอร์ให้แล้วนำเข้าอีกครั้ง"
 }

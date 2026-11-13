@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Đã chuyển sang: {n}",
 	"migrate.needAttentionN": "Cần chú ý: {n}",
 	"migrate.needAttentionWhy": "Thư mục cũ của chúng không có trên máy chủ này, nên chúng được đưa vào một thư mục ở đây dưới dạng cần tìm. Hãy sửa thư mục hoặc thêm quy tắc đường dẫn: {list}",
-	"migrate.leftOutUncheckedN": "Bị bỏ ra, thư mục chưa được chọn: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} chưa được chọn; hãy chọn rồi nhập lại"
+	"migrate.leftOutUncheckedN": "Bị bỏ ra: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} đang đặt là \"Không đưa họ vào\"; hãy chọn thư mục cho nó rồi nhập lại"
 }

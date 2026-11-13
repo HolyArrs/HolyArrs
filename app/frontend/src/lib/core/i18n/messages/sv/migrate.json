@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Kom över: {n}",
 	"migrate.needAttentionN": "Behöver åtgärd: {n}",
 	"migrate.needAttentionWhy": "Deras gamla mapp finns inte på den här servern, så de kommer som önskade till en mapp här. Rätta mappen eller lägg till en sökvägsregel: {list}",
-	"migrate.leftOutUncheckedN": "Utelämnade, mappen inte markerad: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} var inte markerad; markera den och importera igen"
+	"migrate.leftOutUncheckedN": "Utelämnade: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} står på \"Ta inte med dem\"; välj en mapp för den och importera igen"
 }

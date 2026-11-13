@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "आ गए: {n}",
 	"migrate.needAttentionN": "ध्यान चाहिए: {n}",
 	"migrate.needAttentionWhy": "इनका पुराना फ़ोल्डर इस सर्वर पर नहीं है, इसलिए ये 'चाहिए' के रूप में यहाँ के एक फ़ोल्डर में आते हैं। फ़ोल्डर ठीक करें या पाथ नियम जोड़ें: {list}",
-	"migrate.leftOutUncheckedN": "छोड़े गए, फ़ोल्डर पर निशान नहीं: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} पर निशान नहीं था; निशान लगाएँ और फिर से इम्पोर्ट करें"
+	"migrate.leftOutUncheckedN": "छोड़े गए: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} पर \"इन्हें न लाएं\" चुना है; इसके लिए एक फ़ोल्डर चुनें और फिर से इम्पोर्ट करें"
 }

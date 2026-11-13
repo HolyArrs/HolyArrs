@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "انتقلت: {n}",
 	"migrate.needAttentionN": "تحتاج إلى انتباه: {n}",
 	"migrate.needAttentionWhy": "مجلدها القديم غير موجود على هذا الخادم، لذا تنتقل كمطلوبة إلى مجلد هنا. أصلح المجلد أو أضف قاعدة مسار: {list}",
-	"migrate.leftOutUncheckedN": "مستبعدة، المجلد غير محدد: {n}",
-	"migrate.leftOutUncheckedWhy": "لم يُحدَّد {folder}؛ حدِّده واستورد مجددًا"
+	"migrate.leftOutUncheckedN": "مستبعدة: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} مضبوط على \"لا تنقلهم\"؛ اختر له مجلدًا واستورد مجددًا"
 }

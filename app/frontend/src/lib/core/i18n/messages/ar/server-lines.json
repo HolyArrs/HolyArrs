@@ -1300,6 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "أُضيف إلى {fallback} كمطلوب بلا ملفات؛ يحتاج إلى انتباه: المجلد القديم {dir} غير موجود على هذا الخادم؛ أصلح المجلد أو أضف قاعدة مسار",
 	"server.migrate.will-be-added-to-as-wanted": "سيُضاف إلى {fallback} كمطلوب بلا ملفات؛ يحتاج إلى انتباه: المجلد القديم {dir} غير موجود على هذا الخادم؛ أصلح المجلد أو أضف قاعدة مسار",
 	"server.migrate.its-library-folder-is-not-on": "مجلد المكتبة {library} غير موجود على هذا الخادم، ولا يوجد هنا مجلد مكتبة لـ {kind}؛ أضف واحدًا واستورد مجددًا",
-	"server.migrate.left-out-was-left-unchecked-check": "مستبعد: لم يُحدَّد {attnfolder}؛ حدِّده واستورد مجددًا",
-	"server.migrate.left-out-was-left-unchecked-check-2": "مستبعد: لم يُحدَّد {path}؛ حدِّده واستورد مجددًا"
+	"server.migrate.left-out-was-left-unchecked-check": "مستبعد: {attnfolder} مضبوط على \"لا تنقلهم\"؛ اختر له مجلدًا واستورد مجددًا",
+	"server.migrate.left-out-was-left-unchecked-check-2": "مستبعد: {path} مضبوط على \"لا تنقلهم\"؛ اختر له مجلدًا واستورد مجددًا"
 }

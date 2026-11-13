@@ -8,6 +8,6 @@
 	"migrate.cameOverN": "Nailipat: {n}",
 	"migrate.needAttentionN": "Kailangang tingnan: {n}",
 	"migrate.needAttentionWhy": "Wala sa server na ito ang luma nilang folder, kaya pumapasok sila bilang hinahanap sa isang folder dito. Ayusin ang folder o magdagdag ng path rule: {list}",
-	"migrate.leftOutUncheckedN": "Hindi isinama, hindi na-check ang folder: {n}",
-	"migrate.leftOutUncheckedWhy": "Hindi na-check ang {folder}; i-check ito at mag-import muli"
+	"migrate.leftOutUncheckedN": "Hindi isinama: {n}",
+	"migrate.leftOutUncheckedWhy": "Naka-set ang {folder} sa \"Huwag silang dalhin\"; pumili ng folder para dito at mag-import muli"
 }

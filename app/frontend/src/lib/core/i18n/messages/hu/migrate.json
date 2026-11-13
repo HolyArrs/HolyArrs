@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Átkerült: {n}",
 	"migrate.needAttentionN": "Figyelmet igényel: {n}",
 	"migrate.needAttentionWhy": "A régi mappájuk nincs ezen a szerveren, így kívántként egy itteni mappába kerülnek. Javítsd a mappát, vagy adj hozzá útvonalszabályt: {list}",
-	"migrate.leftOutUncheckedN": "Kihagyva, mappa nincs bejelölve: {n}",
-	"migrate.leftOutUncheckedWhy": "A(z) {folder} nem volt bejelölve; jelöld be, és importálj újra"
+	"migrate.leftOutUncheckedN": "Kihagyva: {n}",
+	"migrate.leftOutUncheckedWhy": "A(z) {folder} beállítása „Ne hozza át őket”; válassz hozzá mappát, és importálj újra"
 }

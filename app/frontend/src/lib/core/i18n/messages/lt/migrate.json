@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Perkelta: {n}",
 	"migrate.needAttentionN": "Reikia dėmesio: {n}",
 	"migrate.needAttentionWhy": "Jų senojo aplanko šiame serveryje nėra, todėl jie atkeliauja kaip norimi į aplanką čia. Pataisykite aplanką arba pridėkite kelio taisyklę: {list}",
-	"migrate.leftOutUncheckedN": "Praleista, aplankas nepažymėtas: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} liko nepažymėtas; pažymėkite jį ir importuokite iš naujo"
+	"migrate.leftOutUncheckedN": "Praleista: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} nustatytas į „Neįtraukti jų“; pasirinkite jam aplanką ir importuokite iš naujo"
 }

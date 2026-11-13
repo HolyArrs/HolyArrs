@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Preneseno: {n}",
 	"migrate.needAttentionN": "Traže pažnju: {n}",
 	"migrate.needAttentionWhy": "Njihova stara mapa nije na ovom poslužitelju, pa dolaze kao željeni u mapu ovdje. Ispravite mapu ili dodajte pravilo putanje: {list}",
-	"migrate.leftOutUncheckedN": "Izostavljeno, mapa nije označena: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} nije označena; označite je i uvezite ponovno"
+	"migrate.leftOutUncheckedN": "Izostavljeno: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} je postavljena na \"Ne dovodi ih\"; odaberite joj mapu i uvezite ponovno"
 }
