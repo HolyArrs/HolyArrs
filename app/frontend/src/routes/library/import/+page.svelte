@@ -5,19 +5,21 @@
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import ProgressBar from '#lib/ui/ProgressBar.svelte';
-	import Badge from '#lib/ui/Badge.svelte';
-	import Poster from '#lib/ui/Poster.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import Sheet from '#lib/ui/Sheet.svelte';
+	import type { MenuItem } from '#lib/ui/Menu.svelte';
+	import { densityLabels, loadDensity, loadPosterSize, posterLabels, saveDensity, savePosterSize, type Density, type PosterSize } from '#lib/ui/library-art.ts';
 	import { reaskWhileFilling } from '#lib/music/index.ts';
-	import { LibraryToolPage, albumFolderLine, cutFilesLine, canAdopt, choices, episodeFileLine, musicFolderLine, trackFileLine, fileName, followJob, groupPlan, scanCount, matchKey, pickedPoster, score, showFolderLine, showIdOf, startPicks, type AdoptCandidate, type AdoptPlan, type AdoptResult, type JobView } from '#lib/mediafiles/index.ts';
+	import { DlFind } from '#lib/downloads/index.ts';
+	import { ImportList, ImportToolbar, LibraryToolPage, PosterLightbox, choices, fileName, findFolders, followJob, scanCount, matchKey, pickedOf, readImportView, showIdOf, sortFolders, startPicks, statusCounts, statusLabel, type AdoptCandidate, type AdoptPlan, type AdoptResult, type ImportFilter, type ImportView, type JobView, type Named } from '#lib/mediafiles/index.ts';
 	import type { LookupArtist } from '#lib/music/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { bytes } from '#lib/core/format.ts';
 	import { session } from '#lib/core/session.svelte.ts';
+	import { views as savedViews } from '#lib/core/views.svelte.ts';
 	import type { LibraryFolder, LookupMovie } from '#lib/core/types.ts';
 	import { unit } from '#lib/mediafiles/index.ts';
 	import type { LookupShow } from '#lib/core/types.ts';
@@ -33,8 +35,8 @@
 	let plan = $state<AdoptPlan | null>(null);
 	/** The movie (TMDB id) or show ("<source>:<id>") chosen for each folder. */
 	let sel = $state<Record<string, string>>({});
-	/** Names of movies or shows picked by a lookup, by id, to show what was chosen. */
-	let named = $state<Record<string, string>>({});
+	/** Movies, shows or artists picked by a lookup, by id, to show what was chosen. */
+	let named = $state<Record<string, Named>>({});
 	let ticked = $state<Record<string, boolean>>({});
 	let adopting = $state(false);
 	// Follow what is brought in: it goes on my calendar (ticked by default).
@@ -45,7 +47,7 @@
 
 	let lookFor = $state<string | null>(null);
 	let term = $state('');
-	let found = $state<{ key: string; name: string; year?: number; title_id?: number }[]>([]);
+	let found = $state<{ key: string; name: string; year?: number; poster?: string; title_id?: number }[]>([]);
 	let looking = $state(false);
 	let lookError = $state('');
 
@@ -54,12 +56,51 @@
 	const word = $derived(kind === 'show' ? 'show' : kind === 'music' ? 'artist' : 'movie');
 	const w = $derived(t(`library.import.word.${word}`));
 	const ws = $derived(t(`library.import.words.${word}`));
-	const groups = $derived(plan ? groupPlan(plan.folders, word) : []);
+	const lookFolder = $derived(lookFor === null ? undefined : plan?.folders.find((f) => f.folder === lookFor));
 	const picks = $derived(choices(Object.fromEntries(Object.entries(ticked).filter(([, on]) => on).map(([f]) => [f, sel[f] ?? ''])), kind));
 	// A scan's note says how many folders are read: shown in the person's words.
 	const scanned = $derived(scanning ? scanCount(job?.ProgressNote) : null);
 	const running = $derived(!!job && !['done', 'failed', 'cancelled'].includes(job.State));
 	const okCount = $derived(results ? results.filter((r) => r.title_id).length : 0);
+
+	// The scanned folders: unsure ones first, narrowed by the search words and the status filter.
+	let q = $state('');
+	let filter = $state<ImportFilter>('all');
+	let findOpen = $state(false);
+	let zoom = $state<AdoptCandidate | null>(null);
+	const sorted = $derived(plan ? sortFolders(plan.folders, appLocale()) : []);
+	const shown = $derived(findFolders(sorted, q, filter));
+	const filters = $derived<{ value: ImportFilter; label: string; n: number }[]>([
+		{ value: 'all', label: t('mediafiles.filter.all'), n: plan?.folders.length ?? 0 },
+		...statusCounts(plan?.folders ?? []).map((c) => ({ value: c.status, label: statusLabel(c.status, kind), n: c.n }))
+	]);
+	// A filter whose folders are all gone falls back to All.
+	$effect(() => {
+		if (filter !== 'all' && !filters.some((c) => c.value === filter)) filter = 'all';
+	});
+
+	// The view and art size are this page's own, kept per person the way the Library keeps its own.
+	const myId = $derived(session.s.id);
+	let view = $state<ImportView>(readImportView(savedViews.get('library.import.view')));
+	let posterSize = $state<PosterSize>('m');
+	let density = $state<Density>('large');
+	let planWidth = $state(1000);
+	const phone = $derived(planWidth < 640);
+	$effect(() => {
+		posterSize = loadPosterSize(myId, undefined, 'import');
+		density = loadDensity(myId, undefined, 'import');
+	});
+	function setView(v: ImportView) {
+		view = v;
+		savedViews.set('library.import.view', v);
+	}
+	const sizeItems = $derived<MenuItem[] | null>(
+		phone || (view !== 'posters' && view !== 'banners')
+			? null
+			: view === 'posters'
+				? [{ kind: 'heading', label: t('library.page.posterSize') }, ...(['s', 'm', 'l'] as const).map((z) => ({ label: posterLabels[z], checked: posterSize === z, onselect: () => { posterSize = z; savePosterSize(myId, z, undefined, 'import'); } }))]
+				: [{ kind: 'heading', label: t('library.page.bannerSize') }, ...(['large', 'comfortable', 'compact'] as const).map((d) => ({ label: densityLabels[d], checked: density === d, onselect: () => { density = d; saveDensity(myId, d, undefined, 'import'); } }))]
+	);
 
 	function folderKind(k: string | undefined): 'movie' | 'show' | 'music' {
 		return k === 'show' || k === 'music' ? k : 'movie';
@@ -102,7 +143,8 @@
 		plan = null;
 		results = null;
 		restFrom = '';
-		near = {};
+		q = '';
+		filter = 'all';
 		try {
 			const r = await api.post<{ job_id: number }>(`/library-folders/${folderId}/scan`, after ? { after } : undefined);
 			const end = await follow(r.job_id);
@@ -142,17 +184,17 @@
 				const ask = () => api.get<{ artists: LookupArtist[]; pending?: boolean }>(`/artists/lookup?term=${encodeURIComponent(term.trim())}`);
 				// A name never searched before answers "pending" while the search runs: ask again quietly.
 				const artists = (await reaskWhileFilling(await ask(), ask, () => {})).artists;
-				found = artists.map((a) => ({ key: `mbid:${a.mbid}`, name: a.disambiguation ? `${a.name} (${a.disambiguation})` : a.name, title_id: a.title_id }));
+				found = artists.map((a) => ({ key: `mbid:${a.mbid}`, name: a.disambiguation ? `${a.name} (${a.disambiguation})` : a.name, poster: a.image, title_id: a.title_id }));
 				if (!found.length) lookError = t('library.import.nothingFound', { id: 'mbid:<id>' });
 			} else if (kind === 'show') {
 				const shows = (await api.get<{ shows: LookupShow[] }>(`/shows/lookup?term=${encodeURIComponent(term.trim())}`)).shows;
-				found = shows.map((s) => ({ key: showIdOf(s), name: s.name, year: s.year, title_id: s.title_id })).filter((s) => s.key);
+				found = shows.map((s) => ({ key: showIdOf(s), name: s.name, year: s.year, poster: s.poster, title_id: s.title_id })).filter((s) => s.key);
 				if (!found.length) lookError = t('library.import.nothingFound', { id: 'tvdb:<id>' });
 			} else {
 				const m = term.trim().match(/^(.*?)\s+\(?((?:19|20)\d\d)\)?$/);
-				const q = m ? `term=${encodeURIComponent(m[1])}&year=${m[2]}` : `term=${encodeURIComponent(term.trim())}`;
-				const movies = (await api.get<{ movies: LookupMovie[] }>(`/titles/lookup?${q}`)).movies;
-				found = movies.map((x) => ({ key: x.ids.tmdb ?? '', name: x.name, year: x.year, title_id: x.title_id })).filter((x) => x.key);
+				const ask = m ? `term=${encodeURIComponent(m[1])}&year=${m[2]}` : `term=${encodeURIComponent(term.trim())}`;
+				const movies = (await api.get<{ movies: LookupMovie[] }>(`/titles/lookup?${ask}`)).movies;
+				found = movies.map((x) => ({ key: x.ids.tmdb ?? '', name: x.name, year: x.year, poster: x.poster, title_id: x.title_id })).filter((x) => x.key);
 				if (!found.length) lookError = t('library.import.nothingFound', { id: 'tmdb:<id>' });
 			}
 		} catch (err) {
@@ -162,45 +204,13 @@
 		}
 	}
 
-	function use(folder: string, m: { key: string; name: string; year?: number }) {
+	function use(folder: string, m: { key: string; name: string; year?: number; poster?: string }) {
 		const id = m.key;
 		if (!id) return;
 		sel[folder] = id;
-		named[id] = `${m.name}${m.year ? ` (${m.year})` : ''}`;
+		named[id] = { name: m.name, year: m.year, poster: m.poster };
 		ticked[folder] = true;
 		lookFor = null;
-	}
-
-	// Posters mount only for rows near the screen, so a scan of thousands of folders stays fast.
-	let near = $state<Record<string, boolean>>({});
-	let seen: IntersectionObserver | undefined;
-	function whenNear(node: HTMLElement, folder: string) {
-		if (typeof IntersectionObserver === 'undefined') {
-			near[folder] = true;
-			return {};
-		}
-		seen ??= new IntersectionObserver(
-			(es) => {
-				for (const e of es) {
-					if (!e.isIntersecting) continue;
-					const el = e.target as HTMLElement;
-					near[el.dataset.folder ?? ''] = true;
-					seen?.unobserve(el);
-				}
-			},
-			{ rootMargin: '600px 0px' }
-		);
-		node.dataset.folder = folder;
-		seen.observe(node);
-		return { destroy: () => seen?.unobserve(node) };
-	}
-
-	function movieLabel(f: AdoptCandidate): string {
-		const id = sel[f.folder];
-		if (!id) return t('library.import.nonePicked', { word: w });
-		if (named[id]) return named[id];
-		const m = [f.match, ...f.others].find((x) => x && matchKey(x) === id);
-		return m ? `${m.name}${m.year ? ` (${m.year})` : ''}` : kind === 'movie' ? t('library.import.movieId', { id }) : id;
 	}
 
 	async function adopt() {
@@ -303,122 +313,18 @@
 					<Button onclick={() => scan(plan?.next ?? '')} disabled={scanning || adopting}>{t('library.import.scanRest')}</Button>
 				</div>
 			{/if}
-			{#each groups as g (g.status)}
-				<div class="group" data-testid="group-{g.status}">
-					<h3 class="h3">{g.label} <span class="muted">({g.folders.length})</span></h3>
-					<p class="xs muted">{g.about}</p>
-					<ul class="list">
-						{#each g.folders as f (f.folder)}
-							<li class="folder">
-								<div class="top">
-									{#if canAdopt(f)}
-										<label class="tick">
-											<input type="checkbox" bind:checked={ticked[f.folder]} disabled={!sel[f.folder]} aria-label={t('library.import.adoptFolder', { folder: f.folder })} />
-											<span class="mono small path">{f.folder}</span>
-										</label>
-									{:else}
-										<span class="mono small path">{f.folder}</span>
-									{/if}
-									{#if f.match && canAdopt(f)}<Badge label={score(f.match.score)} />{/if}
-								</div>
-								{#if canAdopt(f)}
-									{@const art = pickedPoster(f, sel[f.folder])}
-									<div class="matchline">
-										{#if art}<div class="art" data-testid="import-poster" use:whenNear={f.folder}>{#if near[f.folder]}<Poster src={art} name={movieLabel(f)} />{/if}</div>{/if}
-										<p class="small"><b>{movieLabel(f)}</b></p>
-									</div>
-									{#if f.others.length && f.status !== 'matched'}
-										<div class="field other">
-											<label class="xs" for="o-{f.folder}">{t('library.import.orOne')}</label>
-											<select id="o-{f.folder}" class="input" bind:value={sel[f.folder]}>
-												{#each [f.match, ...f.others].filter((x) => !!x) as m (matchKey(m))}
-													<option value={matchKey(m)}>{m.name}{m.year ? ` (${m.year})` : ''} · {score(m.score)}</option>
-												{/each}
-											</select>
-										</div>
-									{/if}
-								{/if}
-								<p class="xs muted">{f.why}{#if f.main}{' · '}{t('mediafiles.sheet.file')}: <span class="mono path">{fileName(f.main)}</span>{#if f.videos[0]}{' '}({bytes(f.videos[0].size)}){/if}{/if}</p>
-								{#if f.albums?.length}
-									<details class="eps" data-testid="music-albums">
-										<summary class="xs">{musicFolderLine(f)}</summary>
-										<ul class="files albums">
-											{#each f.albums as al (al.folder)}
-												<li class="album" data-testid="music-album">
-													<span class="small"><span class="mono path">{al.folder}</span></span>
-													<span class="xs muted">{albumFolderLine(al)}</span>
-													<ul class="files">
-														{#each al.files as tf (tf.path)}
-															<li class="xs" class:left={!tf.track}>
-																<span class="mono path">{fileName(tf.path)}</span>
-																<span class="muted">{trackFileLine(tf)}</span>
-															</li>
-														{/each}
-														{#if cutFilesLine(al)}<li class="xs muted">{cutFilesLine(al)}</li>{/if}
-													</ul>
-												</li>
-											{/each}
-											{#each f.files ?? [] as ef (ef.path)}
-												<li class="xs left">
-													<span class="mono path">{fileName(ef.path)}</span>
-													<span class="muted">{episodeFileLine(ef)}</span>
-												</li>
-											{/each}
-											{#if f.cut}<li class="xs muted">{t('library.import.moreLoose')}</li>{/if}
-										</ul>
-									</details>
-								{:else if f.files?.length}
-									<details class="eps" data-testid="show-files">
-										<summary class="xs">{showFolderLine(f)}</summary>
-										<ul class="files">
-											{#each f.files as ef (ef.path)}
-												<li class="xs" class:left={!ef.episodes.length}>
-													<span class="mono path">{fileName(ef.path)}</span>
-													<span class="muted">{episodeFileLine(ef)}</span>
-												</li>
-											{/each}
-										</ul>
-									</details>
-								{/if}
-								{#if f.status === 'in_library' && f.title_id}<a class="xs" href={to(`/library/${f.title_id}`)}>{t('library.import.openThe', { word: w })}</a>{/if}
-								{#if canAdopt(f)}
-									{#if lookFor === f.folder}
-										<form class="look" onsubmit={lookup}>
-											<label class="sr-only" for="look-{f.folder}">{t('library.import.lookUpFor', { word: w, folder: f.folder })}</label>
-											<input
-												id="look-{f.folder}"
-												class="input"
-												bind:value={term}
-												placeholder={kind === 'show' ? t('library.import.phShow') : kind === 'music' ? t('library.import.phMusic') : t('library.import.phMovie')}
-												autocomplete="off"
-											/>
-											<Button type="submit" busy={looking}>{t('library.byHand.lookUp')}</Button>
-											<Button variant="plain" onclick={() => (lookFor = null)}>{t('shows.page.close')}</Button>
-										</form>
-										{#if lookError}<p class="form-error" role="alert">{lookError}</p>{/if}
-										{#if found.length}
-											<ul class="found">
-												{#each found as m (m.key)}
-													<li>
-														<span class="small">{m.name}{m.year ? ` (${m.year})` : ''}</span>
-														{#if m.title_id}
-															<span class="xs muted">{t('mediafiles.adopt.inLibrary')}</span>
-														{:else}
-															<Button variant="plain" onclick={() => use(f.folder, m)}>{t('library.byHand.useThis')}</Button>
-														{/if}
-													</li>
-												{/each}
-											</ul>
-										{/if}
-									{:else}
-										<div><Button variant="plain" icon="search" onclick={() => openLookup(f)}>{f.status === 'matched' ? t('library.import.notThis') : t('library.byHand.lookUp')}</Button></div>
-									{/if}
-								{/if}
-							</li>
-						{/each}
-					</ul>
+			{#if plan.folders.length}
+				<div class="checkbar" bind:clientWidth={planWidth}>
+					<ImportToolbar {phone} compact={phone || planWidth < 900} {view} {setView} {sizeItems} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} {filters} bind:filter findLabel={t('library.import.searchFolders')} bind:findOpen hasWords={!!q.trim()}>
+						{#snippet find()}<DlFind bind:term={q} shown={shown.length} total={plan?.folders.length ?? 0} searchKey="" placeholder={t('library.import.searchFolders')} note={t(shown.length === 1 ? 'library.import.folderCountOne' : 'library.import.folderCountMany', { n: shown.length.toLocaleString(appLocale()) })} testid="import-find" />{/snippet}
+					</ImportToolbar>
+					{#if shown.length}
+						<ImportList folders={shown} {view} size={posterSize} {density} {kind} {phone} bind:sel bind:ticked {named} onlook={openLookup} onzoom={(f) => (zoom = f)} />
+					{:else}
+						<p class="notice" data-testid="import-none">{t('library.import.noneMatch')}</p>
+					{/if}
 				</div>
-			{/each}
+			{/if}
 			<div class="row end">
 				<label class="checkline follow-all" data-testid="follow-box">
 					<input type="checkbox" bind:checked={followAll} />
@@ -435,9 +341,39 @@
 </PageLoader>
 </LibraryToolPage>
 
+{#if lookFolder}
+	<Sheet open title={t('library.import.lookUpFor', { word: w, folder: lookFolder.folder })} size="md" placement="top" onclose={() => (lookFor = null)}>
+		<form class="look" onsubmit={lookup} data-testid="import-lookup">
+			<label class="sr-only" for="look-term">{t('library.import.lookUpFor', { word: w, folder: lookFolder.folder })}</label>
+			<!-- svelte-ignore a11y_autofocus -->
+			<input id="look-term" class="input" bind:value={term} placeholder={kind === 'show' ? t('library.import.phShow') : kind === 'music' ? t('library.import.phMusic') : t('library.import.phMovie')} autocomplete="off" autofocus />
+			<Button type="submit" busy={looking}>{t('library.byHand.lookUp')}</Button>
+		</form>
+		{#if lookError}<p class="form-error" role="alert">{lookError}</p>{/if}
+		{#if found.length}
+			<ul class="found">
+				{#each found as m (m.key)}
+					<li>
+						<span class="small">{m.name}{m.year ? ` (${m.year})` : ''}</span>
+						{#if m.title_id}
+							<span class="xs muted">{t('mediafiles.adopt.inLibrary')}</span>
+						{:else}
+							<Button variant="plain" onclick={() => lookFolder && use(lookFolder.folder, m)}>{t('library.byHand.useThis')}</Button>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	</Sheet>
+{/if}
+
+{#if zoom}
+	{@const p = pickedOf(zoom, sel[zoom.folder], named)}
+	<PosterLightbox art={p.poster} title={`${p.name}${p.year ? ` (${p.year})` : ''}`} sub={[zoom.folder, zoom.main ? fileName(zoom.main) : ''].filter(Boolean).join(' · ')} square={kind === 'music'} onclose={() => (zoom = null)} />
+{/if}
+
 <style>
 	:global(.tp) .h2 { margin: 0 0 12px; font: var(--t-title3); }
-	:global(.tp) .h3 { margin: 0 0 2px; font: var(--t-headline); }
 	.notice { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 12px 14px; border: 0; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-callout); }
 	.notice.bad { color: var(--fail); }
 	.notice[data-testid='scan-more'] { flex-direction: column; }
@@ -453,14 +389,13 @@
 		flex: 1 1 240px;
 		margin-bottom: 0;
 	}
-	.follow-all { margin-right: auto; }
+	.follow-all { margin-inline-end: auto; }
 	.bar {
 		width: 100%;
 		margin-top: var(--s-4);
 	}
-	.group {
-		margin-top: var(--s-5);
-	}
+	/* The toolbar and the folders sit a step under the intro, as on the Library page. */
+	.checkbar { display: flex; flex-direction: column; gap: 12px; min-width: 0; margin-top: 14px; }
 	.list,
 	.found {
 		list-style: none;
@@ -469,45 +404,14 @@
 	}
 	.list { border: 1px solid var(--line); border-radius: var(--r-btn); background: var(--surface-1); overflow: hidden; }
 	.list > li {
-		padding: var(--s-3) var(--s-4);
 		display: flex;
 		flex-direction: column;
 		gap: var(--s-1);
-		border: 0;
-		border-radius: 0;
-		background: transparent;
+		padding: var(--s-3) var(--s-4);
 	}
-	.matchline { display: flex; align-items: center; gap: var(--s-3); min-width: 0; }
-	.matchline p { margin: 0; min-width: 0; overflow-wrap: anywhere; }
-	.art { flex: none; width: 40px; aspect-ratio: var(--poster-ratio); }
-	.list > li + li {
-		margin-top: 0;
-		border-top: 1px solid var(--line);
-	}
-	.top {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--s-2);
-	}
-	.tick {
-		display: flex;
-		align-items: center;
-		gap: var(--s-2);
-		min-height: 40px;
-		min-width: 0;
-	}
-	.tick input {
-		width: 20px;
-		height: 20px;
-		flex: none;
-	}
+	.list > li + li { border-top: 1px solid var(--line); }
 	.path {
 		overflow-wrap: anywhere;
-	}
-	.other {
-		max-width: 480px;
-		margin-bottom: 0;
 	}
 	.look {
 		display: flex;
@@ -522,8 +426,10 @@
 		justify-content: space-between;
 		align-items: center;
 		gap: var(--s-2);
+		min-height: 44px;
 		padding: var(--s-1) 0;
 	}
+	.found li + li { border-top: 1px solid var(--line); }
 	.end {
 		justify-content: flex-end;
 		align-items: center;
@@ -533,36 +439,7 @@
 	.bad-text {
 		color: var(--fail);
 	}
-	.eps summary {
-		min-height: 40px;
-		display: flex;
-		align-items: center;
-		cursor: pointer;
-	}
-	.files {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
-	.files li {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 2px var(--s-2);
-		padding: 2px 0;
-	}
-	.files li.left .path {
-		color: var(--text-muted);
-	}
-	.files li.album {
-		flex-direction: column;
-		padding: var(--s-2) 0;
-	}
-	.albums > li + li {
-		border-top: 1px solid var(--line);
-	}
 	@media (max-width: 600px) {
 		.pick > :global(.ui-btn), .look > :global(.ui-btn), .end > :global(.ui-btn) { width: 100%; }
-		.top, .found li { align-items: flex-start; flex-direction: column; }
-
 	}
 </style>

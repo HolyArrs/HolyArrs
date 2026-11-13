@@ -67,6 +67,20 @@ describe('remembered per member', () => {
 		expect(loadDensity(2, s)).toBe('large');
 		expect(loadPosterSize(2, s)).toBe('m');
 	});
+	it('keeps the Import a library page apart from the Library', () => {
+		const s = mem();
+		savePosterSize(1, 's', s);
+		saveDensity(1, 'compact', s);
+		expect(loadPosterSize(1, s, 'import')).toBe('m');
+		expect(loadDensity(1, s, 'import')).toBe('large');
+		savePosterSize(1, 'l', s, 'import');
+		saveDensity(1, 'comfortable', s, 'import');
+		expect(loadPosterSize(1, s, 'import')).toBe('l');
+		expect(loadDensity(1, s, 'import')).toBe('comfortable');
+		expect(loadPosterSize(1, s)).toBe('s');
+		expect(loadDensity(1, s)).toBe('compact');
+		expect(s.getItem('holyarrs.import-poster-size.1')).toBe('l');
+	});
 	it('ignores junk', () => {
 		const s = mem();
 		s.setItem('holyarrs.library-density.1', 'huge');

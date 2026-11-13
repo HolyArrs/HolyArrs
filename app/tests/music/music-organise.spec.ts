@@ -109,8 +109,8 @@ test('Import a library scans the music folder, matches albums and tracks, and ad
 	await page.getByRole('button', { name: 'Scan', exact: true }).click();
 	const plan = page.getByTestId('adopt-plan');
 	await expect(plan).toBeVisible({ timeout: 30_000 });
-	await expect(plan.getByTestId('group-in_library')).toContainText('Tin Lanterns');
-	const choir = plan.getByTestId('group-matched').locator('li.folder').filter({ hasText: 'Copper Wren' });
+	await expect(plan.locator('[data-testid="import-item"][data-status="in_library"]').filter({ hasText: 'Tin Lanterns' })).toBeVisible();
+	const choir = plan.locator('[data-testid="import-item"][data-status="matched"]').filter({ hasText: 'Copper Wren' });
 	await expect(choir.getByRole('checkbox', { name: 'Adopt Copper Wren' })).toBeChecked();
 	const albums = choir.getByTestId('music-albums');
 	await expect(albums.locator('summary')).toHaveText('2 tracks in 2 albums; 2 files left alone');
