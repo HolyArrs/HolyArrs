@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Batal",
 	"ui.confirm.localVisit": "Lawatan ini melangkau log masuk, jadi ia tidak dapat mengesahkan kata laluan anda. Log masuk dahulu dengan kata laluan anda dan anda akan kembali ke sini.",
 	"ui.confirm.signInFirst": "Log masuk dengan kata laluan saya",
+	"ui.confirm.outsideAgain": "Untuk mengesahkan ini anda, log masuk semula dengan {method}. Anda akan kembali ke sini. Anda juga boleh menetapkan kata laluan HolyArrs dalam Akaun saya.",
+	"ui.confirm.signInAgainWith": "Log masuk semula dengan {method}",
 	"ui.growCard.preview": "Pratonton {title}",
 	"ui.growCard.goTo": "Pergi ke {title}",
 	"ui.growCard.moreInfoAbout": "Maklumat lanjut tentang {title}",

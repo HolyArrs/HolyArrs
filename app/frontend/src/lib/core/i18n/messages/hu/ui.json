@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Mégse",
 	"ui.confirm.localVisit": "Ez a látogatás kihagyja a bejelentkezést, ezért nem tudja megerősíteni a jelszavadat. Jelentkezz be előbb a jelszavaddal, és visszatérsz ide.",
 	"ui.confirm.signInFirst": "Bejelentkezés a jelszavammal",
+	"ui.confirm.outsideAgain": "A megerősítéshez jelentkezz be újra ezzel: {method}. Utána ide térsz vissza. A Saját fiókban HolyArrs-jelszót is beállíthatsz.",
+	"ui.confirm.signInAgainWith": "Újra bejelentkezés ezzel: {method}",
 	"ui.growCard.preview": "{title} előnézete",
 	"ui.growCard.goTo": "Ugrás ide: {title}",
 	"ui.growCard.moreInfoAbout": "További információ: {title}",

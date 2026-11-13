@@ -48,6 +48,9 @@ type Caller struct {
 	// OutsideRecent is true for a Plex, Jellyfin or Emby sign-in less than
 	// ten minutes old: the proof a person with no password yet can give.
 	OutsideRecent bool `json:"outside_recent"`
+	// NoPassword is true for a browser session whose person has no HolyArrs
+	// password; only then does OutsideRecent count as a recent proof.
+	NoPassword bool `json:"-"`
 	// SetupRecent is true for the session first-run owner setup started,
 	// until the first-run wizard is done; it then counts as LocalRecent.
 	SetupRecent bool `json:"setup_recent"`

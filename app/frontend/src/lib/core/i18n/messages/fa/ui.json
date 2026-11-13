@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "انصراف",
 	"ui.confirm.localVisit": "این بازدید ورود را رد می‌کند و به همین دلیل نمی‌تواند گذرواژهٔ شما را تأیید کند. ابتدا با گذرواژهٔ خود وارد شوید تا به اینجا برگردید.",
 	"ui.confirm.signInFirst": "ورود با گذرواژهٔ من",
+	"ui.confirm.outsideAgain": "برای تأیید هویت، دوباره با {method} وارد شوید. بعد به همین‌جا برمی‌گردید. می‌توانید در حساب من یک گذرواژهٔ HolyArrs هم بگذارید.",
+	"ui.confirm.signInAgainWith": "ورود دوباره با {method}",
 	"ui.growCard.preview": "پیش‌نمایش {title}",
 	"ui.growCard.goTo": "رفتن به {title}",
 	"ui.growCard.moreInfoAbout": "اطلاعات بیشتر درباره {title}",

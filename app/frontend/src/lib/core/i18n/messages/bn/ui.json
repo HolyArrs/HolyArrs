@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "বাতিল",
 	"ui.confirm.localVisit": "এই ভিজিটে সাইন-ইন এড়িয়ে যাওয়া হয়েছে, তাই এটি আপনার পাসওয়ার্ড নিশ্চিত করতে পারে না। আগে আপনার পাসওয়ার্ড দিয়ে সাইন ইন করুন, তারপর আপনি এখানে ফিরে আসবেন।",
 	"ui.confirm.signInFirst": "আমার পাসওয়ার্ড দিয়ে সাইন ইন করুন",
+	"ui.confirm.outsideAgain": "আপনিই কিনা নিশ্চিত করতে {method} দিয়ে আবার সাইন ইন করুন। এরপর আপনি এখানে ফিরে আসবেন। চাইলে আমার অ্যাকাউন্টে একটি HolyArrs পাসওয়ার্ডও সেট করতে পারেন।",
+	"ui.confirm.signInAgainWith": "{method} দিয়ে আবার সাইন ইন করুন",
 	"ui.growCard.preview": "{title} প্রিভিউ",
 	"ui.growCard.goTo": "{title}-এ যান",
 	"ui.growCard.moreInfoAbout": "{title} সম্পর্কে আরও তথ্য",

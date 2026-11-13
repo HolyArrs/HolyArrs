@@ -148,7 +148,8 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		s.twoFactor = !!me.two_factor;
 		s.mustTwoFactor = !!me.must_two_factor;
 		s.authMethod = me.auth_method ?? '';
-		s.localRecent = !!me.local_recent;
+		// The server takes a fresh Plex, Jellyfin or Emby sign-in as the proof when there is no password to confirm.
+		s.localRecent = !!me.local_recent || (!!me.outside_recent && me.has_password === false);
 		s.outsideRecent = !!me.outside_recent;
 		s.hasPassword = me.has_password ?? true;
 		s.setupOpen = !!me.setup_open;

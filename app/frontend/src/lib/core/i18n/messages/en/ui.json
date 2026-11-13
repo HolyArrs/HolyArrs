@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Cancel",
 	"ui.confirm.localVisit": "This visit skips sign-in, so it can't confirm your password. Sign in with your password first and you'll come back here.",
 	"ui.confirm.signInFirst": "Sign in with my password",
+	"ui.confirm.outsideAgain": "To confirm it's you, sign in again with {method}. You'll come back here. You can also set a HolyArrs password in My account.",
+	"ui.confirm.signInAgainWith": "Sign in again with {method}",
 	"ui.growCard.preview": "{title} preview",
 	"ui.growCard.goTo": "Go to {title}",
 	"ui.growCard.moreInfoAbout": "More info about {title}",

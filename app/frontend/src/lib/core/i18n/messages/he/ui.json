@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "ביטול",
 	"ui.confirm.localVisit": "הביקור הזה מדלג על ההתחברות, ולכן הוא לא יכול לאשר את הסיסמה שלך. התחבר קודם עם הסיסמה שלך ותחזור לכאן.",
 	"ui.confirm.signInFirst": "התחברות עם הסיסמה שלי",
+	"ui.confirm.outsideAgain": "כדי לאשר שזה אתה, התחבר שוב עם {method}. תחזור לכאן אחר כך. אפשר גם להגדיר סיסמת HolyArrs בחשבון שלי.",
+	"ui.confirm.signInAgainWith": "התחברות מחדש עם {method}",
 	"ui.growCard.preview": "תצוגה מקדימה של {title}",
 	"ui.growCard.goTo": "מעבר אל {title}",
 	"ui.growCard.moreInfoAbout": "מידע נוסף על {title}",

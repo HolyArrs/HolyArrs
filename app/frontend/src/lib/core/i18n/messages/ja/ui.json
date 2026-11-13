@@ -7,6 +7,8 @@
 "ui.confirm.cancel": "キャンセル",
 "ui.confirm.localVisit": "この訪問ではサインインが省略されているため、パスワードを確認できません。先にパスワードでサインインすると、ここに戻ってきます。",
 "ui.confirm.signInFirst": "パスワードでサインイン",
+"ui.confirm.outsideAgain": "ご本人確認のため、{method} でもう一度サインインしてください。このページに戻ります。マイアカウントで HolyArrs のパスワードを設定することもできます。",
+"ui.confirm.signInAgainWith": "{method} でもう一度サインイン",
 "ui.growCard.preview": "{title} のプレビュー",
 "ui.growCard.goTo": "{title} へ移動",
 "ui.growCard.moreInfoAbout": "{title} の詳細",

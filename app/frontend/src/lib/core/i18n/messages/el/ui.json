@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Ακύρωση",
 	"ui.confirm.localVisit": "Αυτή η επίσκεψη παρακάμπτει τη σύνδεση, οπότε δεν μπορεί να επιβεβαιώσει τον κωδικό σας. Συνδεθείτε πρώτα με τον κωδικό σας και θα επιστρέψετε εδώ.",
 	"ui.confirm.signInFirst": "Σύνδεση με τον κωδικό μου",
+	"ui.confirm.outsideAgain": "Για να επιβεβαιώσετε ότι είστε εσείς, συνδεθείτε ξανά με {method}. Θα επιστρέψετε εδώ. Μπορείτε επίσης να ορίσετε κωδικό HolyArrs στον Λογαριασμό μου.",
+	"ui.confirm.signInAgainWith": "Σύνδεση ξανά με {method}",
 	"ui.growCard.preview": "Προεπισκόπηση: {title}",
 	"ui.growCard.goTo": "Μετάβαση: {title}",
 	"ui.growCard.moreInfoAbout": "Περισσότερες πληροφορίες: {title}",

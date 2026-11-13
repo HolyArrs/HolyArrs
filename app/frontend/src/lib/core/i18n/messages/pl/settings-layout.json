@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Najpierw ustaw hasło",
 	"settings.layout.setPasswordDesc": "Klucze, hasła, użytkownicy i backupy wymagają hasła do HolyArrs. Jeszcze go nie masz.",
 	"settings.layout.setPasswordLabel": "Ustaw hasło",
+	"settings.layout.signInAgainTitle": "Najpierw zaloguj się ponownie",
 	"settings.layout.confirmPasswordLabel": "Potwierdź hasło",
 	"settings.layout.confirmPasswordDesc": "Klucze, hasła, użytkownicy i backupy wymagają twojego hasła. Obowiązuje przez 10 minut."
 }

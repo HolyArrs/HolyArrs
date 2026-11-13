@@ -5,6 +5,7 @@
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Confirm from '#lib/ui/Confirm.svelte';
+	import { outsideWay } from '#lib/ui/sensitive.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { homeArt, startArt } from './(home)/art.svelte.ts';
 	import { wall } from './(home)/pick.ts';
@@ -195,6 +196,11 @@
 			{#if blocked}
 				<SettingsCard id="settings-blocked" title={t('settings.layout.blocked')} icon="shield">
 					<div><Button href={to('/settings')}>{t('settings.layout.backToSettings')}</Button></div>
+				</SettingsCard>
+			{:else if reauth && outsideWay(session.s)}
+				<!-- No password to confirm: Confirm offers signing in again with Plex, Jellyfin or Emby ("link" asks whenever the proof is stale). -->
+				<SettingsCard id="settings-reauth" title={t('settings.layout.signInAgainTitle')} icon="shield">
+					<Confirm action="link">{#snippet children()}{/snippet}</Confirm>
 				</SettingsCard>
 			{:else if reauth && !session.s.hasPassword}
 				<SettingsCard id="settings-reauth" title={t('settings.layout.setPasswordFirst')} description={t('settings.layout.setPasswordDesc')} icon="shield">

@@ -538,6 +538,18 @@ describe('session', () => {
 		expect(c.csrf()).toBe('fresh');
 	});
 
+	it('counts a fresh outside sign-in as recent only for someone with no password', async () => {
+		const recent = async (extra: Record<string, unknown>) => {
+			const me = { name: 'boss', via: 'session', auth_method: 'plex', ...extra };
+			const s = createSession(createClient(async () => new Response(JSON.stringify(me))));
+			await s.load();
+			return s.s.localRecent;
+		};
+		expect(await recent({ outside_recent: true, has_password: false })).toBe(true);
+		expect(await recent({ outside_recent: true, has_password: true })).toBe(false);
+		expect(await recent({ outside_recent: false, has_password: false })).toBe(false);
+	});
+
 	it('starts and finishes OIDC linking and links forward auth explicitly', async () => {
 		const c = server({
 			'POST /auth/oidc/link': json(200, { auth_url: 'https://id.example.test/link' }),

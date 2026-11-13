@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "আগে একটি পাসওয়ার্ড সেট করুন",
 	"settings.layout.setPasswordDesc": "কী, পাসওয়ার্ড, মানুষ ও ব্যাকআপের জন্য HolyArrs পাসওয়ার্ড লাগে। আপনার এখনো নেই।",
 	"settings.layout.setPasswordLabel": "পাসওয়ার্ড সেট করুন",
+	"settings.layout.signInAgainTitle": "আগে আবার সাইন ইন করুন",
 	"settings.layout.confirmPasswordLabel": "আপনার পাসওয়ার্ড নিশ্চিত করুন",
 	"settings.layout.confirmPasswordDesc": "কী, পাসওয়ার্ড, মানুষ ও ব্যাকআপের জন্য আপনার পাসওয়ার্ড লাগে। ১০ মিনিট পর্যন্ত বৈধ।"
 }

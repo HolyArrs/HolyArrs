@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Määra esmalt parool",
 	"settings.layout.setPasswordDesc": "Võtmed, paroolid, inimesed ja varukoopiad vajavad HolyArrsi parooli. Sul pole seda veel.",
 	"settings.layout.setPasswordLabel": "Määra parool",
+	"settings.layout.signInAgainTitle": "Logi esmalt uuesti sisse",
 	"settings.layout.confirmPasswordLabel": "Kinnita oma parool",
 	"settings.layout.confirmPasswordDesc": "Võtmed, paroolid, inimesed ja varukoopiad vajavad sinu parooli. Kehtib 10 minutit."
 }

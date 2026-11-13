@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Először állítson be jelszót",
 	"settings.layout.setPasswordDesc": "A kulcsokhoz, jelszavakhoz, személyekhez és biztonsági mentésekhez HolyArrs-jelszó kell. Önnek még nincs.",
 	"settings.layout.setPasswordLabel": "Jelszó beállítása",
+	"settings.layout.signInAgainTitle": "Előbb jelentkezz be újra",
 	"settings.layout.confirmPasswordLabel": "Erősítse meg a jelszavát",
 	"settings.layout.confirmPasswordDesc": "A kulcsokhoz, jelszavakhoz, személyekhez és biztonsági mentésekhez a jelszava kell. 10 percig érvényes."
 }

@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Отмена",
 	"ui.confirm.localVisit": "Это посещение пропускает вход, поэтому не может подтвердить ваш пароль. Сначала войдите по паролю, и вы вернётесь сюда.",
 	"ui.confirm.signInFirst": "Войти по моему паролю",
+	"ui.confirm.outsideAgain": "Чтобы подтвердить, что это вы, войдите снова через {method}. Вы вернётесь сюда. Пароль HolyArrs также можно задать в разделе «Мой аккаунт».",
+	"ui.confirm.signInAgainWith": "Войти снова через {method}",
 	"ui.growCard.preview": "Предпросмотр: {title}",
 	"ui.growCard.goTo": "Перейти: {title}",
 	"ui.growCard.moreInfoAbout": "Подробнее: {title}",

@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "קודם הגדר סיסמה",
 	"settings.layout.setPasswordDesc": "מפתחות, סיסמאות, אנשים וגיבויים דורשים סיסמה של HolyArrs. עדיין אין לך סיסמה.",
 	"settings.layout.setPasswordLabel": "הגדרת סיסמה",
+	"settings.layout.signInAgainTitle": "קודם התחבר שוב",
 	"settings.layout.confirmPasswordLabel": "אימות הסיסמה",
 	"settings.layout.confirmPasswordDesc": "מפתחות, סיסמאות, אנשים וגיבויים דורשים את הסיסמה שלך. תקף ל־10 דקות."
 }

@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Hãy đặt mật khẩu trước",
 	"settings.layout.setPasswordDesc": "Khóa, mật khẩu, người dùng và bản sao lưu cần có mật khẩu HolyArrs. Bạn chưa có mật khẩu.",
 	"settings.layout.setPasswordLabel": "Đặt mật khẩu",
+	"settings.layout.signInAgainTitle": "Hãy đăng nhập lại trước",
 	"settings.layout.confirmPasswordLabel": "Xác nhận mật khẩu",
 	"settings.layout.confirmPasswordDesc": "Khóa, mật khẩu, người dùng và bản sao lưu cần mật khẩu của bạn. Có hiệu lực trong 10 phút."
 }

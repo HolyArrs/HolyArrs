@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Leg zuerst ein Passwort fest",
 	"settings.layout.setPasswordDesc": "Schlüssel, Passwörter, Personen und Backups brauchen ein HolyArrs-Passwort. Du hast noch keins.",
 	"settings.layout.setPasswordLabel": "Passwort festlegen",
+	"settings.layout.signInAgainTitle": "Erst erneut anmelden",
 	"settings.layout.confirmPasswordLabel": "Bestätige dein Passwort",
 	"settings.layout.confirmPasswordDesc": "Schlüssel, Passwörter, Personen und Backups brauchen dein Passwort. Gilt 10 Minuten."
 }

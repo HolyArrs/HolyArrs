@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Annuleren",
 	"ui.confirm.localVisit": "Dit bezoek slaat het aanmelden over en kan je wachtwoord dus niet bevestigen. Meld je eerst aan met je wachtwoord, dan kom je hier terug.",
 	"ui.confirm.signInFirst": "Aanmelden met mijn wachtwoord",
+	"ui.confirm.outsideAgain": "Meld je opnieuw aan met {method} om te bevestigen dat jij het bent. Daarna kom je hier terug. Je kunt ook een HolyArrs-wachtwoord instellen bij Mijn account.",
+	"ui.confirm.signInAgainWith": "Opnieuw aanmelden met {method}",
 	"ui.growCard.preview": "Voorbeeld van {title}",
 	"ui.growCard.goTo": "Ga naar {title}",
 	"ui.growCard.moreInfoAbout": "Meer info over {title}",

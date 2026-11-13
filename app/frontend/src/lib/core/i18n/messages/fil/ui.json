@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Kanselahin",
 	"ui.confirm.localVisit": "Nilalaktawan ng pagbisitang ito ang pag-sign in, kaya hindi nito makumpirma ang password mo. Mag-sign in muna gamit ang password mo at babalik ka rito.",
 	"ui.confirm.signInFirst": "Mag-sign in gamit ang password ko",
+	"ui.confirm.outsideAgain": "Para makumpirmang ikaw ito, mag-sign in ulit gamit ang {method}. Babalik ka rito pagkatapos. Puwede ka ring magtakda ng HolyArrs password sa Aking account.",
+	"ui.confirm.signInAgainWith": "Mag-sign in ulit gamit ang {method}",
 	"ui.growCard.preview": "Preview ng {title}",
 	"ui.growCard.goTo": "Pumunta sa {title}",
 	"ui.growCard.moreInfoAbout": "Higit pang info tungkol sa {title}",
