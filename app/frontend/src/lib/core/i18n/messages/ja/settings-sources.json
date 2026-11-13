@@ -72,5 +72,10 @@
 "settings.sources.off": "ソースはオフです",
 "settings.sources.offText": "HolyArrs は検索も取得もしません。ダウンローダーで追加したダウンロードは引き続きインポートされます。",
 "settings.sources.openParts": "パーツを開く",
-"settings.sources.offState": "オフ"
+"settings.sources.offState": "オフ",
+"settings.sources.site": "組み込みサイト",
+"settings.sources.siteLabel": "サイト",
+"settings.sources.addressSite": "サイト自体のアドレスです。サイトが移転した場合のみ変更してください。",
+"settings.sources.siteKeyLabel": "Cookie または RSS キー",
+"settings.sources.siteKeyHint": "ご自身のアカウントから：ブラウザーの Cookie の uid と pass、または RSS リンクの u と tp。暗号化して保存されます。"
 }

@@ -4,7 +4,9 @@ import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export interface SourceForm {
 	name: string;
-	format: 'torznab' | 'newznab' | 'rss';
+	format: 'torznab' | 'newznab' | 'rss' | 'site';
+	// site is the built-in site a site Source reads.
+	site: string;
 	protocol: 'torrent' | 'usenet';
 	url: string;
 	api_key: string;
@@ -64,6 +66,7 @@ export function emptyForm(): SourceForm {
 	return {
 		name: '',
 		format: 'torznab',
+		site: '',
 		protocol: 'torrent',
 		url: '',
 		api_key: '',
@@ -91,6 +94,7 @@ export function formFrom(s: SourceView): SourceForm {
 		...f,
 		name: s.name,
 		format: s.format === 'bridge' ? 'torznab' : s.format,
+		site: s.site ?? '',
 		protocol: s.protocol,
 		url: s.url,
 		api_key: s.api_key,
@@ -112,13 +116,39 @@ export function formFrom(s: SourceView): SourceForm {
 	};
 }
 
+// The built-in sites a Source can read directly, with their polite limits.
+// Names are the sites' own names, so they are not translated.
+export const builtInSites = [
+	{ id: 'knaben', name: 'Knaben', url: 'https://api.knaben.org', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'torrentscsv', name: 'TorrentsCSV', url: 'https://torrents-csv.com', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'subsplease', name: 'SubsPlease', url: 'https://subsplease.org', key: false, kinds: ['tv'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'iptorrents', name: 'IPTorrents', url: 'https://iptorrents.com', key: true, kinds: ['movie', 'tv', 'music'], gap_ms: 3000, per_hour: 60, timeout_s: 30 }
+] as const;
+
+// pickSite fills a new form with a built-in site's address and limits.
+export function pickSite(f: SourceForm, id: string): void {
+	const s = builtInSites.find((x) => x.id === id);
+	if (!s) return;
+	const before = builtInSites.find((x) => x.id === f.site);
+	f.site = s.id;
+	f.protocol = 'torrent';
+	f.url = s.url;
+	if (!f.name.trim() || f.name === before?.name) f.name = s.name;
+	f.kinds = [...s.kinds];
+	f.gap_ms = s.gap_ms;
+	f.searches_per_window = s.per_hour;
+	f.window_hours = 1;
+	f.timeout_s = s.timeout_s;
+}
+
 // An rss Source only feeds.
 export function formBody(f: SourceForm): Record<string, unknown> {
 	const rss = f.format === 'rss';
 	return {
 		name: f.name.trim(),
 		format: f.format,
-		protocol: f.protocol,
+		...(f.format === 'site' ? { site: f.site } : {}),
+		protocol: f.format === 'site' ? 'torrent' : f.protocol,
 		url: f.url.trim(),
 		api_key: f.api_key,
 		use_for: { feed: f.feed, auto_search: rss ? false : f.auto_search, hand_search: rss ? false : f.hand_search },

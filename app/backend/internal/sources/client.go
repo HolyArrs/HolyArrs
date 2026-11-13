@@ -1,6 +1,7 @@
 package sources
 
 import (
+	"bytes"
 	"context"
 	"encoding/xml"
 	"errors"
@@ -80,6 +81,8 @@ type Config struct {
 	resolve func(ctx context.Context, host string) ([]net.IP, error)
 	// PathKeys are passkeys the URL holds in its path. They are never logged.
 	PathKeys []string
+	// Site names the built-in site a site-format Source reads (see sites.go).
+	Site string
 }
 
 // Client is a Torznab/Newznab client for one Source. It is safe for
@@ -133,6 +136,11 @@ func (c *Client) scrub(msg string) string {
 		}
 	}
 	hide(c.cfg.APIKey)
+	if c.cfg.Format == "site" {
+		for _, v := range secretValues(c.cfg) {
+			hide(v)
+		}
+	}
 	for _, k := range c.cfg.PathKeys {
 		hide(k)
 	}
@@ -221,6 +229,12 @@ func (c *Client) getWithObserver(ctx context.Context, op string, q url.Values, o
 }
 
 func (c *Client) fetch(ctx context.Context, raw string) ([]byte, error) {
+	return c.send(ctx, http.MethodGet, raw, nil, nil)
+}
+
+// send makes one call to the Source: a GET, or a POST with a JSON body for a
+// built-in site that asks for one. head adds headers, such as a site cookie.
+func (c *Client) send(ctx context.Context, method, raw string, payload []byte, head http.Header) ([]byte, error) {
 	identity := []string{c.cfg.URL, c.cfg.APIKey}
 	if c.cfg.Proxy != nil {
 		identity = append(identity, c.cfg.Proxy.String())
@@ -236,10 +250,19 @@ func (c *Client) fetch(ctx context.Context, raw string) ([]byte, error) {
 	defer func() { op.Finish(outcome) }()
 	rctx, cancel := op.AttemptContext(ctx, c.cfg.Timeout)
 	defer cancel()
-	req, err := http.NewRequestWithContext(rctx, http.MethodGet, raw, nil)
+	var reqBody io.Reader
+	if payload != nil {
+		reqBody = bytes.NewReader(payload)
+	}
+	req, err := http.NewRequestWithContext(rctx, method, raw, reqBody)
 	if err != nil {
 		outcome = outbound.TerminalFailure
 		return nil, &Error{Kind: KindBroken, Msg: "bad Source address"}
+	}
+	for k, vs := range head {
+		for _, v := range vs {
+			req.Header.Add(k, v)
+		}
 	}
 	if req.Header.Get("User-Agent") == "" {
 		req.Header.Set("User-Agent", UserAgent)
@@ -383,6 +406,9 @@ type capsXML struct {
 
 // Caps reads what the Source can do and remembers it.
 func (c *Client) Caps(ctx context.Context) (Caps, error) {
+	if c.cfg.Format == "site" {
+		return c.siteCaps()
+	}
 	body, err := c.get(ctx, "caps", url.Values{"t": {"caps"}})
 	if err != nil {
 		return Caps{}, err
@@ -434,6 +460,8 @@ type Query struct {
 	Music  bool
 	Artist string
 	Album  string
+	// feed asks a built-in site for its newest releases.
+	feed bool
 }
 
 // Item is one search result, before parsing and judging.
@@ -485,6 +513,9 @@ func textQuery(q Query) string {
 // Search runs a movie search. It uses the ids the Source supports and falls
 // back to a text search by title and year.
 func (c *Client) Search(ctx context.Context, q Query) ([]Item, error) {
+	if c.cfg.Format == "site" {
+		return c.siteSearch(ctx, q, c.cfg.Observe)
+	}
 	c.mu.Lock()
 	caps := c.caps
 	c.mu.Unlock()
@@ -667,6 +698,9 @@ func (c *Client) feedProbe(ctx context.Context, categories []int, observer func(
 }
 
 func (c *Client) feed(ctx context.Context, categories []int, observer func(string, time.Duration, error)) ([]Item, error) {
+	if c.cfg.Format == "site" {
+		return c.siteSearch(ctx, Query{Categories: categories, feed: true}, observer)
+	}
 	v := url.Values{}
 	if c.cfg.Format != "rss" {
 		v.Set("t", "search")
@@ -688,6 +722,9 @@ func (c *Client) feed(ctx context.Context, categories []int, observer func(strin
 // Test checks that the Source answers: its caps for Torznab and Newznab, its
 // feed for rss. It returns how many releases the feed holds, 0 for caps.
 func (c *Client) Test(ctx context.Context) (int, error) {
+	if c.cfg.Format == "site" {
+		return c.siteTest(ctx)
+	}
 	if c.cfg.Format == "rss" {
 		items, err := c.Feed(ctx, nil)
 		return len(items), err

@@ -72,5 +72,10 @@
 	"settings.sources.off": "Źródła są wyłączone",
 	"settings.sources.offText": "HolyArrs nic nie szuka ani nie pobiera. Pobrania dodane w kliencie pobierania nadal są importowane.",
 	"settings.sources.openParts": "Otwórz Części",
-	"settings.sources.offState": "Wyłączone"
+	"settings.sources.offState": "Wyłączone",
+	"settings.sources.site": "Wbudowana strona",
+	"settings.sources.siteLabel": "Strona",
+	"settings.sources.addressSite": "Własny adres strony. Zmień go tylko, jeśli strona się przeniosła.",
+	"settings.sources.siteKeyLabel": "Ciasteczko lub klucz RSS",
+	"settings.sources.siteKeyHint": "Z własnego konta: uid i pass z ciasteczka przeglądarki albo u i tp z linku RSS. Przechowywane w postaci zaszyfrowanej."
 }

@@ -72,5 +72,10 @@
 	"settings.sources.off": "Les sources sont désactivées",
 	"settings.sources.offText": "HolyArrs ne cherche ni ne récupère rien. Les téléchargements ajoutés dans ton téléchargeur sont toujours importés.",
 	"settings.sources.openParts": "Ouvrir Parties",
-	"settings.sources.offState": "Désactivé"
+	"settings.sources.offState": "Désactivé",
+	"settings.sources.site": "Site intégré",
+	"settings.sources.siteLabel": "Site",
+	"settings.sources.addressSite": "L’adresse propre du site. Ne la changez que si le site a déménagé.",
+	"settings.sources.siteKeyLabel": "Cookie ou clé RSS",
+	"settings.sources.siteKeyHint": "De votre propre compte : uid et pass du cookie du navigateur, ou u et tp de votre lien RSS. Conservé chiffré."
 }

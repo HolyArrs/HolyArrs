@@ -72,5 +72,10 @@
 	"settings.sources.off": "Zdroje jsou vypnuté",
 	"settings.sources.offText": "HolyArrs nevyhledává ani nestahuje. Stahování, která přidáte ve svém Stahovači, se stále importují.",
 	"settings.sources.openParts": "Otevřít Části",
-	"settings.sources.offState": "Vypnuto"
+	"settings.sources.offState": "Vypnuto",
+	"settings.sources.site": "Vestavěný web",
+	"settings.sources.siteLabel": "Web",
+	"settings.sources.addressSite": "Vlastní adresa webu. Změňte ji jen tehdy, když se web přestěhoval.",
+	"settings.sources.siteKeyLabel": "Cookie nebo klíč RSS",
+	"settings.sources.siteKeyHint": "Z vlastního účtu: uid a pass z cookie prohlížeče, nebo u a tp z vašeho odkazu RSS. Uloženo šifrovaně."
 }

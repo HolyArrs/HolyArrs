@@ -72,5 +72,10 @@
 	"settings.sources.off": "منبع‌ها خاموش هستند",
 	"settings.sources.offText": "HolyArrs جست‌وجو نمی‌کند و دریافت نمی‌کند. دانلودهایی که در دانلودر خود اضافه می‌کنید همچنان وارد می‌شوند.",
 	"settings.sources.openParts": "باز کردن بخش‌ها",
-	"settings.sources.offState": "خاموش"
+	"settings.sources.offState": "خاموش",
+	"settings.sources.site": "سایت داخلی",
+	"settings.sources.siteLabel": "سایت",
+	"settings.sources.addressSite": "نشانی خود سایت. فقط اگر سایت جابه‌جا شده آن را تغییر دهید.",
+	"settings.sources.siteKeyLabel": "کوکی یا کلید RSS",
+	"settings.sources.siteKeyHint": "از حساب خودتان: uid و pass از کوکی مرورگر، یا u و tp از پیوند RSS شما. به‌صورت رمزگذاری‌شده نگه داشته می‌شود."
 }

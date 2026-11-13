@@ -72,5 +72,10 @@
 	"settings.sources.off": "সোর্স বন্ধ আছে",
 	"settings.sources.offText": "HolyArrs সার্চ করে না বা ধরে না। আপনার ডাউনলোডারে যোগ করা ডাউনলোড এখনও ইমপোর্ট হয়।",
 	"settings.sources.openParts": "অংশ খুলুন",
-	"settings.sources.offState": "বন্ধ"
+	"settings.sources.offState": "বন্ধ",
+	"settings.sources.site": "অন্তর্নির্মিত সাইট",
+	"settings.sources.siteLabel": "সাইট",
+	"settings.sources.addressSite": "সাইটের নিজস্ব ঠিকানা। সাইট সরে গেলে তবেই বদলান।",
+	"settings.sources.siteKeyLabel": "কুকি বা RSS কী",
+	"settings.sources.siteKeyHint": "আপনার নিজের অ্যাকাউন্ট থেকে: ব্রাউজার কুকি থেকে uid ও pass, অথবা আপনার RSS লিঙ্ক থেকে u ও tp। এনক্রিপ্ট করে রাখা হয়।"
 }

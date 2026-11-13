@@ -727,6 +727,7 @@ The Auth column is the permission a caller needs, as pinned in the snapshot. The
 | GET | `/api/v1/sources` | manage_library |  |
 | POST | `/api/v1/sources` | settings |  |
 | POST | `/api/v1/sources/check` | settings |  |
+| GET | `/api/v1/sources/sites` | manage_library |  |
 | PUT | `/api/v1/sources/{id}` | settings |  |
 | DELETE | `/api/v1/sources/{id}` | settings |  |
 | POST | `/api/v1/sources/{id}/pause` | settings |  |

@@ -84,7 +84,7 @@ func sameConfig(a, b Config) bool {
 	}
 	return a.URL == b.URL && a.APIKey == b.APIKey && a.AllowLocal == b.AllowLocal && a.Format == b.Format && a.Protocol == b.Protocol &&
 		a.GapMS == b.GapMS && a.PerWindow == b.PerWindow && a.Window == b.Window && a.Timeout == b.Timeout &&
-		proxy(a) == proxy(b) && a.ProxyAllowLocal == b.ProxyAllowLocal
+		proxy(a) == proxy(b) && a.ProxyAllowLocal == b.ProxyAllowLocal && a.Site == b.Site
 }
 
 // hidden marks where a Source key was taken out of a stored link. The number
@@ -100,7 +100,7 @@ func secretValues(cfg Config) []string {
 		return nil
 	}
 	var out []string
-	if cfg.Format != "rss" {
+	if cfg.Format != "rss" && cfg.Format != "site" {
 		if cfg.APIKey != "" {
 			out = append(out, cfg.APIKey)
 		}

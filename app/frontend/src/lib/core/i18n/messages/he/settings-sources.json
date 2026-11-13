@@ -72,5 +72,10 @@
 	"settings.sources.off": "המקורות כבויים",
 	"settings.sources.offText": "HolyArrs לא מחפש ולא תופס. הורדות שאתם מוסיפים במוריד שלכם עדיין מיובאות.",
 	"settings.sources.openParts": "פתיחת רכיבים",
-	"settings.sources.offState": "כבוי"
+	"settings.sources.offState": "כבוי",
+	"settings.sources.site": "אתר מובנה",
+	"settings.sources.siteLabel": "אתר",
+	"settings.sources.addressSite": "הכתובת של האתר עצמו. שנו אותה רק אם האתר עבר.",
+	"settings.sources.siteKeyLabel": "עוגייה או מפתח RSS",
+	"settings.sources.siteKeyHint": "מהחשבון שלכם: uid ו־pass מעוגיית הדפדפן, או u ו־tp מקישור ה־RSS שלכם. נשמר מוצפן."
 }

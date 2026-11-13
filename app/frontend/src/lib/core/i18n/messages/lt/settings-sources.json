@@ -72,5 +72,10 @@
 	"settings.sources.off": "Šaltiniai išjungti",
 	"settings.sources.offText": "HolyArrs neieško ir nesiunčia. Atsisiuntimai, kuriuos pridedate savo Atsisiuntėjuje, vis tiek importuojami.",
 	"settings.sources.openParts": "Atidaryti Dalis",
-	"settings.sources.offState": "Išjungta"
+	"settings.sources.offState": "Išjungta",
+	"settings.sources.site": "Įtaisyta svetainė",
+	"settings.sources.siteLabel": "Svetainė",
+	"settings.sources.addressSite": "Pačios svetainės adresas. Keiskite jį tik tada, jei svetainė persikėlė.",
+	"settings.sources.siteKeyLabel": "Slapukas arba RSS raktas",
+	"settings.sources.siteKeyHint": "Iš savo paskyros: uid ir pass iš naršyklės slapuko arba u ir tp iš savo RSS nuorodos. Saugoma užšifruota."
 }

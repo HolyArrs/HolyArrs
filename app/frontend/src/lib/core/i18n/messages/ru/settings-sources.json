@@ -72,5 +72,10 @@
 	"settings.sources.off": "Источники выключены",
 	"settings.sources.offText": "HolyArrs ничего не ищет и не скачивает. Загрузки, добавленные в загрузчике, по-прежнему импортируются.",
 	"settings.sources.openParts": "Открыть «Части»",
-	"settings.sources.offState": "Выкл."
+	"settings.sources.offState": "Выкл.",
+	"settings.sources.site": "Встроенный сайт",
+	"settings.sources.siteLabel": "Сайт",
+	"settings.sources.addressSite": "Собственный адрес сайта. Меняйте его, только если сайт переехал.",
+	"settings.sources.siteKeyLabel": "Cookie или ключ RSS",
+	"settings.sources.siteKeyHint": "Из вашего аккаунта: uid и pass из cookie браузера или u и tp из вашей ссылки RSS. Хранится в зашифрованном виде."
 }

@@ -72,5 +72,10 @@
 	"settings.sources.off": "Las fuentes están apagadas",
 	"settings.sources.offText": "HolyArrs no busca ni descarga. Lo que añadas en tu gestor de descargas se sigue importando.",
 	"settings.sources.openParts": "Abrir Partes",
-	"settings.sources.offState": "Apagado"
+	"settings.sources.offState": "Apagado",
+	"settings.sources.site": "Sitio integrado",
+	"settings.sources.siteLabel": "Sitio",
+	"settings.sources.addressSite": "La dirección propia del sitio. Cámbiala solo si el sitio se mudó.",
+	"settings.sources.siteKeyLabel": "Cookie o clave RSS",
+	"settings.sources.siteKeyHint": "De tu propia cuenta: uid y pass de la cookie del navegador, o u y tp de tu enlace RSS. Se guarda cifrada."
 }

@@ -347,7 +347,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			}
 			return sources.Transport(cfg), nil
 		},
-		FromVault: vault.Get}
+		SourceHeader: sources.FileHeaders(vault),
+		FromVault:    vault.Get}
 	// Background download reader: one reader per Downloader inside the
 	// "downloads" loop; the Manager and the Downloads view read its snapshots.
 	dls := &downloads.Sync{Store: &downloads.Store{}, DB: s, Manager: dm, Lines: downloads.TorrentLines}

@@ -82,6 +82,11 @@ type Manager struct {
 	// through the proxy with every address checked. Nil refuses such a send to
 	// qBittorrent or SABnzbd.
 	SourceTransport func(ctx context.Context, src domain.Source) (http.RoundTripper, error)
+	// SourceHeader gives headers a Source's own site needs to hand out a
+	// Release file, such as a sign-in cookie; nil or empty needs none. With
+	// one, HolyArrs fetches the file itself and sends it, so the Downloader
+	// never needs the cookie and it is never stored in a link.
+	SourceHeader func(ctx context.Context, src domain.Source) (http.Header, error)
 	// FromVault reads a Downloader's key or password from the vault.
 	FromVault func(ctx context.Context, id int64) (string, error)
 	// Sync, when set and on (downloads.sync = on), is the background reader.

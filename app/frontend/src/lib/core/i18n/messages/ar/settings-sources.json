@@ -72,5 +72,10 @@
 	"settings.sources.off": "المصادر متوقفة",
 	"settings.sources.offText": "لا يبحث HolyArrs ولا يجلب شيئًا. التنزيلات التي تضيفها في برنامج التنزيل تُستورد كالمعتاد.",
 	"settings.sources.openParts": "فتح الأجزاء",
-	"settings.sources.offState": "متوقف"
+	"settings.sources.offState": "متوقف",
+	"settings.sources.site": "موقع مدمج",
+	"settings.sources.siteLabel": "الموقع",
+	"settings.sources.addressSite": "عنوان الموقع نفسه. غيّره فقط إذا انتقل الموقع.",
+	"settings.sources.siteKeyLabel": "ملف تعريف الارتباط أو مفتاح RSS",
+	"settings.sources.siteKeyHint": "من حسابك الخاص: uid وpass من ملف تعريف الارتباط في المتصفح، أو u وtp من رابط RSS الخاص بك. يُحفظ مشفّرًا."
 }
