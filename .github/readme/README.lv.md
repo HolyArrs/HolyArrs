@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> ir viena paštīklotā lietotne taviem seriāliem, filmām un mūzikai.<br>Pārlūko kā straumēšanas lietotnē, pieprasi, ko vēlies, un pārējo tā izdara pati.</p>
 
-<p align="center"><b>Aptuveni 19.5 MB lejupielādes · aptuveni 95 MiB RAM dīkstāvē jaunā instalācijā · amd64, arm64, armv7</b><br><sub>Sešas lietotnes, ko tā aizstāj, kopā lejupielādē 718.2 MB.</sub></p>
+<p align="center"><b>Aptuveni 16.9 MB lejupielādes · aptuveni 95 MiB RAM dīkstāvē jaunā instalācijā · amd64, arm64, armv7</b><br><sub>Sešas lietotnes, ko tā aizstāj, kopā lejupielādē 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Ātrā sākšana</a> · <a href="#why">Kāpēc</a> · <a href="#what-it-does">Ko tā dara</a> · <a href="#moving">Pāreja no citām lietotnēm</a> · <a href="#manual">Rokasgrāmata</a> · <a href="#help">Palīdzība</a></p>
 
@@ -105,9 +105,9 @@ Tāpēc es to uzbūvēju.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Visas sešas kopā** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Aptuveni 37 reizes mazāk. Saspiesta lejupielāde no reģistra, linuxserver.io attēli, amd64, izmērīts 2026-11-08. RAM dīkstāvē izmērīts ar 10,000 nosaukumiem un 55,000 filmu un epizožu. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>Aptuveni 43 reizes mazāk. Saspiesta lejupielāde no reģistra, linuxserver.io attēli, amd64, izmērīts 2026-11-08. RAM dīkstāvē izmērīts ar 10,000 nosaukumiem un 55,000 filmu un epizožu. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Kāds pieprasa nosaukumu. HolyArrs pārmeklē tavus avotus, ar taviem izvēles n
 | 🔌 **Iepriekšējo lietotņu API** | Seerr, Prowlarr, Bazarr, Unpackerr un Homepage turpina strādāt, kad tu to ieslēdz. |
 | 🗝️ **API atslēgas nav vajadzīgas** | Nosaukumi, noformējums un topi nāk no HolyArrs metadatu servera. Der arī tavas pašas atslēgas vai serveris. |
 | 🔒 **Šifrētas atslēgas** | Saglabātās paroles un atslēgas aizslēdz galvenā atslēga, kas atrodas tavā konfigurācijas mapē. |
-| 🪶 **Sīka** | Aptuveni 19.5 MB liels attēls, kurā ir tikai HolyArrs. |
+| 🪶 **Sīka** | Aptuveni 16.9 MB liels attēls, kurā ir tikai HolyArrs. |
 
 <details>
 <summary><b>Skaties katru lapu kustībā</b></summary>

@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> là một ứng dụng tự lưu trữ cho phim bộ, phim lẻ và nhạc của bạn.<br>Duyệt như một ứng dụng xem phim trực tuyến, yêu cầu thứ bạn muốn, phần còn lại cứ để nó lo.</p>
 
-<p align="center"><b>Khoảng 19.5 MB để tải xuống · khoảng 95 MiB RAM khi rảnh trên bản cài mới · amd64, arm64, armv7</b><br><sub>Sáu ứng dụng mà nó thay thế có dung lượng tải xuống tổng cộng 718.2 MB.</sub></p>
+<p align="center"><b>Khoảng 16.9 MB để tải xuống · khoảng 95 MiB RAM khi rảnh trên bản cài mới · amd64, arm64, armv7</b><br><sub>Sáu ứng dụng mà nó thay thế có dung lượng tải xuống tổng cộng 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Bắt đầu nhanh</a> · <a href="#why">Vì sao</a> · <a href="#what-it-does">Nó làm được gì</a> · <a href="#moving">Chuyển từ các ứng dụng khác</a> · <a href="#manual">Sổ tay</a> · <a href="#help">Trợ giúp</a></p>
 
@@ -105,9 +105,9 @@ Nên tôi đã xây dựng nó.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Cả sáu cộng lại** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Nhỏ hơn khoảng 37 lần. Dung lượng tải xuống đã nén từ registry, image của linuxserver.io, amd64, đo ngày 2026-11-08. RAM khi rảnh được đo với 10,000 mục và 55,000 phim lẻ và tập phim. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>Nhỏ hơn khoảng 43 lần. Dung lượng tải xuống đã nén từ registry, image của linuxserver.io, amd64, đo ngày 2026-11-08. RAM khi rảnh được đo với 10,000 mục và 55,000 phim lẻ và tập phim. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Có người yêu cầu một mục. HolyArrs tìm trong các Nguồn của bạ
 | 🔌 **API của ứng dụng cũ** | Seerr, Prowlarr, Bazarr, Unpackerr và Homepage vẫn chạy tiếp khi bạn bật tính năng này. |
 | 🗝️ **Không cần khóa API** | Tên mục, ảnh bìa và bảng xếp hạng đến từ máy chủ metadata của HolyArrs. Khóa hoặc máy chủ riêng của bạn cũng dùng được. |
 | 🔒 **Khóa được mã hóa** | Mật khẩu và khóa đã lưu được khóa bằng một khóa chính nằm trong thư mục cấu hình của bạn. |
-| 🪶 **Siêu nhỏ** | Một image khoảng 19.5 MB, bên trong chỉ có HolyArrs. |
+| 🪶 **Siêu nhỏ** | Một image khoảng 16.9 MB, bên trong chỉ có HolyArrs. |
 
 <details>
 <summary><b>Xem mọi trang khi chuyển động</b></summary>

@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> on yksi itse isännöitävä sovellus sarjoillesi, elokuvillesi ja musiikillesi.<br>Selaa kuin suoratoistosovellusta, pyydä mitä haluat, niin se hoitaa loput.</p>
 
-<p align="center"><b>Noin 19.5 MB:n lataus · noin 95 MiB RAM-muistia joutilaana uudessa asennuksessa · amd64, arm64, armv7</b><br><sub>Sen korvaamien kuuden sovelluksen lataus on yhteensä 718.2 MB.</sub></p>
+<p align="center"><b>Noin 16.9 MB:n lataus · noin 95 MiB RAM-muistia joutilaana uudessa asennuksessa · amd64, arm64, armv7</b><br><sub>Sen korvaamien kuuden sovelluksen lataus on yhteensä 718.2 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Pikaopas</a> · <a href="#why">Miksi</a> · <a href="#what-it-does">Mitä se tekee</a> · <a href="#moving">Siirtyminen muista sovelluksista</a> · <a href="#manual">Käyttöopas</a> · <a href="#help">Apua</a></p>
 
@@ -105,9 +105,9 @@ Joten tein sen.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Kuusi yhteensä** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Noin 37 kertaa pienempi. Pakattu lataus rekisteristä, linuxserver.io:n imaget, amd64, mitattu 2026-11-08. RAM joutilaana mitattu 10,000 nimikkeellä ja 55,000 elokuvalla ja jaksolla. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>Noin 43 kertaa pienempi. Pakattu lataus rekisteristä, linuxserver.io:n imaget, amd64, mitattu 2026-11-08. RAM joutilaana mitattu 10,000 nimikkeellä ja 55,000 elokuvalla ja jaksolla. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Joku pyytää nimikettä. HolyArrs hakee lähteistäsi, valitsee parhaan julkais
 | 🔌 **Vanhojen sovellusten API** | Seerr, Prowlarr, Bazarr, Unpackerr ja Homepage toimivat edelleen, kun otat sen käyttöön. |
 | 🗝️ **API-avaimia ei tarvita** | Nimikkeet, kuvitus ja listat tulevat HolyArrsin metadatapalvelimelta. Omat avaimet tai oma palvelin käyvät myös. |
 | 🔒 **Salatut avaimet** | Tallennetut salasanat ja avaimet on lukittu pääavaimella, joka on asetuskansiossasi. |
-| 🪶 **Pieni** | Noin 19.5 MB:n image, jonka sisällä on pelkkä HolyArrs. |
+| 🪶 **Pieni** | Noin 16.9 MB:n image, jonka sisällä on pelkkä HolyArrs. |
 
 <details>
 <summary><b>Katso jokainen sivu liikkeessä</b></summary>
