@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "seda kvaliteeti ei saa taotleda",
 	"server.requests.the-quality-you-picked-was-not": "Valitud kvaliteeti ei kasutatud: sellel pealkirjal on see koopia juba olemas.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex ei paku enam nimekirja inimestest, kellega sinu serverit jagatakse",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex lükkas sinu seotud Plexi konto tagasi; seo see uuesti"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex lükkas sinu seotud Plexi konto tagasi; seo see uuesti",
+	"server.migrate.the-show-could-not-be-found": "sarja ei leitud ei oma id-de ega nime järgi"
 }

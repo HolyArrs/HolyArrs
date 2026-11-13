@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "essa qualidade não pode ser pedida",
 	"server.requests.the-quality-you-picked-was-not": "A qualidade escolhida não foi usada: este título já tem essa cópia.",
 	"server.accounts.plex-no-longer-offers-the-list": "o Plex já não disponibiliza a lista de pessoas com quem o seu servidor é partilhado",
-	"server.accounts.plex-refused-your-linked-plex-account": "o Plex recusou a sua conta do Plex associada; associe-a novamente"
+	"server.accounts.plex-refused-your-linked-plex-account": "o Plex recusou a sua conta do Plex associada; associe-a novamente",
+	"server.migrate.the-show-could-not-be-found": "a série não foi encontrada pelos ids nem pelo nome"
 }

@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "ez a minőség nem kérhető",
 	"server.requests.the-quality-you-picked-was-not": "A választott minőség nem lett felhasználva: ennek a címnek már megvan ez a másolata.",
 	"server.accounts.plex-no-longer-offers-the-list": "a Plex már nem adja ki azoknak a személyeknek a listáját, akikkel a szerverét megosztották",
-	"server.accounts.plex-refused-your-linked-plex-account": "a Plex elutasította az összekapcsolt Plex-fiókját; kapcsolja össze újra"
+	"server.accounts.plex-refused-your-linked-plex-account": "a Plex elutasította az összekapcsolt Plex-fiókját; kapcsolja össze újra",
+	"server.migrate.the-show-could-not-be-found": "a sorozatot sem az azonosítói, sem a neve alapján nem sikerült megtalálni"
 }

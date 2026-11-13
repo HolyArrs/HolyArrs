@@ -30,7 +30,7 @@ func (r *run) titleHere(t *TitlePlan) int64 {
 	case "show":
 		ids := map[string]string{}
 		for _, k := range []string{"tvdb", "tmdb", "imdb"} {
-			if t.IDs[k] != "" {
+			if t.IDs[k] != "" && (k != "tmdb" || t.IDs["tvdb"] == "") {
 				ids[k] = t.IDs[k]
 			}
 		}
@@ -150,17 +150,30 @@ func (r *run) title(it Item) (string, string) {
 	var err error
 	if noFiles {
 		var id int64
-		id, err = r.addNoFiles(lfID, t)
+		err = r.withShowIDs(t, func(sid string) error {
+			tt := *t
+			tt.ID = sid
+			var e error
+			id, e = r.addNoFiles(lfID, &tt)
+			return e
+		})
 		res = []library.AdoptResult{{TitleID: id}}
 	} else {
 		c := library.AdoptChoice{Folder: t.Folder, ID: t.ID}
 		if t.Kind == "movie" {
 			c = library.AdoptChoice{Folder: t.Folder, TMDB: strings.TrimPrefix(t.ID, "tmdb:"), ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays}
 		}
-		res, err = r.m.Library.Adopt(r.ctx, lfID, []library.AdoptChoice{c}, r.by)
-		if err == nil && len(res) == 1 && res[0].Error != "" {
-			err = errors.New(res[0].Error)
-		}
+		err = r.withShowIDs(t, func(sid string) error {
+			if t.Kind != "movie" {
+				c.ID = sid
+			}
+			var e error
+			res, e = r.m.Library.Adopt(r.ctx, lfID, []library.AdoptChoice{c}, r.by)
+			if e == nil && len(res) == 1 && res[0].Error != "" {
+				e = errors.New(res[0].Error)
+			}
+			return e
+		})
 	}
 	if err != nil {
 		return ResFailed, err.Error()

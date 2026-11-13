@@ -1325,5 +1325,6 @@
 	"server.requests.that-quality-cannot-be-asked-for": "ขอคุณภาพนั้นไม่ได้",
 	"server.requests.the-quality-you-picked-was-not": "ไม่ได้ใช้คุณภาพที่คุณเลือก: รายการนี้มีสำเนานั้นอยู่แล้ว",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex ไม่มีรายชื่อคนที่เซิร์ฟเวอร์ของคุณแชร์ให้อีกต่อไป",
-	"server.accounts.plex-refused-your-linked-plex-account": "Plex ปฏิเสธบัญชี Plex ที่คุณเชื่อมโยงไว้ เชื่อมโยงใหม่อีกครั้ง"
+	"server.accounts.plex-refused-your-linked-plex-account": "Plex ปฏิเสธบัญชี Plex ที่คุณเชื่อมโยงไว้ เชื่อมโยงใหม่อีกครั้ง",
+	"server.migrate.the-show-could-not-be-found": "ไม่พบซีรีส์ด้วยรหัสหรือชื่อของมัน"
 }
