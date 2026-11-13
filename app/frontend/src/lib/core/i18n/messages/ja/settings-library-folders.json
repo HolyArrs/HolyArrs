@@ -54,5 +54,9 @@
 	"settings.libraryFolders.sideOnHint": "ライブラリにすでにあるファイルが置き換えられることはありません。",
 	"settings.libraryFolders.sideTypes": "ファイルの種類",
 	"settings.libraryFolders.sideTypesHint": "種類はカンマで区切ります（例: srt, ass）。",
-"settings.libraryFolders.notMounted": "HolyArrs から {path} が見えません。見えるのはコンテナーにマウントしたフォルダーだけです。{path}:{inside} のようなボリュームを追加して、ここでは {inside} を使ってください。"
+"settings.libraryFolders.notMounted": "HolyArrs から {path} が見えません。見えるのはコンテナーにマウントしたフォルダーだけです。{path}:{inside} のようなボリュームを追加して、ここでは {inside} を使ってください。",
+"settings.libraryFolders.quality": "品質",
+"settings.libraryFolders.qualityNone": "既定を使う",
+"settings.libraryFolders.qualityHint": "このフォルダーの新しい作品は、この品質で始まります。",
+"settings.libraryFolders.qualityOf": "{path} の品質"
 }
