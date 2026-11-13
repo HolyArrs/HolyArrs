@@ -146,6 +146,7 @@ export { sortTitles } from './table.ts';
 export { splitSteps } from './organise.ts';
 export { statusCounts } from './import-view.ts';
 export { statusLabel } from './import-view.ts';
+export { canTick, tickCounts } from './import-view.ts';
 export { startChoices } from './title-defaults.ts';
 export { startDir } from './table.ts';
 export { startPick } from './import-files.ts';
