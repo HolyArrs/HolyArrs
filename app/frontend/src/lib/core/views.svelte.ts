@@ -1,8 +1,8 @@
-// The view each person picked last on a page (the Library view per kind, the Calendar's view and follows), kept on their account so a phone, another browser or the installed app opens on the same view. The picks come with the session, so a page never opens on the wrong view first.
+// The view each person picked last on a page (the Library view per kind, the Import a library view, the Calendar's view and follows), kept on their account so a phone, another browser or the installed app opens on the same view. The picks come with the session, so a page never opens on the wrong view first.
 
 import { api as defaultClient, type Client } from './api';
 
-export type ViewName = `library.view.${'all' | 'movie' | 'show' | 'artist'}` | 'calendar.view' | 'calendar.follows';
+export type ViewName = `library.view.${'all' | 'movie' | 'show' | 'artist'}` | 'library.import.view' | 'calendar.view' | 'calendar.follows';
 
 /** How long the move of this browser's older picks waits, so the first page loads before it. */
 export const VIEW_SEED_WAIT = 3000;

@@ -19,13 +19,14 @@ import (
 // viewValueMax is the longest value kept, in bytes of compact JSON.
 const viewValueMax = 256
 
-// viewNames are the picks a page may save: the Library view per kind and
-// the Calendar's view and follows.
+// viewNames are the picks a page may save: the Library view per kind, the
+// Import a library view, and the Calendar's view and follows.
 var viewNames = map[string]bool{
 	"library.view.all":    true,
 	"library.view.movie":  true,
 	"library.view.show":   true,
 	"library.view.artist": true,
+	"library.import.view": true,
 	"calendar.view":       true,
 	"calendar.follows":    true,
 }

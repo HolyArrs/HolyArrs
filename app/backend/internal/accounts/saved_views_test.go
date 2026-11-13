@@ -22,12 +22,12 @@ func TestMyViewsSaveAndRead(t *testing.T) {
 	if v := myViews(t, f, own); len(v) != 0 {
 		t.Fatalf("fresh views: %v", v)
 	}
-	resp, out := own.do(t, f, "PUT", "/api/v1/my/views", `{"library.view.movie":"posters","calendar.view":"list","calendar.follows":"everyone"}`)
+	resp, out := own.do(t, f, "PUT", "/api/v1/my/views", `{"library.view.movie":"posters","library.import.view":"banners","calendar.view":"list","calendar.follows":"everyone"}`)
 	if resp.StatusCode != 200 || !strings.Contains(out, `"library.view.movie":"posters"`) {
 		t.Fatalf("put: %d %s", resp.StatusCode, out)
 	}
 	v := myViews(t, f, own)
-	if v["library.view.movie"] != "posters" || v["calendar.view"] != "list" || v["calendar.follows"] != "everyone" || len(v) != 3 {
+	if v["library.view.movie"] != "posters" || v["calendar.view"] != "list" || v["calendar.follows"] != "everyone" || v["library.import.view"] != "banners" || len(v) != 4 {
 		t.Fatalf("saved views: %v", v)
 	}
 	// A later pick replaces the earlier one; keys left out stay as they were.
