@@ -26,7 +26,7 @@
 	.stacked { flex-direction: column; align-items: flex-start; gap: 10px; margin-top: var(--s-4); }
 	.stacked .rl { margin: 0; color: var(--text); font: var(--t-callout); font-weight: 600; }
 	.rule { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 0; border-radius: var(--r-pill); background: var(--surface-2); color: inherit; font: var(--t-subhead); font-weight: 600; cursor: pointer; transition: background 200ms var(--ease-out), color 200ms var(--ease-out); }
-	.rule:hover:not(:disabled) { background: var(--surface-3); }
+	.rule:hover:not(:disabled):not([aria-pressed='true']) { background: var(--surface-3); }
 	.rule[aria-pressed='true'] { background: var(--text); color: var(--bg); }
 	.rule:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.rule.off { background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--text-muted); cursor: default; }

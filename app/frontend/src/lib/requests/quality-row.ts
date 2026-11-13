@@ -81,7 +81,9 @@ export function ownerRow(
 	const pill = (l: QualityChoice): QualityPill => ({ key: l.id, label: qualityName(l.id, l.name), quality: l.id, rulesId: 0, extra: l.extra, disabled: false, note: '' });
 	const mains = all.filter((l) => !l.extra);
 	const used = new Set(all.map((l) => l.pick_rules_id).filter(Boolean));
+	// A rule named like a line (Standard, 4K) is that line to the eye: one button each.
+	const names = new Set(all.map((l) => qualityName(l.id, l.name).toLowerCase()));
 	const main = mains[0]?.id ?? STANDARD;
-	const other = rules.filter((r) => !used.has(r.id)).map((r): QualityPill => ({ key: `rules-${r.id}`, label: r.name, quality: main, rulesId: r.id, extra: false, disabled: false, note: '' }));
+	const other = rules.filter((r) => !used.has(r.id) && !names.has(r.name.toLowerCase())).map((r): QualityPill => ({ key: `rules-${r.id}`, label: r.name, quality: main, rulesId: r.id, extra: false, disabled: false, note: '' }));
 	return { pills: [...mains.map(pill), ...other, ...all.filter((l) => l.extra).map(pill)], asked };
 }

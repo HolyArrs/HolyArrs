@@ -28,6 +28,8 @@
 	// The Quality row: the lines of what people can ask for that I may use (one line or none hides it).
 	let choices = $state<QualityChoice[]>([]);
 	let quality = $state('');
+	// Each opening reads the lines again; an answer for an earlier opening is dropped.
+	let opened = 0;
 	const row = $derived(memberRow(choices));
 	let mode = $state<'all' | 'choose' | 'future'>('all');
 	let chosen = $state<number[]>([]);
@@ -48,8 +50,9 @@
 		follow = true;
 		choices = [];
 		quality = '';
+		const asked = ++opened;
 		void askQualities().then((q) => {
-			if (picked !== s) return;
+			if (asked !== opened) return;
 			choices = q.show;
 			quality = row.selected;
 		});

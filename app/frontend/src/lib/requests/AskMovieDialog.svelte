@@ -45,6 +45,8 @@
 	// The Quality row: the lines of what people can ask for that I may use (one line or none hides it).
 	let choices = $state<QualityChoice[]>([]);
 	let quality = $state('');
+	// Each opening reads the lines again; an answer for an earlier opening is dropped.
+	let opened = 0;
 	let busy = $state(false);
 	let error = $state('');
 
@@ -70,8 +72,9 @@
 		picked = m;
 		error = '';
 		sheetOpen = true;
+		const asked = ++opened;
 		void askQualities().then((q) => {
-			if (picked !== m) return;
+			if (asked !== opened) return;
 			choices = q.movie;
 			quality = row.selected || quality;
 		});

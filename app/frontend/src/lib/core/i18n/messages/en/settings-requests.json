@@ -46,7 +46,7 @@
 	"settings.requests.choices": "What people can ask for",
 	"settings.requests.choicesDesc": "The Quality buttons on request sheets, in this order. Rename or hide them here; Kids get the first one shown.",
 	"settings.requests.choiceShown": "Show to people",
-	"settings.requests.choiceMain": "{rules} · the title’s main copy",
+	"settings.requests.choiceMain": "{rules} · the title's main copy",
 	"settings.requests.choiceOwn": "{rules} · kept as its own copy",
 	"settings.requests.choiceNotReady": "Offered once a 4K quality is set up above"
 }

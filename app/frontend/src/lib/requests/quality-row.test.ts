@@ -70,6 +70,11 @@ describe('the Quality row when approving', () => {
 		expect(r.pills.map((p) => p.label)).toEqual(['Standard', 'Best', '4K']);
 	});
 
+	it('shows a rule named like a line once', () => {
+		const r = ownerRow([std, uhd], [{ id: 1, name: 'Standard' }, ...rules], { quality: 'standard' });
+		expect(r.pills.map((p) => p.label)).toEqual(['Standard', 'Lite', 'Best', '4K']);
+	});
+
 	it('keeps the asked line when it is hidden now, and reads older answers by four_k', () => {
 		const r = ownerRow([std], [], { four_k: true });
 		expect(r.asked).toBe('4k');

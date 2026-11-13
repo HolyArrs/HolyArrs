@@ -289,7 +289,7 @@
 		gap: var(--s-3);
 	}
 	.q-row .input {
-		flex: 1 1 180px;
+		flex: 1 1 120px;
 		min-width: 0;
 	}
 	.q-shown {
