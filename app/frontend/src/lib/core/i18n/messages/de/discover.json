@@ -767,7 +767,7 @@
 	"discover.leftovers.reason.bigger_file_same_episode": "Eine größere Datei hat dieselbe Folge",
 	"discover.leftovers.reason.episode_has_file": "Ihre Folge hat schon eine Datei",
 	"discover.leftovers.reason.movie_more_than_one": "Mehr als ein Video im Ordner",
-	"discover.leftovers.reason.movie_copy_choice": "Passt nicht zu dieser Version",
+	"discover.leftovers.reason.movie_copy_choice": "Passt nicht zu dieser Variante",
 	"discover.leftovers.reason.movie_has_file": "Der Film hat schon eine Datei",
 	"discover.leftovers.reason.replaced_by_hand": "Durch eine andere Datei ersetzt",
 	"discover.leftovers.reason.unmatched": "Zuordnung von Hand aufgehoben"
