@@ -11,8 +11,7 @@
 	import { HistoryLine as CompactRow, isRoutine, groupDownloads, downloadTone } from '#lib/downloads/index.ts';
 	import { qualityBadges, ShowDeleteDialog, splitSteps, type RenameStep } from '#lib/mediafiles/index.ts';
 	import { MovieVersions } from '#lib/movies/index.ts';
-	import { SubtitlePanel } from '#lib/subtitles/index.ts';
-	import type { TitleSubtitles } from '#lib/subtitles/index.ts';
+	import { SubtitlePanel, type TitleSubtitles } from '#lib/subtitles/index.ts';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -20,8 +19,7 @@
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import type { LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
-	import { bytes, ago } from '#lib/core/format.ts';
-	import { date } from '#lib/core/format.ts';
+	import { bytes, ago, date } from '#lib/core/format.ts';
 	import { orderLabel, splitOutside } from './episode-groups.ts';
 	import { EpisodeOrder } from './episode-order.svelte.ts';
 
