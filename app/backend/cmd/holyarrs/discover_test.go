@@ -27,6 +27,9 @@ type discoverTMDB struct {
 	srv     *httptest.Server
 	hits    atomic.Int32
 	limited atomic.Bool
+	// details counts asks for movie 11's details only: background work the
+	// first page starts asks for other things and lands in hits at any time.
+	details atomic.Int32
 }
 
 func newDiscoverTMDB(t *testing.T) *discoverTMDB {
@@ -65,6 +68,7 @@ func newDiscoverTMDB(t *testing.T) *discoverTMDB {
 		case "/3/movie/11/recommendations":
 			_, _ = w.Write([]byte(list(41, 12)))
 		case "/3/movie/11":
+			f.details.Add(1)
 			_, _ = w.Write([]byte(`{"id":11,"title":"M11","release_date":"2024-05-01","runtime":100,"genres":[{"name":"Drama"}],
 				"credits":{"cast":[{"name":"Ann","character":"Hero"}],"crew":[{"id":5,"name":"Dee","job":"Director"}]},"keywords":{"keywords":[{"name":"heist"}]},"belongs_to_collection":{"id":90,"name":"Set"},"recommendations":` + list(12, 13, 41) + `}`))
 		case "/3/tv/21/watch/providers":
@@ -295,9 +299,9 @@ func TestMetadataDetails(t *testing.T) {
 	if len(d.Similar) != 2 || d.Similar[0].TMDBID != "12" || d.Similar[0].Ask == nil || d.Similar[1].TMDBID != "41" {
 		t.Fatalf("similar %s", b)
 	}
-	before := f.hits.Load()
+	before := f.details.Load()
 	do(t, "GET", srv.URL+"/api/v1/metadata/movie/11", "", 200)
-	if f.hits.Load() != before {
+	if f.details.Load() != before {
 		t.Fatal("details not cached")
 	}
 	s := string(do(t, "GET", srv.URL+"/api/v1/metadata/show/21", "", 200))

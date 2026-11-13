@@ -1311,5 +1311,8 @@
 	"server.migrate.imported-before-got-their-sign-in": "đã nhập trước đó; đã nhận cách đăng nhập bằng {way}",
 	"server.migrate.imported-before-their-account-signs-in": "đã nhập trước đó; tài khoản {way} của họ đăng nhập ở đây với tên {name}, nên giữ nguyên như vậy",
 	"server.migrate.people-who-signed-in-to-the": "Những người từng đăng nhập ứng dụng cũ bằng Plex, Jellyfin hoặc Emby được bật khi đăng nhập lần đầu theo cách đó, khi bạn bật nó trong Cài đặt > Đăng nhập và bảo mật.",
-	"server.sources.this-release-does-not-match-an": "Bản phát hành này không khớp với tập nào mà HolyArrs đang tìm. Nếu vẫn muốn dùng, hãy chọn nó từ tập mà nó thuộc về."
+	"server.sources.this-release-does-not-match-an": "Bản phát hành này không khớp với tập nào mà HolyArrs đang tìm. Nếu vẫn muốn dùng, hãy chọn nó từ tập mà nó thuộc về.",
+	"server.metadata.the-metadata-server-is-slow-right": "Máy chủ metadata đang chậm. Việc này sẽ tự trở lại bình thường.",
+	"server.requests.could-not-add-it-back-in": "{before}: không thêm được, quay lại đang chờ",
+	"server.requests.the-metadata-server-did-not-answer": "Máy chủ metadata không phản hồi kịp. Yêu cầu đã quay lại đang chờ; hãy duyệt lại."
 }

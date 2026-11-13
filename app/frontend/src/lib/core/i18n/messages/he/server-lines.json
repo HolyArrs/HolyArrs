@@ -1311,5 +1311,8 @@
 	"server.migrate.imported-before-got-their-sign-in": "יובא בעבר; קיבל את ההתחברות עם {way}",
 	"server.migrate.imported-before-their-account-signs-in": "יובא בעבר; חשבון {way} שלו מתחבר כאן בתור {name}, אז זה נשאר כך",
 	"server.migrate.people-who-signed-in-to-the": "אנשים שהתחברו לאפליקציה הישנה עם Plex, Jellyfin או Emby מופעלים בהתחברות הראשונה שלהם בדרך הזו, ברגע שהיא מופעלת בהגדרות > התחברות ואבטחה.",
-	"server.sources.this-release-does-not-match-an": "הריליז הזה לא מתאים לאף פרק ש-HolyArrs מחפש. כדי להשתמש בו בכל זאת, בחר אותו מתוך הפרק שהוא שייך אליו."
+	"server.sources.this-release-does-not-match-an": "הריליז הזה לא מתאים לאף פרק ש-HolyArrs מחפש. כדי להשתמש בו בכל זאת, בחר אותו מתוך הפרק שהוא שייך אליו.",
+	"server.metadata.the-metadata-server-is-slow-right": "שרת המטא־דאטה איטי כרגע. זה יחזור לעצמו.",
+	"server.requests.could-not-add-it-back-in": "{before}: לא ניתן היה להוסיף, שוב ממתין",
+	"server.requests.the-metadata-server-did-not-answer": "שרת המטא־דאטה לא ענה בזמן. הבקשה שוב ממתינה; אשר אותה שוב."
 }

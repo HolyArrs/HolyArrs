@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Puuduvad artiklid",
 	"downloads.problem.noFullCopy": "Täielikku koopiat pole",
 	"downloads.problem.noPeers": "Partnereid pole",
-	"downloads.problem.repairNeeded": "Vajab parandamist"
+	"downloads.problem.repairNeeded": "Vajab parandamist",
+	"downloads.hl.notAdded": "Ei lisatud; jälle ootel",
+	"downloads.hl.notAddedSlow": "metaandmete server ei vastanud õigel ajal"
 }

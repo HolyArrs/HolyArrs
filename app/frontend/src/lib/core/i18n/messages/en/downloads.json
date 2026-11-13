@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Missing articles",
 	"downloads.problem.noFullCopy": "No full copy",
 	"downloads.problem.noPeers": "No peers",
-	"downloads.problem.repairNeeded": "Repair needed"
+	"downloads.problem.repairNeeded": "Repair needed",
+	"downloads.hl.notAdded": "Not added; back in Waiting",
+	"downloads.hl.notAddedSlow": "the metadata server did not answer in time"
 }

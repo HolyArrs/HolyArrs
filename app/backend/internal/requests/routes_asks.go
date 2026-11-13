@@ -69,6 +69,8 @@ func (h *AskHandlers) askError(w http.ResponseWriter, err error) {
 		secs := int(time.Until(le.RetryAt).Seconds()) + 1
 		w.Header().Set("Retry-After", strconv.Itoa(max(secs, 1)))
 		webserver.WriteJSON(w, http.StatusTooManyRequests, map[string]any{"error": err.Error(), "retry_at": le.RetryAt, "per_week": le.PerWeek, "kind": le.Kind})
+	case errors.Is(err, ErrNotAddedSlow):
+		webserver.Fail(w, http.StatusServiceUnavailable, err.Error())
 	case errors.Is(err, ErrNotOpen), errors.Is(err, ErrAskedAgain):
 		webserver.Fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, ErrNotYours), errors.Is(err, ErrAboveLimit):

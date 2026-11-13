@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "บทความขาดหาย",
 	"downloads.problem.noFullCopy": "ไม่มีสำเนาเต็ม",
 	"downloads.problem.noPeers": "ไม่มีเพียร์",
-	"downloads.problem.repairNeeded": "ต้องซ่อมแซม"
+	"downloads.problem.repairNeeded": "ต้องซ่อมแซม",
+	"downloads.hl.notAdded": "ไม่ได้เพิ่ม กลับไปรออีกครั้ง",
+	"downloads.hl.notAddedSlow": "เซิร์ฟเวอร์เมทาดาทาไม่ตอบทันเวลา"
 }

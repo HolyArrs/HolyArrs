@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "கட்டுரைகள் இல்லை",
 	"downloads.problem.noFullCopy": "முழு நகல் இல்லை",
 	"downloads.problem.noPeers": "பியர்கள் இல்லை",
-	"downloads.problem.repairNeeded": "பழுது நீக்க வேண்டும்"
+	"downloads.problem.repairNeeded": "பழுது நீக்க வேண்டும்",
+	"downloads.hl.notAdded": "சேர்க்கப்படவில்லை; மீண்டும் காத்திருக்கிறது",
+	"downloads.hl.notAddedSlow": "மெட்டாடேட்டா சேவையகம் நேரத்தில் பதிலளிக்கவில்லை"
 }

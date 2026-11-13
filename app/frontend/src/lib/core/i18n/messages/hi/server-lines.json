@@ -1311,5 +1311,8 @@
 	"server.migrate.imported-before-got-their-sign-in": "पहले इंपोर्ट हो चुका; उन्हें {way} साइन इन मिल गया",
 	"server.migrate.imported-before-their-account-signs-in": "पहले इंपोर्ट हो चुका; उनका {way} खाता यहां {name} के रूप में साइन इन करता है, इसलिए वैसा ही रहता है",
 	"server.migrate.people-who-signed-in-to-the": "जो लोग पुराने ऐप में Plex, Jellyfin या Emby से साइन इन करते थे, वे उसी तरह पहली बार साइन इन करने पर चालू होते हैं, जब सेटिंग > साइन इन और सुरक्षा में इसे चालू किया गया हो।",
-	"server.sources.this-release-does-not-match-an": "यह रिलीज़ किसी ऐसे एपिसोड से मेल नहीं खाती जिसे HolyArrs ढूँढ रहा है। फिर भी इस्तेमाल करना हो, तो इसे उसी एपिसोड से चुनो जिसके लिए यह है।"
+	"server.sources.this-release-does-not-match-an": "यह रिलीज़ किसी ऐसे एपिसोड से मेल नहीं खाती जिसे HolyArrs ढूँढ रहा है। फिर भी इस्तेमाल करना हो, तो इसे उसी एपिसोड से चुनो जिसके लिए यह है।",
+	"server.metadata.the-metadata-server-is-slow-right": "मेटाडेटा सर्वर अभी धीमा है। यह अपने आप ठीक हो जाएगा।",
+	"server.requests.could-not-add-it-back-in": "{before}: जोड़ा नहीं जा सका, फिर से इंतज़ार में",
+	"server.requests.the-metadata-server-did-not-answer": "मेटाडेटा सर्वर ने समय पर जवाब नहीं दिया। यह फिर से इंतज़ार में है; इसे फिर से मंज़ूर करें।"
 }

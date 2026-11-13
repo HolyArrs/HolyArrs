@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Chybějící články",
 	"downloads.problem.noFullCopy": "Žádná úplná kopie",
 	"downloads.problem.noPeers": "Žádní peeři",
-	"downloads.problem.repairNeeded": "Nutná oprava"
+	"downloads.problem.repairNeeded": "Nutná oprava",
+	"downloads.hl.notAdded": "Nepřidáno; znovu čeká",
+	"downloads.hl.notAddedSlow": "server metadat neodpověděl včas"
 }

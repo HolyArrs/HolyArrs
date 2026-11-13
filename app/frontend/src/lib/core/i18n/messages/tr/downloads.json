@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Eksik makaleler",
 	"downloads.problem.noFullCopy": "Tam kopya yok",
 	"downloads.problem.noPeers": "Eş yok",
-	"downloads.problem.repairNeeded": "Onarım gerekli"
+	"downloads.problem.repairNeeded": "Onarım gerekli",
+	"downloads.hl.notAdded": "Eklenmedi; yeniden bekliyor",
+	"downloads.hl.notAddedSlow": "metadata sunucusu zamanında yanıt vermedi"
 }

@@ -1311,5 +1311,8 @@
 	"server.migrate.imported-before-got-their-sign-in": "diimport sebelum ini; telah mendapat log masuk {way} mereka",
 	"server.migrate.imported-before-their-account-signs-in": "diimport sebelum ini; akaun {way} mereka log masuk sebagai {name} di sini, jadi ia kekal begitu",
 	"server.migrate.people-who-signed-in-to-the": "Orang yang log masuk ke apl lama dengan Plex, Jellyfin atau Emby dihidupkan semasa log masuk pertama mereka dengan cara itu, sebaik sahaja ia dihidupkan di Tetapan > Log masuk dan keselamatan.",
-	"server.sources.this-release-does-not-match-an": "Keluaran ini tidak sepadan dengan mana-mana episod yang sedang dicari oleh HolyArrs. Untuk menggunakannya juga, pilih ia daripada episod yang berkenaan."
+	"server.sources.this-release-does-not-match-an": "Keluaran ini tidak sepadan dengan mana-mana episod yang sedang dicari oleh HolyArrs. Untuk menggunakannya juga, pilih ia daripada episod yang berkenaan.",
+	"server.metadata.the-metadata-server-is-slow-right": "Pelayan metadata perlahan sekarang. Ia akan pulih dengan sendirinya.",
+	"server.requests.could-not-add-it-back-in": "{before}: tidak dapat ditambah, kembali menunggu",
+	"server.requests.the-metadata-server-did-not-answer": "Pelayan metadata tidak menjawab tepat pada masanya. Ia kembali menunggu; luluskan sekali lagi."
 }

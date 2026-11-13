@@ -1311,5 +1311,8 @@
 	"server.migrate.imported-before-got-their-sign-in": "importado antes; recebeu o início de sessão com {way}",
 	"server.migrate.imported-before-their-account-signs-in": "importado antes; a conta do {way} dessa pessoa inicia sessão aqui como {name}, por isso fica assim",
 	"server.migrate.people-who-signed-in-to-the": "As pessoas que iniciavam sessão na app antiga com Plex, Jellyfin ou Emby são ativadas no primeiro início de sessão dessa forma, quando isso estiver ativado em Definições > Início de sessão e segurança.",
-	"server.sources.this-release-does-not-match-an": "Este lançamento não corresponde a nenhum episódio que o HolyArrs esteja a procurar. Para o usares na mesma, escolhe-o a partir do episódio a que pertence."
+	"server.sources.this-release-does-not-match-an": "Este lançamento não corresponde a nenhum episódio que o HolyArrs esteja a procurar. Para o usares na mesma, escolhe-o a partir do episódio a que pertence.",
+	"server.metadata.the-metadata-server-is-slow-right": "O servidor de metadados está lento neste momento. Isto volta ao normal sozinho.",
+	"server.requests.could-not-add-it-back-in": "{before}: não foi possível adicionar, voltou a aguardar",
+	"server.requests.the-metadata-server-did-not-answer": "O servidor de metadados não respondeu a tempo. O pedido voltou a aguardar; aprove-o novamente."
 }

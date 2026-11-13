@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Manglende artikler",
 	"downloads.problem.noFullCopy": "Ingen fuld kopi",
 	"downloads.problem.noPeers": "Ingen peers",
-	"downloads.problem.repairNeeded": "Reparation nødvendig"
+	"downloads.problem.repairNeeded": "Reparation nødvendig",
+	"downloads.hl.notAdded": "Ikke tilføjet; venter igen",
+	"downloads.hl.notAddedSlow": "metadataserveren svarede ikke i tide"
 }

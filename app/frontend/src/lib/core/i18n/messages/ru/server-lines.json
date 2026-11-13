@@ -1311,5 +1311,8 @@
 	"server.migrate.imported-before-got-their-sign-in": "уже импортировано раньше; получил вход через {way}",
 	"server.migrate.imported-before-their-account-signs-in": "уже импортировано раньше; его аккаунт {way} входит здесь как {name}, поэтому всё остаётся так",
 	"server.migrate.people-who-signed-in-to-the": "Люди, которые входили в старое приложение через Plex, Jellyfin или Emby, включатся при первом входе этим способом, как только он включён в разделе «Настройки > Вход и безопасность».",
-	"server.sources.this-release-does-not-match-an": "Этот релиз не подходит ни к одной серии, которую ищет HolyArrs. Чтобы всё равно его использовать, выберите его в той серии, к которой он относится."
+	"server.sources.this-release-does-not-match-an": "Этот релиз не подходит ни к одной серии, которую ищет HolyArrs. Чтобы всё равно его использовать, выберите его в той серии, к которой он относится.",
+	"server.metadata.the-metadata-server-is-slow-right": "Сервер метаданных сейчас работает медленно. Это пройдёт само.",
+	"server.requests.could-not-add-it-back-in": "{before}: не удалось добавить, снова ожидает",
+	"server.requests.the-metadata-server-did-not-answer": "Сервер метаданных не ответил вовремя. Запрос снова ожидает; одобрите его ещё раз."
 }

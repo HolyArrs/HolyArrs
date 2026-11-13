@@ -7,10 +7,12 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
@@ -124,6 +126,11 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 	if err != nil {
 		return a, err
 	}
+	// The add runs apart from the approver's request, with its own limit: a
+	// closed tab or a page change ends that request, and must not stop an
+	// approval halfway.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), approveAddLimit)
+	defer cancel()
 	// The audio languages only go on a title this approval adds: changing a
 	// title already in the Library is a Library edit, not an approval.
 	if len(opt.AudioLanguages) > 0 {
@@ -148,13 +155,7 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 		tid, err = s.addForAsk(ctx, a, set, opt, by)
 	}
 	if err != nil {
-		// Put the ask back as it was, so it can be decided again.
-		if rerr := s.Store.Write(context.WithoutCancel(ctx), func(tx *sql.Tx) error {
-			return database.Update(tx, "asks", &before, by.actor())
-		}); rerr != nil {
-			log.Printf("asks: put back ask %d: %v", id, rerr)
-		}
-		return before, err
+		return before, s.notAdded(ctx, before, by, err)
 	}
 	// The title is in the Library now. The rest must finish even if the
 	// approver's request ends, or the ask stays approved with no title.
@@ -211,6 +212,40 @@ func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOp
 		log.Printf("asks: check ready: %v", err)
 	}
 	return get(ctx, s.Store.Read(), a.ID)
+}
+
+// approveAddLimit is how long adding an approved title may take. A lookup the
+// metadata server has not kept yet can take half a minute.
+const approveAddLimit = 2 * time.Minute
+
+// ErrNotAddedSlow answers an approval whose title could not be added because
+// the metadata server did not answer in time.
+var ErrNotAddedSlow = errors.New("The metadata server did not answer in time. It is back in Waiting; approve it again.")
+
+// notAdded puts an ask whose title could not be added back as it was, so it
+// can be decided again, and says so: a log line, a History line with the
+// reason and a live change, so the Requests page shows it waiting at once.
+// It answers the error for the approver.
+func (s *Service) notAdded(ctx context.Context, before domain.Ask, by Person, err error) error {
+	ctx = context.WithoutCancel(ctx)
+	if rerr := s.Store.Write(ctx, func(tx *sql.Tx) error {
+		return database.Update(tx, "asks", &before, by.actor())
+	}); rerr != nil {
+		log.Printf("asks: put back ask %d: %v", before.ID, rerr)
+	}
+	slow := errors.Is(err, metadata.ErrServiceSlow) || errors.Is(err, context.DeadlineExceeded)
+	why := err.Error()
+	if slow {
+		why = "the metadata server did not answer in time"
+	}
+	log.Printf("asks: %s was approved by %s but could not be added, so it is back in Waiting: %v", label(before), by.Name, err)
+	s.event(ctx, &domain.Event{Actor: by.actor(), Kind: domain.EventAskNotAdded, Summary: label(before) + ": could not add it, back in Waiting",
+		Data: map[string]any{"ask_id": before.ID, "approved_by": by.Name, "reason": why, "slow": slow}, GroupKey: groupKey(before.ID)})
+	s.changed(ctx, before.ID)
+	if slow {
+		return ErrNotAddedSlow
+	}
+	return err
 }
 
 // setAudio puts the approver's audio languages on the title's main Version.

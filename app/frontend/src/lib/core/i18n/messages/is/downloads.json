@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Greinar vantar",
 	"downloads.problem.noFullCopy": "Engin heil afrit",
 	"downloads.problem.noPeers": "Engir jafningjar",
-	"downloads.problem.repairNeeded": "Viðgerðar þörf"
+	"downloads.problem.repairNeeded": "Viðgerðar þörf",
+	"downloads.hl.notAdded": "Ekki bætt við; bíður aftur",
+	"downloads.hl.notAddedSlow": "lýsigagnaþjónninn svaraði ekki í tæka tíð"
 }

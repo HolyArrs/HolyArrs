@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Nedostaju članci",
 	"downloads.problem.noFullCopy": "Nema potpune kopije",
 	"downloads.problem.noPeers": "Nema peerova",
-	"downloads.problem.repairNeeded": "Potreban popravak"
+	"downloads.problem.repairNeeded": "Potreban popravak",
+	"downloads.hl.notAdded": "Nije dodano; opet čeka",
+	"downloads.hl.notAddedSlow": "poslužitelj metapodataka nije odgovorio na vrijeme"
 }

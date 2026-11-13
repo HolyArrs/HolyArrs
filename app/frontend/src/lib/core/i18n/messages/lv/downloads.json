@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Trūkst rakstu",
 	"downloads.problem.noFullCopy": "Nav pilnas kopijas",
 	"downloads.problem.noPeers": "Nav vienādranga",
-	"downloads.problem.repairNeeded": "Nepieciešams labojums"
+	"downloads.problem.repairNeeded": "Nepieciešams labojums",
+	"downloads.hl.notAdded": "Nav pievienots; atkal gaida",
+	"downloads.hl.notAddedSlow": "metadatu serveris neatbildēja laikā"
 }

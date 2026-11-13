@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Λείπουν άρθρα",
 	"downloads.problem.noFullCopy": "Κανένα πλήρες αντίγραφο",
 	"downloads.problem.noPeers": "Κανένας peer",
-	"downloads.problem.repairNeeded": "Χρειάζεται επισκευή"
+	"downloads.problem.repairNeeded": "Χρειάζεται επισκευή",
+	"downloads.hl.notAdded": "Δεν προστέθηκε· ξανά σε αναμονή",
+	"downloads.hl.notAddedSlow": "ο διακομιστής μεταδεδομένων δεν απάντησε εγκαίρως"
 }

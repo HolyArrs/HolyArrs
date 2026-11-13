@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "আর্টিকেল অনুপস্থিত",
 	"downloads.problem.noFullCopy": "পূর্ণ কপি নেই",
 	"downloads.problem.noPeers": "কোনো পিয়ার নেই",
-	"downloads.problem.repairNeeded": "মেরামত দরকার"
+	"downloads.problem.repairNeeded": "মেরামত দরকার",
+	"downloads.hl.notAdded": "যোগ হয়নি; আবার অপেক্ষায়",
+	"downloads.hl.notAddedSlow": "মেটাডেটা সার্ভার সময়মতো সাড়া দেয়নি"
 }

@@ -1311,5 +1311,8 @@
 	"server.migrate.imported-before-got-their-sign-in": "schon früher importiert; hat die Anmeldung mit {way} bekommen",
 	"server.migrate.imported-before-their-account-signs-in": "schon früher importiert; ihr {way}-Konto meldet sich hier als {name} an, also bleibt es so",
 	"server.migrate.people-who-signed-in-to-the": "Personen, die sich in der alten App mit Plex, Jellyfin oder Emby angemeldet haben, werden bei ihrer ersten Anmeldung auf diesem Weg eingeschaltet, sobald er unter Einstellungen > Anmeldung und Sicherheit an ist.",
-	"server.sources.this-release-does-not-match-an": "Dieses Release passt zu keiner Folge, nach der HolyArrs sucht. Um es trotzdem zu nutzen, wähle es bei der Folge, zu der es gehört."
+	"server.sources.this-release-does-not-match-an": "Dieses Release passt zu keiner Folge, nach der HolyArrs sucht. Um es trotzdem zu nutzen, wähle es bei der Folge, zu der es gehört.",
+	"server.metadata.the-metadata-server-is-slow-right": "Der Metadaten-Server ist gerade langsam. Das gibt sich von selbst.",
+	"server.requests.could-not-add-it-back-in": "{before}: konnte nicht hinzugefügt werden, wartet wieder",
+	"server.requests.the-metadata-server-did-not-answer": "Der Metadaten-Server hat nicht rechtzeitig geantwortet. Die Anfrage wartet wieder; genehmige sie noch einmal."
 }

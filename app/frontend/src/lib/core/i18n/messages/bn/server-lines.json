@@ -1311,5 +1311,8 @@
 	"server.migrate.imported-before-got-their-sign-in": "আগে ইমপোর্ট হয়েছে; তাদের {way} সাইন ইন পেয়েছে",
 	"server.migrate.imported-before-their-account-signs-in": "আগে ইমপোর্ট হয়েছে; তাদের {way} অ্যাকাউন্ট এখানে {name} হিসেবে সাইন ইন করে, তাই সেভাবেই থাকে",
 	"server.migrate.people-who-signed-in-to-the": "যারা পুরোনো অ্যাপে Plex, Jellyfin বা Emby দিয়ে সাইন ইন করতেন, সেটিংস > সাইন ইন ও নিরাপত্তা থেকে সেটি চালু হলে সেভাবে প্রথম সাইন ইনে তারা চালু হন।",
-	"server.sources.this-release-does-not-match-an": "এই রিলিজটি HolyArrs যে পর্ব খুঁজছে তার কোনোটির সাথে মেলে না। তবুও ব্যবহার করতে চাইলে, যে পর্বের জন্য এটি, সেখান থেকে এটি বেছে নাও।"
+	"server.sources.this-release-does-not-match-an": "এই রিলিজটি HolyArrs যে পর্ব খুঁজছে তার কোনোটির সাথে মেলে না। তবুও ব্যবহার করতে চাইলে, যে পর্বের জন্য এটি, সেখান থেকে এটি বেছে নাও।",
+	"server.metadata.the-metadata-server-is-slow-right": "মেটাডেটা সার্ভার এখন ধীর। এটা নিজে থেকেই ঠিক হয়ে যাবে।",
+	"server.requests.could-not-add-it-back-in": "{before}: যোগ করা যায়নি, আবার অপেক্ষায়",
+	"server.requests.the-metadata-server-did-not-answer": "মেটাডেটা সার্ভার সময়মতো সাড়া দেয়নি। এটি আবার অপেক্ষায় আছে; আবার অনুমোদন করুন।"
 }

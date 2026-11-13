@@ -1311,5 +1311,8 @@
 	"server.migrate.imported-before-got-their-sign-in": "importeret før; fik deres {way}-login",
 	"server.migrate.imported-before-their-account-signs-in": "importeret før; deres {way}-konto logger ind som {name} her, så det forbliver sådan",
 	"server.migrate.people-who-signed-in-to-the": "Personer, der loggede ind i den gamle app med Plex, Jellyfin eller Emby, slås til ved deres første login på den måde, når det er slået til under Indstillinger > Login og sikkerhed.",
-	"server.sources.this-release-does-not-match-an": "Denne Udgivelse passer ikke til et afsnit, HolyArrs leder efter. Vil du bruge den alligevel, så vælg den fra det afsnit, den hører til."
+	"server.sources.this-release-does-not-match-an": "Denne Udgivelse passer ikke til et afsnit, HolyArrs leder efter. Vil du bruge den alligevel, så vælg den fra det afsnit, den hører til.",
+	"server.metadata.the-metadata-server-is-slow-right": "Metadataserveren er langsom lige nu. Det retter sig af sig selv.",
+	"server.requests.could-not-add-it-back-in": "{before}: kunne ikke tilføjes, venter igen",
+	"server.requests.the-metadata-server-did-not-answer": "Metadataserveren svarede ikke i tide. Den venter igen; godkend den igen."
 }

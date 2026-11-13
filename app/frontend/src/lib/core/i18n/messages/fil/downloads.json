@@ -1277,5 +1277,7 @@
 	"downloads.problem.missingArticles": "Kulang na mga article",
 	"downloads.problem.noFullCopy": "Walang buong kopya",
 	"downloads.problem.noPeers": "Walang peer",
-	"downloads.problem.repairNeeded": "Kailangang ayusin"
+	"downloads.problem.repairNeeded": "Kailangang ayusin",
+	"downloads.hl.notAdded": "Hindi naidagdag; naghihintay ulit",
+	"downloads.hl.notAddedSlow": "hindi sumagot sa oras ang metadata server"
 }

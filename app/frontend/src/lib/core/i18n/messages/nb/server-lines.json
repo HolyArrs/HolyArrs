@@ -1311,5 +1311,8 @@
 	"server.migrate.imported-before-got-their-sign-in": "importert før; fikk {way}-innloggingen sin",
 	"server.migrate.imported-before-their-account-signs-in": "importert før; {way}-kontoen deres logger inn som {name} her, så det forblir slik",
 	"server.migrate.people-who-signed-in-to-the": "Personer som logget inn i den gamle appen med Plex, Jellyfin eller Emby, slås på ved første innlogging på den måten, så snart det er slått på under Innstillinger > Innlogging og sikkerhet.",
-	"server.sources.this-release-does-not-match-an": "Denne utgivelsen passer ikke til noen episode HolyArrs leter etter. Vil du bruke den likevel, velger du den fra episoden den hører til."
+	"server.sources.this-release-does-not-match-an": "Denne utgivelsen passer ikke til noen episode HolyArrs leter etter. Vil du bruke den likevel, velger du den fra episoden den hører til.",
+	"server.metadata.the-metadata-server-is-slow-right": "Metadataserveren er treg akkurat nå. Det går over av seg selv.",
+	"server.requests.could-not-add-it-back-in": "{before}: kunne ikke legges til, venter igjen",
+	"server.requests.the-metadata-server-did-not-answer": "Metadataserveren svarte ikke i tide. Den venter igjen; godkjenn den på nytt."
 }

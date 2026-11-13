@@ -1311,5 +1311,8 @@
 	"server.migrate.imported-before-got-their-sign-in": "นำเข้าไปแล้วก่อนหน้านี้ ได้รับการเข้าสู่ระบบด้วย {way} แล้ว",
 	"server.migrate.imported-before-their-account-signs-in": "นำเข้าไปแล้วก่อนหน้านี้ บัญชี {way} ของเขาเข้าสู่ระบบที่นี่ในชื่อ {name} จึงคงไว้แบบนั้น",
 	"server.migrate.people-who-signed-in-to-the": "ผู้ที่เคยเข้าสู่ระบบแอปเก่าด้วย Plex, Jellyfin หรือ Emby จะเปิดเมื่อเข้าสู่ระบบด้วยวิธีนั้นครั้งแรก เมื่อเปิดไว้ในการตั้งค่า > การเข้าสู่ระบบและความปลอดภัย",
-	"server.sources.this-release-does-not-match-an": "รีลีสนี้ไม่ตรงกับตอนใดที่ HolyArrs กำลังหาอยู่ หากยังต้องการใช้ ให้เลือกจากตอนที่รีลีสนี้เป็นของ"
+	"server.sources.this-release-does-not-match-an": "รีลีสนี้ไม่ตรงกับตอนใดที่ HolyArrs กำลังหาอยู่ หากยังต้องการใช้ ให้เลือกจากตอนที่รีลีสนี้เป็นของ",
+	"server.metadata.the-metadata-server-is-slow-right": "ตอนนี้เซิร์ฟเวอร์เมทาดาทาช้าอยู่ เดี๋ยวจะกลับมาเป็นปกติเอง",
+	"server.requests.could-not-add-it-back-in": "{before}: เพิ่มไม่ได้ กลับไปรออีกครั้ง",
+	"server.requests.the-metadata-server-did-not-answer": "เซิร์ฟเวอร์เมทาดาทาไม่ตอบทันเวลา คำขอกลับไปรออีกครั้ง โปรดอนุมัติอีกครั้ง"
 }
