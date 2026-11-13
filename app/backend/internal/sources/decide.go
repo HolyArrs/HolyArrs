@@ -87,7 +87,10 @@ func (c slotCtx) ref() mediafiles.TitleRef {
 }
 
 // dedupe drops repeats of one Release across Sources, matching on the lower-cased name or on the info hash.
-func dedupe(all []found) []found {
+func dedupe(all []found) []found { return dedupeEach(all, nil) }
+
+// dedupeEach is dedupe that tells dropped about each repeat it leaves out.
+func dedupeEach(all []found, dropped func(found)) []found {
 	seen := map[string]bool{}
 	var out []found
 	for _, f := range all {
@@ -100,6 +103,9 @@ func dedupe(all []found) []found {
 			dup = dup || seen[k]
 		}
 		if dup {
+			if dropped != nil {
+				dropped(f)
+			}
 			continue
 		}
 		for _, k := range keys {
