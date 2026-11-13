@@ -324,29 +324,6 @@ func (c *Client) send(ctx context.Context, method, raw string, payload []byte, h
 	return body, nil
 }
 
-// feedError reads a Newznab error answer, an error root with a code and a
-// description.
-func feedError(body []byte) error {
-	var e struct {
-		XMLName     xml.Name
-		Code        int    `xml:"code,attr"`
-		Description string `xml:"description,attr"`
-	}
-	if xml.Unmarshal(body, &e) != nil || e.XMLName.Local != "error" {
-		return nil
-	}
-	kind := KindBroken
-	switch {
-	case e.Code >= 100 && e.Code < 200:
-		kind = KindLoginRefused
-	case e.Code == 429 || e.Code == 500 || e.Code == 501:
-		kind = KindRateLimited
-	case e.Code >= 900:
-		kind = KindDown
-	}
-	return &Error{Kind: kind, Msg: fmt.Sprintf("code %d: %s", e.Code, e.Description), RetryAfter: Backoff(1)}
-}
-
 // Caps is what a Source says it can do.
 type Caps struct {
 	Search      bool
