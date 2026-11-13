@@ -1300,6 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "tilføjet til {fallback} som ønsket uden filer; kræver opmærksomhed: den gamle mappe {dir} findes ikke på denne server; ret mappen eller tilføj en stiregel",
 	"server.migrate.will-be-added-to-as-wanted": "tilføjes til {fallback} som ønsket uden filer; kræver opmærksomhed: den gamle mappe {dir} findes ikke på denne server; ret mappen eller tilføj en stiregel",
 	"server.migrate.its-library-folder-is-not-on": "biblioteksmappen {library} findes ikke på denne server, og her er ingen biblioteksmappe til {kind}; tilføj en og importér igen",
-	"server.migrate.left-out-was-left-unchecked-check": "udeladt: {attnfolder} var ikke afkrydset; afkryds den og importér igen",
-	"server.migrate.left-out-was-left-unchecked-check-2": "udeladt: {path} var ikke afkrydset; afkryds den og importér igen"
+	"server.migrate.left-out-was-left-unchecked-check": "udeladt: {attnfolder} står til \"Tag dem ikke med\"; vælg en mappe til den og importér igen",
+	"server.migrate.left-out-was-left-unchecked-check-2": "udeladt: {path} står til \"Tag dem ikke med\"; vælg en mappe til den og importér igen"
 }

@@ -1300,6 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "добавено в {fallback} като желано, без файлове; изисква внимание: старата папка {dir} я няма на този сървър; поправете папката или добавете правило за път",
 	"server.migrate.will-be-added-to-as-wanted": "ще бъде добавено в {fallback} като желано, без файлове; изисква внимание: старата папка {dir} я няма на този сървър; поправете папката или добавете правило за път",
 	"server.migrate.its-library-folder-is-not-on": "папката на библиотеката {library} я няма на този сървър и тук няма папка на библиотеката за {kind}; добавете такава и импортирайте отново",
-	"server.migrate.left-out-was-left-unchecked-check": "пропуснато: {attnfolder} остана неотметната; отметнете я и импортирайте отново",
-	"server.migrate.left-out-was-left-unchecked-check-2": "пропуснато: {path} остана неотметната; отметнете я и импортирайте отново"
+	"server.migrate.left-out-was-left-unchecked-check": "пропуснато: {attnfolder} е зададена на „Не ги внасяй“; изберете папка за нея и импортирайте отново",
+	"server.migrate.left-out-was-left-unchecked-check-2": "пропуснато: {path} е зададена на „Не ги внасяй“; изберете папка за нея и импортирайте отново"
 }

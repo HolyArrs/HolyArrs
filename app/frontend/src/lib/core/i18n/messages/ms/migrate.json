@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Dipindahkan: {n}",
 	"migrate.needAttentionN": "Perlu perhatian: {n}",
 	"migrate.needAttentionWhy": "Folder lama mereka tiada di pelayan ini, jadi ia masuk sebagai dikehendaki ke folder di sini. Betulkan folder atau tambah peraturan laluan: {list}",
-	"migrate.leftOutUncheckedN": "Ditinggalkan, folder tidak ditanda: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} tidak ditanda; tandakannya dan import semula"
+	"migrate.leftOutUncheckedN": "Ditinggalkan: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} ditetapkan kepada \"Jangan bawa mereka\"; pilih folder untuknya dan import semula"
 }

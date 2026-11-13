@@ -1300,6 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "přidáno do {fallback} jako hledané bez souborů; vyžaduje pozornost: stará složka {dir} na tomto serveru není; opravte složku nebo přidejte pravidlo cesty",
 	"server.migrate.will-be-added-to-as-wanted": "bude přidáno do {fallback} jako hledané bez souborů; vyžaduje pozornost: stará složka {dir} na tomto serveru není; opravte složku nebo přidejte pravidlo cesty",
 	"server.migrate.its-library-folder-is-not-on": "složka knihovny {library} na tomto serveru není a není tu žádná složka knihovny pro {kind}; přidejte ji a importujte znovu",
-	"server.migrate.left-out-was-left-unchecked-check": "vynecháno: {attnfolder} zůstala nezaškrtnutá; zaškrtněte ji a importujte znovu",
-	"server.migrate.left-out-was-left-unchecked-check-2": "vynecháno: {path} zůstala nezaškrtnutá; zaškrtněte ji a importujte znovu"
+	"server.migrate.left-out-was-left-unchecked-check": "vynecháno: {attnfolder} má nastaveno „Nepřebírat je“; vyberte pro ni složku a importujte znovu",
+	"server.migrate.left-out-was-left-unchecked-check-2": "vynecháno: {path} má nastaveno „Nepřebírat je“; vyberte pro ni složku a importujte znovu"
 }

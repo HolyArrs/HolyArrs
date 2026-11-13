@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Aktarıldı: {n}",
 	"migrate.needAttentionN": "İlgi gerekiyor: {n}",
 	"migrate.needAttentionWhy": "Eski klasörleri bu sunucuda yok, bu yüzden buradaki bir klasöre istenen olarak geliyorlar. Klasörü düzeltin veya bir yol kuralı ekleyin: {list}",
-	"migrate.leftOutUncheckedN": "Dışarıda bırakıldı, klasör işaretlenmedi: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} işaretlenmedi; işaretleyip yeniden içe aktarın"
+	"migrate.leftOutUncheckedN": "Dışarıda bırakıldı: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} \"Getirme\" olarak ayarlı; bunun için bir klasör seçip yeniden içe aktarın"
 }

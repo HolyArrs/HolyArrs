@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { ltr, t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	let keepOpen = false;
 </script>
@@ -230,26 +230,26 @@
 	{@const twins = shared[p] ?? []}
 	<li class="mrow wrap" data-testid={testid}>
 		<div class="txt">
-			<label for={id} class="mono path one" title={p}><span aria-hidden="true">{clipMiddle(p)}</span><span class="sr-only">{p}</span></label>
+			<label for={id} class="mono path one" title={p}><span aria-hidden="true" dir="ltr">{clipMiddle(p)}</span><span class="sr-only">{p}</span></label>
 			{#if note && pick && pick === suggested[p]}<span class="sub">{t('migrate.suggested')}</span>{/if}
 		</div>
 		<span class="arrow" aria-hidden="true">→</span>
 		<select {id} class="input pick" value={pick} aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `${id}-err` : undefined} onchange={(e) => onfolder(p, e.currentTarget.value)}>
 			<option value="">{t('migrate.donTBringThem')}</option>
-			{#each choicesFor(p) as o (o.value)}<option value={o.value}>{o.label}</option>{/each}
+			{#each choicesFor(p) as o (o.value)}<option value={o.value}>{ltr(o.label)}</option>{/each}
 			<option value={OTHER}>{t('migrate.otherPath')}</option>
 		</select>
 		{#if pick === OTHER || err || gone || twins.length}
 			<div class="below">
 				{#if pick === OTHER}
 					<label class="sr-only" for="{id}-other">{t('migrate.pathHereFor', { path: p })}</label>
-					<input id="{id}-other" class="input mono wide" value={others[p] ?? ''} placeholder="/data/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `${id}-err` : undefined} oninput={(e) => onother(p, e.currentTarget.value)} onblur={oncommit} onkeydown={keyDone} />
+					<input id="{id}-other" dir="ltr" class="input mono wide" value={others[p] ?? ''} placeholder="/data/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `${id}-err` : undefined} oninput={(e) => onother(p, e.currentTarget.value)} onblur={oncommit} onkeydown={keyDone} />
 				{/if}
 				{#if err}<p class="form-error" id="{id}-err">{err}</p>{/if}
-				{#if gone}<p class="sub warn note" data-testid="folder-not-here">{t('migrate.notInContainer', { path: gone })}{#if seen.length} {t('migrate.foldersItSees', { list: seen.join(', ') })}{/if}</p>
+				{#if gone}<p class="sub warn note" data-testid="folder-not-here">{t('migrate.notInContainer', { path: ltr(gone) })}{#if seen.length}{' ' + t('migrate.foldersItSees', { list: seen.map(ltr).join(', ') })}{/if}</p>
 					{#if oldRows.length > 0 && !extra.some((r) => r.from === p)}<Button icon="plus" variant="plain" data-testid="folder-not-here-rule" onclick={() => (onextra([...extra, { from: p, to: '' }]), (advOpen = true))}>{t('migrate.addAPathRule')}</Button>{/if}
 				{/if}
-				{#if twins.length}<p class="sub warn note" data-testid="folder-shared">{t('migrate.sameNewFolder', { list: twins.join(', ') })}</p>{/if}
+				{#if twins.length}<p class="sub warn note" data-testid="folder-shared">{t('migrate.sameNewFolder', { list: twins.map(ltr).join(', ') })}</p>{/if}
 			</div>
 		{/if}
 	</li>
@@ -261,10 +261,10 @@
 		<li class="mrow wrap rule">
 			<span class="sr-only">{t('migrate.pathRule', { n: i + 1 })}</span>
 			<label class="sr-only" for="move-rule-from-{i}">{t('migrate.oldAppSPath')}</label>
-			<input id="move-rule-from-{i}" class="input mono half" value={r.from} placeholder="/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `move-rule-${i}-err` : undefined} oninput={(e) => onextra(extra.map((x, j) => (j === i ? { ...x, from: e.currentTarget.value } : x)))} onblur={oncommit} onkeydown={keyDone} />
+			<input id="move-rule-from-{i}" dir="ltr" class="input mono half" value={r.from} placeholder="/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `move-rule-${i}-err` : undefined} oninput={(e) => onextra(extra.map((x, j) => (j === i ? { ...x, from: e.currentTarget.value } : x)))} onblur={oncommit} onkeydown={keyDone} />
 			<span class="arrow" aria-hidden="true">→</span>
 			<label class="sr-only" for="move-rule-to-{i}">{t('migrate.pathHere')}</label>
-			<input id="move-rule-to-{i}" class="input mono half" value={r.to} placeholder="/data/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `move-rule-${i}-err` : undefined} oninput={(e) => onextra(extra.map((x, j) => (j === i ? { ...x, to: e.currentTarget.value } : x)))} onblur={oncommit} onkeydown={keyDone} />
+			<input id="move-rule-to-{i}" dir="ltr" class="input mono half" value={r.to} placeholder="/data/movies" aria-invalid={err ? 'true' : undefined} aria-describedby={err ? `move-rule-${i}-err` : undefined} oninput={(e) => onextra(extra.map((x, j) => (j === i ? { ...x, to: e.currentTarget.value } : x)))} onblur={oncommit} onkeydown={keyDone} />
 			<IconButton icon="x" label={t('migrate.removePathRule', { n: i + 1 })} onclick={() => (onextra(extra.filter((_, j) => j !== i)), oncommit())} />
 			{#if err}<div class="below"><p class="form-error" id="move-rule-{i}-err">{err}</p></div>{/if}
 		</li>

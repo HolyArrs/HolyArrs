@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Přešlo: {n}",
 	"migrate.needAttentionN": "Vyžadují pozornost: {n}",
 	"migrate.needAttentionWhy": "Jejich stará složka na tomto serveru není, takže přicházejí jako hledané do složky zde. Opravte složku nebo přidejte pravidlo cesty: {list}",
-	"migrate.leftOutUncheckedN": "Vynecháno, složka nezaškrtnutá: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} zůstala nezaškrtnutá; zaškrtněte ji a importujte znovu"
+	"migrate.leftOutUncheckedN": "Vynecháno: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} má nastaveno „Nepřebírat je“; vyberte pro ni složku a importujte znovu"
 }

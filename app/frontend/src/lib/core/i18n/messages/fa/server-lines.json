@@ -1300,6 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "به‌عنوان خواسته‌شده و بدون فایل به {fallback} افزوده شد؛ نیاز به توجه: پوشهٔ قدیمی {dir} روی این سرور نیست؛ پوشه را درست کنید یا یک قاعدهٔ مسیر بیفزایید",
 	"server.migrate.will-be-added-to-as-wanted": "به‌عنوان خواسته‌شده و بدون فایل به {fallback} افزوده می‌شود؛ نیاز به توجه: پوشهٔ قدیمی {dir} روی این سرور نیست؛ پوشه را درست کنید یا یک قاعدهٔ مسیر بیفزایید",
 	"server.migrate.its-library-folder-is-not-on": "پوشهٔ کتابخانهٔ {library} روی این سرور نیست و اینجا هیچ پوشهٔ کتابخانه‌ای برای {kind} نیست؛ یکی بیفزایید و دوباره وارد کنید",
-	"server.migrate.left-out-was-left-unchecked-check": "کنار گذاشته شد: {attnfolder} علامت نخورده بود؛ علامتش بزنید و دوباره وارد کنید",
-	"server.migrate.left-out-was-left-unchecked-check-2": "کنار گذاشته شد: {path} علامت نخورده بود؛ علامتش بزنید و دوباره وارد کنید"
+	"server.migrate.left-out-was-left-unchecked-check": "کنار گذاشته شد: {attnfolder} روی «آن‌ها را نیاور» است؛ برایش پوشه‌ای انتخاب کنید و دوباره وارد کنید",
+	"server.migrate.left-out-was-left-unchecked-check-2": "کنار گذاشته شد: {path} روی «آن‌ها را نیاور» است؛ برایش پوشه‌ای انتخاب کنید و دوباره وارد کنید"
 }

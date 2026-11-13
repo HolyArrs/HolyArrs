@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Au venit: {n}",
 	"migrate.needAttentionN": "Necesită atenție: {n}",
 	"migrate.needAttentionWhy": "Vechiul lor dosar nu este pe acest server, așa că vin ca dorite într-un dosar de aici. Corectează dosarul sau adaugă o regulă de cale: {list}",
-	"migrate.leftOutUncheckedN": "Lăsate deoparte, dosar nebifat: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} a rămas nebifat; bifează-l și importă din nou"
+	"migrate.leftOutUncheckedN": "Lăsate deoparte: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} este setat pe „Nu-i aduce”; alege un dosar pentru el și importă din nou"
 }

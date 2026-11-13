@@ -1300,6 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "เพิ่มลงใน {fallback} เป็นรายการที่ต้องการแล้ว ยังไม่มีไฟล์; ต้องตรวจสอบ: ไม่มีโฟลเดอร์เดิม {dir} บนเซิร์ฟเวอร์นี้; แก้โฟลเดอร์หรือเพิ่มกฎเส้นทาง",
 	"server.migrate.will-be-added-to-as-wanted": "จะเพิ่มลงใน {fallback} เป็นรายการที่ต้องการ ยังไม่มีไฟล์; ต้องตรวจสอบ: ไม่มีโฟลเดอร์เดิม {dir} บนเซิร์ฟเวอร์นี้; แก้โฟลเดอร์หรือเพิ่มกฎเส้นทาง",
 	"server.migrate.its-library-folder-is-not-on": "ไม่มีโฟลเดอร์คลัง {library} บนเซิร์ฟเวอร์นี้ และที่นี่ไม่มีโฟลเดอร์คลังสำหรับ {kind}; เพิ่มหนึ่งโฟลเดอร์แล้วนำเข้าอีกครั้ง",
-	"server.migrate.left-out-was-left-unchecked-check": "ไม่ได้รวม: {attnfolder} ไม่ได้ถูกเลือก; เลือกแล้วนำเข้าอีกครั้ง",
-	"server.migrate.left-out-was-left-unchecked-check-2": "ไม่ได้รวม: {path} ไม่ได้ถูกเลือก; เลือกแล้วนำเข้าอีกครั้ง"
+	"server.migrate.left-out-was-left-unchecked-check": "ไม่ได้รวม: {attnfolder} ตั้งไว้เป็น \"ไม่นำเขามา\"; เลือกโฟลเดอร์ให้แล้วนำเข้าอีกครั้ง",
+	"server.migrate.left-out-was-left-unchecked-check-2": "ไม่ได้รวม: {path} ตั้งไว้เป็น \"ไม่นำเขามา\"; เลือกโฟลเดอร์ให้แล้วนำเข้าอีกครั้ง"
 }

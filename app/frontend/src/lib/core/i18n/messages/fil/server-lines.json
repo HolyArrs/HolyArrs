@@ -1300,6 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "idinagdag sa {fallback} bilang hinahanap, walang file; kailangang tingnan: wala sa server na ito ang lumang folder na {dir}; ayusin ang folder o magdagdag ng path rule",
 	"server.migrate.will-be-added-to-as-wanted": "idaragdag sa {fallback} bilang hinahanap, walang file; kailangang tingnan: wala sa server na ito ang lumang folder na {dir}; ayusin ang folder o magdagdag ng path rule",
 	"server.migrate.its-library-folder-is-not-on": "wala sa server na ito ang Library folder na {library}, at walang Library folder para sa {kind} dito; magdagdag ng isa at mag-import muli",
-	"server.migrate.left-out-was-left-unchecked-check": "hindi isinama: hindi na-check ang {attnfolder}; i-check ito at mag-import muli",
-	"server.migrate.left-out-was-left-unchecked-check-2": "hindi isinama: hindi na-check ang {path}; i-check ito at mag-import muli"
+	"server.migrate.left-out-was-left-unchecked-check": "hindi isinama: naka-set ang {attnfolder} sa \"Huwag silang dalhin\"; pumili ng folder para dito at mag-import muli",
+	"server.migrate.left-out-was-left-unchecked-check-2": "hindi isinama: naka-set ang {path} sa \"Huwag silang dalhin\"; pumili ng folder para dito at mag-import muli"
 }

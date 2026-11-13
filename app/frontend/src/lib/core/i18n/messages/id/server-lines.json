@@ -1300,6 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "ditambahkan ke {fallback} sebagai dicari tanpa file; perlu perhatian: folder lamanya {dir} tidak ada di server ini; perbaiki foldernya atau tambahkan aturan jalur",
 	"server.migrate.will-be-added-to-as-wanted": "akan ditambahkan ke {fallback} sebagai dicari tanpa file; perlu perhatian: folder lamanya {dir} tidak ada di server ini; perbaiki foldernya atau tambahkan aturan jalur",
 	"server.migrate.its-library-folder-is-not-on": "folder Pustaka {library} tidak ada di server ini, dan di sini tidak ada folder Pustaka untuk {kind}; tambahkan satu lalu impor lagi",
-	"server.migrate.left-out-was-left-unchecked-check": "ditinggalkan: {attnfolder} tidak dicentang; centang lalu impor lagi",
-	"server.migrate.left-out-was-left-unchecked-check-2": "ditinggalkan: {path} tidak dicentang; centang lalu impor lagi"
+	"server.migrate.left-out-was-left-unchecked-check": "ditinggalkan: {attnfolder} diatur ke \"Jangan bawa mereka\"; pilih folder untuknya lalu impor lagi",
+	"server.migrate.left-out-was-left-unchecked-check-2": "ditinggalkan: {path} diatur ke \"Jangan bawa mereka\"; pilih folder untuknya lalu impor lagi"
 }

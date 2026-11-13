@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "এসেছে: {n}",
 	"migrate.needAttentionN": "মনোযোগ দরকার: {n}",
 	"migrate.needAttentionWhy": "এদের পুরোনো ফোল্ডার এই সার্ভারে নেই, তাই এগুলো 'চাই' হিসেবে এখানকার একটি ফোল্ডারে আসে। ফোল্ডার ঠিক করুন বা একটি পাথ নিয়ম যোগ করুন: {list}",
-	"migrate.leftOutUncheckedN": "বাদ রাখা, ফোল্ডারে টিক নেই: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} টিক দেওয়া ছিল না; টিক দিয়ে আবার ইমপোর্ট করুন"
+	"migrate.leftOutUncheckedN": "বাদ রাখা: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder}-এ \"তাদের আনবেন না\" বেছে নেওয়া আছে; এর জন্য একটি ফোল্ডার বেছে নিয়ে আবার ইমপোর্ট করুন"
 }

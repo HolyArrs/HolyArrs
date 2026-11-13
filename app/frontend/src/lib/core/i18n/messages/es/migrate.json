@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Importados: {n}",
 	"migrate.needAttentionN": "Requieren atención: {n}",
 	"migrate.needAttentionWhy": "Su carpeta antigua no está en este servidor, así que llegan como deseados a una carpeta de aquí. Corrige la carpeta o añade una regla de ruta: {list}",
-	"migrate.leftOutUncheckedN": "Omitidos, carpeta sin marcar: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} quedó sin marcar; márcala e importa de nuevo"
+	"migrate.leftOutUncheckedN": "Omitidos: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} está en \"No traerlos\"; elige una carpeta para ella e importa de nuevo"
 }

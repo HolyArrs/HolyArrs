@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Перенесены: {n}",
 	"migrate.needAttentionN": "Требуют внимания: {n}",
 	"migrate.needAttentionWhy": "Их старой папки нет на этом сервере, поэтому они переносятся как желаемые в папку здесь. Исправьте папку или добавьте правило пути: {list}",
-	"migrate.leftOutUncheckedN": "Исключены, папка не отмечена: {n}",
-	"migrate.leftOutUncheckedWhy": "Папка {folder} не отмечена; отметьте её и импортируйте снова"
+	"migrate.leftOutUncheckedN": "Исключены: {n}",
+	"migrate.leftOutUncheckedWhy": "Для папки {folder} выбрано «Не переносить»; выберите для неё папку и импортируйте снова"
 }

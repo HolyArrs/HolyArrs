@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Пренесени: {n}",
 	"migrate.needAttentionN": "Изискват внимание: {n}",
 	"migrate.needAttentionWhy": "Старата им папка я няма на този сървър, затова идват като желани в папка тук. Поправете папката или добавете правило за път: {list}",
-	"migrate.leftOutUncheckedN": "Пропуснати, папката не е отметната: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} остана неотметната; отметнете я и импортирайте отново"
+	"migrate.leftOutUncheckedN": "Пропуснати: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} е зададена на „Не ги внасяй“; изберете папка за нея и импортирайте отново"
 }

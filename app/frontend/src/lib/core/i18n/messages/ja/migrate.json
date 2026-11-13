@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "移行済み: {n}",
 	"migrate.needAttentionN": "要確認: {n}",
 	"migrate.needAttentionWhy": "古いフォルダーがこのサーバーにないため、欲しいものとしてここのフォルダーに入ります。フォルダーを直すか、パスルールを追加してください: {list}",
-	"migrate.leftOutUncheckedN": "対象外 (フォルダー未チェック): {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} のチェックが外れていました。チェックしてもう一度インポートしてください"
+	"migrate.leftOutUncheckedN": "対象外: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} は「引き継がない」になっています。フォルダーを選んでもう一度インポートしてください"
 }

@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Μεταφέρθηκαν: {n}",
 	"migrate.needAttentionN": "Χρειάζονται προσοχή: {n}",
 	"migrate.needAttentionWhy": "Ο παλιός τους φάκελος δεν υπάρχει σε αυτόν τον διακομιστή, οπότε έρχονται ως επιθυμητοί σε φάκελο εδώ. Διορθώστε τον φάκελο ή προσθέστε κανόνα διαδρομής: {list}",
-	"migrate.leftOutUncheckedN": "Παραλείφθηκαν, φάκελος χωρίς επιλογή: {n}",
-	"migrate.leftOutUncheckedWhy": "Το {folder} έμεινε χωρίς επιλογή· επιλέξτε το και εισαγάγετε ξανά"
+	"migrate.leftOutUncheckedN": "Παραλείφθηκαν: {n}",
+	"migrate.leftOutUncheckedWhy": "Το {folder} έχει οριστεί σε «Να μην εισαχθούν»· επιλέξτε φάκελο για αυτό και εισαγάγετε ξανά"
 }

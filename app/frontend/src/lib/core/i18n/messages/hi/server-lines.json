@@ -1300,6 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "{fallback} में बिना फ़ाइलों के 'चाहिए' के रूप में जोड़ा गया; ध्यान चाहिए: पुराना फ़ोल्डर {dir} इस सर्वर पर नहीं है; फ़ोल्डर ठीक करें या पाथ नियम जोड़ें",
 	"server.migrate.will-be-added-to-as-wanted": "{fallback} में बिना फ़ाइलों के 'चाहिए' के रूप में जोड़ा जाएगा; ध्यान चाहिए: पुराना फ़ोल्डर {dir} इस सर्वर पर नहीं है; फ़ोल्डर ठीक करें या पाथ नियम जोड़ें",
 	"server.migrate.its-library-folder-is-not-on": "लाइब्रेरी फ़ोल्डर {library} इस सर्वर पर नहीं है, और यहाँ {kind} के लिए कोई लाइब्रेरी फ़ोल्डर नहीं है; एक जोड़ें और फिर से इम्पोर्ट करें",
-	"server.migrate.left-out-was-left-unchecked-check": "छोड़ा गया: {attnfolder} पर निशान नहीं था; निशान लगाएँ और फिर से इम्पोर्ट करें",
-	"server.migrate.left-out-was-left-unchecked-check-2": "छोड़ा गया: {path} पर निशान नहीं था; निशान लगाएँ और फिर से इम्पोर्ट करें"
+	"server.migrate.left-out-was-left-unchecked-check": "छोड़ा गया: {attnfolder} पर \"इन्हें न लाएं\" चुना है; इसके लिए एक फ़ोल्डर चुनें और फिर से इम्पोर्ट करें",
+	"server.migrate.left-out-was-left-unchecked-check-2": "छोड़ा गया: {path} पर \"इन्हें न लाएं\" चुना है; इसके लिए एक फ़ोल्डर चुनें और फिर से इम्पोर्ट करें"
 }

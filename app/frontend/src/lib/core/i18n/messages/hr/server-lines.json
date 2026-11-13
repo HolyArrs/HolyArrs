@@ -1300,6 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "dodano u {fallback} kao željeno, bez datoteka; traži pažnju: stara mapa {dir} nije na ovom poslužitelju; ispravite mapu ili dodajte pravilo putanje",
 	"server.migrate.will-be-added-to-as-wanted": "bit će dodano u {fallback} kao željeno, bez datoteka; traži pažnju: stara mapa {dir} nije na ovom poslužitelju; ispravite mapu ili dodajte pravilo putanje",
 	"server.migrate.its-library-folder-is-not-on": "mapa knjižnice {library} nije na ovom poslužitelju i ovdje nema mape knjižnice za {kind}; dodajte jednu i uvezite ponovno",
-	"server.migrate.left-out-was-left-unchecked-check": "izostavljeno: {attnfolder} nije označena; označite je i uvezite ponovno",
-	"server.migrate.left-out-was-left-unchecked-check-2": "izostavljeno: {path} nije označena; označite je i uvezite ponovno"
+	"server.migrate.left-out-was-left-unchecked-check": "izostavljeno: {attnfolder} je postavljena na \"Ne dovodi ih\"; odaberite joj mapu i uvezite ponovno",
+	"server.migrate.left-out-was-left-unchecked-check-2": "izostavljeno: {path} je postavljena na \"Ne dovodi ih\"; odaberite joj mapu i uvezite ponovno"
 }

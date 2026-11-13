@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Перенесено: {n}",
 	"migrate.needAttentionN": "Потребують уваги: {n}",
 	"migrate.needAttentionWhy": "Їхньої старої теки немає на цьому сервері, тож вони переходять як бажані до теки тут. Виправте теку або додайте правило шляху: {list}",
-	"migrate.leftOutUncheckedN": "Пропущено, теку не позначено: {n}",
-	"migrate.leftOutUncheckedWhy": "Теку {folder} не позначено; позначте її та імпортуйте знову"
+	"migrate.leftOutUncheckedN": "Пропущено: {n}",
+	"migrate.leftOutUncheckedWhy": "Для теки {folder} вибрано «Не переносити їх»; виберіть для неї теку та імпортуйте знову"
 }

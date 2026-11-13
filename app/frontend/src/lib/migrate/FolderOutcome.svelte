@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { ltr, t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { folderOutcome, type Line } from './move.ts';
 
 	let { lines, after = false }: { lines: Line[]; after?: boolean } = $props();
@@ -12,14 +12,14 @@
 		{#if o.attention > 0}
 			<li class="fo-row" data-testid="folder-outcome-attention">
 				<b>{t('migrate.needAttentionN', { n: o.attention })}</b>
-				<span class="fo-sub">{t('migrate.needAttentionWhy', { list: o.attentionFolders.join(', ') })}</span>
+				<span class="fo-sub">{t('migrate.needAttentionWhy', { list: o.attentionFolders.map(ltr).join(', ') })}</span>
 			</li>
 		{/if}
 		{#if o.unchecked > 0}
 			<li class="fo-row" data-testid="folder-outcome-unchecked">
 				<b>{t('migrate.leftOutUncheckedN', { n: o.unchecked })}</b>
 				{#each o.uncheckedFolders as f (f)}
-					<span class="fo-sub">{t('migrate.leftOutUncheckedWhy', { folder: f })}</span>
+					<span class="fo-sub">{t('migrate.leftOutUncheckedWhy', { folder: ltr(f) })}</span>
 				{/each}
 			</li>
 		{/if}

@@ -1300,6 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "aggiunto a {fallback} come desiderato, senza file; richiede attenzione: la sua vecchia cartella {dir} non è su questo server; correggi la cartella o aggiungi una regola di percorso",
 	"server.migrate.will-be-added-to-as-wanted": "verrà aggiunto a {fallback} come desiderato, senza file; richiede attenzione: la sua vecchia cartella {dir} non è su questo server; correggi la cartella o aggiungi una regola di percorso",
 	"server.migrate.its-library-folder-is-not-on": "la sua cartella della libreria {library} non è su questo server e qui non c'è nessuna cartella della libreria per {kind}; aggiungine una e importa di nuovo",
-	"server.migrate.left-out-was-left-unchecked-check": "escluso: {attnfolder} non è stata spuntata; spuntala e importa di nuovo",
-	"server.migrate.left-out-was-left-unchecked-check-2": "escluso: {path} non è stata spuntata; spuntala e importa di nuovo"
+	"server.migrate.left-out-was-left-unchecked-check": "escluso: {attnfolder} è impostata su \"Non importarli\"; scegli una cartella e importa di nuovo",
+	"server.migrate.left-out-was-left-unchecked-check-2": "escluso: {path} è impostata su \"Non importarli\"; scegli una cartella e importa di nuovo"
 }

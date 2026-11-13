@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "已迁移：{n}",
 	"migrate.needAttentionN": "需要注意：{n}",
 	"migrate.needAttentionWhy": "它们的旧文件夹不在此服务器上，所以会作为想要的条目进入这里的一个文件夹。请修正文件夹或添加路径规则：{list}",
-	"migrate.leftOutUncheckedN": "未包含（文件夹未勾选）：{n}",
-	"migrate.leftOutUncheckedWhy": "{folder} 未勾选；勾选后再次导入"
+	"migrate.leftOutUncheckedN": "未包含：{n}",
+	"migrate.leftOutUncheckedWhy": "{folder} 设为“不迁入”；为它选择一个文件夹后再次导入"
 }

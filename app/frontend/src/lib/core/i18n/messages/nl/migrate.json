@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Overgekomen: {n}",
 	"migrate.needAttentionN": "Vragen aandacht: {n}",
 	"migrate.needAttentionWhy": "Hun oude map staat niet op deze server, dus komen ze als gewenst in een map hier. Corrigeer de map of voeg een padregel toe: {list}",
-	"migrate.leftOutUncheckedN": "Weggelaten, map niet aangevinkt: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} was niet aangevinkt; vink hem aan en importeer opnieuw"
+	"migrate.leftOutUncheckedN": "Weggelaten: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} staat op \"Niet overnemen\"; kies er een map voor en importeer opnieuw"
 }

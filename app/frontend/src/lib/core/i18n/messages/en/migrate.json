@@ -306,6 +306,6 @@
 	"migrate.cameOverN": "Came over: {n}",
 	"migrate.needAttentionN": "Need attention: {n}",
 	"migrate.needAttentionWhy": "Their old folder is not on this server, so they come over as wanted into a folder here. Fix the folder or add a path rule: {list}",
-	"migrate.leftOutUncheckedN": "Left out, folder unchecked: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} was left unchecked; check it and import again"
+	"migrate.leftOutUncheckedN": "Left out: {n}",
+	"migrate.leftOutUncheckedWhy": "{folder} is set to \"Don't bring them\"; pick a folder for it and import again"
 }

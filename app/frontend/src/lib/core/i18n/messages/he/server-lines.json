@@ -1300,6 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "נוסף אל {fallback} כמבוקש, בלי קבצים; דורש תשומת לב: התיקייה הישנה {dir} לא נמצאת בשרת הזה; תקן את התיקייה או הוסף כלל נתיב",
 	"server.migrate.will-be-added-to-as-wanted": "יתווסף אל {fallback} כמבוקש, בלי קבצים; דורש תשומת לב: התיקייה הישנה {dir} לא נמצאת בשרת הזה; תקן את התיקייה או הוסף כלל נתיב",
 	"server.migrate.its-library-folder-is-not-on": "תיקיית הספרייה {library} לא נמצאת בשרת הזה, ואין כאן תיקיית ספרייה עבור {kind}; הוסף אחת וייבא שוב",
-	"server.migrate.left-out-was-left-unchecked-check": "הושמט: {attnfolder} לא סומנה; סמן אותה וייבא שוב",
-	"server.migrate.left-out-was-left-unchecked-check-2": "הושמט: {path} לא סומנה; סמן אותה וייבא שוב"
+	"server.migrate.left-out-was-left-unchecked-check": "הושמט: {attnfolder} מוגדרת ל\"לא להעביר אותם\"; בחר עבורה תיקייה וייבא שוב",
+	"server.migrate.left-out-was-left-unchecked-check-2": "הושמט: {path} מוגדרת ל\"לא להעביר אותם\"; בחר עבורה תיקייה וייבא שוב"
 }

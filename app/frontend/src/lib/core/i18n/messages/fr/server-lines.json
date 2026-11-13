@@ -1300,6 +1300,6 @@
 	"server.migrate.added-to-as-wanted-with-no": "ajouté à {fallback} comme souhaité, sans fichiers ; à vérifier : son ancien dossier {dir} n'est pas sur ce serveur ; corrigez son dossier ou ajoutez une règle de chemin",
 	"server.migrate.will-be-added-to-as-wanted": "sera ajouté à {fallback} comme souhaité, sans fichiers ; à vérifier : son ancien dossier {dir} n'est pas sur ce serveur ; corrigez son dossier ou ajoutez une règle de chemin",
 	"server.migrate.its-library-folder-is-not-on": "son dossier de bibliothèque {library} n'est pas sur ce serveur et il n'y a ici aucun dossier de bibliothèque {kind} ; ajoutez-en un et importez à nouveau",
-	"server.migrate.left-out-was-left-unchecked-check": "laissé de côté : {attnfolder} n'a pas été coché ; cochez-le et importez à nouveau",
-	"server.migrate.left-out-was-left-unchecked-check-2": "laissé de côté : {path} n'a pas été coché ; cochez-le et importez à nouveau"
+	"server.migrate.left-out-was-left-unchecked-check": "laissé de côté : {attnfolder} est réglé sur « Ne pas les importer » ; choisissez-lui un dossier et importez à nouveau",
+	"server.migrate.left-out-was-left-unchecked-check-2": "laissé de côté : {path} est réglé sur « Ne pas les importer » ; choisissez-lui un dossier et importez à nouveau"
 }

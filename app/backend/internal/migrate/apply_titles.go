@@ -92,7 +92,7 @@ func (r *run) title(it Item) (string, string) {
 			lfID = -1 // the folder itself comes over in this same run
 		} else {
 			r.attn, r.attnFolder = AttnUnchecked, filepath.ToSlash(filepath.Clean(lib))
-			return ResSkipped, "left out: " + r.attnFolder + " was left unchecked; check it and import again"
+			return ResSkipped, "left out: " + r.attnFolder + " is set to \"Don't bring them\"; pick a folder for it and import again"
 		}
 	}
 	// A title whose own folder is missing (wanted, never downloaded) still
