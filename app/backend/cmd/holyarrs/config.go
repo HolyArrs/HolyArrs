@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -60,12 +62,48 @@ func envOn(key string) bool {
 // (6262, Psalm 62). The health check uses the same port.
 const defaultPort = "6262"
 
+// EnvAddr sets the listen address (such as :8080) and EnvPort only its port
+// (such as 8080). -addr wins over both, and EnvAddr over EnvPort.
+const (
+	EnvAddr = "HOLYARRS_ADDR"
+	EnvPort = "HOLYARRS_PORT"
+)
+
+// envListenAddr is the listen address from EnvAddr or EnvPort, or the
+// default. A bad value is an error that names the variable.
+func envListenAddr() (string, error) {
+	if v := strings.TrimSpace(os.Getenv(EnvAddr)); v != "" {
+		_, port, err := net.SplitHostPort(v)
+		if err == nil {
+			err = validPort(port)
+		}
+		if err != nil {
+			return "", fmt.Errorf("%s=%q is not a listen address such as :8080 or 0.0.0.0:8080", EnvAddr, v)
+		}
+		return v, nil
+	}
+	if v := strings.TrimSpace(os.Getenv(EnvPort)); v != "" {
+		if err := validPort(v); err != nil {
+			return "", fmt.Errorf("%s=%q is not a port number from 1 to 65535", EnvPort, v)
+		}
+		return ":" + v, nil
+	}
+	return ":" + defaultPort, nil
+}
+
+func validPort(s string) error {
+	if n, err := strconv.Atoi(s); err != nil || n < 1 || n > 65535 {
+		return fmt.Errorf("bad port %q", s)
+	}
+	return nil
+}
+
 func parseFlags(args []string, errOut io.Writer) (config, error) {
 	fs := flag.NewFlagSet("holyarrs", flag.ContinueOnError)
 	fs.SetOutput(errOut)
 	var c config
 	fs.StringVar(&c.ConfigDir, "config", "/config", "folder for the database and settings (must be on local disk)")
-	fs.StringVar(&c.Addr, "addr", ":"+defaultPort, "address to listen on")
+	fs.StringVar(&c.Addr, "addr", ":"+defaultPort, "address to listen on ("+EnvAddr+", or "+EnvPort+" for the port only)")
 	fs.StringVar(&c.SourceURL, "source-url", env("HOLYARRS_SOURCE_URL", ""), "Torznab Source to add on start (no key)")
 	fs.StringVar(&c.QbitURL, "qbittorrent-url", env("HOLYARRS_QBITTORRENT_URL", ""), "qBittorrent Web UI to add on start")
 	fs.StringVar(&c.Movies, "movies", env("HOLYARRS_MOVIES", ""), "movie Library folder to add on start")
@@ -75,7 +113,19 @@ func parseFlags(args []string, errOut io.Writer) (config, error) {
 	if err := fs.Parse(args); err != nil {
 		return c, err
 	}
-	fs.Visit(func(f *flag.Flag) { c.urlBaseFlag = c.urlBaseFlag || f.Name == "url-base" })
+	addrFlag := false
+	fs.Visit(func(f *flag.Flag) {
+		c.urlBaseFlag = c.urlBaseFlag || f.Name == "url-base"
+		addrFlag = addrFlag || f.Name == "addr"
+	})
+	if !addrFlag {
+		addr, err := envListenAddr()
+		if err != nil {
+			fmt.Fprintln(errOut, err)
+			return c, err
+		}
+		c.Addr = addr
+	}
 	base, err := webserver.CleanURLBase(c.URLBase)
 	if err != nil {
 		fmt.Fprintln(errOut, "-url-base:", err)

@@ -144,7 +144,7 @@ docker build --file deploy/Dockerfile --tag holyarrs:dev .
 docker run -p 6262:6262 -v ./config:/config holyarrs:dev
 ```
 
-The image starts `FROM scratch` and holds the program, CA certificates and licences. It runs `-config /config -addr :6262`.
+The image starts `FROM scratch` and holds the program, CA certificates and licences. It runs `-config /config` and listens on `:6262`, or on `HOLYARRS_ADDR` or `HOLYARRS_PORT` when set.
 
 </details>
 

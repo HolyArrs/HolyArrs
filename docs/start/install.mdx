@@ -138,7 +138,7 @@ switch to one data folder later without importing again. See
 
 | Setting | What it does |
 | --- | --- |
-| `-p 6262:6262` | The web app. |
+| `-p 6262:6262` | The web app. To use another port only on the host, change the left number, such as `-p 8080:6262`. |
 | `-v /config` | Databases, settings, the master key, backups and logs. Local disk only. |
 | `-v /data` | Your downloads and your Library folders, in one folder. See [Media folders](#media-folders). |
 | `-v /movies`, `-v /tv`, `-v /music`, `-v /downloads` | Optional, in place of `/data`. See [Separate mounts](#separate-mounts). Every import is then a full copy. |
@@ -156,6 +156,7 @@ switch to one data folder later without importing again. See
 | `HOLYARRS_ALLOWED_HOSTS` | Optional. Extra host names people use to reach HolyArrs, comma separated. |
 | `HOLYARRS_TRUSTED_PROXIES` | Optional. Your reverse proxy's address or network. |
 | `HOLYARRS_URL_BASE` | Optional. Serve HolyArrs under a path. See [URL base and reverse proxies](../run/url-base.md). |
+| `HOLYARRS_PORT` | Optional. The port inside the container, such as `8080` with `-p 8080:8080`. The health check follows it. |
 | `HOLYARRS_MASTER_KEY_FILE` | Optional. Read the master key from its own file. |
 
 Any variable can come from a file. Put `FILE__` in front of the name and give
