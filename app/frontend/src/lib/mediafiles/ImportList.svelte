@@ -146,7 +146,7 @@
 			{#each folders as f (f.folder)}
 				<li class="card" class:unr={needsLook(f) && !ticked[f.folder]} data-testid="import-item" data-status={f.status} use:whenNear={f.folder}>
 					<div class="pw">
-						{@render art(f, 'big')}
+						{@render art(f, 'wall')}
 						<label class="ovl">{@render tickBox(f)}</label>
 						<span class="ovr">{@render pill(f)}</span>
 					</div>
@@ -187,6 +187,7 @@
 							{@render titleLine(f, true)}
 							{@render folderLine(f)}
 							{#if f.main}<span class="fd">{fileName(f.main)}</span>{/if}
+							<span class="c-st2">{@render pill(f)}</span>
 							<ImportFolderFiles {f} />
 						</span>
 						<span class="c-st">{@render pill(f)}</span>
@@ -201,7 +202,7 @@
 								{#if f.main}<dt>{t('mediafiles.sheet.file')}</dt><dd title={fileName(f.main)}>{fileName(f.main)}</dd>{/if}
 								{#if f.videos[0]}<dt>{t('mediafiles.col.size')}</dt><dd>{bytes(f.videos[0].size)}</dd>{/if}
 							</dl>
-							{#if f.why}<span class="fd">{f.why}</span>{/if}
+							{#if f.why}<span class="why">{f.why}</span>{/if}
 							<ImportFolderFiles {f} />
 						</span>
 						<span class="pkw"><span class="lab">{t('discover.leftovers.match')}</span>{@render pick(f)}</span>
@@ -266,10 +267,12 @@
 	.v-banners .row { display: grid; grid-template-columns: 28px var(--bw) minmax(160px, 1fr) 128px minmax(200px, 250px); gap: 0 16px; align-items: center; padding-inline: 14px 16px; }
 	.v-banners .item { min-height: calc(var(--bw) / var(--bratio) + 16px); padding-block: 8px; box-sizing: border-box; }
 	.v-banners .item + .item::before { inset-inline-start: calc(var(--bw) + 58px); inset-inline-end: 16px; }
+	.c-st2 { display: none; }
 	.ban { display: block; min-width: 0; --banner-r: 12px; border-radius: 12px; box-shadow: 0 1px 2px rgb(20 24 40 / 12%), 0 10px 18px -12px rgb(20 24 40 / 50%); aspect-ratio: var(--bratio); background: var(--surface-2); overflow: hidden; }
 	@container (max-width: 980px) {
 		.v-banners .row { grid-template-columns: 28px min(var(--bw), 34cqw) minmax(0, 1fr) minmax(160px, 220px); }
 		.v-banners .hd > :nth-child(4), .v-banners .c-st { display: none; }
+		.v-banners .c-st2 { display: block; }
 		.v-banners .item + .item::before { inset-inline-start: calc(min(var(--bw), 34cqw) + 58px); }
 	}
 
@@ -278,9 +281,9 @@
 	.grid.sz-s { gap: 18px 14px; }
 	.card { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 	.pw { position: relative; }
-	.big { width: 100%; border-radius: 12px; box-shadow: 0 1px 2px rgb(20 24 40 / 12%), 0 10px 18px -12px rgb(20 24 40 / 50%); }
+	.wall { width: 100%; border-radius: 12px; box-shadow: 0 1px 2px rgb(20 24 40 / 12%), 0 10px 18px -12px rgb(20 24 40 / 50%); }
 	.card.unr { background: none; }
-	.card.unr .big { box-shadow: 0 0 0 2px var(--surface-1), 0 0 0 4px color-mix(in srgb, var(--wait) 75%, transparent), 0 10px 18px -12px rgb(20 24 40 / 50%); }
+	.card.unr .wall { box-shadow: 0 0 0 2px var(--surface-1), 0 0 0 4px color-mix(in srgb, var(--wait) 75%, transparent), 0 10px 18px -12px rgb(20 24 40 / 50%); }
 	.ovl { position: absolute; top: 8px; inset-inline-start: 8px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: color-mix(in srgb, var(--surface-1) 88%, transparent); box-shadow: 0 1px 3px rgb(0 0 0 / 25%); backdrop-filter: blur(6px); }
 	.ovl > span.tk { display: none; }
 	.ovl:has(> span.tk) { display: none; }
@@ -328,6 +331,7 @@
 	.phone.v-banners .item + .item::before { display: none; }
 	.phone.v-banners .item + .item { border-top: 1px solid var(--line); }
 	.phone.v-banners .tl.big b { font: var(--t-headline); }
+	.phone.v-banners .c-st2 { display: none; }
 	.phone.v-posters .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 12px; }
 	.phone.v-overview .item { grid-template-columns: 22px 76px minmax(0, 1fr); grid-template-areas: 't p x' 'k k k'; gap: 12px; padding: 14px 12px; }
 	.phone.v-overview .item > .tk { grid-area: t; }
