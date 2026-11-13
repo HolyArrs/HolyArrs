@@ -3,8 +3,10 @@ module github.com/HolyArrs/holyarrs
 go 1.27.4
 
 require (
+	github.com/andybalholm/brotli v1.2.7
 	github.com/bodgit/sevenzip v1.6.5
 	github.com/coreos/go-oidc/v3 v3.21.0
+	github.com/dlclark/regexp2 v1.11.5
 	github.com/go-jose/go-jose/v4 v4.1.6
 	github.com/nwaples/rardecode/v2 v2.4.5
 	github.com/stangelandcl/ppmd v0.1.1
@@ -19,10 +21,8 @@ require (
 )
 
 require (
-	github.com/andybalholm/brotli v1.2.7 // indirect
 	github.com/bodgit/plumbing v1.3.0 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
-	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect

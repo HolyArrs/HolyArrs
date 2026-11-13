@@ -6,7 +6,8 @@ WORKDIR /src/app/frontend
 COPY app/frontend/package.json app/frontend/package-lock.json ./
 RUN npm ci --ignore-scripts --no-audit --no-fund
 COPY app/frontend/ ./
-RUN npm run build
+# The language files stay plain here; the build stage packs them with bzip2.
+RUN HOLYARRS_LANGUAGES_PLAIN=1 npm run build
 
 # Build stage: runs on the build machine and cross-compiles for the target,
 # so multi-arch builds (amd64, arm64, armv7) need no emulation.
@@ -25,11 +26,27 @@ COPY . .
 # The pages just built are what the program embeds.
 RUN rm -rf app/frontend/dist
 COPY --from=web /src/app/frontend/dist ./app/frontend/dist
+# bzip2 is smaller than brotli for every language file (Python is part of the
+# Go image; the program unpacks with Go's own bzip2 reader).
+RUN python3 deploy/pack_languages.py app/frontend/dist
+# Inlining is off in HolyArrs's own packages and in the parts of Go's library
+# and the sign-in libraries that are not speed-critical (about 1.3 MB less to
+# download, same measured speed). The database, text handling, unpacking and
+# database/sql keep it, where it matters for speed.
 RUN set -eu; \
     ldflags="-s -w"; \
     if [ -n "${VERSION:-}" ]; then ldflags="$ldflags -X main.version=$VERSION"; fi; \
+    noinline=""; \
+    for p in github.com/HolyArrs/holyarrs/... \
+        net/http/... crypto/tls/... crypto/x509/... net net/url net/textproto net/mail net/netip net/smtp mime/... \
+        os os/exec os/signal os/user log/... encoding/asn1 encoding/pem encoding/csv archive/... vendor/... \
+        io/fs path/filepath html/... text/... flag embed \
+        github.com/go-jose/... github.com/coreos/... golang.org/x/oauth2/... github.com/spf13/... go4.org/... \
+        github.com/google/... github.com/dustin/... github.com/hashicorp/...; do \
+        noinline="$noinline -gcflags=$p=-l"; \
+    done; \
     GOARM="${TARGETVARIANT#v}" CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
-    go build -trimpath -ldflags="$ldflags" -o /out/holyarrs ./app/backend/cmd/holyarrs
+    go build -trimpath $noinline -ldflags="$ldflags" -o /out/holyarrs ./app/backend/cmd/holyarrs
 # The folders the bare image needs: /config for the owner (1000:1000) and a
 # /tmp anyone may write (Move's working copies, temporary files).
 RUN mkdir -p /out/config /out/tmp && chown 1000:1000 /out/config && chmod 1777 /out/tmp
