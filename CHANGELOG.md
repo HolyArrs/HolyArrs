@@ -19,6 +19,7 @@ All notable changes to HolyArrs are listed here. The format follows [Keep a Chan
 ### Fixed
 
 - People from Seerr keep their Plex, Jellyfin or Emby sign-in. ([#334](https://github.com/HolyArrs/HolyArrs/issues/334))
+- Import members reads people from Plex again. ([#341](https://github.com/HolyArrs/HolyArrs/issues/341))
 - Requests from Seerr show real names, years and posters. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
 - An approval that adds nothing says why. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
 - Posters view stays light in big libraries, Safari too. ([#328](https://github.com/HolyArrs/HolyArrs/issues/328))
@@ -51,7 +52,7 @@ All notable changes to HolyArrs are listed here. The format follows [Keep a Chan
 
 ### Thanks
 
-Thanks to everyone who reported, tested and asked for these: [@eddoww](https://github.com/HolyArrs/HolyArrs/issues/289), [@JulianAtkins](https://github.com/HolyArrs/HolyArrs/issues/318), [@stormbyte](https://github.com/HolyArrs/HolyArrs/issues/284), GreyJoshy94 on Discord, [@mandopatriot](https://github.com/HolyArrs/HolyArrs/issues/279), [@mimedo](https://github.com/HolyArrs/HolyArrs/issues/291#issuecomment-6816138650), [@danielbaercgn](https://github.com/HolyArrs/HolyArrs/issues/308), [@stevelucky](https://github.com/HolyArrs/HolyArrs/issues/309), [@Nviviri](https://github.com/HolyArrs/HolyArrs/issues/314), [@zhu327](https://github.com/HolyArrs/HolyArrs/issues/325#issuecomment-6854023071), [@nevpeek](https://github.com/HolyArrs/HolyArrs/issues/324), [@p5y6ry52pt-hue](https://github.com/HolyArrs/HolyArrs/issues/328), [@sparecycles-dev](https://github.com/HolyArrs/HolyArrs/issues/332), Mr_Mennens_Tech, roychassi and tekhop on Discord, and u/Blegrand15 on Reddit.
+Thanks to everyone who reported, tested and asked for these: [@eddoww](https://github.com/HolyArrs/HolyArrs/issues/289), [@JulianAtkins](https://github.com/HolyArrs/HolyArrs/issues/318), [@stormbyte](https://github.com/HolyArrs/HolyArrs/issues/284), GreyJoshy94 on Discord, [@mandopatriot](https://github.com/HolyArrs/HolyArrs/issues/279), [@mimedo](https://github.com/HolyArrs/HolyArrs/issues/291#issuecomment-6816138650), [@danielbaercgn](https://github.com/HolyArrs/HolyArrs/issues/308), [@stevelucky](https://github.com/HolyArrs/HolyArrs/issues/309), [@Nviviri](https://github.com/HolyArrs/HolyArrs/issues/314), [@zhu327](https://github.com/HolyArrs/HolyArrs/issues/325#issuecomment-6854023071), [@nevpeek](https://github.com/HolyArrs/HolyArrs/issues/324), [@p5y6ry52pt-hue](https://github.com/HolyArrs/HolyArrs/issues/328), [@sparecycles-dev](https://github.com/HolyArrs/HolyArrs/issues/332), Lunim, Mr_Mennens_Tech, roychassi and tekhop on Discord, and u/Blegrand15 on Reddit.
 
 ## 1.1.0
 
