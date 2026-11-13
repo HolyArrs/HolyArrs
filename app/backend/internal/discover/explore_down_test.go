@@ -3,6 +3,7 @@ package discover
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"log"
 	"net/url"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
@@ -78,3 +80,30 @@ func TestExploreServerDownLogsOnceAndWaits(t *testing.T) {
 }
 
 func noStore() *database.Store { return nil }
+
+// The wait doubles up to two minutes, a fail-fast refusal from our own
+// guard does not lengthen it, and an answer ends it.
+func TestExploreServerWaitIsCapped(t *testing.T) {
+	_ = captureLog(t)
+	var h serverHold
+	now := time.Unix(1000, 0)
+	for range 10 {
+		h.note(metadata.ErrServiceUnavailable, now)
+	}
+	if d := h.until.Sub(now); d != downWaitMax || downWaitMax != 2*time.Minute {
+		t.Fatalf("wait after many failures = %v", d)
+	}
+	until := h.until
+	h.note(fmt.Errorf("TMDB: %w (%w)", metadata.ErrServiceUnavailable, outbound.ErrSuppressed), now.Add(time.Minute))
+	if h.until != until {
+		t.Fatalf("a fail-fast refusal moved the wait to %v", h.until)
+	}
+	h.note(nil, now)
+	if h.held(now) || h.fails != 0 {
+		t.Fatal("an answer should end the wait")
+	}
+	h.note(metadata.ErrServiceUnavailable, now)
+	if d := h.until.Sub(now); d != downWaitMin {
+		t.Fatalf("first wait after an answer = %v", d)
+	}
+}
