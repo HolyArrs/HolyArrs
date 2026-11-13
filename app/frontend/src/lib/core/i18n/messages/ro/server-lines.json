@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Importul manual citește doar din dosarele Bibliotecii, din dosarele programelor de descărcare și din dosarele de import suplimentare din Setări > Dosarele Bibliotecii: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Importul manual citește doar din dosarele Bibliotecii, din dosarele programelor de descărcare și din dosarele de import suplimentare, și încă nu este configurat niciunul. Adaugă unul în Setări > Dosarele Bibliotecii.",
 	"server.sources.holds-not-what-was-searched-for": "conține {covered}, nu ce s-a căutat",
-	"server.mediafiles.no-title-in-the-library-is": "niciun Titlu din bibliotecă nu se numește {value}"
+	"server.mediafiles.no-title-in-the-library-is": "niciun Titlu din bibliotecă nu se numește {value}",
+	"server.requests.a-quality-name-can-be-at": "numele unei calități poate avea cel mult 30 de caractere",
+	"server.requests.keep-at-least-one-quality-shown": "lasă afișată cel puțin o calitate pentru filme și una pentru seriale",
+	"server.requests.someone-already-asked-for-this-movie": "cineva a cerut deja acest film în această calitate; decide în schimb cererea lui",
+	"server.requests.that-quality-cannot-be-asked-for": "această calitate nu poate fi cerută",
+	"server.requests.the-quality-you-picked-was-not": "Calitatea aleasă nu a fost folosită: titlul are deja această copie."
 }

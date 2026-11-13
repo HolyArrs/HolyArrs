@@ -1310,6 +1310,7 @@ qualities
 quality
 qualityProfileId
 qualityVersion
+quality_name
 quality_profiles
 query
 queue
@@ -1333,6 +1334,7 @@ ratio_limit
 read_at
 read_by_owner
 read_token
+ready
 reason
 reasons
 recent

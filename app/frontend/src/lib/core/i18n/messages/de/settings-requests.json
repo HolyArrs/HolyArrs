@@ -42,5 +42,11 @@
 	"settings.requests.fourK": "4K-Kopie",
 	"settings.requests.fourKDesc": "Wohin genehmigte 4K-Anfragen gehen und wie sie gewählt werden",
 	"settings.requests.fourKSameFolder": "Wie andere Anfragen",
-	"settings.requests.fourKNamedRules": "Die Qualität namens 4K"
+	"settings.requests.fourKNamedRules": "Die Qualität namens 4K",
+	"settings.requests.choices": "Was angefragt werden kann",
+	"settings.requests.choicesDesc": "Die Qualitäts-Schaltflächen in den Anfragefenstern, in dieser Reihenfolge. Hier umbenennen oder ausblenden; Kinder bekommen die erste sichtbare.",
+	"settings.requests.choiceShown": "Allen zeigen",
+	"settings.requests.choiceMain": "{rules} · die Hauptkopie des Titels",
+	"settings.requests.choiceOwn": "{rules} · als eigene Kopie behalten",
+	"settings.requests.choiceNotReady": "Wird angeboten, sobald oben eine 4K-Qualität eingerichtet ist"
 }

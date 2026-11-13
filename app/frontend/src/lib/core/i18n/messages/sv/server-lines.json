@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Manuell import läser bara från biblioteksmapparna, nedladdarnas mappar och de extra importmapparna under Inställningar > Biblioteksmappar: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Manuell import läser bara från biblioteksmapparna, nedladdarnas mappar och de extra importmapparna, och ingen är inställd än. Lägg till en under Inställningar > Biblioteksmappar.",
 	"server.sources.holds-not-what-was-searched-for": "innehåller {covered}, inte det som söktes",
-	"server.mediafiles.no-title-in-the-library-is": "ingen Titel i biblioteket heter {value}"
+	"server.mediafiles.no-title-in-the-library-is": "ingen Titel i biblioteket heter {value}",
+	"server.requests.a-quality-name-can-be-at": "ett kvalitetsnamn får vara högst 30 tecken",
+	"server.requests.keep-at-least-one-quality-shown": "låt minst en kvalitet visas för filmer och en för serier",
+	"server.requests.someone-already-asked-for-this-movie": "någon har redan efterfrågat den här filmen i den kvaliteten; avgör deras förfrågan i stället",
+	"server.requests.that-quality-cannot-be-asked-for": "den kvaliteten kan inte efterfrågas",
+	"server.requests.the-quality-you-picked-was-not": "Kvaliteten du valde användes inte: titeln har redan den kopian."
 }

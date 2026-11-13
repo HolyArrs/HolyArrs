@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Manuel import læser kun fra biblioteksmapperne, downloadernes mapper og de ekstra importmapper under Indstillinger > Biblioteksmapper: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Manuel import læser kun fra biblioteksmapperne, downloadernes mapper og de ekstra importmapper, og der er ingen sat op endnu. Tilføj en under Indstillinger > Biblioteksmapper.",
 	"server.sources.holds-not-what-was-searched-for": "indeholder {covered}, ikke det, der blev søgt efter",
-	"server.mediafiles.no-title-in-the-library-is": "ingen Titel i biblioteket hedder {value}"
+	"server.mediafiles.no-title-in-the-library-is": "ingen Titel i biblioteket hedder {value}",
+	"server.requests.a-quality-name-can-be-at": "et kvalitetsnavn må højst være 30 tegn",
+	"server.requests.keep-at-least-one-quality-shown": "behold mindst én kvalitet synlig for film og én for serier",
+	"server.requests.someone-already-asked-for-this-movie": "nogen har allerede anmodet om denne film i den kvalitet; afgør deres anmodning i stedet",
+	"server.requests.that-quality-cannot-be-asked-for": "den kvalitet kan der ikke anmodes om",
+	"server.requests.the-quality-you-picked-was-not": "Den valgte kvalitet blev ikke brugt: titlen har allerede den kopi."
 }

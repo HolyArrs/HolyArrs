@@ -6,7 +6,7 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { PlexFriends, type AskSettings } from '#lib/requests/index.ts';
+	import { PlexFriends, qualityName, type AskSettings, type QualityLine } from '#lib/requests/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { api } from '#lib/core/api.ts';
@@ -55,6 +55,18 @@
 		{ key: 'shows_per_week', id: 'per-week-shows', label: t('settings.requests.showReq'), hint: t('settings.requests.showReqHint') },
 		{ key: 'music_per_week', id: 'per-week-music', label: t('settings.requests.musicReq'), hint: t('settings.requests.musicReqHint') }
 	] as const);
+
+	// What people can ask for: each line's name and whether people see it. Its Pick rules come from the settings above.
+	const lineKinds = $derived([
+		{ kind: 'movie', title: t('settings.requests.movieReq'), plain: settings.pick_rules_id, fourK: settings.four_k_pick_rules_id },
+		{ kind: 'show', title: t('settings.requests.showReq'), plain: settings.show_pick_rules_id, fourK: settings.show_four_k_pick_rules_id }
+	] as const);
+	function lineHint(l: QualityLine, plain: number, fourK: number): string {
+		const id = l.extra ? fourK : plain;
+		const name = id ? (rules.find((r) => r.id === id)?.name ?? '') : t(l.extra ? 'settings.requests.fourKNamedRules' : 'settings.requests.folderQuality');
+		const line = t(l.extra ? 'settings.requests.choiceOwn' : 'settings.requests.choiceMain', { rules: name });
+		return l.ready ? line : `${line}. ${t('settings.requests.choiceNotReady')}`;
+	}
 
 	async function load() {
 		loading = true;
@@ -220,6 +232,21 @@
 				</select>
 			</Field>
 		</SettingsCard>
+		{#if settings.qualities}
+			<SettingsCard id="ask-qualities" title={t('settings.requests.choices')} description={t('settings.requests.choicesDesc')}>
+				{#each lineKinds as k (k.kind)}
+					<h3 class="q-kind">{k.title}</h3>
+					{#each settings.qualities[k.kind] as l, i (l.id)}
+						<Field id="q-{k.kind}-{l.id}" label={qualityName(l.id)} hint={lineHint(l, k.plain, k.fourK)}>
+							<div class="q-row">
+								<input id="q-{k.kind}-{l.id}" class="input" maxlength="30" placeholder={qualityName(l.id)} aria-describedby="q-{k.kind}-{l.id}-hint" bind:value={settings.qualities[k.kind][i].name} />
+								<label class="q-shown"><input type="checkbox" checked={!l.hidden} onchange={(e) => (settings.qualities![k.kind][i].hidden = !e.currentTarget.checked)} data-testid="q-shown-{k.kind}-{l.id}" />{t('settings.requests.choiceShown')}</label>
+							</div>
+						</Field>
+					{/each}
+				{/each}
+			</SettingsCard>
+		{/if}
 		<SettingsCard id="plex-watchlists" title={t('settings.requests.plex')} description={t('settings.requests.plexDesc')}>
 			<label class="checkline">
 				<input id="plex-watchlists-on" type="checkbox" bind:checked={settings.plex_watchlists} />
@@ -248,6 +275,30 @@
 		border: 0;
 		padding: 0;
 		margin: 0 0 var(--s-4);
+	}
+	.q-kind {
+		margin: var(--s-3) 0 0;
+		font: var(--t-subhead);
+		font-weight: 600;
+		color: var(--text-muted);
+	}
+	.q-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--s-3);
+	}
+	.q-row .input {
+		flex: 1 1 120px;
+		min-width: 0;
+	}
+	.q-shown {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--s-2);
+		min-height: 44px;
+		font: var(--t-callout);
+		white-space: nowrap;
 	}
 	.kind-row {
 		display: grid;

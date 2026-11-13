@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Importeren met de hand leest alleen uit de bibliotheekmappen, de mappen van de downloaders en de extra importmappen onder Instellingen > Bibliotheekmappen: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Importeren met de hand leest alleen uit de bibliotheekmappen, de mappen van de downloaders en de extra importmappen, en er is er nog geen ingesteld. Voeg er een toe onder Instellingen > Bibliotheekmappen.",
 	"server.sources.holds-not-what-was-searched-for": "bevat {covered}, niet wat er gezocht werd",
-	"server.mediafiles.no-title-in-the-library-is": "geen Titel in de bibliotheek heet {value}"
+	"server.mediafiles.no-title-in-the-library-is": "geen Titel in de bibliotheek heet {value}",
+	"server.requests.a-quality-name-can-be-at": "een kwaliteitsnaam mag hoogstens 30 tekens hebben",
+	"server.requests.keep-at-least-one-quality-shown": "laat minstens één kwaliteit zichtbaar voor films en één voor series",
+	"server.requests.someone-already-asked-for-this-movie": "iemand heeft deze film al in die kwaliteit aangevraagd; beslis liever over die aanvraag",
+	"server.requests.that-quality-cannot-be-asked-for": "die kwaliteit kan niet worden aangevraagd",
+	"server.requests.the-quality-you-picked-was-not": "De gekozen kwaliteit is niet gebruikt: deze titel heeft die kopie al."
 }

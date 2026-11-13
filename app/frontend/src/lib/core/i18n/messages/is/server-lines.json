@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Innflutningur í höndunum les aðeins úr safnmöppunum, möppum niðurhalaranna og aukainnflutningsmöppunum í Stillingar > Safnmöppur: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Innflutningur í höndunum les aðeins úr safnmöppunum, möppum niðurhalaranna og aukainnflutningsmöppunum, og engin er enn sett upp. Bættu einni við í Stillingar > Safnmöppur.",
 	"server.sources.holds-not-what-was-searched-for": "inniheldur {covered}, ekki það sem leitað var að",
-	"server.mediafiles.no-title-in-the-library-is": "enginn Titill í safninu heitir {value}"
+	"server.mediafiles.no-title-in-the-library-is": "enginn Titill í safninu heitir {value}",
+	"server.requests.a-quality-name-can-be-at": "heiti gæða má vera í mesta lagi 30 stafir",
+	"server.requests.keep-at-least-one-quality-shown": "hafðu að minnsta kosti ein gæði sýnileg fyrir kvikmyndir og ein fyrir þætti",
+	"server.requests.someone-already-asked-for-this-movie": "einhver hefur þegar beðið um þessa kvikmynd í þessum gæðum; afgreiddu frekar þá beiðni",
+	"server.requests.that-quality-cannot-be-asked-for": "ekki er hægt að biðja um þessi gæði",
+	"server.requests.the-quality-you-picked-was-not": "Gæðin sem þú valdir voru ekki notuð: þessi titill er þegar með það eintak."
 }

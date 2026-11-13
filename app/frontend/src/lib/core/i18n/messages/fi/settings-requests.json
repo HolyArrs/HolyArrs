@@ -42,5 +42,11 @@
 	"settings.requests.fourK": "4K-kopio",
 	"settings.requests.fourKDesc": "Minne hyväksytyt 4K-pyynnöt menevät ja miten ne valitaan",
 	"settings.requests.fourKSameFolder": "Kuten muut pyynnöt",
-	"settings.requests.fourKNamedRules": "Laatu nimeltä 4K"
+	"settings.requests.fourKNamedRules": "Laatu nimeltä 4K",
+	"settings.requests.choices": "Mitä ihmiset voivat pyytää",
+	"settings.requests.choicesDesc": "Laatupainikkeet pyyntöikkunoissa tässä järjestyksessä. Nimeä tai piilota ne täällä; lapset saavat ensimmäisen näkyvän.",
+	"settings.requests.choiceShown": "Näytä ihmisille",
+	"settings.requests.choiceMain": "{rules} · nimikkeen pääkopio",
+	"settings.requests.choiceOwn": "{rules} · pidetään omana kopionaan",
+	"settings.requests.choiceNotReady": "Tarjotaan, kun 4K-laatu on asetettu yllä"
 }

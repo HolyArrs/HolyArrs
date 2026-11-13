@@ -32,7 +32,11 @@ const handLines = { 'Because you have {name}': 'suggest', 'No Downloader has con
 	"Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders, and none is set up yet. Add one in Settings > Library folders.": 'importer',
 	"Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders in Settings > Library folders: {all}": 'importer',
 	// Two lines of a Release's reasons (mediafiles judge, sources search_shows), shown in the Release lists.
-	'holds {covered}, not what was searched for': 'sources', 'no Title in the library is called {value}': 'mediafiles' };
+	'holds {covered}, not what was searched for': 'sources', 'no Title in the library is called {value}': 'mediafiles',
+	// requests: the Quality row's refusals and the approver's note (qualities.go, approve.go CopyKept).
+	'a quality name can be at most 30 characters': 'requests', 'keep at least one quality shown for movies and one for shows': 'requests',
+	'that quality cannot be asked for': 'requests', 'someone already asked for this movie in that quality; decide their ask instead': 'requests',
+	'The quality you picked was not used: this title already has that copy.': 'requests' };
 // Files whose fmt.Sprintf lines are display text (card lines, labels).
 const display = /(accounts[\\/]events|discover[\\/](home|explore_np|title_view)|shows[\\/]episode_labels|requests[\\/](episodes|follows\w*|reports)|health[\\/](health|routes_settings_status)|migrate[\\/]plan_\w+|metadata[\\/]moods)\.go$/;
 

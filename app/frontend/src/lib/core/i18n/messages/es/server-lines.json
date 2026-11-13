@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "La importación a mano solo lee de las carpetas de la Biblioteca, las carpetas de los gestores de descargas y las carpetas de importación extra de Ajustes > Carpetas de la Biblioteca: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "La importación a mano solo lee de las carpetas de la Biblioteca, las carpetas de los gestores de descargas y las carpetas de importación extra, y todavía no hay ninguna. Añade una en Ajustes > Carpetas de la Biblioteca.",
 	"server.sources.holds-not-what-was-searched-for": "contiene {covered}, no lo que se buscaba",
-	"server.mediafiles.no-title-in-the-library-is": "ningún Título de la biblioteca se llama {value}"
+	"server.mediafiles.no-title-in-the-library-is": "ningún Título de la biblioteca se llama {value}",
+	"server.requests.a-quality-name-can-be-at": "el nombre de una calidad puede tener como máximo 30 caracteres",
+	"server.requests.keep-at-least-one-quality-shown": "deja al menos una calidad visible para películas y una para series",
+	"server.requests.someone-already-asked-for-this-movie": "alguien ya pidió esta película en esa calidad; decide su pedido en su lugar",
+	"server.requests.that-quality-cannot-be-asked-for": "esa calidad no se puede pedir",
+	"server.requests.the-quality-you-picked-was-not": "No se usó la calidad elegida: este título ya tiene esa copia."
 }

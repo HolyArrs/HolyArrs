@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Importas ranka skaito tik iš bibliotekos aplankų, atsisiuntėjų aplankų ir papildomų importo aplankų skiltyje Nustatymai > Bibliotekos aplankai: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Importas ranka skaito tik iš bibliotekos aplankų, atsisiuntėjų aplankų ir papildomų importo aplankų, o dar nė vienas nenustatytas. Pridėkite vieną skiltyje Nustatymai > Bibliotekos aplankai.",
 	"server.sources.holds-not-what-was-searched-for": "jame yra {covered}, o ne tai, ko ieškota",
-	"server.mediafiles.no-title-in-the-library-is": "bibliotekoje nėra Pavadinimo {value}"
+	"server.mediafiles.no-title-in-the-library-is": "bibliotekoje nėra Pavadinimo {value}",
+	"server.requests.a-quality-name-can-be-at": "kokybės pavadinimas gali būti ne ilgesnis nei 30 simbolių",
+	"server.requests.keep-at-least-one-quality-shown": "palikite rodomą bent vieną kokybę filmams ir vieną serialams",
+	"server.requests.someone-already-asked-for-this-movie": "kažkas jau užsakė šį filmą ta kokybe; geriau nuspręskite dėl jo užsakymo",
+	"server.requests.that-quality-cannot-be-asked-for": "šios kokybės užsakyti negalima",
+	"server.requests.the-quality-you-picked-was-not": "Pasirinkta kokybė nepanaudota: šis pavadinimas jau turi tą kopiją."
 }

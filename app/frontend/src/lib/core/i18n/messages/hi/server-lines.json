@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "हाथ से इंपोर्ट सिर्फ़ लाइब्रेरी फ़ोल्डर, डाउनलोडर के फ़ोल्डर और सेटिंग > लाइब्रेरी फ़ोल्डर में इंपोर्ट के अतिरिक्त फ़ोल्डर से पढ़ता है: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "हाथ से इंपोर्ट सिर्फ़ लाइब्रेरी फ़ोल्डर, डाउनलोडर के फ़ोल्डर और इंपोर्ट के अतिरिक्त फ़ोल्डर से पढ़ता है, और अभी तक कोई सेट नहीं है। सेटिंग > लाइब्रेरी फ़ोल्डर में एक जोड़ें।",
 	"server.sources.holds-not-what-was-searched-for": "इसमें {covered} है, जो खोजा गया वह नहीं",
-	"server.mediafiles.no-title-in-the-library-is": "लाइब्रेरी में {value} नाम का कोई टाइटल नहीं है"
+	"server.mediafiles.no-title-in-the-library-is": "लाइब्रेरी में {value} नाम का कोई टाइटल नहीं है",
+	"server.requests.a-quality-name-can-be-at": "क्वालिटी का नाम ज़्यादा से ज़्यादा 30 अक्षरों का हो सकता है",
+	"server.requests.keep-at-least-one-quality-shown": "फ़िल्मों के लिए कम से कम एक और सीरीज़ के लिए एक क्वालिटी दिखती रहने दें",
+	"server.requests.someone-already-asked-for-this-movie": "किसी ने यह फ़िल्म इस क्वालिटी में पहले ही रिक्वेस्ट की है; उसकी रिक्वेस्ट पर फ़ैसला करें",
+	"server.requests.that-quality-cannot-be-asked-for": "यह क्वालिटी रिक्वेस्ट नहीं की जा सकती",
+	"server.requests.the-quality-you-picked-was-not": "आपकी चुनी क्वालिटी इस्तेमाल नहीं हुई: इस टाइटल में वह कॉपी पहले से है।"
 }

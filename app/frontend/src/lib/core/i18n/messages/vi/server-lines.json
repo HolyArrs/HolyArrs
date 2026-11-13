@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Nhập thủ công chỉ đọc từ thư mục thư viện, thư mục của trình tải và thư mục nhập bổ sung trong Cài đặt > Thư mục thư viện: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Nhập thủ công chỉ đọc từ thư mục thư viện, thư mục của trình tải và thư mục nhập bổ sung, nhưng chưa có thư mục nào được thiết lập. Hãy thêm một thư mục trong Cài đặt > Thư mục thư viện.",
 	"server.sources.holds-not-what-was-searched-for": "chứa {covered}, không phải thứ đã tìm",
-	"server.mediafiles.no-title-in-the-library-is": "không có Tựa nào trong thư viện tên là {value}"
+	"server.mediafiles.no-title-in-the-library-is": "không có Tựa nào trong thư viện tên là {value}",
+	"server.requests.a-quality-name-can-be-at": "tên chất lượng dài tối đa 30 ký tự",
+	"server.requests.keep-at-least-one-quality-shown": "giữ ít nhất một chất lượng hiển thị cho phim lẻ và một cho phim bộ",
+	"server.requests.someone-already-asked-for-this-movie": "đã có người yêu cầu phim này ở chất lượng đó; hãy quyết định yêu cầu của họ",
+	"server.requests.that-quality-cannot-be-asked-for": "không thể yêu cầu chất lượng đó",
+	"server.requests.the-quality-you-picked-was-not": "Chất lượng bạn chọn không được dùng: tựa này đã có bản đó."
 }

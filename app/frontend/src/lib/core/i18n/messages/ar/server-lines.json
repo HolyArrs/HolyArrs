@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "لا يقرأ الاستيراد اليدوي إلا من مجلدات المكتبة ومجلدات برامج التنزيل ومجلدات الاستيراد الإضافية في الإعدادات > مجلدات المكتبة: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "لا يقرأ الاستيراد اليدوي إلا من مجلدات المكتبة ومجلدات برامج التنزيل ومجلدات الاستيراد الإضافية، ولم يُضبط أي منها بعد. أضف واحدًا في الإعدادات > مجلدات المكتبة.",
 	"server.sources.holds-not-what-was-searched-for": "يحوي {covered}، وليس ما تم البحث عنه",
-	"server.mediafiles.no-title-in-the-library-is": "لا يوجد عنوان في المكتبة باسم {value}"
+	"server.mediafiles.no-title-in-the-library-is": "لا يوجد عنوان في المكتبة باسم {value}",
+	"server.requests.a-quality-name-can-be-at": "يمكن أن يكون اسم الجودة 30 حرفًا على الأكثر",
+	"server.requests.keep-at-least-one-quality-shown": "أبقِ جودة واحدة على الأقل ظاهرة للأفلام وواحدة للمسلسلات",
+	"server.requests.someone-already-asked-for-this-movie": "طلب شخص ما هذا الفيلم بهذه الجودة بالفعل؛ قرّر في طلبه بدلًا من ذلك",
+	"server.requests.that-quality-cannot-be-asked-for": "لا يمكن طلب هذه الجودة",
+	"server.requests.the-quality-you-picked-was-not": "لم تُستخدم الجودة التي اخترتها: هذا العنوان لديه تلك النسخة بالفعل."
 }

@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Ručný import číta len z priečinkov Knižnice, priečinkov sťahovačov a ďalších priečinkov importu v Nastavenia > Priečinky Knižnice: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Ručný import číta len z priečinkov Knižnice, priečinkov sťahovačov a ďalších priečinkov importu, a zatiaľ nie je nastavený žiadny. Pridajte jeden v Nastavenia > Priečinky Knižnice.",
 	"server.sources.holds-not-what-was-searched-for": "obsahuje {covered}, nie to, čo sa hľadalo",
-	"server.mediafiles.no-title-in-the-library-is": "žiadny Titul v knižnici sa nevolá {value}"
+	"server.mediafiles.no-title-in-the-library-is": "žiadny Titul v knižnici sa nevolá {value}",
+	"server.requests.a-quality-name-can-be-at": "názov kvality môže mať najviac 30 znakov",
+	"server.requests.keep-at-least-one-quality-shown": "nechajte zobrazenú aspoň jednu kvalitu pre filmy a jednu pre seriály",
+	"server.requests.someone-already-asked-for-this-movie": "niekto už o tento film v tejto kvalite požiadal; rozhodnite radšej jeho žiadosť",
+	"server.requests.that-quality-cannot-be-asked-for": "o túto kvalitu nemožno žiadať",
+	"server.requests.the-quality-you-picked-was-not": "Vybraná kvalita nebola použitá: tento titul už túto kópiu má."
 }

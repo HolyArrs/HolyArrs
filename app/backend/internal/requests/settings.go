@@ -63,6 +63,10 @@ type Settings struct {
 	// PlexFriends also reads the watchlists of people imported from the
 	// owner's Plex account, with the owner's Plex link (off by default).
 	PlexFriends bool `json:"plex_friends"`
+	// Qualities are what people can ask for, per kind (qualities.go). The
+	// API answers them filled from the settings above; only names and
+	// hidden are kept from what is sent.
+	Qualities QualityLists `json:"qualities"`
 }
 
 // PerWeekOf is the default weekly limit for one kind.
@@ -78,12 +82,12 @@ func (s Settings) PerWeekOf(kind string) int {
 
 var settingKeys = []string{"ask_movies_per_week", "ask_library_folder_id", "ask_pick_rules_id", "ask_search_on_approve",
 	"ask_show_library_folder_id", "ask_show_pick_rules_id", "ask_shows_per_week", "ask_music_library_folder_id", "ask_music_pick_rules_id", "ask_music_per_week", "ask_plex_watchlists", "ask_plex_watchlists_everyone", "ask_plex_friends",
-	"ask_four_k_library_folder_id", "ask_four_k_pick_rules_id", "ask_show_four_k_library_folder_id", "ask_show_four_k_pick_rules_id"}
+	"ask_four_k_library_folder_id", "ask_four_k_pick_rules_id", "ask_show_four_k_library_folder_id", "ask_show_four_k_pick_rules_id", "ask_qualities"}
 
 // ReadSettings reads the Request settings (10 a week of each kind, search
 // on approve).
 func ReadSettings(ctx context.Context, db database.Lister) (Settings, error) {
-	s := Settings{MoviesPerWeek: DefaultPerWeek, ShowsPerWeek: DefaultPerWeek, MusicPerWeek: DefaultPerWeek, SearchOnApprove: true}
+	s := Settings{MoviesPerWeek: DefaultPerWeek, ShowsPerWeek: DefaultPerWeek, MusicPerWeek: DefaultPerWeek, SearchOnApprove: true, Qualities: defaultQualities()}
 	args := make([]any, len(settingKeys))
 	for i, k := range settingKeys {
 		args[i] = k
@@ -132,6 +136,8 @@ func ReadSettings(ctx context.Context, db database.Lister) (Settings, error) {
 			s.ShowFourKLibraryFolderID = n
 		case "ask_show_four_k_pick_rules_id":
 			s.ShowFourKPickRulesID = n
+		case "ask_qualities":
+			s.Qualities = parseQualities(v)
 		}
 	}
 	return s, rows.Err()
@@ -208,6 +214,10 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 			return library.ErrNoPickRules
 		}
 	}
+	q, err := checkQualities(s.Qualities)
+	if err != nil {
+		return err
+	}
 	who, _ := json.Marshal(by)
 	return st.Write(ctx, func(tx *sql.Tx) error {
 		now := database.FormatTime(time.Now())
@@ -215,7 +225,7 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 			strconv.FormatInt(s.ShowLibraryFolderID, 10), strconv.FormatInt(s.ShowPickRulesID, 10), strconv.Itoa(s.ShowsPerWeek),
 			strconv.FormatInt(s.MusicLibraryFolderID, 10), strconv.FormatInt(s.MusicPickRulesID, 10), strconv.Itoa(s.MusicPerWeek), strconv.FormatBool(s.PlexWatchlists), strconv.FormatBool(s.PlexWatchlistsEveryone),
 			strconv.FormatBool(s.PlexFriends), strconv.FormatInt(s.FourKLibraryFolderID, 10), strconv.FormatInt(s.FourKPickRulesID, 10),
-			strconv.FormatInt(s.ShowFourKLibraryFolderID, 10), strconv.FormatInt(s.ShowFourKPickRulesID, 10)}
+			strconv.FormatInt(s.ShowFourKLibraryFolderID, 10), strconv.FormatInt(s.ShowFourKPickRulesID, 10), storeQualities(q)}
 		for i, k := range settingKeys {
 			_, err := tx.Exec(saveSettingsSQL2,
 				k, vals[i], now, string(who), now, string(who))

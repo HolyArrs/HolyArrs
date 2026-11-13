@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Ang pag-import nang mano-mano ay bumabasa lang mula sa mga Library folder, sa mga folder ng mga Downloader at sa mga dagdag na import folder sa Mga Setting > Mga Library folder: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Ang pag-import nang mano-mano ay bumabasa lang mula sa mga Library folder, sa mga folder ng mga Downloader at sa mga dagdag na import folder, at wala pang naka-set up. Magdagdag ng isa sa Mga Setting > Mga Library folder.",
 	"server.sources.holds-not-what-was-searched-for": "may laman na {covered}, hindi ang hinanap",
-	"server.mediafiles.no-title-in-the-library-is": "walang Title sa library na ang pangalan ay {value}"
+	"server.mediafiles.no-title-in-the-library-is": "walang Title sa library na ang pangalan ay {value}",
+	"server.requests.a-quality-name-can-be-at": "ang pangalan ng kalidad ay hanggang 30 character lang",
+	"server.requests.keep-at-least-one-quality-shown": "mag-iwan ng kahit isang kalidad na nakikita para sa mga pelikula at isa para sa mga palabas",
+	"server.requests.someone-already-asked-for-this-movie": "may humiling na ng pelikulang ito sa kalidad na iyon; ang hiling nila ang pagpasyahan",
+	"server.requests.that-quality-cannot-be-asked-for": "hindi puwedeng hilingin ang kalidad na iyon",
+	"server.requests.the-quality-you-picked-was-not": "Hindi nagamit ang kalidad na pinili mo: mayroon na ng kopyang iyon ang title na ito."
 }

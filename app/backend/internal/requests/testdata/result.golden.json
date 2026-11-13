@@ -53,7 +53,11 @@
         "songs_done": true
       }
     ],
-    "FourK": true
+    "FourK": true,
+    "Quality": "s",
+    "QualityName": "s",
+    "QualityRulesID": 7,
+    "QualityExtra": true
   },
   "Joined": true,
   "Already": true

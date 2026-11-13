@@ -42,5 +42,11 @@
 	"settings.requests.fourK": "کپی 4K",
 	"settings.requests.fourKDesc": "درخواست‌های 4K تأییدشده کجا می‌روند و چطور انتخاب می‌شوند",
 	"settings.requests.fourKSameFolder": "مثل بقیه درخواست‌ها",
-	"settings.requests.fourKNamedRules": "کیفیتی به نام 4K"
+	"settings.requests.fourKNamedRules": "کیفیتی به نام 4K",
+	"settings.requests.choices": "آنچه افراد می‌توانند درخواست کنند",
+	"settings.requests.choicesDesc": "دکمه‌های کیفیت در برگه‌های درخواست، به همین ترتیب. اینجا نامشان را عوض کن یا پنهانشان کن؛ کودکان اولین دکمهٔ نمایان را می‌گیرند.",
+	"settings.requests.choiceShown": "نمایش به افراد",
+	"settings.requests.choiceMain": "{rules} · کپی اصلی عنوان",
+	"settings.requests.choiceOwn": "{rules} · به‌عنوان کپی جداگانه نگه داشته می‌شود",
+	"settings.requests.choiceNotReady": "وقتی کیفیت 4K در بالا تنظیم شود ارائه می‌شود"
 }

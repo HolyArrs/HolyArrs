@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Elle içe aktarma yalnızca kütüphane klasörlerinden, indiricilerin klasörlerinden ve Ayarlar > Kütüphane klasörleri altındaki ek içe aktarma klasörlerinden okur: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Elle içe aktarma yalnızca kütüphane klasörlerinden, indiricilerin klasörlerinden ve ek içe aktarma klasörlerinden okur ve henüz hiçbiri ayarlanmadı. Ayarlar > Kütüphane klasörleri altından bir tane ekleyin.",
 	"server.sources.holds-not-what-was-searched-for": "{covered} içeriyor, aranan bu değil",
-	"server.mediafiles.no-title-in-the-library-is": "kütüphanede {value} adlı bir Başlık yok"
+	"server.mediafiles.no-title-in-the-library-is": "kütüphanede {value} adlı bir Başlık yok",
+	"server.requests.a-quality-name-can-be-at": "bir kalite adı en fazla 30 karakter olabilir",
+	"server.requests.keep-at-least-one-quality-shown": "filmler için en az bir, diziler için en az bir kaliteyi görünür bırakın",
+	"server.requests.someone-already-asked-for-this-movie": "biri bu filmi o kalitede zaten istedi; bunun yerine onun isteğine karar verin",
+	"server.requests.that-quality-cannot-be-asked-for": "bu kalite istenemez",
+	"server.requests.the-quality-you-picked-was-not": "Seçtiğiniz kalite kullanılmadı: bu başlıkta o kopya zaten var."
 }

@@ -42,5 +42,11 @@
 	"settings.requests.fourK": "Kopie ve 4K",
 	"settings.requests.fourKDesc": "Kam jdou schválené žádosti ve 4K a jak se vybírají",
 	"settings.requests.fourKSameFolder": "Stejně jako ostatní žádosti",
-	"settings.requests.fourKNamedRules": "Kvalita s názvem 4K"
+	"settings.requests.fourKNamedRules": "Kvalita s názvem 4K",
+	"settings.requests.choices": "O co mohou lidé žádat",
+	"settings.requests.choicesDesc": "Tlačítka kvality v okně žádosti, v tomto pořadí. Tady je přejmenujte nebo skryjte; děti dostanou první zobrazené.",
+	"settings.requests.choiceShown": "Zobrazit lidem",
+	"settings.requests.choiceMain": "{rules} · hlavní kopie titulu",
+	"settings.requests.choiceOwn": "{rules} · vedená jako samostatná kopie",
+	"settings.requests.choiceNotReady": "Nabídne se, až bude výše nastavena kvalita 4K"
 }

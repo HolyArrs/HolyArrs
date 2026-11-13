@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Käsitsi import loeb ainult meediakogu kaustadest, allalaadijate kaustadest ja lisaimpordikaustadest jaotises Seaded > Meediakogu kaustad: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Käsitsi import loeb ainult meediakogu kaustadest, allalaadijate kaustadest ja lisaimpordikaustadest, ja ühtegi pole veel seadistatud. Lisa üks jaotises Seaded > Meediakogu kaustad.",
 	"server.sources.holds-not-what-was-searched-for": "sisaldab {covered}, mitte seda, mida otsiti",
-	"server.mediafiles.no-title-in-the-library-is": "meediakogus pole ühtegi pealkirja nimega {value}"
+	"server.mediafiles.no-title-in-the-library-is": "meediakogus pole ühtegi pealkirja nimega {value}",
+	"server.requests.a-quality-name-can-be-at": "kvaliteedi nimi võib olla kuni 30 märki",
+	"server.requests.keep-at-least-one-quality-shown": "jäta nähtavaks vähemalt üks kvaliteet filmidele ja üks sarjadele",
+	"server.requests.someone-already-asked-for-this-movie": "keegi on seda filmi selles kvaliteedis juba taotlenud; otsusta hoopis tema taotlus",
+	"server.requests.that-quality-cannot-be-asked-for": "seda kvaliteeti ei saa taotleda",
+	"server.requests.the-quality-you-picked-was-not": "Valitud kvaliteeti ei kasutatud: sellel pealkirjal on see koopia juba olemas."
 }

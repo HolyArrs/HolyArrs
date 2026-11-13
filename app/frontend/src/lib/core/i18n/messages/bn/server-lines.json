@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "হাতে ইমপোর্ট শুধু লাইব্রেরি ফোল্ডার, ডাউনলোডারের ফোল্ডার আর সেটিংস > লাইব্রেরি ফোল্ডার-এর অতিরিক্ত ইমপোর্ট ফোল্ডার থেকে পড়ে: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "হাতে ইমপোর্ট শুধু লাইব্রেরি ফোল্ডার, ডাউনলোডারের ফোল্ডার আর অতিরিক্ত ইমপোর্ট ফোল্ডার থেকে পড়ে, আর এখনও কোনোটি সেট করা নেই। সেটিংস > লাইব্রেরি ফোল্ডার-এ একটি যোগ করুন।",
 	"server.sources.holds-not-what-was-searched-for": "এতে আছে {covered}, যা খোঁজা হয়েছিল তা নয়",
-	"server.mediafiles.no-title-in-the-library-is": "লাইব্রেরিতে {value} নামে কোনো টাইটেল নেই"
+	"server.mediafiles.no-title-in-the-library-is": "লাইব্রেরিতে {value} নামে কোনো টাইটেল নেই",
+	"server.requests.a-quality-name-can-be-at": "কোয়ালিটির নাম সর্বোচ্চ 30 অক্ষরের হতে পারে",
+	"server.requests.keep-at-least-one-quality-shown": "সিনেমার জন্য অন্তত একটি এবং সিরিজের জন্য অন্তত একটি কোয়ালিটি দেখানো রাখুন",
+	"server.requests.someone-already-asked-for-this-movie": "কেউ আগেই এই সিনেমা ওই কোয়ালিটিতে রিকোয়েস্ট করেছে; তার রিকোয়েস্টে সিদ্ধান্ত নিন",
+	"server.requests.that-quality-cannot-be-asked-for": "এই কোয়ালিটি রিকোয়েস্ট করা যায় না",
+	"server.requests.the-quality-you-picked-was-not": "আপনার বেছে নেওয়া কোয়ালিটি ব্যবহার হয়নি: এই টাইটেলে ওই কপি আগেই আছে।"
 }

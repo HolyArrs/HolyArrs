@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "A importação à mão só lê das pastas da Biblioteca, das pastas dos gestores de downloads e das pastas de importação extras em Definições > Pastas da Biblioteca: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "A importação à mão só lê das pastas da Biblioteca, das pastas dos gestores de downloads e das pastas de importação extras, e ainda não há nenhuma configurada. Adicione uma em Definições > Pastas da Biblioteca.",
 	"server.sources.holds-not-what-was-searched-for": "contém {covered}, não o que foi procurado",
-	"server.mediafiles.no-title-in-the-library-is": "nenhum Título da biblioteca se chama {value}"
+	"server.mediafiles.no-title-in-the-library-is": "nenhum Título da biblioteca se chama {value}",
+	"server.requests.a-quality-name-can-be-at": "o nome de uma qualidade pode ter no máximo 30 caracteres",
+	"server.requests.keep-at-least-one-quality-shown": "deixe pelo menos uma qualidade visível para filmes e uma para séries",
+	"server.requests.someone-already-asked-for-this-movie": "alguém já pediu este filme nessa qualidade; decida antes o pedido dessa pessoa",
+	"server.requests.that-quality-cannot-be-asked-for": "essa qualidade não pode ser pedida",
+	"server.requests.the-quality-you-picked-was-not": "A qualidade escolhida não foi usada: este título já tem essa cópia."
 }

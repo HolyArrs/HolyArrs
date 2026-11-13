@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "手动导入只读取媒体库文件夹、下载器的文件夹以及 设置 > 媒体库文件夹 中额外的导入文件夹：{all}",
 	"server.importer.import-by-hand-reads-only-from-2": "手动导入只读取媒体库文件夹、下载器的文件夹以及额外的导入文件夹，但目前一个都还没有设置。请在 设置 > 媒体库文件夹 中添加一个。",
 	"server.sources.holds-not-what-was-searched-for": "包含 {covered}，不是要找的内容",
-	"server.mediafiles.no-title-in-the-library-is": "媒体库中没有名为 {value} 的条目"
+	"server.mediafiles.no-title-in-the-library-is": "媒体库中没有名为 {value} 的条目",
+	"server.requests.a-quality-name-can-be-at": "画质名称最多 30 个字符",
+	"server.requests.keep-at-least-one-quality-shown": "电影和剧集各至少保留一个显示的画质",
+	"server.requests.someone-already-asked-for-this-movie": "已经有人以该画质请求了这部电影；请改为处理他们的请求",
+	"server.requests.that-quality-cannot-be-asked-for": "无法请求该画质",
+	"server.requests.the-quality-you-picked-was-not": "未使用你选择的画质：这部作品已经有该副本。"
 }

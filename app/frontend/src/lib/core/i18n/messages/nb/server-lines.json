@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Import for hånd leser bare fra bibliotekmappene, nedlasternes mapper og de ekstra importmappene under Innstillinger > Bibliotekmapper: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Import for hånd leser bare fra bibliotekmappene, nedlasternes mapper og de ekstra importmappene, og ingen er satt opp ennå. Legg til en under Innstillinger > Bibliotekmapper.",
 	"server.sources.holds-not-what-was-searched-for": "inneholder {covered}, ikke det som ble søkt etter",
-	"server.mediafiles.no-title-in-the-library-is": "ingen Tittel i biblioteket heter {value}"
+	"server.mediafiles.no-title-in-the-library-is": "ingen Tittel i biblioteket heter {value}",
+	"server.requests.a-quality-name-can-be-at": "et kvalitetsnavn kan være på høyst 30 tegn",
+	"server.requests.keep-at-least-one-quality-shown": "behold minst én kvalitet synlig for filmer og én for serier",
+	"server.requests.someone-already-asked-for-this-movie": "noen har allerede bedt om denne filmen i den kvaliteten; avgjør forespørselen deres i stedet",
+	"server.requests.that-quality-cannot-be-asked-for": "den kvaliteten kan ikke forespørres",
+	"server.requests.the-quality-you-picked-was-not": "Kvaliteten du valgte ble ikke brukt: tittelen har allerede den kopien."
 }

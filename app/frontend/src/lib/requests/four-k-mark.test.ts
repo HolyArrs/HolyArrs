@@ -10,8 +10,9 @@ function line(src: string): string {
 	return at < 0 ? '' : src.slice(at, src.indexOf('\n', at));
 }
 
-describe('4K mark on request cards', () => {
-	const mark = `{#if a.four_k}<span class="ap4k-tag" title={t('requests.board.fourKTitle')}>4K</span>{/if}`;
+describe('quality mark on request cards', () => {
+	// The asked line's name (4K, or the owner's name for it) when it is not the first line.
+	const mark = `{#if qualityTag(a)}<span class="ap4k-tag" title={t('requests.board.qualityTitle', { quality: qualityTag(a) })}>{qualityTag(a)}</span>{/if}`;
 
 	it('shows on the approvers cards', () => {
 		expect(line(board)).toContain(mark);

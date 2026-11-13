@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "手動インポートが読み込むのは、ライブラリフォルダー、ダウンローダーのフォルダー、設定 > ライブラリフォルダーの追加のインポートフォルダーだけです: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "手動インポートが読み込むのは、ライブラリフォルダー、ダウンローダーのフォルダー、追加のインポートフォルダーだけですが、まだ1つも設定されていません。設定 > ライブラリフォルダーで追加してください。",
 	"server.sources.holds-not-what-was-searched-for": "{covered} を含み、検索したものではありません",
-	"server.mediafiles.no-title-in-the-library-is": "ライブラリに {value} という名前のタイトルはありません"
+	"server.mediafiles.no-title-in-the-library-is": "ライブラリに {value} という名前のタイトルはありません",
+	"server.requests.a-quality-name-can-be-at": "品質の名前は 30 文字以内にしてください",
+	"server.requests.keep-at-least-one-quality-shown": "映画とシリーズでそれぞれ 1 つ以上の品質を表示したままにしてください",
+	"server.requests.someone-already-asked-for-this-movie": "この映画はすでにその品質で誰かがリクエストしています。そちらのリクエストを判断してください",
+	"server.requests.that-quality-cannot-be-asked-for": "その品質はリクエストできません",
+	"server.requests.the-quality-you-picked-was-not": "選んだ品質は使われませんでした。このタイトルにはそのコピーがすでにあります。"
 }

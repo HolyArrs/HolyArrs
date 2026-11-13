@@ -42,5 +42,11 @@
 	"settings.requests.fourK": "עותק 4K",
 	"settings.requests.fourKDesc": "לאן הולכות בקשות 4K שאושרו ואיך הן נבחרות",
 	"settings.requests.fourKSameFolder": "כמו בקשות אחרות",
-	"settings.requests.fourKNamedRules": "האיכות בשם 4K"
+	"settings.requests.fourKNamedRules": "האיכות בשם 4K",
+	"settings.requests.choices": "מה אנשים יכולים לבקש",
+	"settings.requests.choicesDesc": "כפתורי האיכות בחלונות הבקשה, בסדר הזה. אפשר לשנות להם שם או להסתיר אותם כאן; ילדים מקבלים את הראשון שמוצג.",
+	"settings.requests.choiceShown": "הצג לאנשים",
+	"settings.requests.choiceMain": "{rules} · העותק הראשי של הכותר",
+	"settings.requests.choiceOwn": "{rules} · נשמר כעותק נפרד",
+	"settings.requests.choiceNotReady": "יוצע אחרי שתוגדר איכות 4K למעלה"
 }

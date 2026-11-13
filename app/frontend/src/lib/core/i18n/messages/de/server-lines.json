@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Der Import von Hand liest nur aus den Bibliotheksordnern, den Ordnern der Downloader und den zusätzlichen Import-Ordnern unter Einstellungen > Bibliotheksordner: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Der Import von Hand liest nur aus den Bibliotheksordnern, den Ordnern der Downloader und den zusätzlichen Import-Ordnern, und noch ist keiner eingerichtet. Füge einen unter Einstellungen > Bibliotheksordner hinzu.",
 	"server.sources.holds-not-what-was-searched-for": "enthält {covered}, nicht das Gesuchte",
-	"server.mediafiles.no-title-in-the-library-is": "kein Titel in der Bibliothek heißt {value}"
+	"server.mediafiles.no-title-in-the-library-is": "kein Titel in der Bibliothek heißt {value}",
+	"server.requests.a-quality-name-can-be-at": "ein Qualitätsname darf höchstens 30 Zeichen haben",
+	"server.requests.keep-at-least-one-quality-shown": "lass mindestens eine Qualität für Filme und eine für Serien sichtbar",
+	"server.requests.someone-already-asked-for-this-movie": "jemand hat diesen Film schon in dieser Qualität angefragt; entscheide stattdessen über diese Anfrage",
+	"server.requests.that-quality-cannot-be-asked-for": "diese Qualität kann nicht angefragt werden",
+	"server.requests.the-quality-you-picked-was-not": "Die gewählte Qualität wurde nicht verwendet: Dieser Titel hat diese Kopie schon."
 }

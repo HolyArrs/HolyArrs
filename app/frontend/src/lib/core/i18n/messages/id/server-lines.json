@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Impor manual hanya membaca dari folder pustaka, folder pengunduh, dan folder impor tambahan di Pengaturan > Folder pustaka: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Impor manual hanya membaca dari folder pustaka, folder pengunduh, dan folder impor tambahan, dan belum ada yang disiapkan. Tambahkan satu di Pengaturan > Folder pustaka.",
 	"server.sources.holds-not-what-was-searched-for": "berisi {covered}, bukan yang dicari",
-	"server.mediafiles.no-title-in-the-library-is": "tidak ada Judul di pustaka yang bernama {value}"
+	"server.mediafiles.no-title-in-the-library-is": "tidak ada Judul di pustaka yang bernama {value}",
+	"server.requests.a-quality-name-can-be-at": "nama kualitas paling banyak 30 karakter",
+	"server.requests.keep-at-least-one-quality-shown": "biarkan setidaknya satu kualitas tampil untuk film dan satu untuk serial",
+	"server.requests.someone-already-asked-for-this-movie": "seseorang sudah meminta film ini dalam kualitas itu; putuskan permintaannya saja",
+	"server.requests.that-quality-cannot-be-asked-for": "kualitas itu tidak bisa diminta",
+	"server.requests.the-quality-you-picked-was-not": "Kualitas yang kamu pilih tidak dipakai: judul ini sudah punya salinan itu."
 }

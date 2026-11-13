@@ -42,5 +42,11 @@
 	"settings.requests.fourK": "4K копија",
 	"settings.requests.fourKDesc": "Где иду одобрени 4K захтеви и како се бирају",
 	"settings.requests.fourKSameFolder": "Као и остали захтеви",
-	"settings.requests.fourKNamedRules": "Квалитет под називом 4K"
+	"settings.requests.fourKNamedRules": "Квалитет под називом 4K",
+	"settings.requests.choices": "Шта људи могу да затраже",
+	"settings.requests.choicesDesc": "Дугмад за квалитет на листовима захтева, овим редом. Овде их преименуј или сакриј; деца добијају прво приказано.",
+	"settings.requests.choiceShown": "Прикажи људима",
+	"settings.requests.choiceMain": "{rules} · главна копија наслова",
+	"settings.requests.choiceOwn": "{rules} · чува се као засебна копија",
+	"settings.requests.choiceNotReady": "Нуди се када се изнад подеси 4K квалитет"
 }

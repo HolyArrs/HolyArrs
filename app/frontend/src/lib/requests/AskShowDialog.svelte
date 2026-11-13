@@ -8,7 +8,10 @@
 	import { api, message, ApiError } from '../core/api.ts';
 	import type { Ask } from '../core/types.ts';
 	import type { LookupShow } from '../core/types.ts';
-	import { fourKReady } from './four-k-ready.ts';
+	import { askQualities } from './four-k-ready.ts';
+	import QualityPills from './QualityPills.svelte';
+	import { memberRow } from './quality-row.ts';
+	import type { QualityChoice } from './types.ts';
 
 	let {
 		onasked,
@@ -22,9 +25,12 @@
 	let picked = $state<LookupShow | null>(null);
 	// Follow puts it on my calendar (ticked by default).
 	let follow = $state(true);
-	// A 4K copy: offered only when 4K quality is set up for shows.
-	let fourK = $state(false);
-	let fourKOn = $state(false);
+	// The Quality row: the lines of what people can ask for that I may use (one line or none hides it).
+	let choices = $state<QualityChoice[]>([]);
+	let quality = $state('');
+	// Each opening reads the lines again; an answer for an earlier opening is dropped.
+	let opened = 0;
+	const row = $derived(memberRow(choices));
 	let mode = $state<'all' | 'choose' | 'future'>('all');
 	let chosen = $state<number[]>([]);
 	// Single episodes picked, by season (seasons not ticked whole).
@@ -42,9 +48,14 @@
 	/** Shows the dialog for one looked-up show. */
 	export function open(s: LookupShow) {
 		follow = true;
-		fourK = false;
-		fourKOn = false;
-		void fourKReady().then((r) => (fourKOn = r.show));
+		choices = [];
+		quality = '';
+		const asked = ++opened;
+		void askQualities().then((q) => {
+			if (asked !== opened) return;
+			choices = q.show;
+			quality = row.selected;
+		});
 		picked = s;
 		mode = 'all';
 		chosen = [];
@@ -93,7 +104,7 @@
 		try {
 			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', {
 				...(mode === 'future' ? { kind: 'show', id: idOf(picked), future_only: true, follow } : { kind: 'show', id: idOf(picked), seasons: mode === 'all' ? [] : chosen, ...(mode === 'choose' && pickedEps.length ? { episodes: pickedEps } : {}), follow }),
-				...(fourK && fourKOn ? { four_k: true } : {})
+				...(quality ? { quality } : {})
 			});
 			(sheetOpen = false);
 			onasked(picked, r);
@@ -162,16 +173,11 @@
 					{/each}
 				</fieldset>
 			{/if}
+			{#if row.shown}<QualityPills pills={row.pills} bind:selected={quality} stacked />{/if}
 			<label class="checkline" data-testid="follow-box">
 				<input type="checkbox" bind:checked={follow} />
 				<span><b>{t('requests.add.follow')}</b><br /><span class="hint">{t('requests.add.followHint')}</span></span>
 			</label>
-			{#if fourKOn}
-				<label class="checkline" data-testid="four-k-box">
-					<input type="checkbox" bind:checked={fourK} />
-					<span><b>{t('requests.ask.fourK')}</b><br /><span class="hint">{t('requests.ask.fourKHint')}</span></span>
-				</label>
-			{/if}
 			{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		</form>
 	{/if}

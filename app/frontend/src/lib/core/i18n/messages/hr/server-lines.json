@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Ručni uvoz čita samo iz mapa biblioteke, mapa preuzimatelja i dodatnih mapa za uvoz u Postavke > Mape biblioteke: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Ručni uvoz čita samo iz mapa biblioteke, mapa preuzimatelja i dodatnih mapa za uvoz, a još nijedna nije postavljena. Dodajte jednu u Postavke > Mape biblioteke.",
 	"server.sources.holds-not-what-was-searched-for": "sadrži {covered}, a ne ono što se tražilo",
-	"server.mediafiles.no-title-in-the-library-is": "nijedan Naslov u biblioteci ne zove se {value}"
+	"server.mediafiles.no-title-in-the-library-is": "nijedan Naslov u biblioteci ne zove se {value}",
+	"server.requests.a-quality-name-can-be-at": "naziv kvalitete može imati najviše 30 znakova",
+	"server.requests.keep-at-least-one-quality-shown": "ostavi vidljivu barem jednu kvalitetu za filmove i jednu za serije",
+	"server.requests.someone-already-asked-for-this-movie": "netko je već zatražio ovaj film u toj kvaliteti; odluči o njegovu zahtjevu",
+	"server.requests.that-quality-cannot-be-asked-for": "ta se kvaliteta ne može zatražiti",
+	"server.requests.the-quality-you-picked-was-not": "Odabrana kvaliteta nije iskorištena: ovaj naslov već ima tu kopiju."
 }

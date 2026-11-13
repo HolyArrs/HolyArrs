@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "ייבוא ידני קורא רק מתיקיות הספרייה, מהתיקיות של המורידים ומתיקיות הייבוא הנוספות בהגדרות > תיקיות ספרייה: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "ייבוא ידני קורא רק מתיקיות הספרייה, מהתיקיות של המורידים ומתיקיות הייבוא הנוספות, ועדיין לא הוגדרה אף אחת. הוסיפו אחת בהגדרות > תיקיות ספרייה.",
 	"server.sources.holds-not-what-was-searched-for": "מכיל את {covered}, לא את מה שחיפשו",
-	"server.mediafiles.no-title-in-the-library-is": "אין כותר בספרייה בשם {value}"
+	"server.mediafiles.no-title-in-the-library-is": "אין כותר בספרייה בשם {value}",
+	"server.requests.a-quality-name-can-be-at": "שם של איכות יכול להכיל עד 30 תווים",
+	"server.requests.keep-at-least-one-quality-shown": "השאר לפחות איכות אחת מוצגת לסרטים ואחת לסדרות",
+	"server.requests.someone-already-asked-for-this-movie": "מישהו כבר ביקש את הסרט הזה באיכות הזו; החלט על הבקשה שלו במקום",
+	"server.requests.that-quality-cannot-be-asked-for": "אי אפשר לבקש את האיכות הזו",
+	"server.requests.the-quality-you-picked-was-not": "האיכות שבחרת לא שימשה: לכותר הזה כבר יש את העותק הזה."
 }

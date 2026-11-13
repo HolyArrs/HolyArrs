@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Import dengan tangan hanya membaca daripada folder pustaka, folder pemuat turun dan folder import tambahan dalam Tetapan > Folder pustaka: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Import dengan tangan hanya membaca daripada folder pustaka, folder pemuat turun dan folder import tambahan, dan belum ada yang disediakan. Tambah satu dalam Tetapan > Folder pustaka.",
 	"server.sources.holds-not-what-was-searched-for": "mengandungi {covered}, bukan yang dicari",
-	"server.mediafiles.no-title-in-the-library-is": "tiada Tajuk dalam pustaka bernama {value}"
+	"server.mediafiles.no-title-in-the-library-is": "tiada Tajuk dalam pustaka bernama {value}",
+	"server.requests.a-quality-name-can-be-at": "nama kualiti boleh mempunyai paling banyak 30 aksara",
+	"server.requests.keep-at-least-one-quality-shown": "biarkan sekurang-kurangnya satu kualiti dipaparkan untuk filem dan satu untuk rancangan",
+	"server.requests.someone-already-asked-for-this-movie": "seseorang sudah meminta filem ini dalam kualiti itu; putuskan permintaan mereka sahaja",
+	"server.requests.that-quality-cannot-be-asked-for": "kualiti itu tidak boleh diminta",
+	"server.requests.the-quality-you-picked-was-not": "Kualiti yang anda pilih tidak digunakan: tajuk ini sudah mempunyai salinan itu."
 }

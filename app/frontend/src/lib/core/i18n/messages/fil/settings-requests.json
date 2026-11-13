@@ -42,5 +42,11 @@
 	"settings.requests.fourK": "4K na kopya",
 	"settings.requests.fourKDesc": "Kung saan napupunta ang mga naaprubahang 4K request at paano pinipili",
 	"settings.requests.fourKSameFolder": "Kapareho ng ibang request",
-	"settings.requests.fourKNamedRules": "Ang kalidad na may pangalang 4K"
+	"settings.requests.fourKNamedRules": "Ang kalidad na may pangalang 4K",
+	"settings.requests.choices": "Ang puwedeng hilingin ng mga tao",
+	"settings.requests.choicesDesc": "Ang mga button ng Kalidad sa mga request sheet, sa ganitong ayos. Palitan ang pangalan o itago rito; ang mga Kid ay makakakuha ng unang nakikita.",
+	"settings.requests.choiceShown": "Ipakita sa mga tao",
+	"settings.requests.choiceMain": "{rules} · ang pangunahing kopya ng title",
+	"settings.requests.choiceOwn": "{rules} · itinatago bilang sariling kopya",
+	"settings.requests.choiceNotReady": "Iaalok kapag may naka-set up nang 4K na kalidad sa itaas"
 }

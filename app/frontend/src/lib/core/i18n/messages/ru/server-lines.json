@@ -1318,5 +1318,10 @@
 	"server.importer.import-by-hand-reads-only-from": "Импорт вручную читает только из папок Медиатеки, папок загрузчиков и дополнительных папок импорта в Настройки > Папки Медиатеки: {all}",
 	"server.importer.import-by-hand-reads-only-from-2": "Импорт вручную читает только из папок Медиатеки, папок загрузчиков и дополнительных папок импорта, а ни одна ещё не настроена. Добавьте папку в Настройки > Папки Медиатеки.",
 	"server.sources.holds-not-what-was-searched-for": "содержит {covered}, а не то, что искали",
-	"server.mediafiles.no-title-in-the-library-is": "в библиотеке нет Тайтла с названием {value}"
+	"server.mediafiles.no-title-in-the-library-is": "в библиотеке нет Тайтла с названием {value}",
+	"server.requests.a-quality-name-can-be-at": "название качества может быть не длиннее 30 символов",
+	"server.requests.keep-at-least-one-quality-shown": "оставьте видимым хотя бы одно качество для фильмов и одно для сериалов",
+	"server.requests.someone-already-asked-for-this-movie": "кто-то уже запросил этот фильм в этом качестве; лучше решите по его запросу",
+	"server.requests.that-quality-cannot-be-asked-for": "это качество нельзя запросить",
+	"server.requests.the-quality-you-picked-was-not": "Выбранное качество не применено: у этого тайтла уже есть такая копия."
 }

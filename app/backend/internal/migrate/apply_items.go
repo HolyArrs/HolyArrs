@@ -528,6 +528,7 @@ func (r *run) ask(it Item) (string, string) {
 	if a.Kind == "movie" {
 		row.Seasons = []int{}
 	}
+	requests.ImportedQuality(&row)
 	if titleID != 0 {
 		row.TitleID = &titleID
 	}
