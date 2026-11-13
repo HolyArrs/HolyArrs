@@ -225,9 +225,28 @@ func (im *Importer) byHandPlaces(ctx context.Context, db database.Lister, folder
 		}
 	}
 	add(im.SavePath)
+	byID := map[int64]domain.Downloader{}
 	for _, d := range dls {
+		byID[d.ID] = d
 		for _, m := range d.PathMap {
 			add(m.Ours)
+		}
+	}
+	// The save folders the Downloaders report for finished downloads are the
+	// ones HolyArrs imports from on its own (the client's default or a
+	// category's folder), so they count even with no path pair set.
+	done, err := database.Select[domain.Download](ctx, db, "downloads",
+		"id IN (SELECT MAX(id) FROM downloads WHERE state IN ('finished', 'seeding') AND save_path != '' GROUP BY downloader_id, save_path)")
+	if err != nil {
+		return ps, err
+	}
+	for _, d := range done {
+		dr, ok := byID[d.DownloaderID]
+		if !ok {
+			continue
+		}
+		if p, ok := domain.MapPath(d.SavePath, dr.PathMap); ok && filepath.IsAbs(p) && (im.Store == nil || !UnsafeFolder(p, im.Store.Dir())) {
+			add(p)
 		}
 	}
 	ps.Extra, err = ReadImportFolders(ctx, db)
