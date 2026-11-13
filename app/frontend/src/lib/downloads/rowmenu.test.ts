@@ -41,6 +41,10 @@ describe('row actions menu', () => {
 		expect(rowItems({ ...tor, downloader_kind: 'aria2', state: 'paused' })).toEqual(['resume', 'remove']);
 		expect(rowItems({ ...tor, downloader_kind: 'aria2', can_act: false })).toEqual([]);
 	});
+	it('offers Import files by hand on a refused import whose folder is known', () => {
+		expect(rowItems({ ...tor, can_act: false, title_id: 4, phase: 'import_refused', import_folder: '/data/Salt.Choir' })).toEqual(['byhand', 'library']);
+		expect(rowItems({ ...tor, can_act: false, title_id: 4, phase: 'import_refused' })).toEqual(['library']);
+	});
 	it('never offers a client change on a read-only row', () => {
 		expect(rowItems({ ...tor, can_act: false, title_id: 4 })).toEqual(['library']);
 		expect(rowItems({ ...tor, can_act: false })).toEqual([]);

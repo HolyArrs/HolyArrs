@@ -5,7 +5,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { COL, MAX_W, MIN_W, move, quality, sortRows, visible, type ColId } from './columns.ts';
-	import { PRIORITIES, clientOk, paneExtras, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
+	import { PRIORITIES, byHandPath, clientOk, paneExtras, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
 	import DlBar from './DlBar.svelte';
 	import DlStatus from './DlStatus.svelte';
 	import DlMorePop from './DlMorePop.svelte';
@@ -263,7 +263,7 @@
 		get bottom() { return t('downloads.act.bottom'); },
 		get priority() { return t('downloads.act.priority'); },
 		get import() { return t('downloads.act.importAgain'); },
-		get library() { return t('downloads.act.library'); },
+		get library() { return t('downloads.act.library'); }, get byhand() { return t('downloads.dp.importByHand'); },
 		get remove() { return t('downloads.act.remove'); }
 	};
 	// Usenet jobs move and take a priority one at a time; there is no bulk call.
@@ -292,7 +292,7 @@
 			const label = ROW_WORD[k];
 			if (k === 'priority') return [{ kind: 'heading', label }, ...PRIORITIES.map((p): MenuItem => ({ label: p.label, disabled: off, onselect: () => void usenetPriority(r, p.key, p.label) }))];
 			if ((k === 'up' || k === 'down' || k === 'top' || k === 'bottom') && usenetQueued(r)) return { label, disabled: off, onselect: () => void usenetMove(r, k) };
-			if (k === 'library') return { label, icon: 'film', href: to(`/library/${r.title_id}`) };
+			if (k === 'library' || k === 'byhand') return { label, icon: k === 'library' ? 'film' : 'folder', href: to(k === 'library' ? `/library/${r.title_id}` : byHandPath(r.import_folder ?? '')) };
 			if (k === 'remove') return { label, icon: 'trash', destructive: true, disabled: off, onselect: () => onremove(r) };
 			if (k === 'import') return { label, icon: 'refresh', disabled: off, onselect: () => void importAgain(r) };
 			if (k === 'pause' || k === 'resume') return { label, icon: k === 'pause' ? 'pause' : 'play', disabled: off, onselect: () => onact?.(r, k) };
@@ -302,11 +302,11 @@
 	}
 	function rowMenu(r: DownloadRow): MenuItem[] {
 		const items = menuItems(r, rowItems(r).filter((k) => k !== 'retry' || mayEdit(r)));
-		if (!r.can_act && !r.can_import) items.unshift({ kind: 'heading', label: t('downloads.act.cannotChange') });
+		if (!r.can_act && !r.can_import && !r.import_folder) items.unshift({ kind: 'heading', label: t('downloads.act.cannotChange') });
 		return items;
 	}
 	// The pane menu is the row's list minus what the pane shows as buttons, plus a torrent's checks, force start, sheets and Mark failed.
-	const PANE_BUTTONS = new Set<RowItem>(['pause', 'resume', 'retry', 'library', 'remove']);
+	const PANE_BUTTONS = new Set<RowItem>(['pause', 'resume', 'retry', 'byhand', 'library', 'remove']);
 	function paneMenu(r: DownloadRow): MenuItem[] {
 		if (!r.can_act) return [];
 		const off = busy === r.id || queueBusy === r.id;

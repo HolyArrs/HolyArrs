@@ -11,6 +11,7 @@
 	import { size as bytes, protocolOf } from './size.ts';
 	import { packLine, statusWord } from './status-tabs.ts';
 	import { pausable, retryable } from './usenet.ts';
+	import { byHandPath } from './rowmenu.ts';
 	import { poster, who } from './row-art.ts';
 	import { problem } from './problem.ts';
 	import { barTone } from './sections.ts';
@@ -132,6 +133,7 @@
 			{:else if pausable(r) && !r.client_locked}<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} onclick={() => onact?.(r, isPaused(r) ? 'resume' : 'pause')} data-testid="dl-panel-pause">{isPaused(r) ? t('downloads.act.start') : t('downloads.act.pause')}</button>{/if}
 			<button type="button" class="xbn" disabled={!r.can_act || busy === r.id} title={r.can_act ? t('downloads.act.remove') : t('downloads.pane.cannotRemove')} onclick={() => onremove(r)} data-testid="dl-panel-remove">{t('downloads.act.remove')}</button>
 		{/if}
+		{#if r.import_folder && !watch}<a class="xbn" href={to(byHandPath(r.import_folder))} data-testid="dl-import-by-hand">{t('downloads.dp.importByHand')}</a>{/if}
 		{#if r.title_id && (r.linked || !r.outside)}<a class="xbn" href={to(`/library/${r.title_id}`)} data-testid="dl-open-title">{t('downloads.act.library')}</a>{/if}
 		{#if more.length}<span class="more" data-testid="dl-more"><Menu label={t('downloads.pane.moreActions')} items={more} width={220} /></span>{/if}
 	</div>
@@ -152,7 +154,7 @@
 	<section class="dpane" class:shut={!paneOpen} style={paneOpen ? (paneFit ? `max-height: ${maxPane()}px; --ph: ${maxPane()}px` : `height: ${paneH}px; --ph: ${paneH}px`) : ''} id="dlx-{r.id}" data-testid="dl-pane" aria-label={t('downloads.pane.detailsOf', { name: who(r) })}>
 		<div class="phd">
 			<button type="button" class="grab" aria-label={t('downloads.pane.close')} onpointerdown={(e) => (grabY = e.clientY)} onpointerup={(e) => { if (grabY != null && e.clientY - grabY > 40) openId = 0; grabY = null; }} onclick={() => (openId = 0)} data-testid="dl-pane-grab"><i></i></button>
-			<p class="xt pt"><b>{who(r)}</b><span class="hs"><i class="hdot {barTone(r)}" class:bad={problem(r)?.tone === 'fail' || r.phase === 'failed'} aria-hidden="true"></i><span data-testid="dl-health">{protocolOf(r) === 'torrent' ? healthLine({ ...r, done_at: pane.det.id === r.id ? pane.det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: pane.det.id === r.id ? pane.det.detail?.torrent?.seeding_time : undefined, ratio: pane.det.id === r.id ? pane.det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : t('downloads.pane.line', { status: statusWord(r), pct: Math.floor(percent(r.progress)), size: sizeWord })}</span></span>{#if r.pack}<span data-testid="dl-pane-pack">{packLine(r)}</span>{/if}</p>
+			<p class="xt pt"><b>{who(r)}</b><span class="hs"><i class="hdot {barTone(r)}" class:bad={problem(r)?.tone === 'fail' || r.phase === 'failed'} aria-hidden="true"></i><span data-testid="dl-health">{protocolOf(r) === 'torrent' || r.phase === 'import_refused' ? healthLine({ ...r, done_at: pane.det.id === r.id ? pane.det.detail?.torrent?.done_at ?? r.finished_at : r.finished_at, seeding_time: pane.det.id === r.id ? pane.det.detail?.torrent?.seeding_time : undefined, ratio: pane.det.id === r.id ? pane.det.detail?.torrent?.ratio ?? r.ratio : r.ratio }) : t('downloads.pane.line', { status: statusWord(r), pct: Math.floor(percent(r.progress)), size: sizeWord })}</span></span>{#if r.pack}<span data-testid="dl-pane-pack">{packLine(r)}</span>{/if}</p>
 			{@render tabStrip(r)}
 			{#if paneOpen}
 			<div class="pact" data-testid="dl-pane-actions">
