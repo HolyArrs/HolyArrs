@@ -130,7 +130,7 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 			return true, prepared, nil
 		}
 		for _, item := range answer.items {
-			seen, err := releaseSeen(ctx, db, answer.src.ID, item.Title)
+			seen, _, err := releaseSeen(ctx, db, answer.src.ID, item.Title)
 			if err != nil {
 				return true, nil, err
 			}

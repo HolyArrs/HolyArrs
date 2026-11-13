@@ -12,7 +12,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// #314: a feed check read 121 new Releases, stored 2 and said nothing about
+// A feed check read 121 new Releases, stored 2 and said nothing about
 // the rest, so a daily show's episode vanished without a trace. The feed
 // check event now counts why each one went nowhere, and names a few of those
 // that matched a Title in the Library.
