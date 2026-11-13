@@ -136,6 +136,29 @@ func TitlesLooking(ctx context.Context, q database.Lister, states [3]string) ([]
 		WHERE i.title_id = titles.id AND sl.state IN (?, ?, ?)) ORDER BY sort_name, id`, states[0], states[1], states[2])
 }
 
+// LookingRuleTags maps each Title with a Slot in one of these states to the
+// tags of the Pick rules those Slots use.
+func LookingRuleTags(ctx context.Context, q database.Lister, states [3]string) (map[int64][]string, error) {
+	rows, err := q.QueryContext(ctx, `SELECT DISTINCT i.title_id, t.value FROM slots sl
+		JOIN items i ON i.id = sl.item_id JOIN versions v ON v.id = sl.version_id
+		JOIN pick_rules p ON p.id = v.pick_rules_id, json_each(p.body, '$.tags') t
+		WHERE sl.state IN (?, ?, ?) AND t.type = 'text'`, states[0], states[1], states[2])
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[int64][]string{}
+	for rows.Next() {
+		var id int64
+		var tag string
+		if err := rows.Scan(&id, &tag); err != nil {
+			return nil, err
+		}
+		out[id] = append(out[id], tag)
+	}
+	return out, rows.Err()
+}
+
 // HeldSlotDue says whether a Slot holds a Release whose wait is over.
 func HeldSlotDue(ctx context.Context, q database.Querier, now time.Time) (bool, error) {
 	var due bool

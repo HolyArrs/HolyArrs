@@ -219,8 +219,8 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 		case m.Title == nil:
 			unmatched = append(unmatched, f)
 
-		// A tagged Source's Release goes only to a Title sharing a tag. It is matched against every wanted Title first, so it never lands on a look-alike because the right one was left out.
-		case mediafiles.SourceServes(f.src.Tags, m.Title.Tags):
+		// A tagged Source's Release goes only to a Title sharing a tag, on the Title or its Pick rules. It is matched against every wanted Title first, so it never lands on a look-alike because the right one was left out.
+		case mediafiles.SourceTakesTitle(f.src.Tags, m.Title.Tags, m.Title.RuleTags):
 			byTitle[m.Title.ID] = append(byTitle[m.Title.ID], f)
 		default:
 			drops.add(f.src, f.item.Title, dropSourceTags)
@@ -272,7 +272,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			continue
 		}
 		for _, c := range ctxs[titleID] {
-			cands := append([]found(nil), fs...)
+			cands := rulesTake(c.pr.Body.Tags, fs)
 			for k := range cands {
 				if id := storedID[keyOf(cands[k])]; id > 0 {
 					cands[k].relID = id
@@ -545,7 +545,15 @@ func (s *Searcher) wantedTitleRefs(ctx context.Context) ([]mediafiles.TitleRef, 
 	if err != nil {
 		return nil, err
 	}
-	return titleRefs(titles), nil
+	ruleTags, err := mediafiles.LookingRuleTags(ctx, s.Store.Read(), lookingStateNames())
+	if err != nil {
+		return nil, err
+	}
+	refs := titleRefs(titles)
+	for i := range refs {
+		refs[i].RuleTags = ruleTags[refs[i].ID]
+	}
+	return refs, nil
 }
 
 // dropUnmatched records the Releases that matched no looking Title. Those
@@ -669,4 +677,16 @@ func movieOut(t mediafiles.Title) *time.Time {
 // lookingStateNames is lookingStates as the strings the store compares with.
 func lookingStateNames() [3]string {
 	return [3]string{string(lookingStates[0]), string(lookingStates[1]), string(lookingStates[2])}
+}
+
+// rulesTake keeps the feed Releases whose Source these Pick rules may use,
+// the same rule Search follows when it picks Sources to ask.
+func rulesTake(rules []string, fs []found) []found {
+	out := make([]found, 0, len(fs))
+	for _, f := range fs {
+		if mediafiles.RulesTakeSource(f.src.Tags, rules) {
+			out = append(out, f)
+		}
+	}
+	return out
 }
