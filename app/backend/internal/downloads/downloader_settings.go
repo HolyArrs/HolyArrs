@@ -235,7 +235,11 @@ func HealthOf(d domain.Downloader, now time.Time) HealthView {
 	case d.State == "auth_failed":
 		return HealthView{"sign_in_refused", "Sign-in refused", "It turned down the key or sign-in. Check them and test again."}
 	case d.BackoffUntil != nil && d.BackoffUntil.After(now):
-		return HealthView{"resting", "Resting", "It did not answer, so HolyArrs waits until " + d.BackoffUntil.UTC().Format("15:04 UTC") + " before sending to it again. " + d.LastError}
+		why := ""
+		if e := strings.TrimRight(strings.TrimSpace(d.LastError), "."); e != "" {
+			why = " (" + e + ")"
+		}
+		return HealthView{"resting", "Resting", "It did not answer" + why + ", so HolyArrs waits until " + d.BackoffUntil.UTC().Format("15:04 UTC") + " before sending to it again."}
 	case d.State == "unreachable":
 		return HealthView{"not_answering", "Not answering", "It did not answer the last check. " + d.LastError}
 	}

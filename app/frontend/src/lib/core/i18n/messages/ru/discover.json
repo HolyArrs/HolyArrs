@@ -767,7 +767,7 @@
 	"discover.leftovers.reason.bigger_file_same_episode": "Файл побольше содержит ту же серию",
 	"discover.leftovers.reason.episode_has_file": "У этой серии уже есть файл",
 	"discover.leftovers.reason.movie_more_than_one": "В папке больше одного видео",
-	"discover.leftovers.reason.movie_copy_choice": "Не подходит к этой версии",
+	"discover.leftovers.reason.movie_copy_choice": "Не подходит к этому варианту",
 	"discover.leftovers.reason.movie_has_file": "У фильма уже есть файл",
 	"discover.leftovers.reason.replaced_by_hand": "Заменён другим файлом",
 	"discover.leftovers.reason.unmatched": "Сопоставление снято вручную"
