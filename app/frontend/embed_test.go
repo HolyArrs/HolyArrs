@@ -2,6 +2,7 @@ package frontend
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
 	"io/fs"
 	"testing"
@@ -31,8 +32,10 @@ func TestPackedOpensBrotliCopy(t *testing.T) {
 	w := brotli.NewWriter(&z)
 	_, _ = w.Write([]byte("hello pages"))
 	_ = w.Close()
-	p := packed{fstest.MapFS{"a.js.br": {Data: z.Bytes()}, "b.css": {Data: []byte("plain")}}}
-	for name, want := range map[string]string{"a.js": "hello pages", "b.css": "plain"} {
+	// "hello pages" as bzip2 -9 wrote it.
+	bz, _ := hex.DecodeString("425a683931415926535997261baa0000029180400022c4c80020002200f4420c98810734e1df8bb9229c28484b930dd500")
+	p := packed{fstest.MapFS{"a.js.br": {Data: z.Bytes()}, "b.css": {Data: []byte("plain")}, "c.json.bz2": {Data: bz}}}
+	for name, want := range map[string]string{"a.js": "hello pages", "b.css": "plain", "c.json": "hello pages"} {
 		b, err := fs.ReadFile(p, name)
 		if err != nil || string(b) != want {
 			t.Fatalf("%s = %q, %v; want %q", name, b, err, want)

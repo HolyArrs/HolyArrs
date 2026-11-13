@@ -17,6 +17,8 @@ function walk(dir) {
 		if (!exts.has(extname(p)) || name === 'index.html') continue;
 		const b = readFileSync(p);
 		if (b.length < 1024) continue;
+		// The image build packs the language files itself, with bzip2 (deploy/pack_languages.py).
+		if (process.env.HOLYARRS_LANGUAGES_PLAIN && extname(p) === '.json' && b.subarray(0, 8).toString() === '{"fit":"') continue;
 		const z = brotliCompressSync(b, { params: { [constants.BROTLI_PARAM_QUALITY]: 11, [constants.BROTLI_PARAM_SIZE_HINT]: b.length } });
 		if (z.length >= b.length * 0.9) continue;
 		writeFileSync(p + '.br', z);
