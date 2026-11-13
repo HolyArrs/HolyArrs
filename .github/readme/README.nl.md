@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> is één zelfgehoste app voor je series, films en muziek.<br>Blader als in een streamingapp, vraag aan wat je wilt, en de rest regelt de app.</p>
 
-<p align="center"><b>Ongeveer 19.5 MB downloaden · ongeveer 95 MiB RAM in rust bij een verse installatie · amd64, arm64, armv7</b><br><sub>De zes apps die ze vervangt, zijn samen 718.2 MB groot.</sub></p>
+<p align="center"><b>Ongeveer 16.9 MB downloaden · ongeveer 95 MiB RAM in rust bij een verse installatie · amd64, arm64, armv7</b><br><sub>De zes apps die ze vervangt, zijn samen 718.2 MB groot.</sub></p>
 
 <p align="center"><a href="#quick-start">Snelstart</a> · <a href="#why">Waarom</a> · <a href="#what-it-does">Wat het doet</a> · <a href="#moving">Overstappen van andere apps</a> · <a href="#manual">De handleiding</a> · <a href="#help">Hulp</a></p>
 
@@ -105,9 +105,9 @@ Dus heb ik hem gebouwd.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Alle zes samen** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Ongeveer 37 keer kleiner. Gecomprimeerde registry-download, images van linuxserver.io, amd64, gemeten op 2026-11-08. RAM in rust gemeten met 10,000 titels en 55,000 films en afleveringen. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>Ongeveer 43 keer kleiner. Gecomprimeerde registry-download, images van linuxserver.io, amd64, gemeten op 2026-11-08. RAM in rust gemeten met 10,000 titels en 55,000 films en afleveringen. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Iemand vraagt een titel aan. HolyArrs doorzoekt je bronnen, kiest met je keuzere
 | 🔌 **API voor eerdere apps** | Seerr, Prowlarr, Bazarr, Unpackerr en Homepage blijven werken zodra je dat aanzet. |
 | 🗝️ **Geen API-sleutels nodig** | Titels, artwork en hitlijsten komen van de metadataserver van HolyArrs. Je eigen sleutels of server werken ook. |
 | 🔒 **Versleutelde sleutels** | Opgeslagen wachtwoorden en sleutels zijn vergrendeld met een hoofdsleutel die in je configuratiemap staat. |
-| 🪶 **Piepklein** | Een image van ongeveer 19.5 MB met alleen HolyArrs erin. |
+| 🪶 **Piepklein** | Een image van ongeveer 16.9 MB met alleen HolyArrs erin. |
 
 <details>
 <summary><b>Bekijk elke pagina in beweging</b></summary>

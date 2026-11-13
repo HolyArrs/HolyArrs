@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> er én selvhostet app for seriene, filmene og musikken din.<br>Bla som i en strømmeapp, be om det du vil ha, så tar den seg av resten.</p>
 
-<p align="center"><b>Omtrent 19.5 MB å laste ned · omtrent 95 MiB RAM i hvile på en ny installasjon · amd64, arm64, armv7</b><br><sub>De seks appene den erstatter er til sammen 718.2 MB å laste ned.</sub></p>
+<p align="center"><b>Omtrent 16.9 MB å laste ned · omtrent 95 MiB RAM i hvile på en ny installasjon · amd64, arm64, armv7</b><br><sub>De seks appene den erstatter er til sammen 718.2 MB å laste ned.</sub></p>
 
 <p align="center"><a href="#quick-start">Hurtigstart</a> · <a href="#why">Hvorfor</a> · <a href="#what-it-does">Hva den gjør</a> · <a href="#moving">Bytte fra andre apper</a> · <a href="#manual">Manualen</a> · <a href="#help">Hjelp</a></p>
 
@@ -105,9 +105,9 @@ Så jeg bygde den.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Alle seks til sammen** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Omtrent 37 ganger mindre. Komprimert nedlasting fra registry, images fra linuxserver.io, amd64, målt 2026-11-08. RAM i hvile målt med 10,000 titler og 55,000 filmer og episoder. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>Omtrent 43 ganger mindre. Komprimert nedlasting fra registry, images fra linuxserver.io, amd64, målt 2026-11-08. RAM i hvile målt med 10,000 titler og 55,000 filmer og episoder. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Noen ber om en tittel. HolyArrs søker gjennom kildene dine, velger den beste re
 | 🔌 **API for tidligere apper** | Seerr, Prowlarr, Bazarr, Unpackerr og Homepage fortsetter å virke når du slår det på. |
 | 🗝️ **Ingen API-nøkler nødvendig** | Titler, artwork og lister kommer fra HolyArrs' metadataserver. Egne nøkler eller egen server fungerer også. |
 | 🔒 **Krypterte nøkler** | Lagrede passord og nøkler er låst med en hovednøkkel som ligger i konfigurasjonsmappen din. |
-| 🪶 **Bitteliten** | Et image på omtrent 19.5 MB med ingenting annet enn HolyArrs i. |
+| 🪶 **Bitteliten** | Et image på omtrent 16.9 MB med ingenting annet enn HolyArrs i. |
 
 <details>
 <summary><b>Se hver side i bevegelse</b></summary>

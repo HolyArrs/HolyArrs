@@ -4,6 +4,10 @@ All notable changes to HolyArrs are listed here. The format follows [Keep a Chan
 
 ## 1.1.2
 
+### Changed
+
+- The image is smaller to download: about 16.9 MB, down from 19.5 MB.
+
 ### Fixed
 
 - Members can request seasons of a show that is already in the Library. ([#338](https://github.com/HolyArrs/HolyArrs/issues/338))

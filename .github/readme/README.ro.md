@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> este o singură aplicație self-hosted pentru serialele, filmele și muzica ta.<br>Răsfoiești ca într-o aplicație de streaming, ceri ce vrei, iar restul îl face ea.</p>
 
-<p align="center"><b>Circa 19.5 MB de descărcat · circa 95 MiB de RAM în repaus la o instalare nouă · amd64, arm64, armv7</b><br><sub>Cele șase aplicații pe care le înlocuiește au împreună 718.2 MB de descărcat.</sub></p>
+<p align="center"><b>Circa 16.9 MB de descărcat · circa 95 MiB de RAM în repaus la o instalare nouă · amd64, arm64, armv7</b><br><sub>Cele șase aplicații pe care le înlocuiește au împreună 718.2 MB de descărcat.</sub></p>
 
 <p align="center"><a href="#quick-start">Pornire rapidă</a> · <a href="#why">De ce</a> · <a href="#what-it-does">Ce face</a> · <a href="#moving">Trecerea de la alte aplicații</a> · <a href="#manual">Manualul</a> · <a href="#help">Ajutor</a></p>
 
@@ -105,9 +105,9 @@ Așa că am făcut-o.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Toate șase la un loc** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>De circa 37 de ori mai mic. Descărcare comprimată din registry, imagini linuxserver.io, amd64, măsurat la 2026-11-08. RAM în repaus măsurat cu 10,000 de titluri și 55,000 de filme și episoade. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>De circa 43 de ori mai mic. Descărcare comprimată din registry, imagini linuxserver.io, amd64, măsurat la 2026-11-08. RAM în repaus măsurat cu 10,000 de titluri și 55,000 de filme și episoade. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Cineva cere un titlu. HolyArrs caută în Sursele tale, alege cea mai bună vari
 | 🔌 **API pentru aplicațiile mai vechi** | Seerr, Prowlarr, Bazarr, Unpackerr și Homepage funcționează în continuare, după ce îl pornești. |
 | 🗝️ **Fără chei API** | Titlurile, imaginile și topurile vin de la serverul de metadate HolyArrs. Merg și cheile sau serverul tău. |
 | 🔒 **Chei criptate** | Parolele și cheile salvate sunt blocate cu o cheie principală care stă în dosarul tău de configurare. |
-| 🪶 **Minuscul** | O imagine de circa 19.5 MB, în care nu e nimic în afară de HolyArrs. |
+| 🪶 **Minuscul** | O imagine de circa 16.9 MB, în care nu e nimic în afară de HolyArrs. |
 
 <details>
 <summary><b>Vezi fiecare pagină în mișcare</b></summary>

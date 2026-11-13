@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> 是一個自架的 App，管理你的影集、電影和音樂。<br>像串流 App 一樣瀏覽，請求你想要的作品，剩下的它來處理。</p>
 
-<p align="center"><b>下載約 19.5 MB · 全新安裝時閒置約用 95 MiB 記憶體 · amd64、arm64、armv7</b><br><sub>它取代的那六個 App，下載量加起來是 718.2 MB。</sub></p>
+<p align="center"><b>下載約 16.9 MB · 全新安裝時閒置約用 95 MiB 記憶體 · amd64、arm64、armv7</b><br><sub>它取代的那六個 App，下載量加起來是 718.2 MB。</sub></p>
 
 <p align="center"><a href="#quick-start">快速開始</a> · <a href="#why">為什麼</a> · <a href="#what-it-does">它能做什麼</a> · <a href="#moving">從其他 App 轉移</a> · <a href="#manual">使用手冊</a> · <a href="#help">協助</a></p>
 
@@ -105,9 +105,9 @@ docker compose up -d
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **六個加起來** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>小了約 37 倍。為壓縮後的 registry 下載大小，使用 linuxserver.io 的 image，amd64，2026-11-08 測量。閒置記憶體是在 10,000 部作品、55,000 部電影和集數的情況下測得。 (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>小了約 43 倍。為壓縮後的 registry 下載大小，使用 linuxserver.io 的 image，amd64，2026-11-08 測量。閒置記憶體是在 10,000 部作品、55,000 部電影和集數的情況下測得。 (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ docker compose up -d
 | 🔌 **舊的 App API** | 開啟之後，Seerr、Prowlarr、Bazarr、Unpackerr 和 Homepage 都能繼續運作。 |
 | 🗝️ **不需要 API 金鑰** | 作品資料、圖片和排行榜都來自 HolyArrs 的 metadata 伺服器。也可以用你自己的金鑰或伺服器。 |
 | 🔒 **已加密的金鑰** | 儲存的密碼和金鑰都用主金鑰鎖住，主金鑰放在你的設定資料夾裡。 |
-| 🪶 **超小** | image 約 19.5 MB，裡面只有 HolyArrs。 |
+| 🪶 **超小** | image 約 16.9 MB，裡面只有 HolyArrs。 |
 
 <details>
 <summary><b>看看每個頁面的動態畫面</b></summary>

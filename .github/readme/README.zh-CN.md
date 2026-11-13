@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> 是一个自托管应用，管理你的剧集、电影和音乐。<br>像用流媒体应用一样浏览，想看什么就提出请求，剩下的交给它。</p>
 
-<p align="center"><b>下载约 19.5 MB · 全新安装时空闲内存约 95 MiB · amd64、arm64、armv7</b><br><sub>它所取代的六个应用，加起来要下载 718.2 MB。</sub></p>
+<p align="center"><b>下载约 16.9 MB · 全新安装时空闲内存约 95 MiB · amd64、arm64、armv7</b><br><sub>它所取代的六个应用，加起来要下载 718.2 MB。</sub></p>
 
 <p align="center"><a href="#quick-start">快速开始</a> · <a href="#why">为什么</a> · <a href="#what-it-does">功能</a> · <a href="#moving">从其他应用迁移</a> · <a href="#manual">手册</a> · <a href="#help">帮助</a></p>
 
@@ -105,9 +105,9 @@ docker compose up -d
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **六个合计** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>体积小约 37 倍。数据为注册表压缩后的下载大小，来自 linuxserver.io 镜像，amd64，2026-11-08 测量。空闲内存在 10,000 个标题、55,000 部电影和剧集的条件下测量。 (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>体积小约 43 倍。数据为注册表压缩后的下载大小，来自 linuxserver.io 镜像，amd64，2026-11-08 测量。空闲内存在 10,000 个标题、55,000 部电影和剧集的条件下测量。 (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ docker compose up -d
 | 🔌 **旧应用 API** | 开启后，Seerr、Prowlarr、Bazarr、Unpackerr 和 Homepage 都能继续工作。 |
 | 🗝️ **不需要 API 密钥** | 标题、海报和榜单都来自 HolyArrs 元数据服务器。也可以用你自己的密钥或服务器。 |
 | 🔒 **加密保存密钥** | 保存的密码和密钥由主密钥锁定，主密钥放在你的配置文件夹里。 |
-| 🪶 **很小** | 镜像约 19.5 MB，里面只有 HolyArrs。 |
+| 🪶 **很小** | 镜像约 16.9 MB，里面只有 HolyArrs。 |
 
 <details>
 <summary><b>查看每个页面的动态效果</b></summary>

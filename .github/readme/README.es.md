@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> es una app autoalojada para tus series, películas y música.<br>Navega como en una app de streaming, pide lo que quieras y ella se encarga del resto.</p>
 
-<p align="center"><b>Unos 19.5 MB de descarga · unos 95 MiB de RAM en reposo en una instalación nueva · amd64, arm64, armv7</b><br><sub>Las seis apps que reemplaza suman 718.2 MB de descarga.</sub></p>
+<p align="center"><b>Unos 16.9 MB de descarga · unos 95 MiB de RAM en reposo en una instalación nueva · amd64, arm64, armv7</b><br><sub>Las seis apps que reemplaza suman 718.2 MB de descarga.</sub></p>
 
 <p align="center"><a href="#quick-start">Inicio rápido</a> · <a href="#why">Por qué</a> · <a href="#what-it-does">Qué hace</a> · <a href="#moving">Venir de otras apps</a> · <a href="#manual">El manual</a> · <a href="#help">Ayuda</a></p>
 
@@ -105,9 +105,9 @@ Así que la hice.
 | Bazarr | 156.4 MB | | 1 | 1 |
 | Overseerr | 180.8 MB | | 1 | 1 |
 | **Las seis juntas** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **19.5 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Unas 37 veces más pequeña. Descarga comprimida del registro, imágenes de linuxserver.io, amd64, medido el 2026-11-08. La RAM en reposo se midió con 10,000 títulos y 55,000 películas y episodios. (HolyArrs 1.1.2: 2026-11-13)</sub>
+<sub>Unas 43 veces más pequeña. Descarga comprimida del registro, imágenes de linuxserver.io, amd64, medido el 2026-11-08. La RAM en reposo se midió con 10,000 títulos y 55,000 películas y episodios. (HolyArrs 1.1.2: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Alguien pide un título. HolyArrs busca en tus Sources, elige el mejor lanzamien
 | 🔌 **API de las apps antiguas** | Seerr, Prowlarr, Bazarr, Unpackerr y Homepage siguen funcionando cuando lo actives. |
 | 🗝️ **Sin claves de API** | Los títulos, las carátulas y las listas vienen del servidor de metadatos de HolyArrs. También sirven tus propias claves o tu propio servidor. |
 | 🔒 **Claves cifradas** | Las contraseñas y claves guardadas se protegen con una clave maestra que vive en tu carpeta de configuración. |
-| 🪶 **Diminuta** | Una imagen de unos 19.5 MB con HolyArrs y nada más. |
+| 🪶 **Diminuta** | Una imagen de unos 16.9 MB con HolyArrs y nada más. |
 
 <details>
 <summary><b>Mira cada página en movimiento</b></summary>
