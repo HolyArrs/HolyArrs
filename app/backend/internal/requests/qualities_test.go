@@ -283,6 +283,9 @@ func TestApprovalSaysWhenTheCopyIsAlreadyThere(t *testing.T) {
 	if _, err := r.svc.Approve(ctx, first.Ask.ID, r.luis, ApproveOptions{}); err != nil {
 		t.Fatal(err)
 	}
+	// The Standard copy is in the Library (an approved Standard ask still open
+	// would refuse the change instead: ErrQualityTaken).
+	pinExec(t, r, "UPDATE asks SET state = 'available' WHERE id = ?", first.Ask.ID)
 	// A 4K ask for the same movie, approved as Standard: the main copy is there.
 	uhd, err := r.svc.AskQuality(ctx, r.bo, "693134", QualityFourK)
 	if err != nil {
