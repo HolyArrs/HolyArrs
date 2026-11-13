@@ -301,7 +301,7 @@
 
 <!-- The rail column is kept while loading too, so the cards do not narrow when it appears. -->
 <div class:has-rail={railOn || (!loaded && sort.key === 'name' && !grouped)} class="with-rail">
-	<div class="content">
+	<div class="content" bind:clientWidth={listWidth}>
 		<PageLoader loading={!loaded} label={tr('mediafiles.list.loading')} onretry={retryLoad}>
 		{#if error}
 			<LoadError hasData={false} message={plainReason(error).text} onretry={retryLoad} />
@@ -329,7 +329,7 @@
 				{/each}
 			</ul>
 		{:else}
-			<div class="rows {view}" class:v-rows={view === 'rows'} class:has-select={selecting} style="--acts-w: {actsW}px; --cols: {gridCols}; --table-min: {tableMin}px; --banner-w: {bannerW}px; --row-pad: {20 + touchActs + (view === 'table' && !phone && hiddenCols > 0 ? 16 : 0)}px" bind:this={listEl} bind:clientWidth={listWidth}>
+			<div class="rows {view}" class:v-rows={view === 'rows'} class:has-select={selecting} style="--acts-w: {actsW}px; --cols: {gridCols}; --table-min: {tableMin}px; --banner-w: {bannerW}px; --row-pad: {20 + touchActs + (view === 'table' && !phone && hiddenCols > 0 ? 16 : 0)}px" bind:this={listEl}>
 				{#if view === 'rows' && !phone}
 					<div class="lh" role="presentation" style="--facts: {factsTpl}">
 						{#if selecting}<span></span>{/if}

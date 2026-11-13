@@ -131,7 +131,7 @@
 	<div class="frame" bind:this={frame} onpointermove={move} onpointerleave={reset}>
 		<a class="art" {href} aria-label={name} use:viewTransitionName={vtName}>
 			{#if !image || failed || !loaded}
-				<ArtPlaceholder name={title} shape={kind === 'artist' ? 'square' : 'poster'} loading={!!image && !failed && !loaded} />
+				<ArtPlaceholder name={title} shape={kind === 'artist' ? 'square' : 'poster'} loading={shown && !!image && !failed && !loaded} />
 			{/if}
 			{#if image && !failed}
 				<img src={pic} class:in={loaded} alt="" loading="lazy" decoding="async" use:whenLoaded={() => (loaded = true)} onerror={() => (failed = true)} />
@@ -170,7 +170,9 @@
 
 
 	.lp.square { --poster-ratio: 1 / 1; }
-	.frame { container-type: inline-size; position: relative; aspect-ratio: var(--poster-ratio); margin-bottom: 6px; border-radius: var(--r-card); transform: perspective(800px) translateY(var(--ty, 0)) scale(var(--s, 1)) rotateX(var(--rx)) rotateY(var(--ry)); transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); box-shadow: var(--shadow-card); will-change: transform; }
+	.frame { container-type: inline-size; position: relative; aspect-ratio: var(--poster-ratio); margin-bottom: 6px; border-radius: var(--r-card); transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); box-shadow: var(--shadow-card); }
+	/* Idle cards carry no 3D transform, so a big grid does not make a layer per card. */
+	.lp.selecting .frame { transform: perspective(800px) translateY(var(--ty, 0)) scale(var(--s, 1)) rotateX(var(--rx)) rotateY(var(--ry)); }
 	.art { position: absolute; inset: 0; display: block; overflow: hidden; border-radius: inherit; background: var(--surface-2); color: var(--text); }
 	.art:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--dur) var(--ease-out); }
@@ -196,7 +198,7 @@
 
 
 	/* Frosted hover panel; the --gp vars carry the light and dark colours. */
-	.glass { --gp-bg: rgb(244 244 246 / 86%); --gp-fg: #1d1d1f; --gp-fg2: rgb(60 60 67); --gp-btn: rgb(0 0 0 / 8%); --gp-btn-hi: rgb(0 0 0 / 14%); --gp-edge: rgb(255 255 255 / 60%); position: absolute; left: 0; right: 0; bottom: 0; min-height: 34%; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; padding: clamp(7px, 6cqi, 10px) clamp(7px, 6cqi, 10px) clamp(6px, 5.5cqi, 9px); box-sizing: border-box; border-radius: 0 0 var(--r-card) var(--r-card); color: var(--gp-fg); background: var(--gp-bg); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); box-shadow: inset 0 1px 0 var(--gp-edge); opacity: 0; pointer-events: none; transition: opacity var(--dur-fast) var(--ease-in); }
+	.glass { --gp-bg: rgb(244 244 246 / 86%); --gp-fg: #1d1d1f; --gp-fg2: rgb(60 60 67); --gp-btn: rgb(0 0 0 / 8%); --gp-btn-hi: rgb(0 0 0 / 14%); --gp-edge: rgb(255 255 255 / 60%); position: absolute; left: 0; right: 0; bottom: 0; min-height: 34%; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; padding: clamp(7px, 6cqi, 10px) clamp(7px, 6cqi, 10px) clamp(6px, 5.5cqi, 9px); box-sizing: border-box; border-radius: 0 0 var(--r-card) var(--r-card); color: var(--gp-fg); background: var(--gp-bg); box-shadow: inset 0 1px 0 var(--gp-edge); opacity: 0; pointer-events: none; transition: opacity var(--dur-fast) var(--ease-in), backdrop-filter 0s var(--dur-fast), -webkit-backdrop-filter 0s var(--dur-fast); }
 	@media (prefers-color-scheme: dark) { :global(:root:not([data-theme='light'])) .glass { --gp-bg: rgb(28 28 30 / 80%); --gp-fg: #fff; --gp-fg2: rgb(235 235 245 / 82%); --gp-btn: rgb(255 255 255 / 14%); --gp-btn-hi: rgb(255 255 255 / 24%); --gp-edge: rgb(255 255 255 / 12%); } }
 	:global([data-theme='dark']) .glass { --gp-bg: rgb(28 28 30 / 80%); --gp-fg: #fff; --gp-fg2: rgb(235 235 245 / 82%); --gp-btn: rgb(255 255 255 / 14%); --gp-btn-hi: rgb(255 255 255 / 24%); --gp-edge: rgb(255 255 255 / 12%); }
 
@@ -220,8 +222,9 @@
 	.g-btn:focus-visible, .g-open:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 	@media (hover: hover) and (pointer: fine) {
-		.frame:hover, .frame:focus-within { --ty: -4px; --s: 1.03; box-shadow: var(--shadow-lift); z-index: 2; }
-		.frame:hover .glass, .frame:focus-within .glass { opacity: 1; pointer-events: auto; transition: opacity var(--dur) var(--ease-out); }
+		.frame:hover, .frame:focus-within { --ty: -4px; --s: 1.03; box-shadow: var(--shadow-lift); z-index: 2; transform: perspective(800px) translateY(var(--ty, 0)) scale(var(--s, 1)) rotateX(var(--rx)) rotateY(var(--ry)); will-change: transform; }
+		/* The blur is set only while the panel shows; idle cards skip the cost. */
+		.frame:hover .glass, .frame:focus-within .glass { opacity: 1; pointer-events: auto; transition: opacity var(--dur) var(--ease-out); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); }
 		.frame:hover .badge, .frame:focus-within .badge { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	}
 
@@ -244,7 +247,7 @@
 
 	@media (prefers-reduced-transparency: reduce) {
 		.badge { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgb(24 24 26 / 94%); }
-		.glass { backdrop-filter: none; -webkit-backdrop-filter: none; }
+		.glass, .frame:hover .glass, .frame:focus-within .glass { backdrop-filter: none; -webkit-backdrop-filter: none; }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.lp, .lp.shown { opacity: 1; transform: none; transition: none; }
