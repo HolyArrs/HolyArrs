@@ -2,6 +2,7 @@
 
 export type * from './types.ts';
 export { activeCount } from './table.ts';
+export { airedEpisodes } from './table.ts';
 export { airDateChoices } from './organise.ts';
 export { albumFolderLine } from './organise.ts';
 export { artName } from './title-page.ts';

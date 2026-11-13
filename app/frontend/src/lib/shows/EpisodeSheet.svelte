@@ -23,6 +23,7 @@
 		episode: number;
 		name?: string;
 		air_date?: string;
+		air_day?: string;
 		runtime_minutes?: number;
 		still?: string;
 		keep_up_to_date?: boolean;
