@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: no se pudo añadir, vuelve a estar en espera",
 	"server.requests.the-metadata-server-did-not-answer": "El servidor de metadatos no respondió a tiempo. Vuelve a estar en espera; apruébala de nuevo.",
 	"server.importer.import-by-hand-reads-only-from": "La importación a mano solo lee de las carpetas de la Biblioteca, las carpetas de los gestores de descargas y las carpetas de importación extra de Ajustes > Carpetas de la Biblioteca: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "La importación a mano solo lee de las carpetas de la Biblioteca, las carpetas de los gestores de descargas y las carpetas de importación extra, y todavía no hay ninguna. Añade una en Ajustes > Carpetas de la Biblioteca."
+	"server.importer.import-by-hand-reads-only-from-2": "La importación a mano solo lee de las carpetas de la Biblioteca, las carpetas de los gestores de descargas y las carpetas de importación extra, y todavía no hay ninguna. Añade una en Ajustes > Carpetas de la Biblioteca.",
+	"server.sources.holds-not-what-was-searched-for": "contiene {covered}, no lo que se buscaba",
+	"server.mediafiles.no-title-in-the-library-is": "ningún Título de la biblioteca se llama {value}"
 }

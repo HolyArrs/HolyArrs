@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: ekki tókst að bæta við, bíður aftur",
 	"server.requests.the-metadata-server-did-not-answer": "Lýsigagnaþjónninn svaraði ekki í tæka tíð. Beiðnin bíður aftur; samþykktu hana aftur.",
 	"server.importer.import-by-hand-reads-only-from": "Innflutningur í höndunum les aðeins úr safnmöppunum, möppum niðurhalaranna og aukainnflutningsmöppunum í Stillingar > Safnmöppur: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "Innflutningur í höndunum les aðeins úr safnmöppunum, möppum niðurhalaranna og aukainnflutningsmöppunum, og engin er enn sett upp. Bættu einni við í Stillingar > Safnmöppur."
+	"server.importer.import-by-hand-reads-only-from-2": "Innflutningur í höndunum les aðeins úr safnmöppunum, möppum niðurhalaranna og aukainnflutningsmöppunum, og engin er enn sett upp. Bættu einni við í Stillingar > Safnmöppur.",
+	"server.sources.holds-not-what-was-searched-for": "inniheldur {covered}, ekki það sem leitað var að",
+	"server.mediafiles.no-title-in-the-library-is": "enginn Titill í safninu heitir {value}"
 }

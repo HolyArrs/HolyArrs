@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: tidak bisa ditambahkan, kembali menunggu",
 	"server.requests.the-metadata-server-did-not-answer": "Server metadata tidak menjawab tepat waktu. Permintaan kembali menunggu; setujui lagi.",
 	"server.importer.import-by-hand-reads-only-from": "Impor manual hanya membaca dari folder pustaka, folder pengunduh, dan folder impor tambahan di Pengaturan > Folder pustaka: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "Impor manual hanya membaca dari folder pustaka, folder pengunduh, dan folder impor tambahan, dan belum ada yang disiapkan. Tambahkan satu di Pengaturan > Folder pustaka."
+	"server.importer.import-by-hand-reads-only-from-2": "Impor manual hanya membaca dari folder pustaka, folder pengunduh, dan folder impor tambahan, dan belum ada yang disiapkan. Tambahkan satu di Pengaturan > Folder pustaka.",
+	"server.sources.holds-not-what-was-searched-for": "berisi {covered}, bukan yang dicari",
+	"server.mediafiles.no-title-in-the-library-is": "tidak ada Judul di pustaka yang bernama {value}"
 }

@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: nepavyko pridėti, vėl laukia",
 	"server.requests.the-metadata-server-did-not-answer": "Metaduomenų serveris neatsakė laiku. Prašymas vėl laukia; patvirtinkite jį dar kartą.",
 	"server.importer.import-by-hand-reads-only-from": "Importas ranka skaito tik iš bibliotekos aplankų, atsisiuntėjų aplankų ir papildomų importo aplankų skiltyje Nustatymai > Bibliotekos aplankai: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "Importas ranka skaito tik iš bibliotekos aplankų, atsisiuntėjų aplankų ir papildomų importo aplankų, o dar nė vienas nenustatytas. Pridėkite vieną skiltyje Nustatymai > Bibliotekos aplankai."
+	"server.importer.import-by-hand-reads-only-from-2": "Importas ranka skaito tik iš bibliotekos aplankų, atsisiuntėjų aplankų ir papildomų importo aplankų, o dar nė vienas nenustatytas. Pridėkite vieną skiltyje Nustatymai > Bibliotekos aplankai.",
+	"server.sources.holds-not-what-was-searched-for": "jame yra {covered}, o ne tai, ko ieškota",
+	"server.mediafiles.no-title-in-the-library-is": "bibliotekoje nėra Pavadinimo {value}"
 }

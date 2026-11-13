@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: kunne ikke tilføjes, venter igen",
 	"server.requests.the-metadata-server-did-not-answer": "Metadataserveren svarede ikke i tide. Den venter igen; godkend den igen.",
 	"server.importer.import-by-hand-reads-only-from": "Manuel import læser kun fra biblioteksmapperne, downloadernes mapper og de ekstra importmapper under Indstillinger > Biblioteksmapper: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "Manuel import læser kun fra biblioteksmapperne, downloadernes mapper og de ekstra importmapper, og der er ingen sat op endnu. Tilføj en under Indstillinger > Biblioteksmapper."
+	"server.importer.import-by-hand-reads-only-from-2": "Manuel import læser kun fra biblioteksmapperne, downloadernes mapper og de ekstra importmapper, og der er ingen sat op endnu. Tilføj en under Indstillinger > Biblioteksmapper.",
+	"server.sources.holds-not-what-was-searched-for": "indeholder {covered}, ikke det, der blev søgt efter",
+	"server.mediafiles.no-title-in-the-library-is": "ingen Titel i biblioteket hedder {value}"
 }

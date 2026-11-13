@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: לא ניתן היה להוסיף, שוב ממתין",
 	"server.requests.the-metadata-server-did-not-answer": "שרת המטא־דאטה לא ענה בזמן. הבקשה שוב ממתינה; אשר אותה שוב.",
 	"server.importer.import-by-hand-reads-only-from": "ייבוא ידני קורא רק מתיקיות הספרייה, מהתיקיות של המורידים ומתיקיות הייבוא הנוספות בהגדרות > תיקיות ספרייה: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "ייבוא ידני קורא רק מתיקיות הספרייה, מהתיקיות של המורידים ומתיקיות הייבוא הנוספות, ועדיין לא הוגדרה אף אחת. הוסיפו אחת בהגדרות > תיקיות ספרייה."
+	"server.importer.import-by-hand-reads-only-from-2": "ייבוא ידני קורא רק מתיקיות הספרייה, מהתיקיות של המורידים ומתיקיות הייבוא הנוספות, ועדיין לא הוגדרה אף אחת. הוסיפו אחת בהגדרות > תיקיות ספרייה.",
+	"server.sources.holds-not-what-was-searched-for": "מכיל את {covered}, לא את מה שחיפשו",
+	"server.mediafiles.no-title-in-the-library-is": "אין כותר בספרייה בשם {value}"
 }

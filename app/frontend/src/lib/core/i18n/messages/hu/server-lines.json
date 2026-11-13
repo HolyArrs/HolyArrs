@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: nem sikerült hozzáadni, újra várakozik",
 	"server.requests.the-metadata-server-did-not-answer": "A metaadat-szerver nem válaszolt időben. A kérés újra várakozik; hagyja jóvá újra.",
 	"server.importer.import-by-hand-reads-only-from": "A kézi importálás csak a médiatár-mappákból, a letöltők mappáiból és a Beállítások > Médiatár-mappák alatti további importmappákból olvas: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "A kézi importálás csak a médiatár-mappákból, a letöltők mappáiból és a további importmappákból olvas, és még egy sincs beállítva. Adjon hozzá egyet a Beállítások > Médiatár-mappák alatt."
+	"server.importer.import-by-hand-reads-only-from-2": "A kézi importálás csak a médiatár-mappákból, a letöltők mappáiból és a további importmappákból olvas, és még egy sincs beállítva. Adjon hozzá egyet a Beállítások > Médiatár-mappák alatt.",
+	"server.sources.holds-not-what-was-searched-for": "ebben {covered} van, nem az, amit kerestek",
+	"server.mediafiles.no-title-in-the-library-is": "a médiatárban nincs {value} nevű Cím"
 }

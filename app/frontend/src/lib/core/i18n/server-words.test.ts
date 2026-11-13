@@ -40,6 +40,13 @@ describe('serverWords', () => {
 		expect(serverWords('Marked bad')).toBe('Als fehlerhaft markiert');
 	});
 
+	it('shows a Release reason in the picked language', async () => {
+		const de = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>('./messages/de/server-lines.json', { eager: true })).map((f) => f.default));
+		speak(de);
+		expect(serverWords('holds S01E01, not what was searched for')).toBe('enthält S01E01, nicht das Gesuchte');
+		expect(serverWords('no Title in the library is called "Dune"')).toBe('kein Titel in der Bibliothek heißt "Dune"');
+	});
+
 	it('names the file a folder path change stopped at', async () => {
 		const de = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>('./messages/de/server-lines.json', { eager: true })).map((f) => f.default));
 		speak(de);

@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: اضافه نشد، دوباره در انتظار است",
 	"server.requests.the-metadata-server-did-not-answer": "سرور متادیتا به‌موقع پاسخ نداد. دوباره در انتظار است؛ دوباره تأییدش کن.",
 	"server.importer.import-by-hand-reads-only-from": "ورود دستی فقط از پوشه‌های کتابخانه، پوشه‌های دانلودرها و پوشه‌های ورود اضافه در تنظیمات > پوشه‌های کتابخانه می‌خواند: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "ورود دستی فقط از پوشه‌های کتابخانه، پوشه‌های دانلودرها و پوشه‌های ورود اضافه می‌خواند و هنوز هیچ‌کدام تنظیم نشده است. یکی را در تنظیمات > پوشه‌های کتابخانه اضافه کنید."
+	"server.importer.import-by-hand-reads-only-from-2": "ورود دستی فقط از پوشه‌های کتابخانه، پوشه‌های دانلودرها و پوشه‌های ورود اضافه می‌خواند و هنوز هیچ‌کدام تنظیم نشده است. یکی را در تنظیمات > پوشه‌های کتابخانه اضافه کنید.",
+	"server.sources.holds-not-what-was-searched-for": "شامل {covered} است، نه آنچه جست‌وجو شد",
+	"server.mediafiles.no-title-in-the-library-is": "هیچ عنوانی در کتابخانه {value} نام ندارد"
 }

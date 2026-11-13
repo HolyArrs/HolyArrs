@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: could not add it, back in Waiting",
 	"server.requests.the-metadata-server-did-not-answer": "The metadata server did not answer in time. It is back in Waiting; approve it again.",
 	"server.importer.import-by-hand-reads-only-from": "Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders in Settings > Library folders: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders, and none is set up yet. Add one in Settings > Library folders."
+	"server.importer.import-by-hand-reads-only-from-2": "Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders, and none is set up yet. Add one in Settings > Library folders.",
+	"server.mediafiles.no-title-in-the-library-is": "no Title in the library is called {value}",
+	"server.sources.holds-not-what-was-searched-for": "holds {covered}, not what was searched for"
 }

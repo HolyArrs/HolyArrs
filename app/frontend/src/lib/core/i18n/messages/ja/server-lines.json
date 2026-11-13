@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: 追加できなかったため、待機中に戻りました",
 	"server.requests.the-metadata-server-did-not-answer": "メタデータサーバーが時間内に応答しませんでした。待機中に戻りました。もう一度承認してください。",
 	"server.importer.import-by-hand-reads-only-from": "手動インポートが読み込むのは、ライブラリフォルダー、ダウンローダーのフォルダー、設定 > ライブラリフォルダーの追加のインポートフォルダーだけです: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "手動インポートが読み込むのは、ライブラリフォルダー、ダウンローダーのフォルダー、追加のインポートフォルダーだけですが、まだ1つも設定されていません。設定 > ライブラリフォルダーで追加してください。"
+	"server.importer.import-by-hand-reads-only-from-2": "手動インポートが読み込むのは、ライブラリフォルダー、ダウンローダーのフォルダー、追加のインポートフォルダーだけですが、まだ1つも設定されていません。設定 > ライブラリフォルダーで追加してください。",
+	"server.sources.holds-not-what-was-searched-for": "{covered} を含み、検索したものではありません",
+	"server.mediafiles.no-title-in-the-library-is": "ライブラリに {value} という名前のタイトルはありません"
 }

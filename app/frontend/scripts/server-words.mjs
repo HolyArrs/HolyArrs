@@ -30,7 +30,9 @@ const handLines = { 'Because you have {name}': 'suggest', 'No Downloader has con
 	'The metadata server did not answer in time. It is back in Waiting; approve it again.': 'requests',
 	// importer.PlaceError, the refusal of a folder Import by hand may not read.
 	"Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders, and none is set up yet. Add one in Settings > Library folders.": 'importer',
-	"Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders in Settings > Library folders: {all}": 'importer' };
+	"Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders in Settings > Library folders: {all}": 'importer',
+	// Two lines of a Release's reasons (mediafiles judge, sources search_shows), shown in the Release lists.
+	'holds {covered}, not what was searched for': 'sources', 'no Title in the library is called {value}': 'mediafiles' };
 // Files whose fmt.Sprintf lines are display text (card lines, labels).
 const display = /(accounts[\\/]events|discover[\\/](home|explore_np|title_view)|shows[\\/]episode_labels|requests[\\/](episodes|follows\w*|reports)|health[\\/](health|routes_settings_status)|migrate[\\/]plan_\w+|metadata[\\/]moods)\.go$/;
 

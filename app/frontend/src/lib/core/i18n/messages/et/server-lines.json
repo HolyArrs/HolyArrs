@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: lisada ei õnnestunud, jälle ootel",
 	"server.requests.the-metadata-server-did-not-answer": "Metaandmete server ei vastanud õigel ajal. See on jälle ootel; kiida see uuesti heaks.",
 	"server.importer.import-by-hand-reads-only-from": "Käsitsi import loeb ainult meediakogu kaustadest, allalaadijate kaustadest ja lisaimpordikaustadest jaotises Seaded > Meediakogu kaustad: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "Käsitsi import loeb ainult meediakogu kaustadest, allalaadijate kaustadest ja lisaimpordikaustadest, ja ühtegi pole veel seadistatud. Lisa üks jaotises Seaded > Meediakogu kaustad."
+	"server.importer.import-by-hand-reads-only-from-2": "Käsitsi import loeb ainult meediakogu kaustadest, allalaadijate kaustadest ja lisaimpordikaustadest, ja ühtegi pole veel seadistatud. Lisa üks jaotises Seaded > Meediakogu kaustad.",
+	"server.sources.holds-not-what-was-searched-for": "sisaldab {covered}, mitte seda, mida otsiti",
+	"server.mediafiles.no-title-in-the-library-is": "meediakogus pole ühtegi pealkirja nimega {value}"
 }

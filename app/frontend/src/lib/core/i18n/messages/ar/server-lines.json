@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: تعذّرت إضافته، وعاد إلى الانتظار",
 	"server.requests.the-metadata-server-did-not-answer": "لم يرد خادم البيانات الوصفية في الوقت المناسب. عاد الطلب إلى الانتظار؛ وافق عليه مرة أخرى.",
 	"server.importer.import-by-hand-reads-only-from": "لا يقرأ الاستيراد اليدوي إلا من مجلدات المكتبة ومجلدات برامج التنزيل ومجلدات الاستيراد الإضافية في الإعدادات > مجلدات المكتبة: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "لا يقرأ الاستيراد اليدوي إلا من مجلدات المكتبة ومجلدات برامج التنزيل ومجلدات الاستيراد الإضافية، ولم يُضبط أي منها بعد. أضف واحدًا في الإعدادات > مجلدات المكتبة."
+	"server.importer.import-by-hand-reads-only-from-2": "لا يقرأ الاستيراد اليدوي إلا من مجلدات المكتبة ومجلدات برامج التنزيل ومجلدات الاستيراد الإضافية، ولم يُضبط أي منها بعد. أضف واحدًا في الإعدادات > مجلدات المكتبة.",
+	"server.sources.holds-not-what-was-searched-for": "يحوي {covered}، وليس ما تم البحث عنه",
+	"server.mediafiles.no-title-in-the-library-is": "لا يوجد عنوان في المكتبة باسم {value}"
 }

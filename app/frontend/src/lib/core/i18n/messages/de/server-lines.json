@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: konnte nicht hinzugefügt werden, wartet wieder",
 	"server.requests.the-metadata-server-did-not-answer": "Der Metadaten-Server hat nicht rechtzeitig geantwortet. Die Anfrage wartet wieder; genehmige sie noch einmal.",
 	"server.importer.import-by-hand-reads-only-from": "Der Import von Hand liest nur aus den Bibliotheksordnern, den Ordnern der Downloader und den zusätzlichen Import-Ordnern unter Einstellungen > Bibliotheksordner: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "Der Import von Hand liest nur aus den Bibliotheksordnern, den Ordnern der Downloader und den zusätzlichen Import-Ordnern, und noch ist keiner eingerichtet. Füge einen unter Einstellungen > Bibliotheksordner hinzu."
+	"server.importer.import-by-hand-reads-only-from-2": "Der Import von Hand liest nur aus den Bibliotheksordnern, den Ordnern der Downloader und den zusätzlichen Import-Ordnern, und noch ist keiner eingerichtet. Füge einen unter Einstellungen > Bibliotheksordner hinzu.",
+	"server.sources.holds-not-what-was-searched-for": "enthält {covered}, nicht das Gesuchte",
+	"server.mediafiles.no-title-in-the-library-is": "kein Titel in der Bibliothek heißt {value}"
 }

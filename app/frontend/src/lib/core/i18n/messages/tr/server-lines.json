@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: eklenemedi, yeniden bekliyor",
 	"server.requests.the-metadata-server-did-not-answer": "Metadata sunucusu zamanında yanıt vermedi. İstek yeniden bekliyor; tekrar onayla.",
 	"server.importer.import-by-hand-reads-only-from": "Elle içe aktarma yalnızca kütüphane klasörlerinden, indiricilerin klasörlerinden ve Ayarlar > Kütüphane klasörleri altındaki ek içe aktarma klasörlerinden okur: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "Elle içe aktarma yalnızca kütüphane klasörlerinden, indiricilerin klasörlerinden ve ek içe aktarma klasörlerinden okur ve henüz hiçbiri ayarlanmadı. Ayarlar > Kütüphane klasörleri altından bir tane ekleyin."
+	"server.importer.import-by-hand-reads-only-from-2": "Elle içe aktarma yalnızca kütüphane klasörlerinden, indiricilerin klasörlerinden ve ek içe aktarma klasörlerinden okur ve henüz hiçbiri ayarlanmadı. Ayarlar > Kütüphane klasörleri altından bir tane ekleyin.",
+	"server.sources.holds-not-what-was-searched-for": "{covered} içeriyor, aranan bu değil",
+	"server.mediafiles.no-title-in-the-library-is": "kütüphanede {value} adlı bir Başlık yok"
 }

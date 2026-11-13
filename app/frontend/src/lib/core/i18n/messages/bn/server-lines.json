@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: যোগ করা যায়নি, আবার অপেক্ষায়",
 	"server.requests.the-metadata-server-did-not-answer": "মেটাডেটা সার্ভার সময়মতো সাড়া দেয়নি। এটি আবার অপেক্ষায় আছে; আবার অনুমোদন করুন।",
 	"server.importer.import-by-hand-reads-only-from": "হাতে ইমপোর্ট শুধু লাইব্রেরি ফোল্ডার, ডাউনলোডারের ফোল্ডার আর সেটিংস > লাইব্রেরি ফোল্ডার-এর অতিরিক্ত ইমপোর্ট ফোল্ডার থেকে পড়ে: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "হাতে ইমপোর্ট শুধু লাইব্রেরি ফোল্ডার, ডাউনলোডারের ফোল্ডার আর অতিরিক্ত ইমপোর্ট ফোল্ডার থেকে পড়ে, আর এখনও কোনোটি সেট করা নেই। সেটিংস > লাইব্রেরি ফোল্ডার-এ একটি যোগ করুন।"
+	"server.importer.import-by-hand-reads-only-from-2": "হাতে ইমপোর্ট শুধু লাইব্রেরি ফোল্ডার, ডাউনলোডারের ফোল্ডার আর অতিরিক্ত ইমপোর্ট ফোল্ডার থেকে পড়ে, আর এখনও কোনোটি সেট করা নেই। সেটিংস > লাইব্রেরি ফোল্ডার-এ একটি যোগ করুন।",
+	"server.sources.holds-not-what-was-searched-for": "এতে আছে {covered}, যা খোঁজা হয়েছিল তা নয়",
+	"server.mediafiles.no-title-in-the-library-is": "লাইব্রেরিতে {value} নামে কোনো টাইটেল নেই"
 }

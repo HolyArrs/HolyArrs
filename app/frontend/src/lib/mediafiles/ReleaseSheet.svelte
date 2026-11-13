@@ -8,6 +8,7 @@
 	import { bytes } from '#lib/core/format.ts';
 	import type { Choice, ReleasePage, ReleaseView } from '#lib/core/types.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 	let { open = $bindable(false), titleId, name, scope = null, onchosen }: { open?: boolean; titleId: number; name: string; scope?: { label: string; query: string; body: Record<string, unknown> } | null; onchosen?: () => void } = $props();
 
@@ -184,7 +185,7 @@
 								<span>{r.source_name}</span>
 								{#if r.published_at}<span>{age(r.published_at)}</span>{/if}
 							</p>
-							{#each why as w, i (i)}<p class="rs-why {w.effect}">{w.text}</p>{/each}
+							{#each why as w, i (i)}<p class="rs-why {w.effect}">{serverWords(w.text)}</p>{/each}
 						</div>
 						<div class="rs-act">
 							{#if r.state === 'chosen'}

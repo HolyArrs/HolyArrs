@@ -1316,5 +1316,7 @@
 	"server.requests.could-not-add-it-back-in": "{before}: non è stato possibile aggiungerlo, di nuovo in attesa",
 	"server.requests.the-metadata-server-did-not-answer": "Il server dei metadati non ha risposto in tempo. La richiesta è di nuovo in attesa; approvala di nuovo.",
 	"server.importer.import-by-hand-reads-only-from": "L'importazione a mano legge solo dalle cartelle della Libreria, dalle cartelle dei downloader e dalle cartelle di importazione extra in Impostazioni > Cartelle della Libreria: {all}",
-	"server.importer.import-by-hand-reads-only-from-2": "L'importazione a mano legge solo dalle cartelle della Libreria, dalle cartelle dei downloader e dalle cartelle di importazione extra, e non ne è ancora impostata nessuna. Aggiungine una in Impostazioni > Cartelle della Libreria."
+	"server.importer.import-by-hand-reads-only-from-2": "L'importazione a mano legge solo dalle cartelle della Libreria, dalle cartelle dei downloader e dalle cartelle di importazione extra, e non ne è ancora impostata nessuna. Aggiungine una in Impostazioni > Cartelle della Libreria.",
+	"server.sources.holds-not-what-was-searched-for": "contiene {covered}, non ciò che si cercava",
+	"server.mediafiles.no-title-in-the-library-is": "nessun Titolo della libreria si chiama {value}"
 }
