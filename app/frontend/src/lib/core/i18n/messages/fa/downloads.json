@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "نام حداکثر 60 نویسه می‌تواند باشد.",
 	"downloads.pr.err.notTrait": "{bad} برای این نوع‌ها یک ویژگی نیست.",
 	"downloads.pr.err.ownRemoved": "یکی از ویژگی‌های خودت که حذف شده هنوز فهرست شده؛ آن را بردار.",
-	"downloads.pr.err.points": "امتیازها از -10000 تا 10000 هستند.",
+	"downloads.pr.err.points": "امتیازها از -2147483647 تا 2147483647 هستند.",
 	"downloads.pr.err.rulesName": "به این قوانین انتخاب یک نام بده.",
 	"downloads.pr.err.sizeBig": "بزرگ‌ترین حجم خیلی بزرگ است.",
 	"downloads.pr.err.sizeNeg": "حجم‌ها نمی‌توانند زیر 0 باشند.",

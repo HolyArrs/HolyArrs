@@ -57,7 +57,7 @@ func TestPlanBringsFormats(t *testing.T) {
 	if !slices.Equal(allowed, []string{"2160p_web", "2160p_bluray", "2160p_remux"}) || b.GoodEnoughAt != "2160p_remux" {
 		t.Fatalf("steps %v good %s", allowed, b.GoodEnoughAt)
 	}
-	if b.MinPoints != -100 || *b.GoodEnoughPoints != 10000 || b.UpgradeMinPoints != 10 || b.Order != "quality_then_points" {
+	if b.MinPoints != -100 || *b.GoodEnoughPoints != 20000 || b.UpgradeMinPoints != 10 || b.Order != "quality_then_points" {
 		t.Fatalf("points %d %d %d %s", b.MinPoints, *b.GoodEnoughPoints, b.UpgradeMinPoints, b.Order)
 	}
 	got := map[string]int{}
@@ -261,7 +261,7 @@ func TestImportedRulesMatchTheProfile(t *testing.T) {
 		t.Error("a profile allowing full discs still refuses them")
 	}
 	notes := strings.Join(rp.Notes, "; ")
-	if rp.Traits[0].Points != -10000 || !strings.Contains(notes, "10000") || !strings.Contains(notes, "Unknown") {
+	if rp.Traits[0].Points != -999999 || strings.Contains(notes, "stop at") || !strings.Contains(notes, "Unknown") {
 		t.Errorf("points %d notes %q", rp.Traits[0].Points, notes)
 	}
 

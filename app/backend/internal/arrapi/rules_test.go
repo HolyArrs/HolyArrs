@@ -257,7 +257,7 @@ func pushAll(t *testing.T, h *hookRig) (fmts map[string]int64, profile int64) {
 }
 
 // A profile becomes Pick rules for movies: its qualities and cutoff as
-// steps, its scores as trait points (clamped), its score settings and its
+// steps, its scores as trait points (as sent), its score settings and its
 // language; the list answers it as sent, with raw scores.
 func TestProfiles_PushBecomesPickRules(t *testing.T) {
 	h := newHookRig(t)
@@ -287,7 +287,7 @@ func TestProfiles_PushBecomesPickRules(t *testing.T) {
 		points[tp.Trait] = tp.Points
 	}
 	good, banned := mediafiles.OwnTraitKey(h.formatTrait("radarr", fmts["Good group"])), mediafiles.OwnTraitKey(h.formatTrait("radarr", fmts["Banned"]))
-	if len(points) != 2 || points[good] != 1500 || points[banned] != -10000 {
+	if len(points) != 2 || points[good] != 1500 || points[banned] != -999999 {
 		t.Fatalf("traits: %v", b.Traits)
 	}
 	l := h.list("radarr", "qualityprofile")

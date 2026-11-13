@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "שם יכול להכיל עד 60 תווים.",
 	"downloads.pr.err.notTrait": "{bad} הוא לא מאפיין עבור הסוגים האלה.",
 	"downloads.pr.err.ownRemoved": "מאפיין שלך שהוסר עדיין ברשימה; הסר אותו.",
-	"downloads.pr.err.points": "נקודות הן בין -10000 ל־10000.",
+	"downloads.pr.err.points": "נקודות הן בין -2147483647 ל־2147483647.",
 	"downloads.pr.err.rulesName": "תן שם לכללי הבחירה האלה.",
 	"downloads.pr.err.sizeBig": "הגודל המרבי גדול מדי.",
 	"downloads.pr.err.sizeNeg": "גדלים לא יכולים להיות מתחת ל־0.",

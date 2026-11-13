@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "Nosaukums var būt ne garāks par 60 rakstzīmēm.",
 	"downloads.pr.err.notTrait": "{bad} nav pazīme šiem veidiem.",
 	"downloads.pr.err.ownRemoved": "Tava pazīme, kas tika noņemta, joprojām ir uzskaitīta; izņem to.",
-	"downloads.pr.err.points": "Punkti ir no -10000 līdz 10000.",
+	"downloads.pr.err.points": "Punkti ir no -2147483647 līdz 2147483647.",
 	"downloads.pr.err.rulesName": "Dod šiem Izvēles noteikumiem nosaukumu.",
 	"downloads.pr.err.sizeBig": "Lielākais izmērs ir par lielu.",
 	"downloads.pr.err.sizeNeg": "Izmēri nevar būt zem 0.",

@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "Un nom pot tenir com a màxim 60 caràcters.",
 	"downloads.pr.err.notTrait": "{bad} no és un tret per a aquests tipus.",
 	"downloads.pr.err.ownRemoved": "Un tret teu que s'ha eliminat encara apareix a la llista; treu-lo.",
-	"downloads.pr.err.points": "Els punts van de -10000 a 10000.",
+	"downloads.pr.err.points": "Els punts van de -2147483647 a 2147483647.",
 	"downloads.pr.err.rulesName": "Posa un nom a aquestes Regles d'elecció.",
 	"downloads.pr.err.sizeBig": "La mida màxima és massa gran.",
 	"downloads.pr.err.sizeNeg": "Les mides no poden ser inferiors a 0.",

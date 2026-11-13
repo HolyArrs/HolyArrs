@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "ชื่อยาวได้สูงสุด 60 ตัวอักษร",
 	"downloads.pr.err.notTrait": "{bad} ไม่ใช่ลักษณะสำหรับประเภทเหล่านี้",
 	"downloads.pr.err.ownRemoved": "ลักษณะของคุณที่ถูกลบยังอยู่ในรายการ ให้เอาออก",
-	"downloads.pr.err.points": "คะแนนตั้งแต่ -10000 ถึง 10000",
+	"downloads.pr.err.points": "คะแนนตั้งแต่ -2147483647 ถึง 2147483647",
 	"downloads.pr.err.rulesName": "ตั้งชื่อให้กฎการเลือกเหล่านี้",
 	"downloads.pr.err.sizeBig": "ขนาดใหญ่สุดใหญ่เกินไป",
 	"downloads.pr.err.sizeNeg": "ขนาดต้องไม่ต่ำกว่า 0",

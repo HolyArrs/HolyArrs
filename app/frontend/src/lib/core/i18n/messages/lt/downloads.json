@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "Pavadinimą gali sudaryti ne daugiau kaip 60 simbolių.",
 	"downloads.pr.err.notTrait": "{bad} nėra ypatybė šioms rūšims.",
 	"downloads.pr.err.ownRemoved": "Pašalinta jūsų ypatybė vis dar išvardyta; išimkite ją.",
-	"downloads.pr.err.points": "Taškai nuo -10000 iki 10000.",
+	"downloads.pr.err.points": "Taškai nuo -2147483647 iki 2147483647.",
 	"downloads.pr.err.rulesName": "Suteikite šioms Pasirinkimo taisyklėms pavadinimą.",
 	"downloads.pr.err.sizeBig": "Didžiausias dydis per didelis.",
 	"downloads.pr.err.sizeNeg": "Dydžiai negali būti mažesni nei 0.",

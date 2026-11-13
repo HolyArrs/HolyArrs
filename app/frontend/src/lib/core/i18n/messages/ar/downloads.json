@@ -889,7 +889,7 @@
 	"downloads.pr.err.name60": "يجوز أن يبلغ الاسم 60 حرفًا كحد أقصى.",
 	"downloads.pr.err.notTrait": "{bad} ليست سمة لهذه الأنواع.",
 	"downloads.pr.err.ownRemoved": "ما زالت سمة خاصة بك أُزيلت مدرجة؛ احذفها.",
-	"downloads.pr.err.points": "النقاط من -10000 إلى 10000.",
+	"downloads.pr.err.points": "النقاط من -2147483647 إلى 2147483647.",
 	"downloads.pr.err.rulesName": "أعطِ قواعد الاختيار هذه اسمًا.",
 	"downloads.pr.err.sizeBig": "أكبر حجم كبير جدًا.",
 	"downloads.pr.err.sizeNeg": "لا يمكن أن تقل الأحجام عن 0.",

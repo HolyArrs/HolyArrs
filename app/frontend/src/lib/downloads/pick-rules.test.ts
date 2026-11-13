@@ -10,6 +10,7 @@ import {
 	gbPerHour,
 	isMusic,
 	ladderFor,
+	maxPoints,
 	musicLadder,
 	neverChoices,
 	sizeParts,
@@ -163,12 +164,16 @@ describe('checkBody', () => {
 		expect(checkBody('A', ['movie'], b).traits).toBe('Each trait can be listed once.');
 		b.traits = [{ trait: 'flac', points: 1 }];
 		expect(checkBody('A', ['movie'], b).traits).toBe('flac is not a trait for these kinds.');
-		b.traits = [{ trait: 'hevc', points: 10001 }];
-		expect(checkBody('A', ['movie'], b).traits).toBe('Points go from -10000 to 10000.');
+		b.traits = [{ trait: 'hevc', points: maxPoints + 1 }];
+		const range = 'Points go from -2147483647 to 2147483647.';
+		expect(checkBody('A', ['movie'], b).traits).toBe(range);
+		b.traits = [{ trait: 'hevc', points: maxPoints }, { trait: 'av1', points: -maxPoints }];
+		expect(checkBody('A', ['movie'], b).traits).toBeUndefined();
 		const p = good();
-		p.min_points = -10001;
-		p.upgrade_min_points = 20000;
-		expect(checkBody('A', ['movie'], p)).toMatchObject({ min_points: 'Points go from -10000 to 10000.', upgrade_min_points: 'Points go from -10000 to 10000.' });
+		p.min_points = -maxPoints - 1;
+		p.upgrade_min_points = maxPoints + 1;
+		p.good_enough_points = maxPoints + 1;
+		expect(checkBody('A', ['movie'], p)).toMatchObject({ min_points: range, upgrade_min_points: range, good_enough_points: range });
 	});
 
 	it('keeps safety traits for Never only', () => {
@@ -255,6 +260,19 @@ describe('tidyBody', () => {
 		b.proper_policy.max_age_days = 14;
 		expect(tidyBody(b).proper_policy.max_age_days).toBe(14);
 		expect(b.min_points).toBe('');
+	});
+
+	it('saves synced large scores exactly as they came, with no complaint', () => {
+		// Tiered scores as Profilarr sends them, well past the old 10000 bound.
+		const b = blankBody('movie');
+		b.traits = [{ trait: 'hevc', points: 943000 }, { trait: 'av1', points: 861000 }, { trait: 'remux', points: -9999999 }];
+		b.min_points = -1500000;
+		b.upgrade_min_points = 1000;
+		b.good_enough_points = 2000000;
+		const t = tidyBody(b);
+		expect(t.traits).toEqual(b.traits);
+		expect([t.min_points, t.upgrade_min_points, t.good_enough_points]).toEqual([-1500000, 1000, 2000000]);
+		expect(checkBody('1080p Compact', ['movie'], t)).toEqual({});
 	});
 
 	it('keeps good enough points as a whole number and drops them when the box is cleared', () => {

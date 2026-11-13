@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "Bir ad en fazla 60 karakter olabilir.",
 	"downloads.pr.err.notTrait": "{bad}, bu türler için bir özellik değil.",
 	"downloads.pr.err.ownRemoved": "Kaldırılmış bir özelliğin hâlâ listede; çıkar.",
-	"downloads.pr.err.points": "Puanlar -10000 ile 10000 arasındadır.",
+	"downloads.pr.err.points": "Puanlar -2147483647 ile 2147483647 arasındadır.",
 	"downloads.pr.err.rulesName": "Bu Seçim kurallarına bir ad ver.",
 	"downloads.pr.err.sizeBig": "En büyük boyut çok büyük.",
 	"downloads.pr.err.sizeNeg": "Boyutlar 0'ın altında olamaz.",

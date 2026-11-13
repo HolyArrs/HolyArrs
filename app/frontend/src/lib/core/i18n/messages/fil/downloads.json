@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "Ang pangalan ay hanggang 60 karakter lang.",
 	"downloads.pr.err.notTrait": "Ang {bad} ay hindi katangian para sa mga uring ito.",
 	"downloads.pr.err.ownRemoved": "May nakalista pang katangian mo na naalis na; alisin ito.",
-	"downloads.pr.err.points": "Ang mga puntos ay mula -10000 hanggang 10000.",
+	"downloads.pr.err.points": "Ang mga puntos ay mula -2147483647 hanggang 2147483647.",
 	"downloads.pr.err.rulesName": "Pangalanan ang mga Pick rule na ito.",
 	"downloads.pr.err.sizeBig": "Masyadong malaki ang pinakamalaking laki.",
 	"downloads.pr.err.sizeNeg": "Hindi puwedeng mas mababa sa 0 ang mga laki.",

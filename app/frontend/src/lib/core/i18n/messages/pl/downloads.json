@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "Nazwa może mieć najwyżej 60 znaków.",
 	"downloads.pr.err.notTrait": "{bad} nie jest cechą dla tych rodzajów.",
 	"downloads.pr.err.ownRemoved": "Usunięta własna cecha nadal jest na liście; usuń ją.",
-	"downloads.pr.err.points": "Punkty mogą być od -10000 do 10000.",
+	"downloads.pr.err.points": "Punkty mogą być od -2147483647 do 2147483647.",
 	"downloads.pr.err.rulesName": "Nadaj tym Regułom wyboru nazwę.",
 	"downloads.pr.err.sizeBig": "Największy rozmiar jest zbyt duży.",
 	"downloads.pr.err.sizeNeg": "Rozmiary nie mogą być poniżej 0.",

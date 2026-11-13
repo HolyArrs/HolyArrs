@@ -279,7 +279,7 @@ var (
 )
 
 // TrashMaxPoints is the Pick rules points bound; TRaSH scores past it are cut.
-const TrashMaxPoints = 10000
+const TrashMaxPoints = mediafiles.MaxPoints
 
 // Build plans applying profile p: its own formats plus the required and
 // default formats of the default groups that include it.

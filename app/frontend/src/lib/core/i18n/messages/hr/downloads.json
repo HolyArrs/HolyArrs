@@ -905,7 +905,7 @@
 	"downloads.pr.err.name60": "Naziv može imati najviše 60 znakova.",
 	"downloads.pr.err.notTrait": "{bad} nije osobina za ove vrste.",
 	"downloads.pr.err.ownRemoved": "Tvoja osobina koja je uklonjena i dalje je navedena; makni je.",
-	"downloads.pr.err.points": "Bodovi idu od -10000 do 10000.",
+	"downloads.pr.err.points": "Bodovi idu od -2147483647 do 2147483647.",
 	"downloads.pr.err.rulesName": "Daj ovim pravilima odabira naziv.",
 	"downloads.pr.err.sizeBig": "Najveća veličina je prevelika.",
 	"downloads.pr.err.sizeNeg": "Veličine ne mogu biti ispod 0.",
