@@ -25,6 +25,7 @@ All notable changes to HolyArrs are listed here. The format follows [Keep a Chan
 - Downloads names the same person in the list and the side pane. ([#350](https://github.com/HolyArrs/HolyArrs/issues/350))
 - A toast over an open sheet stays readable. ([#351](https://github.com/HolyArrs/HolyArrs/issues/351))
 - Sort & filter on the Library works in Safari. ([#340](https://github.com/HolyArrs/HolyArrs/issues/340))
+- More toast and History lines show in your language. ([#352](https://github.com/HolyArrs/HolyArrs/issues/352))
 
 ### Thanks
 

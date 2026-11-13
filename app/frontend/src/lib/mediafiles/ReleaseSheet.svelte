@@ -74,7 +74,7 @@
 			const body: Record<string, unknown> = { force: r.needs_force };
 			if (typeof scope?.body.slot_id === 'number') body.slot_id = scope.body.slot_id;
 			const ch = await api.post<Choice>(`/releases/${r.id}/choose`, body);
-			toasts.push(t('mediafiles.title.sent'), 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : t('mediafiles.title.warnings', { n: ch.warnings.length }) } : undefined);
+			toasts.push(t('mediafiles.title.sent'), 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? serverWords(ch.warnings[0]) : t('mediafiles.title.warnings', { n: ch.warnings.length }) } : undefined);
 			open = false;
 			onchosen?.();
 		} catch (e) {

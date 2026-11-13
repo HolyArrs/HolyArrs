@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "La qualità scelta non è stata usata: questo titolo ha già quella copia.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex non offre più l’elenco delle persone con cui è condiviso il tuo server",
 	"server.accounts.plex-refused-your-linked-plex-account": "Plex ha rifiutato il tuo account Plex collegato; collegalo di nuovo",
-	"server.migrate.the-show-could-not-be-found": "la serie non è stata trovata né dai suoi id né dal suo nome"
+	"server.migrate.the-show-could-not-be-found": "la serie non è stata trovata né dai suoi id né dal suo nome",
+	"server.downloads.the-downloader-already-has-this-torrent": "il downloader ha già questo torrent fuori da HolyArrs, e «Mostra solo gli elementi di HolyArrs» è attivo: spostalo lì nella categoria di HolyArrs, oppure disattiva quell'impostazione",
+	"server.downloads.the-release-has-no-info-hash": "la release non ha un hash info, quindi il download di {name} non si è potuto seguire",
+	"server.downloads.the-release-link-leads-to-a": "il link della release porta a un indirizzo locale o bloccato; se questa Fonte è nella tua rete domestica, attiva «Può raggiungere la rete locale» per essa",
+	"server.downloads.the-source-has-no-such-release": "la Fonte non ha questo file della release",
+	"server.downloads.the-torrent-file-does-not-match": "il file torrent non corrisponde al suo hash info",
+	"server.sources.it-was-judged-for-another-slot": "è stata valutata per un altro Slot",
+	"server.sources.it-was-turned-down": "è stata rifiutata",
+	"server.sources.it-was-turned-down-2": "è stata rifiutata: {d}",
+	"server.sources.it-was-turned-down-for-this": "è stata rifiutata per questo episodio",
+	"server.sources.it-was-turned-down-for-this-2": "è stata rifiutata per questo episodio: {d}",
+	"server.sources.left-out": "escluso: {skipped}",
+	"server.sources.sent-although-it-failed": "inviata anche se non ha superato i controlli: {overridden}",
+	"server.sources.the-album-would-mix-copies": "l'album mescolerebbe copie: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "La Soglia di uscita viene saltata: questo film non conta ancora come uscito",
+	"server.sources.this-version-already-has-a-good": "Questa Versione ha già una copia abbastanza buona; la nuova la sostituirà"
 }

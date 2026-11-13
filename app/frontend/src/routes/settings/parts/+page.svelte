@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import MoreOptions from '#lib/ui/MoreOptions.svelte';
@@ -252,7 +253,7 @@
 				<ul class="rows list">
 					{#each events as e (e.ID)}
 						<li>
-							<span class="grow small">{e.Summary}</span>
+							<span class="grow small">{serverWords(e.Summary)}</span>
 							<time class="xs muted" datetime={e.At}>{ago(e.At)}</time>
 						</li>
 					{/each}

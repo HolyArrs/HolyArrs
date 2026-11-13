@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "Hindi nagamit ang kalidad na pinili mo: mayroon na ng kopyang iyon ang title na ito.",
 	"server.accounts.plex-no-longer-offers-the-list": "hindi na ibinibigay ng Plex ang listahan ng mga taong pinagbahagian ng server mo",
 	"server.accounts.plex-refused-your-linked-plex-account": "tinanggihan ng Plex ang naka-link mong Plex account; i-link ito ulit",
-	"server.migrate.the-show-could-not-be-found": "hindi nahanap ang palabas gamit ang mga id o pangalan nito"
+	"server.migrate.the-show-could-not-be-found": "hindi nahanap ang palabas gamit ang mga id o pangalan nito",
+	"server.downloads.the-downloader-already-has-this-torrent": "Nasa Downloader na ang torrent na ito sa labas ng HolyArrs, at naka-on ang «Ipakita lang ang mga item ng HolyArrs»: ilipat ito roon sa category ng HolyArrs, o i-off ang setting na iyon",
+	"server.downloads.the-release-has-no-info-hash": "Walang info hash ang Release, kaya hindi masundan ang download ng {name}",
+	"server.downloads.the-release-link-leads-to-a": "papunta ang link ng Release sa lokal o naka-block na address; kung nasa home network mo ang Source na ito, i-on para dito ang «Abutin ang local network»",
+	"server.downloads.the-source-has-no-such-release": "walang ganoong file ng Release ang Source",
+	"server.downloads.the-torrent-file-does-not-match": "hindi tugma ang torrent file sa info hash nito",
+	"server.sources.it-was-judged-for-another-slot": "hinusgahan ito para sa ibang Slot",
+	"server.sources.it-was-turned-down": "tinanggihan ito",
+	"server.sources.it-was-turned-down-2": "tinanggihan ito: {d}",
+	"server.sources.it-was-turned-down-for-this": "tinanggihan ito para sa episode na ito",
+	"server.sources.it-was-turned-down-for-this-2": "tinanggihan ito para sa episode na ito: {d}",
+	"server.sources.left-out": "inalis: {skipped}",
+	"server.sources.sent-although-it-failed": "ipinadala kahit pumalya: {overridden}",
+	"server.sources.the-album-would-mix-copies": "paghahalu-haluin ng album ang mga kopya: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "Nilalaktawan ang Release gate: hindi pa binibilang na lumabas ang pelikulang ito",
+	"server.sources.this-version-already-has-a-good": "May sapat nang magandang kopya ang Bersyong ito; papalitan ito ng bago"
 }

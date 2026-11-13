@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "Valitud kvaliteeti ei kasutatud: sellel pealkirjal on see koopia juba olemas.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex ei paku enam nimekirja inimestest, kellega sinu serverit jagatakse",
 	"server.accounts.plex-refused-your-linked-plex-account": "Plex lükkas sinu seotud Plexi konto tagasi; seo see uuesti",
-	"server.migrate.the-show-could-not-be-found": "sarja ei leitud ei oma id-de ega nime järgi"
+	"server.migrate.the-show-could-not-be-found": "sarja ei leitud ei oma id-de ega nime järgi",
+	"server.downloads.the-downloader-already-has-this-torrent": "allalaadijal on see torrent juba HolyArrsist väljaspool ja «Näita ainult HolyArrsi üksusi» on sees: tõsta see seal HolyArrsi kategooriasse või lülita see säte välja",
+	"server.downloads.the-release-has-no-info-hash": "väljalaskel pole info räsi, nii et allalaadimist {name} ei saanud jälgida",
+	"server.downloads.the-release-link-leads-to-a": "väljalaske link viib kohalikule või blokeeritud aadressile; kui see allikas on sinu koduvõrgus, lülita selle jaoks sisse «Võib ligi pääseda kohtvõrku»",
+	"server.downloads.the-source-has-no-such-release": "allikal pole seda väljalaskefaili",
+	"server.downloads.the-torrent-file-does-not-match": "torrentfail ei vasta oma info räsile",
+	"server.sources.it-was-judged-for-another-slot": "see hinnati teise koha jaoks",
+	"server.sources.it-was-turned-down": "see lükati tagasi",
+	"server.sources.it-was-turned-down-2": "see lükati tagasi: {d}",
+	"server.sources.it-was-turned-down-for-this": "see lükati sellel episoodil tagasi",
+	"server.sources.it-was-turned-down-for-this-2": "see lükati sellel episoodil tagasi: {d}",
+	"server.sources.left-out": "välja jäetud: {skipped}",
+	"server.sources.sent-although-it-failed": "saadetud, kuigi see ei läbinud: {overridden}",
+	"server.sources.the-album-would-mix-copies": "album segaks koopiaid: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "Väljalaske lävi jäetakse vahele: seda filmi ei loeta veel ilmunuks",
+	"server.sources.this-version-already-has-a-good": "Sellel versioonil on juba piisavalt hea koopia; uus asendab selle"
 }

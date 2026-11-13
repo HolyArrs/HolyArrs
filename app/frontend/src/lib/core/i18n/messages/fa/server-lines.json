@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "کیفیتی که انتخاب کردی استفاده نشد: این عنوان آن کپی را از قبل دارد.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex دیگر فهرست افرادی را که سرورت با آن‌ها به اشتراک گذاشته شده ارائه نمی‌کند",
 	"server.accounts.plex-refused-your-linked-plex-account": "Plex حساب Plex وصل‌شده‌ات را رد کرد؛ دوباره وصلش کن",
-	"server.migrate.the-show-could-not-be-found": "سریال نه با شناسه‌هایش پیدا شد و نه با نامش"
+	"server.migrate.the-show-could-not-be-found": "سریال نه با شناسه‌هایش پیدا شد و نه با نامش",
+	"server.downloads.the-downloader-already-has-this-torrent": "دانلودر از قبل این تورنت را بیرون از HolyArrs دارد و «فقط موارد HolyArrs را نشان بده» روشن است: آن را همان‌جا به دستهٔ HolyArrs ببر یا آن تنظیم را خاموش کن",
+	"server.downloads.the-release-has-no-info-hash": "ریلیز هش اطلاعات ندارد، برای همین دانلود {name} قابل پیگیری نبود",
+	"server.downloads.the-release-link-leads-to-a": "پیوند ریلیز به نشانی محلی یا مسدود می‌رود؛ اگر این منبع در شبکهٔ خانگی توست، برایش «می‌تواند به شبکه محلی برسد» را روشن کن",
+	"server.downloads.the-source-has-no-such-release": "منبع چنین فایل ریلیزی ندارد",
+	"server.downloads.the-torrent-file-does-not-match": "فایل تورنت با هش اطلاعاتش نمی‌خواند",
+	"server.sources.it-was-judged-for-another-slot": "برای Slot دیگری بررسی شد",
+	"server.sources.it-was-turned-down": "رد شد",
+	"server.sources.it-was-turned-down-2": "رد شد: {d}",
+	"server.sources.it-was-turned-down-for-this": "برای این قسمت رد شد",
+	"server.sources.it-was-turned-down-for-this-2": "برای این قسمت رد شد: {d}",
+	"server.sources.left-out": "کنار گذاشته شد: {skipped}",
+	"server.sources.sent-although-it-failed": "با وجود ردشدن فرستاده شد: {overridden}",
+	"server.sources.the-album-would-mix-copies": "آلبوم کپی‌ها را قاطی می‌کرد: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "آستانه انتشار رد می‌شود: این فیلم هنوز منتشرشده حساب نمی‌شود",
+	"server.sources.this-version-already-has-a-good": "این نسخه از قبل کپی به‌اندازه کافی خوبی دارد؛ کپی تازه جایش را می‌گیرد"
 }

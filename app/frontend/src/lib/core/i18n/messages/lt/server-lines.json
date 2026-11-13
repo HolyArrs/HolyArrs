@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "Pasirinkta kokybė nepanaudota: šis pavadinimas jau turi tą kopiją.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex nebeteikia sąrašo žmonių, su kuriais bendrinamas jūsų serveris",
 	"server.accounts.plex-refused-your-linked-plex-account": "Plex atmetė jūsų susietą Plex paskyrą; susiekite ją iš naujo",
-	"server.migrate.the-show-could-not-be-found": "serialo nepavyko rasti nei pagal jo id, nei pagal pavadinimą"
+	"server.migrate.the-show-could-not-be-found": "serialo nepavyko rasti nei pagal jo id, nei pagal pavadinimą",
+	"server.downloads.the-downloader-already-has-this-torrent": "Atsisiuntėjas jau turi šį torentą už HolyArrs ribų, o «Rodyti tik HolyArrs elementus» įjungta: perkelk jį ten į HolyArrs kategoriją arba išjunk šį nustatymą",
+	"server.downloads.the-release-has-no-info-hash": "Leidimas neturi informacijos maišos, todėl {name} atsisiuntimo nepavyko sekti",
+	"server.downloads.the-release-link-leads-to-a": "Leidimo nuoroda veda į vietinį arba užblokuotą adresą; jei šis Šaltinis yra tavo namų tinkle, įjunk jam «Gali pasiekti vietinį tinklą»",
+	"server.downloads.the-source-has-no-such-release": "Šaltinis neturi tokio Leidimo failo",
+	"server.downloads.the-torrent-file-does-not-match": "torento failas neatitinka savo informacijos maišos",
+	"server.sources.it-was-judged-for-another-slot": "jis įvertintas kitai Vietai",
+	"server.sources.it-was-turned-down": "jis atmestas",
+	"server.sources.it-was-turned-down-2": "jis atmestas: {d}",
+	"server.sources.it-was-turned-down-for-this": "jis atmestas šiam epizodui",
+	"server.sources.it-was-turned-down-for-this-2": "jis atmestas šiam epizodui: {d}",
+	"server.sources.left-out": "praleista: {skipped}",
+	"server.sources.sent-although-it-failed": "išsiųsta, nors nepraėjo: {overridden}",
+	"server.sources.the-album-would-mix-copies": "albumas sumaišytų kopijas: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "Išleidimo riba praleidžiama: šis filmas dar neskaitomas kaip išėjęs",
+	"server.sources.this-version-already-has-a-good": "Ši Versija jau turi pakankamai gerą kopiją; nauja ją pakeis"
 }

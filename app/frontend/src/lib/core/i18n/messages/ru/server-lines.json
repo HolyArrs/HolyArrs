@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "Выбранное качество не применено: у этого тайтла уже есть такая копия.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex больше не отдаёт список людей, с которыми открыт доступ к вашему серверу",
 	"server.accounts.plex-refused-your-linked-plex-account": "Plex отклонил вашу связанную учётную запись Plex; свяжите её заново",
-	"server.migrate.the-show-could-not-be-found": "сериал не найден ни по идентификаторам, ни по названию"
+	"server.migrate.the-show-could-not-be-found": "сериал не найден ни по идентификаторам, ни по названию",
+	"server.downloads.the-downloader-already-has-this-torrent": "у загрузчика уже есть этот торрент вне HolyArrs, а «Показывать только элементы HolyArrs» включено: перенеси его там в категорию HolyArrs или выключи эту настройку",
+	"server.downloads.the-release-has-no-info-hash": "у релиза нет инфо-хэша, поэтому загрузку {name} не удалось отследить",
+	"server.downloads.the-release-link-leads-to-a": "ссылка релиза ведёт на локальный или заблокированный адрес; если этот источник в твоей домашней сети, включи для него «Доступ к локальной сети»",
+	"server.downloads.the-source-has-no-such-release": "у источника нет такого файла релиза",
+	"server.downloads.the-torrent-file-does-not-match": "торрент-файл не совпадает со своим инфо-хэшем",
+	"server.sources.it-was-judged-for-another-slot": "он оценён для другого слота",
+	"server.sources.it-was-turned-down": "он отклонён",
+	"server.sources.it-was-turned-down-2": "он отклонён: {d}",
+	"server.sources.it-was-turned-down-for-this": "он отклонён для этого эпизода",
+	"server.sources.it-was-turned-down-for-this-2": "он отклонён для этого эпизода: {d}",
+	"server.sources.left-out": "пропущено: {skipped}",
+	"server.sources.sent-although-it-failed": "отправлен, хотя не прошёл проверку: {overridden}",
+	"server.sources.the-album-would-mix-copies": "альбом смешал бы копии: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "Порог выхода пропускается: этот фильм пока не считается вышедшим",
+	"server.sources.this-version-already-has-a-good": "У этого варианта уже есть достаточно хорошая копия; новая её заменит"
 }

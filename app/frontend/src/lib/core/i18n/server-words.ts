@@ -36,11 +36,19 @@ export function serverWords(text: string | null | undefined): string | null | un
 	if (lang.value === 'en') return text;
 	if (cache.lang !== lang.words) cache.lang = lang.words, cache.lines.clear();
 	let line = cache.lines.get(text);
-	if (line === undefined) cache.lines.set(text, (line = look(text, 0)));
+	if (line === undefined) cache.lines.set(text, (line = lookCapped(text)));
 	return line;
 }
 
 const cache = { lang: null as Record<string, string> | null, lines: new Map<string, string>() };
+
+// A History row starts its sentence with a capital letter; the stored line starts in lower case.
+function lookCapped(text: string): string {
+	const line = look(text, 0);
+	if (line !== text || !/^\p{Lu}/u.test(text)) return line;
+	const low = look(text[0].toLowerCase() + text.slice(1), 0);
+	return low === text[0].toLowerCase() + text.slice(1) ? text : low[0].toUpperCase() + low.slice(1);
+}
 
 function look(text: string, depth: number): string {
 	const key = exact.get(text);

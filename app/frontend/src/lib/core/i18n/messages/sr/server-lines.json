@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "Изабрани квалитет није искоришћен: овај наслов већ има ту копију.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex више не нуди списак људи са којима је твој сервер подељен",
 	"server.accounts.plex-refused-your-linked-plex-account": "Plex је одбио твој повезани Plex налог; повежи га поново",
-	"server.migrate.the-show-could-not-be-found": "serija nije pronađena ni po svojim id-jevima ni po nazivu"
+	"server.migrate.the-show-could-not-be-found": "serija nije pronađena ni po svojim id-jevima ni po nazivu",
+	"server.downloads.the-downloader-already-has-this-torrent": "Преузимач већ има овај торент ван HolyArrs-а, а «Прикажи само ставке HolyArrs-а» је укључено: премести га тамо у категорију HolyArrs-а или искључи ту поставку",
+	"server.downloads.the-release-has-no-info-hash": "Издање нема инфо хеш, па се преузимање {name} није могло пратити",
+	"server.downloads.the-release-link-leads-to-a": "веза Издања води на локалну или блокирану адресу; ако је овај Извор на твојој кућној мрежи, укључи му «Допри до локалне мреже»",
+	"server.downloads.the-source-has-no-such-release": "Извор нема такву датотеку Издања",
+	"server.downloads.the-torrent-file-does-not-match": "торент датотека не одговара свом инфо хешу",
+	"server.sources.it-was-judged-for-another-slot": "оцењено је за други Слот",
+	"server.sources.it-was-turned-down": "одбијено је",
+	"server.sources.it-was-turned-down-2": "одбијено је: {d}",
+	"server.sources.it-was-turned-down-for-this": "одбијено је за ову епизоду",
+	"server.sources.it-was-turned-down-for-this-2": "одбијено је за ову епизоду: {d}",
+	"server.sources.left-out": "изостављено: {skipped}",
+	"server.sources.sent-although-it-failed": "послато иако није прошло: {overridden}",
+	"server.sources.the-album-would-mix-copies": "албум би помешао копије: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "Праг изласка се прескаче: овај филм се још не рачуна као изашао",
+	"server.sources.this-version-already-has-a-good": "Ова Верзија већ има довољно добру копију; нова ће је заменити"
 }

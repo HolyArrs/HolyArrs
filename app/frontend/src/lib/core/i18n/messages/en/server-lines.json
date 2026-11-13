@@ -1326,5 +1326,20 @@
 	"server.requests.the-quality-you-picked-was-not": "The quality you picked was not used: this title already has that copy.",
 	"server.accounts.plex-no-longer-offers-the-list": "Plex no longer offers the list of people your server is shared with",
 	"server.accounts.plex-refused-your-linked-plex-account": "Plex refused your linked Plex account; link it again",
-	"server.migrate.the-show-could-not-be-found": "the show could not be found by its ids or its name"
+	"server.migrate.the-show-could-not-be-found": "the show could not be found by its ids or its name",
+	"server.downloads.the-downloader-already-has-this-torrent": "the Downloader already has this torrent outside HolyArrs, and Show only HolyArrs items is on: move it to HolyArrs's category there, or turn that setting off",
+	"server.downloads.the-release-has-no-info-hash": "the Release has no info hash, so {name}'s download of it could not be followed",
+	"server.downloads.the-release-link-leads-to-a": "the Release link leads to a local or blocked address; if this Source is on your home network, turn on \"May reach the local network\" for it",
+	"server.downloads.the-source-has-no-such-release": "the Source has no such Release file",
+	"server.downloads.the-torrent-file-does-not-match": "the torrent file does not match its info hash",
+	"server.sources.it-was-judged-for-another-slot": "it was judged for another Slot",
+	"server.sources.it-was-turned-down": "it was turned down",
+	"server.sources.it-was-turned-down-for-this": "it was turned down for this episode",
+	"server.sources.it-was-turned-down-for-this-2": "it was turned down for this episode: {d}",
+	"server.sources.it-was-turned-down-2": "it was turned down: {d}",
+	"server.sources.left-out": "left out: {skipped}",
+	"server.sources.sent-although-it-failed": "sent although it failed: {overridden}",
+	"server.sources.the-album-would-mix-copies": "the album would mix copies: {skipped}",
+	"server.sources.the-release-gate-is-skipped-this": "the Release gate is skipped: this Title is not out yet",
+	"server.sources.this-version-already-has-a-good": "this Version already has a good enough copy; the new one will replace it"
 }

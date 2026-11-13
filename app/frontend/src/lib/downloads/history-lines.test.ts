@@ -1,6 +1,10 @@
 import { dayWord, episodeBits, eventText, fakeEpisodeName, plainWhy, resolutionOf, rowText } from './history-lines.ts';
 import { groupDownloads } from './history.ts';
 import { describe, expect, it } from 'vitest';
+import { lang } from '../core/i18n/i18n.svelte.ts';
+import { serverWords } from '../core/i18n/server-words.ts';
+import de from '../core/i18n/messages/de/server-lines.json';
+import en from '../core/i18n/messages/en/server-lines.json';
 import type { EventRecord } from '../core/types.ts';
 
 let id = 0;
@@ -129,5 +133,20 @@ describe('system rows', () => {
 		]);
 		const t = rowText(row, ctx);
 		expect([t.tag.word, t.line]).toEqual(['Failed', 'Nothing could be placed']);
+	});
+});
+
+describe('stored reasons in another language', () => {
+	it('shows the refused-send and no-file reasons in German, even after the row capitalises them', () => {
+		const was = { value: lang.value, words: lang.words };
+		lang.value = 'de';
+		lang.words = { ...(en as Record<string, string>), ...(de as Record<string, string>) };
+		try {
+			expect(plainWhy('the Source has no such Release file')).toBe('die Quelle hat diese Release-Datei nicht');
+			expect(serverWords('The Source has no such Release file')).toBe('Die Quelle hat diese Release-Datei nicht');
+		} finally {
+			lang.value = was.value;
+			lang.words = was.words;
+		}
 	});
 });
