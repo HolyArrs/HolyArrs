@@ -167,8 +167,9 @@
 					{/each}
 				</select>
 			</Field>
-			<label class="checkline">
+			<label class="checkline switch">
 				<input id="search-approved" type="checkbox" bind:checked={settings.search_on_approve} />
+				<span class="sw" aria-hidden="true"></span>
 				<span><b>{t('settings.requests.search')}</b><br /><span class="hint">{t('settings.requests.searchHint')}</span></span>
 			</label>
 			{#snippet advanced()}
@@ -240,7 +241,7 @@
 						<Field id="q-{k.kind}-{l.id}" label={qualityName(l.id)} hint={lineHint(l, k.plain, k.fourK)}>
 							<div class="q-row">
 								<input id="q-{k.kind}-{l.id}" class="input" maxlength="30" placeholder={qualityName(l.id)} aria-describedby="q-{k.kind}-{l.id}-hint" bind:value={settings.qualities[k.kind][i].name} />
-								<label class="q-shown"><input type="checkbox" checked={!l.hidden} onchange={(e) => (settings.qualities![k.kind][i].hidden = !e.currentTarget.checked)} data-testid="q-shown-{k.kind}-{l.id}" />{t('settings.requests.choiceShown')}</label>
+								<label class="switch q-shown"><input type="checkbox" checked={!l.hidden} onchange={(e) => (settings.qualities![k.kind][i].hidden = !e.currentTarget.checked)} data-testid="q-shown-{k.kind}-{l.id}" /><span class="sw" aria-hidden="true"></span><span>{t('settings.requests.choiceShown')}</span></label>
 							</div>
 						</Field>
 					{/each}
@@ -248,16 +249,19 @@
 			</SettingsCard>
 		{/if}
 		<SettingsCard id="plex-watchlists" title={t('settings.requests.plex')} description={t('settings.requests.plexDesc')}>
-			<label class="checkline">
+			<label class="checkline switch">
 				<input id="plex-watchlists-on" type="checkbox" bind:checked={settings.plex_watchlists} />
+				<span class="sw" aria-hidden="true"></span>
 				<span><b>{t('settings.requests.plexOn')}</b><br /><span class="hint">{t('settings.requests.plexOnHint')}</span></span>
 			</label>
-			<label class="checkline">
+			<label class="checkline switch">
 				<input id="plex-watchlists-everyone" type="checkbox" bind:checked={settings.plex_watchlists_everyone} disabled={!settings.plex_watchlists} />
+				<span class="sw" aria-hidden="true"></span>
 				<span><b>{t('settings.requests.plexEveryone')}</b><br /><span class="hint">{t('settings.requests.plexEveryoneHint')}</span></span>
 			</label>
-			<label class="checkline">
+			<label class="checkline switch">
 				<input id="plex-friends" type="checkbox" bind:checked={settings.plex_friends} disabled={!settings.plex_watchlists} data-testid="plex-friends" />
+				<span class="sw" aria-hidden="true"></span>
 				<span><b>{t('settings.requests.plexFriends')}</b><br /><span class="hint">{t('settings.requests.plexFriendsHint')}</span></span>
 			</label>
 			<PlexFriends on={!!settings.plex_watchlists && !!settings.plex_friends} />

@@ -357,6 +357,10 @@ select.input {
 .switch input:focus-visible + .sw {
 	box-shadow: var(--focus-ring);
 }
+/* A switch with its label and hint on one full-width row */
+.switch.checkline {
+	display: flex;
+}
 
 /* Progress */
 .bar {
