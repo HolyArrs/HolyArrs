@@ -334,7 +334,7 @@
 					</p>
 				{/if}
 				{#if isOwner}
-					<div class="pw-save"><Button variant="primary" size="sm" type="submit" disabled={savingMinLength} aria-busy={savingMinLength}>{t('settings.signIn.save')}</Button></div>
+					<div class="pw-save"><Button variant="primary" type="submit" disabled={savingMinLength} aria-busy={savingMinLength}>{t('settings.signIn.save')}</Button></div>
 				{:else}
 					<p class="hint">{t('settings.signIn.ownerOnly')}</p>
 				{/if}
