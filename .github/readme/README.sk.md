@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> je jedna self-hosted aplikácia pre tvoje seriály, filmy a hudbu.<br>Prehliadaj ako v streamovacej aplikácii, požiadaj o to, čo chceš, a zvyšok vybaví sama.</p>
 
-<p align="center"><b>Približne 16.9 MB na stiahnutie · približne 95 MiB RAM v nečinnosti na čerstvej inštalácii · amd64, arm64, armv7</b><br><sub>Šesť aplikácií, ktoré nahrádza, má dokopy na stiahnutie 718.2 MB.</sub></p>
+<p align="center"><b>Približne 16.1 MB na stiahnutie · približne 95 MiB RAM v nečinnosti na čerstvej inštalácii · amd64, arm64, armv7</b><br><sub>Šesť aplikácií, ktoré nahrádza, má dokopy na stiahnutie 685.0 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Rýchly štart</a> · <a href="#why">Prečo</a> · <a href="#what-it-does">Čo dokáže</a> · <a href="#moving">Prechod z iných aplikácií</a> · <a href="#manual">Príručka</a> · <a href="#help">Pomoc</a></p>
 
@@ -98,16 +98,16 @@ Tak som ju postavil.
 
 | Aplikácia | Veľkosť na stiahnutie (amd64) | RAM v nečinnosti | Prihlásenia | Webové porty |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Všetkých šesť spolu** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Všetkých šesť spolu** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Približne 43-krát menšie. Komprimované stiahnutie z registra, image z linuxserver.io, amd64, odmerané 2026-11-08. RAM v nečinnosti odmeraná s 10,000 titulmi a 55,000 filmami a epizódami. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Približne 43-krát menšie. Komprimované stiahnutie z registra, image z linuxserver.io, amd64, odmerané 2026-11-13. RAM v nečinnosti odmeraná s 10,000 titulmi a 55,000 filmami a epizódami. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Niekto požiada o titul. HolyArrs prehľadá tvoje zdroje, podľa tvojich pravid
 | 🔌 **API pre staršie aplikácie** | Seerr, Prowlarr, Bazarr, Unpackerr a Homepage fungujú ďalej, keď to zapneš. |
 | 🗝️ **Žiadne kľúče API netreba** | Tituly, obrázky a rebríčky prichádzajú z metadátového servera HolyArrs. Fungujú aj tvoje vlastné kľúče alebo server. |
 | 🔒 **Šifrované kľúče** | Uložené heslá a kľúče sú zamknuté hlavným kľúčom, ktorý leží v tvojom konfiguračnom priečinku. |
-| 🪶 **Drobné** | Image s veľkosťou približne 16.9 MB, v ktorom je len HolyArrs. |
+| 🪶 **Drobné** | Image s veľkosťou približne 16.1 MB, v ktorom je len HolyArrs. |
 
 <details>
 <summary><b>Pozri si každú stránku v pohybe</b></summary>

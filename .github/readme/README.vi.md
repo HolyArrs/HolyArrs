@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> là một ứng dụng tự lưu trữ cho phim bộ, phim lẻ và nhạc của bạn.<br>Duyệt như một ứng dụng xem phim trực tuyến, yêu cầu thứ bạn muốn, phần còn lại cứ để nó lo.</p>
 
-<p align="center"><b>Khoảng 16.9 MB để tải xuống · khoảng 95 MiB RAM khi rảnh trên bản cài mới · amd64, arm64, armv7</b><br><sub>Sáu ứng dụng mà nó thay thế có dung lượng tải xuống tổng cộng 718.2 MB.</sub></p>
+<p align="center"><b>Khoảng 16.1 MB để tải xuống · khoảng 95 MiB RAM khi rảnh trên bản cài mới · amd64, arm64, armv7</b><br><sub>Sáu ứng dụng mà nó thay thế có dung lượng tải xuống tổng cộng 685.0 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Bắt đầu nhanh</a> · <a href="#why">Vì sao</a> · <a href="#what-it-does">Nó làm được gì</a> · <a href="#moving">Chuyển từ các ứng dụng khác</a> · <a href="#manual">Sổ tay</a> · <a href="#help">Trợ giúp</a></p>
 
@@ -98,16 +98,16 @@ Nên tôi đã xây dựng nó.
 
 | Ứng dụng | Dung lượng tải xuống (amd64) | RAM khi rảnh | Lần đăng nhập | Cổng web |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Cả sáu cộng lại** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Cả sáu cộng lại** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Nhỏ hơn khoảng 43 lần. Dung lượng tải xuống đã nén từ registry, image của linuxserver.io, amd64, đo ngày 2026-11-08. RAM khi rảnh được đo với 10,000 mục và 55,000 phim lẻ và tập phim. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Nhỏ hơn khoảng 43 lần. Dung lượng tải xuống đã nén từ registry, image của linuxserver.io, amd64, đo ngày 2026-11-13. RAM khi rảnh được đo với 10,000 mục và 55,000 phim lẻ và tập phim. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Có người yêu cầu một mục. HolyArrs tìm trong các Nguồn của bạ
 | 🔌 **API của ứng dụng cũ** | Seerr, Prowlarr, Bazarr, Unpackerr và Homepage vẫn chạy tiếp khi bạn bật tính năng này. |
 | 🗝️ **Không cần khóa API** | Tên mục, ảnh bìa và bảng xếp hạng đến từ máy chủ metadata của HolyArrs. Khóa hoặc máy chủ riêng của bạn cũng dùng được. |
 | 🔒 **Khóa được mã hóa** | Mật khẩu và khóa đã lưu được khóa bằng một khóa chính nằm trong thư mục cấu hình của bạn. |
-| 🪶 **Siêu nhỏ** | Một image khoảng 16.9 MB, bên trong chỉ có HolyArrs. |
+| 🪶 **Siêu nhỏ** | Một image khoảng 16.1 MB, bên trong chỉ có HolyArrs. |
 
 <details>
 <summary><b>Xem mọi trang khi chuyển động</b></summary>

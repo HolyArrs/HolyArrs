@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> on yksi itse isännöitävä sovellus sarjoillesi, elokuvillesi ja musiikillesi.<br>Selaa kuin suoratoistosovellusta, pyydä mitä haluat, niin se hoitaa loput.</p>
 
-<p align="center"><b>Noin 16.9 MB:n lataus · noin 95 MiB RAM-muistia joutilaana uudessa asennuksessa · amd64, arm64, armv7</b><br><sub>Sen korvaamien kuuden sovelluksen lataus on yhteensä 718.2 MB.</sub></p>
+<p align="center"><b>Noin 16.1 MB:n lataus · noin 95 MiB RAM-muistia joutilaana uudessa asennuksessa · amd64, arm64, armv7</b><br><sub>Sen korvaamien kuuden sovelluksen lataus on yhteensä 685.0 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Pikaopas</a> · <a href="#why">Miksi</a> · <a href="#what-it-does">Mitä se tekee</a> · <a href="#moving">Siirtyminen muista sovelluksista</a> · <a href="#manual">Käyttöopas</a> · <a href="#help">Apua</a></p>
 
@@ -98,16 +98,16 @@ Joten tein sen.
 
 | Sovellus | Lataus (amd64) | RAM joutilaana | Kirjautumisia | Web-portteja |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Kuusi yhteensä** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Kuusi yhteensä** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Noin 43 kertaa pienempi. Pakattu lataus rekisteristä, linuxserver.io:n imaget, amd64, mitattu 2026-11-08. RAM joutilaana mitattu 10,000 nimikkeellä ja 55,000 elokuvalla ja jaksolla. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Noin 43 kertaa pienempi. Pakattu lataus rekisteristä, linuxserver.io:n imaget, amd64, mitattu 2026-11-13. RAM joutilaana mitattu 10,000 nimikkeellä ja 55,000 elokuvalla ja jaksolla. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Joku pyytää nimikettä. HolyArrs hakee lähteistäsi, valitsee parhaan julkais
 | 🔌 **Vanhojen sovellusten API** | Seerr, Prowlarr, Bazarr, Unpackerr ja Homepage toimivat edelleen, kun otat sen käyttöön. |
 | 🗝️ **API-avaimia ei tarvita** | Nimikkeet, kuvitus ja listat tulevat HolyArrsin metadatapalvelimelta. Omat avaimet tai oma palvelin käyvät myös. |
 | 🔒 **Salatut avaimet** | Tallennetut salasanat ja avaimet on lukittu pääavaimella, joka on asetuskansiossasi. |
-| 🪶 **Pieni** | Noin 16.9 MB:n image, jonka sisällä on pelkkä HolyArrs. |
+| 🪶 **Pieni** | Noin 16.1 MB:n image, jonka sisällä on pelkkä HolyArrs. |
 
 <details>
 <summary><b>Katso jokainen sivu liikkeessä</b></summary>

@@ -41,7 +41,7 @@
 
 <p align="center">A <b>HolyArrs</b> egy saját szerveren futtatott app a sorozataidhoz, filmjeidhez és zenéidhez.<br>Böngéssz benne, mint egy streaming appban, kérd, amit szeretnél, a többit pedig elintézi.</p>
 
-<p align="center"><b>Kb. 16.9 MB letöltés · kb. 95 MiB RAM üresjáratban friss telepítésen · amd64, arm64, armv7</b><br><sub>A hat app, amelyet kivált, együtt 718.2 MB.</sub></p>
+<p align="center"><b>Kb. 16.1 MB letöltés · kb. 95 MiB RAM üresjáratban friss telepítésen · amd64, arm64, armv7</b><br><sub>A hat app, amelyet kivált, együtt 685.0 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Gyors indítás</a> · <a href="#why">Miért</a> · <a href="#what-it-does">Mit tud</a> · <a href="#moving">Átállás más appokról</a> · <a href="#manual">A kézikönyv</a> · <a href="#help">Segítség</a></p>
 
@@ -98,16 +98,16 @@ Egy appot akartam. Egy bejelentkezést, egy portot, egy helyet, ahol körülnéz
 
 | App | Letöltés (amd64) | RAM üresjáratban | Bejelentkezések | Webes portok |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Mind a hat együtt** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Mind a hat együtt** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Kb. 43-szor kisebb. Tömörített registry-letöltés, linuxserver.io image-ek, amd64, mérve 2026-11-08-án. A RAM üresjáratban 10,000 címmel, valamint 55,000 filmmel és epizóddal mérve. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Kb. 43-szor kisebb. Tömörített registry-letöltés, linuxserver.io image-ek, amd64, mérve 2026-11-13-án. A RAM üresjáratban 10,000 címmel, valamint 55,000 filmmel és epizóddal mérve. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Valaki kér egy címet. A HolyArrs végigkeresi a Forrásaidat, a Választási s
 | 🔌 **API a korábbi appokhoz** | A Seerr, a Prowlarr, a Bazarr, az Unpackerr és a Homepage tovább működik, ha bekapcsolod. |
 | 🗝️ **Nem kellenek API-kulcsok** | A címek, a borítók és a toplisták a HolyArrs metaadat-szerveréről jönnek. Saját kulcsokkal vagy saját szerverrel is megy. |
 | 🔒 **Titkosított kulcsok** | A tárolt jelszavakat és kulcsokat egy főkulcs zárja le, amely a konfigurációs mappádban van. |
-| 🪶 **Apró** | Egy kb. 16.9 MB-os image, amelyben csak a HolyArrs van. |
+| 🪶 **Apró** | Egy kb. 16.1 MB-os image, amelyben csak a HolyArrs van. |
 
 <details>
 <summary><b>Nézd meg az összes oldalt mozgásban</b></summary>

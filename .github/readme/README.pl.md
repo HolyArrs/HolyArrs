@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> to jedna samodzielnie hostowana aplikacja do twoich seriali, filmów i muzyki.<br>Przeglądaj jak w aplikacji streamingowej, poproś o to, co chcesz, a resztą zajmie się ona sama.</p>
 
-<p align="center"><b>Około 16.9 MB do pobrania · około 95 MiB RAM-u w stanie bezczynności na świeżej instalacji · amd64, arm64, armv7</b><br><sub>Sześć aplikacji, które zastępuje, waży razem 718.2 MB.</sub></p>
+<p align="center"><b>Około 16.1 MB do pobrania · około 95 MiB RAM-u w stanie bezczynności na świeżej instalacji · amd64, arm64, armv7</b><br><sub>Sześć aplikacji, które zastępuje, waży razem 685.0 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Szybki start</a> · <a href="#why">Dlaczego</a> · <a href="#what-it-does">Co potrafi</a> · <a href="#moving">Przejście z innych aplikacji</a> · <a href="#manual">Instrukcja</a> · <a href="#help">Pomoc</a></p>
 
@@ -98,16 +98,16 @@ Więc ją zbudowałem.
 
 | Aplikacja | Pobieranie (amd64) | RAM w bezczynności | Loginy | Porty webowe |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Wszystkie sześć razem** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Wszystkie sześć razem** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Około 43 razy mniejsza. Skompresowane pobieranie z rejestru, image'e z linuxserver.io, amd64, zmierzone 2026-11-08. RAM w bezczynności zmierzony przy 10,000 tytułów i 55,000 filmów i odcinków. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Około 43 razy mniejsza. Skompresowane pobieranie z rejestru, image'e z linuxserver.io, amd64, zmierzone 2026-11-13. RAM w bezczynności zmierzony przy 10,000 tytułów i 55,000 filmów i odcinków. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Ktoś prosi o tytuł. HolyArrs przeszukuje twoje źródła, wybiera najlepszy re
 | 🔌 **API dla starych aplikacji** | Seerr, Prowlarr, Bazarr, Unpackerr i Homepage dalej działają, gdy to włączysz. |
 | 🗝️ **Bez kluczy API** | Tytuły, grafiki i listy przebojów pochodzą z serwera metadanych HolyArrs. Działają też twoje własne klucze lub serwer. |
 | 🔒 **Zaszyfrowane klucze** | Zapisane hasła i klucze są zablokowane kluczem głównym, który leży w twoim folderze konfiguracji. |
-| 🪶 **Malutka** | Image o rozmiarze około 16.9 MB, w którym nie ma nic poza HolyArrs. |
+| 🪶 **Malutka** | Image o rozmiarze około 16.1 MB, w którym nie ma nic poza HolyArrs. |
 
 <details>
 <summary><b>Zobacz wszystkie strony w ruchu</b></summary>

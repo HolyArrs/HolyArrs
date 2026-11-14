@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b>, dizilerin, filmlerin ve müziğin için kendi sunucunda çalışan tek bir uygulama.<br>Bir yayın uygulaması gibi gez, istediğini iste, gerisini o halleder.</p>
 
-<p align="center"><b>Yaklaşık 16.9 MB indirme · yeni kurulumda boştayken yaklaşık 95 MiB RAM · amd64, arm64, armv7</b><br><sub>Yerine geçtiği altı uygulamanın indirme boyutu birlikte 718.2 MB.</sub></p>
+<p align="center"><b>Yaklaşık 16.1 MB indirme · yeni kurulumda boştayken yaklaşık 95 MiB RAM · amd64, arm64, armv7</b><br><sub>Yerine geçtiği altı uygulamanın indirme boyutu birlikte 685.0 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Hızlı başlangıç</a> · <a href="#why">Neden</a> · <a href="#what-it-does">Ne yapar</a> · <a href="#moving">Diğer uygulamalardan geçiş</a> · <a href="#manual">El kitabı</a> · <a href="#help">Yardım</a></p>
 
@@ -98,16 +98,16 @@ Ben de yaptım.
 
 | Uygulama | İndirme (amd64) | Boşta RAM | Giriş | Web portu |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Altısı birlikte** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Altısı birlikte** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Yaklaşık 43 kat küçük. Sıkıştırılmış registry indirmesi, linuxserver.io imajları, amd64, 2026-11-08'de ölçüldü. Boşta RAM, 10,000 başlık ve 55,000 film ve bölümle ölçüldü. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Yaklaşık 43 kat küçük. Sıkıştırılmış registry indirmesi, linuxserver.io imajları, amd64, 2026-11-13'de ölçüldü. Boşta RAM, 10,000 başlık ve 55,000 film ve bölümle ölçüldü. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Biri bir başlık ister. HolyArrs Kaynaklarını arar, Seçim kurallarınla en i
 | 🔌 **Eski uygulama API'si** | Sen açtıktan sonra Seerr, Prowlarr, Bazarr, Unpackerr ve Homepage çalışmaya devam eder. |
 | 🗝️ **API anahtarı gerekmez** | Başlıklar, görseller ve listeler HolyArrs metadata sunucusundan gelir. Kendi anahtarların veya kendi sunucun da çalışır. |
 | 🔒 **Şifreli anahtarlar** | Saklanan parolalar ve anahtarlar, yapılandırma klasöründe duran bir ana anahtarla kilitlenir. |
-| 🪶 **Minicik** | İçinde sadece HolyArrs olan, yaklaşık 16.9 MB'lık bir imaj. |
+| 🪶 **Minicik** | İçinde sadece HolyArrs olan, yaklaşık 16.1 MB'lık bir imaj. |
 
 <details>
 <summary><b>Bütün sayfaları hareket halinde gör</b></summary>

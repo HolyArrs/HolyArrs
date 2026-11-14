@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> yra viena savarankiškai talpinama programa tavo serialams, filmams ir muzikai.<br>Naršyk kaip streaming programoje, paprašyk to, ko nori, o visa kita ji padarys pati.</p>
 
-<p align="center"><b>Apie 16.9 MB atsisiuntimas · apie 95 MiB RAM be apkrovos naujame diegime · amd64, arm64, armv7</b><br><sub>Šešios programos, kurias ji pakeičia, kartu atsisiunčiamos 718.2 MB.</sub></p>
+<p align="center"><b>Apie 16.1 MB atsisiuntimas · apie 95 MiB RAM be apkrovos naujame diegime · amd64, arm64, armv7</b><br><sub>Šešios programos, kurias ji pakeičia, kartu atsisiunčiamos 685.0 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Greitas startas</a> · <a href="#why">Kodėl</a> · <a href="#what-it-does">Ką ji daro</a> · <a href="#moving">Perėjimas iš kitų programų</a> · <a href="#manual">Vadovas</a> · <a href="#help">Pagalba</a></p>
 
@@ -98,16 +98,16 @@ Taigi ją sukūriau.
 
 | Programa | Atsisiuntimas (amd64) | RAM be apkrovos | Prisijungimai | Žiniatinklio portai |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Visos šešios kartu** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Visos šešios kartu** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Apie 43 kartus mažiau. Suspaustas atsisiuntimas iš registry, linuxserver.io image, amd64, išmatuota 2026-11-08. RAM be apkrovos išmatuota su 10,000 pavadinimų ir 55,000 filmų bei serijų. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Apie 43 kartus mažiau. Suspaustas atsisiuntimas iš registry, linuxserver.io image, amd64, išmatuota 2026-11-13. RAM be apkrovos išmatuota su 10,000 pavadinimų ir 55,000 filmų bei serijų. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Kažkas paprašo pavadinimo. HolyArrs ieško tavo šaltiniuose, pagal tavo parin
 | 🔌 **Ankstesnių programų API** | Seerr, Prowlarr, Bazarr, Unpackerr ir Homepage toliau veikia, kai tai įjungi. |
 | 🗝️ **API raktų nereikia** | Pavadinimai, iliustracijos ir topai ateina iš HolyArrs metaduomenų serverio. Tinka ir tavo paties raktai ar serveris. |
 | 🔒 **Užšifruoti raktai** | Išsaugoti slaptažodžiai ir raktai užrakinami pagrindiniu raktu, kuris yra tavo konfigūracijos aplanke. |
-| 🪶 **Mažytė** | Apie 16.9 MB image, kuriame nėra nieko, tik HolyArrs. |
+| 🪶 **Mažytė** | Apie 16.1 MB image, kuriame nėra nieko, tik HolyArrs. |
 
 <details>
 <summary><b>Pamatyti kiekvieną puslapį judesyje</b></summary>

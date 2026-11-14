@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> ir viena paštīklotā lietotne taviem seriāliem, filmām un mūzikai.<br>Pārlūko kā straumēšanas lietotnē, pieprasi, ko vēlies, un pārējo tā izdara pati.</p>
 
-<p align="center"><b>Aptuveni 16.9 MB lejupielādes · aptuveni 95 MiB RAM dīkstāvē jaunā instalācijā · amd64, arm64, armv7</b><br><sub>Sešas lietotnes, ko tā aizstāj, kopā lejupielādē 718.2 MB.</sub></p>
+<p align="center"><b>Aptuveni 16.1 MB lejupielādes · aptuveni 95 MiB RAM dīkstāvē jaunā instalācijā · amd64, arm64, armv7</b><br><sub>Sešas lietotnes, ko tā aizstāj, kopā lejupielādē 685.0 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Ātrā sākšana</a> · <a href="#why">Kāpēc</a> · <a href="#what-it-does">Ko tā dara</a> · <a href="#moving">Pāreja no citām lietotnēm</a> · <a href="#manual">Rokasgrāmata</a> · <a href="#help">Palīdzība</a></p>
 
@@ -98,16 +98,16 @@ Tāpēc es to uzbūvēju.
 
 | Lietotne | Lejupielāde (amd64) | RAM dīkstāvē | Pieteikšanās | Web porti |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Visas sešas kopā** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Visas sešas kopā** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Aptuveni 43 reizes mazāk. Saspiesta lejupielāde no reģistra, linuxserver.io attēli, amd64, izmērīts 2026-11-08. RAM dīkstāvē izmērīts ar 10,000 nosaukumiem un 55,000 filmu un epizožu. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Aptuveni 43 reizes mazāk. Saspiesta lejupielāde no reģistra, linuxserver.io attēli, amd64, izmērīts 2026-11-13. RAM dīkstāvē izmērīts ar 10,000 nosaukumiem un 55,000 filmu un epizožu. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Kāds pieprasa nosaukumu. HolyArrs pārmeklē tavus avotus, ar taviem izvēles n
 | 🔌 **Iepriekšējo lietotņu API** | Seerr, Prowlarr, Bazarr, Unpackerr un Homepage turpina strādāt, kad tu to ieslēdz. |
 | 🗝️ **API atslēgas nav vajadzīgas** | Nosaukumi, noformējums un topi nāk no HolyArrs metadatu servera. Der arī tavas pašas atslēgas vai serveris. |
 | 🔒 **Šifrētas atslēgas** | Saglabātās paroles un atslēgas aizslēdz galvenā atslēga, kas atrodas tavā konfigurācijas mapē. |
-| 🪶 **Sīka** | Aptuveni 16.9 MB liels attēls, kurā ir tikai HolyArrs. |
+| 🪶 **Sīka** | Aptuveni 16.1 MB liels attēls, kurā ir tikai HolyArrs. |
 
 <details>
 <summary><b>Skaties katru lapu kustībā</b></summary>

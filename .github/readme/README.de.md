@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> ist eine selbst gehostete App für deine Serien, Filme und Musik.<br>Stöbere wie in einer Streaming-App, wünsch dir, was du willst, und den Rest erledigt sie.</p>
 
-<p align="center"><b>Etwa 16.9 MB Download · etwa 95 MiB RAM im Leerlauf bei einer frischen Installation · amd64, arm64, armv7</b><br><sub>Die sechs Apps, die sie ersetzt, sind zusammen 718.2 MB groß.</sub></p>
+<p align="center"><b>Etwa 16.1 MB Download · etwa 95 MiB RAM im Leerlauf bei einer frischen Installation · amd64, arm64, armv7</b><br><sub>Die sechs Apps, die sie ersetzt, sind zusammen 685.0 MB groß.</sub></p>
 
 <p align="center"><a href="#quick-start">Schnellstart</a> · <a href="#why">Warum</a> · <a href="#what-it-does">Was sie kann</a> · <a href="#moving">Von anderen Apps wechseln</a> · <a href="#manual">Das Handbuch</a> · <a href="#help">Hilfe</a></p>
 
@@ -98,16 +98,16 @@ Also habe ich sie gebaut.
 
 | App | Download (amd64) | RAM im Leerlauf | Logins | Web-Ports |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Alle sechs zusammen** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Alle sechs zusammen** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Etwa 43-mal kleiner. Komprimierter Registry-Download, Images von linuxserver.io, amd64, gemessen am 2026-11-08. RAM im Leerlauf gemessen mit 10,000 Titeln und 55,000 Filmen und Episoden. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Etwa 43-mal kleiner. Komprimierter Registry-Download, Images von linuxserver.io, amd64, gemessen am 2026-11-13. RAM im Leerlauf gemessen mit 10,000 Titeln und 55,000 Filmen und Episoden. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Jemand wünscht sich einen Titel. HolyArrs durchsucht deine Sources, wählt mit 
 | 🔌 **API für alte Apps** | Seerr, Prowlarr, Bazarr, Unpackerr und Homepage funktionieren weiter, sobald du das einschaltest. |
 | 🗝️ **Keine API-Keys nötig** | Titel, Artwork und Charts kommen vom HolyArrs-Metadatenserver. Eigene Keys oder ein eigener Server gehen auch. |
 | 🔒 **Verschlüsselte Keys** | Gespeicherte Passwörter und Keys sind mit einem Master-Key gesperrt, der in deinem Config-Ordner liegt. |
-| 🪶 **Winzig** | Ein Image von etwa 16.9 MB, in dem nur HolyArrs steckt. |
+| 🪶 **Winzig** | Ein Image von etwa 16.1 MB, in dem nur HolyArrs steckt. |
 
 <details>
 <summary><b>Alle Seiten in Bewegung ansehen</b></summary>
