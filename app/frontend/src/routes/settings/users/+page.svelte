@@ -441,7 +441,7 @@
 									>{t('settings.users.resetTwoFactor')}</Button>
 							{/if}
 							{#if u.state === 'active'}
-								<Button variant="destructive" type="button" onclick={() => setState(u, 'disabled')} disabled={saving} aria-label={t('settings.users.turnOffName', { name: u.name })}
+								<Button variant="plain" type="button" onclick={() => setState(u, 'disabled')} disabled={saving} aria-label={t('settings.users.turnOffName', { name: u.name })}
 									>{t('settings.users.turnOff')}</Button>
 							{:else}
 								<Button type="button" onclick={() => setState(u, 'active')} disabled={saving} aria-label={t('settings.users.turnOnName', { name: u.name })}
