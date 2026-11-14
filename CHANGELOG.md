@@ -36,7 +36,7 @@ Thanks to [@zaldev](https://github.com/HolyArrs/HolyArrs/issues/339), [@ArBohe](
 
 ### Changed
 
-- The image is smaller to download: about 16.9 MB, down from 19.5 MB.
+- The image is smaller to download: about 16.1 MB, down from 18.6 MB.
 
 ### Fixed
 
