@@ -431,6 +431,8 @@
 		flex-wrap: wrap;
 		gap: var(--s-2);
 	}
+	select.input { min-height: 40px; border-radius: 12px; border-color: color-mix(in srgb, var(--text) 10%, transparent); background: color-mix(in srgb, var(--text) 5%, transparent); font: 400 14.5px/1.3 var(--font-ui); }
+	@media (pointer: coarse) { select.input { min-height: 44px; } }
 	.look .input {
 		flex: 1 1 200px;
 	}

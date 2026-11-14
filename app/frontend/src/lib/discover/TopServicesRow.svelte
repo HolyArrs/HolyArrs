@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { edgeFade } from '#lib/ui/edge-fade.ts';
+	import '#lib/ui/edge-fade.css';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import PosterCard from '#lib/ui/PosterCard.svelte';
@@ -116,7 +118,7 @@
 
 {#snippet tools()}
 	<div class="top-tools">
-		<div class="chips" role="group" aria-label={t('discover.topServicesRow.services')}>
+		<div class="chips" role="group" aria-label={t('discover.topServicesRow.services')} use:edgeFade>
 			{#each chips as c (c.service)}
 				<Chip label={c.name} selected={row?.service === c.service} onclick={() => (picked = c.service)} />
 			{/each}
@@ -159,6 +161,8 @@
 	@media (pointer: coarse) { .chips { min-height: 48px; } }
 	.chips::-webkit-scrollbar { display: none; }
 	.chips :global(.ui-chip) { flex: none; }
+	.chips :global(.ui-chip .main) { min-height: 36px; }
+	@media (pointer: coarse) { .chips :global(.ui-chip .main) { min-height: 44px; } }
 	/* The column is the poster (68%, as wide as other rows' posters) plus the number (32%); the poster overlaps the number's right edge a little. */
 	.ranked { position: relative; container-type: inline-size; }
 	.rank { position: absolute; inset-inline-start: 0; top: 0; width: 37%; height: 102cqw; display: flex; align-items: flex-end; justify-content: flex-end; font-size: 50cqw; font-weight: 800; line-height: 0.76; letter-spacing: -0.06em; color: var(--bg, #000); -webkit-text-stroke: 3px var(--text-muted); paint-order: stroke; user-select: none; z-index: 0; }

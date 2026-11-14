@@ -1,5 +1,7 @@
 <!-- Toolbar of the scanned folders: search, the status filter and the Library's own view switch. -->
 <script lang="ts">
+	import { edgeFade } from '#lib/ui/edge-fade.ts';
+	import '#lib/ui/edge-fade.css';
 	import { tick, type Snippet } from 'svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
@@ -52,7 +54,7 @@
 </script>
 
 {#snippet chips()}
-	<div class="chips" class:many={filters.length > 3} role="group" aria-label={t('mediafiles.sortFilter.filter')} data-testid="import-filter">
+	<div class="chips" class:many={filters.length > 3} role="group" aria-label={t('mediafiles.sortFilter.filter')} data-testid="import-filter" use:edgeFade>
 		{#each filters as c (c.value)}
 			<button type="button" aria-pressed={filter === c.value} onclick={() => (filter = c.value)}>{c.label} <span class="n">{c.n.toLocaleString(appLocale())}</span></button>
 		{/each}
