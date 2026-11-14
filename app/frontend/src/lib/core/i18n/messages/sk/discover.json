@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} min",
 	"discover.titleLibrary.missing": "Chýba",
 	"discover.titleLibrary.notOutYet": "Zatiaľ nevyšlo",
+	"discover.titleLibrary.waitingAfterAir": "Čaká sa po odvysielaní",
 	"discover.titleLibrary.searchingEpisode": "Hľadá sa epizóda {episode}",
 	"discover.titleLibrary.versions": "Verzie",
 	"discover.titleLibrary.file": "Súbor",

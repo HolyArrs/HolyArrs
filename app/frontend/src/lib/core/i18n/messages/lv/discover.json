@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} min",
 	"discover.titleLibrary.missing": "Trūkst",
 	"discover.titleLibrary.notOutYet": "Vēl nav iznācis",
+	"discover.titleLibrary.waitingAfterAir": "Gaida pēc pārraides",
 	"discover.titleLibrary.searchingEpisode": "Meklē {episode}. epizodi",
 	"discover.titleLibrary.versions": "Versijas",
 	"discover.titleLibrary.file": "Fails",

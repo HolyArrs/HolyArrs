@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} min.",
 	"discover.titleLibrary.missing": "Trūksta",
 	"discover.titleLibrary.notOutYet": "Dar neišėjo",
+	"discover.titleLibrary.waitingAfterAir": "Laukiama po transliacijos",
 	"discover.titleLibrary.searchingEpisode": "Ieškoma {episode} epizodo",
 	"discover.titleLibrary.versions": "Versijos",
 	"discover.titleLibrary.file": "Failas",

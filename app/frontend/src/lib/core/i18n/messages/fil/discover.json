@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} min",
 	"discover.titleLibrary.missing": "Nawawala",
 	"discover.titleLibrary.notOutYet": "Hindi pa lumalabas",
+	"discover.titleLibrary.waitingAfterAir": "Naghihintay pagkatapos ng ere",
 	"discover.titleLibrary.searchingEpisode": "Naghahanap ng episode {episode}",
 	"discover.titleLibrary.versions": "Mga Bersyon",
 	"discover.titleLibrary.file": "File",

@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} perc",
 	"discover.titleLibrary.missing": "Hiányzik",
 	"discover.titleLibrary.notOutYet": "Még nem jelent meg",
+	"discover.titleLibrary.waitingAfterAir": "Vár az adás után",
 	"discover.titleLibrary.searchingEpisode": "A(z) {episode}. epizód keresése",
 	"discover.titleLibrary.versions": "Változatok",
 	"discover.titleLibrary.file": "Fájl",

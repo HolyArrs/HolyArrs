@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} मि",
 	"discover.titleLibrary.missing": "बाकी",
 	"discover.titleLibrary.notOutYet": "अभी रिलीज़ नहीं हुआ",
+	"discover.titleLibrary.waitingAfterAir": "प्रसारण के बाद प्रतीक्षा",
 	"discover.titleLibrary.searchingEpisode": "एपिसोड {episode} खोजा जा रहा है",
 	"discover.titleLibrary.versions": "वर्ज़न",
 	"discover.titleLibrary.file": "फ़ाइल",

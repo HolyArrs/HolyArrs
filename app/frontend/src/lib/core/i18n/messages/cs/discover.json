@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} min",
 	"discover.titleLibrary.missing": "Chybí",
 	"discover.titleLibrary.notOutYet": "Zatím nevyšlo",
+	"discover.titleLibrary.waitingAfterAir": "Čeká se po vysílání",
 	"discover.titleLibrary.searchingEpisode": "Hledá se epizoda {episode}",
 	"discover.titleLibrary.versions": "Verze",
 	"discover.titleLibrary.file": "Soubor",
