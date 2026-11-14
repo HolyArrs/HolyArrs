@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.4： 可以移除任何請求，朋友的 Plex 待看清單也能再次讀取了。**資料夾的品質現在會顯示在它的卡片上，Settings 也統一了。[查看新功能](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4：可以移除任何請求，朋友的 Plex 待看清單也能再次讀取了。**資料夾的品質現在會顯示在它的卡片上，Settings 也統一了。[查看新功能](https://holyarrs.com/whats-new/)
 
 > 你的 HolyArrs 裡每一張海報、每一支預告片和每一個評分，都來自我自己架設、自己付費的伺服器，所以它能對所有人保持免費。如果 HolyArrs 讓你的電影夜好過了一點，贊助能讓我們大家的燈一直亮著 💛
 >

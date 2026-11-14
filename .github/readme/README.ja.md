@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.4： どのリクエストも削除でき、友だちの Plex ウォッチリストも再び読み込まれます。**フォルダの画質がカードに表示されるようになり、Settings の表記と動作も統一しました。[新機能を見る](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4：どのリクエストも削除でき、友だちの Plex ウォッチリストも再び読み込まれます。**フォルダの画質がカードに表示されるようになり、Settings の表記と動作も統一しました。[新機能を見る](https://holyarrs.com/whats-new/)
 
 > HolyArrs のポスター、予告編、スコアはすべて、私が自分で運営し費用を払っているサーバーから届いています。だから誰でも無料で使えます。HolyArrs で映画の夜が少しでも楽しくなったなら、スポンサーになってみんなの明かりを灯し続けてください 💛
 >

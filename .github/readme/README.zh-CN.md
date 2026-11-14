@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.4： 可以删除任何请求，好友的 Plex 观看列表也能重新读取了。**文件夹的质量现在显示在它的卡片上，Settings 也统一了。[查看新功能](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4：可以删除任何请求，好友的 Plex 观看列表也能重新读取了。**文件夹的质量现在显示在它的卡片上，Settings 也统一了。[查看新功能](https://holyarrs.com/whats-new/)
 
 > 你的 HolyArrs 里每一张海报、每一段预告片和每一个评分，都来自我自己运营、自己付费的服务器，所以它对所有人都免费。如果 HolyArrs 让你的电影之夜更好了一点，赞助一下，就能为我们所有人留着这盏灯 💛
 >
