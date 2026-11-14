@@ -18,7 +18,7 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="लाइसेंस: AGPL-3.0"></a>
 </p>
 
-<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="HolyArrs/HolyArrs on Trendshift" width="250" height="55"></a></p>
 
 > [!NOTE]
 > **HolyArrs 1.1.4: कोई भी रिक्वेस्ट हटाएँ, और दोस्तों की Plex वॉचलिस्ट फिर से पढ़ी जाती हैं।** फ़ोल्डर की क्वालिटी अब उसके कार्ड पर दिखती है, और Settings को एक जैसा किया गया है। [नया क्या है](https://holyarrs.com/whats-new/)
