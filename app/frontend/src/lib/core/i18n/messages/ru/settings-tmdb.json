@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Необязательно, для оценок.",
 	"settings.tmdb.keyFanart": "Ключ fanart.tv",
 	"settings.tmdb.keyFanartHint": "Необязательно, для логотипов и картинок.",
-	"settings.tmdb.testKey": "Проверить ключ",
+	"settings.tmdb.testKey": "Проверить",
 	"settings.tmdb.testWorks": "Ключ работает",
 	"settings.tmdb.testRefused": "Ключ отклонён",
 	"settings.tmdb.testPinRefused": "Ключ или PIN отклонён",

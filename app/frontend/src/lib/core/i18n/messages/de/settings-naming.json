@@ -81,5 +81,5 @@
 	"settings.naming.holding": "Ordner für Zurückgehaltenes",
 	"settings.naming.clearOld": "Alte zurückgehaltene Dateien leeren",
 	"settings.naming.clearOldHint": "Läuft jeden Tag von selbst",
-	"settings.naming.clearNow": "Jetzt leeren"
+	"settings.naming.clearNow": "Leeren"
 }

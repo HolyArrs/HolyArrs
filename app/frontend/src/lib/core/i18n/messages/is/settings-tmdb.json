@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Valfrjálst, fyrir einkunnir.",
 	"settings.tmdb.keyFanart": "fanart.tv-lykill",
 	"settings.tmdb.keyFanartHint": "Valfrjálst, fyrir merki og myndir.",
-	"settings.tmdb.testKey": "Prófa lykil",
+	"settings.tmdb.testKey": "Prófa",
 	"settings.tmdb.testWorks": "Lykillinn virkar",
 	"settings.tmdb.testRefused": "Lyklinum var hafnað",
 	"settings.tmdb.testPinRefused": "Lyklinum eða PIN var hafnað",

@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Không bắt buộc, cho điểm đánh giá.",
 	"settings.tmdb.keyFanart": "Khóa fanart.tv",
 	"settings.tmdb.keyFanartHint": "Không bắt buộc, cho logo và hình ảnh.",
-	"settings.tmdb.testKey": "Thử khóa",
+	"settings.tmdb.testKey": "Kiểm tra",
 	"settings.tmdb.testWorks": "Khóa hoạt động",
 	"settings.tmdb.testRefused": "Khóa bị từ chối",
 	"settings.tmdb.testPinRefused": "Khóa hoặc PIN bị từ chối",

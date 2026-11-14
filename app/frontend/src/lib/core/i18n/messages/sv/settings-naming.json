@@ -81,5 +81,5 @@
 	"settings.naming.holding": "Väntemapp",
 	"settings.naming.clearOld": "Rensa gamla undanhållna filer",
 	"settings.naming.clearOldHint": "Körs av sig själv varje dag",
-	"settings.naming.clearNow": "Rensa nu"
+	"settings.naming.clearNow": "Rensa"
 }

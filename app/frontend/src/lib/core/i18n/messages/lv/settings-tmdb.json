@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Neobligāti, vērtējumiem.",
 	"settings.tmdb.keyFanart": "fanart.tv atslēga",
 	"settings.tmdb.keyFanartHint": "Neobligāti, logotipiem un attēliem.",
-	"settings.tmdb.testKey": "Pārbaudīt atslēgu",
+	"settings.tmdb.testKey": "Pārbaudīt",
 	"settings.tmdb.testWorks": "Atslēga darbojas",
 	"settings.tmdb.testRefused": "Atslēga noraidīta",
 	"settings.tmdb.testPinRefused": "Atslēga vai PIN noraidīts",

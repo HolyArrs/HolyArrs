@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "選用，用於評分。",
 	"settings.tmdb.keyFanart": "fanart.tv 金鑰",
 	"settings.tmdb.keyFanartHint": "選用，用於標誌與圖片。",
-	"settings.tmdb.testKey": "測試金鑰",
+	"settings.tmdb.testKey": "測試",
 	"settings.tmdb.testWorks": "金鑰可用",
 	"settings.tmdb.testRefused": "金鑰被拒絕",
 	"settings.tmdb.testPinRefused": "金鑰或 PIN 被拒絕",

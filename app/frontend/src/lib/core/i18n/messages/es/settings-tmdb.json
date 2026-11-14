@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Opcional, para valoraciones.",
 	"settings.tmdb.keyFanart": "Clave de fanart.tv",
 	"settings.tmdb.keyFanartHint": "Opcional, para logos e imágenes.",
-	"settings.tmdb.testKey": "Probar clave",
+	"settings.tmdb.testKey": "Probar",
 	"settings.tmdb.testWorks": "La clave funciona",
 	"settings.tmdb.testRefused": "Clave rechazada",
 	"settings.tmdb.testPinRefused": "Clave o PIN rechazados",

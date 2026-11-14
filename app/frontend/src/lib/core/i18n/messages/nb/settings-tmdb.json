@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Valgfritt, for vurderinger.",
 	"settings.tmdb.keyFanart": "fanart.tv-nøkkel",
 	"settings.tmdb.keyFanartHint": "Valgfritt, for logoer og bilder.",
-	"settings.tmdb.testKey": "Test nøkkel",
+	"settings.tmdb.testKey": "Test",
 	"settings.tmdb.testWorks": "Nøkkelen fungerer",
 	"settings.tmdb.testRefused": "Nøkkelen ble avvist",
 	"settings.tmdb.testPinRefused": "Nøkkel eller PIN ble avvist",
