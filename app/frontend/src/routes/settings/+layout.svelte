@@ -371,7 +371,9 @@
 	.settings-content :global(:is(.field, .srow):has(textarea)) { align-items: start !important; }
 	.settings-content :global(:is(.field, .srow):has(textarea) > :is(label, .txt)) { padding-top: 10px; }
 	/* Row words, the same sizes as the Library folders rows. */
-	.settings-content :global(section.ui-settings :is(.srow > .txt > .hint, .field > .hint, label.switch .hint, .checkline .hint)) { font: 400 13px/1.35 var(--font-ui) !important; color: var(--text-muted); }
+	.settings-content :global(section.ui-settings :is(.srow > .txt > .hint, .field > .hint, label.switch .hint, .checkline .hint)) { font: 400 12px/1.35 var(--font-ui) !important; color: var(--text-muted); }
+	/* Helper lines written as small muted text are hints too: one 12px size. */
+	.settings-content :global(section.ui-settings .small.muted:not(.lead)) { font-size: 12px; line-height: 1.35; }
 	/* A field row's label lines up with its box, not with box and hint. */
 	.settings-content :global(section.ui-settings :is(.srow, .field):not(.ask > *, .row-fields > *):has(> .ctl :is(input, select), > :is(input, select), > .ctl > .input)) { align-items: start !important; }
 	.settings-content :global(section.ui-settings :is(.srow, .field):not(.ask > *, .row-fields > *):has(> .ctl :is(input, select), > :is(input, select), > .ctl > .input) > :is(.txt, label:first-child)) { padding-top: 10px; }
