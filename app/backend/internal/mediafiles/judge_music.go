@@ -122,11 +122,11 @@ func matchArtist(p releasename.Result, lib []TitleRef) Match {
 			if t.Kind != "artist" {
 				continue
 			}
-			if releasename.CleanName(t.Name) == want {
+			if releasename.SameName(t.Name, want) {
 				return Match{Title: t, Conf: releasename.Sure, Detail: t.Name + " by clean name"}
 			}
 			for _, a := range t.Aliases {
-				if releasename.CleanName(a) == want {
+				if releasename.SameName(a, want) {
 					return Match{Title: t, Conf: releasename.Sure, Detail: fmt.Sprintf("%s by its other name %s", t.Name, a)}
 				}
 			}
@@ -192,7 +192,7 @@ func MatchAlbum(p releasename.Result, artist string, albums []AlbumRef) (*AlbumR
 		}
 		for i := range albums {
 			a := &albums[i]
-			if releasename.CleanName(a.Name) == want {
+			if releasename.SameName(a.Name, want) {
 				cands = append(cands, a)
 			}
 		}

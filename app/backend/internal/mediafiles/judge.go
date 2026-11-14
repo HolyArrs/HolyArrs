@@ -162,12 +162,12 @@ func MatchTitle(p releasename.Result, lib []TitleRef) Match {
 		if (t.Kind == "show") != p.IsShow() || t.Kind == "artist" {
 			continue // an episode name never matches a movie, nor a movie name a show; artists only music names
 		}
-		if releasename.CleanName(t.Name) == name {
+		if releasename.SameName(t.Name, name) {
 			cands = append(cands, t)
 			continue
 		}
 		for _, a := range t.Aliases {
-			if releasename.CleanName(a) == name {
+			if releasename.SameName(a, name) {
 				cands = append(cands, t)
 				break
 			}
