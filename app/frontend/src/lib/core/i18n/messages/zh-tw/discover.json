@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} 分鐘",
 	"discover.titleLibrary.missing": "缺少",
 	"discover.titleLibrary.notOutYet": "尚未上線",
+	"discover.titleLibrary.waitingAfterAir": "播出後等待中",
 	"discover.titleLibrary.searchingEpisode": "正在搜尋第 {episode} 集",
 	"discover.titleLibrary.versions": "版本",
 	"discover.titleLibrary.file": "檔案",

@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} мин",
 	"discover.titleLibrary.missing": "Недостаје",
 	"discover.titleLibrary.notOutYet": "Још није изашло",
+	"discover.titleLibrary.waitingAfterAir": "Čeka se posle emitovanja",
 	"discover.titleLibrary.searchingEpisode": "Тражим епизоду {episode}",
 	"discover.titleLibrary.versions": "Верзије",
 	"discover.titleLibrary.file": "Датотека",

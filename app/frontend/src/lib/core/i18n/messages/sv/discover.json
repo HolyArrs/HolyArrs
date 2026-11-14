@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} min",
 	"discover.titleLibrary.missing": "Saknas",
 	"discover.titleLibrary.notOutYet": "Inte utkommen ännu",
+	"discover.titleLibrary.waitingAfterAir": "Väntar efter sändningen",
 	"discover.titleLibrary.searchingEpisode": "Söker efter avsnitt {episode}",
 	"discover.titleLibrary.versions": "Versioner",
 	"discover.titleLibrary.file": "Fil",

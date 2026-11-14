@@ -160,3 +160,31 @@ func TestNoShowsFallback(t *testing.T) {
 		t.Fatalf("search_show step: %v", err)
 	}
 }
+
+// An episode known only by its day opens at the end of that day in UTC, and
+// one with an exact time opens then; a wait pushes both later. The shows
+// supervisor pass (every minute) is what moves the Slot, not a refresh.
+func TestEpisodeGateFromDayOnlyAndTimed(t *testing.T) {
+	dayEnd := time.Date(2026, 11, 13, 0, 0, 0, 0, time.UTC) // air day Nov 12, no time
+	timed := time.Date(2026, 11, 13, 2, 0, 0, 0, time.UTC)  // aired 9pm in New York on Nov 12
+	cases := []struct {
+		name string
+		air  time.Time
+		wait time.Duration
+		now  time.Time
+		open bool
+	}{
+		{"day only, 7 minutes before its end (10:53 in Sydney)", dayEnd, 0, time.Date(2026, 11, 12, 23, 53, 0, 0, time.UTC), false},
+		{"day only, once its end has passed", dayEnd, 0, time.Date(2026, 11, 13, 0, 1, 0, 0, time.UTC), true},
+		{"timed, before the air time", timed, 0, time.Date(2026, 11, 13, 1, 59, 0, 0, time.UTC), false},
+		{"timed, after the air time", timed, 0, time.Date(2026, 11, 13, 2, 0, 0, 0, time.UTC), true},
+		{"timed, held by the wait", timed, 6 * time.Hour, time.Date(2026, 11, 13, 7, 0, 0, 0, time.UTC), false},
+		{"timed, wait over", timed, 6 * time.Hour, time.Date(2026, 11, 13, 8, 0, 0, 0, time.UTC), true},
+	}
+	for _, c := range cases {
+		air := c.air
+		if open, why := EpisodeGate(&air, c.wait, c.now); open != c.open {
+			t.Errorf("%s: open %v (%s)", c.name, open, why)
+		}
+	}
+}

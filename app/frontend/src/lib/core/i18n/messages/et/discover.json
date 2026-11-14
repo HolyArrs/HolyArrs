@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} min",
 	"discover.titleLibrary.missing": "Puudub",
 	"discover.titleLibrary.notOutYet": "Pole veel ilmunud",
+	"discover.titleLibrary.waitingAfterAir": "Ootab pärast eetrisseminekut",
 	"discover.titleLibrary.searchingEpisode": "Otsin episoodi {episode}",
 	"discover.titleLibrary.versions": "Versioonid",
 	"discover.titleLibrary.file": "Fail",

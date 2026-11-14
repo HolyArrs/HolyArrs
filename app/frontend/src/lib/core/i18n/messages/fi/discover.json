@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} min",
 	"discover.titleLibrary.missing": "Puuttuu",
 	"discover.titleLibrary.notOutYet": "Ei vielä ilmestynyt",
+	"discover.titleLibrary.waitingAfterAir": "Odottaa lähetyksen jälkeen",
 	"discover.titleLibrary.searchingEpisode": "Etsitään jaksoa {episode}",
 	"discover.titleLibrary.versions": "Versiot",
 	"discover.titleLibrary.file": "Tiedosto",

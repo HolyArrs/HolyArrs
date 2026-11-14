@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} د",
 	"discover.titleLibrary.missing": "ناقصة",
 	"discover.titleLibrary.notOutYet": "لم تصدر بعد",
+	"discover.titleLibrary.waitingAfterAir": "في الانتظار بعد موعد العرض",
 	"discover.titleLibrary.searchingEpisode": "جارٍ البحث عن الحلقة {episode}",
 	"discover.titleLibrary.versions": "النسخ",
 	"discover.titleLibrary.file": "الملف",

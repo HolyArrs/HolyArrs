@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} min",
 	"discover.titleLibrary.missing": "Falta",
 	"discover.titleLibrary.notOutYet": "Encara no ha sortit",
+	"discover.titleLibrary.waitingAfterAir": "Esperant després de l'emissió",
 	"discover.titleLibrary.searchingEpisode": "Cercant l'episodi {episode}",
 	"discover.titleLibrary.versions": "Versions",
 	"discover.titleLibrary.file": "Fitxer",

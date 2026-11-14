@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} min",
 	"discover.titleLibrary.missing": "Manquant",
 	"discover.titleLibrary.notOutYet": "Pas encore sorti",
+	"discover.titleLibrary.waitingAfterAir": "En attente après la diffusion",
 	"discover.titleLibrary.searchingEpisode": "Recherche de l'épisode {episode}",
 	"discover.titleLibrary.versions": "Versions",
 	"discover.titleLibrary.file": "Fichier",
