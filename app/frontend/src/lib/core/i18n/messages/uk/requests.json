@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Стандартний",
 	"requests.window.askedFor": "{name} запросив(ла) {quality}.",
 	"requests.window.addsOnly": "Додає лише копію {quality}.",
-	"requests.board.qualityTitle": "Запрошено в {quality}"
+	"requests.board.qualityTitle": "Запрошено в {quality}",
+	"requests.page.removeRequest": "Видалити запит",
+	"requests.page.removeTitle": "Видалити цей запит?",
+	"requests.page.removeDesc": "Назва та її файли залишаться.",
+	"requests.window.removeName": "Видалити запит на {name}",
+	"requests.board.clearFailed": "Очистити невдалі",
+	"requests.board.clearFinished": "Очистити завершені",
+	"requests.board.clearFailedTitle": "Видалити невдалі запити ({n})?",
+	"requests.board.clearFailedDesc": "Їх схвалили, але нічого не додалося. Назви та їхні файли залишаться.",
+	"requests.board.clearFinishedTitle": "Видалити завершені запити ({n})?",
+	"requests.board.clearFinishedDesc": "Вони готові або відхилені. Назви та їхні файли залишаться.",
+	"requests.board.clearConfirm": "Видалити всі"
 }

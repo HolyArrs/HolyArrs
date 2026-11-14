@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Standart",
 	"requests.window.askedFor": "{name} {quality} istedi.",
 	"requests.window.addsOnly": "Yalnızca {quality} kopyasını ekler.",
-	"requests.board.qualityTitle": "{quality} olarak istendi"
+	"requests.board.qualityTitle": "{quality} olarak istendi",
+	"requests.page.removeRequest": "İsteği kaldır",
+	"requests.page.removeTitle": "Bu istek kaldırılsın mı?",
+	"requests.page.removeDesc": "Başlık ve dosyaları kalır.",
+	"requests.window.removeName": "{name} isteğini kaldır",
+	"requests.board.clearFailed": "Başarısızları temizle",
+	"requests.board.clearFinished": "Bitenleri temizle",
+	"requests.board.clearFailedTitle": "Başarısız istekler ({n}) kaldırılsın mı?",
+	"requests.board.clearFailedDesc": "Onaylandılar ama hiçbir şey eklenmedi. Başlıklar ve dosyaları kalır.",
+	"requests.board.clearFinishedTitle": "Biten istekler ({n}) kaldırılsın mı?",
+	"requests.board.clearFinishedDesc": "Hazırlar ya da reddedildiler. Başlıklar ve dosyaları kalır.",
+	"requests.board.clearConfirm": "Hepsini kaldır"
 }

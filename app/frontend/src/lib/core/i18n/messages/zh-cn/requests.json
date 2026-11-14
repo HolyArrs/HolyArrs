@@ -565,5 +565,16 @@
 	"requests.quality.standard": "标准",
 	"requests.window.askedFor": "{name} 请求了 {quality}。",
 	"requests.window.addsOnly": "只添加 {quality} 副本。",
-	"requests.board.qualityTitle": "请求的画质：{quality}"
+	"requests.board.qualityTitle": "请求的画质：{quality}",
+	"requests.page.removeRequest": "移除请求",
+	"requests.page.removeTitle": "移除此请求？",
+	"requests.page.removeDesc": "片名及其文件会保留。",
+	"requests.window.removeName": "移除 {name} 的请求",
+	"requests.board.clearFailed": "清除失败的",
+	"requests.board.clearFinished": "清除已完成的",
+	"requests.board.clearFailedTitle": "移除失败的请求（{n}）？",
+	"requests.board.clearFailedDesc": "这些请求已获批准，但没有添加任何内容。片名及其文件会保留。",
+	"requests.board.clearFinishedTitle": "移除已完成的请求（{n}）？",
+	"requests.board.clearFinishedDesc": "这些请求已就绪或被拒绝。片名及其文件会保留。",
+	"requests.board.clearConfirm": "全部移除"
 }

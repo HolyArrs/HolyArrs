@@ -41,6 +41,7 @@ func (h *AskHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/asks/{id}", h.getAsk)
 	m.HandleFunc("GET /api/v1/asks/{id}/parts", h.askParts)
 	m.HandleFunc("DELETE /api/v1/asks/{id}", h.withdrawAsk)
+	m.HandleFunc("POST /api/v1/asks/remove", h.removeAsks)
 	m.HandleFunc("POST /api/v1/asks/{id}/approve", h.approveAsk)
 	m.HandleFunc("POST /api/v1/asks/{id}/turn-down", h.turnDownAsk)
 	m.HandleFunc("GET /api/v1/settings/asks", h.getAskSettings)
@@ -352,11 +353,39 @@ func (h *AskHandlers) withdrawAsk(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// People who approve can remove an ask in any state; a waiting ask is
+	// taken back as always (others who joined keep it).
+	if v.State != domain.AskAsked && mayApprove(r) {
+		if err := h.Svc.Remove(r.Context(), v.ID, h.Person(r)); err != nil {
+			h.askError(w, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	if err := h.Svc.Withdraw(r.Context(), v.ID, h.Person(r), mayApprove(r)); err != nil {
 		h.askError(w, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// removeAsks removes several asks at once, for people who approve: the
+// ids sent, or every "failed" or "finished" one.
+func (h *AskHandlers) removeAsks(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		IDs    []int64 `json:"ids"`
+		Filter string  `json:"filter"`
+	}
+	if !webserver.Decode(w, r, &in, `send {"ids":[1,2]} or {"filter":"failed"} or {"filter":"finished"}`) {
+		return
+	}
+	n, err := h.Svc.RemoveMany(r.Context(), h.Person(r), in.IDs, in.Filter)
+	if err != nil {
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"removed": n})
 }
 
 // askParts answers an ask's stored lists (season episodes, album songs),

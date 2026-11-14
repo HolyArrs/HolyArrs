@@ -323,8 +323,11 @@
 					{#if picked.kind !== 'movie' && !choosing}
 						<button type="button" class="act glass peek" data-opens-sheet onclick={() => void choose()}><Icon name="chevronUp" size={18} />{listName}</button>
 					{/if}
-					{#if failed}
-						<div class="acts"><button type="button" class="act glass" aria-label={t('requests.window.declineName', { name: picked.name })} data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}><Icon name="x" size={20} /><span class="bl">{t('requests.window.decline')}</span></button></div>
+					{#if failed || ctx.approver}
+						<div class="acts">
+							{#if failed}<button type="button" class="act glass" aria-label={t('requests.window.declineName', { name: picked.name })} data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}><Icon name="x" size={20} /><span class="bl">{t('requests.window.decline')}</span></button>{/if}
+							{#if ctx.approver}<button type="button" class="act glass" aria-label={t('requests.window.removeName', { name: picked.name })} data-testid="ask-remove" onclick={() => ctx.removeAsk(picked)}><Icon name="trash" size={20} /><span class="bl">{t('requests.page.removeRequest')}</span></button>{/if}
+						</div>
 					{/if}
 				</section>
 			{:else}

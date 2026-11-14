@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Standardowe",
 	"requests.window.askedFor": "{name} prosi o {quality}.",
 	"requests.window.addsOnly": "Dodaje tylko kopię {quality}.",
-	"requests.board.qualityTitle": "Prośba o {quality}"
+	"requests.board.qualityTitle": "Prośba o {quality}",
+	"requests.page.removeRequest": "Usuń prośbę",
+	"requests.page.removeTitle": "Usunąć tę prośbę?",
+	"requests.page.removeDesc": "Tytuł i jego pliki zostają.",
+	"requests.window.removeName": "Usuń prośbę o {name}",
+	"requests.board.clearFailed": "Wyczyść nieudane",
+	"requests.board.clearFinished": "Wyczyść zakończone",
+	"requests.board.clearFailedTitle": "Usunąć nieudane prośby ({n})?",
+	"requests.board.clearFailedDesc": "Zostały zatwierdzone, ale nic nie dodano. Tytuły i ich pliki zostają.",
+	"requests.board.clearFinishedTitle": "Usunąć zakończone prośby ({n})?",
+	"requests.board.clearFinishedDesc": "Są gotowe lub odrzucone. Tytuły i ich pliki zostają.",
+	"requests.board.clearConfirm": "Usuń wszystkie"
 }

@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Standar",
 	"requests.window.askedFor": "{name} meminta {quality}.",
 	"requests.window.addsOnly": "Hanya menambahkan salinan {quality}.",
-	"requests.board.qualityTitle": "Diminta dalam {quality}"
+	"requests.board.qualityTitle": "Diminta dalam {quality}",
+	"requests.page.removeRequest": "Hapus permintaan",
+	"requests.page.removeTitle": "Hapus permintaan ini?",
+	"requests.page.removeDesc": "Judul dan file-nya tetap ada.",
+	"requests.window.removeName": "Hapus permintaan untuk {name}",
+	"requests.board.clearFailed": "Bersihkan yang gagal",
+	"requests.board.clearFinished": "Bersihkan yang selesai",
+	"requests.board.clearFailedTitle": "Hapus permintaan yang gagal ({n})?",
+	"requests.board.clearFailedDesc": "Permintaan ini disetujui, tetapi tidak ada yang ditambahkan. Judul dan file-nya tetap ada.",
+	"requests.board.clearFinishedTitle": "Hapus permintaan yang selesai ({n})?",
+	"requests.board.clearFinishedDesc": "Permintaan ini sudah siap atau ditolak. Judul dan file-nya tetap ada.",
+	"requests.board.clearConfirm": "Hapus semua"
 }

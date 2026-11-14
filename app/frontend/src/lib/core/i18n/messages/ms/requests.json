@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Piawai",
 	"requests.window.askedFor": "{name} meminta {quality}.",
 	"requests.window.addsOnly": "Hanya menambah salinan {quality}.",
-	"requests.board.qualityTitle": "Diminta dalam {quality}"
+	"requests.board.qualityTitle": "Diminta dalam {quality}",
+	"requests.page.removeRequest": "Alih keluar permintaan",
+	"requests.page.removeTitle": "Alih keluar permintaan ini?",
+	"requests.page.removeDesc": "Tajuk dan failnya kekal.",
+	"requests.window.removeName": "Alih keluar permintaan untuk {name}",
+	"requests.board.clearFailed": "Kosongkan yang gagal",
+	"requests.board.clearFinished": "Kosongkan yang selesai",
+	"requests.board.clearFailedTitle": "Alih keluar permintaan yang gagal ({n})?",
+	"requests.board.clearFailedDesc": "Permintaan ini diluluskan, tetapi tiada apa-apa ditambah. Tajuk dan failnya kekal.",
+	"requests.board.clearFinishedTitle": "Alih keluar permintaan yang selesai ({n})?",
+	"requests.board.clearFinishedDesc": "Permintaan ini sudah siap atau ditolak. Tajuk dan failnya kekal.",
+	"requests.board.clearConfirm": "Alih keluar semua"
 }

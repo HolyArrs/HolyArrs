@@ -8989,9 +8989,67 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/asks/remove": {
+      "post": {
+        "description": "For people who approve. Send ids, or a filter: \"failed\" (approved, nothing added) or \"finished\" (ready or turned down). Only the asks go; titles, files, downloads and follows stay. Answers how many were removed.",
+        "operationId": "removeAsks",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "filter": {
+                    "enum": [
+                      "failed",
+                      "finished"
+                    ],
+                    "type": "string"
+                  },
+                  "ids": {
+                    "items": {
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "removed": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "How many asks were removed"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Only people who approve"
+          }
+        },
+        "summary": "Remove several asks",
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "approve",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/asks/{id}": {
       "delete": {
-        "description": "Only while it waits. When others asked too, only the caller leaves it. People who approve may take back any waiting ask.",
+        "description": "While it waits, as the person who asked (others who asked too keep it). People who approve may remove an ask in any state: only the ask goes, never the title, its files or downloads.",
         "operationId": "withdrawAsk",
         "parameters": [
           {

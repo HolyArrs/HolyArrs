@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Standard",
 	"requests.window.askedFor": "{name} anmodede om {quality}.",
 	"requests.window.addsOnly": "Tilføjer kun {quality}-kopien.",
-	"requests.board.qualityTitle": "Anmodet om {quality}"
+	"requests.board.qualityTitle": "Anmodet om {quality}",
+	"requests.page.removeRequest": "Fjern anmodning",
+	"requests.page.removeTitle": "Fjern denne anmodning?",
+	"requests.page.removeDesc": "Titlen og dens filer bliver.",
+	"requests.window.removeName": "Fjern anmodningen om {name}",
+	"requests.board.clearFailed": "Ryd mislykkede",
+	"requests.board.clearFinished": "Ryd afsluttede",
+	"requests.board.clearFailedTitle": "Fjern de mislykkede anmodninger ({n})?",
+	"requests.board.clearFailedDesc": "De blev godkendt, men intet blev tilføjet. Titlerne og deres filer bliver.",
+	"requests.board.clearFinishedTitle": "Fjern de afsluttede anmodninger ({n})?",
+	"requests.board.clearFinishedDesc": "De er klar eller afvist. Titlerne og deres filer bliver.",
+	"requests.board.clearConfirm": "Fjern alle"
 }

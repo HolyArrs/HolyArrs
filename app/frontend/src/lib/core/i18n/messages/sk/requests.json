@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Štandardné",
 	"requests.window.askedFor": "{name} požiadal(a) o {quality}.",
 	"requests.window.addsOnly": "Pridá len kópiu {quality}.",
-	"requests.board.qualityTitle": "Vyžiadané v {quality}"
+	"requests.board.qualityTitle": "Vyžiadané v {quality}",
+	"requests.page.removeRequest": "Odstrániť žiadosť",
+	"requests.page.removeTitle": "Odstrániť túto žiadosť?",
+	"requests.page.removeDesc": "Titul a jeho súbory zostanú.",
+	"requests.window.removeName": "Odstrániť žiadosť o {name}",
+	"requests.board.clearFailed": "Vyčistiť neúspešné",
+	"requests.board.clearFinished": "Vyčistiť dokončené",
+	"requests.board.clearFailedTitle": "Odstrániť neúspešné žiadosti ({n})?",
+	"requests.board.clearFailedDesc": "Boli schválené, ale nič sa nepridalo. Tituly a ich súbory zostanú.",
+	"requests.board.clearFinishedTitle": "Odstrániť dokončené žiadosti ({n})?",
+	"requests.board.clearFinishedDesc": "Sú hotové alebo zamietnuté. Tituly a ich súbory zostanú.",
+	"requests.board.clearConfirm": "Odstrániť všetko"
 }

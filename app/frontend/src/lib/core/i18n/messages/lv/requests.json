@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Standarta",
 	"requests.window.askedFor": "{name} pieprasīja {quality}.",
 	"requests.window.addsOnly": "Pievieno tikai {quality} kopiju.",
-	"requests.board.qualityTitle": "Pieprasīts: {quality}"
+	"requests.board.qualityTitle": "Pieprasīts: {quality}",
+	"requests.page.removeRequest": "Noņemt pieprasījumu",
+	"requests.page.removeTitle": "Noņemt šo pieprasījumu?",
+	"requests.page.removeDesc": "Nosaukums un tā faili paliek.",
+	"requests.window.removeName": "Noņemt pieprasījumu: {name}",
+	"requests.board.clearFailed": "Notīrīt neizdevušos",
+	"requests.board.clearFinished": "Notīrīt pabeigtos",
+	"requests.board.clearFailedTitle": "Noņemt neizdevušos pieprasījumus ({n})?",
+	"requests.board.clearFailedDesc": "Tie tika apstiprināti, bet nekas netika pievienots. Nosaukumi un to faili paliek.",
+	"requests.board.clearFinishedTitle": "Noņemt pabeigtos pieprasījumus ({n})?",
+	"requests.board.clearFinishedDesc": "Tie ir gatavi vai noraidīti. Nosaukumi un to faili paliek.",
+	"requests.board.clearConfirm": "Noņemt visus"
 }
