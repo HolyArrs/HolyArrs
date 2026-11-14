@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Standardne",
 	"requests.window.askedFor": "{name} taotles: {quality}.",
 	"requests.window.addsOnly": "Lisab ainult koopia {quality}.",
-	"requests.board.qualityTitle": "Taotletud: {quality}"
+	"requests.board.qualityTitle": "Taotletud: {quality}",
+	"requests.page.removeRequest": "Eemalda taotlus",
+	"requests.page.removeTitle": "Kas eemaldada see taotlus?",
+	"requests.page.removeDesc": "Pealkiri ja selle failid jäävad alles.",
+	"requests.window.removeName": "Eemalda taotlus: {name}",
+	"requests.board.clearFailed": "Tühjenda ebaõnnestunud",
+	"requests.board.clearFinished": "Tühjenda lõpetatud",
+	"requests.board.clearFailedTitle": "Kas eemaldada ebaõnnestunud taotlused ({n})?",
+	"requests.board.clearFailedDesc": "Need kiideti heaks, kuid midagi ei lisatud. Pealkirjad ja nende failid jäävad alles.",
+	"requests.board.clearFinishedTitle": "Kas eemaldada lõpetatud taotlused ({n})?",
+	"requests.board.clearFinishedDesc": "Need on valmis või tagasi lükatud. Pealkirjad ja nende failid jäävad alles.",
+	"requests.board.clearConfirm": "Eemalda kõik"
 }

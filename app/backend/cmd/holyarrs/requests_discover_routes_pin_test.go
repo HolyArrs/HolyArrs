@@ -88,6 +88,7 @@ var rdpRoutes = map[string][2]string{
 	"GET /mcp":                                             {"signed_in", "mcp"},
 	"GET /oauth/authorize":                                 {"public", "admin"},
 	"POST /api/v1/asks":                                    {"ask", "write"},
+	"POST /api/v1/asks/remove":                            {"approve", "write"},
 	"POST /api/v1/asks/{id}/approve":                       {"approve", "write"},
 	"POST /api/v1/asks/{id}/turn-down":                     {"approve", "write"},
 	"POST /api/v1/auth/setup/done":                         {"owner", "admin"},

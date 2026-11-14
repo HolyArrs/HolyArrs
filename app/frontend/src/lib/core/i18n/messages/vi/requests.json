@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Tiêu chuẩn",
 	"requests.window.askedFor": "{name} đã yêu cầu {quality}.",
 	"requests.window.addsOnly": "Chỉ thêm bản {quality}.",
-	"requests.board.qualityTitle": "Yêu cầu bản {quality}"
+	"requests.board.qualityTitle": "Yêu cầu bản {quality}",
+	"requests.page.removeRequest": "Gỡ yêu cầu",
+	"requests.page.removeTitle": "Gỡ yêu cầu này?",
+	"requests.page.removeDesc": "Tiêu đề và tệp của nó vẫn còn.",
+	"requests.window.removeName": "Gỡ yêu cầu cho {name}",
+	"requests.board.clearFailed": "Xóa các yêu cầu thất bại",
+	"requests.board.clearFinished": "Xóa các yêu cầu đã xong",
+	"requests.board.clearFailedTitle": "Gỡ các yêu cầu thất bại ({n})?",
+	"requests.board.clearFailedDesc": "Chúng đã được duyệt nhưng chưa có gì được thêm. Các tiêu đề và tệp của chúng vẫn còn.",
+	"requests.board.clearFinishedTitle": "Gỡ các yêu cầu đã xong ({n})?",
+	"requests.board.clearFinishedDesc": "Chúng đã sẵn sàng hoặc bị từ chối. Các tiêu đề và tệp của chúng vẫn còn.",
+	"requests.board.clearConfirm": "Gỡ tất cả"
 }

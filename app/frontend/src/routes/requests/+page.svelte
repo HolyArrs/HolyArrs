@@ -3,7 +3,7 @@
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { createDeclineDialog } from '#lib/requests/index.ts';
 	import { createAskLive } from '#lib/requests/index.ts';
-	import { createTakeBack } from '#lib/requests/index.ts';
+	import { createTakeBack, createRemoveFlow } from '#lib/requests/index.ts';
 	import { createAskCards } from '#lib/requests/index.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
@@ -257,6 +257,7 @@
 		load,
 	};
 	const takeBackFlow = createTakeBack(takeBackFlowCtx);
+	const removeFlow = createRemoveFlow({ load });
 	let fresh = $state(new Set<number>());
 	let reading = false;
 	$effect(() => {
@@ -335,6 +336,8 @@
 		turnDownWith: (a, note) => act([a], 'turn_down', note),
 		review: () => {},
 		takeBack: (a) => takeBackFlow.askTakeBack(a),
+		removeAsk: (a) => removeFlow.ask({ one: a }),
+		clearAll: (which, n) => removeFlow.ask({ all: which, n }),
 		foldersFor: askChoices.foldersOf,
 		qualityRow: askChoices.qualityRowOf,
 		who: (a) => {
@@ -570,6 +573,16 @@
 		<div class="decide-actions">
 			<Button variant="plain" type="button" onclick={() => (takeBackFlow.takeBackOpen = false)}>{t('requests.page.keepIt')}</Button>
 			<Button variant="destructive" type="button" busy={takingBack.has(takeBackFlow.takeBackAsk.id)} onclick={() => takeBackFlow.takeBackAsk && void takeBackFlow.takeBack(takeBackFlow.takeBackAsk)}>{t('requests.page.takeBack')}</Button>
+		</div>
+	{/if}
+</Sheet>
+
+<Sheet bind:open={removeFlow.open} size="sm" title={removeFlow.what ? ('one' in removeFlow.what ? t('requests.page.removeTitle') : t(removeFlow.what.all === 'failed' ? 'requests.board.clearFailedTitle' : 'requests.board.clearFinishedTitle', { n: removeFlow.what.n })) : t('requests.page.removeRequest')} description={removeFlow.what ? ('one' in removeFlow.what ? t('requests.page.removeDesc') : t(removeFlow.what.all === 'failed' ? 'requests.board.clearFailedDesc' : 'requests.board.clearFinishedDesc')) : ''}>
+	{#if removeFlow.what}
+		{#if removeFlow.error}<p class="form-error" role="alert" data-testid="remove-error">{removeFlow.error}</p>{/if}
+		<div class="decide-actions">
+			<Button variant="plain" type="button" onclick={() => (removeFlow.open = false)}>{t('requests.page.keepIt')}</Button>
+			<Button variant="destructive" type="button" busy={removeFlow.busy} data-testid="remove-confirm" onclick={() => void removeFlow.confirm()}>{'one' in removeFlow.what ? t('requests.page.removeRequest') : t('requests.board.clearConfirm')}</Button>
 		</div>
 	{/if}
 </Sheet>

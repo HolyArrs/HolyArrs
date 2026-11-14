@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Estàndard",
 	"requests.window.askedFor": "{name} ha sol·licitat {quality}.",
 	"requests.window.addsOnly": "Només afegeix la còpia {quality}.",
-	"requests.board.qualityTitle": "Sol·licitat en {quality}"
+	"requests.board.qualityTitle": "Sol·licitat en {quality}",
+	"requests.page.removeRequest": "Elimina la sol·licitud",
+	"requests.page.removeTitle": "Vols eliminar aquesta sol·licitud?",
+	"requests.page.removeDesc": "El títol i els seus fitxers es queden.",
+	"requests.window.removeName": "Elimina la sol·licitud de {name}",
+	"requests.board.clearFailed": "Neteja les fallides",
+	"requests.board.clearFinished": "Neteja les acabades",
+	"requests.board.clearFailedTitle": "Vols eliminar les sol·licituds fallides ({n})?",
+	"requests.board.clearFailedDesc": "Es van aprovar, però no s'hi va afegir res. Els títols i els seus fitxers es queden.",
+	"requests.board.clearFinishedTitle": "Vols eliminar les sol·licituds acabades ({n})?",
+	"requests.board.clearFinishedDesc": "Són llestes o rebutjades. Els títols i els seus fitxers es queden.",
+	"requests.board.clearConfirm": "Elimina-les totes"
 }

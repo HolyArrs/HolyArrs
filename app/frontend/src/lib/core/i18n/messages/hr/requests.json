@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Standardno",
 	"requests.window.askedFor": "{name} je zatražio/la {quality}.",
 	"requests.window.addsOnly": "Dodaje samo kopiju {quality}.",
-	"requests.board.qualityTitle": "Zatraženo u {quality}"
+	"requests.board.qualityTitle": "Zatraženo u {quality}",
+	"requests.page.removeRequest": "Ukloni zahtjev",
+	"requests.page.removeTitle": "Ukloniti ovaj zahtjev?",
+	"requests.page.removeDesc": "Naslov i njegove datoteke ostaju.",
+	"requests.window.removeName": "Ukloni zahtjev za {name}",
+	"requests.board.clearFailed": "Očisti neuspjele",
+	"requests.board.clearFinished": "Očisti završene",
+	"requests.board.clearFailedTitle": "Ukloniti neuspjele zahtjeve ({n})?",
+	"requests.board.clearFailedDesc": "Odobreni su, ali ništa nije dodano. Naslovi i njihove datoteke ostaju.",
+	"requests.board.clearFinishedTitle": "Ukloniti završene zahtjeve ({n})?",
+	"requests.board.clearFinishedDesc": "Spremni su ili odbijeni. Naslovi i njihove datoteke ostaju.",
+	"requests.board.clearConfirm": "Ukloni sve"
 }

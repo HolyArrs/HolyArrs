@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Vakio",
 	"requests.window.askedFor": "{name} pyysi laatua {quality}.",
 	"requests.window.addsOnly": "Lisää vain {quality}-kopion.",
-	"requests.board.qualityTitle": "Pyydetty laatu: {quality}"
+	"requests.board.qualityTitle": "Pyydetty laatu: {quality}",
+	"requests.page.removeRequest": "Poista pyyntö",
+	"requests.page.removeTitle": "Poistetaanko tämä pyyntö?",
+	"requests.page.removeDesc": "Nimike ja sen tiedostot säilyvät.",
+	"requests.window.removeName": "Poista pyyntö: {name}",
+	"requests.board.clearFailed": "Tyhjennä epäonnistuneet",
+	"requests.board.clearFinished": "Tyhjennä valmiit",
+	"requests.board.clearFailedTitle": "Poistetaanko epäonnistuneet pyynnöt ({n})?",
+	"requests.board.clearFailedDesc": "Ne hyväksyttiin, mutta mitään ei lisätty. Nimikkeet ja niiden tiedostot säilyvät.",
+	"requests.board.clearFinishedTitle": "Poistetaanko valmiit pyynnöt ({n})?",
+	"requests.board.clearFinishedDesc": "Ne ovat valmiita tai hylättyjä. Nimikkeet ja niiden tiedostot säilyvät.",
+	"requests.board.clearConfirm": "Poista kaikki"
 }

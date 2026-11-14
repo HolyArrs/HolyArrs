@@ -565,5 +565,16 @@
 	"requests.quality.standard": "標準",
 	"requests.window.askedFor": "{name} が {quality} をリクエストしました。",
 	"requests.window.addsOnly": "{quality} のコピーだけを追加します。",
-	"requests.board.qualityTitle": "{quality} でリクエスト"
+	"requests.board.qualityTitle": "{quality} でリクエスト",
+	"requests.page.removeRequest": "リクエストを削除",
+	"requests.page.removeTitle": "このリクエストを削除しますか？",
+	"requests.page.removeDesc": "作品とそのファイルはそのまま残ります。",
+	"requests.window.removeName": "{name} のリクエストを削除",
+	"requests.board.clearFailed": "失敗を一括削除",
+	"requests.board.clearFinished": "完了を一括削除",
+	"requests.board.clearFailedTitle": "失敗したリクエスト（{n}件）を削除しますか？",
+	"requests.board.clearFailedDesc": "承認されましたが、何も追加されていません。作品とそのファイルはそのまま残ります。",
+	"requests.board.clearFinishedTitle": "完了したリクエスト（{n}件）を削除しますか？",
+	"requests.board.clearFinishedDesc": "準備完了または却下されたものです。作品とそのファイルはそのまま残ります。",
+	"requests.board.clearConfirm": "すべて削除"
 }

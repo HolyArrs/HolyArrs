@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Standard",
 	"requests.window.askedFor": "{name} asked for {quality}.",
 	"requests.window.addsOnly": "Adds only the {quality} copy.",
-	"requests.board.qualityTitle": "Asked for {quality}"
+	"requests.board.qualityTitle": "Asked for {quality}",
+	"requests.page.removeRequest": "Remove request",
+	"requests.page.removeTitle": "Remove this request?",
+	"requests.page.removeDesc": "The title and its files stay.",
+	"requests.window.removeName": "Remove the request for {name}",
+	"requests.board.clearFailed": "Clear failed",
+	"requests.board.clearFinished": "Clear finished",
+	"requests.board.clearFailedTitle": "Remove the failed requests ({n})?",
+	"requests.board.clearFailedDesc": "These were approved, but nothing was added. The titles and their files stay.",
+	"requests.board.clearFinishedTitle": "Remove the finished requests ({n})?",
+	"requests.board.clearFinishedDesc": "These are ready or turned down. The titles and their files stay.",
+	"requests.board.clearConfirm": "Remove all"
 }

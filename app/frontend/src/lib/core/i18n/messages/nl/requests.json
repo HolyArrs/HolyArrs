@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Standaard",
 	"requests.window.askedFor": "{name} vroeg om {quality}.",
 	"requests.window.addsOnly": "Voegt alleen de {quality}-kopie toe.",
-	"requests.board.qualityTitle": "Aangevraagd in {quality}"
+	"requests.board.qualityTitle": "Aangevraagd in {quality}",
+	"requests.page.removeRequest": "Verzoek verwijderen",
+	"requests.page.removeTitle": "Dit verzoek verwijderen?",
+	"requests.page.removeDesc": "De titel en zijn bestanden blijven staan.",
+	"requests.window.removeName": "Verzoek voor {name} verwijderen",
+	"requests.board.clearFailed": "Mislukte wissen",
+	"requests.board.clearFinished": "Afgeronde wissen",
+	"requests.board.clearFailedTitle": "De mislukte verzoeken ({n}) verwijderen?",
+	"requests.board.clearFailedDesc": "Ze zijn goedgekeurd, maar er is niets toegevoegd. De titels en hun bestanden blijven staan.",
+	"requests.board.clearFinishedTitle": "De afgeronde verzoeken ({n}) verwijderen?",
+	"requests.board.clearFinishedDesc": "Ze zijn klaar of afgewezen. De titels en hun bestanden blijven staan.",
+	"requests.board.clearConfirm": "Alles verwijderen"
 }

@@ -81,6 +81,10 @@ export interface BoardCtx {
 	review(a: Ask, trigger?: HTMLElement): void;
 	/** Take back one of my own waiting asks (confirm sheet). */
 	takeBack(a: Ask): void;
+	/** Remove one request in any state (confirm sheet); people who approve only. */
+	removeAsk(a: Ask): void;
+	/** Remove every failed or every finished request (confirm sheet with the count). */
+	clearAll(which: 'failed' | 'finished', n: number): void;
 	foldersFor(a: Ask): LibraryFolder[];
 	/** The Quality row when approving: the lines, other Pick rules and the 4K line, with the asked line. */
 	qualityRow(a: Ask): { pills: QualityPill[]; asked: string };

@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Standardní",
 	"requests.window.askedFor": "{name} požádal(a) o {quality}.",
 	"requests.window.addsOnly": "Přidá jen kopii {quality}.",
-	"requests.board.qualityTitle": "Požádáno o {quality}"
+	"requests.board.qualityTitle": "Požádáno o {quality}",
+	"requests.page.removeRequest": "Odebrat žádost",
+	"requests.page.removeTitle": "Odebrat tuto žádost?",
+	"requests.page.removeDesc": "Titul a jeho soubory zůstanou.",
+	"requests.window.removeName": "Odebrat žádost o {name}",
+	"requests.board.clearFailed": "Vyčistit neúspěšné",
+	"requests.board.clearFinished": "Vyčistit dokončené",
+	"requests.board.clearFailedTitle": "Odebrat neúspěšné žádosti ({n})?",
+	"requests.board.clearFailedDesc": "Byly schváleny, ale nic se nepřidalo. Tituly a jejich soubory zůstanou.",
+	"requests.board.clearFinishedTitle": "Odebrat dokončené žádosti ({n})?",
+	"requests.board.clearFinishedDesc": "Jsou hotové nebo zamítnuté. Tituly a jejich soubory zůstanou.",
+	"requests.board.clearConfirm": "Odebrat vše"
 }

@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Standard",
 	"requests.window.askedFor": "{name} hat {quality} angefragt.",
 	"requests.window.addsOnly": "Fügt nur die {quality}-Kopie hinzu.",
-	"requests.board.qualityTitle": "{quality} angefragt"
+	"requests.board.qualityTitle": "{quality} angefragt",
+	"requests.page.removeRequest": "Anfrage entfernen",
+	"requests.page.removeTitle": "Diese Anfrage entfernen?",
+	"requests.page.removeDesc": "Der Titel und seine Dateien bleiben.",
+	"requests.window.removeName": "Anfrage für {name} entfernen",
+	"requests.board.clearFailed": "Fehlgeschlagene leeren",
+	"requests.board.clearFinished": "Abgeschlossene leeren",
+	"requests.board.clearFailedTitle": "Die fehlgeschlagenen Anfragen entfernen ({n})?",
+	"requests.board.clearFailedDesc": "Sie wurden genehmigt, aber es wurde nichts hinzugefügt. Die Titel und ihre Dateien bleiben.",
+	"requests.board.clearFinishedTitle": "Die abgeschlossenen Anfragen entfernen ({n})?",
+	"requests.board.clearFinishedDesc": "Sie sind fertig oder abgelehnt. Die Titel und ihre Dateien bleiben.",
+	"requests.board.clearConfirm": "Alle entfernen"
 }

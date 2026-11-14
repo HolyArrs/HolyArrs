@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Standard",
 	"requests.window.askedFor": "Humiling si {name} ng {quality}.",
 	"requests.window.addsOnly": "Idinadagdag lang ang {quality} na kopya.",
-	"requests.board.qualityTitle": "Hiniling sa {quality}"
+	"requests.board.qualityTitle": "Hiniling sa {quality}",
+	"requests.page.removeRequest": "Alisin ang kahilingan",
+	"requests.page.removeTitle": "Alisin ang kahilingang ito?",
+	"requests.page.removeDesc": "Mananatili ang titulo at ang mga file nito.",
+	"requests.window.removeName": "Alisin ang kahilingan para sa {name}",
+	"requests.board.clearFailed": "Linisin ang mga nabigo",
+	"requests.board.clearFinished": "Linisin ang mga tapos na",
+	"requests.board.clearFailedTitle": "Alisin ang mga nabigong kahilingan ({n})?",
+	"requests.board.clearFailedDesc": "Naaprubahan ang mga ito, pero walang naidagdag. Mananatili ang mga titulo at ang mga file nila.",
+	"requests.board.clearFinishedTitle": "Alisin ang mga tapos na kahilingan ({n})?",
+	"requests.board.clearFinishedDesc": "Handa na o tinanggihan ang mga ito. Mananatili ang mga titulo at ang mga file nila.",
+	"requests.board.clearConfirm": "Alisin lahat"
 }
