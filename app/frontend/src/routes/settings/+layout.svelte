@@ -4,6 +4,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Confirm from '#lib/ui/Confirm.svelte';
 	import { outsideWay } from '#lib/ui/sensitive.ts';
 	import Button from '#lib/ui/Button.svelte';
@@ -194,6 +195,8 @@
 	<div class="settings-workspace" bind:this={workspace}>
 		<div class="settings-content">
 			{#if blocked}
+				{@const sec = sectionFor(all, current)}
+				{#if sec}<PageHeader title={sec.label} />{/if}
 				<SettingsCard id="settings-blocked" title={t('settings.layout.blocked')} icon="shield">
 					<div><Button href={to('/settings')}>{t('settings.layout.backToSettings')}</Button></div>
 				</SettingsCard>
