@@ -350,14 +350,14 @@
 	.buttons { display: flex; align-items: center; gap: 8px; min-width: 0; }
 	.buttons :global(.ui-ibtn.glass) { background: var(--text); color: var(--surface-1); box-shadow: none; }
 	.buttons :global(.ui-ibtn.glass:hover) { background: color-mix(in srgb, var(--text) 85%, var(--surface-1)); }
-	.more { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--text); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--text) 40%, transparent); transition: box-shadow var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
+	.more { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: var(--text); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--text) 40%, transparent); transition: box-shadow var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
 	.more:hover { box-shadow: inset 0 0 0 2px var(--text); background: var(--surface-2); }
 	.more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.more.bell.on { background: var(--text); color: var(--bg); box-shadow: none; }
 	.more.info { margin-left: auto; }
 	/* Only one state button shows even if the action slot adds its own. */
 	.buttons :global(.state:not(:first-child)) { display: none; }
-	.buttons :global(.ui-ibtn) { width: 40px; height: 40px; flex: none; }
+	.buttons :global(.ui-ibtn) { width: 36px; height: 36px; flex: none; }
 	.buttons :global(.ui-ibtn:focus-visible) { outline: none; box-shadow: var(--focus-ring); }
 	.title { margin: 2px 0 -4px; font: var(--t-headline); letter-spacing: -0.01em; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.facts, .tags, .ctx { min-height: 18px; }
