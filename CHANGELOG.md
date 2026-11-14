@@ -19,11 +19,12 @@ All notable changes to HolyArrs are listed here. The format follows [Keep a Chan
 
 - An owner who set up with Plex, Jellyfin or Emby can make protected changes after signing in again. ([#364](https://github.com/HolyArrs/HolyArrs/issues/364))
 - Setting a first password needs a fresh sign-in; an API key can no longer set one. ([#364](https://github.com/HolyArrs/HolyArrs/issues/364))
+- Shows, movies and artists with an apostrophe in the name match their releases again. ([#369](https://github.com/HolyArrs/HolyArrs/issues/369))
 - An episode airing later today no longer reads Yesterday for viewers ahead of the show's time zone. ([#368](https://github.com/HolyArrs/HolyArrs/issues/368))
 
 ### Thanks
 
-Thanks to roychassi and Lunim on Discord.
+Thanks to [@Nviviri](https://github.com/HolyArrs/HolyArrs/issues/369), who found the cause, and to roychassi and Lunim on Discord.
 
 ## 1.1.3
 
