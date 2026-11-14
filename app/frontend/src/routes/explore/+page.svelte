@@ -721,9 +721,6 @@
 	.types.stuck :global(.ui-seg) { transform: scale(0.9); background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	/* Scaled to 0.9 while stuck: the segments' hit area grows to stay 44px on touch phones. */
 	.types.stuck { --seg-hit: 49px; }
-	.types :global(.ui-seg) { border-radius: 999px; padding: 3px; }
-	.types :global(.ui-seg .thumb) { top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 999px; }
-	.types :global(.ui-seg button) { min-height: 38px; padding: 0 16px; border-radius: 999px; font-size: 14px; }
 	/* Reduced motion: the same compact size, without the animation. */
 	@media (prefers-reduced-motion: reduce) { .types :global(.ui-seg), .types :global(.ui-seg .thumb), .genre-pick :global(.trigger) { transition: none; } }
 	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 8px; } .music-banner { margin-top: 28px; } }
@@ -738,8 +735,9 @@
 	.pick-sk { --poster-ratio: 1; }
 	.genre-pick { pointer-events: auto; margin-left: 8px; display: flex; align-items: center; }
 	/* Genres matches the tab pill: same height, type and glass. */
-	.genre-pick :global(.trigger) { min-height: 44px; border-radius: 999px; padding: 0 16px; font: 600 14px/1 var(--font-ui); background: var(--surface-2); color: var(--text); }
+	.genre-pick :global(.trigger) { min-height: 36px; border-radius: 10px; padding: 0 14px; font: 600 14px/1 var(--font-ui); background: var(--surface-2); color: var(--text); }
 	.genre-pick :global(.trigger) { transition: transform var(--bar-glide); transform-origin: top center; }
+	@media (pointer: coarse) { .genre-pick :global(.trigger) { min-height: 44px; } }
 	.types.stuck .genre-pick :global(.trigger) { transform: scale(0.9); }
 	.types.stuck .genre-pick :global(.trigger) { background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	/* Minimal look: the floating pills are solid, with no blur and only a hairline edge. */

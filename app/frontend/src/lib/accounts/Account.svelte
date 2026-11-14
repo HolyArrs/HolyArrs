@@ -504,9 +504,8 @@
 	.lock { flex: none; display: grid; place-items: center; width: 24px; height: 24px; color: var(--text-faint); cursor: help; }
 	.dn { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 	.dn .input { flex: 1 1 200px; min-width: 0; }
-	/* One button height and one input height across My account, the Settings sizes. */
-	.acct :global(.ui-btn.ui-btn) { min-height: 32px; }
-	.acct :global(.input:not(textarea)) { height: 32px; min-height: 32px; padding-block: 0; }
+	/* One input height across My account, the Settings size. */
+	.acct :global(.input:not(textarea)) { height: 40px; min-height: 40px; padding-block: 0; }
 	.acts { gap: 8px; flex-wrap: wrap; align-items: center; }
 	.pw { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 	.pw { width: min(100%, 360px); }
@@ -521,12 +520,7 @@
 		.boxes { grid-template-columns: minmax(0, 1fr); }
 		.dn .input { flex-basis: 100%; }
 	}
-	@media (max-width: 600px) {
-		.acct :global(.ui-btn.ui-btn) { min-height: 40px; }
-		.acct :global(.input:not(textarea)) { height: 40px; min-height: 40px; }
-	}
 	@media (pointer: coarse) {
-		.acct :global(.ui-btn.ui-btn) { min-height: 44px; }
 		.acct :global(.input:not(textarea)) { height: 44px; min-height: 44px; }
 	}
 </style>
