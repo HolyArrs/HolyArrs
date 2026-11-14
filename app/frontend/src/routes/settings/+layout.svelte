@@ -4,7 +4,9 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Confirm from '#lib/ui/Confirm.svelte';
+	import { outsideWay } from '#lib/ui/sensitive.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import { homeArt, startArt } from './(home)/art.svelte.ts';
 	import { wall } from './(home)/pick.ts';
@@ -193,8 +195,15 @@
 	<div class="settings-workspace" bind:this={workspace}>
 		<div class="settings-content">
 			{#if blocked}
+				{@const sec = sectionFor(all, current)}
+				{#if sec}<PageHeader title={sec.label} />{/if}
 				<SettingsCard id="settings-blocked" title={t('settings.layout.blocked')} icon="shield">
 					<div><Button href={to('/settings')}>{t('settings.layout.backToSettings')}</Button></div>
+				</SettingsCard>
+			{:else if reauth && outsideWay(session.s)}
+				<!-- No password to confirm: Confirm offers signing in again with Plex, Jellyfin or Emby ("link" asks whenever the proof is stale). -->
+				<SettingsCard id="settings-reauth" title={t('settings.layout.signInAgainTitle')} icon="shield">
+					<Confirm action="link">{#snippet children()}{/snippet}</Confirm>
 				</SettingsCard>
 			{:else if reauth && !session.s.hasPassword}
 				<SettingsCard id="settings-reauth" title={t('settings.layout.setPasswordFirst')} description={t('settings.layout.setPasswordDesc')} icon="shield">
@@ -233,7 +242,7 @@
 	.back-home { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; margin-left: -6px; padding: 0 12px 0 4px; border-radius: var(--r-pill); color: var(--accent-text); font: var(--t-callout); font-weight: 500; transition: background var(--dur-fast) var(--ease-out); }
 	.back-home:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
 	.back-home:focus-visible, .cap:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.group-name { margin: 2px 0 12px; font: 700 34px/1.12 var(--font-display, var(--font-ui)); letter-spacing: -0.022em; }
+	.group-name { margin: 2px 0 12px; font: 700 30px/1.12 var(--font-display, var(--font-ui)); letter-spacing: -0.022em; }
 
 	/* The group's pages, one capsule each; the current one is filled. */
 	.caps { display: flex; gap: 8px; overflow-x: auto; margin: 0 -4px 22px; padding: 4px; scrollbar-width: none; overscroll-behavior-x: contain; }
@@ -249,7 +258,7 @@
 	@media (pointer: coarse) { .cap { min-height: 44px; } }
 
 	@media (max-width: 767px) {
-		.group-name { font-size: 28px; margin-bottom: 10px; }
+		.group-name { margin-bottom: 10px; }
 		/* Phones: the sections wrap onto a second line; nothing sits past the screen edge. */
 		.caps { margin-bottom: 16px; flex-wrap: wrap; overflow-x: visible; }
 		.back-home { margin-left: -10px; }
@@ -259,6 +268,9 @@
 	/* Hand-built cards wear the same surface, corners and title as SettingsCards. */
 	.settings-content :global(.card) { border: 0; border-radius: var(--fin-r); background: var(--fin-card); box-shadow: var(--fin-shadow), 0 0 0 1px var(--fin-edge); padding: 12px 14px; }
 	.settings-content :global(:is(.card, .ui-settings) :is(h2, .h2)) { font: var(--t-headline); font-size: 15px; font-weight: 600; letter-spacing: normal; }
+	/* An empty state inside a section keeps the standard empty-state size. */
+	.settings-content :global(:is(.card, .ui-settings) .ui-empty:not(.compact)) { padding: 48px 24px !important; }
+	.settings-content :global(:is(.card, .ui-settings) .ui-empty h2) { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
 	.settings-content > :global(:is(.ui-settings, .sc-form, .card, div[data-testid], ul.card) + :is(.ui-settings, .sc-form, .card, div[data-testid], ul, p, section)) { margin-top: 16px; }
 	.settings-content :global(.sc-form > .ui-settings + .ui-settings) { margin-top: 0; }
 	.settings-content :global(.sc-form) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
@@ -359,11 +371,15 @@
 	.settings-content :global(:is(input.input:not([type='checkbox'], [type='radio']), select.input, textarea.input)) { min-height: 40px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); background: color-mix(in srgb, var(--text) 5%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04); font: 400 14.5px/1.3 var(--font-ui); color: var(--text); }
 	.settings-content :global(:is(input.input, select.input, textarea.input):focus-visible) { outline: none; border-color: color-mix(in srgb, var(--accent) 55%, transparent); box-shadow: var(--focus-ring); }
 	.settings-content :global(textarea.input) { padding-top: 10px; }
+	/* Touch screens: text fields and pickers are 44px tall, like the buttons. */
+	@media (pointer: coarse) { .settings-content :global(:is(input.input:not([type='checkbox'], [type='radio']), select.input)) { min-height: 44px; } }
 	/* A row with a tall text box keeps its label at the top, beside the box. */
 	.settings-content :global(:is(.field, .srow):has(textarea)) { align-items: start !important; }
 	.settings-content :global(:is(.field, .srow):has(textarea) > :is(label, .txt)) { padding-top: 10px; }
 	/* Row words, the same sizes as the Library folders rows. */
-	.settings-content :global(section.ui-settings :is(.srow > .txt > .hint, .field > .hint, label.switch .hint, .checkline .hint)) { font: 400 13px/1.35 var(--font-ui) !important; color: var(--text-muted); }
+	.settings-content :global(section.ui-settings :is(.srow > .txt > .hint, .field > .hint, label.switch .hint, .checkline .hint)) { font: 400 12px/1.35 var(--font-ui) !important; color: var(--text-muted); }
+	/* Helper lines written as small muted text are hints too: one 12px size. */
+	.settings-content :global(section.ui-settings .small.muted:not(.lead)) { font-size: 12px; line-height: 1.35; }
 	/* A field row's label lines up with its box, not with box and hint. */
 	.settings-content :global(section.ui-settings :is(.srow, .field):not(.ask > *, .row-fields > *):has(> .ctl :is(input, select), > :is(input, select), > .ctl > .input)) { align-items: start !important; }
 	.settings-content :global(section.ui-settings :is(.srow, .field):not(.ask > *, .row-fields > *):has(> .ctl :is(input, select), > :is(input, select), > .ctl > .input) > :is(.txt, label:first-child)) { padding-top: 10px; }

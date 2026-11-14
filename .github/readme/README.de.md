@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease und IPTorrents eingebaut**, ganz ohne Prowlarr. Fordere Serien in 4K an, und Profilarr kann seine Formate und Profile schicken. [Was ist neu](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: jede Request lässt sich entfernen, und die Plex-Watchlists von Freunden werden wieder gelesen.** Die Qualität eines Ordners steht jetzt auf seiner Karte, und Settings wurde vereinheitlicht. [Was ist neu](https://holyarrs.com/whats-new/)
 
 > Jedes Poster, jeder Trailer und jede Bewertung in deinem HolyArrs kommt von einem Server, den ich selbst betreibe und bezahle, damit es für alle kostenlos bleibt. Wenn HolyArrs deinen Filmabend ein bisschen schöner gemacht hat, hält ein Sponsoring für uns alle das Licht an 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> ist eine selbst gehostete App für deine Serien, Filme und Musik.<br>Stöbere wie in einer Streaming-App, wünsch dir, was du willst, und den Rest erledigt sie.</p>
 
-<p align="center"><b>Etwa 16.9 MB Download · etwa 95 MiB RAM im Leerlauf bei einer frischen Installation · amd64, arm64, armv7</b><br><sub>Die sechs Apps, die sie ersetzt, sind zusammen 718.2 MB groß.</sub></p>
+<p align="center"><b>Etwa 16.1 MB Download · etwa 95 MiB RAM im Leerlauf bei einer frischen Installation · amd64, arm64, armv7</b><br><sub>Die sechs Apps, die sie ersetzt, sind zusammen 685.0 MB groß.</sub></p>
 
 <p align="center"><a href="#quick-start">Schnellstart</a> · <a href="#why">Warum</a> · <a href="#what-it-does">Was sie kann</a> · <a href="#moving">Von anderen Apps wechseln</a> · <a href="#manual">Das Handbuch</a> · <a href="#help">Hilfe</a></p>
 
@@ -98,16 +98,16 @@ Also habe ich sie gebaut.
 
 | App | Download (amd64) | RAM im Leerlauf | Logins | Web-Ports |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Alle sechs zusammen** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Alle sechs zusammen** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Etwa 43-mal kleiner. Komprimierter Registry-Download, Images von linuxserver.io, amd64, gemessen am 2026-11-08. RAM im Leerlauf gemessen mit 10,000 Titeln und 55,000 Filmen und Episoden. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Etwa 43-mal kleiner. Komprimierter Registry-Download, Images von linuxserver.io, amd64, gemessen am 2026-11-13. RAM im Leerlauf gemessen mit 10,000 Titeln und 55,000 Filmen und Episoden. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Jemand wünscht sich einen Titel. HolyArrs durchsucht deine Sources, wählt mit 
 | 🔌 **API für alte Apps** | Seerr, Prowlarr, Bazarr, Unpackerr und Homepage funktionieren weiter, sobald du das einschaltest. |
 | 🗝️ **Keine API-Keys nötig** | Titel, Artwork und Charts kommen vom HolyArrs-Metadatenserver. Eigene Keys oder ein eigener Server gehen auch. |
 | 🔒 **Verschlüsselte Keys** | Gespeicherte Passwörter und Keys sind mit einem Master-Key gesperrt, der in deinem Config-Ordner liegt. |
-| 🪶 **Winzig** | Ein Image von etwa 16.9 MB, in dem nur HolyArrs steckt. |
+| 🪶 **Winzig** | Ein Image von etwa 16.1 MB, in dem nur HolyArrs steckt. |
 
 <details>
 <summary><b>Alle Seiten in Bewegung ansehen</b></summary>
@@ -222,7 +222,7 @@ Die Images liegen auf Docker Hub als [`holyarrs/holyarrs`](https://hub.docker.co
 | Tag | Dafür nutzen |
 | :----: | --- |
 | `latest` | Die neueste Version. |
-| `1.1.3` | Eine genaue Version. Sie ändert sich nie. |
+| `1.1.4` | Eine genaue Version. Sie ändert sich nie. |
 
 ## Verwendung
 

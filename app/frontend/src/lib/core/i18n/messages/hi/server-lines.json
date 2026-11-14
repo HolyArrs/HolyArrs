@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "फ़ेल होने के बावजूद भेजा गया: {overridden}",
 	"server.sources.the-album-would-mix-copies": "एल्बम में कॉपियाँ मिल जातीं: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "रिलीज़ गेट छोड़ा गया: यह फ़िल्म अभी रिलीज़ नहीं मानी जाती",
-	"server.sources.this-version-already-has-a-good": "इस वर्ज़न की काफ़ी अच्छी कॉपी पहले से है; नई कॉपी उसकी जगह ले लेगी"
+	"server.sources.this-version-already-has-a-good": "इस वर्ज़न की काफ़ी अच्छी कॉपी पहले से है; नई कॉपी उसकी जगह ले लेगी",
+	"server.requests.removed-the-request-for": "{name} ने {a} का अनुरोध हटाया",
+	"server.requests.plex-gave-no-account-code-for": "Plex ने इस व्यक्ति के लिए खाता कोड नहीं दिया, इसलिए उनकी वॉचलिस्ट नहीं पढ़ी जा रही है।"
 }

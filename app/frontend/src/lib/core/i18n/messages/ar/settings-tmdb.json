@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "اختياري، للتقييمات.",
 	"settings.tmdb.keyFanart": "مفتاح fanart.tv",
 	"settings.tmdb.keyFanartHint": "اختياري، للشعارات والصور.",
-	"settings.tmdb.testKey": "اختبار المفتاح",
+	"settings.tmdb.testKey": "اختبار",
 	"settings.tmdb.testWorks": "المفتاح يعمل",
 	"settings.tmdb.testRefused": "تم رفض المفتاح",
 	"settings.tmdb.testPinRefused": "تم رفض المفتاح أو رمز PIN",

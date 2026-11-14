@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "雖未通過仍已送出：{overridden}",
 	"server.sources.the-album-would-mix-copies": "專輯會混入多份副本：{skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "已跳過發行門檻：這部電影還不算已上映",
-	"server.sources.this-version-already-has-a-good": "這個版本已有足夠好的副本；新的會替換它"
+	"server.sources.this-version-already-has-a-good": "這個版本已有足夠好的副本；新的會替換它",
+	"server.requests.removed-the-request-for": "{name} 移除了 {a} 的請求",
+	"server.requests.plex-gave-no-account-code-for": "Plex 沒有提供此人的帳號代碼，因此不會讀取其待看清單。"
 }

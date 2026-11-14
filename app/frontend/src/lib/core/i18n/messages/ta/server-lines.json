@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "தோல்வியடைந்தாலும் அனுப்பப்பட்டது: {overridden}",
 	"server.sources.the-album-would-mix-copies": "ஆல்பம் பிரதிகளைக் கலந்துவிடும்: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "வெளியீட்டு வாயில் தவிர்க்கப்படுகிறது: இந்தத் திரைப்படம் இன்னும் வெளியானதாகக் கணக்கில் இல்லை",
-	"server.sources.this-version-already-has-a-good": "இந்தப் பதிப்புக்கு ஏற்கெனவே போதுமான தரத்தில் ஒரு பிரதி உள்ளது; புதியது அதை மாற்றும்"
+	"server.sources.this-version-already-has-a-good": "இந்தப் பதிப்புக்கு ஏற்கெனவே போதுமான தரத்தில் ஒரு பிரதி உள்ளது; புதியது அதை மாற்றும்",
+	"server.requests.removed-the-request-for": "{name} {a} கோரிக்கையை நீக்கினார்",
+	"server.requests.plex-gave-no-account-code-for": "Plex இந்த நபருக்கான கணக்குக் குறியீட்டை வழங்கவில்லை, எனவே அவரது பார்வைப் பட்டியல் படிக்கப்படவில்லை."
 }

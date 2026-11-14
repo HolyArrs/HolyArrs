@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Ngăn cách các loại bằng dấu phẩy, ví dụ srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs không thấy {path}. Nó chỉ thấy các thư mục được gắn vào container của nó. Thêm một volume như {path}:{inside}, rồi dùng {inside} ở đây.",
 	"settings.libraryFolders.quality": "Chất lượng",
-	"settings.libraryFolders.qualityNone": "Dùng mặc định",
 	"settings.libraryFolders.qualityHint": "Tựa mới trong thư mục này bắt đầu với chất lượng này.",
-	"settings.libraryFolders.qualityOf": "Chất lượng của {path}"
+	"settings.libraryFolders.qualityDefault": "Mặc định",
+	"settings.libraryFolders.qualityDefaultNamed": "Mặc định ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · mặc định",
+	"settings.libraryFolders.qualityFor": "Chất lượng cho {name}: {value}"
 }

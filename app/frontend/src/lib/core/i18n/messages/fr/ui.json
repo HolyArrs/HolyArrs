@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Annuler",
 	"ui.confirm.localVisit": "Cette visite saute la connexion, elle ne peut donc pas confirmer ton mot de passe. Connecte-toi d'abord avec ton mot de passe et tu reviendras ici.",
 	"ui.confirm.signInFirst": "Me connecter avec mon mot de passe",
+	"ui.confirm.outsideAgain": "Pour confirmer que c'est bien vous, reconnectez-vous avec {method}. Vous reviendrez ici. Vous pouvez aussi définir un mot de passe HolyArrs dans Mon compte.",
+	"ui.confirm.signInAgainWith": "Me reconnecter avec {method}",
 	"ui.growCard.preview": "Aperçu de {title}",
 	"ui.growCard.goTo": "Aller à {title}",
 	"ui.growCard.moreInfoAbout": "Plus d'infos sur {title}",

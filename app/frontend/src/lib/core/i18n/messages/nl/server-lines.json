@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "toch verstuurd, hoewel hij afviel: {overridden}",
 	"server.sources.the-album-would-mix-copies": "het album zou kopieën mengen: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "De Releasedrempel wordt overgeslagen: deze film telt nog niet als uit",
-	"server.sources.this-version-already-has-a-good": "Deze variant heeft al een kopie die goed genoeg is; de nieuwe vervangt die"
+	"server.sources.this-version-already-has-a-good": "Deze variant heeft al een kopie die goed genoeg is; de nieuwe vervangt die",
+	"server.requests.removed-the-request-for": "{name} heeft het verzoek voor {a} verwijderd",
+	"server.requests.plex-gave-no-account-code-for": "Plex gaf geen accountcode voor deze persoon, dus zijn of haar kijklijst wordt niet gelezen."
 }

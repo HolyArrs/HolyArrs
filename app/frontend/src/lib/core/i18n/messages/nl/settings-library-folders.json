@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Scheid typen met komma's, zoals srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs ziet {path} niet. Het ziet alleen mappen die in de container zijn gekoppeld. Voeg een volume toe zoals {path}:{inside} en gebruik hier dan {inside}.",
 	"settings.libraryFolders.quality": "Kwaliteit",
-	"settings.libraryFolders.qualityNone": "Standaard gebruiken",
 	"settings.libraryFolders.qualityHint": "Nieuwe titels in deze map starten met deze kwaliteit.",
-	"settings.libraryFolders.qualityOf": "Kwaliteit van {path}"
+	"settings.libraryFolders.qualityDefault": "Standaard",
+	"settings.libraryFolders.qualityDefaultNamed": "Standaard ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · standaard",
+	"settings.libraryFolders.qualityFor": "Kwaliteit voor {name}: {value}"
 }

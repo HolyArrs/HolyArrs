@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} min",
 	"discover.titleLibrary.missing": "Ontbrekend",
 	"discover.titleLibrary.notOutYet": "Nog niet uit",
+	"discover.titleLibrary.waitingAfterAir": "Wacht na de uitzending",
 	"discover.titleLibrary.searchingEpisode": "Zoeken naar aflevering {episode}",
 	"discover.titleLibrary.versions": "Varianten",
 	"discover.titleLibrary.file": "Bestand",

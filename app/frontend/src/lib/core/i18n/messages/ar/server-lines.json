@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "أُرسل رغم أنه لم يجتز: {overridden}",
 	"server.sources.the-album-would-mix-copies": "الألبوم سيخلط النسخ: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "يُتخطى شرط الصدور: هذا الفيلم لا يُعد صادرًا بعد",
-	"server.sources.this-version-already-has-a-good": "لهذه النسخة نسخة كافية الجودة بالفعل؛ وستحل الجديدة محلها"
+	"server.sources.this-version-already-has-a-good": "لهذه النسخة نسخة كافية الجودة بالفعل؛ وستحل الجديدة محلها",
+	"server.requests.removed-the-request-for": "أزال {name} الطلب على {a}",
+	"server.requests.plex-gave-no-account-code-for": "لم يعطِ Plex رمز حساب لهذا الشخص، لذا لا تتم قراءة قائمة المشاهدة الخاصة به."
 }

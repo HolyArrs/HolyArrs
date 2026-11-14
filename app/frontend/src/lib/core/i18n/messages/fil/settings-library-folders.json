@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Paghiwalayin ang mga uri gamit ang kuwit, gaya ng srt, ass.",
 	"settings.libraryFolders.notMounted": "Hindi makita ng HolyArrs ang {path}. Ang nakikita lang nito ay mga folder na naka-mount sa container nito. Magdagdag ng volume gaya ng {path}:{inside}, saka gamitin ang {inside} dito.",
 	"settings.libraryFolders.quality": "Kalidad",
-	"settings.libraryFolders.qualityNone": "Gamitin ang default",
 	"settings.libraryFolders.qualityHint": "Ang mga bagong titulo sa folder na ito ay magsisimula sa kalidad na ito.",
-	"settings.libraryFolders.qualityOf": "Kalidad ng {path}"
+	"settings.libraryFolders.qualityDefault": "Default",
+	"settings.libraryFolders.qualityDefaultNamed": "Default ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · default",
+	"settings.libraryFolders.qualityFor": "Kalidad para sa {name}: {value}"
 }

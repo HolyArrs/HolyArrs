@@ -81,5 +81,5 @@
 	"settings.naming.holding": "Папка отложенных",
 	"settings.naming.clearOld": "Очищать старые отложенные файлы",
 	"settings.naming.clearOldHint": "Запускается сам каждый день",
-	"settings.naming.clearNow": "Очистить сейчас"
+	"settings.naming.clearNow": "Очистить"
 }

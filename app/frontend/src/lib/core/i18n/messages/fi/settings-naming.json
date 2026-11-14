@@ -81,5 +81,5 @@
 	"settings.naming.holding": "Pidätyskansio",
 	"settings.naming.clearOld": "Tyhjennä vanhat pidätetyt tiedostot",
 	"settings.naming.clearOldHint": "Ajetaan itsestään joka päivä",
-	"settings.naming.clearNow": "Tyhjennä nyt"
+	"settings.naming.clearNow": "Tyhjennä"
 }

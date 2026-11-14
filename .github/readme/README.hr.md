@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease i IPTorrents ugrađeni**, bez Prowlarra. Traži serije u 4K, a Profilarr može poslati svoje formate i profile. [Pogledaj što je novo](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: ukloni bilo koji zahtjev, a Plex popisi za gledanje prijatelja ponovno se čitaju.** Kvaliteta mape sada se vidi na njezinoj kartici, a Settings je usklađen. [Pogledaj što je novo](https://holyarrs.com/whats-new/)
 
 > Svaki poster, trailer i ocjena u tvom HolyArrsu dolazi sa servera koji sâm vodim i plaćam, da ostane besplatan za sve. Ako ti je HolyArrs malo uljepšao filmsku večer, sponzorstvo drži svjetla upaljenima za sve nas 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> je jedna aplikacija na vlastitom serveru za tvoje serije, filmove i glazbu.<br>Pregledavaj kao streaming aplikaciju, zatraži što želiš, a ostalo obavlja ona.</p>
 
-<p align="center"><b>Oko 16.9 MB za preuzimanje · oko 95 MiB RAM-a u mirovanju na svježoj instalaciji · amd64, arm64, armv7</b><br><sub>Šest aplikacija koje zamjenjuje zajedno se preuzimaju kao 718.2 MB.</sub></p>
+<p align="center"><b>Oko 16.1 MB za preuzimanje · oko 95 MiB RAM-a u mirovanju na svježoj instalaciji · amd64, arm64, armv7</b><br><sub>Šest aplikacija koje zamjenjuje zajedno se preuzimaju kao 685.0 MB.</sub></p>
 
 <p align="center"><a href="#quick-start">Brzi početak</a> · <a href="#why">Zašto</a> · <a href="#what-it-does">Što radi</a> · <a href="#moving">Prelazak s drugih aplikacija</a> · <a href="#manual">Priručnik</a> · <a href="#help">Pomoć</a></p>
 
@@ -98,16 +98,16 @@ Pa sam je napravio.
 
 | Aplikacija | Preuzimanje (amd64) | RAM u mirovanju | Prijave | Web portovi |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Svih šest zajedno** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Svih šest zajedno** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Oko 43 puta manji. Komprimirano preuzimanje iz registryja, linuxserver.io imagei, amd64, izmjereno 2026-11-08. RAM u mirovanju izmjeren s 10,000 naslova i 55,000 filmova i epizoda. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Oko 43 puta manji. Komprimirano preuzimanje iz registryja, linuxserver.io imagei, amd64, izmjereno 2026-11-13. RAM u mirovanju izmjeren s 10,000 naslova i 55,000 filmova i epizoda. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Netko zatraži naslov. HolyArrs pretraži tvoje izvore, pomoću tvojih pravila o
 | 🔌 **API za dosadašnje aplikacije** | Seerr, Prowlarr, Bazarr, Unpackerr i Homepage nastavljaju raditi kad to uključiš. |
 | 🗝️ **API ključevi nisu potrebni** | Naslovi, slike i ljestvice dolaze s HolyArrs metadata servera. Rade i tvoji vlastiti ključevi ili server. |
 | 🔒 **Šifrirani ključevi** | Spremljene lozinke i ključevi zaključani su glavnim ključem koji se nalazi u tvojoj mapi s konfiguracijom. |
-| 🪶 **Sićušan** | Image od oko 16.9 MB u kojem nema ničega osim HolyArrsa. |
+| 🪶 **Sićušan** | Image od oko 16.1 MB u kojem nema ničega osim HolyArrsa. |
 
 <details>
 <summary><b>Pogledaj svaku stranicu u pokretu</b></summary>
@@ -222,7 +222,7 @@ Imagei se nalaze na Docker Hubu kao [`holyarrs/holyarrs`](https://hub.docker.com
 | Oznaka | Za što je koristiti |
 | :----: | --- |
 | `latest` | Najnovija verzija. |
-| `1.1.3` | Jedna točna verzija. Nikad se ne mijenja. |
+| `1.1.4` | Jedna točna verzija. Nikad se ne mijenja. |
 
 ## Korištenje
 

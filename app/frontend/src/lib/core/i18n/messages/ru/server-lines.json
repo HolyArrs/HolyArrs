@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "отправлен, хотя не прошёл проверку: {overridden}",
 	"server.sources.the-album-would-mix-copies": "альбом смешал бы копии: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Порог выхода пропускается: этот фильм пока не считается вышедшим",
-	"server.sources.this-version-already-has-a-good": "У этого варианта уже есть достаточно хорошая копия; новая её заменит"
+	"server.sources.this-version-already-has-a-good": "У этого варианта уже есть достаточно хорошая копия; новая её заменит",
+	"server.requests.removed-the-request-for": "{name} удалил(а) запрос на {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex не передал код аккаунта этого человека, поэтому его список просмотра не читается."
 }

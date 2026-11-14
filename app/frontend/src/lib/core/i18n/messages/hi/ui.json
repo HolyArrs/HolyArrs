@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "रद्द करें",
 	"ui.confirm.localVisit": "यह विज़िट साइन-इन छोड़ देती है, इसलिए आपके पासवर्ड की पुष्टि नहीं कर सकती। पहले अपने पासवर्ड से साइन इन करें, फिर आप यहीं लौट आएँगे।",
 	"ui.confirm.signInFirst": "मेरे पासवर्ड से साइन इन करें",
+	"ui.confirm.outsideAgain": "यह आप ही हैं, यह पक्का करने के लिए {method} से फिर से साइन इन करें। आप वापस यहीं आएंगे। आप मेरा खाता में HolyArrs पासवर्ड भी सेट कर सकते हैं।",
+	"ui.confirm.signInAgainWith": "{method} से फिर से साइन इन करें",
 	"ui.growCard.preview": "{title} प्रीव्यू",
 	"ui.growCard.goTo": "{title} पर जाएं",
 	"ui.growCard.moreInfoAbout": "{title} के बारे में और जानकारी",

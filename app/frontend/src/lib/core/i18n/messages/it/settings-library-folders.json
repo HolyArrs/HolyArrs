@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Separa i tipi con virgole, ad esempio srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs non vede {path}. Vede solo le cartelle montate nel suo container. Aggiungi un volume come {path}:{inside}, poi usa {inside} qui.",
 	"settings.libraryFolders.quality": "Qualità",
-	"settings.libraryFolders.qualityNone": "Usa quella predefinita",
 	"settings.libraryFolders.qualityHint": "I nuovi titoli in questa cartella partono con questa qualità.",
-	"settings.libraryFolders.qualityOf": "Qualità di {path}"
+	"settings.libraryFolders.qualityDefault": "Predefinita",
+	"settings.libraryFolders.qualityDefaultNamed": "Predefinita ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · predefinita",
+	"settings.libraryFolders.qualityFor": "Qualità per {name}: {value}"
 }

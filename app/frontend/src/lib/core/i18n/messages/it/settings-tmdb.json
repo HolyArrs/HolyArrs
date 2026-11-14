@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Facoltativa, per i voti.",
 	"settings.tmdb.keyFanart": "Chiave fanart.tv",
 	"settings.tmdb.keyFanartHint": "Facoltativa, per loghi e immagini.",
-	"settings.tmdb.testKey": "Prova chiave",
+	"settings.tmdb.testKey": "Prova",
 	"settings.tmdb.testWorks": "La chiave funziona",
 	"settings.tmdb.testRefused": "Chiave rifiutata",
 	"settings.tmdb.testPinRefused": "Chiave o PIN rifiutati",

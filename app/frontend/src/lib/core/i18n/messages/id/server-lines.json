@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "dikirim meski gagal: {overridden}",
 	"server.sources.the-album-would-mix-copies": "album akan mencampur salinan: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Batas rilis dilewati: film ini belum dianggap rilis",
-	"server.sources.this-version-already-has-a-good": "Versi ini sudah punya salinan yang cukup baik; yang baru akan menggantikannya"
+	"server.sources.this-version-already-has-a-good": "Versi ini sudah punya salinan yang cukup baik; yang baru akan menggantikannya",
+	"server.requests.removed-the-request-for": "{name} menghapus permintaan untuk {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kode akun untuk orang ini, jadi daftar tontonannya tidak dibaca."
 }

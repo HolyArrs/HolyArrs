@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "enviado aunque falló: {overridden}",
 	"server.sources.the-album-would-mix-copies": "el álbum mezclaría copias: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Se omite el Umbral de estreno: esta película aún no cuenta como estrenada",
-	"server.sources.this-version-already-has-a-good": "Esta Versión ya tiene una copia suficiente; la nueva la reemplazará"
+	"server.sources.this-version-already-has-a-good": "Esta Versión ya tiene una copia suficiente; la nueva la reemplazará",
+	"server.requests.removed-the-request-for": "{name} quitó la solicitud de {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex no dio ningún código de cuenta para esta persona, así que no se lee su lista de seguimiento."
 }

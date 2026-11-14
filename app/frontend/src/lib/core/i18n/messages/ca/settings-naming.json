@@ -81,5 +81,5 @@
 	"settings.naming.holding": "Carpeta de retenció",
 	"settings.naming.clearOld": "Neteja els fitxers En espera antics",
 	"settings.naming.clearOldHint": "S'executa sol cada dia",
-	"settings.naming.clearNow": "Neteja ara"
+	"settings.naming.clearNow": "Neteja"
 }

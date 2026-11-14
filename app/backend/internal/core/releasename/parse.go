@@ -397,6 +397,20 @@ func CleanName(s string) string {
 	return strings.Join(words, " ")
 }
 
+// SameName says whether a library name cleans to want (a CleanName of a
+// release name). An apostrophe in the library name is tried both as a
+// separator ("Schitt s Creek", "d Amelie") and as nothing ("Schitts Creek"),
+// since release names show either.
+func SameName(libName, want string) bool {
+	if CleanName(libName) == want {
+		return true
+	}
+	if !strings.ContainsAny(libName, "'’ʼ") {
+		return false
+	}
+	return CleanName(strings.NewReplacer("'", "", "’", "", "ʼ", "").Replace(libName)) == want
+}
+
 func sure[T any](v T) Field[T] { return Field[T]{v, Sure} }
 
 func likely[T any](v T) Field[T] { return Field[T]{v, Likely} }

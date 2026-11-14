@@ -1,0 +1,4 @@
+/* A sideways-scrolling row fades out on the side that has more (set by edgeFade). The mask shows the page behind, so it follows light and dark. */
+[data-fade-left] { mask-image: linear-gradient(to right, transparent, #000 28px); }
+[data-fade-right] { mask-image: linear-gradient(to left, transparent, #000 28px); }
+[data-fade-left][data-fade-right] { mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 28px), transparent); }

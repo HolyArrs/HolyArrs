@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Стандартный",
 	"requests.window.askedFor": "{name} запросил(а) {quality}.",
 	"requests.window.addsOnly": "Добавляет только копию {quality}.",
-	"requests.board.qualityTitle": "Запрошено в {quality}"
+	"requests.board.qualityTitle": "Запрошено в {quality}",
+	"requests.page.removeRequest": "Удалить запрос",
+	"requests.page.removeTitle": "Удалить этот запрос?",
+	"requests.page.removeDesc": "Название и его файлы останутся.",
+	"requests.window.removeName": "Удалить запрос на {name}",
+	"requests.board.clearFailed": "Очистить неудавшиеся",
+	"requests.board.clearFinished": "Очистить завершённые",
+	"requests.board.clearFailedTitle": "Удалить неудавшиеся запросы ({n})?",
+	"requests.board.clearFailedDesc": "Их одобрили, но ничего не добавилось. Названия и их файлы останутся.",
+	"requests.board.clearFinishedTitle": "Удалить завершённые запросы ({n})?",
+	"requests.board.clearFinishedDesc": "Они готовы или отклонены. Названия и их файлы останутся.",
+	"requests.board.clearConfirm": "Удалить все"
 }

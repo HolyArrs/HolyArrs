@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Staðlað",
 	"requests.window.askedFor": "{name} bað um {quality}.",
 	"requests.window.addsOnly": "Bætir aðeins við {quality}-eintakinu.",
-	"requests.board.qualityTitle": "Beðið um {quality}"
+	"requests.board.qualityTitle": "Beðið um {quality}",
+	"requests.page.removeRequest": "Fjarlægja beiðni",
+	"requests.page.removeTitle": "Fjarlægja þessa beiðni?",
+	"requests.page.removeDesc": "Titillinn og skrárnar hans haldast.",
+	"requests.window.removeName": "Fjarlægja beiðni um {name}",
+	"requests.board.clearFailed": "Hreinsa misheppnaðar",
+	"requests.board.clearFinished": "Hreinsa kláraðar",
+	"requests.board.clearFailedTitle": "Fjarlægja misheppnuðu beiðnirnar ({n})?",
+	"requests.board.clearFailedDesc": "Þær voru samþykktar en engu var bætt við. Titlarnir og skrárnar þeirra haldast.",
+	"requests.board.clearFinishedTitle": "Fjarlægja kláruðu beiðnirnar ({n})?",
+	"requests.board.clearFinishedDesc": "Þær eru tilbúnar eða hafnað. Titlarnir og skrárnar þeirra haldast.",
+	"requests.board.clearConfirm": "Fjarlægja allt"
 }

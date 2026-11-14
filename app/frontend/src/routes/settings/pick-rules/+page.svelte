@@ -94,7 +94,7 @@
 	{#if error}<LoadError hasData message={error} onretry={load} busy={loading} />{/if}
 	<SettingsCard id="pick-rules-card" title={t('settings.pickRules.yours')} description={t('settings.pickRules.yoursDesc')}>
 		{#if rules.length === 0}
-			<EmptyState compact icon="star" title={t('settings.pickRules.none')} text={t('settings.pickRules.noneText')} action={mayEdit ? { label: t('settings.pickRules.add'), href: to('/settings/pick-rules/new'), icon: 'plus' } : undefined} />
+			<EmptyState icon="star" title={t('settings.pickRules.none')} text={t('settings.pickRules.noneText')} action={mayEdit ? { label: t('settings.pickRules.add'), href: to('/settings/pick-rules/new'), icon: 'plus' } : undefined} />
 		{:else}
 			<ul class="rows" data-testid="pick-rules">
 				{#each rules as r (r.id)}

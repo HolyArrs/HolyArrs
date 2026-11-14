@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "ipinadala kahit pumalya: {overridden}",
 	"server.sources.the-album-would-mix-copies": "paghahalu-haluin ng album ang mga kopya: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Nilalaktawan ang Release gate: hindi pa binibilang na lumabas ang pelikulang ito",
-	"server.sources.this-version-already-has-a-good": "May sapat nang magandang kopya ang Bersyong ito; papalitan ito ng bago"
+	"server.sources.this-version-already-has-a-good": "May sapat nang magandang kopya ang Bersyong ito; papalitan ito ng bago",
+	"server.requests.removed-the-request-for": "Inalis ni {name} ang kahilingan para sa {a}",
+	"server.requests.plex-gave-no-account-code-for": "Walang ibinigay na account code ang Plex para sa taong ito, kaya hindi binabasa ang watchlist niya."
 }

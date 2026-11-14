@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "با وجود ردشدن فرستاده شد: {overridden}",
 	"server.sources.the-album-would-mix-copies": "آلبوم کپی‌ها را قاطی می‌کرد: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "آستانه انتشار رد می‌شود: این فیلم هنوز منتشرشده حساب نمی‌شود",
-	"server.sources.this-version-already-has-a-good": "این نسخه از قبل کپی به‌اندازه کافی خوبی دارد؛ کپی تازه جایش را می‌گیرد"
+	"server.sources.this-version-already-has-a-good": "این نسخه از قبل کپی به‌اندازه کافی خوبی دارد؛ کپی تازه جایش را می‌گیرد",
+	"server.requests.removed-the-request-for": "{name} درخواست {a} را حذف کرد",
+	"server.requests.plex-gave-no-account-code-for": "Plex کد حساب این شخص را نداد، بنابراین فهرست تماشای او خوانده نمی‌شود."
 }

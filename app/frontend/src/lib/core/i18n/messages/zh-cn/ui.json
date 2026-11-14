@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "取消",
 	"ui.confirm.localVisit": "这次访问跳过了登录，因此无法确认你的密码。请先用密码登录，之后会回到这里。",
 	"ui.confirm.signInFirst": "用我的密码登录",
+	"ui.confirm.outsideAgain": "为确认是你本人，请用 {method} 重新登录，之后会回到这里。你也可以在“我的账户”中设置 HolyArrs 密码。",
+	"ui.confirm.signInAgainWith": "用 {method} 重新登录",
 	"ui.growCard.preview": "{title} 预览",
 	"ui.growCard.goTo": "前往 {title}",
 	"ui.growCard.moreInfoAbout": "{title} 的更多信息",

@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "نوع‌ها را با ویرگول جدا کنید، مانند srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs نمی‌تواند {path} را ببیند. فقط پوشه‌هایی را می‌بیند که در کانتینرش mount شده‌اند. یک volume مثل {path}:{inside} اضافه کنید و بعد اینجا از {inside} استفاده کنید.",
 	"settings.libraryFolders.quality": "کیفیت",
-	"settings.libraryFolders.qualityNone": "استفاده از پیش‌فرض",
 	"settings.libraryFolders.qualityHint": "عنوان‌های جدید این پوشه با این کیفیت شروع می‌شوند.",
-	"settings.libraryFolders.qualityOf": "کیفیت {path}"
+	"settings.libraryFolders.qualityDefault": "پیش‌فرض",
+	"settings.libraryFolders.qualityDefaultNamed": "پیش‌فرض ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · پیش‌فرض",
+	"settings.libraryFolders.qualityFor": "کیفیت {name}: {value}"
 }

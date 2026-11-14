@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "wysłano mimo niepowodzenia: {overridden}",
 	"server.sources.the-album-would-mix-copies": "album mieszałby kopie: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Próg premiery jest pominięty: ten film nie liczy się jeszcze jako wydany",
-	"server.sources.this-version-already-has-a-good": "Ta Odmiana ma już wystarczająco dobrą kopię; nowa ją zastąpi"
+	"server.sources.this-version-already-has-a-good": "Ta Odmiana ma już wystarczająco dobrą kopię; nowa ją zastąpi",
+	"server.requests.removed-the-request-for": "{name} usunął(-ęła) prośbę o {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex nie podał kodu konta tej osoby, więc jej lista do obejrzenia nie jest czytana."
 }

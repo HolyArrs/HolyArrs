@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
-	import StepCapsule from './StepCapsule.svelte';
 	import { steps, stepIndex, type Step } from './move.ts';
 
 	let {
@@ -34,13 +33,7 @@
 					disabled={i > now || (locked && i !== now)}
 					onclick={() => i !== now && onpick(s.id)}
 				>
-					{#if i === now}
-						<StepCapsule tone="go" live={!!busy} fill={busy ? Math.max(fill, 0.15) : fill} word={busy || s.word} status={busy ? 'processing' : undefined} />
-					{:else if i < now}
-						<StepCapsule tone="ok" fill={1} word={s.word} status="ready" />
-					{:else}
-						<StepCapsule tone="soft" fill={0} word={s.word} />
-					{/if}
+					<span class="tx" class:live={i === now && !!busy}>{i === now && busy ? busy : s.word}</span>
 					<span class="num" aria-hidden="true">{i + 1}</span>
 				</button>
 			</li>
@@ -50,23 +43,24 @@
 </nav>
 
 <style>
+	/* The app's segmented look: a 36px track, 10px corners, 14px labels; the step you are on is the raised thumb. */
 	.rail-wrap { min-width: 0; }
-	.rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+	.rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; margin: 0; padding: 2px; list-style: none; border-radius: 10px; background: var(--surface-2); }
 	.rail li { min-width: 0; }
-	.cap-btn { position: relative; display: block; width: 100%; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: inherit; border-radius: 12px; cursor: pointer; }
-	.cap-btn:disabled { cursor: default; }
-	.now .cap-btn { cursor: default; }
+	.cap-btn { display: flex; align-items: center; justify-content: center; width: 100%; min-width: 0; min-height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: var(--t-subhead); font-size: 14px; cursor: pointer; }
+	.cap-btn:disabled { cursor: default; opacity: 0.7; }
+	.now .cap-btn { cursor: default; background: var(--seg-thumb); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 0 0 .5px rgb(0 0 0 / 4%); }
+	.done .cap-btn { color: var(--text); }
 	.cap-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.cap-btn:disabled :global(.st-cap),
-	.cap-btn:disabled .num { opacity: 0.7; }
+	.tx { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.tx.live { animation: st-pulse 1.6s ease-in-out infinite; }
+	@keyframes st-pulse { 50% { opacity: 0.55; } }
 	.num { display: none; }
+	@media (pointer: coarse) { .cap-btn { min-height: 40px; } }
 	@media (max-width: 600px) {
-		.rail { grid-template-columns: var(--phone-cols); gap: 6px; }
-		.rail li :global(.st-cap) { --st-h: 44px; }
-		li:not(.now) :global(.st-cap) { padding: 0; }
-		li:not(.now) :global(.st-tx),
-		li:not(.now) :global(.st-i) { display: none; }
-		li:not(.now) .num { position: absolute; inset: 0; display: grid; place-items: center; font: 700 14px/1 var(--font-ui); color: var(--text); pointer-events: none; }
-		li.done:not(.now) .num { color: light-dark(#073d1b, #a6efc0); }
+		.rail { grid-template-columns: var(--phone-cols); }
+		li:not(.now) .tx { display: none; }
+		li:not(.now) .num { display: block; font-weight: 700; }
 	}
+	@media (prefers-reduced-motion: reduce) { .tx.live { animation: none; } }
 </style>

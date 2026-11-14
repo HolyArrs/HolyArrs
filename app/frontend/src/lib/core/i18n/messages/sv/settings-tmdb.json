@@ -50,7 +50,7 @@
   "settings.tmdb.keyMdblistHint": "Valfritt, för betyg.",
   "settings.tmdb.keyFanart": "fanart.tv-nyckel",
   "settings.tmdb.keyFanartHint": "Valfritt, för logotyper och bilder.",
-  "settings.tmdb.testKey": "Testa nyckel",
+  "settings.tmdb.testKey": "Testa",
   "settings.tmdb.testWorks": "Nyckeln fungerar",
   "settings.tmdb.testRefused": "Nyckeln nekades",
   "settings.tmdb.testPinRefused": "Nyckel eller PIN nekades",

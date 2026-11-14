@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Zrušit",
 	"ui.confirm.localVisit": "Tato návštěva přeskočila přihlášení, a proto nemůže potvrdit vaše heslo. Nejdřív se přihlaste heslem a vrátíte se sem.",
 	"ui.confirm.signInFirst": "Přihlásit se heslem",
+	"ui.confirm.outsideAgain": "Abyste potvrdili, že jste to vy, přihlaste se znovu přes {method}. Pak se vrátíte sem. Heslo pro HolyArrs si můžete nastavit také v Můj účet.",
+	"ui.confirm.signInAgainWith": "Znovu se přihlásit přes {method}",
 	"ui.growCard.preview": "Náhled: {title}",
 	"ui.growCard.goTo": "Přejít na {title}",
 	"ui.growCard.moreInfoAbout": "Více informací o {title}",

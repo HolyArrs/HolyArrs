@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: built-in na ang Knaben, TorrentsCSV, SubsPlease at IPTorrents**, hindi na kailangan ng Prowlarr. Humiling ng mga palabas sa 4K, at puwedeng ipadala ng Profilarr ang mga format at profile nito. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: alisin ang kahit anong request, at binabasa na ulit ang mga Plex watchlist ng mga kaibigan.** Makikita na sa card ng isang folder ang quality nito, at nagkaroon ng consistency pass ang Settings. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
 
 > Ang bawat poster, trailer at score sa HolyArrs mo ay galing sa server na ako mismo ang nagpapatakbo at nagbabayad, kaya nananatili itong libre para sa lahat. Kung napaganda nang kaunti ng HolyArrs ang movie night mo, ang sponsor ang nagpapanatiling bukas ang ilaw para sa ating lahat 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> ay isang self-hosted na app para sa mga palabas, pelikula at musika mo.<br>Mag-browse na parang streaming app, humiling ng gusto mo, at ito na ang bahala sa iba.</p>
 
-<p align="center"><b>Mga 16.9 MB ang download · mga 95 MiB ng RAM kapag idle sa bagong install · amd64, arm64, armv7</b><br><sub>Ang anim na app na pinapalitan nito ay 718.2 MB kapag pinagsama.</sub></p>
+<p align="center"><b>Mga 16.1 MB ang download · mga 95 MiB ng RAM kapag idle sa bagong install · amd64, arm64, armv7</b><br><sub>Ang anim na app na pinapalitan nito ay 685.0 MB kapag pinagsama.</sub></p>
 
 <p align="center"><a href="#quick-start">Mabilis na simula</a> · <a href="#why">Bakit</a> · <a href="#what-it-does">Ano ang kaya nito</a> · <a href="#moving">Paglipat mula sa ibang app</a> · <a href="#manual">Ang manual</a> · <a href="#help">Tulong</a></p>
 
@@ -98,16 +98,16 @@ Kaya ginawa ko ito.
 
 | App | Download (amd64) | RAM kapag idle | Mga login | Mga web port |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Anim na magkakasama** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Anim na magkakasama** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Mga 43 beses na mas maliit. Naka-compress na registry download, mga image ng linuxserver.io, amd64, sinukat noong 2026-11-08. Sinukat ang RAM kapag idle na may 10,000 pamagat at 55,000 pelikula at episode. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Mga 43 beses na mas maliit. Naka-compress na registry download, mga image ng linuxserver.io, amd64, sinukat noong 2026-11-13. Sinukat ang RAM kapag idle na may 10,000 pamagat at 55,000 pelikula at episode. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ May humiling ng pamagat. Hahanapin ng HolyArrs ang mga Pinagkukunan mo, pipiliin
 | 🔌 **API ng mga naunang app** | Patuloy na gagana ang Seerr, Prowlarr, Bazarr, Unpackerr at Homepage kapag in-on mo ito. |
 | 🗝️ **Hindi kailangan ng API key** | Ang mga pamagat, artwork at chart ay galing sa metadata server ng HolyArrs. Gumagana rin ang sarili mong mga key o server. |
 | 🔒 **Naka-encrypt na key** | Ang mga naka-save na password at key ay naka-lock gamit ang master key na nasa config folder mo. |
-| 🪶 **Napakaliit** | Isang image na mga 16.9 MB na HolyArrs lang ang laman. |
+| 🪶 **Napakaliit** | Isang image na mga 16.1 MB na HolyArrs lang ang laman. |
 
 <details>
 <summary><b>Tingnan ang bawat pahina habang gumagalaw</b></summary>
@@ -222,7 +222,7 @@ Nasa Docker Hub ang mga image bilang [`holyarrs/holyarrs`](https://hub.docker.co
 | Tag | Gamitin para sa |
 | :----: | --- |
 | `latest` | Ang pinakabagong bersyon. |
-| `1.1.3` | Isang eksaktong bersyon. Hindi ito kailanman gumagalaw. |
+| `1.1.4` | Isang eksaktong bersyon. Hindi ito kailanman gumagalaw. |
 
 ## Paggamit
 

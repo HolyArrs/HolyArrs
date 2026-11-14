@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Opcional, para notas.",
 	"settings.tmdb.keyFanart": "Chave do fanart.tv",
 	"settings.tmdb.keyFanartHint": "Opcional, para logos e artes.",
-	"settings.tmdb.testKey": "Testar chave",
+	"settings.tmdb.testKey": "Testar",
 	"settings.tmdb.testWorks": "A chave funciona",
 	"settings.tmdb.testRefused": "Chave recusada",
 	"settings.tmdb.testPinRefused": "Chave ou PIN recusados",

@@ -336,6 +336,11 @@
 			{#if ctx.approverTab === 'pending' && toApprove.length > 1}
 				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(toApprove)}><Icon name="check" size={16} />{t('requests.board.approveAll')}<span class="aa-n">{toApprove.length}</span></button>
 			{/if}
+			{#if ctx.approverTab === 'processing' && (ctx.approverCounts.failed ?? 0) > 0}
+				<button type="button" class="approve-all clear" in:fade={{ duration: ms(200) }} data-testid="clear-failed" onclick={() => ctx.clearAll('failed', ctx.approverCounts.failed)}><Icon name="trash" size={16} />{t('requests.board.clearFailed')}<span class="aa-n">{ctx.approverCounts.failed}</span></button>
+			{:else if ctx.approverTab === 'done' && (ctx.approverCounts.done ?? 0) > 0}
+				<button type="button" class="approve-all clear" in:fade={{ duration: ms(200) }} data-testid="clear-finished" onclick={() => ctx.clearAll('finished', ctx.approverCounts.done)}><Icon name="trash" size={16} />{t('requests.board.clearFinished')}<span class="aa-n">{ctx.approverCounts.done}</span></button>
+			{/if}
 			<RequestsFilter {ctx} {types} {subs} {hasSubs} {subsTotal} {filterCount} {status} {toneOf} {setStatus} {ms} bind:open={sfMenu} bind:btn={sfBtn} />
 		</div>
 	</div>

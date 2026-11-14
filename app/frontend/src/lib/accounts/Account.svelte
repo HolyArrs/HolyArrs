@@ -18,7 +18,8 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { personName } from '#lib/core/plain.ts';
-	import { api } from '#lib/core/api.ts';
+	import { api, ApiError } from '#lib/core/api.ts';
+	import { outsideWay } from '#lib/ui/sensitive.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { session } from '../core/session.svelte.ts';
@@ -193,7 +194,7 @@
 	let pwOpen = $state(false);
 	// The Settings search links to #pw-current, which only exists once the form is open.
 	$effect(() => {
-		if (page.url.hash === '#pw-current' && (session.s.hasPassword || session.s.outsideRecent)) pwOpen = true;
+		if (page.url.hash === '#pw-current' && (session.s.hasPassword || session.s.localRecent)) pwOpen = true;
 	});
 
 	async function changePassword(e: SubmitEvent) {
@@ -210,7 +211,11 @@
 			if (first) session.s.hasPassword = true;
 			toasts.push(first ? t('accounts.account.pwSet') : t('accounts.account.pwChanged'), 'ok', { body: first ? t('accounts.account.signInAs', { name: session.s.name }) : t('accounts.account.othersOut') });
 		} catch (err) {
-			pwError = strong(err);
+			// A first password needs a fresh sign-in: the box turns into the sign-in-again card.
+			if (first && err instanceof ApiError && err.body?.code === 'reauth') {
+				session.s.localRecent = false;
+				pwOpen = false;
+			} else pwError = strong(err);
 		} finally {
 			pwBusy = false;
 		}
@@ -331,7 +336,10 @@
 		</div>
 		<div class="box" class:wide={pwOpen} data-testid="box-password">
 			<span class="label">{t('accounts.signin.passwordLabel')}</span>
-			{#if !session.s.hasPassword && !session.s.outsideRecent}
+			{#if !session.s.hasPassword && !session.s.localRecent && outsideWay(session.s)}
+				<!-- Not fresh enough to set one: sign in again with Plex, Jellyfin or Emby first ("link" asks whenever the proof is stale). -->
+				<Confirm action="link">{#snippet children()}{/snippet}</Confirm>
+			{:else if !session.s.hasPassword && !session.s.localRecent}
 				<span class="hint">{t('accounts.account.noneYet', { method: authMethodWord(session.s.authMethod) })}</span>
 			{:else if !session.s.hasPassword && !pwOpen}
 				<div class="line"><Button type="button" onclick={() => (pwOpen = true)} data-testid="change-password">{t('accounts.account.setAPasswordLabel')}</Button></div>
@@ -496,9 +504,8 @@
 	.lock { flex: none; display: grid; place-items: center; width: 24px; height: 24px; color: var(--text-faint); cursor: help; }
 	.dn { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 	.dn .input { flex: 1 1 200px; min-width: 0; }
-	/* One button height and one input height across My account, the Settings sizes. */
-	.acct :global(.ui-btn.ui-btn) { min-height: 32px; }
-	.acct :global(.input:not(textarea)) { height: 32px; min-height: 32px; padding-block: 0; }
+	/* One input height across My account, the Settings size. */
+	.acct :global(.input:not(textarea)) { height: 40px; min-height: 40px; padding-block: 0; }
 	.acts { gap: 8px; flex-wrap: wrap; align-items: center; }
 	.pw { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 	.pw { width: min(100%, 360px); }
@@ -513,12 +520,7 @@
 		.boxes { grid-template-columns: minmax(0, 1fr); }
 		.dn .input { flex-basis: 100%; }
 	}
-	@media (max-width: 600px) {
-		.acct :global(.ui-btn.ui-btn) { min-height: 40px; }
-		.acct :global(.input:not(textarea)) { height: 40px; min-height: 40px; }
-	}
 	@media (pointer: coarse) {
-		.acct :global(.ui-btn.ui-btn) { min-height: 44px; }
 		.acct :global(.input:not(textarea)) { height: 44px; min-height: 44px; }
 	}
 </style>

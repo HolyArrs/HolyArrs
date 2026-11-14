@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease dan IPTorrents terbina dalam**, tanpa Prowlarr. Minta siri dalam 4K, dan Profilarr boleh menghantar format dan profilnya. [Lihat perkara baharu](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: padam mana-mana permintaan, dan senarai tontonan Plex rakan dibaca semula.** Kualiti folder kini dipaparkan pada kadnya, dan Settings telah diseragamkan. [Lihat perkara baharu](https://holyarrs.com/whats-new/)
 
 > Setiap poster, treler dan skor dalam HolyArrs anda datang daripada pelayan yang saya jalankan dan bayar sendiri, supaya ia kekal percuma untuk semua orang. Jika HolyArrs menjadikan malam menonton filem anda sedikit lebih baik, seorang penaja membantu menghidupkan lampu untuk kita semua 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> ialah satu app dihoskan sendiri untuk siri, filem dan muzik anda.<br>Semak imbas seperti app penstriman, minta apa yang anda mahu, dan ia uruskan selebihnya.</p>
 
-<p align="center"><b>Kira-kira 16.9 MB untuk dimuat turun · kira-kira 95 MiB RAM ketika melahu pada pemasangan baharu · amd64, arm64, armv7</b><br><sub>Enam app yang digantikannya bersaiz 718.2 MB apabila digabungkan.</sub></p>
+<p align="center"><b>Kira-kira 16.1 MB untuk dimuat turun · kira-kira 95 MiB RAM ketika melahu pada pemasangan baharu · amd64, arm64, armv7</b><br><sub>Enam app yang digantikannya bersaiz 685.0 MB apabila digabungkan.</sub></p>
 
 <p align="center"><a href="#quick-start">Mula pantas</a> · <a href="#why">Mengapa</a> · <a href="#what-it-does">Fungsinya</a> · <a href="#moving">Berpindah dari app lain</a> · <a href="#manual">Manual</a> · <a href="#help">Bantuan</a></p>
 
@@ -98,16 +98,16 @@ Jadi saya membinanya.
 
 | App | Muat turun (amd64) | RAM ketika melahu | Log masuk | Port web |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Enam app digabungkan** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Enam app digabungkan** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Kira-kira 43 kali lebih kecil. Muat turun registri termampat, imej linuxserver.io, amd64, diukur pada 2026-11-08. RAM ketika melahu diukur dengan 10,000 judul dan 55,000 filem dan episod. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Kira-kira 43 kali lebih kecil. Muat turun registri termampat, imej linuxserver.io, amd64, diukur pada 2026-11-13. RAM ketika melahu diukur dengan 10,000 judul dan 55,000 filem dan episod. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Seseorang meminta sebuah judul. HolyArrs mencari dalam Sumber anda, memilih kelu
 | 🔌 **API app lama** | Seerr, Prowlarr, Bazarr, Unpackerr dan Homepage terus berfungsi setelah anda menghidupkannya. |
 | 🗝️ **Tiada kunci API diperlukan** | Judul, ilustrasi dan carta datang daripada pelayan metadata HolyArrs. Kunci atau pelayan anda sendiri juga boleh digunakan. |
 | 🔒 **Kunci disulitkan** | Kata laluan dan kunci yang disimpan dikunci dengan kunci induk yang berada dalam folder konfigurasi anda. |
-| 🪶 **Sangat kecil** | Imej sekitar 16.9 MB yang hanya mengandungi HolyArrs. |
+| 🪶 **Sangat kecil** | Imej sekitar 16.1 MB yang hanya mengandungi HolyArrs. |
 
 <details>
 <summary><b>Lihat setiap halaman bergerak</b></summary>
@@ -222,7 +222,7 @@ Imej berada di Docker Hub sebagai [`holyarrs/holyarrs`](https://hub.docker.com/r
 | Teg | Gunakan untuk |
 | :----: | --- |
 | `latest` | Keluaran terbaharu. |
-| `1.1.3` | Satu versi tepat. Ia tidak pernah berubah. |
+| `1.1.4` | Satu versi tepat. Ia tidak pernah berubah. |
 
 ## Penggunaan
 

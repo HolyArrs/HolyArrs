@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease og IPTorrents innbyggð**, án Prowlarr. Biddu um þætti í 4K, og Profilarr getur sent sniðin sín og prófíla. [Sjáðu hvað er nýtt](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: fjarlægðu hvaða beiðni sem er, og áhorfslistar vina í Plex eru lesnir aftur.** Gæði möppu sjást nú á spjaldinu hennar, og Settings var samræmt. [Sjáðu hvað er nýtt](https://holyarrs.com/whats-new/)
 
 > Hvert veggspjald, hver stikla og hver einkunn í HolyArrs kemur frá server sem ég rek og borga sjálfur, svo að það haldist ókeypis fyrir alla. Ef HolyArrs gerði bíókvöldið aðeins betra heldur styrktaraðili ljósunum kveiktum fyrir okkur öll 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> er eitt forrit fyrir þættina þína, kvikmyndir og tónlist sem keyrir á þinni eigin vél.<br>Flettu eins og í streymisforriti, biddu um það sem þú vilt og forritið sér um restina.</p>
 
-<p align="center"><b>Um 16.9 MB niðurhal · um 95 MiB af minni í lausagangi á nýrri uppsetningu · amd64, arm64, armv7</b><br><sub>Forritin sex sem það leysir af hólmi eru samtals 718.2 MB í niðurhali.</sub></p>
+<p align="center"><b>Um 16.1 MB niðurhal · um 95 MiB af minni í lausagangi á nýrri uppsetningu · amd64, arm64, armv7</b><br><sub>Forritin sex sem það leysir af hólmi eru samtals 685.0 MB í niðurhali.</sub></p>
 
 <p align="center"><a href="#quick-start">Fljótleg byrjun</a> · <a href="#why">Af hverju</a> · <a href="#what-it-does">Hvað það gerir</a> · <a href="#moving">Flytja úr öðrum forritum</a> · <a href="#manual">Handbókin</a> · <a href="#help">Hjálp</a></p>
 
@@ -98,16 +98,16 @@ Venjulegur margmiðlunarþjónn keyrir sex forrit: Sonarr, Radarr, Lidarr, Bazar
 
 | Forrit | Niðurhal (amd64) | Minni í lausagangi | Innskráningar | Vefport |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Öll sex saman** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Öll sex saman** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Um 43 sinnum minna. Þjappað niðurhal úr registry, image frá linuxserver.io, amd64, mælt 2026-11-08. Minni í lausagangi mælt með 10,000 titlum og 55,000 kvikmyndum og þáttum. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Um 43 sinnum minna. Þjappað niðurhal úr registry, image frá linuxserver.io, amd64, mælt 2026-11-13. Minni í lausagangi mælt með 10,000 titlum og 55,000 kvikmyndum og þáttum. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Einhver biður um titil. HolyArrs leitar í uppsprettunum þínum, velur bestu �
 | 🔌 **API fyrir eldri forrit** | Seerr, Prowlarr, Bazarr, Unpackerr og Homepage halda áfram að virka þegar þú kveikir á því. |
 | 🗝️ **Engir API-lyklar nauðsynlegir** | Titlar, myndefni og vinsældalistar koma frá metadata-server HolyArrs. Þínir eigin lyklar eða þjónn virka líka. |
 | 🔒 **Dulkóðaðir lyklar** | Vistuð lykilorð og lyklar eru læstir með aðallykli sem liggur í stillingamöppunni þinni. |
-| 🪶 **Örlítið** | Image upp á um 16.9 MB þar sem ekkert er inni nema HolyArrs. |
+| 🪶 **Örlítið** | Image upp á um 16.1 MB þar sem ekkert er inni nema HolyArrs. |
 
 <details>
 <summary><b>Sjáðu hverja síðu á hreyfingu</b></summary>
@@ -222,7 +222,7 @@ Image eru á Docker Hub sem [`holyarrs/holyarrs`](https://hub.docker.com/r/holya
 | Tag | Notaðu það fyrir |
 | :----: | --- |
 | `latest` | Nýjustu útgáfuna. |
-| `1.1.3` | Eina tiltekna útgáfu. Hún breytist aldrei. |
+| `1.1.4` | Eina tiltekna útgáfu. Hún breytist aldrei. |
 
 ## Notkun
 

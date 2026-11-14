@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Magtakda muna ng password",
 	"settings.layout.setPasswordDesc": "Kailangan ng HolyArrs password para sa mga key, password, tao at backup. Wala ka pa nito.",
 	"settings.layout.setPasswordLabel": "Magtakda ng password",
+	"settings.layout.signInAgainTitle": "Mag-sign in ulit muna",
 	"settings.layout.confirmPasswordLabel": "Kumpirmahin ang password mo",
 	"settings.layout.confirmPasswordDesc": "Kailangan ng password mo para sa mga key, password, tao at backup. Tatagal ito ng 10 minuto."
 }

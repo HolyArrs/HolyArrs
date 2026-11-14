@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} mín.",
 	"discover.titleLibrary.missing": "Vantar",
 	"discover.titleLibrary.notOutYet": "Ekki komið út enn",
+	"discover.titleLibrary.waitingAfterAir": "Bíður eftir útsendingu",
 	"discover.titleLibrary.searchingEpisode": "Leita að þætti {episode}",
 	"discover.titleLibrary.versions": "Afbrigði",
 	"discover.titleLibrary.file": "Skrá",

@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} min",
 	"discover.titleLibrary.missing": "Lipsă",
 	"discover.titleLibrary.notOutYet": "Încă nu a apărut",
+	"discover.titleLibrary.waitingAfterAir": "Așteaptă după difuzare",
 	"discover.titleLibrary.searchingEpisode": "Se caută episodul {episode}",
 	"discover.titleLibrary.versions": "Versiuni",
 	"discover.titleLibrary.file": "Fișier",

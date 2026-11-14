@@ -54,6 +54,7 @@ export type { Member } from './board.ts';
 export type { TitleLive } from './live.ts';
 export { createAskCards } from './ask-cards.svelte.ts';
 export { createTakeBack } from './take-back.svelte.ts';
+export { createRemoveFlow } from './remove-flow.svelte.ts';
 export { createAskLive } from './ask-live.svelte.ts';
 export { createDeclineDialog } from './decline-dialog.svelte.ts';
 export { createAskChoices } from './ask-choices.svelte.ts';

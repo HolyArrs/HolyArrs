@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Stel eerst een wachtwoord in",
 	"settings.layout.setPasswordDesc": "Voor sleutels, wachtwoorden, mensen en backups heb je een HolyArrs-wachtwoord nodig. Je hebt er nog geen.",
 	"settings.layout.setPasswordLabel": "Een wachtwoord instellen",
+	"settings.layout.signInAgainTitle": "Meld je eerst opnieuw aan",
 	"settings.layout.confirmPasswordLabel": "Bevestig je wachtwoord",
 	"settings.layout.confirmPasswordDesc": "Voor sleutels, wachtwoorden, mensen en backups is je wachtwoord nodig. Geldt 10 minuten."
 }

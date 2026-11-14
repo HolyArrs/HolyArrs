@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Standard",
 	"requests.window.askedFor": "{name} a cerut {quality}.",
 	"requests.window.addsOnly": "Adaugă doar copia {quality}.",
-	"requests.board.qualityTitle": "Cerut în {quality}"
+	"requests.board.qualityTitle": "Cerut în {quality}",
+	"requests.page.removeRequest": "Elimină cererea",
+	"requests.page.removeTitle": "Elimini această cerere?",
+	"requests.page.removeDesc": "Titlul și fișierele lui rămân.",
+	"requests.window.removeName": "Elimină cererea pentru {name}",
+	"requests.board.clearFailed": "Șterge cele eșuate",
+	"requests.board.clearFinished": "Șterge cele încheiate",
+	"requests.board.clearFailedTitle": "Elimini cererile eșuate ({n})?",
+	"requests.board.clearFailedDesc": "Au fost aprobate, dar nu s-a adăugat nimic. Titlurile și fișierele lor rămân.",
+	"requests.board.clearFinishedTitle": "Elimini cererile încheiate ({n})?",
+	"requests.board.clearFinishedDesc": "Sunt gata sau respinse. Titlurile și fișierele lor rămân.",
+	"requests.board.clearConfirm": "Elimină-le pe toate"
 }

@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Vispirms iestati paroli",
 	"settings.layout.setPasswordDesc": "Atslēgām, parolēm, cilvēkiem un dublējumiem vajadzīga HolyArrs parole. Tev tās vēl nav.",
 	"settings.layout.setPasswordLabel": "Iestatīt paroli",
+	"settings.layout.signInAgainTitle": "Vispirms piesakieties vēlreiz",
 	"settings.layout.confirmPasswordLabel": "Apstiprini savu paroli",
 	"settings.layout.confirmPasswordDesc": "Atslēgām, parolēm, cilvēkiem un dublējumiem vajadzīga tava parole. Derīga 10 minūtes."
 }

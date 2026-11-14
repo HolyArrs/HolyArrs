@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Tetapkan kata laluan dahulu",
 	"settings.layout.setPasswordDesc": "Kunci, kata laluan, orang dan sandaran memerlukan kata laluan HolyArrs. Anda belum mempunyainya.",
 	"settings.layout.setPasswordLabel": "Tetapkan kata laluan",
+	"settings.layout.signInAgainTitle": "Log masuk semula dahulu",
 	"settings.layout.confirmPasswordLabel": "Sahkan kata laluan anda",
 	"settings.layout.confirmPasswordDesc": "Kunci, kata laluan, orang dan sandaran memerlukan kata laluan anda. Sah selama 10 minit."
 }

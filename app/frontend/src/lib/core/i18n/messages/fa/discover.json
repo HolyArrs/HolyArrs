@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} دقیقه",
 	"discover.titleLibrary.missing": "کم‌شده",
 	"discover.titleLibrary.notOutYet": "هنوز منتشر نشده",
+	"discover.titleLibrary.waitingAfterAir": "در انتظار پس از پخش",
 	"discover.titleLibrary.searchingEpisode": "در حال جستجوی قسمت {episode}",
 	"discover.titleLibrary.versions": "نسخه‌ها",
 	"discover.titleLibrary.file": "فایل",

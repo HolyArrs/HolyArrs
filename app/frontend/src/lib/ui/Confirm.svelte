@@ -3,8 +3,9 @@
 	// Asks for the password again before a sensitive action, else shows the content.
 	import type { Snippet } from 'svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { needsConfirm, signInFirst, type Sensitive } from './sensitive.ts';
+	import { needsConfirm, outsideWay, signInFirst, type Sensitive } from './sensitive.ts';
 	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import { appPath, to } from '#lib/core/paths.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -22,6 +23,13 @@
 
 	// A home visit that skipped sign-in cannot confirm a password: it signs in on the sign-in page and comes back here.
 	const signInLink = $derived(signInFirst({ via: session.s.via }, appPath(page.url.pathname) + page.url.search));
+	// No password to type: a fresh sign-in with their own way is the proof, so sign out and come back through it.
+	const way = $derived(outsideWay(session.s));
+	async function signInAgain() {
+		const back = appPath(page.url.pathname) + page.url.search;
+		await session.logout();
+		await goto(to(`/login?next=${encodeURIComponent(back)}`));
+	}
 
 	// Secrets are cleared whether or not it worked.
 	async function submit(e: SubmitEvent) {
@@ -46,6 +54,14 @@
 		<p class="hint">{t('ui.confirm.localVisit')}</p>
 		<div class="row acts">
 			<Button size="sm" variant="primary" href={to(signInLink)}>{t('ui.confirm.signInFirst')}</Button>
+			{#if onCancel}<Button size="sm" variant="plain" type="button" onclick={onCancel}>{t('ui.confirm.cancel')}</Button>{/if}
+		</div>
+	</div>
+{:else if need && way}
+	<div class="confirm" data-testid="confirm-outside">
+		<p class="hint">{t('ui.confirm.outsideAgain', { method: way })}</p>
+		<div class="row acts">
+			<Button size="sm" variant="primary" type="button" onclick={signInAgain}>{t('ui.confirm.signInAgainWith', { method: way })}</Button>
 			{#if onCancel}<Button size="sm" variant="plain" type="button" onclick={onCancel}>{t('ui.confirm.cancel')}</Button>{/if}
 		</div>
 	</div>

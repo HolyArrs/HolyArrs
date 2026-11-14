@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} хв",
 	"discover.titleLibrary.missing": "Бракує",
 	"discover.titleLibrary.notOutYet": "Ще не вийшла",
+	"discover.titleLibrary.waitingAfterAir": "Очікує після виходу в ефір",
 	"discover.titleLibrary.searchingEpisode": "Шукаємо серію {episode}",
 	"discover.titleLibrary.versions": "Варіанти",
 	"discover.titleLibrary.file": "Файл",

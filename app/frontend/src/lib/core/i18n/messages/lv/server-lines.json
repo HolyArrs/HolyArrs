@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "nosūtīts, kaut arī neizturēja: {overridden}",
 	"server.sources.the-album-would-mix-copies": "albums sajauktu kopijas: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Izlaidumu vārti tiek izlaisti: šī filma vēl netiek uzskatīta par iznākušu",
-	"server.sources.this-version-already-has-a-good": "Šai Versijai jau ir pietiekami laba kopija; jaunā to aizstās"
+	"server.sources.this-version-already-has-a-good": "Šai Versijai jau ir pietiekami laba kopija; jaunā to aizstās",
+	"server.requests.removed-the-request-for": "{name} noņēma pieprasījumu: {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex nedeva šīs personas konta kodu, tāpēc viņas skatīšanās saraksts netiek lasīts."
 }

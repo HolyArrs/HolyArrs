@@ -565,5 +565,16 @@
 	"requests.quality.standard": "தரநிலை",
 	"requests.window.askedFor": "{name} {quality} கோரினார்.",
 	"requests.window.addsOnly": "{quality} பிரதியை மட்டும் சேர்க்கும்.",
-	"requests.board.qualityTitle": "{quality} இல் கோரப்பட்டது"
+	"requests.board.qualityTitle": "{quality} இல் கோரப்பட்டது",
+	"requests.page.removeRequest": "கோரிக்கையை நீக்கு",
+	"requests.page.removeTitle": "இந்தக் கோரிக்கையை நீக்கவா?",
+	"requests.page.removeDesc": "தலைப்பும் அதன் கோப்புகளும் இருக்கும்.",
+	"requests.window.removeName": "{name} கோரிக்கையை நீக்கு",
+	"requests.board.clearFailed": "தோல்வியடைந்தவற்றை அழி",
+	"requests.board.clearFinished": "முடிந்தவற்றை அழி",
+	"requests.board.clearFailedTitle": "தோல்வியடைந்த கோரிக்கைகளை ({n}) நீக்கவா?",
+	"requests.board.clearFailedDesc": "இவை அங்கீகரிக்கப்பட்டன, ஆனால் எதுவும் சேர்க்கப்படவில்லை. தலைப்புகளும் அவற்றின் கோப்புகளும் இருக்கும்.",
+	"requests.board.clearFinishedTitle": "முடிந்த கோரிக்கைகளை ({n}) நீக்கவா?",
+	"requests.board.clearFinishedDesc": "இவை தயார் அல்லது நிராகரிக்கப்பட்டவை. தலைப்புகளும் அவற்றின் கோப்புகளும் இருக்கும்.",
+	"requests.board.clearConfirm": "அனைத்தையும் நீக்கு"
 }

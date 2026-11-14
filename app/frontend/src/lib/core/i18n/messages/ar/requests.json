@@ -565,5 +565,16 @@
 	"requests.quality.standard": "قياسي",
 	"requests.window.askedFor": "طلب {name} بجودة {quality}.",
 	"requests.window.addsOnly": "يضيف نسخة {quality} فقط.",
-	"requests.board.qualityTitle": "طُلب بجودة {quality}"
+	"requests.board.qualityTitle": "طُلب بجودة {quality}",
+	"requests.page.removeRequest": "إزالة الطلب",
+	"requests.page.removeTitle": "إزالة هذا الطلب؟",
+	"requests.page.removeDesc": "يبقى العنوان وملفاته.",
+	"requests.window.removeName": "إزالة طلب {name}",
+	"requests.board.clearFailed": "مسح الفاشلة",
+	"requests.board.clearFinished": "مسح المنتهية",
+	"requests.board.clearFailedTitle": "إزالة الطلبات الفاشلة ({n})؟",
+	"requests.board.clearFailedDesc": "تمت الموافقة عليها لكن لم تتم إضافة شيء. تبقى العناوين وملفاتها.",
+	"requests.board.clearFinishedTitle": "إزالة الطلبات المنتهية ({n})؟",
+	"requests.board.clearFinishedDesc": "هذه جاهزة أو مرفوضة. تبقى العناوين وملفاتها.",
+	"requests.board.clearConfirm": "إزالة الكل"
 }

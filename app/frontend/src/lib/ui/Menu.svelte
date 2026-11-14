@@ -23,7 +23,8 @@
 		placement = 'below',
 		width = 220,
 		open = $bindable(false),
-		tabindex
+		tabindex,
+		portal = false
 	}: {
 		label: string;
 		items: MenuItem[];
@@ -36,6 +37,8 @@
 		width?: number;
 		open?: boolean;
 		tabindex?: number;
+		/** Moves the menu to the page's top level so a clipping or blurred parent cannot cut it off. */
+		portal?: boolean;
 	} = $props();
 
 	// Set when the menu opens with ArrowUp so focus lands on the last entry.
@@ -88,7 +91,7 @@
 	}
 </script>
 
-<Popover {label} {icon} {text} {trigger} {variant} {align} {placement} {width} {tabindex} bind:open haspopup="menu" panelRole="none" onopen={focusFirst} ontriggerkey={triggerKey}>
+<Popover {label} {icon} {text} {trigger} {variant} {align} {placement} {width} {tabindex} {portal} bind:open haspopup="menu" panelRole="none" onopen={focusFirst} ontriggerkey={triggerKey}>
 	{#snippet children(close)}
 		<div class="ui-menu" role="menu" aria-label={label} tabindex="-1" onkeydown={nav}>
 			{#each items as item, i (i)}

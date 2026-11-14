@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "不合格でしたが送信しました：{overridden}",
 	"server.sources.the-album-would-mix-copies": "アルバムのコピーが混ざってしまいます：{skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "公開判定は省かれます。この映画は、まだ公開済みとして数えられません",
-	"server.sources.this-version-already-has-a-good": "このバージョンには、すでに十分な品質のコピーがあります。新しいものが置き換えます"
+	"server.sources.this-version-already-has-a-good": "このバージョンには、すでに十分な品質のコピーがあります。新しいものが置き換えます",
+	"server.requests.removed-the-request-for": "{name} が {a} のリクエストを削除しました",
+	"server.requests.plex-gave-no-account-code-for": "Plex がこの人のアカウントコードを返さなかったため、ウォッチリストは読み取られません。"
 }

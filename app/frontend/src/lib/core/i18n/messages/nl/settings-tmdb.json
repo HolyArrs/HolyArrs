@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Optioneel, voor beoordelingen.",
 	"settings.tmdb.keyFanart": "fanart.tv-sleutel",
 	"settings.tmdb.keyFanartHint": "Optioneel, voor logo's en afbeeldingen.",
-	"settings.tmdb.testKey": "Sleutel testen",
+	"settings.tmdb.testKey": "Testen",
 	"settings.tmdb.testWorks": "Sleutel werkt",
 	"settings.tmdb.testRefused": "Sleutel geweigerd",
 	"settings.tmdb.testPinRefused": "Sleutel of pincode geweigerd",

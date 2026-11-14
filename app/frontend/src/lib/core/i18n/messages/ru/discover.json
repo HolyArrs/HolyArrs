@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} мин",
 	"discover.titleLibrary.missing": "Не хватает",
 	"discover.titleLibrary.notOutYet": "Ещё не вышла",
+	"discover.titleLibrary.waitingAfterAir": "Ждёт после выхода в эфир",
 	"discover.titleLibrary.searchingEpisode": "Поиск серии {episode}",
 	"discover.titleLibrary.versions": "Варианты",
 	"discover.titleLibrary.file": "Файл",

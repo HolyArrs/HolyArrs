@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "任意。評価用。",
 	"settings.tmdb.keyFanart": "fanart.tv キー",
 	"settings.tmdb.keyFanartHint": "任意。ロゴと画像用。",
-	"settings.tmdb.testKey": "キーをテスト",
+	"settings.tmdb.testKey": "テスト",
 	"settings.tmdb.testWorks": "キーは有効です",
 	"settings.tmdb.testRefused": "キーが拒否されました",
 	"settings.tmdb.testPinRefused": "キーまたは PIN が拒否されました",

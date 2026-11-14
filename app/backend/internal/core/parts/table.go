@@ -609,6 +609,7 @@ var routeOwners = map[string]Owner{
 	"POST /api/v1/asks":                              wishlist,
 	"GET /api/v1/asks/limit":                         wishlist,
 	"DELETE /api/v1/asks/{id}":                       wishlist,
+	"POST /api/v1/asks/remove":                       wishlist,
 	"POST /api/v1/asks/{id}/approve":                 wishlist,
 	"POST /api/v1/asks/{id}/turn-down":               wishlist,
 	"GET /api/v1/ask-limits":                         wishlist,

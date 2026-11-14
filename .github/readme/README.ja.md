@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3：Knaben、TorrentsCSV、SubsPlease、IPTorrents を内蔵**、Prowlarr は不要です。番組を 4K でリクエストでき、Profilarr からフォーマットとプロファイルを送れます。[新機能を見る](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4：どのリクエストも削除でき、友だちの Plex ウォッチリストも再び読み込まれます。**フォルダの画質がカードに表示されるようになり、Settings の表記と動作も統一しました。[新機能を見る](https://holyarrs.com/whats-new/)
 
 > HolyArrs のポスター、予告編、スコアはすべて、私が自分で運営し費用を払っているサーバーから届いています。だから誰でも無料で使えます。HolyArrs で映画の夜が少しでも楽しくなったなら、スポンサーになってみんなの明かりを灯し続けてください 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> は、番組、映画、音楽のためのセルフホスト型アプリです。<br>配信アプリのように見て回り、欲しいものをリクエストすれば、あとは任せられます。</p>
 
-<p align="center"><b>ダウンロードは約 16.9 MB · 新規インストールのアイドル時 RAM は約 95 MiB · amd64, arm64, armv7</b><br><sub>置き換える6つのアプリは、合計で 718.2 MB あります。</sub></p>
+<p align="center"><b>ダウンロードは約 16.1 MB · 新規インストールのアイドル時 RAM は約 95 MiB · amd64, arm64, armv7</b><br><sub>置き換える6つのアプリは、合計で 685.0 MB あります。</sub></p>
 
 <p align="center"><a href="#quick-start">クイックスタート</a> · <a href="#why">作った理由</a> · <a href="#what-it-does">できること</a> · <a href="#moving">他のアプリからの移行</a> · <a href="#manual">マニュアル</a> · <a href="#help">ヘルプ</a></p>
 
@@ -98,16 +98,16 @@ docker compose up -d
 
 | アプリ | ダウンロード (amd64) | アイドル時の RAM | ログイン | Web ポート |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **6つの合計** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **6つの合計** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>約43分の1のサイズです。レジストリからの圧縮ダウンロードサイズで、linuxserver.io のイメージ、amd64、2026-11-08 に測定しました。アイドル時の RAM は、10,000 タイトルと、映画とエピソード合計 55,000 件で測定しています。 (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>約43分の1のサイズです。レジストリからの圧縮ダウンロードサイズで、linuxserver.io のイメージ、amd64、2026-11-13 に測定しました。アイドル時の RAM は、10,000 タイトルと、映画とエピソード合計 55,000 件で測定しています。 (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ docker compose up -d
 | 🔌 **旧アプリ API** | 有効にすると、Seerr、Prowlarr、Bazarr、Unpackerr、Homepage がこれまでどおり動きます。 |
 | 🗝️ **API キー不要** | タイトル、アートワーク、チャートは HolyArrs のメタデータサーバーから届きます。自分のキーやサーバーも使えます。 |
 | 🔒 **暗号化されたキー** | 保存したパスワードとキーは、config フォルダにあるマスターキーでロックされます。 |
-| 🪶 **小さい** | HolyArrs だけが入った、約 16.9 MB のイメージです。 |
+| 🪶 **小さい** | HolyArrs だけが入った、約 16.1 MB のイメージです。 |
 
 <details>
 <summary><b>各ページの動きを見る</b></summary>
@@ -222,7 +222,7 @@ NAS をお使いですか。[Unraid、Synology などの NAS](https://docs.HolyA
 | タグ | 用途 |
 | :----: | --- |
 | `latest` | 最新のリリース。 |
-| `1.1.3` | 特定の1つのバージョンです。動くことはありません。 |
+| `1.1.4` | 特定の1つのバージョンです。動くことはありません。 |
 
 ## 使い方
 

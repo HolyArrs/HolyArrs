@@ -36,7 +36,8 @@
 	.ui-head { margin-bottom: 24px; }
 	.row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 16px; }
 	.titles { min-width: 0; }
-	h1 { font: var(--t-large-title); letter-spacing: var(--t-large-title-track); text-wrap: balance; }
+	/* Main page title: 30px/700 on every page (Settings pages set their own 20px/600). */
+	h1 { font: var(--t-large-title); font-size: 30px; letter-spacing: var(--t-large-title-track); text-wrap: balance; }
 	.title1 h1 { font: var(--t-title1); letter-spacing: var(--t-title1-track); }
 	p { margin-top: 4px; color: var(--text-muted); font: var(--t-body); max-width: 62ch; }
 	.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -51,6 +52,5 @@
 			transition: opacity var(--dur-fast) var(--ease-out), translate var(--dur-fast) var(--ease-out), visibility 0s linear var(--dur-fast);
 		}
 		.mini.show { opacity: 1; visibility: visible; translate: 0 0; transition-delay: 0s; }
-		h1 { font-size: 30px; }
 	}
 </style>

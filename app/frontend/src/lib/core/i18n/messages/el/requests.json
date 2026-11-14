@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Τυπική",
 	"requests.window.askedFor": "Ο/Η {name} ζήτησε {quality}.",
 	"requests.window.addsOnly": "Προσθέτει μόνο το αντίγραφο {quality}.",
-	"requests.board.qualityTitle": "Ζητήθηκε σε {quality}"
+	"requests.board.qualityTitle": "Ζητήθηκε σε {quality}",
+	"requests.page.removeRequest": "Αφαίρεση αιτήματος",
+	"requests.page.removeTitle": "Να αφαιρεθεί αυτό το αίτημα;",
+	"requests.page.removeDesc": "Ο τίτλος και τα αρχεία του παραμένουν.",
+	"requests.window.removeName": "Αφαίρεση αιτήματος για {name}",
+	"requests.board.clearFailed": "Εκκαθάριση αποτυχημένων",
+	"requests.board.clearFinished": "Εκκαθάριση ολοκληρωμένων",
+	"requests.board.clearFailedTitle": "Να αφαιρεθούν τα αποτυχημένα αιτήματα ({n});",
+	"requests.board.clearFailedDesc": "Εγκρίθηκαν, αλλά δεν προστέθηκε τίποτα. Οι τίτλοι και τα αρχεία τους παραμένουν.",
+	"requests.board.clearFinishedTitle": "Να αφαιρεθούν τα ολοκληρωμένα αιτήματα ({n});",
+	"requests.board.clearFinishedDesc": "Είναι έτοιμα ή απορρίφθηκαν. Οι τίτλοι και τα αρχεία τους παραμένουν.",
+	"requests.board.clearConfirm": "Αφαίρεση όλων"
 }

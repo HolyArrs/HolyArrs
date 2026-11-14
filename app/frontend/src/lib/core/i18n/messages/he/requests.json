@@ -565,5 +565,16 @@
 	"requests.quality.standard": "רגיל",
 	"requests.window.askedFor": "{name} ביקש/ה {quality}.",
 	"requests.window.addsOnly": "מוסיף רק את עותק ה-{quality}.",
-	"requests.board.qualityTitle": "התבקש ב-{quality}"
+	"requests.board.qualityTitle": "התבקש ב-{quality}",
+	"requests.page.removeRequest": "הסרת הבקשה",
+	"requests.page.removeTitle": "להסיר את הבקשה הזו?",
+	"requests.page.removeDesc": "הכותר והקבצים שלו נשארים.",
+	"requests.window.removeName": "הסרת הבקשה עבור {name}",
+	"requests.board.clearFailed": "ניקוי שנכשלו",
+	"requests.board.clearFinished": "ניקוי שהסתיימו",
+	"requests.board.clearFailedTitle": "להסיר את הבקשות שנכשלו ({n})?",
+	"requests.board.clearFailedDesc": "הן אושרו, אבל לא נוסף דבר. הכותרים והקבצים שלהם נשארים.",
+	"requests.board.clearFinishedTitle": "להסיר את הבקשות שהסתיימו ({n})?",
+	"requests.board.clearFinishedDesc": "הן מוכנות או נדחו. הכותרים והקבצים שלהם נשארים.",
+	"requests.board.clearConfirm": "הסרת הכול"
 }

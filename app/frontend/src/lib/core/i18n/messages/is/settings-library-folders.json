@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Aðskildu gerðir með kommum, t.d. srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs sér ekki {path}. Það sér aðeins möppur sem eru tengdar inn í gáminn þess. Bættu við volume eins og {path}:{inside} og notaðu svo {inside} hér.",
 	"settings.libraryFolders.quality": "Gæði",
-	"settings.libraryFolders.qualityNone": "Nota sjálfgefið",
 	"settings.libraryFolders.qualityHint": "Nýir titlar í þessari möppu byrja með þessum gæðum.",
-	"settings.libraryFolders.qualityOf": "Gæði {path}"
+	"settings.libraryFolders.qualityDefault": "Sjálfgefið",
+	"settings.libraryFolders.qualityDefaultNamed": "Sjálfgefið ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · sjálfgefið",
+	"settings.libraryFolders.qualityFor": "Gæði fyrir {name}: {value}"
 }

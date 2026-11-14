@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Szabványos",
 	"requests.window.askedFor": "{name} ezt kérte: {quality}.",
 	"requests.window.addsOnly": "Csak a(z) {quality} másolatot adja hozzá.",
-	"requests.board.qualityTitle": "Kért minőség: {quality}"
+	"requests.board.qualityTitle": "Kért minőség: {quality}",
+	"requests.page.removeRequest": "Kérés eltávolítása",
+	"requests.page.removeTitle": "Eltávolítod ezt a kérést?",
+	"requests.page.removeDesc": "A cím és a fájljai megmaradnak.",
+	"requests.window.removeName": "{name} kérésének eltávolítása",
+	"requests.board.clearFailed": "Sikertelenek törlése",
+	"requests.board.clearFinished": "Befejezettek törlése",
+	"requests.board.clearFailedTitle": "Eltávolítod a sikertelen kéréseket ({n})?",
+	"requests.board.clearFailedDesc": "Jóváhagyták őket, de semmi sem lett hozzáadva. A címek és a fájljaik megmaradnak.",
+	"requests.board.clearFinishedTitle": "Eltávolítod a befejezett kéréseket ({n})?",
+	"requests.board.clearFinishedDesc": "Készek vagy elutasítottak. A címek és a fájljaik megmaradnak.",
+	"requests.board.clearConfirm": "Mind eltávolítása"
 }

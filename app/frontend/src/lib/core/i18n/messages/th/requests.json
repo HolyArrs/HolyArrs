@@ -565,5 +565,16 @@
 	"requests.quality.standard": "มาตรฐาน",
 	"requests.window.askedFor": "{name} ขอแบบ {quality}",
 	"requests.window.addsOnly": "เพิ่มเฉพาะสำเนา {quality}",
-	"requests.board.qualityTitle": "ขอแบบ {quality}"
+	"requests.board.qualityTitle": "ขอแบบ {quality}",
+	"requests.page.removeRequest": "ลบคำขอ",
+	"requests.page.removeTitle": "ลบคำขอนี้ไหม",
+	"requests.page.removeDesc": "ชื่อเรื่องและไฟล์ยังอยู่",
+	"requests.window.removeName": "ลบคำขอของ {name}",
+	"requests.board.clearFailed": "ล้างที่ล้มเหลว",
+	"requests.board.clearFinished": "ล้างที่เสร็จแล้ว",
+	"requests.board.clearFailedTitle": "ลบคำขอที่ล้มเหลว ({n}) ไหม",
+	"requests.board.clearFailedDesc": "คำขอเหล่านี้อนุมัติแล้วแต่ไม่มีอะไรถูกเพิ่ม ชื่อเรื่องและไฟล์ยังอยู่",
+	"requests.board.clearFinishedTitle": "ลบคำขอที่เสร็จแล้ว ({n}) ไหม",
+	"requests.board.clearFinishedDesc": "คำขอเหล่านี้พร้อมแล้วหรือถูกปฏิเสธ ชื่อเรื่องและไฟล์ยังอยู่",
+	"requests.board.clearConfirm": "ลบทั้งหมด"
 }

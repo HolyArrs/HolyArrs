@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "envoyée malgré son échec: {overridden}",
 	"server.sources.the-album-would-mix-copies": "l'album mélangerait des copies: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Le seuil de sortie est sauté : ce film ne compte pas encore comme sorti",
-	"server.sources.this-version-already-has-a-good": "Cette version a déjà une copie suffisante ; la nouvelle la remplacera"
+	"server.sources.this-version-already-has-a-good": "Cette version a déjà une copie suffisante ; la nouvelle la remplacera",
+	"server.requests.removed-the-request-for": "{name} a retiré la demande pour {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex n'a donné aucun code de compte pour cette personne, donc sa liste de suivi n'est pas lue."
 }

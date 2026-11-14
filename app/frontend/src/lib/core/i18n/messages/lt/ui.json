@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Atšaukti",
 	"ui.confirm.localVisit": "Šis apsilankymas praleidžia prisijungimą, todėl negali patvirtinti jūsų slaptažodžio. Pirmiausia prisijunkite slaptažodžiu ir sugrįšite čia.",
 	"ui.confirm.signInFirst": "Prisijungti mano slaptažodžiu",
+	"ui.confirm.outsideAgain": "Kad patvirtintumėte, jog tai jūs, vėl prisijunkite per {method}. Grįšite čia. HolyArrs slaptažodį taip pat galite nustatyti skiltyje Mano paskyra.",
+	"ui.confirm.signInAgainWith": "Vėl prisijungti per {method}",
 	"ui.growCard.preview": "{title} peržiūra",
 	"ui.growCard.goTo": "Eiti į: {title}",
 	"ui.growCard.moreInfoAbout": "Daugiau apie: {title}",

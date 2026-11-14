@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "στάλθηκε παρότι απέτυχε: {overridden}",
 	"server.sources.the-album-would-mix-copies": "το άλμπουμ θα ανέμιγνε αντίγραφα: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Το Όριο κυκλοφορίας παραλείπεται: αυτή η ταινία δεν θεωρείται ακόμη κυκλοφορημένη",
-	"server.sources.this-version-already-has-a-good": "Αυτή η παραλλαγή έχει ήδη αρκετά καλό αντίγραφο· το νέο θα το αντικαταστήσει"
+	"server.sources.this-version-already-has-a-good": "Αυτή η παραλλαγή έχει ήδη αρκετά καλό αντίγραφο· το νέο θα το αντικαταστήσει",
+	"server.requests.removed-the-request-for": "Ο/Η {name} αφαίρεσε το αίτημα για {a}",
+	"server.requests.plex-gave-no-account-code-for": "Το Plex δεν έδωσε κωδικό λογαριασμού για αυτό το άτομο, οπότε η λίστα παρακολούθησής του δεν διαβάζεται."
 }

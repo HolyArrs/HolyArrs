@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "虽未通过仍已发送：{overridden}",
 	"server.sources.the-album-would-mix-copies": "专辑会混入多份副本：{skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "已跳过发行门槛：这部电影还不算已上映",
-	"server.sources.this-version-already-has-a-good": "这个版本已有足够好的副本；新的会替换它"
+	"server.sources.this-version-already-has-a-good": "这个版本已有足够好的副本；新的会替换它",
+	"server.requests.removed-the-request-for": "{name} 移除了 {a} 的请求",
+	"server.requests.plex-gave-no-account-code-for": "Plex 没有提供此人的账户代码，因此不会读取其待看清单。"
 }

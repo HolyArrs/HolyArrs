@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} นาที",
 	"discover.titleLibrary.missing": "ขาด",
 	"discover.titleLibrary.notOutYet": "ยังไม่ออก",
+	"discover.titleLibrary.waitingAfterAir": "รอหลังออกอากาศ",
 	"discover.titleLibrary.searchingEpisode": "กำลังค้นหาตอนที่ {episode}",
 	"discover.titleLibrary.versions": "เวอร์ชัน",
 	"discover.titleLibrary.file": "ไฟล์",

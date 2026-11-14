@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease e IPTorrents integrados**, sem Prowlarr. Peça séries em 4K, e o Profilarr pode enviar seus formatos e perfis. [Veja as novidades](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: remova qualquer pedido, e as watchlists do Plex dos amigos voltam a ser lidas.** A qualidade de uma pasta agora aparece no cartão dela, e o Settings ficou mais consistente. [Veja as novidades](https://holyarrs.com/whats-new/)
 
 > Cada pôster, trailer e nota do seu HolyArrs vem de um servidor que eu mantenho e pago do meu bolso, para que continue grátis para todo mundo. Se o HolyArrs deixou sua noite de filme um pouco melhor, patrocinar mantém as luzes acesas para todos nós 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> é um app self-hosted único para suas séries, filmes e músicas.<br>Navegue como em um app de streaming, peça o que quiser e ele cuida do resto.</p>
 
-<p align="center"><b>Cerca de 16.9 MB para baixar · cerca de 95 MiB de RAM em repouso em uma instalação nova · amd64, arm64, armv7</b><br><sub>Os seis apps que ele substitui somam 718.2 MB para baixar.</sub></p>
+<p align="center"><b>Cerca de 16.1 MB para baixar · cerca de 95 MiB de RAM em repouso em uma instalação nova · amd64, arm64, armv7</b><br><sub>Os seis apps que ele substitui somam 685.0 MB para baixar.</sub></p>
 
 <p align="center"><a href="#quick-start">Início rápido</a> · <a href="#why">Por quê</a> · <a href="#what-it-does">O que ele faz</a> · <a href="#moving">Migrar de outros apps</a> · <a href="#manual">O manual</a> · <a href="#help">Ajuda</a></p>
 
@@ -98,16 +98,16 @@ Então eu criei.
 
 | App | Download (amd64) | RAM em repouso | Logins | Portas web |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Os seis juntos** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Os seis juntos** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Cerca de 43 vezes menor. Download comprimido do registry, imagens do linuxserver.io, amd64, medido em 2026-11-08. RAM em repouso medida com 10,000 títulos e 55,000 filmes e episódios. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Cerca de 43 vezes menor. Download comprimido do registry, imagens do linuxserver.io, amd64, medido em 2026-11-13. RAM em repouso medida com 10,000 títulos e 55,000 filmes e episódios. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Alguém pede um título. O HolyArrs busca nos seus Sources, escolhe o melhor rel
 | 🔌 **API dos apps antigos** | Seerr, Prowlarr, Bazarr, Unpackerr e Homepage continuam funcionando depois que você ativar. |
 | 🗝️ **Sem chaves de API** | Títulos, imagens e rankings vêm do servidor de metadados do HolyArrs. Suas próprias chaves ou seu próprio servidor também funcionam. |
 | 🔒 **Chaves criptografadas** | Senhas e chaves guardadas são trancadas com uma chave mestra que fica na sua pasta de config. |
-| 🪶 **Minúsculo** | Uma imagem de cerca de 16.9 MB só com o HolyArrs dentro. |
+| 🪶 **Minúsculo** | Uma imagem de cerca de 16.1 MB só com o HolyArrs dentro. |
 
 <details>
 <summary><b>Veja cada página em movimento</b></summary>
@@ -222,7 +222,7 @@ As imagens ficam no Docker Hub como [`holyarrs/holyarrs`](https://hub.docker.com
 | Tag | Use para |
 | :----: | --- |
 | `latest` | A versão mais recente. |
-| `1.1.3` | Uma versão exata. Nunca muda. |
+| `1.1.4` | Uma versão exata. Nunca muda. |
 
 ## Uso
 

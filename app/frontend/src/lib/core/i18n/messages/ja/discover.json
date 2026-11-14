@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} 分",
 	"discover.titleLibrary.missing": "不足",
 	"discover.titleLibrary.notOutYet": "まだ公開されていません",
+	"discover.titleLibrary.waitingAfterAir": "放送後の待機中",
 	"discover.titleLibrary.searchingEpisode": "第 {episode} 話を検索中",
 	"discover.titleLibrary.versions": "バージョン",
 	"discover.titleLibrary.file": "ファイル",

@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "वैकल्पिक, रेटिंग के लिए।",
 	"settings.tmdb.keyFanart": "fanart.tv कुंजी",
 	"settings.tmdb.keyFanartHint": "वैकल्पिक, लोगो और चित्रों के लिए।",
-	"settings.tmdb.testKey": "कुंजी जाँचें",
+	"settings.tmdb.testKey": "टेस्ट",
 	"settings.tmdb.testWorks": "कुंजी काम करती है",
 	"settings.tmdb.testRefused": "कुंजी अस्वीकार",
 	"settings.tmdb.testPinRefused": "कुंजी या PIN अस्वीकार",

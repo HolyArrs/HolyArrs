@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Skill typer med komma, for eksempel srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs ser ikke {path}. Den ser bare mapper som er montert i containeren sin. Legg til et volum som {path}:{inside}, og bruk så {inside} her.",
 	"settings.libraryFolders.quality": "Kvalitet",
-	"settings.libraryFolders.qualityNone": "Bruk standarden",
 	"settings.libraryFolders.qualityHint": "Nye titler i denne mappen starter med denne kvaliteten.",
-	"settings.libraryFolders.qualityOf": "Kvalitet for {path}"
+	"settings.libraryFolders.qualityDefault": "Standard",
+	"settings.libraryFolders.qualityDefaultNamed": "Standard ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · standard",
+	"settings.libraryFolders.qualityFor": "Kvalitet for {name}: {value}"
 }

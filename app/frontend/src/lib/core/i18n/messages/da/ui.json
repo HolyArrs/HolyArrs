@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Annullér",
 	"ui.confirm.localVisit": "Dette besøg springer login over, så det kan ikke bekræfte din adgangskode. Log først ind med din adgangskode, så kommer du tilbage hertil.",
 	"ui.confirm.signInFirst": "Log ind med min adgangskode",
+	"ui.confirm.outsideAgain": "Log ind igen med {method} for at bekræfte, at det er dig. Du kommer tilbage hertil. Du kan også oprette en HolyArrs-adgangskode under Min konto.",
+	"ui.confirm.signInAgainWith": "Log ind igen med {method}",
 	"ui.growCard.preview": "Forhåndsvisning af {title}",
 	"ui.growCard.goTo": "Gå til {title}",
 	"ui.growCard.moreInfoAbout": "Mere info om {title}",

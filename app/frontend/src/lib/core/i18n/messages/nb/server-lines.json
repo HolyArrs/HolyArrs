@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "sendt selv om den feilet: {overridden}",
 	"server.sources.the-album-would-mix-copies": "albumet ville blande kopier: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Utgivelsesgrensen hoppes over: denne filmen regnes ikke som ute ennå",
-	"server.sources.this-version-already-has-a-good": "Denne versjonen har allerede en bra nok kopi. Den nye erstatter den"
+	"server.sources.this-version-already-has-a-good": "Denne versjonen har allerede en bra nok kopi. Den nye erstatter den",
+	"server.requests.removed-the-request-for": "{name} fjernet forespørselen om {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex ga ingen kontokode for denne personen, så ønskelisten hens blir ikke lest."
 }

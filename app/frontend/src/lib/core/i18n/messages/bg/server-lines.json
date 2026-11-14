@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "изпратен, въпреки че не мина проверката: {overridden}",
 	"server.sources.the-album-would-mix-copies": "албумът би смесил копия: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Прагът за излизане е пропуснат: този филм не се брои за излязъл",
-	"server.sources.this-version-already-has-a-good": "Този вариант вече има достатъчно добро копие; новото ще го замени"
+	"server.sources.this-version-already-has-a-good": "Този вариант вече има достатъчно добро копие; новото ще го замени",
+	"server.requests.removed-the-request-for": "{name} премахна заявката за {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex не даде код на акаунта за този човек, затова списъкът му за гледане не се чете."
 }

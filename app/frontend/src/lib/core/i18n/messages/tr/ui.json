@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Vazgeç",
 	"ui.confirm.localVisit": "Bu ziyaret girişi atladığı için parolanı onaylayamaz. Önce parolanla giriş yap, buraya geri döneceksin.",
 	"ui.confirm.signInFirst": "Parolamla giriş yap",
+	"ui.confirm.outsideAgain": "Sen olduğunu doğrulamak için {method} ile yeniden giriş yap. Sonra buraya döneceksin. Hesabım bölümünden bir HolyArrs parolası da belirleyebilirsin.",
+	"ui.confirm.signInAgainWith": "{method} ile yeniden giriş yap",
 	"ui.growCard.preview": "{title} önizleme",
 	"ui.growCard.goTo": "{title} sayfasına git",
 	"ui.growCard.moreInfoAbout": "{title} hakkında daha fazla bilgi",
