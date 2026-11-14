@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Valinnainen, arvosanoille.",
 	"settings.tmdb.keyFanart": "fanart.tv-avain",
 	"settings.tmdb.keyFanartHint": "Valinnainen, logoille ja kuville.",
-	"settings.tmdb.testKey": "Testaa avain",
+	"settings.tmdb.testKey": "Testaa",
 	"settings.tmdb.testWorks": "Avain toimii",
 	"settings.tmdb.testRefused": "Avain hylättiin",
 	"settings.tmdb.testPinRefused": "Avain tai PIN hylättiin",

@@ -81,5 +81,5 @@
 	"settings.naming.holding": "暂存文件夹",
 	"settings.naming.clearOld": "清理旧的暂存文件",
 	"settings.naming.clearOldHint": "每天自动运行",
-	"settings.naming.clearNow": "立即清理"
+	"settings.naming.clearNow": "清理"
 }

@@ -181,9 +181,10 @@
 						hint={view.secret_set && !moving ? t('accounts.sso.secretSaved') : t('accounts.sso.secretNew')}>
 						<input id="sso-secret" class="input mono" type="password" bind:value={typedCred} disabled={publicClient} maxlength="4096" autocomplete="off" spellcheck="false" />
 					</Field>
-					<label class="check small">
+					<label class="switch">
 						<input type="checkbox" bind:checked={publicClient} />
-						{t('accounts.sso.publicClient')}
+						<span class="sw" aria-hidden="true"></span>
+						<span>{t('accounts.sso.publicClient')}</span>
 					</label>
 					<Field id="sso-callback" label={t('accounts.sso.callbackAddress')} hint={t('accounts.sso.callbackHint')} style="display: flex !important; flex-direction: column; align-items: stretch !important; gap: 6px">
 						<div class="row callback-row">
@@ -191,9 +192,10 @@
 							<Button icon="copy" type="button" onclick={copyCallback}>{t('accounts.sso.copy')}</Button>
 						</div>
 					</Field>
-					<label class="check small">
+					<label class="switch">
 						<input type="checkbox" bind:checked={allowJoin} />
-						{t('accounts.sso.allowJoin')}
+						<span class="sw" aria-hidden="true"></span>
+						<span>{t('accounts.sso.allowJoin')}</span>
 					</label>
 					{#if opening}
 						<label class="check small notice warn">

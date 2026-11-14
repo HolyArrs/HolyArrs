@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Voliteľné, pre hodnotenia.",
 	"settings.tmdb.keyFanart": "Kľúč fanart.tv",
 	"settings.tmdb.keyFanartHint": "Voliteľné, pre logá a obrázky.",
-	"settings.tmdb.testKey": "Otestovať kľúč",
+	"settings.tmdb.testKey": "Otestovať",
 	"settings.tmdb.testWorks": "Kľúč funguje",
 	"settings.tmdb.testRefused": "Kľúč bol odmietnutý",
 	"settings.tmdb.testPinRefused": "Kľúč alebo PIN bol odmietnutý",

@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "ไม่บังคับ สำหรับคะแนน",
 	"settings.tmdb.keyFanart": "คีย์ fanart.tv",
 	"settings.tmdb.keyFanartHint": "ไม่บังคับ สำหรับโลโก้และภาพ",
-	"settings.tmdb.testKey": "ทดสอบคีย์",
+	"settings.tmdb.testKey": "ทดสอบ",
 	"settings.tmdb.testWorks": "คีย์ใช้งานได้",
 	"settings.tmdb.testRefused": "คีย์ถูกปฏิเสธ",
 	"settings.tmdb.testPinRefused": "คีย์หรือ PIN ถูกปฏิเสธ",

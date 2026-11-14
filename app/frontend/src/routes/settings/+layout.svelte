@@ -4,6 +4,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
+	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Confirm from '#lib/ui/Confirm.svelte';
 	import { outsideWay } from '#lib/ui/sensitive.ts';
 	import Button from '#lib/ui/Button.svelte';
@@ -194,6 +195,8 @@
 	<div class="settings-workspace" bind:this={workspace}>
 		<div class="settings-content">
 			{#if blocked}
+				{@const sec = sectionFor(all, current)}
+				{#if sec}<PageHeader title={sec.label} />{/if}
 				<SettingsCard id="settings-blocked" title={t('settings.layout.blocked')} icon="shield">
 					<div><Button href={to('/settings')}>{t('settings.layout.backToSettings')}</Button></div>
 				</SettingsCard>
@@ -265,6 +268,9 @@
 	/* Hand-built cards wear the same surface, corners and title as SettingsCards. */
 	.settings-content :global(.card) { border: 0; border-radius: var(--fin-r); background: var(--fin-card); box-shadow: var(--fin-shadow), 0 0 0 1px var(--fin-edge); padding: 12px 14px; }
 	.settings-content :global(:is(.card, .ui-settings) :is(h2, .h2)) { font: var(--t-headline); font-size: 15px; font-weight: 600; letter-spacing: normal; }
+	/* An empty state inside a section keeps the standard empty-state size. */
+	.settings-content :global(:is(.card, .ui-settings) .ui-empty:not(.compact)) { padding: 48px 24px !important; }
+	.settings-content :global(:is(.card, .ui-settings) .ui-empty h2) { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
 	.settings-content > :global(:is(.ui-settings, .sc-form, .card, div[data-testid], ul.card) + :is(.ui-settings, .sc-form, .card, div[data-testid], ul, p, section)) { margin-top: 16px; }
 	.settings-content :global(.sc-form > .ui-settings + .ui-settings) { margin-top: 0; }
 	.settings-content :global(.sc-form) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: stretch; }

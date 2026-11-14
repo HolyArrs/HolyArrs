@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "אופציונלי, לדירוגים.",
 	"settings.tmdb.keyFanart": "מפתח fanart.tv",
 	"settings.tmdb.keyFanartHint": "אופציונלי, ללוגואים ולתמונות.",
-	"settings.tmdb.testKey": "בדיקת מפתח",
+	"settings.tmdb.testKey": "בדיקה",
 	"settings.tmdb.testWorks": "המפתח עובד",
 	"settings.tmdb.testRefused": "המפתח נדחה",
 	"settings.tmdb.testPinRefused": "המפתח או ה-PIN נדחו",

@@ -330,8 +330,8 @@
 					<form class="ed" onsubmit={(e) => (e.preventDefault(), saveLabel(f))}>
 						<label class="sr-only" for="ed-{f.id}">{t('settings.libraryFolders.name')}</label>
 						<input id="ed-{f.id}" class="input" bind:value={editLabel} maxlength="64" />
-						<Button type="submit" size="sm" disabled={busyId === f.id}>{t('settings.libraryFolders.save')}</Button>
-						<Button variant="plain" size="sm" type="button" onclick={() => (editing = null)}>{t('settings.libraryFolders.cancel')}</Button>
+						<Button variant="primary" type="submit" disabled={busyId === f.id}>{t('settings.libraryFolders.save')}</Button>
+						<Button variant="plain" type="button" onclick={() => (editing = null)}>{t('settings.libraryFolders.cancel')}</Button>
 					</form>
 				{:else}
 					<div class="top"><span class="name">{f.label || f.path}</span><span class="kind" data-testid="folder-kind">{f.kind === 'show' ? t('settings.libraryFolders.forShows') : f.kind === 'music' ? t('settings.libraryFolders.forMusic') : t('settings.libraryFolders.forMovies')}</span></div>

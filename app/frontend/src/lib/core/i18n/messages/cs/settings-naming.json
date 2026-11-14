@@ -81,5 +81,5 @@
 	"settings.naming.holding": "Pozdržovací složka",
 	"settings.naming.clearOld": "Vyčistit staré Pozdržené soubory",
 	"settings.naming.clearOldHint": "Běží samo každý den",
-	"settings.naming.clearNow": "Vyčistit teď"
+	"settings.naming.clearNow": "Vyčistit"
 }

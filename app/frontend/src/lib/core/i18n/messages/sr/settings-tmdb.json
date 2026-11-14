@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Опционо, за оцене.",
 	"settings.tmdb.keyFanart": "fanart.tv кључ",
 	"settings.tmdb.keyFanartHint": "Опционо, за логотипе и слике.",
-	"settings.tmdb.testKey": "Тестирај кључ",
+	"settings.tmdb.testKey": "Тестирај",
 	"settings.tmdb.testWorks": "Кључ ради",
 	"settings.tmdb.testRefused": "Кључ је одбијен",
 	"settings.tmdb.testPinRefused": "Кључ или PIN је одбијен",

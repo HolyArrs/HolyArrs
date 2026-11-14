@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Opsyonal, para sa mga rating.",
 	"settings.tmdb.keyFanart": "fanart.tv key",
 	"settings.tmdb.keyFanartHint": "Opsyonal, para sa mga logo at larawan.",
-	"settings.tmdb.testKey": "Subukan ang key",
+	"settings.tmdb.testKey": "Subukan",
 	"settings.tmdb.testWorks": "Gumagana ang key",
 	"settings.tmdb.testRefused": "Tinanggihan ang key",
 	"settings.tmdb.testPinRefused": "Tinanggihan ang key o PIN",

@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "선택 사항. 평점용.",
 	"settings.tmdb.keyFanart": "fanart.tv 키",
 	"settings.tmdb.keyFanartHint": "선택 사항. 로고와 이미지용.",
-	"settings.tmdb.testKey": "키 테스트",
+	"settings.tmdb.testKey": "테스트",
 	"settings.tmdb.testWorks": "키가 작동합니다",
 	"settings.tmdb.testRefused": "키가 거부되었습니다",
 	"settings.tmdb.testPinRefused": "키 또는 PIN이 거부되었습니다",

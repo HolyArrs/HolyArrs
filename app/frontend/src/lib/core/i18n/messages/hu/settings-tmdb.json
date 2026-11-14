@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Nem kötelező, értékelésekhez.",
 	"settings.tmdb.keyFanart": "fanart.tv-kulcs",
 	"settings.tmdb.keyFanartHint": "Nem kötelező, logókhoz és képekhez.",
-	"settings.tmdb.testKey": "Kulcs tesztelése",
+	"settings.tmdb.testKey": "Teszt",
 	"settings.tmdb.testWorks": "A kulcs működik",
 	"settings.tmdb.testRefused": "A kulcsot elutasították",
 	"settings.tmdb.testPinRefused": "A kulcsot vagy a PIN-t elutasították",

@@ -81,5 +81,5 @@
 	"settings.naming.holding": "Carpeta de espera",
 	"settings.naming.clearOld": "Vaciar archivos en espera antiguos",
 	"settings.naming.clearOldHint": "Se ejecuta solo cada día",
-	"settings.naming.clearNow": "Vaciar ahora"
+	"settings.naming.clearNow": "Vaciar"
 }

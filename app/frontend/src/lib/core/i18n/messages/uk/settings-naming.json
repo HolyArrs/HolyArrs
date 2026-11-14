@@ -81,5 +81,5 @@
 	"settings.naming.holding": "Тека очікування",
 	"settings.naming.clearOld": "Очищати старі утримувані файли",
 	"settings.naming.clearOldHint": "Запускається сама щодня",
-	"settings.naming.clearNow": "Очистити зараз"
+	"settings.naming.clearNow": "Очистити"
 }

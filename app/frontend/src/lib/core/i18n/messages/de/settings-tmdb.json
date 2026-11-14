@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Optional, für Bewertungen.",
 	"settings.tmdb.keyFanart": "fanart.tv-Schlüssel",
 	"settings.tmdb.keyFanartHint": "Optional, für Logos und Bilder.",
-	"settings.tmdb.testKey": "Schlüssel testen",
+	"settings.tmdb.testKey": "Testen",
 	"settings.tmdb.testWorks": "Schlüssel funktioniert",
 	"settings.tmdb.testRefused": "Schlüssel abgelehnt",
 	"settings.tmdb.testPinRefused": "Schlüssel oder PIN abgelehnt",
