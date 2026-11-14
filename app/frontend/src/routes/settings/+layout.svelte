@@ -365,6 +365,8 @@
 	.settings-content :global(:is(input.input:not([type='checkbox'], [type='radio']), select.input, textarea.input)) { min-height: 40px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); background: color-mix(in srgb, var(--text) 5%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04); font: 400 14.5px/1.3 var(--font-ui); color: var(--text); }
 	.settings-content :global(:is(input.input, select.input, textarea.input):focus-visible) { outline: none; border-color: color-mix(in srgb, var(--accent) 55%, transparent); box-shadow: var(--focus-ring); }
 	.settings-content :global(textarea.input) { padding-top: 10px; }
+	/* Touch screens: text fields and pickers are 44px tall, like the buttons. */
+	@media (pointer: coarse) { .settings-content :global(:is(input.input:not([type='checkbox'], [type='radio']), select.input)) { min-height: 44px; } }
 	/* A row with a tall text box keeps its label at the top, beside the box. */
 	.settings-content :global(:is(.field, .srow):has(textarea)) { align-items: start !important; }
 	.settings-content :global(:is(.field, .srow):has(textarea) > :is(label, .txt)) { padding-top: 10px; }
