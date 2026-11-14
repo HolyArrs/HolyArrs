@@ -239,7 +239,7 @@
 	.back-home { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; margin-left: -6px; padding: 0 12px 0 4px; border-radius: var(--r-pill); color: var(--accent-text); font: var(--t-callout); font-weight: 500; transition: background var(--dur-fast) var(--ease-out); }
 	.back-home:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
 	.back-home:focus-visible, .cap:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.group-name { margin: 2px 0 12px; font: 700 34px/1.12 var(--font-display, var(--font-ui)); letter-spacing: -0.022em; }
+	.group-name { margin: 2px 0 12px; font: 700 30px/1.12 var(--font-display, var(--font-ui)); letter-spacing: -0.022em; }
 
 	/* The group's pages, one capsule each; the current one is filled. */
 	.caps { display: flex; gap: 8px; overflow-x: auto; margin: 0 -4px 22px; padding: 4px; scrollbar-width: none; overscroll-behavior-x: contain; }
@@ -255,7 +255,7 @@
 	@media (pointer: coarse) { .cap { min-height: 44px; } }
 
 	@media (max-width: 767px) {
-		.group-name { font-size: 28px; margin-bottom: 10px; }
+		.group-name { margin-bottom: 10px; }
 		/* Phones: the sections wrap onto a second line; nothing sits past the screen edge. */
 		.caps { margin-bottom: 16px; flex-wrap: wrap; overflow-x: visible; }
 		.back-home { margin-left: -10px; }
