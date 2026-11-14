@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} min.",
 	"discover.titleLibrary.missing": "Mangler",
 	"discover.titleLibrary.notOutYet": "Ikke udkommet endnu",
+	"discover.titleLibrary.waitingAfterAir": "Venter efter udsendelsen",
 	"discover.titleLibrary.searchingEpisode": "Søger efter episode {episode}",
 	"discover.titleLibrary.versions": "Versioner",
 	"discover.titleLibrary.file": "Fil",

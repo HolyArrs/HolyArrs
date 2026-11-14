@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Oddziel typy przecinkami, np. srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs nie widzi {path}. Widzi tylko foldery zamontowane w swoim kontenerze. Dodaj wolumin, np. {path}:{inside}, a potem wpisz tu {inside}.",
 	"settings.libraryFolders.quality": "Jakość",
-	"settings.libraryFolders.qualityNone": "Użyj domyślnej",
 	"settings.libraryFolders.qualityHint": "Nowe tytuły w tym folderze zaczynają z tą jakością.",
-	"settings.libraryFolders.qualityOf": "Jakość folderu {path}"
+	"settings.libraryFolders.qualityDefault": "Domyślna",
+	"settings.libraryFolders.qualityDefaultNamed": "Domyślna ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · domyślna",
+	"settings.libraryFolders.qualityFor": "Jakość dla {name}: {value}"
 }

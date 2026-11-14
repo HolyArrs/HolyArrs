@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease en IPTorrents ingebouwd**, zonder Prowlarr. Vraag series aan in 4K, en Profilarr kan zijn formats en profielen sturen. [Wat is er nieuw](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: verwijder elk verzoek, en de Plex-watchlists van vrienden worden weer gelezen.** De kwaliteit van een map staat nu op de kaart, en Settings is netter op één lijn gebracht. [Wat is er nieuw](https://holyarrs.com/whats-new/)
 
 > Elke poster, trailer en score in je HolyArrs komt van een server die ik zelf draai en betaal, zodat het voor iedereen gratis blijft. Heeft HolyArrs je filmavond een beetje beter gemaakt? Met een sponsor blijven de lichten aan voor ons allemaal 💛
 >
@@ -41,7 +41,7 @@
 
 <p align="center"><b>HolyArrs</b> is één zelfgehoste app voor je series, films en muziek.<br>Blader als in een streamingapp, vraag aan wat je wilt, en de rest regelt de app.</p>
 
-<p align="center"><b>Ongeveer 16.9 MB downloaden · ongeveer 95 MiB RAM in rust bij een verse installatie · amd64, arm64, armv7</b><br><sub>De zes apps die ze vervangt, zijn samen 718.2 MB groot.</sub></p>
+<p align="center"><b>Ongeveer 16.1 MB downloaden · ongeveer 95 MiB RAM in rust bij een verse installatie · amd64, arm64, armv7</b><br><sub>De zes apps die ze vervangt, zijn samen 685.0 MB groot.</sub></p>
 
 <p align="center"><a href="#quick-start">Snelstart</a> · <a href="#why">Waarom</a> · <a href="#what-it-does">Wat het doet</a> · <a href="#moving">Overstappen van andere apps</a> · <a href="#manual">De handleiding</a> · <a href="#help">Hulp</a></p>
 
@@ -98,16 +98,16 @@ Dus heb ik hem gebouwd.
 
 | App | Download (amd64) | RAM in rust | Logins | Webpoorten |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **Alle zes samen** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **16.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **Alle zes samen** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>Ongeveer 43 keer kleiner. Gecomprimeerde registry-download, images van linuxserver.io, amd64, gemeten op 2026-11-08. RAM in rust gemeten met 10,000 titels en 55,000 films en afleveringen. (HolyArrs 1.1.3: 2026-11-13)</sub>
+<sub>Ongeveer 43 keer kleiner. Gecomprimeerde registry-download, images van linuxserver.io, amd64, gemeten op 2026-11-13. RAM in rust gemeten met 10,000 titels en 55,000 films en afleveringen. (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -129,7 +129,7 @@ Iemand vraagt een titel aan. HolyArrs doorzoekt je bronnen, kiest met je keuzere
 | 🔌 **API voor eerdere apps** | Seerr, Prowlarr, Bazarr, Unpackerr en Homepage blijven werken zodra je dat aanzet. |
 | 🗝️ **Geen API-sleutels nodig** | Titels, artwork en hitlijsten komen van de metadataserver van HolyArrs. Je eigen sleutels of server werken ook. |
 | 🔒 **Versleutelde sleutels** | Opgeslagen wachtwoorden en sleutels zijn vergrendeld met een hoofdsleutel die in je configuratiemap staat. |
-| 🪶 **Piepklein** | Een image van ongeveer 16.9 MB met alleen HolyArrs erin. |
+| 🪶 **Piepklein** | Een image van ongeveer 16.1 MB met alleen HolyArrs erin. |
 
 <details>
 <summary><b>Bekijk elke pagina in beweging</b></summary>
@@ -222,7 +222,7 @@ De images staan op Docker Hub als [`holyarrs/holyarrs`](https://hub.docker.com/r
 | Tag | Gebruik het voor |
 | :----: | --- |
 | `latest` | De nieuwste versie. |
-| `1.1.3` | Eén exacte versie. Die verandert nooit. |
+| `1.1.4` | Eén exacte versie. Die verandert nooit. |
 
 ## Gebruik
 

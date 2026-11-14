@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "poslano iako nije prošlo: {overridden}",
 	"server.sources.the-album-would-mix-copies": "album bi pomiješao kopije: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Prag izlaska se preskače: ovaj film se još ne računa kao izašao",
-	"server.sources.this-version-already-has-a-good": "Ova verzija već ima dovoljno dobru kopiju; nova će je zamijeniti"
+	"server.sources.this-version-already-has-a-good": "Ova verzija već ima dovoljno dobru kopiju; nova će je zamijeniti",
+	"server.requests.removed-the-request-for": "{name} je uklonio/la zahtjev za {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru računa za ovu osobu, pa se njezin popis za gledanje ne čita."
 }

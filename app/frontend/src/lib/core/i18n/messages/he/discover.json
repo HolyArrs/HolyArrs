@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} דק׳",
 	"discover.titleLibrary.missing": "חסר",
 	"discover.titleLibrary.notOutYet": "עוד לא יצא",
+	"discover.titleLibrary.waitingAfterAir": "ממתין אחרי השידור",
 	"discover.titleLibrary.searchingEpisode": "מחפש את פרק {episode}",
 	"discover.titleLibrary.versions": "גרסאות",
 	"discover.titleLibrary.file": "קובץ",

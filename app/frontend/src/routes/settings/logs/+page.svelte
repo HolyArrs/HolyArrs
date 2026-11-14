@@ -87,7 +87,7 @@
 		</Field>
 		<div class="go">
 			<Button variant="primary" size="sm" type="submit" disabled={busy} aria-busy={busy}>{t('settings.logs.apply')}</Button>
-			<Button variant="plain" size="sm" type="button" onclick={clear}>{t('settings.logs.clear')}</Button>
+			<Button size="sm" type="button" onclick={clear}>{t('settings.logs.clear')}</Button>
 		</div>
 	</div>
 </form>

@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "用逗号分隔类型，例如 srt, ass。",
 	"settings.libraryFolders.notMounted": "HolyArrs 看不到 {path}。它只能看到挂载到其容器中的文件夹。添加类似 {path}:{inside} 的卷，然后在这里填写 {inside}。",
 	"settings.libraryFolders.quality": "画质",
-	"settings.libraryFolders.qualityNone": "使用默认设置",
 	"settings.libraryFolders.qualityHint": "此文件夹中的新内容将以这个画质开始。",
-	"settings.libraryFolders.qualityOf": "{path} 的画质"
+	"settings.libraryFolders.qualityDefault": "默认",
+	"settings.libraryFolders.qualityDefaultNamed": "默认（{name}）",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · 默认",
+	"settings.libraryFolders.qualityFor": "{name} 的画质：{value}"
 }

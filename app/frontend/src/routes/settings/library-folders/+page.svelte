@@ -9,10 +9,12 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import Menu from '#lib/ui/Menu.svelte';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
-	import { folderMissing, qualityFor, qualityBody } from '#lib/mediafiles/index.ts';
+	import { folderMissing, qualityFor, qualityBody, qualityValue, qualityChoices, defaultChoice, savedDefaults } from '#lib/mediafiles/index.ts';
+	import type { TitleDefaults } from '#lib/mediafiles/index.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { bytes, dateTime, folderHealth, tone } from '#lib/core/format.ts';
@@ -30,6 +32,8 @@
 	let loaded = $state(false);
 	// Quality sets, for each folder's own quality. Left empty (and the choice hidden) when they cannot be read.
 	let rules = $state<PickRulesView[]>([]);
+	// The saved Movies and TV defaults name the set a folder with no quality of its own hands on.
+	let titleDefaults = $state<TitleDefaults | null>(null);
 	const canEdit = $derived(session.can('settings'));
 	let error = $state('');
 
@@ -146,6 +150,7 @@
 	onMount(() => {
 		void load();
 		void loadRules();
+		void savedDefaults.load().then((d) => (titleDefaults = d));
 		void loadExtra();
 		void loadSide();
 	});
@@ -215,12 +220,18 @@
 		}
 	}
 
-	async function setQuality(f: LibraryFolder, value: string) {
+	// Shows the choice at once and puts the old one back when the save fails.
+	async function setQuality(f: LibraryFolder, id: number) {
+		const was = f.default_pick_rules_id;
+		if ((was ?? 0) === id) return;
+		const put = (v: number | null) => (folders = folders.map((x) => (x.id === f.id ? { ...x, default_pick_rules_id: v } : x)));
+		put(id || null);
 		busyId = f.id;
 		try {
-			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}`, qualityBody(value));
+			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}`, qualityBody(id));
 			folders = folders.map((x) => (x.id === f.id ? n : x));
 		} catch (err) {
+			put(was);
 			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
 		} finally {
 			busyId = null;
@@ -290,7 +301,7 @@
 			{#if rules.length}
 				<Field id="lf-quality" label={t('settings.libraryFolders.quality')} hint={t('settings.libraryFolders.qualityHint')}>
 					<select id="lf-quality" class="input" bind:value={quality} disabled={!canEdit}>
-						<option value="">{t('settings.libraryFolders.qualityNone')}</option>
+						<option value="">{defaultChoice(rules, kind, titleDefaults)}</option>
 						{#each qualityFor(rules, kind) as r (r.id)}<option value={String(r.id)}>{r.name}</option>{/each}
 					</select>
 				</Field>
@@ -319,25 +330,29 @@
 					<form class="ed" onsubmit={(e) => (e.preventDefault(), saveLabel(f))}>
 						<label class="sr-only" for="ed-{f.id}">{t('settings.libraryFolders.name')}</label>
 						<input id="ed-{f.id}" class="input" bind:value={editLabel} maxlength="64" />
-						<Button type="submit" size="sm" disabled={busyId === f.id}>{t('settings.libraryFolders.save')}</Button>
-						<Button variant="plain" size="sm" type="button" onclick={() => (editing = null)}>{t('settings.libraryFolders.cancel')}</Button>
+						<Button variant="primary" type="submit" disabled={busyId === f.id}>{t('settings.libraryFolders.save')}</Button>
+						<Button variant="plain" type="button" onclick={() => (editing = null)}>{t('settings.libraryFolders.cancel')}</Button>
 					</form>
 				{:else}
 					<div class="top"><span class="name">{f.label || f.path}</span><span class="kind" data-testid="folder-kind">{f.kind === 'show' ? t('settings.libraryFolders.forShows') : f.kind === 'music' ? t('settings.libraryFolders.forMusic') : t('settings.libraryFolders.forMovies')}</span></div>
 				{/if}
 				<div class="where"><bdi dir="ltr">{shortPath(f.path)}</bdi></div>
-				{#if rules.length}
-					<div class="qual">
-						<label for="q-{f.id}">{t('settings.libraryFolders.quality')}</label>
-						<select id="q-{f.id}" class="input" aria-label={t('settings.libraryFolders.qualityOf', { path: f.path })} value={f.default_pick_rules_id ? String(f.default_pick_rules_id) : ''} disabled={!canEdit || busyId === f.id} onchange={(e) => setQuality(f, e.currentTarget.value)}>
-							<option value="">{t('settings.libraryFolders.qualityNone')}</option>
-							{#each qualityFor(rules, f.kind, f.default_pick_rules_id) as r (r.id)}<option value={String(r.id)}>{r.name}</option>{/each}
-						</select>
-					</div>
-				{/if}
 				{#if f.health_reason && rowTone(f) !== 'ok'}<div class="why {rowTone(f)}">{f.health_reason}</div>{/if}
 			</div>
 			<div class="free"><b>{freeNum(f.free_space)[0]}</b><small>{t('settings.libraryFolders.free', { unit: freeNum(f.free_space)[1] ?? '' })}</small></div>
+			{#if rules.length}
+				{@const q = qualityValue(f, rules, titleDefaults)}
+				<!-- A settings row: the name, then the value; the menu opens only on a tap. -->
+				<div class="qpick" class:own={q.own} data-testid="folder-quality">
+					{#if canEdit}
+						<Menu label={t('settings.libraryFolders.qualityFor', { name: f.label || f.path, value: q.text })} variant="row" align="end" width={240} portal items={qualityChoices(rules, f.kind, f.default_pick_rules_id, titleDefaults).map((c) => ({ label: c.label, checked: c.checked, onselect: () => void setQuality(f, c.id) }))}>
+							{#snippet trigger()}<span class="ql">{t('settings.libraryFolders.quality')}</span><span class="qv" title={q.text}>{q.text}</span><span class="qc" aria-hidden="true"><Icon name="chevronRight" size={16} /></span>{/snippet}
+						</Menu>
+					{:else}
+						<div class="qro"><span class="ql">{t('settings.libraryFolders.quality')}</span><span class="qv">{q.text}</span></div>
+					{/if}
+				</div>
+			{/if}
 			<span class="st {rowTone(f)}"><i></i><span>{rowHealth(f)}</span>{#if f.health === 'no_hardlink'}<a class="why-link" href={copiesDoc} target="_blank" rel="noopener noreferrer">{t('settings.libraryFolders.whyCopies')}</a>{/if}</span>
 			<div class="acts">
 				<IconButton icon="refresh" label={t('settings.libraryFolders.checkAgain', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => recheck(f)} />
@@ -430,9 +445,16 @@
 	.name { font: 600 15px/1.3 var(--font-ui); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.kind { flex: none; color: var(--text-muted); font: 500 12px/1 var(--font-ui); }
 	.where { margin-top: 3px; color: var(--text-muted); font: 400 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.qual { display: flex; align-items: center; gap: 8px; margin-top: 6px; min-width: 0; }
-	.qual label { flex: none; color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); }
-	.qual .input { flex: 0 1 240px; min-width: 0; min-height: 36px; }
+	/* Quality: a compact name-and-value button in the facts on wide screens, a full settings row on phones. */
+	/* A fixed width keeps the label lined up from row to row, whatever the path or set name. */
+	.qpick { width: 232px; min-width: 0; }
+	.qpick :global(.ui-pop) { display: flex; min-width: 0; }
+	.qpick :global(.trigger.row), .qro { display: flex; align-items: center; gap: 6px; width: auto; max-width: 100%; min-width: 0; min-height: 36px; padding: 4px 8px; }
+	.ql { flex: none; color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); }
+	.qv { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
+	.own .qv { color: var(--text); }
+	.qc { flex: none; display: inline-flex; color: var(--text-muted); transform: rotate(90deg); }
+	@media (pointer: coarse) { .qpick :global(.trigger.row) { min-height: 44px; } }
 	.why { margin-top: 3px; font: 500 12px/1.3 var(--font-ui); color: var(--fail-text, var(--fail)); }
 	.why.wait { color: var(--wait-text, var(--wait)); }
 	.free { display: flex; align-items: baseline; gap: 4px; justify-content: flex-end; white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -472,7 +494,13 @@
 	.kind { display: none; }
 
 	@container settings (max-width: 640px) {
-		.folder { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic grow grow' 'ic st st' 'ic free acts'; row-gap: 6px; }
+		.folder { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic grow grow' 'ic st st' 'ic q q' 'ic free acts'; row-gap: 6px; }
+		.folder .qpick { grid-area: q; width: auto; border-block: 1px solid var(--line); }
+		.qpick :global(.ui-pop) { width: 100%; }
+		.qpick :global(.trigger.row), .qro { width: 100%; max-width: none; min-height: 44px; padding: 0; border-radius: 0; }
+		.ql { flex: 1; color: var(--text); font: 400 15px/1.3 var(--font-ui); }
+		.qv { font: 400 15px/1.3 var(--font-ui); }
+		.qc { transform: none; }
 		.folder .ic { grid-area: ic; align-self: start; } .folder .grow { grid-area: grow; } .folder .st { grid-area: st; justify-self: start; white-space: normal; line-height: 1.3; }
 		.folder .free { grid-area: free; justify-content: flex-start; } .folder .acts { grid-area: acts; justify-self: end; opacity: 1 !important; }
 		.folder .kind { display: none; }
@@ -480,13 +508,13 @@
 	}
 
 	/* The folder mark: a plain line icon, no tile. */
-	.fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto auto auto; }
+	.fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto auto auto auto; }
 	.ic, .k-show .ic, .k-music .ic { width: 24px; height: 24px; background: none; box-shadow: none; border-radius: 0; color: color-mix(in srgb, var(--text) 55%, transparent); }
 	@container settings (max-width: 640px) { .fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto; } }
 	/* Phones: the buttons take their own line at the row's end (change path, then remove, last), so a long Rename label cannot squeeze the name. */
 	/* The state takes its own line too, so a long state never squeezes the name. */
 	@container settings (max-width: 440px) {
-		.folder { grid-template-areas: 'ic grow grow' 'ic st st' 'ic free free' 'ic acts acts'; }
+		.folder { grid-template-areas: 'ic grow grow' 'ic st st' 'ic free free' 'ic q q' 'ic acts acts'; }
 		.folder .st { justify-self: start; white-space: normal; line-height: 1.3; }
 		.folder .acts { justify-self: end; flex-wrap: wrap; justify-content: flex-end; margin-inline-end: -8px; }
 	}

@@ -23,6 +23,8 @@ export interface Me {
 	auth_method?: AuthMethod;
 	local_recent?: boolean;
 	outside_recent?: boolean;
+	// Whether the server takes this session as a recent proof for risky changes right now.
+	recent_proof?: boolean;
 	has_password?: boolean;
 	setup_open?: boolean;
 	avatar?: string | null;
@@ -148,7 +150,8 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		s.twoFactor = !!me.two_factor;
 		s.mustTwoFactor = !!me.must_two_factor;
 		s.authMethod = me.auth_method ?? '';
-		s.localRecent = !!me.local_recent;
+		// The server's own answer: a recent password or setup sign-in, or a fresh Plex, Jellyfin or Emby one when there is no password, and no two-factor still to turn on.
+		s.localRecent = me.recent_proof ?? !!me.local_recent;
 		s.outsideRecent = !!me.outside_recent;
 		s.hasPassword = me.has_password ?? true;
 		s.setupOpen = !!me.setup_open;

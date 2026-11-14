@@ -565,5 +565,16 @@
 	"requests.quality.standard": "স্ট্যান্ডার্ড",
 	"requests.window.askedFor": "{name} {quality} রিকোয়েস্ট করেছে।",
 	"requests.window.addsOnly": "শুধু {quality} কপি যোগ করে।",
-	"requests.board.qualityTitle": "{quality} রিকোয়েস্ট করা হয়েছে"
+	"requests.board.qualityTitle": "{quality} রিকোয়েস্ট করা হয়েছে",
+	"requests.page.removeRequest": "অনুরোধ সরান",
+	"requests.page.removeTitle": "এই অনুরোধটি সরাবেন?",
+	"requests.page.removeDesc": "শিরোনাম ও তার ফাইল থেকে যাবে।",
+	"requests.window.removeName": "{name}-এর অনুরোধ সরান",
+	"requests.board.clearFailed": "ব্যর্থগুলো মুছুন",
+	"requests.board.clearFinished": "সম্পন্নগুলো মুছুন",
+	"requests.board.clearFailedTitle": "ব্যর্থ অনুরোধগুলো ({n}) সরাবেন?",
+	"requests.board.clearFailedDesc": "এগুলো অনুমোদিত হয়েছিল, কিন্তু কিছু যোগ হয়নি। শিরোনাম ও ফাইল থেকে যাবে।",
+	"requests.board.clearFinishedTitle": "সম্পন্ন অনুরোধগুলো ({n}) সরাবেন?",
+	"requests.board.clearFinishedDesc": "এগুলো প্রস্তুত অথবা প্রত্যাখ্যাত। শিরোনাম ও ফাইল থেকে যাবে।",
+	"requests.board.clearConfirm": "সব সরান"
 }

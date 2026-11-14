@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Padrão",
 	"requests.window.askedFor": "{name} pediu {quality}.",
 	"requests.window.addsOnly": "Adiciona só a cópia {quality}.",
-	"requests.board.qualityTitle": "Pedido em {quality}"
+	"requests.board.qualityTitle": "Pedido em {quality}",
+	"requests.page.removeRequest": "Remover pedido",
+	"requests.page.removeTitle": "Remover este pedido?",
+	"requests.page.removeDesc": "O título e os respetivos ficheiros ficam.",
+	"requests.window.removeName": "Remover o pedido de {name}",
+	"requests.board.clearFailed": "Limpar os que falharam",
+	"requests.board.clearFinished": "Limpar os concluídos",
+	"requests.board.clearFailedTitle": "Remover os pedidos que falharam ({n})?",
+	"requests.board.clearFailedDesc": "Foram aprovados, mas nada foi adicionado. Os títulos e os respetivos ficheiros ficam.",
+	"requests.board.clearFinishedTitle": "Remover os pedidos concluídos ({n})?",
+	"requests.board.clearFinishedDesc": "Estão prontos ou recusados. Os títulos e os respetivos ficheiros ficam.",
+	"requests.board.clearConfirm": "Remover todos"
 }

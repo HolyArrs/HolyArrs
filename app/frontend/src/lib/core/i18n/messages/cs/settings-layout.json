@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Nejdřív nastavte heslo",
 	"settings.layout.setPasswordDesc": "Klíče, hesla, lidé a zálohy vyžadují heslo k HolyArrs. Zatím žádné nemáte.",
 	"settings.layout.setPasswordLabel": "Nastavit heslo",
+	"settings.layout.signInAgainTitle": "Nejdřív se znovu přihlaste",
 	"settings.layout.confirmPasswordLabel": "Potvrďte své heslo",
 	"settings.layout.confirmPasswordDesc": "Klíče, hesla, lidé a zálohy vyžadují vaše heslo. Platí 10 minut."
 }

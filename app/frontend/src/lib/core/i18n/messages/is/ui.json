@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Hætta við",
 	"ui.confirm.localVisit": "Þessi heimsókn sleppir innskráningu og getur því ekki staðfest lykilorðið þitt. Skráðu þig fyrst inn með lykilorðinu þínu og þú kemur aftur hingað.",
 	"ui.confirm.signInFirst": "Skrá inn með lykilorðinu mínu",
+	"ui.confirm.outsideAgain": "Til að staðfesta að þetta sért þú skaltu skrá þig aftur inn með {method}. Þú kemur svo hingað aftur. Þú getur líka sett HolyArrs-lykilorð undir Aðgangurinn minn.",
+	"ui.confirm.signInAgainWith": "Skrá inn aftur með {method}",
 	"ui.growCard.preview": "Forskoðun {title}",
 	"ui.growCard.goTo": "Fara á {title}",
 	"ui.growCard.moreInfoAbout": "Meira um {title}",

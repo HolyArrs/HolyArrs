@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Primer defineix una contrasenya",
 	"settings.layout.setPasswordDesc": "Les claus, les contrasenyes, les persones i les còpies de seguretat necessiten una contrasenya de HolyArrs. Encara no en tens cap.",
 	"settings.layout.setPasswordLabel": "Defineix una contrasenya",
+	"settings.layout.signInAgainTitle": "Primer torna a iniciar la sessió",
 	"settings.layout.confirmPasswordLabel": "Confirma la contrasenya",
 	"settings.layout.confirmPasswordDesc": "Les claus, les contrasenyes, les persones i les còpies de seguretat necessiten la teva contrasenya. Vàlida durant 10 minuts."
 }

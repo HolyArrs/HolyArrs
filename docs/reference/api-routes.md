@@ -162,6 +162,7 @@ The Auth column is the permission a caller needs, as pinned in the snapshot. The
 | GET | `/api/v1/asks/limit` | ask |  |
 | GET | `/api/v1/asks/{id}` | signed_in |  |
 | DELETE | `/api/v1/asks/{id}` | ask |  |
+| POST | `/api/v1/asks/remove` | approve |  |
 | POST | `/api/v1/asks/{id}/approve` | approve |  |
 | GET | `/api/v1/asks/{id}/parts` | signed_in |  |
 | POST | `/api/v1/asks/{id}/turn-down` | approve |  |

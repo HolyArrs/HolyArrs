@@ -81,5 +81,5 @@
 	"settings.naming.holding": "Map voor vastgehouden bestanden",
 	"settings.naming.clearOld": "Oude vastgehouden bestanden wissen",
 	"settings.naming.clearOldHint": "Draait elke dag vanzelf",
-	"settings.naming.clearNow": "Nu wissen"
+	"settings.naming.clearNow": "Wissen"
 }

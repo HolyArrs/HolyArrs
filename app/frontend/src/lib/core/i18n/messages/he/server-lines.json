@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "נשלח למרות שנכשל: {overridden}",
 	"server.sources.the-album-would-mix-copies": "האלבום היה מערבב עותקים: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "שער היציאה מדולג: הסרט הזה עדיין לא נחשב כיצא",
-	"server.sources.this-version-already-has-a-good": "לגרסה הזו כבר יש עותק מספיק טוב; החדש יחליף אותו"
+	"server.sources.this-version-already-has-a-good": "לגרסה הזו כבר יש עותק מספיק טוב; החדש יחליף אותו",
+	"server.requests.removed-the-request-for": "{name} הסיר/ה את הבקשה עבור {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex לא סיפק קוד חשבון עבור האדם הזה, ולכן רשימת הצפייה שלו לא נקראת."
 }

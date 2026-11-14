@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "ঐচ্ছিক, রেটিংয়ের জন্য।",
 	"settings.tmdb.keyFanart": "fanart.tv কী",
 	"settings.tmdb.keyFanartHint": "ঐচ্ছিক, লোগো ও ছবির জন্য।",
-	"settings.tmdb.testKey": "কী পরীক্ষা করুন",
+	"settings.tmdb.testKey": "টেস্ট",
 	"settings.tmdb.testWorks": "কী কাজ করছে",
 	"settings.tmdb.testRefused": "কী প্রত্যাখ্যাত হয়েছে",
 	"settings.tmdb.testPinRefused": "কী বা পিন প্রত্যাখ্যাত হয়েছে",

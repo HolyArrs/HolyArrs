@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Skilj typer åt med kommatecken, till exempel srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs ser inte {path}. Den ser bara mappar som är monterade i dess container. Lägg till en volym som {path}:{inside} och använd sedan {inside} här.",
 	"settings.libraryFolders.quality": "Kvalitet",
-	"settings.libraryFolders.qualityNone": "Använd standard",
 	"settings.libraryFolders.qualityHint": "Nya titlar i den här mappen startar med den här kvaliteten.",
-	"settings.libraryFolders.qualityOf": "Kvalitet för {path}"
+	"settings.libraryFolders.qualityDefault": "Standard",
+	"settings.libraryFolders.qualityDefaultNamed": "Standard ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · standard",
+	"settings.libraryFolders.qualityFor": "Kvalitet för {name}: {value}"
 }

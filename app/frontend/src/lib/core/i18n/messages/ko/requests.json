@@ -565,5 +565,16 @@
 	"requests.quality.standard": "표준",
 	"requests.window.askedFor": "{name}님이 {quality}을(를) 요청했습니다.",
 	"requests.window.addsOnly": "{quality} 사본만 추가합니다.",
-	"requests.board.qualityTitle": "{quality}(으)로 요청됨"
+	"requests.board.qualityTitle": "{quality}(으)로 요청됨",
+	"requests.page.removeRequest": "요청 삭제",
+	"requests.page.removeTitle": "이 요청을 삭제할까요?",
+	"requests.page.removeDesc": "작품과 파일은 그대로 남습니다.",
+	"requests.window.removeName": "{name} 요청 삭제",
+	"requests.board.clearFailed": "실패한 요청 비우기",
+	"requests.board.clearFinished": "완료된 요청 비우기",
+	"requests.board.clearFailedTitle": "실패한 요청({n}개)을 삭제할까요?",
+	"requests.board.clearFailedDesc": "승인되었지만 아무것도 추가되지 않았습니다. 작품과 파일은 그대로 남습니다.",
+	"requests.board.clearFinishedTitle": "완료된 요청({n}개)을 삭제할까요?",
+	"requests.board.clearFinishedDesc": "준비되었거나 거절된 요청입니다. 작품과 파일은 그대로 남습니다.",
+	"requests.board.clearConfirm": "모두 삭제"
 }

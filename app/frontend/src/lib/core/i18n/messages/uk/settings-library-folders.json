@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Розділяйте типи комами, наприклад srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs не бачить {path}. Він бачить лише теки, підключені до його контейнера. Додайте том, наприклад {path}:{inside}, а потім вкажіть тут {inside}.",
 	"settings.libraryFolders.quality": "Якість",
-	"settings.libraryFolders.qualityNone": "Використовувати типове",
 	"settings.libraryFolders.qualityHint": "Нові тайтли в цій папці починають із такої якості.",
-	"settings.libraryFolders.qualityOf": "Якість для {path}"
+	"settings.libraryFolders.qualityDefault": "Типова",
+	"settings.libraryFolders.qualityDefaultNamed": "Типова ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · типова",
+	"settings.libraryFolders.qualityFor": "Якість для {name}: {value}"
 }

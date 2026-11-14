@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Standartinė",
 	"requests.window.askedFor": "{name} užsakė {quality}.",
 	"requests.window.addsOnly": "Prideda tik {quality} kopiją.",
-	"requests.board.qualityTitle": "Užsakyta: {quality}"
+	"requests.board.qualityTitle": "Užsakyta: {quality}",
+	"requests.page.removeRequest": "Pašalinti užklausą",
+	"requests.page.removeTitle": "Pašalinti šią užklausą?",
+	"requests.page.removeDesc": "Pavadinimas ir jo failai lieka.",
+	"requests.window.removeName": "Pašalinti užklausą: {name}",
+	"requests.board.clearFailed": "Išvalyti nepavykusias",
+	"requests.board.clearFinished": "Išvalyti baigtas",
+	"requests.board.clearFailedTitle": "Pašalinti nepavykusias užklausas ({n})?",
+	"requests.board.clearFailedDesc": "Jos patvirtintos, bet nieko nepridėta. Pavadinimai ir jų failai lieka.",
+	"requests.board.clearFinishedTitle": "Pašalinti baigtas užklausas ({n})?",
+	"requests.board.clearFinishedDesc": "Jos paruoštos arba atmestos. Pavadinimai ir jų failai lieka.",
+	"requests.board.clearConfirm": "Pašalinti visas"
 }

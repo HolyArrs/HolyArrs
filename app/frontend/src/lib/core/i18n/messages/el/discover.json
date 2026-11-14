@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} λ.",
 	"discover.titleLibrary.missing": "Λείπει",
 	"discover.titleLibrary.notOutYet": "Δεν έχει κυκλοφορήσει ακόμη",
+	"discover.titleLibrary.waitingAfterAir": "Αναμονή μετά την προβολή",
 	"discover.titleLibrary.searchingEpisode": "Αναζήτηση του επεισοδίου {episode}",
 	"discover.titleLibrary.versions": "Παραλλαγές",
 	"discover.titleLibrary.file": "Αρχείο",

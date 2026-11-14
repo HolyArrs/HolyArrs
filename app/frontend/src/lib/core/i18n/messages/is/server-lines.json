@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "send þótt hún félli: {overridden}",
 	"server.sources.the-album-would-mix-copies": "platan myndi blanda saman eintökum: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Útgáfuþröskuldinum er sleppt: þessi kvikmynd telst ekki komin út enn",
-	"server.sources.this-version-already-has-a-good": "Þetta afbrigði hefur þegar nógu gott eintak; það nýja kemur í staðinn"
+	"server.sources.this-version-already-has-a-good": "Þetta afbrigði hefur þegar nógu gott eintak; það nýja kemur í staðinn",
+	"server.requests.removed-the-request-for": "{name} fjarlægði beiðni um {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex gaf engan reikningskóða fyrir þessa manneskju, þannig að áhorfslistinn hennar er ekki lesinn."
 }

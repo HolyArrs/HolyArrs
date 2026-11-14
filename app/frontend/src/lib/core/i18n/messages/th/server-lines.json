@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "ส่งไปแม้จะไม่ผ่าน: {overridden}",
 	"server.sources.the-album-would-mix-copies": "อัลบั้มจะปนสำเนากัน: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "ข้ามเกณฑ์วันวางจำหน่าย: ภาพยนตร์เรื่องนี้ยังนับว่าไม่ออก",
-	"server.sources.this-version-already-has-a-good": "เวอร์ชันนี้มีสำเนาที่ดีพอแล้ว ตัวใหม่จะมาแทนที่"
+	"server.sources.this-version-already-has-a-good": "เวอร์ชันนี้มีสำเนาที่ดีพอแล้ว ตัวใหม่จะมาแทนที่",
+	"server.requests.removed-the-request-for": "{name} ลบคำขอ {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex ไม่ได้ให้รหัสบัญชีของคนนี้ จึงไม่อ่านรายการที่อยากดูของเขา"
 }

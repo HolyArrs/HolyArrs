@@ -2,6 +2,30 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.1.4
+
+### Added
+
+- Remove a request in any state, or clear all failed or finished ones. ([#365](https://github.com/HolyArrs/HolyArrs/issues/365))
+- Friends' Plex watchlists are read again. ([#343](https://github.com/HolyArrs/HolyArrs/issues/343))
+
+### Changed
+
+- A folder's quality is a row on its card that shows the real value. ([#344](https://github.com/HolyArrs/HolyArrs/issues/344))
+- Buttons, titles, switches and hints use one size across Settings, Explore and the Library.
+- The image sizes in the README are the ones Docker Hub shows.
+
+### Fixed
+
+- An owner who set up with Plex, Jellyfin or Emby can make protected changes after signing in again. ([#364](https://github.com/HolyArrs/HolyArrs/issues/364))
+- Setting a first password needs a fresh sign-in; an API key can no longer set one. ([#364](https://github.com/HolyArrs/HolyArrs/issues/364))
+- Shows, movies and artists with an apostrophe in the name match their releases again. ([#369](https://github.com/HolyArrs/HolyArrs/issues/369))
+- An episode airing later today no longer reads Yesterday for viewers ahead of the show's time zone. ([#368](https://github.com/HolyArrs/HolyArrs/issues/368))
+
+### Thanks
+
+Thanks to [@Nviviri](https://github.com/HolyArrs/HolyArrs/issues/369), who found the cause, and to roychassi and Lunim on Discord.
+
 ## 1.1.3
 
 ### Added
@@ -36,7 +60,7 @@ Thanks to [@zaldev](https://github.com/HolyArrs/HolyArrs/issues/339), [@ArBohe](
 
 ### Changed
 
-- The image is smaller to download: about 16.9 MB, down from 19.5 MB.
+- The image is smaller to download: about 16.1 MB, down from 18.6 MB.
 
 ### Fixed
 

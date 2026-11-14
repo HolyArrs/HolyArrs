@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "lähetetty, vaikka se ei läpäissyt: {overridden}",
 	"server.sources.the-album-would-mix-copies": "albumi sekoittaisi kopioita: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Julkaisuportti ohitetaan: tämän elokuvan ei lasketa vielä ilmestyneen",
-	"server.sources.this-version-already-has-a-good": "Tällä versiolla on jo riittävän hyvä kopio; uusi korvaa sen"
+	"server.sources.this-version-already-has-a-good": "Tällä versiolla on jo riittävän hyvä kopio; uusi korvaa sen",
+	"server.requests.removed-the-request-for": "{name} poisti pyynnön: {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex ei antanut tälle henkilölle tilikoodia, joten hänen katselulistaansa ei lueta."
 }

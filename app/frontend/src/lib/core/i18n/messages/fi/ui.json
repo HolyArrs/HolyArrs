@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Peruuta",
 	"ui.confirm.localVisit": "Tämä käynti ohittaa kirjautumisen, joten se ei voi vahvistaa salasanaasi. Kirjaudu ensin salasanallasi, niin palaat tänne.",
 	"ui.confirm.signInFirst": "Kirjaudu omalla salasanallani",
+	"ui.confirm.outsideAgain": "Vahvista henkilöllisyytesi kirjautumalla uudelleen palvelulla {method}. Palaat sitten tänne. Voit myös asettaa HolyArrs-salasanan kohdassa Oma tili.",
+	"ui.confirm.signInAgainWith": "Kirjaudu uudelleen palvelulla {method}",
 	"ui.growCard.preview": "{title}: esikatselu",
 	"ui.growCard.goTo": "Siirry: {title}",
 	"ui.growCard.moreInfoAbout": "Lisätietoja: {title}",

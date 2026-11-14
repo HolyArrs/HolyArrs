@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} mnt",
 	"discover.titleLibrary.missing": "Hilang",
 	"discover.titleLibrary.notOutYet": "Belum rilis",
+	"discover.titleLibrary.waitingAfterAir": "Menunggu setelah tayang",
 	"discover.titleLibrary.searchingEpisode": "Mencari episode {episode}",
 	"discover.titleLibrary.versions": "Versi",
 	"discover.titleLibrary.file": "File",

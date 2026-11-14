@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "הפרידו סוגים בפסיקים, למשל srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs לא רואה את {path}. הוא רואה רק תיקיות שמחוברות לקונטיינר שלו. הוסיפו volume כמו {path}:{inside}, ואז השתמשו כאן ב-{inside}.",
 	"settings.libraryFolders.quality": "איכות",
-	"settings.libraryFolders.qualityNone": "שימוש בברירת המחדל",
 	"settings.libraryFolders.qualityHint": "כותרים חדשים בתיקייה הזו מתחילים באיכות הזו.",
-	"settings.libraryFolders.qualityOf": "האיכות של {path}"
+	"settings.libraryFolders.qualityDefault": "ברירת מחדל",
+	"settings.libraryFolders.qualityDefaultNamed": "ברירת מחדל ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · ברירת מחדל",
+	"settings.libraryFolders.qualityFor": "איכות עבור {name}: {value}"
 }

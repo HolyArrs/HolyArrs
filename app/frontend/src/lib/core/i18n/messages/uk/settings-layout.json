@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Спершу задай пароль",
 	"settings.layout.setPasswordDesc": "Ключам, паролям, людям і бекапам потрібен пароль HolyArrs. У тебе його ще немає.",
 	"settings.layout.setPasswordLabel": "Задати пароль",
+	"settings.layout.signInAgainTitle": "Спершу увійдіть знову",
 	"settings.layout.confirmPasswordLabel": "Підтверди свій пароль",
 	"settings.layout.confirmPasswordDesc": "Ключам, паролям, людям і бекапам потрібен твій пароль. Діє 10 хвилин."
 }

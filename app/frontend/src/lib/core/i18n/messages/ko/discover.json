@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n}분",
 	"discover.titleLibrary.missing": "누락",
 	"discover.titleLibrary.notOutYet": "아직 미공개",
+	"discover.titleLibrary.waitingAfterAir": "방송 후 대기 중",
 	"discover.titleLibrary.searchingEpisode": "에피소드 {episode} 검색 중",
 	"discover.titleLibrary.versions": "버전",
 	"discover.titleLibrary.file": "파일",

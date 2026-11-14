@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "விருப்பம், மதிப்பீடுகளுக்கு.",
 	"settings.tmdb.keyFanart": "fanart.tv விசை",
 	"settings.tmdb.keyFanartHint": "விருப்பம், லோகோக்களுக்கும் படங்களுக்கும்.",
-	"settings.tmdb.testKey": "விசையைச் சோதி",
+	"settings.tmdb.testKey": "சோதி",
 	"settings.tmdb.testWorks": "விசை வேலை செய்கிறது",
 	"settings.tmdb.testRefused": "விசை நிராகரிக்கப்பட்டது",
 	"settings.tmdb.testPinRefused": "விசை அல்லது பின் நிராகரிக்கப்பட்டது",

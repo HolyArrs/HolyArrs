@@ -130,7 +130,8 @@ func TestSetupMarkEndsWithReauth(t *testing.T) {
 }
 
 // An owner made through Jellyfin has no password to confirm: the setup
-// session lets the first-run steps through; a later Jellyfin sign-in does not.
+// session lets the first-run steps through; a later Jellyfin sign-in only
+// while it is fresh (see TestNoPasswordOwnerOutsideSignInCounts).
 func TestOutsideSetupSessionCountsAsRecent(t *testing.T) {
 	ms := fakeSetupServer(t)
 	f := gated(t, Options{})
@@ -159,6 +160,7 @@ func TestOutsideSetupSessionCountsAsRecent(t *testing.T) {
 	if who := meOf(t, f, later); who.SetupRecent {
 		t.Fatal("a later Jellyfin sign-in counted as setup")
 	}
+	f.clock.add(localRecentFor + time.Minute)
 	if newKey(t, f, later) {
 		t.Fatal("a Jellyfin sign-in made a key without a password")
 	}

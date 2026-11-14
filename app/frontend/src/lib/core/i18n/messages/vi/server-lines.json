@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "đã gửi dù không đạt: {overridden}",
 	"server.sources.the-album-would-mix-copies": "album sẽ trộn lẫn các bản sao: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Ngưỡng phát hành bị bỏ qua: phim này chưa được tính là đã ra mắt",
-	"server.sources.this-version-already-has-a-good": "Phiên bản này đã có một bản sao đủ tốt; bản mới sẽ thay thế nó"
+	"server.sources.this-version-already-has-a-good": "Phiên bản này đã có một bản sao đủ tốt; bản mới sẽ thay thế nó",
+	"server.requests.removed-the-request-for": "{name} đã gỡ yêu cầu cho {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex không đưa mã tài khoản của người này nên danh sách xem của họ không được đọc."
 }

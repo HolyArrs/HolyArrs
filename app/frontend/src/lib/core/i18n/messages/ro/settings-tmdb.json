@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Opțional, pentru evaluări.",
 	"settings.tmdb.keyFanart": "Cheie fanart.tv",
 	"settings.tmdb.keyFanartHint": "Opțional, pentru logouri și imagini.",
-	"settings.tmdb.testKey": "Testează cheia",
+	"settings.tmdb.testKey": "Testează",
 	"settings.tmdb.testWorks": "Cheia funcționează",
 	"settings.tmdb.testRefused": "Cheia a fost respinsă",
 	"settings.tmdb.testPinRefused": "Cheia sau PIN-ul a fost respins",

@@ -81,5 +81,5 @@
 	"settings.naming.holding": "보관 폴더",
 	"settings.naming.clearOld": "오래된 보류 파일 정리",
 	"settings.naming.clearOldHint": "매일 자동으로 실행됩니다",
-	"settings.naming.clearNow": "지금 정리"
+	"settings.naming.clearNow": "정리"
 }

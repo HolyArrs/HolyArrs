@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Opcional, per a valoracions.",
 	"settings.tmdb.keyFanart": "Clau de fanart.tv",
 	"settings.tmdb.keyFanartHint": "Opcional, per a logotips i imatges.",
-	"settings.tmdb.testKey": "Prova la clau",
+	"settings.tmdb.testKey": "Prova",
 	"settings.tmdb.testWorks": "La clau funciona",
 	"settings.tmdb.testRefused": "Clau rebutjada",
 	"settings.tmdb.testPinRefused": "Clau o PIN rebutjat",

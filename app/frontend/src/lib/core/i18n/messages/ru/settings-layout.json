@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Сначала задайте пароль",
 	"settings.layout.setPasswordDesc": "Для ключей, паролей, людей и резервных копий нужен пароль HolyArrs. У вас его пока нет.",
 	"settings.layout.setPasswordLabel": "Задайте пароль",
+	"settings.layout.signInAgainTitle": "Сначала войдите снова",
 	"settings.layout.confirmPasswordLabel": "Подтвердите пароль",
 	"settings.layout.confirmPasswordDesc": "Для ключей, паролей, людей и резервных копий нужен ваш пароль. Действует 10 минут."
 }

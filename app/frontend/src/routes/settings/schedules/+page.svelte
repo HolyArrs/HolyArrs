@@ -188,7 +188,7 @@
 											<Button type="button" busy={busy === s.kind && editing !== s.kind} disabled={busy === s.kind} onclick={() => runNow(s)} aria-label={t('settings.schedules.runLabel', { label: s.label })}>{t('settings.schedules.runNow')}</Button>
 										{/if}
 										{#if canChange && editing !== s.kind}
-											<Button variant="plain" type="button" id="change-{s.kind}" onclick={() => edit(s)} aria-label={t('settings.schedules.changeLabel', { label: s.label })} aria-expanded="false" aria-controls="ed-{s.kind}">{t('settings.schedules.change')}</Button>
+											<Button type="button" id="change-{s.kind}" onclick={() => edit(s)} aria-label={t('settings.schedules.changeLabel', { label: s.label })} aria-expanded="false" aria-controls="ed-{s.kind}">{t('settings.schedules.change')}</Button>
 										{/if}
 									</div>
 								</div>
@@ -289,7 +289,8 @@
 	.group-about { margin: -2px 6px 8px; color: var(--text-muted); font: var(--t-footnote); font-weight: 400; }
 	.group-about :global(a) { color: var(--accent-text); font-weight: 600; }
 	.s-card { margin: 0; padding: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
-	.sched-card { container-type: inline-size; overflow: hidden; }
+	/* Same sheet as every other Settings section. */
+	.sched-card { container-type: inline-size; overflow: hidden; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45); }
 	.sched-card ul { margin: 0; padding: 0; list-style: none; }
 
 	.now { margin-bottom: 22px; }

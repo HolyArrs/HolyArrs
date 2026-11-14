@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "請先設定密碼",
 	"settings.layout.setPasswordDesc": "金鑰、密碼、成員和備份需要 HolyArrs 密碼，而你還沒有設定。",
 	"settings.layout.setPasswordLabel": "設定密碼",
+	"settings.layout.signInAgainTitle": "請先重新登入",
 	"settings.layout.confirmPasswordLabel": "確認你的密碼",
 	"settings.layout.confirmPasswordDesc": "金鑰、密碼、成員和備份需要驗證你的密碼，10 分鐘內有效。"
 }

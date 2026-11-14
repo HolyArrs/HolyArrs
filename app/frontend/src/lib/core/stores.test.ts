@@ -538,6 +538,19 @@ describe('session', () => {
 		expect(c.csrf()).toBe('fresh');
 	});
 
+	it("takes the server's own answer for a recent proof", async () => {
+		const recent = async (extra: Record<string, unknown>) => {
+			const me = { name: 'boss', via: 'session', auth_method: 'plex', ...extra };
+			const s = createSession(createClient(async () => new Response(JSON.stringify(me))));
+			await s.load();
+			return s.s.localRecent;
+		};
+		expect(await recent({ outside_recent: true, has_password: false, recent_proof: true })).toBe(true);
+		// Two-factor still to turn on: the server says no even right after signing in.
+		expect(await recent({ outside_recent: true, has_password: false, must_two_factor: true, recent_proof: false })).toBe(false);
+		expect(await recent({ local_recent: true, must_two_factor: true, recent_proof: false })).toBe(false);
+	});
+
 	it('starts and finishes OIDC linking and links forward auth explicitly', async () => {
 		const c = server({
 			'POST /auth/oidc/link': json(200, { auth_url: 'https://id.example.test/link' }),

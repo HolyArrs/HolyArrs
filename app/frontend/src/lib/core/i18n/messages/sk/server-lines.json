@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "odoslané, hoci neprešlo: {overridden}",
 	"server.sources.the-album-would-mix-copies": "album by zmiešalo kópie: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Prah vydania sa preskočí: tento film sa ešte nepočíta ako vydaný",
-	"server.sources.this-version-already-has-a-good": "Táto Verzia už má dostatočnú kópiu; nová ju nahradí"
+	"server.sources.this-version-already-has-a-good": "Táto Verzia už má dostatočnú kópiu; nová ju nahradí",
+	"server.requests.removed-the-request-for": "{name} odstránil(a) žiadosť o {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex pre túto osobu nedal kód účtu, preto sa jej zoznam na pozretie nečíta."
 }

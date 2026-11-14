@@ -21,7 +21,7 @@
 
 
 	.tp-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
-	.tp-name { display: inline-flex; align-items: baseline; gap: 10px; min-width: 0; margin: 0 8px 0 0; font: 700 22px/1.2 var(--font-display, var(--font-ui)); letter-spacing: -0.02em; white-space: nowrap; }
+	.tp-name { display: inline-flex; align-items: baseline; gap: 10px; min-width: 0; margin: 0 8px 0 0; font: 700 30px/1.2 var(--font-display, var(--font-ui)); letter-spacing: -0.022em; white-space: nowrap; }
 	.tp-count { color: var(--text-muted); font: 500 14px/1 var(--font-ui); letter-spacing: 0; font-variant-numeric: tabular-nums; }
 	.tp :global(.tp-gap) { flex: 1 1 auto; }
 	/* Control capsule; the 44px children keep touch targets large. */

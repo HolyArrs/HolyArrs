@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Откажи",
 	"ui.confirm.localVisit": "Ова посета прескаче пријаву, па не може да потврди твоју лозинку. Прво се пријави лозинком и вратићеш се овде.",
 	"ui.confirm.signInFirst": "Пријава мојом лозинком",
+	"ui.confirm.outsideAgain": "Да потврдите да сте то ви, поново се пријавите преко {method}. Вратићете се овде. Лозинку за HolyArrs можете поставити и у Мој налог.",
+	"ui.confirm.signInAgainWith": "Поновна пријава преко {method}",
 	"ui.growCard.preview": "Преглед: {title}",
 	"ui.growCard.goTo": "Иди на {title}",
 	"ui.growCard.moreInfoAbout": "Више информација о: {title}",

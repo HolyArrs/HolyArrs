@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Cancelar",
 	"ui.confirm.localVisit": "Esta visita salta o início de sessão, por isso não consegue confirmar a sua palavra-passe. Inicie primeiro sessão com a sua palavra-passe e volta para aqui.",
 	"ui.confirm.signInFirst": "Iniciar sessão com a minha palavra-passe",
+	"ui.confirm.outsideAgain": "Para confirmar que é você, inicie sessão novamente com {method}. Voltará aqui. Também pode definir uma palavra-passe do HolyArrs em A minha conta.",
+	"ui.confirm.signInAgainWith": "Iniciar sessão novamente com {method}",
 	"ui.growCard.preview": "Pré-visualização de {title}",
 	"ui.growCard.goTo": "Ir para {title}",
 	"ui.growCard.moreInfoAbout": "Mais informações sobre {title}",

@@ -9,6 +9,7 @@
 "settings.layout.setPasswordFirst": "先にパスワードを設定してください",
 "settings.layout.setPasswordDesc": "キー、パスワード、ユーザー、バックアップの操作には HolyArrs のパスワードが必要です。まだ設定されていません。",
 "settings.layout.setPasswordLabel": "パスワードを設定",
+"settings.layout.signInAgainTitle": "もう一度サインインしてください",
 "settings.layout.confirmPasswordLabel": "パスワードを確認",
 "settings.layout.confirmPasswordDesc": "キー、パスワード、ユーザー、バックアップの操作にはパスワードが必要です。10 分間有効です。"
 }

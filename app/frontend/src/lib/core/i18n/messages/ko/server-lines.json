@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "통과하지 못했지만 보냈습니다: {overridden}",
 	"server.sources.the-album-would-mix-copies": "앨범에 사본이 섞이게 됩니다: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "출시 기준을 건너뜁니다. 이 영화는 아직 공개된 것으로 보지 않습니다",
-	"server.sources.this-version-already-has-a-good": "이 버전에는 이미 충분한 품질의 사본이 있습니다. 새 사본으로 교체됩니다"
+	"server.sources.this-version-already-has-a-good": "이 버전에는 이미 충분한 품질의 사본이 있습니다. 새 사본으로 교체됩니다",
+	"server.requests.removed-the-request-for": "{name}님이 {a} 요청을 삭제했습니다",
+	"server.requests.plex-gave-no-account-code-for": "Plex가 이 사람의 계정 코드를 주지 않아 관심 목록을 읽지 않습니다."
 }

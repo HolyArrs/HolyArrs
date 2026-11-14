@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Defina uma palavra-passe primeiro",
 	"settings.layout.setPasswordDesc": "Chaves, palavras-passe, pessoas e backups exigem uma palavra-passe do HolyArrs. Ainda não tem uma.",
 	"settings.layout.setPasswordLabel": "Definir uma palavra-passe",
+	"settings.layout.signInAgainTitle": "Inicie sessão novamente primeiro",
 	"settings.layout.confirmPasswordLabel": "Confirme a sua palavra-passe",
 	"settings.layout.confirmPasswordDesc": "Chaves, palavras-passe, pessoas e backups exigem a sua palavra-passe. Vale por 10 minutos."
 }

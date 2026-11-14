@@ -175,7 +175,7 @@ func (a *Auth) ssoRoutes(m *http.ServeMux) {
 
 func (a *Auth) requireSSOLink(w http.ResponseWriter, r *http.Request) (webserver.Caller, bool) {
 	who, ok := webserver.From(r.Context())
-	if !ok || who.Via != "session" || !who.LocalRecent || who.MustTwoFactor {
+	if !ok || who.Via != "session" || !(who.LocalRecent || outsideCounts(who)) || who.MustTwoFactor {
 		fail(w, http.StatusForbidden, "confirm your local password in My account before linking")
 		return webserver.Caller{}, false
 	}

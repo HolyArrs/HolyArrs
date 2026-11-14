@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} phút",
 	"discover.titleLibrary.missing": "Thiếu",
 	"discover.titleLibrary.notOutYet": "Chưa ra mắt",
+	"discover.titleLibrary.waitingAfterAir": "Đang chờ sau khi phát sóng",
 	"discover.titleLibrary.searchingEpisode": "Đang tìm tập {episode}",
 	"discover.titleLibrary.versions": "Các Phiên bản",
 	"discover.titleLibrary.file": "Tệp",

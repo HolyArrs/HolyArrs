@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { dayWords, epTone } from './title-library-words.ts';
+import { airWords, dayWords, epTone } from './title-library-words.ts';
 
 describe('dayWords', () => {
 	const zone = process.env.TZ;
@@ -52,5 +52,32 @@ describe('episode row tone with a file', () => {
 		expect(epTone('wanted', true)).toBe('have');
 		expect(epTone('not_out_yet')).toBe('missing');
 		expect(epTone('searching', true)).toBe('downloading');
+	});
+});
+
+describe('airWords: the date and "not out yet" come from the same moment', () => {
+	const zone = process.env.TZ;
+	afterEach(() => {
+		vi.useRealTimers();
+		if (zone === undefined) delete process.env.TZ; else process.env.TZ = zone;
+	});
+
+	it('a show that airs tonight in the US is not "Yesterday" for a viewer in Sydney', () => {
+		process.env.TZ = 'Australia/Sydney';
+		vi.useFakeTimers();
+		// Fri Nov 13, 10:53 in Sydney; the US show's day was Thu Nov 12 and it airs Nov 13 02:00 UTC.
+		vi.setSystemTime(new Date('2026-11-12T23:53:00Z'));
+		expect(dayWords('2026-11-12')).toBe('Yesterday');
+		expect(airWords('2026-11-12', '2026-11-13T02:00:00Z')).toBe('Today');
+		expect(airWords('2026-11-12', '2026-11-13T00:00:00Z')).toBe('Today');
+	});
+
+	it('keeps the own day once the moment has passed, and for future days', () => {
+		process.env.TZ = 'Europe/Berlin';
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date('2026-11-13T09:53:00Z'));
+		expect(airWords('2026-11-12', '2026-11-13T02:00:00Z')).toBe('Yesterday');
+		expect(airWords('2026-11-20', '2026-11-21T02:00:00Z')).toBe(dayWords('2026-11-20'));
+		expect(airWords(undefined, undefined)).toBe('');
 	});
 });

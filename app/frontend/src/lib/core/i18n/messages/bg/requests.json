@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Стандартно",
 	"requests.window.askedFor": "{name} заяви {quality}.",
 	"requests.window.addsOnly": "Добавя само копието {quality}.",
-	"requests.board.qualityTitle": "Заявено: {quality}"
+	"requests.board.qualityTitle": "Заявено: {quality}",
+	"requests.page.removeRequest": "Премахни заявката",
+	"requests.page.removeTitle": "Да се премахне ли тази заявка?",
+	"requests.page.removeDesc": "Заглавието и файловете му остават.",
+	"requests.window.removeName": "Премахни заявката за {name}",
+	"requests.board.clearFailed": "Изчисти неуспешните",
+	"requests.board.clearFinished": "Изчисти приключилите",
+	"requests.board.clearFailedTitle": "Да се премахнат ли неуспешните заявки ({n})?",
+	"requests.board.clearFailedDesc": "Одобрени са, но нищо не е добавено. Заглавията и файловете им остават.",
+	"requests.board.clearFinishedTitle": "Да се премахнат ли приключилите заявки ({n})?",
+	"requests.board.clearFinishedDesc": "Те са готови или отказани. Заглавията и файловете им остават.",
+	"requests.board.clearConfirm": "Премахни всички"
 }

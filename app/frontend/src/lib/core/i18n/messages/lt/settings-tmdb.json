@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Neprivaloma, įvertinimams.",
 	"settings.tmdb.keyFanart": "fanart.tv raktas",
 	"settings.tmdb.keyFanartHint": "Neprivaloma, logotipams ir paveikslėliams.",
-	"settings.tmdb.testKey": "Patikrinti raktą",
+	"settings.tmdb.testKey": "Išbandyti",
 	"settings.tmdb.testWorks": "Raktas veikia",
 	"settings.tmdb.testRefused": "Raktas atmestas",
 	"settings.tmdb.testPinRefused": "Raktas arba PIN atmestas",

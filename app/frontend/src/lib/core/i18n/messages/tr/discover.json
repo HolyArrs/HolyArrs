@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} dk",
 	"discover.titleLibrary.missing": "Eksik",
 	"discover.titleLibrary.notOutYet": "Henüz çıkmadı",
+	"discover.titleLibrary.waitingAfterAir": "Yayından sonra bekliyor",
 	"discover.titleLibrary.searchingEpisode": "Bölüm {episode} aranıyor",
 	"discover.titleLibrary.versions": "Versiyonlar",
 	"discover.titleLibrary.file": "Dosya",

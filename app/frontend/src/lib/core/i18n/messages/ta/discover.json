@@ -528,6 +528,7 @@
 	"discover.titleLibrary.runtimeMin": "{n} நிமி",
 	"discover.titleLibrary.missing": "விடுபட்டது",
 	"discover.titleLibrary.notOutYet": "இன்னும் வெளியாகவில்லை",
+	"discover.titleLibrary.waitingAfterAir": "ஒளிபரப்புக்குப் பின் காத்திருக்கிறது",
 	"discover.titleLibrary.searchingEpisode": "எபிசோட் {episode} ஐத் தேடுகிறது",
 	"discover.titleLibrary.versions": "பதிப்புகள்",
 	"discover.titleLibrary.file": "கோப்பு",

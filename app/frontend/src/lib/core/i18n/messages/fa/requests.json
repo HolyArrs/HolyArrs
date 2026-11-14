@@ -565,5 +565,16 @@
 	"requests.quality.standard": "استاندارد",
 	"requests.window.askedFor": "{name} کیفیت {quality} را درخواست کرد.",
 	"requests.window.addsOnly": "فقط کپی {quality} را اضافه می‌کند.",
-	"requests.board.qualityTitle": "درخواست با کیفیت {quality}"
+	"requests.board.qualityTitle": "درخواست با کیفیت {quality}",
+	"requests.page.removeRequest": "حذف درخواست",
+	"requests.page.removeTitle": "این درخواست حذف شود؟",
+	"requests.page.removeDesc": "عنوان و فایل‌هایش می‌مانند.",
+	"requests.window.removeName": "حذف درخواست {name}",
+	"requests.board.clearFailed": "پاک‌کردن ناموفق‌ها",
+	"requests.board.clearFinished": "پاک‌کردن پایان‌یافته‌ها",
+	"requests.board.clearFailedTitle": "درخواست‌های ناموفق ({n}) حذف شوند؟",
+	"requests.board.clearFailedDesc": "این‌ها تأیید شدند اما چیزی اضافه نشد. عنوان‌ها و فایل‌هایشان می‌مانند.",
+	"requests.board.clearFinishedTitle": "درخواست‌های پایان‌یافته ({n}) حذف شوند؟",
+	"requests.board.clearFinishedDesc": "این‌ها آماده یا رد شده‌اند. عنوان‌ها و فایل‌هایشان می‌مانند.",
+	"requests.board.clearConfirm": "حذف همه"
 }

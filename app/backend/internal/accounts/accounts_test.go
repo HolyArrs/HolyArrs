@@ -795,12 +795,16 @@ func TestMediaServerFirstPassword(t *testing.T) {
 	if resp, _ := call(t, &http.Client{}, "POST", f.srv.URL+"/api/v1/auth/password", `{"current":"x","new":"`+first+`-3"}`, map[string]string{APIKeyHeader: k.Key}); resp.StatusCode != 403 {
 		t.Fatalf("API key changed a password: %d", resp.StatusCode)
 	}
-	// A password-less account may set its first password from an older sign-in
-	// too: there is nothing to confirm, and the session already owns the account.
+	// A first password needs a fresh sign-in too: an older one could be a
+	// stolen cookie, and a password would keep the account for good.
 	kid := signIn("kid")
 	f.clock.add(11 * time.Minute)
-	if resp, out := kid.do(t, f, "POST", "/api/v1/auth/password", `{"new":"`+first+`"}`); resp.StatusCode != 204 {
+	if resp, out := kid.do(t, f, "POST", "/api/v1/auth/password", `{"new":"`+first+`"}`); resp.StatusCode != 403 || !strings.Contains(out, `"reauth"`) {
 		t.Fatalf("first password from an old sign-in: %d %s", resp.StatusCode, out)
+	}
+	kid = signIn("kid")
+	if resp, out := kid.do(t, f, "POST", "/api/v1/auth/password", `{"new":"`+first+`"}`); resp.StatusCode != 204 {
+		t.Fatalf("first password from a fresh sign-in: %d %s", resp.StatusCode, out)
 	}
 }
 

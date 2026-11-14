@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "trimisă deși a eșuat: {overridden}",
 	"server.sources.the-album-would-mix-copies": "albumul ar amesteca copii: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Pragul de lansare e sărit: acest film nu se consideră încă apărut",
-	"server.sources.this-version-already-has-a-good": "Această Versiune are deja o copie suficient de bună; cea nouă o va înlocui"
+	"server.sources.this-version-already-has-a-good": "Această Versiune are deja o copie suficient de bună; cea nouă o va înlocui",
+	"server.requests.removed-the-request-for": "{name} a eliminat cererea pentru {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex nu a dat niciun cod de cont pentru această persoană, așa că lista ei de vizionare nu este citită."
 }

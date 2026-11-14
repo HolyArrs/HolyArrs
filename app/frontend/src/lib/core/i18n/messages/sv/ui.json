@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Avbryt",
 	"ui.confirm.localVisit": "Det här besöket hoppar över inloggningen och kan därför inte bekräfta ditt lösenord. Logga först in med ditt lösenord, så kommer du tillbaka hit.",
 	"ui.confirm.signInFirst": "Logga in med mitt lösenord",
+	"ui.confirm.outsideAgain": "Logga in igen med {method} för att bekräfta att det är du. Du kommer tillbaka hit. Du kan också skapa ett HolyArrs-lösenord under Mitt konto.",
+	"ui.confirm.signInAgainWith": "Logga in igen med {method}",
 	"ui.growCard.preview": "Förhandsvisning av {title}",
 	"ui.growCard.goTo": "Gå till {title}",
 	"ui.growCard.moreInfoAbout": "Mer information om {title}",

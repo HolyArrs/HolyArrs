@@ -1,0 +1,37 @@
+name: HolyArrs - Lock quiet issues
+
+# A closed issue stays open for replies for 30 days, so "still broken" lands
+# in the same thread. After 30 days with no activity it is locked with a note.
+
+on:
+  schedule:
+    - cron: '23 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: holyarrs-lock
+  cancel-in-progress: false
+
+jobs:
+  lock:
+    name: Lock closed issues after 30 quiet days
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Lock
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          cutoff=$(date -u -d '30 days ago' +%Y-%m-%d)
+          gh issue list --repo "$REPO" --state closed --limit 100 \
+            --search "is:unlocked updated:<$cutoff sort:updated-asc" \
+            --json number --jq '.[].number' | while read -r n; do
+            gh issue comment "$n" --repo "$REPO" --body "Locked after 30 days with no activity. Still seeing this? Open a new issue and mention #$n."
+            gh issue lock "$n" --repo "$REPO" --reason resolved
+          done

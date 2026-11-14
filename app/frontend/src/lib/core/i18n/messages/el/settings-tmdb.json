@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "Προαιρετικό, για βαθμολογίες.",
 	"settings.tmdb.keyFanart": "Κλειδί fanart.tv",
 	"settings.tmdb.keyFanartHint": "Προαιρετικό, για λογότυπα και εικόνες.",
-	"settings.tmdb.testKey": "Δοκιμή κλειδιού",
+	"settings.tmdb.testKey": "Δοκιμή",
 	"settings.tmdb.testWorks": "Το κλειδί λειτουργεί",
 	"settings.tmdb.testRefused": "Το κλειδί απορρίφθηκε",
 	"settings.tmdb.testPinRefused": "Το κλειδί ή το PIN απορρίφθηκε",

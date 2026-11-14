@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "По избор, за оценки.",
 	"settings.tmdb.keyFanart": "Ключ на fanart.tv",
 	"settings.tmdb.keyFanartHint": "По избор, за лога и изображения.",
-	"settings.tmdb.testKey": "Тест на ключа",
+	"settings.tmdb.testKey": "Проверка",
 	"settings.tmdb.testWorks": "Ключът работи",
 	"settings.tmdb.testRefused": "Ключът е отхвърлен",
 	"settings.tmdb.testPinRefused": "Ключът или PIN е отхвърлен",

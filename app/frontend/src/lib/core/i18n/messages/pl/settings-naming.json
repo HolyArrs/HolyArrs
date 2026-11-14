@@ -81,5 +81,5 @@
 	"settings.naming.holding": "Folder przechowywania",
 	"settings.naming.clearOld": "Wyczyść stare wstrzymane pliki",
 	"settings.naming.clearOldHint": "Uruchamia się samo każdego dnia",
-	"settings.naming.clearNow": "Wyczyść teraz"
+	"settings.naming.clearNow": "Wyczyść"
 }

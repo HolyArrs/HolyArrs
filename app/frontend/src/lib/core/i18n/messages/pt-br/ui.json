@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Cancelar",
 	"ui.confirm.localVisit": "Esta visita pula o login, então não consegue confirmar sua senha. Entre primeiro com sua senha e você volta para cá.",
 	"ui.confirm.signInFirst": "Entrar com minha senha",
+	"ui.confirm.outsideAgain": "Para confirmar que é você, entre de novo com {method}. Você volta para cá depois. Você também pode criar uma senha do HolyArrs em Minha conta.",
+	"ui.confirm.signInAgainWith": "Entrar de novo com {method}",
 	"ui.growCard.preview": "Prévia de {title}",
 	"ui.growCard.goTo": "Ir para {title}",
 	"ui.growCard.moreInfoAbout": "Mais informações sobre {title}",

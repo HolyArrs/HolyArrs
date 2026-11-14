@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "sent although it failed: {overridden}",
 	"server.sources.the-album-would-mix-copies": "the album would mix copies: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "the Release gate is skipped: this Title is not out yet",
-	"server.sources.this-version-already-has-a-good": "this Version already has a good enough copy; the new one will replace it"
+	"server.sources.this-version-already-has-a-good": "this Version already has a good enough copy; the new one will replace it",
+	"server.requests.removed-the-request-for": "{name} removed the request for {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex gave no account code for this person, so their watchlist is not read."
 }

@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Abbrechen",
 	"ui.confirm.localVisit": "Dieser Besuch überspringt die Anmeldung und kann dein Passwort deshalb nicht bestätigen. Melde dich zuerst mit deinem Passwort an, dann kommst du hierher zurück.",
 	"ui.confirm.signInFirst": "Mit meinem Passwort anmelden",
+	"ui.confirm.outsideAgain": "Melde dich zur Bestätigung erneut mit {method} an. Danach kommst du hierher zurück. Du kannst auch unter Mein Konto ein HolyArrs-Passwort festlegen.",
+	"ui.confirm.signInAgainWith": "Erneut mit {method} anmelden",
 	"ui.growCard.preview": "Vorschau: {title}",
 	"ui.growCard.goTo": "Zu {title} gehen",
 	"ui.growCard.moreInfoAbout": "Mehr Infos zu {title}",

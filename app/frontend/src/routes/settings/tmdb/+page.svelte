@@ -177,7 +177,7 @@
 					<div class="txt"><label class="label" for="mk-{k}">{keyLabel[k]()}</label><span id="mk-{k}-hint" class="hint">{fromDocker ? t('settings.tmdb.tmdbFromDocker') : keyHint[k]()}</span></div>
 					<div class="ctl">
 						<input id="mk-{k}" class="input mono" type="password" bind:value={keys[k]} autocomplete="new-password" spellcheck="false" disabled={fromDocker} aria-describedby="mk-{k}-hint" />
-						<Button type="button" variant="secondary" size="sm" onclick={() => test(k)} disabled={tests[k]?.busy} aria-busy={tests[k]?.busy}>{t('settings.tmdb.testKey')}</Button>
+						<Button type="button" variant="secondary" onclick={() => test(k)} disabled={tests[k]?.busy} aria-busy={tests[k]?.busy}>{t('settings.tmdb.testKey')}</Button>
 					</div>
 					{#if tests[k] && !tests[k].busy}
 						<div class="below"><span class="st" class:fail={!tests[k].ok} role="status"><i></i>{tests[k].text}</span></div>

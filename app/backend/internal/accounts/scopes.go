@@ -188,6 +188,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/asks":                              webserver.PermAsk,
 	"GET /api/v1/asks/limit":                         webserver.PermAsk,
 	"DELETE /api/v1/asks/{id}":                       webserver.PermAsk,
+	"POST /api/v1/asks/remove":                       webserver.PermApprove,
 	"POST /api/v1/asks/{id}/approve":                 webserver.PermApprove,
 	"POST /api/v1/asks/{id}/turn-down":               webserver.PermApprove,
 	"GET /api/v1/messages":                           webserver.NeedSignedIn,

@@ -81,5 +81,5 @@
 	"settings.naming.holding": "Dossier de rétention",
 	"settings.naming.clearOld": "Vider les anciens fichiers retenus",
 	"settings.naming.clearOldHint": "Se lance seul chaque jour",
-	"settings.naming.clearNow": "Vider maintenant"
+	"settings.naming.clearNow": "Vider"
 }

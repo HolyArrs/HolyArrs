@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "Définissez d'abord un mot de passe",
 	"settings.layout.setPasswordDesc": "Les clés, mots de passe, personnes et sauvegardes demandent un mot de passe HolyArrs. Vous n'en avez pas encore.",
 	"settings.layout.setPasswordLabel": "Définir un mot de passe",
+	"settings.layout.signInAgainTitle": "Reconnectez-vous d'abord",
 	"settings.layout.confirmPasswordLabel": "Confirmez votre mot de passe",
 	"settings.layout.confirmPasswordDesc": "Les clés, mots de passe, personnes et sauvegardes demandent votre mot de passe. Valable 10 minutes."
 }

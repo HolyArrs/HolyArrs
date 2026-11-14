@@ -565,5 +565,16 @@
 	"requests.quality.standard": "स्टैंडर्ड",
 	"requests.window.askedFor": "{name} ने {quality} की रिक्वेस्ट की।",
 	"requests.window.addsOnly": "सिर्फ़ {quality} कॉपी जोड़ता है।",
-	"requests.board.qualityTitle": "{quality} की रिक्वेस्ट"
+	"requests.board.qualityTitle": "{quality} की रिक्वेस्ट",
+	"requests.page.removeRequest": "अनुरोध हटाएँ",
+	"requests.page.removeTitle": "यह अनुरोध हटाएँ?",
+	"requests.page.removeDesc": "शीर्षक और उसकी फ़ाइलें बनी रहेंगी।",
+	"requests.window.removeName": "{name} का अनुरोध हटाएँ",
+	"requests.board.clearFailed": "असफल साफ़ करें",
+	"requests.board.clearFinished": "पूरे हुए साफ़ करें",
+	"requests.board.clearFailedTitle": "असफल अनुरोध ({n}) हटाएँ?",
+	"requests.board.clearFailedDesc": "इन्हें मंज़ूरी मिली थी, पर कुछ जोड़ा नहीं गया। शीर्षक और उनकी फ़ाइलें बनी रहेंगी।",
+	"requests.board.clearFinishedTitle": "पूरे हुए अनुरोध ({n}) हटाएँ?",
+	"requests.board.clearFinishedDesc": "ये तैयार हैं या ठुकराए गए हैं। शीर्षक और उनकी फ़ाइलें बनी रहेंगी।",
+	"requests.board.clearConfirm": "सभी हटाएँ"
 }

@@ -1341,5 +1341,7 @@
 	"server.sources.sent-although-it-failed": "başarısız olmasına rağmen gönderildi: {overridden}",
 	"server.sources.the-album-would-mix-copies": "albüm kopyaları karıştırırdı: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Çıkış eşiği atlandı: bu film henüz çıkmış sayılmıyor",
-	"server.sources.this-version-already-has-a-good": "Bu versiyonun zaten yeterince iyi bir kopyası var; yenisi onun yerini alır"
+	"server.sources.this-version-already-has-a-good": "Bu versiyonun zaten yeterince iyi bir kopyası var; yenisi onun yerini alır",
+	"server.requests.removed-the-request-for": "{name}, {a} isteğini kaldırdı",
+	"server.requests.plex-gave-no-account-code-for": "Plex bu kişi için hesap kodu vermedi, bu yüzden izleme listesi okunmuyor."
 }

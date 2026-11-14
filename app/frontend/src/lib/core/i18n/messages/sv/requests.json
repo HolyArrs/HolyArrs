@@ -565,5 +565,16 @@
 	"requests.quality.standard": "Standard",
 	"requests.window.askedFor": "{name} efterfrågade {quality}.",
 	"requests.window.addsOnly": "Lägger bara till {quality}-kopian.",
-	"requests.board.qualityTitle": "Efterfrågad i {quality}"
+	"requests.board.qualityTitle": "Efterfrågad i {quality}",
+	"requests.page.removeRequest": "Ta bort begäran",
+	"requests.page.removeTitle": "Ta bort den här begäran?",
+	"requests.page.removeDesc": "Titeln och dess filer finns kvar.",
+	"requests.window.removeName": "Ta bort begäran om {name}",
+	"requests.board.clearFailed": "Rensa misslyckade",
+	"requests.board.clearFinished": "Rensa avslutade",
+	"requests.board.clearFailedTitle": "Ta bort de misslyckade begärandena ({n})?",
+	"requests.board.clearFailedDesc": "De godkändes, men inget lades till. Titlarna och deras filer finns kvar.",
+	"requests.board.clearFinishedTitle": "Ta bort de avslutade begärandena ({n})?",
+	"requests.board.clearFinishedDesc": "De är klara eller nekade. Titlarna och deras filer finns kvar.",
+	"requests.board.clearConfirm": "Ta bort alla"
 }

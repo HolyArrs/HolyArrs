@@ -7,6 +7,8 @@
 	"ui.confirm.cancel": "Annulla",
 	"ui.confirm.localVisit": "Questa visita salta l'accesso, quindi non può confermare la tua password. Accedi prima con la tua password e tornerai qui.",
 	"ui.confirm.signInFirst": "Accedi con la mia password",
+	"ui.confirm.outsideAgain": "Per confermare che sei tu, accedi di nuovo con {method}. Tornerai qui. Puoi anche impostare una password HolyArrs in Il mio account.",
+	"ui.confirm.signInAgainWith": "Accedi di nuovo con {method}",
 	"ui.growCard.preview": "Anteprima di {title}",
 	"ui.growCard.goTo": "Vai a {title}",
 	"ui.growCard.moreInfoAbout": "Altre info su {title}",

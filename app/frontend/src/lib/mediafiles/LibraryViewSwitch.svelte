@@ -63,7 +63,7 @@
 	.compact .on .lbl { max-width: 0; margin-left: 0; opacity: 0; }
 	.compact .on button { padding-right: 10px; }
 	.size { display: inline-flex; padding-right: 2px; }
-	.size :global(.trigger.icon) { width: 26px; height: 28px; border-radius: 6px; }
+	.size :global(.trigger.icon) { width: 30px; height: 30px; border-radius: 8px; }
 	.size :global(.trigger.icon svg) { width: 15px; height: 15px; }
 	@media (prefers-reduced-motion: reduce) { .lbl, .seg { transition: none; } }
 	@media (pointer: coarse) { button { min-height: 40px; min-width: 44px; } .size :global(.trigger.icon) { width: 36px; height: 40px; } }

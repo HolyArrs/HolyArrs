@@ -56,7 +56,9 @@
 	"settings.libraryFolders.sideTypesHint": "Séparez les types par des virgules, par exemple srt, ass.",
 	"settings.libraryFolders.notMounted": "HolyArrs ne voit pas {path}. Il ne voit que les dossiers montés dans son conteneur. Ajoutez un volume comme {path}:{inside}, puis utilisez {inside} ici.",
 	"settings.libraryFolders.quality": "Qualité",
-	"settings.libraryFolders.qualityNone": "Utiliser celle par défaut",
 	"settings.libraryFolders.qualityHint": "Les nouveaux titres de ce dossier commencent avec cette qualité.",
-	"settings.libraryFolders.qualityOf": "Qualité de {path}"
+	"settings.libraryFolders.qualityDefault": "Par défaut",
+	"settings.libraryFolders.qualityDefaultNamed": "Par défaut ({name})",
+	"settings.libraryFolders.qualityDefaultValue": "{name} · par défaut",
+	"settings.libraryFolders.qualityFor": "Qualité pour {name} : {value}"
 }

@@ -50,7 +50,7 @@
 	"settings.tmdb.keyMdblistHint": "İsteğe bağlı, puanlar için.",
 	"settings.tmdb.keyFanart": "fanart.tv anahtarı",
 	"settings.tmdb.keyFanartHint": "İsteğe bağlı, logolar ve görseller için.",
-	"settings.tmdb.testKey": "Anahtarı dene",
+	"settings.tmdb.testKey": "Dene",
 	"settings.tmdb.testWorks": "Anahtar çalışıyor",
 	"settings.tmdb.testRefused": "Anahtar reddedildi",
 	"settings.tmdb.testPinRefused": "Anahtar veya PIN reddedildi",
