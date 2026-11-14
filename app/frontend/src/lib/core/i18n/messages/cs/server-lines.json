@@ -1342,5 +1342,6 @@
 	"server.sources.the-album-would-mix-copies": "album by smíchalo kopie: {skipped}",
 	"server.sources.the-release-gate-is-skipped-this": "Práh vydání se přeskočí: tento film se ještě nepočítá jako vydaný",
 	"server.sources.this-version-already-has-a-good": "Tato Verze už má dost dobrou kopii; nová ji nahradí",
-	"server.requests.removed-the-request-for": "{name} odebral(a) žádost o {a}"
+	"server.requests.removed-the-request-for": "{name} odebral(a) žádost o {a}",
+	"server.requests.plex-gave-no-account-code-for": "Plex u této osoby nedal kód účtu, proto se její seznam ke zhlédnutí nečte."
 }

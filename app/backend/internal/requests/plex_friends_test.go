@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"encoding/xml"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -30,7 +32,9 @@ type fakeFriends struct {
 	looks   map[string]map[string]any   // entry key -> its own page
 	calls   map[string]int              // "friends", "watchlist", "lookup"
 	leaked  bool
-	srv     *httptest.Server
+	// usersStatus makes /api/users answer this status instead of the list.
+	usersStatus int
+	srv         *httptest.Server
 }
 
 const ownerTok = "tok-owner"
@@ -46,14 +50,25 @@ func newFakeFriends(t *testing.T) *fakeFriends {
 		if strings.Contains(r.URL.String(), ownerTok) || strings.Contains(string(body), ownerTok) {
 			f.leaked = true
 		}
-		if r.Header.Get("X-Plex-Token") != ownerTok || r.Header.Get("X-Plex-Product") != "HolyArrs" || r.Header.Get("Accept") != "application/json" {
+		accept := "application/json"
+		if r.URL.Path == "/api/users" {
+			accept = "application/xml"
+		}
+		if r.Header.Get("X-Plex-Token") != ownerTok || r.Header.Get("X-Plex-Product") != "HolyArrs" || r.Header.Get("Accept") != accept {
 			http.Error(w, "no", http.StatusUnauthorized)
 			return
 		}
 		switch {
 		case r.Method == http.MethodGet && r.URL.Path == "/api/v2/friends":
+			f.calls["v2"]++
+			http.Error(w, "gone", http.StatusGone)
+		case r.Method == http.MethodGet && r.URL.Path == "/api/users":
 			f.calls["friends"]++
-			_ = json.NewEncoder(w).Encode(f.friends)
+			if f.usersStatus != 0 {
+				http.Error(w, "no", f.usersStatus)
+				return
+			}
+			_, _ = w.Write([]byte(friendsXML(f.friends)))
 		case r.Method == http.MethodPost && r.URL.Path == "/api":
 			f.calls["watchlist"]++
 			var q struct {
@@ -95,6 +110,38 @@ func newFakeFriends(t *testing.T) *fakeFriends {
 	}))
 	t.Cleanup(f.srv.Close)
 	return f
+}
+
+// friendsXML is /api/users as Plex gives it: no uuid field, the uuid only
+// inside the picture address. A "thumb" is used as given, else one is made
+// from "uuid".
+func friendsXML(fs []map[string]any) string {
+	esc := func(v string) string {
+		var b strings.Builder
+		_ = xml.EscapeText(&b, []byte(v))
+		return b.String()
+	}
+	var b strings.Builder
+	b.WriteString(`<MediaContainer friendlyName="myPlex">`)
+	for _, f := range fs {
+		thumb, _ := f["thumb"].(string)
+		if u, _ := f["uuid"].(string); thumb == "" && u != "" {
+			thumb = "https://plex.tv/users/" + u + "/avatar?c=1"
+		}
+		home := "0"
+		if h, _ := f["home"].(bool); h {
+			home = "1"
+		}
+		b.WriteString(`<User id="` + esc(fmt.Sprint(f["id"])) + `" title="x" username="x" thumb="` + esc(thumb) + `" home="` + home + `">`)
+		if ss, ok := f["sharedServers"].([]map[string]string); ok {
+			for _, s := range ss {
+				b.WriteString(`<Server machineIdentifier="` + esc(s["machineIdentifier"]) + `"/>`)
+			}
+		}
+		b.WriteString(`</User>`)
+	}
+	b.WriteString(`</MediaContainer>`)
+	return b.String()
 }
 
 func (f *fakeFriends) setFriends(fs ...map[string]any) {
@@ -559,8 +606,69 @@ func TestFriendsTokenNeverFollowsRedirectToAnotherHost(t *testing.T) {
 	}))
 	t.Cleanup(hop.Close)
 	w.PlexTV = hop.URL
-	_, _ = w.fetchFriends(context.Background(), ownerTok, "srv-1")
+	_, _, _ = w.fetchFriends(context.Background(), ownerTok, "srv-1")
 	if got != "" {
 		t.Fatal("the owner's token followed a redirect to another host")
+	}
+}
+
+func friendNotes(t *testing.T, r *rig) map[int64]string {
+	t.Helper()
+	out := map[int64]string{}
+	for _, id := range []int64{r.ana.UserID, r.bo.UserID} {
+		st, err := ReadWatchlist(context.Background(), r.st.Read(), id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		out[id] = st.Error
+	}
+	return out
+}
+
+func TestFriendsReadFromUsersListWithUUIDFromPicture(t *testing.T) {
+	r, f, w, _ := friendsRig(t)
+	setFriendsSwitch(t, r, true)
+	f.setList("aaa111", f.friendNode("k1", "movie", "Heat", 1995, "tmdb://949"))
+	runWatchlists(t, w)
+	if f.count("v2") != 0 || f.count("friends") != 1 || f.count("watchlist") == 0 {
+		t.Fatalf("calls %v, want /api/users once, no /api/v2/friends, a watchlist read", f.calls)
+	}
+}
+
+func TestFriendWithoutUUIDIsSkippedAndSaid(t *testing.T) {
+	r, f, w, _ := friendsRig(t)
+	setFriendsSwitch(t, r, true)
+	f.setFriends(
+		map[string]any{"id": 9001, "thumb": "https://plex.tv/users/aaa111/avatar", "sharedServers": []map[string]string{{"machineIdentifier": "srv-1"}}},
+		map[string]any{"id": "9002", "thumb": "https://example.com/pic.png", "home": true},
+	)
+	f.setList("aaa111", f.friendNode("k1", "movie", "Heat", 1995, "tmdb://949"))
+	runWatchlists(t, w)
+	notes := friendNotes(t, r)
+	if notes[r.bo.UserID] != friendWords["nocode"] || notes[r.ana.UserID] == friendWords["nocode"] {
+		t.Fatalf("notes %v: only the person without a uuid should say so", notes)
+	}
+	if f.count("watchlist") != 1 {
+		t.Fatalf("watchlist read %d times, want 1 (only the one with a uuid)", f.count("watchlist"))
+	}
+}
+
+func TestFriendsListFailingSaysWhyOnEachPerson(t *testing.T) {
+	for _, c := range []struct {
+		status int
+		want   string
+	}{{http.StatusGone, errPlexGone.Error()}, {http.StatusUnauthorized, friendWords["refused"]}, {http.StatusInternalServerError, "Plex answered 500; HolyArrs tries again at the next check"}} {
+		r, f, w, _ := friendsRig(t)
+		setFriendsSwitch(t, r, true)
+		f.usersStatus = c.status
+		runWatchlists(t, w)
+		for id, note := range friendNotes(t, r) {
+			if note != c.want {
+				t.Fatalf("status %d: user %d note %q, want %q", c.status, id, note, c.want)
+			}
+		}
+		if f.count("watchlist") != 0 || countAsks(t, r) != 0 {
+			t.Fatalf("status %d: something was read or asked", c.status)
+		}
 	}
 }

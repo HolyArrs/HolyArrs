@@ -733,7 +733,6 @@ hold_unknown_releases
 hold_until
 holding_days
 holyarrs
-home
 home_date
 host
 hosts
@@ -910,7 +909,6 @@ looked
 lossless
 low_space_mb
 m
-machineIdentifier
 machine_made
 machine_translated
 made
@@ -1530,7 +1528,6 @@ severity
 shape
 share_limit_action
 share_ratio
-sharedServers
 shelf
 show
 show_days
