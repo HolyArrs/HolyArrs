@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease, dan IPTorrents bawaan**, tanpa Prowlarr. Minta serial dalam 4K, dan Profilarr bisa mengirim format dan profilnya. [Lihat yang baru](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: hapus permintaan apa pun, dan watchlist Plex milik teman dibaca lagi.** Kualitas folder kini tampil di kartunya, dan Settings sudah dirapikan agar konsisten. [Lihat yang baru](https://holyarrs.com/whats-new/)
 
 > Setiap poster, trailer, dan skor di HolyArrs kamu berasal dari server yang saya jalankan dan bayar sendiri, supaya tetap gratis untuk semua orang. Kalau HolyArrs membuat malam nonton kamu sedikit lebih menyenangkan, sponsor membantu menjaga semuanya tetap menyala untuk kita semua 💛
 >
@@ -222,7 +222,7 @@ Image tersedia di Docker Hub sebagai [`holyarrs/holyarrs`](https://hub.docker.co
 | Tag | Dipakai untuk |
 | :----: | --- |
 | `latest` | Versi terbaru. |
-| `1.1.3` | Satu versi tertentu. Tidak pernah berpindah. |
+| `1.1.4` | Satu versi tertentu. Tidak pernah berpindah. |
 
 ## Penggunaan
 

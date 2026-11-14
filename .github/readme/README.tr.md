@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease ve IPTorrents yerleşik**, Prowlarr gerekmeden. Dizileri 4K olarak iste, Profilarr da formatlarını ve profillerini gönderebilir. [Yenilikler](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: herhangi bir isteği kaldırabilirsin, arkadaşlarının Plex izleme listeleri de yeniden okunuyor.** Bir klasörün kalitesi artık kartında görünüyor ve Settings tutarlı hale getirildi. [Yenilikler](https://holyarrs.com/whats-new/)
 
 > HolyArrs'ındaki her afiş, fragman ve puan, kendim çalıştırıp ödediğim bir sunucudan geliyor; böylece herkes için ücretsiz kalıyor. HolyArrs film gecene biraz güzellik kattıysa, sponsor olmak hepimiz için ışıkları açık tutar 💛
 >
@@ -222,7 +222,7 @@ Yerel bir paket mi istersin? Her [sürüme](https://github.com/HolyArrs/HolyArrs
 | Etiket | Ne için kullanılır |
 | :----: | --- |
 | `latest` | En yeni sürüm. |
-| `1.1.3` | Tam olarak tek bir sürüm. Asla değişmez. |
+| `1.1.4` | Tam olarak tek bir sürüm. Asla değişmez. |
 
 ## Kullanım
 

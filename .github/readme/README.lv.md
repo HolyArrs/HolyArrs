@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease un IPTorrents iebūvēti**, bez Prowlarr. Pieprasi seriālus 4K kvalitātē, un Profilarr var nosūtīt savus formātus un profilus. [Skaties, kas jauns](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: noņem jebkuru pieprasījumu, un draugu Plex skatīšanās saraksti atkal tiek lasīti.** Mapes kvalitāte tagad redzama tās kartītē, un Settings ir saskaņots. [Skaties, kas jauns](https://holyarrs.com/whats-new/)
 
 > Katrs plakāts, treileris un vērtējums tavā HolyArrs nāk no servera, ko es pats uzturu un apmaksāju, lai tas paliktu bezmaksas visiem. Ja HolyArrs ir padarījis filmu vakaru mazliet labāku, sponsors palīdz mums visiem uzturēt gaismu 💛
 >
@@ -222,7 +222,7 @@ Attēli ir Docker Hub kā [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarr
 | Birka | Kam to lietot |
 | :----: | --- |
 | `latest` | Jaunākā versija. |
-| `1.1.3` | Viena konkrēta versija. Tā nekad nemainās. |
+| `1.1.4` | Viena konkrēta versija. Tā nekad nemainās. |
 
 ## Lietošana
 

@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease и IPTorrents уграђени**, без Prowlarr-а. Тражи серије у 4K, а Profilarr може да пошаље своје формате и профиле. [Погледај шта је ново](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: уклони било који захтев, а Plex листе за гледање пријатеља поново се читају.** Квалитет фолдера сада се види на његовој картици, а Settings је усклађен. [Погледај шта је ново](https://holyarrs.com/whats-new/)
 
 > Сваки постер, трејлер и оцена у твом HolyArrs-у долази са сервера који сам водим и плаћам сâм, да би остао бесплатан за све. Ако је HolyArrs учинио твоје филмске вечери мало лепшим, спонзор држи светло упаљеним за све нас 💛
 >
@@ -222,7 +222,7 @@ Image-и су на Docker Hub-у као [`holyarrs/holyarrs`](https://hub.docker
 | Таг | За шта га користити |
 | :----: | --- |
 | `latest` | Најновија верзија. |
-| `1.1.3` | Једна тачна верзија. Никад се не мења. |
+| `1.1.4` | Једна тачна верзија. Никад се не мења. |
 
 ## Употреба
 

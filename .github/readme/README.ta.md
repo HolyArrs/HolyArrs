@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease, IPTorrents உள்ளமைக்கப்பட்டவை**, Prowlarr தேவையில்லை. தொடர்களை 4K-இல் கேளுங்கள், Profilarr தன் formats மற்றும் profiles-ஐ அனுப்பலாம். [புதியவை என்ன](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: எந்த கோரிக்கையையும் நீக்கலாம், நண்பர்களின் Plex watchlist-கள் மீண்டும் படிக்கப்படுகின்றன.** ஒரு அடைவின் தரம் இப்போது அதன் அட்டையில் தெரிகிறது, Settings ஒரே மாதிரியாக்கப்பட்டது. [புதியவை என்ன](https://holyarrs.com/whats-new/)
 
 > உங்கள் HolyArrs-இல் உள்ள ஒவ்வொரு போஸ்டர், ட்ரெய்லர், மதிப்பெண்ணும் நானே நடத்தி, நானே பணம் செலுத்தும் ஒரு server-இலிருந்து வருகிறது. அதனால் இது எல்லோருக்கும் இலவசமாகவே இருக்கிறது. HolyArrs உங்கள் திரைப்பட இரவை இன்னும் கொஞ்சம் இனிமையாக்கியிருந்தால், ஒரு sponsor நம் எல்லோருக்கும் விளக்கை எரிய வைக்கிறார் 💛
 >
@@ -222,7 +222,7 @@ Images Docker Hub-இல் [`holyarrs/holyarrs`](https://hub.docker.com/r/holya
 | Tag | எதற்குப் பயன்படுத்த |
 | :----: | --- |
 | `latest` | புதிய பதிப்பு. |
-| `1.1.3` | ஒரு குறிப்பிட்ட பதிப்பு. இது ஒருபோதும் மாறாது. |
+| `1.1.4` | ஒரு குறிப்பிட்ட பதிப்பு. இது ஒருபோதும் மாறாது. |
 
 ## பயன்பாடு
 

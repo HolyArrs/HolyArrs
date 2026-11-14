@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease og IPTorrents innebygd**, uten Prowlarr. Be om serier i 4K, og Profilarr kan sende formatene og profilene sine. [Se hva som er nytt](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: fjern hvilken som helst forespørsel, og venners Plex-watchlister blir lest igjen.** Kvaliteten til en mappe vises nå på kortet, og Settings er gjort mer konsekvent. [Se hva som er nytt](https://holyarrs.com/whats-new/)
 
 > Hver eneste plakat, trailer og vurdering i HolyArrs kommer fra en server jeg drifter og betaler for selv, slik at det forblir gratis for alle. Hvis HolyArrs har gjort filmkvelden din litt bedre, holder en sponsor lyset på for oss alle 💛
 >
@@ -222,7 +222,7 @@ Imagene ligger på Docker Hub som [`holyarrs/holyarrs`](https://hub.docker.com/r
 | Tagg | Bruk den til |
 | :----: | --- |
 | `latest` | Den nyeste versjonen. |
-| `1.1.3` | Én bestemt versjon. Den flytter seg aldri. |
+| `1.1.4` | Én bestemt versjon. Den flytter seg aldri. |
 
 ## Bruk
 

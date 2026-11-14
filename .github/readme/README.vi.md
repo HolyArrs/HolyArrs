@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: tích hợp sẵn Knaben, TorrentsCSV, SubsPlease và IPTorrents**, không cần Prowlarr. Yêu cầu phim bộ ở 4K, và Profilarr có thể gửi định dạng và hồ sơ của nó. [Xem có gì mới](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: xóa được mọi yêu cầu, và danh sách xem Plex của bạn bè lại được đọc.** Chất lượng của thư mục giờ hiện trên thẻ của nó, và Settings đã được chỉnh cho thống nhất. [Xem có gì mới](https://holyarrs.com/whats-new/)
 
 > Mọi poster, trailer và điểm đánh giá trong HolyArrs của bạn đều đến từ một máy chủ do chính tôi vận hành và trả tiền, để nó luôn miễn phí cho mọi người. Nếu HolyArrs làm buổi xem phim của bạn vui hơn một chút, một lượt tài trợ sẽ giúp giữ đèn sáng cho tất cả chúng ta 💛
 >
@@ -222,7 +222,7 @@ Các image nằm trên Docker Hub với tên [`holyarrs/holyarrs`](https://hub.d
 | Tag | Dùng cho |
 | :----: | --- |
 | `latest` | Phiên bản mới nhất. |
-| `1.1.3` | Một phiên bản chính xác. Nó không bao giờ thay đổi. |
+| `1.1.4` | Một phiên bản chính xác. Nó không bao giờ thay đổi. |
 
 ## Cách dùng
 

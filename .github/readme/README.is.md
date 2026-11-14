@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease og IPTorrents innbyggð**, án Prowlarr. Biddu um þætti í 4K, og Profilarr getur sent sniðin sín og prófíla. [Sjáðu hvað er nýtt](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: fjarlægðu hvaða beiðni sem er, og áhorfslistar vina í Plex eru lesnir aftur.** Gæði möppu sjást nú á spjaldinu hennar, og Settings var samræmt. [Sjáðu hvað er nýtt](https://holyarrs.com/whats-new/)
 
 > Hvert veggspjald, hver stikla og hver einkunn í HolyArrs kemur frá server sem ég rek og borga sjálfur, svo að það haldist ókeypis fyrir alla. Ef HolyArrs gerði bíókvöldið aðeins betra heldur styrktaraðili ljósunum kveiktum fyrir okkur öll 💛
 >
@@ -222,7 +222,7 @@ Image eru á Docker Hub sem [`holyarrs/holyarrs`](https://hub.docker.com/r/holya
 | Tag | Notaðu það fyrir |
 | :----: | --- |
 | `latest` | Nýjustu útgáfuna. |
-| `1.1.3` | Eina tiltekna útgáfu. Hún breytist aldrei. |
+| `1.1.4` | Eina tiltekna útgáfu. Hún breytist aldrei. |
 
 ## Notkun
 

@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease ir IPTorrents įtaisyti**, be Prowlarr. Prašyk serialų 4K kokybe, o Profilarr gali atsiųsti savo formatus ir profilius. [Žiūrėti, kas naujo](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: pašalink bet kurią užklausą, o draugų Plex žiūrėjimo sąrašai vėl nuskaitomi.** Aplanko kokybė dabar rodoma jo kortelėje, o Settings suvienodintas. [Žiūrėti, kas naujo](https://holyarrs.com/whats-new/)
 
 > Kiekvienas tavo HolyArrs plakatas, anonsas ir įvertinimas ateina iš serverio, kurį pats laikau ir apmoku, todėl visiems tai lieka nemokama. Jei HolyArrs padarė tavo filmų vakarą šiek tiek geresnį, rėmėjas padeda mums visiems išlaikyti šviesą 💛
 >
@@ -222,7 +222,7 @@ Image yra Docker Hub kaip [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarr
 | Tag | Kam naudoti |
 | :----: | --- |
 | `latest` | Naujausia versija. |
-| `1.1.3` | Viena tiksli versija. Ji niekada nesikeičia. |
+| `1.1.4` | Viena tiksli versija. Ji niekada nesikeičia. |
 
 ## Naudojimas
 

@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease ו-IPTorrents מובנים**, בלי צורך ב-Prowlarr. בקשו סדרות ב-4K, ו-Profilarr יכול לשלוח את הפורמטים והפרופילים שלו. [מה חדש](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: אפשר להסיר כל בקשה, ורשימות הצפייה של חברים ב-Plex נקראות שוב.** האיכות של תיקייה מופיעה עכשיו בכרטיס שלה, ו-Settings עבר איחוד. [מה חדש](https://holyarrs.com/whats-new/)
 
 > כל פוסטר, טריילר וציון ב-HolyArrs שלך מגיעים משרת שאני מפעיל ומשלם עליו בעצמי, כדי שישאר חינמי לכולם. אם HolyArrs שיפר קצת את ערב הסרט שלך, תמיכה כספית שומרת על האור דלוק בשבילנו כולנו 💛
 >
@@ -222,7 +222,7 @@ HolyArrs רק קורא את האפליקציות הישנות שלך ולא מש
 | תגית | מתאימה ל |
 | :----: | --- |
 | `latest` | הגרסה החדשה ביותר. |
-| `1.1.3` | גרסה מדויקת אחת. היא אף פעם לא זזה. |
+| `1.1.4` | גרסה מדויקת אחת. היא אף פעם לא זזה. |
 
 ## שימוש
 

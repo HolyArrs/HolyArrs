@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: built-in na ang Knaben, TorrentsCSV, SubsPlease at IPTorrents**, hindi na kailangan ng Prowlarr. Humiling ng mga palabas sa 4K, at puwedeng ipadala ng Profilarr ang mga format at profile nito. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: alisin ang kahit anong request, at binabasa na ulit ang mga Plex watchlist ng mga kaibigan.** Makikita na sa card ng isang folder ang quality nito, at nagkaroon ng consistency pass ang Settings. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
 
 > Ang bawat poster, trailer at score sa HolyArrs mo ay galing sa server na ako mismo ang nagpapatakbo at nagbabayad, kaya nananatili itong libre para sa lahat. Kung napaganda nang kaunti ng HolyArrs ang movie night mo, ang sponsor ang nagpapanatiling bukas ang ilaw para sa ating lahat 💛
 >
@@ -222,7 +222,7 @@ Nasa Docker Hub ang mga image bilang [`holyarrs/holyarrs`](https://hub.docker.co
 | Tag | Gamitin para sa |
 | :----: | --- |
 | `latest` | Ang pinakabagong bersyon. |
-| `1.1.3` | Isang eksaktong bersyon. Hindi ito kailanman gumagalaw. |
+| `1.1.4` | Isang eksaktong bersyon. Hindi ito kailanman gumagalaw. |
 
 ## Paggamit
 

@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease ja IPTorrents sisäänrakennettuina**, ilman Prowlarria. Pyydä sarjoja 4K-laatuisina, ja Profilarr voi lähettää formaattinsa ja profiilinsa. [Katso mitä uutta](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: poista mikä tahansa pyyntö, ja ystävien Plex-katselulistat luetaan taas.** Kansion laatu näkyy nyt sen kortissa, ja Settings sai yhtenäistyksen. [Katso mitä uutta](https://holyarrs.com/whats-new/)
 
 > Jokainen julisteesi, traileri ja arvosana HolyArrsissa tulee palvelimelta, jota ylläpidän ja maksan itse, jotta se pysyy kaikille ilmaisena. Jos HolyArrs paransi elokuvailtaasi edes vähän, sponsorointi pitää valot päällä meille kaikille 💛
 >
@@ -222,7 +222,7 @@ Imaget ovat Docker Hubissa nimellä [`holyarrs/holyarrs`](https://hub.docker.com
 | Tagi | Käyttötarkoitus |
 | :----: | --- |
 | `latest` | Uusin versio. |
-| `1.1.3` | Yksi tietty versio. Se ei koskaan muutu. |
+| `1.1.4` | Yksi tietty versio. Se ei koskaan muutu. |
 
 ## Käyttö
 

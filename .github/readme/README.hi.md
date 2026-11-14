@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease और IPTorrents अब बिल्ट-इन**, Prowlarr की ज़रूरत नहीं। शो 4K में मांगें, और Profilarr अपने फ़ॉर्मैट और प्रोफ़ाइल भेज सकता है। [नया क्या है](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: कोई भी रिक्वेस्ट हटाएँ, और दोस्तों की Plex वॉचलिस्ट फिर से पढ़ी जाती हैं।** फ़ोल्डर की क्वालिटी अब उसके कार्ड पर दिखती है, और Settings को एक जैसा किया गया है। [नया क्या है](https://holyarrs.com/whats-new/)
 
 > आपके HolyArrs का हर पोस्टर, ट्रेलर और स्कोर एक ऐसे सर्वर से आता है जिसे मैं खुद चलाता हूँ और जिसका खर्च खुद उठाता हूँ, ताकि यह सबके लिए मुफ़्त रहे। अगर HolyArrs ने आपकी मूवी नाइट थोड़ी बेहतर बनाई है, तो स्पॉन्सर बनकर हम सबके लिए यह रोशनी जलाए रखिए 💛
 >
@@ -222,7 +222,7 @@ NAS पर चला रहे हैं? देखिए [Unraid, Synology औ�
 | टैग | किसके लिए |
 | :----: | --- |
 | `latest` | नवीनतम रिलीज़। |
-| `1.1.3` | एक तय वर्ज़न। यह कभी नहीं बदलता। |
+| `1.1.4` | एक तय वर्ज़न। यह कभी नहीं बदलता। |
 
 ## इस्तेमाल
 

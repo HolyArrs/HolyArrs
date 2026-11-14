@@ -21,7 +21,7 @@
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.3: Knaben, TorrentsCSV, SubsPlease ja IPTorrents on sisse ehitatud**, ilma Prowlarrita. Küsi sarju 4K-s ja Profilarr saab saata oma formaadid ja profiilid. [Mis uut](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.1.4: eemalda mis tahes päring ja sõprade Plexi vaatamisnimekirjad loetakse jälle.** Kausta kvaliteet on nüüd tema kaardil nähtav ja Settings sai ühtlustuse. [Mis uut](https://holyarrs.com/whats-new/)
 
 > Iga poster, treiler ja hinnang sinu HolyArrsis tuleb serverist, mida ma ise pean ja mille eest ise maksan, et see jääks kõigile tasuta. Kui HolyArrs tegi sinu filmiõhtu veidi paremaks, hoiab sponsor tuled meil kõigil põlemas 💛
 >
@@ -222,7 +222,7 @@ Image'id asuvad Docker Hubis kui [`holyarrs/holyarrs`](https://hub.docker.com/r/
 | Silt | Kasuta selleks |
 | :----: | --- |
 | `latest` | Uusim versioon. |
-| `1.1.3` | Üks täpne versioon. See ei liigu kunagi. |
+| `1.1.4` | Üks täpne versioon. See ei liigu kunagi. |
 
 ## Kasutamine
 
