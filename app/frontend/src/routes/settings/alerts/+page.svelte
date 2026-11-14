@@ -324,14 +324,12 @@
 					{/each}
 				</fieldset>
 			{/each}
-			<label class="checkline switch">
+			<label class="checkline">
 				<input type="checkbox" bind:checked={form.allow_local_network} />
-				<span class="sw" aria-hidden="true"></span>
 				<span><b>{t('settings.alerts.local')}</b><br /><span class="hint">{t('settings.alerts.localHint')}</span></span>
 			</label>
-			<label class="checkline switch">
+			<label class="checkline">
 				<input type="checkbox" bind:checked={form.enabled} />
-				<span class="sw" aria-hidden="true"></span>
 				<span><b>{t('settings.alerts.send')}</b></span>
 			</label>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
