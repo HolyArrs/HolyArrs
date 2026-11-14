@@ -209,7 +209,7 @@
 				{#each backups as b (b.name)}
 					<li>
 						<div class="grow">
-							<div class="mono small ellipsis">{b.name}</div>
+							<div class="mono small bname" title={b.name}>{b.name}</div>
 							<div class="xs muted">{dateTime(b.created_at)} · {bytes(b.size)} · {b.detail || words(b.kind)}</div>
 						</div>
 						<AdminLinkButton variant="plain" href={to(`/api/v1/backups/${encodeURIComponent(b.name)}`)} download onclick={download}>{t('settings.backups.download')}</AdminLinkButton>
@@ -258,6 +258,7 @@
 {/if}
 
 <style>
+	.bname { overflow-wrap: anywhere; }
 	/* A file picker label, shaped like the secondary Button. */
 	.restore { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 16px; border-radius: var(--r-btn); background: var(--surface-2); color: var(--text); font: var(--t-headline); font-size: 15px; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
 	.restore:hover { background: var(--surface-3); }
