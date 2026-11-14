@@ -139,7 +139,7 @@
 	{:else if list}
 		{#if error}<LoadError hasData message={error} onretry={load} busy={loading} />{/if}
 		{#if handMade.length === 0}
-			<EmptyState compact icon="star" title={t('downloads.ot.none')} text={t('downloads.ot.noneText')} action={mayEdit ? { label: t('downloads.ot.make'), icon: 'plus', onclick: () => openSheet(null) } : undefined} />
+			<EmptyState icon="star" title={t('downloads.ot.none')} text={t('downloads.ot.noneText')} action={mayEdit ? { label: t('downloads.ot.make'), icon: 'plus', onclick: () => openSheet(null) } : undefined} />
 		{:else}
 			<ul class="rows" data-testid="own-traits">
 				{#each handMade as o (o.id)}
