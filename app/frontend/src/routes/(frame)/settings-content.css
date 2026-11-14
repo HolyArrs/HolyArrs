@@ -93,6 +93,11 @@
 	/* Links that open a page from a list row (My account > Following). */
 	.settings-content .follows a { display: inline-flex; align-items: center; min-height: 44px; }
 }
+/* Any touch screen (tablets too): row fields and switches keep a 44px target. */
+@media (pointer: coarse) {
+	.settings-content .srow > .ctl > .input { height: 44px; }
+	.settings-content .srow .switch { min-height: 44px; }
+}
 @media (prefers-reduced-motion: reduce) {
 	.settings-content .ui-settings { transition: none; }
 }
