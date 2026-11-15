@@ -170,6 +170,7 @@ GET /api/v1/my/follows auth=signed_in scope=read assurance=false part=wishlist
 GET /api/v1/my/plex-watchlist auth=signed_in scope=read assurance=false part=wishlist
 GET /api/v1/my/profile auth=signed_in scope=read assurance=false part=core
 GET /api/v1/my/views auth=signed_in scope=read assurance=false part=core
+GET /api/v1/my/watched auth=signed_in scope=read assurance=false part=media
 GET /api/v1/needs-decision auth=manage_library scope=read assurance=false part=media
 GET /api/v1/never-add auth=manage_library scope=read assurance=false part=media
 GET /api/v1/openapi.json auth=signed_in scope=read assurance=false part=core

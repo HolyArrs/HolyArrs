@@ -510,5 +510,8 @@
 	"mediafiles.showDelete.deleteLabel": "Slet {what}",
 	"mediafiles.showReleases.searchingFor": "Søger efter {name}",
 	"mediafiles.sheet.file": "Fil",
-	"mediafiles.parts.stopsSources": "Automatiske søgninger stopper, til når du selv tilføjer downloads. Downloadere og importer bliver ved med at virke."
+	"mediafiles.parts.stopsSources": "Automatiske søgninger stopper, til når du selv tilføjer downloads. Downloadere og importer bliver ved med at virke.",
+	"mediafiles.watched.all": "Set",
+	"mediafiles.watched.part": "Set {seen} af {of}",
+	"mediafiles.watched.partly": "Delvist set"
 }

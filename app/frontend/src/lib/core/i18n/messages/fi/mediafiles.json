@@ -510,5 +510,8 @@
 	"mediafiles.showDelete.deleteLabel": "Poista {what}",
 	"mediafiles.showReleases.searchingFor": "Etsitään: {name}",
 	"mediafiles.sheet.file": "Tiedosto",
-	"mediafiles.parts.stopsSources": "Automaattiset haut pysähtyvät, kun lisäät lataukset itse. Lataajat ja tuonnit toimivat edelleen."
+	"mediafiles.parts.stopsSources": "Automaattiset haut pysähtyvät, kun lisäät lataukset itse. Lataajat ja tuonnit toimivat edelleen.",
+	"mediafiles.watched.all": "Katsottu",
+	"mediafiles.watched.part": "Katsottu {seen} / {of}",
+	"mediafiles.watched.partly": "Osittain katsottu"
 }

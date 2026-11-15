@@ -390,3 +390,28 @@ func LinkedPeople(ctx context.Context, q database.Lister, provider string) (map[
 	}
 	return out, rows.Err()
 }
+
+// MediaLink is one media server account linked to a person: the server's
+// kind (plex, jellyfin, emby) and the account's id there.
+type MediaLink struct {
+	Provider string
+	ExtID    string
+}
+
+// LinksOfPerson lists the media server accounts linked to one person.
+func LinksOfPerson(ctx context.Context, q database.Lister, userID int64) ([]MediaLink, error) {
+	rows, err := q.QueryContext(ctx, "SELECT provider, external_id FROM user_links WHERE user_id = ? ORDER BY provider, external_id", userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []MediaLink
+	for rows.Next() {
+		var l MediaLink
+		if err := rows.Scan(&l.Provider, &l.ExtID); err != nil {
+			return nil, err
+		}
+		out = append(out, l)
+	}
+	return out, rows.Err()
+}

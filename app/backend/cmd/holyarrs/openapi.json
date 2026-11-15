@@ -21770,6 +21770,20 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/my/watched": {
+      "get": {
+        "description": "What the signed-in person watched on Plex, Jellyfin or Emby, from the last watch history read: the ids of their watched movies, and for each show the number of episodes watched per season. Only the accounts linked to that person count, and nobody else's are ever answered. linked is false for a person with no media server account here, and everything is empty while watch history is off. One answer covers the whole Library.",
+        "responses": {
+          "200": {
+            "description": "Whether watch history is on, whether the person has a linked account, their watched movie ids and their watched episode counts by show and season."
+          }
+        },
+        "summary": "What I watched",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/needs-decision": {
       "get": {
         "description": "Movies where HolyArrs ran out of Releases or hit a conflict, newest first, with the reason in plain words. count feeds the badge in the menu.",

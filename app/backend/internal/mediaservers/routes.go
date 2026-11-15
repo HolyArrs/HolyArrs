@@ -36,6 +36,7 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/settings/watch-history", h.getWatchHistory)
 	m.HandleFunc("PUT /api/v1/settings/watch-history", h.putWatchHistory)
 	m.HandleFunc("GET /api/v1/library/stats/watched", h.watched)
+	m.HandleFunc("GET /api/v1/my/watched", h.myWatched)
 }
 
 func (h *Handlers) list(w http.ResponseWriter, r *http.Request) {

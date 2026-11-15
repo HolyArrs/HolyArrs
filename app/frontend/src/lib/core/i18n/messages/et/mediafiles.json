@@ -510,5 +510,8 @@
 	"mediafiles.showDelete.deleteLabel": "Kustuta {what}",
 	"mediafiles.showReleases.searchingFor": "Otsin: {name}",
 	"mediafiles.sheet.file": "Fail",
-	"mediafiles.parts.stopsSources": "Automaatsed otsingud peatuvad, juhuks kui lisad allalaadimised ise. Allalaadijad ja impordid töötavad edasi."
+	"mediafiles.parts.stopsSources": "Automaatsed otsingud peatuvad, juhuks kui lisad allalaadimised ise. Allalaadijad ja impordid töötavad edasi.",
+	"mediafiles.watched.all": "Vaadatud",
+	"mediafiles.watched.part": "Vaadatud {seen} / {of}",
+	"mediafiles.watched.partly": "Osaliselt vaadatud"
 }

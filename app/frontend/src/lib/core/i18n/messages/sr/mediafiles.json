@@ -510,5 +510,8 @@
 	"mediafiles.showDelete.deleteLabel": "Обриши {what}",
 	"mediafiles.showReleases.searchingFor": "Тражим {name}",
 	"mediafiles.sheet.file": "Датотека",
-	"mediafiles.parts.stopsSources": "Аутоматске претраге се заустављају, за случај када сами додајете преузимања. Преузимачи и увози настављају да раде."
+	"mediafiles.parts.stopsSources": "Аутоматске претраге се заустављају, за случај када сами додајете преузимања. Преузимачи и увози настављају да раде.",
+	"mediafiles.watched.all": "Одгледано",
+	"mediafiles.watched.part": "Одгледано {seen} од {of}",
+	"mediafiles.watched.partly": "Делимично одгледано"
 }

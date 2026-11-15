@@ -510,5 +510,8 @@
 	"mediafiles.list.nothingMissing": "不足しているものはありません。",
 	"mediafiles.showDelete.deleteLabel": "{what} を削除",
 	"mediafiles.showReleases.searchingFor": "{name} を検索中",
-	"mediafiles.sheet.file": "ファイル"
+	"mediafiles.sheet.file": "ファイル",
+	"mediafiles.watched.all": "視聴済み",
+	"mediafiles.watched.part": "{of} 話中 {seen} 話を視聴",
+	"mediafiles.watched.partly": "一部視聴済み"
 }

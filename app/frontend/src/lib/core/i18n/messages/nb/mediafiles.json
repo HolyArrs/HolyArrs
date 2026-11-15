@@ -510,5 +510,8 @@
 	"mediafiles.showDelete.deleteLabel": "Slett {what}",
 	"mediafiles.showReleases.searchingFor": "Søker etter {name}",
 	"mediafiles.sheet.file": "Fil",
-	"mediafiles.parts.stopsSources": "Automatiske søk stopper, for når du legger til nedlastinger selv. Nedlastere og importer fortsetter å fungere."
+	"mediafiles.parts.stopsSources": "Automatiske søk stopper, for når du legger til nedlastinger selv. Nedlastere og importer fortsetter å fungere.",
+	"mediafiles.watched.all": "Sett",
+	"mediafiles.watched.part": "Sett {seen} av {of}",
+	"mediafiles.watched.partly": "Delvis sett"
 }

@@ -510,5 +510,8 @@
 	"mediafiles.list.nothingMissing": "Nada faltando.",
 	"mediafiles.showDelete.deleteLabel": "Apagar {what}",
 	"mediafiles.showReleases.searchingFor": "Buscando {name}",
-	"mediafiles.sheet.file": "Arquivo"
+	"mediafiles.sheet.file": "Arquivo",
+	"mediafiles.watched.all": "Assistido",
+	"mediafiles.watched.part": "{seen} de {of} assistidos",
+	"mediafiles.watched.partly": "Assistido em parte"
 }

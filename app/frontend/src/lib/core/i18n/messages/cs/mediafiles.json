@@ -510,5 +510,8 @@
 	"mediafiles.showDelete.deleteLabel": "Smazat {what}",
 	"mediafiles.showReleases.searchingFor": "Hledá se {name}",
 	"mediafiles.sheet.file": "Soubor",
-	"mediafiles.parts.stopsSources": "Automatická vyhledávání se zastaví, pro případ, že stahování přidáváte sami. Stahovače a importy fungují dál."
+	"mediafiles.parts.stopsSources": "Automatická vyhledávání se zastaví, pro případ, že stahování přidáváte sami. Stahovače a importy fungují dál.",
+	"mediafiles.watched.all": "Zhlédnuto",
+	"mediafiles.watched.part": "Zhlédnuto {seen} z {of}",
+	"mediafiles.watched.partly": "Částečně zhlédnuto"
 }

@@ -510,5 +510,8 @@
 	"mediafiles.showDelete.deleteLabel": "I-delete ang {what}",
 	"mediafiles.showReleases.searchingFor": "Hinahanap ang {name}",
 	"mediafiles.sheet.file": "File",
-	"mediafiles.parts.stopsSources": "Humihinto ang mga awtomatikong paghahanap, para kapag ikaw mismo ang nagdaragdag ng mga download. Patuloy na gumagana ang mga Downloader at import."
+	"mediafiles.parts.stopsSources": "Humihinto ang mga awtomatikong paghahanap, para kapag ikaw mismo ang nagdaragdag ng mga download. Patuloy na gumagana ang mga Downloader at import.",
+	"mediafiles.watched.all": "Napanood na",
+	"mediafiles.watched.part": "Napanood ang {seen} sa {of}",
+	"mediafiles.watched.partly": "Bahagyang napanood"
 }

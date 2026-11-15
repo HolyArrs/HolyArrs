@@ -510,5 +510,8 @@
 	"mediafiles.showDelete.deleteLabel": "Ištrinti: {what}",
 	"mediafiles.showReleases.searchingFor": "Ieškoma: {name}",
 	"mediafiles.sheet.file": "Failas",
-	"mediafiles.parts.stopsSources": "Automatinės paieškos sustoja, kai atsisiuntimus pridedate patys. Atsisiuntėjai ir importai toliau veikia."
+	"mediafiles.parts.stopsSources": "Automatinės paieškos sustoja, kai atsisiuntimus pridedate patys. Atsisiuntėjai ir importai toliau veikia.",
+	"mediafiles.watched.all": "Žiūrėta",
+	"mediafiles.watched.part": "Žiūrėta {seen} iš {of}",
+	"mediafiles.watched.partly": "Iš dalies žiūrėta"
 }

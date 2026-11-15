@@ -510,5 +510,8 @@
 	"mediafiles.showDelete.deleteLabel": "מחיקת {what}",
 	"mediafiles.showReleases.searchingFor": "מחפש את {name}",
 	"mediafiles.sheet.file": "קובץ",
-	"mediafiles.parts.stopsSources": "החיפושים האוטומטיים נעצרים, למקרה שאתם מוסיפים הורדות בעצמכם. מורידים וייבוא ממשיכים לעבוד."
+	"mediafiles.parts.stopsSources": "החיפושים האוטומטיים נעצרים, למקרה שאתם מוסיפים הורדות בעצמכם. מורידים וייבוא ממשיכים לעבוד.",
+	"mediafiles.watched.all": "נצפה",
+	"mediafiles.watched.part": "נצפו {seen} מתוך {of}",
+	"mediafiles.watched.partly": "נצפה חלקית"
 }

@@ -510,5 +510,8 @@
 	"mediafiles.showDelete.deleteLabel": "Διαγραφή: {what}",
 	"mediafiles.showReleases.searchingFor": "Αναζήτηση: {name}",
 	"mediafiles.sheet.file": "Αρχείο",
-	"mediafiles.parts.stopsSources": "Οι αυτόματες αναζητήσεις σταματούν, για όταν προσθέτετε λήψεις μόνοι σας. Τα Προγράμματα λήψης και οι εισαγωγές συνεχίζουν να λειτουργούν."
+	"mediafiles.parts.stopsSources": "Οι αυτόματες αναζητήσεις σταματούν, για όταν προσθέτετε λήψεις μόνοι σας. Τα Προγράμματα λήψης και οι εισαγωγές συνεχίζουν να λειτουργούν.",
+	"mediafiles.watched.all": "Προβλήθηκε",
+	"mediafiles.watched.part": "Προβλήθηκαν {seen} από {of}",
+	"mediafiles.watched.partly": "Προβλήθηκε εν μέρει"
 }

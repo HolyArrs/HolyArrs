@@ -510,5 +510,8 @@
 	"mediafiles.list.nothingMissing": "Niets ontbreekt.",
 	"mediafiles.showDelete.deleteLabel": "{what} verwijderen",
 	"mediafiles.showReleases.searchingFor": "Zoeken naar {name}",
-	"mediafiles.sheet.file": "Bestand"
+	"mediafiles.sheet.file": "Bestand",
+	"mediafiles.watched.all": "Bekeken",
+	"mediafiles.watched.part": "{seen} van {of} bekeken",
+	"mediafiles.watched.partly": "Deels bekeken"
 }
