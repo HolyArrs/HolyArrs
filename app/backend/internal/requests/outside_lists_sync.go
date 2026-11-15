@@ -46,8 +46,15 @@ type OutsideLists struct {
 	// mode): the address, the credential and the client, in place of
 	// TMDBBase, TMDBToken and HTTP. metadata.ErrSourceOff: lookups are off.
 	TMDBRoute func(ctx context.Context) (string, func(context.Context) (string, error), *http.Client, error)
-	HTTP      *http.Client
-	Now       func() time.Time
+	// MDBListBase (the API, default https://api.mdblist.com) and MDBListSite
+	// (the public site, default https://mdblist.com) are pointed at
+	// stand-ins by tests. MDBListKey reads the owner's MDBList key, the one
+	// outside ratings use; with no key, lists are read by their public link.
+	MDBListBase string
+	MDBListSite string
+	MDBListKey  func(ctx context.Context) (string, error)
+	HTTP        *http.Client
+	Now         func() time.Time
 }
 
 // ErrListsOff means TMDB lists are not read: lookups are off on this install.
@@ -100,6 +107,8 @@ func (s *OutsideLists) Sync(ctx context.Context, id int64, by domain.Actor) (Out
 		es, err = s.fetchTMDB(ctx, l.Ref, l.TitleKind)
 	case ListTrakt:
 		es, err = s.fetchTrakt(ctx, l.Ref, l.TitleKind)
+	case ListMDBList:
+		es, err = s.fetchMDBList(ctx, l.Ref, l.TitleKind)
 	default:
 		err = ErrKind
 	}
@@ -317,12 +326,14 @@ func (s *OutsideLists) get(ctx context.Context, what, endpoint, u string, head m
 	return s.getWith(ctx, s.client(), what, endpoint, u, head, into)
 }
 
-// getWith is get through the client cl.
-func (s *OutsideLists) getWith(ctx context.Context, cl *http.Client, what, endpoint, u string, head map[string]string, into any) (http.Header, error) {
+// getWith is get through the client cl. extra joins the retry identity: a
+// key that travels in the address rather than a header.
+func (s *OutsideLists) getWith(ctx context.Context, cl *http.Client, what, endpoint, u string, head map[string]string, into any, extra ...string) (http.Header, error) {
 	identity := []string{what, endpoint}
 	for _, k := range []string{"Authorization", "trakt-api-key", "X-Trakt-Client-Id"} {
 		identity = append(identity, head[k])
 	}
+	identity = append(identity, extra...)
 	op, err := outbound.Begin(ctx, outbound.Target{Kind: "outside_list", Identity: identity})
 	if err != nil {
 		return nil, err
