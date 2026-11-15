@@ -62,6 +62,8 @@ var Words = map[string]string{
 	"quality":    "resolution and source, such as 1080p BluRay",
 	"resolution": "such as 1080p",
 	"source":     "such as BluRay or WEB",
+	"audio":      "the audio codec, such as EAC3 or TrueHD",
+	"hdr":        "the HDR kind, such as DolbyVision or HDR10+; empty for SDR",
 	"edition":    "such as Director's Cut, when the release name says so",
 	"group":      "the release group",
 	"tmdb":       "the TMDB id",
@@ -289,6 +291,8 @@ type NameFacts struct {
 	Year    int
 	Step    string // quality step, such as 1080p_bluray
 	Edition string
+	Audio   string // the audio codec, such as EAC3; "" when not known
+	HDR     string // the HDR kinds, such as DolbyVision; "" for SDR
 	Group   string
 	TMDB    string
 	IMDB    string
@@ -352,7 +356,8 @@ func values(f NameFacts) map[string]string {
 		year = fmt.Sprint(f.Year)
 	}
 	return map[string]string{"title": f.Title, "sort_title": sortTitle(f.Title), "year": year, "quality": quality,
-		"resolution": res, "source": src, "edition": f.Edition, "group": f.Group, "tmdb": f.TMDB, "imdb": f.IMDB, "release": f.Release}
+		"resolution": res, "source": src, "audio": f.Audio, "hdr": f.HDR, "edition": f.Edition, "group": f.Group,
+		"tmdb": f.TMDB, "imdb": f.IMDB, "release": f.Release}
 }
 
 func renderVals(s NamingSettings, pat string, vals map[string]string) string {
@@ -367,9 +372,20 @@ func renderVals(s NamingSettings, pat string, vals map[string]string) string {
 			b.WriteString(rest)
 			break
 		}
-		b.WriteString(rest[:open])
-		b.WriteString(vals[rest[open+1:open+end]])
+		lit, v := rest[:open], vals[rest[open+1:open+end]]
 		rest = rest[open+end+1:]
+		if v == "" {
+			// A word with no value takes one dot, dash or underscore the
+			// pattern wrote beside it, never a character of another word's
+			// value: "{audio}.{resolution}" without a codec gives "2160p".
+			if n := len(lit); n > 0 && strings.IndexByte("._-", lit[n-1]) >= 0 {
+				lit = lit[:n-1]
+			} else if rest != "" && strings.IndexByte("._-", rest[0]) >= 0 {
+				rest = rest[1:]
+			}
+		}
+		b.WriteString(lit)
+		b.WriteString(v)
 	}
 	out := b.String()
 	// Words with no value leave empty brackets and lone dashes behind.
@@ -605,6 +621,7 @@ func PutNamingSettings(ctx context.Context, st *database.Store, s NamingSettings
 // FactsFrom builds NameFacts from a parsed release name: what an import knows.
 func FactsFrom(title string, year int, ids map[string]string, p releasename.Result, release, ext string) NameFacts {
 	f := NameFacts{Title: title, Year: year, Step: StepFor(p), Group: p.Group.Value, Release: release, Ext: ext,
+		Audio: AudioLabel(p.Audio.Format), HDR: HDRLabel(strings.Join(p.HDR.Value, " ")),
 		TMDB: ids["tmdb"], IMDB: ids["imdb"]}
 	if len(p.Edition) > 0 {
 		f.Edition = strings.Join(p.Edition, " ")
