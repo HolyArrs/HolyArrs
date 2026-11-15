@@ -109,6 +109,7 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	}
 	a.titles.Routes(m)
 	if a.s.Secrets != nil {
+		lists.MDBListKeyRoutes(m)
 		if startup.FeatureOn(startup.TraktLists) {
 			lists.TraktKeyRoutes(m)
 			a.disc.TokenRoutes(m)

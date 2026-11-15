@@ -67,6 +67,35 @@ func listSetup(t *testing.T) (*httptest.Server, *database.Store) {
 	return srv, s
 }
 
+// route: GET /api/v1/settings/mdblist-key
+// route: PUT /api/v1/settings/mdblist-key
+func TestMDBListKeyRoutes(t *testing.T) {
+	t.Parallel()
+	srv, s := listSetup(t)
+	ctx := context.Background()
+	do(t, "PUT", srv.URL+"/api/v1/settings/mdblist-key", `{}`, 400)
+	do(t, "PUT", srv.URL+"/api/v1/settings/mdblist-key", `not json`, 400)
+	if b := string(do(t, "GET", srv.URL+"/api/v1/settings/mdblist-key", "", 200)); !strings.Contains(b, `"key":""`) {
+		t.Fatalf("no key yet: %s", b)
+	}
+	do(t, "PUT", srv.URL+"/api/v1/settings/mdblist-key", `{"key":"MDBLIST_FOR_TEST_ONLY"}`, 200)
+	b := string(do(t, "GET", srv.URL+"/api/v1/settings/mdblist-key", "", 200))
+	if strings.Contains(b, "MDBLIST_FOR_TEST_ONLY") || !strings.Contains(b, secrets.Masked) {
+		t.Fatalf("mdblist key shown: %s", b)
+	}
+	// It is the key outside ratings read (Settings > Metadata, own keys).
+	if ref, err := database.Setting(ctx, s.Read(), metadata.KeyGroup, metadata.KeyMDBList); err != nil || ref == "" {
+		t.Fatalf("not stored as the ratings key: %q %v", ref, err)
+	}
+	// An empty key removes it, so lists go back to the public link.
+	if b := string(do(t, "PUT", srv.URL+"/api/v1/settings/mdblist-key", `{"key":""}`, 200)); !strings.Contains(b, `"key":""`) {
+		t.Fatalf("clear answer: %s", b)
+	}
+	if b := string(do(t, "GET", srv.URL+"/api/v1/settings/mdblist-key", "", 200)); !strings.Contains(b, `"key":""`) {
+		t.Fatalf("key still set: %s", b)
+	}
+}
+
 // route: GET /api/v1/outside-lists
 // route: POST /api/v1/outside-lists
 // route: PUT /api/v1/outside-lists/{id}

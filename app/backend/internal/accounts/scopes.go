@@ -443,6 +443,8 @@ var RoutePerms = map[string]webserver.Perm{
 	"PUT /api/v1/settings/release-gate":    webserver.PermSettings,
 	"GET /api/v1/settings/trakt-key":       webserver.PermSettings,
 	"PUT /api/v1/settings/trakt-key":       webserver.PermSettings,
+	"GET /api/v1/settings/mdblist-key":     webserver.PermSettings,
+	"PUT /api/v1/settings/mdblist-key":     webserver.PermSettings,
 	"GET /api/v1/settings/trakt-token":     webserver.NeedOwner,
 	"PUT /api/v1/settings/trakt-token":     webserver.NeedOwner,
 	"GET /api/v1/outside-lists":            webserver.PermSettings,
