@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -205,4 +206,24 @@ func goodEverydayBody(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return string(b)
+}
+
+// The API contract names every list kind the server takes.
+func TestOpenAPIListKinds(t *testing.T) {
+	var doc struct {
+		Components struct {
+			Schemas map[string]struct {
+				Properties map[string]struct {
+					Enum []string `json:"enum"`
+				} `json:"properties"`
+			} `json:"schemas"`
+		} `json:"components"`
+	}
+	if err := json.Unmarshal(readSpec(t), &doc); err != nil {
+		t.Fatal(err)
+	}
+	got := doc.Components.Schemas["ListInput"].Properties["kind"].Enum
+	if want := []string{requests.ListTMDB, requests.ListTrakt, requests.ListMDBList}; !slices.Equal(got, want) {
+		t.Fatalf("ListInput.kind enum %v, want %v", got, want)
+	}
 }

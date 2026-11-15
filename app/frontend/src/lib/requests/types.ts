@@ -73,11 +73,11 @@ export interface AskSettings {
 	qualities?: { movie: QualityLine[]; show: QualityLine[] };
 }
 
-/** A TMDB or Trakt list whose movies are added on a schedule. */
+/** A TMDB, Trakt or MDBList list whose movies or shows are added on a schedule. */
 export interface OutsideList {
 	id: number;
 	name: string;
-	kind: 'tmdb_list' | 'trakt_list';
+	kind: 'tmdb_list' | 'trakt_list' | 'mdblist_list';
 	/** What the list adds: movie or show. */
 	title_kind: 'movie' | 'show';
 	ref: string;

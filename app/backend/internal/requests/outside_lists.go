@@ -49,7 +49,7 @@ var (
 	traktURL  = regexp.MustCompile(`^https?://(?:www\.|app\.)?trakt\.tv/users/([A-Za-z0-9._-]+)/(?:lists/([A-Za-z0-9._-]+)|(watchlist))/?(?:[?#].*)?$`)
 	traktPair = regexp.MustCompile(`^([A-Za-z0-9._-]+)/([A-Za-z0-9._-]+)$`)
 	// An MDBList list page, or its /json feed, with any query or fragment.
-	mdblistURL = regexp.MustCompile(`^(?i:https?://(?:www\.)?mdblist\.com)/lists/([A-Za-z0-9._-]+)/([A-Za-z0-9._-]+)(?:/json)?/?(?:[?#].*)?$`)
+	mdblistURL = regexp.MustCompile(`^(?i:(?:https?://)?(?:www\.)?mdblist\.com)/lists/([A-Za-z0-9._-]+)/([A-Za-z0-9._-]+)(?:/json)?/?(?:[?#].*)?$`)
 )
 
 // OutsideListInput is what a person sets on a list. Zero values take defaults: a movie

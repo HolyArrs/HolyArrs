@@ -287,3 +287,29 @@ func TestMDBListSyncAddsTitles(t *testing.T) {
 		}
 	}
 }
+
+// A key that cannot be read (a damaged vault) is an error, never a quiet
+// switch to the public link; only a missing key means the public link.
+func TestMDBListKeyReadFailureIsAnError(t *testing.T) {
+	e := setup(t)
+	f := withMDBList(t, e, "")
+	e.svc.MDBListKey = func(context.Context) (string, error) { return "", errors.New("vault: cannot open") }
+	if _, err := e.svc.fetchMDBList(context.Background(), "lab/mixed", "movie"); err == nil {
+		t.Fatal("a key read failure was ignored")
+	}
+	if f.site.Load()+f.api.Load() != 0 {
+		t.Fatal("a request went out without the key")
+	}
+}
+
+// With no key saved, a refusal from the public site is not about a key.
+func TestMDBListSiteRefusalDoesNotBlameAKey(t *testing.T) {
+	e := setup(t)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(403) }))
+	t.Cleanup(srv.Close)
+	e.svc.MDBListSite = srv.URL
+	_, err := e.svc.fetchMDBList(context.Background(), "lab/mixed", "movie")
+	if err == nil || strings.Contains(err.Error(), "key") || !strings.Contains(err.Error(), "MDBList refused the request") {
+		t.Fatalf("err %v", err)
+	}
+}
