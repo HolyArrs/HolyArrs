@@ -111,7 +111,7 @@ func (h *OutsideListHandlers) listOutsideLists(w http.ResponseWriter, r *http.Re
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"outside_lists": out})
 }
 
-const listHelp = `send {"name": "...", "kind": "tmdb_list" or "trakt_list", "ref": "<TMDB list number, Trakt user/list or a link>"} with optional title_kind ("movie" or "show"), library_folder_id, pick_rules_id, keep_up_to_date, search_on_add, release_gate (movies), seasons and new_seasons (shows), enabled, sync_every_hours`
+const listHelp = `send {"name": "...", "kind": "tmdb_list", "trakt_list" or "mdblist_list", "ref": "<TMDB list number, Trakt or MDBList user/list, or a link>"} with optional title_kind ("movie" or "show"), library_folder_id, pick_rules_id, keep_up_to_date, search_on_add, release_gate (movies), seasons and new_seasons (shows), enabled, sync_every_hours`
 
 func (h *OutsideListHandlers) addOutsideList(w http.ResponseWriter, r *http.Request) {
 	var in OutsideListInput

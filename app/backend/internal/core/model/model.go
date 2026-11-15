@@ -289,7 +289,7 @@ type Setting struct {
 type OutsideList struct {
 	Meta
 	Name            string     `db:"name"`
-	Kind            string     `db:"kind"`       // tmdb_list, trakt_list
+	Kind            string     `db:"kind"`       // tmdb_list, trakt_list, mdblist_list
 	TitleKind       string     `db:"title_kind"` // movie, show
 	Ref             string     `db:"ref"`        // TMDB list number, or Trakt "user/slug"
 	LibraryFolderID int64      `db:"library_folder_id"`
