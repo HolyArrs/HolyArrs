@@ -692,6 +692,7 @@ has_account
 has_copy
 has_file
 has_key
+has_more
 has_other_announce_error
 has_tracker_error
 has_tracker_warning
@@ -936,6 +937,7 @@ me
 media
 mediaInfo
 media_type
+mediatype
 member
 members
 message
@@ -1803,6 +1805,7 @@ tvdbId
 tvdb_id
 tvdb_offset
 tvdb_season
+tvdbid
 tvmaze
 two_factor
 ty
