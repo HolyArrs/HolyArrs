@@ -172,6 +172,8 @@
 	"requests.lists.tmdbHint": "リストの番号またはリンク。例: themoviedb.org/list/12345",
 	"requests.lists.trakt": "Trakt リスト",
 	"requests.lists.traktHint": "user/list、user/watchlist、またはリンク。例: trakt.tv/users/ana/lists/favourites",
+	"requests.lists.mdblist": "MDBList リスト",
+	"requests.lists.mdblistHint": "user/list、またはリンク。例: mdblist.com/lists/ana/favourites。公開リストはキーなしで使えます。",
 	"requests.lists.everyDay": "毎日",
 	"requests.lists.everyDays": "{n} 日ごと",
 	"requests.lists.everyHours": "{n} 時間ごと",

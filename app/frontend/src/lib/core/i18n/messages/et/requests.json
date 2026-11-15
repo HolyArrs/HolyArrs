@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "Nimekirja number või selle link, näiteks themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakti nimekiri",
 	"requests.lists.traktHint": "user/list, user/watchlist või link, näiteks trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "MDBListi nimekiri",
+	"requests.lists.mdblistHint": "user/list või link, näiteks mdblist.com/lists/ana/favourites. Avalikud nimekirjad töötavad ilma võtmeta.",
 	"requests.lists.everyDay": "iga päev",
 	"requests.lists.everyDays": "iga {n} päeva järel",
 	"requests.lists.everyHours": "iga {n} tunni järel",

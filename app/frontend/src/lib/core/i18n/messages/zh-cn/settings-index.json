@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "tmdb 列表 trakt 列表 导入列表 自动添加 tmdb list trakt list import list auto add",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Trakt 密钥",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt 密钥 client id vip 访问令牌 评论 trakt key client id vip access token reviews comments",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "MDBList 密钥",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist 密钥 api 密钥 列表 mdblist key api key lists",
 	"settings.index.outside-lists.never-card.never-add-list.label": "永不添加列表",
 	"settings.index.outside-lists.never-card.never-add-list.words": "永不添加 排除 屏蔽 列表 never add exclusion block list",
 	"settings.index.sources.page.sources.label": "来源",

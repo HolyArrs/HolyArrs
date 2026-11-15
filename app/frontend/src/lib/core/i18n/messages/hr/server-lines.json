@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "Prag izlaska se preskače: ovaj film se još ne računa kao izašao",
 	"server.sources.this-version-already-has-a-good": "Ova verzija već ima dovoljno dobru kopiju; nova će je zamijeniti",
 	"server.requests.removed-the-request-for": "{name} je uklonio/la zahtjev za {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru računa za ovu osobu, pa se njezin popis za gledanje ne čita."
+	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru računa za ovu osobu, pa se njezin popis za gledanje ne čita.",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs čita MDBList popise; dodaj ga ponovno u Postavke > Vanjski popisi",
+	"server.requests.send-key-mdblist-api-key-or": "pošalji {\"key\": \"<MDBList API ključ>\"}, ili {\"key\": \"\"} da ga ukloniš"
 }

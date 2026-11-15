@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "Број листе или њена веза, на пример themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt листа",
 	"requests.lists.traktHint": "user/list, user/watchlist или веза, на пример trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "MDBList листа",
+	"requests.lists.mdblistHint": "user/list или веза, на пример mdblist.com/lists/ana/favourites. Јавне листе раде без кључа.",
 	"requests.lists.everyDay": "сваког дана",
 	"requests.lists.everyDays": "сваких {n} дана",
 	"requests.lists.everyHours": "сваких {n} сати",

@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "lista tmdb lista trakt lista de importação adicionar automaticamente",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Chave do Trakt",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "chave trakt client id vip token de acesso críticas comentários",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "Chave do MDBList",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist chave api listas",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Lista de nunca adicionar",
 	"settings.index.outside-lists.never-card.never-add-list.words": "nunca adicionar exclusão bloquear lista",
 	"settings.index.sources.page.sources.label": "Fontes",

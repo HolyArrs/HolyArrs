@@ -172,6 +172,8 @@
 	"requests.lists.tmdbHint": "رقم القائمة أو رابطها، مثل themoviedb.org/list/12345.",
 	"requests.lists.trakt": "قائمة Trakt",
 	"requests.lists.traktHint": "user/list أو user/watchlist أو الرابط، مثل trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "قائمة MDBList",
+	"requests.lists.mdblistHint": "user/list أو الرابط، مثل mdblist.com/lists/ana/favourites. تعمل القوائم العامة دون مفتاح.",
 	"requests.lists.everyDay": "كل يوم",
 	"requests.lists.everyDays": "كل {n} أيام",
 	"requests.lists.everyHours": "كل {n} ساعات",

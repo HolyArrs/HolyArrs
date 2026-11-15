@@ -24,7 +24,8 @@ export const listSeasons: [string, string, string][] = [
 
 export const listKinds: [string, string, string][] = [
 	words<[string, string, string]>('tmdb_list', () => t('requests.lists.tmdb'), () => t('requests.lists.tmdbHint')),
-	words<[string, string, string]>('trakt_list', () => t('requests.lists.trakt'), () => t('requests.lists.traktHint'))
+	words<[string, string, string]>('trakt_list', () => t('requests.lists.trakt'), () => t('requests.lists.traktHint')),
+	words<[string, string, string]>('mdblist_list', () => t('requests.lists.mdblist'), () => t('requests.lists.mdblistHint'))
 ];
 
 /** Where a list can be seen on its own site. */
@@ -33,6 +34,7 @@ export function listLink(kind: string, ref: string): string {
 	const [user, slug] = ref.split('/');
 	if (!user || !slug) return '';
 	const u = encodeURIComponent(user);
+	if (kind === 'mdblist_list') return `https://mdblist.com/lists/${u}/${encodeURIComponent(slug)}`;
 	return slug === 'watchlist' ? `https://trakt.tv/users/${u}/watchlist` : `https://trakt.tv/users/${u}/lists/${encodeURIComponent(slug)}`;
 }
 

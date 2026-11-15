@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "公開判定は省かれます。この映画は、まだ公開済みとして数えられません",
 	"server.sources.this-version-already-has-a-good": "このバージョンには、すでに十分な品質のコピーがあります。新しいものが置き換えます",
 	"server.requests.removed-the-request-for": "{name} が {a} のリクエストを削除しました",
-	"server.requests.plex-gave-no-account-code-for": "Plex がこの人のアカウントコードを返さなかったため、ウォッチリストは読み取られません。"
+	"server.requests.plex-gave-no-account-code-for": "Plex がこの人のアカウントコードを返さなかったため、ウォッチリストは読み取られません。",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs は MDBList のリストを読み込みます。設定 > 外部リスト でもう一度追加してください",
+	"server.requests.send-key-mdblist-api-key-or": "{\"key\": \"<MDBList の API キー>\"} を送信してください。削除するには {\"key\": \"\"} を送信してください"
 }

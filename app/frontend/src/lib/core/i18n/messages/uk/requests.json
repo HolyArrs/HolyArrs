@@ -172,6 +172,8 @@
 	"requests.lists.tmdbHint": "Номер списку або посилання на нього, наприклад themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Список Trakt",
 	"requests.lists.traktHint": "user/list, user/watchlist або посилання, наприклад trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "Список MDBList",
+	"requests.lists.mdblistHint": "user/list або посилання, наприклад mdblist.com/lists/ana/favourites. Публічні списки працюють без ключа.",
 	"requests.lists.everyDay": "щодня",
 	"requests.lists.everyDays": "кожні {n} дн.",
 	"requests.lists.everyHours": "кожні {n} год",

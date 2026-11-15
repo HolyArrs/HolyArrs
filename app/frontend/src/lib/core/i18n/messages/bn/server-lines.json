@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "রিলিজ গেট বাদ গেছে: এই সিনেমা এখনো বেরিয়েছে বলে গণ্য হয় না",
 	"server.sources.this-version-already-has-a-good": "এই ভার্সনের আগেই একটি যথেষ্ট ভালো কপি আছে; নতুনটি সেটি বদলে দেবে",
 	"server.requests.removed-the-request-for": "{name} {a}-এর অনুরোধ সরিয়েছেন",
-	"server.requests.plex-gave-no-account-code-for": "Plex এই ব্যক্তির অ্যাকাউন্ট কোড দেয়নি, তাই তার ওয়াচলিস্ট পড়া হচ্ছে না।"
+	"server.requests.plex-gave-no-account-code-for": "Plex এই ব্যক্তির অ্যাকাউন্ট কোড দেয়নি, তাই তার ওয়াচলিস্ট পড়া হচ্ছে না।",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs MDBList তালিকা পড়ে; সেটিংস > বাইরের তালিকায় আবার যোগ করুন",
+	"server.requests.send-key-mdblist-api-key-or": "পাঠান {\"key\": \"<MDBList API কী>\"}, অথবা সরাতে {\"key\": \"\"}"
 }

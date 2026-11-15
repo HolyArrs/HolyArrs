@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "பட்டியல் இறக்குமதிப் பட்டியல் தானாகச் சேர் tmdb list trakt list import list auto add",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Trakt விசை",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "விசை அணுகல் டோக்கன் விமர்சனங்கள் கருத்துகள் trakt key client id vip access token reviews comments",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "MDBList விசை",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist விசை api விசை பட்டியல்கள் key lists",
 	"settings.index.outside-lists.never-card.never-add-list.label": "ஒருபோதும் சேர்க்காத பட்டியல்",
 	"settings.index.outside-lists.never-card.never-add-list.words": "விலக்கு தடைப் பட்டியல் never add exclusion block list",
 	"settings.index.sources.page.sources.label": "மூலங்கள்",

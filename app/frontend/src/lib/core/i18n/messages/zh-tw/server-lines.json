@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "已跳過發行門檻：這部電影還不算已上映",
 	"server.sources.this-version-already-has-a-good": "這個版本已有足夠好的副本；新的會替換它",
 	"server.requests.removed-the-request-for": "{name} 移除了 {a} 的請求",
-	"server.requests.plex-gave-no-account-code-for": "Plex 沒有提供此人的帳號代碼，因此不會讀取其待看清單。"
+	"server.requests.plex-gave-no-account-code-for": "Plex 沒有提供此人的帳號代碼，因此不會讀取其待看清單。",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs 可讀取 MDBList 清單；請在 設定 > 外部清單 中重新新增",
+	"server.requests.send-key-mdblist-api-key-or": "請傳送 {\"key\": \"<MDBList API 金鑰>\"}，或傳送 {\"key\": \"\"} 將其移除"
 }

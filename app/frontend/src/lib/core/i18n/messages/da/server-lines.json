@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "Udgivelsestærsklen springes over: denne film tæller ikke som udkommet endnu",
 	"server.sources.this-version-already-has-a-good": "Denne Version har allerede en kopi, der er god nok. Den nye erstatter den",
 	"server.requests.removed-the-request-for": "{name} fjernede anmodningen om {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokode for denne person, så vedkommendes ønskeliste læses ikke."
+	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokode for denne person, så vedkommendes ønskeliste læses ikke.",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs læser MDBList-lister. Tilføj den igen under Indstillinger > Eksterne lister",
+	"server.requests.send-key-mdblist-api-key-or": "send {\"key\": \"<MDBList-API-nøgle>\"}, eller {\"key\": \"\"} for at fjerne den"
 }

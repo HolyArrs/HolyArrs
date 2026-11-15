@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "A Megjelenési küszöb ki van hagyva: ez a film még nem számít megjelentnek",
 	"server.sources.this-version-already-has-a-good": "Ennek a Változatnak már van elég jó másolata; az új lecseréli",
 	"server.requests.removed-the-request-for": "{name} eltávolította a kérést: {a}",
-	"server.requests.plex-gave-no-account-code-for": "A Plex nem adott fiókkódot ehhez a személyhez, ezért a figyelőlistáját nem olvassa."
+	"server.requests.plex-gave-no-account-code-for": "A Plex nem adott fiókkódot ehhez a személyhez, ezért a figyelőlistáját nem olvassa.",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "A HolyArrs beolvassa az MDBList-listákat; adja hozzá újra a Beállítások > Külső listák alatt",
+	"server.requests.send-key-mdblist-api-key-or": "küldje: {\"key\": \"<MDBList API-kulcs>\"}, vagy {\"key\": \"\"} az eltávolításához"
 }

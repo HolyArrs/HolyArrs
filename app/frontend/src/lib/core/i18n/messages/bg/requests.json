@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "Номерът на списъка или връзката му, например themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Списък от Trakt",
 	"requests.lists.traktHint": "user/list, user/watchlist или връзката, например trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "Списък от MDBList",
+	"requests.lists.mdblistHint": "user/list или връзката, например mdblist.com/lists/ana/favourites. Публичните списъци работят без ключ.",
 	"requests.lists.everyDay": "всеки ден",
 	"requests.lists.everyDays": "на всеки {n} дни",
 	"requests.lists.everyHours": "на всеки {n} часа",

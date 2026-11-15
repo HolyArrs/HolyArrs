@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "O Marco de lançamento é ignorado: este filme ainda não conta como lançado",
 	"server.sources.this-version-already-has-a-good": "Esta Versão já tem uma cópia boa o bastante; a nova vai substituí-la",
 	"server.requests.removed-the-request-for": "{name} removeu o pedido de {a}",
-	"server.requests.plex-gave-no-account-code-for": "O Plex não deu nenhum código de conta para esta pessoa, então a lista de interesse dela não é lida."
+	"server.requests.plex-gave-no-account-code-for": "O Plex não deu nenhum código de conta para esta pessoa, então a lista de interesse dela não é lida.",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "O HolyArrs lê listas do MDBList; adicione de novo em Configurações > Listas externas",
+	"server.requests.send-key-mdblist-api-key-or": "envie {\"key\": \"<chave de API do MDBList>\"}, ou {\"key\": \"\"} para removê-la"
 }

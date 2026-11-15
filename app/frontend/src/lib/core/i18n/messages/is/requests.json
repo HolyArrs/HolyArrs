@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "Númer listans eða tengill hans, til dæmis themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt-listi",
 	"requests.lists.traktHint": "user/list, user/watchlist eða tengillinn, til dæmis trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "MDBList-listi",
+	"requests.lists.mdblistHint": "user/list eða tengillinn, til dæmis mdblist.com/lists/ana/favourites. Opinberir listar virka án lykils.",
 	"requests.lists.everyDay": "á hverjum degi",
 	"requests.lists.everyDays": "á {n} daga fresti",
 	"requests.lists.everyHours": "á {n} klukkustunda fresti",

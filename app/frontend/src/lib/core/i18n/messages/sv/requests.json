@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "Listnumret eller dess länk, till exempel themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt-lista",
 	"requests.lists.traktHint": "användare/lista, användare/watchlist eller länken, till exempel trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "MDBList-lista",
+	"requests.lists.mdblistHint": "användare/lista eller länken, till exempel mdblist.com/lists/ana/favourites. Offentliga listor fungerar utan nyckel.",
 	"requests.lists.everyDay": "varje dag",
 	"requests.lists.everyDays": "var {n}:e dag",
 	"requests.lists.everyHours": "var {n}:e timme",

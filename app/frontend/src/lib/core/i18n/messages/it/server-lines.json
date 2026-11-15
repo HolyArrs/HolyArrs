@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "La Soglia di uscita viene saltata: questo film non conta ancora come uscito",
 	"server.sources.this-version-already-has-a-good": "Questa Versione ha già una copia abbastanza buona; la nuova la sostituirà",
 	"server.requests.removed-the-request-for": "{name} ha rimosso la richiesta per {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex non ha fornito alcun codice account per questa persona, quindi la sua watchlist non viene letta."
+	"server.requests.plex-gave-no-account-code-for": "Plex non ha fornito alcun codice account per questa persona, quindi la sua watchlist non viene letta.",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs legge le liste MDBList; aggiungila di nuovo in Impostazioni > Liste esterne",
+	"server.requests.send-key-mdblist-api-key-or": "invia {\"key\": \"<chiave API di MDBList>\"}, o {\"key\": \"\"} per rimuoverla"
 }
