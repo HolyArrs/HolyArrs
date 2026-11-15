@@ -421,6 +421,12 @@ HolyArrs is free, but it isn't free to run. By default, each install talks to a 
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Sponsor HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Vote on the roadmap" /></picture></a></p>
 
+<!-- sponsors: start. Drawn by the HolyCore bot from the live sponsor list; shows nothing until the first sponsor. -->
+<p align="center">
+  <a href="https://holycore.coderluii.dev/activity/sponsor/list/holyarrs"><picture><source media="(prefers-color-scheme: dark)" srcset="https://holycore.coderluii.dev/activity/sponsor/wall/holyarrs.svg?theme=dark"><img src="https://holycore.coderluii.dev/activity/sponsor/wall/holyarrs.svg?theme=light" width="100%" align="top" alt="HolyArrs supporters"></picture></a><br><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://holycore.coderluii.dev/activity/sponsor/button/github.svg?theme=dark&project=holyarrs"><img src="https://holycore.coderluii.dev/activity/sponsor/button/github.svg?theme=light&project=holyarrs" alt="Sponsor on GitHub" width="50%" align="top"></picture></a><a href="https://buymeacoffee.com/coderluii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://holycore.coderluii.dev/activity/sponsor/button/bmac.svg?theme=dark&project=holyarrs"><img src="https://holycore.coderluii.dev/activity/sponsor/button/bmac.svg?theme=light&project=holyarrs" alt="Buy Me a Coffee" width="50%" align="top"></picture></a>
+</p>
+<!-- sponsors: end -->
+
 ---
 
 <p align="center">Built by <a href="https://github.com/CoderLuii">CoderLuii</a>.<br><sub>If HolyArrs saves you from running six apps, a star helps other people find it.</sub></p>
