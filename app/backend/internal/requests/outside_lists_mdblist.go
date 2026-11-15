@@ -10,6 +10,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
+// ErrMDBListKey means the saved MDBList key could not be read.
+var ErrMDBListKey = errors.New("the MDBList key could not be read; save it again in Outside lists settings")
+
 // mdblistPage is how many items one MDBList API read asks for. Free keys
 // allow 1000 requests a day, so a sync should take few reads.
 const mdblistPage = 1000
@@ -50,9 +53,11 @@ func (s *OutsideLists) fetchMDBList(ctx context.Context, ref, titleKind string) 
 	}
 	key := ""
 	if s.MDBListKey != nil {
-		if k, err := s.MDBListKey(ctx); err == nil {
-			key = strings.TrimSpace(k)
+		k, err := s.MDBListKey(ctx)
+		if err != nil {
+			return nil, ErrMDBListKey // never a quiet switch to the public link
 		}
+		key = strings.TrimSpace(k)
 	}
 	user, slug, _ := strings.Cut(ref, "/")
 	path := "/lists/" + url.PathEscape(user) + "/" + url.PathEscape(slug)
@@ -108,6 +113,8 @@ func (s *OutsideLists) fetchMDBListAPI(ctx context.Context, path, key, titleKind
 		for _, it := range items {
 			out = append(out, it.entry(titleKind))
 		}
+		// limit and offset count movies and shows together (checked on a mixed
+		// list: each page held limit items across both, total was combined).
 		offset += len(body.Movies) + len(body.Shows)
 		if !body.Pagination.HasMore || len(body.Movies)+len(body.Shows) == 0 {
 			break

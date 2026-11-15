@@ -2842,7 +2842,8 @@
           "kind": {
             "enum": [
               "tmdb_list",
-              "trakt_list"
+              "trakt_list",
+              "mdblist_list"
             ],
             "type": "string"
           },
@@ -22122,7 +22123,7 @@
         "x-holyarrs-scope": "read"
       },
       "post": {
-        "description": "Saves a TMDB or Trakt list and, when on, reads it once straight away.",
+        "description": "Saves a TMDB, Trakt or MDBList list and, when on, reads it once straight away.",
         "operationId": "addOutsideList",
         "requestBody": {
           "content": {

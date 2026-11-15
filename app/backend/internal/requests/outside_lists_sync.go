@@ -369,6 +369,8 @@ func (s *OutsideLists) getWith(ctx context.Context, cl *http.Client, what, endpo
 	}
 	outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
 	switch {
+	case (resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden) && len(head)+len(extra) == 0:
+		return nil, fmt.Errorf("%s refused the request", what) // no key was sent, so none to check
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
 		return nil, fmt.Errorf("%s refused the key; check it in Settings", what)
 	case resp.StatusCode == http.StatusNotFound:
