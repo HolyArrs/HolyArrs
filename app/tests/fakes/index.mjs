@@ -5,6 +5,7 @@
 import { startDiscordFake } from './discord.mjs';
 import { startIndexerFake } from './indexer.mjs';
 import { startJellyfinFake } from './jellyfin.mjs';
+import { startMdblistFake } from './mdblist.mjs';
 import { startMusicBrainzFake } from './musicbrainz.mjs';
 import { startOldRadarrFake } from './old-radarr.mjs';
 import { startOldSeerrFake } from './old-seerr.mjs';
@@ -16,7 +17,7 @@ import { startTraktFake } from './trakt.mjs';
 import { startTvmazeFake } from './tvmaze.mjs';
 
 export {
-	discordPort, embyUser, fakeInstallToken, indexerKey, indexerPort, jellyKey, jellyfinPort, mbPort, mediaUser,
+	discordPort, embyUser, fakeInstallToken, indexerKey, indexerPort, jellyKey, jellyfinPort, mbPort, mdblistKey, mdblistPort, mediaUser,
 	oldKey, oldRadarrPort, oldSeerrPort, plexPort, plexServerToken, qbitPort, sabKey, sabPort, subsPort,
 	tmdbPort, traktKey, traktPort, tvmazePort
 } from './ports.mjs';
@@ -34,6 +35,7 @@ export function startFakes() {
 	const mb = startMusicBrainzFake();
 	const tvmaze = startTvmazeFake();
 	const trakt = startTraktFake();
+	const mdblist = startMdblistFake();
 	const plex = startPlexFake();
 	const jelly = startJellyfinFake();
 	const discord = startDiscordFake();
@@ -53,6 +55,7 @@ export function startFakes() {
 		mb.close();
 		tvmaze.close();
 		trakt.close();
+		mdblist.close();
 		plex.close();
 		jelly.close();
 	};
