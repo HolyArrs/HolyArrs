@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "tmdb liste trakt liste importliste automatisk tilføj outside lists",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Trakt-nøgle",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt nøgle klient-id vip adgangstoken anmeldelser kommentarer key client id",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "MDBList-nøgle",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist nøgle api-nøgle lister key lists",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Aldrig-tilføj-liste",
 	"settings.index.outside-lists.never-card.never-add-list.words": "aldrig tilføj udeluk blokliste never add exclusion block",
 	"settings.index.sources.page.sources.label": "Kilder",

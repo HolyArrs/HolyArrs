@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "tmdb nimekiri trakt nimekiri impordinimekiri automaatne lisamine",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Trakti võti",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt võti kliendi id vip ligipääsutunnus arvustused kommentaarid",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "MDBListi võti",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist võti api võti nimekirjad",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Mitte kunagi lisatavate nimekiri",
 	"settings.index.outside-lists.never-card.never-add-list.words": "mitte kunagi lisa välistus blokeeri nimekiri",
 	"settings.index.sources.page.sources.label": "Allikad",

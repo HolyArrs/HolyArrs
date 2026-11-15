@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "listă tmdb listă trakt listă de import adăugare automată",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Cheie Trakt",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt cheie client id vip token de acces recenzii comentarii",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "Cheie MDBList",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist cheie api cheie liste",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Lista Nu adăuga",
 	"settings.index.outside-lists.never-card.never-add-list.words": "nu adăuga excludere listă de blocare",
 	"settings.index.sources.page.sources.label": "Surse",

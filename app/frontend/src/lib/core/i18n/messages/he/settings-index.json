@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "רשימת tmdb רשימת trakt רשימת ייבוא הוספה אוטומטית",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "מפתח Trakt",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt מפתח מזהה לקוח vip אסימון גישה ביקורות תגובות",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "מפתח MDBList",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist מפתח api מפתח רשימות",
 	"settings.index.outside-lists.never-card.never-add-list.label": "רשימת אי־הוספה",
 	"settings.index.outside-lists.never-card.never-add-list.words": "אי הוספה החרגה רשימת חסימה",
 	"settings.index.sources.page.sources.label": "מקורות",

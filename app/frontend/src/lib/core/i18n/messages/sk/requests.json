@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "Číslo zoznamu alebo jeho odkaz, napríklad themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Zoznam Trakt",
 	"requests.lists.traktHint": "user/list, user/watchlist alebo odkaz, napríklad trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "Zoznam MDBList",
+	"requests.lists.mdblistHint": "user/list alebo odkaz, napríklad mdblist.com/lists/ana/favourites. Verejné zoznamy fungujú bez kľúča.",
 	"requests.lists.everyDay": "každý deň",
 	"requests.lists.everyDays": "každých {n} dní",
 	"requests.lists.everyHours": "každých {n} hodín",

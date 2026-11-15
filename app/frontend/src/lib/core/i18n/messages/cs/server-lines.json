@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "Práh vydání se přeskočí: tento film se ještě nepočítá jako vydaný",
 	"server.sources.this-version-already-has-a-good": "Tato Verze už má dost dobrou kopii; nová ji nahradí",
 	"server.requests.removed-the-request-for": "{name} odebral(a) žádost o {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex u této osoby nedal kód účtu, proto se její seznam ke zhlédnutí nečte."
+	"server.requests.plex-gave-no-account-code-for": "Plex u této osoby nedal kód účtu, proto se její seznam ke zhlédnutí nečte.",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs čte seznamy MDBList; přidejte ho znovu v Nastavení > Externí seznamy",
+	"server.requests.send-key-mdblist-api-key-or": "pošlete {\"key\": \"<klíč API MDBList>\"}, nebo {\"key\": \"\"} pro jeho odebrání"
 }

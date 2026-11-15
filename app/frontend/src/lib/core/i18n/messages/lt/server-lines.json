@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "Išleidimo riba praleidžiama: šis filmas dar neskaitomas kaip išėjęs",
 	"server.sources.this-version-already-has-a-good": "Ši Versija jau turi pakankamai gerą kopiją; nauja ją pakeis",
 	"server.requests.removed-the-request-for": "{name} pašalino užklausą: {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nepateikė šio asmens paskyros kodo, todėl jo žiūrėjimo sąrašas neskaitomas."
+	"server.requests.plex-gave-no-account-code-for": "Plex nepateikė šio asmens paskyros kodo, todėl jo žiūrėjimo sąrašas neskaitomas.",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs skaito MDBList sąrašus; pridėkite jį iš naujo skiltyje Nustatymai > Išoriniai sąrašai",
+	"server.requests.send-key-mdblist-api-key-or": "siųskite {\"key\": \"<MDBList API raktas>\"}, arba {\"key\": \"\"}, kad jį pašalintumėte"
 }

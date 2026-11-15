@@ -172,6 +172,8 @@
 	"requests.lists.tmdbHint": "Numer listy albo jej link, na przykład themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Lista Trakt",
 	"requests.lists.traktHint": "user/list, user/watchlist albo link, na przykład trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "Lista MDBList",
+	"requests.lists.mdblistHint": "user/list albo link, na przykład mdblist.com/lists/ana/favourites. Listy publiczne działają bez klucza.",
 	"requests.lists.everyDay": "codziennie",
 	"requests.lists.everyDays": "co {n} dni",
 	"requests.lists.everyHours": "co {n} godz.",

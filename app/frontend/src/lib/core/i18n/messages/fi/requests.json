@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "Listan numero tai sen linkki, esimerkiksi themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt-lista",
 	"requests.lists.traktHint": "user/list, user/watchlist tai linkki, esimerkiksi trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "MDBList-lista",
+	"requests.lists.mdblistHint": "user/list tai linkki, esimerkiksi mdblist.com/lists/ana/favourites. Julkiset listat toimivat ilman avainta.",
 	"requests.lists.everyDay": "joka päivä",
 	"requests.lists.everyDays": "joka {n}. päivä",
 	"requests.lists.everyHours": "joka {n}. tunti",

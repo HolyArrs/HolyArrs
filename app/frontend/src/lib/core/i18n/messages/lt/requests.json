@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "Sąrašo numeris ar jo nuoroda, pavyzdžiui themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt sąrašas",
 	"requests.lists.traktHint": "user/list, user/watchlist ar nuoroda, pavyzdžiui trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "MDBList sąrašas",
+	"requests.lists.mdblistHint": "user/list arba nuoroda, pavyzdžiui mdblist.com/lists/ana/favourites. Vieši sąrašai veikia be rakto.",
 	"requests.lists.everyDay": "kasdien",
 	"requests.lists.everyDays": "kas {n} d.",
 	"requests.lists.everyHours": "kas {n} val.",

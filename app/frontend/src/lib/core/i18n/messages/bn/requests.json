@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "তালিকার নম্বর বা তার লিংক, যেমন themoviedb.org/list/12345।",
 	"requests.lists.trakt": "Trakt তালিকা",
 	"requests.lists.traktHint": "user/list, user/watchlist বা লিংক, যেমন trakt.tv/users/ana/lists/favourites।",
+	"requests.lists.mdblist": "MDBList তালিকা",
+	"requests.lists.mdblistHint": "user/list বা লিংক, যেমন mdblist.com/lists/ana/favourites। পাবলিক তালিকা কী ছাড়াই কাজ করে।",
 	"requests.lists.everyDay": "প্রতিদিন",
 	"requests.lists.everyDays": "প্রতি {n} দিনে",
 	"requests.lists.everyHours": "প্রতি {n} ঘণ্টায়",

@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "tmdb lista trakt lista tuontilista automaattilisäys",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Trakt-avain",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt avain client id vip käyttöoikeustunniste arvostelut kommentit",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "MDBList-avain",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist avain api-avain listat",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Älä lisää -lista",
 	"settings.index.outside-lists.never-card.never-add-list.words": "älä lisää poissulku estolista",
 	"settings.index.sources.page.sources.label": "Lähteet",

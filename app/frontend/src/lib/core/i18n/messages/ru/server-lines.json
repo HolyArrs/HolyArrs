@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "Порог выхода пропускается: этот фильм пока не считается вышедшим",
 	"server.sources.this-version-already-has-a-good": "У этого варианта уже есть достаточно хорошая копия; новая её заменит",
 	"server.requests.removed-the-request-for": "{name} удалил(а) запрос на {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex не передал код аккаунта этого человека, поэтому его список просмотра не читается."
+	"server.requests.plex-gave-no-account-code-for": "Plex не передал код аккаунта этого человека, поэтому его список просмотра не читается.",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs читает списки MDBList; добавьте его заново в разделе «Настройки > Внешние списки»",
+	"server.requests.send-key-mdblist-api-key-or": "отправьте {\"key\": \"<ключ API MDBList>\"} или {\"key\": \"\"}, чтобы удалить его"
 }

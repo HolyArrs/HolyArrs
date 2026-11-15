@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "tmdb listi trakt listi innflutningslisti sjálfvirk viðbót",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Trakt-lykill",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt lykill client id vip aðgangstákn umsagnir athugasemdir",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "MDBList-lykill",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist lykill api-lykill listar",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Útilokunarlisti",
 	"settings.index.outside-lists.never-card.never-add-list.words": "aldrei bæta við útilokun bannlisti",
 	"settings.index.sources.page.sources.label": "Heimildir",

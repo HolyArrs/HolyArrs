@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "فهرست tmdb فهرست trakt فهرست ورود افزودن خودکار",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "کلید Trakt",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt کلید client id توکن دسترسی vip نقدها نظرها",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "کلید MDBList",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist کلید api کلید فهرست‌ها",
 	"settings.index.outside-lists.never-card.never-add-list.label": "فهرست «هرگز اضافه نشود»",
 	"settings.index.outside-lists.never-card.never-add-list.words": "هرگز اضافه نشود استثنا مسدود فهرست",
 	"settings.index.sources.page.sources.label": "منبع‌ها",

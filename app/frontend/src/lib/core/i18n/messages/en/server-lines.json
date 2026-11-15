@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "the Release gate is skipped: this Title is not out yet",
 	"server.sources.this-version-already-has-a-good": "this Version already has a good enough copy; the new one will replace it",
 	"server.requests.removed-the-request-for": "{name} removed the request for {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex gave no account code for this person, so their watchlist is not read."
+	"server.requests.plex-gave-no-account-code-for": "Plex gave no account code for this person, so their watchlist is not read.",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs reads MDBList lists; add it again under Settings > Outside lists",
+	"server.requests.send-key-mdblist-api-key-or": "send {\"key\": \"<MDBList API key>\"}, or {\"key\": \"\"} to remove it"
 }

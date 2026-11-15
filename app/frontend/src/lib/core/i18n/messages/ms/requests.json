@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "Nombor senarai atau pautannya, contohnya themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Senarai Trakt",
 	"requests.lists.traktHint": "user/list, user/watchlist atau pautan, contohnya trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "Senarai MDBList",
+	"requests.lists.mdblistHint": "user/list atau pautan, contohnya mdblist.com/lists/ana/favourites. Senarai awam berfungsi tanpa kunci.",
 	"requests.lists.everyDay": "setiap hari",
 	"requests.lists.everyDays": "setiap {n} hari",
 	"requests.lists.everyHours": "setiap {n} jam",

@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "λίστα tmdb λίστα trakt λίστα εισαγωγής αυτόματη προσθήκη",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Κλειδί Trakt",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt κλειδί client id vip διακριτικό πρόσβασης κριτικές σχόλια",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "Κλειδί MDBList",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist κλειδί api κλειδί λίστες",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Λίστα μη προσθήκης",
 	"settings.index.outside-lists.never-card.never-add-list.words": "μη προσθήκη αποκλεισμός λίστα αποκλεισμού",
 	"settings.index.sources.page.sources.label": "Πηγές",

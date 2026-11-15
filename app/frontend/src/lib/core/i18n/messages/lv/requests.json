@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "Saraksta numurs vai tā saite, piemēram, themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt saraksts",
 	"requests.lists.traktHint": "user/list, user/watchlist vai saite, piemēram, trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "MDBList saraksts",
+	"requests.lists.mdblistHint": "user/list vai saite, piemēram, mdblist.com/lists/ana/favourites. Publiski saraksti darbojas bez atslēgas.",
 	"requests.lists.everyDay": "katru dienu",
 	"requests.lists.everyDays": "ik pēc {n} dienām",
 	"requests.lists.everyHours": "ik pēc {n} stundām",

@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "tmdb-lijst trakt-lijst importlijst automatisch toevoegen",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Trakt-sleutel",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt sleutel client id vip toegangstoken recensies reacties",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "MDBList-sleutel",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist sleutel api-sleutel lijsten",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Nooit-toevoegen-lijst",
 	"settings.index.outside-lists.never-card.never-add-list.words": "nooit toevoegen uitsluiting blokkeerlijst",
 	"settings.index.sources.page.sources.label": "Bronnen",

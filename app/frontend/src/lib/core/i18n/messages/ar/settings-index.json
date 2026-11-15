@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "قائمة tmdb قائمة trakt قائمة استيراد إضافة تلقائية",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "مفتاح Trakt",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt مفتاح معرّف العميل رمز وصول vip مراجعات تعليقات",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "مفتاح MDBList",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist مفتاح api مفتاح قوائم",
 	"settings.index.outside-lists.never-card.never-add-list.label": "قائمة عدم الإضافة",
 	"settings.index.outside-lists.never-card.never-add-list.words": "عدم الإضافة استثناء حظر قائمة",
 	"settings.index.sources.page.sources.label": "المصادر",

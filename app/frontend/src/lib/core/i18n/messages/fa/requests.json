@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "شماره فهرست یا پیوندش، مثلاً themoviedb.org/list/12345.",
 	"requests.lists.trakt": "فهرست Trakt",
 	"requests.lists.traktHint": "user/list، user/watchlist یا پیوند، مثلاً trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "فهرست MDBList",
+	"requests.lists.mdblistHint": "user/list یا پیوند، مثلاً mdblist.com/lists/ana/favourites. فهرست‌های عمومی بدون کلید کار می‌کنند.",
 	"requests.lists.everyDay": "هر روز",
 	"requests.lists.everyDays": "هر {n} روز",
 	"requests.lists.everyHours": "هر {n} ساعت",

@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "tmdb listesi trakt listesi içe aktarma listesi otomatik ekle",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Trakt anahtarı",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt anahtar client id vip erişim token yorumlar",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "MDBList anahtarı",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist anahtar api anahtarı listeler",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Asla ekleme listesi",
 	"settings.index.outside-lists.never-card.never-add-list.words": "asla ekleme dışlama engel listesi",
 	"settings.index.sources.page.sources.label": "Kaynaklar",

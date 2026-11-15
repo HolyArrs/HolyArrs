@@ -129,6 +129,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/tmdb', 'metadata-card', 'Metadata server', 'metadata tmdb posters names artwork server'),
 	e('/settings/outside-lists', '', 'Outside lists', 'tmdb list trakt list import list auto add'),
 	e('/settings/outside-lists', 'trakt-card', 'Trakt key', 'trakt key client id vip access token reviews comments'),
+	e('/settings/outside-lists', 'mdblist-card', 'MDBList key', 'mdblist key api key lists'),
 	e('/settings/outside-lists', 'never-card', 'Never-add list', 'never add exclusion block list'),
 
 	e('/settings/sources', '', 'Sources', 'indexer torznab newznab rss tracker usenet add source'),

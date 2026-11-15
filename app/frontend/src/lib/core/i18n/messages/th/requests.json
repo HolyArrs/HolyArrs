@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "เลขรายการหรือลิงก์ เช่น themoviedb.org/list/12345",
 	"requests.lists.trakt": "รายการ Trakt",
 	"requests.lists.traktHint": "user/list, user/watchlist หรือลิงก์ เช่น trakt.tv/users/ana/lists/favourites",
+	"requests.lists.mdblist": "รายการ MDBList",
+	"requests.lists.mdblistHint": "user/list หรือลิงก์ เช่น mdblist.com/lists/ana/favourites รายการสาธารณะใช้ได้โดยไม่ต้องมีคีย์",
 	"requests.lists.everyDay": "ทุกวัน",
 	"requests.lists.everyDays": "ทุก {n} วัน",
 	"requests.lists.everyHours": "ทุก {n} ชั่วโมง",

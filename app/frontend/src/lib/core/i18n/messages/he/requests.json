@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "מספר הרשימה או הקישור שלה, למשל themoviedb.org/list/12345.",
 	"requests.lists.trakt": "רשימת Trakt",
 	"requests.lists.traktHint": "user/list, user/watchlist או הקישור, למשל trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "רשימת MDBList",
+	"requests.lists.mdblistHint": "user/list או הקישור, למשל mdblist.com/lists/ana/favourites. רשימות ציבוריות עובדות בלי מפתח.",
 	"requests.lists.everyDay": "כל יום",
 	"requests.lists.everyDays": "כל {n} ימים",
 	"requests.lists.everyHours": "כל {n} שעות",

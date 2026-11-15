@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "Ang numero ng listahan o link nito, halimbawa themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Listahan ng Trakt",
 	"requests.lists.traktHint": "user/list, user/watchlist o ang link, halimbawa trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "Listahan ng MDBList",
+	"requests.lists.mdblistHint": "user/list o ang link, halimbawa mdblist.com/lists/ana/favourites. Gumagana ang mga pampublikong listahan kahit walang key.",
 	"requests.lists.everyDay": "araw-araw",
 	"requests.lists.everyDays": "kada {n} araw",
 	"requests.lists.everyHours": "kada {n} oras",

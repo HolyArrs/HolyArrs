@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "llista tmdb llista trakt importa llista afegeix automàticament",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Clau de Trakt",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "clau trakt id de client testimoni d'accés vip ressenyes comentaris",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "Clau de MDBList",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist clau api llistes",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Llista de no afegir mai",
 	"settings.index.outside-lists.never-card.never-add-list.words": "no afegir mai exclusió llista de bloqueig",
 	"settings.index.sources.page.sources.label": "Fonts",

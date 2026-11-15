@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "Çıkış eşiği atlandı: bu film henüz çıkmış sayılmıyor",
 	"server.sources.this-version-already-has-a-good": "Bu versiyonun zaten yeterince iyi bir kopyası var; yenisi onun yerini alır",
 	"server.requests.removed-the-request-for": "{name}, {a} isteğini kaldırdı",
-	"server.requests.plex-gave-no-account-code-for": "Plex bu kişi için hesap kodu vermedi, bu yüzden izleme listesi okunmuyor."
+	"server.requests.plex-gave-no-account-code-for": "Plex bu kişi için hesap kodu vermedi, bu yüzden izleme listesi okunmuyor.",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs MDBList listelerini okur; Ayarlar > Dış listeler altından yeniden ekle",
+	"server.requests.send-key-mdblist-api-key-or": "şunu gönder: {\"key\": \"<MDBList API anahtarı>\"}, ya da kaldırmak için {\"key\": \"\"}"
 }

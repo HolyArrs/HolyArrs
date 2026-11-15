@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "பட்டியல் எண் அல்லது அதன் இணைப்பு, எடுத்துக்காட்டாக themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt பட்டியல்",
 	"requests.lists.traktHint": "user/list, user/watchlist அல்லது இணைப்பு, எடுத்துக்காட்டாக trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "MDBList பட்டியல்",
+	"requests.lists.mdblistHint": "user/list அல்லது இணைப்பு, எடுத்துக்காட்டாக mdblist.com/lists/ana/favourites. பொதுப் பட்டியல்கள் விசை இல்லாமலே வேலை செய்யும்.",
 	"requests.lists.everyDay": "ஒவ்வொரு நாளும்",
 	"requests.lists.everyDays": "ஒவ்வொரு {n} நாட்களுக்கும்",
 	"requests.lists.everyHours": "ஒவ்வொரு {n} மணிநேரத்துக்கும்",

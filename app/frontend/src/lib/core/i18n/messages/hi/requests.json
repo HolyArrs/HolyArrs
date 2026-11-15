@@ -172,6 +172,8 @@
 	"requests.lists.tmdbHint": "सूची का नंबर या उसका लिंक, जैसे themoviedb.org/list/12345।",
 	"requests.lists.trakt": "Trakt सूची",
 	"requests.lists.traktHint": "user/list, user/watchlist या लिंक, जैसे trakt.tv/users/ana/lists/favourites।",
+	"requests.lists.mdblist": "MDBList सूची",
+	"requests.lists.mdblistHint": "user/list या लिंक, जैसे mdblist.com/lists/ana/favourites। सार्वजनिक सूचियां बिना कुंजी के काम करती हैं।",
 	"requests.lists.everyDay": "हर दिन",
 	"requests.lists.everyDays": "हर {n} दिन",
 	"requests.lists.everyHours": "हर {n} घंटे",
