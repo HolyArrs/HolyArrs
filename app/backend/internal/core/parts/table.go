@@ -253,6 +253,8 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/jobs/active":              Core,
 	"GET /api/v1/settings/trakt-key":       Core,
 	"PUT /api/v1/settings/trakt-key":       Core,
+	"GET /api/v1/settings/mdblist-key":     Core,
+	"PUT /api/v1/settings/mdblist-key":     Core,
 	"GET /api/v1/settings/trakt-token":     Core,
 	"PUT /api/v1/settings/trakt-token":     Core,
 

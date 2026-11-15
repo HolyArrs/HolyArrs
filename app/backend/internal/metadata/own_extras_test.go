@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -80,5 +82,18 @@ func TestModeExtrasPick(t *testing.T) {
 	_ = m.Set(ModeOff)
 	if _, err := pick(ctx, "movie", "1"); !SourceOff(err) {
 		t.Fatal(err)
+	}
+}
+
+// A key saved on the Outside lists page (MDBList lists work in every mode)
+// must not move ratings or their outside host in HolyArrs server mode.
+func TestMDBListKeyLeavesRatingsOffInServerMode(t *testing.T) {
+	none := func(string) bool { return false }
+	mdb := func(k string) bool { return k == KeyMDBList }
+	if !reflect.DeepEqual(SourceStates(ModeServer, mdb), SourceStates(ModeServer, none)) {
+		t.Fatal("an MDBList key changed what server mode reads")
+	}
+	if slices.Contains(ModeHosts(ModeServer, mdb), "api.mdblist.com") {
+		t.Fatal("server mode asks MDBList for ratings once a key is saved")
 	}
 }

@@ -25056,6 +25056,92 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/settings/mdblist-key": {
+      "get": {
+        "description": "Never sent in full. The same key gives outside ratings in Your own keys mode.",
+        "operationId": "getMDBListKey",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaskedKey"
+                }
+              }
+            },
+            "description": "Masked key."
+          }
+        },
+        "summary": "The MDBList key, masked",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Your MDBList API key, kept encrypted. MDBList lists are read through the MDBList API with it, and by their public link without it; an empty key removes it. Needs a password sign-in, not an API key.",
+        "operationId": "putMDBListKey",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaskedKey"
+                }
+              }
+            },
+            "description": "Saved (masked), or empty once removed."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No key field."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Sign in with a password first."
+          }
+        },
+        "summary": "Store or remove the MDBList key",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/settings/metadata": {
       "get": {
         "description": "The mode (full: the HolyArrs metadata server, own: your own keys, off: no lookups), whether the Docker settings lock it, which own keys are saved (never the keys), each kind of detail on or off, and the outside addresses the mode uses.",

@@ -675,6 +675,8 @@ The Auth column is the permission a caller needs, as pinned in the snapshot. The
 | GET | `/api/v1/settings/import-folders` | settings |  |
 | PUT | `/api/v1/settings/import-folders` | users |  |
 | POST | `/api/v1/settings/import-secrets` | owner |  |
+| GET | `/api/v1/settings/mdblist-key` | settings |  |
+| PUT | `/api/v1/settings/mdblist-key` | settings |  |
 | GET | `/api/v1/settings/metadata` | settings |  |
 | PUT | `/api/v1/settings/metadata` | settings |  |
 | POST | `/api/v1/settings/metadata/test` | settings |  |
