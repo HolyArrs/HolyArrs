@@ -218,3 +218,27 @@ func BenchmarkParse1000(b *testing.B) {
 		}
 	}
 }
+
+// The HDR words HolyArrs writes in a file name read back, so a Library it
+// named keeps its quality.
+func TestHDRWordsHolyArrsWrites(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		want []string
+	}{
+		{"65 (2023) - [2160p.DolbyVision.WEB-NAISU]", []string{"dv"}},
+		{"Movie (2023) - [2160p.DolbyVisionHDR10.WEB-GRP]", []string{"dv", "hdr10"}},
+		{"Movie (2023) - [2160p.DolbyVisionHDR10+.WEB-GRP]", []string{"dv", "hdr10plus"}},
+		{"Movie (2023) - [2160p.DolbyVisionHLG.WEB-GRP]", []string{"dv", "hlg"}},
+		{"Movie (2023) - [2160p.DolbyVisionHDR10HLG.WEB-GRP]", []string{"dv", "hdr10", "hlg"}},
+		{"Movie (2023) - [2160p.DolbyVisionHDR10+HLG.WEB-GRP]", []string{"dv", "hdr10plus", "hlg"}},
+		{"Movie (2023) - [2160p.HDR10+.WEB-GRP]", []string{"hdr10plus"}},
+		{"Movie (2023) - [2160p.HDR10HLG.WEB-GRP]", []string{"hdr10", "hlg"}},
+		{"Movie (2023) - [2160p.HDR10+HLG.WEB-GRP]", []string{"hdr10plus", "hlg"}},
+		{"Movie (2023) - [2160p.TrueHD.WEB-GRP]", nil},
+	} {
+		if got := Parse(c.name, Hints{}).HDR.Value; !slices.Equal(got, c.want) {
+			t.Errorf("%s: hdr %v, want %v", c.name, got, c.want)
+		}
+	}
+}

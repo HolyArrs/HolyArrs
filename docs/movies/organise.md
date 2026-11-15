@@ -111,7 +111,7 @@ Fix: add it again. If you deleted its files, take them back from `.holyarrs-repl
 
 | Setting | What it does | Default | Change it when |
 | --- | --- | --- | --- |
-| File name pattern | Text with words in braces, such as `{title} ({year}) {quality}`. Empty words drop out. The example shows the result as you type. HolyArrs cannot save an unknown word. | `{title} ({year}) {quality}` | Your media server wants another layout. |
+| File name pattern | Text with words in braces, such as `{title} ({year}) {quality}`. An empty word drops out, with the dot, dash or underscore beside it. The example shows the result as you type. HolyArrs cannot save an unknown word. | `{title} ({year}) {quality}` | Your media server wants another layout. |
 | Folder name pattern | Same, for folders. Applies to movies added from now on. | `{title} ({year})` | Same. |
 | A colon in a name becomes | Replaces the colon. | Smart | You prefer another style. |
 | Other characters a disk cannot hold | Swap them for safe ones, or drop them. | Swap | Same. |
