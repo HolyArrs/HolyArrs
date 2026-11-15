@@ -40,6 +40,8 @@ export const tmdbMovies = [
 	{ id: 900021, title: 'Brumwick Gate', release_date: '2008-09-09', imdb_id: 'tt9000210', overview: 'A town gate that opens onto a different town each night.', dates: [[3, '2008-09-09'], [4, '2008-12-01']], collection: { id: 950001, name: 'The Brumwick Films' } },
 	{ id: 900022, title: 'Brumwick Gate Again', release_date: '2012-10-10', imdb_id: 'tt9000220', overview: 'The gate opens once more, onto the town it left.', dates: [[3, '2012-10-10'], [4, '2013-01-01']], collection: { id: 950001, name: 'The Brumwick Films' } },
 	// Only library-editions.spec.ts uses this one: a Director's Cut named for Plex.
+	// Only lists.spec.ts adds this one, from the fake MDBList list lab/mdb-picks.
+	{ id: 900090, title: 'Hollow Barometer', release_date: '2012-12-12', imdb_id: 'tt9000900', overview: 'A barometer that forecasts only the weather of last year.', dates: [[3, '2012-12-12'], [4, '2013-02-01']] },
 	{ id: 900081, title: 'Zephyr Projectionist', release_date: '2009-11-11', imdb_id: 'tt9000810', overview: 'A projectionist who only screens films that were never made.', dates: [[3, '2009-11-11'], [4, '2010-01-01']] },
 	// Import files by hand picks another title (library-import.spec.ts): a file named Tamarind Quay that is really Ochre Bandstand.
 	{ id: 900040, title: 'Tamarind Quay', release_date: '2013-06-06', imdb_id: 'tt9000400', overview: 'A quay where the spice ships never quite dock.', dates: [[3, '2013-06-06'], [4, '2013-08-01']] },
