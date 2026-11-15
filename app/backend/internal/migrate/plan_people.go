@@ -363,6 +363,10 @@ func (b *builder) leftBehind(s *Snapshot) {
 			if strings.Contains(kind, "trakt") {
 				why += " (a private list needs to be made public first)"
 			}
+		// An MDBList list, by its own kind or a list link to mdblist.com, is
+		// added again by hand: its link is not brought over yet.
+		case strings.HasPrefix(kind, "mdblist") || strings.Contains(strings.ToLower(setStr(l.Settings, "url", "listUrl")), "mdblist.com"): // not imdblist
+			why = "HolyArrs reads MDBList lists; add it again under Settings > Outside lists"
 		default:
 			why = "HolyArrs reads TMDB lists and public Trakt lists only; this list stays in Radarr"
 		}
