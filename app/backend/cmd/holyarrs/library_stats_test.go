@@ -37,3 +37,13 @@ func TestLibraryStatsAndWatchHistoryOverHTTP(t *testing.T) {
 	}
 	r.owner.call("PUT", "/api/v1/settings/watch-history", `{"enabled":false}`, 200)
 }
+
+// Anyone signed in may ask where a title opens on the media servers.
+// route: GET /api/v1/media-servers/watch-links
+func TestWatchLinksOverHTTP(t *testing.T) {
+	t.Parallel()
+	r := newAskRig(t)
+	r.ana.call("GET", "/api/v1/media-servers/watch-links", "", 400)
+	r.ana.call("GET", "/api/v1/media-servers/watch-links?title=x", "", 400)
+	r.ana.call("GET", "/api/v1/media-servers/watch-links?title=999999", "", 404)
+}

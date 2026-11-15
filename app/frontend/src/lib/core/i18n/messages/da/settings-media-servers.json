@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs-sti",
 	"settings.mediaServers.pathTo": "Samme mappe på serveren",
 	"settings.mediaServers.pathHint": "Kun hvis serveren ser dine filer under en anden sti",
+	"settings.mediaServers.webUrl": "Adresse til browsere",
+	"settings.mediaServers.webUrlHint": "Hvor folk åbner serveren på telefonen eller computeren. Tilføjer en Åbn-knap til siderne for titler, den har. Lad feltet stå tomt for ingen knap.",
 	"settings.mediaServers.local": "Nå det lokale netværk",
 	"settings.mediaServers.send": "Send opdateringer",
 	"settings.mediaServers.save": "Gem",

@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs ceļš",
 	"settings.mediaServers.pathTo": "Tā pati mape serverī",
 	"settings.mediaServers.pathHint": "Tikai ja serveris redz tavus failus zem cita ceļa",
+	"settings.mediaServers.webUrl": "Adrese pārlūkiem",
+	"settings.mediaServers.webUrlHint": "Adrese, kurā visi atver serveri tālrunī vai datorā. Pievieno pogu Atvērt to nosaukumu lapām, kas ir serverī. Atstājiet tukšu, ja poga nav vajadzīga.",
 	"settings.mediaServers.local": "Piekļūt vietējam tīklam",
 	"settings.mediaServers.send": "Sūtīt atjauninājumus",
 	"settings.mediaServers.save": "Saglabāt",

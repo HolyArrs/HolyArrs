@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs putanja",
 	"settings.mediaServers.pathTo": "Ista mapa na poslužitelju",
 	"settings.mediaServers.pathHint": "Samo ako poslužitelj vidi tvoje datoteke pod drugom putanjom",
+	"settings.mediaServers.webUrl": "Adresa za preglednike",
+	"settings.mediaServers.webUrlHint": "Adresa na kojoj svi otvaraju poslužitelj na mobitelu ili računalu. Dodaje gumb Otvori na stranice naslova koje poslužitelj ima. Ostavite prazno ako ne želite gumb.",
 	"settings.mediaServers.local": "Dosegni lokalnu mrežu",
 	"settings.mediaServers.send": "Šalji ažuriranja",
 	"settings.mediaServers.save": "Spremi",

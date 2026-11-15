@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Pad in HolyArrs",
 	"settings.mediaServers.pathTo": "Dezelfde map op de server",
 	"settings.mediaServers.pathHint": "Alleen als de server je bestanden onder een ander pad ziet",
+	"settings.mediaServers.webUrl": "Adres voor browsers",
+	"settings.mediaServers.webUrlHint": "Waar mensen de server openen op hun telefoon of computer. Voegt een Openen-knop toe aan de titelpagina’s die hij heeft. Laat leeg voor geen knop.",
 	"settings.mediaServers.local": "Het lokale netwerk bereiken",
 	"settings.mediaServers.send": "Updates versturen",
 	"settings.mediaServers.save": "Opslaan",

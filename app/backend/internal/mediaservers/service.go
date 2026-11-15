@@ -44,13 +44,14 @@ var (
 	ErrURL      = errors.New("the address must be an http or https link with a host, like http://192.168.1.10:32400")
 	ErrNoKey    = errors.New("paste the server's token (Plex) or API key (Jellyfin, Emby)")
 	ErrPathMap  = errors.New("give both sides of the path map, or neither")
+	ErrWebURL   = errors.New("the browser address must be an http or https link with a host, like http://192.168.1.10:8096")
 	// ErrKeyAgain keeps a stored token from going to another server.
 	ErrKeyAgain = errors.New("type the token again when the server address changes")
 )
 
 // IsInputError says err is a refusal of what was sent.
 func IsInputError(err error) bool {
-	for _, e := range []error{ErrName, ErrKind, ErrURL, ErrNoKey, ErrPathMap, ErrKeyAgain} {
+	for _, e := range []error{ErrName, ErrKind, ErrURL, ErrNoKey, ErrPathMap, ErrWebURL, ErrKeyAgain} {
 		if errors.Is(err, e) {
 			return true
 		}
@@ -72,6 +73,8 @@ type Input struct {
 	PathFrom   string `json:"path_from"`
 	PathTo     string `json:"path_to"`
 	AllowLocal *bool  `json:"allow_local_network"`
+	// WebURL is where people's browsers open the server; empty clears it.
+	WebURL string `json:"web_url"`
 }
 
 func orKeep(p *bool, keep bool) bool {
@@ -114,7 +117,11 @@ func fill(in Input, m *domain.MediaServer, isNew bool) error {
 	if (from == "") != (to == "") {
 		return ErrPathMap
 	}
-	m.Name, m.PathFrom, m.PathTo = name, from, to
+	web := strings.TrimRight(strings.TrimSpace(in.WebURL), "/")
+	if web != "" && checkURL(web) != nil {
+		return ErrWebURL
+	}
+	m.Name, m.PathFrom, m.PathTo, m.WebURL = name, from, to, web
 	m.Enabled = orKeep(in.Enabled, m.Enabled)
 	m.OnImport, m.OnRename, m.OnDelete = orKeep(in.OnImport, m.OnImport), orKeep(in.OnRename, m.OnRename), orKeep(in.OnDelete, m.OnDelete)
 	m.AllowLocal = orKeep(in.AllowLocal, m.AllowLocal)
@@ -214,6 +221,9 @@ type Linker struct {
 	// background one.
 	reading  sync.Mutex
 	stopRead context.CancelFunc
+
+	// watch keeps each server's movie and series lists for WatchLinks.
+	watch watchCache
 
 	mu      sync.Mutex
 	pending map[string]string // folder -> change

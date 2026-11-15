@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs का पाथ",
 	"settings.mediaServers.pathTo": "सर्वर पर वही फ़ोल्डर",
 	"settings.mediaServers.pathHint": "सिर्फ़ तब जब सर्वर को आपकी फ़ाइलें दूसरे पाथ पर दिखती हों",
+	"settings.mediaServers.webUrl": "ब्राउज़र के लिए पता",
+	"settings.mediaServers.webUrlHint": "वह पता जिस पर सब लोग फ़ोन या कंप्यूटर पर सर्वर खोलते हैं। सर्वर में मौजूद टाइटल के पेज पर खोलें बटन जोड़ता है। बटन न चाहिए तो खाली छोड़ दें।",
 	"settings.mediaServers.local": "लोकल नेटवर्क तक पहुंचें",
 	"settings.mediaServers.send": "अपडेट भेजें",
 	"settings.mediaServers.save": "सेव करें",

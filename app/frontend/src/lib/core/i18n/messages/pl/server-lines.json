@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "Próg premiery jest pominięty: ten film nie liczy się jeszcze jako wydany",
 	"server.sources.this-version-already-has-a-good": "Ta Odmiana ma już wystarczająco dobrą kopię; nowa ją zastąpi",
 	"server.requests.removed-the-request-for": "{name} usunął(-ęła) prośbę o {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nie podał kodu konta tej osoby, więc jej lista do obejrzenia nie jest czytana."
+	"server.requests.plex-gave-no-account-code-for": "Plex nie podał kodu konta tej osoby, więc jej lista do obejrzenia nie jest czytana.",
+	"server.mediaservers.no-such-title": "nie ma takiego tytułu",
+	"server.mediaservers.send-title-a-library-title-id": "wyślij title, id tytułu z Biblioteki"
 }

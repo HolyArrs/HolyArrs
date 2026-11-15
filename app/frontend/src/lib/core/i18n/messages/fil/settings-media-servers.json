@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Path ng HolyArrs",
 	"settings.mediaServers.pathTo": "Parehong folder sa server",
 	"settings.mediaServers.pathHint": "Kung iba lang ang path na nakikita ng server sa mga file mo",
+	"settings.mediaServers.webUrl": "Address para sa mga browser",
+	"settings.mediaServers.webUrlHint": "Ang address kung saan binubuksan ng lahat ang server sa phone o computer. Nagdadagdag ng Buksan na button sa mga pahina ng title na meron ito. Iwanang blangko kung ayaw ng button.",
 	"settings.mediaServers.local": "Abutin ang local network",
 	"settings.mediaServers.send": "Magpadala ng mga update",
 	"settings.mediaServers.save": "I-save",

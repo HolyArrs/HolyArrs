@@ -109,6 +109,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}": webserver.NeedSignedIn,
 	"GET /api/v1/trailer/batch":                            webserver.NeedSignedIn,
 	"GET /api/v1/trailer/{kind}/{tmdb_id}":                 webserver.NeedSignedIn,
+	"GET /api/v1/media-servers/watch-links":                webserver.NeedSignedIn,
 	"GET /api/v1/trailer/stream/{id}/manifest.m3u8":        webserver.NeedSignedIn,
 	"GET /api/v1/trailer/stream/{id}/seg/{n}":              webserver.NeedSignedIn,
 	"GET /api/v1/settings/ui":                              webserver.NeedSignedIn,

@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "La Soglia di uscita viene saltata: questo film non conta ancora come uscito",
 	"server.sources.this-version-already-has-a-good": "Questa Versione ha già una copia abbastanza buona; la nuova la sostituirà",
 	"server.requests.removed-the-request-for": "{name} ha rimosso la richiesta per {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex non ha fornito alcun codice account per questa persona, quindi la sua watchlist non viene letta."
+	"server.requests.plex-gave-no-account-code-for": "Plex non ha fornito alcun codice account per questa persona, quindi la sua watchlist non viene letta.",
+	"server.mediaservers.no-such-title": "questo titolo non esiste",
+	"server.mediaservers.send-title-a-library-title-id": "invia title, l’id di un titolo della Libreria"
 }

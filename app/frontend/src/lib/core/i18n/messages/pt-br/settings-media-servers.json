@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Caminho no HolyArrs",
 	"settings.mediaServers.pathTo": "Mesma pasta no servidor",
 	"settings.mediaServers.pathHint": "Só se o servidor vê seus arquivos em outro caminho",
+	"settings.mediaServers.webUrl": "Endereço para navegadores",
+	"settings.mediaServers.webUrlHint": "Onde as pessoas abrem o servidor no celular ou computador. Adiciona um botão Abrir nas páginas dos títulos que ele tem. Deixe vazio para não mostrar o botão.",
 	"settings.mediaServers.local": "Acessar a rede local",
 	"settings.mediaServers.send": "Enviar atualizações",
 	"settings.mediaServers.save": "Salvar",

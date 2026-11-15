@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs পাথ",
 	"settings.mediaServers.pathTo": "সার্ভারে একই ফোল্ডার",
 	"settings.mediaServers.pathHint": "শুধু যদি সার্ভার আপনার ফাইল অন্য পাথে দেখে",
+	"settings.mediaServers.webUrl": "ব্রাউজারের জন্য ঠিকানা",
+	"settings.mediaServers.webUrlHint": "যে ঠিকানায় সবাই ফোন বা কম্পিউটারে সার্ভার খোলে। সার্ভারে থাকা টাইটেলের পেজে খুলুন বোতাম যোগ করে। বোতাম না চাইলে খালি রাখুন।",
 	"settings.mediaServers.local": "লোকাল নেটওয়ার্কে পৌঁছান",
 	"settings.mediaServers.send": "আপডেট পাঠান",
 	"settings.mediaServers.save": "সেভ করুন",

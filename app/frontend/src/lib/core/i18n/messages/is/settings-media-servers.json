@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs-slóð",
 	"settings.mediaServers.pathTo": "Sama mappa á þjóninum",
 	"settings.mediaServers.pathHint": "Aðeins ef þjónninn sér skrárnar þínar undir annarri slóð",
+	"settings.mediaServers.webUrl": "Vistfang fyrir vafra",
+	"settings.mediaServers.webUrlHint": "Þar sem fólk opnar þjóninn í síma eða tölvu. Bætir við Opna-hnappi á síður titla sem hann hefur. Hafðu autt fyrir engan hnapp.",
 	"settings.mediaServers.local": "Ná til staðarnetsins",
 	"settings.mediaServers.send": "Senda uppfærslur",
 	"settings.mediaServers.save": "Vista",
