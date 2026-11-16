@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "De Releasedrempel wordt overgeslagen: deze film telt nog niet als uit",
 	"server.sources.this-version-already-has-a-good": "Deze variant heeft al een kopie die goed genoeg is; de nieuwe vervangt die",
 	"server.requests.removed-the-request-for": "{name} heeft het verzoek voor {a} verwijderd",
-	"server.requests.plex-gave-no-account-code-for": "Plex gaf geen accountcode voor deze persoon, dus zijn of haar kijklijst wordt niet gelezen."
+	"server.requests.plex-gave-no-account-code-for": "Plex gaf geen accountcode voor deze persoon, dus zijn of haar kijklijst wordt niet gelezen.",
+	"server.metadata.the-metadata-server-has-no-room": "De metadataserver heeft nu geen ruimte voor nieuwe installaties. HolyArrs vraagt het binnen het uur zelf opnieuw.",
+	"server.metadata.the-metadata-server-is-busy-right": "De metadataserver is nu druk. HolyArrs vraagt het zo zelf opnieuw.",
+	"server.metadata.the-metadata-server-is-not-signing": "De metadataserver meldt nu geen installaties meer aan vanaf dit adres. HolyArrs vraagt het zelf opnieuw; bewaar de map /config tussen herstarts zodat deze installatie haar aanmelding houdt.",
+	"server.metadata.this-address-sent-the-metadata-server": "Dit adres stuurde te veel verzoeken naar de metadataserver. HolyArrs wacht en vraagt het zelf opnieuw.",
+	"server.metadata.this-install-sent-the-metadata-server": "Deze installatie stuurde te veel verzoeken naar de metadataserver. HolyArrs wacht en vraagt het zelf opnieuw."
 }

@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "A Megjelenési küszöb ki van hagyva: ez a film még nem számít megjelentnek",
 	"server.sources.this-version-already-has-a-good": "Ennek a Változatnak már van elég jó másolata; az új lecseréli",
 	"server.requests.removed-the-request-for": "{name} eltávolította a kérést: {a}",
-	"server.requests.plex-gave-no-account-code-for": "A Plex nem adott fiókkódot ehhez a személyhez, ezért a figyelőlistáját nem olvassa."
+	"server.requests.plex-gave-no-account-code-for": "A Plex nem adott fiókkódot ehhez a személyhez, ezért a figyelőlistáját nem olvassa.",
+	"server.metadata.the-metadata-server-has-no-room": "A metaadat-szervernek most nincs helye új telepítéseknek. A HolyArrs egy órán belül magától újra kérdez.",
+	"server.metadata.the-metadata-server-is-busy-right": "A metaadat-szerver most foglalt. A HolyArrs hamarosan magától újra kérdez.",
+	"server.metadata.the-metadata-server-is-not-signing": "A metaadat-szerver most nem regisztrál több telepítést erről a címről. A HolyArrs magától újra kérdez; tartsd meg a /config mappát az újraindítások között, hogy ez a telepítés megtartsa a regisztrációját.",
+	"server.metadata.this-address-sent-the-metadata-server": "Ez a cím túl sok kérést küldött a metaadat-szervernek. A HolyArrs vár, és magától újra kérdez.",
+	"server.metadata.this-install-sent-the-metadata-server": "Ez a telepítés túl sok kérést küldött a metaadat-szervernek. A HolyArrs vár, és magától újra kérdez."
 }

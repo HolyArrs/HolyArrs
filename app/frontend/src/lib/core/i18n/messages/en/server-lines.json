@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "the Release gate is skipped: this Title is not out yet",
 	"server.sources.this-version-already-has-a-good": "this Version already has a good enough copy; the new one will replace it",
 	"server.requests.removed-the-request-for": "{name} removed the request for {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex gave no account code for this person, so their watchlist is not read."
+	"server.requests.plex-gave-no-account-code-for": "Plex gave no account code for this person, so their watchlist is not read.",
+	"server.metadata.the-metadata-server-has-no-room": "The metadata server has no room for new installs right now. HolyArrs asks again on its own within the hour.",
+	"server.metadata.the-metadata-server-is-busy-right": "The metadata server is busy right now. HolyArrs asks again on its own in a moment.",
+	"server.metadata.the-metadata-server-is-not-signing": "The metadata server is not signing up more installs from this address right now. HolyArrs asks again on its own; keep the /config folder between restarts so this install keeps its sign-up.",
+	"server.metadata.this-address-sent-the-metadata-server": "This address sent the metadata server too many requests. HolyArrs waits and asks again on its own.",
+	"server.metadata.this-install-sent-the-metadata-server": "This install sent the metadata server too many requests. HolyArrs waits and asks again on its own."
 }

@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "公開判定は省かれます。この映画は、まだ公開済みとして数えられません",
 	"server.sources.this-version-already-has-a-good": "このバージョンには、すでに十分な品質のコピーがあります。新しいものが置き換えます",
 	"server.requests.removed-the-request-for": "{name} が {a} のリクエストを削除しました",
-	"server.requests.plex-gave-no-account-code-for": "Plex がこの人のアカウントコードを返さなかったため、ウォッチリストは読み取られません。"
+	"server.requests.plex-gave-no-account-code-for": "Plex がこの人のアカウントコードを返さなかったため、ウォッチリストは読み取られません。",
+	"server.metadata.the-metadata-server-has-no-room": "メタデータサーバーには現在、新しいインストールを受け入れる空きがありません。HolyArrs は 1 時間以内に自動で再度問い合わせます。",
+	"server.metadata.the-metadata-server-is-busy-right": "メタデータサーバーは現在混み合っています。HolyArrs はまもなく自動で再度問い合わせます。",
+	"server.metadata.the-metadata-server-is-not-signing": "メタデータサーバーは現在、このアドレスからのインストール登録を受け付けていません。HolyArrs は自動で再度問い合わせます。このインストールの登録を保つため、再起動しても /config フォルダーを残してください。",
+	"server.metadata.this-address-sent-the-metadata-server": "このアドレスからメタデータサーバーへのリクエストが多すぎました。HolyArrs は待ってから自動で再度問い合わせます。",
+	"server.metadata.this-install-sent-the-metadata-server": "このインストールからメタデータサーバーへのリクエストが多すぎました。HolyArrs は待ってから自動で再度問い合わせます。"
 }

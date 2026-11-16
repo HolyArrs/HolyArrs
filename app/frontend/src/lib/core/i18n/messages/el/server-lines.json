@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "Το Όριο κυκλοφορίας παραλείπεται: αυτή η ταινία δεν θεωρείται ακόμη κυκλοφορημένη",
 	"server.sources.this-version-already-has-a-good": "Αυτή η παραλλαγή έχει ήδη αρκετά καλό αντίγραφο· το νέο θα το αντικαταστήσει",
 	"server.requests.removed-the-request-for": "Ο/Η {name} αφαίρεσε το αίτημα για {a}",
-	"server.requests.plex-gave-no-account-code-for": "Το Plex δεν έδωσε κωδικό λογαριασμού για αυτό το άτομο, οπότε η λίστα παρακολούθησής του δεν διαβάζεται."
+	"server.requests.plex-gave-no-account-code-for": "Το Plex δεν έδωσε κωδικό λογαριασμού για αυτό το άτομο, οπότε η λίστα παρακολούθησής του δεν διαβάζεται.",
+	"server.metadata.the-metadata-server-has-no-room": "Ο διακομιστής μεταδεδομένων δεν έχει χώρο για νέες εγκαταστάσεις αυτή τη στιγμή. Το HolyArrs ρωτά ξανά μόνο του μέσα στην ώρα.",
+	"server.metadata.the-metadata-server-is-busy-right": "Ο διακομιστής μεταδεδομένων είναι απασχολημένος αυτή τη στιγμή. Το HolyArrs ρωτά ξανά μόνο του σε λίγο.",
+	"server.metadata.the-metadata-server-is-not-signing": "Ο διακομιστής μεταδεδομένων δεν εγγράφει άλλες εγκαταστάσεις από αυτή τη διεύθυνση αυτή τη στιγμή. Το HolyArrs ρωτά ξανά μόνο του· κρατήστε τον φάκελο /config ανάμεσα στις επανεκκινήσεις ώστε η εγκατάσταση να κρατά την εγγραφή της.",
+	"server.metadata.this-address-sent-the-metadata-server": "Αυτή η διεύθυνση έστειλε πάρα πολλά αιτήματα στον διακομιστή μεταδεδομένων. Το HolyArrs περιμένει και ρωτά ξανά μόνο του.",
+	"server.metadata.this-install-sent-the-metadata-server": "Αυτή η εγκατάσταση έστειλε πάρα πολλά αιτήματα στον διακομιστή μεταδεδομένων. Το HolyArrs περιμένει και ρωτά ξανά μόνο του."
 }

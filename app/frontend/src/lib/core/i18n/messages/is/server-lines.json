@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "Útgáfuþröskuldinum er sleppt: þessi kvikmynd telst ekki komin út enn",
 	"server.sources.this-version-already-has-a-good": "Þetta afbrigði hefur þegar nógu gott eintak; það nýja kemur í staðinn",
 	"server.requests.removed-the-request-for": "{name} fjarlægði beiðni um {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex gaf engan reikningskóða fyrir þessa manneskju, þannig að áhorfslistinn hennar er ekki lesinn."
+	"server.requests.plex-gave-no-account-code-for": "Plex gaf engan reikningskóða fyrir þessa manneskju, þannig að áhorfslistinn hennar er ekki lesinn.",
+	"server.metadata.the-metadata-server-has-no-room": "Lýsigagnaþjónninn hefur ekki pláss fyrir nýjar uppsetningar núna. HolyArrs spyr aftur sjálfkrafa innan klukkustundar.",
+	"server.metadata.the-metadata-server-is-busy-right": "Lýsigagnaþjónninn er upptekinn núna. HolyArrs spyr aftur sjálfkrafa eftir smástund.",
+	"server.metadata.the-metadata-server-is-not-signing": "Lýsigagnaþjónninn skráir ekki fleiri uppsetningar frá þessu vistfangi núna. HolyArrs spyr aftur sjálfkrafa; haltu möppunni /config milli endurræsinga svo þessi uppsetning haldi skráningu sinni.",
+	"server.metadata.this-address-sent-the-metadata-server": "Þetta vistfang sendi lýsigagnaþjóninum of margar beiðnir. HolyArrs bíður og spyr aftur sjálfkrafa.",
+	"server.metadata.this-install-sent-the-metadata-server": "Þessi uppsetning sendi lýsigagnaþjóninum of margar beiðnir. HolyArrs bíður og spyr aftur sjálfkrafa."
 }

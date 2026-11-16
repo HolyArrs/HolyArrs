@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "রিলিজ গেট বাদ গেছে: এই সিনেমা এখনো বেরিয়েছে বলে গণ্য হয় না",
 	"server.sources.this-version-already-has-a-good": "এই ভার্সনের আগেই একটি যথেষ্ট ভালো কপি আছে; নতুনটি সেটি বদলে দেবে",
 	"server.requests.removed-the-request-for": "{name} {a}-এর অনুরোধ সরিয়েছেন",
-	"server.requests.plex-gave-no-account-code-for": "Plex এই ব্যক্তির অ্যাকাউন্ট কোড দেয়নি, তাই তার ওয়াচলিস্ট পড়া হচ্ছে না।"
+	"server.requests.plex-gave-no-account-code-for": "Plex এই ব্যক্তির অ্যাকাউন্ট কোড দেয়নি, তাই তার ওয়াচলিস্ট পড়া হচ্ছে না।",
+	"server.metadata.the-metadata-server-has-no-room": "মেটাডেটা সার্ভারে এখন নতুন ইনস্টলের জন্য জায়গা নেই। HolyArrs এক ঘণ্টার মধ্যে নিজে থেকে আবার জিজ্ঞেস করবে।",
+	"server.metadata.the-metadata-server-is-busy-right": "মেটাডেটা সার্ভার এখন ব্যস্ত। HolyArrs একটু পরে নিজে থেকে আবার জিজ্ঞেস করবে।",
+	"server.metadata.the-metadata-server-is-not-signing": "মেটাডেটা সার্ভার এখন এই ঠিকানা থেকে আর কোনো ইনস্টল নিবন্ধন করছে না। HolyArrs নিজে থেকে আবার জিজ্ঞেস করবে; রিস্টার্টের মাঝে /config ফোল্ডারটি রাখুন যাতে এই ইনস্টল তার নিবন্ধন ধরে রাখে।",
+	"server.metadata.this-address-sent-the-metadata-server": "এই ঠিকানা মেটাডেটা সার্ভারে অনেক বেশি অনুরোধ পাঠিয়েছে। HolyArrs অপেক্ষা করে নিজে থেকে আবার জিজ্ঞেস করে।",
+	"server.metadata.this-install-sent-the-metadata-server": "এই ইনস্টল মেটাডেটা সার্ভারে অনেক বেশি অনুরোধ পাঠিয়েছে। HolyArrs অপেক্ষা করে নিজে থেকে আবার জিজ্ঞেস করে।"
 }

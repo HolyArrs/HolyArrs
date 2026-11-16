@@ -73,7 +73,7 @@ const (
 	gateAheadBurst    = 3.0
 	gateReserve       = 20.0 // tokens background requests leave for people
 	gateAheadPause    = 30 * time.Second
-	gateAheadPauseMax = 10 * time.Minute
+	gateAheadPauseMax = holdMax
 	gatePersonHoldMax = 10 * time.Second
 )
 
@@ -170,15 +170,10 @@ func (g *Gate) take(ctx context.Context, ahead bool) (held time.Duration, err er
 	}
 }
 
-// refused records a 429 or 503 from the server.
-func (g *Gate) refused(code int, retryAfter string) {
-	d := time.Duration(0)
-	if n, err := strconv.Atoi(strings.TrimSpace(retryAfter)); err == nil && n > 0 {
-		d = time.Duration(n) * time.Second
-	} else if at, err := http.ParseTime(retryAfter); err == nil {
-		d = time.Until(at)
-	}
+// refused records a 429 or 503 from the server, with its reason.
+func (g *Gate) refused(code int, retryAfter string, body []byte) {
 	now := g.now()
+	d := noteRefusal(code, retryAfter, body, now)
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	pause := min(max(d, gateAheadPause), gateAheadPauseMax)
@@ -244,7 +239,7 @@ func (g *Gate) RoundTrip(req *http.Request) (*http.Response, error) {
 		log.Printf("metaslow: %s wait=%v headers=%v", req.URL.Path, t1.Sub(t0).Round(time.Millisecond), time.Since(t1).Round(time.Millisecond))
 	}
 	if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable {
-		g.refused(resp.StatusCode, resp.Header.Get("Retry-After"))
+		g.refused(resp.StatusCode, resp.Header.Get("Retry-After"), peekRefusal(resp))
 	}
 	return resp, nil
 }

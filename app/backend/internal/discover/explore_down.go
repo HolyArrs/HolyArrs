@@ -51,15 +51,31 @@ func (h *serverHold) note(err error, now time.Time) {
 		h.down, h.fails, h.until = false, 0, time.Time{}
 		return
 	}
-	if !h.down {
+	until := now.Add(min(downWaitMin<<min(h.fails, 5), downWaitMax))
+	if r, ok := metadata.CurrentRefusal(now); ok && serverBusy(err) {
+		// The server said how long to wait (logged once on the metadata
+		// side): no Explore list asks before then.
+		until = r.Until
+	} else if !h.down {
 		log.Printf("explore: metadata server is not answering, Explore uses kept lists and tries again later: %v", err)
 	}
-	d := min(downWaitMin<<min(h.fails, 5), downWaitMax)
-	h.down, h.fails, h.until = true, h.fails+1, now.Add(d)
+	h.down, h.fails, h.until = true, h.fails+1, until
 }
 
-// serverDown says err means the metadata server did not answer.
-func serverDown(err error) bool { return errors.Is(err, metadata.ErrServiceUnavailable) }
+// serverBusy says err is the server asking HolyArrs to wait.
+func serverBusy(err error) bool {
+	return errors.Is(err, metadata.ErrRateLimited) || errors.Is(err, metadata.ErrServiceBusy)
+}
+
+// serverDown says err means the metadata server did not answer, or asked
+// to wait with a Retry-After that is still running.
+func serverDown(err error) bool {
+	if serverBusy(err) {
+		_, ok := metadata.CurrentRefusal(time.Now())
+		return ok
+	}
+	return errors.Is(err, metadata.ErrServiceUnavailable)
+}
 
 // lookupsOff says the owner turned lookups off, so Explore asks no one.
 func (e *Explore) lookupsOff() bool { return e.LookupsOff != nil && e.LookupsOff() }

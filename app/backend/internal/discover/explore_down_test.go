@@ -107,3 +107,29 @@ func TestExploreServerWaitIsCapped(t *testing.T) {
 		t.Fatalf("first wait after an answer = %v", d)
 	}
 }
+
+// While the server asks to wait (a 429 with its reason), Explore asks no
+// one until the wait ends, and logs nothing per list: the metadata side
+// already logged the hold once.
+func TestExploreBusyWaitsForRetryAfter(t *testing.T) {
+	b := captureLog(t)
+	metadata.ResetRefusal()
+	t.Cleanup(metadata.ResetRefusal)
+	until := time.Now().Add(20 * time.Minute)
+	metadata.SetRefusal(metadata.Refusal{Code: "registration_limit", Until: until})
+	l := &countLister{err: fmt.Errorf("TMDB: %w", metadata.ErrRateLimited)}
+	e := &Explore{Store: noStore, Paced: &engine.Paced{Source: ListerSource{L: l}, Burst: 100}}
+	s := ExploreSource{E: e, Lister: l, Calls: &engine.Calls{}}
+	for i, list := range []string{"trending", "best", "upcoming", "trending", "best"} {
+		_, _ = s.List(context.Background(), engine.Request{List: list, Kind: "movie", Ref: strconv.Itoa(i)})
+	}
+	if n := l.n.Load(); n != 1 {
+		t.Fatalf("want 1 outside ask while the server says wait, got %d", n)
+	}
+	if !e.hold.held(until.Add(-time.Second)) || e.hold.held(until.Add(time.Second)) {
+		t.Fatalf("hold should last exactly the server's wait, until=%v", e.hold.until)
+	}
+	if strings.Contains(b.String(), "explore:") {
+		t.Fatalf("busy lists should not log per list:\n%s", b)
+	}
+}

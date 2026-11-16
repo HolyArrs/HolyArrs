@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "Nilalaktawan ang Release gate: hindi pa binibilang na lumabas ang pelikulang ito",
 	"server.sources.this-version-already-has-a-good": "May sapat nang magandang kopya ang Bersyong ito; papalitan ito ng bago",
 	"server.requests.removed-the-request-for": "Inalis ni {name} ang kahilingan para sa {a}",
-	"server.requests.plex-gave-no-account-code-for": "Walang ibinigay na account code ang Plex para sa taong ito, kaya hindi binabasa ang watchlist niya."
+	"server.requests.plex-gave-no-account-code-for": "Walang ibinigay na account code ang Plex para sa taong ito, kaya hindi binabasa ang watchlist niya.",
+	"server.metadata.the-metadata-server-has-no-room": "Walang puwang ang metadata server para sa mga bagong install ngayon. Kusang magtatanong muli ang HolyArrs sa loob ng isang oras.",
+	"server.metadata.the-metadata-server-is-busy-right": "Abala ang metadata server ngayon. Kusang magtatanong muli ang HolyArrs maya-maya.",
+	"server.metadata.the-metadata-server-is-not-signing": "Hindi na nagre-rehistro ang metadata server ng mga install mula sa address na ito ngayon. Kusang magtatanong muli ang HolyArrs; panatilihin ang folder na /config sa pagitan ng mga restart para manatiling rehistrado ang install na ito.",
+	"server.metadata.this-address-sent-the-metadata-server": "Masyadong maraming request ang ipinadala ng address na ito sa metadata server. Maghihintay ang HolyArrs at kusang magtatanong muli.",
+	"server.metadata.this-install-sent-the-metadata-server": "Masyadong maraming request ang ipinadala ng install na ito sa metadata server. Maghihintay ang HolyArrs at kusang magtatanong muli."
 }

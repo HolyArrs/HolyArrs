@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "Väljalaske lävi jäetakse vahele: seda filmi ei loeta veel ilmunuks",
 	"server.sources.this-version-already-has-a-good": "Sellel versioonil on juba piisavalt hea koopia; uus asendab selle",
 	"server.requests.removed-the-request-for": "{name} eemaldas taotluse: {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex ei andnud selle inimese kontokoodi, seega tema vaatamisnimekirja ei loeta."
+	"server.requests.plex-gave-no-account-code-for": "Plex ei andnud selle inimese kontokoodi, seega tema vaatamisnimekirja ei loeta.",
+	"server.metadata.the-metadata-server-has-no-room": "Metaandmete serveril pole praegu ruumi uutele paigaldustele. HolyArrs küsib tunni jooksul ise uuesti.",
+	"server.metadata.the-metadata-server-is-busy-right": "Metaandmete server on praegu hõivatud. HolyArrs küsib kohe ise uuesti.",
+	"server.metadata.the-metadata-server-is-not-signing": "Metaandmete server ei registreeri praegu sellelt aadressilt rohkem paigaldusi. HolyArrs küsib ise uuesti; hoia kausta /config taaskäivituste vahel alles, et see paigaldus säilitaks oma registreeringu.",
+	"server.metadata.this-address-sent-the-metadata-server": "See aadress saatis metaandmete serverile liiga palju päringuid. HolyArrs ootab ja küsib ise uuesti.",
+	"server.metadata.this-install-sent-the-metadata-server": "See paigaldus saatis metaandmete serverile liiga palju päringuid. HolyArrs ootab ja küsib ise uuesti."
 }

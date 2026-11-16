@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "Próg premiery jest pominięty: ten film nie liczy się jeszcze jako wydany",
 	"server.sources.this-version-already-has-a-good": "Ta Odmiana ma już wystarczająco dobrą kopię; nowa ją zastąpi",
 	"server.requests.removed-the-request-for": "{name} usunął(-ęła) prośbę o {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nie podał kodu konta tej osoby, więc jej lista do obejrzenia nie jest czytana."
+	"server.requests.plex-gave-no-account-code-for": "Plex nie podał kodu konta tej osoby, więc jej lista do obejrzenia nie jest czytana.",
+	"server.metadata.the-metadata-server-has-no-room": "Serwer metadanych nie ma teraz miejsca na nowe instalacje. HolyArrs sam zapyta ponownie w ciągu godziny.",
+	"server.metadata.the-metadata-server-is-busy-right": "Serwer metadanych jest teraz zajęty. HolyArrs sam zapyta ponownie za chwilę.",
+	"server.metadata.the-metadata-server-is-not-signing": "Serwer metadanych nie rejestruje teraz kolejnych instalacji z tego adresu. HolyArrs sam zapyta ponownie; zachowaj folder /config między restartami, aby ta instalacja zachowała swoją rejestrację.",
+	"server.metadata.this-address-sent-the-metadata-server": "Ten adres wysłał do serwera metadanych zbyt wiele żądań. HolyArrs czeka i sam zapyta ponownie.",
+	"server.metadata.this-install-sent-the-metadata-server": "Ta instalacja wysłała do serwera metadanych zbyt wiele żądań. HolyArrs czeka i sam zapyta ponownie."
 }

@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "출시 기준을 건너뜁니다. 이 영화는 아직 공개된 것으로 보지 않습니다",
 	"server.sources.this-version-already-has-a-good": "이 버전에는 이미 충분한 품질의 사본이 있습니다. 새 사본으로 교체됩니다",
 	"server.requests.removed-the-request-for": "{name}님이 {a} 요청을 삭제했습니다",
-	"server.requests.plex-gave-no-account-code-for": "Plex가 이 사람의 계정 코드를 주지 않아 관심 목록을 읽지 않습니다."
+	"server.requests.plex-gave-no-account-code-for": "Plex가 이 사람의 계정 코드를 주지 않아 관심 목록을 읽지 않습니다.",
+	"server.metadata.the-metadata-server-has-no-room": "메타데이터 서버에 지금은 새 설치를 받을 자리가 없습니다. HolyArrs가 한 시간 안에 알아서 다시 요청합니다.",
+	"server.metadata.the-metadata-server-is-busy-right": "메타데이터 서버가 지금 바쁩니다. HolyArrs가 잠시 후 알아서 다시 요청합니다.",
+	"server.metadata.the-metadata-server-is-not-signing": "메타데이터 서버가 지금은 이 주소에서 더 이상 설치를 등록하지 않습니다. HolyArrs가 알아서 다시 요청합니다. 이 설치의 등록이 유지되도록 재시작 사이에도 /config 폴더를 유지하세요.",
+	"server.metadata.this-address-sent-the-metadata-server": "이 주소에서 메타데이터 서버로 요청을 너무 많이 보냈습니다. HolyArrs가 기다렸다가 알아서 다시 요청합니다.",
+	"server.metadata.this-install-sent-the-metadata-server": "이 설치에서 메타데이터 서버로 요청을 너무 많이 보냈습니다. HolyArrs가 기다렸다가 알아서 다시 요청합니다."
 }

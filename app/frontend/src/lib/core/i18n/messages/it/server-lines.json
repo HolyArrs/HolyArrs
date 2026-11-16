@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "La Soglia di uscita viene saltata: questo film non conta ancora come uscito",
 	"server.sources.this-version-already-has-a-good": "Questa Versione ha già una copia abbastanza buona; la nuova la sostituirà",
 	"server.requests.removed-the-request-for": "{name} ha rimosso la richiesta per {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex non ha fornito alcun codice account per questa persona, quindi la sua watchlist non viene letta."
+	"server.requests.plex-gave-no-account-code-for": "Plex non ha fornito alcun codice account per questa persona, quindi la sua watchlist non viene letta.",
+	"server.metadata.the-metadata-server-has-no-room": "Il server dei metadati non ha posto per nuove installazioni in questo momento. HolyArrs riprova da solo entro l'ora.",
+	"server.metadata.the-metadata-server-is-busy-right": "Il server dei metadati è occupato in questo momento. HolyArrs riprova da solo tra poco.",
+	"server.metadata.the-metadata-server-is-not-signing": "Il server dei metadati non sta registrando altre installazioni da questo indirizzo in questo momento. HolyArrs riprova da solo; conserva la cartella /config tra un riavvio e l'altro così questa installazione mantiene la sua registrazione.",
+	"server.metadata.this-address-sent-the-metadata-server": "Questo indirizzo ha inviato troppe richieste al server dei metadati. HolyArrs attende e riprova da solo.",
+	"server.metadata.this-install-sent-the-metadata-server": "Questa installazione ha inviato troppe richieste al server dei metadati. HolyArrs attende e riprova da solo."
 }

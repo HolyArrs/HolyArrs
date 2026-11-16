@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "Порог выхода пропускается: этот фильм пока не считается вышедшим",
 	"server.sources.this-version-already-has-a-good": "У этого варианта уже есть достаточно хорошая копия; новая её заменит",
 	"server.requests.removed-the-request-for": "{name} удалил(а) запрос на {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex не передал код аккаунта этого человека, поэтому его список просмотра не читается."
+	"server.requests.plex-gave-no-account-code-for": "Plex не передал код аккаунта этого человека, поэтому его список просмотра не читается.",
+	"server.metadata.the-metadata-server-has-no-room": "У сервера метаданных сейчас нет места для новых установок. HolyArrs сам спросит снова в течение часа.",
+	"server.metadata.the-metadata-server-is-busy-right": "Сервер метаданных сейчас занят. HolyArrs сам спросит снова через мгновение.",
+	"server.metadata.the-metadata-server-is-not-signing": "Сервер метаданных сейчас не регистрирует новые установки с этого адреса. HolyArrs сам спросит снова; сохраняйте папку /config между перезапусками, чтобы эта установка сохранила регистрацию.",
+	"server.metadata.this-address-sent-the-metadata-server": "С этого адреса на сервер метаданных отправлено слишком много запросов. HolyArrs ждёт и сам спросит снова.",
+	"server.metadata.this-install-sent-the-metadata-server": "Эта установка отправила на сервер метаданных слишком много запросов. HolyArrs ждёт и сам спросит снова."
 }

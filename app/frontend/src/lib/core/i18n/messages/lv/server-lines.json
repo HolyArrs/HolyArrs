@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "Izlaidumu vārti tiek izlaisti: šī filma vēl netiek uzskatīta par iznākušu",
 	"server.sources.this-version-already-has-a-good": "Šai Versijai jau ir pietiekami laba kopija; jaunā to aizstās",
 	"server.requests.removed-the-request-for": "{name} noņēma pieprasījumu: {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nedeva šīs personas konta kodu, tāpēc viņas skatīšanās saraksts netiek lasīts."
+	"server.requests.plex-gave-no-account-code-for": "Plex nedeva šīs personas konta kodu, tāpēc viņas skatīšanās saraksts netiek lasīts.",
+	"server.metadata.the-metadata-server-has-no-room": "Metadatu serverim pašlaik nav vietas jaunām instalācijām. HolyArrs pats jautās vēlreiz stundas laikā.",
+	"server.metadata.the-metadata-server-is-busy-right": "Metadatu serveris pašlaik ir aizņemts. HolyArrs pats drīz jautās vēlreiz.",
+	"server.metadata.the-metadata-server-is-not-signing": "Metadatu serveris pašlaik nereģistrē vairāk instalāciju no šīs adreses. HolyArrs pats jautās vēlreiz; saglabājiet mapi /config starp restartēšanām, lai šī instalācija paturētu savu reģistrāciju.",
+	"server.metadata.this-address-sent-the-metadata-server": "Šī adrese nosūtīja metadatu serverim pārāk daudz pieprasījumu. HolyArrs gaida un pats jautās vēlreiz.",
+	"server.metadata.this-install-sent-the-metadata-server": "Šī instalācija nosūtīja metadatu serverim pārāk daudz pieprasījumu. HolyArrs gaida un pats jautās vēlreiz."
 }

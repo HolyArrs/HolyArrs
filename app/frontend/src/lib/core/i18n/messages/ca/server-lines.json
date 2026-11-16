@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "L'Umbral d'estrena s'omet: aquesta pel·lícula encara no es considera estrenada",
 	"server.sources.this-version-already-has-a-good": "Aquesta Versió ja té una còpia prou bona; la nova la substituirà",
 	"server.requests.removed-the-request-for": "{name} ha eliminat la sol·licitud de {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex no ha donat cap codi de compte d'aquesta persona, així que no se'n llegeix la llista de seguiment."
+	"server.requests.plex-gave-no-account-code-for": "Plex no ha donat cap codi de compte d'aquesta persona, així que no se'n llegeix la llista de seguiment.",
+	"server.metadata.the-metadata-server-has-no-room": "El servidor de metadades no té lloc per a noves instal·lacions ara mateix. HolyArrs torna a preguntar tot sol dins l'hora.",
+	"server.metadata.the-metadata-server-is-busy-right": "El servidor de metadades està ocupat ara mateix. HolyArrs torna a preguntar tot sol d'aquí a un moment.",
+	"server.metadata.the-metadata-server-is-not-signing": "El servidor de metadades no registra més instal·lacions des d'aquesta adreça ara mateix. HolyArrs torna a preguntar tot sol; conserva la carpeta /config entre reinicis perquè aquesta instal·lació mantingui el registre.",
+	"server.metadata.this-address-sent-the-metadata-server": "Aquesta adreça ha enviat massa sol·licituds al servidor de metadades. HolyArrs espera i torna a preguntar tot sol.",
+	"server.metadata.this-install-sent-the-metadata-server": "Aquesta instal·lació ha enviat massa sol·licituds al servidor de metadades. HolyArrs espera i torna a preguntar tot sol."
 }

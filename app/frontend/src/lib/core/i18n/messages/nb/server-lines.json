@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "Utgivelsesgrensen hoppes over: denne filmen regnes ikke som ute ennå",
 	"server.sources.this-version-already-has-a-good": "Denne versjonen har allerede en bra nok kopi. Den nye erstatter den",
 	"server.requests.removed-the-request-for": "{name} fjernet forespørselen om {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex ga ingen kontokode for denne personen, så ønskelisten hens blir ikke lest."
+	"server.requests.plex-gave-no-account-code-for": "Plex ga ingen kontokode for denne personen, så ønskelisten hens blir ikke lest.",
+	"server.metadata.the-metadata-server-has-no-room": "Metadataserveren har ikke plass til nye installasjoner akkurat nå. HolyArrs spør igjen av seg selv innen en time.",
+	"server.metadata.the-metadata-server-is-busy-right": "Metadataserveren er opptatt akkurat nå. HolyArrs spør igjen av seg selv om et øyeblikk.",
+	"server.metadata.the-metadata-server-is-not-signing": "Metadataserveren registrerer ikke flere installasjoner fra denne adressen akkurat nå. HolyArrs spør igjen av seg selv; behold mappen /config mellom omstarter så installasjonen beholder registreringen sin.",
+	"server.metadata.this-address-sent-the-metadata-server": "Denne adressen sendte for mange forespørsler til metadataserveren. HolyArrs venter og spør igjen av seg selv.",
+	"server.metadata.this-install-sent-the-metadata-server": "Denne installasjonen sendte for mange forespørsler til metadataserveren. HolyArrs venter og spør igjen av seg selv."
 }

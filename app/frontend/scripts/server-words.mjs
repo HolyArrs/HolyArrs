@@ -26,6 +26,12 @@ const handLines = { 'Because you have {name}': 'suggest', 'No Downloader has con
 	'{name} restarted the stage {stage}': 'accounts', 'Download removed': 'downloads', 'Download removed by {name}': 'downloads',
 	// metadata.ErrServiceSlow, answered through library.ServiceError.
 	'The metadata server is slow right now. This comes back on its own.': 'metadata',
+	// metadata.BusyLine: the server's reason for asking HolyArrs to wait, answered by discover.Fail and library.ServiceError.
+	'The metadata server is not signing up more installs from this address right now. HolyArrs asks again on its own; keep the /config folder between restarts so this install keeps its sign-up.': 'metadata',
+	'The metadata server has no room for new installs right now. HolyArrs asks again on its own within the hour.': 'metadata',
+	'This address sent the metadata server too many requests. HolyArrs waits and asks again on its own.': 'metadata',
+	'This install sent the metadata server too many requests. HolyArrs waits and asks again on its own.': 'metadata',
+	'The metadata server is busy right now. HolyArrs asks again on its own in a moment.': 'metadata',
 	// requests.ErrNotAddedSlow, answered when an approval could not add its title.
 	'The metadata server did not answer in time. It is back in Waiting; approve it again.': 'requests',
 	// importer.PlaceError, the refusal of a folder Import by hand may not read.

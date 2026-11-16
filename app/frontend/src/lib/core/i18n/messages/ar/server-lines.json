@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "يُتخطى شرط الصدور: هذا الفيلم لا يُعد صادرًا بعد",
 	"server.sources.this-version-already-has-a-good": "لهذه النسخة نسخة كافية الجودة بالفعل؛ وستحل الجديدة محلها",
 	"server.requests.removed-the-request-for": "أزال {name} الطلب على {a}",
-	"server.requests.plex-gave-no-account-code-for": "لم يعطِ Plex رمز حساب لهذا الشخص، لذا لا تتم قراءة قائمة المشاهدة الخاصة به."
+	"server.requests.plex-gave-no-account-code-for": "لم يعطِ Plex رمز حساب لهذا الشخص، لذا لا تتم قراءة قائمة المشاهدة الخاصة به.",
+	"server.metadata.the-metadata-server-has-no-room": "لا يتسع خادم البيانات الوصفية لتثبيتات جديدة الآن. سيسأل HolyArrs مجددًا من تلقاء نفسه خلال ساعة.",
+	"server.metadata.the-metadata-server-is-busy-right": "خادم البيانات الوصفية مشغول الآن. سيسأل HolyArrs مجددًا من تلقاء نفسه بعد قليل.",
+	"server.metadata.the-metadata-server-is-not-signing": "لا يسجّل خادم البيانات الوصفية المزيد من التثبيتات من هذا العنوان الآن. سيسأل HolyArrs مجددًا من تلقاء نفسه؛ احتفظ بمجلد /config بين عمليات إعادة التشغيل كي يحتفظ هذا التثبيت بتسجيله.",
+	"server.metadata.this-address-sent-the-metadata-server": "أرسل هذا العنوان طلبات كثيرة جدًا إلى خادم البيانات الوصفية. ينتظر HolyArrs ثم يسأل مجددًا من تلقاء نفسه.",
+	"server.metadata.this-install-sent-the-metadata-server": "أرسل هذا التثبيت طلبات كثيرة جدًا إلى خادم البيانات الوصفية. ينتظر HolyArrs ثم يسأل مجددًا من تلقاء نفسه."
 }

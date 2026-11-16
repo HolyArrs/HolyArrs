@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "Pragul de lansare e sărit: acest film nu se consideră încă apărut",
 	"server.sources.this-version-already-has-a-good": "Această Versiune are deja o copie suficient de bună; cea nouă o va înlocui",
 	"server.requests.removed-the-request-for": "{name} a eliminat cererea pentru {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nu a dat niciun cod de cont pentru această persoană, așa că lista ei de vizionare nu este citită."
+	"server.requests.plex-gave-no-account-code-for": "Plex nu a dat niciun cod de cont pentru această persoană, așa că lista ei de vizionare nu este citită.",
+	"server.metadata.the-metadata-server-has-no-room": "Serverul de metadate nu are loc pentru instalări noi acum. HolyArrs întreabă din nou singur în decurs de o oră.",
+	"server.metadata.the-metadata-server-is-busy-right": "Serverul de metadate este ocupat acum. HolyArrs întreabă din nou singur peste puțin timp.",
+	"server.metadata.the-metadata-server-is-not-signing": "Serverul de metadate nu mai înregistrează instalări de la această adresă acum. HolyArrs întreabă din nou singur; păstrează dosarul /config între reporniri ca această instalare să își păstreze înregistrarea.",
+	"server.metadata.this-address-sent-the-metadata-server": "Această adresă a trimis prea multe cereri serverului de metadate. HolyArrs așteaptă și întreabă din nou singur.",
+	"server.metadata.this-install-sent-the-metadata-server": "Această instalare a trimis prea multe cereri serverului de metadate. HolyArrs așteaptă și întreabă din nou singur."
 }

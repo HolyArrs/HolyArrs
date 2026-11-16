@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "已跳过发行门槛：这部电影还不算已上映",
 	"server.sources.this-version-already-has-a-good": "这个版本已有足够好的副本；新的会替换它",
 	"server.requests.removed-the-request-for": "{name} 移除了 {a} 的请求",
-	"server.requests.plex-gave-no-account-code-for": "Plex 没有提供此人的账户代码，因此不会读取其待看清单。"
+	"server.requests.plex-gave-no-account-code-for": "Plex 没有提供此人的账户代码，因此不会读取其待看清单。",
+	"server.metadata.the-metadata-server-has-no-room": "元数据服务器目前没有空位接受新的安装。HolyArrs 会在一小时内自动重新请求。",
+	"server.metadata.the-metadata-server-is-busy-right": "元数据服务器目前繁忙。HolyArrs 稍后会自动重新请求。",
+	"server.metadata.the-metadata-server-is-not-signing": "元数据服务器目前不再为此地址注册更多安装。HolyArrs 会自动重新请求；请在重启之间保留 /config 文件夹，让此安装保留其注册。",
+	"server.metadata.this-address-sent-the-metadata-server": "此地址向元数据服务器发送了太多请求。HolyArrs 会等待并自动重新请求。",
+	"server.metadata.this-install-sent-the-metadata-server": "此安装向元数据服务器发送了太多请求。HolyArrs 会等待并自动重新请求。"
 }

@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "Prah vydania sa preskočí: tento film sa ešte nepočíta ako vydaný",
 	"server.sources.this-version-already-has-a-good": "Táto Verzia už má dostatočnú kópiu; nová ju nahradí",
 	"server.requests.removed-the-request-for": "{name} odstránil(a) žiadosť o {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex pre túto osobu nedal kód účtu, preto sa jej zoznam na pozretie nečíta."
+	"server.requests.plex-gave-no-account-code-for": "Plex pre túto osobu nedal kód účtu, preto sa jej zoznam na pozretie nečíta.",
+	"server.metadata.the-metadata-server-has-no-room": "Server metadát teraz nemá miesto pre nové inštalácie. HolyArrs sa sám opýta znova do hodiny.",
+	"server.metadata.the-metadata-server-is-busy-right": "Server metadát je teraz vyťažený. HolyArrs sa sám o chvíľu opýta znova.",
+	"server.metadata.the-metadata-server-is-not-signing": "Server metadát teraz neregistruje ďalšie inštalácie z tejto adresy. HolyArrs sa sám opýta znova; ponechajte priečinok /config medzi reštartmi, aby si táto inštalácia zachovala registráciu.",
+	"server.metadata.this-address-sent-the-metadata-server": "Táto adresa poslala serveru metadát príliš veľa požiadaviek. HolyArrs počká a sám sa opýta znova.",
+	"server.metadata.this-install-sent-the-metadata-server": "Táto inštalácia poslala serveru metadát príliš veľa požiadaviek. HolyArrs počká a sám sa opýta znova."
 }

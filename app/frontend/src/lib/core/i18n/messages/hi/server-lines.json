@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "रिलीज़ गेट छोड़ा गया: यह फ़िल्म अभी रिलीज़ नहीं मानी जाती",
 	"server.sources.this-version-already-has-a-good": "इस वर्ज़न की काफ़ी अच्छी कॉपी पहले से है; नई कॉपी उसकी जगह ले लेगी",
 	"server.requests.removed-the-request-for": "{name} ने {a} का अनुरोध हटाया",
-	"server.requests.plex-gave-no-account-code-for": "Plex ने इस व्यक्ति के लिए खाता कोड नहीं दिया, इसलिए उनकी वॉचलिस्ट नहीं पढ़ी जा रही है।"
+	"server.requests.plex-gave-no-account-code-for": "Plex ने इस व्यक्ति के लिए खाता कोड नहीं दिया, इसलिए उनकी वॉचलिस्ट नहीं पढ़ी जा रही है।",
+	"server.metadata.the-metadata-server-has-no-room": "मेटाडेटा सर्वर में अभी नए इंस्टॉल के लिए जगह नहीं है। HolyArrs एक घंटे के भीतर अपने आप फिर से पूछेगा।",
+	"server.metadata.the-metadata-server-is-busy-right": "मेटाडेटा सर्वर अभी व्यस्त है। HolyArrs थोड़ी देर में अपने आप फिर से पूछेगा।",
+	"server.metadata.the-metadata-server-is-not-signing": "मेटाडेटा सर्वर अभी इस पते से और इंस्टॉल रजिस्टर नहीं कर रहा है। HolyArrs अपने आप फिर से पूछेगा; रीस्टार्ट के बीच /config फ़ोल्डर रखें ताकि यह इंस्टॉल अपना रजिस्ट्रेशन बनाए रखे।",
+	"server.metadata.this-address-sent-the-metadata-server": "इस पते ने मेटाडेटा सर्वर को बहुत ज़्यादा अनुरोध भेजे। HolyArrs इंतज़ार करता है और अपने आप फिर से पूछता है।",
+	"server.metadata.this-install-sent-the-metadata-server": "इस इंस्टॉल ने मेटाडेटा सर्वर को बहुत ज़्यादा अनुरोध भेजे। HolyArrs इंतज़ार करता है और अपने आप फिर से पूछता है।"
 }

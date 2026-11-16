@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "Праг изласка се прескаче: овај филм се још не рачуна као изашао",
 	"server.sources.this-version-already-has-a-good": "Ова Верзија већ има довољно добру копију; нова ће је заменити",
 	"server.requests.removed-the-request-for": "{name} je uklonio/la zahtev za {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru naloga za ovu osobu, pa se njena lista za gledanje ne čita."
+	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru naloga za ovu osobu, pa se njena lista za gledanje ne čita.",
+	"server.metadata.the-metadata-server-has-no-room": "Сервер метаподатака тренутно нема места за нове инсталације. HolyArrs ће сам поново питати у року од сат времена.",
+	"server.metadata.the-metadata-server-is-busy-right": "Сервер метаподатака је тренутно заузет. HolyArrs ће сам поново питати за тренутак.",
+	"server.metadata.the-metadata-server-is-not-signing": "Сервер метаподатака тренутно не региструје још инсталација са ове адресе. HolyArrs ће сам поново питати; чувајте фасциклу /config између поновних покретања да би ова инсталација задржала регистрацију.",
+	"server.metadata.this-address-sent-the-metadata-server": "Ова адреса је послала превише захтева серверу метаподатака. HolyArrs чека и сам поново пита.",
+	"server.metadata.this-install-sent-the-metadata-server": "Ова инсталација је послала превише захтева серверу метаподатака. HolyArrs чека и сам поново пита."
 }

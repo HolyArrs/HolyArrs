@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "Die Veröffentlichungsschwelle wird übersprungen: Dieser Film gilt noch nicht als erschienen",
 	"server.sources.this-version-already-has-a-good": "Diese Variante hat schon eine gut genügende Kopie; die neue ersetzt sie",
 	"server.requests.removed-the-request-for": "{name} hat die Anfrage für {a} entfernt",
-	"server.requests.plex-gave-no-account-code-for": "Plex hat für diese Person keinen Kontocode geliefert, deshalb wird ihre Merkliste nicht gelesen."
+	"server.requests.plex-gave-no-account-code-for": "Plex hat für diese Person keinen Kontocode geliefert, deshalb wird ihre Merkliste nicht gelesen.",
+	"server.metadata.the-metadata-server-has-no-room": "Der Metadaten-Server hat gerade keinen Platz für neue Installationen. HolyArrs fragt innerhalb der Stunde von selbst erneut.",
+	"server.metadata.the-metadata-server-is-busy-right": "Der Metadaten-Server ist gerade ausgelastet. HolyArrs fragt gleich von selbst erneut.",
+	"server.metadata.the-metadata-server-is-not-signing": "Der Metadaten-Server meldet gerade keine weiteren Installationen von dieser Adresse an. HolyArrs fragt von selbst erneut; behalte den Ordner /config zwischen Neustarts, damit diese Installation ihre Anmeldung behält.",
+	"server.metadata.this-address-sent-the-metadata-server": "Diese Adresse hat zu viele Anfragen an den Metadaten-Server gesendet. HolyArrs wartet und fragt von selbst erneut.",
+	"server.metadata.this-install-sent-the-metadata-server": "Diese Installation hat zu viele Anfragen an den Metadaten-Server gesendet. HolyArrs wartet und fragt von selbst erneut."
 }

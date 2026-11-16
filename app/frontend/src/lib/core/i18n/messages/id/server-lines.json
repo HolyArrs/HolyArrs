@@ -1343,5 +1343,10 @@
 	"server.sources.the-release-gate-is-skipped-this": "Batas rilis dilewati: film ini belum dianggap rilis",
 	"server.sources.this-version-already-has-a-good": "Versi ini sudah punya salinan yang cukup baik; yang baru akan menggantikannya",
 	"server.requests.removed-the-request-for": "{name} menghapus permintaan untuk {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kode akun untuk orang ini, jadi daftar tontonannya tidak dibaca."
+	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kode akun untuk orang ini, jadi daftar tontonannya tidak dibaca.",
+	"server.metadata.the-metadata-server-has-no-room": "Server metadata sedang tidak punya ruang untuk instalasi baru. HolyArrs akan bertanya lagi sendiri dalam satu jam.",
+	"server.metadata.the-metadata-server-is-busy-right": "Server metadata sedang sibuk. HolyArrs akan bertanya lagi sendiri sebentar lagi.",
+	"server.metadata.the-metadata-server-is-not-signing": "Server metadata sedang tidak mendaftarkan instalasi lagi dari alamat ini. HolyArrs akan bertanya lagi sendiri; simpan folder /config di antara restart agar instalasi ini tetap terdaftar.",
+	"server.metadata.this-address-sent-the-metadata-server": "Alamat ini mengirim terlalu banyak permintaan ke server metadata. HolyArrs menunggu lalu bertanya lagi sendiri.",
+	"server.metadata.this-install-sent-the-metadata-server": "Instalasi ini mengirim terlalu banyak permintaan ke server metadata. HolyArrs menunggu lalu bertanya lagi sendiri."
 }
