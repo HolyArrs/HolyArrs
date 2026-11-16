@@ -270,7 +270,7 @@
 							{#if f.kind === 'video' || p || f.guess.title_id || f.guess.reason}
 								<div class="match">
 									<b class="small">{pickLine(p)}</b>
-									{#if p && f.guess.title_id === p.title_id && f.guess.confidence > 0 && f.guess.confidence < 1}<Badge label={f.guess.confidence >= 0.7 ? tr('library.byHand.likely') : tr('library.byHand.guess')} />{/if}
+									{#if p && f.guess.title_id === p.title_id && (p.title_kind !== 'artist' || p.slot_id === f.guess.slot_id) && f.guess.confidence > 0 && f.guess.confidence < 1}<Badge label={f.guess.confidence >= 0.7 ? tr('library.byHand.likely') : tr('library.byHand.guess')} />{/if}
 									{#if !f.in_library && editFor !== f.path}<Button variant="plain" size="sm" onclick={() => openEditor(f)} disabled={importing}>{tr('shows.versions.change')}</Button>{/if}
 								</div>
 							{/if}
@@ -280,7 +280,7 @@
 									<span class="small">{tr('mediafiles.byHand.replace')}</span>
 								</label>
 							{/if}
-							{#if why}<p class="xs muted">{why}</p>{:else if f.note}<p class="xs muted">{f.note}</p>{/if}
+							{#if why && done?.outcome !== 'placed'}<p class="xs muted">{why}</p>{:else if f.note}<p class="xs muted">{f.note}</p>{/if}
 							{#if done}
 								<p class="xs" class:ok-text={done.outcome === 'placed'} class:bad-text={done.outcome !== 'placed'} role="status">
 									{resultLine(done)}{#if done.title_id && done.outcome === 'placed'}{' · '}<a href={to(`/library/${done.title_id}`)}>{tr('mediafiles.poster.open')}</a>{/if}
