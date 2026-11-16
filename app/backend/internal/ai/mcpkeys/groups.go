@@ -30,23 +30,24 @@ var All = []Group{See, Add, Control, Settings, Delete, Admin}
 
 // overrides pin single routes whose path alone says the wrong thing.
 var overrides = map[string]Group{
-	"GET /api/v1/auth/me":                  See,
-	"POST /api/v1/explore/counts":          See, // a read sent as POST
-	"POST /api/v1/explore/strip/counts":    See,
-	"POST /api/v1/live/interest":           See,
-	"POST /api/v1/messages/read":           See,
-	"POST /api/v1/settings/naming/example": See,
-	"GET /mcp":                             See, // the AI route itself; tools are checked one by one
-	"POST /mcp":                            See,
-	"GET /api/v1/mcp":                      See,
-	"POST /api/v1/mcp":                     See,
-	"GET /healthz":                         See,
-	"HEAD /healthz":                        See,
-	"GET /readyz":                          See,
-	"HEAD /readyz":                         See,
-	"POST /api/v1/downloaders":             Settings, // adding a download app is setup
-	"PUT /api/v1/downloaders/{id}":         Settings,
-	"POST /api/v1/downloaders/{id}/test":   Settings,
+	"GET /api/v1/auth/me":                          See,
+	"POST /api/v1/explore/counts":                  See, // a read sent as POST
+	"POST /api/v1/explore/strip/counts":            See,
+	"POST /api/v1/live/interest":                   See,
+	"POST /api/v1/messages/read":                   See,
+	"POST /api/v1/settings/naming/example":         See,
+	"POST /api/v1/collections/{id}/remove/preview": See, // shows what a removal would do; changes nothing
+	"GET /mcp":                           See, // the AI route itself; tools are checked one by one
+	"POST /mcp":                          See,
+	"GET /api/v1/mcp":                    See,
+	"POST /api/v1/mcp":                   See,
+	"GET /healthz":                       See,
+	"HEAD /healthz":                      See,
+	"GET /readyz":                        See,
+	"HEAD /readyz":                       See,
+	"POST /api/v1/downloaders":           Settings, // adding a download app is setup
+	"PUT /api/v1/downloaders/{id}":       Settings,
+	"POST /api/v1/downloaders/{id}/test": Settings,
 }
 
 // roots are the first path words the app serves. Anything else is unknown.
@@ -106,14 +107,17 @@ func GroupFor(method, pattern string) (Group, bool) {
 	switch method {
 	case http.MethodGet, http.MethodHead:
 		read = true
-	case http.MethodDelete:
-		return Delete, true
-	case http.MethodPost, http.MethodPut, http.MethodPatch:
+	case http.MethodDelete, http.MethodPost, http.MethodPut, http.MethodPatch:
 	default:
 		return "", false
 	}
+	// Every verb on an admin route is Admin, deletes included: a key with
+	// only Delete ticked must never remove people or keys.
 	if hasPrefix(pattern, adminPrefixes) {
 		return Admin, true
+	}
+	if method == http.MethodDelete {
+		return Delete, true
 	}
 	if read {
 		// Settings answers can carry addresses and keys.

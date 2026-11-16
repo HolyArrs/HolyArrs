@@ -1,13 +1,17 @@
 package mcpkeys
 
 import (
+	"flag"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 )
+
+var update = flag.Bool("update", false, "rewrite testdata/route-groups.txt")
 
 var registration = regexp.MustCompile(`Handle(?:Func)?\("([A-Z]+ /[^"]*)"`)
 
@@ -52,6 +56,7 @@ func appRoutes(t *testing.T) []string {
 // TestEveryRouteHasAGroup keeps new routes from slipping past the tick boxes.
 func TestEveryRouteHasAGroup(t *testing.T) {
 	counts := map[Group]int{}
+	var lines []string
 	for _, r := range appRoutes(t) {
 		method, _, _ := strings.Cut(r, " ")
 		g, ok := GroupFor(method, r)
@@ -60,6 +65,7 @@ func TestEveryRouteHasAGroup(t *testing.T) {
 			continue
 		}
 		counts[g]++
+		lines = append(lines, r+" "+string(g))
 		if !Allows(Set{g}, method, r) || (g != See && Allows(Set{See}, method, r)) {
 			t.Errorf("%s: Allows disagrees with group %s", r, g)
 		}
@@ -70,6 +76,40 @@ func TestEveryRouteHasAGroup(t *testing.T) {
 		}
 	}
 	t.Logf("routes per group: %v", counts)
+	slices.Sort(lines)
+	compareSnapshot(t, lines)
+}
+
+// compareSnapshot pins every route's group in testdata/route-groups.txt, so a
+// new or regrouped route is a reviewed change, never a silent one.
+func compareSnapshot(t *testing.T, got []string) {
+	t.Helper()
+	path := filepath.Join("testdata", "route-groups.txt")
+	if *update {
+		if err := os.MkdirAll("testdata", 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(strings.Join(got, "\n")+"\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
+	want, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantLines := strings.Split(strings.TrimRight(strings.ReplaceAll(string(want), "\r\n", "\n"), "\n"), "\n")
+	const hint = "review the route's group in groups.go, then run go test ./internal/ai/mcpkeys/ -run TestEveryRouteHasAGroup -update"
+	for _, l := range wantLines {
+		if !slices.Contains(got, l) {
+			t.Errorf("route-groups.txt: removed or changed: %s (%s)", l, hint)
+		}
+	}
+	for _, l := range got {
+		if !slices.Contains(wantLines, l) {
+			t.Errorf("route-groups.txt: new or changed: %s (%s)", l, hint)
+		}
+	}
 }
 
 func TestGroupFor(t *testing.T) {
