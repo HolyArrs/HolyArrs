@@ -5,7 +5,9 @@ import (
 	"crypto/ed25519"
 	"encoding/base64"
 	"log"
+	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins"
 )
@@ -45,5 +47,6 @@ func newPluginEngine(c config) *plugins.Engine {
 		}
 		keys = append(keys, ed25519.PublicKey(b))
 	}
-	return &plugins.Engine{Dir: filepath.Join(c.ConfigDir, "plugins"), ListURL: c.PluginListURL, Keys: keys, Runner: run, Limits: limits}
+	return &plugins.Engine{Dir: filepath.Join(c.ConfigDir, "plugins"), ListURL: c.PluginListURL, Keys: keys, Runner: run, Limits: limits,
+		HTTP: &http.Client{Timeout: 5 * time.Minute, CheckRedirect: plugins.RedirectGuard(c.PluginListURL)}}
 }

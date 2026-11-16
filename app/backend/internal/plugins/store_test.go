@@ -3,6 +3,7 @@ package plugins
 import (
 	"context"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,6 +34,11 @@ func newFixture(t *testing.T) *fixture {
 		if l.Entries == nil {
 			l.Entries = []Entry{}
 		}
+		for i := range l.Entries {
+			if kind == KindPlugins && l.Entries[i].ManifestSHA256 == "" {
+				l.Entries[i].ManifestSHA256 = fileHash([]byte("start checks never read the manifest"))
+			}
+		}
 		return sign(t, priv, l)
 	}
 	return f
@@ -49,10 +55,11 @@ func (f *fixture) accepted(version string, file []byte) *Accepted {
 	man := manifestJSON(func(m map[string]any) { m["version"] = version; m["sha256"] = fileHash(file) })
 	acc, err := CheckInstall(InstallInput{
 		PublicKey: f.pub,
-		List:      f.sign(KindPlugins, 1, Entry{ID: "tailscale", Version: version, SHA256: fileHash(file)}),
+		List:      f.sign(KindPlugins, 1, Entry{ID: "tailscale", Version: version, SHA256: fileHash(file), ManifestSHA256: fileHash(man)}),
 		Blocklist: f.sign(KindBlocklist, 1),
 		Manifest:  man,
 		File:      strings.NewReader(string(file)),
+		TempDir:   f.t.TempDir(),
 	})
 	if err != nil {
 		f.t.Error(err)
@@ -256,7 +263,8 @@ func TestInterruptedInstallKeepsOldVersion(t *testing.T) {
 	}
 	orig := writeProgram
 	t.Cleanup(func() { writeProgram = orig })
-	writeProgram = func(path string, data []byte) error {
+	writeProgram = func(path string, r io.Reader) error {
+		data, _ := io.ReadAll(r)
 		os.WriteFile(path, data[:len(data)/2], 0o700)
 		return errors.New("disk full")
 	}

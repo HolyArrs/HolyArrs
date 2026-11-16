@@ -16,10 +16,22 @@ type Handlers struct {
 // Routes registers the plugin routes.
 func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/plugins", h.list)
-	m.HandleFunc("POST /api/v1/plugins/{id}/install", h.install)
-	m.HandleFunc("POST /api/v1/plugins/{id}/start", h.start)
-	m.HandleFunc("POST /api/v1/plugins/{id}/stop", h.stop)
-	m.HandleFunc("DELETE /api/v1/plugins/{id}", h.remove)
+	m.HandleFunc("POST /api/v1/plugins/{id}/install", sessionOnly(h.install))
+	m.HandleFunc("POST /api/v1/plugins/{id}/start", sessionOnly(h.start))
+	m.HandleFunc("POST /api/v1/plugins/{id}/stop", sessionOnly(h.stop))
+	m.HandleFunc("DELETE /api/v1/plugins/{id}", sessionOnly(h.remove))
+}
+
+// sessionOnly refuses every API key: an owner's admin key passes the scope
+// gate, but running code on the server stays with the signed-in owner.
+func sessionOnly(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if who, ok := webserver.From(r.Context()); ok && who.KeyID != 0 {
+			webserver.Fail(w, http.StatusForbidden, "plugins are changed only from a signed-in owner session, never with an API key")
+			return
+		}
+		next(w, r)
+	}
 }
 
 func (h *Handlers) ready(w http.ResponseWriter) bool {
@@ -99,7 +111,7 @@ func fail(w http.ResponseWriter, err error) {
 	case errors.Is(err, ErrFetch), errors.Is(err, ErrListSignature), errors.Is(err, ErrListFormat),
 		errors.Is(err, ErrListOlder), errors.Is(err, ErrListKind):
 		webserver.Fail(w, http.StatusBadGateway, err.Error())
-	case errors.Is(err, ErrBlocked), errors.Is(err, ErrNotOnList), errors.Is(err, ErrHashMismatch),
+	case errors.Is(err, ErrBlocked), errors.Is(err, ErrNotOnList), errors.Is(err, ErrHashMismatch), errors.Is(err, ErrManifestHash),
 		errors.Is(err, ErrManifest), errors.Is(err, ErrStaleBlock), errors.Is(err, ErrFileTooLarge),
 		errors.Is(err, ErrTampered), errors.Is(err, ErrDisabled), errors.Is(err, ErrCounterOlder):
 		webserver.Fail(w, http.StatusUnprocessableEntity, err.Error())

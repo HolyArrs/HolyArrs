@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins/pluginstest"
 )
@@ -31,6 +33,8 @@ type listServer struct {
 	block    []byte
 	manifest []byte
 	file     []byte
+	version  string
+	redirect string // when set, plugins.json redirects here
 }
 
 var pluginFile = []byte("plugin program bytes")
@@ -41,29 +45,34 @@ func newListServer(t *testing.T) (*listServer, ed25519.PublicKey) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ls := &listServer{t: t, priv: priv, file: pluginFile}
+	ls := &listServer{t: t, priv: priv, file: pluginFile, version: "1.0.0"}
 	sum := sha256.Sum256(pluginFile)
 	sha := hex.EncodeToString(sum[:])
 	zero := uint64(0)
-	ls.list = ls.sign(plugins.List{Kind: plugins.KindPlugins, Counter: 1, MinBlocklistCounter: &zero,
-		Entries: []plugins.Entry{{ID: "tailscale", Version: "1.0.0", SHA256: sha}}})
 	ls.block = ls.sign(plugins.List{Kind: plugins.KindBlocklist, Counter: 1, Entries: []plugins.Entry{}})
 	ls.manifest, _ = json.Marshal(map[string]any{
 		"id": "tailscale", "name": "Tailscale", "version": "1.0.0", "author": "HolyArrs",
 		"access":          map[string]any{"hosts": []string{"controlplane.tailscale.com"}, "folders": []string{}, "actions": []string{}},
 		"min_app_version": "1.0.0", "sha256": sha,
 	})
+	ls.list = ls.sign(plugins.List{Kind: plugins.KindPlugins, Counter: 1, MinBlocklistCounter: &zero,
+		Entries: []plugins.Entry{{ID: "tailscale", Version: "1.0.0", SHA256: sha, ManifestSHA256: hashOf(ls.manifest)}}})
 	ls.srv = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ls.mu.Lock()
 		defer ls.mu.Unlock()
+		base := "/list/plugins/tailscale/" + ls.version
 		switch r.URL.Path {
 		case "/list/plugins.json":
+			if ls.redirect != "" {
+				http.Redirect(w, r, ls.redirect, http.StatusFound)
+				return
+			}
 			w.Write(ls.list)
 		case "/list/blocklist.json":
 			w.Write(ls.block)
-		case "/list/plugins/tailscale/1.0.0/manifest.json":
+		case base + "/manifest.json":
 			w.Write(ls.manifest)
-		case "/list/plugins/tailscale/1.0.0/plugin":
+		case base + "/plugin":
 			w.Write(ls.file)
 		default:
 			http.NotFound(w, r)
@@ -71,6 +80,11 @@ func newListServer(t *testing.T) (*listServer, ed25519.PublicKey) {
 	}))
 	t.Cleanup(ls.srv.Close)
 	return ls, pub
+}
+
+func hashOf(b []byte) string {
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])
 }
 
 func (ls *listServer) sign(l plugins.List) []byte {
@@ -301,4 +315,122 @@ func TestBlocklistCheckStopsAndDisables(t *testing.T) {
 	}
 	// Starting it again is refused and it stays disabled.
 	call(t, mux(e), "POST", "/api/v1/plugins/tailscale/start", http.StatusUnprocessableEntity)
+}
+
+// publish serves a new signed version of tailscale with list counter n.
+func (ls *listServer) publish(version string, file []byte, n uint64) {
+	ls.mu.Lock()
+	defer ls.mu.Unlock()
+	sha := hashOf(file)
+	ls.version, ls.file = version, file
+	ls.manifest, _ = json.Marshal(map[string]any{
+		"id": "tailscale", "name": "Tailscale", "version": version, "author": "HolyArrs",
+		"access":          map[string]any{"hosts": []string{}, "folders": []string{}, "actions": []string{}},
+		"min_app_version": "1.0.0", "sha256": sha,
+	})
+	zero := uint64(0)
+	ls.list = ls.sign(plugins.List{Kind: plugins.KindPlugins, Counter: n, MinBlocklistCounter: &zero,
+		Entries: []plugins.Entry{{ID: "tailscale", Version: version, SHA256: sha, ManifestSHA256: hashOf(ls.manifest)}}})
+}
+
+func TestInstallRefusesTamperedManifest(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, run := newEngine(t, ls, pub)
+	ls.mu.Lock()
+	var m map[string]any
+	_ = json.Unmarshal(ls.manifest, &m)
+	m["access"] = map[string]any{"hosts": []string{"evil.example"}, "folders": []string{}, "actions": []string{}}
+	ls.manifest, _ = json.Marshal(m) // program hash still matches
+	ls.mu.Unlock()
+	out := call(t, mux(e), "POST", "/api/v1/plugins/tailscale/install", http.StatusUnprocessableEntity)
+	if !strings.Contains(out["error"].(string), "manifest") || len(run.Starts) != 0 {
+		t.Fatalf("tampered manifest: %v, starts %d", out, len(run.Starts))
+	}
+}
+
+func TestInstallRefusesRedirectToHTTP(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, _ := newEngine(t, ls, pub)
+	ls.redirect = "http://" + strings.TrimPrefix(ls.srv.URL, "https://") + "/list/plugins.json"
+	out := call(t, mux(e), "POST", "/api/v1/plugins/tailscale/install", http.StatusBadGateway)
+	if !strings.Contains(out["error"].(string), "redirect") {
+		t.Fatalf("error = %v", out["error"])
+	}
+	ls.redirect = "https://other.example/list/plugins.json"
+	out = call(t, mux(e), "POST", "/api/v1/plugins/tailscale/install", http.StatusBadGateway)
+	if !strings.Contains(out["error"].(string), "redirect") {
+		t.Fatalf("other host: error = %v", out["error"])
+	}
+}
+
+func TestConcurrentStartDuringInstallRunsNewVersion(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, run := newEngine(t, ls, pub)
+	if _, err := e.Install(context.Background(), "tailscale"); err != nil {
+		t.Fatal(err)
+	}
+	two := []byte("plugin program bytes, version two")
+	ls.publish("1.1.0", two, 2)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if _, err := e.Install(context.Background(), "tailscale"); err != nil {
+			t.Error(err)
+		}
+	}()
+	for i := 0; i < 20; i++ {
+		wg.Add(1)
+		go func() { defer wg.Done(); _ = e.Start(context.Background(), "tailscale") }()
+	}
+	wg.Wait()
+	last := run.Starts[len(run.Starts)-1]
+	if !strings.Contains(last.Program, "1.1.0-") {
+		t.Fatalf("running %s, want version 1.1.0", last.Program)
+	}
+	p := row(t, call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
+	if p["installed_version"] != "1.1.0" || p["running"] != true {
+		t.Fatalf("after install: %v", p)
+	}
+}
+
+func TestFailedStartDisables(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, run := newEngine(t, ls, pub)
+	m := mux(e)
+	call(t, m, "POST", "/api/v1/plugins/tailscale/install", http.StatusOK)
+	ov := call(t, m, "GET", "/api/v1/plugins", http.StatusOK)
+	if ov["blocklist_checked_at"] == nil || ov["blocklist_stale"] != false {
+		t.Fatalf("blocklist check time: %v", ov)
+	}
+	call(t, m, "POST", "/api/v1/plugins/tailscale/stop", http.StatusOK)
+	run.Err = errors.New("sandbox refused")
+	if err := e.Start(context.Background(), "tailscale"); err == nil {
+		t.Fatal("start succeeded")
+	}
+	p := row(t, call(t, m, "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
+	if p["enabled"] != false || !strings.Contains(p["disabled_reason"].(string), "sandbox refused") {
+		t.Fatalf("after failed start: %v", p)
+	}
+}
+
+func TestPluginWritesRefuseAPIKeys(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, run := newEngine(t, ls, pub)
+	m := mux(e)
+	for _, r := range []struct{ method, path string }{
+		{"POST", "/api/v1/plugins/tailscale/install"}, {"POST", "/api/v1/plugins/tailscale/start"},
+		{"POST", "/api/v1/plugins/tailscale/stop"}, {"DELETE", "/api/v1/plugins/tailscale"},
+	} {
+		req := httptest.NewRequest(r.method, r.path, nil)
+		req = req.WithContext(webserver.ContextWith(req.Context(), webserver.Caller{KeyID: 7, Scopes: []string{webserver.ScopeAdmin}}))
+		rec := httptest.NewRecorder()
+		m.ServeHTTP(rec, req)
+		if rec.Code != http.StatusForbidden {
+			t.Fatalf("%s %s with an admin key = %d %s", r.method, r.path, rec.Code, rec.Body)
+		}
+	}
+	if len(run.Starts) != 0 {
+		t.Fatal("installed with an API key")
+	}
 }

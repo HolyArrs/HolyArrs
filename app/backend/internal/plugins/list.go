@@ -46,6 +46,9 @@ type Entry struct {
 	ID      string `json:"id"`
 	Version string `json:"version"`
 	SHA256  string `json:"sha256"`
+	// ManifestSHA256 is the hash of the manifest file's bytes; required on
+	// the plugin list, so the manifest is signed through the list.
+	ManifestSHA256 string `json:"manifest_sha256,omitempty"`
 }
 
 // VerifyList checks the signature with pub, the kind, and that the counter is
@@ -89,14 +92,14 @@ func VerifyList(pub ed25519.PublicKey, data []byte, kind string, lastCounter uin
 		return nil, fmt.Errorf("%w: missing min_blocklist_counter", ErrListFormat)
 	}
 	for i, e := range l.Entries {
-		if kind == KindPlugins && (e.ID == "" || e.Version == "" || e.SHA256 == "") {
+		if kind == KindPlugins && (e.ID == "" || e.Version == "" || e.SHA256 == "" || e.ManifestSHA256 == "") {
 			return nil, fmt.Errorf("%w: entry %d is incomplete", ErrListFormat, i)
 		}
 		if e.ID == "" && e.SHA256 == "" {
 			return nil, fmt.Errorf("%w: entry %d needs an id or a hash", ErrListFormat, i)
 		}
 		if (e.ID != "" && !idRe.MatchString(e.ID)) || (e.Version != "" && !semverRe.MatchString(e.Version)) ||
-			(e.SHA256 != "" && !validSHA256(e.SHA256)) {
+			(e.SHA256 != "" && !validSHA256(e.SHA256)) || (e.ManifestSHA256 != "" && !validSHA256(e.ManifestSHA256)) {
 			return nil, fmt.Errorf("%w: entry %d has a bad id, version or hash", ErrListFormat, i)
 		}
 	}

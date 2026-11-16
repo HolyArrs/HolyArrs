@@ -38,6 +38,10 @@ const maxListSize = 4 << 20
 // DefaultBlockEvery is how often the blocklist is checked.
 const DefaultBlockEvery = 6 * time.Hour
 
+// blockStaleAfter is when the list shows the blocklist check as stale. It
+// only warns: signatures never expire and nothing is stopped for it.
+const blockStaleAfter = 7 * 24 * time.Hour
+
 // Engine installs, starts and stops plugins. Nothing runs before the first
 // install: with no plugin installed, start-up and the blocklist check do
 // nothing.
@@ -64,11 +68,17 @@ type Engine struct {
 	store   *Store
 	mu      sync.Mutex // guards procs and the cache files
 	procs   map[string]Process
+	// opMu covers a whole install, start, stop or remove of a plugin, so a
+	// start never slips in between an install's stop and its start.
+	opMu sync.Mutex
+	// installing lets one install download and check at a time.
+	installing chan struct{}
 }
 
 func (e *Engine) init() error {
 	e.once.Do(func() {
 		e.procs = map[string]Process{}
+		e.installing = make(chan struct{}, 1)
 		e.store, e.initErr = NewStore(e.Dir)
 	})
 	return e.initErr
@@ -89,6 +99,12 @@ type Plugin struct {
 // Overview is the answer of the plugin list route.
 type Overview struct {
 	KeySet  bool         `json:"key_set"`
+	// BlocklistCheckedAt is when the blocklist last verified; null before
+	// the first check.
+	BlocklistCheckedAt *time.Time `json:"blocklist_checked_at"`
+	// BlocklistStale is true when plugins are installed and the last
+	// check is older than 7 days.
+	BlocklistStale bool `json:"blocklist_stale"`
 	CanRun  bool         `json:"can_run"`
 	Limits  ActiveLimits `json:"limits"`
 	Plugins []Plugin     `json:"plugins"`
@@ -105,6 +121,11 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 		return nil, err
 	}
 	ov := &Overview{KeySet: len(e.Keys) > 0, CanRun: e.Runner != nil, Limits: e.Limits, Plugins: []Plugin{}}
+	if !st.BlockCheckedAt.IsZero() {
+		at := st.BlockCheckedAt
+		ov.BlocklistCheckedAt = &at
+	}
+	ov.BlocklistStale = len(st.Plugins) > 0 && time.Since(st.BlockCheckedAt) > blockStaleAfter
 	rows := map[string]*Plugin{}
 	var order []string
 	if raw := e.cachedList(ctx); raw != nil {
@@ -178,6 +199,12 @@ func (e *Engine) Install(ctx context.Context, id string) (*Installed, error) {
 	if !idRe.MatchString(id) {
 		return nil, fmt.Errorf("%w: %s", ErrNotListed, id)
 	}
+	select {
+	case e.installing <- struct{}{}:
+		defer func() { <-e.installing }()
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 	st, err := e.store.Load()
 	if err != nil {
 		return nil, err
@@ -214,26 +241,25 @@ func (e *Engine) Install(ctx context.Context, id string) (*Installed, error) {
 	}
 	defer file.Close()
 	acc, err := CheckInstall(InstallInput{PublicKey: key, List: listRaw, LastListCounter: st.ListCounter,
-		Blocklist: blockRaw, LastBlockCounter: st.BlockCounter, Manifest: manRaw, File: file})
+		Blocklist: blockRaw, LastBlockCounter: st.BlockCounter, Manifest: manRaw, File: file, TempDir: e.Dir})
 	if err != nil {
 		return nil, err
 	}
+	defer acc.Close()
 	if acc.Manifest.ID != id {
 		return nil, fmt.Errorf("%w: manifest names %s", ErrNotListed, acc.Manifest.ID)
 	}
-	e.mu.Lock()
-	if p := e.procs[id]; p != nil {
-		_ = p.Stop()
-		delete(e.procs, id)
+	e.opMu.Lock()
+	defer e.opMu.Unlock()
+	if err := e.stopProc(id); err != nil {
+		return nil, fmt.Errorf("stopping plugin: %w", err)
 	}
-	_ = writeFileSynced(filepath.Join(e.Dir, cacheList), listRaw)
-	_ = writeFileSynced(filepath.Join(e.Dir, cacheBlocklist), blockRaw)
-	e.mu.Unlock()
 	if err := e.store.Install(acc); err != nil {
 		return nil, err
 	}
+	e.writeCache(listRaw, blockRaw, acc.ListCounter, acc.BlockCounter)
 	e.saveManifest(id, manRaw)
-	if err := e.Start(ctx, id); err != nil {
+	if err := e.start(id); err != nil {
 		return nil, err
 	}
 	return e.installed(id)
@@ -247,6 +273,8 @@ func (e *Engine) Start(ctx context.Context, id string) error {
 	if e.Runner == nil {
 		return ErrNotLinux
 	}
+	e.opMu.Lock()
+	defer e.opMu.Unlock()
 	if err := e.store.SetEnabled(id, true, ""); err != nil {
 		return err
 	}
@@ -254,7 +282,8 @@ func (e *Engine) Start(ctx context.Context, id string) error {
 }
 
 // start runs id with the cached lists. The process lives with the app, not
-// with the request that started it.
+// with the request that started it. A failed start disables the plugin with
+// the reason.
 func (e *Engine) start(id string) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -263,10 +292,12 @@ func (e *Engine) start(id string) error {
 	}
 	in, err := e.startInput()
 	if err != nil {
+		_ = e.store.SetEnabled(id, false, err.Error())
 		return err
 	}
 	p, err := e.store.Start(context.Background(), e.Runner, id, in, nil, nil)
 	if err != nil {
+		_ = e.store.SetEnabled(id, false, err.Error())
 		return err
 	}
 	e.procs[id] = p
@@ -289,7 +320,14 @@ func (e *Engine) startInput() (StartInput, error) {
 	if err := errors.Join(err1, err2); err != nil {
 		return StartInput{}, fmt.Errorf("cached plugin lists: %w", err)
 	}
-	_, key, err := e.verify(list, KindPlugins, 0)
+	st, err := e.store.Load()
+	if err != nil {
+		return StartInput{}, err
+	}
+	if _, _, err := e.verify(block, KindBlocklist, st.BlockCounter); err != nil {
+		return StartInput{}, fmt.Errorf("cached blocklist: %w", err)
+	}
+	_, key, err := e.verify(list, KindPlugins, st.ListCounter)
 	if err != nil {
 		key = nil
 		if len(e.Keys) > 0 {
@@ -307,6 +345,8 @@ func (e *Engine) Stop(id string) error {
 	if err := e.init(); err != nil {
 		return err
 	}
+	e.opMu.Lock()
+	defer e.opMu.Unlock()
 	if err := e.stopProc(id); err != nil {
 		return err
 	}
@@ -334,6 +374,8 @@ func (e *Engine) Remove(id string, keep bool) error {
 	if keep {
 		mode = RemoveKeep
 	}
+	e.opMu.Lock()
+	defer e.opMu.Unlock()
 	if _, err := e.installed(id); err != nil {
 		return err
 	}
@@ -402,6 +444,9 @@ func (e *Engine) Run(ctx context.Context) {
 	if every <= 0 {
 		every = DefaultBlockEvery
 	}
+	if err := e.CheckBlocklist(ctx); err != nil {
+		log.Printf("plugins: blocklist check: %v", err)
+	}
 	t := time.NewTicker(every)
 	defer t.Stop()
 	for {
@@ -433,7 +478,7 @@ func (e *Engine) CheckBlocklist(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, key, err := e.verify(listRaw, KindPlugins, st.ListCounter)
+	l, key, err := e.verify(listRaw, KindPlugins, st.ListCounter)
 	if err != nil {
 		return fmt.Errorf("plugin list: %w", err)
 	}
@@ -441,13 +486,14 @@ func (e *Engine) CheckBlocklist(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if _, _, err := e.verify(blockRaw, KindBlocklist, st.BlockCounter); err != nil {
+	block, _, err := e.verify(blockRaw, KindBlocklist, st.BlockCounter)
+	if err != nil {
 		return fmt.Errorf("blocklist: %w", err)
 	}
-	e.mu.Lock()
-	_ = writeFileSynced(filepath.Join(e.Dir, cacheList), listRaw)
-	_ = writeFileSynced(filepath.Join(e.Dir, cacheBlocklist), blockRaw)
-	e.mu.Unlock()
+	if err := e.store.SaveCounters(l.Counter, block.Counter, time.Now()); err != nil {
+		return err
+	}
+	e.writeCache(listRaw, blockRaw, l.Counter, block.Counter)
 	for id, p := range st.Plugins {
 		if !p.Enabled {
 			continue
@@ -460,6 +506,20 @@ func (e *Engine) CheckBlocklist(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+// writeCache writes the cached lists after their counters are stored, and
+// only when they are not older than the stored ones, so a slower check
+// never puts back an older list.
+func (e *Engine) writeCache(listRaw, blockRaw []byte, list, block uint64) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	st, err := e.store.Load()
+	if err != nil || list < st.ListCounter || block < st.BlockCounter {
+		return
+	}
+	_ = writeFileSynced(filepath.Join(e.Dir, cacheList), listRaw)
+	_ = writeFileSynced(filepath.Join(e.Dir, cacheBlocklist), blockRaw)
 }
 
 // verify checks raw with each pinned key and returns the key that signed it.
@@ -545,10 +605,11 @@ func (e *Engine) fetchBody(ctx context.Context, rel string, max int64) (io.ReadC
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrFetch, err)
 	}
-	c := e.HTTP
-	if c == nil {
-		c = &http.Client{Timeout: 5 * time.Minute}
+	c := http.Client{Timeout: 5 * time.Minute}
+	if e.HTTP != nil {
+		c = *e.HTTP
 	}
+	c.CheckRedirect = RedirectGuard(e.ListURL)
 	resp, err := c.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrFetch, err)
@@ -562,6 +623,24 @@ func (e *Engine) fetchBody(ctx context.Context, rel string, max int64) (io.ReadC
 		return nil, fmt.Errorf("%w: %s is too large", ErrFetch, rel)
 	}
 	return resp.Body, nil
+}
+
+// RedirectGuard refuses any redirect that leaves https or the host of
+// listURL. Every list client uses it.
+func RedirectGuard(listURL string) func(*http.Request, []*http.Request) error {
+	host := ""
+	if u, err := url.Parse(listURL); err == nil {
+		host = u.Host
+	}
+	return func(req *http.Request, via []*http.Request) error {
+		if req.URL.Scheme != "https" || req.URL.Host != host {
+			return fmt.Errorf("%w: redirect to %s refused", ErrFetch, req.URL.Redacted())
+		}
+		if len(via) >= 10 {
+			return fmt.Errorf("%w: too many redirects", ErrFetch)
+		}
+		return nil
+	}
 }
 
 // newerVersion compares plain semver cores; a pre-release sorts below its

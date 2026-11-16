@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"os"
 	"strings"
 	"testing"
 )
@@ -128,7 +129,7 @@ func TestVerifyList(t *testing.T) {
 	if _, err := VerifyList(pub, sign(t, priv, List{Kind: KindBlocklist, Entries: []Entry{{SHA256: h}}}), KindBlocklist, 0); err != nil {
 		t.Fatalf("hash-only blocklist entry must pass: %v", err)
 	}
-	good := List{Kind: KindPlugins, Counter: 5, MinBlocklistCounter: u64(0), Entries: []Entry{{ID: "tailscale", Version: "1.0.0", SHA256: fileHash(programFile)}}}
+	good := List{Kind: KindPlugins, Counter: 5, MinBlocklistCounter: u64(0), Entries: []Entry{{ID: "tailscale", Version: "1.0.0", SHA256: fileHash(programFile), ManifestSHA256: fileHash(manifestJSON(nil))}}}
 
 	if l, err := VerifyList(pub, sign(t, priv, good), KindPlugins, 5); err != nil || l.Counter != 5 {
 		t.Fatalf("same counter must pass: %v", err)
@@ -199,18 +200,22 @@ func TestCheckInstall(t *testing.T) {
 	pub, priv := testKey(t)
 	_, otherPriv := testKey(t)
 	h := fileHash(programFile)
-	list := sign(t, priv, List{Kind: KindPlugins, Counter: 3, MinBlocklistCounter: u64(2), Entries: []Entry{{ID: "tailscale", Version: "1.0.0", SHA256: h}}})
+	list := sign(t, priv, List{Kind: KindPlugins, Counter: 3, MinBlocklistCounter: u64(2), Entries: []Entry{{ID: "tailscale", Version: "1.0.0", SHA256: h, ManifestSHA256: fileHash(manifestJSON(nil))}}})
 	emptyBlock := sign(t, priv, List{Kind: KindBlocklist, Counter: 2})
 
 	base := func() InstallInput {
 		return InstallInput{PublicKey: pub, List: list, LastListCounter: 3, Blocklist: emptyBlock, LastBlockCounter: 2,
-			Manifest: manifestJSON(nil), File: bytes.NewReader(programFile)}
+			Manifest: manifestJSON(nil), File: bytes.NewReader(programFile), TempDir: t.TempDir()}
 	}
 
 	acc, err := CheckInstall(base())
-	if err != nil || acc.Manifest.ID != "tailscale" || acc.ListCounter != 3 || acc.BlockCounter != 2 || !bytes.Equal(acc.File, programFile) {
+	if err != nil || acc.Manifest.ID != "tailscale" || acc.ListCounter != 3 || acc.BlockCounter != 2 {
 		t.Fatalf("valid install refused: %v", err)
 	}
+	if got, _ := os.ReadFile(acc.FilePath); !bytes.Equal(got, programFile) {
+		t.Fatalf("checked file = %q", got)
+	}
+	acc.Close()
 
 	old := maxFileSize
 	maxFileSize = int64(len(programFile)) - 1
@@ -227,6 +232,11 @@ func TestCheckInstall(t *testing.T) {
 	}{
 		{"wrong hash", func(in *InstallInput) { in.File = bytes.NewReader(otherFile) }, ErrHashMismatch},
 		{"no file", func(in *InstallInput) { in.File = nil }, ErrHashMismatch},
+		{"tampered manifest, program hash still matching", func(in *InstallInput) {
+			in.Manifest = manifestJSON(func(m map[string]any) {
+				m["access"] = map[string]any{"hosts": []string{"evil.example"}, "folders": []string{"tailscale", "media"}, "actions": []string{}}
+			})
+		}, ErrManifestHash},
 		{"not on list", func(in *InstallInput) {
 			in.Manifest = manifestJSON(func(m map[string]any) { m["id"] = "unsigned"; m["sha256"] = fileHash(otherFile) })
 			in.File = bytes.NewReader(otherFile)
@@ -257,7 +267,7 @@ func TestCheckInstall(t *testing.T) {
 		{"older list", func(in *InstallInput) { in.LastListCounter = 4 }, ErrListOlder},
 		{"older blocklist", func(in *InstallInput) { in.LastBlockCounter = 3 }, ErrListOlder},
 		{"list signed by other key", func(in *InstallInput) {
-			in.List = sign(t, otherPriv, List{Kind: KindPlugins, Counter: 3, MinBlocklistCounter: u64(2), Entries: []Entry{{ID: "tailscale", Version: "1.0.0", SHA256: h}}})
+			in.List = sign(t, otherPriv, List{Kind: KindPlugins, Counter: 3, MinBlocklistCounter: u64(2), Entries: []Entry{{ID: "tailscale", Version: "1.0.0", SHA256: h, ManifestSHA256: fileHash(manifestJSON(nil))}}})
 		}, ErrListSignature},
 		{"tampered list", func(in *InstallInput) {
 			var sl SignedList

@@ -3,14 +3,17 @@ package plugins
 import (
 	"bytes"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sync"
+	"time"
 )
 
 // Store refusals.
@@ -41,6 +44,8 @@ const (
 type State struct {
 	ListCounter  uint64                `json:"list_counter"`
 	BlockCounter uint64                `json:"block_counter"`
+	// BlockCheckedAt is when the blocklist last verified.
+	BlockCheckedAt time.Time           `json:"block_checked_at,omitempty"`
 	Plugins      map[string]*Installed `json:"plugins"`
 }
 
@@ -64,7 +69,7 @@ type Store struct {
 // writeProgram and writeState write files; vars so tests can break an
 // install half way.
 var (
-	writeProgram = writeFileSynced
+	writeProgram = writeReaderSynced
 	writeState   = writeFileSynced
 )
 
@@ -142,9 +147,20 @@ func (s *Store) Install(a *Accepted) error {
 		return err
 	}
 	tmp := filepath.Join(verDir, programName+".new")
-	if err := writeProgram(tmp, a.File); err != nil {
+	src, err := os.Open(a.FilePath)
+	if err != nil {
+		return fmt.Errorf("checked plugin file: %w", err)
+	}
+	h := sha256.New()
+	err = writeProgram(tmp, io.TeeReader(src, h))
+	src.Close()
+	if err != nil {
 		os.Remove(tmp)
 		return fmt.Errorf("writing plugin program: %w", err)
+	}
+	if got := hex.EncodeToString(h.Sum(nil)); got != m.SHA256 {
+		os.Remove(tmp)
+		return fmt.Errorf("%w: checked file changed before install", ErrTampered)
 	}
 	if err := os.Rename(tmp, filepath.Join(verDir, programName)); err != nil {
 		os.Remove(tmp)
@@ -153,7 +169,7 @@ func (s *Store) Install(a *Accepted) error {
 	syncDir(verDir)
 
 	old := st.Plugins[m.ID]
-	st.ListCounter, st.BlockCounter = a.ListCounter, a.BlockCounter
+	st.ListCounter, st.BlockCounter, st.BlockCheckedAt = a.ListCounter, a.BlockCounter, time.Now().UTC()
 	st.Plugins[m.ID] = &Installed{ID: m.ID, Version: m.Version, SHA256: m.SHA256, Dir: verName, Enabled: true}
 	if err := s.save(st); err != nil {
 		return err
@@ -273,6 +289,42 @@ func randomName() string {
 	b := make([]byte, 8)
 	rand.Read(b)
 	return hex.EncodeToString(b)
+}
+
+// SaveCounters records the counters of newly verified lists and the check
+// time. A counter below the stored one is refused, so a slower check can
+// never roll the stored counters back.
+func (s *Store) SaveCounters(list, block uint64, checked time.Time) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	st, err := s.Load()
+	if err != nil {
+		return err
+	}
+	if list < st.ListCounter || block < st.BlockCounter {
+		return ErrCounterOlder
+	}
+	st.ListCounter, st.BlockCounter, st.BlockCheckedAt = list, block, checked.UTC()
+	return s.save(st)
+}
+
+func writeReaderSynced(path string, r io.Reader) error {
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o700)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(f, r); err != nil {
+		f.Close()
+		return err
+	}
+	if err := f.Sync(); err != nil {
+		f.Close()
+		return err
+	}
+	if err := f.Close(); err != nil {
+		return err
+	}
+	return os.Chmod(path, 0o700)
 }
 
 func writeFileSynced(path string, data []byte) error {

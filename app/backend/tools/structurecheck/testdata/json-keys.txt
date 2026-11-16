@@ -243,8 +243,11 @@ bit_depth
 bitrate
 bittorrent
 block
+block_checked_at
 block_counter
 blocked
+blocklist_checked_at
+blocklist_stale
 blocks
 body
 boot
@@ -929,6 +932,7 @@ magnet
 magnetUrl
 main
 mal
+manifest_sha256
 mapped
 match
 matched
