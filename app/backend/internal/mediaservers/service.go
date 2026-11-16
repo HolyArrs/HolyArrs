@@ -569,7 +569,7 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 			err = ue.Err
 		}
 		// The line never holds the address or the token.
-		if c := doctor.At(doctor.Of(err), err.Error(), m.URL); c != doctor.Unknown {
+		if c := doctor.Of(err); c != doctor.Unknown {
 			return nil, doctor.Mark(c, nil)
 		}
 		return nil, errors.New("the server did not answer")

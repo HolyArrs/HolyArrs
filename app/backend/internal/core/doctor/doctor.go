@@ -106,8 +106,16 @@ func Of(err error) Cause {
 		return Blocked
 	}
 	var dnsErr *net.DNSError
-	if errors.As(err, &dnsErr) && !dnsErr.IsTimeout {
-		return DNS
+	if errors.As(err, &dnsErr) {
+		// Only a name that does not exist is a setting; a resolver that is
+		// down or slow is an outage.
+		if dnsErr.IsNotFound {
+			return DNS
+		}
+		if dnsErr.IsTimeout {
+			return Timeout
+		}
+		return Unknown
 	}
 	var rh tls.RecordHeaderError
 	if errors.As(err, &rh) {
@@ -141,7 +149,7 @@ var textCauses = []struct {
 	words []string
 }{
 	{Blocked, []string{"address refused by the network policy", "on the local network"}},
-	{DNS, []string{"no such host", "server misbehaving", "could not look up"}},
+	{DNS, []string{"no such host", "could not look up"}},
 	{UseHTTP, []string{"server gave http response to https client", "first record does not look like a tls handshake"}},
 	{UseHTTPS, []string{"http request to an https server"}},
 	{TLS, []string{"x509:", "certificate", "tls: "}},
@@ -181,7 +189,8 @@ func Explain(err error) (Cause, string, bool) {
 	return c, causeWords[c], c != Unknown
 }
 
-// At refines a cause with the address that was called. A connection closed
+// At refines a cause with the address that was called; only the Test path
+// uses it, since a restart in the background hangs up the same way. A connection closed
 // without any answer is a protocol mismatch: an https:// address on a plain
 // http port (qBittorrent just hangs up), or http on a port that speaks
 // something else.

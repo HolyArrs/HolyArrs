@@ -180,3 +180,17 @@ func TestAtReadsAHangUp(t *testing.T) {
 		t.Errorf("a known cause must stay: %q", got)
 	}
 }
+
+func TestResolverOutageIsNotABadName(t *testing.T) {
+	temp := &net.DNSError{Err: "server misbehaving", Name: "sab", IsTemporary: true}
+	if c := Of(temp); c == DNS {
+		t.Fatalf("temporary resolver failure read as %q", c)
+	}
+	if c := OfText("lookup sab on 10.0.0.1:53: server misbehaving"); c == DNS {
+		t.Fatalf("server misbehaving read as %q", c)
+	}
+	missing := &net.DNSError{Err: "no such host", Name: "sab", IsNotFound: true}
+	if c := Of(missing); c != DNS {
+		t.Fatalf("missing name read as %q", c)
+	}
+}

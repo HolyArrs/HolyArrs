@@ -234,7 +234,7 @@ func SetPaused(ctx context.Context, s *database.Store, id int64, paused bool, by
 // A known cause of the last error is said in its own line, the same one the
 // Test button gives.
 func HealthOf(d domain.Downloader, now time.Time) HealthView {
-	cause := doctor.At(doctor.OfText(d.LastError), d.LastError, d.URL)
+	cause := doctor.OfText(d.LastError)
 	line := doctor.Line(cause)
 	switch {
 	case d.State == "disabled":

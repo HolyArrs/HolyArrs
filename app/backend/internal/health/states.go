@@ -73,7 +73,7 @@ func (e *Engine) Links(ctx context.Context) ([]jobs.Status, error) {
 			add("downloader", d.ID, d.Name, jobs.Off, "Paused by you.")
 		case "unreachable":
 			why := "It does not answer; HolyArrs tries again on its own. The log has the details."
-			if line := doctor.Line(doctor.At(doctor.OfText(d.LastError), d.LastError, d.URL)); line != "" {
+			if line := doctor.Line(doctor.OfText(d.LastError)); line != "" {
 				why = line
 			}
 			add("downloader", d.ID, d.Name, jobs.Retrying, why)
@@ -123,7 +123,7 @@ func (e *Engine) Links(ctx context.Context) ([]jobs.Status, error) {
 			add("media_server", m.ID, m.Name, jobs.Off, "Turned off.")
 		case strings.TrimSpace(m.LastError) != "":
 			why := "The last refresh failed. The log has the details."
-			if line := doctor.Line(doctor.At(doctor.OfText(m.LastError), m.LastError, m.URL)); line != "" {
+			if line := doctor.Line(doctor.OfText(m.LastError)); line != "" {
 				why = line
 			}
 			add("media_server", m.ID, m.Name, jobs.Failed, why)

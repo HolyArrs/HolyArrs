@@ -451,7 +451,7 @@ func (s *Searcher) pause(ctx context.Context, src domain.Source, cause error) {
 		var err error
 		n, until, paused, err = pauseSourceTx(tx, ctx, src.ID, kind, detail, wait)
 		if err == nil && paused {
-			err = setCauseTx(tx, ctx, src.ID, string(CauseAt(cause, src.URL)))
+			err = setCauseTx(tx, ctx, src.ID, string(CauseOf(cause)))
 		}
 		return err
 	})

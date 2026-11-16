@@ -122,6 +122,14 @@ func TestDownloaderTestNamesEachCause(t *testing.T) {
 				}
 				// The stored last error reads the same on the health row.
 				d := downloaderWithError(err, tc.base)
+				if strings.Contains(tc.name, "hangs up") {
+					// A hang-up in the background is as likely a restart as a
+					// wrong port, so the row does not blame the setting.
+					if hv := HealthOf(d, time.Now()); hv.Cause == string(tc.want) {
+						t.Fatalf("health blames the setting: %+v", hv)
+					}
+					return
+				}
 				if hv := HealthOf(d, time.Now()); hv.Text != doctor.Line(tc.want) || hv.Cause != string(tc.want) {
 					t.Fatalf("health %+v (last error %q)", hv, d.LastError)
 				}
