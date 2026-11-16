@@ -147,6 +147,16 @@ func folderAlbum(name string) (string, int) {
 	return strings.TrimSpace(name), year
 }
 
+var tagTail = regexp.MustCompile(`(?i)\s*[\(\[]\s*(?:(?:19|20)\d{2}|flac|mp3|aac|alac|ogg|opus|wav|320|v0|cd|web|hi-?res|\d{2}-?bit)\s*[\)\]]\s*$`)
+
+// tagAlbum strips only a trailing year or file format off an album tag.
+func tagAlbum(name string) string {
+	for i := 0; i < 3; i++ {
+		name = tagTail.ReplaceAllString(name, "")
+	}
+	return strings.TrimSpace(name)
+}
+
 // sameName compares two names leaving out case, marks and a leading "The".
 func sameName(a, b string) bool {
 	fa, fb := fold(a), fold(b)
@@ -269,7 +279,7 @@ func (ml *musicLibrary) guessMusicByHand(ctx context.Context, f *ByHandFile) err
 		return err
 	}
 	f.Guess.TitleID, f.Guess.TitleName, f.Guess.TitleKind, f.Guess.VersionID = ti.ID, ti.Name, "artist", a.main
-	al, reason := a.album(tg, dirAlbum, dirYear)
+	al, reason, loose := a.album(tg, dirAlbum, dirYear)
 	if al == nil {
 		f.Guess.Reason, f.Guess.Detail = reason, tg.Album
 		if f.Guess.Detail == "" {
@@ -286,6 +296,8 @@ func (ml *musicLibrary) guessMusicByHand(ctx context.Context, f *ByHandFile) err
 	f.Guess.Disc, f.Guess.Track, f.Guess.TrackName = tr.disc, tr.number, tr.name
 	f.Guess.SlotID, f.Guess.HasFile = tr.slot, tr.filled
 	switch {
+	case loose:
+		f.Guess.Confidence = 0.4
 	case byTags && sure:
 		f.Guess.Confidence = 1
 	case sure:
@@ -297,14 +309,14 @@ func (ml *musicLibrary) guessMusicByHand(ctx context.Context, f *ByHandFile) err
 }
 
 // album finds the album by its MusicBrainz ids, then by the album tag, then by the folder name.
-func (a *musicArtist) album(tg tags.Tags, dirAlbum string, dirYear int) (*musicAlbum, string) {
+func (a *musicArtist) album(tg tags.Tags, dirAlbum string, dirYear int) (*musicAlbum, string, bool) {
 	for _, al := range a.albums {
 		if tg.ReleaseGroupID != "" && strings.EqualFold(al.part.SourceIDs["musicbrainz"], tg.ReleaseGroupID) || tg.ReleaseID != "" && al.releases[tg.ReleaseID] {
-			return al, ""
+			return al, "", false
 		}
 	}
 	reason := MusicNoAlbum
-	for _, name := range []string{tg.Album, dirAlbum} {
+	for i, name := range []string{tg.Album, dirAlbum} {
 		stripped, year := folderAlbum(name)
 		if year == 0 {
 			year = dirYear
@@ -326,12 +338,14 @@ func (a *musicArtist) album(tg tags.Tags, dirAlbum string, dirYear int) (*musicA
 		}
 		switch {
 		case len(hits) == 1:
-			return hits[0], ""
+			// A tag that only matches once a "(Live)" or "(Deluxe Edition)" is cut off may be another recording.
+			loose := i == 0 && !sameName(hits[0].part.Name, name) && !sameName(hits[0].part.Name, tagAlbum(name))
+			return hits[0], "", loose
 		case len(hits) > 1:
 			reason = MusicTwoAlbum
 		}
 	}
-	return nil, reason
+	return nil, reason, false
 }
 
 // track finds the track by its MusicBrainz recording id, then by the tag's

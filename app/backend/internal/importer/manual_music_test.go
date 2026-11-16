@@ -183,6 +183,25 @@ func TestByHandMusicTaggedAlbum(t *testing.T) {
 	}
 }
 
+// A live or deluxe album tag that only matches once its "(...)" is cut off is a
+// guess, never sure: it may be a different recording from the studio track.
+func TestByHandMusicAlbumTagTailNotSure(t *testing.T) {
+	w := musicSetup(t)
+	for _, al := range []string{"Part II (Live)", "Part II (Deluxe Edition)", "Part II [Acoustic]"} {
+		flacFixture(t, filepath.Join(w.in, "x", al+".flac"), "ARTIST=Brad Paisley", "ALBUM="+al, "TRACKNUMBER=3", "TITLE="+partTwo[2])
+	}
+	flacFixture(t, filepath.Join(w.in, "x", "year.flac"), "ARTIST=Brad Paisley", "ALBUM=Part II (2001)", "TRACKNUMBER=3", "TITLE="+partTwo[2])
+	got := w.scan(t, w.in)
+	for _, al := range []string{"Part II (Live)", "Part II (Deluxe Edition)", "Part II [Acoustic]"} {
+		if g := got["x/"+al+".flac"].Guess; g.Confidence >= 0.7 {
+			t.Errorf("%s: %+v", al, g)
+		}
+	}
+	if g := got["x/year.flac"].Guess; g.AlbumID != w.album || g.Track != 3 || g.Confidence != 1 {
+		t.Errorf("year tail: %+v", g)
+	}
+}
+
 func TestByHandMusicFolderNamesAndIDs(t *testing.T) {
 	w := musicSetup(t)
 	// No tags: the folders name the artist and album, the file the track.
