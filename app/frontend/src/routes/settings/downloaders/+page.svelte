@@ -499,7 +499,7 @@
 						<Button variant="plain" size="sm" type="button" onclick={() => remove(d)} aria-label={t('settings.downloaders.removeName', { name: d.name })}>{t('settings.downloaders.remove')}</Button>
 					</div>
 				</div>
-				{#if d.health.text}<p class="note" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{serverWords(d.health.text)}</p>{/if}
+				{#if d.health.text && !(results[d.id] && !results[d.id].ok)}<p class="note" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{serverWords(d.health.text)}</p>{/if}
 				{#if results[d.id] && !results[d.id].ok}
 					<p class="note bad-text" role="status" data-testid="downloader-test">{serverWords(results[d.id].text)}</p>
 				{/if}

@@ -615,10 +615,12 @@ func (l *Linker) plexSections(ctx context.Context, m domain.MediaServer) ([]plex
 		return nil, err
 	}
 	var mc struct {
+		XMLName     xml.Name
 		Directories []plexSection `xml:"Directory"`
 	}
-	if err := xml.Unmarshal(b, &mc); err != nil {
-		return nil, errors.New("the server's answer was not a Plex library list")
+	// A page or list that is not Plex's means another app answers there.
+	if err := xml.Unmarshal(b, &mc); err != nil || mc.XMLName.Local != "MediaContainer" {
+		return nil, doctor.Mark(doctor.WrongApp, nil)
 	}
 	var out []plexSection
 	for _, d := range mc.Directories {

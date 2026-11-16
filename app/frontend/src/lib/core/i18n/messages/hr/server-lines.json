@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Ime nije pronađeno. Provjerite naziv hosta u adresi.",
 	"server.core.no-answer-in-time-check-the": "Nema odgovora na vrijeme. Provjerite adresu i da vatrozid ne smeta.",
 	"server.core.nothing-answers-on-that-port-check": "Na tom portu ništa ne odgovara. Provjerite port i radi li aplikacija.",
-	"server.core.nothing-at-that-path-check-the": "Na toj putanji nema ničega. Provjerite putanju nakon porta, na primjer /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Na toj putanji nema ničega. Provjerite putanju nakon porta, na primjer /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Kategorija nedostaje: {name}. Dodajte je u aplikaciji za preuzimanje ili ovdje odaberite drugu."
 }

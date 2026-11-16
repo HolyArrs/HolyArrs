@@ -44,6 +44,7 @@ func TestDownloadersAddTestPauseDelete(t *testing.T) {
 		Text   string `json:"text"`
 		Health struct {
 			State string `json:"state"`
+			Text  string `json:"text"`
 		} `json:"health"`
 	}
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/downloaders/"+id+"/test", "", 200), &res)
@@ -55,7 +56,7 @@ func TestDownloadersAddTestPauseDelete(t *testing.T) {
 	do(t, "PUT", srv.URL+"/api/v1/downloaders/"+id, body(map[string]any{"name": "Lab SABnzbd", "secret": keep, "category": "movies"}), 200)
 	do(t, "PUT", srv.URL+"/api/v1/downloaders/"+id, body(map[string]any{"name": "Lab SABnzbd", "secret": wrong}), 200)
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/downloaders/"+id+"/test", "", 200), &res)
-	if res.OK || !strings.Contains(res.Text, "password refused") || res.Health.State != "sign_in_refused" {
+	if res.OK || !strings.Contains(res.Text, "password refused") || res.Health.State != "sign_in_refused" || res.Health.Text != res.Text {
 		t.Fatalf("wrong key test %+v", res)
 	}
 	// A new host needs the key again.

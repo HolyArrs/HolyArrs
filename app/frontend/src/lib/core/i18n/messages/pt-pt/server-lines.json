@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Nome não encontrado. Verifique o nome do anfitrião no endereço.",
 	"server.core.no-answer-in-time-check-the": "Sem resposta a tempo. Verifique o endereço e se nenhuma firewall está a bloquear.",
 	"server.core.nothing-answers-on-that-port-check": "Nada responde nessa porta. Verifique a porta e se a aplicação está a correr.",
-	"server.core.nothing-at-that-path-check-the": "Nada nesse caminho. Verifique o caminho a seguir à porta, por exemplo /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Nada nesse caminho. Verifique o caminho a seguir à porta, por exemplo /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Categoria em falta: {name}. Adicione-a na aplicação de transferências ou escolha outra aqui."
 }

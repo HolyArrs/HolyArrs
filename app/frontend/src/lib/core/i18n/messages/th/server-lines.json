@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "ไม่พบชื่อ ตรวจสอบชื่อโฮสต์ในที่อยู่",
 	"server.core.no-answer-in-time-check-the": "ไม่มีคำตอบทันเวลา ตรวจสอบที่อยู่ และว่าไม่มีไฟร์วอลล์ขวางอยู่",
 	"server.core.nothing-answers-on-that-port-check": "ไม่มีอะไรตอบที่พอร์ตนั้น ตรวจสอบพอร์ต และว่าแอปกำลังทำงาน",
-	"server.core.nothing-at-that-path-check-the": "ไม่มีอะไรที่พาธนั้น ตรวจสอบพาธหลังพอร์ต เช่น /sabnzbd"
+	"server.core.nothing-at-that-path-check-the": "ไม่มีอะไรที่พาธนั้น ตรวจสอบพาธหลังพอร์ต เช่น /sabnzbd",
+	"server.core.category-missing-add-it-in-the-2": "ไม่มีหมวดหมู่: {name} เพิ่มในแอปดาวน์โหลด หรือเลือกหมวดอื่นที่นี่"
 }

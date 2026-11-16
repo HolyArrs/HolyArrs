@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Không tìm thấy tên. Kiểm tra tên máy chủ trong địa chỉ.",
 	"server.core.no-answer-in-time-check-the": "Không có trả lời kịp thời. Kiểm tra địa chỉ, và không có tường lửa chặn.",
 	"server.core.nothing-answers-on-that-port-check": "Không có gì trả lời ở cổng đó. Kiểm tra cổng, và ứng dụng đang chạy.",
-	"server.core.nothing-at-that-path-check-the": "Không có gì ở đường dẫn đó. Kiểm tra đường dẫn sau cổng, ví dụ /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Không có gì ở đường dẫn đó. Kiểm tra đường dẫn sau cổng, ví dụ /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Thiếu danh mục: {name}. Thêm danh mục trong ứng dụng tải xuống, hoặc chọn danh mục khác ở đây."
 }

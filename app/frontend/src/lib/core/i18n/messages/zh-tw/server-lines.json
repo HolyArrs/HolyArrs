@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "找不到該名稱。請檢查位址中的主機名稱。",
 	"server.core.no-answer-in-time-check-the": "未及時回應。請檢查位址，以及沒有防火牆阻擋。",
 	"server.core.nothing-answers-on-that-port-check": "該連接埠上沒有任何回應。請檢查連接埠，以及應用程式是否在執行。",
-	"server.core.nothing-at-that-path-check-the": "該路徑下沒有內容。請檢查連接埠後的路徑，例如 /sabnzbd。"
+	"server.core.nothing-at-that-path-check-the": "該路徑下沒有內容。請檢查連接埠後的路徑，例如 /sabnzbd。",
+	"server.core.category-missing-add-it-in-the-2": "缺少分類: {name}。請在下載應用程式中新增，或在這裡選擇另一個。"
 }

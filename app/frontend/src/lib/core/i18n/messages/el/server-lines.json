@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Το όνομα δεν βρέθηκε. Έλεγξε το όνομα κεντρικού υπολογιστή στη διεύθυνση.",
 	"server.core.no-answer-in-time-check-the": "Καμία απάντηση εγκαίρως. Έλεγξε τη διεύθυνση και ότι δεν μπλοκάρει τείχος προστασίας.",
 	"server.core.nothing-answers-on-that-port-check": "Τίποτα δεν απαντά σε αυτή τη θύρα. Έλεγξε τη θύρα και ότι η εφαρμογή τρέχει.",
-	"server.core.nothing-at-that-path-check-the": "Τίποτα σε αυτή τη διαδρομή. Έλεγξε τη διαδρομή μετά τη θύρα, για παράδειγμα /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Τίποτα σε αυτή τη διαδρομή. Έλεγξε τη διαδρομή μετά τη θύρα, για παράδειγμα /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Λείπει η κατηγορία: {name}. Πρόσθεσέ την στην εφαρμογή λήψεων ή διάλεξε άλλη εδώ."
 }

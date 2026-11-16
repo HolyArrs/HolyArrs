@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Nafn fannst ekki. Athugaðu hýsilnafnið í vistfanginu.",
 	"server.core.no-answer-in-time-check-the": "Ekkert svar í tæka tíð. Athugaðu vistfangið og að enginn eldveggur sé fyrir.",
 	"server.core.nothing-answers-on-that-port-check": "Ekkert svarar á þeirri gátt. Athugaðu gáttina og að forritið sé í gangi.",
-	"server.core.nothing-at-that-path-check-the": "Ekkert á þeirri slóð. Athugaðu slóðina á eftir gáttinni, til dæmis /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Ekkert á þeirri slóð. Athugaðu slóðina á eftir gáttinni, til dæmis /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Flokk vantar: {name}. Bættu honum við í niðurhalsforritinu eða veldu annan hér."
 }

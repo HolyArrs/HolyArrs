@@ -240,7 +240,7 @@ func HealthOf(d domain.Downloader, now time.Time) HealthView {
 	case d.State == "disabled":
 		return HealthView{"paused", "Paused", "Paused by you: HolyArrs sends nothing new to it. Downloads already there are still followed.", ""}
 	case d.State == "auth_failed":
-		return HealthView{"sign_in_refused", "Sign-in refused", "It turned down the key or sign-in. Check them and test again.", string(doctor.Auth)}
+		return HealthView{"sign_in_refused", "Sign-in refused", doctor.Line(doctor.Auth), string(doctor.Auth)}
 	case d.BackoffUntil != nil && d.BackoffUntil.After(now):
 		if line != "" {
 			return HealthView{"resting", "Resting", line, string(cause)}

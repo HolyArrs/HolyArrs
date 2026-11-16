@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Nime ei leitud. Kontrolli aadressis olevat hostinime.",
 	"server.core.no-answer-in-time-check-the": "Õigel ajal vastust ei tulnud. Kontrolli aadressi ja et tulemüür ei sega.",
 	"server.core.nothing-answers-on-that-port-check": "Selles pordis ei vasta miski. Kontrolli porti ja et rakendus töötab.",
-	"server.core.nothing-at-that-path-check-the": "Sellel teel pole midagi. Kontrolli pordi järel olevat teed, näiteks /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Sellel teel pole midagi. Kontrolli pordi järel olevat teed, näiteks /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Kategooria puudub: {name}. Lisa see allalaadimisrakenduses või vali siin mõni muu."
 }

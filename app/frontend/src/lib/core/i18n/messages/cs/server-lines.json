@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Jméno nenalezeno. Zkontrolujte název hostitele v adrese.",
 	"server.core.no-answer-in-time-check-the": "Žádná odpověď včas. Zkontrolujte adresu a že nepřekáží firewall.",
 	"server.core.nothing-answers-on-that-port-check": "Na tomto portu nic neodpovídá. Zkontrolujte port a že aplikace běží.",
-	"server.core.nothing-at-that-path-check-the": "Na této cestě nic není. Zkontrolujte cestu za portem, například /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Na této cestě nic není. Zkontrolujte cestu za portem, například /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Chybí kategorie: {name}. Přidejte ji ve stahovací aplikaci, nebo zde vyberte jinou."
 }

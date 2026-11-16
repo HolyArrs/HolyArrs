@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Nombre no encontrado. Revisa el nombre del host en la dirección.",
 	"server.core.no-answer-in-time-check-the": "Sin respuesta a tiempo. Revisa la dirección y que ningún cortafuegos lo impida.",
 	"server.core.nothing-answers-on-that-port-check": "Nada responde en ese puerto. Revisa el puerto y que la aplicación esté en marcha.",
-	"server.core.nothing-at-that-path-check-the": "No hay nada en esa ruta. Revisa la ruta tras el puerto, por ejemplo /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "No hay nada en esa ruta. Revisa la ruta tras el puerto, por ejemplo /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Falta la categoría: {name}. Añádela en la aplicación de descargas o elige otra aquí."
 }

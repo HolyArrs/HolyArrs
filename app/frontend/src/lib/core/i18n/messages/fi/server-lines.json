@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Nimeä ei löytynyt. Tarkista osoitteen isäntänimi.",
 	"server.core.no-answer-in-time-check-the": "Ei vastausta ajoissa. Tarkista osoite ja ettei palomuuri estä.",
 	"server.core.nothing-answers-on-that-port-check": "Mikään ei vastaa siinä portissa. Tarkista portti ja että sovellus on käynnissä.",
-	"server.core.nothing-at-that-path-check-the": "Polussa ei ole mitään. Tarkista portin jälkeinen polku, esimerkiksi /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Polussa ei ole mitään. Tarkista portin jälkeinen polku, esimerkiksi /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Kategoria puuttuu: {name}. Lisää se lataussovellukseen tai valitse tästä toinen."
 }

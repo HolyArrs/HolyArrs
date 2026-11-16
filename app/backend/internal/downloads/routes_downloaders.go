@@ -344,7 +344,13 @@ func explainDownloader(err error, rawURL string) (doctor.Cause, string) {
 	case errors.Is(err, ErrAuth):
 		return doctor.Auth, doctor.Line(doctor.Auth)
 	case errors.Is(err, ErrNoCategory):
-		return doctor.Category, doctor.Line(doctor.Category)
+		name := ""
+		if msg := err.Error(); strings.HasSuffix(msg, ")") {
+			if i := strings.LastIndex(msg, " ("); i >= 0 {
+				name = msg[i+2 : len(msg)-1]
+			}
+		}
+		return doctor.Category, doctor.CategoryLine(name)
 	case errors.Is(err, outbound.ErrAddressRefused):
 		return doctor.Blocked, doctor.Line(doctor.Blocked)
 	}

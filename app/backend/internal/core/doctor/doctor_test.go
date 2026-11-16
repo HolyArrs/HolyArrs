@@ -134,8 +134,10 @@ func TestOfText(t *testing.T) {
 		"the server turned down the token":                                                                                Auth,
 		"Get \"http://x\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)":                    Timeout,
 		"tls: failed to verify certificate: x509: certificate signed by unknown authority":                                TLS,
-		"something odd": Unknown,
-		"":              Unknown,
+		"the Downloader's change feed could not be read":                                                                  WrongApp,
+		"download not found in the Downloader":                                                                            NotFound,
+		"something odd":                                                                                                   Unknown,
+		"":                                                                                                                Unknown,
 	}
 	for msg, want := range cases {
 		if got := OfText(msg); got != want {

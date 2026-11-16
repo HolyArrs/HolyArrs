@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Vardas nerastas. Patikrinkite pagrindinio kompiuterio vardą adrese.",
 	"server.core.no-answer-in-time-check-the": "Laiku negauta atsakymo. Patikrinkite adresą ir ar netrukdo ugniasienė.",
 	"server.core.nothing-answers-on-that-port-check": "Tame prievade niekas neatsako. Patikrinkite prievadą ir ar programa veikia.",
-	"server.core.nothing-at-that-path-check-the": "Tame kelyje nieko nėra. Patikrinkite kelią po prievado, pavyzdžiui, /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Tame kelyje nieko nėra. Patikrinkite kelią po prievado, pavyzdžiui, /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Trūksta kategorijos: {name}. Pridėkite ją atsisiuntimo programoje arba čia pasirinkite kitą."
 }

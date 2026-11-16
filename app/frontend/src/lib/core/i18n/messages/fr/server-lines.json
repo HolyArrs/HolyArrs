@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Nom introuvable. Vérifiez le nom d'hôte dans l'adresse.",
 	"server.core.no-answer-in-time-check-the": "Pas de réponse à temps. Vérifiez l'adresse et qu'aucun pare-feu ne bloque.",
 	"server.core.nothing-answers-on-that-port-check": "Rien ne répond sur ce port. Vérifiez le port et que l'application tourne.",
-	"server.core.nothing-at-that-path-check-the": "Rien à ce chemin. Vérifiez le chemin après le port, par exemple /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Rien à ce chemin. Vérifiez le chemin après le port, par exemple /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Catégorie absente: {name}. Ajoutez-la dans l'application de téléchargement, ou choisissez-en une autre ici."
 }

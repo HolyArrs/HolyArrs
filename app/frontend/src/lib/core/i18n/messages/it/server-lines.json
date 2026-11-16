@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Nome non trovato. Controlla il nome host nell'indirizzo.",
 	"server.core.no-answer-in-time-check-the": "Nessuna risposta in tempo. Controlla l'indirizzo e che nessun firewall blocchi.",
 	"server.core.nothing-answers-on-that-port-check": "Nessuno risponde su quella porta. Controlla la porta e che l'app sia in esecuzione.",
-	"server.core.nothing-at-that-path-check-the": "Niente a quel percorso. Controlla il percorso dopo la porta, ad esempio /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Niente a quel percorso. Controlla il percorso dopo la porta, ad esempio /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Categoria mancante: {name}. Aggiungila nell'app di download o scegline un'altra qui."
 }

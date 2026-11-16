@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "نام پیدا نشد. نام میزبان را در نشانی بررسی کنید.",
 	"server.core.no-answer-in-time-check-the": "پاسخی به‌موقع نرسید. نشانی را بررسی کنید و اینکه دیواره‌آتشی مانع نباشد.",
 	"server.core.nothing-answers-on-that-port-check": "هیچ چیزی روی این درگاه پاسخ نمی‌دهد. درگاه را بررسی کنید و اینکه برنامه در حال اجراست.",
-	"server.core.nothing-at-that-path-check-the": "در این مسیر چیزی نیست. مسیر پس از درگاه را بررسی کنید، مثلاً /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "در این مسیر چیزی نیست. مسیر پس از درگاه را بررسی کنید، مثلاً /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "دسته وجود ندارد: {name}. آن را در برنامهٔ دانلود اضافه کنید یا اینجا دستهٔ دیگری انتخاب کنید."
 }

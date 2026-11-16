@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "名前が見つかりません。アドレスのホスト名を確認してください。",
 	"server.core.no-answer-in-time-check-the": "時間内に応答がありません。アドレスと、ファイアウォールが妨げていないか確認してください。",
 	"server.core.nothing-answers-on-that-port-check": "そのポートでは何も応答しません。ポートと、アプリが動いているか確認してください。",
-	"server.core.nothing-at-that-path-check-the": "そのパスには何もありません。ポートの後のパスを確認してください（例：/sabnzbd）。"
+	"server.core.nothing-at-that-path-check-the": "そのパスには何もありません。ポートの後のパスを確認してください（例：/sabnzbd）。",
+	"server.core.category-missing-add-it-in-the-2": "カテゴリがありません: {name}。ダウンロードアプリで追加するか、ここで別のものを選んでください。"
 }

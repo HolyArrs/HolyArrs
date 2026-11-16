@@ -77,3 +77,22 @@ func TestMediaServerTestNamesEachCause(t *testing.T) {
 		})
 	}
 }
+
+func TestPlexTestNamesAnotherApp(t *testing.T) {
+	page := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte("<!doctype html><html><body>Sonarr</body></html>"))
+	}))
+	defer page.Close()
+	w := newWorld(t)
+	ctx := context.Background()
+	local := true
+	m, err := Add(ctx, w.s, w.v, Input{Name: "Plex page", Kind: "plex", URL: page.URL, Token: "x", AllowLocal: &local}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = (&Linker{Store: w.s, Vault: w.v}).Test(ctx, m)
+	if got := doctor.Of(err); got != doctor.WrongApp {
+		t.Fatalf("cause %q (error %v)", got, err)
+	}
+}

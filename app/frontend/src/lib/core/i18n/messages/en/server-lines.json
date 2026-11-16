@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Name not found. Check the host name in the address.",
 	"server.core.no-answer-in-time-check-the": "No answer in time. Check the address, and that no firewall is in the way.",
 	"server.core.nothing-answers-on-that-port-check": "Nothing answers on that port. Check the port, and that the app is running.",
-	"server.core.nothing-at-that-path-check-the": "Nothing at that path. Check the path after the port, for example /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Nothing at that path. Check the path after the port, for example /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Category missing: {name}. Add it in the download app, or pick another one here."
 }

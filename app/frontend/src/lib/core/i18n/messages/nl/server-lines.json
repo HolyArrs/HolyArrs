@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Naam niet gevonden. Controleer de hostnaam in het adres.",
 	"server.core.no-answer-in-time-check-the": "Geen antwoord op tijd. Controleer het adres en of er geen firewall in de weg zit.",
 	"server.core.nothing-answers-on-that-port-check": "Niets antwoordt op die poort. Controleer de poort en of de app draait.",
-	"server.core.nothing-at-that-path-check-the": "Niets op dat pad. Controleer het pad na de poort, bijvoorbeeld /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Niets op dat pad. Controleer het pad na de poort, bijvoorbeeld /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Categorie ontbreekt: {name}. Voeg hem toe in de download-app, of kies hier een andere."
 }

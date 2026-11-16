@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "A név nem található. Ellenőrizd a címben a gépnevet.",
 	"server.core.no-answer-in-time-check-the": "Nincs válasz időben. Ellenőrizd a címet, és hogy tűzfal ne álljon útban.",
 	"server.core.nothing-answers-on-that-port-check": "Ezen a porton semmi nem válaszol. Ellenőrizd a portot, és hogy fut-e az alkalmazás.",
-	"server.core.nothing-at-that-path-check-the": "Ezen az útvonalon nincs semmi. Ellenőrizd a port utáni útvonalat, például /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Ezen az útvonalon nincs semmi. Ellenőrizd a port utáni útvonalat, például /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Hiányzik a kategória: {name}. Add hozzá a letöltőalkalmazásban, vagy válassz itt egy másikat."
 }

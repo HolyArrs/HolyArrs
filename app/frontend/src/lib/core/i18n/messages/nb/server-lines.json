@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Fant ikke navnet. Sjekk vertsnavnet i adressen.",
 	"server.core.no-answer-in-time-check-the": "Ikke svar i tide. Sjekk adressen, og at ingen brannmur står i veien.",
 	"server.core.nothing-answers-on-that-port-check": "Ingenting svarer på den porten. Sjekk porten, og at appen kjører.",
-	"server.core.nothing-at-that-path-check-the": "Ingenting på den stien. Sjekk stien etter porten, for eksempel /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Ingenting på den stien. Sjekk stien etter porten, for eksempel /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Kategorien mangler: {name}. Legg den til i nedlastingsappen, eller velg en annen her."
 }

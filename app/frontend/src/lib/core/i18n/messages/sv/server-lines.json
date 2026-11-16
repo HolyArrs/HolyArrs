@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Namnet hittades inte. Kontrollera värdnamnet i adressen.",
 	"server.core.no-answer-in-time-check-the": "Inget svar i tid. Kontrollera adressen, och att ingen brandvägg är i vägen.",
 	"server.core.nothing-answers-on-that-port-check": "Inget svarar på den porten. Kontrollera porten, och att appen körs.",
-	"server.core.nothing-at-that-path-check-the": "Inget på den sökvägen. Kontrollera sökvägen efter porten, till exempel /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "Inget på den sökvägen. Kontrollera sökvägen efter porten, till exempel /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Kategorin saknas: {name}. Lägg till den i nedladdningsappen, eller välj en annan här."
 }

@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "الاسم غير موجود. تحقق من اسم المضيف في العنوان.",
 	"server.core.no-answer-in-time-check-the": "لا رد في الوقت المحدد. تحقق من العنوان ومن عدم وجود جدار حماية يعترضه.",
 	"server.core.nothing-answers-on-that-port-check": "لا شيء يجيب على هذا المنفذ. تحقق من المنفذ ومن أن التطبيق يعمل.",
-	"server.core.nothing-at-that-path-check-the": "لا شيء في هذا المسار. تحقق من المسار بعد المنفذ، مثل /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "لا شيء في هذا المسار. تحقق من المسار بعد المنفذ، مثل /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "الفئة غير موجودة: {name}. أضفها في تطبيق التنزيل، أو اختر فئة أخرى هنا."
 }

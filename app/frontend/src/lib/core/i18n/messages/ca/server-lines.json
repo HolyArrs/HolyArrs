@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "No s'ha trobat el nom. Comprova el nom de l'amfitrió a l'adreça.",
 	"server.core.no-answer-in-time-check-the": "Sense resposta a temps. Comprova l'adreça i que cap tallafoc ho impedeixi.",
 	"server.core.nothing-answers-on-that-port-check": "No respon res en aquest port. Comprova el port i que l'aplicació estigui en marxa.",
-	"server.core.nothing-at-that-path-check-the": "No hi ha res en aquest camí. Comprova el camí després del port, per exemple /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "No hi ha res en aquest camí. Comprova el camí després del port, per exemple /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "Falta la categoria: {name}. Afegeix-la a l'aplicació de baixades o tria'n una altra aquí."
 }

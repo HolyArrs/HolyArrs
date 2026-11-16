@@ -132,7 +132,7 @@ func TestDownloaderTestNamesEachCause(t *testing.T) {
 
 func TestDownloaderTestNamesMissingCategory(t *testing.T) {
 	cause, text := explainDownloader(fmt.Errorf("%w (tv)", ErrNoCategory), "http://sab:8080")
-	if cause != doctor.Category || text != doctor.Line(doctor.Category) {
+	if cause != doctor.Category || !strings.Contains(text, "tv") || doctor.OfText(text) != doctor.Category {
 		t.Fatalf("%q %q", cause, text)
 	}
 }

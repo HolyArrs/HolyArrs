@@ -1354,5 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "이름을 찾을 수 없습니다. 주소의 호스트 이름을 확인하세요.",
 	"server.core.no-answer-in-time-check-the": "제시간에 응답이 없습니다. 주소와 방화벽이 막고 있지 않은지 확인하세요.",
 	"server.core.nothing-answers-on-that-port-check": "그 포트에서 아무것도 응답하지 않습니다. 포트와 앱이 실행 중인지 확인하세요.",
-	"server.core.nothing-at-that-path-check-the": "그 경로에는 아무것도 없습니다. 포트 뒤의 경로를 확인하세요. 예: /sabnzbd."
+	"server.core.nothing-at-that-path-check-the": "그 경로에는 아무것도 없습니다. 포트 뒤의 경로를 확인하세요. 예: /sabnzbd.",
+	"server.core.category-missing-add-it-in-the-2": "카테고리가 없습니다: {name}. 다운로드 앱에서 추가하거나 여기서 다른 것을 고르세요."
 }
