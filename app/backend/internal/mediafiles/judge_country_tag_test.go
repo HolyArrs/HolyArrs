@@ -46,6 +46,14 @@ func TestMatchTitleCountryAndYearTag(t *testing.T) {
 			{ID: 6, Kind: "show", Name: "Doctor Who (2005)", Year: 2005},
 			{ID: 8, Kind: "show", Name: "Doctor Who (1963)", Year: 1963},
 		}, "Doctor.Who.S01E01.720p.HDTV", 0},
+		{"year picks tagged remake over plain original", []TitleRef{
+			{ID: 1, Kind: "show", Name: "Doctor Who", Year: 1963},
+			{ID: 6, Kind: "show", Name: "Doctor Who (2005)", Year: 2005},
+		}, "Doctor.Who.2005.S01E01.720p.HDTV", 6},
+		{"year picks plain original over tagged remake", []TitleRef{
+			{ID: 1, Kind: "show", Name: "Doctor Who", Year: 1963},
+			{ID: 6, Kind: "show", Name: "Doctor Who (2005)", Year: 2005},
+		}, "Doctor.Who.1963.S01E01.480p.DVDRip", 1},
 		{"tag in alias", []TitleRef{{ID: 9, Kind: "show", Name: "Other", Aliases: []string{"Shameless (US)"}}}, "Shameless.S01E01.720p.HDTV", 9},
 		{"other tag text kept", []TitleRef{{ID: 10, Kind: "show", Name: "Ghosts (Remix)"}}, "Ghosts.S01E01.720p.HDTV", 0},
 		{"movie unaffected", []TitleRef{{ID: 11, Kind: "movie", Name: "The Office (US)", Year: 2005}}, "The.Office.2005.1080p.BluRay", 0},

@@ -246,3 +246,41 @@ func taggedShows(p releasename.Result, name string, lib []TitleRef) []*TitleRef 
 	}
 	return cands
 }
+
+// withTaggedShows adds the second try: shows whose name carries a country
+// or year mark. It runs when the plain names found nothing, and also when
+// the release names a year none of them has, so a plain-named original
+// never takes a release of a year-marked remake.
+func withTaggedShows(p releasename.Result, name string, lib []TitleRef, cands []*TitleRef) []*TitleRef {
+	if len(cands) == 0 {
+		return taggedShows(p, name, lib)
+	}
+	if p.Year.Value == 0 {
+		return cands
+	}
+	for _, t := range cands {
+		if t.Year == p.Year.Value {
+			return cands
+		}
+	}
+	var dated []*TitleRef
+	for _, t := range taggedShows(p, name, lib) {
+		if t.Year == p.Year.Value || tagYear(t, name) == p.Year.Value {
+			dated = append(dated, t)
+		}
+	}
+	if len(dated) > 0 {
+		return dated
+	}
+	return cands
+}
+
+// tagYear is the year in a show's name mark that fits the base name; 0: none.
+func tagYear(t *TitleRef, name string) int {
+	for _, n := range append([]string{t.Name}, t.Aliases...) {
+		if base, _, year, ok := releasename.SplitNameTag(n); ok && year > 0 && releasename.SameName(base, name) {
+			return year
+		}
+	}
+	return 0
+}
