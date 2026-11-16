@@ -203,6 +203,7 @@ GET /api/v1/settings/metadata auth=settings scope=read assurance=false part=core
 GET /api/v1/settings/music auth=manage_library scope=read assurance=false part=music
 GET /api/v1/settings/naming auth=manage_library scope=read assurance=false part=media
 GET /api/v1/settings/old-app-api auth=settings scope=admin assurance=false part=core
+GET /api/v1/settings/plex-labels auth=owner scope=admin assurance=false part=media
 GET /api/v1/settings/release-gate auth=manage_library scope=read assurance=false part=movies
 GET /api/v1/settings/search auth=settings scope=read assurance=false part=media
 GET /api/v1/settings/shows auth=manage_library scope=read assurance=false part=shows
@@ -451,6 +452,7 @@ POST /api/v1/settings/import-secrets auth=owner scope=admin assurance=false part
 POST /api/v1/settings/metadata/test auth=settings scope=write assurance=false part=core
 POST /api/v1/settings/naming/example auth=manage_library scope=write assurance=false part=media
 POST /api/v1/settings/old-app-api/keys/{side} auth=settings scope=admin assurance=true part=core
+POST /api/v1/settings/plex-labels/run auth=owner scope=admin assurance=false part=media
 POST /api/v1/settings/subtitles/translator/test auth=settings scope=write assurance=false part=subtitles
 POST /api/v1/shows auth=manage_library scope=write assurance=false part=shows
 POST /api/v1/sources auth=settings scope=write assurance=false part=core
@@ -544,6 +546,7 @@ PUT /api/v1/settings/metadata auth=settings scope=write assurance=false part=cor
 PUT /api/v1/settings/music auth=settings scope=write assurance=false part=music
 PUT /api/v1/settings/naming auth=settings scope=write assurance=false part=media
 PUT /api/v1/settings/old-app-api auth=settings scope=write assurance=false part=core
+PUT /api/v1/settings/plex-labels auth=owner scope=admin assurance=false part=media
 PUT /api/v1/settings/release-gate auth=settings scope=write assurance=false part=movies
 PUT /api/v1/settings/search auth=settings scope=write assurance=false part=media
 PUT /api/v1/settings/shows auth=settings scope=write assurance=false part=shows

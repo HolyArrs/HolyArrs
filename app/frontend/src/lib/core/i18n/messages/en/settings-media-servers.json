@@ -47,5 +47,15 @@
 	"settings.mediaServers.watchConfirmOff": "Turn off watch history? Everything read so far is deleted.",
 	"settings.mediaServers.watchTurnedOn": "Watch history on. The first read comes within 30 minutes.",
 	"settings.mediaServers.watchTurnedOff": "Watch history off",
-	"settings.mediaServers.watchFailed": "Couldn't change watch history"
+	"settings.mediaServers.watchFailed": "Couldn't change watch history",
+	"settings.mediaServers.labelTitle": "Plex labels",
+	"settings.mediaServers.labelSwitch": "Label requested titles",
+	"settings.mediaServers.labelHint": "When a requested movie or show is in Plex, HolyArrs adds a label to it, so you can filter, build collections or share by it in Plex. Labels already there stay.",
+	"settings.mediaServers.labelText": "Label",
+	"settings.mediaServers.labelAskers": "Also add the requester's name as a label",
+	"settings.mediaServers.labelSaved": "Plex labels saved",
+	"settings.mediaServers.labelFailed": "Couldn't save Plex labels",
+	"settings.mediaServers.labelExisting": "Label existing requested titles",
+	"settings.mediaServers.labelExistingStarted": "Labelling started. Titles get their labels within a few minutes.",
+	"settings.mediaServers.labelExistingFailed": "Couldn't start labelling"
 }

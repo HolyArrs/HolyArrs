@@ -47,5 +47,15 @@
 	"settings.mediaServers.watchConfirmOff": "Išjungti žiūrėjimo istoriją? Viskas, kas iki šiol perskaityta, ištrinama.",
 	"settings.mediaServers.watchTurnedOn": "Žiūrėjimo istorija įjungta. Pirmasis skaitymas įvyksta per 30 minučių.",
 	"settings.mediaServers.watchTurnedOff": "Žiūrėjimo istorija išjungta",
-	"settings.mediaServers.watchFailed": "Nepavyko pakeisti žiūrėjimo istorijos"
+	"settings.mediaServers.watchFailed": "Nepavyko pakeisti žiūrėjimo istorijos",
+	"settings.mediaServers.labelTitle": "Plex žymos",
+	"settings.mediaServers.labelSwitch": "Žymėti užsakytus pavadinimus",
+	"settings.mediaServers.labelHint": "Kai užsakytas filmas ar serialas yra Plex, HolyArrs prideda jam žymą, kad Plex galėtumėte pagal ją filtruoti, kurti rinkinius ar bendrinti. Esamos žymos lieka.",
+	"settings.mediaServers.labelText": "Žyma",
+	"settings.mediaServers.labelAskers": "Pridėti ir užsakiusio asmens vardą kaip žymą",
+	"settings.mediaServers.labelSaved": "Plex žymos išsaugotos",
+	"settings.mediaServers.labelFailed": "Nepavyko išsaugoti Plex žymų",
+	"settings.mediaServers.labelExisting": "Žymėti jau užsakytus pavadinimus",
+	"settings.mediaServers.labelExistingStarted": "Žymėjimas pradėtas. Pavadinimai žymas gaus per kelias minutes.",
+	"settings.mediaServers.labelExistingFailed": "Nepavyko pradėti žymėjimo"
 }

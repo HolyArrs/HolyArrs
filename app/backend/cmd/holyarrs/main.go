@@ -650,7 +650,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	sender := &alerts.Sender{Store: s, Vault: vault, Lang: func(ctx context.Context) string { return accounts.OwnerLanguage(ctx, s.Read()) }}
 	sender.Watch(ctx)
-	media := &mediaservers.Linker{Store: s, Vault: vault, Paused: c.SafeMode}
+	media := &mediaservers.Linker{Store: s, Vault: vault, Paused: c.SafeMode, Asked: requests.AskedForLabels(s)}
 	reg.AlsoWait(func() { media.Stop(); media.Wait() })
 	reg.AlsoWait(he.Wait)
 	if !c.SafeMode {
@@ -663,8 +663,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 		return media.AdvancePacks(ctx, ids, dm.Advance)
 	}})
-	// Only reads while the owner keeps watch history on.
-	optional(jobs.Loop{Name: "watch_history", Label: "Watch history read", Every: 30 * time.Minute, Run: media.ReadWatchHistory})
+	optional(jobs.Loop{Name: "watch_history", Label: "Watch history read", Every: 30 * time.Minute, Run: media.ReadWatchHistory}) // only while the owner keeps it on
+	optional(jobs.Loop{Name: "plex_labels", Label: "Plex labels", Every: 15 * time.Minute, Run: media.LabelPass})                 // only while the owner keeps it on
 	defer sender.Wait()
 	requestsSvc := &requests.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
 	readyCheck.Store(requestsSvc)

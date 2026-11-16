@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "Izlaidumu vārti tiek izlaisti: šī filma vēl netiek uzskatīta par iznākušu",
 	"server.sources.this-version-already-has-a-good": "Šai Versijai jau ir pietiekami laba kopija; jaunā to aizstās",
 	"server.requests.removed-the-request-for": "{name} noņēma pieprasījumu: {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nedeva šīs personas konta kodu, tāpēc viņas skatīšanās saraksts netiek lasīts."
+	"server.requests.plex-gave-no-account-code-for": "Plex nedeva šīs personas konta kodu, tāpēc viņas skatīšanās saraksts netiek lasīts.",
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "nosūtiet {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "vispirms ieslēdziet Pievienot birku pieprasītajiem nosaukumiem",
+	"server.mediaservers.a-label-needs-1-to-64": "birkai jābūt no 1 līdz 64 rakstzīmēm"
 }

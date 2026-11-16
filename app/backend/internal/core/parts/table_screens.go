@@ -102,6 +102,7 @@ var loopOwners = map[string]Owner{
 	"stranded_imports": Media,
 	"pack_watched":     Media,
 	"watch_history":    Media,
+	"plex_labels":      Media,
 	"gates":            movies,
 	"wishlist":         wishlist,
 	"music_warm":       music,

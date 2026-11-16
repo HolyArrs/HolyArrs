@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "Väljalaske lävi jäetakse vahele: seda filmi ei loeta veel ilmunuks",
 	"server.sources.this-version-already-has-a-good": "Sellel versioonil on juba piisavalt hea koopia; uus asendab selle",
 	"server.requests.removed-the-request-for": "{name} eemaldas taotluse: {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex ei andnud selle inimese kontokoodi, seega tema vaatamisnimekirja ei loeta."
+	"server.requests.plex-gave-no-account-code-for": "Plex ei andnud selle inimese kontokoodi, seega tema vaatamisnimekirja ei loeta.",
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "saada {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "lülita esmalt sisse Lisa soovitud pealkirjadele silt",
+	"server.mediaservers.a-label-needs-1-to-64": "silt peab olema 1 kuni 64 märki"
 }

@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "Çıkış eşiği atlandı: bu film henüz çıkmış sayılmıyor",
 	"server.sources.this-version-already-has-a-good": "Bu versiyonun zaten yeterince iyi bir kopyası var; yenisi onun yerini alır",
 	"server.requests.removed-the-request-for": "{name}, {a} isteğini kaldırdı",
-	"server.requests.plex-gave-no-account-code-for": "Plex bu kişi için hesap kodu vermedi, bu yüzden izleme listesi okunmuyor."
+	"server.requests.plex-gave-no-account-code-for": "Plex bu kişi için hesap kodu vermedi, bu yüzden izleme listesi okunmuyor.",
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "{\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false} gönderin",
+	"server.mediaservers.turn-on-label-requested-titles-first": "önce İstenen yapımları etiketle seçeneğini açın",
+	"server.mediaservers.a-label-needs-1-to-64": "etiket 1 ile 64 karakter arasında olmalı"
 }

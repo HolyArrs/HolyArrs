@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "Práh vydání se přeskočí: tento film se ještě nepočítá jako vydaný",
 	"server.sources.this-version-already-has-a-good": "Tato Verze už má dost dobrou kopii; nová ji nahradí",
 	"server.requests.removed-the-request-for": "{name} odebral(a) žádost o {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex u této osoby nedal kód účtu, proto se její seznam ke zhlédnutí nečte."
+	"server.requests.plex-gave-no-account-code-for": "Plex u této osoby nedal kód účtu, proto se její seznam ke zhlédnutí nečte.",
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "pošlete {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "nejprve zapněte Označit požadované tituly štítkem",
+	"server.mediaservers.a-label-needs-1-to-64": "štítek musí mít 1 až 64 znaků"
 }

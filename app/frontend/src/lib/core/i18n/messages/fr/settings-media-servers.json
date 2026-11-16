@@ -47,5 +47,15 @@
 	"settings.mediaServers.watchConfirmOff": "Désactiver l’historique ? Tout ce qui a été lu est effacé.",
 	"settings.mediaServers.watchTurnedOn": "Historique activé. La première lecture arrive sous 30 minutes.",
 	"settings.mediaServers.watchTurnedOff": "Historique désactivé",
-	"settings.mediaServers.watchFailed": "Impossible de changer l’historique"
+	"settings.mediaServers.watchFailed": "Impossible de changer l’historique",
+	"settings.mediaServers.labelTitle": "Libellés Plex",
+	"settings.mediaServers.labelSwitch": "Étiqueter les titres demandés",
+	"settings.mediaServers.labelHint": "Quand un film ou une série demandé est dans Plex, HolyArrs lui ajoute un libellé, pour filtrer, créer des collections ou partager avec dans Plex. Les libellés déjà présents restent.",
+	"settings.mediaServers.labelText": "Libellé",
+	"settings.mediaServers.labelAskers": "Ajouter aussi le nom du demandeur comme libellé",
+	"settings.mediaServers.labelSaved": "Libellés Plex enregistrés",
+	"settings.mediaServers.labelFailed": "Impossible d'enregistrer les libellés Plex",
+	"settings.mediaServers.labelExisting": "Étiqueter les titres déjà demandés",
+	"settings.mediaServers.labelExistingStarted": "Étiquetage lancé. Les titres reçoivent leurs libellés d'ici quelques minutes.",
+	"settings.mediaServers.labelExistingFailed": "Impossible de lancer l'étiquetage"
 }

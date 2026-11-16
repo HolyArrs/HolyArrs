@@ -47,5 +47,15 @@
 	"settings.mediaServers.watchConfirmOff": "关闭观看记录？目前读取的内容将全部删除。",
 	"settings.mediaServers.watchTurnedOn": "观看记录已开启。首次读取会在 30 分钟内完成。",
 	"settings.mediaServers.watchTurnedOff": "观看记录已关闭",
-	"settings.mediaServers.watchFailed": "无法更改观看记录"
+	"settings.mediaServers.watchFailed": "无法更改观看记录",
+	"settings.mediaServers.labelTitle": "Plex 标签",
+	"settings.mediaServers.labelSwitch": "为请求的作品添加标签",
+	"settings.mediaServers.labelHint": "请求的电影或剧集进入 Plex 后，HolyArrs 会为它添加标签，方便你在 Plex 中按标签筛选、建立合集或分享。已有的标签会保留。",
+	"settings.mediaServers.labelText": "标签",
+	"settings.mediaServers.labelAskers": "同时把请求者的名字添加为标签",
+	"settings.mediaServers.labelSaved": "Plex 标签已保存",
+	"settings.mediaServers.labelFailed": "无法保存 Plex 标签",
+	"settings.mediaServers.labelExisting": "为已请求的作品添加标签",
+	"settings.mediaServers.labelExistingStarted": "已开始添加标签。作品会在几分钟内获得标签。",
+	"settings.mediaServers.labelExistingFailed": "无法开始添加标签"
 }

@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "Ngưỡng phát hành bị bỏ qua: phim này chưa được tính là đã ra mắt",
 	"server.sources.this-version-already-has-a-good": "Phiên bản này đã có một bản sao đủ tốt; bản mới sẽ thay thế nó",
 	"server.requests.removed-the-request-for": "{name} đã gỡ yêu cầu cho {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex không đưa mã tài khoản của người này nên danh sách xem của họ không được đọc."
+	"server.requests.plex-gave-no-account-code-for": "Plex không đưa mã tài khoản của người này nên danh sách xem của họ không được đọc.",
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "gửi {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "hãy bật Gắn nhãn cho các tựa được yêu cầu trước",
+	"server.mediaservers.a-label-needs-1-to-64": "nhãn cần từ 1 đến 64 ký tự"
 }

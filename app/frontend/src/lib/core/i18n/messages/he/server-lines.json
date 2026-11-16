@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "שער היציאה מדולג: הסרט הזה עדיין לא נחשב כיצא",
 	"server.sources.this-version-already-has-a-good": "לגרסה הזו כבר יש עותק מספיק טוב; החדש יחליף אותו",
 	"server.requests.removed-the-request-for": "{name} הסיר/ה את הבקשה עבור {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex לא סיפק קוד חשבון עבור האדם הזה, ולכן רשימת הצפייה שלו לא נקראת."
+	"server.requests.plex-gave-no-account-code-for": "Plex לא סיפק קוד חשבון עבור האדם הזה, ולכן רשימת הצפייה שלו לא נקראת.",
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "שלחו {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "הפעילו קודם את תיוג כותרים שהתבקשו",
+	"server.mediaservers.a-label-needs-1-to-64": "תווית צריכה 1 עד 64 תווים"
 }

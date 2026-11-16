@@ -47,5 +47,15 @@
 	"settings.mediaServers.watchConfirmOff": "시청 기록을 끌까요? 지금까지 읽은 기록이 모두 삭제돼요.",
 	"settings.mediaServers.watchTurnedOn": "시청 기록을 켰어요. 첫 읽기는 30분 안에 이뤄져요.",
 	"settings.mediaServers.watchTurnedOff": "시청 기록을 껐어요",
-	"settings.mediaServers.watchFailed": "시청 기록을 바꾸지 못했어요"
+	"settings.mediaServers.watchFailed": "시청 기록을 바꾸지 못했어요",
+	"settings.mediaServers.labelTitle": "Plex 라벨",
+	"settings.mediaServers.labelSwitch": "요청된 작품에 라벨 붙이기",
+	"settings.mediaServers.labelHint": "요청된 영화나 프로그램이 Plex에 들어오면 HolyArrs가 라벨을 붙여 Plex에서 이 라벨로 필터링, 컬렉션 만들기, 공유를 할 수 있습니다. 기존 라벨은 그대로 남습니다.",
+	"settings.mediaServers.labelText": "라벨",
+	"settings.mediaServers.labelAskers": "요청한 사람의 이름도 라벨로 붙이기",
+	"settings.mediaServers.labelSaved": "Plex 라벨을 저장했습니다",
+	"settings.mediaServers.labelFailed": "Plex 라벨을 저장하지 못했습니다",
+	"settings.mediaServers.labelExisting": "이미 요청된 작품에 라벨 붙이기",
+	"settings.mediaServers.labelExistingStarted": "라벨 붙이기를 시작했습니다. 몇 분 안에 작품에 라벨이 붙습니다.",
+	"settings.mediaServers.labelExistingFailed": "라벨 붙이기를 시작하지 못했습니다"
 }

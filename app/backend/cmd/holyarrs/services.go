@@ -202,7 +202,7 @@ func (s *services) fill() {
 		WireUpdateChecks(s.Health, s.Updates)
 	}
 	if s.Media == nil && s.Secrets != nil {
-		s.Media = &mediaservers.Linker{Store: s.Store, Vault: s.Secrets}
+		s.Media = &mediaservers.Linker{Store: s.Store, Vault: s.Secrets, Asked: requests.AskedForLabels(s.Store)}
 	}
 	if s.Subtitles == nil {
 		s.Subtitles = subtitles.NewService(s.Store, s.Secrets, s.Live, s.Queue)

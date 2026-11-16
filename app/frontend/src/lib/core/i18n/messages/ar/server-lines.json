@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "يُتخطى شرط الصدور: هذا الفيلم لا يُعد صادرًا بعد",
 	"server.sources.this-version-already-has-a-good": "لهذه النسخة نسخة كافية الجودة بالفعل؛ وستحل الجديدة محلها",
 	"server.requests.removed-the-request-for": "أزال {name} الطلب على {a}",
-	"server.requests.plex-gave-no-account-code-for": "لم يعطِ Plex رمز حساب لهذا الشخص، لذا لا تتم قراءة قائمة المشاهدة الخاصة به."
+	"server.requests.plex-gave-no-account-code-for": "لم يعطِ Plex رمز حساب لهذا الشخص، لذا لا تتم قراءة قائمة المشاهدة الخاصة به.",
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "أرسل {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "شغّل تسمية العناوين المطلوبة أولًا",
+	"server.mediaservers.a-label-needs-1-to-64": "تحتاج التسمية إلى 1 إلى 64 حرفًا"
 }

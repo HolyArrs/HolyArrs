@@ -47,5 +47,15 @@
 	"settings.mediaServers.watchConfirmOff": "Matikan sejarah tontonan? Semua yang telah dibaca setakat ini dipadam.",
 	"settings.mediaServers.watchTurnedOn": "Sejarah tontonan dihidupkan. Bacaan pertama dibuat dalam masa 30 minit.",
 	"settings.mediaServers.watchTurnedOff": "Sejarah tontonan dimatikan",
-	"settings.mediaServers.watchFailed": "Tidak dapat menukar sejarah tontonan"
+	"settings.mediaServers.watchFailed": "Tidak dapat menukar sejarah tontonan",
+	"settings.mediaServers.labelTitle": "Label Plex",
+	"settings.mediaServers.labelSwitch": "Labelkan tajuk yang diminta",
+	"settings.mediaServers.labelHint": "Apabila filem atau rancangan yang diminta ada dalam Plex, HolyArrs menambah label padanya supaya anda boleh menapis, membina koleksi atau berkongsi dengannya dalam Plex. Label sedia ada kekal.",
+	"settings.mediaServers.labelText": "Label",
+	"settings.mediaServers.labelAskers": "Tambah juga nama peminta sebagai label",
+	"settings.mediaServers.labelSaved": "Label Plex disimpan",
+	"settings.mediaServers.labelFailed": "Tidak dapat menyimpan label Plex",
+	"settings.mediaServers.labelExisting": "Labelkan tajuk yang sudah diminta",
+	"settings.mediaServers.labelExistingStarted": "Pelabelan bermula. Tajuk mendapat label dalam beberapa minit.",
+	"settings.mediaServers.labelExistingFailed": "Tidak dapat memulakan pelabelan"
 }
