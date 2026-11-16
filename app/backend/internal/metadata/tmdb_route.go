@@ -14,6 +14,8 @@ type TMDBRoute struct {
 	Access func(ctx context.Context) (string, error)
 	HTTP   *http.Client
 	Off    bool
+	// Direct: the request goes to TMDB itself, not through the metadata server.
+	Direct bool
 }
 
 func (r TMDBRoute) base() string {
@@ -23,12 +25,27 @@ func (r TMDBRoute) base() string {
 	return strings.TrimRight(r.Base, "/")
 }
 
+// ListAuth is the credential for a caller that builds its own request: the
+// address to call and the headers to send. A v3 API key goes in the query
+// only when the call goes to TMDB itself (Direct); the metadata server always
+// gets a Bearer header, so the credential never lands in its web addresses.
+func (r TMDBRoute) ListAuth(u, tok string) (string, map[string]string) {
+	if r.Direct {
+		if bearer, key := tmdbCredential(tok); key != "" {
+			return withQuery(u, "api_key", key), nil
+		} else {
+			tok = bearer
+		}
+	}
+	return u, map[string]string{"Authorization": "Bearer " + strings.TrimSpace(tok)}
+}
+
 // route is Route's answer, or the fixed BaseURL, Access and HTTP.
 func (t *TMDB) route(ctx context.Context) TMDBRoute {
 	if t.Route != nil {
 		return t.Route(ctx)
 	}
-	return TMDBRoute{Base: t.base(), Access: t.Access, HTTP: t.HTTP}
+	return TMDBRoute{Base: t.base(), Access: t.Access, HTTP: t.HTTP, Direct: true}
 }
 
 // keptOnly answers from a kept copy of any age while lookups are off; saved

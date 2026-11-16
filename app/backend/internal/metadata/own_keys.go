@@ -109,22 +109,21 @@ func (h *Hosted) TMDBRoute(ctx context.Context) TMDBRoute {
 	server := TMDBRoute{Base: h.Service.Base() + TMDBPath, Access: h.TMDBAccess, HTTP: h.HTTP}
 	switch {
 	case h.OwnKey:
-		return TMDBRoute{Base: h.TMDBBase, Access: h.TMDBAccess, Off: mode == ModeOff}
+		return TMDBRoute{Base: h.TMDBBase, Access: h.TMDBAccess, Off: mode == ModeOff, Direct: true}
 	case mode == ModeServer:
 		return server
 	case mode == ModeOwn:
-		return TMDBRoute{Base: h.stand, Access: h.KeyReader(KeyTMDB), HTTP: h.Direct}
+		return TMDBRoute{Base: h.stand, Access: h.KeyReader(KeyTMDB), HTTP: h.Direct, Direct: true}
 	}
 	server.Off = true
 	return server
 }
 
-// ListRoute is TMDBRoute for the Outside lists sync: the address, the
-// credential and the client, or ErrSourceOff.
-func (h *Hosted) ListRoute(ctx context.Context) (string, func(context.Context) (string, error), *http.Client, error) {
+// ListRoute is TMDBRoute for the Outside lists sync, or ErrSourceOff.
+func (h *Hosted) ListRoute(ctx context.Context) (TMDBRoute, error) {
 	r := h.TMDBRoute(ctx)
 	if r.Off {
-		return "", nil, nil, ErrSourceOff
+		return TMDBRoute{}, ErrSourceOff
 	}
-	return r.Base, r.Access, r.HTTP, nil
+	return r, nil
 }

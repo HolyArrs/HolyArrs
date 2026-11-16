@@ -45,7 +45,7 @@ type OutsideLists struct {
 	// TMDBRoute, when set, says where TMDB lists are read now (the metadata
 	// mode): the address, the credential and the client, in place of
 	// TMDBBase, TMDBToken and HTTP. metadata.ErrSourceOff: lookups are off.
-	TMDBRoute func(ctx context.Context) (string, func(context.Context) (string, error), *http.Client, error)
+	TMDBRoute func(ctx context.Context) (metadata.TMDBRoute, error)
 	HTTP      *http.Client
 	Now       func() time.Time
 }
@@ -334,7 +334,7 @@ func (s *OutsideLists) getWith(ctx context.Context, cl *http.Client, what, endpo
 	req, err := http.NewRequestWithContext(rctx, http.MethodGet, u, nil)
 	if err != nil {
 		outcome = outbound.TerminalFailure
-		return nil, err
+		return nil, fmt.Errorf("%s did not answer", what)
 	}
 	req.Header.Set("Accept", "application/json")
 	for k, v := range head {
@@ -380,18 +380,19 @@ func (s *OutsideLists) getWith(ctx context.Context, cl *http.Client, what, endpo
 // fetchTMDB reads a TMDB list. A list can mix movies and shows, so only the
 // ones of the list's kind are kept.
 func (s *OutsideLists) fetchTMDB(ctx context.Context, ref, titleKind string) ([]entry, error) {
-	base, token, cl := s.TMDBBase, s.TMDBToken, s.client()
+	route := metadata.TMDBRoute{Base: s.TMDBBase, Access: s.TMDBToken}
 	if s.TMDBRoute != nil {
 		var err error
-		if base, token, cl, err = s.TMDBRoute(ctx); err != nil {
+		if route, err = s.TMDBRoute(ctx); err != nil {
 			if errors.Is(err, metadata.ErrSourceOff) {
 				return nil, ErrListsOff
 			}
 			return nil, err
 		}
-		if cl == nil {
-			cl = s.client()
-		}
+	}
+	base, token, cl := route.Base, route.Access, route.HTTP
+	if cl == nil {
+		cl = s.client()
 	}
 	if token == nil {
 		return nil, metadata.ErrNoAccess
@@ -416,7 +417,8 @@ func (s *OutsideLists) fetchTMDB(ctx context.Context, ref, titleKind string) ([]
 			} `json:"items"`
 		}
 		u := base + "/list/" + url.PathEscape(ref) + "?page=" + strconv.Itoa(page)
-		if _, err := s.getWith(ctx, cl, "TMDB", base, u, map[string]string{"Authorization": "Bearer " + tok}, &body); err != nil {
+		u, hdr := route.ListAuth(u, tok)
+		if _, err := s.getWith(ctx, cl, "TMDB", base, u, hdr, &body); err != nil {
 			return nil, err
 		}
 		for _, it := range body.Items {

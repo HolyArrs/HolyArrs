@@ -306,7 +306,10 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	if tok == "" {
 		return nil, ErrNoAccess
 	}
-	bearer := tmdbApply(&u, tok)
+	bearer := strings.TrimSpace(tok)
+	if r.Direct {
+		bearer = tmdbApply(&u, tok)
+	}
 	// Fetch-ahead and a person's pages fail apart: a warm-up that keeps
 	// failing never opens the breaker a page call goes through.
 	lane := "page"
