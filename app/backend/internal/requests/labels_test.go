@@ -30,6 +30,11 @@ func TestAskedForLabels(t *testing.T) {
 	if err != nil || len(got) != 1 || got[0].TitleID == 0 || !slices.Equal(got[0].Askers, []string{r.ana.Name, r.bo.Name}) {
 		t.Fatalf("available: %+v %v", got, err)
 	}
+	// A deleted person's stored name (with its hidden mark) never becomes a label.
+	pinExec(t, r, "UPDATE users SET name = ? WHERE name = ?", r.bo.Name+"\u2063"+"5", r.bo.Name)
+	if got, err := list(ctx, ""); err != nil || len(got) != 1 || !slices.Equal(got[0].Askers, []string{r.ana.Name}) {
+		t.Fatalf("deleted asker: %+v %v", got, err)
+	}
 	if got, err := list(ctx, "2026-11-11T00:00:00.000000000Z"); err != nil || len(got) != 0 {
 		t.Fatalf("since after: %+v %v", got, err)
 	}

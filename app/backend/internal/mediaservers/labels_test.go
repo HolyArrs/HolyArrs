@@ -21,6 +21,7 @@ type plexLabelServer struct {
 	mu     sync.Mutex
 	labels map[string][]string // ratingKey -> labels
 	hidden map[string]bool     // ratingKey not scanned yet
+	fourK  bool                // a second movie section holds the movie too (key 51)
 	puts   []url.Values
 }
 
@@ -41,7 +42,13 @@ func newPlexLabelServer(t *testing.T) *plexLabelServer {
 		}
 		switch {
 		case r.Method == http.MethodGet && r.URL.Path == "/library/sections":
-			_, _ = w.Write([]byte(`<MediaContainer><Directory key="1" type="movie" title="Movies"/><Directory key="2" type="show" title="TV"/></MediaContainer>`))
+			extra := ""
+			if p.fourK {
+				extra = `<Directory key="3" type="movie" title="Movies 4K"/>`
+			}
+			_, _ = w.Write([]byte(`<MediaContainer><Directory key="1" type="movie" title="Movies"/><Directory key="2" type="show" title="TV"/>` + extra + `</MediaContainer>`))
+		case r.Method == http.MethodGet && r.URL.Path == "/library/sections/3/all":
+			_, _ = w.Write([]byte(`<MediaContainer>` + item("Video", "51", "tmdb://603") + `</MediaContainer>`))
 		case r.Method == http.MethodGet && r.URL.Path == "/library/sections/1/all":
 			_, _ = w.Write([]byte(`<MediaContainer>` + item("Video", "50", "tmdb://603") + `</MediaContainer>`))
 		case r.Method == http.MethodGet && r.URL.Path == "/library/sections/2/all":
@@ -59,7 +66,7 @@ func newPlexLabelServer(t *testing.T) *plexLabelServer {
 			}
 			b.WriteString(`</` + tag + `></MediaContainer>`)
 			_, _ = w.Write([]byte(b.String()))
-		case r.Method == http.MethodPut && (r.URL.Path == "/library/sections/1/all" || r.URL.Path == "/library/sections/2/all"):
+		case r.Method == http.MethodPut && (r.URL.Path == "/library/sections/1/all" || r.URL.Path == "/library/sections/2/all" || r.URL.Path == "/library/sections/3/all"):
 			q := r.URL.Query()
 			p.puts = append(p.puts, q)
 			var set []string
@@ -159,6 +166,20 @@ func TestPlexLabelsKeepOtherLabelsAndPutOnce(t *testing.T) {
 	}
 	if (*sinces)[1] != "" {
 		t.Fatalf("label existing asked since %q", (*sinces)[1])
+	}
+}
+
+// A title in two sections (Movies and Movies 4K) gets the label in both.
+func TestPlexLabelsEveryCopyOfATitle(t *testing.T) {
+	w, p, l, _ := labelWorld(t)
+	p.fourK = true
+	labelsOn(t, w, LabelSettings{Enabled: true, Label: "holyarrs"})
+	if _, err := l.LabelPlex(context.Background(), false); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := p.state()
+	if !slices.Equal(got["50"], []string{"Favs", "holyarrs"}) || !slices.Equal(got["51"], []string{"holyarrs"}) {
+		t.Fatalf("labels %v", got)
 	}
 }
 

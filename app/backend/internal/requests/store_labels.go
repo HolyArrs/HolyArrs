@@ -2,6 +2,7 @@ package requests
 
 import (
 	"context"
+	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -46,7 +47,8 @@ func AskedForLabels(s *database.Store) mediaservers.AskedFunc {
 			if len(out) == 0 || out[len(out)-1].TitleID != p.title {
 				out = append(out, mediaservers.AskedTitle{TitleID: p.title})
 			}
-			if n := names[p.user]; n != "" {
+			// A deleted person's stored name carries a hidden mark: leave it out.
+			if n := names[p.user]; n != "" && !strings.ContainsRune(n, 0x2063) {
 				out[len(out)-1].Askers = append(out[len(out)-1].Askers, n)
 			}
 		}

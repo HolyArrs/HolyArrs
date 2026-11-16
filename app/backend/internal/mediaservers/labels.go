@@ -234,12 +234,10 @@ func (l *Linker) labelServer(ctx context.Context, m domain.MediaServer, set Labe
 	if err != nil {
 		return 0, err
 	}
-	items := map[int64]plexItem{}
+	items := map[int64][]plexItem{} // every copy, e.g. Movies and Movies 4K
 	if err := l.plexItems(ctx, m, keys, func(_ string, it plexItem, title int64) {
 		if _, ok := want[title]; ok {
-			if _, seen := items[title]; !seen {
-				items[title] = it
-			}
+			items[title] = append(items[title], it)
 		}
 	}); err != nil {
 		return 0, err
@@ -251,25 +249,30 @@ func (l *Linker) labelServer(ctx context.Context, m domain.MediaServer, set Labe
 	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 	n := 0
 	for _, id := range ids {
-		it := items[id]
-		have, err := l.plexLabels(ctx, m, it.ratingKey)
-		if err != nil {
-			return n, err
-		}
-		on := map[string]bool{}
-		for _, h := range have {
-			on[strings.ToLower(h)] = true
-		}
-		var add []string
-		for _, lb := range want[id] {
-			if !on[strings.ToLower(lb)] {
-				add = append(add, lb)
-			}
-		}
-		if len(add) > 0 {
-			if err := l.putPlexLabels(ctx, m, it, have, add); err != nil {
+		put := false
+		for _, it := range items[id] {
+			have, err := l.plexLabels(ctx, m, it.ratingKey)
+			if err != nil {
 				return n, err
 			}
+			on := map[string]bool{}
+			for _, h := range have {
+				on[strings.ToLower(h)] = true
+			}
+			var add []string
+			for _, lb := range want[id] {
+				if !on[strings.ToLower(lb)] {
+					add = append(add, lb)
+				}
+			}
+			if len(add) > 0 {
+				if err := l.putPlexLabels(ctx, m, it, have, add); err != nil {
+					return n, err
+				}
+				put = true
+			}
+		}
+		if put {
 			n++
 		}
 		if err := markLabels(ctx, l.Store, m.ID, id, want[id], time.Now().UTC()); err != nil {
