@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"context"
+	"database/sql"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -64,6 +65,34 @@ func TestMyMediaLink(t *testing.T) {
 	}
 	if resp, _ := ana.do(t, f, "DELETE", "/api/v1/auth/media-link/jellyfin", ""); resp.StatusCode != 404 {
 		t.Fatalf("unlink again: %d", resp.StatusCode)
+	}
+}
+
+// Relinking someone whose only way in is their sign-in link, to an account on
+// a server that is not the sign-in one, would lock them out: refused.
+func TestRelinkKeepsOnlyWayIn(t *testing.T) {
+	f := gated(t, Options{})
+	mediaLinked(t, f)
+	own := ownerOf(t, f)
+	join(t, f, invite(t, f, own, `{"role":"member"}`), "ana")
+	uid := userID(t, f, "ana")
+	ctx := context.Background()
+	err := f.s.WriteCore(ctx, func(tx *sql.Tx) error {
+		if _, err := tx.ExecContext(ctx, "UPDATE users SET password_hash = '' WHERE id = ?", uid); err != nil {
+			return err
+		}
+		return insertUserLink(ctx, tx, uid, "jellyfin", "signin1", "Ana", "2026-01-01T00:00:00Z")
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := strconv.FormatInt(uid, 10)
+	if resp, out := own.do(t, f, "PUT", "/api/v1/users/"+id+"/media-link", `{"server":7,"account":"kid1"}`); resp.StatusCode != 409 {
+		t.Fatalf("relink: %d %s", resp.StatusCode, out)
+	}
+	links, _ := LinksOfPerson(ctx, f.s.Read(), uid)
+	if len(links) != 1 || links[0].ExtID != "signin1" {
+		t.Fatalf("links = %v", links)
 	}
 }
 

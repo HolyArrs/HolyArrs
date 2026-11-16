@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -150,7 +151,7 @@ func (a *Auth) myMediaLink(w http.ResponseWriter, r *http.Request) {
 		if err := a.linkSessionFreshTx(tx, proof); err != nil {
 			return err
 		}
-		return a.linkMediaTx(ctx, tx, who.UserID, m.Kind, got.ID, got.Name)
+		return a.linkMediaTx(ctx, tx, who.UserID, m, got.ID, got.Name)
 	})
 	if !a.mediaLinkDone(w, r, who.UserID, m.Kind, got.Name, err) {
 		return
@@ -169,6 +170,13 @@ func (a *Auth) mediaLinkDone(w http.ResponseWriter, r *http.Request, userID int6
 	case errors.Is(err, errNotAllowed):
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": "confirm your local password again before linking", "code": "reauth"})
 		return false
+	case errors.Is(err, errNoWayIn):
+		if who, _ := webserver.From(r.Context()); who.UserID == userID {
+			fail(w, http.StatusConflict, "this is your only way to sign in; set a HolyArrs password first")
+		} else {
+			fail(w, http.StatusConflict, "this is their only way to sign in; set them a password first")
+		}
+		return false
 	case err != nil:
 		serverError(w, "media link", err)
 		return false
@@ -183,7 +191,10 @@ func (a *Auth) mediaLinkDone(w http.ResponseWriter, r *http.Request, userID int6
 // linkMediaTx links account extID of a Jellyfin or Emby server to userID,
 // replacing the person's earlier link of that kind; the sessions that
 // earlier account signed in end. errTaken: it belongs to someone else.
-func (a *Auth) linkMediaTx(ctx context.Context, tx *sql.Tx, userID int64, kind, extID, name string) error {
+// errNoWayIn: the earlier link is the person's only way in and the new
+// account is not on the sign-in server, so they could no longer sign in.
+func (a *Auth) linkMediaTx(ctx context.Context, tx *sql.Tx, userID int64, m LinkServer, extID, name string) error {
+	kind := m.Kind
 	other, err := linkOwner(ctx, tx, kind, extID)
 	switch {
 	case err == nil && other != userID:
@@ -191,6 +202,9 @@ func (a *Auth) linkMediaTx(ctx context.Context, tx *sql.Tx, userID int64, kind, 
 	case err == nil:
 		return nil // linked already
 	case !errors.Is(err, sql.ErrNoRows):
+		return err
+	}
+	if err := a.relinkKeepsWayIn(ctx, tx, userID, m); err != nil {
 		return err
 	}
 	n, err := deleteMediaLink(ctx, tx, userID, kind)
@@ -203,6 +217,43 @@ func (a *Auth) linkMediaTx(ctx context.Context, tx *sql.Tx, userID int64, kind, 
 		}
 	}
 	return insertUserLink(ctx, tx, userID, kind, extID, truncate(name, 200), database.FormatTime(a.now()))
+}
+
+// relinkKeepsWayIn refuses replacing a link that is the person's only way
+// in, unless the new server is the one people sign in with.
+func (a *Auth) relinkKeepsWayIn(ctx context.Context, tx *sql.Tx, userID int64, m LinkServer) error {
+	if sameServer(a.way(ctx, m.Kind).URL, m.URL) {
+		return nil
+	}
+	links, err := mediaLinksOf(ctx, tx, userID)
+	if err != nil {
+		return err
+	}
+	had := false
+	for _, l := range links {
+		had = had || l.Provider == m.Kind
+	}
+	if !had {
+		return nil
+	}
+	hash, err := passwordHashOf(ctx, tx, userID)
+	if err != nil {
+		return err
+	}
+	others, err := waysInBesidesLink(ctx, tx, userID, m.Kind)
+	if err != nil {
+		return err
+	}
+	if hash == "" && others == 0 {
+		return errNoWayIn
+	}
+	return nil
+}
+
+func sameServer(a, b string) bool {
+	a = strings.TrimRight(strings.TrimSpace(a), "/")
+	b = strings.TrimRight(strings.TrimSpace(b), "/")
+	return a != "" && strings.EqualFold(a, b)
 }
 
 // myMediaUnlink removes my link of one kind; refused when it is my only way in.
@@ -348,7 +399,7 @@ func (a *Auth) userMediaLink(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "no such account on that server")
 		return
 	}
-	err = a.s.WriteCore(ctx, func(tx *sql.Tx) error { return a.linkMediaTx(ctx, tx, id, m.Kind, pick.ID, pick.Name) })
+	err = a.s.WriteCore(ctx, func(tx *sql.Tx) error { return a.linkMediaTx(ctx, tx, id, m, pick.ID, pick.Name) })
 	if !a.mediaLinkDone(w, r, id, m.Kind, pick.Name, err) {
 		return
 	}
