@@ -2,7 +2,6 @@ package metadata
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -31,15 +30,8 @@ const Attribution = "This product uses the TMDB API but is not endorsed or certi
 // EnvTokenFile names a file holding the TMDB read access token (for the lab).
 const EnvTokenFile = "HOLYARRS_TMDB_TOKEN_FILE"
 
-// TMDB looks movies up on The Movie Database. TMDB issues two credentials
-// in two shapes and this accepts both:
-//
-//   - a v4 read access token (a long JWT), sent as an Authorization: Bearer
-//     header and never in a URL;
-//   - a v3 API key (32 hex characters, the "API Key" on TMDB's own settings
-//     page, and the one most people copy), sent as ?api_key=.
-//
-// A 32-hex credential is a v3 key; anything else rides the header.
+// TMDB looks movies up on The Movie Database. It takes either credential
+// TMDB issues: a v4 read token (Bearer header) or a v3 API key (?api_key=).
 //
 // Answers are kept in memory for TTL. With Disk set, every answer but a
 // search is kept there too for tmdbKeep, so a restart reads it back: an
@@ -294,28 +286,6 @@ func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 // turn upstream, then keeps the answer for the next ask.
 const tmdbAttempt = 25 * time.Second
 
-// tmdbCredential tells TMDB's two credentials apart: a v3 API key is 32 hex
-// characters and goes in the query, anything else is a v4 read access token
-// and goes in the Authorization header.
-func tmdbCredential(tok string) (bearer, apiKey string) {
-	t := strings.TrimSpace(tok)
-	if len(t) == 32 {
-		if _, err := hex.DecodeString(t); err == nil {
-			return "", t
-		}
-	}
-	return t, ""
-}
-
-// withQuery adds one query value to u, keeping the ones already there.
-func withQuery(u, key, value string) string {
-	sep := "?"
-	if strings.Contains(u, "?") {
-		sep = "&"
-	}
-	return u + sep + url.Values{key: {value}}.Encode()
-}
-
 // fetch makes one request (one retry after a 429).
 func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	ahead := IsAhead(ctx)
@@ -336,11 +306,7 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	if tok == "" {
 		return nil, ErrNoAccess
 	}
-	// A v3 API key rides the query; a v4 read token rides the header.
-	bearer, apiKey := tmdbCredential(tok)
-	if apiKey != "" {
-		u = withQuery(u, "api_key", apiKey)
-	}
+	bearer := tmdbApply(&u, tok)
 	// Fetch-ahead and a person's pages fail apart: a warm-up that keeps
 	// failing never opens the breaker a page call goes through.
 	lane := "page"
@@ -370,9 +336,7 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 		}
 		rctx, cancel := afterGate(ctx, timeout)
 		req, _ := http.NewRequestWithContext(rctx, http.MethodGet, u, nil)
-		if bearer != "" {
-			req.Header.Set("Authorization", "Bearer "+bearer)
-		}
+		setCredential(req, bearer)
 		req.Header.Set("Accept", "application/json")
 		aheadRequest(ctx, req)
 		resp, err := cl.Do(req)
