@@ -1,20 +1,20 @@
-package plugins
+package pluginstest
 
 import (
 	"context"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins"
 	"sync"
 )
 
-// FakeRunner records starts instead of running programs, for tests in this
-// and other packages.
+// FakeRunner records starts instead of running programs, for tests.
 type FakeRunner struct {
 	mu     sync.Mutex
-	Starts []Spec
+	Starts []plugins.Spec
 	Err    error
 }
 
 // Start records spec and returns a process that runs until stopped or ctx ends.
-func (f *FakeRunner) Start(ctx context.Context, spec Spec) (Process, error) {
+func (f *FakeRunner) Start(ctx context.Context, spec plugins.Spec) (plugins.Process, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.Err != nil {

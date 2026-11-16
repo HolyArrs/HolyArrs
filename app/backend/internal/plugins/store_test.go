@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -40,6 +41,11 @@ func newFixture(t *testing.T) *fixture {
 // install runs CheckInstall and Install for one version of the program.
 func (f *fixture) install(version string, file []byte) error {
 	f.t.Helper()
+	return f.store.Install(f.accepted(version, file))
+}
+
+// accepted runs CheckInstall for one version of the program.
+func (f *fixture) accepted(version string, file []byte) *Accepted {
 	man := manifestJSON(func(m map[string]any) { m["version"] = version; m["sha256"] = fileHash(file) })
 	acc, err := CheckInstall(InstallInput{
 		PublicKey: f.pub,
@@ -49,9 +55,9 @@ func (f *fixture) install(version string, file []byte) error {
 		File:      strings.NewReader(string(file)),
 	})
 	if err != nil {
-		f.t.Fatal(err)
+		f.t.Error(err)
 	}
-	return f.store.Install(acc)
+	return acc
 }
 
 func (f *fixture) startInput(version string, file []byte, block ...Entry) StartInput {
@@ -71,6 +77,30 @@ func (f *fixture) state() *State {
 	return st
 }
 
+func (f *fixture) programPath() string {
+	f.t.Helper()
+	return f.store.ProgramPath(f.state().Plugins["tailscale"])
+}
+
+// recordRunner records starts; pluginstest.FakeRunner would be an import
+// cycle here.
+type recordRunner struct {
+	mu     sync.Mutex
+	Starts []Spec
+}
+
+func (r *recordRunner) Start(_ context.Context, spec Spec) (Process, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.Starts = append(r.Starts, spec)
+	return stoppedProcess{}, nil
+}
+
+type stoppedProcess struct{}
+
+func (stoppedProcess) Stop() error { return nil }
+func (stoppedProcess) Wait() error { return nil }
+
 func TestInstallAndStart(t *testing.T) {
 	f := newFixture(t)
 	if err := f.install("1.0.0", programFile); err != nil {
@@ -80,15 +110,25 @@ func TestInstallAndStart(t *testing.T) {
 	if p == nil || !p.Enabled || p.Version != "1.0.0" || p.SHA256 != fileHash(programFile) {
 		t.Fatalf("state: %+v", p)
 	}
-	r := &FakeRunner{}
-	proc, err := f.store.Start(context.Background(), r, "tailscale", f.startInput("1.0.0", programFile), []string{"up"}, []string{"A=1"})
+	r := &recordRunner{}
+	proc, err := f.store.Start(context.Background(), r, "tailscale", f.startInput("1.0.0", programFile), []string{"up"}, []string{"A=1", "HOLYARRS_PLUGIN_X=1"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	proc.Stop()
+	prog := f.programPath()
 	if len(r.Starts) != 1 || r.Starts[0].DataDir != f.store.DataDir("tailscale") ||
-		r.Starts[0].Program != f.store.ProgramPath("tailscale", "1.0.0") {
+		filepath.Dir(r.Starts[0].Program) != filepath.Dir(prog) ||
+		!strings.HasPrefix(filepath.Base(r.Starts[0].Program), "run-") {
 		t.Fatalf("starts: %+v", r.Starts)
+	}
+	if got, err := hashFile(r.Starts[0].Program); err != nil || got != fileHash(programFile) {
+		t.Fatalf("run copy: %s %v", got, err)
+	}
+	env := strings.Join(r.Starts[0].Env, "\n")
+	if strings.Contains(env, "A=1") || !strings.Contains(env, "HOLYARRS_PLUGIN_X=1") ||
+		!strings.Contains(env, "HOME="+f.store.DataDir("tailscale")) {
+		t.Fatalf("env: %v", r.Starts[0].Env)
 	}
 	if fi, err := os.Stat(r.Starts[0].DataDir); err != nil || !fi.IsDir() {
 		t.Fatalf("data folder: %v", err)
@@ -101,10 +141,11 @@ func TestUpdateReplacesOldVersion(t *testing.T) {
 	if err := f.install("1.0.0", programFile); err != nil {
 		t.Fatal(err)
 	}
+	oldDir := filepath.Dir(f.programPath())
 	if err := f.install("1.1.0", newFile); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Dir(f.store.ProgramPath("tailscale", "1.0.0"))); !os.IsNotExist(err) {
+	if _, err := os.Stat(oldDir); !os.IsNotExist(err) {
 		t.Fatalf("old version folder still there: %v", err)
 	}
 	if _, err := f.store.CheckStart("tailscale", f.startInput("1.1.0", newFile)); err != nil {
@@ -117,10 +158,10 @@ func TestStartRefusesTamperedProgram(t *testing.T) {
 	if err := f.install("1.0.0", programFile); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(f.store.ProgramPath("tailscale", "1.0.0"), []byte("evil"), 0o700); err != nil {
+	if err := os.WriteFile(f.programPath(), []byte("evil"), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	r := &FakeRunner{}
+	r := &recordRunner{}
 	if _, err := f.store.Start(context.Background(), r, "tailscale", f.startInput("1.0.0", programFile), nil, nil); !errors.Is(err, ErrTampered) {
 		t.Fatalf("got %v, want ErrTampered", err)
 	}
@@ -141,7 +182,7 @@ func TestStartRefusesMissingProgram(t *testing.T) {
 	if err := f.install("1.0.0", programFile); err != nil {
 		t.Fatal(err)
 	}
-	os.Remove(f.store.ProgramPath("tailscale", "1.0.0"))
+	os.Remove(f.programPath())
 	if _, err := f.store.CheckStart("tailscale", f.startInput("1.0.0", programFile)); !errors.Is(err, ErrTampered) {
 		t.Fatalf("got %v", err)
 	}
@@ -225,7 +266,7 @@ func TestInterruptedInstallKeepsOldVersion(t *testing.T) {
 	if p := f.state().Plugins["tailscale"]; p.Version != "1.0.0" || !p.Enabled {
 		t.Fatalf("state changed: %+v", p)
 	}
-	if _, err := os.Stat(f.store.ProgramPath("tailscale", "1.1.0")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(f.store.dir, "tailscale", versionDir("1.1.0", fileHash([]byte("version two"))), programName)); !os.IsNotExist(err) {
 		t.Fatalf("half-written program placed: %v", err)
 	}
 	if _, err := f.store.CheckStart("tailscale", f.startInput("1.0.0", programFile)); err != nil {
@@ -272,5 +313,104 @@ func TestRemove(t *testing.T) {
 	}
 	if err := f.store.Remove("tailscale", "wipe"); err == nil {
 		t.Fatal("unknown mode accepted")
+	}
+}
+
+func TestConcurrentInstallAndStart(t *testing.T) {
+	f := newFixture(t)
+	if err := f.install("1.0.0", programFile); err != nil {
+		t.Fatal(err)
+	}
+	in := f.startInput("1.0.0", programFile)
+	r := &recordRunner{}
+	var wg sync.WaitGroup
+	errs := make(chan error, 20)
+	for i := 0; i < 10; i++ {
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			errs <- f.store.Install(f.accepted("1.0.0", programFile))
+		}()
+		go func() {
+			defer wg.Done()
+			_, err := f.store.Start(context.Background(), r, "tailscale", in, nil, nil)
+			errs <- err
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if p := f.state().Plugins["tailscale"]; !p.Enabled || len(r.Starts) != 10 {
+		t.Fatalf("state %+v, starts %d", p, len(r.Starts))
+	}
+}
+
+func TestReinstallSameVersionFailedSaveKeepsOld(t *testing.T) {
+	f := newFixture(t)
+	if err := f.install("1.0.0", programFile); err != nil {
+		t.Fatal(err)
+	}
+	orig := writeState
+	t.Cleanup(func() { writeState = orig })
+	writeState = func(string, []byte) error { return errors.New("disk full") }
+	if err := f.install("1.0.0", []byte("other bytes")); err == nil {
+		t.Fatal("install with failed save succeeded")
+	}
+	writeState = orig
+	if p := f.state().Plugins["tailscale"]; p.SHA256 != fileHash(programFile) {
+		t.Fatalf("state changed: %+v", p)
+	}
+	r := &recordRunner{}
+	if _, err := f.store.Start(context.Background(), r, "tailscale", f.startInput("1.0.0", programFile), nil, nil); err != nil {
+		t.Fatalf("old program no longer starts: %v", err)
+	}
+}
+
+func TestStartRefusesSymlinkedFolder(t *testing.T) {
+	f := newFixture(t)
+	if err := f.install("1.0.0", programFile); err != nil {
+		t.Fatal(err)
+	}
+	verDir := filepath.Dir(f.programPath())
+	other := t.TempDir()
+	os.WriteFile(filepath.Join(other, programName), programFile, 0o700)
+	if err := os.RemoveAll(verDir); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(other, verDir); err != nil {
+		t.Skipf("symlinks not available: %v", err)
+	}
+	if _, err := f.store.CheckStart("tailscale", f.startInput("1.0.0", programFile)); !errors.Is(err, ErrTampered) {
+		t.Fatalf("got %v, want ErrTampered", err)
+	}
+}
+
+func TestExecRunnerRefusesRelativeProgram(t *testing.T) {
+	if _, err := (ExecRunner{}).Start(context.Background(), Spec{Program: "program"}); err == nil {
+		t.Fatal("relative program accepted")
+	}
+}
+
+func TestRemoveCallsStop(t *testing.T) {
+	f := newFixture(t)
+	if err := f.install("1.0.0", programFile); err != nil {
+		t.Fatal(err)
+	}
+	stopped := false
+	if err := f.store.Remove("tailscale", RemoveDelete, func() error { stopped = true; return nil }); err != nil {
+		t.Fatal(err)
+	}
+	if !stopped {
+		t.Fatal("stop not called")
+	}
+	entries, _ := os.ReadDir(f.store.dir)
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), ".trash-") {
+			t.Fatalf("trash left: %s", e.Name())
+		}
 	}
 }

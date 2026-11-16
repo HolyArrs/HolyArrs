@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os/exec"
+	"path/filepath"
 	"sync"
 )
 
@@ -50,6 +51,9 @@ type ExecRunner struct {
 // Start runs the program in its data folder with only the given env plus
 // the data folder's path as HOLYARRS_PLUGIN_DATA.
 func (r ExecRunner) Start(ctx context.Context, spec Spec) (Process, error) {
+	if !filepath.IsAbs(spec.Program) {
+		return nil, errors.New("plugin program path is not absolute")
+	}
 	cmd := exec.CommandContext(ctx, spec.Program, spec.Args...)
 	cmd.Dir = spec.DataDir
 	cmd.Env = append(append([]string{}, spec.Env...), "HOLYARRS_PLUGIN_DATA="+spec.DataDir)
