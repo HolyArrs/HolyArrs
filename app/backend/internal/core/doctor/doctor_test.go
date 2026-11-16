@@ -164,6 +164,8 @@ func TestExplainUnknownKeepsCallerWords(t *testing.T) {
 }
 
 func TestAtReadsAHangUp(t *testing.T) {
+	probe = func(string) Cause { return Unknown }
+	defer func() { probe = Probe }()
 	cases := []struct {
 		msg, url string
 		want     Cause

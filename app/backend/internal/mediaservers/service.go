@@ -523,6 +523,10 @@ func client(m domain.MediaServer) *http.Client {
 // maxAnswer is the most bytes of one media server answer read.
 const maxAnswer = 4 << 20
 
+// ownAlso is the app that may answer for a kind as well: Jellyfin grew out
+// of Emby and still names it.
+var ownAlso = map[string]string{"jellyfin": "emby", "emby": "jellyfin"}
+
 // do sends one request with the server's token and returns the body. The
 // error never holds the address or the token.
 func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path string, body []byte) ([]byte, error) {
@@ -569,7 +573,7 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 			err = ue.Err
 		}
 		// The line never holds the address or the token.
-		if c := doctor.Of(err); c != doctor.Unknown {
+		if c := doctor.At(doctor.Of(err), err.Error(), m.URL); c != doctor.Unknown {
 			return nil, doctor.Mark(c, nil)
 		}
 		return nil, errors.New("the server did not answer")
@@ -589,6 +593,8 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 	}
 	outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
 	switch {
+	case resp.StatusCode >= 400 && doctor.Other(resp.Header, b, m.Kind, ownAlso[m.Kind]) != nil:
+		return nil, doctor.Mark(doctor.WrongApp, nil)
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
 		return nil, doctor.Mark(doctor.Auth, nil)
 	case doctor.Answer(resp.StatusCode, b) != nil:

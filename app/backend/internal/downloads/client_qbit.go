@@ -379,6 +379,12 @@ func (q *Qbittorrent) doRaw(ctx context.Context, method, path string, form url.V
 		return 0, nil, fmt.Errorf("qbittorrent %s: %w", path, ErrTooLarge)
 	}
 	code := resp.StatusCode
+	if code >= 400 {
+		// Another app on the port is not a key or path problem.
+		if e := doctor.Other(resp.Header, b, "qbittorrent"); e != nil {
+			return code, nil, fmt.Errorf("qbittorrent %s: %w", path, e)
+		}
+	}
 	switch {
 	case code >= 200 && code < 300:
 		return code, b, nil

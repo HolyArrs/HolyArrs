@@ -245,16 +245,13 @@ func HealthOf(d domain.Downloader, now time.Time) HealthView {
 		if line != "" {
 			return HealthView{"resting", "Resting", line, string(cause)}
 		}
-		why := ""
-		if e := strings.TrimRight(strings.TrimSpace(d.LastError), "."); e != "" {
-			why = " (" + e + ")"
-		}
-		return HealthView{"resting", "Resting", "It did not answer" + why + ", so HolyArrs waits until " + d.BackoffUntil.UTC().Format("15:04 UTC") + " before sending to it again.", ""}
+		// The raw error stays in the log; the line is plain words.
+		return HealthView{"resting", "Resting", "It did not answer, so HolyArrs waits until " + d.BackoffUntil.UTC().Format("15:04 UTC") + " before sending to it again.", ""}
 	case d.State == "unreachable":
 		if line != "" {
 			return HealthView{"not_answering", "Not answering", line, string(cause)}
 		}
-		return HealthView{"not_answering", "Not answering", "It did not answer the last check. " + d.LastError, ""}
+		return HealthView{"not_answering", "Not answering", "It did not answer the last check. The log has the details.", ""}
 	}
 	return HealthView{"working", "Working", "", ""}
 }

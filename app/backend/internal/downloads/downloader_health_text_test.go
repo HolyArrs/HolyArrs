@@ -1,6 +1,7 @@
 package downloads
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -19,7 +20,7 @@ func TestRestingDownloaderTextIsOneSentence(t *testing.T) {
 		t.Fatalf("known cause: got %q", got)
 	}
 	d.LastError = "qbittorrent app/version: 502 Bad Gateway"
-	want := "It did not answer (qbittorrent app/version: 502 Bad Gateway), so HolyArrs waits until 12:01 UTC before sending to it again."
+	want := "It did not answer, so HolyArrs waits until 12:01 UTC before sending to it again."
 	if got := HealthOf(d, now).Text; got != want {
 		t.Fatalf("got %q", got)
 	}
@@ -27,5 +28,10 @@ func TestRestingDownloaderTextIsOneSentence(t *testing.T) {
 	want = "It did not answer, so HolyArrs waits until 12:01 UTC before sending to it again."
 	if got := HealthOf(d, now).Text; got != want {
 		t.Fatalf("no cause: got %q", got)
+	}
+	d.BackoffUntil, d.State = nil, "unreachable"
+	d.LastError = "read tcp 1.2.3.4:5->6.7.8.9:10: wsarecv: An existing connection was forcibly closed by the remote host."
+	if got := HealthOf(d, now).Text; strings.Contains(got, "wsarecv") || strings.Contains(got, "forcibly") {
+		t.Fatalf("raw error on the card: %q", got)
 	}
 }

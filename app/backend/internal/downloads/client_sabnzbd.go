@@ -304,6 +304,11 @@ func (s *Sabnzbd) do(req *http.Request, mode string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	b, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
+	if resp.StatusCode >= 400 {
+		if e := doctor.Other(resp.Header, b, "sabnzbd"); e != nil {
+			return nil, fmt.Errorf("sabnzbd %s: %w", mode, e)
+		}
+	}
 	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized {
 		line := strings.TrimSpace(string(b))
 		if line == "" || strings.Contains(line, "API Key") {

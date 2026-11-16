@@ -138,5 +138,10 @@
 	"settings.downloaders.categoryAfterImport": "Danh mục sau khi nhập",
 	"settings.downloaders.categoryAfterImportHint": "Khi torrent đã được nhập, HolyArrs chuyển nó sang danh mục này. Để trống để giữ nó ở danh mục chính.",
 	"settings.downloaders.ownOnly": "Chỉ hiện mục của HolyArrs",
-	"settings.downloaders.ownOnlyHint": "Mục của ứng dụng khác trên trình tải này sẽ bị ẩn, và HolyArrs không thay đổi chúng."
+	"settings.downloaders.ownOnlyHint": "Mục của ứng dụng khác trên trình tải này sẽ bị ẩn, và HolyArrs không thay đổi chúng.",
+	"settings.downloaders.state.notAnswering": "Không phản hồi",
+	"settings.downloaders.state.paused": "Đã tạm dừng",
+	"settings.downloaders.state.resting": "Đang nghỉ",
+	"settings.downloaders.state.signInRefused": "Đăng nhập bị từ chối",
+	"settings.downloaders.state.working": "Đang hoạt động"
 }

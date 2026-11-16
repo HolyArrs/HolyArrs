@@ -138,5 +138,10 @@
 	"settings.downloaders.categoryAfterImport": "Luokka tuonnin jälkeen",
 	"settings.downloaders.categoryAfterImportHint": "Kun torrent on tuotu, HolyArrs siirtää sen tähän luokkaan. Jätä tyhjäksi, niin se pysyy pääluokassa.",
 	"settings.downloaders.ownOnly": "Näytä vain HolyArrsin kohteet",
-	"settings.downloaders.ownOnlyHint": "Muiden sovellusten kohteet tässä lataajassa piilotetaan, eikä HolyArrs muuta niitä."
+	"settings.downloaders.ownOnlyHint": "Muiden sovellusten kohteet tässä lataajassa piilotetaan, eikä HolyArrs muuta niitä.",
+	"settings.downloaders.state.notAnswering": "Ei vastaa",
+	"settings.downloaders.state.paused": "Keskeytetty",
+	"settings.downloaders.state.resting": "Tauolla",
+	"settings.downloaders.state.signInRefused": "Kirjautuminen hylätty",
+	"settings.downloaders.state.working": "Toimii"
 }

@@ -78,7 +78,7 @@ func (e *Engine) Links(ctx context.Context) ([]jobs.Status, error) {
 			}
 			add("downloader", d.ID, d.Name, jobs.Retrying, why)
 		case "auth_failed":
-			add("downloader", d.ID, d.Name, jobs.Failed, "It turned down the sign-in. Check its user name and password or key; the log has the details.")
+			add("downloader", d.ID, d.Name, jobs.Failed, doctor.Line(doctor.Auth))
 		default:
 			add("downloader", d.ID, d.Name, jobs.Running, "")
 		}

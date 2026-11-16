@@ -306,6 +306,8 @@ func (c *Client) send(ctx context.Context, method, raw string, payload []byte, h
 			e.RetryAfter = time.Duration(min(s, maxRetryAfter)) * time.Second
 		}
 		return nil, e
+	case (resp.StatusCode == 401 || resp.StatusCode == 403 || resp.StatusCode == 404) && doctor.Other(resp.Header, body, "prowlarr", "jackett", "nzbhydra") != nil:
+		return nil, &Error{Kind: KindBroken, Msg: resp.Status, cause: doctor.Mark(doctor.WrongApp, nil)}
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
 		return nil, &Error{Kind: KindLoginRefused, Msg: resp.Status}
 	case resp.StatusCode >= 500:

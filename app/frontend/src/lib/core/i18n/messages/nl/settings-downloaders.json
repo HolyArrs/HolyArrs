@@ -138,5 +138,10 @@
 	"settings.downloaders.categoryAfterImport": "Categorie na import",
 	"settings.downloaders.categoryAfterImportHint": "Zodra een torrent is geïmporteerd, verplaatst HolyArrs hem naar deze categorie. Laat leeg om hem in de hoofdcategorie te houden.",
 	"settings.downloaders.ownOnly": "Alleen HolyArrs-items tonen",
-	"settings.downloaders.ownOnlyHint": "Items van andere apps op deze downloader worden verborgen en HolyArrs wijzigt ze niet."
+	"settings.downloaders.ownOnlyHint": "Items van andere apps op deze downloader worden verborgen en HolyArrs wijzigt ze niet.",
+	"settings.downloaders.state.notAnswering": "Geen antwoord",
+	"settings.downloaders.state.paused": "Gepauzeerd",
+	"settings.downloaders.state.resting": "Rust",
+	"settings.downloaders.state.signInRefused": "Aanmelding geweigerd",
+	"settings.downloaders.state.working": "Werkt"
 }

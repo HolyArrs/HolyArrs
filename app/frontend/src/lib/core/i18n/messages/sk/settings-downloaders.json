@@ -138,5 +138,10 @@
 	"settings.downloaders.categoryAfterImport": "Kategória po importe",
 	"settings.downloaders.categoryAfterImportHint": "Po importe HolyArrs presunie torrent do tejto kategórie. Nechajte prázdne, aby zostal v hlavnej kategórii.",
 	"settings.downloaders.ownOnly": "Zobraziť len položky HolyArrs",
-	"settings.downloaders.ownOnlyHint": "Položky iných aplikácií v tomto sťahovači sú skryté a HolyArrs ich nemení."
+	"settings.downloaders.ownOnlyHint": "Položky iných aplikácií v tomto sťahovači sú skryté a HolyArrs ich nemení.",
+	"settings.downloaders.state.notAnswering": "Neodpovedá",
+	"settings.downloaders.state.paused": "Pozastavené",
+	"settings.downloaders.state.resting": "Odpočíva",
+	"settings.downloaders.state.signInRefused": "Prihlásenie odmietnuté",
+	"settings.downloaders.state.working": "Funguje"
 }

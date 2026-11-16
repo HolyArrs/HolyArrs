@@ -319,6 +319,9 @@ func CauseOf(err error) doctor.Cause {
 		}
 		return doctor.Blocked
 	case KindBroken:
+		if se.cause != nil && doctor.Of(se.cause) == doctor.WrongApp {
+			return doctor.WrongApp
+		}
 		if c := doctor.OfText(se.Msg); c == doctor.NotFound {
 			return c
 		}

@@ -18,6 +18,12 @@ func TestSourceTestNamesEachCause(t *testing.T) {
 		switch {
 		case strings.HasPrefix(r.URL.Path, "/key/"):
 			w.WriteHeader(http.StatusUnauthorized)
+		case strings.HasPrefix(r.URL.Path, "/radarr/"):
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte("<html><head><title>Radarr</title></head></html>"))
+		case strings.HasPrefix(r.URL.Path, "/nginx/"):
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("The plain HTTP request was sent to HTTPS port"))
 		case strings.HasPrefix(r.URL.Path, "/page/"):
 			w.Header().Set("Content-Type", "text/html")
 			_, _ = w.Write([]byte("<!doctype html><html><body>Some other app</body></html>"))
@@ -57,6 +63,8 @@ func TestSourceTestNamesEachCause(t *testing.T) {
 		{"key refused", plain.URL + "/key/api", true, doctor.Auth},
 		{"wrong path", plain.URL + "/nothing/api", true, doctor.NotFound},
 		{"another app", plain.URL + "/page/api", true, doctor.WrongApp},
+		{"another app turns down the key", plain.URL + "/radarr/api", true, doctor.WrongApp},
+		{"nginx https port", plain.URL + "/nginx/api", true, doctor.UseHTTPS},
 		{"local network policy", plain.URL + "/api", false, doctor.Blocked},
 	}
 	for _, tc := range cases {

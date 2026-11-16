@@ -138,5 +138,10 @@
 	"settings.downloaders.categoryAfterImport": "导入后的分类",
 	"settings.downloaders.categoryAfterImportHint": "种子导入后，HolyArrs 会把它移到这个分类。留空则保留在主分类中。",
 	"settings.downloaders.ownOnly": "只显示 HolyArrs 的项目",
-	"settings.downloaders.ownOnlyHint": "此下载器上其他应用的项目会被隐藏，HolyArrs 也不会更改它们。"
+	"settings.downloaders.ownOnlyHint": "此下载器上其他应用的项目会被隐藏，HolyArrs 也不会更改它们。",
+	"settings.downloaders.state.notAnswering": "无响应",
+	"settings.downloaders.state.paused": "已暂停",
+	"settings.downloaders.state.resting": "暂停中",
+	"settings.downloaders.state.signInRefused": "登录被拒绝",
+	"settings.downloaders.state.working": "正常"
 }

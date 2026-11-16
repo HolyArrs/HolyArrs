@@ -16,8 +16,8 @@ import (
 
 // doctorServers are the fake apps on 127.0.0.1 every cause is shown with.
 type doctorServers struct {
-	plain, secure, slow, page *httptest.Server
-	closed, hangUp            string
+	plain, secure, slow, page, other, nginx *httptest.Server
+	closed, hangUp, picky                   string
 }
 
 func startDoctorServers(t *testing.T) doctorServers {
@@ -43,6 +43,17 @@ func startDoctorServers(t *testing.T) doctorServers {
 		w.Header().Set("Content-Type", "text/html")
 		_, _ = w.Write([]byte("<!doctype html><html><body>Some other app</body></html>"))
 	}))
+	// Another app (here Sonarr) that turns down the key on every path.
+	s.other = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte("<html><head><title>Sonarr</title></head></html>"))
+	}))
+	// nginx's answer to plain http on its https port.
+	s.nginx = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Server", "nginx")
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("<center>The plain HTTP request was sent to HTTPS port</center>"))
+	}))
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -66,7 +77,38 @@ func startDoctorServers(t *testing.T) doctorServers {
 	}()
 	s.hangUp = h.Addr().String()
 	t.Cleanup(func() { h.Close() })
-	t.Cleanup(func() { s.plain.Close(); s.secure.Close(); s.slow.Close(); s.page.Close() })
+	// A plain http port that hangs up on a TLS hello without a word but
+	// answers plain http, the way qBittorrent's web UI does.
+	pk, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		for {
+			c, err := pk.Accept()
+			if err != nil {
+				return
+			}
+			go func() {
+				defer c.Close()
+				b := make([]byte, 1)
+				if _, err := c.Read(b); err != nil || b[0] == 0x16 {
+					return
+				}
+				_, _ = c.Write([]byte("HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"))
+			}()
+		}
+	}()
+	s.picky = pk.Addr().String()
+	t.Cleanup(func() { pk.Close() })
+	t.Cleanup(func() {
+		s.plain.Close()
+		s.secure.Close()
+		s.slow.Close()
+		s.page.Close()
+		s.other.Close()
+		s.nginx.Close()
+	})
 	return s
 }
 
@@ -89,6 +131,9 @@ func TestDownloaderTestNamesEachCause(t *testing.T) {
 		{"key refused", s.plain.URL + "/key", true, false, doctor.Auth},
 		{"wrong path", s.plain.URL + "/nothing", true, false, doctor.NotFound},
 		{"another app", s.page.URL, true, false, doctor.WrongApp},
+		{"another app turns down the key", s.other.URL, true, false, doctor.WrongApp},
+		{"nginx: plain http on its https port", s.nginx.URL, true, false, doctor.UseHTTPS},
+		{"https on a plain port that drops TLS", "https://" + s.picky, true, false, doctor.UseHTTP},
 		{"https on a port that hangs up", "https://" + s.hangUp, true, false, doctor.Unknown},
 		{"http on a port that hangs up", "http://" + s.hangUp, true, false, doctor.Unknown},
 		{"local network policy", s.plain.URL, false, false, doctor.Blocked},
@@ -122,7 +167,7 @@ func TestDownloaderTestNamesEachCause(t *testing.T) {
 				}
 				// The stored last error reads the same on the health row.
 				d := downloaderWithError(err, tc.base)
-				if strings.Contains(tc.name, "hangs up") {
+				if strings.Contains(tc.name, "hangs up") || strings.Contains(tc.name, "drops TLS") {
 					// A hang-up in the background is as likely a restart as a
 					// wrong port, so the row does not blame the setting.
 					if hv := HealthOf(d, time.Now()); hv.Cause != "" {

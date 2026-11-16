@@ -138,5 +138,10 @@
 	"settings.downloaders.categoryAfterImport": "Kategória importálás után",
 	"settings.downloaders.categoryAfterImportHint": "Importálás után a HolyArrs ebbe a kategóriába teszi a torrentet. Hagyja üresen, hogy a fő kategóriában maradjon.",
 	"settings.downloaders.ownOnly": "Csak a HolyArrs elemeinek mutatása",
-	"settings.downloaders.ownOnlyHint": "Más alkalmazások elemei ezen a letöltőn rejtve maradnak, és a HolyArrs nem módosítja őket."
+	"settings.downloaders.ownOnlyHint": "Más alkalmazások elemei ezen a letöltőn rejtve maradnak, és a HolyArrs nem módosítja őket.",
+	"settings.downloaders.state.notAnswering": "Munkamenet",
+	"settings.downloaders.state.paused": "Szüneteltetve",
+	"settings.downloaders.state.resting": "Pihen",
+	"settings.downloaders.state.signInRefused": "Bejelentkezés elutasítva",
+	"settings.downloaders.state.working": "Működik"
 }

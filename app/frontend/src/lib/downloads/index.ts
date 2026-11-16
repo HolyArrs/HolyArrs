@@ -32,7 +32,7 @@ export { seedGoalKinds, seedingBody, seedingFields, deadRuleOn } from './downloa
 export { fromAnswer } from './dl-store.ts';
 export { groupDownloads } from './history.ts';
 export { groupLabel } from './history.ts';
-export { healthTone } from './downloaders.ts';
+export { healthLabel, healthTone } from './downloaders.ts';
 export { isDl } from './dl-store.ts';
 export { isMusic } from './pick-rules.ts';
 export { isOwnTrait } from './pick-rules.ts';

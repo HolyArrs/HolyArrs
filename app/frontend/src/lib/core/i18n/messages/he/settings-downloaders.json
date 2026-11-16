@@ -138,5 +138,10 @@
 	"settings.downloaders.categoryAfterImport": "קטגוריה אחרי הייבוא",
 	"settings.downloaders.categoryAfterImportHint": "אחרי שטורנט יובא, HolyArrs מעביר אותו לקטגוריה הזו. השאירו ריק כדי להשאיר אותו בקטגוריה הראשית.",
 	"settings.downloaders.ownOnly": "להציג רק פריטים של HolyArrs",
-	"settings.downloaders.ownOnlyHint": "פריטים של אפליקציות אחרות במוריד הזה מוסתרים, ו־HolyArrs לא משנה אותם."
+	"settings.downloaders.ownOnlyHint": "פריטים של אפליקציות אחרות במוריד הזה מוסתרים, ו־HolyArrs לא משנה אותם.",
+	"settings.downloaders.state.notAnswering": "לא עונה",
+	"settings.downloaders.state.paused": "מושהה",
+	"settings.downloaders.state.resting": "במנוחה",
+	"settings.downloaders.state.signInRefused": "הכניסה נדחתה",
+	"settings.downloaders.state.working": "פועל"
 }

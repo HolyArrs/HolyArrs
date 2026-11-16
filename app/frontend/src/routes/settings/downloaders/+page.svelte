@@ -13,7 +13,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { emptyForm, samePathPair, formBody, formFrom, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
+	import { emptyForm, samePathPair, formBody, formFrom, healthLabel, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -487,7 +487,7 @@
 						</div>
 					</div>
 					<div class="num" title={d.checked_at ? t('settings.downloaders.checked', { ago: ago(d.checked_at) }) : undefined}><b>{d.active_downloads}</b><small>{t('settings.downloaders.active')}</small></div>
-					<span class="st {healthTone(d.health.state)}"><i></i><span data-testid="downloader-state">{d.health.label}</span></span>
+					<span class="st {healthTone(d.health.state)}"><i></i><span data-testid="downloader-state">{healthLabel(d.health)}</span></span>
 					<div class="acts">
 						<Button variant="plain" size="sm" type="button" disabled={testing === d.id} aria-busy={testing === d.id} onclick={() => test(d)}>{t('settings.downloaders.test')}</Button>
 						{#if d.health.state === 'paused'}

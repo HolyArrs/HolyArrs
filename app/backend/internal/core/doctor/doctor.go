@@ -82,7 +82,7 @@ func Mark(c Cause, err error) error { return &Fault{Cause: c, Err: err} }
 // otherwise. Callers keep their own errors for the rest.
 func Answer(code int, body []byte) error {
 	switch {
-	case code == 400 && strings.Contains(string(body), "HTTP request to an HTTPS server"):
+	case code == 400 && (strings.Contains(string(body), "HTTP request to an HTTPS server") || strings.Contains(string(body), "plain HTTP request was sent to HTTPS port")):
 		return Mark(UseHTTPS, nil)
 	case code == 401 || code == 403:
 		return Mark(Auth, nil)
@@ -151,7 +151,8 @@ var textCauses = []struct {
 	{Blocked, []string{"address refused by the network policy", "on the local network"}},
 	{DNS, []string{"no such host", "could not look up"}},
 	{UseHTTP, []string{"server gave http response to https client", "first record does not look like a tls handshake"}},
-	{UseHTTPS, []string{"http request to an https server"}},
+	// A TLS record (alert 0x15, handshake 0x16) read as a plain http answer.
+	{UseHTTPS, []string{"http request to an https server", "plain http request was sent to https port", `malformed http response "\x15\x03`, `malformed http response "\x16\x03`}},
 	{TLS, []string{"x509:", "certificate", "tls: "}},
 	{Refused, []string{"connection refused", "actively refused"}},
 	{Timeout, []string{"timeout", "deadline exceeded", "did not answer within", "took too long"}},
@@ -191,8 +192,8 @@ func Explain(err error) (Cause, string, bool) {
 
 // At refines a cause with the address that was called. A bare hang-up is
 // as likely a restart or a dropped connection as a wrong port, so it stays
-// unknown; only an https:// address whose TLS handshake ended in EOF reads as
-// a plain http port.
+// unknown unless an https:// handshake ended in EOF, or a second look at the
+// address (Probe) finds it speaks the other of http and https.
 func At(c Cause, msg, rawURL string) Cause {
 	if c != Unknown {
 		return c
@@ -202,7 +203,7 @@ func At(c Cause, msg, rawURL string) Cause {
 	if handshake && strings.HasSuffix(m, "eof") && strings.HasPrefix(strings.ToLower(strings.TrimSpace(rawURL)), "https://") {
 		return UseHTTP
 	}
-	return Unknown
+	return probe(rawURL)
 }
 
 // ExplainAt is Explain for a call to rawURL.
