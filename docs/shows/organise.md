@@ -14,7 +14,7 @@ HolyArrs takes over a show folder as it is. The scan only reads. Nothing is move
 2. Press **Scan**. HolyArrs reads the show name, and the year if there is one, from each folder name and looks it up at your show details source.
 3. Open each show's summary line, like "8 episodes in 7 files; 1 file with no episode, left alone". Each video is listed with the episodes its name gives.
 4. Check the groups: Matched, Unsure, Not matched, Already in the Library, On the Never-add list, No video file. Press **Look up** on an unsure or unmatched show to search by name or by an id like `tvdb:81189`.
-5. Tick the shows you want and press **Adopt**.
+5. Tick the shows you want, or use **Select all** in the count bar, and press **Adopt**.
 
 You should see every episode with a file in the Library, or looking for a better copy when the file is below Good enough. The other episodes follow your show settings.
 
