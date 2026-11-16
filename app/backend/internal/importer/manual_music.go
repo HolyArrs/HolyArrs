@@ -353,7 +353,8 @@ func (a *musicArtist) album(tg tags.Tags, dirAlbum string, dirYear int) (*musicA
 		switch {
 		case len(hits) == 1:
 			// A name that only matches once a "(Live)" or "(Deluxe Edition)" is cut off may be another recording.
-			loose := !sameName(hits[0].part.Name, name) && !sameName(hits[0].part.Name, exact)
+			// A folder hit after an album tag that found nothing is a guess too.
+			loose := !sameName(hits[0].part.Name, name) && !sameName(hits[0].part.Name, exact) || name == dirAlbum && tg.Album != "" && !sameName(tg.Album, dirAlbum)
 			return hits[0], "", loose
 		case len(hits) > 1:
 			reason = MusicTwoAlbum

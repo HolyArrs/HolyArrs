@@ -622,6 +622,15 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 		info[k] = v
 	}
 	release := strings.TrimSuffix(filepath.Base(src), filepath.Ext(src))
+	if item.Kind == "track" {
+		// A track's file name carries no format, so add it the way adopted music does.
+		ext := strings.ToLower(filepath.Ext(src))
+		word := strings.ToUpper(strings.TrimPrefix(ext, "."))
+		if info, err := mediafiles.Inspect(target); err == nil && info.AudioWord() != "" && (ext == ".m4a" || ext == ".mka" || ext == ".mp4") {
+			word = info.AudioWord()
+		}
+		release += " [" + word + "]"
+	}
 	var pr mediafiles.PickRules
 	ge := false
 	if database.Get(ctx, im.Store.Read(), "pick_rules", ver.PickRulesID, &pr) == nil {

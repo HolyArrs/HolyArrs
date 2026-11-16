@@ -296,7 +296,8 @@ func TestByHandMusicImport(t *testing.T) {
 		if err := database.Get(ctx, w.s.Read(), "slots", w.slots[i], &sl); err != nil || sl.FileID == nil {
 			t.Fatalf("slot %d: %+v %v", i, sl, err)
 		}
-		if sl.State != mediafiles.SlotInLibrary && sl.State != mediafiles.SlotBetterWanted {
+		// A lossless file imported by hand reaches Lossless first's good enough.
+		if sl.State != mediafiles.SlotInLibrary {
 			t.Fatalf("slot %d state %s", i, sl.State)
 		}
 		var f mediafiles.File
@@ -304,7 +305,7 @@ func TestByHandMusicImport(t *testing.T) {
 			t.Fatal(err)
 		}
 		if !strings.HasPrefix(f.RelativePath, "Brad Paisley/") || !strings.Contains(f.RelativePath, "Part II") || !strings.HasSuffix(f.RelativePath, ".flac") ||
-			f.Quality.Source != "flac" || f.Origin != "imported" {
+			f.Quality.Source != "flac" || f.Origin != "imported" || f.ReleaseName == nil || !strings.HasSuffix(*f.ReleaseName, " [FLAC]") {
 			t.Fatalf("file %d: %+v", i, f)
 		}
 		if !exists(filepath.Join(w.lib, filepath.FromSlash(f.RelativePath))) {
@@ -363,5 +364,16 @@ func TestByHandMusicExactAlbumNameWins(t *testing.T) {
 		if g := got[k].Guess; g.AlbumID != deluxe || g.Track != 3 {
 			t.Errorf("%s: %+v", k, g)
 		}
+	}
+}
+
+// An album tag that names no album of the artist leaves only the folder name,
+// so a folder hit is a guess even when the artist came from the tags.
+func TestByHandMusicUnknownAlbumTagFolderGuess(t *testing.T) {
+	w := musicSetup(t)
+	flacFixture(t, filepath.Join(w.in, "Brad Paisley", "Part II", "03.flac"), "ARTIST=Brad Paisley", "ALBUM=Unplugged", "TRACKNUMBER=3")
+	got := w.scan(t, w.in)
+	if g := got["Brad Paisley/Part II/03.flac"].Guess; g.Confidence > 0.4 {
+		t.Fatalf("%+v", g)
 	}
 }
