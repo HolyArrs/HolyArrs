@@ -377,3 +377,160 @@ func TestByHandMusicUnknownAlbumTagFolderGuess(t *testing.T) {
 		t.Fatalf("%+v", g)
 	}
 }
+
+// addAlbum gives an artist one more album; tracks are "disc:name", and the Slots come back in order.
+func (w musicWorld) addAlbum(t *testing.T, artist int64, name string, year int, rgid string, tracks ...string) (int64, []int64) {
+	t.Helper()
+	var part int64
+	var slots []int64
+	err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
+		var vid int64
+		if err := tx.QueryRow("SELECT id FROM versions WHERE title_id = ?", artist).Scan(&vid); err != nil {
+			return err
+		}
+		rd := time.Date(year, 5, 1, 0, 0, 0, 0, time.UTC)
+		p := &mediafiles.Part{TitleID: artist, Kind: "album", Name: name, ReleaseDate: &rd, KeepUpToDate: true,
+			SourceIDs: map[string]string{"musicbrainz": rgid}, Pressings: []mediafiles.Pressing{}, SecondaryTypes: []string{}, Included: true}
+		if _, err := database.Insert(tx, "parts", p, domain.System); err != nil {
+			return err
+		}
+		part = p.ID
+		nums := map[int]int{}
+		for _, tn := range tracks {
+			d, n, _ := strings.Cut(tn, ":")
+			disc := int(d[0] - '0')
+			nums[disc]++
+			num, name := nums[disc], n
+			it := &mediafiles.Item{TitleID: artist, PartID: &p.ID, Kind: "track", Numbers: mediafiles.Numbers{Disc: &disc, Track: &num}, Name: &name,
+				KeepUpToDate: true, SourceIDs: map[string]string{}}
+			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
+				return err
+			}
+			sl := &mediafiles.Slot{ItemID: it.ID, VersionID: vid, State: mediafiles.SlotWanted}
+			if _, err := database.Insert(tx, "slots", sl, domain.System); err != nil {
+				return err
+			}
+			slots = append(slots, sl.ID)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return part, slots
+}
+
+// A two-disc album in CD1/CD2 folders with no disc tags: the folder gives the disc.
+func TestByHandMusicDiscFolders(t *testing.T) {
+	w := musicSetup(t)
+	part, slots := w.addAlbum(t, w.artist, "Hits Live", 2003, "e0000000-0000-4000-8000-0000000000c1", "1:Opener", "1:Second", "2:Encore", "2:Closer")
+	root := filepath.Join(w.in, "Brad Paisley", "Hits Live (2003)")
+	flacFixture(t, filepath.Join(root, "CD1", "01.flac"), "ARTIST=Brad Paisley", "ALBUM=Hits Live", "TRACKNUMBER=1", "TITLE=Opener")
+	flacFixture(t, filepath.Join(root, "CD2", "01.flac"), "ARTIST=Brad Paisley", "ALBUM=Hits Live", "TRACKNUMBER=1", "TITLE=Encore")
+	flacFixture(t, filepath.Join(root, "CD2", "02.flac"), "ARTIST=Brad Paisley", "ALBUM=Hits Live", "TRACKNUMBER=2/2", "TITLE=Closer")
+	mp3Fixture(t, filepath.Join(root, "Disc 2", "02 Closer.mp3"))
+	mp3Fixture(t, filepath.Join(root, "CD2", "x.mp3"), [2]string{"TPE1", "Brad Paisley"}, [2]string{"TALB", "Hits Live"}, [2]string{"TRCK", "1/2"}, [2]string{"TPOS", "2/2"})
+	got := w.scan(t, w.in)
+	for k, want := range map[string]int64{"CD1/01.flac": slots[0], "CD2/01.flac": slots[2], "CD2/02.flac": slots[3], "Disc 2/02 Closer.mp3": slots[3], "CD2/x.mp3": slots[2]} {
+		g := got["Brad Paisley/Hits Live (2003)/"+k].Guess
+		if g.AlbumID != part || g.SlotID != want || g.Confidence < 0.7 {
+			t.Errorf("%s: %+v", k, g)
+		}
+	}
+}
+
+// Two albums of the same name: the year in the folder picks one; with no year it is left to the user.
+func TestByHandMusicSameNameAlbums(t *testing.T) {
+	w := musicSetup(t)
+	again, slots := w.addAlbum(t, w.artist, "Part II", 2010, "e0000000-0000-4000-8000-0000000000c2", "1:New One", "1:New Two", "1:New Three")
+	flacFixture(t, filepath.Join(w.in, "Brad Paisley", "Part II (2001)", "03.flac"), "ARTIST=Brad Paisley", "ALBUM=Part II", "TRACKNUMBER=3", "TITLE="+partTwo[2])
+	flacFixture(t, filepath.Join(w.in, "Brad Paisley", "Part II (2010)", "03.flac"), "ARTIST=Brad Paisley", "ALBUM=Part II", "TRACKNUMBER=3", "TITLE=New Three")
+	flacFixture(t, filepath.Join(w.in, "Brad Paisley", "Part II", "03.flac"), "ARTIST=Brad Paisley", "ALBUM=Part II", "TRACKNUMBER=3")
+	got := w.scan(t, w.in)
+	if g := got["Brad Paisley/Part II (2001)/03.flac"].Guess; g.AlbumID != w.album || g.SlotID != w.slots[2] || g.Confidence != 1 {
+		t.Errorf("2001: %+v", g)
+	}
+	if g := got["Brad Paisley/Part II (2010)/03.flac"].Guess; g.AlbumID != again || g.SlotID != slots[2] || g.Confidence != 1 {
+		t.Errorf("2010: %+v", g)
+	}
+	if g := got["Brad Paisley/Part II/03.flac"].Guess; g.Reason != MusicTwoAlbum || g.SlotID != 0 || g.TitleID != w.artist {
+		t.Errorf("no year: %+v", g)
+	}
+}
+
+// A compilation: the album artist is Various Artists, the track artist one of ours.
+func TestByHandMusicCompilation(t *testing.T) {
+	w := musicSetup(t)
+	flacFixture(t, filepath.Join(w.in, "Various Artists", "Road Songs (2019)", "05.flac"), "ALBUMARTIST=Various Artists", "ARTIST=Lab Band",
+		"ALBUM=Road Songs", "TRACKNUMBER=5", "TITLE=Night Train", "COMPILATION=1")
+	flacFixture(t, filepath.Join(w.in, "Various Artists", "First Light", "03.flac"), "ALBUMARTIST=Various Artists", "ARTIST=Lab Band",
+		"ALBUM=First Light", "TRACKNUMBER=3", "TITLE=Night Train")
+	got := w.scan(t, w.in)
+	if g := got["Various Artists/Road Songs (2019)/05.flac"].Guess; g.TitleName != "Lab Band" || g.Reason != MusicNoAlbum || g.SlotID != 0 || g.Confidence != 0 {
+		t.Errorf("compilation: %+v", g)
+	}
+	if g := got["Various Artists/First Light/03.flac"].Guess; g.TitleName != "Lab Band" || g.Track != 3 || g.Confidence != 1 {
+		t.Errorf("own album under Various Artists: %+v", g)
+	}
+}
+
+// "feat." in the artist tag, with the MusicBrainz ids of both artists.
+func TestByHandMusicFeaturedArtist(t *testing.T) {
+	w := musicSetup(t)
+	brad, other := "e0000000-0000-4000-8000-000000000001", "e0000000-0000-4000-8000-0000000000ff"
+	flacFixture(t, filepath.Join(w.in, "a", "03.flac"), "ARTIST=Brad Paisley feat. Alison Krauss", "ALBUM=Part II", "TRACKNUMBER=3", "TITLE="+partTwo[2],
+		"MUSICBRAINZ_ARTISTID="+brad, "MUSICBRAINZ_ARTISTID="+other)
+	flacFixture(t, filepath.Join(w.in, "b", "03.flac"), "ARTIST=Alison Krauss & Brad Paisley", "ALBUM=Part II", "TRACKNUMBER=3", "TITLE="+partTwo[2],
+		"MUSICBRAINZ_ARTISTID="+other+"; "+brad)
+	mp3Fixture(t, filepath.Join(w.in, "c", "03.mp3"), [2]string{"TPE1", "Brad Paisley feat. Alison Krauss"}, [2]string{"TALB", "Part II"}, [2]string{"TRCK", "3/12"},
+		[2]string{"TIT2", partTwo[2]})
+	got := w.scan(t, w.in)
+	for _, k := range []string{"a/03.flac", "b/03.flac", "c/03.mp3"} {
+		if g := got[k].Guess; g.TitleID != w.artist || g.SlotID != w.slots[2] || g.Confidence != 1 {
+			t.Errorf("%s: %+v", k, g)
+		}
+	}
+}
+
+// Replace puts the new file on a track that has one; the old file waits in Recently deleted.
+func TestByHandMusicReplace(t *testing.T) {
+	w := musicSetup(t)
+	ctx := context.Background()
+	first := filepath.Join(w.in, "one", "03.mp3")
+	mp3Fixture(t, first, [2]string{"TPE1", "Brad Paisley"}, [2]string{"TALB", "Part II"}, [2]string{"TRCK", "3/12"})
+	im := &Importer{Store: w.s, SavePath: w.in}
+	if res, err := im.ImportByHand(ctx, []ByHandItem{{Path: first, SlotID: w.slots[2], Mode: "copy"}}, domain.System); err != nil || res[0].Outcome != "placed" {
+		t.Fatalf("first: %+v %v", res, err)
+	}
+	var sl mediafiles.Slot
+	_ = database.Get(ctx, w.s.Read(), "slots", w.slots[2], &sl)
+	oldID := *sl.FileID
+	var old mediafiles.File
+	_ = database.Get(ctx, w.s.Read(), "files", oldID, &old)
+	better := filepath.Join(w.in, "two", "03.flac")
+	flacFixture(t, better, "ARTIST=Brad Paisley", "ALBUM=Part II", "TRACKNUMBER=3", "TITLE="+partTwo[2])
+	if g := w.scan(t, filepath.Join(w.in, "two"))["03.flac"].Guess; !g.HasFile || g.SlotID != w.slots[2] {
+		t.Fatalf("scan sees no file: %+v", g)
+	}
+	if res, _ := im.ImportByHand(ctx, []ByHandItem{{Path: better, SlotID: w.slots[2]}}, domain.System); res[0].Outcome != "refused" {
+		t.Fatalf("no replace: %+v", res)
+	}
+	res, err := im.ImportByHand(ctx, []ByHandItem{{Path: better, SlotID: w.slots[2], Replace: true}}, domain.System)
+	if err != nil || res[0].Outcome != "placed" {
+		t.Fatalf("replace: %+v %v", res, err)
+	}
+	_ = database.Get(ctx, w.s.Read(), "slots", w.slots[2], &sl)
+	var nf, gone mediafiles.File
+	_ = database.Get(ctx, w.s.Read(), "files", *sl.FileID, &nf)
+	_ = database.Get(ctx, w.s.Read(), "files", oldID, &gone)
+	if *sl.FileID == oldID || !strings.HasSuffix(nf.RelativePath, ".flac") || !exists(filepath.Join(w.lib, filepath.FromSlash(nf.RelativePath))) {
+		t.Fatalf("new file %+v", nf)
+	}
+	if gone.State != "gone" || !strings.HasPrefix(gone.RelativePath, HoldingDir+"/") || !exists(filepath.Join(w.lib, filepath.FromSlash(gone.RelativePath))) ||
+		exists(filepath.Join(w.lib, filepath.FromSlash(old.RelativePath))) {
+		t.Fatalf("old file %+v (was %s)", gone, old.RelativePath)
+	}
+	if !exists(better) || !exists(first) {
+		t.Fatal("a source file went missing")
+	}
+}

@@ -198,6 +198,16 @@ func musicFolders(p string) (artist, album string, year int) {
 	return artist, album, year
 }
 
+var featTail = regexp.MustCompile(`(?i)\s*[\(\[]?\s*\b(?:feat\.?|ft\.|featuring)\s.*$`)
+
+// mainArtist cuts a "feat. Someone" tail off an artist tag; "" when there is none.
+func mainArtist(name string) string {
+	if cut := strings.TrimSpace(featTail.ReplaceAllString(name, "")); cut != name {
+		return cut
+	}
+	return ""
+}
+
 func (ml *musicLibrary) artistNamed(names ...string) *mediafiles.Title {
 	for _, n := range names {
 		if n == "" {
@@ -243,16 +253,15 @@ func (ml *musicLibrary) guessMusicByHand(ctx context.Context, f *ByHandFile) err
 	// The artist: its MusicBrainz id, then the tags, then the folders.
 	var ti *mediafiles.Title
 	byTags := false
-	if tg.ArtistID != "" {
+	for _, id := range strings.Fields(tg.ArtistID) {
 		for i := range ml.artists {
-			if strings.EqualFold(ml.artists[i].SourceIDs["musicbrainz"], tg.ArtistID) {
+			if ti == nil && strings.EqualFold(ml.artists[i].SourceIDs["musicbrainz"], id) {
 				ti, byTags = &ml.artists[i], true
-				break
 			}
 		}
 	}
 	if ti == nil {
-		if ti = ml.artistNamed(tg.AlbumArtist, tg.Artist); ti != nil {
+		if ti = ml.artistNamed(tg.AlbumArtist, tg.Artist, mainArtist(tg.AlbumArtist), mainArtist(tg.Artist)); ti != nil {
 			byTags = true
 		}
 	}

@@ -22,6 +22,7 @@ type Tags struct {
 
 	AlbumArtist string `json:"album_artist,omitempty"`
 	// MusicBrainz ids, when a tagger wrote them; only well-formed ids are kept.
+	// ArtistID holds every artist id of the track, space-separated.
 	ArtistID       string `json:"artist_id,omitempty"`
 	ReleaseGroupID string `json:"release_group_id,omitempty"`
 	ReleaseID      string `json:"release_id,omitempty"`
@@ -140,7 +141,13 @@ func (t *Tags) set(key, v string) {
 			t.AlbumArtist = clean(v)
 		}
 	case "MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID":
-		setID(&t.ArtistID, v)
+		// A track with a featured artist lists several ids; keep each, space-separated.
+		for _, part := range strings.FieldsFunc(v, func(r rune) bool { return r == ';' || r == '/' || r == ',' || r == 0 }) {
+			var id string
+			if setID(&id, part); id != "" && !strings.Contains(t.ArtistID, id) && len(t.ArtistID) < 200 {
+				t.ArtistID = strings.TrimSpace(t.ArtistID + " " + id)
+			}
+		}
 	case "MUSICBRAINZ_RELEASEGROUPID", "MUSICBRAINZ RELEASE GROUP ID":
 		setID(&t.ReleaseGroupID, v)
 	case "MUSICBRAINZ_ALBUMID", "MUSICBRAINZ ALBUM ID":
