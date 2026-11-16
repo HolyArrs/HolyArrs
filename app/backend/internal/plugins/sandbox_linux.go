@@ -34,7 +34,7 @@
 // the process group kill only; Active reports which caps apply.
 //
 // Known limits: no network allowlist (Landlock TCP port rules may come
-// later). A cgroup whose program ended on its own is removed by Stop.
+// later). A cgroup whose program ended on its own is killed and removed then.
 package plugins
 
 import (
@@ -42,8 +42,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"syscall"
 	"unsafe"
 
@@ -96,18 +98,37 @@ func (s LinuxSandbox) Apply(cmd *exec.Cmd, spec Spec) error {
 	}
 	cmd.Env = env
 	cmd.Path = helper
-	cg := cgroupCreate(spec.ID, spec.Limits)
+	cg := ""
+	if cgroupUsable() {
+		var err error
+		if cg, err = cgroupCreate(spec.ID, spec.Limits); err != nil {
+			return err
+		}
+	}
 	cmd.Args = append([]string{helper, sandboxHelperArg, spec.DataDir, weaker, cg, spec.Program}, spec.Args...)
 	if cmd.SysProcAttr == nil {
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 	}
 	cmd.SysProcAttr.Setpgid = true
+	var once sync.Once
+	var cancelErr error
 	cmd.Cancel = func() error {
-		err := killProcess(cmd)
-		if cg != "" {
-			err = cgroupKill(cg)
-		}
-		return err
+		once.Do(func() {
+			cancelErr = killProcess(cmd)
+			if cg != "" {
+				cancelErr = cgroupKill(cg)
+			}
+		})
+		return cancelErr
+	}
+	return nil
+}
+
+// Cleanup removes a start's cgroup when Start failed or the program ended
+// on its own, killing anything it left behind.
+func (LinuxSandbox) Cleanup(cmd *exec.Cmd) error {
+	if len(cmd.Args) > 4 && cmd.Args[1] == sandboxHelperArg && cmd.Args[4] != "" {
+		return cgroupKill(cmd.Args[4])
 	}
 	return nil
 }
@@ -190,6 +211,12 @@ func landlockHandled(abi int) uint64 {
 }
 
 func landlockRestrict(dataDir, program string) error {
+	// Never grant anything under the cgroup tree, so the plugin cannot raise its own caps.
+	for _, p := range []string{dataDir, program} {
+		if c := filepath.Clean(p); c == cgroupRoot || strings.HasPrefix(c, cgroupRoot+"/") {
+			return fmt.Errorf("landlock %s: paths under %s are not allowed", p, cgroupRoot)
+		}
+	}
 	abi := landlockABI()
 	if abi < 1 {
 		return ErrNoLandlock

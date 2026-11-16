@@ -3,9 +3,11 @@ package plugins
 import (
 	"context"
 	"errors"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
+	"syscall"
 )
 
 // Spec is one program start. Env is the whole environment: nothing from the
@@ -84,11 +86,23 @@ func (r ExecRunner) Start(ctx context.Context, spec Spec) (Process, error) {
 	if err := sb.Apply(cmd, spec); err != nil {
 		return nil, err
 	}
+	cleanup := func() error { return nil }
+	if c, ok := sb.(interface{ Cleanup(*exec.Cmd) error }); ok {
+		cleanup = func() error { return c.Cleanup(cmd) }
+	}
 	if err := cmd.Start(); err != nil {
+		_ = cleanup()
 		return nil, err
 	}
 	p := &execProcess{cmd: cmd, done: make(chan struct{})}
-	go func() { p.err = cmd.Wait(); close(p.done) }()
+	if a, ok := sb.(interface{ Active() ActiveLimits }); ok {
+		p.limits = a.Active()
+	}
+	go func() {
+		p.err = cmd.Wait()
+		p.cleanupErr = cleanup()
+		close(p.done)
+	}()
 	return p, nil
 }
 
@@ -97,22 +111,35 @@ type execProcess struct {
 	done chan struct{}
 	err  error
 	once sync.Once
+	// limits are the caps this start actually got.
+	limits     ActiveLimits
+	cleanupErr error
+	stopErr    error
 }
+
+// Limits reports the caps this start actually got.
+func (p *execProcess) Limits() ActiveLimits { return p.limits }
 
 func (p *execProcess) Stop() error {
 	p.once.Do(func() {
 		if p.cmd.Cancel != nil {
-			_ = p.cmd.Cancel()
+			p.stopErr = p.cmd.Cancel()
 		} else {
-			_ = killProcess(p.cmd)
+			p.stopErr = killProcess(p.cmd)
 		}
 	})
 	<-p.done
 	var exit *exec.ExitError
-	if errors.As(p.err, &exit) {
-		return nil
+	if p.err != nil && !errors.As(p.err, &exit) {
+		return p.err
 	}
-	return p.err
+	if p.cleanupErr != nil {
+		return p.cleanupErr
+	}
+	if p.stopErr != nil && !errors.Is(p.stopErr, os.ErrProcessDone) && !errors.Is(p.stopErr, syscall.ESRCH) {
+		return p.stopErr
+	}
+	return nil
 }
 
 func (p *execProcess) Wait() error {

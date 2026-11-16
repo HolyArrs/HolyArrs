@@ -217,3 +217,35 @@ func TestServerBinaryRunsSandboxHelper(t *testing.T) {
 		t.Fatalf("probe did not run: %v", err)
 	}
 }
+
+// TestLinuxSandboxCannotWriteCgroupLimits checks that a plugin cannot raise
+// the caps of a plugin cgroup.
+func TestLinuxSandboxCannotWriteCgroupLimits(t *testing.T) {
+	requireCgroup(t)
+	_, data, probe := probeDirs(t)
+	r := ExecRunner{Sandbox: LinuxSandbox{}}
+	sleeper, err := r.Start(context.Background(), Spec{ID: "cgmem", Program: probe, Args: []string{"sleep"}, DataDir: data})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sleeper.Stop()
+	dirs, _ := filepath.Glob(filepath.Join(cgroupBase(), "holyarrs-plugin-cgmem-*"))
+	if len(dirs) != 1 {
+		t.Fatalf("plugin cgroups: %v", dirs)
+	}
+	file := filepath.Join(dirs[0], "memory.max")
+	before, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := r.Start(context.Background(), Spec{ID: "cgmem-writer", Program: probe, Args: []string{"write", file}, DataDir: data})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := p.Wait(); err == nil {
+		t.Error("probe wrote memory.max of a plugin cgroup")
+	}
+	if after, _ := os.ReadFile(file); string(after) != string(before) {
+		t.Errorf("memory.max changed: %q -> %q", before, after)
+	}
+}
