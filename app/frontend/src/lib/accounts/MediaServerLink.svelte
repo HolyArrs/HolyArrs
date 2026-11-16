@@ -123,7 +123,8 @@
 	.srow > .ctl { flex-wrap: wrap; }
 	/* On a phone the server buttons go under the words, so the words keep the row's width. */
 	@media (max-width: 600px) {
-		.srow { grid-template-columns: minmax(0, 1fr); row-gap: 8px; }
-		.srow > .ctl { justify-self: start; }
+		/* The id keeps this ahead of the shared settings row rule. */
+		#watch-link.srow { grid-template-columns: minmax(0, 1fr); row-gap: 8px; }
+		#watch-link.srow > .ctl { justify-self: stretch; }
 	}
 </style>
