@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} sanatçısının Kütüphanede {name} adında bir albümü yok. Albümü seç.",
 	"mediafiles.byHand.music.twoAlbums": "{artist} sanatçısının birden fazla albümünün adı {name}. Albümü seç.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Albümü ve parçayı seç.",
+	"mediafiles.byHand.music.sameTrack": "Bu parçaya başka bir dosya gidiyor. Onun yerine bunu kullanmak için bunu işaretleyin.",
 	"mediafiles.byHand.music.noTrack": "{album} albümündeki hiçbir parça bu dosyayla eşleşmiyor. Parçayı seç.",
 	"mediafiles.byHand.music.pickTrack": "Parçayı seç.",
 	"mediafiles.state.searching": "Aranıyor",

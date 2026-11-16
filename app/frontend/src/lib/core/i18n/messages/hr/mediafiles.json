@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} nema album naziva {name} u biblioteci. Odaberi album.",
 	"mediafiles.byHand.music.twoAlbums": "Više albuma izvođača {artist} zove se {name}. Odaberi album.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Odaberi album i pjesmu.",
+	"mediafiles.byHand.music.sameTrack": "Druga datoteka ide na ovu pjesmu. Označi ovu da se koristi umjesto nje.",
 	"mediafiles.byHand.music.noTrack": "Nijedna pjesma s albuma {album} ne odgovara ovoj datoteci. Odaberi pjesmu.",
 	"mediafiles.byHand.music.pickTrack": "Odaberi pjesmu.",
 	"mediafiles.state.searching": "Traži se",

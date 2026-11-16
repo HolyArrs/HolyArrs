@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} har intet album ved navn {name} i Biblioteket. Vælg albummet.",
 	"mediafiles.byHand.music.twoAlbums": "Mere end ét album af {artist} hedder {name}. Vælg albummet.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Vælg album og nummer.",
+	"mediafiles.byHand.music.sameTrack": "En anden fil går til dette nummer. Sæt flueben ved denne for at bruge den i stedet.",
 	"mediafiles.byHand.music.noTrack": "Intet nummer på {album} passer til denne fil. Vælg nummeret.",
 	"mediafiles.byHand.music.pickTrack": "Vælg nummeret.",
 	"mediafiles.state.searching": "Søger",

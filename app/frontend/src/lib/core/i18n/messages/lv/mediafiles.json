@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} Bibliotēkā nav albuma ar nosaukumu {name}. Izvēlies albumu.",
 	"mediafiles.byHand.music.twoAlbums": "Vairāki {artist} albumi saucas {name}. Izvēlies albumu.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Izvēlies albumu un dziesmu.",
+	"mediafiles.byHand.music.sameTrack": "Uz šo dziesmu iet cits fails. Atzīmē šo, lai izmantotu to tā vietā.",
 	"mediafiles.byHand.music.noTrack": "Neviena albuma {album} dziesma neatbilst šim failam. Izvēlies dziesmu.",
 	"mediafiles.byHand.music.pickTrack": "Izvēlies dziesmu.",
 	"mediafiles.state.searching": "Meklē",

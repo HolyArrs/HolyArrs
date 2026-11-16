@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "Walang album na {name} si {artist} sa Library. Piliin ang album.",
 	"mediafiles.byHand.music.twoAlbums": "Higit sa isang album ni {artist} ang may pangalang {name}. Piliin ang album.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Piliin ang album at track.",
+	"mediafiles.byHand.music.sameTrack": "May ibang file na mapupunta sa track na ito. I-tick ito para ito ang gamitin.",
 	"mediafiles.byHand.music.noTrack": "Walang track sa {album} na tugma sa file na ito. Piliin ang track.",
 	"mediafiles.byHand.music.pickTrack": "Piliin ang track.",
 	"mediafiles.state.searching": "Naghahanap",

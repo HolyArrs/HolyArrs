@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} няма албум с име {name} в библиотеката. Изберете албума.",
 	"mediafiles.byHand.music.twoAlbums": "Повече от един албум на {artist} се казва {name}. Изберете албума.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Изберете албума и песента.",
+	"mediafiles.byHand.music.sameTrack": "Друг файл отива към тази песен. Отметни този, за да го използваш вместо него.",
 	"mediafiles.byHand.music.noTrack": "Нито една песен от {album} не отговаря на този файл. Изберете песента.",
 	"mediafiles.byHand.music.pickTrack": "Изберете песента.",
 	"mediafiles.state.searching": "Търси се",

@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} nu are niciun album numit {name} în Bibliotecă. Alege albumul.",
 	"mediafiles.byHand.music.twoAlbums": "Mai multe albume ale lui {artist} se numesc {name}. Alege albumul.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Alege albumul și piesa.",
+	"mediafiles.byHand.music.sameTrack": "Alt fișier merge la această piesă. Bifează-l pe acesta ca să-l folosești în locul lui.",
 	"mediafiles.byHand.music.noTrack": "Nicio piesă de pe {album} nu se potrivește cu acest fișier. Alege piesa.",
 	"mediafiles.byHand.music.pickTrack": "Alege piesa.",
 	"mediafiles.state.searching": "Se caută",

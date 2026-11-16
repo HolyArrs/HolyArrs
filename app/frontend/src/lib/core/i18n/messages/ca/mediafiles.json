@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} no té cap àlbum anomenat {name} a la Biblioteca. Tria l'àlbum.",
 	"mediafiles.byHand.music.twoAlbums": "Més d'un àlbum de {artist} es diu {name}. Tria l'àlbum.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Tria l'àlbum i la pista.",
+	"mediafiles.byHand.music.sameTrack": "Un altre fitxer va a aquesta pista. Marca aquest per fer-lo servir en lloc seu.",
 	"mediafiles.byHand.music.noTrack": "Cap pista de {album} coincideix amb aquest fitxer. Tria la pista.",
 	"mediafiles.byHand.music.pickTrack": "Tria la pista.",
 	"mediafiles.state.searching": "Cercant",

@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "라이브러리의 {artist}에게 {name}(이)라는 앨범이 없습니다. 앨범을 고르세요.",
 	"mediafiles.byHand.music.twoAlbums": "{artist}의 앨범 중 {name}(이)라는 이름이 여러 개입니다. 앨범을 고르세요.",
 	"mediafiles.byHand.music.pickAlbumTrack": "앨범과 트랙을 고르세요.",
+	"mediafiles.byHand.music.sameTrack": "다른 파일이 이 트랙에 들어갑니다. 대신 이 파일을 쓰려면 체크하세요.",
 	"mediafiles.byHand.music.noTrack": "{album}의 어떤 트랙도 이 파일과 맞지 않습니다. 트랙을 고르세요.",
 	"mediafiles.byHand.music.pickTrack": "트랙을 고르세요.",
 	"mediafiles.state.searching": "검색 중",

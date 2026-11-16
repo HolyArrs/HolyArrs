@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "Artistil {artist} pole meediakogus albumit nimega {name}. Vali album.",
 	"mediafiles.byHand.music.twoAlbums": "Artistil {artist} on mitu albumit nimega {name}. Vali album.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Vali album ja lugu.",
+	"mediafiles.byHand.music.sameTrack": "Sellele lool läheb juba teine fail. Märgi see, et kasutada hoopis seda.",
 	"mediafiles.byHand.music.noTrack": "Ükski albumi {album} lugu ei sobi selle failiga. Vali lugu.",
 	"mediafiles.byHand.music.pickTrack": "Vali lugu.",
 	"mediafiles.state.searching": "Otsin",

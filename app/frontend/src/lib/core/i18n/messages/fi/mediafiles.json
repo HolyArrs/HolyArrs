@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "Artistilla {artist} ei ole Kirjastossa albumia nimeltä {name}. Valitse albumi.",
 	"mediafiles.byHand.music.twoAlbums": "Artistilla {artist} on useampi albumi nimeltä {name}. Valitse albumi.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Valitse albumi ja kappale.",
+	"mediafiles.byHand.music.sameTrack": "Toinen tiedosto menee tähän kappaleeseen. Valitse tämä, jos haluat käyttää tätä sen sijaan.",
 	"mediafiles.byHand.music.noTrack": "Mikään albumin {album} kappale ei vastaa tätä tiedostoa. Valitse kappale.",
 	"mediafiles.byHand.music.pickTrack": "Valitse kappale.",
 	"mediafiles.state.searching": "Etsitään",

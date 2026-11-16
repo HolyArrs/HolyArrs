@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "लाइब्रेरी में {artist} का {name} नाम का कोई एल्बम नहीं। एल्बम चुनें।",
 	"mediafiles.byHand.music.twoAlbums": "{artist} के एक से ज़्यादा एल्बम का नाम {name} है। एल्बम चुनें।",
 	"mediafiles.byHand.music.pickAlbumTrack": "एल्बम और ट्रैक चुनें।",
+	"mediafiles.byHand.music.sameTrack": "दूसरी फ़ाइल इस ट्रैक पर जा रही है। उसकी जगह इसे लेने के लिए इसे टिक करें।",
 	"mediafiles.byHand.music.noTrack": "{album} का कोई ट्रैक इस फ़ाइल से मेल नहीं खाता। ट्रैक चुनें।",
 	"mediafiles.byHand.music.pickTrack": "ट्रैक चुनें।",
 	"mediafiles.state.searching": "खोज रहा है",

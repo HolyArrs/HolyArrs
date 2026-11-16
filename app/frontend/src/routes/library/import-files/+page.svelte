@@ -3,7 +3,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
-	import { LibraryToolPage, blocker, episodeCode, itemsFor, pickLine, resultLine, startPick, startTicked, type ByHandFile, type ByHandResult, type ByHandScan, type Pick } from '#lib/mediafiles/index.ts';
+	import { LibraryToolPage, blocker, episodeCode, itemsFor, pickLine, resultLine, startPick, startTicked, oneTickPerTrack, type ByHandFile, type ByHandResult, type ByHandScan, type Pick } from '#lib/mediafiles/index.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
@@ -20,6 +20,7 @@
 	let scan = $state<ByHandScan | null>(null);
 	let picks = $state<Record<string, Pick | null>>({});
 	let ticked = $state<Record<string, boolean>>({});
+	let held = $state<Record<string, boolean>>({});
 	let results = $state<Record<string, ByHandResult>>({});
 	let importing = $state(false);
 	let error = $state('');
@@ -72,6 +73,7 @@
 				p[f.path] = startPick(f);
 				t[f.path] = startTicked(f, p[f.path]);
 			}
+			held = oneTickPerTrack(s.files, p, t);
 			picks = p;
 			ticked = t;
 			scan = s;
@@ -186,6 +188,7 @@
 		};
 		const f = files.find((x) => x.path === editFor);
 		ticked[editFor] = !!f && !blocker(f, picks[editFor]);
+		held[editFor] = false;
 		editFor = null;
 	}
 
@@ -280,7 +283,7 @@
 									<span class="small">{tr('mediafiles.byHand.replace')}</span>
 								</label>
 							{/if}
-							{#if why && done?.outcome !== 'placed'}<p class="xs muted">{why}</p>{:else if f.note}<p class="xs muted">{f.note}</p>{/if}
+							{#if why && done?.outcome !== 'placed'}<p class="xs muted">{why}</p>{:else if f.note}<p class="xs muted">{f.note}</p>{:else if held[f.path] && !ticked[f.path] && !done}<p class="xs muted">{tr('mediafiles.byHand.music.sameTrack')}</p>{/if}
 							{#if done}
 								<p class="xs" class:ok-text={done.outcome === 'placed'} class:bad-text={done.outcome !== 'placed'} role="status">
 									{resultLine(done)}{#if done.title_id && done.outcome === 'placed'}{' · '}<a href={to(`/library/${done.title_id}`)}>{tr('mediafiles.poster.open')}</a>{/if}

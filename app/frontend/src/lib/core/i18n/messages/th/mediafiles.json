@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} ไม่มีอัลบั้มชื่อ {name} ในไลบรารี เลือกอัลบั้ม",
 	"mediafiles.byHand.music.twoAlbums": "{artist} มีอัลบั้มชื่อ {name} มากกว่าหนึ่งอัลบั้ม เลือกอัลบั้ม",
 	"mediafiles.byHand.music.pickAlbumTrack": "เลือกอัลบั้มและเพลง",
+	"mediafiles.byHand.music.sameTrack": "มีไฟล์อื่นจะไปที่แทร็กนี้แล้ว ติ๊กไฟล์นี้หากต้องการใช้ไฟล์นี้แทน",
 	"mediafiles.byHand.music.noTrack": "ไม่มีเพลงใดใน {album} ที่ตรงกับไฟล์นี้ เลือกเพลง",
 	"mediafiles.byHand.music.pickTrack": "เลือกเพลง",
 	"mediafiles.state.searching": "กำลังค้นหา",

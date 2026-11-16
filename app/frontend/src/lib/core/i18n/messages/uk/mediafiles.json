@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "У {artist} немає альбому {name} у Бібліотеці. Обери альбом.",
 	"mediafiles.byHand.music.twoAlbums": "Кілька альбомів {artist} мають назву {name}. Обери альбом.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Обери альбом і трек.",
+	"mediafiles.byHand.music.sameTrack": "До цього треку йде інший файл. Позначте цей, щоб узяти його замість того.",
 	"mediafiles.byHand.music.noTrack": "Жоден трек альбому {album} не підходить до цього файлу. Обери трек.",
 	"mediafiles.byHand.music.pickTrack": "Обери трек.",
 	"mediafiles.state.searching": "Пошук",

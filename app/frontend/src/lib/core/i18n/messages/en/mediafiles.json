@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} has no album called {name} in the Library. Pick the album.",
 	"mediafiles.byHand.music.twoAlbums": "More than one album by {artist} is called {name}. Pick the album.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Pick the album and track.",
+	"mediafiles.byHand.music.sameTrack": "Another file goes to this track. Tick this one to use it instead.",
 	"mediafiles.byHand.music.noTrack": "No track on {album} matches this file. Pick the track.",
 	"mediafiles.byHand.music.pickTrack": "Pick the track.",
 	"mediafiles.state.searching": "Searching",

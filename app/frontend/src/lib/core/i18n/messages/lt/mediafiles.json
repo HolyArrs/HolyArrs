@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} Bibliotekoje neturi albumo pavadinimu {name}. Pasirinkite albumą.",
 	"mediafiles.byHand.music.twoAlbums": "Keli {artist} albumai vadinasi {name}. Pasirinkite albumą.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Pasirinkite albumą ir kūrinį.",
+	"mediafiles.byHand.music.sameTrack": "Į šį kūrinį eina kitas failas. Pažymėkite šį, jei norite naudoti jį vietoj ano.",
 	"mediafiles.byHand.music.noTrack": "Joks albumo {album} kūrinys netinka šiam failui. Pasirinkite kūrinį.",
 	"mediafiles.byHand.music.pickTrack": "Pasirinkite kūrinį.",
 	"mediafiles.state.searching": "Ieškoma",

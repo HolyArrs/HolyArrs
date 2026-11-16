@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "ليس لدى {artist} ألبوم باسم {name} في المكتبة. اختر الألبوم.",
 	"mediafiles.byHand.music.twoAlbums": "أكثر من ألبوم لـ{artist} يحمل اسم {name}. اختر الألبوم.",
 	"mediafiles.byHand.music.pickAlbumTrack": "اختر الألبوم والمقطع.",
+	"mediafiles.byHand.music.sameTrack": "ملف آخر سيذهب إلى هذا المقطع. حدّد هذا الملف لاستخدامه بدلًا منه.",
 	"mediafiles.byHand.music.noTrack": "لا يطابق أي مقطع في {album} هذا الملف. اختر المقطع.",
 	"mediafiles.byHand.music.pickTrack": "اختر المقطع.",
 	"mediafiles.state.searching": "جارٍ البحث",

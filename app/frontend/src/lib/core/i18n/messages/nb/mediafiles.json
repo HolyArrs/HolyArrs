@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} har ikke noe album som heter {name} i Biblioteket. Velg albumet.",
 	"mediafiles.byHand.music.twoAlbums": "Flere album av {artist} heter {name}. Velg albumet.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Velg album og spor.",
+	"mediafiles.byHand.music.sameTrack": "En annen fil går til dette sporet. Huk av denne for å bruke den i stedet.",
 	"mediafiles.byHand.music.noTrack": "Ingen spor på {album} passer til denne filen. Velg sporet.",
 	"mediafiles.byHand.music.pickTrack": "Velg sporet.",
 	"mediafiles.state.searching": "Søker",

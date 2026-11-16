@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} heeft geen album met de naam {name} in de Bibliotheek. Kies het album.",
 	"mediafiles.byHand.music.twoAlbums": "Meer dan één album van {artist} heet {name}. Kies het album.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Kies het album en het nummer.",
+	"mediafiles.byHand.music.sameTrack": "Een ander bestand gaat naar dit nummer. Vink dit aan om dit in plaats daarvan te gebruiken.",
 	"mediafiles.byHand.music.noTrack": "Geen nummer op {album} past bij dit bestand. Kies het nummer.",
 	"mediafiles.byHand.music.pickTrack": "Kies het nummer.",
 	"mediafiles.state.searching": "Wordt gezocht",

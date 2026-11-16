@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "লাইব্রেরিতে {artist}-এর {name} নামে কোনো অ্যালবাম নেই। অ্যালবাম বাছুন।",
 	"mediafiles.byHand.music.twoAlbums": "{artist}-এর একাধিক অ্যালবামের নাম {name}। অ্যালবাম বাছুন।",
 	"mediafiles.byHand.music.pickAlbumTrack": "অ্যালবাম ও ট্র্যাক বাছুন।",
+	"mediafiles.byHand.music.sameTrack": "আরেকটি ফাইল এই ট্র্যাকে যাচ্ছে। এটির বদলে এই ফাইলটি নিতে টিক দিন।",
 	"mediafiles.byHand.music.noTrack": "{album}-এর কোনো ট্র্যাক এই ফাইলের সাথে মেলে না। ট্র্যাক বাছুন।",
 	"mediafiles.byHand.music.pickTrack": "ট্র্যাক বাছুন।",
 	"mediafiles.state.searching": "খোঁজা হচ্ছে",

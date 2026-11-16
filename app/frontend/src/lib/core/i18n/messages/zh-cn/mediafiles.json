@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "媒体库中 {artist} 没有名为 {name} 的专辑。请选择专辑。",
 	"mediafiles.byHand.music.twoAlbums": "{artist} 有不止一张专辑名为 {name}。请选择专辑。",
 	"mediafiles.byHand.music.pickAlbumTrack": "请选择专辑和曲目。",
+	"mediafiles.byHand.music.sameTrack": "另一个文件将放到这首曲目。勾选此文件即可改用它。",
 	"mediafiles.byHand.music.noTrack": "{album} 中没有与此文件相符的曲目。请选择曲目。",
 	"mediafiles.byHand.music.pickTrack": "请选择曲目。",
 	"mediafiles.state.searching": "搜索中",

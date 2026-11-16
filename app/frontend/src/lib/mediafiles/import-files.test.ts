@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blocker, episodeCode, itemsFor, pickLine, resultLine, startPick, startTicked, type ByHandFile } from './import-files.ts';
+import { blocker, episodeCode, itemsFor, pickLine, resultLine, startPick, startTicked, oneTickPerTrack, type ByHandFile } from './import-files.ts';
 
 const show = (over: Partial<ByHandFile> = {}): ByHandFile => ({
 	path: '/dl/a/Copper.Valley.S01E02.mkv',
@@ -103,5 +103,20 @@ describe('import files by hand', () => {
 		const filled = song({ guess: { ...song().guess, has_file: true } });
 		expect(blocker(filled, startPick(filled))).toMatch(/already has a file/);
 		expect(itemsFor([filled], { [filled.path]: { ...startPick(filled)!, replace: true } }, { [filled.path]: true })).toEqual([{ path: filled.path, title_id: 4, slot_id: 33, replace: true }]);
+	});
+	it('ticks only the best of two files guessed onto the same track', () => {
+		const mp3 = song({ path: '/in/a/03.mp3', size: 5, guess: { ...song().guess, confidence: 0.8 } });
+		const flac = song({ path: '/in/a/03.flac', size: 30, guess: { ...song().guess, confidence: 0.8 } });
+		const other = song({ path: '/in/a/04.flac', guess: { ...song().guess, slot_id: 34 } });
+		const files = [mp3, flac, other];
+		const picks = Object.fromEntries(files.map((f) => [f.path, startPick(f)]));
+		const ticked = Object.fromEntries(files.map((f) => [f.path, startTicked(f, picks[f.path])]));
+		const held = oneTickPerTrack(files, picks, ticked);
+		expect(ticked).toEqual({ [mp3.path]: false, [flac.path]: true, [other.path]: true });
+		expect(held).toEqual({ [mp3.path]: true });
+		const sure = song({ path: '/in/b/03.mp3', size: 1, guess: { ...song().guess, confidence: 1 } });
+		const t2 = { [flac.path]: true, [sure.path]: true };
+		expect(oneTickPerTrack([flac, sure], { [flac.path]: picks[flac.path], [sure.path]: startPick(sure) }, t2)).toEqual({ [flac.path]: true });
+		expect(t2).toEqual({ [flac.path]: false, [sure.path]: true });
 	});
 });

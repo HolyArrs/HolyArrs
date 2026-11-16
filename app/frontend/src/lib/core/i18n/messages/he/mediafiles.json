@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "ל-{artist} אין בספרייה אלבום בשם {name}. בחר את האלבום.",
 	"mediafiles.byHand.music.twoAlbums": "יותר מאלבום אחד של {artist} נקרא {name}. בחר את האלבום.",
 	"mediafiles.byHand.music.pickAlbumTrack": "בחר את האלבום והרצועה.",
+	"mediafiles.byHand.music.sameTrack": "קובץ אחר הולך לרצועה הזו. סמנו את זה כדי להשתמש בו במקומו.",
 	"mediafiles.byHand.music.noTrack": "אף רצועה ב-{album} לא מתאימה לקובץ הזה. בחר את הרצועה.",
 	"mediafiles.byHand.music.pickTrack": "בחר את הרצועה.",
 	"mediafiles.state.searching": "מחפש",

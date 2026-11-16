@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} tiada album bernama {name} dalam Pustaka. Pilih album.",
 	"mediafiles.byHand.music.twoAlbums": "Lebih daripada satu album {artist} bernama {name}. Pilih album.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Pilih album dan lagu.",
+	"mediafiles.byHand.music.sameTrack": "Fail lain akan pergi ke trek ini. Tandakan yang ini untuk menggunakannya sebagai ganti.",
 	"mediafiles.byHand.music.noTrack": "Tiada lagu dalam {album} yang sepadan dengan fail ini. Pilih lagu.",
 	"mediafiles.byHand.music.pickTrack": "Pilih lagu.",
 	"mediafiles.state.searching": "Mencari",

@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} nemá v knihovně album s názvem {name}. Vyberte album.",
 	"mediafiles.byHand.music.twoAlbums": "Více alb od {artist} se jmenuje {name}. Vyberte album.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Vyberte album a skladbu.",
+	"mediafiles.byHand.music.sameTrack": "K této skladbě míří jiný soubor. Zaškrtni tento, chceš-li místo něj použít tento.",
 	"mediafiles.byHand.music.noTrack": "Žádná skladba na albu {album} neodpovídá tomuto souboru. Vyberte skladbu.",
 	"mediafiles.byHand.music.pickTrack": "Vyberte skladbu.",
 	"mediafiles.state.searching": "Hledá se",

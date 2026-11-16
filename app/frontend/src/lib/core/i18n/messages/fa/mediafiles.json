@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} آلبومی به نام {name} در کتابخانه ندارد. آلبوم را انتخاب کن.",
 	"mediafiles.byHand.music.twoAlbums": "بیش از یک آلبوم از {artist} نامش {name} است. آلبوم را انتخاب کن.",
 	"mediafiles.byHand.music.pickAlbumTrack": "آلبوم و قطعه را انتخاب کن.",
+	"mediafiles.byHand.music.sameTrack": "فایل دیگری به این قطعه می‌رود. برای استفاده از این فایل به‌جای آن، تیکش بزنید.",
 	"mediafiles.byHand.music.noTrack": "هیچ قطعه‌ای در {album} با این فایل جور نیست. قطعه را انتخاب کن.",
 	"mediafiles.byHand.music.pickTrack": "قطعه را انتخاب کن.",
 	"mediafiles.state.searching": "در حال جستجو",

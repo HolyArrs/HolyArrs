@@ -149,6 +149,29 @@ export function startTicked(f: ByHandFile, p: Pick | null): boolean {
 	return !blocker(f, p) && !f.note && f.guess.confidence >= 0.7;
 }
 
+// When several ticked files go to the same track, keeps only the surest one ticked
+// (then the bigger file) and returns the paths it unticked.
+export function oneTickPerTrack(files: ByHandFile[], picks: Record<string, Pick | null>, ticked: Record<string, boolean>): Record<string, boolean> {
+	const best = new Map<string, ByHandFile>();
+	const held: Record<string, boolean> = {};
+	for (const f of files) {
+		const p = picks[f.path];
+		if (!ticked[f.path] || p?.title_kind !== 'artist' || !p.slot_id) continue;
+		const key = `${p.title_id}:${p.slot_id}`;
+		const was = best.get(key);
+		if (!was) {
+			best.set(key, f);
+			continue;
+		}
+		const better = f.guess.confidence > was.guess.confidence || (f.guess.confidence === was.guess.confidence && f.size > was.size);
+		const lose = better ? was : f;
+		if (better) best.set(key, f);
+		ticked[lose.path] = false;
+		held[lose.path] = true;
+	}
+	return held;
+}
+
 // Builds the import request from ticked files that have a valid pick.
 // No mode is sent: files are placed like automatic imports (a link when possible, else a real copy).
 export function itemsFor(files: ByHandFile[], picks: Record<string, Pick | null>, ticked: Record<string, boolean>) {

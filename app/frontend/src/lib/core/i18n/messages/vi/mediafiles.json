@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} không có album nào tên {name} trong Thư viện. Hãy chọn album.",
 	"mediafiles.byHand.music.twoAlbums": "Có hơn một album của {artist} tên {name}. Hãy chọn album.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Hãy chọn album và bài hát.",
+	"mediafiles.byHand.music.sameTrack": "Một tệp khác sẽ vào bài này. Đánh dấu tệp này để dùng nó thay thế.",
 	"mediafiles.byHand.music.noTrack": "Không bài nào trong {album} khớp với tệp này. Hãy chọn bài hát.",
 	"mediafiles.byHand.music.pickTrack": "Hãy chọn bài hát.",
 	"mediafiles.state.searching": "Đang tìm",

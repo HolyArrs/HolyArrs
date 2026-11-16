@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} não tem nenhum álbum chamado {name} na Biblioteca. Escolha o álbum.",
 	"mediafiles.byHand.music.twoAlbums": "Mais de um álbum de {artist} se chama {name}. Escolha o álbum.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Escolha o álbum e a faixa.",
+	"mediafiles.byHand.music.sameTrack": "Outro arquivo vai para esta faixa. Marque este para usá-lo no lugar.",
 	"mediafiles.byHand.music.noTrack": "Nenhuma faixa de {album} corresponde a este arquivo. Escolha a faixa.",
 	"mediafiles.byHand.music.pickTrack": "Escolha a faixa.",
 	"mediafiles.state.searching": "Buscando",

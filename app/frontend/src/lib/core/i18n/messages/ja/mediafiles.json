@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "ライブラリの {artist} には {name} というアルバムがありません。アルバムを選んでください。",
 	"mediafiles.byHand.music.twoAlbums": "{artist} には {name} という名前のアルバムが複数あります。アルバムを選んでください。",
 	"mediafiles.byHand.music.pickAlbumTrack": "アルバムと曲を選んでください。",
+	"mediafiles.byHand.music.sameTrack": "別のファイルがこのトラックに入ります。代わりにこちらを使うにはチェックしてください。",
 	"mediafiles.byHand.music.noTrack": "{album} にこのファイルと合う曲がありません。曲を選んでください。",
 	"mediafiles.byHand.music.pickTrack": "曲を選んでください。",
 	"mediafiles.state.searching": "検索中",

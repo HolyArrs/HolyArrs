@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "Ο/Η {artist} δεν έχει άλμπουμ με όνομα {name} στη Βιβλιοθήκη. Επιλέξτε το άλμπουμ.",
 	"mediafiles.byHand.music.twoAlbums": "Περισσότερα από ένα άλμπουμ του/της {artist} λέγονται {name}. Επιλέξτε το άλμπουμ.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Επιλέξτε άλμπουμ και κομμάτι.",
+	"mediafiles.byHand.music.sameTrack": "Ένα άλλο αρχείο πηγαίνει σε αυτό το κομμάτι. Τσέκαρε αυτό για να χρησιμοποιηθεί αντί για εκείνο.",
 	"mediafiles.byHand.music.noTrack": "Κανένα κομμάτι του {album} δεν ταιριάζει με αυτό το αρχείο. Επιλέξτε το κομμάτι.",
 	"mediafiles.byHand.music.pickTrack": "Επιλέξτε το κομμάτι.",
 	"mediafiles.state.searching": "Αναζήτηση",

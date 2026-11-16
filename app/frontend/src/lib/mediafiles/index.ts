@@ -151,7 +151,7 @@ export { startChoices } from './title-defaults.ts';
 export { startDir } from './table.ts';
 export { startPick } from './import-files.ts';
 export { startPicks } from './organise.ts';
-export { startTicked } from './import-files.ts';
+export { startTicked, oneTickPerTrack } from './import-files.ts';
 export { switchPlan } from './parts.ts';
 export { tableMinWidth } from './table.ts';
 export { titleArt } from './title-art.ts';

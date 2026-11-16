@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} n'a pas d'album nommé {name} dans la Bibliothèque. Choisissez l'album.",
 	"mediafiles.byHand.music.twoAlbums": "Plusieurs albums de {artist} s'appellent {name}. Choisissez l'album.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Choisissez l'album et le titre.",
+	"mediafiles.byHand.music.sameTrack": "Un autre fichier va vers cette piste. Coche celui-ci pour l'utiliser à sa place.",
 	"mediafiles.byHand.music.noTrack": "Aucun titre de {album} ne correspond à ce fichier. Choisissez le titre.",
 	"mediafiles.byHand.music.pickTrack": "Choisissez le titre.",
 	"mediafiles.state.searching": "Recherche en cours",

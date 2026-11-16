@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} á enga plötu sem heitir {name} í safninu. Veldu plötuna.",
 	"mediafiles.byHand.music.twoAlbums": "Fleiri en ein plata eftir {artist} heitir {name}. Veldu plötuna.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Veldu plötu og lag.",
+	"mediafiles.byHand.music.sameTrack": "Önnur skrá fer á þetta lag. Hakaðu við þessa til að nota hana í staðinn.",
 	"mediafiles.byHand.music.noTrack": "Ekkert lag á {album} passar við þessa skrá. Veldu lagið.",
 	"mediafiles.byHand.music.pickTrack": "Veldu lagið.",
   "mediafiles.state.searching": "Leita",

@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "{artist} nemá v Knižnici album s názvom {name}. Vyberte album.",
 	"mediafiles.byHand.music.twoAlbums": "Viac albumov od {artist} sa volá {name}. Vyberte album.",
 	"mediafiles.byHand.music.pickAlbumTrack": "Vyberte album a skladbu.",
+	"mediafiles.byHand.music.sameTrack": "K tejto skladbe ide iný súbor. Zaškrtni tento, ak chceš použiť tento.",
 	"mediafiles.byHand.music.noTrack": "Žiadna skladba na albume {album} nezodpovedá tomuto súboru. Vyberte skladbu.",
 	"mediafiles.byHand.music.pickTrack": "Vyberte skladbu.",
 	"mediafiles.state.searching": "Hľadá sa",

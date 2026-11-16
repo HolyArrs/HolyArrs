@@ -167,6 +167,7 @@
 	"mediafiles.byHand.music.noAlbum": "நூலகத்தில் {artist} க்கு {name} என்ற ஆல்பம் இல்லை. ஆல்பத்தைத் தேர்ந்தெடுங்கள்.",
 	"mediafiles.byHand.music.twoAlbums": "{artist} இன் ஒன்றுக்கு மேற்பட்ட ஆல்பங்களின் பெயர் {name}. ஆல்பத்தைத் தேர்ந்தெடுங்கள்.",
 	"mediafiles.byHand.music.pickAlbumTrack": "ஆல்பம், பாடலைத் தேர்ந்தெடுங்கள்.",
+	"mediafiles.byHand.music.sameTrack": "வேறு கோப்பு இந்த டிராக்கிற்குச் செல்கிறது. அதற்குப் பதிலாக இதைப் பயன்படுத்த இதைத் தேர்வுசெய்யவும்.",
 	"mediafiles.byHand.music.noTrack": "{album} இல் எந்தப் பாடலும் இந்தக் கோப்புடன் பொருந்தவில்லை. பாடலைத் தேர்ந்தெடுங்கள்.",
 	"mediafiles.byHand.music.pickTrack": "பாடலைத் தேர்ந்தெடுங்கள்.",
 	"mediafiles.state.searching": "தேடுகிறது",
