@@ -70,7 +70,7 @@
 		<div class="ctl">
 			{#if !open}
 				{#each servers as s (s.id)}
-					<Button variant="secondary" type="button" onclick={() => { open = s; error = ''; }} data-testid="media-link-open">{t('accounts.security.link')} · {s.name}</Button>
+					<Button variant="secondary" type="button" onclick={() => { open = s; error = ''; }} data-testid="media-link-open">{linkOf(s.kind) ? t('accounts.account.change') : t('accounts.security.link')} · {s.name}</Button>
 				{/each}
 			{/if}
 		</div>
@@ -120,4 +120,10 @@
 	.form { display: flex; flex-direction: column; gap: 8px; width: min(100%, 360px); }
 	.field { display: flex; flex-direction: column; gap: 4px; }
 	.acts { gap: 8px; flex-wrap: wrap; align-items: center; }
+	.srow > .ctl { flex-wrap: wrap; }
+	/* On a phone the server buttons go under the words, so the words keep the row's width. */
+	@media (max-width: 600px) {
+		.srow { grid-template-columns: minmax(0, 1fr); row-gap: 8px; }
+		.srow > .ctl { justify-self: start; }
+	}
 </style>

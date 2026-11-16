@@ -121,6 +121,11 @@ func TestOwnerLinksSomeone(t *testing.T) {
 	if resp, out := own.do(t, f, "PUT", "/api/v1/users/"+id+"/media-link", `{"server":7,"account":"kid1"}`); resp.StatusCode != 200 {
 		t.Fatalf("owner link: %d %s", resp.StatusCode, out)
 	}
+	// The picker shows which account is already someone's, and whose.
+	if resp, out := own.do(t, f, "GET", "/api/v1/users/media-accounts", ""); resp.StatusCode != 200 ||
+		!strings.Contains(out, `{"id":"kid1","name":"Kid","taken_by":`+id+`,"taken_name":"ana"}`) || !strings.Contains(out, `{"id":"abc123","name":"Mum"}`) {
+		t.Fatalf("taken list: %d %s", resp.StatusCode, out)
+	}
 	if resp, _ := own.do(t, f, "DELETE", "/api/v1/users/"+id+"/media-link/jellyfin", ""); resp.StatusCode != 204 {
 		t.Fatalf("owner unlink: %d", resp.StatusCode)
 	}

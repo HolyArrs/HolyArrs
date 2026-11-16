@@ -33,6 +33,9 @@ type LinkServer struct {
 type ServerAccount struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+	// TakenBy and TakenName name the person the account is already linked to.
+	TakenBy   int64  `json:"taken_by,omitempty"`
+	TakenName string `json:"taken_name,omitempty"`
 }
 
 // MediaLinks reaches the owner's connected media servers. Servers lists the
@@ -343,6 +346,16 @@ func (a *Auth) serverAccounts(w http.ResponseWriter, r *http.Request) {
 			v.Error = "the " + kind + " server did not answer"
 		} else if got != nil {
 			v.Accounts = got
+			taken, err := linkedAccounts(r.Context(), a.s.Read(), m.Kind)
+			if err != nil {
+				serverError(w, "media accounts", err)
+				return
+			}
+			for i := range v.Accounts {
+				if p, ok := taken[v.Accounts[i].ID]; ok {
+					v.Accounts[i].TakenBy, v.Accounts[i].TakenName = p.ID, p.Name
+				}
+			}
 		}
 		out = append(out, v)
 	}

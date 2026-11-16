@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import WatchedMark from './WatchedMark.svelte';
@@ -26,6 +27,10 @@ describe('WatchedMark', () => {
 		const part = render(WatchedMark, { props: { mark: { state: 'partly', seen: 1, of: 4 }, look: 'bar' } }).body;
 		expect(part).toContain('class="wbar');
 		expect(part).toContain('width: 25%');
+	});
+	it('keeps the phone bar seen on a light poster: a dark track under it', () => {
+		const src = readFileSync(new URL('./WatchedMark.svelte', import.meta.url), 'utf8');
+		expect(src).toMatch(/\.wbar \{[^}]*background: rgb\(20 20 22 \/ 72%\)/);
 	});
 	it('draws nothing when nothing is watched', () => {
 		expect(render(WatchedMark, { props: { mark: null } }).body).not.toContain('wm');

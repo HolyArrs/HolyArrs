@@ -25,7 +25,7 @@
 	.wm { position: absolute; right: 8px; bottom: 10px; z-index: 1; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 99px; pointer-events: none; transition: opacity var(--dur-fast) var(--ease-out); }
 	.done { color: #fff; background: var(--ok-on-art); box-shadow: 0 1px 4px rgb(0 0 0 / 35%); }
 	.part { color: var(--ok-on-art); background: rgb(20 20 22 / 72%); -webkit-backdrop-filter: blur(8px) saturate(160%); backdrop-filter: blur(8px) saturate(160%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 14%); }
-	.wbar { position: absolute; left: 3px; right: 3px; bottom: 3px; z-index: 1; height: 3px; border-radius: 2px; background: rgb(255 255 255 / 30%); pointer-events: none; }
+	.wbar { position: absolute; left: 3px; right: 3px; bottom: 3px; z-index: 1; height: 3px; border-radius: 2px; background: rgb(20 20 22 / 72%); box-shadow: 0 0 0 1px rgb(20 20 22 / 40%); pointer-events: none; }
 	.wbar i { display: block; height: 100%; border-radius: inherit; background: #fff; }
 	:global([dir='rtl']) .wm { right: auto; left: 8px; }
 	@media (prefers-reduced-transparency: reduce) { .part { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgb(24 24 26 / 94%); } }

@@ -6,8 +6,8 @@
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { accountChoice, type ServerAccount as Account } from './media-link.ts';
 
-	type Account = { id: string; name: string };
 	type Server = { id: number; name: string; kind: string; accounts: Account[]; error?: string };
 	let { user, links, onchange }: { user: { id: number; name: string }; links: { provider: string; name: string }[]; onchange: () => void } = $props();
 
@@ -73,7 +73,7 @@
 			<option value="">{t('settings.users.pickAccount')}</option>
 			{#each servers ?? [] as s (s.id)}
 				<optgroup label={s.error ? `${s.name}: ${message(s.error)}` : s.name}>
-					{#each s.accounts as a (a.id)}<option value="{s.id}:{a.id}">{a.name}</option>{/each}
+					{#each s.accounts as a (a.id)}{@const c = accountChoice(a, user.id, t)}<option value="{s.id}:{a.id}" disabled={c.taken}>{c.label}</option>{/each}
 				</optgroup>
 			{/each}
 		</select>

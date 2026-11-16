@@ -28,6 +28,12 @@ describe('titleWatched', () => {
 		const ix = watchedIndex(mine({ shows: { '3': { '0': 1 } } }));
 		expect(titleWatched(show(3, 2, 8), ix)).toEqual({ state: 'partly', seen: 0, of: 8 });
 	});
+	it('counts only the episodes in the Library, as Plex and Jellyfin do', () => {
+		const ix = watchedIndex(mine({ shows: { '3': { '1': 2 } } }));
+		const t = { id: 3, kind: 'show', show: { seasons: [{ number: 1, aired: 120, in_library: 3 }, { number: 2, aired: 66, in_library: 0 }] } };
+		expect(titleWatched(t, ix)).toEqual({ state: 'partly', seen: 2, of: 3 });
+		expect(seasonWatched(3, { number: 1, aired: 120, in_library: 3 }, ix)).toEqual({ state: 'partly', seen: 2, of: 3 });
+	});
 	it('says partly watched for a show whose seasons are not known', () => {
 		const ix = watchedIndex(mine({ shows: { '3': { '1': 2 } } }));
 		expect(titleWatched({ id: 3, kind: 'show' }, ix)).toEqual({ state: 'partly', seen: 2, of: 0 });
