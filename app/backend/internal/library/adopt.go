@@ -294,6 +294,8 @@ func PlanAdoptFrom(ctx context.Context, db Reader, md metadata.Provider, folderI
 	p.Warning = MountWarning(ctx, db, lf, len(ents))
 	total := ScanTotal(ents, after, p.Limit)
 	defer func() { ReportScan(ctx, len(p.Folders), total) }()
+	ahead := startAhead(ctx, md, scanLookups(ents, after, p.Limit, known))
+	defer ahead.close()
 	for _, e := range ents {
 		if !ScanWants(e, after) {
 			continue
@@ -313,6 +315,7 @@ func PlanAdoptFrom(ctx context.Context, db Reader, md metadata.Provider, folderI
 			p.Counts[c.Status]++
 			continue
 		}
+		ahead.wait(ctx, e.Name())
 		name, year, ms, err := matchFolder(ctx, md, e.Name())
 		if err != nil {
 			if ctx.Err() != nil {
