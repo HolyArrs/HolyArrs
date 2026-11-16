@@ -361,6 +361,9 @@ func ProbeDial(x domain.Source) doctor.Dial {
 	return outbound.PolicyDialer(allow).DialContext
 }
 
+// probeDialOf is ProbeDial; tests swap it to count the looks.
+var probeDialOf = ProbeDial
+
 // Explain turns a failed call into plain words for the person.
 // It never includes the address or the key.
 func Explain(err error) string {
@@ -388,7 +391,11 @@ func Explain(err error) string {
 // ExplainVia is Explain for one Source: when it searches through Prowlarr or
 // Jackett and that app does not answer, it names that app and what to do.
 func ExplainVia(sourceURL string, err error, dial doctor.Dial) string {
-	c := CauseAt(err, sourceURL, dial)
+	return explainWith(sourceURL, err, CauseAt(err, sourceURL, dial))
+}
+
+// explainWith is ExplainVia with the cause already worked out.
+func explainWith(sourceURL string, err error, c doctor.Cause) string {
 	text := Explain(err)
 	if line := doctor.Line(c); line != "" {
 		text = line
