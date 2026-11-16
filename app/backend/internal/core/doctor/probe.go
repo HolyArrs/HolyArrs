@@ -90,7 +90,9 @@ var apps = []struct {
 	{"nzbget", []string{"nzbget"}},
 	{"transmission", []string{"x-transmission-session-id", "<title>transmission", "realm=\"transmission"}},
 	{"deluge", []string{"deluge"}},
-	{"holyarrs", []string{"holyarrs"}},
+	// HolyArrs's own security policy names its trailer player, even on a
+	// bare 401.
+	{"holyarrs", []string{"holyarrs", "youtube-nocookie.com"}},
 	// Sonarr, Radarr, Prowlarr and the rest of that family send this header.
 	{"servarr", []string{"x-application-version:"}},
 	// An empty answer from a .NET app names only its web server: Jellyfin,

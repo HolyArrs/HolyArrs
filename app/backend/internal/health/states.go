@@ -79,6 +79,13 @@ func (e *Engine) Links(ctx context.Context) ([]jobs.Status, error) {
 			add("downloader", d.ID, d.Name, jobs.Retrying, why)
 		case "auth_failed":
 			add("downloader", d.ID, d.Name, jobs.Failed, doctor.Line(doctor.Auth))
+		case "ok":
+			// A missing category needs a person, though other grabs still go.
+			if doctor.OfText(d.LastError) == doctor.Category {
+				add("downloader", d.ID, d.Name, jobs.Failed, doctor.LineOf(d.LastError))
+				continue
+			}
+			add("downloader", d.ID, d.Name, jobs.Running, "")
 		default:
 			add("downloader", d.ID, d.Name, jobs.Running, "")
 		}

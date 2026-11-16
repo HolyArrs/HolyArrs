@@ -16,12 +16,17 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // clientTimeout bounds one call to a client. A busy NAS client (for example
 // during a recheck) can take longer than 15 s to answer.
 const clientTimeout = 30 * time.Second
+
+// tlsWait bounds a TLS hello. A plain http port (qBittorrent's) never answers
+// one, so a short wait makes an https:// mistake show quickly.
+var tlsWait = 5 * time.Second
 
 // Back-off after a Downloader fails: 1 minute, doubling, at most 30.
 const (
@@ -69,7 +74,7 @@ func Client(base string, allowLocal bool) *http.Client {
 	dial := policyDial(allow)
 	return &http.Client{
 		Timeout:   clientTimeout,
-		Transport: &http.Transport{Proxy: nil, DialContext: dial, TLSHandshakeTimeout: 10 * time.Second, MaxIdleConnsPerHost: 2},
+		Transport: &http.Transport{Proxy: nil, DialContext: dial, TLSHandshakeTimeout: tlsWait, MaxIdleConnsPerHost: 2},
 		CheckRedirect: func(r *http.Request, via []*http.Request) error {
 			if r.URL.Host != host || r.URL.Scheme != scheme || len(via) > 3 {
 				return errors.New("the Downloader sent us to another address")
@@ -92,7 +97,9 @@ func (m *Manager) Check(ctx context.Context, d domain.Downloader) (Health, error
 			raw = guarded.Engine
 		}
 		raw = unwrapReadOnly(raw)
-		if s, ok := raw.(*Sabnzbd); ok {
+		if s, ok := raw.(interface {
+			HasCategory(context.Context, string) (bool, error)
+		}); ok {
 			for _, c := range d.Categories() {
 				if c == "" || c == "*" {
 					continue
@@ -270,6 +277,14 @@ func (m *Manager) downloaderFailed(ctx context.Context, d domain.Downloader, cau
 		state = "auth_failed"
 	}
 	log.Printf("downloaders: %s (%d): %s", d.Name, d.ID, firstLine(cause.Error()))
+	last := firstLine(cause.Error())
+	// A bare timeout or hang-up gets the Test's second look, so health keeps
+	// naming http or https after the next check.
+	if c := doctor.Of(cause); (c == doctor.Unknown || c == doctor.Timeout) && !errors.Is(cause, context.Canceled) {
+		if found := secondLook(cause, d.URL, d.AllowLocal); found != c && found != doctor.Unknown {
+			last = doctor.Line(found)
+		}
+	}
 	now := m.now()
 	_ = m.Store.Write(ctx, func(tx *sql.Tx) error {
 		var fails int
@@ -285,7 +300,7 @@ func (m *Manager) downloaderFailed(ctx context.Context, d domain.Downloader, cau
 			wait = backoffMost
 		}
 		_, err := tx.Exec("UPDATE downloaders SET state = ?, fail_count = fail_count + 1, backoff_until = ?, last_error = ?, checked_at = ?, updated_at = ? WHERE id = ?",
-			state, database.FormatTime(now.Add(wait)), firstLine(cause.Error()), database.FormatTime(now), database.FormatTime(now), d.ID)
+			state, database.FormatTime(now.Add(wait)), last, database.FormatTime(now), database.FormatTime(now), d.ID)
 		return err
 	})
 	m.publish("downloader", map[string]any{"id": d.ID, "state": state})

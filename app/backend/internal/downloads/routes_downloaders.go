@@ -354,8 +354,8 @@ func explainDownloader(err error, rawURL string, allowLocal bool) (doctor.Cause,
 	case errors.Is(err, outbound.ErrAddressRefused):
 		return doctor.Blocked, doctor.Line(doctor.Blocked)
 	}
-	if c, line, ok := doctor.ExplainAt(err, rawURL, probeDial(allowLocal)); ok {
-		return c, line
+	if c := secondLook(err, rawURL, allowLocal); c != doctor.Unknown {
+		return c, doctor.Line(c)
 	}
 	// The raw error (addresses, Go words) stays in the log.
 	return doctor.Unknown, "It did not answer the last check. The log has the details."
@@ -712,6 +712,20 @@ func orZero(p *float64) *float64 {
 		return new(float64)
 	}
 	return p
+}
+
+// secondLook is the cause of err, with a second look at the address for one
+// that has none or only timed out: a plain port that sits silent on a TLS
+// hello times out, yet answers plain http.
+func secondLook(err error, rawURL string, allowLocal bool) doctor.Cause {
+	c := doctor.Of(err)
+	if c == doctor.Timeout {
+		if p := doctor.At(doctor.Unknown, err.Error(), rawURL, probeDial(allowLocal)); p != doctor.Unknown {
+			return p
+		}
+		return c
+	}
+	return doctor.At(c, err.Error(), rawURL, probeDial(allowLocal))
 }
 
 // probeDial is the Downloader's own way out, for a second look at its address.
