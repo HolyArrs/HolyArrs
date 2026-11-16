@@ -955,6 +955,7 @@ min
 minFormatScore
 minUpgradeFormatScore
 min_app_version
+min_blocklist_counter
 min_free_mb
 min_from
 min_password_length

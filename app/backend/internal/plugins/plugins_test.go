@@ -30,7 +30,7 @@ func testKey(t *testing.T) (ed25519.PublicKey, ed25519.PrivateKey) {
 func manifestJSON(mod func(map[string]any)) []byte {
 	m := map[string]any{
 		"id": "tailscale", "name": "Tailscale", "version": "1.0.0", "author": "HolyArrs",
-		"access":          map[string]any{"hosts": []string{"controlplane.tailscale.com"}, "folders": []string{"/config/plugins/tailscale"}, "actions": []string{}},
+		"access":          map[string]any{"hosts": []string{"controlplane.tailscale.com"}, "folders": []string{"tailscale"}, "actions": []string{}},
 		"min_app_version": "1.2.0",
 		"sha256":          fileHash(programFile),
 	}
@@ -39,6 +39,18 @@ func manifestJSON(mod func(map[string]any)) []byte {
 	}
 	b, _ := json.Marshal(m)
 	return b
+}
+
+func u64(n uint64) *uint64 { return &n }
+
+func withAccess(m map[string]any, folders, hosts []string) {
+	if folders == nil {
+		folders = []string{}
+	}
+	if hosts == nil {
+		hosts = []string{}
+	}
+	m["access"] = map[string]any{"hosts": hosts, "folders": folders, "actions": []string{}}
 }
 
 func sign(t *testing.T, priv ed25519.PrivateKey, l List) []byte {
@@ -77,7 +89,27 @@ func TestParseManifest(t *testing.T) {
 		{"short sha", manifestJSON(func(m map[string]any) { m["sha256"] = "abc" }), "64 lowercase"},
 		{"upper sha", manifestJSON(func(m map[string]any) { m["sha256"] = strings.ToUpper(fileHash(programFile)) }), "64 lowercase"},
 		{"wrong type", manifestJSON(func(m map[string]any) { m["version"] = 1 }), "cannot unmarshal"},
-		{"trailing data", append(manifestJSON(nil), []byte(" {}")...), "JSON object"},
+		{"trailing data", append(manifestJSON(nil), []byte(" {}")...), "extra data"},
+		{"trailing garbage", append(manifestJSON(nil), []byte(" x")...), "extra data"},
+		{"duplicate id", []byte(strings.Replace(string(manifestJSON(nil)), `"id":"tailscale"`, `"id":"tailscale","id":"other"`, 1)), "duplicate field"},
+		{"case variant ID", manifestJSON(func(m map[string]any) { m["ID"] = "x" }), `unknown field "ID"`},
+		{"case variant access key", manifestJSON(func(m map[string]any) {
+			m["access"] = map[string]any{"hosts": []string{}, "folders": []string{}, "actions": []string{}, "Hosts": []string{}}
+		}), `unknown field "access.Hosts"`},
+		{"upper id", manifestJSON(func(m map[string]any) { m["id"] = "Tailscale" }), `"id" must`},
+		{"id with slash", manifestJSON(func(m map[string]any) { m["id"] = "../x" }), `"id" must`},
+		{"id leading dash", manifestJSON(func(m map[string]any) { m["id"] = "-x" }), `"id" must`},
+		{"id too long", manifestJSON(func(m map[string]any) { m["id"] = strings.Repeat("a", 65) }), `"id" must`},
+		{"version not semver", manifestJSON(func(m map[string]any) { m["version"] = "1.0" }), "semver"},
+		{"version with path", manifestJSON(func(m map[string]any) { m["version"] = "1.0.0/../x" }), "semver"},
+		{"empty folder", manifestJSON(func(m map[string]any) { withAccess(m, []string{""}, nil) }), "unsafe folder"},
+		{"dotdot folder", manifestJSON(func(m map[string]any) { withAccess(m, []string{"a/../b"}, nil) }), "unsafe folder"},
+		{"backslash folder", manifestJSON(func(m map[string]any) { withAccess(m, []string{`a\b`}, nil) }), "unsafe folder"},
+		{"absolute folder", manifestJSON(func(m map[string]any) { withAccess(m, []string{"/etc"}, nil) }), "unsafe folder"},
+		{"drive folder", manifestJSON(func(m map[string]any) { withAccess(m, []string{"C:/x"}, nil) }), "unsafe folder"},
+		{"empty host", manifestJSON(func(m map[string]any) { withAccess(m, nil, []string{""}) }), "unsafe host"},
+		{"dotdot host", manifestJSON(func(m map[string]any) { withAccess(m, nil, []string{"a..b"}) }), "unsafe host"},
+		{"backslash host", manifestJSON(func(m map[string]any) { withAccess(m, nil, []string{`a\b`}) }), "unsafe host"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -92,7 +124,11 @@ func TestParseManifest(t *testing.T) {
 func TestVerifyList(t *testing.T) {
 	pub, priv := testKey(t)
 	otherPub, otherPriv := testKey(t)
-	good := List{Kind: KindPlugins, Counter: 5, Entries: []Entry{{ID: "tailscale", Version: "1.0.0", SHA256: fileHash(programFile)}}}
+	h := fileHash(programFile)
+	if _, err := VerifyList(pub, sign(t, priv, List{Kind: KindBlocklist, Entries: []Entry{{SHA256: h}}}), KindBlocklist, 0); err != nil {
+		t.Fatalf("hash-only blocklist entry must pass: %v", err)
+	}
+	good := List{Kind: KindPlugins, Counter: 5, MinBlocklistCounter: u64(0), Entries: []Entry{{ID: "tailscale", Version: "1.0.0", SHA256: fileHash(programFile)}}}
 
 	if l, err := VerifyList(pub, sign(t, priv, good), KindPlugins, 5); err != nil || l.Counter != 5 {
 		t.Fatalf("same counter must pass: %v", err)
@@ -132,8 +168,18 @@ func TestVerifyList(t *testing.T) {
 		{"not json", pub, []byte("nope"), KindPlugins, 0, ErrListFormat},
 		{"unknown outer field", pub, []byte(`{"payload":"","signature":"","x":1}`), KindPlugins, 0, ErrListFormat},
 		{"missing signature", pub, []byte(`{"payload":"e30="}`), KindPlugins, 0, ErrListFormat},
-		{"entry without hash", pub, sign(t, priv, List{Kind: KindPlugins, Entries: []Entry{{ID: "a", Version: "1"}}}), KindPlugins, 0, ErrListFormat},
-		{"entry without id", pub, sign(t, priv, List{Kind: KindBlocklist, Entries: []Entry{{}}}), KindBlocklist, 0, ErrListFormat},
+		{"entry without hash", pub, sign(t, priv, List{Kind: KindPlugins, MinBlocklistCounter: u64(0), Entries: []Entry{{ID: "a", Version: "1.0.0"}}}), KindPlugins, 0, ErrListFormat},
+		{"plugin entry hash only", pub, sign(t, priv, List{Kind: KindPlugins, MinBlocklistCounter: u64(0), Entries: []Entry{{SHA256: h}}}), KindPlugins, 0, ErrListFormat},
+		{"blocklist entry empty", pub, sign(t, priv, List{Kind: KindBlocklist, Entries: []Entry{{}}}), KindBlocklist, 0, ErrListFormat},
+		{"blocklist entry version only", pub, sign(t, priv, List{Kind: KindBlocklist, Entries: []Entry{{Version: "1.0.0"}}}), KindBlocklist, 0, ErrListFormat},
+		{"bad entry id", pub, sign(t, priv, List{Kind: KindPlugins, MinBlocklistCounter: u64(0), Entries: []Entry{{ID: "A/b", Version: "1.0.0", SHA256: h}}}), KindPlugins, 0, ErrListFormat},
+		{"bad entry version", pub, sign(t, priv, List{Kind: KindPlugins, MinBlocklistCounter: u64(0), Entries: []Entry{{ID: "a", Version: "1", SHA256: h}}}), KindPlugins, 0, ErrListFormat},
+		{"bad blocklist version", pub, sign(t, priv, List{Kind: KindBlocklist, Entries: []Entry{{ID: "a", Version: "v1"}}}), KindBlocklist, 0, ErrListFormat},
+		{"upper blocklist hash", pub, sign(t, priv, List{Kind: KindBlocklist, Entries: []Entry{{SHA256: strings.ToUpper(h)}}}), KindBlocklist, 0, ErrListFormat},
+		{"short blocklist hash", pub, sign(t, priv, List{Kind: KindBlocklist, Entries: []Entry{{ID: "a", SHA256: "abc"}}}), KindBlocklist, 0, ErrListFormat},
+		{"missing min_blocklist_counter", pub, sign(t, priv, List{Kind: KindPlugins, Counter: 5}), KindPlugins, 0, ErrListFormat},
+		{"trailing outer data", pub, append(sign(t, priv, good), []byte(" {}")...), KindPlugins, 0, ErrListFormat},
+		{"trailing payload data", pub, signRaw(priv, []byte(`{"kind":"blocklist","counter":1,"entries":[]} {}`)), KindBlocklist, 0, ErrListFormat},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -144,11 +190,16 @@ func TestVerifyList(t *testing.T) {
 	}
 }
 
+func signRaw(priv ed25519.PrivateKey, payload []byte) []byte {
+	b, _ := json.Marshal(SignedList{Payload: payload, Signature: ed25519.Sign(priv, payload)})
+	return b
+}
+
 func TestCheckInstall(t *testing.T) {
 	pub, priv := testKey(t)
 	_, otherPriv := testKey(t)
 	h := fileHash(programFile)
-	list := sign(t, priv, List{Kind: KindPlugins, Counter: 3, Entries: []Entry{{ID: "tailscale", Version: "1.0.0", SHA256: h}}})
+	list := sign(t, priv, List{Kind: KindPlugins, Counter: 3, MinBlocklistCounter: u64(2), Entries: []Entry{{ID: "tailscale", Version: "1.0.0", SHA256: h}}})
 	emptyBlock := sign(t, priv, List{Kind: KindBlocklist, Counter: 2})
 
 	base := func() InstallInput {
@@ -157,9 +208,16 @@ func TestCheckInstall(t *testing.T) {
 	}
 
 	acc, err := CheckInstall(base())
-	if err != nil || acc.Manifest.ID != "tailscale" || acc.ListCounter != 3 || acc.BlockCounter != 2 {
+	if err != nil || acc.Manifest.ID != "tailscale" || acc.ListCounter != 3 || acc.BlockCounter != 2 || !bytes.Equal(acc.File, programFile) {
 		t.Fatalf("valid install refused: %v", err)
 	}
+
+	old := maxFileSize
+	maxFileSize = int64(len(programFile)) - 1
+	if _, err := CheckInstall(base()); !errors.Is(err, ErrFileTooLarge) {
+		t.Fatalf("oversized file: got %v, want ErrFileTooLarge", err)
+	}
+	maxFileSize = old
 
 	otherFile := []byte("another program")
 	tests := []struct {
@@ -187,12 +245,19 @@ func TestCheckInstall(t *testing.T) {
 			in.Blocklist = sign(t, priv, List{Kind: KindBlocklist, Counter: 2, Entries: []Entry{{ID: "tailscale"}}})
 		}, ErrBlocked},
 		{"blocklisted by hash", func(in *InstallInput) {
-			in.Blocklist = sign(t, priv, List{Kind: KindBlocklist, Counter: 2, Entries: []Entry{{ID: "x", Version: "9", SHA256: h}}})
+			in.Blocklist = sign(t, priv, List{Kind: KindBlocklist, Counter: 2, Entries: []Entry{{ID: "x", Version: "9.0.0", SHA256: h}}})
 		}, ErrBlocked},
+		{"blocklisted by hash only", func(in *InstallInput) {
+			in.Blocklist = sign(t, priv, List{Kind: KindBlocklist, Counter: 2, Entries: []Entry{{SHA256: h}}})
+		}, ErrBlocked},
+		{"stale blocklist", func(in *InstallInput) {
+			in.Blocklist = sign(t, priv, List{Kind: KindBlocklist, Counter: 1})
+			in.LastBlockCounter = 0
+		}, ErrStaleBlock},
 		{"older list", func(in *InstallInput) { in.LastListCounter = 4 }, ErrListOlder},
 		{"older blocklist", func(in *InstallInput) { in.LastBlockCounter = 3 }, ErrListOlder},
 		{"list signed by other key", func(in *InstallInput) {
-			in.List = sign(t, otherPriv, List{Kind: KindPlugins, Counter: 3, Entries: []Entry{{ID: "tailscale", Version: "1.0.0", SHA256: h}}})
+			in.List = sign(t, otherPriv, List{Kind: KindPlugins, Counter: 3, MinBlocklistCounter: u64(2), Entries: []Entry{{ID: "tailscale", Version: "1.0.0", SHA256: h}}})
 		}, ErrListSignature},
 		{"tampered list", func(in *InstallInput) {
 			var sl SignedList

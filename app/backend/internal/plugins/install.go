@@ -14,7 +14,12 @@ var (
 	ErrHashMismatch = errors.New("plugin file hash does not match its manifest")
 	ErrNotOnList    = errors.New("plugin is not on the signed plugin list")
 	ErrBlocked      = errors.New("plugin is on the signed blocklist")
+	ErrFileTooLarge = errors.New("plugin file is too large")
+	ErrStaleBlock   = errors.New("blocklist is older than the plugin list requires")
 )
+
+// maxFileSize caps a plugin file read into memory (a var so tests can lower it).
+var maxFileSize int64 = 512 << 20
 
 // InstallInput is everything one install check needs. Counters are those of
 // the last lists accepted, so an older list is refused.
@@ -28,9 +33,11 @@ type InstallInput struct {
 	File             io.Reader
 }
 
-// Accepted is the result of a passed check; the caller stores the counters.
+// Accepted is the result of a passed check; the caller stores the counters
+// and installs exactly File, the bytes whose hash was checked.
 type Accepted struct {
 	Manifest     *Manifest
+	File         []byte
 	ListCounter  uint64
 	BlockCounter uint64
 }
@@ -47,6 +54,9 @@ func CheckInstall(in InstallInput) (*Accepted, error) {
 	if err != nil {
 		return nil, fmt.Errorf("blocklist: %w", err)
 	}
+	if block.Counter < *list.MinBlocklistCounter {
+		return nil, fmt.Errorf("%w: counter %d, need %d", ErrStaleBlock, block.Counter, *list.MinBlocklistCounter)
+	}
 	m, err := ParseManifest(in.Manifest)
 	if err != nil {
 		return nil, err
@@ -54,11 +64,15 @@ func CheckInstall(in InstallInput) (*Accepted, error) {
 	if in.File == nil {
 		return nil, ErrHashMismatch
 	}
-	h := sha256.New()
-	if _, err := io.Copy(h, in.File); err != nil {
+	file, err := io.ReadAll(io.LimitReader(in.File, maxFileSize+1))
+	if err != nil {
 		return nil, fmt.Errorf("reading plugin file: %w", err)
 	}
-	if got := hex.EncodeToString(h.Sum(nil)); got != m.SHA256 {
+	if int64(len(file)) > maxFileSize {
+		return nil, fmt.Errorf("%w: over %d bytes", ErrFileTooLarge, maxFileSize)
+	}
+	sum := sha256.Sum256(file)
+	if got := hex.EncodeToString(sum[:]); got != m.SHA256 {
 		return nil, fmt.Errorf("%w: file %s, manifest %s", ErrHashMismatch, got, m.SHA256)
 	}
 
@@ -77,5 +91,5 @@ func CheckInstall(in InstallInput) (*Accepted, error) {
 			return nil, fmt.Errorf("%w: %s %s", ErrBlocked, m.ID, m.Version)
 		}
 	}
-	return &Accepted{Manifest: m, ListCounter: list.Counter, BlockCounter: block.Counter}, nil
+	return &Accepted{Manifest: m, File: file, ListCounter: list.Counter, BlockCounter: block.Counter}, nil
 }
