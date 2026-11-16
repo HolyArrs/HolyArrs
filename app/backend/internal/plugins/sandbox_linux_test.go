@@ -4,10 +4,14 @@ package plugins
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"syscall"
 	"testing"
+	"time"
 )
 
 // TestMain lets the test binary act as the sandbox helper.
@@ -16,24 +20,32 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestLinuxSandboxLimitsFiles(t *testing.T) {
-	if landlockABI() < 1 {
-		t.Skip("kernel has no Landlock; sandbox test skipped")
-	}
-	root := t.TempDir()
-	data := filepath.Join(root, "data")
+// probeDirs builds the probe into root/ver and returns the data folder and probe path.
+func probeDirs(t *testing.T) (root, data, probe string) {
+	t.Helper()
+	root = t.TempDir()
+	data = filepath.Join(root, "data")
 	ver := filepath.Join(root, "ver")
 	for _, d := range []string{data, ver} {
 		if err := os.MkdirAll(d, 0o700); err != nil {
 			t.Fatal(err)
 		}
 	}
-	probe := filepath.Join(ver, "run-probe")
+	probe = filepath.Join(ver, "run-probe")
 	build := exec.Command("go", "build", "-o", probe, "./testdata/sandboxprobe")
 	build.Env = append(os.Environ(), "CGO_ENABLED=0")
 	if out, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build probe: %v\n%s", err, out)
 	}
+	return root, data, probe
+}
+
+func TestLinuxSandboxLimitsFiles(t *testing.T) {
+	if landlockABI() < 1 {
+		t.Skip("kernel has no Landlock; sandbox test skipped")
+	}
+	root, data, probe := probeDirs(t)
+	ver := filepath.Dir(probe)
 	secret := filepath.Join(root, "secret.txt")
 	if err := os.WriteFile(secret, []byte("s"), 0o600); err != nil {
 		t.Fatal(err)
@@ -56,5 +68,88 @@ func TestLinuxSandboxLimitsFiles(t *testing.T) {
 	}
 	if err := run("read", "/etc/hosts"); err != nil {
 		t.Errorf("read /etc/hosts failed: %v", err)
+	}
+}
+
+func TestLinuxSandboxBlocksSignalToParent(t *testing.T) {
+	if landlockABI() < 6 {
+		t.Skip("kernel Landlock ABI below 6; signal scope test skipped")
+	}
+	_, data, probe := probeDirs(t)
+	p, err := (ExecRunner{Sandbox: LinuxSandbox{}}).Start(context.Background(), Spec{Program: probe, Args: []string{"signalparent"}, DataDir: data})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := p.Wait(); err == nil {
+		t.Error("probe could signal its parent")
+	}
+}
+
+func TestLinuxSandboxStopKillsLeftChildren(t *testing.T) {
+	if landlockABI() < 1 {
+		t.Skip("kernel has no Landlock; sandbox test skipped")
+	}
+	_, data, probe := probeDirs(t)
+	pidFile := filepath.Join(data, "child.pid")
+	p, err := (ExecRunner{Sandbox: LinuxSandbox{}}).Start(context.Background(), Spec{Program: probe, Args: []string{"fork", pidFile}, DataDir: data})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := p.Wait(); err != nil {
+		t.Fatalf("probe fork: %v", err)
+	}
+	b, err := os.ReadFile(pidFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pid, _ := strconv.Atoi(string(b))
+	if err := syscall.Kill(pid, 0); err != nil {
+		t.Fatalf("child not running before stop: %v", err)
+	}
+	if err := p.Stop(); err != nil {
+		t.Fatalf("stop: %v", err)
+	}
+	// The child is not ours to reap; it is gone once it is a zombie or reaped.
+	for i := 0; i < 100; i++ {
+		st, err := os.ReadFile("/proc/" + strconv.Itoa(pid) + "/stat")
+		if errors.Is(err, os.ErrNotExist) || (err == nil && statState(st) == 'Z') {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	syscall.Kill(pid, syscall.SIGKILL)
+	t.Error("child still running after Stop")
+}
+
+func statState(st []byte) byte {
+	for i := len(st) - 1; i > 0; i-- {
+		if st[i] == ')' && i+2 < len(st) {
+			return st[i+2]
+		}
+	}
+	return 0
+}
+
+// TestServerBinaryRunsSandboxHelper builds the real server and checks that in
+// helper mode it execs the plugin instead of starting the server.
+func TestServerBinaryRunsSandboxHelper(t *testing.T) {
+	if testing.Short() {
+		t.Skip("builds the whole server")
+	}
+	root, data, probe := probeDirs(t)
+	server := filepath.Join(root, "holyarrs")
+	build := exec.Command("go", "build", "-o", server, "../../cmd/holyarrs")
+	build.Env = append(os.Environ(), "CGO_ENABLED=0")
+	if out, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("build server: %v\n%s", err, out)
+	}
+	ok := filepath.Join(data, "ok.txt")
+	cmd := exec.Command(server, sandboxHelperArg, data, "1", probe, "write", ok)
+	cmd.Env = []string{}
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("helper mode: %v\n%s", err, out)
+	}
+	if _, err := os.Stat(ok); err != nil {
+		t.Fatalf("probe did not run: %v", err)
 	}
 }

@@ -21,8 +21,13 @@
 // rlimits open files 1024 and no core dumps (address space is left alone,
 // Go needs a large one).
 //
-// Network is not limited in this slice; Landlock TCP port rules may come
-// later.
+// With Landlock ABI 6 or newer the plugin also cannot signal processes or
+// reach abstract unix sockets outside its own sandbox. GO* variables
+// (GODEBUG, GOTRACEBACK, GOMAXPROCS...) are dropped from its environment.
+//
+// Known limits, for the next slice: no cgroups (memory and CPU are not
+// capped), no RLIMIT_NPROC, and no network allowlist (network is not limited;
+// Landlock TCP port rules may come later).
 package plugins
 
 import (
@@ -31,6 +36,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 	"syscall"
 	"unsafe"
 
@@ -75,6 +81,13 @@ func (s LinuxSandbox) Apply(cmd *exec.Cmd, spec Spec) error {
 	if s.AllowWeaker {
 		weaker = "1"
 	}
+	env := cmd.Env[:0:0]
+	for _, kv := range cmd.Env {
+		if !strings.HasPrefix(kv, "GO") {
+			env = append(env, kv)
+		}
+	}
+	cmd.Env = env
 	cmd.Path = helper
 	cmd.Args = append([]string{helper, sandboxHelperArg, spec.DataDir, weaker, spec.Program}, spec.Args...)
 	if cmd.SysProcAttr == nil {
@@ -161,6 +174,9 @@ func landlockRestrict(dataDir, program string) error {
 	}
 	handled := landlockHandled(abi)
 	attr := unix.LandlockRulesetAttr{Handled_access_fs: handled}
+	if abi >= 6 {
+		attr.Scoped = unix.LANDLOCK_SCOPE_SIGNAL | unix.LANDLOCK_SCOPE_ABSTRACT_UNIX_SOCKET
+	}
 	fd, _, errno := unix.Syscall(unix.SYS_LANDLOCK_CREATE_RULESET, uintptr(unsafe.Pointer(&attr)), unsafe.Sizeof(attr), 0)
 	if errno != 0 {
 		return fmt.Errorf("landlock ruleset: %w", errno)
@@ -207,7 +223,8 @@ func landlockRestrict(dataDir, program string) error {
 	return nil
 }
 
-// killProcess kills the whole process group when the program has its own.
+// killProcess kills the whole process group when the program has its own,
+// even after the main process has ended, so children it left are killed too.
 func killProcess(cmd *exec.Cmd) error {
 	if cmd.SysProcAttr != nil && cmd.SysProcAttr.Setpgid && cmd.Process != nil {
 		return unix.Kill(-cmd.Process.Pid, unix.SIGKILL)

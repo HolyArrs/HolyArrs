@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/arrapi"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
@@ -23,9 +22,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
@@ -761,6 +760,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 }
 
 func main() {
+	plugins.RunSandboxHelper()
 	if len(os.Args) > 1 && os.Args[1] == "-healthcheck" {
 		os.Exit(healthcheckCmd())
 	}

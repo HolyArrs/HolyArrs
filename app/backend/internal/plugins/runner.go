@@ -80,13 +80,7 @@ type execProcess struct {
 }
 
 func (p *execProcess) Stop() error {
-	p.once.Do(func() {
-		select {
-		case <-p.done:
-		default:
-			killProcess(p.cmd)
-		}
-	})
+	p.once.Do(func() { _ = killProcess(p.cmd) })
 	<-p.done
 	var exit *exec.ExitError
 	if errors.As(p.err, &exit) {
