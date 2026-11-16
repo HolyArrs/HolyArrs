@@ -85,7 +85,7 @@ func (s *Store) Start(ctx context.Context, r Runner, id string, in StartInput, a
 		os.Remove(run)
 		return nil, fmt.Errorf("%w: run copy %s", ErrTampered, got)
 	}
-	proc, err := r.Start(ctx, Spec{Program: run, Args: args, Env: pluginEnv(env, data), DataDir: data})
+	proc, err := r.Start(ctx, Spec{ID: id, Program: run, Args: args, Env: pluginEnv(env, data), DataDir: data})
 	if err != nil {
 		os.Remove(run)
 		return nil, err

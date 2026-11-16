@@ -121,6 +121,70 @@ func TestLinuxSandboxStopKillsLeftChildren(t *testing.T) {
 	t.Error("child still running after Stop")
 }
 
+func requireCgroup(t *testing.T) {
+	t.Helper()
+	if landlockABI() < 1 {
+		t.Skip("kernel has no Landlock; sandbox test skipped")
+	}
+	if !(LinuxSandbox{}).Active().Cgroup {
+		t.Skip("no delegated, writable cgroup v2 with pids, memory and cpu; cgroup test skipped")
+	}
+}
+
+func TestLinuxSandboxCgroupCapsPids(t *testing.T) {
+	requireCgroup(t)
+	_, data, probe := probeDirs(t)
+	p, err := (ExecRunner{Sandbox: LinuxSandbox{}}).Start(context.Background(), Spec{ID: "pids", Program: probe, Args: []string{"forkmany", "400"}, DataDir: data})
+	if err != nil {
+		t.Fatal(err)
+	}
+	werr := p.Wait()
+	if err := p.Stop(); err != nil {
+		t.Fatalf("stop: %v", err)
+	}
+	if werr != nil {
+		t.Errorf("probe forked past pids.max: %v", werr)
+	}
+}
+
+func TestLinuxSandboxCgroupKillsEscapedChild(t *testing.T) {
+	requireCgroup(t)
+	_, data, probe := probeDirs(t)
+	pidFile := filepath.Join(data, "child.pid")
+	p, err := (ExecRunner{Sandbox: LinuxSandbox{}}).Start(context.Background(), Spec{ID: "escape", Program: probe, Args: []string{"escape", pidFile}, DataDir: data})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := p.Wait(); err != nil {
+		t.Fatalf("probe escape: %v", err)
+	}
+	b, err := os.ReadFile(pidFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pid, _ := strconv.Atoi(string(b))
+	if err := p.Stop(); err != nil {
+		t.Fatalf("stop: %v", err)
+	}
+	for i := 0; i < 100; i++ {
+		st, err := os.ReadFile("/proc/" + strconv.Itoa(pid) + "/stat")
+		if errors.Is(err, os.ErrNotExist) || (err == nil && statState(st) == 'Z') {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	syscall.Kill(pid, syscall.SIGKILL)
+	t.Error("setsid child still running after Stop")
+}
+
+func TestLinuxSandboxActiveReportsGroupKill(t *testing.T) {
+	a := (LinuxSandbox{}).Active()
+	if !a.GroupKill {
+		t.Error("group kill not reported")
+	}
+	t.Logf("active limits: %+v", a)
+}
+
 func statState(st []byte) byte {
 	for i := len(st) - 1; i > 0; i-- {
 		if st[i] == ')' && i+2 < len(st) {
@@ -144,7 +208,7 @@ func TestServerBinaryRunsSandboxHelper(t *testing.T) {
 		t.Fatalf("build server: %v\n%s", err, out)
 	}
 	ok := filepath.Join(data, "ok.txt")
-	cmd := exec.Command(server, sandboxHelperArg, data, "1", probe, "write", ok)
+	cmd := exec.Command(server, sandboxHelperArg, data, "1", "", probe, "write", ok)
 	cmd.Env = []string{}
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("helper mode: %v\n%s", err, out)

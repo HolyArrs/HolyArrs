@@ -25,9 +25,16 @@
 // reach abstract unix sockets outside its own sandbox. GO* variables
 // (GODEBUG, GOTRACEBACK, GOMAXPROCS...) are dropped from its environment.
 //
-// Known limits, for the next slice: no cgroups (memory and CPU are not
-// capped), no RLIMIT_NPROC, and no network allowlist (network is not limited;
-// Landlock TCP port rules may come later).
+// Resources (cgroup v2): when the app's own cgroup is delegated to it, each
+// start gets a child cgroup holyarrs-plugin-<id>-<random> with pids.max 256,
+// memory.max 512 MiB (Spec.Limits overrides) and cpu.max of 1 CPU. The helper
+// joins it before the lockdown, so the plugin and everything it starts stay
+// inside; Stop writes cgroup.kill, which no setsid or double fork escapes,
+// then removes the folder. Without a usable cgroup the start goes on with
+// the process group kill only; Active reports which caps apply.
+//
+// Known limits: no network allowlist (Landlock TCP port rules may come
+// later). A cgroup whose program ended on its own is removed by Stop.
 package plugins
 
 import (
@@ -89,27 +96,42 @@ func (s LinuxSandbox) Apply(cmd *exec.Cmd, spec Spec) error {
 	}
 	cmd.Env = env
 	cmd.Path = helper
-	cmd.Args = append([]string{helper, sandboxHelperArg, spec.DataDir, weaker, spec.Program}, spec.Args...)
+	cg := cgroupCreate(spec.ID, spec.Limits)
+	cmd.Args = append([]string{helper, sandboxHelperArg, spec.DataDir, weaker, cg, spec.Program}, spec.Args...)
 	if cmd.SysProcAttr == nil {
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 	}
 	cmd.SysProcAttr.Setpgid = true
-	cmd.Cancel = func() error { return killProcess(cmd) }
+	cmd.Cancel = func() error {
+		err := killProcess(cmd)
+		if cg != "" {
+			err = cgroupKill(cg)
+		}
+		return err
+	}
 	return nil
 }
+
+// Active reports which resource caps and stop guarantees this host gives.
+func (LinuxSandbox) Active() ActiveLimits { return cgroupActive() }
 
 // RunSandboxHelper does nothing unless this process was started as the
 // sandbox helper; then it locks down and execs the plugin, never returning.
 func RunSandboxHelper() {
-	if len(os.Args) < 5 || os.Args[1] != sandboxHelperArg {
+	if len(os.Args) < 6 || os.Args[1] != sandboxHelperArg {
 		return
 	}
-	err := sandboxExec(os.Args[2], os.Args[3] == "1", os.Args[4], os.Args[5:])
+	err := sandboxExec(os.Args[2], os.Args[3] == "1", os.Args[4], os.Args[5], os.Args[6:])
 	fmt.Fprintln(os.Stderr, "plugin sandbox:", err)
 	os.Exit(126)
 }
 
-func sandboxExec(dataDir string, allowWeaker bool, program string, args []string) error {
+func sandboxExec(dataDir string, allowWeaker bool, cgroup, program string, args []string) error {
+	if cgroup != "" {
+		if err := cgroupJoin(cgroup); err != nil {
+			return fmt.Errorf("join cgroup: %w", err)
+		}
+	}
 	runtime.LockOSThread() // Landlock and no_new_privs are per thread; exec from this one.
 	if err := unix.Prctl(unix.PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0); err != nil {
 		return fmt.Errorf("no_new_privs: %w", err)

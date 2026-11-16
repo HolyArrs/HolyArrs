@@ -11,10 +11,30 @@ import (
 // Spec is one program start. Env is the whole environment: nothing from the
 // app's own environment is passed on, and DataDir is the only folder given.
 type Spec struct {
+	// ID names the plugin; it names its cgroup.
+	ID      string
 	Program string
 	Args    []string
 	Env     []string
 	DataDir string
+	// Limits overrides the default resource caps; zero fields keep the defaults.
+	Limits Limits
+}
+
+// Limits are resource caps for one start.
+type Limits struct {
+	// MemoryMax is in bytes; 0 means the default (512 MiB).
+	MemoryMax int64
+}
+
+// ActiveLimits says which caps a sandbox can actually apply, so the UI can
+// show it.
+type ActiveLimits struct {
+	Cgroup    bool // the plugin runs in its own cgroup, killed as a whole on stop
+	Pids      bool // pids.max 256
+	Memory    bool // memory.max
+	CPU       bool // cpu.max, 1 CPU
+	GroupKill bool // its own process group is killed on stop
 }
 
 // Runner starts plugin programs.
@@ -80,7 +100,13 @@ type execProcess struct {
 }
 
 func (p *execProcess) Stop() error {
-	p.once.Do(func() { _ = killProcess(p.cmd) })
+	p.once.Do(func() {
+		if p.cmd.Cancel != nil {
+			_ = p.cmd.Cancel()
+		} else {
+			_ = killProcess(p.cmd)
+		}
+	})
 	<-p.done
 	var exit *exec.ExitError
 	if errors.As(p.err, &exit) {
