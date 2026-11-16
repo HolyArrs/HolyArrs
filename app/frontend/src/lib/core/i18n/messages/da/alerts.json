@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Downloads at tage stilling til: {n}",
+	"alerts.dot.show": "Vis hvad der kræver opmærksomhed",
+	"alerts.dot.unseen": "Nye beskeder: {n}",
+	"alerts.dot.waiting": "Ventende ønsker: {n}",
 	"alerts.fallback.settings": "Indstillinger",
 	"alerts.panel.clearAll": "Ryd alle",
 	"alerts.panel.empty": "Intet her endnu",

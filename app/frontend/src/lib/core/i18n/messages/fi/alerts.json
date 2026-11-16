@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Päätettäviä latauksia: {n}",
+	"alerts.dot.show": "Näytä, mikä vaatii huomiota",
+	"alerts.dot.unseen": "Uusia ilmoituksia: {n}",
+	"alerts.dot.waiting": "Odottavia pyyntöjä: {n}",
 	"alerts.fallback.settings": "Asetukset",
 	"alerts.panel.clearAll": "Tyhjennä kaikki",
 	"alerts.panel.empty": "Ei vielä mitään",

@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "সিদ্ধান্তের অপেক্ষায় ডাউনলোড: {n}",
+	"alerts.dot.show": "কী দেখতে হবে তা দেখাও",
+	"alerts.dot.unseen": "নতুন সতর্কতা: {n}",
+	"alerts.dot.waiting": "অপেক্ষমাণ অনুরোধ: {n}",
 	"alerts.fallback.settings": "সেটিংস",
 	"alerts.panel.clearAll": "সব মুছুন",
 	"alerts.panel.empty": "এখানে এখনো কিছু নেই",

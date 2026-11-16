@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Unduhan untuk diputuskan: {n}",
+	"alerts.dot.show": "Tampilkan yang perlu diperhatikan",
+	"alerts.dot.unseen": "Peringatan baru: {n}",
+	"alerts.dot.waiting": "Permintaan menunggu: {n}",
 	"alerts.fallback.settings": "Pengaturan",
 	"alerts.panel.clearAll": "Hapus semua",
 	"alerts.panel.empty": "Belum ada apa-apa",

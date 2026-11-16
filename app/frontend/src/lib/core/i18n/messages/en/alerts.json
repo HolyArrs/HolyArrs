@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Downloads to decide: {n}",
+	"alerts.dot.show": "Show what needs attention",
+	"alerts.dot.unseen": "New alerts: {n}",
+	"alerts.dot.waiting": "Requests waiting: {n}",
 	"alerts.fallback.settings": "Settings",
 	"alerts.panel.clearAll": "Clear all",
 	"alerts.panel.empty": "Nothing here yet",

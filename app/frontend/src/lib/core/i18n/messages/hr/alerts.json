@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Preuzimanja za odluku: {n}",
+	"alerts.dot.show": "Prikaži što traži pažnju",
+	"alerts.dot.unseen": "Nove obavijesti: {n}",
+	"alerts.dot.waiting": "Zahtjevi na čekanju: {n}",
 	"alerts.fallback.settings": "Postavke",
 	"alerts.panel.clearAll": "Očisti sve",
 	"alerts.panel.empty": "Ovdje još nema ničega",

@@ -23,7 +23,7 @@
 	import { decisionPins, feedPins, startBellFeeds } from './(frame)/bell-feeds.svelte.ts';
 	import { inbox, refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import { partsNow, refreshParts, offPartName } from '#lib/mediafiles/index.ts';
-	import { settingsNow, refreshSettingsStatus, needsAttention } from '#lib/alerts/index.ts';
+	import { settingsNow, refreshSettingsStatus, needsAttention, dotReasons, DotList } from '#lib/alerts/index.ts';
 	import { navigateWithTransition } from '#lib/core/motion.ts';
 	import { installPersonPrefetch, installHeroAhead, checkHero, installScrollBar, showBar, arrived, leaving } from '#lib/discover/index.ts';
 	import { forgetMusicPrefetch, installMusicPrefetch, prefetchMusicOnScreen, installArtistVideoPrefetch } from '#lib/music/index.ts';
@@ -276,6 +276,10 @@
 
 	let moreOpen = $state(false);
 	const manager = $derived(allowed('manage'));
+	// What lights the red dot, from one list: the phone Manage tab counts everything, the Settings row only its own items. Tapping the dot shows the same lines.
+	const settingsItems = $derived(settingsOn ? (settingsNow.answer?.items ?? []) : []);
+	const tabReasons = $derived(dotReasons({ settings: settingsItems, decisions: decisions.count, waiting: inbox.waiting, unseen: toasts.unseen(), manager }));
+	const settingsReasons = $derived(dotReasons({ settings: settingsItems, decisions: 0, waiting: 0, unseen: 0, manager: true }));
 	const tabs = $derived.by<Tab[]>(() => {
 		const list: Tab[] = [];
 		const add = (href: string, label: string, icon: Tab['icon']) => list.push({ href: to(href), label, icon, current: href === '/' ? path === '/' : path === href || path.startsWith(href + '/') });
@@ -288,7 +292,7 @@
 		}
 		const tabbed = ['/', '/explore', '/library', '/search', '/requests'];
 		const elsewhere = !tabbed.some((h) => (h === '/' ? path === '/' : path === h || path.startsWith(h + '/')));
-		list.push({ label: manager ? t('frame.nav.manage') : t('frame.layout.more'), icon: manager ? 'inbox' : 'more', current: elsewhere, dot: ((inbox.waiting + decisions.count > 0 || settingsAttention) && manager) || toasts.unseen() > 0, onclick: () => (moreOpen = true) });
+		list.push({ label: manager ? t('frame.nav.manage') : t('frame.layout.more'), icon: manager ? 'inbox' : 'more', current: elsewhere, dot: tabReasons.length > 0, onclick: () => (moreOpen = true) });
 		return list;
 	});
 
@@ -459,6 +463,8 @@
 
 <svelte:window onkeydown={keys} />
 
+{#snippet dotPanel(close: () => void)}<DotList reasons={settingsReasons} {link} onpick={() => { close(); void closeOverlay(false); }} />{/snippet}
+
 {#snippet account()}
 	<Menu label={t('frame.layout.accountMenu', { name: shownName, role: roleWord })} items={accountItems} variant="row" align="start" placement="above" width={240}>
 		{#snippet trigger()}
@@ -513,6 +519,7 @@
 				ontoggle={toggleSidebar}
 				onpick={() => void closeOverlay(false)}
 				footer={account}
+				{dotPanel}
 			/>
 		{/snippet}
 		{#snippet topbar()}
@@ -537,6 +544,7 @@
 		<!-- Only while open, so a closed sheet adds no second copy of every place to the page. -->
 		{#if moreOpen}
 		<nav class="more" aria-label={t('frame.layout.allPlaces')}>
+			{#if tabReasons.length}<div class="more-sec"><DotList reasons={tabReasons} {link} onpick={() => (moreOpen = false)} onalerts={() => (alertsPanel.open = true)} /></div>{/if}
 			{#each sections as s (s.id)}
 				<div class="more-sec">
 					{#if s.label}<h3>{s.label}</h3>{/if}

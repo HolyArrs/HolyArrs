@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Karar bekleyen indirmeler: {n}",
+	"alerts.dot.show": "Dikkat isteyenleri göster",
+	"alerts.dot.unseen": "Yeni uyarılar: {n}",
+	"alerts.dot.waiting": "Bekleyen istekler: {n}",
 	"alerts.fallback.settings": "Ayarlar",
 	"alerts.panel.clearAll": "Tümünü temizle",
 	"alerts.panel.empty": "Henüz bir şey yok",

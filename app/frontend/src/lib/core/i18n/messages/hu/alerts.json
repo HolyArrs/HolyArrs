@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Döntésre váró letöltések: {n}",
+	"alerts.dot.show": "Mutasd, mire kell figyelni",
+	"alerts.dot.unseen": "Új értesítések: {n}",
+	"alerts.dot.waiting": "Várakozó kérések: {n}",
 	"alerts.fallback.settings": "Beállítások",
 	"alerts.panel.clearAll": "Összes törlése",
 	"alerts.panel.empty": "Itt még nincs semmi",

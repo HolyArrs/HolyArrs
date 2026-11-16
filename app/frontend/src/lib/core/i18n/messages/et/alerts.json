@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Otsustamist ootavad allalaadimised: {n}",
+	"alerts.dot.show": "Näita, mis vajab tähelepanu",
+	"alerts.dot.unseen": "Uued teated: {n}",
+	"alerts.dot.waiting": "Ootel soovid: {n}",
 	"alerts.fallback.settings": "Seaded",
 	"alerts.panel.clearAll": "Tühjenda kõik",
 	"alerts.panel.empty": "Siin pole veel midagi",

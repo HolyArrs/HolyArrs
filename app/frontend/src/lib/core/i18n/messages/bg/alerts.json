@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Изтегляния за решение: {n}",
+	"alerts.dot.show": "Покажи какво иска внимание",
+	"alerts.dot.unseen": "Нови известия: {n}",
+	"alerts.dot.waiting": "Чакащи заявки: {n}",
 	"alerts.fallback.settings": "Настройки",
 	"alerts.panel.clearAll": "Изчистване на всички",
 	"alerts.panel.empty": "Още няма нищо",

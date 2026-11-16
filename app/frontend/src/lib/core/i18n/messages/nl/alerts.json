@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Downloads om te beslissen: {n}",
+	"alerts.dot.show": "Toon wat aandacht nodig heeft",
+	"alerts.dot.unseen": "Nieuwe meldingen: {n}",
+	"alerts.dot.waiting": "Wachtende verzoeken: {n}",
 	"alerts.fallback.settings": "Instellingen",
 	"alerts.panel.clearAll": "Alles wissen",
 	"alerts.panel.empty": "Nog niets hier",

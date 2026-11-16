@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Baixades per decidir: {n}",
+	"alerts.dot.show": "Mostra què cal revisar",
+	"alerts.dot.unseen": "Avisos nous: {n}",
+	"alerts.dot.waiting": "Peticions en espera: {n}",
 	"alerts.fallback.settings": "Configuració",
 	"alerts.panel.clearAll": "Esborra-ho tot",
 	"alerts.panel.empty": "Encara no hi ha res",

@@ -12,6 +12,7 @@
 	import type { MediaServerView } from '#lib/mediaservers/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
+	import { recheckSettingsStatus } from '#lib/alerts/index.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { ago } from '#lib/core/format.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
@@ -122,6 +123,7 @@
 			toasts.push(t('settings.mediaServers.saved', { name: form.name }), 'ok');
 			editing = null;
 			await load();
+			void recheckSettingsStatus();
 		} catch (err) {
 			formError = message(err);
 		} finally {
@@ -142,6 +144,8 @@
 		} finally {
 			testing = 0;
 			await load();
+			// Its state is read live: one fresh read clears the menu dot at once.
+			void recheckSettingsStatus();
 		}
 	}
 
@@ -150,6 +154,7 @@
 		try {
 			await api.del(`/media-servers/${m.id}`);
 			await load();
+			void recheckSettingsStatus();
 		} catch (err) {
 			toasts.push(t('settings.mediaServers.couldntRemove'), 'fail', { body: message(err) });
 		}

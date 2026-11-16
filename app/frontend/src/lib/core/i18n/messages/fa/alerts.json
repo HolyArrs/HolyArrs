@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "دانلودهای منتظر تصمیم: {n}",
+	"alerts.dot.show": "نمایش مواردی که توجه می‌خواهند",
+	"alerts.dot.unseen": "هشدارهای تازه: {n}",
+	"alerts.dot.waiting": "درخواست‌های در انتظار: {n}",
 	"alerts.fallback.settings": "تنظیمات",
 	"alerts.panel.clearAll": "پاک کردن همه",
 	"alerts.panel.empty": "فعلاً چیزی نیست",

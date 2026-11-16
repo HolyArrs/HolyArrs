@@ -18,6 +18,7 @@
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { api } from '#lib/core/api.ts';
+	import { recheckSettingsStatus } from '#lib/alerts/index.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { ago, words } from '#lib/core/format.ts';
 	import { testCount } from '#lib/core/test-tag.ts';
@@ -102,6 +103,8 @@
 		} finally {
 			testing = 0;
 			await load();
+			// A test that works clears its warning and the menu dot at once.
+			void recheckSettingsStatus('source');
 		}
 	}
 
@@ -119,6 +122,7 @@
 		try {
 			await api.del(`/sources/${s.id}`);
 			await load();
+			void recheckSettingsStatus('source');
 		} catch (err) {
 			toasts.push(t('settings.sources.removeFailed'), 'fail', { body: message(err) });
 		}

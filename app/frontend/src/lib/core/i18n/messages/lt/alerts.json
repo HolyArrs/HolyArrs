@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Atsisiuntimai sprendimui: {n}",
+	"alerts.dot.show": "Rodyti, kam reikia dėmesio",
+	"alerts.dot.unseen": "Nauji įspėjimai: {n}",
+	"alerts.dot.waiting": "Laukiantys prašymai: {n}",
 	"alerts.fallback.settings": "Nustatymai",
 	"alerts.panel.clearAll": "Išvalyti viską",
 	"alerts.panel.empty": "Čia kol kas nieko nėra",

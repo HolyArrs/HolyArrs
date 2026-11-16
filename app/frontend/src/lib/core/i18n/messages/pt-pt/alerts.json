@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Transferências por decidir: {n}",
+	"alerts.dot.show": "Mostrar o que precisa de atenção",
+	"alerts.dot.unseen": "Novos alertas: {n}",
+	"alerts.dot.waiting": "Pedidos em espera: {n}",
 	"alerts.fallback.settings": "Definições",
 	"alerts.panel.clearAll": "Limpar tudo",
 	"alerts.panel.empty": "Nada por aqui ainda",

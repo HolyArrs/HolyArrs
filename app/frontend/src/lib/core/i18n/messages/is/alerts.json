@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Niðurhöl til ákvörðunar: {n}",
+	"alerts.dot.show": "Sýna það sem þarf athygli",
+	"alerts.dot.unseen": "Nýjar tilkynningar: {n}",
+	"alerts.dot.waiting": "Beiðnir í bið: {n}",
 	"alerts.fallback.settings": "Stillingar",
 	"alerts.panel.clearAll": "Hreinsa allt",
 	"alerts.panel.empty": "Ekkert hér enn",

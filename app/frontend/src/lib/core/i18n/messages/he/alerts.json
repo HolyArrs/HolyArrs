@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "הורדות להחלטה: {n}",
+	"alerts.dot.show": "הצג מה דורש תשומת לב",
+	"alerts.dot.unseen": "התראות חדשות: {n}",
+	"alerts.dot.waiting": "בקשות ממתינות: {n}",
 	"alerts.fallback.settings": "הגדרות",
 	"alerts.panel.clearAll": "ניקוי הכול",
 	"alerts.panel.empty": "אין כאן כלום עדיין",

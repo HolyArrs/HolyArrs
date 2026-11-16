@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Nedladdningar att avgöra: {n}",
+	"alerts.dot.show": "Visa vad som behöver åtgärdas",
+	"alerts.dot.unseen": "Nya aviseringar: {n}",
+	"alerts.dot.waiting": "Väntande önskemål: {n}",
 	"alerts.fallback.settings": "Inställningar",
 	"alerts.panel.clearAll": "Rensa alla",
 	"alerts.panel.empty": "Inget här ännu",

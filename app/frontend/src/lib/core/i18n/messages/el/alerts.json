@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Λήψεις για απόφαση: {n}",
+	"alerts.dot.show": "Δείξε τι χρειάζεται προσοχή",
+	"alerts.dot.unseen": "Νέες ειδοποιήσεις: {n}",
+	"alerts.dot.waiting": "Αιτήματα σε αναμονή: {n}",
 	"alerts.fallback.settings": "Ρυθμίσεις",
 	"alerts.panel.clearAll": "Εκκαθάριση όλων",
 	"alerts.panel.empty": "Δεν υπάρχει τίποτα ακόμη",

@@ -70,8 +70,17 @@ func (h *Handlers) checks(w http.ResponseWriter, r *http.Request) {
 	h.answerChecks(w, r, cs)
 }
 
+// runChecks runs every check, or with ?only= the one group a fix changed.
 func (h *Handlers) runChecks(w http.ResponseWriter, r *http.Request) {
-	cs, err := h.Engine.Run(r.Context())
+	run := h.Engine.Run
+	if only := r.URL.Query().Get("only"); only != "" {
+		run = func(ctx context.Context) ([]domain.HealthCheck, error) { return h.Engine.RunOnly(ctx, only) }
+	}
+	cs, err := run(r.Context())
+	if errors.Is(err, ErrNoGroup) {
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return

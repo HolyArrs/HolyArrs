@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "تنزيلات تنتظر قرارك: {n}",
+	"alerts.dot.show": "عرض ما يحتاج إلى انتباه",
+	"alerts.dot.unseen": "تنبيهات جديدة: {n}",
+	"alerts.dot.waiting": "طلبات تنتظر: {n}",
 	"alerts.fallback.settings": "الإعدادات",
 	"alerts.panel.clearAll": "مسح الكل",
 	"alerts.panel.empty": "لا شيء هنا بعد",

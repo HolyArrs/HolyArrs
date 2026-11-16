@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Nedlastinger å ta stilling til: {n}",
+	"alerts.dot.show": "Vis hva som trenger oppmerksomhet",
+	"alerts.dot.unseen": "Nye varsler: {n}",
+	"alerts.dot.waiting": "Ventende ønsker: {n}",
 	"alerts.fallback.settings": "Innstillinger",
 	"alerts.panel.clearAll": "Fjern alle",
 	"alerts.panel.empty": "Ingenting her ennå",

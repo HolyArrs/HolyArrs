@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Descargas por decidir: {n}",
+	"alerts.dot.show": "Ver qué necesita atención",
+	"alerts.dot.unseen": "Avisos nuevos: {n}",
+	"alerts.dot.waiting": "Peticiones en espera: {n}",
 	"alerts.fallback.settings": "Ajustes",
 	"alerts.panel.clearAll": "Borrar todo",
 	"alerts.panel.empty": "Aún no hay nada",

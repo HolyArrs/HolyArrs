@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "ดาวน์โหลดที่รอตัดสินใจ: {n}",
+	"alerts.dot.show": "แสดงสิ่งที่ต้องดูแล",
+	"alerts.dot.unseen": "การแจ้งเตือนใหม่: {n}",
+	"alerts.dot.waiting": "คำขอที่รออยู่: {n}",
 	"alerts.fallback.settings": "ตั้งค่า",
 	"alerts.panel.clearAll": "ล้างทั้งหมด",
 	"alerts.panel.empty": "ยังไม่มีอะไรที่นี่",

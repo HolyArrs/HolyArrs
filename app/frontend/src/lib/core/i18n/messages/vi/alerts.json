@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Tải xuống cần quyết định: {n}",
+	"alerts.dot.show": "Xem mục cần chú ý",
+	"alerts.dot.unseen": "Cảnh báo mới: {n}",
+	"alerts.dot.waiting": "Yêu cầu đang chờ: {n}",
 	"alerts.fallback.settings": "Cài đặt",
 	"alerts.panel.clearAll": "Xóa tất cả",
 	"alerts.panel.empty": "Chưa có gì ở đây",

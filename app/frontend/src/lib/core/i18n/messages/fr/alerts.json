@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Téléchargements à trancher : {n}",
+	"alerts.dot.show": "Voir ce qui est à traiter",
+	"alerts.dot.unseen": "Nouvelles alertes : {n}",
+	"alerts.dot.waiting": "Demandes en attente : {n}",
 	"alerts.fallback.settings": "Paramètres",
 	"alerts.panel.clearAll": "Tout effacer",
 	"alerts.panel.empty": "Rien pour l'instant",

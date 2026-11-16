@@ -12,6 +12,7 @@
 	import Menu from '#lib/ui/Menu.svelte';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
+	import { recheckSettingsStatus } from '#lib/alerts/index.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { folderMissing, qualityFor, qualityBody, qualityValue, qualityChoices, defaultChoice, savedDefaults } from '#lib/mediafiles/index.ts';
 	import type { TitleDefaults } from '#lib/mediafiles/index.ts';
@@ -186,6 +187,7 @@
 			kind = 'movie';
 			quality = '';
 			adding = false;
+			void recheckSettingsStatus('library_folder');
 			toasts.push(t('settings.libraryFolders.added'), f.health === 'ok' ? 'ok' : 'info', { body: f.health === 'ok' ? undefined : folderHealth(f.health) });
 		} catch (err) {
 			formError = folderMissing(err, path, kind) ?? message(err);
@@ -200,6 +202,7 @@
 			const n = await api.post<LibraryFolder>(`/library-folders/${f.id}/check`);
 			folders = folders.map((x) => (x.id === f.id ? n : x));
 			toasts.push(t('settings.libraryFolders.checked'), n.health === 'ok' ? 'ok' : 'info', { body: folderHealth(n.health) });
+			void recheckSettingsStatus('library_folder');
 		} catch (err) {
 			toasts.push(t('settings.libraryFolders.checkFailed'), 'fail', { body: message(err) });
 		} finally {
@@ -249,8 +252,8 @@
 		try {
 			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}`, { copies_expected: on });
 			folders = folders.map((x) => (x.id === f.id ? n : x));
-			// Run the checks again so the Settings badge follows at once.
-			void api.post('/health/checks/run').catch(() => {});
+			// The folder checks run again, so the warning and the menu dot follow at once.
+			void recheckSettingsStatus('library_folder');
 		} catch (err) {
 			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
 		} finally {
@@ -265,6 +268,7 @@
 			await api.del(`/library-folders/${f.id}`);
 			folders = folders.filter((x) => x.id !== f.id);
 			toasts.push(t('settings.libraryFolders.removed'), 'ok');
+			void recheckSettingsStatus('library_folder');
 		} catch (err) {
 			toasts.push(t('settings.libraryFolders.removeFailed'), 'fail', { body: message(err) });
 		} finally {

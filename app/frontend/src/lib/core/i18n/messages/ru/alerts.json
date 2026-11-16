@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Загрузки ждут решения: {n}",
+	"alerts.dot.show": "Показать, что требует внимания",
+	"alerts.dot.unseen": "Новые оповещения: {n}",
+	"alerts.dot.waiting": "Ждущие запросы: {n}",
 	"alerts.fallback.settings": "Настройки",
 	"alerts.panel.clearAll": "Очистить всё",
 	"alerts.panel.empty": "Пока пусто",

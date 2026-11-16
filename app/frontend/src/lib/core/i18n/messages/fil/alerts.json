@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Mga download na pagpapasyahan: {n}",
+	"alerts.dot.show": "Ipakita kung ano ang kailangang tingnan",
+	"alerts.dot.unseen": "Mga bagong alerto: {n}",
+	"alerts.dot.waiting": "Mga request na naghihintay: {n}",
 	"alerts.fallback.settings": "Mga Setting",
 	"alerts.panel.clearAll": "I-clear lahat",
 	"alerts.panel.empty": "Wala pa rito",

@@ -1,4 +1,8 @@
 {
+	"alerts.dot.decide": "Descărcări de decis: {n}",
+	"alerts.dot.show": "Arată ce cere atenție",
+	"alerts.dot.unseen": "Alerte noi: {n}",
+	"alerts.dot.waiting": "Cereri în așteptare: {n}",
 	"alerts.fallback.settings": "Setări",
 	"alerts.panel.clearAll": "Șterge tot",
 	"alerts.panel.empty": "Nimic încă",

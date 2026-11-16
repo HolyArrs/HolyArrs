@@ -16,6 +16,7 @@
 	import { emptyForm, samePathPair, formBody, formFrom, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
+	import { recheckSettingsStatus } from '#lib/alerts/index.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { ago } from '#lib/core/format.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
@@ -207,6 +208,8 @@
 		} finally {
 			testing = 0;
 			await load();
+			// A test that works clears its warning and the menu dot at once.
+			void recheckSettingsStatus('downloader');
 		}
 	}
 
@@ -224,6 +227,7 @@
 		try {
 			await api.del(`/downloaders/${d.id}`);
 			await load();
+			void recheckSettingsStatus('downloader');
 		} catch (err) {
 			toasts.push(t('settings.downloaders.removeFailed'), 'fail', { body: message(err) });
 		}
