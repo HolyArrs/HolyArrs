@@ -28,6 +28,33 @@ type Set []Group
 // All lists every group.
 var All = []Group{See, Add, Control, Settings, Delete, Admin}
 
+// Default is what a new AI key holds, and what every key held when the tick
+// boxes came: all but Delete and Admin.
+var Default = Set{See, Add, Control, Settings}
+
+// labels are the tick-box names a person reads.
+var labels = map[Group]string{See: "See", Add: "Add", Control: "Control", Settings: "Settings", Delete: "Delete", Admin: "Admin"}
+
+// Label is the tick-box name of g, as a screen and an error say it.
+func (g Group) Label() string { return labels[g] }
+
+// Parse keeps the known groups of names, in the order of All, once each.
+// ok is false when a name is not a group.
+func Parse(names []string) (set Set, ok bool) {
+	ok = true
+	for _, n := range names {
+		if !slices.Contains(All, Group(n)) {
+			ok = false
+		}
+	}
+	for _, g := range All {
+		if slices.Contains(names, string(g)) {
+			set = append(set, g)
+		}
+	}
+	return set, ok
+}
+
 // overrides pin single routes whose path alone says the wrong thing.
 var overrides = map[string]Group{
 	"GET /api/v1/auth/me":                          See,

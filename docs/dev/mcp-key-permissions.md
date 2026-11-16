@@ -30,6 +30,13 @@ Today's split (from the test): see 198, settings 116, admin 115, delete 56, cont
 
 `TestEveryRouteHasAGroup` walks every non-test `.go` file under `app/backend/internal` and `app/backend/cmd`, reads each `Handle`/`HandleFunc("METHOD /path")` registration and fails if one has no group. It finds every `accounts.RoutePerms` entry plus the old-app inner routes and the public sign-in routes.
 
+## Storage and check
+
+- `api_keys.mcp_groups` (migration 0123) holds each key's tick boxes as JSON. New and existing keys start with `see`, `add`, `control`, `settings` (`mcpkeys.Default`): what an AI key could do before.
+- `POST /api/v1/auth/keys` takes and returns `mcp_groups` for an `mcp` key; `GET` lists them. Like scopes, they are fixed when the key is made (no key route edits a key).
+- Every AI tool reaches the app through `Handlers.call` (`internal/ai/tools.go`), which runs `mcpkeys.Allows` first. A refused route becomes a tool error naming the tick box, e.g. "This key can't Delete. The owner can turn it on in Settings → Keys."
+- The AI connections switch (`this_app.mcp_enabled`, off until the owner turns it on) now answers 403 with a plain message when off.
+
 ## Not done yet
 
-No middleware, no database column, no screen. The tick boxes still sit on top of the person's own permissions and the key's scope.
+No screen for the tick boxes. They still sit on top of the person's own permissions and the key's scope.
