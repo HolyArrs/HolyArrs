@@ -168,15 +168,24 @@ func TestAtReadsAHangUp(t *testing.T) {
 		msg, url string
 		want     Cause
 	}{
-		{"qbittorrent app/version: EOF", "https://127.0.0.1:8080", UseHTTP},
-		{"sabnzbd version: EOF", "http://127.0.0.1:8080", WrongApp},
-		{"read tcp 127.0.0.1:1->127.0.0.1:2: read: connection reset by peer", "http://nas:9117/api", WrongApp},
+		{"qbittorrent app/version: EOF", "https://127.0.0.1:8080", Unknown},
+		{"sabnzbd version: EOF", "http://127.0.0.1:8080", Unknown},
+		{"read tcp 127.0.0.1:1->127.0.0.1:2: read: connection reset by peer", "http://nas:9117/api", Unknown},
+		{"read tcp 127.0.0.1:1->127.0.0.1:2: read: connection reset by peer", "https://nas:9117/api", Unknown},
+		{"wsarecv: An existing connection was forcibly closed by the remote host.", "http://nas:9117/api", Unknown},
+		{"qbittorrent app/version: remote error: EOF", "https://127.0.0.1:8080", UseHTTP},
 		{"something odd", "https://x", Unknown},
 	}
 	for _, c := range cases {
 		if got := At(OfText(c.msg), c.msg, c.url); got != c.want {
 			t.Errorf("At(%q, %q) = %q, want %q", c.msg, c.url, got, c.want)
 		}
+	}
+	if got := At(Unknown, "tls: handshake failure: EOF", "https://x"); got != UseHTTP {
+		t.Errorf("an https handshake EOF: %q", got)
+	}
+	if got := At(Unknown, "tls: handshake failure: EOF", "http://x"); got != Unknown {
+		t.Errorf("a handshake EOF on http: %q", got)
 	}
 	if got := At(Refused, "EOF", "https://x"); got != Refused {
 		t.Errorf("a known cause must stay: %q", got)

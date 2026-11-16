@@ -89,8 +89,8 @@ func TestDownloaderTestNamesEachCause(t *testing.T) {
 		{"key refused", s.plain.URL + "/key", true, false, doctor.Auth},
 		{"wrong path", s.plain.URL + "/nothing", true, false, doctor.NotFound},
 		{"another app", s.page.URL, true, false, doctor.WrongApp},
-		{"https on a port that hangs up", "https://" + s.hangUp, true, false, doctor.UseHTTP},
-		{"http on a port that hangs up", "http://" + s.hangUp, true, false, doctor.WrongApp},
+		{"https on a port that hangs up", "https://" + s.hangUp, true, false, doctor.Unknown},
+		{"http on a port that hangs up", "http://" + s.hangUp, true, false, doctor.Unknown},
 		{"local network policy", s.plain.URL, false, false, doctor.Blocked},
 	}
 	for _, adapter := range []string{"qbittorrent", "sabnzbd"} {
@@ -115,7 +115,7 @@ func TestDownloaderTestNamesEachCause(t *testing.T) {
 				if cause != tc.want {
 					t.Fatalf("cause %q, want %q (error %v)", cause, tc.want, err)
 				}
-				if adapter == "sabnzbd" || tc.want != doctor.Auth {
+				if tc.want != doctor.Unknown && (adapter == "sabnzbd" || tc.want != doctor.Auth) {
 					if text != doctor.Line(tc.want) {
 						t.Fatalf("text %q", text)
 					}
@@ -125,7 +125,7 @@ func TestDownloaderTestNamesEachCause(t *testing.T) {
 				if strings.Contains(tc.name, "hangs up") {
 					// A hang-up in the background is as likely a restart as a
 					// wrong port, so the row does not blame the setting.
-					if hv := HealthOf(d, time.Now()); hv.Cause == string(tc.want) {
+					if hv := HealthOf(d, time.Now()); hv.Cause != "" {
 						t.Fatalf("health blames the setting: %+v", hv)
 					}
 					return

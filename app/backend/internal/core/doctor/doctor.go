@@ -189,27 +189,20 @@ func Explain(err error) (Cause, string, bool) {
 	return c, causeWords[c], c != Unknown
 }
 
-// At refines a cause with the address that was called; only the Test path
-// uses it, since a restart in the background hangs up the same way. A connection closed
-// without any answer is a protocol mismatch: an https:// address on a plain
-// http port (qBittorrent just hangs up), or http on a port that speaks
-// something else.
+// At refines a cause with the address that was called. A bare hang-up is
+// as likely a restart or a dropped connection as a wrong port, so it stays
+// unknown; only an https:// address whose TLS handshake ended in EOF reads as
+// a plain http port.
 func At(c Cause, msg, rawURL string) Cause {
 	if c != Unknown {
 		return c
 	}
-	m := strings.ToLower(msg)
-	hungUp := strings.HasSuffix(strings.TrimSpace(m), "eof")
-	for _, w := range []string{"connection reset", "forcibly closed", "connection was aborted", "broken pipe"} {
-		hungUp = hungUp || strings.Contains(m, w)
-	}
-	if !hungUp {
-		return Unknown
-	}
-	if strings.HasPrefix(strings.ToLower(strings.TrimSpace(rawURL)), "https://") {
+	m := strings.ToLower(strings.TrimSpace(msg))
+	handshake := strings.Contains(m, "handshake") || strings.Contains(m, "remote error")
+	if handshake && strings.HasSuffix(m, "eof") && strings.HasPrefix(strings.ToLower(strings.TrimSpace(rawURL)), "https://") {
 		return UseHTTP
 	}
-	return WrongApp
+	return Unknown
 }
 
 // ExplainAt is Explain for a call to rawURL.
