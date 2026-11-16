@@ -62,3 +62,49 @@ func TestNZBGetAnsweredClassification(t *testing.T) {
 		t.Fatal("answered classification")
 	}
 }
+
+// NZBGet 26.3 stores each member of the {Name, Value} struct as its own
+// parameter. The job is still found by its marker in the queue, in the list and
+// when a lost send is settled.
+func TestNZBGetFindsItsMarkerWhenNZBGetSplitsTheStruct(t *testing.T) {
+	f, base := startNZBGet(t)
+	f.flatten = true
+	n := NewNZBGet(base, f.user, f.pass, nil)
+	r := AddRequest{URL: nzbSource(t), Name: "flattened", Category: "tv", OperationKey: "flattened", AllowLocal: true}
+	id, err := n.Add(context.Background(), r)
+	if err != nil || id == "" || f.adds != 1 {
+		t.Fatalf("add: %q %v adds=%d", id, err, f.adds)
+	}
+	if j, err := n.Get(context.Background(), id); err != nil || j.ID != id {
+		t.Fatalf("get: %+v %v", j, err)
+	}
+	if jobs, err := n.List(context.Background(), "tv"); err != nil || len(jobs) != 1 || jobs[0].ID != id {
+		t.Fatalf("list: %+v %v", jobs, err)
+	}
+	if got, err := n.Add(context.Background(), AddRequest{Name: r.Name, Category: "tv", AttemptMarker: id, ReconcileOnly: true}); err != nil || got != id {
+		t.Fatalf("reconcile: %q %v", got, err)
+	}
+	if again, err := n.Add(context.Background(), r); err != nil || again != id || f.adds != 1 {
+		t.Fatalf("a second send must find the first: %q %v adds=%d", again, err, f.adds)
+	}
+}
+
+func TestNZBGetMarkerShapes(t *testing.T) {
+	const id = "nzbget-0123"
+	for _, c := range []struct {
+		ps   []nzbParam
+		want string
+	}{
+		{[]nzbParam{{"HolyArrsID", id}}, id},
+		{[]nzbParam{{"Name", "HolyArrsID"}, {"Value", id}, {"*Unpack:", "yes"}}, id},
+		{[]nzbParam{{"Value", id}, {"Name", "HolyArrsID"}}, id},
+		{[]nzbParam{{"Value", id}}, ""},
+		{[]nzbParam{{"Name", "Other"}, {"Value", id}}, ""},
+		{[]nzbParam{{"Name", "HolyArrsID"}, {"Value", "not-ours"}}, ""},
+		{nil, ""},
+	} {
+		if got := nzbgetMarkerID(c.ps); got != c.want {
+			t.Errorf("%v: %q, want %q", c.ps, got, c.want)
+		}
+	}
+}

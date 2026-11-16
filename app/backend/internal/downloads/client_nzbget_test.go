@@ -31,6 +31,7 @@ type fakeNZBGet struct {
 	hideAppend      bool
 	hidden          []map[string]any
 	config          []nzbParam // the options "config" answers
+	flatten         bool       // store each struct member as its own parameter, as NZBGet 26.3 does
 }
 
 func (f *fakeNZBGet) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -100,19 +101,34 @@ func (f *fakeNZBGet) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			_ = json.Unmarshal(raw, &v)
 			args = append(args, v)
 		}
+		// Strict like the published API and spec-following stand-ins: the last
+		// argument is an array of {Name, Value} structs; anything else is refused.
+		var params []nzbParam
+		pairs, ok := args[len(args)-1].([]any)
+		for _, pair := range pairs {
+			fields, isStruct := pair.(map[string]any)
+			pName, okName := fields["Name"].(string)
+			pValue, okValue := fields["Value"].(string)
+			if !isStruct || !okName || !okValue || len(fields) != 2 {
+				ok = false
+				break
+			}
+			if f.flatten {
+				params = append(params, nzbParam{Name: "Name", Value: pName}, nzbParam{Name: "Value", Value: pValue})
+			} else {
+				params = append(params, nzbParam{Name: pName, Value: pValue})
+			}
+		}
+		if !ok {
+			_ = json.NewEncoder(w).Encode(map[string]any{"version": "1.1", "id": in.ID,
+				"error": map[string]any{"name": "JSONRPCError", "code": 2, "message": "Invalid parameter (PPParameters)"}})
+			return
+		}
 		f.appends = append(f.appends, args)
 		f.adds++
 		id := 100 + f.adds
 		name, _ := args[0].(string)
 		cat, _ := args[2].(string)
-		var params []nzbParam
-		if pairs, ok := args[10].([]any); ok {
-			for _, pair := range pairs {
-				if fields, ok := pair.([]any); ok && len(fields) == 2 {
-					params = append(params, nzbParam{Name: fields[0].(string), Value: fields[1].(string)})
-				}
-			}
-		}
 		f.groups = append(f.groups, map[string]any{"NZBID": id, "NZBFilename": name, "NZBName": strings.TrimSuffix(name, ".nzb"),
 			"Category": cat, "DestDir": "/downloads/" + cat, "FileSizeLo": 1024, "FileSizeHi": 0,
 			"RemainingSizeLo": 1024, "RemainingSizeHi": 0, "Status": "QUEUED", "Parameters": params})
@@ -164,7 +180,7 @@ func TestNZBGetAddUploadsBytesAndKeepsStableIdentity(t *testing.T) {
 		t.Fatalf("append positions: %#v", args)
 	}
 	pairs, ok := args[10].([]any)
-	if !ok || len(pairs) != 1 || len(pairs[0].([]any)) != 2 || pairs[0].([]any)[0] != nzbgetMarker || pairs[0].([]any)[1] != id {
+	if !ok || len(pairs) != 1 || pairs[0].(map[string]any)["Name"] != nzbgetMarker || pairs[0].(map[string]any)["Value"] != id {
 		t.Fatalf("append marker: %#v", args[10])
 	}
 	b, err := base64.StdEncoding.DecodeString(args[1].(string))
@@ -250,7 +266,7 @@ func TestNZBGetUncertainAppendOnlyReconcilesItsDurableMarker(t *testing.T) {
 	if id, err := n.Add(context.Background(), r); err != nil || id != r.AttemptMarker || f.adds != 1 {
 		t.Fatalf("late positive reconciliation: %v adds=%d", err, f.adds)
 	}
-	if f.appends[0][10].([]any)[0].([]any)[1] != r.AttemptMarker {
+	if f.appends[0][10].([]any)[0].(map[string]any)["Value"] != r.AttemptMarker {
 		t.Fatal("durable marker was not sent unchanged")
 	}
 }
