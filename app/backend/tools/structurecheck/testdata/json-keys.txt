@@ -307,6 +307,8 @@ choose
 chosen
 chosen_by
 cinema_date
+cipher
+ciphertext
 clear_app_token
 clear_finished
 clear_key
@@ -807,6 +809,7 @@ jsonrpc
 jwks_uri
 k
 kbpersec
+kdf
 keep
 keep_specials
 keep_up_to_date
@@ -1085,6 +1088,7 @@ no_limit
 no_release
 nodes
 nominations
+nonce
 noofslots
 noofslots_total
 not_media
@@ -1450,6 +1454,7 @@ runtime
 runtime_minutes
 s
 sabnzbd
+salt
 sample_rate
 savePath
 save_path
