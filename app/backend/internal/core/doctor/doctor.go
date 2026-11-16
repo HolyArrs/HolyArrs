@@ -43,7 +43,7 @@ var causeWords = map[Cause]string{
 	UseHTTP:  "It speaks http, not https. Start the address with http://.",
 	UseHTTPS: "It speaks https, not http. Start the address with https://.",
 	Auth:     "Key or password refused. Check them, then test again.",
-	NotFound: "Nothing at that path. Check the path after the port, for example /sabnzbd.",
+	NotFound: "Nothing at that path. Check the path after the port.",
 	WrongApp: "Another app answered. Check the port: it belongs to something else.",
 	Category: "Category missing. Add it in the download app, or pick another one here.",
 	Blocked:  "Blocked: local network. Turn on \"Reach the local network\" if it runs at home.",
@@ -55,6 +55,27 @@ func CategoryLine(name string) string {
 		return causeWords[Category]
 	}
 	return "Category missing: " + name + ". Add it in the download app, or pick another one here."
+}
+
+// LineOf is the line for a stored error text, "" when its cause is unknown.
+// A missing category keeps its name: from a line, or from "(name)" at the end.
+func LineOf(msg string) string {
+	c := OfText(msg)
+	if c != Category {
+		return causeWords[c]
+	}
+	m := strings.TrimSpace(msg)
+	if rest, ok := strings.CutPrefix(m, "Category missing: "); ok {
+		if i := strings.Index(rest, ". "); i > 0 {
+			return CategoryLine(rest[:i])
+		}
+	}
+	if strings.HasSuffix(m, ")") {
+		if i := strings.LastIndex(m, " ("); i >= 0 {
+			return CategoryLine(m[i+2 : len(m)-1])
+		}
+	}
+	return causeWords[Category]
 }
 
 // Line is the cause's line, "" for Unknown.

@@ -1354,6 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Nosaukums nav atrasts. Pārbaudiet resursdatora nosaukumu adresē.",
 	"server.core.no-answer-in-time-check-the": "Nav atbildes laikā. Pārbaudiet adresi un to, vai netraucē ugunsmūris.",
 	"server.core.nothing-answers-on-that-port-check": "Šajā portā nekas neatbild. Pārbaudiet portu un to, vai lietotne darbojas.",
-	"server.core.nothing-at-that-path-check-the": "Šajā ceļā nekā nav. Pārbaudiet ceļu aiz porta, piemēram, /sabnzbd.",
+	"server.core.nothing-at-that-path-check-the": "Šajā ceļā nekā nav. Pārbaudiet ceļu aiz porta.",
 	"server.core.category-missing-add-it-in-the-2": "Trūkst kategorijas: {name}. Pievienojiet to lejupielādes lietotnē vai izvēlieties citu šeit."
 }

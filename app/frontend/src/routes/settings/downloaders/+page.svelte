@@ -759,9 +759,11 @@
 	.note { margin: 8px 0 0 40px; font: 400 13px/1.35 var(--font-ui); color: var(--text-muted); }
 	.dl .attempt-review { margin: 10px 0 0 40px; }
 	@media (max-width: 760px) {
-		.main { grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-areas: 'ic grow st' 'ic num num' 'ic acts acts'; row-gap: 6px; }
-		.main > .ic { grid-area: ic; align-self: start; } .main > .grow { grid-area: grow; } .main > .st { grid-area: st; justify-self: end; align-self: start; }
-		.main > .num { grid-area: num; } .main > .acts { grid-area: acts; justify-self: start; flex-wrap: wrap; margin-left: -10px; }
+		/* The name has the whole first line; its chips wrap below it, then the status and count. */
+		.main { grid-template-columns: 24px auto minmax(0, 1fr); grid-template-areas: 'ic grow grow' 'ic st num' 'ic acts acts'; row-gap: 6px; }
+		.main > .ic { grid-area: ic; align-self: start; } .main > .grow { grid-area: grow; } .main > .st { grid-area: st; justify-self: start; }
+		.top { flex-wrap: wrap; row-gap: 4px; } .name { white-space: normal; overflow-wrap: anywhere; }
+		.main > .num { grid-area: num; justify-self: end; } .main > .acts { grid-area: acts; justify-self: start; flex-wrap: wrap; margin-left: -10px; }
 		.note, .dl .attempt-review { margin-left: 0; }
 	}
 </style>

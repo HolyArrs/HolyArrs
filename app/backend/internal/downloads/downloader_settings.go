@@ -235,7 +235,7 @@ func SetPaused(ctx context.Context, s *database.Store, id int64, paused bool, by
 // Test button gives.
 func HealthOf(d domain.Downloader, now time.Time) HealthView {
 	cause := doctor.OfText(d.LastError)
-	line := doctor.Line(cause)
+	line := doctor.LineOf(d.LastError)
 	switch {
 	case d.State == "disabled":
 		return HealthView{"paused", "Paused", "Paused by you: HolyArrs sends nothing new to it. Downloads already there are still followed.", ""}

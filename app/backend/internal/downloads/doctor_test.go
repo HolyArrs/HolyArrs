@@ -190,9 +190,9 @@ func TestDownloaderTestNamesMissingCategory(t *testing.T) {
 	}
 }
 
-func TestDownloaderUnknownErrorKeepsItsWords(t *testing.T) {
+func TestDownloaderUnknownErrorSaysTheLogHasIt(t *testing.T) {
 	cause, text := explainDownloader(fmt.Errorf("qbittorrent app/version: 502 Bad Gateway"), "http://qbit:8080", false)
-	if cause != doctor.Unknown || !strings.Contains(text, "502") {
+	if cause != doctor.Unknown || strings.Contains(text, "502") || !strings.Contains(text, "log") {
 		t.Fatalf("%q %q", cause, text)
 	}
 }

@@ -1354,6 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Hindi nahanap ang pangalan. Tingnan ang host name sa address.",
 	"server.core.no-answer-in-time-check-the": "Walang sagot sa takdang oras. Tingnan ang address, at na walang firewall na humaharang.",
 	"server.core.nothing-answers-on-that-port-check": "Walang sumasagot sa port na iyon. Tingnan ang port, at na tumatakbo ang app.",
-	"server.core.nothing-at-that-path-check-the": "Walang laman ang path na iyon. Tingnan ang path pagkatapos ng port, halimbawa /sabnzbd.",
+	"server.core.nothing-at-that-path-check-the": "Walang laman ang path na iyon. Tingnan ang path pagkatapos ng port.",
 	"server.core.category-missing-add-it-in-the-2": "Walang ganitong category: {name}. Idagdag ito sa download app, o pumili ng iba rito."
 }

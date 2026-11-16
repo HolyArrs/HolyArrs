@@ -357,7 +357,8 @@ func explainDownloader(err error, rawURL string, allowLocal bool) (doctor.Cause,
 	if c, line, ok := doctor.ExplainAt(err, rawURL, probeDial(allowLocal)); ok {
 		return c, line
 	}
-	return doctor.Unknown, "It did not answer: " + firstLine(err.Error())
+	// The raw error (addresses, Go words) stays in the log.
+	return doctor.Unknown, "It did not answer the last check. The log has the details."
 }
 
 // mayKeepSaveRoot says whether a test may store the save root. Like an edit,
@@ -389,6 +390,9 @@ func (a *Web) TestDownloader(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		cause, text := explainDownloader(err, d.URL, d.AllowLocal)
 		out["text"], out["cause"] = text, cause
+		if cause != doctor.Unknown {
+			m.noteCause(ctx, id, text) // Health then says what Test found.
+		}
 	} else {
 		out["text"] = "It answered: " + d.Adapter + " " + h.Version + "."
 		out["version"] = h.Version

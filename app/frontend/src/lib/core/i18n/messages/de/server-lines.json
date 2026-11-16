@@ -1354,6 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Name nicht gefunden. Prüfe den Hostnamen in der Adresse.",
 	"server.core.no-answer-in-time-check-the": "Keine Antwort in der Zeit. Prüfe die Adresse und ob eine Firewall im Weg ist.",
 	"server.core.nothing-answers-on-that-port-check": "Auf diesem Port antwortet nichts. Prüfe den Port und ob die App läuft.",
-	"server.core.nothing-at-that-path-check-the": "Unter diesem Pfad ist nichts. Prüfe den Pfad nach dem Port, zum Beispiel /sabnzbd.",
+	"server.core.nothing-at-that-path-check-the": "Unter diesem Pfad ist nichts. Prüfe den Pfad nach dem Port.",
 	"server.core.category-missing-add-it-in-the-2": "Kategorie fehlt: {name}. Lege sie in der Download-App an oder wähle hier eine andere."
 }

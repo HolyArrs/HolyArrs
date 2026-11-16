@@ -82,7 +82,7 @@ var apps = []struct {
 	{"prowlarr", []string{"prowlarr"}},
 	{"bazarr", []string{"bazarr"}},
 	{"jackett", []string{"jackett"}},
-	{"jellyfin", []string{"jellyfin"}},
+	{"jellyfin", []string{"jellyfin", "x-response-time-ms"}},
 	{"emby", []string{"emby server", "x-emby-", "<title>emby"}},
 	{"plex", []string{"x-plex-", "plex media server", "<mediacontainer"}},
 	{"qbittorrent", []string{"qbittorrent", "vuetorrent"}},
@@ -91,7 +91,19 @@ var apps = []struct {
 	{"transmission", []string{"x-transmission-session-id", "<title>transmission", "realm=\"transmission"}},
 	{"deluge", []string{"deluge"}},
 	{"holyarrs", []string{"holyarrs"}},
+	// Sonarr, Radarr, Prowlarr and the rest of that family send this header.
+	{"servarr", []string{"x-application-version:"}},
+	// An empty answer from a .NET app names only its web server: Jellyfin,
+	// Emby and that family answer a wrong path or key this way.
+	{"kestrel", []string{"server: kestrel"}},
 }
+
+// kestrelApps are the apps that answer as Kestrel, and servarrApps those of
+// them that send the version header.
+var (
+	servarrApps = []string{"sonarr", "radarr", "lidarr", "readarr", "whisparr", "prowlarr"}
+	kestrelApps = append([]string{"jellyfin", "emby", "jackett"}, servarrApps...)
+)
 
 // Who names the app that answered, from its headers and the start of its
 // body; "" when nothing gives it away.
@@ -123,9 +135,18 @@ func Other(h http.Header, body []byte, own ...string) error {
 	if n == "" {
 		return nil
 	}
+	same := []string{n}
+	switch n {
+	case "servarr":
+		same = servarrApps
+	case "kestrel":
+		same = kestrelApps
+	}
 	for _, o := range own {
-		if strings.EqualFold(o, n) {
-			return nil
+		for _, s := range same {
+			if strings.EqualFold(o, s) {
+				return nil
+			}
 		}
 	}
 	return Mark(WrongApp, nil)

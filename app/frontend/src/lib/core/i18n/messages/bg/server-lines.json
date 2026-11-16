@@ -1354,6 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Името не е намерено. Проверете името на хоста в адреса.",
 	"server.core.no-answer-in-time-check-the": "Няма отговор навреме. Проверете адреса и дали защитна стена не пречи.",
 	"server.core.nothing-answers-on-that-port-check": "Нищо не отговаря на този порт. Проверете порта и дали приложението работи.",
-	"server.core.nothing-at-that-path-check-the": "Няма нищо на този път. Проверете пътя след порта, например /sabnzbd.",
+	"server.core.nothing-at-that-path-check-the": "Няма нищо на този път. Проверете пътя след порта.",
 	"server.core.category-missing-add-it-in-the-2": "Липсва категория: {name}. Добавете я в приложението за изтегляне или изберете друга тук."
 }

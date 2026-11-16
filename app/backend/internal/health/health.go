@@ -587,7 +587,7 @@ func (e *Engine) downloaders(ctx context.Context) ([]Result, error) {
 	for _, d := range ds {
 		r := Result{Key: "downloader:" + strconv.FormatInt(d.ID, 10), Kind: "downloader", Subject: d.Name, State: OK}
 		why := strings.TrimSpace(d.LastError)
-		if line := doctor.Line(doctor.OfText(why)); line != "" {
+		if line := doctor.LineOf(why); line != "" {
 			why = line
 		}
 		switch d.State {

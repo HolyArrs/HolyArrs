@@ -105,9 +105,7 @@ func (m *Manager) Check(ctx context.Context, d domain.Downloader) (Health, error
 		}
 	}
 	if err != nil {
-		if !errors.Is(err, ErrNoCategory) {
-			m.downloaderFailed(ctx, d, err)
-		}
+		m.downloaderFailed(ctx, d, err)
 		return h, err
 	}
 	m.downloaderOK(ctx, d)
@@ -285,6 +283,15 @@ func (m *Manager) downloaderFailed(ctx context.Context, d domain.Downloader, cau
 		return err
 	})
 	m.publish("downloader", map[string]any{"id": d.ID, "state": state})
+}
+
+// noteCause stores a Test's line as the last error of a Downloader that
+// failed, so health names the cause the Test found.
+func (m *Manager) noteCause(ctx context.Context, id int64, line string) {
+	_ = m.Store.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE downloaders SET last_error = ? WHERE id = ? AND state <> 'ok' AND last_error <> ''", line, id)
+		return err
+	})
 }
 
 // downloaderOK ends a back-off. It writes only when something changes.

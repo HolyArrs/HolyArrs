@@ -1354,6 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Nie znaleziono nazwy. Sprawdź nazwę hosta w adresie.",
 	"server.core.no-answer-in-time-check-the": "Brak odpowiedzi na czas. Sprawdź adres i czy zapora nie blokuje.",
 	"server.core.nothing-answers-on-that-port-check": "Na tym porcie nic nie odpowiada. Sprawdź port i czy aplikacja działa.",
-	"server.core.nothing-at-that-path-check-the": "Pod tą ścieżką nic nie ma. Sprawdź ścieżkę po porcie, na przykład /sabnzbd.",
+	"server.core.nothing-at-that-path-check-the": "Pod tą ścieżką nic nie ma. Sprawdź ścieżkę po porcie.",
 	"server.core.category-missing-add-it-in-the-2": "Brak kategorii: {name}. Dodaj ją w aplikacji do pobierania lub wybierz tu inną."
 }

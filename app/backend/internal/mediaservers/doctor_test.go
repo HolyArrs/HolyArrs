@@ -2,6 +2,7 @@ package mediaservers
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 func TestMediaServerTestNamesEachCause(t *testing.T) {
@@ -132,4 +134,64 @@ func picky(t *testing.T) string {
 		}
 	}()
 	return l.Addr().String()
+}
+
+// After a few failures the outbound breaker holds calls back; the Test line
+// stays plain words and the stored cause stays the real one.
+func TestMediaServerTestWhileHeldBackIsPlain(t *testing.T) {
+	outbound.Reset()
+	t.Cleanup(outbound.Reset)
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	closed := "http://" + l.Addr().String()
+	l.Close()
+	w := newWorld(t)
+	ctx := context.Background()
+	local := true
+	m, err := Add(ctx, w.s, w.v, Input{Name: "Held back", Kind: "jellyfin", URL: closed, Token: "x", AllowLocal: &local}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lk := &Linker{Store: w.s, Vault: w.v}
+	held := false
+	for range 12 {
+		_, err = lk.Test(ctx, m)
+		if errors.Is(err, outbound.ErrSuppressed) {
+			held = true
+			break
+		}
+	}
+	if !held {
+		t.Skip("the breaker never held the calls back")
+	}
+	if strings.Contains(err.Error(), "outside service") || strings.Contains(err.Error(), "retrying") {
+		t.Fatalf("raw breaker words on the Test line: %q", err.Error())
+	}
+	m, _ = getServer(ctx, w.s.Read(), m.ID)
+	if got := doctor.OfText(m.LastError); got != doctor.Refused {
+		t.Fatalf("stored %q reads as %q", m.LastError, got)
+	}
+}
+
+// Jellyfin answers Plex's paths with an empty 404 that names only Kestrel.
+func TestPlexAtJellyfinNamesAnotherApp(t *testing.T) {
+	jf := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Server", "Kestrel")
+		w.Header().Set("Content-Length", "0")
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer jf.Close()
+	w := newWorld(t)
+	ctx := context.Background()
+	local := true
+	m, err := Add(ctx, w.s, w.v, Input{Name: "Plex at Jellyfin", Kind: "plex", URL: jf.URL, Token: "x", AllowLocal: &local}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = (&Linker{Store: w.s, Vault: w.v}).Test(ctx, m)
+	if got := doctor.Of(err); got != doctor.WrongApp {
+		t.Fatalf("cause %q (error %v)", got, err)
+	}
 }

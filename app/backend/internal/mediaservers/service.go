@@ -711,6 +711,12 @@ func (l *Linker) Tell(ctx context.Context, m domain.MediaServer, us []Update) er
 	return nil
 }
 
+// held is a Test line said while calls are held back; it unwraps to
+// outbound.ErrSuppressed as well.
+type held struct{ error }
+
+func (h *held) Unwrap() []error { return []error{h.error, outbound.ErrSuppressed} }
+
 // Test checks the address and token: Plex must list at least one movie,
 // TV or music library; Jellyfin and Emby must answer their system info.
 func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error) {
@@ -745,6 +751,14 @@ func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error)
 		}
 	}
 	now := database.FormatTime(time.Now())
+	if errors.Is(err, outbound.ErrSuppressed) {
+		// Calls are held back after recent failures: say the last known
+		// cause in plain words and keep it stored.
+		if c := doctor.OfText(m.LastError); c != doctor.Unknown {
+			return res, &held{doctor.Mark(c, nil)}
+		}
+		return res, &held{errors.New("the server did not answer")}
+	}
 	if err != nil {
 		log.Printf("media servers: %s: test: %v", m.Name, err)
 		markError(ctx, l.Store, m.ID, err.Error())

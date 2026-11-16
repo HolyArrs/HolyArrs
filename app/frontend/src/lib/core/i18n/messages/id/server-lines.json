@@ -1354,6 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Nama tidak ditemukan. Periksa nama host di alamat.",
 	"server.core.no-answer-in-time-check-the": "Tidak ada jawaban tepat waktu. Periksa alamat, dan pastikan tidak ada firewall yang menghalangi.",
 	"server.core.nothing-answers-on-that-port-check": "Tidak ada yang menjawab di port itu. Periksa port, dan pastikan aplikasinya berjalan.",
-	"server.core.nothing-at-that-path-check-the": "Tidak ada apa-apa di path itu. Periksa path setelah port, misalnya /sabnzbd.",
+	"server.core.nothing-at-that-path-check-the": "Tidak ada apa-apa di path itu. Periksa path setelah port.",
 	"server.core.category-missing-add-it-in-the-2": "Kategori tidak ada: {name}. Tambahkan di aplikasi unduhan, atau pilih yang lain di sini."
 }

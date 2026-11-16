@@ -1354,6 +1354,6 @@
 	"server.core.name-not-found-check-the-host": "Ad bulunamadı. Adresteki ana makine adını kontrol et.",
 	"server.core.no-answer-in-time-check-the": "Zamanında yanıt yok. Adresi ve bir güvenlik duvarının engel olmadığını kontrol et.",
 	"server.core.nothing-answers-on-that-port-check": "O bağlantı noktasında hiçbir şey yanıt vermiyor. Bağlantı noktasını ve uygulamanın çalıştığını kontrol et.",
-	"server.core.nothing-at-that-path-check-the": "O yolda hiçbir şey yok. Bağlantı noktasından sonraki yolu kontrol et, örneğin /sabnzbd.",
+	"server.core.nothing-at-that-path-check-the": "O yolda hiçbir şey yok. Bağlantı noktasından sonraki yolu kontrol et.",
 	"server.core.category-missing-add-it-in-the-2": "Kategori yok: {name}. İndirme uygulamasında ekle ya da burada başka birini seç."
 }
