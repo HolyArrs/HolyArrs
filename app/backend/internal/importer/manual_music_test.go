@@ -320,3 +320,46 @@ func TestByHandMusicImport(t *testing.T) {
 		t.Fatalf("rescan %+v", g)
 	}
 }
+
+// When the Library has both "Part II" and "Part II (Deluxe Edition)", a file
+// tagged with the deluxe name goes on the deluxe album, never the base one.
+func TestByHandMusicExactAlbumNameWins(t *testing.T) {
+	w := musicSetup(t)
+	var deluxe int64
+	err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
+		var vid int64
+		if err := tx.QueryRow("SELECT id FROM versions WHERE title_id = ?", w.artist).Scan(&vid); err != nil {
+			return err
+		}
+		rd := time.Date(2001, 5, 1, 0, 0, 0, 0, time.UTC)
+		p := &mediafiles.Part{TitleID: w.artist, Kind: "album", Name: "Part II (Deluxe Edition)", ReleaseDate: &rd, KeepUpToDate: true,
+			SourceIDs: map[string]string{"musicbrainz": "e0000000-0000-4000-8000-0000000000a3"}, Pressings: []mediafiles.Pressing{}, SecondaryTypes: []string{}, Included: true}
+		if _, err := database.Insert(tx, "parts", p, domain.System); err != nil {
+			return err
+		}
+		deluxe = p.ID
+		for i, tn := range partTwo {
+			disc, num, name := 1, i+1, tn
+			it := &mediafiles.Item{TitleID: w.artist, PartID: &p.ID, Kind: "track", Numbers: mediafiles.Numbers{Disc: &disc, Track: &num}, Name: &name,
+				KeepUpToDate: true, SourceIDs: map[string]string{}}
+			if _, err := database.Insert(tx, "items", it, domain.System); err != nil {
+				return err
+			}
+			if _, err := database.Insert(tx, "slots", &mediafiles.Slot{ItemID: it.ID, VersionID: vid, State: mediafiles.SlotWanted}, domain.System); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	flacFixture(t, filepath.Join(w.in, "Brad Paisley", "Part II (2001)", "03.flac"), "ARTIST=Brad Paisley", "ALBUM=Part II (Deluxe Edition)", "TRACKNUMBER=3", "TITLE="+partTwo[2])
+	flacFixture(t, filepath.Join(w.in, "x", "03.flac"), "ARTIST=Brad Paisley", "ALBUM=Part II (Deluxe Edition)", "TRACKNUMBER=3", "TITLE="+partTwo[2])
+	got := w.scan(t, w.in)
+	for _, k := range []string{"Brad Paisley/Part II (2001)/03.flac", "x/03.flac"} {
+		if g := got[k].Guess; g.AlbumID != deluxe || g.Track != 3 {
+			t.Errorf("%s: %+v", k, g)
+		}
+	}
+}

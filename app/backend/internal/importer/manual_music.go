@@ -328,11 +328,17 @@ func (a *musicArtist) album(tg tags.Tags, dirAlbum string, dirYear int) (*musicA
 		if year == 0 {
 			year = dirYear
 		}
-		var hits []*musicAlbum
+		// An album named exactly as the tag or folder wins over one found after cutting the tail.
+		var hits, cut []*musicAlbum
 		for _, al := range a.albums {
-			if sameName(al.part.Name, name) || sameName(al.part.Name, stripped) {
+			if sameName(al.part.Name, name) {
 				hits = append(hits, al)
+			} else if sameName(al.part.Name, stripped) {
+				cut = append(cut, al)
 			}
+		}
+		if len(hits) == 0 {
+			hits = cut
 		}
 		if len(hits) > 1 && year > 0 {
 			var same []*musicAlbum
