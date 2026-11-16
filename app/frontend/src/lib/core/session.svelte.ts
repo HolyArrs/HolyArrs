@@ -3,6 +3,8 @@
 import { api as defaultClient, type Client } from './api';
 import { setHeld } from './settings.ts';
 import { views as accountViews } from './views.svelte.ts';
+import { watchedNow } from '../mediafiles/watched.svelte.ts';
+import { watchedIndex } from '../mediafiles/watched.ts';
 
 export type SessionState = 'unknown' | 'signed_out' | 'needs_setup' | 'signed_in';
 export type Role = 'owner' | 'admin' | 'member';
@@ -169,6 +171,8 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		if (expected !== generation) return;
 		client.setCsrf('');
 		views.forget();
+		// The next person never sees the last one's Watched marks.
+		watchedNow.ix = watchedIndex(null);
 		s.id = undefined;
 		s.name = '';
 		s.via = '';
