@@ -1,4 +1,10 @@
 {
+	"alerts.dot.count.few": "Требует внимания: {n}",
+	"alerts.dot.count.many": "Требует внимания: {n}",
+	"alerts.dot.count.one": "Требует внимания: {n}",
+	"alerts.dot.count.other": "Требует внимания: {n}",
+	"alerts.dot.count.two": "Требует внимания: {n}",
+	"alerts.dot.count.zero": "Требует внимания: {n}",
 	"alerts.dot.decide": "Загрузки ждут решения: {n}",
 	"alerts.dot.show": "Показать, что требует внимания",
 	"alerts.dot.unseen": "Новые оповещения: {n}",

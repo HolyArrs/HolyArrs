@@ -1,4 +1,10 @@
 {
+	"alerts.dot.count.few": "ต้องดูแล {n} รายการ",
+	"alerts.dot.count.many": "ต้องดูแล {n} รายการ",
+	"alerts.dot.count.one": "ต้องดูแล {n} รายการ",
+	"alerts.dot.count.other": "ต้องดูแล {n} รายการ",
+	"alerts.dot.count.two": "ต้องดูแล {n} รายการ",
+	"alerts.dot.count.zero": "ต้องดูแล {n} รายการ",
 	"alerts.dot.decide": "ดาวน์โหลดที่รอตัดสินใจ: {n}",
 	"alerts.dot.show": "แสดงสิ่งที่ต้องดูแล",
 	"alerts.dot.unseen": "การแจ้งเตือนใหม่: {n}",

@@ -1,4 +1,10 @@
 {
+	"alerts.dot.count.few": "{n} χρειάζονται προσοχή",
+	"alerts.dot.count.many": "{n} χρειάζονται προσοχή",
+	"alerts.dot.count.one": "{n} χρειάζεται προσοχή",
+	"alerts.dot.count.other": "{n} χρειάζονται προσοχή",
+	"alerts.dot.count.two": "{n} χρειάζονται προσοχή",
+	"alerts.dot.count.zero": "{n} χρειάζονται προσοχή",
 	"alerts.dot.decide": "Λήψεις για απόφαση: {n}",
 	"alerts.dot.show": "Δείξε τι χρειάζεται προσοχή",
 	"alerts.dot.unseen": "Νέες ειδοποιήσεις: {n}",

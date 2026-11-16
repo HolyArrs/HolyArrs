@@ -1,4 +1,10 @@
 {
+	"alerts.dot.count.few": "확인 필요 {n}개",
+	"alerts.dot.count.many": "확인 필요 {n}개",
+	"alerts.dot.count.one": "확인 필요 {n}개",
+	"alerts.dot.count.other": "확인 필요 {n}개",
+	"alerts.dot.count.two": "확인 필요 {n}개",
+	"alerts.dot.count.zero": "확인 필요 {n}개",
 	"alerts.dot.decide": "결정할 다운로드: {n}",
 	"alerts.dot.show": "확인할 항목 보기",
 	"alerts.dot.unseen": "새 알림: {n}",

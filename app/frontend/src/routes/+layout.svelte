@@ -463,7 +463,7 @@
 
 <svelte:window onkeydown={keys} />
 
-{#snippet dotPanel(close: () => void)}<DotList reasons={settingsReasons} {link} onpick={() => { close(); void closeOverlay(false); }} />{/snippet}
+{#snippet dotPanel(close: () => void)}<DotList reasons={settingsReasons} {link} lead onpick={() => { close(); void closeOverlay(false); }} />{/snippet}
 
 {#snippet account()}
 	<Menu label={t('frame.layout.accountMenu', { name: shownName, role: roleWord })} items={accountItems} variant="row" align="start" placement="above" width={240}>
@@ -544,7 +544,7 @@
 		<!-- Only while open, so a closed sheet adds no second copy of every place to the page. -->
 		{#if moreOpen}
 		<nav class="more" aria-label={t('frame.layout.allPlaces')}>
-			{#if tabReasons.length}<div class="more-sec"><DotList reasons={tabReasons} {link} onpick={() => (moreOpen = false)} onalerts={() => (alertsPanel.open = true)} /></div>{/if}
+			{#if tabReasons.length}<div class="more-sec"><DotList reasons={tabReasons} {link} card onpick={() => (moreOpen = false)} onalerts={() => (alertsPanel.open = true)} /></div>{/if}
 			{#each sections as s (s.id)}
 				<div class="more-sec">
 					{#if s.label}<h3>{s.label}</h3>{/if}

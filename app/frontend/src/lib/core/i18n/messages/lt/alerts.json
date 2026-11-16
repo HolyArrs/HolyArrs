@@ -1,4 +1,10 @@
 {
+	"alerts.dot.count.few": "Reikia dėmesio: {n}",
+	"alerts.dot.count.many": "Reikia dėmesio: {n}",
+	"alerts.dot.count.one": "Reikia dėmesio: {n}",
+	"alerts.dot.count.other": "Reikia dėmesio: {n}",
+	"alerts.dot.count.two": "Reikia dėmesio: {n}",
+	"alerts.dot.count.zero": "Reikia dėmesio: {n}",
 	"alerts.dot.decide": "Atsisiuntimai sprendimui: {n}",
 	"alerts.dot.show": "Rodyti, kam reikia dėmesio",
 	"alerts.dot.unseen": "Nauji įspėjimai: {n}",

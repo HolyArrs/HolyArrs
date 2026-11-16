@@ -1,4 +1,10 @@
 {
+	"alerts.dot.count.few": "Wymaga uwagi: {n}",
+	"alerts.dot.count.many": "Wymaga uwagi: {n}",
+	"alerts.dot.count.one": "Wymaga uwagi: {n}",
+	"alerts.dot.count.other": "Wymaga uwagi: {n}",
+	"alerts.dot.count.two": "Wymaga uwagi: {n}",
+	"alerts.dot.count.zero": "Wymaga uwagi: {n}",
 	"alerts.dot.decide": "Pobrania do decyzji: {n}",
 	"alerts.dot.show": "Pokaż, co wymaga uwagi",
 	"alerts.dot.unseen": "Nowe alerty: {n}",

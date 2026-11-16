@@ -1,4 +1,10 @@
 {
+	"alerts.dot.count.few": "Vyžaduje pozornost: {n}",
+	"alerts.dot.count.many": "Vyžaduje pozornost: {n}",
+	"alerts.dot.count.one": "Vyžaduje pozornost: {n}",
+	"alerts.dot.count.other": "Vyžaduje pozornost: {n}",
+	"alerts.dot.count.two": "Vyžaduje pozornost: {n}",
+	"alerts.dot.count.zero": "Vyžaduje pozornost: {n}",
 	"alerts.dot.decide": "Stahování k rozhodnutí: {n}",
 	"alerts.dot.show": "Ukázat, co potřebuje pozornost",
 	"alerts.dot.unseen": "Nová upozornění: {n}",

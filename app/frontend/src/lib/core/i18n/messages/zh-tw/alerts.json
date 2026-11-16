@@ -1,4 +1,10 @@
 {
+	"alerts.dot.count.few": "{n} 項需要處理",
+	"alerts.dot.count.many": "{n} 項需要處理",
+	"alerts.dot.count.one": "{n} 項需要處理",
+	"alerts.dot.count.other": "{n} 項需要處理",
+	"alerts.dot.count.two": "{n} 項需要處理",
+	"alerts.dot.count.zero": "{n} 項需要處理",
 	"alerts.dot.decide": "待決定的下載：{n}",
 	"alerts.dot.show": "查看需要處理的事項",
 	"alerts.dot.unseen": "新提醒：{n}",

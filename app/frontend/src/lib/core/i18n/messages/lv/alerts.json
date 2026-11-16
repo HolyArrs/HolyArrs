@@ -1,4 +1,10 @@
 {
+	"alerts.dot.count.few": "Jāpievērš uzmanība: {n}",
+	"alerts.dot.count.many": "Jāpievērš uzmanība: {n}",
+	"alerts.dot.count.one": "Jāpievērš uzmanība: {n}",
+	"alerts.dot.count.other": "Jāpievērš uzmanība: {n}",
+	"alerts.dot.count.two": "Jāpievērš uzmanība: {n}",
+	"alerts.dot.count.zero": "Jāpievērš uzmanība: {n}",
 	"alerts.dot.decide": "Lejupielādes lēmumam: {n}",
 	"alerts.dot.show": "Rādīt, kam vajag uzmanību",
 	"alerts.dot.unseen": "Jauni brīdinājumi: {n}",

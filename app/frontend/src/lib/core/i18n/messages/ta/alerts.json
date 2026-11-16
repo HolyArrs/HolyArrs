@@ -1,4 +1,10 @@
 {
+	"alerts.dot.count.few": "{n} கவனம் தேவை",
+	"alerts.dot.count.many": "{n} கவனம் தேவை",
+	"alerts.dot.count.one": "{n} கவனம் தேவை",
+	"alerts.dot.count.other": "{n} கவனம் தேவை",
+	"alerts.dot.count.two": "{n} கவனம் தேவை",
+	"alerts.dot.count.zero": "{n} கவனம் தேவை",
 	"alerts.dot.decide": "முடிவுக்குக் காத்திருக்கும் பதிவிறக்கங்கள்: {n}",
 	"alerts.dot.show": "கவனிக்க வேண்டியதைக் காட்டு",
 	"alerts.dot.unseen": "புதிய எச்சரிக்கைகள்: {n}",

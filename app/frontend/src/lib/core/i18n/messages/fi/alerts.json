@@ -1,4 +1,10 @@
 {
+	"alerts.dot.count.few": "{n} vaativat huomiota",
+	"alerts.dot.count.many": "{n} vaativat huomiota",
+	"alerts.dot.count.one": "{n} vaatii huomiota",
+	"alerts.dot.count.other": "{n} vaativat huomiota",
+	"alerts.dot.count.two": "{n} vaativat huomiota",
+	"alerts.dot.count.zero": "{n} vaativat huomiota",
 	"alerts.dot.decide": "Päätettäviä latauksia: {n}",
 	"alerts.dot.show": "Näytä, mikä vaatii huomiota",
 	"alerts.dot.unseen": "Uusia ilmoituksia: {n}",

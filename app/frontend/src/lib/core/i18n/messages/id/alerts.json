@@ -1,4 +1,10 @@
 {
+	"alerts.dot.count.few": "{n} perlu perhatian",
+	"alerts.dot.count.many": "{n} perlu perhatian",
+	"alerts.dot.count.one": "{n} perlu perhatian",
+	"alerts.dot.count.other": "{n} perlu perhatian",
+	"alerts.dot.count.two": "{n} perlu perhatian",
+	"alerts.dot.count.zero": "{n} perlu perhatian",
 	"alerts.dot.decide": "Unduhan untuk diputuskan: {n}",
 	"alerts.dot.show": "Tampilkan yang perlu diperhatikan",
 	"alerts.dot.unseen": "Peringatan baru: {n}",

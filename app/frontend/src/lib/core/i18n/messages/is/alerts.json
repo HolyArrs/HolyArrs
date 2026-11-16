@@ -1,4 +1,10 @@
 {
+	"alerts.dot.count.few": "{n} þarfnast athygli",
+	"alerts.dot.count.many": "{n} þarfnast athygli",
+	"alerts.dot.count.one": "{n} þarfnast athygli",
+	"alerts.dot.count.other": "{n} þarfnast athygli",
+	"alerts.dot.count.two": "{n} þarfnast athygli",
+	"alerts.dot.count.zero": "{n} þarfnast athygli",
 	"alerts.dot.decide": "Niðurhöl til ákvörðunar: {n}",
 	"alerts.dot.show": "Sýna það sem þarf athygli",
 	"alerts.dot.unseen": "Nýjar tilkynningar: {n}",

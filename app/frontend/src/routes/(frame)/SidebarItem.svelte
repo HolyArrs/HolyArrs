@@ -43,6 +43,7 @@
 	} = $props();
 	const dotButton = $derived(dot && !(badge > 0) && !collapsed && !!dotPanel);
 	let dotOpen = $state(false);
+	let rowEl = $state<HTMLElement>();
 
 	let tip = $state<{ x: number; y: number } | null>(null);
 	let timer: ReturnType<typeof setTimeout> | undefined;
@@ -73,13 +74,13 @@
 	{#if badge > 0}<b class="count" aria-hidden="true" data-testid={badgeTestid}>{badge > 99 ? '99+' : badge}</b>{/if}
 {/snippet}
 {#if href}
-	<a class="ui-sbi" class:current {href} aria-current={current ? 'page' : undefined} aria-label={collapsed || badge > 0 || dot ? name : undefined} data-testid={testid} {onclick} onpointerenter={show} onpointerleave={hide} onfocus={show} onblur={hide} use:press={'row'}>{@render body()}</a>
+	<a bind:this={rowEl} class="ui-sbi" class:current {href} aria-current={current ? 'page' : undefined} aria-label={collapsed || badge > 0 || dot ? name : undefined} data-testid={testid} {onclick} onpointerenter={show} onpointerleave={hide} onfocus={show} onblur={hide} use:press={'row'}>{@render body()}</a>
 {:else}
-	<button class="ui-sbi" class:current type="button" aria-label={collapsed || badge > 0 || dot ? name : undefined} data-testid={testid} {onclick} onpointerenter={show} onpointerleave={hide} onfocus={show} onblur={hide} use:press={'row'}>{@render body()}</button>
+	<button bind:this={rowEl} class="ui-sbi" class:current type="button" aria-label={collapsed || badge > 0 || dot ? name : undefined} data-testid={testid} {onclick} onpointerenter={show} onpointerleave={hide} onfocus={show} onblur={hide} use:press={'row'}>{@render body()}</button>
 {/if}
 {#if dotButton && dotPanel}
 	<span class="flag-pop">
-		<Popover label={t('alerts.dot.show')} portal width={300} bind:open={dotOpen}>
+		<Popover label={t('alerts.dot.show')} portal width={320} beside={() => rowEl} bind:open={dotOpen}>
 			{#snippet trigger()}<span class="flag" data-testid="nav-flag"></span>{/snippet}
 			{#snippet children(close)}{@render dotPanel(close)}{/snippet}
 		</Popover>

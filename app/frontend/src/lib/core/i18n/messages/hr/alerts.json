@@ -1,4 +1,10 @@
 {
+	"alerts.dot.count.few": "Traži pažnju: {n}",
+	"alerts.dot.count.many": "Traži pažnju: {n}",
+	"alerts.dot.count.one": "Traži pažnju: {n}",
+	"alerts.dot.count.other": "Traži pažnju: {n}",
+	"alerts.dot.count.two": "Traži pažnju: {n}",
+	"alerts.dot.count.zero": "Traži pažnju: {n}",
 	"alerts.dot.decide": "Preuzimanja za odluku: {n}",
 	"alerts.dot.show": "Prikaži što traži pažnju",
 	"alerts.dot.unseen": "Nove obavijesti: {n}",
