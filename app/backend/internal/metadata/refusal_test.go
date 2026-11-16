@@ -110,3 +110,15 @@ func TestBusyLineNamesTheReason(t *testing.T) {
 type refusalRT func(*http.Request) (*http.Response, error)
 
 func (f refusalRT) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+// A short refusal inside a longer hold keeps the longer hold's reason.
+func TestShortRefusalKeepsLongerReason(t *testing.T) {
+	refusalLogs(t)
+	now := time.Unix(9000, 0)
+	noteRefusal(429, "3600", []byte(`{"error":{"code":"registration_limit"}}`), now)
+	noteRefusal(503, "1", []byte(`{"error":{"code":"service_busy"}}`), now.Add(5*time.Second))
+	noteRefusal(429, "2", nil, now.Add(6*time.Second))
+	if r, _ := CurrentRefusal(now.Add(10 * time.Second)); r.Code != "registration_limit" {
+		t.Fatalf("code = %q", r.Code)
+	}
+}

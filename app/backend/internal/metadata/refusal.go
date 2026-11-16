@@ -85,8 +85,8 @@ func noteRefusal(status int, retryAfter string, body []byte, now time.Time) time
 	running := now.Before(refusal.r.Until)
 	if u := now.Add(d); !running || u.After(refusal.r.Until) {
 		refusal.r.Until = u
+		refusal.r.Code = code
 	}
-	refusal.r.Code = code
 	until := refusal.r.Until
 	refusal.mu.Unlock()
 	if !running {
