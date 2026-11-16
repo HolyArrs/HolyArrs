@@ -26,4 +26,5 @@ export function pinned(items: Attention[], pages: { href: string; label: string 
 	});
 }
 
-const upper = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+// A word like qBittorrent keeps its own casing.
+const upper = (s: string) => (!s || /^.\p{Lu}/u.test(s) ? s : s[0].toUpperCase() + s.slice(1));
