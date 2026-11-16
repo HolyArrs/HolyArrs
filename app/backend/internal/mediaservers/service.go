@@ -757,7 +757,7 @@ func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error)
 		if c := doctor.OfText(m.LastError); c != doctor.Unknown {
 			return res, &held{doctor.Mark(c, nil)}
 		}
-		return res, &held{errors.New("the server did not answer")}
+		return res, &held{doctor.Mark(doctor.Timeout, nil)}
 	}
 	if err != nil {
 		log.Printf("media servers: %s: test: %v", m.Name, err)

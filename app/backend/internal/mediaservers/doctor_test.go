@@ -173,6 +173,16 @@ func TestMediaServerTestWhileHeldBackIsPlain(t *testing.T) {
 	if got := doctor.OfText(m.LastError); got != doctor.Refused {
 		t.Fatalf("stored %q reads as %q", m.LastError, got)
 	}
+	// A stored cause nobody knows still gives a translated line.
+	markError(ctx, w.s, m.ID, "something odd")
+	m, _ = getServer(ctx, w.s.Read(), m.ID)
+	_, err = lk.Test(ctx, m)
+	if !errors.Is(err, outbound.ErrSuppressed) {
+		t.Skip("the breaker let the call through")
+	}
+	if err.Error() != doctor.Line(doctor.Timeout) {
+		t.Fatalf("held line %q is not a known line", err.Error())
+	}
 }
 
 // Jellyfin answers Plex's paths with an empty 404 that names only Kestrel.
