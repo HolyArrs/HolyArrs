@@ -84,7 +84,7 @@ func (p *execProcess) Stop() error {
 		select {
 		case <-p.done:
 		default:
-			p.cmd.Process.Kill()
+			killProcess(p.cmd)
 		}
 	})
 	<-p.done
