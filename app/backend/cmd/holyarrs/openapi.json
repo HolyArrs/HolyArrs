@@ -23364,6 +23364,157 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/plugins": {
+      "get": {
+        "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
+        "responses": {
+          "200": {
+            "description": "Plugins from the cached signed list with installed state, version, declared access, enabled flag and the active sandbox limits"
+          }
+        },
+        "summary": "List plugins",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}": {
+      "delete": {
+        "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "keep",
+            "required": false,
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stopped and removed; keep=1 keeps its program and data, disabled"
+          },
+          "404": {
+            "description": "Not installed"
+          }
+        },
+        "summary": "Remove a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/install": {
+      "post": {
+        "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Installed and started"
+          },
+          "404": {
+            "description": "Not on the plugin list"
+          },
+          "409": {
+            "description": "Plugin signing key not set yet"
+          },
+          "422": {
+            "description": "Refused by the install checks"
+          },
+          "501": {
+            "description": "Plugins run only on Linux"
+          },
+          "502": {
+            "description": "The list server or a list signature failed"
+          }
+        },
+        "summary": "Install and start a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/start": {
+      "post": {
+        "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Started"
+          },
+          "404": {
+            "description": "Not installed"
+          },
+          "422": {
+            "description": "Refused by the start checks; the plugin stays disabled"
+          },
+          "501": {
+            "description": "Plugins run only on Linux"
+          }
+        },
+        "summary": "Start a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/stop": {
+      "post": {
+        "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stopped and disabled until started again"
+          },
+          "404": {
+            "description": "Not installed"
+          }
+        },
+        "summary": "Stop a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/public/signin-art": {
       "get": {
         "description": "The sign-in page's backdrops; open to everyone. Only picture addresses with their native width and height (a textless backdrop, an optional textless poster for tall screens, and a logo): never names, ids or counts. Kid-safe titles only (movies up to PG-13, shows up to TV-PG, never unrated). From the Library when \"Show Library art on the sign-in page\" is on and 6 or more titles qualify, else from trending titles. Kept 6 hours; each address may call it 20 times a minute (429 with Retry-After past that).",

@@ -293,3 +293,22 @@ func writeFileSynced(path string, data []byte) error {
 	}
 	return os.Chmod(path, 0o700)
 }
+
+// SetEnabled turns a plugin on or off with the reason shown while off.
+func (s *Store) SetEnabled(id string, on bool, reason string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	st, err := s.Load()
+	if err != nil {
+		return err
+	}
+	p, ok := st.Plugins[id]
+	if !ok {
+		return fmt.Errorf("%w: %s", ErrNotInstalled, id)
+	}
+	if on {
+		reason = ""
+	}
+	p.Enabled, p.DisabledReason = on, reason
+	return s.save(st)
+}

@@ -24,6 +24,7 @@ DELETE /api/v1/never-add/{id} auth=manage_library scope=write assurance=false pa
 DELETE /api/v1/outside-lists/{id} auth=settings scope=write assurance=false part=media
 DELETE /api/v1/own-traits/{id} auth=settings scope=write assurance=false part=media
 DELETE /api/v1/pick-rules/{id} auth=settings scope=write assurance=false part=media
+DELETE /api/v1/plugins/{id} auth=owner scope=admin assurance=false part=core
 DELETE /api/v1/settings/old-app-api/keys/{side} auth=settings scope=admin assurance=true part=core
 DELETE /api/v1/sources/{id} auth=settings scope=write assurance=false part=core
 DELETE /api/v1/subtitle-sites/{id} auth=settings scope=write assurance=false part=subtitles
@@ -183,6 +184,7 @@ GET /api/v1/people/shelves/{id} auth=signed_in scope=read assurance=false part=m
 GET /api/v1/people/{id} auth=signed_in scope=read assurance=false part=movies
 GET /api/v1/pick-rules auth=manage_library scope=read assurance=false part=media
 GET /api/v1/pick-rules/{id} auth=manage_library scope=read assurance=false part=media
+GET /api/v1/plugins auth=owner scope=admin assurance=false part=core
 GET /api/v1/public/signin-art auth=public scope=admin assurance=false part=core
 GET /api/v1/public/signin-pic/t/p/{size}/{file} auth=public scope=admin assurance=false part=core
 GET /api/v1/rename auth=manage_library scope=read assurance=false part=media
@@ -437,6 +439,9 @@ POST /api/v1/parts/{part}/restart auth=users scope=control assurance=false part=
 POST /api/v1/people/{id}/movies/review auth=signed_in scope=read assurance=false part=movies
 POST /api/v1/pick-rules auth=settings scope=write assurance=false part=media
 POST /api/v1/pick-rules/{id}/trash auth=settings scope=write assurance=false part=media
+POST /api/v1/plugins/{id}/install auth=owner scope=admin assurance=false part=core
+POST /api/v1/plugins/{id}/start auth=owner scope=admin assurance=false part=core
+POST /api/v1/plugins/{id}/stop auth=owner scope=admin assurance=false part=core
 POST /api/v1/releases/{id}/choose auth=manage_library scope=write assurance=false part=media
 POST /api/v1/releases/{id}/turn-down auth=manage_library scope=write assurance=false part=media
 POST /api/v1/rename auth=manage_library scope=write assurance=false part=media

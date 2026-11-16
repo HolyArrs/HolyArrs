@@ -707,7 +707,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// the hosted music source answers from them first.
 	pkgs, own := &music.PackageSync{Store: s, Source: hosted.Service}, ownExtras(hosted)
 	hosted.Service.SetLocalMusic(pkgs)
-	a := buildHandlers(services{Bridges: bridges, Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
+	a := buildHandlers(services{Plugins: startPlugins(ctx, c), Bridges: bridges, Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: metadataUp(hosted), MetadataModes: hosted.Modes, MetadataTest: hosted.TestKey, MetadataEnvKey: hosted.OwnKey, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err

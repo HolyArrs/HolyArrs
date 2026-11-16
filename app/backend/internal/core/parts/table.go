@@ -100,6 +100,11 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/auth/ai-connect":                         Core,
 	"POST /api/v1/auth/ai-connect":                        Core,
 
+	"GET /api/v1/plugins":                               Core,
+	"POST /api/v1/plugins/{id}/install":                 Core,
+	"POST /api/v1/plugins/{id}/start":                   Core,
+	"POST /api/v1/plugins/{id}/stop":                    Core,
+	"DELETE /api/v1/plugins/{id}":                       Core,
 	"GET /api/v1/data-packs":                            Core,
 	"GET /api/v1/data-packs/{id}":                       Core,
 	"GET /api/v1/data-packs/{id}/preview":               Core,

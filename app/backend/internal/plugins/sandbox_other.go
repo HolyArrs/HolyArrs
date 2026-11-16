@@ -8,3 +8,6 @@ import "os/exec"
 func RunSandboxHelper() {}
 
 func killProcess(cmd *exec.Cmd) error { return cmd.Process.Kill() }
+
+// DefaultRunner refuses: plugins run only on Linux.
+func DefaultRunner() (Runner, ActiveLimits, error) { return nil, ActiveLimits{}, ErrNotLinux }

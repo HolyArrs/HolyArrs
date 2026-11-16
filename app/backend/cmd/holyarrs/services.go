@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
 	"log"
@@ -40,6 +41,8 @@ import (
 // them to every module.
 type services struct {
 	Store *database.Store
+	// Plugins runs the Plugin Engine; nil answers that plugins are not set up.
+	Plugins *plugins.Engine
 	// DLSync is the background download reader (downloads.sync = on); nil
 	// keeps the Downloads view's own client reads.
 	DLSync   *downloads.Sync

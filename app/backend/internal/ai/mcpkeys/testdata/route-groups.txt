@@ -24,6 +24,7 @@ DELETE /api/v1/never-add/{id} delete
 DELETE /api/v1/outside-lists/{id} delete
 DELETE /api/v1/own-traits/{id} delete
 DELETE /api/v1/pick-rules/{id} delete
+DELETE /api/v1/plugins/{id} admin
 DELETE /api/v1/settings/old-app-api/keys/{side} admin
 DELETE /api/v1/sources/{id} delete
 DELETE /api/v1/subtitle-sites/{id} delete
@@ -183,6 +184,7 @@ GET /api/v1/people/shelves/{id} see
 GET /api/v1/people/{id} see
 GET /api/v1/pick-rules see
 GET /api/v1/pick-rules/{id} see
+GET /api/v1/plugins admin
 GET /api/v1/public/signin-art see
 GET /api/v1/public/signin-pic/t/p/{size}/{file} see
 GET /api/v1/rename see
@@ -437,6 +439,9 @@ POST /api/v1/parts/{part}/restart admin
 POST /api/v1/people/{id}/movies/review add
 POST /api/v1/pick-rules settings
 POST /api/v1/pick-rules/{id}/trash delete
+POST /api/v1/plugins/{id}/install admin
+POST /api/v1/plugins/{id}/start admin
+POST /api/v1/plugins/{id}/stop admin
 POST /api/v1/releases/{id}/choose control
 POST /api/v1/releases/{id}/turn-down control
 POST /api/v1/rename control

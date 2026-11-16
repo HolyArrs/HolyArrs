@@ -88,7 +88,7 @@ var roots = []string{
 
 // adminPrefixes cover sign-in, people, keys and the whole app.
 var adminPrefixes = []string{
-	"/api/v1/auth", "/api/v1/users", "/api/v1/backups", "/api/v1/app", "/api/v1/system", "/api/v1/data-packs",
+	"/api/v1/auth", "/api/v1/users", "/api/v1/backups", "/api/v1/app", "/api/v1/system", "/api/v1/data-packs", "/api/v1/plugins",
 	"/api/v1/migrate", "/api/v1/logs", "/api/v1/support", "/api/v1/parts", "/api/v1/stages", "/api/v1/links",
 	"/api/v1/settings/old-app-api/keys", "/api/v1/settings/import-secrets", "/api/v1/settings/url-base",
 	"/oauth", "/.well-known", "/invite", "/login", "/system",

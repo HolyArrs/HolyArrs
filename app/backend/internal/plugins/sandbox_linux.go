@@ -280,3 +280,9 @@ func killProcess(cmd *exec.Cmd) error {
 	}
 	return cmd.Process.Kill()
 }
+
+// DefaultRunner runs plugins in the LinuxSandbox and reports its caps.
+func DefaultRunner() (Runner, ActiveLimits, error) {
+	sb := LinuxSandbox{}
+	return ExecRunner{Sandbox: sb}, sb.Active(), nil
+}
