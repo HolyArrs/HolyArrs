@@ -31479,7 +31479,7 @@
     },
     "/api/v1/users/media-accounts": {
       "get": {
-        "description": "Owner only: every connected Jellyfin and Emby server with its accounts, to link a person to one.",
+        "description": "Owner only: every connected Jellyfin and Emby server with its accounts, to link a person to one. An account already linked to someone else carries taken_by (that person's id) and taken_name.",
         "operationId": "serverAccounts",
         "responses": {
           "200": {

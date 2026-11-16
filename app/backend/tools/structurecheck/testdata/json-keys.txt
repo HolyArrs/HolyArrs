@@ -1676,6 +1676,8 @@ tagline
 tags
 tail
 taken
+taken_by
+taken_name
 tallies
 target
 target_path
