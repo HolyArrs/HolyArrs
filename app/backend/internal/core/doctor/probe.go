@@ -17,11 +17,19 @@ const probeWait = 3 * time.Second
 // probe is Probe; tests swap it out.
 var probe = Probe
 
+// Dial opens a connection the way the caller's own calls do, with its network
+// policy checked on every address after DNS.
+type Dial func(ctx context.Context, network, addr string) (net.Conn, error)
+
 // Probe looks at rawURL once more in the other speech, for a call that failed
 // without a cause: an http:// port that finishes a TLS handshake speaks
 // https, and an https:// port that answers plain "HTTP/" speaks http.
-// Anything else stays Unknown.
-func Probe(rawURL string) Cause {
+// Anything else stays Unknown. It connects only through dial, so the
+// caller's network policy holds; with no dial it does not look.
+func Probe(rawURL string, dial Dial) Cause {
+	if dial == nil {
+		return Unknown
+	}
 	u, err := url.Parse(strings.TrimSpace(rawURL))
 	if err != nil || u.Hostname() == "" {
 		return Unknown
@@ -33,8 +41,7 @@ func Probe(rawURL string) Cause {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), probeWait)
 	defer cancel()
-	var d net.Dialer
-	conn, err := d.DialContext(ctx, "tcp", net.JoinHostPort(u.Hostname(), port))
+	conn, err := dial(ctx, "tcp", net.JoinHostPort(u.Hostname(), port))
 	if err != nil {
 		return Unknown
 	}

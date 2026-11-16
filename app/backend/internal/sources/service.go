@@ -21,6 +21,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
@@ -339,12 +340,25 @@ func CauseOf(err error) doctor.Cause {
 }
 
 // CauseAt is CauseOf for a call to rawURL: a connection closed without an
-// answer reads as an http/https or port mix-up.
-func CauseAt(err error, rawURL string) doctor.Cause {
+// answer reads as an http/https or port mix-up. dial is ProbeDial.
+func CauseAt(err error, rawURL string, dial doctor.Dial) doctor.Cause {
 	if err == nil {
 		return doctor.Unknown
 	}
-	return doctor.At(CauseOf(err), err.Error(), rawURL)
+	return doctor.At(CauseOf(err), err.Error(), rawURL, dial)
+}
+
+// ProbeDial is the way a second look at x may connect: through its network
+// rule, and not at all when a proxy carries its calls.
+func ProbeDial(x domain.Source) doctor.Dial {
+	if x.ProxyURL != "" {
+		return nil
+	}
+	allow := outbound.PublicOnly
+	if x.AllowLocal {
+		allow = outbound.NotMetadata
+	}
+	return outbound.PolicyDialer(allow).DialContext
 }
 
 // Explain turns a failed call into plain words for the person.
@@ -373,8 +387,8 @@ func Explain(err error) string {
 
 // ExplainVia is Explain for one Source: when it searches through Prowlarr or
 // Jackett and that app does not answer, it names that app and what to do.
-func ExplainVia(sourceURL string, err error) string {
-	c := CauseAt(err, sourceURL)
+func ExplainVia(sourceURL string, err error, dial doctor.Dial) string {
+	c := CauseAt(err, sourceURL, dial)
 	text := Explain(err)
 	if line := doctor.Line(c); line != "" {
 		text = line

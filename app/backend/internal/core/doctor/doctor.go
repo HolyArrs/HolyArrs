@@ -193,8 +193,10 @@ func Explain(err error) (Cause, string, bool) {
 // At refines a cause with the address that was called. A bare hang-up is
 // as likely a restart or a dropped connection as a wrong port, so it stays
 // unknown unless an https:// handshake ended in EOF, or a second look at the
-// address (Probe) finds it speaks the other of http and https.
-func At(c Cause, msg, rawURL string) Cause {
+// address (Probe) finds it speaks the other of http and https. dial is the
+// caller's policy-checked dial, nil when a proxy carries its calls; then, and
+// after a policy refusal, there is no second look.
+func At(c Cause, msg, rawURL string, dial Dial) Cause {
 	if c != Unknown {
 		return c
 	}
@@ -203,14 +205,17 @@ func At(c Cause, msg, rawURL string) Cause {
 	if handshake && strings.HasSuffix(m, "eof") && strings.HasPrefix(strings.ToLower(strings.TrimSpace(rawURL)), "https://") {
 		return UseHTTP
 	}
-	return probe(rawURL)
+	if dial == nil || strings.Contains(m, strings.ToLower(outbound.ErrAddressRefused.Error())) {
+		return Unknown
+	}
+	return probe(rawURL, dial)
 }
 
 // ExplainAt is Explain for a call to rawURL.
-func ExplainAt(err error, rawURL string) (Cause, string, bool) {
+func ExplainAt(err error, rawURL string, dial Dial) (Cause, string, bool) {
 	if err == nil {
 		return Unknown, "", false
 	}
-	c := At(Of(err), err.Error(), rawURL)
+	c := At(Of(err), err.Error(), rawURL, dial)
 	return c, causeWords[c], c != Unknown
 }

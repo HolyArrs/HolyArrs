@@ -7,8 +7,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 // hangUp listens on 127.0.0.1 and runs serve on every connection.
@@ -54,7 +57,7 @@ func TestPlainHTTPToHTTPSPort(t *testing.T) {
 		c.Write([]byte{0x15, 0x03, 0x01, 0x00, 0x02, 0x02, 0x46})
 	})
 	err := call(t, "http://"+alert+"/api")
-	if got := At(Of(err), err.Error(), "http://"+alert+"/api"); got != UseHTTPS {
+	if got := at(Of(err), err.Error(), "http://"+alert+"/api"); got != UseHTTPS {
 		t.Errorf("TLS alert on a plain read: %v -> %q", err, got)
 	}
 	// A TLS port that hangs up on plain http: only asking again finds it.
@@ -63,7 +66,7 @@ func TestPlainHTTPToHTTPSPort(t *testing.T) {
 	tlsSrv.StartTLS()
 	defer tlsSrv.Close()
 	plain := "http://" + strings.TrimPrefix(tlsSrv.URL, "https://")
-	if got := At(Unknown, "read: connection reset by peer", plain); got != UseHTTPS {
+	if got := at(Unknown, "read: connection reset by peer", plain); got != UseHTTPS {
 		t.Errorf("reset from a TLS port: %q", got)
 	}
 }
@@ -73,16 +76,16 @@ func TestHTTPSToPlainPort(t *testing.T) {
 	defer plain.Close()
 	tlsURL := "https://" + strings.TrimPrefix(plain.URL, "http://")
 	for _, msg := range []string{"qbittorrent app/version: EOF", "the server did not answer", "did not answer"} {
-		if got := At(OfText(msg), msg, tlsURL); got != UseHTTP {
+		if got := at(OfText(msg), msg, tlsURL); got != UseHTTP {
 			t.Errorf("%q on a plain port: %q", msg, got)
 		}
 	}
 	// A plain port that says nothing and closes: no guess.
 	silent := hangUp(t, func(net.Conn) {})
-	if got := At(Unknown, "EOF", "https://"+silent); got != Unknown {
+	if got := at(Unknown, "EOF", "https://"+silent); got != Unknown {
 		t.Errorf("silent hang-up: %q", got)
 	}
-	if got := At(Unknown, "EOF", "http://"+silent); got != Unknown {
+	if got := at(Unknown, "EOF", "http://"+silent); got != Unknown {
 		t.Errorf("silent hang-up on http: %q", got)
 	}
 }
@@ -115,5 +118,38 @@ func TestOtherAppAnswered(t *testing.T) {
 		if got := Of(Other(c.h, []byte(c.body), c.own...)); got != c.want {
 			t.Errorf("%s: %q, want %q", c.name, got, c.want)
 		}
+	}
+}
+
+// at is At with a dial that lets every address through.
+func at(c Cause, msg, rawURL string) Cause {
+	var d net.Dialer
+	return At(c, msg, rawURL, d.DialContext)
+}
+
+func TestProbeKeepsThePolicy(t *testing.T) {
+	var hits atomic.Int32
+	tlsSrv := httptest.NewUnstartedServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	tlsSrv.Config.ConnState = func(net.Conn, http.ConnState) { hits.Add(1) }
+	tlsSrv.StartTLS()
+	defer tlsSrv.Close()
+	plain := "http://" + strings.TrimPrefix(tlsSrv.URL, "https://")
+	// The policy refuses this machine: the second look never connects.
+	refuse := outbound.PolicyDialer(outbound.PublicOnly).DialContext
+	if got := At(Unknown, "read: connection reset by peer", plain, refuse); got != Unknown {
+		t.Errorf("policy-refused probe: %q", got)
+	}
+	// No dial (a proxy carries the calls): no second look at all.
+	if got := At(Unknown, "read: connection reset by peer", plain, nil); got != Unknown {
+		t.Errorf("probe without a dial: %q", got)
+	}
+	// An error the policy gave is never looked at again.
+	open := (&net.Dialer{}).DialContext
+	if got := At(Unknown, "dial tcp: "+outbound.ErrAddressRefused.Error(), plain, open); got != Unknown {
+		t.Errorf("probe after a policy refusal: %q", got)
+	}
+	time.Sleep(100 * time.Millisecond)
+	if n := hits.Load(); n != 0 {
+		t.Errorf("the probe reached the server %d times", n)
 	}
 }

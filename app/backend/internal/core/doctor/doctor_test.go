@@ -164,7 +164,7 @@ func TestExplainUnknownKeepsCallerWords(t *testing.T) {
 }
 
 func TestAtReadsAHangUp(t *testing.T) {
-	probe = func(string) Cause { return Unknown }
+	probe = func(string, Dial) Cause { return Unknown }
 	defer func() { probe = Probe }()
 	cases := []struct {
 		msg, url string
@@ -179,17 +179,17 @@ func TestAtReadsAHangUp(t *testing.T) {
 		{"something odd", "https://x", Unknown},
 	}
 	for _, c := range cases {
-		if got := At(OfText(c.msg), c.msg, c.url); got != c.want {
+		if got := at(OfText(c.msg), c.msg, c.url); got != c.want {
 			t.Errorf("At(%q, %q) = %q, want %q", c.msg, c.url, got, c.want)
 		}
 	}
-	if got := At(Unknown, "tls: handshake failure: EOF", "https://x"); got != UseHTTP {
+	if got := at(Unknown, "tls: handshake failure: EOF", "https://x"); got != UseHTTP {
 		t.Errorf("an https handshake EOF: %q", got)
 	}
-	if got := At(Unknown, "tls: handshake failure: EOF", "http://x"); got != Unknown {
+	if got := at(Unknown, "tls: handshake failure: EOF", "http://x"); got != Unknown {
 		t.Errorf("a handshake EOF on http: %q", got)
 	}
-	if got := At(Refused, "EOF", "https://x"); got != Refused {
+	if got := at(Refused, "EOF", "https://x"); got != Refused {
 		t.Errorf("a known cause must stay: %q", got)
 	}
 }

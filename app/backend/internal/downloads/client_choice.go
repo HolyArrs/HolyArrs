@@ -62,17 +62,11 @@ func Client(base string, allowLocal bool) *http.Client {
 	if !allowLocal {
 		allow = outbound.PublicOnly
 	}
-	d := outbound.PolicyDialer(allow)
 	host, scheme := "", ""
 	if u, err := url.Parse(base); err == nil {
 		host, scheme = u.Host, u.Scheme
 	}
-	dial := func(ctx context.Context, network, addr string) (net.Conn, error) {
-		if h, _, err := net.SplitHostPort(addr); err == nil && metadataName(h) {
-			return nil, &net.OpError{Op: "dial", Net: network, Err: outbound.ErrAddressRefused}
-		}
-		return d.DialContext(ctx, network, addr)
-	}
+	dial := policyDial(allow)
 	return &http.Client{
 		Timeout:   clientTimeout,
 		Transport: &http.Transport{Proxy: nil, DialContext: dial, TLSHandshakeTimeout: 10 * time.Second, MaxIdleConnsPerHost: 2},
@@ -359,4 +353,16 @@ func (m *Manager) settings(ctx context.Context) settings {
 		st.actAfter = m.ActAfter
 	}
 	return st
+}
+
+// policyDial connects only where allow says yes, after DNS, and never to a
+// metadata name.
+func policyDial(allow func(net.IP) bool) func(ctx context.Context, network, addr string) (net.Conn, error) {
+	d := outbound.PolicyDialer(allow)
+	return func(ctx context.Context, network, addr string) (net.Conn, error) {
+		if h, _, err := net.SplitHostPort(addr); err == nil && metadataName(h) {
+			return nil, &net.OpError{Op: "dial", Net: network, Err: outbound.ErrAddressRefused}
+		}
+		return d.DialContext(ctx, network, addr)
+	}
 }

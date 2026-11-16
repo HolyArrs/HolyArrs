@@ -103,7 +103,7 @@ func TestSourceThroughBridgeNamesTheBridge(t *testing.T) {
 	addr := l.Addr().String()
 	l.Close()
 	_, err = New(Config{URL: "http://" + addr + "/1/api", APIKey: "k", AllowLocal: true, Timeout: time.Second}).Test(context.Background())
-	if got := ExplainVia("http://"+addr+"/1/api", err); !strings.HasPrefix(got, "Prowlarr isn't answering") {
+	if got := ExplainVia("http://"+addr+"/1/api", err, nil); !strings.HasPrefix(got, "Prowlarr isn't answering") {
 		t.Fatalf("got %q", got)
 	}
 }

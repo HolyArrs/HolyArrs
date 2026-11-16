@@ -156,7 +156,7 @@ func TestDownloaderTestNamesEachCause(t *testing.T) {
 				if err == nil {
 					t.Fatal("the test passed")
 				}
-				cause, text := explainDownloader(err, tc.base)
+				cause, text := explainDownloader(err, tc.base, true)
 				if cause != tc.want {
 					t.Fatalf("cause %q, want %q (error %v)", cause, tc.want, err)
 				}
@@ -184,14 +184,14 @@ func TestDownloaderTestNamesEachCause(t *testing.T) {
 }
 
 func TestDownloaderTestNamesMissingCategory(t *testing.T) {
-	cause, text := explainDownloader(fmt.Errorf("%w (tv)", ErrNoCategory), "http://sab:8080")
+	cause, text := explainDownloader(fmt.Errorf("%w (tv)", ErrNoCategory), "http://sab:8080", false)
 	if cause != doctor.Category || !strings.Contains(text, "tv") || doctor.OfText(text) != doctor.Category {
 		t.Fatalf("%q %q", cause, text)
 	}
 }
 
 func TestDownloaderUnknownErrorKeepsItsWords(t *testing.T) {
-	cause, text := explainDownloader(fmt.Errorf("qbittorrent app/version: 502 Bad Gateway"), "http://qbit:8080")
+	cause, text := explainDownloader(fmt.Errorf("qbittorrent app/version: 502 Bad Gateway"), "http://qbit:8080", false)
 	if cause != doctor.Unknown || !strings.Contains(text, "502") {
 		t.Fatalf("%q %q", cause, text)
 	}

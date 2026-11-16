@@ -510,14 +510,18 @@ func (l *Linker) token(ctx context.Context, m domain.MediaServer) (string, error
 func client(m domain.MediaServer) *http.Client {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.Proxy = nil
-	if m.AllowLocal {
-		// The local network, but never link-local or cloud metadata.
-		t.DialContext = outbound.PolicyDialer(outbound.NotMetadata).DialContext
-	} else {
-		t.DialContext = outbound.PolicyDialer(outbound.PublicOnly).DialContext
-	}
+	t.DialContext = dialer(m)
 	return &http.Client{Timeout: 20 * time.Second, Transport: t,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+}
+
+// dialer connects under m's network rule: the local network only when
+// allowed, and never link-local or cloud metadata.
+func dialer(m domain.MediaServer) doctor.Dial {
+	if m.AllowLocal {
+		return outbound.PolicyDialer(outbound.NotMetadata).DialContext
+	}
+	return outbound.PolicyDialer(outbound.PublicOnly).DialContext
 }
 
 // maxAnswer is the most bytes of one media server answer read.
@@ -573,7 +577,7 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 			err = ue.Err
 		}
 		// The line never holds the address or the token.
-		if c := doctor.At(doctor.Of(err), err.Error(), m.URL); c != doctor.Unknown {
+		if c := doctor.At(doctor.Of(err), err.Error(), m.URL, dialer(m)); c != doctor.Unknown {
 			return nil, doctor.Mark(c, nil)
 		}
 		return nil, errors.New("the server did not answer")

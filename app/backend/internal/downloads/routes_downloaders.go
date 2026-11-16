@@ -335,7 +335,7 @@ func (a *Web) abandonDownloaderAttempt(w http.ResponseWriter, r *http.Request) {
 // holds a key: adapters strip addresses from network errors.
 // A known cause gets the doctor's line, the same for every kind of app; the
 // two qBittorrent sign-in refusals keep their own, which say more.
-func explainDownloader(err error, rawURL string) (doctor.Cause, string) {
+func explainDownloader(err error, rawURL string, allowLocal bool) (doctor.Cause, string) {
 	switch {
 	case errors.Is(err, ErrQbitBanned):
 		return doctor.Auth, "qBittorrent has banned this address after too many wrong passwords. Wait for the ban to end (an hour by default), check the password, then test again."
@@ -354,7 +354,7 @@ func explainDownloader(err error, rawURL string) (doctor.Cause, string) {
 	case errors.Is(err, outbound.ErrAddressRefused):
 		return doctor.Blocked, doctor.Line(doctor.Blocked)
 	}
-	if c, line, ok := doctor.ExplainAt(err, rawURL); ok {
+	if c, line, ok := doctor.ExplainAt(err, rawURL, probeDial(allowLocal)); ok {
 		return c, line
 	}
 	return doctor.Unknown, "It did not answer: " + firstLine(err.Error())
@@ -387,7 +387,7 @@ func (a *Web) TestDownloader(w http.ResponseWriter, r *http.Request) {
 	h, err := m.CheckNow(ctx, d)
 	out := map[string]any{"ok": err == nil, "ms": time.Since(start).Milliseconds()}
 	if err != nil {
-		cause, text := explainDownloader(err, d.URL)
+		cause, text := explainDownloader(err, d.URL, d.AllowLocal)
 		out["text"], out["cause"] = text, cause
 	} else {
 		out["text"] = "It answered: " + d.Adapter + " " + h.Version + "."
@@ -708,4 +708,12 @@ func orZero(p *float64) *float64 {
 		return new(float64)
 	}
 	return p
+}
+
+// probeDial is the Downloader's own way out, for a second look at its address.
+func probeDial(allowLocal bool) doctor.Dial {
+	if allowLocal {
+		return policyDial(outbound.NotMetadata)
+	}
+	return policyDial(outbound.PublicOnly)
 }
