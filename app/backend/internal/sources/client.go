@@ -17,6 +17,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
@@ -284,7 +285,7 @@ func (c *Client) send(ctx context.Context, method, raw string, payload []byte, h
 			}
 			return nil, &Error{Kind: KindBlocked, Msg: c.scrub(msg)}
 		}
-		return nil, &Error{Kind: KindDown, Msg: c.scrub(err.Error())}
+		return nil, &Error{Kind: KindDown, Msg: c.scrub(err.Error()), cause: err}
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 16<<20))
 	if closeErr := resp.Body.Close(); err == nil {
@@ -309,6 +310,8 @@ func (c *Client) send(ctx context.Context, method, raw string, payload []byte, h
 		return nil, &Error{Kind: KindLoginRefused, Msg: resp.Status}
 	case resp.StatusCode >= 500:
 		return nil, &Error{Kind: KindDown, Msg: resp.Status}
+	case resp.StatusCode == http.StatusBadRequest && doctor.Answer(resp.StatusCode, body) != nil:
+		return nil, &Error{Kind: KindDown, Msg: resp.Status, cause: doctor.Answer(resp.StatusCode, body)}
 	case resp.StatusCode != http.StatusOK:
 		return nil, &Error{Kind: KindBroken, Msg: resp.Status}
 	}
@@ -363,7 +366,8 @@ func (s capsSearch) params() []string {
 }
 
 type capsXML struct {
-	Limits struct {
+	XMLName xml.Name
+	Limits  struct {
 		Max int `xml:"max,attr"`
 	} `xml:"limits"`
 	Searching struct {
@@ -393,6 +397,9 @@ func (c *Client) Caps(ctx context.Context) (Caps, error) {
 	var x capsXML
 	if err := xml.Unmarshal(body, &x); err != nil {
 		return Caps{}, &Error{Kind: KindBroken, Msg: "caps are not valid XML: " + err.Error()}
+	}
+	if strings.EqualFold(x.XMLName.Local, "html") {
+		return Caps{}, &Error{Kind: KindBroken, Msg: "caps are not valid XML: a web page answered"}
 	}
 	caps := Caps{
 		Search: x.Searching.Search.on(), MovieSearch: x.Searching.Movie.on(), TVSearch: x.Searching.TV.on(),

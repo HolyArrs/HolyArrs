@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Порог выхода пропускается: этот фильм пока не считается вышедшим",
 	"server.sources.this-version-already-has-a-good": "У этого варианта уже есть достаточно хорошая копия; новая её заменит",
 	"server.requests.removed-the-request-for": "{name} удалил(а) запрос на {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex не передал код аккаунта этого человека, поэтому его список просмотра не читается."
+	"server.requests.plex-gave-no-account-code-for": "Plex не передал код аккаунта этого человека, поэтому его список просмотра не читается.",
+	"server.core.another-app-answered-check-the-port": "Ответило другое приложение. Проверьте порт: он занят чем-то другим.",
+	"server.core.blocked-local-network-turn-on-may": "Заблокировано: локальная сеть. Включите «Доступ к локальной сети», если оно работает дома.",
+	"server.core.category-missing-add-it-in-the": "Нет категории. Добавьте её в приложении загрузок или выберите здесь другую.",
+	"server.core.certificate-not-trusted-use-the-name": "Сертификат не доверенный. Укажите имя из его сертификата или http://, если сертификата нет.",
+	"server.core.it-speaks-http-not-https-start": "Оно работает по http, а не https. Начните адрес с http://.",
+	"server.core.it-speaks-https-not-http-start": "Оно работает по https, а не http. Начните адрес с https://.",
+	"server.core.key-or-password-refused-check-them": "Ключ или пароль отклонены. Проверьте их и повторите проверку.",
+	"server.core.name-not-found-check-the-host": "Имя не найдено. Проверьте имя хоста в адресе.",
+	"server.core.no-answer-in-time-check-the": "Нет ответа вовремя. Проверьте адрес и что брандмауэр не мешает.",
+	"server.core.nothing-answers-on-that-port-check": "На этом порту ничего не отвечает. Проверьте порт и что приложение запущено.",
+	"server.core.nothing-at-that-path-check-the": "По этому пути ничего нет. Проверьте путь после порта, например /sabnzbd."
 }

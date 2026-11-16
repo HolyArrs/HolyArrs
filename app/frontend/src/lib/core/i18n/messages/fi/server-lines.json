@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Julkaisuportti ohitetaan: tämän elokuvan ei lasketa vielä ilmestyneen",
 	"server.sources.this-version-already-has-a-good": "Tällä versiolla on jo riittävän hyvä kopio; uusi korvaa sen",
 	"server.requests.removed-the-request-for": "{name} poisti pyynnön: {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex ei antanut tälle henkilölle tilikoodia, joten hänen katselulistaansa ei lueta."
+	"server.requests.plex-gave-no-account-code-for": "Plex ei antanut tälle henkilölle tilikoodia, joten hänen katselulistaansa ei lueta.",
+	"server.core.another-app-answered-check-the-port": "Toinen sovellus vastasi. Tarkista portti: se kuuluu jollekin muulle.",
+	"server.core.blocked-local-network-turn-on-may": "Estetty: paikallisverkko. Ota \"Tavoita paikallisverkko\" käyttöön, jos se toimii kotona.",
+	"server.core.category-missing-add-it-in-the": "Kategoria puuttuu. Lisää se lataussovellukseen tai valitse tästä toinen.",
+	"server.core.certificate-not-trusted-use-the-name": "Varmenteeseen ei luoteta. Käytä sen varmenteessa olevaa nimeä tai http://, jos varmennetta ei ole.",
+	"server.core.it-speaks-http-not-https-start": "Se puhuu http:tä, ei https:ää. Aloita osoite http://.",
+	"server.core.it-speaks-https-not-http-start": "Se puhuu https:ää, ei http:tä. Aloita osoite https://.",
+	"server.core.key-or-password-refused-check-them": "Avain tai salasana hylättiin. Tarkista ne ja testaa uudelleen.",
+	"server.core.name-not-found-check-the-host": "Nimeä ei löytynyt. Tarkista osoitteen isäntänimi.",
+	"server.core.no-answer-in-time-check-the": "Ei vastausta ajoissa. Tarkista osoite ja ettei palomuuri estä.",
+	"server.core.nothing-answers-on-that-port-check": "Mikään ei vastaa siinä portissa. Tarkista portti ja että sovellus on käynnissä.",
+	"server.core.nothing-at-that-path-check-the": "Polussa ei ole mitään. Tarkista portin jälkeinen polku, esimerkiksi /sabnzbd."
 }

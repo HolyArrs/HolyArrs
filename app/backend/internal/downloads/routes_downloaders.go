@@ -11,6 +11,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 
@@ -332,26 +333,25 @@ func (a *Web) abandonDownloaderAttempt(w http.ResponseWriter, r *http.Request) {
 
 // explainDownloader says a failed test in plain words. The error never
 // holds a key: adapters strip addresses from network errors.
-func explainDownloader(err error) string {
+// A known cause gets the doctor's line, the same for every kind of app; the
+// two qBittorrent sign-in refusals keep their own, which say more.
+func explainDownloader(err error, rawURL string) (doctor.Cause, string) {
 	switch {
 	case errors.Is(err, ErrQbitBanned):
-		return "qBittorrent has banned this address after too many wrong passwords. Wait for the ban to end (an hour by default), check the password, then test again."
+		return doctor.Auth, "qBittorrent has banned this address after too many wrong passwords. Wait for the ban to end (an hour by default), check the password, then test again."
 	case errors.Is(err, ErrQbitKeyRefused):
-		return "qBittorrent turned down the API key. Check the key; the API key needs qBittorrent 5.2 or newer, so on an older qBittorrent sign in with user name and password instead."
+		return doctor.Auth, "qBittorrent turned down the API key. Check the key; the API key needs qBittorrent 5.2 or newer, so on an older qBittorrent sign in with user name and password instead."
 	case errors.Is(err, ErrAuth):
-		return "It turned down the key or sign-in. Check them and test again."
+		return doctor.Auth, doctor.Line(doctor.Auth)
 	case errors.Is(err, ErrNoCategory):
-		return "It answered, but " + err.Error() + "."
+		return doctor.Category, doctor.Line(doctor.Category)
 	case errors.Is(err, outbound.ErrAddressRefused):
-		return "The address is on this machine or the local network. Turn on May reach the local network if that is where it runs."
-	case errors.Is(err, context.DeadlineExceeded):
-		return "It did not answer within 20 seconds."
+		return doctor.Blocked, doctor.Line(doctor.Blocked)
 	}
-	msg := firstLine(err.Error())
-	if strings.Contains(msg, "connection refused") {
-		return "Nothing answers at that address and port. Is it running?"
+	if c, line, ok := doctor.ExplainAt(err, rawURL); ok {
+		return c, line
 	}
-	return "It did not answer: " + msg
+	return doctor.Unknown, "It did not answer: " + firstLine(err.Error())
 }
 
 // mayKeepSaveRoot says whether a test may store the save root. Like an edit,
@@ -381,7 +381,8 @@ func (a *Web) TestDownloader(w http.ResponseWriter, r *http.Request) {
 	h, err := m.CheckNow(ctx, d)
 	out := map[string]any{"ok": err == nil, "ms": time.Since(start).Milliseconds()}
 	if err != nil {
-		out["text"] = explainDownloader(err)
+		cause, text := explainDownloader(err, d.URL)
+		out["text"], out["cause"] = text, cause
 	} else {
 		out["text"] = "It answered: " + d.Adapter + " " + h.Version + "."
 		out["version"] = h.Version

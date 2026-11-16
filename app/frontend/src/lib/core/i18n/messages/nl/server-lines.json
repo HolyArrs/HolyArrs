@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "De Releasedrempel wordt overgeslagen: deze film telt nog niet als uit",
 	"server.sources.this-version-already-has-a-good": "Deze variant heeft al een kopie die goed genoeg is; de nieuwe vervangt die",
 	"server.requests.removed-the-request-for": "{name} heeft het verzoek voor {a} verwijderd",
-	"server.requests.plex-gave-no-account-code-for": "Plex gaf geen accountcode voor deze persoon, dus zijn of haar kijklijst wordt niet gelezen."
+	"server.requests.plex-gave-no-account-code-for": "Plex gaf geen accountcode voor deze persoon, dus zijn of haar kijklijst wordt niet gelezen.",
+	"server.core.another-app-answered-check-the-port": "Een andere app antwoordde. Controleer de poort: die hoort bij iets anders.",
+	"server.core.blocked-local-network-turn-on-may": "Geblokkeerd: lokaal netwerk. Zet \"Het lokale netwerk bereiken\" aan als het thuis draait.",
+	"server.core.category-missing-add-it-in-the": "Categorie ontbreekt. Voeg hem toe in de download-app, of kies hier een andere.",
+	"server.core.certificate-not-trusted-use-the-name": "Certificaat niet vertrouwd. Gebruik de naam op het certificaat, of http:// als het er geen heeft.",
+	"server.core.it-speaks-http-not-https-start": "Het spreekt http, geen https. Begin het adres met http://.",
+	"server.core.it-speaks-https-not-http-start": "Het spreekt https, geen http. Begin het adres met https://.",
+	"server.core.key-or-password-refused-check-them": "Sleutel of wachtwoord geweigerd. Controleer ze en test opnieuw.",
+	"server.core.name-not-found-check-the-host": "Naam niet gevonden. Controleer de hostnaam in het adres.",
+	"server.core.no-answer-in-time-check-the": "Geen antwoord op tijd. Controleer het adres en of er geen firewall in de weg zit.",
+	"server.core.nothing-answers-on-that-port-check": "Niets antwoordt op die poort. Controleer de poort en of de app draait.",
+	"server.core.nothing-at-that-path-check-the": "Niets op dat pad. Controleer het pad na de poort, bijvoorbeeld /sabnzbd."
 }

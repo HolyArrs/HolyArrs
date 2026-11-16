@@ -1,5 +1,6 @@
 // Status page rows: linked apps, checks and jobs as one kind of row, grouped in a fixed order.
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 import type { AlertView, HealthCheck } from '../core/types.ts';
 import type { OutsideList } from '../requests/index.ts';
 import type { StageState } from './types.ts';
@@ -187,7 +188,7 @@ export function buildRows(i: StatusInput): StatusRow[] {
 		if (!m) continue;
 		const id = linkId(s.key);
 		const check: CheckAction | undefined = id && (s.kind === 'source' || s.kind === 'downloader') ? { kind: s.kind, id } : undefined;
-		rows.push({ group: m.g, key: s.key, name: s.name, ...linkTone(s), reason: s.reason, at: realTime(s.since), fix: m.fix, check });
+		rows.push({ group: m.g, key: s.key, name: s.name, ...linkTone(s), reason: serverWords(s.reason), at: realTime(s.since), fix: m.fix, check });
 	}
 	for (const c of i.checks ?? []) {
 		if (typeof checkFix[c.kind] !== 'string') continue;
@@ -207,7 +208,7 @@ export function buildRows(i: StatusInput): StatusRow[] {
 	for (const l of i.lists ?? []) {
 		const base = { group: 'lists' as const, key: `list:${l.id}`, name: l.name, at: l.last_synced_at, fix: '/settings/outside-lists' };
 		if (!l.enabled) rows.push({ ...base, tone: 'idle', word: t('health.run.off'), reason: '' });
-		else if (l.last_error) rows.push({ ...base, tone: 'fail', word: t('health.word.broken'), reason: l.last_error });
+		else if (l.last_error) rows.push({ ...base, tone: 'fail', word: t('health.word.broken'), reason: serverWords(l.last_error) });
 		else if (!l.last_synced_at) rows.push({ ...base, tone: 'idle', word: t('health.word.notSynced'), reason: '' });
 		else rows.push({ ...base, tone: 'ok', word: t('health.word.working'), reason: l.last_result });
 	}

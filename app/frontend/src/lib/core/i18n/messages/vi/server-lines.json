@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Ngưỡng phát hành bị bỏ qua: phim này chưa được tính là đã ra mắt",
 	"server.sources.this-version-already-has-a-good": "Phiên bản này đã có một bản sao đủ tốt; bản mới sẽ thay thế nó",
 	"server.requests.removed-the-request-for": "{name} đã gỡ yêu cầu cho {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex không đưa mã tài khoản của người này nên danh sách xem của họ không được đọc."
+	"server.requests.plex-gave-no-account-code-for": "Plex không đưa mã tài khoản của người này nên danh sách xem của họ không được đọc.",
+	"server.core.another-app-answered-check-the-port": "Một ứng dụng khác đã trả lời. Kiểm tra cổng: cổng này thuộc về thứ khác.",
+	"server.core.blocked-local-network-turn-on-may": "Bị chặn: mạng cục bộ. Bật \"Truy cập mạng cục bộ\" nếu nó chạy ở nhà.",
+	"server.core.category-missing-add-it-in-the": "Thiếu danh mục. Thêm danh mục trong ứng dụng tải xuống, hoặc chọn danh mục khác ở đây.",
+	"server.core.certificate-not-trusted-use-the-name": "Chứng chỉ không đáng tin. Dùng tên trên chứng chỉ của nó, hoặc http:// nếu không có.",
+	"server.core.it-speaks-http-not-https-start": "Nó dùng http, không phải https. Bắt đầu địa chỉ bằng http://.",
+	"server.core.it-speaks-https-not-http-start": "Nó dùng https, không phải http. Bắt đầu địa chỉ bằng https://.",
+	"server.core.key-or-password-refused-check-them": "Khóa hoặc mật khẩu bị từ chối. Kiểm tra lại rồi thử lại.",
+	"server.core.name-not-found-check-the-host": "Không tìm thấy tên. Kiểm tra tên máy chủ trong địa chỉ.",
+	"server.core.no-answer-in-time-check-the": "Không có trả lời kịp thời. Kiểm tra địa chỉ, và không có tường lửa chặn.",
+	"server.core.nothing-answers-on-that-port-check": "Không có gì trả lời ở cổng đó. Kiểm tra cổng, và ứng dụng đang chạy.",
+	"server.core.nothing-at-that-path-check-the": "Không có gì ở đường dẫn đó. Kiểm tra đường dẫn sau cổng, ví dụ /sabnzbd."
 }

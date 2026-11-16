@@ -13,7 +13,7 @@ func TestExplainViaNamesTheBridge(t *testing.T) {
 		"http://192.168.1.36:9696/12/api":                             "Prowlarr isn't answering",
 		"http://192.168.1.36:9696/12":                                 "Prowlarr isn't answering",
 		"http://jackett:9117/api/v2.0/indexers/nyaa/results/torznab/": "Jackett isn't answering",
-		"https://indexer.example/api":                                 "HolyArrs could not reach the Source",
+		"https://indexer.example/api":                                 "Nothing answers on that port.",
 	} {
 		if got := ExplainVia(addr, down); !strings.HasPrefix(got, want) {
 			t.Errorf("%s: got %q, want it to start %q", addr, got, want)

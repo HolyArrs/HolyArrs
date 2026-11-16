@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Išleidimo riba praleidžiama: šis filmas dar neskaitomas kaip išėjęs",
 	"server.sources.this-version-already-has-a-good": "Ši Versija jau turi pakankamai gerą kopiją; nauja ją pakeis",
 	"server.requests.removed-the-request-for": "{name} pašalino užklausą: {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nepateikė šio asmens paskyros kodo, todėl jo žiūrėjimo sąrašas neskaitomas."
+	"server.requests.plex-gave-no-account-code-for": "Plex nepateikė šio asmens paskyros kodo, todėl jo žiūrėjimo sąrašas neskaitomas.",
+	"server.core.another-app-answered-check-the-port": "Atsakė kita programa. Patikrinkite prievadą: jis priklauso kam nors kitam.",
+	"server.core.blocked-local-network-turn-on-may": "Užblokuota: vietinis tinklas. Įjunkite „Pasiekti vietinį tinklą“, jei tai veikia namuose.",
+	"server.core.category-missing-add-it-in-the": "Trūksta kategorijos. Pridėkite ją atsisiuntimo programoje arba čia pasirinkite kitą.",
+	"server.core.certificate-not-trusted-use-the-name": "Sertifikatu nepasitikima. Naudokite vardą iš jo sertifikato arba http://, jei jo nėra.",
+	"server.core.it-speaks-http-not-https-start": "Jis kalba http, ne https. Pradėkite adresą http://.",
+	"server.core.it-speaks-https-not-http-start": "Jis kalba https, ne http. Pradėkite adresą https://.",
+	"server.core.key-or-password-refused-check-them": "Raktas arba slaptažodis atmestas. Patikrinkite juos ir išbandykite dar kartą.",
+	"server.core.name-not-found-check-the-host": "Vardas nerastas. Patikrinkite pagrindinio kompiuterio vardą adrese.",
+	"server.core.no-answer-in-time-check-the": "Laiku negauta atsakymo. Patikrinkite adresą ir ar netrukdo ugniasienė.",
+	"server.core.nothing-answers-on-that-port-check": "Tame prievade niekas neatsako. Patikrinkite prievadą ir ar programa veikia.",
+	"server.core.nothing-at-that-path-check-the": "Tame kelyje nieko nėra. Patikrinkite kelią po prievado, pavyzdžiui, /sabnzbd."
 }

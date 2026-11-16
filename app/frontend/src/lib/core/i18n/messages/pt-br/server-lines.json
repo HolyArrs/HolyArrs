@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "O Marco de lançamento é ignorado: este filme ainda não conta como lançado",
 	"server.sources.this-version-already-has-a-good": "Esta Versão já tem uma cópia boa o bastante; a nova vai substituí-la",
 	"server.requests.removed-the-request-for": "{name} removeu o pedido de {a}",
-	"server.requests.plex-gave-no-account-code-for": "O Plex não deu nenhum código de conta para esta pessoa, então a lista de interesse dela não é lida."
+	"server.requests.plex-gave-no-account-code-for": "O Plex não deu nenhum código de conta para esta pessoa, então a lista de interesse dela não é lida.",
+	"server.core.another-app-answered-check-the-port": "Outro app respondeu. Verifique a porta: ela é de outra coisa.",
+	"server.core.blocked-local-network-turn-on-may": "Bloqueado: rede local. Ative \"Acessar a rede local\" se ele roda em casa.",
+	"server.core.category-missing-add-it-in-the": "Categoria ausente. Adicione-a no app de downloads ou escolha outra aqui.",
+	"server.core.certificate-not-trusted-use-the-name": "Certificado não confiável. Use o nome do certificado dele, ou http:// se não tiver.",
+	"server.core.it-speaks-http-not-https-start": "Ele fala http, não https. Comece o endereço com http://.",
+	"server.core.it-speaks-https-not-http-start": "Ele fala https, não http. Comece o endereço com https://.",
+	"server.core.key-or-password-refused-check-them": "Chave ou senha recusada. Confira e teste de novo.",
+	"server.core.name-not-found-check-the-host": "Nome não encontrado. Confira o nome do host no endereço.",
+	"server.core.no-answer-in-time-check-the": "Sem resposta a tempo. Confira o endereço e se nenhum firewall está bloqueando.",
+	"server.core.nothing-answers-on-that-port-check": "Nada responde nessa porta. Confira a porta e se o app está rodando.",
+	"server.core.nothing-at-that-path-check-the": "Nada nesse caminho. Confira o caminho depois da porta, por exemplo /sabnzbd."
 }

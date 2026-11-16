@@ -272,7 +272,7 @@ func (h *Handlers) runTest(w http.ResponseWriter, r *http.Request, x domain.Sour
 	Record(context.WithoutCancel(r.Context()), h.Store, x.ID, "test", took, err)
 	out := map[string]any{"ok": err == nil, "ms": took.Milliseconds()}
 	if err != nil {
-		out["text"] = ExplainVia(x.URL, err)
+		out["text"], out["cause"] = ExplainVia(x.URL, err), CauseAt(err, x.URL)
 		if repause && x.State == "enabled" && h.search() != nil {
 			h.search().TryFailed(context.WithoutCancel(r.Context()), x, err)
 			if database.Get(r.Context(), h.Store.Read(), "sources", x.ID, &x) == nil {
@@ -286,7 +286,12 @@ func (h *Handlers) runTest(w http.ResponseWriter, r *http.Request, x domain.Sour
 			if errors.As(err, &se) {
 				kind, detail = se.Kind, se.Detail
 			}
-			if h.Store.Write(r.Context(), func(tx *sql.Tx) error { return markTestFailedTx(tx, r.Context(), x.ID, kind, detail) }) == nil &&
+			if h.Store.Write(r.Context(), func(tx *sql.Tx) error {
+				if err := markTestFailedTx(tx, r.Context(), x.ID, kind, detail); err != nil {
+					return err
+				}
+				return setCauseTx(tx, r.Context(), x.ID, string(CauseAt(err, x.URL)))
+			}) == nil &&
 				database.Get(r.Context(), h.Store.Read(), "sources", x.ID, &x) == nil {
 				h.PublishSource(x)
 			}

@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Το Όριο κυκλοφορίας παραλείπεται: αυτή η ταινία δεν θεωρείται ακόμη κυκλοφορημένη",
 	"server.sources.this-version-already-has-a-good": "Αυτή η παραλλαγή έχει ήδη αρκετά καλό αντίγραφο· το νέο θα το αντικαταστήσει",
 	"server.requests.removed-the-request-for": "Ο/Η {name} αφαίρεσε το αίτημα για {a}",
-	"server.requests.plex-gave-no-account-code-for": "Το Plex δεν έδωσε κωδικό λογαριασμού για αυτό το άτομο, οπότε η λίστα παρακολούθησής του δεν διαβάζεται."
+	"server.requests.plex-gave-no-account-code-for": "Το Plex δεν έδωσε κωδικό λογαριασμού για αυτό το άτομο, οπότε η λίστα παρακολούθησής του δεν διαβάζεται.",
+	"server.core.another-app-answered-check-the-port": "Απάντησε άλλη εφαρμογή. Έλεγξε τη θύρα: ανήκει σε κάτι άλλο.",
+	"server.core.blocked-local-network-turn-on-may": "Αποκλεισμένο: τοπικό δίκτυο. Ενεργοποίησε το «Πρόσβαση στο τοπικό δίκτυο» αν τρέχει στο σπίτι.",
+	"server.core.category-missing-add-it-in-the": "Λείπει η κατηγορία. Πρόσθεσέ την στην εφαρμογή λήψεων ή διάλεξε άλλη εδώ.",
+	"server.core.certificate-not-trusted-use-the-name": "Μη έμπιστο πιστοποιητικό. Χρησιμοποίησε το όνομα του πιστοποιητικού του, ή http:// αν δεν έχει.",
+	"server.core.it-speaks-http-not-https-start": "Μιλά http, όχι https. Ξεκίνα τη διεύθυνση με http://.",
+	"server.core.it-speaks-https-not-http-start": "Μιλά https, όχι http. Ξεκίνα τη διεύθυνση με https://.",
+	"server.core.key-or-password-refused-check-them": "Το κλειδί ή ο κωδικός απορρίφθηκε. Έλεγξέ τα και δοκίμασε ξανά.",
+	"server.core.name-not-found-check-the-host": "Το όνομα δεν βρέθηκε. Έλεγξε το όνομα κεντρικού υπολογιστή στη διεύθυνση.",
+	"server.core.no-answer-in-time-check-the": "Καμία απάντηση εγκαίρως. Έλεγξε τη διεύθυνση και ότι δεν μπλοκάρει τείχος προστασίας.",
+	"server.core.nothing-answers-on-that-port-check": "Τίποτα δεν απαντά σε αυτή τη θύρα. Έλεγξε τη θύρα και ότι η εφαρμογή τρέχει.",
+	"server.core.nothing-at-that-path-check-the": "Τίποτα σε αυτή τη διαδρομή. Έλεγξε τη διαδρομή μετά τη θύρα, για παράδειγμα /sabnzbd."
 }

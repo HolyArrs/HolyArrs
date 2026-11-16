@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "L'Umbral d'estrena s'omet: aquesta pel·lícula encara no es considera estrenada",
 	"server.sources.this-version-already-has-a-good": "Aquesta Versió ja té una còpia prou bona; la nova la substituirà",
 	"server.requests.removed-the-request-for": "{name} ha eliminat la sol·licitud de {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex no ha donat cap codi de compte d'aquesta persona, així que no se'n llegeix la llista de seguiment."
+	"server.requests.plex-gave-no-account-code-for": "Plex no ha donat cap codi de compte d'aquesta persona, així que no se'n llegeix la llista de seguiment.",
+	"server.core.another-app-answered-check-the-port": "Ha respost una altra aplicació. Comprova el port: és d'una altra cosa.",
+	"server.core.blocked-local-network-turn-on-may": "Bloquejat: xarxa local. Activa \"Accedeix a la xarxa local\" si funciona a casa.",
+	"server.core.category-missing-add-it-in-the": "Falta la categoria. Afegeix-la a l'aplicació de baixades o tria'n una altra aquí.",
+	"server.core.certificate-not-trusted-use-the-name": "Certificat no de confiança. Fes servir el nom del certificat, o http:// si no en té.",
+	"server.core.it-speaks-http-not-https-start": "Parla http, no https. Comença l'adreça amb http://.",
+	"server.core.it-speaks-https-not-http-start": "Parla https, no http. Comença l'adreça amb https://.",
+	"server.core.key-or-password-refused-check-them": "Clau o contrasenya rebutjada. Revisa-les i torna a provar.",
+	"server.core.name-not-found-check-the-host": "No s'ha trobat el nom. Comprova el nom de l'amfitrió a l'adreça.",
+	"server.core.no-answer-in-time-check-the": "Sense resposta a temps. Comprova l'adreça i que cap tallafoc ho impedeixi.",
+	"server.core.nothing-answers-on-that-port-check": "No respon res en aquest port. Comprova el port i que l'aplicació estigui en marxa.",
+	"server.core.nothing-at-that-path-check-the": "No hi ha res en aquest camí. Comprova el camí després del port, per exemple /sabnzbd."
 }

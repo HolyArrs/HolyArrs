@@ -9,6 +9,7 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
@@ -71,7 +72,11 @@ func (e *Engine) Links(ctx context.Context) ([]jobs.Status, error) {
 		case "disabled":
 			add("downloader", d.ID, d.Name, jobs.Off, "Paused by you.")
 		case "unreachable":
-			add("downloader", d.ID, d.Name, jobs.Retrying, "It does not answer; HolyArrs tries again on its own. The log has the details.")
+			why := "It does not answer; HolyArrs tries again on its own. The log has the details."
+			if line := doctor.Line(doctor.At(doctor.OfText(d.LastError), d.LastError, d.URL)); line != "" {
+				why = line
+			}
+			add("downloader", d.ID, d.Name, jobs.Retrying, why)
 		case "auth_failed":
 			add("downloader", d.ID, d.Name, jobs.Failed, "It turned down the sign-in. Check its user name and password or key; the log has the details.")
 		default:
@@ -117,7 +122,11 @@ func (e *Engine) Links(ctx context.Context) ([]jobs.Status, error) {
 		case !m.Enabled:
 			add("media_server", m.ID, m.Name, jobs.Off, "Turned off.")
 		case strings.TrimSpace(m.LastError) != "":
-			add("media_server", m.ID, m.Name, jobs.Failed, "The last refresh failed. The log has the details.")
+			why := "The last refresh failed. The log has the details."
+			if line := doctor.Line(doctor.At(doctor.OfText(m.LastError), m.LastError, m.URL)); line != "" {
+				why = line
+			}
+			add("media_server", m.ID, m.Name, jobs.Failed, why)
 		case m.LastOKAt == nil:
 			add("media_server", m.ID, m.Name, jobs.Starting, "Not told about a change yet.")
 		default:

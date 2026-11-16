@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "রিলিজ গেট বাদ গেছে: এই সিনেমা এখনো বেরিয়েছে বলে গণ্য হয় না",
 	"server.sources.this-version-already-has-a-good": "এই ভার্সনের আগেই একটি যথেষ্ট ভালো কপি আছে; নতুনটি সেটি বদলে দেবে",
 	"server.requests.removed-the-request-for": "{name} {a}-এর অনুরোধ সরিয়েছেন",
-	"server.requests.plex-gave-no-account-code-for": "Plex এই ব্যক্তির অ্যাকাউন্ট কোড দেয়নি, তাই তার ওয়াচলিস্ট পড়া হচ্ছে না।"
+	"server.requests.plex-gave-no-account-code-for": "Plex এই ব্যক্তির অ্যাকাউন্ট কোড দেয়নি, তাই তার ওয়াচলিস্ট পড়া হচ্ছে না।",
+	"server.core.another-app-answered-check-the-port": "অন্য একটি অ্যাপ উত্তর দিয়েছে। পোর্টটি দেখুন: এটি অন্য কিছুর।",
+	"server.core.blocked-local-network-turn-on-may": "আটকানো: লোকাল নেটওয়ার্ক। বাড়িতে চললে \"লোকাল নেটওয়ার্কে পৌঁছান\" চালু করুন।",
+	"server.core.category-missing-add-it-in-the": "ক্যাটাগরি নেই। ডাউনলোড অ্যাপে এটি যোগ করুন, অথবা এখানে অন্যটি বেছে নিন।",
+	"server.core.certificate-not-trusted-use-the-name": "সার্টিফিকেট বিশ্বস্ত নয়। এর সার্টিফিকেটের নাম ব্যবহার করুন, অথবা না থাকলে http://।",
+	"server.core.it-speaks-http-not-https-start": "এটি https নয়, http ব্যবহার করে। ঠিকানা http:// দিয়ে শুরু করুন।",
+	"server.core.it-speaks-https-not-http-start": "এটি http নয়, https ব্যবহার করে। ঠিকানা https:// দিয়ে শুরু করুন।",
+	"server.core.key-or-password-refused-check-them": "কী বা পাসওয়ার্ড প্রত্যাখ্যাত। সেগুলো দেখে আবার পরীক্ষা করুন।",
+	"server.core.name-not-found-check-the-host": "নাম পাওয়া যায়নি। ঠিকানার হোস্ট নামটি দেখুন।",
+	"server.core.no-answer-in-time-check-the": "সময়মতো উত্তর নেই। ঠিকানা দেখুন, এবং কোনো ফায়ারওয়াল বাধা দিচ্ছে কি না।",
+	"server.core.nothing-answers-on-that-port-check": "ওই পোর্টে কিছুই উত্তর দেয় না। পোর্টটি দেখুন, এবং অ্যাপটি চলছে কি না।",
+	"server.core.nothing-at-that-path-check-the": "ওই পাথে কিছু নেই। পোর্টের পরের পাথটি দেখুন, যেমন /sabnzbd।"
 }

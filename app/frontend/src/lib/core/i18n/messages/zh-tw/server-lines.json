@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "已跳過發行門檻：這部電影還不算已上映",
 	"server.sources.this-version-already-has-a-good": "這個版本已有足夠好的副本；新的會替換它",
 	"server.requests.removed-the-request-for": "{name} 移除了 {a} 的請求",
-	"server.requests.plex-gave-no-account-code-for": "Plex 沒有提供此人的帳號代碼，因此不會讀取其待看清單。"
+	"server.requests.plex-gave-no-account-code-for": "Plex 沒有提供此人的帳號代碼，因此不會讀取其待看清單。",
+	"server.core.another-app-answered-check-the-port": "另一個應用程式回應了。請檢查連接埠：它屬於別的程式。",
+	"server.core.blocked-local-network-turn-on-may": "已封鎖：區域網路。如果它在家中執行，請開啟「存取區域網路」。",
+	"server.core.category-missing-add-it-in-the": "缺少分類。請在下載應用程式中新增，或在這裡選擇另一個。",
+	"server.core.certificate-not-trusted-use-the-name": "憑證不受信任。請使用憑證上的名稱，沒有憑證則用 http://。",
+	"server.core.it-speaks-http-not-https-start": "它使用 http，而不是 https。請以 http:// 開頭。",
+	"server.core.it-speaks-https-not-http-start": "它使用 https，而不是 http。請以 https:// 開頭。",
+	"server.core.key-or-password-refused-check-them": "金鑰或密碼遭拒。請檢查後再測試。",
+	"server.core.name-not-found-check-the-host": "找不到該名稱。請檢查位址中的主機名稱。",
+	"server.core.no-answer-in-time-check-the": "未及時回應。請檢查位址，以及沒有防火牆阻擋。",
+	"server.core.nothing-answers-on-that-port-check": "該連接埠上沒有任何回應。請檢查連接埠，以及應用程式是否在執行。",
+	"server.core.nothing-at-that-path-check-the": "該路徑下沒有內容。請檢查連接埠後的路徑，例如 /sabnzbd。"
 }

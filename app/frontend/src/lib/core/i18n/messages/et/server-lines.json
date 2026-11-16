@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Väljalaske lävi jäetakse vahele: seda filmi ei loeta veel ilmunuks",
 	"server.sources.this-version-already-has-a-good": "Sellel versioonil on juba piisavalt hea koopia; uus asendab selle",
 	"server.requests.removed-the-request-for": "{name} eemaldas taotluse: {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex ei andnud selle inimese kontokoodi, seega tema vaatamisnimekirja ei loeta."
+	"server.requests.plex-gave-no-account-code-for": "Plex ei andnud selle inimese kontokoodi, seega tema vaatamisnimekirja ei loeta.",
+	"server.core.another-app-answered-check-the-port": "Vastas teine rakendus. Kontrolli porti: see kuulub millelegi muule.",
+	"server.core.blocked-local-network-turn-on-may": "Blokeeritud: kohtvõrk. Lülita sisse „Luba ligipääs kohtvõrku“, kui see töötab kodus.",
+	"server.core.category-missing-add-it-in-the": "Kategooria puudub. Lisa see allalaadimisrakenduses või vali siin mõni muu.",
+	"server.core.certificate-not-trusted-use-the-name": "Sertifikaati ei usaldata. Kasuta tema sertifikaadil olevat nime või http://, kui sertifikaati pole.",
+	"server.core.it-speaks-http-not-https-start": "See räägib http-d, mitte https-i. Alusta aadressi http://-ga.",
+	"server.core.it-speaks-https-not-http-start": "See räägib https-i, mitte http-d. Alusta aadressi https://-ga.",
+	"server.core.key-or-password-refused-check-them": "Võti või parool lükati tagasi. Kontrolli neid ja testi uuesti.",
+	"server.core.name-not-found-check-the-host": "Nime ei leitud. Kontrolli aadressis olevat hostinime.",
+	"server.core.no-answer-in-time-check-the": "Õigel ajal vastust ei tulnud. Kontrolli aadressi ja et tulemüür ei sega.",
+	"server.core.nothing-answers-on-that-port-check": "Selles pordis ei vasta miski. Kontrolli porti ja et rakendus töötab.",
+	"server.core.nothing-at-that-path-check-the": "Sellel teel pole midagi. Kontrolli pordi järel olevat teed, näiteks /sabnzbd."
 }

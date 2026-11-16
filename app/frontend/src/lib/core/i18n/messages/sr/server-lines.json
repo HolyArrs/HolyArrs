@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Праг изласка се прескаче: овај филм се још не рачуна као изашао",
 	"server.sources.this-version-already-has-a-good": "Ова Верзија већ има довољно добру копију; нова ће је заменити",
 	"server.requests.removed-the-request-for": "{name} je uklonio/la zahtev za {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru naloga za ovu osobu, pa se njena lista za gledanje ne čita."
+	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru naloga za ovu osobu, pa se njena lista za gledanje ne čita.",
+	"server.core.another-app-answered-check-the-port": "Одговорила је друга апликација. Проверите порт: припада нечем другом.",
+	"server.core.blocked-local-network-turn-on-may": "Блокирано: локална мрежа. Укључите „Допри до локалне мреже“ ако ради код куће.",
+	"server.core.category-missing-add-it-in-the": "Категорија недостаје. Додајте је у апликацији за преузимање или овде изаберите другу.",
+	"server.core.certificate-not-trusted-use-the-name": "Сертификат није поуздан. Користите име са његовог сертификата или http:// ако га нема.",
+	"server.core.it-speaks-http-not-https-start": "Говори http, не https. Почните адресу са http://.",
+	"server.core.it-speaks-https-not-http-start": "Говори https, не http. Почните адресу са https://.",
+	"server.core.key-or-password-refused-check-them": "Кључ или лозинка одбијени. Проверите их па тестирајте поново.",
+	"server.core.name-not-found-check-the-host": "Име није пронађено. Проверите име хоста у адреси.",
+	"server.core.no-answer-in-time-check-the": "Нема одговора на време. Проверите адресу и да заштитни зид не смета.",
+	"server.core.nothing-answers-on-that-port-check": "На том порту ништа не одговара. Проверите порт и да ли апликација ради.",
+	"server.core.nothing-at-that-path-check-the": "На тој путањи нема ничега. Проверите путању после порта, на пример /sabnzbd."
 }

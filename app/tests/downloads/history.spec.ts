@@ -243,7 +243,7 @@ test('media servers: add Jellyfin, test it, a wrong key is said plainly', async 
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await card.getByRole('button', { name: 'Test' }).click();
 	await expect(card.getByTestId('media-test')).toHaveText('Not connected');
-	await expect(card.getByTestId('media-result')).toContainText(/the server turned down the token/i);
+	await expect(card.getByTestId('media-result')).toContainText(/Key or password refused/i);
 });
 
 test('red buttons keep their contrast on hover', async () => {

@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Próg premiery jest pominięty: ten film nie liczy się jeszcze jako wydany",
 	"server.sources.this-version-already-has-a-good": "Ta Odmiana ma już wystarczająco dobrą kopię; nowa ją zastąpi",
 	"server.requests.removed-the-request-for": "{name} usunął(-ęła) prośbę o {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nie podał kodu konta tej osoby, więc jej lista do obejrzenia nie jest czytana."
+	"server.requests.plex-gave-no-account-code-for": "Plex nie podał kodu konta tej osoby, więc jej lista do obejrzenia nie jest czytana.",
+	"server.core.another-app-answered-check-the-port": "Odpowiedziała inna aplikacja. Sprawdź port: należy do czegoś innego.",
+	"server.core.blocked-local-network-turn-on-may": "Zablokowane: sieć lokalna. Włącz „Dostęp do sieci lokalnej”, jeśli działa w domu.",
+	"server.core.category-missing-add-it-in-the": "Brak kategorii. Dodaj ją w aplikacji do pobierania lub wybierz tu inną.",
+	"server.core.certificate-not-trusted-use-the-name": "Certyfikat niezaufany. Użyj nazwy z jego certyfikatu albo http://, jeśli go nie ma.",
+	"server.core.it-speaks-http-not-https-start": "Mówi http, nie https. Zacznij adres od http://.",
+	"server.core.it-speaks-https-not-http-start": "Mówi https, nie http. Zacznij adres od https://.",
+	"server.core.key-or-password-refused-check-them": "Klucz lub hasło odrzucone. Sprawdź je i przetestuj ponownie.",
+	"server.core.name-not-found-check-the-host": "Nie znaleziono nazwy. Sprawdź nazwę hosta w adresie.",
+	"server.core.no-answer-in-time-check-the": "Brak odpowiedzi na czas. Sprawdź adres i czy zapora nie blokuje.",
+	"server.core.nothing-answers-on-that-port-check": "Na tym porcie nic nie odpowiada. Sprawdź port i czy aplikacja działa.",
+	"server.core.nothing-at-that-path-check-the": "Pod tą ścieżką nic nie ma. Sprawdź ścieżkę po porcie, na przykład /sabnzbd."
 }

@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Släppgränsen hoppas över: den här filmen räknas inte som utgiven ännu",
 	"server.sources.this-version-already-has-a-good": "Den här versionen har redan en tillräckligt bra kopia; den nya ersätter den",
 	"server.requests.removed-the-request-for": "{name} tog bort begäran om {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte."
+	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte.",
+	"server.core.another-app-answered-check-the-port": "En annan app svarade. Kontrollera porten: den hör till något annat.",
+	"server.core.blocked-local-network-turn-on-may": "Blockerad: lokalt nätverk. Slå på \"Nå det lokala nätverket\" om den körs hemma.",
+	"server.core.category-missing-add-it-in-the": "Kategorin saknas. Lägg till den i nedladdningsappen, eller välj en annan här.",
+	"server.core.certificate-not-trusted-use-the-name": "Certifikatet är inte betrott. Använd namnet i dess certifikat, eller http:// om det saknas.",
+	"server.core.it-speaks-http-not-https-start": "Den talar http, inte https. Börja adressen med http://.",
+	"server.core.it-speaks-https-not-http-start": "Den talar https, inte http. Börja adressen med https://.",
+	"server.core.key-or-password-refused-check-them": "Nyckel eller lösenord nekades. Kontrollera dem och testa igen.",
+	"server.core.name-not-found-check-the-host": "Namnet hittades inte. Kontrollera värdnamnet i adressen.",
+	"server.core.no-answer-in-time-check-the": "Inget svar i tid. Kontrollera adressen, och att ingen brandvägg är i vägen.",
+	"server.core.nothing-answers-on-that-port-check": "Inget svarar på den porten. Kontrollera porten, och att appen körs.",
+	"server.core.nothing-at-that-path-check-the": "Inget på den sökvägen. Kontrollera sökvägen efter porten, till exempel /sabnzbd."
 }

@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Izlaidumu vārti tiek izlaisti: šī filma vēl netiek uzskatīta par iznākušu",
 	"server.sources.this-version-already-has-a-good": "Šai Versijai jau ir pietiekami laba kopija; jaunā to aizstās",
 	"server.requests.removed-the-request-for": "{name} noņēma pieprasījumu: {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nedeva šīs personas konta kodu, tāpēc viņas skatīšanās saraksts netiek lasīts."
+	"server.requests.plex-gave-no-account-code-for": "Plex nedeva šīs personas konta kodu, tāpēc viņas skatīšanās saraksts netiek lasīts.",
+	"server.core.another-app-answered-check-the-port": "Atbildēja cita lietotne. Pārbaudiet portu: tas pieder kaut kam citam.",
+	"server.core.blocked-local-network-turn-on-may": "Bloķēts: vietējais tīkls. Ieslēdziet “Piekļūt vietējam tīklam”, ja tas darbojas mājās.",
+	"server.core.category-missing-add-it-in-the": "Trūkst kategorijas. Pievienojiet to lejupielādes lietotnē vai izvēlieties citu šeit.",
+	"server.core.certificate-not-trusted-use-the-name": "Sertifikāts nav uzticams. Izmantojiet nosaukumu no tā sertifikāta vai http://, ja tāda nav.",
+	"server.core.it-speaks-http-not-https-start": "Tas runā http, nevis https. Sāciet adresi ar http://.",
+	"server.core.it-speaks-https-not-http-start": "Tas runā https, nevis http. Sāciet adresi ar https://.",
+	"server.core.key-or-password-refused-check-them": "Atslēga vai parole noraidīta. Pārbaudiet tās un testējiet vēlreiz.",
+	"server.core.name-not-found-check-the-host": "Nosaukums nav atrasts. Pārbaudiet resursdatora nosaukumu adresē.",
+	"server.core.no-answer-in-time-check-the": "Nav atbildes laikā. Pārbaudiet adresi un to, vai netraucē ugunsmūris.",
+	"server.core.nothing-answers-on-that-port-check": "Šajā portā nekas neatbild. Pārbaudiet portu un to, vai lietotne darbojas.",
+	"server.core.nothing-at-that-path-check-the": "Šajā ceļā nekā nav. Pārbaudiet ceļu aiz porta, piemēram, /sabnzbd."
 }

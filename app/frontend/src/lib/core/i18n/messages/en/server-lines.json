@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "the Release gate is skipped: this Title is not out yet",
 	"server.sources.this-version-already-has-a-good": "this Version already has a good enough copy; the new one will replace it",
 	"server.requests.removed-the-request-for": "{name} removed the request for {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex gave no account code for this person, so their watchlist is not read."
+	"server.requests.plex-gave-no-account-code-for": "Plex gave no account code for this person, so their watchlist is not read.",
+	"server.core.another-app-answered-check-the-port": "Another app answered. Check the port: it belongs to something else.",
+	"server.core.blocked-local-network-turn-on-may": "Blocked: local network. Turn on \"Reach the local network\" if it runs at home.",
+	"server.core.category-missing-add-it-in-the": "Category missing. Add it in the download app, or pick another one here.",
+	"server.core.certificate-not-trusted-use-the-name": "Certificate not trusted. Use the name on its certificate, or http:// if it has none.",
+	"server.core.it-speaks-http-not-https-start": "It speaks http, not https. Start the address with http://.",
+	"server.core.it-speaks-https-not-http-start": "It speaks https, not http. Start the address with https://.",
+	"server.core.key-or-password-refused-check-them": "Key or password refused. Check them, then test again.",
+	"server.core.name-not-found-check-the-host": "Name not found. Check the host name in the address.",
+	"server.core.no-answer-in-time-check-the": "No answer in time. Check the address, and that no firewall is in the way.",
+	"server.core.nothing-answers-on-that-port-check": "Nothing answers on that port. Check the port, and that the app is running.",
+	"server.core.nothing-at-that-path-check-the": "Nothing at that path. Check the path after the port, for example /sabnzbd."
 }

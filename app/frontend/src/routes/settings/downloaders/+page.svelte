@@ -501,7 +501,7 @@
 				</div>
 				{#if d.health.text}<p class="note" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{serverWords(d.health.text)}</p>{/if}
 				{#if results[d.id] && !results[d.id].ok}
-					<p class="note bad-text" role="status" data-testid="downloader-test">{results[d.id].text}</p>
+					<p class="note bad-text" role="status" data-testid="downloader-test">{serverWords(results[d.id].text)}</p>
 				{/if}
 				{#if pendingAttempts(attempts[d.id]).length > 0}
 					<section class="notice bad attempt-review" aria-label={t('settings.downloaders.needsDecision')} data-testid="downloader-attempts">

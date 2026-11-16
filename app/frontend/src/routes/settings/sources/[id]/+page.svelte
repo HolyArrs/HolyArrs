@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -89,8 +90,8 @@
 		<div class="card tile">
 			<span class="label">{t('settings.sourceDetail.state')}</span>
 			<span class="big">{healthWord(src.health)}</span>
-			<span class="xs muted">{src.health.text}{#if pausedUntil(src.health)} {pausedUntil(src.health)}.{/if}</span>
-			{#if tried}<span class="testline" data-testid="source-tried"><TestTag ok={tried.ok} text={tried.text} hover={tried.hover} extra={tried.extra} />{#if !tried.ok}<span class="xs bad-text">{tried.text}</span>{/if}</span>{/if}
+			<span class="xs muted">{serverWords(src.health.text)}{#if pausedUntil(src.health)} {pausedUntil(src.health)}.{/if}</span>
+			{#if tried}<span class="testline" data-testid="source-tried"><TestTag ok={tried.ok} text={tried.text} hover={tried.hover} extra={tried.extra} />{#if !tried.ok}<span class="xs bad-text">{serverWords(tried.text)}</span>{/if}</span>{/if}
 		</div>
 		<div class="card tile">
 			<span class="label">{t('settings.sourceDetail.lastAnswer')}</span>

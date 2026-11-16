@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "வெளியீட்டு வாயில் தவிர்க்கப்படுகிறது: இந்தத் திரைப்படம் இன்னும் வெளியானதாகக் கணக்கில் இல்லை",
 	"server.sources.this-version-already-has-a-good": "இந்தப் பதிப்புக்கு ஏற்கெனவே போதுமான தரத்தில் ஒரு பிரதி உள்ளது; புதியது அதை மாற்றும்",
 	"server.requests.removed-the-request-for": "{name} {a} கோரிக்கையை நீக்கினார்",
-	"server.requests.plex-gave-no-account-code-for": "Plex இந்த நபருக்கான கணக்குக் குறியீட்டை வழங்கவில்லை, எனவே அவரது பார்வைப் பட்டியல் படிக்கப்படவில்லை."
+	"server.requests.plex-gave-no-account-code-for": "Plex இந்த நபருக்கான கணக்குக் குறியீட்டை வழங்கவில்லை, எனவே அவரது பார்வைப் பட்டியல் படிக்கப்படவில்லை.",
+	"server.core.another-app-answered-check-the-port": "வேறொரு ஆப் பதிலளித்தது. போர்ட்டைச் சரிபார்க்கவும்: அது வேறு ஒன்றுடையது.",
+	"server.core.blocked-local-network-turn-on-may": "தடுக்கப்பட்டது: உள்ளூர் வலை. வீட்டில் இயங்கினால் \"உள்ளூர் வலையை அடை\" ஐ இயக்கவும்.",
+	"server.core.category-missing-add-it-in-the": "வகை இல்லை. பதிவிறக்க ஆப்பில் அதைச் சேர்க்கவும், அல்லது இங்கே வேறொன்றைத் தேர்ந்தெடுக்கவும்.",
+	"server.core.certificate-not-trusted-use-the-name": "சான்றிதழ் நம்பகமானதல்ல. அதன் சான்றிதழில் உள்ள பெயரைப் பயன்படுத்தவும், இல்லையெனில் http://.",
+	"server.core.it-speaks-http-not-https-start": "இது https அல்ல, http பேசுகிறது. முகவரியை http:// என்று தொடங்கவும்.",
+	"server.core.it-speaks-https-not-http-start": "இது http அல்ல, https பேசுகிறது. முகவரியை https:// என்று தொடங்கவும்.",
+	"server.core.key-or-password-refused-check-them": "கீ அல்லது கடவுச்சொல் மறுக்கப்பட்டது. அவற்றைச் சரிபார்த்து மீண்டும் சோதிக்கவும்.",
+	"server.core.name-not-found-check-the-host": "பெயர் கிடைக்கவில்லை. முகவரியில் உள்ள ஹோஸ்ட் பெயரைச் சரிபார்க்கவும்.",
+	"server.core.no-answer-in-time-check-the": "நேரத்தில் பதில் இல்லை. முகவரியையும், ஃபயர்வால் தடுக்கவில்லை என்பதையும் சரிபார்க்கவும்.",
+	"server.core.nothing-answers-on-that-port-check": "அந்த போர்ட்டில் எதுவும் பதிலளிக்கவில்லை. போர்ட்டையும், ஆப் இயங்குகிறதா என்பதையும் சரிபார்க்கவும்.",
+	"server.core.nothing-at-that-path-check-the": "அந்தப் பாதையில் எதுவும் இல்லை. போர்ட்டுக்குப் பிறகான பாதையைச் சரிபார்க்கவும், எ.கா. /sabnzbd."
 }

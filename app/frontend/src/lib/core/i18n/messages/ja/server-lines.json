@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "公開判定は省かれます。この映画は、まだ公開済みとして数えられません",
 	"server.sources.this-version-already-has-a-good": "このバージョンには、すでに十分な品質のコピーがあります。新しいものが置き換えます",
 	"server.requests.removed-the-request-for": "{name} が {a} のリクエストを削除しました",
-	"server.requests.plex-gave-no-account-code-for": "Plex がこの人のアカウントコードを返さなかったため、ウォッチリストは読み取られません。"
+	"server.requests.plex-gave-no-account-code-for": "Plex がこの人のアカウントコードを返さなかったため、ウォッチリストは読み取られません。",
+	"server.core.another-app-answered-check-the-port": "別のアプリが応答しました。ポートを確認してください：別のものが使っています。",
+	"server.core.blocked-local-network-turn-on-may": "ブロック：ローカルネットワーク。自宅で動いているなら「ローカルネットワークに接続」をオンにしてください。",
+	"server.core.category-missing-add-it-in-the": "カテゴリがありません。ダウンロードアプリで追加するか、ここで別のものを選んでください。",
+	"server.core.certificate-not-trusted-use-the-name": "証明書が信頼されていません。証明書にある名前を使うか、証明書がなければ http:// にしてください。",
+	"server.core.it-speaks-http-not-https-start": "https ではなく http で応答します。アドレスを http:// で始めてください。",
+	"server.core.it-speaks-https-not-http-start": "http ではなく https で応答します。アドレスを https:// で始めてください。",
+	"server.core.key-or-password-refused-check-them": "キーまたはパスワードが拒否されました。確認してから再テストしてください。",
+	"server.core.name-not-found-check-the-host": "名前が見つかりません。アドレスのホスト名を確認してください。",
+	"server.core.no-answer-in-time-check-the": "時間内に応答がありません。アドレスと、ファイアウォールが妨げていないか確認してください。",
+	"server.core.nothing-answers-on-that-port-check": "そのポートでは何も応答しません。ポートと、アプリが動いているか確認してください。",
+	"server.core.nothing-at-that-path-check-the": "そのパスには何もありません。ポートの後のパスを確認してください（例：/sabnzbd）。"
 }

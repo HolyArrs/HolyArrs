@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '../core/i18n/server-words.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Field from '#lib/ui/Field.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -64,7 +65,7 @@
 						</span>
 						{#if c.paused}<span class="chip {checkTone(c)}">{checkWord(c)}</span>{:else}<TestTag ok={c.answered} text={c.answered ? '' : (c.error ?? '')} hover={c.answered ? t('sources.test.countIn', { count: checkCount(c), time: ms(c.ms) }) : ''} extra={checkCount(c)} />{/if}
 						<span class="meta" class:bad-text={!c.answered && !c.paused}>
-							{#if c.answered}{ms(c.ms)}{:else if c.paused}{c.health.text}{:else}{c.error}{#if c.ms} · {ms(c.ms)}{/if}{/if}
+							{#if c.answered}{ms(c.ms)}{:else if c.paused}{serverWords(c.health.text)}{:else}{serverWords(c.error)}{#if c.ms} · {ms(c.ms)}{/if}{/if}
 						</span>
 					</li>
 				{/each}

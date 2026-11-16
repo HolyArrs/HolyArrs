@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 )
 
 // ErrNoCategory means the target category is missing in SABnzbd.
@@ -89,7 +91,7 @@ func (s *Sabnzbd) Health(ctx context.Context) (Health, error) {
 		Version string `json:"version"`
 	}
 	if err := json.Unmarshal(b, &v); err != nil || v.Version == "" {
-		return Health{}, errors.New("the address answered, but not like SABnzbd")
+		return Health{}, doctor.Mark(doctor.WrongApp, errors.New("the address answered, but not like SABnzbd"))
 	}
 	if _, err := s.call(ctx, "queue", url.Values{"limit": {"1"}}, true); err != nil {
 		return Health{}, err
@@ -319,6 +321,9 @@ func (s *Sabnzbd) do(req *http.Request, mode string) ([]byte, error) {
 		return nil, fmt.Errorf("sabnzbd %s: no API at this address", mode)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		if e := doctor.Answer(resp.StatusCode, b); e != nil {
+			return nil, fmt.Errorf("sabnzbd %s: %w", mode, e)
+		}
 		return nil, fmt.Errorf("sabnzbd %s: %s", mode, resp.Status)
 	}
 	var st struct {

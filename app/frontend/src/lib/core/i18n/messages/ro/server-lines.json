@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Pragul de lansare e sărit: acest film nu se consideră încă apărut",
 	"server.sources.this-version-already-has-a-good": "Această Versiune are deja o copie suficient de bună; cea nouă o va înlocui",
 	"server.requests.removed-the-request-for": "{name} a eliminat cererea pentru {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nu a dat niciun cod de cont pentru această persoană, așa că lista ei de vizionare nu este citită."
+	"server.requests.plex-gave-no-account-code-for": "Plex nu a dat niciun cod de cont pentru această persoană, așa că lista ei de vizionare nu este citită.",
+	"server.core.another-app-answered-check-the-port": "A răspuns altă aplicație. Verifică portul: aparține altui program.",
+	"server.core.blocked-local-network-turn-on-may": "Blocat: rețea locală. Activează „Acces la rețeaua locală” dacă rulează acasă.",
+	"server.core.category-missing-add-it-in-the": "Categoria lipsește. Adaug-o în aplicația de descărcare sau alege alta aici.",
+	"server.core.certificate-not-trusted-use-the-name": "Certificat neîncrezut. Folosește numele din certificatul său sau http:// dacă nu are.",
+	"server.core.it-speaks-http-not-https-start": "Vorbește http, nu https. Începe adresa cu http://.",
+	"server.core.it-speaks-https-not-http-start": "Vorbește https, nu http. Începe adresa cu https://.",
+	"server.core.key-or-password-refused-check-them": "Cheie sau parolă refuzată. Verifică-le, apoi testează din nou.",
+	"server.core.name-not-found-check-the-host": "Numele nu a fost găsit. Verifică numele gazdei din adresă.",
+	"server.core.no-answer-in-time-check-the": "Niciun răspuns la timp. Verifică adresa și că niciun firewall nu blochează.",
+	"server.core.nothing-answers-on-that-port-check": "Nimic nu răspunde pe acel port. Verifică portul și că aplicația rulează.",
+	"server.core.nothing-at-that-path-check-the": "Nimic la acea cale. Verifică calea de după port, de exemplu /sabnzbd."
 }

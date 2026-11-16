@@ -23,6 +23,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 
@@ -567,8 +568,9 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 		if errors.As(err, &ue) {
 			err = ue.Err
 		}
-		if errors.Is(err, outbound.ErrAddressRefused) {
-			return nil, errors.New("the server is on the local network, which it may not reach")
+		// The line never holds the address or the token.
+		if c := doctor.At(doctor.Of(err), err.Error(), m.URL); c != doctor.Unknown {
+			return nil, doctor.Mark(c, nil)
 		}
 		return nil, errors.New("the server did not answer")
 	}
@@ -588,7 +590,9 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 	outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
 	switch {
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-		return nil, errors.New("the server turned down the token")
+		return nil, doctor.Mark(doctor.Auth, nil)
+	case doctor.Answer(resp.StatusCode, b) != nil:
+		return nil, doctor.Answer(resp.StatusCode, b)
 	case resp.StatusCode/100 != 2:
 		return nil, fmt.Errorf("the server answered %d", resp.StatusCode)
 	}
@@ -721,7 +725,10 @@ func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error)
 				ServerName string `json:"ServerName"`
 				Version    string `json:"Version"`
 			}
-			_ = json.Unmarshal(b, &info)
+			if json.Unmarshal(b, &info) != nil || info.Version == "" {
+				// Something answers there, but not as Jellyfin or Emby does.
+				err = doctor.Mark(doctor.WrongApp, nil)
+			}
 			res = strings.TrimSpace(info.ServerName + " " + info.Version)
 		}
 	}

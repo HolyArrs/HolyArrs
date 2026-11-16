@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Batas rilis dilewati: film ini belum dianggap rilis",
 	"server.sources.this-version-already-has-a-good": "Versi ini sudah punya salinan yang cukup baik; yang baru akan menggantikannya",
 	"server.requests.removed-the-request-for": "{name} menghapus permintaan untuk {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kode akun untuk orang ini, jadi daftar tontonannya tidak dibaca."
+	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kode akun untuk orang ini, jadi daftar tontonannya tidak dibaca.",
+	"server.core.another-app-answered-check-the-port": "Aplikasi lain yang menjawab. Periksa port: itu milik hal lain.",
+	"server.core.blocked-local-network-turn-on-may": "Diblokir: jaringan lokal. Nyalakan \"Jangkau jaringan lokal\" jika berjalan di rumah.",
+	"server.core.category-missing-add-it-in-the": "Kategori tidak ada. Tambahkan di aplikasi unduhan, atau pilih yang lain di sini.",
+	"server.core.certificate-not-trusted-use-the-name": "Sertifikat tidak dipercaya. Gunakan nama di sertifikatnya, atau http:// jika tidak punya.",
+	"server.core.it-speaks-http-not-https-start": "Ia memakai http, bukan https. Awali alamat dengan http://.",
+	"server.core.it-speaks-https-not-http-start": "Ia memakai https, bukan http. Awali alamat dengan https://.",
+	"server.core.key-or-password-refused-check-them": "Kunci atau kata sandi ditolak. Periksa, lalu uji lagi.",
+	"server.core.name-not-found-check-the-host": "Nama tidak ditemukan. Periksa nama host di alamat.",
+	"server.core.no-answer-in-time-check-the": "Tidak ada jawaban tepat waktu. Periksa alamat, dan pastikan tidak ada firewall yang menghalangi.",
+	"server.core.nothing-answers-on-that-port-check": "Tidak ada yang menjawab di port itu. Periksa port, dan pastikan aplikasinya berjalan.",
+	"server.core.nothing-at-that-path-check-the": "Tidak ada apa-apa di path itu. Periksa path setelah port, misalnya /sabnzbd."
 }

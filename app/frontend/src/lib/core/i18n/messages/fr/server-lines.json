@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Le seuil de sortie est sauté : ce film ne compte pas encore comme sorti",
 	"server.sources.this-version-already-has-a-good": "Cette version a déjà une copie suffisante ; la nouvelle la remplacera",
 	"server.requests.removed-the-request-for": "{name} a retiré la demande pour {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex n'a donné aucun code de compte pour cette personne, donc sa liste de suivi n'est pas lue."
+	"server.requests.plex-gave-no-account-code-for": "Plex n'a donné aucun code de compte pour cette personne, donc sa liste de suivi n'est pas lue.",
+	"server.core.another-app-answered-check-the-port": "Une autre application a répondu. Vérifiez le port : il appartient à autre chose.",
+	"server.core.blocked-local-network-turn-on-may": "Bloqué : réseau local. Activez « Joindre le réseau local » s'il tourne chez vous.",
+	"server.core.category-missing-add-it-in-the": "Catégorie absente. Ajoutez-la dans l'application de téléchargement, ou choisissez-en une autre ici.",
+	"server.core.certificate-not-trusted-use-the-name": "Certificat non fiable. Utilisez le nom de son certificat, ou http:// s'il n'en a pas.",
+	"server.core.it-speaks-http-not-https-start": "Il parle http, pas https. Commencez l'adresse par http://.",
+	"server.core.it-speaks-https-not-http-start": "Il parle https, pas http. Commencez l'adresse par https://.",
+	"server.core.key-or-password-refused-check-them": "Clé ou mot de passe refusé. Vérifiez-les, puis testez à nouveau.",
+	"server.core.name-not-found-check-the-host": "Nom introuvable. Vérifiez le nom d'hôte dans l'adresse.",
+	"server.core.no-answer-in-time-check-the": "Pas de réponse à temps. Vérifiez l'adresse et qu'aucun pare-feu ne bloque.",
+	"server.core.nothing-answers-on-that-port-check": "Rien ne répond sur ce port. Vérifiez le port et que l'application tourne.",
+	"server.core.nothing-at-that-path-check-the": "Rien à ce chemin. Vérifiez le chemin après le port, par exemple /sabnzbd."
 }

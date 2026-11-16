@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Ambang keluaran dilangkau: filem ini belum dikira sudah keluar",
 	"server.sources.this-version-already-has-a-good": "Versi ini sudah mempunyai salinan yang cukup baik; yang baharu akan menggantikannya",
 	"server.requests.removed-the-request-for": "{name} mengalih keluar permintaan untuk {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kod akaun untuk orang ini, jadi senarai tontonannya tidak dibaca."
+	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kod akaun untuk orang ini, jadi senarai tontonannya tidak dibaca.",
+	"server.core.another-app-answered-check-the-port": "Aplikasi lain yang menjawab. Semak port: ia milik sesuatu yang lain.",
+	"server.core.blocked-local-network-turn-on-may": "Disekat: rangkaian setempat. Hidupkan \"Capai rangkaian setempat\" jika ia berjalan di rumah.",
+	"server.core.category-missing-add-it-in-the": "Kategori tiada. Tambahnya dalam aplikasi muat turun, atau pilih yang lain di sini.",
+	"server.core.certificate-not-trusted-use-the-name": "Sijil tidak dipercayai. Guna nama pada sijilnya, atau http:// jika tiada.",
+	"server.core.it-speaks-http-not-https-start": "Ia menggunakan http, bukan https. Mulakan alamat dengan http://.",
+	"server.core.it-speaks-https-not-http-start": "Ia menggunakan https, bukan http. Mulakan alamat dengan https://.",
+	"server.core.key-or-password-refused-check-them": "Kunci atau kata laluan ditolak. Semak, kemudian uji lagi.",
+	"server.core.name-not-found-check-the-host": "Nama tidak ditemui. Semak nama hos dalam alamat.",
+	"server.core.no-answer-in-time-check-the": "Tiada jawapan dalam masa. Semak alamat, dan pastikan tiada tembok api yang menghalang.",
+	"server.core.nothing-answers-on-that-port-check": "Tiada apa yang menjawab pada port itu. Semak port, dan pastikan aplikasi sedang berjalan.",
+	"server.core.nothing-at-that-path-check-the": "Tiada apa-apa pada laluan itu. Semak laluan selepas port, contohnya /sabnzbd."
 }

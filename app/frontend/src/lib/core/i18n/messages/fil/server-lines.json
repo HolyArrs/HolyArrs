@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Nilalaktawan ang Release gate: hindi pa binibilang na lumabas ang pelikulang ito",
 	"server.sources.this-version-already-has-a-good": "May sapat nang magandang kopya ang Bersyong ito; papalitan ito ng bago",
 	"server.requests.removed-the-request-for": "Inalis ni {name} ang kahilingan para sa {a}",
-	"server.requests.plex-gave-no-account-code-for": "Walang ibinigay na account code ang Plex para sa taong ito, kaya hindi binabasa ang watchlist niya."
+	"server.requests.plex-gave-no-account-code-for": "Walang ibinigay na account code ang Plex para sa taong ito, kaya hindi binabasa ang watchlist niya.",
+	"server.core.another-app-answered-check-the-port": "Ibang app ang sumagot. Tingnan ang port: para ito sa ibang bagay.",
+	"server.core.blocked-local-network-turn-on-may": "Naka-block: local network. I-on ang \"Abutin ang local network\" kung tumatakbo ito sa bahay.",
+	"server.core.category-missing-add-it-in-the": "Walang ganitong category. Idagdag ito sa download app, o pumili ng iba rito.",
+	"server.core.certificate-not-trusted-use-the-name": "Hindi pinagkakatiwalaan ang certificate. Gamitin ang pangalan sa certificate nito, o http:// kung wala.",
+	"server.core.it-speaks-http-not-https-start": "Http ang gamit nito, hindi https. Simulan ang address sa http://.",
+	"server.core.it-speaks-https-not-http-start": "Https ang gamit nito, hindi http. Simulan ang address sa https://.",
+	"server.core.key-or-password-refused-check-them": "Tinanggihan ang key o password. Tingnan ang mga ito, saka subukan muli.",
+	"server.core.name-not-found-check-the-host": "Hindi nahanap ang pangalan. Tingnan ang host name sa address.",
+	"server.core.no-answer-in-time-check-the": "Walang sagot sa takdang oras. Tingnan ang address, at na walang firewall na humaharang.",
+	"server.core.nothing-answers-on-that-port-check": "Walang sumasagot sa port na iyon. Tingnan ang port, at na tumatakbo ang app.",
+	"server.core.nothing-at-that-path-check-the": "Walang laman ang path na iyon. Tingnan ang path pagkatapos ng port, halimbawa /sabnzbd."
 }

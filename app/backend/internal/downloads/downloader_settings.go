@@ -12,6 +12,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -72,6 +73,8 @@ type HealthView struct {
 	State string `json:"state"`
 	Label string `json:"label"`
 	Text  string `json:"text"`
+	// Cause names why it cannot be reached (doctor causes), when known.
+	Cause string `json:"cause,omitempty"`
 }
 
 // Add saves a new Downloader and runs then in the same transaction.
@@ -228,22 +231,32 @@ func SetPaused(ctx context.Context, s *database.Store, id int64, paused bool, by
 }
 
 // HealthOf builds the health view of d as of now.
+// A known cause of the last error is said in its own line, the same one the
+// Test button gives.
 func HealthOf(d domain.Downloader, now time.Time) HealthView {
+	cause := doctor.At(doctor.OfText(d.LastError), d.LastError, d.URL)
+	line := doctor.Line(cause)
 	switch {
 	case d.State == "disabled":
-		return HealthView{"paused", "Paused", "Paused by you: HolyArrs sends nothing new to it. Downloads already there are still followed."}
+		return HealthView{"paused", "Paused", "Paused by you: HolyArrs sends nothing new to it. Downloads already there are still followed.", ""}
 	case d.State == "auth_failed":
-		return HealthView{"sign_in_refused", "Sign-in refused", "It turned down the key or sign-in. Check them and test again."}
+		return HealthView{"sign_in_refused", "Sign-in refused", "It turned down the key or sign-in. Check them and test again.", string(doctor.Auth)}
 	case d.BackoffUntil != nil && d.BackoffUntil.After(now):
+		if line != "" {
+			return HealthView{"resting", "Resting", line, string(cause)}
+		}
 		why := ""
 		if e := strings.TrimRight(strings.TrimSpace(d.LastError), "."); e != "" {
 			why = " (" + e + ")"
 		}
-		return HealthView{"resting", "Resting", "It did not answer" + why + ", so HolyArrs waits until " + d.BackoffUntil.UTC().Format("15:04 UTC") + " before sending to it again."}
+		return HealthView{"resting", "Resting", "It did not answer" + why + ", so HolyArrs waits until " + d.BackoffUntil.UTC().Format("15:04 UTC") + " before sending to it again.", ""}
 	case d.State == "unreachable":
-		return HealthView{"not_answering", "Not answering", "It did not answer the last check. " + d.LastError}
+		if line != "" {
+			return HealthView{"not_answering", "Not answering", line, string(cause)}
+		}
+		return HealthView{"not_answering", "Not answering", "It did not answer the last check. " + d.LastError, ""}
 	}
-	return HealthView{"working", "Working", ""}
+	return HealthView{"working", "Working", "", ""}
 }
 
 func hostOf(raw string) string {

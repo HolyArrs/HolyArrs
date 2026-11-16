@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Prah vydania sa preskočí: tento film sa ešte nepočíta ako vydaný",
 	"server.sources.this-version-already-has-a-good": "Táto Verzia už má dostatočnú kópiu; nová ju nahradí",
 	"server.requests.removed-the-request-for": "{name} odstránil(a) žiadosť o {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex pre túto osobu nedal kód účtu, preto sa jej zoznam na pozretie nečíta."
+	"server.requests.plex-gave-no-account-code-for": "Plex pre túto osobu nedal kód účtu, preto sa jej zoznam na pozretie nečíta.",
+	"server.core.another-app-answered-check-the-port": "Odpovedala iná aplikácia. Skontrolujte port: patrí niečomu inému.",
+	"server.core.blocked-local-network-turn-on-may": "Blokované: lokálna sieť. Ak beží doma, zapnite „Dosiahnuť lokálnu sieť“.",
+	"server.core.category-missing-add-it-in-the": "Chýba kategória. Pridajte ju v aplikácii na sťahovanie alebo tu vyberte inú.",
+	"server.core.certificate-not-trusted-use-the-name": "Certifikát nie je dôveryhodný. Použite meno z jeho certifikátu, alebo http://, ak žiadny nemá.",
+	"server.core.it-speaks-http-not-https-start": "Hovorí http, nie https. Začnite adresu http://.",
+	"server.core.it-speaks-https-not-http-start": "Hovorí https, nie http. Začnite adresu https://.",
+	"server.core.key-or-password-refused-check-them": "Kľúč alebo heslo zamietnuté. Skontrolujte ich a otestujte znova.",
+	"server.core.name-not-found-check-the-host": "Meno sa nenašlo. Skontrolujte názov hostiteľa v adrese.",
+	"server.core.no-answer-in-time-check-the": "Žiadna odpoveď včas. Skontrolujte adresu a či neprekáža firewall.",
+	"server.core.nothing-answers-on-that-port-check": "Na tomto porte nič neodpovedá. Skontrolujte port a či aplikácia beží.",
+	"server.core.nothing-at-that-path-check-the": "Na tejto ceste nič nie je. Skontrolujte cestu za portom, napríklad /sabnzbd."
 }

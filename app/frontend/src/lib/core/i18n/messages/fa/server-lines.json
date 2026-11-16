@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "آستانه انتشار رد می‌شود: این فیلم هنوز منتشرشده حساب نمی‌شود",
 	"server.sources.this-version-already-has-a-good": "این نسخه از قبل کپی به‌اندازه کافی خوبی دارد؛ کپی تازه جایش را می‌گیرد",
 	"server.requests.removed-the-request-for": "{name} درخواست {a} را حذف کرد",
-	"server.requests.plex-gave-no-account-code-for": "Plex کد حساب این شخص را نداد، بنابراین فهرست تماشای او خوانده نمی‌شود."
+	"server.requests.plex-gave-no-account-code-for": "Plex کد حساب این شخص را نداد، بنابراین فهرست تماشای او خوانده نمی‌شود.",
+	"server.core.another-app-answered-check-the-port": "برنامهٔ دیگری پاسخ داد. درگاه را بررسی کنید: مال چیز دیگری است.",
+	"server.core.blocked-local-network-turn-on-may": "مسدود: شبکهٔ محلی. اگر در خانه اجرا می‌شود، «دسترسی به شبکه محلی» را روشن کنید.",
+	"server.core.category-missing-add-it-in-the": "دسته وجود ندارد. آن را در برنامهٔ دانلود اضافه کنید یا اینجا دستهٔ دیگری انتخاب کنید.",
+	"server.core.certificate-not-trusted-use-the-name": "گواهی مورد اعتماد نیست. از نام روی گواهی آن استفاده کنید، یا اگر گواهی ندارد از http://.",
+	"server.core.it-speaks-http-not-https-start": "با http کار می‌کند، نه https. نشانی را با http:// شروع کنید.",
+	"server.core.it-speaks-https-not-http-start": "با https کار می‌کند، نه http. نشانی را با https:// شروع کنید.",
+	"server.core.key-or-password-refused-check-them": "کلید یا گذرواژه رد شد. آن‌ها را بررسی و دوباره آزمایش کنید.",
+	"server.core.name-not-found-check-the-host": "نام پیدا نشد. نام میزبان را در نشانی بررسی کنید.",
+	"server.core.no-answer-in-time-check-the": "پاسخی به‌موقع نرسید. نشانی را بررسی کنید و اینکه دیواره‌آتشی مانع نباشد.",
+	"server.core.nothing-answers-on-that-port-check": "هیچ چیزی روی این درگاه پاسخ نمی‌دهد. درگاه را بررسی کنید و اینکه برنامه در حال اجراست.",
+	"server.core.nothing-at-that-path-check-the": "در این مسیر چیزی نیست. مسیر پس از درگاه را بررسی کنید، مثلاً /sabnzbd."
 }

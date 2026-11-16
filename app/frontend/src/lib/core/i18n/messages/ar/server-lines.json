@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "يُتخطى شرط الصدور: هذا الفيلم لا يُعد صادرًا بعد",
 	"server.sources.this-version-already-has-a-good": "لهذه النسخة نسخة كافية الجودة بالفعل؛ وستحل الجديدة محلها",
 	"server.requests.removed-the-request-for": "أزال {name} الطلب على {a}",
-	"server.requests.plex-gave-no-account-code-for": "لم يعطِ Plex رمز حساب لهذا الشخص، لذا لا تتم قراءة قائمة المشاهدة الخاصة به."
+	"server.requests.plex-gave-no-account-code-for": "لم يعطِ Plex رمز حساب لهذا الشخص، لذا لا تتم قراءة قائمة المشاهدة الخاصة به.",
+	"server.core.another-app-answered-check-the-port": "أجاب تطبيق آخر. تحقق من المنفذ: إنه لبرنامج آخر.",
+	"server.core.blocked-local-network-turn-on-may": "محظور: شبكة محلية. فعّل \"الوصول إلى الشبكة المحلية\" إذا كان يعمل في المنزل.",
+	"server.core.category-missing-add-it-in-the": "الفئة غير موجودة. أضفها في تطبيق التنزيل، أو اختر فئة أخرى هنا.",
+	"server.core.certificate-not-trusted-use-the-name": "الشهادة غير موثوقة. استخدم الاسم الموجود في شهادته، أو http:// إن لم تكن له شهادة.",
+	"server.core.it-speaks-http-not-https-start": "يتحدث http وليس https. ابدأ العنوان بـ http://.",
+	"server.core.it-speaks-https-not-http-start": "يتحدث https وليس http. ابدأ العنوان بـ https://.",
+	"server.core.key-or-password-refused-check-them": "تم رفض المفتاح أو كلمة المرور. تحقق منهما ثم اختبر مجددًا.",
+	"server.core.name-not-found-check-the-host": "الاسم غير موجود. تحقق من اسم المضيف في العنوان.",
+	"server.core.no-answer-in-time-check-the": "لا رد في الوقت المحدد. تحقق من العنوان ومن عدم وجود جدار حماية يعترضه.",
+	"server.core.nothing-answers-on-that-port-check": "لا شيء يجيب على هذا المنفذ. تحقق من المنفذ ومن أن التطبيق يعمل.",
+	"server.core.nothing-at-that-path-check-the": "لا شيء في هذا المسار. تحقق من المسار بعد المنفذ، مثل /sabnzbd."
 }

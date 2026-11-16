@@ -48,7 +48,7 @@ test('a SABnzbd is added and tested, a wrong key is said in plain words, it paus
 	await r.getByRole('button', { name: 'Change' }).click();
 	await page.getByLabel('API key', { exact: true }).fill('not-the-key');
 	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
-	await expect(r.getByTestId('downloader-test')).toContainText('turned down the key');
+	await expect(r.getByTestId('downloader-test')).toContainText('Key or password refused');
 	await expect(r.getByTestId('downloader-state')).toHaveText('Sign-in refused');
 
 	// A category SABnzbd does not have.
@@ -57,7 +57,7 @@ test('a SABnzbd is added and tested, a wrong key is said in plain words, it paus
 	await page.getByLabel('API key', { exact: true }).fill(sabKey);
 	await page.getByLabel('Category', { exact: true }).fill('holyarrs');
 	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
-	await expect(r.getByTestId('downloader-test')).toContainText('category does not exist in SABnzbd');
+	await expect(r.getByTestId('downloader-test')).toContainText('Category missing');
 	await r.hover(); // row buttons show on hover
 	await r.getByRole('button', { name: 'Change' }).click();
 	await page.getByLabel('Category', { exact: true }).fill('movies');

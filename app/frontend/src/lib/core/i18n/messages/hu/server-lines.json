@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "A Megjelenési küszöb ki van hagyva: ez a film még nem számít megjelentnek",
 	"server.sources.this-version-already-has-a-good": "Ennek a Változatnak már van elég jó másolata; az új lecseréli",
 	"server.requests.removed-the-request-for": "{name} eltávolította a kérést: {a}",
-	"server.requests.plex-gave-no-account-code-for": "A Plex nem adott fiókkódot ehhez a személyhez, ezért a figyelőlistáját nem olvassa."
+	"server.requests.plex-gave-no-account-code-for": "A Plex nem adott fiókkódot ehhez a személyhez, ezért a figyelőlistáját nem olvassa.",
+	"server.core.another-app-answered-check-the-port": "Egy másik alkalmazás válaszolt. Ellenőrizd a portot: az valami másé.",
+	"server.core.blocked-local-network-turn-on-may": "Letiltva: helyi hálózat. Kapcsold be a(z) „Elérés a helyi hálózaton” lehetőséget, ha otthon fut.",
+	"server.core.category-missing-add-it-in-the": "Hiányzik a kategória. Add hozzá a letöltőalkalmazásban, vagy válassz itt egy másikat.",
+	"server.core.certificate-not-trusted-use-the-name": "A tanúsítvány nem megbízható. Használd a tanúsítványán szereplő nevet, vagy http://-t, ha nincs neki.",
+	"server.core.it-speaks-http-not-https-start": "http-t beszél, nem https-t. Kezdd a címet http://-vel.",
+	"server.core.it-speaks-https-not-http-start": "https-t beszél, nem http-t. Kezdd a címet https://-sel.",
+	"server.core.key-or-password-refused-check-them": "A kulcsot vagy a jelszót elutasította. Ellenőrizd őket, majd teszteld újra.",
+	"server.core.name-not-found-check-the-host": "A név nem található. Ellenőrizd a címben a gépnevet.",
+	"server.core.no-answer-in-time-check-the": "Nincs válasz időben. Ellenőrizd a címet, és hogy tűzfal ne álljon útban.",
+	"server.core.nothing-answers-on-that-port-check": "Ezen a porton semmi nem válaszol. Ellenőrizd a portot, és hogy fut-e az alkalmazás.",
+	"server.core.nothing-at-that-path-check-the": "Ezen az útvonalon nincs semmi. Ellenőrizd a port utáni útvonalat, például /sabnzbd."
 }

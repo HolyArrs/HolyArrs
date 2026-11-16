@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Utgivelsesgrensen hoppes over: denne filmen regnes ikke som ute ennå",
 	"server.sources.this-version-already-has-a-good": "Denne versjonen har allerede en bra nok kopi. Den nye erstatter den",
 	"server.requests.removed-the-request-for": "{name} fjernet forespørselen om {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex ga ingen kontokode for denne personen, så ønskelisten hens blir ikke lest."
+	"server.requests.plex-gave-no-account-code-for": "Plex ga ingen kontokode for denne personen, så ønskelisten hens blir ikke lest.",
+	"server.core.another-app-answered-check-the-port": "En annen app svarte. Sjekk porten: den tilhører noe annet.",
+	"server.core.blocked-local-network-turn-on-may": "Blokkert: lokalt nettverk. Slå på «Få tilgang til det lokale nettverket» hvis den kjører hjemme.",
+	"server.core.category-missing-add-it-in-the": "Kategorien mangler. Legg den til i nedlastingsappen, eller velg en annen her.",
+	"server.core.certificate-not-trusted-use-the-name": "Sertifikatet er ikke klarert. Bruk navnet i sertifikatet, eller http:// hvis det ikke har noe.",
+	"server.core.it-speaks-http-not-https-start": "Den snakker http, ikke https. Start adressen med http://.",
+	"server.core.it-speaks-https-not-http-start": "Den snakker https, ikke http. Start adressen med https://.",
+	"server.core.key-or-password-refused-check-them": "Nøkkel eller passord avvist. Sjekk dem, og test igjen.",
+	"server.core.name-not-found-check-the-host": "Fant ikke navnet. Sjekk vertsnavnet i adressen.",
+	"server.core.no-answer-in-time-check-the": "Ikke svar i tide. Sjekk adressen, og at ingen brannmur står i veien.",
+	"server.core.nothing-answers-on-that-port-check": "Ingenting svarer på den porten. Sjekk porten, og at appen kjører.",
+	"server.core.nothing-at-that-path-check-the": "Ingenting på den stien. Sjekk stien etter porten, for eksempel /sabnzbd."
 }

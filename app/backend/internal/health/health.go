@@ -18,6 +18,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 
@@ -586,6 +587,9 @@ func (e *Engine) downloaders(ctx context.Context) ([]Result, error) {
 	for _, d := range ds {
 		r := Result{Key: "downloader:" + strconv.FormatInt(d.ID, 10), Kind: "downloader", Subject: d.Name, State: OK}
 		why := strings.TrimSpace(d.LastError)
+		if line := doctor.Line(doctor.At(doctor.OfText(why), why, d.URL)); line != "" {
+			why = line
+		}
 		switch d.State {
 		case "unreachable":
 			r.State, r.Message = Warning, "Downloader "+d.Name+" does not answer"

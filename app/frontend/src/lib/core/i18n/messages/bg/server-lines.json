@@ -1343,5 +1343,16 @@
 	"server.sources.the-release-gate-is-skipped-this": "Прагът за излизане е пропуснат: този филм не се брои за излязъл",
 	"server.sources.this-version-already-has-a-good": "Този вариант вече има достатъчно добро копие; новото ще го замени",
 	"server.requests.removed-the-request-for": "{name} премахна заявката за {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex не даде код на акаунта за този човек, затова списъкът му за гледане не се чете."
+	"server.requests.plex-gave-no-account-code-for": "Plex не даде код на акаунта за този човек, затова списъкът му за гледане не се чете.",
+	"server.core.another-app-answered-check-the-port": "Отговори друго приложение. Проверете порта: той е на нещо друго.",
+	"server.core.blocked-local-network-turn-on-may": "Блокирано: локална мрежа. Включете „Достъп до локалната мрежа“, ако работи у дома.",
+	"server.core.category-missing-add-it-in-the": "Липсва категория. Добавете я в приложението за изтегляне или изберете друга тук.",
+	"server.core.certificate-not-trusted-use-the-name": "Сертификатът не е доверен. Използвайте името от сертификата или http://, ако няма такъв.",
+	"server.core.it-speaks-http-not-https-start": "Говори http, не https. Започнете адреса с http://.",
+	"server.core.it-speaks-https-not-http-start": "Говори https, не http. Започнете адреса с https://.",
+	"server.core.key-or-password-refused-check-them": "Ключът или паролата са отказани. Проверете ги и тествайте отново.",
+	"server.core.name-not-found-check-the-host": "Името не е намерено. Проверете името на хоста в адреса.",
+	"server.core.no-answer-in-time-check-the": "Няма отговор навреме. Проверете адреса и дали защитна стена не пречи.",
+	"server.core.nothing-answers-on-that-port-check": "Нищо не отговаря на този порт. Проверете порта и дали приложението работи.",
+	"server.core.nothing-at-that-path-check-the": "Няма нищо на този път. Проверете пътя след порта, например /sabnzbd."
 }
