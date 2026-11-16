@@ -202,6 +202,24 @@ func TestByHandMusicAlbumTagTailNotSure(t *testing.T) {
 	}
 }
 
+// The same holds for an untagged file whose album folder only matches once its
+// "(Live)" or "(Deluxe Edition)" is cut off; a year or format tail stays sure.
+func TestByHandMusicAlbumFolderTailNotSure(t *testing.T) {
+	w := musicSetup(t)
+	for _, al := range []string{"Part II (Live)", "Part II (Deluxe Edition)", "Part II (2001) [FLAC]"} {
+		mp3Fixture(t, filepath.Join(w.in, "Brad Paisley", al, "03 "+partTwo[2]+".mp3"))
+	}
+	got := w.scan(t, w.in)
+	for _, al := range []string{"Part II (Live)", "Part II (Deluxe Edition)"} {
+		if g := got["Brad Paisley/"+al+"/03 "+partTwo[2]+".mp3"].Guess; g.Confidence >= 0.7 {
+			t.Errorf("%s: %+v", al, g)
+		}
+	}
+	if g := got["Brad Paisley/Part II (2001) [FLAC]/03 "+partTwo[2]+".mp3"].Guess; g.AlbumID != w.album || g.Track != 3 || g.Confidence < 0.7 {
+		t.Errorf("year tail: %+v", g)
+	}
+}
+
 func TestByHandMusicFolderNamesAndIDs(t *testing.T) {
 	w := musicSetup(t)
 	// No tags: the folders name the artist and album, the file the track.

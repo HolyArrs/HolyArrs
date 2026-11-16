@@ -73,7 +73,13 @@ func (ml *musicLibrary) artist(ctx context.Context, t mediafiles.Title) (*musicA
 		return a, nil
 	}
 	a := &musicArtist{t: t}
-	_ = ml.db.QueryRowContext(ctx, "SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1", t.ID).Scan(&a.main)
+	vers, err := mediafiles.VersionsOfTitle(ctx, ml.db, t.ID)
+	if err != nil {
+		return nil, err
+	}
+	if len(vers) > 0 {
+		a.main = vers[0].ID
+	}
 	parts, err := database.Select[mediafiles.Part](ctx, ml.db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL", t.ID)
 	if err != nil {
 		return nil, err
@@ -174,7 +180,7 @@ func sameName(a, b string) bool {
 	return cut(a) != "" && cut(a) == cut(b)
 }
 
-// musicFolders reads the artist and album names out of a file's folders:
+// musicFolders reads the artist and album folder names out of a file's path:
 // ".../Artist/Album (2001)/CD1/01 Song.flac" or ".../Artist - Album/01 Song.flac".
 func musicFolders(p string) (artist, album string, year int) {
 	dirs := strings.Split(filepath.ToSlash(filepath.Dir(p)), "/")
@@ -184,7 +190,8 @@ func musicFolders(p string) (artist, album string, year int) {
 	if len(dirs) == 0 {
 		return "", "", 0
 	}
-	album, year = folderAlbum(dirs[len(dirs)-1])
+	album = dirs[len(dirs)-1]
+	_, year = folderAlbum(album)
 	if len(dirs) > 1 {
 		artist = dirs[len(dirs)-2]
 	}
@@ -316,7 +323,7 @@ func (a *musicArtist) album(tg tags.Tags, dirAlbum string, dirYear int) (*musicA
 		}
 	}
 	reason := MusicNoAlbum
-	for i, name := range []string{tg.Album, dirAlbum} {
+	for _, name := range []string{tg.Album, dirAlbum} {
 		stripped, year := folderAlbum(name)
 		if year == 0 {
 			year = dirYear
@@ -338,8 +345,8 @@ func (a *musicArtist) album(tg tags.Tags, dirAlbum string, dirYear int) (*musicA
 		}
 		switch {
 		case len(hits) == 1:
-			// A tag that only matches once a "(Live)" or "(Deluxe Edition)" is cut off may be another recording.
-			loose := i == 0 && !sameName(hits[0].part.Name, name) && !sameName(hits[0].part.Name, tagAlbum(name))
+			// A name that only matches once a "(Live)" or "(Deluxe Edition)" is cut off may be another recording.
+			loose := !sameName(hits[0].part.Name, name) && !sameName(hits[0].part.Name, tagAlbum(name))
 			return hits[0], "", loose
 		case len(hits) > 1:
 			reason = MusicTwoAlbum
