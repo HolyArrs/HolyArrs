@@ -101,5 +101,8 @@
 "settings.users.noteExample": "napr. Mama",
 "settings.users.days": "Dni platnosti odkazu",
 "settings.users.makeInvite": "Vytvoriť odkaz na pozvánku",
-"settings.users.permAuto4k": "Žiadosti o 4K schválené bez čakania"
+"settings.users.permAuto4k": "Žiadosti o 4K schválené bez čakania",
+"settings.users.serverAccount": "Účet na serveri",
+"settings.users.pickAccount": "Vyberte účet na mediálnom serveri",
+"settings.users.accountLinked": "Prepojené s {name}"
 }

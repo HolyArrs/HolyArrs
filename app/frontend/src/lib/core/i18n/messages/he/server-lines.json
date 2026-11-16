@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "שער היציאה מדולג: הסרט הזה עדיין לא נחשב כיצא",
 	"server.sources.this-version-already-has-a-good": "לגרסה הזו כבר יש עותק מספיק טוב; החדש יחליף אותו",
 	"server.requests.removed-the-request-for": "{name} הסיר/ה את הבקשה עבור {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex לא סיפק קוד חשבון עבור האדם הזה, ולכן רשימת הצפייה שלו לא נקראת."
+	"server.requests.plex-gave-no-account-code-for": "Plex לא סיפק קוד חשבון עבור האדם הזה, ולכן רשימת הצפייה שלו לא נקראת.",
+	"server.accounts.linked-the-account-to": "{name} קישר את חשבון {kind} {name2} אל {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} ביטל את קישור חשבון {kind} של {name2}",
+	"server.accounts.no-such-account-on-that-server": "אין חשבון כזה בשרת הזה",
+	"server.accounts.only-the-owner-links-people-to": "רק הבעלים מקשר אנשים לחשבונות בשרת",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "זו הדרך היחידה שלהם להיכנס; קבעו להם סיסמה קודם"
 }

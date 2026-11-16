@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "np. Mama",
 	"settings.users.days": "Ile dni działa link",
 	"settings.users.makeInvite": "Utwórz link zaproszenia",
-	"settings.users.permAuto4k": "Prośby o 4K zatwierdzane bez czekania"
+	"settings.users.permAuto4k": "Prośby o 4K zatwierdzane bez czekania",
+	"settings.users.serverAccount": "Konto na serwerze",
+	"settings.users.pickAccount": "Wybierz konto na serwerze multimediów",
+	"settings.users.accountLinked": "Połączono z {name}"
 }

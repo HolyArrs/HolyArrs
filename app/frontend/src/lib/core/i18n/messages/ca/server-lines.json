@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "L'Umbral d'estrena s'omet: aquesta pel·lícula encara no es considera estrenada",
 	"server.sources.this-version-already-has-a-good": "Aquesta Versió ja té una còpia prou bona; la nova la substituirà",
 	"server.requests.removed-the-request-for": "{name} ha eliminat la sol·licitud de {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex no ha donat cap codi de compte d'aquesta persona, així que no se'n llegeix la llista de seguiment."
+	"server.requests.plex-gave-no-account-code-for": "Plex no ha donat cap codi de compte d'aquesta persona, així que no se'n llegeix la llista de seguiment.",
+	"server.accounts.linked-the-account-to": "{name} ha enllaçat el compte de {kind} {name2} a {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} ha desenllaçat el compte de {kind} de {name2}",
+	"server.accounts.no-such-account-on-that-server": "no hi ha cap compte així en aquest servidor",
+	"server.accounts.only-the-owner-links-people-to": "només el propietari enllaça persones a comptes del servidor",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "és la seva única manera d'entrar; posa'ls primer una contrasenya"
 }

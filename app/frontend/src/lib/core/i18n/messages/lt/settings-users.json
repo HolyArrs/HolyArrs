@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "pvz., Mama",
 	"settings.users.days": "Kiek dienų galioja nuoroda",
 	"settings.users.makeInvite": "Sukurti kvietimo nuorodą",
-	"settings.users.permAuto4k": "4K užsakymai patvirtinami nelaukiant"
+	"settings.users.permAuto4k": "4K užsakymai patvirtinami nelaukiant",
+	"settings.users.serverAccount": "Serverio paskyra",
+	"settings.users.pickAccount": "Pasirinkite paskyrą medijos serveryje",
+	"settings.users.accountLinked": "Susieta su {name}"
 }

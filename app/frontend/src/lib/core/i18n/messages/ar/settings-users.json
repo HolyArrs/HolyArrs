@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "مثلًا أمي",
 	"settings.users.days": "أيام صلاحية الرابط",
 	"settings.users.makeInvite": "أنشئ رابط دعوة",
-	"settings.users.permAuto4k": "طلبات 4K يُوافَق عليها دون انتظار"
+	"settings.users.permAuto4k": "طلبات 4K يُوافَق عليها دون انتظار",
+	"settings.users.serverAccount": "حساب الخادم",
+	"settings.users.pickAccount": "اختر حسابًا على خادم وسائط",
+	"settings.users.accountLinked": "تم الربط مع {name}"
 }

@@ -6,6 +6,7 @@
 	import Confirm from '#lib/ui/Confirm.svelte';
 	import { needsConfirm } from '#lib/ui/sensitive.ts';
 	import QrCode from './QrCode.svelte';
+	import MediaServerLink from './MediaServerLink.svelte';
 	import { strong } from './strong-error.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -382,6 +383,7 @@
 			{/if}
 		</div>
 	{/if}
+	<MediaServerLink />
 	{#if session.s.role === 'owner'}
 		<div class="srow">
 			<div class="txt"><span class="label">{t('accounts.security.locked')}</span><span class="hint">{t('accounts.signin.runThis')}</span></div>

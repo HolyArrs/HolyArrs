@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "La Soglia di uscita viene saltata: questo film non conta ancora come uscito",
 	"server.sources.this-version-already-has-a-good": "Questa Versione ha già una copia abbastanza buona; la nuova la sostituirà",
 	"server.requests.removed-the-request-for": "{name} ha rimosso la richiesta per {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex non ha fornito alcun codice account per questa persona, quindi la sua watchlist non viene letta."
+	"server.requests.plex-gave-no-account-code-for": "Plex non ha fornito alcun codice account per questa persona, quindi la sua watchlist non viene letta.",
+	"server.accounts.linked-the-account-to": "{name} ha collegato l'account {kind} {name2} a {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} ha scollegato l'account {kind} di {name2}",
+	"server.accounts.no-such-account-on-that-server": "nessun account del genere su quel server",
+	"server.accounts.only-the-owner-links-people-to": "solo il proprietario collega le persone agli account del server",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "è il loro unico modo di accedere; imposta prima una password"
 }

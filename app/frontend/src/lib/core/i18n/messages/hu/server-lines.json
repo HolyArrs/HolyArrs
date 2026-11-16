@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "A Megjelenési küszöb ki van hagyva: ez a film még nem számít megjelentnek",
 	"server.sources.this-version-already-has-a-good": "Ennek a Változatnak már van elég jó másolata; az új lecseréli",
 	"server.requests.removed-the-request-for": "{name} eltávolította a kérést: {a}",
-	"server.requests.plex-gave-no-account-code-for": "A Plex nem adott fiókkódot ehhez a személyhez, ezért a figyelőlistáját nem olvassa."
+	"server.requests.plex-gave-no-account-code-for": "A Plex nem adott fiókkódot ehhez a személyhez, ezért a figyelőlistáját nem olvassa.",
+	"server.accounts.linked-the-account-to": "{name} összekapcsolta a(z) {kind} fiókot ({name2}) ezzel: {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} leválasztotta {name2} {kind} fiókját",
+	"server.accounts.no-such-account-on-that-server": "nincs ilyen fiók azon a szerveren",
+	"server.accounts.only-the-owner-links-people-to": "csak a tulajdonos kapcsol embereket szerverfiókokhoz",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "ez az egyetlen módjuk a belépésre; előbb adj nekik jelszót"
 }

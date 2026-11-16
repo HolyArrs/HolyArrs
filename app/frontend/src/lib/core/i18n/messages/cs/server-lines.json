@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Práh vydání se přeskočí: tento film se ještě nepočítá jako vydaný",
 	"server.sources.this-version-already-has-a-good": "Tato Verze už má dost dobrou kopii; nová ji nahradí",
 	"server.requests.removed-the-request-for": "{name} odebral(a) žádost o {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex u této osoby nedal kód účtu, proto se její seznam ke zhlédnutí nečte."
+	"server.requests.plex-gave-no-account-code-for": "Plex u této osoby nedal kód účtu, proto se její seznam ke zhlédnutí nečte.",
+	"server.accounts.linked-the-account-to": "{name} propojil účet {kind} {name2} s {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} odpojil účet {kind} uživatele {name2}",
+	"server.accounts.no-such-account-on-that-server": "takový účet na tom serveru není",
+	"server.accounts.only-the-owner-links-people-to": "jen vlastník propojuje lidi s účty na serveru",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "je to jejich jediný způsob přihlášení; nejdřív jim nastavte heslo"
 }

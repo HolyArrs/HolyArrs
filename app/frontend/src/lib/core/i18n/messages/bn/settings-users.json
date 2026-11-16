@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "যেমন মা",
 	"settings.users.days": "লিংক যত দিন চলবে",
 	"settings.users.makeInvite": "একটি আমন্ত্রণের লিংক বানান",
-	"settings.users.permAuto4k": "অপেক্ষা ছাড়াই অনুমোদিত 4K রিকোয়েস্ট"
+	"settings.users.permAuto4k": "অপেক্ষা ছাড়াই অনুমোদিত 4K রিকোয়েস্ট",
+	"settings.users.serverAccount": "সার্ভার অ্যাকাউন্ট",
+	"settings.users.pickAccount": "একটি মিডিয়া সার্ভারে অ্যাকাউন্ট বেছে নিন",
+	"settings.users.accountLinked": "{name}-এর সাথে যুক্ত"
 }

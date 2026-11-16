@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "npr. Mama",
 	"settings.users.days": "Dana važenja poveznice",
 	"settings.users.makeInvite": "Napravi poveznicu pozivnice",
-	"settings.users.permAuto4k": "4K zahtjevi odobreni bez čekanja"
+	"settings.users.permAuto4k": "4K zahtjevi odobreni bez čekanja",
+	"settings.users.serverAccount": "Račun na poslužitelju",
+	"settings.users.pickAccount": "Odaberite račun na medijskom poslužitelju",
+	"settings.users.accountLinked": "Povezano s {name}"
 }

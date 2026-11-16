@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Ambang keluaran dilangkau: filem ini belum dikira sudah keluar",
 	"server.sources.this-version-already-has-a-good": "Versi ini sudah mempunyai salinan yang cukup baik; yang baharu akan menggantikannya",
 	"server.requests.removed-the-request-for": "{name} mengalih keluar permintaan untuk {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kod akaun untuk orang ini, jadi senarai tontonannya tidak dibaca."
+	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kod akaun untuk orang ini, jadi senarai tontonannya tidak dibaca.",
+	"server.accounts.linked-the-account-to": "{name} memautkan akaun {kind} {name2} kepada {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} membuang pautan akaun {kind} milik {name2}",
+	"server.accounts.no-such-account-on-that-server": "tiada akaun sebegitu pada pelayan itu",
+	"server.accounts.only-the-owner-links-people-to": "hanya pemilik memautkan orang kepada akaun pelayan",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "ini satu-satunya cara mereka log masuk; tetapkan kata laluan dahulu"
 }

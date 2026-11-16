@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Ngưỡng phát hành bị bỏ qua: phim này chưa được tính là đã ra mắt",
 	"server.sources.this-version-already-has-a-good": "Phiên bản này đã có một bản sao đủ tốt; bản mới sẽ thay thế nó",
 	"server.requests.removed-the-request-for": "{name} đã gỡ yêu cầu cho {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex không đưa mã tài khoản của người này nên danh sách xem của họ không được đọc."
+	"server.requests.plex-gave-no-account-code-for": "Plex không đưa mã tài khoản của người này nên danh sách xem của họ không được đọc.",
+	"server.accounts.linked-the-account-to": "{name} đã liên kết tài khoản {kind} {name2} với {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} đã gỡ liên kết tài khoản {kind} của {name2}",
+	"server.accounts.no-such-account-on-that-server": "không có tài khoản như vậy trên máy chủ đó",
+	"server.accounts.only-the-owner-links-people-to": "chỉ chủ sở hữu liên kết mọi người với tài khoản máy chủ",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "đây là cách đăng nhập duy nhất của họ; hãy đặt mật khẩu cho họ trước"
 }

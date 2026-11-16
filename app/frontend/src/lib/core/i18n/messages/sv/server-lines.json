@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Släppgränsen hoppas över: den här filmen räknas inte som utgiven ännu",
 	"server.sources.this-version-already-has-a-good": "Den här versionen har redan en tillräckligt bra kopia; den nya ersätter den",
 	"server.requests.removed-the-request-for": "{name} tog bort begäran om {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte."
+	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte.",
+	"server.accounts.linked-the-account-to": "{name} länkade {kind}-kontot {name2} till {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} tog bort länken till {kind}-kontot för {name2}",
+	"server.accounts.no-such-account-on-that-server": "inget sådant konto på den servern",
+	"server.accounts.only-the-owner-links-people-to": "bara ägaren länkar personer till serverkonton",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "detta är deras enda sätt att logga in; ge dem ett lösenord först"
 }

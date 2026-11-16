@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Útgáfuþröskuldinum er sleppt: þessi kvikmynd telst ekki komin út enn",
 	"server.sources.this-version-already-has-a-good": "Þetta afbrigði hefur þegar nógu gott eintak; það nýja kemur í staðinn",
 	"server.requests.removed-the-request-for": "{name} fjarlægði beiðni um {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex gaf engan reikningskóða fyrir þessa manneskju, þannig að áhorfslistinn hennar er ekki lesinn."
+	"server.requests.plex-gave-no-account-code-for": "Plex gaf engan reikningskóða fyrir þessa manneskju, þannig að áhorfslistinn hennar er ekki lesinn.",
+	"server.accounts.linked-the-account-to": "{name} tengdi {kind}-aðganginn {name2} við {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} aftengdi {kind}-aðgang {name2}",
+	"server.accounts.no-such-account-on-that-server": "enginn slíkur aðgangur á þeim þjóni",
+	"server.accounts.only-the-owner-links-people-to": "aðeins eigandinn tengir fólk við aðganga á þjóni",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "þetta er eina leið þeirra til að skrá sig inn; gefðu þeim fyrst lykilorð"
 }

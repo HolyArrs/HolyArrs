@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Порог выхода пропускается: этот фильм пока не считается вышедшим",
 	"server.sources.this-version-already-has-a-good": "У этого варианта уже есть достаточно хорошая копия; новая её заменит",
 	"server.requests.removed-the-request-for": "{name} удалил(а) запрос на {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex не передал код аккаунта этого человека, поэтому его список просмотра не читается."
+	"server.requests.plex-gave-no-account-code-for": "Plex не передал код аккаунта этого человека, поэтому его список просмотра не читается.",
+	"server.accounts.linked-the-account-to": "{name} связал учётную запись {kind} {name2} с {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} отвязал учётную запись {kind} пользователя {name2}",
+	"server.accounts.no-such-account-on-that-server": "такой учётной записи на этом сервере нет",
+	"server.accounts.only-the-owner-links-people-to": "только владелец связывает людей с учётными записями сервера",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "это их единственный способ входа; сначала задайте им пароль"
 }

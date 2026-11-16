@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Pragul de lansare e sărit: acest film nu se consideră încă apărut",
 	"server.sources.this-version-already-has-a-good": "Această Versiune are deja o copie suficient de bună; cea nouă o va înlocui",
 	"server.requests.removed-the-request-for": "{name} a eliminat cererea pentru {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nu a dat niciun cod de cont pentru această persoană, așa că lista ei de vizionare nu este citită."
+	"server.requests.plex-gave-no-account-code-for": "Plex nu a dat niciun cod de cont pentru această persoană, așa că lista ei de vizionare nu este citită.",
+	"server.accounts.linked-the-account-to": "{name} a legat contul {kind} {name2} de {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} a dezlegat contul {kind} al lui {name2}",
+	"server.accounts.no-such-account-on-that-server": "nu există un astfel de cont pe acel server",
+	"server.accounts.only-the-owner-links-people-to": "doar proprietarul leagă persoane de conturi de pe server",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "este singura lor cale de conectare; setează-le întâi o parolă"
 }

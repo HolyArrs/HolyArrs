@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Väljalaske lävi jäetakse vahele: seda filmi ei loeta veel ilmunuks",
 	"server.sources.this-version-already-has-a-good": "Sellel versioonil on juba piisavalt hea koopia; uus asendab selle",
 	"server.requests.removed-the-request-for": "{name} eemaldas taotluse: {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex ei andnud selle inimese kontokoodi, seega tema vaatamisnimekirja ei loeta."
+	"server.requests.plex-gave-no-account-code-for": "Plex ei andnud selle inimese kontokoodi, seega tema vaatamisnimekirja ei loeta.",
+	"server.accounts.linked-the-account-to": "{name} sidus {kind} konto {name2} kasutajaga {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} eemaldas kasutaja {name2} {kind} konto sidumise",
+	"server.accounts.no-such-account-on-that-server": "sellist kontot selles serveris pole",
+	"server.accounts.only-the-owner-links-people-to": "ainult omanik seob inimesi serveri kontodega",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "see on nende ainus sisselogimise viis; anna neile enne parool"
 }

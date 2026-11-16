@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Utgivelsesgrensen hoppes over: denne filmen regnes ikke som ute ennå",
 	"server.sources.this-version-already-has-a-good": "Denne versjonen har allerede en bra nok kopi. Den nye erstatter den",
 	"server.requests.removed-the-request-for": "{name} fjernet forespørselen om {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex ga ingen kontokode for denne personen, så ønskelisten hens blir ikke lest."
+	"server.requests.plex-gave-no-account-code-for": "Plex ga ingen kontokode for denne personen, så ønskelisten hens blir ikke lest.",
+	"server.accounts.linked-the-account-to": "{name} koblet {kind}-kontoen {name2} til {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} koblet fra {kind}-kontoen til {name2}",
+	"server.accounts.no-such-account-on-that-server": "ingen slik konto på den serveren",
+	"server.accounts.only-the-owner-links-people-to": "bare eieren kobler personer til serverkontoer",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "dette er deres eneste måte å logge inn på; gi dem et passord først"
 }

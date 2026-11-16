@@ -17,7 +17,7 @@ import (
 
 // mineWorld has a Plex and a Jellyfin server with watch history on, the
 // movie and show of watchTitles, and three people: 7 (ana) linked on both
-// servers, 8 (Luis R) linked to Plex by a plex.tv id, 9 (bo) with no link.
+// servers, 8 (Rae R) linked to Plex by a plex.tv id, 9 (bo) with no link.
 func mineWorld(t *testing.T) (w *world, movie, show int64) {
 	t.Helper()
 	w = newWorld(t)
@@ -93,7 +93,7 @@ func TestWatchedByOwnAccountsOnly(t *testing.T) {
 		t.Fatalf("ana %+v, want %+v", got, want)
 	}
 
-	// Luis R is linked, and watched nothing.
+	// Rae R is linked, and watched nothing.
 	if got := mine(t, w, 8); !got.Enabled || !got.Linked || len(got.Movies) != 0 || len(got.Shows) != 0 {
 		t.Fatalf("luis %+v", got)
 	}

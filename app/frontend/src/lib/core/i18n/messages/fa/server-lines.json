@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "آستانه انتشار رد می‌شود: این فیلم هنوز منتشرشده حساب نمی‌شود",
 	"server.sources.this-version-already-has-a-good": "این نسخه از قبل کپی به‌اندازه کافی خوبی دارد؛ کپی تازه جایش را می‌گیرد",
 	"server.requests.removed-the-request-for": "{name} درخواست {a} را حذف کرد",
-	"server.requests.plex-gave-no-account-code-for": "Plex کد حساب این شخص را نداد، بنابراین فهرست تماشای او خوانده نمی‌شود."
+	"server.requests.plex-gave-no-account-code-for": "Plex کد حساب این شخص را نداد، بنابراین فهرست تماشای او خوانده نمی‌شود.",
+	"server.accounts.linked-the-account-to": "{name} حساب {kind} {name2} را به {name3} پیوند داد",
+	"server.accounts.unlinked-the-account-of": "{name} پیوند حساب {kind} {name2} را برداشت",
+	"server.accounts.no-such-account-on-that-server": "چنین حسابی روی آن سرور نیست",
+	"server.accounts.only-the-owner-links-people-to": "فقط مالک افراد را به حساب‌های سرور پیوند می‌دهد",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "این تنها راه ورود آن‌هاست؛ اول برایشان گذرواژه بگذارید"
 }

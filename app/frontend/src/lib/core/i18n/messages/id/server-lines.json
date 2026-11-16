@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Batas rilis dilewati: film ini belum dianggap rilis",
 	"server.sources.this-version-already-has-a-good": "Versi ini sudah punya salinan yang cukup baik; yang baru akan menggantikannya",
 	"server.requests.removed-the-request-for": "{name} menghapus permintaan untuk {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kode akun untuk orang ini, jadi daftar tontonannya tidak dibaca."
+	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kode akun untuk orang ini, jadi daftar tontonannya tidak dibaca.",
+	"server.accounts.linked-the-account-to": "{name} menautkan akun {kind} {name2} ke {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} melepas tautan akun {kind} milik {name2}",
+	"server.accounts.no-such-account-on-that-server": "tidak ada akun seperti itu di server tersebut",
+	"server.accounts.only-the-owner-links-people-to": "hanya pemilik yang menautkan orang ke akun server",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "ini satu-satunya cara mereka masuk; beri mereka kata sandi dulu"
 }

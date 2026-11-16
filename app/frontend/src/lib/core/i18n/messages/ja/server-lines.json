@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "公開判定は省かれます。この映画は、まだ公開済みとして数えられません",
 	"server.sources.this-version-already-has-a-good": "このバージョンには、すでに十分な品質のコピーがあります。新しいものが置き換えます",
 	"server.requests.removed-the-request-for": "{name} が {a} のリクエストを削除しました",
-	"server.requests.plex-gave-no-account-code-for": "Plex がこの人のアカウントコードを返さなかったため、ウォッチリストは読み取られません。"
+	"server.requests.plex-gave-no-account-code-for": "Plex がこの人のアカウントコードを返さなかったため、ウォッチリストは読み取られません。",
+	"server.accounts.linked-the-account-to": "{name} が {kind} アカウント {name2} を {name3} にリンクしました",
+	"server.accounts.unlinked-the-account-of": "{name} が {name2} の {kind} アカウントのリンクを解除しました",
+	"server.accounts.no-such-account-on-that-server": "そのサーバーにそのアカウントはありません",
+	"server.accounts.only-the-owner-links-people-to": "サーバーのアカウントに人をリンクできるのはオーナーだけです",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "これがその人の唯一のサインイン方法です。先にパスワードを設定してください"
 }

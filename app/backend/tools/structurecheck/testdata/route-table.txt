@@ -2,6 +2,7 @@ DELETE /api/v1/account/avatar auth=self scope=write assurance=false part=core
 DELETE /api/v1/alerts/{id} auth=settings scope=write assurance=false part=core
 DELETE /api/v1/asks/{id} auth=ask scope=write assurance=false part=wishlist
 DELETE /api/v1/auth/keys/{id} auth=settings scope=admin assurance=true part=core
+DELETE /api/v1/auth/media-link/{kind} auth=self scope=admin assurance=true part=core
 DELETE /api/v1/auth/plex/link auth=owner scope=admin assurance=true part=core
 DELETE /api/v1/auth/plex/my-link auth=self scope=admin assurance=true part=core
 DELETE /api/v1/auth/sessions auth=self scope=admin assurance=false part=core
@@ -32,6 +33,7 @@ DELETE /api/v1/titles/{id}/versions/{vid} auth=manage_library scope=write assura
 DELETE /api/v1/turned-down auth=manage_library scope=write assurance=false part=media
 DELETE /api/v1/turned-down/{id} auth=manage_library scope=write assurance=false part=media
 DELETE /api/v1/users/invites/{id} auth=users scope=admin assurance=false part=core
+DELETE /api/v1/users/{id}/media-link/{kind} auth=owner scope=admin assurance=true part=core
 DELETE /api/v1/users/{id}/sessions/{sid} auth=users scope=admin assurance=false part=core
 DELETE /customformat/{id} auth=unlisted scope=admin assurance=false part=-
 DELETE /delayprofile/{id} auth=unlisted scope=admin assurance=false part=-
@@ -68,6 +70,7 @@ GET /api/v1/auth/ai-connect auth=signed_in scope=read assurance=false part=core
 GET /api/v1/auth/invites/{token} auth=unlisted scope=admin assurance=false part=core
 GET /api/v1/auth/keys auth=settings scope=admin assurance=false part=core
 GET /api/v1/auth/me auth=self scope=read assurance=false part=core
+GET /api/v1/auth/media-link auth=self scope=read assurance=false part=core
 GET /api/v1/auth/oidc/callback auth=public scope=admin assurance=false part=core
 GET /api/v1/auth/plex/my-link auth=self scope=read assurance=false part=core
 GET /api/v1/auth/sessions auth=self scope=admin assurance=false part=core
@@ -251,6 +254,7 @@ GET /api/v1/trash/profiles auth=settings scope=admin assurance=false part=media
 GET /api/v1/turned-down auth=manage_library scope=read assurance=false part=media
 GET /api/v1/users auth=users scope=admin assurance=false part=core
 GET /api/v1/users/invites auth=users scope=admin assurance=false part=core
+GET /api/v1/users/media-accounts auth=owner scope=admin assurance=false part=core
 GET /api/v1/users/{id}/avatar auth=signed_in scope=read assurance=false part=core
 GET /api/v1/users/{id}/sessions auth=users scope=admin assurance=false part=core
 GET /api/v1/watch-services auth=signed_in scope=read assurance=false part=media
@@ -324,6 +328,7 @@ POST /api/v1/auth/keys auth=settings scope=admin assurance=true part=core
 POST /api/v1/auth/login auth=unlisted scope=admin assurance=false part=core
 POST /api/v1/auth/login/two-factor auth=unlisted scope=admin assurance=false part=core
 POST /api/v1/auth/logout auth=self scope=write assurance=false part=core
+POST /api/v1/auth/media-link/{server} auth=self scope=admin assurance=true part=core
 POST /api/v1/auth/media-server/{kind} auth=unlisted scope=admin assurance=false part=core
 POST /api/v1/auth/media-server/{kind}/test auth=owner scope=admin assurance=false part=core
 POST /api/v1/auth/oidc/finish auth=public scope=admin assurance=false part=core
@@ -568,6 +573,7 @@ PUT /api/v1/titles/{id}/seasons/{number} auth=manage_library scope=write assuran
 PUT /api/v1/titles/{id}/subtitle-wish auth=manage_library scope=write assurance=false part=subtitles
 PUT /api/v1/titles/{id}/versions/{vid} auth=manage_library scope=write assurance=false part=title
 PUT /api/v1/users/{id} auth=users scope=admin assurance=true part=core
+PUT /api/v1/users/{id}/media-link auth=owner scope=admin assurance=true part=core
 PUT /config/mediamanagement auth=unlisted scope=admin assurance=false part=-
 PUT /config/mediamanagement/{id} auth=unlisted scope=admin assurance=false part=-
 PUT /config/naming auth=unlisted scope=admin assurance=false part=-

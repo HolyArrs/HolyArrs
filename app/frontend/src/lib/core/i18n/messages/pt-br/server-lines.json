@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "O Marco de lançamento é ignorado: este filme ainda não conta como lançado",
 	"server.sources.this-version-already-has-a-good": "Esta Versão já tem uma cópia boa o bastante; a nova vai substituí-la",
 	"server.requests.removed-the-request-for": "{name} removeu o pedido de {a}",
-	"server.requests.plex-gave-no-account-code-for": "O Plex não deu nenhum código de conta para esta pessoa, então a lista de interesse dela não é lida."
+	"server.requests.plex-gave-no-account-code-for": "O Plex não deu nenhum código de conta para esta pessoa, então a lista de interesse dela não é lida.",
+	"server.accounts.linked-the-account-to": "{name} vinculou a conta {kind} {name2} a {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} desvinculou a conta {kind} de {name2}",
+	"server.accounts.no-such-account-on-that-server": "não existe essa conta nesse servidor",
+	"server.accounts.only-the-owner-links-people-to": "só o dono vincula pessoas a contas do servidor",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "é a única forma de entrar dessa pessoa; defina uma senha primeiro"
 }

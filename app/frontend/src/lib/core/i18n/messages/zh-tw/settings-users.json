@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "例如 媽媽",
 	"settings.users.days": "連結有效天數",
 	"settings.users.makeInvite": "建立邀請連結",
-	"settings.users.permAuto4k": "4K 請求無需等待即獲核准"
+	"settings.users.permAuto4k": "4K 請求無需等待即獲核准",
+	"settings.users.serverAccount": "伺服器帳號",
+	"settings.users.pickAccount": "選擇媒體伺服器上的帳號",
+	"settings.users.accountLinked": "已連結 {name}"
 }

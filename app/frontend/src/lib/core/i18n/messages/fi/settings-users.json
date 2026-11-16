@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "esim. Äiti",
 	"settings.users.days": "Linkin voimassaolopäivät",
 	"settings.users.makeInvite": "Luo kutsulinkki",
-	"settings.users.permAuto4k": "4K-pyynnöt hyväksytään odottamatta"
+	"settings.users.permAuto4k": "4K-pyynnöt hyväksytään odottamatta",
+	"settings.users.serverAccount": "Palvelintili",
+	"settings.users.pickAccount": "Valitse tili mediapalvelimelta",
+	"settings.users.accountLinked": "Yhdistetty käyttäjään {name}"
 }

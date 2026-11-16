@@ -75,6 +75,9 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/auth/plex/my-link/start":      webserver.NeedSelf,
 	"POST /api/v1/auth/plex/my-link/finish":     webserver.NeedSelf,
 	"DELETE /api/v1/auth/plex/my-link":          webserver.NeedSelf,
+	"GET /api/v1/auth/media-link":               webserver.NeedSelf,
+	"POST /api/v1/auth/media-link/{server}":     webserver.NeedSelf,
+	"DELETE /api/v1/auth/media-link/{kind}":     webserver.NeedSelf,
 	"POST /api/v1/auth/oidc/link-finish":        webserver.NeedSelf,
 	"POST /api/v1/auth/forward/link":            webserver.NeedSelf,
 	"POST /api/v1/auth/password":                webserver.NeedSelf,
@@ -481,6 +484,10 @@ var RoutePerms = map[string]webserver.Perm{
 	"PUT /api/v1/auth/sso":               webserver.NeedOwner,
 	"POST /api/v1/auth/sso/test":         webserver.NeedOwner,
 	"POST /api/v1/users/{id}/sso/unlink": webserver.NeedOwner,
+	// Linking someone to their account on a connected Jellyfin or Emby server.
+	"GET /api/v1/users/media-accounts":            webserver.NeedOwner,
+	"PUT /api/v1/users/{id}/media-link":           webserver.NeedOwner,
+	"DELETE /api/v1/users/{id}/media-link/{kind}": webserver.NeedOwner,
 	// Setting up outside sign-in: link the owner's Plex, test an address, import people.
 	"POST /api/v1/auth/plex/link/start":          webserver.NeedOwner,
 	"POST /api/v1/auth/plex/link/finish":         webserver.NeedOwner,

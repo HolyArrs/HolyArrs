@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Išleidimo riba praleidžiama: šis filmas dar neskaitomas kaip išėjęs",
 	"server.sources.this-version-already-has-a-good": "Ši Versija jau turi pakankamai gerą kopiją; nauja ją pakeis",
 	"server.requests.removed-the-request-for": "{name} pašalino užklausą: {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nepateikė šio asmens paskyros kodo, todėl jo žiūrėjimo sąrašas neskaitomas."
+	"server.requests.plex-gave-no-account-code-for": "Plex nepateikė šio asmens paskyros kodo, todėl jo žiūrėjimo sąrašas neskaitomas.",
+	"server.accounts.linked-the-account-to": "{name} susiejo {kind} paskyrą {name2} su {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} atsiejo {name2} {kind} paskyrą",
+	"server.accounts.no-such-account-on-that-server": "tokios paskyros tame serveryje nėra",
+	"server.accounts.only-the-owner-links-people-to": "tik savininkas sieja žmones su serverio paskyromis",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "tai vienintelis jų prisijungimo būdas; pirmiausia nustatykite jiems slaptažodį"
 }

@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Die Veröffentlichungsschwelle wird übersprungen: Dieser Film gilt noch nicht als erschienen",
 	"server.sources.this-version-already-has-a-good": "Diese Variante hat schon eine gut genügende Kopie; die neue ersetzt sie",
 	"server.requests.removed-the-request-for": "{name} hat die Anfrage für {a} entfernt",
-	"server.requests.plex-gave-no-account-code-for": "Plex hat für diese Person keinen Kontocode geliefert, deshalb wird ihre Merkliste nicht gelesen."
+	"server.requests.plex-gave-no-account-code-for": "Plex hat für diese Person keinen Kontocode geliefert, deshalb wird ihre Merkliste nicht gelesen.",
+	"server.accounts.linked-the-account-to": "{name} hat das {kind}-Konto {name2} mit {name3} verknüpft",
+	"server.accounts.unlinked-the-account-of": "{name} hat das {kind}-Konto von {name2} gelöst",
+	"server.accounts.no-such-account-on-that-server": "kein solches Konto auf diesem Server",
+	"server.accounts.only-the-owner-links-people-to": "nur der Besitzer verknüpft Personen mit Server-Konten",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "das ist ihr einziger Weg zur Anmeldung; gib ihnen zuerst ein Passwort"
 }

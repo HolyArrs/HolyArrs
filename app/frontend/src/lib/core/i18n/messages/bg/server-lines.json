@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Прагът за излизане е пропуснат: този филм не се брои за излязъл",
 	"server.sources.this-version-already-has-a-good": "Този вариант вече има достатъчно добро копие; новото ще го замени",
 	"server.requests.removed-the-request-for": "{name} премахна заявката за {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex не даде код на акаунта за този човек, затова списъкът му за гледане не се чете."
+	"server.requests.plex-gave-no-account-code-for": "Plex не даде код на акаунта за този човек, затова списъкът му за гледане не се чете.",
+	"server.accounts.linked-the-account-to": "{name} свърза профила в {kind} {name2} с {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} премахна връзката на профила в {kind} на {name2}",
+	"server.accounts.no-such-account-on-that-server": "няма такъв профил в този сървър",
+	"server.accounts.only-the-owner-links-people-to": "само собственикът свързва хора с профили в сървъра",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "това е единственият им начин за вход; първо им задайте парола"
 }

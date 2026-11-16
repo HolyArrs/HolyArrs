@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "the Release gate is skipped: this Title is not out yet",
 	"server.sources.this-version-already-has-a-good": "this Version already has a good enough copy; the new one will replace it",
 	"server.requests.removed-the-request-for": "{name} removed the request for {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex gave no account code for this person, so their watchlist is not read."
+	"server.requests.plex-gave-no-account-code-for": "Plex gave no account code for this person, so their watchlist is not read.",
+	"server.accounts.linked-the-account-to": "{name} linked the {kind} account {name2} to {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} unlinked the {kind} account of {name2}",
+	"server.accounts.no-such-account-on-that-server": "no such account on that server",
+	"server.accounts.only-the-owner-links-people-to": "only the owner links people to server accounts",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "this is their only way to sign in; set them a password first"
 }

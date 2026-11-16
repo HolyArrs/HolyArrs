@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "напр. Мама",
 	"settings.users.days": "Дни, през които връзката важи",
 	"settings.users.makeInvite": "Създаване на връзка за покана",
-	"settings.users.permAuto4k": "4K заявки, одобрени без чакане"
+	"settings.users.permAuto4k": "4K заявки, одобрени без чакане",
+	"settings.users.serverAccount": "Профил в сървъра",
+	"settings.users.pickAccount": "Изберете профил в медиен сървър",
+	"settings.users.accountLinked": "Свързано с {name}"
 }

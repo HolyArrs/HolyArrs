@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "已跳过发行门槛：这部电影还不算已上映",
 	"server.sources.this-version-already-has-a-good": "这个版本已有足够好的副本；新的会替换它",
 	"server.requests.removed-the-request-for": "{name} 移除了 {a} 的请求",
-	"server.requests.plex-gave-no-account-code-for": "Plex 没有提供此人的账户代码，因此不会读取其待看清单。"
+	"server.requests.plex-gave-no-account-code-for": "Plex 没有提供此人的账户代码，因此不会读取其待看清单。",
+	"server.accounts.linked-the-account-to": "{name} 将 {kind} 账户 {name2} 关联到 {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} 取消了 {name2} 的 {kind} 账户关联",
+	"server.accounts.no-such-account-on-that-server": "该服务器上没有这个账户",
+	"server.accounts.only-the-owner-links-people-to": "只有所有者可以把人关联到服务器账户",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "这是他们唯一的登录方式；请先为他们设置密码"
 }

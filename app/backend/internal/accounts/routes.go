@@ -31,6 +31,7 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	a.outsideRoutes(m)
 	a.mediaServerPeopleRoutes(m)
 	a.plexMineRoutes(m)
+	a.mediaLinkRoutes(m)
 	a.ssoRoutes(m)
 	if startup.FeatureOn(startup.AIApps) {
 		a.aiOAuthRoutes(m)

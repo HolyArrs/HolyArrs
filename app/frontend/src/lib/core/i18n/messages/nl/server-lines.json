@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "De Releasedrempel wordt overgeslagen: deze film telt nog niet als uit",
 	"server.sources.this-version-already-has-a-good": "Deze variant heeft al een kopie die goed genoeg is; de nieuwe vervangt die",
 	"server.requests.removed-the-request-for": "{name} heeft het verzoek voor {a} verwijderd",
-	"server.requests.plex-gave-no-account-code-for": "Plex gaf geen accountcode voor deze persoon, dus zijn of haar kijklijst wordt niet gelezen."
+	"server.requests.plex-gave-no-account-code-for": "Plex gaf geen accountcode voor deze persoon, dus zijn of haar kijklijst wordt niet gelezen.",
+	"server.accounts.linked-the-account-to": "{name} koppelde het {kind}-account {name2} aan {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} ontkoppelde het {kind}-account van {name2}",
+	"server.accounts.no-such-account-on-that-server": "zo'n account bestaat niet op die server",
+	"server.accounts.only-the-owner-links-people-to": "alleen de eigenaar koppelt mensen aan serveraccounts",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "dit is hun enige manier om in te loggen; geef ze eerst een wachtwoord"
 }

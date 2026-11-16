@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "जैसे मम्मी",
 	"settings.users.days": "लिंक कितने दिन चलेगा",
 	"settings.users.makeInvite": "न्योते का लिंक बनाएं",
-	"settings.users.permAuto4k": "4K रिक्वेस्ट बिना इंतज़ार के मंज़ूर"
+	"settings.users.permAuto4k": "4K रिक्वेस्ट बिना इंतज़ार के मंज़ूर",
+	"settings.users.serverAccount": "सर्वर खाता",
+	"settings.users.pickAccount": "किसी मीडिया सर्वर पर खाता चुनें",
+	"settings.users.accountLinked": "{name} से जोड़ा गया"
 }

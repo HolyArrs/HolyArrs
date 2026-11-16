@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "रिलीज़ गेट छोड़ा गया: यह फ़िल्म अभी रिलीज़ नहीं मानी जाती",
 	"server.sources.this-version-already-has-a-good": "इस वर्ज़न की काफ़ी अच्छी कॉपी पहले से है; नई कॉपी उसकी जगह ले लेगी",
 	"server.requests.removed-the-request-for": "{name} ने {a} का अनुरोध हटाया",
-	"server.requests.plex-gave-no-account-code-for": "Plex ने इस व्यक्ति के लिए खाता कोड नहीं दिया, इसलिए उनकी वॉचलिस्ट नहीं पढ़ी जा रही है।"
+	"server.requests.plex-gave-no-account-code-for": "Plex ने इस व्यक्ति के लिए खाता कोड नहीं दिया, इसलिए उनकी वॉचलिस्ट नहीं पढ़ी जा रही है।",
+	"server.accounts.linked-the-account-to": "{name} ने {kind} खाता {name2} को {name3} से जोड़ा",
+	"server.accounts.unlinked-the-account-of": "{name} ने {name2} का {kind} खाता अलग किया",
+	"server.accounts.no-such-account-on-that-server": "उस सर्वर पर ऐसा कोई खाता नहीं",
+	"server.accounts.only-the-owner-links-people-to": "केवल मालिक लोगों को सर्वर खातों से जोड़ता है",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "यह उनका साइन इन करने का एकमात्र तरीका है; पहले उन्हें पासवर्ड दें"
 }

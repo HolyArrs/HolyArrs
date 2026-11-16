@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Çıkış eşiği atlandı: bu film henüz çıkmış sayılmıyor",
 	"server.sources.this-version-already-has-a-good": "Bu versiyonun zaten yeterince iyi bir kopyası var; yenisi onun yerini alır",
 	"server.requests.removed-the-request-for": "{name}, {a} isteğini kaldırdı",
-	"server.requests.plex-gave-no-account-code-for": "Plex bu kişi için hesap kodu vermedi, bu yüzden izleme listesi okunmuyor."
+	"server.requests.plex-gave-no-account-code-for": "Plex bu kişi için hesap kodu vermedi, bu yüzden izleme listesi okunmuyor.",
+	"server.accounts.linked-the-account-to": "{name}, {kind} hesabı {name2} ile {name3} kişisini bağladı",
+	"server.accounts.unlinked-the-account-of": "{name}, {name2} kişisinin {kind} hesabının bağlantısını kaldırdı",
+	"server.accounts.no-such-account-on-that-server": "o sunucuda böyle bir hesap yok",
+	"server.accounts.only-the-owner-links-people-to": "kişileri sunucu hesaplarına yalnızca sahip bağlar",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "bu onların tek giriş yolu; önce onlara bir parola ver"
 }

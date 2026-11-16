@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Se omite el Umbral de estreno: esta película aún no cuenta como estrenada",
 	"server.sources.this-version-already-has-a-good": "Esta Versión ya tiene una copia suficiente; la nueva la reemplazará",
 	"server.requests.removed-the-request-for": "{name} quitó la solicitud de {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex no dio ningún código de cuenta para esta persona, así que no se lee su lista de seguimiento."
+	"server.requests.plex-gave-no-account-code-for": "Plex no dio ningún código de cuenta para esta persona, así que no se lee su lista de seguimiento.",
+	"server.accounts.linked-the-account-to": "{name} vinculó la cuenta de {kind} {name2} a {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} desvinculó la cuenta de {kind} de {name2}",
+	"server.accounts.no-such-account-on-that-server": "no existe esa cuenta en ese servidor",
+	"server.accounts.only-the-owner-links-people-to": "solo el propietario vincula personas a cuentas del servidor",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "es su única forma de iniciar sesión; ponles primero una contraseña"
 }

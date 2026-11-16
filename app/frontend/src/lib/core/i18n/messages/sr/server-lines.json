@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "Праг изласка се прескаче: овај филм се још не рачуна као изашао",
 	"server.sources.this-version-already-has-a-good": "Ова Верзија већ има довољно добру копију; нова ће је заменити",
 	"server.requests.removed-the-request-for": "{name} je uklonio/la zahtev za {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru naloga za ovu osobu, pa se njena lista za gledanje ne čita."
+	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru naloga za ovu osobu, pa se njena lista za gledanje ne čita.",
+	"server.accounts.linked-the-account-to": "{name} је повезао {kind} налог {name2} са {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} је уклонио везу {kind} налога корисника {name2}",
+	"server.accounts.no-such-account-on-that-server": "нема таквог налога на том серверу",
+	"server.accounts.only-the-owner-links-people-to": "само власник повезује људе са налозима на серверу",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "ово им је једини начин пријаве; прво им поставите лозинку"
 }

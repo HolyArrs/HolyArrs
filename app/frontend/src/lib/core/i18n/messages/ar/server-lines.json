@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "يُتخطى شرط الصدور: هذا الفيلم لا يُعد صادرًا بعد",
 	"server.sources.this-version-already-has-a-good": "لهذه النسخة نسخة كافية الجودة بالفعل؛ وستحل الجديدة محلها",
 	"server.requests.removed-the-request-for": "أزال {name} الطلب على {a}",
-	"server.requests.plex-gave-no-account-code-for": "لم يعطِ Plex رمز حساب لهذا الشخص، لذا لا تتم قراءة قائمة المشاهدة الخاصة به."
+	"server.requests.plex-gave-no-account-code-for": "لم يعطِ Plex رمز حساب لهذا الشخص، لذا لا تتم قراءة قائمة المشاهدة الخاصة به.",
+	"server.accounts.linked-the-account-to": "ربط {name} حساب {kind} {name2} بـ {name3}",
+	"server.accounts.unlinked-the-account-of": "ألغى {name} ربط حساب {kind} الخاص بـ {name2}",
+	"server.accounts.no-such-account-on-that-server": "لا يوجد حساب كهذا على ذلك الخادم",
+	"server.accounts.only-the-owner-links-people-to": "المالك وحده يربط الأشخاص بحسابات الخادم",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "هذه طريقتهم الوحيدة لتسجيل الدخول؛ عيّن لهم كلمة مرور أولًا"
 }

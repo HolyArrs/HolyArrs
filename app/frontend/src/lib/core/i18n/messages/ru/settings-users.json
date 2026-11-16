@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "например, Мама",
 	"settings.users.days": "Сколько дней действует ссылка",
 	"settings.users.makeInvite": "Создать ссылку-приглашение",
-	"settings.users.permAuto4k": "Запросы в 4K одобряются без ожидания"
+	"settings.users.permAuto4k": "Запросы в 4K одобряются без ожидания",
+	"settings.users.serverAccount": "Учётная запись сервера",
+	"settings.users.pickAccount": "Выберите учётную запись на медиасервере",
+	"settings.users.accountLinked": "Связано с {name}"
 }

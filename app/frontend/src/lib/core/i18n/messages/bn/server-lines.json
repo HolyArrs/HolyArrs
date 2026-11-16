@@ -1343,5 +1343,11 @@
 	"server.sources.the-release-gate-is-skipped-this": "রিলিজ গেট বাদ গেছে: এই সিনেমা এখনো বেরিয়েছে বলে গণ্য হয় না",
 	"server.sources.this-version-already-has-a-good": "এই ভার্সনের আগেই একটি যথেষ্ট ভালো কপি আছে; নতুনটি সেটি বদলে দেবে",
 	"server.requests.removed-the-request-for": "{name} {a}-এর অনুরোধ সরিয়েছেন",
-	"server.requests.plex-gave-no-account-code-for": "Plex এই ব্যক্তির অ্যাকাউন্ট কোড দেয়নি, তাই তার ওয়াচলিস্ট পড়া হচ্ছে না।"
+	"server.requests.plex-gave-no-account-code-for": "Plex এই ব্যক্তির অ্যাকাউন্ট কোড দেয়নি, তাই তার ওয়াচলিস্ট পড়া হচ্ছে না।",
+	"server.accounts.linked-the-account-to": "{name} {kind} অ্যাকাউন্ট {name2}-কে {name3}-এর সাথে যুক্ত করেছেন",
+	"server.accounts.unlinked-the-account-of": "{name} {name2}-এর {kind} অ্যাকাউন্টের সংযোগ সরিয়েছেন",
+	"server.accounts.no-such-account-on-that-server": "সেই সার্ভারে এমন কোনো অ্যাকাউন্ট নেই",
+	"server.accounts.only-the-owner-links-people-to": "শুধু মালিক মানুষকে সার্ভার অ্যাকাউন্টে যুক্ত করেন",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "এটাই তাদের সাইন ইন করার একমাত্র উপায়; আগে তাদের একটি পাসওয়ার্ড দিন"
 }
