@@ -167,7 +167,7 @@ func TestNZBGetConformance(t *testing.T) { runConformance(t, nzbgetHarness(t)) }
 
 func TestNZBGetAddUploadsBytesAndKeepsStableIdentity(t *testing.T) {
 	f, base := startNZBGet(t)
-	r := AddRequest{URL: nzbSource(t), Name: "Case.Sensitive.Name", Category: "movies", OperationKey: "downloader/release/slot", AllowLocal: true}
+	r := ownSource(AddRequest{URL: nzbSource(t), Name: "Case.Sensitive.Name", Category: "movies", OperationKey: "downloader/release/slot", AllowLocal: true})
 	n := NewNZBGet(base, f.user, f.pass, nil)
 	id, err := n.Add(context.Background(), r)
 	if err != nil || id == "" || id == "101" {
@@ -218,7 +218,7 @@ func TestNZBGetAddUploadsBytesAndKeepsStableIdentity(t *testing.T) {
 func TestNZBGetFallbackIdentityCaseFoldsNameAndCategory(t *testing.T) {
 	f, base := startNZBGet(t)
 	n := NewNZBGet(base, f.user, f.pass, nil)
-	r := AddRequest{URL: nzbSource(t), Name: "Fallback.Name", Category: "Movies", AllowLocal: true}
+	r := ownSource(AddRequest{URL: nzbSource(t), Name: "Fallback.Name", Category: "Movies", AllowLocal: true})
 	id, err := n.Add(context.Background(), r)
 	if err != nil {
 		t.Fatal(err)
@@ -234,11 +234,11 @@ func TestNZBGetReconcilesAnAcceptedAppendWithALostResponse(t *testing.T) {
 	f, base := startNZBGet(t)
 	f.appendHTTPError = true
 	n := NewNZBGet(base, f.user, f.pass, nil)
-	id, err := n.Add(context.Background(), AddRequest{URL: nzbSource(t), Name: "ambiguous", Category: "movies", OperationKey: "ambiguous", AllowLocal: true})
+	id, err := n.Add(context.Background(), ownSource(AddRequest{URL: nzbSource(t), Name: "ambiguous", Category: "movies", OperationKey: "ambiguous", AllowLocal: true}))
 	if err != nil || id == "" || f.adds != 1 {
 		t.Fatalf("ambiguous append %q: %v adds=%d", id, err, f.adds)
 	}
-	again, err := n.Add(context.Background(), AddRequest{URL: nzbSource(t), Name: "ambiguous", Category: "movies", OperationKey: "ambiguous", AllowLocal: true})
+	again, err := n.Add(context.Background(), ownSource(AddRequest{URL: nzbSource(t), Name: "ambiguous", Category: "movies", OperationKey: "ambiguous", AllowLocal: true}))
 	if err != nil || again != id || f.adds != 1 {
 		t.Fatalf("retry %q: %v adds=%d", again, err, f.adds)
 	}
@@ -247,8 +247,8 @@ func TestNZBGetReconcilesAnAcceptedAppendWithALostResponse(t *testing.T) {
 func TestNZBGetUncertainAppendOnlyReconcilesItsDurableMarker(t *testing.T) {
 	f, base := startNZBGet(t)
 	f.appendHTTPError, f.hideAppend = true, true
-	r := AddRequest{URL: nzbSource(t), Name: "uncertain", Category: "movies", AllowLocal: true,
-		AttemptMarker: "nzbget-opaque-durable-attempt"}
+	r := ownSource(AddRequest{URL: nzbSource(t), Name: "uncertain", Category: "movies", AllowLocal: true,
+		AttemptMarker: "nzbget-opaque-durable-attempt"})
 	n := NewNZBGet(base, f.user, f.pass, nil)
 	if _, err := n.Add(context.Background(), r); !errors.Is(err, ErrUncertain) || f.adds != 1 {
 		t.Fatalf("unknown append: %v adds=%d", err, f.adds)
@@ -274,7 +274,7 @@ func TestNZBGetUncertainAppendOnlyReconcilesItsDurableMarker(t *testing.T) {
 func TestNZBGetFailsClosedOnDuplicateMarkers(t *testing.T) {
 	f, base := startNZBGet(t)
 	n := NewNZBGet(base, f.user, f.pass, nil)
-	r := AddRequest{URL: nzbSource(t), Name: "duplicate-marker", Category: "movies", OperationKey: "duplicate-marker", AllowLocal: true}
+	r := ownSource(AddRequest{URL: nzbSource(t), Name: "duplicate-marker", Category: "movies", OperationKey: "duplicate-marker", AllowLocal: true})
 	id, err := n.Add(context.Background(), r)
 	if err != nil {
 		t.Fatal(err)
@@ -306,7 +306,7 @@ func TestNZBGetDedupesQueueHistoryTransitionByNativeID(t *testing.T) {
 	f, base := startNZBGet(t)
 	n := NewNZBGet(base, f.user, f.pass, nil)
 	n.Category = "movies"
-	r := AddRequest{URL: nzbSource(t), Name: "transition", Category: "movies", OperationKey: "transition", AllowLocal: true}
+	r := ownSource(AddRequest{URL: nzbSource(t), Name: "transition", Category: "movies", OperationKey: "transition", AllowLocal: true})
 	id, err := n.Add(context.Background(), r)
 	if err != nil {
 		t.Fatal(err)
@@ -338,7 +338,7 @@ func TestNZBGetTransitionKeepsARenamedCategoryRow(t *testing.T) {
 	f, base := startNZBGet(t)
 	n := NewNZBGet(base, f.user, f.pass, nil)
 	n.Category = "movies"
-	r := AddRequest{URL: nzbSource(t), Name: "transition-foreign", Category: "movies", OperationKey: "transition-foreign", AllowLocal: true}
+	r := ownSource(AddRequest{URL: nzbSource(t), Name: "transition-foreign", Category: "movies", OperationKey: "transition-foreign", AllowLocal: true})
 	id, err := n.Add(context.Background(), r)
 	if err != nil {
 		t.Fatal(err)
@@ -366,7 +366,7 @@ func TestNZBGetAdoptsItsMarkerAfterACategoryAliasRename(t *testing.T) {
 	f, base := startNZBGet(t)
 	n := NewNZBGet(base, f.user, f.pass, nil)
 	n.Category = "tv"
-	r := AddRequest{URL: nzbSource(t), Name: "renamed", Category: "tv", OperationKey: "renamed", AllowLocal: true}
+	r := ownSource(AddRequest{URL: nzbSource(t), Name: "renamed", Category: "tv", OperationKey: "renamed", AllowLocal: true})
 	id, err := n.Add(context.Background(), r)
 	if err != nil {
 		t.Fatal(err)
@@ -423,7 +423,7 @@ func TestNZBGetRejectsAnythingButAnNZBDocument(t *testing.T) {
 			f, base := startNZBGet(t)
 			s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(body)) }))
 			defer s.Close()
-			_, err := NewNZBGet(base, f.user, f.pass, nil).Add(context.Background(), AddRequest{URL: s.URL, Name: name, Category: "movies", OperationKey: name, AllowLocal: true})
+			_, err := NewNZBGet(base, f.user, f.pass, nil).Add(context.Background(), ownSource(AddRequest{URL: s.URL, Name: name, Category: "movies", OperationKey: name, AllowLocal: true}))
 			if err == nil || f.adds != 0 {
 				t.Fatalf("invalid document: %v adds=%d", err, f.adds)
 			}
@@ -434,7 +434,7 @@ func TestNZBGetRejectsAnythingButAnNZBDocument(t *testing.T) {
 func TestNZBGetFinalAndPostProcessStates(t *testing.T) {
 	f, base := startNZBGet(t)
 	n := NewNZBGet(base, f.user, f.pass, nil)
-	id, err := n.Add(context.Background(), AddRequest{URL: nzbSource(t), Name: "states", Category: "movies", OperationKey: "states", AllowLocal: true})
+	id, err := n.Add(context.Background(), ownSource(AddRequest{URL: nzbSource(t), Name: "states", Category: "movies", OperationKey: "states", AllowLocal: true}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -475,7 +475,7 @@ func TestNZBGetFinalAndPostProcessStates(t *testing.T) {
 func TestNZBGetRemoveKeepsFilesWithNonFinalDelete(t *testing.T) {
 	f, base := startNZBGet(t)
 	n := NewNZBGet(base, f.user, f.pass, nil)
-	id, err := n.Add(context.Background(), AddRequest{URL: nzbSource(t), Name: "keep", Category: "movies", OperationKey: "keep", AllowLocal: true})
+	id, err := n.Add(context.Background(), ownSource(AddRequest{URL: nzbSource(t), Name: "keep", Category: "movies", OperationKey: "keep", AllowLocal: true}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -490,7 +490,7 @@ func TestNZBGetRemoveKeepsFilesWithNonFinalDelete(t *testing.T) {
 func TestNZBGetRemovesHistoryWithTheHistoryCommand(t *testing.T) {
 	f, base := startNZBGet(t)
 	n := NewNZBGet(base, f.user, f.pass, nil)
-	id, err := n.Add(context.Background(), AddRequest{URL: nzbSource(t), Name: "done", Category: "movies", OperationKey: "done", AllowLocal: true})
+	id, err := n.Add(context.Background(), ownSource(AddRequest{URL: nzbSource(t), Name: "done", Category: "movies", OperationKey: "done", AllowLocal: true}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -508,7 +508,7 @@ func TestNZBGetRemovesHistoryWithTheHistoryCommand(t *testing.T) {
 func TestNZBGetRemoveFollowsTheMarkerAcrossCategories(t *testing.T) {
 	f, base := startNZBGet(t)
 	n := NewNZBGet(base, f.user, f.pass, nil)
-	id, err := n.Add(context.Background(), AddRequest{URL: nzbSource(t), Name: "owned", Category: "music", OperationKey: "owned", AllowLocal: true})
+	id, err := n.Add(context.Background(), ownSource(AddRequest{URL: nzbSource(t), Name: "owned", Category: "music", OperationKey: "owned", AllowLocal: true}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -557,8 +557,8 @@ func nzbSource(t *testing.T) string {
 func nzbgetHarness(t *testing.T) conformance {
 	f, base := startNZBGet(t)
 	url := nzbSource(t)
-	release := AddRequest{URL: url, Name: "Lab.Usenet.Movie.2026.1080p.WEB.H264-HOLYARRS", Category: "movies",
-		OperationKey: "download-1/release-1/slot-1", AllowLocal: true}
+	release := ownSource(AddRequest{URL: url, Name: "Lab.Usenet.Movie.2026.1080p.WEB.H264-HOLYARRS", Category: "movies",
+		OperationKey: "download-1/release-1/slot-1", AllowLocal: true})
 	return conformance{
 		name:    "nzbget",
 		engine:  NewNZBGet(base, f.user, f.pass, nil),
@@ -582,4 +582,11 @@ func nzbgetHarness(t *testing.T) conformance {
 			"FETCHING": StateQueued, "PP_QUEUED": StateQueued, "UNPACKING": StateDownloading,
 			"PP_FINISHED": StateDownloading, "brand-new-word": StateDownloading},
 	}
+}
+
+// ownSource marks the link's own site as the Source, as a Source that serves
+// its own NZB files on the home network.
+func ownSource(r AddRequest) AddRequest {
+	r.SourceURL = r.URL
+	return r
 }

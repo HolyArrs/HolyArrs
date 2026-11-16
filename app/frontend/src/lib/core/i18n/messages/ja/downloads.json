@@ -1230,6 +1230,7 @@
 	"downloads.why.conflict": "インポートを自力で完了できませんでした。",
 	"downloads.why.notReplaced": "ダウンロードが HolyArrs の外で削除されましたが、自動では置き換えられません(設定)。",
 	"downloads.why.notSent": "受け付けられるダウンローダーがありません。作品のタグとダウンローダーを確認してください。",
+	"downloads.why.linkRefused": "ダウンローダーには届いていません。リリースのリンクが HolyArrs の接続できないアドレスを指していました。",
 	"downloads.why.out": "選定ルールを満たすリリースが、なくなりました。",
 	"downloads.why.taken": "HolyArrs がインポートする前に別のアプリがファイルを持っていきました。",
 	"downloads.ot.fromTrash": "TRaSH Guides から（{n}）",

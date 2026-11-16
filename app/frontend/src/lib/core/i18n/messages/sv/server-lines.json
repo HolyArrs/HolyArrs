@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "Släppgränsen hoppas över: den här filmen räknas inte som utgiven ännu",
 	"server.sources.this-version-already-has-a-good": "Den här versionen har redan en tillräckligt bra kopia; den nya ersätter den",
 	"server.requests.removed-the-request-for": "{name} tog bort begäran om {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte."
+	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte.",
+	"server.downloads.the-release-link-went-to-a": "releasens länk gick till en annan adress på ditt hemnätverk, och det är inte tillåtet: där får bara källans egen adress nås"
 }

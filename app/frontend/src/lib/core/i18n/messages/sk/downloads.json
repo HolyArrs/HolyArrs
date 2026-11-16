@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "Import sa nepodarilo dokončiť sám.",
 	"downloads.why.notReplaced": "Jeho sťahovanie bolo odstránené mimo HolyArrs a nenahradí sa samo (nastavenie).",
 	"downloads.why.notSent": "Žiadny Sťahovač ho nemohol prijať: skontrolujte štítky na titule a vaše Sťahovače.",
+	"downloads.why.linkRefused": "Sťahovač ho nedostal: odkaz vydania viedol na adresu, kam HolyArrs nesmie.",
 	"downloads.why.out": "HolyArrs došli Vydania, ktoré vyhovujú Pravidlám výberu.",
 	"downloads.why.taken": "Iná aplikácia vzala súbory skôr, než ich HolyArrs stihol importovať.",
 	"downloads.pr.lang.pl": "poľština",

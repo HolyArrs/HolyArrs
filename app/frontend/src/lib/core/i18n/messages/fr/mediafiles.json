@@ -293,6 +293,7 @@
 	"mediafiles.gate.released": "Une fois sorti en numérique ou en disque",
 	"mediafiles.gate.releasedHelp": "Chercher à partir de la première date numérique ou disque.",
 	"mediafiles.title.sent": "Envoyé au client de téléchargement",
+	"mediafiles.title.sending": "Envoi au client de téléchargement",
 	"mediafiles.title.warnings": "{n} avertissements",
 	"mediafiles.title.didNotPass": "elle n'a pas passé",
 	"mediafiles.title.turnedDown": "Release écartée",

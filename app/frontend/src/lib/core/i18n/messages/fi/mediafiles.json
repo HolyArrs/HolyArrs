@@ -292,6 +292,7 @@
 	"mediafiles.gate.released": "Kun se on ilmestynyt digitaalisena tai levynä",
 	"mediafiles.gate.releasedHelp": "Etsi ensimmäisestä digitaalisesta tai levypäivästä alkaen.",
 	"mediafiles.title.sent": "Lähetetty lataajalle",
+	"mediafiles.title.sending": "Lähetetään lataajalle",
 	"mediafiles.title.warnings": "{n} varoitusta",
 	"mediafiles.title.didNotPass": "se ei läpäissyt",
 	"mediafiles.title.turnedDown": "Julkaisu hylätty",

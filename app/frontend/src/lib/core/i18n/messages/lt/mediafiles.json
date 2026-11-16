@@ -292,6 +292,7 @@
 	"mediafiles.gate.released": "Kai išeina skaitmeniniu ar disko formatu",
 	"mediafiles.gate.releasedHelp": "Ieškoti nuo pirmosios skaitmeninės ar disko datos.",
 	"mediafiles.title.sent": "Išsiųsta Atsisiuntėjui",
+	"mediafiles.title.sending": "Siunčiama Atsisiuntėjui",
 	"mediafiles.title.warnings": "Įspėjimų: {n}",
 	"mediafiles.title.didNotPass": "nepraėjo",
 	"mediafiles.title.turnedDown": "Leidimas atmestas",

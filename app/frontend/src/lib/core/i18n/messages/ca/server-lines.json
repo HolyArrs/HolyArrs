@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "L'Umbral d'estrena s'omet: aquesta pel·lícula encara no es considera estrenada",
 	"server.sources.this-version-already-has-a-good": "Aquesta Versió ja té una còpia prou bona; la nova la substituirà",
 	"server.requests.removed-the-request-for": "{name} ha eliminat la sol·licitud de {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex no ha donat cap codi de compte d'aquesta persona, així que no se'n llegeix la llista de seguiment."
+	"server.requests.plex-gave-no-account-code-for": "Plex no ha donat cap codi de compte d'aquesta persona, així que no se'n llegeix la llista de seguiment.",
+	"server.downloads.the-release-link-went-to-a": "l'enllaç del Llançament ha anat a una altra adreça de la teva xarxa domèstica, cosa que no està permesa: només s'hi pot accedir a l'adreça pròpia de la Font"
 }

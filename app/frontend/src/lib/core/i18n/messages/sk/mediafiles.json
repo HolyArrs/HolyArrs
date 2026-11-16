@@ -292,6 +292,7 @@
 	"mediafiles.gate.released": "Po vydaní digitálne alebo na disku",
 	"mediafiles.gate.releasedHelp": "Hľadať od prvého digitálneho dátumu alebo dátumu disku.",
 	"mediafiles.title.sent": "Odoslané Sťahovaču",
+	"mediafiles.title.sending": "Odosiela sa Sťahovaču",
 	"mediafiles.title.warnings": "Varovaní: {n}",
 	"mediafiles.title.didNotPass": "neprešlo",
 	"mediafiles.title.turnedDown": "Vydanie zamietnuté",

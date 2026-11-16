@@ -1230,6 +1230,7 @@
 	"downloads.why.conflict": "इंपोर्ट अपने आप पूरा नहीं हो सका।",
 	"downloads.why.notReplaced": "इसका डाउनलोड HolyArrs के बाहर हटाया गया और अपने आप बदला नहीं जाता (सेटिंग)।",
 	"downloads.why.notSent": "कोई डाउनलोडर इसे ले नहीं सका: टाइटल के टैग और अपने डाउनलोडर जांचें।",
+	"downloads.why.linkRefused": "डाउनलोडर को यह नहीं मिला: रिलीज़ का लिंक ऐसे पते पर गया जहां HolyArrs नहीं जा सकता।",
 	"downloads.why.out": "चुनाव के नियमों पर खरी उतरने वाली रिलीज़ HolyArrs के पास खत्म हो गईं।",
 	"downloads.why.taken": "HolyArrs के इंपोर्ट करने से पहले किसी दूसरे ऐप ने फ़ाइलें ले लीं।",
 	"downloads.ot.fromTrash": "TRaSH Guides से ({n})",

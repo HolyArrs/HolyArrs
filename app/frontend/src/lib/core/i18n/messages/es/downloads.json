@@ -1230,6 +1230,7 @@
 	"downloads.why.conflict": "La importación no pudo terminar por sí sola.",
 	"downloads.why.notReplaced": "Su descarga se quitó fuera de HolyArrs y no se reemplaza sola (ajuste).",
 	"downloads.why.notSent": "Ningún gestor de descargas pudo aceptarla: revisa las etiquetas del título y tus gestores de descargas.",
+	"downloads.why.linkRefused": "El gestor de descargas nunca lo recibió: el enlace del lanzamiento llevó a una dirección a la que HolyArrs no puede acceder.",
 	"downloads.why.out": "A HolyArrs se le acabaron los lanzamientos que cumplen las Reglas de elección.",
 	"downloads.why.taken": "Otra app se llevó los archivos antes de que HolyArrs pudiera importarlos.",
 	"downloads.ot.fromTrash": "De TRaSH Guides ({n})",

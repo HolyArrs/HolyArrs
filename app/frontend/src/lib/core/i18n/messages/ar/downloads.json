@@ -1230,6 +1230,7 @@
 	"downloads.why.conflict": "تعذّر إكمال الاستيراد بمفرده.",
 	"downloads.why.notReplaced": "أُزيل تنزيله خارج HolyArrs ولا يُستبدل تلقائيًا (إعداد).",
 	"downloads.why.notSent": "لم يستطع أي برنامج تنزيل قبوله: تحقق من وسوم العمل وبرامج التنزيل لديك.",
+	"downloads.why.linkRefused": "لم يصل إلى برنامج التنزيل: رابط الإصدار قاد إلى عنوان لا يُسمح لـ HolyArrs بالوصول إليه.",
 	"downloads.why.out": "نفدت الإصدارات التي تجتاز قواعد الاختيار لدى HolyArrs.",
 	"downloads.why.taken": "أخذ تطبيق آخر الملفات قبل أن يتمكن HolyArrs من استيرادها.",
 	"downloads.ot.fromTrash": "من TRaSH Guides ‏({n})",

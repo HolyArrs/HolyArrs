@@ -293,6 +293,7 @@
 	"mediafiles.gate.released": "डिजिटल या डिस्क पर आने पर",
 	"mediafiles.gate.releasedHelp": "पहली डिजिटल या डिस्क तारीख़ से खोजें।",
 	"mediafiles.title.sent": "डाउनलोडर को भेजा गया",
+	"mediafiles.title.sending": "डाउनलोडर को भेजा जा रहा है",
 	"mediafiles.title.warnings": "{n} चेतावनियां",
 	"mediafiles.title.didNotPass": "यह पास नहीं हुई",
 	"mediafiles.title.turnedDown": "रिलीज़ ठुकराई गई",

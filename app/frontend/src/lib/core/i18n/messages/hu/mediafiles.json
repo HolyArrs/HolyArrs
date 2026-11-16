@@ -292,6 +292,7 @@
 	"mediafiles.gate.released": "Amint digitálisan vagy lemezen megjelent",
 	"mediafiles.gate.releasedHelp": "Keressen az első digitális vagy lemezes dátumtól.",
 	"mediafiles.title.sent": "Letöltőnek elküldve",
+	"mediafiles.title.sending": "Küldés a Letöltőnek",
 	"mediafiles.title.warnings": "{n} figyelmeztetés",
 	"mediafiles.title.didNotPass": "nem ment át",
 	"mediafiles.title.turnedDown": "A release elvetve",

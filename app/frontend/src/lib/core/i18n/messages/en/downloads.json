@@ -1246,6 +1246,7 @@
 	"downloads.why.conflict": "The import could not finish on its own.",
 	"downloads.why.notReplaced": "Its download was removed outside HolyArrs and is not replaced by itself (setting).",
 	"downloads.why.notSent": "No Downloader could take it: check the tags on the title and your Downloaders.",
+	"downloads.why.linkRefused": "The Downloader never got it: the Release link led to an address HolyArrs may not reach.",
 	"downloads.why.out": "HolyArrs ran out of Releases that pass the Pick rules.",
 	"downloads.why.taken": "Another app took the files before HolyArrs could import them.",
 	"downloads.row.imported": "Imported",

@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "Çıkış eşiği atlandı: bu film henüz çıkmış sayılmıyor",
 	"server.sources.this-version-already-has-a-good": "Bu versiyonun zaten yeterince iyi bir kopyası var; yenisi onun yerini alır",
 	"server.requests.removed-the-request-for": "{name}, {a} isteğini kaldırdı",
-	"server.requests.plex-gave-no-account-code-for": "Plex bu kişi için hesap kodu vermedi, bu yüzden izleme listesi okunmuyor."
+	"server.requests.plex-gave-no-account-code-for": "Plex bu kişi için hesap kodu vermedi, bu yüzden izleme listesi okunmuyor.",
+	"server.downloads.the-release-link-went-to-a": "sürüm adayının bağlantısı ev ağındaki başka bir adrese gitti ve buna izin yok: orada yalnızca Kaynağın kendi adresine erişilebilir"
 }

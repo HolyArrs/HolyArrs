@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "A Megjelenési küszöb ki van hagyva: ez a film még nem számít megjelentnek",
 	"server.sources.this-version-already-has-a-good": "Ennek a Változatnak már van elég jó másolata; az új lecseréli",
 	"server.requests.removed-the-request-for": "{name} eltávolította a kérést: {a}",
-	"server.requests.plex-gave-no-account-code-for": "A Plex nem adott fiókkódot ehhez a személyhez, ezért a figyelőlistáját nem olvassa."
+	"server.requests.plex-gave-no-account-code-for": "A Plex nem adott fiókkódot ehhez a személyhez, ezért a figyelőlistáját nem olvassa.",
+	"server.downloads.the-release-link-went-to-a": "a release hivatkozása az otthoni hálózatod egy másik címére vezetett, ez nem megengedett: ott csak a Forrás saját címe érhető el"
 }

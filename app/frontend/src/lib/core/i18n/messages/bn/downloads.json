@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "ইমপোর্ট নিজে শেষ করা যায়নি।",
 	"downloads.why.notReplaced": "এর ডাউনলোড HolyArrs-এর বাইরে সরানো হয়েছে এবং নিজে থেকে বদলানো হয় না (সেটিং)।",
 	"downloads.why.notSent": "কোনো ডাউনলোডার এটি নিতে পারেনি: টাইটেলের ট্যাগ ও আপনার ডাউনলোডার দেখুন।",
+	"downloads.why.linkRefused": "ডাউনলোডার এটা পায়নি: রিলিজের লিংক এমন ঠিকানায় গেছে যেখানে HolyArrs যেতে পারে না।",
 	"downloads.why.out": "বাছাইয়ের নিয়ম পাস করে এমন রিলিজ HolyArrs-এর আর নেই।",
 	"downloads.why.taken": "HolyArrs ইমপোর্ট করার আগেই অন্য একটি অ্যাপ ফাইলগুলো নিয়ে নিয়েছে।",
 	"downloads.pr.lang.pl": "পোলিশ",

@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "Importen kunne ikke fullføres på egen hånd.",
 	"downloads.why.notReplaced": "Nedlastingen ble fjernet utenfor HolyArrs og erstattes ikke av seg selv (innstilling).",
 	"downloads.why.notSent": "Ingen nedlaster kunne ta den: sjekk merkene på tittelen og nedlasterne dine.",
+	"downloads.why.linkRefused": "Nedlasteren fikk den aldri: lenken til utgivelsen førte til en adresse HolyArrs ikke får nå.",
 	"downloads.why.out": "HolyArrs gikk tom for utgivelser som består valgreglene.",
 	"downloads.why.taken": "En annen app tok filene før HolyArrs kunne importere dem.",
 	"downloads.pr.lang.pl": "Polsk",

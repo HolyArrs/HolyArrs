@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "ข้ามเกณฑ์วันวางจำหน่าย: ภาพยนตร์เรื่องนี้ยังนับว่าไม่ออก",
 	"server.sources.this-version-already-has-a-good": "เวอร์ชันนี้มีสำเนาที่ดีพอแล้ว ตัวใหม่จะมาแทนที่",
 	"server.requests.removed-the-request-for": "{name} ลบคำขอ {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex ไม่ได้ให้รหัสบัญชีของคนนี้ จึงไม่อ่านรายการที่อยากดูของเขา"
+	"server.requests.plex-gave-no-account-code-for": "Plex ไม่ได้ให้รหัสบัญชีของคนนี้ จึงไม่อ่านรายการที่อยากดูของเขา",
+	"server.downloads.the-release-link-went-to-a": "ลิงก์ของรีลีสไปยังที่อยู่อื่นในเครือข่ายบ้านของคุณ ซึ่งไม่อนุญาต ที่นั่นเข้าถึงได้เฉพาะที่อยู่ของแหล่งที่มาเองเท่านั้น"
 }

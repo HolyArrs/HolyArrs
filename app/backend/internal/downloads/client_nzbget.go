@@ -159,9 +159,9 @@ func (n *NZBGet) Add(ctx context.Context, r AddRequest) (string, error) {
 	id := nzbgetID(r, attempt)
 	// Read the file like the SABnzbd path does: a redirect to another site (a
 	// Prowlarr link pointing at its indexer) is followed, while every hop still
-	// passes the address, scheme and redirect checks. Only the link's own host
+	// passes the address, scheme and redirect checks. Only the Source's own host
 	// may be on the home network, and only when the Source allows it.
-	payload, magnet, err := fetchGrabLink(ctx, r.URL, nzbgetMaxNZB, nil, sourceLocalHost(r.URL, r.AllowLocal))
+	payload, magnet, err := fetchGrabLink(ctx, r.URL, nzbgetMaxNZB, nil, sourceLocalHost(r.SourceURL, r.AllowLocal))
 	if err != nil {
 		return "", err
 	}

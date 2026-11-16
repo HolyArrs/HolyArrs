@@ -292,6 +292,7 @@
 	"mediafiles.gate.released": "டிஜிட்டல் அல்லது வட்டில் வெளியானதும்",
 	"mediafiles.gate.releasedHelp": "முதல் டிஜிட்டல் அல்லது வட்டு தேதியிலிருந்து தேடு.",
 	"mediafiles.title.sent": "பதிவிறக்கிக்கு அனுப்பப்பட்டது",
+	"mediafiles.title.sending": "பதிவிறக்கிக்கு அனுப்பப்படுகிறது",
 	"mediafiles.title.warnings": "{n} எச்சரிக்கைகள்",
 	"mediafiles.title.didNotPass": "அது தேர்ச்சி பெறவில்லை",
 	"mediafiles.title.turnedDown": "வெளியீடு நிராகரிக்கப்பட்டது",

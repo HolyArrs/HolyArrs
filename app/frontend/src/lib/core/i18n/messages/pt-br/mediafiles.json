@@ -293,6 +293,7 @@
 	"mediafiles.gate.released": "Quando sair em digital ou disco",
 	"mediafiles.gate.releasedHelp": "Buscar a partir da primeira data digital ou de disco.",
 	"mediafiles.title.sent": "Enviado ao gerenciador de downloads",
+	"mediafiles.title.sending": "Enviando ao gerenciador de downloads",
 	"mediafiles.title.warnings": "{n} avisos",
 	"mediafiles.title.didNotPass": "não passou",
 	"mediafiles.title.turnedDown": "Lançamento descartado",

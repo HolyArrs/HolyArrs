@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "Die Veröffentlichungsschwelle wird übersprungen: Dieser Film gilt noch nicht als erschienen",
 	"server.sources.this-version-already-has-a-good": "Diese Variante hat schon eine gut genügende Kopie; die neue ersetzt sie",
 	"server.requests.removed-the-request-for": "{name} hat die Anfrage für {a} entfernt",
-	"server.requests.plex-gave-no-account-code-for": "Plex hat für diese Person keinen Kontocode geliefert, deshalb wird ihre Merkliste nicht gelesen."
+	"server.requests.plex-gave-no-account-code-for": "Plex hat für diese Person keinen Kontocode geliefert, deshalb wird ihre Merkliste nicht gelesen.",
+	"server.downloads.the-release-link-went-to-a": "der Link des Releases ging zu einer anderen Adresse in deinem Heimnetz, und das ist nicht erlaubt: dort darf nur die eigene Adresse der Quelle erreicht werden"
 }

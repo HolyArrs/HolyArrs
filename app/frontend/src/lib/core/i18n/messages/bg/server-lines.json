@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "Прагът за излизане е пропуснат: този филм не се брои за излязъл",
 	"server.sources.this-version-already-has-a-good": "Този вариант вече има достатъчно добро копие; новото ще го замени",
 	"server.requests.removed-the-request-for": "{name} премахна заявката за {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex не даде код на акаунта за този човек, затова списъкът му за гледане не се чете."
+	"server.requests.plex-gave-no-account-code-for": "Plex не даде код на акаунта за този човек, затова списъкът му за гледане не се чете.",
+	"server.downloads.the-release-link-went-to-a": "връзката на релийза отиде към друг адрес в домашната ти мрежа, което не е позволено: там може да се стига само до собствения адрес на източника"
 }

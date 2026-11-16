@@ -293,6 +293,7 @@
 	"mediafiles.gate.released": "Dijitalde ya da diskte çıkınca",
 	"mediafiles.gate.releasedHelp": "İlk dijital ya da disk tarihinden itibaren ara.",
 	"mediafiles.title.sent": "İndiriciye gönderildi",
+	"mediafiles.title.sending": "İndiriciye gönderiliyor",
 	"mediafiles.title.warnings": "{n} uyarı",
 	"mediafiles.title.didNotPass": "geçemedi",
 	"mediafiles.title.turnedDown": "Sürüm adayı reddedildi",

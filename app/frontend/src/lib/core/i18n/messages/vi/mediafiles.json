@@ -292,6 +292,7 @@
 	"mediafiles.gate.released": "Khi đã ra mắt kỹ thuật số hoặc đĩa",
 	"mediafiles.gate.releasedHelp": "Tìm từ ngày kỹ thuật số hoặc đĩa đầu tiên.",
 	"mediafiles.title.sent": "Đã gửi tới Trình tải",
+	"mediafiles.title.sending": "Đang gửi tới Trình tải",
 	"mediafiles.title.warnings": "{n} cảnh báo",
 	"mediafiles.title.didNotPass": "nó không đạt",
 	"mediafiles.title.turnedDown": "Đã loại bản phát hành",

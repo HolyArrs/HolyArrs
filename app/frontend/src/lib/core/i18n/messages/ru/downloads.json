@@ -1230,6 +1230,7 @@
 	"downloads.why.conflict": "Импорт не удалось завершить самостоятельно.",
 	"downloads.why.notReplaced": "Её загрузка была удалена вне HolyArrs и не заменяется сама (настройка).",
 	"downloads.why.notSent": "Ни один загрузчик не смог её принять: проверьте теги тайтла и ваши загрузчики.",
+	"downloads.why.linkRefused": "Загрузчик его не получил: ссылка релиза вела на адрес, куда HolyArrs нельзя.",
 	"downloads.why.out": "У HolyArrs закончились релизы, проходящие по правилам отбора.",
 	"downloads.why.taken": "Другое приложение забрало файлы до того, как HolyArrs смог их импортировать.",
 	"downloads.ot.fromTrash": "Из TRaSH Guides ({n})",

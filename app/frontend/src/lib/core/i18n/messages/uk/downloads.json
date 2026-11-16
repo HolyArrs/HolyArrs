@@ -1230,6 +1230,7 @@
 	"downloads.why.conflict": "Імпорт не вдалося завершити самостійно.",
 	"downloads.why.notReplaced": "Його завантаження видалено поза HolyArrs і не замінюється саме (налаштування).",
 	"downloads.why.notSent": "Жоден завантажувач не зміг його прийняти: перевірте теги тайтла й твої завантажувачі.",
+	"downloads.why.linkRefused": "Завантажувач його не отримав: посилання релізу вело на адресу, куди HolyArrs не можна.",
 	"downloads.why.out": "У HolyArrs закінчилися релізи, що відповідають правилам вибору.",
 	"downloads.why.taken": "Інший застосунок забрав файли до того, як HolyArrs зміг їх імпортувати.",
 	"downloads.ot.fromTrash": "З TRaSH Guides ({n})",

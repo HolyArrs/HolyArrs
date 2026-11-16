@@ -37,14 +37,14 @@ func TestNZBGetFollowsARedirectToTheIndexer(t *testing.T) {
 
 	f, base := startNZBGet(t)
 	n := NewNZBGet(base, f.user, f.pass, nil)
-	id, err := n.Add(context.Background(), AddRequest{URL: prowlarr.URL + "/indexer", Name: "Redirected", Category: "tv",
-		OperationKey: "redirected", AllowLocal: true})
+	id, err := n.Add(context.Background(), ownSource(AddRequest{URL: prowlarr.URL + "/indexer", Name: "Redirected", Category: "tv",
+		OperationKey: "redirected", AllowLocal: true}))
 	if err != nil || id == "" || f.adds != 1 {
 		t.Fatalf("redirect to the indexer: id=%q adds=%d err=%v", id, f.adds, err)
 	}
 	for _, p := range []string{"/home", "/rebind", "/file", "/loop"} {
-		_, err := n.Add(context.Background(), AddRequest{URL: prowlarr.URL + p, Name: "Refused" + p[1:], Category: "tv",
-			OperationKey: "refused" + p, AllowLocal: true})
+		_, err := n.Add(context.Background(), ownSource(AddRequest{URL: prowlarr.URL + p, Name: "Refused" + p[1:], Category: "tv",
+			OperationKey: "refused" + p, AllowLocal: true}))
 		if err == nil {
 			t.Errorf("%s: a redirect that must be refused was followed", p)
 		}
@@ -66,8 +66,8 @@ func TestNZBGetRedirectKeepsTheSizeLimit(t *testing.T) {
 	t.Cleanup(prowlarr.Close)
 	fakeDNS(t, map[string]string{"indexer.example": hostPort(t, indexer)}, true)
 	f, base := startNZBGet(t)
-	if _, err := NewNZBGet(base, f.user, f.pass, nil).Add(context.Background(), AddRequest{URL: prowlarr.URL + "/x", Name: "Big",
-		Category: "tv", OperationKey: "big", AllowLocal: true}); err == nil || f.adds != 0 {
+	if _, err := NewNZBGet(base, f.user, f.pass, nil).Add(context.Background(), ownSource(AddRequest{URL: prowlarr.URL + "/x", Name: "Big",
+		Category: "tv", OperationKey: "big", AllowLocal: true})); err == nil || f.adds != 0 {
 		t.Fatalf("oversized file: adds=%d err=%v", f.adds, err)
 	}
 }

@@ -292,6 +292,7 @@
 	"mediafiles.gate.released": "Når den er ude digitalt eller på disk",
 	"mediafiles.gate.releasedHelp": "Led fra den første digitale dato eller diskdato.",
 	"mediafiles.title.sent": "Sendt til Downloader",
+	"mediafiles.title.sending": "Sender til Downloader",
 	"mediafiles.title.warnings": "{n} advarsler",
 	"mediafiles.title.didNotPass": "den bestod ikke",
 	"mediafiles.title.turnedDown": "Udgivelse afvist",

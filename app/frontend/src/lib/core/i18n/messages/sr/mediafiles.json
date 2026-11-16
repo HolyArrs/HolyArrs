@@ -292,6 +292,7 @@
 	"mediafiles.gate.released": "Кад изађе дигитално или на диску",
 	"mediafiles.gate.releasedHelp": "Тражи од првог датума дигиталног или дискова издања.",
 	"mediafiles.title.sent": "Послато Преузимачу",
+	"mediafiles.title.sending": "Шаље се Преузимачу",
 	"mediafiles.title.warnings": "{n} упозорења",
 	"mediafiles.title.didNotPass": "није прошло",
 	"mediafiles.title.turnedDown": "Издање је одбијено",

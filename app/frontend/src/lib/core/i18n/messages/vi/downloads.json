@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "Việc nhập không tự hoàn tất được.",
 	"downloads.why.notReplaced": "Lượt tải của nó đã bị xóa bên ngoài HolyArrs và không được tự thay thế (cài đặt).",
 	"downloads.why.notSent": "Không Trình tải nào nhận được: hãy kiểm tra các thẻ trên tựa và các Trình tải của bạn.",
+	"downloads.why.linkRefused": "Trình tải chưa nhận được: liên kết của Bản phát hành dẫn tới địa chỉ mà HolyArrs không được truy cập.",
 	"downloads.why.out": "HolyArrs đã hết Bản phát hành đạt Quy tắc chọn.",
 	"downloads.why.taken": "Một ứng dụng khác đã lấy các tệp trước khi HolyArrs nhập được.",
 	"downloads.pr.lang.pl": "tiếng Ba Lan",

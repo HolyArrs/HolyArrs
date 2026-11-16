@@ -293,6 +293,7 @@
 	"mediafiles.gate.released": "بمجرد صدوره رقميًا أو على قرص",
 	"mediafiles.gate.releasedHelp": "ابحث من أول تاريخ رقمي أو قرص.",
 	"mediafiles.title.sent": "أُرسل إلى برنامج التنزيل",
+	"mediafiles.title.sending": "جارٍ الإرسال إلى برنامج التنزيل",
 	"mediafiles.title.warnings": "{n} تحذيرات",
 	"mediafiles.title.didNotPass": "لم يجتز",
 	"mediafiles.title.turnedDown": "تم استبعاد الإصدار",

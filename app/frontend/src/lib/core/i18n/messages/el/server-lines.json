@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "Το Όριο κυκλοφορίας παραλείπεται: αυτή η ταινία δεν θεωρείται ακόμη κυκλοφορημένη",
 	"server.sources.this-version-already-has-a-good": "Αυτή η παραλλαγή έχει ήδη αρκετά καλό αντίγραφο· το νέο θα το αντικαταστήσει",
 	"server.requests.removed-the-request-for": "Ο/Η {name} αφαίρεσε το αίτημα για {a}",
-	"server.requests.plex-gave-no-account-code-for": "Το Plex δεν έδωσε κωδικό λογαριασμού για αυτό το άτομο, οπότε η λίστα παρακολούθησής του δεν διαβάζεται."
+	"server.requests.plex-gave-no-account-code-for": "Το Plex δεν έδωσε κωδικό λογαριασμού για αυτό το άτομο, οπότε η λίστα παρακολούθησής του δεν διαβάζεται.",
+	"server.downloads.the-release-link-went-to-a": "ο σύνδεσμος της κυκλοφορίας πήγε σε άλλη διεύθυνση του οικιακού σου δικτύου, κάτι που δεν επιτρέπεται: εκεί επιτρέπεται μόνο η δική διεύθυνση της Πηγής"
 }

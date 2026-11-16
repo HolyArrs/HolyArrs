@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "Ambang keluaran dilangkau: filem ini belum dikira sudah keluar",
 	"server.sources.this-version-already-has-a-good": "Versi ini sudah mempunyai salinan yang cukup baik; yang baharu akan menggantikannya",
 	"server.requests.removed-the-request-for": "{name} mengalih keluar permintaan untuk {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kod akaun untuk orang ini, jadi senarai tontonannya tidak dibaca."
+	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kod akaun untuk orang ini, jadi senarai tontonannya tidak dibaca.",
+	"server.downloads.the-release-link-went-to-a": "pautan Keluaran pergi ke alamat lain di rangkaian rumah anda, dan itu tidak dibenarkan: di sana hanya alamat Sumber itu sendiri boleh dicapai"
 }

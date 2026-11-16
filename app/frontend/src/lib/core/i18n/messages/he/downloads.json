@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "הייבוא לא הצליח להסתיים לבד.",
 	"downloads.why.notReplaced": "ההורדה שלו הוסרה מחוץ ל־HolyArrs ולא מוחלפת מעצמה (הגדרה).",
 	"downloads.why.notSent": "אף מוריד לא יכול היה לקחת אותו: בדוק את התגיות של הכותר ואת המורידים שלך.",
+	"downloads.why.linkRefused": "המוריד לא קיבל אותו: קישור הריליז הוביל לכתובת ש-HolyArrs לא רשאי להגיע אליה.",
 	"downloads.why.out": "ל־HolyArrs נגמרו ריליזים שעוברים את כללי הבחירה.",
 	"downloads.why.taken": "אפליקציה אחרת לקחה את הקבצים לפני ש־HolyArrs הספיק לייבא אותם.",
 	"downloads.pr.lang.pl": "פולנית",

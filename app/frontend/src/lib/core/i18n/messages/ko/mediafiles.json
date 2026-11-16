@@ -293,6 +293,7 @@
 	"mediafiles.gate.released": "디지털이나 디스크로 나오면",
 	"mediafiles.gate.releasedHelp": "처음 디지털 또는 디스크 출시일부터 찾습니다.",
 	"mediafiles.title.sent": "다운로더로 보냄",
+	"mediafiles.title.sending": "다운로더로 보내는 중",
 	"mediafiles.title.warnings": "경고 {n}개",
 	"mediafiles.title.didNotPass": "통과하지 못했습니다",
 	"mediafiles.title.turnedDown": "릴리스 거부됨",

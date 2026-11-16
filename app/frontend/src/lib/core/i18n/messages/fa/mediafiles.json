@@ -292,6 +292,7 @@
 	"mediafiles.gate.released": "وقتی به‌صورت دیجیتال یا دیسک منتشر شد",
 	"mediafiles.gate.releasedHelp": "از اولین تاریخ دیجیتال یا دیسک جستجو کن.",
 	"mediafiles.title.sent": "به دانلودر فرستاده شد",
+	"mediafiles.title.sending": "در حال فرستادن به دانلودر",
 	"mediafiles.title.warnings": "{n} هشدار",
 	"mediafiles.title.didNotPass": "رد نشد",
 	"mediafiles.title.turnedDown": "ریلیز رد شد",

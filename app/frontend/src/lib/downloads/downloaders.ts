@@ -397,6 +397,8 @@ export function whyWords(d: Pick<Decision, 'why' | 'has_copy'>): string {
 			return t('downloads.why.notReplaced');
 		case 'not_sent':
 			return t('downloads.why.notSent');
+		case 'link_refused':
+			return t('downloads.why.linkRefused');
 		case 'taken':
 			return t('downloads.why.taken');
 	}

@@ -13,8 +13,8 @@ func TestNZBGetAnsweredRefusalIsDefinite(t *testing.T) {
 	f, base := startNZBGet(t)
 	f.appendRefusal = true
 	n := NewNZBGet(base, f.user, f.pass, nil)
-	_, err := n.Add(context.Background(), AddRequest{URL: nzbSource(t), Name: "refused", Category: "tv", AllowLocal: true,
-		AttemptMarker: "nzbget-refused-marker"})
+	_, err := n.Add(context.Background(), ownSource(AddRequest{URL: nzbSource(t), Name: "refused", Category: "tv", AllowLocal: true,
+		AttemptMarker: "nzbget-refused-marker"}))
 	if err == nil || errors.Is(err, ErrUncertain) {
 		t.Fatalf("answered refusal: %v", err)
 	}
@@ -29,8 +29,8 @@ func TestNZBGetProxyFailureStaysUnknown(t *testing.T) {
 	f, base := startNZBGet(t)
 	f.appendHTTPError, f.hideAppend = true, true
 	n := NewNZBGet(base, f.user, f.pass, nil)
-	_, err := n.Add(context.Background(), AddRequest{URL: nzbSource(t), Name: "proxy", Category: "tv", AllowLocal: true,
-		AttemptMarker: "nzbget-proxy-marker"})
+	_, err := n.Add(context.Background(), ownSource(AddRequest{URL: nzbSource(t), Name: "proxy", Category: "tv", AllowLocal: true,
+		AttemptMarker: "nzbget-proxy-marker"}))
 	if !errors.Is(err, ErrUncertain) {
 		t.Fatalf("5xx should stay unknown: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestNZBGetFindsItsMarkerWhenNZBGetSplitsTheStruct(t *testing.T) {
 	f, base := startNZBGet(t)
 	f.flatten = true
 	n := NewNZBGet(base, f.user, f.pass, nil)
-	r := AddRequest{URL: nzbSource(t), Name: "flattened", Category: "tv", OperationKey: "flattened", AllowLocal: true}
+	r := ownSource(AddRequest{URL: nzbSource(t), Name: "flattened", Category: "tv", OperationKey: "flattened", AllowLocal: true})
 	id, err := n.Add(context.Background(), r)
 	if err != nil || id == "" || f.adds != 1 {
 		t.Fatalf("add: %q %v adds=%d", id, err, f.adds)

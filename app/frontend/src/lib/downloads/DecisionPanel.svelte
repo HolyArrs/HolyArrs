@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// Choices for a download that needs a decision: one reason, one primary fix, the rest under More, and the plan behind Why. A season pack or album gets the same shape for the whole pack.
 	import Button from '#lib/ui/Button.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
@@ -76,6 +77,7 @@
 		if (k === 'edition') return t('downloads.dp.editionUnknown');
 		if (k === 'copy') return t('downloads.dp.copyInPlace');
 		if (k === 'taken') return whyWords(d);
+		if (d.why === 'link_refused' && d.reason) return serverWords(d.reason.replace(/^not sent: /, ''));
 		if (k === 'nomatch') {
 			const m = noMatchKind(d.reason);
 			return t(m === 'episode' ? 'downloads.dp.noMatchEpisode' : m === 'track' ? 'downloads.dp.noMatchTrack' : 'downloads.dp.noMatchMovie');

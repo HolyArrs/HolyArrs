@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "Prah vydania sa preskočí: tento film sa ešte nepočíta ako vydaný",
 	"server.sources.this-version-already-has-a-good": "Táto Verzia už má dostatočnú kópiu; nová ju nahradí",
 	"server.requests.removed-the-request-for": "{name} odstránil(a) žiadosť o {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex pre túto osobu nedal kód účtu, preto sa jej zoznam na pozretie nečíta."
+	"server.requests.plex-gave-no-account-code-for": "Plex pre túto osobu nedal kód účtu, preto sa jej zoznam na pozretie nečíta.",
+	"server.downloads.the-release-link-went-to-a": "odkaz vydania viedol na inú adresu v tvojej domácej sieti, čo nie je dovolené: tam sa smie len na vlastnú adresu Zdroja"
 }

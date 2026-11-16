@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "ورود نتوانست خودش تمام شود.",
 	"downloads.why.notReplaced": "دانلودش بیرون از HolyArrs حذف شد و خودش جایگزین نمی‌شود (تنظیم).",
 	"downloads.why.notSent": "هیچ دانلودری نتوانست آن را بپذیرد: برچسب‌های عنوان و دانلودرهایت را بررسی کن.",
+	"downloads.why.linkRefused": "دانلودر آن را نگرفت: پیوند ریلیز به نشانی‌ای رفت که HolyArrs اجازهٔ رسیدن به آن را ندارد.",
 	"downloads.why.out": "ریلیزهای عبورکننده از قوانین انتخاب برای HolyArrs تمام شد.",
 	"downloads.why.taken": "برنامه دیگری پیش از ورود HolyArrs فایل‌ها را برداشت.",
 	"downloads.pr.lang.pl": "لهستانی",

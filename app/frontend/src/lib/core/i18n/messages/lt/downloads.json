@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "Importo pats nepavyko užbaigti.",
 	"downloads.why.notReplaced": "Jo atsisiuntimas buvo pašalintas ne per HolyArrs ir pats nepakeičiamas (nustatymas).",
 	"downloads.why.notSent": "Joks Atsisiuntėjas negalėjo jo priimti: patikrinkite kūrinio žymas ir savo Atsisiuntėjus.",
+	"downloads.why.linkRefused": "Atsisiuntėjas jo negavo: Leidimo nuoroda vedė į adresą, kurio HolyArrs negali pasiekti.",
 	"downloads.why.out": "HolyArrs baigėsi Leidimai, kurie atitinka Pasirinkimo taisykles.",
 	"downloads.why.taken": "Kita programa paėmė failus, kol HolyArrs nespėjo jų importuoti.",
 	"downloads.pr.lang.pl": "lenkų",

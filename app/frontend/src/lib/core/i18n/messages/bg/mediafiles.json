@@ -292,6 +292,7 @@
 	"mediafiles.gate.released": "Щом излезе дигитално или на диск",
 	"mediafiles.gate.releasedHelp": "Търси от първата дигитална дата или дата на диск.",
 	"mediafiles.title.sent": "Изпратен към програмата за изтегляне",
+	"mediafiles.title.sending": "Изпраща се към програмата за изтегляне",
 	"mediafiles.title.warnings": "{n} предупреждения",
 	"mediafiles.title.didNotPass": "не премина",
 	"mediafiles.title.turnedDown": "Релийзът е отхвърлен",

@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "การนำเข้าทำให้เสร็จเองไม่ได้",
 	"downloads.why.notReplaced": "การดาวน์โหลดของมันถูกลบนอก HolyArrs และจะไม่ถูกแทนที่เอง (การตั้งค่า)",
 	"downloads.why.notSent": "ไม่มีตัวดาวน์โหลดตัวไหนรับได้ ตรวจแท็กของเรื่องและตัวดาวน์โหลดของคุณ",
+	"downloads.why.linkRefused": "ตัวดาวน์โหลดไม่ได้รับ ลิงก์ของรีลีสพาไปยังที่อยู่ที่ HolyArrs ไม่ได้รับอนุญาตให้เข้าถึง",
 	"downloads.why.out": "HolyArrs หารีลีสที่ผ่านกฎการเลือกไม่เจอแล้ว",
 	"downloads.why.taken": "แอปอื่นเอาไฟล์ไปก่อนที่ HolyArrs จะนำเข้าได้",
 	"downloads.pr.lang.pl": "โปแลนด์",

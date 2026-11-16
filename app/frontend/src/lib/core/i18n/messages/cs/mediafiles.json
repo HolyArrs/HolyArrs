@@ -292,6 +292,7 @@
 	"mediafiles.gate.released": "Jakmile vyjde digitálně nebo na disku",
 	"mediafiles.gate.releasedHelp": "Hledat od prvního data digitálního vydání nebo vydání na disku.",
 	"mediafiles.title.sent": "Odesláno Stahovači",
+	"mediafiles.title.sending": "Odesílá se Stahovači",
 	"mediafiles.title.warnings": "Varování: {n}",
 	"mediafiles.title.didNotPass": "neprošlo",
 	"mediafiles.title.turnedDown": "Release zamítnuto",
