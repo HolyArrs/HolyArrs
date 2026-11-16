@@ -120,7 +120,7 @@ func (m *Manager) Check(ctx context.Context, d domain.Downloader) (Health, error
 		m.downloaderFailed(ctx, d, err)
 		return h, err
 	}
-	m.downloaderOK(ctx, d)
+	m.categoryFound(ctx, d)
 	if m.Sync != nil && !m.Sync.View(d.ID).Fresh {
 		m.Kick(d.ID) // The client answers again, so let the reader catch up now.
 	}
@@ -305,15 +305,17 @@ func (m *Manager) downloaderFailed(ctx context.Context, d domain.Downloader, cau
 	m.publish("downloader", map[string]any{"id": d.ID, "state": state})
 }
 
-// downloaderOK ends a back-off. It writes only when something changes.
+// downloaderOK ends a back-off. It writes only when something changes. A
+// missing-category line stays: only Check, which asks for the category, clears it.
 func (m *Manager) downloaderOK(ctx context.Context, d domain.Downloader) {
-	if (d.State == "ok" || d.State == "disabled") && d.FailCount == 0 && d.BackoffUntil == nil && d.LastError == "" {
+	keep := doctor.OfText(d.LastError) == doctor.Category
+	if (d.State == "ok" || d.State == "disabled") && d.FailCount == 0 && d.BackoffUntil == nil && (d.LastError == "" || keep) {
 		return
 	}
 	now := m.now()
 	_ = m.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec(`UPDATE downloaders SET state = CASE WHEN state = 'disabled' THEN state ELSE 'ok' END, fail_count = 0, backoff_until = NULL,
-			last_error = '', checked_at = ?, updated_at = ? WHERE id = ?`, database.FormatTime(now), database.FormatTime(now), d.ID)
+			last_error = CASE WHEN ? THEN last_error ELSE '' END, checked_at = ?, updated_at = ? WHERE id = ?`, keep, database.FormatTime(now), database.FormatTime(now), d.ID)
 		return err
 	})
 	m.publish("downloader", map[string]any{"id": d.ID, "state": "ok"})
