@@ -54,6 +54,14 @@ func TestMissingCategoryShowsOnHealth(t *testing.T) {
 	if hv := HealthOf(got, time.Now()); hv.Text != doctor.CategoryLine("nope-cat") || hv.Cause != string(doctor.Category) {
 		t.Fatalf("health %+v (last error %q)", hv, got.LastError)
 	}
+	// A missing category never rests the whole Downloader: grabs for its
+	// other categories still go to it.
+	if got.State != "ok" || got.BackoffUntil != nil || got.FailCount != 0 {
+		t.Fatalf("missing category rested the Downloader: state %q, backoff %v, fails %d", got.State, got.BackoffUntil, got.FailCount)
+	}
+	if ok, skipped := m.order([]domain.Downloader{got}, time.Now()); len(ok) != 1 {
+		t.Fatalf("picker skips it: %v", skipped)
+	}
 }
 
 // A cause only the Test's second look finds (an https:// address on a plain

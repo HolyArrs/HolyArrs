@@ -253,6 +253,9 @@ func HealthOf(d domain.Downloader, now time.Time) HealthView {
 		}
 		return HealthView{"not_answering", "Not answering", "It did not answer the last check. The log has the details.", ""}
 	}
+	if cause == doctor.Category && line != "" {
+		return HealthView{"working", "Working", line, string(cause)}
+	}
 	return HealthView{"working", "Working", "", ""}
 }
 

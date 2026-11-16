@@ -104,6 +104,12 @@ func (m *Manager) Check(ctx context.Context, d domain.Downloader) (Health, error
 			}
 		}
 	}
+	if errors.Is(err, ErrNoCategory) {
+		// The client answers; only one category is missing. Health names it,
+		// but the Downloader keeps taking grabs for its other categories.
+		m.noteCategory(ctx, d.ID, err)
+		return h, err
+	}
 	if err != nil {
 		m.downloaderFailed(ctx, d, err)
 		return h, err
@@ -290,6 +296,15 @@ func (m *Manager) downloaderFailed(ctx context.Context, d domain.Downloader, cau
 func (m *Manager) noteCause(ctx context.Context, id int64, line string) {
 	_ = m.Store.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE downloaders SET last_error = ? WHERE id = ? AND state <> 'ok' AND last_error <> ''", line, id)
+		return err
+	})
+}
+
+// noteCategory records a missing category as the last error only, with no
+// back-off and no change of state.
+func (m *Manager) noteCategory(ctx context.Context, id int64, cause error) {
+	_ = m.Store.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE downloaders SET last_error = ? WHERE id = ?", firstLine(cause.Error()), id)
 		return err
 	})
 }
