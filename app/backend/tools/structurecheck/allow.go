@@ -33,6 +33,7 @@ var layers = map[string]int{
 	"backups":      11,
 	"health":       10,
 	"updates":      11,
+	"plugins":      11, // Plugin Engine: manifests, signed lists, install checks
 	"setup":        11,
 }
 

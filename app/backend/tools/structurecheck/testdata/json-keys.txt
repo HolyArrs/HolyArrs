@@ -60,6 +60,7 @@ absoluteEpisodeNumber
 absoluteNumber
 absolute_digits
 absolute_from
+access
 account
 acknowledge_protection
 action
@@ -364,6 +365,7 @@ copy
 corrected
 count
 count_install
+counter
 country
 counts
 cover
@@ -952,6 +954,7 @@ mimeType
 min
 minFormatScore
 minUpgradeFormatScore
+min_app_version
 min_free_mb
 min_from
 min_password_length
@@ -1192,6 +1195,7 @@ patterns
 pause_reason
 paused
 paused_until
+payload
 peak
 peers
 peers_getting_from_us
@@ -1525,6 +1529,7 @@ session_up
 settings
 setup_recent
 severity
+sha256
 shape
 share_limit_action
 share_ratio
@@ -1546,6 +1551,7 @@ side
 sign_in
 sign_in_id
 sign_in_name
+signature
 signatureCipher
 signin_library_art
 signing_secret
