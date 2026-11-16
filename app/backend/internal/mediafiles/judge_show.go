@@ -216,3 +216,33 @@ func Gains(rel ReleaseFacts, rules PickRulesBody, cur *Current) bool {
 	v.better(rel, rules, cur, idx, sumPoints(rel.Parse, rules))
 	return !v.failed()
 }
+
+// taggedShows finds shows whose name, or an alias, matches once a trailing
+// country or year mark is left off ("The Office (US)" for "The.Office.S01E01"),
+// the way scene names leave the mark out. A release that names a year must
+// agree with the show's year, so "Doctor.Who.1963" never takes "Doctor Who (2005)".
+// A release naming another country never gets here: "office uk" is not "office".
+func taggedShows(p releasename.Result, name string, lib []TitleRef) []*TitleRef {
+	var cands []*TitleRef
+	for i := range lib {
+		t := &lib[i]
+		if t.Kind != "show" {
+			continue
+		}
+		for _, n := range append([]string{t.Name}, t.Aliases...) {
+			base, _, year, ok := releasename.SplitNameTag(n)
+			if !ok || !releasename.SameName(base, name) {
+				continue
+			}
+			if year == 0 {
+				year = t.Year
+			}
+			if p.Year.Value > 0 && year > 0 && year != p.Year.Value {
+				continue
+			}
+			cands = append(cands, t)
+			break
+		}
+	}
+	return cands
+}
