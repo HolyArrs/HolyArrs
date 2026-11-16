@@ -330,8 +330,9 @@ func (a *musicArtist) album(tg tags.Tags, dirAlbum string, dirYear int) (*musicA
 		}
 		// An album named exactly as the tag or folder wins over one found after cutting the tail.
 		var hits, cut []*musicAlbum
+		exact := tagAlbum(name)
 		for _, al := range a.albums {
-			if sameName(al.part.Name, name) {
+			if sameName(al.part.Name, name) || sameName(al.part.Name, exact) {
 				hits = append(hits, al)
 			} else if sameName(al.part.Name, stripped) {
 				cut = append(cut, al)
@@ -352,7 +353,7 @@ func (a *musicArtist) album(tg tags.Tags, dirAlbum string, dirYear int) (*musicA
 		switch {
 		case len(hits) == 1:
 			// A name that only matches once a "(Live)" or "(Deluxe Edition)" is cut off may be another recording.
-			loose := !sameName(hits[0].part.Name, name) && !sameName(hits[0].part.Name, tagAlbum(name))
+			loose := !sameName(hits[0].part.Name, name) && !sameName(hits[0].part.Name, exact)
 			return hits[0], "", loose
 		case len(hits) > 1:
 			reason = MusicTwoAlbum

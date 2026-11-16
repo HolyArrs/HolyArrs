@@ -356,8 +356,10 @@ func TestByHandMusicExactAlbumNameWins(t *testing.T) {
 	}
 	flacFixture(t, filepath.Join(w.in, "Brad Paisley", "Part II (2001)", "03.flac"), "ARTIST=Brad Paisley", "ALBUM=Part II (Deluxe Edition)", "TRACKNUMBER=3", "TITLE="+partTwo[2])
 	flacFixture(t, filepath.Join(w.in, "x", "03.flac"), "ARTIST=Brad Paisley", "ALBUM=Part II (Deluxe Edition)", "TRACKNUMBER=3", "TITLE="+partTwo[2])
+	flacFixture(t, filepath.Join(w.in, "y", "03.flac"), "ARTIST=Brad Paisley", "ALBUM=Part II (Deluxe Edition) [2001]", "TRACKNUMBER=3", "TITLE="+partTwo[2])
+	flacFixture(t, filepath.Join(w.in, "Brad Paisley", "Part II (Deluxe Edition) (2001) [FLAC]", "03.flac"))
 	got := w.scan(t, w.in)
-	for _, k := range []string{"Brad Paisley/Part II (2001)/03.flac", "x/03.flac"} {
+	for _, k := range []string{"Brad Paisley/Part II (2001)/03.flac", "x/03.flac", "y/03.flac", "Brad Paisley/Part II (Deluxe Edition) (2001) [FLAC]/03.flac"} {
 		if g := got[k].Guess; g.AlbumID != deluxe || g.Track != 3 {
 			t.Errorf("%s: %+v", k, g)
 		}
