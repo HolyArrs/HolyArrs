@@ -458,6 +458,16 @@ func TestByHandMusicSameNameAlbums(t *testing.T) {
 	}
 }
 
+// A single named like the album, with no tracks listed, never blocks the album.
+func TestByHandMusicSameNameEmptySingle(t *testing.T) {
+	w := musicSetup(t)
+	w.addAlbum(t, w.artist, "Part II", 2002, "e0000000-0000-4000-8000-0000000000c3")
+	mp3Fixture(t, filepath.Join(w.in, "Brad Paisley", "Part II", "03 "+partTwo[2]+".mp3"))
+	if g := w.scan(t, w.in)["Brad Paisley/Part II/03 "+partTwo[2]+".mp3"].Guess; g.AlbumID != w.album || g.SlotID != w.slots[2] {
+		t.Fatalf("%+v", g)
+	}
+}
+
 // A compilation: the album artist is Various Artists, the track artist one of ours.
 func TestByHandMusicCompilation(t *testing.T) {
 	w := musicSetup(t)

@@ -350,6 +350,18 @@ func (a *musicArtist) album(tg tags.Tags, dirAlbum string, dirYear int) (*musicA
 		if len(hits) == 0 {
 			hits = cut
 		}
+		// A same-name single with no tracks listed can take no file, so it never blocks the album.
+		if len(hits) > 1 {
+			var withTracks []*musicAlbum
+			for _, al := range hits {
+				if len(al.tracks) > 0 {
+					withTracks = append(withTracks, al)
+				}
+			}
+			if len(withTracks) > 0 {
+				hits = withTracks
+			}
+		}
 		if len(hits) > 1 && year > 0 {
 			var same []*musicAlbum
 			for _, al := range hits {
