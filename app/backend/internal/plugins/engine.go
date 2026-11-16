@@ -494,6 +494,13 @@ func (e *Engine) CheckBlocklist(ctx context.Context) error {
 		return err
 	}
 	e.writeCache(listRaw, blockRaw, l.Counter, block.Counter)
+	// Hold opMu and reload, so an install or start during the fetch is
+	// checked against the new lists too.
+	e.opMu.Lock()
+	defer e.opMu.Unlock()
+	if st, err = e.store.Load(); err != nil {
+		return err
+	}
 	for id, p := range st.Plugins {
 		if !p.Enabled {
 			continue
