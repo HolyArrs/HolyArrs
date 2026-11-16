@@ -3,7 +3,7 @@
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
-export type Need = 'manage_library' | 'settings' | 'wishlist' | 'approve' | 'staff' | 'manage' | null;
+export type Need = 'manage_library' | 'settings' | 'wishlist' | 'approve' | 'staff' | 'manage' | 'owner' | null;
 
 export interface NavItem {
 	href: string;
@@ -103,6 +103,7 @@ export function buildNav(input: NavInput): NavSection[] {
 						{ href: '/downloads', label: t('frame.nav.downloads'), icon: 'download', need: 'manage_library', also: ['/downloads/decide'], ...downloadsBadge(input) },
 						{ href: '/downloads/history', label: t('frame.nav.history'), icon: 'clock', need: 'manage_library' },
 						{ href: '/health', label: t('frame.nav.status'), icon: 'shield', need: 'manage_library' },
+						{ href: '/plugins', label: t('frame.nav.plugins'), icon: 'grid', need: 'owner' },
 						{ href: '/settings', label: t('frame.nav.settings'), icon: 'settings', need: 'staff', ...(input.settingsAttention && input.allowed('settings') ? { dot: true } : {}) }
 					]
 				: []

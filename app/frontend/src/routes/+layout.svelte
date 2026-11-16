@@ -67,6 +67,7 @@
 		if (need === 'staff') return session.can('settings') || session.can('users');
 		if (need === 'manage') return session.can('manage_library') || session.can('approve') || session.can('settings');
 		if (need === 'settings') return session.can('settings');
+		if (need === 'owner') return session.s.role === 'owner';
 		return session.can(need);
 	}
 

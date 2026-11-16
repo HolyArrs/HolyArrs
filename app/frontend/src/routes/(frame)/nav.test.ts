@@ -21,7 +21,7 @@ describe('buildNav', () => {
 			[null, ['Home', 'Explore', 'New & Popular']],
 			['Library', ['Movies', 'TV shows', 'Music', 'Stats']],
 			['Your stuff', ['Calendar', 'Requests']],
-			['Manage', ['Downloads', 'History', 'Status', 'Settings']]
+			['Manage', ['Downloads', 'History', 'Status', 'Plugins', 'Settings']]
 		]);
 	});
 	it('lists Library stats only for people who manage the Library', () => {
