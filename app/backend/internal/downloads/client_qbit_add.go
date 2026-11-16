@@ -266,18 +266,3 @@ func linkName(l string) string {
 	}
 	return u.Host + "/" + safeFileName(u.Path)
 }
-
-// HasCategory reports whether qBittorrent has the category cat. Names are
-// matched exactly, as qBittorrent does.
-func (q *Qbittorrent) HasCategory(ctx context.Context, cat string) (bool, error) {
-	b, err := q.call(ctx, http.MethodGet, "torrents/categories", nil)
-	if err != nil {
-		return false, err
-	}
-	var cats map[string]json.RawMessage
-	if err := json.Unmarshal(b, &cats); err != nil {
-		return false, fmt.Errorf("qbittorrent torrents/categories: %w", err)
-	}
-	_, ok := cats[cat]
-	return ok, nil
-}

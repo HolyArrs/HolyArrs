@@ -97,9 +97,8 @@ func (m *Manager) Check(ctx context.Context, d domain.Downloader) (Health, error
 			raw = guarded.Engine
 		}
 		raw = unwrapReadOnly(raw)
-		if s, ok := raw.(interface {
-			HasCategory(context.Context, string) (bool, error)
-		}); ok {
+		// Only SABnzbd: qBittorrent makes a missing category on the first add.
+		if s, ok := raw.(*Sabnzbd); ok {
 			for _, c := range d.Categories() {
 				if c == "" || c == "*" {
 					continue

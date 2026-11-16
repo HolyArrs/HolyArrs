@@ -2,12 +2,10 @@ package downloads
 
 import (
 	"context"
-	"errors"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -108,8 +106,8 @@ func TestBackgroundCheckNamesHTTPSOnATLSPort(t *testing.T) {
 	}
 }
 
-// A category qBittorrent does not have fails its check by name; one it has passes.
-func TestQbitCheckNamesAMissingCategory(t *testing.T) {
+// qBittorrent makes a category on the first add, so a missing one passes.
+func TestQbitCheckPassesAMissingCategory(t *testing.T) {
 	w, m := setup(t)
 	ctx := context.Background()
 	w.fake.listCats = true
@@ -119,12 +117,8 @@ func TestQbitCheckNamesAMissingCategory(t *testing.T) {
 		t.Fatal(err)
 	}
 	d.Category = "tv-missing"
-	_, err := m.Check(ctx, d)
-	if !errors.Is(err, ErrNoCategory) || !strings.Contains(err.Error(), "(tv-missing)") {
-		t.Fatalf("check %v", err)
-	}
-	if _, line := explainDownloader(err, d.URL, true); line != doctor.CategoryLine("tv-missing") {
-		t.Fatalf("line %q", line)
+	if _, err := m.Check(ctx, d); err != nil {
+		t.Fatalf("check without the category: %v", err)
 	}
 	d.Category = "movies"
 	if _, err := m.Check(ctx, d); err != nil {
