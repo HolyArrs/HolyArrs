@@ -124,20 +124,22 @@ func TestMarks(t *testing.T) {
 
 func TestOfText(t *testing.T) {
 	cases := map[string]Cause{
-		"qbittorrent app/version: dial tcp 127.0.0.1:4013: connect: connection refused":                                   Refused,
-		"dial tcp 127.0.0.1:4013: connectex: No connection could be made because the target machine actively refused it.": Refused,
-		"the address answered, but not like SABnzbd":                                                                      WrongApp,
-		"the category does not exist in SABnzbd; add it there first (Config > Categories) (tv)":                           Category,
-		"sabnzbd version: no API at this address":                                                                         NotFound,
-		"qbittorrent app/version: 404 Not Found":                                                                          NotFound,
-		"the server answered 404":                                                                                         NotFound,
-		"the server turned down the token":                                                                                Auth,
-		"Get \"http://x\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)":                    Timeout,
-		"tls: failed to verify certificate: x509: certificate signed by unknown authority":                                TLS,
-		"the Downloader's change feed could not be read":                                                                  WrongApp,
-		"download not found in the Downloader":                                                                            NotFound,
-		"something odd":                                                                                                   Unknown,
-		"":                                                                                                                Unknown,
+		"qbittorrent app/version: dial tcp 127.0.0.1:4013: connect: connection refused":                                                   Refused,
+		"dial tcp 127.0.0.1:4013: connectex: No connection could be made because the target machine actively refused it.":                 Refused,
+		"the address answered, but not like SABnzbd":                                                                                      WrongApp,
+		"the category does not exist in SABnzbd; add it there first (Config > Categories) (tv)":                                           Category,
+		"sabnzbd version: no API at this address":                                                                                         NotFound,
+		"qbittorrent app/version: 404 Not Found":                                                                                          NotFound,
+		"the server answered 404":                                                                                                         NotFound,
+		"the server turned down the token":                                                                                                Auth,
+		"Get \"http://x\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)":                                    Timeout,
+		"tls: failed to verify certificate: x509: certificate signed by unknown authority":                                                TLS,
+		"the Downloader's change feed could not be read: qbittorrent sync/maindata: invalid character '<' looking for beginning of value": WrongApp,
+		"the Downloader's change feed could not be read: qbittorrent sync/maindata: unexpected end of JSON input":                         Unknown,
+		"the Downloader's change feed could not be read: sabnzbd queue: unexpected EOF":                                                   Unknown,
+		"download not found in the Downloader":                                                                                            NotFound,
+		"something odd":                                                                                                                   Unknown,
+		"":                                                                                                                                Unknown,
 	}
 	for msg, want := range cases {
 		if got := OfText(msg); got != want {

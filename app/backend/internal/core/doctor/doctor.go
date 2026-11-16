@@ -156,7 +156,7 @@ var textCauses = []struct {
 	{Refused, []string{"connection refused", "actively refused"}},
 	{Timeout, []string{"timeout", "deadline exceeded", "did not answer within", "took too long"}},
 	{Category, []string{"category does not exist", "category missing"}},
-	{WrongApp, []string{"answered, but not like", "not with a feed", "not valid xml", "another app answered", "change feed could not be read"}},
+	{WrongApp, []string{"answered, but not like", "not with a feed", "not valid xml", "another app answered", "invalid character '<'"}},
 	{Auth, []string{"401 unauthorized", "403 forbidden", "answered 401", "answered 403", "turned down the key", "turned down the token", "wants a sign-in", "sign-in refused"}},
 	{NotFound, []string{"404 not found", "answered 404", "no api at this address", "not at this path", "nothing at that path", "download not found in the downloader"}},
 }
