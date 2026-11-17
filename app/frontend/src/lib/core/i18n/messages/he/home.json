@@ -274,5 +274,7 @@
 	"home.sourcesOff": "כבוי ב\"רכיבים\"",
 	"home.noneForSources": "חסר עבור מה שהמקורות שלך מוצאים",
 	"home.addedTwice": "נוסף פעמיים",
-	"home.addedTwiceMany": "נוספו פעמיים"
+	"home.addedTwiceMany": "נוספו פעמיים",
+	"home.notSetUpYet": "עדיין לא הוגדר",
+	"home.setUpToAdd": "סיימו את ההגדרה כדי להוסיף את {name}"
 }

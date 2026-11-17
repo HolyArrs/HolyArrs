@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Désactivé dans Parties",
 	"home.noneForSources": "manquant pour ce que trouvent vos sources",
 	"home.addedTwice": "est ajouté deux fois",
-	"home.addedTwiceMany": "sont ajoutés deux fois"
+	"home.addedTwiceMany": "sont ajoutés deux fois",
+	"home.notSetUpYet": "Pas encore configuré",
+	"home.setUpToAdd": "Terminez la configuration pour ajouter {name}"
 }

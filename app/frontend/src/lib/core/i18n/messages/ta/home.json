@@ -274,5 +274,7 @@
 	"home.sourcesOff": "பகுதிகளில் அணைக்கப்பட்டுள்ளது",
 	"home.noneForSources": "உங்கள் மூலங்கள் கண்டறிவதற்கு இல்லை",
 	"home.addedTwice": "இருமுறை சேர்க்கப்பட்டது",
-	"home.addedTwiceMany": "இருமுறை சேர்க்கப்பட்டன"
+	"home.addedTwiceMany": "இருமுறை சேர்க்கப்பட்டன",
+	"home.notSetUpYet": "இன்னும் அமைக்கப்படவில்லை",
+	"home.setUpToAdd": "{name} ஐச் சேர்க்க அமைப்பை முடிக்கவும்"
 }

@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Uitgezet in Onderdelen",
 	"home.noneForSources": "ontbreekt voor wat je bronnen vinden",
 	"home.addedTwice": "is twee keer toegevoegd",
-	"home.addedTwiceMany": "zijn twee keer toegevoegd"
+	"home.addedTwiceMany": "zijn twee keer toegevoegd",
+	"home.notSetUpYet": "Nog niet ingesteld",
+	"home.setUpToAdd": "Rond de installatie af om {name} toe te voegen"
 }

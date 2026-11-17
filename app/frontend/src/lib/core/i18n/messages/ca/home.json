@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Desactivat a Parts",
 	"home.noneForSources": "falta per al que troben les teves fonts",
 	"home.addedTwice": "està afegit dues vegades",
-	"home.addedTwiceMany": "estan afegits dues vegades"
+	"home.addedTwiceMany": "estan afegits dues vegades",
+	"home.notSetUpYet": "Encara no està configurat",
+	"home.setUpToAdd": "Acaba la configuració per afegir {name}"
 }

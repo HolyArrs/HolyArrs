@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Απενεργοποιημένο στις Ενότητες",
 	"home.noneForSources": "λείπει για ό,τι βρίσκουν οι πηγές σας",
 	"home.addedTwice": "προστέθηκε δύο φορές",
-	"home.addedTwiceMany": "προστέθηκαν δύο φορές"
+	"home.addedTwiceMany": "προστέθηκαν δύο φορές",
+	"home.notSetUpYet": "Δεν έχει ρυθμιστεί ακόμα",
+	"home.setUpToAdd": "Ολοκληρώστε τη ρύθμιση για να προσθέσετε {name}"
 }

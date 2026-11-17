@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Bölümler'de kapatıldı",
 	"home.noneForSources": "kaynaklarının bulduğu şey için yok",
 	"home.addedTwice": "iki kez eklendi",
-	"home.addedTwiceMany": "iki kez eklendi"
+	"home.addedTwiceMany": "iki kez eklendi",
+	"home.notSetUpYet": "Henüz ayarlanmadı",
+	"home.setUpToAdd": "{name} eklemek için kurulumu bitirin"
 }

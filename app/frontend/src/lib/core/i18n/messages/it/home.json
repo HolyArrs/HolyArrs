@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Spento in Parti",
 	"home.noneForSources": "manca per ciò che trovano le tue fonti",
 	"home.addedTwice": "è aggiunto due volte",
-	"home.addedTwiceMany": "sono aggiunti due volte"
+	"home.addedTwiceMany": "sono aggiunti due volte",
+	"home.notSetUpYet": "Non ancora configurato",
+	"home.setUpToAdd": "Completa la configurazione per aggiungere {name}"
 }

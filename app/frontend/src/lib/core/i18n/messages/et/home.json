@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Moodulites välja lülitatud",
 	"home.noneForSources": "puudub selle jaoks, mida su allikad leiavad",
 	"home.addedTwice": "on lisatud kaks korda",
-	"home.addedTwiceMany": "on lisatud kaks korda"
+	"home.addedTwiceMany": "on lisatud kaks korda",
+	"home.notSetUpYet": "Veel seadistamata",
+	"home.setUpToAdd": "Lõpeta seadistus, et lisada {name}"
 }

@@ -274,5 +274,7 @@
 	"home.sourcesOff": "パーツでオフ",
 	"home.noneForSources": "ソースが見つけるものに対応するものがありません",
 	"home.addedTwice": "が二重に追加されています",
-	"home.addedTwiceMany": "が二重に追加されています"
+	"home.addedTwiceMany": "が二重に追加されています",
+	"home.notSetUpYet": "まだ設定されていません",
+	"home.setUpToAdd": "{name} を追加するにはセットアップを完了してください"
 }

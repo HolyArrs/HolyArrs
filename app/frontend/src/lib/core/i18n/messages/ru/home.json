@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Выключено в разделе «Части»",
 	"home.noneForSources": "нет для того, что находят ваши источники",
 	"home.addedTwice": "добавлен дважды",
-	"home.addedTwiceMany": "добавлены дважды"
+	"home.addedTwiceMany": "добавлены дважды",
+	"home.notSetUpYet": "Ещё не настроено",
+	"home.setUpToAdd": "Завершите настройку, чтобы добавить {name}"
 }

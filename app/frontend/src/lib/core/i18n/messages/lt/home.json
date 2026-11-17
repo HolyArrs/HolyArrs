@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Išjungta Dalyse",
 	"home.noneForSources": "trūksta tam, ką randa jūsų šaltiniai",
 	"home.addedTwice": "pridėtas du kartus",
-	"home.addedTwiceMany": "pridėti du kartus"
+	"home.addedTwiceMany": "pridėti du kartus",
+	"home.notSetUpYet": "Dar nenustatyta",
+	"home.setUpToAdd": "Užbaikite sąranką, kad pridėtumėte {name}"
 }

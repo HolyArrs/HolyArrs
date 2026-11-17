@@ -181,6 +181,14 @@
 					<span class="num">{n(overview.recentNew)}</span>
 					<span class="sm">{overview.recentArrived.length && home?.new_seasons?.length ? t('home.arrivalsAndNewSeasons') : overview.recentArrived.length ? t('home.arrivedInTheLast') : home?.new_seasons?.length === 1 ? t('home.newSeasonOfA') : t('home.newSeasonsOfShows')}</span>
 				</a>
+			{:else if key === 'setup'}
+				<!-- Before setup: the Library's place says what it needs and opens that step; once only the first title is left, it opens Search. -->
+				{@const missing = attentionView.steps.find((s) => !s.done && s.href !== '/search')}
+				<a class="tile stat {cls}" href={to(missing?.href ?? '/search')} data-testid="home-setup-library">
+					{#if !missing || missing.href === '/settings/library-folders'}{@render head('library', 'indigo', t('home.library'))}{:else}{@render head('download', 'blue', t('home.downloads'))}{/if}
+					<span class="word">{missing ? t('home.notSetUpYet') : t('home.addYourFirstTitle')}</span>
+					<span class="sm">{missing ? missing.text : t('home.searchForSomethingNew')}</span>
+				</a>
 			{:else if key === 'explore'}
 				<a class="tile stat {cls}" href={to('/explore')}>
 					{@render head('compass', 'green', t('home.explore'))}

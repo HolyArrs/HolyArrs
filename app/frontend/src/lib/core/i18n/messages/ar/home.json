@@ -274,5 +274,7 @@
 	"home.sourcesOff": "متوقف في الأجزاء",
 	"home.noneForSources": "مفقود لما تجده مصادرك",
 	"home.addedTwice": "مضاف مرتين",
-	"home.addedTwiceMany": "مضافة مرتين"
+	"home.addedTwiceMany": "مضافة مرتين",
+	"home.notSetUpYet": "لم يُعدّ بعد",
+	"home.setUpToAdd": "أكمل الإعداد لإضافة {name}"
 }
