@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "AI সহকারীদের HolyArrs ব্যবহার করতে দিন",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "অন্য অ্যাপের জন্য কী ও রুট",
+	"core.settings.remoteAccess.label": "রিমোট অ্যাক্সেস",
+	"core.settings.remoteAccess.about": "বাড়ির বাইরে থেকে HolyArrs ব্যবহার করুন",
 	"core.settings.tmdb.label": "মেটাডেটা",
 	"core.settings.tmdb.about": "পোস্টার ও নাম যেখান থেকে আসে",
 	"core.settings.health.label": "হেলথ চেক",

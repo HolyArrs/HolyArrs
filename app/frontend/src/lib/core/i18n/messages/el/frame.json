@@ -17,6 +17,7 @@
 	"frame.nav.history": "Ιστορικό",
 	"frame.nav.status": "Κατάσταση",
 	"frame.nav.settings": "Ρυθμίσεις",
+	"frame.nav.plugins": "Πρόσθετα",
 	"frame.nav.goTo": "Μετάβαση σε",
 	"frame.nav.active": "{n} ενεργές, {percent}%",
 	"frame.nav.decide": "{n} χρειάζονται απόφαση",

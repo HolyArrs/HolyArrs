@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "未及時回應。請檢查位址，以及沒有防火牆阻擋。",
 	"server.core.nothing-answers-on-that-port-check": "該連接埠上沒有任何回應。請檢查連接埠，以及應用程式是否在執行。",
 	"server.core.nothing-at-that-path-check-the": "該路徑下沒有內容。請檢查連接埠後的路徑。",
-	"server.core.category-missing-add-it-in-the-2": "缺少分類: {name}。請在下載應用程式中新增，或在這裡選擇另一個。"
+	"server.core.category-missing-add-it-in-the-2": "缺少分類: {name}。請在下載應用程式中新增，或在這裡選擇另一個。",
+	"server.plugins.plugins-are-changed-only-from-a": "外掛只能在擁有者已登入的工作階段中變更，絕不能用 API 金鑰",
+	"server.plugins.plugins-are-not-set-up-in": "此版本未設定外掛",
+	"server.accounts.finish-setup-on-the-home-network": "請先在家用網路中完成設定。",
+	"server.accounts.api-key-changed": "API 金鑰 {label} 已變更",
+	"server.accounts.only-the-owner-and-admins-may-2": "只有已登入的擁有者和管理員可以變更金鑰"
 }

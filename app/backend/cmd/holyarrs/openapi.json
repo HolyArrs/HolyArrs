@@ -10253,6 +10253,74 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Owner or admin, signed in: set an AI (mcp) key's mcp_groups. Admins reach only their own keys. Scopes stay fixed.",
+        "operationId": "editKey",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "mcp_groups": {
+                    "items": {
+                      "enum": [
+                        "see",
+                        "add",
+                        "control",
+                        "settings",
+                        "delete",
+                        "admin",
+                        "approve"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "mcp_groups"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The key's new tick boxes."
+          },
+          "400": {
+            "description": "Unknown group, or not an AI key."
+          },
+          "403": {
+            "description": "Not the owner or an admin, or called with a key."
+          },
+          "404": {
+            "description": "No such key."
+          }
+        },
+        "summary": "Change an AI key's tick boxes",
+        "tags": [
+          "API keys"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/auth/login": {
@@ -23569,6 +23637,191 @@
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/plugins": {
+      "get": {
+        "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
+        "responses": {
+          "200": {
+            "description": "Plugins from the cached signed list with installed state, version, declared access, enabled flag and the active sandbox limits"
+          }
+        },
+        "summary": "List plugins",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/tailscale/signout": {
+      "post": {
+        "description": "Owner only, signed-in session only. Stops the Tailscale plugin, runs it once to log the device out and wipe its Tailscale state, and leaves it stopped. If the logout itself fails the state is still wiped; remove the device in Tailscale's admin page.",
+        "responses": {
+          "200": {
+            "description": "Signed out; the plugin stays stopped"
+          },
+          "404": {
+            "description": "The Tailscale plugin is not installed"
+          }
+        },
+        "summary": "Sign the Tailscale plugin out",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/tailscale/status": {
+      "get": {
+        "description": "Owner only. The Tailscale plugin's own status file: state, device and ts.net name, Tailscale version, last update, login expiry and direct or relayed. The sign-in link is left out when the request uses an API key.",
+        "responses": {
+          "200": {
+            "description": "Status; state is not_connected until the plugin has written one"
+          },
+          "404": {
+            "description": "The Tailscale plugin is not installed"
+          }
+        },
+        "summary": "Tailscale plugin status",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}": {
+      "delete": {
+        "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "keep",
+            "required": false,
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stopped and removed; keep=1 keeps its program and data, disabled"
+          },
+          "404": {
+            "description": "Not installed"
+          }
+        },
+        "summary": "Remove a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/install": {
+      "post": {
+        "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Installed and started"
+          },
+          "404": {
+            "description": "Not on the plugin list"
+          },
+          "409": {
+            "description": "Plugin signing key not set yet"
+          },
+          "422": {
+            "description": "Refused by the install checks"
+          },
+          "501": {
+            "description": "Plugins run only on Linux"
+          },
+          "502": {
+            "description": "The list server or a list signature failed"
+          }
+        },
+        "summary": "Install and start a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/start": {
+      "post": {
+        "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Started"
+          },
+          "404": {
+            "description": "Not installed"
+          },
+          "422": {
+            "description": "Refused by the start checks; the plugin stays disabled"
+          },
+          "501": {
+            "description": "Plugins run only on Linux"
+          }
+        },
+        "summary": "Start a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/stop": {
+      "post": {
+        "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stopped and disabled until started again"
+          },
+          "404": {
+            "description": "Not installed"
+          }
+        },
+        "summary": "Stop a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/public/signin-art": {

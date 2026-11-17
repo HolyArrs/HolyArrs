@@ -12,6 +12,13 @@ import (
 // RoutePerms says what each route needs. Routes missing here are for the
 // owner only, so a new route is closed until someone decides who may use it.
 var RoutePerms = map[string]webserver.Perm{
+	"GET /api/v1/plugins":                               webserver.NeedOwner,
+	"POST /api/v1/plugins/{id}/install":                 webserver.NeedOwner,
+	"POST /api/v1/plugins/{id}/start":                   webserver.NeedOwner,
+	"POST /api/v1/plugins/{id}/stop":                    webserver.NeedOwner,
+	"DELETE /api/v1/plugins/{id}":                       webserver.NeedOwner,
+	"GET /api/v1/plugins/tailscale/status":              webserver.NeedOwner,
+	"POST /api/v1/plugins/tailscale/signout":            webserver.NeedOwner,
 	"GET /api/v1/data-packs":                            webserver.NeedOwner,
 	"GET /api/v1/data-packs/{id}":                       webserver.NeedOwner,
 	"GET /api/v1/data-packs/{id}/preview":               webserver.NeedOwner,
@@ -467,6 +474,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/auth/keys":                webserver.PermSettings,
 	"POST /api/v1/auth/keys":               webserver.PermSettings,
 	"DELETE /api/v1/auth/keys/{id}":        webserver.PermSettings,
+	"PUT /api/v1/auth/keys/{id}":           webserver.PermSettings,
 	"GET /api/v1/auth/settings":            webserver.PermSettings,
 
 	// People.

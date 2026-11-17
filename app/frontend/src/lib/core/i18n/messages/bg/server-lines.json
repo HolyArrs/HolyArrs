@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Няма отговор навреме. Проверете адреса и дали защитна стена не пречи.",
 	"server.core.nothing-answers-on-that-port-check": "Нищо не отговаря на този порт. Проверете порта и дали приложението работи.",
 	"server.core.nothing-at-that-path-check-the": "Няма нищо на този път. Проверете пътя след порта.",
-	"server.core.category-missing-add-it-in-the-2": "Липсва категория: {name}. Добавете я в приложението за изтегляне или изберете друга тук."
+	"server.core.category-missing-add-it-in-the-2": "Липсва категория: {name}. Добавете я в приложението за изтегляне или изберете друга тук.",
+	"server.plugins.plugins-are-changed-only-from-a": "добавките се променят само от вписана сесия на собственика, никога с API ключ",
+	"server.plugins.plugins-are-not-set-up-in": "добавките не са настроени в тази версия",
+	"server.accounts.finish-setup-on-the-home-network": "Първо завършете настройката в домашната мрежа.",
+	"server.accounts.api-key-changed": "API ключът {label} е променен",
+	"server.accounts.only-the-owner-and-admins-may-2": "само собственикът и администраторите могат да променят ключ, след вход"
 }

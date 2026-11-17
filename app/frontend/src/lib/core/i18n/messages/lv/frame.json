@@ -17,6 +17,7 @@
 	"frame.nav.history": "Vēsture",
 	"frame.nav.status": "Statuss",
 	"frame.nav.settings": "Iestatījumi",
+	"frame.nav.plugins": "Spraudņi",
 	"frame.nav.goTo": "Pāriet uz",
 	"frame.nav.active": "Aktīvi: {n}, {percent}%",
 	"frame.nav.decide": "Jālemj: {n}",

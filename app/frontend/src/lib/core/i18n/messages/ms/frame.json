@@ -17,6 +17,7 @@
 	"frame.nav.history": "Sejarah",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Tetapan",
+	"frame.nav.plugins": "Pemalam",
 	"frame.nav.goTo": "Pergi ke",
 	"frame.nav.active": "{n} aktif, {percent}%",
 	"frame.nav.decide": "{n} perlu keputusan",

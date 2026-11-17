@@ -17,6 +17,7 @@
 	"frame.nav.history": "История",
 	"frame.nav.status": "Състояние",
 	"frame.nav.settings": "Настройки",
+	"frame.nav.plugins": "Добавки",
 	"frame.nav.goTo": "Към",
 	"frame.nav.active": "{n} активни, {percent}%",
 	"frame.nav.decide": "{n} чакат решение",

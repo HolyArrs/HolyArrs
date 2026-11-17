@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Αφήστε βοηθούς AI να χρησιμοποιούν το HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Κλειδιά και διαδρομές για άλλες εφαρμογές",
+	"core.settings.remoteAccess.label": "Απομακρυσμένη πρόσβαση",
+	"core.settings.remoteAccess.about": "Πρόσβαση στο HolyArrs εκτός σπιτιού",
 	"core.settings.tmdb.label": "Μεταδεδομένα",
 	"core.settings.tmdb.about": "Από πού προέρχονται οι αφίσες και τα ονόματα",
 	"core.settings.health.label": "Έλεγχοι υγείας",

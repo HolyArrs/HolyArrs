@@ -17,6 +17,7 @@
 	"frame.nav.history": "기록",
 	"frame.nav.status": "상태",
 	"frame.nav.settings": "설정",
+	"frame.nav.plugins": "플러그인",
 	"frame.nav.goTo": "이동",
 	"frame.nav.active": "{n}건 진행 중, {percent}%",
 	"frame.nav.decide": "{n}건 결정 필요",

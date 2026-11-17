@@ -17,6 +17,7 @@
 	"frame.nav.history": "السجل",
 	"frame.nav.status": "الحالة",
 	"frame.nav.settings": "الإعدادات",
+	"frame.nav.plugins": "الإضافات",
 	"frame.nav.goTo": "انتقل إلى",
 	"frame.nav.active": "{n} نشط، {percent}%",
 	"frame.nav.decide": "{n} بحاجة إلى قرار",

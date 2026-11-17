@@ -7,6 +7,7 @@ export { backdrop } from './backdrop.svelte.ts';
 export { blockDissolve } from './pixel-trail.ts';
 export { default as Account } from './Account.svelte';
 export { default as Sessions } from './Sessions.svelte';
+export { default as QrCode } from './QrCode.svelte';
 export { default as SigninBackdrop } from './SigninBackdrop.svelte';
 export { default as SigninPerson } from './SigninPerson.svelte';
 export { default as SigninLoginForm } from './SigninLoginForm.svelte';

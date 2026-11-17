@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Keine Antwort in der Zeit. Prüfe die Adresse und ob eine Firewall im Weg ist.",
 	"server.core.nothing-answers-on-that-port-check": "Auf diesem Port antwortet nichts. Prüfe den Port und ob die App läuft.",
 	"server.core.nothing-at-that-path-check-the": "Unter diesem Pfad ist nichts. Prüfe den Pfad nach dem Port.",
-	"server.core.category-missing-add-it-in-the-2": "Kategorie fehlt: {name}. Lege sie in der Download-App an oder wähle hier eine andere."
+	"server.core.category-missing-add-it-in-the-2": "Kategorie fehlt: {name}. Lege sie in der Download-App an oder wähle hier eine andere.",
+	"server.plugins.plugins-are-changed-only-from-a": "Plugins werden nur in einer angemeldeten Sitzung des Besitzers geändert, nie mit einem API-Schlüssel",
+	"server.plugins.plugins-are-not-set-up-in": "Plugins sind in diesem Build nicht eingerichtet",
+	"server.accounts.finish-setup-on-the-home-network": "Schließe die Einrichtung zuerst im Heimnetz ab.",
+	"server.accounts.api-key-changed": "API-Schlüssel {label} geändert",
+	"server.accounts.only-the-owner-and-admins-may-2": "nur der Besitzer und Admins dürfen einen Schlüssel ändern, angemeldet"
 }

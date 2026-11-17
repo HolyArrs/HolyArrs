@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Lasă asistenții AI să folosească HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Chei și rute pentru alte aplicații",
+	"core.settings.remoteAccess.label": "Acces de la distanță",
+	"core.settings.remoteAccess.about": "Folosește HolyArrs departe de casă",
 	"core.settings.tmdb.label": "Metadate",
 	"core.settings.tmdb.about": "De unde vin afișele și numele",
 	"core.settings.health.label": "Verificări de stare",

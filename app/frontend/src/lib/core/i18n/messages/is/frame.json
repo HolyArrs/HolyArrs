@@ -17,6 +17,7 @@
 	"frame.nav.history": "Ferill",
 	"frame.nav.status": "Staða",
 	"frame.nav.settings": "Stillingar",
+	"frame.nav.plugins": "Viðbætur",
 	"frame.nav.goTo": "Fara á",
 	"frame.nav.active": "{n} virk, {percent}%",
 	"frame.nav.decide": "{n} þarfnast ákvörðunar",

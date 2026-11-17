@@ -38,6 +38,8 @@ type config struct {
 	URLBase string
 	// urlBaseFlag is true when -url-base was given on the command line.
 	urlBaseFlag bool
+	// PluginListURL is the https base of the signed plugin list.
+	PluginListURL string
 }
 
 func env(key, def string) string {
@@ -110,6 +112,7 @@ func parseFlags(args []string, errOut io.Writer) (config, error) {
 	fs.StringVar(&c.SavePath, "save-path", env("HOLYARRS_SAVE_PATH", ""), "where the Downloader saves (same path in both containers)")
 	fs.BoolVar(&c.SafeMode, "safe-mode", envOn(EnvSafeMode), "start only the core: sign-in, the Library, settings, backups and health ("+EnvSafeMode+"=1)")
 	fs.StringVar(&c.URLBase, "url-base", env(webserver.URLBaseEnv, ""), "serve under this path behind a reverse proxy, such as /holyarrs ("+webserver.URLBaseEnv+")")
+	fs.StringVar(&c.PluginListURL, "plugin-list-url", env("HOLYARRS_PLUGIN_LIST_URL", defaultPluginListURL), "https base of the signed plugin list (HOLYARRS_PLUGIN_LIST_URL)")
 	if err := fs.Parse(args); err != nil {
 		return c, err
 	}

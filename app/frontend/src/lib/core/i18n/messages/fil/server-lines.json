@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Walang sagot sa takdang oras. Tingnan ang address, at na walang firewall na humaharang.",
 	"server.core.nothing-answers-on-that-port-check": "Walang sumasagot sa port na iyon. Tingnan ang port, at na tumatakbo ang app.",
 	"server.core.nothing-at-that-path-check-the": "Walang laman ang path na iyon. Tingnan ang path pagkatapos ng port.",
-	"server.core.category-missing-add-it-in-the-2": "Walang ganitong category: {name}. Idagdag ito sa download app, o pumili ng iba rito."
+	"server.core.category-missing-add-it-in-the-2": "Walang ganitong category: {name}. Idagdag ito sa download app, o pumili ng iba rito.",
+	"server.plugins.plugins-are-changed-only-from-a": "binabago lang ang mga plugin mula sa naka-sign in na session ng may-ari, hindi kailanman gamit ang API key",
+	"server.plugins.plugins-are-not-set-up-in": "hindi naka-set up ang mga plugin sa build na ito",
+	"server.accounts.finish-setup-on-the-home-network": "Tapusin muna ang setup sa home network.",
+	"server.accounts.api-key-changed": "Nabago ang API key na {label}",
+	"server.accounts.only-the-owner-and-admins-may-2": "ang owner at mga admin lang na naka-sign in ang puwedeng magbago ng key"
 }

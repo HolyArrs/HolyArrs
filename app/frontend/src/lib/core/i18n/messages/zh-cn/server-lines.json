@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "未及时回应。请检查地址，以及没有防火墙阻挡。",
 	"server.core.nothing-answers-on-that-port-check": "该端口上没有任何回应。请检查端口，以及应用是否在运行。",
 	"server.core.nothing-at-that-path-check-the": "该路径下没有内容。请检查端口后的路径。",
-	"server.core.category-missing-add-it-in-the-2": "缺少分类: {name}。请在下载应用中添加，或在这里选择另一个。"
+	"server.core.category-missing-add-it-in-the-2": "缺少分类: {name}。请在下载应用中添加，或在这里选择另一个。",
+	"server.plugins.plugins-are-changed-only-from-a": "插件只能在所有者已登录的会话中更改，绝不能用 API 密钥",
+	"server.plugins.plugins-are-not-set-up-in": "此版本未设置插件",
+	"server.accounts.finish-setup-on-the-home-network": "请先在家庭网络中完成设置。",
+	"server.accounts.api-key-changed": "API 密钥 {label} 已更改",
+	"server.accounts.only-the-owner-and-admins-may-2": "只有已登录的所有者和管理员可以更改密钥"
 }

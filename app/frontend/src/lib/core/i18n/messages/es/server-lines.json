@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Sin respuesta a tiempo. Revisa la dirección y que ningún cortafuegos lo impida.",
 	"server.core.nothing-answers-on-that-port-check": "Nada responde en ese puerto. Revisa el puerto y que la aplicación esté en marcha.",
 	"server.core.nothing-at-that-path-check-the": "No hay nada en esa ruta. Revisa la ruta tras el puerto.",
-	"server.core.category-missing-add-it-in-the-2": "Falta la categoría: {name}. Añádela en la aplicación de descargas o elige otra aquí."
+	"server.core.category-missing-add-it-in-the-2": "Falta la categoría: {name}. Añádela en la aplicación de descargas o elige otra aquí.",
+	"server.plugins.plugins-are-changed-only-from-a": "los plugins solo se cambian desde una sesión iniciada del propietario, nunca con una clave API",
+	"server.plugins.plugins-are-not-set-up-in": "los plugins no están configurados en este build",
+	"server.accounts.finish-setup-on-the-home-network": "Termina primero la configuración en la red de casa.",
+	"server.accounts.api-key-changed": "Clave API {label} cambiada",
+	"server.accounts.only-the-owner-and-admins-may-2": "solo el propietario y los administradores pueden cambiar una clave, con la sesión iniciada"
 }

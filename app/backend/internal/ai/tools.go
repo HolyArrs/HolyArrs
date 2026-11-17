@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/ai/mcpkeys"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -141,8 +142,27 @@ func toolError(msg string) map[string]any {
 	return map[string]any{"content": []any{map[string]any{"type": "text", "text": msg}}, "isError": true}
 }
 
-// call runs one app route as who with only scope, the way the app would.
+// refused says why the key's tick boxes do not cover method on path, ""
+// when they do.
+func refused(who webserver.Caller, method, path string) string {
+	route, _, _ := strings.Cut(path, "?")
+	set, _ := mcpkeys.Parse(who.MCPGroups)
+	if mcpkeys.Allows(set, method, route) {
+		return ""
+	}
+	g, ok := mcpkeys.GroupFor(method, route)
+	if !ok {
+		return "This key can't do that."
+	}
+	return "This key can't " + g.Label() + ". The owner can turn it on in Settings → Keys."
+}
+
+// call runs one app route as who with only scope, the way the app would,
+// once the key's tick boxes allow it.
 func (h *Handlers) call(r *http.Request, who webserver.Caller, scope, method, path string, body any) (int, any) {
+	if why := refused(who, method, path); why != "" {
+		return http.StatusForbidden, map[string]any{"error": why}
+	}
 	var rd io.Reader
 	if body != nil {
 		b, _ := json.Marshal(body)

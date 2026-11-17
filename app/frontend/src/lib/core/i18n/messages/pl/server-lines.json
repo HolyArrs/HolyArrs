@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Brak odpowiedzi na czas. Sprawdź adres i czy zapora nie blokuje.",
 	"server.core.nothing-answers-on-that-port-check": "Na tym porcie nic nie odpowiada. Sprawdź port i czy aplikacja działa.",
 	"server.core.nothing-at-that-path-check-the": "Pod tą ścieżką nic nie ma. Sprawdź ścieżkę po porcie.",
-	"server.core.category-missing-add-it-in-the-2": "Brak kategorii: {name}. Dodaj ją w aplikacji do pobierania lub wybierz tu inną."
+	"server.core.category-missing-add-it-in-the-2": "Brak kategorii: {name}. Dodaj ją w aplikacji do pobierania lub wybierz tu inną.",
+	"server.plugins.plugins-are-changed-only-from-a": "wtyczki zmienia się tylko z zalogowanej sesji właściciela, nigdy kluczem API",
+	"server.plugins.plugins-are-not-set-up-in": "wtyczki nie są skonfigurowane w tej wersji",
+	"server.accounts.finish-setup-on-the-home-network": "Najpierw dokończ konfigurację w sieci domowej.",
+	"server.accounts.api-key-changed": "Klucz API {label} zmieniony",
+	"server.accounts.only-the-owner-and-admins-may-2": "klucz może zmienić tylko zalogowany właściciel i administratorzy"
 }

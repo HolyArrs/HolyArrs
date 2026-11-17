@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Geen antwoord op tijd. Controleer het adres en of er geen firewall in de weg zit.",
 	"server.core.nothing-answers-on-that-port-check": "Niets antwoordt op die poort. Controleer de poort en of de app draait.",
 	"server.core.nothing-at-that-path-check-the": "Niets op dat pad. Controleer het pad na de poort.",
-	"server.core.category-missing-add-it-in-the-2": "Categorie ontbreekt: {name}. Voeg hem toe in de download-app, of kies hier een andere."
+	"server.core.category-missing-add-it-in-the-2": "Categorie ontbreekt: {name}. Voeg hem toe in de download-app, of kies hier een andere.",
+	"server.plugins.plugins-are-changed-only-from-a": "plug-ins worden alleen gewijzigd vanuit een aangemelde sessie van de eigenaar, nooit met een API-sleutel",
+	"server.plugins.plugins-are-not-set-up-in": "plug-ins zijn niet ingesteld in deze build",
+	"server.accounts.finish-setup-on-the-home-network": "Rond eerst de installatie af op het thuisnetwerk.",
+	"server.accounts.api-key-changed": "API-sleutel {label} gewijzigd",
+	"server.accounts.only-the-owner-and-admins-may-2": "alleen de eigenaar en beheerders mogen een sleutel wijzigen, ingelogd"
 }

@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Õigel ajal vastust ei tulnud. Kontrolli aadressi ja et tulemüür ei sega.",
 	"server.core.nothing-answers-on-that-port-check": "Selles pordis ei vasta miski. Kontrolli porti ja et rakendus töötab.",
 	"server.core.nothing-at-that-path-check-the": "Sellel teel pole midagi. Kontrolli pordi järel olevat teed.",
-	"server.core.category-missing-add-it-in-the-2": "Kategooria puudub: {name}. Lisa see allalaadimisrakenduses või vali siin mõni muu."
+	"server.core.category-missing-add-it-in-the-2": "Kategooria puudub: {name}. Lisa see allalaadimisrakenduses või vali siin mõni muu.",
+	"server.plugins.plugins-are-changed-only-from-a": "pluginaid muudetakse ainult omaniku sisselogitud seansist, mitte kunagi API-võtmega",
+	"server.plugins.plugins-are-not-set-up-in": "pluginad pole selles versioonis seadistatud",
+	"server.accounts.finish-setup-on-the-home-network": "Lõpeta seadistus kõigepealt koduvõrgus.",
+	"server.accounts.api-key-changed": "API võti {label} muudetud",
+	"server.accounts.only-the-owner-and-admins-may-2": "võtit tohivad muuta ainult sisse loginud omanik ja administraatorid"
 }

@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Žádná odpověď včas. Zkontrolujte adresu a že nepřekáží firewall.",
 	"server.core.nothing-answers-on-that-port-check": "Na tomto portu nic neodpovídá. Zkontrolujte port a že aplikace běží.",
 	"server.core.nothing-at-that-path-check-the": "Na této cestě nic není. Zkontrolujte cestu za portem.",
-	"server.core.category-missing-add-it-in-the-2": "Chybí kategorie: {name}. Přidejte ji ve stahovací aplikaci, nebo zde vyberte jinou."
+	"server.core.category-missing-add-it-in-the-2": "Chybí kategorie: {name}. Přidejte ji ve stahovací aplikaci, nebo zde vyberte jinou.",
+	"server.plugins.plugins-are-changed-only-from-a": "pluginy se mění jen z přihlášené relace vlastníka, nikdy klíčem API",
+	"server.plugins.plugins-are-not-set-up-in": "pluginy nejsou v této verzi nastavené",
+	"server.accounts.finish-setup-on-the-home-network": "Nejprve dokončete nastavení v domácí síti.",
+	"server.accounts.api-key-changed": "Klíč API {label} změněn",
+	"server.accounts.only-the-owner-and-admins-may-2": "klíč smí změnit jen vlastník a správci, po přihlášení"
 }

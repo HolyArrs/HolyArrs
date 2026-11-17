@@ -332,8 +332,9 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 	}
 
 	// Owners can do anything; admins also manage users.
-	function can(p: Perm | 'users'): boolean {
+	function can(p: Perm | 'users' | 'owner'): boolean {
 		if (s.role === 'owner') return true;
+		if (p === 'owner') return false;
 		if (p === 'users') return s.role === 'admin';
 		return s.perms.includes(p);
 	}

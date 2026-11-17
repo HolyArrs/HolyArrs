@@ -17,6 +17,7 @@
 	"frame.nav.history": "Előzmények",
 	"frame.nav.status": "Állapot",
 	"frame.nav.settings": "Beállítások",
+	"frame.nav.plugins": "Bővítmények",
 	"frame.nav.goTo": "Ugrás ide:",
 	"frame.nav.active": "{n} aktív, {percent}%",
 	"frame.nav.decide": "{n} döntésre vár",

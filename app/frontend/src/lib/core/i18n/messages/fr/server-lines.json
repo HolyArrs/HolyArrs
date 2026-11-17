@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Pas de réponse à temps. Vérifiez l'adresse et qu'aucun pare-feu ne bloque.",
 	"server.core.nothing-answers-on-that-port-check": "Rien ne répond sur ce port. Vérifiez le port et que l'application tourne.",
 	"server.core.nothing-at-that-path-check-the": "Rien à ce chemin. Vérifiez le chemin après le port.",
-	"server.core.category-missing-add-it-in-the-2": "Catégorie absente: {name}. Ajoutez-la dans l'application de téléchargement, ou choisissez-en une autre ici."
+	"server.core.category-missing-add-it-in-the-2": "Catégorie absente: {name}. Ajoutez-la dans l'application de téléchargement, ou choisissez-en une autre ici.",
+	"server.plugins.plugins-are-changed-only-from-a": "les plugins se modifient seulement depuis une session du propriétaire connecté, jamais avec une clé API",
+	"server.plugins.plugins-are-not-set-up-in": "les plugins ne sont pas configurés dans ce build",
+	"server.accounts.finish-setup-on-the-home-network": "Terminez d'abord la configuration sur le réseau de la maison.",
+	"server.accounts.api-key-changed": "Clé API {label} modifiée",
+	"server.accounts.only-the-owner-and-admins-may-2": "seuls le propriétaire et les administrateurs connectés peuvent modifier une clé"
 }

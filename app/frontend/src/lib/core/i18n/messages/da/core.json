@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Lad AI-assistenter bruge HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Nøgler og ruter til andre apps",
+	"core.settings.remoteAccess.label": "Fjernadgang",
+	"core.settings.remoteAccess.about": "Brug HolyArrs væk fra hjemmet",
 	"core.settings.tmdb.label": "Metadata",
 	"core.settings.tmdb.about": "Hvor plakater og navne kommer fra",
 	"core.settings.health.label": "Sundhedstjek",

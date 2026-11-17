@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Nav atbildes laikā. Pārbaudiet adresi un to, vai netraucē ugunsmūris.",
 	"server.core.nothing-answers-on-that-port-check": "Šajā portā nekas neatbild. Pārbaudiet portu un to, vai lietotne darbojas.",
 	"server.core.nothing-at-that-path-check-the": "Šajā ceļā nekā nav. Pārbaudiet ceļu aiz porta.",
-	"server.core.category-missing-add-it-in-the-2": "Trūkst kategorijas: {name}. Pievienojiet to lejupielādes lietotnē vai izvēlieties citu šeit."
+	"server.core.category-missing-add-it-in-the-2": "Trūkst kategorijas: {name}. Pievienojiet to lejupielādes lietotnē vai izvēlieties citu šeit.",
+	"server.plugins.plugins-are-changed-only-from-a": "spraudņus maina tikai no īpašnieka pieteiktas sesijas, nekad ar API atslēgu",
+	"server.plugins.plugins-are-not-set-up-in": "spraudņi šajā versijā nav iestatīti",
+	"server.accounts.finish-setup-on-the-home-network": "Vispirms pabeidziet iestatīšanu mājas tīklā.",
+	"server.accounts.api-key-changed": "API atslēga {label} mainīta",
+	"server.accounts.only-the-owner-and-admins-may-2": "atslēgu drīkst mainīt tikai pierakstījies īpašnieks un admini"
 }

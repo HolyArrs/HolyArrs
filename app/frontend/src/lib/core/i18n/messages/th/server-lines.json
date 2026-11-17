@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "ไม่มีคำตอบทันเวลา ตรวจสอบที่อยู่ และว่าไม่มีไฟร์วอลล์ขวางอยู่",
 	"server.core.nothing-answers-on-that-port-check": "ไม่มีอะไรตอบที่พอร์ตนั้น ตรวจสอบพอร์ต และว่าแอปกำลังทำงาน",
 	"server.core.nothing-at-that-path-check-the": "ไม่มีอะไรที่พาธนั้น ตรวจสอบพาธหลังพอร์ต",
-	"server.core.category-missing-add-it-in-the-2": "ไม่มีหมวดหมู่: {name} เพิ่มในแอปดาวน์โหลด หรือเลือกหมวดอื่นที่นี่"
+	"server.core.category-missing-add-it-in-the-2": "ไม่มีหมวดหมู่: {name} เพิ่มในแอปดาวน์โหลด หรือเลือกหมวดอื่นที่นี่",
+	"server.plugins.plugins-are-changed-only-from-a": "ปลั๊กอินเปลี่ยนได้จากเซสชันที่เจ้าของลงชื่อเข้าใช้เท่านั้น ไม่ใช่ด้วยคีย์ API",
+	"server.plugins.plugins-are-not-set-up-in": "ปลั๊กอินยังไม่ได้ตั้งค่าในบิลด์นี้",
+	"server.accounts.finish-setup-on-the-home-network": "ตั้งค่าให้เสร็จบนเครือข่ายในบ้านก่อน",
+	"server.accounts.api-key-changed": "เปลี่ยนคีย์ API {label} แล้ว",
+	"server.accounts.only-the-owner-and-admins-may-2": "เฉพาะเจ้าของและผู้ดูแลที่ลงชื่อเข้าใช้แล้วที่เปลี่ยนคีย์ได้"
 }

@@ -17,6 +17,7 @@
 	"frame.nav.history": "历史",
 	"frame.nav.status": "状态",
 	"frame.nav.settings": "设置",
+	"frame.nav.plugins": "插件",
 	"frame.nav.goTo": "前往",
 	"frame.nav.active": "{n} 个进行中，{percent}%",
 	"frame.nav.decide": "{n} 项待你决定",

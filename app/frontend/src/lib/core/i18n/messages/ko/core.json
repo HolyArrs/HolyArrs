@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "AI 어시스턴트가 HolyArrs를 쓰도록 허용",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "다른 앱용 키와 경로",
+	"core.settings.remoteAccess.label": "원격 접속",
+	"core.settings.remoteAccess.about": "집 밖에서 HolyArrs 사용",
 	"core.settings.tmdb.label": "메타데이터",
 	"core.settings.tmdb.about": "포스터와 이름을 가져오는 곳",
 	"core.settings.health.label": "상태 점검",

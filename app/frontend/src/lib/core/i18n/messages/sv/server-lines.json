@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Inget svar i tid. Kontrollera adressen, och att ingen brandvägg är i vägen.",
 	"server.core.nothing-answers-on-that-port-check": "Inget svarar på den porten. Kontrollera porten, och att appen körs.",
 	"server.core.nothing-at-that-path-check-the": "Inget på den sökvägen. Kontrollera sökvägen efter porten.",
-	"server.core.category-missing-add-it-in-the-2": "Kategorin saknas: {name}. Lägg till den i nedladdningsappen, eller välj en annan här."
+	"server.core.category-missing-add-it-in-the-2": "Kategorin saknas: {name}. Lägg till den i nedladdningsappen, eller välj en annan här.",
+	"server.plugins.plugins-are-changed-only-from-a": "tillägg ändras bara från en inloggad ägarsession, aldrig med en API-nyckel",
+	"server.plugins.plugins-are-not-set-up-in": "tillägg är inte konfigurerade i den här versionen",
+	"server.accounts.finish-setup-on-the-home-network": "Slutför konfigurationen på hemnätverket först.",
+	"server.accounts.api-key-changed": "API-nyckeln {label} ändrades",
+	"server.accounts.only-the-owner-and-admins-may-2": "bara ägaren och admins får ändra en nyckel, inloggade"
 }

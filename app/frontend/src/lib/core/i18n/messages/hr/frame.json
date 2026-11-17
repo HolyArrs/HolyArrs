@@ -17,6 +17,7 @@
 	"frame.nav.history": "Povijest",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Postavke",
+	"frame.nav.plugins": "Dodaci",
 	"frame.nav.goTo": "Idi na",
 	"frame.nav.active": "Aktivno: {n}, {percent}%",
 	"frame.nav.decide": "Odluku čeka: {n}",

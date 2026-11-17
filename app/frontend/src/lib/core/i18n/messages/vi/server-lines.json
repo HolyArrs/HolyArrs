@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Không có trả lời kịp thời. Kiểm tra địa chỉ, và không có tường lửa chặn.",
 	"server.core.nothing-answers-on-that-port-check": "Không có gì trả lời ở cổng đó. Kiểm tra cổng, và ứng dụng đang chạy.",
 	"server.core.nothing-at-that-path-check-the": "Không có gì ở đường dẫn đó. Kiểm tra đường dẫn sau cổng.",
-	"server.core.category-missing-add-it-in-the-2": "Thiếu danh mục: {name}. Thêm danh mục trong ứng dụng tải xuống, hoặc chọn danh mục khác ở đây."
+	"server.core.category-missing-add-it-in-the-2": "Thiếu danh mục: {name}. Thêm danh mục trong ứng dụng tải xuống, hoặc chọn danh mục khác ở đây.",
+	"server.plugins.plugins-are-changed-only-from-a": "plugin chỉ được thay đổi từ phiên đăng nhập của chủ sở hữu, không bao giờ bằng khóa API",
+	"server.plugins.plugins-are-not-set-up-in": "plugin chưa được thiết lập trong bản này",
+	"server.accounts.finish-setup-on-the-home-network": "Hãy hoàn tất thiết lập trên mạng gia đình trước.",
+	"server.accounts.api-key-changed": "Đã đổi khóa API {label}",
+	"server.accounts.only-the-owner-and-admins-may-2": "chỉ chủ sở hữu và quản trị viên đã đăng nhập mới được đổi khóa"
 }

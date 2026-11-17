@@ -6,7 +6,7 @@ import (
 
 // The held-back features, by switch name.
 const (
-	AIApps        = "ai_apps"         // AI connector, AI keys, AI app guides
+	AIApps        = "ai_apps"         // AI connector (MCP) and AI keys
 	RowTitleStats = "row_title_stats" // Explore row titles statistics (owner table)
 	TraktLists    = "trakt_lists"     // Trakt key, Trakt lists, VIP token
 	EmbySignIn    = "emby_signin"     // Sign in with Emby

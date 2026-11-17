@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "لا رد في الوقت المحدد. تحقق من العنوان ومن عدم وجود جدار حماية يعترضه.",
 	"server.core.nothing-answers-on-that-port-check": "لا شيء يجيب على هذا المنفذ. تحقق من المنفذ ومن أن التطبيق يعمل.",
 	"server.core.nothing-at-that-path-check-the": "لا شيء في هذا المسار. تحقق من المسار بعد المنفذ.",
-	"server.core.category-missing-add-it-in-the-2": "الفئة غير موجودة: {name}. أضفها في تطبيق التنزيل، أو اختر فئة أخرى هنا."
+	"server.core.category-missing-add-it-in-the-2": "الفئة غير موجودة: {name}. أضفها في تطبيق التنزيل، أو اختر فئة أخرى هنا.",
+	"server.plugins.plugins-are-changed-only-from-a": "لا تُغيَّر الإضافات إلا من جلسة مالك مسجّل الدخول، وليس بمفتاح API أبدًا",
+	"server.plugins.plugins-are-not-set-up-in": "الإضافات غير مُعدّة في هذا الإصدار",
+	"server.accounts.finish-setup-on-the-home-network": "أكمل الإعداد على الشبكة المنزلية أولًا.",
+	"server.accounts.api-key-changed": "تم تغيير مفتاح API ‏{label}",
+	"server.accounts.only-the-owner-and-admins-may-2": "المالك والمشرفون فقط يستطيعون تغيير مفتاح، بعد تسجيل الدخول"
 }

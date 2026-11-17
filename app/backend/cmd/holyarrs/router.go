@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"errors"
+	"os"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles/datapack"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -92,6 +94,7 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	a.appHandlers().Routes(m)
 	(&updates.Handlers{Checker: a.s.Updates}).Routes(m)
 	(&datapack.Handlers{Deps: datapack.Deps{Store: a.s.Store}}).Routes(m)
+	(&plugins.Handlers{Engine: a.s.Plugins, LoginServer: os.Getenv("HOLYARRS_TAILSCALE_LOGIN_SERVER")}).Routes(m)
 	a.scheduleHandlers().Routes(m)
 	m.HandleFunc("GET /api/v1/metadata/search", a.searchMetadata)
 	(&metadata.Handlers{Up: func(ctx context.Context) bool { return a.s.MetadataUp == nil || a.s.MetadataUp(ctx) }}).Routes(m)

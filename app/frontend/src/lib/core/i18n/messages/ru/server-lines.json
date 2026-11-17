@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Нет ответа вовремя. Проверьте адрес и что брандмауэр не мешает.",
 	"server.core.nothing-answers-on-that-port-check": "На этом порту ничего не отвечает. Проверьте порт и что приложение запущено.",
 	"server.core.nothing-at-that-path-check-the": "По этому пути ничего нет. Проверьте путь после порта.",
-	"server.core.category-missing-add-it-in-the-2": "Нет категории: {name}. Добавьте её в приложении загрузок или выберите здесь другую."
+	"server.core.category-missing-add-it-in-the-2": "Нет категории: {name}. Добавьте её в приложении загрузок или выберите здесь другую.",
+	"server.plugins.plugins-are-changed-only-from-a": "плагины меняются только из сессии владельца, вошедшего в систему, никогда по API-ключу",
+	"server.plugins.plugins-are-not-set-up-in": "плагины не настроены в этой сборке",
+	"server.accounts.finish-setup-on-the-home-network": "Сначала завершите настройку в домашней сети.",
+	"server.accounts.api-key-changed": "Ключ API {label} изменён",
+	"server.accounts.only-the-owner-and-admins-may-2": "изменять ключ могут только владелец и администраторы после входа"
 }

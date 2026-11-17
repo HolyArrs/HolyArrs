@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "No answer in time. Check the address, and that no firewall is in the way.",
 	"server.core.nothing-answers-on-that-port-check": "Nothing answers on that port. Check the port, and that the app is running.",
 	"server.core.nothing-at-that-path-check-the": "Nothing at that path. Check the path after the port.",
-	"server.core.category-missing-add-it-in-the-2": "Category missing: {name}. Add it in the download app, or pick another one here."
+	"server.core.category-missing-add-it-in-the-2": "Category missing: {name}. Add it in the download app, or pick another one here.",
+	"server.plugins.plugins-are-changed-only-from-a": "plugins are changed only from a signed-in owner session, never with an API key",
+	"server.plugins.plugins-are-not-set-up-in": "plugins are not set up in this build",
+	"server.accounts.finish-setup-on-the-home-network": "Finish setup on the home network first.",
+	"server.accounts.api-key-changed": "API key {label} changed",
+	"server.accounts.only-the-owner-and-admins-may-2": "only the owner and admins may change a key, signed in"
 }

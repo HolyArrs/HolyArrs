@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Sem resposta a tempo. Confira o endereço e se nenhum firewall está bloqueando.",
 	"server.core.nothing-answers-on-that-port-check": "Nada responde nessa porta. Confira a porta e se o app está rodando.",
 	"server.core.nothing-at-that-path-check-the": "Nada nesse caminho. Confira o caminho depois da porta.",
-	"server.core.category-missing-add-it-in-the-2": "Categoria ausente: {name}. Adicione-a no app de downloads ou escolha outra aqui."
+	"server.core.category-missing-add-it-in-the-2": "Categoria ausente: {name}. Adicione-a no app de downloads ou escolha outra aqui.",
+	"server.plugins.plugins-are-changed-only-from-a": "plugins só são alterados numa sessão do dono conectado, nunca com uma chave de API",
+	"server.plugins.plugins-are-not-set-up-in": "plugins não estão configurados nesta versão",
+	"server.accounts.finish-setup-on-the-home-network": "Termine a configuração na rede de casa primeiro.",
+	"server.accounts.api-key-changed": "Chave de API {label} alterada",
+	"server.accounts.only-the-owner-and-admins-may-2": "só o dono e os administradores, com sessão iniciada, podem alterar uma chave"
 }

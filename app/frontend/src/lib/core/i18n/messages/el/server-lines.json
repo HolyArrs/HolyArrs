@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Καμία απάντηση εγκαίρως. Έλεγξε τη διεύθυνση και ότι δεν μπλοκάρει τείχος προστασίας.",
 	"server.core.nothing-answers-on-that-port-check": "Τίποτα δεν απαντά σε αυτή τη θύρα. Έλεγξε τη θύρα και ότι η εφαρμογή τρέχει.",
 	"server.core.nothing-at-that-path-check-the": "Τίποτα σε αυτή τη διαδρομή. Έλεγξε τη διαδρομή μετά τη θύρα.",
-	"server.core.category-missing-add-it-in-the-2": "Λείπει η κατηγορία: {name}. Πρόσθεσέ την στην εφαρμογή λήψεων ή διάλεξε άλλη εδώ."
+	"server.core.category-missing-add-it-in-the-2": "Λείπει η κατηγορία: {name}. Πρόσθεσέ την στην εφαρμογή λήψεων ή διάλεξε άλλη εδώ.",
+	"server.plugins.plugins-are-changed-only-from-a": "τα πρόσθετα αλλάζουν μόνο από συνδεδεμένη συνεδρία του κατόχου, ποτέ με κλειδί API",
+	"server.plugins.plugins-are-not-set-up-in": "τα πρόσθετα δεν έχουν ρυθμιστεί σε αυτή την έκδοση",
+	"server.accounts.finish-setup-on-the-home-network": "Ολοκληρώστε πρώτα τη ρύθμιση στο οικιακό δίκτυο.",
+	"server.accounts.api-key-changed": "Το κλειδί API «{label}» άλλαξε",
+	"server.accounts.only-the-owner-and-admins-may-2": "μόνο ο ιδιοκτήτης και οι διαχειριστές μπορούν να αλλάξουν κλειδί, συνδεδεμένοι"
 }

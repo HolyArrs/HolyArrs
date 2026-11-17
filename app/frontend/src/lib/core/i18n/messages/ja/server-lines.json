@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "時間内に応答がありません。アドレスと、ファイアウォールが妨げていないか確認してください。",
 	"server.core.nothing-answers-on-that-port-check": "そのポートでは何も応答しません。ポートと、アプリが動いているか確認してください。",
 	"server.core.nothing-at-that-path-check-the": "そのパスには何もありません。ポートの後のパスを確認してください。",
-	"server.core.category-missing-add-it-in-the-2": "カテゴリがありません: {name}。ダウンロードアプリで追加するか、ここで別のものを選んでください。"
+	"server.core.category-missing-add-it-in-the-2": "カテゴリがありません: {name}。ダウンロードアプリで追加するか、ここで別のものを選んでください。",
+	"server.plugins.plugins-are-changed-only-from-a": "プラグインはサインイン中のオーナーのセッションからのみ変更でき、API キーでは変更できません",
+	"server.plugins.plugins-are-not-set-up-in": "このビルドではプラグインが設定されていません",
+	"server.accounts.finish-setup-on-the-home-network": "まず自宅のネットワークでセットアップを完了してください。",
+	"server.accounts.api-key-changed": "API キー {label} を変更しました",
+	"server.accounts.only-the-owner-and-admins-may-2": "キーを変更できるのは、サインイン中のオーナーと管理者だけです"
 }

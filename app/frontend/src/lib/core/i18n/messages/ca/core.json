@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Deixa que els assistents d'IA facin servir HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Claus i rutes per a altres apps",
+	"core.settings.remoteAccess.label": "Accés remot",
+	"core.settings.remoteAccess.about": "Accedeix a HolyArrs fora de casa",
 	"core.settings.tmdb.label": "Metadades",
 	"core.settings.tmdb.about": "D'on vénen els pòsters i els noms",
 	"core.settings.health.label": "Comprovacions d'estat",

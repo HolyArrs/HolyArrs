@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Benarkan pembantu AI menggunakan HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Kunci dan laluan untuk apl lain",
+	"core.settings.remoteAccess.label": "Akses jauh",
+	"core.settings.remoteAccess.about": "Capai HolyArrs dari luar rumah",
 	"core.settings.tmdb.label": "Metadata",
 	"core.settings.tmdb.about": "Tempat poster dan nama datang",
 	"core.settings.health.label": "Semakan kesihatan",

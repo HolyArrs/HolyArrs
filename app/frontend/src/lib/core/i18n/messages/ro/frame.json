@@ -17,6 +17,7 @@
 	"frame.nav.history": "Istoric",
 	"frame.nav.status": "Stare",
 	"frame.nav.settings": "Setări",
+	"frame.nav.plugins": "Pluginuri",
 	"frame.nav.goTo": "Mergi la",
 	"frame.nav.active": "{n} active, {percent}%",
 	"frame.nav.decide": "{n} necesită o decizie",

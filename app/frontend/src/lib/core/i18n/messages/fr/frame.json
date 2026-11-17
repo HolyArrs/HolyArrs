@@ -17,6 +17,7 @@
 	"frame.nav.history": "Historique",
 	"frame.nav.status": "État",
 	"frame.nav.settings": "Paramètres",
+	"frame.nav.plugins": "Plugins",
 	"frame.nav.goTo": "Aller à",
 	"frame.nav.active": "{n} actifs, {percent} %",
 	"frame.nav.decide": "{n} demandent une décision",

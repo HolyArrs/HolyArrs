@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "Разрешите ИИ-помощникам использовать HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Ключи и маршруты для других приложений",
+	"core.settings.remoteAccess.label": "Удалённый доступ",
+	"core.settings.remoteAccess.about": "Доступ к HolyArrs вне дома",
 	"core.settings.tmdb.label": "Метаданные",
 	"core.settings.tmdb.about": "Откуда берутся постеры и названия",
 	"core.settings.health.label": "Проверки исправности",

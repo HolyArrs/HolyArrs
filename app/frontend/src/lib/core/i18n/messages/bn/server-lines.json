@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "সময়মতো উত্তর নেই। ঠিকানা দেখুন, এবং কোনো ফায়ারওয়াল বাধা দিচ্ছে কি না।",
 	"server.core.nothing-answers-on-that-port-check": "ওই পোর্টে কিছুই উত্তর দেয় না। পোর্টটি দেখুন, এবং অ্যাপটি চলছে কি না।",
 	"server.core.nothing-at-that-path-check-the": "ওই পাথে কিছু নেই। পোর্টের পরের পাথটি দেখুন।",
-	"server.core.category-missing-add-it-in-the-2": "ক্যাটাগরি নেই: {name}। ডাউনলোড অ্যাপে এটি যোগ করুন, অথবা এখানে অন্যটি বেছে নিন।"
+	"server.core.category-missing-add-it-in-the-2": "ক্যাটাগরি নেই: {name}। ডাউনলোড অ্যাপে এটি যোগ করুন, অথবা এখানে অন্যটি বেছে নিন।",
+	"server.plugins.plugins-are-changed-only-from-a": "প্লাগইন শুধু মালিকের সাইন-ইন করা সেশন থেকে বদলানো যায়, কখনও API কী দিয়ে নয়",
+	"server.plugins.plugins-are-not-set-up-in": "এই বিল্ডে প্লাগইন সেট আপ করা নেই",
+	"server.accounts.finish-setup-on-the-home-network": "আগে হোম নেটওয়ার্কে সেটআপ শেষ করুন।",
+	"server.accounts.api-key-changed": "API কী {label} বদলানো হয়েছে",
+	"server.accounts.only-the-owner-and-admins-may-2": "শুধু ওনার ও অ্যাডমিনরা সাইন ইন করে কী বদলাতে পারেন"
 }

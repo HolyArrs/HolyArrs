@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Intet svar i tide. Tjek adressen, og at ingen firewall er i vejen.",
 	"server.core.nothing-answers-on-that-port-check": "Intet svarer på den port. Tjek porten, og at appen kører.",
 	"server.core.nothing-at-that-path-check-the": "Intet på den sti. Tjek stien efter porten.",
-	"server.core.category-missing-add-it-in-the-2": "Kategorien mangler: {name}. Tilføj den i download-appen, eller vælg en anden her."
+	"server.core.category-missing-add-it-in-the-2": "Kategorien mangler: {name}. Tilføj den i download-appen, eller vælg en anden her.",
+	"server.plugins.plugins-are-changed-only-from-a": "plugins ændres kun fra en indlogget session som ejer, aldrig med en API-nøgle",
+	"server.plugins.plugins-are-not-set-up-in": "plugins er ikke sat op i dette build",
+	"server.accounts.finish-setup-on-the-home-network": "Gør opsætningen færdig på hjemmenetværket først.",
+	"server.accounts.api-key-changed": "API-nøglen {label} ændret",
+	"server.accounts.only-the-owner-and-admins-may-2": "kun ejeren og administratorer må ændre en nøgle, når de er logget ind"
 }

@@ -17,6 +17,7 @@
 	"frame.nav.history": "Lịch sử",
 	"frame.nav.status": "Trạng thái",
 	"frame.nav.settings": "Cài đặt",
+	"frame.nav.plugins": "Plugin",
 	"frame.nav.goTo": "Đi tới",
 	"frame.nav.active": "{n} đang chạy, {percent}%",
 	"frame.nav.decide": "{n} cần quyết định",

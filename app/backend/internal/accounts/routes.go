@@ -19,6 +19,7 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/auth/me", a.me)
 	m.HandleFunc("GET /api/v1/auth/keys", a.listKeys)
 	m.HandleFunc("POST /api/v1/auth/keys", a.makeKey)
+	m.HandleFunc("PUT /api/v1/auth/keys/{id}", a.editKey)
 	m.HandleFunc("DELETE /api/v1/auth/keys/{id}", a.deleteKey)
 	m.HandleFunc("GET /api/v1/auth/settings", a.getSettings)
 	m.HandleFunc("PUT /api/v1/auth/settings", a.putSettings)

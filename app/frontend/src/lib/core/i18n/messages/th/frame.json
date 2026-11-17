@@ -17,6 +17,7 @@
 	"frame.nav.history": "ประวัติ",
 	"frame.nav.status": "สถานะ",
 	"frame.nav.settings": "ตั้งค่า",
+	"frame.nav.plugins": "ปลั๊กอิน",
 	"frame.nav.goTo": "ไปที่",
 	"frame.nav.active": "กำลังทำงาน {n} รายการ {percent}%",
 	"frame.nav.decide": "{n} รายการรอการตัดสินใจ",

@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "AI உதவியாளர்கள் HolyArrs ஐப் பயன்படுத்தட்டும்",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "பிற ஆப்களுக்கான விசைகளும் வழிகளும்",
+	"core.settings.remoteAccess.label": "தொலை அணுகல்",
+	"core.settings.remoteAccess.about": "வீட்டுக்கு வெளியே இருந்து HolyArrs ஐ அணுகுங்கள்",
 	"core.settings.tmdb.label": "மெட்டாடேட்டா",
 	"core.settings.tmdb.about": "சுவரொட்டிகளும் பெயர்களும் வரும் இடம்",
 	"core.settings.health.label": "நலச் சோதனைகள்",

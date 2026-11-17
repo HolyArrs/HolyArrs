@@ -17,6 +17,7 @@
 	"frame.nav.history": "歷史",
 	"frame.nav.status": "狀態",
 	"frame.nav.settings": "設定",
+	"frame.nav.plugins": "外掛",
 	"frame.nav.goTo": "前往",
 	"frame.nav.active": "{n} 個進行中，{percent}%",
 	"frame.nav.decide": "{n} 項待你決定",

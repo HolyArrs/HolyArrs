@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "제시간에 응답이 없습니다. 주소와 방화벽이 막고 있지 않은지 확인하세요.",
 	"server.core.nothing-answers-on-that-port-check": "그 포트에서 아무것도 응답하지 않습니다. 포트와 앱이 실행 중인지 확인하세요.",
 	"server.core.nothing-at-that-path-check-the": "그 경로에는 아무것도 없습니다. 포트 뒤의 경로를 확인하세요.",
-	"server.core.category-missing-add-it-in-the-2": "카테고리가 없습니다: {name}. 다운로드 앱에서 추가하거나 여기서 다른 것을 고르세요."
+	"server.core.category-missing-add-it-in-the-2": "카테고리가 없습니다: {name}. 다운로드 앱에서 추가하거나 여기서 다른 것을 고르세요.",
+	"server.plugins.plugins-are-changed-only-from-a": "플러그인은 로그인한 소유자 세션에서만 변경되며 API 키로는 절대 변경되지 않습니다",
+	"server.plugins.plugins-are-not-set-up-in": "이 빌드에는 플러그인이 설정되어 있지 않습니다",
+	"server.accounts.finish-setup-on-the-home-network": "먼저 집 네트워크에서 설정을 마치세요.",
+	"server.accounts.api-key-changed": "API 키 {label}을(를) 변경했습니다",
+	"server.accounts.only-the-owner-and-admins-may-2": "키는 로그인한 소유자와 관리자만 변경할 수 있습니다"
 }

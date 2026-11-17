@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Sem resposta a tempo. Verifique o endereço e se nenhuma firewall está a bloquear.",
 	"server.core.nothing-answers-on-that-port-check": "Nada responde nessa porta. Verifique a porta e se a aplicação está a correr.",
 	"server.core.nothing-at-that-path-check-the": "Nada nesse caminho. Verifique o caminho a seguir à porta.",
-	"server.core.category-missing-add-it-in-the-2": "Categoria em falta: {name}. Adicione-a na aplicação de transferências ou escolha outra aqui."
+	"server.core.category-missing-add-it-in-the-2": "Categoria em falta: {name}. Adicione-a na aplicação de transferências ou escolha outra aqui.",
+	"server.plugins.plugins-are-changed-only-from-a": "os plugins só se alteram numa sessão do dono com sessão iniciada, nunca com uma chave de API",
+	"server.plugins.plugins-are-not-set-up-in": "os plugins não estão configurados nesta versão",
+	"server.accounts.finish-setup-on-the-home-network": "Termine primeiro a configuração na rede de casa.",
+	"server.accounts.api-key-changed": "Chave de API {label} alterada",
+	"server.accounts.only-the-owner-and-admins-may-2": "só o proprietário e os administradores, com sessão iniciada, podem alterar uma chave"
 }

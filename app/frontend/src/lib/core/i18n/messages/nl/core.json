@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "AI-assistenten HolyArrs laten gebruiken",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Sleutels en routes voor andere apps",
+	"core.settings.remoteAccess.label": "Toegang op afstand",
+	"core.settings.remoteAccess.about": "HolyArrs gebruiken buiten de deur",
 	"core.settings.tmdb.label": "Metadata",
 	"core.settings.tmdb.about": "Waar posters en namen vandaan komen",
 	"core.settings.health.label": "Gezondheidscontroles",

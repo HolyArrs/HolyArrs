@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "समय पर जवाब नहीं आया। पता जांचें, और कि कोई फ़ायरवॉल रास्ते में नहीं है।",
 	"server.core.nothing-answers-on-that-port-check": "उस पोर्ट पर कुछ जवाब नहीं देता। पोर्ट जांचें, और कि ऐप चल रहा है।",
 	"server.core.nothing-at-that-path-check-the": "उस पाथ पर कुछ नहीं है। पोर्ट के बाद का पाथ जांचें।",
-	"server.core.category-missing-add-it-in-the-2": "कैटेगरी नहीं है: {name}। इसे डाउनलोड ऐप में जोड़ें, या यहां कोई दूसरी चुनें।"
+	"server.core.category-missing-add-it-in-the-2": "कैटेगरी नहीं है: {name}। इसे डाउनलोड ऐप में जोड़ें, या यहां कोई दूसरी चुनें।",
+	"server.plugins.plugins-are-changed-only-from-a": "प्लगइन केवल मालिक के साइन-इन सत्र से बदले जाते हैं, कभी API कुंजी से नहीं",
+	"server.plugins.plugins-are-not-set-up-in": "इस बिल्ड में प्लगइन सेट अप नहीं हैं",
+	"server.accounts.finish-setup-on-the-home-network": "पहले घर के नेटवर्क पर सेटअप पूरा करें।",
+	"server.accounts.api-key-changed": "API कुंजी {label} बदली गई",
+	"server.accounts.only-the-owner-and-admins-may-2": "कुंजी सिर्फ़ साइन इन किए ओनर और एडमिन बदल सकते हैं"
 }

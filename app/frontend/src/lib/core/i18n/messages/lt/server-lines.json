@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Laiku negauta atsakymo. Patikrinkite adresą ir ar netrukdo ugniasienė.",
 	"server.core.nothing-answers-on-that-port-check": "Tame prievade niekas neatsako. Patikrinkite prievadą ir ar programa veikia.",
 	"server.core.nothing-at-that-path-check-the": "Tame kelyje nieko nėra. Patikrinkite kelią po prievado.",
-	"server.core.category-missing-add-it-in-the-2": "Trūksta kategorijos: {name}. Pridėkite ją atsisiuntimo programoje arba čia pasirinkite kitą."
+	"server.core.category-missing-add-it-in-the-2": "Trūksta kategorijos: {name}. Pridėkite ją atsisiuntimo programoje arba čia pasirinkite kitą.",
+	"server.plugins.plugins-are-changed-only-from-a": "papildiniai keičiami tik iš prisijungusio savininko sesijos, niekada su API raktu",
+	"server.plugins.plugins-are-not-set-up-in": "papildiniai šioje versijoje nenustatyti",
+	"server.accounts.finish-setup-on-the-home-network": "Pirmiausia baikite sąranką namų tinkle.",
+	"server.accounts.api-key-changed": "API raktas {label} pakeistas",
+	"server.accounts.only-the-owner-and-admins-may-2": "raktą gali keisti tik prisijungę savininkas ir administratoriai"
 }

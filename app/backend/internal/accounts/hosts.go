@@ -137,7 +137,7 @@ func (a *Auth) hostAllowed(r *http.Request) bool {
 	if h == "" {
 		return false
 	}
-	if net.ParseIP(h) != nil || a.hosts[h] {
+	if net.ParseIP(h) != nil || a.hosts[h] || pluginHost(r) {
 		return true
 	}
 	if saved := a.savedHosts.Load(); saved != nil {

@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "اسمح لمساعدي الذكاء الاصطناعي باستخدام HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "مفاتيح ومسارات للتطبيقات الأخرى",
+	"core.settings.remoteAccess.label": "الوصول عن بُعد",
+	"core.settings.remoteAccess.about": "الوصول إلى HolyArrs بعيدًا عن المنزل",
 	"core.settings.tmdb.label": "البيانات الوصفية",
 	"core.settings.tmdb.about": "مصدر الملصقات والأسماء",
 	"core.settings.health.label": "فحوصات السلامة",

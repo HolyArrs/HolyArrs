@@ -1370,5 +1370,10 @@
 	"server.core.no-answer-in-time-check-the": "Tidak ada jawaban tepat waktu. Periksa alamat, dan pastikan tidak ada firewall yang menghalangi.",
 	"server.core.nothing-answers-on-that-port-check": "Tidak ada yang menjawab di port itu. Periksa port, dan pastikan aplikasinya berjalan.",
 	"server.core.nothing-at-that-path-check-the": "Tidak ada apa-apa di path itu. Periksa path setelah port.",
-	"server.core.category-missing-add-it-in-the-2": "Kategori tidak ada: {name}. Tambahkan di aplikasi unduhan, atau pilih yang lain di sini."
+	"server.core.category-missing-add-it-in-the-2": "Kategori tidak ada: {name}. Tambahkan di aplikasi unduhan, atau pilih yang lain di sini.",
+	"server.plugins.plugins-are-changed-only-from-a": "plugin hanya diubah dari sesi pemilik yang masuk, tidak pernah dengan kunci API",
+	"server.plugins.plugins-are-not-set-up-in": "plugin belum disiapkan di build ini",
+	"server.accounts.finish-setup-on-the-home-network": "Selesaikan penyiapan di jaringan rumah dulu.",
+	"server.accounts.api-key-changed": "Kunci API {label} diubah",
+	"server.accounts.only-the-owner-and-admins-may-2": "hanya pemilik dan admin yang sudah masuk yang boleh mengubah kunci"
 }

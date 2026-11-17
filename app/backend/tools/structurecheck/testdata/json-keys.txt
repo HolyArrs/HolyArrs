@@ -60,6 +60,7 @@ absoluteEpisodeNumber
 absoluteNumber
 absolute_digits
 absolute_from
+access
 account
 accounts
 acknowledge_protection
@@ -243,7 +244,11 @@ bit_depth
 bitrate
 bittorrent
 block
+block_checked_at
+block_counter
 blocked
+blocklist_checked_at
+blocklist_stale
 blocks
 body
 boot
@@ -273,6 +278,7 @@ calls_24h
 can_act
 can_import
 can_read
+can_run
 candidate
 candidates
 cap
@@ -306,6 +312,8 @@ choose
 chosen
 chosen_by
 cinema_date
+cipher
+ciphertext
 clear_app_token
 clear_finished
 clear_key
@@ -365,6 +373,7 @@ copy
 corrected
 count
 count_install
+counter
 country
 counts
 cover
@@ -422,6 +431,7 @@ detail
 details
 details_source
 device
+device_name
 died
 digests
 digital
@@ -429,6 +439,7 @@ digitalRelease
 digital_date
 dir
 directors
+disabled_reason
 disambiguation
 disc
 disc_count
@@ -779,6 +790,8 @@ infoHash
 infohash
 inherit
 inspection_status
+installed
+installed_version
 instanceName
 ip
 isAvailable
@@ -805,12 +818,14 @@ jsonrpc
 jwks_uri
 k
 kbpersec
+kdf
 keep
 keep_specials
 keep_up_to_date
 kept
 kept_roots
 key
+key_set
 keys
 keywords
 kicker
@@ -853,6 +868,7 @@ last_success
 last_sync
 last_synced_at
 last_tried_at
+last_updated
 last_used_at
 last_watched_at
 last_year
@@ -891,6 +907,7 @@ linked
 linked_to
 links
 list
+list_counter
 listen_count
 listeners
 listeners_change_today
@@ -904,6 +921,9 @@ local_recent
 locked
 locked_note
 log
+login_expiry
+login_qr
+login_url
 logo
 logo_path
 logos
@@ -919,6 +939,7 @@ magnet
 magnetUrl
 main
 mal
+manifest_sha256
 mapped
 match
 matched
@@ -934,6 +955,7 @@ may_ask
 mb
 mbid
 mbleft
+mcp_groups
 me
 media
 mediaInfo
@@ -955,6 +977,8 @@ mimeType
 min
 minFormatScore
 minUpgradeFormatScore
+min_app_version
+min_blocklist_counter
 min_free_mb
 min_from
 min_password_length
@@ -1081,6 +1105,7 @@ no_limit
 no_release
 nodes
 nominations
+nonce
 noofslots
 noofslots_total
 not_media
@@ -1195,6 +1220,7 @@ patterns
 pause_reason
 paused
 paused_until
+payload
 peak
 peers
 peers_getting_from_us
@@ -1247,6 +1273,7 @@ plex_friends
 plex_name
 plex_watchlists
 plex_watchlists_everyone
+plugins
 points
 pop
 popularity
@@ -1444,6 +1471,7 @@ runtime
 runtime_minutes
 s
 sabnzbd
+salt
 sample_rate
 savePath
 save_path
@@ -1528,6 +1556,7 @@ session_up
 settings
 setup_recent
 severity
+sha256
 shape
 share_limit_action
 share_ratio
@@ -1549,6 +1578,7 @@ side
 sign_in
 sign_in_id
 sign_in_name
+signature
 signatureCipher
 signin_library_art
 signing_secret
@@ -1677,6 +1707,7 @@ tag_name
 tagline
 tags
 tail
+tailscale_version
 taken
 taken_by
 taken_name
@@ -1798,6 +1829,7 @@ trimmed
 trusted
 trusted_proxies
 try_next_downloader
+tsnet_name
 turn_down
 turned_down_for
 tvDbId

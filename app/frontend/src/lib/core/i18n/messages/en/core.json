@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "Let AI assistants use HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Keys and routes for other apps",
+	"core.settings.remoteAccess.label": "Remote access",
+	"core.settings.remoteAccess.about": "Reach HolyArrs away from home",
 	"core.settings.tmdb.label": "Metadata",
 	"core.settings.tmdb.about": "Where posters and names come from",
 	"core.settings.health.label": "Health checks",

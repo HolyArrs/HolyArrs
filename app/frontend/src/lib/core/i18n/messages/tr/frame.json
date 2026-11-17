@@ -17,6 +17,7 @@
 	"frame.nav.history": "Geçmiş",
 	"frame.nav.status": "Durum",
 	"frame.nav.settings": "Ayarlar",
+	"frame.nav.plugins": "Eklentiler",
 	"frame.nav.goTo": "Git",
 	"frame.nav.active": "{n} etkin, %{percent}",
 	"frame.nav.decide": "{n} tanesi karar bekliyor",
