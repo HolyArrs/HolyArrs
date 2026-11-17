@@ -86,5 +86,5 @@
 	"settings.outsideLists.addNever": "Add to the Never-add list",
 	"settings.outsideLists.showDot": "show ·",
 	"settings.outsideLists.takeOff": "Take off {name}",
-	"settings.outsideLists.empty": "Empty"
+	"settings.outsideLists.empty": "Nothing on this list yet"
 }

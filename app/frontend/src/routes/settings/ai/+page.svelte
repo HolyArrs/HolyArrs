@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Words from '#lib/ui/Words.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -210,10 +211,10 @@
 		<div class="small addr-label">{t('settings.ai.address')}</div>
 		<div class="addr-row">
 			<code class="addr grow" data-testid="ai-address">{url}</code>
-			<Button icon="copy" size="sm" type="button" aria-label={t('settings.ai.copyAddress')} onclick={() => copy(url)}>{t('settings.ai.copy')}</Button>
+			<Button icon="copy" type="button" aria-label={t('settings.ai.copyAddress')} onclick={() => copy(url)}>{t('settings.ai.copy')}</Button>
 		</div>
 		<p class="xs muted">{t('settings.ai.errorExpected')}</p>
-		{#if !enabled}<p class="notice warn"><span><Words key="settings.ai.turnOnFirst" /></span></p>{/if}
+		{#if !enabled}<p class="notice warn" role="status"><Icon name="info" size={18} /><span><Words key="settings.ai.turnOnFirst" /></span></p>{/if}
 	</SettingsCard>
 
 	<SettingsCard id="ai-keys" title={t('settings.ai.linked')}>
@@ -223,7 +224,7 @@
 		{:else}
 			{@render freshBox()}
 			{#if aiKeys.length === 0}
-				<p class="small muted">{t('settings.ai.noneLinked')}</p>
+				<p class="empty-row">{t('settings.ai.noneLinked')}</p>
 			{:else}
 				<ul class="rows">
 					{#each aiKeys as k (k.id)}
@@ -360,7 +361,9 @@
 	}
 	/* AI address card: no divider between a label and its value. */
 	:global(#ai-connect > .body) { gap: 8px !important; padding-top: 16px !important; padding-bottom: 18px !important; }
-	:global(#ai-connect > .body > *) { box-shadow: none !important; padding-block: 0 !important; }
+	:global(#ai-connect > .body > :not(.notice)) { box-shadow: none !important; padding-block: 0 !important; }
+	/* The notice keeps the house notice box: its own padding, a gap above, the info icon. */
+	:global(#ai-connect > .body > .notice) { margin: 4px 18px 0 !important; align-items: center; }
 	.addr-label { margin-top: 0; font: 600 15px/1.3 var(--font-ui); }
 	.addr { flex: 1; padding: 10px 14px; border-radius: 12px; font-size: 14px; }
 </style>

@@ -197,7 +197,7 @@
 	<div data-testid="control-stages">
 		<SettingsCard id="stages-card" title={t('settings.parts.stages')} description={t('settings.parts.stagesDesc')}>
 			{#if split.stages.length === 0}
-				<p class="small muted">{t('settings.parts.noStages')}</p>
+				<p class="empty-row">{t('settings.parts.noStages')}</p>
 			{:else}
 				<ul class="rows list">
 					{#each split.stages as s (s.key)}
@@ -210,10 +210,10 @@
 								{#if paused(s)}
 									<Button type="button" onclick={() => stage(s, 'resume')} disabled={!!busy} aria-label={t('settings.parts.stage.resume', { name: s.name })}>{t('settings.parts.resume')}</Button>
 								{:else}
-									<Button variant="plain" type="button" onclick={() => stage(s, 'pause')} disabled={!!busy} aria-label={t('settings.parts.stage.pause', { name: s.name })}>{t('settings.parts.pause')}</Button>
+									<Button type="button" onclick={() => stage(s, 'pause')} disabled={!!busy} aria-label={t('settings.parts.stage.pause', { name: s.name })}>{t('settings.parts.pause')}</Button>
 								{/if}
 								<Button type="button" onclick={() => stage(s, 'restart')} disabled={!!busy} aria-label={t('settings.parts.stage.restart', { name: s.name })}>{t('settings.parts.restart')}</Button>
-							</div>{:else}<span class="xs muted">{t('settings.parts.withApp')}</span>{/if}
+							</div>{:else}<div class="row acts"><span class="xs muted">{t('settings.parts.withApp')}</span></div>{/if}
 						</li>
 					{/each}
 				</ul>
@@ -224,7 +224,7 @@
 	<div data-testid="control-links">
 		<SettingsCard id="links-card" title={t('settings.parts.links')} description={t('settings.parts.linksDesc')}>
 			{#if split.links.length === 0}
-				<p class="small muted">{t('settings.parts.noLinks')}</p>
+				<p class="empty-row">{t('settings.parts.noLinks')}</p>
 			{:else}
 				<ul class="rows list">
 					{#each split.links as l (l.key)}
@@ -248,7 +248,7 @@
 	<div data-testid="control-events">
 		<SettingsCard title={t('settings.parts.controls')}>
 			{#if events.length === 0}
-				<p class="small muted">{t('settings.parts.nothingUsed')}</p>
+				<p class="empty-row">{t('settings.parts.nothingUsed')}</p>
 			{:else}
 				<ul class="rows list">
 					{#each events as e (e.ID)}
@@ -267,12 +267,13 @@
 {/if}
 
 <style>
-	.list {
-		margin-top: var(--s-3);
-	}
 	.list li {
-		align-items: flex-start;
 		flex-wrap: wrap;
+	}
+	/* The action area is one button tall whether it holds buttons or a line of text, so rows keep one height. */
+	.acts {
+		min-height: 36px;
+		align-items: center;
 	}
 	.list .grow {
 		min-width: 0;

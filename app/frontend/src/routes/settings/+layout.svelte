@@ -271,9 +271,10 @@
 	/* An empty state inside a section keeps the standard empty-state size. */
 	.settings-content :global(:is(.card, .ui-settings) .ui-empty:not(.compact)) { padding: 48px 24px !important; }
 	.settings-content :global(:is(.card, .ui-settings) .ui-empty h2) { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
-	.settings-content > :global(:is(.ui-settings, .sc-form, .card, div[data-testid], ul.card) + :is(.ui-settings, .sc-form, .card, div[data-testid], ul, p, section)) { margin-top: 16px; }
+	.settings-content > :global(:is(.ui-settings, .sc-form, .card, div[data-testid], ul.card) + :is(.ui-settings, .sc-form, .card, div[data-testid], ul, p, section)) { margin-top: 0; }
+	/* One gap between every card on every page: the 22px grid gap, also inside grouped forms. */
 	.settings-content :global(.sc-form > .ui-settings + .ui-settings) { margin-top: 0; }
-	.settings-content :global(.sc-form) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+	.settings-content :global(.sc-form) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: stretch; }
 	.settings-content :global(.sc-form > :not(.ui-settings)) { grid-column: 1 / -1; }
 	.settings-content :global(.sc-form > section.ui-settings:last-of-type:nth-of-type(odd)) { grid-column: 1 / -1; }
 	@media (max-width: 760px) { .settings-content :global(.sc-form) { grid-template-columns: minmax(0, 1fr); } }
@@ -332,7 +333,9 @@
 	}
 	/* Rows run edge to edge like the Library folders rows: the sheet has no side padding, each row has 18px. */
 	.settings-content :global(section.ui-settings > .body) { padding: 0; gap: 0 !important; }
-	.settings-content :global(section.ui-settings > .body > :not(form, .ui-table)), .settings-content :global(section.ui-settings > .body > form > *) { padding-inline: 18px; }
+	.settings-content :global(section.ui-settings > .body > :not(form, .ui-table)), .settings-content :global(section.ui-settings > .body > form:not(.row) > *) { padding-inline: 18px; }
+	/* An inline form (a field and its button on one line) keeps the row's 18px from both card edges. */
+	.settings-content :global(section.ui-settings > .body > form.row) { padding: 12px 18px; }
 	.settings-content :global(section.ui-settings > .body > form) { padding: 0; }
 	.settings-content :global(:is(ul.card, div.card)) { padding: 4px 18px; }
 	.settings-content :global(section.ui-settings.danger > .body) { border-color: color-mix(in srgb, var(--fail) 40%, transparent); }
@@ -341,8 +344,17 @@
 	.settings-content :global(section.ui-settings > .body > * + *), .settings-content :global(section.ui-settings > .body > form:not(.ask) > * + *) { box-shadow: inset 0 1px 0 var(--line); margin-top: 0 !important; }
 	.settings-content :global(section.ui-settings > .body > :first-child:last-child:not(.srow, .field)) { padding-block: 14px; }
 	.settings-content :global(section.ui-settings > .body > :is(ul, ol, p, .row)) { padding-block: 12px; }
+	/* Lists inside a sheet: one rhythm. The list starts at the sheet's top edge (no extra gap on the first row), and every row has the same 12px padding and 60px minimum, whatever it holds. */
+	.settings-content :global(section.ui-settings > .body > ul.rows) { margin-block: 0; }
+	.settings-content :global(section.ui-settings > .body > ul.rows > li) { min-height: 60px; padding-block: 12px; align-items: center; }
+	/* A button row or note inside a sheet's form gets the same room as other rows, so a button never sits on the hairline above it. */
+	.settings-content :global(section.ui-settings > .body > form:not(.ask) > :is(.row, .ui-btn)) { padding-block: 12px; }
+	/* An empty list line inside a sheet reads as a row, not a stray caption. */
+	.settings-content :global(section.ui-settings > .body > .empty-row) { display: flex; align-items: center; min-height: 52px; padding-block: 12px; color: var(--text-muted); font: 400 14px/1.35 var(--font-ui); }
+	/* Hand-built boxes: the button after the last field keeps a gap. */
+	.settings-content :global(:is(section.card, div.card) form > :is(.ui-btn, .row):last-child) { margin-top: 12px; margin-bottom: 4px; }
 	/* One label style for every row: switch, text box or dropdown. */
-	.settings-content :global(section.ui-settings :is(.srow > .txt > :is(.label, label), .body > .field > :is(label:first-child, .label, legend), .body > form:not(.ask) > .field > :is(label:first-child, .label, legend), .adv-body > .field > :is(label:first-child, .label, legend), .body :not(.ask, .row-fields) > .field > label:first-child)) { font: 600 15px/1.3 var(--font-ui) !important; color: var(--text) !important; letter-spacing: -0.005em; }
+	.settings-content :global(section.ui-settings :is(.srow > .txt > :is(.label, label), .body > .field > :is(label:first-child, .label, legend), .body > form:not(.ask) > .field > :is(label:first-child, .label, legend), .adv-body > .field > :is(label:first-child, .label, legend), .body :not(.ask, .row-fields) > .field > label:first-child, .adv-body :not(.ask, .row-fields) > .field > label:first-child)) { font: 600 15px/1.3 var(--font-ui) !important; color: var(--text) !important; letter-spacing: -0.005em; }
 	.settings-content :global(section.ui-settings .srow > .txt) { align-self: center; }
 	/* A table inside a sheet uses the sheet's surface; no second box. */
 	.settings-content :global(section.ui-settings > .body > .ui-table) { margin: 4px -18px; padding: 0 8px; border-radius: 0; background: none; box-shadow: none; }
@@ -351,6 +363,8 @@
 	.settings-content :global(section.ui-settings fieldset > legend) { float: left; width: 100%; padding: 16px 0 8px; color: var(--text-muted); font: 600 11px/1.2 var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; }
 	.settings-content :global(section.ui-settings fieldset > legend :is(b, strong)) { font-weight: 600; color: var(--text-muted); }
 	.settings-content :global(section.ui-settings fieldset > legend + *) { clear: both; }
+	/* A hint inside a group label reads as a normal sentence on its own line, not more caps run into the label. */
+	.settings-content :global(section.ui-settings fieldset > legend .hint) { display: block; margin-top: 4px; font: 400 13px/1.35 var(--font-ui); letter-spacing: normal; text-transform: none; }
 	.settings-content :global(section.ui-settings fieldset label:not(.switch, .checkline) > input[type='checkbox']) { width: 18px; height: 18px; accent-color: var(--accent); }
 	/* A section with only Advanced: Advanced becomes its sheet, so the heading never floats alone. */
 	.settings-content :global(section.ui-settings:not(:has(> .body)) > .advanced) { margin: 0; padding: 0 18px; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45); }

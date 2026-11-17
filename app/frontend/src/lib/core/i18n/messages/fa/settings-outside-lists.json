@@ -86,5 +86,5 @@
 	"settings.outsideLists.addNever": "افزودن به فهرست «هرگز اضافه نشود»",
 	"settings.outsideLists.showDot": "سریال ·",
 	"settings.outsideLists.takeOff": "برداشتن {name}",
-	"settings.outsideLists.empty": "خالی"
+	"settings.outsideLists.empty": "هنوز چیزی در این فهرست نیست"
 }

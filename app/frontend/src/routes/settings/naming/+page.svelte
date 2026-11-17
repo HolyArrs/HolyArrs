@@ -392,7 +392,7 @@
 	<SettingsCard id="holding-card" title={t('settings.naming.holding')}>
 		<div class="srow">
 			<div class="txt"><span class="label">{t('settings.naming.clearOld')}</span><span class="hint">{t('settings.naming.clearOldHint')}</span></div>
-			<div class="ctl"><Button type="button" size="sm" onclick={cleanNow} disabled={cleaning} aria-busy={cleaning}>{t('settings.naming.clearNow')}</Button></div>
+			<div class="ctl"><Button type="button" onclick={cleanNow} disabled={cleaning} aria-busy={cleaning}>{t('settings.naming.clearNow')}</Button></div>
 		</div>
 	</SettingsCard>
 	<SaveBar {dirty} form="naming-form" saving={busy} disabled={!!exampleError} ondiscard={discard} />

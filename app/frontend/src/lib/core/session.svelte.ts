@@ -3,8 +3,13 @@
 import { api as defaultClient, type Client } from './api';
 import { setHeld } from './settings.ts';
 import { views as accountViews } from './views.svelte.ts';
-import { watchedNow } from '../mediafiles/watched.svelte.ts';
-import { watchedIndex } from '../mediafiles/watched.ts';
+
+// Things outside core that hold one person's data (Watched marks) clear themselves here when that person signs out.
+const signOutHooks = new Set<() => void>();
+export function onSignedOut(fn: () => void): () => void {
+	signOutHooks.add(fn);
+	return () => signOutHooks.delete(fn);
+}
 
 export type SessionState = 'unknown' | 'signed_out' | 'needs_setup' | 'signed_in';
 export type Role = 'owner' | 'admin' | 'member';
@@ -171,8 +176,8 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		if (expected !== generation) return;
 		client.setCsrf('');
 		views.forget();
-		// The next person never sees the last one's Watched marks.
-		watchedNow.ix = watchedIndex(null);
+		// The next person never sees the last one's data (Watched marks among it).
+		for (const fn of signOutHooks) fn();
 		s.id = undefined;
 		s.name = '';
 		s.via = '';

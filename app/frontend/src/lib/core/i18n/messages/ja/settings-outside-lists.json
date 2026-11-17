@@ -86,5 +86,5 @@
 "settings.outsideLists.addNever": "追加禁止リストに追加",
 "settings.outsideLists.showDot": "番組 ·",
 "settings.outsideLists.takeOff": "{name} を外す",
-"settings.outsideLists.empty": "空"
+"settings.outsideLists.empty": "このリストにはまだ何もありません"
 }
