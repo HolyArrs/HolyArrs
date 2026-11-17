@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Дозволи AI асистентима да користе HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Кључеви и руте за друге апликације",
+	"core.settings.remoteAccess.label": "Удаљени приступ",
+	"core.settings.remoteAccess.about": "Приступ HolyArrs-у ван куће",
 	"core.settings.tmdb.label": "Метаподаци",
 	"core.settings.tmdb.about": "Одакле долазе постери и називи",
 	"core.settings.health.label": "Провере стања",

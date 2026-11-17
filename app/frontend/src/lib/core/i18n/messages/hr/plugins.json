@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Odjavljeno ovdje. Uklonite uređaj i na admin stranici Tailscalea.",
 	"plugins.remoteReconnecting": "Ponovno povezivanje s Tailscaleom",
 	"plugins.remoteDisconnected": "Veza s Tailscaleom prekinuta",
-	"plugins.remoteLoadFailed": "Stanje Tailscalea nije moguće pročitati"
+	"plugins.remoteLoadFailed": "Stanje Tailscalea nije moguće pročitati",
+	"plugins.remoteNeedsPlugin": "Udaljeni pristup koristi dodatak Tailscale.",
+	"plugins.remoteOpenPlugins": "Idi na Dodatke",
+	"plugins.remoteSettings": "Postavke udaljenog pristupa"
 }

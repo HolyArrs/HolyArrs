@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Siin välja logitud. Eemalda seade ka Tailscale'i halduslehel.",
 	"plugins.remoteReconnecting": "Ühendan uuesti Tailscale'iga",
 	"plugins.remoteDisconnected": "Tailscale'ist lahti ühendatud",
-	"plugins.remoteLoadFailed": "Tailscale'i olekut ei saanud lugeda"
+	"plugins.remoteLoadFailed": "Tailscale'i olekut ei saanud lugeda",
+	"plugins.remoteNeedsPlugin": "Kaugjuurdepääs kasutab Tailscale'i pluginat.",
+	"plugins.remoteOpenPlugins": "Mine pluginate juurde",
+	"plugins.remoteSettings": "Kaugjuurdepääsu seaded"
 }

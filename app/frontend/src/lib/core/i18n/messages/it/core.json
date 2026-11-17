@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "Lascia che gli assistenti IA usino HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Chiavi e percorsi per altre app",
+	"core.settings.remoteAccess.label": "Accesso remoto",
+	"core.settings.remoteAccess.about": "Usa HolyArrs fuori casa",
 	"core.settings.tmdb.label": "Metadati",
 	"core.settings.tmdb.about": "Da dove arrivano locandine e nomi",
 	"core.settings.health.label": "Controlli di stato",

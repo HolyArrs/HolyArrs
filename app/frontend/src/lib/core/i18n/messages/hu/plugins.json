@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Itt kijelentkezve. Töröld az eszközt a Tailscale admin oldalán is.",
 	"plugins.remoteReconnecting": "Újracsatlakozás a Tailscale-hez",
 	"plugins.remoteDisconnected": "Leválasztva a Tailscale-ről",
-	"plugins.remoteLoadFailed": "Nem sikerült beolvasni a Tailscale állapotát"
+	"plugins.remoteLoadFailed": "Nem sikerült beolvasni a Tailscale állapotát",
+	"plugins.remoteNeedsPlugin": "A távoli elérés a Tailscale bővítményt használja.",
+	"plugins.remoteOpenPlugins": "Ugrás a Bővítményekhez",
+	"plugins.remoteSettings": "Távoli elérés beállításai"
 }

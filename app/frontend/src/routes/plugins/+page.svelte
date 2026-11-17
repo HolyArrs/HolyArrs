@@ -15,7 +15,8 @@
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { limitLines, notices, pluginName, pluginState, RemoteAccess, shownVersion, stateLabel, type Plugin, type PluginOverview } from '#lib/plugins/index.ts';
+	import { to } from '#lib/core/paths.ts';
+	import { limitLines, notices, pluginName, pluginState, shownVersion, stateLabel, type Plugin, type PluginOverview } from '#lib/plugins/index.ts';
 
 	const owner = $derived(session.s.role === 'owner');
 	let ov = $state<PluginOverview | null>(null);
@@ -31,7 +32,6 @@
 	const notes = $derived(ov ? notices(ov) : []);
 	const limits = $derived(ov ? limitLines(ov.limits) : []);
 	const canInstall = $derived(!!ov && ov.key_set && ov.can_run);
-	const tailscale = $derived(ov?.plugins.find((p) => p.id === 'tailscale' && p.installed) ?? null);
 	const reach = $derived(
 		reaching
 			? [
@@ -135,6 +135,7 @@
 							<div class="xs muted">{t('plugins.byLine')} · <span class="mono">{shownVersion(p)}</span></div>
 							<div class="state"><Badge label={s === 'off' ? t('plugins.stateOff') : stateLabel(p)} /></div>
 							{#if s === 'off' && p.disabled_reason}<div class="xs muted hint" data-testid="plugin-hint">{p.disabled_reason}</div>{/if}
+							{#if p.id === 'tailscale' && p.installed}<div class="hint"><a class="small" href={to('/settings/remote-access')}>{t('plugins.remoteSettings')}</a></div>{/if}
 						</div>
 						<div class="acts">
 							{#if s === 'not_installed'}
@@ -153,8 +154,6 @@
 			</ul>
 		{/if}
 	</section>
-
-	{#if tailscale}<RemoteAccess plugin={tailscale} canRun={ov.can_run} onchange={load} />{/if}
 
 	<SettingsCard id="plugin-limits" title={t('plugins.limits')} description={t('plugins.limitsAbout')}>
 		{#if limits.length}

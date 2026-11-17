@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "여기서 로그아웃했습니다. Tailscale 관리 페이지에서도 기기를 제거하세요.",
 	"plugins.remoteReconnecting": "Tailscale에 다시 연결 중",
 	"plugins.remoteDisconnected": "Tailscale 연결 끊김",
-	"plugins.remoteLoadFailed": "Tailscale 상태를 읽을 수 없음"
+	"plugins.remoteLoadFailed": "Tailscale 상태를 읽을 수 없음",
+	"plugins.remoteNeedsPlugin": "원격 접속은 Tailscale 플러그인을 사용합니다.",
+	"plugins.remoteOpenPlugins": "플러그인으로 이동",
+	"plugins.remoteSettings": "원격 접속 설정"
 }

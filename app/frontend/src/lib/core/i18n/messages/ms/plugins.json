@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Telah log keluar di sini. Buang juga peranti di halaman admin Tailscale.",
 	"plugins.remoteReconnecting": "Menyambung semula ke Tailscale",
 	"plugins.remoteDisconnected": "Diputuskan daripada Tailscale",
-	"plugins.remoteLoadFailed": "Tidak dapat membaca status Tailscale"
+	"plugins.remoteLoadFailed": "Tidak dapat membaca status Tailscale",
+	"plugins.remoteNeedsPlugin": "Akses jauh menggunakan pemalam Tailscale.",
+	"plugins.remoteOpenPlugins": "Pergi ke Pemalam",
+	"plugins.remoteSettings": "Tetapan akses jauh"
 }

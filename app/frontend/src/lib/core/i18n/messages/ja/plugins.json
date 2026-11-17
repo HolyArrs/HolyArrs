@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "ここではサインアウトしました。Tailscale の管理ページでもデバイスを削除してください。",
 	"plugins.remoteReconnecting": "Tailscale に再接続中",
 	"plugins.remoteDisconnected": "Tailscale から切断しました",
-	"plugins.remoteLoadFailed": "Tailscale の状態を読み取れませんでした"
+	"plugins.remoteLoadFailed": "Tailscale の状態を読み取れませんでした",
+	"plugins.remoteNeedsPlugin": "リモートアクセスにはTailscaleプラグインを使います。",
+	"plugins.remoteOpenPlugins": "プラグインへ",
+	"plugins.remoteSettings": "リモートアクセスの設定"
 }

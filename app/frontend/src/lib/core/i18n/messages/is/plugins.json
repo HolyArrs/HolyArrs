@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Skráð út hér. Fjarlægðu tækið líka á stjórnsíðu Tailscale.",
 	"plugins.remoteReconnecting": "Tengist Tailscale aftur",
 	"plugins.remoteDisconnected": "Aftengt frá Tailscale",
-	"plugins.remoteLoadFailed": "Gat ekki lesið stöðu Tailscale"
+	"plugins.remoteLoadFailed": "Gat ekki lesið stöðu Tailscale",
+	"plugins.remoteNeedsPlugin": "Fjaraðgangur notar Tailscale-viðbótina.",
+	"plugins.remoteOpenPlugins": "Fara í Viðbætur",
+	"plugins.remoteSettings": "Stillingar fjaraðgangs"
 }

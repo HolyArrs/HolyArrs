@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Đã đăng xuất ở đây. Hãy xóa thiết bị trong trang quản trị Tailscale nữa.",
 	"plugins.remoteReconnecting": "Đang kết nối lại Tailscale",
 	"plugins.remoteDisconnected": "Đã ngắt khỏi Tailscale",
-	"plugins.remoteLoadFailed": "Không đọc được trạng thái Tailscale"
+	"plugins.remoteLoadFailed": "Không đọc được trạng thái Tailscale",
+	"plugins.remoteNeedsPlugin": "Truy cập từ xa dùng plugin Tailscale.",
+	"plugins.remoteOpenPlugins": "Đến Plugin",
+	"plugins.remoteSettings": "Cài đặt truy cập từ xa"
 }

@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Вихід виконано тут. Видаліть пристрій і на сторінці адміна Tailscale.",
 	"plugins.remoteReconnecting": "Повторне під'єднання до Tailscale",
 	"plugins.remoteDisconnected": "Від'єднано від Tailscale",
-	"plugins.remoteLoadFailed": "Не вдалося прочитати стан Tailscale"
+	"plugins.remoteLoadFailed": "Не вдалося прочитати стан Tailscale",
+	"plugins.remoteNeedsPlugin": "Віддалений доступ працює через плагін Tailscale.",
+	"plugins.remoteOpenPlugins": "Перейти до плагінів",
+	"plugins.remoteSettings": "Налаштування віддаленого доступу"
 }

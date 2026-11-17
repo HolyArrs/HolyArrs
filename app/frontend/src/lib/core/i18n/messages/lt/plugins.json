@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Čia atsijungta. Pašalinkite įrenginį ir Tailscale administravimo puslapyje.",
 	"plugins.remoteReconnecting": "Jungiamasi prie Tailscale iš naujo",
 	"plugins.remoteDisconnected": "Atjungta nuo Tailscale",
-	"plugins.remoteLoadFailed": "Nepavyko nuskaityti Tailscale būsenos"
+	"plugins.remoteLoadFailed": "Nepavyko nuskaityti Tailscale būsenos",
+	"plugins.remoteNeedsPlugin": "Nuotolinė prieiga naudoja Tailscale papildinį.",
+	"plugins.remoteOpenPlugins": "Eiti į Papildinius",
+	"plugins.remoteSettings": "Nuotolinės prieigos nustatymai"
 }

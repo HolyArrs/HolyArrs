@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "এখানে সাইন আউট হয়েছে। Tailscale-এর অ্যাডমিন পেজ থেকেও ডিভাইসটি সরান।",
 	"plugins.remoteReconnecting": "Tailscale-এ আবার সংযোগ হচ্ছে",
 	"plugins.remoteDisconnected": "Tailscale থেকে বিচ্ছিন্ন",
-	"plugins.remoteLoadFailed": "Tailscale-এর অবস্থা পড়া যায়নি"
+	"plugins.remoteLoadFailed": "Tailscale-এর অবস্থা পড়া যায়নি",
+	"plugins.remoteNeedsPlugin": "রিমোট অ্যাক্সেস Tailscale প্লাগইন ব্যবহার করে।",
+	"plugins.remoteOpenPlugins": "প্লাগইনে যান",
+	"plugins.remoteSettings": "রিমোট অ্যাক্সেস সেটিংস"
 }

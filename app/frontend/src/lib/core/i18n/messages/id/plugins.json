@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Sudah keluar di sini. Hapus juga perangkat di halaman admin Tailscale.",
 	"plugins.remoteReconnecting": "Menghubungkan lagi ke Tailscale",
 	"plugins.remoteDisconnected": "Terputus dari Tailscale",
-	"plugins.remoteLoadFailed": "Tidak bisa membaca status Tailscale"
+	"plugins.remoteLoadFailed": "Tidak bisa membaca status Tailscale",
+	"plugins.remoteNeedsPlugin": "Akses jarak jauh memakai plugin Tailscale.",
+	"plugins.remoteOpenPlugins": "Buka Plugin",
+	"plugins.remoteSettings": "Pengaturan akses jarak jauh"
 }

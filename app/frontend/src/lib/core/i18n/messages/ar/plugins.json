@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "تم تسجيل الخروج هنا. أزل الجهاز من صفحة إدارة Tailscale أيضًا.",
 	"plugins.remoteReconnecting": "جارٍ إعادة الاتصال بـ Tailscale",
 	"plugins.remoteDisconnected": "تم قطع الاتصال بـ Tailscale",
-	"plugins.remoteLoadFailed": "تعذّرت قراءة حالة Tailscale"
+	"plugins.remoteLoadFailed": "تعذّرت قراءة حالة Tailscale",
+	"plugins.remoteNeedsPlugin": "يستخدم الوصول عن بُعد إضافة Tailscale.",
+	"plugins.remoteOpenPlugins": "اذهب إلى الإضافات",
+	"plugins.remoteSettings": "إعدادات الوصول عن بُعد"
 }

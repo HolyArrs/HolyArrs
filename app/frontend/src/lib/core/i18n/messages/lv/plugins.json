@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Šeit izrakstīts. Noņemiet ierīci arī Tailscale administratora lapā.",
 	"plugins.remoteReconnecting": "Savieno vēlreiz ar Tailscale",
 	"plugins.remoteDisconnected": "Atvienots no Tailscale",
-	"plugins.remoteLoadFailed": "Neizdevās nolasīt Tailscale statusu"
+	"plugins.remoteLoadFailed": "Neizdevās nolasīt Tailscale statusu",
+	"plugins.remoteNeedsPlugin": "Attālā piekļuve izmanto Tailscale spraudni.",
+	"plugins.remoteOpenPlugins": "Uz Spraudņiem",
+	"plugins.remoteSettings": "Attālās piekļuves iestatījumi"
 }

@@ -70,6 +70,7 @@ var screenOwners = map[string]Owner{
 	"/settings/ai":                   Core,
 	"/ai":                            Core,
 	"/settings/tmdb":                 Core,
+	"/settings/remote-access":        Core,
 	"/settings/users":                Core,
 	"/settings/naming":               Media,
 	"/settings/pick-rules":           Media,

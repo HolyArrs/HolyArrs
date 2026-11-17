@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Utloggad här. Ta också bort enheten på Tailscales admin-sida.",
 	"plugins.remoteReconnecting": "Ansluter till Tailscale igen",
 	"plugins.remoteDisconnected": "Frånkopplad från Tailscale",
-	"plugins.remoteLoadFailed": "Kunde inte läsa Tailscale-status"
+	"plugins.remoteLoadFailed": "Kunde inte läsa Tailscale-status",
+	"plugins.remoteNeedsPlugin": "Fjärråtkomst använder Tailscale-tillägget.",
+	"plugins.remoteOpenPlugins": "Gå till Tillägg",
+	"plugins.remoteSettings": "Inställningar för fjärråtkomst"
 }

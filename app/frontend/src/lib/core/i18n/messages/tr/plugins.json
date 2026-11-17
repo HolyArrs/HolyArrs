@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Burada çıkış yapıldı. Cihazı Tailscale yönetim sayfasından da kaldırın.",
 	"plugins.remoteReconnecting": "Tailscale'e yeniden bağlanılıyor",
 	"plugins.remoteDisconnected": "Tailscale bağlantısı kesildi",
-	"plugins.remoteLoadFailed": "Tailscale durumu okunamadı"
+	"plugins.remoteLoadFailed": "Tailscale durumu okunamadı",
+	"plugins.remoteNeedsPlugin": "Uzaktan erişim Tailscale eklentisini kullanır.",
+	"plugins.remoteOpenPlugins": "Eklentilere git",
+	"plugins.remoteSettings": "Uzaktan erişim ayarları"
 }

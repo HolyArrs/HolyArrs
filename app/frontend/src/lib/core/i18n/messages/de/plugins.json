@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Hier abgemeldet. Entferne das Gerät auch auf der Admin-Seite von Tailscale.",
 	"plugins.remoteReconnecting": "Verbinde neu mit Tailscale",
 	"plugins.remoteDisconnected": "Von Tailscale getrennt",
-	"plugins.remoteLoadFailed": "Tailscale-Status konnte nicht gelesen werden"
+	"plugins.remoteLoadFailed": "Tailscale-Status konnte nicht gelesen werden",
+	"plugins.remoteNeedsPlugin": "Fernzugriff nutzt das Tailscale-Plugin.",
+	"plugins.remoteOpenPlugins": "Zu den Plugins",
+	"plugins.remoteSettings": "Einstellungen für Fernzugriff"
 }

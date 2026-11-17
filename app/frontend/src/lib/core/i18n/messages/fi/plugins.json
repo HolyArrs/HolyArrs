@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Kirjauduttu ulos täällä. Poista laite myös Tailscalen hallintasivulla.",
 	"plugins.remoteReconnecting": "Yhdistetään uudelleen Tailscaleen",
 	"plugins.remoteDisconnected": "Yhteys Tailscaleen katkaistu",
-	"plugins.remoteLoadFailed": "Tailscalen tilaa ei voitu lukea"
+	"plugins.remoteLoadFailed": "Tailscalen tilaa ei voitu lukea",
+	"plugins.remoteNeedsPlugin": "Etäkäyttö käyttää Tailscale-laajennusta.",
+	"plugins.remoteOpenPlugins": "Siirry laajennuksiin",
+	"plugins.remoteSettings": "Etäkäytön asetukset"
 }

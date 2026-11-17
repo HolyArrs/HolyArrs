@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Wylogowano tutaj. Usuń urządzenie także na stronie admina Tailscale.",
 	"plugins.remoteReconnecting": "Ponowne łączenie z Tailscale",
 	"plugins.remoteDisconnected": "Rozłączono z Tailscale",
-	"plugins.remoteLoadFailed": "Nie udało się odczytać stanu Tailscale"
+	"plugins.remoteLoadFailed": "Nie udało się odczytać stanu Tailscale",
+	"plugins.remoteNeedsPlugin": "Dostęp zdalny używa wtyczki Tailscale.",
+	"plugins.remoteOpenPlugins": "Przejdź do Wtyczek",
+	"plugins.remoteSettings": "Ustawienia dostępu zdalnego"
 }

@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "यहाँ साइन आउट हो गया। Tailscale के एडमिन पेज से भी डिवाइस हटाएँ।",
 	"plugins.remoteReconnecting": "Tailscale से फिर कनेक्ट हो रहा है",
 	"plugins.remoteDisconnected": "Tailscale से डिस्कनेक्ट हो गया",
-	"plugins.remoteLoadFailed": "Tailscale की स्थिति नहीं पढ़ी जा सकी"
+	"plugins.remoteLoadFailed": "Tailscale की स्थिति नहीं पढ़ी जा सकी",
+	"plugins.remoteNeedsPlugin": "रिमोट एक्सेस Tailscale प्लगइन का उपयोग करता है।",
+	"plugins.remoteOpenPlugins": "प्लगइन पर जाएँ",
+	"plugins.remoteSettings": "रिमोट एक्सेस सेटिंग्स"
 }

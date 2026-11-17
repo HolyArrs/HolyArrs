@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Sessió tancada aquí. Elimina també el dispositiu a la pàgina d'admin de Tailscale.",
 	"plugins.remoteReconnecting": "Tornant a connectar a Tailscale",
 	"plugins.remoteDisconnected": "Desconnectat de Tailscale",
-	"plugins.remoteLoadFailed": "No s'ha pogut llegir l'estat de Tailscale"
+	"plugins.remoteLoadFailed": "No s'ha pogut llegir l'estat de Tailscale",
+	"plugins.remoteNeedsPlugin": "L'accés remot fa servir el connector Tailscale.",
+	"plugins.remoteOpenPlugins": "Ves a Connectors",
+	"plugins.remoteSettings": "Configuració de l'accés remot"
 }

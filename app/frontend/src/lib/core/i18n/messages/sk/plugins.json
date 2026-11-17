@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Tu odhlásené. Odstráňte zariadenie aj na stránke správy Tailscale.",
 	"plugins.remoteReconnecting": "Znova sa pripája k Tailscale",
 	"plugins.remoteDisconnected": "Odpojené od Tailscale",
-	"plugins.remoteLoadFailed": "Stav Tailscale sa nedá načítať"
+	"plugins.remoteLoadFailed": "Stav Tailscale sa nedá načítať",
+	"plugins.remoteNeedsPlugin": "Vzdialený prístup používa plugin Tailscale.",
+	"plugins.remoteOpenPlugins": "Prejsť na Pluginy",
+	"plugins.remoteSettings": "Nastavenia vzdialeného prístupu"
 }

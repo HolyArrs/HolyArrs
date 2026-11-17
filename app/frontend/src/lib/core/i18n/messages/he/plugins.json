@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "התנתקתם כאן. הסירו את המכשיר גם בדף הניהול של Tailscale.",
 	"plugins.remoteReconnecting": "מתחבר מחדש ל-Tailscale",
 	"plugins.remoteDisconnected": "מנותק מ-Tailscale",
-	"plugins.remoteLoadFailed": "לא ניתן לקרוא את מצב Tailscale"
+	"plugins.remoteLoadFailed": "לא ניתן לקרוא את מצב Tailscale",
+	"plugins.remoteNeedsPlugin": "גישה מרחוק משתמשת בתוסף Tailscale.",
+	"plugins.remoteOpenPlugins": "מעבר לתוספים",
+	"plugins.remoteSettings": "הגדרות גישה מרחוק"
 }

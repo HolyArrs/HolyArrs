@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Hayaang gamitin ng mga AI assistant ang HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Mga key at route para sa ibang app",
+	"core.settings.remoteAccess.label": "Remote access",
+	"core.settings.remoteAccess.about": "Gamitin ang HolyArrs kahit wala sa bahay",
 	"core.settings.tmdb.label": "Metadata",
 	"core.settings.tmdb.about": "Kung saan galing ang mga poster at pangalan",
 	"core.settings.health.label": "Mga health check",

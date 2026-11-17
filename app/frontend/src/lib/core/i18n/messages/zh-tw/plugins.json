@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "已在此處登出。也請到 Tailscale 管理頁面移除該裝置。",
 	"plugins.remoteReconnecting": "正在重新連線 Tailscale",
 	"plugins.remoteDisconnected": "已與 Tailscale 中斷連線",
-	"plugins.remoteLoadFailed": "無法讀取 Tailscale 狀態"
+	"plugins.remoteLoadFailed": "無法讀取 Tailscale 狀態",
+	"plugins.remoteNeedsPlugin": "遠端存取使用 Tailscale 外掛。",
+	"plugins.remoteOpenPlugins": "前往外掛",
+	"plugins.remoteSettings": "遠端存取設定"
 }

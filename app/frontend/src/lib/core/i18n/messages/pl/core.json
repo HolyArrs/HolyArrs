@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "Pozwól asystentom AI korzystać z HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Klucze i trasy dla innych aplikacji",
+	"core.settings.remoteAccess.label": "Dostęp zdalny",
+	"core.settings.remoteAccess.about": "Korzystaj z HolyArrs poza domem",
 	"core.settings.tmdb.label": "Metadane",
 	"core.settings.tmdb.about": "Skąd biorą się plakaty i nazwy",
 	"core.settings.health.label": "Kontrole kondycji",

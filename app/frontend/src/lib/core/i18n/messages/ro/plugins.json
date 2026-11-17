@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Deconectat aici. Elimină dispozitivul și din pagina de admin Tailscale.",
 	"plugins.remoteReconnecting": "Reconectare la Tailscale",
 	"plugins.remoteDisconnected": "Deconectat de la Tailscale",
-	"plugins.remoteLoadFailed": "Nu s-a putut citi starea Tailscale"
+	"plugins.remoteLoadFailed": "Nu s-a putut citi starea Tailscale",
+	"plugins.remoteNeedsPlugin": "Accesul de la distanță folosește pluginul Tailscale.",
+	"plugins.remoteOpenPlugins": "Mergi la Pluginuri",
+	"plugins.remoteSettings": "Setări pentru acces de la distanță"
 }

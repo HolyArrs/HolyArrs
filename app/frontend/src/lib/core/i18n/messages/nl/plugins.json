@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "Hier afgemeld. Verwijder het apparaat ook op de beheerpagina van Tailscale.",
 	"plugins.remoteReconnecting": "Opnieuw verbinden met Tailscale",
 	"plugins.remoteDisconnected": "Verbinding met Tailscale verbroken",
-	"plugins.remoteLoadFailed": "Tailscale-status kon niet worden gelezen"
+	"plugins.remoteLoadFailed": "Tailscale-status kon niet worden gelezen",
+	"plugins.remoteNeedsPlugin": "Toegang op afstand gebruikt de Tailscale-plug-in.",
+	"plugins.remoteOpenPlugins": "Naar Plug-ins",
+	"plugins.remoteSettings": "Instellingen voor toegang op afstand"
 }

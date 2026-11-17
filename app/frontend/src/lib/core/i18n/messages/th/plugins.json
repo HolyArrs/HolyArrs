@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "ออกจากระบบที่นี่แล้ว นำอุปกรณ์ออกในหน้าผู้ดูแลของ Tailscale ด้วย",
 	"plugins.remoteReconnecting": "กำลังเชื่อมต่อ Tailscale ใหม่",
 	"plugins.remoteDisconnected": "ตัดการเชื่อมต่อจาก Tailscale แล้ว",
-	"plugins.remoteLoadFailed": "อ่านสถานะ Tailscale ไม่ได้"
+	"plugins.remoteLoadFailed": "อ่านสถานะ Tailscale ไม่ได้",
+	"plugins.remoteNeedsPlugin": "การเข้าถึงระยะไกลใช้ปลั๊กอิน Tailscale",
+	"plugins.remoteOpenPlugins": "ไปที่ปลั๊กอิน",
+	"plugins.remoteSettings": "การตั้งค่าการเข้าถึงระยะไกล"
 }

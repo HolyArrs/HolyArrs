@@ -80,5 +80,8 @@
 	"plugins.remoteRemoveInAdmin": "இங்கே வெளியேறியது. Tailscale நிர்வாகப் பக்கத்திலும் சாதனத்தை நீக்கவும்.",
 	"plugins.remoteReconnecting": "Tailscale-உடன் மீண்டும் இணைக்கிறது",
 	"plugins.remoteDisconnected": "Tailscale-இலிருந்து துண்டிக்கப்பட்டது",
-	"plugins.remoteLoadFailed": "Tailscale நிலையைப் படிக்க முடியவில்லை"
+	"plugins.remoteLoadFailed": "Tailscale நிலையைப் படிக்க முடியவில்லை",
+	"plugins.remoteNeedsPlugin": "தொலை அணுகல் Tailscale செருகுநிரலைப் பயன்படுத்துகிறது.",
+	"plugins.remoteOpenPlugins": "செருகுநிரல்களுக்குச் செல்",
+	"plugins.remoteSettings": "தொலை அணுகல் அமைப்புகள்"
 }

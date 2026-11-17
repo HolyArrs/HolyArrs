@@ -96,8 +96,29 @@ for (const width of [1280, 375]) {
 	});
 }
 
-// Remote access card: a mocked Tailscale status, the sign-in link and QR,
-// the 5 s refresh to Connected with its facts, Disconnect and Sign out.
+// Settings > Remote access without Tailscale: one line and a button to Plugins.
+for (const width of [1280, 375]) {
+	test(`plugins: remote access page without Tailscale at ${width}`, async ({ browser }) => {
+		const page = await (await browser.newContext({ viewport: { width, height: 844 } })).newPage();
+		await signIn(page, owner());
+		await withFake(page, []);
+		await page.goto('/settings/remote-access');
+		await expect(page.getByRole('heading', { name: 'Remote access', level: 1 })).toBeVisible();
+		const box = page.getByTestId('remote-needs-plugin');
+		await expect(box).toContainText('Remote access uses the Tailscale plugin.');
+		await expect(page.getByTestId('remote-access')).toHaveCount(0);
+		await noSidewaysScroll(page);
+		await page.screenshot({ path: test.info().outputPath(`remote-none-${width}.png`), fullPage: true });
+		await box.getByRole('link', { name: 'Go to Plugins' }).click();
+		await expect(page).toHaveURL(/\/plugins$/);
+		await expect(page.getByTestId('plugin-row').first()).toBeVisible();
+		await expect(page.getByRole('link', { name: 'Remote access settings' })).toHaveCount(0);
+		await page.context().close();
+	});
+}
+
+// Remote access card on Settings > Remote access: a mocked Tailscale status, the sign-in
+// link and QR, the 5 s refresh to Connected with its facts, Disconnect and Sign out.
 for (const width of [1280, 375]) {
 	test(`plugins: remote access card at ${width}`, async ({ browser }) => {
 		const page = await (await browser.newContext({ viewport: { width, height: 844 } })).newPage();
@@ -118,8 +139,11 @@ for (const width of [1280, 375]) {
 			return route.fulfill({ json: path.endsWith('/tailscale/signout') ? { signed_out: true, removed_remotely: false } : { ok: true } });
 		});
 		await page.goto('/plugins');
+		await expect(page.getByTestId('remote-access')).toHaveCount(0);
+		await page.getByTestId('plugin-row').first().getByRole('link', { name: 'Remote access settings' }).click();
+		await expect(page).toHaveURL(/\/settings\/remote-access$/);
 		const card = page.getByTestId('remote-access');
-		await expect(page.getByRole('heading', { name: 'Remote access' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Remote access', level: 1 })).toBeVisible();
 		await expect(card).toContainText('Waiting for sign-in');
 		await expect(card.getByRole('button', { name: 'Open Tailscale sign-in' })).toBeVisible();
 		await expect(card.getByRole('img', { name: 'QR code for the Tailscale sign-in link' })).toBeVisible();
