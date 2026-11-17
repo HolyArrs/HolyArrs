@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Laiku negauta atsakymo. Patikrinkite adresą ir ar netrukdo ugniasienė.",
 	"server.core.nothing-answers-on-that-port-check": "Tame prievade niekas neatsako. Patikrinkite prievadą ir ar programa veikia.",
 	"server.core.nothing-at-that-path-check-the": "Tame kelyje nieko nėra. Patikrinkite kelią po prievado.",
-	"server.core.category-missing-add-it-in-the-2": "Trūksta kategorijos: {name}. Pridėkite ją atsisiuntimo programoje arba čia pasirinkite kitą."
+	"server.core.category-missing-add-it-in-the-2": "Trūksta kategorijos: {name}. Pridėkite ją atsisiuntimo programoje arba čia pasirinkite kitą.",
+	"server.core.name-show-not-found": "{name} → nerasta. HolyArrs neranda šio pavadinimo. Naudok IP adresą.",
+	"server.core.name-show-refused": "{name} → {ip} → atmesta prievade {port}. Pavadinimas veikia, bet tame prievade niekas neatsako. Patikrink prievadą.",
+	"server.core.name-show-no-answer": "{name} → {ip} → nėra atsakymo prievade {port}. Pavadinimas veikia, bet niekas neatsako laiku. Patikrink prievadą ir ar netrukdo ugniasienė."
 }

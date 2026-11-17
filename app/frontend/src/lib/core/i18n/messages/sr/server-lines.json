@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Нема одговора на време. Проверите адресу и да заштитни зид не смета.",
 	"server.core.nothing-answers-on-that-port-check": "На том порту ништа не одговара. Проверите порт и да ли апликација ради.",
 	"server.core.nothing-at-that-path-check-the": "На тој путањи нема ничега. Проверите путању после порта.",
-	"server.core.category-missing-add-it-in-the-2": "Категорија недостаје: {name}. Додајте је у апликацији за преузимање или овде изаберите другу."
+	"server.core.category-missing-add-it-in-the-2": "Категорија недостаје: {name}. Додајте је у апликацији за преузимање или овде изаберите другу.",
+	"server.core.name-show-not-found": "{name} → nije pronađeno. HolyArrs ne može da pronađe ovo ime. Umesto toga koristi IP.",
+	"server.core.name-show-refused": "{name} → {ip} → odbijeno na portu {port}. Ime radi, ali na tom portu ništa ne odgovara. Proveri port.",
+	"server.core.name-show-no-answer": "{name} → {ip} → nema odgovora na portu {port}. Ime radi, ali ništa ne odgovara na vreme. Proveri port i da zaštitni zid ne smeta."
 }

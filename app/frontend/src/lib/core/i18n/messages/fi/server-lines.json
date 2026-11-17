@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Ei vastausta ajoissa. Tarkista osoite ja ettei palomuuri estä.",
 	"server.core.nothing-answers-on-that-port-check": "Mikään ei vastaa siinä portissa. Tarkista portti ja että sovellus on käynnissä.",
 	"server.core.nothing-at-that-path-check-the": "Polussa ei ole mitään. Tarkista portin jälkeinen polku.",
-	"server.core.category-missing-add-it-in-the-2": "Kategoria puuttuu: {name}. Lisää se lataussovellukseen tai valitse tästä toinen."
+	"server.core.category-missing-add-it-in-the-2": "Kategoria puuttuu: {name}. Lisää se lataussovellukseen tai valitse tästä toinen.",
+	"server.core.name-show-not-found": "{name} → ei löytynyt. HolyArrs ei löydä tätä nimeä. Käytä IP-osoitetta.",
+	"server.core.name-show-refused": "{name} → {ip} → torjuttu portissa {port}. Nimi toimii, mutta portissa ei vastaa mikään. Tarkista portti.",
+	"server.core.name-show-no-answer": "{name} → {ip} → ei vastausta portissa {port}. Nimi toimii, mutta mikään ei vastaa ajoissa. Tarkista portti ja ettei palomuuri estä."
 }

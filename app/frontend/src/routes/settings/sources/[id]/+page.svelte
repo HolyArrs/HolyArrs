@@ -7,6 +7,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
+	import ConnectHelp from '#lib/ui/ConnectHelp.svelte';
 	import { barHeight, ms, opWords, uses, healthTone, healthWord, pausedUntil } from '#lib/sources/index.ts';
 	import type { SourceCall, SourceDay, SourceView } from '#lib/sources/index.ts';
 	import { page } from '$app/state';
@@ -91,7 +92,7 @@
 			<span class="label">{t('settings.sourceDetail.state')}</span>
 			<span class="big">{healthWord(src.health)}</span>
 			<span class="xs muted">{serverWords(src.health.text)}{#if pausedUntil(src.health)} {pausedUntil(src.health)}.{/if}</span>
-			{#if tried}<span class="testline" data-testid="source-tried"><TestTag ok={tried.ok} text={tried.text} hover={tried.hover} extra={tried.extra} />{#if !tried.ok}<span class="xs bad-text">{serverWords(tried.text)}</span>{/if}</span>{/if}
+			{#if tried}<span class="testline" data-testid="source-tried"><TestTag ok={tried.ok} text={tried.text} hover={tried.hover} extra={tried.extra} />{#if !tried.ok}<span class="xs bad-text">{serverWords(tried.text)}<ConnectHelp text={tried.text} /></span>{/if}</span>{/if}
 		</div>
 		<div class="card tile">
 			<span class="label">{t('settings.sourceDetail.lastAnswer')}</span>

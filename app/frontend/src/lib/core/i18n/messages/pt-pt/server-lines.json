@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Sem resposta a tempo. Verifique o endereço e se nenhuma firewall está a bloquear.",
 	"server.core.nothing-answers-on-that-port-check": "Nada responde nessa porta. Verifique a porta e se a aplicação está a correr.",
 	"server.core.nothing-at-that-path-check-the": "Nada nesse caminho. Verifique o caminho a seguir à porta.",
-	"server.core.category-missing-add-it-in-the-2": "Categoria em falta: {name}. Adicione-a na aplicação de transferências ou escolha outra aqui."
+	"server.core.category-missing-add-it-in-the-2": "Categoria em falta: {name}. Adicione-a na aplicação de transferências ou escolha outra aqui.",
+	"server.core.name-show-not-found": "{name} → não encontrado. O HolyArrs não encontra este nome. Usa o IP.",
+	"server.core.name-show-refused": "{name} → {ip} → recusado na porta {port}. O nome funciona, mas nada responde nessa porta. Verifica a porta.",
+	"server.core.name-show-no-answer": "{name} → {ip} → sem resposta na porta {port}. O nome funciona, mas nada responde a tempo. Verifica a porta e se nenhuma firewall está a bloquear."
 }

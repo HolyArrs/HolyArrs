@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Brak odpowiedzi na czas. Sprawdź adres i czy zapora nie blokuje.",
 	"server.core.nothing-answers-on-that-port-check": "Na tym porcie nic nie odpowiada. Sprawdź port i czy aplikacja działa.",
 	"server.core.nothing-at-that-path-check-the": "Pod tą ścieżką nic nie ma. Sprawdź ścieżkę po porcie.",
-	"server.core.category-missing-add-it-in-the-2": "Brak kategorii: {name}. Dodaj ją w aplikacji do pobierania lub wybierz tu inną."
+	"server.core.category-missing-add-it-in-the-2": "Brak kategorii: {name}. Dodaj ją w aplikacji do pobierania lub wybierz tu inną.",
+	"server.core.name-show-not-found": "{name} → nie znaleziono. HolyArrs nie może znaleźć tej nazwy. Użyj adresu IP.",
+	"server.core.name-show-refused": "{name} → {ip} → odrzucono na porcie {port}. Nazwa działa, ale na tym porcie nic nie odpowiada. Sprawdź port.",
+	"server.core.name-show-no-answer": "{name} → {ip} → brak odpowiedzi na porcie {port}. Nazwa działa, ale nic nie odpowiada na czas. Sprawdź port i czy zapora nie blokuje."
 }

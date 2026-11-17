@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "获奖：{name}",
 	"ui.wikiFacts.nominated": "提名：{name}",
 	"ui.wikiFacts.andMore": "另有 {count} 项",
-	"ui.pageLoader.loading": "加载中"
+	"ui.pageLoader.loading": "加载中",
+	"ui.connectHelp.link": "如何修复"
 }

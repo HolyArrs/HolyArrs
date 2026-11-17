@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Vítězství: {name}",
 	"ui.wikiFacts.nominated": "Nominace: {name}",
 	"ui.wikiFacts.andMore": "a dalších: {count}",
-	"ui.pageLoader.loading": "Načítá se"
+	"ui.pageLoader.loading": "Načítá se",
+	"ui.connectHelp.link": "Jak to opravit"
 }

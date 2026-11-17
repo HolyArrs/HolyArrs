@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Nav atbildes laikā. Pārbaudiet adresi un to, vai netraucē ugunsmūris.",
 	"server.core.nothing-answers-on-that-port-check": "Šajā portā nekas neatbild. Pārbaudiet portu un to, vai lietotne darbojas.",
 	"server.core.nothing-at-that-path-check-the": "Šajā ceļā nekā nav. Pārbaudiet ceļu aiz porta.",
-	"server.core.category-missing-add-it-in-the-2": "Trūkst kategorijas: {name}. Pievienojiet to lejupielādes lietotnē vai izvēlieties citu šeit."
+	"server.core.category-missing-add-it-in-the-2": "Trūkst kategorijas: {name}. Pievienojiet to lejupielādes lietotnē vai izvēlieties citu šeit.",
+	"server.core.name-show-not-found": "{name} → nav atrasts. HolyArrs nevar atrast šo nosaukumu. Izmanto IP adresi.",
+	"server.core.name-show-refused": "{name} → {ip} → atteikts portā {port}. Nosaukums darbojas, bet šajā portā nekas neatbild. Pārbaudi portu.",
+	"server.core.name-show-no-answer": "{name} → {ip} → nav atbildes portā {port}. Nosaukums darbojas, bet nekas neatbild laikā. Pārbaudi portu un vai netraucē ugunsmūris."
 }

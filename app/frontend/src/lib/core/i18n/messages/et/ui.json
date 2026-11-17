@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Võitis: {name}",
 	"ui.wikiFacts.nominated": "Nomineeritud: {name}",
 	"ui.wikiFacts.andMore": "ja veel {count}",
-	"ui.pageLoader.loading": "Laadin"
+	"ui.pageLoader.loading": "Laadin",
+	"ui.connectHelp.link": "Kuidas parandada"
 }

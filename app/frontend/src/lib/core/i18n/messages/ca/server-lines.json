@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Sense resposta a temps. Comprova l'adreça i que cap tallafoc ho impedeixi.",
 	"server.core.nothing-answers-on-that-port-check": "No respon res en aquest port. Comprova el port i que l'aplicació estigui en marxa.",
 	"server.core.nothing-at-that-path-check-the": "No hi ha res en aquest camí. Comprova el camí després del port.",
-	"server.core.category-missing-add-it-in-the-2": "Falta la categoria: {name}. Afegeix-la a l'aplicació de baixades o tria'n una altra aquí."
+	"server.core.category-missing-add-it-in-the-2": "Falta la categoria: {name}. Afegeix-la a l'aplicació de baixades o tria'n una altra aquí.",
+	"server.core.name-show-not-found": "{name} → no trobat. HolyArrs no troba aquest nom. Fes servir la IP.",
+	"server.core.name-show-refused": "{name} → {ip} → rebutjat al port {port}. El nom funciona, però res no respon en aquest port. Comprova el port.",
+	"server.core.name-show-no-answer": "{name} → {ip} → sense resposta al port {port}. El nom funciona, però res no respon a temps. Comprova el port i que cap tallafoc no ho impedeixi."
 }

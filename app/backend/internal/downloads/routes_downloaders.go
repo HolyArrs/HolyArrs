@@ -355,6 +355,9 @@ func explainDownloader(err error, rawURL string, allowLocal bool) (doctor.Cause,
 		return doctor.Blocked, doctor.Line(doctor.Blocked)
 	}
 	if c := secondLook(err, rawURL, allowLocal); c != doctor.Unknown {
+		if line := doctor.NameLine(c, rawURL, probeDial(allowLocal)); line != "" {
+			return c, line
+		}
 		return c, doctor.Line(c)
 	}
 	// The raw error (addresses, Go words) stays in the log.

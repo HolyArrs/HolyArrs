@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "জিতেছে: {name}",
 	"ui.wikiFacts.nominated": "মনোনীত: {name}",
 	"ui.wikiFacts.andMore": "আরও {count}টি",
-	"ui.pageLoader.loading": "লোড হচ্ছে"
+	"ui.pageLoader.loading": "লোড হচ্ছে",
+	"ui.connectHelp.link": "কীভাবে ঠিক করবেন"
 }

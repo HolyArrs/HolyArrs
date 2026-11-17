@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Õigel ajal vastust ei tulnud. Kontrolli aadressi ja et tulemüür ei sega.",
 	"server.core.nothing-answers-on-that-port-check": "Selles pordis ei vasta miski. Kontrolli porti ja et rakendus töötab.",
 	"server.core.nothing-at-that-path-check-the": "Sellel teel pole midagi. Kontrolli pordi järel olevat teed.",
-	"server.core.category-missing-add-it-in-the-2": "Kategooria puudub: {name}. Lisa see allalaadimisrakenduses või vali siin mõni muu."
+	"server.core.category-missing-add-it-in-the-2": "Kategooria puudub: {name}. Lisa see allalaadimisrakenduses või vali siin mõni muu.",
+	"server.core.name-show-not-found": "{name} → ei leitud. HolyArrs ei leia seda nime. Kasuta selle asemel IP-d.",
+	"server.core.name-show-refused": "{name} → {ip} → keelduti pordil {port}. Nimi töötab, aga sellel pordil ei vasta miski. Kontrolli porti.",
+	"server.core.name-show-no-answer": "{name} → {ip} → vastust pole pordil {port}. Nimi töötab, aga miski ei vasta õigel ajal. Kontrolli porti ja et tulemüür ei sega."
 }

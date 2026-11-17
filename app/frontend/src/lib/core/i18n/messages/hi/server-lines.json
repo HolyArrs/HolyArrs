@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "समय पर जवाब नहीं आया। पता जांचें, और कि कोई फ़ायरवॉल रास्ते में नहीं है।",
 	"server.core.nothing-answers-on-that-port-check": "उस पोर्ट पर कुछ जवाब नहीं देता। पोर्ट जांचें, और कि ऐप चल रहा है।",
 	"server.core.nothing-at-that-path-check-the": "उस पाथ पर कुछ नहीं है। पोर्ट के बाद का पाथ जांचें।",
-	"server.core.category-missing-add-it-in-the-2": "कैटेगरी नहीं है: {name}। इसे डाउनलोड ऐप में जोड़ें, या यहां कोई दूसरी चुनें।"
+	"server.core.category-missing-add-it-in-the-2": "कैटेगरी नहीं है: {name}। इसे डाउनलोड ऐप में जोड़ें, या यहां कोई दूसरी चुनें।",
+	"server.core.name-show-not-found": "{name} → नहीं मिला. HolyArrs यह नाम नहीं ढूंढ पा रहा। इसकी जगह IP इस्तेमाल करें।",
+	"server.core.name-show-refused": "{name} → {ip} → पोर्ट पर मना किया {port}. नाम काम करता है, पर उस पोर्ट पर कोई जवाब नहीं देता। पोर्ट जांचें।",
+	"server.core.name-show-no-answer": "{name} → {ip} → पोर्ट पर कोई जवाब नहीं {port}. नाम काम करता है, पर समय पर कोई जवाब नहीं देता। पोर्ट जांचें, और कि कोई फ़ायरवॉल बीच में न हो।"
 }

@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Geen antwoord op tijd. Controleer het adres en of er geen firewall in de weg zit.",
 	"server.core.nothing-answers-on-that-port-check": "Niets antwoordt op die poort. Controleer de poort en of de app draait.",
 	"server.core.nothing-at-that-path-check-the": "Niets op dat pad. Controleer het pad na de poort.",
-	"server.core.category-missing-add-it-in-the-2": "Categorie ontbreekt: {name}. Voeg hem toe in de download-app, of kies hier een andere."
+	"server.core.category-missing-add-it-in-the-2": "Categorie ontbreekt: {name}. Voeg hem toe in de download-app, of kies hier een andere.",
+	"server.core.name-show-not-found": "{name} → niet gevonden. HolyArrs kan deze naam niet vinden. Gebruik het IP-adres.",
+	"server.core.name-show-refused": "{name} → {ip} → geweigerd op poort {port}. De naam werkt, maar niets antwoordt op die poort. Controleer de poort.",
+	"server.core.name-show-no-answer": "{name} → {ip} → geen antwoord op poort {port}. De naam werkt, maar niets antwoordt op tijd. Controleer de poort en of er geen firewall in de weg zit."
 }

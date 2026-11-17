@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Inget svar i tid. Kontrollera adressen, och att ingen brandvägg är i vägen.",
 	"server.core.nothing-answers-on-that-port-check": "Inget svarar på den porten. Kontrollera porten, och att appen körs.",
 	"server.core.nothing-at-that-path-check-the": "Inget på den sökvägen. Kontrollera sökvägen efter porten.",
-	"server.core.category-missing-add-it-in-the-2": "Kategorin saknas: {name}. Lägg till den i nedladdningsappen, eller välj en annan här."
+	"server.core.category-missing-add-it-in-the-2": "Kategorin saknas: {name}. Lägg till den i nedladdningsappen, eller välj en annan här.",
+	"server.core.name-show-not-found": "{name} → hittades inte. HolyArrs hittar inte det här namnet. Använd IP-adressen i stället.",
+	"server.core.name-show-refused": "{name} → {ip} → nekad på port {port}. Namnet fungerar, men inget svarar på den porten. Kontrollera porten.",
+	"server.core.name-show-no-answer": "{name} → {ip} → inget svar på port {port}. Namnet fungerar, men inget svarar i tid. Kontrollera porten och att ingen brandvägg är i vägen."
 }

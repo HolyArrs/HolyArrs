@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Nessuna risposta in tempo. Controlla l'indirizzo e che nessun firewall blocchi.",
 	"server.core.nothing-answers-on-that-port-check": "Nessuno risponde su quella porta. Controlla la porta e che l'app sia in esecuzione.",
 	"server.core.nothing-at-that-path-check-the": "Niente a quel percorso. Controlla il percorso dopo la porta.",
-	"server.core.category-missing-add-it-in-the-2": "Categoria mancante: {name}. Aggiungila nell'app di download o scegline un'altra qui."
+	"server.core.category-missing-add-it-in-the-2": "Categoria mancante: {name}. Aggiungila nell'app di download o scegline un'altra qui.",
+	"server.core.name-show-not-found": "{name} → non trovato. HolyArrs non trova questo nome. Usa l'IP.",
+	"server.core.name-show-refused": "{name} → {ip} → rifiutato sulla porta {port}. Il nome funziona, ma su quella porta non risponde nulla. Controlla la porta.",
+	"server.core.name-show-no-answer": "{name} → {ip} → nessuna risposta sulla porta {port}. Il nome funziona, ma nulla risponde in tempo. Controlla la porta e che nessun firewall blocchi."
 }

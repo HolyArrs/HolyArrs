@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "אין תשובה בזמן. בדוק את הכתובת, ושאין חומת אש בדרך.",
 	"server.core.nothing-answers-on-that-port-check": "שום דבר לא עונה בפורט הזה. בדוק את הפורט, ושהאפליקציה פועלת.",
 	"server.core.nothing-at-that-path-check-the": "אין כלום בנתיב הזה. בדוק את הנתיב שאחרי הפורט.",
-	"server.core.category-missing-add-it-in-the-2": "הקטגוריה חסרה: {name}. הוסף אותה באפליקציית ההורדות, או בחר אחרת כאן."
+	"server.core.category-missing-add-it-in-the-2": "הקטגוריה חסרה: {name}. הוסף אותה באפליקציית ההורדות, או בחר אחרת כאן.",
+	"server.core.name-show-not-found": "{name} → לא נמצא. HolyArrs לא מוצא את השם הזה. השתמש בכתובת ה-IP במקום.",
+	"server.core.name-show-refused": "{name} → {ip} → נדחה בפורט {port}. השם עובד, אבל שום דבר לא עונה בפורט הזה. בדוק את הפורט.",
+	"server.core.name-show-no-answer": "{name} → {ip} → אין תשובה בפורט {port}. השם עובד, אבל שום דבר לא עונה בזמן. בדוק את הפורט ושאין חומת אש שחוסמת."
 }

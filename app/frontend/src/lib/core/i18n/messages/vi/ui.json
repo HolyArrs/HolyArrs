@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Thắng: {name}",
 	"ui.wikiFacts.nominated": "Được đề cử: {name}",
 	"ui.wikiFacts.andMore": "và {count} nữa",
-	"ui.pageLoader.loading": "Đang tải"
+	"ui.pageLoader.loading": "Đang tải",
+	"ui.connectHelp.link": "Cách khắc phục"
 }

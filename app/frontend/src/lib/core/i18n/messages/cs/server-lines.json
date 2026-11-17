@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Žádná odpověď včas. Zkontrolujte adresu a že nepřekáží firewall.",
 	"server.core.nothing-answers-on-that-port-check": "Na tomto portu nic neodpovídá. Zkontrolujte port a že aplikace běží.",
 	"server.core.nothing-at-that-path-check-the": "Na této cestě nic není. Zkontrolujte cestu za portem.",
-	"server.core.category-missing-add-it-in-the-2": "Chybí kategorie: {name}. Přidejte ji ve stahovací aplikaci, nebo zde vyberte jinou."
+	"server.core.category-missing-add-it-in-the-2": "Chybí kategorie: {name}. Přidejte ji ve stahovací aplikaci, nebo zde vyberte jinou.",
+	"server.core.name-show-not-found": "{name} → nenalezeno. HolyArrs tento název nenajde. Použij místo něj IP adresu.",
+	"server.core.name-show-refused": "{name} → {ip} → odmítnuto na portu {port}. Název funguje, ale na tom portu nic neodpovídá. Zkontroluj port.",
+	"server.core.name-show-no-answer": "{name} → {ip} → bez odpovědi na portu {port}. Název funguje, ale nic neodpoví včas. Zkontroluj port a že tomu nebrání firewall."
 }

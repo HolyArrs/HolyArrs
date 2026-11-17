@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Pas de réponse à temps. Vérifiez l'adresse et qu'aucun pare-feu ne bloque.",
 	"server.core.nothing-answers-on-that-port-check": "Rien ne répond sur ce port. Vérifiez le port et que l'application tourne.",
 	"server.core.nothing-at-that-path-check-the": "Rien à ce chemin. Vérifiez le chemin après le port.",
-	"server.core.category-missing-add-it-in-the-2": "Catégorie absente: {name}. Ajoutez-la dans l'application de téléchargement, ou choisissez-en une autre ici."
+	"server.core.category-missing-add-it-in-the-2": "Catégorie absente: {name}. Ajoutez-la dans l'application de téléchargement, ou choisissez-en une autre ici.",
+	"server.core.name-show-not-found": "{name} → introuvable. HolyArrs ne trouve pas ce nom. Utilise plutôt l'IP.",
+	"server.core.name-show-refused": "{name} → {ip} → refusé sur le port {port}. Le nom fonctionne, mais rien ne répond sur ce port. Vérifie le port.",
+	"server.core.name-show-no-answer": "{name} → {ip} → pas de réponse sur le port {port}. Le nom fonctionne, mais rien ne répond à temps. Vérifie le port et qu'aucun pare-feu ne bloque."
 }

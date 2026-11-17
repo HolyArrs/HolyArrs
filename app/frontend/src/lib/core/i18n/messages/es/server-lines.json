@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Sin respuesta a tiempo. Revisa la dirección y que ningún cortafuegos lo impida.",
 	"server.core.nothing-answers-on-that-port-check": "Nada responde en ese puerto. Revisa el puerto y que la aplicación esté en marcha.",
 	"server.core.nothing-at-that-path-check-the": "No hay nada en esa ruta. Revisa la ruta tras el puerto.",
-	"server.core.category-missing-add-it-in-the-2": "Falta la categoría: {name}. Añádela en la aplicación de descargas o elige otra aquí."
+	"server.core.category-missing-add-it-in-the-2": "Falta la categoría: {name}. Añádela en la aplicación de descargas o elige otra aquí.",
+	"server.core.name-show-not-found": "{name} → no encontrado. HolyArrs no encuentra este nombre. Usa la IP.",
+	"server.core.name-show-refused": "{name} → {ip} → rechazado en el puerto {port}. El nombre funciona, pero nada responde en ese puerto. Revisa el puerto.",
+	"server.core.name-show-no-answer": "{name} → {ip} → sin respuesta en el puerto {port}. El nombre funciona, pero nada responde a tiempo. Revisa el puerto y que ningún cortafuegos lo bloquee."
 }

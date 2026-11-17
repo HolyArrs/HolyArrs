@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Ekkert svar í tæka tíð. Athugaðu vistfangið og að enginn eldveggur sé fyrir.",
 	"server.core.nothing-answers-on-that-port-check": "Ekkert svarar á þeirri gátt. Athugaðu gáttina og að forritið sé í gangi.",
 	"server.core.nothing-at-that-path-check-the": "Ekkert á þeirri slóð. Athugaðu slóðina á eftir gáttinni.",
-	"server.core.category-missing-add-it-in-the-2": "Flokk vantar: {name}. Bættu honum við í niðurhalsforritinu eða veldu annan hér."
+	"server.core.category-missing-add-it-in-the-2": "Flokk vantar: {name}. Bættu honum við í niðurhalsforritinu eða veldu annan hér.",
+	"server.core.name-show-not-found": "{name} → fannst ekki. HolyArrs finnur ekki þetta nafn. Notaðu IP-töluna í staðinn.",
+	"server.core.name-show-refused": "{name} → {ip} → hafnað á gátt {port}. Nafnið virkar, en ekkert svarar á þeirri gátt. Athugaðu gáttina.",
+	"server.core.name-show-no-answer": "{name} → {ip} → ekkert svar á gátt {port}. Nafnið virkar, en ekkert svarar í tæka tíð. Athugaðu gáttina og að enginn eldveggur sé fyrir."
 }

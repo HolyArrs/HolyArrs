@@ -40,6 +40,10 @@ const handLines = { 'Because you have {name}': 'suggest', 'No Downloader has con
 	// sources choose.go: a forced pick's reasons, each ending in the verdict text.
 	// doctor.CategoryLine, the Category line with the missing category's name.
 	'Category missing: {name}. Add it in the download app, or pick another one here.': 'core',
+	// doctor.NameLine, a failed test line that shows what the address's name turned into.
+	"{name} → not found. HolyArrs can't find this name. Use the IP instead.": 'core',
+	'{name} → {ip} → refused on port {port}. The name works, but nothing answers on that port. Check the port.': 'core',
+	'{name} → {ip} → no answer on port {port}. The name works, but nothing answers in time. Check the port, and that no firewall is in the way.': 'core',
 	'it was turned down: {d}': 'sources', 'it was turned down for this episode: {d}': 'sources' };
 // Files whose fmt.Sprintf lines are display text (card lines, labels).
 const display = /(accounts[\\/]events|discover[\\/](home|explore_np|title_view)|shows[\\/]episode_labels|requests[\\/](episodes|follows\w*|reports)|health[\\/](health|routes_settings_status)|migrate[\\/]plan_\w+|metadata[\\/]moods)\.go$/;

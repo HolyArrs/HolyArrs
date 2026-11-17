@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Niciun răspuns la timp. Verifică adresa și că niciun firewall nu blochează.",
 	"server.core.nothing-answers-on-that-port-check": "Nimic nu răspunde pe acel port. Verifică portul și că aplicația rulează.",
 	"server.core.nothing-at-that-path-check-the": "Nimic la acea cale. Verifică calea de după port.",
-	"server.core.category-missing-add-it-in-the-2": "Categoria lipsește: {name}. Adaug-o în aplicația de descărcare sau alege alta aici."
+	"server.core.category-missing-add-it-in-the-2": "Categoria lipsește: {name}. Adaug-o în aplicația de descărcare sau alege alta aici.",
+	"server.core.name-show-not-found": "{name} → negăsit. HolyArrs nu găsește acest nume. Folosește IP-ul.",
+	"server.core.name-show-refused": "{name} → {ip} → refuzat pe portul {port}. Numele funcționează, dar nimic nu răspunde pe acel port. Verifică portul.",
+	"server.core.name-show-no-answer": "{name} → {ip} → niciun răspuns pe portul {port}. Numele funcționează, dar nimic nu răspunde la timp. Verifică portul și că niciun firewall nu blochează."
 }

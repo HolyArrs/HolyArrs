@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Няма отговор навреме. Проверете адреса и дали защитна стена не пречи.",
 	"server.core.nothing-answers-on-that-port-check": "Нищо не отговаря на този порт. Проверете порта и дали приложението работи.",
 	"server.core.nothing-at-that-path-check-the": "Няма нищо на този път. Проверете пътя след порта.",
-	"server.core.category-missing-add-it-in-the-2": "Липсва категория: {name}. Добавете я в приложението за изтегляне или изберете друга тук."
+	"server.core.category-missing-add-it-in-the-2": "Липсва категория: {name}. Добавете я в приложението за изтегляне или изберете друга тук.",
+	"server.core.name-show-not-found": "{name} → не е намерено. HolyArrs не намира това име. Използвай IP адреса.",
+	"server.core.name-show-refused": "{name} → {ip} → отказано на порт {port}. Името работи, но нищо не отговаря на този порт. Провери порта.",
+	"server.core.name-show-no-answer": "{name} → {ip} → няма отговор на порт {port}. Името работи, но нищо не отговаря навреме. Провери порта и че няма защитна стена по пътя."
 }

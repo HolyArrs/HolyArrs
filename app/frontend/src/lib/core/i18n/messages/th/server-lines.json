@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "ไม่มีคำตอบทันเวลา ตรวจสอบที่อยู่ และว่าไม่มีไฟร์วอลล์ขวางอยู่",
 	"server.core.nothing-answers-on-that-port-check": "ไม่มีอะไรตอบที่พอร์ตนั้น ตรวจสอบพอร์ต และว่าแอปกำลังทำงาน",
 	"server.core.nothing-at-that-path-check-the": "ไม่มีอะไรที่พาธนั้น ตรวจสอบพาธหลังพอร์ต",
-	"server.core.category-missing-add-it-in-the-2": "ไม่มีหมวดหมู่: {name} เพิ่มในแอปดาวน์โหลด หรือเลือกหมวดอื่นที่นี่"
+	"server.core.category-missing-add-it-in-the-2": "ไม่มีหมวดหมู่: {name} เพิ่มในแอปดาวน์โหลด หรือเลือกหมวดอื่นที่นี่",
+	"server.core.name-show-not-found": "{name} → ไม่พบ. HolyArrs หาชื่อนี้ไม่เจอ ใช้ IP แทน",
+	"server.core.name-show-refused": "{name} → {ip} → ถูกปฏิเสธที่พอร์ต {port}. ชื่อใช้งานได้ แต่ไม่มีอะไรตอบที่พอร์ตนั้น ตรวจสอบพอร์ต",
+	"server.core.name-show-no-answer": "{name} → {ip} → ไม่มีคำตอบที่พอร์ต {port}. ชื่อใช้งานได้ แต่ไม่มีอะไรตอบทันเวลา ตรวจสอบพอร์ต และดูว่าไม่มีไฟร์วอลล์ขวางอยู่"
 }

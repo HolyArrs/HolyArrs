@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Nanalo: {name}",
 	"ui.wikiFacts.nominated": "Nominado: {name}",
 	"ui.wikiFacts.andMore": "at {count} pa",
-	"ui.pageLoader.loading": "Naglo-load"
+	"ui.pageLoader.loading": "Naglo-load",
+	"ui.connectHelp.link": "Paano ayusin"
 }

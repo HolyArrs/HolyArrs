@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Ieguva balvu: {name}",
 	"ui.wikiFacts.nominated": "Nominēts: {name}",
 	"ui.wikiFacts.andMore": "un vēl {count}",
-	"ui.pageLoader.loading": "Ielādē"
+	"ui.pageLoader.loading": "Ielādē",
+	"ui.connectHelp.link": "Kā to labot"
 }

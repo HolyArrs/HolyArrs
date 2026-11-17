@@ -24,6 +24,15 @@ describe('serverWords', () => {
 		for (const [line, want] of [['New movie', 'Nuovo film'], ['New show', 'Nuova serie'], ['New episode Mon', 'Nuovo episodio · lun'], ['Coming Friday', 'Arriva venerdì'], ['New season', 'Nuova stagione']]) expect(serverWords(line)).toBe(want);
 	});
 
+	it('shows what a name turned into in the picked language', async () => {
+		const de = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>('./messages/de/server-lines.json', { eager: true })).map((f) => f.default));
+		speak(de);
+		expect(serverWords("qbittorrent → not found. HolyArrs can't find this name. Use the IP instead.")).toBe('qbittorrent → nicht gefunden. HolyArrs findet diesen Namen nicht. Nimm stattdessen die IP.');
+		expect(serverWords('qbittorrent → 172.18.0.5 → refused on port 8080. The name works, but nothing answers on that port. Check the port.')).toBe(
+			'qbittorrent → 172.18.0.5 → abgelehnt auf Port 8080. Der Name funktioniert, aber auf diesem Port antwortet nichts. Prüfe den Port.'
+		);
+	});
+
 	it('says the Import by hand folder refusal in the picked language', async () => {
 		const de = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>('./messages/de/server-lines.json', { eager: true })).map((f) => f.default));
 		speak(de);

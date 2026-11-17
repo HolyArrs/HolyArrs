@@ -273,8 +273,9 @@ func (h *Handlers) runTest(w http.ResponseWriter, r *http.Request, x domain.Sour
 	out := map[string]any{"ok": err == nil, "ms": took.Milliseconds()}
 	if err != nil {
 		// Worked out once, outside the database write: it may look at the address.
-		cause := CauseAt(err, x.URL, probeDialOf(x))
-		out["text"], out["cause"] = explainWith(x.URL, err, cause), cause
+		dial := probeDialOf(x)
+		cause := CauseAt(err, x.URL, dial)
+		out["text"], out["cause"] = explainWith(x.URL, err, cause, dial), cause
 		if repause && x.State == "enabled" && h.search() != nil {
 			h.search().TryFailed(context.WithoutCancel(r.Context()), x, err)
 			if database.Get(r.Context(), h.Store.Read(), "sources", x.ID, &x) == nil {

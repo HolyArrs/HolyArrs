@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "فاز: {name}",
 	"ui.wikiFacts.nominated": "رُشّح: {name}",
 	"ui.wikiFacts.andMore": "و{count} أخرى",
-	"ui.pageLoader.loading": "جارٍ التحميل"
+	"ui.pageLoader.loading": "جارٍ التحميل",
+	"ui.connectHelp.link": "كيفية الإصلاح"
 }

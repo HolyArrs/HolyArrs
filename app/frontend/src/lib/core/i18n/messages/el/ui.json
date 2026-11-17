@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Κέρδισε: {name}",
 	"ui.wikiFacts.nominated": "Υποψήφιο: {name}",
 	"ui.wikiFacts.andMore": "και {count} ακόμη",
-	"ui.pageLoader.loading": "Φόρτωση"
+	"ui.pageLoader.loading": "Φόρτωση",
+	"ui.connectHelp.link": "Πώς να το διορθώσεις"
 }

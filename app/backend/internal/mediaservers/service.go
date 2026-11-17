@@ -759,6 +759,13 @@ func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error)
 		}
 		return res, &held{doctor.Mark(doctor.Timeout, nil)}
 	}
+	if c := doctor.Of(err); err != nil {
+		// Only a Test looks at what the name turned into; background calls
+		// stay quick.
+		if line := doctor.NameLine(c, m.URL, dialer(m)); line != "" {
+			err = doctor.Mark(c, errors.New(line))
+		}
+	}
 	if err != nil {
 		log.Printf("media servers: %s: test: %v", m.Name, err)
 		markError(ctx, l.Store, m.ID, err.Error())

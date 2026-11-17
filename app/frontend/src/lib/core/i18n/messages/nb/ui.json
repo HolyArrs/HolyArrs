@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Vant: {name}",
 	"ui.wikiFacts.nominated": "Nominert: {name}",
 	"ui.wikiFacts.andMore": "og {count} til",
-	"ui.pageLoader.loading": "Laster"
+	"ui.pageLoader.loading": "Laster",
+	"ui.connectHelp.link": "Slik fikser du det"
 }

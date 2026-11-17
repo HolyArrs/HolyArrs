@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Intet svar i tide. Tjek adressen, og at ingen firewall er i vejen.",
 	"server.core.nothing-answers-on-that-port-check": "Intet svarer på den port. Tjek porten, og at appen kører.",
 	"server.core.nothing-at-that-path-check-the": "Intet på den sti. Tjek stien efter porten.",
-	"server.core.category-missing-add-it-in-the-2": "Kategorien mangler: {name}. Tilføj den i download-appen, eller vælg en anden her."
+	"server.core.category-missing-add-it-in-the-2": "Kategorien mangler: {name}. Tilføj den i download-appen, eller vælg en anden her.",
+	"server.core.name-show-not-found": "{name} → ikke fundet. HolyArrs kan ikke finde dette navn. Brug IP-adressen i stedet.",
+	"server.core.name-show-refused": "{name} → {ip} → afvist på port {port}. Navnet virker, men intet svarer på den port. Tjek porten.",
+	"server.core.name-show-no-answer": "{name} → {ip} → intet svar på port {port}. Navnet virker, men intet svarer i tide. Tjek porten, og at ingen firewall er i vejen."
 }

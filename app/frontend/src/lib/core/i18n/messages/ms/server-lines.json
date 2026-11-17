@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Tiada jawapan dalam masa. Semak alamat, dan pastikan tiada tembok api yang menghalang.",
 	"server.core.nothing-answers-on-that-port-check": "Tiada apa yang menjawab pada port itu. Semak port, dan pastikan aplikasi sedang berjalan.",
 	"server.core.nothing-at-that-path-check-the": "Tiada apa-apa pada laluan itu. Semak laluan selepas port.",
-	"server.core.category-missing-add-it-in-the-2": "Kategori tiada: {name}. Tambahnya dalam aplikasi muat turun, atau pilih yang lain di sini."
+	"server.core.category-missing-add-it-in-the-2": "Kategori tiada: {name}. Tambahnya dalam aplikasi muat turun, atau pilih yang lain di sini.",
+	"server.core.name-show-not-found": "{name} → tidak ditemui. HolyArrs tidak dapat mencari nama ini. Gunakan IP sebaliknya.",
+	"server.core.name-show-refused": "{name} → {ip} → ditolak pada port {port}. Nama berfungsi, tetapi tiada apa yang menjawab pada port itu. Semak port.",
+	"server.core.name-show-no-answer": "{name} → {ip} → tiada jawapan pada port {port}. Nama berfungsi, tetapi tiada apa yang menjawab tepat pada masanya. Semak port, dan pastikan tiada tembok api yang menghalang."
 }

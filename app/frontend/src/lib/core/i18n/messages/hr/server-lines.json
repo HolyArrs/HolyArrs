@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Nema odgovora na vrijeme. Provjerite adresu i da vatrozid ne smeta.",
 	"server.core.nothing-answers-on-that-port-check": "Na tom portu ništa ne odgovara. Provjerite port i radi li aplikacija.",
 	"server.core.nothing-at-that-path-check-the": "Na toj putanji nema ničega. Provjerite putanju nakon porta.",
-	"server.core.category-missing-add-it-in-the-2": "Kategorija nedostaje: {name}. Dodajte je u aplikaciji za preuzimanje ili ovdje odaberite drugu."
+	"server.core.category-missing-add-it-in-the-2": "Kategorija nedostaje: {name}. Dodajte je u aplikaciji za preuzimanje ili ovdje odaberite drugu.",
+	"server.core.name-show-not-found": "{name} → nije pronađeno. HolyArrs ne može pronaći ovo ime. Umjesto toga koristi IP.",
+	"server.core.name-show-refused": "{name} → {ip} → odbijeno na portu {port}. Ime radi, ali na tom portu ništa ne odgovara. Provjeri port.",
+	"server.core.name-show-no-answer": "{name} → {ip} → nema odgovora na portu {port}. Ime radi, ali ništa ne odgovara na vrijeme. Provjeri port i da vatrozid ne smeta."
 }

@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Ganhou: {name}",
 	"ui.wikiFacts.nominated": "Indicado: {name}",
 	"ui.wikiFacts.andMore": "e mais {count}",
-	"ui.pageLoader.loading": "Carregando"
+	"ui.pageLoader.loading": "Carregando",
+	"ui.connectHelp.link": "Como corrigir"
 }

@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "সময়মতো উত্তর নেই। ঠিকানা দেখুন, এবং কোনো ফায়ারওয়াল বাধা দিচ্ছে কি না।",
 	"server.core.nothing-answers-on-that-port-check": "ওই পোর্টে কিছুই উত্তর দেয় না। পোর্টটি দেখুন, এবং অ্যাপটি চলছে কি না।",
 	"server.core.nothing-at-that-path-check-the": "ওই পাথে কিছু নেই। পোর্টের পরের পাথটি দেখুন।",
-	"server.core.category-missing-add-it-in-the-2": "ক্যাটাগরি নেই: {name}। ডাউনলোড অ্যাপে এটি যোগ করুন, অথবা এখানে অন্যটি বেছে নিন।"
+	"server.core.category-missing-add-it-in-the-2": "ক্যাটাগরি নেই: {name}। ডাউনলোড অ্যাপে এটি যোগ করুন, অথবা এখানে অন্যটি বেছে নিন।",
+	"server.core.name-show-not-found": "{name} → পাওয়া যায়নি. HolyArrs এই নামটি খুঁজে পাচ্ছে না। এর বদলে IP ব্যবহার করুন।",
+	"server.core.name-show-refused": "{name} → {ip} → পোর্টে প্রত্যাখ্যাত {port}. নামটি কাজ করে, কিন্তু ওই পোর্টে কেউ সাড়া দিচ্ছে না। পোর্টটি দেখুন।",
+	"server.core.name-show-no-answer": "{name} → {ip} → পোর্টে সাড়া নেই {port}. নামটি কাজ করে, কিন্তু সময়মতো কেউ সাড়া দিচ্ছে না। পোর্টটি দেখুন, আর কোনো ফায়ারওয়াল বাধা দিচ্ছে কি না।"
 }

@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Немає відповіді вчасно. Перевірте адресу і що брандмауер не заважає.",
 	"server.core.nothing-answers-on-that-port-check": "На цьому порту ніщо не відповідає. Перевірте порт і що застосунок запущено.",
 	"server.core.nothing-at-that-path-check-the": "За цим шляхом нічого немає. Перевірте шлях після порту.",
-	"server.core.category-missing-add-it-in-the-2": "Немає категорії: {name}. Додайте її в застосунку завантажень або виберіть тут іншу."
+	"server.core.category-missing-add-it-in-the-2": "Немає категорії: {name}. Додайте її в застосунку завантажень або виберіть тут іншу.",
+	"server.core.name-show-not-found": "{name} → не знайдено. HolyArrs не знаходить це ім'я. Вкажіть IP-адресу.",
+	"server.core.name-show-refused": "{name} → {ip} → відмова на порту {port}. Ім'я працює, але на цьому порту ніхто не відповідає. Перевірте порт.",
+	"server.core.name-show-no-answer": "{name} → {ip} → немає відповіді на порту {port}. Ім'я працює, але ніхто не відповідає вчасно. Перевірте порт і чи не заважає брандмауер."
 }

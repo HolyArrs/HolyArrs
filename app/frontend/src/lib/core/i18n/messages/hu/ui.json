@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Díj: {name}",
 	"ui.wikiFacts.nominated": "Jelölés: {name}",
 	"ui.wikiFacts.andMore": "és még {count}",
-	"ui.pageLoader.loading": "Betöltés"
+	"ui.pageLoader.loading": "Betöltés",
+	"ui.connectHelp.link": "Hogyan javítsd"
 }

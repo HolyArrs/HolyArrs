@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Récompensé : {name}",
 	"ui.wikiFacts.nominated": "Nommé : {name}",
 	"ui.wikiFacts.andMore": "et {count} de plus",
-	"ui.pageLoader.loading": "Chargement"
+	"ui.pageLoader.loading": "Chargement",
+	"ui.connectHelp.link": "Comment corriger"
 }

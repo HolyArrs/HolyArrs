@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Osvojio: {name}",
 	"ui.wikiFacts.nominated": "Nominiran: {name}",
 	"ui.wikiFacts.andMore": "i još {count}",
-	"ui.pageLoader.loading": "Učitavanje"
+	"ui.pageLoader.loading": "Učitavanje",
+	"ui.connectHelp.link": "Kako to popraviti"
 }

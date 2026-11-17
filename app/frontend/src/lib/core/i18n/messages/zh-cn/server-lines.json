@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "未及时回应。请检查地址，以及没有防火墙阻挡。",
 	"server.core.nothing-answers-on-that-port-check": "该端口上没有任何回应。请检查端口，以及应用是否在运行。",
 	"server.core.nothing-at-that-path-check-the": "该路径下没有内容。请检查端口后的路径。",
-	"server.core.category-missing-add-it-in-the-2": "缺少分类: {name}。请在下载应用中添加，或在这里选择另一个。"
+	"server.core.category-missing-add-it-in-the-2": "缺少分类: {name}。请在下载应用中添加，或在这里选择另一个。",
+	"server.core.name-show-not-found": "{name} → 未找到. HolyArrs 找不到这个名称。请改用 IP。",
+	"server.core.name-show-refused": "{name} → {ip} → 端口拒绝 {port}. 名称可用，但该端口没有任何回应。请检查端口。",
+	"server.core.name-show-no-answer": "{name} → {ip} → 端口无回应 {port}. 名称可用，但没有及时回应。请检查端口，并确认没有防火墙阻挡。"
 }

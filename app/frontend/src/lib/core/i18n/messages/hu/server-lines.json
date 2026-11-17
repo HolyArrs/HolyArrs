@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Nincs válasz időben. Ellenőrizd a címet, és hogy tűzfal ne álljon útban.",
 	"server.core.nothing-answers-on-that-port-check": "Ezen a porton semmi nem válaszol. Ellenőrizd a portot, és hogy fut-e az alkalmazás.",
 	"server.core.nothing-at-that-path-check-the": "Ezen az útvonalon nincs semmi. Ellenőrizd a port utáni útvonalat.",
-	"server.core.category-missing-add-it-in-the-2": "Hiányzik a kategória: {name}. Add hozzá a letöltőalkalmazásban, vagy válassz itt egy másikat."
+	"server.core.category-missing-add-it-in-the-2": "Hiányzik a kategória: {name}. Add hozzá a letöltőalkalmazásban, vagy válassz itt egy másikat.",
+	"server.core.name-show-not-found": "{name} → nem található. A HolyArrs nem találja ezt a nevet. Használd inkább az IP-címet.",
+	"server.core.name-show-refused": "{name} → {ip} → elutasítva a porton {port}. A név működik, de azon a porton semmi nem válaszol. Ellenőrizd a portot.",
+	"server.core.name-show-no-answer": "{name} → {ip} → nincs válasz a porton {port}. A név működik, de semmi nem válaszol időben. Ellenőrizd a portot, és hogy tűzfal nem áll-e útban."
 }

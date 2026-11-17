@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Không có trả lời kịp thời. Kiểm tra địa chỉ, và không có tường lửa chặn.",
 	"server.core.nothing-answers-on-that-port-check": "Không có gì trả lời ở cổng đó. Kiểm tra cổng, và ứng dụng đang chạy.",
 	"server.core.nothing-at-that-path-check-the": "Không có gì ở đường dẫn đó. Kiểm tra đường dẫn sau cổng.",
-	"server.core.category-missing-add-it-in-the-2": "Thiếu danh mục: {name}. Thêm danh mục trong ứng dụng tải xuống, hoặc chọn danh mục khác ở đây."
+	"server.core.category-missing-add-it-in-the-2": "Thiếu danh mục: {name}. Thêm danh mục trong ứng dụng tải xuống, hoặc chọn danh mục khác ở đây.",
+	"server.core.name-show-not-found": "{name} → không tìm thấy. HolyArrs không tìm thấy tên này. Hãy dùng IP thay thế.",
+	"server.core.name-show-refused": "{name} → {ip} → bị từ chối ở cổng {port}. Tên hoạt động, nhưng không có gì trả lời ở cổng đó. Kiểm tra cổng.",
+	"server.core.name-show-no-answer": "{name} → {ip} → không trả lời ở cổng {port}. Tên hoạt động, nhưng không có gì trả lời kịp. Kiểm tra cổng và xem có tường lửa nào chặn không."
 }

@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "זכה: {name}",
 	"ui.wikiFacts.nominated": "מועמד: {name}",
 	"ui.wikiFacts.andMore": "ועוד {count}",
-	"ui.pageLoader.loading": "טוען"
+	"ui.pageLoader.loading": "טוען",
+	"ui.connectHelp.link": "איך לתקן"
 }

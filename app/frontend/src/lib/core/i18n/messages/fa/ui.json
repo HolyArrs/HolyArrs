@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "برنده: {name}",
 	"ui.wikiFacts.nominated": "نامزد: {name}",
 	"ui.wikiFacts.andMore": "و {count} مورد دیگر",
-	"ui.pageLoader.loading": "در حال بارگیری"
+	"ui.pageLoader.loading": "در حال بارگیری",
+	"ui.connectHelp.link": "چطور درستش کنید"
 }

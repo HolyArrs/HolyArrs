@@ -12,6 +12,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
+	import ConnectHelp from '#lib/ui/ConnectHelp.svelte';
 	import { ConnectBridge } from '#lib/sources/index.ts';
 	import { partOff } from '#lib/mediafiles/index.ts';
 	import { healthTone, healthWord, pausedUntil, SourceCheck, emptyForm, formBody, formFrom, ms, uses, builtInSites, pickSite, type SourceForm } from '#lib/sources/index.ts';
@@ -311,7 +312,7 @@
 				<p class="note" class:bad-text={s.health.state !== 'working' && s.health.state !== 'disabled'} class:sr-only={s.health.state === 'working' || s.health.state === 'disabled' || s.state === 'paused'} data-testid="source-text">{serverWords(s.health.text)}{until(s.health)}</p>
 				{#if s.health.block === 'bot_check' || results[s.id]?.text.includes("site's bot check")}<p class="note"><a href="#connect-bridge" data-testid="source-bridge-link">{t('settings.sources.bridge')}</a></p>{/if}
 				{#if results[s.id]}
-					<div class="testline note" data-testid="source-test"><TestTag ok={results[s.id].ok} text={results[s.id].text} hover={results[s.id].hover} extra={results[s.id].extra} />{#if !results[s.id].ok}<span class="small bad-text">{serverWords(results[s.id].text)}</span>{/if}</div>
+					<div class="testline note" data-testid="source-test"><TestTag ok={results[s.id].ok} text={results[s.id].text} hover={results[s.id].hover} extra={results[s.id].extra} />{#if !results[s.id].ok}<span class="small bad-text">{serverWords(results[s.id].text)}<ConnectHelp text={results[s.id].text} /></span>{/if}</div>
 				{/if}
 			</li>
 		{/each}

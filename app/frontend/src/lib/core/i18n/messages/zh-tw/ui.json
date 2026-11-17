@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "獲獎：{name}",
 	"ui.wikiFacts.nominated": "提名：{name}",
 	"ui.wikiFacts.andMore": "另有 {count} 項",
-	"ui.pageLoader.loading": "載入中"
+	"ui.pageLoader.loading": "載入中",
+	"ui.connectHelp.link": "如何修正"
 }

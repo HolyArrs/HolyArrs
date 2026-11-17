@@ -391,11 +391,11 @@ func Explain(err error) string {
 // ExplainVia is Explain for one Source: when it searches through Prowlarr or
 // Jackett and that app does not answer, it names that app and what to do.
 func ExplainVia(sourceURL string, err error, dial doctor.Dial) string {
-	return explainWith(sourceURL, err, CauseAt(err, sourceURL, dial))
+	return explainWith(sourceURL, err, CauseAt(err, sourceURL, dial), dial)
 }
 
 // explainWith is ExplainVia with the cause already worked out.
-func explainWith(sourceURL string, err error, c doctor.Cause) string {
+func explainWith(sourceURL string, err error, c doctor.Cause, dial doctor.Dial) string {
 	text := Explain(err)
 	if line := doctor.Line(c); line != "" {
 		text = line
@@ -408,6 +408,9 @@ func explainWith(sourceURL string, err error, c doctor.Cause) string {
 	}
 	via := bridgeOf(sourceURL)
 	if via == "" {
+		if line := doctor.NameLine(c, sourceURL, dial); line != "" {
+			return line
+		}
 		return text
 	}
 	return via + " isn't answering. Sources brought in from " + via + " search through it, so keep " + via + " running, or change the address."

@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Walang sagot sa takdang oras. Tingnan ang address, at na walang firewall na humaharang.",
 	"server.core.nothing-answers-on-that-port-check": "Walang sumasagot sa port na iyon. Tingnan ang port, at na tumatakbo ang app.",
 	"server.core.nothing-at-that-path-check-the": "Walang laman ang path na iyon. Tingnan ang path pagkatapos ng port.",
-	"server.core.category-missing-add-it-in-the-2": "Walang ganitong category: {name}. Idagdag ito sa download app, o pumili ng iba rito."
+	"server.core.category-missing-add-it-in-the-2": "Walang ganitong category: {name}. Idagdag ito sa download app, o pumili ng iba rito.",
+	"server.core.name-show-not-found": "{name} → hindi nahanap. Hindi mahanap ng HolyArrs ang pangalang ito. Gamitin na lang ang IP.",
+	"server.core.name-show-refused": "{name} → {ip} → tinanggihan sa port {port}. Gumagana ang pangalan, pero walang sumasagot sa port na iyon. Tingnan ang port.",
+	"server.core.name-show-no-answer": "{name} → {ip} → walang sagot sa port {port}. Gumagana ang pangalan, pero walang sumasagot sa oras. Tingnan ang port, at na walang firewall na humaharang."
 }

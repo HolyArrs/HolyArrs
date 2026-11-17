@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Перемога: {name}",
 	"ui.wikiFacts.nominated": "Номінація: {name}",
 	"ui.wikiFacts.andMore": "і ще {count}",
-	"ui.pageLoader.loading": "Завантаження"
+	"ui.pageLoader.loading": "Завантаження",
+	"ui.connectHelp.link": "Як виправити"
 }

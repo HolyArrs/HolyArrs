@@ -1355,5 +1355,8 @@
 	"server.core.no-answer-in-time-check-the": "Tidak ada jawaban tepat waktu. Periksa alamat, dan pastikan tidak ada firewall yang menghalangi.",
 	"server.core.nothing-answers-on-that-port-check": "Tidak ada yang menjawab di port itu. Periksa port, dan pastikan aplikasinya berjalan.",
 	"server.core.nothing-at-that-path-check-the": "Tidak ada apa-apa di path itu. Periksa path setelah port.",
-	"server.core.category-missing-add-it-in-the-2": "Kategori tidak ada: {name}. Tambahkan di aplikasi unduhan, atau pilih yang lain di sini."
+	"server.core.category-missing-add-it-in-the-2": "Kategori tidak ada: {name}. Tambahkan di aplikasi unduhan, atau pilih yang lain di sini.",
+	"server.core.name-show-not-found": "{name} → tidak ditemukan. HolyArrs tidak bisa menemukan nama ini. Pakai IP saja.",
+	"server.core.name-show-refused": "{name} → {ip} → ditolak di port {port}. Namanya berfungsi, tapi tidak ada yang menjawab di port itu. Periksa port-nya.",
+	"server.core.name-show-no-answer": "{name} → {ip} → tidak ada jawaban di port {port}. Namanya berfungsi, tapi tidak ada yang menjawab tepat waktu. Periksa port-nya, dan pastikan tidak ada firewall yang menghalangi."
 }

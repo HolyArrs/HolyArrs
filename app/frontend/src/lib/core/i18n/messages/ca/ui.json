@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Guanyador: {name}",
 	"ui.wikiFacts.nominated": "Nominat: {name}",
 	"ui.wikiFacts.andMore": "i {count} més",
-	"ui.pageLoader.loading": "Carregant"
+	"ui.pageLoader.loading": "Carregant",
+	"ui.connectHelp.link": "Com arreglar-ho"
 }
