@@ -59,7 +59,7 @@ export function tone(t: TitleView): 'full' | 'gap' | 'none' | 'later' {
 
 function movieOut(t: TitleView): string {
 	const now = Date.now();
-	if (t.digital_date) return Date.parse(t.digital_date) <= now ? tr('mediafiles.view.out', { date: date(t.digital_date) }) : tr('mediafiles.view.homeRelease', { date: date(t.digital_date) });
+	if (t.digital_date) return Date.parse(t.digital_date) <= now ? date(t.digital_date) : tr('mediafiles.view.homeRelease', { date: date(t.digital_date) });
 	if (t.cinema_date) return Date.parse(t.cinema_date) <= now ? tr('mediafiles.view.inCinemas', { date: date(t.cinema_date) }) : tr('mediafiles.view.cinemas', { date: date(t.cinema_date) });
 	return date(releaseDate(t)) || tr('mediafiles.view.notKnown');
 }
