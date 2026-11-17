@@ -135,7 +135,8 @@
 		return () => clearTimeout(t);
 	});
 	const waiting = $derived(!!searchField.term.trim() && (order.some((t) => groups[t] === null) || busy || lib === null) && (freshTotal === 0 || !settleCap));
-	const holding = $derived(waiting && !!stale);
+	// Old answers stay up at most 2.5 s: a slow group then shows the skeleton (and later the empty state), never the previous words' results.
+	const holding = $derived(waiting && !!stale && !settleCap);
 	// A fresh search keeps the page you were on until its answer is slow: the skeleton shows once the request has been out 200 ms (the 250 ms typing pause does not count), so a quick answer swaps straight in.
 	let slow = $state(false);
 	$effect(() => {

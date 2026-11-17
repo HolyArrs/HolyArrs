@@ -237,7 +237,8 @@
 			showBar();
 			if (!path.startsWith('/search')) rememberReturn();
 			const shown = focusField(true);
-			if (!path.startsWith('/search')) void goto(to(shown && searchField.term.trim() ? `/search?q=${encodeURIComponent(searchField.term.trim())}` : '/search'), { reset: !shown });
+			// A key press means a keyboard is there: when no field showed yet (phones), focus the Search page's field once it opens, so typed words are not lost.
+			if (!path.startsWith('/search')) void goto(to(shown && searchField.term.trim() ? `/search?q=${encodeURIComponent(searchField.term.trim())}` : '/search'), { reset: !shown }).then(() => { if (!shown) void tick().then(() => focusField()); });
 		} else if (e.key === 'Escape' && overlayOpen) {
 			void closeOverlay();
 		}

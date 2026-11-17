@@ -47,8 +47,8 @@
 	const typeOptions = $derived(
 		([
 			{ value: 'all', label: t('discover.popular.all'), icon: 'grid' },
-			{ value: 'shows', label: t('discover.popular.tvShows'), icon: 'tv' },
 			{ value: 'movies', label: t('discover.popular.movies'), icon: 'film' },
+			{ value: 'shows', label: t('discover.popular.tvShows'), icon: 'tv' },
 			{ value: 'music', label: t('discover.popular.music'), icon: 'music' }
 		] as { value: NewType; label: string; icon: IconName }[]).filter((o) => o.value !== 'music' || partOn('music'))
 	);
