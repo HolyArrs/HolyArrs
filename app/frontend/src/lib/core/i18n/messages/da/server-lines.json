@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "Denne Version har allerede en kopi, der er god nok. Den nye erstatter den",
 	"server.requests.removed-the-request-for": "{name} fjernede anmodningen om {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokode for denne person, så vedkommendes ønskeliste læses ikke.",
-<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs læser MDBList-lister. Tilføj den igen under Indstillinger > Eksterne lister",
 	"server.requests.send-key-mdblist-api-key-or": "send {\"key\": \"<MDBList-API-nøgle>\"}, eller {\"key\": \"\"} for at fjerne den",
 	"server.mediaservers.no-such-title": "den titel findes ikke",
@@ -1380,8 +1379,6 @@
 	"server.metadata.your-router-or-vpn-is-sending": "Din router eller VPN sender HolyArrs til en falsk adresse (198.18.x.x). Det kommer som regel fra Clash eller Surge. Tilføj {host} til dens direkte liste.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "send {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "slå Sæt etiket på ønskede titler til først",
-	"server.mediaservers.a-label-needs-1-to-64": "en etiket skal have 1 til 64 tegn"
-=======
+	"server.mediaservers.a-label-needs-1-to-64": "en etiket skal have 1 til 64 tegn",
 	"server.downloads.the-release-link-went-to-a": "Udgivelsens link gik til en anden adresse på dit hjemmenetværk, og det er ikke tilladt: kun Kildens egen adresse må nås der"
->>>>>>> fix/422-423-nzbget
 }

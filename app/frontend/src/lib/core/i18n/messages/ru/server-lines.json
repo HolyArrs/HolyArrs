@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "У этого варианта уже есть достаточно хорошая копия; новая её заменит",
 	"server.requests.removed-the-request-for": "{name} удалил(а) запрос на {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex не передал код аккаунта этого человека, поэтому его список просмотра не читается.",
-<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs читает списки MDBList; добавьте его заново в разделе «Настройки > Внешние списки»",
 	"server.requests.send-key-mdblist-api-key-or": "отправьте {\"key\": \"<ключ API MDBList>\"} или {\"key\": \"\"}, чтобы удалить его",
 	"server.mediaservers.no-such-title": "такого тайтла нет",
@@ -1380,8 +1379,6 @@
 	"server.metadata.your-router-or-vpn-is-sending": "Ваш роутер или VPN направляет HolyArrs на поддельный адрес (198.18.x.x). Обычно это делает Clash или Surge. Добавьте {host} в его список прямых подключений.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "отправьте {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "сначала включите Добавлять метку запрошенным тайтлам",
-	"server.mediaservers.a-label-needs-1-to-64": "метка должна быть от 1 до 64 символов"
-=======
+	"server.mediaservers.a-label-needs-1-to-64": "метка должна быть от 1 до 64 символов",
 	"server.downloads.the-release-link-went-to-a": "ссылка релиза ушла на другой адрес в твоей домашней сети, а это не разрешено: там можно обращаться только к собственному адресу источника"
->>>>>>> fix/422-423-nzbget
 }

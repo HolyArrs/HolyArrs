@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "Aquesta Versió ja té una còpia prou bona; la nova la substituirà",
 	"server.requests.removed-the-request-for": "{name} ha eliminat la sol·licitud de {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex no ha donat cap codi de compte d'aquesta persona, així que no se'n llegeix la llista de seguiment.",
-<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs llegeix llistes de MDBList; torna-la a afegir a Configuració > Llistes externes",
 	"server.requests.send-key-mdblist-api-key-or": "envia {\"key\": \"<clau d'API de MDBList>\"}, o {\"key\": \"\"} per eliminar-la",
 	"server.mediaservers.no-such-title": "aquest títol no existeix",
@@ -1380,8 +1379,6 @@
 	"server.metadata.your-router-or-vpn-is-sending": "El teu router o VPN està enviant HolyArrs a una adreça falsa (198.18.x.x). Normalment ve de Clash o Surge. Afegeix {host} a la seva llista directa.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "envia {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "primer activa Etiqueta els títols demanats",
-	"server.mediaservers.a-label-needs-1-to-64": "una etiqueta necessita d'1 a 64 caràcters"
-=======
+	"server.mediaservers.a-label-needs-1-to-64": "una etiqueta necessita d'1 a 64 caràcters",
 	"server.downloads.the-release-link-went-to-a": "l'enllaç del Llançament ha anat a una altra adreça de la teva xarxa domèstica, cosa que no està permesa: només s'hi pot accedir a l'adreça pròpia de la Font"
->>>>>>> fix/422-423-nzbget
 }

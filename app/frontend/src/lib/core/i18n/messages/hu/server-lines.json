@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "Ennek a Változatnak már van elég jó másolata; az új lecseréli",
 	"server.requests.removed-the-request-for": "{name} eltávolította a kérést: {a}",
 	"server.requests.plex-gave-no-account-code-for": "A Plex nem adott fiókkódot ehhez a személyhez, ezért a figyelőlistáját nem olvassa.",
-<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "A HolyArrs beolvassa az MDBList-listákat; adja hozzá újra a Beállítások > Külső listák alatt",
 	"server.requests.send-key-mdblist-api-key-or": "küldje: {\"key\": \"<MDBList API-kulcs>\"}, vagy {\"key\": \"\"} az eltávolításához",
 	"server.mediaservers.no-such-title": "nincs ilyen cím",
@@ -1380,8 +1379,6 @@
 	"server.metadata.your-router-or-vpn-is-sending": "A routered vagy a VPN hamis címre (198.18.x.x) küldi a HolyArrst. Ez általában a Clash vagy a Surge miatt van. Add hozzá a(z) {host} címet a közvetlen listájához.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "küldd ezt: {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "előbb kapcsold be a Kért címek felcímkézése opciót",
-	"server.mediaservers.a-label-needs-1-to-64": "a címke 1–64 karakter lehet"
-=======
+	"server.mediaservers.a-label-needs-1-to-64": "a címke 1–64 karakter lehet",
 	"server.downloads.the-release-link-went-to-a": "a release hivatkozása az otthoni hálózatod egy másik címére vezetett, ez nem megengedett: ott csak a Forrás saját címe érhető el"
->>>>>>> fix/422-423-nzbget
 }

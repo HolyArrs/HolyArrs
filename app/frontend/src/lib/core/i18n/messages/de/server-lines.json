@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "Diese Variante hat schon eine gut genügende Kopie; die neue ersetzt sie",
 	"server.requests.removed-the-request-for": "{name} hat die Anfrage für {a} entfernt",
 	"server.requests.plex-gave-no-account-code-for": "Plex hat für diese Person keinen Kontocode geliefert, deshalb wird ihre Merkliste nicht gelesen.",
-<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs liest MDBList-Listen; füge sie unter Einstellungen > Externe Listen noch einmal hinzu",
 	"server.requests.send-key-mdblist-api-key-or": "sende {\"key\": \"<MDBList-API-Schlüssel>\"}, oder {\"key\": \"\"}, um ihn zu entfernen",
 	"server.mediaservers.no-such-title": "diesen Titel gibt es nicht",
@@ -1380,8 +1379,6 @@
 	"server.metadata.your-router-or-vpn-is-sending": "Dein Router oder VPN schickt HolyArrs an eine falsche Adresse (198.18.x.x). Das kommt meist von Clash oder Surge. Trage {host} in dessen Direkt-Liste ein.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "sende {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "schalte zuerst Angefragte Titel mit Label versehen ein",
-	"server.mediaservers.a-label-needs-1-to-64": "ein Label braucht 1 bis 64 Zeichen"
-=======
+	"server.mediaservers.a-label-needs-1-to-64": "ein Label braucht 1 bis 64 Zeichen",
 	"server.downloads.the-release-link-went-to-a": "der Link des Releases ging zu einer anderen Adresse in deinem Heimnetz, und das ist nicht erlaubt: dort darf nur die eigene Adresse der Quelle erreicht werden"
->>>>>>> fix/422-423-nzbget
 }

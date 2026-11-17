@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "Esta Versão já tem uma cópia boa o bastante; a nova vai substituí-la",
 	"server.requests.removed-the-request-for": "{name} removeu o pedido de {a}",
 	"server.requests.plex-gave-no-account-code-for": "O Plex não deu nenhum código de conta para esta pessoa, por isso a lista de interesse dela não é lida.",
-<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "O HolyArrs lê listas do MDBList; adicione-a novamente em Definições > Listas externas",
 	"server.requests.send-key-mdblist-api-key-or": "envie {\"key\": \"<chave de API do MDBList>\"}, ou {\"key\": \"\"} para a remover",
 	"server.mediaservers.no-such-title": "esse título não existe",
@@ -1380,8 +1379,6 @@
 	"server.metadata.your-router-or-vpn-is-sending": "O seu router ou VPN está a enviar o HolyArrs para um endereço falso (198.18.x.x). Isto costuma vir do Clash ou do Surge. Adicione {host} à lista direta dele.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "envie {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "ative primeiro Etiquetar títulos pedidos",
-	"server.mediaservers.a-label-needs-1-to-64": "uma etiqueta precisa de 1 a 64 caracteres"
-=======
+	"server.mediaservers.a-label-needs-1-to-64": "uma etiqueta precisa de 1 a 64 caracteres",
 	"server.downloads.the-release-link-went-to-a": "a ligação do lançamento foi para outro endereço da tua rede doméstica, o que não é permitido: aí só se pode aceder ao endereço da própria Fonte"
->>>>>>> fix/422-423-nzbget
 }

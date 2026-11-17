@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "Ова Верзија већ има довољно добру копију; нова ће је заменити",
 	"server.requests.removed-the-request-for": "{name} je uklonio/la zahtev za {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru naloga za ovu osobu, pa se njena lista za gledanje ne čita.",
-<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs чита MDBList листе; додај је поново у Подешавања > Спољне листе",
 	"server.requests.send-key-mdblist-api-key-or": "пошаљи {\"key\": \"<MDBList API кључ>\"}, или {\"key\": \"\"} да га уклониш",
 	"server.mediaservers.no-such-title": "такав наслов не постоји",
@@ -1380,8 +1379,6 @@
 	"server.metadata.your-router-or-vpn-is-sending": "Ваш рутер или VPN шаље HolyArrs на лажну адресу (198.18.x.x). То обично долази од Clash-а или Surge-а. Додајте {host} на његову листу директних веза.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "пошаљите {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "прво укључите Означи тражене наслове",
-	"server.mediaservers.a-label-needs-1-to-64": "ознака мора имати од 1 до 64 знака"
-=======
+	"server.mediaservers.a-label-needs-1-to-64": "ознака мора имати од 1 до 64 знака",
 	"server.downloads.the-release-link-went-to-a": "веза Издања отишла је на другу адресу у твојој кућној мрежи, што није дозвољено: тамо се сме доћи само до сопствене адресе Извора"
->>>>>>> fix/422-423-nzbget
 }

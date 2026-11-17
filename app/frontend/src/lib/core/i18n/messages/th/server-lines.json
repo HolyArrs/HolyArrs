@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "เวอร์ชันนี้มีสำเนาที่ดีพอแล้ว ตัวใหม่จะมาแทนที่",
 	"server.requests.removed-the-request-for": "{name} ลบคำขอ {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex ไม่ได้ให้รหัสบัญชีของคนนี้ จึงไม่อ่านรายการที่อยากดูของเขา",
-<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs อ่านรายการ MDBList เพิ่มอีกครั้งในการตั้งค่า > รายการภายนอก",
 	"server.requests.send-key-mdblist-api-key-or": "ส่ง {\"key\": \"<คีย์ API ของ MDBList>\"} หรือ {\"key\": \"\"} เพื่อลบ",
 	"server.mediaservers.no-such-title": "ไม่มีชื่อเรื่องนี้",
@@ -1380,8 +1379,6 @@
 	"server.metadata.your-router-or-vpn-is-sending": "เราเตอร์หรือ VPN ของคุณกำลังส่ง HolyArrs ไปยังที่อยู่ปลอม (198.18.x.x) ส่วนใหญ่มาจาก Clash หรือ Surge ให้เพิ่ม {host} ในรายการเชื่อมต่อตรงของมัน",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "ส่ง {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "เปิด ติดป้ายกำกับเรื่องที่ขอ ก่อน",
-	"server.mediaservers.a-label-needs-1-to-64": "ป้ายกำกับต้องมี 1 ถึง 64 ตัวอักษร"
-=======
+	"server.mediaservers.a-label-needs-1-to-64": "ป้ายกำกับต้องมี 1 ถึง 64 ตัวอักษร",
 	"server.downloads.the-release-link-went-to-a": "ลิงก์ของรีลีสไปยังที่อยู่อื่นในเครือข่ายบ้านของคุณ ซึ่งไม่อนุญาต ที่นั่นเข้าถึงได้เฉพาะที่อยู่ของแหล่งที่มาเองเท่านั้น"
->>>>>>> fix/422-423-nzbget
 }

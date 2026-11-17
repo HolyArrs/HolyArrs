@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "May sapat nang magandang kopya ang Bersyong ito; papalitan ito ng bago",
 	"server.requests.removed-the-request-for": "Inalis ni {name} ang kahilingan para sa {a}",
 	"server.requests.plex-gave-no-account-code-for": "Walang ibinigay na account code ang Plex para sa taong ito, kaya hindi binabasa ang watchlist niya.",
-<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "Binabasa ng HolyArrs ang mga listahan ng MDBList; idagdag ulit sa Settings > Mga Panlabas na listahan",
 	"server.requests.send-key-mdblist-api-key-or": "ipadala ang {\"key\": \"<MDBList API key>\"}, o {\"key\": \"\"} para alisin ito",
 	"server.mediaservers.no-such-title": "walang ganoong title",
@@ -1380,8 +1379,6 @@
 	"server.metadata.your-router-or-vpn-is-sending": "Ipinapadala ng router o VPN mo ang HolyArrs sa isang pekeng address (198.18.x.x). Kadalasan galing ito sa Clash o Surge. Idagdag ang {host} sa direct list nito.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "ipadala ang {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "i-on muna ang Lagyan ng label ang mga hiniling na title",
-	"server.mediaservers.a-label-needs-1-to-64": "kailangan ng label ng 1 hanggang 64 na character"
-=======
+	"server.mediaservers.a-label-needs-1-to-64": "kailangan ng label ng 1 hanggang 64 na character",
 	"server.downloads.the-release-link-went-to-a": "napunta ang link ng Release sa ibang address sa home network mo, na hindi pinapayagan: ang sariling address lang ng Source ang pwedeng abutin doon"
->>>>>>> fix/422-423-nzbget
 }

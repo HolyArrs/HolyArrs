@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "این نسخه از قبل کپی به‌اندازه کافی خوبی دارد؛ کپی تازه جایش را می‌گیرد",
 	"server.requests.removed-the-request-for": "{name} درخواست {a} را حذف کرد",
 	"server.requests.plex-gave-no-account-code-for": "Plex کد حساب این شخص را نداد، بنابراین فهرست تماشای او خوانده نمی‌شود.",
-<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs فهرست‌های MDBList را می‌خواند؛ دوباره زیر تنظیمات > فهرست‌های بیرونی اضافه‌اش کن",
 	"server.requests.send-key-mdblist-api-key-or": "بفرست {\"key\": \"<کلید API از MDBList>\"}، یا {\"key\": \"\"} تا حذف شود",
 	"server.mediaservers.no-such-title": "چنین عنوانی وجود ندارد",
@@ -1380,8 +1379,6 @@
 	"server.metadata.your-router-or-vpn-is-sending": "روتر یا VPN شما HolyArrs را به یک نشانی جعلی (198.18.x.x) می‌فرستد. معمولاً این کار Clash یا Surge است. {host} را به فهرست اتصال مستقیم آن اضافه کنید.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "{\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false} را بفرستید",
 	"server.mediaservers.turn-on-label-requested-titles-first": "اول برچسب زدن به عنوان‌های درخواستی را روشن کنید",
-	"server.mediaservers.a-label-needs-1-to-64": "برچسب باید ۱ تا ۶۴ نویسه باشد"
-=======
+	"server.mediaservers.a-label-needs-1-to-64": "برچسب باید ۱ تا ۶۴ نویسه باشد",
 	"server.downloads.the-release-link-went-to-a": "پیوند ریلیز به نشانی دیگری در شبکهٔ خانگی تو رفت، که مجاز نیست: آنجا فقط به نشانی خود منبع می‌توان رسید"
->>>>>>> fix/422-423-nzbget
 }

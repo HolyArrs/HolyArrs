@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "Tato Verze už má dost dobrou kopii; nová ji nahradí",
 	"server.requests.removed-the-request-for": "{name} odebral(a) žádost o {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex u této osoby nedal kód účtu, proto se její seznam ke zhlédnutí nečte.",
-<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs čte seznamy MDBList; přidejte ho znovu v Nastavení > Externí seznamy",
 	"server.requests.send-key-mdblist-api-key-or": "pošlete {\"key\": \"<klíč API MDBList>\"}, nebo {\"key\": \"\"} pro jeho odebrání",
 	"server.mediaservers.no-such-title": "takový titul neexistuje",
@@ -1380,8 +1379,6 @@
 	"server.metadata.your-router-or-vpn-is-sending": "Váš router nebo VPN posílá HolyArrs na falešnou adresu (198.18.x.x). Obvykle to způsobuje Clash nebo Surge. Přidejte {host} do jeho seznamu přímých připojení.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "pošlete {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "nejprve zapněte Označit požadované tituly štítkem",
-	"server.mediaservers.a-label-needs-1-to-64": "štítek musí mít 1 až 64 znaků"
-=======
+	"server.mediaservers.a-label-needs-1-to-64": "štítek musí mít 1 až 64 znaků",
 	"server.downloads.the-release-link-went-to-a": "odkaz release vedl na jinou adresu v tvé domácí síti, což není dovoleno: smí se tam jen na vlastní adresu Zdroje"
->>>>>>> fix/422-423-nzbget
 }

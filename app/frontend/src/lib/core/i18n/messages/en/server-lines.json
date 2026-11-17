@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "this Version already has a good enough copy; the new one will replace it",
 	"server.requests.removed-the-request-for": "{name} removed the request for {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex gave no account code for this person, so their watchlist is not read.",
-<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs reads MDBList lists; add it again under Settings > Outside lists",
 	"server.requests.send-key-mdblist-api-key-or": "send {\"key\": \"<MDBList API key>\"}, or {\"key\": \"\"} to remove it",
 	"server.mediaservers.no-such-title": "no such title",
@@ -1380,8 +1379,6 @@
 	"server.metadata.your-router-or-vpn-is-sending": "Your router or VPN is sending HolyArrs to a fake address (198.18.x.x). This usually comes from Clash or Surge. Add {host} to its direct list.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "send {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "turn on Label requested titles first",
-	"server.mediaservers.a-label-needs-1-to-64": "a label needs 1 to 64 characters"
-=======
+	"server.mediaservers.a-label-needs-1-to-64": "a label needs 1 to 64 characters",
 	"server.downloads.the-release-link-went-to-a": "the Release link went to a different address on your home network, which is not allowed: only the Source's own address may be reached there"
->>>>>>> fix/422-423-nzbget
 }

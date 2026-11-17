@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "Šai Versijai jau ir pietiekami laba kopija; jaunā to aizstās",
 	"server.requests.removed-the-request-for": "{name} noņēma pieprasījumu: {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex nedeva šīs personas konta kodu, tāpēc viņas skatīšanās saraksts netiek lasīts.",
-<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs lasa MDBList sarakstus; pievieno to vēlreiz sadaļā Iestatījumi > Ārējie saraksti",
 	"server.requests.send-key-mdblist-api-key-or": "sūti {\"key\": \"<MDBList API atslēga>\"}, vai {\"key\": \"\"}, lai to noņemtu",
 	"server.mediaservers.no-such-title": "tāda nosaukuma nav",
@@ -1380,8 +1379,6 @@
 	"server.metadata.your-router-or-vpn-is-sending": "Jūsu maršrutētājs vai VPN sūta HolyArrs uz viltotu adresi (198.18.x.x). Parasti to dara Clash vai Surge. Pievienojiet {host} tā tiešā savienojuma sarakstam.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "nosūtiet {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "vispirms ieslēdziet Pievienot birku pieprasītajiem nosaukumiem",
-	"server.mediaservers.a-label-needs-1-to-64": "birkai jābūt no 1 līdz 64 rakstzīmēm"
-=======
+	"server.mediaservers.a-label-needs-1-to-64": "birkai jābūt no 1 līdz 64 rakstzīmēm",
 	"server.downloads.the-release-link-went-to-a": "Izlaiduma saite aizveda uz citu adresi tavā mājas tīklā, un tas nav atļauts: tur drīkst piekļūt tikai paša Avota adresei"
->>>>>>> fix/422-423-nzbget
 }

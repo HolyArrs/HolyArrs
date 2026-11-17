@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "इस वर्ज़न की काफ़ी अच्छी कॉपी पहले से है; नई कॉपी उसकी जगह ले लेगी",
 	"server.requests.removed-the-request-for": "{name} ने {a} का अनुरोध हटाया",
 	"server.requests.plex-gave-no-account-code-for": "Plex ने इस व्यक्ति के लिए खाता कोड नहीं दिया, इसलिए उनकी वॉचलिस्ट नहीं पढ़ी जा रही है।",
-<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs MDBList सूचियां पढ़ता है; इसे सेटिंग > बाहरी सूचियां में फिर जोड़ें",
 	"server.requests.send-key-mdblist-api-key-or": "भेजें {\"key\": \"<MDBList API कुंजी>\"}, या इसे हटाने के लिए {\"key\": \"\"}",
 	"server.mediaservers.no-such-title": "ऐसा कोई टाइटल नहीं है",
@@ -1380,8 +1379,6 @@
 	"server.metadata.your-router-or-vpn-is-sending": "आपका राउटर या VPN HolyArrs को एक नकली पते (198.18.x.x) पर भेज रहा है। यह आमतौर पर Clash या Surge से होता है। {host} को उसकी डायरेक्ट सूची में जोड़ें।",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "{\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false} भेजें",
 	"server.mediaservers.turn-on-label-requested-titles-first": "पहले अनुरोधित टाइटल पर लेबल लगाएँ चालू करें",
-	"server.mediaservers.a-label-needs-1-to-64": "लेबल में 1 से 64 अक्षर होने चाहिए"
-=======
+	"server.mediaservers.a-label-needs-1-to-64": "लेबल में 1 से 64 अक्षर होने चाहिए",
 	"server.downloads.the-release-link-went-to-a": "रिलीज़ का लिंक तुम्हारे घर के नेटवर्क के किसी दूसरे पते पर गया, जिसकी अनुमति नहीं है: वहां सिर्फ़ सोर्स के अपने पते तक पहुंचा जा सकता है"
->>>>>>> fix/422-423-nzbget
 }
