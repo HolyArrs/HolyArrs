@@ -2,9 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/ed25519"
-	"encoding/base64"
-	"log"
 	"net"
 	"net/http"
 	"path/filepath"
@@ -16,13 +13,6 @@ import (
 
 // defaultPluginListURL serves the signed plugin list, blocklist and files.
 const defaultPluginListURL = "https://plugins.holyarrs.com/"
-
-// pluginKeys are the pinned ed25519 public keys (base64) the plugin lists
-// must be signed with: the main key, then the backup key kept offline.
-var pluginKeys = []string{
-	"BFcI/1RFf6k7cRqXaj+YYQsfZu1MQWmiFYktV2QIBHE=", // main
-	"ENa3RVFV9VfQgZ/uyaKItB9xmniR36sWM17HWXi+llY=", // backup
-}
 
 // startPlugins builds the Engine and, outside safe mode, starts the
 // enabled plugins and the blocklist check; they stop when ctx ends.
@@ -56,15 +46,6 @@ func newPluginEngine(c config) *plugins.Engine {
 	if err != nil {
 		run = nil
 	}
-	var keys []ed25519.PublicKey
-	for _, k := range pluginKeys {
-		b, err := base64.StdEncoding.DecodeString(k)
-		if err != nil || len(b) != ed25519.PublicKeySize {
-			log.Printf("plugins: pinned key %q is not an ed25519 public key; skipped", k)
-			continue
-		}
-		keys = append(keys, ed25519.PublicKey(b))
-	}
-	return &plugins.Engine{Dir: filepath.Join(c.ConfigDir, "plugins"), ListURL: c.PluginListURL, Keys: keys, Runner: run,
+	return &plugins.Engine{Dir: filepath.Join(c.ConfigDir, "plugins"), ListURL: c.PluginListURL, Keys: plugins.PinnedKeys(), Runner: run,
 		HTTP: &http.Client{Timeout: 5 * time.Minute, CheckRedirect: plugins.RedirectGuard(c.PluginListURL)}}
 }

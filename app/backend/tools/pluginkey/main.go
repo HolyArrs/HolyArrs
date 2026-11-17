@@ -4,6 +4,8 @@
 //	pluginkey keygen -out <dir>
 //	pluginkey sign -key <file> -kind plugins|blocklist -in <payload.json> -out <list.json> [-min-counter N]
 //	pluginkey verify -pub <file> -in <list.json>
+//	pluginkey check -kind plugins|blocklist -in <list.json>   (against the pinned keys)
+//	pluginkey stage ... / pluginkey block ...                  (see publish.go)
 //
 // The private key file holds the ed25519 seed sealed with XChaCha20-Poly1305
 // under a key derived from the passphrase with scrypt (golang.org/x/crypto).
@@ -65,6 +67,12 @@ func main() {
 		err = runKeygen(os.Args[2:])
 	case "sign":
 		err = runSign(os.Args[2:])
+	case "stage":
+		err = runStage(os.Args[2:])
+	case "block":
+		err = runBlock(os.Args[2:])
+	case "check":
+		err = runCheck(os.Args[2:])
 	case "verify":
 		err = runVerify(os.Args[2:])
 	default:
@@ -77,7 +85,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: pluginkey keygen|sign|verify [flags]")
+	fmt.Fprintln(os.Stderr, "usage: pluginkey keygen|sign|verify|check|stage|block [flags]")
 	os.Exit(2)
 }
 
@@ -118,12 +126,18 @@ func runSign(args []string) error {
 	in := fs.String("in", "", "payload JSON")
 	out := fs.String("out", "", "signed list to write")
 	minCounter := fs.Uint64("min-counter", 0, "the payload counter must be above this")
+	passEnv := fs.String("pass-env", "", "read the passphrase from this environment variable (CI only)")
 	_ = fs.Parse(args)
 	if *key == "" || *in == "" || *out == "" {
 		return errors.New("-key, -in and -out are required")
 	}
-	pass, err := readPassphrase("Passphrase: ")
-	if err != nil {
+	var pass []byte
+	var err error
+	if *passEnv != "" {
+		if pass = []byte(os.Getenv(*passEnv)); len(pass) == 0 {
+			return fmt.Errorf("%s is empty", *passEnv)
+		}
+	} else if pass, err = readPassphrase("Passphrase: "); err != nil {
 		return err
 	}
 	if err := sign(*key, pass, *kind, *in, *out, *minCounter); err != nil {

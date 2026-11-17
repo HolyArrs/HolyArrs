@@ -1,0 +1,186 @@
+name: HolyArrs - Plugins
+
+# Builds, signs and publishes a plugin to plugins.holyarrs.com, or blocks one.
+#
+# Publish: push a tag plugin-<id>-v<version> (for example plugin-tailscale-v1.0.1),
+#          or start it by hand with action "publish".
+# Block:   start it by hand with action "block", the plugin id and (optional)
+#          the version. Installed copies switch off at their next blocklist check.
+#
+# The live lists are read first and verified against the keys the app pins, so
+# the counters always go up and nothing already listed is lost. Plugin files go
+# up first, the blocklist next and the plugin list last, so a list never names a
+# file that is not there yet. "Dry run" builds and signs but uploads nothing.
+
+on:
+  push:
+    tags:
+      - "plugin-*-v*"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: publish or block
+        type: choice
+        options: [publish, block]
+        default: publish
+      id:
+        description: Plugin id (for example tailscale)
+        required: true
+        type: string
+      version:
+        description: Version (for block, leave empty to block every version)
+        required: false
+        type: string
+      dry_run:
+        description: Build and sign only; upload nothing
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plugins-list
+  cancel-in-progress: false
+
+env:
+  LIST_URL: https://plugins.holyarrs.com
+  BUCKET: holyarrs-plugins
+
+jobs:
+  plugins:
+    name: Plugins (${{ inputs.action || 'publish' }})
+    runs-on: ubuntu-latest
+    environment: plugins
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Read what to do
+        id: what
+        env:
+          REF: ${{ github.ref_name }}
+          IN_ACTION: ${{ inputs.action }}
+          IN_ID: ${{ inputs.id }}
+          IN_VERSION: ${{ inputs.version }}
+          IN_DRY: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            [[ "$REF" =~ ^plugin-([a-z0-9][a-z0-9-]*)-v([0-9]+\.[0-9]+\.[0-9]+)$ ]] || { echo "::error::Tag must look like plugin-<id>-v1.2.3"; exit 1; }
+            action=publish id="${BASH_REMATCH[1]}" version="${BASH_REMATCH[2]}" dry=false
+          else
+            action="$IN_ACTION" id="$IN_ID" version="$IN_VERSION" dry="$IN_DRY"
+          fi
+          [[ "$id" =~ ^[a-z0-9][a-z0-9-]*$ ]] || { echo "::error::Bad plugin id"; exit 1; }
+          [ -z "$version" ] || [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Bad version"; exit 1; }
+          if [ "$action" = publish ]; then
+            [ -n "$version" ] || { echo "::error::Publish needs a version"; exit 1; }
+            [ -f "app/plugins/$id/plugin.json" ] || { echo "::error::app/plugins/$id/plugin.json not found"; exit 1; }
+          fi
+          { echo "action=$action"; echo "id=$id"; echo "version=$version"; echo "dry=$dry"; } >> "$GITHUB_OUTPUT"
+
+      - name: Fetch the live lists
+        run: |
+          set -euo pipefail
+          mkdir -p live
+          for f in plugins.json blocklist.json; do
+            code=$(curl -sS -o "live/$f" -w '%{http_code}' "$LIST_URL/$f?ts=$(date +%s)")
+            case "$code" in
+              200) ;;
+              404) rm -f "live/$f"; echo "No live $f yet (first publish)";;
+              *) echo "::error::$LIST_URL/$f answered $code; stopping so no counter is reused"; exit 1;;
+            esac
+          done
+
+      - name: Build the plugin for every platform
+        if: steps.what.outputs.action == 'publish'
+        env:
+          ID: ${{ steps.what.outputs.id }}
+        run: |
+          set -euo pipefail
+          for p in amd64:linux-amd64 arm64:linux-arm64 arm:linux-armv7; do
+            arch=${p%%:*} name=${p#*:}
+            mkdir -p "builds/$name"
+            (cd "app/plugins/$ID" && CGO_ENABLED=0 GOOS=linux GOARCH=$arch GOARM=7 \
+              go build -trimpath -ldflags="-s -w" -o "$GITHUB_WORKSPACE/builds/$name/plugin" .)
+          done
+          ls -l builds/*/plugin
+
+      - name: Stage the files and payloads
+        env:
+          ACTION: ${{ steps.what.outputs.action }}
+          ID: ${{ steps.what.outputs.id }}
+          VERSION: ${{ steps.what.outputs.version }}
+        run: |
+          set -euo pipefail
+          go build -o pluginkey ./app/backend/tools/pluginkey
+          if [ "$ACTION" = publish ]; then
+            ./pluginkey stage -id "$ID" -version "$VERSION" -meta "app/plugins/$ID/plugin.json" -builds builds -current live -out out
+          else
+            ./pluginkey block -id "$ID" -version "$VERSION" -current live -out out
+          fi
+
+      - name: Sign the lists
+        env:
+          PLUGIN_SIGNING_KEY: ${{ secrets.PLUGIN_SIGNING_KEY }}
+          PLUGIN_SIGNING_PASSPHRASE: ${{ secrets.PLUGIN_SIGNING_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          umask 077
+          key="$RUNNER_TEMP/plugin-signing.key"
+          trap 'rm -f "$key"' EXIT
+          printf '%s' "$PLUGIN_SIGNING_KEY" > "$key"
+          . out/counters.env
+          ./pluginkey sign -key "$key" -pass-env PLUGIN_SIGNING_PASSPHRASE -kind blocklist -in out/blocklist.payload.json -out out/blocklist.json -min-counter "$BLOCK_MIN"
+          ./pluginkey sign -key "$key" -pass-env PLUGIN_SIGNING_PASSPHRASE -kind plugins -in out/plugins.payload.json -out out/plugins.json -min-counter "$LIST_MIN"
+
+      - name: Check the signatures against the keys the app pins
+        run: |
+          set -euo pipefail
+          ./pluginkey check -kind blocklist -in out/blocklist.json
+          ./pluginkey check -kind plugins -in out/plugins.json
+
+      - name: Keep the staged files
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: plugins-${{ steps.what.outputs.action }}-${{ steps.what.outputs.id }}
+          path: out/
+          retention-days: 30
+
+      - name: Publish to plugins.holyarrs.com
+        if: steps.what.outputs.dry != 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.PLUGINS_CLOUDFLARE_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.PLUGINS_CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          put() { # path, content type, cache rule
+            npx --yes wrangler@4.20.0 r2 object put "$BUCKET/$1" --remote --file "out/$1" --content-type "$2" --cache-control "$3" >/dev/null
+            echo "uploaded $1"
+          }
+          # Versioned files never change, so they may be cached for long.
+          if [ -d out/plugins ]; then
+            while IFS= read -r f; do put "$f" application/octet-stream "public, max-age=31536000, immutable"; done \
+              < <(cd out && find plugins -type f -name plugin | sort)
+            while IFS= read -r f; do put "$f" application/json "public, max-age=31536000, immutable"; done \
+              < <(cd out && find plugins -type f -name manifest.json | sort)
+          fi
+          put blocklist.json application/json "no-cache"
+          put plugins.json application/json "no-cache"
+
+      - name: Check what is live now
+        if: steps.what.outputs.dry != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p after
+          for f in plugins.json blocklist.json; do curl -fsS -o "after/$f" "$LIST_URL/$f?ts=$(date +%s)"; done
+          cmp after/plugins.json out/plugins.json
+          cmp after/blocklist.json out/blocklist.json
+          ./pluginkey check -kind plugins -in after/plugins.json
+          ./pluginkey check -kind blocklist -in after/blocklist.json
