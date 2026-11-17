@@ -30,8 +30,8 @@ const Attribution = "This product uses the TMDB API but is not endorsed or certi
 // EnvTokenFile names a file holding the TMDB read access token (for the lab).
 const EnvTokenFile = "HOLYARRS_TMDB_TOKEN_FILE"
 
-// TMDB looks movies up on The Movie Database with a v4 read access token,
-// sent as a Bearer header and never in a URL.
+// TMDB looks movies up on The Movie Database. It takes either credential
+// TMDB issues: a v4 read token (Bearer header) or a v3 API key (?api_key=).
 //
 // Answers are kept in memory for TTL. With Disk set, every answer but a
 // search is kept there too for tmdbKeep, so a restart reads it back: an
@@ -306,6 +306,10 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	if tok == "" {
 		return nil, ErrNoAccess
 	}
+	bearer := strings.TrimSpace(tok)
+	if r.Direct {
+		bearer = tmdbApply(&u, tok)
+	}
 	// Fetch-ahead and a person's pages fail apart: a warm-up that keeps
 	// failing never opens the breaker a page call goes through.
 	lane := "page"
@@ -335,7 +339,7 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 		}
 		rctx, cancel := afterGate(ctx, timeout)
 		req, _ := http.NewRequestWithContext(rctx, http.MethodGet, u, nil)
-		req.Header.Set("Authorization", "Bearer "+tok)
+		setCredential(req, bearer)
 		req.Header.Set("Accept", "application/json")
 		aheadRequest(ctx, req)
 		resp, err := cl.Do(req)
