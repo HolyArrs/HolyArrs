@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { limitLines, notices, pluginName, pluginState, shownVersion, stateLabel } from './view.ts';
+import { limitRows, notices, pluginName, pluginState, shownVersion, stateLabel } from './view.ts';
 import type { Plugin } from './types.ts';
 
 const base: Plugin = { id: 'tailscale', version: '1.2.0', installed: false, running: false, enabled: false, access: null };
@@ -36,8 +36,12 @@ describe('page notices and limits', () => {
 			"Couldn't check for blocked plugins for over a week."
 		]);
 	});
-	it('words only the limits that are on', () => {
-		expect(limitLines({ Cgroup: false, Pids: false, Memory: false, CPU: false, GroupKill: true })).toEqual(['Every process it starts stops with it']);
-		expect(limitLines({ Cgroup: true, Pids: true, Memory: true, CPU: true, GroupKill: true })).toHaveLength(5);
+	it('lists every limit, and says which caps this server cannot apply', () => {
+		const off = limitRows({ Cgroup: false, Pids: false, Memory: false, CPU: false, GroupKill: true });
+		expect(off.map((r) => r.label)).toEqual(['Memory', 'Processor', 'Processes', 'Open files', 'Files and folders', 'Network', 'When it stops']);
+		expect(off[0].value).toBe('Not limited on this server');
+		expect(off[6].value).toBe('Everything it started stops too');
+		const on = limitRows({ Cgroup: true, Pids: true, Memory: true, CPU: true, GroupKill: true });
+		expect(on.slice(0, 3).map((r) => r.value)).toEqual(['Up to 512 MB', 'Up to 1 CPU core', 'Up to 256']);
 	});
 });

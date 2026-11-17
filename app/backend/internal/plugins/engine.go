@@ -3,6 +3,8 @@ package plugins
 import (
 	"context"
 	"crypto/ed25519"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -30,6 +32,9 @@ const (
 	cacheList      = "list.json"
 	cacheBlocklist = "blocklist.json"
 	manifestDir    = ".manifests"
+	// listManifestDir caches the manifests of listed (not yet installed)
+	// versions, each checked against the signed list's manifest hash.
+	listManifestDir = ".list-manifests"
 )
 
 // maxListSize caps a fetched list or manifest.
@@ -88,14 +93,28 @@ func (e *Engine) init() error {
 
 // Plugin is one row of the plugin list as the API shows it.
 type Plugin struct {
-	ID               string  `json:"id"`
-	Version          string  `json:"version"`
-	Installed        bool    `json:"installed"`
-	InstalledVersion string  `json:"installed_version,omitempty"`
-	Running          bool    `json:"running"`
-	Enabled          bool    `json:"enabled"`
-	DisabledReason   string  `json:"disabled_reason,omitempty"`
-	Access           *Access `json:"access"`
+	ID               string `json:"id"`
+	Version          string `json:"version"`
+	Installed        bool   `json:"installed"`
+	InstalledVersion string `json:"installed_version,omitempty"`
+	Running          bool   `json:"running"`
+	Enabled          bool   `json:"enabled"`
+	DisabledReason   string `json:"disabled_reason,omitempty"`
+	// Name, Author, Description and Icon come from the signed manifest.
+	Name        string  `json:"name,omitempty"`
+	Author      string  `json:"author,omitempty"`
+	Description string  `json:"description,omitempty"`
+	Icon        string  `json:"icon,omitempty"`
+	Access      *Access `json:"access"`
+	// ReachesApp is true when the plugin is handed this server's own address.
+	ReachesApp bool `json:"reaches_app"`
+}
+
+// show copies a manifest's display fields and access onto the row.
+func (p *Plugin) show(m *Manifest) {
+	p.Name, p.Author, p.Description, p.Icon = m.Name, m.Author, m.Description, m.Icon
+	a := m.Access
+	p.Access = &a
 }
 
 // Overview is the answer of the plugin list route.
@@ -129,6 +148,7 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 	}
 	ov.BlocklistStale = len(st.Plugins) > 0 && time.Since(st.BlockCheckedAt) > blockStaleAfter
 	rows := map[string]*Plugin{}
+	newest := map[string]Entry{}
 	var order []string
 	if raw := e.cachedList(ctx); raw != nil {
 		if l, _, err := e.verify(raw, KindPlugins, 0); err == nil {
@@ -136,12 +156,19 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 				if p, ok := rows[en.ID]; ok {
 					if newerVersion(en.Version, p.Version) {
 						p.Version = en.Version
+						newest[en.ID] = en
 					}
 					continue
 				}
 				rows[en.ID] = &Plugin{ID: en.ID, Version: en.Version}
+				newest[en.ID] = en
 				order = append(order, en.ID)
 			}
+		}
+	}
+	for id, en := range newest {
+		if m := e.listedManifest(ctx, en); m != nil {
+			rows[id].show(m)
 		}
 	}
 	e.mu.Lock()
@@ -155,11 +182,12 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 		}
 		p.Installed, p.InstalledVersion, p.Enabled, p.DisabledReason = true, in.Version, in.Enabled, in.DisabledReason
 		_, p.Running = e.procs[id]
-		if m := e.readManifest(id); m != nil && m.Version == in.Version {
-			p.Access = &m.Access
+		if m := e.readManifest(id); m != nil && m.Version == in.Version && p.Version == in.Version {
+			p.show(m)
 		}
 	}
 	for _, id := range order {
+		rows[id].ReachesApp = e.Env != nil && len(e.Env(id)) > 0
 		ov.Plugins = append(ov.Plugins, *rows[id])
 	}
 	return ov, nil
@@ -570,6 +598,30 @@ func (e *Engine) saveManifest(id string, raw []byte) {
 	if err := os.MkdirAll(dir, 0o700); err == nil {
 		_ = writeFileSynced(filepath.Join(dir, id+".json"), raw)
 	}
+}
+
+// listedManifest is the manifest of a listed version, fetched once and
+// cached; it counts only when its bytes match the signed list's hash and id.
+func (e *Engine) listedManifest(ctx context.Context, en Entry) *Manifest {
+	path := filepath.Join(e.Dir, listManifestDir, en.ID+"-"+en.Version+".json")
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		if raw, err = e.fetch(ctx, "plugins/"+en.ID+"/"+en.Version+"/manifest.json"); err != nil {
+			return nil
+		}
+	}
+	sum := sha256.Sum256(raw)
+	if hex.EncodeToString(sum[:]) != en.ManifestSHA256 {
+		return nil
+	}
+	m, err := ParseManifest(raw)
+	if err != nil || m.ID != en.ID || m.Version != en.Version {
+		return nil
+	}
+	if os.MkdirAll(filepath.Dir(path), 0o700) == nil {
+		_ = writeFileSynced(path, raw)
+	}
+	return m
 }
 
 func (e *Engine) readManifest(id string) *Manifest {

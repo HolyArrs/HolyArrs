@@ -333,6 +333,29 @@ func (ls *listServer) publish(version string, file []byte, n uint64) {
 		Entries: []plugins.Entry{{ID: "tailscale", Version: version, SHA256: sha, ManifestSHA256: hashOf(ls.manifest)}}})
 }
 
+// Before install the row already shows the signed manifest's access; a
+// manifest that no longer matches the list's hash shows none.
+func TestListShowsListedManifest(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, _ := newEngine(t, ls, pub)
+	p := row(t, call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
+	if p["installed"] != false || p["access"] == nil || p["name"] != "Tailscale" || p["author"] != "HolyArrs" {
+		t.Fatalf("listed row: %v", p)
+	}
+
+	ls2, pub2 := newListServer(t)
+	e2, _ := newEngine(t, ls2, pub2)
+	ls2.mu.Lock()
+	var m map[string]any
+	_ = json.Unmarshal(ls2.manifest, &m)
+	m["description"] = "changed after signing"
+	ls2.manifest, _ = json.Marshal(m)
+	ls2.mu.Unlock()
+	if p := row(t, call(t, mux(e2), "GET", "/api/v1/plugins", http.StatusOK), "tailscale"); p["access"] != nil || p["description"] != nil {
+		t.Fatalf("tampered manifest shown: %v", p)
+	}
+}
+
 func TestInstallRefusesTamperedManifest(t *testing.T) {
 	ls, pub := newListServer(t)
 	e, run := newEngine(t, ls, pub)

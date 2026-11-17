@@ -4,6 +4,9 @@ import type { ActiveLimits, Plugin, PluginOverview } from './types.ts';
 
 export type PluginState = 'not_installed' | 'running' | 'stopped' | 'off';
 
+/** A newer signed version than the installed one is on the list. */
+export const hasUpdate = (p: Plugin): boolean => p.installed && !!p.installed_version && p.installed_version !== p.version;
+
 const names: Record<string, string> = { tailscale: 'Tailscale', mcp: 'MCP Server', 'mcp-server': 'MCP Server' };
 
 export function pluginName(id: string): string {
@@ -38,14 +41,41 @@ export function notices(ov: Pick<PluginOverview, 'key_set' | 'can_run' | 'blockl
 	return out;
 }
 
-/** Each limit the Engine puts on a running plugin, as a short line. */
-export function limitLines(l: ActiveLimits): string[] {
+export interface LimitRow {
+	label: string;
+	value: string;
+	on: boolean;
+}
+
+/** Every limit a running plugin is held to, with its value; caps this server can't apply say so. Numbers match the Engine's sandbox. */
+export function limitRows(l: ActiveLimits): LimitRow[] {
+	const off = t('plugins.limitOff');
+	const row = (key: string, on: boolean): LimitRow => ({ label: t(`plugins.${key}`), value: on ? t(`plugins.${key}Value`) : off, on });
+	return [
+		row('limitMemory', l.Memory),
+		row('limitCpu', l.CPU),
+		row('limitPids', l.Pids),
+		row('limitOpenFiles', true),
+		row('limitFolders', true),
+		{ label: t('plugins.limitNetwork'), value: t('plugins.limitNetworkValue'), on: false },
+		row('limitStop', l.Cgroup || l.GroupKill)
+	];
+}
+
+const known = new Set(['tailscale']);
+
+/** The plugin's description: our own words for plugins we ship, else the signed manifest's. */
+export function pluginAbout(p: Plugin): string {
+	return known.has(p.id) ? t(`plugins.about.${p.id}`) : (p.description ?? '');
+}
+
+/** What the plugin will be able to do once installed, in plain words. */
+export function abilities(p: Plugin): string[] {
 	const out: string[] = [];
-	if (l.Cgroup) out.push(t('plugins.limitGroup'));
-	if (l.Pids) out.push(t('plugins.limitPids'));
-	if (l.Memory) out.push(t('plugins.limitMemory'));
-	if (l.CPU) out.push(t('plugins.limitCpu'));
-	if (l.GroupKill) out.push(t('plugins.limitKill'));
+	const hosts = p.access?.hosts ?? [];
+	if (hosts.length) out.push(known.has(p.id) ? t(`plugins.can.${p.id}.hosts`) : t('plugins.canHosts', { hosts: hosts.join(', ') }));
+	if (p.reaches_app) out.push(known.has(p.id) ? t(`plugins.can.${p.id}.app`) : t('plugins.canApp'));
+	out.push(t('plugins.canFolder'));
 	return out;
 }
 
