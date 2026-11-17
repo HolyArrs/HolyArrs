@@ -54,13 +54,14 @@
 {#if announce}<span class="sr-only" aria-live="polite">{said}</span>{/if}
 
 <style>
-	.ui-seg { position: relative; flex: none; display: inline-grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding: 2px; border-radius: 10px; background: var(--surface-2); isolation: isolate; max-width: 100%; }
+	.ui-seg { position: relative; flex: none; display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 2px; border-radius: 10px; background: var(--surface-2); isolation: isolate; max-width: 100%; }
 	.thumb { position: absolute; z-index: -1; top: 2px; bottom: 2px; inset-inline-start: 2px; width: calc((100% - 4px) / var(--n)); border-radius: 8px; background: var(--seg-thumb); box-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 0 0 .5px rgb(0 0 0 / 4%); transform: translateX(calc(100% * var(--i) * var(--dir, 1))); transition: transform var(--dur) var(--ease-spring); }
-	button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; padding: 0 14px; border-radius: 8px; color: var(--text-muted); font: var(--t-subhead); font-size: 14px; white-space: nowrap; transition: color var(--dur-fast) var(--ease-out); }
-	button { min-width: 0; }
+	button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; padding: 0 14px; border-radius: 8px; color: var(--text-muted); font: var(--t-subhead); font-size: 14px; line-height: 1.15; text-align: center; white-space: normal; padding-block: 4px; transition: color var(--dur-fast) var(--ease-out); }
+	/* Each segment is as wide as its words; when space runs out the words wrap to a second line, never cut off with dots. */
+	button { min-width: min-content; }
 	.none .thumb { opacity: 0; }
-	button span { overflow: hidden; text-overflow: ellipsis; }
-	@media (max-width: 420px) { button { padding: 0 8px; font-size: 13px; } }
+	button span { overflow-wrap: normal; }
+	@media (max-width: 420px) { button { padding: 4px 8px; font-size: 13px; } }
 	button[aria-checked='true'] { color: var(--text); font-weight: 600; }
 	button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (pointer: coarse) { button { min-height: 40px; } }
