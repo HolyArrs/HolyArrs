@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex nepateikė šio asmens paskyros kodo, todėl jo žiūrėjimo sąrašas neskaitomas.",
 	"server.plugins.plugins-are-changed-only-from-a": "papildiniai keičiami tik iš prisijungusio savininko sesijos, niekada su API raktu",
 	"server.plugins.plugins-are-not-set-up-in": "papildiniai šioje versijoje nenustatyti",
-	"server.accounts.finish-setup-on-the-home-network": "Pirmiausia baikite sąranką namų tinkle."
+	"server.accounts.finish-setup-on-the-home-network": "Pirmiausia baikite sąranką namų tinkle.",
+	"server.accounts.api-key-changed": "API raktas {label} pakeistas",
+	"server.accounts.only-the-owner-and-admins-may-2": "raktą gali keisti tik prisijungę savininkas ir administratoriai"
 }

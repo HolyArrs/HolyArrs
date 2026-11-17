@@ -47,7 +47,7 @@
 "settings.ai.groupDelete": "削除",
 "settings.ai.groupAdmin": "管理（ユーザー、キー、バックアップ、更新）",
 "settings.ai.adminHint": "AIがユーザー、キー、バックアップを管理できるようになります。",
-"settings.ai.groupsFixed": "変更するには新しいキーを作成してください。",
+"settings.ai.groupsFixed": "あとでキー一覧から変更できます。",
 "settings.ai.shortSee": "閲覧",
 "settings.ai.shortAdd": "追加",
 "settings.ai.shortControl": "ダウンロード",
@@ -55,5 +55,14 @@
 "settings.ai.shortDelete": "削除",
 "settings.ai.shortAdmin": "管理",
 "settings.ai.canDo": "可能: {list}",
-"settings.ai.groupNone": "なし"
+"settings.ai.groupNone": "なし",
+"settings.ai.groupApprove": "リクエストの承認",
+"settings.ai.approveHint": "保留中のリクエストを承認または却下します。管理でも可能です。",
+"settings.ai.shortApprove": "承認",
+"settings.ai.edit": "変更",
+"settings.ai.editName": "{name} にできることを変更",
+"settings.ai.editDesc": "変更はキーの次の呼び出しから反映されます。",
+"settings.ai.saveGroups": "保存",
+"settings.ai.groupsSaved": "{name} を更新しました",
+"settings.ai.groupsSaveFailed": "{name} を変更できませんでした"
 }

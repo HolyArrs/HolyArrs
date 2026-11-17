@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "删除",
 	"settings.ai.groupAdmin": "管理（用户、密钥、备份、更新）",
 	"settings.ai.adminHint": "允许 AI 管理用户、密钥和备份。",
-	"settings.ai.groupsFixed": "要更改这些，请新建一个密钥。",
+	"settings.ai.groupsFixed": "之后可以在密钥列表中更改。",
 	"settings.ai.shortSee": "查看",
 	"settings.ai.shortAdd": "添加",
 	"settings.ai.shortControl": "下载",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "删除",
 	"settings.ai.shortAdmin": "管理",
 	"settings.ai.canDo": "可以：{list}",
-	"settings.ai.groupNone": "无"
+	"settings.ai.groupNone": "无",
+	"settings.ai.groupApprove": "批准请求",
+	"settings.ai.approveHint": "批准或拒绝待处理的请求。管理权限也可以。",
+	"settings.ai.shortApprove": "批准",
+	"settings.ai.edit": "更改",
+	"settings.ai.editName": "更改 {name} 的权限",
+	"settings.ai.editDesc": "更改从该密钥的下一次调用起生效。",
+	"settings.ai.saveGroups": "保存",
+	"settings.ai.groupsSaved": "{name} 已更新",
+	"settings.ai.groupsSaveFailed": "无法更改 {name}"
 }

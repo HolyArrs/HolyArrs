@@ -34,6 +34,7 @@ func TestCallRefusedPerGroup(t *testing.T) {
 		mcpkeys.Settings: {"PUT", "/api/v1/settings/naming"},
 		mcpkeys.Delete:   {"DELETE", "/api/v1/asks/3"},
 		mcpkeys.Admin:    {"POST", "/api/v1/backups"},
+		mcpkeys.Approve:  {"POST", "/api/v1/asks/3/approve"},
 	}
 	for _, g := range mcpkeys.All {
 		rt, ok := routes[g]
@@ -45,6 +46,9 @@ func TestCallRefusedPerGroup(t *testing.T) {
 		}
 		gr := newRig(t)
 		gr.who.MCPGroups = without(g)
+		if g == mcpkeys.Approve {
+			gr.who.MCPGroups = slices.DeleteFunc(gr.who.MCPGroups, func(s string) bool { return s == string(mcpkeys.Admin) })
+		}
 		code, v := gr.h.call(gr.request(), gr.who, webserver.ScopeWrite, rt[0], rt[1], nil)
 		want := "This key can't " + g.Label() + ". The owner can turn it on in Settings → Keys."
 		if code != http.StatusForbidden || routeError(code, v) != want {
@@ -77,6 +81,20 @@ func TestToolsRefusedByGroups(t *testing.T) {
 	g.who.MCPGroups = nil
 	if _, _, isErr := g.tool("downloads", nil); !isErr {
 		t.Error("a key with no tick boxes read downloads")
+	}
+}
+
+// Approving or declining a request takes the Approve box or Admin.
+func TestApproveTakesApproveOrAdmin(t *testing.T) {
+	for _, p := range []string{"/api/v1/asks/{id}/approve", "/api/v1/asks/{id}/turn-down"} {
+		for _, c := range []struct {
+			set mcpkeys.Set
+			ok  bool
+		}{{mcpkeys.Set{mcpkeys.Approve}, true}, {mcpkeys.Set{mcpkeys.Admin}, true}, {mcpkeys.Default, false}, {mcpkeys.Set{mcpkeys.Delete}, false}} {
+			if got := mcpkeys.Allows(c.set, "POST", p); got != c.ok {
+				t.Errorf("%s with %v: %v, want %v", p, c.set, got, c.ok)
+			}
+		}
 	}
 }
 

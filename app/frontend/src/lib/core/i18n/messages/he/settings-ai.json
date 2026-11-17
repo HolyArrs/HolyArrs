@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "מחיקה",
 	"settings.ai.groupAdmin": "ניהול (משתמשים, מפתחות, גיבויים, עדכונים)",
 	"settings.ai.adminHint": "מאפשר לבינה המלאכותית לנהל משתמשים, מפתחות וגיבויים.",
-	"settings.ai.groupsFixed": "כדי לשנות אותם, צרו מפתח חדש.",
+	"settings.ai.groupsFixed": "אפשר לשנות את זה אחר כך מרשימת המפתחות.",
 	"settings.ai.shortSee": "צפייה",
 	"settings.ai.shortAdd": "הוספה",
 	"settings.ai.shortControl": "הורדות",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "מחיקה",
 	"settings.ai.shortAdmin": "ניהול",
 	"settings.ai.canDo": "רשאית: {list}",
-	"settings.ai.groupNone": "כלום"
+	"settings.ai.groupNone": "כלום",
+	"settings.ai.groupApprove": "אישור בקשות",
+	"settings.ai.approveHint": "אישור או דחייה של בקשות ממתינות. גם ניהול יכול.",
+	"settings.ai.shortApprove": "אישור",
+	"settings.ai.edit": "שינוי",
+	"settings.ai.editName": "שינוי ההרשאות של {name}",
+	"settings.ai.editDesc": "השינוי חל מהקריאה הבאה של המפתח.",
+	"settings.ai.saveGroups": "שמירה",
+	"settings.ai.groupsSaved": "{name} עודכן",
+	"settings.ai.groupsSaveFailed": "לא ניתן לשנות את {name}"
 }

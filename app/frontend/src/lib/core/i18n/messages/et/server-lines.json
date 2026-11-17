@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex ei andnud selle inimese kontokoodi, seega tema vaatamisnimekirja ei loeta.",
 	"server.plugins.plugins-are-changed-only-from-a": "pluginaid muudetakse ainult omaniku sisselogitud seansist, mitte kunagi API-võtmega",
 	"server.plugins.plugins-are-not-set-up-in": "pluginad pole selles versioonis seadistatud",
-	"server.accounts.finish-setup-on-the-home-network": "Lõpeta seadistus kõigepealt koduvõrgus."
+	"server.accounts.finish-setup-on-the-home-network": "Lõpeta seadistus kõigepealt koduvõrgus.",
+	"server.accounts.api-key-changed": "API võti {label} muudetud",
+	"server.accounts.only-the-owner-and-admins-may-2": "võtit tohivad muuta ainult sisse loginud omanik ja administraatorid"
 }

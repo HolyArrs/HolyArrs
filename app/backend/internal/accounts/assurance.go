@@ -56,6 +56,7 @@ var riskyRoutes = map[string]bool{
 	// API keys, AI keys and arr API keys.
 	"POST /api/v1/auth/keys":                          true,
 	"DELETE /api/v1/auth/keys/{id}":                   true,
+	"PUT /api/v1/auth/keys/{id}":                      true,
 	"POST /api/v1/auth/ai-connect":                    true,
 	"POST /api/v1/settings/old-app-api/keys/{side}":   true,
 	"DELETE /api/v1/settings/old-app-api/keys/{side}": true,

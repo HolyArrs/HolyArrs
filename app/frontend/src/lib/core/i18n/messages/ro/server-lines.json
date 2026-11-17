@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex nu a dat niciun cod de cont pentru această persoană, așa că lista ei de vizionare nu este citită.",
 	"server.plugins.plugins-are-changed-only-from-a": "pluginurile se schimbă doar dintr-o sesiune a proprietarului conectat, niciodată cu o cheie API",
 	"server.plugins.plugins-are-not-set-up-in": "pluginurile nu sunt configurate în această versiune",
-	"server.accounts.finish-setup-on-the-home-network": "Termină mai întâi configurarea în rețeaua de acasă."
+	"server.accounts.finish-setup-on-the-home-network": "Termină mai întâi configurarea în rețeaua de acasă.",
+	"server.accounts.api-key-changed": "Cheia API {label} modificată",
+	"server.accounts.only-the-owner-and-admins-may-2": "doar proprietarul și administratorii, autentificați, pot modifica o cheie"
 }

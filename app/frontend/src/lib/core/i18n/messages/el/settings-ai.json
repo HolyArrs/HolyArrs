@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Διαγραφή",
 	"settings.ai.groupAdmin": "Διαχείριση (χρήστες, κλειδιά, αντίγραφα, ενημερώσεις)",
 	"settings.ai.adminHint": "Επιτρέπει στην ΤΝ να διαχειρίζεται χρήστες, κλειδιά και αντίγραφα ασφαλείας.",
-	"settings.ai.groupsFixed": "Για να τα αλλάξετε, φτιάξτε νέο κλειδί.",
+	"settings.ai.groupsFixed": "Μπορείς να τα αλλάξεις αργότερα από τη λίστα κλειδιών.",
 	"settings.ai.shortSee": "Προβολή",
 	"settings.ai.shortAdd": "Προσθήκη",
 	"settings.ai.shortControl": "Λήψεις",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Διαγραφή",
 	"settings.ai.shortAdmin": "Διαχείριση",
 	"settings.ai.canDo": "Μπορεί: {list}",
-	"settings.ai.groupNone": "τίποτα"
+	"settings.ai.groupNone": "τίποτα",
+	"settings.ai.groupApprove": "Έγκριση αιτημάτων",
+	"settings.ai.approveHint": "Εγκρίνει ή απορρίπτει εκκρεμή αιτήματα. Το ίδιο μπορεί και η Διαχείριση.",
+	"settings.ai.shortApprove": "Έγκριση",
+	"settings.ai.edit": "Αλλαγή",
+	"settings.ai.editName": "Αλλαγή του τι μπορεί να κάνει το {name}",
+	"settings.ai.editDesc": "Η αλλαγή ισχύει από την επόμενη κλήση του κλειδιού.",
+	"settings.ai.saveGroups": "Αποθήκευση",
+	"settings.ai.groupsSaved": "Το {name} ενημερώθηκε",
+	"settings.ai.groupsSaveFailed": "Δεν ήταν δυνατή η αλλαγή του {name}"
 }

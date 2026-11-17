@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Видалення",
 	"settings.ai.groupAdmin": "Адміністрування (користувачі, ключі, резервні копії, оновлення)",
 	"settings.ai.adminHint": "Дозволяє ШІ керувати користувачами, ключами й резервними копіями.",
-	"settings.ai.groupsFixed": "Щоб змінити це, створіть новий ключ.",
+	"settings.ai.groupsFixed": "Це можна змінити пізніше в списку ключів.",
 	"settings.ai.shortSee": "Перегляд",
 	"settings.ai.shortAdd": "Додавання",
 	"settings.ai.shortControl": "Завантаження",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Видалення",
 	"settings.ai.shortAdmin": "Адмін",
 	"settings.ai.canDo": "Може: {list}",
-	"settings.ai.groupNone": "нічого"
+	"settings.ai.groupNone": "нічого",
+	"settings.ai.groupApprove": "Схвалення запитів",
+	"settings.ai.approveHint": "Схвалює або відхиляє запити, що очікують. Адмін теж може.",
+	"settings.ai.shortApprove": "Схвалення",
+	"settings.ai.edit": "Змінити",
+	"settings.ai.editName": "Змінити права {name}",
+	"settings.ai.editDesc": "Зміна діє з наступного виклику ключа.",
+	"settings.ai.saveGroups": "Зберегти",
+	"settings.ai.groupsSaved": "{name} оновлено",
+	"settings.ai.groupsSaveFailed": "Не вдалося змінити {name}"
 }

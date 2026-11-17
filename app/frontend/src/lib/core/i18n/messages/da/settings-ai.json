@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Slet",
 	"settings.ai.groupAdmin": "Admin (brugere, nøgler, sikkerhedskopier, opdateringer)",
 	"settings.ai.adminHint": "Lader AI'en styre brugere, nøgler og sikkerhedskopier.",
-	"settings.ai.groupsFixed": "Lav en ny nøgle for at ændre dem.",
+	"settings.ai.groupsFixed": "Du kan ændre dem senere fra nøglelisten.",
 	"settings.ai.shortSee": "Se",
 	"settings.ai.shortAdd": "Tilføj",
 	"settings.ai.shortControl": "Downloads",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Slet",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Må: {list}",
-	"settings.ai.groupNone": "intet"
+	"settings.ai.groupNone": "intet",
+	"settings.ai.groupApprove": "Godkend anmodninger",
+	"settings.ai.approveHint": "Godkend eller afvis ventende anmodninger. Admin kan også.",
+	"settings.ai.shortApprove": "Godkend",
+	"settings.ai.edit": "Ændr",
+	"settings.ai.editName": "Ændr hvad {name} må",
+	"settings.ai.editDesc": "Ændringen gælder fra nøglens næste kald.",
+	"settings.ai.saveGroups": "Gem",
+	"settings.ai.groupsSaved": "{name} opdateret",
+	"settings.ai.groupsSaveFailed": "Kunne ikke ændre {name}"
 }

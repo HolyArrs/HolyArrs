@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Poistaa",
 	"settings.ai.groupAdmin": "Ylläpito (käyttäjät, avaimet, varmuuskopiot, päivitykset)",
 	"settings.ai.adminHint": "Antaa tekoälyn hallita käyttäjiä, avaimia ja varmuuskopioita.",
-	"settings.ai.groupsFixed": "Muuta näitä tekemällä uusi avain.",
+	"settings.ai.groupsFixed": "Voit muuttaa näitä myöhemmin avainlistasta.",
 	"settings.ai.shortSee": "Näkee",
 	"settings.ai.shortAdd": "Lisää",
 	"settings.ai.shortControl": "Lataukset",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Poistaa",
 	"settings.ai.shortAdmin": "Ylläpito",
 	"settings.ai.canDo": "Saa: {list}",
-	"settings.ai.groupNone": "ei mitään"
+	"settings.ai.groupNone": "ei mitään",
+	"settings.ai.groupApprove": "Pyyntöjen hyväksyntä",
+	"settings.ai.approveHint": "Hyväksy tai hylkää odottavat pyynnöt. Ylläpito voi tehdä tämän myös.",
+	"settings.ai.shortApprove": "Hyväksyntä",
+	"settings.ai.edit": "Muuta",
+	"settings.ai.editName": "Muuta, mitä {name} saa tehdä",
+	"settings.ai.editDesc": "Muutos pätee avaimen seuraavasta kutsusta.",
+	"settings.ai.saveGroups": "Tallenna",
+	"settings.ai.groupsSaved": "{name} päivitetty",
+	"settings.ai.groupsSaveFailed": "Kohdetta {name} ei voitu muuttaa"
 }

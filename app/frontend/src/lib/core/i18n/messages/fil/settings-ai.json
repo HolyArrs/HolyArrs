@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Magbura",
 	"settings.ai.groupAdmin": "Admin (mga user, key, backup, update)",
 	"settings.ai.adminHint": "Hinahayaan ang AI na mag-manage ng mga user, key at backup.",
-	"settings.ai.groupsFixed": "Para baguhin ang mga ito, gumawa ng bagong key.",
+	"settings.ai.groupsFixed": "Puwede mo itong baguhin mamaya mula sa listahan ng key.",
 	"settings.ai.shortSee": "Tingnan",
 	"settings.ai.shortAdd": "Magdagdag",
 	"settings.ai.shortControl": "Mga download",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Magbura",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Puwede: {list}",
-	"settings.ai.groupNone": "wala"
+	"settings.ai.groupNone": "wala",
+	"settings.ai.groupApprove": "Aprubahan ang mga request",
+	"settings.ai.approveHint": "Aprubahan o tanggihan ang mga nakabinbing request. Kaya rin ito ng Admin.",
+	"settings.ai.shortApprove": "Aprubahan",
+	"settings.ai.edit": "Baguhin",
+	"settings.ai.editName": "Baguhin ang puwedeng gawin ng {name}",
+	"settings.ai.editDesc": "May bisa ang pagbabago sa susunod na tawag ng key.",
+	"settings.ai.saveGroups": "I-save",
+	"settings.ai.groupsSaved": "Na-update ang {name}",
+	"settings.ai.groupsSaveFailed": "Hindi mabago ang {name}"
 }

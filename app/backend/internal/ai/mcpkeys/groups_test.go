@@ -152,3 +152,22 @@ func TestAllowsRefusesUnknown(t *testing.T) {
 		t.Error("empty set allowed a route")
 	}
 }
+
+// The AI tools check real paths; pinned {id} routes must match them.
+func TestOverridesMatchRealPaths(t *testing.T) {
+	for _, c := range []struct {
+		method, path string
+		want         Group
+	}{
+		{"POST", "/api/v1/asks/3/approve", Approve},
+		{"POST", "/api/v1/asks/3/turn-down", Approve},
+		{"PUT", "/api/v1/downloaders/5", Settings},
+		{"POST", "/api/v1/downloaders/5/test", Settings},
+		{"POST", "/api/v1/collections/5/remove/preview", See},
+		{"POST", "/api/v1/asks//approve", Add},
+	} {
+		if g, _ := GroupFor(c.method, c.path); g != c.want {
+			t.Errorf("%s %s: %s, want %s", c.method, c.path, g, c.want)
+		}
+	}
+}

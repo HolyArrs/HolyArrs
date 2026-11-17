@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Padam",
 	"settings.ai.groupAdmin": "Pentadbir (pengguna, kunci, sandaran, kemas kini)",
 	"settings.ai.adminHint": "Membenarkan AI mengurus pengguna, kunci dan sandaran.",
-	"settings.ai.groupsFixed": "Untuk menukarnya, buat kunci baharu.",
+	"settings.ai.groupsFixed": "Anda boleh menukarnya kemudian dari senarai kunci.",
 	"settings.ai.shortSee": "Lihat",
 	"settings.ai.shortAdd": "Tambah",
 	"settings.ai.shortControl": "Muat turun",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Padam",
 	"settings.ai.shortAdmin": "Pentadbir",
 	"settings.ai.canDo": "Boleh: {list}",
-	"settings.ai.groupNone": "tiada"
+	"settings.ai.groupNone": "tiada",
+	"settings.ai.groupApprove": "Luluskan permintaan",
+	"settings.ai.approveHint": "Luluskan atau tolak permintaan yang menunggu. Pentadbir juga boleh.",
+	"settings.ai.shortApprove": "Lulus",
+	"settings.ai.edit": "Tukar",
+	"settings.ai.editName": "Tukar apa yang boleh dibuat oleh {name}",
+	"settings.ai.editDesc": "Perubahan berkuat kuasa dari panggilan seterusnya kunci.",
+	"settings.ai.saveGroups": "Simpan",
+	"settings.ai.groupsSaved": "{name} dikemas kini",
+	"settings.ai.groupsSaveFailed": "Tidak dapat menukar {name}"
 }

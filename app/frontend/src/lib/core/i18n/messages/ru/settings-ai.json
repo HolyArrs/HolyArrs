@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Удаление",
 	"settings.ai.groupAdmin": "Администрирование (пользователи, ключи, резервные копии, обновления)",
 	"settings.ai.adminHint": "Позволяет ИИ управлять пользователями, ключами и резервными копиями.",
-	"settings.ai.groupsFixed": "Чтобы изменить это, создайте новый ключ.",
+	"settings.ai.groupsFixed": "Это можно изменить позже в списке ключей.",
 	"settings.ai.shortSee": "Просмотр",
 	"settings.ai.shortAdd": "Добавление",
 	"settings.ai.shortControl": "Загрузки",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Удаление",
 	"settings.ai.shortAdmin": "Админ",
 	"settings.ai.canDo": "Может: {list}",
-	"settings.ai.groupNone": "ничего"
+	"settings.ai.groupNone": "ничего",
+	"settings.ai.groupApprove": "Одобрение запросов",
+	"settings.ai.approveHint": "Одобряет или отклоняет ожидающие запросы. Админ тоже может.",
+	"settings.ai.shortApprove": "Одобрение",
+	"settings.ai.edit": "Изменить",
+	"settings.ai.editName": "Изменить права {name}",
+	"settings.ai.editDesc": "Изменение действует со следующего вызова ключа.",
+	"settings.ai.saveGroups": "Сохранить",
+	"settings.ai.groupsSaved": "{name} обновлён",
+	"settings.ai.groupsSaveFailed": "Не удалось изменить {name}"
 }

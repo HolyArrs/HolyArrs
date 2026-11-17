@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Törlés",
 	"settings.ai.groupAdmin": "Adminisztráció (felhasználók, kulcsok, mentések, frissítések)",
 	"settings.ai.adminHint": "Lehetővé teszi, hogy az MI kezelje a felhasználókat, kulcsokat és mentéseket.",
-	"settings.ai.groupsFixed": "A módosításhoz hozz létre új kulcsot.",
+	"settings.ai.groupsFixed": "Ezeket később a kulcslistában módosíthatod.",
 	"settings.ai.shortSee": "Megtekintés",
 	"settings.ai.shortAdd": "Hozzáadás",
 	"settings.ai.shortControl": "Letöltések",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Törlés",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Tehet: {list}",
-	"settings.ai.groupNone": "semmi"
+	"settings.ai.groupNone": "semmi",
+	"settings.ai.groupApprove": "Kérések jóváhagyása",
+	"settings.ai.approveHint": "Függő kérések jóváhagyása vagy elutasítása. Az Admin is megteheti.",
+	"settings.ai.shortApprove": "Jóváhagyás",
+	"settings.ai.edit": "Módosítás",
+	"settings.ai.editName": "Mit tehet {name}",
+	"settings.ai.editDesc": "A változás a kulcs következő hívásától él.",
+	"settings.ai.saveGroups": "Mentés",
+	"settings.ai.groupsSaved": "{name} frissítve",
+	"settings.ai.groupsSaveFailed": "{name} módosítása nem sikerült"
 }

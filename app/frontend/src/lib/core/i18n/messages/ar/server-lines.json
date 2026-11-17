@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "لم يعطِ Plex رمز حساب لهذا الشخص، لذا لا تتم قراءة قائمة المشاهدة الخاصة به.",
 	"server.plugins.plugins-are-changed-only-from-a": "لا تُغيَّر الإضافات إلا من جلسة مالك مسجّل الدخول، وليس بمفتاح API أبدًا",
 	"server.plugins.plugins-are-not-set-up-in": "الإضافات غير مُعدّة في هذا الإصدار",
-	"server.accounts.finish-setup-on-the-home-network": "أكمل الإعداد على الشبكة المنزلية أولًا."
+	"server.accounts.finish-setup-on-the-home-network": "أكمل الإعداد على الشبكة المنزلية أولًا.",
+	"server.accounts.api-key-changed": "تم تغيير مفتاح API ‏{label}",
+	"server.accounts.only-the-owner-and-admins-may-2": "المالك والمشرفون فقط يستطيعون تغيير مفتاح، بعد تسجيل الدخول"
 }

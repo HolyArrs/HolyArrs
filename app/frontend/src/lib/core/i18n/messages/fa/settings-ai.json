@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "حذف",
 	"settings.ai.groupAdmin": "مدیریت (کاربران، کلیدها، پشتیبان‌ها، به‌روزرسانی‌ها)",
 	"settings.ai.adminHint": "به هوش مصنوعی اجازه می‌دهد کاربران، کلیدها و پشتیبان‌ها را مدیریت کند.",
-	"settings.ai.groupsFixed": "برای تغییر این‌ها، کلید تازه‌ای بسازید.",
+	"settings.ai.groupsFixed": "بعداً می‌توانی این‌ها را از فهرست کلیدها تغییر دهی.",
 	"settings.ai.shortSee": "دیدن",
 	"settings.ai.shortAdd": "افزودن",
 	"settings.ai.shortControl": "دانلودها",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "حذف",
 	"settings.ai.shortAdmin": "مدیریت",
 	"settings.ai.canDo": "می‌تواند: {list}",
-	"settings.ai.groupNone": "هیچ"
+	"settings.ai.groupNone": "هیچ",
+	"settings.ai.groupApprove": "تأیید درخواست‌ها",
+	"settings.ai.approveHint": "درخواست‌های در انتظار را تأیید یا رد می‌کند. مدیریت هم می‌تواند.",
+	"settings.ai.shortApprove": "تأیید",
+	"settings.ai.edit": "تغییر",
+	"settings.ai.editName": "تغییر دسترسی‌های {name}",
+	"settings.ai.editDesc": "تغییر از فراخوانی بعدی کلید اعمال می‌شود.",
+	"settings.ai.saveGroups": "ذخیره",
+	"settings.ai.groupsSaved": "{name} به‌روز شد",
+	"settings.ai.groupsSaveFailed": "{name} تغییر نکرد"
 }

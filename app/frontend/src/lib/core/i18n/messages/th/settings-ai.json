@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "ลบ",
 	"settings.ai.groupAdmin": "ผู้ดูแล (ผู้ใช้ คีย์ ข้อมูลสำรอง การอัปเดต)",
 	"settings.ai.adminHint": "ให้ AI จัดการผู้ใช้ คีย์ และข้อมูลสำรอง",
-	"settings.ai.groupsFixed": "หากต้องการเปลี่ยน ให้สร้างคีย์ใหม่",
+	"settings.ai.groupsFixed": "เปลี่ยนได้ภายหลังจากรายการคีย์",
 	"settings.ai.shortSee": "ดู",
 	"settings.ai.shortAdd": "เพิ่ม",
 	"settings.ai.shortControl": "ดาวน์โหลด",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "ลบ",
 	"settings.ai.shortAdmin": "ผู้ดูแล",
 	"settings.ai.canDo": "ทำได้: {list}",
-	"settings.ai.groupNone": "ไม่มี"
+	"settings.ai.groupNone": "ไม่มี",
+	"settings.ai.groupApprove": "อนุมัติคำขอ",
+	"settings.ai.approveHint": "อนุมัติหรือปฏิเสธคำขอที่รออยู่ ผู้ดูแลก็ทำได้",
+	"settings.ai.shortApprove": "อนุมัติ",
+	"settings.ai.edit": "เปลี่ยน",
+	"settings.ai.editName": "เปลี่ยนสิ่งที่ {name} ทำได้",
+	"settings.ai.editDesc": "การเปลี่ยนแปลงมีผลตั้งแต่การเรียกครั้งถัดไปของคีย์",
+	"settings.ai.saveGroups": "บันทึก",
+	"settings.ai.groupsSaved": "อัปเดต {name} แล้ว",
+	"settings.ai.groupsSaveFailed": "เปลี่ยน {name} ไม่สำเร็จ"
 }

@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Supprimer",
 	"settings.ai.groupAdmin": "Administration (utilisateurs, clés, sauvegardes, mises à jour)",
 	"settings.ai.adminHint": "Permet à l'IA de gérer les utilisateurs, les clés et les sauvegardes.",
-	"settings.ai.groupsFixed": "Pour les changer, créez une nouvelle clé.",
+	"settings.ai.groupsFixed": "Tu pourras les modifier plus tard depuis la liste des clés.",
 	"settings.ai.shortSee": "Voir",
 	"settings.ai.shortAdd": "Ajouter",
 	"settings.ai.shortControl": "Téléchargements",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Supprimer",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Peut : {list}",
-	"settings.ai.groupNone": "rien"
+	"settings.ai.groupNone": "rien",
+	"settings.ai.groupApprove": "Approuver les demandes",
+	"settings.ai.approveHint": "Approuver ou refuser les demandes en attente. Admin peut aussi le faire.",
+	"settings.ai.shortApprove": "Approuver",
+	"settings.ai.edit": "Modifier",
+	"settings.ai.editName": "Modifier ce que {name} peut faire",
+	"settings.ai.editDesc": "Le changement s'applique dès le prochain appel de la clé.",
+	"settings.ai.saveGroups": "Enregistrer",
+	"settings.ai.groupsSaved": "{name} mise à jour",
+	"settings.ai.groupsSaveFailed": "Impossible de modifier {name}"
 }

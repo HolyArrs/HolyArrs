@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "মুছে ফেলা",
 	"settings.ai.groupAdmin": "অ্যাডমিন (ব্যবহারকারী, কী, ব্যাকআপ, আপডেট)",
 	"settings.ai.adminHint": "এআই-কে ব্যবহারকারী, কী ও ব্যাকআপ পরিচালনা করতে দেয়।",
-	"settings.ai.groupsFixed": "এগুলো বদলাতে নতুন কী বানান।",
+	"settings.ai.groupsFixed": "পরে কী তালিকা থেকে এগুলো বদলাতে পারবেন।",
 	"settings.ai.shortSee": "দেখা",
 	"settings.ai.shortAdd": "যোগ",
 	"settings.ai.shortControl": "ডাউনলোড",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "মোছা",
 	"settings.ai.shortAdmin": "অ্যাডমিন",
 	"settings.ai.canDo": "পারে: {list}",
-	"settings.ai.groupNone": "কিছুই না"
+	"settings.ai.groupNone": "কিছুই না",
+	"settings.ai.groupApprove": "অনুরোধ অনুমোদন",
+	"settings.ai.approveHint": "অপেক্ষমাণ অনুরোধ অনুমোদন বা বাতিল করে। অ্যাডমিনও এটা পারে।",
+	"settings.ai.shortApprove": "অনুমোদন",
+	"settings.ai.edit": "বদলান",
+	"settings.ai.editName": "{name} কী করতে পারবে তা বদলান",
+	"settings.ai.editDesc": "কী-এর পরের কল থেকে পরিবর্তন কার্যকর হবে।",
+	"settings.ai.saveGroups": "সেভ করুন",
+	"settings.ai.groupsSaved": "{name} আপডেট হয়েছে",
+	"settings.ai.groupsSaveFailed": "{name} বদলানো যায়নি"
 }

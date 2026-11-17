@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Eliminar",
 	"settings.ai.groupAdmin": "Admin (utilizadores, chaves, cópias de segurança, atualizações)",
 	"settings.ai.adminHint": "Permite à IA gerir utilizadores, chaves e cópias de segurança.",
-	"settings.ai.groupsFixed": "Para alterar isto, crie uma nova chave.",
+	"settings.ai.groupsFixed": "Podes alterar isto mais tarde na lista de chaves.",
 	"settings.ai.shortSee": "Ver",
 	"settings.ai.shortAdd": "Adicionar",
 	"settings.ai.shortControl": "Transferências",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Eliminar",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Pode: {list}",
-	"settings.ai.groupNone": "nada"
+	"settings.ai.groupNone": "nada",
+	"settings.ai.groupApprove": "Aprovar pedidos",
+	"settings.ai.approveHint": "Aprova ou recusa pedidos pendentes. Admin também pode.",
+	"settings.ai.shortApprove": "Aprovar",
+	"settings.ai.edit": "Alterar",
+	"settings.ai.editName": "Alterar o que {name} pode fazer",
+	"settings.ai.editDesc": "A alteração vale a partir da próxima chamada da chave.",
+	"settings.ai.saveGroups": "Guardar",
+	"settings.ai.groupsSaved": "{name} atualizada",
+	"settings.ai.groupsSaveFailed": "Não foi possível alterar {name}"
 }

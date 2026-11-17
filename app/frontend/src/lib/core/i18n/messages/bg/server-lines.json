@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex не даде код на акаунта за този човек, затова списъкът му за гледане не се чете.",
 	"server.plugins.plugins-are-changed-only-from-a": "добавките се променят само от вписана сесия на собственика, никога с API ключ",
 	"server.plugins.plugins-are-not-set-up-in": "добавките не са настроени в тази версия",
-	"server.accounts.finish-setup-on-the-home-network": "Първо завършете настройката в домашната мрежа."
+	"server.accounts.finish-setup-on-the-home-network": "Първо завършете настройката в домашната мрежа.",
+	"server.accounts.api-key-changed": "API ключът {label} е променен",
+	"server.accounts.only-the-owner-and-admins-may-2": "само собственикът и администраторите могат да променят ключ, след вход"
 }

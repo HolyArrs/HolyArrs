@@ -20,20 +20,21 @@ const (
 	Settings Group = "settings" // change settings
 	Delete   Group = "delete"   // delete or remove anything
 	Admin    Group = "admin"    // users, keys, sign-in, backups, updates, the whole app
+	Approve  Group = "approve"  // approve or decline pending requests; Admin covers it too
 )
 
 // Set is the groups one key holds.
 type Set []Group
 
 // All lists every group.
-var All = []Group{See, Add, Control, Settings, Delete, Admin}
+var All = []Group{See, Add, Control, Settings, Delete, Admin, Approve}
 
 // Default is what a new AI key holds, and what every key held when the tick
 // boxes came: all but Delete and Admin.
 var Default = Set{See, Add, Control, Settings}
 
 // labels are the tick-box names a person reads.
-var labels = map[Group]string{See: "See", Add: "Add", Control: "Control", Settings: "Settings", Delete: "Delete", Admin: "Admin"}
+var labels = map[Group]string{See: "See", Add: "Add", Control: "Control", Settings: "Settings", Delete: "Delete", Admin: "Admin", Approve: "Approve requests"}
 
 // Label is the tick-box name of g, as a screen and an error say it.
 func (g Group) Label() string { return labels[g] }
@@ -72,10 +73,25 @@ var overrides = map[string]Group{
 	"HEAD /healthz":                      See,
 	"GET /readyz":                        See,
 	"HEAD /readyz":                       See,
+	"POST /api/v1/asks/{id}/approve":     Approve,
+	"POST /api/v1/asks/{id}/turn-down":   Approve,
 	"POST /api/v1/downloaders":           Settings, // adding a download app is setup
 	"PUT /api/v1/downloaders/{id}":       Settings,
 	"POST /api/v1/downloaders/{id}/test": Settings,
 }
+
+// wildOverrides are the override patterns with a {wildcard}, sorted so the
+// match never depends on map order.
+var wildOverrides = func() []string {
+	var out []string
+	for k := range overrides {
+		if strings.Contains(k, "{") {
+			out = append(out, k)
+		}
+	}
+	slices.Sort(out)
+	return out
+}()
 
 // roots are the first path words the app serves. Anything else is unknown.
 var roots = []string{
@@ -127,7 +143,7 @@ func GroupFor(method, pattern string) (Group, bool) {
 	if !strings.HasPrefix(pattern, "/") || !knownRoot(pattern) {
 		return "", false
 	}
-	if g, ok := overrides[method+" "+pattern]; ok {
+	if g, ok := override(method, pattern); ok {
 		return g, true
 	}
 	read := false
@@ -170,10 +186,45 @@ func GroupFor(method, pattern string) (Group, bool) {
 }
 
 // Allows says whether a key holding set may call the route pattern. Unknown
-// routes are refused.
+// routes are refused. Admin also covers Approve, so a key that had Admin
+// before the Approve box came keeps approving.
 func Allows(set Set, method, pattern string) bool {
 	g, ok := GroupFor(method, pattern)
-	return ok && slices.Contains(set, g)
+	if !ok {
+		return false
+	}
+	return slices.Contains(set, g) || (g == Approve && slices.Contains(set, Admin))
+}
+
+// override finds the pinned group of a pattern, or of a real path such as
+// /api/v1/asks/3/approve that a {wildcard} pattern matches.
+func override(method, path string) (Group, bool) {
+	if g, ok := overrides[method+" "+path]; ok {
+		return g, true
+	}
+	segs := strings.Split(path, "/")
+	for _, k := range wildOverrides {
+		g := overrides[k]
+		m, p, _ := strings.Cut(k, " ")
+		if m != method {
+			continue
+		}
+		ps := strings.Split(p, "/")
+		if len(ps) != len(segs) {
+			continue
+		}
+		match := true
+		for i := range ps {
+			if ps[i] != segs[i] && !(strings.HasPrefix(ps[i], "{") && segs[i] != "") {
+				match = false
+				break
+			}
+		}
+		if match {
+			return g, true
+		}
+	}
+	return "", false
 }
 
 func knownRoot(path string) bool {

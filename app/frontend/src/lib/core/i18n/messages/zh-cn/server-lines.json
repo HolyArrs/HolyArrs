@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex 没有提供此人的账户代码，因此不会读取其待看清单。",
 	"server.plugins.plugins-are-changed-only-from-a": "插件只能在所有者已登录的会话中更改，绝不能用 API 密钥",
 	"server.plugins.plugins-are-not-set-up-in": "此版本未设置插件",
-	"server.accounts.finish-setup-on-the-home-network": "请先在家庭网络中完成设置。"
+	"server.accounts.finish-setup-on-the-home-network": "请先在家庭网络中完成设置。",
+	"server.accounts.api-key-changed": "API 密钥 {label} 已更改",
+	"server.accounts.only-the-owner-and-admins-may-2": "只有已登录的所有者和管理员可以更改密钥"
 }

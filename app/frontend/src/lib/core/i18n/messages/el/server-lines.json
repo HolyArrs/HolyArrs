@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Το Plex δεν έδωσε κωδικό λογαριασμού για αυτό το άτομο, οπότε η λίστα παρακολούθησής του δεν διαβάζεται.",
 	"server.plugins.plugins-are-changed-only-from-a": "τα πρόσθετα αλλάζουν μόνο από συνδεδεμένη συνεδρία του κατόχου, ποτέ με κλειδί API",
 	"server.plugins.plugins-are-not-set-up-in": "τα πρόσθετα δεν έχουν ρυθμιστεί σε αυτή την έκδοση",
-	"server.accounts.finish-setup-on-the-home-network": "Ολοκληρώστε πρώτα τη ρύθμιση στο οικιακό δίκτυο."
+	"server.accounts.finish-setup-on-the-home-network": "Ολοκληρώστε πρώτα τη ρύθμιση στο οικιακό δίκτυο.",
+	"server.accounts.api-key-changed": "Το κλειδί API «{label}» άλλαξε",
+	"server.accounts.only-the-owner-and-admins-may-2": "μόνο ο ιδιοκτήτης και οι διαχειριστές μπορούν να αλλάξουν κλειδί, συνδεδεμένοι"
 }

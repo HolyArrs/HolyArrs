@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Slette",
 	"settings.ai.groupAdmin": "Admin (brukere, nøkler, sikkerhetskopier, oppdateringer)",
 	"settings.ai.adminHint": "Lar AI-en styre brukere, nøkler og sikkerhetskopier.",
-	"settings.ai.groupsFixed": "Lag en ny nøkkel for å endre disse.",
+	"settings.ai.groupsFixed": "Du kan endre dem senere fra nøkkellisten.",
 	"settings.ai.shortSee": "Se",
 	"settings.ai.shortAdd": "Legge til",
 	"settings.ai.shortControl": "Nedlastinger",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Slette",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Får: {list}",
-	"settings.ai.groupNone": "ingenting"
+	"settings.ai.groupNone": "ingenting",
+	"settings.ai.groupApprove": "Godkjenn forespørsler",
+	"settings.ai.approveHint": "Godkjenn eller avvis ventende forespørsler. Admin kan også.",
+	"settings.ai.shortApprove": "Godkjenn",
+	"settings.ai.edit": "Endre",
+	"settings.ai.editName": "Endre hva {name} kan gjøre",
+	"settings.ai.editDesc": "Endringen gjelder fra nøkkelens neste kall.",
+	"settings.ai.saveGroups": "Lagre",
+	"settings.ai.groupsSaved": "{name} oppdatert",
+	"settings.ai.groupsSaveFailed": "Kunne ikke endre {name}"
 }

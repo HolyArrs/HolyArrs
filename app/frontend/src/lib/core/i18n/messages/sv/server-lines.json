@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte.",
 	"server.plugins.plugins-are-changed-only-from-a": "tillägg ändras bara från en inloggad ägarsession, aldrig med en API-nyckel",
 	"server.plugins.plugins-are-not-set-up-in": "tillägg är inte konfigurerade i den här versionen",
-	"server.accounts.finish-setup-on-the-home-network": "Slutför konfigurationen på hemnätverket först."
+	"server.accounts.finish-setup-on-the-home-network": "Slutför konfigurationen på hemnätverket först.",
+	"server.accounts.api-key-changed": "API-nyckeln {label} ändrades",
+	"server.accounts.only-the-owner-and-admins-may-2": "bara ägaren och admins får ändra en nyckel, inloggade"
 }

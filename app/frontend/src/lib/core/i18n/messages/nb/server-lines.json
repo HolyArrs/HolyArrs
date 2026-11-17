@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex ga ingen kontokode for denne personen, så ønskelisten hens blir ikke lest.",
 	"server.plugins.plugins-are-changed-only-from-a": "utvidelser endres bare fra en innlogget eierøkt, aldri med en API-nøkkel",
 	"server.plugins.plugins-are-not-set-up-in": "utvidelser er ikke satt opp i denne versjonen",
-	"server.accounts.finish-setup-on-the-home-network": "Fullfør oppsettet på hjemmenettverket først."
+	"server.accounts.finish-setup-on-the-home-network": "Fullfør oppsettet på hjemmenettverket først.",
+	"server.accounts.api-key-changed": "API-nøkkelen {label} endret",
+	"server.accounts.only-the-owner-and-admins-may-2": "bare eieren og admin kan endre en nøkkel, når de er logget inn"
 }

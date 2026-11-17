@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex gave no account code for this person, so their watchlist is not read.",
 	"server.plugins.plugins-are-changed-only-from-a": "plugins are changed only from a signed-in owner session, never with an API key",
 	"server.plugins.plugins-are-not-set-up-in": "plugins are not set up in this build",
-	"server.accounts.finish-setup-on-the-home-network": "Finish setup on the home network first."
+	"server.accounts.finish-setup-on-the-home-network": "Finish setup on the home network first.",
+	"server.accounts.api-key-changed": "API key {label} changed",
+	"server.accounts.only-the-owner-and-admins-may-2": "only the owner and admins may change a key, signed in"
 }

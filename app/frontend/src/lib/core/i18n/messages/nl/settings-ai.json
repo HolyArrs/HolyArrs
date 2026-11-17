@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Verwijderen",
 	"settings.ai.groupAdmin": "Beheer (gebruikers, sleutels, back-ups, updates)",
 	"settings.ai.adminHint": "Laat de AI gebruikers, sleutels en back-ups beheren.",
-	"settings.ai.groupsFixed": "Maak een nieuwe sleutel om dit te wijzigen.",
+	"settings.ai.groupsFixed": "Je kunt dit later wijzigen in de sleutellijst.",
 	"settings.ai.shortSee": "Bekijken",
 	"settings.ai.shortAdd": "Toevoegen",
 	"settings.ai.shortControl": "Downloads",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Verwijderen",
 	"settings.ai.shortAdmin": "Beheer",
 	"settings.ai.canDo": "Mag: {list}",
-	"settings.ai.groupNone": "niets"
+	"settings.ai.groupNone": "niets",
+	"settings.ai.groupApprove": "Aanvragen goedkeuren",
+	"settings.ai.approveHint": "Openstaande aanvragen goedkeuren of afwijzen. Beheer kan dit ook.",
+	"settings.ai.shortApprove": "Goedkeuren",
+	"settings.ai.edit": "Wijzigen",
+	"settings.ai.editName": "Wijzigen wat {name} mag",
+	"settings.ai.editDesc": "De wijziging telt vanaf de volgende aanroep van de sleutel.",
+	"settings.ai.saveGroups": "Opslaan",
+	"settings.ai.groupsSaved": "{name} bijgewerkt",
+	"settings.ai.groupsSaveFailed": "{name} wijzigen mislukt"
 }

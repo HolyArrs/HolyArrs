@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex がこの人のアカウントコードを返さなかったため、ウォッチリストは読み取られません。",
 	"server.plugins.plugins-are-changed-only-from-a": "プラグインはサインイン中のオーナーのセッションからのみ変更でき、API キーでは変更できません",
 	"server.plugins.plugins-are-not-set-up-in": "このビルドではプラグインが設定されていません",
-	"server.accounts.finish-setup-on-the-home-network": "まず自宅のネットワークでセットアップを完了してください。"
+	"server.accounts.finish-setup-on-the-home-network": "まず自宅のネットワークでセットアップを完了してください。",
+	"server.accounts.api-key-changed": "API キー {label} を変更しました",
+	"server.accounts.only-the-owner-and-admins-may-2": "キーを変更できるのは、サインイン中のオーナーと管理者だけです"
 }

@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex ei antanut tälle henkilölle tilikoodia, joten hänen katselulistaansa ei lueta.",
 	"server.plugins.plugins-are-changed-only-from-a": "laajennuksia muutetaan vain omistajan kirjautuneesta istunnosta, ei koskaan API-avaimella",
 	"server.plugins.plugins-are-not-set-up-in": "laajennuksia ei ole otettu käyttöön tässä versiossa",
-	"server.accounts.finish-setup-on-the-home-network": "Viimeistele käyttöönotto ensin kotiverkossa."
+	"server.accounts.finish-setup-on-the-home-network": "Viimeistele käyttöönotto ensin kotiverkossa.",
+	"server.accounts.api-key-changed": "API-avain {label} muutettu",
+	"server.accounts.only-the-owner-and-admins-may-2": "vain sisäänkirjautunut omistaja ja ylläpitäjät voivat muuttaa avainta"
 }

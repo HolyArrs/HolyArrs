@@ -7,7 +7,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { DEFAULT_MCP_GROUPS, MCP_GROUPS, aiKeyBody, aiURL, isAIKey, type McpGroup } from '#lib/ai/index.ts';
+	import { DEFAULT_MCP_GROUPS, MCP_GROUPS, aiKeyBody, aiKeyGroupsBody, aiURL, isAIKey, type McpGroup } from '#lib/ai/index.ts';
 	import { onMount, tick } from 'svelte';
 	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -32,8 +32,13 @@
 	let revoking = $state<ApiKey | null>(null);
 	let revokeOpen = $state(false);
 	let revokeBusy = $state(false);
+	let editing = $state<ApiKey | null>(null);
+	let editOpen = $state(false);
+	let editGroups = $state<string[]>([]);
+	let editBusy = $state(false);
 
 	const isOwner = $derived(session.s.role === 'owner');
+	const canEdit = $derived(session.s.role === 'owner' || session.s.role === 'admin');
 	const url = $derived(typeof window === 'undefined' ? '/api/v1/mcp' : aiURL(window.location.origin, getBase()));
 	const aiKeys = $derived(keys.filter(isAIKey));
 
@@ -122,6 +127,29 @@
 		}
 	}
 
+	function askEdit(k: ApiKey) {
+		editing = k;
+		editGroups = [...(k.mcp_groups ?? [])];
+		editOpen = true;
+	}
+
+	async function saveEdit(e: SubmitEvent) {
+		e.preventDefault();
+		const k = editing;
+		if (!k || editBusy) return;
+		editBusy = true;
+		try {
+			const r = await api.put<{ mcp_groups: string[] }>(`/auth/keys/${k.id}`, aiKeyGroupsBody(editGroups));
+			keys = keys.map((x) => (x.id === k.id ? { ...x, mcp_groups: r.mcp_groups } : x));
+			editOpen = false;
+			toasts.push(t('settings.ai.groupsSaved', { name: k.label }), 'ok');
+		} catch (err) {
+			toasts.push(t('settings.ai.groupsSaveFailed', { name: k.label }), 'fail', { body: keyNote(err) });
+		} finally {
+			editBusy = false;
+		}
+	}
+
 	async function copy(text: string) {
 		try {
 			await navigator.clipboard.writeText(text);
@@ -132,9 +160,9 @@
 	}
 
 	const groupName = (g: McpGroup) =>
-		({ see: t('settings.ai.groupSee'), add: t('settings.ai.groupAdd'), control: t('settings.ai.groupControl'), settings: t('settings.ai.groupSettings'), delete: t('settings.ai.groupDelete'), admin: t('settings.ai.groupAdmin') })[g];
+		({ see: t('settings.ai.groupSee'), add: t('settings.ai.groupAdd'), control: t('settings.ai.groupControl'), settings: t('settings.ai.groupSettings'), delete: t('settings.ai.groupDelete'), admin: t('settings.ai.groupAdmin'), approve: t('settings.ai.groupApprove') })[g];
 	const shortName = (g: McpGroup) =>
-		({ see: t('settings.ai.shortSee'), add: t('settings.ai.shortAdd'), control: t('settings.ai.shortControl'), settings: t('settings.ai.shortSettings'), delete: t('settings.ai.shortDelete'), admin: t('settings.ai.shortAdmin') })[g];
+		({ see: t('settings.ai.shortSee'), add: t('settings.ai.shortAdd'), control: t('settings.ai.shortControl'), settings: t('settings.ai.shortSettings'), delete: t('settings.ai.shortDelete'), admin: t('settings.ai.shortAdmin'), approve: t('settings.ai.shortApprove') })[g];
 	const groupShort = (k: ApiKey) => MCP_GROUPS.filter((g) => k.mcp_groups?.includes(g)).map(shortName).join(' · ');
 </script>
 
@@ -205,6 +233,7 @@
 								{#if k.mcp_groups}<div class="xs muted" data-testid="ai-key-groups">{t('settings.ai.canDo', { list: groupShort(k) || t('settings.ai.groupNone') })}</div>{/if}
 								<div class="xs muted">{t('settings.ai.made', { date: date(k.created_at) })} · {k.last_used_at ? t('settings.ai.lastUsed', { ago: ago(k.last_used_at) }) : t('settings.ai.neverUsed')}</div>
 							</div>
+							{#if canEdit && k.mcp_groups}<Button variant="plain" type="button" data-testid="ai-key-edit" aria-label={t('settings.ai.editName', { name: k.label })} onclick={() => askEdit(k)}>{t('settings.ai.edit')}</Button>{/if}
 							<Button variant="destructive" type="button" onclick={() => askRevoke(k)}>{t('settings.ai.revoke')}</Button>
 						</li>
 					{/each}
@@ -218,11 +247,7 @@
 						{#each MCP_GROUPS as g (g)}
 							<label class="checkline">
 								<input type="checkbox" name="mcp_groups" value={g} bind:group={groups} />
-								{#if g === 'admin'}
-									<span>{groupName(g)}<br /><span class="hint">{t('settings.ai.adminHint')}</span></span>
-								{:else}
-									<span>{groupName(g)}</span>
-								{/if}
+								{@render groupText(g)}
 							</label>
 						{/each}
 						<p class="hint" id="ai-groups-fixed">{t('settings.ai.groupsFixed')}</p>
@@ -237,6 +262,24 @@
 		{/if}
 	</SettingsCard>
 
+	<Sheet bind:open={editOpen} size="sm" title={editing ? t('settings.ai.editName', { name: editing.label }) : t('settings.ai.edit')} description={t('settings.ai.editDesc')}>
+		<form onsubmit={saveEdit}>
+			<fieldset class="groups" data-testid="ai-key-edit-form">
+				<legend>{t('settings.ai.groupsLegend')}</legend>
+				{#each MCP_GROUPS as g (g)}
+					<label class="checkline">
+						<input type="checkbox" name="edit_mcp_groups" value={g} bind:group={editGroups} />
+						{@render groupText(g)}
+					</label>
+				{/each}
+			</fieldset>
+			<div class="confirm-actions">
+				<Button variant="plain" type="button" onclick={() => (editOpen = false)}>{t('settings.ai.keepIt')}</Button>
+				<Button type="submit" disabled={editBusy} aria-busy={editBusy}>{t('settings.ai.saveGroups')}</Button>
+			</div>
+		</form>
+	</Sheet>
+
 	<Sheet bind:open={revokeOpen} size="sm" title={revoking ? t('settings.ai.revokeName', { name: revoking.label }) : t('settings.ai.revoke')} description={t('settings.ai.revokeDesc')}>
 		<div class="confirm-actions">
 			<Button variant="plain" type="button" onclick={() => (revokeOpen = false)}>{t('settings.ai.keepIt')}</Button>
@@ -244,6 +287,16 @@
 		</div>
 	</Sheet>
 {/if}
+
+{#snippet groupText(g: McpGroup)}
+	{#if g === 'admin'}
+		<span>{groupName(g)}<br /><span class="hint">{t('settings.ai.adminHint')}</span></span>
+	{:else if g === 'approve'}
+		<span>{groupName(g)}<br /><span class="hint">{t('settings.ai.approveHint')}</span></span>
+	{:else}
+		<span>{groupName(g)}</span>
+	{/if}
+{/snippet}
 
 <style>
 	.facts {

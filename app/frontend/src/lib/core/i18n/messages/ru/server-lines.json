@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex не передал код аккаунта этого человека, поэтому его список просмотра не читается.",
 	"server.plugins.plugins-are-changed-only-from-a": "плагины меняются только из сессии владельца, вошедшего в систему, никогда по API-ключу",
 	"server.plugins.plugins-are-not-set-up-in": "плагины не настроены в этой сборке",
-	"server.accounts.finish-setup-on-the-home-network": "Сначала завершите настройку в домашней сети."
+	"server.accounts.finish-setup-on-the-home-network": "Сначала завершите настройку в домашней сети.",
+	"server.accounts.api-key-changed": "Ключ API {label} изменён",
+	"server.accounts.only-the-owner-and-admins-may-2": "изменять ключ могут только владелец и администраторы после входа"
 }

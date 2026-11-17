@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex এই ব্যক্তির অ্যাকাউন্ট কোড দেয়নি, তাই তার ওয়াচলিস্ট পড়া হচ্ছে না।",
 	"server.plugins.plugins-are-changed-only-from-a": "প্লাগইন শুধু মালিকের সাইন-ইন করা সেশন থেকে বদলানো যায়, কখনও API কী দিয়ে নয়",
 	"server.plugins.plugins-are-not-set-up-in": "এই বিল্ডে প্লাগইন সেট আপ করা নেই",
-	"server.accounts.finish-setup-on-the-home-network": "আগে হোম নেটওয়ার্কে সেটআপ শেষ করুন।"
+	"server.accounts.finish-setup-on-the-home-network": "আগে হোম নেটওয়ার্কে সেটআপ শেষ করুন।",
+	"server.accounts.api-key-changed": "API কী {label} বদলানো হয়েছে",
+	"server.accounts.only-the-owner-and-admins-may-2": "শুধু ওনার ও অ্যাডমিনরা সাইন ইন করে কী বদলাতে পারেন"
 }

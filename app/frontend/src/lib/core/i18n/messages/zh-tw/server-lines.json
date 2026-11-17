@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex 沒有提供此人的帳號代碼，因此不會讀取其待看清單。",
 	"server.plugins.plugins-are-changed-only-from-a": "外掛只能在擁有者已登入的工作階段中變更，絕不能用 API 金鑰",
 	"server.plugins.plugins-are-not-set-up-in": "此版本未設定外掛",
-	"server.accounts.finish-setup-on-the-home-network": "請先在家用網路中完成設定。"
+	"server.accounts.finish-setup-on-the-home-network": "請先在家用網路中完成設定。",
+	"server.accounts.api-key-changed": "API 金鑰 {label} 已變更",
+	"server.accounts.only-the-owner-and-admins-may-2": "只有已登入的擁有者和管理員可以變更金鑰"
 }

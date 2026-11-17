@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex nie podał kodu konta tej osoby, więc jej lista do obejrzenia nie jest czytana.",
 	"server.plugins.plugins-are-changed-only-from-a": "wtyczki zmienia się tylko z zalogowanej sesji właściciela, nigdy kluczem API",
 	"server.plugins.plugins-are-not-set-up-in": "wtyczki nie są skonfigurowane w tej wersji",
-	"server.accounts.finish-setup-on-the-home-network": "Najpierw dokończ konfigurację w sieci domowej."
+	"server.accounts.finish-setup-on-the-home-network": "Najpierw dokończ konfigurację w sieci domowej.",
+	"server.accounts.api-key-changed": "Klucz API {label} zmieniony",
+	"server.accounts.only-the-owner-and-admins-may-2": "klucz może zmienić tylko zalogowany właściciel i administratorzy"
 }

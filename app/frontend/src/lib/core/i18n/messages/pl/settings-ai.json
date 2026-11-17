@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Usuwanie",
 	"settings.ai.groupAdmin": "Administracja (użytkownicy, klucze, kopie zapasowe, aktualizacje)",
 	"settings.ai.adminHint": "Pozwala AI zarządzać użytkownikami, kluczami i kopiami zapasowymi.",
-	"settings.ai.groupsFixed": "Aby to zmienić, utwórz nowy klucz.",
+	"settings.ai.groupsFixed": "Możesz to później zmienić na liście kluczy.",
 	"settings.ai.shortSee": "Podgląd",
 	"settings.ai.shortAdd": "Dodawanie",
 	"settings.ai.shortControl": "Pobieranie",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Usuwanie",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Może: {list}",
-	"settings.ai.groupNone": "nic"
+	"settings.ai.groupNone": "nic",
+	"settings.ai.groupApprove": "Zatwierdzanie próśb",
+	"settings.ai.approveHint": "Zatwierdza lub odrzuca oczekujące prośby. Admin też to może.",
+	"settings.ai.shortApprove": "Zatwierdzanie",
+	"settings.ai.edit": "Zmień",
+	"settings.ai.editName": "Zmień, co może {name}",
+	"settings.ai.editDesc": "Zmiana działa od następnego wywołania klucza.",
+	"settings.ai.saveGroups": "Zapisz",
+	"settings.ai.groupsSaved": "Zaktualizowano {name}",
+	"settings.ai.groupsSaveFailed": "Nie udało się zmienić {name}"
 }

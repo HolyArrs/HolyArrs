@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex n'a donné aucun code de compte pour cette personne, donc sa liste de suivi n'est pas lue.",
 	"server.plugins.plugins-are-changed-only-from-a": "les plugins se modifient seulement depuis une session du propriétaire connecté, jamais avec une clé API",
 	"server.plugins.plugins-are-not-set-up-in": "les plugins ne sont pas configurés dans ce build",
-	"server.accounts.finish-setup-on-the-home-network": "Terminez d'abord la configuration sur le réseau de la maison."
+	"server.accounts.finish-setup-on-the-home-network": "Terminez d'abord la configuration sur le réseau de la maison.",
+	"server.accounts.api-key-changed": "Clé API {label} modifiée",
+	"server.accounts.only-the-owner-and-admins-may-2": "seuls le propriétaire et les administrateurs connectés peuvent modifier une clé"
 }

@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Trinti",
 	"settings.ai.groupAdmin": "Administravimas (naudotojai, raktai, atsarginės kopijos, naujinimai)",
 	"settings.ai.adminHint": "Leidžia DI tvarkyti naudotojus, raktus ir atsargines kopijas.",
-	"settings.ai.groupsFixed": "Norėdami tai pakeisti, sukurkite naują raktą.",
+	"settings.ai.groupsFixed": "Vėliau tai galėsi pakeisti raktų sąraše.",
 	"settings.ai.shortSee": "Matyti",
 	"settings.ai.shortAdd": "Pridėti",
 	"settings.ai.shortControl": "Atsisiuntimai",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Trinti",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Gali: {list}",
-	"settings.ai.groupNone": "nieko"
+	"settings.ai.groupNone": "nieko",
+	"settings.ai.groupApprove": "Patvirtinti užklausas",
+	"settings.ai.approveHint": "Patvirtina arba atmeta laukiančias užklausas. Admin taip pat gali.",
+	"settings.ai.shortApprove": "Patvirtinti",
+	"settings.ai.edit": "Keisti",
+	"settings.ai.editName": "Keisti, ką gali {name}",
+	"settings.ai.editDesc": "Pakeitimas galioja nuo kito rakto kvietimo.",
+	"settings.ai.saveGroups": "Išsaugoti",
+	"settings.ai.groupsSaved": "{name} atnaujintas",
+	"settings.ai.groupsSaveFailed": "Nepavyko pakeisti {name}"
 }

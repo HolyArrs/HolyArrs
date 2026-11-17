@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Ștergere",
 	"settings.ai.groupAdmin": "Administrare (utilizatori, chei, copii de rezervă, actualizări)",
 	"settings.ai.adminHint": "Permite IA să gestioneze utilizatori, chei și copii de rezervă.",
-	"settings.ai.groupsFixed": "Pentru a le schimba, creează o cheie nouă.",
+	"settings.ai.groupsFixed": "Le poți schimba mai târziu din lista de chei.",
 	"settings.ai.shortSee": "Vizualizare",
 	"settings.ai.shortAdd": "Adăugare",
 	"settings.ai.shortControl": "Descărcări",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Ștergere",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Poate: {list}",
-	"settings.ai.groupNone": "nimic"
+	"settings.ai.groupNone": "nimic",
+	"settings.ai.groupApprove": "Aprobă cereri",
+	"settings.ai.approveHint": "Aprobă sau respinge cererile în așteptare. Admin poate și el.",
+	"settings.ai.shortApprove": "Aprobă",
+	"settings.ai.edit": "Schimbă",
+	"settings.ai.editName": "Schimbă ce poate face {name}",
+	"settings.ai.editDesc": "Schimbarea se aplică de la următorul apel al cheii.",
+	"settings.ai.saveGroups": "Salvează",
+	"settings.ai.groupsSaved": "{name} actualizată",
+	"settings.ai.groupsSaveFailed": "Nu s-a putut schimba {name}"
 }

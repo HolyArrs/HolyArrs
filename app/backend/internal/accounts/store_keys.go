@@ -63,3 +63,16 @@ func deleteKeysOf(ctx context.Context, q conn, userID int64) error {
 	_, err := q.ExecContext(ctx, "DELETE FROM api_keys WHERE owner_user_id = ?", userID)
 	return err
 }
+
+// keyForEdit reads the label, scope list and tick boxes of a key the person
+// owns, or of any key for the owner; sql.ErrNoRows when there is none.
+func keyForEdit(ctx context.Context, q conn, id int64, all bool, userID int64) (label, scope, groups string, err error) {
+	err = q.QueryRowContext(ctx, "SELECT label, scope, mcp_groups FROM api_keys WHERE id = ? AND (? OR owner_user_id = ?)", id, all, userID).Scan(&label, &scope, &groups)
+	return label, scope, groups, err
+}
+
+// setKeyGroups stores an AI key's tick boxes.
+func setKeyGroups(ctx context.Context, q conn, id int64, groups, now, actor string) error {
+	_, err := q.ExecContext(ctx, "UPDATE api_keys SET mcp_groups = ?, updated_at = ?, updated_by = ? WHERE id = ?", groups, now, actor, id)
+	return err
+}

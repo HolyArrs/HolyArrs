@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Silme",
 	"settings.ai.groupAdmin": "Yönetim (kullanıcılar, anahtarlar, yedekler, güncellemeler)",
 	"settings.ai.adminHint": "Yapay zekânın kullanıcıları, anahtarları ve yedekleri yönetmesine izin verir.",
-	"settings.ai.groupsFixed": "Bunları değiştirmek için yeni bir anahtar oluşturun.",
+	"settings.ai.groupsFixed": "Bunları daha sonra anahtar listesinden değiştirebilirsin.",
 	"settings.ai.shortSee": "Görme",
 	"settings.ai.shortAdd": "Ekleme",
 	"settings.ai.shortControl": "İndirmeler",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Silme",
 	"settings.ai.shortAdmin": "Yönetim",
 	"settings.ai.canDo": "Yapabilir: {list}",
-	"settings.ai.groupNone": "hiçbir şey"
+	"settings.ai.groupNone": "hiçbir şey",
+	"settings.ai.groupApprove": "İstekleri onayla",
+	"settings.ai.approveHint": "Bekleyen istekleri onaylar veya reddeder. Yönetim de yapabilir.",
+	"settings.ai.shortApprove": "Onay",
+	"settings.ai.edit": "Değiştir",
+	"settings.ai.editName": "{name} neler yapabilir, değiştir",
+	"settings.ai.editDesc": "Değişiklik anahtarın bir sonraki çağrısından itibaren geçerli.",
+	"settings.ai.saveGroups": "Kaydet",
+	"settings.ai.groupsSaved": "{name} güncellendi",
+	"settings.ai.groupsSaveFailed": "{name} değiştirilemedi"
 }

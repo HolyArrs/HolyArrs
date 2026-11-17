@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex இந்த நபருக்கான கணக்குக் குறியீட்டை வழங்கவில்லை, எனவே அவரது பார்வைப் பட்டியல் படிக்கப்படவில்லை.",
 	"server.plugins.plugins-are-changed-only-from-a": "செருகுநிரல்கள் உரிமையாளரின் உள்நுழைந்த அமர்விலிருந்து மட்டுமே மாற்றப்படும், API விசையால் ஒருபோதும் இல்லை",
 	"server.plugins.plugins-are-not-set-up-in": "இந்தப் பதிப்பில் செருகுநிரல்கள் அமைக்கப்படவில்லை",
-	"server.accounts.finish-setup-on-the-home-network": "முதலில் வீட்டு நெட்வொர்க்கில் அமைப்பை முடிக்கவும்."
+	"server.accounts.finish-setup-on-the-home-network": "முதலில் வீட்டு நெட்வொர்க்கில் அமைப்பை முடிக்கவும்.",
+	"server.accounts.api-key-changed": "API விசை {label} மாற்றப்பட்டது",
+	"server.accounts.only-the-owner-and-admins-may-2": "உள்நுழைந்த உரிமையாளரும் நிர்வாகிகளும் மட்டுமே விசையை மாற்றலாம்"
 }

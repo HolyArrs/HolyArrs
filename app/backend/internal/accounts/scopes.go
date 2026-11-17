@@ -466,6 +466,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/auth/keys":                webserver.PermSettings,
 	"POST /api/v1/auth/keys":               webserver.PermSettings,
 	"DELETE /api/v1/auth/keys/{id}":        webserver.PermSettings,
+	"PUT /api/v1/auth/keys/{id}":           webserver.PermSettings,
 	"GET /api/v1/auth/settings":            webserver.PermSettings,
 
 	// People.

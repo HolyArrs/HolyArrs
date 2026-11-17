@@ -71,7 +71,7 @@ Only `ask_for_title` changes anything. It counts as your own request. An app can
 
 ### What each AI key may do
 
-Each AI key also has six tick boxes, a second limit on top of the tools above. They're set when the key is made and can't be changed later; make a new key instead. The key still can't do more than the person who made it.
+Each AI key also has seven tick boxes, a second limit on top of the tools above. They're set when the key is made; the owner or an admin can change them later with **Change** next to the key, and the change counts from the key's next call. The key still can't do more than the person who made it.
 
 | Tick box | Lets the app | On for new keys |
 |---|---|---|
@@ -81,6 +81,7 @@ Each AI key also has six tick boxes, a second limit on top of the tools above. T
 | Change settings | Change downloaders, sources, folders, alerts and other settings | Yes |
 | Delete | Remove or delete anything | No |
 | Admin | Users, sign-in, keys, backups, updates, restarts and logs | No |
+| Approve requests | Approve or decline pending requests, without full Admin (Admin can do this too) | No |
 
 When an app tries something its key doesn't allow, it gets a message naming the tick box, such as "This key can't Delete."
 
@@ -107,7 +108,7 @@ When an app tries something its key doesn't allow, it gets a message naming the 
 
 - The card lists each AI key: name, last 4 characters, made and last used.
 - **Revoke** stops an app at once. **Make a key by hand** names a new key.
-- What an AI key may do: in **Settings > AI apps** (`/settings/ai`), card **Linked AI apps**, open **Make a key by hand**. Six tick boxes: **See library and activity**, **Add and request**, **Control downloads**, **Change settings**, **Delete** and **Admin (users, keys, backups, updates)**. The first four start ticked. The list shows each key's boxes in short form, such as *Can: See · Add · Downloads · Settings*. A key can't be changed after it is made; to change its boxes, make a new key and revoke the old one. Keys made before this came keep all six.
+- What an AI key may do: in **Settings > AI apps** (`/settings/ai`), card **Linked AI apps**, open **Make a key by hand**. Seven tick boxes: **See library and activity**, **Add and request**, **Control downloads**, **Change settings**, **Delete**, **Admin (users, keys, backups, updates)** and **Approve requests**. The first four start ticked. The list shows each key's boxes in short form, such as *Can: See · Add · Downloads · Settings · Approve*. The owner and admins can change a key's boxes with **Change** next to it (`PUT /api/v1/auth/keys/{id}` with `mcp_groups`, signed in, not with a key); its scopes stay fixed.
 - The owner sees every AI key; others who may change settings see their own. Managing keys needs that permission and a recent password sign-in.
 - A key stops working when its account is turned off.
 - While **Let AI apps connect** is off, a keyed app gets not found; an app without a key is still sent to sign in. The owner clicking **Allow** turns it on.

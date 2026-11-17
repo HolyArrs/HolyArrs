@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "الحذف",
 	"settings.ai.groupAdmin": "الإدارة (المستخدمون، المفاتيح، النسخ الاحتياطية، التحديثات)",
 	"settings.ai.adminHint": "يتيح للذكاء الاصطناعي إدارة المستخدمين والمفاتيح والنسخ الاحتياطية.",
-	"settings.ai.groupsFixed": "لتغيير هذه، أنشئ مفتاحًا جديدًا.",
+	"settings.ai.groupsFixed": "يمكنك تغيير هذه لاحقًا من قائمة المفاتيح.",
 	"settings.ai.shortSee": "عرض",
 	"settings.ai.shortAdd": "إضافة",
 	"settings.ai.shortControl": "التنزيلات",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "حذف",
 	"settings.ai.shortAdmin": "إدارة",
 	"settings.ai.canDo": "يمكنه: {list}",
-	"settings.ai.groupNone": "لا شيء"
+	"settings.ai.groupNone": "لا شيء",
+	"settings.ai.groupApprove": "الموافقة على الطلبات",
+	"settings.ai.approveHint": "وافق على الطلبات المعلّقة أو ارفضها. يمكن للإدارة ذلك أيضًا.",
+	"settings.ai.shortApprove": "موافقة",
+	"settings.ai.edit": "تغيير",
+	"settings.ai.editName": "تغيير ما يُسمح لـ {name} بفعله",
+	"settings.ai.editDesc": "يسري التغيير من الاستدعاء التالي للمفتاح.",
+	"settings.ai.saveGroups": "حفظ",
+	"settings.ai.groupsSaved": "تم تحديث {name}",
+	"settings.ai.groupsSaveFailed": "تعذّر تغيير {name}"
 }

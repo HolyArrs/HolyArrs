@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Löschen",
 	"settings.ai.groupAdmin": "Verwaltung (Benutzer, Schlüssel, Sicherungen, Updates)",
 	"settings.ai.adminHint": "Lässt die KI Benutzer, Schlüssel und Sicherungen verwalten.",
-	"settings.ai.groupsFixed": "Zum Ändern einen neuen Schlüssel erstellen.",
+	"settings.ai.groupsFixed": "Du kannst das später in der Schlüsselliste ändern.",
 	"settings.ai.shortSee": "Ansehen",
 	"settings.ai.shortAdd": "Hinzufügen",
 	"settings.ai.shortControl": "Downloads",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Löschen",
 	"settings.ai.shortAdmin": "Verwaltung",
 	"settings.ai.canDo": "Darf: {list}",
-	"settings.ai.groupNone": "nichts"
+	"settings.ai.groupNone": "nichts",
+	"settings.ai.groupApprove": "Anfragen freigeben",
+	"settings.ai.approveHint": "Offene Anfragen freigeben oder ablehnen. Die Verwaltung kann das auch.",
+	"settings.ai.shortApprove": "Freigeben",
+	"settings.ai.edit": "Ändern",
+	"settings.ai.editName": "Ändern, was {name} darf",
+	"settings.ai.editDesc": "Die Änderung gilt ab dem nächsten Aufruf des Schlüssels.",
+	"settings.ai.saveGroups": "Speichern",
+	"settings.ai.groupsSaved": "{name} aktualisiert",
+	"settings.ai.groupsSaveFailed": "{name} konnte nicht geändert werden"
 }

@@ -176,6 +176,7 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/auth/keys":                           Core,
 	"POST /api/v1/auth/keys":                          Core,
 	"DELETE /api/v1/auth/keys/{id}":                   Core,
+	"PUT /api/v1/auth/keys/{id}":                      Core,
 	"GET /api/v1/auth/settings":                       Core,
 	"PUT /api/v1/auth/settings":                       Core,
 	"POST /api/v1/auth/plex/link/start":               Core,

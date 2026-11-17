@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex nedeva šīs personas konta kodu, tāpēc viņas skatīšanās saraksts netiek lasīts.",
 	"server.plugins.plugins-are-changed-only-from-a": "spraudņus maina tikai no īpašnieka pieteiktas sesijas, nekad ar API atslēgu",
 	"server.plugins.plugins-are-not-set-up-in": "spraudņi šajā versijā nav iestatīti",
-	"server.accounts.finish-setup-on-the-home-network": "Vispirms pabeidziet iestatīšanu mājas tīklā."
+	"server.accounts.finish-setup-on-the-home-network": "Vispirms pabeidziet iestatīšanu mājas tīklā.",
+	"server.accounts.api-key-changed": "API atslēga {label} mainīta",
+	"server.accounts.only-the-owner-and-admins-may-2": "atslēgu drīkst mainīt tikai pierakstījies īpašnieks un admini"
 }

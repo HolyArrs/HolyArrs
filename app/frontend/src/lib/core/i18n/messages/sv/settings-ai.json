@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Radera",
 	"settings.ai.groupAdmin": "Admin (användare, nycklar, säkerhetskopior, uppdateringar)",
 	"settings.ai.adminHint": "Låter AI:n hantera användare, nycklar och säkerhetskopior.",
-	"settings.ai.groupsFixed": "Skapa en ny nyckel för att ändra dessa.",
+	"settings.ai.groupsFixed": "Du kan ändra dem senare i nyckellistan.",
 	"settings.ai.shortSee": "Se",
 	"settings.ai.shortAdd": "Lägga till",
 	"settings.ai.shortControl": "Nedladdningar",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Radera",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Får: {list}",
-	"settings.ai.groupNone": "inget"
+	"settings.ai.groupNone": "inget",
+	"settings.ai.groupApprove": "Godkänn förfrågningar",
+	"settings.ai.approveHint": "Godkänn eller avvisa väntande förfrågningar. Admin kan också.",
+	"settings.ai.shortApprove": "Godkänn",
+	"settings.ai.edit": "Ändra",
+	"settings.ai.editName": "Ändra vad {name} får göra",
+	"settings.ai.editDesc": "Ändringen gäller från nyckelns nästa anrop.",
+	"settings.ai.saveGroups": "Spara",
+	"settings.ai.groupsSaved": "{name} uppdaterad",
+	"settings.ai.groupsSaveFailed": "Kunde inte ändra {name}"
 }

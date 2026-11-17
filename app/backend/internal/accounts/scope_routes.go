@@ -89,6 +89,7 @@ var RouteScopes = map[string]string{
 	"POST /api/v1/auth/oidc/link-finish":        webserver.ScopeAdmin,
 	"POST /api/v1/auth/forward/link":            webserver.ScopeAdmin,
 	"DELETE /api/v1/auth/keys/{id}":             webserver.ScopeAdmin,
+	"PUT /api/v1/auth/keys/{id}":                webserver.ScopeAdmin,
 	"POST /api/v1/auth/password":                webserver.ScopeAdmin,
 	"POST /api/v1/auth/two-factor/setup":        webserver.ScopeAdmin,
 	"POST /api/v1/auth/two-factor/enable":       webserver.ScopeAdmin,

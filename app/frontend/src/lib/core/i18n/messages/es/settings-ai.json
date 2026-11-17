@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Borrar",
 	"settings.ai.groupAdmin": "Administración (usuarios, claves, copias, actualizaciones)",
 	"settings.ai.adminHint": "Permite a la IA gestionar usuarios, claves y copias de seguridad.",
-	"settings.ai.groupsFixed": "Para cambiarlo, crea una clave nueva.",
+	"settings.ai.groupsFixed": "Puedes cambiarlo más tarde desde la lista de claves.",
 	"settings.ai.shortSee": "Ver",
 	"settings.ai.shortAdd": "Añadir",
 	"settings.ai.shortControl": "Descargas",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Borrar",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Puede: {list}",
-	"settings.ai.groupNone": "nada"
+	"settings.ai.groupNone": "nada",
+	"settings.ai.groupApprove": "Aprobar solicitudes",
+	"settings.ai.approveHint": "Aprueba o rechaza solicitudes pendientes. Admin también puede.",
+	"settings.ai.shortApprove": "Aprobar",
+	"settings.ai.edit": "Cambiar",
+	"settings.ai.editName": "Cambiar lo que puede hacer {name}",
+	"settings.ai.editDesc": "El cambio cuenta desde la próxima llamada de la clave.",
+	"settings.ai.saveGroups": "Guardar",
+	"settings.ai.groupsSaved": "{name} actualizada",
+	"settings.ai.groupsSaveFailed": "No se pudo cambiar {name}"
 }

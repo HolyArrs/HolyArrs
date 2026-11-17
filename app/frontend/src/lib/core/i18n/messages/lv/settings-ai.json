@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Dzēst",
 	"settings.ai.groupAdmin": "Administrēšana (lietotāji, atslēgas, dublējumi, atjauninājumi)",
 	"settings.ai.adminHint": "Ļauj MI pārvaldīt lietotājus, atslēgas un dublējumus.",
-	"settings.ai.groupsFixed": "Lai tos mainītu, izveidojiet jaunu atslēgu.",
+	"settings.ai.groupsFixed": "Tos vēlāk var mainīt atslēgu sarakstā.",
 	"settings.ai.shortSee": "Skatīt",
 	"settings.ai.shortAdd": "Pievienot",
 	"settings.ai.shortControl": "Lejupielādes",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Dzēst",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Drīkst: {list}",
-	"settings.ai.groupNone": "neko"
+	"settings.ai.groupNone": "neko",
+	"settings.ai.groupApprove": "Apstiprināt pieprasījumus",
+	"settings.ai.approveHint": "Apstiprina vai noraida gaidošos pieprasījumus. Admin to var arī.",
+	"settings.ai.shortApprove": "Apstiprināt",
+	"settings.ai.edit": "Mainīt",
+	"settings.ai.editName": "Mainīt, ko drīkst {name}",
+	"settings.ai.editDesc": "Izmaiņas stājas spēkā ar nākamo atslēgas izsaukumu.",
+	"settings.ai.saveGroups": "Saglabāt",
+	"settings.ai.groupsSaved": "{name} atjaunināts",
+	"settings.ai.groupsSaveFailed": "Neizdevās mainīt {name}"
 }

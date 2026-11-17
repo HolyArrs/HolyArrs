@@ -311,8 +311,8 @@ POST /api/v1/app/update/check admin
 POST /api/v1/artists add
 POST /api/v1/asks add
 POST /api/v1/asks/remove delete
-POST /api/v1/asks/{id}/approve add
-POST /api/v1/asks/{id}/turn-down add
+POST /api/v1/asks/{id}/approve approve
+POST /api/v1/asks/{id}/turn-down approve
 POST /api/v1/auth/ai-connect admin
 POST /api/v1/auth/forward/link admin
 POST /api/v1/auth/forward/login admin
@@ -515,6 +515,7 @@ PUT /api/v1/account/avatar settings
 PUT /api/v1/albums/{id} add
 PUT /api/v1/alerts/{id} settings
 PUT /api/v1/ask-limits/{id} settings
+PUT /api/v1/auth/keys/{id} admin
 PUT /api/v1/auth/settings admin
 PUT /api/v1/auth/sso admin
 PUT /api/v1/backups/settings admin

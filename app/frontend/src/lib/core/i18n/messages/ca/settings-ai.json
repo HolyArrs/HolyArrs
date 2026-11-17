@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Esborrar",
 	"settings.ai.groupAdmin": "Administració (usuaris, claus, còpies, actualitzacions)",
 	"settings.ai.adminHint": "Permet a la IA gestionar usuaris, claus i còpies de seguretat.",
-	"settings.ai.groupsFixed": "Per canviar-ho, crea una clau nova.",
+	"settings.ai.groupsFixed": "Ho pots canviar més tard des de la llista de claus.",
 	"settings.ai.shortSee": "Veure",
 	"settings.ai.shortAdd": "Afegir",
 	"settings.ai.shortControl": "Baixades",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Esborrar",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Pot: {list}",
-	"settings.ai.groupNone": "res"
+	"settings.ai.groupNone": "res",
+	"settings.ai.groupApprove": "Aprovar peticions",
+	"settings.ai.approveHint": "Aprova o rebutja les peticions pendents. Admin també ho pot fer.",
+	"settings.ai.shortApprove": "Aprovar",
+	"settings.ai.edit": "Canvia",
+	"settings.ai.editName": "Canvia què pot fer {name}",
+	"settings.ai.editDesc": "El canvi compta a partir de la propera crida de la clau.",
+	"settings.ai.saveGroups": "Desa",
+	"settings.ai.groupsSaved": "{name} actualitzada",
+	"settings.ai.groupsSaveFailed": "No s'ha pogut canviar {name}"
 }

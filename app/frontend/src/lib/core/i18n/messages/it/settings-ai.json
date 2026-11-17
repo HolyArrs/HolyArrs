@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Eliminare",
 	"settings.ai.groupAdmin": "Amministrazione (utenti, chiavi, backup, aggiornamenti)",
 	"settings.ai.adminHint": "Permette all'IA di gestire utenti, chiavi e backup.",
-	"settings.ai.groupsFixed": "Per cambiarle, crea una nuova chiave.",
+	"settings.ai.groupsFixed": "Puoi cambiarli più tardi dall'elenco delle chiavi.",
 	"settings.ai.shortSee": "Vedere",
 	"settings.ai.shortAdd": "Aggiungere",
 	"settings.ai.shortControl": "Download",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Eliminare",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Può: {list}",
-	"settings.ai.groupNone": "niente"
+	"settings.ai.groupNone": "niente",
+	"settings.ai.groupApprove": "Approvare richieste",
+	"settings.ai.approveHint": "Approva o rifiuta le richieste in attesa. Anche Admin può farlo.",
+	"settings.ai.shortApprove": "Approva",
+	"settings.ai.edit": "Cambia",
+	"settings.ai.editName": "Cambia cosa può fare {name}",
+	"settings.ai.editDesc": "La modifica vale dalla prossima chiamata della chiave.",
+	"settings.ai.saveGroups": "Salva",
+	"settings.ai.groupsSaved": "{name} aggiornata",
+	"settings.ai.groupsSaveFailed": "Impossibile cambiare {name}"
 }

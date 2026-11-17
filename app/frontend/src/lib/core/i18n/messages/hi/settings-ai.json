@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "हटाएँ",
 	"settings.ai.groupAdmin": "एडमिन (उपयोगकर्ता, कुंजियाँ, बैकअप, अपडेट)",
 	"settings.ai.adminHint": "AI को उपयोगकर्ता, कुंजियाँ और बैकअप संभालने देता है।",
-	"settings.ai.groupsFixed": "इन्हें बदलने के लिए नई कुंजी बनाएँ।",
+	"settings.ai.groupsFixed": "आप इन्हें बाद में कुंजी सूची से बदल सकते हैं।",
 	"settings.ai.shortSee": "देखें",
 	"settings.ai.shortAdd": "जोड़ें",
 	"settings.ai.shortControl": "डाउनलोड",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "हटाएँ",
 	"settings.ai.shortAdmin": "एडमिन",
 	"settings.ai.canDo": "कर सकता है: {list}",
-	"settings.ai.groupNone": "कुछ नहीं"
+	"settings.ai.groupNone": "कुछ नहीं",
+	"settings.ai.groupApprove": "अनुरोध मंज़ूर करें",
+	"settings.ai.approveHint": "लंबित अनुरोध मंज़ूर या अस्वीकार करें। एडमिन भी यह कर सकता है।",
+	"settings.ai.shortApprove": "मंज़ूरी",
+	"settings.ai.edit": "बदलें",
+	"settings.ai.editName": "{name} क्या कर सकता है, बदलें",
+	"settings.ai.editDesc": "बदलाव कुंजी की अगली कॉल से लागू होगा।",
+	"settings.ai.saveGroups": "सेव करें",
+	"settings.ai.groupsSaved": "{name} अपडेट हुआ",
+	"settings.ai.groupsSaveFailed": "{name} नहीं बदला जा सका"
 }

@@ -10244,6 +10244,74 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Owner or admin, signed in: set an AI (mcp) key's mcp_groups. Admins reach only their own keys. Scopes stay fixed.",
+        "operationId": "editKey",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "mcp_groups": {
+                    "items": {
+                      "enum": [
+                        "see",
+                        "add",
+                        "control",
+                        "settings",
+                        "delete",
+                        "admin",
+                        "approve"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "mcp_groups"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The key's new tick boxes."
+          },
+          "400": {
+            "description": "Unknown group, or not an AI key."
+          },
+          "403": {
+            "description": "Not the owner or an admin, or called with a key."
+          },
+          "404": {
+            "description": "No such key."
+          }
+        },
+        "summary": "Change an AI key's tick boxes",
+        "tags": [
+          "API keys"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/auth/login": {

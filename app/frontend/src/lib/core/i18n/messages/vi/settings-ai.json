@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Xóa",
 	"settings.ai.groupAdmin": "Quản trị (người dùng, khóa, bản sao lưu, cập nhật)",
 	"settings.ai.adminHint": "Cho phép AI quản lý người dùng, khóa và bản sao lưu.",
-	"settings.ai.groupsFixed": "Để thay đổi, hãy tạo khóa mới.",
+	"settings.ai.groupsFixed": "Bạn có thể đổi sau trong danh sách khóa.",
 	"settings.ai.shortSee": "Xem",
 	"settings.ai.shortAdd": "Thêm",
 	"settings.ai.shortControl": "Tải xuống",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Xóa",
 	"settings.ai.shortAdmin": "Quản trị",
 	"settings.ai.canDo": "Được: {list}",
-	"settings.ai.groupNone": "không gì"
+	"settings.ai.groupNone": "không gì",
+	"settings.ai.groupApprove": "Duyệt yêu cầu",
+	"settings.ai.approveHint": "Duyệt hoặc từ chối yêu cầu đang chờ. Quản trị cũng làm được.",
+	"settings.ai.shortApprove": "Duyệt",
+	"settings.ai.edit": "Đổi",
+	"settings.ai.editName": "Đổi quyền của {name}",
+	"settings.ai.editDesc": "Thay đổi áp dụng từ lần gọi tiếp theo của khóa.",
+	"settings.ai.saveGroups": "Lưu",
+	"settings.ai.groupsSaved": "Đã cập nhật {name}",
+	"settings.ai.groupsSaveFailed": "Không thể đổi {name}"
 }

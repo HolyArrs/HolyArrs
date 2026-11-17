@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Brisanje",
 	"settings.ai.groupAdmin": "Administracija (korisnici, ključevi, rezervne kopije, ažuriranja)",
 	"settings.ai.adminHint": "Dozvoljava VI da upravlja korisnicima, ključevima i rezervnim kopijama.",
-	"settings.ai.groupsFixed": "Da biste ovo promenili, napravite novi ključ.",
+	"settings.ai.groupsFixed": "Ово можеш касније да промениш на листи кључева.",
 	"settings.ai.shortSee": "Pregled",
 	"settings.ai.shortAdd": "Dodavanje",
 	"settings.ai.shortControl": "Preuzimanja",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Brisanje",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Sme: {list}",
-	"settings.ai.groupNone": "ništa"
+	"settings.ai.groupNone": "ništa",
+	"settings.ai.groupApprove": "Одобравање захтева",
+	"settings.ai.approveHint": "Одобрава или одбија захтеве на чекању. Admin то такође може.",
+	"settings.ai.shortApprove": "Одобри",
+	"settings.ai.edit": "Промени",
+	"settings.ai.editName": "Промени шта {name} сме",
+	"settings.ai.editDesc": "Промена важи од следећег позива кључа.",
+	"settings.ai.saveGroups": "Сачувај",
+	"settings.ai.groupsSaved": "{name} ажуриран",
+	"settings.ai.groupsSaveFailed": "Није могуће променити {name}"
 }

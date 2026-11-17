@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Delete",
 	"settings.ai.groupAdmin": "Admin (users, keys, backups, updates)",
 	"settings.ai.adminHint": "Lets the AI manage users, keys and backups.",
-	"settings.ai.groupsFixed": "To change these, make a new key.",
+	"settings.ai.groupsFixed": "You can change these later from the key list.",
 	"settings.ai.shortSee": "See",
 	"settings.ai.shortAdd": "Add",
 	"settings.ai.shortControl": "Downloads",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Delete",
 	"settings.ai.shortAdmin": "Admin",
 	"settings.ai.canDo": "Can: {list}",
-	"settings.ai.groupNone": "nothing"
+	"settings.ai.groupNone": "nothing",
+	"settings.ai.groupApprove": "Approve requests",
+	"settings.ai.approveHint": "Approve or decline pending requests. Admin can do this too.",
+	"settings.ai.shortApprove": "Approve",
+	"settings.ai.edit": "Change",
+	"settings.ai.editName": "Change what {name} may do",
+	"settings.ai.editDesc": "The change counts from the key's next call.",
+	"settings.ai.saveGroups": "Save",
+	"settings.ai.groupsSaved": "{name} updated",
+	"settings.ai.groupsSaveFailed": "Couldn't change {name}"
 }

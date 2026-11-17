@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex ने इस व्यक्ति के लिए खाता कोड नहीं दिया, इसलिए उनकी वॉचलिस्ट नहीं पढ़ी जा रही है।",
 	"server.plugins.plugins-are-changed-only-from-a": "प्लगइन केवल मालिक के साइन-इन सत्र से बदले जाते हैं, कभी API कुंजी से नहीं",
 	"server.plugins.plugins-are-not-set-up-in": "इस बिल्ड में प्लगइन सेट अप नहीं हैं",
-	"server.accounts.finish-setup-on-the-home-network": "पहले घर के नेटवर्क पर सेटअप पूरा करें।"
+	"server.accounts.finish-setup-on-the-home-network": "पहले घर के नेटवर्क पर सेटअप पूरा करें।",
+	"server.accounts.api-key-changed": "API कुंजी {label} बदली गई",
+	"server.accounts.only-the-owner-and-admins-may-2": "कुंजी सिर्फ़ साइन इन किए ओनर और एडमिन बदल सकते हैं"
 }

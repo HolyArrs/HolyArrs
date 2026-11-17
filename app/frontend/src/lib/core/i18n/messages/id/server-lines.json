@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kode akun untuk orang ini, jadi daftar tontonannya tidak dibaca.",
 	"server.plugins.plugins-are-changed-only-from-a": "plugin hanya diubah dari sesi pemilik yang masuk, tidak pernah dengan kunci API",
 	"server.plugins.plugins-are-not-set-up-in": "plugin belum disiapkan di build ini",
-	"server.accounts.finish-setup-on-the-home-network": "Selesaikan penyiapan di jaringan rumah dulu."
+	"server.accounts.finish-setup-on-the-home-network": "Selesaikan penyiapan di jaringan rumah dulu.",
+	"server.accounts.api-key-changed": "Kunci API {label} diubah",
+	"server.accounts.only-the-owner-and-admins-may-2": "hanya pemilik dan admin yang sudah masuk yang boleh mengubah kunci"
 }

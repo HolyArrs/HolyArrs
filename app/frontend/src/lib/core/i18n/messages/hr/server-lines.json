@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru računa za ovu osobu, pa se njezin popis za gledanje ne čita.",
 	"server.plugins.plugins-are-changed-only-from-a": "dodaci se mijenjaju samo iz prijavljene sesije vlasnika, nikad API ključem",
 	"server.plugins.plugins-are-not-set-up-in": "dodaci nisu postavljeni u ovoj verziji",
-	"server.accounts.finish-setup-on-the-home-network": "Najprije dovršite postavljanje na kućnoj mreži."
+	"server.accounts.finish-setup-on-the-home-network": "Najprije dovršite postavljanje na kućnoj mreži.",
+	"server.accounts.api-key-changed": "API ključ {label} je promijenjen",
+	"server.accounts.only-the-owner-and-admins-may-2": "samo prijavljeni vlasnik i administratori mogu promijeniti ključ"
 }

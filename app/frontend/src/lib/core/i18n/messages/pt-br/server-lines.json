@@ -1346,5 +1346,7 @@
 	"server.requests.plex-gave-no-account-code-for": "O Plex não deu nenhum código de conta para esta pessoa, então a lista de interesse dela não é lida.",
 	"server.plugins.plugins-are-changed-only-from-a": "plugins só são alterados numa sessão do dono conectado, nunca com uma chave de API",
 	"server.plugins.plugins-are-not-set-up-in": "plugins não estão configurados nesta versão",
-	"server.accounts.finish-setup-on-the-home-network": "Termine a configuração na rede de casa primeiro."
+	"server.accounts.finish-setup-on-the-home-network": "Termine a configuração na rede de casa primeiro.",
+	"server.accounts.api-key-changed": "Chave de API {label} alterada",
+	"server.accounts.only-the-owner-and-admins-may-2": "só o dono e os administradores, com sessão iniciada, podem alterar uma chave"
 }

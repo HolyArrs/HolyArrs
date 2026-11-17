@@ -47,7 +47,7 @@
 	"settings.ai.groupDelete": "Kustutada",
 	"settings.ai.groupAdmin": "Haldus (kasutajad, võtmed, varukoopiad, uuendused)",
 	"settings.ai.adminHint": "Lubab AI-l hallata kasutajaid, võtmeid ja varukoopiaid.",
-	"settings.ai.groupsFixed": "Muutmiseks loo uus võti.",
+	"settings.ai.groupsFixed": "Saad neid hiljem võtmete loendist muuta.",
 	"settings.ai.shortSee": "Vaatamine",
 	"settings.ai.shortAdd": "Lisamine",
 	"settings.ai.shortControl": "Allalaadimised",
@@ -55,5 +55,14 @@
 	"settings.ai.shortDelete": "Kustutamine",
 	"settings.ai.shortAdmin": "Haldus",
 	"settings.ai.canDo": "Tohib: {list}",
-	"settings.ai.groupNone": "mitte midagi"
+	"settings.ai.groupNone": "mitte midagi",
+	"settings.ai.groupApprove": "Taotluste kinnitamine",
+	"settings.ai.approveHint": "Kinnita või lükka ootel taotlused tagasi. Haldus saab seda ka.",
+	"settings.ai.shortApprove": "Kinnita",
+	"settings.ai.edit": "Muuda",
+	"settings.ai.editName": "Muuda, mida {name} tohib teha",
+	"settings.ai.editDesc": "Muudatus kehtib võtme järgmisest päringust.",
+	"settings.ai.saveGroups": "Salvesta",
+	"settings.ai.groupsSaved": "{name} uuendatud",
+	"settings.ai.groupsSaveFailed": "{name} muutmine ebaõnnestus"
 }
