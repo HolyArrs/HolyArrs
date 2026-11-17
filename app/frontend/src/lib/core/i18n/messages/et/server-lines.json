@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "saada {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "lülita esmalt sisse Lisa soovitud pealkirjadele silt",
 	"server.mediaservers.a-label-needs-1-to-64": "silt peab olema 1 kuni 64 märki",
-	"server.downloads.the-release-link-went-to-a": "väljalaske link läks sinu koduvõrgus teisele aadressile, mis pole lubatud: seal tohib minna ainult allika enda aadressile"
+	"server.downloads.the-release-link-went-to-a": "väljalaske link läks sinu koduvõrgus teisele aadressile, mis pole lubatud: seal tohib minna ainult allika enda aadressile",
+	"server.core.name-show-not-found": "{name} → ei leitud. HolyArrs ei leia seda nime. Kasuta selle asemel IP-d.",
+	"server.core.name-show-refused": "{name} → {ip} → keelduti pordil {port}. Nimi töötab, aga sellel pordil ei vasta miski. Kontrolli porti.",
+	"server.core.name-show-no-answer": "{name} → {ip} → vastust pole pordil {port}. Nimi töötab, aga miski ei vasta õigel ajal. Kontrolli porti ja et tulemüür ei sega."
 }

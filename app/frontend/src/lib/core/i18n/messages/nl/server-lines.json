@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "stuur {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "zet eerst Aangevraagde titels labelen aan",
 	"server.mediaservers.a-label-needs-1-to-64": "een label moet 1 tot 64 tekens hebben",
-	"server.downloads.the-release-link-went-to-a": "de releaselink ging naar een ander adres op je thuisnetwerk, en dat mag niet: daar mag alleen het eigen adres van de bron bereikt worden"
+	"server.downloads.the-release-link-went-to-a": "de releaselink ging naar een ander adres op je thuisnetwerk, en dat mag niet: daar mag alleen het eigen adres van de bron bereikt worden",
+	"server.core.name-show-not-found": "{name} → niet gevonden. HolyArrs kan deze naam niet vinden. Gebruik het IP-adres.",
+	"server.core.name-show-refused": "{name} → {ip} → geweigerd op poort {port}. De naam werkt, maar niets antwoordt op die poort. Controleer de poort.",
+	"server.core.name-show-no-answer": "{name} → {ip} → geen antwoord op poort {port}. De naam werkt, maar niets antwoordt op tijd. Controleer de poort en of er geen firewall in de weg zit."
 }

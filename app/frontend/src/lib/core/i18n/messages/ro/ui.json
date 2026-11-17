@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Câștigător: {name}",
 	"ui.wikiFacts.nominated": "Nominalizat: {name}",
 	"ui.wikiFacts.andMore": "și încă {count}",
-	"ui.pageLoader.loading": "Se încarcă"
+	"ui.pageLoader.loading": "Se încarcă",
+	"ui.connectHelp.link": "Cum repari"
 }

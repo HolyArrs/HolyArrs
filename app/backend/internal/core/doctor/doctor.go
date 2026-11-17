@@ -170,13 +170,13 @@ var textCauses = []struct {
 	words []string
 }{
 	{Blocked, []string{"address refused by the network policy", "on the local network"}},
-	{DNS, []string{"no such host", "could not look up"}},
+	{DNS, []string{"no such host", "could not look up", "→ not found."}},
 	{UseHTTP, []string{"server gave http response to https client", "first record does not look like a tls handshake"}},
 	// A TLS record (alert 0x15, handshake 0x16) read as a plain http answer.
 	{UseHTTPS, []string{"http request to an https server", "plain http request was sent to https port", `malformed http response "\x15\x03`, `malformed http response "\x16\x03`}},
 	{TLS, []string{"x509:", "certificate", "tls: "}},
-	{Refused, []string{"connection refused", "actively refused"}},
-	{Timeout, []string{"timeout", "deadline exceeded", "did not answer within", "took too long"}},
+	{Refused, []string{"connection refused", "actively refused", "→ refused on port"}},
+	{Timeout, []string{"timeout", "deadline exceeded", "did not answer within", "took too long", "→ no answer on port"}},
 	{Category, []string{"category does not exist", "category missing"}},
 	{WrongApp, []string{"answered, but not like", "not with a feed", "not valid xml", "another app answered", "invalid character '<'"}},
 	{Auth, []string{"401 unauthorized", "403 forbidden", "answered 401", "answered 403", "turned down the key", "turned down the token", "wants a sign-in", "sign-in refused"}},

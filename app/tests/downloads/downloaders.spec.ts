@@ -64,6 +64,21 @@ test('a SABnzbd is added and tested, a wrong key is said in plain words, it paus
 	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(r.getByTestId('downloader-state')).toHaveText('Working');
 
+	// A name with nothing behind its port: the line shows what the name turned into and links to the fix.
+	await r.hover(); // row buttons show on hover
+	await r.getByRole('button', { name: 'Change' }).click();
+	await page.getByLabel('Address', { exact: true }).fill('http://localhost:18998');
+	await page.getByLabel('API key', { exact: true }).fill(sabKey);
+	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(r.getByTestId('downloader-test')).toContainText(/localhost → \S+ → refused on port 18998\. The name works/);
+	await expect(r.getByTestId('connect-help')).toHaveAttribute('href', /docs\.holyarrs\.com\/start\/connect\/#if-it-does-not-work:~:text=Not%20answering$/);
+	await r.hover(); // row buttons show on hover
+	await r.getByRole('button', { name: 'Change' }).click();
+	await page.getByLabel('Address', { exact: true }).fill(`http://127.0.0.1:${sabPort}`);
+	await page.getByLabel('API key', { exact: true }).fill(sabKey);
+	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(r.getByTestId('downloader-state')).toHaveText('Working');
+
 	await r.getByRole('button', { name: 'Pause' }).click();
 	await expect(r.getByTestId('downloader-state')).toHaveText('Paused');
 	await expect(r.getByTestId('downloader-text')).toContainText('Paused by you');

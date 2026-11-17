@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "trimite {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "activează mai întâi Etichetează titlurile cerute",
 	"server.mediaservers.a-label-needs-1-to-64": "o etichetă are nevoie de 1 până la 64 de caractere",
-	"server.downloads.the-release-link-went-to-a": "linkul Lansării a mers la o altă adresă din rețeaua ta de acasă, iar asta nu e permis: acolo se poate accesa doar adresa proprie a Sursei"
+	"server.downloads.the-release-link-went-to-a": "linkul Lansării a mers la o altă adresă din rețeaua ta de acasă, iar asta nu e permis: acolo se poate accesa doar adresa proprie a Sursei",
+	"server.core.name-show-not-found": "{name} → negăsit. HolyArrs nu găsește acest nume. Folosește IP-ul.",
+	"server.core.name-show-refused": "{name} → {ip} → refuzat pe portul {port}. Numele funcționează, dar nimic nu răspunde pe acel port. Verifică portul.",
+	"server.core.name-show-no-answer": "{name} → {ip} → niciun răspuns pe portul {port}. Numele funcționează, dar nimic nu răspunde la timp. Verifică portul și că niciun firewall nu blochează."
 }

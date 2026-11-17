@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Vandt: {name}",
 	"ui.wikiFacts.nominated": "Nomineret: {name}",
 	"ui.wikiFacts.andMore": "og {count} mere",
-	"ui.pageLoader.loading": "Indlæser"
+	"ui.pageLoader.loading": "Indlæser",
+	"ui.connectHelp.link": "Sådan løser du det"
 }

@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "изпратете {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "първо включете Етикетирай заявените заглавия",
 	"server.mediaservers.a-label-needs-1-to-64": "етикетът трябва да е от 1 до 64 знака",
-	"server.downloads.the-release-link-went-to-a": "връзката на релийза отиде към друг адрес в домашната ти мрежа, което не е позволено: там може да се стига само до собствения адрес на източника"
+	"server.downloads.the-release-link-went-to-a": "връзката на релийза отиде към друг адрес в домашната ти мрежа, което не е позволено: там може да се стига само до собствения адрес на източника",
+	"server.core.name-show-not-found": "{name} → не е намерено. HolyArrs не намира това име. Използвай IP адреса.",
+	"server.core.name-show-refused": "{name} → {ip} → отказано на порт {port}. Името работи, но нищо не отговаря на този порт. Провери порта.",
+	"server.core.name-show-no-answer": "{name} → {ip} → няма отговор на порт {port}. Името работи, но нищо не отговаря навреме. Провери порта и че няма защитна стена по пътя."
 }

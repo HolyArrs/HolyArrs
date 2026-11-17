@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "{\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false} भेजें",
 	"server.mediaservers.turn-on-label-requested-titles-first": "पहले अनुरोधित टाइटल पर लेबल लगाएँ चालू करें",
 	"server.mediaservers.a-label-needs-1-to-64": "लेबल में 1 से 64 अक्षर होने चाहिए",
-	"server.downloads.the-release-link-went-to-a": "रिलीज़ का लिंक तुम्हारे घर के नेटवर्क के किसी दूसरे पते पर गया, जिसकी अनुमति नहीं है: वहां सिर्फ़ सोर्स के अपने पते तक पहुंचा जा सकता है"
+	"server.downloads.the-release-link-went-to-a": "रिलीज़ का लिंक तुम्हारे घर के नेटवर्क के किसी दूसरे पते पर गया, जिसकी अनुमति नहीं है: वहां सिर्फ़ सोर्स के अपने पते तक पहुंचा जा सकता है",
+	"server.core.name-show-not-found": "{name} → नहीं मिला. HolyArrs यह नाम नहीं ढूंढ पा रहा। इसकी जगह IP इस्तेमाल करें।",
+	"server.core.name-show-refused": "{name} → {ip} → पोर्ट पर मना किया {port}. नाम काम करता है, पर उस पोर्ट पर कोई जवाब नहीं देता। पोर्ट जांचें।",
+	"server.core.name-show-no-answer": "{name} → {ip} → पोर्ट पर कोई जवाब नहीं {port}. नाम काम करता है, पर समय पर कोई जवाब नहीं देता। पोर्ट जांचें, और कि कोई फ़ायरवॉल बीच में न हो।"
 }

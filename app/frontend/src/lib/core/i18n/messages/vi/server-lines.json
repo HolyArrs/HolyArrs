@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "gửi {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "hãy bật Gắn nhãn cho các tựa được yêu cầu trước",
 	"server.mediaservers.a-label-needs-1-to-64": "nhãn cần từ 1 đến 64 ký tự",
-	"server.downloads.the-release-link-went-to-a": "liên kết của Bản phát hành đi tới một địa chỉ khác trong mạng gia đình của bạn, điều này không được phép: ở đó chỉ được truy cập địa chỉ của chính Nguồn"
+	"server.downloads.the-release-link-went-to-a": "liên kết của Bản phát hành đi tới một địa chỉ khác trong mạng gia đình của bạn, điều này không được phép: ở đó chỉ được truy cập địa chỉ của chính Nguồn",
+	"server.core.name-show-not-found": "{name} → không tìm thấy. HolyArrs không tìm thấy tên này. Hãy dùng IP thay thế.",
+	"server.core.name-show-refused": "{name} → {ip} → bị từ chối ở cổng {port}. Tên hoạt động, nhưng không có gì trả lời ở cổng đó. Kiểm tra cổng.",
+	"server.core.name-show-no-answer": "{name} → {ip} → không trả lời ở cổng {port}. Tên hoạt động, nhưng không có gì trả lời kịp. Kiểm tra cổng và xem có tường lửa nào chặn không."
 }

@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "{\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false} gönderin",
 	"server.mediaservers.turn-on-label-requested-titles-first": "önce İstenen yapımları etiketle seçeneğini açın",
 	"server.mediaservers.a-label-needs-1-to-64": "etiket 1 ile 64 karakter arasında olmalı",
-	"server.downloads.the-release-link-went-to-a": "sürüm adayının bağlantısı ev ağındaki başka bir adrese gitti ve buna izin yok: orada yalnızca Kaynağın kendi adresine erişilebilir"
+	"server.downloads.the-release-link-went-to-a": "sürüm adayının bağlantısı ev ağındaki başka bir adrese gitti ve buna izin yok: orada yalnızca Kaynağın kendi adresine erişilebilir",
+	"server.core.name-show-not-found": "{name} → bulunamadı. HolyArrs bu adı bulamıyor. Bunun yerine IP'yi kullanın.",
+	"server.core.name-show-refused": "{name} → {ip} → portta reddedildi {port}. Ad çalışıyor, ama o portta hiçbir şey yanıt vermiyor. Portu kontrol edin.",
+	"server.core.name-show-no-answer": "{name} → {ip} → portta yanıt yok {port}. Ad çalışıyor, ama hiçbir şey zamanında yanıt vermiyor. Portu ve araya güvenlik duvarı girmediğini kontrol edin."
 }

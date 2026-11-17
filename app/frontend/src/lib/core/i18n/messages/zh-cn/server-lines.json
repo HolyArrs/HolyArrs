@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "请发送 {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "请先开启“为请求的作品添加标签”",
 	"server.mediaservers.a-label-needs-1-to-64": "标签需要 1 到 64 个字符",
-	"server.downloads.the-release-link-went-to-a": "资源的链接转到了你家庭网络中的另一个地址，这是不允许的：那里只能访问来源自己的地址"
+	"server.downloads.the-release-link-went-to-a": "资源的链接转到了你家庭网络中的另一个地址，这是不允许的：那里只能访问来源自己的地址",
+	"server.core.name-show-not-found": "{name} → 未找到. HolyArrs 找不到这个名称。请改用 IP。",
+	"server.core.name-show-refused": "{name} → {ip} → 端口拒绝 {port}. 名称可用，但该端口没有任何回应。请检查端口。",
+	"server.core.name-show-no-answer": "{name} → {ip} → 端口无回应 {port}. 名称可用，但没有及时回应。请检查端口，并确认没有防火墙阻挡。"
 }

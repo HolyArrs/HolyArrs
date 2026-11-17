@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "ส่ง {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "เปิด ติดป้ายกำกับเรื่องที่ขอ ก่อน",
 	"server.mediaservers.a-label-needs-1-to-64": "ป้ายกำกับต้องมี 1 ถึง 64 ตัวอักษร",
-	"server.downloads.the-release-link-went-to-a": "ลิงก์ของรีลีสไปยังที่อยู่อื่นในเครือข่ายบ้านของคุณ ซึ่งไม่อนุญาต ที่นั่นเข้าถึงได้เฉพาะที่อยู่ของแหล่งที่มาเองเท่านั้น"
+	"server.downloads.the-release-link-went-to-a": "ลิงก์ของรีลีสไปยังที่อยู่อื่นในเครือข่ายบ้านของคุณ ซึ่งไม่อนุญาต ที่นั่นเข้าถึงได้เฉพาะที่อยู่ของแหล่งที่มาเองเท่านั้น",
+	"server.core.name-show-not-found": "{name} → ไม่พบ. HolyArrs หาชื่อนี้ไม่เจอ ใช้ IP แทน",
+	"server.core.name-show-refused": "{name} → {ip} → ถูกปฏิเสธที่พอร์ต {port}. ชื่อใช้งานได้ แต่ไม่มีอะไรตอบที่พอร์ตนั้น ตรวจสอบพอร์ต",
+	"server.core.name-show-no-answer": "{name} → {ip} → ไม่มีคำตอบที่พอร์ต {port}. ชื่อใช้งานได้ แต่ไม่มีอะไรตอบทันเวลา ตรวจสอบพอร์ต และดูว่าไม่มีไฟร์วอลล์ขวางอยู่"
 }

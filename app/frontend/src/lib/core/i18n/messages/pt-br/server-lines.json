@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "envie {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "ative primeiro Etiquetar títulos pedidos",
 	"server.mediaservers.a-label-needs-1-to-64": "uma etiqueta precisa ter de 1 a 64 caracteres",
-	"server.downloads.the-release-link-went-to-a": "o link do lançamento foi para outro endereço da sua rede doméstica, o que não é permitido: lá só pode ser acessado o endereço da própria Fonte"
+	"server.downloads.the-release-link-went-to-a": "o link do lançamento foi para outro endereço da sua rede doméstica, o que não é permitido: lá só pode ser acessado o endereço da própria Fonte",
+	"server.core.name-show-not-found": "{name} → não encontrado. O HolyArrs não encontra esse nome. Use o IP.",
+	"server.core.name-show-refused": "{name} → {ip} → recusado na porta {port}. O nome funciona, mas nada responde nessa porta. Confira a porta.",
+	"server.core.name-show-no-answer": "{name} → {ip} → sem resposta na porta {port}. O nome funciona, mas nada responde a tempo. Confira a porta e se nenhum firewall está bloqueando."
 }

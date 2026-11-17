@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "sendu {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "kveiktu fyrst á Merkja umbeðna titla",
 	"server.mediaservers.a-label-needs-1-to-64": "merki þarf 1 til 64 stafi",
-	"server.downloads.the-release-link-went-to-a": "tengill útgáfunnar fór á annað vistfang á heimanetinu þínu, sem er ekki leyft: þar má aðeins ná til eigin vistfangs heimildarinnar"
+	"server.downloads.the-release-link-went-to-a": "tengill útgáfunnar fór á annað vistfang á heimanetinu þínu, sem er ekki leyft: þar má aðeins ná til eigin vistfangs heimildarinnar",
+	"server.core.name-show-not-found": "{name} → fannst ekki. HolyArrs finnur ekki þetta nafn. Notaðu IP-töluna í staðinn.",
+	"server.core.name-show-refused": "{name} → {ip} → hafnað á gátt {port}. Nafnið virkar, en ekkert svarar á þeirri gátt. Athugaðu gáttina.",
+	"server.core.name-show-no-answer": "{name} → {ip} → ekkert svar á gátt {port}. Nafnið virkar, en ekkert svarar í tæka tíð. Athugaðu gáttina og að enginn eldveggur sé fyrir."
 }

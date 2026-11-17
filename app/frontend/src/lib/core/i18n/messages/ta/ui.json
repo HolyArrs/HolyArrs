@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "வென்றது: {name}",
 	"ui.wikiFacts.nominated": "பரிந்துரைக்கப்பட்டது: {name}",
 	"ui.wikiFacts.andMore": "மேலும் {count}",
-	"ui.pageLoader.loading": "ஏற்றுகிறது"
+	"ui.pageLoader.loading": "ஏற்றுகிறது",
+	"ui.connectHelp.link": "சரிசெய்வது எப்படி"
 }

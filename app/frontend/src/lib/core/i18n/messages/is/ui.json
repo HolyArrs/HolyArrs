@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Vann: {name}",
 	"ui.wikiFacts.nominated": "Tilnefnt: {name}",
 	"ui.wikiFacts.andMore": "og {count} fleiri",
-	"ui.pageLoader.loading": "Hleð"
+	"ui.pageLoader.loading": "Hleð",
+	"ui.connectHelp.link": "Svona lagarðu það"
 }

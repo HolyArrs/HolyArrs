@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "envia {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "primer activa Etiqueta els títols demanats",
 	"server.mediaservers.a-label-needs-1-to-64": "una etiqueta necessita d'1 a 64 caràcters",
-	"server.downloads.the-release-link-went-to-a": "l'enllaç del Llançament ha anat a una altra adreça de la teva xarxa domèstica, cosa que no està permesa: només s'hi pot accedir a l'adreça pròpia de la Font"
+	"server.downloads.the-release-link-went-to-a": "l'enllaç del Llançament ha anat a una altra adreça de la teva xarxa domèstica, cosa que no està permesa: només s'hi pot accedir a l'adreça pròpia de la Font",
+	"server.core.name-show-not-found": "{name} → no trobat. HolyArrs no troba aquest nom. Fes servir la IP.",
+	"server.core.name-show-refused": "{name} → {ip} → rebutjat al port {port}. El nom funciona, però res no respon en aquest port. Comprova el port.",
+	"server.core.name-show-no-answer": "{name} → {ip} → sense resposta al port {port}. El nom funciona, però res no respon a temps. Comprova el port i que cap tallafoc no ho impedeixi."
 }

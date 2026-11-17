@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "{\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false} را بفرستید",
 	"server.mediaservers.turn-on-label-requested-titles-first": "اول برچسب زدن به عنوان‌های درخواستی را روشن کنید",
 	"server.mediaservers.a-label-needs-1-to-64": "برچسب باید ۱ تا ۶۴ نویسه باشد",
-	"server.downloads.the-release-link-went-to-a": "پیوند ریلیز به نشانی دیگری در شبکهٔ خانگی تو رفت، که مجاز نیست: آنجا فقط به نشانی خود منبع می‌توان رسید"
+	"server.downloads.the-release-link-went-to-a": "پیوند ریلیز به نشانی دیگری در شبکهٔ خانگی تو رفت، که مجاز نیست: آنجا فقط به نشانی خود منبع می‌توان رسید",
+	"server.core.name-show-not-found": "{name} → پیدا نشد. HolyArrs این نام را پیدا نمی‌کند. به‌جای آن از IP استفاده کنید.",
+	"server.core.name-show-refused": "{name} → {ip} → رد شد روی درگاه {port}. نام کار می‌کند، اما چیزی روی آن درگاه پاسخ نمی‌دهد. درگاه را بررسی کنید.",
+	"server.core.name-show-no-answer": "{name} → {ip} → بی‌پاسخ روی درگاه {port}. نام کار می‌کند، اما چیزی به‌موقع پاسخ نمی‌دهد. درگاه را بررسی کنید و اینکه دیواره آتش مانع نباشد."
 }

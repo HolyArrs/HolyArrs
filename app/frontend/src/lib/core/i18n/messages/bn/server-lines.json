@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "{\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false} পাঠান",
 	"server.mediaservers.turn-on-label-requested-titles-first": "আগে অনুরোধ করা টাইটেলে লেবেল দিন চালু করুন",
 	"server.mediaservers.a-label-needs-1-to-64": "লেবেলে 1 থেকে 64টি অক্ষর লাগবে",
-	"server.downloads.the-release-link-went-to-a": "রিলিজের লিংক তোমার বাড়ির নেটওয়ার্কের অন্য একটি ঠিকানায় গেছে, যা অনুমোদিত নয়: সেখানে শুধু সোর্সের নিজের ঠিকানায় পৌঁছানো যায়"
+	"server.downloads.the-release-link-went-to-a": "রিলিজের লিংক তোমার বাড়ির নেটওয়ার্কের অন্য একটি ঠিকানায় গেছে, যা অনুমোদিত নয়: সেখানে শুধু সোর্সের নিজের ঠিকানায় পৌঁছানো যায়",
+	"server.core.name-show-not-found": "{name} → পাওয়া যায়নি. HolyArrs এই নামটি খুঁজে পাচ্ছে না। এর বদলে IP ব্যবহার করুন।",
+	"server.core.name-show-refused": "{name} → {ip} → পোর্টে প্রত্যাখ্যাত {port}. নামটি কাজ করে, কিন্তু ওই পোর্টে কেউ সাড়া দিচ্ছে না। পোর্টটি দেখুন।",
+	"server.core.name-show-no-answer": "{name} → {ip} → পোর্টে সাড়া নেই {port}. নামটি কাজ করে, কিন্তু সময়মতো কেউ সাড়া দিচ্ছে না। পোর্টটি দেখুন, আর কোনো ফায়ারওয়াল বাধা দিচ্ছে কি না।"
 }

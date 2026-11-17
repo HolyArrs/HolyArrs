@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Menang: {name}",
 	"ui.wikiFacts.nominated": "Nominasi: {name}",
 	"ui.wikiFacts.andMore": "dan {count} lainnya",
-	"ui.pageLoader.loading": "Memuat"
+	"ui.pageLoader.loading": "Memuat",
+	"ui.connectHelp.link": "Cara memperbaikinya"
 }

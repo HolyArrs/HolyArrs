@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "pošlite {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "najprv zapnite Označiť požadované tituly štítkom",
 	"server.mediaservers.a-label-needs-1-to-64": "štítok musí mať 1 až 64 znakov",
-	"server.downloads.the-release-link-went-to-a": "odkaz vydania viedol na inú adresu v tvojej domácej sieti, čo nie je dovolené: tam sa smie len na vlastnú adresu Zdroja"
+	"server.downloads.the-release-link-went-to-a": "odkaz vydania viedol na inú adresu v tvojej domácej sieti, čo nie je dovolené: tam sa smie len na vlastnú adresu Zdroja",
+	"server.core.name-show-not-found": "{name} → nenájdené. HolyArrs tento názov nenájde. Použi namiesto neho IP adresu.",
+	"server.core.name-show-refused": "{name} → {ip} → odmietnuté na porte {port}. Názov funguje, ale na tom porte nič neodpovedá. Skontroluj port.",
+	"server.core.name-show-no-answer": "{name} → {ip} → bez odpovede na porte {port}. Názov funguje, ale nič neodpovie včas. Skontroluj port a či tomu nebráni firewall."
 }

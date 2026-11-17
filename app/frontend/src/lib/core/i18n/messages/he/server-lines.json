@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "שלחו {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "הפעילו קודם את תיוג כותרים שהתבקשו",
 	"server.mediaservers.a-label-needs-1-to-64": "תווית צריכה 1 עד 64 תווים",
-	"server.downloads.the-release-link-went-to-a": "קישור הריליז הוביל לכתובת אחרת ברשת הביתית שלך, וזה לא מותר: שם מותר להגיע רק לכתובת של המקור עצמו"
+	"server.downloads.the-release-link-went-to-a": "קישור הריליז הוביל לכתובת אחרת ברשת הביתית שלך, וזה לא מותר: שם מותר להגיע רק לכתובת של המקור עצמו",
+	"server.core.name-show-not-found": "{name} → לא נמצא. HolyArrs לא מוצא את השם הזה. השתמש בכתובת ה-IP במקום.",
+	"server.core.name-show-refused": "{name} → {ip} → נדחה בפורט {port}. השם עובד, אבל שום דבר לא עונה בפורט הזה. בדוק את הפורט.",
+	"server.core.name-show-no-answer": "{name} → {ip} → אין תשובה בפורט {port}. השם עובד, אבל שום דבר לא עונה בזמן. בדוק את הפורט ושאין חומת אש שחוסמת."
 }

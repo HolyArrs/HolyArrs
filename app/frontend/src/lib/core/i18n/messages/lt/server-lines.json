@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "siųskite {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "pirmiausia įjunkite Žymėti užsakytus pavadinimus",
 	"server.mediaservers.a-label-needs-1-to-64": "žymą turi sudaryti nuo 1 iki 64 simbolių",
-	"server.downloads.the-release-link-went-to-a": "Leidimo nuoroda nuvedė į kitą tavo namų tinklo adresą, o tai neleidžiama: ten galima pasiekti tik paties Šaltinio adresą"
+	"server.downloads.the-release-link-went-to-a": "Leidimo nuoroda nuvedė į kitą tavo namų tinklo adresą, o tai neleidžiama: ten galima pasiekti tik paties Šaltinio adresą",
+	"server.core.name-show-not-found": "{name} → nerasta. HolyArrs neranda šio pavadinimo. Naudok IP adresą.",
+	"server.core.name-show-refused": "{name} → {ip} → atmesta prievade {port}. Pavadinimas veikia, bet tame prievade niekas neatsako. Patikrink prievadą.",
+	"server.core.name-show-no-answer": "{name} → {ip} → nėra atsakymo prievade {port}. Pavadinimas veikia, bet niekas neatsako laiku. Patikrink prievadą ir ar netrukdo ugniasienė."
 }

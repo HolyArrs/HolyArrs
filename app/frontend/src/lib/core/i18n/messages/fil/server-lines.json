@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "ipadala ang {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "i-on muna ang Lagyan ng label ang mga hiniling na title",
 	"server.mediaservers.a-label-needs-1-to-64": "kailangan ng label ng 1 hanggang 64 na character",
-	"server.downloads.the-release-link-went-to-a": "napunta ang link ng Release sa ibang address sa home network mo, na hindi pinapayagan: ang sariling address lang ng Source ang pwedeng abutin doon"
+	"server.downloads.the-release-link-went-to-a": "napunta ang link ng Release sa ibang address sa home network mo, na hindi pinapayagan: ang sariling address lang ng Source ang pwedeng abutin doon",
+	"server.core.name-show-not-found": "{name} → hindi nahanap. Hindi mahanap ng HolyArrs ang pangalang ito. Gamitin na lang ang IP.",
+	"server.core.name-show-refused": "{name} → {ip} → tinanggihan sa port {port}. Gumagana ang pangalan, pero walang sumasagot sa port na iyon. Tingnan ang port.",
+	"server.core.name-show-no-answer": "{name} → {ip} → walang sagot sa port {port}. Gumagana ang pangalan, pero walang sumasagot sa oras. Tingnan ang port, at na walang firewall na humaharang."
 }

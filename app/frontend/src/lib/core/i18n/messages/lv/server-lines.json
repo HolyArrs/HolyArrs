@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "nosūtiet {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "vispirms ieslēdziet Pievienot birku pieprasītajiem nosaukumiem",
 	"server.mediaservers.a-label-needs-1-to-64": "birkai jābūt no 1 līdz 64 rakstzīmēm",
-	"server.downloads.the-release-link-went-to-a": "Izlaiduma saite aizveda uz citu adresi tavā mājas tīklā, un tas nav atļauts: tur drīkst piekļūt tikai paša Avota adresei"
+	"server.downloads.the-release-link-went-to-a": "Izlaiduma saite aizveda uz citu adresi tavā mājas tīklā, un tas nav atļauts: tur drīkst piekļūt tikai paša Avota adresei",
+	"server.core.name-show-not-found": "{name} → nav atrasts. HolyArrs nevar atrast šo nosaukumu. Izmanto IP adresi.",
+	"server.core.name-show-refused": "{name} → {ip} → atteikts portā {port}. Nosaukums darbojas, bet šajā portā nekas neatbild. Pārbaudi portu.",
+	"server.core.name-show-no-answer": "{name} → {ip} → nav atbildes portā {port}. Nosaukums darbojas, bet nekas neatbild laikā. Pārbaudi portu un vai netraucē ugunsmūris."
 }

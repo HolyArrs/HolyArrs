@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Kazandı: {name}",
 	"ui.wikiFacts.nominated": "Aday: {name}",
 	"ui.wikiFacts.andMore": "ve {count} tane daha",
-	"ui.pageLoader.loading": "Yükleniyor"
+	"ui.pageLoader.loading": "Yükleniyor",
+	"ui.connectHelp.link": "Nasıl düzeltilir"
 }

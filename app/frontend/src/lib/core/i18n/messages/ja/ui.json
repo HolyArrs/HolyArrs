@@ -213,5 +213,6 @@
 "ui.wikiFacts.won": "受賞: {name}",
 "ui.wikiFacts.nominated": "ノミネート: {name}",
 "ui.wikiFacts.andMore": "ほか {count} 件",
-"ui.pageLoader.loading": "読み込み中"
+"ui.pageLoader.loading": "読み込み中",
+"ui.connectHelp.link": "直し方"
 }

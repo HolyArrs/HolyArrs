@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "skicka {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "slå på Märk önskade titlar med etikett först",
 	"server.mediaservers.a-label-needs-1-to-64": "en etikett behöver 1 till 64 tecken",
-	"server.downloads.the-release-link-went-to-a": "releasens länk gick till en annan adress på ditt hemnätverk, och det är inte tillåtet: där får bara källans egen adress nås"
+	"server.downloads.the-release-link-went-to-a": "releasens länk gick till en annan adress på ditt hemnätverk, och det är inte tillåtet: där får bara källans egen adress nås",
+	"server.core.name-show-not-found": "{name} → hittades inte. HolyArrs hittar inte det här namnet. Använd IP-adressen i stället.",
+	"server.core.name-show-refused": "{name} → {ip} → nekad på port {port}. Namnet fungerar, men inget svarar på den porten. Kontrollera porten.",
+	"server.core.name-show-no-answer": "{name} → {ip} → inget svar på port {port}. Namnet fungerar, men inget svarar i tid. Kontrollera porten och att ingen brandvägg är i vägen."
 }

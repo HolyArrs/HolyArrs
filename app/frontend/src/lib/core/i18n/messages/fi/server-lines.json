@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "lähetä {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "ota ensin käyttöön Merkitse pyydetyt nimikkeet tunnisteella",
 	"server.mediaservers.a-label-needs-1-to-64": "tunnisteessa on oltava 1–64 merkkiä",
-	"server.downloads.the-release-link-went-to-a": "julkaisun linkki meni kotiverkkosi toiseen osoitteeseen, mikä ei ole sallittua: siellä saa käyttää vain lähteen omaa osoitetta"
+	"server.downloads.the-release-link-went-to-a": "julkaisun linkki meni kotiverkkosi toiseen osoitteeseen, mikä ei ole sallittua: siellä saa käyttää vain lähteen omaa osoitetta",
+	"server.core.name-show-not-found": "{name} → ei löytynyt. HolyArrs ei löydä tätä nimeä. Käytä IP-osoitetta.",
+	"server.core.name-show-refused": "{name} → {ip} → torjuttu portissa {port}. Nimi toimii, mutta portissa ei vastaa mikään. Tarkista portti.",
+	"server.core.name-show-no-answer": "{name} → {ip} → ei vastausta portissa {port}. Nimi toimii, mutta mikään ei vastaa ajoissa. Tarkista portti ja ettei palomuuri estä."
 }

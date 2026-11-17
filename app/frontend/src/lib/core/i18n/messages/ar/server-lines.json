@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "أرسل {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "شغّل تسمية العناوين المطلوبة أولًا",
 	"server.mediaservers.a-label-needs-1-to-64": "تحتاج التسمية إلى 1 إلى 64 حرفًا",
-	"server.downloads.the-release-link-went-to-a": "رابط الإصدار ذهب إلى عنوان آخر على شبكتك المنزلية، وهذا غير مسموح: يمكن الوصول هناك إلى عنوان المصدر نفسه فقط"
+	"server.downloads.the-release-link-went-to-a": "رابط الإصدار ذهب إلى عنوان آخر على شبكتك المنزلية، وهذا غير مسموح: يمكن الوصول هناك إلى عنوان المصدر نفسه فقط",
+	"server.core.name-show-not-found": "{name} → غير موجود. لا يجد HolyArrs هذا الاسم. استخدم عنوان IP بدلًا منه.",
+	"server.core.name-show-refused": "{name} → {ip} → مرفوض على المنفذ {port}. الاسم يعمل، لكن لا شيء يجيب على هذا المنفذ. تحقّق من المنفذ.",
+	"server.core.name-show-no-answer": "{name} → {ip} → لا رد على المنفذ {port}. الاسم يعمل، لكن لا شيء يجيب في الوقت المحدد. تحقّق من المنفذ ومن عدم وجود جدار حماية يعترض."
 }

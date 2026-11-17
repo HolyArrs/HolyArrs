@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "pošaljite {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "najprije uključite Označi tražene naslove",
 	"server.mediaservers.a-label-needs-1-to-64": "oznaka treba imati od 1 do 64 znaka",
-	"server.downloads.the-release-link-went-to-a": "poveznica izdanja otišla je na drugu adresu u tvojoj kućnoj mreži, što nije dopušteno: tamo se smije doći samo do vlastite adrese izvora"
+	"server.downloads.the-release-link-went-to-a": "poveznica izdanja otišla je na drugu adresu u tvojoj kućnoj mreži, što nije dopušteno: tamo se smije doći samo do vlastite adrese izvora",
+	"server.core.name-show-not-found": "{name} → nije pronađeno. HolyArrs ne može pronaći ovo ime. Umjesto toga koristi IP.",
+	"server.core.name-show-refused": "{name} → {ip} → odbijeno na portu {port}. Ime radi, ali na tom portu ništa ne odgovara. Provjeri port.",
+	"server.core.name-show-no-answer": "{name} → {ip} → nema odgovora na portu {port}. Ime radi, ali ništa ne odgovara na vrijeme. Provjeri port i da vatrozid ne smeta."
 }

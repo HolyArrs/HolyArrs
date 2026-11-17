@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "send {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "slå på Merk ønskede titler med etikett først",
 	"server.mediaservers.a-label-needs-1-to-64": "en etikett må ha 1 til 64 tegn",
-	"server.downloads.the-release-link-went-to-a": "lenken til utgivelsen gikk til en annen adresse på hjemmenettverket ditt, og det er ikke tillatt: der kan bare kildens egen adresse nås"
+	"server.downloads.the-release-link-went-to-a": "lenken til utgivelsen gikk til en annen adresse på hjemmenettverket ditt, og det er ikke tillatt: der kan bare kildens egen adresse nås",
+	"server.core.name-show-not-found": "{name} → ikke funnet. HolyArrs finner ikke dette navnet. Bruk IP-adressen i stedet.",
+	"server.core.name-show-refused": "{name} → {ip} → avvist på port {port}. Navnet virker, men ingenting svarer på den porten. Sjekk porten.",
+	"server.core.name-show-no-answer": "{name} → {ip} → ikke svar på port {port}. Navnet virker, men ingenting svarer i tide. Sjekk porten, og at ingen brannmur er i veien."
 }

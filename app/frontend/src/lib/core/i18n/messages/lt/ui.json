@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Laimėjo: {name}",
 	"ui.wikiFacts.nominated": "Nominuota: {name}",
 	"ui.wikiFacts.andMore": "ir dar {count}",
-	"ui.pageLoader.loading": "Įkeliama"
+	"ui.pageLoader.loading": "Įkeliama",
+	"ui.connectHelp.link": "Kaip pataisyti"
 }

@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "kirim {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "nyalakan dulu Beri label pada judul yang diminta",
 	"server.mediaservers.a-label-needs-1-to-64": "label perlu 1 sampai 64 karakter",
-	"server.downloads.the-release-link-went-to-a": "tautan Rilis menuju alamat lain di jaringan rumahmu, dan itu tidak diizinkan: di sana hanya alamat Sumber itu sendiri yang boleh dijangkau"
+	"server.downloads.the-release-link-went-to-a": "tautan Rilis menuju alamat lain di jaringan rumahmu, dan itu tidak diizinkan: di sana hanya alamat Sumber itu sendiri yang boleh dijangkau",
+	"server.core.name-show-not-found": "{name} → tidak ditemukan. HolyArrs tidak bisa menemukan nama ini. Pakai IP saja.",
+	"server.core.name-show-refused": "{name} → {ip} → ditolak di port {port}. Namanya berfungsi, tapi tidak ada yang menjawab di port itu. Periksa port-nya.",
+	"server.core.name-show-no-answer": "{name} → {ip} → tidak ada jawaban di port {port}. Namanya berfungsi, tapi tidak ada yang menjawab tepat waktu. Periksa port-nya, dan pastikan tidak ada firewall yang menghalangi."
 }

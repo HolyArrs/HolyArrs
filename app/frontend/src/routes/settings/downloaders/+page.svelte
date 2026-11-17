@@ -13,6 +13,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
+	import ConnectHelp from '#lib/ui/ConnectHelp.svelte';
 	import { emptyForm, samePathPair, formBody, formFrom, healthLabel, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
@@ -505,7 +506,7 @@
 				</div>
 				{#if d.health.text && !(results[d.id] && !results[d.id].ok)}<p class="note" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{serverWords(d.health.text)}</p>{/if}
 				{#if results[d.id] && !results[d.id].ok}
-					<p class="note bad-text" role="status" data-testid="downloader-test">{serverWords(results[d.id].text)}</p>
+					<p class="note bad-text" role="status" data-testid="downloader-test">{serverWords(results[d.id].text)}<ConnectHelp text={results[d.id].text} /></p>
 				{/if}
 				{#if pendingAttempts(attempts[d.id]).length > 0}
 					<section class="notice bad attempt-review" aria-label={t('settings.downloaders.needsDecision')} data-testid="downloader-attempts">

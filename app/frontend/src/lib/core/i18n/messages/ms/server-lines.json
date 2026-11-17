@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "hantar {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "hidupkan Labelkan tajuk yang diminta dahulu",
 	"server.mediaservers.a-label-needs-1-to-64": "label perlu 1 hingga 64 aksara",
-	"server.downloads.the-release-link-went-to-a": "pautan Keluaran pergi ke alamat lain di rangkaian rumah anda, dan itu tidak dibenarkan: di sana hanya alamat Sumber itu sendiri boleh dicapai"
+	"server.downloads.the-release-link-went-to-a": "pautan Keluaran pergi ke alamat lain di rangkaian rumah anda, dan itu tidak dibenarkan: di sana hanya alamat Sumber itu sendiri boleh dicapai",
+	"server.core.name-show-not-found": "{name} → tidak ditemui. HolyArrs tidak dapat mencari nama ini. Gunakan IP sebaliknya.",
+	"server.core.name-show-refused": "{name} → {ip} → ditolak pada port {port}. Nama berfungsi, tetapi tiada apa yang menjawab pada port itu. Semak port.",
+	"server.core.name-show-no-answer": "{name} → {ip} → tiada jawapan pada port {port}. Nama berfungsi, tetapi tiada apa yang menjawab tepat pada masanya. Semak port, dan pastikan tiada tembok api yang menghalang."
 }

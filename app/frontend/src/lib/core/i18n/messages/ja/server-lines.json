@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "{\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false} を送信してください",
 	"server.mediaservers.turn-on-label-requested-titles-first": "先に「リクエストされた作品にラベルを付ける」をオンにしてください",
 	"server.mediaservers.a-label-needs-1-to-64": "ラベルは 1〜64 文字にしてください",
-	"server.downloads.the-release-link-went-to-a": "リリースのリンクが家庭内ネットワークの別のアドレスに向かっていました。これは許可されていません。そこではソース自身のアドレスにしか接続できません"
+	"server.downloads.the-release-link-went-to-a": "リリースのリンクが家庭内ネットワークの別のアドレスに向かっていました。これは許可されていません。そこではソース自身のアドレスにしか接続できません",
+	"server.core.name-show-not-found": "{name} → 見つかりません. HolyArrs はこの名前を見つけられません。代わりに IP を使ってください。",
+	"server.core.name-show-refused": "{name} → {ip} → ポートで拒否 {port}. 名前は解決できていますが、そのポートで何も応答しません。ポートを確認してください。",
+	"server.core.name-show-no-answer": "{name} → {ip} → ポートで応答なし {port}. 名前は解決できていますが、時間内に何も応答しません。ポートと、ファイアウォールが邪魔していないか確認してください。"
 }

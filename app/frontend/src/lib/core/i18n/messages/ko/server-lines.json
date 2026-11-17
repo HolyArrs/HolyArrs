@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "{\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false} 을(를) 보내세요",
 	"server.mediaservers.turn-on-label-requested-titles-first": "먼저 요청된 작품에 라벨 붙이기를 켜세요",
 	"server.mediaservers.a-label-needs-1-to-64": "라벨은 1~64자여야 합니다",
-	"server.downloads.the-release-link-went-to-a": "릴리스 링크가 집 네트워크의 다른 주소로 연결되었으며, 이는 허용되지 않습니다. 그곳에서는 소스 자체의 주소에만 접근할 수 있습니다"
+	"server.downloads.the-release-link-went-to-a": "릴리스 링크가 집 네트워크의 다른 주소로 연결되었으며, 이는 허용되지 않습니다. 그곳에서는 소스 자체의 주소에만 접근할 수 있습니다",
+	"server.core.name-show-not-found": "{name} → 찾을 수 없음. HolyArrs가 이 이름을 찾지 못합니다. 대신 IP를 사용하세요.",
+	"server.core.name-show-refused": "{name} → {ip} → 포트에서 거부됨 {port}. 이름은 작동하지만 그 포트에서 아무것도 응답하지 않습니다. 포트를 확인하세요.",
+	"server.core.name-show-no-answer": "{name} → {ip} → 포트에서 응답 없음 {port}. 이름은 작동하지만 제시간에 아무것도 응답하지 않습니다. 포트와 방화벽이 막고 있지 않은지 확인하세요."
 }

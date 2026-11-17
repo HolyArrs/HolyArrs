@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "send {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "turn on Label requested titles first",
 	"server.mediaservers.a-label-needs-1-to-64": "a label needs 1 to 64 characters",
-	"server.downloads.the-release-link-went-to-a": "the Release link went to a different address on your home network, which is not allowed: only the Source's own address may be reached there"
+	"server.downloads.the-release-link-went-to-a": "the Release link went to a different address on your home network, which is not allowed: only the Source's own address may be reached there",
+	"server.core.name-show-not-found": "{name} → not found. HolyArrs can't find this name. Use the IP instead.",
+	"server.core.name-show-refused": "{name} → {ip} → refused on port {port}. The name works, but nothing answers on that port. Check the port.",
+	"server.core.name-show-no-answer": "{name} → {ip} → no answer on port {port}. The name works, but nothing answers in time. Check the port, and that no firewall is in the way."
 }

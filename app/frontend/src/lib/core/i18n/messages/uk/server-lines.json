@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "надішліть {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "спершу увімкніть Додавати мітку запитаним тайтлам",
 	"server.mediaservers.a-label-needs-1-to-64": "мітка має містити від 1 до 64 символів",
-	"server.downloads.the-release-link-went-to-a": "посилання релізу пішло на іншу адресу у твоїй домашній мережі, а це не дозволено: там можна звертатися лише до власної адреси джерела"
+	"server.downloads.the-release-link-went-to-a": "посилання релізу пішло на іншу адресу у твоїй домашній мережі, а це не дозволено: там можна звертатися лише до власної адреси джерела",
+	"server.core.name-show-not-found": "{name} → не знайдено. HolyArrs не знаходить це ім'я. Вкажіть IP-адресу.",
+	"server.core.name-show-refused": "{name} → {ip} → відмова на порту {port}. Ім'я працює, але на цьому порту ніхто не відповідає. Перевірте порт.",
+	"server.core.name-show-no-answer": "{name} → {ip} → немає відповіді на порту {port}. Ім'я працює, але ніхто не відповідає вчасно. Перевірте порт і чи не заважає брандмауер."
 }

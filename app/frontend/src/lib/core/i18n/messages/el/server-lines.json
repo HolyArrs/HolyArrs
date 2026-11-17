@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "στείλτε {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "ενεργοποιήστε πρώτα την Ετικέτα στους τίτλους που ζητήθηκαν",
 	"server.mediaservers.a-label-needs-1-to-64": "η ετικέτα χρειάζεται 1 έως 64 χαρακτήρες",
-	"server.downloads.the-release-link-went-to-a": "ο σύνδεσμος της κυκλοφορίας πήγε σε άλλη διεύθυνση του οικιακού σου δικτύου, κάτι που δεν επιτρέπεται: εκεί επιτρέπεται μόνο η δική διεύθυνση της Πηγής"
+	"server.downloads.the-release-link-went-to-a": "ο σύνδεσμος της κυκλοφορίας πήγε σε άλλη διεύθυνση του οικιακού σου δικτύου, κάτι που δεν επιτρέπεται: εκεί επιτρέπεται μόνο η δική διεύθυνση της Πηγής",
+	"server.core.name-show-not-found": "{name} → δεν βρέθηκε. Το HolyArrs δεν βρίσκει αυτό το όνομα. Χρησιμοποίησε την IP.",
+	"server.core.name-show-refused": "{name} → {ip} → απορρίφθηκε στη θύρα {port}. Το όνομα λειτουργεί, αλλά τίποτα δεν απαντά σε αυτή τη θύρα. Έλεγξε τη θύρα.",
+	"server.core.name-show-no-answer": "{name} → {ip} → καμία απάντηση στη θύρα {port}. Το όνομα λειτουργεί, αλλά τίποτα δεν απαντά εγκαίρως. Έλεγξε τη θύρα και ότι δεν μπλοκάρει κάποιο τείχος προστασίας."
 }

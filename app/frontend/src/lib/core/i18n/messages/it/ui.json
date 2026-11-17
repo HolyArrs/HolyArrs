@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Vinto: {name}",
 	"ui.wikiFacts.nominated": "Candidato: {name}",
 	"ui.wikiFacts.andMore": "e altri {count}",
-	"ui.pageLoader.loading": "Caricamento"
+	"ui.pageLoader.loading": "Caricamento",
+	"ui.connectHelp.link": "Come risolvere"
 }

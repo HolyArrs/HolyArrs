@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Vann: {name}",
 	"ui.wikiFacts.nominated": "Nominerad: {name}",
 	"ui.wikiFacts.andMore": "och {count} till",
-	"ui.pageLoader.loading": "Laddar"
+	"ui.pageLoader.loading": "Laddar",
+	"ui.connectHelp.link": "Så fixar du det"
 }

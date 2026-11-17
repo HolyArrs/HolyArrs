@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "küldd ezt: {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "előbb kapcsold be a Kért címek felcímkézése opciót",
 	"server.mediaservers.a-label-needs-1-to-64": "a címke 1–64 karakter lehet",
-	"server.downloads.the-release-link-went-to-a": "a release hivatkozása az otthoni hálózatod egy másik címére vezetett, ez nem megengedett: ott csak a Forrás saját címe érhető el"
+	"server.downloads.the-release-link-went-to-a": "a release hivatkozása az otthoni hálózatod egy másik címére vezetett, ez nem megengedett: ott csak a Forrás saját címe érhető el",
+	"server.core.name-show-not-found": "{name} → nem található. A HolyArrs nem találja ezt a nevet. Használd inkább az IP-címet.",
+	"server.core.name-show-refused": "{name} → {ip} → elutasítva a porton {port}. A név működik, de azon a porton semmi nem válaszol. Ellenőrizd a portot.",
+	"server.core.name-show-no-answer": "{name} → {ip} → nincs válasz a porton {port}. A név működik, de semmi nem válaszol időben. Ellenőrizd a portot, és hogy tűzfal nem áll-e útban."
 }

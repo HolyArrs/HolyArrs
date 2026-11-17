@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "수상: {name}",
 	"ui.wikiFacts.nominated": "후보: {name}",
 	"ui.wikiFacts.andMore": "외 {count}개",
-	"ui.pageLoader.loading": "불러오는 중"
+	"ui.pageLoader.loading": "불러오는 중",
+	"ui.connectHelp.link": "해결 방법"
 }

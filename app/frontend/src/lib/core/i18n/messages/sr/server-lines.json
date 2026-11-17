@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "пошаљите {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "прво укључите Означи тражене наслове",
 	"server.mediaservers.a-label-needs-1-to-64": "ознака мора имати од 1 до 64 знака",
-	"server.downloads.the-release-link-went-to-a": "веза Издања отишла је на другу адресу у твојој кућној мрежи, што није дозвољено: тамо се сме доћи само до сопствене адресе Извора"
+	"server.downloads.the-release-link-went-to-a": "веза Издања отишла је на другу адресу у твојој кућној мрежи, што није дозвољено: тамо се сме доћи само до сопствене адресе Извора",
+	"server.core.name-show-not-found": "{name} → nije pronađeno. HolyArrs ne može da pronađe ovo ime. Umesto toga koristi IP.",
+	"server.core.name-show-refused": "{name} → {ip} → odbijeno na portu {port}. Ime radi, ali na tom portu ništa ne odgovara. Proveri port.",
+	"server.core.name-show-no-answer": "{name} → {ip} → nema odgovora na portu {port}. Ime radi, ali ništa ne odgovara na vreme. Proveri port i da zaštitni zid ne smeta."
 }

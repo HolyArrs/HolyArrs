@@ -213,5 +213,6 @@
 	"ui.wikiFacts.won": "Won: {name}",
 	"ui.wikiFacts.nominated": "Nominated: {name}",
 	"ui.wikiFacts.andMore": "and {count} more",
-	"ui.pageLoader.loading": "Loading"
+	"ui.pageLoader.loading": "Loading",
+	"ui.connectHelp.link": "How to fix it"
 }

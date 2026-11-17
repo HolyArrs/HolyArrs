@@ -1380,5 +1380,8 @@
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "請傳送 {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "請先開啟「為請求的作品加上標籤」",
 	"server.mediaservers.a-label-needs-1-to-64": "標籤需要 1 到 64 個字元",
-	"server.downloads.the-release-link-went-to-a": "資源的連結轉到了你家用網路中的另一個位址，這是不允許的：那裡只能存取來源自己的位址"
+	"server.downloads.the-release-link-went-to-a": "資源的連結轉到了你家用網路中的另一個位址，這是不允許的：那裡只能存取來源自己的位址",
+	"server.core.name-show-not-found": "{name} → 找不到. HolyArrs 找不到這個名稱。請改用 IP。",
+	"server.core.name-show-refused": "{name} → {ip} → 連接埠拒絕 {port}. 名稱可用，但該連接埠沒有任何回應。請檢查連接埠。",
+	"server.core.name-show-no-answer": "{name} → {ip} → 連接埠無回應 {port}. 名稱可用，但沒有及時回應。請檢查連接埠，並確認沒有防火牆阻擋。"
 }
