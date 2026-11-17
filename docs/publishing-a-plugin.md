@@ -10,11 +10,16 @@ does all of it.
 - What users see on the Plugins page: `app/plugins/<id>/plugin.json` (name,
   author, description, icon, access, min_app_version). Leave `id`, `version`
   and `sha256` out; the workflow fills them in.
-- The hosted files: `https://plugins.holyarrs.com/` (a Cloudflare R2 bucket
-  named `holyarrs-plugins`):
+- The plugin files: a GitHub release on this repo per version, tagged
+  `plugin-<id>-v<version>`, with one file per platform (`<id>-linux-amd64`,
+  `<id>-linux-arm64`, `<id>-linux-armv7`). Never marked as the latest release.
+- `https://plugins.holyarrs.com/`, a small Cloudflare Pages site
+  (`holyarrs-plugins`) holding:
   - `plugins.json` and `blocklist.json`, the two signed lists
-  - `plugins/<id>/<version>/<platform>/manifest.json` and `plugin`, for
-    `linux-amd64`, `linux-arm64` and `linux-armv7`
+  - `plugins/<id>/<version>/<platform>/manifest.json`
+  - `plugins/<id>/<version>/<platform>/plugin`, a redirect to the file on its
+    release. The app trusts a file only when its hash matches the signed list,
+    wherever it was downloaded from.
 
 ## Publish a new version
 
@@ -26,8 +31,8 @@ does all of it.
    git push origin plugin-tailscale-v1.0.1
    ```
 
-3. The workflow builds the three platforms, adds them to the list, signs both
-   lists with the main key and uploads them. Every HolyArrs install sees the new
+3. The workflow builds the three platforms, puts them on the release, adds
+   them to the list, signs both lists with the main key and deploys the site. Every HolyArrs install sees the new
    version the next time it reads the list.
 
 A version can be published once. To change it, publish the next version.
@@ -61,11 +66,11 @@ plugins.holyarrs.com cannot be reached, the workflow stops instead of guessing.
 
 - Repository secrets: `PLUGIN_SIGNING_KEY` (the key file's contents) and
   `PLUGIN_SIGNING_PASSPHRASE`, `PLUGINS_CLOUDFLARE_TOKEN` (an API token that may
-  only edit R2 objects in `holyarrs-plugins`) and `PLUGINS_CLOUDFLARE_ACCOUNT_ID`.
+  only edit Cloudflare Pages) and `PLUGINS_CLOUDFLARE_ACCOUNT_ID`.
 - A GitHub environment named `plugins`. Add yourself as a required reviewer, so
   nothing is published without your click.
-- In Cloudflare: the R2 bucket `holyarrs-plugins`, with `plugins.holyarrs.com`
-  connected to it as its custom domain.
+- In Cloudflare: a Pages project `holyarrs-plugins` (direct upload), with
+  `plugins.holyarrs.com` added as its custom domain.
 
 ## Signing by hand
 

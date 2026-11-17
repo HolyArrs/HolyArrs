@@ -705,7 +705,7 @@ func RedirectGuard(listURL string) func(*http.Request, []*http.Request) error {
 		host = u.Host
 	}
 	return func(req *http.Request, via []*http.Request) error {
-		if req.URL.Scheme != "https" || req.URL.Host != host {
+		if req.URL.Scheme != "https" || (req.URL.Host != host && !githubDownload(req.URL)) {
 			return fmt.Errorf("%w: redirect to %s refused", ErrFetch, req.URL.Redacted())
 		}
 		if len(via) >= 10 {
@@ -713,6 +713,19 @@ func RedirectGuard(listURL string) func(*http.Request, []*http.Request) error {
 		}
 		return nil
 	}
+}
+
+// githubDownload reports whether u is a plugin file on our GitHub releases.
+// The plugin files are kept there; the list host redirects to them. Where a
+// file comes from does not matter for trust: its hash is in the signed list.
+func githubDownload(u *url.URL) bool {
+	switch u.Host {
+	case "github.com":
+		return strings.HasPrefix(u.Path, "/HolyArrs/HolyArrs/releases/download/plugin-")
+	case "release-assets.githubusercontent.com", "objects.githubusercontent.com":
+		return true
+	}
+	return false
 }
 
 // newerVersion compares plain semver cores; a pre-release sorts below its
