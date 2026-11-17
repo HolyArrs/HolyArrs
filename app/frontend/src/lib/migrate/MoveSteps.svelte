@@ -47,7 +47,7 @@
 	.rail-wrap { min-width: 0; }
 	.rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; margin: 0; padding: 2px; list-style: none; border-radius: 10px; background: var(--surface-2); }
 	.rail li { min-width: 0; }
-	.cap-btn { display: flex; align-items: center; justify-content: center; width: 100%; min-width: 0; min-height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: var(--t-subhead); font-size: 14px; cursor: pointer; }
+	.cap-btn { display: flex; align-items: center; justify-content: center; width: 100%; min-width: 0; min-height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: var(--t-subhead); font-size: 14px; cursor: pointer; }
 	.cap-btn:disabled { cursor: default; opacity: 0.7; }
 	.now .cap-btn { cursor: default; background: var(--seg-thumb); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 0 0 .5px rgb(0 0 0 / 4%); }
 	.done .cap-btn { color: var(--text); }
