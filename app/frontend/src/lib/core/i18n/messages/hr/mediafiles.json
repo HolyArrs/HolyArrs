@@ -512,6 +512,7 @@
 	"mediafiles.sheet.file": "Datoteka",
 	"mediafiles.parts.stopsSources": "Automatska pretraživanja se zaustavljaju, za slučaj kad sami dodajete preuzimanja. Preuzimatelji i uvozi nastavljaju raditi.",
 	"mediafiles.watched.all": "Pogledano",
+	"mediafiles.watched.byAnyone": "Netko je pogledao",
 	"mediafiles.watched.part": "Pogledano {seen} od {of}",
 	"mediafiles.watched.partly": "Djelomično pogledano"
 }

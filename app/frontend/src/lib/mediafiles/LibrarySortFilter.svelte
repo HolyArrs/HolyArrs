@@ -19,6 +19,7 @@
 		askers: { id: number; name: string }[];
 		series: MovieCollection[];
 		subsTitles: Set<number> | null;
+		anyoneWatched: Set<number> | null;
 		loaded: boolean;
 		myId: number | undefined;
 		canManage: boolean;
@@ -34,7 +35,7 @@
 		syncUrl: () => void;
 		onclose: () => void;
 	};
-	let { kind, sort, filter, counts, askers, series, subsTitles, loaded, myId, canManage, anyPart, deletedCount, groupSets = $bindable(), phone, view, sizeItems, foot, setSort, setFilter, syncUrl, onclose }: Props = $props();
+	let { kind, sort, filter, counts, askers, series, subsTitles, anyoneWatched, loaded, myId, canManage, anyPart, deletedCount, groupSets = $bindable(), phone, view, sizeItems, foot, setSort, setFilter, syncUrl, onclose }: Props = $props();
 
 	// Counts stay blank until the Library has loaded, so a 0 only ever means 0.
 	const countHint = (n: number) => (loaded ? String(n) : undefined);
@@ -86,6 +87,12 @@
 			<h3 class="sf-h">{t('mediafiles.sheet.subtitles')}</h3>
 			<div class="sf-chips">
 				<Chip label={t('mediafiles.filter.missing')} icon="subtitle" count={counts.subs} selected={!!filter.subs} onclick={() => setFilter({ subs: !filter.subs })} />
+			</div>
+		{/if}
+		{#if anyoneWatched && kind !== 'artist' && (counts.watched || filter.watched)}
+			<h3 class="sf-h">{t('mediafiles.watched.all')}</h3>
+			<div class="sf-chips">
+				<Chip label={t('mediafiles.watched.byAnyone')} icon="check" count={counts.watched} selected={!!filter.watched} onclick={() => setFilter({ watched: !filter.watched })} />
 			</div>
 		{/if}
 		{#if (kind === 'movie' || kind === 'all') && series.length}

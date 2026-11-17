@@ -512,6 +512,7 @@
 	"mediafiles.showReleases.searchingFor": "正在搜索 {name}",
 	"mediafiles.sheet.file": "文件",
 	"mediafiles.watched.all": "已观看",
+	"mediafiles.watched.byAnyone": "有人看过",
 	"mediafiles.watched.part": "已观看 {seen} / {of}",
 	"mediafiles.watched.partly": "已观看部分"
 }

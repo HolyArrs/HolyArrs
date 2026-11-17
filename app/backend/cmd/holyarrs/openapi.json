@@ -18631,6 +18631,20 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/library/watched-by-anyone": {
+      "get": {
+        "description": "The ids of every title any account watched on Plex, Jellyfin or Emby, from the last watch history read, whether or not the account is linked to a person here. Feeds the Library's Watched by anyone filter. Needs the owner or an admin. Empty while watch history is off.",
+        "responses": {
+          "200": {
+            "description": "Whether watch history is on and the watched title ids."
+          }
+        },
+        "summary": "Titles anybody watched",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/links/{kind}/{id}/restart": {
       "post": {
         "description": "Reconnects one linked app and leaves the others alone: a Downloader is signed in again and checked, a Source is tested now, a media server or subtitle site is tested again. Answers what that app's own test answers. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",

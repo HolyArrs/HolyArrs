@@ -512,6 +512,7 @@
 	"mediafiles.sheet.file": "Датотека",
 	"mediafiles.parts.stopsSources": "Аутоматске претраге се заустављају, за случај када сами додајете преузимања. Преузимачи и увози настављају да раде.",
 	"mediafiles.watched.all": "Одгледано",
+	"mediafiles.watched.byAnyone": "Неко је одгледао",
 	"mediafiles.watched.part": "Одгледано {seen} од {of}",
 	"mediafiles.watched.partly": "Делимично одгледано"
 }

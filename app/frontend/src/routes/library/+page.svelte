@@ -59,6 +59,7 @@
 		return {
 			codec: k === 'movie' && codec !== 'all' && (copyCodecs as readonly string[]).includes(codec) ? codec : '',
 			subs: (k === 'movie' || k === 'show') && p.get('subs') === 'missing',
+			watched: k !== 'artist' && p.get('watched') === 'anyone',
 			status: filters.some(([f]) => f === status) ? status : 'all',
 			kept: kept === 'on' || kept === 'off' ? kept : 'any',
 			asker: asker === 'me' || (asker && /^[1-9]\d*$/.test(asker)) ? asker : 'anyone',
@@ -95,6 +96,7 @@
 		set('series', filter.series ? String(filter.series) : null);
 		set('codec', filter.codec || null);
 		set('subs', filter.subs ? 'missing' : null);
+		set('watched', filter.watched ? 'anyone' : null);
 		set('q', q || null);
 		const d = defaultSort(kind === 'all' ? 'all' : kind);
 		set('sort', sort.key === d.key ? null : sort.key);
@@ -225,7 +227,10 @@
 
 	// Titles with subtitles still wanted (movies and TV shows), from the same list the subtitles search uses.
 	let subsTitles = $state<Set<number> | null>(null);
-	const ctx = $derived<FilterContext>({ askers: (t) => linkedPeople(t).map((p) => p.id), me: myId, seriesOf: (t) => seriesOfTitle.get(t.id), subsMissing: (t) => !!subsTitles?.has(t.id) });
+	// Titles anybody watched, for the owner's and admins' filter; null while watch history is off or unread.
+	let anyoneWatched = $state<Set<number> | null>(null);
+	const seesAnyone = $derived(session.can('users') && !session.kid);
+	const ctx = $derived<FilterContext>({ askers: (t) => linkedPeople(t).map((p) => p.id), me: myId, seriesOf: (t) => seriesOfTitle.get(t.id), subsMissing: (t) => !!subsTitles?.has(t.id), watchedAnyone: anyoneWatched ? (t) => anyoneWatched!.has(t.id) : undefined });
 	const ofThisKind = $derived(titles.filter((t) => ofKind(t, kind) && matchesTitleQuery(t, query, indexedIds)));
 	const counts = $derived(filterCounts(ofThisKind, filter, ctx));
 	const shown = $derived(sortTitles(ofThisKind.filter((t) => passes(t, filter, ctx)), sort.key, sort.dir));
@@ -312,7 +317,7 @@
 		saved = saved.filter((s) => s.name !== name);
 		saveSaved(myId, kind, saved);
 	}
-	const sameFilter = (a: FilterState, b: FilterState) => a.status === b.status && a.kept === b.kept && a.asker === b.asker && a.series === b.series && (a.codec ?? '') === (b.codec ?? '') && !!a.subs === !!b.subs;
+	const sameFilter = (a: FilterState, b: FilterState) => a.status === b.status && a.kept === b.kept && a.asker === b.asker && a.series === b.series && (a.codec ?? '') === (b.codec ?? '') && !!a.subs === !!b.subs && !!a.watched === !!b.watched;
 
 	// Counts stay blank until the Library has loaded, so a 0 only ever means 0.
 	const countHint = (n: number) => (loaded ? String(n) : undefined);
@@ -433,6 +438,13 @@
 		if (Date.now() - subsAt < 60_000) return;
 		subsAt = Date.now();
 		void api.get<{ titles: { id: number }[] }>('/subtitles/missing?limit=1').then((r) => (subsTitles = new Set((r.titles ?? []).map((x) => x.id))), () => {});
+	});
+	// What anybody watched: read at most once a minute.
+	let anyoneAt = 0;
+	$effect(() => {
+		if (!seesAnyone || Date.now() - anyoneAt < 60_000) return;
+		anyoneAt = Date.now();
+		void api.get<{ enabled: boolean; titles: number[] }>('/library/watched-by-anyone').then((r) => (anyoneWatched = r.enabled ? new Set(r.titles ?? []) : null), () => {});
 	});
 	async function searchMissingSubs() {
 		subsSearching = true;
@@ -628,6 +640,7 @@
 			{#if filter.series}<Chip label={tr('library.page.collectionChip', { name: seriesName(filter.series) })} selected onclick={() => setFilter({ series: 0 })} onremove={() => setFilter({ series: 0 })} />{/if}
 			{#if filter.codec}<Chip label={codecLabel(filter.codec)} selected onclick={() => setFilter({ codec: '' })} onremove={() => setFilter({ codec: '' })} />{/if}
 			{#if filter.subs}<Chip label={tr('library.page.missingSubs')} selected onclick={() => setFilter({ subs: false })} onremove={() => setFilter({ subs: false })} />{/if}
+			{#if filter.watched}<Chip label={tr('mediafiles.watched.byAnyone')} selected onclick={() => setFilter({ watched: false })} onremove={() => setFilter({ watched: false })} />{/if}
 			{#if q}<Chip label={tr('library.page.searchChip', { q })} selected onclick={clearSearch} onremove={clearSearch} />{/if}
 			{#if grouped}<Chip label={tr('library.page.grouped')} selected onclick={() => { groupSets = false; syncUrl(); }} onremove={() => { groupSets = false; syncUrl(); }} />{/if}
 			<Button variant="plain" size="md" onclick={clearFilters}>{tr('library.page.clear')}</Button>
@@ -645,7 +658,7 @@
 <LibraryDialogs bind:deleteDialog bind:copyDialog bind:missingDialog bind:saveDialog bind:copyPreview bind:saveName {deleteIds} {deleteWord} {busy} {missingCount} {searchingAll} {confirmDelete} {findCopies} {searchAllMissing} {saveCurrent} />
 
 {#snippet sortFilter()}
-	<LibrarySortFilter {kind} {sort} {filter} {counts} {askers} {series} {subsTitles} {loaded} {myId} {canManage} anyPart={!partOff('movies') || !partOff('shows') || !partOff('music')} {deletedCount} bind:groupSets {phone} {view} {sizeItems} foot={panelFoot} {setSort} {setFilter} {syncUrl} onclose={() => (sortOpen = false)} />
+	<LibrarySortFilter {kind} {sort} {filter} {counts} {askers} {series} {subsTitles} {anyoneWatched} {loaded} {myId} {canManage} anyPart={!partOff('movies') || !partOff('shows') || !partOff('music')} {deletedCount} bind:groupSets {phone} {view} {sizeItems} foot={panelFoot} {setSort} {setFilter} {syncUrl} onclose={() => (sortOpen = false)} />
 {/snippet}
 
 {#snippet panelFoot()}{@render savedFilters(false)}{/snippet}

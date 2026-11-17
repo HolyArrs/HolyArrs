@@ -512,6 +512,7 @@
 	"mediafiles.sheet.file": "Ficheiro",
 	"mediafiles.parts.stopsSources": "As pesquisas automáticas param, para quando adicionas os downloads tu próprio. Os Gestores de downloads e as importações continuam a funcionar.",
 	"mediafiles.watched.all": "Visto",
+	"mediafiles.watched.byAnyone": "Visto por alguém",
 	"mediafiles.watched.part": "{seen} de {of} vistos",
 	"mediafiles.watched.partly": "Visto em parte"
 }

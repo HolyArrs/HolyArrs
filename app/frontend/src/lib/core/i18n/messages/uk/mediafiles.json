@@ -512,6 +512,7 @@
 	"mediafiles.showReleases.searchingFor": "Шукаємо {name}",
 	"mediafiles.sheet.file": "Файл",
 	"mediafiles.watched.all": "Переглянуто",
+	"mediafiles.watched.byAnyone": "Дивився будь-хто",
 	"mediafiles.watched.part": "Переглянуто {seen} із {of}",
 	"mediafiles.watched.partly": "Переглянуто частково"
 }

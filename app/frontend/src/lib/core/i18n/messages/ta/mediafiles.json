@@ -512,6 +512,7 @@
 	"mediafiles.sheet.file": "கோப்பு",
 	"mediafiles.parts.stopsSources": "நீங்களே பதிவிறக்கங்களைச் சேர்க்கும்போது தானியங்கி தேடல்கள் நிற்கும். பதிவிறக்கிகளும் இறக்குமதிகளும் தொடர்ந்து வேலை செய்யும்.",
 	"mediafiles.watched.all": "பார்க்கப்பட்டது",
+	"mediafiles.watched.byAnyone": "யாரோ பார்த்தது",
 	"mediafiles.watched.part": "{of} இல் {seen} பார்க்கப்பட்டது",
 	"mediafiles.watched.partly": "பகுதியளவு பார்க்கப்பட்டது"
 }

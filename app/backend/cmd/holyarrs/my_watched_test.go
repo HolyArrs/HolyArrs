@@ -73,3 +73,16 @@ func TestMyWatchedOverHTTP(t *testing.T) {
 		t.Fatalf("off %+v", got)
 	}
 }
+
+// Only the owner and admins may ask what anybody watched.
+// route: GET /api/v1/library/watched-by-anyone
+func TestWatchedByAnyoneOverHTTP(t *testing.T) {
+	t.Parallel()
+	r := newAskRig(t)
+	r.owner.call("PUT", "/api/v1/settings/watch-history", `{"enabled":true}`, 200)
+	var out mediaservers.AnyoneWatched
+	if err := json.Unmarshal(r.owner.call("GET", "/api/v1/library/watched-by-anyone", "", 200), &out); err != nil || !out.Enabled || out.Titles == nil {
+		t.Fatalf("owner %+v %v", out, err)
+	}
+	r.ana.call("GET", "/api/v1/library/watched-by-anyone", "", 403)
+}

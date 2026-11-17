@@ -512,6 +512,7 @@
 	"mediafiles.sheet.file": "Tiedosto",
 	"mediafiles.parts.stopsSources": "Automaattiset haut pysähtyvät, kun lisäät lataukset itse. Lataajat ja tuonnit toimivat edelleen.",
 	"mediafiles.watched.all": "Katsottu",
+	"mediafiles.watched.byAnyone": "Joku on katsonut",
 	"mediafiles.watched.part": "Katsottu {seen} / {of}",
 	"mediafiles.watched.partly": "Osittain katsottu"
 }

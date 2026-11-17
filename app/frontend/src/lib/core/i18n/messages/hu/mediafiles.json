@@ -512,6 +512,7 @@
 	"mediafiles.sheet.file": "Fájl",
 	"mediafiles.parts.stopsSources": "Az automatikus keresések leállnak, arra az esetre, ha a letöltéseket te adod hozzá. A Letöltők és az importok tovább működnek.",
 	"mediafiles.watched.all": "Megnézve",
+	"mediafiles.watched.byAnyone": "Bárki megnézte",
 	"mediafiles.watched.part": "{seen} / {of} megnézve",
 	"mediafiles.watched.partly": "Részben megnézve"
 }

@@ -512,6 +512,7 @@
 	"mediafiles.showReleases.searchingFor": "Searching for {name}",
 	"mediafiles.sheet.file": "File",
 	"mediafiles.watched.all": "Watched",
+	"mediafiles.watched.byAnyone": "Watched by anyone",
 	"mediafiles.watched.part": "Watched {seen} of {of}",
 	"mediafiles.watched.partly": "Partly watched"
 }

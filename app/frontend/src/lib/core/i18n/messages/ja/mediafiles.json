@@ -512,6 +512,7 @@
 	"mediafiles.showReleases.searchingFor": "{name} を検索中",
 	"mediafiles.sheet.file": "ファイル",
 	"mediafiles.watched.all": "視聴済み",
+	"mediafiles.watched.byAnyone": "誰かが視聴済み",
 	"mediafiles.watched.part": "{of} 話中 {seen} 話を視聴",
 	"mediafiles.watched.partly": "一部視聴済み"
 }

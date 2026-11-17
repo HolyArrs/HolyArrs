@@ -512,6 +512,7 @@
 	"mediafiles.sheet.file": "Súbor",
 	"mediafiles.parts.stopsSources": "Automatické vyhľadávania sa zastavia, pre prípad, že sťahovania pridávate sami. Sťahovače a importy fungujú ďalej.",
 	"mediafiles.watched.all": "Pozreté",
+	"mediafiles.watched.byAnyone": "Videl ktokoľvek",
 	"mediafiles.watched.part": "Pozreté {seen} z {of}",
 	"mediafiles.watched.partly": "Čiastočne pozreté"
 }

@@ -512,6 +512,7 @@
 	"mediafiles.sheet.file": "File",
 	"mediafiles.parts.stopsSources": "Pencarian otomatis berhenti, untuk saat Anda menambahkan unduhan sendiri. Pengunduh dan impor tetap berfungsi.",
 	"mediafiles.watched.all": "Sudah ditonton",
+	"mediafiles.watched.byAnyone": "Ditonton siapa pun",
 	"mediafiles.watched.part": "{seen} dari {of} ditonton",
 	"mediafiles.watched.partly": "Ditonton sebagian"
 }

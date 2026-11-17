@@ -512,6 +512,7 @@
 	"mediafiles.sheet.file": "ไฟล์",
 	"mediafiles.parts.stopsSources": "การค้นหาอัตโนมัติหยุดลง สำหรับตอนที่คุณเพิ่มดาวน์โหลดเอง ตัวดาวน์โหลดและการนำเข้ายังทำงานต่อ",
 	"mediafiles.watched.all": "ดูแล้ว",
+	"mediafiles.watched.byAnyone": "มีคนดูแล้ว",
 	"mediafiles.watched.part": "ดูแล้ว {seen} จาก {of}",
 	"mediafiles.watched.partly": "ดูแล้วบางส่วน"
 }

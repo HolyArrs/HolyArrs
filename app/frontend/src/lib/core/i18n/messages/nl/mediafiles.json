@@ -512,6 +512,7 @@
 	"mediafiles.showReleases.searchingFor": "Zoeken naar {name}",
 	"mediafiles.sheet.file": "Bestand",
 	"mediafiles.watched.all": "Bekeken",
+	"mediafiles.watched.byAnyone": "Door iemand gekeken",
 	"mediafiles.watched.part": "{seen} van {of} bekeken",
 	"mediafiles.watched.partly": "Deels bekeken"
 }

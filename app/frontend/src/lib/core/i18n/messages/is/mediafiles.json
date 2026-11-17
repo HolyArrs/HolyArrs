@@ -512,6 +512,7 @@
   "mediafiles.sheet.file": "Skrá",
   "mediafiles.parts.stopsSources": "Sjálfvirkar leitir stöðvast, fyrir þegar þú bætir niðurhölum við sjálf(ur). Niðurhalarar og innflutningur halda áfram að virka.",
 	"mediafiles.watched.all": "Horft",
+	"mediafiles.watched.byAnyone": "Einhver hefur horft",
 	"mediafiles.watched.part": "Horft á {seen} af {of}",
 	"mediafiles.watched.partly": "Horft að hluta"
 }

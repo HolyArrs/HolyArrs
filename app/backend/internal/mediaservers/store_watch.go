@@ -218,3 +218,24 @@ func eachWatchedBy(ctx context.Context, q database.Lister, a watchAccount, fn fu
 	}
 	return rows.Err()
 }
+
+// WatchedByAnyone lists the titles any account watched, linked here or not.
+func WatchedByAnyone(ctx context.Context, q watchReader) (AnyoneWatched, error) {
+	out := AnyoneWatched{Enabled: WatchHistoryOn(ctx, q), Titles: []int64{}}
+	if !out.Enabled {
+		return out, nil
+	}
+	rows, err := q.QueryContext(ctx, "SELECT DISTINCT title_id FROM watch_state ORDER BY title_id")
+	if err != nil {
+		return out, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return out, err
+		}
+		out.Titles = append(out.Titles, id)
+	}
+	return out, rows.Err()
+}

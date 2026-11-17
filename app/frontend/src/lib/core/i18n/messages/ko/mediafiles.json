@@ -512,6 +512,7 @@
 	"mediafiles.showReleases.searchingFor": "{name} 검색 중",
 	"mediafiles.sheet.file": "파일",
 	"mediafiles.watched.all": "시청함",
+	"mediafiles.watched.byAnyone": "누군가 시청함",
 	"mediafiles.watched.part": "{of}개 중 {seen}개 시청",
 	"mediafiles.watched.partly": "일부 시청함"
 }

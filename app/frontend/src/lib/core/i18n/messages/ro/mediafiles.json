@@ -512,6 +512,7 @@
 	"mediafiles.sheet.file": "Fișier",
 	"mediafiles.parts.stopsSources": "Căutările automate se opresc, pentru când adaugi tu descărcările. Programele de descărcare și importurile continuă să funcționeze.",
 	"mediafiles.watched.all": "Vizionat",
+	"mediafiles.watched.byAnyone": "Văzut de oricine",
 	"mediafiles.watched.part": "Vizionate {seen} din {of}",
 	"mediafiles.watched.partly": "Vizionat parțial"
 }

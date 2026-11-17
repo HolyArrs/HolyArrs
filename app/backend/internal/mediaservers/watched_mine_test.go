@@ -197,3 +197,23 @@ func TestMyWatchedRouteIsTheCallersOwn(t *testing.T) {
 		t.Fatalf("no caller %+v", got)
 	}
 }
+
+// "Watched by anyone" lists every title any account watched, linked to a
+// person here or not, each once, and nothing while watch history is off.
+func TestWatchedByAnyone(t *testing.T) {
+	w, movie, show := mineWorld(t)
+	seen(t, w, "Jelly", "stranger", "stranger", movie, 0, 0)
+	seen(t, w, "Plex", "22", "ana", movie, 0, 0)
+	seen(t, w, "Plex", "22", "ana", show, 1, 1)
+	got, err := WatchedByAnyone(context.Background(), w.s.Read())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got.Enabled || !reflect.DeepEqual(got.Titles, []int64{movie, show}) {
+		t.Fatalf("got %+v", got)
+	}
+	watchOn(t, w, false)
+	if got, _ := WatchedByAnyone(context.Background(), w.s.Read()); got.Enabled || len(got.Titles) != 0 {
+		t.Fatalf("off %+v", got)
+	}
+}

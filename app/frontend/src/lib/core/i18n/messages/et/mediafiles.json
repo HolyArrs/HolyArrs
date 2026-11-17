@@ -512,6 +512,7 @@
 	"mediafiles.sheet.file": "Fail",
 	"mediafiles.parts.stopsSources": "Automaatsed otsingud peatuvad, juhuks kui lisad allalaadimised ise. Allalaadijad ja impordid töötavad edasi.",
 	"mediafiles.watched.all": "Vaadatud",
+	"mediafiles.watched.byAnyone": "Keegi on vaadanud",
 	"mediafiles.watched.part": "Vaadatud {seen} / {of}",
 	"mediafiles.watched.partly": "Osaliselt vaadatud"
 }

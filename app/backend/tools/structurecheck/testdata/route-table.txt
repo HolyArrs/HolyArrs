@@ -139,6 +139,7 @@ GET /api/v1/library/copies auth=manage_library scope=read assurance=false part=m
 GET /api/v1/library/search auth=signed_in scope=read assurance=false part=media
 GET /api/v1/library/stats auth=manage_library scope=admin assurance=false part=media
 GET /api/v1/library/stats/watched auth=manage_library scope=admin assurance=false part=media
+GET /api/v1/library/watched-by-anyone auth=users scope=admin assurance=false part=media
 GET /api/v1/logs auth=users scope=admin assurance=false part=core
 GET /api/v1/logs/download auth=users scope=admin assurance=false part=core
 GET /api/v1/mcp auth=signed_in scope=mcp assurance=false part=core

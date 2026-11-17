@@ -60,6 +60,8 @@ export default defineConfig({
 		// Downloads screen and Needs a decision: live progress, Remove with its choices, the badge, phone width and accessibility.
 		{ name: 'downloads', testMatch: '**/downloads/downloads.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['downloaders'] },
 		// Organise: import an existing library, rename, delete, naming settings; phone width, accessibility, members see none of it.
+		// Watched by anyone: the owner's Library filter.
+		{ name: 'watchedanyone', testMatch: '**/mediafiles/watched-anyone.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'organise', testMatch: '**/mediafiles/organise.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// History, health, the calendar and its phone feed, webhook Alerts and media servers; phone width and accessibility.
 		{ name: 'history', testMatch: '**/downloads/history.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['organise'] },

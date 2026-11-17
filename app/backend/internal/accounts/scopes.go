@@ -41,6 +41,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/library/stats":                         webserver.PermManageLibrary,
 	"GET /api/v1/library/stats/watched":                 webserver.PermManageLibrary,
 	"GET /api/v1/my/watched":                            webserver.NeedSignedIn,
+	"GET /api/v1/library/watched-by-anyone":             webserver.NeedUsers,
 	"GET /api/v1/settings/watch-history":                webserver.NeedOwner,
 	"PUT /api/v1/settings/watch-history":                webserver.NeedOwner,
 

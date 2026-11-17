@@ -512,6 +512,7 @@
 	"mediafiles.showReleases.searchingFor": "{name} खोजा जा रहा है",
 	"mediafiles.sheet.file": "फ़ाइल",
 	"mediafiles.watched.all": "देखा गया",
+	"mediafiles.watched.byAnyone": "किसी ने भी देखा",
 	"mediafiles.watched.part": "{of} में से {seen} देखे गए",
 	"mediafiles.watched.partly": "आंशिक रूप से देखा गया"
 }

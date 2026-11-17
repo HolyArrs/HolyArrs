@@ -512,6 +512,7 @@
 	"mediafiles.sheet.file": "Fil",
 	"mediafiles.parts.stopsSources": "Automatiska sökningar stoppas, för när du lägger till nedladdningar själv. Nedladdare och importer fortsätter fungera.",
 	"mediafiles.watched.all": "Sedd",
+	"mediafiles.watched.byAnyone": "Sedd av någon",
 	"mediafiles.watched.part": "Sett {seen} av {of}",
 	"mediafiles.watched.partly": "Delvis sedd"
 }

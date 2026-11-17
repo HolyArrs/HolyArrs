@@ -512,6 +512,7 @@
 	"mediafiles.sheet.file": "檔案",
 	"mediafiles.parts.stopsSources": "自動搜尋會停止，適用於你自己新增下載的情況。下載器與匯入仍會運作。",
 	"mediafiles.watched.all": "已觀看",
+	"mediafiles.watched.byAnyone": "有人看過",
 	"mediafiles.watched.part": "已觀看 {seen} / {of}",
 	"mediafiles.watched.partly": "已觀看部分"
 }

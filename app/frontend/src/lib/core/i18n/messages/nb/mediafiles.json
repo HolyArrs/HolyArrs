@@ -512,6 +512,7 @@
 	"mediafiles.sheet.file": "Fil",
 	"mediafiles.parts.stopsSources": "Automatiske søk stopper, for når du legger til nedlastinger selv. Nedlastere og importer fortsetter å fungere.",
 	"mediafiles.watched.all": "Sett",
+	"mediafiles.watched.byAnyone": "Sett av noen",
 	"mediafiles.watched.part": "Sett {seen} av {of}",
 	"mediafiles.watched.partly": "Delvis sett"
 }

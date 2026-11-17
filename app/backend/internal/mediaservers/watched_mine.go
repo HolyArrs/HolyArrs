@@ -111,6 +111,23 @@ func accountsOf(ctx context.Context, q watchReader, userID int64) ([]watchAccoun
 	return out, nil
 }
 
+// AnyoneWatched is every title anybody watched on the media servers, for
+// the owner's and admins' "Watched by anyone" Library filter.
+type AnyoneWatched struct {
+	Enabled bool    `json:"enabled"`
+	Titles  []int64 `json:"titles"`
+}
+
+// watchedByAnyone answers the titles anybody watched.
+func (h *Handlers) watchedByAnyone(w http.ResponseWriter, r *http.Request) {
+	out, err := WatchedByAnyone(r.Context(), h.Store.Read())
+	if err != nil {
+		internalError(w, err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, out)
+}
+
 // myWatched answers what the signed-in person watched. Who is read from
 // the sign-in only, never from the request.
 func (h *Handlers) myWatched(w http.ResponseWriter, r *http.Request) {
