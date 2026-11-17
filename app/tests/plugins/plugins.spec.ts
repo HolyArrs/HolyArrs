@@ -63,7 +63,9 @@ for (const width of [1280, 375]) {
 		await expect(rows.nth(0)).toContainText('By HolyArrs · signed');
 		await expect(rows.nth(0)).toContainText('Not installed');
 		await expect(rows.nth(1)).toContainText('Running');
-		await expect(rows.nth(2)).toContainText('Turned off: on the blocklist');
+		await expect(rows.nth(2)).toContainText('Turned off');
+		await expect(rows.nth(2).getByTestId('plugin-hint')).toHaveText('on the blocklist');
+		await expect(rows.nth(2).getByRole('button', { name: 'Start Old thing' })).toHaveCount(0);
 		await expect(page.getByTestId('plugins-notice')).toHaveText(["Couldn't check for blocked plugins for over a week."]);
 		await expect(page.getByText('At most 256 processes')).toBeVisible();
 		await noSidewaysScroll(page);

@@ -39,5 +39,14 @@
 	"plugins.started": "{name} started",
 	"plugins.stopped": "{name} stopped",
 	"plugins.removed": "{name} removed",
-	"plugins.failed": "Couldn't do that"
+	"plugins.failed": "Couldn't do that",
+	"plugins.installFailed": "Couldn't install {name}",
+	"plugins.startFailed": "Couldn't start {name}",
+	"plugins.stopFailed": "Couldn't stop {name}",
+	"plugins.removeFailed": "Couldn't remove {name}",
+	"plugins.installName": "Install {name}",
+	"plugins.startName": "Start {name}",
+	"plugins.stopName": "Stop {name}",
+	"plugins.removeName": "Remove {name}",
+	"plugins.missing": "Plugins aren't available on this server."
 }

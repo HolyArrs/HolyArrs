@@ -10,8 +10,8 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { onMount } from 'svelte';
-	import { api } from '#lib/core/api.ts';
+	import { onMount, tick } from 'svelte';
+	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
@@ -21,6 +21,7 @@
 	let ov = $state<PluginOverview | null>(null);
 	let loaded = $state(false);
 	let error = $state('');
+	let missing = $state(false);
 	let busy = $state('');
 	let reaching = $state<Plugin | null>(null);
 	let reachOpen = $state(false);
@@ -45,7 +46,8 @@
 			ov = await api.get<PluginOverview>('/plugins');
 			error = '';
 		} catch (e) {
-			error = message(e);
+			if (e instanceof ApiError && e.status === 404) missing = true;
+			else error = message(e);
 		} finally {
 			loaded = true;
 		}
@@ -55,19 +57,28 @@
 		else loaded = true;
 	});
 
-	async function act(p: Plugin, run: () => Promise<unknown>, done: string) {
+	// After a dialog action, focus lands on the row's main button, or the heading when the row is gone.
+	async function act(p: Plugin, run: () => Promise<unknown>, done: string, fail: string, refocus = false) {
 		if (busy) return;
 		busy = p.id;
 		try {
 			await run();
 			toasts.push(t(done, { name: pluginName(p.id) }), 'ok');
-			await load();
 		} catch (e) {
-			toasts.push(t('plugins.failed'), 'fail', { body: message(e) });
+			toasts.push(t(fail, { name: pluginName(p.id) }), 'fail', { body: message(e) });
 		} finally {
+			await load();
 			busy = '';
+			removing = null;
+		}
+		if (refocus) {
+			await tick();
+			const row = document.querySelector<HTMLElement>(`[data-testid="plugin-row"][data-id="${CSS.escape(p.id)}"] .acts button:not([disabled])`);
+			(row ?? document.getElementById('h-plugins'))?.focus();
 		}
 	}
+	// Start shows for an off plugin only when the owner stopped it (or no reason is given); other reasons need a fix first.
+	const startable = (p: Plugin) => !p.disabled_reason || p.disabled_reason === 'stopped by the owner';
 
 	const path = (p: Plugin) => `/plugins/${encodeURIComponent(p.id)}`;
 
@@ -78,7 +89,7 @@
 	function install() {
 		const p = reaching;
 		reachOpen = false;
-		if (p) void act(p, () => api.post(`${path(p)}/install`), 'plugins.installed');
+		if (p) void act(p, () => api.post(`${path(p)}/install`), 'plugins.installed', 'plugins.installFailed', true);
 	}
 	function askRemove(p: Plugin) {
 		removing = p;
@@ -87,7 +98,7 @@
 	function remove(keep: boolean) {
 		const p = removing;
 		removeOpen = false;
-		if (p) void act(p, () => api.del(path(p) + (keep ? '?keep=1' : '')), 'plugins.removed');
+		if (p) void act(p, () => api.del(path(p) + (keep ? '?keep=1' : '')), 'plugins.removed', 'plugins.removeFailed', true);
 	}
 </script>
 
@@ -99,6 +110,8 @@
 	<EmptyState icon="shield" title={t('plugins.title')} text={t('plugins.ownerOnly')} />
 {:else if !loaded}
 	<SkSettings rows={2} />
+{:else if missing}
+	<EmptyState icon="shield" title={t('plugins.title')} text={t('plugins.missing')} />
 {:else if !ov}
 	<LoadError hasData={false} message={error} onretry={load} />
 {:else}
@@ -119,18 +132,19 @@
 						<div class="grow">
 							<div class="pname">{pluginName(p.id)}</div>
 							<div class="xs muted">{t('plugins.byLine')} · <span class="mono">{shownVersion(p)}</span></div>
-							<div class="state"><Badge label={stateLabel(p)} /></div>
+							<div class="state"><Badge label={s === 'off' ? t('plugins.stateOff') : stateLabel(p)} /></div>
+							{#if s === 'off' && p.disabled_reason}<div class="xs muted hint" data-testid="plugin-hint">{p.disabled_reason}</div>{/if}
 						</div>
 						<div class="acts">
 							{#if s === 'not_installed'}
-								<Button variant="primary" disabled={!canInstall || !!busy} busy={busy === p.id} onclick={() => askInstall(p)}>{t('plugins.install')}</Button>
+								<Button variant="primary" aria-label={t('plugins.installName', { name: pluginName(p.id) })} disabled={!canInstall || !!busy} busy={busy === p.id} onclick={() => askInstall(p)}>{t('plugins.install')}</Button>
 							{:else}
 								{#if s === 'running'}
-									<Button disabled={!!busy} busy={busy === p.id} onclick={() => act(p, () => api.post(`${path(p)}/stop`), 'plugins.stopped')}>{t('plugins.stop')}</Button>
-								{:else if s === 'stopped'}
-									<Button disabled={!ov.can_run || !!busy} busy={busy === p.id} onclick={() => act(p, () => api.post(`${path(p)}/start`), 'plugins.started')}>{t('plugins.start')}</Button>
+									<Button aria-label={t('plugins.stopName', { name: pluginName(p.id) })} disabled={!!busy} busy={busy === p.id} onclick={() => act(p, () => api.post(`${path(p)}/stop`), 'plugins.stopped', 'plugins.stopFailed')}>{t('plugins.stop')}</Button>
+								{:else if s === 'stopped' || (s === 'off' && startable(p))}
+									<Button aria-label={t('plugins.startName', { name: pluginName(p.id) })} disabled={!ov.can_run || !!busy} busy={busy === p.id} onclick={() => act(p, () => api.post(`${path(p)}/start`), 'plugins.started', 'plugins.startFailed')}>{t('plugins.start')}</Button>
 								{/if}
-								<Button variant="plain" disabled={!!busy} onclick={() => askRemove(p)}>{t('plugins.remove')}</Button>
+								<Button variant="plain" aria-label={t('plugins.removeName', { name: pluginName(p.id) })} disabled={!!busy} busy={busy === p.id && removing?.id === p.id} onclick={() => askRemove(p)}>{t('plugins.remove')}</Button>
 							{/if}
 						</div>
 					</li>
@@ -179,6 +193,7 @@
 	.notice { margin-bottom: var(--s-4); }
 	.pname { font-weight: var(--weight-semibold); }
 	.state { margin-top: 4px; }
+	.hint { margin-top: 4px; }
 	.acts { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 	.facts { margin: var(--s-3) 0 0; padding-left: 1.2em; display: grid; gap: 4px; }
 	.facts-none { margin-top: var(--s-3); }
