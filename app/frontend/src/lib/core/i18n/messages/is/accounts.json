@@ -371,7 +371,15 @@
   "accounts.language.auto": "Sjálfvirkt",
   "accounts.language.hint": "Sjálfvirkt fylgir vafranum þínum. Vistað á aðgangnum þínum.",
   "accounts.language.saveFailed": "Ekki tókst að vista tungumálið",
-	"accounts.language.count.one": "1 tungumál",
-	"accounts.language.count.other": "{n} tungumál",
-  "accounts.account.watchEveryone": "Eigandinn kveikti á þessu fyrir alla. Slökktu á báðu til að stöðva það."
+  "accounts.language.count.one": "1 tungumál",
+  "accounts.language.count.other": "{n} tungumál",
+  "accounts.account.watchEveryone": "Eigandinn kveikti á þessu fyrir alla. Slökktu á báðu til að stöðva það.",
+  "accounts.watch.title": "Merkingar um áhorf",
+  "accounts.watch.hint": "Tengdu aðganginn þinn á miðlaraþjóni hér svo Safnið sýni hvað þú hefur horft á.",
+  "accounts.watch.as": "{server}, sem {name}",
+  "accounts.watch.nameOn": "Nafn á {server}",
+  "accounts.watch.passwordOnce": "Lykilorðið þitt fer aðeins til {server} og er ekki geymt.",
+  "accounts.watch.linked": "Tengt við {name} á {server}",
+  "accounts.watch.unlinked": "Tenging fjarlægð",
+  "accounts.login.importPaused": "Innskráningin þín rann út, svo innflutningurinn er í bið. Skráðu þig inn, opnaðu Flytja inn safn og ýttu á Skanna til að halda áfram."
 }

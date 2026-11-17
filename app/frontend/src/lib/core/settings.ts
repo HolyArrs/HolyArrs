@@ -2,6 +2,7 @@
 import { message } from './api.ts';
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 export type GroupId = 'library' | 'downloads' | 'users' | 'connections' | 'system' | 'account';
 
@@ -14,7 +15,7 @@ export interface Section {
 	about: string;
 	group: GroupId;
 	tint: Tint;
-	need?: 'users' | 'self' | 'library';
+	need?: 'users' | 'self' | 'library' | 'owner';
 	feature?: string;
 }
 
@@ -26,7 +27,7 @@ export interface Group {
 	about: string;
 }
 
-type Can = (p: 'settings' | 'users' | 'manage_library') => boolean;
+type Can = (p: 'settings' | 'users' | 'manage_library' | 'owner') => boolean;
 
 // Set by the session, so this module can ask about held features without importing it.
 let heldNow: (feature: string) => boolean = () => false;
@@ -66,6 +67,7 @@ export const sections: Section[] = [
 	{ href: '/settings/alerts', group: 'connections', tint: 'red', get label() { return t('core.settings.alerts.label'); }, icon: 'bell', get about() { return t('core.settings.alerts.about'); } },
 	{ href: '/settings/ai', group: 'connections', tint: 'indigo', get label() { return t('core.settings.ai.label'); }, icon: 'sparkle', get about() { return t('core.settings.ai.about'); }, feature: 'ai_apps' },
 	{ href: '/settings/api', group: 'connections', tint: 'gray', get label() { return t('core.settings.api.label'); }, icon: 'key', get about() { return t('core.settings.api.about'); } },
+	{ href: '/settings/remote-access', group: 'connections', tint: 'blue', get label() { return t('core.settings.remoteAccess.label'); }, icon: 'globe', get about() { return t('core.settings.remoteAccess.about'); }, need: 'owner' },
 	{ href: '/settings/tmdb', group: 'connections', tint: 'purple', get label() { return t('core.settings.tmdb.label'); }, icon: 'sparkle', get about() { return t('core.settings.tmdb.about'); } },
 
 	{ href: '/settings/health', group: 'system', tint: 'green', get label() { return t('core.settings.health.label'); }, icon: 'check', get about() { return t('core.settings.health.about'); } },
@@ -90,6 +92,7 @@ export function mayOpen(s: Section, can: Can): boolean {
 	if (isHeld(s.feature)) return false;
 	if (s.need === 'self') return true;
 	if (s.need === 'users') return can('users');
+	if (s.need === 'owner') return can('owner');
 	if (s.need === 'library') return can('settings') || can('manage_library');
 	return can('settings');
 }
@@ -114,7 +117,7 @@ export function groupOf(id: GroupId | undefined): Group | undefined {
 export function reachWords(text: string): string {
 	return /connection (was )?refused|does not answer|refused to connect|no such host|timed? ?out|unreachable|dial tcp|no route|connection reset|could not (connect|reach)|couldn.t (connect|reach)|can.t connect|EOF/i.test(text)
 		? t('core.settings.cantReach')
-		: text;
+		: serverWords(text);
 }
 
 // Turns any error into a short sentence with a capital and an end mark.

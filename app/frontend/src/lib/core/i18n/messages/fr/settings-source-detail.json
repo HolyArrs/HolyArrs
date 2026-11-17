@@ -34,5 +34,6 @@
 	"settings.sourceDetail.what": "Quoi",
 	"settings.sourceDetail.result": "Résultat",
 	"settings.sourceDetail.time": "Durée",
-	"settings.sourceDetail.answeredCell": "Répondu"
+	"settings.sourceDetail.answeredCell": "Répondu",
+	"settings.sourceDetail.noTimes": "Aucune réponse pour l’instant"
 }

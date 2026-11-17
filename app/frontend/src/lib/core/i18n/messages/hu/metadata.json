@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Film",
 	"metadata.health.downTitle": "A metaadatok nem érhetők el",
 	"metadata.health.down": "A keresés és az új borítók szünetelnek, amíg vissza nem áll. A Médiatár továbbra is működik.",
-	"metadata.health.back": "A metaadatok újra elérhetők"
+	"metadata.health.back": "A metaadatok újra elérhetők",
+	"metadata.health.fakeIp": "A routered vagy a VPN hamis címre (198.18.x.x) küldi a HolyArrst. Ez általában a Clash vagy a Surge miatt van. Add hozzá a(z) {host} címet a közvetlen listájához."
 }

@@ -16,7 +16,7 @@
 	import { live } from '#lib/core/live.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { plainReason } from '#lib/core/plain.ts';
-	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
+	import { appLocale, t as tr } from '#lib/core/i18n/i18n.svelte.ts';
 
 	// Missing subtitles: every movie and episode missing a wished subtitle.
 
@@ -153,7 +153,7 @@
 
 <svelte:head><title>{tr('library.missingSubs.title')} · HolyArrs</title></svelte:head>
 
-<LibraryToolPage title={tr('library.missingSubs.title')} count={loaded && !error ? tr('library.missingSubs.count', { n: total }) : ''}>
+<LibraryToolPage title={tr('library.missingSubs.title')} count={loaded && !error ? tr('library.missingSubs.count', { n: total.toLocaleString(appLocale()) }) : ''}>
 	{#snippet bar()}
 		<span class="tp-cap">
 			<select aria-label={tr('library.missingSubs.language')} bind:value={language} onchange={filter}>
@@ -183,7 +183,7 @@
 	{#if jobIds.length}
 		<div class="tp-sheet tp-pad progress" aria-live="polite" data-testid="search-all-progress">
 			<ProgressBar value={(done / jobIds.length) * 100} label={tr('library.missingSubs.done')} />
-			<p class="tp-note">{running ? tr('library.missingSubs.searched', { done, total: jobIds.length }) : tr(jobIds.length === 1 ? 'library.missingSubs.doneOne' : 'library.missingSubs.doneMany', { n: jobIds.length })}</p>
+			<p class="tp-note">{running ? tr('library.missingSubs.searched', { done: done.toLocaleString(appLocale()), total: jobIds.length.toLocaleString(appLocale()) }) : tr(jobIds.length === 1 ? 'library.missingSubs.doneOne' : 'library.missingSubs.doneMany', { n: jobIds.length.toLocaleString(appLocale()) })}</p>
 		</div>
 	{/if}
 

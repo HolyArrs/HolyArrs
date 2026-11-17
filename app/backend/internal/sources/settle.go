@@ -15,9 +15,9 @@ import (
 
 // settlePicks settles show picks, choosing or holding each release for all its
 // Slots in one write. It returns how many were chosen and held, and the Slots
-// they took.
+// they took. note is what the search or feed says about the Sources it used.
 func (s *Searcher) settlePicks(ctx context.Context, by domain.Actor, jobID *int64, titleID int64, labels map[int64]string, all []found, vs []mediafiles.Verdict, ids []int64,
-	picks []showPick, how string) (int, int, map[int64]bool) {
+	picks []showPick, how, note string) (int, int, map[int64]bool) {
 	chosen, held := 0, 0
 	took := map[int64]bool{}
 	for _, pk := range picks {
@@ -38,7 +38,7 @@ func (s *Searcher) settlePicks(ctx context.Context, by domain.Actor, jobID *int6
 				eps = append(eps, l)
 			}
 		}
-		data := map[string]any{"release_id": ids[pk.idx], "slot_ids": pk.slots, "episodes": eps}
+		data := noted(map[string]any{"release_id": ids[pk.idx], "slot_ids": pk.slots, "episodes": eps}, note)
 		for _, id := range pk.slots {
 			if pk.held {
 				s.addEvent(ctx, by, jobID, titleID, id, EventReleaseHeld, fmt.Sprintf("%s holding %s for %s", how, name, strings.Join(eps, ", ")), data)

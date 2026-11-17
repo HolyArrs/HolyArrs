@@ -15,8 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"unicode"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
@@ -277,6 +277,9 @@ func (c *Client) send(ctx context.Context, method, raw string, payload []byte, h
 		if errors.As(err, &ue) {
 			err = ue.Err
 		}
+		if errors.Is(err, outbound.ErrMetadataRefused) {
+			return nil, &Error{Kind: KindBlocked, Msg: "the address is a cloud metadata address, which HolyArrs never connects to"}
+		}
 		if errors.Is(err, outbound.ErrAddressRefused) {
 			msg := err.Error()
 			if msg == outbound.ErrAddressRefused.Error() {
@@ -284,7 +287,7 @@ func (c *Client) send(ctx context.Context, method, raw string, payload []byte, h
 			}
 			return nil, &Error{Kind: KindBlocked, Msg: c.scrub(msg)}
 		}
-		return nil, &Error{Kind: KindDown, Msg: c.scrub(err.Error())}
+		return nil, &Error{Kind: KindDown, Msg: c.scrub(err.Error()), cause: err}
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 16<<20))
 	if closeErr := resp.Body.Close(); err == nil {
@@ -305,10 +308,14 @@ func (c *Client) send(ctx context.Context, method, raw string, payload []byte, h
 			e.RetryAfter = time.Duration(min(s, maxRetryAfter)) * time.Second
 		}
 		return nil, e
+	case (resp.StatusCode == 401 || resp.StatusCode == 403 || resp.StatusCode == 404) && doctor.Other(resp.Header, body, "prowlarr", "jackett", "nzbhydra") != nil:
+		return nil, &Error{Kind: KindBroken, Msg: resp.Status, cause: doctor.Mark(doctor.WrongApp, nil)}
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
 		return nil, &Error{Kind: KindLoginRefused, Msg: resp.Status}
 	case resp.StatusCode >= 500:
 		return nil, &Error{Kind: KindDown, Msg: resp.Status}
+	case resp.StatusCode == http.StatusBadRequest && doctor.Answer(resp.StatusCode, body) != nil:
+		return nil, &Error{Kind: KindDown, Msg: resp.Status, cause: doctor.Answer(resp.StatusCode, body)}
 	case resp.StatusCode != http.StatusOK:
 		return nil, &Error{Kind: KindBroken, Msg: resp.Status}
 	}
@@ -363,7 +370,8 @@ func (s capsSearch) params() []string {
 }
 
 type capsXML struct {
-	Limits struct {
+	XMLName xml.Name
+	Limits  struct {
 		Max int `xml:"max,attr"`
 	} `xml:"limits"`
 	Searching struct {
@@ -393,6 +401,9 @@ func (c *Client) Caps(ctx context.Context) (Caps, error) {
 	var x capsXML
 	if err := xml.Unmarshal(body, &x); err != nil {
 		return Caps{}, &Error{Kind: KindBroken, Msg: "caps are not valid XML: " + err.Error()}
+	}
+	if strings.EqualFold(x.XMLName.Local, "html") {
+		return Caps{}, &Error{Kind: KindBroken, Msg: "caps are not valid XML: a web page answered"}
 	}
 	caps := Caps{
 		Search: x.Searching.Search.on(), MovieSearch: x.Searching.Movie.on(), TVSearch: x.Searching.TV.on(),
@@ -432,6 +443,8 @@ type Query struct {
 	// Aliases are other names of the title; an id search answered under one
 	// of them is a real answer.
 	Aliases []string
+	// other is which of the Aliases a search by words also asks about.
+	other nameAsk
 	// Music makes it an album search by artist and album where the Source takes
 	// them, otherwise a text search of both.
 	Music  bool
@@ -453,6 +466,10 @@ type Item struct {
 	Published time.Time
 	InfoHash  string
 	Files     int
+	// TVDB and IMDb are the ids the Source gives for the release's show
+	// (IMDb as digits with no leading zeros); 0 and "" when it gives none.
+	TVDB int
+	IMDb string
 }
 
 type rssXML struct {
@@ -474,24 +491,19 @@ type rssXML struct {
 	} `xml:"channel>item"`
 }
 
-func textQuery(q Query) string {
-	// Apostrophes go without a space (Schitt's -> Schitts): most sites find
-	// nothing when the term keeps them. Other punctuation splits words.
-	title := strings.NewReplacer("'", "", "’", "", "‘", "", "`", "").Replace(q.Title)
-	words := strings.FieldsFunc(title, func(r rune) bool {
-		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
-	})
-	if q.Year > 0 {
-		words = append(words, strconv.Itoa(q.Year))
-	}
-	return strings.Join(words, " ")
-}
-
 // Search runs a movie search. It uses the ids the Source supports and falls
 // back to a text search by title and year.
 func (c *Client) Search(ctx context.Context, q Query) ([]Item, error) {
+	items, _, err := c.search(ctx, q)
+	return items, err
+}
+
+// search is Search that also says whether the Source was asked by an id,
+// which names the title however a release is named.
+func (c *Client) search(ctx context.Context, q Query) ([]Item, bool, error) {
 	if c.cfg.Format == "site" {
-		return c.siteSearch(ctx, q, c.cfg.Observe)
+		items, err := c.siteSearch(ctx, q, c.cfg.Observe)
+		return items, false, err
 	}
 	c.mu.Lock()
 	caps := c.caps
@@ -499,34 +511,35 @@ func (c *Client) Search(ctx context.Context, q Query) ([]Item, error) {
 	if caps == nil {
 		got, err := c.Caps(ctx)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		caps = &got
 	}
 	v, ids, err := searchValues(q, *caps, true)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	items, err := c.searchWith(ctx, q, *caps, v)
-	if err != nil || !ids || len(items) == 0 {
-		return items, err
+	if err != nil || !ids {
+		return items, false, err
 	}
 	// A site that lists an id but ignores it answers with its newest
-	// releases. When none of them names the title, ask again by title.
-	name := strings.Fields(strings.ToLower(textQuery(Query{Title: q.Title})))
+	// releases, and one that needs every id to match may answer nothing.
+	// When no answer names the title, ask again by title.
+	name := nameWords(q.Title)
 	if len(name) == 0 {
-		return items, nil
+		return items, true, nil
 	}
 	names := [][]string{name}
 	for _, a := range q.Aliases {
-		if w := strings.Fields(strings.ToLower(textQuery(Query{Title: a}))); len(w) > 0 {
+		if w := nameWords(a); len(w) > 0 {
 			names = append(names, w)
 		}
 	}
 	for _, it := range items {
 		for _, n := range names {
 			if namesAll(it.Title, n) {
-				return items, nil
+				return items, true, nil
 			}
 		}
 	}
@@ -534,29 +547,15 @@ func (c *Client) Search(ctx context.Context, q Query) ([]Item, error) {
 	// gives nothing rather than them.
 	v, _, err = searchValues(q, *caps, false)
 	if err != nil {
-		return nil, nil
+		return nil, false, nil
 	}
 	byName, err := c.searchWith(ctx, q, *caps, v)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	// No id answer names the title under any of its names: the site ignored
 	// the id, so its answers are its newest releases. Keep the title search.
-	return byName, nil
-}
-
-// namesAll says whether a release name holds every word of the title.
-func namesAll(release string, words []string) bool {
-	got := map[string]bool{}
-	for _, w := range strings.Fields(strings.ToLower(textQuery(Query{Title: release}))) {
-		got[w] = true
-	}
-	for _, w := range words {
-		if !got[w] {
-			return false
-		}
-	}
-	return true
+	return byName, false, nil
 }
 
 // ErrNothingToSearch is a search with no title and no id the Source takes. It
@@ -580,14 +579,14 @@ func searchValues(q Query, caps Caps, withIDs bool) (url.Values, bool, error) {
 		if q.Album != "" && caps.Supports("music", "album") {
 			v.Set("album", q.Album)
 		} else if named && q.Album != "" {
-			v.Set("q", textQuery(Query{Title: q.Album}))
+			v.Set("q", musicText(q.Album))
 		}
 		if !named {
-			v.Set("q", textQuery(Query{Title: q.Artist + " " + q.Album}))
+			v.Set("q", musicText(q.Artist+" "+q.Album))
 		}
 	case q.Music && caps.Search:
 		v.Set("t", "search")
-		v.Set("q", textQuery(Query{Title: q.Artist + " " + q.Album}))
+		v.Set("q", musicText(q.Artist+" "+q.Album))
 	case q.Music:
 		return nil, false, &Error{Kind: KindBroken, Msg: "the Source offers no music search"}
 	case q.TV && caps.TVSearch:
@@ -598,6 +597,14 @@ func searchValues(q Query, caps Caps, withIDs bool) (url.Values, bool, error) {
 		}
 		if withIDs && q.TVMaze > 0 && caps.Supports("tv", "tvmazeid") {
 			v.Set("tvmazeid", strconv.Itoa(q.TVMaze))
+			ids = true
+		}
+		if id := strings.TrimPrefix(strings.ToLower(strings.TrimSpace(q.IMDb)), "tt"); withIDs && id != "" && caps.Supports("tv", "imdbid") {
+			v.Set("imdbid", id)
+			ids = true
+		}
+		if withIDs && q.TMDb > 0 && caps.Supports("tv", "tmdbid") {
+			v.Set("tmdbid", strconv.Itoa(q.TMDb))
 			ids = true
 		}
 		if !ids {
@@ -618,7 +625,7 @@ func searchValues(q Query, caps Caps, withIDs bool) (url.Values, bool, error) {
 		return nil, false, &Error{Kind: KindBroken, Msg: "the Source offers no show search"}
 	case caps.MovieSearch:
 		v.Set("t", "movie")
-		if id := strings.TrimPrefix(q.IMDb, "tt"); withIDs && id != "" && caps.Supports("movie", "imdbid") {
+		if id := strings.TrimPrefix(strings.ToLower(strings.TrimSpace(q.IMDb)), "tt"); withIDs && id != "" && caps.Supports("movie", "imdbid") {
 			v.Set("imdbid", id)
 			ids = true
 		}
@@ -754,6 +761,10 @@ func parseItems(body []byte, protocol string) ([]Item, error) {
 				if n, err := strconv.Atoi(a.Value); err == nil && n > 0 {
 					i.Files = n
 				}
+			case "tvdbid":
+				i.TVDB, _ = strconv.Atoi(strings.TrimSpace(a.Value))
+			case "imdb", "imdbid":
+				i.IMDb = strings.TrimLeft(strings.TrimPrefix(strings.TrimSpace(a.Value), "tt"), "0")
 			case "size":
 				if i.Size == 0 {
 					i.Size, _ = strconv.ParseInt(a.Value, 10, 64)

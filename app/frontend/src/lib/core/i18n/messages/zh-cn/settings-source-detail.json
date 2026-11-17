@@ -34,5 +34,6 @@
 	"settings.sourceDetail.what": "内容",
 	"settings.sourceDetail.result": "结果",
 	"settings.sourceDetail.time": "耗时",
-	"settings.sourceDetail.answeredCell": "有响应"
+	"settings.sourceDetail.answeredCell": "有响应",
+	"settings.sourceDetail.noTimes": "暂无响应"
 }

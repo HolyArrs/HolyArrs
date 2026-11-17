@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Incolla un ID, tipo tmdb:693134 o tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Oppure descrivilo, tipo “film di fantascienza con un robot del 2014”.",
 	"discover.search.lookEverywhere": "Cerca dappertutto",
-	"discover.search.searchIndexersFor": "Cerca nelle Fonti “{searched}”",
+	"discover.search.searchIndexersFor": "Controlla le tue fonti",
 	"discover.search.topMatches": "Risultati migliori",
 	"discover.people.goToTheFilmography": "Vai alla filmografia",
 	"discover.people.filmography": "Filmografia",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Non corrisponde a questa versione",
 	"discover.leftovers.reason.movie_has_file": "Il film ha già un file",
 	"discover.leftovers.reason.replaced_by_hand": "Sostituito da un altro file",
-	"discover.leftovers.reason.unmatched": "Abbinamento tolto a mano"
+	"discover.leftovers.reason.unmatched": "Abbinamento tolto a mano",
+	"discover.searchSections.genres": "Generi",
+	"discover.searchSections.moods": "Atmosfere",
+	"discover.searchSections.stories": "Storie e temi",
+	"discover.searchSections.worlds": "Mondi e ambientazioni",
+	"discover.searchSections.eras": "Epoche",
+	"discover.searchSections.world": "Dal mondo",
+	"discover.searchSections.collections": "Raccolte",
+	"discover.popularRail.out": "Esce",
+	"discover.popularRail.comingDay": "In arrivo",
+	"discover.titleLibrary.turnShowOnHint": "Attiva la serie per iniziare a cercare.",
+	"discover.leftovers.reason.seasons_differ": "Trovata solo con il numero TMDB della vecchia app: controlla che sia la stessa serie, poi abbina il file tu stesso"
 }

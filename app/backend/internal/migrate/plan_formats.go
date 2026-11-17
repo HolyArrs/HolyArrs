@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
 
@@ -17,7 +18,7 @@ type ImportSkipped struct {
 }
 
 // maxImportTraits matches the Pick rules limit on listed traits.
-const maxImportTraits = 64
+const maxImportTraits = mediafiles.MaxTraits
 
 func clampPoints(n int) int { return library.ClampPoints(n) }
 
@@ -78,7 +79,7 @@ func (b *builder) importedRules(s *Snapshot, p Profile, preset string) (*RulesPl
 	if len(rp.Traits) > maxImportTraits {
 		sort.SliceStable(rp.Traits, func(i, j int) bool { return abs(rp.Traits[i].Points) > abs(rp.Traits[j].Points) })
 		for _, t := range rp.Traits[maxImportTraits:] {
-			rp.Skipped = append(rp.Skipped, ImportSkipped{Name: t.Name, Reason: "Pick rules hold at most 64 traits; the strongest scores were kept"})
+			rp.Skipped = append(rp.Skipped, ImportSkipped{Name: t.Name, Reason: "Pick rules hold at most 256 traits; the strongest scores were kept"})
 		}
 		rp.Traits = rp.Traits[:maxImportTraits]
 	}

@@ -121,7 +121,10 @@ test('a Release turned down for an episode is never picked again for it; Search 
 
 	// Search now looks again: the turned-down copy is refused, the 720p is taken.
 	await expect(s2).toBeVisible();
+	// Reload only once the search was taken: a reload cancels the request still on its way.
+	const asked = page.waitForResponse((r) => /\/api\/v1\/titles\/\d+\/search$/.test(new URL(r.url()).pathname) && r.request().method() === 'POST');
 	await episodeAction(page, 'S02E01', 'Search now');
+	expect((await asked).ok()).toBe(true);
 	await stateAfterReload(page, 'Season 2', 'S02E01', /Chosen|Downloading/);
 
 	// The Turned down list says what it was turned down for; take it off.

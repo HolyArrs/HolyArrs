@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Jezik se nije mogao spremiti",
 	"accounts.language.count.one": "1 jezik",
 	"accounts.language.count.other": "Jezika: {n}",
-	"accounts.account.watchEveryone": "Vlasnik je ovo uključio za sve. Isključi oboje da to zaustaviš."
+	"accounts.account.watchEveryone": "Vlasnik je ovo uključio za sve. Isključi oboje da to zaustaviš.",
+	"accounts.watch.title": "Oznake gledanja",
+	"accounts.watch.hint": "Povežite ovdje svoj račun na medijskom poslužitelju kako bi Knjižnica pokazivala što ste gledali.",
+	"accounts.watch.as": "{server}, kao {name}",
+	"accounts.watch.nameOn": "Ime na {server}",
+	"accounts.watch.passwordOnce": "Vaša lozinka ide samo na {server} i ne sprema se.",
+	"accounts.watch.linked": "Povezano s {name} na {server}",
+	"accounts.watch.unlinked": "Veza uklonjena",
+	"accounts.login.importPaused": "Prijava ti je istekla, pa je uvoz pauziran. Prijavi se, otvori Uvezi biblioteku i pritisni Skeniraj za nastavak."
 }

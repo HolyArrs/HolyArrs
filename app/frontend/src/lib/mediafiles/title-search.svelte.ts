@@ -1,3 +1,4 @@
+import { ask } from '#lib/ui/ask.svelte.ts';
 // The movie page's search, the failed download mark and the refresh.
 import type { TitleView } from '#lib/core/types.ts';
 import { api, message } from '#lib/core/api.ts';
@@ -8,7 +9,7 @@ import { t } from '#lib/core/i18n/i18n.svelte.ts';
 export function createTitleSearch(ctx: { id: number; title: TitleView | null; slotPick: number; searching: boolean; running: number[]; relOffset: number; refreshing: boolean; load: (which?: 'all' | 'title' | 'releases') => Promise<void> }) {
 	let failing = $state(0);
 	async function markFailed(downloadID: number) {
-		if (!confirm(t('mediafiles.title.markConfirm'))) return;
+		if (!(await ask(t('mediafiles.title.markConfirm'), { yes: t('ui.ask.markFailed') }))) return;
 		failing = downloadID;
 		try {
 			await api.post(`/downloads/${downloadID}/mark-failed`);

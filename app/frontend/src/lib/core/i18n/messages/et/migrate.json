@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Vajavad tähelepanu: {n}",
 	"migrate.needAttentionWhy": "Nende vana kausta selles serveris pole, seega tulevad nad soovituna siinsesse kausta. Paranda kaust või lisa teereegel: {list}",
 	"migrate.leftOutUncheckedN": "Välja jäetud: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} on seatud valikule \"Ära too neid\"; vali sellele kaust ja impordi uuesti"
+	"migrate.leftOutUncheckedWhy": "{folder} on seatud valikule \"Ära too neid\"; vali sellele kaust ja impordi uuesti",
+	"migrate.seasonsDifferOne": "Kontrolli 1 sarja, mis leiti TMDB numbri järgi",
+	"migrate.seasonsDifferOther": "Kontrolli {n} sarja, mis leiti TMDB numbri järgi",
+	"migrate.seasonsDifferWhy": "{list} leiti ainult vana rakenduse TMDB numbri järgi, siin teise nimega. Ava igaüks ja kontrolli, et see on sama sari. Kui on, on selle hooajad teisiti nummerdatud: seo selle Ülejäänud failid ja lülita siis sari sisse. Kui ei ole, eemalda see; selle failid jäävad oma kohale.",
+	"migrate.stillChecking": "Sarjad, mida metaandmete server veel kontrollib: {n}. See loend uueneb ise, kui see on valmis.",
+	"migrate.stillCheckingImport": "Sarjad, mida metaandmete server veel kontrollib: {n}. Võid kohe importida; neid kontrollitakse importimise ajal."
 }

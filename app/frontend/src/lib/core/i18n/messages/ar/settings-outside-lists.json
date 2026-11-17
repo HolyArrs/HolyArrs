@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "لا يمكن قراءة قوائم Trakt الخاصة بك حتى يُعيَّن.",
 	"settings.outsideLists.replaceKey": "استبدل مفتاح Trakt",
 	"settings.outsideLists.pasteKey": "الصق مفتاح Trakt",
+	"settings.outsideLists.mdblistKey": "مفتاح MDBList",
+	"settings.outsideLists.mdblistInfo": "اختياري. بمفتاح API الخاص بك من MDBList تُقرأ قوائم MDBList عبر MDBList API؛ ودونه عبر رابطها العام. يُحفظ مشفّرًا، وهو المفتاح نفسه الذي تستخدمه التقييمات الخارجية في وضع مفاتيحك الخاصة.",
+	"settings.outsideLists.pasteMdblistKey": "الصق مفتاح API الخاص بك من MDBList",
+	"settings.outsideLists.replaceMdblistKey": "استبدل مفتاح MDBList",
+	"settings.outsideLists.removeMdblistKey": "أزل المفتاح",
+	"settings.outsideLists.mdblistKeySaved": "حُفظ مفتاح MDBList",
+	"settings.outsideLists.mdblistKeyRemoved": "أُزيل مفتاح MDBList؛ تستخدم القوائم رابطها العام",
 	"settings.outsideLists.replaceVip": "استبدل رمز وصول VIP",
 	"settings.outsideLists.vip": "رمز وصول VIP (اختياري)",
 	"settings.outsideLists.vipHint": "يضيف تبويب Trakt إلى صفحات الأعمال: التقييم والمشاهدون والتعليقات",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "أضف إلى قائمة عدم الإضافة",
 	"settings.outsideLists.showDot": "مسلسل ·",
 	"settings.outsideLists.takeOff": "أزل {name}",
-	"settings.outsideLists.empty": "فارغة"
+	"settings.outsideLists.empty": "لا شيء في هذه القائمة بعد"
 }

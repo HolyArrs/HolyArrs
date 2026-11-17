@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -248,6 +249,17 @@ func (set showSet) ref() mediafiles.TitleRef {
 	return r
 }
 
+// sourceIDRule marks a Release matched by the id its Source gave.
+const sourceIDRule = "source_id"
+
+// sameID says the ids a Source gives for a release are this show's (TVDB
+// or IMDb), so the release is the show's even when its name or year is not.
+func (set showSet) sameID(it Item) bool {
+	tvdb, _ := strconv.Atoi(set.ti.SourceIDs["tvdb"])
+	imdb := strings.TrimLeft(strings.TrimPrefix(set.ti.SourceIDs["imdb"], "tt"), "0")
+	return it.TVDB > 0 && it.TVDB == tvdb || it.IMDb != "" && it.IMDb == imdb
+}
+
 // labels names each episode Slot, like S01E02.
 func (set showSet) labels() map[int64]string {
 	out := map[int64]string{}
@@ -320,8 +332,17 @@ func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand
 		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Show: true})
 		rels[i] = mediafiles.ReleaseFacts{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
-		ss := mediafiles.SlotSet{Match: mediafiles.MatchTitle(p, []mediafiles.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, Listing: set.listing, SkipGate: skipGate, Out: true,
+		m := mediafiles.MatchRelease(p, []mediafiles.TitleRef{tref})
+		byID := m.Title == nil && (f.byID || set.sameID(f.item))
+		if byID {
+			m = mediafiles.Match{Title: &tref, Conf: releasename.Sure, Detail: tref.Name + " by the id the Source gives"}
+		}
+		ss := mediafiles.SlotSet{Match: m, MinSeeders: f.src.MinSeeders, HandSearch: hand, Listing: set.listing, SkipGate: skipGate, Out: true,
 			Checks: checks}
+		if byID {
+			// Kept with the Release, so it stays matched when it is judged again while it waits.
+			ss.MatchReasons = append(ss.MatchReasons, mediafiles.Reason{Step: "match", Rule: sourceIDRule, Effect: "pass", Detail: "the Source's id for it is this show's"})
+		}
 		if ss.Match.Title != nil {
 			set.lines(&ss, rels[i], refs, byItem, rules, turnedFor)
 		}

@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Won: {name}",
 	"ui.wikiFacts.nominated": "Nominated: {name}",
 	"ui.wikiFacts.andMore": "and {count} more",
-	"ui.pageLoader.loading": "Loading"
+	"ui.pageLoader.loading": "Loading",
+	"ui.connectHelp.link": "How to fix it",
+	"ui.ask.remove": "Remove",
+	"ui.ask.restore": "Restore",
+	"ui.ask.stop": "Stop",
+	"ui.ask.revoke": "Revoke",
+	"ui.ask.replace": "Replace",
+	"ui.ask.unlink": "Unlink",
+	"ui.ask.turnOff": "Turn off",
+	"ui.ask.markFailed": "Mark failed",
+	"ui.ask.reset": "Reset",
+	"ui.ask.import": "Import"
 }

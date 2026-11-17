@@ -13,8 +13,10 @@
 		pill?: boolean;
 		pressed?: boolean;
 		busy?: boolean;
+		// A link to another app (a media server) opens in a new tab.
+		target?: '_blank';
 	};
-	let { icon, label, caption, href, primary = false, pill = false, pressed, busy = false, type = 'button', class: cls = '', ...rest }: Props = $props();
+	let { icon, label, caption, href, target, primary = false, pill = false, pressed, busy = false, type = 'button', class: cls = '', ...rest }: Props = $props();
 	// Icon-only round button unless it is primary or a pill.
 	const round = $derived(!primary && !pill);
 	const word = $derived(caption ?? label);
@@ -29,7 +31,7 @@
 {/snippet}
 
 {#if href}
-	<a class="ui-act {cls}" class:primary class:round {href} aria-label={aria} use:press={round ? 'round' : 'button'}>{@render inner()}</a>
+	<a class="ui-act {cls}" class:primary class:round {href} {target} rel={target ? 'noopener noreferrer' : undefined} aria-label={aria} data-testid={rest['data-testid' as keyof typeof rest] as string | undefined} use:press={round ? 'round' : 'button'}>{@render inner()}</a>
 {:else}
 	<button
 		class="ui-act {cls}"

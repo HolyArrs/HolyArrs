@@ -27,7 +27,8 @@
 </script>
 
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import PersonText from '#lib/ui/PersonText.svelte';
+	import { onMount, untrack } from 'svelte';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { whenLoaded } from '#lib/ui/lazy-art.ts';
@@ -36,6 +37,8 @@
 	import { reducedMotion, viewTransitionName } from '../core/motion.ts';
 	import { sized } from '../core/tmdb-image.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import WatchedMark from './WatchedMark.svelte';
+	import { watchedWords, type WatchedMark as WatchedMarkT } from './watched.ts';
 
 	let {
 		title,
@@ -55,8 +58,11 @@
 		canManage = false,
 		selecting = false,
 		selected = false,
+		seen = false,
+		onseen,
 		onsearch,
-		onkeep
+		onkeep,
+		watched = null
 	}: {
 		title: string;
 		year?: number | string;
@@ -79,13 +85,18 @@
 		canManage?: boolean;
 		selecting?: boolean;
 		selected?: boolean;
+		// Already shown once in this list: it comes back without the fade and rise.
+		seen?: boolean;
+		onseen?: () => void;
 		onsearch?: () => void;
 		onkeep?: (keep: boolean) => void;
+		// What the signed-in person has watched of this title.
+		watched?: WatchedMarkT | null;
 	} = $props();
 
 	let root = $state<HTMLElement>();
 	let frame = $state<HTMLElement>();
-	let shown = $state(false);
+	let shown = $state(untrack(() => seen));
 	let loaded = $state(false);
 	let failed = $state(false);
 	let cw = $state(0);
@@ -94,12 +105,15 @@
 	const pic = $derived(sized(image, 'poster', cw || 200));
 	const kindIcon = $derived<IconName>(kind === 'show' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 	const words = $derived(ls?.label ?? (bar.tone === 'ok' ? t('mediafiles.poster.inLibrary') : ''));
-	const name = $derived([title, year, words, score && `${t('mediafiles.col.score')} ${score}`].filter(Boolean).join(', '));
+	const name = $derived([title, year, words, score && `${t('mediafiles.col.score')} ${score}`, watched && watchedWords(watched, t)].filter(Boolean).join(', '));
 
 	$effect(() => {
 		if (!root) return;
-		if (reducedMotion()) return void (shown = true);
-		return watch(root, () => (shown = true));
+		if (reducedMotion() || untrack(() => shown)) return void (shown = true);
+		return watch(root, () => {
+			shown = true;
+			onseen?.();
+		});
 	});
 	$effect(() => () => cancelAnimationFrame(raf));
 
@@ -143,12 +157,13 @@
 			{#if score && !selecting}
 				<span class="badge score" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 12 12"><path d="M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z" fill="currentColor" /></svg><b>{score}</b></span>
 			{/if}
+			<WatchedMark mark={watched} />
 			<span class="line {bar.tone}" aria-hidden="true"><i style="transform: scaleX({bar.fill})"></i></span>
 		</a>
 		{#if !touch}
 		<div class="glass" aria-label={t('mediafiles.poster.details', { title })} role="group">
 			<p class="g-state {bar.tone}">{words || t('mediafiles.poster.inLibrary')}</p>
-			{#each facts.filter(Boolean) as f (f)}<p class="g-fact">{f}</p>{/each}
+			{#each facts.filter(Boolean) as f (f)}<p class="g-fact"><PersonText text={f} /></p>{/each}
 			<div class="g-acts">
 				{#if canManage}
 					<button type="button" class="g-btn" onclick={() => onsearch?.()} aria-label={t('mediafiles.poster.searchFor', { title })} title={t('mediafiles.select.searchNow')}><Icon name="search" size={15} /></button>
@@ -224,8 +239,10 @@
 	@media (hover: hover) and (pointer: fine) {
 		.frame:hover, .frame:focus-within { --ty: -4px; --s: 1.03; box-shadow: var(--shadow-lift); z-index: 2; transform: perspective(800px) translateY(var(--ty, 0)) scale(var(--s, 1)) rotateX(var(--rx)) rotateY(var(--ry)); will-change: transform; }
 		/* The blur is set only while the panel shows; idle cards skip the cost. */
-		.frame:hover .glass, .frame:focus-within .glass { opacity: 1; pointer-events: auto; transition: opacity var(--dur) var(--ease-out); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); }
-		.frame:hover .badge, .frame:focus-within .badge { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
+		.frame:hover .glass, .frame:focus-within .glass { opacity: 1; pointer-events: none; transition: opacity var(--dur) var(--ease-out); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); }
+		/* Only the panel's buttons take the pointer; a click on its words reaches the card's link under it and opens the title. */
+		.frame:hover .glass :is(a, button), .frame:focus-within .glass :is(a, button) { pointer-events: auto; }
+		.frame:hover .badge, .frame:focus-within .badge, .frame:hover :global(.wm), .frame:focus-within :global(.wm) { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	}
 
 	/* Keyboard focus should not leave the card tilted. */

@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Mostrar às pessoas",
 	"settings.requests.choiceMain": "{rules} · a cópia principal do título",
 	"settings.requests.choiceOwn": "{rules} · mantida como cópia própria",
-	"settings.requests.choiceNotReady": "Oferecido quando houver uma qualidade 4K definida acima"
+	"settings.requests.choiceNotReady": "Oferecido quando houver uma qualidade 4K definida acima",
+	"settings.requests.approvals": "Aprovações",
+	"settings.requests.autoApprove": "Aprovar pedidos automaticamente",
+	"settings.requests.autoApproveNote": "Desligado = os pedidos dessa pessoa esperam por você. Títulos da watchlist do Plex seguem o mesmo botão.",
+	"settings.requests.ownerTag": "Dono",
+	"settings.requests.choiceAdd": "Adicionar uma qualidade",
+	"settings.requests.choiceNew": "Nova qualidade",
+	"settings.requests.choiceLabel": "Seu nome",
+	"settings.requests.choiceSeen": "As pessoas veem"
 }

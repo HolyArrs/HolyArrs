@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n}건 대기",
 	"frame.nav.new": "새 항목 {n}",
 	"frame.nav.manage": "관리",
+	"frame.nav.activity": "활동",
+	"frame.nav.system": "시스템",
 	"frame.nav.history": "기록",
 	"frame.nav.status": "상태",
 	"frame.nav.settings": "설정",
+	"frame.nav.plugins": "플러그인",
 	"frame.nav.goTo": "이동",
 	"frame.nav.active": "{n}건 진행 중, {percent}%",
 	"frame.nav.decide": "{n}건 결정 필요",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "시스템",
 	"frame.layout.switch": "계정 전환",
 	"frame.layout.signOut": "로그아웃",
+	"frame.layout.support": "HolyArrs 후원하기",
 	"frame.layout.signOutFail": "로그아웃을 확인할 수 없습니다",
 	"frame.layout.signedOut": "로그아웃했습니다",
 	"frame.layout.accountMenu": "{name}, {role}: 계정 및 외관",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs가 알아서 다시 시도합니다",
 	"frame.feeds.clearNow": "지금 정리",
 	"frame.feeds.cleared": "다운로더에서 정리됨",
-	"frame.feeds.clearStill": "아직 정리되지 않음"
+	"frame.feeds.clearStill": "아직 정리되지 않음",
+	"frame.error.pageGone": "이 페이지는 없습니다. 링크가 오래되었거나 잘못 입력되었을 수 있습니다."
 }

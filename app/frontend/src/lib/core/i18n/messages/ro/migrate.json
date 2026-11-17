@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Necesită atenție: {n}",
 	"migrate.needAttentionWhy": "Vechiul lor dosar nu este pe acest server, așa că vin ca dorite într-un dosar de aici. Corectează dosarul sau adaugă o regulă de cale: {list}",
 	"migrate.leftOutUncheckedN": "Lăsate deoparte: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} este setat pe „Nu-i aduce”; alege un dosar pentru el și importă din nou"
+	"migrate.leftOutUncheckedWhy": "{folder} este setat pe „Nu-i aduce”; alege un dosar pentru el și importă din nou",
+	"migrate.seasonsDifferOne": "Verifică 1 serial găsit după numărul TMDB",
+	"migrate.seasonsDifferOther": "Seriale găsite după numărul TMDB, de verificat: {n}",
+	"migrate.seasonsDifferWhy": "Doar numărul TMDB din aplicația veche a găsit {list}, aici sub alt nume. Deschide-l pe fiecare și verifică dacă este același serial. Dacă da, sezoanele lui sunt numerotate altfel: potrivește-i Fișierele rămase, apoi pornește serialul. Dacă nu, elimină-l; fișierele lui rămân unde sunt.",
+	"migrate.stillChecking": "Seriale pe care serverul de metadate încă le verifică: {n}. Lista se actualizează singură când termină.",
+	"migrate.stillCheckingImport": "Seriale pe care serverul de metadate încă le verifică: {n}. Poți importa acum; sunt verificate în timpul importului."
 }

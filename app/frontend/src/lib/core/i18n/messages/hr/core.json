@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Dopusti AI asistentima korištenje HolyArrsa",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Ključevi i rute za druge aplikacije",
+	"core.settings.remoteAccess.label": "Udaljeni pristup",
+	"core.settings.remoteAccess.about": "Pristupite HolyArrsu izvan kuće",
 	"core.settings.tmdb.label": "Metapodaci",
 	"core.settings.tmdb.about": "Odakle dolaze posteri i nazivi",
 	"core.settings.health.label": "Provjere stanja",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "Jedan preuzimatelj nema mapu za spremanje, pa HolyArrs ne može uvesti njegova završena preuzimanja.",
 	"core.api.sourceOff": "Neki su retci isključeni na ovoj instalaciji.",
 	"core.plain.noDownloader": "Tvoji izvori pronalaze preuzimanja koja nijedan tvoj preuzimatelj ne može primiti, pa se ništa ne može poslati.",
-	"core.plain.sameDownloader": "Dva preuzimatelja vode do iste aplikacije za preuzimanje, pa se preuzimanja mogu prikazati dvaput."
+	"core.plain.sameDownloader": "Dva preuzimatelja vode do iste aplikacije za preuzimanje, pa se preuzimanja mogu prikazati dvaput.",
+	"core.plain.peopleCheck": "Popis korisnika medijskog poslužitelja ne može se pročitati, pa se ovdje ne isključuju osobe uklonjene ondje.",
+	"core.plain.deleted": "izbrisan",
+	"core.plain.deletedName": "{name} (izbrisan)"
 }

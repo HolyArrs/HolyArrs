@@ -11,7 +11,8 @@
 		"lint": "eslint src",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && svelte-check --tsconfig ../tests/tsconfig.check.json --fail-on-warnings",
 		"test": "vitest run",
-		"e2e": "playwright test"
+		"e2e": "playwright test",
+		"test:e2e:plugins": "playwright test --config ../tests/setups/plugins.config.ts"
 	},
 	"devDependencies": {
 		"@axe-core/playwright": "^4.13.0",

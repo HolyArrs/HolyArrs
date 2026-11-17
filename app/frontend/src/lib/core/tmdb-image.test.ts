@@ -16,6 +16,12 @@ describe('sized', () => {
 		setBase('/holyarrs');
 		expect(sized('https://image.tmdb.org/t/p/w500/a.jpg', 'poster')).toBe('/holyarrs/api/v1/artwork/tmdb/w342/a.jpg');
 	});
+	it('keeps the URL base on a picture the app already holds', () => {
+		setBase('/holyarrs');
+		expect(sized('/api/v1/artwork/x.jpg', 'poster')).toBe('/holyarrs/api/v1/artwork/x.jpg');
+		expect(sized('/holyarrs/api/v1/artwork/x.jpg', 'poster')).toBe('/holyarrs/api/v1/artwork/x.jpg');
+		expect(sized('/api/v1/artwork/img/provider/8/1.png', 'poster')).toBe('/holyarrs/api/v1/artwork/img/provider/8/1.png');
+	});
 	it('leaves other pictures alone', () => {
 		expect(sized('/api/v1/artwork/x.jpg', 'poster')).toBe('/api/v1/artwork/x.jpg');
 		expect(sized('https://image.tmdb.org/t/p/w500/../x.jpg', 'poster')).toBe('https://image.tmdb.org/t/p/w500/../x.jpg');
@@ -56,6 +62,14 @@ describe('hero backdrops', () => {
 });
 
 describe('proxied', () => {
+	afterEach(() => setBase(''));
+	it('keeps the URL base on its own pictures', () => {
+		setBase('/holyarrs');
+		expect(proxied('/api/v1/artwork/x.jpg')).toBe('/holyarrs/api/v1/artwork/x.jpg');
+		expect(proxied('/api/v1/artwork/tmdb/w342/p.jpg')).toBe('/holyarrs/api/v1/artwork/tmdb/w342/p.jpg');
+		expect(proxied('/holyarrs/api/v1/artwork/x.jpg')).toBe('/holyarrs/api/v1/artwork/x.jpg');
+		expect(proxied('https://assets.fanart.tv/x.png')).toBe('https://assets.fanart.tv/x.png');
+	});
 	it('sends TMDB pictures through the artwork cache at a size it fetches', () => {
 		expect(proxied('https://image.tmdb.org/t/p/w500/logo.png')).toMatch(/\/api\/v1\/artwork\/tmdb\/w500\/logo\.png$/);
 		expect(proxied('https://image.tmdb.org/t/p/original/a_b-c.jpg')).toMatch(/\/api\/v1\/artwork\/tmdb\/original\/a_b-c\.jpg$/);

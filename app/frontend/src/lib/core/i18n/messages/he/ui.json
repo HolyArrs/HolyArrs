@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "זכה: {name}",
 	"ui.wikiFacts.nominated": "מועמד: {name}",
 	"ui.wikiFacts.andMore": "ועוד {count}",
-	"ui.pageLoader.loading": "טוען"
+	"ui.pageLoader.loading": "טוען",
+	"ui.connectHelp.link": "איך לתקן",
+	"ui.ask.remove": "הסר",
+	"ui.ask.restore": "שחזר",
+	"ui.ask.stop": "עצור",
+	"ui.ask.revoke": "בטל",
+	"ui.ask.replace": "החלף",
+	"ui.ask.unlink": "נתק",
+	"ui.ask.turnOff": "כבה",
+	"ui.ask.markFailed": "סמן כנכשל",
+	"ui.ask.reset": "אפס",
+	"ui.ask.import": "ייבא"
 }

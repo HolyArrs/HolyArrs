@@ -71,7 +71,7 @@ No Profilarr? Bring the formats and profiles over once.
 | Limit | What happens |
 | --- | --- |
 | A format tests something HolyArrs cannot check | It is kept but becomes no trait. |
-| More than 64 scored formats in one profile | Pick rules hold at most 64 traits. The strongest scores are kept and the weakest are left out. |
+| More than 256 scored formats in one profile | Pick rules hold at most 256 traits. The strongest scores are kept and the weakest are left out. |
 | Very large scores | Kept exactly, over the same range Sonarr and Radarr allow. |
 | Extra delay profiles | Kept and listed back, but they change nothing. Only the default one is used. |
 | Rename patterns | Kept and listed back, but HolyArrs names files its own way. |

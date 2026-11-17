@@ -35,7 +35,7 @@ func newRig(t *testing.T) *rig {
 	}
 	g := &rig{st: st, partsOff: map[parts.Part]bool{}}
 	g.who = webserver.Caller{UserID: 7, Name: "Sam", Via: "api_key", Role: webserver.RoleOwner, KeyID: 3, KeyLabel: "test key",
-		Scopes: []string{webserver.ScopeMCP}, Perms: webserver.AllPerms}
+		Scopes: []string{webserver.ScopeMCP}, MCPGroups: []string{"see", "add", "control", "settings"}, Perms: webserver.AllPerms}
 	g.h = &Handlers{Store: st, Version: "test", PartOn: func(p parts.Part) bool { return !g.partsOff[p] }}
 	g.h.Inner = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
@@ -141,7 +141,7 @@ func TestMCPFailedActionLogged(t *testing.T) {
 
 func TestToolCallWithoutInner(t *testing.T) {
 	h := &Handlers{}
-	who := webserver.Caller{UserID: 1, Via: "api_key", KeyID: 1, Scopes: []string{webserver.ScopeMCP}}
+	who := webserver.Caller{UserID: 1, Via: "api_key", KeyID: 1, Scopes: []string{webserver.ScopeMCP}, MCPGroups: []string{"see"}}
 	req := httptest.NewRequest("POST", "/mcp", nil)
 	res, wait := h.callTool(req, who, "downloads", map[string]any{})
 	if wait != 0 || res["isError"] != true {

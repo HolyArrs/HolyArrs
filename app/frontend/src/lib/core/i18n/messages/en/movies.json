@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Pick rules for this Version",
 	"movies.versions.folderLabel": "Library folder for this Version",
 	"movies.versions.cancel": "Cancel",
-	"movies.versions.addButton": "Add version"
+	"movies.versions.addButton": "Add version",
+	"movies.versions.setEdition": "Set edition",
+	"movies.versions.editionFileHint": "The cut this file is, like Theatrical or Directors Cut. Leave it empty to clear it.",
+	"movies.versions.unprotectConfirm": "Remove protection from {label}? A better copy can replace it again.",
+	"movies.versions.editionChars": "Not allowed:",
+	"movies.versions.editionInvalid": "That edition can't be used. Keep it short (accented and non-Latin letters take more room), leave out the characters listed above, and don't end it with a dot.",
+	"movies.versions.editionDevice": "{name} is a name Windows keeps for devices, so it can't be used. Type a different one."
 }

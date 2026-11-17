@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "ریلیزهای منتشرشده پیش از انتشار رد شوند",
 	"settings.search.refuseEarlyHint": "احتمالاً جعلی‌اند. «انتخاب ریلیز» همچنان آن‌ها را با هشدار نشان می‌دهد.",
 	"settings.search.refuseTiny": "جعلی‌ها را بر اساس حجم و نوع فایل رد کن",
-	"settings.search.refuseTinyHint": "ریلیزهای خیلی کوچک، فایل‌های خالی و .wmv یا .asf زیر نام‌های HD",
+	"settings.search.refuseTinyHint": "ریلیزهای خیلی کوچک، فایل‌های خالی، ویدیوهای نیمه‌کاره و .wmv یا .asf زیر نام‌های HD",
 	"settings.search.grace": "ساعت‌هایی که یک ریلیز می‌تواند زودهنگام باشد",
 	"settings.search.graceHint": "برای منطقه‌های زمانی. پیش‌فرض 24.",
 	"settings.search.floors": "بررسی حجم فایل‌ها هنگام ورود",

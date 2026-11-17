@@ -83,7 +83,7 @@ func thousandArtists(t *testing.T, root string, tracks int) {
 	}
 }
 
-// 4.15 review: a music scan reads at most the music scan limit (200) of
+// 4.15 review: a music scan reads at most the music scan limit (50) of
 // artist folders, one search and one album list per artist and one
 // Pressings list per album, all as background lookups; the next part
 // starts after Next.
@@ -96,14 +96,14 @@ func TestMusicScanPagesAtItsOwnLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.Limit != mediafiles.DefaultMusicAdoptScanLimit || len(p.Folders) != 200 || !p.More || p.Next != "Artist 0200" || p.Counts["matched"] != 200 {
+	if p.Limit != mediafiles.DefaultMusicAdoptScanLimit || len(p.Folders) != 50 || !p.More || p.Next != "Artist 0050" || p.Counts["matched"] != 50 {
 		t.Fatalf("limit %d folders %d more %v next %q counts %v", p.Limit, len(p.Folders), p.More, p.Next, p.Counts)
 	}
-	if cm.search != 200 || cm.artist != 200 || cm.press != 200 || cm.bad != 0 {
+	if cm.search != 50 || cm.artist != 50 || cm.press != 50 || cm.bad != 0 {
 		t.Fatalf("calls search %d artist %d pressings %d not background %d", cm.search, cm.artist, cm.press, cm.bad)
 	}
 	p2, err := PlanMusicAdoptFrom(ctx, s.Read(), cm, lf.ID, p.Next)
-	if err != nil || len(p2.Folders) != 200 || p2.Folders[0].Folder != "Artist 0201" || p2.Next != "Artist 0400" {
+	if err != nil || len(p2.Folders) != 50 || p2.Folders[0].Folder != "Artist 0051" || p2.Next != "Artist 0100" {
 		t.Fatalf("second part %v %d %+v", err, len(p2.Folders), p2.Next)
 	}
 	// The movie and show limit is not the music one.
@@ -153,10 +153,10 @@ func TestMusicScanKeepsFinishedParts(t *testing.T) {
 	}
 	before := cm.search
 	p, err := planMusicAdopt(context.Background(), s.Read(), cm, lf.ID, "", &last, nil)
-	if err != nil || len(p.Folders) != 200 || p.Partial || p.Next != "Artist 0200" || p.Counts["matched"] != 200 {
+	if err != nil || len(p.Folders) != 50 || p.Partial || p.Next != "Artist 0050" || p.Counts["matched"] != 50 {
 		t.Fatalf("resumed %v %d %v %q %v", err, len(p.Folders), p.Partial, p.Next, p.Counts)
 	}
-	if cm.search-before != 197 {
+	if cm.search-before != 47 {
 		t.Fatalf("looked up %d artists again", cm.search-before)
 	}
 }

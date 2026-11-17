@@ -50,7 +50,7 @@ Each item below comes over paused or off. Type its secret, check it, then turn i
 
 A Source, Downloader or Alert that had tags in the old app now serves every title of its kind. Check it before you turn it on.
 
-Sources and Downloaders arrive with **May reach the local network** off. Turn it on only for one on your home network. Link-local and cloud metadata addresses stay blocked either way.
+Sources and Downloaders arrive with **May reach the local network** off. Turn it on only for one on your home network. Cloud metadata addresses stay blocked either way.
 
 To type many keys at once, see [Import keys from a file](import-secrets.md).
 

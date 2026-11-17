@@ -34,5 +34,6 @@
 	"settings.sourceDetail.what": "O quê",
 	"settings.sourceDetail.result": "Resultado",
 	"settings.sourceDetail.time": "Tempo",
-	"settings.sourceDetail.answeredCell": "Respondeu"
+	"settings.sourceDetail.answeredCell": "Respondeu",
+	"settings.sourceDetail.noTimes": "Ainda sem respostas"
 }

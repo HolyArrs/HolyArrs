@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Hindi na-save ang wika",
 	"accounts.language.count.one": "1 wika",
 	"accounts.language.count.other": "{n} wika",
-	"accounts.account.watchEveryone": "In-on ito ng owner para sa lahat. I-off ang dalawa para ihinto ito."
+	"accounts.account.watchEveryone": "In-on ito ng owner para sa lahat. I-off ang dalawa para ihinto ito.",
+	"accounts.watch.title": "Mga marka ng napanood",
+	"accounts.watch.hint": "I-link dito ang account mo sa isang media server para ipakita ng Library ang mga napanood mo.",
+	"accounts.watch.as": "{server}, bilang {name}",
+	"accounts.watch.nameOn": "Pangalan sa {server}",
+	"accounts.watch.passwordOnce": "Ang password mo ay napupunta lang sa {server} at hindi itinatago.",
+	"accounts.watch.linked": "Naka-link kay {name} sa {server}",
+	"accounts.watch.unlinked": "Tinanggal ang link",
+	"accounts.login.importPaused": "Natapos ang pag-sign in mo, kaya huminto muna ang import. Mag-sign in, buksan ang Mag-import ng library at pindutin ang I-scan para magpatuloy."
 }

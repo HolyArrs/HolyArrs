@@ -32,11 +32,12 @@
 	"settings.backups.key": "Hovednøkkel",
 	"settings.backups.keyDesc": "Sikkerhetskopiene inneholder ikke denne nøkkelen. Ta vare på en kopi på et trygt sted.",
 	"settings.backups.noKit": "Ingen nøkkelpakke er lagret for denne nøkkelen ennå. Uten den kan ikke lagrede passord i en sikkerhetskopi åpnes på en ny maskin.",
+	"settings.backups.kitRecommended": "Anbefalt: last ned nøkkelpakken.",
 	"settings.backups.ownerOnlyKit": "Bare eieren kan laste den ned. Be vedkommende om det.",
 	"settings.backups.fingerprint": "Nøkkelens fingeravtrykk",
 	"settings.backups.downloadKit": "Last ned nøkkelpakke",
 	"settings.backups.restoreKey": "For å gjenopprette: gi den navnet holyarrs.key og legg den i konfigurasjonsmappen",
 	"settings.backups.offPlan": "Av",
-	"settings.backups.offAbout": "Ingen planlagte sikkerhetskopier. Det tas fortsatt en kopi før hver oppdatering.",
+	"settings.backups.offAbout": "Ingen automatiske sikkerhetskopier, heller ikke før en oppdatering. Kopier du lager selv, virker fortsatt.",
 	"settings.backups.offKeeps": "Av beholder sikkerhetskopiene du allerede har."
 }

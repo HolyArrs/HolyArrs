@@ -3,7 +3,7 @@
 	import { decisionPins, feedPins, forgetFeeds } from './bell-feeds.svelte.ts';
 	import Toast from './Toast.svelte';
 	import { AlertsPanel } from '#lib/alerts/index.ts';
-	import { metadataBackTitle, metadataDownTitle, clearMetadataBack, dismissMetadataDown, metadataDownShown, metadataOutage, watchMetadata } from '#lib/metadata/index.ts';
+	import { metadataBackTitle, metadataDownText, metadataDownTitle, metadataHealth, clearMetadataBack, dismissMetadataDown, metadataDownShown, metadataOutage, watchMetadata } from '#lib/metadata/index.ts';
 	import { onMount, untrack } from 'svelte';
 	import { glide, notifyIn, notifyOut } from '#lib/core/transitions.ts';
 	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
@@ -30,7 +30,7 @@
 	});
 	// The outage and the recovery are kept in Recent alerts too (the card itself is not a toast).
 	$effect(() => {
-		if (signedIn && downShown) untrack(() => toasts.record(metadataDownTitle(), 'warn', { body: t('frame.toasts.libraryWorks') }));
+		if (signedIn && downShown) untrack(() => toasts.record(metadataDownTitle(), 'warn', { body: metadataHealth.fakeIP ? metadataDownText() : t('frame.toasts.libraryWorks') }));
 	});
 	$effect(() => {
 		if (signedIn && back) untrack(() => toasts.record(metadataBackTitle(), 'ok', { body: t('frame.toasts.restored') }));
@@ -153,7 +153,7 @@
 <div class="toasts" class:in-win={inWin} role="status" aria-live="polite" popover="manual" bind:this={host}>
 	{#if signedIn && downShown}
 		<div class="slot" in:toastIn out:toastOut data-testid="metadata-down">
-			<Toast tone="warn" icon="cloudOff" title={metadataDownTitle()} text={t('frame.toasts.libraryWorks')} time="now" {compact} onexpand={openCard} ondismiss={dismissMetadataDown} />
+			<Toast tone="warn" icon="cloudOff" title={metadataDownTitle()} text={metadataHealth.fakeIP ? metadataDownText() : t('frame.toasts.libraryWorks')} time="now" {compact} onexpand={openCard} ondismiss={dismissMetadataDown} />
 		</div>
 	{:else if signedIn && back}
 		<div class="slot" in:toastIn out:toastOut data-testid="metadata-back">

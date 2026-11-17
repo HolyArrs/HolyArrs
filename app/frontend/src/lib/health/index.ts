@@ -4,6 +4,7 @@ export { buildRows } from './rows.ts';
 export { busyNow } from './schedules.ts';
 export { checkName } from './checks.ts';
 export { default as HealthSections } from './HealthSections.svelte';
+export { default as ProxyCard } from './ProxyCard.svelte';
 export { dot } from './schedules.ts';
 export { emptyFilter } from './logs.ts';
 export { every } from './schedules.ts';

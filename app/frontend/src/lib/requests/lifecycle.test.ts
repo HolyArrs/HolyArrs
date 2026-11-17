@@ -30,6 +30,10 @@ describe('lifecycle live stages', () => {
 });
 
 describe('lifecycle', () => {
+	it('an approved ask whose title is still being added is not Failed', () => {
+		expect(lifecycle({ state: 'approved', title_id: undefined, adding: true }).stage).not.toBe('failed');
+		expect(lifecycle({ state: 'approved', title_id: undefined }).stage).toBe('failed');
+	});
 	it('weights rise with each stage', () => {
 		const w = Object.values(STAGE_WEIGHT);
 		expect(w).toEqual([...w].sort((x, y) => x - y));

@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "A Trakt-listái addig nem olvashatók be, amíg nincs beállítva.",
 	"settings.outsideLists.replaceKey": "Trakt-kulcs cseréje",
 	"settings.outsideLists.pasteKey": "Illessze be a Trakt-kulcsot",
+	"settings.outsideLists.mdblistKey": "MDBList-kulcs",
+	"settings.outsideLists.mdblistInfo": "Nem kötelező. Az MDBList API-kulccsal az MDBList-listák olvasása az MDBList API-n keresztül történik; nélküle a nyilvános hivatkozásukon keresztül. Titkosítva tárolódik, és ugyanaz a kulcs, amelyet a külső értékelések a Saját kulcsaid módban használnak.",
+	"settings.outsideLists.pasteMdblistKey": "Illessze be az MDBList API-kulcsát",
+	"settings.outsideLists.replaceMdblistKey": "MDBList-kulcs cseréje",
+	"settings.outsideLists.removeMdblistKey": "Kulcs eltávolítása",
+	"settings.outsideLists.mdblistKeySaved": "MDBList-kulcs mentve",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList-kulcs eltávolítva; a listák a nyilvános hivatkozásukat használják",
 	"settings.outsideLists.replaceVip": "VIP hozzáférési token cseréje",
 	"settings.outsideLists.vip": "VIP hozzáférési token (nem kötelező)",
 	"settings.outsideLists.vipHint": "Trakt fület ad a címoldalakhoz: pontszám, nézők és hozzászólások",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Hozzáadás a Soha nem hozzáadandók listájához",
 	"settings.outsideLists.showDot": "sorozat ·",
 	"settings.outsideLists.takeOff": "{name} levétele",
-	"settings.outsideLists.empty": "Üres"
+	"settings.outsideLists.empty": "Ezen a listán még nincs semmi"
 }

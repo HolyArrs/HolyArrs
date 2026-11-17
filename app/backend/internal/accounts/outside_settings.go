@@ -244,6 +244,7 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 		}
 		set[settingsGroup+"/"+signInPrefix+keyMinLength] = strconv.Itoa(*body.MinPassword)
 	}
+	var forget []string
 	for p, v := range map[string]*WayView{ProviderPlex: body.Plex, ProviderJellyfin: body.Jellyfin, ProviderEmby: body.Emby} {
 		if v == nil {
 			continue
@@ -275,6 +276,9 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 		if p != ProviderPlex && v.On && v.URL == "" {
 			fail(w, http.StatusBadRequest, "give the "+p+" server address first")
 			return
+		}
+		if old := a.way(r.Context(), p); p != ProviderPlex && (old.On && !v.On || old.URL != v.URL) {
+			forget = append(forget, p) // a later read starts its count again
 		}
 		g := settingsGroup + "/" + signInPrefix + p
 		set[g+"_on"] = strconv.FormatBool(v.On)
@@ -320,6 +324,11 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		serverError(w, "sign-in settings", err)
 		return
+	}
+	for _, p := range forget {
+		if err := ForgetUserListRead(r.Context(), a.s, p); err != nil {
+			log.Printf("auth: %s people check: %v", p, err)
+		}
 	}
 	if body.LocalNets != nil {
 		a.localNets.Store(nets)

@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "немає",
 	"settings.thisApp.needsRestart": "Потрібен перезапуск. HOLYARRS_URL_BASE або -url-base перевизначає її.",
 	"settings.thisApp.save": "Зберегти",
-	"settings.thisApp.licence": "HolyArrs — вільне програмне забезпечення за ліцензією AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs — вільне програмне забезпечення за ліцензією AGPL-3.0.",
+	"settings.thisApp.proxy": "Проксі",
+	"settings.thisApp.proxyDesc": "Надсилати зовнішні запити через проксі. Правила блокування й домашньої мережі й далі діють для справжньої адреси.",
+	"settings.thisApp.proxyType": "Тип",
+	"settings.thisApp.proxyOff": "Вимкнено",
+	"settings.thisApp.proxyHost": "Хост",
+	"settings.thisApp.proxyPort": "Порт",
+	"settings.thisApp.proxyUser": "Ім’я користувача",
+	"settings.thisApp.proxyPasswordLabel": "Пароль",
+	"settings.thisApp.proxyPasswordKept": "Залиште порожнім, щоб зберегти збережений пароль",
+	"settings.thisApp.proxyBypass": "Не використовувати проксі для",
+	"settings.thisApp.proxyBypassHint": "Імена, адреси або діапазони через кому. *.example.com охоплює всі імена під ним.",
+	"settings.thisApp.proxyBypassLocal": "Не використовувати проксі для локальних адрес",
+	"settings.thisApp.proxyBypassLocalHint": "Цей комп’ютер і домашня мережа з’єднуються напряму",
+	"settings.thisApp.proxySaved": "Проксі збережено",
+	"settings.thisApp.proxyOffSaved": "Проксі вимкнено"
 }

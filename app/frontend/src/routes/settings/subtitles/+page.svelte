@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
@@ -213,7 +214,7 @@
 	}
 
 	async function remove(s: SiteView) {
-		if (!confirm(t('settings.subtitles.confirmRemove', { name: s.name }))) return;
+		if (!(await ask(t('settings.subtitles.confirmRemove', { name: s.name }), { yes: t('ui.ask.remove'), danger: true }))) return;
 		try {
 			await api.del(`/subtitle-sites/${s.ID}`);
 			await loadSites();
@@ -304,10 +305,10 @@
 					<div class="testline" data-testid="translator-test"><TestTag ok={trResult.ok} text={trResult.message} />{#if !trResult.ok}<span class="small bad-text">{trResult.message}</span>{/if}</div>
 				{/if}
 				{#if trError}<p class="form-error" role="alert">{trError}</p>{/if}
-				<div class="row actions">
+				{#if tr.kind || trDirty}<div class="row actions">
 					<Button variant="primary" type="submit" disabled={trBusy || !trDirty} busy={trBusy}>{t('settings.subtitles.save')}</Button>
 					{#if tr.kind}<Button type="button" disabled={trTesting || trDirty} busy={trTesting} onclick={testTranslator} data-testid="translator-test-button">{t('settings.subtitles.test')}</Button>{/if}
-				</div>
+				</div>{/if}
 			</SettingsCard>
 		</form>
 	{/if}
@@ -400,7 +401,7 @@
 				{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 				<div class="row" style="margin-top: var(--s-5)">
 					<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>{t('settings.subtitles.save')}</Button>
-					<Button variant="plain" type="button" onclick={() => ((editing = null), (form = null))}>{t('settings.subtitles.cancel')}</Button>
+					<Button type="button" onclick={() => ((editing = null), (form = null))}>{t('settings.subtitles.cancel')}</Button>
 				</div>
 			</form>
 		{/if}
@@ -433,13 +434,16 @@
 						{/if}
 						<div class="row actions">
 							<Button type="button" disabled={testing === s.ID} aria-busy={testing === s.ID} onclick={() => test(s)} aria-label={t('settings.subtitles.testName', { name: s.name })}>{t('settings.subtitles.test')}</Button>
-							{#if s.state === 'disabled'}
-								<Button variant="plain" type="button" onclick={() => setPaused(s, false)} aria-label={t('settings.subtitles.turnOnName', { name: s.name })}>{t('settings.subtitles.turnOn')}</Button>
-							{:else}
-								<Button variant="plain" type="button" onclick={() => setPaused(s, true)} aria-label={t('settings.subtitles.pauseName', { name: s.name })}>{t('settings.subtitles.pause')}</Button>
+							<!-- A saved site whose kind is no longer offered can only be tested or removed. -->
+							{#if k}
+								{#if s.state === 'disabled'}
+									<Button type="button" onclick={() => setPaused(s, false)} aria-label={t('settings.subtitles.turnOnName', { name: s.name })}>{t('settings.subtitles.turnOn')}</Button>
+								{:else}
+									<Button type="button" onclick={() => setPaused(s, true)} aria-label={t('settings.subtitles.pauseName', { name: s.name })}>{t('settings.subtitles.pause')}</Button>
+								{/if}
+								<Button type="button" onclick={() => startChange(s)} aria-label={t('settings.subtitles.changeName', { name: s.name })}>{t('settings.subtitles.changeButton')}</Button>
 							{/if}
-							<Button variant="plain" type="button" onclick={() => startChange(s)} aria-label={t('settings.subtitles.changeName', { name: s.name })}>{t('settings.subtitles.changeButton')}</Button>
-							<Button variant="plain" type="button" onclick={() => remove(s)} aria-label={t('settings.subtitles.removeName', { name: s.name })}>{t('settings.subtitles.remove')}</Button>
+							<Button type="button" onclick={() => remove(s)} aria-label={t('settings.subtitles.removeName', { name: s.name })}>{t('settings.subtitles.remove')}</Button>
 						</div>
 					</li>
 				{/each}
@@ -574,7 +578,7 @@
 		margin-bottom: 8px;
 	}
 	/* No sites yet: the empty note sits in the same glass sheet as every other section. */
-	.sites-sec > :global(.ui-empty) { width: auto; max-width: none; margin: 0; padding: 22px 18px; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45); }
+	.sites-sec > :global(.ui-empty) { width: auto; max-width: none; margin: 0; padding: 22px 18px; border: var(--sheet-edge); border-radius: var(--sheet-r); background: var(--sheet-bg); box-shadow: var(--sheet-shadow); }
 	.group {
 		border: 0;
 		padding: 0;
@@ -635,7 +639,8 @@
 		}
 	}
 	/* No languages yet: the note and Add a language share one row. */
-	:global(#lang-card > .body:has(> .wants > li.small)) { flex-direction: row !important; align-items: center; justify-content: space-between; min-height: 64px; }
-	:global(#lang-card > .body:has(> .wants > li.small) > *) { margin: 0 !important; box-shadow: none !important; padding-block: 12px !important; }
-	:global(#lang-card > .body:has(> .wants > li.small) > .add) { padding-left: 0 !important; }
+	:global(#lang-card > .body:has(> .wants > li.none)) { flex-direction: row !important; flex-wrap: wrap; column-gap: 12px; align-items: center; justify-content: space-between; min-height: 64px; }
+	:global(#lang-card > .body:has(> .wants > li.none) > *) { margin: 0 !important; box-shadow: none !important; padding-block: 12px !important; }
+	:global(#lang-card > .body:has(> .wants > li.none) > .add) { padding-inline: 14px !important; }
+	:global(#lang-card .add .ui-btn) { white-space: nowrap; }
 </style>

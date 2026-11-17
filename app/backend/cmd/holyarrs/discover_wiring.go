@@ -63,7 +63,11 @@ func (a *handlers) newDiscover() *discover.Handlers {
 		},
 		WithFreshRow: discover.WithFreshRow, OpenAsk: a.openAsk, OpenShowAsk: a.openShowAsk,
 		FillCardArt: cards.Fill, QueueCardItems: cards.QueueItems,
-		ServiceTop: func() discover.ServiceTopFetch { return a.s.ServiceTop }, ServiceTopCache: &a.serviceTop, WatchOn: &a.watchOn, FillTrailerKeys: a.fillTrailerKeys,
+		FillCardArtNow: func(r *http.Request, items []discover.ItemView) {
+			cards.FillNow(r, items, discover.HeroArtMax, discover.HeroArtWait)
+		},
+		TrailersNow: a.heroTrailersNow,
+		ServiceTop:  func() discover.ServiceTopFetch { return a.s.ServiceTop }, ServiceTopCache: &a.serviceTop, WatchOn: &a.watchOn, FillTrailerKeys: a.fillTrailerKeys,
 		KidKnownFor: a.kidKnownFor, LibraryMovieAllowed: a.libraryMovieAllowed,
 		LiveSource: func(ctx context.Context) discover.Lister { return a.disc.LiveExplore(ctx) },
 		TitleView:  a.titleView, KidMovies: a.kidMovies,
@@ -186,4 +190,18 @@ func (a *handlers) warmTitles(lang string, titles [][2]string) {
 		w.TrailerKey = func(ctx context.Context, kind, id, lang string) { _, _ = a.trailers.Key(ctx, kind, id, lang) }
 	})
 	a.warm.Warm(lang, titles)
+}
+
+// heroTrailersNow looks the hero's trailers up now, one after another in the
+// background, instead of waiting for the read-ahead's turn. They are noted
+// too, so a failed lookup is asked again by the next pass.
+func (a *handlers) heroTrailersNow(lang string, titles [][2]string) {
+	a.trailers.Note(lang, titles)
+	go func() {
+		for _, ti := range titles {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			_, _ = a.trailers.ResolveTitle(ctx, ti[0], ti[1], lang)
+			cancel()
+		}
+	}()
 }

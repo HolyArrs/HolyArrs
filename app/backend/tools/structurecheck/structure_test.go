@@ -18,10 +18,10 @@ import (
 // Modules are the module packages allowed under internal/, besides core.
 var Modules = []string{"suggest", "importer", "library", "requests", "movies", "shows", "music", "sources", "downloads", "subtitles", "discover",
 	"mediafiles", "metadata", "mediaservers", "accounts", "alerts", "migrate", "arrapi", "ai", "backups",
-	"health", "updates", "setup"}
+	"health", "updates", "setup", "plugins"}
 
 // CoreParts are the packages allowed under internal/core/.
-var CoreParts = []string{"database", "webserver", "outbound", "jobs", "logs", "files", "secrets", "startup", "releasename", "model", "parts"}
+var CoreParts = []string{"database", "webserver", "outbound", "jobs", "logs", "files", "secrets", "startup", "releasename", "model", "parts", "doctor"}
 
 // sourceRoots are the top folders the guards walk.
 var sourceRoots = []string{"app"}

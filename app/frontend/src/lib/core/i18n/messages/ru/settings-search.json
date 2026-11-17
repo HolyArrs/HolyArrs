@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Отбрасывать релизы, выложенные до выхода",
 	"settings.search.refuseEarlyHint": "Скорее всего подделки. «Выбрать релиз» всё равно показывает их с предупреждением.",
 	"settings.search.refuseTiny": "Отбрасывать подделки по размеру и типу файла",
-	"settings.search.refuseTinyHint": "Слишком маленькие релизы, пустые файлы и .wmv или .asf под HD-названиями",
+	"settings.search.refuseTinyHint": "Слишком маленькие релизы, пустые файлы, оборванные видео и .wmv или .asf под HD-названиями",
 	"settings.search.grace": "На сколько часов релиз может опередить выход",
 	"settings.search.graceHint": "Из-за часовых поясов. По умолчанию 24.",
 	"settings.search.floors": "Проверять размер файлов при импорте",

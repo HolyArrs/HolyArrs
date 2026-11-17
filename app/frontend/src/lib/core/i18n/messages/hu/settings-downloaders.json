@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "A két útvonal azonos, így ez a pár semmit sem nevez át. Ettől még megmondja a HolyArrsnak, hol vannak ennek a letöltőnek a fájljai, így megtarthatod.",
 	"settings.downloaders.change": "{name} módosítása",
 	"settings.downloaders.whichApp": "Melyik alkalmazás",
-	"settings.downloaders.torrents": "(torrentek)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torrentek",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "Legnépszerűbb",
 	"settings.downloaders.name": "Név",
 	"settings.downloaders.address": "Cím",
 	"settings.downloaders.addressHint": "A webes felülete. SABnzbd esetén használja az IP-címet, vagy engedélyezze a HolyArrs gépnevét.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Kategória importálás után",
 	"settings.downloaders.categoryAfterImportHint": "Importálás után a HolyArrs ebbe a kategóriába teszi a torrentet. Hagyja üresen, hogy a fő kategóriában maradjon.",
 	"settings.downloaders.ownOnly": "Csak a HolyArrs elemeinek mutatása",
-	"settings.downloaders.ownOnlyHint": "Más alkalmazások elemei ezen a letöltőn rejtve maradnak, és a HolyArrs nem módosítja őket."
+	"settings.downloaders.ownOnlyHint": "Más alkalmazások elemei ezen a letöltőn rejtve maradnak, és a HolyArrs nem módosítja őket.",
+	"settings.downloaders.state.notAnswering": "Munkamenet",
+	"settings.downloaders.state.paused": "Szüneteltetve",
+	"settings.downloaders.state.resting": "Pihen",
+	"settings.downloaders.state.signInRefused": "Bejelentkezés elutasítva",
+	"settings.downloaders.state.working": "Működik"
 }

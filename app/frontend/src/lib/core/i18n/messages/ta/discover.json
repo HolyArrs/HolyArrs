@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "tmdb:693134 அல்லது tvmaze:82 போன்ற ஐடியை ஒட்டுங்கள்.",
 	"discover.search.orDescribeItSuch": "அல்லது “2014 இல் ரோபோ உள்ள விண்வெளித் திரைப்படம்” போல விவரியுங்கள்.",
 	"discover.search.lookEverywhere": "எங்கும் தேடு",
-	"discover.search.searchIndexersFor": "இண்டெக்சர்களில் “{searched}” ஐத் தேடு",
+	"discover.search.searchIndexersFor": "உங்கள் மூலங்களைச் சரிபார்",
 	"discover.search.topMatches": "சிறந்த பொருத்தங்கள்",
 	"discover.people.goToTheFilmography": "திரைப்படப் பட்டியலுக்குச் செல்",
 	"discover.people.filmography": "திரைப்படப் பட்டியல்",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "இந்தப் பதிப்புக்குப் பொருந்தவில்லை",
 	"discover.leftovers.reason.movie_has_file": "படத்துக்கு ஏற்கனவே கோப்பு உள்ளது",
 	"discover.leftovers.reason.replaced_by_hand": "வேறு கோப்பால் மாற்றப்பட்டது",
-	"discover.leftovers.reason.unmatched": "பொருத்தம் கையால் நீக்கப்பட்டது"
+	"discover.leftovers.reason.unmatched": "பொருத்தம் கையால் நீக்கப்பட்டது",
+	"discover.searchSections.genres": "வகைகள்",
+	"discover.searchSections.moods": "மனநிலைகள்",
+	"discover.searchSections.stories": "கதைகள் & கருப்பொருள்கள்",
+	"discover.searchSections.worlds": "உலகங்கள் & பின்னணிகள்",
+	"discover.searchSections.eras": "காலகட்டங்கள்",
+	"discover.searchSections.world": "உலகம் முழுவதும்",
+	"discover.searchSections.collections": "தொகுப்புகள்",
+	"discover.popularRail.out": "வெளியீடு",
+	"discover.popularRail.comingDay": "வருகிறது",
+	"discover.titleLibrary.turnShowOnHint": "தேடத் தொடங்க நிகழ்ச்சியை இயக்கவும்.",
+	"discover.leftovers.reason.seasons_differ": "பழைய ஆப்பின் TMDB எண்ணால் மட்டுமே கண்டறியப்பட்டது: இது அதே நிகழ்ச்சிதானா என்று சரிபார்த்து, பிறகு கோப்பை நீங்களே பொருத்துங்கள்"
 }

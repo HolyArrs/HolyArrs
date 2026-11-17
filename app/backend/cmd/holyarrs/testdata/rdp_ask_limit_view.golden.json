@@ -8,5 +8,13 @@
   "used": {
     "s": 7
   },
-  "no_limit": true
+  "no_limit": true,
+  "qualities": {
+    "movie": [
+      "s"
+    ],
+    "show": [
+      "s"
+    ]
+  }
 }

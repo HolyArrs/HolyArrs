@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Film",
 	"metadata.health.downTitle": "Metadata çevrimdışı",
 	"metadata.health.down": "Geri gelene kadar arama ve yeni görseller duraklar. Kütüphanen yine çalışır.",
-	"metadata.health.back": "Metadata yeniden çevrimiçi"
+	"metadata.health.back": "Metadata yeniden çevrimiçi",
+	"metadata.health.fakeIp": "Yönlendiriciniz veya VPN'iniz HolyArrs'ı sahte bir adrese (198.18.x.x) gönderiyor. Bu genelde Clash veya Surge'den gelir. {host} adresini onun doğrudan bağlantı listesine ekleyin."
 }

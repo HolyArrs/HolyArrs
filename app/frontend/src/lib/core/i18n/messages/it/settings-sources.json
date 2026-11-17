@@ -7,6 +7,7 @@
 	"settings.sources.title": "Fonti",
 	"settings.sources.add": "Aggiungi una Fonte",
 	"settings.sources.lead": "La priorità 1 va per prima. Una Fonte che fallisce viene saltata per fino a sei ore. Per i siti senza feed, aggiungi Jackett o Prowlarr come feed Torznab.",
+	"settings.sources.builtIn": "I siti integrati non richiedono Jackett né Prowlarr: {sites}. Scegli {site} in {kind}.",
 	"settings.sources.change": "Modifica {name}",
 	"settings.sources.name": "Nome",
 	"settings.sources.feedKind": "Tipo di feed",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Salva",
 	"settings.sources.cancel": "Annulla",
 	"settings.sources.none": "Nessuna Fonte",
-	"settings.sources.noneText": "Aggiungi un feed Torznab o Newznab, oppure Jackett o Prowlarr.",
+	"settings.sources.noneText": "Aggiungi un sito integrato, un feed Torznab o Newznab, oppure Jackett o Prowlarr.",
 	"settings.sources.rowTitle": "{url} · priorità {priority} · {uses}",
 	"settings.sources.priorityUses": "Priorità {priority} · {uses}",
 	"settings.sources.keyIs": "chiave {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Sito",
 	"settings.sources.addressSite": "L’indirizzo del sito. Cambialo solo se il sito si è spostato.",
 	"settings.sources.siteKeyLabel": "Cookie o chiave RSS",
-	"settings.sources.siteKeyHint": "Dal tuo account: uid e pass dal cookie del browser, oppure u e tp dal tuo link RSS. Conservato cifrato."
+	"settings.sources.siteKeyHint": "Dal tuo account: uid e pass dal cookie del browser, oppure u e tp dal tuo link RSS. Conservato cifrato.",
+	"settings.sources.sendTo": "Invia i download a",
+	"settings.sources.sendToAny": "Qualsiasi downloader",
+	"settings.sources.sendToHint": "Tutto ciò che viene scelto da questa fonte va solo a questo downloader. Se non funziona, aspetta.",
+	"settings.sources.sendToGone": "Il downloader scelto è stato rimosso. I download di questa fonte ora vanno a qualsiasi downloader."
 }

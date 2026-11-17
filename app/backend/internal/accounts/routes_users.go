@@ -5,6 +5,7 @@ import "net/http"
 func (a *Auth) userRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/users", a.listUsers)
 	m.HandleFunc("PUT /api/v1/users/{id}", a.editUser)
+	m.HandleFunc("DELETE /api/v1/users/{id}", a.deletePerson)
 	m.HandleFunc("POST /api/v1/users/{id}/two-factor/reset", a.resetUserTwoFactor)
 	m.HandleFunc("POST /api/v1/users/{id}/password", a.setUserPassword)
 	m.HandleFunc("GET /api/v1/users/invites", a.listInvites)

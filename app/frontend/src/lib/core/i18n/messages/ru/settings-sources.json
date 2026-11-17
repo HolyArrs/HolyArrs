@@ -7,6 +7,7 @@
 	"settings.sources.title": "Источники",
 	"settings.sources.add": "Добавить источник",
 	"settings.sources.lead": "Приоритет 1 идёт первым. Источник, который даёт сбой, пропускается до шести часов. Для сайтов без ленты добавьте Jackett или Prowlarr как ленту Torznab.",
+	"settings.sources.builtIn": "Встроенным сайтам Jackett и Prowlarr не нужны: {sites}. Выберите {site} в поле «{kind}».",
 	"settings.sources.change": "Изменить {name}",
 	"settings.sources.name": "Название",
 	"settings.sources.feedKind": "Вид ленты",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Сохранить",
 	"settings.sources.cancel": "Отмена",
 	"settings.sources.none": "Источников нет",
-	"settings.sources.noneText": "Добавьте ленту Torznab или Newznab, либо Jackett или Prowlarr.",
+	"settings.sources.noneText": "Добавьте встроенный сайт, ленту Torznab или Newznab, либо Jackett или Prowlarr.",
 	"settings.sources.rowTitle": "{url} · приоритет {priority} · {uses}",
 	"settings.sources.priorityUses": "Приоритет {priority} · {uses}",
 	"settings.sources.keyIs": "ключ {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Сайт",
 	"settings.sources.addressSite": "Собственный адрес сайта. Меняйте его, только если сайт переехал.",
 	"settings.sources.siteKeyLabel": "Cookie или ключ RSS",
-	"settings.sources.siteKeyHint": "Из вашего аккаунта: uid и pass из cookie браузера или u и tp из вашей ссылки RSS. Хранится в зашифрованном виде."
+	"settings.sources.siteKeyHint": "Из вашего аккаунта: uid и pass из cookie браузера или u и tp из вашей ссылки RSS. Хранится в зашифрованном виде.",
+	"settings.sources.sendTo": "Отправлять загрузки в",
+	"settings.sources.sendToAny": "Любой загрузчик",
+	"settings.sources.sendToHint": "Всё, что выбрано из этого источника, идёт только в этот загрузчик. Если он не работает, ждёт.",
+	"settings.sources.sendToGone": "Выбранный загрузчик удалён. Загрузки из этого источника теперь идут в любой загрузчик."
 }

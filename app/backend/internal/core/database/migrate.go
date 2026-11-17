@@ -226,9 +226,9 @@ func plan(w *writer, src fs.FS, label string) ([]migration, int, error) {
 // this update), after checking there is room for it and the update.
 // Migrations run with synchronous=FULL and the result is checked.
 // onUpdating, when set, is called before existing data is updated.
-func migrate(w *writer, path string, ms []migration, cur int, backupDir, label string, onUpdating func()) error {
+func migrate(w *writer, path string, ms []migration, cur int, backupDir, label string, onUpdating func()) (string, error) {
 	if len(ms) == 0 {
-		return nil
+		return "", nil
 	}
 	pinned := ""
 	if cur > 0 {
@@ -236,7 +236,7 @@ func migrate(w *writer, path string, ms []migration, cur int, backupDir, label s
 			onUpdating()
 		}
 		if err := os.MkdirAll(backupDir, 0o750); err != nil {
-			return fmt.Errorf("%w (%s): the backups folder %s cannot be made: %v; the data was not changed", ErrBackup, label, backupDir, err)
+			return "", fmt.Errorf("%w (%s): the backups folder %s cannot be made: %v; the data was not changed", ErrBackup, label, backupDir, err)
 		}
 		stale, _ := filepath.Glob(filepath.Join(backupDir, label+"-pre-update-*.db.partial"))
 		for _, p := range stale {
@@ -245,7 +245,7 @@ func migrate(w *writer, path string, ms []migration, cur int, backupDir, label s
 		if skipSpaceCheck() {
 			log.Printf("store: %s=yes, so the free space check before the %s update is skipped", SkipSpaceCheckEnv, label)
 		} else if err := checkSpace(path, filepath.Dir(path), backupDir); err != nil {
-			return err
+			return "", err
 		}
 		to := ms[len(ms)-1].version
 		var err error
@@ -262,7 +262,7 @@ func migrate(w *writer, path string, ms []migration, cur int, backupDir, label s
 			log.Printf("store: backup before the %s update (try %d of %d): %v", label, try, backupTries, err)
 		}
 		if err != nil {
-			return fmt.Errorf("%w (%s, %d tries): %v; the data was not changed", ErrBackup, label, backupTries, err)
+			return "", fmt.Errorf("%w (%s, %d tries): %v; the data was not changed", ErrBackup, label, backupTries, err)
 		}
 	}
 	// Every PRAGMA and migration runs on one connection, so a setting can
@@ -270,17 +270,17 @@ func migrate(w *writer, path string, ms []migration, cur int, backupDir, label s
 	ctx := context.Background()
 	conn, err := w.db.Conn(ctx)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer conn.Close()
 	// foreign_keys can only change outside a transaction; migrations that
 	// rebuild tables need it off, and each one is checked before commit.
 	if _, err := conn.ExecContext(ctx, "PRAGMA foreign_keys=OFF"); err != nil {
-		return err
+		return "", err
 	}
 	defer func() { _, _ = conn.ExecContext(ctx, "PRAGMA foreign_keys=ON") }()
 	if _, err := conn.ExecContext(ctx, "PRAGMA synchronous=FULL"); err != nil {
-		return err
+		return "", err
 	}
 	defer func() { _, _ = conn.ExecContext(ctx, "PRAGMA synchronous=NORMAL") }()
 	for _, m := range ms {
@@ -305,7 +305,7 @@ func migrate(w *writer, path string, ms []migration, cur int, backupDir, label s
 			return tx.Commit()
 		}()
 		if err != nil {
-			return fmt.Errorf("%w: migration %s (%s): %v; this step was undone", ErrMigration, m.name, label, err)
+			return "", fmt.Errorf("%w: migration %s (%s): %v; this step was undone", ErrMigration, m.name, label, err)
 		}
 	}
 	res, err := integrityCheck(conn)
@@ -323,9 +323,9 @@ func migrate(w *writer, path string, ms []migration, cur int, backupDir, label s
 		if pinned != "" {
 			where = "restore the backup " + pinned
 		}
-		return fmt.Errorf("%w (%s): %s; %s", ErrCheckFailed, label, res, where)
+		return "", fmt.Errorf("%w (%s): %s; %s", ErrCheckFailed, label, res, where)
 	}
-	return nil
+	return pinned, nil
 }
 
 // integrityCheck runs the full PRAGMA integrity_check; "ok" means sound.

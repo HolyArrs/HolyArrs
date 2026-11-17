@@ -63,20 +63,20 @@
 		<div class="ask" role="group" aria-label={t('downloads.ha.findAnotherLabel')} bind:this={box} onkeydown={(ev) => ev.key === 'Escape' && (ev.stopPropagation(), stop())}>
 			<p>{t('downloads.ha.ask', { quality: qualityOf(row) || t('downloads.ha.sameQuality') })}</p>
 			<div class="btns">
-				<Button variant="primary" size="sm" data-testid="history-find-confirm" disabled={busy} busy={busy} onclick={confirm}>{t('downloads.ha.blockSearch')}</Button>
-				<Button variant="plain" size="sm" data-testid="history-find-cancel" onclick={() => stop()}>{t('downloads.sel.cancel')}</Button>
+				<Button variant="primary" data-testid="history-find-confirm" disabled={busy} busy={busy} onclick={confirm}>{t('downloads.ha.blockSearch')}</Button>
+				<Button variant="plain" data-testid="history-find-cancel" onclick={() => stop()}>{t('downloads.sel.cancel')}</Button>
 			</div>
 		</div>
 	{:else if find}
-		<Button variant="secondary" size="sm" icon="refresh" data-testid="history-find" onclick={ask}>{findWord}</Button>
+		<Button variant="secondary" icon="refresh" data-testid="history-find" onclick={ask}>{findWord}</Button>
 	{/if}
-	{#each links as l (l.key)}<Button variant="secondary" size="sm" href={to(l.href)} iconAfter="chevronRight" data-testid="history-go-{l.key}">{l.label}</Button>{/each}
+	{#each links as l (l.key)}<Button variant="secondary" href={to(l.href)} iconAfter="chevronRight" data-testid="history-go-{l.key}">{l.label}</Button>{/each}
 </div>
 {/if}
 
 <style>
 	.da { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%; min-width: 0; }
-	.da > :global(.ui-btn) { flex: 1 1 auto; border-radius: var(--r-pill); max-width: 100%; }
+	.da > :global(.ui-btn) { flex: 1 1 0; min-width: min(max-content, 100%); border-radius: var(--r-pill); max-width: 100%; }
 	.da > :global(.ui-btn span) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 	.btns { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 	.ask { flex: 1 0 100%; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: var(--r-card); background: var(--well, var(--surface-2)); box-shadow: inset 0 0 0 1px var(--line); }

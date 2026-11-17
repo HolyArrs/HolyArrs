@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Cho trợ lý AI dùng HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Khóa và đường dẫn cho ứng dụng khác",
+	"core.settings.remoteAccess.label": "Truy cập từ xa",
+	"core.settings.remoteAccess.about": "Dùng HolyArrs khi ra ngoài",
 	"core.settings.tmdb.label": "Metadata",
 	"core.settings.tmdb.about": "Nơi poster và tên đến từ",
 	"core.settings.health.label": "Kiểm tra tình trạng",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "Một trình tải chưa có thư mục lưu, nên HolyArrs không thể nhập các bản tải đã xong của nó.",
 	"core.api.sourceOff": "Một số hàng đang tắt trên bản cài đặt này.",
 	"core.plain.noDownloader": "Nguồn của bạn tìm được bản tải mà không trình tải nào của bạn nhận được, nên không gửi được bản nào.",
-	"core.plain.sameDownloader": "Hai trình tải kết nối tới cùng một ứng dụng tải xuống, nên các lượt tải có thể hiện hai lần."
+	"core.plain.sameDownloader": "Hai trình tải kết nối tới cùng một ứng dụng tải xuống, nên các lượt tải có thể hiện hai lần.",
+	"core.plain.peopleCheck": "Không đọc được danh sách người dùng của máy chủ đa phương tiện, nên người bị xóa ở đó không bị tắt ở đây.",
+	"core.plain.deleted": "đã xóa",
+	"core.plain.deletedName": "{name} (đã xóa)"
 }

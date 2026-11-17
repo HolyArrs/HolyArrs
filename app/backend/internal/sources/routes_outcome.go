@@ -37,6 +37,9 @@ func (h *Handlers) searchOutcome(w http.ResponseWriter, r *http.Request) {
 			srcs = list
 		}
 		out["sources"] = srcs
+		if note, ok := e.Data["sources_note"].(string); ok {
+			out["note"] = note
+		}
 	}
 	webserver.WriteJSON(w, http.StatusOK, out)
 }

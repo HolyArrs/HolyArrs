@@ -183,7 +183,7 @@ func (a *Aria2) post(ctx context.Context, r aria2Req) (json.RawMessage, error) {
 			return nil, ctx.Err()
 		}
 		if errors.Is(err, outbound.ErrAddressRefused) {
-			return nil, outbound.ErrAddressRefused
+			return nil, outbound.Refusal(err)
 		}
 		if len(body) > aria2BodyLimit {
 			return nil, aria2TooLarge{fmt.Errorf("%w: aria2 dropped a call of %d bytes; raise aria2's --rpc-max-request-size (default 2M)", ErrTooLarge, len(body))}

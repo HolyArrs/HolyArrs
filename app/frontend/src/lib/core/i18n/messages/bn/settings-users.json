@@ -83,6 +83,7 @@
 	"settings.users.preset": "প্রিসেট",
 	"settings.users.comingSoon": "শিগগিরই আসছে",
 	"settings.users.custom": "কাস্টম",
+	"settings.users.customHint": "নিচের সুইচগুলোর এটি আপনার নিজের মিশ্রণ। একটি প্রিসেট বাছাই করলে এটি বদলে যায়; ফিরিয়ে আনতে আবার “কাস্টম” বেছে নিন।",
 	"settings.users.ageRating": "বয়সভিত্তিক রেটিং",
 	"settings.users.newPasswordFor": "{name}-এর নতুন পাসওয়ার্ড",
 	"settings.users.passwordNote": "{name} নিজেরটা ভুলে গেলে এটি ব্যবহার করুন। তারা সব জায়গা থেকে সাইন আউট হয় এবং নতুনটি দিয়ে আবার সাইন ইন করে। তাদের সামনাসামনি জানান।",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "যেমন মা",
 	"settings.users.days": "লিংক যত দিন চলবে",
 	"settings.users.makeInvite": "একটি আমন্ত্রণের লিংক বানান",
-	"settings.users.permAuto4k": "অপেক্ষা ছাড়াই অনুমোদিত 4K রিকোয়েস্ট"
+	"settings.users.permAuto4k": "অপেক্ষা ছাড়াই অনুমোদিত 4K রিকোয়েস্ট",
+	"settings.users.serverAccount": "সার্ভার অ্যাকাউন্ট",
+	"settings.users.pickAccount": "একটি মিডিয়া সার্ভারে অ্যাকাউন্ট বেছে নিন",
+	"settings.users.accountLinked": "{name}-এর সাথে যুক্ত",
+	"settings.users.removedOnServer": "{word} সার্ভার থেকে সরানো হয়েছে, তাই এখানে বন্ধ করা হয়েছে",
+	"settings.users.delete": "মুছুন",
+	"settings.users.deleteName": "{name} মুছুন",
+	"settings.users.confirmDelete": "{name} মুছবেন? তাকে স্থায়ীভাবে সাইন আউট করা হবে এবং তার কী মুছে যাবে। তার অনুরোধগুলো থাকবে, সরানো ব্যক্তি হিসেবে দেখাবে।",
+	"settings.users.deleteYes": "ব্যক্তিকে মুছুন",
+	"settings.users.keep": "রাখুন",
+	"settings.users.deleted": "{name} মুছে ফেলা হয়েছে",
+	"settings.users.couldntDelete": "মুছতে পারা যায়নি",
+	"settings.users.confirmDeleteKeys": "তার তৈরি করা Seerr কী সবার জন্য কাজ করা বন্ধ করবে, যতক্ষণ না নতুন একটি তৈরি হয়।",
+	"settings.users.qualities": "কোয়ালিটি",
+	"settings.users.qualitiesHint": "শুধু চালু থাকাগুলো বেছে নিতে পারবেন। সব চালু থাকলে নতুনগুলোও দেখানো হয়।"
 }

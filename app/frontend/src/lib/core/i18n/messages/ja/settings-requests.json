@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "表示する",
 	"settings.requests.choiceMain": "{rules} · タイトルのメインコピー",
 	"settings.requests.choiceOwn": "{rules} · 別のコピーとして保持",
-	"settings.requests.choiceNotReady": "上で 4K の品質を設定すると表示されます"
+	"settings.requests.choiceNotReady": "上で 4K の品質を設定すると表示されます",
+	"settings.requests.approvals": "承認",
+	"settings.requests.autoApprove": "リクエストを自動で承認",
+	"settings.requests.autoApproveNote": "オフ = その人のリクエストはあなたの承認を待ちます。Plex ウォッチリストのタイトルも同じスイッチに従います。",
+	"settings.requests.ownerTag": "オーナー",
+	"settings.requests.choiceAdd": "品質を追加",
+	"settings.requests.choiceNew": "新しい品質",
+	"settings.requests.choiceLabel": "あなたの名前",
+	"settings.requests.choiceSeen": "表示名"
 }

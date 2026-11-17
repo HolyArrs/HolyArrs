@@ -12,7 +12,7 @@
 	{@const o = own.owned}
 	{#if own.mayReport}<ReportSheet bind:open={own.reportOpen} title={o} />{/if}
 	{#if own.manage}
-		<ReleaseSheet bind:open={own.pickOpen} titleId={o.id} name={o.name} scope={own.pickScope} onchosen={() => own.loadOwned(o.id)} />
+		<ReleaseSheet bind:open={own.pickOpen} titleId={o.id} name={o.name} scope={own.pickScope} show={o.kind === 'show'} onchosen={() => own.loadOwned(o.id)} />
 		<Sheet bind:open={own.renameOpen} title={t('discover.titleOwnedSheets.renameFiles')} description={o.name} size="md">
 			{#if own.renameOpen}<RenamePreview titleId={o.id} onDone={() => { own.renameOpen = false; void own.loadOwned(o.id); }} />{/if}
 		</Sheet>

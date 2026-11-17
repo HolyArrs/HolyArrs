@@ -51,7 +51,6 @@ test.beforeAll(async ({ browser }) => {
 		writeFileSync(f, `video ${f}`);
 	}
 	page = await fresh(browser);
-	page.on('dialog', (d) => void d.accept());
 	await signIn(page, owner());
 });
 
@@ -117,6 +116,7 @@ test('Subtitle sites: the lab site is added and tested; a site that needs your a
 	await expect(acct.getByTestId('subtitle-site-state')).toHaveText('Paused');
 	await expect(acct.getByTestId('subtitle-site-text')).toContainText('Paused by you');
 	await acct.getByRole('button', { name: /^Remove / }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(page.getByTestId('subtitle-site')).toHaveCount(1);
 });
 

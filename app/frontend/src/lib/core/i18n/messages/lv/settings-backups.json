@@ -32,11 +32,12 @@
 	"settings.backups.key": "Galvenā atslēga",
 	"settings.backups.keyDesc": "Dublējumos šīs atslēgas nav. Glabā kopiju drošā vietā.",
 	"settings.backups.noKit": "Šai atslēgai vēl nav saglabāta atslēgu komplekta. Bez tā dublējumā saglabātās paroles nevar atvērt jaunā datorā.",
+	"settings.backups.kitRecommended": "Ieteicams: lejupielādē atslēgu komplektu.",
 	"settings.backups.ownerOnlyKit": "To var lejupielādēt tikai īpašnieks; palūdz viņam.",
 	"settings.backups.fingerprint": "Atslēgas pirkstu nospiedums",
 	"settings.backups.downloadKit": "Lejupielādēt atslēgu komplektu",
 	"settings.backups.restoreKey": "Lai atjaunotu: pārdēvē par holyarrs.key un ieliec konfigurācijas mapē",
 	"settings.backups.offPlan": "Izslēgts",
-	"settings.backups.offAbout": "Ieplānotu dublējumu nav. Pirms katra atjauninājuma tomēr tiek izveidota kopija.",
+	"settings.backups.offAbout": "Nav automātisku dublējumu, pat ne pirms atjauninājuma. Pašu veidoti dublējumi joprojām darbojas.",
 	"settings.backups.offKeeps": "Izslēgts saglabā dublējumus, kas jums jau ir."
 }

@@ -110,11 +110,7 @@ func (a *Auth) firstSignIn(ctx context.Context, provider string, id int64, name 
 
 // outsideBase is the name a new user from an outside account starts from.
 func outsideBase(provider, extName string) string {
-	base := strings.TrimSpace(extName)
-	if base == "" {
-		base = provider + "-user"
-	}
-	return truncate(base, 56)
+	return NewPersonName(extName, provider+"-user", 56)
 }
 
 // freeName is base, or base-2, base-3... when that name is taken.
@@ -187,7 +183,18 @@ func (a *Auth) serverFetch(ctx context.Context, method, u string, hdr map[string
 	return a.call(ctx, a.server, method, u, hdr, body, out)
 }
 
+// keepRefusal passed as out to call decodes a good answer into out and keeps
+// the body of a refused one in refusal.
+type keepRefusal struct {
+	out     any
+	refusal *[]byte
+}
+
 func (a *Auth) call(ctx context.Context, c *http.Client, method, u string, hdr map[string]string, body any, out any) (int, error) {
+	var refusal *[]byte
+	if k, ok := out.(keepRefusal); ok {
+		out, refusal = k.out, k.refusal
+	}
 	var rd io.Reader
 	if body != nil {
 		b, _ := json.Marshal(body)
@@ -214,6 +221,9 @@ func (a *Auth) call(ctx context.Context, c *http.Client, method, u string, hdr m
 	data, err := io.ReadAll(io.LimitReader(resp.Body, outsideMax))
 	if err != nil {
 		return resp.StatusCode, err
+	}
+	if refusal != nil && resp.StatusCode/100 != 2 {
+		*refusal = data
 	}
 	if raw, ok := out.(*[]byte); ok && resp.StatusCode/100 == 2 {
 		*raw = data // an answer that is not JSON, read by the caller

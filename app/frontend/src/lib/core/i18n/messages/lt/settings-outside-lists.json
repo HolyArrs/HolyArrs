@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Jūsų Trakt sąrašų negalima nuskaityti, kol jis nenustatytas.",
 	"settings.outsideLists.replaceKey": "Pakeisti Trakt raktą",
 	"settings.outsideLists.pasteKey": "Įklijuokite Trakt raktą",
+	"settings.outsideLists.mdblistKey": "MDBList raktas",
+	"settings.outsideLists.mdblistInfo": "Neprivaloma. Su jūsų MDBList API raktu MDBList sąrašai skaitomi per MDBList API; be jo – per jų viešą nuorodą. Jis laikomas užšifruotas ir yra tas pats raktas, kurį išoriniai įvertinimai naudoja režimu Jūsų savi raktai.",
+	"settings.outsideLists.pasteMdblistKey": "Įklijuokite savo MDBList API raktą",
+	"settings.outsideLists.replaceMdblistKey": "Pakeisti MDBList raktą",
+	"settings.outsideLists.removeMdblistKey": "Pašalinti raktą",
+	"settings.outsideLists.mdblistKeySaved": "MDBList raktas išsaugotas",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList raktas pašalintas; sąrašai naudoja savo viešą nuorodą",
 	"settings.outsideLists.replaceVip": "Pakeisti VIP prieigos žetoną",
 	"settings.outsideLists.vip": "VIP prieigos žetonas (neprivaloma)",
 	"settings.outsideLists.vipHint": "Prideda Trakt skirtuką kūrinių puslapiuose: įvertinimas, žiūrovai ir komentarai",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Pridėti į Nepridėtinų sąrašą",
 	"settings.outsideLists.showDot": "serialas ·",
 	"settings.outsideLists.takeOff": "Išimti: {name}",
-	"settings.outsideLists.empty": "Tuščia"
+	"settings.outsideLists.empty": "Šiame sąraše dar nieko nėra"
 }

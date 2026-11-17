@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "Begge stier er ens, så dette par omdøber ingenting. Det fortæller stadig HolyArrs, hvor denne klients filer ligger, så du kan beholde det.",
 	"settings.downloaders.change": "Ændr {name}",
 	"settings.downloaders.whichApp": "Hvilken app",
-	"settings.downloaders.torrents": "(torrents)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torrents",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "Mest brugt",
 	"settings.downloaders.name": "Navn",
 	"settings.downloaders.address": "Adresse",
 	"settings.downloaders.addressHint": "Dens webside. For SABnzbd: brug IP-adressen, eller tillad HolyArrs' værtsnavn.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Kategori efter import",
 	"settings.downloaders.categoryAfterImportHint": "Når en torrent er importeret, flytter HolyArrs den til denne kategori. Lad feltet være tomt for at beholde den i hovedkategorien.",
 	"settings.downloaders.ownOnly": "Vis kun HolyArrs-elementer",
-	"settings.downloaders.ownOnlyHint": "Andre apps' elementer på denne downloader skjules, og HolyArrs ændrer dem ikke."
+	"settings.downloaders.ownOnlyHint": "Andre apps' elementer på denne downloader skjules, og HolyArrs ændrer dem ikke.",
+	"settings.downloaders.state.notAnswering": "Svarer ikke",
+	"settings.downloaders.state.paused": "På pause",
+	"settings.downloaders.state.resting": "Hviler",
+	"settings.downloaders.state.signInRefused": "Login afvist",
+	"settings.downloaders.state.working": "Virker"
 }

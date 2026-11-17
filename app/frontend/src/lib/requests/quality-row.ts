@@ -53,13 +53,15 @@ export interface MemberRowFacts {
 
 /**
  * The row on a member's request sheet: one button per line the person may use, in the owner's order. A line whose copy is in the
- * Library, or that the person asked for already, is off. The preferred line, else a line someone else asked for, else the first
+ * Library, or that the person asked for already (any line on the main copy counts for all of them), is off. The preferred line, else a line someone else asked for, else the first
  * free one is picked. The row shows only when there is more than one line.
  */
 export function memberRow(choices: QualityChoice[], f: MemberRowFacts = {}): { pills: QualityPill[]; selected: string; shown: boolean } {
+	// The lines on the main copy share one request: asked for one, asked for all of them.
+	const mineMain = choices.some((c) => !c.extra && f.mine?.includes(c.id));
 	const pills = choices.map((c): QualityPill => {
 		const have = c.extra ? !!f.has4k : !!f.inLibrary;
-		const mine = !have && !!f.mine?.includes(c.id);
+		const mine = !have && (c.extra ? !!f.mine?.includes(c.id) : mineMain);
 		return { key: c.id, label: qualityName(c.id, c.name), quality: c.id, rulesId: 0, extra: c.extra, disabled: have || mine, note: have ? t('mediafiles.state.inLibrary') : mine ? t('discover.titlePage.requestedCaption') : '' };
 	});
 	const free = (id?: string) => !!id && pills.some((p) => p.key === id && !p.disabled);
@@ -86,4 +88,16 @@ export function ownerRow(
 	const main = mains[0]?.id ?? STANDARD;
 	const other = rules.filter((r) => !used.has(r.id) && !names.has(r.name.toLowerCase())).map((r): QualityPill => ({ key: `rules-${r.id}`, label: r.name, quality: main, rulesId: r.id, extra: false, disabled: false, note: '' }));
 	return { pills: [...mains.map(pill), ...other, ...all.filter((l) => l.extra).map(pill)], asked };
+}
+
+/** The tile an arrow, Home or End key moves to among the ones that can be picked (wrapping); null for any other key. */
+export function arrowPill(pills: { key: string; disabled?: boolean }[], selected: string, key: string): string | null {
+	const keys = pills.filter((p) => !p.disabled).map((p) => p.key);
+	if (!keys.length) return null;
+	const i = keys.indexOf(selected);
+	if (key === 'Home') return keys[0];
+	if (key === 'End') return keys[keys.length - 1];
+	if (key === 'ArrowRight' || key === 'ArrowDown') return keys[(i + 1) % keys.length];
+	if (key === 'ArrowLeft' || key === 'ArrowUp') return keys[(i - 1 + keys.length) % keys.length];
+	return null;
 }

@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "언어를 저장하지 못했습니다",
 	"accounts.language.count.one": "언어 1개",
 	"accounts.language.count.other": "언어 {n}개",
-	"accounts.account.watchEveryone": "소유자가 모두에게 켰습니다. 멈추려면 둘 다 끄세요."
+	"accounts.account.watchEveryone": "소유자가 모두에게 켰습니다. 멈추려면 둘 다 끄세요.",
+	"accounts.watch.title": "시청 표시",
+	"accounts.watch.hint": "여기서 미디어 서버의 계정을 연결하면 라이브러리에 시청한 항목이 표시됩니다.",
+	"accounts.watch.as": "{server}, {name}(으)로",
+	"accounts.watch.nameOn": "{server}의 이름",
+	"accounts.watch.passwordOnce": "비밀번호는 {server}에만 전송되며 저장되지 않습니다.",
+	"accounts.watch.linked": "{server}의 {name}에 연결됨",
+	"accounts.watch.unlinked": "연결 해제됨",
+	"accounts.login.importPaused": "로그인이 끝나서 가져오기가 일시 중지되었습니다. 로그인한 뒤 라이브러리 가져오기을 열고 스캔을 눌러 계속하세요."
 }

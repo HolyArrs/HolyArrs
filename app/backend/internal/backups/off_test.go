@@ -45,8 +45,9 @@ func TestOffStopsScheduledBackups(t *testing.T) {
 
 // With Off the Backups card does not ask for a key kit.
 func TestOffHidesKeyKitReminder(t *testing.T) {
-	m, _, _, _ := setup(t)
+	m, s, c, _ := setup(t)
 	m.Key = labKey(7)
+	saveSecretAt(t, s, c.t)
 	if !m.keyKitState(t.Context()).Needed {
 		t.Fatal("key kit not asked for before Off")
 	}

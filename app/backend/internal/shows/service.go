@@ -69,7 +69,9 @@ func lookupShow(ctx context.Context, p metadata.ShowProvider, source string, ids
 		}
 		tried[k] = true
 		sh, err := p.Show(ctx, k+":"+v)
-		if errors.Is(err, metadata.ErrShowNotFound) {
+		if errors.Is(err, metadata.ErrShowNotFound) || (err == nil && (k == "tvdb" || k == "tvmaze") && sh.Source == "tmdb" && copiedTMDB(sh.IDs)) {
+			// A TMDB show found by its TVDB or TVmaze id whose own TMDB id is
+			// that same number is the other show it names; found by IMDb id the pairing is real.
 			continue
 		}
 		return sh, err

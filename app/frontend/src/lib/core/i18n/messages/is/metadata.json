@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Kvikmynd",
 	"metadata.health.downTitle": "Lýsigögn ótengd",
 	"metadata.health.down": "Leit og ný myndskreyting bíða þar til þau eru komin aftur. Safnið þitt virkar áfram.",
-	"metadata.health.back": "Lýsigögn aftur tengd"
+	"metadata.health.back": "Lýsigögn aftur tengd",
+	"metadata.health.fakeIp": "Beinirinn eða VPN-ið þitt sendir HolyArrs á falskt vistfang (198.18.x.x). Þetta kemur oftast frá Clash eða Surge. Bættu {host} á beina listann þess."
 }

@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Leiskite DI asistentams naudoti HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Raktai ir maršrutai kitoms programoms",
+	"core.settings.remoteAccess.label": "Nuotolinė prieiga",
+	"core.settings.remoteAccess.about": "Naudokite HolyArrs ne namuose",
 	"core.settings.tmdb.label": "Metaduomenys",
 	"core.settings.tmdb.about": "Iš kur gaunami plakatai ir pavadinimai",
 	"core.settings.health.label": "Būklės patikros",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "Vienas atsisiuntėjas neturi išsaugojimo aplanko, todėl HolyArrs negali importuoti jo baigtų atsisiuntimų.",
 	"core.api.sourceOff": "Kai kurios eilutės šioje diegtyje išjungtos.",
 	"core.plain.noDownloader": "Jūsų šaltiniai randa atsisiuntimų, kurių negali priimti nė vienas jūsų atsisiuntėjas, todėl nieko negalima išsiųsti.",
-	"core.plain.sameDownloader": "Du atsisiuntėjai pasiekia tą pačią atsisiuntimo programą, todėl atsisiuntimai gali būti rodomi du kartus."
+	"core.plain.sameDownloader": "Du atsisiuntėjai pasiekia tą pačią atsisiuntimo programą, todėl atsisiuntimai gali būti rodomi du kartus.",
+	"core.plain.peopleCheck": "Nepavyksta perskaityti medijos serverio naudotojų sąrašo, todėl ten pašalinti žmonės čia neišjungiami.",
+	"core.plain.deleted": "ištrintas",
+	"core.plain.deletedName": "{name} (ištrintas)"
 }

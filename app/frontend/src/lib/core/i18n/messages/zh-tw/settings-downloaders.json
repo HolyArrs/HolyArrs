@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "兩個路徑相同，所以這一組不會替換任何內容。它仍會告訴 HolyArrs 這個下載器的檔案在哪裡，因此可以保留。",
 	"settings.downloaders.change": "更改 {name}",
 	"settings.downloaders.whichApp": "哪個應用程式",
-	"settings.downloaders.torrents": "（種子）",
-	"settings.downloaders.usenet": "（Usenet）",
+	"settings.downloaders.torrentsHead": "種子",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "最常用",
 	"settings.downloaders.name": "名稱",
 	"settings.downloaders.address": "位址",
 	"settings.downloaders.addressHint": "它的網頁位址。對於 SABnzbd，請使用 IP，或允許 HolyArrs 所在的主機名稱。",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "匯入後的分類",
 	"settings.downloaders.categoryAfterImportHint": "種子匯入後，HolyArrs 會把它移到這個分類。留空則保留在主分類中。",
 	"settings.downloaders.ownOnly": "只顯示 HolyArrs 的項目",
-	"settings.downloaders.ownOnlyHint": "此下載器上其他應用程式的項目會被隱藏，HolyArrs 也不會變更它們。"
+	"settings.downloaders.ownOnlyHint": "此下載器上其他應用程式的項目會被隱藏，HolyArrs 也不會變更它們。",
+	"settings.downloaders.state.notAnswering": "無回應",
+	"settings.downloaders.state.paused": "已暫停",
+	"settings.downloaders.state.resting": "暫停中",
+	"settings.downloaders.state.signInRefused": "登入被拒絕",
+	"settings.downloaders.state.working": "正常"
 }

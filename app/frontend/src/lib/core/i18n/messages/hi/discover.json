@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "कोई आईडी पेस्ट करें, जैसे tmdb:693134 या tvmaze:82।",
 	"discover.search.orDescribeItSuch": "या उसका विवरण दें, जैसे “space movie with a robot from 2014”।",
 	"discover.search.lookEverywhere": "हर जगह खोजें",
-	"discover.search.searchIndexersFor": "“{searched}” के लिए इंडेक्सर में खोजें",
+	"discover.search.searchIndexersFor": "अपने स्रोत जाँचें",
 	"discover.search.topMatches": "सबसे अच्छे नतीजे",
 	"discover.people.goToTheFilmography": "फ़िल्मोग्राफ़ी पर जाएं",
 	"discover.people.filmography": "फ़िल्मोग्राफ़ी",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "इस वर्ज़न से मेल नहीं खाता",
 	"discover.leftovers.reason.movie_has_file": "फ़िल्म में पहले से फ़ाइल है",
 	"discover.leftovers.reason.replaced_by_hand": "दूसरी फ़ाइल से बदला गया",
-	"discover.leftovers.reason.unmatched": "मिलान हाथ से हटाया गया"
+	"discover.leftovers.reason.unmatched": "मिलान हाथ से हटाया गया",
+	"discover.searchSections.genres": "शैलियाँ",
+	"discover.searchSections.moods": "मूड",
+	"discover.searchSections.stories": "कहानियाँ और विषय",
+	"discover.searchSections.worlds": "दुनिया और परिवेश",
+	"discover.searchSections.eras": "दौर",
+	"discover.searchSections.world": "दुनिया भर से",
+	"discover.searchSections.collections": "संग्रह",
+	"discover.popularRail.out": "रिलीज़",
+	"discover.popularRail.comingDay": "आने वाला",
+	"discover.titleLibrary.turnShowOnHint": "खोज शुरू करने के लिए शो चालू करें।",
+	"discover.leftovers.reason.seasons_differ": "सिर्फ़ पुराने ऐप के TMDB नंबर से मिला: जाँच लें कि यह वही शो है, फिर फ़ाइल खुद मिलाएँ"
 }

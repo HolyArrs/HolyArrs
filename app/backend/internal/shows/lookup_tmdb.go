@@ -2,9 +2,11 @@ package shows
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -79,7 +81,7 @@ func (s *Service) fixCopiedTMDB(ctx context.Context, sh *metadata.Show) {
 	}
 	for _, k := range []string{"tvdb", "imdb"} {
 		if v := sh.IDs[k]; v != "" {
-			if m, err := p.Show(ctx, k+":"+v); err == nil && m.IDs["tmdb"] != "" && metadata.SameShow(*sh, m) {
+			if m, err := p.Show(ctx, k+":"+v); err == nil && m.IDs["tmdb"] != "" && !copiedTMDB(m.IDs) && metadata.SameShow(*sh, m) {
 				sh.IDs["tmdb"] = m.IDs["tmdb"]
 				return
 			}
@@ -87,12 +89,16 @@ func (s *Service) fixCopiedTMDB(ctx context.Context, sh *metadata.Show) {
 	}
 }
 
+// errCopiedUnsure says no answer could be trusted for a show stored with a
+// TMDB id equal to its TVDB or TVmaze id; a refresh keeps the show as it is.
+var errCopiedUnsure = errors.New("TMDB gives no show that can be trusted for this one's ids; kept as it is")
+
 // lookupKnown is lookupShow for a show already stored. A stored TMDB id
 // that is a copied TVDB or TVmaze id is not used, and a TMDB answer whose
 // TVDB id is not the stored one (the stored TMDB id is another show's) is
 // replaced by the show found by its other ids, so a wrong TMDB id never
 // turns the show into another one.
-func (s *Service) lookupKnown(ctx context.Context, p metadata.ShowProvider, source string, ids map[string]string) (metadata.Show, error) {
+func (s *Service) lookupKnown(ctx context.Context, p metadata.ShowProvider, source, name string, ids map[string]string) (metadata.Show, error) {
 	others := map[string]string{}
 	for k, v := range ids {
 		if k != "tmdb" {
@@ -100,7 +106,17 @@ func (s *Service) lookupKnown(ctx context.Context, p metadata.ShowProvider, sour
 		}
 	}
 	if copiedTMDB(ids) {
-		return lookupShow(ctx, p, source, others)
+		sh, err := lookupShow(ctx, p, source, others)
+		if !errors.Is(err, metadata.ErrShowNotFound) || source != "tmdb" {
+			return sh, err
+		}
+		// No other id finds it: a stored TMDB id that answers with the
+		// show's own name is real after all; otherwise the show is kept
+		// as it is, never flagged as gone.
+		if sh, err := p.Show(ctx, "tmdb:"+ids["tmdb"]); err == nil && library.NameScore(name, 0, sh.Name, 0) >= library.MatchUnsure {
+			return sh, nil
+		}
+		return metadata.Show{}, errCopiedUnsure
 	}
 	sh, err := lookupShow(ctx, p, source, ids)
 	if err == nil && sh.Source == "tmdb" && ids["tmdb"] != "" && ids["tvdb"] != "" && sh.IDs["tvdb"] != "" && sh.IDs["tvdb"] != ids["tvdb"] {

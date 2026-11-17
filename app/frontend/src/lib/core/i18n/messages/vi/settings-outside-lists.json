@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Danh sách Trakt của bạn không đọc được cho đến khi đặt nó.",
 	"settings.outsideLists.replaceKey": "Thay khóa Trakt",
 	"settings.outsideLists.pasteKey": "Dán khóa Trakt",
+	"settings.outsideLists.mdblistKey": "Khóa MDBList",
+	"settings.outsideLists.mdblistInfo": "Không bắt buộc. Với khóa API MDBList của bạn, danh sách MDBList được đọc qua MDBList API; không có nó thì qua liên kết công khai của chúng. Khóa được lưu mã hóa và là cùng khóa mà điểm đánh giá bên ngoài dùng ở chế độ Khóa riêng của bạn.",
+	"settings.outsideLists.pasteMdblistKey": "Dán khóa API MDBList của bạn",
+	"settings.outsideLists.replaceMdblistKey": "Thay khóa MDBList",
+	"settings.outsideLists.removeMdblistKey": "Xóa khóa",
+	"settings.outsideLists.mdblistKeySaved": "Đã lưu khóa MDBList",
+	"settings.outsideLists.mdblistKeyRemoved": "Đã xóa khóa MDBList; danh sách dùng liên kết công khai của chúng",
 	"settings.outsideLists.replaceVip": "Thay VIP access token",
 	"settings.outsideLists.vip": "VIP access token (không bắt buộc)",
 	"settings.outsideLists.vipHint": "Thêm một tab Trakt vào trang tựa: điểm, người xem và bình luận",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Thêm vào danh sách Không bao giờ thêm",
 	"settings.outsideLists.showDot": "phim bộ ·",
 	"settings.outsideLists.takeOff": "Gỡ {name}",
-	"settings.outsideLists.empty": "Trống"
+	"settings.outsideLists.empty": "Danh sách này chưa có gì"
 }

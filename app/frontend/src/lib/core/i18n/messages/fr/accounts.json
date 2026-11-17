@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Impossible d'enregistrer la langue",
 	"accounts.language.count.one": "1 langue",
 	"accounts.language.count.other": "{n} langues",
-	"accounts.account.watchEveryone": "Le propriétaire l’a activé pour tout le monde. Désactivez les deux pour l’arrêter."
+	"accounts.account.watchEveryone": "Le propriétaire l’a activé pour tout le monde. Désactivez les deux pour l’arrêter.",
+	"accounts.watch.title": "Marques de visionnage",
+	"accounts.watch.hint": "Liez ici votre compte d'un serveur multimédia pour que la Bibliothèque montre ce que vous avez vu.",
+	"accounts.watch.as": "{server}, en tant que {name}",
+	"accounts.watch.nameOn": "Nom sur {server}",
+	"accounts.watch.passwordOnce": "Votre mot de passe va uniquement à {server} et n'est pas conservé.",
+	"accounts.watch.linked": "Lié à {name} sur {server}",
+	"accounts.watch.unlinked": "Lien supprimé",
+	"accounts.login.importPaused": "Votre connexion a pris fin, donc l'import est en pause. Connectez-vous, ouvrez Importer une bibliothèque et appuyez sur Analyser pour continuer."
 }

@@ -23,7 +23,7 @@ func TestHandle_PickRulesTagsLimitSources(t *testing.T) {
 	if err := database.Get(context.Background(), f.s.Read(), "slots", f.slotID, &sl); err != nil {
 		t.Fatal(err)
 	}
-	if j.State != "done" || sl.LastReason == nil || *sl.LastReason != "no Source takes this title's tags: Test: its tags (none) are not in the Pick rules' tags (anime)" {
+	if j.State != "done" || sl.LastReason == nil || *sl.LastReason != "no Source takes this title's tags: Test: it has no tags, and the Pick rules only take Sources tagged anime" {
 		t.Fatalf("job %s, slot %s: %v", j.State, sl.State, sl.LastReason)
 	}
 	exec(t, f, `UPDATE sources SET tags = '["anime"]'`)

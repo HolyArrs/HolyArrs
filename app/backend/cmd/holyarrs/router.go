@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"errors"
+	"os"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles/datapack"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -90,11 +92,12 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	a.mh().RouteMux(m)
 	subtitles.NewHandlers(a.s.Store, a.s.Secrets, a.s.Subtitles).Routes(m)
 	a.appHandlers().Routes(m)
-	(&updates.Handlers{Checker: a.s.Updates}).Routes(m)
+	(&updates.Handlers{Checker: a.s.Updates, ImageVersion: version}).Routes(m)
 	(&datapack.Handlers{Deps: datapack.Deps{Store: a.s.Store}}).Routes(m)
+	(&plugins.Handlers{Engine: a.s.Plugins, LoginServer: os.Getenv("HOLYARRS_TAILSCALE_LOGIN_SERVER")}).Routes(m)
 	a.scheduleHandlers().Routes(m)
 	m.HandleFunc("GET /api/v1/metadata/search", a.searchMetadata)
-	(&metadata.Handlers{Up: func(ctx context.Context) bool { return a.s.MetadataUp == nil || a.s.MetadataUp(ctx) }}).Routes(m)
+	(&metadata.Handlers{Up: func(ctx context.Context) bool { return a.s.MetadataUp == nil || a.s.MetadataUp(ctx) }, FakeIP: metadata.ServerFakeIP}).Routes(m)
 	a.metadataModeHandlers().Routes(m)
 	a.disc.Routes(m)
 	a.shows.AnimeRoutes(m)
@@ -109,13 +112,13 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	}
 	a.titles.Routes(m)
 	if a.s.Secrets != nil {
-		if startup.FeatureOn(startup.TraktLists) {
-			lists.TraktKeyRoutes(m)
-			a.disc.TokenRoutes(m)
-		}
+		lists.MDBListKeyRoutes(m)
+		lists.TraktKeyRoutes(m)
+		a.disc.TokenRoutes(m)
 	}
 	a.askHandlers().Routes(m)
 	(&webserver.URLBaseHandlers{Store: a.s.Store, InUse: a.s.URLBase}).Routes(m)
+	a.proxyHandlers().Routes(m)
 	(&alerts.Handlers{Store: a.s.Store, Secrets: a.s.Secrets, Sender: a.s.Alerts, Caller: func(r *http.Request) (int64, string) { p := a.person(r); return p.UserID, p.Name },
 		OwnEmail: func(ctx context.Context, userID int64) (string, error) {
 			t, err := requests.ReadTargets(ctx, a.s.Store.Read(), userID)

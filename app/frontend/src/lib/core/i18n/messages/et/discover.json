@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Kleebi ID, näiteks tmdb:693134 või tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Või kirjelda seda, näiteks “kosmosefilm robotiga aastast 2014”.",
 	"discover.search.lookEverywhere": "Otsi kõikjalt",
-	"discover.search.searchIndexersFor": "Otsi indekseerijatest: “{searched}”",
+	"discover.search.searchIndexersFor": "Kontrolli oma allikaid",
 	"discover.search.topMatches": "Parimad vasted",
 	"discover.people.goToTheFilmography": "Mine filmograafiasse",
 	"discover.people.filmography": "Filmograafia",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Ei sobi selle versiooniga",
 	"discover.leftovers.reason.movie_has_file": "Filmil on juba fail",
 	"discover.leftovers.reason.replaced_by_hand": "Asendatud teise failiga",
-	"discover.leftovers.reason.unmatched": "Sidumine käsitsi eemaldatud"
+	"discover.leftovers.reason.unmatched": "Sidumine käsitsi eemaldatud",
+	"discover.searchSections.genres": "Žanrid",
+	"discover.searchSections.moods": "Meeleolud",
+	"discover.searchSections.stories": "Lood ja teemad",
+	"discover.searchSections.worlds": "Maailmad ja paigad",
+	"discover.searchSections.eras": "Ajastud",
+	"discover.searchSections.world": "Üle maailma",
+	"discover.searchSections.collections": "Kogud",
+	"discover.popularRail.out": "Ilmub",
+	"discover.popularRail.comingDay": "Tulekul",
+	"discover.titleLibrary.turnShowOnHint": "Lülita sari sisse, et otsimine algaks.",
+	"discover.leftovers.reason.seasons_differ": "Leiti ainult vana rakenduse TMDB numbri järgi: kontrolli, et see on sama sari, ja seo siis fail ise"
 }

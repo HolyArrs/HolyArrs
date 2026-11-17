@@ -147,6 +147,7 @@ export type { Follows } from './calendar.ts';
 export type { GenreAnswer } from './genres.ts';
 export type { GenreRowCard } from './explore-type.ts';
 export type { HeadAnswer } from './explore-server.ts';
+export type { ServerRow } from './explore-server.ts';
 export type { MoodView } from './search-browse.ts';
 export type { MovieFacts } from './calendar.ts';
 export type { NewAnswer } from './popular.ts';

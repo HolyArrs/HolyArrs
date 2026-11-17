@@ -53,3 +53,32 @@ func TitleSize(ctx context.Context, db database.Lister, titleID int64) (int64, e
 	}
 	return n, rows.Err()
 }
+
+// ShowName is one name a Library show carries, its own or an other name,
+// with the show's id and year (0: not known).
+type ShowName struct {
+	ID   int64
+	Name string
+	Year int
+}
+
+// ShowNames lists the names and other names of the Library's shows.
+func ShowNames(ctx context.Context, db *sql.DB) ([]ShowName, error) {
+	rows, err := db.QueryContext(ctx, `SELECT id, name, coalesce(year, 0) FROM titles WHERE kind = 'show' AND state != 'removed'
+		UNION ALL SELECT t.id, j.value, coalesce(t.year, 0) FROM titles t, json_each(t.aliases) j WHERE t.kind = 'show' AND t.state != 'removed'`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []ShowName
+	for rows.Next() {
+		var n sql.NullString
+		var sn ShowName
+		if err := rows.Scan(&sn.ID, &n, &sn.Year); err != nil {
+			return nil, err
+		}
+		sn.Name = n.String
+		out = append(out, sn)
+	}
+	return out, rows.Err()
+}

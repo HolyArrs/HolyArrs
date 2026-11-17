@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Releases afkeuren die voor de uitgave zijn geplaatst",
 	"settings.search.refuseEarlyHint": "Waarschijnlijk nep. Release kiezen toont ze nog steeds, met een waarschuwing.",
 	"settings.search.refuseTiny": "Nepbestanden afkeuren op grootte en bestandstype",
-	"settings.search.refuseTinyHint": "Te kleine releases, lege bestanden en .wmv of .asf onder HD-namen",
+	"settings.search.refuseTinyHint": "Te kleine releases, lege bestanden, afgebroken video's en .wmv of .asf onder HD-namen",
 	"settings.search.grace": "Uren die een release te vroeg mag zijn",
 	"settings.search.graceHint": "Voor tijdzones. Standaard 24.",
 	"settings.search.floors": "Bestandsgroottes controleren bij import",

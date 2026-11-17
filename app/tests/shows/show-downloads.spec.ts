@@ -115,9 +115,9 @@ test('Needs a decision works from a phone', async ({ browser }) => {
 
 test('one choice settles the whole pack: Add the pack to Turned down searches each episode again', async () => {
 	const card = details().getByTestId('decision-pack');
-	page.once('dialog', (d) => d.accept());
 	await card.getByRole('button', { name: /^More/ }).first().click();
 	await page.getByRole('menuitem', { name: 'Add the pack to Turned down' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(page.getByText('Searching again for these episodes')).toBeVisible();
 	await expect(card).toHaveCount(0, { timeout: 30_000 });
 	await page.goto('/library/turned-down');

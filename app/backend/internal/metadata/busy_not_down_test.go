@@ -36,3 +36,22 @@ func TestBusyAnswersDoNotMarkTheServerDown(t *testing.T) {
 		t.Fatalf("after busy answers the server must not be marked down: %v", err)
 	}
 }
+
+// A health check answered with a busy 503 or 429 that names a wait is the
+// server pacing HolyArrs, not an outage.
+func TestHealthBusyWithRetryAfterIsUp(t *testing.T) {
+	for _, status := range []int{http.StatusServiceUnavailable, http.StatusTooManyRequests} {
+		s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Retry-After", "5")
+			w.WriteHeader(status)
+			_, _ = w.Write([]byte(`{"error":{"code":"service_busy"}}`))
+		})
+		if !(&Health{Service: s}).Up(context.Background()) {
+			t.Fatalf("%d busy with Retry-After reported down", status)
+		}
+	}
+	plain := testService(t, func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusServiceUnavailable) })
+	if (&Health{Service: plain}).Up(context.Background()) {
+		t.Fatal("plain 503 must still be down")
+	}
+}

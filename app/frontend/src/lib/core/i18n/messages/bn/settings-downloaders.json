@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "দুটি পথ একই, তাই এই জোড়া কিছুই বদলায় না। তবুও এটি HolyArrs-কে জানায় এই ডাউনলোডারের ফাইল কোথায় আছে, তাই এটি রাখতে পারেন।",
 	"settings.downloaders.change": "{name} বদলান",
 	"settings.downloaders.whichApp": "কোন অ্যাপ",
-	"settings.downloaders.torrents": "(টরেন্ট)",
-	"settings.downloaders.usenet": "(ইউজনেট)",
+	"settings.downloaders.torrentsHead": "টরেন্ট",
+	"settings.downloaders.usenetHead": "ইউজনেট",
+	"settings.downloaders.mostUsed": "সবচেয়ে বেশি ব্যবহৃত",
 	"settings.downloaders.name": "নাম",
 	"settings.downloaders.address": "ঠিকানা",
 	"settings.downloaders.addressHint": "এর ওয়েব পেজ। SABnzbd-এর জন্য IP ব্যবহার করুন বা HolyArrs-এর হোস্ট নামকে অনুমতি দিন।",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "ইমপোর্টের পরে ক্যাটাগরি",
 	"settings.downloaders.categoryAfterImportHint": "টরেন্ট ইমপোর্ট হলে HolyArrs সেটিকে এই ক্যাটাগরিতে সরায়। মূল ক্যাটাগরিতে রাখতে ফাঁকা রাখুন।",
 	"settings.downloaders.ownOnly": "শুধু HolyArrs-এর আইটেম দেখান",
-	"settings.downloaders.ownOnlyHint": "এই ডাউনলোডারে অন্য অ্যাপের আইটেম লুকানো থাকে, আর HolyArrs সেগুলো বদলায় না।"
+	"settings.downloaders.ownOnlyHint": "এই ডাউনলোডারে অন্য অ্যাপের আইটেম লুকানো থাকে, আর HolyArrs সেগুলো বদলায় না।",
+	"settings.downloaders.state.notAnswering": "সাড়া দিচ্ছে না",
+	"settings.downloaders.state.paused": "থামানো",
+	"settings.downloaders.state.resting": "বিরতিতে",
+	"settings.downloaders.state.signInRefused": "সাইন-ইন প্রত্যাখ্যাত",
+	"settings.downloaders.state.working": "কাজ করছে"
 }

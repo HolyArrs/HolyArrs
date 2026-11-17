@@ -34,5 +34,6 @@
 	"settings.sourceDetail.what": "Ano",
 	"settings.sourceDetail.result": "Resulta",
 	"settings.sourceDetail.time": "Oras",
-	"settings.sourceDetail.answeredCell": "Sinagot"
+	"settings.sourceDetail.answeredCell": "Sinagot",
+	"settings.sourceDetail.noTimes": "Wala pang sagot"
 }

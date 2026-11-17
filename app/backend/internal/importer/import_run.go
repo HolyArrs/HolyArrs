@@ -96,7 +96,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if !rootOK {
 		cands, bad = nil, []mediafiles.PlanStep{unpackStep(d.SavePath, "the Downloader reported a folder with \"..\" in it")}
 	}
-	folder := safeName(ver.FolderName)
+	folder := safeFolder(ver.FolderName)
 	if folder == "" || folder == "." || folder == ".." {
 		folder = FolderName(ti.Name, year)
 	}
@@ -328,7 +328,12 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			}
 		}
 	}
-	slotTo, reason := mediafiles.SlotNeedsADecision, im.nothingPlaced(dr, d.FilesSeen)
+	slotTo, reason := mediafiles.SlotNeedsADecision, im.nothingPlaced(dr, d.FilesSeen, plan)
+	if why := notPlacedWhy(root, plan, imp.Result); why != "" {
+		reason = why
+	} else if why := im.unseenWhy(dr, d.FilesSeen, root, rootOK, plan, len(cands) == 0); why != "" {
+		reason = why
+	}
 	if unpackWhy != "" {
 		reason = unpackWhy
 	}
@@ -478,4 +483,78 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		im.OnFilesGone(ctx, ti.ID)
 	}
 	return imp, nil
+}
+
+func (im *Importer) importBackoff(ctx context.Context, downloadID int64) (bool, error) {
+	var failed int
+	var last sql.NullString
+	err := im.Store.Read().QueryRowContext(ctx, `SELECT count(*), max(ended_at) FROM jobs WHERE kind = ? AND state = 'failed'
+		AND json_extract(subject, '$.type') = 'download' AND json_extract(subject, '$.id') = ?`, KindImport, downloadID).Scan(&failed, &last)
+	if err != nil || failed == 0 || !last.Valid {
+		return false, err
+	}
+	end, err := time.Parse(time.RFC3339Nano, last.String)
+	if err != nil {
+		return false, nil
+	}
+	// The wait doubles per failure from ten minutes and stops at one day.
+	wait := 24 * time.Hour
+	if failed <= 8 {
+		wait = min(wait, 10*time.Minute<<(failed-1))
+	}
+	return time.Since(end) < wait, nil
+}
+
+// importingDownloads lists the finished downloads that have a Slot left
+// importing while no import job waits or runs for them: the app stopped
+// between waking the Slot and queueing its import, or the job was cancelled.
+func importingDownloads(ctx context.Context, db *sql.DB) ([]int64, error) {
+	return idsOf(ctx, db, `SELECT DISTINCT d.id FROM downloads d, json_each(d.slot_ids) j JOIN slots s ON s.id = j.value
+		WHERE d.state IN ('finished', 'seeding') AND s.state = 'importing' AND (s.active_download_id IS NULL OR s.active_download_id = d.id)
+		AND NOT EXISTS (SELECT 1 FROM jobs q WHERE q.kind = ? AND q.state IN ('queued', 'running')
+			AND json_extract(q.subject, '$.type') = 'download' AND json_extract(q.subject, '$.id') = d.id)
+		ORDER BY d.id`, KindImport)
+}
+
+// gaveUpDownloads lists the finished show and album downloads whose import
+// gave up after it began placing: their Slots wait on that card, and a later
+// try finishes what the fault cut short.
+func gaveUpDownloads(ctx context.Context, db *sql.DB) ([]int64, error) {
+	return idsOf(ctx, db, `SELECT DISTINCT d.id FROM downloads d, json_each(d.slot_ids) j JOIN slots s ON s.id = j.value
+		JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
+		WHERE d.state IN ('finished', 'seeding') AND s.state = 'needs_a_decision' AND s.last_reason = ? AND t.kind IN ('show', 'artist')
+		AND (s.active_download_id IS NULL OR s.active_download_id = d.id)
+		AND (SELECT x.state FROM imports x WHERE x.download_id = d.id ORDER BY x.id DESC LIMIT 1) = 'placing'
+		AND NOT EXISTS (SELECT 1 FROM jobs q WHERE q.kind = ? AND q.state IN ('queued', 'running')
+			AND json_extract(q.subject, '$.type') = 'download' AND json_extract(q.subject, '$.id') = d.id)
+		ORDER BY d.id`, gaveUpWhy, KindImport)
+}
+
+// importingWithoutDownload lists the Slots left importing that no download
+// still running or finished was grabbed for (it failed, vanished or was
+// cleaned meanwhile) and no import job waits or runs for.
+func importingWithoutDownload(ctx context.Context, db *sql.DB) ([]int64, error) {
+	return idsOf(ctx, db, `SELECT s.id FROM slots s WHERE s.state = 'importing'
+		AND NOT EXISTS (SELECT 1 FROM downloads d, json_each(d.slot_ids) j WHERE j.value = s.id
+			AND (s.active_download_id IS NULL OR s.active_download_id = d.id) AND d.state IN ('finished', 'seeding', 'sent', 'queued', 'downloading', 'stalled', 'paused'))
+		AND NOT EXISTS (SELECT 1 FROM downloads d, json_each(d.slot_ids) j, jobs q WHERE j.value = s.id AND q.kind = ? AND q.state IN ('queued', 'running')
+			AND json_extract(q.subject, '$.type') = 'download' AND json_extract(q.subject, '$.id') = d.id)
+		ORDER BY s.id`, KindImport)
+}
+
+func idsOf(ctx context.Context, db *sql.DB, q string, args ...any) ([]int64, error) {
+	rows, err := db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
 }

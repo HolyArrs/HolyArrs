@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Film",
 	"metadata.health.downTitle": "Métadonnées hors ligne",
 	"metadata.health.down": "La recherche et les nouvelles images sont en pause jusqu'au retour. Votre Bibliothèque fonctionne toujours.",
-	"metadata.health.back": "Métadonnées de nouveau en ligne"
+	"metadata.health.back": "Métadonnées de nouveau en ligne",
+	"metadata.health.fakeIp": "Votre routeur ou VPN envoie HolyArrs vers une fausse adresse (198.18.x.x). Cela vient souvent de Clash ou Surge. Ajoutez {host} à sa liste directe."
 }

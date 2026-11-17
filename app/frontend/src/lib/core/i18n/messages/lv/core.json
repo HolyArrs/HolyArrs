@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Ļauj MI asistentiem izmantot HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Atslēgas un maršruti citām lietotnēm",
+	"core.settings.remoteAccess.label": "Attālā piekļuve",
+	"core.settings.remoteAccess.about": "Lietojiet HolyArrs ārpus mājām",
 	"core.settings.tmdb.label": "Metadati",
 	"core.settings.tmdb.about": "No kurienes nāk plakāti un nosaukumi",
 	"core.settings.health.label": "Veselības pārbaudes",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "Vienam lejupielādētājam nav saglabāšanas mapes, tāpēc HolyArrs nevar importēt tā pabeigtās lejupielādes.",
 	"core.api.sourceOff": "Dažas rindas šajā instalācijā ir izslēgtas.",
 	"core.plain.noDownloader": "Tavi avoti atrod lejupielādes, kuras nevar pieņemt neviens tavs lejupielādētājs, tāpēc neko nevar nosūtīt.",
-	"core.plain.sameDownloader": "Divi lejupielādētāji sasniedz to pašu lejupielādes lietotni, tāpēc lejupielādes var parādīties divreiz."
+	"core.plain.sameDownloader": "Divi lejupielādētāji sasniedz to pašu lejupielādes lietotni, tāpēc lejupielādes var parādīties divreiz.",
+	"core.plain.peopleCheck": "Multivides servera lietotāju sarakstu nevar nolasīt, tāpēc tur noņemtie cilvēki šeit netiek izslēgti.",
+	"core.plain.deleted": "dzēsts",
+	"core.plain.deletedName": "{name} (dzēsts)"
 }

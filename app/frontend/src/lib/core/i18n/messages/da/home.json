@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Slået fra i Dele",
 	"home.noneForSources": "mangler til det, dine kilder finder",
 	"home.addedTwice": "er tilføjet to gange",
-	"home.addedTwiceMany": "er tilføjet to gange"
+	"home.addedTwiceMany": "er tilføjet to gange",
+	"home.notSetUpYet": "Ikke sat op endnu",
+	"home.setUpToAdd": "Gør opsætningen færdig for at tilføje {name}",
+	"home.comingThisWeek": "Kommer i denne uge",
+	"home.thisWeek": "i denne uge",
+	"home.landingThisWeek": "Afsnit og film, der kommer i denne uge",
+	"home.popularThisWeek": "Populære udgivelser, der kommer i denne uge",
+	"home.peopleCheck": "Personkontrol",
+	"home.cantReadUsers": "brugerlisten kan ikke læses"
 }

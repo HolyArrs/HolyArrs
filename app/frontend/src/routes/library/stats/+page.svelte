@@ -23,6 +23,13 @@
 	let loaded = $state(false);
 	let error = $state('');
 	const shown = $derived(kinds.find((k) => k.kind === kind) ?? kinds[0]);
+	// A card whose only bar is "unreadable" or "not checked" says nothing new; show it once, not on every card.
+	const shownFacts = $derived.by(() => {
+		if (!shown) return [];
+		const all = factOrder.filter((f) => shown.facts[f]?.length);
+		const real = all.filter((f) => shown.facts[f].some((b) => b.value !== 'unknown' && b.value !== 'unchecked'));
+		return real.length ? real : all.slice(0, 1);
+	});
 	const unchecked = $derived(shown?.facts.resolution?.find((b) => b.value === 'unchecked')?.files ?? shown?.facts.container?.find((b) => b.value === 'unchecked')?.files ?? 0);
 
 	async function load() {
@@ -88,7 +95,7 @@
 			<div class="tp-sheet tile"><span class="lab">{t('library.stats.value.unchecked')}</span><b>{unchecked.toLocaleString()}</b></div>
 		</div>
 		<div class="grid">
-			{#each factOrder.filter((f) => shown.facts[f]?.length) as f (f)}
+			{#each shownFacts as f (f)}
 				<section class="tp-sheet fact" data-testid="stats-fact">
 					<h2 class="fh">{t('library.stats.fact.' + f)}</h2>
 					<ul>

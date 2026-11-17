@@ -32,11 +32,12 @@
 	"settings.backups.key": "Hlavní klíč",
 	"settings.backups.keyDesc": "Zálohy tento klíč neobsahují. Uchovejte si jeho kopii na bezpečném místě.",
 	"settings.backups.noKit": "Pro tento klíč zatím není uložena sada klíčů. Bez ní nelze uložená hesla ze zálohy otevřít na novém počítači.",
+	"settings.backups.kitRecommended": "Doporučeno: stáhněte si sadu klíčů.",
 	"settings.backups.ownerOnlyKit": "Stáhnout ji může jen vlastník; požádejte ho o to.",
 	"settings.backups.fingerprint": "Otisk klíče",
 	"settings.backups.downloadKit": "Stáhnout sadu klíčů",
 	"settings.backups.restoreKey": "Pro obnovu: přejmenujte na holyarrs.key a vložte do složky config",
 	"settings.backups.offPlan": "Vypnuto",
-	"settings.backups.offAbout": "Žádné plánované zálohy. Kopie se stále vytvoří před každou aktualizací.",
+	"settings.backups.offAbout": "Žádné automatické zálohy, ani před aktualizací. Zálohy, které vytvoříte sami, fungují dál.",
 	"settings.backups.offKeeps": "Vypnuto zachová zálohy, které už máte."
 }

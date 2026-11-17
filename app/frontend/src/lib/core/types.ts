@@ -277,6 +277,8 @@ export interface Ask {
 	auto_approved: boolean;
 	available_at?: string;
 	problem?: string;
+	/** Approved a moment ago and its title is still being added: not Failed yet. */
+	adding?: boolean;
 	mine: boolean;
 }
 
@@ -348,6 +350,8 @@ export interface LibraryFolder {
 	health_reason: string;
 	health_checked_at?: string;
 	copies_expected?: boolean;
+	new_title_tags?: string[];
+	only_tagged_sources?: boolean;
 }
 
 export interface Reason {
@@ -403,6 +407,10 @@ export interface Choice {
 	slot_ids?: number[];
 	forced: boolean;
 	warnings: string[];
+	/** Why the Downloader did not get the Release. */
+	not_sent?: string;
+	/** The send had not ended when the answer went out. */
+	sending?: boolean;
 }
 
 export interface Download {
@@ -431,6 +439,8 @@ export interface EventRecord {
 	Data?: Record<string, unknown>;
 	Actor?: { kind: string; id?: number };
 	actor_name?: string;
+	// asked_names are the askers' current names by saved id (marked when deleted).
+	asked_names?: string[];
 	title_name?: string;
 	episode?: string;
 	version?: string;
@@ -448,7 +458,7 @@ export interface EventPage {
 export interface HealthCheck {
 	id: number;
 	key: string;
-	kind: 'library_folder' | 'disk_space' | 'source' | 'downloader' | 'backups' | 'update' | 'config_disk' | 'config_folder' | 'waiting_downloads' | 'clear_waiting' | 'save_folder' | 'no_downloader' | 'same_downloader';
+	kind: 'library_folder' | 'disk_space' | 'source' | 'downloader' | 'backups' | 'update' | 'config_disk' | 'config_folder' | 'waiting_downloads' | 'clear_waiting' | 'save_folder' | 'no_downloader' | 'same_downloader' | 'people_check';
 	subject: string;
 	state: 'ok' | 'warning' | 'error';
 	message: string;
@@ -540,6 +550,8 @@ export interface DownloadView {
 	peers_total?: number;
 	eta?: number;
 	active: boolean;
+	/** A finished torrent still shared in its Downloader. */
+	seeding?: boolean;
 }
 
 export interface DownloadRow extends DownloadView {
@@ -589,6 +601,8 @@ export interface DownloadRow extends DownloadView {
 	client_hint?: 'checking' | 'moving' | 'errored' | 'missing' | 'idle_seed' | 'verifying' | 'repairing' | 'unpacking' | 'finishing' | 'script';
 	limits?: { ratio: number; seeding_minutes: number; inactive_minutes: number; action: '' | 'stop' | 'remove' | 'remove_files' | 'super_seed' };
 	client_item?: boolean;
+	/** Remove keeps this finished download's files: they are in or around a Library folder. */
+	files_stay?: boolean;
 	outside?: boolean;
 	linked?: boolean;
 	downloader_id?: number;
@@ -623,7 +637,7 @@ export interface Decision {
 	year?: number;
 	version: string;
 	versions: number;
-	why: 'ran_out' | 'conflict' | 'not_replaced' | 'not_sent' | 'taken';
+	why: 'ran_out' | 'conflict' | 'not_replaced' | 'not_sent' | 'link_refused' | 'taken';
 	reason: string;
 	release_id?: number;
 	release_name?: string;
@@ -640,6 +654,8 @@ export interface Decision {
 	import_file?: string;
 	// The finished download's folder; Import files by hand opens there.
 	import_folder?: string;
+	// Import again reads the download's folder right now.
+	reading?: boolean;
 }
 
 export interface SearchView {
@@ -689,6 +705,7 @@ export interface ApiKey {
 	created_at: string;
 	last_used_at?: string;
 	scopes?: string[];
+	mcp_groups?: string[];
 }
 
 export interface UpdateInfo {

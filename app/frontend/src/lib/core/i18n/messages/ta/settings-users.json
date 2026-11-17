@@ -83,6 +83,7 @@
 	"settings.users.preset": "முன்னமைவு",
 	"settings.users.comingSoon": "விரைவில்",
 	"settings.users.custom": "தனிப்பயன்",
+	"settings.users.customHint": "கீழே உள்ள சுவிட்சுகளின் உங்கள் சொந்த கலவை இது. முன்னமைவைத் தேர்ந்தால் இது மாறும்; திரும்பப் பெற மீண்டும் “தனிப்பயன்” என்பதைத் தேர்ந்தெடுங்கள்.",
 	"settings.users.ageRating": "வயது மதிப்பீடு",
 	"settings.users.newPasswordFor": "{name} க்குப் புதிய கடவுச்சொல்",
 	"settings.users.passwordNote": "{name} தமது கடவுச்சொல்லை மறந்தால் இதைப் பயன்படுத்துங்கள். அவர் எல்லா இடங்களிலும் வெளியேற்றப்பட்டுப் புதியதுடன் மீண்டும் உள்நுழைவார். அதை நேரில் சொல்லுங்கள்.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "எ.கா. அம்மா",
 	"settings.users.days": "இணைப்பு நீடிக்கும் நாட்கள்",
 	"settings.users.makeInvite": "அழைப்பு இணைப்பை உருவாக்கு",
-	"settings.users.permAuto4k": "காத்திருக்காமல் அங்கீகரிக்கப்படும் 4K கோரிக்கைகள்"
+	"settings.users.permAuto4k": "காத்திருக்காமல் அங்கீகரிக்கப்படும் 4K கோரிக்கைகள்",
+	"settings.users.serverAccount": "சர்வர் கணக்கு",
+	"settings.users.pickAccount": "ஒரு மீடியா சர்வரில் கணக்கைத் தேர்வுசெய்க",
+	"settings.users.accountLinked": "{name} உடன் இணைக்கப்பட்டது",
+	"settings.users.removedOnServer": "{word} சேவையகத்தில் நீக்கப்பட்டது, எனவே இங்கே அணைக்கப்பட்டது",
+	"settings.users.delete": "நீக்கு",
+	"settings.users.deleteName": "{name} ஐ நீக்கு",
+	"settings.users.confirmDelete": "{name} ஐ நீக்கவா? நிரந்தரமாக வெளியேற்றப்படுவார், அவரது விசைகள் நீங்கும். அவரது கோரிக்கைகள் நீக்கப்பட்ட நபராக இருக்கும்.",
+	"settings.users.deleteYes": "நபரை நீக்கு",
+	"settings.users.keep": "வைத்திரு",
+	"settings.users.deleted": "{name} நீக்கப்பட்டார்",
+	"settings.users.couldntDelete": "நீக்க முடியவில்லை",
+	"settings.users.confirmDeleteKeys": "அவர் உருவாக்கிய Seerr விசைகள் புதியது உருவாக்கப்படும் வரை அனைவருக்கும் வேலை செய்யாது.",
+	"settings.users.qualities": "தரங்கள்",
+	"settings.users.qualitiesHint": "இயக்கியவற்றை மட்டுமே தேர்வு செய்யலாம். அனைத்தும் இயக்கினால், புதியவையும் வழங்கப்படும்."
 }

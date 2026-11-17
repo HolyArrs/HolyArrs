@@ -105,6 +105,9 @@ type Source struct {
 	PathSecretRef *int64 `db:"path_secret_ref"`
 	// Tags: with any, this Source serves only titles that share one of them.
 	Tags []string `db:"tags,json"`
+	// DownloaderID sends every grab from this Source to that one Downloader;
+	// nil sends to any.
+	DownloaderID *int64 `db:"downloader_id"`
 }
 
 // Release is one search result.
@@ -289,7 +292,7 @@ type Setting struct {
 type OutsideList struct {
 	Meta
 	Name            string     `db:"name"`
-	Kind            string     `db:"kind"`       // tmdb_list, trakt_list
+	Kind            string     `db:"kind"`       // tmdb_list, trakt_list, mdblist_list
 	TitleKind       string     `db:"title_kind"` // movie, show
 	Ref             string     `db:"ref"`        // TMDB list number, or Trakt "user/slug"
 	LibraryFolderID int64      `db:"library_folder_id"`
@@ -475,6 +478,7 @@ type MediaServer struct {
 	PathFrom      string     `db:"path_from"` // HolyArrs' start of a path ...
 	PathTo        string     `db:"path_to"`   // ... as the media server sees it
 	AllowLocal    bool       `db:"allow_local_network"`
+	WebURL        string     `db:"web_url"` // where browsers open it; empty: no Open in button
 	LastOKAt      *time.Time `db:"last_ok_at"`
 	LastError     string     `db:"last_error"`
 }

@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Impossible de connecter {name}",
 	"settings.parts.connected": "{name} connecté",
 	"settings.parts.title": "Modules",
+	"settings.parts.onOff": "Activer ou désactiver les modules",
 	"settings.parts.ownerOnly": "Propriétaire et administrateurs seulement",
 	"settings.parts.safeMode": "HolyArrs tourne en mode sans échec : seul le cœur fonctionne, et les interrupteurs de modules et les commandes de phases sont refusés jusqu'à un démarrage normal. Utilisez <b>Redémarrer HolyArrs</b> dans la <a>Zone dangereuse</a> pour quitter le mode sans échec.",
 	"settings.parts.dangerZone": "Zone dangereuse",

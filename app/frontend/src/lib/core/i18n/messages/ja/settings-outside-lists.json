@@ -65,6 +65,13 @@
 "settings.outsideLists.traktCannotRead": "設定するまで、Trakt のリストは読み取れません。",
 "settings.outsideLists.replaceKey": "Trakt のキーを置き換える",
 "settings.outsideLists.pasteKey": "Trakt のキーを貼り付け",
+"settings.outsideLists.mdblistKey": "MDBList キー",
+"settings.outsideLists.mdblistInfo": "任意です。MDBList の API キーがあると、MDBList のリストは MDBList API で読み込みます。ない場合は公開リンクから読み込みます。暗号化して保存し、「自分のキー」モードで外部の評価が使うものと同じキーです。",
+"settings.outsideLists.pasteMdblistKey": "MDBList の API キーを貼り付け",
+"settings.outsideLists.replaceMdblistKey": "MDBList キーを置き換える",
+"settings.outsideLists.removeMdblistKey": "キーを削除",
+"settings.outsideLists.mdblistKeySaved": "MDBList キーを保存しました",
+"settings.outsideLists.mdblistKeyRemoved": "MDBList キーを削除しました。リストは公開リンクを使います",
 "settings.outsideLists.replaceVip": "VIP アクセストークンを置き換える",
 "settings.outsideLists.vip": "VIP アクセストークン(任意)",
 "settings.outsideLists.vipHint": "作品ページに Trakt タブを追加します(スコア、視聴者、コメント)",
@@ -79,5 +86,5 @@
 "settings.outsideLists.addNever": "追加禁止リストに追加",
 "settings.outsideLists.showDot": "番組 ·",
 "settings.outsideLists.takeOff": "{name} を外す",
-"settings.outsideLists.empty": "空"
+"settings.outsideLists.empty": "このリストにはまだ何もありません"
 }

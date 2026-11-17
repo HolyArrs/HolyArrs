@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Luba tehisintellekti abilistel HolyArrsi kasutada",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Võtmed ja teed teistele rakendustele",
+	"core.settings.remoteAccess.label": "Kaugjuurdepääs",
+	"core.settings.remoteAccess.about": "Kasuta HolyArrsi kodust eemal",
 	"core.settings.tmdb.label": "Metaandmed",
 	"core.settings.tmdb.about": "Kust plakatid ja nimed pärinevad",
 	"core.settings.health.label": "Seisukorra kontrollid",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "Ühel allalaadijal pole salvestuskausta, seega ei saa HolyArrs selle valmis allalaadimisi importida.",
 	"core.api.sourceOff": "Mõned read on selles paigalduses välja lülitatud.",
 	"core.plain.noDownloader": "Sinu allikad leiavad allalaadimisi, mida ükski sinu allalaadija vastu võtta ei saa, seega ei saa ühtegi saata.",
-	"core.plain.sameDownloader": "Kaks allalaadijat jõuavad samasse rakendusse, seega võivad allalaadimised näha kaks korda."
+	"core.plain.sameDownloader": "Kaks allalaadijat jõuavad samasse rakendusse, seega võivad allalaadimised näha kaks korda.",
+	"core.plain.peopleCheck": "Meediaserveri kasutajate loendit ei saa lugeda, seega sealt eemaldatud inimesi siin välja ei lülitata.",
+	"core.plain.deleted": "kustutatud",
+	"core.plain.deletedName": "{name} (kustutatud)"
 }

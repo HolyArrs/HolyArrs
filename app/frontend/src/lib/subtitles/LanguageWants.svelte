@@ -47,7 +47,7 @@
 			<IconButton icon="x" variant="tinted" tooltip={false} onclick={() => wants.splice(i, 1)}  label={t('subtitles.wants.takeOff', { name: langName(w.language, langs) || t('subtitles.wants.thisLanguage') })} />
 		</li>
 	{:else}
-		<li class="small muted">{t('subtitles.wants.empty')}</li>
+		<li class="none">{t('subtitles.wants.empty')}</li>
 	{/each}
 </ul>
 {#if wants.length < 10}
@@ -55,6 +55,8 @@
 {/if}
 
 <style>
+	/* Empty list: a full row like the other empty lines in Settings. */
+	.none { display: flex; align-items: center; min-height: 52px; color: var(--text-muted); font: 400 14px/1.35 var(--font-ui); }
 	.wants {
 		display: flex;
 		flex-direction: column;
@@ -75,7 +77,6 @@
 		grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) minmax(0, 1.2fr) auto auto;
 	}
 	.wants { padding: 0; list-style: none; }
-	.wants > li.small { color: var(--text-muted); font: var(--t-callout); }
 	/* Label above its picker: the settings pages' label-left field rows would squeeze a row of three to one letter wide. */
 	.want .field {
 		display: flex !important;

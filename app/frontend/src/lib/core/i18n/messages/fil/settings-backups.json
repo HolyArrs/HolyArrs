@@ -32,11 +32,12 @@
 	"settings.backups.key": "Master key",
 	"settings.backups.keyDesc": "Hindi kasama sa mga backup ang key na ito. Magtabi ng kopya sa ligtas na lugar.",
 	"settings.backups.noKit": "Wala pang naka-save na key kit para sa key na ito. Kung wala ito, hindi mabubuksan sa bagong makina ang mga naka-save na password ng backup.",
+	"settings.backups.kitRecommended": "Inirerekomenda: i-download ang iyong key kit.",
 	"settings.backups.ownerOnlyKit": "Ang owner lang ang makakapag-download nito; hilingin sa kanila.",
 	"settings.backups.fingerprint": "Fingerprint ng key",
 	"settings.backups.downloadKit": "I-download ang key kit",
 	"settings.backups.restoreKey": "Para mag-restore: palitan ang pangalan ng holyarrs.key, ilagay sa config folder",
 	"settings.backups.offPlan": "Off",
-	"settings.backups.offAbout": "Walang naka-iskedyul na backup. May kopya pa ring ginagawa bago ang bawat update.",
+	"settings.backups.offAbout": "Walang awtomatikong backup, kahit bago mag-update. Gumagana pa rin ang mga backup na ikaw mismo ang gumawa.",
 	"settings.backups.offKeeps": "Pinapanatili ng Off ang mga backup na mayroon ka na."
 }

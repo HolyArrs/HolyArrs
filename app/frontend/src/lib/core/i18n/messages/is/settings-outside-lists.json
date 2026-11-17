@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Ekki er hægt að lesa Trakt-listana þína fyrr en það er stillt.",
 	"settings.outsideLists.replaceKey": "Skipta um Trakt-lykil",
 	"settings.outsideLists.pasteKey": "Límdu inn Trakt-lykilinn",
+	"settings.outsideLists.mdblistKey": "MDBList-lykill",
+	"settings.outsideLists.mdblistInfo": "Valfrjálst. Með MDBList API-lyklinum þínum eru MDBList-listar lesnir í gegnum MDBList API; án hans í gegnum opinberan tengil þeirra. Hann er geymdur dulkóðaður og er sami lykill og utanaðkomandi einkunnir nota í hamnum Þínir eigin lyklar.",
+	"settings.outsideLists.pasteMdblistKey": "Límdu inn MDBList API-lykilinn þinn",
+	"settings.outsideLists.replaceMdblistKey": "Skipta um MDBList-lykil",
+	"settings.outsideLists.removeMdblistKey": "Fjarlægja lykilinn",
+	"settings.outsideLists.mdblistKeySaved": "MDBList-lykill vistaður",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList-lykill fjarlægður; listar nota opinberan tengil sinn",
 	"settings.outsideLists.replaceVip": "Skipta um VIP-aðgangstákn",
 	"settings.outsideLists.vip": "VIP-aðgangstákn (valfrjálst)",
 	"settings.outsideLists.vipHint": "Bætir Trakt-flipa við titilsíður: einkunn, áhorfendur og athugasemdir",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Bæta á útilokunarlistann",
 	"settings.outsideLists.showDot": "þáttur ·",
 	"settings.outsideLists.takeOff": "Taka {name} af",
-	"settings.outsideLists.empty": "Tómt"
+	"settings.outsideLists.empty": "Ekkert er enn á þessum lista"
 }

@@ -211,7 +211,7 @@
 				<div class="txt"><span class="label">{metadataHealth.up ? t('settings.tmdb.connected') : t('settings.tmdb.notAnswering')}</span>{#if !metadataHealth.up}<span class="hint" role="status">{metadataDownText()}</span>{/if}</div>
 				<div class="ctl state">
 					<span class="st" class:fail={!metadataHealth.up}><i></i>{metadataHealth.up ? t('settings.tmdb.answering') : t('settings.tmdb.down')}</span>
-					<Button variant="secondary" size="sm" onclick={recheck} disabled={checking} aria-busy={checking}>{t('settings.tmdb.checkAgain')}</Button>
+					<Button variant="secondary" onclick={recheck} disabled={checking} aria-busy={checking}>{t('settings.tmdb.checkAgain')}</Button>
 				</div>
 			</div>
 		</SettingsCard>

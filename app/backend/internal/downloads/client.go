@@ -39,6 +39,8 @@ type AddRequest struct {
 	InfoHash string
 	// AllowLocal lets the Source fetch Release files on the local network.
 	AllowLocal bool
+	// SourceURL is the Source's own address: with AllowLocal, only its host may be on the local network.
+	SourceURL string
 	// OperationKey ties a retry to the original grab when the first answer was lost.
 	OperationKey string
 	// AttemptMarker is a durable, opaque id claimed before sending. NZBGet stores it remotely; torrent clients match by InfoHash.

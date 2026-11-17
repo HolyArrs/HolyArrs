@@ -266,6 +266,16 @@ func (a *Auth) clientAddrBoth(r *http.Request) (addr, other string, ok, unsure b
 		peer = r.RemoteAddr
 	}
 	peer = strings.Trim(peer, "[]")
+	// A marked Tailscale visit: the plugin's WhoIs address is the visitor,
+	// a fine limit key, never local.
+	if ts := pluginPeer(r); ts != "" {
+		return ts, "", false, false
+	}
+	// Plugin-marked without a matching mark or address: the peer (loopback)
+	// stays a limit key but is unsure, so it never becomes a known place.
+	if r.Header.Get(PluginProxyHeader) != "" {
+		return peer, "", false, true
+	}
 	xffs := r.Header.Values("X-Forwarded-For")
 	real := strings.TrimSpace(r.Header.Get("X-Real-IP"))
 	fwd := r.Header.Get("Forwarded")

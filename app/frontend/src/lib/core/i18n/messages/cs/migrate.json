@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Vyžadují pozornost: {n}",
 	"migrate.needAttentionWhy": "Jejich stará složka na tomto serveru není, takže přicházejí jako hledané do složky zde. Opravte složku nebo přidejte pravidlo cesty: {list}",
 	"migrate.leftOutUncheckedN": "Vynecháno: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} má nastaveno „Nepřebírat je“; vyberte pro ni složku a importujte znovu"
+	"migrate.leftOutUncheckedWhy": "{folder} má nastaveno „Nepřebírat je“; vyberte pro ni složku a importujte znovu",
+	"migrate.seasonsDifferOne": "Zkontroluj 1 seriál nalezený podle čísla TMDB",
+	"migrate.seasonsDifferOther": "Seriály nalezené podle čísla TMDB ke kontrole: {n}",
+	"migrate.seasonsDifferWhy": "{list} našlo jen číslo TMDB ze staré aplikace, zde pod jiným názvem. Otevři každý a zkontroluj, že jde o stejný seriál. Pokud ano, jeho řady jsou číslované jinak: přiřaď jeho Zbylé soubory a pak zapni seriál. Pokud ne, odeber ho; jeho soubory zůstanou, kde jsou.",
+	"migrate.stillChecking": "Seriály, které server metadat ještě ověřuje: {n}. Seznam se sám aktualizuje, až to skončí.",
+	"migrate.stillCheckingImport": "Seriály, které server metadat ještě ověřuje: {n}. Importovat můžete hned; ověří se během importu."
 }

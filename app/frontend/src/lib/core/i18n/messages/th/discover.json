@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "วาง id เช่น tmdb:693134 หรือ tvmaze:82",
 	"discover.search.orDescribeItSuch": "หรืออธิบายเรื่อง เช่น “หนังอวกาศที่มีหุ่นยนต์ จากปี 2014”",
 	"discover.search.lookEverywhere": "มองหาทุกที่",
-	"discover.search.searchIndexersFor": "ค้นหาตัวทำดัชนีสำหรับ “{searched}”",
+	"discover.search.searchIndexersFor": "ตรวจสอบแหล่งที่มา",
 	"discover.search.topMatches": "ผลลัพธ์ที่ตรงที่สุด",
 	"discover.people.goToTheFilmography": "ไปที่ผลงาน",
 	"discover.people.filmography": "ผลงาน",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "ไม่ตรงกับเวอร์ชันนี้",
 	"discover.leftovers.reason.movie_has_file": "ภาพยนตร์มีไฟล์อยู่แล้ว",
 	"discover.leftovers.reason.replaced_by_hand": "ถูกแทนที่ด้วยไฟล์อื่น",
-	"discover.leftovers.reason.unmatched": "ยกเลิกการจับคู่ด้วยมือ"
+	"discover.leftovers.reason.unmatched": "ยกเลิกการจับคู่ด้วยมือ",
+	"discover.searchSections.genres": "ประเภท",
+	"discover.searchSections.moods": "อารมณ์",
+	"discover.searchSections.stories": "เรื่องราวและธีม",
+	"discover.searchSections.worlds": "โลกและฉาก",
+	"discover.searchSections.eras": "ยุคสมัย",
+	"discover.searchSections.world": "จากทั่วโลก",
+	"discover.searchSections.collections": "คอลเลกชัน",
+	"discover.popularRail.out": "ออกฉาย",
+	"discover.popularRail.comingDay": "เร็วๆ นี้",
+	"discover.titleLibrary.turnShowOnHint": "เปิดรายการนี้เพื่อเริ่มค้นหา",
+	"discover.leftovers.reason.seasons_differ": "พบจากหมายเลข TMDB ของแอปเดิมเท่านั้น: ตรวจดูว่าเป็นเรื่องเดียวกัน แล้วจับคู่ไฟล์เอง"
 }

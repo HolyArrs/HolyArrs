@@ -83,6 +83,7 @@
 	"settings.users.preset": "Preset",
 	"settings.users.comingSoon": "Segera hadir",
 	"settings.users.custom": "Kustom",
+	"settings.users.customHint": "Kombinasi sakelar di bawah yang Anda atur sendiri. Memilih preset akan menggantinya; pilih Kustom lagi untuk mengembalikannya.",
 	"settings.users.ageRating": "Batas usia",
 	"settings.users.newPasswordFor": "Kata sandi baru untuk {name}",
 	"settings.users.passwordNote": "Pakai ini saat {name} lupa kata sandinya. Mereka keluar dari semua perangkat dan masuk lagi dengan yang baru. Sampaikan langsung kepada mereka.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "mis. Ibu",
 	"settings.users.days": "Hari tautan berlaku",
 	"settings.users.makeInvite": "Buat tautan undangan",
-	"settings.users.permAuto4k": "Permintaan 4K disetujui tanpa menunggu"
+	"settings.users.permAuto4k": "Permintaan 4K disetujui tanpa menunggu",
+	"settings.users.serverAccount": "Akun server",
+	"settings.users.pickAccount": "Pilih akun di server media",
+	"settings.users.accountLinked": "Tertaut ke {name}",
+	"settings.users.removedOnServer": "Dihapus di server {word}, jadi dimatikan di sini",
+	"settings.users.delete": "Hapus",
+	"settings.users.deleteName": "Hapus {name}",
+	"settings.users.confirmDelete": "Hapus {name}? Dia keluar untuk selamanya dan kuncinya dihapus. Permintaannya tetap ada, ditampilkan sebagai orang yang dihapus.",
+	"settings.users.deleteYes": "Hapus orang",
+	"settings.users.keep": "Simpan",
+	"settings.users.deleted": "{name} dihapus",
+	"settings.users.couldntDelete": "Tidak bisa menghapus",
+	"settings.users.confirmDeleteKeys": "Kunci Seerr yang dia buat berhenti berfungsi untuk semua orang sampai kunci baru dibuat.",
+	"settings.users.qualities": "Kualitas",
+	"settings.users.qualitiesHint": "Mereka hanya bisa memilih yang aktif. Jika semua aktif, yang baru juga ditawarkan."
 }

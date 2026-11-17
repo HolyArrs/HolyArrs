@@ -400,3 +400,22 @@ func TestRenameRefusesAChangedPlan(t *testing.T) {
 		t.Fatal("renamed against a changed plan")
 	}
 }
+
+// The rename fills an audio codec or HDR kind the release name left out from
+// the inspection, and keeps the release name's finer label when it gave one.
+func TestFileFactsAudioAndHDR(t *testing.T) {
+	year := 2026
+	name := "5aa954693497bdcbdeee88d78882c34d"
+	f := mediafiles.File{ReleaseName: &name, RelativePath: "Primetime (2026)/Primetime (2026) [.-].mkv",
+		MediaInfo: map[string]any{"audio_codec": "eac3", "hdr": "DV+HDR10"}}
+	fa := fileFacts(mediafiles.Title{Name: "Primetime", Year: &year}, f)
+	if fa.Audio != "EAC3" || fa.HDR != "DolbyVisionHDR10" {
+		t.Fatalf("hash name: audio %q hdr %q", fa.Audio, fa.HDR)
+	}
+	rel := "Quiet.Engines.2023.2160p.UHD.BluRay.REMUX.DTS-HD.MA.7.1.DV.HDR10Plus.HEVC-QUILL"
+	f = mediafiles.File{ReleaseName: &rel, RelativePath: "Quiet Engines (2023)/Quiet Engines (2023) [DTS.2160p].mkv",
+		MediaInfo: map[string]any{"audio_codec": "dts", "hdr": "DV+HDR10"}}
+	if fa = fileFacts(mediafiles.Title{Name: "Quiet Engines", Year: &year}, f); fa.Audio != "DTS-HD" || fa.HDR != "DolbyVisionHDR10+" {
+		t.Fatalf("release name: audio %q hdr %q", fa.Audio, fa.HDR)
+	}
+}

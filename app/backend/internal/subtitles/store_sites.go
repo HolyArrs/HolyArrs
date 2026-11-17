@@ -14,6 +14,7 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 )
 
@@ -114,9 +115,24 @@ func missingAccount(k sites.Kind, a Account) []string {
 	return out
 }
 
+// offeredKinds lists the kinds people may add. The lab's fake sites are left
+// out unless the lab switch is on.
+func offeredKinds() []sites.Kind {
+	if startup.FeatureOn(startup.Lab) {
+		return sites.Kinds
+	}
+	out := make([]sites.Kind, 0, len(sites.Kinds))
+	for _, k := range sites.Kinds {
+		if !k.Lab {
+			out = append(out, k)
+		}
+	}
+	return out
+}
+
 func (in *SiteInput) check() (sites.Kind, error) {
 	k, ok := sites.KindOf(in.Kind)
-	if !ok {
+	if !ok || (k.Lab && !startup.FeatureOn(startup.Lab)) {
 		return k, fmt.Errorf("unknown kind of subtitle site %q", in.Kind)
 	}
 	if k.Later {

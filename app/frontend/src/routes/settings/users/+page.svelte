@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
+	import PersonText from '#lib/ui/PersonText.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
@@ -10,9 +12,9 @@
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { presetOf, presetPerms, presetsFor, type PresetId, Sessions, kidLabel, ratingChoices } from '#lib/accounts/index.ts';
-	import type { AskSettings, LimitKind, PersonLimit } from '#lib/requests/index.ts';
-	import { kindAsks } from '#lib/requests/index.ts';
+	import { choosePreset, presetOf, presetOptions, type Mix, Sessions, UserMediaLink, DeletePersonAsk, focusAfterAsk, kidLabel, ratingChoices } from '#lib/accounts/index.ts';
+	import type { AskSettings, LimitKind, PersonLimit, PersonQualities, QualityLine } from '#lib/requests/index.ts';
+	import { QualityPicker, kindAsks } from '#lib/requests/index.ts';
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	import { to } from '#lib/core/paths.ts';
@@ -20,6 +22,7 @@
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { session, type Perm, type Role } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { shownPerson } from '#lib/core/plain.ts';
 	import { ago, date } from '#lib/core/format.ts';
 	import { HiddenCard } from '#lib/discover/index.ts';
 
@@ -38,6 +41,7 @@
 		last_seen_at?: string;
 		max_rating?: string;
 		rating_country?: string;
+		off_reason?: string;
 	}
 	interface Invite {
 		id: string;
@@ -73,6 +77,7 @@
 		user_id: number;
 		used: Record<LimitKind, number>;
 		no_limit: boolean;
+		qualities?: PersonQualities;
 	}
 	const limitFields = $derived([
 		{ kind: 'movies', key: 'movies_per_week', label: t('settings.users.movieReq') },
@@ -80,6 +85,9 @@
 		{ kind: 'music', key: 'music_per_week', label: t('settings.users.musicReq') }
 	] as const);
 	let limits = $state<Record<number, LimitRow>>({});
+	// Every line of what people can ask for, and the edited person's own choice of them.
+	let qualityLines = $state<{ movie: QualityLine[]; show: QualityLine[] } | null>(null);
+	let editQualities = $state<PersonQualities>({ movie: null, show: null });
 	let defaultsPerWeek = $state<Partial<Record<LimitKind, number>>>({});
 	let editLimits = $state<Record<LimitKind, string>>({ movies: '', shows: '', music: '' });
 
@@ -113,6 +121,15 @@
 	let making = $state(false);
 	let link = $state('');
 
+	// The person's own switches, kept per picker so choosing Custom again brings them back.
+	const mixes = $state<Record<string, Mix | null>>({});
+	// What a screen reader hears when a switch turns a picker to Custom: said once, as it happens.
+	const said = $state<Record<string, string>>({});
+	function switched(name: string, before: Perm[], after: Perm[], max: string) {
+		if (presetOf(after, grantable, max) !== 'custom') said[name] = '';
+		else if (presetOf(before, grantable, max) !== 'custom') said[name] = t('settings.users.custom');
+	}
+
 	// Editing one user.
 	let editing = $state<User | null>(null);
 	let editRole = $state<'admin' | 'member'>('member');
@@ -122,6 +139,8 @@
 	let dialog: HTMLDialogElement | undefined = $state();
 
 	const isOwner = $derived(session.s.role === 'owner');
+	// Only the owner may invite another admin.
+	const roleOptions = $derived<{ value: 'admin' | 'member'; label: string }[]>([{ value: 'member', label: t('settings.users.member') }, ...(isOwner ? [{ value: 'admin' as const, label: t('settings.users.admin') }] : [])]);
 	const names = $derived(new Map(users.map((u) => [u.id, u.name])));
 	// Admins hand out only what they hold.
 	const grantable = $derived(allPerms.filter((p) => session.can(p)));
@@ -165,8 +184,11 @@
 
 	function loadLimits() {
 		api
-			.get<{ limits: LimitRow[] }>('/ask-limits')
-			.then((r) => (limits = Object.fromEntries(r.limits.map((l) => [l.user_id, l]))))
+			.get<{ limits: LimitRow[]; lines?: { movie: QualityLine[]; show: QualityLine[] } }>('/ask-limits')
+			.then((r) => {
+				limits = Object.fromEntries(r.limits.map((l) => [l.user_id, l]));
+				qualityLines = r.lines ?? null;
+			})
 			.catch(() => (limits = {}));
 		if (session.can('settings')) api
 			.get<AskSettings>('/settings/asks')
@@ -184,6 +206,7 @@
 
 	function pickRole(r: 'admin' | 'member') {
 		role = r;
+		mixes['invite-preset'] = null;
 		maxRating = '';
 		perms = defaults[r].filter((p) => session.can(p));
 	}
@@ -270,6 +293,8 @@
 
 	function openEdit(u: User) {
 		editing = u;
+		mixes['edit-preset'] = null;
+		said['edit-preset'] = '';
 		editRole = u.role === 'admin' ? 'admin' : 'member';
 		editPerms = [...u.perms];
 		editMax = u.max_rating ?? '';
@@ -279,6 +304,7 @@
 			shows: l?.shows_per_week == null ? '' : String(l.shows_per_week),
 			music: l?.music_per_week == null ? '' : String(l.music_per_week)
 		};
+		editQualities = { movie: l?.qualities?.movie ?? null, show: l?.qualities?.show ?? null };
 		dialog?.showModal();
 	}
 
@@ -303,8 +329,12 @@
 		const body: Record<string, unknown> = { perms: editPerms, max_rating: editRole === 'admin' ? '' : editMax, rating_country: 'US' };
 		if (isOwner) body.role = editRole;
 		const u = editing;
-		if (limits[u.id] && !limits[u.id].no_limit) {
-			const own = { movies_per_week: limitValue(editLimits.movies), shows_per_week: limitValue(editLimits.shows), music_per_week: limitValue(editLimits.music) };
+		const row = limits[u.id];
+		if (row) {
+			// People who approve have no weekly limit to edit: their stored values go back as they are, beside the qualities.
+			const own = row.no_limit
+				? { movies_per_week: row.movies_per_week, shows_per_week: row.shows_per_week, music_per_week: row.music_per_week, qualities: editQualities }
+				: { movies_per_week: limitValue(editLimits.movies), shows_per_week: limitValue(editLimits.shows), music_per_week: limitValue(editLimits.music), qualities: editQualities };
 			if (Object.values(own).includes(undefined)) {
 				toasts.push(t('settings.users.limitInvalid'), 'fail', { body: t('settings.users.limitInvalidBody') });
 				return;
@@ -320,12 +350,29 @@
 	}
 
 	async function setState(u: User, state: 'active' | 'disabled') {
-		if (state === 'disabled' && !confirm(t('settings.users.confirmOff', { name: u.name }))) return;
+		if (state === 'disabled' && !(await ask(t('settings.users.confirmOff', { name: u.name }), { yes: t('ui.ask.turnOff') }))) return;
 		await put(u, { state }, state === 'disabled' ? t('settings.users.turnedOff', { name: u.name }) : t('settings.users.turnedOn', { name: u.name }));
 	}
 
+	// The person whose Delete was pressed; the row asks before anything goes.
+	let deleting = $state<number | null>(null);
+	async function deletePerson(u: User) {
+		saving = true;
+		try {
+			await api.del(`/users/${u.id}`);
+			toasts.push(t('settings.users.deleted', { name: u.name }), 'ok');
+			deleting = null;
+			await load();
+			focusAfterAsk(document, u.id, true);
+		} catch (e) {
+			toasts.push(t('settings.users.couldntDelete'), 'fail', { body: message(e) });
+		} finally {
+			saving = false;
+		}
+	}
+
 	async function resetTwoFactor(u: User) {
-		if (!confirm(t('settings.users.confirmReset', { name: u.name }))) return;
+		if (!(await ask(t('settings.users.confirmReset', { name: u.name }), { yes: t('ui.ask.reset') }))) return;
 		try {
 			await api.post(`/users/${u.id}/two-factor/reset`);
 			toasts.push(t('settings.users.resetDone', { name: u.name }), 'ok');
@@ -345,14 +392,14 @@
 		}
 	};
 	async function unlinkSSO(u: User, l: { kind: string; issuer: string }) {
-		if (!confirm(t('settings.users.confirmUnlink', { name: u.name, kind: ssoWord(l.kind) }))) return;
+		if (!(await ask(t('settings.users.confirmUnlink', { name: u.name, kind: ssoWord(l.kind) }), { yes: t('ui.ask.unlink'), danger: true }))) return;
 		const body: Record<string, unknown> = { kind: l.kind, issuer: l.issuer };
 		try {
 			try {
 				await api.post(`/users/${u.id}/sso/unlink`, body);
 			} catch (e) {
 				if (!(e instanceof ApiError && e.body.code === 'no_way_in')) throw e;
-				if (!confirm(t('settings.users.confirmLockout', { name: u.name }))) return;
+				if (!(await ask(t('settings.users.confirmLockout', { name: u.name }), { yes: t('ui.ask.unlink'), danger: true }))) return;
 				await api.post(`/users/${u.id}/sso/unlink`, { ...body, confirm_no_way_in: true });
 			}
 			toasts.push(t('settings.users.unlinked', { name: u.name }), 'ok', { body: ssoWord(l.kind) });
@@ -363,7 +410,7 @@
 	}
 
 	function inviteState(i: Invite): string {
-		if (i.used_at) return t('settings.users.usedBy', { who: i.used_by ?? t('settings.users.someone'), ago: ago(i.used_at) });
+		if (i.used_at) return t('settings.users.usedBy', { who: shownPerson(i.used_by) ?? t('settings.users.someone'), ago: ago(i.used_at) });
 		if (new Date(i.expires_at).getTime() < Date.now()) return t('settings.users.ended');
 		return t('settings.users.openUntil', { date: date(i.expires_at) });
 	}
@@ -395,7 +442,7 @@
 	{/if}
 
 	<SettingsCard id="people-card" title={t('settings.users.people')}>
-		<ul class="rows" style="margin-top: var(--s-3)">
+		<ul class="rows">
 			{#each users as u (u.id)}
 				<li class="person">
 					<Avatar name={u.name} src={u.avatar} size={40} />
@@ -412,13 +459,16 @@
 							{/if}{u.role === 'owner' ? t('settings.users.everything') : u.perms.map((p) => permWord[p]).join(', ') || t('settings.users.nothingYet')} ·
 							{u.last_seen_at ? t('settings.users.seen', { ago: ago(u.last_seen_at) }) : t('settings.users.notSeen')}
 						</div>
+						{#if u.state === 'disabled' && u.off_reason}
+							<div class="xs muted" data-testid="off-reason">{t('settings.users.removedOnServer', { word: providerWord[u.off_reason] ?? u.off_reason })}</div>
+						{/if}
 						{#if u.sso_links?.length}
 							<ul class="sso-links" data-testid="user-sso-links">
 								{#each u.sso_links as l (l.kind + l.issuer)}
 									<li class="xs muted">
 										<span>{l.kind === 'oidc' ? t('settings.users.ssoCap') : t('settings.users.proxyCap')}: <span class="mono">{hostOf(l.issuer)}</span>{#if l.name}, {l.name}{/if}</span>
 										{#if isOwner}
-											<Button variant="plain" size="sm" type="button" onclick={() => unlinkSSO(u, l)} aria-label={t('settings.users.unlinkLabel', { kind: ssoWord(l.kind), name: u.name })}>{t('settings.users.unlink')}</Button>
+											<Button variant="secondary" type="button" onclick={() => unlinkSSO(u, l)} aria-label={t('settings.users.unlinkLabel', { kind: ssoWord(l.kind), name: u.name })}>{t('settings.users.unlink')}</Button>
 										{/if}
 									</li>
 								{/each}
@@ -428,27 +478,33 @@
 							<div class="xs muted" data-testid="user-limits">{t('settings.users.thisWeek', { limits: limitWords(limits[u.id]) })}</div>
 						{/if}
 					</div>
-					{#if mayChange(u) || maySeeDevices(u)}
+					{#if mayChange(u) || maySeeDevices(u) || isOwner}
 						<div class="row acts">
 							{#if maySeeDevices(u)}
-								<Button variant="plain" type="button" onclick={() => openDevices(u)} aria-label={t('settings.users.devicesOf', { name: u.name })}>{t('settings.users.devices')}</Button>
+								<Button variant="secondary" type="button" onclick={() => openDevices(u)} aria-label={t('settings.users.devicesOf', { name: u.name })}>{t('settings.users.devices')}</Button>
 							{/if}
 						{#if mayChange(u)}
 							<Button type="button" onclick={() => openEdit(u)} aria-label={t('settings.users.changeName', { name: u.name })}>{t('settings.users.change')}</Button>
-							<Button variant="plain" type="button" onclick={() => openPassword(u)} aria-label={t('settings.users.setPasswordFor', { name: u.name })}>{t('settings.users.setPasswordLabel')}</Button>
+							<Button variant="secondary" type="button" onclick={() => openPassword(u)} aria-label={t('settings.users.setPasswordFor', { name: u.name })}>{t('settings.users.setPasswordLabel')}</Button>
 							{#if u.two_factor}
-								<Button variant="plain" type="button" onclick={() => resetTwoFactor(u)} aria-label={t('settings.users.resetFor', { name: u.name })}
+								<Button variant="secondary" type="button" onclick={() => resetTwoFactor(u)} aria-label={t('settings.users.resetFor', { name: u.name })}
 									>{t('settings.users.resetTwoFactor')}</Button>
 							{/if}
 							{#if u.state === 'active'}
-								<Button variant="plain" type="button" onclick={() => setState(u, 'disabled')} disabled={saving} aria-label={t('settings.users.turnOffName', { name: u.name })}
+								<Button variant="secondary" type="button" onclick={() => setState(u, 'disabled')} disabled={saving} aria-label={t('settings.users.turnOffName', { name: u.name })}
 									>{t('settings.users.turnOff')}</Button>
 							{:else}
 								<Button type="button" onclick={() => setState(u, 'active')} disabled={saving} aria-label={t('settings.users.turnOnName', { name: u.name })}
 									>{t('settings.users.turnOn')}</Button>
 							{/if}
+							<Button variant="plain" type="button" onclick={() => (deleting = u.id)} disabled={saving} aria-label={t('settings.users.deleteName', { name: u.name })}
+								data-testid="user-delete" data-user={u.id}>{t('settings.users.delete')}</Button>
 						{/if}
+						{#if isOwner}<UserMediaLink user={u} links={u.links} onchange={load} />{/if}
 						</div>
+					{/if}
+					{#if deleting === u.id}
+						<DeletePersonAsk name={u.name} busy={saving} onyes={() => deletePerson(u)} onno={() => ((deleting = null), queueMicrotask(() => focusAfterAsk(document, u.id, false)))} />
 					{/if}
 				</li>
 			{/each}
@@ -459,17 +515,17 @@
 
 	<SettingsCard id="invites-card" title={t('settings.users.inviteLinks')}>
 		{#if invites.length === 0}
-			<p class="small muted" style="margin-top: var(--s-3)">{t('settings.users.noInvites')}</p>
+			<p class="small muted">{t('settings.users.noInvites')}</p>
 		{:else}
-			<ul class="rows" style="margin-top: var(--s-3)">
+			<ul class="rows">
 				{#each invites as i (i.id)}
 					<li>
 						<div class="grow">
 							<div class="name">{i.note || t('settings.users.roleInvite', { role: roleWord[i.role] })} <span class="chip">{roleWord[i.role]}</span>{#if i.max_rating}<span class="chip">{kidLabel(i.max_rating)}</span>{/if}</div>
-							<div class="xs muted">{t('settings.users.madeBy', { who: i.created_by, ago: ago(i.created_at) })} · {inviteState(i)}</div>
+							<div class="xs muted"><PersonText text={t('settings.users.madeBy', { who: shownPerson(i.created_by), ago: ago(i.created_at) })} /> · <PersonText text={inviteState(i)} /></div>
 						</div>
 						{#if !i.used_at && new Date(i.expires_at).getTime() > Date.now()}
-							<Button variant="plain" type="button" onclick={() => takeBack(i)}>{t('settings.users.revoke')}</Button>
+							<Button variant="secondary" type="button" onclick={() => takeBack(i)}>{t('settings.users.revoke')}</Button>
 						{/if}
 					</li>
 				{/each}
@@ -480,35 +536,27 @@
 
 {#snippet presetPicker(list: Perm[], set: (next: Perm[]) => void, name: string, max: string, setMax: (m: string) => void)}
 	{@const current = presetOf(list, grantable, max)}
-	<fieldset class="field">
-		<legend class="label">{t('settings.users.preset')}</legend>
-		<div class="row presets">
-			{#each presetsFor(grantable) as pr (pr.id)}
-				<label class="checkline" class:soon={!!pr.soon}
-					><input
-						type="radio"
-						{name}
-						value={pr.id}
-						checked={!pr.soon && current === pr.id}
-						disabled={!!pr.soon}
-						aria-describedby={pr.soon ? `${name}-${pr.id}-why` : undefined}
-						onchange={() => {
-							const next = presetPerms(pr.id as PresetId, grantable);
-							if (next) {
-								set(next);
-								setMax(pr.maxRating ?? '');
-							}
-						}}
-					/>
-					{pr.label}{#if pr.soon}<span class="chip">{t('settings.users.comingSoon')}</span>{/if}</label
-				>
-			{/each}
-			<span class="custom" aria-live="polite">{current === 'custom' ? t('settings.users.custom') : ''}</span>
-		</div>
-		{#each presetsFor(grantable).filter((x) => x.soon) as pr (pr.id)}
-			<p id="{name}-{pr.id}-why" class="xs muted">{pr.soon}</p>
-		{/each}
-	</fieldset>
+	<div class="field">
+		<span class="label" aria-hidden="true">{t('settings.users.preset')}</span>
+		<SegmentedControl
+			label={t('settings.users.preset')}
+			testid={name}
+			wrap
+			options={presetOptions(grantable, t('settings.users.custom'), current === 'custom' || !!mixes[name])}
+			value={current}
+			onchange={(v) => {
+				said[name] = '';
+				const r = choosePreset(v, grantable, { perms: list, max }, mixes[name] ?? null);
+				mixes[name] = r.saved;
+				if (r.mix) {
+					set(r.mix.perms);
+					setMax(r.mix.max);
+				}
+			}}
+		/>
+		<span class="hint mix" class:unseen={current !== 'custom'} aria-hidden={current !== 'custom'}>{t('settings.users.customHint')}</span>
+		<span class="sr-only" aria-live="polite" data-testid="{name}-said">{current === 'custom' ? (said[name] ?? '') : ''}</span>
+	</div>
 	{#if max}
 		<div class="field">
 			<span class="label" aria-hidden="true">{t('settings.users.ageRating')}</span>
@@ -555,13 +603,16 @@
 		<form onsubmit={saveEdit}>
 			<h2 id="h-edit" class="h2">{t('settings.users.change2', { name: editing.name })}</h2>
 			{#if isOwner}
-				<fieldset class="field">
-					<legend class="label">{t('settings.users.role')}</legend>
-					<div class="row">
-						<label class="checkline"><input type="radio" name="edit-role" value="member" bind:group={editRole} onchange={() => { editPerms = [...defaults.member]; editMax = ''; }} /> {t('settings.users.member')}</label>
-						<label class="checkline"><input type="radio" name="edit-role" value="admin" bind:group={editRole} onchange={() => { editPerms = [...defaults.admin]; editMax = ''; }} /> {t('settings.users.admin')}</label>
-					</div>
-				</fieldset>
+				<div class="field">
+					<span class="label" aria-hidden="true">{t('settings.users.role')}</span>
+					<SegmentedControl
+						label={t('settings.users.role')}
+						testid="edit-role"
+						options={[{ value: 'member', label: t('settings.users.member') }, { value: 'admin', label: t('settings.users.admin') }]}
+						bind:value={editRole}
+						onchange={(r) => { mixes['edit-preset'] = null; editPerms = [...defaults[r]]; editMax = ''; }}
+					/>
+				</div>
 			{/if}
 			{#if editRole === 'member'}
 				{@render presetPicker(editPerms, (next) => (editPerms = next), 'edit-preset', editMax, (m) => (editMax = m))}
@@ -570,7 +621,7 @@
 				<legend class="label">{t('settings.users.may')}</legend>
 				{#each grantable as p (p)}
 					<label class="checkline"
-						><input type="checkbox" checked={editPerms.includes(p)} onchange={(e) => (editPerms = toggle(editPerms, p, e.currentTarget.checked))} />
+						><input type="checkbox" checked={editPerms.includes(p)} onchange={(e) => { const next = toggle(editPerms, p, e.currentTarget.checked); switched('edit-preset', editPerms, next, editMax); editPerms = next; }} />
 						{permWord[p]}</label
 					>
 				{/each}
@@ -599,6 +650,9 @@
 			{:else if limits[editing.id]?.no_limit}
 				<p class="hint">{t('settings.users.noWeeklyLimit', { name: editing.name })}</p>
 			{/if}
+			{#if limits[editing.id] && qualityLines}
+				<QualityPicker lines={qualityLines} bind:value={editQualities} />
+			{/if}
 			<HiddenCard people={names} userId={editing.id} />
 			<div class="row end">
 				<Button variant="plain" type="button" onclick={() => dialog?.close()}>{t('settings.users.cancel')}</Button>
@@ -612,21 +666,22 @@
 	<div id="invite-card">
 		<p class="small muted" style="margin-bottom: var(--s-4)">{t('settings.users.oneTime')}</p>
 		<form class="invite" onsubmit={makeInvite}>
-			<fieldset class="field">
-				<legend class="label">{t('settings.users.role')}</legend>
-				<div class="row">
-					<label class="checkline"><input type="radio" name="role" checked={role === 'member'} onchange={() => pickRole('member')} /> {t('settings.users.member')}</label>
-					{#if isOwner}
-						<label class="checkline"><input type="radio" name="role" checked={role === 'admin'} onchange={() => pickRole('admin')} /> {t('settings.users.admin')}</label>
-					{/if}
-				</div>
-			</fieldset>
+			<div class="field">
+				{#if roleOptions.length > 1}
+					<span class="label" aria-hidden="true">{t('settings.users.role')}</span>
+					<SegmentedControl label={t('settings.users.role')} testid="invite-role" options={roleOptions} value={role} onchange={pickRole} />
+				{:else}
+					<!-- Only one role to give: a plain value, not a bar with nothing to pick. -->
+					<span class="label">{t('settings.users.role')}</span>
+					<span class="value" data-testid="invite-role">{roleOptions[0].label}</span>
+				{/if}
+			</div>
 			{@render presetPicker(perms, (next) => (perms = next), 'invite-preset', maxRating, (m) => (maxRating = m))}
 			<fieldset class="field">
 				<legend class="label">{t('settings.users.may')}</legend>
 				{#each grantable as p (p)}
 					<label class="checkline"
-						><input type="checkbox" checked={perms.includes(p)} onchange={(e) => (perms = toggle(perms, p, e.currentTarget.checked))} />
+						><input type="checkbox" checked={perms.includes(p)} onchange={(e) => { const next = toggle(perms, p, e.currentTarget.checked); switched('invite-preset', perms, next, maxRating); perms = next; }} />
 						{permWord[p]}</label
 					>
 				{/each}
@@ -676,20 +731,38 @@
 		padding: 0;
 		margin: 0 0 var(--s-3);
 	}
-	/* A floated legend is a normal child, so it takes the label column like other Field rows. */
-	.invite fieldset.field > legend {
-		float: left;
+	/* A legend starts where the plain labels of the bars above it start. */
+	legend {
+		padding: 0;
 	}
-	.presets { align-items: center; }
-	.soon { color: var(--text-muted); }
-	.soon .chip { margin-left: 6px; }
-	.custom { font-weight: 600; }
 	.invite :global(button[type='submit']) {
 		margin-top: var(--s-3);
 	}
-	.person {
-		flex-wrap: wrap;
+	/* A legend is not a flex child of the column, so float it to keep the label gap other rows have. */
+	.invite fieldset.field > legend {
+		float: left;
 	}
+	.value {
+		font: var(--t-callout);
+		font-weight: 400;
+		color: var(--text);
+	}
+	/* The Custom hint always holds its lines, so the switches under it stay put when it shows. */
+	.unseen {
+		visibility: hidden;
+	}
+	/* A phone has no room to hold those lines: there the hint is only read out. */
+	@media (max-width: 767px) {
+		.mix {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
+		}
+	}
+	.person,
 	.acts {
 		flex-wrap: wrap;
 	}
@@ -701,16 +774,18 @@
 		border-radius: var(--r-modal);
 		padding: var(--s-6);
 	}
-	.dlg::backdrop {
-		background: var(--scrim);
-	}
-	.dlg h2 {
-		margin-bottom: var(--s-4);
-	}
+	.dlg::backdrop { background: var(--scrim); }
+	.dlg h2 { margin-bottom: var(--s-4); }
 	.limit-row {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
+		align-items: end;
 		gap: var(--s-2);
+		margin-bottom: var(--s-2);
+	}
+	/* The three boxes line up: no stacked-field gap between them. */
+	.limit-row > :global(.field) {
+		margin: 0;
 	}
 	@media (max-width: 600px) {
 		.limit-row {

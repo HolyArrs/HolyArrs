@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "Els dos camins són iguals, així que aquest parell no canvia res. Tot i així indica a HolyArrs on són els fitxers d'aquest client, així que el podeu mantenir.",
 	"settings.downloaders.change": "Canvia {name}",
 	"settings.downloaders.whichApp": "Quina app",
-	"settings.downloaders.torrents": "(torrents)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torrents",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "El més usat",
 	"settings.downloaders.name": "Nom",
 	"settings.downloaders.address": "Adreça",
 	"settings.downloaders.addressHint": "La seva pàgina web. Per a SABnzbd, fes servir la IP o permet el nom de host de HolyArrs.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Categoria després d'importar",
 	"settings.downloaders.categoryAfterImportHint": "Quan un torrent s'ha importat, HolyArrs el mou a aquesta categoria. Deixa-ho buit per mantenir-lo a la categoria principal.",
 	"settings.downloaders.ownOnly": "Mostra només els elements d'HolyArrs",
-	"settings.downloaders.ownOnlyHint": "Els elements d'altres aplicacions en aquest gestor de baixades queden amagats i HolyArrs no els canvia."
+	"settings.downloaders.ownOnlyHint": "Els elements d'altres aplicacions en aquest gestor de baixades queden amagats i HolyArrs no els canvia.",
+	"settings.downloaders.state.notAnswering": "No respon",
+	"settings.downloaders.state.paused": "En pausa",
+	"settings.downloaders.state.resting": "En pausa breu",
+	"settings.downloaders.state.signInRefused": "Inici de sessió rebutjat",
+	"settings.downloaders.state.working": "Funcionant"
 }

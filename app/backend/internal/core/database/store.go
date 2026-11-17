@@ -79,7 +79,14 @@ type Store struct {
 	hookMu  sync.RWMutex
 	hooks   []func(Event)
 	filesMu sync.Mutex
+	// checked are the copies from before an update that this Open made or
+	// reused and whose update then passed its checks.
+	checked []string
 }
+
+// CheckedUpdateCopies returns the copies from before an update that this
+// Open made or reused and whose update passed its checks.
+func (s *Store) CheckedUpdateCopies() []string { return s.checked }
 
 // NotWritable wraps err, from writing in the config folder dir, as
 // ErrNotWritable when the reason is a plain one a person fixes (read-only,
@@ -175,11 +182,20 @@ func Open(dir string, opt Options) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := migrate(s.main, mainPath, mainMs, mainCur, backups, "main", opt.OnUpdating); err != nil {
-		return nil, err
-	}
-	if err := migrate(s.events, evPath, evMs, evCur, backups, "events", opt.OnUpdating); err != nil {
-		return nil, err
+	for _, x := range []struct {
+		w     *writer
+		path  string
+		ms    []migration
+		cur   int
+		label string
+	}{{s.main, mainPath, mainMs, mainCur, "main"}, {s.events, evPath, evMs, evCur, "events"}} {
+		pinned, err := migrate(x.w, x.path, x.ms, x.cur, backups, x.label, opt.OnUpdating)
+		if err != nil {
+			return nil, err
+		}
+		if pinned != "" {
+			s.checked = append(s.checked, pinned)
+		}
 	}
 	ok = true
 	return s, nil

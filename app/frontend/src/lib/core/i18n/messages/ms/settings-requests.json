@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Tunjukkan kepada orang",
 	"settings.requests.choiceMain": "{rules} · salinan utama tajuk",
 	"settings.requests.choiceOwn": "{rules} · disimpan sebagai salinan sendiri",
-	"settings.requests.choiceNotReady": "Ditawarkan apabila kualiti 4K disediakan di atas"
+	"settings.requests.choiceNotReady": "Ditawarkan apabila kualiti 4K disediakan di atas",
+	"settings.requests.approvals": "Kelulusan",
+	"settings.requests.autoApprove": "Luluskan permintaan secara automatik",
+	"settings.requests.autoApproveNote": "Mati = permintaan mereka menunggu anda. Tajuk daripada senarai tontonan Plex mengikut suis yang sama.",
+	"settings.requests.ownerTag": "Pemilik",
+	"settings.requests.choiceAdd": "Tambah kualiti",
+	"settings.requests.choiceNew": "Kualiti baharu",
+	"settings.requests.choiceLabel": "Nama anda",
+	"settings.requests.choiceSeen": "Orang lain nampak"
 }

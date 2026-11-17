@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "নেই",
 	"settings.thisApp.needsRestart": "রিস্টার্ট লাগবে। HOLYARRS_URL_BASE বা -url-base এটি বদলে দেয়।",
 	"settings.thisApp.save": "সেভ করুন",
-	"settings.thisApp.licence": "HolyArrs AGPL-3.0 লাইসেন্সের অধীনে একটি ফ্রি সফটওয়্যার।"
+	"settings.thisApp.licence": "HolyArrs AGPL-3.0 লাইসেন্সের অধীনে একটি ফ্রি সফটওয়্যার।",
+	"settings.thisApp.proxy": "প্রক্সি",
+	"settings.thisApp.proxyDesc": "বাইরের কল প্রক্সির মাধ্যমে পাঠান। ব্লক ও হোম নেটওয়ার্কের নিয়ম আসল গন্তব্যে প্রযোজ্য থাকে।",
+	"settings.thisApp.proxyType": "ধরন",
+	"settings.thisApp.proxyOff": "বন্ধ",
+	"settings.thisApp.proxyHost": "হোস্ট",
+	"settings.thisApp.proxyPort": "পোর্ট",
+	"settings.thisApp.proxyUser": "ব্যবহারকারীর নাম",
+	"settings.thisApp.proxyPasswordLabel": "পাসওয়ার্ড",
+	"settings.thisApp.proxyPasswordKept": "সংরক্ষিত পাসওয়ার্ড রাখতে খালি রাখুন",
+	"settings.thisApp.proxyBypass": "এগুলোর জন্য প্রক্সি এড়ান",
+	"settings.thisApp.proxyBypassHint": "নাম, ঠিকানা বা রেঞ্জ, কমা দিয়ে আলাদা। *.example.com এর নিচের সব নাম ধরে।",
+	"settings.thisApp.proxyBypassLocal": "স্থানীয় ঠিকানার জন্য প্রক্সি এড়ান",
+	"settings.thisApp.proxyBypassLocalHint": "এই মেশিন ও আপনার হোম নেটওয়ার্ক সরাসরি যুক্ত হয়",
+	"settings.thisApp.proxySaved": "প্রক্সি সংরক্ষিত",
+	"settings.thisApp.proxyOffSaved": "প্রক্সি বন্ধ"
 }

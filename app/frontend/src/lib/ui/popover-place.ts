@@ -24,3 +24,12 @@ export function placePanel(
 	const originX = leftEdge ? 'left' : 'right';
 	return up ? { left, bottom: vh - b.top + 6, up, maxHeight, originX } : { left, top: b.bottom + 6, up, maxHeight, originX };
 }
+
+/** Beside a row instead of under it: 12px past its end edge (its start edge in right-to-left), top aligned, slid up to stay on screen. */
+export function placeSide(row: Rect, width: number, h: number, view: { width: number; height: number }, rtl: boolean): { left: number; top: number; maxHeight?: number; originX: 'left' | 'right' } {
+	const w = Math.min(width, view.width - 24);
+	const left = Math.max(8, Math.min(rtl ? row.left - 12 - w : row.right + 12, view.width - 8 - w));
+	const top = Math.max(8, Math.min(row.top - 8, view.height - 8 - h));
+	const maxHeight = h > view.height - 16 ? view.height - 16 : undefined;
+	return { left, top, maxHeight, originX: rtl ? 'right' : 'left' };
+}

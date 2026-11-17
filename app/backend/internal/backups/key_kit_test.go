@@ -76,9 +76,10 @@ func keyKitServer(t *testing.T, m *Manager) *httptest.Server {
 // until a kit matching the current key has been downloaded (also after a
 // restart, and again once the key changes).
 func TestKeyKitDownload(t *testing.T) {
-	m, s, _, _ := setup(t)
+	m, s, c, _ := setup(t)
 	key := labKey(11)
 	m.Key = key
+	saveSecretAt(t, s, c.t)
 	srv := keyKitServer(t, m)
 
 	if st := listKeyKit(t, srv.URL); !st.Needed || st.Fingerprint != keyPrint(key) {

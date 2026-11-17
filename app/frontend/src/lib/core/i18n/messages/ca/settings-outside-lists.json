@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Les teves llistes de Trakt no es poden llegir fins que no es defineixi.",
 	"settings.outsideLists.replaceKey": "Substitueix la clau de Trakt",
 	"settings.outsideLists.pasteKey": "Enganxa la clau de Trakt",
+	"settings.outsideLists.mdblistKey": "Clau de MDBList",
+	"settings.outsideLists.mdblistInfo": "Opcional. Amb la teva clau d'API de MDBList, les llistes de MDBList es llegeixen a través de l'API de MDBList; sense, a través del seu enllaç públic. Es guarda xifrada i és la mateixa clau que fan servir les valoracions externes en el mode Les teves pròpies claus.",
+	"settings.outsideLists.pasteMdblistKey": "Enganxa la teva clau d'API de MDBList",
+	"settings.outsideLists.replaceMdblistKey": "Substitueix la clau de MDBList",
+	"settings.outsideLists.removeMdblistKey": "Elimina la clau",
+	"settings.outsideLists.mdblistKeySaved": "Clau de MDBList desada",
+	"settings.outsideLists.mdblistKeyRemoved": "Clau de MDBList eliminada; les llistes fan servir el seu enllaç públic",
 	"settings.outsideLists.replaceVip": "Substitueix el testimoni d'accés VIP",
 	"settings.outsideLists.vip": "Testimoni d'accés VIP (opcional)",
 	"settings.outsideLists.vipHint": "Afegeix una pestanya de Trakt a les pàgines dels títols: puntuació, espectadors i comentaris",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Afegeix a la llista de no afegir mai",
 	"settings.outsideLists.showDot": "sèrie ·",
 	"settings.outsideLists.takeOff": "Treu {name}",
-	"settings.outsideLists.empty": "Buida"
+	"settings.outsideLists.empty": "Encara no hi ha res en aquesta llista"
 }

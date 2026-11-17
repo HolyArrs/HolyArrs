@@ -175,6 +175,10 @@ func (h *Health) ask(ctx context.Context) error {
 	}
 	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4<<10))
 	_ = resp.Body.Close()
+	// A busy answer that names a wait is the server pacing us, not an outage.
+	if (resp.StatusCode == http.StatusServiceUnavailable || resp.StatusCode == http.StatusTooManyRequests) && resp.Header.Get("Retry-After") != "" {
+		return nil
+	}
 	if resp.StatusCode != http.StatusOK {
 		return errors.New("metadata server not ready")
 	}

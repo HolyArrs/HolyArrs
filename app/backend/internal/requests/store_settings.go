@@ -10,6 +10,9 @@ const (
 	setPersonLimitSQL2 = `INSERT INTO user_ask_settings (user_id, per_week, movies_per_week, shows_per_week, music_per_week) VALUES (?, NULL, ?, ?, ?)
 			ON CONFLICT (user_id) DO UPDATE SET per_week = NULL, movies_per_week = excluded.movies_per_week,
 				shows_per_week = excluded.shows_per_week, music_per_week = excluded.music_per_week`
+	personQualitiesSQL    = "SELECT qualities FROM user_ask_settings WHERE user_id = ?"
+	setPersonQualitiesSQL = `INSERT INTO user_ask_settings (user_id, qualities) VALUES (?, ?)
+			ON CONFLICT (user_id) DO UPDATE SET qualities = excluded.qualities`
 	readTargetsSQL = "SELECT email, discord_id, new_episodes = 1 FROM user_ask_settings WHERE user_id = ?"
 	saveTargetsSQL = `INSERT INTO user_ask_settings (user_id, email, discord_id) VALUES (?, ?, ?)
 			ON CONFLICT (user_id) DO UPDATE SET email = excluded.email, discord_id = excluded.discord_id`

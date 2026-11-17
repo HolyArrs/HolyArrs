@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "வென்றது: {name}",
 	"ui.wikiFacts.nominated": "பரிந்துரைக்கப்பட்டது: {name}",
 	"ui.wikiFacts.andMore": "மேலும் {count}",
-	"ui.pageLoader.loading": "ஏற்றுகிறது"
+	"ui.pageLoader.loading": "ஏற்றுகிறது",
+	"ui.connectHelp.link": "சரிசெய்வது எப்படி",
+	"ui.ask.remove": "அகற்று",
+	"ui.ask.restore": "மீட்டமை",
+	"ui.ask.stop": "நிறுத்து",
+	"ui.ask.revoke": "திரும்பப் பெறு",
+	"ui.ask.replace": "மாற்று",
+	"ui.ask.unlink": "இணைப்பை நீக்கு",
+	"ui.ask.turnOff": "அணை",
+	"ui.ask.markFailed": "தோல்வி எனக் குறி",
+	"ui.ask.reset": "மீட்டமைப்பு",
+	"ui.ask.import": "இறக்குமதி"
 }

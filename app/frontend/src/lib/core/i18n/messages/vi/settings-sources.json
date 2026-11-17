@@ -7,6 +7,7 @@
 	"settings.sources.title": "Nguồn",
 	"settings.sources.add": "Thêm Nguồn",
 	"settings.sources.lead": "Ưu tiên 1 đi trước. Nguồn bị lỗi sẽ bị bỏ qua tối đa sáu giờ. Với các trang không có nguồn cấp, hãy thêm Jackett hoặc Prowlarr dưới dạng nguồn cấp Torznab.",
+	"settings.sources.builtIn": "Các trang tích hợp không cần Jackett hay Prowlarr: {sites}. Chọn {site} trong {kind}.",
 	"settings.sources.change": "Sửa {name}",
 	"settings.sources.name": "Tên",
 	"settings.sources.feedKind": "Loại nguồn cấp",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Lưu",
 	"settings.sources.cancel": "Hủy",
 	"settings.sources.none": "Chưa có Nguồn",
-	"settings.sources.noneText": "Hãy thêm nguồn cấp Torznab hoặc Newznab, hoặc Jackett hay Prowlarr.",
+	"settings.sources.noneText": "Hãy thêm trang tích hợp, nguồn cấp Torznab hoặc Newznab, hoặc Jackett hay Prowlarr.",
 	"settings.sources.rowTitle": "{url} · ưu tiên {priority} · {uses}",
 	"settings.sources.priorityUses": "Ưu tiên {priority} · {uses}",
 	"settings.sources.keyIs": "khóa {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Trang",
 	"settings.sources.addressSite": "Địa chỉ riêng của trang. Chỉ đổi khi trang đã chuyển đi.",
 	"settings.sources.siteKeyLabel": "Cookie hoặc khóa RSS",
-	"settings.sources.siteKeyHint": "Từ tài khoản của bạn: uid và pass trong cookie trình duyệt, hoặc u và tp trong liên kết RSS. Được lưu đã mã hóa."
+	"settings.sources.siteKeyHint": "Từ tài khoản của bạn: uid và pass trong cookie trình duyệt, hoặc u và tp trong liên kết RSS. Được lưu đã mã hóa.",
+	"settings.sources.sendTo": "Gửi bản tải tới",
+	"settings.sources.sendToAny": "Trình tải bất kỳ",
+	"settings.sources.sendToHint": "Mọi thứ chọn từ Nguồn này chỉ gửi tới trình tải này. Nếu nó ngừng, sẽ chờ.",
+	"settings.sources.sendToGone": "Trình tải đã chọn đã bị xoá. Bản tải từ Nguồn này giờ gửi tới trình tải bất kỳ."
 }

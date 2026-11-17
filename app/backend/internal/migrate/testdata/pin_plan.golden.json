@@ -162,6 +162,14 @@
             "gate_delay_days": 7,
             "qualities": {
               "s": "s"
+            },
+            "old_episodes": {
+              "s": [
+                {
+                  "season": 0,
+                  "number": 0
+                }
+              ]
             }
           },
           "never_add": {

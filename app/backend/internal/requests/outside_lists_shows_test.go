@@ -2,6 +2,7 @@ package requests
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -255,6 +256,9 @@ func TestSync_TMDBShowListUsesItsSeasonChoice(t *testing.T) {
 	if got := keptSeasons(t, e.s, ferry.ID); !got[1] || got[2] || got[3] {
 		t.Fatalf("first season only: %+v", got)
 	}
+	if got := addedFromList(t, e.s, ferry.ID); got != "Shows" {
+		t.Fatalf("title_added list_name %q", got)
+	}
 	// With search on add, the folder scan carries the whole-show search.
 	var params string
 	if err := e.s.Read().QueryRow("SELECT params FROM jobs WHERE kind = ? AND json_extract(subject, '$.id') = ?", library.KindScanTitle, ferry.ID).Scan(&params); err != nil {
@@ -289,6 +293,9 @@ func TestSync_TraktShowListAndWatchlist(t *testing.T) {
 	if got := keptSeasons(t, e.s, reed.ID); got[1] || !got[3] {
 		t.Fatalf("latest season only: %+v", got)
 	}
+	if got := addedFromList(t, e.s, reed.ID); got != "Trakt shows" {
+		t.Fatalf("title_added list_name %q", got)
+	}
 	var jobs int
 	_ = e.s.Read().QueryRow("SELECT count(*) FROM jobs WHERE kind = ? AND params LIKE '%search_show%'", library.KindScanTitle).Scan(&jobs)
 	if jobs != 0 {
@@ -301,4 +308,14 @@ func TestSync_TraktShowListAndWatchlist(t *testing.T) {
 	if res, err := e.svc.Sync(ctx, w.ID, domain.System); err != nil || res.Already != 2 || res.Added != 0 {
 		t.Fatalf("watchlist %+v %v", res, err)
 	}
+}
+
+// addedFromList is the list name a title's title_added History entry carries.
+func addedFromList(t *testing.T, s *database.Store, titleID int64) string {
+	t.Helper()
+	var name sql.NullString
+	if err := s.ReadEvents().QueryRow("SELECT json_extract(data, '$.list_name') FROM events WHERE kind = ? AND title_id = ?", domain.EventTitleAdded, titleID).Scan(&name); err != nil {
+		t.Fatal(err)
+	}
+	return name.String
 }

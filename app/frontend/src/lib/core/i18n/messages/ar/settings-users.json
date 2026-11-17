@@ -83,6 +83,7 @@
 	"settings.users.preset": "إعداد جاهز",
 	"settings.users.comingSoon": "قريبًا",
 	"settings.users.custom": "مخصص",
+	"settings.users.customHint": "هذه تركيبتك الخاصة من المفاتيح أدناه. اختيار إعداد جاهز يستبدلها؛ اختر «مخصص» مرة أخرى لاسترجاعها.",
 	"settings.users.ageRating": "التصنيف العمري",
 	"settings.users.newPasswordFor": "كلمة مرور جديدة لـ {name}",
 	"settings.users.passwordNote": "استخدم هذا عندما ينسى {name} كلمة مروره. يُسجَّل خروجه في كل مكان ويدخل من جديد بالكلمة الجديدة. أخبره بها شخصيًا.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "مثلًا أمي",
 	"settings.users.days": "أيام صلاحية الرابط",
 	"settings.users.makeInvite": "أنشئ رابط دعوة",
-	"settings.users.permAuto4k": "طلبات 4K يُوافَق عليها دون انتظار"
+	"settings.users.permAuto4k": "طلبات 4K يُوافَق عليها دون انتظار",
+	"settings.users.serverAccount": "حساب الخادم",
+	"settings.users.pickAccount": "اختر حسابًا على خادم وسائط",
+	"settings.users.accountLinked": "تم الربط مع {name}",
+	"settings.users.removedOnServer": "حُذف من خادم {word}، لذا أُوقف هنا",
+	"settings.users.delete": "حذف",
+	"settings.users.deleteName": "حذف {name}",
+	"settings.users.confirmDelete": "حذف {name}؟ سيُسجَّل خروجه نهائيًا وتُحذف مفاتيحه. تبقى طلباته وتظهر باسم شخص محذوف.",
+	"settings.users.deleteYes": "حذف الشخص",
+	"settings.users.keep": "إبقاء",
+	"settings.users.deleted": "تم حذف {name}",
+	"settings.users.couldntDelete": "تعذّر الحذف",
+	"settings.users.confirmDeleteKeys": "أي مفاتيح Seerr أنشأها تتوقف عن العمل للجميع حتى يُنشأ مفتاح جديد.",
+	"settings.users.qualities": "الجودات",
+	"settings.users.qualitiesHint": "يمكنهم اختيار المفعّل فقط. عند تفعيل الكل، تُعرض الجديدة أيضًا."
 }

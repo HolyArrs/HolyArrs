@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "tmdb:693134 や tvmaze:82 のような ID を貼り付けてください。",
 	"discover.search.orDescribeItSuch": "または「2014 年のロボットが出てくる宇宙の映画」のように説明してください。",
 	"discover.search.lookEverywhere": "すべてから探す",
-	"discover.search.searchIndexersFor": "インデクサーで「{searched}」を検索",
+	"discover.search.searchIndexersFor": "ソースを確認",
 	"discover.search.topMatches": "上位の一致",
 	"discover.people.goToTheFilmography": "フィルモグラフィへ移動",
 	"discover.people.filmography": "フィルモグラフィ",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "このバージョンに合いません",
 	"discover.leftovers.reason.movie_has_file": "映画にはすでにファイルがあります",
 	"discover.leftovers.reason.replaced_by_hand": "別のファイルに置き換えられました",
-	"discover.leftovers.reason.unmatched": "手動で照合を外しました"
+	"discover.leftovers.reason.unmatched": "手動で照合を外しました",
+	"discover.searchSections.genres": "ジャンル",
+	"discover.searchSections.moods": "気分",
+	"discover.searchSections.stories": "ストーリーとテーマ",
+	"discover.searchSections.worlds": "世界観と舞台",
+	"discover.searchSections.eras": "時代",
+	"discover.searchSections.world": "世界の作品",
+	"discover.searchSections.collections": "コレクション",
+	"discover.popularRail.out": "公開",
+	"discover.popularRail.comingDay": "近日",
+	"discover.titleLibrary.turnShowOnHint": "探し始めるには番組をオンにしてください。",
+	"discover.leftovers.reason.seasons_differ": "元のアプリの TMDB 番号でのみ見つかりました。同じ番組か確認してから、ファイルを手動で割り当ててください"
 }

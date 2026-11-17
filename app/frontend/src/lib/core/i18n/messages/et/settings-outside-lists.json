@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Sinu Trakti nimekirju ei saa lugeda, kuni see on määramata.",
 	"settings.outsideLists.replaceKey": "Asenda Trakti võti",
 	"settings.outsideLists.pasteKey": "Kleebi Trakti võti",
+	"settings.outsideLists.mdblistKey": "MDBListi võti",
+	"settings.outsideLists.mdblistInfo": "Valikuline. Sinu MDBListi API võtmega loetakse MDBListi nimekirju MDBListi API kaudu; ilma selleta nende avaliku lingi kaudu. See salvestatakse krüptitult ja see on sama võti, mida välised hinnangud kasutavad režiimis Sinu enda võtmed.",
+	"settings.outsideLists.pasteMdblistKey": "Kleebi oma MDBListi API võti",
+	"settings.outsideLists.replaceMdblistKey": "Asenda MDBListi võti",
+	"settings.outsideLists.removeMdblistKey": "Eemalda võti",
+	"settings.outsideLists.mdblistKeySaved": "MDBListi võti salvestatud",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBListi võti eemaldatud; nimekirjad kasutavad oma avalikku linki",
 	"settings.outsideLists.replaceVip": "Asenda VIP ligipääsutunnus",
 	"settings.outsideLists.vip": "VIP ligipääsutunnus (valikuline)",
 	"settings.outsideLists.vipHint": "Lisab pealkirjalehtedele Trakti vahekaardi: hinne, vaatajad ja kommentaarid",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Lisa mitte kunagi lisatavate nimekirja",
 	"settings.outsideLists.showDot": "sari ·",
 	"settings.outsideLists.takeOff": "Eemalda nimekirjast: {name}",
-	"settings.outsideLists.empty": "Tühi"
+	"settings.outsideLists.empty": "Selles loendis pole veel midagi"
 }

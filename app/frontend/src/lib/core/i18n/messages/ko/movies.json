@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "이 버전의 선택 규칙",
 	"movies.versions.folderLabel": "이 버전의 라이브러리 폴더",
 	"movies.versions.cancel": "취소",
-	"movies.versions.addButton": "버전 추가"
+	"movies.versions.addButton": "버전 추가",
+	"movies.versions.setEdition": "에디션 설정",
+	"movies.versions.editionFileHint": "이 파일이 어떤 에디션인지 입력하세요. 예: Theatrical, Directors Cut. 비워 두면 지워집니다.",
+	"movies.versions.unprotectConfirm": "{label}의 보호를 해제할까요? 더 좋은 사본이 다시 이 파일을 대체할 수 있습니다.",
+	"movies.versions.editionChars": "사용할 수 없음:",
+	"movies.versions.editionInvalid": "이 에디션은 사용할 수 없습니다. 짧게 줄이고(악센트가 있는 문자와 라틴 문자가 아닌 문자는 공간을 더 차지합니다), 위에 나열된 문자는 빼고, 마침표로 끝내지 마세요.",
+	"movies.versions.editionDevice": "{name}은(는) Windows가 장치용으로 예약한 이름이라 사용할 수 없습니다. 다른 이름을 입력하세요."
 }

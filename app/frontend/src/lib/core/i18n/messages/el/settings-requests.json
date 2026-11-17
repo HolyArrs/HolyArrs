@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Εμφάνιση στους χρήστες",
 	"settings.requests.choiceMain": "{rules} · το κύριο αντίγραφο του τίτλου",
 	"settings.requests.choiceOwn": "{rules} · κρατιέται ως ξεχωριστό αντίγραφο",
-	"settings.requests.choiceNotReady": "Προσφέρεται μόλις οριστεί ποιότητα 4K παραπάνω"
+	"settings.requests.choiceNotReady": "Προσφέρεται μόλις οριστεί ποιότητα 4K παραπάνω",
+	"settings.requests.approvals": "Εγκρίσεις",
+	"settings.requests.autoApprove": "Αυτόματη έγκριση αιτημάτων",
+	"settings.requests.autoApproveNote": "Ανενεργό = τα αιτήματά τους σας περιμένουν. Οι τίτλοι της λίστας Plex ακολουθούν τον ίδιο διακόπτη.",
+	"settings.requests.ownerTag": "Κάτοχος",
+	"settings.requests.choiceAdd": "Προσθήκη ποιότητας",
+	"settings.requests.choiceNew": "Νέα ποιότητα",
+	"settings.requests.choiceLabel": "Το όνομά σας",
+	"settings.requests.choiceSeen": "Βλέπουν οι άλλοι"
 }

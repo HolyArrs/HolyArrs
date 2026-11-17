@@ -4,7 +4,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
 const banned = [
-	'Monitored', 'Activity', 'Wanted', 'Cutoff', 'Quality Profile', 'Root Folder', 'Download Client',
+	'Monitored', 'Wanted', 'Cutoff', 'Quality Profile', 'Root Folder', 'Download Client',
 	'Interactive Search', 'Manual Import', 'Grabbed', 'Connections', 'Discover', 'Series'
 ];
 const roots = ['src', 'dist'];

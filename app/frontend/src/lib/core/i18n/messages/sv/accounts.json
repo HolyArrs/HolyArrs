@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Det gick inte att spara språket",
 	"accounts.language.count.one": "1 språk",
 	"accounts.language.count.other": "{n} språk",
-	"accounts.account.watchEveryone": "Ägaren har slagit på det här för alla. Stäng av båda för att stoppa det."
+	"accounts.account.watchEveryone": "Ägaren har slagit på det här för alla. Stäng av båda för att stoppa det.",
+	"accounts.watch.title": "Sedd-markeringar",
+	"accounts.watch.hint": "Länka ditt konto på en mediaserver här så att Biblioteket visar vad du har sett.",
+	"accounts.watch.as": "{server}, som {name}",
+	"accounts.watch.nameOn": "Namn på {server}",
+	"accounts.watch.passwordOnce": "Ditt lösenord går bara till {server} och sparas inte.",
+	"accounts.watch.linked": "Länkad till {name} på {server}",
+	"accounts.watch.unlinked": "Länk borttagen",
+	"accounts.login.importPaused": "Din inloggning tog slut, så importen är pausad. Logga in, öppna Importera ett bibliotek och tryck på Skanna för att fortsätta."
 }

@@ -7,6 +7,7 @@
 	"settings.sources.title": "المصادر",
 	"settings.sources.add": "أضف مصدرًا",
 	"settings.sources.lead": "الأولوية 1 تأتي أولًا. المصدر الذي يخفق يُتخطى لمدة تصل إلى ست ساعات. للمواقع التي بلا خلاصة، أضف Jackett أو Prowlarr كخلاصة Torznab.",
+	"settings.sources.builtIn": "لا حاجة إلى Jackett أو Prowlarr للمواقع المدمجة: {sites}. اختر {site} ضمن {kind}.",
 	"settings.sources.change": "تغيير {name}",
 	"settings.sources.name": "الاسم",
 	"settings.sources.feedKind": "نوع الخلاصة",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "حفظ",
 	"settings.sources.cancel": "إلغاء",
 	"settings.sources.none": "لا توجد مصادر",
-	"settings.sources.noneText": "أضف خلاصة Torznab أو Newznab، أو Jackett أو Prowlarr.",
+	"settings.sources.noneText": "أضف موقعًا مدمجًا، أو خلاصة Torznab أو Newznab، أو Jackett أو Prowlarr.",
 	"settings.sources.rowTitle": "{url} · الأولوية {priority} · {uses}",
 	"settings.sources.priorityUses": "الأولوية {priority} · {uses}",
 	"settings.sources.keyIs": "المفتاح {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "الموقع",
 	"settings.sources.addressSite": "عنوان الموقع نفسه. غيّره فقط إذا انتقل الموقع.",
 	"settings.sources.siteKeyLabel": "ملف تعريف الارتباط أو مفتاح RSS",
-	"settings.sources.siteKeyHint": "من حسابك الخاص: uid وpass من ملف تعريف الارتباط في المتصفح، أو u وtp من رابط RSS الخاص بك. يُحفظ مشفّرًا."
+	"settings.sources.siteKeyHint": "من حسابك الخاص: uid وpass من ملف تعريف الارتباط في المتصفح، أو u وtp من رابط RSS الخاص بك. يُحفظ مشفّرًا.",
+	"settings.sources.sendTo": "أرسل التنزيلات إلى",
+	"settings.sources.sendToAny": "أي برنامج تنزيل",
+	"settings.sources.sendToHint": "كل ما يُختار من هذا المصدر يذهب إلى برنامج التنزيل هذا فقط. إن كان متوقفًا، ينتظر.",
+	"settings.sources.sendToGone": "أُزيل برنامج التنزيل المختار. تنزيلات هذا المصدر تذهب الآن إلى أي برنامج تنزيل."
 }

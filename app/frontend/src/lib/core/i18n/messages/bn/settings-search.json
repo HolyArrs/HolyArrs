@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "রিলিজের আগে পোস্ট করা রিলিজ বাতিল করুন",
 	"settings.search.refuseEarlyHint": "সম্ভাব্য ভুয়া। রিলিজ নিজে বাছুন-এ এগুলো সতর্কতাসহ এখনো দেখায়।",
 	"settings.search.refuseTiny": "আকার ও ফাইলের ধরন দেখে ভুয়া বাতিল করুন",
-	"settings.search.refuseTinyHint": "খুব ছোট রিলিজ, খালি ফাইল এবং HD নামের নিচে .wmv বা .asf",
+	"settings.search.refuseTinyHint": "খুব ছোট রিলিজ, খালি ফাইল, মাঝপথে কেটে যাওয়া ভিডিও এবং HD নামের নিচে .wmv বা .asf",
 	"settings.search.grace": "একটি রিলিজ কত ঘণ্টা আগে আসতে পারে",
 	"settings.search.graceHint": "টাইম জোনের জন্য। ডিফল্ট ২৪।",
 	"settings.search.floors": "ইমপোর্টের সময় ফাইলের আকার দেখুন",

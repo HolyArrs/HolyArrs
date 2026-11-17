@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { dragScroll } from '#lib/ui/drag-scroll.ts';
 	import { dayOffset, railLabel, type RailDay, type RailItem } from './popular.ts';
 	import type { Snippet } from 'svelte';
@@ -9,6 +10,14 @@
 
 	const today = new Date();
 	const keyOf = (it: RailItem) => `${it.kind}:${it.tmdb_id}`;
+	// The server says what happens in English (On Netflix, Out, Coming); those show in the app's language.
+	function whatWords(w: string): string {
+		const on = /^On (.+)$/.exec(w);
+		if (on) return t('discover.popular.on', { name: on[1] });
+		if (w === 'Out') return t('discover.popularRail.out');
+		if (w === 'Coming') return t('discover.popularRail.comingDay');
+		return serverWords(w);
+	}
 </script>
 
 {#if days.length > 0}
@@ -27,7 +36,7 @@
 						{#each d.items as it (keyOf(it))}
 							<li class="t">
 								{@render card(it)}
-								<span class="what">{it.what}{#if it.upcoming && it.in_library} {t('discover.popularRail.coming')}{/if}</span>
+								<span class="what">{whatWords(it.what)}{#if it.upcoming && it.in_library} {t('discover.popularRail.coming')}{/if}</span>
 							</li>
 						{/each}
 					</ul>
@@ -53,8 +62,9 @@
 	.track::-webkit-scrollbar { display: none; }
 	.day { flex: none; display: flex; gap: 14px; padding: 4px 16px 4px 8px; scroll-snap-align: start; border-right: 0.5px solid var(--rail-line); }
 	.day:last-child { border-right: 0; }
-	.when { flex: none; width: 74px; display: flex; flex-direction: column; gap: 6px; padding-top: 2px; }
-	.big { font: 400 30px/.92 Anton, var(--font-display, var(--font-ui)), sans-serif; letter-spacing: .01em; color: var(--text, #fff); text-transform: uppercase; }
+	/* Sized to the day word, so a long one (TOMORROW, other languages) never runs under the card. */
+	.when { flex: none; min-width: 74px; width: max-content; display: flex; flex-direction: column; gap: 6px; padding-top: 2px; }
+	.big { white-space: nowrap; font: 400 30px/.92 Anton, var(--font-display, var(--font-ui)), sans-serif; letter-spacing: .01em; color: var(--text, #fff); text-transform: uppercase; }
 	.now .big { color: #ff4a52; }
 	.past .big { color: color-mix(in srgb, var(--text, #fff) 62%, transparent); }
 	.small { font: 600 11px/1.2 var(--font-ui); color: var(--text-muted); letter-spacing: .02em; }

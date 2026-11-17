@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Kunne ikke gemme sproget",
 	"accounts.language.count.one": "1 sprog",
 	"accounts.language.count.other": "{n} sprog",
-	"accounts.account.watchEveryone": "Ejeren har slået dette til for alle. Slå begge fra for at stoppe det."
+	"accounts.account.watchEveryone": "Ejeren har slået dette til for alle. Slå begge fra for at stoppe det.",
+	"accounts.watch.title": "Set-markeringer",
+	"accounts.watch.hint": "Tilknyt din konto på en medieserver her, så Biblioteket viser, hvad du har set.",
+	"accounts.watch.as": "{server}, som {name}",
+	"accounts.watch.nameOn": "Navn på {server}",
+	"accounts.watch.passwordOnce": "Din adgangskode går kun til {server} og gemmes ikke.",
+	"accounts.watch.linked": "Tilknyttet {name} på {server}",
+	"accounts.watch.unlinked": "Tilknytning fjernet",
+	"accounts.login.importPaused": "Dit login udløb, så importen er sat på pause. Log ind, åbn Importér et bibliotek, og tryk på Scan for at fortsætte."
 }

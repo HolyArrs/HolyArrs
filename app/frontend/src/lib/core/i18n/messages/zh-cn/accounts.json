@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "无法保存语言",
 	"accounts.language.count.one": "1 种语言",
 	"accounts.language.count.other": "{n} 种语言",
-	"accounts.account.watchEveryone": "所有者已为所有人开启此功能。关闭两项即可停止。"
+	"accounts.account.watchEveryone": "所有者已为所有人开启此功能。关闭两项即可停止。",
+	"accounts.watch.title": "已看标记",
+	"accounts.watch.hint": "在这里关联你在媒体服务器上的账户，媒体库就会显示你看过的内容。",
+	"accounts.watch.as": "{server}，身份为 {name}",
+	"accounts.watch.nameOn": "在 {server} 上的名称",
+	"accounts.watch.passwordOnce": "你的密码只发送给 {server}，不会保存。",
+	"accounts.watch.linked": "已关联 {server} 上的 {name}",
+	"accounts.watch.unlinked": "已取消关联",
+	"accounts.login.importPaused": "你的登录已结束，所以导入已暂停。请登录，打开“导入媒体库”并按“扫描”继续。"
 }

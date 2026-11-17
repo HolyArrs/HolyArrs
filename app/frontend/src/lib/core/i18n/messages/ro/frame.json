@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} în așteptare",
 	"frame.nav.new": "{n} noi",
 	"frame.nav.manage": "Gestionează",
+	"frame.nav.activity": "Activitate",
+	"frame.nav.system": "Sistem",
 	"frame.nav.history": "Istoric",
 	"frame.nav.status": "Stare",
 	"frame.nav.settings": "Setări",
+	"frame.nav.plugins": "Pluginuri",
 	"frame.nav.goTo": "Mergi la",
 	"frame.nav.active": "{n} active, {percent}%",
 	"frame.nav.decide": "{n} necesită o decizie",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Sistem",
 	"frame.layout.switch": "Schimbă contul",
 	"frame.layout.signOut": "Deconectează-te",
+	"frame.layout.support": "Susține HolyArrs",
 	"frame.layout.signOutFail": "Nu s-a putut confirma deconectarea",
 	"frame.layout.signedOut": "Te-ai deconectat",
 	"frame.layout.accountMenu": "{name}, {role}: cont și aspect",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs încearcă din nou singur",
 	"frame.feeds.clearNow": "Șterge acum",
 	"frame.feeds.cleared": "Șters din Programul de descărcare",
-	"frame.feeds.clearStill": "Încă neșters"
+	"frame.feeds.clearStill": "Încă neșters",
+	"frame.error.pageGone": "Această pagină nu există. Linkul poate fi vechi sau greșit scris."
 }

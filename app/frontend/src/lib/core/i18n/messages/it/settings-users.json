@@ -83,6 +83,7 @@
 	"settings.users.preset": "Preimpostazione",
 	"settings.users.comingSoon": "In arrivo",
 	"settings.users.custom": "Personalizzata",
+	"settings.users.customHint": "La tua combinazione personale degli interruttori qui sotto. Scegliere un profilo la sostituisce; scegli di nuovo Personalizzata per riaverla.",
 	"settings.users.ageRating": "Classificazione per età",
 	"settings.users.newPasswordFor": "Nuova password per {name}",
 	"settings.users.passwordNote": "Usala quando {name} ha dimenticato la sua. Esce da ovunque e accede di nuovo con quella nuova. Comunicagliela di persona.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "es. Mamma",
 	"settings.users.days": "Giorni di durata del link",
 	"settings.users.makeInvite": "Crea un link di invito",
-	"settings.users.permAuto4k": "Richieste 4K approvate senza attesa"
+	"settings.users.permAuto4k": "Richieste 4K approvate senza attesa",
+	"settings.users.serverAccount": "Account del server",
+	"settings.users.pickAccount": "Scegli un account su un media server",
+	"settings.users.accountLinked": "Collegato a {name}",
+	"settings.users.removedOnServer": "Rimosso sul server {word}, quindi disattivato qui",
+	"settings.users.delete": "Elimina",
+	"settings.users.deleteName": "Elimina {name}",
+	"settings.users.confirmDelete": "Eliminare {name}? Viene disconnesso per sempre e le sue chiavi spariscono. Le sue richieste restano, come persona rimossa.",
+	"settings.users.deleteYes": "Elimina persona",
+	"settings.users.keep": "Mantieni",
+	"settings.users.deleted": "{name} eliminato",
+	"settings.users.couldntDelete": "Impossibile eliminare",
+	"settings.users.confirmDeleteKeys": "Le chiavi Seerr che ha creato smettono di funzionare per tutti finché non se ne crea una nuova.",
+	"settings.users.qualities": "Qualità",
+	"settings.users.qualitiesHint": "Possono scegliere solo quelle attive. Con tutte attive, vengono offerte anche le nuove."
 }

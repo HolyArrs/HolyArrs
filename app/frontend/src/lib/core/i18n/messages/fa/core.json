@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "اجازه استفاده از HolyArrs به دستیارهای هوش مصنوعی",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "کلیدها و مسیرها برای برنامه‌های دیگر",
+	"core.settings.remoteAccess.label": "دسترسی از راه دور",
+	"core.settings.remoteAccess.about": "دسترسی به HolyArrs بیرون از خانه",
 	"core.settings.tmdb.label": "متادیتا",
 	"core.settings.tmdb.about": "پوسترها و نام‌ها از کجا می‌آیند",
 	"core.settings.health.label": "بررسی‌های سلامت",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "یک دانلودر پوشه ذخیره ندارد، پس HolyArrs نمی‌تواند دانلودهای تمام‌شده آن را وارد کند.",
 	"core.api.sourceOff": "برخی ردیف‌ها در این نصب خاموش هستند.",
 	"core.plain.noDownloader": "منابع تو دانلودهایی پیدا می‌کنند که هیچ‌کدام از دانلودرهای تو نمی‌تواند بگیرد، پس هیچ‌کدام فرستاده نمی‌شود.",
-	"core.plain.sameDownloader": "دو دانلودر به یک برنامه دانلود می‌رسند، پس دانلودها ممکن است دو بار نشان داده شوند."
+	"core.plain.sameDownloader": "دو دانلودر به یک برنامه دانلود می‌رسند، پس دانلودها ممکن است دو بار نشان داده شوند.",
+	"core.plain.peopleCheck": "فهرست کاربران سرور رسانه خوانده نمی‌شود، پس کسانی که آنجا حذف شده‌اند اینجا خاموش نمی‌شوند.",
+	"core.plain.deleted": "حذف‌شده",
+	"core.plain.deletedName": "{name} (حذف‌شده)"
 }

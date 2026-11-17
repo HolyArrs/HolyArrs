@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} 個待處理",
 	"frame.nav.new": "{n} 個新的",
 	"frame.nav.manage": "管理",
+	"frame.nav.activity": "活動",
+	"frame.nav.system": "系統",
 	"frame.nav.history": "歷史",
 	"frame.nav.status": "狀態",
 	"frame.nav.settings": "設定",
+	"frame.nav.plugins": "外掛",
 	"frame.nav.goTo": "前往",
 	"frame.nav.active": "{n} 個進行中，{percent}%",
 	"frame.nav.decide": "{n} 項待你決定",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "跟隨系統",
 	"frame.layout.switch": "切換帳號",
 	"frame.layout.signOut": "登出",
+	"frame.layout.support": "支持 HolyArrs",
 	"frame.layout.signOutFail": "無法確認已登出",
 	"frame.layout.signedOut": "已登出",
 	"frame.layout.accountMenu": "{name}，{role}：帳號和外觀",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs 會自行重試",
 	"frame.feeds.clearNow": "立即清除",
 	"frame.feeds.cleared": "已從下載器清除",
-	"frame.feeds.clearStill": "尚未清除"
+	"frame.feeds.clearStill": "尚未清除",
+	"frame.error.pageGone": "此頁面不存在。連結可能已過期或輸入錯誤。"
 }

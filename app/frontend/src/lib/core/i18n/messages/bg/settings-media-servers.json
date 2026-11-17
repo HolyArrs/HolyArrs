@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Път в HolyArrs",
 	"settings.mediaServers.pathTo": "Същата папка на сървъра",
 	"settings.mediaServers.pathHint": "Само ако сървърът вижда файловете ви под друг път",
+	"settings.mediaServers.webUrl": "Адрес за браузъри",
+	"settings.mediaServers.webUrlHint": "Адресът, на който всички отварят сървъра на телефон или компютър. Добавя бутон „Отвори“ на страниците на заглавията, които има. Оставете празно, за да няма бутон.",
 	"settings.mediaServers.local": "Достъп до локалната мрежа",
 	"settings.mediaServers.send": "Изпращане на обновявания",
 	"settings.mediaServers.save": "Запазване",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Да изключа ли историята на гледане? Всичко прочетено досега се изтрива.",
 	"settings.mediaServers.watchTurnedOn": "Историята на гледане е включена. Първото четене става до 30 минути.",
 	"settings.mediaServers.watchTurnedOff": "Историята на гледане е изключена",
-	"settings.mediaServers.watchFailed": "Историята на гледане не можа да се промени"
+	"settings.mediaServers.watchFailed": "Историята на гледане не можа да се промени",
+	"settings.mediaServers.labelTitle": "Етикети в Plex",
+	"settings.mediaServers.labelSwitch": "Етикетирай заявените заглавия",
+	"settings.mediaServers.labelHint": "Когато заявен филм или сериал е в Plex, HolyArrs му добавя етикет, за да филтрирате, правите колекции или споделяте по него в Plex. Съществуващите етикети остават.",
+	"settings.mediaServers.labelText": "Етикет",
+	"settings.mediaServers.labelAskers": "Добави и името на заявителя като етикет",
+	"settings.mediaServers.labelSaved": "Етикетите в Plex са запазени",
+	"settings.mediaServers.labelFailed": "Етикетите в Plex не можаха да се запазят",
+	"settings.mediaServers.labelExisting": "Етикетирай вече заявените заглавия",
+	"settings.mediaServers.labelExistingStarted": "Етикетирането започна. Заглавията получават етикетите си до няколко минути.",
+	"settings.mediaServers.labelExistingFailed": "Етикетирането не можа да започне"
 }

@@ -15,6 +15,7 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites/fakesite"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
@@ -28,6 +29,7 @@ type queued struct {
 // svc builds a Service on the fixture with the lab's fake site added.
 func svc(t *testing.T, f *fix, site *fakesite.Site) (*Service, *[]queued) {
 	t.Helper()
+	t.Setenv("HOLYARRS_FLAGS", startup.Lab)
 	srv := httptest.NewServer(site)
 	t.Cleanup(srv.Close)
 	s := &Service{Store: f.st}

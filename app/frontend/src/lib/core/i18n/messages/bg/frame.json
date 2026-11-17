@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} чакат",
 	"frame.nav.new": "{n} нови",
 	"frame.nav.manage": "Управление",
+	"frame.nav.activity": "Активност",
+	"frame.nav.system": "Система",
 	"frame.nav.history": "История",
 	"frame.nav.status": "Състояние",
 	"frame.nav.settings": "Настройки",
+	"frame.nav.plugins": "Добавки",
 	"frame.nav.goTo": "Към",
 	"frame.nav.active": "{n} активни, {percent}%",
 	"frame.nav.decide": "{n} чакат решение",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Системна",
 	"frame.layout.switch": "Смяна на акаунт",
 	"frame.layout.signOut": "Изход",
+	"frame.layout.support": "Подкрепете HolyArrs",
 	"frame.layout.signOutFail": "Изходът не можа да се потвърди",
 	"frame.layout.signedOut": "Излязохте",
 	"frame.layout.accountMenu": "{name}, {role}: акаунт и външен вид",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs опитва отново сам",
 	"frame.feeds.clearNow": "Изчисти сега",
 	"frame.feeds.cleared": "Изчистено от Програмата за изтегляне",
-	"frame.feeds.clearStill": "Още не е изчистено"
+	"frame.feeds.clearStill": "Още не е изчистено",
+	"frame.error.pageGone": "Тази страница не съществува. Връзката може да е стара или сгрешена."
 }

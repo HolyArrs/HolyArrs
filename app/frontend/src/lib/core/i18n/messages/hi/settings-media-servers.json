@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs का पाथ",
 	"settings.mediaServers.pathTo": "सर्वर पर वही फ़ोल्डर",
 	"settings.mediaServers.pathHint": "सिर्फ़ तब जब सर्वर को आपकी फ़ाइलें दूसरे पाथ पर दिखती हों",
+	"settings.mediaServers.webUrl": "ब्राउज़र के लिए पता",
+	"settings.mediaServers.webUrlHint": "वह पता जिस पर सब लोग फ़ोन या कंप्यूटर पर सर्वर खोलते हैं। सर्वर में मौजूद टाइटल के पेज पर खोलें बटन जोड़ता है। बटन न चाहिए तो खाली छोड़ दें।",
 	"settings.mediaServers.local": "लोकल नेटवर्क तक पहुंचें",
 	"settings.mediaServers.send": "अपडेट भेजें",
 	"settings.mediaServers.save": "सेव करें",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "देखने का इतिहास बंद करें? अब तक पढ़ा सब मिट जाएगा।",
 	"settings.mediaServers.watchTurnedOn": "देखने का इतिहास चालू। पहली बार पढ़ना 30 मिनट के अंदर होगा।",
 	"settings.mediaServers.watchTurnedOff": "देखने का इतिहास बंद",
-	"settings.mediaServers.watchFailed": "देखने का इतिहास बदला नहीं जा सका"
+	"settings.mediaServers.watchFailed": "देखने का इतिहास बदला नहीं जा सका",
+	"settings.mediaServers.labelTitle": "Plex लेबल",
+	"settings.mediaServers.labelSwitch": "अनुरोधित टाइटल पर लेबल लगाएँ",
+	"settings.mediaServers.labelHint": "जब कोई अनुरोधित फ़िल्म या शो Plex में होता है, HolyArrs उस पर एक लेबल जोड़ता है, ताकि आप Plex में उससे फ़िल्टर, कलेक्शन बना या शेयर कर सकें। पहले से लगे लेबल बने रहते हैं।",
+	"settings.mediaServers.labelText": "लेबल",
+	"settings.mediaServers.labelAskers": "अनुरोध करने वाले का नाम भी लेबल के रूप में जोड़ें",
+	"settings.mediaServers.labelSaved": "Plex लेबल सहेजे गए",
+	"settings.mediaServers.labelFailed": "Plex लेबल सहेजे नहीं जा सके",
+	"settings.mediaServers.labelExisting": "पहले से अनुरोधित टाइटल पर लेबल लगाएँ",
+	"settings.mediaServers.labelExistingStarted": "लेबल लगाना शुरू हुआ। कुछ मिनटों में टाइटल को लेबल मिल जाएँगे।",
+	"settings.mediaServers.labelExistingFailed": "लेबल लगाना शुरू नहीं हो सका"
 }

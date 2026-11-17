@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "Čeká: {n}",
 	"frame.nav.new": "Nových: {n}",
 	"frame.nav.manage": "Správa",
+	"frame.nav.activity": "Aktivita",
+	"frame.nav.system": "Systém",
 	"frame.nav.history": "Historie",
 	"frame.nav.status": "Stav",
 	"frame.nav.settings": "Nastavení",
+	"frame.nav.plugins": "Pluginy",
 	"frame.nav.goTo": "Přejít na",
 	"frame.nav.active": "Aktivních: {n}, {percent} %",
 	"frame.nav.decide": "Čeká na rozhodnutí: {n}",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Systém",
 	"frame.layout.switch": "Přepnout účet",
 	"frame.layout.signOut": "Odhlásit se",
+	"frame.layout.support": "Podpořit HolyArrs",
 	"frame.layout.signOutFail": "Odhlášení se nepodařilo potvrdit",
 	"frame.layout.signedOut": "Odhlášeno",
 	"frame.layout.accountMenu": "{name}, {role}: účet a vzhled",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs to zkusí znovu sám",
 	"frame.feeds.clearNow": "Vyčistit teď",
 	"frame.feeds.cleared": "Vyčištěno ze Stahovače",
-	"frame.feeds.clearStill": "Zatím nevyčištěno"
+	"frame.feeds.clearStill": "Zatím nevyčištěno",
+	"frame.error.pageGone": "Tato stránka neexistuje. Odkaz může být starý nebo špatně napsaný."
 }

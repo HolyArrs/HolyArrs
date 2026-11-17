@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -250,7 +251,7 @@ func (r *run) person(it Item) (string, string) {
 	if pp.Choice == PersonSkip {
 		// Keep the choice row when someone here has the same name, so the
 		// owner can change it back.
-		if r.choose == "" && r.id("SELECT id FROM users WHERE name = ? COLLATE NOCASE", it.Name) != 0 {
+		if r.choose == "" && liveNamed(r.ctx, r.m.Store.Read(), it.Name) != 0 {
 			r.choose = ChooseSameName
 		}
 		return ResSkipped, "you left them out; their asks come over as yours"
@@ -266,7 +267,7 @@ func (r *run) person(it Item) (string, string) {
 	}
 	// A person here with the same name is never merged silently: the owner
 	// chooses merge or skip on the move screen.
-	if id := r.id("SELECT id FROM users WHERE name = ? COLLATE NOCASE", it.Name); id != 0 {
+	if id := liveNamed(r.ctx, r.m.Store.Read(), it.Name); id != 0 {
 		if r.choose == "" {
 			r.choose = ChooseSameName
 		}
@@ -305,7 +306,13 @@ func (r *run) person(it Item) (string, string) {
 	perms, _ := json.Marshal(pp.Perms)
 	// Made turned off; with a sign-in link, their first sign-in through it
 	// turns them on after that sign-in's checks (accounts.LinkImported).
-	u := domain.User{Name: it.Name, Role: pp.Role, PasswordHash: "", State: "disabled", Perms: string(perms)}
+	// Only a deleted person's row can still hold this name: take the next free one.
+	base := personName(it.Name)
+	name := base
+	for n := 2; nameTaken(r.ctx, r.m.Store.Read(), name); n++ {
+		name = base + " (" + strconv.Itoa(n) + ")"
+	}
+	u := domain.User{Name: name, Role: pp.Role, PasswordHash: "", State: "disabled", Perms: string(perms)}
 	var id int64
 	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
 		var err error
@@ -636,4 +643,11 @@ func originOf(raw string) string {
 		port = map[string]string{"http": "80", "https": "443"}[strings.ToLower(u.Scheme)]
 	}
 	return strings.ToLower(u.Scheme + "://" + u.Hostname() + ":" + port)
+}
+
+// personName is an old-app person's name made fit to store here; a name with
+// hidden characters (such as the mark a deleted person's name carries)
+// becomes imported-user.
+func personName(s string) string {
+	return accounts.NewPersonName(s, "imported-user", 64)
 }

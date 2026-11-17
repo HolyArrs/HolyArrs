@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PersonText from '#lib/ui/PersonText.svelte';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// Show detail page: episodes by season, staff tools, requests and history.
 	import Button from '#lib/ui/Button.svelte';
@@ -19,7 +20,8 @@
 	import { audienceStatus } from '#lib/ui/title-status.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import '#lib/ui/title-page.css';
-	import { RenamePreview, ShowDeleteDialog, ShowReleases, CopyControls, artName, crumbFor, qualityBadges, slotKind, type ReleaseScope } from '../mediafiles/index.ts';
+	import { extrasIdOf } from '#lib/ui/library-art.ts';
+	import { RenamePreview, ShowDeleteDialog, ShowReleases, CopyControls, artName, crumbFor, qualityBadges, slotKind, staleWhileImporting, type ReleaseScope } from '../mediafiles/index.ts';
 	import { SubtitlePanel } from '../subtitles/index.ts';
 	import { groupDownloads, HistoryLine as CompactRow, isRoutine, NoDownloaderNote } from '../downloads/index.ts';
 	import ShowVersions from './ShowVersions.svelte';
@@ -68,6 +70,8 @@
 		askSheet: AskDialog,
 		quickAsk
 	}: { title: TitleView; onchange: (t: TitleView) => void; error?: string; onretry?: () => Promise<void> | void; askSheet: AskShowSheet; quickAsk: QuickAskSheet } = $props();
+	// Only a real TMDB id asks for TMDB art and details: one equal to the TVDB or TVmaze id names another show.
+	const realTmdb = $derived(extrasIdOf(title) || undefined);
 
 	let askedBy = $state<AskedByAnswer>({ titles: {} });
 	// A failed refresh keeps the old data on screen and shows this beside it.
@@ -157,7 +161,7 @@
 	});
 	$effect(() => {
 		const n = cur;
-		const tmdb = title.ids?.tmdb;
+		const tmdb = realTmdb;
 		if (!tmdb || synopses[n] || !show?.seasons.some((x) => x.number === n)) return;
 		const ctl = new AbortController();
 		api.get<{ episodes?: { number: number; overview?: string }[] }>(`/metadata/show/${encodeURIComponent(tmdb)}/seasons/${n}`, ctl.signal)
@@ -175,7 +179,7 @@
 	});
 	// Only fetches when the title lacks art or genres; the flag drops a late reply after a change.
 	$effect(() => {
-		const tmdb = title.ids?.tmdb;
+		const tmdb = realTmdb;
 		rich = null;
 		if (!tmdb || (title?.backdrop && title?.genres?.length)) return;
 		let live = true;
@@ -447,7 +451,7 @@
 <TitleHero
 	title={title.name}
 	kind="show"
-	tmdb={title.ids?.tmdb}
+	tmdb={realTmdb}
 	poster={title.artwork[0] ?? rich?.poster}
 	backdrop={title.backdrop ?? rich?.backdrop}
 	backdrops={rich?.backdrops}
@@ -516,7 +520,7 @@
 						{@const why = staff ? episodeWhy(ep, s.keep_up_to_date, title.keep_up_to_date) : ''}
 						{#if why && why !== off}<p class="xs muted ep-why" data-testid="episode-why">{serverWords(why)}</p>{/if}
 						{#if staff}
-							{#each ep.slots.filter((x) => x.reason && ep.slots.length > 1) as sl (sl.id)}
+							{#each ep.slots.filter((x) => x.reason && ep.slots.length > 1 && !staleWhileImporting(x)) as sl (sl.id)}
 								<p class="xs muted ep-why">{sl.version}: {serverWords(sl.reason)}</p>
 							{/each}
 						{/if}
@@ -529,7 +533,7 @@
 	{/if}
 </section>
 
-<TitleRows kind="show" tmdb={title.ids?.tmdb} {quickAsk}>
+<TitleRows kind="show" tmdb={realTmdb} {quickAsk}>
 	{#snippet middle()}{#key title.id}<TitleCast titleId={title.id} />{/key}{/snippet}
 </TitleRows>
 
@@ -552,11 +556,11 @@
 		{#each title.asks as a (a.id)}
 			<dl class="facts">
 				<dt>{t('shows.page.askedBy')}</dt>
-				<dd>{peopleNames(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
+				<dd><PersonText text={peopleNames(a.people.map((p) => p.name))} /> · {date(a.asked_at)}</dd>
 				<dt>{t('shows.page.for')}</dt>
 				<dd>{a.season_words ?? seasonWords(a.seasons)}</dd>
 				{#if decided(a)}<dt>{t('shows.page.decided')}</dt>
-					<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
+					<dd><PersonText text={decided(a)} />{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
 				<dt>{t('shows.page.now')}</dt>
 				<dd>{serverWords(a.state_label)}</dd>
 				{#if a.note}<dt>{t('shows.page.note')}</dt>

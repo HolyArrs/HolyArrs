@@ -139,10 +139,18 @@ func (t *TMDB) Show(ctx context.Context, id string) (Show, error) {
 		var res struct {
 			TV []tmdbShow `json:"tv_results"`
 		}
-		if err := json.Unmarshal(b, &res); err != nil || len(res.TV) == 0 {
+		if err := json.Unmarshal(b, &res); err != nil {
 			return Show{}, ErrShowNotFound
 		}
-		return t.Show(ctx, "tmdb:"+strconv.FormatInt(res.TV[0].ID, 10))
+		ids := make([]int64, len(res.TV))
+		for i, x := range res.TV {
+			ids[i] = x.ID
+		}
+		id, ok := foundTV(kind, v, ids)
+		if !ok {
+			return Show{}, ErrShowNotFound
+		}
+		return t.Show(ctx, "tmdb:"+id)
 	case "tmdb":
 	default:
 		return Show{}, ErrShowNotFound
@@ -389,8 +397,29 @@ func (t *TMDB) ShowTMDBID(ctx context.Context, id string) (string, error) {
 			ID int64 `json:"id"`
 		} `json:"tv_results"`
 	}
-	if err := json.Unmarshal(b, &res); err != nil || len(res.TV) == 0 || res.TV[0].ID <= 0 {
+	if err := json.Unmarshal(b, &res); err != nil {
 		return "", ErrShowNotFound
 	}
-	return strconv.FormatInt(res.TV[0].ID, 10), nil
+	ids := make([]int64, len(res.TV))
+	for i, x := range res.TV {
+		ids[i] = x.ID
+	}
+	found, ok := foundTV(kind, v, ids)
+	if !ok {
+		return "", ErrShowNotFound
+	}
+	return found, nil
+}
+
+// foundTV is the first show TMDB's find gave for a TVDB or IMDb id. A TMDB
+// id that is the TVDB number looked up is skipped: that number names
+// another show on TMDB, which carries it as a copied TVDB id.
+func foundTV(kind, v string, ids []int64) (string, bool) {
+	for _, n := range ids {
+		id := strconv.FormatInt(n, 10)
+		if n > 0 && !(kind == "tvdb" && id == v) {
+			return id, true
+		}
+	}
+	return "", false
 }

@@ -32,15 +32,15 @@ func (a *Auth) profileRoutes(m *http.ServeMux) {
 	m.HandleFunc("PUT /api/v1/my/language", a.putLanguage)
 }
 
-// cleanDisplayName trims the name and refuses control characters and names
-// over 64 characters. An empty name means "show my username".
+// cleanDisplayName trims the name and refuses control and hidden format
+// characters (joiners inside a word stay) and names over 64 characters. An empty name means "show my username".
 func cleanDisplayName(s string) (string, bool) {
 	s = strings.TrimSpace(s)
 	if utf8.RuneCountInString(s) > displayNameMax {
 		return "", false
 	}
 	for _, r := range s {
-		if unicode.IsControl(r) {
+		if unicode.IsControl(r) || (unicode.Is(unicode.Cf, r) && r != 0x200c && r != 0x200d) {
 			return "", false
 		}
 	}

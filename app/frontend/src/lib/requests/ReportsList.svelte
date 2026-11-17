@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { bareNames, personText } from '#lib/core/plain.ts';
+	import PersonText from '#lib/ui/PersonText.svelte';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -181,7 +183,7 @@
 			beat = new Set(beat).add(r.id);
 			put(done);
 			winOpen = false;
-			toasts.push(t('requests.reports.markedFixed'), 'ok', r.made_by && !r.mine ? { body: t('requests.reports.getsMessage', { name: whoName(r.made_by) }) } : {});
+			toasts.push(t('requests.reports.markedFixed'), 'ok', r.made_by && !r.mine ? { body: personText(t('requests.reports.getsMessage', { name: whoName(r.made_by) })) } : {});
 			setTimeout(() => {
 				const next = new Set(beat);
 				next.delete(r.id);
@@ -274,7 +276,7 @@
 					</div>
 					<div class="sheet-b">
 						<div class="body">
-							<span class="who"><Avatar name={face(r)} size={26} /><span class="gl-id"><span class="gl-n"><b>{who(r)}</b></span><span class="gl-when"><span class="wide">{t('requests.reports.reported')}{' '}</span><time datetime={r.created_at} title={dateTime(r.created_at)}>{ago(r.created_at)}</time></span></span></span>
+							<span class="who"><Avatar name={bareNames(face(r))} size={26} /><span class="gl-id"><span class="gl-n"><b><PersonText text={who(r)} /></b></span><span class="gl-when"><span class="wide">{t('requests.reports.reported')}{' '}</span><time datetime={r.created_at} title={dateTime(r.created_at)}>{ago(r.created_at)}</time></span></span></span>
 							<p class="note" class:none={!r.note}>{r.note || t('requests.reports.noNote')}</p>
 							{#if !open && r.reply}<p class="re"><Icon name="check" size={13} /><span data-testid="report-reply">{r.reply}</span></p>{/if}
 						</div>
@@ -289,7 +291,7 @@
 							{:else}
 								<span class="st-chip st-{open ? 'wait' : 'ok'}">
 									<span class="st-sq"><Icon name={open ? 'clock' : 'check'} size={15} /></span>
-									<span class="st-id"><b>{open ? t('requests.reports.open') : t('requests.reports.fixed')}</b><span class="st-d">{#if open}{t('requests.reports.waiting')}{:else}{#if fixedBy(r)}<span class="wide">{fixedBy(r)}{r.closed_at ? ' · ' : ''}</span>{/if}{#if r.closed_at}<time datetime={r.closed_at} title={dateTime(r.closed_at)}>{ago(r.closed_at)}</time>{/if}{/if}</span></span>
+									<span class="st-id"><b>{open ? t('requests.reports.open') : t('requests.reports.fixed')}</b><span class="st-d">{#if open}{t('requests.reports.waiting')}{:else}{#if fixedBy(r)}<span class="wide"><PersonText text={fixedBy(r)} />{r.closed_at ? ' · ' : ''}</span>{/if}{#if r.closed_at}<time datetime={r.closed_at} title={dateTime(r.closed_at)}>{ago(r.closed_at)}</time>{/if}{/if}</span></span>
 								</span>
 								{#if manage}<button type="button" class="b no re-b" aria-label={t('requests.reports.reopenName', { name: r.title_name })} disabled={busy === r.id} onclick={() => void reopen(r)}><Icon name="refresh" size={15} /></button>{/if}
 							{/if}
@@ -340,9 +342,9 @@
 			</div>
 
 			<div class="rw-msg">
-				<Avatar name={face(win)} size={30} />
+				<Avatar name={bareNames(face(win))} size={30} />
 				<div class="rw-bub">
-					<p class="rw-by"><b>{who(win)}</b><time datetime={win.created_at} title={dateTime(win.created_at)}>{ago(win.created_at)}</time></p>
+					<p class="rw-by"><b><PersonText text={who(win)} /></b><time datetime={win.created_at} title={dateTime(win.created_at)}>{ago(win.created_at)}</time></p>
 					<p class="rw-text" class:none={!win.note}>{win.note || t('requests.reports.noNote')}</p>
 				</div>
 			</div>
@@ -350,7 +352,7 @@
 			{#if !open}
 				<div class="rw-msg back-msg" in:fly={{ y: 8, duration: ms(320), easing: cubicOut }}>
 					<div class="rw-bub ok">
-						<p class="rw-by"><b>{t('requests.reports.fixedBy', { by: fixedBy(win) })}</b>{#if win.closed_at}<time datetime={win.closed_at} title={dateTime(win.closed_at)}>{ago(win.closed_at)}</time>{/if}</p>
+						<p class="rw-by"><b><PersonText text={t('requests.reports.fixedBy', { by: fixedBy(win) })} /></b>{#if win.closed_at}<time datetime={win.closed_at} title={dateTime(win.closed_at)}>{ago(win.closed_at)}</time>{/if}</p>
 						{#if win.reply}<p class="rw-text">{win.reply}</p>{/if}
 					</div>
 					<span class="rw-okic"><Icon name="check" size={16} /></span>
@@ -358,7 +360,7 @@
 			{:else if manage}
 				<form class="rw-form" onsubmit={(e) => { e.preventDefault(); void fix(); }}>
 					<label class="rw-field">
-						<span>{t('requests.reports.replyTo', { name: win.made_by && !win.mine ? whoName(win.made_by) : t('requests.reports.thePerson') })} <small>{t('requests.reportSheet.optional')}</small></span>
+						<span><PersonText text={t('requests.reports.replyTo', { name: win.made_by && !win.mine ? whoName(win.made_by) : t('requests.reports.thePerson') })} /> <small>{t('requests.reportSheet.optional')}</small></span>
 						<textarea bind:this={replyBox} bind:value={reply} rows="2" maxlength={noteMax} placeholder={t('requests.reports.replyPlaceholder')}></textarea>
 					</label>
 					<div class="rw-quick" role="group" aria-label={t('requests.reports.quickReplies')}>

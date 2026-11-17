@@ -22,7 +22,7 @@
 "settings.search.refuseEarly": "Zamietnuť Vydania zverejnené pred premiérou",
 "settings.search.refuseEarlyHint": "Pravdepodobne falošné. Ručný výber vydania ich stále zobrazí, s varovaním.",
 "settings.search.refuseTiny": "Zamietnuť falošné podľa veľkosti a typu súboru",
-"settings.search.refuseTinyHint": "Príliš malé Vydania, prázdne súbory a .wmv alebo .asf pod názvami HD",
+"settings.search.refuseTinyHint": "Príliš malé Vydania, prázdne súbory, useknuté videá a .wmv alebo .asf pod názvami HD",
 "settings.search.grace": "Hodiny, o ktoré môže byť Vydanie predčasné",
 "settings.search.graceHint": "Kvôli časovým pásmam. Predvolené 24.",
 "settings.search.floors": "Kontrolovať veľkosti súborov pri importe",

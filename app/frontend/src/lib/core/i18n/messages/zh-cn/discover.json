@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "粘贴 ID，例如 tmdb:693134 或 tvmaze:82。",
 	"discover.search.orDescribeItSuch": "或者描述它，例如“2014 年有机器人的太空电影”。",
 	"discover.search.lookEverywhere": "到处查找",
-	"discover.search.searchIndexersFor": "在索引器中搜索“{searched}”",
+	"discover.search.searchIndexersFor": "检查你的来源",
 	"discover.search.topMatches": "最佳匹配",
 	"discover.people.goToTheFilmography": "前往作品列表",
 	"discover.people.filmography": "作品列表",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "与此版本不符",
 	"discover.leftovers.reason.movie_has_file": "电影已有文件",
 	"discover.leftovers.reason.replaced_by_hand": "已被另一个文件替换",
-	"discover.leftovers.reason.unmatched": "已手动取消匹配"
+	"discover.leftovers.reason.unmatched": "已手动取消匹配",
+	"discover.searchSections.genres": "类型",
+	"discover.searchSections.moods": "心情",
+	"discover.searchSections.stories": "故事与主题",
+	"discover.searchSections.worlds": "世界与背景",
+	"discover.searchSections.eras": "年代",
+	"discover.searchSections.world": "世界各地",
+	"discover.searchSections.collections": "合集",
+	"discover.popularRail.out": "上映",
+	"discover.popularRail.comingDay": "即将上映",
+	"discover.titleLibrary.turnShowOnHint": "打开这部剧即可开始查找。",
+	"discover.leftovers.reason.seasons_differ": "仅通过旧应用的 TMDB 编号找到：请确认是同一部剧，然后手动匹配文件"
 }

@@ -90,6 +90,7 @@ export type QuickAskSheet = Component<
 		action: (c: ExploreCard) => 'add' | 'ask' | null;
 		busy: (c: ExploreCard) => boolean;
 		open: (c: ExploreCard, act: 'add' | 'ask') => Promise<void>;
+		askAll: (seriesName: string, cards: ExploreCard[], each?: (tmdb: string, news: { ask?: Ask; titleId?: number }) => void, fresh?: () => Promise<ExploreCard[]>) => void;
 	}
 >;
 
@@ -188,6 +189,11 @@ export function liveCard(c: ExploreCard, here: { ask?: AskState; titleId?: numbe
 	if (here?.titleId !== undefined) return { ...c, titleId: here.titleId, status: 'in_library', statusLabel: undefined };
 	if (here?.ask) return { ...c, mine: true, status: titleStatus({ ask: here.ask }, 'staff').kind, statusLabel: undefined };
 	return c;
+}
+
+/** The cards as they stand now: anything asked for since the page loaded counts, and so does the page's own movie when its request is already made. */
+export function liveCards(cards: ExploreCard[], live: (c: ExploreCard) => ExploreCard, own?: { tmdb: string; ask: AskState }): ExploreCard[] {
+	return cards.map((c) => live(own && c.kind === 'movie' && cardTmdb(c) === own.tmdb ? liveCard(c, { ask: own.ask }) : c));
 }
 
 // Indexes titles by id and by external ref so cards from providers can find them.

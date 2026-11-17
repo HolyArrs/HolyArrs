@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "AI-assistenten HolyArrs laten gebruiken",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Sleutels en routes voor andere apps",
+	"core.settings.remoteAccess.label": "Toegang op afstand",
+	"core.settings.remoteAccess.about": "HolyArrs gebruiken buiten de deur",
 	"core.settings.tmdb.label": "Metadata",
 	"core.settings.tmdb.about": "Waar posters en namen vandaan komen",
 	"core.settings.health.label": "Gezondheidscontroles",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "Wachtwoord, tweestapsverificatie, apparaten",
 	"core.api.sourceOff": "Sommige rijen staan uit op deze installatie.",
 	"core.plain.noDownloader": "Je bronnen vinden downloads die geen van je downloaders kan aannemen, dus er kan niets worden verstuurd.",
-	"core.plain.sameDownloader": "Twee Downloaders bereiken dezelfde download-app, dus downloads kunnen dubbel verschijnen."
+	"core.plain.sameDownloader": "Twee Downloaders bereiken dezelfde download-app, dus downloads kunnen dubbel verschijnen.",
+	"core.plain.peopleCheck": "De gebruikerslijst van de mediaserver is niet leesbaar, dus mensen die daar zijn verwijderd, worden hier niet uitgezet.",
+	"core.plain.deleted": "verwijderd",
+	"core.plain.deletedName": "{name} (verwijderd)"
 }

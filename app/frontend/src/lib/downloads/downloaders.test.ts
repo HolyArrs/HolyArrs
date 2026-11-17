@@ -1,5 +1,5 @@
-import { decisionName, groupDecisions, manyWords, phaseTone, removeBody, removeFilesWords, removeStart, rowName, split, whyWords } from './downloaders.ts';
-import { samePathPair, seedingBody, seedingFields, deadRuleOn, downloadTone, emptyForm, formBody, formFrom, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
+import { decisionName, doneInLibrary, doneLine, groupDecisions, manyWords, phaseTone, removeBody, removeFilesWords, removeStart, rowName, split, whyWords } from './downloaders.ts';
+import { removeDeletesFiles, removeSent, samePathPair, seedingBody, seedingFields, deadRuleOn, downloadTone, emptyForm, formBody, formFrom, healthLabel, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
 import { describe, expect, it } from 'vitest';
 import { type Decision, type DownloadRow } from '../core/types.ts';
 
@@ -26,6 +26,8 @@ describe('downloaders', () => {
 		expect(healthTone('working')).toBe('ok');
 		expect(healthTone('paused')).toBe('idle');
 		expect(healthTone('resting')).toBe('wait');
+		expect(healthLabel({ state: 'sign_in_refused', label: 'x' })).toBe('Sign-in refused');
+		expect(healthLabel({ state: 'resting', label: 'x' })).toBe('Resting');
 		expect(healthTone('sign_in_refused')).toBe('fail');
 		expect(healthTone('not_answering')).toBe('fail');
 		expect(downloadTone('downloading')).toBe('wait');
@@ -236,6 +238,40 @@ describe('removeFilesWords', () => {
 		expect(removeFilesWords([{ downloader: 'A' }, { downloader: 'B' }])).toBe('Deletes their files in A, B.');
 		expect(removeFilesWords([])).toBe('');
 	});
+	it('says files in or around a Library folder stay, as the server keeps them', () => {
+		expect(removeFilesWords([{ path: '/media/movies/Film', downloader: 'qBittorrent', files_stay: true }])).toBe('Keeps /media/movies/Film: it is in or around a Library folder.');
+		expect(removeFilesWords([{ path: '/a', downloader: 'qBittorrent' }, { path: '/media/b', downloader: 'qBittorrent', files_stay: true }])).toBe('Deletes /a in qBittorrent. Keeps the files that are in or around a Library folder.');
+	});
+});
+
+describe('removing a finished download', () => {
+	const done = { phase: 'done', state: 'seeding', protocol: 'torrent', downloader: 'qBittorrent', client_item: false };
+	it('says a seeding torrent stops seeding and the library copy stays', () => {
+		expect(doneLine(done)).toBe('Already in your library. Removing stops seeding in qBittorrent; your library copy stays.');
+	});
+	it('says a finished torrent the server marks still seeding (qBittorrent uploading or stalledUP) stops seeding', () => {
+		expect(doneLine({ ...done, state: 'finished', seeding: true })).toBe('Already in your library. Removing stops seeding in qBittorrent; your library copy stays.');
+		expect(doneLine({ ...done, state: 'finished', seeding: false })).toMatch(/clears it from/);
+	});
+	it('says a torrent that stopped seeding (goal met) or a Usenet job is only cleared, with no seeding words', () => {
+		expect(doneLine({ ...done, state: 'finished' })).toBe('Already in your library. Removing clears it from qBittorrent; your library copy stays.');
+		const nzb = doneLine({ ...done, state: 'finished', protocol: 'usenet', downloader: 'SABnzbd' });
+		expect(nzb).toBe('Already in your library. Removing clears it from SABnzbd; your library copy stays.');
+		expect(nzb).not.toMatch(/seed/i);
+	});
+	it('says only part is in the library for a pack with episodes that did not go in', () => {
+		const eps = [{ slot_id: 1, season: 1, episode: 1, label: 'S01E01', state: 'in_library' }, { slot_id: 2, season: 1, episode: 2, label: 'S01E02', state: 'wanted' }];
+		expect(doneLine({ ...done, episodes: eps })).toBe('Part of it is in your library. Removing stops seeding in qBittorrent; what is in your library stays.');
+		expect(doneLine({ ...done, episodes: eps.map((e) => ({ ...e, state: 'in_library' })) })).toMatch(/^Already in your library/);
+	});
+	it('never says "in your library" when the import failed, waits for a person, or for a torrent HolyArrs did not send', () => {
+		for (const phase of ['needs_a_decision', 'import_refused', 'waiting_to_import', 'importing', 'failed']) {
+			expect(doneLine({ ...done, phase })).toBe('');
+			expect(doneInLibrary({ ...done, phase })).toBe(false);
+		}
+		expect(doneLine({ ...done, client_item: true })).toBe('');
+		expect(doneLine({ ...done, state: 'downloading', phase: 'downloading' })).toBe('');
+	});
 });
 
 describe('after seeding', () => {
@@ -293,5 +329,20 @@ describe('same path pair', () => {
 		expect(samePathPair({ theirs: '/mnt/torrents', ours: '/mnt/Torrents' })).toBe(false);
 		expect(samePathPair({ theirs: '/data/downloads', ours: '/downloads' })).toBe(false);
 		expect(samePathPair({ theirs: '', ours: '' })).toBe(false);
+	});
+});
+
+describe('the Remove button with Also delete files', () => {
+	it('says delete files only when some selected row loses its files', () => {
+		expect(removeDeletesFiles(true, [{ files_stay: true }])).toBe(false);
+		expect(removeDeletesFiles(true, [{ files_stay: true }, { files_stay: false }])).toBe(true);
+		expect(removeDeletesFiles(true, [{}])).toBe(true);
+		expect(removeDeletesFiles(false, [{}])).toBe(false);
+	});
+	it('does not say delete files when only blocked outside rows would lose files', () => {
+		const rows = [{ outside: true, files_stay: false }, { outside: false, files_stay: true }];
+		expect(removeDeletesFiles(true, removeSent(rows, false))).toBe(false);
+		expect(removeDeletesFiles(true, removeSent(rows, true))).toBe(true);
+		expect(removeSent(rows, false)).toEqual([rows[1]]);
 	});
 });

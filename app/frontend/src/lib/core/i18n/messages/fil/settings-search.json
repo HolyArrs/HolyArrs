@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Tanggihan ang mga Release na nai-post bago ang petsa ng labas",
 	"settings.search.refuseEarlyHint": "Malamang na peke. Ipinapakita pa rin ito ng Pumili ng release, may kasamang babala.",
 	"settings.search.refuseTiny": "Tanggihan ang mga peke ayon sa laki at uri ng file",
-	"settings.search.refuseTinyHint": "Mga sobrang liit na Release, walang laman na file at .wmv o .asf sa ilalim ng mga pangalang HD",
+	"settings.search.refuseTinyHint": "Mga sobrang liit na Release, walang laman na file, putol na video at .wmv o .asf sa ilalim ng mga pangalang HD",
 	"settings.search.grace": "Oras na puwedeng maaga ang isang Release",
 	"settings.search.graceHint": "Para sa mga time zone. Default ay 24.",
 	"settings.search.floors": "Suriin ang laki ng file sa import",

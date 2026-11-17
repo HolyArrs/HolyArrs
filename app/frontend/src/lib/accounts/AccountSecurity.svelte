@@ -6,6 +6,7 @@
 	import Confirm from '#lib/ui/Confirm.svelte';
 	import { needsConfirm } from '#lib/ui/sensitive.ts';
 	import QrCode from './QrCode.svelte';
+	import MediaServerLink from './MediaServerLink.svelte';
 	import { strong } from './strong-error.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -245,13 +246,22 @@
 			linkBusy = false;
 		}
 	}
+	let resetCopied = $state(false);
+	async function copyReset() {
+		try {
+			await navigator.clipboard.writeText('holyarrs reset-owner');
+			resetCopied = true;
+			setTimeout(() => (resetCopied = false), 1500);
+		} catch {
+			/* Plain http has no clipboard; the command stays readable in the hint. */
+		}
+	}
 </script>
 
 <SettingsCard id="security-me" title={t('accounts.security.title')} icon="shield">
 	<div class="srow" id="twofactor-me">
-		<div class="txt"><span class="label">{t('accounts.security.tf')}</span><span class="hint">{t('accounts.security.tfHint')}</span></div>
+		<div class="txt"><span class="label">{t('accounts.security.tf')} <span class="chip" class:ok={session.s.twoFactor}>{session.s.twoFactor ? t('accounts.sso.on') : t('accounts.sso.off')}</span></span><span class="hint">{t('accounts.security.tfHint')}</span></div>
 		<div class="ctl">
-			<span class="chip" class:ok={session.s.twoFactor}>{session.s.twoFactor ? t('accounts.sso.on') : t('accounts.sso.off')}</span>
 			{#if !tfOpen && !setup}
 				<Button variant="secondary" type="button" onclick={openTwoFactor} busy={tfBusy} data-testid="two-factor-open">{session.s.twoFactor ? t('accounts.security.manage') : t('accounts.security.setUp')}</Button>
 			{/if}
@@ -335,7 +345,7 @@
 								</div>
 							</Confirm>
 						{:else}
-							<Button variant="plain" type="button" onclick={() => (plexUnlinking = true)} aria-label={t('accounts.security.unlinkPlex')}>{t('accounts.security.unlink')}</Button>
+							<Button variant="secondary" type="button" onclick={() => (plexUnlinking = true)} aria-label={t('accounts.security.unlinkPlex')}>{t('accounts.security.unlink')}</Button>
 						{/if}
 					</li>
 				</ul>
@@ -382,10 +392,11 @@
 			{/if}
 		</div>
 	{/if}
+	<MediaServerLink />
 	{#if session.s.role === 'owner'}
 		<div class="srow">
-			<div class="txt"><span class="label">{t('accounts.security.locked')}</span><span class="hint">{t('accounts.signin.runThis')}</span></div>
-			<div class="ctl"><code class="cmd">holyarrs reset-owner</code></div>
+			<div class="txt"><span class="label">{t('accounts.security.locked')}</span><span class="hint">{t('accounts.signin.runThis')} <code class="cmd">holyarrs reset-owner</code></span></div>
+			<div class="ctl"><Button variant="secondary" type="button" onclick={copyReset} data-testid="copy-reset">{resetCopied ? t('accounts.signin.copied') : t('accounts.signin.copy')}</Button></div>
 		</div>
 	{/if}
 </SettingsCard>
@@ -406,7 +417,7 @@
 	.codes { display: grid; grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); gap: 2px 12px; margin: 8px 0; list-style: none; padding: 0; }
 	.steps { margin: 0 0 0 var(--s-5); display: grid; gap: 6px; list-style: decimal; }
 	.key { display: block; margin-top: 6px; padding: 8px 10px; background: var(--surface-2); border-radius: var(--r-sm); overflow-wrap: anywhere; }
-	.cmd { font-size: 13px; padding: 4px 8px; border-radius: 6px; background: var(--surface-2); white-space: nowrap; }
+	.cmd { font-size: 12px; padding: 1px 6px; border-radius: 6px; background: var(--surface-2); white-space: nowrap; }
 		.six { max-width: none; flex: 1; }
 	@media (max-width: 600px) {
 		.six { max-width: none; flex: 1; }

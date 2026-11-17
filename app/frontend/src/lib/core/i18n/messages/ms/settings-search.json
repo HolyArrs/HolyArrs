@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Tolak Keluaran yang disiarkan sebelum tarikh keluaran",
 	"settings.search.refuseEarlyHint": "Berkemungkinan palsu. Pilih keluaran masih memaparkannya, dengan amaran.",
 	"settings.search.refuseTiny": "Tolak yang palsu mengikut saiz dan jenis fail",
-	"settings.search.refuseTinyHint": "Keluaran yang terlalu kecil, fail kosong dan .wmv atau .asf di bawah nama HD",
+	"settings.search.refuseTinyHint": "Keluaran yang terlalu kecil, fail kosong, video terpotong dan .wmv atau .asf di bawah nama HD",
 	"settings.search.grace": "Jam Keluaran boleh lebih awal",
 	"settings.search.graceHint": "Untuk zon waktu. Lalai 24.",
 	"settings.search.floors": "Semak saiz fail semasa import",

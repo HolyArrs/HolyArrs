@@ -12,6 +12,13 @@ import (
 // RoutePerms says what each route needs. Routes missing here are for the
 // owner only, so a new route is closed until someone decides who may use it.
 var RoutePerms = map[string]webserver.Perm{
+	"GET /api/v1/plugins":                               webserver.NeedOwner,
+	"POST /api/v1/plugins/{id}/install":                 webserver.NeedOwner,
+	"POST /api/v1/plugins/{id}/start":                   webserver.NeedOwner,
+	"POST /api/v1/plugins/{id}/stop":                    webserver.NeedOwner,
+	"DELETE /api/v1/plugins/{id}":                       webserver.NeedOwner,
+	"GET /api/v1/plugins/tailscale/status":              webserver.NeedOwner,
+	"POST /api/v1/plugins/tailscale/signout":            webserver.NeedOwner,
 	"GET /api/v1/data-packs":                            webserver.NeedOwner,
 	"GET /api/v1/data-packs/{id}":                       webserver.NeedOwner,
 	"GET /api/v1/data-packs/{id}/preview":               webserver.NeedOwner,
@@ -40,8 +47,14 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/library/copies/search":                webserver.PermManageLibrary,
 	"GET /api/v1/library/stats":                         webserver.PermManageLibrary,
 	"GET /api/v1/library/stats/watched":                 webserver.PermManageLibrary,
+	"GET /api/v1/media-servers/watch-links":             webserver.PermManageLibrary,
+	"GET /api/v1/my/watched":                            webserver.NeedSignedIn,
+	"GET /api/v1/library/watched-by-anyone":             webserver.NeedUsers,
 	"GET /api/v1/settings/watch-history":                webserver.NeedOwner,
 	"PUT /api/v1/settings/watch-history":                webserver.NeedOwner,
+	"GET /api/v1/settings/plex-labels":                  webserver.NeedOwner,
+	"PUT /api/v1/settings/plex-labels":                  webserver.NeedOwner,
+	"POST /api/v1/settings/plex-labels/run":             webserver.NeedOwner,
 
 	// The app's pages and files; the pages themselves ask the API.
 	"GET /":      webserver.NeedSelf,
@@ -74,6 +87,9 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/auth/plex/my-link/start":      webserver.NeedSelf,
 	"POST /api/v1/auth/plex/my-link/finish":     webserver.NeedSelf,
 	"DELETE /api/v1/auth/plex/my-link":          webserver.NeedSelf,
+	"GET /api/v1/auth/media-link":               webserver.NeedSelf,
+	"POST /api/v1/auth/media-link/{server}":     webserver.NeedSelf,
+	"DELETE /api/v1/auth/media-link/{kind}":     webserver.NeedSelf,
 	"POST /api/v1/auth/oidc/link-finish":        webserver.NeedSelf,
 	"POST /api/v1/auth/forward/link":            webserver.NeedSelf,
 	"POST /api/v1/auth/password":                webserver.NeedSelf,
@@ -241,6 +257,8 @@ var RoutePerms = map[string]webserver.Perm{
 	"PUT /api/v1/settings/alerts":                    webserver.PermSettings,
 	"GET /api/v1/settings/url-base":                  webserver.PermSettings,
 	"PUT /api/v1/settings/url-base":                  webserver.PermSettings,
+	"GET /api/v1/settings/proxy":                     webserver.PermSettings,
+	"PUT /api/v1/settings/proxy":                     webserver.PermSettings,
 	"GET /api/v1/alerts":                             webserver.PermSettings,
 	"POST /api/v1/alerts":                            webserver.PermSettings,
 	"PUT /api/v1/alerts/{id}":                        webserver.PermSettings,
@@ -443,6 +461,8 @@ var RoutePerms = map[string]webserver.Perm{
 	"PUT /api/v1/settings/release-gate":    webserver.PermSettings,
 	"GET /api/v1/settings/trakt-key":       webserver.PermSettings,
 	"PUT /api/v1/settings/trakt-key":       webserver.PermSettings,
+	"GET /api/v1/settings/mdblist-key":     webserver.PermSettings,
+	"PUT /api/v1/settings/mdblist-key":     webserver.PermSettings,
 	"GET /api/v1/settings/trakt-token":     webserver.NeedOwner,
 	"PUT /api/v1/settings/trakt-token":     webserver.NeedOwner,
 	"GET /api/v1/outside-lists":            webserver.PermSettings,
@@ -459,11 +479,13 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/auth/keys":                webserver.PermSettings,
 	"POST /api/v1/auth/keys":               webserver.PermSettings,
 	"DELETE /api/v1/auth/keys/{id}":        webserver.PermSettings,
+	"PUT /api/v1/auth/keys/{id}":           webserver.PermSettings,
 	"GET /api/v1/auth/settings":            webserver.PermSettings,
 
 	// People.
 	"GET /api/v1/users":                        webserver.NeedUsers,
 	"PUT /api/v1/users/{id}":                   webserver.NeedUsers,
+	"DELETE /api/v1/users/{id}":                webserver.NeedUsers,
 	"POST /api/v1/users/{id}/two-factor/reset": webserver.NeedUsers,
 	"GET /api/v1/users/{id}/sessions":          webserver.NeedUsers,
 	"POST /api/v1/users/{id}/password":         webserver.NeedUsers,
@@ -480,6 +502,10 @@ var RoutePerms = map[string]webserver.Perm{
 	"PUT /api/v1/auth/sso":               webserver.NeedOwner,
 	"POST /api/v1/auth/sso/test":         webserver.NeedOwner,
 	"POST /api/v1/users/{id}/sso/unlink": webserver.NeedOwner,
+	// Linking someone to their account on a connected Jellyfin or Emby server.
+	"GET /api/v1/users/media-accounts":            webserver.NeedOwner,
+	"PUT /api/v1/users/{id}/media-link":           webserver.NeedOwner,
+	"DELETE /api/v1/users/{id}/media-link/{kind}": webserver.NeedOwner,
 	// Setting up outside sign-in: link the owner's Plex, test an address, import people.
 	"POST /api/v1/auth/plex/link/start":          webserver.NeedOwner,
 	"POST /api/v1/auth/plex/link/finish":         webserver.NeedOwner,
@@ -520,8 +546,13 @@ var RoutePerms = map[string]webserver.Perm{
 
 	// Schedules (3.5.8): staff who run the Library see them and run one
 	// now (the Job's part must be on); the intervals are settings.
-	"GET /api/v1/app/update":            webserver.PermManageLibrary,
-	"POST /api/v1/app/update/check":     webserver.PermSettings,
+	"GET /api/v1/app/update":        webserver.PermManageLibrary,
+	"POST /api/v1/app/update/check": webserver.PermSettings,
+	// In-app updates replace the running program: owner and admins only.
+	"GET /api/v1/app/update/install":    webserver.PermSettings,
+	"POST /api/v1/app/update/install":   webserver.NeedUsers,
+	"POST /api/v1/app/update/go-back":   webserver.NeedUsers,
+	"PUT /api/v1/app/update/mode":       webserver.NeedUsers,
 	"GET /api/v1/schedules":             webserver.PermManageLibrary,
 	"POST /api/v1/schedules/{kind}/run": webserver.PermManageLibrary,
 	"PUT /api/v1/schedules/{kind}":      webserver.PermSettings,

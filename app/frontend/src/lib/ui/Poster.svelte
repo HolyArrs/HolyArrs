@@ -14,10 +14,10 @@
 	// Small posters ask the server for a 250px copy to save bandwidth.
 	const shown = $derived.by(() => {
 		const url = src ?? '';
-		const viaCache = proxied(url);
-		if (viaCache !== url) return viaCache;
 		const small = sized.test(url) && width <= 125 && width * (globalThis.devicePixelRatio || 1) <= 250;
-		return to(small ? `${url}${url.includes('?') ? '&' : '?'}size=250` : url);
+		const want = small ? `${url}${url.includes('?') ? '&' : '?'}size=250` : url;
+		const viaCache = proxied(want);
+		return viaCache !== want ? viaCache : to(want);
 	});
 
 	// Only our own art routes can resize, and only when no size is set yet.

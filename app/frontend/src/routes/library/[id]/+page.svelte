@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PersonText from '#lib/ui/PersonText.svelte';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import type { StatusKind } from '#lib/ui/StatusPill.svelte';
 	import { downloadTone } from '#lib/downloads/index.ts';
@@ -8,6 +9,7 @@
 	import { createTitleRemove } from '#lib/mediafiles/index.ts';
 	import { createTitleSearch } from '#lib/mediafiles/index.ts';
 	import '#lib/ui/title-page.css';
+	import { extrasIdOf } from '#lib/ui/library-art.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import { TitleEmpty as EmptyState } from '#lib/mediafiles/index.ts';
 	import TitleHero, { richMetadata, runtimeWords, shortFolder, type RichMeta } from '#lib/ui/TitleHero.svelte';
@@ -48,6 +50,7 @@
 	import { scrollToStart } from '#lib/core/motion.ts';
 	import type { EventPage, EventRecord, ReleasePage, ReleaseView, TitleView, VersionView } from '#lib/core/types.ts';
 	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
+	import { WatchLinks } from '#lib/mediaservers/index.ts';
 
 	const id = $derived(Number(page.params.id));
 	const libraryBack = $derived.by(() => {
@@ -59,7 +62,7 @@
 	});
 	let title = $state<TitleView | null>(null);
 	// A movie or show with a TMDB id opens the one title page (lib/discover TitlePage), the same page New & Popular, Explore and search open; its Library tab and More menu hold the manager tools. The page below stays only for the cases that page does not cover.
-	const shared = (t: TitleView | null): t is TitleView & { ids: { tmdb: string } } => !!t && (t.kind === 'movie' || t.kind === 'show') && !!t.ids?.tmdb;
+	const shared = (t: TitleView | null): t is TitleView & { ids: { tmdb: string } } => !!t && (t.kind === 'movie' || t.kind === 'show') && !!t.ids?.tmdb && extrasIdOf(t) !== '';
 
 	// Who asked.
 	let askedBy = $state<AskedByAnswer>({ titles: {} });
@@ -289,7 +292,7 @@
 <PageLoader loading={!title} label={tr('library.title.loading')} onretry={() => load()}>
 {#if title}
 {#if shared(title)}
-	{#key title.id}<TitlePage kind={title.kind} tmdb={String(title.ids.tmdb)} libraryId={title.id} backHref={page.url.searchParams.has('returnTo') ? libraryBack : undefined} />{/key}
+	{#key title.id}<TitlePage kind={title.kind} tmdb={extrasIdOf(title)} libraryId={title.id} backHref={page.url.searchParams.has('returnTo') ? libraryBack : undefined} />{/key}
 {:else if title.kind === 'show'}
 	<ShowPage askSheet={askShowSheet} quickAsk={quickAskSheet} {title} onchange={(t) => (title = t)} {error} onretry={() => load('title')} />
 {:else if title.kind === 'artist'}
@@ -322,6 +325,7 @@
 				{:else if mayReport}
 					<ActionMenu label={tr('shows.page.moreActions')} caption={tr('shows.page.more')} icon="more" items={moreItems} />
 				{/if}
+				{#if manage}<WatchLinks titleId={title!.id} />{/if}
 				<FollowButton titleId={title!.id} kind="movie" />
 			{/snippet}
 		</TitleHero>
@@ -371,9 +375,9 @@
 				{#each title.asks as a (a.id)}
 					<dl class="facts">
 						<dt>{tr('shows.page.askedBy')}</dt>
-						<dd>{peopleNames(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
+						<dd><PersonText text={peopleNames(a.people.map((p) => p.name))} /> · {date(a.asked_at)}</dd>
 						{#if decided(a)}<dt>{tr('shows.page.decided')}</dt>
-							<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
+							<dd><PersonText text={decided(a)} />{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
 						<dt>{tr('shows.page.now')}</dt>
 						<dd>{serverWords(a.state_label)}</dd>
 						{#if a.note}<dt>{tr('shows.page.note')}</dt>
@@ -675,7 +679,7 @@
 		{#if removeFlow.delError}<p class="form-error" role="alert">{removeFlow.delError}</p>{/if}
 		<div class="row modal-actions">
 			<Button variant="plain" onclick={() => removeFlow.deleteDialog?.close()}>{tr('mediafiles.dialogs.cancel')}</Button>
-			<Button variant="destructive" onclick={removeFlow.doDelete} disabled={removeFlow.delBusy || !removeFlow.delPlan} busy={removeFlow.delBusy}>{tr('library.title.deleteMovie')}</Button>
+			<Button variant="destructive" onclick={removeFlow.doDelete} disabled={removeFlow.delBusy || !removeFlow.delPlan} busy={removeFlow.delBusy}>{title?.kind === 'artist' ? tr('music.deleteArtist') : title?.kind === 'show' ? tr('discover.titleLibrary.deleteShow') : tr('library.title.deleteMovie')}</Button>
 		</div>
 	{/if}
 </dialog>

@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "Pareho ang dalawang path, kaya walang binabago ang pares na ito. Sinasabi pa rin nito sa HolyArrs kung nasaan ang mga file ng downloader na ito, kaya puwede mo itong itago.",
 	"settings.downloaders.change": "Baguhin ang {name}",
 	"settings.downloaders.whichApp": "Aling app",
-	"settings.downloaders.torrents": "(mga torrent)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torrents",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "Pinakaginagamit",
 	"settings.downloaders.name": "Pangalan",
 	"settings.downloaders.address": "Address",
 	"settings.downloaders.addressHint": "Ang web page nito. Para sa SABnzbd, gamitin ang IP o payagan ang host name ng HolyArrs.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Kategorya pagkatapos ng import",
 	"settings.downloaders.categoryAfterImportHint": "Kapag na-import na ang torrent, ililipat ito ng HolyArrs sa kategoryang ito. Iwanang blangko para manatili ito sa pangunahing kategorya.",
 	"settings.downloaders.ownOnly": "Ipakita lang ang mga item ng HolyArrs",
-	"settings.downloaders.ownOnlyHint": "Nakatago ang mga item ng ibang app sa Downloader na ito, at hindi ito binabago ng HolyArrs."
+	"settings.downloaders.ownOnlyHint": "Nakatago ang mga item ng ibang app sa Downloader na ito, at hindi ito binabago ng HolyArrs.",
+	"settings.downloaders.state.notAnswering": "Hindi sumasagot",
+	"settings.downloaders.state.paused": "Naka-pause",
+	"settings.downloaders.state.resting": "Nagpapahinga",
+	"settings.downloaders.state.signInRefused": "Tinanggihan ang pag-sign in",
+	"settings.downloaders.state.working": "Gumagana"
 }

@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Liitä tunnus, esimerkiksi tmdb:693134 tai tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Tai kuvaile sitä, esimerkiksi “avaruuselokuva robotin kanssa vuodelta 2014”.",
 	"discover.search.lookEverywhere": "Etsi kaikkialta",
-	"discover.search.searchIndexersFor": "Etsi indeksoijista: “{searched}”",
+	"discover.search.searchIndexersFor": "Tarkista lähteesi",
 	"discover.search.topMatches": "Parhaat osumat",
 	"discover.people.goToTheFilmography": "Siirry filmografiaan",
 	"discover.people.filmography": "Filmografia",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Ei sovi tähän versioon",
 	"discover.leftovers.reason.movie_has_file": "Elokuvalla on jo tiedosto",
 	"discover.leftovers.reason.replaced_by_hand": "Korvattu toisella tiedostolla",
-	"discover.leftovers.reason.unmatched": "Yhdistäminen purettu käsin"
+	"discover.leftovers.reason.unmatched": "Yhdistäminen purettu käsin",
+	"discover.searchSections.genres": "Lajityypit",
+	"discover.searchSections.moods": "Tunnelmat",
+	"discover.searchSections.stories": "Tarinat ja teemat",
+	"discover.searchSections.worlds": "Maailmat ja miljööt",
+	"discover.searchSections.eras": "Aikakaudet",
+	"discover.searchSections.world": "Maailmalta",
+	"discover.searchSections.collections": "Kokoelmat",
+	"discover.popularRail.out": "Julkaistaan",
+	"discover.popularRail.comingDay": "Tulossa",
+	"discover.titleLibrary.turnShowOnHint": "Laita sarja päälle, niin etsiminen alkaa.",
+	"discover.leftovers.reason.seasons_differ": "Löytyi vain vanhan sovelluksen TMDB-numerolla: tarkista, että se on sama sarja, ja yhdistä tiedosto sitten itse"
 }

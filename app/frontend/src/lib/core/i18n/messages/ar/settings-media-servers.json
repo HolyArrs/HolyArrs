@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "مسار HolyArrs",
 	"settings.mediaServers.pathTo": "المجلد نفسه على الخادم",
 	"settings.mediaServers.pathHint": "فقط إذا كان الخادم يرى ملفاتك تحت مسار آخر",
+	"settings.mediaServers.webUrl": "العنوان للمتصفحات",
+	"settings.mediaServers.webUrlHint": "العنوان الذي يفتح منه الجميع الخادم على الهاتف أو الكمبيوتر. يضيف زر فتح إلى صفحات العناوين الموجودة فيه. اتركه فارغًا لعدم إظهار الزر.",
 	"settings.mediaServers.local": "الوصول إلى الشبكة المحلية",
 	"settings.mediaServers.send": "أرسل التحديثات",
 	"settings.mediaServers.save": "حفظ",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "إيقاف سجل المشاهدة؟ سيُحذف كل ما قُرئ حتى الآن.",
 	"settings.mediaServers.watchTurnedOn": "سجل المشاهدة يعمل. تأتي أول قراءة خلال 30 دقيقة.",
 	"settings.mediaServers.watchTurnedOff": "أُوقف سجل المشاهدة",
-	"settings.mediaServers.watchFailed": "تعذّر تغيير سجل المشاهدة"
+	"settings.mediaServers.watchFailed": "تعذّر تغيير سجل المشاهدة",
+	"settings.mediaServers.labelTitle": "تسميات Plex",
+	"settings.mediaServers.labelSwitch": "تسمية العناوين المطلوبة",
+	"settings.mediaServers.labelHint": "عندما يكون فيلم أو مسلسل مطلوب في Plex، يضيف HolyArrs تسمية إليه، لتتمكن من التصفية أو إنشاء مجموعات أو المشاركة بها في Plex. تبقى التسميات الموجودة.",
+	"settings.mediaServers.labelText": "التسمية",
+	"settings.mediaServers.labelAskers": "أضف أيضًا اسم صاحب الطلب كتسمية",
+	"settings.mediaServers.labelSaved": "تم حفظ تسميات Plex",
+	"settings.mediaServers.labelFailed": "تعذر حفظ تسميات Plex",
+	"settings.mediaServers.labelExisting": "تسمية العناوين المطلوبة الموجودة",
+	"settings.mediaServers.labelExistingStarted": "بدأت التسمية. تحصل العناوين على تسمياتها خلال دقائق.",
+	"settings.mediaServers.labelExistingFailed": "تعذر بدء التسمية"
 }

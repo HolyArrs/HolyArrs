@@ -98,6 +98,13 @@ describe('statusWord', () => {
 	});
 });
 
+describe('a finished torrent still seeding', () => {
+	it('reads Done · seeding, as its panel says', () => {
+		expect(statusWord({ phase: 'done', state: 'finished', progress: 1, seeding: true })).toBe('Done · seeding');
+		expect(statusWord({ phase: 'done', state: 'finished', progress: 1, seeding: false })).toBe('Done');
+	});
+});
+
 describe('a failed copy that was replaced', () => {
 	it('leaves Problems but still reads Failed', () => {
 		const gone = { phase: 'vanished', state: 'vanished', progress: 0.2, replaced: true };

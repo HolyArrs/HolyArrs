@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Правила отбора для этого варианта",
 	"movies.versions.folderLabel": "Папка Медиатеки для этого варианта",
 	"movies.versions.cancel": "Отмена",
-	"movies.versions.addButton": "Добавить вариант"
+	"movies.versions.addButton": "Добавить вариант",
+	"movies.versions.setEdition": "Указать версию фильма",
+	"movies.versions.editionFileHint": "Какая это версия фильма, например Theatrical или Directors Cut. Оставьте пустым, чтобы очистить.",
+	"movies.versions.unprotectConfirm": "Снять защиту с {label}? Копия получше снова сможет её заменить.",
+	"movies.versions.editionChars": "Нельзя использовать:",
+	"movies.versions.editionInvalid": "Эту версию фильма использовать нельзя. Сделайте название короче (буквы с диакритикой и не латинские буквы занимают больше места), уберите символы из списка выше и не ставьте точку в конце.",
+	"movies.versions.editionDevice": "Windows резервирует имя {name} для устройств, поэтому его использовать нельзя. Введите другое."
 }

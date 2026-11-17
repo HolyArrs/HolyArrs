@@ -94,13 +94,14 @@ func TestEveryRouteChecksItsScope(t *testing.T) {
 	}
 }
 
-// TestKeyScopeCannotBeRaised: no route changes a key once made, and the
-// key routes themselves need the admin scope.
+// TestKeyScopeCannotBeRaised: no route changes a key's scopes once made
+// (the one edit route changes only an AI key's tick boxes), and the key
+// routes themselves need the admin scope.
 func TestKeyScopeCannotBeRaised(t *testing.T) {
 	for _, r := range allRoutes(t) {
 		_, path, _ := strings.Cut(r, " ")
 		if strings.HasPrefix(path, "/api/v1/auth/keys") {
-			if strings.HasPrefix(r, "PUT ") || strings.HasPrefix(r, "PATCH ") {
+			if (strings.HasPrefix(r, "PUT ") || strings.HasPrefix(r, "PATCH ")) && r != "PUT /api/v1/auth/keys/{id}" {
 				t.Errorf("%s edits a key; a key's scopes are fixed when it is made", r)
 			}
 			if RouteScope(r) != webserver.ScopeAdmin {

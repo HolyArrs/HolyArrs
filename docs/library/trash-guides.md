@@ -53,7 +53,7 @@ After applying, **left out** lists every TRaSH entry HolyArrs didn't take, and w
 
 TRaSH entries with no score in the profile are skipped quietly, since they change nothing. Optional TRaSH groups (the ones a profile doesn't include by default) aren't added; give those traits points yourself after a sync if you want them.
 
-Pick rules hold at most 64 traits. If a sync would go over, the strongest scores are kept and the rest are listed.
+Pick rules hold at most 256 traits. If a sync would go over, the strongest scores are kept and the rest are listed.
 
 ## Problems
 

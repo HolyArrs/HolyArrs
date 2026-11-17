@@ -134,7 +134,7 @@
 			</li>
 		{/each}
 	</ul>
-	{#if !isDefault}<Button variant="plain" size="sm" onclick={resetRatingPicks}>{t('settings.appearance.reset')}</Button>{/if}
+	{#if !isDefault}<Button variant="secondary" onclick={resetRatingPicks}>{t('settings.appearance.reset')}</Button>{/if}
 </SettingsCard>
 
 <SettingsCard id="about-card" title={t('settings.appearance.about')} description={t('settings.appearance.aboutDesc')} icon="info">
@@ -152,7 +152,7 @@
 			{/each}
 		</ul>
 	{/each}
-	{#if !aboutIsDefault()}<Button variant="plain" size="sm" onclick={resetAboutPicks}>{t('settings.appearance.reset')}</Button>{/if}
+	{#if !aboutIsDefault()}<Button variant="secondary" onclick={resetAboutPicks}>{t('settings.appearance.reset')}</Button>{/if}
 </SettingsCard>
 
 {#if autoplay !== null}

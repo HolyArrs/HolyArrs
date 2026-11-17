@@ -7,6 +7,7 @@
 	"settings.sources.title": "Allikad",
 	"settings.sources.add": "Lisa allikas",
 	"settings.sources.lead": "Prioriteet 1 läheb esimesena. Ebaõnnestunud allikas jäetakse kuni kuueks tunniks vahele. Voota saitide jaoks lisa Jackett või Prowlarr Torznabi voona.",
+	"settings.sources.builtIn": "Sisseehitatud saitidele pole Jackettit ega Prowlarri vaja: {sites}. Vali {site} kohas {kind}.",
 	"settings.sources.change": "Muuda: {name}",
 	"settings.sources.name": "Nimi",
 	"settings.sources.feedKind": "Voo liik",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Salvesta",
 	"settings.sources.cancel": "Tühista",
 	"settings.sources.none": "Allikaid pole",
-	"settings.sources.noneText": "Lisa Torznabi või Newznabi voog või Jackett või Prowlarr.",
+	"settings.sources.noneText": "Lisa sisseehitatud sait, Torznabi või Newznabi voog või Jackett või Prowlarr.",
 	"settings.sources.rowTitle": "{url} · prioriteet {priority} · {uses}",
 	"settings.sources.priorityUses": "Prioriteet {priority} · {uses}",
 	"settings.sources.keyIs": "võti {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Sait",
 	"settings.sources.addressSite": "Saidi enda aadress. Muuda seda ainult siis, kui sait on kolinud.",
 	"settings.sources.siteKeyLabel": "Küpsis või RSS-võti",
-	"settings.sources.siteKeyHint": "Oma kontolt: uid ja pass brauseri küpsisest või u ja tp oma RSS-lingist. Hoitakse krüpteeritult."
+	"settings.sources.siteKeyHint": "Oma kontolt: uid ja pass brauseri küpsisest või u ja tp oma RSS-lingist. Hoitakse krüpteeritult.",
+	"settings.sources.sendTo": "Saada allalaadimised",
+	"settings.sources.sendToAny": "Mis tahes allalaadija",
+	"settings.sources.sendToHint": "Kõik sellest allikast valitu läheb ainult sellele allalaadijale. Kui see ei tööta, ootab.",
+	"settings.sources.sendToGone": "Valitud allalaadija eemaldati. Selle allika allalaadimised lähevad nüüd mis tahes allalaadijale."
 }

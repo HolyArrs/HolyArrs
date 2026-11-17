@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Sisihkan Rilis yang diposting sebelum tanggal rilis",
 	"settings.search.refuseEarlyHint": "Kemungkinan palsu. Pilih rilis tetap menampilkannya, dengan peringatan.",
 	"settings.search.refuseTiny": "Sisihkan yang palsu berdasarkan ukuran dan jenis file",
-	"settings.search.refuseTinyHint": "Rilis yang terlalu kecil, file kosong, dan .wmv atau .asf dengan nama HD",
+	"settings.search.refuseTinyHint": "Rilis yang terlalu kecil, file kosong, video terpotong, dan .wmv atau .asf dengan nama HD",
 	"settings.search.grace": "Jam sebuah Rilis boleh lebih awal",
 	"settings.search.graceHint": "Untuk zona waktu. Bawaan 24.",
 	"settings.search.floors": "Periksa ukuran file saat impor",

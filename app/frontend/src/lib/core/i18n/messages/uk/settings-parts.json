@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Не вдалося підключити {name}",
 	"settings.parts.connected": "{name} підключено",
 	"settings.parts.title": "Розділи",
+	"settings.parts.onOff": "Увімкнення і вимкнення розділів",
 	"settings.parts.ownerOnly": "Лише власник і адміни",
 	"settings.parts.safeMode": "HolyArrs працює в безпечному режимі: працює лише основа, а перемикачі розділів і керування етапами відхиляються до звичайного запуску. Щоб вийти з безпечного режиму, скористайся <b>Перезапустити HolyArrs</b> у розділі <a>Небезпечна зона</a>.",
 	"settings.parts.dangerZone": "Небезпечна зона",

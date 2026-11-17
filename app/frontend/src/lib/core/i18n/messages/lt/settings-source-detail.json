@@ -34,5 +34,6 @@
 	"settings.sourceDetail.what": "Ką",
 	"settings.sourceDetail.result": "Rezultatas",
 	"settings.sourceDetail.time": "Laikas",
-	"settings.sourceDetail.answeredCell": "Atsakė"
+	"settings.sourceDetail.answeredCell": "Atsakė",
+	"settings.sourceDetail.noTimes": "Atsakymų dar nėra"
 }

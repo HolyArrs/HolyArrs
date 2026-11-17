@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "enginn",
 	"settings.thisApp.needsRestart": "Krefst endurræsingar. HOLYARRS_URL_BASE eða -url-base gengur framar.",
 	"settings.thisApp.save": "Vista",
-	"settings.thisApp.licence": "HolyArrs er frjáls hugbúnaður undir AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs er frjáls hugbúnaður undir AGPL-3.0.",
+	"settings.thisApp.proxy": "Proxy",
+	"settings.thisApp.proxyDesc": "Senda útköll í gegnum proxy. Bann- og heimanetsreglur gilda áfram um raunverulegan áfangastað.",
+	"settings.thisApp.proxyType": "Tegund",
+	"settings.thisApp.proxyOff": "Slökkt",
+	"settings.thisApp.proxyHost": "Hýsill",
+	"settings.thisApp.proxyPort": "Gátt",
+	"settings.thisApp.proxyUser": "Notandanafn",
+	"settings.thisApp.proxyPasswordLabel": "Lykilorð",
+	"settings.thisApp.proxyPasswordKept": "Skildu eftir autt til að halda vistaða lykilorðinu",
+	"settings.thisApp.proxyBypass": "Sleppa proxy fyrir",
+	"settings.thisApp.proxyBypassHint": "Nöfn, vistföng eða svið, aðskilin með kommum. *.example.com nær yfir öll nöfn undir því.",
+	"settings.thisApp.proxyBypassLocal": "Sleppa proxy fyrir staðbundin vistföng",
+	"settings.thisApp.proxyBypassLocalHint": "Þessi vél og heimanetið tengjast beint",
+	"settings.thisApp.proxySaved": "Proxy vistað",
+	"settings.thisApp.proxyOffSaved": "Slökkt á proxy"
 }

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import Words from '#lib/ui/Words.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import { supportLinks } from './support-links.ts';
 	// Retro about window: types its lines, slams tags in, and sends runners across the title bar.
 	import silkscreen from '@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url';
 	import { tick } from 'svelte';
@@ -13,8 +15,6 @@
 		void face.load().catch(() => {});
 	}
 
-	// The Support block stays hidden until this holds a real link.
-	const SUPPORT_URL = '';
 	// Run-cycle frames for the two runners.
 	const luisF = [0, 1, 2, 1].map((i) => to(`/why/coderluii-run-${i}.png`));
 	const dogF = [0, 1, 2, 3, 4, 5].map((i) => to(`/why/peanut-run-${i}.png`));
@@ -135,7 +135,7 @@
 			if (beat.classList.contains('thanks')) { slam(beat); await wait(260); }
 			slam(beat.querySelector('.wtag'));
 			await wait(420);
-			for (const el of beat.querySelectorAll('.typed, .wchip, .wone')) {
+			for (const el of beat.querySelectorAll('.typed, .wchip, .wone, .sponsor')) {
 				if (id !== run) return;
 				if (el.classList.contains('typed')) await typeIn(el, el.classList.contains('big') ? 42 : el.tagName === 'LI' ? 22 : 24, id);
 				else { slam(el); await wait(200); }
@@ -144,8 +144,6 @@
 			await wait(600);
 		}
 		if (id !== run) return;
-		const sp = dlg.querySelector('.who .support');
-		if (sp) { slam(sp); later(260, () => slam(sp.querySelector('a'))); }
 		playing = false;
 	}
 
@@ -239,7 +237,6 @@
 			<aside class="who">
 				<div class="photo stk" style="--r0:-14deg;--r1:-2deg"><img src={to('/why/luis.webp')} alt={t('health.why.photoAlt')} /><span class="scan" aria-hidden="true"></span></div>
 				<div class="name"><b>Luis</b><small>{t('health.why.made')}</small><a href="https://coderluii.dev" target="_blank" rel="noopener">coderluii.dev</a></div>
-				{#if SUPPORT_URL}<div class="support stk" style="--r0:6deg"><p>{t('health.why.saves')}</p><a href={SUPPORT_URL} target="_blank" rel="noopener" class="stk" style="--r0:-16deg"><span aria-hidden="true">♥</span> {t('health.why.support')}</a></div>{/if}
 			</aside>
 			<div class="story">
 				<section>
@@ -258,7 +255,7 @@
 				<section>
 					<span class="wtag stk">{t('health.why.now')}</span>
 					<p class="big typed">{t('health.why.built')}</p>
-					<div class="onerow"><span class="wone stk">{t('health.why.one')}</span></div>
+					<div class="onerow"><span class="wone stk">{t('health.why.one')}</span><span class="said typed"><span class="ipa">/ˈhoʊ·li·ɑːrz/</span> · "holy" + "arrs", {t('health.why.oneSay')}</span></div>
 					<p class="say typed">{t('health.why.asks')}</p>
 				</section>
 				<section>
@@ -273,7 +270,15 @@
 				<section class="thanks stk" style="--r0:-4deg">
 					<span class="wtag tag-heart stk"><span class="heart" aria-hidden="true">{#each '01101101111111011111000111000001000' as c, i (i)}{#if c === '1'}<b></b>{:else}<s></s>{/if}{/each}</span>{t('health.why.thanks')}</span>
 					<p class="big typed">{t('health.why.thanksBig')}</p>
-					<p class="say typed">{t('health.why.thanksSay')}<span class="cur" aria-hidden="true"></span></p>
+					<p class="say typed">{t('health.why.thanksSay')}</p>
+					<div class="give">
+						<p class="say typed">{t('health.support.line2')}<span class="cur" aria-hidden="true"></span></p>
+						<div class="give-row">
+							{#each supportLinks as l, i (l.id)}
+								<a href={l.href} target={l.newTab ? '_blank' : undefined} rel={l.newTab ? 'noopener' : undefined} class="sponsor stk" class:alt={l.id !== 'sponsor'} style="--r0:{i % 2 ? -10 : 12}deg" data-testid="why-{l.id}"><Icon name={l.icon} size={16} stroke={2} />{t(`health.support.${l.id}`)}</a>
+							{/each}
+						</div>
+					</div>
 				</section>
 			</div>
 		</div>
@@ -326,9 +331,6 @@
 	.name b { display: block; font: 400 18px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; padding: 3px 0; }
 	.name small { display: block; margin-top: 6px; color: var(--muted); font-size: 13px; }
 	.name a { display: inline-block; margin-top: 8px; padding: 2px 0; color: var(--red-soft); text-decoration: none; font: 400 11px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; }
-	.support { display: grid; gap: 10px; justify-items: start; margin-top: 6px; padding: 12px 14px; border: 2px solid rgb(243 239 229 / 18%); background: var(--coal-2); }
-	.support p { margin: 0; color: color-mix(in srgb, var(--cream) 78%, transparent); font-size: 13px; line-height: 1.4; }
-	.support a { display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 16px; background: var(--cream); color: var(--coal); border: 2px solid var(--coal); box-shadow: 4px 4px 0 var(--red); text-decoration: none; font: 400 12px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; --r1: -2deg; }
 
 	.story { position: relative; display: grid; gap: 18px; }
 	.wtag { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 2px 0; font: 400 11px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; color: var(--red-soft); }
@@ -343,13 +345,23 @@
 	.wchip { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border: 2px solid rgb(243 239 229 / 35%); background: var(--coal-2); font: 400 10.5px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); transform: rotate(var(--r1, 0deg)); }
 	.wchip i { width: 7px; height: 7px; background: var(--c, #888); }
 	.wchip:nth-child(odd) { --r1: -2deg; } .wchip:nth-child(3n) { --r1: 3deg; translate: 0 3px; } .wchip:nth-child(even) { --r0: 12deg; }
-	.onerow { margin-top: 10px; }
+	.onerow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 10px; }
+	.said { font: 400 10.5px/1.6 var(--pixel); letter-spacing: .16em; word-spacing: .2em; color: var(--muted); }
+	.said .ipa { font: 400 13px/1 var(--font-ui); letter-spacing: .02em; }
 	.wone { display: inline-flex; align-items: center; height: 34px; padding: 0 16px; background: var(--red); color: var(--cream); border: 2px solid var(--cream); box-shadow: 4px 4px 0 var(--shade); font: 400 12px/1 var(--pixel); letter-spacing: .16em; text-transform: uppercase; --r1: -3deg; --r0: 14deg; transform: rotate(-3deg); }
 	.vision { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 	.vision li { position: relative; padding-left: 20px; font-size: 15px; line-height: 1.55; color: color-mix(in srgb, var(--cream) 86%, transparent); }
 	.vision li::before { content: ''; position: absolute; left: 2px; top: 8px; width: 8px; height: 8px; background: var(--red); box-shadow: 2px 2px 0 var(--shade); }
 	.thanks { padding: 16px 20px; border: 2px dashed rgb(243 239 229 / 30%); background: rgb(207 48 37 / 8%); }
 	.thanks .big { font-size: 18px; }
+	.give { display: grid; gap: 12px; justify-items: start; margin-top: 16px; padding-top: 16px; border-top: 2px dashed rgb(243 239 229 / 20%); }
+	.give .say { margin: 0; }
+	.sponsor { display: inline-flex; align-items: center; gap: 10px; min-height: 40px; padding: 8px 16px; background: var(--red); color: var(--cream); border: 2px solid var(--cream); box-shadow: 4px 4px 0 var(--shade); text-decoration: none; font: 400 12px/1.3 var(--pixel); letter-spacing: .16em; word-spacing: .2em; text-transform: uppercase; --r1: -2deg; transform: rotate(-2deg); }
+	.give-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 14px; }
+	.sponsor.alt { background: transparent; }
+	.sponsor:nth-child(even) { --r1: 1.5deg; transform: rotate(1.5deg); }
+	.sponsor:hover { box-shadow: 6px 6px 0 var(--shade); }
+	.sponsor:focus-visible { outline: 2px solid var(--cream); outline-offset: 4px; }
 	.cur { display: inline-block; width: 8px; height: 15px; margin-left: 6px; vertical-align: -2px; background: var(--cream); animation: blink 1s steps(1) infinite; }
 
 	/* Hidden until the script slams or types each part in. */
@@ -383,7 +395,6 @@
 		.screen { grid-template-columns: 1fr; gap: 22px; padding: 22px 18px; }
 		.who { position: static; grid-template-columns: 96px 1fr; align-items: center; }
 		.photo { width: 96px; }
-		.support { grid-column: 1 / -1; }
 		.big { font-size: 19px; } .thanks .big { font-size: 17px; }
 		.win { box-shadow: 6px 6px 0 var(--red), 6px 6px 0 3px var(--shade); }
 	}

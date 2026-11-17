@@ -7,6 +7,7 @@
 	"settings.sources.title": "Surse",
 	"settings.sources.add": "Adaugă o Sursă",
 	"settings.sources.lead": "Prioritatea 1 merge prima. O Sursă care eșuează e sărită până la șase ore. Pentru site-uri fără flux, adaugă Jackett sau Prowlarr ca flux Torznab.",
+	"settings.sources.builtIn": "Site-urile integrate nu au nevoie de Jackett sau Prowlarr: {sites}. Alege {site} la {kind}.",
 	"settings.sources.change": "Schimbă {name}",
 	"settings.sources.name": "Nume",
 	"settings.sources.feedKind": "Tipul fluxului",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Salvează",
 	"settings.sources.cancel": "Anulează",
 	"settings.sources.none": "Nicio Sursă",
-	"settings.sources.noneText": "Adaugă un flux Torznab sau Newznab, sau Jackett ori Prowlarr.",
+	"settings.sources.noneText": "Adaugă un site integrat, un flux Torznab sau Newznab, sau Jackett ori Prowlarr.",
 	"settings.sources.rowTitle": "{url} · prioritate {priority} · {uses}",
 	"settings.sources.priorityUses": "Prioritate {priority} · {uses}",
 	"settings.sources.keyIs": "cheie {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Site",
 	"settings.sources.addressSite": "Adresa proprie a site-ului. Schimb-o doar dacă site-ul s-a mutat.",
 	"settings.sources.siteKeyLabel": "Cookie sau cheie RSS",
-	"settings.sources.siteKeyHint": "Din contul tău: uid și pass din cookie-ul browserului, sau u și tp din linkul tău RSS. Păstrat criptat."
+	"settings.sources.siteKeyHint": "Din contul tău: uid și pass din cookie-ul browserului, sau u și tp din linkul tău RSS. Păstrat criptat.",
+	"settings.sources.sendTo": "Trimite descărcările la",
+	"settings.sources.sendToAny": "Orice program de descărcare",
+	"settings.sources.sendToHint": "Tot ce se alege din această sursă merge doar la acest program. Dacă nu merge, așteaptă.",
+	"settings.sources.sendToGone": "Programul de descărcare ales a fost eliminat. Descărcările din această sursă merg acum la orice program."
 }

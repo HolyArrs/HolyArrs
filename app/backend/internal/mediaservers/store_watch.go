@@ -182,3 +182,60 @@ func watchedRows(ctx context.Context, q watchReader) (WatchedSummary, error) {
 	}
 	return out, rows.Err()
 }
+
+// watchAccount is one account on one media server.
+type watchAccount struct {
+	server int64
+	key    string
+}
+
+// accountName is the name watch_state keeps for an account ("" when it has
+// no rows).
+func accountName(ctx context.Context, q database.Querier, a watchAccount) (string, error) {
+	var name string
+	err := q.QueryRowContext(ctx, "SELECT account_name FROM watch_state WHERE media_server_id = ? AND account_key = ? LIMIT 1", a.server, a.key).Scan(&name)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	return name, err
+}
+
+// eachWatchedBy calls fn for every movie (season and episode 0) and episode
+// one account watched.
+func eachWatchedBy(ctx context.Context, q database.Lister, a watchAccount, fn func(title int64, season, episode int)) error {
+	rows, err := q.QueryContext(ctx, "SELECT title_id, season, episode FROM watch_state WHERE media_server_id = ? AND account_key = ?", a.server, a.key)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var title int64
+		var season, episode int
+		if err := rows.Scan(&title, &season, &episode); err != nil {
+			return err
+		}
+		fn(title, season, episode)
+	}
+	return rows.Err()
+}
+
+// WatchedByAnyone lists the titles any account watched, linked here or not.
+func WatchedByAnyone(ctx context.Context, q watchReader) (AnyoneWatched, error) {
+	out := AnyoneWatched{Enabled: WatchHistoryOn(ctx, q), Titles: []int64{}}
+	if !out.Enabled {
+		return out, nil
+	}
+	rows, err := q.QueryContext(ctx, "SELECT DISTINCT title_id FROM watch_state ORDER BY title_id")
+	if err != nil {
+		return out, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return out, err
+		}
+		out.Titles = append(out.Titles, id)
+	}
+	return out, rows.Err()
+}

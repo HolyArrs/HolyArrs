@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Montrer aux gens",
 	"settings.requests.choiceMain": "{rules} · la copie principale du titre",
 	"settings.requests.choiceOwn": "{rules} · gardée comme copie à part",
-	"settings.requests.choiceNotReady": "Proposé une fois une qualité 4K définie plus haut"
+	"settings.requests.choiceNotReady": "Proposé une fois une qualité 4K définie plus haut",
+	"settings.requests.approvals": "Approbations",
+	"settings.requests.autoApprove": "Approuver les demandes automatiquement",
+	"settings.requests.autoApproveNote": "Désactivé = leurs demandes vous attendent. Les titres de la liste Plex suivent le même interrupteur.",
+	"settings.requests.ownerTag": "Propriétaire",
+	"settings.requests.choiceAdd": "Ajouter une qualité",
+	"settings.requests.choiceNew": "Nouvelle qualité",
+	"settings.requests.choiceLabel": "Votre nom",
+	"settings.requests.choiceSeen": "Les gens voient"
 }

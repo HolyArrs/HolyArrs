@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Klistra in ett id, till exempel tmdb:693134 eller tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Eller beskriv den, till exempel ”rymdfilm med en robot från 2014”.",
 	"discover.search.lookEverywhere": "Sök överallt",
-	"discover.search.searchIndexersFor": "Sök i indexerare efter ”{searched}”",
+	"discover.search.searchIndexersFor": "Kontrollera dina källor",
 	"discover.search.topMatches": "Bästa träffar",
 	"discover.people.goToTheFilmography": "Gå till filmografin",
 	"discover.people.filmography": "Filmografi",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Passar inte den här versionen",
 	"discover.leftovers.reason.movie_has_file": "Filmen har redan en fil",
 	"discover.leftovers.reason.replaced_by_hand": "Ersatt av en annan fil",
-	"discover.leftovers.reason.unmatched": "Koppling borttagen för hand"
+	"discover.leftovers.reason.unmatched": "Koppling borttagen för hand",
+	"discover.searchSections.genres": "Genrer",
+	"discover.searchSections.moods": "Stämningar",
+	"discover.searchSections.stories": "Berättelser och teman",
+	"discover.searchSections.worlds": "Världar och miljöer",
+	"discover.searchSections.eras": "Epoker",
+	"discover.searchSections.world": "Från hela världen",
+	"discover.searchSections.collections": "Samlingar",
+	"discover.popularRail.out": "Släpps",
+	"discover.popularRail.comingDay": "Kommer",
+	"discover.titleLibrary.turnShowOnHint": "Slå på serien för att börja leta.",
+	"discover.leftovers.reason.seasons_differ": "Hittades bara via den gamla appens TMDB-nummer: kolla att det är samma serie och matcha sedan filen själv"
 }

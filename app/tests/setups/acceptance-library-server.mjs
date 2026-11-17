@@ -39,7 +39,9 @@ const child = spawn(bin, ['-config', config, '-addr', `127.0.0.1:${port}`], {
 		HOLYARRS_TRAKT_URL: `http://127.0.0.1:${traktPort}`,
 		HOLYARRS_TVMAZE_URL: `http://127.0.0.1:${tvmazePort}`,
 		HOLYARRS_MUSICBRAINZ_URL: `http://127.0.0.1:${mbPort}`,
-		HOLYARRS_DEEZER_URL: deezerURL
+		HOLYARRS_DEEZER_URL: deezerURL,
+		// The lab switch offers the lab's fake Subtitle site the specs add.
+		HOLYARRS_FLAGS: [process.env.HOLYARRS_FLAGS, 'lab'].filter(Boolean).join(',')
 	}
 });
 

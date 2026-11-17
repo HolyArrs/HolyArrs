@@ -14,6 +14,9 @@ export const indexerPort = Number(process.env.HOLYARRS_E2E_INDEXER_PORT ?? 18747
 export const indexerKey = ['stand', 'in', 'source'].join('-');
 /** The only Trakt key the fake Trakt takes (test-only). */
 export const traktKey = ['stand', 'in', 'trakt'].join('-');
+/** A fake MDBList: its public list links and its API (test-only key). */
+export const mdblistPort = Number(process.env.HOLYARRS_E2E_MDBLIST_PORT ?? 18950);
+export const mdblistKey = ['stand', 'in', 'mdblist'].join('-');
 /** A fake qBittorrent and a fake SABnzbd (test-only key) for the Downloader tests. */
 export const qbitPort = Number(process.env.HOLYARRS_E2E_QBIT_PORT ?? 18748);
 export const sabPort = Number(process.env.HOLYARRS_E2E_SAB_PORT ?? 18749);

@@ -83,6 +83,7 @@
 	"settings.users.preset": "Predefinição",
 	"settings.users.comingSoon": "Em breve",
 	"settings.users.custom": "Personalizado",
+	"settings.users.customHint": "Sua própria combinação dos botões abaixo. Escolher um perfil a substitui; escolha Personalizado de novo para recuperá-la.",
 	"settings.users.ageRating": "Classificação indicativa",
 	"settings.users.newPasswordFor": "Nova senha para {name}",
 	"settings.users.passwordNote": "Use quando {name} esquecer a senha. A pessoa sai de todos os lugares e entra de novo com a nova. Diga a senha pessoalmente.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "ex.: Mãe",
 	"settings.users.days": "Dias de validade do link",
 	"settings.users.makeInvite": "Criar um link de convite",
-	"settings.users.permAuto4k": "Pedidos 4K aprovados sem esperar"
+	"settings.users.permAuto4k": "Pedidos 4K aprovados sem esperar",
+	"settings.users.serverAccount": "Conta do servidor",
+	"settings.users.pickAccount": "Escolha uma conta em um servidor de mídia",
+	"settings.users.accountLinked": "Vinculado a {name}",
+	"settings.users.removedOnServer": "Removido no servidor {word}, então desativado aqui",
+	"settings.users.delete": "Excluir",
+	"settings.users.deleteName": "Excluir {name}",
+	"settings.users.confirmDelete": "Excluir {name}? A sessão é encerrada para sempre e as chaves somem. Os pedidos ficam, mostrados como pessoa removida.",
+	"settings.users.deleteYes": "Excluir pessoa",
+	"settings.users.keep": "Manter",
+	"settings.users.deleted": "{name} excluído",
+	"settings.users.couldntDelete": "Não foi possível excluir",
+	"settings.users.confirmDeleteKeys": "As chaves do Seerr que a pessoa criou param de funcionar para todos até que uma nova seja criada.",
+	"settings.users.qualities": "Qualidades",
+	"settings.users.qualitiesHint": "Só podem escolher as ativadas. Com todas ativadas, as novas também aparecem."
 }

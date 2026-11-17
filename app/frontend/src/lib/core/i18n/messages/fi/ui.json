@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Voitti: {name}",
 	"ui.wikiFacts.nominated": "Ehdolla: {name}",
 	"ui.wikiFacts.andMore": "ja {count} muuta",
-	"ui.pageLoader.loading": "Ladataan"
+	"ui.pageLoader.loading": "Ladataan",
+	"ui.connectHelp.link": "Näin korjaat sen",
+	"ui.ask.remove": "Poista",
+	"ui.ask.restore": "Palauta",
+	"ui.ask.stop": "Pysäytä",
+	"ui.ask.revoke": "Peru",
+	"ui.ask.replace": "Korvaa",
+	"ui.ask.unlink": "Irrota",
+	"ui.ask.turnOff": "Poista käytöstä",
+	"ui.ask.markFailed": "Merkitse epäonnistuneeksi",
+	"ui.ask.reset": "Nollaa",
+	"ui.ask.import": "Tuo"
 }

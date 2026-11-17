@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "ingen",
 	"settings.thisApp.needsRestart": "Kräver omstart. HOLYARRS_URL_BASE eller -url-base åsidosätter den.",
 	"settings.thisApp.save": "Spara",
-	"settings.thisApp.licence": "HolyArrs är fri programvara under AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs är fri programvara under AGPL-3.0.",
+	"settings.thisApp.proxy": "Proxy",
+	"settings.thisApp.proxyDesc": "Skicka utgående anrop via en proxy. Spärrar och hemnätsregler gäller fortfarande för det verkliga målet.",
+	"settings.thisApp.proxyType": "Typ",
+	"settings.thisApp.proxyOff": "Av",
+	"settings.thisApp.proxyHost": "Värd",
+	"settings.thisApp.proxyPort": "Port",
+	"settings.thisApp.proxyUser": "Användarnamn",
+	"settings.thisApp.proxyPasswordLabel": "Lösenord",
+	"settings.thisApp.proxyPasswordKept": "Lämna tomt för att behålla det sparade lösenordet",
+	"settings.thisApp.proxyBypass": "Hoppa över proxyn för",
+	"settings.thisApp.proxyBypassHint": "Namn, adresser eller intervall, åtskilda med kommatecken. *.example.com täcker alla namn under.",
+	"settings.thisApp.proxyBypassLocal": "Hoppa över proxyn för lokala adresser",
+	"settings.thisApp.proxyBypassLocalHint": "Den här datorn och ditt hemnät ansluter direkt",
+	"settings.thisApp.proxySaved": "Proxy sparad",
+	"settings.thisApp.proxyOffSaved": "Proxy av"
 }

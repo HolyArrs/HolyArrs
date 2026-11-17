@@ -1,5 +1,6 @@
 // History (Downloads > History): how much an Event matters, its verb and icon, its day and clock, and the line a run of routine Events folds into, so the few Events that matter are not lost among thousands.
 import { t as say, lang, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
+import { asActor, shownPerson } from '#lib/core/plain.ts';
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { historyQuery, kindGroups, type HistoryFilter, type HistoryRow } from './history.ts';
 import type { EventRecord, TitleView } from '../core/types.ts';
@@ -56,6 +57,7 @@ export function verbOf(kind: string): Verb {
 		case 'ask_approved': return { get word() { return say('downloads.hk.approved'); }, icon: 'check', tone: 'ok' };
 		case 'ask_turned_down': return { get word() { return say('downloads.hk.turnedDown'); }, icon: 'declined', tone: 'idle' };
 		case 'ask_not_added': return { get word() { return say('downloads.hk.failed'); }, icon: 'x', tone: 'fail' };
+		case 'download_not_removed': return { get word() { return say('downloads.hk.failed'); }, icon: 'x', tone: 'fail' };
 		case 'report_made': return { get word() { return say('downloads.hk.reported'); }, icon: 'alert', tone: 'wait' };
 		case 'report_fixed': return { get word() { return say('downloads.hk.fixed'); }, icon: 'check', tone: 'ok' };
 		case 'report_reopened': return { get word() { return say('downloads.hk.reopened'); }, icon: 'alert', tone: 'wait' };
@@ -102,7 +104,8 @@ export function rowTier(row: HistoryRow): Tier {
 	for (const e of row.events) {
 		const t = tierOf(e.Kind);
 		if (t === 'important') return t;
-		if (t === 'changes') best = t;
+		// A search or feed check that says which Sources it left out is not routine.
+		if (t === 'changes' || (typeof e.Data?.sources_note === 'string' && e.Data.sources_note)) best = 'changes';
 	}
 	return best;
 }
@@ -110,13 +113,13 @@ export function rowTier(row: HistoryRow): Tier {
 /** Who or what made an Event happen. */
 export function byWhom(e: Pick<EventRecord, 'Actor' | 'Data' | 'actor_name'>): string {
 	const d = e.Data ?? {};
-	const name = (v: unknown) => (typeof v === 'string' ? v : Array.isArray(v) && typeof v[0] === 'string' ? v[0] : '');
+	const name = (v: unknown) => shownPerson(asActor(typeof v === 'string' ? v : Array.isArray(v) && typeof v[0] === 'string' ? v[0] : '', e.actor_name));
 	switch (e.Actor?.kind) {
-		case 'user': return name(d.approved_by) || name(d.turned_down_by) || name(d.asked_by) || e.actor_name || say('downloads.hk.aPerson');
+		case 'user': return name(d.approved_by) || name(d.turned_down_by) || name(d.asked_by) || shownPerson(e.actor_name) || say('downloads.hk.aPerson');
 		// An AI app with a member's key: the app, then whose key.
 		case 'ai': {
 			const c = name(d.client) || say('downloads.hk.anAiApp');
-			return c.charAt(0).toUpperCase() + c.slice(1) + (e.actor_name ? say('downloads.hk.forName', { name: e.actor_name }) : '');
+			return c.charAt(0).toUpperCase() + c.slice(1) + (e.actor_name ? say('downloads.hk.forName', { name: shownPerson(e.actor_name) }) : '');
 		}
 		case 'job': return say('downloads.hk.backgroundJob');
 		case 'system': return 'HolyArrs';

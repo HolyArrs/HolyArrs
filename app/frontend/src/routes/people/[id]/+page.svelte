@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { createPersonArt } from '#lib/discover/index.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Poster from '#lib/ui/Poster.svelte';
@@ -140,7 +141,7 @@
 		const died = wiki.died && wiki.died.length === 10 ? new Date(`${wiki.died}T00:00:00Z`).toLocaleDateString(appLocale(), { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : wiki.died ?? '';
 		const from = p.birthplace || wiki.birth_place;
 		return [
-			{ text: known ? t('discover.people.knownForName', { name: known }) : (p.department ?? ''), known: !!known },
+			{ text: known ? t('discover.people.knownForName', { name: known }) : serverWords(p.department ?? ''), known: !!known },
 			{ text: born ? t('discover.people.bornOn', { date: born }) : '', known: false },
 			{ text: from ? t('discover.people.fromPlace', { place: from }) : '', known: false },
 			{ text: died ? t('discover.people.diedOn', { date: died }) : '', known: false }
@@ -163,7 +164,7 @@
 			{ k: t('discover.people.from'), v: p.birthplace || wiki.birth_place || '', sub: '' },
 			{ k: t('discover.people.died'), v: longDate(died), sub: age && died ? t('discover.people.aged', { age }) : '' },
 			{ k: t('discover.people.knownFor'), v: data?.known_for?.[0]?.name ?? '', sub: data?.known_for?.[0]?.year ? String(data.known_for[0].year) : '' },
-			{ k: t('discover.people.work'), v: p.department ?? '', sub: yearsLine }
+			{ k: t('discover.people.work'), v: serverWords(p.department ?? ''), sub: yearsLine }
 		].filter((x) => x.v);
 		const wins = wiki.awards.filter((a) => a.won);
 		const noms = wiki.awards.length - wins.length;
@@ -203,7 +204,6 @@
 		if (session.can('ask') && !session.can('manage_library')) void api.get<AskLimit>('/asks/limit').then((r) => (limit = r)).catch(() => {});
 		return () => clearTimeout(waited);
 	});
-
 	// Page layouts picked with ?look=1|2|3 (0 is the plain page). All three follow the music artist page (short banner fading into a tinted page, photo line, slim bar, figures, numbered list, About card), made for movies: 1 the Known-for still, 2 the Known-for trailers playing muted, 3 a slow reel of Known-for stills.
 	const VIEWS = [{ value: 0, label: 'Now' }, { value: 1, label: 'A1 · Still' }, { value: 2, label: 'A2 · Trailers' }, { value: 3, label: 'A3 · Reel' }];
 	const view: number = 2;
@@ -212,7 +212,7 @@
 		const st = data?.stats;
 		return st?.first_year ? `${st.first_year}–${st.active ? t('discover.people.now') : st.last_year}` : '';
 	});
-	const lead = $derived([data?.person.department, ...factsAll.filter((f) => !f.known).map((f) => f.text)].filter(Boolean).join(' · '));
+	const lead = $derived([serverWords(data?.person.department), ...factsAll.filter((f) => !f.known).map((f) => f.text)].filter(Boolean).join(' · '));
 	const top = $derived(personArt.withArt(data?.known_for).slice(0, 10));
 	// Under the name: only what they do and since when; the rest lives in About.
 	const roleWords = $derived.by(() => {
@@ -221,7 +221,7 @@
 		const dept = data?.person.department;
 		const order = dept === 'Directing' ? ['Director', 'Actor'] : ['Actor', 'Director'];
 		const got = order.filter((w) => (w === 'Actor' ? acts : directs)).map((w) => (w === 'Actor' ? t('discover.people.actor') : t('discover.people.director')));
-		return got.length ? got.join(' · ') : dept === 'Acting' ? t('discover.people.actor') : dept ?? '';
+		return got.length ? got.join(' · ') : dept === 'Acting' ? t('discover.people.actor') : serverWords(dept ?? '');
 	});
 	const quiet = $derived([roleWords, data?.stats?.first_year ? t('discover.people.since', { year: data.stats.first_year }) : ''].filter(Boolean).join(' · '));
 	const reel = $derived(personArt.withArt(data?.known_for).map((m) => m.backdrop).filter((b): b is string => !!b).slice(0, 6));

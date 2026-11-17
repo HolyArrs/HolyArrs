@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { forgetPictures, pictureFor, pictureKey, pictureOf, registerPictures, versioned, withVersion } from './pictures.ts';
+import { coverFor, forgetPictures, pictureFor, pictureKey, pictureOf, registerPictures, versioned, withVersion } from './pictures.ts';
 import { createClient } from './api.ts';
+import { setBase } from './paths.ts';
 import { heroPictures } from '../discover/hero-prefetch.ts';
 
 const al = '21159e3f-172e-43f6-aa7d-8e06a81fea49';
@@ -51,5 +52,18 @@ describe('hero ahead', () => {
 		expect(heroPictures(`/music/album/${al}`, 1)).toEqual([`/api/v1/music-trending/art/album/${al}?pv=c1&size=500`]);
 		expect(heroPictures(`/music/artist/${ar}`)).toEqual([`/api/v1/music-trending/art/wide/${ar}?pv=w1`]);
 		expect(heroPictures('/title/movie/603')).toEqual([]);
+	});
+});
+
+describe('coverFor under a URL base', () => {
+	afterEach(() => setBase(''));
+	it('puts the base on its own pictures, once', () => {
+		setBase('/holyarrs');
+		expect(coverFor('/api/v1/users/3/avatar?v=a', 36).src).toBe('/holyarrs/api/v1/users/3/avatar?v=a');
+		expect(coverFor('/api/v1/artwork/ab12.jpg', 48, 1).src).toBe('/holyarrs/api/v1/artwork/ab12.jpg?size=250');
+		expect(coverFor('/api/v1/albums/7/cover', 48, 1).src).toBe('/holyarrs/api/v1/albums/7/cover?size=250');
+		expect(coverFor('/holyarrs/api/v1/albums/7/cover', 48, 1).src).toBe('/holyarrs/api/v1/albums/7/cover?size=250');
+		expect(coverFor('https://i.scdn.co/image/a', 48).src).toBe('https://i.scdn.co/image/a');
+		expect(coverFor(null, 48).src).toBeNull();
 	});
 });

@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Enganxa un identificador, com tmdb:693134 o tvmaze:82.",
 	"discover.search.orDescribeItSuch": "O descriu-la, com “pel·lícula d'espai amb un robot del 2014”.",
 	"discover.search.lookEverywhere": "Cerca arreu",
-	"discover.search.searchIndexersFor": "Cerca “{searched}” als indexadors",
+	"discover.search.searchIndexersFor": "Revisa les teves fonts",
 	"discover.search.topMatches": "Millors coincidències",
 	"discover.people.goToTheFilmography": "Ves a la filmografia",
 	"discover.people.filmography": "Filmografia",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "No encaixa amb aquesta versió",
 	"discover.leftovers.reason.movie_has_file": "La pel·lícula ja té fitxer",
 	"discover.leftovers.reason.replaced_by_hand": "Substituït per un altre fitxer",
-	"discover.leftovers.reason.unmatched": "Assignació desfeta a mà"
+	"discover.leftovers.reason.unmatched": "Assignació desfeta a mà",
+	"discover.searchSections.genres": "Gèneres",
+	"discover.searchSections.moods": "Estats d'ànim",
+	"discover.searchSections.stories": "Històries i temes",
+	"discover.searchSections.worlds": "Mons i escenaris",
+	"discover.searchSections.eras": "Èpoques",
+	"discover.searchSections.world": "Arreu del món",
+	"discover.searchSections.collections": "Col·leccions",
+	"discover.popularRail.out": "Surt",
+	"discover.popularRail.comingDay": "Aviat",
+	"discover.titleLibrary.turnShowOnHint": "Activa la sèrie per començar a cercar.",
+	"discover.leftovers.reason.seasons_differ": "Trobada només pel número de TMDB de l'app antiga: comprova que és la mateixa sèrie i després associa el fitxer tu mateix"
 }

@@ -73,9 +73,6 @@ func (s *Service) Sync(ctx context.Context, id int64, fix subtext.Fix, by domain
 	nr := row
 	nr.ID = 0
 	nr.Sync = map[string]any{"offset_ms": fix.OffsetMS, "from_fps": fix.FromFPS, "to_fps": fix.ToFPS, "from_subtitle_id": row.ID}
-	if row.Origin == "found" {
-		nr.Origin = "by_hand" // written by the app itself
-	}
 	if _, err := s.writeAt(ctx, fc, &nr, out, rel, &row, by); err != nil {
 		return row, err
 	}

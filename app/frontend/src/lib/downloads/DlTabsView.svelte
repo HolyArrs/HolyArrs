@@ -12,6 +12,8 @@
 	import { stageOf } from './status-tabs.ts';
 	import { repairSteps, serverRows } from './usenet.ts';
 	import { live, type PaneDetail } from './pane-detail.svelte.ts';
+	import PersonText from '#lib/ui/PersonText.svelte';
+	import { personText } from '#lib/core/plain.ts';
 	import { calmErr, PRIOS, TRACKER_WORD, fileIndexes, flagsOf, infoGroups, mmss, usenetGroups, type PaneTab } from './pane-facts.ts';
 	import type { ImportRecord } from './types.ts';
 	import { to } from '../core/paths.ts';
@@ -54,7 +56,7 @@
 						<div class="fcol">
 							<h3 class="fcap">{g.cap}</h3>
 							<dl class="fgrid" aria-label={g.cap}>
-								{#each g.rows as x (x.k)}<div class="fr"><dt>{x.k}</dt><dd class:path={x.path} title={x.path || x.v.length > 24 ? x.v : undefined} data-testid={x.tid}>{x.v}</dd></div>{/each}
+								{#each g.rows as x (x.k)}<div class="fr"><dt>{x.k}</dt><dd class:path={x.path} title={x.path || x.v.length > 24 ? personText(x.v) : undefined} data-testid={x.tid}><PersonText text={x.v} /></dd></div>{/each}
 							</dl>
 						</div>
 					{/each}

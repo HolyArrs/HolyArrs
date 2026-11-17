@@ -4,7 +4,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { MetadataNotice } from '#lib/metadata/index.ts';
-	import { secondVersion, builtInDefaults, startChoices, savedDefaults } from '../mediafiles/index.ts';
+	import { secondVersion, builtInDefaults, startChoices, savedDefaults, saveSearchChoice } from '../mediafiles/index.ts';
 	import { detailsSources, episodeOrders, seasonChoices } from '../shows/index.ts';
 	import type { ShowSettings } from '../shows/index.ts';
 	import type { TitleDefaults } from '../mediafiles/index.ts';
@@ -111,6 +111,7 @@
 				details_source: source,
 				more_versions: more ? [{ label: moreLabel.trim(), pick_rules_id: moreRules, library_folder_id: moreFolder }] : []
 			});
+			void saveSearchChoice('show', searchOnAdd);
 			(sheetOpen = false);
 			onadded(picked, r.title);
 		} catch (err) {

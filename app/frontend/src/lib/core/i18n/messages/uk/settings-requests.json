@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Показувати людям",
 	"settings.requests.choiceMain": "{rules} · основна копія тайтлу",
 	"settings.requests.choiceOwn": "{rules} · зберігається як окрема копія",
-	"settings.requests.choiceNotReady": "Стане доступним, коли вище буде задано якість 4K"
+	"settings.requests.choiceNotReady": "Стане доступним, коли вище буде задано якість 4K",
+	"settings.requests.approvals": "Схвалення",
+	"settings.requests.autoApprove": "Схвалювати запити автоматично",
+	"settings.requests.autoApproveNote": "Вимк. = їхні запити чекають на вас. Назви зі списку Plex підкоряються тому ж перемикачу.",
+	"settings.requests.ownerTag": "Власник",
+	"settings.requests.choiceAdd": "Додати якість",
+	"settings.requests.choiceNew": "Нова якість",
+	"settings.requests.choiceLabel": "Ваша назва",
+	"settings.requests.choiceSeen": "Бачать інші"
 }

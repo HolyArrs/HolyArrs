@@ -16,6 +16,11 @@ import (
 
 var errLinkLocal = releaseRefused{`the Release link leads to a local or blocked address; if this Source is on your home network, turn on "May reach the local network" for it`}
 
+// errLinkOtherLocal is the refusal when the Source may already reach the local
+// network: the link went to another local address than the Source's own.
+var errLinkOtherLocal = releaseRefused{"the Release link went to a different address on your home network, which is not allowed: only the Source's own address may be reached there"}
+var errMetadataLink = releaseRefused{"the address is a cloud metadata address, which HolyArrs never connects to"}
+
 var sabMaxNZB int64 = 128 << 20
 
 var (
@@ -38,7 +43,7 @@ func fetchGrabLinkHeader(ctx context.Context, raw string, limit int64, rt http.R
 	dial := func(ctx context.Context, network, addr string) (net.Conn, error) {
 		h, port, err := net.SplitHostPort(addr)
 		if err == nil && metadataName(h) {
-			return nil, &net.OpError{Op: "dial", Net: network, Err: outbound.ErrAddressRefused}
+			return nil, &net.OpError{Op: "dial", Net: network, Err: outbound.ErrMetadataRefused}
 		}
 		if grabDial != nil {
 			addr = grabDial(addr)
@@ -84,11 +89,21 @@ func fetchGrabLinkHeader(ctx context.Context, raw string, limit int64, rt http.R
 		if ctx.Err() != nil {
 			return nil, "", ctx.Err()
 		}
-		if errors.Is(err, outbound.ErrAddressRefused) || errors.Is(err, errLinkLocal) {
+		if errors.Is(err, outbound.ErrMetadataRefused) {
 			if proxied {
-				return nil, "", errors.New(errLinkLocal.msg)
+				return nil, "", errors.New(errMetadataLink.msg)
 			}
-			return nil, "", errLinkLocal
+			return nil, "", errMetadataLink
+		}
+		if errors.Is(err, outbound.ErrAddressRefused) || errors.Is(err, errLinkLocal) {
+			refused := errLinkLocal
+			if localHost != "" && errors.Is(err, outbound.ErrAddressRefused) {
+				refused = errLinkOtherLocal
+			}
+			if proxied {
+				return nil, "", errors.New(refused.msg)
+			}
+			return nil, "", refused
 		}
 		return nil, "", errors.New("the Release file could not be read from its Source")
 	}

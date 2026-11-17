@@ -7,6 +7,8 @@ import (
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
 // TitleFile is one file the old app holds for a title and the quality it
@@ -15,7 +17,12 @@ import (
 type TitleFile struct {
 	Name    string `json:"name"` // the file's base name
 	Quality string `json:"quality"`
+	// Episodes are the old app's episodes the file holds (Sonarr).
+	Episodes []OldEpisode `json:"episodes,omitempty"`
 }
+
+// OldEpisode is one episode as the old app lists it.
+type OldEpisode = library.OldEpisode
 
 // fileQualitiesAPI reads the recorded quality of every file: Radarr keeps
 // it on each movie, Sonarr per series. A series whose list cannot be read
@@ -43,9 +50,14 @@ func (r arrReader) fileQualitiesAPI(ctx context.Context, c *apiClient, out *arrR
 				skipped++
 				continue
 			}
+			// The episode list is read once here: a show whose seasons differ
+			// places a file only where its episode's day and name agree.
+			var eps []any
+			_ = c.getJSON(ctx, r.apiBase()+"/episode", url.Values{"seriesId": {strconv.FormatInt(id, 10)}}, &eps)
+			byFile := oldEpisodesByFile(eps)
 			for _, e := range got {
 				if f := mapOf(e); f != nil {
-					rows = append(rows, map[string]any{"titleid": id, "relativepath": f["relativepath"], "quality": qualityName(f["quality"], nil)})
+					rows = append(rows, map[string]any{"titleid": id, "relativepath": f["relativepath"], "quality": qualityName(f["quality"], nil), "episodes": byFile[num(f["id"])]})
 				}
 			}
 		}
@@ -73,9 +85,19 @@ func (r arrReader) fileQualitiesBackup(ctx context.Context, t table, out *arrRow
 	for _, m := range out.sets["qualitydefs"] {
 		defs[num(m["quality"])] = str(m["title"])
 	}
+	var byFile map[int64][]OldEpisode
+	if r.kind == Sonarr && t.exists(ctx, "Episodes") {
+		if eps, err := t.all(ctx, "Episodes"); err == nil {
+			list := make([]any, len(eps))
+			for i, e := range eps {
+				list[i] = e
+			}
+			byFile = oldEpisodesByFile(list)
+		}
+	}
 	var outRows []map[string]any
 	for _, m := range rows {
-		outRows = append(outRows, map[string]any{"titleid": m[link], "relativepath": m["relativepath"], "quality": qualityName(m["quality"], defs)})
+		outRows = append(outRows, map[string]any{"titleid": m[link], "relativepath": m["relativepath"], "quality": qualityName(m["quality"], defs), "episodes": byFile[num(m["id"])]})
 	}
 	out.sets["filequalities"] = outRows
 }
@@ -117,11 +139,57 @@ func filesByTitle(rows []map[string]any) map[int64][]TitleFile {
 	out := map[int64][]TitleFile{}
 	for _, m := range rows {
 		q, p := str(m["quality"]), str(m["relativepath"])
-		if q == "" || p == "" {
+		eps, _ := m["episodes"].([]OldEpisode)
+		if q == "" && len(eps) == 0 || p == "" {
 			continue
 		}
 		base := path.Base(strings.ReplaceAll(p, `\`, "/"))
-		out[num(m["titleid"])] = append(out[num(m["titleid"])], TitleFile{Name: base, Quality: q})
+		out[num(m["titleid"])] = append(out[num(m["titleid"])], TitleFile{Name: base, Quality: q, Episodes: eps})
 	}
 	return out
+}
+
+// oldEpisodesByFile groups the old app's episodes (API rows or a backup's
+// Episodes table) by the file that holds them.
+func oldEpisodesByFile(rows []any) map[int64][]OldEpisode {
+	out := map[int64][]OldEpisode{}
+	for _, e := range rows {
+		m := mapOf(e)
+		if m == nil || num(m["episodefileid"]) == 0 {
+			continue
+		}
+		day := str(m["airdate"])
+		if len(day) > 10 {
+			day = day[:10]
+		}
+		out[num(m["episodefileid"])] = append(out[num(m["episodefileid"])], OldEpisode{Season: int(num(m["seasonnumber"])), Number: int(num(m["episodenumber"])), AirDate: day, Title: str(m["title"])})
+	}
+	return out
+}
+
+// fileFacts is the recorded quality and the old app's episodes of each
+// file, by its base name (nil when there are none). A base name that two
+// files share gets no old episodes: which file they belong to is unknown.
+func fileFacts(files []TitleFile) (map[string]string, map[string][]OldEpisode) {
+	var q map[string]string
+	var eps map[string][]OldEpisode
+	seen := map[string]int{}
+	for _, f := range files {
+		seen[f.Name]++
+	}
+	for _, f := range files {
+		if f.Quality != "" {
+			if q == nil {
+				q = map[string]string{}
+			}
+			q[f.Name] = f.Quality
+		}
+		if len(f.Episodes) > 0 && seen[f.Name] == 1 {
+			if eps == nil {
+				eps = map[string][]OldEpisode{}
+			}
+			eps[f.Name] = f.Episodes
+		}
+	}
+	return q, eps
 }

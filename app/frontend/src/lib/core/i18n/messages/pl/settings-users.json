@@ -83,6 +83,7 @@
 	"settings.users.preset": "Gotowy zestaw",
 	"settings.users.comingSoon": "Wkrótce",
 	"settings.users.custom": "Własny",
+	"settings.users.customHint": "To Twój własny zestaw przełączników poniżej. Wybranie gotowego zestawu go zastępuje; wybierz ponownie Własny, aby go przywrócić.",
 	"settings.users.ageRating": "Kategoria wiekowa",
 	"settings.users.newPasswordFor": "Nowe hasło dla: {name}",
 	"settings.users.passwordNote": "Użyj tego, gdy {name} zapomni swojego. Zostanie wylogowany wszędzie i zaloguje się nowym hasłem. Podaj mu je osobiście.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "np. Mama",
 	"settings.users.days": "Ile dni działa link",
 	"settings.users.makeInvite": "Utwórz link zaproszenia",
-	"settings.users.permAuto4k": "Prośby o 4K zatwierdzane bez czekania"
+	"settings.users.permAuto4k": "Prośby o 4K zatwierdzane bez czekania",
+	"settings.users.serverAccount": "Konto na serwerze",
+	"settings.users.pickAccount": "Wybierz konto na serwerze multimediów",
+	"settings.users.accountLinked": "Połączono z {name}",
+	"settings.users.removedOnServer": "Usunięto na serwerze {word}, więc wyłączono tutaj",
+	"settings.users.delete": "Usuń",
+	"settings.users.deleteName": "Usuń {name}",
+	"settings.users.confirmDelete": "Usunąć {name}? Zostanie wylogowany na stałe, a jego klucze znikną. Jego prośby zostają, jako usunięta osoba.",
+	"settings.users.deleteYes": "Usuń osobę",
+	"settings.users.keep": "Zostaw",
+	"settings.users.deleted": "Usunięto {name}",
+	"settings.users.couldntDelete": "Nie udało się usunąć",
+	"settings.users.confirmDeleteKeys": "Klucze Seerr, które utworzył, przestają działać dla wszystkich, dopóki nie powstanie nowy.",
+	"settings.users.qualities": "Jakości",
+	"settings.users.qualitiesHint": "Mogą wybrać tylko włączone. Gdy włączone są wszystkie, nowe też są oferowane."
 }

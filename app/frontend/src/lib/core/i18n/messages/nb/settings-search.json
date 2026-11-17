@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Avvis utgivelser lagt ut før lansering",
 	"settings.search.refuseEarlyHint": "Sannsynligvis falske. Velg en utgivelse viser dem fortsatt, med en advarsel.",
 	"settings.search.refuseTiny": "Avvis falske etter størrelse og filtype",
-	"settings.search.refuseTinyHint": "For små utgivelser, tomme filer og .wmv eller .asf under HD-navn",
+	"settings.search.refuseTinyHint": "For små utgivelser, tomme filer, avkuttede videoer og .wmv eller .asf under HD-navn",
 	"settings.search.grace": "Timer en utgivelse kan være tidlig",
 	"settings.search.graceHint": "For tidssoner. Standard 24.",
 	"settings.search.floors": "Sjekk filstørrelser ved import",

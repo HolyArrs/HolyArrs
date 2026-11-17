@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Þarfnast athygli: {n}",
 	"migrate.needAttentionWhy": "Gamla mappan þeirra er ekki á þessum þjóni, svo þeir koma sem óskaðir í möppu hér. Lagaðu möppuna eða bættu við slóðarreglu: {list}",
 	"migrate.leftOutUncheckedN": "Sleppt: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} er stillt á „Ekki koma með þau“; veldu möppu fyrir hana og fluttu inn aftur"
+	"migrate.leftOutUncheckedWhy": "{folder} er stillt á „Ekki koma með þau“; veldu möppu fyrir hana og fluttu inn aftur",
+	"migrate.seasonsDifferOne": "Athugaðu 1 þátt sem fannst eftir TMDB-númeri sínu",
+	"migrate.seasonsDifferOther": "Þættir sem fundust eftir TMDB-númeri og þarf að athuga: {n}",
+	"migrate.seasonsDifferWhy": "Aðeins TMDB-númer gamla forritsins fann {list}, hér undir öðru nafni. Opnaðu hvern og athugaðu hvort þetta sé sami þátturinn. Ef svo er, eru þáttaraðirnar númeraðar öðruvísi: paraðu Afgangsskrár hans og kveiktu svo á þættinum. Ef ekki, fjarlægðu hann; skrárnar hans verða kyrrar þar sem þær eru.",
+	"migrate.stillChecking": "Þáttaraðir sem lýsigagnaþjónninn er enn að athuga: {n}. Listinn uppfærist sjálfur þegar því er lokið.",
+	"migrate.stillCheckingImport": "Þáttaraðir sem lýsigagnaþjónninn er enn að athuga: {n}. Þú getur flutt inn núna; þær eru athugaðar á meðan innflutningurinn stendur yfir."
 }

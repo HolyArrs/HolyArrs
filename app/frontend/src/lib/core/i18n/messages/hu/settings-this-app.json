@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "nincs",
 	"settings.thisApp.needsRestart": "Újraindítás kell hozzá. A HOLYARRS_URL_BASE vagy a -url-base felülírja.",
 	"settings.thisApp.save": "Mentés",
-	"settings.thisApp.licence": "A HolyArrs szabad szoftver az AGPL-3.0 alatt."
+	"settings.thisApp.licence": "A HolyArrs szabad szoftver az AGPL-3.0 alatt.",
+	"settings.thisApp.proxy": "Proxy",
+	"settings.thisApp.proxyDesc": "A külső hívások küldése proxyn keresztül. A tiltási és otthoni hálózati szabályok továbbra is a valódi célra vonatkoznak.",
+	"settings.thisApp.proxyType": "Típus",
+	"settings.thisApp.proxyOff": "Ki",
+	"settings.thisApp.proxyHost": "Gazdagép",
+	"settings.thisApp.proxyPort": "Port",
+	"settings.thisApp.proxyUser": "Felhasználónév",
+	"settings.thisApp.proxyPasswordLabel": "Jelszó",
+	"settings.thisApp.proxyPasswordKept": "Hagyd üresen a mentett jelszó megtartásához",
+	"settings.thisApp.proxyBypass": "Proxy kihagyása ezeknél",
+	"settings.thisApp.proxyBypassHint": "Nevek, címek vagy tartományok vesszővel elválasztva. A *.example.com minden alatta lévő nevet lefed.",
+	"settings.thisApp.proxyBypassLocal": "Proxy kihagyása helyi címeknél",
+	"settings.thisApp.proxyBypassLocalHint": "Ez a gép és az otthoni hálózat közvetlenül kapcsolódik",
+	"settings.thisApp.proxySaved": "Proxy mentve",
+	"settings.thisApp.proxyOffSaved": "Proxy ki"
 }

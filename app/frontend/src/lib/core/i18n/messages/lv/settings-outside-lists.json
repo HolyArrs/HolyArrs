@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Tavus Trakt sarakstus nevar nolasīt, kamēr tas nav iestatīts.",
 	"settings.outsideLists.replaceKey": "Aizstāt Trakt atslēgu",
 	"settings.outsideLists.pasteKey": "Ielīmē Trakt atslēgu",
+	"settings.outsideLists.mdblistKey": "MDBList atslēga",
+	"settings.outsideLists.mdblistInfo": "Neobligāti. Ar tavu MDBList API atslēgu MDBList saraksti tiek lasīti caur MDBList API; bez tās – caur to publisko saiti. Tā tiek glabāta šifrēta un ir tā pati atslēga, ko ārējie vērtējumi izmanto režīmā Jūsu paša atslēgas.",
+	"settings.outsideLists.pasteMdblistKey": "Ielīmē savu MDBList API atslēgu",
+	"settings.outsideLists.replaceMdblistKey": "Aizstāt MDBList atslēgu",
+	"settings.outsideLists.removeMdblistKey": "Noņemt atslēgu",
+	"settings.outsideLists.mdblistKeySaved": "MDBList atslēga saglabāta",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList atslēga noņemta; saraksti izmanto savu publisko saiti",
 	"settings.outsideLists.replaceVip": "Aizstāt VIP piekļuves marķieri",
 	"settings.outsideLists.vip": "VIP piekļuves marķieris (neobligāti)",
 	"settings.outsideLists.vipHint": "Nosaukumu lapām pievieno Trakt cilni: vērtējums, skatītāji un komentāri",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Pievienot nekad nepievienošanas sarakstam",
 	"settings.outsideLists.showDot": "seriāls ·",
 	"settings.outsideLists.takeOff": "Noņemt {name}",
-	"settings.outsideLists.empty": "Tukšs"
+	"settings.outsideLists.empty": "Šajā sarakstā vēl nekā nav"
 }

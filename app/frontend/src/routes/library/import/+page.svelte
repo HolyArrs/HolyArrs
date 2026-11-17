@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Words from '#lib/ui/Words.svelte';
+	import Isolated from '#lib/ui/Isolated.svelte';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -11,11 +12,12 @@
 	import { densityLabels, loadDensity, loadPosterSize, posterLabels, saveDensity, savePosterSize, type Density, type PosterSize } from '#lib/ui/library-art.ts';
 	import { reaskWhileFilling } from '#lib/music/index.ts';
 	import { DlFind } from '#lib/downloads/index.ts';
-	import { ImportList, ImportToolbar, LibraryToolPage, PosterLightbox, choices, fileName, findFolders, followJob, scanCount, matchKey, canTick, pickedOf, readImportView, showIdOf, sortFolders, startPicks, statusCounts, statusLabel, tickCounts, type AdoptCandidate, type AdoptPlan, type AdoptResult, type ImportFilter, type ImportView, type JobView, type Named } from '#lib/mediafiles/index.ts';
+	import { ImportList, ImportToolbar, adoptInParts, askThrough, canAdopt, cutFromJobs, cutKeyOf, cutsGone, findCut, findKept, holdWhile, foldersThenNotes, jobForgotten, notesThenLocks, scansGone, staleCuts, keepAsking, partEnd, lookFail, quiet, scanEnd, scanFromFirstLeft, throughNow, type Cut, type PartResult, LibraryToolPage, PosterLightbox, choices, fileName, findFolders, followJob, scanCount, matchKey, canTick, pickedOf, readImportView, showIdOf, sortFolders, startPicks, statusCounts, statusLabel, tickCounts, type AdoptCandidate, type AdoptPlan, type AdoptResult, type ImportFilter, type ImportView, type JobView, type Named } from '#lib/mediafiles/index.ts';
 	import type { LookupArtist } from '#lib/music/index.ts';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
+	import { beforeNavigate } from '$app/navigation';
 	import { to } from '#lib/core/paths.ts';
-	import { api, message } from '#lib/core/api.ts';
+	import { ApiError, api, message } from '#lib/core/api.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
@@ -23,7 +25,8 @@
 	import type { LibraryFolder, LookupMovie } from '#lib/core/types.ts';
 	import { unit } from '#lib/mediafiles/index.ts';
 	import type { LookupShow } from '#lib/core/types.ts';
-	import { appLocale, t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { appLocale, ltr, t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 	let folders = $state<LibraryFolder[]>([]);
 	let loaded = $state(false);
@@ -41,9 +44,98 @@
 	let adopting = $state(false);
 	// Follow what is brought in: it goes on my calendar (ticked by default).
 	let followAll = $state(true);
-	let results = $state<AdoptResult[] | null>(null);
+	let results = $state<PartResult[] | null>(null);
+	// A large selection goes in parts: how many folders are through so far.
+	let sent = $state<{ done: number; total: number } | null>(null);
 	// A large folder scanned in parts: where the next scan starts, kept after adopting.
 	let restFrom = $state('');
+	// Where this scan began, and where a scan reaches the first folder that did not go through.
+	let scanFrom = '';
+	let retryFrom = $state<string | null>(null);
+	// The page sends the parts: leaving it stops the sending. An import cut short that way is noted
+	// in this browser with its part jobs and why it stopped, so coming back asks the server how far it got.
+	let gone = false;
+	let cut = $state<{ key: string; lf: number; done: number; total: number } | null>(null);
+	// Each tab keeps its own note, so two tabs importing never clear each other's.
+	const tab = Math.random().toString(36).slice(2, 10);
+	const cutBase = $derived(`holyarrs.import.running.${session.s.id}`);
+	const cutKey = $derived(cutKeyOf(cutBase, tab));
+	// The note found on the way in (an older page's): cleared with this tab's own.
+	let wasKey = '';
+	let track: Cut | null = null;
+	// The key of the person who started the import: a sign-in that ends clears the session's id.
+	let markKey = '';
+	// live: this page is still sending, so it keeps the note fresh and other tabs leave it be.
+	function noteCut(v: Cut | null, live = true) {
+		track = v;
+		try {
+			if (v) localStorage.setItem(markKey || cutKey, JSON.stringify({ ...v, at: live ? Date.now() : 0 }));
+			else {
+				localStorage.removeItem(markKey || cutKey);
+				if (wasKey) localStorage.removeItem(wasKey);
+				wasKey = '';
+			}
+		} catch {
+			// No storage: nothing to come back to.
+		}
+	}
+	function noteWhy(why: Cut['why']) {
+		if (track) noteCut({ ...track, why }, false);
+	}
+	$effect(() => {
+		if (!adopting) return;
+		// A note that already says why the import stopped is never made fresh again.
+		const iv = setInterval(() => track?.why === 'closed' && noteCut(track), 5000);
+		return () => clearInterval(iv);
+	});
+	// The sign-in ended mid-import: the sign-in page says the import paused.
+	let lost = false;
+	function signedOut() {
+		noteWhy('signedOut');
+		try {
+			sessionStorage.setItem('holyarrs-import-paused', '1');
+		} catch {
+			// No storage: the sign-in page stays plain.
+		}
+	}
+	// A scan is remembered here, so coming back (or a scan that outlasts the wait) still shows its plan.
+	// Each tab keeps its own, so an import in one tab never clears a scan running in another.
+	const scanBase = $derived(`holyarrs.import.scan.${session.s.id}`);
+	const scanKey = $derived(cutKeyOf(scanBase, tab));
+	// The scan found on the way in (an older page's): cleared with this tab's own.
+	let scanWas = '';
+	function noteScan(v: { lf: number; job: number; from: string } | null) {
+		try {
+			if (v) localStorage.setItem(scanKey, JSON.stringify(v));
+			else {
+				localStorage.removeItem(scanKey);
+				if (scanWas) localStorage.removeItem(scanWas);
+				scanWas = '';
+			}
+		} catch {
+			// No storage: a scan is not picked up again.
+		}
+	}
+	// When HolyArrs last answered: a few seconds of silence says so on the page.
+	let heard = $state(0);
+	let clock = $state(0);
+	$effect(() => {
+		const iv = setInterval(() => (clock = Date.now()), 1000);
+		return () => clearInterval(iv);
+	});
+	const silent = $derived((adopting || scanning) && quiet(heard, clock));
+	function answered<T>(p: Promise<T>): Promise<T> {
+		return p.then(
+			(v) => {
+				heard = Date.now();
+				return v;
+			},
+			(e) => {
+				if (e instanceof ApiError && e.status === 401) lost = true;
+				throw e;
+			}
+		);
+	}
 
 	let lookFor = $state<string | null>(null);
 	let term = $state('');
@@ -62,6 +154,9 @@
 	const scanned = $derived(scanning ? scanCount(job?.ProgressNote) : null);
 	const running = $derived(!!job && !['done', 'failed', 'cancelled'].includes(job.State));
 	const okCount = $derived(results ? results.filter((r) => r.title_id).length : 0);
+	const unknownCount = $derived(results ? results.filter((r) => r.notKnown).length : 0);
+	// Folders the metadata server did not answer for: all of them, or how many.
+	const fail = $derived(plan ? lookFail(plan.folders) : null);
 
 	// The scanned folders: unsure ones first, narrowed by the search words and the status filter.
 	let q = $state('');
@@ -126,11 +221,73 @@
 			loaded = true;
 		}
 	}
-	onMount(loadFolders);
+	onMount(async () => {
+		let was: Cut | null = null;
+		let sc: { lf: number; job: number; from?: string } | null = null;
+		let scKey = '';
+		// A tab still sending holds a lock: its import is running, however rarely a hidden tab writes its note.
+		// The notes are read before the locks are asked, so a tab that starts in between is never called stopped;
+		// both after the folders load, so a slow load never makes a note another tab keeps fresh look old.
+		// No Library folders: HolyArrs (or a proxy in front of it, which answers 404 while it is down) did not answer, so no note is touched.
+		const read = await foldersThenNotes(async () => (await loadFolders(), !foldersFailed), () => localStorage, cutBase, navigator.locks);
+		if (read) {
+			const { store, held, now } = read;
+			const ids = folders.map((f) => f.id);
+			try {
+				// A stopped note of a Library folder that is gone can never show: it goes, and never hides another folder's note.
+				for (const k of cutsGone(store, cutBase, ids, now, held)) localStorage.removeItem(k);
+				const v = findCut(store, cutBase, now, held, ids);
+				if (v) [was, wasKey] = [v.cut, v.key];
+			} catch {
+				was = null;
+			}
+		}
+		if (was && !foldersFailed) {
+			// Ask the server how far the parts got, never what the page last wrote.
+			const jobs = await Promise.all(was.jobs.map((id) => api.get<JobView>(`/jobs/${id}`).catch((e) => (jobForgotten(e) ? null : undefined))));
+			// A part the server no longer knows: how far it got cannot be told, so the note goes.
+			// A part not answered this time: the note stays as it is for the next visit, and this tab never clears it.
+			const note = cutFromJobs(was, jobs);
+			if (note === undefined) wasKey = '';
+			else if (!note) noteCut(null);
+			else if (folders.some((f) => f.id === was?.lf)) {
+				cut = { ...note, lf: was.lf };
+				folderId = was.lf;
+			}
+		}
+		if (!foldersFailed) {
+			try {
+				const ids = folders.map((f) => f.id);
+				// A scan of a Library folder that is gone can never be followed: its record goes, and never hides another tab's scan.
+				for (const k of scansGone(localStorage, scanBase, ids)) localStorage.removeItem(k);
+				const w = findKept<{ lf: number; job: number; from?: string }>(localStorage, scanBase, (x) => typeof x.job === 'number' && ids.includes(x.lf));
+				if (w) [sc, scKey] = [w.v, w.key];
+			} catch {
+				// No storage: no scan to pick up.
+			}
+		}
+		if (sc && !cut && folders.some((f) => f.id === sc?.lf)) {
+			scanWas = scKey;
+			folderId = sc.lf;
+			scanFrom = sc.from ?? '';
+			void watchScan(sc.job, true);
+		}
+	});
+	onDestroy(() => {
+		gone = true;
+		// A sign-in that ended somewhere else (another tab) takes the page away without a page change of its own.
+		if (adopting && session.s.state !== 'signed_in') signedOut();
+	});
+	beforeNavigate((nav) => {
+		if (!adopting || nav.willUnload) return;
+		if (session.s.state !== 'signed_in') return signedOut();
+		if (!confirm(t('library.import.leaveAsk'))) nav.cancel();
+		else noteWhy('left');
+	});
 
 	function follow(id: number) {
 		return followJob(
-			(x) => api.get<JobView>(`/jobs/${x}`),
+			(x) => (gone ? Promise.reject(new Error('')) : answered(api.get<JobView>(`/jobs/${x}`))),
 			id,
 			(j) => (job = j),
 			{
@@ -144,21 +301,50 @@
 
 	async function scan(after = '') {
 		if (!folderId) return;
-		scanning = true;
+		scanFrom = after;
+		retryFrom = null;
+		cut = null;
+		noteCut(null);
 		error = '';
 		plan = null;
 		results = null;
 		restFrom = '';
 		q = '';
 		filter = 'all';
+		scanning = true;
+		heard = Date.now();
 		try {
-			const r = await api.post<{ job_id: number }>(`/library-folders/${folderId}/scan`, after ? { after } : undefined);
-			const end = await follow(r.job_id);
+			const r = await answered(api.post<{ job_id: number }>(`/library-folders/${folderId}/scan`, after ? { after } : undefined));
+			noteScan({ lf: folderId, job: r.job_id, from: after });
+			await watchScan(r.job_id);
+		} catch (e) {
+			error = scanEnd(e, false, t('core.api.notAnswering')).error;
+			scanning = false;
+		}
+	}
+
+	// Follows a scan to its plan; past the long-time line it keeps waiting. back: a scan picked up on the way back.
+	async function watchScan(id: number, back = false) {
+		scanning = true;
+		heard = Date.now();
+		try {
+			let end: JobView;
+			for (;;) {
+				try {
+					end = await askThrough(() => follow(id), () => gone);
+					break;
+				} catch (e) {
+					if (gone || message(e) !== t('mediafiles.organise.slow')) throw e;
+					error = message(e);
+				}
+			}
+			error = '';
 			// A stopped music scan keeps the artist folders it finished.
 			const kept = end.State === 'cancelled' ? (end.Result?.plan as AdoptPlan | undefined) : undefined;
 			if (end.State !== 'done' && !kept?.partial) throw new Error(end.Error?.message || t('library.import.scanUnfinished'));
 			const p = (kept ?? end.Result?.plan) as AdoptPlan;
 			plan = p;
+			noteScan(null);
 			const start = startPicks(p.folders);
 			const s: Record<string, string> = {};
 			for (const f of p.folders) if (f.match) s[f.folder] = matchKey(f.match);
@@ -166,7 +352,10 @@
 			named = {};
 			ticked = Object.fromEntries(Object.keys(start).map((f) => [f, true]));
 		} catch (e) {
-			error = message(e);
+			// A scan HolyArrs did not answer for is kept for the next visit; one it forgot, picked up on the way back, is simply gone.
+			const left = scanEnd(e, back, t('core.api.notAnswering'));
+			error = left.error;
+			if (!gone && !left.keep) noteScan(null);
 		} finally {
 			scanning = false;
 			job = null;
@@ -223,23 +412,71 @@
 		if (!plan || !picks.length) return;
 		adopting = true;
 		error = '';
+		lost = false;
+		heard = Date.now();
+		const lf = plan.library_folder_id;
+		const order = plan.folders.map((f) => f.folder);
+		noteScan(null);
+		markKey = cutKey;
+		const free = holdWhile(navigator.locks, markKey);
+		noteCut({ lf, total: picks.length, jobs: [], why: 'closed' });
+		// A part whose Follow step failed after its folders went in: shown once the results are.
+		let partFail = '';
 		try {
-			const r = await api.post<{ job_id: number }>(`/library-folders/${plan.library_folder_id}/adopt`, { folders: picks, follow: followAll });
-			const end = await follow(r.job_id);
-			if (end.State !== 'done') throw new Error(end.Error?.message || t('library.import.adoptUnfinished'));
-			results = (end.Result?.results as AdoptResult[]) ?? [];
+			const all = await adoptInParts(
+				picks,
+				async (part) => {
+					const r = await answered(api.post<{ job_id: number }>(`/library-folders/${lf}/adopt`, { folders: part, follow: followAll }));
+					if (track) noteCut({ ...track, jobs: [...track.jobs, r.job_id] }, track.why === 'closed');
+					// The server took the part: from here a lost answer means "not known", never "not sent".
+					const end = await keepAsking(() => follow(r.job_id), () => gone);
+					const { res, fail } = partEnd(end, (m) => serverWords(m) || t('library.import.adoptUnfinished'));
+					if (fail && !partFail) partFail = fail;
+					return res;
+				},
+				{ unknown: t('library.import.resultUnknown'), notSent: t('library.import.notSentRest') },
+				(done, total) => {
+					sent = { done, total };
+					job = null;
+				},
+				() => gone || lost
+			);
+			if (lost) signedOut();
+			if (gone || lost) return;
+			noteCut(null);
+			// Notes of earlier imports of this folder that stopped say nothing true any more.
+			try {
+				const { store, held } = await notesThenLocks(localStorage, cutBase, navigator.locks);
+				for (const k of staleCuts(store, cutBase, lf, Date.now(), held)) localStorage.removeItem(k);
+			} catch {
+				// No storage: nothing was kept.
+			}
+			// The ones not adopted come first, so a long list shows them.
+			results = [...all].sort((a, b) => Number(!!a.title_id) - Number(!!b.title_id));
+			error = partFail;
 			const n = results.filter((x) => x.title_id).length;
-			toasts.push(t(n === 1 ? 'library.import.adoptedOne' : 'library.import.adoptedMany', { n, word: w, words: ws }), n ? 'ok' : 'info', { body: t('library.import.noFileMoved') });
+			toasts.push(t(n === 1 ? 'library.import.adoptedOne' : 'library.import.adoptedMany', { n: n.toLocaleString(appLocale()), word: w, words: ws }), n ? 'ok' : 'info', { body: t('library.import.noFileMoved') });
+			retryFrom = scanFromFirstLeft(order, results, scanFrom);
 			restFrom = plan?.more ? (plan.next ?? '') : '';
 			plan = null;
 		} catch (e) {
 			error = message(e);
 		} finally {
+			free();
 			adopting = false;
 			job = null;
+			sent = null;
 		}
 	}
+
+	// Scanning the rest clears the ticks here: ask first when some are ticked.
+	function scanRest(next: string) {
+		if (picks.length && !confirm(t(picks.length === 1 ? 'library.import.askScanRestOne' : 'library.import.askScanRestMany', { n: picks.length.toLocaleString(appLocale()) }))) return;
+		void scan(next);
+	}
 </script>
+
+<svelte:window onbeforeunload={(e) => { if (adopting) e.preventDefault(); }} onpagehide={() => { if (adopting && track) noteCut(track, false); }} />
 
 <svelte:head><title>{t('library.import.title')} · HolyArrs</title></svelte:head>
 
@@ -268,12 +505,22 @@
 			</div>
 			<Button variant="primary" icon="search" onclick={() => scan()} disabled={adopting || !folderId} busy={scanning}>{t('library.byHand.scan')}</Button>
 		</div>
-		{#if running}
+		{#if cut && !plan && !results && !scanning}
+			<p class="notice bad" role="status" data-testid="adopt-cut">{t(cut.key, { done: cut.done.toLocaleString(appLocale()), total: cut.total.toLocaleString(appLocale()) })}</p>
+		{/if}
+		{#if sent}
+			{@const through = throughNow(sent, scanCount(job?.ProgressNote))}
+			<div aria-live="polite" data-testid="adopt-progress">
+				<div class="bar"><ProgressBar value={sent.total ? (through / sent.total) * 100 : 0} label={t('library.import.progress')} /></div>
+				<p class="xs muted">{t('library.import.adoptCount', { done: through.toLocaleString(appLocale()), total: sent.total.toLocaleString(appLocale()) })} {t('library.import.keepOpen')}</p>
+			</div>
+		{:else if running}
 			<div aria-live="polite">
 				<div class="bar"><ProgressBar value={(job?.Progress ?? 0) * 100} label={t('library.import.progress')} /></div>
 				<p class="xs muted">{scanned ? t('library.import.readCount', { done: scanned.done.toLocaleString(appLocale()), total: scanned.total.toLocaleString(appLocale()) }) : job?.ProgressNote || (scanning ? t('library.import.reading', { word: w }) : t('library.import.adopting'))}</p>
 			</div>
 		{/if}
+		{#if silent}<p class="xs bad-text" role="status" data-testid="not-answering">{t('library.import.stillTrying')}</p>{/if}
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		<p class="xs muted"><Words key="library.import.noMatchFiles" links={{ a: to('/library/import-files') }} /></p>
 	</section>
@@ -281,11 +528,14 @@
 	{#if results}
 		<section class="tp-sheet tp-pad" aria-labelledby="h-done" data-testid="adopt-results">
 			<h2 id="h-done" class="h2">{t('library.import.done')}</h2>
-			<p class="small">{t(okCount === 1 ? 'library.import.nowOne' : 'library.import.nowMany', { n: okCount, word: w, words: ws })}</p>
+			<p class="small">{t(okCount === 1 ? 'library.import.nowOne' : 'library.import.nowMany', { n: okCount.toLocaleString(appLocale()), word: w, words: ws })}</p>
+			{#if results.length > okCount + unknownCount}<p class="small bad-text" data-testid="adopt-not-count">{t('library.import.notCount', { n: (results.length - okCount - unknownCount).toLocaleString(appLocale()) })}</p>{/if}
+			{#if unknownCount}<p class="small" data-testid="adopt-unknown-count">{t('library.import.unknownCount', { n: unknownCount.toLocaleString(appLocale()) })}</p>{/if}
+			{#if retryFrom !== null}<p class="small" data-testid="adopt-left">{t('library.import.leftHint')}</p>{/if}
 			<ul class="list">
 				{#each results as r (r.folder)}
 					<li>
-						<span class="mono small path">{r.folder}</span>
+						<span class="mono small path"><bdi>{r.folder}</bdi></span>
 						{#if r.title_id}
 							<a class="small" href={to(`/library/${r.title_id}`)}>{t('library.import.openThe', { word: w })}</a>
 							{#if r.episodes !== undefined || r.unknown?.length}
@@ -295,39 +545,47 @@
 										: ''}</span
 								>
 							{/if}
+						{:else if r.notKnown}
+							<span class="small">{t('library.import.resultUnknown')}</span>
 						{:else}
-							<span class="small bad-text">{t('library.import.notAdopted', { why: r.error ?? '' })}</span>
+							<span class="small bad-text">{t('library.import.notAdopted', { why: serverWords(r.error) ?? '' })}</span>
 						{/if}
 					</li>
 				{/each}
 			</ul>
-			<div class="row end">{#if restFrom}<Button onclick={() => scan(restFrom)} disabled={scanning || adopting}>{t('library.import.scanRest')}</Button>{/if}<Button href={to('/library')}>{t('library.import.goLibrary')}</Button></div>
+			<div class="row end">{#if retryFrom !== null}<Button variant="primary" onclick={() => scan(retryFrom ?? '')} disabled={scanning || adopting} data-testid="adopt-scan-again">{t('library.import.scanAgain')}</Button>{:else if restFrom}<Button onclick={() => scan(restFrom)} disabled={scanning || adopting}>{t('library.import.scanRest')}</Button>{/if}<Button href={to('/library')}>{t('library.import.goLibrary')}</Button></div>
 		</section>
 	{/if}
 
 	{#if plan}
 		<section class="tp-sheet tp-pad" aria-labelledby="h-check" data-testid="adopt-plan">
 			<h2 id="h-check" class="h2">{t('library.import.step2')}</h2>
-			<p class="small muted">
-				{t(plan.folders.length === 1 ? 'library.import.foldersInOne' : 'library.import.foldersInMany', { n: plan.folders.length, path: plan.path, words: ws })}
+			<p class="small muted" data-testid="plan-count">
+				{#if (plan.total ?? 0) > plan.folders.length}
+					<Isolated text={t('library.import.foldersPart', { total: (plan.total ?? 0).toLocaleString(appLocale()), path: ltr(plan.path), from: ((plan.offset ?? 0) + 1).toLocaleString(appLocale()), to: ((plan.offset ?? 0) + plan.folders.length).toLocaleString(appLocale()) })} />
+				{:else}
+					<Isolated text={t(plan.folders.length === 1 ? 'library.import.foldersInOne' : 'library.import.foldersInMany', { n: plan.folders.length.toLocaleString(appLocale()), path: ltr(plan.path), words: ws })} />
+				{/if}
 			</p>
-			{#if plan.warning}<p class="notice bad" role="alert" data-testid="scan-warning">{plan.warning}</p>{/if}
+			{#if fail}<p class="notice bad" role="alert" data-testid="scan-warning">{t(fail.all ? 'library.import.lookFailAll' : 'library.import.lookFailSome', { n: fail.n.toLocaleString(appLocale()), total: fail.of.toLocaleString(appLocale()) })}</p>
+			{:else if plan.warning}<p class="notice bad" role="alert" data-testid="scan-warning">{serverWords(plan.warning)}</p>{/if}
 			{#if !plan.folders.length}<p class="notice">{t('library.import.noFolders', { word: w })}</p>{/if}
-			{#if plan.more}
+			{#if plan.more && (plan.partial || !fail?.every)}
 				<div class="notice" data-testid="scan-more">
-					{#if plan.partial}<p class="small">{t('library.import.stopped', { next: plan.next ?? '' })}</p>{:else}<p class="small">{t('library.import.first', { limit: plan.limit, next: plan.next ?? '' })}</p>{/if}
-					<Button onclick={() => scan(plan?.next ?? '')} disabled={scanning || adopting}>{t('library.import.scanRest')}</Button>
+					{#if plan.partial}<p class="small"><Isolated text={t('library.import.stopped', { next: ltr(plan.next ?? '') })} /></p>{/if}
+					{#if plan.folders.some(canAdopt)}<p class="small">{t('library.import.partNext')}</p>{/if}
+					<Button onclick={() => scanRest(plan?.next ?? '')} disabled={scanning || adopting}>{t('library.import.scanRest')}</Button>
 				</div>
 			{/if}
 			{#if plan.folders.length}
-				<div class="checkbar" bind:clientWidth={planWidth}>
+				<div class="checkbar" class:held={adopting} bind:clientWidth={planWidth} inert={adopting} aria-busy={adopting}>
 					<ImportToolbar {phone} compact={phone || planWidth < 900} {view} {setView} {sizeItems} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} {filters} bind:filter findLabel={t('library.import.searchFolders')} bind:findOpen hasWords={!!q.trim()}>
 						{#snippet find()}<DlFind bind:term={q} shown={shown.length} total={plan?.folders.length ?? 0} searchKey="" placeholder={t('library.import.searchFolders')} note={t(shown.length === 1 ? 'library.import.folderCountOne' : 'library.import.folderCountMany', { n: shown.length.toLocaleString(appLocale()) })} testid="import-find" />{/snippet}
 					</ImportToolbar>
 					{#if shown.length}
 						<div class="tickbar" data-testid="import-tickbar">
 							<span class="count" aria-live="polite">{t('mediafiles.select.count', { n: tickNow.on.toLocaleString(appLocale()) })}</span>
-							<Button variant="plain" size="md" disabled={!tickNow.can} onclick={tickShown} data-testid="import-select-all">{allTicked ? t('mediafiles.select.none') : t('mediafiles.select.all', { n: tickNow.can.toLocaleString(appLocale()) })}</Button>
+							{#if tickNow.can > 0}<Button variant="plain" size="md" onclick={tickShown} data-testid="import-select-all">{allTicked ? t('mediafiles.select.none') : t('mediafiles.select.all', { n: tickNow.can.toLocaleString(appLocale()) })}</Button>{/if}
 						</div>
 						<ImportList folders={shown} {view} size={posterSize} {density} {kind} {phone} bind:sel bind:ticked {named} onlook={openLookup} onzoom={(f) => (zoom = f)} />
 					{:else}
@@ -337,12 +595,12 @@
 			{/if}
 			<div class="row end">
 				<label class="checkline follow-all" data-testid="follow-box">
-					<input type="checkbox" bind:checked={followAll} />
+					<input type="checkbox" bind:checked={followAll} disabled={adopting} />
 					<span><b>{t('library.import.follow')}</b><br /><span class="hint">{t('library.import.followHint')}</span></span>
 				</label>
-				<span class="small muted">{t('library.byHand.ticked', { n: picks.length })}</span>
+				<span class="small muted">{t('library.byHand.ticked', { n: picks.length.toLocaleString(appLocale()) })}</span>
 				<Button variant="primary" onclick={adopt} disabled={!picks.length} busy={adopting}>
-					{t(picks.length === 1 ? 'library.import.adoptOne' : 'library.import.adoptMany', { n: picks.length, word: w, words: ws })}
+					{t(picks.length === 1 ? 'library.import.adoptOne' : 'library.import.adoptMany', { n: picks.length.toLocaleString(appLocale()), word: w, words: ws })}
 				</Button>
 			</div>
 		</section>
@@ -352,9 +610,9 @@
 </LibraryToolPage>
 
 {#if lookFolder}
-	<Sheet open title={t('library.import.lookUpFor', { word: w, folder: lookFolder.folder })} size="md" placement="top" onclose={() => (lookFor = null)}>
+	<Sheet open title={t('library.import.lookUpFor', { word: w, folder: ltr(lookFolder.folder) })} size="md" placement="top" onclose={() => (lookFor = null)}>
 		<form class="look" onsubmit={lookup} data-testid="import-lookup">
-			<label class="sr-only" for="look-term">{t('library.import.lookUpFor', { word: w, folder: lookFolder.folder })}</label>
+			<label class="sr-only" for="look-term"><Isolated text={t('library.import.lookUpFor', { word: w, folder: ltr(lookFolder.folder) })} /></label>
 			<!-- svelte-ignore a11y_autofocus -->
 			<input id="look-term" class="input" bind:value={term} placeholder={kind === 'show' ? t('library.import.phShow') : kind === 'music' ? t('library.import.phMusic') : t('library.import.phMovie')} autocomplete="off" autofocus />
 			<Button type="submit" busy={looking}>{t('library.byHand.lookUp')}</Button>
@@ -406,6 +664,7 @@
 	}
 	/* The toolbar and the folders sit a step under the intro, as on the Library page. */
 	.checkbar { display: flex; flex-direction: column; gap: 12px; min-width: 0; margin-top: 14px; }
+	.checkbar.held { opacity: 0.6; }
 	.tickbar { display: flex; align-items: center; gap: 6px; min-width: 0; }
 	.tickbar .count { padding: 0 8px; font: var(--t-subhead); font-weight: 600; font-variant-numeric: tabular-nums; }
 	.tickbar :global(.ui-btn.plain) { padding-inline: 6px; }

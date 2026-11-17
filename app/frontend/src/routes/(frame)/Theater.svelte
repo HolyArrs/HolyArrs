@@ -2,7 +2,7 @@
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { onDestroy } from 'svelte';
-	import { closeTheater, holdScroll, runExit, theater, waitForResume } from '#lib/core/trailer/theater.svelte.ts';
+	import { closeTheater, holdScroll, runExit, scrimFrames, theater, waitForResume } from '#lib/core/trailer/theater.svelte.ts';
 	import { embedUrl, playingWord, setSoundOn } from '#lib/core/trailer/trailer.ts';
 	import { flipFrames, reducedMotion, THEATER_CHROME_MS, THEATER_EASE, THEATER_FADE_MS, THEATER_GROW_MS, THEATER_SHRINK_MS, type Box } from '#lib/core/motion.ts';
 	import { nativeHLS } from '#lib/core/trailer/autoplay.svelte.ts';
@@ -29,6 +29,8 @@
 	// Every source refused (removed, private or not allowed outside YouTube).
 	let unavailable = $state(false);
 	let leaving = false;
+	// The scrim's opacity once its running fade ends.
+	let scrim = 0;
 	let release: (() => void) | null = null;
 	let idleTimer: ReturnType<typeof setTimeout> | undefined;
 	let tick: ReturnType<typeof setInterval> | undefined;
@@ -66,14 +68,16 @@
 		// The ease is in the frames, so they play at linear timing.
 		const a = track(stage.animate(f.outer.map((transform) => ({ transform })), opts));
 		track(pic.animate(f.inner.map((transform) => ({ transform })), opts));
-		track(dialog.animate(grow ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 1 }, { opacity: 0 }], { ...opts, easing: THEATER_EASE, pseudoElement: '::backdrop' }));
+		track(dialog.animate(scrimFrames(grow ? 1 : 0, scrim), { ...opts, easing: THEATER_EASE, pseudoElement: '::backdrop' }));
+		scrim = grow ? 1 : 0;
 		return a.finished.catch(() => {});
 	}
 	function fade(inOut: 'in' | 'out'): Promise<unknown> {
 		if (!dialog) return Promise.resolve();
 		const k = inOut === 'in' ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 1 }, { opacity: 0 }];
 		const opts: KeyframeAnimationOptions = { duration: THEATER_FADE_MS, easing: 'linear', fill: 'forwards' };
-		track(dialog.animate(k, { ...opts, pseudoElement: '::backdrop' }));
+		track(dialog.animate(scrimFrames(inOut === 'in' ? 1 : 0, scrim), { ...opts, pseudoElement: '::backdrop' }));
+		scrim = inOut === 'in' ? 1 : 0;
 		return track(dialog.animate(k, opts)).finished.catch(() => {});
 	}
 	// Its own animations, so a new open or the close clears them without asking the page for all of them.
@@ -125,6 +129,7 @@
 		mediaOn = !now.still || reducedMotion();
 		release = holdScroll();
 		clearAnims();
+		scrim = 0;
 		dialog.showModal();
 		const r = now.rect;
 		const d = dialog;

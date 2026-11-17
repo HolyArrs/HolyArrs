@@ -5,10 +5,11 @@
 	import BannerArt from './BannerArt.svelte';
 	import ImportFolderFiles from './ImportFolderFiles.svelte';
 	import { canAdopt, fileName, score, type AdoptCandidate } from './organise.ts';
-	import { bannerTitle, matchOptions, needsLook, pickedOf, statusLabel, type ImportView, type Named } from './import-view.ts';
+	import { bannerTitle, folderParts, matchOptions, placeText, needsLook, pickedOf, statusLabel, type ImportView, type Named } from './import-view.ts';
 	import { bytes } from '../core/format.ts';
 	import { to } from '../core/paths.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 	let {
 		folders,
@@ -91,7 +92,7 @@
 {/snippet}
 
 {#snippet pill(f: AdoptCandidate)}
-	<span class="pill {f.status === 'matched' ? 'ok' : needsLook(f) ? 'un' : 'off'}" title={f.why || undefined}>{pillText(f)}</span>
+	<span class="pill {f.status === 'matched' ? 'ok' : needsLook(f) ? 'un' : 'off'}" title={serverWords(f.why) || undefined}>{pillText(f)}</span>
 {/snippet}
 
 {#snippet titleLine(f: AdoptCandidate, big = false)}
@@ -121,14 +122,21 @@
 		{:else}
 			<span class="pk still">{now}</span>
 		{/if}
+		{#if phone && now.length > 40}<span class="pkfull">{now}</span>{/if}
 	{:else if f.status === 'in_library' && f.title_id}
 		<a class="small open" href={to(`/library/${f.title_id}`)}>{t('library.import.openThe', { word: w })}</a>
 	{:else}
-		<span class="why">{f.why}</span>
+		<span class="why">{serverWords(f.why)}</span>
 	{/if}
 {/snippet}
 
 {#snippet folderLine(f: AdoptCandidate)}<span class="fd" title={f.folder}>{f.folder}</span>{/snippet}
+{#snippet placeLine(f: AdoptCandidate)}
+	{@const p = pickedOf(f, sel[f.folder], named)}
+	{@const narrow = placeText(f.folder, p.name, p.year)}
+	{#if folderParts(f.folder).parent}<span class="fd c-par" title={f.folder}>{folderParts(f.folder).parent}</span>{/if}
+	{#if narrow}<span class="fd c-sub" title={f.folder}>{narrow}</span>{/if}
+{/snippet}
 
 <div class="il v-{view}" class:phone style:--poster-ratio={posterRatio(artKind)} style:--pmin="{posterMinFor(size, artKind)}px" style:--bw="{bannerW}px" style:--bratio={kind === 'music' ? 2.5 : 5.405} data-testid="import-list" data-view={view}>
 	{#if view === 'posters'}
@@ -163,7 +171,7 @@
 					{#if view === 'rows'}
 						{@render tickBox(f)}
 						{@render art(f, 'thumb')}
-						<span class="tx">{@render titleLine(f)}<span class="c-sub">{@render folderLine(f)}</span></span>
+						<span class="tx">{@render titleLine(f)}{@render placeLine(f)}</span>
 						<span class="c-fd">{@render folderLine(f)}</span>
 						<span class="c-st">{@render pill(f)}</span>
 						<span class="pkw">{@render pick(f)}</span>
@@ -190,7 +198,7 @@
 								{#if f.main}<dt>{t('mediafiles.sheet.file')}</dt><dd title={fileName(f.main)}>{fileName(f.main)}</dd>{/if}
 								{#if f.videos[0]}<dt>{t('mediafiles.col.size')}</dt><dd>{bytes(f.videos[0].size)}</dd>{/if}
 							</dl>
-							{#if f.why}<span class="why">{f.why}</span>{/if}
+							{#if f.why}<span class="why">{serverWords(f.why)}</span>{/if}
 							<ImportFolderFiles {f} />
 						</span>
 						<span class="pkw"><span class="lab">{t('discover.leftovers.match')}</span>{@render pick(f)}</span>
@@ -234,19 +242,21 @@
 	.tl b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 14px/1.25 var(--font-ui); color: var(--text); }
 	.tl small { flex: none; color: var(--text-muted); font: 500 12.5px/1 var(--font-ui); font-variant-numeric: tabular-nums; }
 	.tl.big b { font: var(--t-title3); }
-	.fd { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-footnote); }
+	.fd { min-width: 0; overflow-wrap: anywhere; color: var(--text-muted); font: var(--t-footnote); }
+	.c-fd { min-width: 0; }
+	.pkfull { display: block; margin-top: 4px; color: var(--text-muted); font: var(--t-footnote); overflow-wrap: anywhere; }
 	.tx { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 	.thumb { width: 32px; border-radius: 5px; box-shadow: 0 0 0 1px var(--line); }
 
 	/* Rows: the Library's ledger, 54px a folder. */
 	.v-rows .row { display: grid; grid-template-columns: 28px 36px minmax(140px, 1.1fr) minmax(120px, 1fr) 128px minmax(200px, 260px); gap: 0 12px; align-items: center; padding-inline: 14px 12px; }
 	.v-rows .item { min-height: 54px; padding-block: 8px; box-sizing: border-box; }
-	.v-rows .c-sub { display: none; }
 	.v-rows .more { grid-column: 3 / -1; }
+	.v-rows .c-sub, .il:not(.v-rows) .c-sub { display: none; }
 	@container (max-width: 820px) {
 		.v-rows .row { grid-template-columns: 28px 36px minmax(0, 1fr) auto minmax(160px, 220px); }
-		.v-rows .c-fd { display: none; }
-		.v-rows .c-sub { display: contents; }
+		.v-rows .c-fd, .v-rows .c-par { display: none; }
+		.v-rows .c-sub { display: block; }
 	}
 
 	/* Banners: the title's wide art set into the sheet, as in the Library. */
@@ -286,7 +296,7 @@
 	.tline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-width: 0; }
 	dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 8px 0 0; font: var(--t-footnote); }
 	dt { color: var(--text-muted); }
-	dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+	dd { margin: 0; overflow-wrap: anywhere; color: var(--text); }
 	.v-overview .pkw { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; min-width: 0; }
 	.lab { color: var(--text-muted); font: var(--t-footnote); }
 	@container (max-width: 760px) {
@@ -296,16 +306,17 @@
 	}
 
 	/* Phone: each view stacks, and the picker gets the full width under the folder. */
-	.phone.v-rows .item { grid-template-columns: 22px 36px minmax(0, 1fr) auto; grid-template-areas: 't p x s' '. . k k' '. . m m'; gap: 6px 10px; padding: 9px 12px; }
+	.phone.v-rows .item { grid-template-columns: 22px 36px minmax(0, 1fr); grid-template-areas: 't p x' '. . s' '. . k' '. . m'; gap: 6px 10px; padding: 9px 12px; }
 	.phone.v-rows .item > .tk { grid-area: t; }
 	.phone.v-rows .item > .thumb { grid-area: p; }
 	.phone.v-rows .item > .tx { grid-area: x; }
 	.phone.v-rows .item > .c-st { grid-area: s; align-self: start; }
 	.phone.v-rows .item > .pkw { grid-area: k; }
 	.phone.v-rows .item > .more { grid-area: m; }
-	.phone.v-rows .c-fd { display: none; }
-	.phone.v-rows .c-sub { display: contents; }
+	.phone.v-rows .c-fd, .phone.v-rows .c-par { display: none; }
+	.phone.v-rows .c-sub { display: block; }
 	.phone .pk { height: 40px; }
+	.phone.v-rows .tl b { white-space: normal; overflow-wrap: break-word; }
 	.phone .item + .item::before { inset-inline: 12px; }
 	.phone.v-banners .item { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; grid-template-areas: 'b b b' 't x s' '. k k'; gap: 8px 10px; padding: 0 12px 12px; min-height: 0; }
 	.phone.v-banners .item > .tk { grid-area: t; align-self: center; }

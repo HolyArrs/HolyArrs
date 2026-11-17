@@ -76,10 +76,11 @@ var langWords = map[string]string{
 
 // moreLangWords are read as languages after the title, but never end a title,
 // because many are ordinary title words ("My Big Fat Greek Wedding"). Short
-// words that clash with names (fin, dan, hun, tur, pol, chi, pl, nl) stay out.
+// words that clash with names (fin, dan, tur, pol, chi, pl, nl) stay out; hun
+// is common in Hungarian release names and needs a tag on both sides.
 var moreLangWords = map[string]string{
 	"polish": "pl", "dutch": "nl", "flemish": "nl", "portuguese": "pt", "swedish": "sv", "swe": "sv",
-	"danish": "da", "norwegian": "no", "finnish": "fi", "czech": "cs", "cze": "cs", "hungarian": "hu",
+	"danish": "da", "norwegian": "no", "finnish": "fi", "czech": "cs", "cze": "cs", "hungarian": "hu", "hun": "hu",
 	"greek": "el", "hebrew": "he", "heb": "he", "turkish": "tr", "arabic": "ar", "hindi": "hi",
 	"chinese": "zh", "mandarin": "zh", "thai": "th", "vietnamese": "vi", "ukrainian": "uk", "ukr": "uk",
 }
@@ -255,6 +256,19 @@ func Parse(name string, h Hints) Result {
 		flags["crc"] = true
 	}
 
+	// A repost marker at the end is not the group: some posters send a scene
+	// name on with "-xpost" after the release group. Drop it so the group
+	// before it is read, and cut a CRC that follows the marker.
+	repost := false
+	if i := strings.LastIndexByte(s, '-'); i > 0 && strings.EqualFold(s[i+1:], "xpost") {
+		s = s[:i]
+		repost = true
+		if loc := reCRC.FindStringIndex(s); loc != nil {
+			s = s[:loc[0]]
+			flags["crc"] = true
+		}
+	}
+
 	// Group: the text after the last hyphen, unless that hyphen joins a tag
 	// (WEB-DL, DTS-HD) or the text after it is not a group.
 	var trailing []string
@@ -264,7 +278,9 @@ func Parse(name string, h Hints) Result {
 		if j := strings.LastIndexAny(before, " ._()[]"); j >= 0 {
 			before = before[j+1:]
 		}
-		compound := tagWords[strings.ToLower(before+"-"+after[0])]
+		// A name whose marker was cut may have a hyphen inside its title
+		// (Spider-Man); the words after it are then not a group.
+		compound := tagWords[strings.ToLower(before+"-"+after[0])] || (repost && len(after) > 1)
 		allTags := true
 		for _, t := range after[1:] {
 			allTags = allTags && isTag(t)
@@ -391,7 +407,10 @@ func CleanName(s string) string {
 		}
 	}
 	words := strings.Fields(b.String())
-	if len(words) > 1 && (words[0] == "the" || words[0] == "a" || words[0] == "an") {
+	// An "a" before another single letter starts letters written apart
+	// ("A.L.F."), not an article.
+	acronym := len(words) > 1 && words[0] == "a" && len([]rune(words[1])) == 1 && unicode.IsLetter([]rune(words[1])[0])
+	if len(words) > 1 && !acronym && (words[0] == "the" || words[0] == "a" || words[0] == "an") {
 		words = words[1:]
 	}
 	return strings.Join(words, " ")
@@ -400,15 +419,101 @@ func CleanName(s string) string {
 // SameName says whether a library name cleans to want (a CleanName of a
 // release name). An apostrophe in the library name is tried both as a
 // separator ("Schitt s Creek", "d Amelie") and as nothing ("Schitts Creek"),
-// since release names show either.
+// since release names show either. An all-capitals library name ("ER",
+// "CSI") also matches its letters written apart ("E.R.").
 func SameName(libName, want string) bool {
-	if CleanName(libName) == want {
+	if slices.Contains(NameForms(libName), want) {
 		return true
 	}
-	if !strings.ContainsAny(libName, "'’ʼ") {
-		return false
+	return want != "" && strings.ToUpper(libName) == libName && strings.ToLower(libName) != libName && CleanName(libName) == JoinLetters(want)
+}
+
+// NameForms are the clean forms a library name can show in release names:
+// as written, with apostrophes dropped, and with letters written apart by
+// dots or stars joined ("S.W.A.T." as "swat", "M*A*S*H" as "mash"). A
+// joined name of only one or two letters ("I.T.", "E.R.") is too short to
+// tell apart from a word and is left out.
+func NameForms(libName string) []string {
+	forms := []string{CleanName(libName)}
+	if strings.ContainsAny(libName, "'’ʼ`‘") {
+		forms = append(forms, CleanName(reApostrophe.Replace(libName)))
 	}
-	return CleanName(strings.NewReplacer("'", "", "’", "", "ʼ", "").Replace(libName)) == want
+	if j := JoinLettersApart(libName, 2); j != libName {
+		if c := CleanName(reApostrophe.Replace(j)); strings.Contains(c, " ") || len([]rune(c)) > 2 {
+			forms = append(forms, CleanName(j), c)
+		}
+	}
+	return forms
+}
+
+// JoinLettersApart joins letters written apart by dots or stars ("S.W.A.T."
+// to "SWAT", "M*A*S*H" to "MASH") when the run has at least least letters;
+// shorter runs stay as they are. The matcher (NameForms) and the search
+// text both use it, so they read a name the same way.
+func JoinLettersApart(s string, least int) string { return joinRuns(reDotted, s, least) }
+
+// JoinDottedLetters joins only letters written apart by dots ("S.W.A.T." to
+// "SWAT", "E.T." to "ET"); a star, or a dot after a word or a number
+// ("D.Gray-man", "2.0"), stays as it is. Search text uses it, as the older
+// apps send names.
+func JoinDottedLetters(s string) string { return joinRuns(reDots, s, 2) }
+
+func joinRuns(re *regexp.Regexp, s string, least int) string {
+	return re.ReplaceAllStringFunc(s, func(m string) string {
+		j := dottedJoin(m)
+		n := 0
+		for _, c := range j {
+			if unicode.IsLetter(c) {
+				n++
+			}
+		}
+		if n < least {
+			return m
+		}
+		return j
+	})
+}
+
+var (
+	reApostrophe = strings.NewReplacer("'", "", "’", "", "ʼ", "", "`", "", "‘", "")
+	// reDotted is two or more single letters, each followed by a dot or star.
+	reDotted = regexp.MustCompile(`(?:^|[^\pL\pN])(?:\pL[.*]){1,}\pL(?:[.*]|$|[^\pL\pN])`)
+	reDots   = regexp.MustCompile(`(?:^|[^\pL\pN])(?:\pL\.){1,}\pL(?:\.|$|[^\pL\pN])`)
+)
+
+// dottedJoin joins the letters of one reDotted match, keeping the edges; a
+// dot or star after the last letter becomes a space ("S.W.A.T.2017").
+func dottedJoin(m string) string {
+	r := []rune(m)
+	var b strings.Builder
+	for i, c := range r {
+		if c == '.' || c == '*' {
+			if i == len(r)-1 && unicode.IsLetter(r[i-1]) {
+				b.WriteByte(' ')
+				continue
+			}
+			if i > 0 && i < len(r)-1 {
+				continue
+			}
+		}
+		b.WriteRune(c)
+	}
+	return b.String()
+}
+
+// JoinLetters joins runs of two or more one-letter words ("e r" to "er").
+func JoinLetters(clean string) string {
+	words := strings.Fields(clean)
+	letter := func(w string) bool { r := []rune(w); return len(r) == 1 && unicode.IsLetter(r[0]) }
+	var out []string
+	for i, w := range words {
+		if letter(w) && i > 0 && letter(words[i-1]) {
+			out[len(out)-1] += w
+			continue
+		}
+		out = append(out, w)
+	}
+	return strings.Join(out, " ")
 }
 
 func sure[T any](v T) Field[T] { return Field[T]{v, Sure} }
@@ -504,14 +609,17 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 	}
 
 	// Resolution. Two different values make it a guess; the later one wins.
+	// UHD and 4K count only when no number is written ("720p.UHD.BluRay"
+	// is a 720p cut of a UHD disc, as Sonarr and Radarr read it).
 	var seen []int
 	for _, t := range low {
 		if m := reResWord.FindStringSubmatch(t); m != nil {
 			v, _ := strconv.Atoi(m[1])
 			seen = append(seen, v)
-		} else if t == "4k" || t == "uhd" {
-			seen = append(seen, 2160)
 		}
+	}
+	if len(seen) == 0 && has("4k", "uhd") {
+		seen = append(seen, 2160)
 	}
 	if len(seen) > 0 {
 		r.Resolution = sure(seen[len(seen)-1])
@@ -585,18 +693,21 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 		r.Codec.Conf = Unknown
 	}
 
-	// HDR.
+	// HDR. The words HolyArrs writes in a file name read back too, so a
+	// Library it named keeps its quality. A written label is one word that
+	// holds several kinds: DolbyVisionHDR10+, DolbyVisionHLG, HDR10HLG.
 	var hdr []string
-	if has("dv", "dovi") || strings.Contains(line, " dolby vision ") {
+	if has("dv", "dovi", "dolbyvision", "dolbyvisionhdr10", "dolbyvisionhdr10+", "dolbyvisionhlg",
+		"dolbyvisionhdr10hlg", "dolbyvisionhdr10+hlg") || strings.Contains(line, " dolby vision ") {
 		hdr = append(hdr, "dv")
 	}
 	switch {
-	case has("hdr10plus", "hdr10+"):
+	case has("hdr10plus", "hdr10+", "dolbyvisionhdr10+", "dolbyvisionhdr10+hlg", "hdr10+hlg"):
 		hdr = append(hdr, "hdr10plus")
-	case has("hdr10", "hdr"):
+	case has("hdr10", "hdr", "dolbyvisionhdr10", "dolbyvisionhdr10hlg", "hdr10hlg"):
 		hdr = append(hdr, "hdr10")
 	}
-	if has("hlg") {
+	if has("hlg", "dolbyvisionhlg", "dolbyvisionhdr10hlg", "dolbyvisionhdr10+hlg", "hdr10hlg", "hdr10+hlg") {
 		hdr = append(hdr, "hlg")
 	}
 	if hdr != nil {
@@ -632,6 +743,8 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 		if !ok {
 			code, ok = moreLangWords[t]
 			ok = ok && (i+1 == len(low) || !plainWord(low[i+1]))
+			// "hun" also needs a tag before it, so "The.Hun.720p" stays a title.
+			ok = ok && (t != "hun" || i > 0 && !plainWord(low[i-1]))
 		}
 		if ok && !slices.Contains(r.Languages, code) {
 			r.Languages = append(r.Languages, code)

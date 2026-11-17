@@ -83,6 +83,7 @@
 	"settings.users.preset": "Předvolba",
 	"settings.users.comingSoon": "Již brzy",
 	"settings.users.custom": "Vlastní",
+	"settings.users.customHint": "Toto je vaše vlastní nastavení přepínačů níže. Výběr předvolby ho nahradí; znovu zvolte Vlastní a vrátí se.",
 	"settings.users.ageRating": "Věkové hodnocení",
 	"settings.users.newPasswordFor": "Nové heslo pro {name}",
 	"settings.users.passwordNote": "Použijte, když {name} zapomněl(a) své. Bude odhlášen(a) všude a přihlásí se znovu novým. Sdělte mu ho osobně.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "např. Máma",
 	"settings.users.days": "Počet dnů platnosti odkazu",
 	"settings.users.makeInvite": "Vytvořit pozvánkový odkaz",
-	"settings.users.permAuto4k": "Žádosti ve 4K se schvalují bez čekání"
+	"settings.users.permAuto4k": "Žádosti ve 4K se schvalují bez čekání",
+	"settings.users.serverAccount": "Účet na serveru",
+	"settings.users.pickAccount": "Vyberte účet na mediálním serveru",
+	"settings.users.accountLinked": "Propojeno s {name}",
+	"settings.users.removedOnServer": "Odebrán na serveru {word}, proto je zde vypnut",
+	"settings.users.delete": "Smazat",
+	"settings.users.deleteName": "Smazat {name}",
+	"settings.users.confirmDelete": "Smazat {name}? Bude natrvalo odhlášen a jeho klíče zmizí. Jeho žádosti zůstanou, zobrazené jako odebraná osoba.",
+	"settings.users.deleteYes": "Smazat osobu",
+	"settings.users.keep": "Ponechat",
+	"settings.users.deleted": "{name} smazán",
+	"settings.users.couldntDelete": "Nepodařilo se smazat",
+	"settings.users.confirmDeleteKeys": "Klíče pro Seerr, které vytvořil, přestanou fungovat pro všechny, dokud nevznikne nový.",
+	"settings.users.qualities": "Kvality",
+	"settings.users.qualitiesHint": "Mohou vybírat jen zapnuté. Když jsou zapnuté všechny, nabídnou se i nové."
 }

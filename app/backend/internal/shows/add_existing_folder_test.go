@@ -6,7 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 // TestAddShowUsesExistingFolder: a show re-added while its files
@@ -60,5 +63,28 @@ func TestAddShowNewFolderWhenNoneMatch(t *testing.T) {
 	_ = s.Read().QueryRow("SELECT folder_name FROM versions WHERE title_id = ? AND is_main = 1", id).Scan(&got)
 	if got == "Other Show (2025)" || got == "" {
 		t.Fatalf("folder %q", got)
+	}
+}
+
+// TestAddShowTakesTheFolderTags: a show added into a Library folder that has
+// tags for new titles carries them.
+func TestAddShowTakesTheFolderTags(t *testing.T) {
+	svc, s, _, _ := addShowService(t)
+	ctx := context.Background()
+	lf := addShowFolder(t, s)
+	tags := []string{"Anime"}
+	if _, err := library.UpdateFolder(ctx, s, lf.ID, library.FolderChange{NewTitleTags: &tags}, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	id, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var title mediafiles.Title
+	if err := database.Get(ctx, s.Read(), "titles", id, &title); err != nil {
+		t.Fatal(err)
+	}
+	if len(title.Tags) != 1 || title.Tags[0] != "anime" {
+		t.Fatalf("show tags %v", title.Tags)
 	}
 }

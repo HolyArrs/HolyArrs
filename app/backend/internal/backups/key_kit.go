@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -24,6 +25,9 @@ const settingKeyKit = "key_kit_print"
 type KeyKit struct {
 	Needed      bool   `json:"needed"`
 	Fingerprint string `json:"fingerprint"`
+	// Level is how loudly to ask: secrets.KitRecommend or secrets.KitWarn
+	// ("" when not needed).
+	Level string `json:"level"`
 }
 
 // KeyKitPrint returns the fingerprint of the last key kit downloaded ("" for none).
@@ -49,11 +53,31 @@ func (m *Manager) keyKitState(ctx context.Context) KeyKit {
 	if len(m.Key) > 0 {
 		st.Fingerprint = secrets.Fingerprint(m.Key)
 	}
-	// With backups off there is no backup to open, so the card does not ask.
-	if p := m.KeyPrint(); p != "" && (m.Store == nil || !m.Off(ctx)) {
-		st.Needed = m.KeyKitPrint(ctx) != p
-	}
+	st.Level = m.KeyKitLevel(ctx)
+	st.Needed = st.Level != ""
 	return st
+}
+
+// KeyKitLevel says how loudly to ask for the key kit (see
+// secrets.KitReminder): "" when a matching kit is saved, the key is a named
+// file, backups are off (no backup to open), or nothing is saved yet.
+func (m *Manager) KeyKitLevel(ctx context.Context) string {
+	p := m.KeyPrint()
+	if p == "" || m.Store != nil && m.Off(ctx) || m.KeyKitPrint(ctx) == p {
+		return ""
+	}
+	var first, oldest time.Time
+	if m.Store != nil {
+		first, _ = secrets.FirstSaved(ctx, m.Store)
+	}
+	byHand := false
+	if all, err := m.List(); err == nil && len(all) > 0 {
+		oldest = all[len(all)-1].CreatedAt
+		for _, b := range all {
+			byHand = byHand || b.Kind == KindManual
+		}
+	}
+	return secrets.KitReminder(first, oldest, byHand, m.now())
 }
 
 // keyKitFile is the master key with '#' notes: secrets.LoadKey reads it

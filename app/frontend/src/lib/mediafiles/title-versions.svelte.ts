@@ -1,3 +1,4 @@
+import { ask } from '#lib/ui/ask.svelte.ts';
 // The movie page's versions: adding and removing a version.
 import { secondVersion } from './library.ts';
 import { api, message } from '#lib/core/api.ts';
@@ -61,7 +62,7 @@ export function createTitleVersions(ctx: { title: TitleView | null; rules: PickR
 	}
 
 	async function removeVersion(v: VersionView) {
-		if (!confirm(t('movies.versions.stopConfirm', { label: v.label }))) return;
+		if (!(await ask(t('movies.versions.stopConfirm', { label: v.label }), { yes: t('ui.ask.stop') }))) return;
 		try {
 			await api.del(`/titles/${ctx.id}/versions/${v.id}`);
 			await ctx.load('title');

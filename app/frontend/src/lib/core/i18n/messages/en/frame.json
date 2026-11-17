@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} waiting",
 	"frame.nav.new": "{n} new",
 	"frame.nav.manage": "Manage",
+	"frame.nav.activity": "Activity",
+	"frame.nav.system": "System",
 	"frame.nav.history": "History",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Settings",
+	"frame.nav.plugins": "Plugins",
 	"frame.nav.goTo": "Go to",
 	"frame.nav.active": "{n} active, {percent}%",
 	"frame.nav.decide": "{n} need a decision",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "System",
 	"frame.layout.switch": "Switch account",
 	"frame.layout.signOut": "Sign out",
+	"frame.layout.support": "Support HolyArrs",
 	"frame.layout.signOutFail": "Couldn't confirm sign-out",
 	"frame.layout.signedOut": "Signed out",
 	"frame.layout.accountMenu": "{name}, {role}: account and appearance",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs tries again on its own",
 	"frame.feeds.clearNow": "Clear now",
 	"frame.feeds.cleared": "Cleared from the Downloader",
-	"frame.feeds.clearStill": "Not cleared yet"
+	"frame.feeds.clearStill": "Not cleared yet",
+	"frame.error.pageGone": "This page doesn't exist. The link may be old or mistyped."
 }

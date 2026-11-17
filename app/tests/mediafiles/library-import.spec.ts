@@ -106,7 +106,7 @@ test('Import files by hand: Change matches a wrongly named file to another Libra
 
 	// Change: look the right movie up in the Library and pick it.
 	await row.getByRole('button', { name: 'Change', exact: true }).click();
-	const look = row.getByPlaceholder('Movie or show in the Library');
+	const look = row.getByPlaceholder('Movie, show or artist in the Library');
 	await expect(look).toHaveValue('Tamarind Quay');
 	await look.fill('Ochre Bandstand');
 	await row.getByRole('button', { name: 'Look up', exact: true }).click();
@@ -186,7 +186,7 @@ test('Import files by hand: two loose episodes of a Library show, one season and
 	}
 	expect(results).toHaveLength(2);
 	await expect(page.getByText('2 files imported')).toBeVisible();
-	for (const row of [first, second]) await expect(row.getByRole('status')).toHaveText(/^(Copied|Linked \(no extra space\))/);
+	for (const row of [first, second]) await expect(row.getByRole('status')).toHaveText(/^(Copied|Added to the Library \(no extra space used\))/);
 	expect(existsSync(named)).toBe(true);
 	expect(existsSync(dated)).toBe(true);
 

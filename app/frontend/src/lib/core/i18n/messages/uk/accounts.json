@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Не вдалося зберегти мову",
 	"accounts.language.count.one": "1 мова",
 	"accounts.language.count.other": "Мов: {n}",
-	"accounts.account.watchEveryone": "Власник увімкнув це для всіх. Вимкніть обидва, щоб зупинити."
+	"accounts.account.watchEveryone": "Власник увімкнув це для всіх. Вимкніть обидва, щоб зупинити.",
+	"accounts.watch.title": "Позначки перегляду",
+	"accounts.watch.hint": "Пов'яжіть тут свій обліковий запис на медіасервері, щоб Бібліотека показувала, що ви переглянули.",
+	"accounts.watch.as": "{server}, як {name}",
+	"accounts.watch.nameOn": "Ім'я на {server}",
+	"accounts.watch.passwordOnce": "Ваш пароль іде лише на {server} і не зберігається.",
+	"accounts.watch.linked": "Пов'язано з {name} на {server}",
+	"accounts.watch.unlinked": "Зв'язок видалено",
+	"accounts.login.importPaused": "Ваш вхід закінчився, тому імпорт призупинено. Увійдіть, відкрийте «Імпорт медіатеки» і натисніть «Сканувати», щоб продовжити."
 }

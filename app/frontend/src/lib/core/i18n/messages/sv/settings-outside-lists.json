@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Dina Trakt-listor kan inte läsas förrän den är angiven.",
 	"settings.outsideLists.replaceKey": "Ersätt Trakt-nyckeln",
 	"settings.outsideLists.pasteKey": "Klistra in Trakt-nyckeln",
+	"settings.outsideLists.mdblistKey": "MDBList-nyckel",
+	"settings.outsideLists.mdblistInfo": "Valfri. Med din MDBList-API-nyckel läses MDBList-listor via MDBList-API:t; utan den via deras offentliga länk. Den sparas krypterad och är samma nyckel som externa betyg använder i läget Dina egna nycklar.",
+	"settings.outsideLists.pasteMdblistKey": "Klistra in din MDBList-API-nyckel",
+	"settings.outsideLists.replaceMdblistKey": "Ersätt MDBList-nyckeln",
+	"settings.outsideLists.removeMdblistKey": "Ta bort nyckeln",
+	"settings.outsideLists.mdblistKeySaved": "MDBList-nyckel sparad",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList-nyckel borttagen; listor använder sin offentliga länk",
 	"settings.outsideLists.replaceVip": "Ersätt VIP-åtkomsttoken",
 	"settings.outsideLists.vip": "VIP-åtkomsttoken (valfritt)",
 	"settings.outsideLists.vipHint": "Lägger till en Trakt-flik på titelsidor: betyg, tittare och kommentarer",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Lägg till på listan Lägg aldrig till",
 	"settings.outsideLists.showDot": "serie ·",
 	"settings.outsideLists.takeOff": "Ta bort {name}",
-	"settings.outsideLists.empty": "Tom"
+	"settings.outsideLists.empty": "Inget på listan än"
 }

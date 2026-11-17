@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "এটি সেট না করা পর্যন্ত আপনার Trakt তালিকা পড়া যাবে না।",
 	"settings.outsideLists.replaceKey": "Trakt কী বদলান",
 	"settings.outsideLists.pasteKey": "Trakt কী পেস্ট করুন",
+	"settings.outsideLists.mdblistKey": "MDBList কী",
+	"settings.outsideLists.mdblistInfo": "ঐচ্ছিক। আপনার MDBList API কী দিয়ে MDBList তালিকা MDBList API-এর মাধ্যমে পড়া হয়; কী ছাড়া, তাদের পাবলিক লিংকের মাধ্যমে। এটি এনক্রিপ্ট করে রাখা হয় এবং আপনার নিজের কী মোডে বাইরের রেটিং যে কী ব্যবহার করে, এটি সেই একই কী।",
+	"settings.outsideLists.pasteMdblistKey": "আপনার MDBList API কী পেস্ট করুন",
+	"settings.outsideLists.replaceMdblistKey": "MDBList কী বদলান",
+	"settings.outsideLists.removeMdblistKey": "কী সরান",
+	"settings.outsideLists.mdblistKeySaved": "MDBList কী সেভ হয়েছে",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList কী সরানো হয়েছে; তালিকাগুলো তাদের পাবলিক লিংক ব্যবহার করে",
 	"settings.outsideLists.replaceVip": "VIP অ্যাক্সেস টোকেন বদলান",
 	"settings.outsideLists.vip": "VIP অ্যাক্সেস টোকেন (ঐচ্ছিক)",
 	"settings.outsideLists.vipHint": "টাইটেল পেজে একটি Trakt ট্যাব যোগ করে: স্কোর, দর্শক ও মন্তব্য",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "কখনো-যোগ-না-করার তালিকায় যোগ করুন",
 	"settings.outsideLists.showDot": "শো ·",
 	"settings.outsideLists.takeOff": "{name} তুলে নিন",
-	"settings.outsideLists.empty": "খালি"
+	"settings.outsideLists.empty": "এই তালিকায় এখনও কিছু নেই"
 }

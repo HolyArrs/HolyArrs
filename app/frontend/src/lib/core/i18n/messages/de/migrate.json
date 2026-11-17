@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Brauchen Aufmerksamkeit: {n}",
 	"migrate.needAttentionWhy": "Ihr alter Ordner ist nicht auf diesem Server, daher kommen sie als gesucht in einen Ordner hier. Ordner korrigieren oder eine Pfadregel hinzufügen: {list}",
 	"migrate.leftOutUncheckedN": "Ausgelassen: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} steht auf „Nicht übernehmen“; wähle einen Ordner dafür und importiere erneut"
+	"migrate.leftOutUncheckedWhy": "{folder} steht auf „Nicht übernehmen“; wähle einen Ordner dafür und importiere erneut",
+	"migrate.seasonsDifferOne": "Prüfe 1 Serie, die über ihre TMDB-Nummer gefunden wurde",
+	"migrate.seasonsDifferOther": "Prüfe {n} Serien, die über ihre TMDB-Nummer gefunden wurden",
+	"migrate.seasonsDifferWhy": "Nur die TMDB-Nummer der alten App hat {list} gefunden, hier unter einem anderen Namen. Öffne jede und prüfe, ob es dieselbe Serie ist. Wenn ja, sind ihre Staffeln anders nummeriert: Ordne ihre Dateien unter „Übrige Dateien“ zu und schalte dann die Serie ein. Wenn nicht, entferne sie; ihre Dateien bleiben, wo sie sind.",
+	"migrate.stillChecking": "Serien, die der Metadatenserver noch prüft: {n}. Diese Liste aktualisiert sich von selbst, sobald er fertig ist.",
+	"migrate.stillCheckingImport": "Serien, die der Metadatenserver noch prüft: {n}. Du kannst jetzt importieren; sie werden während des Imports geprüft."
 }

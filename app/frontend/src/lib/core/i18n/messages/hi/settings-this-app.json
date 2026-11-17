@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "कोई नहीं",
 	"settings.thisApp.needsRestart": "रीस्टार्ट चाहिए। HOLYARRS_URL_BASE या -url-base इसे बदल देता है।",
 	"settings.thisApp.save": "सेव करें",
-	"settings.thisApp.licence": "HolyArrs AGPL-3.0 के तहत फ़्री सॉफ़्टवेयर है।"
+	"settings.thisApp.licence": "HolyArrs AGPL-3.0 के तहत फ़्री सॉफ़्टवेयर है।",
+	"settings.thisApp.proxy": "प्रॉक्सी",
+	"settings.thisApp.proxyDesc": "बाहरी कॉल प्रॉक्सी से भेजें। ब्लॉक और होम नेटवर्क के नियम असली मंज़िल पर लागू रहते हैं।",
+	"settings.thisApp.proxyType": "प्रकार",
+	"settings.thisApp.proxyOff": "बंद",
+	"settings.thisApp.proxyHost": "होस्ट",
+	"settings.thisApp.proxyPort": "पोर्ट",
+	"settings.thisApp.proxyUser": "यूज़रनेम",
+	"settings.thisApp.proxyPasswordLabel": "पासवर्ड",
+	"settings.thisApp.proxyPasswordKept": "सेव किया पासवर्ड रखने के लिए खाली छोड़ें",
+	"settings.thisApp.proxyBypass": "इनके लिए प्रॉक्सी छोड़ें",
+	"settings.thisApp.proxyBypassHint": "नाम, पते या रेंज, कॉमा से अलग। *.example.com उसके नीचे के सभी नाम शामिल करता है।",
+	"settings.thisApp.proxyBypassLocal": "लोकल पतों के लिए प्रॉक्सी छोड़ें",
+	"settings.thisApp.proxyBypassLocalHint": "यह मशीन और आपका होम नेटवर्क सीधे जुड़ते हैं",
+	"settings.thisApp.proxySaved": "प्रॉक्सी सेव हुआ",
+	"settings.thisApp.proxyOffSaved": "प्रॉक्सी बंद"
 }

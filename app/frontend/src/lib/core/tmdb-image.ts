@@ -1,5 +1,5 @@
 // Rewrites TMDB picture addresses to the cached, right-sized copy served by the app.
-import { to } from './paths.ts';
+import { to, toOwn } from './paths.ts';
 import { minimalLook } from './look.svelte.ts';
 
 // Strict form: https only, used when we pick the size ourselves.
@@ -23,7 +23,7 @@ const warmed = new Set<string>();
 // Sends a TMDB picture through our cache so the browser never calls TMDB.
 export function proxied(url: string | null | undefined): string {
 	const m = url ? tmdbAny.exec(url) : null;
-	if (!m) return url ?? '';
+	if (!m) return toOwn(url ?? '');
 	return to(`/api/v1/artwork/tmdb/${cacheSizes.has(m[1]) ? m[1] : 'w500'}/${m[2]}`);
 }
 
@@ -36,7 +36,7 @@ export function pick(as: 'poster' | 'backdrop' | 'large', css = 0, ratio = globa
 
 export function sized(url: string | null | undefined, as: 'poster' | 'backdrop' | 'large', css = 0): string {
 	const m = url ? tmdb.exec(url) : null;
-	return m ? to(`/api/v1/artwork/tmdb/w${pick(as, css)}/${m[1]}`) : (url ?? '');
+	return m ? to(`/api/v1/artwork/tmdb/w${pick(as, css)}/${m[1]}`) : toOwn(url ?? '');
 }
 
 // Hero art only goes to original on wide or dense screens, where w1280 would look soft.
