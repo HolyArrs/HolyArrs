@@ -215,7 +215,7 @@
 							<div class="mono small bname" title={b.name}>{b.name}</div>
 							<div class="xs muted">{dateTime(b.created_at)} · {bytes(b.size)} · {b.detail || words(b.kind)}</div>
 						</div>
-						<AdminLinkButton variant="plain" href={to(`/api/v1/backups/${encodeURIComponent(b.name)}`)} download onclick={download}>{t('settings.backups.download')}</AdminLinkButton>
+						<AdminLinkButton variant="secondary" href={to(`/api/v1/backups/${encodeURIComponent(b.name)}`)} download onclick={download}>{t('settings.backups.download')}</AdminLinkButton>
 						<IconButton icon="trash" label={t('settings.backups.delete', { name: b.name })} tipSide="below-end" type="button" onclick={() => remove(b)} />
 					</li>
 				{/each}

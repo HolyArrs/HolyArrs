@@ -369,8 +369,8 @@
 				{/if}
 				<div class="row actions">
 					<Button type="button" disabled={testing === a.id} aria-busy={testing === a.id} onclick={() => test(a)}>{t('settings.alerts.sendTest')}</Button>
-					<Button variant="plain" type="button" onclick={() => startChange(a)}>{t('settings.alerts.changeButton')}</Button>
-					<Button variant="plain" type="button" onclick={() => remove(a)} aria-label={t('settings.alerts.removeName', { name: a.name })}>{t('settings.alerts.remove')}</Button>
+					<Button variant="secondary" type="button" onclick={() => startChange(a)}>{t('settings.alerts.changeButton')}</Button>
+					<Button variant="secondary" type="button" onclick={() => remove(a)} aria-label={t('settings.alerts.removeName', { name: a.name })}>{t('settings.alerts.remove')}</Button>
 				</div>
 			</li>
 		{/each}

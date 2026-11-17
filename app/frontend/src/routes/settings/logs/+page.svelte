@@ -114,8 +114,8 @@
 					{/each}
 				</ol>
 				<div class="row" style="margin-top: var(--s-3)">
-					<Button variant="plain" type="button" disabled={filter.offset === 0 || busy} onclick={() => move(-filter.limit)}>{t('settings.logs.newer')}</Button>
-					<Button variant="plain" type="button" disabled={filter.offset + result.lines.length >= result.total || busy} onclick={() => move(filter.limit)}
+					<Button variant="secondary" type="button" disabled={filter.offset === 0 || busy} onclick={() => move(-filter.limit)}>{t('settings.logs.newer')}</Button>
+					<Button variant="secondary" type="button" disabled={filter.offset + result.lines.length >= result.total || busy} onclick={() => move(filter.limit)}
 						>{t('settings.logs.older')}</Button>
 				</div>
 			{/if}
