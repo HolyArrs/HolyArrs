@@ -295,7 +295,7 @@
 			<Button variant="plain" type="button" onclick={clearPick} disabled={avatarBusy}>{t('accounts.signin.cancel')}</Button>
 		{:else}
 			<Button type="button" onclick={() => avatarInput?.click()} disabled={avatarBusy}>{session.s.avatar ? t('accounts.account.changePicture') : t('accounts.account.addPicture')}</Button>
-			{#if session.s.avatar}<Button variant="plain" type="button" onclick={removeAvatar} disabled={avatarBusy}>{t('accounts.account.remove')}</Button>{/if}
+			{#if session.s.avatar}<Button variant="secondary" type="button" onclick={removeAvatar} disabled={avatarBusy}>{t('accounts.account.remove')}</Button>{/if}
 		{/if}
 		<span class="hint" title={t('accounts.account.picTip')}>{t('accounts.account.picUpTo')}</span>
 	</div>
@@ -312,7 +312,7 @@
 			{:else}
 				<div class="line">
 					<span class="value">{profile.displayName || session.s.name}</span>
-					<Button variant="plain" type="button" onclick={startName} data-testid="edit-display-name">{t('accounts.account.change')}</Button>
+					<Button variant="secondary" type="button" onclick={startName} data-testid="edit-display-name">{t('accounts.account.change')}</Button>
 				</div>
 			{/if}
 		</div>

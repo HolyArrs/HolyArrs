@@ -312,8 +312,8 @@
 				{/if}
 				<div class="row actions">
 					<Button type="button" disabled={testing === m.id} aria-busy={testing === m.id} onclick={() => test(m)}>{t('settings.mediaServers.test')}</Button>
-					<Button variant="plain" type="button" onclick={() => startChange(m)}>{t('settings.mediaServers.changeButton')}</Button>
-					<Button variant="plain" type="button" onclick={() => remove(m)} aria-label={t('settings.mediaServers.removeName', { name: m.name })}>{t('settings.mediaServers.remove')}</Button>
+					<Button variant="secondary" type="button" onclick={() => startChange(m)}>{t('settings.mediaServers.changeButton')}</Button>
+					<Button variant="secondary" type="button" onclick={() => remove(m)} aria-label={t('settings.mediaServers.removeName', { name: m.name })}>{t('settings.mediaServers.remove')}</Button>
 				</div>
 			</li>
 		{/each}

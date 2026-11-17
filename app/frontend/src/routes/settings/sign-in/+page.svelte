@@ -374,7 +374,7 @@
 						<div class="link-row">
 							{#if plexOwner.linked}
 								<p class="small"><Words key="settings.signIn.linkedTo" vars={{ name: plexOwner.name }} /></p>
-								{#if isOwner}<Button variant="plain" type="button" onclick={unlinkPlex}>{t('settings.signIn.unlink')}</Button>{/if}
+								{#if isOwner}<Button variant="secondary" type="button" onclick={unlinkPlex}>{t('settings.signIn.unlink')}</Button>{/if}
 							{:else}
 								<p class="small muted">{t('settings.signIn.linkNote')}</p>
 							{/if}

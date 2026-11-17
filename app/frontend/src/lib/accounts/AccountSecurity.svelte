@@ -336,7 +336,7 @@
 								</div>
 							</Confirm>
 						{:else}
-							<Button variant="plain" type="button" onclick={() => (plexUnlinking = true)} aria-label={t('accounts.security.unlinkPlex')}>{t('accounts.security.unlink')}</Button>
+							<Button variant="secondary" type="button" onclick={() => (plexUnlinking = true)} aria-label={t('accounts.security.unlinkPlex')}>{t('accounts.security.unlink')}</Button>
 						{/if}
 					</li>
 				</ul>

@@ -418,7 +418,7 @@
 									<li class="xs muted">
 										<span>{l.kind === 'oidc' ? t('settings.users.ssoCap') : t('settings.users.proxyCap')}: <span class="mono">{hostOf(l.issuer)}</span>{#if l.name}, {l.name}{/if}</span>
 										{#if isOwner}
-											<Button variant="plain" type="button" onclick={() => unlinkSSO(u, l)} aria-label={t('settings.users.unlinkLabel', { kind: ssoWord(l.kind), name: u.name })}>{t('settings.users.unlink')}</Button>
+											<Button variant="secondary" type="button" onclick={() => unlinkSSO(u, l)} aria-label={t('settings.users.unlinkLabel', { kind: ssoWord(l.kind), name: u.name })}>{t('settings.users.unlink')}</Button>
 										{/if}
 									</li>
 								{/each}
@@ -432,17 +432,17 @@
 					{#if mayChange(u) || maySeeDevices(u)}
 						<div class="row acts">
 							{#if maySeeDevices(u)}
-								<Button variant="plain" type="button" onclick={() => openDevices(u)} aria-label={t('settings.users.devicesOf', { name: u.name })}>{t('settings.users.devices')}</Button>
+								<Button variant="secondary" type="button" onclick={() => openDevices(u)} aria-label={t('settings.users.devicesOf', { name: u.name })}>{t('settings.users.devices')}</Button>
 							{/if}
 						{#if mayChange(u)}
 							<Button type="button" onclick={() => openEdit(u)} aria-label={t('settings.users.changeName', { name: u.name })}>{t('settings.users.change')}</Button>
-							<Button variant="plain" type="button" onclick={() => openPassword(u)} aria-label={t('settings.users.setPasswordFor', { name: u.name })}>{t('settings.users.setPasswordLabel')}</Button>
+							<Button variant="secondary" type="button" onclick={() => openPassword(u)} aria-label={t('settings.users.setPasswordFor', { name: u.name })}>{t('settings.users.setPasswordLabel')}</Button>
 							{#if u.two_factor}
-								<Button variant="plain" type="button" onclick={() => resetTwoFactor(u)} aria-label={t('settings.users.resetFor', { name: u.name })}
+								<Button variant="secondary" type="button" onclick={() => resetTwoFactor(u)} aria-label={t('settings.users.resetFor', { name: u.name })}
 									>{t('settings.users.resetTwoFactor')}</Button>
 							{/if}
 							{#if u.state === 'active'}
-								<Button variant="plain" type="button" onclick={() => setState(u, 'disabled')} disabled={saving} aria-label={t('settings.users.turnOffName', { name: u.name })}
+								<Button variant="secondary" type="button" onclick={() => setState(u, 'disabled')} disabled={saving} aria-label={t('settings.users.turnOffName', { name: u.name })}
 									>{t('settings.users.turnOff')}</Button>
 							{:else}
 								<Button type="button" onclick={() => setState(u, 'active')} disabled={saving} aria-label={t('settings.users.turnOnName', { name: u.name })}
@@ -470,7 +470,7 @@
 							<div class="xs muted">{t('settings.users.madeBy', { who: i.created_by, ago: ago(i.created_at) })} · {inviteState(i)}</div>
 						</div>
 						{#if !i.used_at && new Date(i.expires_at).getTime() > Date.now()}
-							<Button variant="plain" type="button" onclick={() => takeBack(i)}>{t('settings.users.revoke')}</Button>
+							<Button variant="secondary" type="button" onclick={() => takeBack(i)}>{t('settings.users.revoke')}</Button>
 						{/if}
 					</li>
 				{/each}
