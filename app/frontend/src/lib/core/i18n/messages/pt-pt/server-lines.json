@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "não existe essa conta nesse servidor",
 	"server.accounts.only-the-owner-links-people-to": "só o proprietário associa pessoas a contas do servidor",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "é a única forma de entrar desta pessoa; defina primeiro uma palavra-passe"
+	"server.accounts.this-is-their-only-way-to": "é a única forma de entrar desta pessoa; defina primeiro uma palavra-passe",
+	"server.metadata.the-metadata-server-has-no-room": "O servidor de metadados não tem espaço para novas instalações neste momento. O HolyArrs volta a perguntar sozinho dentro de uma hora.",
+	"server.metadata.the-metadata-server-is-busy-right": "O servidor de metadados está ocupado neste momento. O HolyArrs volta a perguntar sozinho daqui a pouco.",
+	"server.metadata.the-metadata-server-is-not-signing": "O servidor de metadados não está a registar mais instalações deste endereço neste momento. O HolyArrs volta a perguntar sozinho; mantenha a pasta /config entre reinícios para que esta instalação mantenha o registo.",
+	"server.metadata.this-address-sent-the-metadata-server": "Este endereço enviou pedidos a mais ao servidor de metadados. O HolyArrs espera e volta a perguntar sozinho.",
+	"server.metadata.this-install-sent-the-metadata-server": "Esta instalação enviou pedidos a mais ao servidor de metadados. O HolyArrs espera e volta a perguntar sozinho."
 }

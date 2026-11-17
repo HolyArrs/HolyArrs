@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "tidak ada akun seperti itu di server tersebut",
 	"server.accounts.only-the-owner-links-people-to": "hanya pemilik yang menautkan orang ke akun server",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "ini satu-satunya cara mereka masuk; beri mereka kata sandi dulu"
+	"server.accounts.this-is-their-only-way-to": "ini satu-satunya cara mereka masuk; beri mereka kata sandi dulu",
+	"server.metadata.the-metadata-server-has-no-room": "Server metadata sedang tidak punya ruang untuk instalasi baru. HolyArrs akan bertanya lagi sendiri dalam satu jam.",
+	"server.metadata.the-metadata-server-is-busy-right": "Server metadata sedang sibuk. HolyArrs akan bertanya lagi sendiri sebentar lagi.",
+	"server.metadata.the-metadata-server-is-not-signing": "Server metadata sedang tidak mendaftarkan instalasi lagi dari alamat ini. HolyArrs akan bertanya lagi sendiri; simpan folder /config di antara restart agar instalasi ini tetap terdaftar.",
+	"server.metadata.this-address-sent-the-metadata-server": "Alamat ini mengirim terlalu banyak permintaan ke server metadata. HolyArrs menunggu lalu bertanya lagi sendiri.",
+	"server.metadata.this-install-sent-the-metadata-server": "Instalasi ini mengirim terlalu banyak permintaan ke server metadata. HolyArrs menunggu lalu bertanya lagi sendiri."
 }

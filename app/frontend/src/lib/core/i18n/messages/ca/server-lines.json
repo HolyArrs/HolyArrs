@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "no hi ha cap compte així en aquest servidor",
 	"server.accounts.only-the-owner-links-people-to": "només el propietari enllaça persones a comptes del servidor",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "és la seva única manera d'entrar; posa'ls primer una contrasenya"
+	"server.accounts.this-is-their-only-way-to": "és la seva única manera d'entrar; posa'ls primer una contrasenya",
+	"server.metadata.the-metadata-server-has-no-room": "El servidor de metadades no té lloc per a noves instal·lacions ara mateix. HolyArrs torna a preguntar tot sol dins l'hora.",
+	"server.metadata.the-metadata-server-is-busy-right": "El servidor de metadades està ocupat ara mateix. HolyArrs torna a preguntar tot sol d'aquí a un moment.",
+	"server.metadata.the-metadata-server-is-not-signing": "El servidor de metadades no registra més instal·lacions des d'aquesta adreça ara mateix. HolyArrs torna a preguntar tot sol; conserva la carpeta /config entre reinicis perquè aquesta instal·lació mantingui el registre.",
+	"server.metadata.this-address-sent-the-metadata-server": "Aquesta adreça ha enviat massa sol·licituds al servidor de metadades. HolyArrs espera i torna a preguntar tot sol.",
+	"server.metadata.this-install-sent-the-metadata-server": "Aquesta instal·lació ha enviat massa sol·licituds al servidor de metadades. HolyArrs espera i torna a preguntar tot sol."
 }

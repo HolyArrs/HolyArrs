@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "aucun compte de ce type sur ce serveur",
 	"server.accounts.only-the-owner-links-people-to": "seul le propriétaire lie des personnes aux comptes du serveur",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "c'est leur seul moyen de se connecter ; donnez-leur d'abord un mot de passe"
+	"server.accounts.this-is-their-only-way-to": "c'est leur seul moyen de se connecter ; donnez-leur d'abord un mot de passe",
+	"server.metadata.the-metadata-server-has-no-room": "Le serveur de métadonnées n'a plus de place pour de nouvelles installations pour le moment. HolyArrs redemande de lui-même dans l'heure.",
+	"server.metadata.the-metadata-server-is-busy-right": "Le serveur de métadonnées est occupé pour le moment. HolyArrs redemande de lui-même dans un instant.",
+	"server.metadata.the-metadata-server-is-not-signing": "Le serveur de métadonnées n'inscrit plus d'installations depuis cette adresse pour le moment. HolyArrs redemande de lui-même ; gardez le dossier /config entre les redémarrages pour que cette installation conserve son inscription.",
+	"server.metadata.this-address-sent-the-metadata-server": "Cette adresse a envoyé trop de requêtes au serveur de métadonnées. HolyArrs attend et redemande de lui-même.",
+	"server.metadata.this-install-sent-the-metadata-server": "Cette installation a envoyé trop de requêtes au serveur de métadonnées. HolyArrs attend et redemande de lui-même."
 }

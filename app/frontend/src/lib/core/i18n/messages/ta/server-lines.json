@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "அந்த சர்வரில் அப்படி ஒரு கணக்கு இல்லை",
 	"server.accounts.only-the-owner-links-people-to": "உரிமையாளர் மட்டுமே நபர்களை சர்வர் கணக்குகளுடன் இணைப்பார்",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "இது அவர்கள் உள்நுழையும் ஒரே வழி; முதலில் அவர்களுக்கு கடவுச்சொல் அமைக்கவும்"
+	"server.accounts.this-is-their-only-way-to": "இது அவர்கள் உள்நுழையும் ஒரே வழி; முதலில் அவர்களுக்கு கடவுச்சொல் அமைக்கவும்",
+	"server.metadata.the-metadata-server-has-no-room": "மெட்டாடேட்டா சேவையகத்தில் இப்போது புதிய நிறுவல்களுக்கு இடமில்லை. HolyArrs ஒரு மணி நேரத்திற்குள் தானாகவே மீண்டும் கேட்கும்.",
+	"server.metadata.the-metadata-server-is-busy-right": "மெட்டாடேட்டா சேவையகம் இப்போது பரபரப்பாக உள்ளது. HolyArrs சிறிது நேரத்தில் தானாகவே மீண்டும் கேட்கும்.",
+	"server.metadata.the-metadata-server-is-not-signing": "மெட்டாடேட்டா சேவையகம் இப்போது இந்த முகவரியிலிருந்து மேலும் நிறுவல்களைப் பதிவு செய்யவில்லை. HolyArrs தானாகவே மீண்டும் கேட்கும்; இந்த நிறுவல் தன் பதிவை வைத்திருக்க மறுதொடக்கங்களுக்கு இடையே /config கோப்புறையை வைத்திருங்கள்.",
+	"server.metadata.this-address-sent-the-metadata-server": "இந்த முகவரி மெட்டாடேட்டா சேவையகத்துக்கு அதிகமான கோரிக்கைகளை அனுப்பியது. HolyArrs காத்திருந்து தானாகவே மீண்டும் கேட்கும்.",
+	"server.metadata.this-install-sent-the-metadata-server": "இந்த நிறுவல் மெட்டாடேட்டா சேவையகத்துக்கு அதிகமான கோரிக்கைகளை அனுப்பியது. HolyArrs காத்திருந்து தானாகவே மீண்டும் கேட்கும்."
 }

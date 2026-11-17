@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "walang ganoong account sa server na iyon",
 	"server.accounts.only-the-owner-links-people-to": "ang may-ari lang ang nagli-link ng mga tao sa mga account sa server",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "ito lang ang paraan nila para mag-sign in; bigyan mo muna sila ng password"
+	"server.accounts.this-is-their-only-way-to": "ito lang ang paraan nila para mag-sign in; bigyan mo muna sila ng password",
+	"server.metadata.the-metadata-server-has-no-room": "Walang puwang ang metadata server para sa mga bagong install ngayon. Kusang magtatanong muli ang HolyArrs sa loob ng isang oras.",
+	"server.metadata.the-metadata-server-is-busy-right": "Abala ang metadata server ngayon. Kusang magtatanong muli ang HolyArrs maya-maya.",
+	"server.metadata.the-metadata-server-is-not-signing": "Hindi na nagre-rehistro ang metadata server ng mga install mula sa address na ito ngayon. Kusang magtatanong muli ang HolyArrs; panatilihin ang folder na /config sa pagitan ng mga restart para manatiling rehistrado ang install na ito.",
+	"server.metadata.this-address-sent-the-metadata-server": "Masyadong maraming request ang ipinadala ng address na ito sa metadata server. Maghihintay ang HolyArrs at kusang magtatanong muli.",
+	"server.metadata.this-install-sent-the-metadata-server": "Masyadong maraming request ang ipinadala ng install na ito sa metadata server. Maghihintay ang HolyArrs at kusang magtatanong muli."
 }

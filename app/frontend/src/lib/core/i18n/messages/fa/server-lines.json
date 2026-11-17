@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "چنین حسابی روی آن سرور نیست",
 	"server.accounts.only-the-owner-links-people-to": "فقط مالک افراد را به حساب‌های سرور پیوند می‌دهد",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "این تنها راه ورود آن‌هاست؛ اول برایشان گذرواژه بگذارید"
+	"server.accounts.this-is-their-only-way-to": "این تنها راه ورود آن‌هاست؛ اول برایشان گذرواژه بگذارید",
+	"server.metadata.the-metadata-server-has-no-room": "سرور فراداده اکنون جایی برای نصب‌های تازه ندارد. HolyArrs ظرف یک ساعت خودش دوباره می‌پرسد.",
+	"server.metadata.the-metadata-server-is-busy-right": "سرور فراداده اکنون مشغول است. HolyArrs کمی بعد خودش دوباره می‌پرسد.",
+	"server.metadata.the-metadata-server-is-not-signing": "سرور فراداده اکنون نصب بیشتری از این نشانی ثبت نمی‌کند. HolyArrs خودش دوباره می‌پرسد؛ پوشه /config را بین راه‌اندازی‌های دوباره نگه دارید تا این نصب ثبت‌نامش را حفظ کند.",
+	"server.metadata.this-address-sent-the-metadata-server": "این نشانی درخواست‌های بیش از حدی به سرور فراداده فرستاد. HolyArrs صبر می‌کند و خودش دوباره می‌پرسد.",
+	"server.metadata.this-install-sent-the-metadata-server": "این نصب درخواست‌های بیش از حدی به سرور فراداده فرستاد. HolyArrs صبر می‌کند و خودش دوباره می‌پرسد."
 }

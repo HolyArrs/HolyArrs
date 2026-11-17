@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "zo'n account bestaat niet op die server",
 	"server.accounts.only-the-owner-links-people-to": "alleen de eigenaar koppelt mensen aan serveraccounts",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "dit is hun enige manier om in te loggen; geef ze eerst een wachtwoord"
+	"server.accounts.this-is-their-only-way-to": "dit is hun enige manier om in te loggen; geef ze eerst een wachtwoord",
+	"server.metadata.the-metadata-server-has-no-room": "De metadataserver heeft nu geen ruimte voor nieuwe installaties. HolyArrs vraagt het binnen het uur zelf opnieuw.",
+	"server.metadata.the-metadata-server-is-busy-right": "De metadataserver is nu druk. HolyArrs vraagt het zo zelf opnieuw.",
+	"server.metadata.the-metadata-server-is-not-signing": "De metadataserver meldt nu geen installaties meer aan vanaf dit adres. HolyArrs vraagt het zelf opnieuw; bewaar de map /config tussen herstarts zodat deze installatie haar aanmelding houdt.",
+	"server.metadata.this-address-sent-the-metadata-server": "Dit adres stuurde te veel verzoeken naar de metadataserver. HolyArrs wacht en vraagt het zelf opnieuw.",
+	"server.metadata.this-install-sent-the-metadata-server": "Deze installatie stuurde te veel verzoeken naar de metadataserver. HolyArrs wacht en vraagt het zelf opnieuw."
 }

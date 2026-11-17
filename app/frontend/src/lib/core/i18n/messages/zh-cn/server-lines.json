@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "该服务器上没有这个账户",
 	"server.accounts.only-the-owner-links-people-to": "只有所有者可以把人关联到服务器账户",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "这是他们唯一的登录方式；请先为他们设置密码"
+	"server.accounts.this-is-their-only-way-to": "这是他们唯一的登录方式；请先为他们设置密码",
+	"server.metadata.the-metadata-server-has-no-room": "元数据服务器目前没有空位接受新的安装。HolyArrs 会在一小时内自动重新请求。",
+	"server.metadata.the-metadata-server-is-busy-right": "元数据服务器目前繁忙。HolyArrs 稍后会自动重新请求。",
+	"server.metadata.the-metadata-server-is-not-signing": "元数据服务器目前不再为此地址注册更多安装。HolyArrs 会自动重新请求；请在重启之间保留 /config 文件夹，让此安装保留其注册。",
+	"server.metadata.this-address-sent-the-metadata-server": "此地址向元数据服务器发送了太多请求。HolyArrs 会等待并自动重新请求。",
+	"server.metadata.this-install-sent-the-metadata-server": "此安装向元数据服务器发送了太多请求。HolyArrs 会等待并自动重新请求。"
 }

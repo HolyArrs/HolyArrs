@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "takový účet na tom serveru není",
 	"server.accounts.only-the-owner-links-people-to": "jen vlastník propojuje lidi s účty na serveru",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "je to jejich jediný způsob přihlášení; nejdřív jim nastavte heslo"
+	"server.accounts.this-is-their-only-way-to": "je to jejich jediný způsob přihlášení; nejdřív jim nastavte heslo",
+	"server.metadata.the-metadata-server-has-no-room": "Server metadat teď nemá místo pro nové instalace. HolyArrs se sám zeptá znovu do hodiny.",
+	"server.metadata.the-metadata-server-is-busy-right": "Server metadat je teď vytížený. HolyArrs se sám za chvíli zeptá znovu.",
+	"server.metadata.the-metadata-server-is-not-signing": "Server metadat teď neregistruje další instalace z této adresy. HolyArrs se sám zeptá znovu; ponechte složku /config mezi restarty, aby si tato instalace zachovala registraci.",
+	"server.metadata.this-address-sent-the-metadata-server": "Tato adresa poslala serveru metadat příliš mnoho požadavků. HolyArrs počká a sám se zeptá znovu.",
+	"server.metadata.this-install-sent-the-metadata-server": "Tato instalace poslala serveru metadat příliš mnoho požadavků. HolyArrs počká a sám se zeptá znovu."
 }

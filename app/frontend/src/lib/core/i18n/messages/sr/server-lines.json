@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "нема таквог налога на том серверу",
 	"server.accounts.only-the-owner-links-people-to": "само власник повезује људе са налозима на серверу",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "ово им је једини начин пријаве; прво им поставите лозинку"
+	"server.accounts.this-is-their-only-way-to": "ово им је једини начин пријаве; прво им поставите лозинку",
+	"server.metadata.the-metadata-server-has-no-room": "Сервер метаподатака тренутно нема места за нове инсталације. HolyArrs ће сам поново питати у року од сат времена.",
+	"server.metadata.the-metadata-server-is-busy-right": "Сервер метаподатака је тренутно заузет. HolyArrs ће сам поново питати за тренутак.",
+	"server.metadata.the-metadata-server-is-not-signing": "Сервер метаподатака тренутно не региструје још инсталација са ове адресе. HolyArrs ће сам поново питати; чувајте фасциклу /config између поновних покретања да би ова инсталација задржала регистрацију.",
+	"server.metadata.this-address-sent-the-metadata-server": "Ова адреса је послала превише захтева серверу метаподатака. HolyArrs чека и сам поново пита.",
+	"server.metadata.this-install-sent-the-metadata-server": "Ова инсталација је послала превише захтева серверу метаподатака. HolyArrs чека и сам поново пита."
 }

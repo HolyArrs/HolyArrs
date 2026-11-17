@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "không có tài khoản như vậy trên máy chủ đó",
 	"server.accounts.only-the-owner-links-people-to": "chỉ chủ sở hữu liên kết mọi người với tài khoản máy chủ",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "đây là cách đăng nhập duy nhất của họ; hãy đặt mật khẩu cho họ trước"
+	"server.accounts.this-is-their-only-way-to": "đây là cách đăng nhập duy nhất của họ; hãy đặt mật khẩu cho họ trước",
+	"server.metadata.the-metadata-server-has-no-room": "Máy chủ siêu dữ liệu hiện không còn chỗ cho bản cài đặt mới. HolyArrs sẽ tự hỏi lại trong vòng một giờ.",
+	"server.metadata.the-metadata-server-is-busy-right": "Máy chủ siêu dữ liệu hiện đang bận. HolyArrs sẽ tự hỏi lại trong giây lát.",
+	"server.metadata.the-metadata-server-is-not-signing": "Máy chủ siêu dữ liệu hiện không đăng ký thêm bản cài đặt từ địa chỉ này. HolyArrs sẽ tự hỏi lại; hãy giữ thư mục /config giữa các lần khởi động lại để bản cài đặt này giữ được đăng ký.",
+	"server.metadata.this-address-sent-the-metadata-server": "Địa chỉ này đã gửi quá nhiều yêu cầu tới máy chủ siêu dữ liệu. HolyArrs sẽ chờ rồi tự hỏi lại.",
+	"server.metadata.this-install-sent-the-metadata-server": "Bản cài đặt này đã gửi quá nhiều yêu cầu tới máy chủ siêu dữ liệu. HolyArrs sẽ chờ rồi tự hỏi lại."
 }

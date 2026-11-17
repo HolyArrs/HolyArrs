@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "o sunucuda böyle bir hesap yok",
 	"server.accounts.only-the-owner-links-people-to": "kişileri sunucu hesaplarına yalnızca sahip bağlar",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "bu onların tek giriş yolu; önce onlara bir parola ver"
+	"server.accounts.this-is-their-only-way-to": "bu onların tek giriş yolu; önce onlara bir parola ver",
+	"server.metadata.the-metadata-server-has-no-room": "Meta veri sunucusunda şu anda yeni kurulumlar için yer yok. HolyArrs bir saat içinde kendiliğinden yeniden sorar.",
+	"server.metadata.the-metadata-server-is-busy-right": "Meta veri sunucusu şu anda meşgul. HolyArrs birazdan kendiliğinden yeniden sorar.",
+	"server.metadata.the-metadata-server-is-not-signing": "Meta veri sunucusu şu anda bu adresten daha fazla kurulum kaydetmiyor. HolyArrs kendiliğinden yeniden sorar; bu kurulumun kaydını koruması için /config klasörünü yeniden başlatmalar arasında saklayın.",
+	"server.metadata.this-address-sent-the-metadata-server": "Bu adres meta veri sunucusuna çok fazla istek gönderdi. HolyArrs bekler ve kendiliğinden yeniden sorar.",
+	"server.metadata.this-install-sent-the-metadata-server": "Bu kurulum meta veri sunucusuna çok fazla istek gönderdi. HolyArrs bekler ve kendiliğinden yeniden sorar."
 }

@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "لا يوجد حساب كهذا على ذلك الخادم",
 	"server.accounts.only-the-owner-links-people-to": "المالك وحده يربط الأشخاص بحسابات الخادم",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "هذه طريقتهم الوحيدة لتسجيل الدخول؛ عيّن لهم كلمة مرور أولًا"
+	"server.accounts.this-is-their-only-way-to": "هذه طريقتهم الوحيدة لتسجيل الدخول؛ عيّن لهم كلمة مرور أولًا",
+	"server.metadata.the-metadata-server-has-no-room": "لا يتسع خادم البيانات الوصفية لتثبيتات جديدة الآن. سيسأل HolyArrs مجددًا من تلقاء نفسه خلال ساعة.",
+	"server.metadata.the-metadata-server-is-busy-right": "خادم البيانات الوصفية مشغول الآن. سيسأل HolyArrs مجددًا من تلقاء نفسه بعد قليل.",
+	"server.metadata.the-metadata-server-is-not-signing": "لا يسجّل خادم البيانات الوصفية المزيد من التثبيتات من هذا العنوان الآن. سيسأل HolyArrs مجددًا من تلقاء نفسه؛ احتفظ بمجلد /config بين عمليات إعادة التشغيل كي يحتفظ هذا التثبيت بتسجيله.",
+	"server.metadata.this-address-sent-the-metadata-server": "أرسل هذا العنوان طلبات كثيرة جدًا إلى خادم البيانات الوصفية. ينتظر HolyArrs ثم يسأل مجددًا من تلقاء نفسه.",
+	"server.metadata.this-install-sent-the-metadata-server": "أرسل هذا التثبيت طلبات كثيرة جدًا إلى خادم البيانات الوصفية. ينتظر HolyArrs ثم يسأل مجددًا من تلقاء نفسه."
 }

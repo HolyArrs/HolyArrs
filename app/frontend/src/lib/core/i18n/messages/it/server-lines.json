@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "nessun account del genere su quel server",
 	"server.accounts.only-the-owner-links-people-to": "solo il proprietario collega le persone agli account del server",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "è il loro unico modo di accedere; imposta prima una password"
+	"server.accounts.this-is-their-only-way-to": "è il loro unico modo di accedere; imposta prima una password",
+	"server.metadata.the-metadata-server-has-no-room": "Il server dei metadati non ha posto per nuove installazioni in questo momento. HolyArrs riprova da solo entro l'ora.",
+	"server.metadata.the-metadata-server-is-busy-right": "Il server dei metadati è occupato in questo momento. HolyArrs riprova da solo tra poco.",
+	"server.metadata.the-metadata-server-is-not-signing": "Il server dei metadati non sta registrando altre installazioni da questo indirizzo in questo momento. HolyArrs riprova da solo; conserva la cartella /config tra un riavvio e l'altro così questa installazione mantiene la sua registrazione.",
+	"server.metadata.this-address-sent-the-metadata-server": "Questo indirizzo ha inviato troppe richieste al server dei metadati. HolyArrs attende e riprova da solo.",
+	"server.metadata.this-install-sent-the-metadata-server": "Questa installazione ha inviato troppe richieste al server dei metadati. HolyArrs attende e riprova da solo."
 }

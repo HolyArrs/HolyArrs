@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "nincs ilyen fiók azon a szerveren",
 	"server.accounts.only-the-owner-links-people-to": "csak a tulajdonos kapcsol embereket szerverfiókokhoz",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "ez az egyetlen módjuk a belépésre; előbb adj nekik jelszót"
+	"server.accounts.this-is-their-only-way-to": "ez az egyetlen módjuk a belépésre; előbb adj nekik jelszót",
+	"server.metadata.the-metadata-server-has-no-room": "A metaadat-szervernek most nincs helye új telepítéseknek. A HolyArrs egy órán belül magától újra kérdez.",
+	"server.metadata.the-metadata-server-is-busy-right": "A metaadat-szerver most foglalt. A HolyArrs hamarosan magától újra kérdez.",
+	"server.metadata.the-metadata-server-is-not-signing": "A metaadat-szerver most nem regisztrál több telepítést erről a címről. A HolyArrs magától újra kérdez; tartsd meg a /config mappát az újraindítások között, hogy ez a telepítés megtartsa a regisztrációját.",
+	"server.metadata.this-address-sent-the-metadata-server": "Ez a cím túl sok kérést küldött a metaadat-szervernek. A HolyArrs vár, és magától újra kérdez.",
+	"server.metadata.this-install-sent-the-metadata-server": "Ez a telepítés túl sok kérést küldött a metaadat-szervernek. A HolyArrs vár, és magától újra kérdez."
 }

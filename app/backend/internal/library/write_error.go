@@ -3,6 +3,8 @@ package library
 import (
 	"errors"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -60,7 +62,10 @@ func ServiceError(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, metadata.ErrServiceUnavailable):
 		message = metadata.ErrServiceUnavailable.Error()
 	case errors.Is(err, metadata.ErrServiceBusy):
-		message = metadata.ErrServiceBusy.Error()
+		var secs int
+		if message, secs = metadata.BusyLine(time.Now()); secs > 0 {
+			w.Header().Set("Retry-After", strconv.Itoa(secs))
+		}
 	case errors.Is(err, metadata.ErrServiceIncomplete):
 		message = metadata.ErrServiceIncomplete.Error()
 	case errors.Is(err, metadata.ErrServiceInvalid):

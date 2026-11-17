@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "no such account on that server",
 	"server.accounts.only-the-owner-links-people-to": "only the owner links people to server accounts",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "this is their only way to sign in; set them a password first"
+	"server.accounts.this-is-their-only-way-to": "this is their only way to sign in; set them a password first",
+	"server.metadata.the-metadata-server-has-no-room": "The metadata server has no room for new installs right now. HolyArrs asks again on its own within the hour.",
+	"server.metadata.the-metadata-server-is-busy-right": "The metadata server is busy right now. HolyArrs asks again on its own in a moment.",
+	"server.metadata.the-metadata-server-is-not-signing": "The metadata server is not signing up more installs from this address right now. HolyArrs asks again on its own; keep the /config folder between restarts so this install keeps its sign-up.",
+	"server.metadata.this-address-sent-the-metadata-server": "This address sent the metadata server too many requests. HolyArrs waits and asks again on its own.",
+	"server.metadata.this-install-sent-the-metadata-server": "This install sent the metadata server too many requests. HolyArrs waits and asks again on its own."
 }

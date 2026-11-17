@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "enginn slíkur aðgangur á þeim þjóni",
 	"server.accounts.only-the-owner-links-people-to": "aðeins eigandinn tengir fólk við aðganga á þjóni",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "þetta er eina leið þeirra til að skrá sig inn; gefðu þeim fyrst lykilorð"
+	"server.accounts.this-is-their-only-way-to": "þetta er eina leið þeirra til að skrá sig inn; gefðu þeim fyrst lykilorð",
+	"server.metadata.the-metadata-server-has-no-room": "Lýsigagnaþjónninn hefur ekki pláss fyrir nýjar uppsetningar núna. HolyArrs spyr aftur sjálfkrafa innan klukkustundar.",
+	"server.metadata.the-metadata-server-is-busy-right": "Lýsigagnaþjónninn er upptekinn núna. HolyArrs spyr aftur sjálfkrafa eftir smástund.",
+	"server.metadata.the-metadata-server-is-not-signing": "Lýsigagnaþjónninn skráir ekki fleiri uppsetningar frá þessu vistfangi núna. HolyArrs spyr aftur sjálfkrafa; haltu möppunni /config milli endurræsinga svo þessi uppsetning haldi skráningu sinni.",
+	"server.metadata.this-address-sent-the-metadata-server": "Þetta vistfang sendi lýsigagnaþjóninum of margar beiðnir. HolyArrs bíður og spyr aftur sjálfkrafa.",
+	"server.metadata.this-install-sent-the-metadata-server": "Þessi uppsetning sendi lýsigagnaþjóninum of margar beiðnir. HolyArrs bíður og spyr aftur sjálfkrafa."
 }

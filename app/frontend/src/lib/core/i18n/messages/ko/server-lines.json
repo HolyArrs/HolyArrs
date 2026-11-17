@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "해당 서버에 그런 계정이 없습니다",
 	"server.accounts.only-the-owner-links-people-to": "소유자만 사람을 서버 계정에 연결할 수 있습니다",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "이것이 그 사람의 유일한 로그인 방법입니다. 먼저 비밀번호를 설정하세요"
+	"server.accounts.this-is-their-only-way-to": "이것이 그 사람의 유일한 로그인 방법입니다. 먼저 비밀번호를 설정하세요",
+	"server.metadata.the-metadata-server-has-no-room": "메타데이터 서버에 지금은 새 설치를 받을 자리가 없습니다. HolyArrs가 한 시간 안에 알아서 다시 요청합니다.",
+	"server.metadata.the-metadata-server-is-busy-right": "메타데이터 서버가 지금 바쁩니다. HolyArrs가 잠시 후 알아서 다시 요청합니다.",
+	"server.metadata.the-metadata-server-is-not-signing": "메타데이터 서버가 지금은 이 주소에서 더 이상 설치를 등록하지 않습니다. HolyArrs가 알아서 다시 요청합니다. 이 설치의 등록이 유지되도록 재시작 사이에도 /config 폴더를 유지하세요.",
+	"server.metadata.this-address-sent-the-metadata-server": "이 주소에서 메타데이터 서버로 요청을 너무 많이 보냈습니다. HolyArrs가 기다렸다가 알아서 다시 요청합니다.",
+	"server.metadata.this-install-sent-the-metadata-server": "이 설치에서 메타데이터 서버로 요청을 너무 많이 보냈습니다. HolyArrs가 기다렸다가 알아서 다시 요청합니다."
 }

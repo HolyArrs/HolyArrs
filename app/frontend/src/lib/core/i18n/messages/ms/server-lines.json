@@ -1353,5 +1353,10 @@
 	"server.accounts.no-such-account-on-that-server": "tiada akaun sebegitu pada pelayan itu",
 	"server.accounts.only-the-owner-links-people-to": "hanya pemilik memautkan orang kepada akaun pelayan",
 	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
-	"server.accounts.this-is-their-only-way-to": "ini satu-satunya cara mereka log masuk; tetapkan kata laluan dahulu"
+	"server.accounts.this-is-their-only-way-to": "ini satu-satunya cara mereka log masuk; tetapkan kata laluan dahulu",
+	"server.metadata.the-metadata-server-has-no-room": "Pelayan metadata tiada ruang untuk pemasangan baharu buat masa ini. HolyArrs akan bertanya semula sendiri dalam masa sejam.",
+	"server.metadata.the-metadata-server-is-busy-right": "Pelayan metadata sibuk buat masa ini. HolyArrs akan bertanya semula sendiri sebentar lagi.",
+	"server.metadata.the-metadata-server-is-not-signing": "Pelayan metadata tidak mendaftarkan lagi pemasangan dari alamat ini buat masa ini. HolyArrs akan bertanya semula sendiri; simpan folder /config antara mula semula supaya pemasangan ini kekal berdaftar.",
+	"server.metadata.this-address-sent-the-metadata-server": "Alamat ini menghantar terlalu banyak permintaan kepada pelayan metadata. HolyArrs menunggu dan bertanya semula sendiri.",
+	"server.metadata.this-install-sent-the-metadata-server": "Pemasangan ini menghantar terlalu banyak permintaan kepada pelayan metadata. HolyArrs menunggu dan bertanya semula sendiri."
 }
