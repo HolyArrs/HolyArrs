@@ -170,7 +170,10 @@ type Person struct {
 	// AutoApproveFourK lets their 4K asks be approved straight away too
 	// (with AutoApprove); without it a 4K ask waits for staff.
 	AutoApproveFourK bool
-	NoLimit     bool // the weekly limit does not apply (people who approve)
+	// Owner marks the owner, whose asks also follow the owner switch in
+	// the Request settings.
+	Owner   bool
+	NoLimit bool // the weekly limit does not apply (people who approve)
 	// MaxRating is a Kid's age-rating limit ("" for none): they may ask
 	// only for movies and shows rated up to it, and never for music.
 	MaxRating string
@@ -411,6 +414,19 @@ func (p Person) autoApproves(fourK bool) bool {
 	return p.AutoApprove && (!fourK || p.AutoApproveFourK)
 }
 
+// autoApproves is p.autoApproves, with the owner switch from the Request
+// settings applied to the owner.
+func (s *Service) autoApproves(ctx context.Context, p Person, fourK bool) bool {
+	if !p.autoApproves(fourK) {
+		return false
+	}
+	if !p.Owner {
+		return true
+	}
+	set, err := ReadSettings(ctx, s.Store.Read())
+	return err != nil || set.OwnerAutoApprove
+}
+
 // copyOf finds the title's 4K Version (fourK) or its plain copy (the main
 // one first among the Versions without the 4K mark), 0 when it has none.
 func copyOf(ctx context.Context, db database.Querier, titleID int64, fourK bool) (int64, error) {
@@ -540,7 +556,7 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, q QualityLin
 	}
 	s.event(ctx, &domain.Event{Actor: p.actor(), Kind: domain.EventAskMade, Summary: p.Name + " asked for " + label(a),
 		Data: map[string]any{"ask_id": a.ID, "tmdb_id": tmdbID, "asked_by": p.Name}, GroupKey: groupKey(a.ID)})
-	if p.autoApproves(fourK) {
+	if s.autoApproves(ctx, p, fourK) {
 		if got, _, err := s.decide(ctx, a.ID, p, ApproveOptions{}, true); err == nil {
 			return Result{Ask: got}, nil
 		} else {
@@ -574,7 +590,7 @@ func (s *Service) join(ctx context.Context, p Person, id int64) (Result, error) 
 	}
 	s.event(ctx, &domain.Event{Actor: p.actor(), Kind: domain.EventAskJoined, TitleID: a.TitleID, Summary: p.Name + " also asked for " + label(a),
 		Data: map[string]any{"ask_id": a.ID, "asked_by": p.Name}, GroupKey: groupKey(a.ID)})
-	if a.State == domain.AskAsked && p.autoApproves(a.FourK) {
+	if a.State == domain.AskAsked && s.autoApproves(ctx, p, a.FourK) {
 		if got, _, err := s.decide(ctx, a.ID, p, ApproveOptions{}, true); err == nil {
 			a = got
 		}

@@ -163,7 +163,7 @@ var rdpReads = []rdpCall{
 	{"GET /api/v1/asks/limit", 200, 200, "four_k movies music no_limit qualities shows", "four_k movies music no_limit qualities shows"},
 	{"GET /api/v1/asks/1", 404, 404, "error", "error"},
 	{"GET /api/v1/asks/1/parts", 404, 404, "error", "error"},
-	{"GET /api/v1/settings/asks", 200, 403, "four_k_library_folder_id four_k_pick_rules_id library_folder_id movies_per_week music_library_folder_id music_per_week music_pick_rules_id pick_rules_id plex_friends plex_watchlists plex_watchlists_everyone qualities search_on_approve show_four_k_library_folder_id show_four_k_pick_rules_id show_library_folder_id show_pick_rules_id shows_per_week", "error"},
+	{"GET /api/v1/settings/asks", 200, 403, "four_k_library_folder_id four_k_pick_rules_id library_folder_id movies_per_week music_library_folder_id music_per_week music_pick_rules_id owner_auto_approve pick_rules_id plex_friends plex_watchlists plex_watchlists_everyone qualities search_on_approve show_four_k_library_folder_id show_four_k_pick_rules_id show_library_folder_id show_pick_rules_id shows_per_week", "error"},
 	{"GET /api/v1/ask-limits", 200, 403, "limits", "error"},
 	{"GET /api/v1/my/follows", 200, 200, "follows", "follows"},
 	{"GET /api/v1/titles/1/follow", 404, 404, "error", "error"},

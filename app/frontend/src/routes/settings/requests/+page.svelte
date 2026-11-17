@@ -6,7 +6,7 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { PlexFriends, qualityName, type AskSettings, type QualityLine } from '#lib/requests/index.ts';
+	import { PlexFriends, approveChanges, approveRows, qualityName, type ApproveRow, type ApproveUser, type AskSettings, type QualityLine } from '#lib/requests/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { api } from '#lib/core/api.ts';
@@ -32,8 +32,13 @@
 		show_four_k_pick_rules_id: 0,
 		plex_watchlists: false,
 		plex_watchlists_everyone: false,
-		plex_friends: false
+		plex_friends: false,
+		owner_auto_approve: true
 	});
+	// "Approve requests automatically": the owner's switch is a Request setting, everyone else's is their own permission.
+	let users = $state<ApproveUser[]>([]);
+	let people = $state<ApproveRow[]>([]);
+	let savedPeople = $state('[]');
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
 	let busy = $state(false);
@@ -42,7 +47,7 @@
 	let loading = $state(false);
 	let loadError = $state('');
 	let saved = $state('');
-	const dirty = $derived(loaded && !!saved && JSON.stringify(settings) !== saved);
+	const dirty = $derived(loaded && !!saved && (JSON.stringify(settings) !== saved || JSON.stringify(people) !== savedPeople));
 
 	const movieFolders = $derived(folders.filter((f) => f.kind === 'movie'));
 	const movieRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('movie')));
@@ -74,12 +79,28 @@
 		try {
 			settings = await api.get<AskSettings>('/settings/asks');
 			saved = JSON.stringify(settings);
+			await loadPeople().catch(() => {});
 		} catch (e) {
 			loadError = message(e);
 		} finally {
 			loaded = true;
 			loading = false;
 		}
+	}
+
+	async function loadPeople() {
+		if (!session.can('users')) {
+			people = [];
+		} else {
+			users = (await api.get<{ users: ApproveUser[] }>('/users')).users;
+			people = approveRows(users, settings.owner_auto_approve !== false, { id: session.s.id, role: session.s.role });
+		}
+		savedPeople = JSON.stringify(people);
+	}
+
+	function setOn(r: ApproveRow, on: boolean) {
+		r.on = on;
+		if (r.owner) settings.owner_auto_approve = on;
 	}
 
 	onMount(async () => {
@@ -106,6 +127,13 @@
 				music_per_week: Number(settings.music_per_week)
 			});
 			saved = JSON.stringify(settings);
+			try {
+				for (const c of approveChanges(users, JSON.parse(savedPeople), people)) {
+					await api.put(`/users/${c.id}`, { perms: c.perms });
+				}
+			} finally {
+				await loadPeople().catch(() => {});
+			}
 			toasts.push(t('settings.requests.saved'), 'ok');
 		} catch (err) {
 			error = message(err);
@@ -198,6 +226,25 @@
 				</Field>
 			{/snippet}
 		</SettingsCard>
+		<SettingsCard id="approvals" title={t('settings.requests.approvals')}>
+			<h3 class="q-kind">{t('settings.requests.autoApprove')}</h3>
+			{#if people.length}
+				{#each people as r (r.id)}
+					<label class="switch q-shown approve-row">
+						<input type="checkbox" checked={r.on} disabled={r.locked} onchange={(e) => setOn(r, e.currentTarget.checked)} data-testid="auto-approve-{r.id}" />
+						<span class="sw" aria-hidden="true"></span>
+						<span>{r.name}{#if r.owner} · {t('settings.requests.ownerTag')}{/if}</span>
+					</label>
+				{/each}
+			{:else}
+				<label class="switch q-shown approve-row">
+					<input type="checkbox" bind:checked={settings.owner_auto_approve} data-testid="auto-approve-owner" />
+					<span class="sw" aria-hidden="true"></span>
+					<span>{t('settings.requests.ownerTag')}</span>
+				</label>
+			{/if}
+			<p class="hint">{t('settings.requests.autoApproveNote')}</p>
+		</SettingsCard>
 		<SettingsCard id="four-k" title={t('settings.requests.fourK')} description={t('settings.requests.fourKDesc')}>
 			<Field id="ask-4k-folder" label={t('settings.requests.movieFolder')}>
 				<select id="ask-4k-folder" class="input" bind:value={settings.four_k_library_folder_id}>
@@ -264,7 +311,7 @@
 		</SettingsCard>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</form>
-	<SaveBar {dirty} form="wishlist-form" saving={busy} ondiscard={() => (settings = JSON.parse(saved))} />
+	<SaveBar {dirty} form="wishlist-form" saving={busy} ondiscard={() => ((settings = JSON.parse(saved)), (people = JSON.parse(savedPeople)))} />
 {/if}
 
 <style>
@@ -299,6 +346,10 @@
 		min-height: 44px;
 		font: var(--t-callout);
 		white-space: nowrap;
+	}
+	.approve-row {
+		display: flex;
+		white-space: normal;
 	}
 	.kind-row {
 		display: grid;

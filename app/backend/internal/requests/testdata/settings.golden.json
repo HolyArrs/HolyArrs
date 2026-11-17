@@ -16,6 +16,7 @@
   "plex_watchlists": true,
   "plex_watchlists_everyone": true,
   "plex_friends": true,
+  "owner_auto_approve": true,
   "qualities": {
     "movie": [
       {
