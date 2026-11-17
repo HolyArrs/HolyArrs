@@ -271,7 +271,7 @@
 								<div class="cell" class:empty={!l.last_pass}><span class="k">{t('settings.schedules.lastRun')}</span>{#if l.last_pass}<time datetime={l.last_pass} title={dateTime(l.last_pass)}>{ago(l.last_pass, now)}</time>{:else}<span class="faint">{t('settings.schedules.notYet')}</span>{/if}</div>
 								<div class="cell" class:empty={!l.next_pass}><span class="k">{t('settings.schedules.nextRun')}</span>{#if l.next_pass}<time datetime={l.next_pass} title={dateTime(l.next_pass)}>{until(l.next_pass, now)}</time>{:else}<span class="faint">{t('settings.schedules.notYet')}</span>{/if}</div>
 								</div>
-								<div class="acts"><span class="chip {runTone(l.state)}">{runWord(l)}</span></div>
+								<div class="acts">{#if runTone(l.state) !== 'ok'}<span class="chip {runTone(l.state)}">{runWord(l)}</span>{/if}</div>
 							</div>
 						</li>
 					{/each}
@@ -290,7 +290,7 @@
 	.group-about :global(a) { color: var(--accent-text); font-weight: 600; }
 	.s-card { margin: 0; padding: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
 	/* Same sheet as every other Settings section. */
-	.sched-card { container-type: inline-size; overflow: hidden; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45); }
+	.sched-card { container-type: inline-size; overflow: hidden; border: var(--sheet-edge); border-radius: var(--sheet-r); background: var(--sheet-bg); box-shadow: var(--sheet-shadow); }
 	.sched-card ul { margin: 0; padding: 0; list-style: none; }
 
 	.now { margin-bottom: 22px; }

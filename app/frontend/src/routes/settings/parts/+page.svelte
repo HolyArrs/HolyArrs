@@ -167,7 +167,7 @@
 	{/if}
 
 	<div data-testid="parts">
-		<SettingsCard id="parts-card" title={t('settings.parts.title')} description={t('settings.parts.partsDesc')}>
+		<SettingsCard id="parts-card" title={t('settings.parts.onOff')} description={t('settings.parts.partsDesc')}>
 			<ul class="rows list">
 				{#each parts.parts as p (p.part)}
 					<li data-testid="part" data-part={p.part} data-state={p.state}>

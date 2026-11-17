@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "{name} konnte nicht verbunden werden",
 	"settings.parts.connected": "{name} verbunden",
 	"settings.parts.title": "Bereiche",
+	"settings.parts.onOff": "Bereiche ein- oder ausschalten",
 	"settings.parts.ownerOnly": "Nur Besitzer und Admins",
 	"settings.parts.safeMode": "HolyArrs läuft im abgesicherten Modus: Es läuft nur der Kern, und Schalter für Bereiche sowie Steuerungen für Stufen werden bis zu einem normalen Start abgelehnt. Nutze <b>HolyArrs neu starten</b> im <a>Gefahrenbereich</a>, um den abgesicherten Modus zu verlassen.",
 	"settings.parts.dangerZone": "Gefahrenbereich",

@@ -574,7 +574,7 @@
 		margin-bottom: 8px;
 	}
 	/* No sites yet: the empty note sits in the same glass sheet as every other section. */
-	.sites-sec > :global(.ui-empty) { width: auto; max-width: none; margin: 0; padding: 22px 18px; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45); }
+	.sites-sec > :global(.ui-empty) { width: auto; max-width: none; margin: 0; padding: 22px 18px; border: var(--sheet-edge); border-radius: var(--sheet-r); background: var(--sheet-bg); box-shadow: var(--sheet-shadow); }
 	.group {
 		border: 0;
 		padding: 0;

@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Det gick inte att ansluta {name}",
 	"settings.parts.connected": "{name} anslöts",
 	"settings.parts.title": "Delar",
+	"settings.parts.onOff": "Slå på eller av delar",
 	"settings.parts.ownerOnly": "Bara ägare och admins",
 	"settings.parts.safeMode": "HolyArrs körs i felsäkert läge: bara kärnan körs, och delbrytare och stegkontroller nekas tills en normal start. Använd <b>Starta om HolyArrs</b> i <a>Farozonen</a> för att lämna felsäkert läge.",
 	"settings.parts.dangerZone": "Farozon",

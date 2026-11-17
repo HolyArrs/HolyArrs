@@ -397,7 +397,7 @@
 	}
 
 	/* The list: one glass sheet, one row per Source (the Library folders pattern). */
-	.fl { list-style: none; margin: var(--s-4) 0 0; padding: 0; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); -webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45); overflow: hidden; }
+	.fl { list-style: none; margin: var(--s-4) 0 0; padding: 0; border: var(--sheet-edge); border-radius: var(--sheet-r); background: var(--sheet-bg);  box-shadow: var(--sheet-shadow); overflow: hidden; }
 	.dl { padding: 14px 16px 14px 18px; }
 	.dl + .dl { box-shadow: inset 0 1px 0 var(--line); }
 	.dl:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
@@ -417,10 +417,6 @@
 	.acts { display: flex; align-items: center; gap: 2px; }
 	@media (hover: hover) and (min-width: 761px) {
 		.dl { position: relative; }
-		.main { grid-template-columns: 24px minmax(0, 1fr) auto auto; }
-		/* Buttons sit over the right edge only while you point at the row; the status keeps the edge otherwise. */
-		.acts { position: absolute; right: 12px; top: 50%; translate: 0 -50%; padding: 4px 4px 4px 28px; border-radius: 999px; background: linear-gradient(90deg, transparent, var(--surface-1) 24px); opacity: 0; pointer-events: none; transition: opacity var(--dur-fast) var(--ease-out); }
-		.dl:hover .acts, .dl:focus-within .acts { opacity: 1; pointer-events: auto; }
 	}
 	.note { margin: 8px 0 0 40px; font: 400 13px/1.35 var(--font-ui); color: var(--text-muted); }
 	.dl .attempt-review { margin: 10px 0 0 40px; }

@@ -323,6 +323,11 @@
 		.checks .grow {
 			width: 100%;
 		}
+		.checks li > .muted {
+			text-align: start;
+			align-self: flex-start;
+			margin-inline: 0;
+		}
 		.checks li > :global(.chip) {
 			align-self: flex-start;
 		}

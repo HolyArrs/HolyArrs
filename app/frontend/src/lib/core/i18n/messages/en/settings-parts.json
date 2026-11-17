@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Couldn't connect {name}",
 	"settings.parts.connected": "{name} connected",
 	"settings.parts.title": "Parts",
+	"settings.parts.onOff": "Turn parts on or off",
 	"settings.parts.ownerOnly": "Owner and admins only",
 	"settings.parts.safeMode": "HolyArrs runs in safe mode: only the core runs, and part switches and stage controls are refused until a normal start. Use <b>Restart HolyArrs</b> in the <a>Danger zone</a> to leave safe mode.",
 	"settings.parts.dangerZone": "Danger zone",
