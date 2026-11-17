@@ -677,7 +677,7 @@
 		{#if removeFlow.delError}<p class="form-error" role="alert">{removeFlow.delError}</p>{/if}
 		<div class="row modal-actions">
 			<Button variant="plain" onclick={() => removeFlow.deleteDialog?.close()}>{tr('mediafiles.dialogs.cancel')}</Button>
-			<Button variant="destructive" onclick={removeFlow.doDelete} disabled={removeFlow.delBusy || !removeFlow.delPlan} busy={removeFlow.delBusy}>{tr('library.title.deleteMovie')}</Button>
+			<Button variant="destructive" onclick={removeFlow.doDelete} disabled={removeFlow.delBusy || !removeFlow.delPlan} busy={removeFlow.delBusy}>{title?.kind === 'artist' ? tr('music.deleteArtist') : title?.kind === 'show' ? tr('discover.titleLibrary.deleteShow') : tr('library.title.deleteMovie')}</Button>
 		</div>
 	{/if}
 </dialog>

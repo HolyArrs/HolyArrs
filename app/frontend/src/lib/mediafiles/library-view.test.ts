@@ -26,7 +26,7 @@ describe('rowCell / cell', () => {
 		expect(cell(m, col('runtime'), '')).toBe('2h 5m');
 		expect(cell(m, col('kept'), '')).toBe('Yes');
 		expect(cell(m, col('release'), '')).toMatch(/^Home release/);
-		expect(cell({ ...m, digital_date: '2000-01-01' } as TitleView, col('release'), '')).toMatch(/^Out/);
+		expect(cell({ ...m, digital_date: '2000-01-01' } as TitleView, col('release'), '')).toBe('Jan 1, 2000');
 		expect(cell({ ...m, digital_date: undefined, cinema_date: '2999-01-01' } as TitleView, col('release'), '')).toMatch(/^Cinemas/);
 		expect(cell(m, col('series'), 'Matrix')).toBe('Matrix');
 		expect(cell(m, col('nope'), '')).toBe('');
