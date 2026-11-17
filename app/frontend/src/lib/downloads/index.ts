@@ -13,6 +13,7 @@ export { createLatestOnly } from './history.ts';
 export { decisionName } from './downloaders.ts';
 export { decisions } from './decisions.svelte.ts';
 export { default as AddTorrents } from './AddTorrents.svelte';
+export { default as AppTiles } from './AppTiles.svelte';
 export { default as ConfirmMatch } from './ConfirmMatch.svelte';
 export { default as DlFind } from './DlFind.svelte';
 export { default as DlSections } from './DlSections.svelte';

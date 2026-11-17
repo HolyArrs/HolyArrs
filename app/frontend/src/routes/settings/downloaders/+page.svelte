@@ -14,7 +14,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import ConnectHelp from '#lib/ui/ConnectHelp.svelte';
-	import { emptyForm, samePathPair, formBody, formFrom, healthLabel, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
+	import { AppTiles, emptyForm, samePathPair, formBody, formFrom, healthLabel, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { recheckSettingsStatus } from '#lib/alerts/index.ts';
@@ -140,6 +140,20 @@
 		form.secret = '';
 		if (w === 'key') form.username = '';
 	}
+
+	const kindGroups = $derived([
+		{ id: 'torrents', title: t('settings.downloaders.torrentsHead'), tiles: [
+			{ value: 'qbittorrent' as const, name: 'qBittorrent', badge: 'qB', hue: 210, hint: t('settings.downloaders.mostUsed') },
+			{ value: 'transmission' as const, name: 'Transmission', badge: 'Tr', hue: 0 },
+			{ value: 'deluge' as const, name: 'Deluge', badge: 'De', hue: 195 },
+			{ value: 'rtorrent' as const, name: 'rTorrent', badge: 'rT', hue: 270 },
+			{ value: 'aria2' as const, name: 'aria2', badge: 'a2', hue: 30 }
+		] },
+		{ id: 'usenet', title: t('settings.downloaders.usenetHead'), tiles: [
+			{ value: 'sabnzbd' as const, name: 'SABnzbd', badge: 'SB', hue: 45, hint: t('settings.downloaders.mostUsed') },
+			{ value: 'nzbget' as const, name: 'NZBGet', badge: 'NG', hue: 140 }
+		] }
+	]);
 
 	function pickKind(k: DownloaderForm['kind']) {
 		const fresh = emptyForm(k);
@@ -361,15 +375,7 @@
 			{#if isNew}
 				<fieldset class="group">
 					<legend class="label">{t('settings.downloaders.whichApp')}</legend>
-					<div class="row kinds">
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'qbittorrent'} onchange={() => pickKind('qbittorrent')} /><span><b>qBittorrent</b> {t('settings.downloaders.torrents')}</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'transmission'} onchange={() => pickKind('transmission')} /><span><b>Transmission</b> {t('settings.downloaders.torrents')}</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'deluge'} onchange={() => pickKind('deluge')} /><span><b>Deluge</b> {t('settings.downloaders.torrents')}</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'rtorrent'} onchange={() => pickKind('rtorrent')} /><span><b>rTorrent</b> {t('settings.downloaders.torrents')}</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'aria2'} onchange={() => pickKind('aria2')} /><span><b>aria2</b> {t('settings.downloaders.torrents')}</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'sabnzbd'} onchange={() => pickKind('sabnzbd')} /><span><b>SABnzbd</b> {t('settings.downloaders.usenet')}</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'nzbget'} onchange={() => pickKind('nzbget')} /><span><b>NZBGet</b> {t('settings.downloaders.usenet')}</span></label>
-					</div>
+					<AppTiles name="kind" groups={kindGroups} value={form.kind} onpick={pickKind} />
 				</fieldset>
 			{/if}
 			<Field id="dl-name" label={t('settings.downloaders.name')} style="margin-top: var(--s-4)">
