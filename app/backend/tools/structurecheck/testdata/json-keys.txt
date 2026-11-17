@@ -430,6 +430,7 @@ detail
 details
 details_source
 device
+device_name
 died
 digests
 digital
@@ -865,6 +866,7 @@ last_success
 last_sync
 last_synced_at
 last_tried_at
+last_updated
 last_used_at
 last_watched_at
 last_year
@@ -917,6 +919,9 @@ local_recent
 locked
 locked_note
 log
+login_expiry
+login_qr
+login_url
 logo
 logo_path
 logos
@@ -1699,6 +1704,7 @@ tag_name
 tagline
 tags
 tail
+tailscale_version
 taken
 tallies
 target
@@ -1818,6 +1824,7 @@ trimmed
 trusted
 trusted_proxies
 try_next_downloader
+tsnet_name
 turn_down
 turned_down_for
 tvDbId
