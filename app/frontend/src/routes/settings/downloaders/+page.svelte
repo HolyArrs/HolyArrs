@@ -544,8 +544,8 @@
 	{/if}
 {:else}
 <form class="sc-form settings" id="wrong-form" onsubmit={saveSettings} aria-labelledby="h-wrong">
+	<span id="h-wrong" class="sr-only">{t('settings.downloaders.wrong')}</span>
 	<SettingsCard id="wrong-card" title={t('settings.downloaders.wrong')}>
-		<span id="h-wrong" class="sr-only">{t('settings.downloaders.wrong')}</span>
 		<label class="checkline">
 			<input id="remove-failed" type="checkbox" bind:checked={settings.remove_failed} />
 			<span><b>{t('settings.downloaders.removeFailedDl')}</b><br /><span class="hint">{t('settings.downloaders.removeFailedHint')}</span></span>
