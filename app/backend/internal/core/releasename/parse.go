@@ -76,10 +76,11 @@ var langWords = map[string]string{
 
 // moreLangWords are read as languages after the title, but never end a title,
 // because many are ordinary title words ("My Big Fat Greek Wedding"). Short
-// words that clash with names (fin, dan, hun, tur, pol, chi, pl, nl) stay out.
+// words that clash with names (fin, dan, tur, pol, chi, pl, nl) stay out; hun
+// is common in Hungarian release names (#414) and needs a tag on both sides.
 var moreLangWords = map[string]string{
 	"polish": "pl", "dutch": "nl", "flemish": "nl", "portuguese": "pt", "swedish": "sv", "swe": "sv",
-	"danish": "da", "norwegian": "no", "finnish": "fi", "czech": "cs", "cze": "cs", "hungarian": "hu",
+	"danish": "da", "norwegian": "no", "finnish": "fi", "czech": "cs", "cze": "cs", "hungarian": "hu", "hun": "hu",
 	"greek": "el", "hebrew": "he", "heb": "he", "turkish": "tr", "arabic": "ar", "hindi": "hi",
 	"chinese": "zh", "mandarin": "zh", "thai": "th", "vietnamese": "vi", "ukrainian": "uk", "ukr": "uk",
 }
@@ -519,14 +520,17 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 	}
 
 	// Resolution. Two different values make it a guess; the later one wins.
+	// UHD and 4K count only when no number is written ("720p.UHD.BluRay"
+	// is a 720p cut of a UHD disc, as Sonarr and Radarr read it; #414).
 	var seen []int
 	for _, t := range low {
 		if m := reResWord.FindStringSubmatch(t); m != nil {
 			v, _ := strconv.Atoi(m[1])
 			seen = append(seen, v)
-		} else if t == "4k" || t == "uhd" {
-			seen = append(seen, 2160)
 		}
+	}
+	if len(seen) == 0 && has("4k", "uhd") {
+		seen = append(seen, 2160)
 	}
 	if len(seen) > 0 {
 		r.Resolution = sure(seen[len(seen)-1])
@@ -650,6 +654,8 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 		if !ok {
 			code, ok = moreLangWords[t]
 			ok = ok && (i+1 == len(low) || !plainWord(low[i+1]))
+			// "hun" also needs a tag before it, so "The.Hun.720p" stays a title.
+			ok = ok && (t != "hun" || i > 0 && !plainWord(low[i-1]))
 		}
 		if ok && !slices.Contains(r.Languages, code) {
 			r.Languages = append(r.Languages, code)
