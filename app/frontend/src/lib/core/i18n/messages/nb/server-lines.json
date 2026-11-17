@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "Utgivelsesgrensen hoppes over: denne filmen regnes ikke som ute ennå",
 	"server.sources.this-version-already-has-a-good": "Denne versjonen har allerede en bra nok kopi. Den nye erstatter den",
 	"server.requests.removed-the-request-for": "{name} fjernet forespørselen om {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex ga ingen kontokode for denne personen, så ønskelisten hens blir ikke lest."
+	"server.requests.plex-gave-no-account-code-for": "Plex ga ingen kontokode for denne personen, så ønskelisten hens blir ikke lest.",
+	"server.mediaservers.no-such-title": "den tittelen finnes ikke",
+	"server.mediaservers.send-title-a-library-title-id": "send title, ID-en til en tittel i Biblioteket"
 }

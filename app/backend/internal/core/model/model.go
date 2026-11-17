@@ -475,6 +475,7 @@ type MediaServer struct {
 	PathFrom      string     `db:"path_from"` // HolyArrs' start of a path ...
 	PathTo        string     `db:"path_to"`   // ... as the media server sees it
 	AllowLocal    bool       `db:"allow_local_network"`
+	WebURL        string     `db:"web_url"` // where browsers open it; empty: no Open in button
 	LastOKAt      *time.Time `db:"last_ok_at"`
 	LastError     string     `db:"last_error"`
 }

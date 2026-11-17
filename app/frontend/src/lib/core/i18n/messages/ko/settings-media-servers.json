@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs 경로",
 	"settings.mediaServers.pathTo": "서버의 같은 폴더",
 	"settings.mediaServers.pathHint": "서버가 파일을 다른 경로로 볼 때만 입력하세요",
+	"settings.mediaServers.webUrl": "브라우저용 주소",
+	"settings.mediaServers.webUrlHint": "모두가 휴대폰이나 컴퓨터에서 서버를 여는 주소입니다. 서버에 있는 작품 페이지에 열기 버튼이 생깁니다. 버튼이 필요 없으면 비워 두세요.",
 	"settings.mediaServers.local": "로컬 네트워크 접근",
 	"settings.mediaServers.send": "업데이트 보내기",
 	"settings.mediaServers.save": "저장",

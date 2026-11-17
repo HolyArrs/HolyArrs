@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "ข้ามเกณฑ์วันวางจำหน่าย: ภาพยนตร์เรื่องนี้ยังนับว่าไม่ออก",
 	"server.sources.this-version-already-has-a-good": "เวอร์ชันนี้มีสำเนาที่ดีพอแล้ว ตัวใหม่จะมาแทนที่",
 	"server.requests.removed-the-request-for": "{name} ลบคำขอ {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex ไม่ได้ให้รหัสบัญชีของคนนี้ จึงไม่อ่านรายการที่อยากดูของเขา"
+	"server.requests.plex-gave-no-account-code-for": "Plex ไม่ได้ให้รหัสบัญชีของคนนี้ จึงไม่อ่านรายการที่อยากดูของเขา",
+	"server.mediaservers.no-such-title": "ไม่มีชื่อเรื่องนี้",
+	"server.mediaservers.send-title-a-library-title-id": "ส่ง title ซึ่งเป็น id ของชื่อเรื่องในคลัง"
 }

@@ -36,6 +36,8 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/settings/watch-history", h.getWatchHistory)
 	m.HandleFunc("PUT /api/v1/settings/watch-history", h.putWatchHistory)
 	m.HandleFunc("GET /api/v1/library/stats/watched", h.watched)
+	// Where a Library title opens on the Jellyfin and Emby servers.
+	m.HandleFunc("GET /api/v1/media-servers/watch-links", h.watchLinks)
 }
 
 func (h *Handlers) list(w http.ResponseWriter, r *http.Request) {
@@ -134,7 +136,7 @@ func (h *Handlers) Test(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "found": res})
 }
 
-const inputHelp = `send name, kind (plex, jellyfin or emby), url, token, and optionally enabled, on_import, on_rename, on_delete, path_from and path_to, allow_local_network`
+const inputHelp = `send name, kind (plex, jellyfin or emby), url, token, and optionally enabled, on_import, on_rename, on_delete, path_from and path_to, allow_local_network, web_url`
 
 func readInput(w http.ResponseWriter, r *http.Request) (Input, bool) {
 	var in Input

@@ -48,6 +48,7 @@
 	import { scrollToStart } from '#lib/core/motion.ts';
 	import type { EventPage, EventRecord, ReleasePage, ReleaseView, TitleView, VersionView } from '#lib/core/types.ts';
 	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
+	import { WatchLinks } from '#lib/mediaservers/index.ts';
 
 	const id = $derived(Number(page.params.id));
 	const libraryBack = $derived.by(() => {
@@ -322,6 +323,7 @@
 				{:else if mayReport}
 					<ActionMenu label={tr('shows.page.moreActions')} caption={tr('shows.page.more')} icon="more" items={moreItems} />
 				{/if}
+				{#if manage}<WatchLinks titleId={title!.id} />{/if}
 				<FollowButton titleId={title!.id} kind="movie" />
 			{/snippet}
 		</TitleHero>

@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "נתיב ב־HolyArrs",
 	"settings.mediaServers.pathTo": "אותה תיקייה בשרת",
 	"settings.mediaServers.pathHint": "רק אם השרת רואה את הקבצים שלך בנתיב אחר",
+	"settings.mediaServers.webUrl": "כתובת לדפדפנים",
+	"settings.mediaServers.webUrlHint": "הכתובת שבה כולם פותחים את השרת בטלפון או במחשב. מוסיף כפתור פתיחה לדפי הכותרים שיש בו. השאירו ריק כדי שלא יהיה כפתור.",
 	"settings.mediaServers.local": "גישה לרשת המקומית",
 	"settings.mediaServers.send": "שליחת עדכונים",
 	"settings.mediaServers.save": "שמירה",

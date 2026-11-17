@@ -38,7 +38,8 @@
 		on_delete: true,
 		path_from: '',
 		path_to: '',
-		allow_local_network: true
+		allow_local_network: true,
+		web_url: ''
 	});
 	let form = $state(blank());
 	let busy = $state(false);
@@ -193,6 +194,12 @@
 					{form.kind === 'plex' ? t('settings.mediaServers.plexTokenHint') : t('settings.mediaServers.apiKeyHint')}
 				</span>
 			</Field>
+			{#if form.kind !== 'plex'}
+				<Field id="ms-web" label={t('settings.mediaServers.webUrl')}>
+					<input id="ms-web" class="input mono" type="url" bind:value={form.web_url} autocomplete="off" spellcheck="false" placeholder="https://jellyfin.example.com" />
+					<span class="hint">{t('settings.mediaServers.webUrlHint')}</span>
+				</Field>
+			{/if}
 			<fieldset class="when">
 				<legend class="label">{t('settings.mediaServers.after')}</legend>
 				<label class="checkline"><input type="checkbox" bind:checked={form.on_import} /><span><b>{t('settings.mediaServers.anImport')}</b></span></label>

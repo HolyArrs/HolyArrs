@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Path HolyArrs",
 	"settings.mediaServers.pathTo": "Folder yang sama di server",
 	"settings.mediaServers.pathHint": "Hanya jika server melihat file kamu di path lain",
+	"settings.mediaServers.webUrl": "Alamat untuk browser",
+	"settings.mediaServers.webUrlHint": "Alamat tempat semua orang membuka server di ponsel atau komputer. Menambahkan tombol Buka ke halaman judul yang dimilikinya. Biarkan kosong jika tidak ingin ada tombol.",
 	"settings.mediaServers.local": "Jangkau jaringan lokal",
 	"settings.mediaServers.send": "Kirim pembaruan",
 	"settings.mediaServers.save": "Simpan",

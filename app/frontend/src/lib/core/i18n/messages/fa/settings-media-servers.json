@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "مسیر HolyArrs",
 	"settings.mediaServers.pathTo": "همان پوشه در سرور",
 	"settings.mediaServers.pathHint": "فقط اگر سرور فایل‌هایت را زیر مسیر دیگری می‌بیند",
+	"settings.mediaServers.webUrl": "نشانی برای مرورگرها",
+	"settings.mediaServers.webUrlHint": "نشانی‌ای که همه سرور را با آن روی گوشی یا رایانه باز می‌کنند. دکمهٔ باز کردن را به صفحهٔ عنوان‌هایی که دارد اضافه می‌کند. برای نداشتن دکمه خالی بگذارید.",
 	"settings.mediaServers.local": "دسترسی به شبکه محلی",
 	"settings.mediaServers.send": "ارسال به‌روزرسانی‌ها",
 	"settings.mediaServers.save": "ذخیره",

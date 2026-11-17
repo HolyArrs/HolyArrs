@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "Прагът за излизане е пропуснат: този филм не се брои за излязъл",
 	"server.sources.this-version-already-has-a-good": "Този вариант вече има достатъчно добро копие; новото ще го замени",
 	"server.requests.removed-the-request-for": "{name} премахна заявката за {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex не даде код на акаунта за този човек, затова списъкът му за гледане не се чете."
+	"server.requests.plex-gave-no-account-code-for": "Plex не даде код на акаунта за този човек, затова списъкът му за гледане не се чете.",
+	"server.mediaservers.no-such-title": "няма такова заглавие",
+	"server.mediaservers.send-title-a-library-title-id": "изпратете title, id на заглавие от Библиотеката"
 }

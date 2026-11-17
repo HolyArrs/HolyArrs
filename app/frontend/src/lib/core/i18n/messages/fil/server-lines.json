@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "Nilalaktawan ang Release gate: hindi pa binibilang na lumabas ang pelikulang ito",
 	"server.sources.this-version-already-has-a-good": "May sapat nang magandang kopya ang Bersyong ito; papalitan ito ng bago",
 	"server.requests.removed-the-request-for": "Inalis ni {name} ang kahilingan para sa {a}",
-	"server.requests.plex-gave-no-account-code-for": "Walang ibinigay na account code ang Plex para sa taong ito, kaya hindi binabasa ang watchlist niya."
+	"server.requests.plex-gave-no-account-code-for": "Walang ibinigay na account code ang Plex para sa taong ito, kaya hindi binabasa ang watchlist niya.",
+	"server.mediaservers.no-such-title": "walang ganoong title",
+	"server.mediaservers.send-title-a-library-title-id": "ipadala ang title, ang id ng isang title sa Library"
 }

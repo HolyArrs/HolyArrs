@@ -24,6 +24,7 @@
 	import TitleTrailers from './TitleTrailers.svelte';
 	import { createOwnedTitle } from './title-owned.svelte.ts';
 	import { NoDownloaderNote } from '#lib/downloads/index.ts';
+	import { WatchLinks } from '#lib/mediaservers/index.ts';
 	import TitleLibrary from './TitleLibrary.svelte';
 	import TitleOwnedSheets from './TitleOwnedSheets.svelte';
 	import { SearchOutcomeLine, keptSeasons, completeSeasons, seasonsToAsk, QuickAsk, AddMovieDialog, AddShowDialog, AskShowDialog, AskMovieDialog, fourKReady } from '#lib/requests/index.ts';
@@ -420,6 +421,7 @@
 			{#snippet actions()}
 				{#if owned}
 					<ActionButton icon={ownState.kind === 'have' ? 'check' : ownState.kind === 'failed' ? 'refresh' : ownState.kind === 'downloading' ? 'download' : 'search'} label={ownState.label} caption={ownState.kind === 'failed' && manage ? t('discover.titlePage.retry') : ownState.kind === 'missing' && manage ? t('discover.titlePage.searchNow') : ownState.label} primary onclick={() => (manage && (ownState.kind === 'failed' || ownState.kind === 'missing') ? own.ownRun('search') : own.setTab('library'))} data-testid="hero-library" />
+					{#if manage && ownState.kind !== 'missing'}<WatchLinks titleId={owned.id} />{/if}
 					{#if manage || mayReport || mayHide}<ActionMenu label={t('discover.titlePage.moreActions')} caption={t('discover.titlePage.more')} icon="more" items={titleMenu} />{/if}
 					{#if mayAsk}{@render ask4kButton(d)}{/if}
 					{#if mayAsk && d.kind === 'show' && d.show && !d.neverAdd && askable.length > 0}

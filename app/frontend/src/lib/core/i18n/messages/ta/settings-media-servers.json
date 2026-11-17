@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs பாதை",
 	"settings.mediaServers.pathTo": "சேவையகத்திலும் அதே கோப்புறை",
 	"settings.mediaServers.pathHint": "சேவையகம் உங்கள் கோப்புகளை வேறு பாதையில் பார்த்தால் மட்டும்",
+	"settings.mediaServers.webUrl": "உலாவிகளுக்கான முகவரி",
+	"settings.mediaServers.webUrlHint": "அனைவரும் தொலைபேசி அல்லது கணினியில் சர்வரைத் திறக்கும் முகவரி. சர்வரில் உள்ள தலைப்புகளின் பக்கங்களில் திற பொத்தானைச் சேர்க்கும். பொத்தான் வேண்டாமெனில் காலியாக விடுங்கள்.",
 	"settings.mediaServers.local": "உள்ளூர் வலையை அடை",
 	"settings.mediaServers.send": "புதுப்பிப்புகளை அனுப்பு",
 	"settings.mediaServers.save": "சேமி",

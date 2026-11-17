@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Шлях HolyArrs",
 	"settings.mediaServers.pathTo": "Та сама тека на сервері",
 	"settings.mediaServers.pathHint": "Лише якщо сервер бачить твої файли за іншим шляхом",
+	"settings.mediaServers.webUrl": "Адреса для браузерів",
+	"settings.mediaServers.webUrlHint": "Адреса, за якою всі відкривають сервер на телефоні чи комп’ютері. Додає кнопку «Відкрити» на сторінки тайтлів, які є на сервері. Залиште порожнім, щоб кнопки не було.",
 	"settings.mediaServers.local": "Доступ до локальної мережі",
 	"settings.mediaServers.send": "Надсилати оновлення",
 	"settings.mediaServers.save": "Зберегти",

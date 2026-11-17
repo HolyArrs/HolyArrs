@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "مسار HolyArrs",
 	"settings.mediaServers.pathTo": "المجلد نفسه على الخادم",
 	"settings.mediaServers.pathHint": "فقط إذا كان الخادم يرى ملفاتك تحت مسار آخر",
+	"settings.mediaServers.webUrl": "العنوان للمتصفحات",
+	"settings.mediaServers.webUrlHint": "العنوان الذي يفتح منه الجميع الخادم على الهاتف أو الكمبيوتر. يضيف زر فتح إلى صفحات العناوين الموجودة فيه. اتركه فارغًا لعدم إظهار الزر.",
 	"settings.mediaServers.local": "الوصول إلى الشبكة المحلية",
 	"settings.mediaServers.send": "أرسل التحديثات",
 	"settings.mediaServers.save": "حفظ",

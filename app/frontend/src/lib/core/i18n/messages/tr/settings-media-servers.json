@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs yolu",
 	"settings.mediaServers.pathTo": "Sunucudaki aynı klasör",
 	"settings.mediaServers.pathHint": "Yalnızca sunucu dosyalarını başka bir yolda görüyorsa",
+	"settings.mediaServers.webUrl": "Tarayıcılar için adres",
+	"settings.mediaServers.webUrlHint": "Herkesin sunucuyu telefonda veya bilgisayarda açtığı adres. Sunucuda olan başlıkların sayfalarına Aç düğmesi ekler. Düğme istemiyorsan boş bırak.",
 	"settings.mediaServers.local": "Yerel ağa eriş",
 	"settings.mediaServers.send": "Güncellemeleri gönder",
 	"settings.mediaServers.save": "Kaydet",
