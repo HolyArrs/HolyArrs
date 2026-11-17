@@ -1,0 +1,71 @@
+package main
+
+import (
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"strings"
+)
+
+// MarkHeader carries the per-start secret on every visit handed to HolyArrs.
+// HolyArrs knows it as accounts.PluginProxyHeader and always asks for sign-in
+// when it is there.
+const MarkHeader = "X-Holyarrs-Plugin-Proxy"
+
+// Identity headers: information for HolyArrs' screens only, never sign-in.
+const (
+	UserHeader   = "X-Holyarrs-Tailscale-User"
+	DeviceHeader = "X-Holyarrs-Tailscale-Device"
+)
+
+// stripPrefixes are headers a visitor could write to pose as a proxy, a
+// signed-in person or HolyArrs itself. All are removed before the visit
+// goes on.
+var stripPrefixes = []string{"x-forwarded-", "x-holyarrs-", "remote-", "tailscale-", "x-original-", "x-auth-request-", "x-authentik-"}
+
+var stripExact = map[string]bool{
+	"forwarded": true, "x-real-ip": true, "x-client-ip": true, "true-client-ip": true,
+	"cf-connecting-ip": true, "x-cluster-client-ip": true, "client-ip": true,
+}
+
+// stripHeaders removes every forwarding and identity header.
+func stripHeaders(h http.Header) {
+	for k := range h {
+		l := strings.ToLower(k)
+		if stripExact[l] {
+			delete(h, k)
+			continue
+		}
+		for _, p := range stripPrefixes {
+			if strings.HasPrefix(l, p) {
+				delete(h, k)
+				break
+			}
+		}
+	}
+}
+
+// whoFunc looks up the tailnet person and device behind a peer address. It
+// may return empty strings.
+type whoFunc func(r *http.Request) (user, device string)
+
+// newProxy hands visits to HolyArrs at target with the headers cleaned and
+// the mark set.
+func newProxy(target *url.URL, mark string, who whoFunc) http.Handler {
+	return &httputil.ReverseProxy{
+		Rewrite: func(pr *httputil.ProxyRequest) {
+			// pr.Out is already free of hop-by-hop headers; X-Forwarded-For
+			// is only added by SetXForwarded, which is never called.
+			stripHeaders(pr.Out.Header)
+			pr.SetURL(target)
+			pr.Out.Host = target.Host
+			pr.Out.Header.Set(MarkHeader, mark)
+			if who != nil {
+				if u, d := who(pr.In); u != "" || d != "" {
+					pr.Out.Header.Set(UserHeader, u)
+					pr.Out.Header.Set(DeviceHeader, d)
+				}
+			}
+		},
+	}
+}
