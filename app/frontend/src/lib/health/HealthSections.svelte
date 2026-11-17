@@ -291,8 +291,18 @@
 	{:else if tab === 'support'}
 		<section class="st-plate give" aria-labelledby="s-give" data-testid="status-support">
 			<h2 id="s-give">{t('health.support.heading')}</h2>
-			<p class="help-text">{t('health.support.line')}</p>
-			<p class="help-text">{t('health.support.line2')}</p>
+			<div class="give-text">
+				<p>{t('health.support.p1')}</p>
+				<p>{t('health.support.p2')}</p>
+				<h3>{t('health.support.doesHeading')}</h3>
+				<ul>
+					<li>{t('health.support.does1')}</li>
+					<li>{t('health.support.does2')}</li>
+					<li>{t('health.support.does3')}</li>
+				</ul>
+				<p><strong>{t('health.support.p3Lead')}</strong> {t('health.support.p3')}</p>
+				<p>{t('health.support.p4')}</p>
+			</div>
 			<div class="give-row">
 				{#each supportLinks as l (l.id)}
 					<Button variant={l.id === 'sponsor' ? 'primary' : 'secondary'} icon={l.icon} href={l.href} target={l.newTab ? '_blank' : undefined} rel={l.newTab ? 'noopener' : undefined}>{t(`health.support.${l.id}`)}</Button>
@@ -347,6 +357,11 @@
 </div>
 
 <style>
+	.give-text { max-width: 65ch; display: grid; gap: var(--s-3); font-size: 14px; line-height: 1.6; color: var(--text-muted); margin-bottom: var(--s-2); }
+	.give-text p, .give-text ul, .give-text h3 { margin: 0; }
+	.give-text h3 { font-size: 15px; font-weight: 600; margin-top: var(--s-2); color: var(--text); }
+	.give-text ul { padding-left: 1.25rem; display: grid; gap: var(--s-2); list-style: disc; }
+	.give-text strong { color: var(--text); font-weight: 600; }
 	.give-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: var(--s-3); margin-top: var(--s-2); }
 	.secs, .panel { display: flex; flex-direction: column; gap: var(--s-4); }
 	ul { list-style: none; margin: 0; padding: 0; }
