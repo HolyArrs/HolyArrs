@@ -485,6 +485,11 @@
 	.acct { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: stretch; }
 	.acct > :global(*) { margin: 0; }
 	.pfp { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+	/* Picture row and the boxes keep the sheet's row padding, so nothing sits on the card edge. */
+	.pfp { padding-block: 14px; }
+	.boxes { padding-block: 14px; }
+	/* The Discord box is as wide as the Email box and shows its whole example. */
+	.acct :global(.srow > .ctl > #tg-discord) { width: 260px; }
 	.value { font: var(--t-callout); font-weight: 400; color: var(--text); overflow-wrap: anywhere; min-width: 0; }
 	.boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
 	.box {
