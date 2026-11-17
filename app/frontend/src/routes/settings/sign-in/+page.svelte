@@ -315,6 +315,7 @@
 
 <PageHeader title={t('settings.signIn.title')} />
 
+<div class="sign-in-page">
 {#if !loaded}
 	<SkSettings rows={3} />
 {:else}
@@ -343,7 +344,7 @@
 	</SettingsCard>
 
 	<SettingsCard id="twofactor-card" title={t('settings.signIn.twoFactor')}>
-		<label class="switch" style="margin-top: var(--s-3)">
+		<label class="switch">
 			<input type="checkbox" checked={requireAdmins} disabled={!isOwner || savingRequire} aria-busy={savingRequire} onchange={(e) => setRequire(e.currentTarget.checked)} />
 			<span class="sw" aria-hidden="true"></span>
 			<span>{t('settings.signIn.adminsMust')}</span>
@@ -464,6 +465,7 @@
 		</SettingsCard>
 	</MoreOptions>
 {/if}
+</div>
 
 <Sheet bind:open={importOpen} title={importFor ? t('settings.signIn.importFrom', { app: wayWord[importFor] }) : t('settings.signIn.importMembers')} size="md">
 	{#if importFor && importFor !== 'plex' && !candidates}
@@ -582,6 +584,9 @@
 		gap: 6px 10px;
 	}
 	.passwords fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
-	.pw-ctl { max-width: 120px; }
 	.pw-save { padding: 4px 0 14px; }
+	/* Switches sit at the row's end, as on every other Settings page. */
+	.sign-in-page { display: contents; }
+	.sign-in-page :global(label.switch) { display: flex; flex-direction: row-reverse; justify-content: space-between; width: 100%; margin-top: 0 !important; }
+	.sign-in-page :global(label.switch input) { right: 0; }
 </style>

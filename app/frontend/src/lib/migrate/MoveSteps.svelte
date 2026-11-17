@@ -56,7 +56,7 @@
 	.tx.live { animation: st-pulse 1.6s ease-in-out infinite; }
 	@keyframes st-pulse { 50% { opacity: 0.55; } }
 	.num { display: none; }
-	@media (pointer: coarse) { .cap-btn { min-height: 40px; } }
+	@media (pointer: coarse) { .cap-btn { min-height: 44px; } }
 	@media (max-width: 600px) {
 		.rail { grid-template-columns: var(--phone-cols); }
 		li:not(.now) .tx { display: none; }

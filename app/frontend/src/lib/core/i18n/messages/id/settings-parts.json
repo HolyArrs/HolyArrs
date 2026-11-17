@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Tidak bisa menghubungkan {name}",
 	"settings.parts.connected": "{name} terhubung",
 	"settings.parts.title": "Bagian",
+	"settings.parts.onOff": "Nyalakan atau matikan bagian",
 	"settings.parts.ownerOnly": "Khusus pemilik dan admin",
 	"settings.parts.safeMode": "HolyArrs berjalan dalam mode aman: hanya inti yang berjalan, dan sakelar Bagian serta kontrol Tahap ditolak sampai dimulai secara normal. Pakai <b>Mulai ulang HolyArrs</b> di <a>Zona berbahaya</a> untuk keluar dari mode aman.",
 	"settings.parts.dangerZone": "Zona berbahaya",

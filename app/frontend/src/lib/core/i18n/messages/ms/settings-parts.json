@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Tidak dapat menyambung {name}",
 	"settings.parts.connected": "{name} bersambung",
 	"settings.parts.title": "Bahagian",
+	"settings.parts.onOff": "Hidupkan atau matikan bahagian",
 	"settings.parts.ownerOnly": "Pemilik dan pentadbir sahaja",
 	"settings.parts.safeMode": "HolyArrs berjalan dalam mod selamat: hanya teras yang berjalan, dan suis bahagian serta kawalan peringkat ditolak sehingga permulaan biasa. Gunakan <b>Mulakan semula HolyArrs</b> dalam <a>Zon bahaya</a> untuk keluar dari mod selamat.",
 	"settings.parts.dangerZone": "Zon bahaya",

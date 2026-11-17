@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Kohdetta {name} ei voitu yhdistää",
 	"settings.parts.connected": "{name} yhdistetty",
 	"settings.parts.title": "Osat",
+	"settings.parts.onOff": "Ota osia käyttöön tai pois",
 	"settings.parts.ownerOnly": "Vain omistaja ja ylläpitäjät",
 	"settings.parts.safeMode": "HolyArrs toimii vikasietotilassa: vain ydin on käynnissä, ja osien kytkimet ja vaiheiden hallinta evätään seuraavaan normaaliin käynnistykseen asti. Poistu vikasietotilasta valitsemalla <b>Käynnistä HolyArrs uudelleen</b> <a>vaaravyöhykkeellä</a>.",
 	"settings.parts.dangerZone": "Vaaravyöhyke",

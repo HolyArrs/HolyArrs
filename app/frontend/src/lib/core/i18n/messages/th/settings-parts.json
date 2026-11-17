@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "เชื่อมต่อ {name} ไม่สำเร็จ",
 	"settings.parts.connected": "เชื่อมต่อ {name} แล้ว",
 	"settings.parts.title": "ส่วนเสริม",
+	"settings.parts.onOff": "เปิดหรือปิดส่วนเสริม",
 	"settings.parts.ownerOnly": "เฉพาะเจ้าของและผู้ดูแล",
 	"settings.parts.safeMode": "HolyArrs ทำงานในโหมดปลอดภัย โดยรันเฉพาะแกนหลัก และจะปฏิเสธการเปิดปิดส่วนเสริมและการควบคุมขั้นตอนจนกว่าจะเริ่มแบบปกติ ใช้ <b>รีสตาร์ต HolyArrs</b> ใน<a>โซนอันตราย</a>เพื่อออกจากโหมดปลอดภัย",
 	"settings.parts.dangerZone": "โซนอันตราย",
