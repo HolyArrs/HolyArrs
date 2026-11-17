@@ -6,12 +6,12 @@ import (
 	"testing"
 )
 
-// 0123 gives every existing API key the default AI tick boxes (all but
+// 0125 gives every existing API key the default AI tick boxes (all but
 // Delete and Admin) and keeps the key as it was.
 func TestMCPKeyGroupsMigration(t *testing.T) {
 	dir := t.TempDir()
 	ctx := context.Background()
-	old, err := Open(dir, Options{MainMigrations: upTo(t, 122)})
+	old, err := Open(dir, Options{MainMigrations: upTo(t, 124)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,7 +31,7 @@ func TestMCPKeyGroupsMigration(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = old.Close()
-	s, err := Open(dir, Options{MainMigrations: upTo(t, 123)})
+	s, err := Open(dir, Options{MainMigrations: upTo(t, 125)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,6 +41,6 @@ func TestMCPKeyGroupsMigration(t *testing.T) {
 		t.Fatal(err)
 	}
 	if label != "Claude" || scope != `["mcp"]` || groups != `["see","add","control","settings","delete","admin"]` {
-		t.Fatalf("key after 0123: %q %q %q", label, scope, groups)
+		t.Fatalf("key after 0125: %q %q %q", label, scope, groups)
 	}
 }
