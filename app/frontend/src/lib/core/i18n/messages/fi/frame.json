@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs yrittää uudelleen itse",
 	"frame.feeds.clearNow": "Poista nyt",
 	"frame.feeds.cleared": "Poistettu Lataajasta",
-	"frame.feeds.clearStill": "Ei vielä poistettu"
+	"frame.feeds.clearStill": "Ei vielä poistettu",
+	"frame.error.pageGone": "Tätä sivua ei ole. Linkki voi olla vanha tai kirjoitettu väärin."
 }

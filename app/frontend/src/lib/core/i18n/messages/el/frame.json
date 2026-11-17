@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "Το HolyArrs ξαναδοκιμάζει μόνο του",
 	"frame.feeds.clearNow": "Καθαρισμός τώρα",
 	"frame.feeds.cleared": "Καθαρίστηκε από το Πρόγραμμα λήψης",
-	"frame.feeds.clearStill": "Δεν έχει καθαριστεί ακόμα"
+	"frame.feeds.clearStill": "Δεν έχει καθαριστεί ακόμα",
+	"frame.error.pageGone": "Αυτή η σελίδα δεν υπάρχει. Ο σύνδεσμος ίσως είναι παλιός ή λάθος."
 }

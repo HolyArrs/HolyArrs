@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs încearcă din nou singur",
 	"frame.feeds.clearNow": "Șterge acum",
 	"frame.feeds.cleared": "Șters din Programul de descărcare",
-	"frame.feeds.clearStill": "Încă neșters"
+	"frame.feeds.clearStill": "Încă neșters",
+	"frame.error.pageGone": "Această pagină nu există. Linkul poate fi vechi sau greșit scris."
 }

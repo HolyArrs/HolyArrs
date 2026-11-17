@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs riprova da solo",
 	"frame.feeds.clearNow": "Rimuovi ora",
 	"frame.feeds.cleared": "Rimosso dal downloader",
-	"frame.feeds.clearStill": "Non ancora rimosso"
+	"frame.feeds.clearStill": "Non ancora rimosso",
+	"frame.error.pageGone": "Questa pagina non esiste. Il link potrebbe essere vecchio o scritto male."
 }

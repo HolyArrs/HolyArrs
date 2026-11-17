@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs to skúsi znova sám",
 	"frame.feeds.clearNow": "Vyčistiť teraz",
 	"frame.feeds.cleared": "Vyčistené zo Sťahovača",
-	"frame.feeds.clearStill": "Zatiaľ nevyčistené"
+	"frame.feeds.clearStill": "Zatiaľ nevyčistené",
+	"frame.error.pageGone": "Táto stránka neexistuje. Odkaz môže byť starý alebo zle napísaný."
 }

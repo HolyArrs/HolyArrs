@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs خودش دوباره تلاش می‌کند",
 	"frame.feeds.clearNow": "همین حالا پاک شود",
 	"frame.feeds.cleared": "از دانلودر پاک شد",
-	"frame.feeds.clearStill": "هنوز پاک نشده"
+	"frame.feeds.clearStill": "هنوز پاک نشده",
+	"frame.error.pageGone": "این صفحه وجود ندارد. شاید پیوند قدیمی یا اشتباه باشد."
 }

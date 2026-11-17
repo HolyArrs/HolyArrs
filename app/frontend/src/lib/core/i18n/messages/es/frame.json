@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs lo vuelve a intentar solo",
 	"frame.feeds.clearNow": "Quitar ahora",
 	"frame.feeds.cleared": "Quitada del gestor de descargas",
-	"frame.feeds.clearStill": "Aún sin quitar"
+	"frame.feeds.clearStill": "Aún sin quitar",
+	"frame.error.pageGone": "Esta página no existe. Puede que el enlace sea antiguo o esté mal escrito."
 }

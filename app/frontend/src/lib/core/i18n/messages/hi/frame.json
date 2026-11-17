@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs खुद फिर कोशिश करता है",
 	"frame.feeds.clearNow": "अभी हटाएँ",
 	"frame.feeds.cleared": "डाउनलोडर से हटाया गया",
-	"frame.feeds.clearStill": "अभी हटाया नहीं गया"
+	"frame.feeds.clearStill": "अभी हटाया नहीं गया",
+	"frame.error.pageGone": "यह पेज मौजूद नहीं है। लिंक पुराना या गलत लिखा हो सकता है।"
 }

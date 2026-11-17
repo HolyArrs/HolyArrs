@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs mencuba semula sendiri",
 	"frame.feeds.clearNow": "Bersihkan sekarang",
 	"frame.feeds.cleared": "Dibersihkan daripada Pemuat turun",
-	"frame.feeds.clearStill": "Belum dibersihkan"
+	"frame.feeds.clearStill": "Belum dibersihkan",
+	"frame.error.pageGone": "Halaman ini tidak wujud. Pautan mungkin lama atau salah taip."
 }

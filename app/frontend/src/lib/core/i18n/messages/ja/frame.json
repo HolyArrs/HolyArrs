@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs が自動で再試行します",
 	"frame.feeds.clearNow": "今すぐ消去",
 	"frame.feeds.cleared": "ダウンローダーから消去しました",
-	"frame.feeds.clearStill": "まだ消去されていません"
+	"frame.feeds.clearStill": "まだ消去されていません",
+	"frame.error.pageGone": "このページはありません。リンクが古いか、入力が間違っている可能性があります。"
 }

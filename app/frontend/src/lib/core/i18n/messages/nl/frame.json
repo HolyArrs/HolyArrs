@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs probeert het zelf opnieuw",
 	"frame.feeds.clearNow": "Nu opruimen",
 	"frame.feeds.cleared": "Uit de downloader opgeruimd",
-	"frame.feeds.clearStill": "Nog niet opgeruimd"
+	"frame.feeds.clearStill": "Nog niet opgeruimd",
+	"frame.error.pageGone": "Deze pagina bestaat niet. De link is misschien oud of verkeerd getypt."
 }

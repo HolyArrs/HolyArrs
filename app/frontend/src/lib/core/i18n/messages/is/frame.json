@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs reynir aftur sjálft",
 	"frame.feeds.clearNow": "Hreinsa núna",
 	"frame.feeds.cleared": "Hreinsað úr Niðurhalaranum",
-	"frame.feeds.clearStill": "Ekki hreinsað enn"
+	"frame.feeds.clearStill": "Ekki hreinsað enn",
+	"frame.error.pageGone": "Þessi síða er ekki til. Tengillinn gæti verið gamall eða rangt skrifaður."
 }

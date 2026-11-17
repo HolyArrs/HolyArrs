@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs mēģina vēlreiz pats",
 	"frame.feeds.clearNow": "Notīrīt tagad",
 	"frame.feeds.cleared": "Notīrīts no Lejupielādētāja",
-	"frame.feeds.clearStill": "Vēl nav notīrīts"
+	"frame.feeds.clearStill": "Vēl nav notīrīts",
+	"frame.error.pageGone": "Šīs lapas nav. Saite var būt veca vai nepareizi ierakstīta."
 }
