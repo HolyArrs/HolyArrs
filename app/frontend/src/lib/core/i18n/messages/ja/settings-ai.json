@@ -83,5 +83,22 @@
 "settings.ai.makeAiKey": "AI キーを作成",
 "settings.ai.revokeName": "{name} を無効にしますか?",
 "settings.ai.revokeDesc": "もう一度連携するまで、このアプリはアクセスできなくなります",
-"settings.ai.keepIt": "そのままにする"
+"settings.ai.keepIt": "そのままにする",
+"settings.ai.groupsLegend": "AIにできること",
+"settings.ai.groupSee": "ライブラリとアクティビティを見る",
+"settings.ai.groupAdd": "追加とリクエスト",
+"settings.ai.groupControl": "ダウンロードの操作",
+"settings.ai.groupSettings": "設定の変更",
+"settings.ai.groupDelete": "削除",
+"settings.ai.groupAdmin": "管理（ユーザー、キー、バックアップ、更新）",
+"settings.ai.adminHint": "AIがユーザー、キー、バックアップを管理できるようになります。",
+"settings.ai.groupsFixed": "変更するには新しいキーを作成してください。",
+"settings.ai.shortSee": "閲覧",
+"settings.ai.shortAdd": "追加",
+"settings.ai.shortControl": "ダウンロード",
+"settings.ai.shortSettings": "設定",
+"settings.ai.shortDelete": "削除",
+"settings.ai.shortAdmin": "管理",
+"settings.ai.canDo": "可能: {list}",
+"settings.ai.groupNone": "なし"
 }

@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "AI 키 만들기",
 	"settings.ai.revokeName": "{name}을(를) 폐기할까요?",
 	"settings.ai.revokeDesc": "다시 연결하기 전까지 이 앱은 접근할 수 없습니다",
-	"settings.ai.keepIt": "유지"
+	"settings.ai.keepIt": "유지",
+	"settings.ai.groupsLegend": "AI가 할 수 있는 일",
+	"settings.ai.groupSee": "라이브러리와 활동 보기",
+	"settings.ai.groupAdd": "추가 및 요청",
+	"settings.ai.groupControl": "다운로드 제어",
+	"settings.ai.groupSettings": "설정 변경",
+	"settings.ai.groupDelete": "삭제",
+	"settings.ai.groupAdmin": "관리 (사용자, 키, 백업, 업데이트)",
+	"settings.ai.adminHint": "AI가 사용자, 키, 백업을 관리할 수 있게 합니다.",
+	"settings.ai.groupsFixed": "바꾸려면 새 키를 만드세요.",
+	"settings.ai.shortSee": "보기",
+	"settings.ai.shortAdd": "추가",
+	"settings.ai.shortControl": "다운로드",
+	"settings.ai.shortSettings": "설정",
+	"settings.ai.shortDelete": "삭제",
+	"settings.ai.shortAdmin": "관리",
+	"settings.ai.canDo": "가능: {list}",
+	"settings.ai.groupNone": "없음"
 }

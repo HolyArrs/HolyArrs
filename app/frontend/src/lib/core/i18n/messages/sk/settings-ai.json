@@ -83,5 +83,22 @@
 "settings.ai.makeAiKey": "Vytvoriť kľúč AI",
 "settings.ai.revokeName": "Odvolať {name}?",
 "settings.ai.revokeDesc": "Aplikácia stratí prístup, kým ju znova neprepojíte",
-"settings.ai.keepIt": "Ponechať"
+"settings.ai.keepIt": "Ponechať",
+"settings.ai.groupsLegend": "Čo smie AI robiť",
+"settings.ai.groupSee": "Zobraziť knižnicu a aktivitu",
+"settings.ai.groupAdd": "Pridávať a žiadať",
+"settings.ai.groupControl": "Ovládať sťahovanie",
+"settings.ai.groupSettings": "Meniť nastavenia",
+"settings.ai.groupDelete": "Mazať",
+"settings.ai.groupAdmin": "Správa (používatelia, kľúče, zálohy, aktualizácie)",
+"settings.ai.adminHint": "Dovolí AI spravovať používateľov, kľúče a zálohy.",
+"settings.ai.groupsFixed": "Ak to chcete zmeniť, vytvorte nový kľúč.",
+"settings.ai.shortSee": "Zobraziť",
+"settings.ai.shortAdd": "Pridať",
+"settings.ai.shortControl": "Sťahovanie",
+"settings.ai.shortSettings": "Nastavenia",
+"settings.ai.shortDelete": "Mazať",
+"settings.ai.shortAdmin": "Správa",
+"settings.ai.canDo": "Smie: {list}",
+"settings.ai.groupNone": "nič"
 }

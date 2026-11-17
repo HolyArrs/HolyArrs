@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Een AI-sleutel maken",
 	"settings.ai.revokeName": "{name} intrekken?",
 	"settings.ai.revokeDesc": "De app verliest toegang tot je hem opnieuw koppelt",
-	"settings.ai.keepIt": "Behouden"
+	"settings.ai.keepIt": "Behouden",
+	"settings.ai.groupsLegend": "Wat de AI mag doen",
+	"settings.ai.groupSee": "Bibliotheek en activiteit bekijken",
+	"settings.ai.groupAdd": "Toevoegen en aanvragen",
+	"settings.ai.groupControl": "Downloads besturen",
+	"settings.ai.groupSettings": "Instellingen wijzigen",
+	"settings.ai.groupDelete": "Verwijderen",
+	"settings.ai.groupAdmin": "Beheer (gebruikers, sleutels, back-ups, updates)",
+	"settings.ai.adminHint": "Laat de AI gebruikers, sleutels en back-ups beheren.",
+	"settings.ai.groupsFixed": "Maak een nieuwe sleutel om dit te wijzigen.",
+	"settings.ai.shortSee": "Bekijken",
+	"settings.ai.shortAdd": "Toevoegen",
+	"settings.ai.shortControl": "Downloads",
+	"settings.ai.shortSettings": "Instellingen",
+	"settings.ai.shortDelete": "Verwijderen",
+	"settings.ai.shortAdmin": "Beheer",
+	"settings.ai.canDo": "Mag: {list}",
+	"settings.ai.groupNone": "niets"
 }

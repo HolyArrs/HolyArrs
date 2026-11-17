@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Buat kunci AI",
 	"settings.ai.revokeName": "Cabut {name}?",
 	"settings.ai.revokeDesc": "Aplikasi kehilangan akses sampai kamu menautkannya lagi",
-	"settings.ai.keepIt": "Pertahankan"
+	"settings.ai.keepIt": "Pertahankan",
+	"settings.ai.groupsLegend": "Yang boleh dilakukan AI",
+	"settings.ai.groupSee": "Lihat pustaka dan aktivitas",
+	"settings.ai.groupAdd": "Tambah dan minta",
+	"settings.ai.groupControl": "Kendalikan unduhan",
+	"settings.ai.groupSettings": "Ubah pengaturan",
+	"settings.ai.groupDelete": "Hapus",
+	"settings.ai.groupAdmin": "Admin (pengguna, kunci, cadangan, pembaruan)",
+	"settings.ai.adminHint": "Mengizinkan AI mengelola pengguna, kunci, dan cadangan.",
+	"settings.ai.groupsFixed": "Untuk mengubahnya, buat kunci baru.",
+	"settings.ai.shortSee": "Lihat",
+	"settings.ai.shortAdd": "Tambah",
+	"settings.ai.shortControl": "Unduhan",
+	"settings.ai.shortSettings": "Pengaturan",
+	"settings.ai.shortDelete": "Hapus",
+	"settings.ai.shortAdmin": "Admin",
+	"settings.ai.canDo": "Boleh: {list}",
+	"settings.ai.groupNone": "tidak ada"
 }

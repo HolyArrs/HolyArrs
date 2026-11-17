@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Lav en AI-nøgle",
 	"settings.ai.revokeName": "Træk {name} tilbage?",
 	"settings.ai.revokeDesc": "Appen mister adgangen, til du forbinder den igen",
-	"settings.ai.keepIt": "Behold den"
+	"settings.ai.keepIt": "Behold den",
+	"settings.ai.groupsLegend": "Hvad AI'en må",
+	"settings.ai.groupSee": "Se bibliotek og aktivitet",
+	"settings.ai.groupAdd": "Tilføj og anmod",
+	"settings.ai.groupControl": "Styr downloads",
+	"settings.ai.groupSettings": "Skift indstillinger",
+	"settings.ai.groupDelete": "Slet",
+	"settings.ai.groupAdmin": "Admin (brugere, nøgler, sikkerhedskopier, opdateringer)",
+	"settings.ai.adminHint": "Lader AI'en styre brugere, nøgler og sikkerhedskopier.",
+	"settings.ai.groupsFixed": "Lav en ny nøgle for at ændre dem.",
+	"settings.ai.shortSee": "Se",
+	"settings.ai.shortAdd": "Tilføj",
+	"settings.ai.shortControl": "Downloads",
+	"settings.ai.shortSettings": "Indstillinger",
+	"settings.ai.shortDelete": "Slet",
+	"settings.ai.shortAdmin": "Admin",
+	"settings.ai.canDo": "Må: {list}",
+	"settings.ai.groupNone": "intet"
 }

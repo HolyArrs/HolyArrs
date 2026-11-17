@@ -126,6 +126,7 @@ When an app tries something its key doesn't allow, it gets a message naming the 
 
 - The card lists each AI key: name, last 4 characters, made and last used.
 - **Revoke** stops an app at once. **Make a key by hand** names a key for apps not in the list.
+- What an AI key may do: in **Settings > AI apps** (`/settings/ai`), card **Linked AI apps**, open **Make a key by hand**. Six tick boxes: **See library and activity**, **Add and request**, **Control downloads**, **Change settings**, **Delete** and **Admin (users, keys, backups, updates)**. The first four start ticked. A key made from an app's steps gets those four. The list shows each key's boxes in short form, such as *Can: See · Add · Downloads · Settings*. A key can't be changed after it is made; to change its boxes, make a new key and revoke the old one. Keys made before this came keep all six.
 - The owner sees every AI key; others who may change settings see their own. Managing keys needs that permission and a recent password sign-in.
 - A key stops working when its account is turned off.
 - While **Let AI apps connect** is off, a keyed app gets not found; an app without a key is still sent to sign in. The owner clicking **Allow** turns it on.

@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Izveidot MI atslēgu",
 	"settings.ai.revokeName": "Atsaukt {name}?",
 	"settings.ai.revokeDesc": "Lietotne zaudē piekļuvi, līdz to atkal sasaisti",
-	"settings.ai.keepIt": "Paturēt"
+	"settings.ai.keepIt": "Paturēt",
+	"settings.ai.groupsLegend": "Ko MI drīkst darīt",
+	"settings.ai.groupSee": "Skatīt bibliotēku un darbības",
+	"settings.ai.groupAdd": "Pievienot un pieprasīt",
+	"settings.ai.groupControl": "Pārvaldīt lejupielādes",
+	"settings.ai.groupSettings": "Mainīt iestatījumus",
+	"settings.ai.groupDelete": "Dzēst",
+	"settings.ai.groupAdmin": "Administrēšana (lietotāji, atslēgas, dublējumi, atjauninājumi)",
+	"settings.ai.adminHint": "Ļauj MI pārvaldīt lietotājus, atslēgas un dublējumus.",
+	"settings.ai.groupsFixed": "Lai tos mainītu, izveidojiet jaunu atslēgu.",
+	"settings.ai.shortSee": "Skatīt",
+	"settings.ai.shortAdd": "Pievienot",
+	"settings.ai.shortControl": "Lejupielādes",
+	"settings.ai.shortSettings": "Iestatījumi",
+	"settings.ai.shortDelete": "Dzēst",
+	"settings.ai.shortAdmin": "Admin",
+	"settings.ai.canDo": "Drīkst: {list}",
+	"settings.ai.groupNone": "neko"
 }

@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Lag en KI-nøkkel",
 	"settings.ai.revokeName": "Tilbakekalle {name}?",
 	"settings.ai.revokeDesc": "Appen mister tilgangen til du kobler den til igjen",
-	"settings.ai.keepIt": "Behold den"
+	"settings.ai.keepIt": "Behold den",
+	"settings.ai.groupsLegend": "Hva AI-en får gjøre",
+	"settings.ai.groupSee": "Se bibliotek og aktivitet",
+	"settings.ai.groupAdd": "Legge til og be om",
+	"settings.ai.groupControl": "Styre nedlastinger",
+	"settings.ai.groupSettings": "Endre innstillinger",
+	"settings.ai.groupDelete": "Slette",
+	"settings.ai.groupAdmin": "Admin (brukere, nøkler, sikkerhetskopier, oppdateringer)",
+	"settings.ai.adminHint": "Lar AI-en styre brukere, nøkler og sikkerhetskopier.",
+	"settings.ai.groupsFixed": "Lag en ny nøkkel for å endre disse.",
+	"settings.ai.shortSee": "Se",
+	"settings.ai.shortAdd": "Legge til",
+	"settings.ai.shortControl": "Nedlastinger",
+	"settings.ai.shortSettings": "Innstillinger",
+	"settings.ai.shortDelete": "Slette",
+	"settings.ai.shortAdmin": "Admin",
+	"settings.ai.canDo": "Får: {list}",
+	"settings.ai.groupNone": "ingenting"
 }

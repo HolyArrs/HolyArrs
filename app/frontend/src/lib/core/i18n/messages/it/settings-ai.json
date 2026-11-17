@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Crea una chiave IA",
 	"settings.ai.revokeName": "Revocare {name}?",
 	"settings.ai.revokeDesc": "L'app perde l'accesso finché non la colleghi di nuovo",
-	"settings.ai.keepIt": "Tienila"
+	"settings.ai.keepIt": "Tienila",
+	"settings.ai.groupsLegend": "Cosa può fare l'IA",
+	"settings.ai.groupSee": "Vedere libreria e attività",
+	"settings.ai.groupAdd": "Aggiungere e richiedere",
+	"settings.ai.groupControl": "Gestire i download",
+	"settings.ai.groupSettings": "Cambiare le impostazioni",
+	"settings.ai.groupDelete": "Eliminare",
+	"settings.ai.groupAdmin": "Amministrazione (utenti, chiavi, backup, aggiornamenti)",
+	"settings.ai.adminHint": "Permette all'IA di gestire utenti, chiavi e backup.",
+	"settings.ai.groupsFixed": "Per cambiarle, crea una nuova chiave.",
+	"settings.ai.shortSee": "Vedere",
+	"settings.ai.shortAdd": "Aggiungere",
+	"settings.ai.shortControl": "Download",
+	"settings.ai.shortSettings": "Impostazioni",
+	"settings.ai.shortDelete": "Eliminare",
+	"settings.ai.shortAdmin": "Admin",
+	"settings.ai.canDo": "Può: {list}",
+	"settings.ai.groupNone": "niente"
 }

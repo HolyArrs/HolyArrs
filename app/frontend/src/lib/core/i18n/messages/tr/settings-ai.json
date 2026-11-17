@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Yapay zekâ anahtarı oluştur",
 	"settings.ai.revokeName": "{name} iptal edilsin mi?",
 	"settings.ai.revokeDesc": "Uygulama, tekrar bağlayana kadar erişimini kaybeder",
-	"settings.ai.keepIt": "Kalsın"
+	"settings.ai.keepIt": "Kalsın",
+	"settings.ai.groupsLegend": "Yapay zekânın yapabilecekleri",
+	"settings.ai.groupSee": "Kitaplığı ve etkinliği görme",
+	"settings.ai.groupAdd": "Ekleme ve isteme",
+	"settings.ai.groupControl": "İndirmeleri yönetme",
+	"settings.ai.groupSettings": "Ayarları değiştirme",
+	"settings.ai.groupDelete": "Silme",
+	"settings.ai.groupAdmin": "Yönetim (kullanıcılar, anahtarlar, yedekler, güncellemeler)",
+	"settings.ai.adminHint": "Yapay zekânın kullanıcıları, anahtarları ve yedekleri yönetmesine izin verir.",
+	"settings.ai.groupsFixed": "Bunları değiştirmek için yeni bir anahtar oluşturun.",
+	"settings.ai.shortSee": "Görme",
+	"settings.ai.shortAdd": "Ekleme",
+	"settings.ai.shortControl": "İndirmeler",
+	"settings.ai.shortSettings": "Ayarlar",
+	"settings.ai.shortDelete": "Silme",
+	"settings.ai.shortAdmin": "Yönetim",
+	"settings.ai.canDo": "Yapabilir: {list}",
+	"settings.ai.groupNone": "hiçbir şey"
 }

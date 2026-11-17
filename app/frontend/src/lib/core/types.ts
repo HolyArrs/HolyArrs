@@ -689,6 +689,7 @@ export interface ApiKey {
 	created_at: string;
 	last_used_at?: string;
 	scopes?: string[];
+	mcp_groups?: string[];
 }
 
 export interface UpdateInfo {

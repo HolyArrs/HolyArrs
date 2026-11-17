@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "สร้างคีย์ AI",
 	"settings.ai.revokeName": "เพิกถอน {name} ไหม",
 	"settings.ai.revokeDesc": "แอปจะเสียสิทธิ์เข้าถึงจนกว่าคุณจะเชื่อมต่อใหม่",
-	"settings.ai.keepIt": "เก็บไว้"
+	"settings.ai.keepIt": "เก็บไว้",
+	"settings.ai.groupsLegend": "สิ่งที่ AI ทำได้",
+	"settings.ai.groupSee": "ดูคลังและกิจกรรม",
+	"settings.ai.groupAdd": "เพิ่มและขอ",
+	"settings.ai.groupControl": "ควบคุมการดาวน์โหลด",
+	"settings.ai.groupSettings": "เปลี่ยนการตั้งค่า",
+	"settings.ai.groupDelete": "ลบ",
+	"settings.ai.groupAdmin": "ผู้ดูแล (ผู้ใช้ คีย์ ข้อมูลสำรอง การอัปเดต)",
+	"settings.ai.adminHint": "ให้ AI จัดการผู้ใช้ คีย์ และข้อมูลสำรอง",
+	"settings.ai.groupsFixed": "หากต้องการเปลี่ยน ให้สร้างคีย์ใหม่",
+	"settings.ai.shortSee": "ดู",
+	"settings.ai.shortAdd": "เพิ่ม",
+	"settings.ai.shortControl": "ดาวน์โหลด",
+	"settings.ai.shortSettings": "การตั้งค่า",
+	"settings.ai.shortDelete": "ลบ",
+	"settings.ai.shortAdmin": "ผู้ดูแล",
+	"settings.ai.canDo": "ทำได้: {list}",
+	"settings.ai.groupNone": "ไม่มี"
 }

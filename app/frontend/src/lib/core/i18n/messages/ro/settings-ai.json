@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Creează o cheie AI",
 	"settings.ai.revokeName": "Revoci {name}?",
 	"settings.ai.revokeDesc": "Aplicația pierde accesul până o asociezi din nou",
-	"settings.ai.keepIt": "Păstreaz-o"
+	"settings.ai.keepIt": "Păstreaz-o",
+	"settings.ai.groupsLegend": "Ce poate face IA",
+	"settings.ai.groupSee": "Vezi biblioteca și activitatea",
+	"settings.ai.groupAdd": "Adăugare și cereri",
+	"settings.ai.groupControl": "Controlul descărcărilor",
+	"settings.ai.groupSettings": "Schimbarea setărilor",
+	"settings.ai.groupDelete": "Ștergere",
+	"settings.ai.groupAdmin": "Administrare (utilizatori, chei, copii de rezervă, actualizări)",
+	"settings.ai.adminHint": "Permite IA să gestioneze utilizatori, chei și copii de rezervă.",
+	"settings.ai.groupsFixed": "Pentru a le schimba, creează o cheie nouă.",
+	"settings.ai.shortSee": "Vizualizare",
+	"settings.ai.shortAdd": "Adăugare",
+	"settings.ai.shortControl": "Descărcări",
+	"settings.ai.shortSettings": "Setări",
+	"settings.ai.shortDelete": "Ștergere",
+	"settings.ai.shortAdmin": "Admin",
+	"settings.ai.canDo": "Poate: {list}",
+	"settings.ai.groupNone": "nimic"
 }

@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Створити ключ ШІ",
 	"settings.ai.revokeName": "Відкликати {name}?",
 	"settings.ai.revokeDesc": "Застосунок утратить доступ, доки ти не підключиш його знову",
-	"settings.ai.keepIt": "Залишити"
+	"settings.ai.keepIt": "Залишити",
+	"settings.ai.groupsLegend": "Що може ШІ",
+	"settings.ai.groupSee": "Перегляд бібліотеки й активності",
+	"settings.ai.groupAdd": "Додавання й запити",
+	"settings.ai.groupControl": "Керування завантаженнями",
+	"settings.ai.groupSettings": "Зміна налаштувань",
+	"settings.ai.groupDelete": "Видалення",
+	"settings.ai.groupAdmin": "Адміністрування (користувачі, ключі, резервні копії, оновлення)",
+	"settings.ai.adminHint": "Дозволяє ШІ керувати користувачами, ключами й резервними копіями.",
+	"settings.ai.groupsFixed": "Щоб змінити це, створіть новий ключ.",
+	"settings.ai.shortSee": "Перегляд",
+	"settings.ai.shortAdd": "Додавання",
+	"settings.ai.shortControl": "Завантаження",
+	"settings.ai.shortSettings": "Налаштування",
+	"settings.ai.shortDelete": "Видалення",
+	"settings.ai.shortAdmin": "Адмін",
+	"settings.ai.canDo": "Може: {list}",
+	"settings.ai.groupNone": "нічого"
 }

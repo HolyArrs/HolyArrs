@@ -8,7 +8,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
-	import { AI_SCOPE, CHECK_QUESTION, DEEPLINK_LABEL, GROUPS, GUIDES_URL, ROWS, agentPrompt, aiURL, appsFor, canSignIn, codeParts, deeplinkHref, isAIKey, onlyLocal, pickFor, testedLine, whereText, type AIApp, type Ctx, type Part, type Picked, type Row } from '#lib/ai/index.ts';
+	import { CHECK_QUESTION, DEEPLINK_LABEL, DEFAULT_MCP_GROUPS, MCP_GROUPS, aiKeyBody, GROUPS, GUIDES_URL, ROWS, agentPrompt, aiURL, appsFor, canSignIn, codeParts, deeplinkHref, isAIKey, onlyLocal, pickFor, testedLine, whereText, type AIApp, type Ctx, type McpGroup, type Part, type Picked, type Row } from '#lib/ai/index.ts';
 	import { onMount, tick } from 'svelte';
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
@@ -28,6 +28,8 @@
 	let keysNote = $state('');
 	let label = $state('');
 	let making = $state(false);
+	// What a key made by hand may do; a key made from an app's steps gets the defaults.
+	let groups = $state<string[]>([...DEFAULT_MCP_GROUPS]);
 	// A key made from an app's steps fills in only for that app (its steps and the agent prompt).
 	let fresh = $state<{ id: number; key: string; label: string; app?: string } | null>(null);
 	// The picked app sits in the address (?app=cursor), so a link opens on it. None by default.
@@ -138,14 +140,15 @@
 
 	async function makeKey(e: SubmitEvent) {
 		e.preventDefault();
-		if (label.trim()) await newKey(label.trim());
+		if (label.trim()) await newKey(label.trim(), undefined, groups);
 		label = '';
+		groups = [...DEFAULT_MCP_GROUPS];
 	}
 
-	async function newKey(name: string, forApp?: string) {
+	async function newKey(name: string, forApp?: string, ticked: readonly string[] = DEFAULT_MCP_GROUPS) {
 		making = true;
 		try {
-			const r = await api.post<{ id: number; key: string; label: string }>('/auth/keys', { label: name, scopes: [AI_SCOPE] });
+			const r = await api.post<{ id: number; key: string; label: string }>('/auth/keys', aiKeyBody(name, ticked));
 			fresh = { id: r.id, key: r.key, label: r.label, app: forApp };
 			keys = (await api.get<{ keys: ApiKey[] }>('/auth/keys')).keys;
 		} catch (err) {
@@ -227,6 +230,12 @@
 			toasts.push(t('settings.ai.copyFailed'), 'fail', { body: t('settings.ai.selectInstead') });
 		}
 	}
+
+	const groupName = (g: McpGroup) =>
+		({ see: t('settings.ai.groupSee'), add: t('settings.ai.groupAdd'), control: t('settings.ai.groupControl'), settings: t('settings.ai.groupSettings'), delete: t('settings.ai.groupDelete'), admin: t('settings.ai.groupAdmin') })[g];
+	const shortName = (g: McpGroup) =>
+		({ see: t('settings.ai.shortSee'), add: t('settings.ai.shortAdd'), control: t('settings.ai.shortControl'), settings: t('settings.ai.shortSettings'), delete: t('settings.ai.shortDelete'), admin: t('settings.ai.shortAdmin') })[g];
+	const groupShort = (k: ApiKey) => MCP_GROUPS.filter((g) => k.mcp_groups?.includes(g)).map(shortName).join(' · ');
 
 	const copyName = (code: string) => (code.includes('\n') ? t('settings.ai.copyConfig') : code === url ? t('settings.ai.copyAddress') : code.startsWith('Authorization:') ? t('settings.ai.copyHeader') : t('settings.ai.copyCommand'));
 </script>
@@ -470,6 +479,7 @@
 						<li>
 							<div class="grow">
 								<div class="name">{k.label} <span class="mono xs muted">{k.hint}</span></div>
+								{#if k.mcp_groups}<div class="xs muted" data-testid="ai-key-groups">{t('settings.ai.canDo', { list: groupShort(k) || t('settings.ai.groupNone') })}</div>{/if}
 								<div class="xs muted">{t('settings.ai.made', { date: date(k.created_at) })} · {k.last_used_at ? t('settings.ai.lastUsed', { ago: ago(k.last_used_at) }) : t('settings.ai.neverUsed')}</div>
 							</div>
 							<Button variant="destructive" type="button" onclick={() => askRevoke(k)}>{t('settings.ai.revoke')}</Button>
@@ -479,10 +489,26 @@
 			{/if}
 			<details class="more" style="margin-top: var(--s-4)">
 				<summary bind:this={byHand}>{t('settings.ai.byHand')}</summary>
-				<form class="row" onsubmit={makeKey}>
-					<label class="sr-only" for="ai-key-label">{t('settings.ai.keyName')}</label>
-					<input id="ai-key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder={t('settings.ai.keyExample')} maxlength="64" />
-					<Button icon="key" type="submit" disabled={making || !label.trim()} aria-busy={making}>{t('settings.ai.makeAiKey')}</Button>
+				<form onsubmit={makeKey}>
+					<fieldset class="groups" data-testid="ai-key-groups-form" aria-describedby="ai-groups-fixed">
+						<legend>{t('settings.ai.groupsLegend')}</legend>
+						{#each MCP_GROUPS as g (g)}
+							<label class="checkline">
+								<input type="checkbox" name="mcp_groups" value={g} bind:group={groups} />
+								{#if g === 'admin'}
+									<span>{groupName(g)}<br /><span class="hint">{t('settings.ai.adminHint')}</span></span>
+								{:else}
+									<span>{groupName(g)}</span>
+								{/if}
+							</label>
+						{/each}
+						<p class="hint" id="ai-groups-fixed">{t('settings.ai.groupsFixed')}</p>
+					</fieldset>
+					<div class="row">
+						<label class="sr-only" for="ai-key-label">{t('settings.ai.keyName')}</label>
+						<input id="ai-key-label" class="input grow" style="max-width: 320px" bind:value={label} placeholder={t('settings.ai.keyExample')} maxlength="64" />
+						<Button icon="key" type="submit" disabled={making || !label.trim()} aria-busy={making}>{t('settings.ai.makeAiKey')}</Button>
+					</div>
 				</form>
 			</details>
 		{/if}
@@ -692,6 +718,12 @@
 		color: var(--ha-red);
 		text-decoration: underline;
 		text-underline-offset: 3px;
+	}
+	.groups {
+		margin-bottom: var(--s-3);
+	}
+	.groups .hint {
+		margin: var(--s-1) 0 0;
 	}
 	.more summary {
 		cursor: pointer;

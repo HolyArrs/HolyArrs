@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Make an AI key",
 	"settings.ai.revokeName": "Revoke {name}?",
 	"settings.ai.revokeDesc": "The app loses access until you link it again",
-	"settings.ai.keepIt": "Keep it"
+	"settings.ai.keepIt": "Keep it",
+	"settings.ai.groupsLegend": "What the AI may do",
+	"settings.ai.groupSee": "See library and activity",
+	"settings.ai.groupAdd": "Add and request",
+	"settings.ai.groupControl": "Control downloads",
+	"settings.ai.groupSettings": "Change settings",
+	"settings.ai.groupDelete": "Delete",
+	"settings.ai.groupAdmin": "Admin (users, keys, backups, updates)",
+	"settings.ai.adminHint": "Lets the AI manage users, keys and backups.",
+	"settings.ai.groupsFixed": "To change these, make a new key.",
+	"settings.ai.shortSee": "See",
+	"settings.ai.shortAdd": "Add",
+	"settings.ai.shortControl": "Downloads",
+	"settings.ai.shortSettings": "Settings",
+	"settings.ai.shortDelete": "Delete",
+	"settings.ai.shortAdmin": "Admin",
+	"settings.ai.canDo": "Can: {list}",
+	"settings.ai.groupNone": "nothing"
 }

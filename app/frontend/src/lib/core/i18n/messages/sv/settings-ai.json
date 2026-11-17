@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Skapa en AI-nyckel",
 	"settings.ai.revokeName": "Återkalla {name}?",
 	"settings.ai.revokeDesc": "Appen förlorar åtkomsten tills du länkar den igen",
-	"settings.ai.keepIt": "Behåll den"
+	"settings.ai.keepIt": "Behåll den",
+	"settings.ai.groupsLegend": "Vad AI:n får göra",
+	"settings.ai.groupSee": "Se bibliotek och aktivitet",
+	"settings.ai.groupAdd": "Lägga till och begära",
+	"settings.ai.groupControl": "Styra nedladdningar",
+	"settings.ai.groupSettings": "Ändra inställningar",
+	"settings.ai.groupDelete": "Radera",
+	"settings.ai.groupAdmin": "Admin (användare, nycklar, säkerhetskopior, uppdateringar)",
+	"settings.ai.adminHint": "Låter AI:n hantera användare, nycklar och säkerhetskopior.",
+	"settings.ai.groupsFixed": "Skapa en ny nyckel för att ändra dessa.",
+	"settings.ai.shortSee": "Se",
+	"settings.ai.shortAdd": "Lägga till",
+	"settings.ai.shortControl": "Nedladdningar",
+	"settings.ai.shortSettings": "Inställningar",
+	"settings.ai.shortDelete": "Radera",
+	"settings.ai.shortAdmin": "Admin",
+	"settings.ai.canDo": "Får: {list}",
+	"settings.ai.groupNone": "inget"
 }

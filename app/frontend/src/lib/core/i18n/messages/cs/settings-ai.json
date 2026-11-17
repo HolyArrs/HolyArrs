@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Vytvořit klíč AI",
 	"settings.ai.revokeName": "Zrušit {name}?",
 	"settings.ai.revokeDesc": "Aplikace ztratí přístup, dokud ji znovu nepropojíte",
-	"settings.ai.keepIt": "Ponechat"
+	"settings.ai.keepIt": "Ponechat",
+	"settings.ai.groupsLegend": "Co smí AI dělat",
+	"settings.ai.groupSee": "Zobrazit knihovnu a aktivitu",
+	"settings.ai.groupAdd": "Přidávat a žádat",
+	"settings.ai.groupControl": "Ovládat stahování",
+	"settings.ai.groupSettings": "Měnit nastavení",
+	"settings.ai.groupDelete": "Mazat",
+	"settings.ai.groupAdmin": "Správa (uživatelé, klíče, zálohy, aktualizace)",
+	"settings.ai.adminHint": "Dovolí AI spravovat uživatele, klíče a zálohy.",
+	"settings.ai.groupsFixed": "Chcete-li to změnit, vytvořte nový klíč.",
+	"settings.ai.shortSee": "Zobrazit",
+	"settings.ai.shortAdd": "Přidat",
+	"settings.ai.shortControl": "Stahování",
+	"settings.ai.shortSettings": "Nastavení",
+	"settings.ai.shortDelete": "Mazat",
+	"settings.ai.shortAdmin": "Správa",
+	"settings.ai.canDo": "Smí: {list}",
+	"settings.ai.groupNone": "nic"
 }

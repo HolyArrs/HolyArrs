@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Tạo một khóa AI",
 	"settings.ai.revokeName": "Thu hồi {name}?",
 	"settings.ai.revokeDesc": "Ứng dụng mất quyền truy cập cho đến khi bạn liên kết lại",
-	"settings.ai.keepIt": "Giữ lại"
+	"settings.ai.keepIt": "Giữ lại",
+	"settings.ai.groupsLegend": "AI được làm gì",
+	"settings.ai.groupSee": "Xem thư viện và hoạt động",
+	"settings.ai.groupAdd": "Thêm và yêu cầu",
+	"settings.ai.groupControl": "Điều khiển tải xuống",
+	"settings.ai.groupSettings": "Thay đổi cài đặt",
+	"settings.ai.groupDelete": "Xóa",
+	"settings.ai.groupAdmin": "Quản trị (người dùng, khóa, bản sao lưu, cập nhật)",
+	"settings.ai.adminHint": "Cho phép AI quản lý người dùng, khóa và bản sao lưu.",
+	"settings.ai.groupsFixed": "Để thay đổi, hãy tạo khóa mới.",
+	"settings.ai.shortSee": "Xem",
+	"settings.ai.shortAdd": "Thêm",
+	"settings.ai.shortControl": "Tải xuống",
+	"settings.ai.shortSettings": "Cài đặt",
+	"settings.ai.shortDelete": "Xóa",
+	"settings.ai.shortAdmin": "Quản trị",
+	"settings.ai.canDo": "Được: {list}",
+	"settings.ai.groupNone": "không gì"
 }

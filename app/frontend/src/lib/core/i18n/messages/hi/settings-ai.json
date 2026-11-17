@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "AI कुंजी बनाएं",
 	"settings.ai.revokeName": "{name} रद्द करें?",
 	"settings.ai.revokeDesc": "ऐप की पहुंच तब तक बंद रहेगी जब तक आप उसे फिर नहीं जोड़ते",
-	"settings.ai.keepIt": "रहने दें"
+	"settings.ai.keepIt": "रहने दें",
+	"settings.ai.groupsLegend": "AI क्या कर सकता है",
+	"settings.ai.groupSee": "लाइब्रेरी और गतिविधि देखें",
+	"settings.ai.groupAdd": "जोड़ें और अनुरोध करें",
+	"settings.ai.groupControl": "डाउनलोड नियंत्रित करें",
+	"settings.ai.groupSettings": "सेटिंग्स बदलें",
+	"settings.ai.groupDelete": "हटाएँ",
+	"settings.ai.groupAdmin": "एडमिन (उपयोगकर्ता, कुंजियाँ, बैकअप, अपडेट)",
+	"settings.ai.adminHint": "AI को उपयोगकर्ता, कुंजियाँ और बैकअप संभालने देता है।",
+	"settings.ai.groupsFixed": "इन्हें बदलने के लिए नई कुंजी बनाएँ।",
+	"settings.ai.shortSee": "देखें",
+	"settings.ai.shortAdd": "जोड़ें",
+	"settings.ai.shortControl": "डाउनलोड",
+	"settings.ai.shortSettings": "सेटिंग्स",
+	"settings.ai.shortDelete": "हटाएँ",
+	"settings.ai.shortAdmin": "एडमिन",
+	"settings.ai.canDo": "कर सकता है: {list}",
+	"settings.ai.groupNone": "कुछ नहीं"
 }

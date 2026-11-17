@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Búa til gervigreindarlykil",
 	"settings.ai.revokeName": "Afturkalla {name}?",
 	"settings.ai.revokeDesc": "Forritið missir aðgang þar til þú tengir það aftur",
-	"settings.ai.keepIt": "Halda því"
+	"settings.ai.keepIt": "Halda því",
+	"settings.ai.groupsLegend": "Hvað gervigreindin má gera",
+	"settings.ai.groupSee": "Skoða safn og virkni",
+	"settings.ai.groupAdd": "Bæta við og biðja um",
+	"settings.ai.groupControl": "Stýra niðurhali",
+	"settings.ai.groupSettings": "Breyta stillingum",
+	"settings.ai.groupDelete": "Eyða",
+	"settings.ai.groupAdmin": "Stjórnun (notendur, lyklar, afrit, uppfærslur)",
+	"settings.ai.adminHint": "Leyfir gervigreindinni að stjórna notendum, lyklum og afritum.",
+	"settings.ai.groupsFixed": "Til að breyta þessu skaltu búa til nýjan lykil.",
+	"settings.ai.shortSee": "Skoða",
+	"settings.ai.shortAdd": "Bæta við",
+	"settings.ai.shortControl": "Niðurhal",
+	"settings.ai.shortSettings": "Stillingar",
+	"settings.ai.shortDelete": "Eyða",
+	"settings.ai.shortAdmin": "Stjórnun",
+	"settings.ai.canDo": "Má: {list}",
+	"settings.ai.groupNone": "ekkert"
 }

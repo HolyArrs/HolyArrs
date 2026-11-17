@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Utwórz klucz AI",
 	"settings.ai.revokeName": "Unieważnić: {name}?",
 	"settings.ai.revokeDesc": "Aplikacja straci dostęp, dopóki nie połączysz jej ponownie",
-	"settings.ai.keepIt": "Zostaw"
+	"settings.ai.keepIt": "Zostaw",
+	"settings.ai.groupsLegend": "Co może robić AI",
+	"settings.ai.groupSee": "Przeglądanie biblioteki i aktywności",
+	"settings.ai.groupAdd": "Dodawanie i prośby",
+	"settings.ai.groupControl": "Sterowanie pobieraniem",
+	"settings.ai.groupSettings": "Zmiana ustawień",
+	"settings.ai.groupDelete": "Usuwanie",
+	"settings.ai.groupAdmin": "Administracja (użytkownicy, klucze, kopie zapasowe, aktualizacje)",
+	"settings.ai.adminHint": "Pozwala AI zarządzać użytkownikami, kluczami i kopiami zapasowymi.",
+	"settings.ai.groupsFixed": "Aby to zmienić, utwórz nowy klucz.",
+	"settings.ai.shortSee": "Podgląd",
+	"settings.ai.shortAdd": "Dodawanie",
+	"settings.ai.shortControl": "Pobieranie",
+	"settings.ai.shortSettings": "Ustawienia",
+	"settings.ai.shortDelete": "Usuwanie",
+	"settings.ai.shortAdmin": "Admin",
+	"settings.ai.canDo": "Może: {list}",
+	"settings.ai.groupNone": "nic"
 }

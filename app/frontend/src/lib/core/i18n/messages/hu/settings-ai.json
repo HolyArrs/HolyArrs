@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "AI-kulcs létrehozása",
 	"settings.ai.revokeName": "Visszavonja ezt: {name}?",
 	"settings.ai.revokeDesc": "Az alkalmazás elveszíti a hozzáférést, amíg újra össze nem kapcsolja",
-	"settings.ai.keepIt": "Megtartom"
+	"settings.ai.keepIt": "Megtartom",
+	"settings.ai.groupsLegend": "Mit tehet az MI",
+	"settings.ai.groupSee": "Könyvtár és tevékenység megtekintése",
+	"settings.ai.groupAdd": "Hozzáadás és kérés",
+	"settings.ai.groupControl": "Letöltések kezelése",
+	"settings.ai.groupSettings": "Beállítások módosítása",
+	"settings.ai.groupDelete": "Törlés",
+	"settings.ai.groupAdmin": "Adminisztráció (felhasználók, kulcsok, mentések, frissítések)",
+	"settings.ai.adminHint": "Lehetővé teszi, hogy az MI kezelje a felhasználókat, kulcsokat és mentéseket.",
+	"settings.ai.groupsFixed": "A módosításhoz hozz létre új kulcsot.",
+	"settings.ai.shortSee": "Megtekintés",
+	"settings.ai.shortAdd": "Hozzáadás",
+	"settings.ai.shortControl": "Letöltések",
+	"settings.ai.shortSettings": "Beállítások",
+	"settings.ai.shortDelete": "Törlés",
+	"settings.ai.shortAdmin": "Admin",
+	"settings.ai.canDo": "Tehet: {list}",
+	"settings.ai.groupNone": "semmi"
 }

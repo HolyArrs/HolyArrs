@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Направи AI кључ",
 	"settings.ai.revokeName": "Опозвати {name}?",
 	"settings.ai.revokeDesc": "Апликација губи приступ док је поново не повежеш",
-	"settings.ai.keepIt": "Задржи га"
+	"settings.ai.keepIt": "Задржи га",
+	"settings.ai.groupsLegend": "Šta VI sme da radi",
+	"settings.ai.groupSee": "Pregled biblioteke i aktivnosti",
+	"settings.ai.groupAdd": "Dodavanje i zahtevi",
+	"settings.ai.groupControl": "Upravljanje preuzimanjima",
+	"settings.ai.groupSettings": "Menjanje podešavanja",
+	"settings.ai.groupDelete": "Brisanje",
+	"settings.ai.groupAdmin": "Administracija (korisnici, ključevi, rezervne kopije, ažuriranja)",
+	"settings.ai.adminHint": "Dozvoljava VI da upravlja korisnicima, ključevima i rezervnim kopijama.",
+	"settings.ai.groupsFixed": "Da biste ovo promenili, napravite novi ključ.",
+	"settings.ai.shortSee": "Pregled",
+	"settings.ai.shortAdd": "Dodavanje",
+	"settings.ai.shortControl": "Preuzimanja",
+	"settings.ai.shortSettings": "Podešavanja",
+	"settings.ai.shortDelete": "Brisanje",
+	"settings.ai.shortAdmin": "Admin",
+	"settings.ai.canDo": "Sme: {list}",
+	"settings.ai.groupNone": "ništa"
 }

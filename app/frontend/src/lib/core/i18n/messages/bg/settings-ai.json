@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Създаване на AI ключ",
 	"settings.ai.revokeName": "Да се отмени ли {name}?",
 	"settings.ai.revokeDesc": "Приложението губи достъп, докато не го свържете отново",
-	"settings.ai.keepIt": "Запази го"
+	"settings.ai.keepIt": "Запази го",
+	"settings.ai.groupsLegend": "Какво може ИИ",
+	"settings.ai.groupSee": "Преглед на библиотеката и дейността",
+	"settings.ai.groupAdd": "Добавяне и заявки",
+	"settings.ai.groupControl": "Управление на изтеглянията",
+	"settings.ai.groupSettings": "Промяна на настройките",
+	"settings.ai.groupDelete": "Изтриване",
+	"settings.ai.groupAdmin": "Администрация (потребители, ключове, архиви, обновления)",
+	"settings.ai.adminHint": "Позволява на ИИ да управлява потребители, ключове и архиви.",
+	"settings.ai.groupsFixed": "За да ги промените, създайте нов ключ.",
+	"settings.ai.shortSee": "Преглед",
+	"settings.ai.shortAdd": "Добавяне",
+	"settings.ai.shortControl": "Изтегляния",
+	"settings.ai.shortSettings": "Настройки",
+	"settings.ai.shortDelete": "Изтриване",
+	"settings.ai.shortAdmin": "Админ",
+	"settings.ai.canDo": "Може: {list}",
+	"settings.ai.groupNone": "нищо"
 }

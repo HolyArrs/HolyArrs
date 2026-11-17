@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Gumawa ng AI key",
 	"settings.ai.revokeName": "I-revoke ang {name}?",
 	"settings.ai.revokeDesc": "Mawawalan ng access ang app hangga't hindi mo ito nilink ulit",
-	"settings.ai.keepIt": "Panatilihin"
+	"settings.ai.keepIt": "Panatilihin",
+	"settings.ai.groupsLegend": "Ano ang puwedeng gawin ng AI",
+	"settings.ai.groupSee": "Tingnan ang library at aktibidad",
+	"settings.ai.groupAdd": "Magdagdag at mag-request",
+	"settings.ai.groupControl": "Kontrolin ang mga download",
+	"settings.ai.groupSettings": "Baguhin ang mga setting",
+	"settings.ai.groupDelete": "Magbura",
+	"settings.ai.groupAdmin": "Admin (mga user, key, backup, update)",
+	"settings.ai.adminHint": "Hinahayaan ang AI na mag-manage ng mga user, key at backup.",
+	"settings.ai.groupsFixed": "Para baguhin ang mga ito, gumawa ng bagong key.",
+	"settings.ai.shortSee": "Tingnan",
+	"settings.ai.shortAdd": "Magdagdag",
+	"settings.ai.shortControl": "Mga download",
+	"settings.ai.shortSettings": "Mga setting",
+	"settings.ai.shortDelete": "Magbura",
+	"settings.ai.shortAdmin": "Admin",
+	"settings.ai.canDo": "Puwede: {list}",
+	"settings.ai.groupNone": "wala"
 }

@@ -180,3 +180,50 @@ for (const width of [1280, 375]) {
 		await page.context().close();
 	});
 }
+
+// Settings > AI apps: an AI key's tick boxes (mocked keys API). The first four start ticked,
+// mcp_groups goes with the new key, and the list shows each key's boxes in short form.
+for (const width of [1280, 375]) {
+	test(`ai key: tick boxes and list at ${width}`, async ({ browser }) => {
+		const page = await (await browser.newContext({ viewport: { width, height: 844 } })).newPage();
+		await signIn(page, owner());
+		const now = new Date().toISOString();
+		const keys = [{ id: 1, label: 'Old app', hint: 'ab12', created_at: now, scopes: ['mcp'], mcp_groups: ['see', 'add', 'control', 'settings', 'delete', 'admin'] }];
+		const sent: Record<string, unknown>[] = [];
+		// AI apps are held back in this build; let the page show.
+		await page.route('**/api/v1/auth/me', async (route) => {
+			const me = await (await route.fetch()).json();
+			return route.fulfill({ json: { ...me, held: (me.held ?? []).filter((f: string) => f !== 'ai_apps') } });
+		});
+		await page.route('**/api/v1/settings/ai', (route) => route.fulfill({ json: { enabled: true } }));
+		await page.route('**/api/v1/auth/keys', async (route) => {
+			const r = route.request();
+			if (r.method() === 'GET') return route.fulfill({ json: { keys } });
+			const body = r.postDataJSON();
+			sent.push(body);
+			keys.push({ id: 2, label: body.label, hint: 'cd34', created_at: now, scopes: body.scopes, mcp_groups: body.mcp_groups });
+			return route.fulfill({ json: { id: 2, key: 'hak_e2e_fake_key_value', label: body.label } });
+		});
+		await page.goto('/settings/ai');
+		await expect(page.getByTestId('ai-key-groups')).toHaveText(['Can: See · Add · Downloads · Settings · Delete · Admin']);
+		await page.getByText('Make a key by hand').click();
+		const form = page.getByTestId('ai-key-groups-form');
+		for (const name of ['See library and activity', 'Add and request', 'Control downloads', 'Change settings']) await expect(form.getByRole('checkbox', { name })).toBeChecked();
+		await expect(form.getByRole('checkbox', { name: 'Delete' })).not.toBeChecked();
+		await expect(form.getByRole('checkbox', { name: /^Admin/ })).not.toBeChecked();
+		await expect(form).toContainText('Lets the AI manage users, keys and backups.');
+		await expect(form).toContainText('To change these, make a new key.');
+		await form.getByRole('checkbox', { name: 'Change settings' }).uncheck();
+		await form.getByRole('checkbox', { name: 'Delete' }).check();
+		await noSidewaysScroll(page);
+		await page.screenshot({ path: test.info().outputPath(`ai-key-groups-${width}.png`), fullPage: true });
+		await page.getByLabel('Key name').fill('Claude Desktop');
+		await page.getByRole('button', { name: 'Make an AI key' }).click();
+		await expect.poll(() => sent).toEqual([{ label: 'Claude Desktop', scopes: ['mcp'], mcp_groups: ['see', 'add', 'control', 'delete'] }]);
+		await expect(page.getByTestId('ai-key-groups')).toHaveText(['Can: See · Add · Downloads · Settings · Delete · Admin', 'Can: See · Add · Downloads · Delete']);
+		// The boxes go back to the defaults for the next key.
+		await expect(form.getByRole('checkbox', { name: 'Change settings' })).toBeChecked();
+		await expect(form.getByRole('checkbox', { name: 'Delete' })).not.toBeChecked();
+		await page.context().close();
+	});
+}

@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "建立 AI 金鑰",
 	"settings.ai.revokeName": "撤銷 {name}？",
 	"settings.ai.revokeDesc": "該應用程式將失去存取權限，直到你重新關聯",
-	"settings.ai.keepIt": "保留"
+	"settings.ai.keepIt": "保留",
+	"settings.ai.groupsLegend": "AI 可以做什麼",
+	"settings.ai.groupSee": "查看媒體庫和動態",
+	"settings.ai.groupAdd": "新增和請求",
+	"settings.ai.groupControl": "控制下載",
+	"settings.ai.groupSettings": "變更設定",
+	"settings.ai.groupDelete": "刪除",
+	"settings.ai.groupAdmin": "管理（使用者、金鑰、備份、更新）",
+	"settings.ai.adminHint": "允許 AI 管理使用者、金鑰和備份。",
+	"settings.ai.groupsFixed": "要變更這些，請建立新的金鑰。",
+	"settings.ai.shortSee": "查看",
+	"settings.ai.shortAdd": "新增",
+	"settings.ai.shortControl": "下載",
+	"settings.ai.shortSettings": "設定",
+	"settings.ai.shortDelete": "刪除",
+	"settings.ai.shortAdmin": "管理",
+	"settings.ai.canDo": "可以：{list}",
+	"settings.ai.groupNone": "無"
 }

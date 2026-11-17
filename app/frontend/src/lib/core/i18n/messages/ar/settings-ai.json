@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "أنشئ مفتاح ذكاء اصطناعي",
 	"settings.ai.revokeName": "إلغاء {name}؟",
 	"settings.ai.revokeDesc": "يفقد التطبيق الوصول حتى تربطه من جديد",
-	"settings.ai.keepIt": "أبقِه"
+	"settings.ai.keepIt": "أبقِه",
+	"settings.ai.groupsLegend": "ما يمكن للذكاء الاصطناعي فعله",
+	"settings.ai.groupSee": "عرض المكتبة والنشاط",
+	"settings.ai.groupAdd": "الإضافة والطلب",
+	"settings.ai.groupControl": "التحكم في التنزيلات",
+	"settings.ai.groupSettings": "تغيير الإعدادات",
+	"settings.ai.groupDelete": "الحذف",
+	"settings.ai.groupAdmin": "الإدارة (المستخدمون، المفاتيح، النسخ الاحتياطية، التحديثات)",
+	"settings.ai.adminHint": "يتيح للذكاء الاصطناعي إدارة المستخدمين والمفاتيح والنسخ الاحتياطية.",
+	"settings.ai.groupsFixed": "لتغيير هذه، أنشئ مفتاحًا جديدًا.",
+	"settings.ai.shortSee": "عرض",
+	"settings.ai.shortAdd": "إضافة",
+	"settings.ai.shortControl": "التنزيلات",
+	"settings.ai.shortSettings": "الإعدادات",
+	"settings.ai.shortDelete": "حذف",
+	"settings.ai.shortAdmin": "إدارة",
+	"settings.ai.canDo": "يمكنه: {list}",
+	"settings.ai.groupNone": "لا شيء"
 }

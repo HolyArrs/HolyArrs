@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Luo tekoälyavain",
 	"settings.ai.revokeName": "Perutaanko {name}?",
 	"settings.ai.revokeDesc": "Sovellus menettää pääsyn, kunnes yhdistät sen uudelleen",
-	"settings.ai.keepIt": "Säilytä se"
+	"settings.ai.keepIt": "Säilytä se",
+	"settings.ai.groupsLegend": "Mitä tekoäly saa tehdä",
+	"settings.ai.groupSee": "Nähdä kirjaston ja toiminnan",
+	"settings.ai.groupAdd": "Lisätä ja pyytää",
+	"settings.ai.groupControl": "Hallita latauksia",
+	"settings.ai.groupSettings": "Muuttaa asetuksia",
+	"settings.ai.groupDelete": "Poistaa",
+	"settings.ai.groupAdmin": "Ylläpito (käyttäjät, avaimet, varmuuskopiot, päivitykset)",
+	"settings.ai.adminHint": "Antaa tekoälyn hallita käyttäjiä, avaimia ja varmuuskopioita.",
+	"settings.ai.groupsFixed": "Muuta näitä tekemällä uusi avain.",
+	"settings.ai.shortSee": "Näkee",
+	"settings.ai.shortAdd": "Lisää",
+	"settings.ai.shortControl": "Lataukset",
+	"settings.ai.shortSettings": "Asetukset",
+	"settings.ai.shortDelete": "Poistaa",
+	"settings.ai.shortAdmin": "Ylläpito",
+	"settings.ai.canDo": "Saa: {list}",
+	"settings.ai.groupNone": "ei mitään"
 }

@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Δημιουργία κλειδιού AI",
 	"settings.ai.revokeName": "Να ανακληθεί το {name};",
 	"settings.ai.revokeDesc": "Η εφαρμογή χάνει την πρόσβαση μέχρι να την συνδέσετε ξανά",
-	"settings.ai.keepIt": "Να μείνει"
+	"settings.ai.keepIt": "Να μείνει",
+	"settings.ai.groupsLegend": "Τι μπορεί να κάνει η ΤΝ",
+	"settings.ai.groupSee": "Προβολή βιβλιοθήκης και δραστηριότητας",
+	"settings.ai.groupAdd": "Προσθήκη και αιτήματα",
+	"settings.ai.groupControl": "Έλεγχος λήψεων",
+	"settings.ai.groupSettings": "Αλλαγή ρυθμίσεων",
+	"settings.ai.groupDelete": "Διαγραφή",
+	"settings.ai.groupAdmin": "Διαχείριση (χρήστες, κλειδιά, αντίγραφα, ενημερώσεις)",
+	"settings.ai.adminHint": "Επιτρέπει στην ΤΝ να διαχειρίζεται χρήστες, κλειδιά και αντίγραφα ασφαλείας.",
+	"settings.ai.groupsFixed": "Για να τα αλλάξετε, φτιάξτε νέο κλειδί.",
+	"settings.ai.shortSee": "Προβολή",
+	"settings.ai.shortAdd": "Προσθήκη",
+	"settings.ai.shortControl": "Λήψεις",
+	"settings.ai.shortSettings": "Ρυθμίσεις",
+	"settings.ai.shortDelete": "Διαγραφή",
+	"settings.ai.shortAdmin": "Διαχείριση",
+	"settings.ai.canDo": "Μπορεί: {list}",
+	"settings.ai.groupNone": "τίποτα"
 }

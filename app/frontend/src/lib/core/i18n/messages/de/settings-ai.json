@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "KI-Schlüssel erstellen",
 	"settings.ai.revokeName": "{name} widerrufen?",
 	"settings.ai.revokeDesc": "Die App verliert den Zugriff, bis du sie erneut verknüpfst",
-	"settings.ai.keepIt": "Behalten"
+	"settings.ai.keepIt": "Behalten",
+	"settings.ai.groupsLegend": "Was die KI darf",
+	"settings.ai.groupSee": "Mediathek und Aktivität ansehen",
+	"settings.ai.groupAdd": "Hinzufügen und anfragen",
+	"settings.ai.groupControl": "Downloads steuern",
+	"settings.ai.groupSettings": "Einstellungen ändern",
+	"settings.ai.groupDelete": "Löschen",
+	"settings.ai.groupAdmin": "Verwaltung (Benutzer, Schlüssel, Sicherungen, Updates)",
+	"settings.ai.adminHint": "Lässt die KI Benutzer, Schlüssel und Sicherungen verwalten.",
+	"settings.ai.groupsFixed": "Zum Ändern einen neuen Schlüssel erstellen.",
+	"settings.ai.shortSee": "Ansehen",
+	"settings.ai.shortAdd": "Hinzufügen",
+	"settings.ai.shortControl": "Downloads",
+	"settings.ai.shortSettings": "Einstellungen",
+	"settings.ai.shortDelete": "Löschen",
+	"settings.ai.shortAdmin": "Verwaltung",
+	"settings.ai.canDo": "Darf: {list}",
+	"settings.ai.groupNone": "nichts"
 }

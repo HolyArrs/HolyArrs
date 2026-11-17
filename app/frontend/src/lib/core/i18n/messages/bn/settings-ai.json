@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "একটি AI কী বানান",
 	"settings.ai.revokeName": "{name} বাতিল করবেন?",
 	"settings.ai.revokeDesc": "আবার লিংক না করা পর্যন্ত অ্যাপটি অ্যাক্সেস হারায়",
-	"settings.ai.keepIt": "রেখে দিন"
+	"settings.ai.keepIt": "রেখে দিন",
+	"settings.ai.groupsLegend": "এআই কী করতে পারে",
+	"settings.ai.groupSee": "লাইব্রেরি ও কার্যকলাপ দেখা",
+	"settings.ai.groupAdd": "যোগ ও অনুরোধ",
+	"settings.ai.groupControl": "ডাউনলোড নিয়ন্ত্রণ",
+	"settings.ai.groupSettings": "সেটিংস বদলানো",
+	"settings.ai.groupDelete": "মুছে ফেলা",
+	"settings.ai.groupAdmin": "অ্যাডমিন (ব্যবহারকারী, কী, ব্যাকআপ, আপডেট)",
+	"settings.ai.adminHint": "এআই-কে ব্যবহারকারী, কী ও ব্যাকআপ পরিচালনা করতে দেয়।",
+	"settings.ai.groupsFixed": "এগুলো বদলাতে নতুন কী বানান।",
+	"settings.ai.shortSee": "দেখা",
+	"settings.ai.shortAdd": "যোগ",
+	"settings.ai.shortControl": "ডাউনলোড",
+	"settings.ai.shortSettings": "সেটিংস",
+	"settings.ai.shortDelete": "মোছা",
+	"settings.ai.shortAdmin": "অ্যাডমিন",
+	"settings.ai.canDo": "পারে: {list}",
+	"settings.ai.groupNone": "কিছুই না"
 }

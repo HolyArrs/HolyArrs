@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "יצירת מפתח AI",
 	"settings.ai.revokeName": "לבטל את {name}?",
 	"settings.ai.revokeDesc": "האפליקציה מאבדת גישה עד שתקשר אותה שוב",
-	"settings.ai.keepIt": "להשאיר"
+	"settings.ai.keepIt": "להשאיר",
+	"settings.ai.groupsLegend": "מה הבינה המלאכותית רשאית לעשות",
+	"settings.ai.groupSee": "צפייה בספרייה ובפעילות",
+	"settings.ai.groupAdd": "הוספה ובקשות",
+	"settings.ai.groupControl": "שליטה בהורדות",
+	"settings.ai.groupSettings": "שינוי הגדרות",
+	"settings.ai.groupDelete": "מחיקה",
+	"settings.ai.groupAdmin": "ניהול (משתמשים, מפתחות, גיבויים, עדכונים)",
+	"settings.ai.adminHint": "מאפשר לבינה המלאכותית לנהל משתמשים, מפתחות וגיבויים.",
+	"settings.ai.groupsFixed": "כדי לשנות אותם, צרו מפתח חדש.",
+	"settings.ai.shortSee": "צפייה",
+	"settings.ai.shortAdd": "הוספה",
+	"settings.ai.shortControl": "הורדות",
+	"settings.ai.shortSettings": "הגדרות",
+	"settings.ai.shortDelete": "מחיקה",
+	"settings.ai.shortAdmin": "ניהול",
+	"settings.ai.canDo": "רשאית: {list}",
+	"settings.ai.groupNone": "כלום"
 }

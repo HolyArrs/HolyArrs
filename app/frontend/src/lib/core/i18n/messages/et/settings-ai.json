@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Loo tehisintellekti võti",
 	"settings.ai.revokeName": "Kas tühistada {name}?",
 	"settings.ai.revokeDesc": "Rakendus kaotab ligipääsu, kuni selle uuesti seod",
-	"settings.ai.keepIt": "Jäta alles"
+	"settings.ai.keepIt": "Jäta alles",
+	"settings.ai.groupsLegend": "Mida AI tohib teha",
+	"settings.ai.groupSee": "Vaadata kogu ja tegevust",
+	"settings.ai.groupAdd": "Lisada ja soovida",
+	"settings.ai.groupControl": "Juhtida allalaadimisi",
+	"settings.ai.groupSettings": "Muuta seadeid",
+	"settings.ai.groupDelete": "Kustutada",
+	"settings.ai.groupAdmin": "Haldus (kasutajad, võtmed, varukoopiad, uuendused)",
+	"settings.ai.adminHint": "Lubab AI-l hallata kasutajaid, võtmeid ja varukoopiaid.",
+	"settings.ai.groupsFixed": "Muutmiseks loo uus võti.",
+	"settings.ai.shortSee": "Vaatamine",
+	"settings.ai.shortAdd": "Lisamine",
+	"settings.ai.shortControl": "Allalaadimised",
+	"settings.ai.shortSettings": "Seaded",
+	"settings.ai.shortDelete": "Kustutamine",
+	"settings.ai.shortAdmin": "Haldus",
+	"settings.ai.canDo": "Tohib: {list}",
+	"settings.ai.groupNone": "mitte midagi"
 }

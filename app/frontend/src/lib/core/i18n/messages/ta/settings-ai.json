@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "AI விசையை உருவாக்கு",
 	"settings.ai.revokeName": "{name} ஐ ரத்துசெய்யவா?",
 	"settings.ai.revokeDesc": "நீங்கள் மீண்டும் இணைக்கும் வரை அந்த ஆப் அணுகலை இழக்கும்",
-	"settings.ai.keepIt": "வைத்துக்கொள்"
+	"settings.ai.keepIt": "வைத்துக்கொள்",
+	"settings.ai.groupsLegend": "AI என்ன செய்யலாம்",
+	"settings.ai.groupSee": "நூலகம் மற்றும் செயல்பாட்டைப் பார்க்க",
+	"settings.ai.groupAdd": "சேர்க்க மற்றும் கோர",
+	"settings.ai.groupControl": "பதிவிறக்கங்களைக் கட்டுப்படுத்த",
+	"settings.ai.groupSettings": "அமைப்புகளை மாற்ற",
+	"settings.ai.groupDelete": "நீக்க",
+	"settings.ai.groupAdmin": "நிர்வாகம் (பயனர்கள், விசைகள், காப்புப்பிரதிகள், புதுப்பிப்புகள்)",
+	"settings.ai.adminHint": "பயனர்கள், விசைகள் மற்றும் காப்புப்பிரதிகளை AI நிர்வகிக்க அனுமதிக்கும்.",
+	"settings.ai.groupsFixed": "இவற்றை மாற்ற, புதிய விசையை உருவாக்குங்கள்.",
+	"settings.ai.shortSee": "பார்க்க",
+	"settings.ai.shortAdd": "சேர்க்க",
+	"settings.ai.shortControl": "பதிவிறக்கங்கள்",
+	"settings.ai.shortSettings": "அமைப்புகள்",
+	"settings.ai.shortDelete": "நீக்க",
+	"settings.ai.shortAdmin": "நிர்வாகம்",
+	"settings.ai.canDo": "செய்யலாம்: {list}",
+	"settings.ai.groupNone": "எதுவும் இல்லை"
 }

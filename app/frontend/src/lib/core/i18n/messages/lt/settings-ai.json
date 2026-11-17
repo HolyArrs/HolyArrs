@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Sukurti DI raktą",
 	"settings.ai.revokeName": "Atšaukti {name}?",
 	"settings.ai.revokeDesc": "Programa praranda prieigą, kol susiesite ją iš naujo",
-	"settings.ai.keepIt": "Palikti"
+	"settings.ai.keepIt": "Palikti",
+	"settings.ai.groupsLegend": "Ką DI gali daryti",
+	"settings.ai.groupSee": "Matyti biblioteką ir veiklą",
+	"settings.ai.groupAdd": "Pridėti ir prašyti",
+	"settings.ai.groupControl": "Valdyti atsisiuntimus",
+	"settings.ai.groupSettings": "Keisti nustatymus",
+	"settings.ai.groupDelete": "Trinti",
+	"settings.ai.groupAdmin": "Administravimas (naudotojai, raktai, atsarginės kopijos, naujinimai)",
+	"settings.ai.adminHint": "Leidžia DI tvarkyti naudotojus, raktus ir atsargines kopijas.",
+	"settings.ai.groupsFixed": "Norėdami tai pakeisti, sukurkite naują raktą.",
+	"settings.ai.shortSee": "Matyti",
+	"settings.ai.shortAdd": "Pridėti",
+	"settings.ai.shortControl": "Atsisiuntimai",
+	"settings.ai.shortSettings": "Nustatymai",
+	"settings.ai.shortDelete": "Trinti",
+	"settings.ai.shortAdmin": "Admin",
+	"settings.ai.canDo": "Gali: {list}",
+	"settings.ai.groupNone": "nieko"
 }

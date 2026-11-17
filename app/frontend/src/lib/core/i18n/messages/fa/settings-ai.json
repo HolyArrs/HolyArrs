@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "ساخت کلید هوش مصنوعی",
 	"settings.ai.revokeName": "{name} باطل شود؟",
 	"settings.ai.revokeDesc": "برنامه تا وقتی دوباره وصلش نکنی دسترسی‌اش را از دست می‌دهد",
-	"settings.ai.keepIt": "نگهش دار"
+	"settings.ai.keepIt": "نگهش دار",
+	"settings.ai.groupsLegend": "هوش مصنوعی چه کارهایی می‌تواند بکند",
+	"settings.ai.groupSee": "دیدن کتابخانه و فعالیت",
+	"settings.ai.groupAdd": "افزودن و درخواست",
+	"settings.ai.groupControl": "کنترل دانلودها",
+	"settings.ai.groupSettings": "تغییر تنظیمات",
+	"settings.ai.groupDelete": "حذف",
+	"settings.ai.groupAdmin": "مدیریت (کاربران، کلیدها، پشتیبان‌ها، به‌روزرسانی‌ها)",
+	"settings.ai.adminHint": "به هوش مصنوعی اجازه می‌دهد کاربران، کلیدها و پشتیبان‌ها را مدیریت کند.",
+	"settings.ai.groupsFixed": "برای تغییر این‌ها، کلید تازه‌ای بسازید.",
+	"settings.ai.shortSee": "دیدن",
+	"settings.ai.shortAdd": "افزودن",
+	"settings.ai.shortControl": "دانلودها",
+	"settings.ai.shortSettings": "تنظیمات",
+	"settings.ai.shortDelete": "حذف",
+	"settings.ai.shortAdmin": "مدیریت",
+	"settings.ai.canDo": "می‌تواند: {list}",
+	"settings.ai.groupNone": "هیچ"
 }

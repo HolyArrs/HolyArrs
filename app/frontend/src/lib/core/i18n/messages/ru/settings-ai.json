@@ -83,5 +83,22 @@
 	"settings.ai.makeAiKey": "Создать ключ ИИ",
 	"settings.ai.revokeName": "Отозвать {name}?",
 	"settings.ai.revokeDesc": "Приложение потеряет доступ, пока вы не свяжете его снова",
-	"settings.ai.keepIt": "Оставить"
+	"settings.ai.keepIt": "Оставить",
+	"settings.ai.groupsLegend": "Что может ИИ",
+	"settings.ai.groupSee": "Просмотр библиотеки и активности",
+	"settings.ai.groupAdd": "Добавление и запросы",
+	"settings.ai.groupControl": "Управление загрузками",
+	"settings.ai.groupSettings": "Изменение настроек",
+	"settings.ai.groupDelete": "Удаление",
+	"settings.ai.groupAdmin": "Администрирование (пользователи, ключи, резервные копии, обновления)",
+	"settings.ai.adminHint": "Позволяет ИИ управлять пользователями, ключами и резервными копиями.",
+	"settings.ai.groupsFixed": "Чтобы изменить это, создайте новый ключ.",
+	"settings.ai.shortSee": "Просмотр",
+	"settings.ai.shortAdd": "Добавление",
+	"settings.ai.shortControl": "Загрузки",
+	"settings.ai.shortSettings": "Настройки",
+	"settings.ai.shortDelete": "Удаление",
+	"settings.ai.shortAdmin": "Админ",
+	"settings.ai.canDo": "Может: {list}",
+	"settings.ai.groupNone": "ничего"
 }

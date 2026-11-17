@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GROUPS, GUIDES_URL, ROWS, agentPrompt, aiURL, canSignIn, codeParts, deeplinkHref, isAIKey, onlyLocal, pickFor, stepParts, testedLine, whereText } from './ai-connect.ts';
+import { DEFAULT_MCP_GROUPS, GROUPS, MCP_GROUPS, aiKeyBody, GUIDES_URL, ROWS, agentPrompt, aiURL, canSignIn, codeParts, deeplinkHref, isAIKey, onlyLocal, pickFor, stepParts, testedLine, whereText } from './ai-connect.ts';
 import { APP_DATA } from './ai-apps.ts';
 
 const https = { url: 'https://m.example/api/v1/mcp', signIn: true };
@@ -9,6 +9,15 @@ const all = (steps: { text: string; code?: string }[]) => steps.map((s) => s.tex
 const PAGES = ['claude-app', 'chatgpt', 'gemini-app', 'claude-code', 'codex', 'cursor', 'claude-desktop-home', 'local-ai'];
 
 describe('ai-connect', () => {
+	it('starts AI keys with the first four tick boxes, without Delete and Admin', () => {
+		expect(DEFAULT_MCP_GROUPS).toEqual(['see', 'add', 'control', 'settings']);
+		expect(MCP_GROUPS).toEqual(['see', 'add', 'control', 'settings', 'delete', 'admin']);
+	});
+	it('sends the ticked groups in screen order with the mcp scope', () => {
+		expect(aiKeyBody('Claude', DEFAULT_MCP_GROUPS)).toEqual({ label: 'Claude', scopes: ['mcp'], mcp_groups: ['see', 'add', 'control', 'settings'] });
+		expect(aiKeyBody('X', ['admin', 'see', 'bogus'])).toEqual({ label: 'X', scopes: ['mcp'], mcp_groups: ['see', 'admin'] });
+		expect(aiKeyBody('X', []).mcp_groups).toEqual([]);
+	});
 	it('tells AI keys from other keys', () => {
 		const base = { id: 1, label: 'x', hint: 'abcd', created_at: '' };
 		expect(isAIKey({ ...base, scopes: ['mcp'] })).toBe(true);
