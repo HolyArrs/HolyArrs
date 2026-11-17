@@ -400,7 +400,7 @@
 				{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 				<div class="row" style="margin-top: var(--s-5)">
 					<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>{t('settings.subtitles.save')}</Button>
-					<Button variant="plain" type="button" onclick={() => ((editing = null), (form = null))}>{t('settings.subtitles.cancel')}</Button>
+					<Button type="button" onclick={() => ((editing = null), (form = null))}>{t('settings.subtitles.cancel')}</Button>
 				</div>
 			</form>
 		{/if}
@@ -434,12 +434,12 @@
 						<div class="row actions">
 							<Button type="button" disabled={testing === s.ID} aria-busy={testing === s.ID} onclick={() => test(s)} aria-label={t('settings.subtitles.testName', { name: s.name })}>{t('settings.subtitles.test')}</Button>
 							{#if s.state === 'disabled'}
-								<Button variant="plain" type="button" onclick={() => setPaused(s, false)} aria-label={t('settings.subtitles.turnOnName', { name: s.name })}>{t('settings.subtitles.turnOn')}</Button>
+								<Button type="button" onclick={() => setPaused(s, false)} aria-label={t('settings.subtitles.turnOnName', { name: s.name })}>{t('settings.subtitles.turnOn')}</Button>
 							{:else}
-								<Button variant="plain" type="button" onclick={() => setPaused(s, true)} aria-label={t('settings.subtitles.pauseName', { name: s.name })}>{t('settings.subtitles.pause')}</Button>
+								<Button type="button" onclick={() => setPaused(s, true)} aria-label={t('settings.subtitles.pauseName', { name: s.name })}>{t('settings.subtitles.pause')}</Button>
 							{/if}
-							<Button variant="plain" type="button" onclick={() => startChange(s)} aria-label={t('settings.subtitles.changeName', { name: s.name })}>{t('settings.subtitles.changeButton')}</Button>
-							<Button variant="plain" type="button" onclick={() => remove(s)} aria-label={t('settings.subtitles.removeName', { name: s.name })}>{t('settings.subtitles.remove')}</Button>
+							<Button type="button" onclick={() => startChange(s)} aria-label={t('settings.subtitles.changeName', { name: s.name })}>{t('settings.subtitles.changeButton')}</Button>
+							<Button type="button" onclick={() => remove(s)} aria-label={t('settings.subtitles.removeName', { name: s.name })}>{t('settings.subtitles.remove')}</Button>
 						</div>
 					</li>
 				{/each}
