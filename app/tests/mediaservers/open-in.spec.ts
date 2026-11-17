@@ -1,11 +1,15 @@
 import { expect, test, type APIResponse, type Page } from '@playwright/test';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { jellyKey, jellyfinPort } from '../fakes/index.mjs';
 import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
+import { tmp } from '../helpers/data-folder.ts';
 
 // Open in Jellyfin (#401): the owner gives the fake Jellyfin a browser
 // address; the Library page of a movie that server has shows an Open in
 // Jellyfin button that opens the server's details page in a new tab, at
 // the browser address and never at HolyArrs' own address for the server.
+// The movie gets a stand-in file first: a missing title shows no button.
 // Without a browser address there is no button. Checked at 390 wide.
 // Cleans up the server and the movie. Title only this spec uses (fakes/):
 // Saffron Lighthouse.
@@ -32,6 +36,22 @@ test('Open in Jellyfin: a Library movie the server has opens on its details page
 	const added = await call('POST', '/titles', { id: 'tmdb:900415', search_on_add: false, keep_up_to_date: false, follow: false });
 	expect(added.status(), await added.text()).toBe(201);
 	const id = ((await added.json()) as { title: { id: number } }).title.id;
+
+	// A stand-in video, imported into the movie by hand from an extra import folder.
+	const byHand = join(tmp, 'by-hand');
+	const now = (await (await call('GET', '/settings/import-folders')).json()) as { extra_folders?: string[] };
+	if (!(now.extra_folders ?? []).includes(byHand)) {
+		expect((await call('PUT', '/settings/import-folders', { extra_folders: [...(now.extra_folders ?? []), byHand] })).ok()).toBe(true);
+	}
+	const dir = join(byHand, 'saffron-lighthouse');
+	rmSync(dir, { recursive: true, force: true });
+	mkdirSync(dir, { recursive: true });
+	const loose = join(dir, 'Saffron.Lighthouse.2016.1080p.WEB-DL.H264-LAB.mkv');
+	writeFileSync(loose, 'stand-in video '.repeat(64));
+	const imported = await call('POST', '/manual-import', { items: [{ path: loose, title_id: id, mode: 'move' }] });
+	expect(imported.status(), await imported.text()).toBe(200);
+	const [placed] = ((await imported.json()) as { results: { outcome: string; error?: string }[] }).results;
+	expect(placed.outcome, placed.error).toBe('placed');
 
 	const base = { name, kind: 'jellyfin', url: jelly, token: jellyKey, on_import: false, on_rename: false, on_delete: false };
 	const made = await call('POST', '/media-servers', base);
