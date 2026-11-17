@@ -66,6 +66,8 @@ type TMDB struct {
 	cache      map[string]cached
 	refreshing map[string]bool
 	hold       serviceHold
+	// batchOffUntil: the server lacked the batch route; reads go one by one until then.
+	batchOffUntil time.Time
 	// texts are titles' texts per app language, by "kind|id" (title_text.go).
 	texts map[string]map[string]TitleText
 }
@@ -706,11 +708,8 @@ func (m tmdbMovie) movieWithCollection(images string, collectionKnown bool) Movi
 
 // Search finds movies by name, and by year when year is not 0.
 func (t *TMDB) Search(ctx context.Context, query string, year int) ([]Movie, error) {
-	q := url.Values{"query": {query}, "include_adult": {"false"}}
-	if year > 0 {
-		q.Set("year", strconv.Itoa(year))
-	}
-	b, err := t.get(ctx, "/search/movie", q)
+	rd := MovieSearchRead(query, year)
+	b, err := t.get(ctx, rd.Path, rd.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -754,7 +753,8 @@ func (t *TMDB) Movie(ctx context.Context, id string) (Movie, error) {
 		if err != nil || n <= 0 {
 			return Movie{}, ErrNotFound
 		}
-		b, err := t.get(ctx, "/movie/"+strconv.FormatInt(n, 10), url.Values{"append_to_response": {"release_dates,images,credits,translations,alternative_titles"}, "include_image_language": {"en,null"}})
+		rd := MovieDetailRead(n)
+		b, err := t.get(ctx, rd.Path, rd.Query)
 		if err != nil {
 			return Movie{}, err
 		}
