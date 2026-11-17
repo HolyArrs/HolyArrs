@@ -1,11 +1,12 @@
 <script lang="ts">
-	// Remote access: the Tailscale plugin's state, its sign-in link and QR, facts, and Reconnect, Disconnect, Sign out. Refreshes every 5 s while shown.
+	// Remote access: the Tailscale plugin's state, Connect (sign-in link and QR) while not connected, facts, and Disconnect / Sign out once connected. Refreshes every 5 s while shown.
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { QrCode } from '#lib/accounts/index.ts';
+	import { Orbit } from '#lib/ui/sk/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -24,6 +25,16 @@
 
 	const label = $derived(st ? remoteStateLabel(st.state, plugin) : '');
 	const signIn = $derived(plugin.running && st?.state === 'waiting_for_sign_in' && !!st.login_url);
+	const connected = $derived(plugin.running && (st?.state === 'connected' || st?.state === 'login_expiring'));
+	// Running but no link yet: the plugin is still asking Tailscale for one.
+	const gettingLink = $derived(plugin.running && !signIn && (st?.state === 'not_connected' || st?.state === 'waiting_for_sign_in'));
+	// A login Tailscale ended can only be reset by signing out.
+	const stale = $derived(st?.state === 'login_expired' || st?.state === 'device_deleted');
+	// Stopped by the owner while still signed in reads as Reconnect, not Connect.
+	const paused = $derived(!plugin.running && !plugin.enabled && plugin.disabled_reason !== 'signed out by the owner');
+	function openSignIn() {
+		if (st?.login_url?.startsWith('https://')) window.open(st.login_url, '_blank', 'noopener,noreferrer');
+	}
 	const facts = $derived(
 		st
 			? [
@@ -79,12 +90,15 @@
 			<div><Badge label={label} /></div>
 			{#if signIn}
 				<div class="signin">
-					<Button variant="primary" iconAfter="arrowUpRight" onclick={() => st?.login_url?.startsWith('https://') && window.open(st.login_url, '_blank', 'noopener,noreferrer')}>{t('plugins.remoteOpenSignIn')}</Button>
+					<Button variant="primary" iconAfter="arrowUpRight" onclick={openSignIn}>{t('plugins.remoteConnect')}</Button>
+					<p class="small muted">{t('plugins.remoteConnectAbout')}</p>
 					{#if st.login_qr?.length}
 						<p class="xs muted">{t('plugins.remoteScan')}</p>
 						<div class="qr"><QrCode rows={st.login_qr} label={t('plugins.remoteQr')} /></div>
 					{/if}
 				</div>
+			{:else if gettingLink}
+				<div data-testid="remote-getting-link"><Orbit status={t('plugins.remoteGettingLink')} /></div>
 			{/if}
 			{#if facts.length}
 				<dl class="facts small">
@@ -94,12 +108,15 @@
 		{/if}
 		{#if notice}<p class="small" data-testid="remote-notice">{notice}</p>{/if}
 		<div class="acts">
-			{#if plugin.running}
+			{#if connected}
 				<Button disabled={!!busy} busy={busy === 'stop'} onclick={() => act('stop', '/plugins/tailscale/stop', 'plugins.remoteDisconnected', 'plugins.failed')}>{t('plugins.remoteDisconnect')}</Button>
-			{:else}
-				<Button disabled={!canRun || !!busy} busy={busy === 'start'} onclick={() => act('start', '/plugins/tailscale/start', 'plugins.remoteReconnecting', 'plugins.failed')}>{t('plugins.remoteReconnect')}</Button>
+				<Button variant="destructive" disabled={!canRun || !!busy} busy={busy === 'signout'} onclick={() => (confirmOpen = true)}>{t('plugins.remoteSignOut')}</Button>
+			{:else if stale}
+				<Button variant="destructive" disabled={!canRun || !!busy} busy={busy === 'signout'} onclick={() => (confirmOpen = true)}>{t('plugins.remoteSignOut')}</Button>
 			{/if}
-			<Button variant="destructive" disabled={!canRun || !!busy} busy={busy === 'signout'} onclick={() => (confirmOpen = true)}>{t('plugins.remoteSignOut')}</Button>
+			{#if !plugin.running}
+				<Button variant={paused ? 'secondary' : 'primary'} disabled={!canRun || !!busy} busy={busy === 'start'} onclick={() => act('start', '/plugins/tailscale/start', 'plugins.remoteReconnecting', 'plugins.failed')}>{t(paused ? 'plugins.remoteReconnect' : 'plugins.remoteConnect')}</Button>
+			{/if}
 		</div>
 	</div>
 </SettingsCard>

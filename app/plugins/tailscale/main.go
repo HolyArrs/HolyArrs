@@ -138,6 +138,9 @@ func run(ctx context.Context, srv *tsnet.Server, data string, target *url.URL, m
 		srv.Close()
 		return err
 	}
+	// ListenTLS waits until the device is signed in, so status (and the
+	// sign-in link) must be watched before it.
+	go watchStatus(ctx, lc, data)
 	ln, err := srv.ListenTLS("tcp", ":443")
 	if err != nil {
 		srv.Close()
@@ -165,7 +168,6 @@ func run(ctx context.Context, srv *tsnet.Server, data string, target *url.URL, m
 	}
 	served := make(chan error, 1)
 	go func() { served <- hs.Serve(ln) }()
-	go watchStatus(ctx, lc, data)
 
 	select {
 	case <-ctx.Done():

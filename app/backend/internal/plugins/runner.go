@@ -1,8 +1,10 @@
 package plugins
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -79,6 +81,9 @@ func (r ExecRunner) Start(ctx context.Context, spec Spec) (Process, error) {
 	cmd := exec.CommandContext(ctx, spec.Program, spec.Args...)
 	cmd.Dir = spec.DataDir
 	cmd.Env = append(append([]string{}, spec.Env...), "HOLYARRS_PLUGIN_DATA="+spec.DataDir)
+	// The plugin's own output goes to the HolyArrs log, so its failures show.
+	out := &lineLog{prefix: "plugin " + spec.ID + ": "}
+	cmd.Stdout, cmd.Stderr = out, out
 	sb := r.Sandbox
 	if sb == nil {
 		sb = NoSandbox{}
@@ -145,4 +150,37 @@ func (p *execProcess) Stop() error {
 func (p *execProcess) Wait() error {
 	<-p.done
 	return p.err
+}
+
+// lineLog writes each whole line it gets to the HolyArrs log with a prefix.
+// Lines are capped so a noisy plugin can't flood memory.
+type lineLog struct {
+	prefix string
+	mu     sync.Mutex
+	buf    []byte
+}
+
+func (l *lineLog) Write(p []byte) (int, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.buf = append(l.buf, p...)
+	for {
+		i := bytes.IndexByte(l.buf, '\n')
+		if i < 0 {
+			break
+		}
+		l.emit(l.buf[:i])
+		l.buf = l.buf[i+1:]
+	}
+	if len(l.buf) > 4096 {
+		l.emit(l.buf)
+		l.buf = l.buf[:0]
+	}
+	return len(p), nil
+}
+
+func (l *lineLog) emit(b []byte) {
+	if line := bytes.TrimRight(b, "\r"); len(bytes.TrimSpace(line)) > 0 {
+		log.Printf("%s%s", l.prefix, line)
+	}
 }
