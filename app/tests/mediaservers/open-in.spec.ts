@@ -5,7 +5,7 @@ import { jellyKey, jellyfinPort } from '../fakes/index.mjs';
 import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
 import { tmp } from '../helpers/data-folder.ts';
 
-// Open in Jellyfin (#401): the owner gives the fake Jellyfin a browser
+// Open in Jellyfin: the owner gives the fake Jellyfin a browser
 // address; the Library page of a movie that server has shows an Open in
 // Jellyfin button that opens the server's details page in a new tab, at
 // the browser address and never at HolyArrs' own address for the server.
