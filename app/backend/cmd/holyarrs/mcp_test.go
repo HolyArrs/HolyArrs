@@ -146,12 +146,12 @@ func (f *aiFix) toolNames(key string) []string {
 	return out
 }
 
-// AI connections are off by default (403), an AI key reaches only the AI
+// AI connections are off by default (404), an AI key reaches only the AI
 // route, other keys and sessions never reach it, and only the owner turns it on.
 func TestMCPOffAndScopes(t *testing.T) {
 	t.Parallel()
 	f := newAIFix(t)
-	if st, _ := f.rpc(f.ownKey, "ping", ""); st != 403 {
+	if st, _ := f.rpc(f.ownKey, "ping", ""); st != 404 {
 		t.Fatalf("off: %d", st)
 	}
 	if st, _ := f.call(f.mem, f.memCSRF, "", "PUT", "/api/v1/settings/ai", `{"enabled":true}`); st != 403 {
@@ -186,7 +186,7 @@ func TestMCPOffAndScopes(t *testing.T) {
 		t.Fatal("bearer key reached titles")
 	}
 	f.turnOn(false)
-	if st, _ := f.rpc(f.ownKey, "ping", ""); st != 403 {
+	if st, _ := f.rpc(f.ownKey, "ping", ""); st != 404 {
 		t.Fatalf("off again: %d", st)
 	}
 }

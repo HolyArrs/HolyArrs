@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "لهذه النسخة نسخة كافية الجودة بالفعل؛ وستحل الجديدة محلها",
 	"server.requests.removed-the-request-for": "أزال {name} الطلب على {a}",
 	"server.requests.plex-gave-no-account-code-for": "لم يعطِ Plex رمز حساب لهذا الشخص، لذا لا تتم قراءة قائمة المشاهدة الخاصة به.",
-	"server.ai.ai-connections-are-off-the-owner": "اتصالات الذكاء الاصطناعي معطّلة. يمكن للمالك تفعيلها من الإعدادات ← اتصالات الذكاء الاصطناعي.",
 	"server.plugins.plugins-are-changed-only-from-a": "لا تُغيَّر الإضافات إلا من جلسة مالك مسجّل الدخول، وليس بمفتاح API أبدًا",
 	"server.plugins.plugins-are-not-set-up-in": "الإضافات غير مُعدّة في هذا الإصدار",
 	"server.accounts.finish-setup-on-the-home-network": "أكمل الإعداد على الشبكة المنزلية أولًا."

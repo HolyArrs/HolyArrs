@@ -112,7 +112,7 @@ func rpcReply(w http.ResponseWriter, code int, id json.RawMessage, result any, e
 // serveRPC answers one MCP message.
 func (h *Handlers) serveRPC(w http.ResponseWriter, r *http.Request) {
 	if !h.on(r.Context()) {
-		webserver.Fail(w, http.StatusForbidden, "AI connections are off. The owner can turn them on in Settings → AI connections.")
+		http.NotFound(w, r)
 		return
 	}
 	if r.Method != http.MethodPost {

@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "У цього Варіанта вже є достатньо хороша копія; нова її замінить",
 	"server.requests.removed-the-request-for": "{name} видалив(ла) запит на {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex не передав код акаунта цієї людини, тому її список перегляду не читається.",
-	"server.ai.ai-connections-are-off-the-owner": "Підключення ШІ вимкнено. Власник може ввімкнути їх у Налаштування → Підключення ШІ.",
 	"server.plugins.plugins-are-changed-only-from-a": "плагіни змінюються лише із сесії власника, що увійшов, ніколи за API-ключем",
 	"server.plugins.plugins-are-not-set-up-in": "плагіни не налаштовано в цій збірці",
 	"server.accounts.finish-setup-on-the-home-network": "Спершу завершіть налаштування в домашній мережі."

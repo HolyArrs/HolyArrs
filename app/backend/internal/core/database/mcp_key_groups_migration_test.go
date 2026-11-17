@@ -40,7 +40,7 @@ func TestMCPKeyGroupsMigration(t *testing.T) {
 	if err := s.Read().QueryRow("SELECT label, scope, mcp_groups FROM api_keys WHERE id = 1").Scan(&label, &scope, &groups); err != nil {
 		t.Fatal(err)
 	}
-	if label != "Claude" || scope != `["mcp"]` || groups != `["see","add","control","settings"]` {
+	if label != "Claude" || scope != `["mcp"]` || groups != `["see","add","control","settings","delete","admin"]` {
 		t.Fatalf("key after 0123: %q %q %q", label, scope, groups)
 	}
 }

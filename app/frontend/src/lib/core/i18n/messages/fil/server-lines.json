@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "May sapat nang magandang kopya ang Bersyong ito; papalitan ito ng bago",
 	"server.requests.removed-the-request-for": "Inalis ni {name} ang kahilingan para sa {a}",
 	"server.requests.plex-gave-no-account-code-for": "Walang ibinigay na account code ang Plex para sa taong ito, kaya hindi binabasa ang watchlist niya.",
-	"server.ai.ai-connections-are-off-the-owner": "Naka-off ang mga AI connection. Puwede itong i-on ng may-ari sa Settings → Mga AI connection.",
 	"server.plugins.plugins-are-changed-only-from-a": "binabago lang ang mga plugin mula sa naka-sign in na session ng may-ari, hindi kailanman gamit ang API key",
 	"server.plugins.plugins-are-not-set-up-in": "hindi naka-set up ang mga plugin sa build na ito",
 	"server.accounts.finish-setup-on-the-home-network": "Tapusin muna ang setup sa home network."

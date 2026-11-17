@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "Ennek a Változatnak már van elég jó másolata; az új lecseréli",
 	"server.requests.removed-the-request-for": "{name} eltávolította a kérést: {a}",
 	"server.requests.plex-gave-no-account-code-for": "A Plex nem adott fiókkódot ehhez a személyhez, ezért a figyelőlistáját nem olvassa.",
-	"server.ai.ai-connections-are-off-the-owner": "Az MI-kapcsolatok ki vannak kapcsolva. A tulajdonos a Beállítások → MI-kapcsolatok alatt kapcsolhatja be őket.",
 	"server.plugins.plugins-are-changed-only-from-a": "bővítményeket csak a tulajdonos bejelentkezett munkamenetéből lehet módosítani, API-kulccsal soha",
 	"server.plugins.plugins-are-not-set-up-in": "a bővítmények nincsenek beállítva ebben a verzióban",
 	"server.accounts.finish-setup-on-the-home-network": "Előbb fejezd be a beállítást az otthoni hálózaton."

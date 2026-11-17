@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "Phiên bản này đã có một bản sao đủ tốt; bản mới sẽ thay thế nó",
 	"server.requests.removed-the-request-for": "{name} đã gỡ yêu cầu cho {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex không đưa mã tài khoản của người này nên danh sách xem của họ không được đọc.",
-	"server.ai.ai-connections-are-off-the-owner": "Kết nối AI đang tắt. Chủ sở hữu có thể bật trong Cài đặt → Kết nối AI.",
 	"server.plugins.plugins-are-changed-only-from-a": "plugin chỉ được thay đổi từ phiên đăng nhập của chủ sở hữu, không bao giờ bằng khóa API",
 	"server.plugins.plugins-are-not-set-up-in": "plugin chưa được thiết lập trong bản này",
 	"server.accounts.finish-setup-on-the-home-network": "Hãy hoàn tất thiết lập trên mạng gia đình trước."

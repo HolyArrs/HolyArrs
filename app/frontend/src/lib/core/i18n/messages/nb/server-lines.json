@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "Denne versjonen har allerede en bra nok kopi. Den nye erstatter den",
 	"server.requests.removed-the-request-for": "{name} fjernet forespørselen om {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex ga ingen kontokode for denne personen, så ønskelisten hens blir ikke lest.",
-	"server.ai.ai-connections-are-off-the-owner": "AI-tilkoblinger er slått av. Eieren kan slå dem på under Innstillinger → AI-tilkoblinger.",
 	"server.plugins.plugins-are-changed-only-from-a": "utvidelser endres bare fra en innlogget eierøkt, aldri med en API-nøkkel",
 	"server.plugins.plugins-are-not-set-up-in": "utvidelser er ikke satt opp i denne versjonen",
 	"server.accounts.finish-setup-on-the-home-network": "Fullfør oppsettet på hjemmenettverket først."

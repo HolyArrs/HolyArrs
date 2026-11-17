@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "לגרסה הזו כבר יש עותק מספיק טוב; החדש יחליף אותו",
 	"server.requests.removed-the-request-for": "{name} הסיר/ה את הבקשה עבור {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex לא סיפק קוד חשבון עבור האדם הזה, ולכן רשימת הצפייה שלו לא נקראת.",
-	"server.ai.ai-connections-are-off-the-owner": "חיבורי AI כבויים. הבעלים יכול להפעיל אותם בהגדרות ← חיבורי AI.",
 	"server.plugins.plugins-are-changed-only-from-a": "תוספים משתנים רק מתוך הפעלה מחוברת של הבעלים, אף פעם לא עם מפתח API",
 	"server.plugins.plugins-are-not-set-up-in": "תוספים אינם מוגדרים בגרסה הזו",
 	"server.accounts.finish-setup-on-the-home-network": "סיימו קודם את ההגדרה ברשת הביתית."

@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "Versi ini sudah mempunyai salinan yang cukup baik; yang baharu akan menggantikannya",
 	"server.requests.removed-the-request-for": "{name} mengalih keluar permintaan untuk {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kod akaun untuk orang ini, jadi senarai tontonannya tidak dibaca.",
-	"server.ai.ai-connections-are-off-the-owner": "Sambungan AI dimatikan. Pemilik boleh menghidupkannya di Tetapan → Sambungan AI.",
 	"server.plugins.plugins-are-changed-only-from-a": "pemalam hanya ditukar daripada sesi pemilik yang log masuk, tidak sekali-kali dengan kunci API",
 	"server.plugins.plugins-are-not-set-up-in": "pemalam belum disediakan dalam binaan ini",
 	"server.accounts.finish-setup-on-the-home-network": "Selesaikan persediaan di rangkaian rumah dahulu."

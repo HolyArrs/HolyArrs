@@ -87,7 +87,7 @@ func TestDefaultGroups(t *testing.T) {
 	}
 }
 
-// With AI connections off, /mcp answers 403 in plain words.
+// With AI connections off, /mcp answers 404, as before.
 func TestMCPSwitchOff(t *testing.T) {
 	g := newRig(t)
 	if err := saveEnabled(context.Background(), g.st, database.System, false); err != nil {
@@ -98,7 +98,7 @@ func TestMCPSwitchOff(t *testing.T) {
 		r = r.WithContext(webserver.ContextWith(r.Context(), g.who))
 		rec := httptest.NewRecorder()
 		g.h.serveRPC(rec, r)
-		if rec.Code != http.StatusForbidden || !strings.Contains(rec.Body.String(), "AI connections are off") {
+		if rec.Code != http.StatusNotFound {
 			t.Errorf("%s: %d %s", p, rec.Code, rec.Body.String())
 		}
 	}

@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "Cette version a déjà une copie suffisante ; la nouvelle la remplacera",
 	"server.requests.removed-the-request-for": "{name} a retiré la demande pour {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex n'a donné aucun code de compte pour cette personne, donc sa liste de suivi n'est pas lue.",
-	"server.ai.ai-connections-are-off-the-owner": "Les connexions IA sont désactivées. Le propriétaire peut les activer dans Réglages → Connexions IA.",
 	"server.plugins.plugins-are-changed-only-from-a": "les plugins se modifient seulement depuis une session du propriétaire connecté, jamais avec une clé API",
 	"server.plugins.plugins-are-not-set-up-in": "les plugins ne sont pas configurés dans ce build",
 	"server.accounts.finish-setup-on-the-home-network": "Terminez d'abord la configuration sur le réseau de la maison."

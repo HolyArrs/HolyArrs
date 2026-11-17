@@ -422,3 +422,19 @@ func TestRemoveCallsStop(t *testing.T) {
 		}
 	}
 }
+
+// Without plugins nothing is written: the folder waits for the first install.
+func TestNoFolderUntilInstall(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "plugins")
+	s, err := NewStore(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := s.Load()
+	if err != nil || len(st.Plugins) != 0 {
+		t.Fatalf("load: %v %v", st, err)
+	}
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Fatalf("folder made before an install: %v", err)
+	}
+}

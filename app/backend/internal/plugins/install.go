@@ -109,6 +109,10 @@ func CheckInstall(in InstallInput) (*Accepted, error) {
 // spoolFile streams r to a private temp file while hashing it, and keeps the
 // file only when the size and hash are right.
 func spoolFile(r io.Reader, dir, want string) (string, error) {
+	// The first install makes the plugins folder.
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", fmt.Errorf("plugins folder: %w", err)
+	}
 	f, err := os.CreateTemp(dir, "plugin-*.part")
 	if err != nil {
 		return "", fmt.Errorf("plugin temp file: %w", err)

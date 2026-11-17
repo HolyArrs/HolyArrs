@@ -1344,7 +1344,6 @@
 	"server.sources.this-version-already-has-a-good": "Ši Versija jau turi pakankamai gerą kopiją; nauja ją pakeis",
 	"server.requests.removed-the-request-for": "{name} pašalino užklausą: {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex nepateikė šio asmens paskyros kodo, todėl jo žiūrėjimo sąrašas neskaitomas.",
-	"server.ai.ai-connections-are-off-the-owner": "DI ryšiai išjungti. Savininkas gali juos įjungti: Nustatymai → DI ryšiai.",
 	"server.plugins.plugins-are-changed-only-from-a": "papildiniai keičiami tik iš prisijungusio savininko sesijos, niekada su API raktu",
 	"server.plugins.plugins-are-not-set-up-in": "papildiniai šioje versijoje nenustatyti",
 	"server.accounts.finish-setup-on-the-home-network": "Pirmiausia baikite sąranką namų tinkle."

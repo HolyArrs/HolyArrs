@@ -79,13 +79,11 @@ func versionDir(version, sha string) string {
 	return version + "-" + sha[:16]
 }
 
-// NewStore uses dir as the plugins folder, creating it when missing.
+// NewStore uses dir as the plugins folder. The folder is made by the first
+// install; until then a missing folder reads as no plugins.
 func NewStore(dir string) (*Store, error) {
 	dir, err := filepath.Abs(dir)
 	if err != nil {
-		return nil, fmt.Errorf("plugins folder: %w", err)
-	}
-	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, fmt.Errorf("plugins folder: %w", err)
 	}
 	return &Store{dir: dir}, nil
