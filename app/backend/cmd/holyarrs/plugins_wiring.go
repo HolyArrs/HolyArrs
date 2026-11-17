@@ -18,9 +18,11 @@ import (
 const defaultPluginListURL = "https://plugins.holyarrs.com/"
 
 // pluginKeys are the pinned ed25519 public keys (base64) the plugin lists
-// must be signed with. Empty until the real keys are made: every install
-// then refuses with "plugin signing key not set yet".
-var pluginKeys = []string{}
+// must be signed with: the main key, then the backup key kept offline.
+var pluginKeys = []string{
+	"BFcI/1RFf6k7cRqXaj+YYQsfZu1MQWmiFYktV2QIBHE=", // main
+	"ENa3RVFV9VfQgZ/uyaKItB9xmniR36sWM17HWXi+llY=", // backup
+}
 
 // startPlugins builds the Engine and, outside safe mode, starts the
 // enabled plugins and the blocklist check; they stop when ctx ends.
