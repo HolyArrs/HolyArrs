@@ -199,6 +199,7 @@ GET /api/v1/settings/downloaders auth=settings scope=read assurance=false part=c
 GET /api/v1/settings/files auth=manage_library scope=read assurance=false part=media
 GET /api/v1/settings/health auth=settings scope=read assurance=false part=core
 GET /api/v1/settings/import-folders auth=settings scope=read assurance=false part=media
+GET /api/v1/settings/mdblist-key auth=settings scope=admin assurance=false part=core
 GET /api/v1/settings/metadata auth=settings scope=read assurance=false part=core
 GET /api/v1/settings/music auth=manage_library scope=read assurance=false part=music
 GET /api/v1/settings/naming auth=manage_library scope=read assurance=false part=media
@@ -540,6 +541,7 @@ PUT /api/v1/settings/downloaders auth=settings scope=write assurance=false part=
 PUT /api/v1/settings/files auth=settings scope=write assurance=false part=media
 PUT /api/v1/settings/health auth=settings scope=write assurance=false part=core
 PUT /api/v1/settings/import-folders auth=users scope=admin assurance=false part=media
+PUT /api/v1/settings/mdblist-key auth=settings scope=write assurance=false part=core
 PUT /api/v1/settings/metadata auth=settings scope=write assurance=false part=core
 PUT /api/v1/settings/music auth=settings scope=write assurance=false part=music
 PUT /api/v1/settings/naming auth=settings scope=write assurance=false part=media

@@ -53,6 +53,11 @@
 	// Owner only: a Trakt VIP access token adds the Trakt tab (score, watchers, comments) to title pages.
 	let traktVipMasked = $state('');
 	let traktVip = $state('');
+	// MDBList: optional. With the key, lists are read through the MDBList API; without it, by their public link.
+	let mdblistMasked = $state('');
+	let mdblistKey = $state('');
+	let mdblistError = $state('');
+	let mdblistSaving = $state(false);
 
 	let naKind = $state<'movie' | 'show'>('movie');
 	let naId = $state('');
@@ -82,6 +87,7 @@
 			never = n.never_add;
 			// The key read needs a recent password check; without one the lists still show.
 			traktMasked = (await api.get<{ key: string }>('/settings/trakt-key').catch(() => ({ key: '' }))).key;
+			mdblistMasked = (await api.get<{ key: string }>('/settings/mdblist-key').catch(() => ({ key: '' }))).key;
 			if (session.s.role === 'owner') traktVipMasked = (await api.get<{ token: string }>('/settings/trakt-token').catch(() => ({ token: '' }))).token;
 			hasData = true;
 			error = '';
@@ -196,6 +202,26 @@
 			traktError = err instanceof ApiError && err.status === 403 ? t('settings.outsideLists.signInToChange') : message(err);
 		} finally {
 			traktSaving = false;
+		}
+	}
+
+	/** Saves the MDBList key, or removes it when remove is set, so lists go back to the public link. */
+	async function saveMDBList(e: SubmitEvent | null, remove = false) {
+		e?.preventDefault();
+		mdblistError = '';
+		if (!remove && !mdblistKey.trim()) {
+			mdblistError = t('settings.outsideLists.pasteMdblistKey');
+			return;
+		}
+		mdblistSaving = true;
+		try {
+			mdblistMasked = (await api.put<{ key: string }>('/settings/mdblist-key', { key: remove ? '' : mdblistKey.trim() })).key;
+			toasts.push(remove ? t('settings.outsideLists.mdblistKeyRemoved') : t('settings.outsideLists.mdblistKeySaved'), 'ok');
+			mdblistKey = '';
+		} catch (err) {
+			mdblistError = err instanceof ApiError && err.status === 403 ? t('settings.outsideLists.signInToChange') : message(err);
+		} finally {
+			mdblistSaving = false;
 		}
 	}
 
@@ -371,6 +397,24 @@
 		</form>
 	</section>
 	{/if}
+
+	<section class="card" id="mdblist-card" aria-labelledby="h-mdblist">
+		<div class="card-head">
+			<h2 id="h-mdblist" class="h2">{t('settings.outsideLists.mdblistKey')}</h2>
+			<span class="chip {mdblistMasked ? 'ok' : ''}">{mdblistMasked ? t('settings.outsideLists.keySaved') : t('settings.outsideLists.notSet')}</span>
+		</div>
+		<p class="small muted">{t('settings.outsideLists.mdblistInfo')}</p>
+		<form onsubmit={(e) => saveMDBList(e)} style="margin-top: var(--s-4)">
+			<Field id="mdblist" label={mdblistMasked ? t('settings.outsideLists.replaceMdblistKey') : t('settings.outsideLists.pasteMdblistKey')}>
+				<input id="mdblist" class="input mono" type="password" bind:value={mdblistKey} autocomplete="off" spellcheck="false" />
+			</Field>
+			{#if mdblistError}<p class="form-error" role="alert">{mdblistError}</p>{/if}
+			<div class="row">
+				<Button type="submit" disabled={mdblistSaving} aria-busy={mdblistSaving}>{t('settings.outsideLists.save')}</Button>
+				{#if mdblistMasked}<Button type="button" variant="plain" disabled={mdblistSaving} onclick={() => saveMDBList(null, true)}>{t('settings.outsideLists.removeMdblistKey')}</Button>{/if}
+			</div>
+		</form>
+	</section>
 
 	<SettingsCard id="never-card" title={t('settings.outsideLists.never')} description={t('settings.outsideLists.neverDesc')}>
 		<form class="never-form" onsubmit={addNever}>

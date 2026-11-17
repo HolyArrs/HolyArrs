@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "שער היציאה מדולג: הסרט הזה עדיין לא נחשב כיצא",
 	"server.sources.this-version-already-has-a-good": "לגרסה הזו כבר יש עותק מספיק טוב; החדש יחליף אותו",
 	"server.requests.removed-the-request-for": "{name} הסיר/ה את הבקשה עבור {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex לא סיפק קוד חשבון עבור האדם הזה, ולכן רשימת הצפייה שלו לא נקראת."
+	"server.requests.plex-gave-no-account-code-for": "Plex לא סיפק קוד חשבון עבור האדם הזה, ולכן רשימת הצפייה שלו לא נקראת.",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs קורא רשימות MDBList; הוסף אותה שוב תחת הגדרות > רשימות חיצוניות",
+	"server.requests.send-key-mdblist-api-key-or": "שלח {\"key\": \"<מפתח API של MDBList>\"}, או {\"key\": \"\"} כדי להסיר אותו"
 }

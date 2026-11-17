@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "zoznam tmdb zoznam trakt importný zoznam automatické pridávanie",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Kľúč Trakt",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt kľúč client id vip prístupový token recenzie komentáre",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "Kľúč MDBList",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist kľúč api kľúč zoznamy",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Zoznam Nikdy nepridávať",
 	"settings.index.outside-lists.never-card.never-add-list.words": "nikdy nepridávať vylúčenie blokovací zoznam",
 	"settings.index.sources.page.sources.label": "Zdroje",

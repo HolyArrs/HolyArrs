@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "L'Umbral d'estrena s'omet: aquesta pel·lícula encara no es considera estrenada",
 	"server.sources.this-version-already-has-a-good": "Aquesta Versió ja té una còpia prou bona; la nova la substituirà",
 	"server.requests.removed-the-request-for": "{name} ha eliminat la sol·licitud de {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex no ha donat cap codi de compte d'aquesta persona, així que no se'n llegeix la llista de seguiment."
+	"server.requests.plex-gave-no-account-code-for": "Plex no ha donat cap codi de compte d'aquesta persona, així que no se'n llegeix la llista de seguiment.",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs llegeix llistes de MDBList; torna-la a afegir a Configuració > Llistes externes",
+	"server.requests.send-key-mdblist-api-key-or": "envia {\"key\": \"<clau d'API de MDBList>\"}, o {\"key\": \"\"} per eliminar-la"
 }

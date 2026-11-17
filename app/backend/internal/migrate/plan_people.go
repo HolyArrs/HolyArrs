@@ -354,6 +354,11 @@ func (b *builder) leftBehind(s *Snapshot) {
 			why = "HolyArrs Outside lists add movies only for now; this show list stays in Sonarr"
 		case s.Kind == Lidarr:
 			why = "HolyArrs Outside lists add movies only for now; this music list stays in Lidarr"
+		// An MDBList list, by its own kind or a list link to mdblist.com, is
+		// added again by hand: its link is not brought over yet. It comes before
+		// the other-instance case, since Radarr's custom list kind is RadarrListImport.
+		case strings.HasPrefix(kind, "mdblist") || strings.Contains(strings.ToLower(setStr(l.Settings, "url", "listUrl")), "mdblist.com"): // not imdblist
+			why = "HolyArrs reads MDBList lists; add it again under Settings > Outside lists"
 		case strings.Contains(kind, "radarr") || strings.Contains(kind, "sonarr"):
 			why = "HolyArrs is one app; it does not copy from another instance"
 		// Best effort: the TMDB list kind and the Trakt list kinds other than

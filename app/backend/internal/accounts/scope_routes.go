@@ -102,6 +102,7 @@ var RouteScopes = map[string]string{
 	"GET /api/v1/backups/{name}":                      webserver.ScopeAdmin, // the whole database, password hashes included
 	"GET /api/v1/auth/settings":                       webserver.ScopeAdmin,
 	"GET /api/v1/settings/trakt-key":                  webserver.ScopeAdmin,
+	"GET /api/v1/settings/mdblist-key":                webserver.ScopeAdmin,
 	"GET /api/v1/settings/trakt-token":                webserver.ScopeAdmin,
 	"GET /api/v1/users":                               webserver.ScopeAdmin,
 	"GET /api/v1/users/invites":                       webserver.ScopeAdmin,

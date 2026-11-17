@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "Die Veröffentlichungsschwelle wird übersprungen: Dieser Film gilt noch nicht als erschienen",
 	"server.sources.this-version-already-has-a-good": "Diese Variante hat schon eine gut genügende Kopie; die neue ersetzt sie",
 	"server.requests.removed-the-request-for": "{name} hat die Anfrage für {a} entfernt",
-	"server.requests.plex-gave-no-account-code-for": "Plex hat für diese Person keinen Kontocode geliefert, deshalb wird ihre Merkliste nicht gelesen."
+	"server.requests.plex-gave-no-account-code-for": "Plex hat für diese Person keinen Kontocode geliefert, deshalb wird ihre Merkliste nicht gelesen.",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs liest MDBList-Listen; füge sie unter Einstellungen > Externe Listen noch einmal hinzu",
+	"server.requests.send-key-mdblist-api-key-or": "sende {\"key\": \"<MDBList-API-Schlüssel>\"}, oder {\"key\": \"\"}, um ihn zu entfernen"
 }

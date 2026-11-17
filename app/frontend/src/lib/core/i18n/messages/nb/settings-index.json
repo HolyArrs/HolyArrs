@@ -163,6 +163,8 @@
   "settings.index.outside-lists.page.outside-lists.words": "tmdb liste trakt liste importliste legg til automatisk",
   "settings.index.outside-lists.trakt-card.trakt-key.label": "Trakt-nøkkel",
   "settings.index.outside-lists.trakt-card.trakt-key.words": "trakt nøkkel client id vip tilgangstoken anmeldelser kommentarer",
+  "settings.index.outside-lists.mdblist-card.mdblist-key.label": "MDBList-nøkkel",
+  "settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist nøkkel api-nøkkel lister",
   "settings.index.outside-lists.never-card.never-add-list.label": "Aldri-legg-til-liste",
   "settings.index.outside-lists.never-card.never-add-list.words": "aldri legg til utelukkelse blokkeringsliste",
   "settings.index.sources.page.sources.label": "Kilder",

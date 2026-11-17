@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "A lista száma vagy a hivatkozása, például themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt-lista",
 	"requests.lists.traktHint": "user/list, user/watchlist vagy a hivatkozás, például trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "MDBList-lista",
+	"requests.lists.mdblistHint": "user/list vagy a hivatkozás, például mdblist.com/lists/ana/favourites. A nyilvános listák kulcs nélkül is működnek.",
 	"requests.lists.everyDay": "naponta",
 	"requests.lists.everyDays": "{n} naponta",
 	"requests.lists.everyHours": "{n} óránként",

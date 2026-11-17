@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "Nomor daftar atau tautannya, misalnya themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Daftar Trakt",
 	"requests.lists.traktHint": "user/list, user/watchlist, atau tautannya, misalnya trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "Daftar MDBList",
+	"requests.lists.mdblistHint": "user/list atau tautannya, misalnya mdblist.com/lists/ana/favourites. Daftar publik bisa dipakai tanpa kunci.",
 	"requests.lists.everyDay": "setiap hari",
 	"requests.lists.everyDays": "setiap {n} hari",
 	"requests.lists.everyHours": "setiap {n} jam",

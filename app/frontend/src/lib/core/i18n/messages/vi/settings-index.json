@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "danh sách tmdb danh sách trakt nhập danh sách tự thêm import list",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Khóa Trakt",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt khóa client id vip access token đánh giá bình luận",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "Khóa MDBList",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist khóa api khóa danh sách",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Danh sách không bao giờ thêm",
 	"settings.index.outside-lists.never-card.never-add-list.words": "không bao giờ thêm loại trừ danh sách chặn exclusion block",
 	"settings.index.sources.page.sources.label": "Nguồn",

@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "Прагът за излизане е пропуснат: този филм не се брои за излязъл",
 	"server.sources.this-version-already-has-a-good": "Този вариант вече има достатъчно добро копие; новото ще го замени",
 	"server.requests.removed-the-request-for": "{name} премахна заявката за {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex не даде код на акаунта за този човек, затова списъкът му за гледане не се чете."
+	"server.requests.plex-gave-no-account-code-for": "Plex не даде код на акаунта за този човек, затова списъкът му за гледане не се чете.",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs чете списъци от MDBList; добавете го отново в Настройки > Външни списъци",
+	"server.requests.send-key-mdblist-api-key-or": "изпратете {\"key\": \"<API ключ на MDBList>\"}, или {\"key\": \"\"}, за да го премахнете"
 }

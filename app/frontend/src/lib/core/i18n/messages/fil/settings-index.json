@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "listahan ng tmdb listahan ng trakt mag-import ng listahan kusang magdagdag tmdb list trakt list import list auto add",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Trakt key",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt key client id vip access token review komento trakt key client id vip access token reviews comments",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "MDBList key",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist key api key listahan mdblist key api key lists",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Listahan ng Huwag Idagdag",
 	"settings.index.outside-lists.never-card.never-add-list.words": "huwag idagdag exclusion block list never add exclusion block list",
 	"settings.index.sources.page.sources.label": "Mga Source",

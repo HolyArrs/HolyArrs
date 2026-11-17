@@ -172,6 +172,8 @@
 	"requests.lists.tmdbHint": "Het nummer van de lijst of de link ernaar, bijvoorbeeld themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt-lijst",
 	"requests.lists.traktHint": "user/list, user/watchlist of de link, bijvoorbeeld trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "MDBList-lijst",
+	"requests.lists.mdblistHint": "user/list of de link, bijvoorbeeld mdblist.com/lists/ana/favourites. Openbare lijsten werken zonder sleutel.",
 	"requests.lists.everyDay": "elke dag",
 	"requests.lists.everyDays": "elke {n} dagen",
 	"requests.lists.everyHours": "elke {n} uur",

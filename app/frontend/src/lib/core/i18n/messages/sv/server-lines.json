@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "Släppgränsen hoppas över: den här filmen räknas inte som utgiven ännu",
 	"server.sources.this-version-already-has-a-good": "Den här versionen har redan en tillräckligt bra kopia; den nya ersätter den",
 	"server.requests.removed-the-request-for": "{name} tog bort begäran om {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte."
+	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte.",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs läser MDBList-listor; lägg till den igen under Inställningar > Externa listor",
+	"server.requests.send-key-mdblist-api-key-or": "skicka {\"key\": \"<MDBList-API-nyckel>\"}, eller {\"key\": \"\"} för att ta bort den"
 }

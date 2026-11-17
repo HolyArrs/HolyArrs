@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "Số của danh sách hoặc liên kết của nó, ví dụ themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Danh sách Trakt",
 	"requests.lists.traktHint": "user/list, user/watchlist hoặc liên kết, ví dụ trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "Danh sách MDBList",
+	"requests.lists.mdblistHint": "user/list hoặc liên kết, ví dụ mdblist.com/lists/ana/favourites. Danh sách công khai dùng được mà không cần khóa.",
 	"requests.lists.everyDay": "mỗi ngày",
 	"requests.lists.everyDays": "mỗi {n} ngày",
 	"requests.lists.everyHours": "mỗi {n} giờ",

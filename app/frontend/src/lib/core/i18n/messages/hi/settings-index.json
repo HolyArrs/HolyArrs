@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "tmdb सूची trakt सूची इंपोर्ट सूची ऑटो जोड़ें",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Trakt कुंजी",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt कुंजी क्लाइंट id vip एक्सेस टोकन रिव्यू कमेंट",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "MDBList कुंजी",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist कुंजी api कुंजी सूचियां",
 	"settings.index.outside-lists.never-card.never-add-list.label": "कभी-न-जोड़ें सूची",
 	"settings.index.outside-lists.never-card.never-add-list.words": "कभी न जोड़ें बहिष्कार ब्लॉक सूची",
 	"settings.index.sources.page.sources.label": "सोर्स",

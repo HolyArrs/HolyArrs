@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -16,7 +17,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// OutsideListHandlers are the Outside list routes and the Trakt app key.
+// OutsideListHandlers are the Outside list routes and the Trakt and MDBList keys.
 type OutsideListHandlers struct {
 	Store   *database.Store
 	Queue   *jobs.Queue
@@ -40,6 +41,13 @@ func (h *OutsideListHandlers) Routes(m *http.ServeMux) {
 func (h *OutsideListHandlers) TraktKeyRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/settings/trakt-key", h.getTraktKey)
 	m.HandleFunc("PUT /api/v1/settings/trakt-key", h.putTraktKey)
+}
+
+// MDBListKeyRoutes registers the MDBList key routes (needs Secrets). They
+// are not held back and work in every metadata mode.
+func (h *OutsideListHandlers) MDBListKeyRoutes(m *http.ServeMux) {
+	m.HandleFunc("GET /api/v1/settings/mdblist-key", h.getMDBListKey)
+	m.HandleFunc("PUT /api/v1/settings/mdblist-key", h.putMDBListKey)
 }
 
 func listPathID(w http.ResponseWriter, r *http.Request) (int64, bool) {
@@ -111,7 +119,7 @@ func (h *OutsideListHandlers) listOutsideLists(w http.ResponseWriter, r *http.Re
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"outside_lists": out})
 }
 
-const listHelp = `send {"name": "...", "kind": "tmdb_list" or "trakt_list", "ref": "<TMDB list number, Trakt user/list or a link>"} with optional title_kind ("movie" or "show"), library_folder_id, pick_rules_id, keep_up_to_date, search_on_add, release_gate (movies), seasons and new_seasons (shows), enabled, sync_every_hours`
+const listHelp = `send {"name": "...", "kind": "tmdb_list", "trakt_list" or "mdblist_list", "ref": "<TMDB list number, Trakt or MDBList user/list, or a link>"} with optional title_kind ("movie" or "show"), library_folder_id, pick_rules_id, keep_up_to_date, search_on_add, release_gate (movies), seasons and new_seasons (shows), enabled, sync_every_hours`
 
 func (h *OutsideListHandlers) addOutsideList(w http.ResponseWriter, r *http.Request) {
 	var in OutsideListInput
@@ -214,4 +222,36 @@ func (h *OutsideListHandlers) putTraktKey(w http.ResponseWriter, r *http.Request
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]string{"key": secrets.Masked})
+}
+
+// The MDBList key is the one outside ratings use in Your own keys mode, so a
+// key saved here or under Settings > Metadata shows in both.
+func (h *OutsideListHandlers) getMDBListKey(w http.ResponseWriter, r *http.Request) {
+	k, err := h.Secrets.Setting(r.Context(), metadata.KeyGroup, metadata.KeyMDBList)
+	if err != nil {
+		webserver.Internal(w, "api", err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]string{"key": secrets.Mask(k)})
+}
+
+// putMDBListKey saves the key, or removes it when it is empty: unlike Trakt,
+// MDBList lists work without a key, and a refused key fails every read.
+func (h *OutsideListHandlers) putMDBListKey(w http.ResponseWriter, r *http.Request) {
+	if !webserver.RequireStrong(w, r) {
+		return
+	}
+	var body struct {
+		Key *string `json:"key"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil || body.Key == nil || len(*body.Key) > 4096 || strings.ContainsAny(*body.Key, "\r\n") {
+		webserver.Fail(w, http.StatusBadRequest, `send {"key": "<MDBList API key>"}, or {"key": ""} to remove it`)
+		return
+	}
+	key := strings.TrimSpace(*body.Key)
+	if err := h.Secrets.SetSetting(r.Context(), metadata.KeyGroup, metadata.KeyMDBList, key, h.Actor(r)); err != nil {
+		webserver.Internal(w, "api", err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]string{"key": secrets.Mask(key)})
 }

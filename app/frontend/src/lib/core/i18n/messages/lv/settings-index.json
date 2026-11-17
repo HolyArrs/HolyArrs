@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "tmdb saraksts trakt saraksts importa saraksts automātiska pievienošana list",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Trakt atslēga",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt atslēga client id vip piekļuves marķieris atsauksmes komentāri key",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "MDBList atslēga",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist atslēga api atslēga saraksti key",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Nekad nepievienošanas saraksts",
 	"settings.index.outside-lists.never-card.never-add-list.words": "nekad nepievienot izslēgšana bloķēšanas saraksts never add exclusion",
 	"settings.index.sources.page.sources.label": "Avoti",

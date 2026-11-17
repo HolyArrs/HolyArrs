@@ -172,6 +172,8 @@
 	"requests.lists.tmdbHint": "列表编号或它的链接，例如 themoviedb.org/list/12345。",
 	"requests.lists.trakt": "Trakt 列表",
 	"requests.lists.traktHint": "user/list、user/watchlist 或链接，例如 trakt.tv/users/ana/lists/favourites。",
+	"requests.lists.mdblist": "MDBList 列表",
+	"requests.lists.mdblistHint": "user/list 或链接，例如 mdblist.com/lists/ana/favourites。公开列表无需密钥即可使用。",
 	"requests.lists.everyDay": "每天",
 	"requests.lists.everyDays": "每 {n} 天",
 	"requests.lists.everyHours": "每 {n} 小时",

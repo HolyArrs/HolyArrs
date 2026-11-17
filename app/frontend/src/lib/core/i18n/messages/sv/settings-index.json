@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "tmdb-lista trakt-lista importlista automatiskt tillägg",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Trakt-nyckel",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt nyckel klient-id vip åtkomsttoken recensioner kommentarer",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "MDBList-nyckel",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist nyckel api-nyckel listor",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Lägg aldrig till-listan",
 	"settings.index.outside-lists.never-card.never-add-list.words": "lägg aldrig till undantag blockera lista",
 	"settings.index.sources.page.sources.label": "Källor",

@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "список tmdb список trakt список импорта автодобавление",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Ключ Trakt",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt ключ client id vip токен доступа отзывы комментарии",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "Ключ MDBList",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist ключ api ключ списки",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Список «Никогда не добавлять»",
 	"settings.index.outside-lists.never-card.never-add-list.words": "никогда не добавлять исключение блокировка список",
 	"settings.index.sources.page.sources.label": "Источники",

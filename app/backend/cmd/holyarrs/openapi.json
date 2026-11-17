@@ -2842,7 +2842,8 @@
           "kind": {
             "enum": [
               "tmdb_list",
-              "trakt_list"
+              "trakt_list",
+              "mdblist_list"
             ],
             "type": "string"
           },
@@ -22122,7 +22123,7 @@
         "x-holyarrs-scope": "read"
       },
       "post": {
-        "description": "Saves a TMDB or Trakt list and, when on, reads it once straight away.",
+        "description": "Saves a TMDB, Trakt or MDBList list and, when on, reads it once straight away.",
         "operationId": "addOutsideList",
         "requestBody": {
           "content": {
@@ -25054,6 +25055,92 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/settings/mdblist-key": {
+      "get": {
+        "description": "Never sent in full. The same key gives outside ratings in Your own keys mode.",
+        "operationId": "getMDBListKey",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaskedKey"
+                }
+              }
+            },
+            "description": "Masked key."
+          }
+        },
+        "summary": "The MDBList key, masked",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Your MDBList API key, kept encrypted. MDBList lists are read through the MDBList API with it, and by their public link without it; an empty key removes it. Needs a password sign-in, not an API key.",
+        "operationId": "putMDBListKey",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaskedKey"
+                }
+              }
+            },
+            "description": "Saved (masked), or empty once removed."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No key field."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Sign in with a password first."
+          }
+        },
+        "summary": "Store or remove the MDBList key",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
       }
     },
     "/api/v1/settings/metadata": {

@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "daftar tmdb daftar trakt impor daftar tambah otomatis list import auto add",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Kunci Trakt",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "kunci trakt client id token akses vip ulasan komentar reviews comments",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "Kunci MDBList",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist kunci api daftar key lists",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Daftar Jangan-tambahkan",
 	"settings.index.outside-lists.never-card.never-add-list.words": "jangan tambah pengecualian daftar blokir never add exclusion block list",
 	"settings.index.sources.page.sources.label": "Sumber",

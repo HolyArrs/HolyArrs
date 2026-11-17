@@ -1343,5 +1343,7 @@
 	"server.sources.the-release-gate-is-skipped-this": "ข้ามเกณฑ์วันวางจำหน่าย: ภาพยนตร์เรื่องนี้ยังนับว่าไม่ออก",
 	"server.sources.this-version-already-has-a-good": "เวอร์ชันนี้มีสำเนาที่ดีพอแล้ว ตัวใหม่จะมาแทนที่",
 	"server.requests.removed-the-request-for": "{name} ลบคำขอ {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex ไม่ได้ให้รหัสบัญชีของคนนี้ จึงไม่อ่านรายการที่อยากดูของเขา"
+	"server.requests.plex-gave-no-account-code-for": "Plex ไม่ได้ให้รหัสบัญชีของคนนี้ จึงไม่อ่านรายการที่อยากดูของเขา",
+	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs อ่านรายการ MDBList เพิ่มอีกครั้งในการตั้งค่า > รายการภายนอก",
+	"server.requests.send-key-mdblist-api-key-or": "ส่ง {\"key\": \"<คีย์ API ของ MDBList>\"} หรือ {\"key\": \"\"} เพื่อลบ"
 }

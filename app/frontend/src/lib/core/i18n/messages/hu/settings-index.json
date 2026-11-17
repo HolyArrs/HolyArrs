@@ -163,6 +163,8 @@
 	"settings.index.outside-lists.page.outside-lists.words": "tmdb lista trakt lista importlista automatikus hozzáadás",
 	"settings.index.outside-lists.trakt-card.trakt-key.label": "Trakt-kulcs",
 	"settings.index.outside-lists.trakt-card.trakt-key.words": "trakt kulcs kliensazonosító vip hozzáférési token vélemények hozzászólások",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.label": "MDBList-kulcs",
+	"settings.index.outside-lists.mdblist-card.mdblist-key.words": "mdblist kulcs api-kulcs listák",
 	"settings.index.outside-lists.never-card.never-add-list.label": "Soha ne add hozzá lista",
 	"settings.index.outside-lists.never-card.never-add-list.words": "soha ne add hozzá kizárás tiltólista",
 	"settings.index.sources.page.sources.label": "Források",

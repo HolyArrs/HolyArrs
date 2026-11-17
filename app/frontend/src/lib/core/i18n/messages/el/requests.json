@@ -168,6 +168,8 @@
 	"requests.lists.tmdbHint": "Ο αριθμός της λίστας ή ο σύνδεσμός της, για παράδειγμα themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Λίστα Trakt",
 	"requests.lists.traktHint": "user/list, user/watchlist ή ο σύνδεσμος, για παράδειγμα trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "Λίστα MDBList",
+	"requests.lists.mdblistHint": "user/list ή ο σύνδεσμος, για παράδειγμα mdblist.com/lists/ana/favourites. Οι δημόσιες λίστες λειτουργούν χωρίς κλειδί.",
 	"requests.lists.everyDay": "κάθε ημέρα",
 	"requests.lists.everyDays": "κάθε {n} ημέρες",
 	"requests.lists.everyHours": "κάθε {n} ώρες",

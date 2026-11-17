@@ -507,8 +507,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		log.Printf("renames cut off by a stop: %d finished, error %v", n, err)
 	}
 	ol := &requests.OutsideLists{Store: s, Queue: q, Library: lib, Metadata: md, TMDBRoute: hosted.ListRoute,
-		TraktBase:   os.Getenv("HOLYARRS_TRAKT_URL"),
-		TraktClient: func(ctx context.Context) (string, error) { return vault.Setting(ctx, "links", "trakt_client_id") }}
+		TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MDBListBase: os.Getenv(metadata.EnvMDBListURL), MDBListSite: os.Getenv("HOLYARRS_MDBLIST_SITE_URL"),
+		TraktClient: func(ctx context.Context) (string, error) { return vault.Setting(ctx, "links", "trakt_client_id") }, MDBListKey: hosted.KeyReader(metadata.KeyMDBList)}
 	ol.Register(q)
 	q.ProbeSchedule(requests.OutsideListSync, ol.ProbeSync)
 	he := &health.Engine{Store: s, Version: version, ConfigUnmapped: unmapped, ConfigDir: c.ConfigDir, Publish: func(topic string, data any) { hub.Publish(topic, data) },

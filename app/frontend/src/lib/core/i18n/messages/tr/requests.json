@@ -172,6 +172,8 @@
 	"requests.lists.tmdbHint": "Liste numarası ya da bağlantısı, örneğin themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt listesi",
 	"requests.lists.traktHint": "user/list, user/watchlist ya da bağlantı, örneğin trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.mdblist": "MDBList listesi",
+	"requests.lists.mdblistHint": "user/list ya da bağlantı, örneğin mdblist.com/lists/ana/favourites. Herkese açık listeler anahtar olmadan çalışır.",
 	"requests.lists.everyDay": "her gün",
 	"requests.lists.everyDays": "{n} günde bir",
 	"requests.lists.everyHours": "{n} saatte bir",
