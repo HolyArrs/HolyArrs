@@ -9,6 +9,7 @@
 	import PartsRail from './PartsRail.svelte';
 	import RunsTimeline from './RunsTimeline.svelte';
 	import WhyNote from './WhyNote.svelte';
+	import { supportLinks } from './support-links.ts';
 	import { nextRun, until } from './schedules.ts';
 	import type { Health } from './types.ts';
 	import { atVerb, everyKind, needsAttention, nothingLinked, stopped, type StatusGroup, type StatusRow } from './rows.ts';
@@ -289,12 +290,13 @@
 		{/if}
 	{:else if tab === 'support'}
 		<section class="st-plate give" aria-labelledby="s-give" data-testid="status-support">
-			<h2 id="s-give">{t('health.sections.tabSupport')}</h2>
-			<p class="help-text">{t('health.sections.giveThanks')}</p>
-			<p class="help-text">{t('health.sections.givePays')}</p>
+			<h2 id="s-give">{t('health.support.heading')}</h2>
+			<p class="help-text">{t('health.support.line')}</p>
+			<p class="help-text">{t('health.support.line2')}</p>
 			<div class="give-row">
-				<Button variant="primary" href="https://github.com/sponsors/CoderLuii" target="_blank" rel="noopener">{t('health.why.support')}</Button>
-				<Button variant="plain" onclick={() => why?.open()} aria-haspopup="dialog">{t('health.sections.readNote')}</Button>
+				{#each supportLinks as l (l.id)}
+					<Button variant={l.id === 'sponsor' ? 'primary' : 'secondary'} icon={l.icon} href={l.href} target={l.newTab ? '_blank' : undefined} rel={l.newTab ? 'noopener' : undefined}>{t(`health.support.${l.id}`)}</Button>
+				{/each}
 			</div>
 		</section>
 	{:else}
@@ -345,7 +347,7 @@
 </div>
 
 <style>
-	.give-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
+	.give-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: var(--s-3); margin-top: var(--s-2); }
 	.secs, .panel { display: flex; flex-direction: column; gap: var(--s-4); }
 	ul { list-style: none; margin: 0; padding: 0; }
 	/* Same pill track as the Downloads page. */
