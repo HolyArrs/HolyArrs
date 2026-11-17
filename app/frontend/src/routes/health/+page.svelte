@@ -200,7 +200,7 @@
 <div class="status" class:jobs={tab === 'jobs'} data-testid="status-page">
 	<PageHeader title={t('health.page.header')} subtitle={input ? top : undefined}>
 		{#snippet actions()}
-			{#if canAct}
+			{#if canAct && tab !== 'updates'}
 				<Button onclick={checkAll} busy={running.has('all')} disabled={running.has('all')} data-testid="status-check-all">{t('health.page.checkAgain')}</Button>
 			{/if}
 		{/snippet}
