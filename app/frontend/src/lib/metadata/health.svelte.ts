@@ -30,7 +30,9 @@ export function checkMetadata(force = false): Promise<boolean> {
 			record(metadataHealth.up);
 			return metadataHealth.up;
 		})
-		.catch(() => {
+		.catch((e: unknown) => {
+			// A cancelled request (page change, tab sleep) says nothing about the server.
+			if (e instanceof DOMException && e.name === 'AbortError') return metadataHealth.up;
 			metadataHealth.fakeIP = '';
 			record(false);
 			if (metadataOutage.s.down) metadataHealth.up = false;

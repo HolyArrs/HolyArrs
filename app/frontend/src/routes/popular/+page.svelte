@@ -70,6 +70,9 @@
 	let poll: ReturnType<typeof setTimeout> | undefined;
 	/** The try number while the server says the lists are still building (0 means not building). */
 	let building = $state(0);
+	// First visit: the hero waits on details the server is still fetching, so the page asks again a few times.
+	let heroWait = $state(0);
+	const HERO_TRIES = 5;
 	const gone = new AbortController();
 
 	// The pills float once their spot scrolls under the top bar (as on Explore).
@@ -111,9 +114,13 @@
 			more = a.more;
 			failed = false;
 			building = a.building && tries < 20 ? tries + 1 : 0;
-			if (building) poll = setTimeout(() => void loadFirst(tries + 1), 3000);
+			heroWait = !building && hero.length === 0 && rows.length > 0 && tries < HERO_TRIES ? tries + 1 : 0;
+			if (building || heroWait) poll = setTimeout(() => void loadFirst(tries + 1), 3000);
 		} catch {
-			if (n === ask) failed = true;
+			if (n === ask) {
+				failed = true;
+				heroWait = 0;
+			}
 		} finally {
 			if (n === ask) loaded = true;
 		}
@@ -300,6 +307,8 @@
 					{#if why.length}<ul class="why" aria-label={t('discover.popular.whyItIsFeatured')}>{#each why as w (w.text)}<li class="why-{w.kind}">{w.text}</li>{/each}</ul>{/if}
 				{/snippet}
 			</ExploreHero>
+		{:else if heroWait}
+			<div class="hero-wait" data-testid="hero-placeholder" aria-hidden="true"><Skeleton shape="block" /></div>
 		{/if}
 		{#if rail.length > 0}
 			<NewRail days={rail}>
@@ -374,6 +383,9 @@
 	/* Phones: the words win, the glyphs step aside, so no label is clipped. */
 	@media (min-width: 360px) and (max-width: 479px) { .types :global(.ui-seg button svg) { display: none; } }
 	.row-wrap { display: contents; }
+	/* Same box as the hero (Billboard), so the page doesn't jump when it arrives. */
+	.hero-wait { margin: 8px 0 0; border-radius: 24px; overflow: hidden; min-height: max(380px, min(77svh, calc((100vw - var(--gutter) * 2) / 2.18))); display: grid; }
+	.hero-wait :global(.ui-sk) { height: auto; border-radius: 0; }
 	@media (min-width: 768px) { .row-wrap.wide-row { --shelf-gap: 5px; } }
 	.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--gutter) * -1); padding: 2px var(--gutter); }
 	.chips::-webkit-scrollbar { display: none; }
