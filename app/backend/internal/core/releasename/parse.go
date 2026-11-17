@@ -255,6 +255,19 @@ func Parse(name string, h Hints) Result {
 		flags["crc"] = true
 	}
 
+	// A repost marker at the end is not the group: some posters send a scene
+	// name on with "-xpost" after the release group. Drop it so the group
+	// before it is read, and cut a CRC that follows the marker.
+	repost := false
+	if i := strings.LastIndexByte(s, '-'); i > 0 && strings.EqualFold(s[i+1:], "xpost") {
+		s = s[:i]
+		repost = true
+		if loc := reCRC.FindStringIndex(s); loc != nil {
+			s = s[:loc[0]]
+			flags["crc"] = true
+		}
+	}
+
 	// Group: the text after the last hyphen, unless that hyphen joins a tag
 	// (WEB-DL, DTS-HD) or the text after it is not a group.
 	var trailing []string
@@ -264,7 +277,9 @@ func Parse(name string, h Hints) Result {
 		if j := strings.LastIndexAny(before, " ._()[]"); j >= 0 {
 			before = before[j+1:]
 		}
-		compound := tagWords[strings.ToLower(before+"-"+after[0])]
+		// A name whose marker was cut may have a hyphen inside its title
+		// (Spider-Man); the words after it are then not a group.
+		compound := tagWords[strings.ToLower(before+"-"+after[0])] || (repost && len(after) > 1)
 		allTags := true
 		for _, t := range after[1:] {
 			allTags = allTags && isTag(t)
