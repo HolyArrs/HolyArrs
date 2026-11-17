@@ -156,7 +156,9 @@ for (const width of [1280, 375]) {
 		const card = page.getByTestId('remote-access');
 		await expect(page.getByRole('heading', { name: 'Remote access', level: 1 })).toBeVisible();
 		await expect(card).toContainText('Waiting for sign-in');
-		await expect(card.getByRole('button', { name: 'Open Tailscale sign-in' })).toBeVisible();
+		await expect(card.getByRole('button', { name: 'Connect to Tailscale' })).toBeVisible();
+		await expect(card.getByRole('button', { name: 'Disconnect' })).toHaveCount(0);
+		await expect(card.getByRole('button', { name: 'Sign out' })).toHaveCount(0);
 		await expect(card.getByRole('img', { name: 'QR code for the Tailscale sign-in link' })).toBeVisible();
 		await noSidewaysScroll(page);
 		await page.screenshot({ path: test.info().outputPath(`remote-signin-${width}.png`), fullPage: true });
@@ -173,7 +175,7 @@ for (const width of [1280, 375]) {
 		await expect(card).toContainText('holyarrs.tail1234.ts.net');
 		await expect(card).toContainText('1.90.0');
 		await expect(card).toContainText('Direct');
-		await expect(card.getByRole('button', { name: 'Open Tailscale sign-in' })).toHaveCount(0);
+		await expect(card.getByRole('button', { name: 'Connect to Tailscale' })).toHaveCount(0);
 		await noSidewaysScroll(page);
 		await page.screenshot({ path: test.info().outputPath(`remote-connected-${width}.png`), fullPage: true });
 
