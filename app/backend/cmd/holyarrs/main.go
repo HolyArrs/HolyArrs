@@ -525,7 +525,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 		t := http.DefaultTransport.(*http.Transport).Clone()
 		t.Proxy = nil
-		t.DialContext = outbound.PolicyDialer(allow).DialContext
+		t.DialContext = outbound.WatchFakeIP(outbound.PolicyDialer(allow).DialContext)
 		return &http.Client{Transport: t, Timeout: 15 * time.Second}
 	}
 	WireUpdateChecks(he, uc)

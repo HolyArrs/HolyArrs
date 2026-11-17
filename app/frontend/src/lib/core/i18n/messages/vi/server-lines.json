@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "plugin chưa được thiết lập trong bản này",
 	"server.accounts.finish-setup-on-the-home-network": "Hãy hoàn tất thiết lập trên mạng gia đình trước.",
 	"server.accounts.api-key-changed": "Đã đổi khóa API {label}",
-	"server.accounts.only-the-owner-and-admins-may-2": "chỉ chủ sở hữu và quản trị viên đã đăng nhập mới được đổi khóa"
+	"server.accounts.only-the-owner-and-admins-may-2": "chỉ chủ sở hữu và quản trị viên đã đăng nhập mới được đổi khóa",
+	"server.metadata.your-router-or-vpn-is-sending": "Router hoặc VPN của bạn đang gửi HolyArrs tới một địa chỉ giả (198.18.x.x). Việc này thường do Clash hoặc Surge. Hãy thêm {host} vào danh sách kết nối trực tiếp của nó."
 }

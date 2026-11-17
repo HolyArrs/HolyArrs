@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "τα πρόσθετα δεν έχουν ρυθμιστεί σε αυτή την έκδοση",
 	"server.accounts.finish-setup-on-the-home-network": "Ολοκληρώστε πρώτα τη ρύθμιση στο οικιακό δίκτυο.",
 	"server.accounts.api-key-changed": "Το κλειδί API «{label}» άλλαξε",
-	"server.accounts.only-the-owner-and-admins-may-2": "μόνο ο ιδιοκτήτης και οι διαχειριστές μπορούν να αλλάξουν κλειδί, συνδεδεμένοι"
+	"server.accounts.only-the-owner-and-admins-may-2": "μόνο ο ιδιοκτήτης και οι διαχειριστές μπορούν να αλλάξουν κλειδί, συνδεδεμένοι",
+	"server.metadata.your-router-or-vpn-is-sending": "Ο δρομολογητής ή το VPN σας στέλνει το HolyArrs σε ψεύτικη διεύθυνση (198.18.x.x). Συνήθως αυτό οφείλεται στο Clash ή στο Surge. Προσθέστε το {host} στη λίστα άμεσης σύνδεσής του."
 }

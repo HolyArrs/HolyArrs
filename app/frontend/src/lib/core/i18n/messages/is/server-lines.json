@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "viðbætur eru ekki settar upp í þessari útgáfu",
 	"server.accounts.finish-setup-on-the-home-network": "Ljúktu fyrst uppsetningu á heimanetinu.",
 	"server.accounts.api-key-changed": "API-lyklinum {label} breytt",
-	"server.accounts.only-the-owner-and-admins-may-2": "aðeins innskráður eigandi og stjórnendur mega breyta lykli"
+	"server.accounts.only-the-owner-and-admins-may-2": "aðeins innskráður eigandi og stjórnendur mega breyta lykli",
+	"server.metadata.your-router-or-vpn-is-sending": "Beinirinn eða VPN-ið þitt sendir HolyArrs á falskt vistfang (198.18.x.x). Þetta kemur oftast frá Clash eða Surge. Bættu {host} á beina listann þess."
 }

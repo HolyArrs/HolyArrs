@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "добавките не са настроени в тази версия",
 	"server.accounts.finish-setup-on-the-home-network": "Първо завършете настройката в домашната мрежа.",
 	"server.accounts.api-key-changed": "API ключът {label} е променен",
-	"server.accounts.only-the-owner-and-admins-may-2": "само собственикът и администраторите могат да променят ключ, след вход"
+	"server.accounts.only-the-owner-and-admins-may-2": "само собственикът и администраторите могат да променят ключ, след вход",
+	"server.metadata.your-router-or-vpn-is-sending": "Вашият рутер или VPN праща HolyArrs към фалшив адрес (198.18.x.x). Обикновено това идва от Clash или Surge. Добавете {host} към неговия списък за директна връзка."
 }

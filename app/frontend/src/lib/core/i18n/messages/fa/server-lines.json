@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "افزونه‌ها در این نسخه راه‌اندازی نشده‌اند",
 	"server.accounts.finish-setup-on-the-home-network": "ابتدا راه‌اندازی را در شبکهٔ خانگی تمام کنید.",
 	"server.accounts.api-key-changed": "کلید API {label} تغییر کرد",
-	"server.accounts.only-the-owner-and-admins-may-2": "فقط مالک و مدیران، پس از ورود، می‌توانند کلید را تغییر دهند"
+	"server.accounts.only-the-owner-and-admins-may-2": "فقط مالک و مدیران، پس از ورود، می‌توانند کلید را تغییر دهند",
+	"server.metadata.your-router-or-vpn-is-sending": "روتر یا VPN شما HolyArrs را به یک نشانی جعلی (198.18.x.x) می‌فرستد. معمولاً این کار Clash یا Surge است. {host} را به فهرست اتصال مستقیم آن اضافه کنید."
 }

@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "pemalam belum disediakan dalam binaan ini",
 	"server.accounts.finish-setup-on-the-home-network": "Selesaikan persediaan di rangkaian rumah dahulu.",
 	"server.accounts.api-key-changed": "Kunci API {label} ditukar",
-	"server.accounts.only-the-owner-and-admins-may-2": "hanya pemilik dan pentadbir yang log masuk boleh menukar kunci"
+	"server.accounts.only-the-owner-and-admins-may-2": "hanya pemilik dan pentadbir yang log masuk boleh menukar kunci",
+	"server.metadata.your-router-or-vpn-is-sending": "Penghala atau VPN anda menghantar HolyArrs ke alamat palsu (198.18.x.x). Biasanya ini daripada Clash atau Surge. Tambah {host} ke senarai direct-nya."
 }

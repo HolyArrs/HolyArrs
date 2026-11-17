@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "papildiniai šioje versijoje nenustatyti",
 	"server.accounts.finish-setup-on-the-home-network": "Pirmiausia baikite sąranką namų tinkle.",
 	"server.accounts.api-key-changed": "API raktas {label} pakeistas",
-	"server.accounts.only-the-owner-and-admins-may-2": "raktą gali keisti tik prisijungę savininkas ir administratoriai"
+	"server.accounts.only-the-owner-and-admins-may-2": "raktą gali keisti tik prisijungę savininkas ir administratoriai",
+	"server.metadata.your-router-or-vpn-is-sending": "Jūsų maršrutizatorius arba VPN siunčia HolyArrs į netikrą adresą (198.18.x.x). Dažniausiai tai daro Clash arba Surge. Įtraukite {host} į jo tiesioginio ryšio sąrašą."
 }

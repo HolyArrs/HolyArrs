@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "utvidelser er ikke satt opp i denne versjonen",
 	"server.accounts.finish-setup-on-the-home-network": "Fullfør oppsettet på hjemmenettverket først.",
 	"server.accounts.api-key-changed": "API-nøkkelen {label} endret",
-	"server.accounts.only-the-owner-and-admins-may-2": "bare eieren og admin kan endre en nøkkel, når de er logget inn"
+	"server.accounts.only-the-owner-and-admins-may-2": "bare eieren og admin kan endre en nøkkel, når de er logget inn",
+	"server.metadata.your-router-or-vpn-is-sending": "Ruteren eller VPN-en din sender HolyArrs til en falsk adresse (198.18.x.x). Dette kommer som regel fra Clash eller Surge. Legg {host} til i den direkte listen."
 }

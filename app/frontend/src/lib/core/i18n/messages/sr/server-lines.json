@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "додаци нису подешени у овој верзији",
 	"server.accounts.finish-setup-on-the-home-network": "Prvo završite podešavanje na kućnoj mreži.",
 	"server.accounts.api-key-changed": "API кључ {label} је промењен",
-	"server.accounts.only-the-owner-and-admins-may-2": "само пријављени власник и администратори могу да промене кључ"
+	"server.accounts.only-the-owner-and-admins-may-2": "само пријављени власник и администратори могу да промене кључ",
+	"server.metadata.your-router-or-vpn-is-sending": "Ваш рутер или VPN шаље HolyArrs на лажну адресу (198.18.x.x). То обично долази од Clash-а или Surge-а. Додајте {host} на његову листу директних веза."
 }

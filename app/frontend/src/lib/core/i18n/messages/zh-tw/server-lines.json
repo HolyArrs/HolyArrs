@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "此版本未設定外掛",
 	"server.accounts.finish-setup-on-the-home-network": "請先在家用網路中完成設定。",
 	"server.accounts.api-key-changed": "API 金鑰 {label} 已變更",
-	"server.accounts.only-the-owner-and-admins-may-2": "只有已登入的擁有者和管理員可以變更金鑰"
+	"server.accounts.only-the-owner-and-admins-may-2": "只有已登入的擁有者和管理員可以變更金鑰",
+	"server.metadata.your-router-or-vpn-is-sending": "你的路由器或 VPN 把 HolyArrs 指向了一個假位址（198.18.x.x）。這通常來自 Clash 或 Surge。請把 {host} 加入它的直連清單。"
 }

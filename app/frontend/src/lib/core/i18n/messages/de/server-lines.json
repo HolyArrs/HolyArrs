@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "Plugins sind in diesem Build nicht eingerichtet",
 	"server.accounts.finish-setup-on-the-home-network": "Schließe die Einrichtung zuerst im Heimnetz ab.",
 	"server.accounts.api-key-changed": "API-Schlüssel {label} geändert",
-	"server.accounts.only-the-owner-and-admins-may-2": "nur der Besitzer und Admins dürfen einen Schlüssel ändern, angemeldet"
+	"server.accounts.only-the-owner-and-admins-may-2": "nur der Besitzer und Admins dürfen einen Schlüssel ändern, angemeldet",
+	"server.metadata.your-router-or-vpn-is-sending": "Dein Router oder VPN schickt HolyArrs an eine falsche Adresse (198.18.x.x). Das kommt meist von Clash oder Surge. Trage {host} in dessen Direkt-Liste ein."
 }

@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "الإضافات غير مُعدّة في هذا الإصدار",
 	"server.accounts.finish-setup-on-the-home-network": "أكمل الإعداد على الشبكة المنزلية أولًا.",
 	"server.accounts.api-key-changed": "تم تغيير مفتاح API ‏{label}",
-	"server.accounts.only-the-owner-and-admins-may-2": "المالك والمشرفون فقط يستطيعون تغيير مفتاح، بعد تسجيل الدخول"
+	"server.accounts.only-the-owner-and-admins-may-2": "المالك والمشرفون فقط يستطيعون تغيير مفتاح، بعد تسجيل الدخول",
+	"server.metadata.your-router-or-vpn-is-sending": "جهاز التوجيه أو الـ VPN لديك يرسل HolyArrs إلى عنوان وهمي (198.18.x.x). يحدث هذا غالبًا بسبب Clash أو Surge. أضف {host} إلى قائمة الاتصال المباشر فيه."
 }

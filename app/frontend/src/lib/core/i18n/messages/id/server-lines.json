@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "plugin belum disiapkan di build ini",
 	"server.accounts.finish-setup-on-the-home-network": "Selesaikan penyiapan di jaringan rumah dulu.",
 	"server.accounts.api-key-changed": "Kunci API {label} diubah",
-	"server.accounts.only-the-owner-and-admins-may-2": "hanya pemilik dan admin yang sudah masuk yang boleh mengubah kunci"
+	"server.accounts.only-the-owner-and-admins-may-2": "hanya pemilik dan admin yang sudah masuk yang boleh mengubah kunci",
+	"server.metadata.your-router-or-vpn-is-sending": "Router atau VPN kamu mengirim HolyArrs ke alamat palsu (198.18.x.x). Biasanya ini dari Clash atau Surge. Tambahkan {host} ke daftar direct-nya."
 }

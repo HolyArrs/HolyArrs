@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "pluginad pole selles versioonis seadistatud",
 	"server.accounts.finish-setup-on-the-home-network": "Lõpeta seadistus kõigepealt koduvõrgus.",
 	"server.accounts.api-key-changed": "API võti {label} muudetud",
-	"server.accounts.only-the-owner-and-admins-may-2": "võtit tohivad muuta ainult sisse loginud omanik ja administraatorid"
+	"server.accounts.only-the-owner-and-admins-may-2": "võtit tohivad muuta ainult sisse loginud omanik ja administraatorid",
+	"server.metadata.your-router-or-vpn-is-sending": "Sinu ruuter või VPN saadab HolyArrsi võltsaadressile (198.18.x.x). Tavaliselt tuleb see Clashist või Surge'ist. Lisa {host} selle otseühenduse loendisse."
 }

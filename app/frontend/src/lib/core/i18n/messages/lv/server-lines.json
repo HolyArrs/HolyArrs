@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "spraudņi šajā versijā nav iestatīti",
 	"server.accounts.finish-setup-on-the-home-network": "Vispirms pabeidziet iestatīšanu mājas tīklā.",
 	"server.accounts.api-key-changed": "API atslēga {label} mainīta",
-	"server.accounts.only-the-owner-and-admins-may-2": "atslēgu drīkst mainīt tikai pierakstījies īpašnieks un admini"
+	"server.accounts.only-the-owner-and-admins-may-2": "atslēgu drīkst mainīt tikai pierakstījies īpašnieks un admini",
+	"server.metadata.your-router-or-vpn-is-sending": "Jūsu maršrutētājs vai VPN sūta HolyArrs uz viltotu adresi (198.18.x.x). Parasti to dara Clash vai Surge. Pievienojiet {host} tā tiešā savienojuma sarakstam."
 }

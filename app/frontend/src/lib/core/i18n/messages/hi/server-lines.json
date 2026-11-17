@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "इस बिल्ड में प्लगइन सेट अप नहीं हैं",
 	"server.accounts.finish-setup-on-the-home-network": "पहले घर के नेटवर्क पर सेटअप पूरा करें।",
 	"server.accounts.api-key-changed": "API कुंजी {label} बदली गई",
-	"server.accounts.only-the-owner-and-admins-may-2": "कुंजी सिर्फ़ साइन इन किए ओनर और एडमिन बदल सकते हैं"
+	"server.accounts.only-the-owner-and-admins-may-2": "कुंजी सिर्फ़ साइन इन किए ओनर और एडमिन बदल सकते हैं",
+	"server.metadata.your-router-or-vpn-is-sending": "आपका राउटर या VPN HolyArrs को एक नकली पते (198.18.x.x) पर भेज रहा है। यह आमतौर पर Clash या Surge से होता है। {host} को उसकी डायरेक्ट सूची में जोड़ें।"
 }

@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "eklentiler bu sürümde kurulu değil",
 	"server.accounts.finish-setup-on-the-home-network": "Önce kurulumu ev ağında bitirin.",
 	"server.accounts.api-key-changed": "{label} API anahtarı değiştirildi",
-	"server.accounts.only-the-owner-and-admins-may-2": "bir anahtarı yalnızca oturum açmış sahip ve yöneticiler değiştirebilir"
+	"server.accounts.only-the-owner-and-admins-may-2": "bir anahtarı yalnızca oturum açmış sahip ve yöneticiler değiştirebilir",
+	"server.metadata.your-router-or-vpn-is-sending": "Yönlendiriciniz veya VPN'iniz HolyArrs'ı sahte bir adrese (198.18.x.x) gönderiyor. Bu genelde Clash veya Surge'den gelir. {host} adresini onun doğrudan bağlantı listesine ekleyin."
 }

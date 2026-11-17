@@ -3,5 +3,6 @@
 	"metadata.details.movie": "সিনেমা",
 	"metadata.health.downTitle": "মেটাডেটা অফলাইন",
 	"metadata.health.down": "ফিরে না আসা পর্যন্ত সার্চ ও নতুন আর্টওয়ার্ক বন্ধ থাকবে। আপনার লাইব্রেরি কাজ করবে।",
-	"metadata.health.back": "মেটাডেটা আবার অনলাইনে"
+	"metadata.health.back": "মেটাডেটা আবার অনলাইনে",
+	"metadata.health.fakeIp": "আপনার রাউটার বা VPN HolyArrs-কে একটি ভুয়া ঠিকানায় (198.18.x.x) পাঠাচ্ছে। এটি সাধারণত Clash বা Surge থেকে হয়। {host} এর সরাসরি (direct) তালিকায় যোগ করুন।"
 }

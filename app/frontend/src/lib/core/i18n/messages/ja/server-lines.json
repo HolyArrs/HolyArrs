@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "このビルドではプラグインが設定されていません",
 	"server.accounts.finish-setup-on-the-home-network": "まず自宅のネットワークでセットアップを完了してください。",
 	"server.accounts.api-key-changed": "API キー {label} を変更しました",
-	"server.accounts.only-the-owner-and-admins-may-2": "キーを変更できるのは、サインイン中のオーナーと管理者だけです"
+	"server.accounts.only-the-owner-and-admins-may-2": "キーを変更できるのは、サインイン中のオーナーと管理者だけです",
+	"server.metadata.your-router-or-vpn-is-sending": "ルーターまたは VPN が HolyArrs を偽のアドレス (198.18.x.x) に送っています。通常は Clash か Surge が原因です。{host} をその直接接続リストに追加してください。"
 }

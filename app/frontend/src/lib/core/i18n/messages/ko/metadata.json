@@ -3,5 +3,6 @@
 	"metadata.details.movie": "영화",
 	"metadata.health.downTitle": "메타데이터 오프라인",
 	"metadata.health.down": "다시 연결될 때까지 검색과 새 아트워크가 멈춥니다. 라이브러리는 계속 사용할 수 있습니다.",
-	"metadata.health.back": "메타데이터가 다시 온라인입니다"
+	"metadata.health.back": "메타데이터가 다시 온라인입니다",
+	"metadata.health.fakeIp": "라우터나 VPN이 HolyArrs를 가짜 주소(198.18.x.x)로 보내고 있습니다. 보통 Clash나 Surge 때문입니다. {host}을(를) 직접 연결 목록에 추가하세요."
 }

@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "plug-ins zijn niet ingesteld in deze build",
 	"server.accounts.finish-setup-on-the-home-network": "Rond eerst de installatie af op het thuisnetwerk.",
 	"server.accounts.api-key-changed": "API-sleutel {label} gewijzigd",
-	"server.accounts.only-the-owner-and-admins-may-2": "alleen de eigenaar en beheerders mogen een sleutel wijzigen, ingelogd"
+	"server.accounts.only-the-owner-and-admins-may-2": "alleen de eigenaar en beheerders mogen een sleutel wijzigen, ingelogd",
+	"server.metadata.your-router-or-vpn-is-sending": "Je router of VPN stuurt HolyArrs naar een nepadres (198.18.x.x). Dit komt meestal door Clash of Surge. Zet {host} op de directe lijst daarvan."
 }

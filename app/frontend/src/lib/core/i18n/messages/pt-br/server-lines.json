@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "plugins não estão configurados nesta versão",
 	"server.accounts.finish-setup-on-the-home-network": "Termine a configuração na rede de casa primeiro.",
 	"server.accounts.api-key-changed": "Chave de API {label} alterada",
-	"server.accounts.only-the-owner-and-admins-may-2": "só o dono e os administradores, com sessão iniciada, podem alterar uma chave"
+	"server.accounts.only-the-owner-and-admins-may-2": "só o dono e os administradores, com sessão iniciada, podem alterar uma chave",
+	"server.metadata.your-router-or-vpn-is-sending": "Seu roteador ou VPN está mandando o HolyArrs para um endereço falso (198.18.x.x). Isso costuma vir do Clash ou do Surge. Adicione {host} à lista direta dele."
 }

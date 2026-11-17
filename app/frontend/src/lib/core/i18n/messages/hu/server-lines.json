@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "a bővítmények nincsenek beállítva ebben a verzióban",
 	"server.accounts.finish-setup-on-the-home-network": "Előbb fejezd be a beállítást az otthoni hálózaton.",
 	"server.accounts.api-key-changed": "A(z) {label} API-kulcs módosítva",
-	"server.accounts.only-the-owner-and-admins-may-2": "kulcsot csak a bejelentkezett tulajdonos és az adminok módosíthatnak"
+	"server.accounts.only-the-owner-and-admins-may-2": "kulcsot csak a bejelentkezett tulajdonos és az adminok módosíthatnak",
+	"server.metadata.your-router-or-vpn-is-sending": "A routered vagy a VPN hamis címre (198.18.x.x) küldi a HolyArrst. Ez általában a Clash vagy a Surge miatt van. Add hozzá a(z) {host} címet a közvetlen listájához."
 }

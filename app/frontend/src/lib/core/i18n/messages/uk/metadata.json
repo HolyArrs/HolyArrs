@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Фільм",
 	"metadata.health.downTitle": "Метадані офлайн",
 	"metadata.health.down": "Пошук і нові зображення призупинено, доки вони не повернуться. Твоя бібліотека працює.",
-	"metadata.health.back": "Метадані знову онлайн"
+	"metadata.health.back": "Метадані знову онлайн",
+	"metadata.health.fakeIp": "Ваш роутер або VPN спрямовує HolyArrs на підроблену адресу (198.18.x.x). Зазвичай це робить Clash або Surge. Додайте {host} до його списку прямих з'єднань."
 }

@@ -28,7 +28,7 @@
 	import { discoverCard, followsByTmdb, ownedMark, type ExploreCard, type ProviderItem } from '#lib/ui/title-cards.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
 	import { MusicTileGrid, musicCardHref, musicImage } from '#lib/music/index.ts';
-	import { MetadataNotice, detailPath } from '#lib/metadata/index.ts';
+	import { MetadataNotice, detailPath, metadataDownText, metadataHealth } from '#lib/metadata/index.ts';
 	import type { LookupArtist, MusicSettings } from '#lib/music/index.ts';
 	import { AddArtistDialog, AskArtistDialog, QuickAsk } from '#lib/requests/index.ts';
 	import { createLatestOnly } from '#lib/downloads/index.ts';
@@ -681,7 +681,7 @@
 				{/if}
 			</section>
 		{:else if noTMDB && total === 0}
-			<div class="empty"><h2 class="h2">{t('discover.search.theMetadataServerIs')}</h2><p class="muted">{t('discover.search.searchesAndNewArtwork')}</p></div>
+			<div class="empty"><h2 class="h2">{t('discover.search.theMetadataServerIs')}</h2><p class="muted">{metadataHealth.fakeIP ? metadataDownText() : t('discover.search.searchesAndNewArtwork')}</p></div>
 		{:else if error && total === 0}
 			<p class="notice bad" role="alert">{plainReason(error).text}</p>
 		{:else if total === 0 && (pending || busy)}

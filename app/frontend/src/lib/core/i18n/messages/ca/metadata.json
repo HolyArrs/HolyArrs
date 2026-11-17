@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Pel·lícula",
 	"metadata.health.downTitle": "Metadades fora de línia",
 	"metadata.health.down": "La cerca i les noves il·lustracions es pausen fins que torni. La teva Biblioteca continua funcionant.",
-	"metadata.health.back": "Metadades de nou en línia"
+	"metadata.health.back": "Metadades de nou en línia",
+	"metadata.health.fakeIp": "El teu router o VPN està enviant HolyArrs a una adreça falsa (198.18.x.x). Normalment ve de Clash o Surge. Afegeix {host} a la seva llista directa."
 }

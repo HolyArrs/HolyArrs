@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "hindi naka-set up ang mga plugin sa build na ito",
 	"server.accounts.finish-setup-on-the-home-network": "Tapusin muna ang setup sa home network.",
 	"server.accounts.api-key-changed": "Nabago ang API key na {label}",
-	"server.accounts.only-the-owner-and-admins-may-2": "ang owner at mga admin lang na naka-sign in ang puwedeng magbago ng key"
+	"server.accounts.only-the-owner-and-admins-may-2": "ang owner at mga admin lang na naka-sign in ang puwedeng magbago ng key",
+	"server.metadata.your-router-or-vpn-is-sending": "Ipinapadala ng router o VPN mo ang HolyArrs sa isang pekeng address (198.18.x.x). Kadalasan galing ito sa Clash o Surge. Idagdag ang {host} sa direct list nito."
 }

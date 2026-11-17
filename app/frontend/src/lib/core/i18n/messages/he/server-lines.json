@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "תוספים אינם מוגדרים בגרסה הזו",
 	"server.accounts.finish-setup-on-the-home-network": "סיימו קודם את ההגדרה ברשת הביתית.",
 	"server.accounts.api-key-changed": "מפתח ה־API {label} שונה",
-	"server.accounts.only-the-owner-and-admins-may-2": "רק הבעלים והמנהלים, לאחר התחברות, יכולים לשנות מפתח"
+	"server.accounts.only-the-owner-and-admins-may-2": "רק הבעלים והמנהלים, לאחר התחברות, יכולים לשנות מפתח",
+	"server.metadata.your-router-or-vpn-is-sending": "הנתב או ה-VPN שלך שולחים את HolyArrs לכתובת מזויפת (198.18.x.x). זה בדרך כלל מגיע מ-Clash או מ-Surge. הוסף את {host} לרשימת החיבור הישיר שלו."
 }

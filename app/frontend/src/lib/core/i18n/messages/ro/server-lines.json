@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "pluginurile nu sunt configurate în această versiune",
 	"server.accounts.finish-setup-on-the-home-network": "Termină mai întâi configurarea în rețeaua de acasă.",
 	"server.accounts.api-key-changed": "Cheia API {label} modificată",
-	"server.accounts.only-the-owner-and-admins-may-2": "doar proprietarul și administratorii, autentificați, pot modifica o cheie"
+	"server.accounts.only-the-owner-and-admins-may-2": "doar proprietarul și administratorii, autentificați, pot modifica o cheie",
+	"server.metadata.your-router-or-vpn-is-sending": "Routerul sau VPN-ul tău trimite HolyArrs la o adresă falsă (198.18.x.x). De obicei vine de la Clash sau Surge. Adaugă {host} în lista lui directă."
 }

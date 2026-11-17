@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "dodaci nisu postavljeni u ovoj verziji",
 	"server.accounts.finish-setup-on-the-home-network": "Najprije dovršite postavljanje na kućnoj mreži.",
 	"server.accounts.api-key-changed": "API ključ {label} je promijenjen",
-	"server.accounts.only-the-owner-and-admins-may-2": "samo prijavljeni vlasnik i administratori mogu promijeniti ključ"
+	"server.accounts.only-the-owner-and-admins-may-2": "samo prijavljeni vlasnik i administratori mogu promijeniti ključ",
+	"server.metadata.your-router-or-vpn-is-sending": "Vaš usmjerivač ili VPN šalje HolyArrs na lažnu adresu (198.18.x.x). To obično dolazi od Clasha ili Surgea. Dodajte {host} na njegov popis izravnih veza."
 }

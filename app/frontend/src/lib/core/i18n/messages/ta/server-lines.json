@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "இந்தப் பதிப்பில் செருகுநிரல்கள் அமைக்கப்படவில்லை",
 	"server.accounts.finish-setup-on-the-home-network": "முதலில் வீட்டு நெட்வொர்க்கில் அமைப்பை முடிக்கவும்.",
 	"server.accounts.api-key-changed": "API விசை {label} மாற்றப்பட்டது",
-	"server.accounts.only-the-owner-and-admins-may-2": "உள்நுழைந்த உரிமையாளரும் நிர்வாகிகளும் மட்டுமே விசையை மாற்றலாம்"
+	"server.accounts.only-the-owner-and-admins-may-2": "உள்நுழைந்த உரிமையாளரும் நிர்வாகிகளும் மட்டுமே விசையை மாற்றலாம்",
+	"server.metadata.your-router-or-vpn-is-sending": "உங்கள் ரூட்டர் அல்லது VPN HolyArrs-ஐ ஒரு போலி முகவரிக்கு (198.18.x.x) அனுப்புகிறது. இது பொதுவாக Clash அல்லது Surge காரணமாக வருகிறது. {host}-ஐ அதன் நேரடி பட்டியலில் சேர்க்கவும்."
 }

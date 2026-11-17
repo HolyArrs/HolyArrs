@@ -1375,5 +1375,6 @@
 	"server.plugins.plugins-are-not-set-up-in": "এই বিল্ডে প্লাগইন সেট আপ করা নেই",
 	"server.accounts.finish-setup-on-the-home-network": "আগে হোম নেটওয়ার্কে সেটআপ শেষ করুন।",
 	"server.accounts.api-key-changed": "API কী {label} বদলানো হয়েছে",
-	"server.accounts.only-the-owner-and-admins-may-2": "শুধু ওনার ও অ্যাডমিনরা সাইন ইন করে কী বদলাতে পারেন"
+	"server.accounts.only-the-owner-and-admins-may-2": "শুধু ওনার ও অ্যাডমিনরা সাইন ইন করে কী বদলাতে পারেন",
+	"server.metadata.your-router-or-vpn-is-sending": "আপনার রাউটার বা VPN HolyArrs-কে একটি ভুয়া ঠিকানায় (198.18.x.x) পাঠাচ্ছে। এটি সাধারণত Clash বা Surge থেকে হয়। {host} এর সরাসরি (direct) তালিকায় যোগ করুন।"
 }
