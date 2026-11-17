@@ -510,5 +510,9 @@
 	"mediafiles.list.nothingMissing": "لا شيء ناقص.",
 	"mediafiles.showDelete.deleteLabel": "احذف {what}",
 	"mediafiles.showReleases.searchingFor": "جارٍ البحث عن {name}",
-	"mediafiles.sheet.file": "الملف"
+	"mediafiles.sheet.file": "الملف",
+	"mediafiles.watched.all": "تمت المشاهدة",
+	"mediafiles.watched.byAnyone": "شاهده أي شخص",
+	"mediafiles.watched.part": "تمت مشاهدة {seen} من {of}",
+	"mediafiles.watched.partly": "مشاهدة جزئية"
 }

@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs čita MDBList popise; dodaj ga ponovno u Postavke > Vanjski popisi",
 	"server.requests.send-key-mdblist-api-key-or": "pošalji {\"key\": \"<MDBList API ključ>\"}, ili {\"key\": \"\"} da ga ukloniš",
 	"server.mediaservers.no-such-title": "takav naslov ne postoji",
-	"server.mediaservers.send-title-a-library-title-id": "pošaljite title, id naslova iz Biblioteke"
+	"server.mediaservers.send-title-a-library-title-id": "pošaljite title, id naslova iz Biblioteke",
+	"server.accounts.linked-the-account-to": "{name} je povezao {kind} račun {name2} s {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} je uklonio vezu {kind} računa korisnika {name2}",
+	"server.accounts.no-such-account-on-that-server": "nema takvog računa na tom poslužitelju",
+	"server.accounts.only-the-owner-links-people-to": "samo vlasnik povezuje ljude s računima na poslužitelju",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "ovo im je jedini način prijave; prvo im postavite lozinku"
 }

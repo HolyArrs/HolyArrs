@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "ex.: Mama",
 	"settings.users.days": "Zile de valabilitate a linkului",
 	"settings.users.makeInvite": "Creează un link de invitație",
-	"settings.users.permAuto4k": "Cererile 4K sunt aprobate fără așteptare"
+	"settings.users.permAuto4k": "Cererile 4K sunt aprobate fără așteptare",
+	"settings.users.serverAccount": "Cont pe server",
+	"settings.users.pickAccount": "Alege un cont de pe un server media",
+	"settings.users.accountLinked": "Legat de {name}"
 }

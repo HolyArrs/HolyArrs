@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs leser MDBList-lister. Legg den til igjen under Innstillinger > Eksterne lister",
 	"server.requests.send-key-mdblist-api-key-or": "send {\"key\": \"<MDBList-API-nøkkel>\"}, eller {\"key\": \"\"} for å fjerne den",
 	"server.mediaservers.no-such-title": "den tittelen finnes ikke",
-	"server.mediaservers.send-title-a-library-title-id": "send title, ID-en til en tittel i Biblioteket"
+	"server.mediaservers.send-title-a-library-title-id": "send title, ID-en til en tittel i Biblioteket",
+	"server.accounts.linked-the-account-to": "{name} koblet {kind}-kontoen {name2} til {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} koblet fra {kind}-kontoen til {name2}",
+	"server.accounts.no-such-account-on-that-server": "ingen slik konto på den serveren",
+	"server.accounts.only-the-owner-links-people-to": "bare eieren kobler personer til serverkontoer",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "dette er deres eneste måte å logge inn på; gi dem et passord først"
 }

@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs فهرست‌های MDBList را می‌خواند؛ دوباره زیر تنظیمات > فهرست‌های بیرونی اضافه‌اش کن",
 	"server.requests.send-key-mdblist-api-key-or": "بفرست {\"key\": \"<کلید API از MDBList>\"}، یا {\"key\": \"\"} تا حذف شود",
 	"server.mediaservers.no-such-title": "چنین عنوانی وجود ندارد",
-	"server.mediaservers.send-title-a-library-title-id": "title را بفرستید، شناسهٔ یک عنوان در کتابخانه"
+	"server.mediaservers.send-title-a-library-title-id": "title را بفرستید، شناسهٔ یک عنوان در کتابخانه",
+	"server.accounts.linked-the-account-to": "{name} حساب {kind} {name2} را به {name3} پیوند داد",
+	"server.accounts.unlinked-the-account-of": "{name} پیوند حساب {kind} {name2} را برداشت",
+	"server.accounts.no-such-account-on-that-server": "چنین حسابی روی آن سرور نیست",
+	"server.accounts.only-the-owner-links-people-to": "فقط مالک افراد را به حساب‌های سرور پیوند می‌دهد",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "این تنها راه ورود آن‌هاست؛ اول برایشان گذرواژه بگذارید"
 }

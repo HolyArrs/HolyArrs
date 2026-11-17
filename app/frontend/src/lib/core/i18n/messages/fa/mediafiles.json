@@ -510,5 +510,9 @@
 	"mediafiles.showDelete.deleteLabel": "حذف {what}",
 	"mediafiles.showReleases.searchingFor": "در حال جستجوی {name}",
 	"mediafiles.sheet.file": "فایل",
-	"mediafiles.parts.stopsSources": "جست‌وجوهای خودکار متوقف می‌شوند، برای وقتی که دانلودها را خودتان اضافه می‌کنید. دانلودرها و واردکردن‌ها همچنان کار می‌کنند."
+	"mediafiles.parts.stopsSources": "جست‌وجوهای خودکار متوقف می‌شوند، برای وقتی که دانلودها را خودتان اضافه می‌کنید. دانلودرها و واردکردن‌ها همچنان کار می‌کنند.",
+	"mediafiles.watched.all": "دیده‌شده",
+	"mediafiles.watched.byAnyone": "دیده‌شده توسط هر کسی",
+	"mediafiles.watched.part": "{seen} از {of} دیده شده",
+	"mediafiles.watched.partly": "تا حدی دیده‌شده"
 }

@@ -510,5 +510,9 @@
 	"mediafiles.showDelete.deleteLabel": "Suprimeix {what}",
 	"mediafiles.showReleases.searchingFor": "Cercant {name}",
 	"mediafiles.sheet.file": "Fitxer",
-	"mediafiles.parts.stopsSources": "Les cerques automàtiques s'aturen, per a quan afegeixes tu mateix les baixades. Els Gestors de baixades i les importacions continuen funcionant."
+	"mediafiles.parts.stopsSources": "Les cerques automàtiques s'aturen, per a quan afegeixes tu mateix les baixades. Els Gestors de baixades i les importacions continuen funcionant.",
+	"mediafiles.watched.all": "Vist",
+	"mediafiles.watched.byAnyone": "Vist per algú",
+	"mediafiles.watched.part": "Vistos {seen} de {of}",
+	"mediafiles.watched.partly": "Vist en part"
 }

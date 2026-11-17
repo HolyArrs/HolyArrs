@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs MDBList பட்டியல்களைப் படிக்கும்; அமைப்புகள் > வெளிப்பட்டியல்கள் இல் மீண்டும் சேருங்கள்",
 	"server.requests.send-key-mdblist-api-key-or": "{\"key\": \"<MDBList API விசை>\"} ஐ அனுப்புங்கள், அல்லது அதை நீக்க {\"key\": \"\"} ஐ அனுப்புங்கள்",
 	"server.mediaservers.no-such-title": "அப்படி ஒரு தலைப்பு இல்லை",
-	"server.mediaservers.send-title-a-library-title-id": "title அனுப்புங்கள், நூலகத் தலைப்பின் id"
+	"server.mediaservers.send-title-a-library-title-id": "title அனுப்புங்கள், நூலகத் தலைப்பின் id",
+	"server.accounts.linked-the-account-to": "{name} {kind} கணக்கு {name2} ஐ {name3} உடன் இணைத்தார்",
+	"server.accounts.unlinked-the-account-of": "{name} {name2} இன் {kind} கணக்கின் இணைப்பை நீக்கினார்",
+	"server.accounts.no-such-account-on-that-server": "அந்த சர்வரில் அப்படி ஒரு கணக்கு இல்லை",
+	"server.accounts.only-the-owner-links-people-to": "உரிமையாளர் மட்டுமே நபர்களை சர்வர் கணக்குகளுடன் இணைப்பார்",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "இது அவர்கள் உள்நுழையும் ஒரே வழி; முதலில் அவர்களுக்கு கடவுச்சொல் அமைக்கவும்"
 }

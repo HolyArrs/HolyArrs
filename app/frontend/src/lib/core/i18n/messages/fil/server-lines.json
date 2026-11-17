@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "Binabasa ng HolyArrs ang mga listahan ng MDBList; idagdag ulit sa Settings > Mga Panlabas na listahan",
 	"server.requests.send-key-mdblist-api-key-or": "ipadala ang {\"key\": \"<MDBList API key>\"}, o {\"key\": \"\"} para alisin ito",
 	"server.mediaservers.no-such-title": "walang ganoong title",
-	"server.mediaservers.send-title-a-library-title-id": "ipadala ang title, ang id ng isang title sa Library"
+	"server.mediaservers.send-title-a-library-title-id": "ipadala ang title, ang id ng isang title sa Library",
+	"server.accounts.linked-the-account-to": "Ini-link ni {name} ang {kind} account na {name2} kay {name3}",
+	"server.accounts.unlinked-the-account-of": "Tinanggal ni {name} ang link ng {kind} account ni {name2}",
+	"server.accounts.no-such-account-on-that-server": "walang ganoong account sa server na iyon",
+	"server.accounts.only-the-owner-links-people-to": "ang may-ari lang ang nagli-link ng mga tao sa mga account sa server",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "ito lang ang paraan nila para mag-sign in; bigyan mo muna sila ng password"
 }

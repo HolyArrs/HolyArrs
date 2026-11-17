@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs MDBList सूचियां पढ़ता है; इसे सेटिंग > बाहरी सूचियां में फिर जोड़ें",
 	"server.requests.send-key-mdblist-api-key-or": "भेजें {\"key\": \"<MDBList API कुंजी>\"}, या इसे हटाने के लिए {\"key\": \"\"}",
 	"server.mediaservers.no-such-title": "ऐसा कोई टाइटल नहीं है",
-	"server.mediaservers.send-title-a-library-title-id": "title भेजें, लाइब्रेरी के किसी टाइटल का id"
+	"server.mediaservers.send-title-a-library-title-id": "title भेजें, लाइब्रेरी के किसी टाइटल का id",
+	"server.accounts.linked-the-account-to": "{name} ने {kind} खाता {name2} को {name3} से जोड़ा",
+	"server.accounts.unlinked-the-account-of": "{name} ने {name2} का {kind} खाता अलग किया",
+	"server.accounts.no-such-account-on-that-server": "उस सर्वर पर ऐसा कोई खाता नहीं",
+	"server.accounts.only-the-owner-links-people-to": "केवल मालिक लोगों को सर्वर खातों से जोड़ता है",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "यह उनका साइन इन करने का एकमात्र तरीका है; पहले उन्हें पासवर्ड दें"
 }

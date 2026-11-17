@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs lasa MDBList sarakstus; pievieno to vēlreiz sadaļā Iestatījumi > Ārējie saraksti",
 	"server.requests.send-key-mdblist-api-key-or": "sūti {\"key\": \"<MDBList API atslēga>\"}, vai {\"key\": \"\"}, lai to noņemtu",
 	"server.mediaservers.no-such-title": "tāda nosaukuma nav",
-	"server.mediaservers.send-title-a-library-title-id": "nosūtiet title — Bibliotēkas nosaukuma id"
+	"server.mediaservers.send-title-a-library-title-id": "nosūtiet title — Bibliotēkas nosaukuma id",
+	"server.accounts.linked-the-account-to": "{name} sasaistīja {kind} kontu {name2} ar {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} noņēma {name2} {kind} konta saiti",
+	"server.accounts.no-such-account-on-that-server": "šādu kontu tajā serverī nav",
+	"server.accounts.only-the-owner-links-people-to": "tikai īpašnieks sasaista cilvēkus ar servera kontiem",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "tas ir viņu vienīgais pieteikšanās veids; vispirms iestatiet viņiem paroli"
 }

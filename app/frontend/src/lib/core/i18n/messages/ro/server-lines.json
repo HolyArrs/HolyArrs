@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs citește listele MDBList; adaug-o din nou în Setări > Liste externe",
 	"server.requests.send-key-mdblist-api-key-or": "trimite {\"key\": \"<cheie API MDBList>\"}, sau {\"key\": \"\"} pentru a o elimina",
 	"server.mediaservers.no-such-title": "nu există acest titlu",
-	"server.mediaservers.send-title-a-library-title-id": "trimite title, id-ul unui titlu din Bibliotecă"
+	"server.mediaservers.send-title-a-library-title-id": "trimite title, id-ul unui titlu din Bibliotecă",
+	"server.accounts.linked-the-account-to": "{name} a legat contul {kind} {name2} de {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} a dezlegat contul {kind} al lui {name2}",
+	"server.accounts.no-such-account-on-that-server": "nu există un astfel de cont pe acel server",
+	"server.accounts.only-the-owner-links-people-to": "doar proprietarul leagă persoane de conturi de pe server",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "este singura lor cale de conectare; setează-le întâi o parolă"
 }

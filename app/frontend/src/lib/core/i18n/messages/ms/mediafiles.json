@@ -510,5 +510,9 @@
 	"mediafiles.showDelete.deleteLabel": "Padam {what}",
 	"mediafiles.showReleases.searchingFor": "Mencari {name}",
 	"mediafiles.sheet.file": "Fail",
-	"mediafiles.parts.stopsSources": "Carian automatik berhenti, untuk ketika anda menambah muat turun sendiri. Pemuat turun dan import terus berfungsi."
+	"mediafiles.parts.stopsSources": "Carian automatik berhenti, untuk ketika anda menambah muat turun sendiri. Pemuat turun dan import terus berfungsi.",
+	"mediafiles.watched.all": "Sudah ditonton",
+	"mediafiles.watched.byAnyone": "Ditonton sesiapa",
+	"mediafiles.watched.part": "{seen} daripada {of} ditonton",
+	"mediafiles.watched.partly": "Ditonton sebahagian"
 }

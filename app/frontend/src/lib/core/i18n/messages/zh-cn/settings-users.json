@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "例如 妈妈",
 	"settings.users.days": "链接有效天数",
 	"settings.users.makeInvite": "创建邀请链接",
-	"settings.users.permAuto4k": "4K 请求无需等待即获批准"
+	"settings.users.permAuto4k": "4K 请求无需等待即获批准",
+	"settings.users.serverAccount": "服务器账户",
+	"settings.users.pickAccount": "选择媒体服务器上的账户",
+	"settings.users.accountLinked": "已关联 {name}"
 }

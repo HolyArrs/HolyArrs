@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "nt Ema",
 	"settings.users.days": "Päevi, mil link kehtib",
 	"settings.users.makeInvite": "Loo kutse link",
-	"settings.users.permAuto4k": "4K taotlused kiidetakse heaks ilma ootamata"
+	"settings.users.permAuto4k": "4K taotlused kiidetakse heaks ilma ootamata",
+	"settings.users.serverAccount": "Serveri konto",
+	"settings.users.pickAccount": "Vali konto meediaserveris",
+	"settings.users.accountLinked": "Seotud kasutajaga {name}"
 }

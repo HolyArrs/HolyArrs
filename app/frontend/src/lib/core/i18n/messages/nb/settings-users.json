@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "f.eks. Mamma",
 	"settings.users.days": "Dager lenken varer",
 	"settings.users.makeInvite": "Lag en invitasjonslenke",
-	"settings.users.permAuto4k": "4K-forespørsler godkjennes uten å vente"
+	"settings.users.permAuto4k": "4K-forespørsler godkjennes uten å vente",
+	"settings.users.serverAccount": "Serverkonto",
+	"settings.users.pickAccount": "Velg en konto på en medieserver",
+	"settings.users.accountLinked": "Koblet til {name}"
 }

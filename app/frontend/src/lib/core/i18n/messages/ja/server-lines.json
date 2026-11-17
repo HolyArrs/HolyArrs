@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs は MDBList のリストを読み込みます。設定 > 外部リスト でもう一度追加してください",
 	"server.requests.send-key-mdblist-api-key-or": "{\"key\": \"<MDBList の API キー>\"} を送信してください。削除するには {\"key\": \"\"} を送信してください",
 	"server.mediaservers.no-such-title": "その作品はありません",
-	"server.mediaservers.send-title-a-library-title-id": "title にライブラリの作品 ID を指定してください"
+	"server.mediaservers.send-title-a-library-title-id": "title にライブラリの作品 ID を指定してください",
+	"server.accounts.linked-the-account-to": "{name} が {kind} アカウント {name2} を {name3} にリンクしました",
+	"server.accounts.unlinked-the-account-of": "{name} が {name2} の {kind} アカウントのリンクを解除しました",
+	"server.accounts.no-such-account-on-that-server": "そのサーバーにそのアカウントはありません",
+	"server.accounts.only-the-owner-links-people-to": "サーバーのアカウントに人をリンクできるのはオーナーだけです",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "これがその人の唯一のサインイン方法です。先にパスワードを設定してください"
 }

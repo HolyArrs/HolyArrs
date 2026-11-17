@@ -510,5 +510,9 @@
 	"mediafiles.list.nothingMissing": "Eksik yok.",
 	"mediafiles.showDelete.deleteLabel": "{what} sil",
 	"mediafiles.showReleases.searchingFor": "{name} aranıyor",
-	"mediafiles.sheet.file": "Dosya"
+	"mediafiles.sheet.file": "Dosya",
+	"mediafiles.watched.all": "İzlendi",
+	"mediafiles.watched.byAnyone": "Herhangi biri izledi",
+	"mediafiles.watched.part": "{seen} / {of} izlendi",
+	"mediafiles.watched.partly": "Kısmen izlendi"
 }

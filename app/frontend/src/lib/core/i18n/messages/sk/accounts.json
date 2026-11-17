@@ -373,5 +373,12 @@
 "accounts.language.saveFailed": "Jazyk sa nepodarilo uložiť",
 	"accounts.language.count.one": "1 jazyk",
 	"accounts.language.count.other": "Jazyky: {n}",
-"accounts.account.watchEveryone": "Vlastník to zapol pre všetkých. Na zastavenie vypnite obe."
+"accounts.account.watchEveryone": "Vlastník to zapol pre všetkých. Na zastavenie vypnite obe.",
+"accounts.watch.title": "Značky pozretia",
+"accounts.watch.hint": "Prepojte tu svoj účet na mediálnom serveri, aby Knižnica ukazovala, čo ste videli.",
+"accounts.watch.as": "{server}, ako {name}",
+"accounts.watch.nameOn": "Meno na {server}",
+"accounts.watch.passwordOnce": "Vaše heslo ide len na {server} a neukladá sa.",
+"accounts.watch.linked": "Prepojené s {name} na {server}",
+"accounts.watch.unlinked": "Odpojené"
 }

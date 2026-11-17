@@ -85,6 +85,11 @@ var riskyRoutes = map[string]bool{
 	"POST /api/v1/auth/plex/my-link/start":  true,
 	"POST /api/v1/auth/plex/my-link/finish": true,
 	"DELETE /api/v1/auth/plex/my-link":      true,
+	// Jellyfin and Emby links, mine and other people's.
+	"POST /api/v1/auth/media-link/{server}":       true,
+	"DELETE /api/v1/auth/media-link/{kind}":       true,
+	"PUT /api/v1/users/{id}/media-link":           true,
+	"DELETE /api/v1/users/{id}/media-link/{kind}": true,
 	// Sign-in settings, the trusted-network skip among them.
 	"PUT /api/v1/auth/settings": true,
 }

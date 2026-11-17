@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "예: 엄마",
 	"settings.users.days": "링크 유효 기간 (일)",
 	"settings.users.makeInvite": "초대 링크 만들기",
-	"settings.users.permAuto4k": "기다리지 않고 4K 요청 승인"
+	"settings.users.permAuto4k": "기다리지 않고 4K 요청 승인",
+	"settings.users.serverAccount": "서버 계정",
+	"settings.users.pickAccount": "미디어 서버의 계정 선택",
+	"settings.users.accountLinked": "{name}에 연결됨"
 }

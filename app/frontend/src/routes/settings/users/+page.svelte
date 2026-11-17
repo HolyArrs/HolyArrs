@@ -10,7 +10,7 @@
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { presetOf, presetPerms, presetsFor, type PresetId, Sessions, kidLabel, ratingChoices } from '#lib/accounts/index.ts';
+	import { presetOf, presetPerms, presetsFor, type PresetId, Sessions, UserMediaLink, kidLabel, ratingChoices } from '#lib/accounts/index.ts';
 	import type { AskSettings, LimitKind, PersonLimit } from '#lib/requests/index.ts';
 	import { kindAsks } from '#lib/requests/index.ts';
 	import { onMount } from 'svelte';
@@ -427,6 +427,7 @@
 						{#if limits[u.id] && u.role !== 'owner'}
 							<div class="xs muted" data-testid="user-limits">{t('settings.users.thisWeek', { limits: limitWords(limits[u.id]) })}</div>
 						{/if}
+						{#if isOwner}<UserMediaLink user={u} links={u.links} onchange={load} />{/if}
 					</div>
 					{#if mayChange(u) || maySeeDevices(u)}
 						<div class="row acts">

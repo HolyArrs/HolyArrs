@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "ex.: Mãe",
 	"settings.users.days": "Dias de validade do link",
 	"settings.users.makeInvite": "Criar um link de convite",
-	"settings.users.permAuto4k": "Pedidos 4K aprovados sem esperar"
+	"settings.users.permAuto4k": "Pedidos 4K aprovados sem esperar",
+	"settings.users.serverAccount": "Conta do servidor",
+	"settings.users.pickAccount": "Escolha uma conta em um servidor de mídia",
+	"settings.users.accountLinked": "Vinculado a {name}"
 }

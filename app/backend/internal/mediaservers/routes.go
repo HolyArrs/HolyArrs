@@ -38,6 +38,8 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/library/stats/watched", h.watched)
 	// Where a Library title opens on the Jellyfin and Emby servers.
 	m.HandleFunc("GET /api/v1/media-servers/watch-links", h.watchLinks)
+	m.HandleFunc("GET /api/v1/my/watched", h.myWatched)
+	m.HandleFunc("GET /api/v1/library/watched-by-anyone", h.watchedByAnyone)
 }
 
 func (h *Handlers) list(w http.ResponseWriter, r *http.Request) {

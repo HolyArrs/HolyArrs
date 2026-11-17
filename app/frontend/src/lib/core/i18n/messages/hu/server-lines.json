@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "A HolyArrs beolvassa az MDBList-listákat; adja hozzá újra a Beállítások > Külső listák alatt",
 	"server.requests.send-key-mdblist-api-key-or": "küldje: {\"key\": \"<MDBList API-kulcs>\"}, vagy {\"key\": \"\"} az eltávolításához",
 	"server.mediaservers.no-such-title": "nincs ilyen cím",
-	"server.mediaservers.send-title-a-library-title-id": "küldd el a title értéket, egy Könyvtárbeli cím azonosítóját"
+	"server.mediaservers.send-title-a-library-title-id": "küldd el a title értéket, egy Könyvtárbeli cím azonosítóját",
+	"server.accounts.linked-the-account-to": "{name} összekapcsolta a(z) {kind} fiókot ({name2}) ezzel: {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} leválasztotta {name2} {kind} fiókját",
+	"server.accounts.no-such-account-on-that-server": "nincs ilyen fiók azon a szerveren",
+	"server.accounts.only-the-owner-links-people-to": "csak a tulajdonos kapcsol embereket szerverfiókokhoz",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "ez az egyetlen módjuk a belépésre; előbb adj nekik jelszót"
 }

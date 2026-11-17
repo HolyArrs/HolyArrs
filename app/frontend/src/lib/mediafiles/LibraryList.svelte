@@ -27,6 +27,9 @@
 	import BannerArt from './BannerArt.svelte';
 	import LibraryLetterRail from './LibraryLetterRail.svelte';
 	import LibraryPoster from './LibraryPoster.svelte';
+	import WatchedMark from './WatchedMark.svelte';
+	import { titleWatched, watchedWords } from './watched.ts';
+	import { refreshWatched, watchedNow } from './watched.svelte.ts';
 	import { emptyAdds, exceptionChip, firstOfLetter, letterOf, letters, missingEpisodes, posterStatus, type AddKind, type Kind } from './library.ts';
 	import { libraryState } from './library-state.ts';
 	import { partOff } from './parts.svelte.ts';
@@ -287,6 +290,7 @@
 	}
 
 	onMount(() => {
+		void refreshWatched();
 		const onResize = () => {
 			viewH = window.innerHeight;
 			readTop();
@@ -320,7 +324,7 @@
 					{@const p = progressOf(t)}
 					{@const ls = who === 'staff' ? libraryState(t) : null}
 					<li class="item" style:--poster-ratio={posterRatio(t.kind)} animate:flip={{ duration: moveMs, easing: easeOut }} data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
-						<LibraryPoster title={t.name} year={t.year} href={openLink(t)} image={posterSrc(t.artwork[0], gridMin)} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} score={sort.key === 'score' ? scoreText(t) : ''} kept={t.keep_up_to_date} {canManage} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} />
+						<LibraryPoster title={t.name} year={t.year} href={openLink(t)} image={posterSrc(t.artwork[0], gridMin)} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} score={sort.key === 'score' ? scoreText(t) : ''} kept={t.keep_up_to_date} {canManage} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} watched={titleWatched(t, watchedNow.ix)} />
 						{#if selecting}
 							<button type="button" class="pick" aria-pressed={picked.has(t.id)} aria-label={tr('mediafiles.list.select', { name: t.name })} onclick={() => togglePick(t.id)} data-testid="library-pick"><span class="pick-dot" aria-hidden="true">{#if picked.has(t.id)}<Icon name="check" size={14} stroke={3} />{/if}</span></button>
 						{/if}
@@ -382,12 +386,13 @@
 								{@const requester = requestedBy(t)}
 								{@const fold = filter.status === 'missing' && t.kind === 'show' && (t.show?.missing ?? 0) > 0}
 								{@const ri = rowEntries.findIndex((r) => r.t.id === t.id)}
+								{@const wm = titleWatched(t, watchedNow.ix)}
 								<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 								<div
 									class="entry"
 									role="listitem"
 									tabindex={ri === active ? 0 : -1}
-									aria-label="{t.name}{t.year ? `, ${t.year}` : ''}{picked.has(t.id) ? `, ${tr('mediafiles.list.selectedWord')}` : ''}"
+									aria-label="{t.name}{t.year ? `, ${t.year}` : ''}{wm ? `, ${watchedWords(wm, tr)}` : ''}{picked.has(t.id) ? `, ${tr('mediafiles.list.selectedWord')}` : ''}"
 									data-key={e.key}
 									data-testid="library-row"
 									data-title-id={t.id}
@@ -404,7 +409,7 @@
 										<div class="lr" class:ph={phone} style="--facts: {factsTpl}; --row-h: {phone ? 60 : 54}px">
 											{#if selecting}<span class="lsel"><input type="checkbox" class="pick-box lpick" checked={picked.has(t.id)} aria-label={tr('mediafiles.list.select', { name: t.name })} tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" /></span>{/if}
 											<span class="lp" style:--poster-ratio={posterRatio(t.kind)} class:round={t.kind === 'artist'}>
-												<Poster src={t.artwork[0]} name={t.name} />
+												<Poster src={t.artwork[0]} name={t.name} />{#if phone}<WatchedMark mark={wm} look="bar" />{/if}
 											</span>
 											<span class="lt">
 												<a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>
@@ -474,7 +479,7 @@
 										</div>
 									{:else}
 										<div class="ov" class:music={t.kind === 'artist'}>
-											<a class="ov-poster" style:--poster-ratio={posterRatio(t.kind)} href={openLink(t)} tabindex="-1" aria-hidden="true"><Poster src={t.artwork[0]} name={t.name} /></a>
+											<a class="ov-poster" style:--poster-ratio={posterRatio(t.kind)} href={openLink(t)} tabindex="-1" aria-hidden="true"><Poster src={t.artwork[0]} name={t.name} /><WatchedMark mark={wm} /></a>
 											<div class="ov-main">
 												<h2><a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}<span class="keep ov-keep" class:on={t.keep_up_to_date} role="img" aria-label={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')} title={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={15} /></span></h2>
 												{#if t.kind === 'artist'}
@@ -662,7 +667,7 @@
 	.series-head a { margin-left: auto; color: var(--accent-text); font: var(--t-footnote); font-weight: 600; }
 
 	.ov { display: grid; grid-template-columns: 92px minmax(0, 1fr) minmax(200px, 264px); gap: 18px 24px; padding: 14px 20px 14px 16px; }
-	.ov-poster { display: block; border-radius: 8px; overflow: hidden; }
+	.ov-poster { position: relative; display: block; border-radius: 8px; overflow: hidden; }
 	.ov-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 	.ov h2 { margin: 0; font: var(--t-title3); display: flex; align-items: baseline; gap: 10px; }
 	/* A long name wraps (up to three lines) beside the year and the bell, which never break. */

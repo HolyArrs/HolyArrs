@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs les MDBList-lista; bættu honum við aftur undir Stillingar > Ytri listar",
 	"server.requests.send-key-mdblist-api-key-or": "sendu {\"key\": \"<MDBList API-lykill>\"}, eða {\"key\": \"\"} til að fjarlægja hann",
 	"server.mediaservers.no-such-title": "enginn slíkur titill",
-	"server.mediaservers.send-title-a-library-title-id": "sendu title, auðkenni titils í Safninu"
+	"server.mediaservers.send-title-a-library-title-id": "sendu title, auðkenni titils í Safninu",
+	"server.accounts.linked-the-account-to": "{name} tengdi {kind}-aðganginn {name2} við {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} aftengdi {kind}-aðgang {name2}",
+	"server.accounts.no-such-account-on-that-server": "enginn slíkur aðgangur á þeim þjóni",
+	"server.accounts.only-the-owner-links-people-to": "aðeins eigandinn tengir fólk við aðganga á þjóni",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "þetta er eina leið þeirra til að skrá sig inn; gefðu þeim fyrst lykilorð"
 }

@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "bijv. Mama",
 	"settings.users.days": "Dagen dat de link geldig is",
 	"settings.users.makeInvite": "Een uitnodigingslink maken",
-	"settings.users.permAuto4k": "4K-aanvragen zonder wachten goedgekeurd"
+	"settings.users.permAuto4k": "4K-aanvragen zonder wachten goedgekeurd",
+	"settings.users.serverAccount": "Serveraccount",
+	"settings.users.pickAccount": "Kies een account op een mediaserver",
+	"settings.users.accountLinked": "Gekoppeld aan {name}"
 }

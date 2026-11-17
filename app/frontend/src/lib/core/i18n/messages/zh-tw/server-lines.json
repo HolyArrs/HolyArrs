@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs 可讀取 MDBList 清單；請在 設定 > 外部清單 中重新新增",
 	"server.requests.send-key-mdblist-api-key-or": "請傳送 {\"key\": \"<MDBList API 金鑰>\"}，或傳送 {\"key\": \"\"} 將其移除",
 	"server.mediaservers.no-such-title": "沒有這個作品",
-	"server.mediaservers.send-title-a-library-title-id": "請傳送 title，也就是媒體庫中作品的 id"
+	"server.mediaservers.send-title-a-library-title-id": "請傳送 title，也就是媒體庫中作品的 id",
+	"server.accounts.linked-the-account-to": "{name} 將 {kind} 帳號 {name2} 連結到 {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} 取消了 {name2} 的 {kind} 帳號連結",
+	"server.accounts.no-such-account-on-that-server": "該伺服器上沒有這個帳號",
+	"server.accounts.only-the-owner-links-people-to": "只有擁有者可以把人連結到伺服器帳號",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "這是他們唯一的登入方式；請先為他們設定密碼"
 }

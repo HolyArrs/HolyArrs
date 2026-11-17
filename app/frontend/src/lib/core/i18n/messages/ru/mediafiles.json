@@ -510,5 +510,9 @@
 	"mediafiles.list.nothingMissing": "Всё на месте.",
 	"mediafiles.showDelete.deleteLabel": "Удалить {what}",
 	"mediafiles.showReleases.searchingFor": "Поиск: {name}",
-	"mediafiles.sheet.file": "Файл"
+	"mediafiles.sheet.file": "Файл",
+	"mediafiles.watched.all": "Просмотрено",
+	"mediafiles.watched.byAnyone": "Смотрел кто-либо",
+	"mediafiles.watched.part": "Просмотрено {seen} из {of}",
+	"mediafiles.watched.partly": "Просмотрено частично"
 }

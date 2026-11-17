@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs liest MDBList-Listen; füge sie unter Einstellungen > Externe Listen noch einmal hinzu",
 	"server.requests.send-key-mdblist-api-key-or": "sende {\"key\": \"<MDBList-API-Schlüssel>\"}, oder {\"key\": \"\"}, um ihn zu entfernen",
 	"server.mediaservers.no-such-title": "diesen Titel gibt es nicht",
-	"server.mediaservers.send-title-a-library-title-id": "sende title, eine Titel-ID aus der Bibliothek"
+	"server.mediaservers.send-title-a-library-title-id": "sende title, eine Titel-ID aus der Bibliothek",
+	"server.accounts.linked-the-account-to": "{name} hat das {kind}-Konto {name2} mit {name3} verknüpft",
+	"server.accounts.unlinked-the-account-of": "{name} hat das {kind}-Konto von {name2} gelöst",
+	"server.accounts.no-such-account-on-that-server": "kein solches Konto auf diesem Server",
+	"server.accounts.only-the-owner-links-people-to": "nur der Besitzer verknüpft Personen mit Server-Konten",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "das ist ihr einziger Weg zur Anmeldung; gib ihnen zuerst ein Passwort"
 }

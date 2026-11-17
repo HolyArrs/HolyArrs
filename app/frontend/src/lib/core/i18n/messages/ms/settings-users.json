@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "cth. Mak",
 	"settings.users.days": "Hari pautan bertahan",
 	"settings.users.makeInvite": "Buat pautan jemputan",
-	"settings.users.permAuto4k": "Permintaan 4K diluluskan tanpa menunggu"
+	"settings.users.permAuto4k": "Permintaan 4K diluluskan tanpa menunggu",
+	"settings.users.serverAccount": "Akaun pelayan",
+	"settings.users.pickAccount": "Pilih akaun pada pelayan media",
+	"settings.users.accountLinked": "Dipautkan kepada {name}"
 }

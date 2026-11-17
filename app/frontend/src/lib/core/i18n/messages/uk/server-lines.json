@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs читає списки MDBList; додай його знову в Налаштування > Зовнішні списки",
 	"server.requests.send-key-mdblist-api-key-or": "надішли {\"key\": \"<ключ API MDBList>\"} або {\"key\": \"\"}, щоб прибрати його",
 	"server.mediaservers.no-such-title": "такого тайтла немає",
-	"server.mediaservers.send-title-a-library-title-id": "надішліть title — id тайтла з Медіатеки"
+	"server.mediaservers.send-title-a-library-title-id": "надішліть title — id тайтла з Медіатеки",
+	"server.accounts.linked-the-account-to": "{name} пов'язав обліковий запис {kind} {name2} з {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} відв'язав обліковий запис {kind} користувача {name2}",
+	"server.accounts.no-such-account-on-that-server": "такого облікового запису на цьому сервері немає",
+	"server.accounts.only-the-owner-links-people-to": "лише власник пов'язує людей з обліковими записами сервера",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "це їхній єдиний спосіб входу; спершу задайте їм пароль"
 }

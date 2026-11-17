@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs leest MDBList-lijsten; voeg hem opnieuw toe onder Instellingen > Externe lijsten",
 	"server.requests.send-key-mdblist-api-key-or": "stuur {\"key\": \"<MDBList-API-sleutel>\"}, of {\"key\": \"\"} om hem te verwijderen",
 	"server.mediaservers.no-such-title": "die titel bestaat niet",
-	"server.mediaservers.send-title-a-library-title-id": "stuur title, het id van een titel in de Bibliotheek"
+	"server.mediaservers.send-title-a-library-title-id": "stuur title, het id van een titel in de Bibliotheek",
+	"server.accounts.linked-the-account-to": "{name} koppelde het {kind}-account {name2} aan {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} ontkoppelde het {kind}-account van {name2}",
+	"server.accounts.no-such-account-on-that-server": "zo'n account bestaat niet op die server",
+	"server.accounts.only-the-owner-links-people-to": "alleen de eigenaar koppelt mensen aan serveraccounts",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "dit is hun enige manier om in te loggen; geef ze eerst een wachtwoord"
 }

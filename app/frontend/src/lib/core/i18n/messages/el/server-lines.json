@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "Το HolyArrs διαβάζει λίστες MDBList· προσθέστε τη ξανά στις Ρυθμίσεις > Εξωτερικές λίστες",
 	"server.requests.send-key-mdblist-api-key-or": "στείλτε {\"key\": \"<κλειδί API του MDBList>\"}, ή {\"key\": \"\"} για να το αφαιρέσετε",
 	"server.mediaservers.no-such-title": "δεν υπάρχει τέτοιος τίτλος",
-	"server.mediaservers.send-title-a-library-title-id": "στείλτε title, το id ενός τίτλου της Βιβλιοθήκης"
+	"server.mediaservers.send-title-a-library-title-id": "στείλτε title, το id ενός τίτλου της Βιβλιοθήκης",
+	"server.accounts.linked-the-account-to": "{name} συνέδεσε τον λογαριασμό {kind} {name2} με {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} αποσύνδεσε τον λογαριασμό {kind} του {name2}",
+	"server.accounts.no-such-account-on-that-server": "δεν υπάρχει τέτοιος λογαριασμός σε αυτόν τον διακομιστή",
+	"server.accounts.only-the-owner-links-people-to": "μόνο ο κάτοχος συνδέει άτομα με λογαριασμούς διακομιστή",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "αυτός είναι ο μόνος τρόπος σύνδεσής τους· ορίστε τους πρώτα κωδικό"
 }

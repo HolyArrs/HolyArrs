@@ -510,5 +510,9 @@
 	"mediafiles.list.nothingMissing": "Нічого не бракує.",
 	"mediafiles.showDelete.deleteLabel": "Видалити {what}",
 	"mediafiles.showReleases.searchingFor": "Шукаємо {name}",
-	"mediafiles.sheet.file": "Файл"
+	"mediafiles.sheet.file": "Файл",
+	"mediafiles.watched.all": "Переглянуто",
+	"mediafiles.watched.byAnyone": "Дивився будь-хто",
+	"mediafiles.watched.part": "Переглянуто {seen} із {of}",
+	"mediafiles.watched.partly": "Переглянуто частково"
 }

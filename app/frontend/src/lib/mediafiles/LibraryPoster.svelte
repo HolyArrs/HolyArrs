@@ -36,6 +36,8 @@
 	import { reducedMotion, viewTransitionName } from '../core/motion.ts';
 	import { sized } from '../core/tmdb-image.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import WatchedMark from './WatchedMark.svelte';
+	import { watchedWords, type WatchedMark as WatchedMarkT } from './watched.ts';
 
 	let {
 		title,
@@ -56,7 +58,8 @@
 		selecting = false,
 		selected = false,
 		onsearch,
-		onkeep
+		onkeep,
+		watched = null
 	}: {
 		title: string;
 		year?: number | string;
@@ -81,6 +84,8 @@
 		selected?: boolean;
 		onsearch?: () => void;
 		onkeep?: (keep: boolean) => void;
+		// What the signed-in person has watched of this title.
+		watched?: WatchedMarkT | null;
 	} = $props();
 
 	let root = $state<HTMLElement>();
@@ -94,7 +99,7 @@
 	const pic = $derived(sized(image, 'poster', cw || 200));
 	const kindIcon = $derived<IconName>(kind === 'show' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 	const words = $derived(ls?.label ?? (bar.tone === 'ok' ? t('mediafiles.poster.inLibrary') : ''));
-	const name = $derived([title, year, words, score && `${t('mediafiles.col.score')} ${score}`].filter(Boolean).join(', '));
+	const name = $derived([title, year, words, score && `${t('mediafiles.col.score')} ${score}`, watched && watchedWords(watched, t)].filter(Boolean).join(', '));
 
 	$effect(() => {
 		if (!root) return;
@@ -143,6 +148,7 @@
 			{#if score && !selecting}
 				<span class="badge score" aria-hidden="true"><svg width="10" height="10" viewBox="0 0 12 12"><path d="M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z" fill="currentColor" /></svg><b>{score}</b></span>
 			{/if}
+			<WatchedMark mark={watched} />
 			<span class="line {bar.tone}" aria-hidden="true"><i style="transform: scaleX({bar.fill})"></i></span>
 		</a>
 		{#if !touch}
@@ -225,7 +231,7 @@
 		.frame:hover, .frame:focus-within { --ty: -4px; --s: 1.03; box-shadow: var(--shadow-lift); z-index: 2; transform: perspective(800px) translateY(var(--ty, 0)) scale(var(--s, 1)) rotateX(var(--rx)) rotateY(var(--ry)); will-change: transform; }
 		/* The blur is set only while the panel shows; idle cards skip the cost. */
 		.frame:hover .glass, .frame:focus-within .glass { opacity: 1; pointer-events: auto; transition: opacity var(--dur) var(--ease-out); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); }
-		.frame:hover .badge, .frame:focus-within .badge { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
+		.frame:hover .badge, .frame:focus-within .badge, .frame:hover :global(.wm), .frame:focus-within :global(.wm) { opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	}
 
 	/* Keyboard focus should not leave the card tilted. */

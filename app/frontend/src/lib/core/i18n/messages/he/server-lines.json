@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs קורא רשימות MDBList; הוסף אותה שוב תחת הגדרות > רשימות חיצוניות",
 	"server.requests.send-key-mdblist-api-key-or": "שלח {\"key\": \"<מפתח API של MDBList>\"}, או {\"key\": \"\"} כדי להסיר אותו",
 	"server.mediaservers.no-such-title": "אין כותר כזה",
-	"server.mediaservers.send-title-a-library-title-id": "שלחו title, מזהה של כותר בספרייה"
+	"server.mediaservers.send-title-a-library-title-id": "שלחו title, מזהה של כותר בספרייה",
+	"server.accounts.linked-the-account-to": "{name} קישר את חשבון {kind} {name2} אל {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} ביטל את קישור חשבון {kind} של {name2}",
+	"server.accounts.no-such-account-on-that-server": "אין חשבון כזה בשרת הזה",
+	"server.accounts.only-the-owner-links-people-to": "רק הבעלים מקשר אנשים לחשבונות בשרת",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "זו הדרך היחידה שלהם להיכנס; קבעו להם סיסמה קודם"
 }

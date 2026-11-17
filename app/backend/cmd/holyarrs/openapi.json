@@ -10406,6 +10406,141 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/auth/media-link": {
+      "get": {
+        "description": "Lists the owner's connected Jellyfin and Emby servers (name and kind, never the address) and my links to accounts on them.",
+        "operationId": "myMediaLinks",
+        "responses": {
+          "200": {
+            "description": "The servers and my links."
+          }
+        },
+        "summary": "Servers I may link and my links",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/auth/media-link/{kind}": {
+      "delete": {
+        "description": "kind is jellyfin or emby. Removes my link and ends the sessions it signed in; refused when it is my only way to sign in.",
+        "operationId": "myMediaUnlink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Confirm your local password first."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Nothing linked."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "It is my only way to sign in."
+          }
+        },
+        "summary": "Unlink my Jellyfin or Emby account",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/media-link/{server}": {
+      "post": {
+        "description": "Signs in to my account on that server with its name and password (sent to the server only, never kept) and links it to me, replacing my earlier link of that kind; only the account id there is kept. Needs a recent local password.",
+        "operationId": "myMediaLink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "server",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Linked."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Wrong name or password."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Confirm your local password first."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such media server."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "That account is linked to someone else."
+          }
+        },
+        "summary": "Link my Jellyfin or Emby account",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/auth/media-server/{kind}": {
       "post": {
         "description": "kind is jellyfin or emby (when turned on).",
@@ -18505,6 +18640,20 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/library/watched-by-anyone": {
+      "get": {
+        "description": "The ids of every title any account watched on Plex, Jellyfin or Emby, from the last watch history read, whether or not the account is linked to a person here. Feeds the Library's Watched by anyone filter. Needs the owner or an admin. Empty while watch history is off.",
+        "responses": {
+          "200": {
+            "description": "Whether watch history is on and the watched title ids."
+          }
+        },
+        "summary": "Titles anybody watched",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/links/{kind}/{id}/restart": {
       "post": {
         "description": "Reconnects one linked app and leaves the others alone: a Downloader is signed in again and checked, a Source is tested now, a media server or subtitle site is tested again. Answers what that app's own test answers. Needs the owner or an admin; an API key needs the control scope. Writes a control_used Event (who, what, when).",
@@ -21812,6 +21961,20 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/my/watched": {
+      "get": {
+        "description": "What the signed-in person watched on Plex, Jellyfin or Emby, from the last watch history read: the ids of their watched movies, and for each show the number of episodes watched per season. Only the accounts linked to that person count, and nobody else's are ever answered. linked is false for a person with no media server account here, and everything is empty while watch history is off. One answer covers the whole Library.",
+        "responses": {
+          "200": {
+            "description": "Whether watch history is on, whether the person has a linked account, their watched movie ids and their watched episode counts by show and season."
+          }
+        },
+        "summary": "What I watched",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
       }
     },
     "/api/v1/needs-decision": {
@@ -31458,6 +31621,31 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/users/media-accounts": {
+      "get": {
+        "description": "Owner only: every connected Jellyfin and Emby server with its accounts, to link a person to one. An account already linked to someone else carries taken_by (that person's id) and taken_name.",
+        "operationId": "serverAccounts",
+        "responses": {
+          "200": {
+            "description": "The servers and their accounts."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Only the owner."
+          }
+        },
+        "summary": "Accounts on the connected servers",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/users/{id}": {
       "put": {
         "description": "Role, permissions, state and age-rating limit; the owner cannot be changed here. max_rating is a Kid's age-rating limit: one value from G, PG, PG-13, R, NC-17 or TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA, or empty for no limit. rating_country is US (only US ratings are known for now). An empty max_rating clears the limit and a left-out one keeps it. Only members can have a limit; making someone an admin clears it. An unknown rating, a country other than US, or a limit on an admin answers 400. A person with a limit may hold only the ask and auto_approve permissions; any other permission with a limit answers 400 \"A Kid account can only ask for titles.\"",
@@ -31592,6 +31780,124 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/users/{id}/media-link": {
+      "put": {
+        "description": "Owner only: links the person to an account the server lists, replacing their earlier link of that kind.",
+        "operationId": "userMediaLink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Linked."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Only the owner."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such person, server or account."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "That account is linked to someone else."
+          }
+        },
+        "summary": "Link a person to a server account",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/users/{id}/media-link/{kind}": {
+      "delete": {
+        "description": "Owner only: removes the person's Jellyfin or Emby link; refused when it is their only way to sign in.",
+        "operationId": "userMediaUnlink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Only the owner."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Nothing linked."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "It is their only way to sign in."
+          }
+        },
+        "summary": "Unlink a person's server account",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/users/{id}/password": {

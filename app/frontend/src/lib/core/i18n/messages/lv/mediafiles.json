@@ -510,5 +510,9 @@
 	"mediafiles.showDelete.deleteLabel": "Dzēst {what}",
 	"mediafiles.showReleases.searchingFor": "Meklē: {name}",
 	"mediafiles.sheet.file": "Fails",
-	"mediafiles.parts.stopsSources": "Automātiskā meklēšana apstājas, ja lejupielādes pievienojat paši. Lejupielādētāji un importi turpina darboties."
+	"mediafiles.parts.stopsSources": "Automātiskā meklēšana apstājas, ja lejupielādes pievienojat paši. Lejupielādētāji un importi turpina darboties.",
+	"mediafiles.watched.all": "Noskatīts",
+	"mediafiles.watched.byAnyone": "Kāds ir skatījies",
+	"mediafiles.watched.part": "Noskatīts {seen} no {of}",
+	"mediafiles.watched.partly": "Daļēji noskatīts"
 }

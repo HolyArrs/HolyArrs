@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs číta zoznamy MDBList; pridajte ho znova v Nastavenia > Externé zoznamy",
 	"server.requests.send-key-mdblist-api-key-or": "pošlite {\"key\": \"<kľúč API MDBList>\"}, alebo {\"key\": \"\"} na jeho odstránenie",
 	"server.mediaservers.no-such-title": "taký titul neexistuje",
-	"server.mediaservers.send-title-a-library-title-id": "pošlite title, id titulu z Knižnice"
+	"server.mediaservers.send-title-a-library-title-id": "pošlite title, id titulu z Knižnice",
+	"server.accounts.linked-the-account-to": "{name} prepojil účet {kind} {name2} s {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} odpojil účet {kind} používateľa {name2}",
+	"server.accounts.no-such-account-on-that-server": "taký účet na tom serveri nie je",
+	"server.accounts.only-the-owner-links-people-to": "len vlastník prepája ľudí s účtami na serveri",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "je to ich jediný spôsob prihlásenia; najprv im nastavte heslo"
 }

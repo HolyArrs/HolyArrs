@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "mis. Ibu",
 	"settings.users.days": "Hari tautan berlaku",
 	"settings.users.makeInvite": "Buat tautan undangan",
-	"settings.users.permAuto4k": "Permintaan 4K disetujui tanpa menunggu"
+	"settings.users.permAuto4k": "Permintaan 4K disetujui tanpa menunggu",
+	"settings.users.serverAccount": "Akun server",
+	"settings.users.pickAccount": "Pilih akun di server media",
+	"settings.users.accountLinked": "Tertaut ke {name}"
 }

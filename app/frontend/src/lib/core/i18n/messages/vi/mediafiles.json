@@ -510,5 +510,9 @@
 	"mediafiles.showDelete.deleteLabel": "Xóa {what}",
 	"mediafiles.showReleases.searchingFor": "Đang tìm {name}",
 	"mediafiles.sheet.file": "Tệp",
-	"mediafiles.parts.stopsSources": "Tìm kiếm tự động dừng lại, dành cho khi bạn tự thêm bản tải. Trình tải và nhập vẫn hoạt động."
+	"mediafiles.parts.stopsSources": "Tìm kiếm tự động dừng lại, dành cho khi bạn tự thêm bản tải. Trình tải và nhập vẫn hoạt động.",
+	"mediafiles.watched.all": "Đã xem",
+	"mediafiles.watched.byAnyone": "Có người đã xem",
+	"mediafiles.watched.part": "Đã xem {seen} / {of}",
+	"mediafiles.watched.partly": "Đã xem một phần"
 }

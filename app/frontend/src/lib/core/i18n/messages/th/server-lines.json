@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs อ่านรายการ MDBList เพิ่มอีกครั้งในการตั้งค่า > รายการภายนอก",
 	"server.requests.send-key-mdblist-api-key-or": "ส่ง {\"key\": \"<คีย์ API ของ MDBList>\"} หรือ {\"key\": \"\"} เพื่อลบ",
 	"server.mediaservers.no-such-title": "ไม่มีชื่อเรื่องนี้",
-	"server.mediaservers.send-title-a-library-title-id": "ส่ง title ซึ่งเป็น id ของชื่อเรื่องในคลัง"
+	"server.mediaservers.send-title-a-library-title-id": "ส่ง title ซึ่งเป็น id ของชื่อเรื่องในคลัง",
+	"server.accounts.linked-the-account-to": "{name} เชื่อมบัญชี {kind} {name2} กับ {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} ยกเลิกการเชื่อมบัญชี {kind} ของ {name2}",
+	"server.accounts.no-such-account-on-that-server": "ไม่มีบัญชีนี้บนเซิร์ฟเวอร์นั้น",
+	"server.accounts.only-the-owner-links-people-to": "เฉพาะเจ้าของเท่านั้นที่เชื่อมผู้คนกับบัญชีเซิร์ฟเวอร์",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "นี่คือวิธีเดียวที่เขาใช้ลงชื่อเข้า ตั้งรหัสผ่านให้ก่อน"
 }

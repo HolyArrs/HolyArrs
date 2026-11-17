@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "ví dụ Mẹ",
 	"settings.users.days": "Số ngày liên kết có hiệu lực",
 	"settings.users.makeInvite": "Tạo một liên kết mời",
-	"settings.users.permAuto4k": "Yêu cầu 4K được duyệt không cần chờ"
+	"settings.users.permAuto4k": "Yêu cầu 4K được duyệt không cần chờ",
+	"settings.users.serverAccount": "Tài khoản máy chủ",
+	"settings.users.pickAccount": "Chọn một tài khoản trên máy chủ media",
+	"settings.users.accountLinked": "Đã liên kết với {name}"
 }

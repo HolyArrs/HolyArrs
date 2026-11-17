@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "مثلاً مامان",
 	"settings.users.days": "چند روز پیوند معتبر باشد",
 	"settings.users.makeInvite": "ساخت پیوند دعوت",
-	"settings.users.permAuto4k": "درخواست‌های 4K بدون انتظار تأیید می‌شوند"
+	"settings.users.permAuto4k": "درخواست‌های 4K بدون انتظار تأیید می‌شوند",
+	"settings.users.serverAccount": "حساب سرور",
+	"settings.users.pickAccount": "یک حساب روی سرور رسانه انتخاب کنید",
+	"settings.users.accountLinked": "به {name} پیوند خورد"
 }

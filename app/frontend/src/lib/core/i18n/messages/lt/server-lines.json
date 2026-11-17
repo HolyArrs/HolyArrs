@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs skaito MDBList sąrašus; pridėkite jį iš naujo skiltyje Nustatymai > Išoriniai sąrašai",
 	"server.requests.send-key-mdblist-api-key-or": "siųskite {\"key\": \"<MDBList API raktas>\"}, arba {\"key\": \"\"}, kad jį pašalintumėte",
 	"server.mediaservers.no-such-title": "tokio pavadinimo nėra",
-	"server.mediaservers.send-title-a-library-title-id": "nusiųskite title – Bibliotekos pavadinimo id"
+	"server.mediaservers.send-title-a-library-title-id": "nusiųskite title – Bibliotekos pavadinimo id",
+	"server.accounts.linked-the-account-to": "{name} susiejo {kind} paskyrą {name2} su {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} atsiejo {name2} {kind} paskyrą",
+	"server.accounts.no-such-account-on-that-server": "tokios paskyros tame serveryje nėra",
+	"server.accounts.only-the-owner-links-people-to": "tik savininkas sieja žmones su serverio paskyromis",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "tai vienintelis jų prisijungimo būdas; pirmiausia nustatykite jiems slaptažodį"
 }

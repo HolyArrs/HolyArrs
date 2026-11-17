@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "O HolyArrs lê listas do MDBList; adicione-a novamente em Definições > Listas externas",
 	"server.requests.send-key-mdblist-api-key-or": "envie {\"key\": \"<chave de API do MDBList>\"}, ou {\"key\": \"\"} para a remover",
 	"server.mediaservers.no-such-title": "esse título não existe",
-	"server.mediaservers.send-title-a-library-title-id": "envie title, o id de um título da Biblioteca"
+	"server.mediaservers.send-title-a-library-title-id": "envie title, o id de um título da Biblioteca",
+	"server.accounts.linked-the-account-to": "{name} associou a conta {kind} {name2} a {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} desassociou a conta {kind} de {name2}",
+	"server.accounts.no-such-account-on-that-server": "não existe essa conta nesse servidor",
+	"server.accounts.only-the-owner-links-people-to": "só o proprietário associa pessoas a contas do servidor",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "é a única forma de entrar desta pessoa; defina primeiro uma palavra-passe"
 }

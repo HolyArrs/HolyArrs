@@ -101,5 +101,8 @@
 	"settings.users.noteExample": "нпр. мама",
 	"settings.users.days": "Дани трајања везе",
 	"settings.users.makeInvite": "Направи везу позивнице",
-	"settings.users.permAuto4k": "4K захтеви се одобравају без чекања"
+	"settings.users.permAuto4k": "4K захтеви се одобравају без чекања",
+	"settings.users.serverAccount": "Налог на серверу",
+	"settings.users.pickAccount": "Изаберите налог на медијском серверу",
+	"settings.users.accountLinked": "Повезано са {name}"
 }

@@ -1347,5 +1347,11 @@
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs đọc danh sách MDBList; hãy thêm lại trong Cài đặt > Danh sách ngoài",
 	"server.requests.send-key-mdblist-api-key-or": "gửi {\"key\": \"<khóa API MDBList>\"}, hoặc {\"key\": \"\"} để xóa nó",
 	"server.mediaservers.no-such-title": "không có tựa này",
-	"server.mediaservers.send-title-a-library-title-id": "gửi title, id của một tựa trong Thư viện"
+	"server.mediaservers.send-title-a-library-title-id": "gửi title, id của một tựa trong Thư viện",
+	"server.accounts.linked-the-account-to": "{name} đã liên kết tài khoản {kind} {name2} với {name3}",
+	"server.accounts.unlinked-the-account-of": "{name} đã gỡ liên kết tài khoản {kind} của {name2}",
+	"server.accounts.no-such-account-on-that-server": "không có tài khoản như vậy trên máy chủ đó",
+	"server.accounts.only-the-owner-links-people-to": "chỉ chủ sở hữu liên kết mọi người với tài khoản máy chủ",
+	"server.accounts.send-server-1-account": "send {\"server\": 1, \"account\": \"...\"}",
+	"server.accounts.this-is-their-only-way-to": "đây là cách đăng nhập duy nhất của họ; hãy đặt mật khẩu cho họ trước"
 }

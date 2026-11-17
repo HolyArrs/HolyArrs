@@ -611,7 +611,6 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	}})
 	optional(jobs.Loop{Name: "gates", Label: "Release gates", Every: time.Minute, Run: lib.GatesPass})
-
 	sso, err := accounts.SSOFromEnv(c.URLBase)
 	if err != nil {
 		return err
@@ -652,6 +651,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	sender.Watch(ctx)
 	media := &mediaservers.Linker{Store: s, Vault: vault, Paused: c.SafeMode}
 	reg.AlsoWait(func() { media.Stop(); media.Wait() })
+	au.SetMediaLinks(accounts.MediaLinks{Servers: media.LinkServers, Accounts: media.ServerAccounts, Linked: media.ReadWatchHistorySoon})
 	reg.AlsoWait(he.Wait)
 	if !c.SafeMode {
 		media.Watch(ctx)

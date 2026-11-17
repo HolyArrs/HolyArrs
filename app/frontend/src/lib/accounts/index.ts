@@ -23,6 +23,7 @@ export { default as SigninRecent } from './SigninRecent.svelte';
 export { default as LocalSkipCard } from './LocalSkipCard.svelte';
 export { default as SsoCard } from './SsoCard.svelte';
 export { default as Table } from './Table.svelte';
+export { default as UserMediaLink } from './UserMediaLink.svelte';
 export { forgetPerson } from './recent-people.ts';
 export { inviteTiles } from './signin-art.ts';
 export { keepPersonPic } from './recent-people.ts';
