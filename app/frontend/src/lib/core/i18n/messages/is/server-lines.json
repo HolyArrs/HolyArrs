@@ -1344,6 +1344,7 @@
 	"server.sources.this-version-already-has-a-good": "Þetta afbrigði hefur þegar nógu gott eintak; það nýja kemur í staðinn",
 	"server.requests.removed-the-request-for": "{name} fjarlægði beiðni um {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex gaf engan reikningskóða fyrir þessa manneskju, þannig að áhorfslistinn hennar er ekki lesinn.",
+<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs les MDBList-lista; bættu honum við aftur undir Stillingar > Ytri listar",
 	"server.requests.send-key-mdblist-api-key-or": "sendu {\"key\": \"<MDBList API-lykill>\"}, eða {\"key\": \"\"} til að fjarlægja hann",
 	"server.mediaservers.no-such-title": "enginn slíkur titill",
@@ -1377,4 +1378,9 @@
 	"server.accounts.api-key-changed": "API-lyklinum {label} breytt",
 	"server.accounts.only-the-owner-and-admins-may-2": "aðeins innskráður eigandi og stjórnendur mega breyta lykli",
 	"server.metadata.your-router-or-vpn-is-sending": "Beinirinn eða VPN-ið þitt sendir HolyArrs á falskt vistfang (198.18.x.x). Þetta kemur oftast frá Clash eða Surge. Bættu {host} á beina listann þess."
+=======
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "sendu {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "kveiktu fyrst á Merkja umbeðna titla",
+	"server.mediaservers.a-label-needs-1-to-64": "merki þarf 1 til 64 stafi"
+>>>>>>> feat/407-plex-labels
 }

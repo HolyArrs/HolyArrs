@@ -1344,6 +1344,7 @@
 	"server.sources.this-version-already-has-a-good": "Táto Verzia už má dostatočnú kópiu; nová ju nahradí",
 	"server.requests.removed-the-request-for": "{name} odstránil(a) žiadosť o {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex pre túto osobu nedal kód účtu, preto sa jej zoznam na pozretie nečíta.",
+<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs číta zoznamy MDBList; pridajte ho znova v Nastavenia > Externé zoznamy",
 	"server.requests.send-key-mdblist-api-key-or": "pošlite {\"key\": \"<kľúč API MDBList>\"}, alebo {\"key\": \"\"} na jeho odstránenie",
 	"server.mediaservers.no-such-title": "taký titul neexistuje",
@@ -1377,4 +1378,9 @@
 	"server.accounts.api-key-changed": "Kľúč API {label} zmenený",
 	"server.accounts.only-the-owner-and-admins-may-2": "kľúč môžu zmeniť iba prihlásený vlastník a správcovia",
 	"server.metadata.your-router-or-vpn-is-sending": "Váš smerovač alebo VPN posiela HolyArrs na falošnú adresu (198.18.x.x). Zvyčajne to spôsobuje Clash alebo Surge. Pridajte {host} do jeho zoznamu priamych pripojení."
+=======
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "pošlite {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "najprv zapnite Označiť požadované tituly štítkom",
+	"server.mediaservers.a-label-needs-1-to-64": "štítok musí mať 1 až 64 znakov"
+>>>>>>> feat/407-plex-labels
 }

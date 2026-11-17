@@ -225,6 +225,12 @@ type Linker struct {
 
 	// watch keeps each server's movie and series lists for WatchLinks.
 	watch watchCache
+	// Asked lists asked-for titles for Plex labels (nil: no labels).
+	Asked AskedFunc
+	// labelling lets one label pass run at a time; stopLabel ends a
+	// background one.
+	labelling sync.Mutex
+	stopLabel context.CancelFunc
 
 	mu      sync.Mutex
 	pending map[string]string // folder -> change
@@ -392,6 +398,9 @@ func (l *Linker) Stop() {
 	defer l.mu.Unlock()
 	if l.stopRead != nil {
 		l.stopRead()
+	}
+	if l.stopLabel != nil {
+		l.stopLabel()
 	}
 	if l.timer == nil || !l.timer.Stop() {
 		return // nothing gathered, or the send already started

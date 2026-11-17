@@ -1344,6 +1344,7 @@
 	"server.sources.this-version-already-has-a-good": "Ši Versija jau turi pakankamai gerą kopiją; nauja ją pakeis",
 	"server.requests.removed-the-request-for": "{name} pašalino užklausą: {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex nepateikė šio asmens paskyros kodo, todėl jo žiūrėjimo sąrašas neskaitomas.",
+<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs skaito MDBList sąrašus; pridėkite jį iš naujo skiltyje Nustatymai > Išoriniai sąrašai",
 	"server.requests.send-key-mdblist-api-key-or": "siųskite {\"key\": \"<MDBList API raktas>\"}, arba {\"key\": \"\"}, kad jį pašalintumėte",
 	"server.mediaservers.no-such-title": "tokio pavadinimo nėra",
@@ -1377,4 +1378,9 @@
 	"server.accounts.api-key-changed": "API raktas {label} pakeistas",
 	"server.accounts.only-the-owner-and-admins-may-2": "raktą gali keisti tik prisijungę savininkas ir administratoriai",
 	"server.metadata.your-router-or-vpn-is-sending": "Jūsų maršrutizatorius arba VPN siunčia HolyArrs į netikrą adresą (198.18.x.x). Dažniausiai tai daro Clash arba Surge. Įtraukite {host} į jo tiesioginio ryšio sąrašą."
+=======
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "siųskite {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "pirmiausia įjunkite Žymėti užsakytus pavadinimus",
+	"server.mediaservers.a-label-needs-1-to-64": "žymą turi sudaryti nuo 1 iki 64 simbolių"
+>>>>>>> feat/407-plex-labels
 }

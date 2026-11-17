@@ -1344,6 +1344,7 @@
 	"server.sources.this-version-already-has-a-good": "Deze variant heeft al een kopie die goed genoeg is; de nieuwe vervangt die",
 	"server.requests.removed-the-request-for": "{name} heeft het verzoek voor {a} verwijderd",
 	"server.requests.plex-gave-no-account-code-for": "Plex gaf geen accountcode voor deze persoon, dus zijn of haar kijklijst wordt niet gelezen.",
+<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs leest MDBList-lijsten; voeg hem opnieuw toe onder Instellingen > Externe lijsten",
 	"server.requests.send-key-mdblist-api-key-or": "stuur {\"key\": \"<MDBList-API-sleutel>\"}, of {\"key\": \"\"} om hem te verwijderen",
 	"server.mediaservers.no-such-title": "die titel bestaat niet",
@@ -1377,4 +1378,9 @@
 	"server.accounts.api-key-changed": "API-sleutel {label} gewijzigd",
 	"server.accounts.only-the-owner-and-admins-may-2": "alleen de eigenaar en beheerders mogen een sleutel wijzigen, ingelogd",
 	"server.metadata.your-router-or-vpn-is-sending": "Je router of VPN stuurt HolyArrs naar een nepadres (198.18.x.x). Dit komt meestal door Clash of Surge. Zet {host} op de directe lijst daarvan."
+=======
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "stuur {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "zet eerst Aangevraagde titels labelen aan",
+	"server.mediaservers.a-label-needs-1-to-64": "een label moet 1 tot 64 tekens hebben"
+>>>>>>> feat/407-plex-labels
 }

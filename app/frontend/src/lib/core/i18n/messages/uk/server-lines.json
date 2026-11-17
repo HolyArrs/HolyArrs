@@ -1344,6 +1344,7 @@
 	"server.sources.this-version-already-has-a-good": "У цього Варіанта вже є достатньо хороша копія; нова її замінить",
 	"server.requests.removed-the-request-for": "{name} видалив(ла) запит на {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex не передав код акаунта цієї людини, тому її список перегляду не читається.",
+<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs читає списки MDBList; додай його знову в Налаштування > Зовнішні списки",
 	"server.requests.send-key-mdblist-api-key-or": "надішли {\"key\": \"<ключ API MDBList>\"} або {\"key\": \"\"}, щоб прибрати його",
 	"server.mediaservers.no-such-title": "такого тайтла немає",
@@ -1377,4 +1378,9 @@
 	"server.accounts.api-key-changed": "Ключ API {label} змінено",
 	"server.accounts.only-the-owner-and-admins-may-2": "змінювати ключ можуть лише власник і адміни після входу",
 	"server.metadata.your-router-or-vpn-is-sending": "Ваш роутер або VPN спрямовує HolyArrs на підроблену адресу (198.18.x.x). Зазвичай це робить Clash або Surge. Додайте {host} до його списку прямих з'єднань."
+=======
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "надішліть {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "спершу увімкніть Додавати мітку запитаним тайтлам",
+	"server.mediaservers.a-label-needs-1-to-64": "мітка має містити від 1 до 64 символів"
+>>>>>>> feat/407-plex-labels
 }

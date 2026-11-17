@@ -26003,6 +26003,55 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/settings/plex-labels": {
+      "get": {
+        "description": "Whether HolyArrs puts a label on requested movies and shows in Plex, the label, and whether each requester's name is added too. Off by default; the label is holyarrs unless changed.",
+        "responses": {
+          "200": {
+            "description": "{\"enabled\": bool, \"label\": string, \"askers\": bool}."
+          }
+        },
+        "summary": "Plex label settings",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Body {\"enabled\": bool, \"label\": string, \"askers\": bool}; a field left out keeps its value. Turning it on labels titles that become available from then on. Labels already on a Plex item stay. Needs a password sign-in or an API key.",
+        "responses": {
+          "200": {
+            "description": "Saved; the settings as stored."
+          },
+          "400": {
+            "description": "The body is not JSON, or the label is empty or longer than 64 characters."
+          },
+          "403": {
+            "description": "Only the owner, signed in with a password or an API key, may change it."
+          }
+        },
+        "summary": "Change the Plex label settings",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/settings/plex-labels/run": {
+      "post": {
+        "description": "Labels every requested movie and show already in the Library on each Plex server, in the background. A title Plex does not have yet is tried again on the next pass.",
+        "responses": {
+          "202": {
+            "description": "Started."
+          },
+          "409": {
+            "description": "Plex labels are off."
+          }
+        },
+        "summary": "Label existing requested titles",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/settings/release-gate": {
       "get": {
         "description": "The gate new movies get.",

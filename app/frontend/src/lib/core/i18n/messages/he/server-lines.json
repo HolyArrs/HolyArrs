@@ -1344,6 +1344,7 @@
 	"server.sources.this-version-already-has-a-good": "לגרסה הזו כבר יש עותק מספיק טוב; החדש יחליף אותו",
 	"server.requests.removed-the-request-for": "{name} הסיר/ה את הבקשה עבור {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex לא סיפק קוד חשבון עבור האדם הזה, ולכן רשימת הצפייה שלו לא נקראת.",
+<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs קורא רשימות MDBList; הוסף אותה שוב תחת הגדרות > רשימות חיצוניות",
 	"server.requests.send-key-mdblist-api-key-or": "שלח {\"key\": \"<מפתח API של MDBList>\"}, או {\"key\": \"\"} כדי להסיר אותו",
 	"server.mediaservers.no-such-title": "אין כותר כזה",
@@ -1377,4 +1378,9 @@
 	"server.accounts.api-key-changed": "מפתח ה־API {label} שונה",
 	"server.accounts.only-the-owner-and-admins-may-2": "רק הבעלים והמנהלים, לאחר התחברות, יכולים לשנות מפתח",
 	"server.metadata.your-router-or-vpn-is-sending": "הנתב או ה-VPN שלך שולחים את HolyArrs לכתובת מזויפת (198.18.x.x). זה בדרך כלל מגיע מ-Clash או מ-Surge. הוסף את {host} לרשימת החיבור הישיר שלו."
+=======
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "שלחו {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "הפעילו קודם את תיוג כותרים שהתבקשו",
+	"server.mediaservers.a-label-needs-1-to-64": "תווית צריכה 1 עד 64 תווים"
+>>>>>>> feat/407-plex-labels
 }

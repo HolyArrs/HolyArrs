@@ -52,6 +52,9 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/library/watched-by-anyone":             webserver.NeedUsers,
 	"GET /api/v1/settings/watch-history":                webserver.NeedOwner,
 	"PUT /api/v1/settings/watch-history":                webserver.NeedOwner,
+	"GET /api/v1/settings/plex-labels":                  webserver.NeedOwner,
+	"PUT /api/v1/settings/plex-labels":                  webserver.NeedOwner,
+	"POST /api/v1/settings/plex-labels/run":             webserver.NeedOwner,
 
 	// The app's pages and files; the pages themselves ask the API.
 	"GET /":      webserver.NeedSelf,

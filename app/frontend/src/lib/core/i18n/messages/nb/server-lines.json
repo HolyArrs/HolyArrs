@@ -1344,6 +1344,7 @@
 	"server.sources.this-version-already-has-a-good": "Denne versjonen har allerede en bra nok kopi. Den nye erstatter den",
 	"server.requests.removed-the-request-for": "{name} fjernet forespørselen om {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex ga ingen kontokode for denne personen, så ønskelisten hens blir ikke lest.",
+<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs leser MDBList-lister. Legg den til igjen under Innstillinger > Eksterne lister",
 	"server.requests.send-key-mdblist-api-key-or": "send {\"key\": \"<MDBList-API-nøkkel>\"}, eller {\"key\": \"\"} for å fjerne den",
 	"server.mediaservers.no-such-title": "den tittelen finnes ikke",
@@ -1377,4 +1378,9 @@
 	"server.accounts.api-key-changed": "API-nøkkelen {label} endret",
 	"server.accounts.only-the-owner-and-admins-may-2": "bare eieren og admin kan endre en nøkkel, når de er logget inn",
 	"server.metadata.your-router-or-vpn-is-sending": "Ruteren eller VPN-en din sender HolyArrs til en falsk adresse (198.18.x.x). Dette kommer som regel fra Clash eller Surge. Legg {host} til i den direkte listen."
+=======
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "send {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "slå på Merk ønskede titler med etikett først",
+	"server.mediaservers.a-label-needs-1-to-64": "en etikett må ha 1 til 64 tegn"
+>>>>>>> feat/407-plex-labels
 }

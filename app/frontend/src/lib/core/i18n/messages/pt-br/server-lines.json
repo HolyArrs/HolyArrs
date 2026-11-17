@@ -1344,6 +1344,7 @@
 	"server.sources.this-version-already-has-a-good": "Esta Versão já tem uma cópia boa o bastante; a nova vai substituí-la",
 	"server.requests.removed-the-request-for": "{name} removeu o pedido de {a}",
 	"server.requests.plex-gave-no-account-code-for": "O Plex não deu nenhum código de conta para esta pessoa, então a lista de interesse dela não é lida.",
+<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "O HolyArrs lê listas do MDBList; adicione de novo em Configurações > Listas externas",
 	"server.requests.send-key-mdblist-api-key-or": "envie {\"key\": \"<chave de API do MDBList>\"}, ou {\"key\": \"\"} para removê-la",
 	"server.mediaservers.no-such-title": "esse título não existe",
@@ -1377,4 +1378,9 @@
 	"server.accounts.api-key-changed": "Chave de API {label} alterada",
 	"server.accounts.only-the-owner-and-admins-may-2": "só o dono e os administradores, com sessão iniciada, podem alterar uma chave",
 	"server.metadata.your-router-or-vpn-is-sending": "Seu roteador ou VPN está mandando o HolyArrs para um endereço falso (198.18.x.x). Isso costuma vir do Clash ou do Surge. Adicione {host} à lista direta dele."
+=======
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "envie {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "ative primeiro Etiquetar títulos pedidos",
+	"server.mediaservers.a-label-needs-1-to-64": "uma etiqueta precisa ter de 1 a 64 caracteres"
+>>>>>>> feat/407-plex-labels
 }

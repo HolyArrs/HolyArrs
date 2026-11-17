@@ -1344,6 +1344,7 @@
 	"server.sources.this-version-already-has-a-good": "Ova verzija već ima dovoljno dobru kopiju; nova će je zamijeniti",
 	"server.requests.removed-the-request-for": "{name} je uklonio/la zahtjev za {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru računa za ovu osobu, pa se njezin popis za gledanje ne čita.",
+<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs čita MDBList popise; dodaj ga ponovno u Postavke > Vanjski popisi",
 	"server.requests.send-key-mdblist-api-key-or": "pošalji {\"key\": \"<MDBList API ključ>\"}, ili {\"key\": \"\"} da ga ukloniš",
 	"server.mediaservers.no-such-title": "takav naslov ne postoji",
@@ -1377,4 +1378,9 @@
 	"server.accounts.api-key-changed": "API ključ {label} je promijenjen",
 	"server.accounts.only-the-owner-and-admins-may-2": "samo prijavljeni vlasnik i administratori mogu promijeniti ključ",
 	"server.metadata.your-router-or-vpn-is-sending": "Vaš usmjerivač ili VPN šalje HolyArrs na lažnu adresu (198.18.x.x). To obično dolazi od Clasha ili Surgea. Dodajte {host} na njegov popis izravnih veza."
+=======
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "pošaljite {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "najprije uključite Označi tražene naslove",
+	"server.mediaservers.a-label-needs-1-to-64": "oznaka treba imati od 1 do 64 znaka"
+>>>>>>> feat/407-plex-labels
 }

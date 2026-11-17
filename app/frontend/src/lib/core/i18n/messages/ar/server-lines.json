@@ -1344,6 +1344,7 @@
 	"server.sources.this-version-already-has-a-good": "لهذه النسخة نسخة كافية الجودة بالفعل؛ وستحل الجديدة محلها",
 	"server.requests.removed-the-request-for": "أزال {name} الطلب على {a}",
 	"server.requests.plex-gave-no-account-code-for": "لم يعطِ Plex رمز حساب لهذا الشخص، لذا لا تتم قراءة قائمة المشاهدة الخاصة به.",
+<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "يقرأ HolyArrs قوائم MDBList؛ أضفها من جديد في الإعدادات > القوائم الخارجية",
 	"server.requests.send-key-mdblist-api-key-or": "أرسل {\"key\": \"<مفتاح API من MDBList>\"}، أو {\"key\": \"\"} لإزالته",
 	"server.mediaservers.no-such-title": "لا يوجد هذا العنوان",
@@ -1377,4 +1378,9 @@
 	"server.accounts.api-key-changed": "تم تغيير مفتاح API ‏{label}",
 	"server.accounts.only-the-owner-and-admins-may-2": "المالك والمشرفون فقط يستطيعون تغيير مفتاح، بعد تسجيل الدخول",
 	"server.metadata.your-router-or-vpn-is-sending": "جهاز التوجيه أو الـ VPN لديك يرسل HolyArrs إلى عنوان وهمي (198.18.x.x). يحدث هذا غالبًا بسبب Clash أو Surge. أضف {host} إلى قائمة الاتصال المباشر فيه."
+=======
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "أرسل {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "شغّل تسمية العناوين المطلوبة أولًا",
+	"server.mediaservers.a-label-needs-1-to-64": "تحتاج التسمية إلى 1 إلى 64 حرفًا"
+>>>>>>> feat/407-plex-labels
 }

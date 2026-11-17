@@ -1344,6 +1344,7 @@
 	"server.sources.this-version-already-has-a-good": "Versi ini sudah mempunyai salinan yang cukup baik; yang baharu akan menggantikannya",
 	"server.requests.removed-the-request-for": "{name} mengalih keluar permintaan untuk {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kod akaun untuk orang ini, jadi senarai tontonannya tidak dibaca.",
+<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs membaca senarai MDBList; tambahnya semula di bawah Tetapan > Senarai luar",
 	"server.requests.send-key-mdblist-api-key-or": "hantar {\"key\": \"<kunci API MDBList>\"}, atau {\"key\": \"\"} untuk membuangnya",
 	"server.mediaservers.no-such-title": "tajuk itu tiada",
@@ -1377,4 +1378,9 @@
 	"server.accounts.api-key-changed": "Kunci API {label} ditukar",
 	"server.accounts.only-the-owner-and-admins-may-2": "hanya pemilik dan pentadbir yang log masuk boleh menukar kunci",
 	"server.metadata.your-router-or-vpn-is-sending": "Penghala atau VPN anda menghantar HolyArrs ke alamat palsu (198.18.x.x). Biasanya ini daripada Clash atau Surge. Tambah {host} ke senarai direct-nya."
+=======
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "hantar {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "hidupkan Labelkan tajuk yang diminta dahulu",
+	"server.mediaservers.a-label-needs-1-to-64": "label perlu 1 hingga 64 aksara"
+>>>>>>> feat/407-plex-labels
 }

@@ -1344,6 +1344,7 @@
 	"server.sources.this-version-already-has-a-good": "Den här versionen har redan en tillräckligt bra kopia; den nya ersätter den",
 	"server.requests.removed-the-request-for": "{name} tog bort begäran om {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte.",
+<<<<<<< HEAD
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs läser MDBList-listor; lägg till den igen under Inställningar > Externa listor",
 	"server.requests.send-key-mdblist-api-key-or": "skicka {\"key\": \"<MDBList-API-nyckel>\"}, eller {\"key\": \"\"} för att ta bort den",
 	"server.mediaservers.no-such-title": "den titeln finns inte",
@@ -1377,4 +1378,9 @@
 	"server.accounts.api-key-changed": "API-nyckeln {label} ändrades",
 	"server.accounts.only-the-owner-and-admins-may-2": "bara ägaren och admins får ändra en nyckel, inloggade",
 	"server.metadata.your-router-or-vpn-is-sending": "Din router eller VPN skickar HolyArrs till en falsk adress (198.18.x.x). Det kommer oftast från Clash eller Surge. Lägg till {host} i dess direktlista."
+=======
+	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "skicka {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
+	"server.mediaservers.turn-on-label-requested-titles-first": "slå på Märk önskade titlar med etikett först",
+	"server.mediaservers.a-label-needs-1-to-64": "en etikett behöver 1 till 64 tecken"
+>>>>>>> feat/407-plex-labels
 }
