@@ -53,7 +53,9 @@
 			const row = list?.querySelector<HTMLElement>('[aria-current="page"]');
 			if (!row || !list) return void (pill = { ...pill, on: false });
 			const first = !pill.on;
-			pill = { top: row.offsetTop, height: row.offsetHeight, on: true, still: first };
+			// Measure against the list: the row's own offsetTop is relative to its positioned <li>, which is always 0.
+			const top = row.getBoundingClientRect().top - list.getBoundingClientRect().top;
+			pill = { top, height: row.offsetHeight, on: true, still: first };
 		});
 		return () => cancelAnimationFrame(raf);
 	});
