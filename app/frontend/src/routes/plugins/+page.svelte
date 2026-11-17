@@ -3,7 +3,6 @@
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
-	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -17,7 +16,7 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import { to } from '#lib/core/paths.ts';
 	import '../(frame)/settings-content.css';
-	import { abilities, hasUpdate, limitRows, notices, pluginAbout, pluginName, pluginState, shownVersion, stateLabel, type Plugin, type PluginOverview } from '#lib/plugins/index.ts';
+	import { abilities, hasUpdate, notices, pluginAbout, pluginName, pluginState, reaches, shownVersion, stateLabel, type Plugin, type PluginOverview } from '#lib/plugins/index.ts';
 
 	const owner = $derived(session.s.role === 'owner');
 	let ov = $state<PluginOverview | null>(null);
@@ -31,7 +30,6 @@
 	let removeOpen = $state(false);
 
 	const notes = $derived(ov ? notices(ov) : []);
-	const limits = $derived(ov ? limitRows(ov.limits) : []);
 	const canInstall = $derived(!!ov && ov.key_set && ov.can_run);
 	const can = $derived(reaching ? abilities(reaching) : []);
 
@@ -124,6 +122,7 @@
 						{@const s = pluginState(p)}
 						{@const name = pluginName(p.id)}
 						{@const about = pluginAbout(p)}
+						{@const reach = reaches(p)}
 						<li class="pcard" data-testid="plugin-row" data-id={p.id}>
 							<div class="top">
 								{#if p.icon}<img class="pic" src={p.icon} alt="" width="44" height="44" />{:else}<span class="pic none" aria-hidden="true">{name.slice(0, 1)}</span>{/if}
@@ -137,6 +136,14 @@
 								</div>
 							</div>
 							{#if about}<p class="about small">{about}</p>{/if}
+							<div class="access xs" data-testid="plugin-access">
+								<span class="muted">{t('plugins.cardCan')}</span>
+								{#if reach.length}
+									<ul>{#each reach as r (r)}<li>{r}</li>{/each}</ul>
+								{:else}
+									<p>{t('plugins.cardNothing')}</p>
+								{/if}
+							</div>
 							<div class="state">
 								<Badge label={hasUpdate(p) ? t('plugins.stateUpdate') : s === 'off' ? t('plugins.stateOff') : stateLabel(p)} />
 								{#if s === 'off' && p.disabled_reason}<span class="xs muted" data-testid="plugin-hint">{p.disabled_reason}</span>{/if}
@@ -162,15 +169,6 @@
 				</ul>
 			{/if}
 		</div>
-
-		<SettingsCard id="plugin-limits" title={t('plugins.limits')} description={t('plugins.limitsAbout')}>
-			{#each limits as l (l.label)}
-				<div class="srow" data-testid="plugin-limit">
-					<div class="txt"><span class="label">{l.label}</span></div>
-					<div class="ctl"><span class="small" class:muted={!l.on}>{l.value}</span></div>
-				</div>
-			{/each}
-		</SettingsCard>
 	</div>
 {/if}
 
@@ -206,24 +204,26 @@
 <style>
 	.notice { margin-bottom: var(--s-4); }
 	.plist { grid-column: 1 / -1; outline: none; }
-	.empty { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
-	.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
-	.pcard { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 14px; border-radius: 12px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
-	.top, .rhead { display: flex; gap: 12px; align-items: center; min-width: 0; }
+	.empty { margin: 0; padding: var(--s-3) var(--s-4); border-radius: 12px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
+	.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: var(--s-3); }
+	.pcard { display: flex; flex-direction: column; gap: var(--s-3); min-width: 0; padding: var(--s-4); border-radius: 12px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
+	.top, .rhead { display: flex; gap: var(--s-3); align-items: center; min-width: 0; }
 	.pic { flex: none; width: 44px; height: 44px; border-radius: 10px; object-fit: contain; }
 	.pic.none { display: grid; place-items: center; background: var(--surface-2); box-shadow: 0 0 0 1px var(--line); font-weight: var(--weight-semibold); font-size: 18px; color: var(--text-muted); }
 	.who { min-width: 0; }
 	.pname { margin: 0; font: var(--t-headline); font-size: 15px; font-weight: 600; letter-spacing: normal; overflow-wrap: anywhere; }
-	.meta { display: flex; flex-wrap: wrap; column-gap: 8px; row-gap: 2px; }
-	.signed { display: inline-flex; align-items: center; gap: 3px; }
+	.meta { display: flex; flex-wrap: wrap; column-gap: var(--s-2); row-gap: var(--s-1); }
+	.signed { display: inline-flex; align-items: center; gap: var(--s-1); }
 	.about { margin: 0; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-	.state { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-	.acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
-	.rhead { margin-bottom: var(--s-2); }
+	.access, .reach { display: grid; gap: var(--s-2); }
+	.access ul, .reach ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-1); }
+	.access p { margin: 0; }
+	.state { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
+	.acts { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: auto; }
+	.rhead { margin-bottom: var(--s-3); }
 	.reach { margin-top: var(--s-3); }
-	.reach .label { margin: 0 0 6px; font-weight: var(--weight-semibold); }
-	.reach ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-	.reach li { display: flex; gap: 8px; align-items: flex-start; }
+	.reach .label { margin: 0; font-weight: var(--weight-semibold); }
+	.reach li { display: flex; gap: var(--s-2); align-items: flex-start; }
 	.reach li :global(svg) { flex: none; margin-top: 2px; }
-	.confirm-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: var(--s-4); }
+	.confirm-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-4); }
 </style>

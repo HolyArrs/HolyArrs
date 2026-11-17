@@ -1,6 +1,6 @@
-// Pure helpers for the Plugins page: row state, names, notices and limits in plain words.
+// Pure helpers for the Plugins page: row state, names, notices and what each plugin can reach, in plain words.
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
-import type { ActiveLimits, Plugin, PluginOverview } from './types.ts';
+import type { Plugin, PluginOverview } from './types.ts';
 
 export type PluginState = 'not_installed' | 'running' | 'stopped' | 'off';
 
@@ -41,27 +41,6 @@ export function notices(ov: Pick<PluginOverview, 'key_set' | 'can_run' | 'blockl
 	return out;
 }
 
-export interface LimitRow {
-	label: string;
-	value: string;
-	on: boolean;
-}
-
-/** Every limit a running plugin is held to, with its value; caps this server can't apply say so. Numbers match the Engine's sandbox. */
-export function limitRows(l: ActiveLimits): LimitRow[] {
-	const off = t('plugins.limitOff');
-	const row = (key: string, on: boolean): LimitRow => ({ label: t(`plugins.${key}`), value: on ? t(`plugins.${key}Value`) : off, on });
-	return [
-		row('limitMemory', l.Memory),
-		row('limitCpu', l.CPU),
-		row('limitPids', l.Pids),
-		row('limitOpenFiles', true),
-		row('limitFolders', true),
-		{ label: t('plugins.limitNetwork'), value: t('plugins.limitNetworkValue'), on: false },
-		row('limitStop', l.Cgroup || l.GroupKill)
-	];
-}
-
 const known = new Set(['tailscale']);
 
 /** The plugin's description: our own words for plugins we ship, else the signed manifest's. */
@@ -69,14 +48,18 @@ export function pluginAbout(p: Plugin): string {
 	return known.has(p.id) ? t(`plugins.about.${p.id}`) : (p.description ?? '');
 }
 
-/** What the plugin will be able to do once installed, in plain words. */
-export function abilities(p: Plugin): string[] {
+/** What the signed manifest lets the plugin reach outside its own folder, in plain words. */
+export function reaches(p: Plugin): string[] {
 	const out: string[] = [];
 	const hosts = p.access?.hosts ?? [];
 	if (hosts.length) out.push(known.has(p.id) ? t(`plugins.can.${p.id}.hosts`) : t('plugins.canHosts', { hosts: hosts.join(', ') }));
 	if (p.reaches_app) out.push(known.has(p.id) ? t(`plugins.can.${p.id}.app`) : t('plugins.canApp'));
-	out.push(t('plugins.canFolder'));
 	return out;
+}
+
+/** What the plugin will be able to do once installed, in plain words. */
+export function abilities(p: Plugin): string[] {
+	return [...reaches(p), t('plugins.canFolder')];
 }
 
 /** The Remote access state in plain words. A plugin the owner stopped reads as disconnected, whatever its last status says; a signed-out one as not connected. */

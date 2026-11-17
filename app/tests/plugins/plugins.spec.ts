@@ -17,7 +17,6 @@ const fake = {
 	blocklist_checked_at: null,
 	blocklist_stale: true,
 	can_run: true,
-	limits: { Cgroup: true, Pids: true, Memory: true, CPU: true, GroupKill: true },
 	plugins: [
 		{ id: 'tailscale', version: '1.2.0', installed: false, running: false, enabled: false, name: 'Tailscale', author: 'HolyArrs', reaches_app: true, access: { hosts: ['controlplane.tailscale.com'], folders: ['tailscale'], actions: [] } },
 		{ id: 'mcp-server', version: '0.3.0', installed: true, installed_version: '0.2.0', running: true, enabled: true, access: null },
@@ -72,11 +71,12 @@ for (const width of [1280, 375]) {
 		await expect(rows.nth(3).getByTestId('plugin-hint')).toHaveText('on the blocklist');
 		await expect(rows.nth(3).getByRole('button', { name: 'Start Old thing' })).toHaveCount(0);
 		await expect(page.getByTestId('plugins-notice')).toHaveText(["Couldn't check for blocked plugins for over a week."]);
-		await expect(page.getByTestId('plugin-limit')).toHaveCount(7);
-		await expect(page.getByTestId('plugin-limit').nth(2)).toContainText('Up to 256');
-		// The list and the Limits card keep the settings gap between them.
-		const gap = await page.evaluate(() => document.getElementById('plugin-limits')!.getBoundingClientRect().top - document.getElementById('h-plugins')!.getBoundingClientRect().bottom);
-		expect(gap).toBeGreaterThanOrEqual(12);
+		await expect(rows.nth(0).getByTestId('plugin-access')).toContainText('Can access');
+		await expect(rows.nth(0).getByTestId('plugin-access')).toContainText("Connect to Tailscale's servers");
+		await expect(rows.nth(0).getByTestId('plugin-access')).toContainText('Let devices on your tailnet open HolyArrs');
+		await expect(rows.nth(2).getByTestId('plugin-access')).toContainText('Connect to example.org');
+		await expect(rows.nth(1).getByTestId('plugin-access')).toContainText('Nothing outside its own folder');
+		await expect(page.locator('#plugin-limits')).toHaveCount(0);
 		await noSidewaysScroll(page);
 		await page.screenshot({ path: test.info().outputPath(`plugins-${width}.png`), fullPage: true });
 

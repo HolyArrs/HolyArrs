@@ -61,8 +61,6 @@ type Engine struct {
 	Keys []ed25519.PublicKey
 	// Runner starts plugins; nil means plugins cannot run here (not Linux).
 	Runner Runner
-	// Limits are the caps the sandbox applies, shown on the list.
-	Limits ActiveLimits
 	// HTTP fetches lists and files; nil uses a client with a timeout.
 	HTTP *http.Client
 	// BlockEvery is the blocklist check interval; 0 means DefaultBlockEvery.
@@ -125,10 +123,9 @@ type Overview struct {
 	BlocklistCheckedAt *time.Time `json:"blocklist_checked_at"`
 	// BlocklistStale is true when plugins are installed and the last
 	// check is older than 7 days.
-	BlocklistStale bool         `json:"blocklist_stale"`
-	CanRun         bool         `json:"can_run"`
-	Limits         ActiveLimits `json:"limits"`
-	Plugins        []Plugin     `json:"plugins"`
+	BlocklistStale bool     `json:"blocklist_stale"`
+	CanRun         bool     `json:"can_run"`
+	Plugins        []Plugin `json:"plugins"`
 }
 
 // List shows the plugins of the cached signed list (fetched once when none
@@ -141,7 +138,7 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 	if err != nil {
 		return nil, err
 	}
-	ov := &Overview{KeySet: len(e.Keys) > 0, CanRun: e.Runner != nil, Limits: e.Limits, Plugins: []Plugin{}}
+	ov := &Overview{KeySet: len(e.Keys) > 0, CanRun: e.Runner != nil, Plugins: []Plugin{}}
 	if !st.BlockCheckedAt.IsZero() {
 		at := st.BlockCheckedAt
 		ov.BlocklistCheckedAt = &at

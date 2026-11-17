@@ -12,7 +12,20 @@ Plugins add extra features to HolyArrs, such as [remote access with Tailscale](r
 - Only the owner sees and manages **Plugins**.
 - Plugins run only when HolyArrs runs on Linux. The Docker image counts.
 - HolyArrs installs only plugins signed by HolyArrs. You can't add a plugin from anywhere else.
-- Each plugin runs locked into its own folder. It reaches only the websites, folders and HolyArrs actions it lists, and it's held to the limits under **Limits** on the page.
+- Each plugin runs locked into its own folder. It reaches only the websites, folders and HolyArrs actions it lists. Each card on the page shows what that plugin can access.
+
+## Limits
+
+Every running plugin is held to these limits:
+
+- Memory: up to 512 MB.
+- Processor: up to 1 CPU core.
+- Processes: up to 256.
+- Open files: up to 1,024 at once.
+- Files and folders: only its own folder.
+- When it stops, everything it started stops too.
+
+The memory, processor and process caps need cgroups v2 on the host; without them those three aren't applied.
 
 ## Install a plugin
 

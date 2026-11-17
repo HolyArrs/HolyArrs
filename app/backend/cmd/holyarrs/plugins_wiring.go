@@ -52,7 +52,7 @@ func pluginEnv(id, addr string) []string {
 // newPluginEngine builds the Plugin Engine. Off Linux it has no runner, so
 // installs and starts refuse with "plugins run only on Linux".
 func newPluginEngine(c config) *plugins.Engine {
-	run, limits, err := plugins.DefaultRunner()
+	run, _, err := plugins.DefaultRunner()
 	if err != nil {
 		run = nil
 	}
@@ -65,6 +65,6 @@ func newPluginEngine(c config) *plugins.Engine {
 		}
 		keys = append(keys, ed25519.PublicKey(b))
 	}
-	return &plugins.Engine{Dir: filepath.Join(c.ConfigDir, "plugins"), ListURL: c.PluginListURL, Keys: keys, Runner: run, Limits: limits,
+	return &plugins.Engine{Dir: filepath.Join(c.ConfigDir, "plugins"), ListURL: c.PluginListURL, Keys: keys, Runner: run,
 		HTTP: &http.Client{Timeout: 5 * time.Minute, CheckRedirect: plugins.RedirectGuard(c.PluginListURL)}}
 }
