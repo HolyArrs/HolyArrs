@@ -40,6 +40,15 @@ A hardlink is a second name for the same file on the same disk. It is instant an
 
 Under 100 MB free adds a low space note. Imports work until the disk fills.
 
+## Give a folder its own quality
+
+New in 1.1.3. Each folder can start new titles with its own quality, such as 4K for a `/movies-4k` folder.
+
+1. On the folder's card in **Settings > Library folders**, select the **Quality** row.
+2. Pick a quality, or **Use the default** to follow the default for that kind of title.
+
+The row shows the quality in use, with "default" next to it when the folder follows the default. Titles already in the folder keep theirs; change one on its title page.
+
 ## Change a folder's path
 
 New in 1.1.0. Use it when the files already sit somewhere else: a new mount point, a renamed share, or a move to one data folder. HolyArrs does not import anything again.
