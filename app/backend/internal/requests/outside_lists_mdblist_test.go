@@ -313,3 +313,29 @@ func TestMDBListSiteRefusalDoesNotBlameAKey(t *testing.T) {
 		t.Fatalf("err %v", err)
 	}
 }
+
+// A redirect from the MDBList API to another host is not followed, so the
+// key in the query never reaches that host.
+func TestMDBListKeyNotSentOnRedirect(t *testing.T) {
+	e := setup(t)
+	var leaked atomic.Int32
+	other := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.RawQuery, fakeMDBListKey) {
+			leaked.Add(1)
+		}
+		_, _ = w.Write([]byte(`{"movies":[],"shows":[]}`))
+	}))
+	t.Cleanup(other.Close)
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, other.URL+r.URL.RequestURI(), http.StatusFound)
+	}))
+	t.Cleanup(api.Close)
+	e.svc.MDBListSite, e.svc.MDBListBase = api.URL, api.URL+"/api"
+	e.svc.MDBListKey = func(context.Context) (string, error) { return fakeMDBListKey, nil }
+	if _, err := e.svc.fetchMDBList(context.Background(), "lab/mixed", "movie"); err == nil {
+		t.Fatal("followed a redirect to another host")
+	}
+	if leaked.Load() != 0 {
+		t.Fatal("the key went to another host")
+	}
+}
