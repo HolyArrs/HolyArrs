@@ -193,7 +193,7 @@
 		{/if}
 	{/if}
 	<div class="settings-workspace" bind:this={workspace}>
-		<div class="settings-content">
+		<div class="settings-content" class:solo={currentGroup?.items.length === 1 && currentGroup.items[0].label === currentGroup.group.label}>
 			{#if blocked}
 				{@const sec = sectionFor(all, current)}
 				{#if sec}<PageHeader title={sec.label} />{/if}
@@ -321,6 +321,9 @@
 	/* The open section's own title: a quiet bar with its buttons on the right (the tab already names it). */
 	.settings-content :global(> .ui-head), .settings-content :global(.ui-head) { margin-bottom: 4px; }
 	.settings-content :global(.ui-head h1) { font: 600 20px/1.25 var(--font-ui); letter-spacing: -0.01em; }
+	/* A one-page group already shows its name big above; the page title stays for screen readers only. */
+	.settings-content.solo :global(.ui-head h1) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+	.settings-content.solo :global(.ui-head .row) { min-height: 0; }
 	.settings-content :global(.ui-head .row) { align-items: center; min-height: 40px; }
 	/* Every section is the Library folders pattern: a small grey heading, then one glass sheet of rows. */
 	.settings-content { grid-template-columns: minmax(0, 1fr) !important; gap: 22px !important; }
