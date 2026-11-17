@@ -48,6 +48,11 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 			return
 		}
 		if public(r) {
+			// First-run setup only from the home network, never through a plugin.
+			if setupRoute(r) && r.Header.Get(PluginProxyHeader) != "" {
+				fail(w, http.StatusForbidden, "Finish setup on the home network first.")
+				return
+			}
 			// First-run setup checks the host name itself: a home name is
 			// accepted there with no proxy in between (hosts.go).
 			setup := r.Method == http.MethodPost && r.URL.Path == "/api/v1/auth/setup" || setupOutsidePath(r)

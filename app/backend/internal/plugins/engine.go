@@ -62,6 +62,8 @@ type Engine struct {
 	HTTP *http.Client
 	// BlockEvery is the blocklist check interval; 0 means DefaultBlockEvery.
 	BlockEvery time.Duration
+	// Env gives the HOLYARRS_PLUGIN_* settings for a plugin's start; may be nil.
+	Env func(id string) []string
 
 	once    sync.Once
 	initErr error
@@ -295,7 +297,11 @@ func (e *Engine) start(id string) error {
 		_ = e.store.SetEnabled(id, false, err.Error())
 		return err
 	}
-	p, err := e.store.Start(context.Background(), e.Runner, id, in, nil, nil)
+	var env []string
+	if e.Env != nil {
+		env = e.Env(id)
+	}
+	p, err := e.store.Start(context.Background(), e.Runner, id, in, nil, env)
 	if err != nil {
 		_ = e.store.SetEnabled(id, false, err.Error())
 		return err

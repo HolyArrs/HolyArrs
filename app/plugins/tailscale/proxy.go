@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -16,6 +17,14 @@ const MarkHeader = "X-Holyarrs-Plugin-Proxy"
 const (
 	UserHeader   = "X-Holyarrs-Tailscale-User"
 	DeviceHeader = "X-Holyarrs-Tailscale-Device"
+)
+
+// Headers HolyArrs believes only with the mark: the tailnet peer IP (for
+// per-visitor sign-in limits) and this device's ts.net name (so the
+// visitor's Host passes HolyArrs' host check). Neither makes a visit local.
+const (
+	AddrHeader = "X-Holyarrs-Tailscale-Addr"
+	NameHeader = "X-Holyarrs-Tailscale-Name"
 )
 
 // stripPrefixes are headers a visitor could write to pose as a proxy, a
@@ -50,16 +59,25 @@ func stripHeaders(h http.Header) {
 type whoFunc func(r *http.Request) (user, device string)
 
 // newProxy hands visits to HolyArrs at target with the headers cleaned and
-// the mark set.
-func newProxy(target *url.URL, mark string, who whoFunc) http.Handler {
+// the mark set. The visitor's Host is kept; name gives this device's ts.net
+// name and may be nil.
+func newProxy(target *url.URL, mark string, who whoFunc, name func() string) http.Handler {
 	return &httputil.ReverseProxy{
 		Rewrite: func(pr *httputil.ProxyRequest) {
 			// pr.Out is already free of hop-by-hop headers; X-Forwarded-For
 			// is only added by SetXForwarded, which is never called.
 			stripHeaders(pr.Out.Header)
 			pr.SetURL(target)
-			pr.Out.Host = target.Host
+			pr.Out.Host = pr.In.Host
 			pr.Out.Header.Set(MarkHeader, mark)
+			if h, _, err := net.SplitHostPort(pr.In.RemoteAddr); err == nil && net.ParseIP(h) != nil {
+				pr.Out.Header.Set(AddrHeader, h)
+			}
+			if name != nil {
+				if n := name(); n != "" {
+					pr.Out.Header.Set(NameHeader, n)
+				}
+			}
 			if who != nil {
 				if u, d := who(pr.In); u != "" || d != "" {
 					pr.Out.Header.Set(UserHeader, u)

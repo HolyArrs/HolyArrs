@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -22,12 +23,12 @@ func TestProxyStripsHeadersAndMarks(t *testing.T) {
 	defer back.Close()
 	u, _ := url.Parse(back.URL)
 	who := func(*http.Request) (string, string) { return "amy@example.com", "amy-phone" }
-	front := httptest.NewServer(newProxy(u, "secret-token-1234", who))
+	front := httptest.NewServer(newProxy(u, "secret-token-1234", who, func() string { return "holyarrs.tail1.ts.net" }))
 	defer front.Close()
 
 	req, _ := http.NewRequest("GET", front.URL+"/api/v1/titles", nil)
 	for _, h := range []string{"X-Forwarded-For", "X-Forwarded-Host", "X-Forwarded-Proto", "Forwarded", "X-Real-IP",
-		"Remote-User", "Remote-Name", "X-Holyarrs-Outgoing", "X-Holyarrs-Tailscale-User", "Tailscale-User-Login",
+		"Remote-User", "Remote-Name", "X-Holyarrs-Outgoing", "X-Holyarrs-Tailscale-User", "X-Holyarrs-Tailscale-Addr", "Tailscale-User-Login",
 		"Cf-Connecting-Ip", "True-Client-Ip"} {
 		req.Header.Set(h, "10.0.0.5")
 	}
@@ -54,8 +55,11 @@ func TestProxyStripsHeadersAndMarks(t *testing.T) {
 	if got.Get("Accept") != "text/html" {
 		t.Error("ordinary header dropped")
 	}
-	if gotHost != u.Host {
-		t.Errorf("host = %q", gotHost)
+	if gotHost != req.URL.Host {
+		t.Errorf("host = %q, want the visitor's %q", gotHost, req.URL.Host)
+	}
+	if got.Get(AddrHeader) != "127.0.0.1" || got.Get(NameHeader) != "holyarrs.tail1.ts.net" {
+		t.Errorf("addr/name = %q %q", got.Get(AddrHeader), got.Get(NameHeader))
 	}
 }
 
@@ -65,7 +69,7 @@ func TestProxyNoForgedIdentity(t *testing.T) {
 	back := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { got = r.Header.Clone() }))
 	defer back.Close()
 	u, _ := url.Parse(back.URL)
-	front := httptest.NewServer(newProxy(u, "secret-token-1234", func(*http.Request) (string, string) { return "", "" }))
+	front := httptest.NewServer(newProxy(u, "secret-token-1234", func(*http.Request) (string, string) { return "", "" }, nil))
 	defer front.Close()
 	req, _ := http.NewRequest("GET", front.URL, nil)
 	req.Header.Set(UserHeader, "owner@example.com")
@@ -156,5 +160,30 @@ func TestSignOutWipes(t *testing.T) {
 func TestRedact(t *testing.T) {
 	if got := redact("visit https://login.tailscale.com/a/abc123 now tskey-auth-x"); got != "visit [hidden] now [hidden]" {
 		t.Error(got)
+	}
+}
+
+func TestRedactHeadscale(t *testing.T) {
+	got := redact("control: https://hs.example.org:8080/register/nodekey:abc and (https://hs.example.org)")
+	if strings.Contains(got, "https://") || strings.Contains(got, "hs.example.org") {
+		t.Errorf("got %q", got)
+	}
+}
+
+func TestReadAuthKeyDeletes(t *testing.T) {
+	dir := t.TempDir()
+	p := filepath.Join(dir, authKeyFile)
+	if err := os.WriteFile(p, []byte("tskey-auth-xyz "), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOLYARRS_TAILSCALE_AUTHKEY", "from-env")
+	if got := readAuthKey(dir); got != "tskey-auth-xyz" {
+		t.Errorf("key = %q", got)
+	}
+	if _, err := os.Stat(p); !os.IsNotExist(err) {
+		t.Error("auth key file not deleted")
+	}
+	if got := readAuthKey(dir); got != "" {
+		t.Errorf("second read = %q (env must not be used)", got)
 	}
 }

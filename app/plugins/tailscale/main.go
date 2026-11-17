@@ -15,7 +15,9 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -26,9 +28,8 @@ import (
 // Environment HolyArrs passes in. The auth key is read once and dropped.
 const (
 	envData     = "HOLYARRS_PLUGIN_DATA"
-	envTarget   = "HOLYARRS_PLUGIN_TARGET"     // HolyArrs' local address, e.g. http://127.0.0.1:6262
-	envMark     = "HOLYARRS_PLUGIN_MARK"       // per-start random token
-	envAuthKey  = "HOLYARRS_TAILSCALE_AUTHKEY" // optional, one-time
+	envTarget   = "HOLYARRS_PLUGIN_TARGET" // HolyArrs' local address, e.g. http://127.0.0.1:6262
+	envMark     = "HOLYARRS_PLUGIN_MARK"   // per-start random token
 	envLogin    = "HOLYARRS_TAILSCALE_LOGIN_SERVER"
 	envHostname = "HOLYARRS_TAILSCALE_HOSTNAME"
 )
@@ -38,13 +39,30 @@ const stopWithin = 10 * time.Second
 
 var now = time.Now
 
+// tsName is this device's ts.net name, kept fresh by watchStatus.
+var tsName atomic.Value
+
+// authKeyFile is the optional one-time auth key HolyArrs writes (0600) in
+// the data folder. It is read once and deleted.
+const authKeyFile = "authkey"
+
+func readAuthKey(data string) string {
+	p := filepath.Join(data, authKeyFile)
+	b, err := os.ReadFile(p)
+	if err != nil {
+		return ""
+	}
+	if err := os.Remove(p); err != nil {
+		log.Printf("auth key file: %v", err)
+	}
+	return strings.TrimSpace(string(b))
+}
+
 func main() {
 	signOutFlag := flag.Bool("sign-out", false, "log out, wipe the Tailscale state and exit")
 	loginServer := flag.String("login-server", os.Getenv(envLogin), "control server (Headscale); empty for Tailscale")
 	hostname := flag.String("hostname", envOr(envHostname, "holyarrs"), "device name on the tailnet")
 	flag.Parse()
-	authKey := os.Getenv(envAuthKey)
-	os.Unsetenv(envAuthKey)
 	os.Unsetenv("TS_AUTHKEY")
 	os.Unsetenv("TS_AUTH_KEY")
 	// No log upload to Tailscale.
@@ -57,6 +75,7 @@ func main() {
 	if err := os.MkdirAll(stateDir(data), 0o700); err != nil {
 		log.Fatal(err)
 	}
+	authKey := readAuthKey(data)
 	srv := &tsnet.Server{
 		Dir:        stateDir(data),
 		Hostname:   *hostname,
@@ -140,7 +159,7 @@ func run(ctx context.Context, srv *tsnet.Server, data string, target *url.URL, m
 		return u, d
 	}
 	hs := &http.Server{
-		Handler:           newProxy(target, mark, who),
+		Handler:           newProxy(target, mark, who, func() string { n, _ := tsName.Load().(string); return n }),
 		ReadHeaderTimeout: 20 * time.Second,
 	}
 	served := make(chan error, 1)
@@ -182,6 +201,7 @@ func watchStatus(ctx context.Context, lc *local.Client, data string) {
 			if st.Self != nil {
 				s.DeviceName = st.Self.HostName
 				s.TSNetName = strings.TrimSuffix(st.Self.DNSName, ".")
+				tsName.Store(s.TSNetName)
 				if st.Self.KeyExpiry != nil {
 					f.keyExpiry = *st.Self.KeyExpiry
 					s.LoginExpiry = *st.Self.KeyExpiry
@@ -228,10 +248,11 @@ func parseTarget(s string) (*url.URL, error) {
 	return u, nil
 }
 
-// redact hides login links and keys in log lines.
+// redact hides every https link (login links, Headscale addresses) and keys
+// in log lines.
 func redact(s string) string {
 	for _, w := range strings.Fields(s) {
-		if strings.HasPrefix(w, "https://") && strings.Contains(w, "/a/") || strings.HasPrefix(w, "tskey-") {
+		if strings.Contains(w, "https://") || strings.Contains(w, "tskey-") {
 			s = strings.ReplaceAll(s, w, "[hidden]")
 		}
 	}
