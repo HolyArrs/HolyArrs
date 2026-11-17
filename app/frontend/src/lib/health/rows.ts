@@ -203,7 +203,7 @@ export function buildRows(i: StatusInput): StatusRow[] {
 			name: checkTitle(c),
 			tone,
 			word: tone === 'ok' ? t('health.word.working') : tone === 'wait' ? t('health.state.warning') : t('health.word.broken'),
-			reason: c.kind === 'config_folder' && c.state !== 'ok' ? t('health.check.configSteps') : c.kind === 'save_folder' && c.state !== 'ok' ? t('health.check.saveFolderWhy', { app: c.subject }) : c.kind === 'no_downloader' && c.state !== 'ok' ? t(c.subject === 'usenet' ? 'health.check.noUsenetDl' : 'health.check.noTorrentDl') : c.kind === 'same_downloader' && c.state !== 'ok' ? t('health.check.sameDownloaderWhy', { app: c.subject }) : c.message,
+			reason: c.kind === 'config_folder' && c.state !== 'ok' ? t('health.check.configSteps') : c.kind === 'save_folder' && c.state !== 'ok' ? t('health.check.saveFolderWhy', { app: c.subject }) : c.kind === 'no_downloader' && c.state !== 'ok' ? t(c.subject === 'usenet' ? 'health.check.noUsenetDl' : 'health.check.noTorrentDl') : c.kind === 'same_downloader' && c.state !== 'ok' ? t('health.check.sameDownloaderWhy', { app: c.subject }) : c.key === 'backups:key' && c.state === 'ok' && c.message ? keyKitNote(c.message) : c.message,
 			at: c.checked_at || c.since,
 			fix: checkFix[c.kind] || undefined,
 			check: { kind: 'checks' }
@@ -297,4 +297,9 @@ function checkTitle(c: Pick<HealthCheck, 'kind' | 'subject'>): string {
 	if (c.kind === 'no_downloader') return c.subject === 'usenet' ? t('health.check.usenetDl') : t('health.check.torrentDl');
 	if (!c.subject || c.subject === n || c.kind === 'waiting_downloads' || c.kind === 'clear_waiting' || c.kind.startsWith('config_')) return n;
 	return c.kind === 'update' ? c.subject : `${n} ${c.subject}`;
+}
+
+// The key kit's calm note, in the picked language; the owner's words differ from everyone else's.
+function keyKitNote(message: string): string {
+	return /owner/i.test(message) ? t('health.check.keyKitRecommendedOthers') : t('health.check.keyKitRecommended');
 }

@@ -32,6 +32,7 @@
 	"settings.backups.key": "Главни кључ",
 	"settings.backups.keyDesc": "Резервне копије не садрже овај кључ. Чувај копију на безбедном месту.",
 	"settings.backups.noKit": "За овај кључ још није сачуван комплет кључа. Без њега се сачуване лозинке из резервне копије не могу отворити на новој машини.",
+	"settings.backups.kitRecommended": "Препоручено: преузми комплет кључа.",
 	"settings.backups.ownerOnlyKit": "Само власник може да га преузме; замоли га.",
 	"settings.backups.fingerprint": "Отисак кључа",
 	"settings.backups.downloadKit": "Преузми комплет кључа",

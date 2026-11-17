@@ -32,6 +32,7 @@
 	"settings.backups.key": "Hlavný kľúč",
 	"settings.backups.keyDesc": "Zálohy tento kľúč neobsahujú. Uchovajte si jeho kópiu na bezpečnom mieste.",
 	"settings.backups.noKit": "Pre tento kľúč nie je uložená žiadna súprava kľúča. Bez nej sa uložené heslá zo zálohy nedajú otvoriť na novom stroji.",
+	"settings.backups.kitRecommended": "Odporúčané: stiahnite si súpravu kľúča.",
 	"settings.backups.ownerOnlyKit": "Môže ju stiahnuť iba vlastník; požiadajte ho o to.",
 	"settings.backups.fingerprint": "Odtlačok kľúča",
 	"settings.backups.downloadKit": "Stiahnuť súpravu kľúča",

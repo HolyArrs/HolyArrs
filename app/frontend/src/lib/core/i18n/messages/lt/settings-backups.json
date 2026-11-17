@@ -32,6 +32,7 @@
 	"settings.backups.key": "Pagrindinis raktas",
 	"settings.backups.keyDesc": "Atsarginėse kopijose šio rakto nėra. Laikykite jo kopiją saugioje vietoje.",
 	"settings.backups.noKit": "Šiam raktui raktų rinkinys dar neišsaugotas. Be jo atsarginės kopijos išsaugotų slaptažodžių naujame įrenginyje atidaryti nepavyks.",
+	"settings.backups.kitRecommended": "Rekomenduojama: atsisiųskite raktų rinkinį.",
 	"settings.backups.ownerOnlyKit": "Atsisiųsti gali tik savininkas; paprašykite jo.",
 	"settings.backups.fingerprint": "Rakto kontrolinis kodas",
 	"settings.backups.downloadKit": "Atsisiųsti raktų rinkinį",

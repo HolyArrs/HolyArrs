@@ -32,6 +32,7 @@
 	"settings.backups.key": "מפתח ראשי",
 	"settings.backups.keyDesc": "הגיבויים לא כוללים את המפתח הזה. שמור עותק שלו במקום בטוח.",
 	"settings.backups.noKit": "עדיין לא נשמרה ערכת מפתח למפתח הזה. בלעדיה אי אפשר לפתוח את הסיסמאות השמורות בגיבוי במחשב חדש.",
+	"settings.backups.kitRecommended": "מומלץ: להוריד את ערכת המפתח.",
 	"settings.backups.ownerOnlyKit": "רק הבעלים יכול להוריד אותה; בקש ממנו.",
 	"settings.backups.fingerprint": "טביעת אצבע של המפתח",
 	"settings.backups.downloadKit": "הורדת ערכת המפתח",

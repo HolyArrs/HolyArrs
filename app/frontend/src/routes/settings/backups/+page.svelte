@@ -33,7 +33,7 @@
 	let preset = $state<Preset>('balanced');
 	let waiting = $state(false);
 	let keyNote = $state('');
-	let keyKit = $state<{ needed: boolean; fingerprint: string } | null>(null);
+	let keyKit = $state<{ needed: boolean; fingerprint: string; level?: string } | null>(null);
 	let gettingKit = $state(false);
 	let loaded = $state(false);
 	let missing = $state(false);
@@ -46,7 +46,7 @@
 
 	async function load() {
 		try {
-			const r = await api.get<{ backups: BackupInfo[]; preset: Preset; restore_waiting: boolean; key_note: string; key_kit?: { needed: boolean; fingerprint: string } }>('/backups');
+			const r = await api.get<{ backups: BackupInfo[]; preset: Preset; restore_waiting: boolean; key_note: string; key_kit?: { needed: boolean; fingerprint: string; level?: string } }>('/backups');
 			backups = r.backups;
 			preset = r.preset;
 			waiting = r.restore_waiting;
@@ -101,7 +101,7 @@
 			a.download = name;
 			a.click();
 			setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-			if (keyKit) keyKit = { ...keyKit, needed: false };
+			if (keyKit) keyKit = { ...keyKit, needed: false, level: '' };
 			toasts.push(t('settings.backups.kitDownloaded'), 'ok', { body: t('settings.backups.kitApart') });
 			// The key kit warning and the menu dot go out now, not at the next timed check.
 			void recheckSettingsStatus('backups');
@@ -239,9 +239,10 @@
 	{#if keyKit?.fingerprint}
 		<SettingsCard id="backup-key" title={t('settings.backups.key')} description={t('settings.backups.keyDesc')}>
 			{#if keyKit.needed}
-				<p class="notice warn" role="status">
+				<!-- A calm note until saved secrets and backups have gone a while without a kit. -->
+				<p class="notice" class:warn={keyKit.level === 'warn'} role="status" data-testid="key-kit-note" data-level={keyKit.level === 'warn' ? 'warn' : 'recommend'}>
 					<Icon name="info" size={18} /><span
-						>{t('settings.backups.noKit')}{#if session.s.role !== 'owner'}
+						>{keyKit.level === 'warn' ? t('settings.backups.noKit') : t('settings.backups.kitRecommended')}{#if session.s.role !== 'owner'}
 							{t('settings.backups.ownerOnlyKit')}{/if}</span
 					>
 				</p>

@@ -32,6 +32,7 @@
 	"settings.backups.key": "Clau mestra",
 	"settings.backups.keyDesc": "Les còpies de seguretat no inclouen aquesta clau. Guarda'n una còpia en un lloc segur.",
 	"settings.backups.noKit": "Encara no hi ha cap joc de claus desat per a aquesta clau. Sense ell, les contrasenyes desades d'una còpia de seguretat no es poden obrir en una màquina nova.",
+	"settings.backups.kitRecommended": "Recomanat: baixa el joc de claus.",
 	"settings.backups.ownerOnlyKit": "Només el propietari el pot baixar; demana-li que ho faci.",
 	"settings.backups.fingerprint": "Empremta de la clau",
 	"settings.backups.downloadKit": "Baixa el joc de claus",

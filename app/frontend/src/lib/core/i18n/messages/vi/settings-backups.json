@@ -32,6 +32,7 @@
 	"settings.backups.key": "Khóa chính",
 	"settings.backups.keyDesc": "Bản sao lưu không chứa khóa này. Hãy giữ một bản ở nơi an toàn.",
 	"settings.backups.noKit": "Chưa lưu bộ khóa nào cho khóa này. Thiếu bộ khóa, các mật khẩu đã lưu trong bản sao lưu sẽ không mở được trên máy mới.",
+	"settings.backups.kitRecommended": "Nên làm: tải bộ khóa của bạn.",
 	"settings.backups.ownerOnlyKit": "Chỉ chủ sở hữu mới tải được; hãy nhờ họ.",
 	"settings.backups.fingerprint": "Dấu vân tay của khóa",
 	"settings.backups.downloadKit": "Tải bộ khóa",

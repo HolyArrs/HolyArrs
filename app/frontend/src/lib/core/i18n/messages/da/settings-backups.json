@@ -32,6 +32,7 @@
 	"settings.backups.key": "Hovednøgle",
 	"settings.backups.keyDesc": "Sikkerhedskopier indeholder ikke denne nøgle. Gem en kopi et sikkert sted.",
 	"settings.backups.noKit": "Intet nøglesæt er gemt for denne nøgle endnu. Uden det kan en sikkerhedskopis gemte adgangskoder ikke åbnes på en ny maskine.",
+	"settings.backups.kitRecommended": "Anbefalet: download dit nøglesæt.",
 	"settings.backups.ownerOnlyKit": "Kun ejeren kan downloade det; bed vedkommende om det.",
 	"settings.backups.fingerprint": "Nøglens fingeraftryk",
 	"settings.backups.downloadKit": "Download nøglesæt",

@@ -32,6 +32,7 @@
 	"settings.backups.key": "Mesterkulcs",
 	"settings.backups.keyDesc": "A biztonsági mentések nem tartalmazzák ezt a kulcsot. Őrizzen meg egy másolatot valahol biztonságban.",
 	"settings.backups.noKit": "Ehhez a kulcshoz még nincs mentett kulcscsomag. Nélküle a biztonsági mentés mentett jelszavai nem nyithatók meg új gépen.",
+	"settings.backups.kitRecommended": "Ajánlott: töltse le a kulcscsomagot.",
 	"settings.backups.ownerOnlyKit": "Csak a tulajdonos töltheti le; kérje meg rá.",
 	"settings.backups.fingerprint": "Kulcs ujjlenyomata",
 	"settings.backups.downloadKit": "Kulcscsomag letöltése",
