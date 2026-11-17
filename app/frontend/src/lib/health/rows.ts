@@ -193,7 +193,7 @@ export function buildRows(i: StatusInput): StatusRow[] {
 	}
 	for (const c of i.checks ?? []) {
 		if (typeof checkFix[c.kind] !== 'string') continue;
-		// A passing Downloader-group check is not a Downloader; shown, it looks like a ghost one (#413).
+		// A passing Downloader-group check is not a Downloader; shown, it looks like a ghost one.
 		if (c.state === 'ok' && downloaderChecks.has(c.kind)) continue;
 		const tone: Tone = c.state === 'ok' ? 'ok' : c.state === 'warning' ? 'wait' : 'fail';
 		rows.push({
