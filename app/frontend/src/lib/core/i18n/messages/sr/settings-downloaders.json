@@ -138,5 +138,10 @@
 	"settings.downloaders.categoryAfterImport": "Категорија после увоза",
 	"settings.downloaders.categoryAfterImportHint": "Када је торент увезен, HolyArrs га премешта у ову категорију. Оставите празно да остане у главној категорији.",
 	"settings.downloaders.ownOnly": "Прикажи само ставке HolyArrs-а",
-	"settings.downloaders.ownOnlyHint": "Ставке других апликација у овом преузимачу су скривене и HolyArrs их не мења."
+	"settings.downloaders.ownOnlyHint": "Ставке других апликација у овом преузимачу су скривене и HolyArrs их не мења.",
+	"settings.downloaders.state.notAnswering": "Не одговара",
+	"settings.downloaders.state.paused": "Паузиран",
+	"settings.downloaders.state.resting": "Одмара",
+	"settings.downloaders.state.signInRefused": "Пријава одбијена",
+	"settings.downloaders.state.working": "Ради"
 }

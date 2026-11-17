@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Server metadat je teď vytížený. HolyArrs se sám za chvíli zeptá znovu.",
 	"server.metadata.the-metadata-server-is-not-signing": "Server metadat teď neregistruje další instalace z této adresy. HolyArrs se sám zeptá znovu; ponechte složku /config mezi restarty, aby si tato instalace zachovala registraci.",
 	"server.metadata.this-address-sent-the-metadata-server": "Tato adresa poslala serveru metadat příliš mnoho požadavků. HolyArrs počká a sám se zeptá znovu.",
-	"server.metadata.this-install-sent-the-metadata-server": "Tato instalace poslala serveru metadat příliš mnoho požadavků. HolyArrs počká a sám se zeptá znovu."
+	"server.metadata.this-install-sent-the-metadata-server": "Tato instalace poslala serveru metadat příliš mnoho požadavků. HolyArrs počká a sám se zeptá znovu.",
+	"server.core.another-app-answered-check-the-port": "Odpověděla jiná aplikace. Zkontrolujte port: patří něčemu jinému.",
+	"server.core.blocked-local-network-turn-on-may": "Blokováno: místní síť. Pokud běží doma, zapněte „Dosáhnout na místní síť“.",
+	"server.core.category-missing-add-it-in-the": "Chybí kategorie. Přidejte ji ve stahovací aplikaci, nebo zde vyberte jinou.",
+	"server.core.certificate-not-trusted-use-the-name": "Certifikát není důvěryhodný. Použijte jméno z jeho certifikátu, nebo http://, pokud žádný nemá.",
+	"server.core.it-speaks-http-not-https-start": "Mluví http, ne https. Začněte adresu http://.",
+	"server.core.it-speaks-https-not-http-start": "Mluví https, ne http. Začněte adresu https://.",
+	"server.core.key-or-password-refused-check-them": "Klíč nebo heslo odmítnuto. Zkontrolujte je a otestujte znovu.",
+	"server.core.name-not-found-check-the-host": "Jméno nenalezeno. Zkontrolujte název hostitele v adrese.",
+	"server.core.no-answer-in-time-check-the": "Žádná odpověď včas. Zkontrolujte adresu a že nepřekáží firewall.",
+	"server.core.nothing-answers-on-that-port-check": "Na tomto portu nic neodpovídá. Zkontrolujte port a že aplikace běží.",
+	"server.core.nothing-at-that-path-check-the": "Na této cestě nic není. Zkontrolujte cestu za portem.",
+	"server.core.category-missing-add-it-in-the-2": "Chybí kategorie: {name}. Přidejte ji ve stahovací aplikaci, nebo zde vyberte jinou."
 }

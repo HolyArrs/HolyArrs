@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "メタデータサーバーは現在混み合っています。HolyArrs はまもなく自動で再度問い合わせます。",
 	"server.metadata.the-metadata-server-is-not-signing": "メタデータサーバーは現在、このアドレスからのインストール登録を受け付けていません。HolyArrs は自動で再度問い合わせます。このインストールの登録を保つため、再起動しても /config フォルダーを残してください。",
 	"server.metadata.this-address-sent-the-metadata-server": "このアドレスからメタデータサーバーへのリクエストが多すぎました。HolyArrs は待ってから自動で再度問い合わせます。",
-	"server.metadata.this-install-sent-the-metadata-server": "このインストールからメタデータサーバーへのリクエストが多すぎました。HolyArrs は待ってから自動で再度問い合わせます。"
+	"server.metadata.this-install-sent-the-metadata-server": "このインストールからメタデータサーバーへのリクエストが多すぎました。HolyArrs は待ってから自動で再度問い合わせます。",
+	"server.core.another-app-answered-check-the-port": "別のアプリが応答しました。ポートを確認してください：別のものが使っています。",
+	"server.core.blocked-local-network-turn-on-may": "ブロック：ローカルネットワーク。自宅で動いているなら「ローカルネットワークに接続」をオンにしてください。",
+	"server.core.category-missing-add-it-in-the": "カテゴリがありません。ダウンロードアプリで追加するか、ここで別のものを選んでください。",
+	"server.core.certificate-not-trusted-use-the-name": "証明書が信頼されていません。証明書にある名前を使うか、証明書がなければ http:// にしてください。",
+	"server.core.it-speaks-http-not-https-start": "https ではなく http で応答します。アドレスを http:// で始めてください。",
+	"server.core.it-speaks-https-not-http-start": "http ではなく https で応答します。アドレスを https:// で始めてください。",
+	"server.core.key-or-password-refused-check-them": "キーまたはパスワードが拒否されました。確認してから再テストしてください。",
+	"server.core.name-not-found-check-the-host": "名前が見つかりません。アドレスのホスト名を確認してください。",
+	"server.core.no-answer-in-time-check-the": "時間内に応答がありません。アドレスと、ファイアウォールが妨げていないか確認してください。",
+	"server.core.nothing-answers-on-that-port-check": "そのポートでは何も応答しません。ポートと、アプリが動いているか確認してください。",
+	"server.core.nothing-at-that-path-check-the": "そのパスには何もありません。ポートの後のパスを確認してください。",
+	"server.core.category-missing-add-it-in-the-2": "カテゴリがありません: {name}。ダウンロードアプリで追加するか、ここで別のものを選んでください。"
 }

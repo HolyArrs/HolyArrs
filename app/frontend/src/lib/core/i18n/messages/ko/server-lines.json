@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "메타데이터 서버가 지금 바쁩니다. HolyArrs가 잠시 후 알아서 다시 요청합니다.",
 	"server.metadata.the-metadata-server-is-not-signing": "메타데이터 서버가 지금은 이 주소에서 더 이상 설치를 등록하지 않습니다. HolyArrs가 알아서 다시 요청합니다. 이 설치의 등록이 유지되도록 재시작 사이에도 /config 폴더를 유지하세요.",
 	"server.metadata.this-address-sent-the-metadata-server": "이 주소에서 메타데이터 서버로 요청을 너무 많이 보냈습니다. HolyArrs가 기다렸다가 알아서 다시 요청합니다.",
-	"server.metadata.this-install-sent-the-metadata-server": "이 설치에서 메타데이터 서버로 요청을 너무 많이 보냈습니다. HolyArrs가 기다렸다가 알아서 다시 요청합니다."
+	"server.metadata.this-install-sent-the-metadata-server": "이 설치에서 메타데이터 서버로 요청을 너무 많이 보냈습니다. HolyArrs가 기다렸다가 알아서 다시 요청합니다.",
+	"server.core.another-app-answered-check-the-port": "다른 앱이 응답했습니다. 포트를 확인하세요: 다른 것이 쓰고 있습니다.",
+	"server.core.blocked-local-network-turn-on-may": "차단됨: 로컬 네트워크. 집에서 실행 중이면 \"로컬 네트워크 접근\"을 켜세요.",
+	"server.core.category-missing-add-it-in-the": "카테고리가 없습니다. 다운로드 앱에서 추가하거나 여기서 다른 것을 고르세요.",
+	"server.core.certificate-not-trusted-use-the-name": "인증서를 신뢰할 수 없습니다. 인증서에 있는 이름을 쓰거나, 인증서가 없으면 http://를 쓰세요.",
+	"server.core.it-speaks-http-not-https-start": "https가 아니라 http로 응답합니다. 주소를 http://로 시작하세요.",
+	"server.core.it-speaks-https-not-http-start": "http가 아니라 https로 응답합니다. 주소를 https://로 시작하세요.",
+	"server.core.key-or-password-refused-check-them": "키 또는 비밀번호가 거부되었습니다. 확인한 뒤 다시 테스트하세요.",
+	"server.core.name-not-found-check-the-host": "이름을 찾을 수 없습니다. 주소의 호스트 이름을 확인하세요.",
+	"server.core.no-answer-in-time-check-the": "제시간에 응답이 없습니다. 주소와 방화벽이 막고 있지 않은지 확인하세요.",
+	"server.core.nothing-answers-on-that-port-check": "그 포트에서 아무것도 응답하지 않습니다. 포트와 앱이 실행 중인지 확인하세요.",
+	"server.core.nothing-at-that-path-check-the": "그 경로에는 아무것도 없습니다. 포트 뒤의 경로를 확인하세요.",
+	"server.core.category-missing-add-it-in-the-2": "카테고리가 없습니다: {name}. 다운로드 앱에서 추가하거나 여기서 다른 것을 고르세요."
 }

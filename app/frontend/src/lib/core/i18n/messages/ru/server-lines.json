@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Сервер метаданных сейчас занят. HolyArrs сам спросит снова через мгновение.",
 	"server.metadata.the-metadata-server-is-not-signing": "Сервер метаданных сейчас не регистрирует новые установки с этого адреса. HolyArrs сам спросит снова; сохраняйте папку /config между перезапусками, чтобы эта установка сохранила регистрацию.",
 	"server.metadata.this-address-sent-the-metadata-server": "С этого адреса на сервер метаданных отправлено слишком много запросов. HolyArrs ждёт и сам спросит снова.",
-	"server.metadata.this-install-sent-the-metadata-server": "Эта установка отправила на сервер метаданных слишком много запросов. HolyArrs ждёт и сам спросит снова."
+	"server.metadata.this-install-sent-the-metadata-server": "Эта установка отправила на сервер метаданных слишком много запросов. HolyArrs ждёт и сам спросит снова.",
+	"server.core.another-app-answered-check-the-port": "Ответило другое приложение. Проверьте порт: он занят чем-то другим.",
+	"server.core.blocked-local-network-turn-on-may": "Заблокировано: локальная сеть. Включите «Доступ к локальной сети», если оно работает дома.",
+	"server.core.category-missing-add-it-in-the": "Нет категории. Добавьте её в приложении загрузок или выберите здесь другую.",
+	"server.core.certificate-not-trusted-use-the-name": "Сертификат не доверенный. Укажите имя из его сертификата или http://, если сертификата нет.",
+	"server.core.it-speaks-http-not-https-start": "Оно работает по http, а не https. Начните адрес с http://.",
+	"server.core.it-speaks-https-not-http-start": "Оно работает по https, а не http. Начните адрес с https://.",
+	"server.core.key-or-password-refused-check-them": "Ключ или пароль отклонены. Проверьте их и повторите проверку.",
+	"server.core.name-not-found-check-the-host": "Имя не найдено. Проверьте имя хоста в адресе.",
+	"server.core.no-answer-in-time-check-the": "Нет ответа вовремя. Проверьте адрес и что брандмауэр не мешает.",
+	"server.core.nothing-answers-on-that-port-check": "На этом порту ничего не отвечает. Проверьте порт и что приложение запущено.",
+	"server.core.nothing-at-that-path-check-the": "По этому пути ничего нет. Проверьте путь после порта.",
+	"server.core.category-missing-add-it-in-the-2": "Нет категории: {name}. Добавьте её в приложении загрузок или выберите здесь другую."
 }

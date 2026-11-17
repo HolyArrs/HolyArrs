@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Il server dei metadati è occupato in questo momento. HolyArrs riprova da solo tra poco.",
 	"server.metadata.the-metadata-server-is-not-signing": "Il server dei metadati non sta registrando altre installazioni da questo indirizzo in questo momento. HolyArrs riprova da solo; conserva la cartella /config tra un riavvio e l'altro così questa installazione mantiene la sua registrazione.",
 	"server.metadata.this-address-sent-the-metadata-server": "Questo indirizzo ha inviato troppe richieste al server dei metadati. HolyArrs attende e riprova da solo.",
-	"server.metadata.this-install-sent-the-metadata-server": "Questa installazione ha inviato troppe richieste al server dei metadati. HolyArrs attende e riprova da solo."
+	"server.metadata.this-install-sent-the-metadata-server": "Questa installazione ha inviato troppe richieste al server dei metadati. HolyArrs attende e riprova da solo.",
+	"server.core.another-app-answered-check-the-port": "Ha risposto un'altra app. Controlla la porta: appartiene a qualcos'altro.",
+	"server.core.blocked-local-network-turn-on-may": "Bloccato: rete locale. Attiva \"Consenti l'accesso alla rete locale\" se è in esecuzione a casa.",
+	"server.core.category-missing-add-it-in-the": "Categoria mancante. Aggiungila nell'app di download o scegline un'altra qui.",
+	"server.core.certificate-not-trusted-use-the-name": "Certificato non attendibile. Usa il nome del suo certificato, o http:// se non ne ha.",
+	"server.core.it-speaks-http-not-https-start": "Parla http, non https. Inizia l'indirizzo con http://.",
+	"server.core.it-speaks-https-not-http-start": "Parla https, non http. Inizia l'indirizzo con https://.",
+	"server.core.key-or-password-refused-check-them": "Chiave o password rifiutata. Controllale, poi riprova il test.",
+	"server.core.name-not-found-check-the-host": "Nome non trovato. Controlla il nome host nell'indirizzo.",
+	"server.core.no-answer-in-time-check-the": "Nessuna risposta in tempo. Controlla l'indirizzo e che nessun firewall blocchi.",
+	"server.core.nothing-answers-on-that-port-check": "Nessuno risponde su quella porta. Controlla la porta e che l'app sia in esecuzione.",
+	"server.core.nothing-at-that-path-check-the": "Niente a quel percorso. Controlla il percorso dopo la porta.",
+	"server.core.category-missing-add-it-in-the-2": "Categoria mancante: {name}. Aggiungila nell'app di download o scegline un'altra qui."
 }

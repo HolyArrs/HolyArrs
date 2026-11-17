@@ -13,7 +13,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { emptyForm, samePathPair, formBody, formFrom, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
+	import { emptyForm, samePathPair, formBody, formFrom, healthLabel, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { recheckSettingsStatus } from '#lib/alerts/index.ts';
@@ -491,7 +491,7 @@
 						</div>
 					</div>
 					<div class="num" title={d.checked_at ? t('settings.downloaders.checked', { ago: ago(d.checked_at) }) : undefined}><b>{d.active_downloads}</b><small>{t('settings.downloaders.active')}</small></div>
-					<span class="st {healthTone(d.health.state)}"><i></i><span data-testid="downloader-state">{d.health.label}</span></span>
+					<span class="st {healthTone(d.health.state)}"><i></i><span data-testid="downloader-state">{healthLabel(d.health)}</span></span>
 					<div class="acts">
 						<Button variant="plain" size="sm" type="button" disabled={testing === d.id} aria-busy={testing === d.id} onclick={() => test(d)}>{t('settings.downloaders.test')}</Button>
 						{#if d.health.state === 'paused'}
@@ -503,9 +503,9 @@
 						<Button variant="plain" size="sm" type="button" onclick={() => remove(d)} aria-label={t('settings.downloaders.removeName', { name: d.name })}>{t('settings.downloaders.remove')}</Button>
 					</div>
 				</div>
-				{#if d.health.text}<p class="note" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{serverWords(d.health.text)}</p>{/if}
+				{#if d.health.text && !(results[d.id] && !results[d.id].ok)}<p class="note" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{serverWords(d.health.text)}</p>{/if}
 				{#if results[d.id] && !results[d.id].ok}
-					<p class="note bad-text" role="status" data-testid="downloader-test">{results[d.id].text}</p>
+					<p class="note bad-text" role="status" data-testid="downloader-test">{serverWords(results[d.id].text)}</p>
 				{/if}
 				{#if pendingAttempts(attempts[d.id]).length > 0}
 					<section class="notice bad attempt-review" aria-label={t('settings.downloaders.needsDecision')} data-testid="downloader-attempts">
@@ -763,9 +763,11 @@
 	.note { margin: 8px 0 0 40px; font: 400 13px/1.35 var(--font-ui); color: var(--text-muted); }
 	.dl .attempt-review { margin: 10px 0 0 40px; }
 	@media (max-width: 760px) {
-		.main { grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-areas: 'ic grow st' 'ic num num' 'ic acts acts'; row-gap: 6px; }
-		.main > .ic { grid-area: ic; align-self: start; } .main > .grow { grid-area: grow; } .main > .st { grid-area: st; justify-self: end; align-self: start; }
-		.main > .num { grid-area: num; } .main > .acts { grid-area: acts; justify-self: start; flex-wrap: wrap; margin-left: -10px; }
+		/* The name has the whole first line; its chips wrap below it, then the status and count. */
+		.main { grid-template-columns: 24px auto minmax(0, 1fr); grid-template-areas: 'ic grow grow' 'ic st num' 'ic acts acts'; row-gap: 6px; }
+		.main > .ic { grid-area: ic; align-self: start; } .main > .grow { grid-area: grow; } .main > .st { grid-area: st; justify-self: start; }
+		.top { flex-wrap: wrap; row-gap: 4px; } .name { white-space: normal; overflow-wrap: anywhere; }
+		.main > .num { grid-area: num; justify-self: end; } .main > .acts { grid-area: acts; justify-self: start; flex-wrap: wrap; margin-left: -10px; }
 		.note, .dl .attempt-review { margin-left: 0; }
 	}
 </style>

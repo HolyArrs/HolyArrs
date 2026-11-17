@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "ขณะนี้เซิร์ฟเวอร์เมทาดาทาไม่ว่าง HolyArrs จะถามใหม่เองในอีกสักครู่",
 	"server.metadata.the-metadata-server-is-not-signing": "ขณะนี้เซิร์ฟเวอร์เมทาดาทาไม่ลงทะเบียนการติดตั้งเพิ่มจากที่อยู่นี้ HolyArrs จะถามใหม่เอง เก็บโฟลเดอร์ /config ไว้ระหว่างการรีสตาร์ทเพื่อให้การติดตั้งนี้คงการลงทะเบียนไว้",
 	"server.metadata.this-address-sent-the-metadata-server": "ที่อยู่นี้ส่งคำขอไปยังเซิร์ฟเวอร์เมทาดาทามากเกินไป HolyArrs จะรอแล้วถามใหม่เอง",
-	"server.metadata.this-install-sent-the-metadata-server": "การติดตั้งนี้ส่งคำขอไปยังเซิร์ฟเวอร์เมทาดาทามากเกินไป HolyArrs จะรอแล้วถามใหม่เอง"
+	"server.metadata.this-install-sent-the-metadata-server": "การติดตั้งนี้ส่งคำขอไปยังเซิร์ฟเวอร์เมทาดาทามากเกินไป HolyArrs จะรอแล้วถามใหม่เอง",
+	"server.core.another-app-answered-check-the-port": "แอปอื่นตอบกลับ ตรวจสอบพอร์ต: เป็นของอย่างอื่น",
+	"server.core.blocked-local-network-turn-on-may": "ถูกบล็อก: เครือข่ายภายใน เปิด \"เข้าถึงเครือข่ายภายใน\" หากทำงานอยู่ที่บ้าน",
+	"server.core.category-missing-add-it-in-the": "ไม่มีหมวดหมู่ เพิ่มในแอปดาวน์โหลด หรือเลือกหมวดอื่นที่นี่",
+	"server.core.certificate-not-trusted-use-the-name": "ใบรับรองไม่น่าเชื่อถือ ใช้ชื่อที่อยู่บนใบรับรอง หรือ http:// หากไม่มีใบรับรอง",
+	"server.core.it-speaks-http-not-https-start": "ใช้ http ไม่ใช่ https ขึ้นต้นที่อยู่ด้วย http://",
+	"server.core.it-speaks-https-not-http-start": "ใช้ https ไม่ใช่ http ขึ้นต้นที่อยู่ด้วย https://",
+	"server.core.key-or-password-refused-check-them": "คีย์หรือรหัสผ่านถูกปฏิเสธ ตรวจสอบแล้วทดสอบอีกครั้ง",
+	"server.core.name-not-found-check-the-host": "ไม่พบชื่อ ตรวจสอบชื่อโฮสต์ในที่อยู่",
+	"server.core.no-answer-in-time-check-the": "ไม่มีคำตอบทันเวลา ตรวจสอบที่อยู่ และว่าไม่มีไฟร์วอลล์ขวางอยู่",
+	"server.core.nothing-answers-on-that-port-check": "ไม่มีอะไรตอบที่พอร์ตนั้น ตรวจสอบพอร์ต และว่าแอปกำลังทำงาน",
+	"server.core.nothing-at-that-path-check-the": "ไม่มีอะไรที่พาธนั้น ตรวจสอบพาธหลังพอร์ต",
+	"server.core.category-missing-add-it-in-the-2": "ไม่มีหมวดหมู่: {name} เพิ่มในแอปดาวน์โหลด หรือเลือกหมวดอื่นที่นี่"
 }

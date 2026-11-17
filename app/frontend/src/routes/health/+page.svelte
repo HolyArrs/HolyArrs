@@ -20,6 +20,7 @@
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import type { AlertView } from '#lib/core/types.ts';
 	import { testLabel } from '#lib/core/test-tag.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 	const tab = $derived(['jobs', 'updates', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
 	let input = $state<StatusInput | null>(null);
@@ -145,7 +146,7 @@
 				afterChecks(r);
 			} else {
 				const res = await api.post<{ ok: boolean; text: string }>(`/${c.kind}s/${c.id}/test`);
-				toasts.push(res.ok ? t('health.page.connected', { name: r.name }) : t('health.page.cantConnect', { name: r.name }), res.ok ? 'ok' : 'fail', { body: res.ok ? testLabel(res.text) : res.text.trim() || undefined });
+				toasts.push(res.ok ? t('health.page.connected', { name: r.name }) : t('health.page.cantConnect', { name: r.name }), res.ok ? 'ok' : 'fail', { body: res.ok ? testLabel(res.text) : serverWords(res.text.trim()) || undefined });
 				await load(true);
 			}
 		} catch (e) {

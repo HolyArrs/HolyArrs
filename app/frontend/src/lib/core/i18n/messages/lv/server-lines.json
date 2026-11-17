@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Metadatu serveris pašlaik ir aizņemts. HolyArrs pats drīz jautās vēlreiz.",
 	"server.metadata.the-metadata-server-is-not-signing": "Metadatu serveris pašlaik nereģistrē vairāk instalāciju no šīs adreses. HolyArrs pats jautās vēlreiz; saglabājiet mapi /config starp restartēšanām, lai šī instalācija paturētu savu reģistrāciju.",
 	"server.metadata.this-address-sent-the-metadata-server": "Šī adrese nosūtīja metadatu serverim pārāk daudz pieprasījumu. HolyArrs gaida un pats jautās vēlreiz.",
-	"server.metadata.this-install-sent-the-metadata-server": "Šī instalācija nosūtīja metadatu serverim pārāk daudz pieprasījumu. HolyArrs gaida un pats jautās vēlreiz."
+	"server.metadata.this-install-sent-the-metadata-server": "Šī instalācija nosūtīja metadatu serverim pārāk daudz pieprasījumu. HolyArrs gaida un pats jautās vēlreiz.",
+	"server.core.another-app-answered-check-the-port": "Atbildēja cita lietotne. Pārbaudiet portu: tas pieder kaut kam citam.",
+	"server.core.blocked-local-network-turn-on-may": "Bloķēts: vietējais tīkls. Ieslēdziet “Piekļūt vietējam tīklam”, ja tas darbojas mājās.",
+	"server.core.category-missing-add-it-in-the": "Trūkst kategorijas. Pievienojiet to lejupielādes lietotnē vai izvēlieties citu šeit.",
+	"server.core.certificate-not-trusted-use-the-name": "Sertifikāts nav uzticams. Izmantojiet nosaukumu no tā sertifikāta vai http://, ja tāda nav.",
+	"server.core.it-speaks-http-not-https-start": "Tas runā http, nevis https. Sāciet adresi ar http://.",
+	"server.core.it-speaks-https-not-http-start": "Tas runā https, nevis http. Sāciet adresi ar https://.",
+	"server.core.key-or-password-refused-check-them": "Atslēga vai parole noraidīta. Pārbaudiet tās un testējiet vēlreiz.",
+	"server.core.name-not-found-check-the-host": "Nosaukums nav atrasts. Pārbaudiet resursdatora nosaukumu adresē.",
+	"server.core.no-answer-in-time-check-the": "Nav atbildes laikā. Pārbaudiet adresi un to, vai netraucē ugunsmūris.",
+	"server.core.nothing-answers-on-that-port-check": "Šajā portā nekas neatbild. Pārbaudiet portu un to, vai lietotne darbojas.",
+	"server.core.nothing-at-that-path-check-the": "Šajā ceļā nekā nav. Pārbaudiet ceļu aiz porta.",
+	"server.core.category-missing-add-it-in-the-2": "Trūkst kategorijas: {name}. Pievienojiet to lejupielādes lietotnē vai izvēlieties citu šeit."
 }

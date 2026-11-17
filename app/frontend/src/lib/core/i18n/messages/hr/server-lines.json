@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Poslužitelj metapodataka trenutno je zauzet. HolyArrs će sam ponovno pitati za trenutak.",
 	"server.metadata.the-metadata-server-is-not-signing": "Poslužitelj metapodataka trenutno ne registrira nove instalacije s ove adrese. HolyArrs će sam ponovno pitati; zadržite mapu /config između ponovnih pokretanja kako bi ova instalacija zadržala registraciju.",
 	"server.metadata.this-address-sent-the-metadata-server": "Ova adresa poslala je previše zahtjeva poslužitelju metapodataka. HolyArrs čeka i sam ponovno pita.",
-	"server.metadata.this-install-sent-the-metadata-server": "Ova instalacija poslala je previše zahtjeva poslužitelju metapodataka. HolyArrs čeka i sam ponovno pita."
+	"server.metadata.this-install-sent-the-metadata-server": "Ova instalacija poslala je previše zahtjeva poslužitelju metapodataka. HolyArrs čeka i sam ponovno pita.",
+	"server.core.another-app-answered-check-the-port": "Odgovorila je druga aplikacija. Provjerite port: pripada nečem drugom.",
+	"server.core.blocked-local-network-turn-on-may": "Blokirano: lokalna mreža. Uključite „Dosegni lokalnu mrežu” ako radi kod kuće.",
+	"server.core.category-missing-add-it-in-the": "Kategorija nedostaje. Dodajte je u aplikaciji za preuzimanje ili ovdje odaberite drugu.",
+	"server.core.certificate-not-trusted-use-the-name": "Certifikat nije pouzdan. Koristite ime s njegova certifikata ili http:// ako ga nema.",
+	"server.core.it-speaks-http-not-https-start": "Govori http, ne https. Započnite adresu s http://.",
+	"server.core.it-speaks-https-not-http-start": "Govori https, ne http. Započnite adresu s https://.",
+	"server.core.key-or-password-refused-check-them": "Ključ ili lozinka odbijeni. Provjerite ih pa testirajte ponovno.",
+	"server.core.name-not-found-check-the-host": "Ime nije pronađeno. Provjerite naziv hosta u adresi.",
+	"server.core.no-answer-in-time-check-the": "Nema odgovora na vrijeme. Provjerite adresu i da vatrozid ne smeta.",
+	"server.core.nothing-answers-on-that-port-check": "Na tom portu ništa ne odgovara. Provjerite port i radi li aplikacija.",
+	"server.core.nothing-at-that-path-check-the": "Na toj putanji nema ničega. Provjerite putanju nakon porta.",
+	"server.core.category-missing-add-it-in-the-2": "Kategorija nedostaje: {name}. Dodajte je u aplikaciji za preuzimanje ili ovdje odaberite drugu."
 }

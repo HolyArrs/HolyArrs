@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Metaandmete server on praegu hõivatud. HolyArrs küsib kohe ise uuesti.",
 	"server.metadata.the-metadata-server-is-not-signing": "Metaandmete server ei registreeri praegu sellelt aadressilt rohkem paigaldusi. HolyArrs küsib ise uuesti; hoia kausta /config taaskäivituste vahel alles, et see paigaldus säilitaks oma registreeringu.",
 	"server.metadata.this-address-sent-the-metadata-server": "See aadress saatis metaandmete serverile liiga palju päringuid. HolyArrs ootab ja küsib ise uuesti.",
-	"server.metadata.this-install-sent-the-metadata-server": "See paigaldus saatis metaandmete serverile liiga palju päringuid. HolyArrs ootab ja küsib ise uuesti."
+	"server.metadata.this-install-sent-the-metadata-server": "See paigaldus saatis metaandmete serverile liiga palju päringuid. HolyArrs ootab ja küsib ise uuesti.",
+	"server.core.another-app-answered-check-the-port": "Vastas teine rakendus. Kontrolli porti: see kuulub millelegi muule.",
+	"server.core.blocked-local-network-turn-on-may": "Blokeeritud: kohtvõrk. Lülita sisse „Luba ligipääs kohtvõrku“, kui see töötab kodus.",
+	"server.core.category-missing-add-it-in-the": "Kategooria puudub. Lisa see allalaadimisrakenduses või vali siin mõni muu.",
+	"server.core.certificate-not-trusted-use-the-name": "Sertifikaati ei usaldata. Kasuta tema sertifikaadil olevat nime või http://, kui sertifikaati pole.",
+	"server.core.it-speaks-http-not-https-start": "See räägib http-d, mitte https-i. Alusta aadressi http://-ga.",
+	"server.core.it-speaks-https-not-http-start": "See räägib https-i, mitte http-d. Alusta aadressi https://-ga.",
+	"server.core.key-or-password-refused-check-them": "Võti või parool lükati tagasi. Kontrolli neid ja testi uuesti.",
+	"server.core.name-not-found-check-the-host": "Nime ei leitud. Kontrolli aadressis olevat hostinime.",
+	"server.core.no-answer-in-time-check-the": "Õigel ajal vastust ei tulnud. Kontrolli aadressi ja et tulemüür ei sega.",
+	"server.core.nothing-answers-on-that-port-check": "Selles pordis ei vasta miski. Kontrolli porti ja et rakendus töötab.",
+	"server.core.nothing-at-that-path-check-the": "Sellel teel pole midagi. Kontrolli pordi järel olevat teed.",
+	"server.core.category-missing-add-it-in-the-2": "Kategooria puudub: {name}. Lisa see allalaadimisrakenduses või vali siin mõni muu."
 }

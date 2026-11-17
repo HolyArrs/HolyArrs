@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "سرور فراداده اکنون مشغول است. HolyArrs کمی بعد خودش دوباره می‌پرسد.",
 	"server.metadata.the-metadata-server-is-not-signing": "سرور فراداده اکنون نصب بیشتری از این نشانی ثبت نمی‌کند. HolyArrs خودش دوباره می‌پرسد؛ پوشه /config را بین راه‌اندازی‌های دوباره نگه دارید تا این نصب ثبت‌نامش را حفظ کند.",
 	"server.metadata.this-address-sent-the-metadata-server": "این نشانی درخواست‌های بیش از حدی به سرور فراداده فرستاد. HolyArrs صبر می‌کند و خودش دوباره می‌پرسد.",
-	"server.metadata.this-install-sent-the-metadata-server": "این نصب درخواست‌های بیش از حدی به سرور فراداده فرستاد. HolyArrs صبر می‌کند و خودش دوباره می‌پرسد."
+	"server.metadata.this-install-sent-the-metadata-server": "این نصب درخواست‌های بیش از حدی به سرور فراداده فرستاد. HolyArrs صبر می‌کند و خودش دوباره می‌پرسد.",
+	"server.core.another-app-answered-check-the-port": "برنامهٔ دیگری پاسخ داد. درگاه را بررسی کنید: مال چیز دیگری است.",
+	"server.core.blocked-local-network-turn-on-may": "مسدود: شبکهٔ محلی. اگر در خانه اجرا می‌شود، «دسترسی به شبکه محلی» را روشن کنید.",
+	"server.core.category-missing-add-it-in-the": "دسته وجود ندارد. آن را در برنامهٔ دانلود اضافه کنید یا اینجا دستهٔ دیگری انتخاب کنید.",
+	"server.core.certificate-not-trusted-use-the-name": "گواهی مورد اعتماد نیست. از نام روی گواهی آن استفاده کنید، یا اگر گواهی ندارد از http://.",
+	"server.core.it-speaks-http-not-https-start": "با http کار می‌کند، نه https. نشانی را با http:// شروع کنید.",
+	"server.core.it-speaks-https-not-http-start": "با https کار می‌کند، نه http. نشانی را با https:// شروع کنید.",
+	"server.core.key-or-password-refused-check-them": "کلید یا گذرواژه رد شد. آن‌ها را بررسی و دوباره آزمایش کنید.",
+	"server.core.name-not-found-check-the-host": "نام پیدا نشد. نام میزبان را در نشانی بررسی کنید.",
+	"server.core.no-answer-in-time-check-the": "پاسخی به‌موقع نرسید. نشانی را بررسی کنید و اینکه دیواره‌آتشی مانع نباشد.",
+	"server.core.nothing-answers-on-that-port-check": "هیچ چیزی روی این درگاه پاسخ نمی‌دهد. درگاه را بررسی کنید و اینکه برنامه در حال اجراست.",
+	"server.core.nothing-at-that-path-check-the": "در این مسیر چیزی نیست. مسیر پس از درگاه را بررسی کنید.",
+	"server.core.category-missing-add-it-in-the-2": "دسته وجود ندارد: {name}. آن را در برنامهٔ دانلود اضافه کنید یا اینجا دستهٔ دیگری انتخاب کنید."
 }

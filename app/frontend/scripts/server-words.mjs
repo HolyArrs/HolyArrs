@@ -46,6 +46,8 @@ const handLines = { 'Because you have {name}': 'suggest', 'No Downloader has con
 	'that quality cannot be asked for': 'requests', 'someone already asked for this movie in that quality; decide their ask instead': 'requests',
 	'The quality you picked was not used: this title already has that copy.': 'requests',
 	// sources choose.go: a forced pick's reasons, each ending in the verdict text.
+	// doctor.CategoryLine, the Category line with the missing category's name.
+	'Category missing: {name}. Add it in the download app, or pick another one here.': 'core',
 	'it was turned down: {d}': 'sources', 'it was turned down for this episode: {d}': 'sources' };
 // Files whose fmt.Sprintf lines are display text (card lines, labels).
 const display = /(accounts[\\/]events|discover[\\/](home|explore_np|title_view)|shows[\\/]episode_labels|requests[\\/](episodes|follows\w*|reports)|health[\\/](health|routes_settings_status)|migrate[\\/]plan_\w+|metadata[\\/]moods)\.go$/;

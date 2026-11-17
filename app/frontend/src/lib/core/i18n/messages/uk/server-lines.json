@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Сервер метаданих зараз зайнятий. HolyArrs сам запитає знову за мить.",
 	"server.metadata.the-metadata-server-is-not-signing": "Сервер метаданих зараз не реєструє нові встановлення з цієї адреси. HolyArrs сам запитає знову; зберігайте теку /config між перезапусками, щоб це встановлення зберегло реєстрацію.",
 	"server.metadata.this-address-sent-the-metadata-server": "З цієї адреси надіслано забагато запитів до сервера метаданих. HolyArrs чекає і сам запитає знову.",
-	"server.metadata.this-install-sent-the-metadata-server": "Це встановлення надіслало забагато запитів до сервера метаданих. HolyArrs чекає і сам запитає знову."
+	"server.metadata.this-install-sent-the-metadata-server": "Це встановлення надіслало забагато запитів до сервера метаданих. HolyArrs чекає і сам запитає знову.",
+	"server.core.another-app-answered-check-the-port": "Відповів інший застосунок. Перевірте порт: він належить чомусь іншому.",
+	"server.core.blocked-local-network-turn-on-may": "Заблоковано: локальна мережа. Увімкніть «Доступ до локальної мережі», якщо воно працює вдома.",
+	"server.core.category-missing-add-it-in-the": "Немає категорії. Додайте її в застосунку завантажень або виберіть тут іншу.",
+	"server.core.certificate-not-trusted-use-the-name": "Сертифікат недовірений. Вкажіть ім'я з його сертифіката або http://, якщо сертифіката немає.",
+	"server.core.it-speaks-http-not-https-start": "Воно працює через http, а не https. Почніть адресу з http://.",
+	"server.core.it-speaks-https-not-http-start": "Воно працює через https, а не http. Почніть адресу з https://.",
+	"server.core.key-or-password-refused-check-them": "Ключ або пароль відхилено. Перевірте їх і повторіть перевірку.",
+	"server.core.name-not-found-check-the-host": "Ім'я не знайдено. Перевірте ім'я хоста в адресі.",
+	"server.core.no-answer-in-time-check-the": "Немає відповіді вчасно. Перевірте адресу і що брандмауер не заважає.",
+	"server.core.nothing-answers-on-that-port-check": "На цьому порту ніщо не відповідає. Перевірте порт і що застосунок запущено.",
+	"server.core.nothing-at-that-path-check-the": "За цим шляхом нічого немає. Перевірте шлях після порту.",
+	"server.core.category-missing-add-it-in-the-2": "Немає категорії: {name}. Додайте її в застосунку завантажень або виберіть тут іншу."
 }

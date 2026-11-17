@@ -23,6 +23,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 
@@ -519,18 +520,26 @@ func (l *Linker) token(ctx context.Context, m domain.MediaServer) (string, error
 func client(m domain.MediaServer) *http.Client {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.Proxy = nil
-	if m.AllowLocal {
-		// The local network, but never link-local or cloud metadata.
-		t.DialContext = outbound.PolicyDialer(outbound.NotMetadata).DialContext
-	} else {
-		t.DialContext = outbound.PolicyDialer(outbound.PublicOnly).DialContext
-	}
+	t.DialContext = dialer(m)
 	return &http.Client{Timeout: 20 * time.Second, Transport: t,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 }
 
+// dialer connects under m's network rule: the local network only when
+// allowed, and never link-local or cloud metadata.
+func dialer(m domain.MediaServer) doctor.Dial {
+	if m.AllowLocal {
+		return outbound.PolicyDialer(outbound.NotMetadata).DialContext
+	}
+	return outbound.PolicyDialer(outbound.PublicOnly).DialContext
+}
+
 // maxAnswer is the most bytes of one media server answer read.
 const maxAnswer = 4 << 20
+
+// ownAlso is the app that may answer for a kind as well: Jellyfin grew out
+// of Emby and still names it.
+var ownAlso = map[string]string{"jellyfin": "emby", "emby": "jellyfin"}
 
 // do sends one request with the server's token and returns the body. The
 // error never holds the address or the token.
@@ -577,8 +586,9 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 		if errors.As(err, &ue) {
 			err = ue.Err
 		}
-		if errors.Is(err, outbound.ErrAddressRefused) {
-			return nil, errors.New("the server is on the local network, which it may not reach")
+		// The line never holds the address or the token.
+		if c := doctor.At(doctor.Of(err), err.Error(), m.URL, dialer(m)); c != doctor.Unknown {
+			return nil, doctor.Mark(c, nil)
 		}
 		return nil, errors.New("the server did not answer")
 	}
@@ -597,8 +607,12 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 	}
 	outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
 	switch {
+	case resp.StatusCode >= 400 && doctor.Other(resp.Header, b, m.Kind, ownAlso[m.Kind]) != nil:
+		return nil, doctor.Mark(doctor.WrongApp, nil)
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-		return nil, errors.New("the server turned down the token")
+		return nil, doctor.Mark(doctor.Auth, nil)
+	case doctor.Answer(resp.StatusCode, b) != nil:
+		return nil, doctor.Answer(resp.StatusCode, b)
 	case resp.StatusCode/100 != 2:
 		return nil, fmt.Errorf("the server answered %d", resp.StatusCode)
 	}
@@ -621,10 +635,12 @@ func (l *Linker) plexSections(ctx context.Context, m domain.MediaServer) ([]plex
 		return nil, err
 	}
 	var mc struct {
+		XMLName     xml.Name
 		Directories []plexSection `xml:"Directory"`
 	}
-	if err := xml.Unmarshal(b, &mc); err != nil {
-		return nil, errors.New("the server's answer was not a Plex library list")
+	// A page or list that is not Plex's means another app answers there.
+	if err := xml.Unmarshal(b, &mc); err != nil || mc.XMLName.Local != "MediaContainer" {
+		return nil, doctor.Mark(doctor.WrongApp, nil)
 	}
 	var out []plexSection
 	for _, d := range mc.Directories {
@@ -705,6 +721,12 @@ func (l *Linker) Tell(ctx context.Context, m domain.MediaServer, us []Update) er
 	return nil
 }
 
+// held is a Test line said while calls are held back; it unwraps to
+// outbound.ErrSuppressed as well.
+type held struct{ error }
+
+func (h *held) Unwrap() []error { return []error{h.error, outbound.ErrSuppressed} }
+
 // Test checks the address and token: Plex must list at least one movie,
 // TV or music library; Jellyfin and Emby must answer their system info.
 func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error) {
@@ -731,11 +753,22 @@ func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error)
 				ServerName string `json:"ServerName"`
 				Version    string `json:"Version"`
 			}
-			_ = json.Unmarshal(b, &info)
+			if json.Unmarshal(b, &info) != nil || info.Version == "" {
+				// Something answers there, but not as Jellyfin or Emby does.
+				err = doctor.Mark(doctor.WrongApp, nil)
+			}
 			res = strings.TrimSpace(info.ServerName + " " + info.Version)
 		}
 	}
 	now := database.FormatTime(time.Now())
+	if errors.Is(err, outbound.ErrSuppressed) {
+		// Calls are held back after recent failures: say the last known
+		// cause in plain words and keep it stored.
+		if c := doctor.OfText(m.LastError); c != doctor.Unknown {
+			return res, &held{doctor.Mark(c, nil)}
+		}
+		return res, &held{doctor.Mark(doctor.Timeout, nil)}
+	}
 	if err != nil {
 		log.Printf("media servers: %s: test: %v", m.Name, err)
 		markError(ctx, l.Store, m.ID, err.Error())

@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Pelayan metadata sibuk buat masa ini. HolyArrs akan bertanya semula sendiri sebentar lagi.",
 	"server.metadata.the-metadata-server-is-not-signing": "Pelayan metadata tidak mendaftarkan lagi pemasangan dari alamat ini buat masa ini. HolyArrs akan bertanya semula sendiri; simpan folder /config antara mula semula supaya pemasangan ini kekal berdaftar.",
 	"server.metadata.this-address-sent-the-metadata-server": "Alamat ini menghantar terlalu banyak permintaan kepada pelayan metadata. HolyArrs menunggu dan bertanya semula sendiri.",
-	"server.metadata.this-install-sent-the-metadata-server": "Pemasangan ini menghantar terlalu banyak permintaan kepada pelayan metadata. HolyArrs menunggu dan bertanya semula sendiri."
+	"server.metadata.this-install-sent-the-metadata-server": "Pemasangan ini menghantar terlalu banyak permintaan kepada pelayan metadata. HolyArrs menunggu dan bertanya semula sendiri.",
+	"server.core.another-app-answered-check-the-port": "Aplikasi lain yang menjawab. Semak port: ia milik sesuatu yang lain.",
+	"server.core.blocked-local-network-turn-on-may": "Disekat: rangkaian setempat. Hidupkan \"Capai rangkaian setempat\" jika ia berjalan di rumah.",
+	"server.core.category-missing-add-it-in-the": "Kategori tiada. Tambahnya dalam aplikasi muat turun, atau pilih yang lain di sini.",
+	"server.core.certificate-not-trusted-use-the-name": "Sijil tidak dipercayai. Guna nama pada sijilnya, atau http:// jika tiada.",
+	"server.core.it-speaks-http-not-https-start": "Ia menggunakan http, bukan https. Mulakan alamat dengan http://.",
+	"server.core.it-speaks-https-not-http-start": "Ia menggunakan https, bukan http. Mulakan alamat dengan https://.",
+	"server.core.key-or-password-refused-check-them": "Kunci atau kata laluan ditolak. Semak, kemudian uji lagi.",
+	"server.core.name-not-found-check-the-host": "Nama tidak ditemui. Semak nama hos dalam alamat.",
+	"server.core.no-answer-in-time-check-the": "Tiada jawapan dalam masa. Semak alamat, dan pastikan tiada tembok api yang menghalang.",
+	"server.core.nothing-answers-on-that-port-check": "Tiada apa yang menjawab pada port itu. Semak port, dan pastikan aplikasi sedang berjalan.",
+	"server.core.nothing-at-that-path-check-the": "Tiada apa-apa pada laluan itu. Semak laluan selepas port.",
+	"server.core.category-missing-add-it-in-the-2": "Kategori tiada: {name}. Tambahnya dalam aplikasi muat turun, atau pilih yang lain di sini."
 }

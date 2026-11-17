@@ -138,5 +138,10 @@
 	"settings.downloaders.categoryAfterImport": "Categoría tras importar",
 	"settings.downloaders.categoryAfterImportHint": "Cuando un torrent se ha importado, HolyArrs lo mueve a esta categoría. Déjalo vacío para mantenerlo en la categoría principal.",
 	"settings.downloaders.ownOnly": "Mostrar solo elementos de HolyArrs",
-	"settings.downloaders.ownOnlyHint": "Los elementos de otras apps en este gestor de descargas se ocultan y HolyArrs no los cambia."
+	"settings.downloaders.ownOnlyHint": "Los elementos de otras apps en este gestor de descargas se ocultan y HolyArrs no los cambia.",
+	"settings.downloaders.state.notAnswering": "No responde",
+	"settings.downloaders.state.paused": "En pausa",
+	"settings.downloaders.state.resting": "En reposo",
+	"settings.downloaders.state.signInRefused": "Inicio de sesión rechazado",
+	"settings.downloaders.state.working": "Funcionando"
 }

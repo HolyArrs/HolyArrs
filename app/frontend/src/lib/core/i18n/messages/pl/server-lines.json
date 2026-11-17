@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Serwer metadanych jest teraz zajęty. HolyArrs sam zapyta ponownie za chwilę.",
 	"server.metadata.the-metadata-server-is-not-signing": "Serwer metadanych nie rejestruje teraz kolejnych instalacji z tego adresu. HolyArrs sam zapyta ponownie; zachowaj folder /config między restartami, aby ta instalacja zachowała swoją rejestrację.",
 	"server.metadata.this-address-sent-the-metadata-server": "Ten adres wysłał do serwera metadanych zbyt wiele żądań. HolyArrs czeka i sam zapyta ponownie.",
-	"server.metadata.this-install-sent-the-metadata-server": "Ta instalacja wysłała do serwera metadanych zbyt wiele żądań. HolyArrs czeka i sam zapyta ponownie."
+	"server.metadata.this-install-sent-the-metadata-server": "Ta instalacja wysłała do serwera metadanych zbyt wiele żądań. HolyArrs czeka i sam zapyta ponownie.",
+	"server.core.another-app-answered-check-the-port": "Odpowiedziała inna aplikacja. Sprawdź port: należy do czegoś innego.",
+	"server.core.blocked-local-network-turn-on-may": "Zablokowane: sieć lokalna. Włącz „Dostęp do sieci lokalnej”, jeśli działa w domu.",
+	"server.core.category-missing-add-it-in-the": "Brak kategorii. Dodaj ją w aplikacji do pobierania lub wybierz tu inną.",
+	"server.core.certificate-not-trusted-use-the-name": "Certyfikat niezaufany. Użyj nazwy z jego certyfikatu albo http://, jeśli go nie ma.",
+	"server.core.it-speaks-http-not-https-start": "Mówi http, nie https. Zacznij adres od http://.",
+	"server.core.it-speaks-https-not-http-start": "Mówi https, nie http. Zacznij adres od https://.",
+	"server.core.key-or-password-refused-check-them": "Klucz lub hasło odrzucone. Sprawdź je i przetestuj ponownie.",
+	"server.core.name-not-found-check-the-host": "Nie znaleziono nazwy. Sprawdź nazwę hosta w adresie.",
+	"server.core.no-answer-in-time-check-the": "Brak odpowiedzi na czas. Sprawdź adres i czy zapora nie blokuje.",
+	"server.core.nothing-answers-on-that-port-check": "Na tym porcie nic nie odpowiada. Sprawdź port i czy aplikacja działa.",
+	"server.core.nothing-at-that-path-check-the": "Pod tą ścieżką nic nie ma. Sprawdź ścieżkę po porcie.",
+	"server.core.category-missing-add-it-in-the-2": "Brak kategorii: {name}. Dodaj ją w aplikacji do pobierania lub wybierz tu inną."
 }

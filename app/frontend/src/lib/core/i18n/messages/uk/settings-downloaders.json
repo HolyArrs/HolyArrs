@@ -138,5 +138,10 @@
 	"settings.downloaders.categoryAfterImport": "Категорія після імпорту",
 	"settings.downloaders.categoryAfterImportHint": "Після імпорту HolyArrs переносить торент у цю категорію. Залиште порожнім, щоб він лишився в основній категорії.",
 	"settings.downloaders.ownOnly": "Показувати лише елементи HolyArrs",
-	"settings.downloaders.ownOnlyHint": "Елементи інших застосунків у цьому завантажувачі приховано, і HolyArrs їх не змінює."
+	"settings.downloaders.ownOnlyHint": "Елементи інших застосунків у цьому завантажувачі приховано, і HolyArrs їх не змінює.",
+	"settings.downloaders.state.notAnswering": "Не відповідає",
+	"settings.downloaders.state.paused": "На паузі",
+	"settings.downloaders.state.resting": "Відпочиває",
+	"settings.downloaders.state.signInRefused": "Вхід відхилено",
+	"settings.downloaders.state.working": "Працює"
 }

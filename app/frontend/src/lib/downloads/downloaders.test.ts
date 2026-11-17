@@ -1,5 +1,5 @@
 import { decisionName, groupDecisions, manyWords, phaseTone, removeBody, removeFilesWords, removeStart, rowName, split, whyWords } from './downloaders.ts';
-import { samePathPair, seedingBody, seedingFields, deadRuleOn, downloadTone, emptyForm, formBody, formFrom, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
+import { samePathPair, seedingBody, seedingFields, deadRuleOn, downloadTone, emptyForm, formBody, formFrom, healthLabel, healthTone, pendingAttempts, percent, timeLeft, type DownloaderAttempt, type DownloaderView } from './downloaders.ts';
 import { describe, expect, it } from 'vitest';
 import { type Decision, type DownloadRow } from '../core/types.ts';
 
@@ -26,6 +26,8 @@ describe('downloaders', () => {
 		expect(healthTone('working')).toBe('ok');
 		expect(healthTone('paused')).toBe('idle');
 		expect(healthTone('resting')).toBe('wait');
+		expect(healthLabel({ state: 'sign_in_refused', label: 'x' })).toBe('Sign-in refused');
+		expect(healthLabel({ state: 'resting', label: 'x' })).toBe('Resting');
 		expect(healthTone('sign_in_refused')).toBe('fail');
 		expect(healthTone('not_answering')).toBe('fail');
 		expect(downloadTone('downloading')).toBe('wait');

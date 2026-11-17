@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "خادم البيانات الوصفية مشغول الآن. سيسأل HolyArrs مجددًا من تلقاء نفسه بعد قليل.",
 	"server.metadata.the-metadata-server-is-not-signing": "لا يسجّل خادم البيانات الوصفية المزيد من التثبيتات من هذا العنوان الآن. سيسأل HolyArrs مجددًا من تلقاء نفسه؛ احتفظ بمجلد /config بين عمليات إعادة التشغيل كي يحتفظ هذا التثبيت بتسجيله.",
 	"server.metadata.this-address-sent-the-metadata-server": "أرسل هذا العنوان طلبات كثيرة جدًا إلى خادم البيانات الوصفية. ينتظر HolyArrs ثم يسأل مجددًا من تلقاء نفسه.",
-	"server.metadata.this-install-sent-the-metadata-server": "أرسل هذا التثبيت طلبات كثيرة جدًا إلى خادم البيانات الوصفية. ينتظر HolyArrs ثم يسأل مجددًا من تلقاء نفسه."
+	"server.metadata.this-install-sent-the-metadata-server": "أرسل هذا التثبيت طلبات كثيرة جدًا إلى خادم البيانات الوصفية. ينتظر HolyArrs ثم يسأل مجددًا من تلقاء نفسه.",
+	"server.core.another-app-answered-check-the-port": "أجاب تطبيق آخر. تحقق من المنفذ: إنه لبرنامج آخر.",
+	"server.core.blocked-local-network-turn-on-may": "محظور: شبكة محلية. فعّل \"الوصول إلى الشبكة المحلية\" إذا كان يعمل في المنزل.",
+	"server.core.category-missing-add-it-in-the": "الفئة غير موجودة. أضفها في تطبيق التنزيل، أو اختر فئة أخرى هنا.",
+	"server.core.certificate-not-trusted-use-the-name": "الشهادة غير موثوقة. استخدم الاسم الموجود في شهادته، أو http:// إن لم تكن له شهادة.",
+	"server.core.it-speaks-http-not-https-start": "يتحدث http وليس https. ابدأ العنوان بـ http://.",
+	"server.core.it-speaks-https-not-http-start": "يتحدث https وليس http. ابدأ العنوان بـ https://.",
+	"server.core.key-or-password-refused-check-them": "تم رفض المفتاح أو كلمة المرور. تحقق منهما ثم اختبر مجددًا.",
+	"server.core.name-not-found-check-the-host": "الاسم غير موجود. تحقق من اسم المضيف في العنوان.",
+	"server.core.no-answer-in-time-check-the": "لا رد في الوقت المحدد. تحقق من العنوان ومن عدم وجود جدار حماية يعترضه.",
+	"server.core.nothing-answers-on-that-port-check": "لا شيء يجيب على هذا المنفذ. تحقق من المنفذ ومن أن التطبيق يعمل.",
+	"server.core.nothing-at-that-path-check-the": "لا شيء في هذا المسار. تحقق من المسار بعد المنفذ.",
+	"server.core.category-missing-add-it-in-the-2": "الفئة غير موجودة: {name}. أضفها في تطبيق التنزيل، أو اختر فئة أخرى هنا."
 }

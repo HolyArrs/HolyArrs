@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Abala ang metadata server ngayon. Kusang magtatanong muli ang HolyArrs maya-maya.",
 	"server.metadata.the-metadata-server-is-not-signing": "Hindi na nagre-rehistro ang metadata server ng mga install mula sa address na ito ngayon. Kusang magtatanong muli ang HolyArrs; panatilihin ang folder na /config sa pagitan ng mga restart para manatiling rehistrado ang install na ito.",
 	"server.metadata.this-address-sent-the-metadata-server": "Masyadong maraming request ang ipinadala ng address na ito sa metadata server. Maghihintay ang HolyArrs at kusang magtatanong muli.",
-	"server.metadata.this-install-sent-the-metadata-server": "Masyadong maraming request ang ipinadala ng install na ito sa metadata server. Maghihintay ang HolyArrs at kusang magtatanong muli."
+	"server.metadata.this-install-sent-the-metadata-server": "Masyadong maraming request ang ipinadala ng install na ito sa metadata server. Maghihintay ang HolyArrs at kusang magtatanong muli.",
+	"server.core.another-app-answered-check-the-port": "Ibang app ang sumagot. Tingnan ang port: para ito sa ibang bagay.",
+	"server.core.blocked-local-network-turn-on-may": "Naka-block: local network. I-on ang \"Abutin ang local network\" kung tumatakbo ito sa bahay.",
+	"server.core.category-missing-add-it-in-the": "Walang ganitong category. Idagdag ito sa download app, o pumili ng iba rito.",
+	"server.core.certificate-not-trusted-use-the-name": "Hindi pinagkakatiwalaan ang certificate. Gamitin ang pangalan sa certificate nito, o http:// kung wala.",
+	"server.core.it-speaks-http-not-https-start": "Http ang gamit nito, hindi https. Simulan ang address sa http://.",
+	"server.core.it-speaks-https-not-http-start": "Https ang gamit nito, hindi http. Simulan ang address sa https://.",
+	"server.core.key-or-password-refused-check-them": "Tinanggihan ang key o password. Tingnan ang mga ito, saka subukan muli.",
+	"server.core.name-not-found-check-the-host": "Hindi nahanap ang pangalan. Tingnan ang host name sa address.",
+	"server.core.no-answer-in-time-check-the": "Walang sagot sa takdang oras. Tingnan ang address, at na walang firewall na humaharang.",
+	"server.core.nothing-answers-on-that-port-check": "Walang sumasagot sa port na iyon. Tingnan ang port, at na tumatakbo ang app.",
+	"server.core.nothing-at-that-path-check-the": "Walang laman ang path na iyon. Tingnan ang path pagkatapos ng port.",
+	"server.core.category-missing-add-it-in-the-2": "Walang ganitong category: {name}. Idagdag ito sa download app, o pumili ng iba rito."
 }

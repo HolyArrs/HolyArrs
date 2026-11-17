@@ -138,5 +138,10 @@
 	"settings.downloaders.categoryAfterImport": "Kategori selepas import",
 	"settings.downloaders.categoryAfterImportHint": "Selepas torrent diimport, HolyArrs memindahkannya ke kategori ini. Biarkan kosong untuk mengekalkannya dalam kategori utama.",
 	"settings.downloaders.ownOnly": "Tunjukkan item HolyArrs sahaja",
-	"settings.downloaders.ownOnlyHint": "Item apl lain pada Downloader ini disembunyikan, dan HolyArrs tidak mengubahnya."
+	"settings.downloaders.ownOnlyHint": "Item apl lain pada Downloader ini disembunyikan, dan HolyArrs tidak mengubahnya.",
+	"settings.downloaders.state.notAnswering": "Tidak menjawab",
+	"settings.downloaders.state.paused": "Dijeda",
+	"settings.downloaders.state.resting": "Berehat",
+	"settings.downloaders.state.signInRefused": "Log masuk ditolak",
+	"settings.downloaders.state.working": "Berfungsi"
 }

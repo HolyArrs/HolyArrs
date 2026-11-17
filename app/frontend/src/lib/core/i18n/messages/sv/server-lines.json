@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Metadataservern är upptagen just nu. HolyArrs frågar igen av sig själv om en stund.",
 	"server.metadata.the-metadata-server-is-not-signing": "Metadataservern registrerar inga fler installationer från den här adressen just nu. HolyArrs frågar igen av sig själv; behåll mappen /config mellan omstarter så att installationen behåller sin registrering.",
 	"server.metadata.this-address-sent-the-metadata-server": "Den här adressen skickade för många förfrågningar till metadataservern. HolyArrs väntar och frågar igen av sig själv.",
-	"server.metadata.this-install-sent-the-metadata-server": "Den här installationen skickade för många förfrågningar till metadataservern. HolyArrs väntar och frågar igen av sig själv."
+	"server.metadata.this-install-sent-the-metadata-server": "Den här installationen skickade för många förfrågningar till metadataservern. HolyArrs väntar och frågar igen av sig själv.",
+	"server.core.another-app-answered-check-the-port": "En annan app svarade. Kontrollera porten: den hör till något annat.",
+	"server.core.blocked-local-network-turn-on-may": "Blockerad: lokalt nätverk. Slå på \"Nå det lokala nätverket\" om den körs hemma.",
+	"server.core.category-missing-add-it-in-the": "Kategorin saknas. Lägg till den i nedladdningsappen, eller välj en annan här.",
+	"server.core.certificate-not-trusted-use-the-name": "Certifikatet är inte betrott. Använd namnet i dess certifikat, eller http:// om det saknas.",
+	"server.core.it-speaks-http-not-https-start": "Den talar http, inte https. Börja adressen med http://.",
+	"server.core.it-speaks-https-not-http-start": "Den talar https, inte http. Börja adressen med https://.",
+	"server.core.key-or-password-refused-check-them": "Nyckel eller lösenord nekades. Kontrollera dem och testa igen.",
+	"server.core.name-not-found-check-the-host": "Namnet hittades inte. Kontrollera värdnamnet i adressen.",
+	"server.core.no-answer-in-time-check-the": "Inget svar i tid. Kontrollera adressen, och att ingen brandvägg är i vägen.",
+	"server.core.nothing-answers-on-that-port-check": "Inget svarar på den porten. Kontrollera porten, och att appen körs.",
+	"server.core.nothing-at-that-path-check-the": "Inget på den sökvägen. Kontrollera sökvägen efter porten.",
+	"server.core.category-missing-add-it-in-the-2": "Kategorin saknas: {name}. Lägg till den i nedladdningsappen, eller välj en annan här."
 }

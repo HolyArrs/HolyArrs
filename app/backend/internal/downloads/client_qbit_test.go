@@ -27,6 +27,7 @@ type fakeQbit struct {
 	files    map[string][]map[string]any
 	added    []map[string]string
 	cats     []string
+	listCats bool // answer torrents/categories from cats
 	deleted  []string
 	refuse   bool
 	key      string
@@ -104,6 +105,16 @@ func (f *fakeQbit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		f.cats = append(f.cats, r.PostForm.Get("category"))
+	case "/api/v2/torrents/categories":
+		if !f.listCats {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		out := map[string]map[string]string{}
+		for _, c := range f.cats {
+			out[c] = map[string]string{"name": c, "savePath": ""}
+		}
+		_ = json.NewEncoder(w).Encode(out)
 	case "/api/v2/torrents/add":
 		if r.Method != http.MethodPost {
 			w.WriteHeader(http.StatusMethodNotAllowed)

@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Le serveur de métadonnées est occupé pour le moment. HolyArrs redemande de lui-même dans un instant.",
 	"server.metadata.the-metadata-server-is-not-signing": "Le serveur de métadonnées n'inscrit plus d'installations depuis cette adresse pour le moment. HolyArrs redemande de lui-même ; gardez le dossier /config entre les redémarrages pour que cette installation conserve son inscription.",
 	"server.metadata.this-address-sent-the-metadata-server": "Cette adresse a envoyé trop de requêtes au serveur de métadonnées. HolyArrs attend et redemande de lui-même.",
-	"server.metadata.this-install-sent-the-metadata-server": "Cette installation a envoyé trop de requêtes au serveur de métadonnées. HolyArrs attend et redemande de lui-même."
+	"server.metadata.this-install-sent-the-metadata-server": "Cette installation a envoyé trop de requêtes au serveur de métadonnées. HolyArrs attend et redemande de lui-même.",
+	"server.core.another-app-answered-check-the-port": "Une autre application a répondu. Vérifiez le port : il appartient à autre chose.",
+	"server.core.blocked-local-network-turn-on-may": "Bloqué : réseau local. Activez « Joindre le réseau local » s'il tourne chez vous.",
+	"server.core.category-missing-add-it-in-the": "Catégorie absente. Ajoutez-la dans l'application de téléchargement, ou choisissez-en une autre ici.",
+	"server.core.certificate-not-trusted-use-the-name": "Certificat non fiable. Utilisez le nom de son certificat, ou http:// s'il n'en a pas.",
+	"server.core.it-speaks-http-not-https-start": "Il parle http, pas https. Commencez l'adresse par http://.",
+	"server.core.it-speaks-https-not-http-start": "Il parle https, pas http. Commencez l'adresse par https://.",
+	"server.core.key-or-password-refused-check-them": "Clé ou mot de passe refusé. Vérifiez-les, puis testez à nouveau.",
+	"server.core.name-not-found-check-the-host": "Nom introuvable. Vérifiez le nom d'hôte dans l'adresse.",
+	"server.core.no-answer-in-time-check-the": "Pas de réponse à temps. Vérifiez l'adresse et qu'aucun pare-feu ne bloque.",
+	"server.core.nothing-answers-on-that-port-check": "Rien ne répond sur ce port. Vérifiez le port et que l'application tourne.",
+	"server.core.nothing-at-that-path-check-the": "Rien à ce chemin. Vérifiez le chemin après le port.",
+	"server.core.category-missing-add-it-in-the-2": "Catégorie absente: {name}. Ajoutez-la dans l'application de téléchargement, ou choisissez-en une autre ici."
 }

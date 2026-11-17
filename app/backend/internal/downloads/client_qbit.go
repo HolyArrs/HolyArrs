@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
@@ -124,8 +125,15 @@ func NewQbittorrentLogin(base, user, pass string, h *http.Client) *Qbittorrent {
 // Health reads the client version. A key with a client older than 5.2 passes only because the client trusts the address, so a note says so.
 func (q *Qbittorrent) Health(ctx context.Context) (Health, error) {
 	b, err := q.call(ctx, http.MethodGet, "app/version", nil)
+	if errors.Is(err, ErrNotFound) {
+		return Health{}, doctor.Mark(doctor.NotFound, errors.New("qbittorrent app/version: 404 Not Found"))
+	}
 	if err != nil {
 		return Health{}, err
+	}
+	// A version is one short word; a page means another app holds the port.
+	if v := strings.TrimSpace(string(b)); len(v) > 40 || strings.HasPrefix(v, "<") || strings.HasPrefix(v, "{") {
+		return Health{}, doctor.Mark(doctor.WrongApp, errors.New("the address answered, but not like qBittorrent"))
 	}
 	h := Health{Version: strings.TrimSpace(string(b)), At: time.Now().UTC()}
 	if q.key != "" && qbitBefore52(h.Version) {
@@ -371,6 +379,12 @@ func (q *Qbittorrent) doRaw(ctx context.Context, method, path string, form url.V
 		return 0, nil, fmt.Errorf("qbittorrent %s: %w", path, ErrTooLarge)
 	}
 	code := resp.StatusCode
+	if code >= 400 {
+		// Another app on the port is not a key or path problem.
+		if e := doctor.Other(resp.Header, b, "qbittorrent"); e != nil {
+			return code, nil, fmt.Errorf("qbittorrent %s: %w", path, e)
+		}
+	}
 	switch {
 	case code >= 200 && code < 300:
 		return code, b, nil
@@ -384,6 +398,9 @@ func (q *Qbittorrent) doRaw(ctx context.Context, method, path string, form url.V
 	}
 	if code == http.StatusNotFound {
 		return code, nil, ErrNotFound
+	}
+	if e := doctor.Answer(code, b); e != nil {
+		return code, nil, fmt.Errorf("qbittorrent %s: %w", path, e)
 	}
 	return code, nil, fmt.Errorf("qbittorrent %s: %s", path, resp.Status)
 }

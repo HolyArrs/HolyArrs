@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Lýsigagnaþjónninn er upptekinn núna. HolyArrs spyr aftur sjálfkrafa eftir smástund.",
 	"server.metadata.the-metadata-server-is-not-signing": "Lýsigagnaþjónninn skráir ekki fleiri uppsetningar frá þessu vistfangi núna. HolyArrs spyr aftur sjálfkrafa; haltu möppunni /config milli endurræsinga svo þessi uppsetning haldi skráningu sinni.",
 	"server.metadata.this-address-sent-the-metadata-server": "Þetta vistfang sendi lýsigagnaþjóninum of margar beiðnir. HolyArrs bíður og spyr aftur sjálfkrafa.",
-	"server.metadata.this-install-sent-the-metadata-server": "Þessi uppsetning sendi lýsigagnaþjóninum of margar beiðnir. HolyArrs bíður og spyr aftur sjálfkrafa."
+	"server.metadata.this-install-sent-the-metadata-server": "Þessi uppsetning sendi lýsigagnaþjóninum of margar beiðnir. HolyArrs bíður og spyr aftur sjálfkrafa.",
+	"server.core.another-app-answered-check-the-port": "Annað forrit svaraði. Athugaðu gáttina: hún tilheyrir einhverju öðru.",
+	"server.core.blocked-local-network-turn-on-may": "Lokað: staðarnet. Kveiktu á „Ná til staðarnetsins“ ef það keyrir heima.",
+	"server.core.category-missing-add-it-in-the": "Flokk vantar. Bættu honum við í niðurhalsforritinu eða veldu annan hér.",
+	"server.core.certificate-not-trusted-use-the-name": "Skilríki ekki treyst. Notaðu nafnið á skilríkjum þess, eða http:// ef það hefur engin.",
+	"server.core.it-speaks-http-not-https-start": "Það talar http, ekki https. Byrjaðu vistfangið á http://.",
+	"server.core.it-speaks-https-not-http-start": "Það talar https, ekki http. Byrjaðu vistfangið á https://.",
+	"server.core.key-or-password-refused-check-them": "Lykli eða lykilorði hafnað. Athugaðu þau og prófaðu aftur.",
+	"server.core.name-not-found-check-the-host": "Nafn fannst ekki. Athugaðu hýsilnafnið í vistfanginu.",
+	"server.core.no-answer-in-time-check-the": "Ekkert svar í tæka tíð. Athugaðu vistfangið og að enginn eldveggur sé fyrir.",
+	"server.core.nothing-answers-on-that-port-check": "Ekkert svarar á þeirri gátt. Athugaðu gáttina og að forritið sé í gangi.",
+	"server.core.nothing-at-that-path-check-the": "Ekkert á þeirri slóð. Athugaðu slóðina á eftir gáttinni.",
+	"server.core.category-missing-add-it-in-the-2": "Flokk vantar: {name}. Bættu honum við í niðurhalsforritinu eða veldu annan hér."
 }

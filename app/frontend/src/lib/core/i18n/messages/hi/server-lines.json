@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "मेटाडेटा सर्वर अभी व्यस्त है। HolyArrs थोड़ी देर में अपने आप फिर से पूछेगा।",
 	"server.metadata.the-metadata-server-is-not-signing": "मेटाडेटा सर्वर अभी इस पते से और इंस्टॉल रजिस्टर नहीं कर रहा है। HolyArrs अपने आप फिर से पूछेगा; रीस्टार्ट के बीच /config फ़ोल्डर रखें ताकि यह इंस्टॉल अपना रजिस्ट्रेशन बनाए रखे।",
 	"server.metadata.this-address-sent-the-metadata-server": "इस पते ने मेटाडेटा सर्वर को बहुत ज़्यादा अनुरोध भेजे। HolyArrs इंतज़ार करता है और अपने आप फिर से पूछता है।",
-	"server.metadata.this-install-sent-the-metadata-server": "इस इंस्टॉल ने मेटाडेटा सर्वर को बहुत ज़्यादा अनुरोध भेजे। HolyArrs इंतज़ार करता है और अपने आप फिर से पूछता है।"
+	"server.metadata.this-install-sent-the-metadata-server": "इस इंस्टॉल ने मेटाडेटा सर्वर को बहुत ज़्यादा अनुरोध भेजे। HolyArrs इंतज़ार करता है और अपने आप फिर से पूछता है।",
+	"server.core.another-app-answered-check-the-port": "किसी दूसरे ऐप ने जवाब दिया। पोर्ट जांचें: यह किसी और का है।",
+	"server.core.blocked-local-network-turn-on-may": "रोका गया: लोकल नेटवर्क। अगर यह घर पर चलता है तो \"लोकल नेटवर्क तक पहुंचें\" चालू करें।",
+	"server.core.category-missing-add-it-in-the": "कैटेगरी नहीं है। इसे डाउनलोड ऐप में जोड़ें, या यहां कोई दूसरी चुनें।",
+	"server.core.certificate-not-trusted-use-the-name": "सर्टिफ़िकेट भरोसेमंद नहीं। इसके सर्टिफ़िकेट वाला नाम इस्तेमाल करें, या न हो तो http://।",
+	"server.core.it-speaks-http-not-https-start": "यह https नहीं, http बोलता है। पता http:// से शुरू करें।",
+	"server.core.it-speaks-https-not-http-start": "यह http नहीं, https बोलता है। पता https:// से शुरू करें।",
+	"server.core.key-or-password-refused-check-them": "की या पासवर्ड ठुकराया गया। उन्हें जांचें, फिर दोबारा टेस्ट करें।",
+	"server.core.name-not-found-check-the-host": "नाम नहीं मिला। पते में होस्ट नाम जांचें।",
+	"server.core.no-answer-in-time-check-the": "समय पर जवाब नहीं आया। पता जांचें, और कि कोई फ़ायरवॉल रास्ते में नहीं है।",
+	"server.core.nothing-answers-on-that-port-check": "उस पोर्ट पर कुछ जवाब नहीं देता। पोर्ट जांचें, और कि ऐप चल रहा है।",
+	"server.core.nothing-at-that-path-check-the": "उस पाथ पर कुछ नहीं है। पोर्ट के बाद का पाथ जांचें।",
+	"server.core.category-missing-add-it-in-the-2": "कैटेगरी नहीं है: {name}। इसे डाउनलोड ऐप में जोड़ें, या यहां कोई दूसरी चुनें।"
 }

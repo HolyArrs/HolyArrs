@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -258,9 +259,9 @@
 				<p class="small muted mono addr">{m.url}</p>
 				<p class="small muted">{moments(m)}{m.path_from ? ` · ${t('settings.mediaServers.pathMap', { from: m.path_from, to: m.path_to })}` : ''}</p>
 				{#if results[m.id] && !results[m.id].ok}
-					<p class="small bad-text" data-testid="media-result">{results[m.id].text}</p>
+					<p class="small bad-text" data-testid="media-result">{serverWords(results[m.id].text)}</p>
 				{:else if m.last_error}
-					<p class="small bad-text" data-testid="media-result">{t('settings.mediaServers.lastFailed', { error: m.last_error })}</p>
+					<p class="small bad-text" data-testid="media-result">{t('settings.mediaServers.lastFailed', { error: serverWords(m.last_error) })}</p>
 				{:else if m.last_ok_at}
 					<p class="small muted" data-testid="media-result">{t('settings.mediaServers.lastChecked', { ago: ago(m.last_ok_at) })}</p>
 				{/if}

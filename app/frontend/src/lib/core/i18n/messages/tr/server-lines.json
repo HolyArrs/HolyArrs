@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Meta veri sunucusu şu anda meşgul. HolyArrs birazdan kendiliğinden yeniden sorar.",
 	"server.metadata.the-metadata-server-is-not-signing": "Meta veri sunucusu şu anda bu adresten daha fazla kurulum kaydetmiyor. HolyArrs kendiliğinden yeniden sorar; bu kurulumun kaydını koruması için /config klasörünü yeniden başlatmalar arasında saklayın.",
 	"server.metadata.this-address-sent-the-metadata-server": "Bu adres meta veri sunucusuna çok fazla istek gönderdi. HolyArrs bekler ve kendiliğinden yeniden sorar.",
-	"server.metadata.this-install-sent-the-metadata-server": "Bu kurulum meta veri sunucusuna çok fazla istek gönderdi. HolyArrs bekler ve kendiliğinden yeniden sorar."
+	"server.metadata.this-install-sent-the-metadata-server": "Bu kurulum meta veri sunucusuna çok fazla istek gönderdi. HolyArrs bekler ve kendiliğinden yeniden sorar.",
+	"server.core.another-app-answered-check-the-port": "Başka bir uygulama yanıt verdi. Bağlantı noktasını kontrol et: başka bir şeye ait.",
+	"server.core.blocked-local-network-turn-on-may": "Engellendi: yerel ağ. Evde çalışıyorsa \"Yerel ağa eriş\" seçeneğini aç.",
+	"server.core.category-missing-add-it-in-the": "Kategori yok. İndirme uygulamasında ekle ya da burada başka birini seç.",
+	"server.core.certificate-not-trusted-use-the-name": "Sertifikaya güvenilmiyor. Sertifikasındaki adı kullan ya da yoksa http:// kullan.",
+	"server.core.it-speaks-http-not-https-start": "https değil, http konuşuyor. Adresi http:// ile başlat.",
+	"server.core.it-speaks-https-not-http-start": "http değil, https konuşuyor. Adresi https:// ile başlat.",
+	"server.core.key-or-password-refused-check-them": "Anahtar veya parola reddedildi. Kontrol et, sonra yeniden test et.",
+	"server.core.name-not-found-check-the-host": "Ad bulunamadı. Adresteki ana makine adını kontrol et.",
+	"server.core.no-answer-in-time-check-the": "Zamanında yanıt yok. Adresi ve bir güvenlik duvarının engel olmadığını kontrol et.",
+	"server.core.nothing-answers-on-that-port-check": "O bağlantı noktasında hiçbir şey yanıt vermiyor. Bağlantı noktasını ve uygulamanın çalıştığını kontrol et.",
+	"server.core.nothing-at-that-path-check-the": "O yolda hiçbir şey yok. Bağlantı noktasından sonraki yolu kontrol et.",
+	"server.core.category-missing-add-it-in-the-2": "Kategori yok: {name}. İndirme uygulamasında ekle ya da burada başka birini seç."
 }

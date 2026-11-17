@@ -138,5 +138,10 @@
 	"settings.downloaders.categoryAfterImport": "دسته پس از وارد کردن",
 	"settings.downloaders.categoryAfterImportHint": "پس از وارد شدن تورنت، HolyArrs آن را به این دسته می‌برد. برای ماندن در دسته اصلی خالی بگذارید.",
 	"settings.downloaders.ownOnly": "فقط موارد HolyArrs را نشان بده",
-	"settings.downloaders.ownOnlyHint": "موارد برنامه‌های دیگر در این دانلودر پنهان می‌شوند و HolyArrs آن‌ها را تغییر نمی‌دهد."
+	"settings.downloaders.ownOnlyHint": "موارد برنامه‌های دیگر در این دانلودر پنهان می‌شوند و HolyArrs آن‌ها را تغییر نمی‌دهد.",
+	"settings.downloaders.state.notAnswering": "پاسخ نمی‌دهد",
+	"settings.downloaders.state.paused": "متوقف",
+	"settings.downloaders.state.resting": "در استراحت",
+	"settings.downloaders.state.signInRefused": "ورود رد شد",
+	"settings.downloaders.state.working": "کار می‌کند"
 }

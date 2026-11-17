@@ -161,6 +161,20 @@ export const kindWords: Record<DownloaderView['kind'], string> = {
 	aria2: 'aria2'
 };
 
+const stateKeys: Record<DownloaderHealth['state'], string> = {
+	working: 'settings.downloaders.state.working',
+	paused: 'settings.downloaders.state.paused',
+	resting: 'settings.downloaders.state.resting',
+	not_answering: 'settings.downloaders.state.notAnswering',
+	sign_in_refused: 'settings.downloaders.state.signInRefused'
+};
+
+/** A Downloader's health chip word in the app's language; the server's word for a state the page does not know. */
+export function healthLabel(h: Pick<DownloaderHealth, 'state' | 'label'>): string {
+	const key = stateKeys[h.state];
+	return key ? t(key) : h.label;
+}
+
 /** Colours a Downloader's health chip. */
 export function healthTone(state: DownloaderHealth['state']): Tone {
 	if (state === 'working') return 'ok';

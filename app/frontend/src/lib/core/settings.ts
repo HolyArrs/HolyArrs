@@ -2,6 +2,7 @@
 import { message } from './api.ts';
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 export type GroupId = 'library' | 'downloads' | 'users' | 'connections' | 'system' | 'account';
 
@@ -114,7 +115,7 @@ export function groupOf(id: GroupId | undefined): Group | undefined {
 export function reachWords(text: string): string {
 	return /connection (was )?refused|does not answer|refused to connect|no such host|timed? ?out|unreachable|dial tcp|no route|connection reset|could not (connect|reach)|couldn.t (connect|reach)|can.t connect|EOF/i.test(text)
 		? t('core.settings.cantReach')
-		: text;
+		: serverWords(text);
 }
 
 // Turns any error into a short sentence with a capital and an end mark.

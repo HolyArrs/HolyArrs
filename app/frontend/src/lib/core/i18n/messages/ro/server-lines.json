@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Serverul de metadate este ocupat acum. HolyArrs întreabă din nou singur peste puțin timp.",
 	"server.metadata.the-metadata-server-is-not-signing": "Serverul de metadate nu mai înregistrează instalări de la această adresă acum. HolyArrs întreabă din nou singur; păstrează dosarul /config între reporniri ca această instalare să își păstreze înregistrarea.",
 	"server.metadata.this-address-sent-the-metadata-server": "Această adresă a trimis prea multe cereri serverului de metadate. HolyArrs așteaptă și întreabă din nou singur.",
-	"server.metadata.this-install-sent-the-metadata-server": "Această instalare a trimis prea multe cereri serverului de metadate. HolyArrs așteaptă și întreabă din nou singur."
+	"server.metadata.this-install-sent-the-metadata-server": "Această instalare a trimis prea multe cereri serverului de metadate. HolyArrs așteaptă și întreabă din nou singur.",
+	"server.core.another-app-answered-check-the-port": "A răspuns altă aplicație. Verifică portul: aparține altui program.",
+	"server.core.blocked-local-network-turn-on-may": "Blocat: rețea locală. Activează „Acces la rețeaua locală” dacă rulează acasă.",
+	"server.core.category-missing-add-it-in-the": "Categoria lipsește. Adaug-o în aplicația de descărcare sau alege alta aici.",
+	"server.core.certificate-not-trusted-use-the-name": "Certificat neîncrezut. Folosește numele din certificatul său sau http:// dacă nu are.",
+	"server.core.it-speaks-http-not-https-start": "Vorbește http, nu https. Începe adresa cu http://.",
+	"server.core.it-speaks-https-not-http-start": "Vorbește https, nu http. Începe adresa cu https://.",
+	"server.core.key-or-password-refused-check-them": "Cheie sau parolă refuzată. Verifică-le, apoi testează din nou.",
+	"server.core.name-not-found-check-the-host": "Numele nu a fost găsit. Verifică numele gazdei din adresă.",
+	"server.core.no-answer-in-time-check-the": "Niciun răspuns la timp. Verifică adresa și că niciun firewall nu blochează.",
+	"server.core.nothing-answers-on-that-port-check": "Nimic nu răspunde pe acel port. Verifică portul și că aplicația rulează.",
+	"server.core.nothing-at-that-path-check-the": "Nimic la acea cale. Verifică calea de după port.",
+	"server.core.category-missing-add-it-in-the-2": "Categoria lipsește: {name}. Adaug-o în aplicația de descărcare sau alege alta aici."
 }

@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "El servidor de metadades està ocupat ara mateix. HolyArrs torna a preguntar tot sol d'aquí a un moment.",
 	"server.metadata.the-metadata-server-is-not-signing": "El servidor de metadades no registra més instal·lacions des d'aquesta adreça ara mateix. HolyArrs torna a preguntar tot sol; conserva la carpeta /config entre reinicis perquè aquesta instal·lació mantingui el registre.",
 	"server.metadata.this-address-sent-the-metadata-server": "Aquesta adreça ha enviat massa sol·licituds al servidor de metadades. HolyArrs espera i torna a preguntar tot sol.",
-	"server.metadata.this-install-sent-the-metadata-server": "Aquesta instal·lació ha enviat massa sol·licituds al servidor de metadades. HolyArrs espera i torna a preguntar tot sol."
+	"server.metadata.this-install-sent-the-metadata-server": "Aquesta instal·lació ha enviat massa sol·licituds al servidor de metadades. HolyArrs espera i torna a preguntar tot sol.",
+	"server.core.another-app-answered-check-the-port": "Ha respost una altra aplicació. Comprova el port: és d'una altra cosa.",
+	"server.core.blocked-local-network-turn-on-may": "Bloquejat: xarxa local. Activa \"Accedeix a la xarxa local\" si funciona a casa.",
+	"server.core.category-missing-add-it-in-the": "Falta la categoria. Afegeix-la a l'aplicació de baixades o tria'n una altra aquí.",
+	"server.core.certificate-not-trusted-use-the-name": "Certificat no de confiança. Fes servir el nom del certificat, o http:// si no en té.",
+	"server.core.it-speaks-http-not-https-start": "Parla http, no https. Comença l'adreça amb http://.",
+	"server.core.it-speaks-https-not-http-start": "Parla https, no http. Comença l'adreça amb https://.",
+	"server.core.key-or-password-refused-check-them": "Clau o contrasenya rebutjada. Revisa-les i torna a provar.",
+	"server.core.name-not-found-check-the-host": "No s'ha trobat el nom. Comprova el nom de l'amfitrió a l'adreça.",
+	"server.core.no-answer-in-time-check-the": "Sense resposta a temps. Comprova l'adreça i que cap tallafoc ho impedeixi.",
+	"server.core.nothing-answers-on-that-port-check": "No respon res en aquest port. Comprova el port i que l'aplicació estigui en marxa.",
+	"server.core.nothing-at-that-path-check-the": "No hi ha res en aquest camí. Comprova el camí després del port.",
+	"server.core.category-missing-add-it-in-the-2": "Falta la categoria: {name}. Afegeix-la a l'aplicació de baixades o tria'n una altra aquí."
 }

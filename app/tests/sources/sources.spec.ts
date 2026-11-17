@@ -38,7 +38,7 @@ test('a Source is added, tested, shows a wrong key in plain words, pauses and re
 	await page.getByLabel('API key', { exact: true }).fill('not-the-right-key');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await row.getByRole('button', { name: 'Test' }).click();
-	await expect(row.getByTestId('source-test')).toContainText('turned down the key');
+	await expect(row.getByTestId('source-test')).toContainText('Key or password refused');
 
 	// Back to the right key, then pause and resume.
 	await row.getByRole('button', { name: 'Change' }).click();

@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "De metadataserver is nu druk. HolyArrs vraagt het zo zelf opnieuw.",
 	"server.metadata.the-metadata-server-is-not-signing": "De metadataserver meldt nu geen installaties meer aan vanaf dit adres. HolyArrs vraagt het zelf opnieuw; bewaar de map /config tussen herstarts zodat deze installatie haar aanmelding houdt.",
 	"server.metadata.this-address-sent-the-metadata-server": "Dit adres stuurde te veel verzoeken naar de metadataserver. HolyArrs wacht en vraagt het zelf opnieuw.",
-	"server.metadata.this-install-sent-the-metadata-server": "Deze installatie stuurde te veel verzoeken naar de metadataserver. HolyArrs wacht en vraagt het zelf opnieuw."
+	"server.metadata.this-install-sent-the-metadata-server": "Deze installatie stuurde te veel verzoeken naar de metadataserver. HolyArrs wacht en vraagt het zelf opnieuw.",
+	"server.core.another-app-answered-check-the-port": "Een andere app antwoordde. Controleer de poort: die hoort bij iets anders.",
+	"server.core.blocked-local-network-turn-on-may": "Geblokkeerd: lokaal netwerk. Zet \"Het lokale netwerk bereiken\" aan als het thuis draait.",
+	"server.core.category-missing-add-it-in-the": "Categorie ontbreekt. Voeg hem toe in de download-app, of kies hier een andere.",
+	"server.core.certificate-not-trusted-use-the-name": "Certificaat niet vertrouwd. Gebruik de naam op het certificaat, of http:// als het er geen heeft.",
+	"server.core.it-speaks-http-not-https-start": "Het spreekt http, geen https. Begin het adres met http://.",
+	"server.core.it-speaks-https-not-http-start": "Het spreekt https, geen http. Begin het adres met https://.",
+	"server.core.key-or-password-refused-check-them": "Sleutel of wachtwoord geweigerd. Controleer ze en test opnieuw.",
+	"server.core.name-not-found-check-the-host": "Naam niet gevonden. Controleer de hostnaam in het adres.",
+	"server.core.no-answer-in-time-check-the": "Geen antwoord op tijd. Controleer het adres en of er geen firewall in de weg zit.",
+	"server.core.nothing-answers-on-that-port-check": "Niets antwoordt op die poort. Controleer de poort en of de app draait.",
+	"server.core.nothing-at-that-path-check-the": "Niets op dat pad. Controleer het pad na de poort.",
+	"server.core.category-missing-add-it-in-the-2": "Categorie ontbreekt: {name}. Voeg hem toe in de download-app, of kies hier een andere."
 }

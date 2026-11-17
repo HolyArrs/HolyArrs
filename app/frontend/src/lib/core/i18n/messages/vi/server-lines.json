@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "Máy chủ siêu dữ liệu hiện đang bận. HolyArrs sẽ tự hỏi lại trong giây lát.",
 	"server.metadata.the-metadata-server-is-not-signing": "Máy chủ siêu dữ liệu hiện không đăng ký thêm bản cài đặt từ địa chỉ này. HolyArrs sẽ tự hỏi lại; hãy giữ thư mục /config giữa các lần khởi động lại để bản cài đặt này giữ được đăng ký.",
 	"server.metadata.this-address-sent-the-metadata-server": "Địa chỉ này đã gửi quá nhiều yêu cầu tới máy chủ siêu dữ liệu. HolyArrs sẽ chờ rồi tự hỏi lại.",
-	"server.metadata.this-install-sent-the-metadata-server": "Bản cài đặt này đã gửi quá nhiều yêu cầu tới máy chủ siêu dữ liệu. HolyArrs sẽ chờ rồi tự hỏi lại."
+	"server.metadata.this-install-sent-the-metadata-server": "Bản cài đặt này đã gửi quá nhiều yêu cầu tới máy chủ siêu dữ liệu. HolyArrs sẽ chờ rồi tự hỏi lại.",
+	"server.core.another-app-answered-check-the-port": "Một ứng dụng khác đã trả lời. Kiểm tra cổng: cổng này thuộc về thứ khác.",
+	"server.core.blocked-local-network-turn-on-may": "Bị chặn: mạng cục bộ. Bật \"Truy cập mạng cục bộ\" nếu nó chạy ở nhà.",
+	"server.core.category-missing-add-it-in-the": "Thiếu danh mục. Thêm danh mục trong ứng dụng tải xuống, hoặc chọn danh mục khác ở đây.",
+	"server.core.certificate-not-trusted-use-the-name": "Chứng chỉ không đáng tin. Dùng tên trên chứng chỉ của nó, hoặc http:// nếu không có.",
+	"server.core.it-speaks-http-not-https-start": "Nó dùng http, không phải https. Bắt đầu địa chỉ bằng http://.",
+	"server.core.it-speaks-https-not-http-start": "Nó dùng https, không phải http. Bắt đầu địa chỉ bằng https://.",
+	"server.core.key-or-password-refused-check-them": "Khóa hoặc mật khẩu bị từ chối. Kiểm tra lại rồi thử lại.",
+	"server.core.name-not-found-check-the-host": "Không tìm thấy tên. Kiểm tra tên máy chủ trong địa chỉ.",
+	"server.core.no-answer-in-time-check-the": "Không có trả lời kịp thời. Kiểm tra địa chỉ, và không có tường lửa chặn.",
+	"server.core.nothing-answers-on-that-port-check": "Không có gì trả lời ở cổng đó. Kiểm tra cổng, và ứng dụng đang chạy.",
+	"server.core.nothing-at-that-path-check-the": "Không có gì ở đường dẫn đó. Kiểm tra đường dẫn sau cổng.",
+	"server.core.category-missing-add-it-in-the-2": "Thiếu danh mục: {name}. Thêm danh mục trong ứng dụng tải xuống, hoặc chọn danh mục khác ở đây."
 }

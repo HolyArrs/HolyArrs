@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "মেটাডেটা সার্ভার এখন ব্যস্ত। HolyArrs একটু পরে নিজে থেকে আবার জিজ্ঞেস করবে।",
 	"server.metadata.the-metadata-server-is-not-signing": "মেটাডেটা সার্ভার এখন এই ঠিকানা থেকে আর কোনো ইনস্টল নিবন্ধন করছে না। HolyArrs নিজে থেকে আবার জিজ্ঞেস করবে; রিস্টার্টের মাঝে /config ফোল্ডারটি রাখুন যাতে এই ইনস্টল তার নিবন্ধন ধরে রাখে।",
 	"server.metadata.this-address-sent-the-metadata-server": "এই ঠিকানা মেটাডেটা সার্ভারে অনেক বেশি অনুরোধ পাঠিয়েছে। HolyArrs অপেক্ষা করে নিজে থেকে আবার জিজ্ঞেস করে।",
-	"server.metadata.this-install-sent-the-metadata-server": "এই ইনস্টল মেটাডেটা সার্ভারে অনেক বেশি অনুরোধ পাঠিয়েছে। HolyArrs অপেক্ষা করে নিজে থেকে আবার জিজ্ঞেস করে।"
+	"server.metadata.this-install-sent-the-metadata-server": "এই ইনস্টল মেটাডেটা সার্ভারে অনেক বেশি অনুরোধ পাঠিয়েছে। HolyArrs অপেক্ষা করে নিজে থেকে আবার জিজ্ঞেস করে।",
+	"server.core.another-app-answered-check-the-port": "অন্য একটি অ্যাপ উত্তর দিয়েছে। পোর্টটি দেখুন: এটি অন্য কিছুর।",
+	"server.core.blocked-local-network-turn-on-may": "আটকানো: লোকাল নেটওয়ার্ক। বাড়িতে চললে \"লোকাল নেটওয়ার্কে পৌঁছান\" চালু করুন।",
+	"server.core.category-missing-add-it-in-the": "ক্যাটাগরি নেই। ডাউনলোড অ্যাপে এটি যোগ করুন, অথবা এখানে অন্যটি বেছে নিন।",
+	"server.core.certificate-not-trusted-use-the-name": "সার্টিফিকেট বিশ্বস্ত নয়। এর সার্টিফিকেটের নাম ব্যবহার করুন, অথবা না থাকলে http://।",
+	"server.core.it-speaks-http-not-https-start": "এটি https নয়, http ব্যবহার করে। ঠিকানা http:// দিয়ে শুরু করুন।",
+	"server.core.it-speaks-https-not-http-start": "এটি http নয়, https ব্যবহার করে। ঠিকানা https:// দিয়ে শুরু করুন।",
+	"server.core.key-or-password-refused-check-them": "কী বা পাসওয়ার্ড প্রত্যাখ্যাত। সেগুলো দেখে আবার পরীক্ষা করুন।",
+	"server.core.name-not-found-check-the-host": "নাম পাওয়া যায়নি। ঠিকানার হোস্ট নামটি দেখুন।",
+	"server.core.no-answer-in-time-check-the": "সময়মতো উত্তর নেই। ঠিকানা দেখুন, এবং কোনো ফায়ারওয়াল বাধা দিচ্ছে কি না।",
+	"server.core.nothing-answers-on-that-port-check": "ওই পোর্টে কিছুই উত্তর দেয় না। পোর্টটি দেখুন, এবং অ্যাপটি চলছে কি না।",
+	"server.core.nothing-at-that-path-check-the": "ওই পাথে কিছু নেই। পোর্টের পরের পাথটি দেখুন।",
+	"server.core.category-missing-add-it-in-the-2": "ক্যাটাগরি নেই: {name}। ডাউনলোড অ্যাপে এটি যোগ করুন, অথবা এখানে অন্যটি বেছে নিন।"
 }

@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "שרת המטא־נתונים עמוס כרגע. HolyArrs ישאל שוב בעצמו בעוד רגע.",
 	"server.metadata.the-metadata-server-is-not-signing": "שרת המטא־נתונים לא רושם כרגע התקנות נוספות מהכתובת הזו. HolyArrs ישאל שוב בעצמו; שמרו את התיקייה /config בין הפעלות מחדש כדי שההתקנה הזו תשמור על הרישום שלה.",
 	"server.metadata.this-address-sent-the-metadata-server": "הכתובת הזו שלחה יותר מדי בקשות לשרת המטא־נתונים. HolyArrs ממתין ושואל שוב בעצמו.",
-	"server.metadata.this-install-sent-the-metadata-server": "ההתקנה הזו שלחה יותר מדי בקשות לשרת המטא־נתונים. HolyArrs ממתין ושואל שוב בעצמו."
+	"server.metadata.this-install-sent-the-metadata-server": "ההתקנה הזו שלחה יותר מדי בקשות לשרת המטא־נתונים. HolyArrs ממתין ושואל שוב בעצמו.",
+	"server.core.another-app-answered-check-the-port": "אפליקציה אחרת ענתה. בדוק את הפורט: הוא שייך למשהו אחר.",
+	"server.core.blocked-local-network-turn-on-may": "חסום: רשת מקומית. הפעל את \"גישה לרשת המקומית\" אם זה פועל בבית.",
+	"server.core.category-missing-add-it-in-the": "הקטגוריה חסרה. הוסף אותה באפליקציית ההורדות, או בחר אחרת כאן.",
+	"server.core.certificate-not-trusted-use-the-name": "התעודה אינה מהימנה. השתמש בשם שבתעודה שלו, או ב-http:// אם אין לו תעודה.",
+	"server.core.it-speaks-http-not-https-start": "הוא מדבר http, לא https. התחל את הכתובת ב-http://.",
+	"server.core.it-speaks-https-not-http-start": "הוא מדבר https, לא http. התחל את הכתובת ב-https://.",
+	"server.core.key-or-password-refused-check-them": "המפתח או הסיסמה נדחו. בדוק אותם ובדוק שוב.",
+	"server.core.name-not-found-check-the-host": "השם לא נמצא. בדוק את שם המארח בכתובת.",
+	"server.core.no-answer-in-time-check-the": "אין תשובה בזמן. בדוק את הכתובת, ושאין חומת אש בדרך.",
+	"server.core.nothing-answers-on-that-port-check": "שום דבר לא עונה בפורט הזה. בדוק את הפורט, ושהאפליקציה פועלת.",
+	"server.core.nothing-at-that-path-check-the": "אין כלום בנתיב הזה. בדוק את הנתיב שאחרי הפורט.",
+	"server.core.category-missing-add-it-in-the-2": "הקטגוריה חסרה: {name}. הוסף אותה באפליקציית ההורדות, או בחר אחרת כאן."
 }

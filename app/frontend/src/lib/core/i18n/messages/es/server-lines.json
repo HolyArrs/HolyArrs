@@ -1358,5 +1358,17 @@
 	"server.metadata.the-metadata-server-is-busy-right": "El servidor de metadatos está ocupado ahora mismo. HolyArrs vuelve a preguntar por sí solo en un momento.",
 	"server.metadata.the-metadata-server-is-not-signing": "El servidor de metadatos no está registrando más instalaciones desde esta dirección ahora mismo. HolyArrs vuelve a preguntar por sí solo; conserva la carpeta /config entre reinicios para que esta instalación mantenga su registro.",
 	"server.metadata.this-address-sent-the-metadata-server": "Esta dirección envió demasiadas solicitudes al servidor de metadatos. HolyArrs espera y vuelve a preguntar por sí solo.",
-	"server.metadata.this-install-sent-the-metadata-server": "Esta instalación envió demasiadas solicitudes al servidor de metadatos. HolyArrs espera y vuelve a preguntar por sí solo."
+	"server.metadata.this-install-sent-the-metadata-server": "Esta instalación envió demasiadas solicitudes al servidor de metadatos. HolyArrs espera y vuelve a preguntar por sí solo.",
+	"server.core.another-app-answered-check-the-port": "Respondió otra aplicación. Revisa el puerto: es de otra cosa.",
+	"server.core.blocked-local-network-turn-on-may": "Bloqueado: red local. Activa \"Acceder a la red local\" si funciona en casa.",
+	"server.core.category-missing-add-it-in-the": "Falta la categoría. Añádela en la aplicación de descargas o elige otra aquí.",
+	"server.core.certificate-not-trusted-use-the-name": "Certificado no fiable. Usa el nombre de su certificado, o http:// si no tiene.",
+	"server.core.it-speaks-http-not-https-start": "Habla http, no https. Empieza la dirección con http://.",
+	"server.core.it-speaks-https-not-http-start": "Habla https, no http. Empieza la dirección con https://.",
+	"server.core.key-or-password-refused-check-them": "Clave o contraseña rechazada. Revísalas y vuelve a probar.",
+	"server.core.name-not-found-check-the-host": "Nombre no encontrado. Revisa el nombre del host en la dirección.",
+	"server.core.no-answer-in-time-check-the": "Sin respuesta a tiempo. Revisa la dirección y que ningún cortafuegos lo impida.",
+	"server.core.nothing-answers-on-that-port-check": "Nada responde en ese puerto. Revisa el puerto y que la aplicación esté en marcha.",
+	"server.core.nothing-at-that-path-check-the": "No hay nada en esa ruta. Revisa la ruta tras el puerto.",
+	"server.core.category-missing-add-it-in-the-2": "Falta la categoría: {name}. Añádela en la aplicación de descargas o elige otra aquí."
 }
