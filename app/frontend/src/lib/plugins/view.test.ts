@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { limitRows, notices, pluginName, pluginState, shownVersion, stateLabel } from './view.ts';
+import { abilities, notices, reaches, pluginName, pluginState, shownVersion, stateLabel } from './view.ts';
 import type { Plugin } from './types.ts';
 
 const base: Plugin = { id: 'tailscale', version: '1.2.0', installed: false, running: false, enabled: false, access: null };
@@ -27,7 +27,7 @@ describe('plugin rows', () => {
 	});
 });
 
-describe('page notices and limits', () => {
+describe('page notices and access', () => {
 	it('lists every notice that applies, key first', () => {
 		expect(notices({ key_set: true, can_run: true, blocklist_stale: false })).toEqual([]);
 		expect(notices({ key_set: false, can_run: false, blocklist_stale: true })).toEqual([
@@ -36,12 +36,11 @@ describe('page notices and limits', () => {
 			"Couldn't check for blocked plugins for over a week."
 		]);
 	});
-	it('lists every limit, and says which caps this server cannot apply', () => {
-		const off = limitRows({ Cgroup: false, Pids: false, Memory: false, CPU: false, GroupKill: true });
-		expect(off.map((r) => r.label)).toEqual(['Memory', 'Processor', 'Processes', 'Open files', 'Files and folders', 'Network', 'When it stops']);
-		expect(off[0].value).toBe('Not limited on this server');
-		expect(off[6].value).toBe('Everything it started stops too');
-		const on = limitRows({ Cgroup: true, Pids: true, Memory: true, CPU: true, GroupKill: true });
-		expect(on.slice(0, 3).map((r) => r.value)).toEqual(['Up to 512 MB', 'Up to 1 CPU core', 'Up to 256']);
+	it('lists what a plugin can reach from its manifest, nothing when it declares nothing', () => {
+		const ts = { ...base, reaches_app: true, access: { hosts: ['controlplane.tailscale.com'], folders: null, actions: null } };
+		expect(reaches(ts)).toEqual(["Connect to Tailscale's servers to sign in and find your devices", 'Let devices on your tailnet open HolyArrs']);
+		expect(reaches({ ...base, id: 'x', access: { hosts: ['a.org', 'b.org'], folders: null, actions: null } })).toEqual(['Connect to a.org, b.org']);
+		expect(reaches({ ...base, id: 'x' })).toEqual([]);
+		expect(abilities({ ...base, id: 'x' })).toEqual(['Keep files in its own folder, and nowhere else on this server']);
 	});
 });

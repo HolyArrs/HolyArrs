@@ -22,20 +22,11 @@ export interface Plugin {
 	reaches_app?: boolean;
 }
 
-export interface ActiveLimits {
-	Cgroup: boolean;
-	Pids: boolean;
-	Memory: boolean;
-	CPU: boolean;
-	GroupKill: boolean;
-}
-
 export interface PluginOverview {
 	key_set: boolean;
 	blocklist_checked_at: string | null;
 	blocklist_stale: boolean;
 	can_run: boolean;
-	limits: ActiveLimits;
 	plugins: Plugin[];
 }
 
