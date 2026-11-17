@@ -86,5 +86,5 @@
 	"settings.outsideLists.addNever": "เพิ่มในรายการห้ามเพิ่ม",
 	"settings.outsideLists.showDot": "ซีรีส์ ·",
 	"settings.outsideLists.takeOff": "เอา {name} ออก",
-	"settings.outsideLists.empty": "ว่างเปล่า"
+	"settings.outsideLists.empty": "ยังไม่มีอะไรในรายการนี้"
 }

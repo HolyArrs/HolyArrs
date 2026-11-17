@@ -341,6 +341,12 @@
 	.settings-content :global(section.ui-settings > .body > * + *), .settings-content :global(section.ui-settings > .body > form:not(.ask) > * + *) { box-shadow: inset 0 1px 0 var(--line); margin-top: 0 !important; }
 	.settings-content :global(section.ui-settings > .body > :first-child:last-child:not(.srow, .field)) { padding-block: 14px; }
 	.settings-content :global(section.ui-settings > .body > :is(ul, ol, p, .row)) { padding-block: 12px; }
+	/* A button row or note inside a sheet's form gets the same room as other rows, so a button never sits on the hairline above it. */
+	.settings-content :global(section.ui-settings > .body > form:not(.ask) > :is(.row, .ui-btn)) { padding-block: 12px; }
+	/* An empty list line inside a sheet reads as a row, not a stray caption. */
+	.settings-content :global(section.ui-settings > .body > .empty-row) { display: flex; align-items: center; min-height: 52px; padding-block: 12px; color: var(--text-muted); font: 400 14px/1.35 var(--font-ui); }
+	/* Hand-built boxes: the button after the last field keeps a gap. */
+	.settings-content :global(:is(section.card, div.card) form > :is(.ui-btn, .row):last-child) { margin-top: 12px; margin-bottom: 4px; }
 	/* One label style for every row: switch, text box or dropdown. */
 	.settings-content :global(section.ui-settings :is(.srow > .txt > :is(.label, label), .body > .field > :is(label:first-child, .label, legend), .body > form:not(.ask) > .field > :is(label:first-child, .label, legend), .adv-body > .field > :is(label:first-child, .label, legend), .body :not(.ask, .row-fields) > .field > label:first-child)) { font: 600 15px/1.3 var(--font-ui) !important; color: var(--text) !important; letter-spacing: -0.005em; }
 	.settings-content :global(section.ui-settings .srow > .txt) { align-self: center; }

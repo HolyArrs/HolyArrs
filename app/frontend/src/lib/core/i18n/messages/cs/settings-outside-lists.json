@@ -86,5 +86,5 @@
 	"settings.outsideLists.addNever": "Přidat do seznamu Nikdy nepřidávat",
 	"settings.outsideLists.showDot": "seriál ·",
 	"settings.outsideLists.takeOff": "Sundat {name}",
-	"settings.outsideLists.empty": "Prázdné"
+	"settings.outsideLists.empty": "Na tomto seznamu zatím nic není"
 }

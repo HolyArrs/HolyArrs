@@ -86,5 +86,5 @@
 	"settings.outsideLists.addNever": "Ajouter à la liste « à ne jamais ajouter »",
 	"settings.outsideLists.showDot": "série ·",
 	"settings.outsideLists.takeOff": "Retirer {name}",
-	"settings.outsideLists.empty": "Vide"
+	"settings.outsideLists.empty": "Rien dans cette liste pour l’instant"
 }
