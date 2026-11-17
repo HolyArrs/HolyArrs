@@ -148,7 +148,9 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 	newest := map[string]Entry{}
 	var order []string
 	if raw := e.cachedList(ctx); raw != nil {
-		if l, _, err := e.verify(raw, KindPlugins, 0); err == nil {
+		if l, _, err := e.verify(raw, KindPlugins, 0); err != nil {
+			log.Printf("plugins: cached plugin list rejected: %v", err)
+		} else {
 			for _, en := range l.Entries {
 				if p, ok := rows[en.ID]; ok {
 					if newerVersion(en.Version, p.Version) {
@@ -200,9 +202,11 @@ func (e *Engine) cachedList(ctx context.Context) []byte {
 	}
 	raw, err := e.fetch(ctx, "plugins.json")
 	if err != nil {
+		log.Printf("plugins: plugin list fetch failed: %v", err)
 		return nil
 	}
 	if _, _, err := e.verify(raw, KindPlugins, 0); err != nil {
+		log.Printf("plugins: plugin list check failed: %v", err)
 		return nil
 	}
 	e.mu.Lock()
@@ -604,15 +608,18 @@ func (e *Engine) listedManifest(ctx context.Context, en Entry) *Manifest {
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		if raw, err = e.fetch(ctx, "plugins/"+en.ID+"/"+en.Version+"/manifest.json"); err != nil {
+			log.Printf("plugins: manifest fetch for %s %s failed: %v", en.ID, en.Version, err)
 			return nil
 		}
 	}
 	sum := sha256.Sum256(raw)
 	if hex.EncodeToString(sum[:]) != en.ManifestSHA256 {
+		log.Printf("plugins: manifest for %s %s does not match the list's hash", en.ID, en.Version)
 		return nil
 	}
 	m, err := ParseManifest(raw)
 	if err != nil || m.ID != en.ID || m.Version != en.Version {
+		log.Printf("plugins: manifest for %s %s is not valid or names another plugin (%v)", en.ID, en.Version, err)
 		return nil
 	}
 	if os.MkdirAll(filepath.Dir(path), 0o700) == nil {
