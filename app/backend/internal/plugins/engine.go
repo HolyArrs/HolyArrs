@@ -152,6 +152,9 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 			log.Printf("plugins: cached plugin list rejected: %v", err)
 		} else {
 			for _, en := range l.Entries {
+				if !en.forHost() {
+					continue
+				}
 				if p, ok := rows[en.ID]; ok {
 					if newerVersion(en.Version, p.Version) {
 						p.Version = en.Version
@@ -250,7 +253,7 @@ func (e *Engine) Install(ctx context.Context, id string) (*Installed, error) {
 	}
 	var entry *Entry
 	for i, en := range l.Entries {
-		if en.ID == id && (entry == nil || newerVersion(en.Version, entry.Version)) {
+		if en.ID == id && en.forHost() && (entry == nil || newerVersion(en.Version, entry.Version)) {
 			entry = &l.Entries[i]
 		}
 	}
@@ -261,7 +264,7 @@ func (e *Engine) Install(ctx context.Context, id string) (*Installed, error) {
 	if err != nil {
 		return nil, err
 	}
-	base := "plugins/" + url.PathEscape(id) + "/" + url.PathEscape(entry.Version) + "/"
+	base := entry.dir()
 	manRaw, err := e.fetch(ctx, base+"manifest.json")
 	if err != nil {
 		return nil, err
@@ -604,10 +607,10 @@ func (e *Engine) saveManifest(id string, raw []byte) {
 // listedManifest is the manifest of a listed version, fetched once and
 // cached; it counts only when its bytes match the signed list's hash and id.
 func (e *Engine) listedManifest(ctx context.Context, en Entry) *Manifest {
-	path := filepath.Join(e.Dir, listManifestDir, en.ID+"-"+en.Version+".json")
+	path := filepath.Join(e.Dir, listManifestDir, en.ID+"-"+en.Version+platformSuffix(en)+".json")
 	raw, err := os.ReadFile(path)
 	if err != nil {
-		if raw, err = e.fetch(ctx, "plugins/"+en.ID+"/"+en.Version+"/manifest.json"); err != nil {
+		if raw, err = e.fetch(ctx, en.dir()+"manifest.json"); err != nil {
 			log.Printf("plugins: manifest fetch for %s %s failed: %v", en.ID, en.Version, err)
 			return nil
 		}
@@ -730,4 +733,11 @@ func newerVersion(a, b string) bool {
 		return pa == ""
 	}
 	return pa > pb
+}
+
+func platformSuffix(en Entry) string {
+	if en.Platform == "" {
+		return ""
+	}
+	return "-" + en.Platform
 }

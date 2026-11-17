@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
+	"regexp"
 )
 
 // Kinds of signed list. The kind is inside the signed payload, so a
@@ -49,7 +51,25 @@ type Entry struct {
 	// ManifestSHA256 is the hash of the manifest file's bytes; required on
 	// the plugin list, so the manifest is signed through the list.
 	ManifestSHA256 string `json:"manifest_sha256,omitempty"`
+	// Platform names the build ("linux-amd64", "linux-arm64", "linux-armv7").
+	// Empty means one file for every platform. Files of a platform build live
+	// under plugins/{id}/{version}/{platform}/.
+	Platform string `json:"platform,omitempty"`
 }
+
+// forHost reports whether this entry's file runs on this machine.
+func (e Entry) forHost() bool { return e.Platform == "" || e.Platform == HostPlatform() }
+
+// dir is the folder of this entry's manifest and file on the list server.
+func (e Entry) dir() string {
+	d := "plugins/" + url.PathEscape(e.ID) + "/" + url.PathEscape(e.Version) + "/"
+	if e.Platform != "" {
+		d += e.Platform + "/"
+	}
+	return d
+}
+
+var platformRe = regexp.MustCompile(`^linux-(amd64|arm64|armv7)$`)
 
 // VerifyList checks the signature with pub, the kind, and that the counter is
 // not below lastCounter (the counter of the last list accepted; 0 at first).
@@ -99,7 +119,8 @@ func VerifyList(pub ed25519.PublicKey, data []byte, kind string, lastCounter uin
 			return nil, fmt.Errorf("%w: entry %d needs an id or a hash", ErrListFormat, i)
 		}
 		if (e.ID != "" && !idRe.MatchString(e.ID)) || (e.Version != "" && !semverRe.MatchString(e.Version)) ||
-			(e.SHA256 != "" && !validSHA256(e.SHA256)) || (e.ManifestSHA256 != "" && !validSHA256(e.ManifestSHA256)) {
+			(e.SHA256 != "" && !validSHA256(e.SHA256)) || (e.ManifestSHA256 != "" && !validSHA256(e.ManifestSHA256)) ||
+			(e.Platform != "" && !platformRe.MatchString(e.Platform)) {
 			return nil, fmt.Errorf("%w: entry %d has a bad id, version or hash", ErrListFormat, i)
 		}
 	}
