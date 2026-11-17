@@ -16,6 +16,7 @@ name: HolyArrs - Plugins
 
 on:
   push:
+    branches: [plugins-dryrun]
     tags:
       - "plugin-*-v*"
   workflow_dispatch:
@@ -74,7 +75,9 @@ jobs:
           IN_DRY: ${{ inputs.dry_run }}
         run: |
           set -euo pipefail
-          if [ "$GITHUB_EVENT_NAME" = push ]; then
+          if [ "$REF" = plugins-dryrun ]; then
+            action=publish id=tailscale version=1.0.0 dry=true
+          elif [ "$GITHUB_EVENT_NAME" = push ]; then
             [[ "$REF" =~ ^plugin-([a-z0-9][a-z0-9-]*)-v([0-9]+\.[0-9]+\.[0-9]+)$ ]] || { echo "::error::Tag must look like plugin-<id>-v1.2.3"; exit 1; }
             action=publish id="${BASH_REMATCH[1]}" version="${BASH_REMATCH[2]}" dry=false
           else
