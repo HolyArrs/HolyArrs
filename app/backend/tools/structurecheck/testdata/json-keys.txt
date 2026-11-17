@@ -752,6 +752,7 @@ href
 html_url
 hue
 i
+icon
 id
 ids
 ignore_picture_tracks
@@ -1358,6 +1359,7 @@ rating_country
 ratings
 ratio
 ratio_limit
+reaches_app
 read_at
 read_by_owner
 read_token
