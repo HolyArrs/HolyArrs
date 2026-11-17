@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "{n} odottaa",
 	"frame.nav.new": "{n} uutta",
 	"frame.nav.manage": "Hallinta",
+	"frame.nav.activity": "Toiminta",
+	"frame.nav.system": "Järjestelmä",
 	"frame.nav.history": "Historia",
 	"frame.nav.status": "Tila",
 	"frame.nav.settings": "Asetukset",

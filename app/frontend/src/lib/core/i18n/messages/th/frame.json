@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "รอ {n}",
 	"frame.nav.new": "ใหม่ {n}",
 	"frame.nav.manage": "จัดการ",
+	"frame.nav.activity": "กิจกรรม",
+	"frame.nav.system": "ระบบ",
 	"frame.nav.history": "ประวัติ",
 	"frame.nav.status": "สถานะ",
 	"frame.nav.settings": "ตั้งค่า",

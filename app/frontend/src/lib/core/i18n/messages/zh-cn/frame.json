@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "{n} 个待处理",
 	"frame.nav.new": "{n} 个新的",
 	"frame.nav.manage": "管理",
+	"frame.nav.activity": "活动",
+	"frame.nav.system": "系统",
 	"frame.nav.history": "历史",
 	"frame.nav.status": "状态",
 	"frame.nav.settings": "设置",

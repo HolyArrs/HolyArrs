@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "{n} чакат",
 	"frame.nav.new": "{n} нови",
 	"frame.nav.manage": "Управление",
+	"frame.nav.activity": "Активност",
+	"frame.nav.system": "Система",
 	"frame.nav.history": "История",
 	"frame.nav.status": "Състояние",
 	"frame.nav.settings": "Настройки",

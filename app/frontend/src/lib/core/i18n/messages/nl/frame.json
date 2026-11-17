@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "{n} wachten",
 	"frame.nav.new": "{n} nieuw",
 	"frame.nav.manage": "Beheer",
+	"frame.nav.activity": "Activiteit",
+	"frame.nav.system": "Systeem",
 	"frame.nav.history": "Geschiedenis",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Instellingen",

@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "Laukia: {n}",
 	"frame.nav.new": "Naujų: {n}",
 	"frame.nav.manage": "Tvarkyti",
+	"frame.nav.activity": "Veikla",
+	"frame.nav.system": "Sistema",
 	"frame.nav.history": "Istorija",
 	"frame.nav.status": "Būsena",
 	"frame.nav.settings": "Nustatymai",

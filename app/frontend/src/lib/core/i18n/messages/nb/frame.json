@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "{n} venter",
 	"frame.nav.new": "{n} nye",
 	"frame.nav.manage": "Administrer",
+	"frame.nav.activity": "Aktivitet",
+	"frame.nav.system": "System",
 	"frame.nav.history": "Historikk",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Innstillinger",

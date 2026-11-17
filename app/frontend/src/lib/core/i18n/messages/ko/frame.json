@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "{n}건 대기",
 	"frame.nav.new": "새 항목 {n}",
 	"frame.nav.manage": "관리",
+	"frame.nav.activity": "활동",
+	"frame.nav.system": "시스템",
 	"frame.nav.history": "기록",
 	"frame.nav.status": "상태",
 	"frame.nav.settings": "설정",

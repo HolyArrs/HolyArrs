@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "Čeka: {n}",
 	"frame.nav.new": "Novo: {n}",
 	"frame.nav.manage": "Upravljanje",
+	"frame.nav.activity": "Aktivnost",
+	"frame.nav.system": "Sustav",
 	"frame.nav.history": "Povijest",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Postavke",

@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "{n} در انتظار",
 	"frame.nav.new": "{n} جدید",
 	"frame.nav.manage": "مدیریت",
+	"frame.nav.activity": "فعالیت",
+	"frame.nav.system": "سیستم",
 	"frame.nav.history": "تاریخچه",
 	"frame.nav.status": "وضعیت",
 	"frame.nav.settings": "تنظیمات",

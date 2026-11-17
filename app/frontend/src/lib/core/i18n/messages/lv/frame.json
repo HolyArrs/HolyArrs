@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "Gaida: {n}",
 	"frame.nav.new": "Jauni: {n}",
 	"frame.nav.manage": "Pārvaldīt",
+	"frame.nav.activity": "Darbības",
+	"frame.nav.system": "Sistēma",
 	"frame.nav.history": "Vēsture",
 	"frame.nav.status": "Statuss",
 	"frame.nav.settings": "Iestatījumi",

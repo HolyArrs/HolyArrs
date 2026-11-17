@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "{n} a aguardar",
 	"frame.nav.new": "{n} novos",
 	"frame.nav.manage": "Gerir",
+	"frame.nav.activity": "Atividade",
+	"frame.nav.system": "Sistema",
 	"frame.nav.history": "Histórico",
 	"frame.nav.status": "Estado",
 	"frame.nav.settings": "Definições",

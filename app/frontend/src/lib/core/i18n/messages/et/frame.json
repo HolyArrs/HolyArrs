@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "{n} ootel",
 	"frame.nav.new": "{n} uut",
 	"frame.nav.manage": "Haldus",
+	"frame.nav.activity": "Tegevus",
+	"frame.nav.system": "Süsteem",
 	"frame.nav.history": "Ajalugu",
 	"frame.nav.status": "Olek",
 	"frame.nav.settings": "Seaded",

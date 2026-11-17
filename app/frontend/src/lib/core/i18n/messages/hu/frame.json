@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "{n} vár",
 	"frame.nav.new": "{n} új",
 	"frame.nav.manage": "Kezelés",
+	"frame.nav.activity": "Tevékenység",
+	"frame.nav.system": "Rendszer",
 	"frame.nav.history": "Előzmények",
 	"frame.nav.status": "Állapot",
 	"frame.nav.settings": "Beállítások",

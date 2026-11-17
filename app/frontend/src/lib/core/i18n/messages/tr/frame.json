@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "{n} bekliyor",
 	"frame.nav.new": "{n} yeni",
 	"frame.nav.manage": "Yönet",
+	"frame.nav.activity": "Etkinlik",
+	"frame.nav.system": "Sistem",
 	"frame.nav.history": "Geçmiş",
 	"frame.nav.status": "Durum",
 	"frame.nav.settings": "Ayarlar",

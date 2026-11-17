@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "{n} menunggu",
 	"frame.nav.new": "{n} baru",
 	"frame.nav.manage": "Kelola",
+	"frame.nav.activity": "Aktivitas",
+	"frame.nav.system": "Sistem",
 	"frame.nav.history": "Riwayat",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Pengaturan",

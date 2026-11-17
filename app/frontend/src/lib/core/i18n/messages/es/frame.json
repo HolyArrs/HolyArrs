@@ -14,6 +14,8 @@
 	"frame.nav.waiting": "{n} en espera",
 	"frame.nav.new": "{n} nuevas",
 	"frame.nav.manage": "Gestionar",
+	"frame.nav.activity": "Actividad",
+	"frame.nav.system": "Sistema",
 	"frame.nav.history": "Historial",
 	"frame.nav.status": "Estado",
 	"frame.nav.settings": "Ajustes",
