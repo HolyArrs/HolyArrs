@@ -25,12 +25,97 @@
             "old_path": "s",
             "path": "s",
             "kind": "s",
-            "label": "s"
+            "label": "s",
+            "left": true,
+            "unseen": true
           },
           "rules": {
             "app": "s",
             "profile": "s",
-            "preset": "s"
+            "preset": "s",
+            "name": "s",
+            "profile_key": "s",
+            "kinds": [
+              "s"
+            ],
+            "body": {
+              "steps": [
+                {
+                  "quality": "",
+                  "allowed": false
+                }
+              ],
+              "good_enough_at": "s",
+              "traits": [
+                {
+                  "trait": "",
+                  "points": 0
+                }
+              ],
+              "must_have": [
+                ""
+              ],
+              "never": [
+                ""
+              ],
+              "min_points": 7,
+              "good_enough_points": 0,
+              "size_limits": {
+                "": {
+                  "min": 0,
+                  "max": 0,
+                  "per_minute": false
+                }
+              },
+              "protocol": {
+                "prefer": "",
+                "wait_minutes_torrent": 0,
+                "wait_minutes_usenet": 0,
+                "skip_wait_at_good_enough": false
+              },
+              "language": {
+                "wanted": null,
+                "original_ok": false
+              },
+              "order": "s",
+              "upgrade_min_points": 7,
+              "proper_policy": {
+                "mode": ""
+              },
+              "tags": [
+                ""
+              ],
+              "synced": {
+                "from": "",
+                "app": "",
+                "profile_id": "",
+                "name": "",
+                "at": ""
+              }
+            },
+            "traits": [
+              {
+                "source_id": "s",
+                "name": "s",
+                "specs": [
+                  {
+                    "name": "",
+                    "kind": "",
+                    "value": ""
+                  }
+                ],
+                "points": 7
+              }
+            ],
+            "skipped": [
+              {
+                "name": "s",
+                "reason": "s"
+              }
+            ],
+            "notes": [
+              "s"
+            ]
           },
           "protocol": {
             "preset": "s",
@@ -155,7 +240,10 @@
             "shows_per_week": 7,
             "was_admin": true,
             "was_owner": true,
-            "choice": "s"
+            "choice": "s",
+            "sign_in": "s",
+            "sign_in_id": "s",
+            "sign_in_name": "s"
           },
           "ask_settings": {
             "movies_per_week": 7,
@@ -177,7 +265,8 @@
             "decided_by": "s",
             "asked_at": "s",
             "decided_at": "s",
-            "note": "s"
+            "note": "s",
+            "four_k": true
           },
           "alert": {
             "kind": "s",

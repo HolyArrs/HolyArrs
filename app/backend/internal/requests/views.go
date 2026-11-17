@@ -43,8 +43,13 @@ type View struct {
 	Episodes []domain.AskEpisodes `json:"episodes"`
 	// FutureOnly: the show's future seasons only.
 	FutureOnly bool `json:"future_only"`
-	// FourK: a movie ask for a 4K copy.
+	// FourK: a movie or show ask for a 4K copy.
 	FourK bool `json:"four_k"`
+	// Quality is the line of what people can ask for that was picked
+	// (standard, 4k; empty for music), and QualityName the owner's name for
+	// it now (empty: the built-in name).
+	Quality     string `json:"quality"`
+	QualityName string `json:"quality_name"`
 	// Albums are the albums of an artist asked for; empty: the whole artist.
 	Albums []domain.AskAlbum `json:"albums"`
 	// ArtistID is an artist ask's MusicBrainz id, for its page and picture.
@@ -107,8 +112,12 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 		shown[id] = n
 		return n
 	}
+	set, err := ReadSettings(ctx, db)
+	if err != nil {
+		return nil, err
+	}
 	for _, a := range as {
-		v := View{ID: a.ID, Kind: a.Kind, TMDBID: a.TMDBID, Ref: a.Ref, Seasons: a.Seasons, FutureOnly: a.FutureOnly, FourK: a.FourK, Name: a.Name, Year: a.Year, Poster: a.Poster, State: a.State, StateLabel: StateLabels[a.State],
+		v := View{ID: a.ID, Kind: a.Kind, TMDBID: a.TMDBID, Ref: a.Ref, Seasons: a.Seasons, FutureOnly: a.FutureOnly, FourK: a.FourK, Quality: a.Quality, Name: a.Name, Year: a.Year, Poster: a.Poster, State: a.State, StateLabel: StateLabels[a.State],
 			TitleID: a.TitleID, AskedBy: Who{ID: a.AskedBy, Name: userName(a.AskedBy)}, AskedAt: a.AskedAt, DecidedAt: a.DecidedAt, Note: a.Note,
 			AutoApproved: a.AutoApproved, AvailableAt: a.AvailableAt, People: []Asker{}}
 		if v.Seasons == nil {
@@ -120,6 +129,13 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 		}
 		if a.Kind == "show" {
 			v.SeasonWords = askSeasonWords(a)
+		}
+		if a.Quality != "" {
+			if l, ok := lineByID(set.Qualities.of(a.Kind), a.Quality); ok {
+				v.QualityName = l.Name
+			} else {
+				v.QualityName = a.QualityName
+			}
 		}
 		v.Albums = a.Albums
 		if v.Albums == nil {

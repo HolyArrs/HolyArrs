@@ -8,7 +8,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { audienceOf } from '#lib/ui/title-status.ts';
 	import { densityLabels, loadDensity, loadPosterSize, posterLabels, saveDensity, savePosterSize, type Density, type PosterSize } from '#lib/ui/library-art.ts';
-	import { libraryTitles, filters, kinds, matchesTitleQuery, ofKind, titleQuery, type Filter, type Kind, activeCount, filterCounts, loadColumns, loadSaved, passes, saveColumns, saveSaved, sortTitles, sortsFor, startDir, columnsFor, defaultSort, type Column, type FilterContext, type FilterState, type Kept, type LibKind, type SavedFilter, type SortDir, type SortKey, detailLabels, flipFrom, loadPosterDetail, savePosterDetail, type PosterDetail, rememberLibraryKind, partsNow, codecLabel, copyCodecs, type CopySearchPreview, type CopySearchResult, deleteBody } from '#lib/mediafiles/index.ts';
+	import { libraryTitles, filters, kinds, matchesTitleQuery, ofKind, titleQuery, type Filter, type Kind, activeCount, filterCounts, loadColumns, loadSaved, passes, saveColumns, saveSaved, sortTitles, sortsFor, startDir, chosenColumns, columnsFor, defaultSort, type Column, type FilterContext, type FilterState, type Kept, type LibKind, type SavedFilter, type SortDir, type SortKey, detailLabels, flipFrom, loadPosterDetail, savePosterDetail, type PosterDetail, rememberLibraryKind, partsNow, codecLabel, copyCodecs, type CopySearchPreview, type CopySearchResult, deleteBody } from '#lib/mediafiles/index.ts';
 	import { episodeLabel, showProgress } from '#lib/shows/index.ts';
 	import { artistProgress, artistHref } from '#lib/music/index.ts';
 	import { DlFind, searchShortcut, dlTop } from '#lib/downloads/index.ts';
@@ -24,9 +24,11 @@
 	import { DUR, EASE } from '#lib/core/transitions.ts';
 	import { plainReason } from '#lib/core/plain.ts';
 	import { session } from '#lib/core/session.svelte.ts';
+	import { views as savedViews } from '#lib/core/views.svelte.ts';
 	import type { TitleView } from '#lib/core/types.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
+	import { shelfEntries } from '#lib/mediafiles/index.ts';
 	let titles = $state<TitleView[]>([]);
 	let loaded = $state(false);
 	let error = $state('');
@@ -115,13 +117,9 @@
 		if (asked === 'list' || asked === 'table' || asked === 'banners') return 'table';
 		if (asked === 'grid' || asked === 'posters') return 'posters';
 		if (asked === 'overview') return 'overview';
-		// Rows is the view everyone starts on; a view picked before that default was set is not carried over.
-		try {
-			const v = localStorage.getItem(`holyarrs.library-view.${k}`);
-			return v === 'posters' || v === 'overview' || v === 'table' ? v : 'rows';
-		} catch {
-			return 'rows';
-		}
+		// The view picked last on this page, saved to the account so every device opens on it. Rows is the view everyone starts on; a view picked before that default was set is not carried over.
+		const v = savedViews.get(`library.view.${k}`);
+		return v === 'posters' || v === 'overview' || v === 'table' ? v : 'rows';
 	}
 	let view = $state<View>(untrack(() => readView(kind, true)));
 	let viewKind = untrack(() => kind);
@@ -139,9 +137,7 @@
 			const el = view === 'posters' ? gridEl : listEl;
 			if (el && !reducedMotion()) el.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: DUR.base, easing: EASE.out });
 		});
-		try {
-			localStorage.setItem(`holyarrs.library-view.${kind}`, v);
-		} catch { /* Not remembered in a private window. */ }
+		savedViews.set(`library.view.${kind}`, v);
 	}
 
 	let listWidth = $state(1000);
@@ -151,7 +147,7 @@
 		const me = myId;
 		columns = loadColumns(me, k);
 	});
-	const chosenCols = $derived(columns.filter((c) => c.on));
+	const chosenCols = $derived(chosenColumns(columns, sort.key));
 	// Columns that do not fit the width wait until the window is wider (the banner and the title always stay); the header says how many wait. The art is the hero of each row, so the banner column takes its share of the width.
 	let density = $state<Density>('large');
 	let posterSize = $state<PosterSize>('m');
@@ -271,17 +267,11 @@
 	});
 	// A plain /library link opens the kind used last (+page.ts).
 	$effect(() => rememberLibraryKind(kind));
-	// Phones have no side menu: the count is also the Movies / TV shows / Music switch.
+	// Phones have no side menu: the count is also the Movies / TV shows / Music switch, plus Stats for managers.
 	const shelfItems = $derived<MenuItem[]>(
-		(
-			[
-				['movie', 'Movies', 'film', 'movies'],
-				['show', 'TV shows', 'tv', 'shows'],
-				['artist', 'Music', 'music', 'music']
-			] as const
+		shelfEntries({ on: (part) => partsNow.answer?.parts.find((p) => p.part === part)?.on !== false, kid: !!session.kid, manage: canManage }).map(
+			(e): MenuItem => ({ label: e.key === 'stats' ? tr('frame.nav.stats') : tr(`mediafiles.kinds.${e.key}`), checked: e.key === 'stats' ? false : kind === e.key, onselect: () => void goto(to(e.href)) })
 		)
-			.filter(([k, , , part]) => partsNow.answer?.parts.find((p) => p.part === part)?.on !== false && !(k === 'artist' && session.kid))
-			.map(([k]): MenuItem => ({ label: tr(`mediafiles.kinds.${k}`), checked: kind === k, onselect: () => void goto(to(`/library?kind=${k}`)) }))
 	);
 	let findOpen = $state(false);
 	let sortOpen = $state(false);
@@ -328,7 +318,7 @@
 	const countHint = (n: number) => (loaded ? String(n) : undefined);
 	// Add only adds. Everything that looks after the Library is in Tools (people are found by the search, movie series by Group by series, and held files are on Downloads).
 	const addItems = $derived<MenuItem[]>([
-		...(!partOff('movies') ? ([{ label: tr('library.page.addMovie'), icon: 'film', href: to('/search') }] as MenuItem[]) : []),
+		...(!partOff('movies') ? ([{ label: tr('library.page.addMovie'), icon: 'film', href: to('/search?kind=movie') }] as MenuItem[]) : []),
 		...(!partOff('shows') ? ([{ label: tr('library.page.addShow'), icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
 		...(!partOff('music') ? ([{ label: tr('library.page.addArtist'), icon: 'music', href: to('/search?kind=music') }] as MenuItem[]) : []),
 		...(canManage ? ([{ label: tr('library.page.importFromFolder'), icon: 'folder', href: to('/library/import') }] as MenuItem[]) : [])

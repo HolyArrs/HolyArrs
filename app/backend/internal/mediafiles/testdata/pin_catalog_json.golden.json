@@ -19,6 +19,7 @@
   "SourceIDs": null,
   "MetadataSource": "",
   "EpisodeOrder": null,
+  "EpisodeGroupID": null,
   "KeepUpToDate": false,
   "NewPartsPolicy": "",
   "ReleaseGate": "",
@@ -37,6 +38,7 @@
   "DroppedAt": null,
   "SeasonChoice": null,
   "FutureFrom": null,
+  "PackWindow": 0,
   "Network": null,
   "AirTime": null,
   "TimeZone": null,
@@ -51,6 +53,8 @@
   "RuntimeMinutes": 0,
   "Rating": "",
   "People": null,
+  "Score": null,
+  "Votes": 0,
   "Directors": null,
   "Studio": "",
   "Tags": null
@@ -104,7 +108,9 @@
   "CheckedAt": null,
   "Role": "",
   "ParentFileID": null,
-  "State": ""
+  "State": "",
+  "LeftoverReason": null,
+  "LeftoverDismissed": false
 }
 {
   "steps": [

@@ -23,7 +23,7 @@ func NewServerTransport(dial func(ctx context.Context, network, addr string) (ne
 		MaxConnsPerHost:        16,
 		IdleConnTimeout:        90 * time.Second,
 		TLSHandshakeTimeout:    10 * time.Second,
-		ResponseHeaderTimeout:  16 * time.Second,
+		ResponseHeaderTimeout:  30 * time.Second, // above tmdbAttempt: a slow answer can take 20 s or more
 		ExpectContinueTimeout:  time.Second,
 		MaxResponseHeaderBytes: 32 << 10,
 	}

@@ -29,7 +29,7 @@ A multi-disc album keeps every track in one album folder, each name starting wit
 Put downloads and the Library on the same disk. HolyArrs then hardlinks each file, a second name for the same data, so it takes no extra space and your Downloader keeps sharing it. On another disk files are copied. See [Folders](../start/folders.md).
 :::
 
-HolyArrs never moves or deletes the Downloader's files, and never writes over a file it did not put there.
+A finished Usenet download is moved instead, which is instant on the same disk; if it can't be moved, it is copied. A Downloader marked read-only keeps its files. HolyArrs never writes over a file it did not put there.
 
 ## When an album misses tracks
 

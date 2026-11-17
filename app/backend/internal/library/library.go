@@ -62,6 +62,8 @@ type AddOptions struct {
 	Aliases []string `json:"-"`
 	// MoreVersions are extra wanted copies (for example 4K) next to the main one.
 	MoreVersions []VersionInput `json:"more_versions"`
+	// MainFourK adds the main copy as the 4K copy, labelled 4K (a 4K ask).
+	MainFourK bool `json:"-"`
 	// WhyAdded records why the movie was added (by_hand when empty).
 	WhyAdded string `json:"-"`
 	// Adopt keeps a movie folder found on disk as it is.
@@ -298,8 +300,8 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 		if opt.Adopt != nil {
 			folderName = opt.Adopt.FolderName
 		}
-		v := &mediafiles.Version{TitleID: t.ID, Label: "Main", PickRulesID: prID, LibraryFolderID: lf.ID,
-			FolderName: folderName, KeepUpToDate: keep, IsMain: true}
+		v := &mediafiles.Version{TitleID: t.ID, Label: MainLabel(opt.MainFourK), PickRulesID: prID, LibraryFolderID: lf.ID,
+			FolderName: folderName, KeepUpToDate: keep, IsMain: true, FourK: opt.MainFourK}
 		if _, err := database.Insert(tx, "versions", v, by); err != nil {
 			return err
 		}
@@ -356,13 +358,14 @@ func applyMovie(t *mediafiles.Title, m metadata.Movie, now time.Time) {
 	t.CinemaDate, t.DigitalDate, t.PhysicalDate = m.CinemaDate, m.DigitalDate, m.PhysicalDate
 	t.Aliases = MergeAliases(t.Aliases, m.Name, m.OtherNames)
 	t.Status = titleStatus(Stage(DatesOf(*t), now))
-	ApplyDetails(t, m.Backdrop, m.Logo, m.Genres, m.Rating, m.People, m.Runtime)
+	ApplyDetails(t, m.Backdrop, m.Logo, m.Genres, m.Rating, m.People, m.Runtime, m.Score, m.Votes)
 	t.Directors, t.Studio = append([]string{}, m.Directors...), m.Studio
 }
 
 // applyDetails copies the screen details; a fresh lookup replaces them all.
-func ApplyDetails(t *mediafiles.Title, backdrop, logo string, genres []string, rating string, people []string, runtime int) {
+func ApplyDetails(t *mediafiles.Title, backdrop, logo string, genres []string, rating string, people []string, runtime int, score float64, votes int) {
 	t.Backdrop, t.Logo, t.Rating, t.RuntimeMinutes = backdrop, logo, rating, max(runtime, 0)
+	t.Score, t.Votes = &score, max(votes, 0)
 	t.Genres = append([]string{}, genres...)
 	t.People = append([]string{}, people...)
 }

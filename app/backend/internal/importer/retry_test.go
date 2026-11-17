@@ -189,7 +189,8 @@ func TestCopyFallsBackWhenLinkUnsupported(t *testing.T) {
 	}
 }
 
-func TestRetryIgnoresTargetOlderThanImport(t *testing.T) {
+// An identical file is taken whatever its age; another app may have placed it.
+func TestRetryTakesIdenticalTargetOlderThanImport(t *testing.T) {
 	dir := t.TempDir()
 	src, dst := filepath.Join(dir, "a.mkv"), filepath.Join(dir, "b.mkv")
 	write(t, src, 100)
@@ -200,8 +201,8 @@ func TestRetryIgnoresTargetOlderThanImport(t *testing.T) {
 	old := started.Add(-time.Hour)
 	_ = os.Chtimes(dst, old, old)
 	step := mediafiles.PlanStep{SourceFile: src, TargetPath: dst, Method: "hardlink"}
-	if r := place(step, Ops{}, started); r.Outcome != "refused" {
-		t.Fatalf("older file adopted: %+v", r)
+	if r := place(step, Ops{}, started); r.Outcome != "placed" {
+		t.Fatalf("older identical file not adopted: %+v", r)
 	}
 	fresh := started.Add(-time.Second)
 	_ = os.Chtimes(dst, fresh, fresh)

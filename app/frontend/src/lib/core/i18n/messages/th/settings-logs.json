@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "บันทึก",
+	"settings.logs.download": "ดาวน์โหลด",
+	"settings.logs.filter": "กรองบันทึก",
+	"settings.logs.level": "ระดับ",
+	"settings.logs.every": "ทุกบรรทัด",
+	"settings.logs.warnings": "คำเตือนและข้อผิดพลาด",
+	"settings.logs.errors": "เฉพาะข้อผิดพลาด",
+	"settings.logs.text": "ข้อความ",
+	"settings.logs.example": "เช่น qBittorrent",
+	"settings.logs.from": "จาก",
+	"settings.logs.to": "ถึง",
+	"settings.logs.apply": "ใช้",
+	"settings.logs.clear": "ล้าง",
+	"settings.logs.lines": "บรรทัด",
+	"settings.logs.newer": "ใหม่กว่า",
+	"settings.logs.older": "เก่ากว่า"
+}

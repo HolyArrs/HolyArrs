@@ -35,6 +35,7 @@ type pinSMRoute struct {
 var pinSMRoutes = []pinSMRoute{
 	{"GET /api/v1/sources", "manage_library", 401, 403, 200, "sources"},
 	{"GET /api/v1/sources/1/stats", "manage_library", 401, 403, 404, "error"},
+	{"GET /api/v1/sources/sites", "manage_library", 401, 403, 200, "sites"},
 	{"POST /api/v1/sources", "settings", 401, 403, 400, "error"},
 	{"PUT /api/v1/sources/1", "settings", 401, 403, 404, "error"},
 	{"DELETE /api/v1/sources/1", "settings", 401, 403, 404, "error"},

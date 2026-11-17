@@ -203,7 +203,9 @@ func TestImportUnreadableFileIsNotFake(t *testing.T) {
 	if imp.State == "done" || state == "turned_down" {
 		t.Fatalf("import %s, release %s", imp.State, state)
 	}
-	if sl := slotOf(t, w); sl.State != mediafiles.SlotNeedsADecision {
+	// A file gone from the download is let go, not called fake: the movie
+	// stays wanted.
+	if sl := slotOf(t, w); sl.State != mediafiles.SlotWanted {
 		t.Fatalf("slot %s", sl.State)
 	}
 	if !strings.Contains(strings.Join(imp.Plan[0].Why, ";"), "not in the download folder") {

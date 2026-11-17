@@ -25,16 +25,17 @@ const maxMusicName = 2048
 const maxSafetyScan = 1 << 20
 
 var (
-	reMusicDepthRate = regexp.MustCompile(`\b(16|24|32) ?[-/ ] ?(44\.1|44|48|88\.2|88|96|176\.4|176|192|352\.8|384)\b`)
-	reMusicDepth     = regexp.MustCompile(`\b(16|24|32) ?-?bits?\b`)
-	reMusicRate      = regexp.MustCompile(`\b(44\.1|44|48|88\.2|88|96|176\.4|176|192|352\.8|384) ?khz\b`)
-	reMusicDiscRange = regexp.MustCompile(`\b(?:cd|dis[ck]) ?0?(\d{1,2}) ?- ?0?(\d{1,2})\b`)
-	reMusicDiscWord  = regexp.MustCompile(`^(?:cd|dis[ck])0?\d{1,2}(?:-0?\d{1,2})?$`)
-	reMusicDisc      = regexp.MustCompile(`\b(?:cd|dis[ck]) ?0?(\d{1,2})\b`)
-	reMusicDiscCount = regexp.MustCompile(`\b(\d{1,2}) ?(?:cd|cds|disc|discs|disk|disks)\b`)
-	reMusicYearRange = regexp.MustCompile(`\b((?:19|20)\d\d) ?- ?((?:19|20)\d\d)\b`)
-	reMusicKbps      = regexp.MustCompile(`^(\d{2,3}) ?(?:kbps|kbit|kbits|k)$`)
-	reMusicWord      = regexp.MustCompile(`[a-z0-9]+(?:\.[0-9]+)?`)
+	reMusicDepthRate     = regexp.MustCompile(`\b(16|24|32) ?[-/ ] ?(44\.1|44|48|88\.2|88|96|176\.4|176|192|352\.8|384)\b`)
+	reMusicDepth         = regexp.MustCompile(`\b(16|24|32) ?-?bits?\b`)
+	reMusicRate          = regexp.MustCompile(`\b(44\.1|44|48|88\.2|88|96|176\.4|176|192|352\.8|384) ?khz\b`)
+	reMusicDiscRange     = regexp.MustCompile(`\b(?:cd|dis[ck]) ?0?(\d{1,2}) ?- ?0?(\d{1,2})\b`)
+	reMusicDiscWord      = regexp.MustCompile(`^(?:cd|dis[ck])0?\d{1,2}(?:-0?\d{1,2})?$`)
+	reMusicDisc          = regexp.MustCompile(`\b(?:cd|dis[ck]) ?0?(\d{1,2})\b`)
+	reMusicDiscCount     = regexp.MustCompile(`\b(\d{1,2}) ?(?:cd|cds|disc|discs|disk|disks)\b`)
+	reMusicDiscCountWord = regexp.MustCompile(`^\d{1,2}(?:cd|cds|disc|discs|disk|disks)$`)
+	reMusicYearRange     = regexp.MustCompile(`\b((?:19|20)\d\d) ?- ?((?:19|20)\d\d)\b`)
+	reMusicKbps          = regexp.MustCompile(`^(\d{2,3}) ?(?:kbps|kbit|kbits|k)$`)
+	reMusicWord          = regexp.MustCompile(`[a-z0-9]+(?:\.[0-9]+)?`)
 )
 
 var musicFormats = map[string]struct {
@@ -484,7 +485,9 @@ func musicAlbumRegion(s string) (string, []string) {
 			_, isSource := musicSources[lw]
 			_, isFormat := musicFormats[lw]
 			last := k == len(words)-1
+			// A disc count ("2CD") is a tag wherever it stands after the first word.
 			stop := !first && reMusicDiscWord.MatchString(lw) && (last || musicTagWord(strings.ToLower(words[k+1]))) ||
+				!first && reMusicDiscCountWord.MatchString(lw) ||
 				!first && isYearWord(lw) || isFormat || reMusicKbps.MatchString(lw) || reMusicDepth.MatchString(lw) ||
 				isSource && !first && (last || musicTagWord(strings.ToLower(words[k+1])) || isYearWord(strings.ToLower(words[k+1])))
 			if stop {

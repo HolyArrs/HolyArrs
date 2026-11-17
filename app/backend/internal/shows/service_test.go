@@ -311,9 +311,9 @@ func TestSwitchShowSource(t *testing.T) {
 		t.Fatalf("refresh after switch: %v maze %v tmdb %v", err, maze.calls, tmdb.calls)
 	}
 
-	// TVDB is off: refused, nothing changes.
-	if _, err := svc.SwitchSource(ctx, ti.ID, "tvdb", domain.System); !errors.Is(err, metadata.ErrUnknownSource) {
-		t.Fatalf("tvdb is off: %v", err)
+	// TVDB without the person's key: refused, nothing changes.
+	if _, err := svc.SwitchSource(ctx, ti.ID, "tvdb", domain.System); !errors.Is(err, metadata.ErrNoTVDBKey) {
+		t.Fatalf("tvdb without key: %v", err)
 	}
 	// A source that does not know the show: refused, nothing changes.
 	if _, err := svc.SwitchSource(ctx, ti.ID, "tmdb", domain.System); err != nil {
@@ -515,5 +515,60 @@ func TestKeepFutureOnExistingShow(t *testing.T) {
 		if want := se.Number == 2; se.KeepUpToDate != want {
 			t.Errorf("season %d keep %v", se.Number, se.KeepUpToDate)
 		}
+	}
+}
+
+// The release-name numbers from the anime map are stored on the episode; a
+// refresh without them clears them, unless the map could not be read.
+func TestRefreshStoresReleaseNumbers(t *testing.T) {
+	s := open(t)
+	ctx := context.Background()
+	tmdb := &fakeShows{}
+	withAlt := labShow("tmdb", "100")
+	withAlt.Episodes[2].AltSeason, withAlt.Episodes[2].AltEpisode = 2, 5 // S01E02
+	tmdb.set(withAlt, "tmdb:100")
+	ti := seedShow(t, s, withAlt, library.SeasonsAll)
+	svc := showService(s, metadata.ShowSources{"tmdb": tmdb})
+	alt := func() [2]int {
+		t.Helper()
+		its, err := database.Select[mediafiles.Item](ctx, s.Read(), "items", "title_id = ? AND kind = 'episode'", ti.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, it := range its {
+			if *it.Numbers.Season == 1 && *it.Numbers.Episode == 2 {
+				var a [2]int
+				if it.Numbers.AltSeason != nil {
+					a[0] = *it.Numbers.AltSeason
+				}
+				if it.Numbers.AltEpisode != nil {
+					a[1] = *it.Numbers.AltEpisode
+				}
+				return a
+			}
+		}
+		t.Fatal("no S01E02")
+		return [2]int{}
+	}
+	refresh := func(sh metadata.Show) {
+		t.Helper()
+		tmdb.set(sh, "tmdb:100")
+		if _, err := svc.RefreshShow(ctx, ti.ID, domain.System, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if a := alt(); a != [2]int{2, 5} {
+		t.Fatalf("after add: %v", a)
+	}
+	refresh(labShow("tmdb", "100"))
+	if a := alt(); a != [2]int{} {
+		t.Fatalf("after a refresh without them: %v", a)
+	}
+	refresh(withAlt)
+	stale := labShow("tmdb", "100")
+	stale.AltStale = true
+	refresh(stale)
+	if a := alt(); a != [2]int{2, 5} {
+		t.Fatalf("after a refresh that could not read the map: %v", a)
 	}
 }

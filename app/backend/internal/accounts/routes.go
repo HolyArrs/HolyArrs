@@ -26,6 +26,7 @@ func (a *Auth) Routes(m *http.ServeMux) {
 	a.userRoutes(m)
 	a.avatarRoutes(m)
 	a.profileRoutes(m)
+	a.savedViewRoutes(m)
 	a.sessionRoutes(m)
 	a.outsideRoutes(m)
 	a.mediaServerPeopleRoutes(m)

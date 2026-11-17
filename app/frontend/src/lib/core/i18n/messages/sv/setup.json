@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Återanslut",
+	"setup.testNow": "Testa nu",
+	"setup.movies": "Filmer",
+	"setup.tvShows": "Serier",
+	"setup.music": "Musik",
+	"setup.subtitles": "Undertexter",
+	"setup.fullPath": "Använd hela mappsökvägen, som {path}.",
+	"setup.folderUsed": "Den här mappen används redan, eller ligger inuti en som gör det.",
+	"setup.folderMissing": "Mappen finns inte. Kontrollera sökvägen.",
+	"setup.addFolderOrOff": "Lägg till en mapp eller stäng av det här.",
+	"setup.notAnswering": "HolyArrs svarar inte. Försök igen om en stund.",
+	"setup.addUserPasswordHint": "Lägg till användarnamn och lösenord.",
+	"setup.folders": "Mappar",
+	"setup.downloader": "Nedladdare",
+	"setup.source": "Källa"
+}

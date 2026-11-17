@@ -10,6 +10,7 @@ Ask for a movie, show or music that is not in the Library. The owner or an admin
 
 1. Open **Search**, or press **Ask for something** on the Requests page.
 2. Find the movie and press **Ask**.
+3. If you see a **Quality** row, pick the copy you want, such as **Standard** or **4K**. A copy already in the Library shows **In library**.
 
 You should see it on the Requests page as **Waiting for approval**.
 
@@ -17,6 +18,7 @@ You should see it on the Requests page as **Waiting for approval**.
 
 1. Find the show in **Search** and press **Ask**.
 2. Pick the whole show, or tick the seasons you want.
+3. If you see a **Quality** row, pick the copy you want.
 
 The whole show means every season except specials, plus seasons that come out later. If the show is already in the Library, you can tick only the seasons it does not keep yet.
 

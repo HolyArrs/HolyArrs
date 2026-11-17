@@ -5,7 +5,7 @@
 	let { verb, size = 'md', bare = false }: { verb: Verb; size?: 'sm' | 'md'; bare?: boolean } = $props();
 </script>
 
-<span class="vm {verb.tone} {size}" class:bare data-tone={verb.tone}>
+<span class="vm {verb.tone} {size}" class:bare data-tone={verb.tone} title={verb.word}>
 	<span class="dot" aria-hidden="true"><Icon name={verb.icon} size={size === 'sm' ? 11 : 13} /></span>{#if !bare}<span class="w">{verb.word}</span>{:else}<span class="sr-only">{verb.word}</span>{/if}
 </span>
 

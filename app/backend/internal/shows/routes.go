@@ -3,6 +3,7 @@ package shows
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -59,6 +61,8 @@ type Deps struct {
 	Follow func(r *http.Request, titleID int64) error
 	// Added is the title view of a just added Title, also sent to live pages.
 	Added func(ctx context.Context, t mediafiles.Title) (any, error)
+	// Hidden marks a looked-up show the person's hides cover (nil: none).
+	Hidden func(ctx context.Context, kind, tmdbID string, genres []string) (hidden, drop bool)
 	// KindDefaultsFor fills an add's left-out fields from the saved defaults.
 	KindDefaultsFor func(ctx context.Context, kind string, sent map[string]json.RawMessage,
 		folder, rules *int64, keep **bool, search *bool) error
@@ -70,6 +74,9 @@ type Deps struct {
 	Trim func(ctx context.Context, slots map[int64][]EpisodeSlot)
 	// LibraryError answers Library refusals Error does not know.
 	LibraryError func(w http.ResponseWriter, err error)
+	// PackNext switches on the next episodes of a season pack fetched a few at
+	// a time, returning the Download and how many were switched on.
+	PackNext func(ctx context.Context, titleID int64, season int, by domain.Actor) (int64, int, error)
 }
 
 // Handlers serves the Shows routes. Its state fields are private and
@@ -92,9 +99,9 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 		KidShows: func(r *http.Request, list []metadata.Show) []metadata.Show {
 			return h.KidShows(r.Context(), h.KidMax(r), list)
 		},
-		OpenAsk: h.OpenAsk, Defaults: h.showDefaults, Follow: h.Follow, Added: h.Added}).Routes(m)
+		OpenAsk: h.OpenAsk, Defaults: h.showDefaults, Follow: h.Follow, Added: h.Added, Hidden: h.Hidden}).Routes(m)
 	(&EpisodeHandlers{Store: h.Store, Lib: h.Library, TitleID: h.TitleID, Fail: h.Error, StateLabels: h.StateLabels, Trim: h.Trim}).Routes(m)
-	(&SeasonHandlers{Store: h.Store, Lib: h.Library, TitleID: h.TitleID, Fail: h.Error}).Routes(m)
+	(&SeasonHandlers{Store: h.Store, Lib: h.Library, TitleID: h.TitleID, Fail: h.Error, PackNext: h.PackNext}).Routes(m)
 }
 
 // SeasonHandlers serves a show's seasons and the show settings.
@@ -105,12 +112,16 @@ type SeasonHandlers struct {
 	TitleID func(w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool)
 	// Fail answers a show or library error.
 	Fail func(w http.ResponseWriter, err error)
+	// PackNext is Deps.PackNext; nil answers that no pack is fetched that way.
+	PackNext func(ctx context.Context, titleID int64, season int, by domain.Actor) (int64, int, error)
 }
 
 // Routes registers the seasons and show settings routes.
 func (h *SeasonHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/titles/{id}/seasons", h.listSeasons)
+	m.HandleFunc("GET /api/v1/titles/{id}/episode-groups", h.listEpisodeGroups)
 	m.HandleFunc("PUT /api/v1/titles/{id}/seasons/{number}", h.setSeason)
+	m.HandleFunc("POST /api/v1/titles/{id}/seasons/{number}/pack-next", h.packNext)
 	m.HandleFunc("GET /api/v1/settings/shows", h.getShowSettings)
 	m.HandleFunc("PUT /api/v1/settings/shows", h.putShowSettings)
 }
@@ -139,6 +150,32 @@ func (h *SeasonHandlers) listSeasons(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"seasons": ss})
+}
+
+// listEpisodeGroups lists the TMDB episode orders a show can follow and
+// the one it follows. A show without a TMDB id, or not on TMDB, has none.
+func (h *SeasonHandlers) listEpisodeGroups(w http.ResponseWriter, r *http.Request) {
+	t, ok := ShowID(h.TitleID, w, r)
+	if !ok {
+		return
+	}
+	groups := []metadata.EpisodeGroupInfo{}
+	if tmdb := t.SourceIDs["tmdb"]; tmdb != "" && t.MetadataSource == "tmdb" && h.Lib != nil && h.Lib.EpisodeGroups != nil {
+		gs, err := h.Lib.EpisodeGroups.EpisodeGroups(r.Context(), tmdb)
+		switch {
+		case errors.Is(err, metadata.ErrShowNotFound), errors.Is(err, metadata.ErrNotFound):
+		case err != nil:
+			webserver.Fail(w, http.StatusBadGateway, "TMDB could not be read: "+err.Error())
+			return
+		default:
+			groups = gs
+		}
+	}
+	var chosen *string
+	if t.EpisodeGroupID != nil && *t.EpisodeGroupID != "" {
+		chosen = t.EpisodeGroupID
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"groups": groups, "chosen": chosen})
 }
 
 func (h *SeasonHandlers) setSeason(w http.ResponseWriter, r *http.Request) {
@@ -202,4 +239,33 @@ func (h *SeasonHandlers) putShowSettings(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, d)
+}
+
+// packNext answers POST /api/v1/titles/{id}/seasons/{number}/pack-next: the
+// season's pack fetched a few episodes at a time gets its next episodes.
+func (h *SeasonHandlers) packNext(w http.ResponseWriter, r *http.Request) {
+	t, ok := ShowID(h.TitleID, w, r)
+	if !ok {
+		return
+	}
+	n, err := strconv.Atoi(r.PathValue("number"))
+	if err != nil || n < 0 {
+		webserver.Fail(w, http.StatusNotFound, "no such season")
+		return
+	}
+	if h.PackNext == nil {
+		webserver.Fail(w, http.StatusNotFound, downloads.ErrNoPack.Error())
+		return
+	}
+	id, added, err := h.PackNext(r.Context(), t.ID, n, actor(r))
+	switch {
+	case errors.Is(err, downloads.ErrNoPack):
+		webserver.Fail(w, http.StatusNotFound, err.Error())
+	case errors.Is(err, downloads.ErrPackGone), errors.Is(err, downloads.ErrPackChanged):
+		webserver.Fail(w, http.StatusConflict, err.Error())
+	case err != nil:
+		webserver.Fail(w, http.StatusBadGateway, err.Error())
+	default:
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"download_id": id, "added": added})
+	}
 }

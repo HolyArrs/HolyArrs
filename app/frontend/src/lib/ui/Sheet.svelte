@@ -4,6 +4,8 @@
 	import type { Snippet } from 'svelte';
 	import IconButton from './IconButton.svelte';
 	import { reducedMotion } from '../core/motion.ts';
+	import { DUR, EASE } from '../core/transitions.ts';
+	import { dragOffset, dragShuts } from './sheet-drag.ts';
 
 	let {
 		open = $bindable(false),
@@ -66,6 +68,7 @@
 	}
 	function closed() {
 		closing = false;
+		if (dialog) dialog.style.transform = dialog.style.transition = '';
 		if (open) open = false;
 		onclose?.();
 	}
@@ -73,6 +76,33 @@
 	function cancel(e: Event) {
 		e.preventDefault();
 		open = false;
+	}
+	// Phones show a grab handle on bottom sheets: dragging it (or the title row) down follows the finger and closes past 30% of the height or on a flick; otherwise the sheet springs back.
+	let drag: { id: number; y: number; t: number; h: number } | null = null;
+	const handled = () => (placement === 'auto' || placement === 'bottom' || placement === 'drawer') && typeof matchMedia === 'function' && matchMedia('(max-width: 767px)').matches;
+	function dragStart(e: PointerEvent) {
+		const inner = e.currentTarget as HTMLElement;
+		if (!dialog || closing || !e.isPrimary || e.button !== 0 || !handled()) return;
+		if ((e.target as Element).closest('button, a, input, select, textarea, label, [role="button"]')) return;
+		const top = inner.getBoundingClientRect().top;
+		const head = inner.querySelector('header')?.getBoundingClientRect().bottom ?? top;
+		if (e.clientY > Math.max(head, top + 28)) return;
+		drag = { id: e.pointerId, y: e.clientY, t: e.timeStamp, h: dialog.getBoundingClientRect().height };
+		inner.setPointerCapture?.(e.pointerId);
+		dialog.style.transition = 'none';
+	}
+	function dragMove(e: PointerEvent) {
+		if (!drag || e.pointerId !== drag.id || !dialog) return;
+		dialog.style.transform = `translateY(${dragOffset(e.clientY - drag.y)}px)`;
+	}
+	function dragEnd(e: PointerEvent) {
+		if (!drag || e.pointerId !== drag.id || !dialog) return;
+		const shut = e.type === 'pointerup' && dragShuts(e.clientY - drag.y, drag.h, e.timeStamp - drag.t);
+		drag = null;
+		// Closing carries on from where the finger let go (the exit animation starts at the current spot).
+		if (shut) return void (open = false);
+		dialog.style.transition = reducedMotion() ? 'none' : `transform ${DUR.base}ms ${EASE.out}`;
+		dialog.style.transform = '';
 	}
 	// A click on the dialog box itself means the backdrop was hit.
 	function backdrop(e: MouseEvent) {
@@ -90,7 +120,9 @@
 	oncancel={cancel}
 	onclick={backdrop}
 >
-	<div class="inner">
+	<!-- The grab handle and title row are a drag surface for touch; Escape and the close button do the same from the keyboard. -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="inner" onpointerdown={dragStart} onpointermove={dragMove} onpointerup={dragEnd} onpointercancel={dragEnd}>
 		<header class:sr={hideTitle}>
 			<div class="titles">
 				<h2 id="{id}-t" class:sr-only={hideTitle}>{title}</h2>
@@ -138,13 +170,14 @@
 	.at-drawer[open] { animation: rise-in var(--dur) var(--ease-out) both; }
 	.at-drawer.closing { animation: sink-out var(--dur-fast) var(--ease-in) both; }
 	@media (max-width: 767px) {
-		.at-drawer { width: 100vw; max-height: 92dvh; }
+		.at-drawer { width: 100%; max-height: 92dvh; }
 		.at-drawer .inner::before { content: ''; align-self: center; width: 36px; height: 5px; margin-top: 8px; border-radius: 3px; background: var(--line-strong); }
 		.at-auto, .at-bottom {
-			width: 100vw; max-height: 92dvh; margin: auto 0 0; border-radius: var(--r-modal) var(--r-modal) 0 0;
+			width: 100%; max-height: 92dvh; margin: auto 0 0; border-radius: var(--r-modal) var(--r-modal) 0 0;
 		}
 		.at-auto[open], .at-bottom[open] { animation: rise-in var(--dur) var(--ease-out) both; }
 		.at-auto.closing, .at-bottom.closing { animation: sink-out var(--dur-fast) var(--ease-in) both; }
+		.at-auto > .inner, .at-bottom > .inner, .at-drawer > .inner { touch-action: none; }
 		.at-auto .inner::before, .at-bottom .inner::before { content: ''; align-self: center; width: 36px; height: 5px; margin-top: 8px; border-radius: 3px; background: var(--line-strong); }
 		.at-top { margin-top: 12px; }
 		.at-auto .body:last-child, .at-bottom .body:last-child, .at-right .body:last-child { padding-bottom: calc(22px + env(safe-area-inset-bottom)); }

@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.ar.md">العربية</a> · <a href="README.pt-BR.md">Português</a> · <a href="README.ru.md">Русский</a> · <b>日本語</b> · <a href="README.de.md">Deutsch</a> · <a href="README.ko.md">한국어</a> · <a href="README.it.md">Italiano</a> · <a href="README.pl.md">Polski</a> · <a href="README.nl.md">Nederlands</a> · <a href="README.tr.md">Türkçe</a> · <a href="README.uk.md">Українська</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <b>日本語</b> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">その他の言語</a></p>
 
 <p align="center">
   <picture>
@@ -7,21 +7,41 @@
   </picture>
 </p>
 
-<p align="center"><a href="https://holyarrs.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-site-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-site-light.png" height="34" alt="HolyArrs.com" /></picture></a>&nbsp;<a href="https://reddit.com/r/HolyArrs"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-reddit-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-reddit-light.png" height="34" alt="r/HolyArrs" /></picture></a>&nbsp;<a href="https://discord.com/invite/mthsvesKpC"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-discord-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-discord-light.png" height="34" alt="Discord" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-roadmap-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-roadmap-light.png" height="34" alt="ロードマップ" /></picture></a>&nbsp;<a href="https://holyarrs.com/whats-new/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-news-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-news-light.png" height="34" alt="新着情報" /></picture></a></p>
+<p align="center"><a href="https://holyarrs.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-site-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-site-light.png" height="34" alt="HolyArrs.com" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-roadmap-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-roadmap-light.png" height="34" alt="ロードマップ" /></picture></a>&nbsp;<a href="https://holyarrs.com/whats-new/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-news-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-news-light.png" height="34" alt="新着情報" /></picture></a></p>
 
 <p align="center">
   <a href="https://github.com/HolyArrs/HolyArrs/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/HolyArrs/HolyArrs/build.yml?branch=main&style=flat-square&logo=github&logoColor=white&label=build" alt="Build"></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/HolyArrs/HolyArrs"><img src="https://img.shields.io/ossf-scorecard/github.com/HolyArrs/HolyArrs?style=flat-square&label=scorecard" alt="OpenSSF Scorecard"></a>
   <a href="https://www.bestpractices.dev/projects/16513"><img src="https://img.shields.io/cii/level/16513?style=flat-square&label=best%20practices" alt="OpenSSF Best Practices"></a>
   <a href="https://hub.docker.com/r/holyarrs/holyarrs/tags"><img src="https://img.shields.io/docker/v/holyarrs/holyarrs?sort=semver&style=flat-square&logo=docker&logoColor=white&label=version&color=3b82f6" alt="バージョン"></a>
+  <a href="https://hub.docker.com/r/holyarrs/holyarrs"><img src="https://img.shields.io/docker/pulls/holyarrs/holyarrs?style=flat-square&logo=docker&logoColor=white&label=pulls&color=3b82f6" alt="Docker pulls"></a>
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="ライセンス: AGPL-3.0"></a>
 </p>
+
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="HolyArrs/HolyArrs on Trendshift" width="250" height="55"></a></p>
+
+> [!NOTE]
+> **HolyArrs 1.1.4：どのリクエストも削除でき、友だちの Plex ウォッチリストも再び読み込まれます。**フォルダの画質がカードに表示されるようになり、Settings の表記と動作も統一しました。[新機能を見る](https://holyarrs.com/whats-new/)
+
+> HolyArrs のポスター、予告編、スコアはすべて、私が自分で運営し費用を払っているサーバーから届いています。だから誰でも無料で使えます。HolyArrs で映画の夜が少しでも楽しくなったなら、スポンサーになってみんなの明かりを灯し続けてください 💛
+>
+> <a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="40" alt="Sponsor HolyArrs" /></picture></a>
+
+> [!TIP]
+> 一緒に楽しもう！
+>
+> | | |
+> |:--|:--|
+> | <a href="https://discord.com/invite/mthsvesKpC"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Fv9%2Finvites%2FmthsvesKpC%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&suffix=%20members&label=discord&logo=discord&logoColor=white&color=5865F2&style=flat-square" alt="Discord"></a> | すぐに質問、みんなと交流: [Discord](https://discord.com/invite/mthsvesKpC) |
+> | <a href="https://reddit.com/r/HolyArrs"><img src="https://img.shields.io/badge/r%2FHolyArrs-join-ff4500?style=flat-square&logo=reddit&logoColor=white" alt="r/HolyArrs"></a> | アイデアを共有して投票: [r/HolyArrs](https://reddit.com/r/HolyArrs) |
+> | <a href="https://x.com/CoderLuii"><img src="https://img.shields.io/badge/Follow-%40CoderLuii-000000?style=flat-square&logo=x&logoColor=white" alt="X"></a> | 先行チラ見せ: [X](https://x.com/CoderLuii) |
+> | <a href="https://github.com/CoderLuii"><img src="https://img.shields.io/github/followers/CoderLuii?style=flat-square&logo=github&label=followers&color=24292f" alt="GitHub followers"></a> | ほかのプロジェクト: [GitHub](https://github.com/CoderLuii) |
 
 <h3 align="center">番組を1本見るのに、アプリが6つ。これからは1つです。</h3>
 
 <p align="center"><b>HolyArrs</b> は、番組、映画、音楽のためのセルフホスト型アプリです。<br>配信アプリのように見て回り、欲しいものをリクエストすれば、あとは任せられます。</p>
 
-<p align="center"><b>ダウンロードは約 15 MB · アイドル時の RAM は 10,000 タイトルで約 140 MB · amd64, arm64, armv7</b><br><sub>置き換える6つのアプリは、合計で 718.2 MB あります。</sub></p>
+<p align="center"><b>ダウンロードは約 16.1 MB · 新規インストールのアイドル時 RAM は約 95 MiB · amd64, arm64, armv7</b><br><sub>置き換える6つのアプリは、合計で 685.0 MB あります。</sub></p>
 
 <p align="center"><a href="#quick-start">クイックスタート</a> · <a href="#why">作った理由</a> · <a href="#what-it-does">できること</a> · <a href="#moving">他のアプリからの移行</a> · <a href="#manual">マニュアル</a> · <a href="#help">ヘルプ</a></p>
 
@@ -36,7 +56,7 @@
 ローカルディスク上に新しいフォルダを作り、次の内容を `docker-compose.yml` として保存します。
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -78,16 +98,16 @@ docker compose up -d
 
 | アプリ | ダウンロード (amd64) | アイドル時の RAM | ログイン | Web ポート |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **6つの合計** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **6つの合計** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>約48分の1のサイズです。レジストリからの圧縮ダウンロードサイズで、linuxserver.io のイメージ、amd64、2026-11-08 に測定しました。アイドル時の RAM は、10,000 タイトルと、映画とエピソード合計 55,000 件で測定しています。</sub>
+<sub>約43分の1のサイズです。レジストリからの圧縮ダウンロードサイズで、linuxserver.io のイメージ、amd64、2026-11-13 に測定しました。アイドル時の RAM は、10,000 タイトルと、映画とエピソード合計 55,000 件で測定しています。 (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -100,15 +120,16 @@ docker compose up -d
 | | |
 |---|---|
 | 🍿 **Explore** | 配信アプリのように見て回れます。タイトルにカーソルを合わせると、予告編が流れます。 |
-| 🙋 **Requests** | 番組まるごとでも、1シーズンだけでも。あなたが承認します。信頼できる人は承認なしで通すこともできます。 |
+| 🙋 **Requests** | 番組まるごとでも、1シーズンだけでも。あなたが承認します。信頼できる人は承認なしで通すこともできます。Plex と Pulsarr のウォッチリストをリクエストにできます。 |
 | 🎯 **Pick rules** | どのリリースを選ぶかを、サイズ、画質、言語で決められます。 |
-| 💬 **字幕** | 選んだ言語で、ファイルと一緒に保存します。オンラインで探す機能は 1.0 のあとです。 |
+| 💬 **字幕** | 選んだ言語の字幕を字幕サイトから探し、ファイルと一緒に保存します。 |
 | 📅 **Calendar** | フォローしているすべての作品の、次の放送予定です。 |
-| 🚚 **設定の引っ越し** | Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd から。先に試せて、あとから元に戻せます。 |
-| 🔌 **旧アプリ API** | 有効にすると、Prowlarr がこれまでどおり HolyArrs に Sources を送り続けられます。 |
-| 🗝️ **API キー不要** | タイトル、アートワーク、チャートは HolyArrs のメタデータサーバーから届きます。 |
+| 🔔 **Alerts** | Discord、メール、Telegram、ntfy、Gotify、Pushover、webhook。 |
+| 🚚 **設定のインポート** | Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd から。移す内容を選べて、あとから元に戻せます。 |
+| 🔌 **旧アプリ API** | 有効にすると、Seerr、Prowlarr、Bazarr、Unpackerr、Homepage がこれまでどおり動きます。 |
+| 🗝️ **API キー不要** | タイトル、アートワーク、チャートは HolyArrs のメタデータサーバーから届きます。自分のキーやサーバーも使えます。 |
 | 🔒 **暗号化されたキー** | 保存したパスワードとキーは、config フォルダにあるマスターキーでロックされます。 |
-| 🪶 **小さい** | HolyArrs だけが入った、約 15 MB のイメージです。 |
+| 🪶 **小さい** | HolyArrs だけが入った、約 16.1 MB のイメージです。 |
 
 <details>
 <summary><b>各ページの動きを見る</b></summary>
@@ -128,18 +149,18 @@ docker compose up -d
 
 ## 🤝 いま使っているアプリと一緒に使えます
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="ダウンローダー: qBittorrent、Transmission、Deluge、SABnzbd、NZBGet。メディアサーバー: Plex、Jellyfin、Emby。" /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="ダウンローダー: qBittorrent、Transmission、Deluge、rTorrent、aria2、SABnzbd、NZBGet。メディアサーバー: Plex、Jellyfin、Emby。" /></picture>
 
-- **ダウンローダー:** qBittorrent、Transmission、Deluge、SABnzbd、NZBGet
+- **ダウンローダー:** qBittorrent、Transmission、Deluge、rTorrent、aria2、SABnzbd、NZBGet
 - **メディアサーバー:** Plex、Jellyfin、Emby
 - **Sources:** Torznab または Newznab のインデクサー、あるいは Prowlarr や Jackett
-- **設定を引き継げる元:** Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd
+- **設定をインポートできる元:** Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd
 
 <a id="moving"></a>
 
 ## 🚚 古い環境をそのまま引き継ぐ
 
-**Settings > Move from other apps** を開き、古いアプリごとにアドレスと API キー（またはバックアップの zip）を追加します。引き継ぐ内容を選び、**Try it** で試してから **Move** を実行します。移行はあとから元に戻せます。
+**Settings > Import from other apps** を開き、古いアプリごとにアドレスと API キー（またはバックアップの zip）を追加します。引き継ぐ内容を選び、**Import** を選びます。インポートはあとから元に戻せます。
 
 | 移行元 | 引き継ぐもの |
 |---|---|
@@ -151,12 +172,11 @@ docker compose up -d
 
 HolyArrs は古いアプリを読み取るだけで、中身は何も変更しません。信頼できるようになるまで、両方を並べて動かせます。
 
-キーとパスワードは引き継がれません。もう一度入力するか、ファイルからインポートします。カスタムフォーマット、タグ、履歴も引き継がれません。メディアファイルは一切移動しません。手順は [Move from other apps](https://docs.HolyArrs.com/migrate/) にあります。
+キーとパスワードは引き継がれません。もう一度入力するか、ファイルからインポートします。カスタムフォーマット、タグ、履歴も引き継がれません。メディアファイルは一切移動しません。手順は [Import from other apps](https://docs.HolyArrs.com/migrate/) にあります。
 
 ## 🧭 まだできないこと
 
 - **ダウンロード自体。** HolyArrs は qBittorrent や SABnzbd などに接続します。それらを置き換えるものではありません。
-- **AI や MCP の機能。** 1.0 には入りません。
 - **スマホとテレビのアプリ。** 作っていません。Web アプリはスマホでも使えます。
 - **Explore の音楽** はまだ作っている途中です。
 
@@ -193,6 +213,8 @@ HolyArrs は古いアプリを読み取るだけで、中身は何も変更し�
 
 NAS をお使いですか。[Unraid、Synology などの NAS](https://docs.HolyArrs.com/run/platforms/) を見てください。
 
+ネイティブパッケージがよければ、実験的な Synology パッケージ（`.spk`）が各[リリース](https://github.com/HolyArrs/HolyArrs/releases)に添付されています。[Synology パッケージ](../../docs/run/synology.md)を見てください。
+
 ## バージョンタグ
 
 イメージは Docker Hub に [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs) として置いてあります。
@@ -200,14 +222,14 @@ NAS をお使いですか。[Unraid、Synology などの NAS](https://docs.HolyA
 | タグ | 用途 |
 | :----: | --- |
 | `latest` | 最新のリリース。 |
-| `1.0.9` | 特定の1つのバージョンです。動くことはありません。 |
+| `1.1.4` | 特定の1つのバージョンです。動くことはありません。 |
 
 ## 使い方
 
 ### docker compose（推奨）
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -395,7 +417,7 @@ HolyArrs は、[GNU AGPL-3.0](../../LICENSE) のもとで公開されている�
 
 ## 続けていくために
 
-HolyArrs は無料ですが、動かすのは無料ではありません。すべてのインストールが、私が毎月料金を払っているメタデータサーバーと通信します。スポンサーの支援がそれをまかない、投票で選ばれたものに使える時間も増やします。
+HolyArrs は無料ですが、動かすのは無料ではありません。初期設定では、すべてのインストールが、私が毎月料金を払っているメタデータサーバーと通信します。スポンサーの支援がそれをまかない、投票で選ばれたものに使える時間も増やします。
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="HolyArrs をスポンサーする" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="ロードマップに投票する" /></picture></a></p>
 

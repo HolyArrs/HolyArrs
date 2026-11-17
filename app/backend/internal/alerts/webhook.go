@@ -137,8 +137,13 @@ func (s *Sender) webhook(ctx context.Context, a domain.Alert, m Message) error {
 		Artist: m.Artist, Tracks: m.Tracks, Report: m.Report}
 	if m.Event != nil {
 		p.Kind, p.At = m.Event.Kind, m.Event.At
-		if d, ok := payloadData(m.Event.Data).(map[string]any); ok {
-			p.Data = d
+		// The Event holds Go values (lists of import steps and results); as
+		// plain JSON maps and lists, payloadData reaches every path in them.
+		var plain map[string]any
+		if raw, err := json.Marshal(m.Event.Data); err == nil && json.Unmarshal(raw, &plain) == nil {
+			if d, ok := payloadData(plain).(map[string]any); ok {
+				p.Data = d
+			}
 		}
 	}
 	for _, x := range m.People {

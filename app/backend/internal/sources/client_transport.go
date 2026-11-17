@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"net"
@@ -24,7 +25,22 @@ func Transport(cfg Config) http.RoundTripper {
 			cfg.AllowAddr = outbound.NotMetadata
 		}
 	}
-	return transport(cfg)
+	return agentTransport{transport(cfg)}
+}
+
+// UserAgent is sent on every Source request that has none; main sets the version.
+var UserAgent = "HolyArrs/dev"
+
+// agentTransport adds the HolyArrs User-Agent, since sites behind Cloudflare
+// often block Go's default one.
+type agentTransport struct{ next http.RoundTripper }
+
+func (t agentTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req.Header.Get("User-Agent") == "" {
+		req = req.Clone(req.Context())
+		req.Header.Set("User-Agent", UserAgent)
+	}
+	return t.next.RoundTrip(req)
 }
 
 // transport dials through the network policy. With a proxy, the policy checks
@@ -175,4 +191,27 @@ func sameHostRedirect(req *http.Request, via []*http.Request) error {
 		return errors.New("the Source redirected to another host or scheme; refused")
 	}
 	return nil
+}
+
+// feedError reads a Newznab error answer, an error root with a code and a
+// description.
+func feedError(body []byte) error {
+	var e struct {
+		XMLName     xml.Name
+		Code        int    `xml:"code,attr"`
+		Description string `xml:"description,attr"`
+	}
+	if xml.Unmarshal(body, &e) != nil || e.XMLName.Local != "error" {
+		return nil
+	}
+	kind := KindBroken
+	switch {
+	case e.Code >= 100 && e.Code < 200:
+		kind = KindLoginRefused
+	case e.Code == 429 || e.Code == 500 || e.Code == 501:
+		kind = KindRateLimited
+	case e.Code >= 900:
+		kind = KindDown
+	}
+	return &Error{Kind: kind, Msg: fmt.Sprintf("code %d: %s", e.Code, e.Description), RetryAfter: Backoff(1)}
 }

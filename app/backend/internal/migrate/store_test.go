@@ -2,7 +2,9 @@ package migrate
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -57,5 +59,33 @@ func TestSnapshotStore(t *testing.T) {
 	}
 	if list, _ := List(ctx, st); len(list) != MaxSnapshots {
 		t.Fatalf("kept %d snapshots, want %d", len(list), MaxSnapshots)
+	}
+}
+
+// A removed read's number is not given to a new read while an import names
+// it, so the new read is never shown as imported by that import.
+func TestSnapshotNumberNotReused(t *testing.T) {
+	st, err := database.Open(t.TempDir(), database.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	ctx := context.Background()
+	first, err := Save(ctx, st, 1, &Snapshot{Kind: Sonarr, Via: ViaBackup})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := st.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("INSERT INTO moves (created_at, owner_id, snapshots, choices, state) VALUES ('2026-11-12T10:00:00Z', 1, ?, '{}', 'done')", fmt.Sprintf("[%d]", first.ID))
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := Delete(ctx, st, first.ID); err != nil {
+		t.Fatal(err)
+	}
+	next, err := Save(ctx, st, 1, &Snapshot{Kind: Sonarr, Via: ViaBackup})
+	if err != nil || next.ID <= first.ID {
+		t.Fatalf("new read %d (%v) reuses the number of %d", next.ID, err, first.ID)
 	}
 }

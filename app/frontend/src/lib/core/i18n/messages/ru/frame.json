@@ -2,6 +2,7 @@
 	"frame.nav.movies": "Фильмы",
 	"frame.nav.shows": "Сериалы",
 	"frame.nav.music": "Музыка",
+	"frame.nav.stats": "Статистика",
 	"frame.nav.home": "Главная",
 	"frame.nav.explore": "Обзор",
 	"frame.nav.newPopular": "Новое и популярное",
@@ -91,5 +92,11 @@
 	"frame.layout.allPlaces": "Все разделы",
 	"frame.layout.newWord": "новое",
 	"frame.layout.accountName": "Учётная запись · {name}",
-	"frame.layout.hostRefused": "<b>На {host} изменения не сохраняются.</b> HolyArrs сохраняет только на разрешённых именах. Откройте его один раз по IP-адресу и добавьте {host} в Настройки › Вход и безопасность › Разрешённые имена хостов. Перезапуск не нужен."
+	"frame.layout.hostRefused": "<b>На {host} изменения не сохраняются.</b> HolyArrs сохраняет только на разрешённых именах. Откройте его один раз по IP-адресу и добавьте {host} в Настройки › Вход и безопасность › Разрешённые имена хостов. Перезапуск не нужен.",
+	"frame.feeds.clearOne": "Импортированная загрузка не убрана",
+	"frame.feeds.clearMany": "Не убрано импортированных загрузок: {n}",
+	"frame.feeds.clearBody": "HolyArrs попробует снова сам",
+	"frame.feeds.clearNow": "Убрать сейчас",
+	"frame.feeds.cleared": "Убрано из загрузчика",
+	"frame.feeds.clearStill": "Пока не убрано"
 }

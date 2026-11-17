@@ -117,6 +117,8 @@ var (
 	ErrFolderKind   = errors.New("kind must be movie, show or music")
 	ErrFolderTaken  = errors.New("that folder, or one inside or around it, is already a Library folder")
 	ErrFolderInUse  = errors.New("titles still use this Library folder; move them first")
+	ErrFolderHeld   = errors.New("deleted files in this Library folder can still be restored from Recently deleted; remove the folder once their holding days are over, or delete its .holyarrs-replaced folder on disk")
+	ErrFolderListed = errors.New("an outside list adds to this Library folder; point it at another folder first")
 	ErrFolderName   = errors.New("another Library folder of this kind already has that name")
 	ErrFolderAbsent = errors.New("the folder does not exist")
 	ErrNoPickRules  = errors.New("no Pick rules with that id")
@@ -196,7 +198,7 @@ func AddFolder(ctx context.Context, s *database.Store, in FolderInput, downloadP
 		// Names are unique per kind, so a title's Folder menu can tell them apart.
 		// A new folder whose name is taken gets a number; renaming to a taken name is refused.
 		lf.Label, _ = freeLabel(all, in.Kind, in.Label, 0, true)
-		if err := pickRulesExist(tx, in.DefaultPickRules); err != nil {
+		if err := PickRulesFor(tx, in.DefaultPickRules, folderTitleKind(in.Kind)); err != nil {
 			return err
 		}
 		id, err := database.Insert(tx, "library_folders", &lf, by)
@@ -233,6 +235,14 @@ func PickRulesFor(tx *sql.Tx, id *int64, titleKind string) error {
 	return nil
 }
 
+// folderTitleKind is the title kind a folder's Pick rules must fit.
+func folderTitleKind(folderKind string) string {
+	if folderKind == "music" {
+		return "artist"
+	}
+	return folderKind
+}
+
 func pickRulesExist(tx *sql.Tx, id *int64) error {
 	if id == nil {
 		return nil
@@ -252,9 +262,11 @@ func pickRulesExist(tx *sql.Tx, id *int64) error {
 type FolderChange struct {
 	Label            *string `json:"label"`
 	DefaultPickRules *int64  `json:"default_pick_rules_id"`
+	CopiesExpected   *bool   `json:"copies_expected"`
 }
 
-// UpdateFolder changes a Library folder's label and default Pick rules.
+// UpdateFolder changes a Library folder's label, default Pick rules (id 0
+// clears them) and whether copying (no hardlinks) is expected there.
 func UpdateFolder(ctx context.Context, s *database.Store, id int64, c FolderChange, by domain.Actor) (mediafiles.LibraryFolder, error) {
 	var lf mediafiles.LibraryFolder
 	err := s.Write(ctx, func(tx *sql.Tx) error {
@@ -272,10 +284,18 @@ func UpdateFolder(ctx context.Context, s *database.Store, id int64, c FolderChan
 			lf.Label = *c.Label
 		}
 		if c.DefaultPickRules != nil {
-			if err := pickRulesExist(tx, c.DefaultPickRules); err != nil {
-				return err
+			// 0 takes the folder's own quality away.
+			if *c.DefaultPickRules == 0 {
+				lf.DefaultPickRules = nil
+			} else {
+				if err := PickRulesFor(tx, c.DefaultPickRules, folderTitleKind(lf.Kind)); err != nil {
+					return err
+				}
+				lf.DefaultPickRules = c.DefaultPickRules
 			}
-			lf.DefaultPickRules = c.DefaultPickRules
+		}
+		if c.CopiesExpected != nil {
+			lf.CopiesExpected = *c.CopiesExpected
 		}
 		return database.Update(tx, "library_folders", &lf, by)
 	})
@@ -307,15 +327,94 @@ func freeLabel(all []mediafiles.LibraryFolder, kind, label string, skip int64, n
 	return label, true
 }
 
-// DeleteFolder removes a Library folder no Version uses. Nothing on disk is touched.
+// DeleteFolder removes a Library folder no title in the Library uses. Titles
+// deleted from the Library stay in History; their Version and File rows on
+// this folder go with it, unless deleted files there can still be restored.
+// Nothing on disk is touched.
 func DeleteFolder(ctx context.Context, s *database.Store, id int64) error {
+	// Holding a file or restoring one waits, so nothing restorable lands
+	// in the folder between the check and the delete.
+	unlock := s.LockFiles()
+	defer unlock()
 	return s.Write(ctx, func(tx *sql.Tx) error {
+		var root string
+		if err := tx.QueryRow("SELECT path FROM library_folders WHERE id = ?", id).Scan(&root); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return database.ErrNotFound
+			}
+			return err
+		}
 		var n int
-		if err := tx.QueryRow("SELECT count(*) FROM versions WHERE library_folder_id = ?", id).Scan(&n); err != nil {
+		if err := tx.QueryRow(`SELECT count(*) FROM versions v JOIN titles t ON t.id = v.title_id
+			WHERE v.library_folder_id = ? AND t.state != 'removed'`, id).Scan(&n); err != nil {
 			return err
 		}
 		if n > 0 {
 			return ErrFolderInUse
+		}
+		if err := tx.QueryRow("SELECT count(*) FROM outside_lists WHERE library_folder_id = ?", id).Scan(&n); err != nil {
+			return err
+		}
+		if n > 0 {
+			return ErrFolderListed
+		}
+		// A deleted file still in the holding folder can be restored from
+		// Recently deleted; when the folder is gone from disk, none can.
+		prefix := importer.HoldingDir + "/"
+		rows, err := tx.Query(`SELECT f.relative_path FROM files f JOIN versions v ON v.id = f.version_id
+			WHERE v.library_folder_id = ? AND f.state = 'gone' AND substr(f.relative_path, 1, ?) = ?`, id, len(prefix), prefix)
+		if err != nil {
+			return err
+		}
+		var held []string
+		for rows.Next() {
+			var rel string
+			if err := rows.Scan(&rel); err != nil {
+				_ = rows.Close()
+				return err
+			}
+			held = append(held, rel)
+		}
+		if err := rows.Close(); err != nil {
+			return err
+		}
+		for _, rel := range held {
+			if st, err := os.Lstat(filepath.Join(root, filepath.FromSlash(rel))); err == nil && st.Mode().IsRegular() {
+				return ErrFolderHeld
+			}
+		}
+		var gone []int64
+		trows, err := tx.Query(`SELECT DISTINCT v.title_id FROM versions v JOIN titles t ON t.id = v.title_id
+			WHERE v.library_folder_id = ? AND t.state = 'removed'`, id)
+		if err != nil {
+			return err
+		}
+		for trows.Next() {
+			var tid int64
+			if err := trows.Scan(&tid); err != nil {
+				_ = trows.Close()
+				return err
+			}
+			gone = append(gone, tid)
+		}
+		if err := trows.Close(); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(`DELETE FROM files WHERE version_id IN (SELECT v.id FROM versions v JOIN titles t ON t.id = v.title_id
+			WHERE v.library_folder_id = ? AND t.state = 'removed')`, id); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(`DELETE FROM versions WHERE library_folder_id = ? AND title_id IN (SELECT id FROM titles WHERE state = 'removed')`, id); err != nil {
+			return err
+		}
+		// A deleted title whose Main Version was here but has another on
+		// a second folder gets that one as Main, so a restore brings back
+		// a whole title.
+		for _, tid := range gone {
+			if _, err := tx.Exec(`UPDATE versions SET is_main = 1 WHERE id = (SELECT min(id) FROM versions WHERE title_id = ?)
+				AND NOT EXISTS (SELECT 1 FROM versions WHERE title_id = ? AND is_main = 1)`, tid, tid); err != nil {
+				return err
+			}
 		}
 		res, err := tx.Exec("DELETE FROM library_folders WHERE id = ?", id)
 		if err != nil {

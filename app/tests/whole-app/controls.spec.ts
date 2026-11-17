@@ -18,7 +18,7 @@ test.beforeAll(async ({ browser }) => {
 	await signIn(page, owner());
 });
 
-const ids: Record<string, string> = { Movies: 'movies', 'TV shows': 'shows', Music: 'music', Subtitles: 'subtitles', 'Requests': 'wishlist' };
+const ids: Record<string, string> = { Movies: 'movies', 'TV shows': 'shows', Music: 'music', Subtitles: 'subtitles', 'Requests': 'wishlist', Sources: 'sources' };
 const part = (name: string) => page.locator(`[data-testid="part"][data-part="${ids[name]}"]`);
 
 async function confirm(label: RegExp) {
@@ -34,7 +34,8 @@ test('turn a part off and on, a refused switch, and the Events', async () => {
 	await page.getByTestId('settings-group').filter({ hasText: 'Library' }).click();
 	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Parts', exact: true }).click();
 	await expect(page.getByRole('heading', { name: 'Parts', level: 1 })).toBeVisible();
-	await expect(page.getByTestId('part')).toHaveCount(5);
+	await expect(page.getByTestId('part')).toHaveCount(6);
+	await expect(part('Sources')).toContainText('When off: Automatic searches stop');
 	await expect(part('Music')).toContainText('When off: Artist and album pages');
 
 	// Turning off asks first, in plain words.
@@ -120,7 +121,8 @@ test('the parts step turns parts off, and everything comes back', async () => {
 	await expect(page).toHaveURL(/\/$/);
 	await page.goto('/settings/parts');
 	for (const off of ['TV shows', 'Music', 'Subtitles', 'Requests']) await expect(part(off)).toHaveAttribute('data-state', 'off');
-	await expect(part('Movies')).not.toHaveAttribute('data-state', 'off');
+	// The step does not ask about Sources, so it stays as it was.
+	for (const on of ['Movies', 'Sources']) await expect(part(on)).not.toHaveAttribute('data-state', 'off');
 
 	// The same step turns everything back on.
 	await page.goto('/welcome');

@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Beállítások",
+	"alerts.panel.clearAll": "Összes törlése",
+	"alerts.panel.empty": "Itt még nincs semmi",
+	"alerts.panel.needsAttention": "Figyelmet igényel",
+	"alerts.panel.recent": "Legutóbbi",
+	"alerts.panel.remove": "{text} eltávolítása",
+	"alerts.panel.title": "Legutóbbi értesítések",
+	"alerts.state.manyNeed": "{count} figyelmet igényel",
+	"alerts.state.ok": "Minden rendben",
+	"alerts.state.oneNeeds": "1 figyelmet igényel",
+	"alerts.state.unset": "Nincs beállítva",
+	"alerts.time.days": "{n}n",
+	"alerts.time.hours": "{n}ó",
+	"alerts.time.minutes": "{n}p",
+	"alerts.time.now": "most"
+}

@@ -35,7 +35,25 @@ export const languages: [string, string][] = [
 	tup<[string, string]>('es', () => say('downloads.pr.lang.es')),
 	tup<[string, string]>('ru', () => say('downloads.pr.lang.ru')),
 	tup<[string, string]>('ja', () => say('downloads.pr.lang.ja')),
-	tup<[string, string]>('ko', () => say('downloads.pr.lang.ko'))
+	tup<[string, string]>('ko', () => say('downloads.pr.lang.ko')),
+	tup<[string, string]>('pl', () => say('downloads.pr.lang.pl')),
+	tup<[string, string]>('nl', () => say('downloads.pr.lang.nl')),
+	tup<[string, string]>('pt', () => say('downloads.pr.lang.pt')),
+	tup<[string, string]>('sv', () => say('downloads.pr.lang.sv')),
+	tup<[string, string]>('da', () => say('downloads.pr.lang.da')),
+	tup<[string, string]>('no', () => say('downloads.pr.lang.no')),
+	tup<[string, string]>('fi', () => say('downloads.pr.lang.fi')),
+	tup<[string, string]>('cs', () => say('downloads.pr.lang.cs')),
+	tup<[string, string]>('hu', () => say('downloads.pr.lang.hu')),
+	tup<[string, string]>('el', () => say('downloads.pr.lang.el')),
+	tup<[string, string]>('he', () => say('downloads.pr.lang.he')),
+	tup<[string, string]>('tr', () => say('downloads.pr.lang.tr')),
+	tup<[string, string]>('ar', () => say('downloads.pr.lang.ar')),
+	tup<[string, string]>('hi', () => say('downloads.pr.lang.hi')),
+	tup<[string, string]>('zh', () => say('downloads.pr.lang.zh')),
+	tup<[string, string]>('th', () => say('downloads.pr.lang.th')),
+	tup<[string, string]>('vi', () => say('downloads.pr.lang.vi')),
+	tup<[string, string]>('uk', () => say('downloads.pr.lang.uk'))
 ];
 
 export const kindChoices: [RulesKind, string][] = [
@@ -135,6 +153,27 @@ export function checkOwnTrait(name: string, terms: string[]): Record<string, str
 	return err;
 }
 
+/** A size trait's one term, "over-upto" in GB; an empty end is open. */
+export function sizeTerm(over: string, upTo: string): string {
+	return `${over.trim()}-${upTo.trim()}`;
+}
+
+/** Splits a size term back into its two ends. */
+export function sizeParts(term: string | undefined): { over: string; upTo: string } {
+	const [over = '', upTo = ''] = (term ?? '').split('-');
+	return { over: over.trim(), upTo: upTo.trim() };
+}
+
+/** Finds what the server would refuse in a size trait. */
+export function checkSizeTrait(name: string, over: string, upTo: string): Record<string, string> {
+	const err = checkOwnTrait(name, ['x']);
+	const read = (s: string) => (s.trim() === '' ? 0 : Number(s));
+	const lo = read(over);
+	const hi = read(upTo);
+	if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo < 0 || hi < 0 || (lo === 0 && hi === 0) || (hi > 0 && hi <= lo)) err.terms = say('downloads.pr.err.sizeRange');
+	return err;
+}
+
 /** Turns one kind on or off; music cannot share with movies or TV shows. */
 export function toggleKind(kinds: string[], kind: RulesKind, on: boolean): string[] {
 	if (!on) return kinds.filter((k) => k !== kind);
@@ -177,7 +216,9 @@ export function usedWords(use: PickRulesUse | number | undefined): string {
 	return parts.length ? say('downloads.pr.usedBy', { list: joinWords(parts) }) : say('downloads.pr.notUsed');
 }
 
-const inPoints = (n: number) => Number.isInteger(n) && n >= -10000 && n <= 10000;
+/** The server's bound for any points value, both ways: a 32-bit number, as the old apps keep scores. */
+export const maxPoints = 2147483647;
+const inPoints = (n: number) => Number.isInteger(n) && n >= -maxPoints && n <= maxPoints;
 const pointsText = () => say('downloads.pr.err.points');
 const waitText = () => say('downloads.pr.err.wait');
 
@@ -251,9 +292,13 @@ export function tidyBody(body: PickRulesBody): PickRulesBody {
 	b.traits = b.traits.map((t) => ({ trait: t.trait, points: whole(t.points) }));
 	b.min_points = whole(b.min_points);
 	b.upgrade_min_points = whole(b.upgrade_min_points);
-	if (b.good_enough_points !== undefined && b.good_enough_points !== null) b.good_enough_points = whole(b.good_enough_points);
+	// An empty good enough points box means the step alone decides.
+	const gep = b.good_enough_points as unknown;
+	if (gep === undefined || gep === null || gep === '') delete b.good_enough_points;
+	else b.good_enough_points = whole(gep);
 	b.protocol.wait_minutes_torrent = whole(b.protocol.wait_minutes_torrent);
 	b.protocol.wait_minutes_usenet = whole(b.protocol.wait_minutes_usenet);
+	if (!b.tags?.length) delete b.tags;
 	const days = whole(b.proper_policy.max_age_days);
 	if (days) b.proper_policy.max_age_days = days;
 	else delete b.proper_policy.max_age_days;

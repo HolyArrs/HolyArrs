@@ -42,6 +42,7 @@ type Target struct {
 	FolderName  string
 	TitleID     int64
 	TitleName   string
+	Aliases     []string // other names (alternative and original titles); they match too
 	Year        int
 	SlotIDs     []int64
 	Edition     string
@@ -186,7 +187,7 @@ const MinConfidence = 0.7
 
 // Plan turns candidate files into copy steps for a movie.
 func Plan(cands []Candidate, t Target) []mediafiles.PlanStep {
-	ref := mediafiles.TitleRef{ID: t.TitleID, Name: t.TitleName, Year: t.Year}
+	ref := mediafiles.TitleRef{ID: t.TitleID, Name: t.TitleName, Aliases: t.Aliases, Year: t.Year}
 	var steps []mediafiles.PlanStep
 	var mains []int
 	for _, c := range cands {
@@ -205,7 +206,8 @@ func Plan(cands []Candidate, t Target) []mediafiles.PlanStep {
 			s.Method, s.Why = "refuse", []string{"a sample, not the full video"}
 		default:
 			m := mediafiles.MatchTitle(p, []mediafiles.TitleRef{ref})
-			if m.Title == nil && p.Year.Value == 0 {
+			// A file name that names nothing (an odd short name) falls back to its folder's name.
+			if m.Title == nil {
 				if fp := releasename.Parse(filepath.Base(filepath.Dir(c.Path)), releasename.Hints{Size: c.Size}); fp.Title.Value != "" {
 					if fm := mediafiles.MatchTitle(fp, []mediafiles.TitleRef{ref}); fm.Title != nil {
 						m = fm
@@ -259,6 +261,8 @@ func sizeOf(cands []Candidate, path string) int64 {
 type Ops struct {
 	Link func(oldname, newname string) error
 	Copy func(src, dst string) error
+	// Move renames a file without replacing the target.
+	Move func(src, dst string) error
 }
 
 var activeParts sync.Map
@@ -294,8 +298,18 @@ func CopyNoReplace(src, dst string) error { return copyFile(src, dst) }
 
 var beforeFinish func()
 
+// openHook sees every source a copy opens (tests count the reads).
+var openHook func(path string)
+
+func openSource(src string) (*os.File, error) {
+	if openHook != nil {
+		openHook(src)
+	}
+	return os.Open(src)
+}
+
 func copyFile(src, dst string) (err error) {
-	in, err := os.Open(src)
+	in, err := openSource(src)
 	if err != nil {
 		return err
 	}
@@ -333,10 +347,16 @@ func copyFile(src, dst string) (err error) {
 		if errors.Is(err, fs.ErrExist) {
 			return fmt.Errorf("%s appeared while copying", dst)
 		}
-		if linkUnsupported(err) {
-			return copyDirect(src, dst)
+		// No hardlink here: rename the finished copy into place rather than
+		// writing the whole file a second time.
+		rerr := renameNoReplace(tmp, dst)
+		if rerr == nil {
+			return nil
 		}
-		return err
+		if errors.Is(rerr, fs.ErrExist) {
+			return fmt.Errorf("%s appeared while copying", dst)
+		}
+		return copyDirect(src, dst)
 	}
 	return nil
 }
@@ -356,7 +376,7 @@ func CreateTemp(dir, prefix, suffix string) (*os.File, error) {
 var linkHook func(oldname, newname string) error
 
 func copyDirect(src, dst string) (err error) {
-	in, err := os.Open(src)
+	in, err := openSource(src)
 	if err != nil {
 		return err
 	}
@@ -413,6 +433,24 @@ func sameContent(a, b string, size int64) bool {
 	return x != nil && bytes.Equal(x, y)
 }
 
+// sameFullContent hashes both files in full and compares them.
+func sameFullContent(a, b string) bool {
+	sum := func(p string) []byte {
+		f, err := os.Open(p)
+		if err != nil {
+			return nil
+		}
+		defer f.Close()
+		h := sha256.New()
+		if _, err := io.Copy(h, f); err != nil {
+			return nil
+		}
+		return h.Sum(nil)
+	}
+	x, y := sum(a), sum(b)
+	return x != nil && bytes.Equal(x, y)
+}
+
 // Execute runs the steps with ops and returns one result per step.
 func Execute(steps []mediafiles.PlanStep, ops Ops) []mediafiles.PlaceResult {
 	return execute(steps, ops, nil)
@@ -424,6 +462,9 @@ func execute(steps []mediafiles.PlanStep, ops Ops, resumable map[string]time.Tim
 	}
 	if ops.Copy == nil {
 		ops.Copy = copyFile
+	}
+	if ops.Move == nil {
+		ops.Move = renameNoReplace
 	}
 	out := make([]mediafiles.PlaceResult, 0, len(steps))
 	for _, s := range steps {
@@ -463,6 +504,11 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 			r.Outcome, r.PlacedBy, r.FellBack = "placed", "copy", true
 			return r
 		}
+		// Another app may have placed the same file first; take it as ours.
+		if tfi.Mode().IsRegular() && tfi.Size() == sfi.Size() && sameFullContent(s.SourceFile, s.TargetPath) {
+			r.Outcome, r.PlacedBy, r.FellBack = "placed", "copy", true
+			return r
+		}
 		r.Outcome, r.Error = "refused", "a file HolyArrs did not place is already at the target"
 		return r
 	}
@@ -478,6 +524,20 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 	if err := os.MkdirAll(filepath.Dir(s.TargetPath), 0o777); err != nil {
 		r.Outcome, r.Error = "failed", err.Error()
 		return r
+	}
+	moveNote := ""
+	if s.Move && ops.Move != nil {
+		err := ops.Move(s.SourceFile, s.TargetPath)
+		if err == nil {
+			r.Outcome, r.PlacedBy = "placed", "move"
+			return r
+		}
+		if errors.Is(err, fs.ErrExist) {
+			r.Outcome, r.Error = "refused", "a file appeared at the target"
+			return r
+		}
+		// Another drive or a refused rename: link or copy as for any download.
+		moveNote = "move not possible: " + err.Error() + "; "
 	}
 	linkErr := ops.Link(s.SourceFile, s.TargetPath)
 	if linkErr == nil {
@@ -497,7 +557,7 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 		return r
 	}
 	r.Outcome, r.PlacedBy, r.FellBack = "placed", "copy", true
-	r.Error = "hardlink not possible: " + linkErr.Error()
+	r.Error = moveNote + "hardlink not possible: " + linkErr.Error()
 	return r
 }
 
@@ -558,6 +618,55 @@ func candidates(root string, files []domain.SeenFile) ([]Candidate, []mediafiles
 	return cands, bad
 }
 
+// sourcesGone reports whether another app took a finished download's files:
+// every file the plan would read is gone while the download's own folder is
+// still there. For a torrent that folder is the Downloader's save folder, so
+// a missing one is a wrong path map or an empty mount, never proof. A Usenet
+// job folder (ownFolder) belongs to the download alone; it may be gone too
+// when the folder above it is still there.
+func sourcesGone(root string, plan []mediafiles.PlanStep, ownFolder bool) bool {
+	if root == "" {
+		return false
+	}
+	if _, err := os.Stat(root); err != nil {
+		if !ownFolder || !errors.Is(err, fs.ErrNotExist) {
+			return false
+		}
+		if _, err := os.Stat(filepath.Dir(root)); err != nil {
+			return false
+		}
+	}
+	seen := false
+	for _, st := range plan {
+		if !filepath.IsAbs(st.SourceFile) {
+			continue
+		}
+		if _, err := os.Lstat(st.SourceFile); !errors.Is(err, fs.ErrNotExist) {
+			return false
+		}
+		seen = true
+	}
+	if !seen {
+		_, err := os.Lstat(root)
+		return errors.Is(err, fs.ErrNotExist)
+	}
+	return true
+}
+
+// markGone records every step that was not placed as gone, with the reason.
+func markGone(res []mediafiles.PlaceResult) {
+	for i := range res {
+		if res[i].Outcome != "placed" && res[i].Outcome != "skipped" {
+			res[i].Outcome, res[i].Error = "gone", FilesGoneReason
+		}
+	}
+}
+
+// FilesGoneReason is why an import let its download go: every file it would
+// read was already removed, as another app sharing the Downloader does after
+// its own import.
+const FilesGoneReason = "the files were removed by another app before HolyArrs could import them"
+
 // Publisher announces import events.
 type Publisher interface {
 	Publish(topic string, data any) uint64
@@ -565,14 +674,21 @@ type Publisher interface {
 
 // Importer places finished downloads into the library.
 type Importer struct {
-	Store        *database.Store
-	Live         Publisher
-	Ops          Ops
-	SavePath     string
-	OnRejected   func(ctx context.Context, slotID int64)
-	OnImported   func(ctx context.Context, downloadID int64)
+	Store      *database.Store
+	Live       Publisher
+	Ops        Ops
+	SavePath   string
+	OnRejected func(ctx context.Context, slotID int64)
+	OnImported func(ctx context.Context, downloadID int64)
+	// OnFilesGone runs when a finished download's files were all taken by
+	// another app before the import, so a rescan can link the copy that app
+	// placed in the Title's folder.
+	OnFilesGone  func(ctx context.Context, titleID int64)
 	OnLowSpace   func(ctx context.Context, dir string, free, need int64)
 	NoSizeFloors bool
+	// MayMove says whether a Downloader's finished files may be moved out of
+	// its folder. Nil never moves.
+	MayMove func(d domain.Downloader) bool
 
 	runs sync.Map
 
@@ -589,6 +705,11 @@ func (im *Importer) publish(topic string, data any) {
 // ErrEpisodeImport is returned when placing episodes is turned off.
 var ErrEpisodeImport = errors.New("placing episodes is turned off; the download stays in the Downloader")
 
+// ErrPackWaiting is returned when every episode a season pack fetched a few
+// at a time waits for is still downloading; the download goes back to
+// downloading.
+var ErrPackWaiting = errors.New("the season pack's episodes are still downloading; the download goes back to downloading")
+
 // ErrAlbumImport is returned when placing albums is turned off.
 var ErrAlbumImport = errors.New("placing albums is turned off; the download stays in the Downloader")
 
@@ -603,8 +724,8 @@ func (im *Importer) RequeueStranded(ctx context.Context, enqueue func(ctx contex
 	}
 	rows, err := im.Store.Read().QueryContext(ctx, `SELECT DISTINCT d.id FROM downloads d, json_each(d.slot_ids) j
 		JOIN slots s ON s.id = j.value JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
-		WHERE d.state = 'finished' AND s.state = 'downloading' AND (t.kind = 'show' OR t.kind = 'artist' AND ?)
-		AND NOT EXISTS (SELECT 1 FROM imports x WHERE x.download_id = d.id AND x.state IN ('approved', 'placing', 'done', 'partly_done', 'waiting_for_you'))
+		WHERE d.state = 'finished' AND (s.state = 'downloading' AND NOT EXISTS (SELECT 1 FROM imports x WHERE x.download_id = d.id AND x.state IN ('approved', 'placing', 'done', 'partly_done', 'waiting_for_you'))
+		OR s.state = 'importing' AND (SELECT x.state FROM imports x WHERE x.download_id = d.id ORDER BY x.id DESC LIMIT 1) = 'placing') AND (s.active_download_id IS NULL OR s.active_download_id = d.id) AND (t.kind = 'show' OR t.kind = 'artist' AND ?)
 		ORDER BY d.id`, canImportAlbums)
 	if err != nil {
 		return 0, err
@@ -662,7 +783,7 @@ func (im *Importer) HandleJob(ctx context.Context, r *jobs.Run) error {
 	}
 	dry, _ := r.Job.Params["dry_run"].(bool)
 	imp, err := im.Import(ctx, r.Job.Subject.ID, dry, domain.Actor{Kind: "job", ID: r.Job.ID})
-	if errors.Is(err, ErrEpisodeImport) || errors.Is(err, ErrAlbumImport) {
+	if errors.Is(err, ErrEpisodeImport) || errors.Is(err, ErrAlbumImport) || errors.Is(err, ErrPackWaiting) {
 		r.SetResult(map[string]any{"waiting": err.Error()})
 		return nil
 	}

@@ -117,10 +117,8 @@ Then `seed -config ./config` adds the demo library and `seed -config ./config -r
 | Switch | Feature |
 |---|---|
 | `ai_apps` | AI app connections and keys |
-| `plex_watchlists` | Plex watchlists become requests |
 | `row_title_stats` | Explore row statistics for the owner |
 | `trakt_lists` | Trakt lists |
-| `alert_channels_more` | Alert channels beyond Discord and email |
 | `subtitle_sites` | Subtitle sites and subtitle searching |
 | `emby_signin` | Sign in with Emby |
 | `go_back` | Steps to go back to the previous version |
@@ -146,7 +144,7 @@ docker build --file deploy/Dockerfile --tag holyarrs:dev .
 docker run -p 6262:6262 -v ./config:/config holyarrs:dev
 ```
 
-The image starts `FROM scratch` and holds the program, CA certificates and licences. It runs `-config /config -addr :6262`.
+The image starts `FROM scratch` and holds the program, CA certificates and licences. It runs `-config /config` and listens on `:6262`, or on `HOLYARRS_ADDR` or `HOLYARRS_PORT` when set.
 
 </details>
 

@@ -274,6 +274,7 @@
 	"accounts.account.preferences": "環境設定",
 	"accounts.account.trailers": "予告編",
 	"accounts.account.trailersHint": "「自動」は、視覚効果を減らす設定とデータセーバーに従います",
+	"accounts.account.trailersMinimal": "ミニマル表示ではオフ",
 	"accounts.account.playTrailers": "予告編を再生",
 	"accounts.account.auto": "自動",
 	"accounts.account.always": "常に",
@@ -365,7 +366,12 @@
 	"accounts.invite.confirm": "パスワードの確認",
 	"accounts.invite.joinSignIn": "参加してサインイン",
 	"accounts.language.label": "言語",
+	"accounts.language.top": "よく使われる言語",
+	"accounts.language.more": "その他の言語",
 	"accounts.language.auto": "自動",
 	"accounts.language.hint": "「自動」はブラウザーの設定に従います。アカウントに保存されます。",
-	"accounts.language.saveFailed": "言語を保存できませんでした"
+	"accounts.language.saveFailed": "言語を保存できませんでした",
+	"accounts.language.count.one": "1 件の言語",
+	"accounts.language.count.other": "{n} 件の言語",
+	"accounts.account.watchEveryone": "オーナーが全員に対してオンにしました。止めるには両方をオフにしてください。"
 }

@@ -204,5 +204,15 @@
 "shows.page.mainVersionParen": "(メインのバージョン)",
 "shows.page.keepThem": "最新に保つ",
 "shows.page.leaveThem": "オフのままにする",
-"shows.page.filesStay": "エピソードとファイルは残ります。"
+"shows.page.filesStay": "エピソードとファイルは残ります。",
+"shows.page.seasonPacks": "シーズンパック",
+"shows.page.packWhole": "シーズン全体を取得",
+"shows.page.packFew": "数話ずつ取得",
+"shows.page.packAhead": "先行して取得する話数",
+"shows.page.packHint": "リリースがシーズン全体のパックしかない場合、qBittorrent は次の {n} 話を取得します。「次の話を取得」を押すか、Plex または Jellyfin でエピソードが視聴済みになると、続きを取得します。Usenet やほかのダウンローダーはシーズン全体を取得します。",
+"shows.page.packWholeShort": "シーズン全体",
+"shows.page.packAtATime": "{n} 話ずつ",
+"shows.tools.packNote": "このシーズンはパックから {n} 話ずつ取得します。",
+"shows.tools.getNext": "次の {n} 話を取得",
+"shows.page.packOneAtATime": "1 話ずつ"
 }

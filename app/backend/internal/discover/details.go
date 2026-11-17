@@ -111,8 +111,13 @@ func (h *Handlers) LibraryJoin(ctx context.Context, it metadata.DiscoverItem, me
 	return v, never > 0, err
 }
 
-// DropNeverAdd leaves out the items on the Never-add list.
+// DropNeverAdd leaves out the items on the Never-add list, and the ones
+// the person on ctx has hidden from browsing.
 func (h *Handlers) DropNeverAdd(ctx context.Context, items []metadata.DiscoverItem) ([]metadata.DiscoverItem, error) {
+	items, err := h.dropHidden(ctx, items)
+	if err != nil {
+		return nil, err
+	}
 	rows, err := h.Store.Read().QueryContext(ctx, "SELECT kind, json_extract(source_ids, '$.tmdb') FROM never_add WHERE kind IN ('movie', 'show') AND json_extract(source_ids, '$.tmdb') IS NOT NULL")
 	if err != nil {
 		return nil, err
@@ -138,8 +143,14 @@ func (h *Handlers) DropNeverAdd(ctx context.Context, items []metadata.DiscoverIt
 	return out, nil
 }
 
+// JoinItems joins up to n items with the Library, leaving out Never-add
+// items and the ones the person on ctx has hidden.
 func (h *Handlers) JoinItems(ctx context.Context, items []metadata.DiscoverItem, me int64, n int) ([]ItemView, error) {
 	out := []ItemView{}
+	items, err := h.dropHidden(ctx, items)
+	if err != nil {
+		return nil, err
+	}
 	for _, it := range items {
 		if len(out) == n {
 			break
@@ -287,7 +298,11 @@ func (h *Handlers) metadataDetails(w http.ResponseWriter, r *http.Request) {
 			h.Cache.Put(key, e)
 		}
 	}
-	if cached && e.Details != nil && time.Since(e.At) >= DetailsTTL(e) {
+	// Details kept before titles carried their texts are read again now
+	// for a person who reads another language than English.
+	lang := metadata.TextLanguage(r)
+	text, textKnown := keptText(r.Context(), h.Metadata, kind, id, lang)
+	if cached && e.Details != nil && time.Since(e.At) >= DetailsTTL(e) && textKnown {
 		// Stale but kept: served now, refreshed in the background.
 		metadata.RefreshOnce(key, func(ctx context.Context) {
 			if det, err := d.Details(ctx, kind, id); err == nil {
@@ -295,14 +310,16 @@ func (h *Handlers) metadataDetails(w http.ResponseWriter, r *http.Request) {
 				metadata.KeepOnDisk(ctx, h.Store, key, det)
 			}
 		})
-	} else if !cached || time.Since(e.At) >= DetailsTTL(e) {
+	} else if !cached || !textKnown || time.Since(e.At) >= DetailsTTL(e) {
 		det, err := d.Details(r.Context(), kind, id)
 		switch {
 		case err == nil:
 			e = Entry{At: time.Now(), Details: &det}
 			h.Cache.Put(key, e)
 			metadata.KeepOnDisk(r.Context(), h.Store, key, det)
-		case !(cached && StaleOK(err)):
+			text, _ = keptText(r.Context(), h.Metadata, kind, id, lang)
+		// A kept page asked again only for its texts stays, in English.
+		case !(cached && (e.Details != nil || StaleOK(err))):
 			Fail(w, err)
 			return
 		}
@@ -334,6 +351,7 @@ func (h *Handlers) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	if det.People == nil {
 		det.People = []metadata.DetailPerson{}
 	}
+	detailsText(&det, text)
 	type collectionView struct {
 		ID    string     `json:"id"`
 		Name  string     `json:"name"`
@@ -372,8 +390,17 @@ func (h *Handlers) metadataDetails(w http.ResponseWriter, r *http.Request) {
 		}
 		quality = QualityWord(res.Int64)
 	}
+	hidden, hides, err := h.titleHides(r, e.Details.DiscoverItem)
+	if err != nil {
+		webserver.Internal(w, "discover", err)
+		return
+	}
 	webserver.WriteJSON(w, http.StatusOK, struct {
 		metadata.Details
+		// Hidden: the viewer's hides cover this title; Hides are the hides
+		// that cover it, for owners and admins (to show it again).
+		Hidden     bool                    `json:"hidden,omitempty"`
+		Hides      []Hide                  `json:"hides,omitempty"`
 		Quality    string                  `json:"quality,omitempty"`
 		Streaming  []metadata.WatchService `json:"streaming"`
 		Collection *collectionView         `json:"collection,omitempty"`
@@ -382,7 +409,7 @@ func (h *Handlers) metadataDetails(w http.ResponseWriter, r *http.Request) {
 		TitleID    int64                   `json:"title_id,omitempty"`
 		Ask        *requests.AskBrief      `json:"ask"`
 		NeverAdd   bool                    `json:"never_add"`
-	}{Details: det, Quality: quality, Streaming: streaming, Collection: coll, Similar: similar, InLibrary: head.InLibrary, TitleID: head.TitleID, Ask: head.Ask, NeverAdd: never})
+	}{Details: det, Hidden: hidden, Hides: hides, Quality: quality, Streaming: streaming, Collection: coll, Similar: similar, InLibrary: head.InLibrary, TitleID: head.TitleID, Ask: head.Ask, NeverAdd: never})
 }
 
 // rowCardArt gives a title page row its card pictures and logos from the
@@ -569,8 +596,16 @@ func (h *Handlers) metadataSeason(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	eps := e.Episodes
+	// Episode names and synopses in the page's language, where TMDB has
+	// them; a failed ask keeps English.
+	if st, ok := metadata.SeasonTexterFor(r.Context(), h.Metadata); ok {
+		if texts, err := st.SeasonText(r.Context(), id, season, metadata.TextLanguage(r)); err == nil {
+			eps = seasonText(eps, texts)
+		}
+	}
 	h.Caching(w, r, "")
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"tmdb_id": id, "season": season, "episodes": e.Episodes})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"tmdb_id": id, "season": season, "episodes": eps})
 }
 
 // watchServices answers GET /api/v1/watch-services?region=<ISO>: the

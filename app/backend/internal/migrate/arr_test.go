@@ -17,7 +17,11 @@ func radarrAPI(t *testing.T) (string, string) { return radarrAPIWith(t, nil) }
 
 // radarrAPIWith adds or replaces routes of radarrAPI.
 func radarrAPIWith(t *testing.T, extra map[string]any) (string, string) {
-	key := "S3CR3T_RADARR_KEY"
+	return radarrAPIKeyed(t, "S3CR3T_RADARR_KEY", extra)
+}
+
+// radarrAPIKeyed is radarrAPIWith answering only to key.
+func radarrAPIKeyed(t *testing.T, key string, extra map[string]any) (string, string) {
 	routes := map[string]any{
 		"/api/v3/system/status": map[string]any{"appName": "Radarr", "version": "6.4.4", "migrationVersion": 242},
 		"/api/v3/movie": []any{
@@ -511,12 +515,12 @@ func TestArrReleaseWords(t *testing.T) {
 	if fmt.Sprint(rw["required"]) != "[x265 hevc]" || fmt.Sprint(rw["ignored"]) != "[cam ts]" || fmt.Sprint(rw["tags"]) != "[kids]" || fmt.Sprint(rw["indexer_ids"]) != "[2]" {
 		t.Fatalf("radarr backup %+v", rw)
 	}
-	p = BuildPlan([]Input{{1, s}}, Choices{})
+	p = BuildPlan([]Input{{1, s}}, Choices{NoFormats: true})
 	n, ok := notMoved(p, "radarr release_profiles[0]")
 	if !ok || n.What != "release words: must contain x265, hevc / must not contain cam, ts (tags: kids)" || !strings.Contains(n.Why, "fixed list of traits, not free words") {
 		t.Fatalf("radarr rule line %+v", n)
 	}
-	if n, ok := notMoved(p, "radarr custom_formats[0]"); !ok || n.Why != "format scoring rules do not move; Pick rules score a fixed list of traits" {
+	if n, ok := notMoved(p, "radarr custom_formats[0]"); !ok || n.Why != "format scoring rules are not imported; Pick rules score a fixed list of traits" {
 		t.Fatalf("format line %+v", n)
 	}
 
@@ -636,7 +640,7 @@ func TestRadarrWaitSkipsAndListsRead(t *testing.T) {
 	if d := s.DelayProfiles[0]; !d.BypassIfHighestQuality || !d.BypassIfAboveScore || d.TorrentDelay != 120 {
 		t.Fatalf("api wait %+v", d)
 	}
-	p := BuildPlan([]Input{{1, s}}, Choices{})
+	p := BuildPlan([]Input{{1, s}}, Choices{NoFormats: true})
 	if w := item(t, p, GroupRules, "pick_rules_protocol:Standard").Protocol; *w != (ProtocolPlan{Preset: "Standard", Prefer: "torrent", WaitTorrent: 120, SkipAtGoodEnough: true, Part: "movies"}) {
 		t.Fatalf("api wait plan %+v", w)
 	}

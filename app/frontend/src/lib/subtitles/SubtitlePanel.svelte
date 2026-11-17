@@ -8,6 +8,7 @@
 		fromWords,
 		kindLabel,
 		langName,
+		madeLabel,
 		missing,
 		missingWords,
 		offsetWords,
@@ -17,6 +18,8 @@
 		scoreLines,
 		sourceLabel,
 		syncBody,
+		translateBody,
+		translateSources,
 		wantLabel,
 		wishLine,
 		wishProblem,
@@ -25,6 +28,7 @@
 		type SubtitleRow,
 		type SubtitleSettings,
 		type TitleSubtitles,
+		type Translator,
 		type Want
 	} from './api.ts';
 	import { onMount } from 'svelte';
@@ -71,6 +75,10 @@
 	let reason = $state('');
 	let turnError = $state('');
 	let busy = $state(false);
+	let canTranslate = $state(false);
+	let translating = $state(0);
+	let trSource = $state(0);
+	let trError = $state('');
 
 	const passMark = $derived(set ? (movie ? set.pass_mark_movie : set.pass_mark_episode) : 0);
 	const step = $derived(set?.sync_step_ms ?? 500);
@@ -104,6 +112,7 @@
 			},
 			() => {}
 		);
+		if (session.can('settings')) api.get<Translator>('/settings/subtitles/translator').then((x) => (canTranslate = !!x.kind && !!x.url), () => {});
 		let timer: ReturnType<typeof setTimeout> | undefined;
 		const soon = () => {
 			clearTimeout(timer);
@@ -168,6 +177,30 @@
 		choosing = 0;
 		syncing = 0;
 		turning = 0;
+		translating = 0;
+	}
+
+	function openTranslate(m: SubtitleRow, rows: SubtitleRow[]) {
+		closeForms();
+		translating = m.ID;
+		trSource = translateSources(rows, m.language)[0]?.ID ?? 0;
+		trError = '';
+	}
+
+	async function translate(e: SubmitEvent, fileId: number, m: SubtitleRow, rows: SubtitleRow[]) {
+		e.preventDefault();
+		const src = rows.find((r) => r.ID === trSource);
+		if (!src) return;
+		busy = true;
+		try {
+			await api.post(`/files/${fileId}/subtitles/translate`, translateBody(m, src));
+			toasts.push(t('subtitles.panel.translateQueued'), 'info', { body: t('subtitles.panel.translateQueuedBody', { name: langName(m.language, langs) }) });
+			translating = 0;
+		} catch (err) {
+			trError = message(err);
+		} finally {
+			busy = false;
+		}
 	}
 
 	async function openChoose(fileId: number) {
@@ -250,9 +283,9 @@
 <section class="card subs" aria-labelledby="{idp}-h" data-testid="subtitles">
 	<div class="card-head" class:bare>
 		<h2 id="{idp}-h" class="h2" class:sr-only={bare}>{label ? t('subtitles.panel.titleOf', { label }) : t('subtitles.panel.title')}</h2>
-		{#if !session.held('subtitle_sites')}<Button size="sm" icon="search" onclick={search} disabled={searching} busy={searching} data-testid="subtitle-search">
+		<Button size="sm" icon="search" onclick={search} disabled={searching} busy={searching} data-testid="subtitle-search">
 			{t('subtitles.panel.look')}
-		</Button>{/if}
+		</Button>
 	</div>
 	{#if error}
 		<p class="notice bad" role="alert">{error}</p>
@@ -280,7 +313,7 @@
 						<span>{t('subtitles.panel.own')}<br /><span class="hint">{itemId ? t('subtitles.panel.emptyEpisode') : movie ? t('subtitles.panel.emptyMovie') : t('subtitles.panel.emptyShow')}</span></span>
 					</label>
 				</fieldset>
-				{#if own}<WishEditor bind:wants={draft} {langs} id="{idp}-w" />{/if}
+				{#if own}<WishEditor bind:wants={draft} {langs} id="{idp}-w" translate={canTranslate} />{/if}
 				{#if wishError}<p class="form-error" role="alert">{wishError}</p>{/if}
 				<div class="row actions">
 					<Button variant="plain" onclick={() => (editing = false)}>{t('subtitles.panel.cancel')}</Button>
@@ -314,12 +347,14 @@
 										<span class="grow">
 											<b class="small">{langName(s.language, langs)}</b>
 											<span class="chip">{kindLabel(s)}</span>
+											{#if s.made}<span class="chip wait" data-testid="subtitle-made">{madeLabel(s.made)}</span>{/if}
+											{#if s.picture}<span class="chip" title={t('subtitles.panel.pictureTitle')} data-testid="subtitle-picture">{t('subtitles.panel.picture')}</span>{/if}
 											{#if s.score !== undefined && s.score !== null}<span class="chip {passes(s.score, passMark) ? 'ok' : 'wait'}" title={t('subtitles.panel.scoreTitle')}>{s.score}/100</span>{/if}
 										</span>
 										{#if ours(s)}
 											<span class="row sub-actions">
-												{#if !session.held('subtitle_sites')}<Button variant="plain" size="sm" onclick={() => openSync(s)} aria-label={t('subtitles.panel.syncFor', { name: langName(s.language, langs) })} data-testid="subtitle-sync">{t('subtitles.panel.syncFix')}</Button>{/if}
-												{#if !session.held('subtitle_sites')}<Button variant="plain" size="sm" onclick={() => openTurn(s)} aria-label={t('subtitles.panel.turnDownFor', { name: langName(s.language, langs) })} data-testid="subtitle-turn-down">{t('subtitles.panel.turnDown')}</Button>{/if}
+												<Button variant="plain" size="sm" onclick={() => openSync(s)} aria-label={t('subtitles.panel.syncFor', { name: langName(s.language, langs) })} data-testid="subtitle-sync">{t('subtitles.panel.syncFix')}</Button>
+												<Button variant="plain" size="sm" onclick={() => openTurn(s)} aria-label={t('subtitles.panel.turnDownFor', { name: langName(s.language, langs) })} data-testid="subtitle-turn-down">{t('subtitles.panel.turnDown')}</Button>
 											</span>
 										{/if}
 									</div>
@@ -382,14 +417,35 @@
 					{#if lack.length}
 						<ul class="lack">
 							{#each lack as m (m.ID)}
-								<li class="small" data-testid="subtitle-missing"><b>{wantLabel({ language: m.language, hearing_impaired: m.hearing_impaired ? 'hi' : 'normal', forced: m.forced }, langs)}</b>: <span class="muted">{missingWords(m, dateTime)}</span></li>
+								{@const srcs = canTranslate ? translateSources(f.subtitles, m.language) : []}
+								<li class="small" data-testid="subtitle-missing">
+									<div class="sub-top">
+										<span class="grow"><b>{wantLabel({ language: m.language, hearing_impaired: m.hearing_impaired ? 'hi' : 'normal', forced: m.forced }, langs)}</b>: <span class="muted">{missingWords(m, dateTime)}</span></span>
+										{#if srcs.length}<Button variant="plain" size="sm" onclick={() => (translating === m.ID ? (translating = 0) : openTranslate(m, f.subtitles))} aria-expanded={translating === m.ID} aria-label={t('subtitles.panel.translateFor', { name: langName(m.language, langs) })} data-testid="subtitle-translate">{t('subtitles.panel.translate')}</Button>{/if}
+									</div>
+									{#if translating === m.ID}
+										<form class="inline" onsubmit={(e) => translate(e, f.file_id, m, f.subtitles)} aria-label={t('subtitles.panel.translate')}>
+											<div class="field">
+												<label for="{idp}-trs-{m.ID}">{t('subtitles.panel.translateFrom')}</label>
+												<select id="{idp}-trs-{m.ID}" class="input" bind:value={trSource}>
+													{#each srcs as r (r.ID)}<option value={r.ID}>{langName(r.language, langs)} · {sourceLabel(r)}</option>{/each}
+												</select>
+											</div>
+											{#if trError}<p class="form-error" role="alert">{trError}</p>{/if}
+											<div class="row actions">
+												<Button variant="plain" onclick={() => (translating = 0)}>{t('subtitles.panel.cancel')}</Button>
+												<Button variant="primary" type="submit" disabled={busy || !trSource} busy={busy} data-testid="subtitle-translate-yes">{t('subtitles.panel.translate')}</Button>
+											</div>
+										</form>
+									{/if}
+								</li>
 							{/each}
 						</ul>
 					{/if}
 					<div class="row file-actions">
-						{#if !session.held('subtitle_sites')}<Button size="sm" onclick={() => (choosing === f.file_id ? (choosing = 0) : openChoose(f.file_id))} aria-expanded={choosing === f.file_id} data-testid="subtitle-choose">
+						<Button size="sm" onclick={() => (choosing === f.file_id ? (choosing = 0) : openChoose(f.file_id))} aria-expanded={choosing === f.file_id} data-testid="subtitle-choose">
 							{t('subtitles.panel.chooseOne')}
-						</Button>{/if}
+						</Button>
 					</div>
 					{#if choosing === f.file_id}
 						<div class="choices" aria-live="polite" data-testid="subtitle-choices">
@@ -407,7 +463,9 @@
 								</p>
 								{#each choices.outcomes as o, oi (oi)}
 									<h3 class="h3 lang">{wantLabel(o.want, langs)}</h3>
-									{#if !o.choices?.length}
+									{#if o.result === 'translating'}
+										<p class="small muted" data-testid="subtitle-translating">{t('subtitles.panel.translating')}</p>
+									{:else if !o.choices?.length}
 										<p class="small muted">{o.reason || t('subtitles.panel.nothingFound')}</p>
 									{:else}
 										<ul class="cands" data-lang={o.want.language}>
@@ -416,7 +474,7 @@
 													<div class="sub-top">
 														<span class="grow">
 															<span class="mono small rel">{c.release_names?.[0] ?? c.title ?? c.key}</span>
-															<span class="xs muted">{c.site}{#if c.hearing_impaired} · {t('subtitles.panel.cHi')}{/if}{#if c.forced} · {t('subtitles.panel.cForced')}{/if}{#if c.trusted} · {t('subtitles.panel.cTrusted')}{/if}{#if c.downloads} · {t('subtitles.panel.cDownloads', { count: c.downloads })}{/if}</span>
+															<span class="xs muted">{c.site}{#if c.machine_made} · {madeLabel(c.machine_made)}{/if}{#if c.hearing_impaired} · {t('subtitles.panel.cHi')}{/if}{#if c.forced} · {t('subtitles.panel.cForced')}{/if}{#if c.trusted} · {t('subtitles.panel.cTrusted')}{/if}{#if c.downloads} · {t('subtitles.panel.cDownloads', { count: c.downloads })}{/if}</span>
 														</span>
 														<span class="chip {c.score.refused ? 'fail' : passes(c.score.total, passMark) ? 'ok' : 'wait'}" data-testid="subtitle-choice-score">{c.score.total}/100</span>
 														<Button variant="plain" size="sm" disabled={!!choosingKey} busy={choosingKey === c.key} onclick={() => choose(f.file_id, c.site, c.key)} aria-label={t('subtitles.panel.chooseFrom', { name: c.release_names?.[0] ?? c.key, site: c.site })}>{t('subtitles.panel.choose')}</Button>

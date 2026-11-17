@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Instellingen",
+	"alerts.panel.clearAll": "Alles wissen",
+	"alerts.panel.empty": "Nog niets hier",
+	"alerts.panel.needsAttention": "Heeft aandacht nodig",
+	"alerts.panel.recent": "Recent",
+	"alerts.panel.remove": "{text} verwijderen",
+	"alerts.panel.title": "Recente meldingen",
+	"alerts.state.manyNeed": "{count} hebben aandacht nodig",
+	"alerts.state.ok": "Alles in orde",
+	"alerts.state.oneNeeds": "1 heeft aandacht nodig",
+	"alerts.state.unset": "Niet ingesteld",
+	"alerts.time.days": "{n}d",
+	"alerts.time.hours": "{n}u",
+	"alerts.time.minutes": "{n}m",
+	"alerts.time.now": "nu"
+}

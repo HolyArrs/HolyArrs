@@ -10,6 +10,7 @@
 	import { toasts } from '../core/toasts.svelte.ts';
 	import type { Choice, ReleasePage, ReleaseView } from '../core/types.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 	let {
 		titleId,
@@ -107,7 +108,7 @@
 			const ch = await api.post<Choice>(`/releases/${target.id}/choose`, body);
 			chooseDialog?.close();
 			const n = ch.slot_ids?.length ?? 1;
-			toasts.push(t('mediafiles.title.sent'), 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : t('mediafiles.title.warnings', { n: ch.warnings.length }) } : n > 1 ? { body: t('mediafiles.showReleases.forMany', { n, noun }) } : undefined);
+			toasts.push(t('mediafiles.title.sent'), 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? serverWords(ch.warnings[0]) : t('mediafiles.title.warnings', { n: ch.warnings.length }) } : n > 1 ? { body: t('mediafiles.showReleases.forMany', { n, noun }) } : undefined);
 			onchange();
 			await load();
 		} catch (e) {
@@ -172,14 +173,14 @@
 					<div class="xs muted">{facts(r, bytes)}{r.episode ? ` · ${r.episode}` : ''}{music && r.slot_ids?.length ? ` · ${unit('track', r.slot_ids.length)}` : ''}{r.version && r.version !== 'Main' ? ` · ${r.version}` : ''}</div>
 					{#if key.length}
 						<ul class="reasons">
-							{#each key as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
+							{#each key as x, i (i)}<li class={x.effect}>{serverWords(x.text)}</li>{/each}
 						</ul>
 					{/if}
 					{#if r.reasons.length}
 						<details>
 							<summary class="xs muted">{t('mediafiles.showReleases.allReasons', { n: r.reasons.length })}</summary>
 							<ul class="reasons">
-								{#each r.reasons as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
+								{#each r.reasons as x, i (i)}<li class={x.effect}>{serverWords(x.text)}</li>{/each}
 							</ul>
 						</details>
 					{/if}
@@ -213,7 +214,7 @@
 		{#if warnings.length || forceReasons.length}
 			<ul class="warns" data-testid="choose-warnings">
 				{#each warnings as w (w)}<li>{w}</li>{/each}
-				{#each forceReasons as w (w)}<li>{t('mediafiles.showReleases.didNotPass', { why: w })}</li>{/each}
+				{#each forceReasons as w (w)}<li>{t('mediafiles.showReleases.didNotPass', { why: serverWords(w) })}</li>{/each}
 			</ul>
 		{/if}
 		{#if chooseError}<p class="form-error" role="alert">{chooseError}</p>{/if}

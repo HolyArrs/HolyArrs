@@ -18,7 +18,7 @@ describe('placed', () => {
 			Plan: [{ source_file: 'a.mkv', target_path: 'C:\\media\\movies\\Se7en (1995)\\Se7en (1995) 1080p.mkv' }],
 			Result: [{ source_file: 'a.mkv', outcome: 'placed', placed_by: 'hardlink' }]
 		});
-		expect(placed(r)).toEqual({ how: 'Placed by hardlink', where: 'Se7en (1995)' });
+		expect(placed(r)).toEqual({ how: 'Added to the Library (no extra space used)', where: 'Se7en (1995)' });
 	});
 	it('counts the files of a partly done import, leaving out skipped ones', () => {
 		const r = im(5, 12, 'partly_done', {
@@ -28,7 +28,7 @@ describe('placed', () => {
 				{ source_file: 'c', outcome: 'skipped', placed_by: 'none' }
 			]
 		});
-		expect(placed(r)?.how).toBe('1 of 2 files placed by copying');
+		expect(placed(r)?.how).toBe('1 of 2 files added to the Library');
 	});
 	it('is null when nothing was placed', () => {
 		expect(placed(im(1, 8, 'failed', { Result: [{ source_file: 'a', outcome: 'skipped' }] }))).toBeNull();
@@ -58,6 +58,7 @@ describe('failReason and statusDetail', () => {
 		expect(statusDetail({ phase: 'done', state: 'finished', progress: 1 }, im(2, 9, 'done'))).toBe('');
 		expect(statusDetail({ phase: 'vanished', state: 'vanished', progress: 0 }, undefined)).toBe('removed outside HolyArrs');
 		expect(statusDetail({ phase: 'import_refused', state: 'finished', progress: 1 }, undefined)).toBe('the files did not match');
+		expect(statusDetail({ phase: 'import_refused', state: 'finished', progress: 1, refused_why: 'the file is 50 MB, too small to be the full video; likely a fake' }, undefined)).toBe('the file is 50 MB, too small to be the full video; likely a fake');
 		expect(statusDetail({ phase: 'done', state: 'seeding', progress: 1, ratio: 1.5 }, undefined)).toBe('ratio 1.50');
 	});
 });

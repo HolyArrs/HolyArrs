@@ -87,6 +87,12 @@ type Explore struct {
 	Paced *engine.Paced
 	// Cards is the wide card art filler (cardart.go).
 	Cards CardArt
+	// LookupsOff says the owner turned lookups off (nil: never), so lists
+	// come only from what is kept.
+	LookupsOff func() bool
+
+	// hold is the wait while the metadata server is not answering.
+	hold serverHold
 
 	mu      sync.Mutex
 	due     map[PoolKey]time.Time

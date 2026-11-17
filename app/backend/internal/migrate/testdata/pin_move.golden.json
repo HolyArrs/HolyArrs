@@ -18,7 +18,11 @@
     "people": {
       "s": "s"
     },
-    "approved_hash": "s"
+    "approved_hash": "s",
+    "no_formats": true,
+    "leave_folders": [
+      "s"
+    ]
   },
   "state": "s",
   "job_id": 7,
@@ -38,7 +42,9 @@
         "result": "s",
         "detail": "s",
         "needs": "s",
-        "choose": "s"
+        "choose": "s",
+        "attention": "s",
+        "folder": "s"
       }
     ],
     "counts": {

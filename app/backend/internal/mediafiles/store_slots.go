@@ -71,3 +71,29 @@ func actorJSON(a database.Actor) string {
 	b, _ := json.Marshal(a)
 	return string(b)
 }
+
+// ClearSlotDownloadTx unties a Slot from its download: the download is let go.
+func ClearSlotDownloadTx(tx *sql.Tx, slotID int64) error {
+	_, err := tx.Exec("UPDATE slots SET active_download_id = NULL WHERE id = ?", slotID)
+	return err
+}
+
+// FollowedDownloads lists the downloads a Slot still follows: downloading,
+// stalled, importing or waiting on a decision. Such a download is not over.
+func FollowedDownloads(ctx context.Context, q database.Lister) (map[int64]bool, error) {
+	rows, err := q.QueryContext(ctx, `SELECT DISTINCT active_download_id FROM slots WHERE active_download_id IS NOT NULL
+		AND state IN ('downloading', 'stalled', 'importing', 'needs_a_decision')`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[int64]bool{}
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out[id] = true
+	}
+	return out, rows.Err()
+}

@@ -293,7 +293,7 @@
 		{:else}
 		{#if hero.length}
 			{@const h = live(hero[heroAt % hero.length])}
-			<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} vtName={h.vtName} subtitle={h.year ? (h.kind === 'show' ? t('discover.popular.yearShow', { year: h.year }) : t('discover.popular.yearMovie', { year: h.year })) : h.subtitle} settled={loaded}>
+			<ExploreHero kind={h.kind === 'show' ? 'show' : 'movie'} tmdb={cardTmdb(h)} title={h.name} href={cardHref(h)} backdrop={h.wide ?? h.image} poster={h.image} vtName={h.vtName} subtitle={h.year ? (h.kind === 'show' ? t('discover.popular.yearShow', { year: h.year }) : t('discover.popular.yearMovie', { year: h.year })) : h.subtitle} settled={loaded}>
 				{#snippet action()}{@render hoverAction(h, cardAction(h, { manage, ask: mayAsk }), null)}{/snippet}
 				{#snippet badge()}
 					{@const why = heroWhy(h)}
@@ -364,14 +364,13 @@
 	.np { container: explore / inline-size; --title-item: max(200px, calc((100vw - 96px) / 5.16)); --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
 	.types-mark { height: 0; margin-top: -32px; }
 	.types { position: sticky; top: calc(var(--topbar) + 10px); z-index: 20; display: flex; justify-content: center; margin-top: -12px; pointer-events: none; }
-	.types :global(.ui-seg) { pointer-events: auto; border-radius: 999px; padding: 3px; transition: transform var(--bar-glide), box-shadow var(--bar-glide), background-color var(--bar-glide); transform-origin: top center; }
+	.types :global(.ui-seg) { pointer-events: auto; transition: transform var(--bar-glide), box-shadow var(--bar-glide), background-color var(--bar-glide); transform-origin: top center; }
 	.types.stuck :global(.ui-seg) { transform: scale(0.9); background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	/* Scaled to 0.9 while stuck: the segments' hit area grows to stay 44px on touch phones. */
 	.types.stuck { --seg-hit: 49px; }
-	.types :global(.ui-seg .thumb) { top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 999px; }
-	.types :global(.ui-seg button) { min-height: 38px; padding: 0 16px; border-radius: 999px; font-size: 14px; }
 	@media (prefers-reduced-motion: reduce) { .types :global(.ui-seg), .types :global(.ui-seg .thumb) { transition: none; } }
-	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 8px; } }
+	/* Phones: the shared control's 13px type, so long words (Hungarian) are not cut. */
+	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 8px; font-size: 13px; } }
 	/* Phones: the words win, the glyphs step aside, so no label is clipped. */
 	@media (min-width: 360px) and (max-width: 479px) { .types :global(.ui-seg button svg) { display: none; } }
 	.row-wrap { display: contents; }
@@ -380,15 +379,15 @@
 	.chips::-webkit-scrollbar { display: none; }
 	.chips :global(.ui-chip) { flex: none; }
 	.logo-wrap { position: relative; }
-	.svc-logo { position: absolute; top: 8px; left: 8px; width: 28px; height: 28px; border-radius: 7px; object-fit: cover; box-shadow: 0 2px 8px rgb(0 0 0 / 0.35); pointer-events: none; z-index: 2; }
+	.svc-logo { position: absolute; top: 8px; inset-inline-start: 8px; width: 28px; height: 28px; border-radius: 7px; object-fit: cover; box-shadow: 0 2px 8px rgb(0 0 0 / 0.35); pointer-events: none; z-index: 2; }
 	.ranked { position: relative; container-type: inline-size; }
-	.rank { position: absolute; left: 0; top: 0; width: 37%; height: 102cqw; display: flex; align-items: flex-end; justify-content: flex-end; font-size: 50cqw; font-weight: 800; line-height: 0.76; letter-spacing: -0.06em; color: var(--bg, #000); -webkit-text-stroke: 3px var(--text-muted); paint-order: stroke; user-select: none; z-index: 0; }
+	.rank { position: absolute; inset-inline-start: 0; top: 0; width: 37%; height: 102cqw; display: flex; align-items: flex-end; justify-content: flex-end; font-size: 50cqw; font-weight: 800; line-height: 0.76; letter-spacing: -0.06em; color: var(--bg, #000); -webkit-text-stroke: 3px var(--text-muted); paint-order: stroke; user-select: none; z-index: 0; }
 	.rank.two { font-size: 36cqw; letter-spacing: -0.12em; }
-	.pc { position: relative; z-index: 1; margin-left: 32%; width: 68%; min-width: 0; }
+	.pc { position: relative; z-index: 1; margin-inline-start: 32%; width: 68%; min-width: 0; }
 	.sentinel { height: 1px; }
 	/* Ghost cards while a chip's list loads, the same size as the cards they stand for. */
 	.ghost { display: flex; flex-direction: column; gap: 8px; }
-	.ghost.pc-ghost { margin-left: 32%; width: 68%; }
+	.ghost.pc-ghost { margin-inline-start: 32%; width: 68%; }
 	/* The rail's cards are as wide as a Top 10 card. */
 	.np { --rail-item: calc(var(--explore-item) / 0.68); }
 	/* Hero badges (as on Explore): small glass pills, the chart one in the brand red. */

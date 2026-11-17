@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 	"unicode"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -132,16 +131,28 @@ func ssoText(s string, limit int) bool {
 
 // linkSessionFreshTx re-reads, inside the write that makes a link, the session
 // that asked for it: still there (a password change or reset deletes it), the
-// person active, signed in with the local password under 10 minutes ago, and
-// within the idle and absolute limits. Otherwise errNotAllowed.
+// person active, signed in with the local password under 10 minutes ago (or,
+// for a person with no password, with Plex, Jellyfin or Emby under 10 minutes
+// ago, as RecentLocal allows), and within the idle and absolute limits.
+// Otherwise errNotAllowed.
 func (a *Auth) linkSessionFreshTx(tx *sql.Tx, proof ssoLinkProof) error {
-	local, method, created, seen, expires, err := sessionProof(context.Background(), tx, proof.hash, proof.family, proof.userID)
+	ctx := context.Background()
+	local, method, created, seen, expires, err := sessionProof(ctx, tx, proof.hash, proof.family, proof.userID)
 	if err != nil {
 		return errNotAllowed
 	}
 	now, authenticated := a.now(), parseTime(local)
-	if (method != AuthMethodLocalPassword && method != AuthMethodLocalSetup) ||
-		authenticated.IsZero() || authenticated.After(now) || now.Sub(authenticated) >= 10*time.Minute ||
+	switch method {
+	case AuthMethodLocalPassword, AuthMethodLocalSetup:
+	case ProviderPlex, ProviderJellyfin, ProviderEmby:
+		if has, err := hasPassword(ctx, tx, proof.userID); err != nil || has {
+			return errNotAllowed
+		}
+		authenticated = parseTime(created)
+	default:
+		return errNotAllowed
+	}
+	if authenticated.IsZero() || authenticated.After(now) || now.Sub(authenticated) >= localRecentFor ||
 		!now.Before(parseTime(expires)) || now.Sub(parseTime(seen)) >= IdleTimeout || now.Sub(parseTime(created)) >= AbsoluteTimeout {
 		return errNotAllowed
 	}

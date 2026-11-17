@@ -21,7 +21,7 @@
 	import '#lib/ui/title-page.css';
 	import { RenamePreview, ShowDeleteDialog, ShowReleases, CopyControls, artName, crumbFor, qualityBadges, slotKind, type ReleaseScope } from '../mediafiles/index.ts';
 	import { SubtitlePanel } from '../subtitles/index.ts';
-	import { groupDownloads, HistoryLine as CompactRow, isRoutine } from '../downloads/index.ts';
+	import { groupDownloads, HistoryLine as CompactRow, isRoutine, NoDownloaderNote } from '../downloads/index.ts';
 	import ShowVersions from './ShowVersions.svelte';
 	import EpisodeList, { type EpisodeRow } from './EpisodeList.svelte';
 	import SeasonPicker from './SeasonPicker.svelte';
@@ -42,6 +42,7 @@
 		seasonWords,
 		searchWord,
 		showProgress,
+		packWindowValue,
 	} from './labels.ts';
 	import type { AskShowSheet } from './types.ts';
 	import { tick } from 'svelte';
@@ -97,6 +98,8 @@
 	let eRules = $state(0);
 	let eOrder = $state('aired');
 	let eNew = $state('all');
+	// Season packs: 0 gets the whole season, 1 to 10 that many episodes ahead.
+	let ePack = $state(0);
 	let eSource = $state('tmdb');
 	let editError = $state('');
 	let saving = $state(false);
@@ -386,6 +389,7 @@
 		eRules = title.pick_rules_id ?? 0;
 		eOrder = show?.episode_order ?? 'aired';
 		eNew = show?.new_seasons ?? 'all';
+		ePack = show?.pack_window ?? 0;
 		eSource = show?.details_source ?? 'tmdb';
 		editDialog?.showModal();
 		if (!rules.length) {
@@ -403,7 +407,7 @@
 		saving = true;
 		editError = '';
 		try {
-			const body: Record<string, unknown> = { episode_order: eOrder, new_seasons: eNew, details_source: eSource };
+			const body: Record<string, unknown> = { episode_order: eOrder, new_seasons: eNew, pack_window: packWindowValue(ePack), details_source: eSource };
 			if (eRules) body.pick_rules_id = eRules;
 			onchange((await api.put<{ title: TitleView }>(`/titles/${title.id}`, body)).title);
 			editDialog?.close();
@@ -510,10 +514,10 @@
 					{#snippet after(i: number)}
 						{@const ep = eps[i]}
 						{@const why = staff ? episodeWhy(ep, s.keep_up_to_date, title.keep_up_to_date) : ''}
-						{#if why && why !== off}<p class="xs muted ep-why" data-testid="episode-why">{why}</p>{/if}
+						{#if why && why !== off}<p class="xs muted ep-why" data-testid="episode-why">{serverWords(why)}</p>{/if}
 						{#if staff}
 							{#each ep.slots.filter((x) => x.reason && ep.slots.length > 1) as sl (sl.id)}
-								<p class="xs muted ep-why">{sl.version}: {sl.reason}</p>
+								<p class="xs muted ep-why">{sl.version}: {serverWords(sl.reason)}</p>
 							{/each}
 						{/if}
 					{/snippet}
@@ -582,12 +586,14 @@
 					<dd>{label(seasonChoices, show.season_choice)}</dd>{/if}
 				<dt>{t('shows.page.newSeasons')}</dt>
 				<dd>{show?.new_seasons === 'none' ? t('shows.page.leftOff') : t('shows.page.keptUp')}</dd>
+				<dt>{t('shows.page.seasonPacks')}</dt>
+				<dd>{show?.pack_window === 1 ? t('shows.page.packOneAtATime') : show?.pack_window ? t('shows.page.packAtATime', { n: show.pack_window }) : t('shows.page.packWholeShort')}</dd>
 				{#if title.pick_rules_name}<dt>{t('shows.page.pickRules')}</dt>
 					<dd>{title.pick_rules_name}</dd>{/if}
 				{#if title.refreshed_at}<dt>{t('shows.page.refreshed')}</dt>
 					<dd>{date(title.refreshed_at)}</dd>{/if}
 			</dl>
-			<p class="tp-why" data-testid="gate-reason">{title.gate_reason}</p>
+			<p class="tp-why" data-testid="gate-reason">{title.gate_reason}</p><NoDownloaderNote kind={title.no_downloader} manage={staff} />
 			{#if title.folder_path}<details class="tp-details"><summary>{t('shows.versions.details')}</summary><ul><li>{t('shows.page.folder', { path: shortFolder(title.folder_path) })}</li></ul></details>{/if}
 		</TitleSection>
 		<TitleSection id="h-show-history" title={t('shows.tools.history')} testid="title-history">
@@ -656,6 +662,19 @@
 			</select>
 		</div>
 		<div class="field">
+			<label for="e-pack">{t('shows.page.seasonPacks')}</label>
+			<select id="e-pack" class="input" value={ePack > 0 ? 'few' : 'whole'} onchange={(e) => (ePack = e.currentTarget.value === 'few' ? 2 : 0)}>
+				<option value="whole">{t('shows.page.packWhole')}</option>
+				<option value="few">{t('shows.page.packFew')}</option>
+			</select>
+			{#if ePack > 0}
+				<label class="pack-ahead" for="e-pack-n">{t('shows.page.packAhead')}
+					<input id="e-pack-n" class="input" type="number" inputmode="numeric" min="1" max="10" bind:value={ePack} />
+				</label>
+				<span class="hint">{t('shows.page.packHint', { n: packWindowValue(ePack) })}</span>
+			{/if}
+		</div>
+		<div class="field">
 			<label for="e-source">{t('shows.page.detailsFrom')}</label>
 			<select id="e-source" class="input" bind:value={eSource}>
 				{#each detailsSources as [v, l] (v)}<option value={v}>{l}</option>{/each}
@@ -680,4 +699,6 @@
 	.modal::backdrop { background: var(--scrim); }
 	.modal-actions { justify-content: flex-end; margin-top: var(--s-6); }
 	.hist { display: grid; gap: 2px; }
+	.pack-ahead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: var(--s-2); }
+	.pack-ahead .input { width: 88px; }
 </style>

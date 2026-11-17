@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"math/rand/v2"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -53,6 +54,7 @@ type Sync struct {
 
 	cursors Cursors
 	sabs    SabCursors
+	rts     rtCursors
 	persist *persister
 	bucket  bucket
 	started atomic.Bool
@@ -493,6 +495,23 @@ func (s *Sync) active(ctx context.Context, id int64) int {
 	return n
 }
 
+// following lists the ids of the client's active HolyArrs Downloads.
+func (s *Sync) following(ctx context.Context, id int64) []string {
+	rows, err := s.DB.Read().QueryContext(ctx, "SELECT external_id FROM downloads WHERE downloader_id = ? AND state IN ("+activeStates+") AND external_id <> ''", id)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var x string
+		if rows.Scan(&x) == nil {
+			out = append(out, x)
+		}
+	}
+	return out
+}
+
 // cadence returns the client's read interval for its current load.
 func (s *Sync) cadence(d domain.Downloader, n int) time.Duration {
 	snap := s.Store.Current(d.ID)
@@ -542,13 +561,17 @@ func (s *Sync) read(ctx context.Context, d domain.Downloader) error {
 		if s.SABOutside(ctx) {
 			scope = ""
 		} else {
-			jobs = inCategory(jobs, d.Category)
+			jobs = inCategory(jobs, d.Categories())
 		}
+	case d.Adapter == "rtorrent":
+		// Only what is still downloading, between whole reads on the sweep and
+		// while the Downloads page is open.
+		jobs, err = s.rts.poll(cctx, d.ID, gen, e, d.Categories(), s.following(ctx, d.ID), s.Store.Viewer(), s.now())
 	case d.Protocol == "usenet" && s.SABOutside(ctx):
 		jobs, err = e.List(cctx, "")
 		scope = ""
 	default:
-		jobs, err = e.List(cctx, d.Category)
+		jobs, err = listCategories(cctx, e, d.Categories())
 	}
 	if ctx.Err() != nil && err != nil {
 		return err // stopping, so the client is not to blame
@@ -584,14 +607,14 @@ func isSab(e Engine) bool {
 	return ok
 }
 
-// inCategory keeps the jobs of one category. "" or "*" keeps all.
-func inCategory(jobs []Job, cat string) []Job {
-	if cat == "" || cat == "*" {
+// inCategory keeps the jobs in one of cats. "" or "*" among them keeps all.
+func inCategory(jobs []Job, cats []string) []Job {
+	if len(cats) == 0 || slices.Contains(cats, "") || slices.Contains(cats, "*") {
 		return jobs
 	}
 	out := jobs[:0:0]
 	for _, j := range jobs {
-		if j.Category == cat {
+		if hasCategory(cats, j.Category) {
 			out = append(out, j)
 		}
 	}

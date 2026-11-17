@@ -1,5 +1,6 @@
 // Rewrites TMDB picture addresses to the cached, right-sized copy served by the app.
 import { to } from './paths.ts';
+import { minimalLook } from './look.svelte.ts';
 
 // Strict form: https only, used when we pick the size ourselves.
 const tmdb = /^https:\/\/image\.tmdb\.org\/t\/p\/(?:w\d+|original)\/([A-Za-z0-9_-]+\.(?:jpg|png|webp))$/;
@@ -58,7 +59,7 @@ export function fitTile(url: string, css: number, person: boolean, ratio = globa
 
 // Starts the hero fetch early at high priority so it is cached when the page paints.
 export function preloadHero(backdrop: string | null | undefined): void {
-	if (!backdrop || typeof window === 'undefined') return;
+	if (!backdrop || typeof window === 'undefined' || minimalLook()) return;
 	const url = sharpen(sized(backdrop, 'backdrop'), window.innerWidth);
 	if (!url || warmed.has(url)) return;
 	warmed.add(url);

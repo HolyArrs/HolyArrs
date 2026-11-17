@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Žurnāli",
+	"settings.logs.download": "Lejupielādēt",
+	"settings.logs.filter": "Filtrēt žurnālu",
+	"settings.logs.level": "Līmenis",
+	"settings.logs.every": "Katra rinda",
+	"settings.logs.warnings": "Brīdinājumi un kļūdas",
+	"settings.logs.errors": "Tikai kļūdas",
+	"settings.logs.text": "Teksts",
+	"settings.logs.example": "piem., qBittorrent",
+	"settings.logs.from": "No",
+	"settings.logs.to": "Līdz",
+	"settings.logs.apply": "Lietot",
+	"settings.logs.clear": "Notīrīt",
+	"settings.logs.lines": "Rindas",
+	"settings.logs.newer": "Jaunāki",
+	"settings.logs.older": "Vecāki"
+}

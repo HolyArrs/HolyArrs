@@ -81,5 +81,5 @@
 	"settings.naming.holding": "Holding folder",
 	"settings.naming.clearOld": "Clear old Held files",
 	"settings.naming.clearOldHint": "Runs by itself every day",
-	"settings.naming.clearNow": "Clear now"
+	"settings.naming.clearNow": "Clear"
 }

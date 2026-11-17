@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
@@ -91,11 +92,20 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 			return
 		}
 		if a.strictLocal(r) {
-			if id, name, ok := a.owner(r.Context()); ok {
-				if unsafeMethod(r.Method) && a.refuse(w, r, true) {
-					return
+			// The picked person, with their own role and limits; nobody
+			// (sign in) when they are gone or a guard holds.
+			if who, _, ok := a.localCaller(r.Context()); ok {
+				csrf, had := a.localToken(w, r)
+				if unsafeMethod(r.Method) {
+					if a.refuse(w, r, true) {
+						return
+					}
+					if !had || subtle.ConstantTimeCompare([]byte(r.Header.Get(CSRFHeader)), []byte(csrf)) != 1 {
+						fail(w, http.StatusForbidden, "missing or wrong CSRF token")
+						return
+					}
 				}
-				who := webserver.Caller{UserID: id, Name: name, Via: "local_network", Role: webserver.RoleOwner, Perms: webserver.DefaultPerms(webserver.RoleOwner)}
+				who.CSRF = csrf
 				next.ServeHTTP(w, r.WithContext(webserver.ContextWith(r.Context(), who)))
 				return
 			}
@@ -152,6 +162,13 @@ func (a *Auth) trustedProxy(ip net.IP) bool {
 			return true
 		}
 	}
+	if saved := a.savedProxies.Load(); saved != nil {
+		for _, n := range saved.nets {
+			if n.Contains(ip) {
+				return true
+			}
+		}
+	}
 	return false
 }
 
@@ -172,8 +189,13 @@ func (a *Auth) localPeer(r *http.Request) bool {
 // proxy warning saw; a proxy that never sends any forwarding header and is
 // not listed cannot be told apart from a home device, which is why the
 // Settings card asks the owner to list it.
+//
+// The container's own gateway is the exception to that memory: on a Docker
+// bridge every home device arrives as the gateway, so one device sending a
+// forwarding header would end the skip for the whole household. There only
+// the request that carries the header is refused.
 func (a *Auth) strictLocal(r *http.Request) bool {
-	if !a.skipLocal.Load() || !a.hostAllowed(r) {
+	if !a.skipLocal.Load() || r.Header.Get(outbound.SelfCallHeader) != "" || !a.hostAllowed(r) {
 		return false
 	}
 	if h := normHost(r.Host); net.ParseIP(h) == nil && !homeName(h) {
@@ -185,10 +207,17 @@ func (a *Auth) strictLocal(r *http.Request) bool {
 			a.warnUntrustedProxy(ip)
 			return false
 		}
-	} else if ip == nil || a.trustedProxy(ip) || a.seenProxy(ip) {
+		return a.localPeer(r)
+	}
+	if ip == nil || a.trustedProxy(ip) {
 		return false
 	}
-	return a.localPeer(r)
+	// The container's own gateway is how LAN visits arrive on a Docker
+	// bridge; it counts while the skip is on (local_gateway.go).
+	if ownGateway(ip) {
+		return true
+	}
+	return !a.seenProxy(ip) && a.isLocal(ip.String())
 }
 
 // anyForwardHeader says whether the request carries any proxy forwarding header.

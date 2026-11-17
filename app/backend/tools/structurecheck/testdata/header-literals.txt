@@ -27,6 +27,8 @@ Referrer-Policy
 Remote-Name
 Remote-User
 Retry-After
+SOAPAction
+Sec-Fetch-Site
 Server
 Server-Timing
 Title
@@ -44,6 +46,7 @@ X-Forwarded-For
 X-Forwarded-Proto
 X-Goog-Visitor-Id
 X-Gotify-Key
+X-HolyArrs-Language
 X-MediaBrowser-Token
 X-Metadata-Placeholder
 X-Plex-Client-Identifier

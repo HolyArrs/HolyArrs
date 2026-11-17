@@ -4,7 +4,7 @@ import type { DownloadRow } from '../core/types.ts';
 
 export type Stage = 'checking' | 'queued' | 'paused' | 'downloading' | 'stalled' | 'importing' | 'done' | 'seeding' | 'failed' | 'decide';
 
-type RowBits = Pick<DownloadRow, 'phase' | 'state' | 'progress'> & { replaced?: boolean; client_hint?: DownloadRow['client_hint'] };
+type RowBits = Pick<DownloadRow, 'phase' | 'state' | 'progress'> & { replaced?: boolean; client_hint?: DownloadRow['client_hint']; pack?: DownloadRow['pack'] };
 
 export type TabKey = 'active' | 'waiting' | 'progress' | 'done' | 'problems';
 
@@ -139,6 +139,47 @@ export function counts(rows: RowBits[], tabs: Tab[]): Counted[] {
 	return out;
 }
 
+/** Torrents a view answer left out, per Downloader id: its protocol and how many per stage (its outside_rest). */
+export type Rest = Record<string, { protocol?: string; stages?: Partial<Record<Stage, number>> }>;
+
+/** The left-out torrents of every Downloader, per stage; with src only those of that protocol. */
+export function restSum(rest: Rest, src = ''): Partial<Record<Stage, number>> {
+	const out: Partial<Record<Stage, number>> = {};
+	for (const e of Object.values(rest)) {
+		if (src && e.protocol !== src) continue;
+		for (const [s, n] of Object.entries(e.stages ?? {}) as [Stage, number][]) out[s] = (out[s] ?? 0) + n;
+	}
+	return out;
+}
+
+/** How many torrents were left out in all. */
+export function restTotal(extra: Partial<Record<Stage, number>>): number {
+	return Object.values(extra).reduce((a, n) => a + (n ?? 0), 0);
+}
+
+/** Counts of the loaded rows plus the left-out torrents on each tab's (or sub-tab's) stages. */
+export function withRest(c: Counted[], groups: { key: string; stages: Stage[] }[], extra: Partial<Record<Stage, number>>): Counted[] {
+	return c.map((x) => {
+		const g = groups.find((y) => y.key === x.key);
+		return g ? { ...x, count: x.count + g.stages.reduce((a, s) => a + (extra[s] ?? 0), 0) } : x;
+	});
+}
+
+/** What the page says about torrents it has not loaded, for the source filter on (src) and whether another filter is on (partial). */
+export function moreOf(o: { rest: Rest; src: '' | 'usenet' | 'torrent'; partial: boolean; loaded: number; canMore: boolean }) {
+	const left = restSum(o.rest, o.src);
+	const n = restTotal(left);
+	return {
+		// Added to tab counts; another filter can only be checked against loaded rows.
+		extra: o.partial ? {} : left,
+		left: n,
+		loaded: o.loaded,
+		total: o.loaded + n,
+		more: n > 0 && o.canMore,
+		capped: n > 0 && !o.canMore
+	};
+}
+
 /** A tab's sub-tabs with their counts. */
 export function subCounts(rows: RowBits[], tab: Tab | undefined): Counted[] {
 	if (!tab) return [];
@@ -146,10 +187,24 @@ export function subCounts(rows: RowBits[], tab: Tab | undefined): Counted[] {
 	return tab.subs.map((s) => ({ key: s.key, label: s.label, count: stages.filter((x) => s.stages.includes(x)).length, hint: s.hint }));
 }
 
-/** The row's word in the status column; it follows the sub-tab words. A download removed outside HolyArrs, a failed copy already replaced, or a torrent the Downloader marks errored or missing its files reads accordingly. */
+/** True for a season pack that still has episodes it has not taken yet. */
+export function partialPack(r: Pick<RowBits, 'pack'>): boolean {
+	return !!r.pack && r.pack.taken < r.pack.total;
+}
+
+/** The chip for a season pack taken a few episodes at a time, or ''. */
+export function packLine(r: Pick<RowBits, 'pack'>): string {
+	const p = r.pack;
+	if (!p) return '';
+	return p.from === p.to ? t('downloads.pack.one', { from: p.from, taken: p.taken, total: p.total }) : t('downloads.pack.range', { from: p.from, to: p.to, taken: p.taken, total: p.total });
+}
+
+/** The row's word in the status column; it follows the sub-tab words. A download removed outside HolyArrs, a failed copy already replaced, or a torrent the Downloader marks errored or missing its files reads accordingly. A season pack whose taken episodes are in waits for the next ones. */
 export function statusWord(r: RowBits): string {
 	if (r.phase === 'failed' || r.phase === 'vanished') return t('downloads.status.failed');
-	switch (stageOf(r)) {
+	const stage = stageOf(r);
+	if ((stage === 'done' || stage === 'seeding') && partialPack(r)) return t('downloads.status.packWaiting');
+	switch (stage) {
 		case 'checking':
 			return r.client_hint === 'moving' ? t('downloads.status.moving') : t('downloads.status.checking');
 		case 'queued':
@@ -204,6 +259,7 @@ export function stepLine(r: Pick<RowBits, 'client_hint'>, detail: string): strin
 	if (detail.startsWith(t('downloads.detail.importFailed', { why: '' }).trimEnd())) return t('downloads.step.importFailed');
 	if (detail === t('downloads.detail.removed')) return t('downloads.step.removedOutside');
 	if (detail === t('downloads.detail.noMatch')) return t('downloads.step.noMatch');
+	if (detail === t('downloads.detail.filesGone')) return t('downloads.step.filesGone');
 	return detail ? detail.charAt(0).toUpperCase() + detail.slice(1) : '';
 }
 

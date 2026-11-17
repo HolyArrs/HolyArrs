@@ -6,6 +6,7 @@
 <script lang="ts">
 	// Corner marks for a card: ownership state and a freshness tag.
 	import Icon from './Icon.svelte';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { freshLabel, type Fresh } from './fresh.ts';
 
 	let { fresh = null, owned = null, size = 'md' }: { fresh?: Fresh | null; owned?: CardOwned | null; size?: 'sm' | 'md' } = $props();
@@ -39,7 +40,7 @@
 
 {#if fresh}
 	<span class="fresh {fresh.kind}" class:sm={size === 'sm'} role="img" aria-label={freshLabel(fresh)} title={freshLabel(fresh)} data-testid="card-fresh" data-kind={fresh.kind}>
-		<span aria-hidden="true">{fresh.text}</span>
+		<span aria-hidden="true">{serverWords(fresh.text)}</span>
 	</span>
 {/if}
 

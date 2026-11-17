@@ -8,6 +8,7 @@
 	import { bytes } from '#lib/core/format.ts';
 	import type { Choice, ReleasePage, ReleaseView } from '#lib/core/types.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 	let { open = $bindable(false), titleId, name, scope = null, onchosen }: { open?: boolean; titleId: number; name: string; scope?: { label: string; query: string; body: Record<string, unknown> } | null; onchosen?: () => void } = $props();
 
@@ -69,8 +70,11 @@
 		if (r.needs_force && confirmId !== r.id) return void (confirmId = r.id);
 		busyId = r.id;
 		try {
-			const ch = await api.post<Choice>(`/releases/${r.id}/choose`, { force: r.needs_force });
-			toasts.push(t('mediafiles.title.sent'), 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? ch.warnings[0] : t('mediafiles.title.warnings', { n: ch.warnings.length }) } : undefined);
+			// Send the Slot the sheet was opened for; with none, the server picks the Version whose rules the Release fits.
+			const body: Record<string, unknown> = { force: r.needs_force };
+			if (typeof scope?.body.slot_id === 'number') body.slot_id = scope.body.slot_id;
+			const ch = await api.post<Choice>(`/releases/${r.id}/choose`, body);
+			toasts.push(t('mediafiles.title.sent'), 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? serverWords(ch.warnings[0]) : t('mediafiles.title.warnings', { n: ch.warnings.length }) } : undefined);
 			open = false;
 			onchosen?.();
 		} catch (e) {
@@ -181,7 +185,7 @@
 								<span>{r.source_name}</span>
 								{#if r.published_at}<span>{age(r.published_at)}</span>{/if}
 							</p>
-							{#each why as w, i (i)}<p class="rs-why {w.effect}">{w.text}</p>{/each}
+							{#each why as w, i (i)}<p class="rs-why {w.effect}">{serverWords(w.text)}</p>{/each}
 						</div>
 						<div class="rs-act">
 							{#if r.state === 'chosen'}

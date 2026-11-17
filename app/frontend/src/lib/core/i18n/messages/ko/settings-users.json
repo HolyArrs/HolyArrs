@@ -100,5 +100,6 @@
 	"settings.users.note": "내가 볼 메모",
 	"settings.users.noteExample": "예: 엄마",
 	"settings.users.days": "링크 유효 기간 (일)",
-	"settings.users.makeInvite": "초대 링크 만들기"
+	"settings.users.makeInvite": "초대 링크 만들기",
+	"settings.users.permAuto4k": "기다리지 않고 4K 요청 승인"
 }

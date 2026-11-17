@@ -222,7 +222,7 @@
 	<form id="adopt-copy-form" class="sheet-form" onsubmit={adopt}>
 		<p class="small muted"><Words key="mediafiles.copy.adoptNote" vars={{ folder: shortFolder(adoptVersion?.folder_path) }} /></p>
 		{#if session.can('manage_library')}<details class="small muted"><summary>{t('mediafiles.copy.details')}</summary><span class="mono path">{adoptVersion?.folder_path}</span></details>{/if}
-		<div class="field"><label for="adopt-path">{t('mediafiles.copy.relativePath')}</label><input id="adopt-path" class="input" bind:value={adoptPath} required /></div>
+		<div class="field"><label for="adopt-path">{t('mediafiles.copy.relativePath')}</label><input id="adopt-path" class="input" dir="ltr" bind:value={adoptPath} required /></div>
 
 		{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 	</form>
@@ -248,12 +248,12 @@
 	.cc-row small.mono { font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace); }
 	.cc-row.act { cursor: pointer; }
 	.cc-row.act:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 4%, transparent); }
-	.cc-row.act:disabled { opacity: .55; cursor: default; }
+	.cc-row.act:disabled { opacity: var(--disabled-opacity); cursor: default; }
 	.cc-row :global(svg) { flex: none; color: var(--text-muted); }
 	.cc-check { display: inline-flex; align-items: center; gap: 7px; color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); cursor: pointer; }
 	.cc-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--text); }
 	.cc-btn { flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; }
-	.cc-btn:disabled { opacity: .45; cursor: default; }
+	.cc-btn:disabled { opacity: var(--disabled-opacity); cursor: default; }
 	/* Larger hit areas on touch screens. */
 	@media (pointer: coarse) { .cc-btn { height: 44px; } .cc-check input { width: 20px; height: 20px; } }
 	@media (max-width: 600px) { .cc-row { padding: 12px 16px; } }

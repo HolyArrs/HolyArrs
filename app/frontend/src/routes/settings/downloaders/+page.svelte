@@ -13,7 +13,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { emptyForm, formBody, formFrom, healthTone, kindWords, pendingAttempts, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
+	import { emptyForm, samePathPair, formBody, formFrom, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -48,8 +48,19 @@
 		remove_delete_files: true,
 		remove_turn_down: false,
 		remove_search_again: true,
-		downloads_auto_add: false
+		downloads_auto_add: false,
+		downloads_sab_outside: true
 	});
+	// The dead torrent rule shows its numbers only while on; off saves zeros.
+	// Kept open while on, so typing a 0 into one box does not hide the boxes mid-edit.
+	let deadOpen = $state(false);
+	const deadOn = $derived(deadOpen || deadRuleOn(settings));
+	function setDead(on: boolean) {
+		deadOpen = on;
+		settings.dead_metadata_minutes = on ? 30 : 0;
+		settings.crawl_kbps = on ? 10 : 0;
+		settings.crawl_hours = on ? 6 : 0;
+	}
 	let setBusy = $state(false);
 	let saved = $state('');
 	const dirty = $derived(!!saved && JSON.stringify(settings) !== saved);
@@ -135,7 +146,7 @@
 	}
 
 	function hasUsername(kind: DownloaderForm['kind']): boolean {
-		return kind === 'transmission' || kind === 'nzbget' || (kind === 'qbittorrent' && qbitWay === 'login');
+		return kind === 'transmission' || kind === 'nzbget' || kind === 'rtorrent' || (kind === 'qbittorrent' && qbitWay === 'login');
 	}
 
 	function addressPlaceholder(kind: DownloaderForm['kind']): string {
@@ -148,6 +159,10 @@
 				return 'http://192.168.1.10:6789';
 			case 'deluge':
 				return 'http://192.168.1.10:8112';
+			case 'rtorrent':
+				return 'http://192.168.1.10:8000/RPC2';
+			case 'aria2':
+				return 'http://192.168.1.10:6800/jsonrpc';
 			default:
 				return 'http://192.168.1.10:8090';
 		}
@@ -157,6 +172,8 @@
 		if (kind === 'sabnzbd') return t('settings.downloaders.catSab');
 		if (kind === 'transmission') return t('settings.downloaders.catTransmission');
 		if (kind === 'deluge') return t('settings.downloaders.catDeluge');
+		if (kind === 'rtorrent') return t('settings.downloaders.catRtorrent');
+		if (kind === 'aria2') return t('settings.downloaders.catAria2');
 		if (kind === 'nzbget') return t('settings.downloaders.catNzbget');
 		return t('settings.downloaders.catQbit');
 	}
@@ -238,7 +255,10 @@
 			...settings,
 			stalled_after_hours: Number(settings.stalled_after_hours),
 			stalled_act_hours: Number(settings.stalled_act_hours),
-			grab_spacing_seconds: Number(settings.grab_spacing_seconds)
+			grab_spacing_seconds: Number(settings.grab_spacing_seconds),
+			dead_metadata_minutes: Number(settings.dead_metadata_minutes) || 0,
+			crawl_kbps: Number(settings.crawl_kbps) || 0,
+			crawl_hours: Number(settings.crawl_hours) || 0
 		};
 		if (body.stalled_act_hours < body.stalled_after_hours) {
 			setError = t('settings.downloaders.actSooner');
@@ -287,9 +307,31 @@
 		<input id="dl-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
 	</Field>
 </div>
+<div class="two three">
+	<Field id="dl-cat-movies" label={t('settings.downloaders.categoryMovies')} hint={t('settings.downloaders.categoryKindHint')}>
+		<input id="dl-cat-movies" class="input" bind:value={form.category_movies} maxlength="64" aria-describedby="dl-cat-movies-hint" />
+	</Field>
+	<Field id="dl-cat-shows" label={t('settings.downloaders.categoryShows')} hint={t('settings.downloaders.categoryKindHint')}>
+		<input id="dl-cat-shows" class="input" bind:value={form.category_shows} maxlength="64" aria-describedby="dl-cat-shows-hint" />
+	</Field>
+	<Field id="dl-cat-music" label={t('settings.downloaders.categoryMusic')} hint={t('settings.downloaders.categoryKindHint')}>
+		<input id="dl-cat-music" class="input" bind:value={form.category_music} maxlength="64" aria-describedby="dl-cat-music-hint" />
+	</Field>
+</div>
 <Field id="dl-tags" label={t('settings.downloaders.tags')} hint={t('settings.downloaders.tagsHint')}>
 	<TagInput id="dl-tags" bind:value={form.tags} describedby="dl-tags-hint" testid="dl-tags" />
 </Field>
+{#if form.kind === 'qbittorrent'}
+	<Field id="dl-cat-after" label={t('settings.downloaders.categoryAfterImport')} hint={t('settings.downloaders.categoryAfterImportHint')}>
+		<input id="dl-cat-after" class="input" bind:value={form.category_after_import} maxlength="64" aria-describedby="dl-cat-after-hint" data-testid="dl-cat-after" />
+	</Field>
+{/if}
+{#if form.kind !== 'sabnzbd' && form.kind !== 'nzbget'}
+	<label class="checkline">
+		<input type="checkbox" bind:checked={form.own_only} data-testid="dl-own-only" />
+		<span><b>{t('settings.downloaders.ownOnly')}</b><br /><span class="hint">{t('settings.downloaders.ownOnlyHint')}</span></span>
+	</label>
+{/if}
 <details class="more" open={form.path_map.length > 0}>
 	<summary>{t('settings.downloaders.folderNames')}</summary>
 	<p class="hint">{t('settings.downloaders.folderNamesHint')}</p>
@@ -302,6 +344,7 @@
 				<input id="pm-ours-{i}" class="input mono" bind:value={p.ours} placeholder="/downloads" />
 			</Field>
 		</div>
+		{#if samePathPair(p)}<p class="hint" data-testid="pm-same-{i}">{t('settings.downloaders.samePair')}</p>{/if}
 	{/each}
 	<Button variant="plain" type="button" style="margin-top: var(--s-3)" onclick={() => form.path_map.push({ theirs: '', ours: '' })}>{t('settings.downloaders.addPair')}</Button>
 </details>
@@ -317,6 +360,8 @@
 						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'qbittorrent'} onchange={() => pickKind('qbittorrent')} /><span><b>qBittorrent</b> {t('settings.downloaders.torrents')}</span></label>
 						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'transmission'} onchange={() => pickKind('transmission')} /><span><b>Transmission</b> {t('settings.downloaders.torrents')}</span></label>
 						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'deluge'} onchange={() => pickKind('deluge')} /><span><b>Deluge</b> {t('settings.downloaders.torrents')}</span></label>
+						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'rtorrent'} onchange={() => pickKind('rtorrent')} /><span><b>rTorrent</b> {t('settings.downloaders.torrents')}</span></label>
+						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'aria2'} onchange={() => pickKind('aria2')} /><span><b>aria2</b> {t('settings.downloaders.torrents')}</span></label>
 						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'sabnzbd'} onchange={() => pickKind('sabnzbd')} /><span><b>SABnzbd</b> {t('settings.downloaders.usenet')}</span></label>
 						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'nzbget'} onchange={() => pickKind('nzbget')} /><span><b>NZBGet</b> {t('settings.downloaders.usenet')}</span></label>
 					</div>
@@ -350,13 +395,17 @@
 				</div>
 			{:else}
 				{@const key = form.kind === 'sabnzbd' || form.kind === 'qbittorrent'}
-				<Field id="dl-secret" label={key ? t('settings.downloaders.apiKeyLabel') : t('settings.downloaders.passwordLabel')}>
-					<input id="dl-secret" class="input" class:mono={key} type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew} data-testid="dl-secret" />
-					<span class="hint">{form.kind === 'sabnzbd' ? t('settings.downloaders.secretSab') : form.kind === 'qbittorrent' ? t('settings.downloaders.secretQbit') : t('settings.downloaders.secretDeluge')} {t('settings.downloaders.secretKept')}</span>
+				<Field id="dl-secret" label={key ? t('settings.downloaders.apiKeyLabel') : form.kind === 'aria2' ? t('settings.downloaders.secretTokenLabel') : t('settings.downloaders.passwordLabel')}>
+					<input id="dl-secret" class="input" class:mono={key} type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew && form.kind !== 'aria2'} data-testid="dl-secret" />
+					<span class="hint">{form.kind === 'sabnzbd' ? t('settings.downloaders.secretSab') : form.kind === 'qbittorrent' ? t('settings.downloaders.secretQbit') : form.kind === 'aria2' ? t('settings.downloaders.secretAria2') : t('settings.downloaders.secretDeluge')} {t('settings.downloaders.secretKept')}</span>
 				</Field>
 			{/if}
 			{#if form.kind === 'deluge'}
 				<p class="notice">{t('settings.downloaders.delugeNote')}</p>
+			{:else if form.kind === 'rtorrent'}
+				<p class="notice">{t('settings.downloaders.rtorrentNote')}</p>
+			{:else if form.kind === 'aria2'}
+				<p class="notice">{t('settings.downloaders.aria2Note')}</p>
 			{/if}
 			{#if form.kind === 'qbittorrent'}
 				<details class="more"><summary>{t('settings.downloaders.moreOptions')}</summary>{@render moreFields()}</details>
@@ -371,6 +420,35 @@
 				<input type="checkbox" bind:checked={form.writable} disabled={writableLocked} data-testid="dl-form-writable" />
 				<span><b>{t('settings.downloaders.writable')}</b><br /><span class="hint">{writableLocked ? t('settings.downloaders.writableLocked') : t('settings.downloaders.writableOff')}</span></span>
 			</label>
+			{#if seedingFields(form.kind) !== 'none'}
+				{@const goals = seedingFields(form.kind) === 'goals'}
+				{@const app = kindWords[form.kind]}
+				<fieldset class="defaults" data-testid="dl-after-seeding">
+					<legend>{t('settings.downloaders.afterSeeding')}</legend>
+					<label class="checkline" class:off={!form.writable}>
+						<input type="checkbox" bind:checked={form.seed_remove} disabled={!form.writable} data-testid="dl-seed-remove" />
+						<span><b>{t('settings.downloaders.seedRemove')}</b><br /><span class="hint">{!form.writable ? t('settings.downloaders.seedNeedsWritable') : goals ? t('settings.downloaders.seedRemoveHintGoal', { app }) : t('settings.downloaders.seedRemoveHint', { app })}</span></span>
+					</label>
+					{#if form.seed_remove && form.writable}
+						<div class="dead">
+							{#if goals}
+								<div class="two">
+									<Field id="dl-seed-ratio" label={t('settings.downloaders.seedRatio')} hint={t('settings.downloaders.seedRatioHint', { app })}>
+										<input id="dl-seed-ratio" class="input" type="number" min="0" step="any" inputmode="decimal" bind:value={form.seed_ratio} />
+									</Field>
+									<Field id="dl-seed-hours" label={t('settings.downloaders.seedHours')} hint={t('settings.downloaders.seedHoursHint')}>
+										<input id="dl-seed-hours" class="input" type="number" min="0" step="any" inputmode="decimal" bind:value={form.seed_hours} />
+									</Field>
+								</div>
+							{/if}
+							<label class="checkline">
+								<input type="checkbox" bind:checked={form.seed_delete_files} data-testid="dl-seed-delete" />
+								<span><b>{t('settings.downloaders.seedDelete')}</b><br /><span class="hint">{t('settings.downloaders.seedDeleteHint')}</span></span>
+							</label>
+						</div>
+					{/if}
+				</fieldset>
+			{/if}
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
 				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>{t('settings.downloaders.save')}</Button>
@@ -385,7 +463,7 @@
 {#if !loaded}
 	<SkSettings rows={1} />
 {:else if error && !listOk}
-	<LoadError hasData={false} message={error} onretry={load} />
+	<LoadError hasData={false} message={error} onretry={() => { load(); if (setLoadError) loadSettings(); }} />
 {:else if list.length === 0 && !editing}
 	<EmptyState icon="downloader" title={t('settings.downloaders.none')} text={t('settings.downloaders.noneText')} action={{ label: t('settings.downloaders.add'), onclick: startAdd, icon: 'plus' }} />
 {:else}
@@ -446,7 +524,9 @@
 {/if}
 
 {#if !saved}
-	{#if setLoadError}
+	{#if setLoadError && error && !listOk}
+		<!-- the list's error above already offers one retry for both -->
+	{:else if setLoadError}
 		<div class="settings"><LoadError hasData={false} message={setLoadError} onretry={loadSettings} busy={setLoading} /></div>
 	{:else}
 		<div class="settings"><SkSettings rows={2} /></div>
@@ -462,6 +542,10 @@
 		<label class="checkline">
 			<input id="auto-add" type="checkbox" bind:checked={settings.downloads_auto_add} />
 			<span><b>{t('settings.downloaders.autoAdd')}</b><br /><span class="hint">{t('settings.downloaders.autoAddHint')}</span></span>
+		</label>
+		<label class="checkline">
+			<input id="sab-outside" type="checkbox" bind:checked={settings.downloads_sab_outside} />
+			<span><b>{t('settings.downloaders.sabOutside')}</b><br /><span class="hint">{t('settings.downloaders.sabOutsideHint')}</span></span>
 		</label>
 		<fieldset class="defaults" id="remove-defaults" tabindex="-1">
 			<legend>{t('settings.downloaders.whenRemove')}</legend>
@@ -487,6 +571,26 @@
 					<input id="st-act" class="input" type="number" min="1" max="720" step="0.5" bind:value={settings.stalled_act_hours} />
 				</Field>
 			</div>
+			<label class="checkline">
+				<input id="dead-rule" type="checkbox" checked={deadOn} onchange={(e) => setDead(e.currentTarget.checked)} />
+				<span><b>{t('settings.downloaders.deadRule')}</b><br /><span class="hint">{t('settings.downloaders.deadRuleHint')}</span></span>
+			</label>
+			{#if deadOn}
+				<div class="dead">
+					<Field id="st-dead-min" label={t('settings.downloaders.deadMinutes')} hint={t('settings.downloaders.deadMinutesHint')}>
+						<input id="st-dead-min" class="input" type="number" min="0" max="1440" step="1" bind:value={settings.dead_metadata_minutes} aria-describedby="st-dead-min-hint" />
+					</Field>
+					<div class="two">
+						<Field id="st-crawl-kbps" label={t('settings.downloaders.crawlKbps')}>
+							<input id="st-crawl-kbps" class="input" type="number" min="0" max="100000" step="1" bind:value={settings.crawl_kbps} />
+						</Field>
+						<Field id="st-crawl-hours" label={t('settings.downloaders.crawlHours')}>
+							<input id="st-crawl-hours" class="input" type="number" min="0" max="168" step="1" bind:value={settings.crawl_hours} />
+						</Field>
+					</div>
+					<p class="hint">{t('settings.downloaders.crawlHint')}</p>
+				</div>
+			{/if}
 			<label class="checkline">
 				<input id="fail-programs" type="checkbox" bind:checked={settings.fail_dangerous} />
 				<span
@@ -542,6 +646,13 @@
 		text-transform: uppercase;
 	}
 	.defaults > legend + * { clear: both; }
+	.dead {
+		padding-block-end: var(--s-4);
+		padding-inline-start: var(--s-5);
+	}
+	@media (max-width: 600px) {
+		.dead { padding-inline-start: 0; }
+	}
 	.head {
 		display: flex;
 		align-items: center;
@@ -587,6 +698,9 @@
 	}
 	.two :global(.field + .field) {
 		margin-top: 0;
+	}
+	.three {
+		grid-template-columns: 1fr 1fr 1fr;
 	}
 	.group {
 		border: 0;

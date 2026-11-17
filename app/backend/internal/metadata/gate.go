@@ -52,6 +52,10 @@ type Gate struct {
 	// countryOff: the owner switched "Count this install" off (Settings,
 	// This app); every request then carries X-Country-Count: off.
 	countryOff atomic.Bool
+
+	// Modes is where details come from. Unless it is the metadata server,
+	// no request is sent: each answers ErrSourceOff here.
+	Modes *Modes
 }
 
 // CountryCountHeader tells the metadata server this install is not counted
@@ -194,6 +198,13 @@ func (g *Gate) refused(code int, retryAfter string) {
 
 func (g *Gate) RoundTrip(req *http.Request) (*http.Response, error) {
 	ahead := gateAhead(req)
+	if !g.Modes.Server() {
+		g.count(req, ahead, "off")
+		if req.Body != nil {
+			_ = req.Body.Close()
+		}
+		return nil, ErrSourceOff
+	}
 	t0 := time.Now()
 	held, err := g.take(req.Context(), ahead)
 	t1 := time.Now()
@@ -210,6 +221,14 @@ func (g *Gate) RoundTrip(req *http.Request) (*http.Response, error) {
 		body := fmt.Sprintf(`{"error":{"code":"client_held","retry_after_seconds":%d}}`, secs)
 		return &http.Response{Status: "429 Too Many Requests", StatusCode: http.StatusTooManyRequests, Proto: "HTTP/1.1", ProtoMajor: 1, ProtoMinor: 1,
 			Header: h, Body: io.NopCloser(strings.NewReader(body)), ContentLength: int64(len(body)), Request: req}, nil
+	}
+	// Asked again after the wait: the mode may have changed meanwhile.
+	if !g.Modes.Server() {
+		g.count(req, ahead, "off")
+		return nil, ErrSourceOff
+	}
+	if passed, ok := req.Context().Value(gatePassedKey{}).(func()); ok {
+		passed()
 	}
 	if g.countryOff.Load() {
 		req = req.Clone(req.Context())
@@ -228,6 +247,31 @@ func (g *Gate) RoundTrip(req *http.Request) (*http.Response, error) {
 		g.refused(resp.StatusCode, resp.Header.Get("Retry-After"))
 	}
 	return resp, nil
+}
+
+type gatePassedKey struct{}
+
+// afterGate limits one attempt (the request and the read of its answer) to
+// timeout, counted again from when the Gate lets the request go: waiting for
+// our own turn is not the server being slow. The wait at the Gate itself is
+// held to timeout too; without a Gate the clock simply runs from now. When
+// the time runs out, context.Cause of the returned context is
+// context.DeadlineExceeded.
+func afterGate(parent context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancelCause(parent)
+	clock := time.AfterFunc(timeout, func() { cancel(context.DeadlineExceeded) })
+	ctx = context.WithValue(ctx, gatePassedKey{}, func() { clock.Reset(timeout) })
+	return ctx, func() {
+		clock.Stop()
+		cancel(context.Canceled)
+	}
+}
+
+// timedOut reports whether an afterGate attempt ran out of its own time
+// while the caller still waited: the server was slow (or our own Gate held
+// the request), which is not the server being down.
+func timedOut(caller, attempt context.Context) bool {
+	return caller.Err() == nil && context.Cause(attempt) == context.DeadlineExceeded
 }
 
 // EnvCountRequests turns on a debug-only counter of the requests to the

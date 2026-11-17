@@ -29,4 +29,24 @@ describe('problem', () => {
 	it('says import blocked when the files did not match', () => {
 		expect(problem(row({ phase: 'import_refused', state: 'failed' }))).toEqual({ text: 'import blocked', tone: 'fail' });
 	});
+	it('says nothing about copies or peers for a season pack taken a few episodes at a time', () => {
+		const pack = { from: 1, to: 2, taken: 2, total: 9 };
+		expect(problem(row({ protocol: 'torrent', availability: 0.4, pack }))).toBeNull();
+		expect(problem(row({ protocol: 'torrent', phase: 'stalled', state: 'stalled', seeds: 0, peers: 0, pack }))).toBeNull();
+		expect(problem(row({ protocol: 'torrent', tracker_problem: 'error', pack }))?.text).toBe('tracker error');
+	});
+});
+
+describe('problem words', () => {
+	it('gives every problem a message key in every language', async () => {
+		const { readdirSync, readFileSync } = await import('node:fs');
+		const { PROBLEM_KEY } = await import('./problem.ts');
+		const src = readFileSync('src/lib/downloads/problem.ts', 'utf8');
+		const texts = [...src.matchAll(/text: '([^']+)'/g)].map((m) => m[1]);
+		const dir = 'src/lib/core/i18n/messages';
+		for (const l of readdirSync(dir)) {
+			const words = JSON.parse(readFileSync(`${dir}/${l}/downloads.json`, 'utf8'));
+			for (const t of texts) expect(typeof words[PROBLEM_KEY[t]], `${l} ${t}`).toBe('string');
+		}
+	});
 });

@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs stopt.",
+	"settings.danger.couldnt": "Kon niet {action}",
+	"settings.danger.title": "Gevarenzone",
+	"settings.danger.ownerOnly": "Alleen eigenaar en beheerders",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Ja, {action}",
+	"settings.danger.cancel": "Annuleren",
+	"settings.danger.expires": "Verloopt over 60 s",
+	"settings.danger.wholeApp": "De hele app",
+	"settings.danger.intro": "Hiermee stopt HolyArrs. Het herstartbeleid van Docker start de app na een paar seconden weer, tenzij het beleid <code>no</code> is; start de container dan zelf. Bij elke actie wordt eerst om bevestiging gevraagd.",
+	"settings.danger.restart": "HolyArrs herstarten",
+	"settings.danger.safe": "Herstarten in veilige modus",
+	"settings.danger.shutdown": "Afsluiten",
+	"settings.danger.safeNote": "Start één keer met alleen aanmelden, Instellingen en Bibliotheek. Gebruik dit als een Onderdeel het opstarten blokkeert."
+}

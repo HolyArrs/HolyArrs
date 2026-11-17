@@ -210,6 +210,37 @@ func TestClearFinishedNeverDeletesAFolderNamedOtherwise(t *testing.T) {
 	}
 }
 
+// A job folder in a Library folder, or one that holds a Library folder, is
+// never deleted (the same rule a torrent's files follow); the job still
+// leaves the Downloader.
+func TestClearFinishedNeverDeletesInOrAroundALibraryFolder(t *testing.T) {
+	const name = "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"
+	for _, lib := range []string{"complete", filepath.Join("complete", name, "Movies")} {
+		share := t.TempDir()
+		job := filepath.Join(share, "complete", name)
+		if err := os.MkdirAll(job, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(job, name+".mkv"), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		w, m, id, spy := usenetDownload(t)
+		if err := execSQL(w, `UPDATE downloaders SET path_map = '[{"theirs":"/downloads","ours":`+jsonStr(share)+`}]'`); err != nil {
+			t.Fatal(err)
+		}
+		exec41(t, w.s, "UPDATE library_folders SET path = ?", filepath.Join(share, lib))
+		m.Forget(w.download(t, id).DownloaderID)
+		spy.content = "/downloads/complete/" + name
+		m.ClearFinished(context.Background(), id)
+		if _, err := os.Stat(filepath.Join(job, name+".mkv")); err != nil {
+			t.Fatalf("library folder %s: the job's files were deleted: %v", lib, err)
+		}
+		if len(spy.removed) != 1 {
+			t.Fatalf("library folder %s: removed %v", lib, spy.removed)
+		}
+	}
+}
+
 func TestClearFinishedNeverFollowsALinkedParentOutside(t *testing.T) {
 	share, outside := t.TempDir(), t.TempDir()
 	victim := filepath.Join(outside, "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS")

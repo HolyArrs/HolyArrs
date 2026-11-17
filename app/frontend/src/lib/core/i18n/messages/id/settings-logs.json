@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Log",
+	"settings.logs.download": "Unduh",
+	"settings.logs.filter": "Saring log",
+	"settings.logs.level": "Tingkat",
+	"settings.logs.every": "Semua baris",
+	"settings.logs.warnings": "Peringatan dan galat",
+	"settings.logs.errors": "Hanya galat",
+	"settings.logs.text": "Teks",
+	"settings.logs.example": "mis. qBittorrent",
+	"settings.logs.from": "Dari",
+	"settings.logs.to": "Sampai",
+	"settings.logs.apply": "Terapkan",
+	"settings.logs.clear": "Hapus",
+	"settings.logs.lines": "Baris",
+	"settings.logs.newer": "Lebih baru",
+	"settings.logs.older": "Lebih lama"
+}

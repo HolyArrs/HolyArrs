@@ -8,7 +8,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import StatusPill, { type StatusKind } from '#lib/ui/StatusPill.svelte';
 	import StepCapsule from './StepCapsule.svelte';
-	import { appName, bestStats, countWords, moveCounts, moveStateWord, type AppKind, type Move, type Snapshot } from './move.ts';
+	import { appName, bestStats, countWords, hostOf, latestPerInstance, moveCounts, moveStateWord, type Move, type Snapshot } from './move.ts';
 	import { dateTime } from '../core/format.ts';
 
 	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
@@ -35,7 +35,7 @@
 		movesError?: string;
 		onpick: (id: number, on: boolean) => void;
 		onadd: () => void;
-		onagain: (kind: AppKind) => void;
+		onagain: (s: Snapshot) => void;
 		onforget: (s: Snapshot) => void;
 		onopen: (m: Move) => void;
 		onretrymoves: () => void;
@@ -45,13 +45,20 @@
 	const shownMoves = $derived(allMoves ? moves : moves.slice(0, 5));
 	const pills: Record<string, StatusKind> = { ok: 'in_library', info: 'downloading', wait: 'missing', fail: 'failed', idle: 'requested' };
 
-	const latest = $derived(snapshots.filter((s, i) => snapshots.findIndex((x) => x.kind === s.kind) === i));
+	// One row per copy of an app (kind and address); an older read of the same copy is switched off.
+	const latest = $derived(latestPerInstance(snapshots));
 	$effect(() => {
 		for (const s of snapshots) {
 			const use = latest.includes(s);
 			if (use !== picked.includes(s.id)) onpick(s.id, use);
 		}
 	});
+
+	/** The app's name, with its address when another copy of it is listed. */
+	function label(s: Snapshot): string {
+		const twin = latest.some((x) => x !== s && x.kind === s.kind);
+		return twin && s.address ? t('migrate.appAt', { name: appName(s.kind), address: hostOf(s.address) }) : appName(s.kind);
+	}
 
 	function hint(s: Snapshot): string {
 		const used = usedBy.get(s.id);
@@ -83,12 +90,12 @@
 				{@const h = hint(s)}
 				<li class="read" data-testid="read-row">
 					<div class="top">
-						<div class="what" title={t('migrate.read2', { date: dateTime(s.created_at) })}><b>{appName(s.kind)}</b><span class="sub one">{h || t('migrate.nothingFound')}</span></div>
+						<div class="what" title={t('migrate.read2', { date: dateTime(s.created_at) })}><b>{label(s)}</b><span class="sub one">{h || t('migrate.nothingFound')}</span></div>
 						<span class="ok-tag" title={t('migrate.read2', { date: dateTime(s.created_at) })}><Icon name="check" size={12} stroke={2.5} />{s.app_version ? `v${s.app_version.split('.').slice(0, 3).join('.')}` : t('migrate.read')}</span>
 					</div>
 					<div class="acts">
-						<button type="button" class="quiet" disabled={!!reading} onclick={() => onagain(s.kind as AppKind)} aria-label={t('migrate.edit', { name: appName(s.kind) })}>{t('migrate.edit2')}</button>
-						<button type="button" class="quiet danger" onclick={() => onforget(s)} aria-label={t('migrate.forgetTheReadFrom', { name: appName(s.kind), date: dateTime(s.created_at) })}>{t('migrate.remove')}</button>
+						<button type="button" class="quiet" disabled={!!reading} onclick={() => onagain(s)} aria-label={t('migrate.edit', { name: label(s) })}>{t('migrate.edit2')}</button>
+						<button type="button" class="quiet danger" onclick={() => onforget(s)} aria-label={t('migrate.forgetTheReadFrom', { name: label(s), date: dateTime(s.created_at) })}>{t('migrate.remove')}</button>
 					</div>
 				</li>
 			{/each}

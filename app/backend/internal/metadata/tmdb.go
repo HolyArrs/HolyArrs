@@ -46,7 +46,7 @@ type TMDB struct {
 	BaseURL string                                    // default https://api.themoviedb.org/3
 	Access  func(ctx context.Context) (string, error) // the read access token, read on each request; never logged
 	HTTP    *http.Client
-	Timeout time.Duration // per request, default 10s
+	Timeout time.Duration // per request, default tmdbAttempt
 	Gap     time.Duration // least time between requests, default 50ms
 	// AheadGap is the least time between fetch-ahead requests, default
 	// 250ms (the server's per-install budget leaves room for pages).
@@ -56,6 +56,9 @@ type TMDB struct {
 	Images string
 	// Disk keeps answers across restarts (lookup_cache); nil keeps memory only.
 	Disk Cache
+	// Route, when set, picks where each request goes (the metadata mode)
+	// in place of BaseURL, Access and HTTP.
+	Route func(ctx context.Context) TMDBRoute
 
 	mu         sync.Mutex
 	last       time.Time
@@ -63,6 +66,8 @@ type TMDB struct {
 	cache      map[string]cached
 	refreshing map[string]bool
 	hold       serviceHold
+	// texts are titles' texts per app language, by "kind|id" (title_text.go).
+	texts map[string]map[string]TitleText
 }
 
 type cached struct {
@@ -232,7 +237,8 @@ func tmdbStaleOK(ctx context.Context, err error) bool {
 }
 
 func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, error) {
-	u := t.base() + path
+	r := t.route(ctx)
+	u := r.base() + path
 	if len(q) > 0 {
 		u += "?" + q.Encode()
 	}
@@ -242,6 +248,9 @@ func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 	}
 	// Searches hold the person's words: they stay in memory only.
 	disk := t.Disk != nil && !strings.HasPrefix(path, "/search")
+	if r.Off {
+		return t.keptOnly(ctx, u, disk)
+	}
 	var stale *cached
 	if !noCache(ctx) {
 		if c, ok := t.kept(ctx, u, disk); ok {
@@ -272,13 +281,25 @@ func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 	return body, err
 }
 
+// tmdbAttempt is how long one request may take once the Gate lets it go. An
+// answer the server has not kept yet can take 20 s or more: it waits its
+// turn upstream, then keeps the answer for the next ask.
+const tmdbAttempt = 25 * time.Second
+
 // fetch makes one request (one retry after a 429).
 func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	ahead := IsAhead(ctx)
 	if ahead && t.hold.held(time.Now()) {
 		return nil, ErrRateLimited
 	}
-	tok, err := t.Access(ctx)
+	r := t.route(ctx)
+	if r.Off {
+		return nil, ErrSourceOff
+	}
+	if r.Access == nil {
+		return nil, ErrNoAccess
+	}
+	tok, err := r.Access(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +312,7 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	if ahead {
 		lane = "ahead"
 	}
-	op, err := outbound.Begin(ctx, outbound.Target{Kind: "metadata_tmdb", Identity: []string{t.base(), tok, lane}})
+	op, err := outbound.Begin(ctx, outbound.Target{Kind: "metadata_tmdb", Identity: []string{r.base(), tok, lane}})
 	if err != nil {
 		if errors.Is(err, outbound.ErrSuppressed) {
 			return nil, fmt.Errorf("TMDB: %w (%w)", ErrServiceUnavailable, err)
@@ -300,19 +321,19 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 	}
 	outcome := outbound.Canceled
 	defer func() { op.Finish(outcome) }()
-	cl := t.HTTP
+	cl := r.HTTP
 	if cl == nil {
 		cl = http.DefaultClient
 	}
 	timeout := t.Timeout
 	if timeout <= 0 {
-		timeout = 10 * time.Second
+		timeout = tmdbAttempt
 	}
 	for try := 0; ; try++ {
 		if err := t.wait(ctx); err != nil {
 			return nil, err
 		}
-		rctx, cancel := op.AttemptContext(ctx, timeout)
+		rctx, cancel := afterGate(ctx, timeout)
 		req, _ := http.NewRequestWithContext(rctx, http.MethodGet, u, nil)
 		req.Header.Set("Authorization", "Bearer "+tok)
 		req.Header.Set("Accept", "application/json")
@@ -320,8 +341,12 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 		resp, err := cl.Do(req)
 		if err != nil {
 			outcome = outbound.HTTPOutcome(0, err, ctx)
+			why := ErrServiceUnavailable
+			if timedOut(ctx, rctx) {
+				outcome, why = outbound.Canceled, ErrServiceSlow // slow, or our own Gate's wait: not down
+			}
 			cancel()
-			return nil, fmt.Errorf("TMDB: %w (%w)", ErrServiceUnavailable, stripURL(err))
+			return nil, fmt.Errorf("TMDB: %w (%w)", why, stripURL(err))
 		}
 		body, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
 		if closeErr := resp.Body.Close(); err == nil {
@@ -330,6 +355,10 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 		cancel()
 		if err != nil {
 			outcome = outbound.HTTPOutcome(resp.StatusCode, err, ctx)
+			if timedOut(ctx, rctx) {
+				outcome = outbound.Canceled
+				return nil, fmt.Errorf("TMDB: %w (%w)", ErrServiceSlow, stripURL(err))
+			}
 			return nil, fmt.Errorf("TMDB: %w", stripURL(err))
 		}
 		switch {
@@ -353,6 +382,9 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 			// Fetch-ahead does not wait inside the call: it holds back instead.
 			t.hold.set(resp.Header.Get("Retry-After"), body, time.Now())
 			outcome = outbound.TransientFailure
+			if resp.Header.Get(GateHeld) != "" {
+				outcome = outbound.Canceled // held by our own Gate, never sent
+			}
 			return nil, ErrRateLimited
 		default:
 			outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
@@ -502,7 +534,9 @@ type tmdbExtras struct {
 	Genres       []struct {
 		Name string `json:"name"`
 	} `json:"genres"`
-	Images *struct {
+	// GenreIDs are what list and search answers carry in place of names.
+	GenreIDs []int64 `json:"genre_ids"`
+	Images   *struct {
 		Logos []struct {
 			FilePath string  `json:"file_path"`
 			Language *string `json:"iso_639_1"`
@@ -517,6 +551,23 @@ type tmdbExtras struct {
 			Job  string `json:"job"`
 		} `json:"crew"`
 	} `json:"credits"`
+	VoteAverage float64 `json:"vote_average"`
+	VoteCount   int     `json:"vote_count"`
+}
+
+// score is the members' average to one decimal and its vote count.
+func (x tmdbExtras) score() (float64, int) {
+	return float64(int(x.VoteAverage*10+0.5)) / 10, x.VoteCount
+}
+
+// tmdbGenreNames are TMDB's fixed movie and TV genre ids with their English
+// names (the two lists share the ids they have in common).
+var tmdbGenreNames = map[int64]string{
+	28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime", 99: "Documentary", 18: "Drama",
+	10751: "Family", 14: "Fantasy", 36: "History", 27: "Horror", 10402: "Music", 9648: "Mystery", 10749: "Romance",
+	878: "Science Fiction", 10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western",
+	10759: "Action & Adventure", 10762: "Kids", 10763: "News", 10764: "Reality", 10765: "Sci-Fi & Fantasy",
+	10766: "Soap", 10767: "Talk", 10768: "War & Politics",
 }
 
 // maxCast is how many cast names a Title keeps.
@@ -550,6 +601,13 @@ func (x tmdbExtras) pictures(images string) (backdrop, logo string, genres, peop
 	for _, g := range x.Genres {
 		if g.Name != "" {
 			genres = append(genres, g.Name)
+		}
+	}
+	if len(x.Genres) == 0 {
+		for _, id := range x.GenreIDs {
+			if name := tmdbGenreNames[id]; name != "" {
+				genres = append(genres, name)
+			}
 		}
 	}
 	if x.Credits != nil {
@@ -620,6 +678,7 @@ func (m tmdbMovie) movieWithCollection(images string, collectionKnown bool) Movi
 	out.CinemaDate, out.DigitalDate, out.PhysicalDate = m.dates()
 	out.Backdrop, out.Logo, out.Genres, out.People = m.tmdbExtras.pictures(images)
 	out.Directors = m.tmdbExtras.directors()
+	out.Score, out.Votes = m.tmdbExtras.score()
 	for _, c := range m.ProductionCompanies {
 		if c.Name != "" {
 			out.Studio = c.Name

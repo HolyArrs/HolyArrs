@@ -67,11 +67,11 @@ func TestImportSecretsRoutes(t *testing.T) {
 	// A dry run, then the run, then again.
 	dry, _ := json.Marshal(map[string]any{"file": file, "dry_run": true})
 	st, out := keyCall(t, r.srv.URL, k.Key, "POST", "/api/v1/settings/import-secrets", string(dry))
-	if st != 200 || !strings.Contains(out, `"result":"would set`) {
+	if st != 200 || !strings.Contains(out, `"result":"would set"`) {
 		t.Fatalf("dry %d %s", st, out)
 	}
 	st, out = keyCall(t, r.srv.URL, k.Key, "POST", "/api/v1/settings/import-secrets", string(body))
-	if st != 200 || !strings.Contains(out, `"ok":true`) || !strings.Contains(out, `{"item":"radarr (old app)","result":"set`) {
+	if st != 200 || !strings.Contains(out, `"ok":true`) || !strings.Contains(out, `{"item":"tvdb","result":"set"}`) {
 		t.Fatalf("run %d %s", st, out)
 	}
 	for _, v := range []string{radarrKey, "your-tvdb-key-2", "your-owner-key-3"} {
@@ -79,7 +79,7 @@ func TestImportSecretsRoutes(t *testing.T) {
 			t.Fatalf("a value in the answer")
 		}
 	}
-	if _, out = keyCall(t, r.srv.URL, k.Key, "POST", "/api/v1/settings/import-secrets", string(body)); !strings.Contains(out, `{"item":"radarr (old app)","result":"unchanged`) {
+	if _, out = keyCall(t, r.srv.URL, k.Key, "POST", "/api/v1/settings/import-secrets", string(body)); !strings.Contains(out, `{"item":"tvdb","result":"unchanged"}`) {
 		t.Fatalf("again %s", out)
 	}
 
@@ -93,9 +93,9 @@ func TestImportSecretsRoutes(t *testing.T) {
 	// An admin is not the owner.
 	r.owner.call("PUT", "/api/v1/users/"+arrItoa(r.bo.id), `{"role":"admin"}`, 200)
 	r.bo.call("POST", "/api/v1/migrate/probe", `{"kind":"radarr","use_saved_key":true}`, 403)
-	// The key only goes to its saved address, with only its saved leave.
+	// The key only goes to its saved address: another address has no saved key.
 	b = r.owner.call("POST", "/api/v1/migrate/probe", `{"kind":"radarr","use_saved_key":true,"url":"http://127.0.0.1:1"}`, 400)
-	if !strings.Contains(string(b), "only sent to its saved address") {
+	if !strings.Contains(string(b), "no saved key for this app at this address") {
 		t.Fatalf("other url %s", b)
 	}
 	r.owner.call("POST", "/api/v1/migrate/probe", `{"kind":"radarr","use_saved_key":true,"url":"not a url"}`, 400)

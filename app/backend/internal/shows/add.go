@@ -28,12 +28,14 @@ type ShowAddOptions struct {
 	Seasons         string `json:"seasons"`        // all, future, latest, none
 	NewSeasons      string `json:"new_seasons"`    // all, none
 	EpisodeOrder    string `json:"episode_order"`  // aired, daily, absolute
-	Source          string `json:"details_source"` // tmdb or tvmaze
+	Source          string `json:"details_source"` // tmdb, tvmaze, tvdb
 	// SearchOnAdd searches the whole show after the folder scan, the same
 	// search POST /titles/{id}/search starts for a show.
 	SearchOnAdd bool `json:"search_on_add"`
 	// MoreVersions are extra wanted copies (for example 4K) next to the main one.
 	MoreVersions []library.VersionInput `json:"more_versions"`
+	// MainFourK adds the main copy as the 4K copy, labelled 4K (a 4K ask).
+	MainFourK bool `json:"-"`
 	// WhyAdded records why the show was added (by_hand when empty).
 	WhyAdded string `json:"-"`
 	// Adopt keeps a show folder found on disk as it is, with its files.
@@ -44,6 +46,15 @@ type ShowAddOptions struct {
 	// FirstSeason keeps only the show's first season up to date: season 1,
 	// else the lowest numbered season after it, else Specials.
 	FirstSeason bool `json:"-"`
+	// Specials, when set, says whether Specials start kept up to date with
+	// the other seasons, in place of the keep_specials default.
+	Specials *bool `json:"-"`
+	// KeepEpisode, when set, narrows the episodes that start kept up to
+	// date: one it says no to starts not kept, in the same write as the add,
+	// so the scan and search after it never see it kept. The arr API uses it
+	// for the old apps' episode choices (the first episode only, recent
+	// episodes).
+	KeepEpisode func(season, episode int, aired *time.Time) bool `json:"-"`
 }
 
 // ShowAlreadyAddedError says the show is already in the Library.
@@ -119,6 +130,9 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 	if opt.SeasonNumbers != nil || opt.FirstSeason {
 		opt.Seasons = library.SeasonsNone
 	}
+	if opt.Specials != nil {
+		defs.KeepSpecials = *opt.Specials
+	}
 	if opt.Seasons == "" {
 		opt.Seasons = defs.SeasonChoice
 	}
@@ -190,6 +204,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		return 0, 0, err
 	}
 	s.addAirTimes(ctx, &sh)
+	s.fixCopiedTMDB(ctx, &sh)
 	aliases := s.AnimeAliases(ctx, "show", sh.IDs["tmdb"], sh.Name)
 	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
@@ -245,8 +260,22 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		folder := mediafiles.ShowFolder(ns, mediafiles.NameFacts{Title: t.Name, Year: year, TMDB: t.SourceIDs["tmdb"], IMDB: t.SourceIDs["imdb"]})
 		if opt.Adopt != nil {
 			folder = opt.Adopt.FolderName
+		} else {
+			// A folder for this show already on disk under a slightly different
+			// name is used as is, so the scan after the add finds its files.
+			taken := map[string]bool{}
+			if rows, err := tx.QueryContext(ctx, "SELECT folder_name FROM versions WHERE library_folder_id = ?", lf.ID); err == nil {
+				for rows.Next() {
+					var n string
+					if rows.Scan(&n) == nil {
+						taken[strings.ToLower(n)] = true
+					}
+				}
+				rows.Close()
+			}
+			folder = library.ExistingFolder(lf.Path, folder, t.Name, year, func(d string) bool { return taken[strings.ToLower(d)] })
 		}
-		v := &mediafiles.Version{TitleID: t.ID, Label: "Main", PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: folder, KeepUpToDate: keep, IsMain: true}
+		v := &mediafiles.Version{TitleID: t.ID, Label: library.MainLabel(opt.MainFourK), PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: folder, KeepUpToDate: keep, IsMain: true, FourK: opt.MainFourK}
 		if _, err := database.Insert(tx, "versions", v, by); err != nil {
 			return err
 		}
@@ -276,6 +305,11 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 				if _, err := tx.Exec("UPDATE items SET keep_up_to_date = 1, updated_at = ?, updated_by = ? WHERE part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'season' AND number = ?)", ts, who, t.ID, n); err != nil {
 					return err
 				}
+			}
+		}
+		if keep && opt.KeepEpisode != nil {
+			if err := narrowEpisodesTx(ctx, tx, t.ID, opt.KeepEpisode, by); err != nil {
+				return err
 			}
 		}
 		// More Versions after the episodes, so each gets one Slot per episode.
@@ -508,9 +542,10 @@ type SeasonSummary struct {
 	Missing      int        `json:"missing"`       // aired, kept up to date, no file yet
 	BetterWanted int        `json:"better_wanted"` // in the Library, a better copy is sought
 	NotOutYet    int        `json:"not_out_yet"`
-	Downloading  int        `json:"downloading"` // a copy is on the way (downloading, stalled, importing)
+	Downloading  int        `json:"downloading"` // a Downloader took a copy (downloading, stalled, importing)
 	Failed       int        `json:"failed"`      // the download failed or its import needs a decision
 	NextAirDate  *time.Time `json:"next_air_date,omitempty"`
+	NextAirDay   string     `json:"next_air_day,omitempty"` // the show's own air day of that episode
 	Dropped      bool       `json:"dropped,omitempty"`
 }
 
@@ -530,9 +565,15 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 	if len(parts) == 0 {
 		return out, nil
 	}
+	if grouped, err := library.HasEpisodeGroup(ctx, db, titleID); err != nil || grouped {
+		if err != nil {
+			return nil, err
+		}
+		return groupSeasons(ctx, db, titleID, now, parts)
+	}
 	// One query for every season of the show instead of one per season. The
 	// main Version is looked up once (by the show's id), not once per episode.
-	rows, err := db.QueryContext(ctx, `SELECT i.part_id, i.air_date, i.keep_up_to_date, COALESCE(s.state, '') FROM items i
+	rows, err := db.QueryContext(ctx, `SELECT i.part_id, i.air_date, COALESCE(i.air_day, ''), i.keep_up_to_date, COALESCE(s.state, ''), s.file_id IS NOT NULL FROM items i
 		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1)
 		WHERE i.part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'season')`, titleID, titleID)
 	if err != nil {
@@ -542,47 +583,100 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 	for rows.Next() {
 		var part int64
 		var air sql.NullString
+		var day string
 		var keep bool
 		var state string
-		if err := rows.Scan(&part, &air, &keep, &state); err != nil {
+		var hasFile bool
+		if err := rows.Scan(&part, &air, &day, &keep, &state, &hasFile); err != nil {
 			return nil, err
 		}
 		idx, ok := index[part]
 		if !ok {
 			continue
 		}
-		ss := &out[idx]
-		ss.Episodes++
-		if air.Valid {
-			if at, err := time.Parse(database.TimeLayout, air.String); err == nil {
-				if !at.After(now) {
-					ss.Aired++
-				} else if ss.NextAirDate == nil || at.Before(*ss.NextAirDate) {
-					a := at
-					ss.NextAirDate = &a
-				}
-			}
-		}
-		switch mediafiles.SlotState(state) {
-		case mediafiles.SlotInLibrary:
-			ss.InLibrary++
-		case mediafiles.SlotBetterWanted:
-			ss.InLibrary++
-			ss.BetterWanted++
-		case mediafiles.SlotNotOutYet:
-			ss.NotOutYet++
-		case mediafiles.SlotChosen, mediafiles.SlotDownloading, mediafiles.SlotStalled, mediafiles.SlotImporting:
-			ss.Downloading++
-		case mediafiles.SlotFailed, mediafiles.SlotNeedsADecision:
-			ss.Failed++
-		case mediafiles.SlotWanted:
-			if keep {
-				ss.Missing++
-			}
-		}
+		out[idx].tally(air, day, keep, state, hasFile, now)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return out, nil
+}
+
+// tally counts one episode of a season: its air date, its Keep up to date
+// switch, the main Version's Slot state and whether the Slot holds a File.
+// An episode with a File is in the Library whatever its state or air time
+// says (a search or a better copy on the way, an air time later today).
+func (ss *SeasonSummary) tally(air sql.NullString, day string, keep bool, state string, hasFile bool, now time.Time) {
+	ss.Episodes++
+	aired := false
+	if air.Valid {
+		if at, err := time.Parse(database.TimeLayout, air.String); err == nil {
+			if !at.After(now) {
+				aired = true
+				ss.Aired++
+			} else if ss.NextAirDate == nil || at.Before(*ss.NextAirDate) {
+				a := at
+				ss.NextAirDate, ss.NextAirDay = &a, day
+			}
+		}
+	}
+	st := mediafiles.SlotState(state)
+	if hasFile && st != mediafiles.SlotInLibrary && st != mediafiles.SlotBetterWanted {
+		ss.InLibrary++
+		switch st {
+		case mediafiles.SlotNotOutYet, mediafiles.SlotWanted, mediafiles.SlotChosen:
+			return
+		}
+	}
+	switch st {
+	case mediafiles.SlotInLibrary:
+		ss.InLibrary++
+	case mediafiles.SlotBetterWanted:
+		ss.InLibrary++
+		ss.BetterWanted++
+	case mediafiles.SlotNotOutYet:
+		ss.NotOutYet++
+	case mediafiles.SlotDownloading, mediafiles.SlotStalled, mediafiles.SlotImporting:
+		// Only a copy a Downloader took counts as on the way. A chosen Release not
+		// yet confirmed by a Downloader still counts as missing.
+		ss.Downloading++
+	case mediafiles.SlotFailed, mediafiles.SlotNeedsADecision:
+		ss.Failed++
+	case mediafiles.SlotWanted, mediafiles.SlotChosen:
+		// Missing means aired and still without a file, as in Sonarr; a
+		// wanted episode whose air time has not passed is not out yet.
+		switch {
+		case !aired:
+			ss.NotOutYet++
+		case keep:
+			ss.Missing++
+		}
+	}
+}
+
+// narrowEpisodesTx stops keeping up to date every kept episode of a show
+// that keepEpisode says no to.
+func narrowEpisodesTx(ctx context.Context, tx *sql.Tx, titleID int64, keepEpisode func(season, episode int, aired *time.Time) bool, by domain.Actor) error {
+	its, err := database.Select[mediafiles.Item](ctx, tx, "items", "title_id = ? AND kind = 'episode' AND keep_up_to_date = 1", titleID)
+	if err != nil {
+		return err
+	}
+	for i := range its {
+		it := &its[i]
+		season, episode := 0, 0
+		if it.Numbers.Season != nil {
+			season = *it.Numbers.Season
+		}
+		if it.Numbers.Episode != nil {
+			episode = *it.Numbers.Episode
+		}
+		if keepEpisode(season, episode, it.AirDate) {
+			continue
+		}
+		it.KeepUpToDate = false
+		if err := database.Update(tx, "items", it, by); err != nil {
+			return err
+		}
+	}
+	return nil
 }

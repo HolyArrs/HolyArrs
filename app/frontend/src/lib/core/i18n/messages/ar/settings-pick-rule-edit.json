@@ -24,6 +24,8 @@
 	"settings.pickRuleEdit.goodEnough": "جودة كافية",
 	"settings.pickRuleEdit.goodEnoughAt": "تكفي عند",
 	"settings.pickRuleEdit.goodEnoughHint": "يتوقف HolyArrs عن البحث عن نسخة أفضل عندما يبلغ الملف هذه الدرجة.",
+	"settings.pickRuleEdit.goodEnoughPoints": "نقاط الجودة الكافية",
+	"settings.pickRuleEdit.goodEnoughPointsHint": "يحتاج الملف عند درجة الجودة الكافية أيضًا إلى هذا العدد من النقاط. اتركه فارغًا ليُحكم بالدرجة وحدها.",
 	"settings.pickRuleEdit.yourTraits": "سماتك",
 	"settings.pickRuleEdit.traits": "السمات والنقاط",
 	"settings.pickRuleEdit.traitsDesc": "الأكثر نقاطًا يفوز ضمن الدرجة نفسها",
@@ -84,5 +86,8 @@
 	"settings.pickRuleEdit.trashScored": "تم تقييم {n} سمة",
 	"settings.pickRuleEdit.trashResult": "تم تقييم {n} سمة · {added} جديدة · {updated} محدّثة",
 	"settings.pickRuleEdit.trashLeftOut": "تم استبعاد {n}",
-	"settings.pickRuleEdit.trashTests": "يختبر {kinds}"
+	"settings.pickRuleEdit.trashTests": "يختبر {kinds}",
+	"settings.pickRuleEdit.sourcesTitle": "المصادر",
+	"settings.pickRuleEdit.sourcesDesc": "ابحث فقط في المصادر التي تشترك في أحد هذه الوسوم. اتركه فارغًا للبحث في كل مصدر.",
+	"settings.pickRuleEdit.tags": "الوسوم"
 }

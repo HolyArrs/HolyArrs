@@ -1,5 +1,6 @@
 {
   "appName": "string",
+  "authentication": "string",
   "branch": "string",
   "databaseType": "string",
   "instanceName": "string",

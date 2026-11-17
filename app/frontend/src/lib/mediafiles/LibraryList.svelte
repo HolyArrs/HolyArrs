@@ -27,10 +27,10 @@
 	import BannerArt from './BannerArt.svelte';
 	import LibraryLetterRail from './LibraryLetterRail.svelte';
 	import LibraryPoster from './LibraryPoster.svelte';
-	import { exceptionChip, firstOfLetter, letterOf, letters, missingEpisodes, posterStatus, type Kind } from './library.ts';
+	import { emptyAdds, exceptionChip, firstOfLetter, letterOf, letters, missingEpisodes, posterStatus, type AddKind, type Kind } from './library.ts';
 	import { libraryState } from './library-state.ts';
 	import { partOff } from './parts.svelte.ts';
-	import { buildEntries, cell, grow, isProgressCol, posterExtra, posterFacts, requestedBy, rowCell, shrink, tone, type Entry, type View } from './library-view.ts';
+	import { buildEntries, cell, grow, isProgressCol, posterExtra, posterFacts, requestedBy, rowCell, scoreText, shrink, tone, type Entry, type View } from './library-view.ts';
 	import { needsAttention, barOf, type PosterDetail } from './poster.ts';
 	import { columnSort, progressOf, sortName, sortsFor, tableMinWidth, type Column, type FilterState, type LibKind, type SortDir, type SortKey } from './table.ts';
 	import { artName, slotKind } from './title-page.ts';
@@ -78,6 +78,8 @@
 		setKeep: (ids: number[], keep: boolean) => void;
 		refreshTitle: (t: TitleView) => void;
 	};
+	// The empty Library's add buttons, named for the kind each one adds.
+	const addWords = $derived<Record<AddKind, string>>({ movie: tr('mediafiles.list.addMovie'), show: tr('mediafiles.list.addShow'), artist: tr('mediafiles.list.addArtist') });
 	let { titles, shown, loaded, error, view, kind, libKind, filter, sort, grouped, kindTitle, q, filtersOn, who, canManage, selecting, picked, lastOpenedId, chosenCols, density, posterSize, posterDetail, seriesOfTitle, seriesName, phone, listWidth = $bindable(), gridEl = $bindable(), listEl = $bindable(), progressText, artistHref, episodeLabel, retryLoad, clearFilters, togglePick, startSelecting, setSort, searchTitles, setKeep, refreshTitle }: Props = $props();
 
 	const kindLabel = (k: string) => tr(`mediafiles.kindCap.${k}`);
@@ -104,10 +106,10 @@
 	const actsW = $derived(96 + (touchActs ? 48 : 0));
 	const factCols = $derived(chosenCols.filter((c) => c.id !== 'status' && c.id !== 'kept'));
 	const rowCols = $derived.by(() => {
-		if (kind === 'all') return [];
 		let room = listWidth - 10 - 52 - 120 - 168 - actsW - 12 * 3 - (selecting ? 28 + 12 : 0);
 		const out: Column[] = [];
-		for (const c of factCols) {
+		// All mixes kinds, so its rows show only the score, and only while sorted by it.
+		for (const c of kind === 'all' ? factCols.filter((c) => c.id === 'score' && sort.key === 'score') : factCols) {
 			if (out.length === 3 || (out.length && room < colPx(c) + 12)) break;
 			out.push(c);
 			room -= colPx(c) + 12;
@@ -299,15 +301,15 @@
 
 <!-- The rail column is kept while loading too, so the cards do not narrow when it appears. -->
 <div class:has-rail={railOn || (!loaded && sort.key === 'name' && !grouped)} class="with-rail">
-	<div class="content">
+	<div class="content" bind:clientWidth={listWidth}>
 		<PageLoader loading={!loaded} label={tr('mediafiles.list.loading')} onretry={retryLoad}>
 		{#if error}
 			<LoadError hasData={false} message={plainReason(error).text} onretry={retryLoad} />
 		{:else if titles.length === 0}
-			<EmptyState icon="library" title={tr('mediafiles.list.nothingYet')} action={{ label: tr('mediafiles.list.addMovie'), href: to('/search'), icon: 'search' }} />
+			{@const [firstAdd, ...moreAdds] = emptyAdds(kind, partOff)}
+			<EmptyState icon="library" title={tr('mediafiles.list.nothingYet')} action={firstAdd ? { label: addWords[firstAdd.kind], href: to(firstAdd.href), icon: 'search' } : undefined} />
 			<div class="empty-more">
-				{#if !partOff('shows')}<Button href={to('/search?kind=show')}>{tr('mediafiles.list.addShow')}</Button>{/if}
-				{#if !partOff('music')}<Button href={to('/search?kind=music')}>{tr('mediafiles.list.addArtist')}</Button>{/if}
+				{#each moreAdds as a (a.kind)}<Button href={to(a.href)}>{addWords[a.kind]}</Button>{/each}
 				{#if session.can('settings')}<Button href={to('/settings/library-folders')}>{tr('mediafiles.list.folders')}</Button>{/if}
 			</div>
 		{:else if shown.length === 0}
@@ -318,7 +320,7 @@
 					{@const p = progressOf(t)}
 					{@const ls = who === 'staff' ? libraryState(t) : null}
 					<li class="item" style:--poster-ratio={posterRatio(t.kind)} animate:flip={{ duration: moveMs, easing: easeOut }} data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
-						<LibraryPoster title={t.name} year={t.year} href={openLink(t)} image={posterSrc(t.artwork[0], gridMin)} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} kept={t.keep_up_to_date} {canManage} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} />
+						<LibraryPoster title={t.name} year={t.year} href={openLink(t)} image={posterSrc(t.artwork[0], gridMin)} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} score={sort.key === 'score' ? scoreText(t) : ''} kept={t.keep_up_to_date} {canManage} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} />
 						{#if selecting}
 							<button type="button" class="pick" aria-pressed={picked.has(t.id)} aria-label={tr('mediafiles.list.select', { name: t.name })} onclick={() => togglePick(t.id)} data-testid="library-pick"><span class="pick-dot" aria-hidden="true">{#if picked.has(t.id)}<Icon name="check" size={14} stroke={3} />{/if}</span></button>
 						{/if}
@@ -327,7 +329,7 @@
 				{/each}
 			</ul>
 		{:else}
-			<div class="rows {view}" class:v-rows={view === 'rows'} class:has-select={selecting} style="--acts-w: {actsW}px; --cols: {gridCols}; --table-min: {tableMin}px; --banner-w: {bannerW}px; --row-pad: {20 + touchActs}px" bind:this={listEl} bind:clientWidth={listWidth}>
+			<div class="rows {view}" class:v-rows={view === 'rows'} class:has-select={selecting} style="--acts-w: {actsW}px; --cols: {gridCols}; --table-min: {tableMin}px; --banner-w: {bannerW}px; --row-pad: {20 + touchActs + (view === 'table' && !phone && hiddenCols > 0 ? 16 : 0)}px" bind:this={listEl}>
 				{#if view === 'rows' && !phone}
 					<div class="lh" role="presentation" style="--facts: {factsTpl}">
 						{#if selecting}<span></span>{/if}
@@ -405,7 +407,7 @@
 												<Poster src={t.artwork[0]} name={t.name} />
 											</span>
 											<span class="lt">
-												<a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>
+												<a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>
 												{#if !phone && t.year}<small>{t.year}</small>{/if}
 												{#if phone}{@const fc = rowCols.find((c) => !isProgressCol(c)) ?? rowCols[0]}<span class="lsub">{[ls?.label, fc ? rowCell(t, fc, p, seriesOf(t)) : ''].filter(Boolean).join(' · ')}</span>{/if}
 											</span>
@@ -432,9 +434,9 @@
 												{:else}<span class="keep" class:on={t.keep_up_to_date} aria-label={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')} role="img"><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={16} /></span>{/if}
 											</span>
 											<span class="name">
-												<a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>
+												<a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>
 												<span class="sub">
-													{#if kind === 'all'}{kindLabel(t.kind)}{#if t.year} · {t.year}{/if}{/if}
+													{#if kind === 'all'}{kindLabel(t.kind)}{#if t.year} · {t.year}{/if}{#if sort.key === 'score' && !phone && scoreText(t)} · ★ {scoreText(t)}{/if}{/if}
 													{#if ls && (kind === 'all' || phone || !shownCols.some((c) => c.id === 'status'))}<span class="ls {ls.tone}" data-testid="library-status" data-state={ls.key}><i class="dot" aria-hidden="true"></i>{ls.label}</span>{/if}
 												</span>
 												{#if phone}<span class="facts">{factCols.slice(0, 3).map((c) => (isProgressCol(c) ? `${p.have}/${p.total}` : cell(t, c, seriesOf(t)))).filter(Boolean).join(' · ')}</span>{/if}
@@ -474,11 +476,11 @@
 										<div class="ov" class:music={t.kind === 'artist'}>
 											<a class="ov-poster" style:--poster-ratio={posterRatio(t.kind)} href={openLink(t)} tabindex="-1" aria-hidden="true"><Poster src={t.artwork[0]} name={t.name} /></a>
 											<div class="ov-main">
-												<h2><a href={openLink(t)} tabindex="-1" title={t.name}>{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}<span class="keep ov-keep" class:on={t.keep_up_to_date} role="img" aria-label={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')} title={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={15} /></span></h2>
+												<h2><a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}<span class="keep ov-keep" class:on={t.keep_up_to_date} role="img" aria-label={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')} title={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={15} /></span></h2>
 												{#if t.kind === 'artist'}
 													{#if t.artist?.bio}<p class="ov-text ov-bio">{t.artist.bio}</p>{/if}
 												{:else}
-													<p class="ov-text">{t.overview || tr('mediafiles.list.noDescription')}</p>
+													<p class="ov-text" dir="auto">{t.overview || tr('mediafiles.list.noDescription')}</p>
 												{/if}
 												{#if t.kind !== 'movie'}
 													<span class="ov-prog">
@@ -541,12 +543,12 @@
 	/* Rows: a ledger. 54 px a title, a small poster, the name and year, the status with its colour dot, three facts, the actions. */
 	.lh, .lr { display: grid; grid-template-columns: 52px minmax(120px, 1fr) 168px var(--facts, 150px) var(--acts-w, 96px); align-items: center; gap: 0 12px; }
 	.rows.has-select .lh, .rows.has-select .lr { grid-template-columns: 28px 52px minmax(120px, 1fr) 168px var(--facts, 150px) var(--acts-w, 96px); }
-	.lsel { display: grid; place-items: center; padding-left: 10px; }
+	.lsel { display: grid; place-items: center; padding-inline-start: 10px; }
 	.lr { position: relative; }
-	.lh { position: relative; height: 40px; padding-right: 10px; background: color-mix(in srgb, var(--text) 3%, transparent); border-bottom: 1px solid var(--line); }
-	.lr { height: var(--row-h, 54px); padding-right: 10px; }
+	.lh { position: relative; height: 40px; padding-inline-end: 10px; background: color-mix(in srgb, var(--text) 3%, transparent); border-bottom: 1px solid var(--line); }
+	.lr { height: var(--row-h, 54px); padding-inline-end: 10px; }
 	.rows.v-rows .entry::before { left: 0; right: 0; }
-	.lp { position: relative; display: block; width: 32px; margin-left: 10px; border-radius: 5px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
+	.lp { position: relative; display: block; width: 32px; margin-inline-start: 10px; border-radius: 5px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
 	.lp.round { border-radius: 50%; }
 	.lpick { display: block; margin: 0 auto; }
 	.lt { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
@@ -564,9 +566,9 @@
 	.lc { min-width: 0; color: var(--text-muted); font: var(--t-callout); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lr .acts { top: 50%; }
 	/* Phone rows (chosen by the list's own width): the poster, the name over "status · fact", the year at the right. */
-	.lr.ph { grid-template-columns: 50px minmax(0, 1fr) auto; height: 60px; padding-right: 12px; }
+	.lr.ph { grid-template-columns: 50px minmax(0, 1fr) auto; height: 60px; padding-inline-end: 12px; }
 	.rows.has-select .lr.ph { grid-template-columns: 28px 50px minmax(0, 1fr) auto; }
-	.lr.ph .lp { width: 36px; margin-left: 8px; }
+	.lr.ph .lp { width: 36px; margin-inline-start: 8px; }
 	.lr.ph .lt { flex-direction: column; align-items: flex-start; gap: 3px; }
 	.lr.ph .lt a { max-width: 100%; }
 	.lsub { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
@@ -663,15 +665,16 @@
 	.ov-poster { display: block; border-radius: 8px; overflow: hidden; }
 	.ov-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 	.ov h2 { margin: 0; font: var(--t-title3); display: flex; align-items: baseline; gap: 10px; }
-	.ov h2 a { color: var(--text); text-decoration: none; }
-	.yr { color: var(--text-muted); font: var(--t-callout); }
+	/* A long name wraps (up to three lines) beside the year and the bell, which never break. */
+	.ov h2 a { flex: 0 1 auto; min-width: 0; color: var(--text); text-decoration: none; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; overflow-wrap: break-word; }
+	.yr { flex: none; white-space: nowrap; color: var(--text-muted); font: var(--t-callout); font-variant-numeric: tabular-nums; }
 	.ov-text { margin: 0; color: var(--text-muted); font: var(--t-callout); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 	/* A description reads best at a book's line length; the rest of the row is the facts'. */
 	.ov-text { max-width: 68ch; }
 	.ov-prog { display: flex; align-items: center; gap: 10px; margin-top: auto; }
 	.ov .meter { flex: 0 1 280px; }
 	.ov-count { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.ov-keep { flex: none; align-self: center; width: 24px; height: 24px; }
+	.ov-keep { flex: none; align-self: flex-start; width: 24px; height: 24px; }
 	.ov-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; margin: 0; align-content: start; font: var(--t-footnote); }
 	.ov-facts dt { color: var(--text-muted); }
 	.ov-facts dd { margin: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

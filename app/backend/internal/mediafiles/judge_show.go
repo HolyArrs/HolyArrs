@@ -32,10 +32,22 @@ type EpisodeRef struct {
 	Episode  int
 	Absolute int    // 0: none
 	AirDay   string // YYYY-MM-DD, "" when unknown
+	// AltSeason and AltEpisode are how release names number the episode
+	// when that differs (an anime part TMDB keeps inside one season); 0: none.
+	AltSeason  int
+	AltEpisode int
 }
 
 // Label names an episode the way people write it: S01E02.
 func (e EpisodeRef) Label() string { return fmt.Sprintf("S%02dE%02d", e.Season, e.Episode) }
+
+// Named is the season and episode release names use for the episode.
+func (e EpisodeRef) Named() (int, int) {
+	if e.AltSeason > 0 {
+		return e.AltSeason, e.AltEpisode
+	}
+	return e.Season, e.Episode
+}
 
 // isPack says the Release holds whole seasons.
 func isPack(p releasename.Result) bool {
@@ -70,7 +82,12 @@ func MatchEpisodes(p releasename.Result, order string, eps []EpisodeRef) ([]Epis
 	}
 	switch p.Kind.Value {
 	case releasename.KindSeasonPack, releasename.KindMultiSeason:
-		find(func(e EpisodeRef) bool { return slices.Contains(sh.Seasons, e.Season) })
+		// An episode sits in the season release names give it; the stored
+		// season counts only when that finds nothing.
+		find(func(e EpisodeRef) bool { s, _ := e.Named(); return slices.Contains(sh.Seasons, s) })
+		if len(out) == 0 {
+			find(func(e EpisodeRef) bool { return slices.Contains(sh.Seasons, e.Season) })
+		}
 		if len(out) == 0 {
 			return nil, fmt.Sprintf("the show has no episodes in season %s", seasonList(sh.Seasons))
 		}
@@ -108,7 +125,12 @@ func MatchEpisodes(p releasename.Result, order string, eps []EpisodeRef) ([]Epis
 	}
 	var missing []string
 	for _, n := range sh.Episodes {
-		i := slices.IndexFunc(eps, func(e EpisodeRef) bool { return e.Season == sh.Seasons[0] && e.Episode == n })
+		// Release-name numbers first, as the old apps read scene numbers;
+		// then the stored ones.
+		i := slices.IndexFunc(eps, func(e EpisodeRef) bool { s, x := e.Named(); return s == sh.Seasons[0] && x == n })
+		if i < 0 {
+			i = slices.IndexFunc(eps, func(e EpisodeRef) bool { return e.Season == sh.Seasons[0] && e.Episode == n })
+		}
 		if i < 0 {
 			missing = append(missing, fmt.Sprintf("S%02dE%02d", sh.Seasons[0], n))
 			continue

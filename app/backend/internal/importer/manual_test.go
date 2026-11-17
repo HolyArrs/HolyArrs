@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -212,3 +213,44 @@ func TestScanByHandStopsOnCancel(t *testing.T) {
 type goneCtx struct{ context.Context }
 
 func (goneCtx) Err() error { return context.Canceled }
+
+// A by-hand move across two mounts is a copy then a delete, and is recorded as one.
+func TestByHandMoveAcrossMountsRecordsCopy(t *testing.T) {
+	w := setup(t)
+	ctx := context.Background()
+	if err := w.s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE slots SET state = 'wanted' WHERE id = ?", w.slotID)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	loose := t.TempDir()
+	src := filepath.Join(loose, "Dune.Part.Two.2024.2160p.WEB-DL.mkv")
+	write(t, src, 4096)
+	im := &Importer{Store: w.s, SavePath: loose, Ops: Ops{Link: func(string, string) error { return &os.LinkError{Op: "link", Err: syscall.EXDEV} }}}
+	res, err := im.ImportByHand(ctx, []ByHandItem{{Path: src, SlotID: w.slotID, Mode: "move"}}, domain.System)
+	if err != nil || len(res) != 1 || res[0].Outcome != "placed" {
+		t.Fatalf("import %+v %v", res, err)
+	}
+	if res[0].PlacedBy != "copy" || !res[0].FellBack {
+		t.Fatalf("result %+v, want copy that fell back", res[0])
+	}
+	if _, err := os.Stat(src); err == nil {
+		t.Fatal("a move left the original")
+	}
+	var f mediafiles.File
+	if err := database.Get(ctx, w.s.Read(), "files", res[0].FileID, &f); err != nil {
+		t.Fatal(err)
+	}
+	if f.PlacedBy != "copy" || !f.FellBack {
+		t.Fatalf("file %+v", f)
+	}
+	imps, _ := database.Select[mediafiles.Import](ctx, w.s.Read(), "imports", "mode = 'by_hand'")
+	if len(imps) != 1 || imps[0].Result[0].PlacedBy != "copy" || !imps[0].Result[0].FellBack {
+		t.Fatalf("imports %+v", imps)
+	}
+	es, _, _ := w.s.Events(ctx, database.EventFilter{Kinds: []string{"import_done"}})
+	if len(es) != 1 || es[0].Data["placed_by"] != "copy" || es[0].Data["fell_back"] != true {
+		t.Fatalf("events %+v", es)
+	}
+}

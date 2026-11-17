@@ -1,11 +1,27 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError, createClient, isIncomplete, keepFor, message } from './api.ts';
+import { ApiError, createClient, isIncomplete, isSourceOff, keepFor, message } from './api.ts';
+import { appLanguage } from './i18n/i18n.svelte.ts';
 
 function reply(status: number, body?: unknown, headers: Record<string, string> = {}) {
 	return new Response(body === undefined ? null : typeof body === 'string' ? body : JSON.stringify(body), { status, headers });
 }
 
 describe('api client', () => {
+	it('asks for browsing answers at a fresh address after a hide, and leaves other reads alone', async () => {
+		const f = vi.fn(async () => reply(200, {}));
+		const c = createClient(f, () => undefined);
+		await c.get('/explore/head?type=all');
+		c.freshBrowsing();
+		await c.get('/explore/head?type=all');
+		await c.get('/metadata/movie/1');
+		await c.get('/users');
+		const urls = f.mock.calls.map((x) => String((x as unknown[])[0]));
+		expect(urls[0]).not.toContain('fresh=');
+		expect(urls[1]).toMatch(/\/explore\/head\?type=all&fresh=\d+$/);
+		expect(urls[2]).toMatch(/\/metadata\/movie\/1\?fresh=\d+$/);
+		expect(urls[3]).not.toContain('fresh=');
+	});
+
 	it('shares one request between identical reads and forgets it after a change', async () => {
 		const f = vi.fn(async () => reply(200, { n: [1] }));
 		const c = createClient(f);
@@ -18,6 +34,14 @@ describe('api client', () => {
 		await c.post('/y', {});
 		await c.get('/x');
 		expect(f).toHaveBeenCalledTimes(3);
+	});
+
+	it('turns a lookup that is off on this install into a calm error, not data', async () => {
+		const f = vi.fn(async () => reply(200, { source_off: true, note: 'Some rows are off on this install.' }));
+		const c = createClient(f);
+		const e = await c.get('/discover/x').catch((x) => x);
+		expect(isSourceOff(e)).toBe(true);
+		expect(isSourceOff(new ApiError('no', 500))).toBe(false);
 	});
 
 	it('does not keep a failed read', async () => {
@@ -33,6 +57,14 @@ describe('api client', () => {
 		const c = createClient(f);
 		expect(await c.get('/titles')).toEqual({ titles: [] });
 		expect(f).toHaveBeenCalledWith('/api/v1/titles', expect.objectContaining({ method: 'GET', credentials: 'same-origin' }));
+	});
+
+	it('sends the language the app is shown in, so titles and synopses come in it', async () => {
+		const f = vi.fn(async (_u: string, _o?: RequestInit) => reply(200, {}));
+		const c = createClient(f);
+		await c.get('/metadata/movie/1');
+		await c.post('/asks', {});
+		for (const call of f.mock.calls) expect((call[1]?.headers as Record<string, string>)['X-HolyArrs-Language']).toBe(appLanguage());
 	});
 
 	it('sends the CSRF token on changes but not on reads', async () => {

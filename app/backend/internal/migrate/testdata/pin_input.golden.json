@@ -6,6 +6,7 @@
     "version": "s",
     "schema": 7,
     "read_at": "2026-10-13T12:00:00Z",
+    "address": "s",
     "titles": [
       {
         "source_id": 7,
@@ -73,6 +74,14 @@
         ],
         "min_score": 7,
         "cutoff_score": 7,
+        "min_upgrade_score": 7,
+        "qualities": [
+          "s"
+        ],
+        "cutoff_qualities": [
+          "s"
+        ],
+        "language": "s",
         "scores": {
           "s": 7
         }
@@ -389,6 +398,7 @@
       {
         "source_id": 7,
         "external_id": "s",
+        "ext_name": "s",
         "name": "s",
         "email": "s",
         "kind": "s",

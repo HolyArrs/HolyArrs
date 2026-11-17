@@ -168,13 +168,6 @@ func countUsersNamed(ctx context.Context, q conn, name string) (int, error) {
 	return n, err
 }
 
-// countKids counts the people who have an age limit.
-func countKids(ctx context.Context, q conn) (int, error) {
-	var kids int
-	err := q.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE max_rating != ''").Scan(&kids)
-	return kids, err
-}
-
 // countActiveOwners counts the owner rows that are turned on.
 func countActiveOwners(ctx context.Context, q conn) (int, error) {
 	var owner int

@@ -9,6 +9,7 @@ Health string `db:"health"`
 HealthCheckedAt *time.Time `db:"health_checked_at"`
 SameDiskAs []int64 `db:"same_disk_as,json"`
 HealthReason string `db:"health_reason"`
+CopiesExpected bool `db:"copies_expected"`
 == Title
 Meta Meta ``
 Kind string `db:"kind"`
@@ -22,6 +23,7 @@ Aliases []string `db:"aliases,json"`
 SourceIDs map[string]string `db:"source_ids,json"`
 MetadataSource string `db:"metadata_source"`
 EpisodeOrder *string `db:"episode_order"`
+EpisodeGroupID *string `db:"episode_group_id"`
 KeepUpToDate bool `db:"keep_up_to_date"`
 NewPartsPolicy string `db:"new_parts_policy"`
 ReleaseGate string `db:"release_gate"`
@@ -40,6 +42,7 @@ GateOpensAt *time.Time `db:"gate_opens_at"`
 DroppedAt *time.Time `db:"dropped_at"`
 SeasonChoice *string `db:"season_choice"`
 FutureFrom *time.Time `db:"future_from"`
+PackWindow int `db:"pack_window"`
 Network *string `db:"network"`
 AirTime *string `db:"air_time"`
 TimeZone *string `db:"time_zone"`
@@ -54,6 +57,8 @@ Genres []string `db:"genres,json"`
 RuntimeMinutes int `db:"runtime_minutes"`
 Rating string `db:"rating"`
 People []string `db:"people,json"`
+Score *float64 `db:"score"`
+Votes int `db:"votes"`
 Directors []string `db:"directors,json"`
 Studio string `db:"studio"`
 Tags []string `db:"tags,json"`
@@ -116,6 +121,7 @@ KeepUpToDate bool `db:"keep_up_to_date"`
 IsMain bool `db:"is_main"`
 Edition string `db:"edition"`
 AudioLanguages []string `db:"audio_languages,json"`
+FourK bool `db:"four_k"`
 == Slot
 Meta Meta ``
 ItemID int64 `db:"item_id"`
@@ -140,6 +146,7 @@ SourceFile string `json:"source_file"`
 TargetSlotIDs []int64 `json:"target_slot_ids"`
 TargetPath string `json:"target_path"`
 Method string `json:"method"`
+Move bool `json:"move,omitempty"`
 ReplacesFileID *int64 `json:"replaces_file_id,omitempty"`
 Confidence float64 `json:"confidence"`
 Why []string `json:"why"`
@@ -150,6 +157,8 @@ PlacedBy string `json:"placed_by"`
 FellBack bool `json:"fell_back"`
 Error string `json:"error,omitempty"`
 HeldAside string `json:"held_aside,omitempty"`
+MoveSize int64 `json:"move_size,omitempty"`
+MoveMod int64 `json:"move_mod,omitempty"`
 HeldAsideMore []string `json:"held_aside_more,omitempty"`
 == Import
 Meta Meta ``
@@ -188,6 +197,8 @@ CheckedAt *time.Time `db:"checked_at"`
 Role string `db:"role"`
 ParentFileID *int64 `db:"parent_file_id"`
 State string `db:"state"`
+LeftoverReason *string `db:"leftover_reason"`
+LeftoverDismissed bool `db:"leftover_dismissed"`
 == PickRulesBody
 Steps []Step `json:"steps"`
 GoodEnoughAt string `json:"good_enough_at"`
@@ -202,6 +213,7 @@ Language LanguageRule `json:"language"`
 Order string `json:"order"`
 UpgradeMinPoints int `json:"upgrade_min_points"`
 ProperPolicy ProperPolicy `json:"proper_policy"`
+Tags []string `json:"tags,omitempty"`
 Synced *SyncedProfile `json:"synced,omitempty"`
 == OwnTrait
 Meta Meta ``

@@ -1,0 +1,96 @@
+version = "1.1.1"
+theme = "Built-in sites, 4K for shows, Profilarr, and fewer stuck downloads."
+images = [
+  {registry = "Docker Hub", name = "holyarrs/holyarrs"},
+]
+docs_url = ""
+known_issues = []
+security = []
+credits = [
+  {github = "eddoww", link = "https://github.com/HolyArrs/HolyArrs/issues/289", issues = [289, 291, 292, 293]},
+  {github = "JulianAtkins", link = "https://github.com/HolyArrs/HolyArrs/issues/318", issues = [318, 325, 326]},
+  {github = "stormbyte", link = "https://github.com/HolyArrs/HolyArrs/issues/284", issues = [284, 320]},
+  {name = "GreyJoshy94", issues = [265, 312]},
+  {github = "mandopatriot", link = "https://github.com/HolyArrs/HolyArrs/issues/279", issues = [279]},
+  {github = "mimedo", link = "https://github.com/HolyArrs/HolyArrs/issues/291#issuecomment-6816138650", issues = [291]},
+  {github = "danielbaercgn", link = "https://github.com/HolyArrs/HolyArrs/issues/308", issues = [308]},
+  {github = "stevelucky", link = "https://github.com/HolyArrs/HolyArrs/issues/309", issues = [309]},
+  {github = "Nviviri", link = "https://github.com/HolyArrs/HolyArrs/issues/314", issues = [314]},
+  {github = "zhu327", link = "https://github.com/HolyArrs/HolyArrs/issues/325#issuecomment-6854023071", issues = [325]},
+  {github = "nevpeek", link = "https://github.com/HolyArrs/HolyArrs/issues/324", issues = [324]},
+  {github = "p5y6ry52pt-hue", link = "https://github.com/HolyArrs/HolyArrs/issues/328", issues = [328]},
+  {github = "sparecycles-dev", link = "https://github.com/HolyArrs/HolyArrs/issues/332", issues = [332]},
+  {name = "Lunim", issues = [341]},
+  {name = "Mr_Mennens_Tech", issues = [238]},
+  {name = "roychassi", issues = [307]},
+  {name = "tekhop", issues = [321]},
+  {name = "u/Blegrand15", issues = [334]},
+]
+
+[[highlights]]
+line = "Knaben, TorrentsCSV, SubsPlease and IPTorrents work without Prowlarr."
+issues = [289]
+shot = "Add a Source with Built-in site picked"
+
+[[highlights]]
+line = "Ask for shows in 4K, and pick a quality when you ask."
+issues = [293, 335]
+shot = "Show request sheet with the Quality row (phone)"
+
+[[highlights]]
+line = "Profilarr can send its formats, profiles and settings to HolyArrs."
+issues = [279]
+shot = "Settings > API listing what Profilarr sent"
+
+[groups]
+Requests = [
+  "Fixed: People from Seerr keep their Plex, Jellyfin or Emby sign-in. (#334)",
+  "Fixed: Import members reads people from Plex again. (#341)",
+  "Fixed: Requests from Seerr show real names, years and posters. (#322)",
+  "Fixed: An approval that adds nothing says why. (#322)",
+]
+Library = [
+  "Leftover files show up, and you can match them to episodes. (#284)",
+  "Import a library has the Library's four views and big posters. (#324)",
+  "Library stats sits in the Library menu. (#321)",
+  "Fixed: Posters view stays light in big libraries, Safari too. (#328)",
+  "Fixed: Rename files no longer reads every file first. (#332)",
+  "Fixed: Episodes count as missing only after they air. (#320)",
+  "Fixed: Movies under a translated name import; by-hand import can replace files. (#308)",
+]
+Downloads = [
+  "qBittorrent: category after import, others' torrents left alone, subtitles come along. (#292)",
+  "Fixed: Downloads left on a removed Downloader re-link, or can be removed. (#309)",
+  "Fixed: A grab that never reaches a Downloader says so, never Sent. (#310)",
+  "Fixed: SABnzbd downloads import with the episodes they were grabbed for. (#312)",
+  "Fixed: A path pair with the same folder twice gets a note. (#265)",
+  "Fixed: A torrent the client already holds is followed when picked. (#322)",
+  "Fixed: A refused import shows why and offers Import files by hand. (#322)",
+  "Fixed: Downloads keeps its bar and tabs while the list loads. (#322)",
+]
+Indexers = [
+  "Fixed: Season packs are found, likely fakes skipped, stuck choices replaceable. (#307)",
+  "Fixed: Feed checks grab date-named daily episodes and say what they skip. (#314)",
+  "Fixed: A failed Source test stays failed after a reload. (#322)",
+]
+Health = [
+  "Fixed: Backup alerts stop once backups are off. (#318)",
+  "Fixed: Metadata set to Off raises no alerts. (#326)",
+  "Fixed: A slow metadata server reads as slow, not down. (#325)",
+]
+Setup = [
+  "Old-app formats come over with exact scores; tags pick each title's Sources. (#291)",
+  "Set the listen port with HOLYARRS_PORT or HOLYARRS_ADDR. (#322)",
+  "Fixed: Folders HolyArrs can't see come over as wanted, or stay behind. (#238)",
+  "Fixed: Confirming your password goes on with the import. (#322)",
+  "Fixed: Settings tabs wrap on phones instead of hiding. (#322)",
+  "Fixed: The sign-in language button is bigger on touch screens. (#322)",
+  "Fixed: Long toasts wrap instead of being cut off. (#322)",
+  "Fixed: Reworded hints are updated in all 44 languages. (#322)",
+  "Changed: Subtitle sites and subtitle searching start turned on. (#322)",
+]
+
+[stats]
+issues_done = 26
+still_building = 1
+people_credited = 18

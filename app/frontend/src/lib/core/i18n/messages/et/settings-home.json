@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Täpsemad",
+	"settings.home.page": "{group} · leht",
+	"settings.home.title": "Seaded",
+	"settings.home.search": "Otsi seadeid",
+	"settings.home.matching": "Sobivad seaded",
+	"settings.home.noMatch": "Sobivaid seadeid pole",
+	"settings.home.noMatchText": "Proovi mõnda teist sõna, näiteks kaust, võti või parool.",
+	"settings.home.clear": "Tühjenda otsing"
+}

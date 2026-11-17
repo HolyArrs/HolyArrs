@@ -26,6 +26,7 @@ func (h *FolderHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/library-folders", h.addFolder)
 	m.HandleFunc("PUT /api/v1/library-folders/{id}", h.editFolder)
 	m.HandleFunc("DELETE /api/v1/library-folders/{id}", h.deleteFolder)
+	m.HandleFunc("PUT /api/v1/library-folders/{id}/path", h.changeFolderPath)
 	m.HandleFunc("POST /api/v1/library-folders/{id}/check", h.checkFolder)
 	m.HandleFunc("GET /api/v1/never-add", h.listNeverAdd)
 	m.HandleFunc("POST /api/v1/never-add", h.addNeverAdd)
@@ -45,11 +46,12 @@ type FolderView struct {
 	Health           string     `json:"health"`
 	HealthReason     string     `json:"health_reason"`
 	HealthCheckedAt  *time.Time `json:"health_checked_at,omitempty"`
+	CopiesExpected   bool       `json:"copies_expected"`
 }
 
 func folderView(f mf.LibraryFolder) FolderView {
 	return FolderView{ID: f.ID, Path: f.Path, Kind: f.Kind, Label: f.Label, DefaultPickRules: f.DefaultPickRules, FreeSpace: f.FreeSpace,
-		Health: f.Health, HealthReason: f.HealthReason, HealthCheckedAt: f.HealthCheckedAt}
+		Health: f.Health, HealthReason: f.HealthReason, HealthCheckedAt: f.HealthCheckedAt, CopiesExpected: f.CopiesExpected}
 }
 
 // NeverAddView is a Never-add entry as the API shows it.
@@ -98,10 +100,29 @@ func (h *FolderHandlers) editFolder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var c FolderChange
-	if !webserver.Decode(w, r, &c, `send {"label": "...", "default_pick_rules_id": <id>}`) {
+	if !webserver.Decode(w, r, &c, `send {"label": "...", "default_pick_rules_id": <id>, "copies_expected": true}`) {
 		return
 	}
 	lf, err := UpdateFolder(r.Context(), h.Store, id, c, h.Actor(r))
+	if err != nil {
+		h.Fail(w, err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, folderView(lf))
+}
+
+func (h *FolderHandlers) changeFolderPath(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	var body struct {
+		Path string `json:"path"`
+	}
+	if !webserver.Decode(w, r, &body, `send {"path": "/data/media/movies"}`) {
+		return
+	}
+	lf, err := ChangeFolderPath(r.Context(), h.Store, id, body.Path, h.DownloadPaths(r), h.Actor(r))
 	if err != nil {
 		h.Fail(w, err)
 		return

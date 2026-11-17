@@ -37,6 +37,8 @@ export interface TitleView {
 	stage: string;
 	gate_open: boolean;
 	gate_reason: string;
+	/** The protocol wanted copies could not be sent for: no Downloader takes it. */
+	no_downloader?: 'usenet' | 'torrent';
 	library_folder_id?: number;
 	folder_path?: string;
 	pick_rules_id?: number;
@@ -47,6 +49,9 @@ export interface TitleView {
 	genres?: string[];
 	runtime_minutes?: number;
 	rating?: string;
+	// Members' average out of 10 and its vote count (not the age rating); missing when not known.
+	score?: number;
+	votes?: number;
 	added_at?: string;
 	size_bytes?: number;
 	copy?: TitleCopy;
@@ -123,14 +128,18 @@ export interface SeasonSummary {
 	downloading?: number;
 	failed?: number;
 	next_air_date?: string;
+	next_air_day?: string;
 	dropped?: boolean;
 }
 
 export interface ShowInfo {
 	details_source: string;
 	episode_order: string;
+	episode_group?: { id: string; name: string; type: number } | null;
 	season_choice?: string;
 	new_seasons: string;
+	// Episodes ahead a season pack fetches; 0 or missing gets the whole season.
+	pack_window?: number;
 	status: string;
 	network?: string;
 	air_time?: string;
@@ -207,6 +216,8 @@ export interface LookupMovie extends Movie {
 	ask?: AskBrief;
 	ask_4k?: AskBrief;
 	has_4k?: boolean;
+	/** Hidden from browsing; managers still find it to add it. */
+	hidden?: boolean;
 }
 
 export type AskState = 'asked' | 'approved' | 'turned_down' | 'available';
@@ -243,6 +254,9 @@ export interface Ask {
 	episodes?: { season: number; episodes: number[] }[];
 	future_only?: boolean;
 	four_k?: boolean;
+	/** The line of what people can ask for that was picked (standard, 4k), and the owner's name for it now ('' is the built-in name). */
+	quality?: string;
+	quality_name?: string;
 	albums?: AskAlbum[];
 	album_words?: string;
 	artist_id?: string;
@@ -287,6 +301,8 @@ export type Moment =
 	| 'report_made'
 	| 'report_fixed'
 	| 'grab'
+	| 'downloaded'
+	| 'download_failed'
 	| 'import'
 	| 'rename'
 	| 'add'
@@ -331,6 +347,7 @@ export interface LibraryFolder {
 	health: string;
 	health_reason: string;
 	health_checked_at?: string;
+	copies_expected?: boolean;
 }
 
 export interface Reason {
@@ -431,7 +448,7 @@ export interface EventPage {
 export interface HealthCheck {
 	id: number;
 	key: string;
-	kind: 'library_folder' | 'disk_space' | 'source' | 'downloader' | 'backups' | 'update' | 'config_disk' | 'config_folder' | 'waiting_downloads';
+	kind: 'library_folder' | 'disk_space' | 'source' | 'downloader' | 'backups' | 'update' | 'config_disk' | 'config_folder' | 'waiting_downloads' | 'clear_waiting' | 'save_folder' | 'no_downloader' | 'same_downloader';
 	subject: string;
 	state: 'ok' | 'warning' | 'error';
 	message: string;
@@ -541,8 +558,17 @@ export interface DownloadRow extends DownloadView {
 	finished_at?: string;
 	updated_at: string;
 	slot_state?: string;
+	/** Imported, but its clear from the Downloader failed; HolyArrs tries again at next_try. */
+	clear_waiting?: { next_try: string; tries: number; reason?: string };
 	can_act: boolean;
 	client_locked?: boolean;
+	/** Its Downloader was removed and no other one holds it: Remove clears HolyArrs' own record only. */
+	downloader_gone?: boolean;
+	/** Finished and still waiting for its import: Import again asks for it. */
+	can_import?: boolean;
+	/** A refused import: why (the importer's words) and the folder Import files by hand opens on. */
+	refused_why?: string;
+	import_folder?: string;
 	replaced?: boolean;
 	kind?: 'movie' | 'show' | 'artist';
 	episodes?: EpisodeLine[];
@@ -569,6 +595,15 @@ export interface DownloadRow extends DownloadView {
 	hash?: string;
 	category?: string;
 	live_key?: string;
+	// A season pack taken a few episodes at a time: the episodes switched on and how many of the pack's episodes that is.
+	pack?: PackRange;
+}
+
+export interface PackRange {
+	from: number;
+	to: number;
+	taken: number;
+	total: number;
 }
 
 export interface EpisodeLine {
@@ -588,7 +623,7 @@ export interface Decision {
 	year?: number;
 	version: string;
 	versions: number;
-	why: 'ran_out' | 'conflict' | 'not_replaced' | 'not_sent';
+	why: 'ran_out' | 'conflict' | 'not_replaced' | 'not_sent' | 'taken';
 	reason: string;
 	release_id?: number;
 	release_name?: string;
@@ -601,6 +636,10 @@ export interface Decision {
 	pack_slot_ids?: number[];
 	pack?: EpisodeLine[];
 	artwork?: string;
+	// The one video a movie's finished download holds; Review can import it.
+	import_file?: string;
+	// The finished download's folder; Import files by hand opens there.
+	import_folder?: string;
 }
 
 export interface SearchView {
@@ -639,6 +678,8 @@ export interface LookupShow {
 	title_id?: number;
 	never_add?: boolean;
 	ask?: AskBrief;
+	/** Hidden from browsing; managers still find it to add it. */
+	hidden?: boolean;
 }
 
 export interface ApiKey {
@@ -660,4 +701,15 @@ export interface UpdateInfo {
 	no_release?: boolean;
 	problem?: string;
 	version: string;
+}
+
+/** One hide from GET /api/v1/hidden: a title (tmdb_id, name) or a genre, for everyone (user_id 0) or one person. */
+export interface Hide {
+	id: number;
+	kind: 'movie' | 'show';
+	tmdb_id?: string;
+	genre?: string;
+	name?: string;
+	user_id: number;
+	created_at: string;
 }

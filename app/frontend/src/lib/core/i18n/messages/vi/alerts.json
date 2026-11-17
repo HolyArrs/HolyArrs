@@ -1,0 +1,17 @@
+{
+	"alerts.fallback.settings": "Cài đặt",
+	"alerts.panel.clearAll": "Xóa tất cả",
+	"alerts.panel.empty": "Chưa có gì ở đây",
+	"alerts.panel.needsAttention": "Cần chú ý",
+	"alerts.panel.recent": "Gần đây",
+	"alerts.panel.remove": "Xóa {text}",
+	"alerts.panel.title": "Cảnh báo gần đây",
+	"alerts.state.manyNeed": "{count} mục cần chú ý",
+	"alerts.state.ok": "Mọi thứ ổn",
+	"alerts.state.oneNeeds": "1 mục cần chú ý",
+	"alerts.state.unset": "Chưa thiết lập",
+	"alerts.time.days": "{n} ngày",
+	"alerts.time.hours": "{n} giờ",
+	"alerts.time.minutes": "{n} phút",
+	"alerts.time.now": "vừa xong"
+}

@@ -9,13 +9,16 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
+	import Menu from '#lib/ui/Menu.svelte';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { folderMissing, qualityFor, qualityBody, qualityValue, qualityChoices, defaultChoice, savedDefaults } from '#lib/mediafiles/index.ts';
+	import type { TitleDefaults } from '#lib/mediafiles/index.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { bytes, dateTime, folderHealth, tone } from '#lib/core/format.ts';
-	import type { LibraryFolder } from '#lib/core/types.ts';
+	import type { LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 
 	// Grouped list with a plain line icon per folder.
 	const kindWord = (k: string) => (k === 'show' ? t('settings.libraryFolders.shows') : k === 'music' ? t('settings.libraryFolders.music') : t('settings.libraryFolders.movies'));
@@ -27,12 +30,18 @@
 
 	let folders = $state<LibraryFolder[]>([]);
 	let loaded = $state(false);
+	// Quality sets, for each folder's own quality. Left empty (and the choice hidden) when they cannot be read.
+	let rules = $state<PickRulesView[]>([]);
+	// The saved Movies and TV defaults name the set a folder with no quality of its own hands on.
+	let titleDefaults = $state<TitleDefaults | null>(null);
+	const canEdit = $derived(session.can('settings'));
 	let error = $state('');
 
 	let adding = $state(false);
 	let path = $state('');
 	let label = $state('');
 	let kind = $state<'movie' | 'show' | 'music'>('movie');
+	let quality = $state('');
 	let formError = $state('');
 	let saving = $state(false);
 
@@ -40,12 +49,78 @@
 	let editLabel = $state('');
 	let busyId = $state<number | null>(null);
 
+	// Change path: the files were already moved; the server checks each one and moves nothing.
+	let moving = $state<number | null>(null);
+	let movePath = $state('');
+	let moveError = $state('');
+	let moveBusy = $state(false);
+	function openMove(f: LibraryFolder) {
+		moving = moving === f.id ? null : f.id;
+		movePath = f.path;
+		moveError = '';
+	}
+	async function changePath(f: LibraryFolder) {
+		moveError = '';
+		const p = movePath.trim();
+		if (!p) {
+			moveError = t('settings.libraryFolders.pathNeeded');
+			return;
+		}
+		if (p === f.path) {
+			moving = null;
+			return;
+		}
+		moveBusy = true;
+		busyId = f.id;
+		try {
+			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}/path`, { path: p });
+			folders = folders.map((x) => (x.id === f.id ? n : x));
+			moving = null;
+			toasts.push(t('settings.libraryFolders.pathChanged'), n.health === 'ok' ? 'ok' : 'info', { body: n.health === 'ok' ? undefined : folderHealth(n.health) });
+		} catch (err) {
+			moveError = folderMissing(err, p, f.kind) ?? message(err);
+		} finally {
+			moveBusy = false;
+			busyId = null;
+		}
+	}
+
 	// Extra import folders: where Import files by hand may also read.
 	let extraText = $state('');
 	let extraLoaded = $state(false);
 	let extraError = $state('');
 	let extraSaving = $state(false);
 	const canSaveExtra = $derived(session.can('users'));
+	// Subtitle files brought along on import: off with srt until turned on.
+	let side = $state<{ on: boolean; types: string[] } | null>(null);
+	let sideTypes = $state('srt');
+	let sideError = $state('');
+	let sideSaving = $state(false);
+	const canSaveSide = $derived(session.can('settings'));
+	async function loadSide() {
+		try {
+			side = await api.get<{ on: boolean; types: string[] }>('/settings/side-files');
+			sideTypes = side.types.join(', ');
+		} catch {
+			side = null; // No settings permission: the card stays hidden.
+		}
+	}
+	async function saveSide(e: SubmitEvent) {
+		e.preventDefault();
+		if (!side) return;
+		sideError = '';
+		sideSaving = true;
+		try {
+			const types = sideTypes.split(/[\s,]+/).map((x) => x.trim()).filter(Boolean);
+			side = await api.put<{ on: boolean; types: string[] }>('/settings/side-files', { on: side.on, types });
+			sideTypes = side.types.join(', ');
+			toasts.push(t('settings.libraryFolders.importSaved'), 'ok');
+		} catch (err) {
+			sideError = message(err);
+		} finally {
+			sideSaving = false;
+		}
+	}
 
 	async function load() {
 		try {
@@ -55,6 +130,13 @@
 			error = message(e);
 		} finally {
 			loaded = true;
+		}
+	}
+	async function loadRules() {
+		try {
+			rules = (await api.get<{ pick_rules: PickRulesView[] }>('/pick-rules')).pick_rules;
+		} catch {
+			rules = [];
 		}
 	}
 	async function loadExtra() {
@@ -67,7 +149,10 @@
 	}
 	onMount(() => {
 		void load();
+		void loadRules();
+		void savedDefaults.load().then((d) => (titleDefaults = d));
 		void loadExtra();
+		void loadSide();
 	});
 
 	async function saveExtra(e: SubmitEvent) {
@@ -94,15 +179,16 @@
 		}
 		saving = true;
 		try {
-			const f = await api.post<LibraryFolder>('/library-folders', { path: path.trim(), kind, label: label.trim() });
+			const f = await api.post<LibraryFolder>('/library-folders', { path: path.trim(), kind, label: label.trim(), ...(quality ? qualityBody(quality) : {}) });
 			folders = [...folders, f];
 			path = '';
 			label = '';
 			kind = 'movie';
+			quality = '';
 			adding = false;
 			toasts.push(t('settings.libraryFolders.added'), f.health === 'ok' ? 'ok' : 'info', { body: f.health === 'ok' ? undefined : folderHealth(f.health) });
 		} catch (err) {
-			formError = message(err);
+			formError = folderMissing(err, path, kind) ?? message(err);
 		} finally {
 			saving = false;
 		}
@@ -127,6 +213,44 @@
 			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}`, { label: editLabel.trim() });
 			folders = folders.map((x) => (x.id === f.id ? n : x));
 			editing = null;
+		} catch (err) {
+			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
+		} finally {
+			busyId = null;
+		}
+	}
+
+	// Shows the choice at once and puts the old one back when the save fails.
+	async function setQuality(f: LibraryFolder, id: number) {
+		const was = f.default_pick_rules_id;
+		if ((was ?? 0) === id) return;
+		const put = (v: number | null) => (folders = folders.map((x) => (x.id === f.id ? { ...x, default_pick_rules_id: v } : x)));
+		put(id || null);
+		busyId = f.id;
+		try {
+			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}`, qualityBody(id));
+			folders = folders.map((x) => (x.id === f.id ? n : x));
+		} catch (err) {
+			put(was);
+			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
+		} finally {
+			busyId = null;
+		}
+	}
+
+	// Copying on purpose (downloads and media on separate disks): the folder then counts as fine.
+	const copiesOk = (f: LibraryFolder) => f.health === 'no_hardlink' && !!f.copies_expected;
+	const rowTone = (f: LibraryFolder) => (copiesOk(f) ? 'ok' : tone(f.health));
+	const rowHealth = (f: LibraryFolder) => (copiesOk(f) ? t('settings.libraryFolders.copiesExpectedState') : f.health === 'ok' ? t('settings.libraryFolders.stateInstant') : folderHealth(f.health));
+	// The one /data folder layout that makes imports instant.
+	const copiesDoc = 'https://docs.holyarrs.com/start/folders/';
+	async function setCopies(f: LibraryFolder, on: boolean) {
+		busyId = f.id;
+		try {
+			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}`, { copies_expected: on });
+			folders = folders.map((x) => (x.id === f.id ? n : x));
+			// Run the checks again so the Settings badge follows at once.
+			void api.post('/health/checks/run').catch(() => {});
 		} catch (err) {
 			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
 		} finally {
@@ -161,7 +285,7 @@
 	<form class="sc-form" onsubmit={add} aria-label={t('settings.libraryFolders.addFolder')}>
 		<SettingsCard title={t('settings.libraryFolders.addFolder')}>
 			<Field id="lf-kind" label={t('settings.libraryFolders.holds')} hint={t('settings.libraryFolders.holdsHint')}>
-				<select id="lf-kind" class="input" bind:value={kind}>
+				<select id="lf-kind" class="input" bind:value={kind} onchange={() => (quality = '')}>
 					<option value="movie">{t('settings.libraryFolders.movies')}</option>
 					<option value="show">{t('settings.libraryFolders.shows')}</option>
 					<option value="music">{t('settings.libraryFolders.music')}</option>
@@ -174,6 +298,14 @@
 				<label for="lf-label">{t('settings.libraryFolders.name')} <span class="muted">{t('settings.libraryFolders.optional')}</span></label>
 				<input id="lf-label" class="input" bind:value={label} placeholder={kindWord(kind)} maxlength="64" />
 			</div>
+			{#if rules.length}
+				<Field id="lf-quality" label={t('settings.libraryFolders.quality')} hint={t('settings.libraryFolders.qualityHint')}>
+					<select id="lf-quality" class="input" bind:value={quality} disabled={!canEdit}>
+						<option value="">{defaultChoice(rules, kind, titleDefaults)}</option>
+						{#each qualityFor(rules, kind) as r (r.id)}<option value={String(r.id)}>{r.name}</option>{/each}
+					</select>
+				</Field>
+			{/if}
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
 				<Button variant="primary" type="submit" disabled={saving} aria-busy={saving}>{t('settings.libraryFolders.addButton')}</Button>
@@ -198,22 +330,49 @@
 					<form class="ed" onsubmit={(e) => (e.preventDefault(), saveLabel(f))}>
 						<label class="sr-only" for="ed-{f.id}">{t('settings.libraryFolders.name')}</label>
 						<input id="ed-{f.id}" class="input" bind:value={editLabel} maxlength="64" />
-						<Button type="submit" size="sm" disabled={busyId === f.id}>{t('settings.libraryFolders.save')}</Button>
-						<Button variant="plain" size="sm" type="button" onclick={() => (editing = null)}>{t('settings.libraryFolders.cancel')}</Button>
+						<Button variant="primary" type="submit" disabled={busyId === f.id}>{t('settings.libraryFolders.save')}</Button>
+						<Button variant="plain" type="button" onclick={() => (editing = null)}>{t('settings.libraryFolders.cancel')}</Button>
 					</form>
 				{:else}
 					<div class="top"><span class="name">{f.label || f.path}</span><span class="kind" data-testid="folder-kind">{f.kind === 'show' ? t('settings.libraryFolders.forShows') : f.kind === 'music' ? t('settings.libraryFolders.forMusic') : t('settings.libraryFolders.forMovies')}</span></div>
 				{/if}
-				<div class="where">{shortPath(f.path)}</div>
-				{#if f.health_reason && tone(f.health) !== 'ok'}<div class="why {tone(f.health)}">{f.health_reason}</div>{/if}
+				<div class="where"><bdi dir="ltr">{shortPath(f.path)}</bdi></div>
+				{#if f.health_reason && rowTone(f) !== 'ok'}<div class="why {rowTone(f)}">{f.health_reason}</div>{/if}
 			</div>
 			<div class="free"><b>{freeNum(f.free_space)[0]}</b><small>{t('settings.libraryFolders.free', { unit: freeNum(f.free_space)[1] ?? '' })}</small></div>
-			<span class="st {tone(f.health)}"><i></i><span>{folderHealth(f.health)}</span></span>
+			{#if rules.length}
+				{@const q = qualityValue(f, rules, titleDefaults)}
+				<!-- A settings row: the name, then the value; the menu opens only on a tap. -->
+				<div class="qpick" class:own={q.own} data-testid="folder-quality">
+					{#if canEdit}
+						<Menu label={t('settings.libraryFolders.qualityFor', { name: f.label || f.path, value: q.text })} variant="row" align="end" width={240} portal items={qualityChoices(rules, f.kind, f.default_pick_rules_id, titleDefaults).map((c) => ({ label: c.label, checked: c.checked, onselect: () => void setQuality(f, c.id) }))}>
+							{#snippet trigger()}<span class="ql">{t('settings.libraryFolders.quality')}</span><span class="qv" title={q.text}>{q.text}</span><span class="qc" aria-hidden="true"><Icon name="chevronRight" size={16} /></span>{/snippet}
+						</Menu>
+					{:else}
+						<div class="qro"><span class="ql">{t('settings.libraryFolders.quality')}</span><span class="qv">{q.text}</span></div>
+					{/if}
+				</div>
+			{/if}
+			<span class="st {rowTone(f)}"><i></i><span>{rowHealth(f)}</span>{#if f.health === 'no_hardlink'}<a class="why-link" href={copiesDoc} target="_blank" rel="noopener noreferrer">{t('settings.libraryFolders.whyCopies')}</a>{/if}</span>
 			<div class="acts">
 				<IconButton icon="refresh" label={t('settings.libraryFolders.checkAgain', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => recheck(f)} />
+				{#if f.health === 'no_hardlink'}<Button variant="plain" size="sm" type="button" disabled={busyId === f.id} onclick={() => setCopies(f, !f.copies_expected)}>{f.copies_expected ? t('settings.libraryFolders.warnAgain') : t('settings.libraryFolders.copiesExpected')}</Button>{/if}
 				<Button variant="plain" size="sm" type="button" onclick={() => ((editing = f.id), (editLabel = f.label))}>{t('settings.libraryFolders.rename')}</Button>
+				<IconButton icon="folderMove" label={t('settings.libraryFolders.changePathOf', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} aria-expanded={moving === f.id} onclick={() => openMove(f)} />
 				<IconButton icon="trash" label={t('settings.libraryFolders.removePath', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => remove(f)} />
 			</div>
+			{#if moving === f.id}
+				<form class="mv" onsubmit={(e) => (e.preventDefault(), changePath(f))} aria-label={t('settings.libraryFolders.changePath')}>
+					<label for="mv-{f.id}">{t('settings.libraryFolders.newPath')}</label>
+					<div class="mv-row">
+						<input id="mv-{f.id}" class="input mono" dir="ltr" bind:value={movePath} autocomplete="off" spellcheck="false" disabled={moveBusy} aria-describedby="mv-{f.id}-hint" />
+						<Button variant="primary" size="sm" type="submit" busy={moveBusy} disabled={moveBusy}>{moveBusy ? t('settings.libraryFolders.checkingFiles') : t('settings.libraryFolders.changePath')}</Button>
+						<Button variant="plain" size="sm" type="button" disabled={moveBusy} onclick={() => (moving = null)}>{t('settings.libraryFolders.cancel')}</Button>
+					</div>
+					<p class="hint" id="mv-{f.id}-hint">{t('settings.libraryFolders.changePathHint')}</p>
+					{#if moveError}<p class="form-error" role="alert">{moveError}</p>{/if}
+				</form>
+			{/if}
 		</li>
 	{/snippet}
 	<div class="fl-groups">
@@ -235,6 +394,27 @@
 			{#if canSaveExtra}
 				<div class="row" style="margin-top: var(--s-5)">
 					<Button variant="primary" type="submit" disabled={extraSaving} aria-busy={extraSaving}>{t('settings.libraryFolders.save')}</Button>
+				</div>
+			{:else}
+				<p class="hint">{t('settings.libraryFolders.ownerOnly')}</p>
+			{/if}
+		</SettingsCard>
+	</form>
+{/if}
+
+{#if side}
+	<form class="sc-form extra" onsubmit={saveSide} aria-label={t('settings.libraryFolders.sideFiles')} data-testid="side-files">
+		<SettingsCard id="side-files" title={t('settings.libraryFolders.sideFiles')} description={t('settings.libraryFolders.sideFilesDesc')}>
+			<label class="checkline">
+				<input type="checkbox" bind:checked={side.on} disabled={!canSaveSide} data-testid="side-files-on" />
+				<span><b>{t('settings.libraryFolders.sideOn')}</b><br /><span class="hint">{t('settings.libraryFolders.sideOnHint')}</span></span>
+			</label>
+			<Field id="side-types" label={t('settings.libraryFolders.sideTypes')} hint={t('settings.libraryFolders.sideTypesHint')} error={sideError}>
+				<input id="side-types" class="input mono" bind:value={sideTypes} placeholder="srt" autocomplete="off" spellcheck="false" readonly={!canSaveSide} />
+			</Field>
+			{#if canSaveSide}
+				<div class="row" style="margin-top: var(--s-5)">
+					<Button variant="primary" type="submit" disabled={sideSaving} aria-busy={sideSaving}>{t('settings.libraryFolders.save')}</Button>
 				</div>
 			{:else}
 				<p class="hint">{t('settings.libraryFolders.ownerOnly')}</p>
@@ -265,18 +445,36 @@
 	.name { font: 600 15px/1.3 var(--font-ui); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.kind { flex: none; color: var(--text-muted); font: 500 12px/1 var(--font-ui); }
 	.where { margin-top: 3px; color: var(--text-muted); font: 400 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	/* Quality: a compact name-and-value button in the facts on wide screens, a full settings row on phones. */
+	/* A fixed width keeps the label lined up from row to row, whatever the path or set name. */
+	.qpick { width: 232px; min-width: 0; }
+	.qpick :global(.ui-pop) { display: flex; min-width: 0; }
+	.qpick :global(.trigger.row), .qro { display: flex; align-items: center; gap: 6px; width: auto; max-width: 100%; min-width: 0; min-height: 36px; padding: 4px 8px; }
+	.ql { flex: none; color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); }
+	.qv { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
+	.own .qv { color: var(--text); }
+	.qc { flex: none; display: inline-flex; color: var(--text-muted); transform: rotate(90deg); }
+	@media (pointer: coarse) { .qpick :global(.trigger.row) { min-height: 44px; } }
 	.why { margin-top: 3px; font: 500 12px/1.3 var(--font-ui); color: var(--fail-text, var(--fail)); }
 	.why.wait { color: var(--wait-text, var(--wait)); }
 	.free { display: flex; align-items: baseline; gap: 4px; justify-content: flex-end; white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.free b { font: 600 15px/1 var(--font-ui); }
 	.free small { color: var(--text-muted); font: 400 12px/1 var(--font-ui); }
 	.st { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font: 500 12px/1 var(--font-ui); white-space: nowrap; }
-	.st i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 18%, transparent); }
+	.st i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 18%, transparent); }
 	.st.wait i { background: var(--wait); box-shadow: 0 0 0 3px color-mix(in srgb, var(--wait) 22%, transparent); }
 	.st.fail i { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
+	.st .why-link { flex: none; color: var(--accent, var(--text)); text-decoration: underline; text-underline-offset: 2px; }
 	.acts { display: flex; align-items: center; gap: 2px; }
 	.ed { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 	.ed .input { max-width: 240px; min-height: 36px; }
+	/* Change path: a full-width line under the row. */
+	.folder .mv { grid-column: 2 / -1; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-top: 6px; }
+	.mv label { color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); }
+	.mv-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+	.mv-row .input { flex: 1 1 220px; min-width: 0; min-height: 36px; }
+	.mv .hint { margin: 0; color: var(--text-muted); font: 400 12px/1.4 var(--font-ui); }
+	.mv .form-error { margin: 0; overflow-wrap: anywhere; }
 	/* Glass sheet shared by the folder rows. */
 	.fl {
 		border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px;
@@ -295,18 +493,29 @@
 	.fl-group h3 .cnt { padding: 3px 8px; border-radius: var(--r-pill); background: var(--surface-2); font-size: 11px; font-variant-numeric: tabular-nums; }
 	.kind { display: none; }
 
-	@media (max-width: 760px) {
-		.folder { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic grow st' 'ic free acts'; row-gap: 6px; }
-		.folder .ic { grid-area: ic; align-self: start; } .folder .grow { grid-area: grow; } .folder .st { grid-area: st; justify-self: end; }
+	@container settings (max-width: 640px) {
+		.folder { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic grow grow' 'ic st st' 'ic q q' 'ic free acts'; row-gap: 6px; }
+		.folder .qpick { grid-area: q; width: auto; border-block: 1px solid var(--line); }
+		.qpick :global(.ui-pop) { width: 100%; }
+		.qpick :global(.trigger.row), .qro { width: 100%; max-width: none; min-height: 44px; padding: 0; border-radius: 0; }
+		.ql { flex: 1; color: var(--text); font: 400 15px/1.3 var(--font-ui); }
+		.qv { font: 400 15px/1.3 var(--font-ui); }
+		.qc { transform: none; }
+		.folder .ic { grid-area: ic; align-self: start; } .folder .grow { grid-area: grow; } .folder .st { grid-area: st; justify-self: start; white-space: normal; line-height: 1.3; }
 		.folder .free { grid-area: free; justify-content: flex-start; } .folder .acts { grid-area: acts; justify-self: end; opacity: 1 !important; }
 		.folder .kind { display: none; }
 		.folder .name { white-space: normal; }
 	}
 
 	/* The folder mark: a plain line icon, no tile. */
-	.fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto auto auto; }
+	.fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto auto auto auto; }
 	.ic, .k-show .ic, .k-music .ic { width: 24px; height: 24px; background: none; box-shadow: none; border-radius: 0; color: color-mix(in srgb, var(--text) 55%, transparent); }
-	@media (max-width: 760px) { .fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto; } }
-	/* Phones: the buttons take their own line, so a long Rename label cannot squeeze the name. */
-	@media (max-width: 480px) { .folder { grid-template-areas: 'ic grow st' 'ic free free' 'ic acts acts'; } .folder .acts { justify-self: start; margin-inline-start: -8px; } }
+	@container settings (max-width: 640px) { .fl .folder { grid-template-columns: 24px minmax(0, 1fr) auto; } }
+	/* Phones: the buttons take their own line at the row's end (change path, then remove, last), so a long Rename label cannot squeeze the name. */
+	/* The state takes its own line too, so a long state never squeezes the name. */
+	@container settings (max-width: 440px) {
+		.folder { grid-template-areas: 'ic grow grow' 'ic st st' 'ic free free' 'ic q q' 'ic acts acts'; }
+		.folder .st { justify-self: start; white-space: normal; line-height: 1.3; }
+		.folder .acts { justify-self: end; flex-wrap: wrap; justify-content: flex-end; margin-inline-end: -8px; }
+	}
 </style>

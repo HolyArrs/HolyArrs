@@ -3,10 +3,11 @@ import type { EpisodeView, SeasonSummary, ShowInfo } from '../core/types.ts';
 import { date } from '../core/format.ts';
 import { t } from '../core/i18n/i18n.svelte.ts';
 import { episodeCode } from '../core/episodes.ts';
+import { airedEpisodes } from '#lib/mediafiles/index.ts';
 
 export { episodeCode };
 
-type SeasonLike = { number: number; aired?: number; episodes?: number; not_out_yet?: number; next_air_date?: string; year?: number };
+type SeasonLike = { number: number; aired?: number; episodes?: number; not_out_yet?: number; next_air_date?: string; next_air_day?: string; year?: number };
 
 // Slot states where a manual search makes sense.
 const searchStates = ['wanted', 'better_wanted', 'failed', 'rejected', 'stalled', 'not_out_yet', 'held', 'needs_a_decision'];
@@ -34,7 +35,8 @@ export const episodeOrders: [string, string, string][] = [
 
 export const detailsSources: [string, string][] = [
 	['tmdb', 'TMDB'],
-	['tvmaze', 'TVMaze']
+	['tvmaze', 'TVMaze'],
+	['tvdb', 'TheTVDB']
 ];
 
 export function label(list: [string, string, ...string[]][], v: string | undefined): string {
@@ -63,13 +65,13 @@ export function seasonLine(s: SeasonSummary): string {
 	const parts = [t('shows.season.inLibrary', { in: s.in_library, aired: s.aired })];
 	if (s.missing) parts.push(t('shows.season.missing', { n: s.missing }));
 	if (s.not_out_yet) parts.push(t('shows.season.notOutYet', { n: s.not_out_yet }));
-	if (s.next_air_date) parts.push(t('shows.season.next', { date: date(s.next_air_date) }));
+	if (s.next_air_date) parts.push(t('shows.season.next', { date: date(s.next_air_day || s.next_air_date) }));
 	return parts.join(' · ');
 }
 
 export function showProgress(s: ShowInfo | undefined): string {
 	if (!s) return '';
-	return t('shows.progress', { in: s.in_library, aired: airedOf(s) });
+	return t('shows.progress', { in: s.in_library, aired: airedEpisodes(s) });
 }
 
 export function mainSlot(e: EpisodeView) {
@@ -121,7 +123,15 @@ export function keepOffNote(seasonKept: boolean, showKept: boolean): string {
 	return '';
 }
 
-// Total aired episodes across all seasons.
-function airedOf(s: ShowInfo): number {
-	return s.seasons.reduce((n, x) => n + x.aired, 0);
+// packWindowValue is the episodes-ahead number the server takes: 0 is off,
+// otherwise a whole number from 1 to 10. A blank field while typing counts as 1.
+export function packWindowValue(n: number): number {
+	if (Number.isNaN(n)) return 1;
+	if (n <= 0) return 0;
+	return Math.min(10, Math.max(1, Math.round(n)));
+}
+
+// Why a chosen episode is still waiting (for example no Downloader has taken the Release yet).
+export function chosenWhy(s: { state: string; reason?: string } | undefined): string {
+	return s?.state === 'chosen' && s.reason ? s.reason : '';
 }

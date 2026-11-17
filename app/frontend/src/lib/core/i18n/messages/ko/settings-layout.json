@@ -9,6 +9,7 @@
 	"settings.layout.setPasswordFirst": "먼저 비밀번호를 설정하세요",
 	"settings.layout.setPasswordDesc": "키, 비밀번호, 사용자, 백업에는 HolyArrs 비밀번호가 필요합니다. 아직 설정되어 있지 않습니다.",
 	"settings.layout.setPasswordLabel": "비밀번호 설정",
+	"settings.layout.signInAgainTitle": "먼저 다시 로그인하세요",
 	"settings.layout.confirmPasswordLabel": "비밀번호 확인",
 	"settings.layout.confirmPasswordDesc": "키, 비밀번호, 사용자, 백업에는 비밀번호가 필요합니다. 10분간 유효합니다."
 }

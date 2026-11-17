@@ -29,6 +29,14 @@ type Searcher struct {
 	Secrets SecretReader
 	// Queue takes the searches a missing search queues.
 	Queue *jobs.Queue
+	// PackReady says a qBittorrent HolyArrs may change takes a show's torrents,
+	// so a season pack can be fetched a few episodes at a time. Nil means no.
+	PackReady func(ctx context.Context, titleTags []string) bool
+	// SourcesOn says the Sources part is on. Off, only searches a person asks
+	// for run (see sourcesOff). Nil means on.
+	SourcesOn func() bool
+	// HasDownloader says a Downloader takes the protocol. Nil means yes.
+	HasDownloader func(ctx context.Context, protocol string) bool
 
 	mu         sync.Mutex
 	clients    map[int64]*Client
@@ -76,7 +84,7 @@ func sameConfig(a, b Config) bool {
 	}
 	return a.URL == b.URL && a.APIKey == b.APIKey && a.AllowLocal == b.AllowLocal && a.Format == b.Format && a.Protocol == b.Protocol &&
 		a.GapMS == b.GapMS && a.PerWindow == b.PerWindow && a.Window == b.Window && a.Timeout == b.Timeout &&
-		proxy(a) == proxy(b) && a.ProxyAllowLocal == b.ProxyAllowLocal
+		proxy(a) == proxy(b) && a.ProxyAllowLocal == b.ProxyAllowLocal && a.Site == b.Site
 }
 
 // hidden marks where a Source key was taken out of a stored link. The number
@@ -92,7 +100,7 @@ func secretValues(cfg Config) []string {
 		return nil
 	}
 	var out []string
-	if cfg.Format != "rss" {
+	if cfg.Format != "rss" && cfg.Format != "site" {
 		if cfg.APIKey != "" {
 			out = append(out, cfg.APIKey)
 		}
@@ -135,21 +143,11 @@ func spellings(keys []string) []spelling {
 }
 
 // cleanLink takes the Source's key values out of a result link, in the query
-// or the path, so a stored release never holds the secret. Another apikey
-// parameter is dropped.
+// or the path, so a stored release never holds the secret. A download key the
+// site put in the link itself stays: the Downloader needs it to fetch the file.
+// Messages hide it with the rest of the address.
 func cleanLink(link string, keys []string) string {
-	link = hideKeys(strings.ReplaceAll(link, hidden, "HOLYARRS-KEY"), keys)
-	u, err := url.Parse(link)
-	if err != nil {
-		return link
-	}
-	q := u.Query()
-	if !q.Has("apikey") || strings.HasPrefix(q.Get("apikey"), hidden) {
-		return link
-	}
-	q.Del("apikey")
-	u.RawQuery = q.Encode()
-	return u.String()
+	return hideKeys(strings.ReplaceAll(link, hidden, "HOLYARRS-KEY"), keys)
 }
 
 // hideKeys swaps the key values in a link for their markers and keeps the
@@ -221,6 +219,9 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	if r.Job.Subject == nil || r.Job.Subject.Type != "slot" {
 		return errors.New("search_slot needs a slot subject")
 	}
+	if s.sourcesOff(r) {
+		return nil
+	}
 	slotID := r.Job.Subject.ID
 	by := jobActor(r)
 	c, err := s.loadSlot(ctx, slotID)
@@ -276,23 +277,36 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 
 	now := time.Now().UTC()
 	ti := c.ti
-	q := Query{Title: ti.Name, IMDb: ti.SourceIDs["imdb"]}
+	q := Query{Title: ti.Name, IMDb: ti.SourceIDs["imdb"], Aliases: ti.Aliases}
 	if ti.Year != nil {
 		q.Year = *ti.Year
 	}
 	q.TMDb, _ = strconv.Atoi(ti.SourceIDs["tmdb"])
 	isShow := ti.Kind == "show"
+	if !isShow && ti.Kind != "movie" {
+		r.SetResult(map[string]any{"skipped": "a " + ti.Kind + " is not searched as a movie"})
+		return nil
+	}
 	var shows showSet
+	var ep *epSlot
 	if isShow {
-		var ep *epSlot
 		if shows, ep, err = s.episodeSet(ctx, c, from != mediafiles.SlotNotOutYet); err != nil {
 			return err
 		}
 		q = showQuery(ti, ep.ref.Season, ep)
 	}
-	all, failures, answered, skipped, err := s.askAll(ctx, r, q, handSearch, isShow, ti.Tags)
+	all, failures, answered, skipped, err := s.askAll(ctx, r, q, handSearch, isShow, ti.Tags, c.pr.Body.Tags)
 	if err != nil {
 		return err
+	}
+	// Absolute order also searches by title and running number; a Source
+	// that failed or was skipped is said once.
+	if aq, ok := absoluteQuery(ti, ep); isShow && ok {
+		more, _, n, _, err := s.askAll(ctx, r, aq, handSearch, true, ti.Tags, c.pr.Body.Tags)
+		if err != nil {
+			return err
+		}
+		all, answered = append(all, more...), max(answered, n)
 	}
 	jobID := r.Job.ID
 
@@ -311,6 +325,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 	out := from != mediafiles.SlotNotOutYet
 	var rels []mediafiles.ReleaseFacts
 	var vs []mediafiles.Verdict
+	c.listing, shows.listing = show, show
 	if isShow {
 		rels, vs, err = s.judgeShow(ctx, shows, all, handSearch, skipGate, s.showRules(ctx))
 	} else {
@@ -384,15 +399,21 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(result)
 	default:
 		reason := fmt.Sprintf("no Release passed the Pick rules (%d found, %d refused)", len(all), refused)
+		blocked := blockedWhy(vs)
+		if blocked != "" {
+			reason = blocked
+		}
 		if from != mediafiles.SlotHeld {
 			to := restState(c, from)
 			// A failed download with no other release and no copy in place goes to a person. With a copy it keeps looking for a better one.
-			if from == mediafiles.SlotFailed && c.cur == nil {
+			if from == mediafiles.SlotFailed && c.cur == nil && blocked == "" {
 				to = mediafiles.SlotNeedsADecision
 				reason = "the download failed and no other Release passed the Pick rules (" + strconv.Itoa(len(all)) + " found, " + strconv.Itoa(refused) + " refused)"
 			}
 			if from == mediafiles.SlotNeedsADecision {
 				to = mediafiles.SlotNeedsADecision
+			}
+			if from == mediafiles.SlotNeedsADecision && blocked == "" {
 				reason = "searched again and no Release passed the Pick rules (" + strconv.Itoa(len(all)) + " found, " + strconv.Itoa(refused) + " refused)"
 			}
 			if err := mediafiles.MoveSlot(ctx, s.Store, slotID, to, reason, by); err != nil {

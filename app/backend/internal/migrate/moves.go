@@ -126,8 +126,8 @@ func (m *Mover) setState(ctx context.Context, id int64, state string, rep *Repor
 			// A finished move forgets every arr key kept for "Read
 			// again" (the move credentials and their vault rows).
 			// While any item failed (say the metadata server was down) the
-			// keys stay, so "move again" needs no retyping; the next clean
-			// move forgets them.
+			// keys stay, so "import again" needs no retyping; the next clean
+			// import forgets them.
 			if _, err := tx.Exec("DELETE FROM secrets WHERE id IN (SELECT secret_id FROM move_credentials)"); err != nil {
 				return err
 			}
@@ -147,14 +147,14 @@ func (m *Mover) setUndoState(ctx context.Context, id int64, state string) error 
 }
 
 // stoppedNote is the report of a move a stop cut off with no Job left.
-const stoppedNote = "HolyArrs stopped during this move, before it finished. What it made is marked: move again to finish it (nothing is added twice), or undo it."
+const stoppedNote = "HolyArrs stopped during this import, before it finished. What it made is marked: import again to finish it (nothing is added twice), or undo it."
 
 // Recover runs at start, before the Job queue: a move or undo whose Job is
 // gone (not queued or running) failed with a stop, so it is marked failed
 // instead of blocking every later move. A move whose Job is still there is
 // resumed by the queue (a move is safe to repeat).
 func (m *Mover) Recover(ctx context.Context) error {
-	b, _ := json.Marshal(&Report{Lines: []Line{}, Counts: map[string]int{}, NotMoved: []NotMoved{}, NeedsInput: []string{}, Next: []string{stoppedNote}})
+	b, _ := json.Marshal(&Report{At: m.now(), Lines: []Line{}, Counts: map[string]int{}, NotMoved: []NotMoved{}, NeedsInput: []string{}, Next: []string{stoppedNote}})
 	// Only a move with a live job can resume. Orphaned moves keep the
 	// interrupted-move report below instead of becoming approval failures.
 	pending, err := moves(ctx, m.Store, `WHERE state IN ('queued', 'running')
@@ -168,7 +168,7 @@ func (m *Mover) Recover(ctx context.Context) error {
 			planErr = ErrPlanChanged
 		}
 		if planErr != nil {
-			rep := &Report{Move: mv.ID, Lines: []Line{}, Counts: map[string]int{}, Next: []string{"This queued move no longer matches an approved preview. Preview it again and start a new move."}}
+			rep := &Report{Move: mv.ID, At: m.now(), Lines: []Line{}, Counts: map[string]int{}, Next: []string{"This queued import no longer matches an approved preview. Preview it again and start a new import."}}
 			if err := m.setState(ctx, mv.ID, "failed", rep); err != nil {
 				return err
 			}
@@ -206,8 +206,8 @@ func (m *Mover) handle(ctx context.Context, r *jobs.Run) error {
 		if r.Stopping() {
 			return ctx.Err() // a stop while reading the plan: resume after the restart
 		}
-		_ = m.setState(context.WithoutCancel(ctx), mv.ID, "failed", &Report{Move: mv.ID, Lines: []Line{}, Counts: map[string]int{},
-			Next: []string{"The move could not start from its approved preview: " + err.Error() + ". Preview it again and start a new move."}})
+		_ = m.setState(context.WithoutCancel(ctx), mv.ID, "failed", &Report{Move: mv.ID, At: m.now(), Lines: []Line{}, Counts: map[string]int{},
+			Next: []string{"The import could not start from its approved preview: " + err.Error() + ". Preview it again and start a new import."}})
 		return err
 	}
 	if err := m.setState(ctx, mv.ID, "running", nil); err != nil {
@@ -215,7 +215,7 @@ func (m *Mover) handle(ctx context.Context, r *jobs.Run) error {
 	}
 	by := r.Job.CreatedBy
 	rep := m.Run(ctx, mv.ID, p, false, by, func(done, total int) {
-		_ = r.Progress(ctx, float64(done)/float64(max(total, 1)), fmt.Sprintf("%d of %d moved", done, total))
+		_ = r.Progress(ctx, float64(done)/float64(max(total, 1)), fmt.Sprintf("%d of %d imported", done, total))
 	})
 	if r.Stopping() {
 		// The app is stopping (docker stop, an update): leave the move
@@ -407,6 +407,11 @@ func (m *Mover) undo(ctx context.Context, id int64, by domain.Actor, progress fu
 			return rep, ctx.Err()
 		}
 		res, detail := m.undoOne(ctx, x, by)
+		if x.what == "ask_claim" {
+			// A claim only noted a request this import found already here: it
+			// added nothing, so the undo neither counts nor names it.
+			continue
+		}
 		line := Line{Group: x.what, Key: x.key, Name: x.key, Result: res, Detail: detail}
 		if l, ok := moved[x.key]; ok {
 			line.Group, line.Name = l.Group, l.Name
@@ -417,9 +422,9 @@ func (m *Mover) undo(ctx context.Context, id int64, by domain.Actor, progress fu
 			progress(i+1, len(made))
 		}
 	}
-	rep.Next = []string{"Nothing in the old apps was touched by the move or by this undo, and no media file was moved or removed."}
+	rep.Next = []string{"Nothing in the old apps was touched by the import or by this undo, and no media file was moved or removed."}
 	if rep.Counts[ResKept] > 0 {
-		rep.Next = append(rep.Next, "Some things stay because you set them up or changed them after the move, or they are no longer the rows the move made; remove them by hand if you want.")
+		rep.Next = append(rep.Next, "Some things stay because you set them up or changed them after the import, or they are no longer the rows the import made; remove them by hand if you want.")
 	}
 	if rep.Counts[ResFailed] > 0 {
 		rep.Next = append(rep.Next, "Some items could not be undone. Fix their reported error and retry this undo.")
@@ -445,16 +450,16 @@ func (m *Mover) Undo(ctx context.Context, id int64, by domain.Actor) (*Report, e
 }
 
 const (
-	keptReplaced = "this is no longer the row the move made (it was removed and its place reused, or renamed), so it stays"
-	keptUnknown  = "it cannot be checked to be the row the move made (marked before this check existed), so it stays; remove it by hand if you want"
-	keptChanged  = "you changed it since the move, so it stays as you left it"
+	keptReplaced = "this is no longer the row the import made (it was removed and its place reused, or renamed), so it stays"
+	keptUnknown  = "it cannot be checked to be the row the import made (marked before this check existed), so it stays; remove it by hand if you want"
+	keptChanged  = "you changed it since the import, so it stays as you left it"
 )
 
 var (
-	errUndoChanged    = errors.New("changed since the move")
+	errUndoChanged    = errors.New("changed since the import")
 	errUndoGone       = errors.New("already gone")
-	errUndoReplaced   = errors.New("move row was replaced")
-	errUndoIncomplete = errors.New("some moved items could not be undone")
+	errUndoReplaced   = errors.New("import row was replaced")
+	errUndoIncomplete = errors.New("some imported items could not be undone")
 )
 
 // undoOne undoes one marked row.
@@ -529,13 +534,40 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 				return ResFailed, e.Error()
 			}
 			return ResRemoved, "left the Library; its files stay where they are"
+		case "pick_rules":
+			e := library.DeletePickRules(ctx, m.Store, x.row, by)
+			switch {
+			case e == nil:
+				return ResRemoved, ""
+			case errors.Is(e, library.ErrPickRulesInUse):
+				return ResKept, "something here still uses these Pick rules, so they stay"
+			case errors.Is(e, database.ErrNotFound):
+				return ResKept, "already gone"
+			}
+			return ResFailed, e.Error()
+		case "own_trait":
+			var uses int
+			if e := m.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM pick_rules WHERE body LIKE ?", `%"`+mediafiles.OwnTraitKey(x.row)+`"%`).Scan(&uses); e != nil {
+				return ResFailed, e.Error()
+			}
+			if uses > 0 {
+				return ResKept, "Pick rules here still give it points, so it stays"
+			}
+			if _, e := library.DeleteOwnTrait(ctx, m.Store, x.row, by); e != nil && !errors.Is(e, database.ErrNotFound) {
+				return ResFailed, e.Error()
+			}
+			return ResRemoved, ""
 		case "folder":
 			e := library.DeleteFolder(ctx, m.Store, x.row)
 			switch {
 			case e == nil:
 				return ResRemoved, ""
 			case errors.Is(e, library.ErrFolderInUse):
-				return ResKept, "the titles that were in it stay in History as removed, so the folder stays"
+				return ResKept, "titles in the Library still use it, so the folder stays"
+			case errors.Is(e, library.ErrFolderHeld):
+				return ResKept, "deleted files still wait in its holding folder, so the folder stays"
+			case errors.Is(e, library.ErrFolderListed):
+				return ResKept, "an outside list still uses it, so the folder stays"
 			case errors.Is(e, database.ErrNotFound):
 				return ResKept, "already gone"
 			}
@@ -607,7 +639,7 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 		}
 		return ResRemoved, "request ownership link removed"
 	case "ask_claim":
-		return ResRemoved, "later move's Requests claim released; the existing request and ownership stay"
+		return ResRemoved, "later import's Requests claim released; the existing request and ownership stay"
 	case "ask_settings":
 		var old, moved askSettingsMark
 		if json.Unmarshal([]byte(x.before), &old) != nil || json.Unmarshal([]byte(x.after), &moved) != nil {

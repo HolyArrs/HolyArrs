@@ -44,6 +44,9 @@ type Qbittorrent struct {
 	verMu      sync.Mutex
 	ver        [3]int
 	verAt      time.Time
+	// cats are the Downloader's own categories; Pause all and Resume all
+	// touch only torrents in them.
+	cats []string
 }
 
 // qbitTorrent is one row of torrents/info. Pointer fields are the ones older clients leave out.
@@ -150,6 +153,11 @@ func (q *Qbittorrent) Add(ctx context.Context, r AddRequest) (string, error) {
 		if r.SavePath != "" {
 			_ = mw.WriteField("savepath", r.SavePath)
 		}
+		if r.Stopped {
+			// stopped since WebUI API 2.11, paused before it.
+			_ = mw.WriteField("stopped", "true")
+			_ = mw.WriteField("paused", "true")
+		}
 		w, werr := mw.CreateFormFile("torrents", "release.torrent")
 		if werr != nil {
 			return "", werr
@@ -164,6 +172,10 @@ func (q *Qbittorrent) Add(ctx context.Context, r AddRequest) (string, error) {
 		}
 		if r.SavePath != "" {
 			f.Set("savepath", r.SavePath)
+		}
+		if r.Stopped {
+			f.Set("stopped", "true")
+			f.Set("paused", "true")
 		}
 		b, err = q.call(ctx, http.MethodPost, "torrents/add", f)
 	}

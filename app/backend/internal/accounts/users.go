@@ -50,8 +50,9 @@ type LinkView struct {
 	Name     string `json:"name"`
 }
 
-// SkipLocal says sign-in is skipped on the local network.
-func (a *Auth) SkipLocal() bool { return a.skipLocal.Load() }
+// SkipLocal says sign-in is skipped on the local network for someone who is
+// not a Kid, so a Kid account at home would mean nothing.
+func (a *Auth) SkipLocal() bool { return a.skipBlocksKids(context.Background()) }
 
 // OutsideJoinOpen says new people can join by signing in with Plex,
 // Jellyfin, Emby or single sign-on.
@@ -80,7 +81,8 @@ func countryOr(c string) string {
 
 // kidLimit checks an age-rating limit asked for a person of role and
 // returns it as stored, or an error in plain words for a 400. A limit is
-// refused while sign-in is skipped on the local network (skipLocal).
+// refused while sign-in is skipped on the local network for someone who is
+// not a Kid (skipLocal).
 func kidLimit(role, max, country string, perms []webserver.Perm, skipLocal bool) (string, string, error) {
 	max, country = metadata.NormRating(max), countryOr(country)
 	if !metadata.ValidRating(max) {
@@ -99,7 +101,7 @@ func kidLimit(role, max, country string, perms []webserver.Perm, skipLocal bool)
 		// A Kid may only ask: any other permission would open routes
 		// (live events, downloads, history, jobs) the limit does not cover.
 		for _, p := range perms {
-			if p != webserver.PermAsk && p != webserver.PermAutoApprove {
+			if p != webserver.PermAsk && p != webserver.PermAutoApprove && p != webserver.PermAutoApproveFourK {
 				return "", "", errors.New("A Kid account can only ask for titles.")
 			}
 		}
@@ -259,7 +261,7 @@ func (a *Auth) editUser(w http.ResponseWriter, r *http.Request) {
 	if body.RatingCountry != nil {
 		country = *body.RatingCountry
 	}
-	if maxRating, country, err = kidLimit(newRole, maxRating, country, perms, a.skipLocal.Load()); err != nil {
+	if maxRating, country, err = kidLimit(newRole, maxRating, country, perms, a.skipBlocksKids(r.Context())); err != nil {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -452,11 +454,13 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 		serverError(w, "password", err)
 		return
 	}
-	// People who only sign in through a media server have no password yet
-	// and may set one. Changing one that exists needs a recent local proof,
-	// on purpose also for API keys: a key never changes its user's password.
+	// Every password change, the first one too, needs a recent proof in the
+	// browser: a local password sign-in, the first-run setup session, or for
+	// someone with no password yet a fresh Plex, Jellyfin or Emby sign-in. API
+	// keys and home-network visits never pass, so a key never sets or changes
+	// its user's password.
 	first := cur == ""
-	if !first && !RecentLocal(r) {
+	if !RecentLocal(r) {
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": "confirm your local password again before using this route", "code": "reauth"})
 		return
 	}

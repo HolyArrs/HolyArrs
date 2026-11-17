@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Avancerat",
+	"settings.home.page": "{group} · sida",
+	"settings.home.title": "Inställningar",
+	"settings.home.search": "Sök i inställningar",
+	"settings.home.matching": "Matchande inställningar",
+	"settings.home.noMatch": "Inga matchande inställningar",
+	"settings.home.noMatchText": "Prova ett annat ord, som mapp, nyckel eller lösenord.",
+	"settings.home.clear": "Rensa sökningen"
+}

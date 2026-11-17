@@ -327,7 +327,7 @@ func (h *Handlers) artistIDs(ctx context.Context, mbid string) metadata.ArtistID
 // Fresh 12 hours; no sure match is a miss, asked again after an hour (the
 // artist's links may have come by then).
 func (h *Handlers) deezerProfile(ctx context.Context, mbid string, art metadata.Artist) metadata.DeezerProfile {
-	if h.MusicDeezer != nil {
+	if h.MusicDeezer != nil && !h.Deps.own() {
 		// The metadata server's kept match (by the artist's own links, else
 		// a checked name search there); a miss is asked again after an hour.
 		p, _ := SideGet(h, ctx, "deezer2", strings.ToLower(mbid), 12*time.Hour, func(ctx context.Context) (metadata.DeezerProfile, bool, error) {
@@ -336,7 +336,8 @@ func (h *Handlers) deezerProfile(ctx context.Context, mbid string, art metadata.
 		})
 		return p
 	}
-	if h.lib() == nil || h.lib().ArtistImages == nil {
+	pics := h.pictures()
+	if pics == nil {
 		return metadata.DeezerProfile{}
 	}
 	name := art.Name
@@ -348,7 +349,7 @@ func (h *Handlers) deezerProfile(ctx context.Context, mbid string, art metadata.
 		if name == "" {
 			return metadata.DeezerProfile{}, false, errors.New("no artist name yet")
 		}
-		p, err := h.lib().ArtistImages.ProfileFor(ctx, name, h.artistIDs(ctx, mbid).Deezer, albums)
+		p, err := pics.ProfileFor(ctx, name, h.artistIDs(ctx, mbid).Deezer, albums)
 		return p, err == nil && p.ID != 0, err
 	})
 	return p
@@ -358,18 +359,19 @@ func (h *Handlers) deezerProfile(ctx context.Context, mbid string, art metadata.
 // asked again after an hour): the metadata server's (the article the
 // artist's Wikidata item links), else the developer stand-in's by name.
 func (h *Handlers) artistBio(ctx context.Context, mbid, name string) *metadata.WikiSummary {
-	if h.MusicArtistBio != nil {
+	if h.MusicArtistBio != nil && !h.Deps.own() {
 		b, _ := SideGet(h, ctx, "bio2", strings.ToLower(mbid), 24*time.Hour, func(ctx context.Context) (*metadata.WikiSummary, bool, error) {
 			b, err := h.MusicArtistBio(ctx, mbid)
 			return b, err == nil && b != nil, err
 		})
 		return b
 	}
-	if h.lib() == nil || h.lib().ArtistImages == nil || strings.TrimSpace(name) == "" {
+	pics := h.pictures()
+	if pics == nil || strings.TrimSpace(name) == "" {
 		return nil
 	}
 	b, _ := SideGet(h, ctx, "bio", strings.ToLower(name), 24*time.Hour, func(ctx context.Context) (*metadata.WikiSummary, bool, error) {
-		b, err := h.lib().ArtistImages.ArtistBio(ctx, name)
+		b, err := pics.ArtistBio(ctx, name)
 		return b, err == nil && b != nil, err
 	})
 	return b
@@ -379,7 +381,7 @@ func (h *Handlers) artistBio(ctx context.Context, mbid, name string) *metadata.W
 // the metadata server's, kept here 14 days (a miss an hour), else the
 // developer stand-in's.
 func (h *Handlers) deezerAlbum(ctx context.Context, id int64) metadata.DeezerAlbumInfo {
-	if h.MusicDeezerAlbum != nil {
+	if h.MusicDeezerAlbum != nil && !h.Deps.own() {
 		type kept struct {
 			Label    string          `json:"label"`
 			Explicit bool            `json:"explicit"`
@@ -397,10 +399,11 @@ func (h *Handlers) deezerAlbum(ctx context.Context, id int64) metadata.DeezerAlb
 		}
 		return metadata.DeezerAlbumInfo{Label: k.Label, Explicit: k.Explicit, Tracks: k.Tracks}
 	}
-	if h.lib() == nil || h.lib().ArtistImages == nil {
+	pics := h.pictures()
+	if pics == nil {
 		return metadata.DeezerAlbumInfo{Tracks: map[string]bool{}}
 	}
-	info, _ := h.lib().ArtistImages.AlbumInfo(ctx, id)
+	info, _ := pics.AlbumInfo(ctx, id)
 	return info
 }
 
@@ -606,4 +609,16 @@ func (h *Handlers) prefetchSimilarArt(list []PageArtist) {
 		defer h.music.prefetching.Done()
 		h.prefetchMusicArt("artist", items)
 	}()
+}
+
+// pictures is the direct Deezer and Wikipedia client: the owner's (Your own
+// keys), else the developer stand-in; nil when neither.
+func (h *Handlers) pictures() *metadata.ArtistImages {
+	if h.Deps.own() {
+		return h.OwnPictures
+	}
+	if h.lib() == nil {
+		return nil
+	}
+	return h.lib().ArtistImages
 }

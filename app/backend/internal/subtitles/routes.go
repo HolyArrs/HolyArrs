@@ -12,7 +12,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
@@ -38,9 +37,10 @@ func (a *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("PUT /api/v1/settings/subtitles", a.putSubtitleSettings)
 	m.HandleFunc("GET /api/v1/titles/{id}/subtitles", a.titleSubtitles)
 	m.HandleFunc("PUT /api/v1/titles/{id}/subtitle-wish", a.putSubtitleWish)
-	if !startup.FeatureOn(startup.SubtitleSites) {
-		return
-	}
+	m.HandleFunc("GET /api/v1/settings/subtitles/translator", a.getTranslator)
+	m.HandleFunc("PUT /api/v1/settings/subtitles/translator", a.putTranslator)
+	m.HandleFunc("POST /api/v1/settings/subtitles/translator/test", a.testTranslator)
+	m.HandleFunc("POST /api/v1/files/{id}/subtitles/translate", a.translateSubtitle)
 	m.HandleFunc("POST /api/v1/subtitles/search", a.searchSubtitles)
 	m.HandleFunc("GET /api/v1/subtitles/missing", a.missingSubtitles)
 	m.HandleFunc("POST /api/v1/subtitles/missing/search", a.searchMissingSubtitles)
@@ -219,13 +219,18 @@ func (a *Handlers) searchSubtitles(w http.ResponseWriter, r *http.Request) {
 func (a *Handlers) subtitleJobIDs(ctx context.Context, fileIDs []int64) []int64 {
 	out := []int64{}
 	for _, id := range fileIDs {
-		var jid int64
-		if a.store.Read().QueryRowContext(ctx, "SELECT id FROM jobs WHERE dedupe_key = ? ORDER BY id DESC LIMIT 1",
-			KindSearch+":"+strconv.FormatInt(id, 10)).Scan(&jid) == nil {
+		if jid, ok := a.jobByKey(ctx, KindSearch+":"+strconv.FormatInt(id, 10)); ok {
 			out = append(out, jid)
 		}
 	}
 	return out
+}
+
+// jobByKey finds the newest Job queued under a dedupe key.
+func (a *Handlers) jobByKey(ctx context.Context, key string) (int64, bool) {
+	var jid int64
+	err := a.store.Read().QueryRowContext(ctx, "SELECT id FROM jobs WHERE dedupe_key = ? ORDER BY id DESC LIMIT 1", key).Scan(&jid)
+	return jid, err == nil
 }
 
 func (a *Handlers) missingSubtitles(w http.ResponseWriter, r *http.Request) {

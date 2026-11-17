@@ -30,8 +30,12 @@ const (
 	RadarrVersion = "5.0.99.0"
 )
 
-// AppName is the app name in the status answer. No client reads it.
+// AppName is the instance name in the status answer.
 const AppName = "HolyArrs"
+
+// oldAppNames are the app names each side answers in its status, because
+// Pulsarr refuses a server whose name is not the old app's.
+var oldAppNames = map[string]string{"sonarr": "Sonarr", "radarr": "Radarr"}
 
 // bodyMax caps a request body. A show sent back with every season and
 // picture stays far below it.
@@ -95,6 +99,7 @@ func Sonarr(d Deps) http.Handler {
 	mux.HandleFunc("GET /wanted/missing", h.missingEpisodes)
 	mux.HandleFunc("GET /calendar", h.calendarEpisodes)
 	mux.HandleFunc("GET /queue/details", h.queueDetails)
+	mux.HandleFunc("GET /importlistexclusion/paged", h.neverAddPage)
 	return h.serve(mux)
 }
 
@@ -110,6 +115,7 @@ func Radarr(d Deps) http.Handler {
 	mux.HandleFunc("PUT /movie", h.putMovie)
 	mux.HandleFunc("PUT /movie/{id}", h.putMovie)
 	mux.HandleFunc("DELETE /movie/{id}", h.deleteTitle)
+	mux.HandleFunc("GET /exclusions/paged", h.neverAddPage)
 	return h.serve(mux)
 }
 
@@ -117,11 +123,22 @@ func Radarr(d Deps) http.Handler {
 func (h *handler) common(mux *http.ServeMux) {
 	mux.HandleFunc("GET /system/status", h.status)
 	mux.HandleFunc("GET /qualityprofile", h.qualityProfiles)
+	mux.HandleFunc("GET /qualityprofile/{id}", h.qualityProfile)
+	mux.HandleFunc("POST /qualityprofile", h.addProfile)
+	mux.HandleFunc("PUT /qualityprofile/{id}", h.putProfile)
+	mux.HandleFunc("DELETE /qualityprofile/{id}", h.deleteProfile)
+	mux.HandleFunc("GET /customformat", h.listFormats)
+	mux.HandleFunc("GET /customformat/{id}", h.getFormat)
+	mux.HandleFunc("POST /customformat", h.addFormat)
+	mux.HandleFunc("PUT /customformat/{id}", h.putFormat)
+	mux.HandleFunc("DELETE /customformat/{id}", h.deleteFormat)
 	mux.HandleFunc("GET /rootfolder", h.rootFolders)
 	mux.HandleFunc("GET /tag", h.listTags)
 	mux.HandleFunc("POST /tag", h.addTag)
 	mux.HandleFunc("PUT /tag", h.putTag)
 	mux.HandleFunc("PUT /tag/{id}", h.putTag)
+	mux.HandleFunc("DELETE /tag/{id}", h.removeTag)
+	mux.HandleFunc("GET /tag/detail", h.tagDetail)
 	mux.HandleFunc("GET /queue", h.queue)
 	mux.HandleFunc("POST /command", h.command)
 	mux.HandleFunc("GET /command/{id}", h.getCommand)
@@ -133,6 +150,13 @@ func (h *handler) common(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /indexer/{id}", h.putIndexer)
 	mux.HandleFunc("DELETE /indexer/{id}", h.deleteIndexer)
 	mux.HandleFunc("POST /indexer/test", h.testIndexer)
+	mux.HandleFunc("GET /notification", h.listHooks)
+	mux.HandleFunc("POST /notification", h.addHook)
+	mux.HandleFunc("PUT /notification", h.putHook)
+	mux.HandleFunc("PUT /notification/{id}", h.putHook)
+	mux.HandleFunc("DELETE /notification/{id}", h.deleteHook)
+	mux.HandleFunc("POST /notification/test", h.testHook)
+	h.configRoutes(mux)
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) { notFound(w) })
 }
 

@@ -71,7 +71,19 @@ describe('controllable', () => {
 		expect(controllable('qbittorrent')).toBe(true);
 		expect(controllable('sabnzbd')).toBe(true);
 		expect(controllable(undefined)).toBe(true);
-		for (const k of ['transmission', 'deluge', 'nzbget']) expect(controllable(k)).toBe(false);
+		for (const k of ['transmission', 'deluge', 'nzbget', 'rtorrent', 'aria2']) expect(controllable(k)).toBe(false);
 		expect(pausable({ protocol: 'torrent', phase: 'downloading', downloader_kind: 'deluge' })).toBe(false);
+	});
+	it('lets rTorrent pause and resume but take no other row control', () => {
+		expect(controllable('rtorrent')).toBe(false);
+		expect(pausable({ protocol: 'torrent', phase: 'downloading', downloader_kind: 'rtorrent' })).toBe(true);
+		expect(pausable({ protocol: 'torrent', phase: 'done', downloader_kind: 'rtorrent' })).toBe(true);
+		expect(retryable({ client_item: true, outside: true, hash: 'h', downloader_id: 3, protocol: 'torrent', phase: 'failed', downloader_kind: 'rtorrent' })).toBe(false);
+	});
+	it('lets aria2 pause and resume but take no other row control', () => {
+		expect(controllable('aria2')).toBe(false);
+		expect(pausable({ protocol: 'torrent', phase: 'downloading', downloader_kind: 'aria2' })).toBe(true);
+		expect(pausable({ protocol: 'torrent', phase: 'done', downloader_kind: 'aria2' })).toBe(true);
+		expect(retryable({ client_item: true, outside: true, hash: 'h', downloader_id: 3, protocol: 'torrent', phase: 'failed', downloader_kind: 'aria2' })).toBe(false);
 	});
 });

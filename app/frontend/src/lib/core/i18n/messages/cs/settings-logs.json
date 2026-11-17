@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Protokoly",
+	"settings.logs.download": "Stáhnout",
+	"settings.logs.filter": "Filtrovat protokol",
+	"settings.logs.level": "Úroveň",
+	"settings.logs.every": "Všechny řádky",
+	"settings.logs.warnings": "Varování a chyby",
+	"settings.logs.errors": "Pouze chyby",
+	"settings.logs.text": "Text",
+	"settings.logs.example": "např. qBittorrent",
+	"settings.logs.from": "Od",
+	"settings.logs.to": "Do",
+	"settings.logs.apply": "Použít",
+	"settings.logs.clear": "Vymazat",
+	"settings.logs.lines": "Řádky",
+	"settings.logs.newer": "Novější",
+	"settings.logs.older": "Starší"
+}

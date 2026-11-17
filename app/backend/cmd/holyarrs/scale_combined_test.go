@@ -477,12 +477,13 @@ func TestCombinedScaleFixtureAndAuthenticatedRescan(t *testing.T) {
 	if err := rows.Close(); err != nil {
 		t.Fatal(err)
 	}
-	wantFound := []string{
-		"Fixture Movie 0000/Own.Unmatched.Movie.Extra.mkv",
-		"Fixture Show 0000/Season 1/Fixture.Show.0000.S01E06.Own.Unknown.mkv",
+	// The show file names an episode that is still empty, so the rescan links it.
+	if len(foundPaths) != 1 || foundPaths[0] != "Fixture Movie 0000/Own.Unmatched.Movie.Extra.mkv" {
+		t.Fatalf("found paths %q", foundPaths)
 	}
-	if len(foundPaths) != len(wantFound) || foundPaths[0] != wantFound[0] || foundPaths[1] != wantFound[1] {
-		t.Fatalf("found paths %q, want %q", foundPaths, wantFound)
+	var linked int
+	if err := control.Store.Read().QueryRow(`SELECT count(*) FROM files WHERE origin = 'adopted' AND relative_path = 'Fixture Show 0000/Season 1/Fixture.Show.0000.S01E06.Own.Unknown.mkv'`).Scan(&linked); err != nil || linked != 1 {
+		t.Fatalf("rescan did not link the S01E06 file: %d %v", linked, err)
 	}
 	if streams.Count() != 2 || streams.RescanEvents() != 2 {
 		t.Fatalf("live clients=%d rescan events=%d", streams.Count(), streams.RescanEvents())

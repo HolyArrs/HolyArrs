@@ -15,7 +15,7 @@ export interface SettingEntry {
 }
 
 /** Search entries for features held back from this release, by anchor. */
-const heldAnchors: Record<string, string> = { 'row-titles-card': 'row_title_stats', 'sites-card': 'subtitle_sites', 'trakt-card': 'trakt_lists', 'emby-card': 'emby_signin' };
+const heldAnchors: Record<string, string> = { 'row-titles-card': 'row_title_stats', 'trakt-card': 'trakt_lists', 'emby-card': 'emby_signin' };
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
 
@@ -36,11 +36,15 @@ const said = (key: string, fallback: string) => {
 /** The entry's label in the person's language (the English label when the entry has no message). */
 export const entryLabel = (entry: SettingEntry): string => (entry.id ? said(`${entry.id}.label`, entry.label) : entry.label);
 
+/** The key the results list uses for each row; it must differ for every entry the search can return. Several hand-made entries open the same card (the Quality ones) or the same page as a page row, so they use their own id. */
+export const resultKey = (entry: SettingEntry): string => entry.id ?? `${entry.href}#${entry.anchor}`;
+
 /** The words a person might type for it, in their language. */
 export const entryWords = (entry: SettingEntry): string => (entry.id ? said(`${entry.id}.words`, entry.words ?? '') : (entry.words ?? ''));
 
 export const settingIndex: SettingEntry[] = [
 	e('/settings/appearance', 'theme', 'Theme', 'appearance light dark automatic mode colours colors night'),
+	e('/settings/appearance', 'look', 'Look', 'minimal plain simple calm no photos no glow autoplay'),
 	e('/settings/appearance', 'language', 'Language', 'language translation locale english words'),
 	e('/settings/appearance', 'autoplay-trailers', 'Play trailers by themselves', 'autoplay trailers video explore muted'),
 	e('/settings/appearance', 'signin-art', 'Show Library art on the sign-in page', 'sign-in login page background posters art'),
@@ -71,7 +75,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/title-defaults', 'td-seasons', 'Seasons a new TV show keeps up to date', 'shows seasons monitor all future latest none', true),
 	e('/settings/title-defaults', 'td-new-seasons', 'New seasons of a TV show', 'shows new seasons monitor', true),
 	e('/settings/title-defaults', 'td-order', 'Episode order for new shows', 'shows series type anime daily absolute aired numbering', true),
-	e('/settings/title-defaults', 'td-source', 'Where show details come from', 'shows metadata tmdb tvmaze details source', true),
+	e('/settings/title-defaults', 'td-source', 'Where show details come from', 'shows metadata tmdb tvmaze tvdb details source', true),
 	e('/settings/naming', 'file-pattern', 'Movie file name pattern', 'naming rename format movie file'),
 	e('/settings/naming', 'folder-pattern', 'Movie folder name pattern', 'naming folder format movie'),
 	e('/settings/naming', 'colon', 'A colon in a name becomes', 'colon character replace', true),
@@ -119,6 +123,9 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/subtitles', 'better-subs', 'Look for better subtitles', 'subtitles upgrade better'),
 	e('/settings/subtitles', 'sy-step', 'Sync fix shift', 'subtitles sync timing offset ms', true),
 	e('/settings/subtitles', 'sites-card', 'Subtitle sites', 'subtitles opensubtitles provider site add'),
+	e('/settings/tmdb', 'metadata-mode', 'Where details come from', 'metadata mode own keys off lookups privacy server independent'),
+	e('/settings/tmdb', 'metadata-keys', 'Your own keys', 'tmdb token tvdb pin mdblist fanart key api'),
+	e('/settings/tmdb', 'metadata-hosts', 'Addresses for your firewall', 'firewall hosts outside addresses allow list'),
 	e('/settings/tmdb', 'metadata-card', 'Metadata server', 'metadata tmdb posters names artwork server'),
 	e('/settings/outside-lists', '', 'Outside lists', 'tmdb list trakt list import list auto add'),
 	e('/settings/outside-lists', 'trakt-card', 'Trakt key', 'trakt key client id vip access token reviews comments'),
@@ -144,7 +151,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/search', 'episode-minutes', 'Episode length when not known', 'runtime minutes', true),
 	e('/settings/search', 'hold-unknown', 'Hold Releases of unknown size or date', 'hold unknown', true),
 	e('/settings/search', 'search-now', 'Search now', 'search better copy feeds run'),
-	e('/settings/downloaders', 'downloaders-card', 'Downloaders', 'download client qbittorrent sabnzbd transmission deluge nzbget torrent client add'),
+	e('/settings/downloaders', 'downloaders-card', 'Downloaders', 'download client qbittorrent sabnzbd transmission deluge rtorrent rutorrent aria2 nzbget torrent client add'),
 	e('/settings/downloaders', 'st-stall', 'Stalled after', 'stalled stuck hours download', true),
 	e('/settings/downloaders', 'st-act', 'Give up and try the next Release after', 'give up hours retry', true),
 	e('/settings/downloaders', 'remove-failed', 'Remove failed downloads from the Downloader', 'failed remove cleanup'),
@@ -152,7 +159,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/downloaders', 'replace-removed', 'Replace downloads removed outside HolyArrs', 'removed outside', true),
 	e('/settings/downloaders', 'remove-defaults', 'What removing a download does by default', 'remove delete files turned down search again'),
 	e('/settings/downloaders', 'try-next-dl', 'Try the next Downloader', 'fallback downloader', true),
-	e('/settings/downloaders', 'st-gap', 'Seconds between sends to one Downloader', 'delay seconds send', true),
+	e('/settings/downloaders', 'st-gap', 'Wait between sends (seconds)', 'delay seconds send gap', true),
 	e('/settings/pick-rules', 'pick-rules-card', 'Quality', 'quality profile quality formats resolution 4k 1080p pick rules'),
 	// The editor works on one set at a time, so these open the list to pick which set to change.
 	e('/settings/pick-rules', 'pick-rules-card', 'New quality set', 'make add create copy new quality profile'),
@@ -170,6 +177,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/requests', 'ask-folder', 'Library folder for approved requests', 'wishlist approved folder'),
 	e('/settings/requests', 'ask-rules', 'Quality for approved requests', 'wishlist approved pick rules quality', true),
 	e('/settings/requests', 'search-approved', 'Search when approved', 'wishlist approved search'),
+	e('/settings/requests', 'plex-watchlists', 'Request from Plex watchlists', 'plex watchlist requests everyone automatic'),
 	e('/settings/users', 'inv-note', 'Invite someone', 'invite link add user family friend new user'),
 	e('/settings/users', 'people-card', 'Users and roles', 'users people roles permissions admin member kid preset devices'),
 	e('/settings/users', 'invites-card', 'Invite links', 'invites take back links'),
@@ -211,6 +219,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/account', 'pw-current', 'Change my password', 'password my account change'),
 	e('/settings/account', 'twofactor-me', 'My two-factor sign-in', '2fa two-factor otp authenticator backup codes'),
 	e('/settings/account', 'alerts-me', 'Alerts for me', 'my email discord notifications'),
+	e('/settings/account', 'watchlist-me', 'My Plex watchlist', 'plex watchlist requests my account'),
 	e('/settings/account', 'sessions-me', 'My signed-in devices', 'sessions devices sign out everywhere')
 ];
 

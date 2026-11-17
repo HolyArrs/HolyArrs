@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -23,6 +24,9 @@ type OwnTraitView struct {
 	// Specs and cannot be edited by hand.
 	Source string               `json:"source,omitempty"`
 	Specs  []mediafiles.OwnSpec `json:"specs,omitempty"`
+	// App is the old app an imported trait ("import") came from, or the
+	// side a trait sent through the arr API ("arrapi") came in on.
+	App string `json:"app,omitempty"`
 }
 
 func viewOfOwnTrait(t mediafiles.OwnTrait) OwnTraitView {
@@ -30,10 +34,14 @@ func viewOfOwnTrait(t mediafiles.OwnTrait) OwnTraitView {
 	if terms == nil {
 		terms = []string{}
 	}
-	return OwnTraitView{ID: t.ID, Key: mediafiles.OwnTraitKey(t.ID), Name: t.Name, Match: t.Match, Terms: terms, Source: t.Source, Specs: t.Specs}
+	v := OwnTraitView{ID: t.ID, Key: mediafiles.OwnTraitKey(t.ID), Name: t.Name, Match: t.Match, Terms: terms, Source: t.Source, Specs: t.Specs}
+	if t.OldApp() {
+		v.App, _, _ = strings.Cut(t.SourceID, ":")
+	}
+	return v
 }
 
-const ownTraitHelp = `send {"name": "...", "match": "name" or "group", "terms": ["word", "/pattern/"]}`
+const ownTraitHelp = `send {"name": "...", "match": "name", "group" or "size", "terms": ["word", "/pattern/"] or one size range in GB like ["60-"], ["-8"] or ["2-8"]}`
 
 func (h *Handlers) ownTraitID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)

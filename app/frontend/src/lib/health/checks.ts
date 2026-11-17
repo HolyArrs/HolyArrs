@@ -15,6 +15,9 @@ const kinds: Record<string, string> = {
 	get config_disk() { return t('health.kind.configDisk'); },
 	get config_folder() { return t('health.kind.configFolder'); },
 	get waiting_downloads() { return t('health.kind.waitingDownloads'); },
+	get clear_waiting() { return t('health.kind.clearWaiting'); },
+	get save_folder() { return t('health.kind.saveFolder'); },
+	get same_downloader() { return t('health.kind.sameDownloader'); },
 	get trailers() { return t('health.kind.trailers'); }
 };
 

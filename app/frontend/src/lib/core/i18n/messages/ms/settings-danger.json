@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs sedang berhenti.",
+	"settings.danger.couldnt": "Tidak dapat {action}",
+	"settings.danger.title": "Zon bahaya",
+	"settings.danger.ownerOnly": "Pemilik dan pentadbir sahaja",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "Ya, {action}",
+	"settings.danger.cancel": "Batal",
+	"settings.danger.expires": "Tamat dalam 60 s",
+	"settings.danger.wholeApp": "Seluruh apl",
+	"settings.danger.intro": "Ini menghentikan HolyArrs. Dasar mula semula Docker memulakannya semula dalam beberapa saat, kecuali dasarnya <code>no</code>; jika begitu, mulakan bekas itu sendiri. Setiap satu bertanya dahulu.",
+	"settings.danger.restart": "Mulakan semula HolyArrs",
+	"settings.danger.safe": "Mulakan semula dalam mod selamat",
+	"settings.danger.shutdown": "Matikan",
+	"settings.danger.safeNote": "Bermula sekali dengan hanya log masuk, Tetapan dan Pustaka. Gunakan apabila sesuatu Bahagian menyekat permulaan."
+}

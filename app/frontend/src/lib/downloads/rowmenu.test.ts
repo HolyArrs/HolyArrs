@@ -31,6 +31,20 @@ describe('row actions menu', () => {
 	it('keeps Transmission rows to remove', () => {
 		expect(rowItems({ ...tor, downloader_kind: 'transmission' })).toEqual(['remove']);
 	});
+	it('gives rTorrent rows pause or resume and remove only', () => {
+		expect(rowItems({ ...tor, downloader_kind: 'rtorrent' })).toEqual(['pause', 'remove']);
+		expect(rowItems({ ...tor, downloader_kind: 'rtorrent', state: 'paused' })).toEqual(['resume', 'remove']);
+		expect(rowItems({ ...tor, downloader_kind: 'rtorrent', can_act: false })).toEqual([]);
+	});
+	it('gives aria2 rows pause or resume and remove only', () => {
+		expect(rowItems({ ...tor, downloader_kind: 'aria2' })).toEqual(['pause', 'remove']);
+		expect(rowItems({ ...tor, downloader_kind: 'aria2', state: 'paused' })).toEqual(['resume', 'remove']);
+		expect(rowItems({ ...tor, downloader_kind: 'aria2', can_act: false })).toEqual([]);
+	});
+	it('offers Import files by hand on a refused import whose folder is known', () => {
+		expect(rowItems({ ...tor, can_act: false, title_id: 4, phase: 'import_refused', import_folder: '/data/Salt.Choir' })).toEqual(['byhand', 'library']);
+		expect(rowItems({ ...tor, can_act: false, title_id: 4, phase: 'import_refused' })).toEqual(['library']);
+	});
 	it('never offers a client change on a read-only row', () => {
 		expect(rowItems({ ...tor, can_act: false, title_id: 4 })).toEqual(['library']);
 		expect(rowItems({ ...tor, can_act: false })).toEqual([]);

@@ -8,6 +8,10 @@
 	import { api, message, ApiError } from '../core/api.ts';
 	import type { Ask } from '../core/types.ts';
 	import type { LookupShow } from '../core/types.ts';
+	import { askQualities } from './four-k-ready.ts';
+	import QualityPills from './QualityPills.svelte';
+	import { memberRow } from './quality-row.ts';
+	import type { QualityChoice } from './types.ts';
 
 	let {
 		onasked,
@@ -19,8 +23,18 @@
 
 	let sheetOpen = $state(false);
 	let picked = $state<LookupShow | null>(null);
+	// Seasons a Library show already keeps up to date: shown as kept, not ticked.
+	let kept = $state<number[]>([]);
+	// Seasons a Library show already holds in full: shown as in the Library, not ticked.
+	let complete = $state<number[]>([]);
 	// Follow puts it on my calendar (ticked by default).
 	let follow = $state(true);
+	// The Quality row: the lines of what people can ask for that I may use (one line or none hides it).
+	let choices = $state<QualityChoice[]>([]);
+	let quality = $state('');
+	// Each opening reads the lines again; an answer for an earlier opening is dropped.
+	let opened = 0;
+	const row = $derived(memberRow(choices));
 	let mode = $state<'all' | 'choose' | 'future'>('all');
 	let chosen = $state<number[]>([]);
 	// Single episodes picked, by season (seasons not ticked whole).
@@ -36,8 +50,18 @@
 	const seasons = $derived((picked?.seasons ?? []).map((s) => s.number).sort((a, b) => a - b));
 
 	/** Shows the dialog for one looked-up show. */
-	export function open(s: LookupShow) {
+	export function open(s: LookupShow, keptSeasons: number[] = [], completeSeasons: number[] = []) {
+		kept = keptSeasons;
+		complete = completeSeasons;
 		follow = true;
+		choices = [];
+		quality = '';
+		const asked = ++opened;
+		void askQualities().then((q) => {
+			if (asked !== opened) return;
+			choices = q.show;
+			quality = row.selected;
+		});
 		picked = s;
 		mode = 'all';
 		chosen = [];
@@ -84,7 +108,10 @@
 		busy = true;
 		error = '';
 		try {
-			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', mode === 'future' ? { kind: 'show', id: idOf(picked), future_only: true, follow } : { kind: 'show', id: idOf(picked), seasons: mode === 'all' ? [] : chosen, ...(mode === 'choose' && pickedEps.length ? { episodes: pickedEps } : {}), follow });
+			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', {
+				...(mode === 'future' ? { kind: 'show', id: idOf(picked), future_only: true, follow } : { kind: 'show', id: idOf(picked), seasons: mode === 'all' ? [] : chosen, ...(mode === 'choose' && pickedEps.length ? { episodes: pickedEps } : {}), follow }),
+				...(quality ? { quality } : {})
+			});
 			(sheetOpen = false);
 			onasked(picked, r);
 		} catch (err) {
@@ -109,7 +136,7 @@
 					<span><b>{t('requests.askShow.all')}</b><br /><span class="hint">{t('requests.askShow.allHint')}</span></span>
 				</label>
 				<label class="checkline">
-					<input type="radio" name="what" checked={mode === 'choose'} onchange={() => (mode = 'choose')} disabled={seasons.length === 0} />
+					<input type="radio" name="what" checked={mode === 'choose'} onchange={() => (mode = 'choose')} disabled={seasons.every((n) => kept.includes(n) || complete.includes(n))} />
 					<span><b>{t('requests.askShow.choose')}</b><br /><span class="hint">{t('requests.askShow.chooseHint')}</span></span>
 				</label>
 				<label class="checkline">
@@ -123,13 +150,15 @@
 					{#each seasons as n (n)}
 						{@const whole = chosen.includes(n)}
 						{@const list = eps[n]}
+						{@const have = kept.includes(n) || complete.includes(n)}
 						<div class="row" class:on={whole || (epPicks[n]?.length ?? 0) > 0}>
-							<label class="pickrow">
-								<input type="checkbox" checked={whole} onchange={(e) => toggle(n, e.currentTarget.checked)} />
+							<label class="pickrow" class:have>
+								<input type="checkbox" checked={whole} disabled={have} onchange={(e) => toggle(n, e.currentTarget.checked)} />
 								<span class="nm">{seasonName(n)}</span>
+								{#if have}<span class="xs muted">{kept.includes(n) ? t('discover.titleLibrary.keptUpToDate') : t('requests.askArtist.inLibrary')}</span>{/if}
 								{#if epPicks[n]?.length}<span class="xs muted">{t('requests.askShow.picked', { n: epPicks[n].length })}</span>{/if}
 							</label>
-							<button type="button" class="more" aria-expanded={openSeason === n} aria-label={t('requests.askShow.episodesOf', { season: seasonName(n) })} disabled={whole} onclick={() => expand(n)}>{openSeason === n ? t('requests.askShow.hide') : t('requests.askShow.episodes')}</button>
+							<button type="button" class="more" aria-expanded={openSeason === n} aria-label={t('requests.askShow.episodesOf', { season: seasonName(n) })} disabled={whole || have} onclick={() => expand(n)}>{openSeason === n ? t('requests.askShow.hide') : t('requests.askShow.episodes')}</button>
 						</div>
 						{#if openSeason === n && !whole}
 							{#if list === 'error'}
@@ -152,6 +181,7 @@
 					{/each}
 				</fieldset>
 			{/if}
+			{#if row.shown}<QualityPills pills={row.pills} bind:selected={quality} stacked />{/if}
 			<label class="checkline" data-testid="follow-box">
 				<input type="checkbox" bind:checked={follow} />
 				<span><b>{t('requests.add.follow')}</b><br /><span class="hint">{t('requests.add.followHint')}</span></span>
@@ -209,6 +239,7 @@
 		min-height: 44px;
 		cursor: pointer;
 	}
+	.pickrow.have { cursor: default; opacity: 0.6; }
 	.nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.more {
 		min-height: 32px;

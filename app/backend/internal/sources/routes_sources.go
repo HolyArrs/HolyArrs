@@ -18,10 +18,12 @@ import (
 // SourceView is a Source as the API shows it: the key, a passkey in the
 // address path and the proxy password are masked, never sent.
 type SourceView struct {
-	ID         int64               `json:"id"`
-	Name       string              `json:"name"`
-	Protocol   string              `json:"protocol"`
-	Format     string              `json:"format"`
+	ID       int64  `json:"id"`
+	Name     string `json:"name"`
+	Protocol string `json:"protocol"`
+	Format   string `json:"format"`
+	// Site is the built-in site a site-format Source reads.
+	Site       string              `json:"site,omitempty"`
 	URL        string              `json:"url"`
 	APIKey     string              `json:"api_key"`
 	UseFor     domain.SourceUse    `json:"use_for"`
@@ -45,7 +47,7 @@ type SourceView struct {
 
 // SourceViewOf is x as the API shows it, with its summary.
 func SourceViewOf(x domain.Source, sum Summary) SourceView {
-	v := SourceView{ID: x.ID, Name: x.Name, Protocol: x.Protocol, Format: x.Format, URL: MaskURL(x.URL), UseFor: x.UseFor, Kinds: x.Kinds,
+	v := SourceView{ID: x.ID, Name: x.Name, Protocol: x.Protocol, Format: x.Format, Site: x.Extra[extraSiteKind], URL: MaskURL(x.URL), UseFor: x.UseFor, Kinds: x.Kinds,
 		Categories: x.Categories, MinSeeders: x.MinSeeders, Limits: x.Limits, Priority: x.Priority, State: x.State, Health: HealthOf(x),
 		AllowLocal: x.AllowLocal, Proxy: x.ProxyURL, ProxyAllowLocal: x.ProxyAllowLocal, Summary: sum, Tags: x.Tags}
 	if v.Tags == nil {
@@ -81,7 +83,12 @@ func (h *Handlers) listSources(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"sources": out})
 }
 
-const sourceHelp = `send name, format (torznab, newznab or rss), url, and if needed api_key, protocol, use_for {feed, auto_search, hand_search}, kinds, categories, min_seeders, limits, priority (1 to 50), allow_local_network, proxy, proxy_password, proxy_allow_local_network`
+// listSites lists the built-in sites a Source can read directly.
+func (h *Handlers) listSites(w http.ResponseWriter, r *http.Request) {
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"sites": Sites})
+}
+
+const sourceHelp = `send name, format (torznab, newznab, rss or site; a site Source also sends site: knaben, torrentscsv, subsplease or iptorrents), url, and if needed api_key, protocol, use_for {feed, auto_search, hand_search}, kinds, categories, min_seeders, limits, priority (1 to 50), allow_local_network, proxy, proxy_password, proxy_allow_local_network`
 
 // readSource reads a Source body; the masked placeholder keeps the stored secret.
 func readSource(w http.ResponseWriter, r *http.Request) (Input, bool) {
@@ -107,7 +114,7 @@ func sourceError(w http.ResponseWriter, err error) {
 		webserver.Fail(w, http.StatusServiceUnavailable, err.Error())
 	case errors.Is(err, database.ErrNotFound):
 		webserver.Fail(w, http.StatusNotFound, "no such Source")
-	case errors.Is(err, ErrName), errors.Is(err, ErrFormat), errors.Is(err, ErrProtocol), errors.Is(err, ErrURL),
+	case errors.Is(err, ErrName), errors.Is(err, ErrFormat), errors.Is(err, ErrSite), errors.Is(err, ErrProtocol), errors.Is(err, ErrURL),
 		errors.Is(err, ErrPriority), errors.Is(err, ErrLimits), errors.Is(err, ErrKinds), errors.Is(err, ErrUse),
 		errors.Is(err, ErrProxy), errors.Is(err, ErrSeeders):
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
@@ -271,8 +278,26 @@ func (h *Handlers) runTest(w http.ResponseWriter, r *http.Request, x domain.Sour
 			if database.Get(r.Context(), h.Store.Read(), "sources", x.ID, &x) == nil {
 				h.PublishSource(x)
 			}
+		} else if x.State == "enabled" {
+			// Keep why it failed, so the Source does not read as working
+			// once the page is opened again.
+			kind, detail := KindDown, ""
+			var se *Error
+			if errors.As(err, &se) {
+				kind, detail = se.Kind, se.Detail
+			}
+			if h.Store.Write(r.Context(), func(tx *sql.Tx) error { return markTestFailedTx(tx, r.Context(), x.ID, kind, detail) }) == nil &&
+				database.Get(r.Context(), h.Store.Read(), "sources", x.ID, &x) == nil {
+				h.PublishSource(x)
+			}
 		}
 	} else {
+		if x.Extra[extraTestFailed] != "" {
+			if h.Store.Write(r.Context(), func(tx *sql.Tx) error { return recoverSourceTx(tx, r.Context(), x.ID) }) == nil &&
+				database.Get(r.Context(), h.Store.Read(), "sources", x.ID, &x) == nil {
+				h.PublishSource(x)
+			}
+		}
 		out["text"] = "The Source answered."
 		if x.Format == "rss" {
 			out["text"] = "The feed answered with " + strconv.Itoa(items) + " Releases."

@@ -9,9 +9,15 @@ describe("the pane's ⋯ menu", () => {
 		expect(paneExtras(torrent, { steer: true, fail: true })).toEqual(['recheck', 'reannounce', 'force', 'steer', 'fail']);
 		expect(paneExtras(torrent, { steer: false, fail: false })).toEqual(['recheck', 'reannounce']);
 	});
-	it('offers Transmission and Deluge none of the qBittorrent-only calls', () => {
+	it('offers Transmission, Deluge, rTorrent and aria2 none of the qBittorrent-only calls', () => {
 		expect(paneExtras({ ...torrent, downloader_kind: 'transmission' }, { steer: true, fail: true })).toEqual(['fail']);
 		expect(paneExtras({ ...torrent, downloader_kind: 'deluge' }, { steer: true, fail: false })).toEqual([]);
+		expect(paneExtras({ ...torrent, downloader_kind: 'rtorrent' }, { steer: true, fail: true })).toEqual(['fail']);
+		expect(paneExtras({ ...torrent, downloader_kind: 'rtorrent', can_act: false }, { steer: true, fail: true })).toEqual([]);
+		expect(rowItems({ ...torrent, downloader_kind: 'rtorrent', can_act: false })).toEqual([]);
+		expect(paneExtras({ ...torrent, downloader_kind: 'aria2' }, { steer: true, fail: true })).toEqual(['fail']);
+		expect(paneExtras({ ...torrent, downloader_kind: 'aria2', can_act: false }, { steer: true, fail: true })).toEqual([]);
+		expect(rowItems({ ...torrent, downloader_kind: 'aria2', can_act: false })).toEqual([]);
 	});
 	it('gives a Usenet job only Mark failed beyond its row list, which has its queue moves and priority', () => {
 		expect(paneExtras(job, { steer: true, fail: true })).toEqual(['fail']);
@@ -27,5 +33,12 @@ describe("the pane's ⋯ menu", () => {
 		expect(rowItems(own)).toEqual(['library', 'remove']);
 		expect(paneExtras(own, { steer: true, fail: true })).toEqual(['fail']);
 		expect(rowItems({ ...job, client_locked: true })).toEqual(['remove']);
+	});
+	it('never leaves a row stuck before its import without a way on', () => {
+		const finished = { ...torrent, phase: 'waiting_to_import', state: 'finished', title_id: 7 };
+		// The Downloader was removed: Remove (records only) and Import again.
+		expect(rowItems({ ...finished, can_act: true, client_locked: true, can_import: true })).toEqual(['import', 'library', 'remove']);
+		// Still on a live Downloader: Import again beside Open in Library.
+		expect(rowItems({ ...finished, can_act: false, can_import: true })).toEqual(['import', 'library']);
 	});
 });

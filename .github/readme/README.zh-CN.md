@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <b>简体中文</b> · <a href="README.hi.md">हिन्दी</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.ar.md">العربية</a> · <a href="README.pt-BR.md">Português</a> · <a href="README.ru.md">Русский</a> · <a href="README.ja.md">日本語</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ko.md">한국어</a> · <a href="README.it.md">Italiano</a> · <a href="README.pl.md">Polski</a> · <a href="README.nl.md">Nederlands</a> · <a href="README.tr.md">Türkçe</a> · <a href="README.uk.md">Українська</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <b>简体中文</b> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <a href="README.hi.md">हिन्दी</a> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">更多语言</a></p>
 
 <p align="center">
   <picture>
@@ -7,21 +7,41 @@
   </picture>
 </p>
 
-<p align="center"><a href="https://holyarrs.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-site-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-site-light.png" height="34" alt="HolyArrs.com" /></picture></a>&nbsp;<a href="https://reddit.com/r/HolyArrs"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-reddit-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-reddit-light.png" height="34" alt="r/HolyArrs" /></picture></a>&nbsp;<a href="https://discord.com/invite/mthsvesKpC"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-discord-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-discord-light.png" height="34" alt="Discord" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-roadmap-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-roadmap-light.png" height="34" alt="路线图" /></picture></a>&nbsp;<a href="https://holyarrs.com/whats-new/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-news-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-news-light.png" height="34" alt="最新动态" /></picture></a></p>
+<p align="center"><a href="https://holyarrs.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-site-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-site-light.png" height="34" alt="HolyArrs.com" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-roadmap-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-roadmap-light.png" height="34" alt="路线图" /></picture></a>&nbsp;<a href="https://holyarrs.com/whats-new/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-news-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-news-light.png" height="34" alt="最新动态" /></picture></a></p>
 
 <p align="center">
   <a href="https://github.com/HolyArrs/HolyArrs/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/HolyArrs/HolyArrs/build.yml?branch=main&style=flat-square&logo=github&logoColor=white&label=build" alt="Build"></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/HolyArrs/HolyArrs"><img src="https://img.shields.io/ossf-scorecard/github.com/HolyArrs/HolyArrs?style=flat-square&label=scorecard" alt="OpenSSF Scorecard"></a>
   <a href="https://www.bestpractices.dev/projects/16513"><img src="https://img.shields.io/cii/level/16513?style=flat-square&label=best%20practices" alt="OpenSSF Best Practices"></a>
   <a href="https://hub.docker.com/r/holyarrs/holyarrs/tags"><img src="https://img.shields.io/docker/v/holyarrs/holyarrs?sort=semver&style=flat-square&logo=docker&logoColor=white&label=version&color=3b82f6" alt="版本"></a>
+  <a href="https://hub.docker.com/r/holyarrs/holyarrs"><img src="https://img.shields.io/docker/pulls/holyarrs/holyarrs?style=flat-square&logo=docker&logoColor=white&label=pulls&color=3b82f6" alt="Docker pulls"></a>
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="许可证：AGPL-3.0"></a>
 </p>
+
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="HolyArrs/HolyArrs on Trendshift" width="250" height="55"></a></p>
+
+> [!NOTE]
+> **HolyArrs 1.1.4：可以删除任何请求，好友的 Plex 观看列表也能重新读取了。**文件夹的质量现在显示在它的卡片上，Settings 也统一了。[查看新功能](https://holyarrs.com/whats-new/)
+
+> 你的 HolyArrs 里每一张海报、每一段预告片和每一个评分，都来自我自己运营、自己付费的服务器，所以它对所有人都免费。如果 HolyArrs 让你的电影之夜更好了一点，赞助一下，就能为我们所有人留着这盏灯 💛
+>
+> <a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="40" alt="Sponsor HolyArrs" /></picture></a>
+
+> [!TIP]
+> 加入我们！
+>
+> | | |
+> |:--|:--|
+> | <a href="https://discord.com/invite/mthsvesKpC"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Fv9%2Finvites%2FmthsvesKpC%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&suffix=%20members&label=discord&logo=discord&logoColor=white&color=5865F2&style=flat-square" alt="Discord"></a> | 快速获得帮助，和大家一起玩： [Discord](https://discord.com/invite/mthsvesKpC) |
+> | <a href="https://reddit.com/r/HolyArrs"><img src="https://img.shields.io/badge/r%2FHolyArrs-join-ff4500?style=flat-square&logo=reddit&logoColor=white" alt="r/HolyArrs"></a> | 分享想法并投票： [r/HolyArrs](https://reddit.com/r/HolyArrs) |
+> | <a href="https://x.com/CoderLuii"><img src="https://img.shields.io/badge/Follow-%40CoderLuii-000000?style=flat-square&logo=x&logoColor=white" alt="X"></a> | 抢先看： [X](https://x.com/CoderLuii) |
+> | <a href="https://github.com/CoderLuii"><img src="https://img.shields.io/github/followers/CoderLuii?style=flat-square&logo=github&label=followers&color=24292f" alt="GitHub followers"></a> | 更多项目： [GitHub](https://github.com/CoderLuii) |
 
 <h3 align="center">看一部剧要用六个应用。现在只要一个。</h3>
 
 <p align="center"><b>HolyArrs</b> 是一个自托管应用，管理你的剧集、电影和音乐。<br>像用流媒体应用一样浏览，想看什么就提出请求，剩下的交给它。</p>
 
-<p align="center"><b>下载约 15 MB · 管理 10,000 个标题时空闲内存约 140 MB · amd64、arm64、armv7</b><br><sub>它所取代的六个应用，加起来要下载 718.2 MB。</sub></p>
+<p align="center"><b>下载约 16.1 MB · 全新安装时空闲内存约 95 MiB · amd64、arm64、armv7</b><br><sub>它所取代的六个应用，加起来要下载 685.0 MB。</sub></p>
 
 <p align="center"><a href="#quick-start">快速开始</a> · <a href="#why">为什么</a> · <a href="#what-it-does">功能</a> · <a href="#moving">从其他应用迁移</a> · <a href="#manual">手册</a> · <a href="#help">帮助</a></p>
 
@@ -36,7 +56,7 @@
 在本地磁盘上新建一个文件夹，把下面的内容保存为 `docker-compose.yml`：
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -78,16 +98,16 @@ docker compose up -d
 
 | 应用 | 下载大小（amd64） | 空闲内存 | 登录数 | Web 端口数 |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **六个合计** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **六个合计** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>体积小约 48 倍。数据为注册表压缩后的下载大小，来自 linuxserver.io 镜像，amd64，2026-11-08 测量。空闲内存在 10,000 个标题、55,000 部电影和剧集的条件下测量。</sub>
+<sub>体积小约 43 倍。数据为注册表压缩后的下载大小，来自 linuxserver.io 镜像，amd64，2026-11-13 测量。空闲内存在 10,000 个标题、55,000 部电影和剧集的条件下测量。 (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -100,15 +120,16 @@ docker compose up -d
 | | |
 |---|---|
 | 🍿 **Explore** | 像用流媒体应用一样浏览。鼠标悬停在标题上，预告片就会播放。 |
-| 🙋 **Requests** | 请求整部剧，或只请求一季。由你批准，也可以让信任的人跳过审批。 |
+| 🙋 **Requests** | 请求整部剧，或只请求一季。由你批准，也可以让信任的人跳过审批。Plex 和 Pulsarr 的观看列表可以变成请求。 |
 | 🎯 **Pick rules** | 由你决定哪个版本胜出：大小、画质、语言。 |
-| 💬 **字幕** | 使用你选的语言，与文件保存在一起。在线查找字幕会在 1.0 之后加入。 |
+| 💬 **字幕** | 使用你选的语言，从字幕网站查找，并与文件保存在一起。 |
 | 📅 **Calendar** | 你关注的所有内容接下来会播出什么。 |
-| 🚚 **迁移你的设置** | 支持 Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent 和 SABnzbd。先试运行，之后还能撤销。 |
-| 🔌 **旧应用 API** | 开启后，Prowlarr 可以继续向 HolyArrs 推送 Sources。 |
-| 🗝️ **不需要 API 密钥** | 标题、海报和榜单都来自 HolyArrs 元数据服务器。 |
+| 🔔 **Alerts** | Discord、邮件、Telegram、ntfy、Gotify、Pushover 或 webhook。 |
+| 🚚 **导入你的设置** | 支持 Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent 和 SABnzbd。可以选择要导入的内容，之后还能撤销。 |
+| 🔌 **旧应用 API** | 开启后，Seerr、Prowlarr、Bazarr、Unpackerr 和 Homepage 都能继续工作。 |
+| 🗝️ **不需要 API 密钥** | 标题、海报和榜单都来自 HolyArrs 元数据服务器。也可以用你自己的密钥或服务器。 |
 | 🔒 **加密保存密钥** | 保存的密码和密钥由主密钥锁定，主密钥放在你的配置文件夹里。 |
-| 🪶 **很小** | 镜像约 15 MB，里面只有 HolyArrs。 |
+| 🪶 **很小** | 镜像约 16.1 MB，里面只有 HolyArrs。 |
 
 <details>
 <summary><b>查看每个页面的动态效果</b></summary>
@@ -128,18 +149,18 @@ docker compose up -d
 
 ## 🤝 它能和你现有的工具配合
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="下载器：qBittorrent、Transmission、Deluge、SABnzbd、NZBGet。媒体服务器：Plex、Jellyfin、Emby。" /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="下载器：qBittorrent、Transmission、Deluge、rTorrent、aria2、SABnzbd、NZBGet。媒体服务器：Plex、Jellyfin、Emby。" /></picture>
 
-- **下载器：** qBittorrent、Transmission、Deluge、SABnzbd、NZBGet
+- **下载器：** qBittorrent、Transmission、Deluge、rTorrent、aria2、SABnzbd、NZBGet
 - **媒体服务器：** Plex、Jellyfin、Emby
 - **Sources：** 任何 Torznab 或 Newznab 索引器，或者 Prowlarr、Jackett
-- **可从这些应用迁移设置：** Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd
+- **可从这些应用导入设置：** Sonarr、Radarr、Lidarr、Prowlarr、Bazarr、Seerr、Overseerr、qBittorrent、SABnzbd
 
 <a id="moving"></a>
 
 ## 🚚 把旧的设置带过来
 
-打开 **Settings > Move from other apps**，添加每个旧应用的地址和 API 密钥（或备份 zip），选择要带过来的内容，先运行 **Try it**，再点 **Move**。之后你还可以撤销迁移。
+打开 **Settings > Import from other apps**，添加每个旧应用的地址和 API 密钥（或备份 zip），选择要带过来的内容，再选 **Import**。之后你还可以撤销导入。
 
 | 来源 | 会带过来什么 |
 |---|---|
@@ -151,12 +172,11 @@ docker compose up -d
 
 HolyArrs 只读取你的旧应用，不会改动它们里面的任何东西，所以在你信任它之前，可以让两边同时运行。
 
-密钥和密码不会带过来，你需要重新输入，或者从文件导入。自定义格式、标签和历史记录也不会带过来。媒体文件不会被移动。分步说明：[从其他应用迁移](https://docs.HolyArrs.com/migrate/)。
+密钥和密码不会带过来，你需要重新输入，或者从文件导入。自定义格式、标签和历史记录也不会带过来。媒体文件不会被移动。分步说明：[从其他应用导入](https://docs.HolyArrs.com/migrate/)。
 
 ## 🧭 它现在还做不到什么
 
 - **自己下载。** HolyArrs 连接 qBittorrent、SABnzbd 等下载器，不会取代它们。
-- **AI 或 MCP 功能。** 1.0 里没有。
 - **手机和电视应用。** 还没做。网页版可以在手机上使用。
 - **Explore 里的音乐** 还在开发中。
 
@@ -193,6 +213,8 @@ HolyArrs 只读取你的旧应用，不会改动它们里面的任何东西，�
 
 用的是 NAS？请看 [Unraid、Synology 和其他 NAS](https://docs.HolyArrs.com/run/platforms/)。
 
+想要原生安装包？每个[版本](https://github.com/HolyArrs/HolyArrs/releases)都附带一个实验性的 Synology 安装包（`.spk`）。参见 [Synology 安装包](../../docs/run/synology.md)。
+
 ## 版本标签
 
 镜像发布在 Docker Hub：[`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs)。
@@ -200,14 +222,14 @@ HolyArrs 只读取你的旧应用，不会改动它们里面的任何东西，�
 | 标签 | 用途 |
 | :----: | --- |
 | `latest` | 最新版本。 |
-| `1.0.9` | 固定的某一个版本，永远不会变。 |
+| `1.1.4` | 固定的某一个版本，永远不会变。 |
 
 ## 用法
 
 ### docker compose（推荐）
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -395,7 +417,7 @@ HolyArrs 是免费的开源软件，使用 [GNU AGPL-3.0](../../LICENSE) 许可�
 
 ## 让它继续运转
 
-HolyArrs 免费，但运行它不是免费的。每个安装实例都会连接一台元数据服务器，我每个月都要为它付费。赞助者承担这笔费用，也让我有更多时间去做你们投票选出的功能。
+HolyArrs 免费，但运行它不是免费的。默认情况下，每个安装实例都会连接一台元数据服务器，我每个月都要为它付费。赞助者承担这笔费用，也让我有更多时间去做你们投票选出的功能。
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="赞助 HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="为路线图投票" /></picture></a></p>
 

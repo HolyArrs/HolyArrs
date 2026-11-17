@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
@@ -73,6 +75,26 @@ func (a *Web) removeDownload(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// importDownload asks again for the import of a finished download that still
+// waits for it.
+func (a *Web) importDownload(w http.ResponseWriter, r *http.Request) {
+	id, ok := idIn(w, r, "download")
+	if !ok {
+		return
+	}
+	err := a.Manager().ImportAgain(r.Context(), id, actor(r))
+	switch {
+	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
+		webserver.Fail(w, http.StatusNotFound, "no such download")
+	case errors.Is(err, ErrNotWaiting):
+		webserver.Fail(w, http.StatusConflict, err.Error())
+	case err != nil:
+		webserver.Internal(w, "api", err)
+	default:
+		w.WriteHeader(http.StatusAccepted)
+	}
+}
+
 // DecisionView is one movie waiting for a person on Needs a decision.
 type DecisionView struct {
 	SlotID      int64     `json:"slot_id"`
@@ -81,7 +103,7 @@ type DecisionView struct {
 	Year        *int      `json:"year,omitempty"`
 	Version     string    `json:"version"`
 	Versions    int       `json:"versions"` // how many Versions the Title has
-	Why         string    `json:"why"`      // ran_out, conflict, not_replaced
+	Why         string    `json:"why"`      // ran_out, conflict, not_replaced, not_sent, taken
 	Reason      string    `json:"reason"`
 	ReleaseID   *int64    `json:"release_id,omitempty"`
 	ReleaseName string    `json:"release_name,omitempty"`
@@ -97,23 +119,46 @@ type DecisionView struct {
 	DownloadID  *int64        `json:"download_id,omitempty"`
 	PackSlotIDs []int64       `json:"pack_slot_ids,omitempty"`
 	Pack        []EpisodeLine `json:"pack,omitempty"` // every episode of that download
+	// ImportFile names the one video a movie's finished download holds:
+	// Review can import it into this movie (the "import" action).
+	ImportFile string `json:"import_file,omitempty"`
+	// ImportFolder is the finished download's folder as HolyArrs sees it:
+	// Review opens Import files by hand there to match the files.
+	ImportFolder string `json:"import_folder,omitempty"`
 }
 
-// why sorts a Slot's last reason into the three ways it ends up waiting.
+// why sorts a Slot's last reason into the ways it ends up waiting.
 func why(reason string) string {
 	switch {
+	case strings.Contains(reason, "could not be placed") && filesTaken(reason):
+		// An older import whose files another app had already taken.
+		return "taken"
 	case strings.Contains(reason, "not replaced (setting)"):
 		return "not_replaced"
 	case strings.HasPrefix(reason, "not sent:"):
 		// No Downloader takes the title's tags.
 		return "not_sent"
 	case strings.HasPrefix(reason, "nothing could be placed"), strings.Contains(reason, "import"),
-		strings.Contains(reason, "could not be placed"), strings.HasPrefix(reason, "nothing in the download could be matched"),
+		strings.Contains(reason, "could not be placed"), strings.HasPrefix(reason, "nothing in the download could be matched"), strings.HasPrefix(reason, "no file in the download matched"),
 		// The unpack reasons (importer/unpack.go): the import could not finish, Releases did not run out.
-		strings.Contains(reason, "RAR file"), strings.Contains(reason, "archive file"), strings.HasPrefix(reason, "Packed in "), strings.HasPrefix(reason, "Not enough free space to unpack"):
+		strings.Contains(reason, "RAR file"), strings.Contains(reason, "archive file"), strings.HasPrefix(reason, "Packed in "), strings.HasPrefix(reason, "Not enough free space to unpack"),
+		// The file was refused in place of the copy, or its edition was not settled (importer/upgrade.go, copyfacts.go).
+		strings.Contains(reason, "copy in place"), strings.HasPrefix(reason, "edition "):
 		return "conflict"
 	}
 	return "ran_out"
+}
+
+// filesTaken reports whether a placing error says the download's file was
+// no longer there.
+func filesTaken(reason string) bool {
+	r := strings.ToLower(reason)
+	for _, w := range []string{"no such file or directory", "cannot find the file", "cannot find the path", "not in the download folder any more"} {
+		if strings.Contains(r, w) {
+			return true
+		}
+	}
+	return false
 }
 
 func (a *Web) decisions(ctx context.Context, slotID int64) ([]DecisionView, error) {
@@ -182,6 +227,14 @@ func (a *Web) decisions(ctx context.Context, slotID int64) ([]DecisionView, erro
 		if out[i].ReleaseID != nil {
 			_ = a.Store.Read().QueryRowContext(ctx, "SELECT name FROM releases WHERE id = ?", *out[i].ReleaseID).Scan(&out[i].ReleaseName)
 		}
+		if out[i].Kind == "movie" && out[i].DownloadID != nil {
+			if f := a.importer().ReviewFile(ctx, *out[i].DownloadID); f != "" {
+				out[i].ImportFile = filepath.Base(f)
+			}
+		}
+		if out[i].DownloadID != nil {
+			out[i].ImportFolder = a.importer().ReviewFolder(ctx, *out[i].DownloadID)
+		}
 		if out[i].Reason != "" {
 			out[i].Reason = upperFirst(out[i].Reason) + "."
 		}
@@ -215,10 +268,11 @@ func (a *Web) decide(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var in struct {
-		Action string `json:"action"`
-		Pack   bool   `json:"pack"`
+		Action  string `json:"action"`
+		Pack    bool   `json:"pack"`
+		Replace bool   `json:"replace"`
 	}
-	if !webserver.Decode(w, r, &in, `body is {"action": "search" | "turn_down" | "stop", "pack": bool (optional, for every episode of the same download)}`) {
+	if !webserver.Decode(w, r, &in, `body is {"action": "search" | "turn_down" | "stop" | "import", "pack": bool (optional, for every episode of the same download), "replace": bool (import only)}`) {
 		return
 	}
 	list, err := a.decisions(r.Context(), id)
@@ -261,6 +315,8 @@ func (a *Web) decide(w http.ResponseWriter, r *http.Request) {
 		who = p.Name
 	}
 	switch in.Action {
+	case "import":
+		a.importReviewFile(w, r, dv, in.Pack, in.Replace)
 	case "turn_down":
 		if dv.ReleaseID == nil {
 			webserver.Fail(w, http.StatusConflict, "there is no Release to turn down for this "+noun)
@@ -365,6 +421,49 @@ func (a *Web) decide(w http.ResponseWriter, r *http.Request) {
 		}
 		webserver.WriteJSON(w, http.StatusOK, map[string]any{"action": "stop", "state": to, "stopped": len(stopped)})
 	default:
-		webserver.Fail(w, http.StatusBadRequest, `action is "search", "turn_down" or "stop"`)
+		webserver.Fail(w, http.StatusBadRequest, `action is "search", "turn_down", "stop" or "import"`)
 	}
+}
+
+// importer places files the way the import job does, for Review's Import this file.
+func (a *Web) importer() *importer.Importer {
+	im := &importer.Importer{Store: a.Store, OnImported: a.Manager().ClearFinished}
+	if a.Live != nil {
+		im.Live = a.Live
+	}
+	return im
+}
+
+// importReviewFile imports a movie's one downloaded video into the movie it
+// was grabbed for: the person decided the file is that movie. A movie that
+// has a file keeps it unless replace is sent; the old file then goes to the
+// holding folder (Recently deleted).
+func (a *Web) importReviewFile(w http.ResponseWriter, r *http.Request, dv DecisionView, pack, replace bool) {
+	switch {
+	case dv.Kind != "movie" || pack:
+		webserver.Fail(w, http.StatusBadRequest, "only a movie's download is imported from here; use Import files by hand")
+		return
+	case dv.DownloadID == nil || dv.ImportFile == "":
+		webserver.Fail(w, http.StatusConflict, "the download has no single video to import; use Import files by hand")
+		return
+	case dv.HasCopy && !replace:
+		webserver.Fail(w, http.StatusConflict, "this movie already has a file; send replace to put this one in its place")
+		return
+	}
+	res, err := a.importer().ImportReviewFile(r.Context(), dv.SlotID, *dv.DownloadID, replace, actor(r))
+	if err != nil {
+		webserver.Internal(w, "api", err)
+		return
+	}
+	if res.Outcome != "placed" {
+		webserver.Fail(w, http.StatusConflict, res.Error)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"action": "import", "result": res})
+}
+
+// clearNow tries every imported download still waiting to be cleared from
+// its Downloader at once, and answers how many still wait.
+func (a *Web) clearNow(w http.ResponseWriter, r *http.Request) {
+	webserver.WriteJSON(w, http.StatusOK, map[string]int{"left": a.Manager().ClearNow(r.Context())})
 }

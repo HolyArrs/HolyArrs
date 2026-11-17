@@ -25,7 +25,14 @@ type nzbgetStatus struct {
 	DownloadRate   int64  `json:"DownloadRate"`
 	DownloadRateLo uint64 `json:"DownloadRateLo"`
 	DownloadRateHi uint64 `json:"DownloadRateHi"`
+	// DownloadPaused: the whole download queue is paused. Each job still
+	// says QUEUED or DOWNLOADING then.
+	DownloadPaused bool `json:"DownloadPaused"`
 }
+
+// nzbgetHeld reports a job a paused download queue holds: one waiting or
+// downloading. Repair and unpack go on while downloads are paused.
+func nzbgetHeld(j Job) bool { return j.Detail == "QUEUED" || j.Detail == "DOWNLOADING" }
 
 // Queue returns the current queue snapshot.
 func (n *NZBGet) Queue(ctx context.Context) (QueuePage, error) {
@@ -38,12 +45,15 @@ func (n *NZBGet) Queue(ctx context.Context) (QueuePage, error) {
 		return QueuePage{}, err
 	}
 	rate := st.rate()
-	p := QueuePage{Head: QueueHead{Speed: rate}, Jobs: make([]Job, 0, len(active))}
+	p := QueuePage{Head: QueueHead{Paused: st.DownloadPaused, Speed: rate}, Jobs: make([]Job, 0, len(active))}
 	moving, left := 0, int64(0)
 	for i, r := range active {
 		j := r.anyJob(false)
 		if j.ID == "" {
 			continue
+		}
+		if st.DownloadPaused && nzbgetHeld(j) {
+			j.State = StatePaused
 		}
 		j.QueuePos = i + 1
 		if j.State == StateDownloading && j.Progress < 1 {

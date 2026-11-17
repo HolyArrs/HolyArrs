@@ -100,18 +100,20 @@
 	:global(html.over-hero) .ui-topbar { background-color: transparent; border-bottom-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
 	@media (prefers-reduced-motion: reduce) { .ui-topbar { transition: none; } }
 	.lead, .trail { display: flex; align-items: center; gap: 4px; min-width: 0; }
+	.lead { container: lead / inline-size; }
 	/* Where you are, in quiet text after the arrows; hidden where the bar is narrow. */
 	/* A glass pill, so the trail stays readable over any hero frame, bright or black, in both themes. */
 	/* Same glass as the search field: translucent, blurred, soft shadow. */
 	.glass, .crumbs { border-radius: 999px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 0.18), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
 	.nav { display: flex; align-items: center; height: 44px; padding: 0 2px; }
-	.nav :global(button) { width: 38px; height: 38px; border-radius: 999px; }
 	.crumbs { display: flex; align-items: center; min-width: 0; margin-inline-start: 8px; height: 44px; padding: 0 18px; font: 500 13px/1 var(--font-ui); color: var(--text-muted); white-space: nowrap; }
-	.crumbs a { display: inline-flex; align-items: center; min-height: 24px; color: var(--text-muted); text-decoration: none; transition: color var(--dur-fast) var(--ease-out); }
+	/* The place you came from gives way (with an ellipsis) before this page's name collapses. */
+	.crumbs a { display: block; line-height: 24px; min-width: 0; max-width: 16vw; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); text-decoration: none; transition: color var(--dur-fast) var(--ease-out); }
 	.crumbs a:hover { color: var(--text); }
 	.crumbs .sep { margin: 0 6px; opacity: .5; }
-	/* Long page names (other languages) wrap to a second line instead of cutting off; the search stays centred. */
-	.crumbs .here { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; white-space: normal; overflow-wrap: break-word; min-width: 0; line-height: 1.15; max-width: 28vw; color: var(--text); font-weight: 600; }
+	/* The page name stays on one line (the full name is in its title); where the bar is tight the place you came from steps out first, so neither is cut to a couple of letters. The search stays centred. */
+	.crumbs .here { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; min-width: 0; line-height: 24px; max-width: 28vw; color: var(--text); font-weight: 600; }
+	@container lead (max-width: 380px) { .crumbs a, .crumbs .sep { display: none; } }
 	@media (max-width: 1099px) { .crumbs { display: none; } }
 	@media (max-width: 767px) { .ui-topbar { display: none; } }
 </style>

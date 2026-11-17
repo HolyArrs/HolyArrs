@@ -16,10 +16,10 @@ import (
 // seriesIn is what an app sends to add or change a show. Other fields
 // come from the Library or the details source, as in the old apps.
 type seriesIn struct {
-	ID               int64  `json:"id"`
-	TvdbID           int64  `json:"tvdbId"`
-	Title            string `json:"title"`
-	QualityProfileID int64  `json:"qualityProfileId"`
+	ID               int64   `json:"id"`
+	TvdbID           int64   `json:"tvdbId"`
+	Title            string  `json:"title"`
+	QualityProfileID looseID `json:"qualityProfileId"`
 	Seasons          []struct {
 		SeasonNumber int  `json:"seasonNumber"`
 		Monitored    bool `json:"monitored"`
@@ -28,14 +28,25 @@ type seriesIn struct {
 	MonitorNewItems string `json:"monitorNewItems"`
 	RootFolderPath  string `json:"rootFolderPath"`
 	SeriesType      string `json:"seriesType"`
-	AddOptions      struct {
-		SearchForMissingEpisodes bool `json:"searchForMissingEpisodes"`
+	// Tags are tag ids, as numbers or number text.
+	Tags       []looseID `json:"tags"`
+	AddOptions struct {
+		Monitor                  string `json:"monitor"`
+		SearchForMissingEpisodes bool   `json:"searchForMissingEpisodes"`
 	} `json:"addOptions"`
 }
 
-// addSeries adds a show and keeps the seasons sent as monitored up to
-// date. With searchForMissingEpisodes the search waits for the folder
-// scan, so episodes already on disk are not grabbed again.
+// Duplicate refusals keep the old apps' phrase, which Pulsarr reads as
+// "already there".
+const (
+	showAlreadyAdded  = "this show has already been added to the HolyArrs Library"
+	movieAlreadyAdded = "this movie has already been added to the HolyArrs Library"
+)
+
+// addSeries adds a show and keeps the seasons of the season choice, or
+// the seasons sent as monitored, up to date. With searchForMissingEpisodes
+// the search waits for the folder scan, so episodes already on disk are
+// not grabbed again. The tags sent are put on the show.
 func (h *handler) addSeries(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var in seriesIn
@@ -46,11 +57,15 @@ func (h *handler) addSeries(w http.ResponseWriter, r *http.Request) {
 		refuse(w, failure{PropertyName: "TvdbId", ErrorMessage: "send the show's TVDB id", AttemptedValue: in.TvdbID})
 		return
 	}
+	if in.QualityProfileID < 0 {
+		refuse(w, failure{PropertyName: "QualityProfileId", ErrorMessage: "send the Pick rules id as a number"})
+		return
+	}
 	if id, err := library.ShowByIDs(ctx, h.Store.Read(), map[string]string{"tvdb": itoa(in.TvdbID)}); err != nil {
 		internalError(w, err)
 		return
 	} else if id != 0 {
-		refuse(w, failure{PropertyName: "TvdbId", ErrorMessage: "this show is already in the HolyArrs Library", AttemptedValue: in.TvdbID, ErrorCode: "AlreadyInLibrary"})
+		refuse(w, failure{PropertyName: "TvdbId", ErrorMessage: showAlreadyAdded, AttemptedValue: in.TvdbID, ErrorCode: "AlreadyInLibrary"})
 		return
 	}
 	folder, ok := h.folderByPath(ctx, in.RootFolderPath)
@@ -60,12 +75,14 @@ func (h *handler) addSeries(w http.ResponseWriter, r *http.Request) {
 	}
 	// A missing monitored counts as false, as in the old apps.
 	keep := in.Monitored != nil && *in.Monitored
-	opt := shows.ShowAddOptions{LibraryFolderID: folder, PickRulesID: in.QualityProfileID, KeepUpToDate: &keep,
+	opt := shows.ShowAddOptions{LibraryFolderID: folder, PickRulesID: int64(in.QualityProfileID), KeepUpToDate: &keep,
 		NewSeasons: "all", EpisodeOrder: episodeOrder(in.SeriesType), SearchOnAdd: in.AddOptions.SearchForMissingEpisodes}
 	if strings.EqualFold(in.MonitorNewItems, "none") {
 		opt.NewSeasons = "none"
 	}
-	if len(in.Seasons) == 0 {
+	if given, noSearch := seasonPlan(in.AddOptions.Monitor, h.now(), &opt); given {
+		opt.SearchOnAdd = opt.SearchOnAdd && !noSearch
+	} else if len(in.Seasons) == 0 {
 		opt.Seasons = library.SeasonsAll // no list means every season but the specials
 	} else {
 		opt.SeasonNumbers = []int{}
@@ -79,7 +96,7 @@ func (h *handler) addSeries(w http.ResponseWriter, r *http.Request) {
 	var dup *shows.ShowAlreadyAddedError
 	switch {
 	case errors.As(err, &dup):
-		refuse(w, failure{PropertyName: "TvdbId", ErrorMessage: "this show is already in the HolyArrs Library", AttemptedValue: in.TvdbID, ErrorCode: "AlreadyInLibrary"})
+		refuse(w, failure{PropertyName: "TvdbId", ErrorMessage: showAlreadyAdded, AttemptedValue: in.TvdbID, ErrorCode: "AlreadyInLibrary"})
 		return
 	case errors.Is(err, shows.ErrShowNeverAdd):
 		refuse(w, failure{PropertyName: "TvdbId", ErrorMessage: "this show is on HolyArrs' Never-add list", AttemptedValue: in.TvdbID})
@@ -88,10 +105,14 @@ func (h *handler) addSeries(w http.ResponseWriter, r *http.Request) {
 		refuse(w, failure{PropertyName: "TvdbId", ErrorMessage: "no show with this TVDB id was found", AttemptedValue: in.TvdbID})
 		return
 	case err != nil:
-		if f, ok := addFailure(err, in.QualityProfileID, in.RootFolderPath); ok {
+		if f, ok := addFailure(err, int64(in.QualityProfileID), in.RootFolderPath); ok {
 			refuse(w, f)
 			return
 		}
+		internalError(w, err)
+		return
+	}
+	if err := linkTags(ctx, h.Store, id, tagIDs(in.Tags)); err != nil {
 		internalError(w, err)
 		return
 	}
@@ -150,12 +171,12 @@ func (h *handler) putSeries(w http.ResponseWriter, r *http.Request) {
 		internalError(w, err)
 		return
 	}
-	if in.QualityProfileID > 0 && in.QualityProfileID != mains[t.ID].PickRulesID {
-		c.PickRulesID = &in.QualityProfileID
+	if p := int64(in.QualityProfileID); p > 0 && p != mains[t.ID].PickRulesID {
+		c.PickRulesID = &p
 	}
 	if c != (library.TitleChange{}) {
 		if _, err := h.Library.Edit(ctx, t.ID, c, false, by); err != nil {
-			if f, ok := addFailure(err, in.QualityProfileID, in.RootFolderPath); ok {
+			if f, ok := addFailure(err, int64(in.QualityProfileID), in.RootFolderPath); ok {
 				refuse(w, f)
 				return
 			}

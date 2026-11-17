@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Advanced",
+	"settings.home.page": "{group} · pahina",
+	"settings.home.title": "Mga Setting",
+	"settings.home.search": "Maghanap sa mga setting",
+	"settings.home.matching": "Mga tugmang setting",
+	"settings.home.noMatch": "Walang tugmang setting",
+	"settings.home.noMatchText": "Subukan ang ibang salita, tulad ng folder, key o password.",
+	"settings.home.clear": "I-clear ang paghahanap"
+}

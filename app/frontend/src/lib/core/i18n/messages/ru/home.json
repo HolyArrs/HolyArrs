@@ -25,6 +25,9 @@
 	"home.lostIfTheContainer": "пропадёт при пересоздании контейнера",
 	"home.downloads": "Загрузки",
 	"home.waitingForTheirFiles": "ждут свои файлы",
+	"home.waitingToBeCleared": "ждут очистки",
+	"home.noSaveFolder": "нет папки сохранения",
+	"home.noSaveFolderMany": "нет папки сохранения",
 	"home.masterKey": "Главный ключ",
 	"home.noKeyKitSaved": "набор ключа не сохранён",
 	"home.trailers": "Трейлеры",
@@ -254,6 +257,7 @@
 	"home.finished": "Завершено {when}",
 	"home.nothingIsDownloadingRight": "Сейчас ничего не загружается.",
 	"home.paused2": "На паузе: {n}.",
+	"home.notSentByHolyArrs": "В загрузчике: {n}, которые HolyArrs не отправлял.",
 	"home.someChecksCouldNot": "Некоторые проверки сейчас не удалось прочитать.",
 	"home.otherCheckPassed": "Остальных проверок пройдено: {n}.",
 	"home.otherChecksPassed": "Остальных проверок пройдено: {n}.",
@@ -265,5 +269,10 @@
 	"home.version": "Версия {version}",
 	"home.metadataServerDown": "Сервер метаданных недоступен",
 	"home.metadataServerOnline": "Сервер метаданных работает",
-	"home.homeCouldNotRead3": "Главной сейчас не удалось прочитать загрузки."
+	"home.homeCouldNotRead3": "Главной сейчас не удалось прочитать загрузки.",
+	"home.off": "Выкл.",
+	"home.sourcesOff": "Выключено в разделе «Части»",
+	"home.noneForSources": "нет для того, что находят ваши источники",
+	"home.addedTwice": "добавлен дважды",
+	"home.addedTwiceMany": "добавлены дважды"
 }

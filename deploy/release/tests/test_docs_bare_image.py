@@ -130,9 +130,12 @@ class Wording(unittest.TestCase):
                 self.assertIn("Check again", read(p))
 
     def test_no_shell_steps_on_first_run(self):
+        # The sign-in words live in the translations since the app speaks several languages.
         page = read(ROOT / "app" / "frontend" / "src" / "routes" / "login" / "+page.svelte")
-        self.assertNotIn("doctor shows how", page)
-        self.assertIn("Forgot to map /config?", page)
+        words = read(ROOT / "app" / "frontend" / "src" / "lib" / "core" / "i18n" / "messages" / "en" / "accounts.json")
+        self.assertNotIn("doctor shows how", page + words)
+        self.assertIn("accounts.login.unmapped", page)
+        self.assertIn("Forgot to map /config?", words)
 
 
 if __name__ == "__main__":

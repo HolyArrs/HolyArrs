@@ -7,6 +7,7 @@ import { fetchMusicExplore } from '../music/music-trending.ts';
 import { musicPrefetchURLs } from '../music/music-prefetch.ts';
 import { firstPageURL } from '../discover/person-prefetch.ts';
 import { loadDetails } from '../metadata/title-details.ts';
+import { browserLocale, LOCALES } from './i18n/i18n.svelte.ts';
 
 const html = readFileSync(new URL('../../app.html', import.meta.url), 'utf8');
 const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).find((s) => s.includes('holyarrs-early'));
@@ -38,7 +39,7 @@ describe('app.html boot requests', () => {
 	it('asks who is signed in and Home on /', () => {
 		const { asked, init } = boot({ url: '/' });
 		expect(asked).toEqual(['/api/v1/auth/me', '/api/v1/home']);
-		expect(init).toEqual({ headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+		expect(init).toEqual({ headers: { Accept: 'application/json', 'X-HolyArrs-Language': 'en' }, credentials: 'same-origin' });
 	});
 
 	it('asks an artist page exactly as the page does', () => {
@@ -95,6 +96,27 @@ describe('app.html boot requests', () => {
 		};
 		new Function('window', 'location', 'document', 'localStorage', 'navigator', 'fetch', 'Intl', script!)(win, u, { querySelector: () => null }, localStorage, { languages: [] }, fetch, globalThis.Intl);
 		expect(fetch).toHaveBeenCalledTimes(2);
+	});
+
+	it('sends the saved app language with the boot asks', () => {
+		expect(boot({ url: '/title/movie/693134', stored: { 'holyarrs-lang': 'pt-br' } }).init).toEqual({
+			headers: { Accept: 'application/json', 'X-HolyArrs-Language': 'pt-br' },
+			credentials: 'same-origin'
+		});
+		expect(boot({ url: '/', stored: { 'holyarrs-lang': 'fil' } }).init).toEqual({
+			headers: { Accept: 'application/json', 'X-HolyArrs-Language': 'fil' },
+			credentials: 'same-origin'
+		});
+		expect(boot({ url: '/', stored: { 'holyarrs-lang': '"><x' } }).init).toEqual({ headers: { Accept: 'application/json', 'X-HolyArrs-Language': 'en' }, credentials: 'same-origin' });
+	});
+
+	it('with no saved language, sends the one the app shows (a browser language the app lacks shows English)', () => {
+		for (const langs of [['hu-HU'], ['hu-HU', 'de'], ['de-AT'], ['pt-PT'], ['zh-TW'], ['ar'], ['en-GB'], [], ['fil-PH'], ...LOCALES.map((l) => [l.code])]) {
+			expect(boot({ url: '/title/movie/693134', langs }).init, langs.join()).toEqual({
+				headers: { Accept: 'application/json', 'X-HolyArrs-Language': browserLocale(langs) },
+				credentials: 'same-origin'
+			});
+		}
 	});
 
 	it('asks a title page exactly as loadDetails does', async () => {

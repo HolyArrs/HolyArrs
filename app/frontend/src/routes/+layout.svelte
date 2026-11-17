@@ -30,6 +30,7 @@
 	import { installHeroPrefetch } from '#lib/metadata/index.ts';
 	import { idlePages, installRowAhead } from '#lib/core/smart-preload.ts';
 	import { preloadHero } from '#lib/core/tmdb-image.ts';
+	import { minimalLook } from '#lib/core/look.svelte.ts';
 	import AppShell from './(frame)/AppShell.svelte';
 	import PosterWall from './(frame)/PosterWall.svelte';
 	import Sidebar from './(frame)/Sidebar.svelte';
@@ -338,7 +339,7 @@
 		// Everyone signed in watches their own downloads; the rest of Downloads is for managers.
 		if (p === '/downloads') return true;
 		if (p.startsWith('/downloads')) return allowed('manage_library');
-		if (p === '/library/held' || p === '/library/turned-down' || p === '/library/rename' || p === '/library/import' || p === '/library/import-files' || p === '/library/missing-subtitles' || p === '/library/copies') return allowed('manage_library');
+		if (p === '/library/held' || p === '/library/turned-down' || p === '/library/rename' || p === '/library/import' || p === '/library/import-files' || p === '/library/missing-subtitles' || p === '/library/copies' || p === '/library/stats') return allowed('manage_library');
 		if (p.startsWith('/requests')) return allowed('wishlist');
 		// Status sits under Manage, as in the side menu.
 		if (p.startsWith('/health')) return allowed('manage_library');
@@ -496,7 +497,7 @@
 {:else}
 	<a class="skip" href="#main">{t('frame.layout.skip')}</a>
 	<!-- Background behind every page: plain by default, or this Library's posters (Settings > Appearance). Settings home draws its own. -->
-	{#if backdrop.value === 'posters' && path !== '/settings'}<PosterWall />{/if}
+	{#if backdrop.value === 'posters' && path !== '/settings' && !minimalLook()}<PosterWall />{/if}
 	<AppShell {collapsed} {overlay} onscrim={() => closeOverlay()}>
 		{#snippet sidebar()}
 			<Sidebar

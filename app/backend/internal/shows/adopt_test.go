@@ -79,7 +79,7 @@ func TestPlanShowAdopt(t *testing.T) {
 	if lab.Episodes != 4 || lab.Unknown != 3 {
 		t.Errorf("counts %d %d", lab.Episodes, lab.Unknown)
 	}
-	if !strings.Contains(why["Lab Show (2025)/Season 1/Other.Show.S01E03.mkv"], "another show") {
+	if !strings.Contains(why["Lab Show (2025)/Season 1/Other.Show.S01E03.mkv"], "S01E03") {
 		t.Errorf("other show why %q", why["Lab Show (2025)/Season 1/Other.Show.S01E03.mkv"])
 	}
 	if h := c["Holiday Videos"]; h.Status != "unmatched" {
@@ -136,7 +136,13 @@ func TestAdoptShowMovesNothing(t *testing.T) {
 	if eps["S02E03"].State == mediafiles.SlotInLibrary || eps["S00E01"].State == mediafiles.SlotInLibrary {
 		t.Error("an episode with no file is in the library")
 	}
-	files, _ := database.Select[mediafiles.File](ctx, s.Read(), "files", "version_id = ? ORDER BY id", v.ID)
+	// The three files left alone are found notes, listed as leftovers.
+	var notes int
+	_ = s.Read().QueryRow("SELECT count(*) FROM files WHERE version_id = ? AND origin = 'found'", v.ID).Scan(&notes)
+	if notes != 3 {
+		t.Fatalf("found notes %d", notes)
+	}
+	files, _ := database.Select[mediafiles.File](ctx, s.Read(), "files", "version_id = ? AND origin != 'found' ORDER BY id", v.ID)
 	if len(files) != 3 {
 		t.Fatalf("files %+v", files)
 	}
@@ -174,7 +180,7 @@ func TestAdoptShowMovesNothing(t *testing.T) {
 }
 
 // 5.2.2: a rescan marks a missing episode file and one that came back,
-// records a new video as found with its episodes, and an empty Library
+// links a new video to its empty episode, and an empty Library
 // folder (a dropped mount) marks nothing missing and warns in the scan.
 func TestRescanShowFolder(t *testing.T) {
 	svc, s, _, _ := addShowService(t)
@@ -194,8 +200,8 @@ func TestRescanShowFolder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// The found files: the new one plus the three left alone at adopting.
-	if r.Missing != 1 || r.Found != 4 || r.Unreachable != 0 {
+	// The found file is the new one; the three left alone were noted at adopting.
+	if r.Missing != 1 || r.Found != 1 || r.Unreachable != 0 {
 		t.Fatalf("rescan %+v", r)
 	}
 	eps := episodes(t, s, res[0].TitleID)
@@ -204,11 +210,11 @@ func TestRescanShowFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = database.Get(ctx, s.Read(), "files", found.ID, &found)
-	if found.Origin != "found" || len(found.SlotIDs) != 1 || found.SlotIDs[0] != eps["S02E03"].SlotID {
+	if found.Origin != "adopted" || len(found.SlotIDs) != 1 || found.SlotIDs[0] != eps["S02E03"].SlotID {
 		t.Errorf("found %+v", found)
 	}
-	if eps["S02E03"].State == mediafiles.SlotInLibrary {
-		t.Error("a found file filled an episode")
+	if st := eps["S02E03"].State; st != mediafiles.SlotInLibrary && st != mediafiles.SlotBetterWanted {
+		t.Errorf("the new file did not fill its empty episode: %s", st)
 	}
 	if err := os.Rename(first+".away", first); err != nil {
 		t.Fatal(err)

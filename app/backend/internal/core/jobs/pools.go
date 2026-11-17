@@ -9,10 +9,19 @@ const (
 	PoolCore  Pool = "core"
 	PoolIO    Pool = "io"
 	PoolHeavy Pool = "heavy"
+	// PoolMigrate runs Import from other apps, so it never queues behind
+	// imports and scans.
+	PoolMigrate Pool = "migrate"
+	// PoolTranslate runs subtitle translations, which can take minutes, so
+	// searches, grabs and imports never wait behind one.
+	PoolTranslate Pool = "translate"
 )
 
 // DefaultPools are the worker counts the app starts with.
-var DefaultPools = map[Pool]int{PoolCore: 1, PoolIO: 2, PoolHeavy: 1}
+var DefaultPools = map[Pool]int{PoolCore: 1, PoolIO: 2, PoolHeavy: 1, PoolMigrate: 1, PoolTranslate: 1}
+
+// AllPools lists every pool in start order.
+var AllPools = []Pool{PoolCore, PoolIO, PoolHeavy, PoolMigrate, PoolTranslate}
 
 // kindPools assigns every Job kind to a pool. A kind not listed runs in
 // the I/O pool; a test in cmd/holyarrs fails for a registered kind that
@@ -33,6 +42,7 @@ var kindPools = map[string]Pool{
 	"subtitle_search":      PoolIO,
 	"subtitle_missing":     PoolIO,
 	"subtitle_better":      PoolIO,
+	"subtitle_translate":   PoolTranslate,
 	"sync_outside_lists":   PoolIO,
 	"sync_plex_watchlists": PoolIO,
 	"check_bridges":        PoolIO,
@@ -44,15 +54,17 @@ var kindPools = map[string]Pool{
 	// heavy disk work
 	"import_download":     PoolHeavy,
 	"scan_title":          PoolHeavy,
+	"rescan_title":        PoolHeavy,
 	"move_title":          PoolHeavy,
 	"rename_files":        PoolHeavy,
 	"clean_holding":       PoolHeavy,
 	"scan_library_folder": PoolHeavy,
 	"adopt_library":       PoolHeavy,
-	"migrate_move":        PoolHeavy,
-	"migrate_undo":        PoolHeavy,
+	"migrate_move":        PoolMigrate,
+	"migrate_undo":        PoolMigrate,
 	"rescan_library":      PoolHeavy,
 	"subtitle_look":       PoolHeavy,
+	"recheck_pick_rules":  PoolHeavy,
 }
 
 // Pool is a group of workers. Core work (health checks) never waits behind

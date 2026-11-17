@@ -16,6 +16,11 @@ func (s *Searcher) episodeSet(ctx context.Context, c slotCtx, out bool) (showSet
 		return set, nil, err
 	}
 	set.single = true
+	if set.window = s.packWindow(ctx, c.ti); set.window > 0 {
+		if set.packed, err = packFetchingItems(ctx, s.Store.Read(), c.ti.ID); err != nil {
+			return set, nil, err
+		}
+	}
 	set.target[c.sl.ID] = true
 	if !out {
 		set.notOut[c.sl.ID] = true
@@ -33,7 +38,7 @@ func (s *Searcher) episodeSet(ctx context.Context, c slotCtx, out bool) (showSet
 // looking Slot it fills, best first. It returns how many were chosen, held
 // and newly stored.
 func (s *Searcher) feedShow(ctx context.Context, by domain.Actor, jobID *int64, cs []slotCtx, fs []found, storedID map[string]int64,
-	keyOf func(found) string) (int, int, int, error) {
+	keyOf func(found) string, drops *feedDrops) (int, int, int, error) {
 	chosen, held, stored := 0, 0, 0
 	byVer := map[int64][]slotCtx{}
 	var order []int64
@@ -44,11 +49,26 @@ func (s *Searcher) feedShow(ctx context.Context, by domain.Actor, jobID *int64, 
 		byVer[c.ver.ID] = append(byVer[c.ver.ID], c)
 	}
 	rules := s.showRules(ctx)
+	judged := map[string]bool{}
+	defer func() {
+		// A Release no Version took is let go: every looking episode it
+		// could fill is not kept up to date.
+		for _, f := range fs {
+			if !judged[keyOf(f)] && storedID[keyOf(f)] == 0 && drops != nil {
+				drops.add(f.src, f.item.Title, dropNotKept)
+			}
+		}
+	}()
 	for _, vid := range order {
 		group := byVer[vid]
 		set, err := s.loadShow(ctx, group[0].ti, group[0].ver)
 		if err != nil {
 			return chosen, held, stored, err
+		}
+		if set.window = s.packWindow(ctx, group[0].ti); set.window > 0 {
+			if set.packed, err = packFetchingItems(ctx, s.Store.Read(), group[0].ti.ID); err != nil {
+				return chosen, held, stored, err
+			}
 		}
 		kept := map[int64]bool{}
 		for _, e := range set.eps {
@@ -57,7 +77,7 @@ func (s *Searcher) feedShow(ctx context.Context, by domain.Actor, jobID *int64, 
 			}
 		}
 		heldNow := map[int64]int64{}
-		cands := append([]found(nil), fs...)
+		cands := rulesTake(group[0].pr.Body.Tags, fs)
 		for _, c := range group {
 			if !kept[c.sl.ID] {
 				continue
@@ -98,6 +118,7 @@ func (s *Searcher) feedShow(ctx context.Context, by domain.Actor, jobID *int64, 
 			return chosen, held, stored, err
 		}
 		for k := range cands {
+			judged[keyOf(cands[k])] = true
 			if cands[k].relID == 0 {
 				storedID[keyOf(cands[k])] = ids[k]
 				stored++

@@ -473,14 +473,14 @@
 									<div class="xs muted">{facts(r, bytes)}{title.slots.length > 1 && r.version ? ` · ${r.version}` : ''}</div>
 									{#if key.length}
 										<ul class="reasons">
-											{#each key as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
+											{#each key as x, i (i)}<li class={x.effect}>{serverWords(x.text)}</li>{/each}
 										</ul>
 									{/if}
 									{#if r.reasons.length}
 										<details>
 											<summary class="xs muted">{tr('mediafiles.showReleases.allReasons', { n: r.reasons.length })}</summary>
 											<ul class="reasons">
-												{#each r.reasons as x, i (i)}<li class={x.effect}>{x.text}</li>{/each}
+												{#each r.reasons as x, i (i)}<li class={x.effect}>{serverWords(x.text)}</li>{/each}
 											</ul>
 										</details>
 									{/if}
@@ -534,7 +534,7 @@
 							{#each history as e (e.ID)}
 								<li>
 									<span class="chip {kindTone(e.Kind)}">{groupLabel(e.Kind)}</span>
-									<span class="grow small">{e.Summary}</span>
+									<span class="grow small">{serverWords(e.Summary)}</span>
 									<time class="mono xs muted" datetime={e.At} title={dateTime(e.At)}>{ago(e.At)}</time>
 								</li>
 							{/each}
@@ -556,8 +556,8 @@
 		<p class="small muted">{facts(chooseFlow.target, bytes)}</p>
 		{#if chooseFlow.warnings.length || chooseFlow.forceReasons.length}
 			<ul class="warns" data-testid="choose-warnings">
-				{#each chooseFlow.warnings as w (w)}<li>{w}</li>{/each}
-				{#each chooseFlow.forceReasons as w (w)}<li>{tr('mediafiles.showReleases.didNotPass', { why: w })}</li>{/each}
+				{#each chooseFlow.warnings as w (w)}<li>{serverWords(w)}</li>{/each}
+				{#each chooseFlow.forceReasons as w (w)}<li>{tr('mediafiles.showReleases.didNotPass', { why: serverWords(w) })}</li>{/each}
 			</ul>
 		{/if}
 		{#if chooseFlow.chooseError}<p class="form-error" role="alert">{chooseFlow.chooseError}</p>{/if}

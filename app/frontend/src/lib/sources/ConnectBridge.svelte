@@ -283,17 +283,17 @@
 			<div class="form" data-testid="bridge-form">
 				<SegmentedControl options={kindChoices} bind:value={kind} label={t('sources.bridge.app')} testid="br-kind" />
 				<Field id="br-url" label={t('sources.bridge.address')} hint={kind === 'jackett' ? t('sources.bridge.basePath') : undefined} error={errors.url}>
-					<input id="br-url" class="input" class:mono={!compact} type={compact ? 'text' : 'url'} inputmode="url" autocomplete="off" spellcheck="false" placeholder={(compact ? '' : 'http://') + (kind === 'jackett' ? '192.168.1.10:9117' : '192.168.1.10:9696')} bind:value={address} aria-invalid={errors.url ? 'true' : undefined} aria-describedby={errors.url ? 'br-url-error' : kind === 'jackett' ? 'br-url-hint' : undefined} />
+					<input id="br-url" class="input" dir="ltr" class:mono={!compact} type={compact ? 'text' : 'url'} inputmode="url" autocomplete="off" spellcheck="false" placeholder={(compact ? '' : 'http://') + (kind === 'jackett' ? '192.168.1.10:9117' : '192.168.1.10:9696')} bind:value={address} aria-invalid={errors.url ? 'true' : undefined} aria-describedby={errors.url ? 'br-url-error' : kind === 'jackett' ? 'br-url-hint' : undefined} />
 				</Field>
 				<Field id="br-key" label={t('sources.bridge.apiKeyLabel')} hint={editingId != null ? t('sources.bridge.keyAgain') : kind === 'jackett' ? t('sources.bridge.keyJackett') : t('sources.bridge.keyProwlarr')} error={errors.key}>
-					<input id="br-key" class="input" class:mono={!compact} type="password" autocomplete="new-password" spellcheck="false" bind:value={key} aria-invalid={errors.key ? 'true' : undefined} aria-describedby={errors.key ? 'br-key-error' : 'br-key-hint'} />
+					<input id="br-key" class="input" dir="ltr" class:mono={!compact} type="password" autocomplete="new-password" spellcheck="false" bind:value={key} aria-invalid={errors.key ? 'true' : undefined} aria-describedby={errors.key ? 'br-key-error' : 'br-key-hint'} />
 				</Field>
 				{#if kind === 'prowlarr'}
 					{#if callback && !callbackOpen && !errors.callback_url}
 						<p class="small muted callback-line">{t('sources.bridge.reaches')} <span class="cb-addr" class:mono={!compact}>{compact ? callback.replace(/^https?:\/\//, '') : callback}</span> <button type="button" class="link" onclick={() => (callbackOpen = true)}>{t('sources.bridge.change')}</button></p>
 					{:else}
 						<Field id="br-callback"  label={t('sources.bridge.callback')} hint={t('sources.bridge.callbackHint')} error={errors.callback_url}>
-							<input id="br-callback" class="input" class:mono={!compact} type={compact ? 'text' : 'url'} inputmode="url" autocomplete="off" spellcheck="false" bind:value={callback} aria-invalid={errors.callback_url ? 'true' : undefined} aria-describedby={errors.callback_url ? 'br-callback-error' : 'br-callback-hint'} />
+							<input id="br-callback" class="input" dir="ltr" class:mono={!compact} type={compact ? 'text' : 'url'} inputmode="url" autocomplete="off" spellcheck="false" bind:value={callback} aria-invalid={errors.callback_url ? 'true' : undefined} aria-describedby={errors.callback_url ? 'br-callback-error' : 'br-callback-hint'} />
 						</Field>
 					{/if}
 					{#if keysNeeded.length}

@@ -32,6 +32,8 @@ func (h *Handlers) PeopleRoutes(m *http.ServeMux) {
 // PeopleError answers a people provider error without its details.
 func PeopleError(w http.ResponseWriter, err error) {
 	switch {
+	case metadata.SourceOff(err):
+		metadata.WriteSourceOff(w)
 	case errors.Is(err, metadata.ErrNotFound):
 		webserver.Fail(w, http.StatusNotFound, "no such person")
 	case errors.Is(err, metadata.ErrNoAccess):
@@ -84,6 +86,7 @@ func (h *Handlers) searchPeople(w http.ResponseWriter, r *http.Request) {
 	}
 	for i := range result.People {
 		h.KidKnownFor(r.Context(), h.KidMax(r), &result.People[i])
+		result.People[i].KnownFor = h.dropHiddenMovies(r.Context(), result.People[i].KnownFor)
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"people": result.People, "page": result.Page, "total_pages": result.TotalPages,
 		"total_results": result.TotalResults, "attribution": metadata.Attribution})
@@ -119,6 +122,7 @@ func (h *Handlers) popularPeople(w http.ResponseWriter, r *http.Request) {
 	}
 	for i := range people {
 		h.KidKnownFor(r.Context(), h.KidMax(r), &people[i])
+		people[i].KnownFor = h.dropHiddenMovies(r.Context(), people[i].KnownFor)
 	}
 	total := (len(pool) + popularPageSize - 1) / popularPageSize
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"people": people, "page": page, "total_pages": total,
@@ -374,7 +378,9 @@ func (h *Handlers) personCredits(r *http.Request, w http.ResponseWriter) (metada
 			filtered = append(filtered, c)
 		}
 	}
-	credits.Movies = filtered
+	// Hidden titles stay off people pages too (browsing only).
+	credits.Movies = h.dropHiddenCredits(r.Context(), filtered)
+	person.KnownFor = h.dropHiddenMovies(r.Context(), person.KnownFor)
 	return person, credits, true
 }
 

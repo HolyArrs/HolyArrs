@@ -49,6 +49,9 @@ Your current databases move to `/config/backups/before-restore-<time>`, so you c
 | **Balanced** (default) | Every day | Last 7 days and 4 weekly copies |
 | **Light** | Once a week | 4 weeks. Least space |
 | **Careful** | Every day | Every copy for 30 days |
+| **Off** | Never on a schedule | Everything you already have |
+
+With **Off**, no scheduled backups are made and none are cleaned up. Backups you make yourself and the backup before an update still happen, so going back after an update still works. The key kit reminder is hidden while backups are off.
 
 The newest scheduled backup is always kept. These rules clean up scheduled backups only. Backups you make stay until you delete them (trash button on the row; this cannot be undone). HolyArrs also backs up before an update that changes stored data and keeps the newest 3; see [Updates](updates.md#the-backup-before-an-update).
 

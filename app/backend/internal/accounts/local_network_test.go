@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 // Only the listed networks count as local; an empty list counts nobody.
@@ -198,5 +200,25 @@ func TestSkipLocalRefusesProxyPeer(t *testing.T) {
 	}
 	if !try(listed, "192.168.1.20", "") {
 		t.Error("a plain home visit no longer skips behind a listed proxy")
+	}
+}
+
+// A call HolyArrs sends itself (a hook pointed back at it) never skips sign-in.
+func TestSkipLocalNeverForSelfCalls(t *testing.T) {
+	nets, err := parseLocalNets([]string{"10.0.0.0/8"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := setup(t, Options{}).a
+	a.localNets.Store(nets)
+	a.skipLocal.Store(true)
+	r := httptest.NewRequest("GET", "/api/v1/titles", nil)
+	r.RemoteAddr, r.Host = "10.0.0.5:5000", "10.0.0.9:6262"
+	if !a.strictLocal(r) {
+		t.Fatal("a plain home visit did not skip")
+	}
+	r.Header.Set(outbound.SelfCallHeader, "1")
+	if a.strictLocal(r) {
+		t.Fatal("a call HolyArrs sent itself skipped sign-in")
 	}
 }

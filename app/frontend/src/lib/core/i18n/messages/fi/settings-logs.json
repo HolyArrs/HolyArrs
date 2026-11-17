@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Lokit",
+	"settings.logs.download": "Lataa",
+	"settings.logs.filter": "Suodata lokia",
+	"settings.logs.level": "Taso",
+	"settings.logs.every": "Kaikki rivit",
+	"settings.logs.warnings": "Varoitukset ja virheet",
+	"settings.logs.errors": "Vain virheet",
+	"settings.logs.text": "Teksti",
+	"settings.logs.example": "esim. qBittorrent",
+	"settings.logs.from": "Alkaen",
+	"settings.logs.to": "Asti",
+	"settings.logs.apply": "Käytä",
+	"settings.logs.clear": "Tyhjennä",
+	"settings.logs.lines": "Rivejä",
+	"settings.logs.newer": "Uudemmat",
+	"settings.logs.older": "Vanhemmat"
+}

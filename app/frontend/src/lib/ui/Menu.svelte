@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import type { IconName } from './Icon.svelte';
 	export type MenuItem =
-		| { kind?: 'item'; label: string; icon?: IconName; href?: string; onselect?: () => void; destructive?: boolean; disabled?: boolean; checked?: boolean; hint?: string }
+		| { kind?: 'item'; label: string; icon?: IconName; href?: string; onselect?: () => void; destructive?: boolean; disabled?: boolean; checked?: boolean; hint?: string; sub?: string }
 		| { kind: 'separator' }
 		| { kind: 'heading'; label: string };
 </script>
@@ -23,7 +23,8 @@
 		placement = 'below',
 		width = 220,
 		open = $bindable(false),
-		tabindex
+		tabindex,
+		portal = false
 	}: {
 		label: string;
 		items: MenuItem[];
@@ -36,6 +37,8 @@
 		width?: number;
 		open?: boolean;
 		tabindex?: number;
+		/** Moves the menu to the page's top level so a clipping or blurred parent cannot cut it off. */
+		portal?: boolean;
 	} = $props();
 
 	// Set when the menu opens with ArrowUp so focus lands on the last entry.
@@ -88,7 +91,7 @@
 	}
 </script>
 
-<Popover {label} {icon} {text} {trigger} {variant} {align} {placement} {width} {tabindex} bind:open haspopup="menu" panelRole="none" onopen={focusFirst} ontriggerkey={triggerKey}>
+<Popover {label} {icon} {text} {trigger} {variant} {align} {placement} {width} {tabindex} {portal} bind:open haspopup="menu" panelRole="none" onopen={focusFirst} ontriggerkey={triggerKey}>
 	{#snippet children(close)}
 		<div class="ui-menu" role="menu" aria-label={label} tabindex="-1" onkeydown={nav}>
 			{#each items as item, i (i)}
@@ -98,7 +101,7 @@
 					<div class="heading" role="presentation">{item.label}</div>
 				{:else if item.href && !item.disabled}
 					<a class="item" class:danger={item.destructive} role="menuitem" tabindex="-1" href={item.href} onclick={() => pick(item, close)}>
-						<span class="ic">{#if item.icon}<Icon name={item.icon} size={17} />{/if}</span><span class="grow">{item.label}</span>{#if item.hint}<kbd>{item.hint}</kbd>{/if}
+						<span class="ic">{#if item.icon}<Icon name={item.icon} size={17} />{/if}</span><span class="grow">{item.label}{#if item.sub}<small class="sub">{item.sub}</small>{/if}</span>{#if item.hint}<kbd>{item.hint}</kbd>{/if}
 					</a>
 				{:else}
 					<button
@@ -111,7 +114,7 @@
 						tabindex="-1"
 						onclick={() => pick(item, close)}
 					>
-						<span class="ic">{#if item.checked}<Icon name="check" size={17} />{:else if item.icon}<Icon name={item.icon} size={17} />{/if}</span><span class="grow">{item.label}</span>{#if item.hint}<kbd>{item.hint}</kbd>{/if}
+						<span class="ic">{#if item.checked}<Icon name="check" size={17} />{:else if item.icon}<Icon name={item.icon} size={17} />{/if}</span><span class="grow">{item.label}{#if item.sub}<small class="sub">{item.sub}</small>{/if}</span>{#if item.hint}<kbd>{item.hint}</kbd>{/if}
 					</button>
 				{/if}
 			{/each}
@@ -121,18 +124,20 @@
 
 <style>
 	.ui-menu { display: flex; flex-direction: column; outline: none; }
-	.item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 0 10px 0 8px; border-radius: 8px; color: var(--text); font: var(--t-callout); font-size: 15px; text-align: left; }
+	.item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding-inline: 8px 10px; border-radius: 8px; color: var(--text); font: var(--t-callout); font-size: 15px; text-align: start; }
 	.item:hover, .item:focus-visible { background: var(--surface-3); outline: none; box-shadow: none; }
 	.item:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
-	.item[aria-disabled='true'] { opacity: .45; cursor: not-allowed; }
+	.item[aria-disabled='true'] { opacity: var(--disabled-opacity); cursor: not-allowed; }
 	.danger { color: var(--fail-text); }
 	.ic { width: 20px; display: grid; place-items: center; color: var(--text-muted); flex: none; }
 	.danger .ic { color: inherit; }
 	.grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.sep { height: 1px; margin: 5px 8px; background: var(--line); }
 	/* Left padding lines the heading up with item labels past the icon column. */
-	.heading { padding: 8px 10px 4px 38px; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
+	.heading { padding-block: 8px 4px; padding-inline: 38px 10px; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
 	kbd { color: var(--text-muted); font: var(--t-footnote); }
 	/* Minimum touch target size. */
 	@media (pointer: coarse) { .item { min-height: 44px; } }
+	/* A second line under an item's name, such as an order's season and episode counts. */
+	.sub { display: block; margin-top: 2px; color: var(--text-muted); font: 400 12px/1.3 var(--font-ui); }
 </style>

@@ -18,7 +18,7 @@ const (
 
 // MatchFunc looks one client item up and links it when sure. It must never
 // add to the Library, only link. outcome is one of linked, suggested,
-// unsure, not_media or own; an error is retried later.
+// unsure, not_media, own or other; an error is retried later.
 type MatchFunc func(ctx context.Context, downloaderID int64, key, name, category string) (outcome string, titleID int64, err error)
 
 // bucket is a token bucket that limits lookups per second.

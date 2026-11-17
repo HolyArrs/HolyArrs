@@ -87,6 +87,7 @@ type Auth struct {
 	hash            hashParams
 	skipLocal       atomic.Bool
 	localNets       atomic.Pointer[localNets]
+	localPerson     atomic.Int64 // who local visitors become; 0 is the owner (local_person.go)
 	dummy           string
 	hosts           map[string]bool          // localhost and names from Options and the environment; fixed
 	savedHosts      atomic.Pointer[[]string] // names saved in Settings (hosts.go)
@@ -97,10 +98,11 @@ type Auth struct {
 	plexApp         string
 	tickets         map[string]*ticket
 	pins            map[int64]*pin
-	offers          map[string]*importOffer // last import preview per provider
-	tester          *http.Client            // address tests (providers.go)
-	server          *http.Client            // Jellyfin/Emby calls; never follows redirects
-	proxies         []*net.IPNet
+	offers          map[string]*importOffer   // last import preview per provider
+	tester          *http.Client              // address tests (providers.go)
+	server          *http.Client              // Jellyfin/Emby calls; never follows redirects
+	proxies         []*net.IPNet              // from Options and HOLYARRS_TRUSTED_PROXIES; fixed
+	savedProxies    atomic.Pointer[proxyList] // saved in Settings (trusted_proxies.go)
 	checks          chan struct{}
 	safeMode        bool
 	configUnmapped  bool
@@ -236,6 +238,8 @@ func New(s *database.Store, opt Options) *Auth {
 	a.dummy, _ = hashPassword("not a real password", a.hash)
 	a.skipLocal.Store(database.SettingOr(context.Background(), s.Read(), settingsGroup, settingSkipLocal, "") == "true")
 	a.localNets.Store(a.loadLocalNets(context.Background()))
+	a.loadLocalPerson(context.Background())
+	a.loadSavedProxies(context.Background())
 	a.loadKnown(context.Background())
 	a.loadSavedHosts(context.Background())
 	a.requireAdmin2FA.Store(a.signInSetting(context.Background(), keyRequireAdmin2FA) == "true")

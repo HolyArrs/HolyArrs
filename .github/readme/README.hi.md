@@ -1,4 +1,4 @@
-<p align="center"><a href="../../README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <b>हिन्दी</b> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.ar.md">العربية</a> · <a href="README.pt-BR.md">Português</a> · <a href="README.ru.md">Русский</a> · <a href="README.ja.md">日本語</a> · <a href="README.de.md">Deutsch</a> · <a href="README.ko.md">한국어</a> · <a href="README.it.md">Italiano</a> · <a href="README.pl.md">Polski</a> · <a href="README.nl.md">Nederlands</a> · <a href="README.tr.md">Türkçe</a> · <a href="README.uk.md">Українська</a></p>
+<p align="center"><a href="../../README.md">English</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.ja.md">日本語</a> · <b>हिन्दी</b> · <a href="README.ar.md">العربية</a> · <a href="README.ru.md">Русский</a> · <a href="LANGUAGES.md">और भाषाएँ</a></p>
 
 <p align="center">
   <picture>
@@ -7,21 +7,41 @@
   </picture>
 </p>
 
-<p align="center"><a href="https://holyarrs.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-site-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-site-light.png" height="34" alt="HolyArrs.com" /></picture></a>&nbsp;<a href="https://reddit.com/r/HolyArrs"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-reddit-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-reddit-light.png" height="34" alt="r/HolyArrs" /></picture></a>&nbsp;<a href="https://discord.com/invite/mthsvesKpC"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-discord-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-discord-light.png" height="34" alt="Discord" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-roadmap-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-roadmap-light.png" height="34" alt="रोडमैप" /></picture></a>&nbsp;<a href="https://holyarrs.com/whats-new/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-news-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-news-light.png" height="34" alt="नया क्या है" /></picture></a></p>
+<p align="center"><a href="https://holyarrs.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-site-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-site-light.png" height="34" alt="HolyArrs.com" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-roadmap-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-roadmap-light.png" height="34" alt="रोडमैप" /></picture></a>&nbsp;<a href="https://holyarrs.com/whats-new/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-news-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-news-light.png" height="34" alt="नया क्या है" /></picture></a></p>
 
 <p align="center">
   <a href="https://github.com/HolyArrs/HolyArrs/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/HolyArrs/HolyArrs/build.yml?branch=main&style=flat-square&logo=github&logoColor=white&label=build" alt="Build"></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/HolyArrs/HolyArrs"><img src="https://img.shields.io/ossf-scorecard/github.com/HolyArrs/HolyArrs?style=flat-square&label=scorecard" alt="OpenSSF Scorecard"></a>
   <a href="https://www.bestpractices.dev/projects/16513"><img src="https://img.shields.io/cii/level/16513?style=flat-square&label=best%20practices" alt="OpenSSF Best Practices"></a>
   <a href="https://hub.docker.com/r/holyarrs/holyarrs/tags"><img src="https://img.shields.io/docker/v/holyarrs/holyarrs?sort=semver&style=flat-square&logo=docker&logoColor=white&label=version&color=3b82f6" alt="वर्ज़न"></a>
+  <a href="https://hub.docker.com/r/holyarrs/holyarrs"><img src="https://img.shields.io/docker/pulls/holyarrs/holyarrs?style=flat-square&logo=docker&logoColor=white&label=pulls&color=3b82f6" alt="Docker pulls"></a>
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="लाइसेंस: AGPL-3.0"></a>
 </p>
+
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="HolyArrs/HolyArrs on Trendshift" width="250" height="55"></a></p>
+
+> [!NOTE]
+> **HolyArrs 1.1.4: कोई भी रिक्वेस्ट हटाएँ, और दोस्तों की Plex वॉचलिस्ट फिर से पढ़ी जाती हैं।** फ़ोल्डर की क्वालिटी अब उसके कार्ड पर दिखती है, और Settings को एक जैसा किया गया है। [नया क्या है](https://holyarrs.com/whats-new/)
+
+> आपके HolyArrs का हर पोस्टर, ट्रेलर और स्कोर एक ऐसे सर्वर से आता है जिसे मैं खुद चलाता हूँ और जिसका खर्च खुद उठाता हूँ, ताकि यह सबके लिए मुफ़्त रहे। अगर HolyArrs ने आपकी मूवी नाइट थोड़ी बेहतर बनाई है, तो स्पॉन्सर बनकर हम सबके लिए यह रोशनी जलाए रखिए 💛
+>
+> <a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="40" alt="Sponsor HolyArrs" /></picture></a>
+
+> [!TIP]
+> हमसे जुड़िए!
+>
+> | | |
+> |:--|:--|
+> | <a href="https://discord.com/invite/mthsvesKpC"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Fv9%2Finvites%2FmthsvesKpC%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&suffix=%20members&label=discord&logo=discord&logoColor=white&color=5865F2&style=flat-square" alt="Discord"></a> | जल्दी मदद और अच्छी संगत: [Discord](https://discord.com/invite/mthsvesKpC) |
+> | <a href="https://reddit.com/r/HolyArrs"><img src="https://img.shields.io/badge/r%2FHolyArrs-join-ff4500?style=flat-square&logo=reddit&logoColor=white" alt="r/HolyArrs"></a> | आइडिया शेयर करें और वोट करें: [r/HolyArrs](https://reddit.com/r/HolyArrs) |
+> | <a href="https://x.com/CoderLuii"><img src="https://img.shields.io/badge/Follow-%40CoderLuii-000000?style=flat-square&logo=x&logoColor=white" alt="X"></a> | झलकियाँ: [X](https://x.com/CoderLuii) |
+> | <a href="https://github.com/CoderLuii"><img src="https://img.shields.io/github/followers/CoderLuii?style=flat-square&logo=github&label=followers&color=24292f" alt="GitHub followers"></a> | और प्रोजेक्ट्स: [GitHub](https://github.com/CoderLuii) |
 
 <h3 align="center">एक शो देखने के लिए छह ऐप। अब सिर्फ़ एक।</h3>
 
 <p align="center"><b>HolyArrs</b> आपके शो, फ़िल्मों और संगीत के लिए एक सेल्फ-होस्टेड ऐप है।<br>स्ट्रीमिंग ऐप की तरह ब्राउज़ कीजिए, जो चाहिए उसकी रिक्वेस्ट डालिए, बाकी यह संभाल लेता है।</p>
 
-<p align="center"><b>डाउनलोड लगभग 15 MB · 10,000 टाइटल के साथ खाली बैठे लगभग 140 MB RAM · amd64, arm64, armv7</b><br><sub>जिन छह ऐप की जगह यह लेता है, वे मिलाकर 718.2 MB डाउनलोड होते हैं।</sub></p>
+<p align="center"><b>डाउनलोड लगभग 16.1 MB · नए इंस्टॉल पर खाली बैठे लगभग 95 MiB RAM · amd64, arm64, armv7</b><br><sub>जिन छह ऐप की जगह यह लेता है, वे मिलाकर 685.0 MB डाउनलोड होते हैं।</sub></p>
 
 <p align="center"><a href="#quick-start">जल्दी शुरू करें</a> · <a href="#why">क्यों</a> · <a href="#what-it-does">यह क्या करता है</a> · <a href="#moving">दूसरे ऐप से आना</a> · <a href="#manual">मैनुअल</a> · <a href="#help">मदद</a></p>
 
@@ -36,7 +56,7 @@
 इसे किसी लोकल डिस्क पर बने नए फ़ोल्डर में `docker-compose.yml` नाम से सेव कीजिए:
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -78,16 +98,16 @@ docker compose up -d
 
 | ऐप | डाउनलोड (amd64) | खाली RAM | लॉगिन | वेब पोर्ट |
 |---|---|---|---|---|
-| Sonarr | 87.9 MB | | 1 | 1 |
-| Radarr | 91.0 MB | | 1 | 1 |
-| Lidarr | 121.3 MB | | 1 | 1 |
-| Prowlarr | 80.8 MB | | 1 | 1 |
-| Bazarr | 156.4 MB | | 1 | 1 |
-| Overseerr | 180.8 MB | | 1 | 1 |
-| **छहों मिलाकर** | **718.2 MB** | | **6** | **6** |
-| **HolyArrs** | **14.9 MB** | **~140 MiB** | **1** | **1 (6262)** |
+| Sonarr | 83.8 MB | | 1 | 1 |
+| Radarr | 86.7 MB | | 1 | 1 |
+| Lidarr | 115.7 MB | | 1 | 1 |
+| Prowlarr | 77.1 MB | | 1 | 1 |
+| Bazarr | 149.2 MB | | 1 | 1 |
+| Overseerr | 172.4 MB | | 1 | 1 |
+| **छहों मिलाकर** | **685.0 MB** | | **6** | **6** |
+| **HolyArrs** | **16.1 MB** | **~140 MiB** | **1** | **1 (6262)** |
 
-<sub>करीब 48 गुना छोटा। रजिस्ट्री से कंप्रेस्ड डाउनलोड, linuxserver.io इमेज, amd64, 2026-11-08 को नापा गया। खाली RAM 10,000 टाइटल और 55,000 फ़िल्मों व एपिसोड के साथ नापी गई।</sub>
+<sub>करीब 43 गुना छोटा। रजिस्ट्री से कंप्रेस्ड डाउनलोड, linuxserver.io इमेज, amd64, 2026-11-13 को नापा गया। खाली RAM 10,000 टाइटल और 55,000 फ़िल्मों व एपिसोड के साथ नापी गई। (HolyArrs 1.1.3: 2026-11-13)</sub>
 
 <a id="what-it-does"></a>
 
@@ -100,15 +120,16 @@ docker compose up -d
 | | |
 |---|---|
 | 🍿 **Explore** | स्ट्रीमिंग ऐप की तरह ब्राउज़ कीजिए। किसी टाइटल पर कर्सर ले जाइए और ट्रेलर चलने लगता है। |
-| 🙋 **Requests** | पूरा शो या सिर्फ़ एक सीज़न। आप मंज़ूरी देते हैं, या भरोसेमंद लोगों को सीधे निकलने देते हैं। |
+| 🙋 **Requests** | पूरा शो या सिर्फ़ एक सीज़न। आप मंज़ूरी देते हैं, या भरोसेमंद लोगों को सीधे निकलने देते हैं। Plex और Pulsarr की वॉचलिस्ट रिक्वेस्ट बन सकती हैं। |
 | 🎯 **Pick rules** | कौन-सा रिलीज़ जीतेगा, यह आप तय करते हैं: साइज़, क्वालिटी, भाषा। |
-| 💬 **सबटाइटल** | आपकी चुनी भाषाओं में, फ़ाइल के साथ रखे जाते हैं। ऑनलाइन खोजने की सुविधा 1.0 के बाद आएगी। |
+| 💬 **सबटाइटल** | आपकी चुनी भाषाओं में, सबटाइटल साइटों से खोजे जाते हैं और फ़ाइल के साथ रखे जाते हैं। |
 | 📅 **Calendar** | आप जो कुछ फ़ॉलो करते हैं, उसमें आगे क्या आ रहा है। |
-| 🚚 **अपना सेटअप साथ लाइए** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent और SABnzbd से। पहले आज़माइए, बाद में चाहें तो वापस कीजिए। |
-| 🔌 **पुराने ऐप का API** | इसे चालू करने के बाद Prowlarr, HolyArrs में Sources भेजता रह सकता है। |
-| 🗝️ **API कुंजियों की ज़रूरत नहीं** | टाइटल, आर्टवर्क और चार्ट HolyArrs मेटाडेटा सर्वर से आते हैं। |
+| 🔔 **Alerts** | Discord, ईमेल, Telegram, ntfy, Gotify, Pushover या कोई webhook। |
+| 🚚 **अपना सेटअप साथ लाइए** | Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent और SABnzbd से। चुनिए क्या-क्या आए, बाद में चाहें तो वापस कीजिए। |
+| 🔌 **पुराने ऐप का API** | इसे चालू करने के बाद Seerr, Prowlarr, Bazarr, Unpackerr और Homepage पहले की तरह काम करते रहते हैं। |
+| 🗝️ **API कुंजियों की ज़रूरत नहीं** | टाइटल, आर्टवर्क और चार्ट HolyArrs मेटाडेटा सर्वर से आते हैं। अपनी कुंजियाँ या अपना सर्वर भी चलता है। |
 | 🔒 **एन्क्रिप्टेड कुंजियाँ** | सेव किए गए पासवर्ड और कुंजियाँ एक मास्टर कुंजी से लॉक रहती हैं, जो आपके कॉन्फ़िग फ़ोल्डर में रहती है। |
-| 🪶 **बहुत छोटा** | लगभग 15 MB की इमेज, जिसमें HolyArrs के अलावा कुछ नहीं है। |
+| 🪶 **बहुत छोटा** | लगभग 16.1 MB की इमेज, जिसमें HolyArrs के अलावा कुछ नहीं है। |
 
 <details>
 <summary><b>हर पेज को चलते हुए देखिए</b></summary>
@@ -128,9 +149,9 @@ docker compose up -d
 
 ## 🤝 यह उन्हीं के साथ चलता है जो आप पहले से चला रहे हैं
 
-<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="डाउनलोडर: qBittorrent, Transmission, Deluge, SABnzbd, NZBGet। मीडिया सर्वर: Plex, Jellyfin, Emby।" /></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/works-light.png" width="100%" alt="डाउनलोडर: qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet। मीडिया सर्वर: Plex, Jellyfin, Emby।" /></picture>
 
-- **डाउनलोडर:** qBittorrent, Transmission, Deluge, SABnzbd, NZBGet
+- **डाउनलोडर:** qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd, NZBGet
 - **मीडिया सर्वर:** Plex, Jellyfin, Emby
 - **Sources:** कोई भी Torznab या Newznab इंडेक्सर, या Prowlarr या Jackett
 - **इनसे सेटअप लाया जा सकता है:** Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, qBittorrent, SABnzbd
@@ -139,7 +160,7 @@ docker compose up -d
 
 ## 🚚 अपना पुराना सेटअप साथ लाइए
 
-**Settings > Move from other apps** खोलिए, हर पुराने ऐप का पता और API कुंजी (या बैकअप zip) जोड़िए, चुनिए कि क्या आना है, **Try it** चलाइए, फिर **Move**। आप बाद में किसी भी मूव को वापस कर सकते हैं।
+**Settings > Import from other apps** खोलिए, हर पुराने ऐप का पता और API कुंजी (या बैकअप zip) जोड़िए, चुनिए कि क्या आना है, फिर **Import** चुनिए। आप बाद में किसी भी इंपोर्ट को वापस कर सकते हैं।
 
 | कहाँ से | क्या आता है |
 |---|---|
@@ -151,12 +172,11 @@ docker compose up -d
 
 HolyArrs आपके पुराने ऐप सिर्फ़ पढ़ता है और उनमें कुछ नहीं बदलता, इसलिए जब तक आपको भरोसा न हो जाए, दोनों साथ-साथ चला सकते हैं।
 
-कुंजियाँ और पासवर्ड पीछे रह जाते हैं; आप उन्हें दोबारा टाइप करते हैं या किसी फ़ाइल से इम्पोर्ट करते हैं। कस्टम फ़ॉर्मेट, टैग और हिस्ट्री साथ नहीं आते। मीडिया फ़ाइलें कभी नहीं हिलतीं। कदम-दर-कदम गाइड: [दूसरे ऐप से आना](https://docs.HolyArrs.com/migrate/)।
+कुंजियाँ और पासवर्ड पीछे रह जाते हैं; आप उन्हें दोबारा टाइप करते हैं या किसी फ़ाइल से इम्पोर्ट करते हैं। कस्टम फ़ॉर्मेट, टैग और हिस्ट्री साथ नहीं आते। मीडिया फ़ाइलें कभी नहीं हिलतीं। कदम-दर-कदम गाइड: [दूसरे ऐप से इंपोर्ट](https://docs.HolyArrs.com/migrate/)।
 
 ## 🧭 यह अभी क्या नहीं करता
 
 - **खुद डाउनलोड करना।** HolyArrs, qBittorrent, SABnzbd और बाकियों से जुड़ता है। उनकी जगह नहीं लेता।
-- **AI या MCP फ़ीचर।** 1.0 में नहीं हैं।
 - **फ़ोन और टीवी ऐप।** बने नहीं हैं। वेब ऐप फ़ोन पर चलता है।
 - **Explore में संगीत** अभी बन रहा है।
 
@@ -193,6 +213,8 @@ HolyArrs आपके पुराने ऐप सिर्फ़ पढ़त�
 
 NAS पर चला रहे हैं? देखिए [Unraid, Synology और दूसरे NAS बॉक्स](https://docs.HolyArrs.com/run/platforms/)।
 
+नेटिव पैकेज चाहिए? हर [रिलीज़](https://github.com/HolyArrs/HolyArrs/releases) के साथ एक प्रायोगिक Synology पैकेज (`.spk`) जुड़ा है। देखिए [Synology पैकेज](../../docs/run/synology.md)।
+
 ## वर्ज़न टैग
 
 इमेज Docker Hub पर [`holyarrs/holyarrs`](https://hub.docker.com/r/holyarrs/holyarrs) नाम से हैं।
@@ -200,14 +222,14 @@ NAS पर चला रहे हैं? देखिए [Unraid, Synology औ�
 | टैग | किसके लिए |
 | :----: | --- |
 | `latest` | नवीनतम रिलीज़। |
-| `1.0.9` | एक तय वर्ज़न। यह कभी नहीं बदलता। |
+| `1.1.4` | एक तय वर्ज़न। यह कभी नहीं बदलता। |
 
 ## इस्तेमाल
 
 ### docker compose (सुझाया गया)
 
 ```yaml
-name: HolyArrs
+name: holyarrs
 services:
   holyarrs:
     image: holyarrs/holyarrs:latest
@@ -395,7 +417,7 @@ HolyArrs [GNU AGPL-3.0](../../LICENSE) के तहत मुफ़्त औ�
 
 ## इसे चलता रखिए
 
-HolyArrs मुफ़्त है, पर इसे चलाना मुफ़्त नहीं है। हर इंस्टॉल एक मेटाडेटा सर्वर से बात करता है, जिसका खर्च मैं हर महीने उठाता हूँ। स्पॉन्सर यह खर्च उठाते हैं, और जिन चीज़ों पर आप वोट देते हैं उनके लिए मुझे और घंटे दिलाते हैं।
+HolyArrs मुफ़्त है, पर इसे चलाना मुफ़्त नहीं है। डिफ़ॉल्ट रूप से हर इंस्टॉल एक मेटाडेटा सर्वर से बात करता है, जिसका खर्च मैं हर महीने उठाता हूँ। स्पॉन्सर यह खर्च उठाते हैं, और जिन चीज़ों पर आप वोट देते हैं उनके लिए मुझे और घंटे दिलाते हैं।
 
 <p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="HolyArrs को स्पॉन्सर कीजिए" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="रोडमैप पर वोट दीजिए" /></picture></a></p>
 

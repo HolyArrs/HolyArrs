@@ -49,6 +49,7 @@
 	"welcome.userName": "사용자 이름",
 	"welcome.apiKeyLabel": "API 키",
 	"welcome.passwordLabel": "비밀번호",
+	"welcome.secretTokenLabel": "시크릿 토큰",
 	"welcome.save": "저장",
 	"welcome.connect": "{name} 연결",
 	"welcome.continue": "계속",

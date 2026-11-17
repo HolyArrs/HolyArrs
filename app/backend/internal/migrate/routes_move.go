@@ -98,8 +98,12 @@ func (h *Handlers) movePlan(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"plan": p, "counts": p.Counts(), "suggested_path_rules": SuggestRules(r.Context(), h.Store, p),
-		"plan_hash": PlanHash(p)})
+	hash, rules, missing := PlanHash(p), SuggestRules(r.Context(), h.Store, p), missingTargets(p)
+	// The titles list says what the import will do, as the dry run would.
+	h.mover().PreviewTitles(r.Context(), p)
+	MarkUnseen(p)
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"plan": p, "counts": p.Counts(), "suggested_path_rules": rules,
+		"missing_paths": missing, "seen_folders": SeenFolders(), "plan_hash": hash})
 }
 
 func (h *Handlers) moveDryRun(w http.ResponseWriter, r *http.Request) {
@@ -116,7 +120,7 @@ func (h *Handlers) moveDryRun(w http.ResponseWriter, r *http.Request) {
 // Library, which safe mode keeps still.
 func (h *Handlers) refuseSafe(w http.ResponseWriter) bool {
 	if h.safeMode() {
-		webserver.Fail(w, http.StatusConflict, "HolyArrs started in safe mode; restart it normally to move or undo")
+		webserver.Fail(w, http.StatusConflict, "HolyArrs started in safe mode; restart it normally to import or undo")
 		return true
 	}
 	return false
@@ -204,7 +208,7 @@ func (h *Handlers) moveReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if mv.Report == nil {
-		webserver.Fail(w, http.StatusConflict, "this move has no report yet")
+		webserver.Fail(w, http.StatusConflict, "this import has no report yet")
 		return
 	}
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")

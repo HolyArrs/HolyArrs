@@ -31,6 +31,36 @@ func (h *WatchlistHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/my/plex-watchlist", h.getMyWatchlist)
 	m.HandleFunc("PUT /api/v1/my/plex-watchlist", h.putMyWatchlist)
 	m.HandleFunc("POST /api/v1/my/plex-watchlist/check", h.checkMyWatchlist)
+	m.HandleFunc("GET /api/v1/settings/asks/plex-friends", h.getPlexFriends)
+}
+
+// plexFriendsView is the people Include Plex friends reads, for Request rules.
+type plexFriendsView struct {
+	// On: Plex watchlists and Include Plex friends are both on.
+	On bool `json:"on"`
+	// OwnerLinked: the owner's Plex link is kept, so friends can be read.
+	OwnerLinked bool         `json:"owner_linked"`
+	People      []PlexFriend `json:"people"`
+}
+
+func (h *WatchlistHandlers) getPlexFriends(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	db := h.Store.Read()
+	set, err := ReadSettings(ctx, db)
+	if err != nil {
+		webserver.Internal(w, "api", err)
+		return
+	}
+	v := plexFriendsView{On: set.PlexWatchlists && set.PlexFriends}
+	if wl := h.Watchlists(); wl != nil && wl.Owner != nil {
+		tok, _ := wl.Owner(ctx)
+		v.OwnerLinked = tok != ""
+	}
+	if v.People, err = ReadPlexFriends(ctx, db); err != nil {
+		webserver.Internal(w, "api", err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, v)
 }
 
 // watchlistView is My account's Plex watchlist card.
@@ -38,6 +68,8 @@ type watchlistView struct {
 	WatchlistState
 	// On: the owner allows watchlists (Request rules).
 	On bool `json:"on"`
+	// Everyone: the owner turned it on for everyone with a Plex sign-in.
+	Everyone bool `json:"everyone"`
 	// Linked: a Plex account is linked to this person; PlexName is its name.
 	Linked   bool   `json:"linked"`
 	PlexName string `json:"plex_name,omitempty"`
@@ -45,6 +77,10 @@ type watchlistView struct {
 	CanRead bool `json:"can_read"`
 	// MayAsk: this person may ask for titles at all.
 	MayAsk bool `json:"may_ask"`
+	// ReadByOwner: with Include Plex friends on, this person's watchlist is
+	// read with the owner's Plex link; Movies and Shows say what is read,
+	// and turning both off stops it.
+	ReadByOwner bool `json:"read_by_owner"`
 }
 
 func mayAsk(r *http.Request) bool {
@@ -71,6 +107,22 @@ func (h *WatchlistHandlers) watchlistView(r *http.Request) (watchlistView, error
 	}
 	v.Linked = err == nil
 	v.CanRead = v.Linked && h.Watchlists().HasToken(ctx, uid)
+	v.Everyone = set.PlexWatchlists && set.PlexWatchlistsEveryone
+	if v.Everyone && !v.Chosen && v.CanRead && v.MayAsk {
+		v.Movies, v.Shows = true, true // what the schedule does for them
+	}
+	if v.Linked && !v.CanRead && v.MayAsk && set.PlexWatchlists && set.PlexFriends && v.Error != friendWords["gone"] {
+		var role string
+		_ = db.QueryRowContext(ctx, userRoleSQL, uid).Scan(&role)
+		if wl := h.Watchlists(); wl != nil && wl.Owner != nil && role != "owner" {
+			if tok, _ := wl.Owner(ctx); tok != "" {
+				v.ReadByOwner = true
+				if !v.Chosen {
+					v.Movies, v.Shows = true, true // what friendPass reads
+				}
+			}
+		}
+	}
 	return v, nil
 }
 
@@ -102,7 +154,7 @@ func (h *WatchlistHandlers) putMyWatchlist(w http.ResponseWriter, r *http.Reques
 			webserver.Fail(w, http.StatusConflict, "the owner has not turned on Plex watchlists in Request rules")
 			return
 		}
-		if !v.CanRead {
+		if !v.CanRead && !v.ReadByOwner {
 			webserver.Fail(w, http.StatusConflict, "link your Plex account first")
 			return
 		}

@@ -8,6 +8,8 @@ export type PosterSize = 's' | 'm' | 'l';
 export type ArtKind = 'movie' | 'show' | 'artist' | string;
 export type TmdbKind = keyof typeof TMDB_SIZES;
 type Store = Pick<Storage, 'getItem' | 'setItem'> | undefined;
+/** The page whose art size is kept: the Library, or Import a library with its own. */
+export type ArtPage = 'library' | 'import';
 
 export const BANNER_RATIO = 1000 / 185;
 export const MUSIC_BANNER_RATIO = 1000 / 400;
@@ -55,6 +57,15 @@ export const TMDB_SIZES = {
 
 // Matches TMDB and our proxied artwork paths so the size part can be swapped.
 const anyTmdb = /^(.*?\/(?:t\/p|api\/v1\/artwork\/tmdb))\/(?:w\d+|h\d+|original)\/([A-Za-z0-9_-]+\.(?:jpg|png|webp))$/;
+
+// The id a title's extra art is asked by: an artist's MusicBrainz id, else only a real TMDB id.
+// A TMDB id equal to the TVDB or TVmaze id was copied over and names another title, so it gives none.
+export function extrasIdOf(title: { kind: ArtKind; ids?: Record<string, string> | null; artist?: { mbid?: string } | null }): string {
+	if (title.kind === 'artist') return title.artist?.mbid ?? '';
+	const ids = title.ids ?? {};
+	const tmdb = ids.tmdb ?? '';
+	return /^\d+$/.test(tmdb) && tmdb !== ids.tvdb && tmdb !== ids.tvmaze ? tmdb : '';
+}
 
 export function bannerRatio(kind?: ArtKind): number {
 	return kind === 'artist' ? MUSIC_BANNER_RATIO : BANNER_RATIO;
@@ -104,33 +115,33 @@ export function posterSrc(url: string, css: number, ratio = globalThis.devicePix
 }
 
 // Storage can throw (private mode), so reads fall back and writes are skipped.
-export function loadDensity(member: number | undefined, store: Store = globalThis.localStorage): Density {
+export function loadDensity(member: number | undefined, store: Store = globalThis.localStorage, page: ArtPage = 'library'): Density {
 	try {
-		const v = store?.getItem(key('density', member));
+		const v = store?.getItem(key('density', member, page));
 		return v === 'comfortable' || v === 'compact' ? v : 'large';
 	} catch {
 		return 'large';
 	}
 }
 
-export function saveDensity(member: number | undefined, d: Density, store: Store = globalThis.localStorage) {
+export function saveDensity(member: number | undefined, d: Density, store: Store = globalThis.localStorage, page: ArtPage = 'library') {
 	try {
-		store?.setItem(key('density', member), d);
+		store?.setItem(key('density', member, page), d);
 	} catch {}
 }
 
-export function loadPosterSize(member: number | undefined, store: Store = globalThis.localStorage): PosterSize {
+export function loadPosterSize(member: number | undefined, store: Store = globalThis.localStorage, page: ArtPage = 'library'): PosterSize {
 	try {
-		const v = store?.getItem(key('poster-size', member));
+		const v = store?.getItem(key('poster-size', member, page));
 		return v === 's' || v === 'l' ? v : 'm';
 	} catch {
 		return 'm';
 	}
 }
 
-export function savePosterSize(member: number | undefined, s: PosterSize, store: Store = globalThis.localStorage) {
+export function savePosterSize(member: number | undefined, s: PosterSize, store: Store = globalThis.localStorage, page: ArtPage = 'library') {
 	try {
-		store?.setItem(key('poster-size', member), s);
+		store?.setItem(key('poster-size', member, page), s);
 	} catch {}
 }
 
@@ -144,5 +155,5 @@ export function tmdbSized(url: string | null | undefined, kind: TmdbKind, css: n
 	return proxied(`${m[1]}/${kind === 'profile' && w === 632 ? 'h632' : `w${w}`}/${m[2]}`);
 }
 
-// One saved choice per member, with a shared slot when signed out.
-const key = (what: string, member: number | undefined) => `holyarrs.library-${what}.${member ?? 'me'}`;
+// One saved choice per member and page, with a shared slot when signed out.
+const key = (what: string, member: number | undefined, page: ArtPage) => `holyarrs.${page}-${what}.${member ?? 'me'}`;

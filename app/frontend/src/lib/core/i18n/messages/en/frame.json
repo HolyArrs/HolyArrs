@@ -2,6 +2,7 @@
 	"frame.nav.movies": "Movies",
 	"frame.nav.shows": "TV shows",
 	"frame.nav.music": "Music",
+	"frame.nav.stats": "Stats",
 	"frame.nav.home": "Home",
 	"frame.nav.explore": "Explore",
 	"frame.nav.newPopular": "New & Popular",
@@ -91,5 +92,11 @@
 	"frame.layout.allPlaces": "All places",
 	"frame.layout.newWord": "new",
 	"frame.layout.accountName": "Account · {name}",
-	"frame.layout.hostRefused": "<b>Changes can't be saved on {host}.</b> HolyArrs only saves on names you allow. Open it once by its IP address, then add {host} under Settings › Sign-in › Allowed host names. No restart needed."
+	"frame.layout.hostRefused": "<b>Changes can't be saved on {host}.</b> HolyArrs only saves on names you allow. Open it once by its IP address, then add {host} under Settings › Sign-in › Allowed host names. No restart needed.",
+	"frame.feeds.clearOne": "Imported download not cleared",
+	"frame.feeds.clearMany": "{n} imported downloads not cleared",
+	"frame.feeds.clearBody": "HolyArrs tries again on its own",
+	"frame.feeds.clearNow": "Clear now",
+	"frame.feeds.cleared": "Cleared from the Downloader",
+	"frame.feeds.clearStill": "Not cleared yet"
 }

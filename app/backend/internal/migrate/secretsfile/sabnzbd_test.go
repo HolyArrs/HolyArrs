@@ -106,18 +106,35 @@ func TestUnusedMetadataAccountFields(t *testing.T) {
 	if !AllOK(ls) || !strings.HasPrefix(r["tvdb.unique_user_key"], "skipped (not used:") || !strings.HasPrefix(r["trakt.redirect_urls"], "skipped (not used:") {
 		t.Fatalf("unused account fields: %v", ls)
 	}
-	for key, want := range map[string]string{TraktClientKey: "your-trakt-client-id"} {
+	for key, want := range map[string]string{TVDBKeyKey: "your-tvdb-api-key", TraktClientKey: "your-trakt-client-id"} {
 		value, err := d.Vault.Setting(ctx, LinksGroup, key)
 		if err != nil || value != want {
 			t.Fatalf("wrong credential selected for %s", key)
 		}
 	}
-	if count(t, d, "SELECT count(*) FROM secrets") != before+1 {
+	if count(t, d, "SELECT count(*) FROM secrets") != before+2 {
 		t.Fatal("unused account values were stored")
 	}
 	noValues(t, d, f, ls)
 	again := results(Apply(ctx, d, f, true))
-	if again["tvdb"] != tvdbOff || again["trakt"] != Unchanged {
+	if again["tvdb"] != Unchanged || again["trakt"] != Unchanged {
 		t.Fatal("unused account fields changed repeat-import behavior")
+	}
+}
+
+// The secrets file names SABnzbd at its /sabnzbd path while the same SABnzbd
+// is already here at the bare address: it is the same Downloader, not a twin.
+func TestSABnzbdSameAppAtAnotherPath(t *testing.T) {
+	ctx := context.Background()
+	d := deps(t)
+	if !AllOK(Apply(ctx, d, parse(t, "version: 1\nsabnzbd:\n  address: http://sabnzbd:8080\n  api_key: your-sab-full-key\n"), false)) {
+		t.Fatal("first import")
+	}
+	ls := Apply(ctx, d, parse(t, "version: 1\nsabnzbd:\n  address: http://sabnzbd:8080/sabnzbd\n  api_key: your-sab-full-key\n"), false)
+	if !AllOK(ls) {
+		t.Fatalf("second import: %v", ls)
+	}
+	if n := count(t, d, "SELECT count(*) FROM downloaders WHERE adapter = 'sabnzbd'"); n != 1 {
+		t.Fatalf("SABnzbd Downloaders: %d, want 1", n)
 	}
 }

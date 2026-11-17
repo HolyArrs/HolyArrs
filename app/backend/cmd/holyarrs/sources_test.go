@@ -29,8 +29,11 @@ func TestShowSourcesHostedUnlessStandIn(t *testing.T) {
 		if isDirect != c.wantDirect {
 			t.Errorf("TVMAZE_URL=%q DIRECT_SOURCES=%q: direct TVmaze = %v, want %v", c.url, c.direct, isDirect, c.wantDirect)
 		}
-		if src["tmdb"] == nil || src["tvdb"] != nil {
-			t.Errorf("TVMAZE_URL=%q: want tmdb and no tvdb source", c.url)
+		if _, bare := src["tmdb"].(*metadata.TMDB); bare {
+			t.Errorf("TVMAZE_URL=%q: the TMDB source skips anime release numbers", c.url)
+		}
+		if src["tmdb"] == nil || src["tvdb"] == nil {
+			t.Errorf("TVMAZE_URL=%q: want tmdb and tvdb (own key) sources", c.url)
 		}
 	}
 	t.Setenv("X_STAND_IN", " off ")

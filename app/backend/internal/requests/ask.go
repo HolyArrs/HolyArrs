@@ -149,6 +149,7 @@ type Service struct {
 	// background when it is asked for (off in tests).
 	PrefetchParts bool
 
+	fill     askFill
 	sendMu   sync.Mutex
 	sendTail <-chan struct{}
 	sending  sync.WaitGroup
@@ -166,6 +167,9 @@ type Person struct {
 	UserID      int64
 	Name        string
 	AutoApprove bool // their asks are approved straight away
+	// AutoApproveFourK lets their 4K asks be approved straight away too
+	// (with AutoApprove); without it a 4K ask waits for staff.
+	AutoApproveFourK bool
 	NoLimit     bool // the weekly limit does not apply (people who approve)
 	// MaxRating is a Kid's age-rating limit ("" for none): they may ask
 	// only for movies and shows rated up to it, and never for music.
@@ -372,25 +376,55 @@ func get(ctx context.Context, q database.Querier, id int64) (domain.Ask, error) 
 
 // Ask asks for a movie by TMDB id for p.
 func (s *Service) Ask(ctx context.Context, p Person, tmdbID string) (Result, error) {
-	return s.ask(ctx, p, tmdbID, false, false)
+	l, err := builtInLine(ctx, s.Store.Read(), "movie", false)
+	if err != nil {
+		return Result{}, err
+	}
+	return s.ask(ctx, p, tmdbID, l, false)
 }
 
 // Ask4K asks for a 4K copy of a movie by TMDB id for p. It is its own ask,
 // approved apart from a plain ask, and may be made for a movie already in
 // the Library that has no 4K Version yet.
 func (s *Service) Ask4K(ctx context.Context, p Person, tmdbID string) (Result, error) {
-	return s.ask(ctx, p, tmdbID, true, false)
+	l, err := builtInLine(ctx, s.Store.Read(), "movie", true)
+	if err != nil {
+		return Result{}, err
+	}
+	return s.ask(ctx, p, tmdbID, l, false)
 }
 
-// fourKVersion finds the title's 4K Version (labelled 4K or on the 4K
-// Pick rules), 0 when it has none.
-func fourKVersion(ctx context.Context, db database.Querier, titleID int64) (int64, error) {
+// AskQuality asks for a movie by TMDB id for p in one line of what people can
+// ask for (empty: p's first line). A line p may not use (hidden, not set up,
+// or not the first one for a Kid) is ErrQualityNotOffered.
+func (s *Service) AskQuality(ctx context.Context, p Person, tmdbID, quality string) (Result, error) {
+	l, err := pickQuality(ctx, s.Store.Read(), p, "movie", quality)
+	if err != nil {
+		return Result{}, err
+	}
+	return s.ask(ctx, p, tmdbID, l, false)
+}
+
+// autoApproves says p's ask of this kind is approved straight away: a 4K
+// ask needs the 4K switch too.
+func (p Person) autoApproves(fourK bool) bool {
+	return p.AutoApprove && (!fourK || p.AutoApproveFourK)
+}
+
+// copyOf finds the title's 4K Version (fourK) or its plain copy (the main
+// one first among the Versions without the 4K mark), 0 when it has none.
+func copyOf(ctx context.Context, db database.Querier, titleID int64, fourK bool) (int64, error) {
 	var id int64
-	err := db.QueryRowContext(ctx, fourKVersionSQL, titleID, mediafiles.FourKName, mediafiles.FourKName).Scan(&id)
+	err := db.QueryRowContext(ctx, copyOfSQL, titleID, fourK).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, nil
 	}
 	return id, err
+}
+
+// fourKVersion finds the title's 4K Version, 0 when it has none.
+func fourKVersion(ctx context.Context, db database.Querier, titleID int64) (int64, error) {
+	return copyOf(ctx, db, titleID, true)
 }
 
 // HasFourK says the title already has a 4K Version (a 4K ask is refused then).
@@ -413,13 +447,14 @@ func fourKRules(ctx context.Context, db database.Querier) (int64, error) {
 var ErrNoFourKRules = errors.New("no 4K Pick rules: add Pick rules named 4K first")
 
 // openAskConflict says err is the one-open-ask-per-movie index refusing a
-// second open ask (asks_one_open on kind and tmdb_id).
+// second open ask (asks_one_open on kind, tmdb_id and quality).
 func openAskConflict(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "UNIQUE constraint failed: asks.kind, asks.tmdb_id")
 }
 
-func (s *Service) ask(ctx context.Context, p Person, tmdbID string, fourK, retried bool) (Result, error) {
+func (s *Service) ask(ctx context.Context, p Person, tmdbID string, q QualityLine, retried bool) (Result, error) {
 	db := s.Store.Read()
+	fourK := q.ID == QualityFourK
 	tmdbID = strings.TrimSpace(tmdbID)
 	if p.MaxRating != "" {
 		// Checked first, so a Kid neither joins an open ask nor learns that
@@ -442,7 +477,7 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, fourK, retri
 	}
 	// An open ask for the same movie: join it.
 	var openID int64
-	err := db.QueryRowContext(ctx, askSQL, tmdbID, fourK).Scan(&openID)
+	err := db.QueryRowContext(ctx, askSQL, tmdbID, q.ID).Scan(&openID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return Result{}, err
 	}
@@ -452,20 +487,15 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, fourK, retri
 	if tid, err := library.TitleByTMDB(ctx, db, tmdbID); err != nil {
 		return Result{}, err
 	} else if tid != 0 {
-		// A 4K ask is fine for a movie in the Library without a 4K Version.
-		vid := int64(0)
-		if fourK {
-			if vid, err = fourKVersion(ctx, db, tid); err != nil {
-				return Result{}, err
-			}
+		// A 4K ask is fine for a movie in the Library without a 4K
+		// Version, a plain ask for one whose only copy is the 4K one.
+		vid, err := copyOf(ctx, db, tid, fourK)
+		if err != nil {
+			return Result{}, err
 		}
-		if !fourK || vid != 0 {
-			q, args := askSQL2, []any{tid}
-			if fourK {
-				q, args = q+" AND version_id = ?", append(args, vid)
-			}
+		if vid != 0 {
 			var n int
-			_ = db.QueryRowContext(ctx, q, args...).Scan(&n)
+			_ = db.QueryRowContext(ctx, askSQL2, tid, vid).Scan(&n)
 			return Result{}, &InLibraryError{TitleID: tid, Ready: n > 0}
 		}
 	}
@@ -483,7 +513,8 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, fourK, retri
 	}
 	now := s.now()
 	a := domain.Ask{Kind: "movie", TMDBID: tmdbID, Ref: "tmdb:" + tmdbID, SourceIDs: map[string]string{"tmdb": tmdbID}, Seasons: []int{},
-		Name: m.Name, Poster: m.Poster, State: domain.AskAsked, AskedBy: p.UserID, AskedAt: now, FourK: fourK}
+		Name: m.Name, Poster: m.Poster, State: domain.AskAsked, AskedBy: p.UserID, AskedAt: now}
+	withQuality(&a, q)
 	if m.Year > 0 {
 		y := m.Year
 		a.Year = &y
@@ -503,14 +534,14 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, fourK, retri
 	if err != nil {
 		// Two people asking at the same moment: the second joins (once).
 		if openAskConflict(err) && !retried {
-			return s.ask(ctx, p, tmdbID, fourK, true)
+			return s.ask(ctx, p, tmdbID, q, true)
 		}
 		return Result{}, err
 	}
 	s.event(ctx, &domain.Event{Actor: p.actor(), Kind: domain.EventAskMade, Summary: p.Name + " asked for " + label(a),
 		Data: map[string]any{"ask_id": a.ID, "tmdb_id": tmdbID, "asked_by": p.Name}, GroupKey: groupKey(a.ID)})
-	if p.AutoApprove {
-		if got, err := s.decide(ctx, a.ID, p, ApproveOptions{}, true); err == nil {
+	if p.autoApproves(fourK) {
+		if got, _, err := s.decide(ctx, a.ID, p, ApproveOptions{}, true); err == nil {
 			return Result{Ask: got}, nil
 		} else {
 			log.Printf("asks: auto-approve %s: %v", a.Name, err)
@@ -543,8 +574,8 @@ func (s *Service) join(ctx context.Context, p Person, id int64) (Result, error) 
 	}
 	s.event(ctx, &domain.Event{Actor: p.actor(), Kind: domain.EventAskJoined, TitleID: a.TitleID, Summary: p.Name + " also asked for " + label(a),
 		Data: map[string]any{"ask_id": a.ID, "asked_by": p.Name}, GroupKey: groupKey(a.ID)})
-	if a.State == domain.AskAsked && p.AutoApprove {
-		if got, err := s.decide(ctx, a.ID, p, ApproveOptions{}, true); err == nil {
+	if a.State == domain.AskAsked && p.autoApproves(a.FourK) {
+		if got, _, err := s.decide(ctx, a.ID, p, ApproveOptions{}, true); err == nil {
 			a = got
 		}
 	}

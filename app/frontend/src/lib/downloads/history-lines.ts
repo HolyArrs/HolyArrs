@@ -1,5 +1,6 @@
 // The words for a History row. Line 1 says what it is (the title, the episode or the kind of title), a status tag says what kind of thing happened, and line 2 says what happened in plain words, never repeating the title.
 import { t as say, lang, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { dayKey } from './history-kinds.ts';
 import type { HistoryRow } from './history.ts';
@@ -123,9 +124,12 @@ export function resolutionOf(release: string): string {
 
 export function plainWhy(reason: string): string {
 	let s = reason.trim().replace(/[.;]\s*$/, '');
+	const known = serverWords(s);
+	if (known !== s) return known;
 	const dl = /^the downloader says (.+)$/i.exec(s);
 	if (dl) s = dl[1].toLowerCase() === 'error' ? say('downloads.hl.dlError') : say('downloads.hl.dlSays', { says: dl[1] });
-	s = s.replace(/[;,]?\s*look at the import plan$/i, '');
+	s = s.replace(/[;,]?\s*(look at the import plan|match the files by hand)$/i, '');
+	s = s.replace(/\bno Usenet Downloader is set up\b/i, say('downloads.hl.noUsenetDl')).replace(/\bno torrent Downloader is set up\b/i, say('downloads.hl.noTorrentDl'));
 	s = s.replace(/\bno Release passed the Pick rules\b/i, say('downloads.hl.nothingGood')).replace(/\bRelease(s?)\b/g, 'download$1').replace(/\bPick rules\b/g, say('downloads.hl.qualityRules'));
 	return s;
 }
@@ -246,6 +250,7 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'download_failed': return t(TAG.failed, plainWhy(str(d.reason)) || say('downloads.hl.dlFailed'));
 		case 'download_vanished': return t(TAG.failed, say('downloads.hl.vanished'));
 		case 'download_not_removed': return t(TAG.failed, say('downloads.hl.notRemoved'));
+		case 'download_not_moved': return t(TAG.failed, say('downloads.hl.notMoved'));
 		case 'import_done': return t(TAG.came, join(resolutionOf(releaseOf([e])), sizeOf(d)));
 		case 'import_partly_done': return t({ ...TAG.came, tone: 'wait' }, join(say('downloads.hl.partly'), say('downloads.hl.needLook')));
 		case 'import_failed':
@@ -269,6 +274,7 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'ask_made': return named(TAG.asked, who(e, ctx) || str(d.asked_by) || say('downloads.hl.aMember'), cap(str(d.albums) || str(d.seasons)));
 		case 'ask_approved': return d.auto === true ? t(TAG.approved, join(say('downloads.hl.automatic'), str(d.note))) : named(TAG.approved, str(d.approved_by) || who(e, ctx), str(d.note));
 		case 'ask_turned_down': return named(TAG.declined, str(d.turned_down_by) || who(e, ctx), str(d.note));
+		case 'ask_not_added': return t(TAG.failed, join(say('downloads.hl.notAdded'), d.slow === true ? say('downloads.hl.notAddedSlow') : d.down === true || /dial tcp|connection refused|no such host/.test(str(d.reason)) ? say('downloads.hl.notAddedDown') : plainWhy(str(d.reason))));
 		case 'report_made': return t(TAG.reported, join(problem(d.kind), str(d.note)));
 		case 'report_fixed': return t(TAG.fixed, join(problem(d.kind), str(d.reply)));
 		case 'report_reopened': return t(TAG.reopened, join(problem(d.kind), str(d.note)));
@@ -377,5 +383,5 @@ function askedName(e: EventRecord): string | undefined {
 	if (!e.Kind.startsWith('ask_')) return undefined;
 	const made = /asked for (.+?)(?:\s*\(\d{4}\))?(?:,\s.*)?$/.exec(e.Summary)?.[1];
 	if (e.Kind === 'ask_made') return made?.trim() || undefined;
-	return /^(.+?)(?:\s*\(\d{4}\))?:\s(?:approved|turned down)\b/i.exec(e.Summary)?.[1]?.trim() || undefined;
+	return /^(.+?)(?:\s*\(\d{4}\))?:\s(?:approved|turned down|could not add)\b/i.exec(e.Summary)?.[1]?.trim() || undefined;
 }

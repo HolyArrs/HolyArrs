@@ -14,7 +14,7 @@ export function loadProfile(): Promise<void> {
 			profile.loaded = true;
 			// A language picked on the sign-in screen is kept on the account; otherwise the account's wins over this browser's.
 			if (pickedBeforeSignIn()) void api.put('/my/language', { language: lang.choice === 'auto' ? '' : lang.choice }).catch(() => {});
-			else if (r.language && isLocaleChoice(r.language) && r.language !== lang.choice) void setLang(r.language);
+			else if (r.language && isLocaleChoice(r.language) && r.language !== lang.choice) void showIn(r.language);
 		})
 		.catch(() => {
 			loading = null;
@@ -31,8 +31,14 @@ export async function saveDisplayName(typed: string): Promise<string> {
 
 /** Shows the app in `choice` now and keeps it on the account ('auto' clears it, so the browser decides). */
 export async function saveLanguage(choice: LocaleChoice): Promise<void> {
-	await setLang(choice);
+	await showIn(choice);
 	await api.put('/my/language', { language: choice === 'auto' ? '' : choice });
+}
+
+// Answers kept from before carry titles and synopses in the old language, so they are dropped.
+async function showIn(choice: LocaleChoice): Promise<void> {
+	await setLang(choice);
+	api.forget();
 }
 
 /** Forgets the loaded profile, so the next person to sign in gets theirs. */

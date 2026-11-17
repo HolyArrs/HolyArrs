@@ -175,24 +175,24 @@
 <style>
 	.ui-search { position: relative; display: flex; align-items: center; width: clamp(280px, 36vw, 560px); max-width: 100%; border-radius: 999px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.18), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	.glow { position: absolute; inset: -6px; border-radius: 999px; box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 16%, transparent), 0 0 28px color-mix(in srgb, var(--accent) 22%, transparent); opacity: 0; pointer-events: none; }
-	.ic { position: absolute; z-index: 1; left: 15px; display: grid; color: var(--text-muted); pointer-events: none; }
-	input { flex: 1; min-width: 0; height: 44px; padding: 0 64px 0 42px; border: 1px solid transparent; border-radius: 999px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); color: var(--text); font: var(--t-body); }
-	.scope { position: absolute; z-index: 1; left: 40px; display: inline-flex; align-items: center; gap: 2px; height: 28px; padding: 0 3px 0 12px; border-radius: var(--r-pill); background: var(--surface-2); color: var(--text); font: var(--t-subhead); font-size: 13px; transition: background var(--dur-fast) var(--ease-out); }
+	.ic { position: absolute; z-index: 1; inset-inline-start: 15px; display: grid; color: var(--text-muted); pointer-events: none; }
+	input { flex: 1; min-width: 0; height: 44px; padding-block: 0; padding-inline: 42px 64px; border: 1px solid transparent; border-radius: 999px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); color: var(--text); font: var(--t-body); }
+	.scope { position: absolute; z-index: 1; inset-inline-start: 40px; display: inline-flex; align-items: center; gap: 2px; height: 28px; padding-block: 0; padding-inline: 12px 3px; border-radius: var(--r-pill); background: var(--surface-2); color: var(--text); font: var(--t-subhead); font-size: 13px; transition: background var(--dur-fast) var(--ease-out); }
 	.scope:hover { background: var(--surface-3); }
 	.scope button { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: none; color: inherit; opacity: 0.75; cursor: pointer; }
 	.scope button:hover { opacity: 1; background: rgb(127 127 127 / 18%); }
 	.scope button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	input.scoped { padding-left: 164px; }
+	input.scoped { padding-inline-start: 164px; }
 	input { text-overflow: ellipsis; }
 	input::placeholder { color: var(--text-muted); text-overflow: ellipsis; }
 	input::-webkit-search-cancel-button { display: none; }
 	input:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.hint { position: absolute; right: 14px; padding: 2px 7px; border-radius: 6px; border: 1px solid var(--line); color: var(--text-muted); font: 500 11px/1.4 var(--font-ui); pointer-events: none; }
-	.close { position: absolute; z-index: 1; right: 4px; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); cursor: pointer; }
+	.hint { position: absolute; inset-inline-end: 14px; padding: 2px 7px; border-radius: 6px; border: 1px solid var(--line); color: var(--text-muted); font: 500 11px/1.4 var(--font-ui); pointer-events: none; }
+	.close { position: absolute; z-index: 1; inset-inline-end: 4px; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); cursor: pointer; }
 	.close:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	form:has(.close) .clear { right: 42px; }
-	form:has(.close) input { padding-right: 84px; }
-	.clear { position: absolute; z-index: 1; right: 4px; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); cursor: pointer; }
+	form:has(.close) .clear { inset-inline-end: 42px; }
+	form:has(.close) input { padding-inline-end: 84px; }
+	.clear { position: absolute; z-index: 1; inset-inline-end: 4px; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 999px; background: none; color: var(--text-muted); cursor: pointer; }
 	.clear:hover { color: var(--text); }
 	.clear:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 </style>

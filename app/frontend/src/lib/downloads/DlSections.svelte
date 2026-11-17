@@ -5,7 +5,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { COL, MAX_W, MIN_W, move, quality, sortRows, visible, type ColId } from './columns.ts';
-	import { PRIORITIES, clientOk, paneExtras, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
+	import { PRIORITIES, byHandPath, clientOk, paneExtras, rowItems, usenetQueued, type Priority, type RowItem } from './rowmenu.ts';
 	import DlBar from './DlBar.svelte';
 	import DlStatus from './DlStatus.svelte';
 	import DlMorePop from './DlMorePop.svelte';
@@ -17,15 +17,15 @@
 	import { Downloaders } from './clients.svelte.ts';
 	import { PaneDetail } from './pane-detail.svelte.ts';
 	import { tabsOf, type PaneTab } from './pane-facts.ts';
-	import GhostEmpty from './GhostEmpty.svelte';
+	import DlEmpty from './DlEmpty.svelte';
 	import { reviewCount, reviewWord } from './status-views.ts';
 	import { listEsc, reviewShown, searchShortcut } from './keys.ts';
 	import { overlayScroll } from './overlay-scroll.ts';
 	import { dlTop } from './dl-top.svelte.ts';
-	import { size as bytes, categoryWords, protocolOf, type KindKey } from './size.ts';
+	import { size as bytes, freeSize, categoryWords, protocolOf, type KindKey } from './size.ts';
 	import { kindOf, rowName } from './downloaders.ts';
 	import type { ImportRecord } from './types.ts';
-	import { ALL, counts, emptyOf, pick, showOf, statusWord, subCounts, tabsFor } from './status-tabs.ts';
+	import { ALL, counts, emptyOf, moreOf, pick, showOf, statusWord, subCounts, tabsFor, withRest, type Rest } from './status-tabs.ts';
 	import { controllable, pausable } from './usenet.ts';
 	import { poster, who } from './row-art.ts';
 	import { byTracker, countLabel, pickRange, problemWords, toolbarTargets, trackerOptions, type BulkAction, type SteerMode } from './manage.ts';
@@ -70,7 +70,9 @@
 		changeOutside = true,
 		batchBusy = false,
 		watch = false,
-		upTotal
+		loading = false,
+		upTotal,
+		outside = { rest: {}, canMore: false, capMax: 0 }
 	}: {
 		rows: DownloadRow[];
 		/** Notes from the page, such as a Downloader not answering, shown in the status popover. */
@@ -102,8 +104,10 @@
 		batchBusy?: boolean;
 		/** Someone who may not manage the Library sees only their own downloads, with no actions. */
 		watch?: boolean;
+		loading?: boolean; // the first read is on its way: the bar, tabs and column heads stay, the list shows the page loader
 		/** Upload speed summed by the server over every sending row; falls back to the rows on hand. */
 		upTotal?: number;
+		outside?: { rest: Rest; canMore: boolean; capMax: number; onmore?: (all?: boolean) => void }; // torrents left out of this page (tabs count them too), whether more can load, and how
 	} = $props();
 	let kindOn = $state<KindKey>('');
 	const typed = $derived(kindOn ? everyRow.filter((r) => kindOf(r) === kindOn) : everyRow);
@@ -142,12 +146,18 @@
 		}
 	}
 	const tabs = $derived(tabsFor(rows, torrent));
-	const tally = $derived(counts(rows, tabs));
+	const filtered = $derived(!!(kindOn || q.trim() || trackKey)); // Unloaded torrents count on their tabs too (Torrent or Usenet filter included); other filters check loaded rows only.
+	const mo = $derived(moreOf({ rest: outside.rest, src: srcOn, partial: filtered, loaded: everyRow.filter((r) => r.client_item && (!srcOn || protocolOf(r) === srcOn)).length, canMore: outside.canMore }));
+	const tally = $derived(withRest(counts(rows, tabs), tabs, mo.extra));
 	const on = $derived(tabs.some((c) => c.key === show) ? show : ALL);
 	const onTab = $derived(tabs.find((c) => c.key === on));
-	const subs = $derived(subCounts(rows, onTab));
+	const subs = $derived(withRest(subCounts(rows, onTab), onTab?.subs ?? [], mo.extra));
 	const subOn = $derived(subs.some((x) => x.key === sub) ? sub : '');
 	const shown = $derived(pick(rows, tabs, on, subOn));
+	// Near the end of the list (or a list too short to scroll), the next torrents load by themselves.
+	const nearEnd = () => { const b = cols.listEl; if (mo.more && b && b.scrollTop + b.clientHeight > b.scrollHeight - 800) outside.onmore?.(!list.length && restHere > 0); };
+	$effect(() => { void list.length; void mo.more; nearEnd(); });
+	const restHere = $derived((onTab?.subs.find((x) => x.key === subOn)?.stages ?? onTab?.stages ?? []).reduce((a, s) => a + (mo.extra[s] ?? 0), 0)); // not loaded yet, on this tab
 	function choose(k: string) {
 		show = k;
 		sub = '';
@@ -252,17 +262,14 @@
 		get top() { return t('downloads.act.top'); },
 		get bottom() { return t('downloads.act.bottom'); },
 		get priority() { return t('downloads.act.priority'); },
-		get library() { return t('downloads.act.library'); },
+		get import() { return t('downloads.act.importAgain'); },
+		get library() { return t('downloads.act.library'); }, get byhand() { return t('downloads.dp.importByHand'); },
 		get remove() { return t('downloads.act.remove'); }
 	};
 	// Usenet jobs move and take a priority one at a time; there is no bulk call.
 	const usenetItem = (r: DownloadRow) => `/downloaders/${r.downloader_id}/items/${encodeURIComponent(r.hash ?? '')}`;
-	const MOVED: Record<string, string> = {
-		get up() { return t('downloads.act.movedUp'); },
-		get down() { return t('downloads.act.movedDown'); },
-		get top() { return t('downloads.act.movedTop'); },
-		get bottom() { return t('downloads.act.movedBottom'); }
-	};
+	const MOVED: Record<string, string> = { get up() { return t('downloads.act.movedUp'); }, get down() { return t('downloads.act.movedDown'); },
+		get top() { return t('downloads.act.movedTop'); }, get bottom() { return t('downloads.act.movedBottom'); } };
 	let queueBusy = $state(0);
 	async function usenetCall(r: DownloadRow, run: () => Promise<unknown>, done: string) {
 		queueBusy = r.id;
@@ -277,6 +284,7 @@
 	}
 	const usenetMove = (r: DownloadRow, k: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/${k}`), MOVED[k] ?? t('downloads.act.moved'));
 	const usenetPriority = (r: DownloadRow, p: Priority, label: string) => usenetCall(r, () => api.post(`${usenetItem(r)}/priority`, { priority: p }), t('downloads.act.prioritySet', { label }));
+	const importAgain = (r: DownloadRow) => usenetCall(r, () => api.post(`/downloads/${r.id}/import`), t('downloads.act.importQueued'));
 	// Shared by the row menu and the pane menu.
 	function menuItems(r: DownloadRow, keys: RowItem[]): MenuItem[] {
 		const off = busy === r.id || queueBusy === r.id;
@@ -284,8 +292,9 @@
 			const label = ROW_WORD[k];
 			if (k === 'priority') return [{ kind: 'heading', label }, ...PRIORITIES.map((p): MenuItem => ({ label: p.label, disabled: off, onselect: () => void usenetPriority(r, p.key, p.label) }))];
 			if ((k === 'up' || k === 'down' || k === 'top' || k === 'bottom') && usenetQueued(r)) return { label, disabled: off, onselect: () => void usenetMove(r, k) };
-			if (k === 'library') return { label, icon: 'film', href: to(`/library/${r.title_id}`) };
+			if (k === 'library' || k === 'byhand') return { label, icon: k === 'library' ? 'film' : 'folder', href: to(k === 'library' ? `/library/${r.title_id}` : byHandPath(r.import_folder ?? '')) };
 			if (k === 'remove') return { label, icon: 'trash', destructive: true, disabled: off, onselect: () => onremove(r) };
+			if (k === 'import') return { label, icon: 'refresh', disabled: off, onselect: () => void importAgain(r) };
 			if (k === 'pause' || k === 'resume') return { label, icon: k === 'pause' ? 'pause' : 'play', disabled: off, onselect: () => onact?.(r, k) };
 			if (k === 'retry') return { label, icon: 'refresh', disabled: off, onselect: () => (onretry ? onretry([r]) : onact?.(r, 'retry')) };
 			return { label, disabled: off, onselect: () => onbulk?.([r], k) };
@@ -293,11 +302,11 @@
 	}
 	function rowMenu(r: DownloadRow): MenuItem[] {
 		const items = menuItems(r, rowItems(r).filter((k) => k !== 'retry' || mayEdit(r)));
-		if (!r.can_act) items.unshift({ kind: 'heading', label: t('downloads.act.cannotChange') });
+		if (!r.can_act && !r.can_import && !r.import_folder) items.unshift({ kind: 'heading', label: t('downloads.act.cannotChange') });
 		return items;
 	}
 	// The pane menu is the row's list minus what the pane shows as buttons, plus a torrent's checks, force start, sheets and Mark failed.
-	const PANE_BUTTONS = new Set<RowItem>(['pause', 'resume', 'retry', 'library', 'remove']);
+	const PANE_BUTTONS = new Set<RowItem>(['pause', 'resume', 'retry', 'byhand', 'library', 'remove']);
 	function paneMenu(r: DownloadRow): MenuItem[] {
 		if (!r.can_act) return [];
 		const off = busy === r.id || queueBusy === r.id;
@@ -541,10 +550,10 @@
 {#snippet pills()}
 	{#each tally as c (c.key)}
 		{@const t = tabs.find((x) => x.key === c.key)}
-		{@const so = t ? subCounts(rows, t) : []}
+		{@const so = t ? withRest(subCounts(rows, t), t.subs, mo.extra) : []}
 		{@const open = on === c.key && so.length > 0}
 		<div class="pw" class:on={on === c.key} class:open class:leaf={on === c.key && !subOn} data-key={c.key}>
-			<button type="button" role="tab" class="tab" class:zero={c.count === 0} aria-selected={on === c.key} tabindex={on === c.key ? 0 : -1} data-nav data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="lb">{c.label}</span><b class="n">{c.count}</b></button>
+			<button type="button" role="tab" class="tab" class:zero={c.count === 0} aria-selected={on === c.key} tabindex={on === c.key ? 0 : -1} data-nav data-testid="rail-item" data-key={c.key} data-count={c.count} onclick={() => choose(c.key)}><span class="lb">{c.label}</span>{#if !loading}<b class="n">{c.count}</b>{/if}</button>
 			{#if so.length}
 				<div class="subwrap" inert={!open}>
 					<div class="subin" data-testid={open ? 'dl-subseg' : undefined}>
@@ -573,14 +582,14 @@
 <div class="body">
 <div class="col" bind:this={colEl}>
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label={t('downloads.list.status')}>{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up={noUp ? '' : `${bytes(upSum)}/s`} eta={etaWords} free={dls.freeAll.length ? bytes(Math.min(...dls.freeAll)) : ''} today={dls.sumOf('day_down') ? bytes(dls.sumOf('day_down')) : ''} session={dls.sumOf('session_down') ? bytes(dls.sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} limit={Number.isFinite(capNow) ? `${bytes(capNow)}/s` : ''} onlimit={watch ? undefined : onlimit} /></div>
-<p class="qline" data-testid="dl-qline">{#if onlimit && !watch}<button type="button" class="qd qbtn" onclick={() => onlimit?.()} title={Number.isFinite(capNow) ? t('downloads.list.limitChange', { speed: `${bytes(capNow)}/s` }) : t('downloads.list.setLimit')} data-testid="dl-q-down"><span class="sr">{t('downloads.list.speedSr')} </span>↓ {bytes(sum.speed)}/s{#if Number.isFinite(capNow)}<span class="qcap"><Icon name="gauge" size={12} /><span class="sr">{t('downloads.list.limitSr')} </span>{bytes(capNow)}/s</span>{:else}<span class="sr">. {t('downloads.list.setLimit')}</span>{/if}</button>{:else}<span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{/if}{#if dls.freeAll.length}<span class="qs" aria-hidden="true">·</span><span data-testid="dl-q-free">{t('downloads.list.free', { size: bytes(Math.min(...dls.freeAll)) })}</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span>{t('downloads.list.left', { time: etaWords })}</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
+<div class="tabrow" data-testid="dl-tabrow" onkeydown={navKey}><div class="tabs" role="tablist" aria-label={t('downloads.list.status')}>{@render pills()}</div>{#if problemWords(trackProblems)}<button type="button" class="trchip" class:on={trackKey === 'p:any'} aria-pressed={trackKey === 'p:any'} onclick={() => (trackOn = trackKey === 'p:any' ? '' : 'p:any')} data-testid="dl-tracker-issues">{problemWords(trackProblems)}</button>{/if}<DlStatus down="{bytes(sum.speed)}/s" up={noUp ? '' : `${bytes(upSum)}/s`} eta={etaWords} free={dls.freeAll.length ? freeSize(Math.min(...dls.freeAll)) : ''} today={dls.sumOf('day_down') ? bytes(dls.sumOf('day_down')) : ''} session={dls.sumOf('session_down') ? bytes(dls.sumOf('session_down')) : ''} review={reviewShown(watch, toReview)} onreview={openReview} more={morePop} limit={Number.isFinite(capNow) ? `${bytes(capNow)}/s` : ''} onlimit={watch ? undefined : onlimit} /></div>
+<p class="qline" data-testid="dl-qline">{#if onlimit && !watch}<button type="button" class="qd qbtn" onclick={() => onlimit?.()} title={Number.isFinite(capNow) ? t('downloads.list.limitChange', { speed: `${bytes(capNow)}/s` }) : t('downloads.list.setLimit')} data-testid="dl-q-down"><span class="sr">{t('downloads.list.speedSr')} </span>↓ {bytes(sum.speed)}/s{#if Number.isFinite(capNow)}<span class="qcap"><Icon name="gauge" size={12} /><span class="sr">{t('downloads.list.limitSr')} </span>{bytes(capNow)}/s</span>{:else}<span class="sr">. {t('downloads.list.setLimit')}</span>{/if}</button>{:else}<span class="qd" data-testid="dl-q-down">↓ {bytes(sum.speed)}/s</span>{/if}{#if dls.freeAll.length}<span class="qs" aria-hidden="true">·</span><span class="qt" data-testid="dl-q-free">{t('downloads.list.free', { size: freeSize(Math.min(...dls.freeAll)) })}</span>{/if}{#if etaWords}<span class="qs" aria-hidden="true">·</span><span class="qt">{t('downloads.list.left', { time: etaWords })}</span>{/if}{#if reviewShown(watch, toReview)}<button type="button" class="qrv" onclick={openReview} data-testid="dl-q-review">{reviewWord(toReview)}</button>{/if}</p>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div class="listbox" bind:this={cols.listEl} data-testid="dl-listbox" use:overlayScroll={{ header: ".chead" }}>
+<div class="listbox" bind:this={cols.listEl} onscroll={nearEnd} data-testid="dl-listbox" use:overlayScroll={{ header: ".chead" }}>
 {#if (pickedRows.length || selecting) && !watch}
 	<DlSelBars {pickedRows} {bulkRows} steer={STEER} {startT} {pauseT} {batchBusy} {steerable} {mayEdit} {runOn} {onbulk} {onsteer} {onretry} {onremovemany} onall={() => (picked = new Set(list.map((r) => r.id)))} onclear={clearPicked} />
 {/if}
-{#if list.length}
+{#if list.length && !loading}
 	<div class="tw" onscroll={cols.sync} data-testid="dl-tablebox"><div class="tin">
 		{@render header()}
 		<ul class="dlrows" class:vw={cols.windowed} bind:this={cols.ulEl} data-testid="dl-list" data-tab={on} data-rows={list.length} style={cols.windowed ? `padding-top: ${cols.span.a * cols.rh}px; padding-bottom: ${(list.length - cols.span.b) * cols.rh}px` : undefined}>
@@ -588,31 +597,21 @@
 		</ul>
 	</div></div>
 {:else}
-	{@const em = emptyOf(on, subOn, q, kindOn, tabs, srcOn)}
 	<div class="tw" data-testid="dl-tablebox"><div class="tin">{@render header()}</div></div>
-	{#key em.title}
-	<GhostEmpty title={em.title} text={em.text}>
-		{#snippet action()}
-			{#if em.action?.act === 'clear'}<button type="button" data-testid="dl-empty-act" onclick={() => (dlScope.term = '')}>{em.action.label}</button>
-			{:else if em.action?.act === 'all'}<button type="button" data-testid="dl-empty-act" onclick={() => { kindOn = ''; srcOn = ''; }}>{em.action.label}</button>{/if}
-		{/snippet}
-	</GhostEmpty>
-	{/key}
+	<DlEmpty {loading} em={emptyOf(on, subOn, q, kindOn, tabs, srcOn)} left={restHere} onclear={() => (dlScope.term = '')} onall={() => { kindOn = ''; srcOn = ''; }} />
 {/if}
 </div>
 {#if openRow}
 	<DlPane r={openRow} bind:paneOpen bind:openId tab={tabNow(openRow)} ontab={(id, t) => (xtabOn[id] = t)} {pane} {importOf} {titles} {titlesReady} {watch} {busy} {decisionsOf} {ondone} {onact} {onretry} {onremove} {mayEdit} {paneMenu} {maxPane} />
 {/if}
-</div>
-</div>
+</div></div>
 {#snippet morePop()}<DlMorePop {notes} {dls} {watch} />{/snippet}
 <div class="vh"><span data-testid="sb-health">{dls.health}</span></div>
 </div>
 <DlColumnPicker {cols} />
 </div>
 <style>
-	.ch[data-col='proto']:has(:global(svg)) { justify-content: center; }
-	.ch[data-col='kind']:has(:global(svg)) { justify-content: center; }
+	.ch[data-col='proto']:has(:global(svg)), .ch[data-col='kind']:has(:global(svg)) { justify-content: center; }
 	.ch[data-col='proto'] .lbl, .ch[data-col='kind'] .lbl { display: flex; }
 	.ch[data-col='poster'] { justify-content: center; }
 	.ch[data-col='poster'] .lbl { display: flex; }
@@ -739,8 +738,8 @@
 		.qline:has(.qbtn) { min-height: 48px; padding-top: 4px; padding-bottom: 0; }
 		.qbtn:focus-visible { outline: none; border-radius: 6px; box-shadow: var(--focus-ring); }
 		.qcap { display: inline-flex; align-items: center; gap: 3px; color: var(--text-muted); font-weight: 400; }
-		.qrv { margin-left: auto; min-height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail-text); font: 600 12px/1 var(--font-ui); }
-		.qrv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+		.qline .qt { min-width: 0; overflow: hidden; text-overflow: ellipsis; } /* Free space and time left give way before the review pill. */
+		.qrv { flex: none; margin-inline-start: auto; min-height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--fail) 14%, transparent); color: var(--fail-text); font: 600 12px/1 var(--font-ui); } .qrv:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 		.listbox:has(:global(.psel)) .dlrows { padding-bottom: 140px; }
 		.dline > [data-col='progress'] { height: 4px; align-self: center; }
 	.strip { gap: 4px 14px; }

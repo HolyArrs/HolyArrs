@@ -178,7 +178,7 @@ func (s *Service) CheckReady(ctx context.Context) (int, error) {
 	if _, err := s.TellMovieFollows(ctx); err != nil {
 		log.Printf("asks: followed movies ready: %v", err)
 	}
-	// A 4K ask is ready once its 4K copy is in (labelled 4K or on the 4K Pick rules).
+	// A 4K ask is ready once its 4K copy (the Version with the 4K mark) is in.
 	as, err := database.Select[domain.Ask](ctx, s.Store.Read(), "asks", checkReadySQL)
 	if err != nil {
 		return 0, err
@@ -242,6 +242,11 @@ func label(a domain.Ask) string {
 	l := a.Name
 	if a.Year != nil {
 		l += " (" + strconv.Itoa(*a.Year) + ")"
+	}
+	// Asked for in another line than the first (4K): say so, so two alerts
+	// for one title tell apart.
+	if a.Quality != "" && a.Quality != QualityStandard && a.QualityName != "" {
+		l += " in " + a.QualityName
 	}
 	if a.Kind == "show" && !wholeShow(a) && !a.FutureOnly {
 		l += ", " + askSeasonWords(a)

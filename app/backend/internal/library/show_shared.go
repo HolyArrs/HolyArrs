@@ -228,14 +228,21 @@ var (
 	ErrBadNewSeasons   = errors.New("new_seasons must be all or none")
 	ErrBadOrder        = errors.New("episode_order must be aired, daily or absolute")
 	ErrBadWait         = errors.New("episode_wait_minutes must be between 0 and 10080")
-	ErrNotShow         = errors.New("that Title is not a show")
-	ErrShowOnly        = errors.New("that choice is for shows only")
-	ErrMovieOnly       = errors.New("the Release gate is for movies; shows are searched once each episode has aired")
-	ErrNoShowFolder    = errors.New("no show Library folder")
-	ErrNotShowFolder   = errors.New("that Library folder is not for shows")
-	ErrNoShowSources   = errors.New("show details sources are not set up")
-	ErrNoSuchSeason    = errors.New("the show has no such season")
+	ErrBadEpisodeGroup = errors.New("episode_group_id must be one of the show's TMDB episode orders, or empty")
+	// ErrEpisodeGroupUnread is TMDB not answering for an episode order.
+	ErrEpisodeGroupUnread = errors.New("the TMDB episode order could not be read")
+	ErrNotShow            = errors.New("that Title is not a show")
+	ErrShowOnly           = errors.New("that choice is for shows only")
+	ErrMovieOnly          = errors.New("the Release gate is for movies; shows are searched once each episode has aired")
+	ErrNoShowFolder       = errors.New("no show Library folder")
+	ErrNotShowFolder      = errors.New("that Library folder is not for shows")
+	ErrNoShowSources      = errors.New("show details sources are not set up")
+	ErrNoSuchSeason       = errors.New("the show has no such season")
+	ErrBadPackWindow      = errors.New("pack_window must be between 0 and 10")
 )
+
+// MaxPackWindow is the most episodes ahead a season pack may fetch.
+const MaxPackWindow = 10
 
 // ValidSeasonChoice reports whether c is a season choice.
 func ValidSeasonChoice(c string) bool {

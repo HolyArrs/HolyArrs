@@ -4,6 +4,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { decisionName, groupDecisions, manyWords, whyWords, type DecisionGroup } from './downloaders.ts';
+	import { decisionFix, noMatchKind, reasonKind, type Fix } from './decision-fix.ts';
 	import { refreshDecisions } from './decisions.svelte.ts';
 	import { editionDecisionBody } from '../mediafiles/index.ts';
 	import { to } from '../core/paths.ts';
@@ -51,23 +52,47 @@
 		}
 	}
 
-	type Fix = 'edition' | 'hand' | 'search';
-	const isEdition = (d: Decision) => d.kind === 'movie' && !!d.download_id && (d.why === 'conflict' || /edition/i.test(d.reason ?? ''));
-	function primary(d: Decision): Fix {
-		if (isEdition(d)) return 'edition';
-		if (d.why === 'conflict') return 'hand';
-		return 'search';
+	// Import this file: the person says the download's one video is this movie. A movie with a file swaps it; the old one goes to Recently deleted.
+	async function importFile(d: Decision, key: string) {
+		const ask = d.has_copy ? 'downloads.dp.askImportReplace' : 'downloads.dp.askImport';
+		if (!confirm(t(ask, { file: d.import_file ?? '', name: decisionName(d) }))) return;
+		busy = key;
+		try {
+			await api.post(`/needs-decision/${d.slot_id}/decide`, { action: 'import', replace: d.has_copy });
+			toasts.push(t('downloads.dp.imported', { name: decisionName(d) }), 'ok');
+			await refreshDecisions();
+			ondone?.();
+		} catch (e) {
+			toasts.push(t('downloads.dp.importFailed'), 'fail', { body: plainReason(message(e)).text });
+		} finally {
+			busy = '';
+		}
 	}
+
+	const primary = (d: Decision): Fix => decisionFix(d);
+	// Set edition only for an edition refusal; a file refused in place of the copy points to another Version.
 	function reasonLine(d: Decision): string {
-		if (isEdition(d)) return t('downloads.dp.editionUnknown');
+		const k = reasonKind(d);
+		if (k === 'edition') return t('downloads.dp.editionUnknown');
+		if (k === 'copy') return t('downloads.dp.copyInPlace');
+		if (k === 'taken') return whyWords(d);
+		if (k === 'nomatch') {
+			const m = noMatchKind(d.reason);
+			return t(m === 'episode' ? 'downloads.dp.noMatchEpisode' : m === 'track' ? 'downloads.dp.noMatchTrack' : 'downloads.dp.noMatchMovie');
+		}
 		const r = d.reason ? plainReason(d.reason).text : '';
 		return r || whyWords(d);
 	}
+	// Import files by hand, opened on the download's folder so its files can be matched.
+	const byHandHref = (d: Decision) => to(`/library/import-files?path=${encodeURIComponent(d.import_folder ?? '')}`);
+	const versionLabel = (d: Decision) => (d.versions > 1 ? t('downloads.dp.anotherVersion') : t('downloads.dp.addVersion'));
 	function more(d: Decision, key: string, fix: Fix): MenuItem[] {
 		const out: MenuItem[] = [];
+		if (d.import_file && fix !== 'import') out.push({ label: t('downloads.dp.importFile'), onselect: () => importFile(d, key) });
+		if (d.import_folder && fix !== 'match') out.push({ label: t('downloads.dp.importByHand'), href: byHandHref(d) });
 		if (fix !== 'search') out.push({ label: t('downloads.dp.searchAgain'), onselect: () => act(d, 'search', false, key) });
 		if (fix !== 'hand') out.push({ label: t('downloads.dp.byHand'), href: to(`/library/${d.title_id}?tab=library&pick=1#h-rel`) });
-		if (!manyWords(d.kind)) out.push({ label: d.versions > 1 ? t('downloads.dp.anotherVersion') : t('downloads.dp.addVersion'), href: to(`/library/${d.title_id}?tab=library#h-versions`) });
+		if (!manyWords(d.kind) && fix !== 'version') out.push({ label: versionLabel(d), href: to(`/library/${d.title_id}?tab=library#h-versions`) });
 		if (d.release_id) out.push({ label: t('downloads.dp.addTurnedDown'), onselect: () => act(d, 'turn_down', false, key) });
 		out.push({ label: t('downloads.dp.stopLooking'), destructive: true, onselect: () => act(d, 'stop', false, key) });
 		out.push({ kind: 'separator' }, { label: t('downloads.dp.openTitle'), href: to(`/library/${d.title_id}`) });
@@ -143,6 +168,14 @@
 			<div class="acts">
 				{#if fix === 'edition'}
 					<Button size="sm" variant="primary" aria-expanded={!!editOpen[key]} aria-controls="ed-form-{key}" onclick={() => (editOpen[key] = !editOpen[key])} data-testid="decision-fix">{t('downloads.dp.setEdition')}</Button>
+				{:else if fix === 'version'}
+					<Button size="sm" variant="primary" href={to(`/library/${d.title_id}?tab=library#h-versions`)} data-testid="decision-fix">{versionLabel(d)}</Button>
+				{:else if fix === 'folder'}
+					<Button size="sm" variant="primary" href={to('/settings/downloaders')} data-testid="decision-fix">{t('downloads.dp.openDownloaders')}</Button>
+				{:else if fix === 'import'}
+					<Button size="sm" variant="primary" onclick={() => importFile(d, key)} disabled={busy === key} busy={busy === key} data-testid="decision-fix">{t('downloads.dp.importFile')}</Button>
+				{:else if fix === 'match'}
+					<Button size="sm" variant="primary" href={byHandHref(d)} data-testid="decision-fix">{t('downloads.dp.importByHand')}</Button>
 				{:else if fix === 'hand'}
 					<Button size="sm" variant="primary" href={to(`/library/${d.title_id}?tab=library&pick=1#h-rel`)} data-testid="decision-fix">{t('downloads.dp.byHand')}</Button>
 				{:else}

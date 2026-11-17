@@ -235,8 +235,10 @@ func seerrUser(m map[string]any) User {
 	switch u.Kind {
 	case "plex":
 		u.ExternalID = str(first(m, "plexId", "plexUserId"))
+		u.ExtName = str(m["plexUsername"])
 	case "jellyfin", "emby":
 		u.ExternalID = str(first(m, "jellyfinUserId", "embyUserId"))
+		u.ExtName = str(m["jellyfinUsername"])
 	}
 	for _, k := range []string{"displayName", "username", "plexUsername", "jellyfinUsername", "email"} {
 		if u.Name = str(m[k]); u.Name != "" {
@@ -263,8 +265,10 @@ func seerrRequest(id, status int64, mediaType string, media map[string]any, by, 
 	switch mediaType {
 	case "tv":
 		rq.Kind = "show"
-	default:
+	case "movie":
 		rq.Kind = "movie"
+	default:
+		return Request{}, false // a request of no known kind is not brought over
 	}
 	for k, id := range map[string]string{"tmdbId": "tmdb", "tvdbId": "tvdb", "imdbId": "imdb"} {
 		if v := str(first(media, k)); v != "" && v != "0" {

@@ -1,0 +1,107 @@
+{
+ "Profile": {
+  "id": "p1",
+  "app": "sonarr",
+  "name": "Test 1080p",
+  "description": "Line one line two",
+  "url": "",
+  "min_points": 0,
+  "good_enough_points": 10000,
+  "upgrade_min_points": 1
+ },
+ "Traits": [
+  {
+   "Trait": {
+    "ID": 0,
+    "CreatedAt": "0001-01-01T00:00:00Z",
+    "CreatedBy": {
+     "kind": ""
+    },
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "UpdatedBy": {
+     "kind": ""
+    },
+    "Name": "Good group",
+    "Match": "name",
+    "Terms": [],
+    "Source": "trash",
+    "SourceID": "sonarr:f2",
+    "Specs": [
+     {
+      "name": "Group",
+      "kind": "group",
+      "value": "^(GOODA)$"
+     },
+     {
+      "name": "WEB",
+      "kind": "source",
+      "value": "web_dl"
+     }
+    ]
+   },
+   "Points": 1700
+  },
+  {
+   "Trait": {
+    "ID": 0,
+    "CreatedAt": "0001-01-01T00:00:00Z",
+    "CreatedBy": {
+     "kind": ""
+    },
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "UpdatedBy": {
+     "kind": ""
+    },
+    "Name": "HEVC",
+    "Match": "name",
+    "Terms": [],
+    "Source": "trash",
+    "SourceID": "sonarr:f1",
+    "Specs": [
+     {
+      "name": "x265",
+      "kind": "name",
+      "value": "[xh][ ._-]?265|\\bHEVC\\b",
+      "required": true
+     }
+    ]
+   },
+   "Points": -500
+  },
+  {
+   "Trait": {
+    "ID": 0,
+    "CreatedAt": "0001-01-01T00:00:00Z",
+    "CreatedBy": {
+     "kind": ""
+    },
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "UpdatedBy": {
+     "kind": ""
+    },
+    "Name": "LQ",
+    "Match": "name",
+    "Terms": [],
+    "Source": "trash",
+    "SourceID": "sonarr:f4",
+    "Specs": [
+     {
+      "name": "LQ",
+      "kind": "group",
+      "value": "^(BADGRP)$"
+     }
+    ]
+   },
+   "Points": -20000
+  }
+ ],
+ "Skipped": [
+  {
+   "name": "Lang only",
+   "kinds": [
+    "language"
+   ],
+   "reason": "it tests something HolyArrs cannot test yet"
+  }
+ ]
+}

@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Koble til på nytt",
+	"setup.testNow": "Test nå",
+	"setup.movies": "Filmer",
+	"setup.tvShows": "TV-serier",
+	"setup.music": "Musikk",
+	"setup.subtitles": "Undertekster",
+	"setup.fullPath": "Bruk hele mappestien, for eksempel {path}.",
+	"setup.folderUsed": "Denne mappen er allerede i bruk, eller ligger inni en som er det.",
+	"setup.folderMissing": "Den mappen finnes ikke. Sjekk stien.",
+	"setup.addFolderOrOff": "Legg til en mappe eller slå dette av.",
+	"setup.notAnswering": "HolyArrs svarer ikke. Prøv igjen om et øyeblikk.",
+	"setup.addUserPasswordHint": "Legg til brukernavn og passord.",
+	"setup.folders": "Mapper",
+	"setup.downloader": "Nedlaster",
+	"setup.source": "Kilde"
+}

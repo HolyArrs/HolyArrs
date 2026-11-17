@@ -10,6 +10,7 @@ import {
 	fileName,
 	finished,
 	followJob,
+	scanCount,
 	groupPlan,
 	score,
 	splitSteps,
@@ -120,6 +121,19 @@ describe('following a Job', () => {
 			}
 		});
 		expect((await p).State).toBe('done');
+	});
+	// A long scan that keeps moving is waited for; only one that
+	// stops moving for the whole wait gives up.
+	it('keeps waiting while the Job moves, gives up when it stalls', async () => {
+		let n = 0;
+		const moving = await followJob(async () => ({ ID: 1, State: ++n > 40 ? 'done' : 'running', Progress: n / 41 }), 1, () => {}, { every: 1, timeout: 200 });
+		expect(moving.State).toBe('done');
+		await expect(followJob(async () => ({ ID: 1, State: 'running', Progress: 0.5 }), 1, () => {}, { every: 1, timeout: 15 })).rejects.toThrow();
+	});
+	it('reads a scan note as folders read of all', () => {
+		expect(scanCount('1200/3000')).toEqual({ done: 1200, total: 3000 });
+		expect(scanCount('Moving files')).toBeNull();
+		expect(scanCount(null)).toBeNull();
 	});
 });
 

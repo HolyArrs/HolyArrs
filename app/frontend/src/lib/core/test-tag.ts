@@ -8,6 +8,9 @@ const apps: Record<string, string> = {
 	transmission: 'Transmission',
 	nzbget: 'NZBGet',
 	deluge: 'Deluge',
+	rtorrent: 'rTorrent',
+	// The version split leaves only these letters of aria2 as a word.
+	aria: 'aria2',
 	prowlarr: 'Prowlarr',
 	jackett: 'Jackett',
 	sonarr: 'Sonarr',

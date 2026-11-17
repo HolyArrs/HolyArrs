@@ -52,7 +52,14 @@ type StatusInput struct {
 	Downloaders []NamedState
 	// NewestBackup is the newest backup's time (RFC 3339), "" for none.
 	NewestBackup *string
-	MetadataUp   *bool
+	// BackupsOff says the owner turned scheduled backups off: no backup
+	// warning is raised, old backups checks included.
+	BackupsOff bool
+	MetadataUp *bool
+	// MetadataMode is where details come from (full, own or off; "" not
+	// known); MetadataBad is a Docker value that was not understood.
+	MetadataMode string
+	MetadataBad  string
 	UpdateNewer  *bool
 	// GoneDefaults are the plain-words notes for saved Movies and TV
 	// defaults whose folder or Pick rules are gone.
@@ -104,7 +111,7 @@ func SettingsStatus(in StatusInput) StatusAnswer {
 	}
 	for _, c := range in.Checks {
 		to, ok := checkTarget[c.Kind]
-		if !ok {
+		if !ok || (in.BackupsOff && c.Kind == "backups") {
 			continue
 		}
 		known(to.page)
@@ -168,7 +175,8 @@ func SettingsStatus(in StatusInput) StatusAnswer {
 		}
 	}
 	a.MetadataUp = in.MetadataUp == nil || *in.MetadataUp
-	if in.MetadataUp != nil {
+	metadataModeItems(in, known, add)
+	if in.MetadataUp != nil && (in.MetadataMode == "" || in.MetadataMode == string(metadata.ModeServer)) {
 		known("/settings/tmdb")
 		if !*in.MetadataUp {
 			add(StatusItem{"library", "/settings/tmdb", metadata.Down, "warning"}, "metadata")
@@ -176,7 +184,9 @@ func SettingsStatus(in StatusInput) StatusAnswer {
 	}
 	if in.NewestBackup != nil {
 		known("/settings/backups")
-		if *in.NewestBackup == "" {
+		if in.BackupsOff {
+			// Off: no backup is expected.
+		} else if *in.NewestBackup == "" {
 			add(StatusItem{"maintenance", "/settings/backups", "No backup yet", "warning"}, "backup-age")
 		} else if at, err := time.Parse(time.RFC3339, *in.NewestBackup); err == nil && in.Now.Sub(at) > 7*24*time.Hour {
 			add(StatusItem{"maintenance", "/settings/backups", "No backup in the last 7 days", "warning"}, "backup-age")
@@ -281,10 +291,15 @@ type StatusHandlers struct {
 	// NewestBackup is the newest backup's time ("" none); ok false when
 	// backups are not known.
 	NewestBackup func() (newest string, ok bool)
+	// BackupsOff says scheduled backups are turned off (nil: not known).
+	BackupsOff func(context.Context) bool
 	// MetadataUp says whether the metadata server answers; known false
 	// when that is not known.
-	MetadataUp  func(context.Context) (up, known bool)
-	UpdateNewer func(context.Context) bool
+	MetadataUp func(context.Context) (up, known bool)
+	// MetadataMode says where details come from and any Docker value that
+	// was not understood (nil: not known).
+	MetadataMode func() (mode, bad string)
+	UpdateNewer  func(context.Context) bool
 	// SkipLocal and OutsideJoin are the sign-in settings (nil: no sign-in).
 	SkipLocal   func() bool
 	OutsideJoin func(context.Context) bool
@@ -373,6 +388,10 @@ func (a *StatusHandlers) statusInput(ctx context.Context, now time.Time) (Status
 			}
 		}
 	}
+	if a.Engine.SourcesOn != nil && !a.Engine.SourcesOn() {
+		// The Sources part is off: no Source needs a fix, and none is missing.
+		in.Sources, in.SourcesNear = nil, nil
+	}
 	dls, err := database.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0 ORDER BY priority, name")
 	if err != nil {
 		return in, err
@@ -385,6 +404,12 @@ func (a *StatusHandlers) statusInput(ctx context.Context, now time.Time) (Status
 		if newest, ok := a.NewestBackup(); ok {
 			in.NewestBackup = &newest
 		}
+	}
+	if a.BackupsOff != nil {
+		in.BackupsOff = a.BackupsOff(ctx)
+	}
+	if a.MetadataMode != nil {
+		in.MetadataMode, in.MetadataBad = a.MetadataMode()
 	}
 	if a.MetadataUp != nil {
 		if up, known := a.MetadataUp(ctx); known {

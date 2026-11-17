@@ -15,6 +15,8 @@ Every variable the HolyArrs container reads. Most installs set only `PUID`, `PGI
 | `TZ` | Time zone for schedules and logs. | `Etc/UTC` | `TZ=Europe/Amsterdam` |
 | `UMASK` | Permission bits new files leave out. Affects new files only. | `022` | `UMASK=002` |
 | `HOLYARRS_SAVE_PATH` | The downloader's save folder, as the downloader sees it. Sent with every download. | none | `/data/downloads` |
+| `HOLYARRS_PORT` | Port HolyArrs listens on, 1 to 65535. Change the container side of your port mapping to match. | `6262` | `8080` |
+| `HOLYARRS_ADDR` | Full listen address. Wins over `HOLYARRS_PORT`; the `-addr` start option wins over both. A bad value stops the start. | `:6262` | `0.0.0.0:8080` |
 | `HOLYARRS_URL_BASE` | Serve HolyArrs under a path behind a reverse proxy. `/` ignores a path saved in Settings. | none | `/holyarrs` |
 | `HOLYARRS_ALLOWED_HOSTS` | Extra host names people use to reach HolyArrs, comma separated. | IPs and `localhost` | `holyarrs.example.com` |
 | `HOLYARRS_TRUSTED_PROXIES` | Your reverse proxy's address or network, comma separated. Needed for real client addresses. | none | `172.18.0.0/16` |
@@ -43,7 +45,7 @@ HolyArrs drops one newline at the end of the file. If the file is missing, HolyA
 | `HOLYARRS_CONFIG_IN_MEMORY` | Allow `/config` on a memory-backed folder. For test boxes; data is lost on restart. | off | `yes` |
 | `HOLYARRS_ALLOW_DESKTOP_FOLDER` | Start with `/config` in a Docker Desktop shared folder on a Mac, after you check file locks work there. HolyArrs warns on every start. | off | `1` |
 | `HOLYARRS_READONLY_DOWNLOADERS` | Downloaders HolyArrs must never change, by id or address, comma separated. | none | `3,http://qbit:8080` |
-| `HOLYARRS_HEALTH_URL` | Address the container health check calls. | `http://127.0.0.1:6262` | `http://127.0.0.1:6262/holyarrs` |
+| `HOLYARRS_HEALTH_URL` | Address the container health check calls. | `http://127.0.0.1:` and the port from `HOLYARRS_ADDR` or `HOLYARRS_PORT`, else `6262` | `http://127.0.0.1:6262/holyarrs` |
 
 On/off variables accept `1`, `true`, `yes` or `on`.
 
@@ -68,15 +70,30 @@ Set these before start. If `HOLYARRS_OIDC_ENABLED` is present at all, even as `f
 
 A bad setup stops HolyArrs from starting. Steps are in [Sign-in and passwords](../users/sign-in.md).
 
+## Proxy variables
+
+HolyArrs ignores `HTTP_PROXY`, `HTTPS_PROXY` and `ALL_PROXY`, in capitals or lowercase, on purpose. Before every outside connection, HolyArrs checks the real address it is about to reach, so that a lookup can never be steered to your local network. A proxy from the environment would connect for HolyArrs, to an address HolyArrs never sees, and that check would mean nothing.
+
+When one of them is set, the log says so at start and the doctor shows a warning under **Network**. Posters, metadata and update checks still connect directly, and fail where your network blocks them. There is no app-wide proxy setting.
+
+What to do instead:
+
+- Let HolyArrs reach the addresses in [Outside addresses](../run/outside-hosts.md) through your firewall.
+- For a Source that needs another route, set **Proxy** on that Source. It takes an HTTP or SOCKS5 proxy. See [Sources](../downloads/sources.md#for-experts).
+
 ## For experts
 
 <details class="ha-more"><summary>Metadata</summary>
 
 | Variable | What it does | Default |
 | --- | --- | --- |
-| `HOLYARRS_METADATA_URL` | The metadata server address. | `https://api.holyarrs.com` |
+| `HOLYARRS_METADATA_MODE` | Where details come from: `full` (the HolyArrs server), `own` (your own keys) or `off`. Set, it locks the choice in **Settings > Metadata**. A value HolyArrs does not understand turns lookups off and shows a red line in Health. | the choice in Settings, else `full` |
+| `HOLYARRS_METADATA_URL` | The metadata server address. `off` means your own keys (before 1.1.0 it stopped HolyArrs at start). | `https://api.holyarrs.com` |
 | `HOLYARRS_TMDB_KEY` | Your own TMDB read access token. Set, TMDB reads go straight to TMDB instead of the metadata server. | none |
+| `HOLYARRS_TVDB_URL`, `HOLYARRS_MDBLIST_URL`, `HOLYARRS_FANART_URL` | Stand-in addresses for TheTVDB, MDBList and fanart.tv. For tests only. | none |
 | `HOLYARRS_METADATA_SERVICE_TOKEN_FILE` | File holding this install's metadata server credential, read on each call. Unset, the credential lives in the vault. | none |
+
+What still goes through the metadata server with your own TMDB key, and every other outside address, is in [Outside addresses](../run/outside-hosts.md).
 
 </details>
 
@@ -103,7 +120,7 @@ These point HolyArrs at stand-ins for tests. Leave them unset on a real install.
 | `HOLYARRS_METADATA_SERVICE_ALLOW_LOCAL` | Allow a metadata server on the local network. |
 | `HOLYARRS_METADATA_COUNT` | Count and log metadata requests. |
 | `HOLYARRS_TMDB_TOKEN_FILE`, `HOLYARRS_TMDB_URL` | Test TMDB token file and stand-in address. |
-| `HOLYARRS_TVMAZE_URL`, `HOLYARRS_MUSICBRAINZ_URL`, `HOLYARRS_DEEZER_URL`, `HOLYARRS_TRAKT_URL`, `HOLYARRS_PLEX_URL`, `HOLYARRS_PLEX_APP_URL`, `HOLYARRS_PLEX_DISCOVER_URL`, `HOLYARRS_PUSHOVER_URL`, `HOLYARRS_TELEGRAM_URL`, `HOLYARRS_YOUTUBE_URL`, `HOLYARRS_RELEASE_FEED` | Stand-in addresses for outside services. |
+| `HOLYARRS_TVMAZE_URL`, `HOLYARRS_MUSICBRAINZ_URL`, `HOLYARRS_DEEZER_URL`, `HOLYARRS_TRAKT_URL`, `HOLYARRS_PLEX_URL`, `HOLYARRS_PLEX_APP_URL`, `HOLYARRS_PLEX_DISCOVER_URL`, `HOLYARRS_PLEX_COMMUNITY_URL`, `HOLYARRS_PUSHOVER_URL`, `HOLYARRS_TELEGRAM_URL`, `HOLYARRS_YOUTUBE_URL`, `HOLYARRS_RELEASE_FEED` | Stand-in addresses for outside services. |
 | `HOLYARRS_TRAILER_PASS_FIRST`, `HOLYARRS_TRAILER_PASS_EVERY` | Trailer pass timing as durations, such as `2s`. |
 
 </details>

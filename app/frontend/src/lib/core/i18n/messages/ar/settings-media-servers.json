@@ -40,5 +40,12 @@
 	"settings.mediaServers.test": "اختبار",
 	"settings.mediaServers.changeButton": "تغيير",
 	"settings.mediaServers.removeName": "إزالة {name}",
-	"settings.mediaServers.remove": "إزالة"
+	"settings.mediaServers.remove": "إزالة",
+	"settings.mediaServers.watchTitle": "سجل المشاهدة",
+	"settings.mediaServers.watchRead": "قراءة سجل المشاهدة",
+	"settings.mediaServers.watchHint": "يعرض في الإحصاءات من شاهد ماذا لمن يدير المكتبة. الإيقاف يحذف ما قُرئ.",
+	"settings.mediaServers.watchConfirmOff": "إيقاف سجل المشاهدة؟ سيُحذف كل ما قُرئ حتى الآن.",
+	"settings.mediaServers.watchTurnedOn": "سجل المشاهدة يعمل. تأتي أول قراءة خلال 30 دقيقة.",
+	"settings.mediaServers.watchTurnedOff": "أُوقف سجل المشاهدة",
+	"settings.mediaServers.watchFailed": "تعذّر تغيير سجل المشاهدة"
 }

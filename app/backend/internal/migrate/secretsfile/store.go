@@ -3,8 +3,10 @@ package secretsfile
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 // The move credential statements are this package's own. The lookups of an
@@ -12,26 +14,44 @@ import (
 // of a new one belong to the migrate orchestrator: they run inside the one
 // transaction that makes the item, so they stay here, byte for byte.
 
-func insertMoveCredential(ctx context.Context, tx *sql.Tx, kind string, secretID int64, createdAt, createdBy string) error {
-	_, err := tx.ExecContext(ctx, "INSERT INTO move_credentials (kind, secret_id, created_at, created_by) VALUES (?, ?, ?, ?)",
-		kind, secretID, createdAt, createdBy)
+func insertMoveCredential(ctx context.Context, tx *sql.Tx, kind, address string, secretID int64, createdAt, createdBy string) error {
+	_, err := tx.ExecContext(ctx, "INSERT INTO move_credentials (kind, address, secret_id, created_at, created_by) VALUES (?, ?, ?, ?, ?)",
+		kind, address, secretID, createdAt, createdBy)
 	return err
 }
 
-func moveCredentialSecret(ctx context.Context, q database.Querier, kind string) (int64, error) {
-	var id int64
-	err := q.QueryRowContext(ctx, "SELECT secret_id FROM move_credentials WHERE kind = ?", kind).Scan(&id)
-	return id, err
+// moveRow is one saved credential's row: its address (” for one saved
+// before keys were kept per address) and its vault secret.
+type moveRow struct {
+	address  string
+	secretID int64
 }
 
-func countMoveCredentials(ctx context.Context, q database.Querier, kind string) (int, error) {
-	var n int
-	err := q.QueryRowContext(ctx, "SELECT count(*) FROM move_credentials WHERE kind = ?", kind).Scan(&n)
-	return n, err
+// rowsQuerier is a database or a transaction.
+type rowsQuerier interface {
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 }
 
-func deleteMoveCredential(ctx context.Context, tx *sql.Tx, kind string) error {
-	_, err := tx.ExecContext(ctx, "DELETE FROM move_credentials WHERE kind = ?", kind)
+// moveRows lists the saved credentials for kind, newest first.
+func moveRows(ctx context.Context, q rowsQuerier, kind string) ([]moveRow, error) {
+	rows, err := q.QueryContext(ctx, "SELECT address, secret_id FROM move_credentials WHERE kind = ? ORDER BY created_at DESC, secret_id DESC", kind)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []moveRow
+	for rows.Next() {
+		var m moveRow
+		if err := rows.Scan(&m.address, &m.secretID); err != nil {
+			return nil, err
+		}
+		out = append(out, m)
+	}
+	return out, rows.Err()
+}
+
+func deleteMoveCredential(ctx context.Context, tx *sql.Tx, kind, address string) error {
+	_, err := tx.ExecContext(ctx, "DELETE FROM move_credentials WHERE kind = ? AND address = ?", kind, address)
 	return err
 }
 
@@ -45,7 +65,24 @@ func downloaderID(ctx context.Context, q database.Querier, adapter, addr, name s
 	var id int64
 	err := q.QueryRowContext(ctx, `SELECT id FROM downloaders WHERE removed = 0 AND adapter = ? AND (url = ? OR name = ? COLLATE NOCASE)
 		ORDER BY url = ? DESC, id LIMIT 1`, adapter, addr, name, addr).Scan(&id)
-	return id, err
+	if !errors.Is(err, sql.ErrNoRows) {
+		return id, err
+	}
+	// The same app at another path (http://sab:8080/sabnzbd) is the same Downloader.
+	l, ok := q.(database.Lister)
+	if !ok {
+		return 0, err
+	}
+	have, serr := database.Select[domain.Downloader](ctx, l, "downloaders", "removed = 0 AND adapter = ? ORDER BY id", adapter)
+	if serr != nil {
+		return 0, serr
+	}
+	for _, h := range have {
+		if domain.SameClient(h, domain.Downloader{Adapter: adapter, URL: addr}) {
+			return h.ID, nil
+		}
+	}
+	return 0, err
 }
 
 func mediaServerID(ctx context.Context, q database.Querier, kind, addr, name string) (int64, error) {

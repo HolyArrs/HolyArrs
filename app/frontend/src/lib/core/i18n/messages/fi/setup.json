@@ -1,0 +1,17 @@
+{
+	"setup.reconnect": "Yhdistä uudelleen",
+	"setup.testNow": "Testaa nyt",
+	"setup.movies": "Elokuvat",
+	"setup.tvShows": "Sarjat",
+	"setup.music": "Musiikki",
+	"setup.subtitles": "Tekstitykset",
+	"setup.fullPath": "Käytä kansion koko polkua, esimerkiksi {path}.",
+	"setup.folderUsed": "Tämä kansio on jo käytössä tai sijaitsee käytössä olevan kansion sisällä.",
+	"setup.folderMissing": "Kansiota ei ole. Tarkista polku.",
+	"setup.addFolderOrOff": "Lisää kansio tai poista tämä käytöstä.",
+	"setup.notAnswering": "HolyArrs ei vastaa. Yritä hetken kuluttua uudelleen.",
+	"setup.addUserPasswordHint": "Lisää käyttäjätunnus ja salasana.",
+	"setup.folders": "Kansiot",
+	"setup.downloader": "Lataaja",
+	"setup.source": "Lähde"
+}

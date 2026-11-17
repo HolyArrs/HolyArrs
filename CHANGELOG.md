@@ -2,6 +2,293 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.1.4
+
+### Added
+
+- Remove a request in any state, or clear all failed or finished ones. ([#365](https://github.com/HolyArrs/HolyArrs/issues/365))
+- Friends' Plex watchlists are read again. ([#343](https://github.com/HolyArrs/HolyArrs/issues/343))
+
+### Changed
+
+- A folder's quality is a row on its card that shows the real value. ([#344](https://github.com/HolyArrs/HolyArrs/issues/344))
+- Buttons, titles, switches and hints use one size across Settings, Explore and the Library.
+- The image sizes in the README are the ones Docker Hub shows.
+
+### Fixed
+
+- An owner who set up with Plex, Jellyfin or Emby can make protected changes after signing in again. ([#364](https://github.com/HolyArrs/HolyArrs/issues/364))
+- Setting a first password needs a fresh sign-in; an API key can no longer set one. ([#364](https://github.com/HolyArrs/HolyArrs/issues/364))
+- Shows, movies and artists with an apostrophe in the name match their releases again. ([#369](https://github.com/HolyArrs/HolyArrs/issues/369))
+- An episode airing later today no longer reads Yesterday for viewers ahead of the show's time zone. ([#368](https://github.com/HolyArrs/HolyArrs/issues/368))
+
+### Thanks
+
+Thanks to [@Nviviri](https://github.com/HolyArrs/HolyArrs/issues/369), who found the cause, and to roychassi and Lunim on Discord.
+
+## 1.1.3
+
+### Added
+
+- Each Library folder can have its own quality. ([#344](https://github.com/HolyArrs/HolyArrs/issues/344))
+- Import a library has Select all. ([#346](https://github.com/HolyArrs/HolyArrs/issues/346))
+
+### Changed
+
+- Library stats says "Unreadable files" and explains why.
+
+### Fixed
+
+- Skip sign-in at home: the password prompt has a way to a real sign-in. ([#353](https://github.com/HolyArrs/HolyArrs/issues/353))
+- The size on the Library list drops when a smaller copy replaces a file. ([#347](https://github.com/HolyArrs/HolyArrs/issues/347))
+- A show no longer picks up another show's picture, name or episodes. ([#342](https://github.com/HolyArrs/HolyArrs/issues/342))
+- Shows from Sonarr with a wrong TMDB number import by their IMDb id or name. ([#339](https://github.com/HolyArrs/HolyArrs/issues/339))
+- A season's Next date matches its episode in every time zone. ([#355](https://github.com/HolyArrs/HolyArrs/issues/355))
+- A season counts every episode that has a file, and an episode with a file never says Not out yet. ([#358](https://github.com/HolyArrs/HolyArrs/issues/358))
+- Undo this import counts only what that import added. ([#349](https://github.com/HolyArrs/HolyArrs/issues/349))
+- Downloads names the same person in the list and the side pane. ([#350](https://github.com/HolyArrs/HolyArrs/issues/350))
+- A toast over an open sheet stays readable. ([#351](https://github.com/HolyArrs/HolyArrs/issues/351))
+- Sort & filter on the Library works in Safari. ([#340](https://github.com/HolyArrs/HolyArrs/issues/340))
+- More toast and History lines show in your language. ([#352](https://github.com/HolyArrs/HolyArrs/issues/352))
+- The request sheet turns off seasons that are already fully in the Library. ([#360](https://github.com/HolyArrs/HolyArrs/issues/360))
+
+### Thanks
+
+Thanks to [@zaldev](https://github.com/HolyArrs/HolyArrs/issues/339), [@ArBohe](https://github.com/HolyArrs/HolyArrs/issues/340), [@stormbyte](https://github.com/HolyArrs/HolyArrs/issues/358), [@johngully](https://github.com/HolyArrs/HolyArrs/issues/360), Lunim, Killjoy.69 and Bastien on Discord, and u/Agreeable_Mirror2257 on Reddit.
+
+## 1.1.2
+
+### Changed
+
+- The image is smaller to download: about 16.1 MB, down from 18.6 MB.
+
+### Fixed
+
+- Members can request seasons of a show that is already in the Library. ([#338](https://github.com/HolyArrs/HolyArrs/issues/338))
+
+### Thanks
+
+Thanks to [@johngully](https://github.com/HolyArrs/HolyArrs/issues/338) for the report.
+
+## 1.1.1
+
+### Added
+
+- Knaben, TorrentsCSV, SubsPlease and IPTorrents work without Prowlarr. ([#289](https://github.com/HolyArrs/HolyArrs/issues/289))
+- Ask for shows in 4K, and pick a quality when you ask. ([#293](https://github.com/HolyArrs/HolyArrs/issues/293)) ([#335](https://github.com/HolyArrs/HolyArrs/issues/335))
+- Profilarr can send its formats, profiles and settings to HolyArrs. ([#279](https://github.com/HolyArrs/HolyArrs/issues/279))
+- Leftover files show up, and you can match them to episodes. ([#284](https://github.com/HolyArrs/HolyArrs/issues/284))
+- Import a library has the Library's four views and big posters. ([#324](https://github.com/HolyArrs/HolyArrs/issues/324))
+- Library stats sits in the Library menu. ([#321](https://github.com/HolyArrs/HolyArrs/issues/321))
+- qBittorrent: category after import, others' torrents left alone, subtitles come along. ([#292](https://github.com/HolyArrs/HolyArrs/issues/292))
+- Old-app formats come over with exact scores; tags pick each title's Sources. ([#291](https://github.com/HolyArrs/HolyArrs/issues/291))
+- Set the listen port with HOLYARRS_PORT or HOLYARRS_ADDR. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+
+### Fixed
+
+- People from Seerr keep their Plex, Jellyfin or Emby sign-in. ([#334](https://github.com/HolyArrs/HolyArrs/issues/334))
+- Import members reads people from Plex again. ([#341](https://github.com/HolyArrs/HolyArrs/issues/341))
+- Requests from Seerr show real names, years and posters. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- An approval that adds nothing says why. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- Posters view stays light in big libraries, Safari too. ([#328](https://github.com/HolyArrs/HolyArrs/issues/328))
+- Rename files no longer reads every file first. ([#332](https://github.com/HolyArrs/HolyArrs/issues/332))
+- Episodes count as missing only after they air. ([#320](https://github.com/HolyArrs/HolyArrs/issues/320))
+- Movies under a translated name import; by-hand import can replace files. ([#308](https://github.com/HolyArrs/HolyArrs/issues/308))
+- Downloads left on a removed Downloader re-link, or can be removed. ([#309](https://github.com/HolyArrs/HolyArrs/issues/309))
+- A grab that never reaches a Downloader says so, never Sent. ([#310](https://github.com/HolyArrs/HolyArrs/issues/310))
+- SABnzbd downloads import with the episodes they were grabbed for. ([#312](https://github.com/HolyArrs/HolyArrs/issues/312))
+- A path pair with the same folder twice gets a note. ([#265](https://github.com/HolyArrs/HolyArrs/issues/265))
+- A torrent the client already holds is followed when picked. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- A refused import shows why and offers Import files by hand. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- Downloads keeps its bar and tabs while the list loads. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- Season packs are found, likely fakes skipped, stuck choices replaceable. ([#307](https://github.com/HolyArrs/HolyArrs/issues/307))
+- Feed checks grab date-named daily episodes and say what they skip. ([#314](https://github.com/HolyArrs/HolyArrs/issues/314))
+- A failed Source test stays failed after a reload. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- Backup alerts stop once backups are off. ([#318](https://github.com/HolyArrs/HolyArrs/issues/318))
+- Metadata set to Off raises no alerts. ([#326](https://github.com/HolyArrs/HolyArrs/issues/326))
+- A slow metadata server reads as slow, not down. ([#325](https://github.com/HolyArrs/HolyArrs/issues/325))
+- Folders HolyArrs can't see come over as wanted, or stay behind. ([#238](https://github.com/HolyArrs/HolyArrs/issues/238))
+- Confirming your password goes on with the import. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- Settings tabs wrap on phones instead of hiding. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- The sign-in language button is bigger on touch screens. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- Long toasts wrap instead of being cut off. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+- Reworded hints are updated in all 44 languages. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+
+### Changed
+
+- Subtitle sites and subtitle searching start turned on. ([#322](https://github.com/HolyArrs/HolyArrs/issues/322))
+
+### Thanks
+
+Thanks to everyone who reported, tested and asked for these: [@eddoww](https://github.com/HolyArrs/HolyArrs/issues/289), [@JulianAtkins](https://github.com/HolyArrs/HolyArrs/issues/318), [@stormbyte](https://github.com/HolyArrs/HolyArrs/issues/284), GreyJoshy94 on Discord, [@mandopatriot](https://github.com/HolyArrs/HolyArrs/issues/279), [@mimedo](https://github.com/HolyArrs/HolyArrs/issues/291#issuecomment-6816138650), [@danielbaercgn](https://github.com/HolyArrs/HolyArrs/issues/308), [@stevelucky](https://github.com/HolyArrs/HolyArrs/issues/309), [@Nviviri](https://github.com/HolyArrs/HolyArrs/issues/314), [@zhu327](https://github.com/HolyArrs/HolyArrs/issues/325#issuecomment-6854023071), [@nevpeek](https://github.com/HolyArrs/HolyArrs/issues/324), [@p5y6ry52pt-hue](https://github.com/HolyArrs/HolyArrs/issues/328), [@sparecycles-dev](https://github.com/HolyArrs/HolyArrs/issues/332), Lunim, Mr_Mennens_Tech, roychassi and tekhop on Discord, and u/Blegrand15 on Reddit.
+
+## 1.1.0
+
+### Added
+
+- HolyArrs speaks 44 languages, right-to-left included. ([#280](https://github.com/HolyArrs/HolyArrs/issues/280))
+- aria2 works as a Downloader for torrents and magnets. ([#233](https://github.com/HolyArrs/HolyArrs/issues/233))
+- Alerts reach Telegram, ntfy, Gotify, Pushover or a webhook. ([#151](https://github.com/HolyArrs/HolyArrs/issues/151)) ([#203](https://github.com/HolyArrs/HolyArrs/issues/203))
+- Pulsarr and Plex friends' watchlists can become requests. ([#200](https://github.com/HolyArrs/HolyArrs/issues/200))
+- Hide titles and genres you pick from Explore and search. ([#121](https://github.com/HolyArrs/HolyArrs/issues/121))
+- Titles and synopses show in each person's language. ([#270](https://github.com/HolyArrs/HolyArrs/issues/270))
+- Pick a show's episode order: aired, DVD or original. ([#204](https://github.com/HolyArrs/HolyArrs/issues/204))
+- A Library stats page shows file types and who watched what. ([#214](https://github.com/HolyArrs/HolyArrs/issues/214))
+- Change a Library folder's path without importing again. ([#275](https://github.com/HolyArrs/HolyArrs/issues/275))
+- Library and Calendar views follow you to every device. ([#273](https://github.com/HolyArrs/HolyArrs/issues/273))
+- Library import shows posters while it scans. ([#305](https://github.com/HolyArrs/HolyArrs/issues/305))
+- Season packs download a few episodes at a time, in order. ([#193](https://github.com/HolyArrs/HolyArrs/issues/193))
+- Remove torrents after seeding, with an optional dead torrent rule. ([#196](https://github.com/HolyArrs/HolyArrs/issues/196))
+- Search follows each Version's audio languages and reads 18 more. ([#202](https://github.com/HolyArrs/HolyArrs/issues/202))
+- Sources can be turned off if you add downloads by hand. ([#278](https://github.com/HolyArrs/HolyArrs/issues/278))
+- Skip sign-in on your home network or listed addresses. ([#262](https://github.com/HolyArrs/HolyArrs/issues/262))
+- Run without the HolyArrs metadata server. ([#206](https://github.com/HolyArrs/HolyArrs/issues/206))
+- Use your own metadata keys or server. ([#222](https://github.com/HolyArrs/HolyArrs/issues/222))
+- Backups can be turned off. ([#261](https://github.com/HolyArrs/HolyArrs/issues/261))
+- The qBittorrent step takes an API key or a user name. ([#260](https://github.com/HolyArrs/HolyArrs/issues/260))
+- A smaller download, even with 44 languages. ([#281](https://github.com/HolyArrs/HolyArrs/issues/281))
+- An experimental native Synology package is attached to this release. ([#294](https://github.com/HolyArrs/HolyArrs/issues/294))
+- Three more subtitle sites: YIFY Subtitles, TVsubtitles and BSPlayer. ([#290](https://github.com/HolyArrs/HolyArrs/issues/290))
+- Translate subtitles with your own AI key. ([#218](https://github.com/HolyArrs/HolyArrs/issues/218))
+
+### Fixed
+
+- Tapping Explore on a phone no longer opens the keyboard. ([#282](https://github.com/HolyArrs/HolyArrs/issues/282))
+- Clearly named episode files import. ([#272](https://github.com/HolyArrs/HolyArrs/issues/272))
+- A second movie copy by quality imports. ([#274](https://github.com/HolyArrs/HolyArrs/issues/274))
+- Music releases with disc counts in the name are read right. ([#269](https://github.com/HolyArrs/HolyArrs/issues/269))
+- Adding a show links the files already in its folder. ([#298](https://github.com/HolyArrs/HolyArrs/issues/298))
+- Shows added from TVMaze work. ([#296](https://github.com/HolyArrs/HolyArrs/issues/296))
+- TVMaze posters load. ([#297](https://github.com/HolyArrs/HolyArrs/issues/297))
+- Big Library imports, 2,700+ folders, show their results. ([#306](https://github.com/HolyArrs/HolyArrs/issues/306))
+- RAR releases with a Sample folder are no longer called fake. ([#249](https://github.com/HolyArrs/HolyArrs/issues/249))
+- Downloads let go once another app took the files. ([#257](https://github.com/HolyArrs/HolyArrs/issues/257))
+- Failed Usenet clears after import are tried again. ([#276](https://github.com/HolyArrs/HolyArrs/issues/276))
+- A by-hand move says copied when the file was copied. ([#277](https://github.com/HolyArrs/HolyArrs/issues/277))
+- Searches drop apostrophes, so "Schitt's Creek" finds releases. ([#271](https://github.com/HolyArrs/HolyArrs/issues/271))
+- A search with no title never reaches a Source. ([#307](https://github.com/HolyArrs/HolyArrs/issues/307))
+- Key kit and backup downloads explain a missing password. ([#283](https://github.com/HolyArrs/HolyArrs/issues/283))
+- Placeholders and turned-off controls are easier to read. ([#300](https://github.com/HolyArrs/HolyArrs/issues/300))
+- Settings pages no longer squeeze their columns. ([#304](https://github.com/HolyArrs/HolyArrs/issues/304))
+- Settings search no longer crashes. ([#268](https://github.com/HolyArrs/HolyArrs/issues/268))
+- Subtitles stop looking for titles removed from the Library. ([#285](https://github.com/HolyArrs/HolyArrs/issues/285))
+
+### Changed
+
+- Big rTorrent seedboxes get much lighter background reads. ([#266](https://github.com/HolyArrs/HolyArrs/issues/266))
+
+### Docs
+
+- The install guide starts with one /data folder. ([#264](https://github.com/HolyArrs/HolyArrs/issues/264))
+- Proxy variables and why HolyArrs ignores them. ([#267](https://github.com/HolyArrs/HolyArrs/issues/267))
+
+## 1.0.19
+
+### Added
+
+- rTorrent and ruTorrent work as a Downloader, seedboxes too. ([#199](https://github.com/HolyArrs/HolyArrs/issues/199))
+
+### Fixed
+
+- Finished Usenet downloads move into the Library, and copies write each file once. ([#240](https://github.com/HolyArrs/HolyArrs/issues/240))
+- Downloads tabs count every torrent, and Show more works under each filter. ([#245](https://github.com/HolyArrs/HolyArrs/issues/245))
+- Free space on Downloads matches what qBittorrent and SABnzbd report. ([#246](https://github.com/HolyArrs/HolyArrs/issues/246))
+- A shared SABnzbd no longer asks you to match other apps' downloads. ([#248](https://github.com/HolyArrs/HolyArrs/issues/248))
+
+## 1.0.18
+
+### Added
+
+- A Minimal look with small posters and no big photos or autoplay. ([#119](https://github.com/HolyArrs/HolyArrs/issues/119))
+
+### Fixed
+
+- Anime that TMDB keeps as one long season gets its second half too. ([#234](https://github.com/HolyArrs/HolyArrs/issues/234))
+- Grabs from sites behind Cloudflare, like NZBFinder, go through. ([#231](https://github.com/HolyArrs/HolyArrs/issues/231))
+- A Library folder can be removed once no title uses it. ([#235](https://github.com/HolyArrs/HolyArrs/issues/235))
+- Changing good enough on a quality set re-checks your Library. ([#236](https://github.com/HolyArrs/HolyArrs/issues/236))
+- The Home downloads card counts torrents your old apps added. ([#237](https://github.com/HolyArrs/HolyArrs/issues/237))
+- Importing from old apps checks folder paths and brings over wanted titles. ([#238](https://github.com/HolyArrs/HolyArrs/issues/238))
+- Rescan links files in a show's folder by season and episode. ([#241](https://github.com/HolyArrs/HolyArrs/issues/241))
+- An empty Library shows the right add button on each page. ([#208](https://github.com/HolyArrs/HolyArrs/issues/208))
+
+## 1.0.17
+
+### Added
+
+- The Library sorts by Score, and shows each title's score while you do. ([#139](https://github.com/HolyArrs/HolyArrs/issues/139))
+
+## 1.0.16
+
+### Added
+
+- Pick rules can score a release by its size, and TRaSH Guides size entries now sync. ([#201](https://github.com/HolyArrs/HolyArrs/issues/201))
+
+### Fixed
+
+- Importing two copies of the same app, like two Sonarrs, keeps both instead of replacing the first. ([#165](https://github.com/HolyArrs/HolyArrs/issues/165))
+
+### Docs
+
+- A new page lists every outside address HolyArrs contacts, what for, and how to turn it off or point it elsewhere. ([#222](https://github.com/HolyArrs/HolyArrs/issues/222))
+
+## 1.0.15
+
+### Added
+
+- Library folders can mark copying as expected, so a setup without hardlinks stops asking for attention. ([#223](https://github.com/HolyArrs/HolyArrs/issues/223))
+
+### Fixed
+
+- Grabs from Newznab sites like NZBgeek keep the site's own download key. ([#216](https://github.com/HolyArrs/HolyArrs/issues/216))
+- Sources send a HolyArrs User-Agent, so sites behind Cloudflare stop blocking searches. ([#209](https://github.com/HolyArrs/HolyArrs/issues/209))
+- Torrents from magnet-only indexers through Prowlarr or Jackett reach the downloader as magnets. ([#194](https://github.com/HolyArrs/HolyArrs/issues/194))
+- The Docker Compose example uses a lowercase project name, so it starts. ([#195](https://github.com/HolyArrs/HolyArrs/issues/195))
+
+## 1.0.14
+
+### Fixed
+
+- Sources imported from Prowlarr get Prowlarr's API key, so they search instead of failing with 401. ([#221](https://github.com/HolyArrs/HolyArrs/issues/221))
+
+## 1.0.13
+
+### Fixed
+
+- The Settings search box reads as an action in every language, for example "Cerca nelle impostazioni" in Italian.
+- Card labels such as New movie, New show, New season and New episodes are translated in all 16 languages.
+- Italian reads more naturally: word order and many literal translations fixed.
+
+## 1.0.12
+
+### Fixed
+
+- Importing from other apps no longer stops with "the plan changed since its dry run". ([#205](https://github.com/HolyArrs/HolyArrs/issues/205))
+- A download finishes when the same file is already in place, for example after Sonarr or Radarr got there first. ([#207](https://github.com/HolyArrs/HolyArrs/issues/207))
+- The poster wall shows trending movies while your Library has no posters yet. ([#215](https://github.com/HolyArrs/HolyArrs/issues/215))
+
+## 1.0.11
+
+### Added
+
+- HolyArrs now speaks 16 languages, the same as HolyArrs.com and the docs. Italian, Dutch, Polish and Turkish are new.
+- More server messages show in your language: import results, History rows and Music row captions.
+
+### Fixed
+
+- Deleting a title never asks you to type its name; deleted files always go to the holding folder. ([#187](https://github.com/HolyArrs/HolyArrs/issues/187))
+
+## 1.0.10
+
+### Added
+
+- Titles on a Plex watchlist become requests. The owner can turn it on for everyone who signs in with Plex. ([#30](https://github.com/HolyArrs/HolyArrs/issues/30))
+- Each downloader can use its own category for movies, shows and music. ([#184](https://github.com/HolyArrs/HolyArrs/issues/184))
+
+### Fixed
+
+- A new install no longer logs "Metadata server is down" while Explore fills in. ([#191](https://github.com/HolyArrs/HolyArrs/issues/191))
+
 ## 1.0.9
 
 ### Added

@@ -308,8 +308,18 @@ func TestM1MigrationsAreAddOnly(t *testing.T) {
 		// TestAlertsKeptByMoreAppsMigration proves no Alert is lost.
 		// 0095 rebuilds move_credentials to add overseerr, qbittorrent and
 		// sabnzbd; TestMoveCredentialsKeptByAllAppsMigration proves no row is lost.
+		// 0102 rebuilds move_credentials to keep one key per address;
+		// TestMoveCredentialsPerAddressMigration proves no key is lost.
+		// 0103 rebuilds own_traits to add the size kind;
+		// TestOwnTraitsKeptBySizeMigration proves no trait or id is lost.
+		// 0106 rebuilds downloaders to add the rtorrent adapter;
+		// TestDownloadersKeptByRTorrentMigration proves no row is lost.
+		// 0109 rebuilds downloaders to add the aria2 adapter;
+		// TestDownloadersKeptByAria2Migration proves no row is lost.
+		// 0121 rebuilds sources to add the site format;
+		// TestSourcesKeptBySiteMigration proves no Source or id is lost.
 		if m.Version < 7 || m.Version == 8 || m.Version == 19 || m.Version == 21 || m.Version == 23 || m.Version == 25 || m.Version == 42 || m.Version == 82 ||
-			m.Version == 84 || m.Version == 95 {
+			m.Version == 84 || m.Version == 95 || m.Version == 102 || m.Version == 103 || m.Version == 106 || m.Version == 109 || m.Version == 121 {
 			continue
 		}
 		up := strings.ToUpper(m.SQL)

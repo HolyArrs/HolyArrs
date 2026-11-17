@@ -39,7 +39,7 @@ test('Import a library scans the show folder, lists each file with its episodes,
 	await page.getByRole('button', { name: 'Scan', exact: true }).click();
 	const plan = page.getByTestId('adopt-plan');
 	await expect(plan).toBeVisible({ timeout: 30_000 });
-	const quarry = plan.getByTestId('group-matched').locator('li.folder').filter({ hasText: 'Quarry Bells (2021)' });
+	const quarry = plan.locator('[data-testid="import-item"][data-status="matched"]').filter({ hasText: 'Quarry Bells (2021)' });
 	await expect(quarry).toContainText('Quarry Bells (2021)');
 	await expect(quarry.getByRole('checkbox', { name: 'Adopt Quarry Bells (2021)' })).toBeChecked();
 	const list = quarry.getByTestId('show-files');

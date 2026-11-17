@@ -23,7 +23,7 @@ func TestShowsAPI(t *testing.T) {
 
 	do(t, "GET", u+"/shows/lookup", "", 400)
 	do(t, "GET", u+"/shows/lookup?term=lab&source=musicbrainz", "", 400)
-	do(t, "GET", u+"/shows/lookup?term=lab&source=tvdb", "", 400)
+	do(t, "GET", u+"/shows/lookup?term=lab&source=tvdb", "", 503)
 	var look struct {
 		Shows  []shows.ShowResult `json:"shows"`
 		Source string             `json:"source"`
@@ -36,12 +36,12 @@ func TestShowsAPI(t *testing.T) {
 	do(t, "POST", u+"/shows", `{}`, 400)
 	do(t, "POST", u+"/shows", `{"id":"tmdb:100","seasons":"pilot"}`, 400)
 	do(t, "POST", u+"/shows", `{"id":"tmdb:999"}`, 404)
-	do(t, "POST", u+"/shows", `{"id":"tvdb:200","details_source":"tvdb"}`, 400)
+	do(t, "POST", u+"/shows", `{"id":"tvdb:200","details_source":"tvdb"}`, 503)
 	var add addedShow
 	_ = json.Unmarshal(do(t, "POST", u+"/shows", `{"id":"tmdb:100","seasons":"latest","new_seasons":"none"}`, 201), &add)
 	sv := add.Title.Show
 	if add.Title.Kind != "show" || add.JobID == 0 || len(add.Title.Slots) != 0 || sv.DetailsSource != "tmdb" || sv.EpisodeOrder != "aired" ||
-		sv.SeasonChoice != "latest" || sv.NewSeasons != "none" || sv.Episodes != 5 || len(sv.Seasons) != 3 || sv.NotOutYet != 2 {
+		sv.SeasonChoice != "latest" || sv.NewSeasons != "none" || sv.Episodes != 4 || len(sv.Seasons) != 3 || sv.NotOutYet != 2 {
 		t.Fatalf("added %+v", add)
 	}
 	id := add.Title.ID
@@ -150,7 +150,9 @@ func TestShowSettingsAndEditAPI(t *testing.T) {
 	tu := fmt.Sprintf("%s/titles/%d", u, id)
 	do(t, "PUT", tu, `{"release_gate":"announced"}`, 400)
 	do(t, "PUT", tu, `{"episode_order":"dvd"}`, 400)
-	do(t, "PUT", tu, `{"details_source":"tvdb"}`, 400)
+	if b := string(do(t, "PUT", tu, `{"details_source":"tvdb"}`, 503)); !strings.Contains(b, "TVDB key") {
+		t.Fatalf("switching to TVDB without a key should name the key: %s", b)
+	}
 	do(t, "PUT", tu, `{"details_source":"plex"}`, 400)
 	var edited struct {
 		Title struct {

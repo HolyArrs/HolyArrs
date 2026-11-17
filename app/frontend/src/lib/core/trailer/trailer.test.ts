@@ -35,6 +35,11 @@ describe('mayAutoplay', () => {
 		expect(mayAutoplay({ ...base, phone: false })).toBe(true);
 		for (const t of ['slow-2g', '2g', '3g']) expect(mayAutoplay({ ...base, effectiveType: t })).toBe(false);
 	});
+	it('never plays in the minimal look, even when the person picked always', () => {
+		expect(mayAutoplay({ ...base, minimal: true })).toBe(false);
+		expect(mayAutoplay({ ...base, minimal: true, pref: 'always' })).toBe(false);
+		expect(mayAutoplay({ ...base, minimal: false, pref: 'always' })).toBe(true);
+	});
 });
 
 describe('dwell', () => {

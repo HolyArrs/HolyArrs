@@ -30,6 +30,7 @@ func (a *handlers) wireExplore() {
 	e.KnownRating = a.knownRating
 	e.LookupRating = a.lookupRating
 	e.QueueCardArt = e.Cards.QueuePool
+	e.LookupsOff = func() bool { return a.s.MetadataModes != nil && a.s.MetadataModes.Current() == metadata.ModeOff }
 }
 
 // StartExplore starts the Explore pool job (discover.Explore) and the
@@ -54,7 +55,7 @@ func (a *handlers) StartExplore(ctx context.Context) {
 // newDiscover builds the Explore handlers on this API's cache and glue.
 func (a *handlers) newDiscover() *discover.Handlers {
 	cards := &a.explore.Cards
-	return &discover.Handlers{Deps: discover.Deps{Store: a.s.Store, Metadata: a.s.Metadata, Secrets: a.s.Secrets, TraktBase: a.s.TraktBase,
+	return &discover.Handlers{Deps: discover.Deps{Store: a.s.Store, Metadata: a.s.Metadata, Secrets: a.s.Secrets, TraktBase: a.s.TraktBase, Modes: a.s.MetadataModes,
 		Cache: &a.discover, Explore: &a.explore, KidMax: a.kidMax, UserID: func(r *http.Request) int64 { return a.person(r).UserID }, Actor: actor,
 		PartOn: a.partIsOn, Parts: a.s.Parts, TitleAllowed: a.titleAllowed, LibraryRating: a.libraryRating, KidItems: a.kidItems,
 		CardFresh: func(ctx context.Context, it metadata.DiscoverItem, titleID int64) (*engine.Fresh, error) {

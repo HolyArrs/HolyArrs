@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer/unrar"
 	"github.com/bodgit/sevenzip"
@@ -97,6 +98,10 @@ func ppmdReader(p []byte, size uint64, rs []io.ReadCloser) (io.ReadCloser, error
 	}
 	if size > 1<<50 {
 		return nil, fmt.Errorf("%w: PPMd size", unrar.ErrCorrupt)
+	}
+	// The decoder counts in int: on a 32-bit build a bigger file would wrap.
+	if size > uint64(math.MaxInt) {
+		return nil, fmt.Errorf("%w: a %d MB PPMd file is too big for this 32-bit build", unrar.ErrUnrecognised, size>>20)
 	}
 	r, err := ppmd.NewH7zReader(rs[0], int(p[0]), int(mem), int(size))
 	if err != nil {

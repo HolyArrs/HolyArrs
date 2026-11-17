@@ -49,6 +49,7 @@
 	"welcome.userName": "用户名",
 	"welcome.apiKeyLabel": "API 密钥",
 	"welcome.passwordLabel": "密码",
+	"welcome.secretTokenLabel": "密钥令牌",
 	"welcome.save": "保存",
 	"welcome.connect": "连接 {name}",
 	"welcome.continue": "继续",

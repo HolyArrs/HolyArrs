@@ -13,6 +13,7 @@
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { proxied, sized } from '../core/tmdb-image.ts';
+	import { minimalLook } from '../core/look.svelte.ts';
 	import { autoplayHere, loadUISettings, trailerSources, type TrailerSource } from '../core/trailer/autoplay.svelte.ts';
 	import { fromHandoff, openTheater } from '../core/trailer/theater.svelte.ts';
 	import { THEATER_GROW_MS } from '../core/motion.ts';
@@ -93,8 +94,8 @@
 	const followTarget = $derived<FollowTarget | null>(followId && kind === 'show' ? { titleId: followId } : followTmdb ? { tmdb, kind } : null);
 	const showing = $derived(playing && !held);
 	const pic = $derived(image ?? (meta?.backdrop ? sized(meta.backdrop, 'backdrop') || null : null));
-	// Only TMDB sizes have a bigger variant to swap in.
-	const big = $derived(pic && /\/artwork\/tmdb\/w(?:300|780)\//.test(pic) ? pic.replace(/\/w(?:300|780)\//, '/w1280/') : null);
+	// Only TMDB sizes have a bigger variant to swap in. The minimal look keeps the card's own picture.
+	const big = $derived(!minimalLook() && pic && /\/artwork\/tmdb\/w(?:300|780)\//.test(pic) ? pic.replace(/\/w(?:300|780)\//, '/w1280/') : null);
 	const shownLogo = $derived(logoFailed ? null : logo ? logo : meta?.logo ? sized(meta.logo, 'poster') : null);
 	const facts = $derived(growFacts({ kind, year: meta?.year ?? year, seasons: meta?.seasons, runtime: meta?.runtime, certification: meta?.certification, score: meta?.score }));
 	const tags = $derived(fitTags(meta?.moods, meta?.genres));
@@ -287,7 +288,7 @@
 		{/if}
 		<span class="scrim" class:playing={showing} aria-hidden="true"></span>
 		{#if shownLogo}<span class="name" class:lifted class:playing={showing} aria-hidden="true"><img class="logo" src={shownLogo} alt="" onerror={() => (logoFailed = true)} /></span>
-		{:else}<span class="name" class:lifted class:playing={showing} aria-hidden="true"><span class="word">{title}</span></span>{/if}
+		{:else}<span class="name" class:lifted class:playing={showing} aria-hidden="true"><span class="word" dir="auto">{title}</span></span>{/if}
 		{#if badge && g}<span class="badge" class:playing={showing}>{@render badge()}</span>{/if}
 	</a>
 	<div class="panel">
@@ -320,6 +321,8 @@
 		transform-origin: 0 0;
 		visibility: hidden;
 	}
+	/* Minimal: a lighter shadow. */
+	:global(html[data-look='minimal']) .ui-grow { --grow-shadow: 0 8px 24px rgb(0 0 0 / 0.22); }
 	.ui-grow.shown { visibility: visible; }
 	.media { position: relative; display: block; container-type: inline-size; aspect-ratio: var(--wide-ratio, 16 / 9); background: var(--surface-2); overflow: hidden; }
 	.media > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -347,14 +350,14 @@
 	.buttons { display: flex; align-items: center; gap: 8px; min-width: 0; }
 	.buttons :global(.ui-ibtn.glass) { background: var(--text); color: var(--surface-1); box-shadow: none; }
 	.buttons :global(.ui-ibtn.glass:hover) { background: color-mix(in srgb, var(--text) 85%, var(--surface-1)); }
-	.more { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--text); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--text) 40%, transparent); transition: box-shadow var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
+	.more { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: var(--text); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--text) 40%, transparent); transition: box-shadow var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
 	.more:hover { box-shadow: inset 0 0 0 2px var(--text); background: var(--surface-2); }
 	.more:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.more.bell.on { background: var(--text); color: var(--bg); box-shadow: none; }
 	.more.info { margin-left: auto; }
 	/* Only one state button shows even if the action slot adds its own. */
 	.buttons :global(.state:not(:first-child)) { display: none; }
-	.buttons :global(.ui-ibtn) { width: 40px; height: 40px; flex: none; }
+	.buttons :global(.ui-ibtn) { width: 36px; height: 36px; flex: none; }
 	.buttons :global(.ui-ibtn:focus-visible) { outline: none; box-shadow: var(--focus-ring); }
 	.title { margin: 2px 0 -4px; font: var(--t-headline); letter-spacing: -0.01em; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.facts, .tags, .ctx { min-height: 18px; }

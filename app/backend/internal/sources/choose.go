@@ -10,11 +10,13 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
@@ -94,6 +96,10 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 	}
 	if slotID == 0 {
 		if len(rel.MatchedSlotIDs) == 0 {
+			// Picked from an album's Choose a release although its name matched no album: it goes to that album, with force.
+			if ids, album := s.albumSearchSlots(ctx, rel); len(ids) > 0 {
+				return s.chooseMany(ctx, rel, ids, nil, true, force, []string{"its name did not match " + album + "; it was found searching for it"}, by)
+			}
 			return Choice{}, ErrNoSlot
 		}
 		slotID = rel.MatchedSlotIDs[0]
@@ -103,12 +109,13 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 				break
 			}
 		}
+		slotID = s.fittingVersion(ctx, rel, slotID)
 	}
 	c, err := s.loadSlot(ctx, slotID)
 	if err != nil {
 		return Choice{}, ErrNoSlot
 	}
-	if !canTakePick(c.sl.State) {
+	if !canTakePick(c.sl.State) && !StuckChoice(c.sl, time.Now()) {
 		return Choice{}, busyErr(c.sl.State)
 	}
 	ch := Choice{ReleaseID: rel.ID, SlotID: slotID, Warnings: []string{}}
@@ -154,6 +161,9 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 	// The state is read again inside the write, so a copy protected or a Slot taken since the check above stops the pick.
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 
+		if _, err := freeStuckChoiceTx(ctx, tx, slotID, by); err != nil {
+			return err
+		}
 		st, err := choiceStateTx(tx, slotID)
 		if err != nil {
 			return err
@@ -188,6 +198,49 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 		s.OnChosen(ctx, slotID, rel.ID)
 	}
 	return ch, nil
+}
+
+// fittingVersion returns the movie Slot a Release picked by hand should go to when no Slot was named: the given one when its Version's rules let the Release pass,
+// otherwise another Version's Slot of the same movie that does, so a 1080p Release never lands on the 4K Version. Anything unclear keeps the given Slot.
+func (s *Searcher) fittingVersion(ctx context.Context, rel domain.Release, slotID int64) int64 {
+	db := s.Store.Read()
+	if kind, _ := mediafiles.SlotKind(ctx, db, slotID); kind != "movie" {
+		return slotID
+	}
+	own, err := s.loadSlot(ctx, slotID)
+	if err != nil {
+		return slotID
+	}
+	slots, err := database.Select[mediafiles.Slot](ctx, db, "slots", "item_id = ? ORDER BY id", own.sl.ItemID)
+	if err != nil || len(slots) < 2 {
+		return slotID
+	}
+	bySlot, _ := rel.Verdict["by_slot"].(map[string]any)
+	fits := func(id int64) bool {
+		if turnedDownFor(rel, id) {
+			return false
+		}
+		c, err := s.loadSlot(ctx, id)
+		if err != nil || !canTakePick(c.sl.State) && !StuckChoice(c.sl, time.Now()) {
+			return false
+		}
+		if v, ok := bySlot[fmt.Sprint(id)].(map[string]any); ok {
+			if passed, ok := v["passed"].(bool); ok {
+				return passed
+			}
+		}
+		_, idx := mediafiles.StepOf(rel.Name, c.pr.Body)
+		return idx >= 0 && c.pr.Body.Steps[idx].Allowed
+	}
+	if fits(slotID) {
+		return slotID
+	}
+	for _, sl := range slots {
+		if sl.ID != slotID && fits(sl.ID) {
+			return sl.ID
+		}
+	}
+	return slotID
 }
 
 // TurnDown rejects a Release for every Slot it matched.
@@ -368,6 +421,16 @@ func canTakePick(st mediafiles.SlotState) bool {
 		(mediafiles.Transition(st, mediafiles.SlotChosen) == nil || mediafiles.Transition(st, mediafiles.SlotSearching) == nil)
 }
 
+// takesPick reports whether a Slot can be given a Release by hand now: its
+// state allows it, or its earlier choice is stuck (no Downloader took it).
+func (s *Searcher) takesPick(ctx context.Context, id int64) bool {
+	var sl mediafiles.Slot
+	if err := database.Get(ctx, s.Store.Read(), "slots", id, &sl); err != nil {
+		return false
+	}
+	return canTakePick(sl.State) || StuckChoice(sl, time.Now())
+}
+
 // busySlot reports whether a Slot already has work in flight.
 func busySlot(st mediafiles.SlotState) bool {
 	return st == mediafiles.SlotChosen || st == mediafiles.SlotDownloading || st == mediafiles.SlotImporting || st == mediafiles.SlotSearching
@@ -410,8 +473,7 @@ func (s *Searcher) packSlots(ctx context.Context, rel domain.Release) (out []int
 	}
 	jr := mediafiles.ReleaseFacts{Name: rel.Name, Parse: releasename.Parse(rel.Name, releasename.Hints{Size: rel.Size, Show: kind == "show", Music: kind == "artist"}), Size: rel.Size, Protocol: rel.Protocol}
 	for _, id := range rel.MatchedSlotIDs {
-		st, err := mediafiles.SlotStateOf(ctx, s.Store.Read(), id)
-		if err != nil || !canTakePick(mediafiles.SlotState(st)) || turnedDownFor(rel, id) {
+		if !s.takesPick(ctx, id) || turnedDownFor(rel, id) {
 			continue
 		}
 		if slotHasProtectedCopy(ctx, s.Store.Read(), id) {
@@ -490,13 +552,45 @@ func (s *Searcher) dangerousSeen(ctx context.Context) dangerousRels {
 func (s *Searcher) unprotectedSlots(ctx context.Context, rel domain.Release) []int64 {
 	var out []int64
 	for _, id := range rel.MatchedSlotIDs {
-		st, err := mediafiles.SlotStateOf(ctx, s.Store.Read(), id)
-		if err != nil || !canTakePick(mediafiles.SlotState(st)) || turnedDownFor(rel, id) || slotHasProtectedCopy(ctx, s.Store.Read(), id) {
+		if !s.takesPick(ctx, id) || turnedDownFor(rel, id) || slotHasProtectedCopy(ctx, s.Store.Read(), id) {
 			continue
 		}
 		out = append(out, id)
 	}
 	return out
+}
+
+// albumSearchSlots returns the tracks of the album whose search found the Release that can take a pick, in the Version searched, and the album's name. Tracks with a protected copy or a copy as good are left out. Anything unclear returns none.
+func (s *Searcher) albumSearchSlots(ctx context.Context, rel domain.Release) ([]int64, string) {
+	if rel.JobID == nil {
+		return nil, ""
+	}
+	db := s.Store.Read()
+	var job domain.Job
+	if err := database.Get(ctx, db, "jobs", *rel.JobID, &job); err != nil || job.Kind != jobs.KindSearchAlbum || job.Subject == nil || job.Subject.Type != "part" {
+		return nil, ""
+	}
+	vid, _ := job.Params["version_id"].(float64)
+	var part mediafiles.Part
+	if err := mediafiles.LoadPart(ctx, db, job.Subject.ID, &part); err != nil {
+		return nil, ""
+	}
+	slots, err := mediafiles.VersionSlotsOfPart(ctx, db, int64(vid), part.ID)
+	if err != nil {
+		return nil, ""
+	}
+	jr := mediafiles.ReleaseFacts{Name: rel.Name, Parse: releasename.Parse(rel.Name, releasename.Hints{Size: rel.Size, Music: true}), Size: rel.Size, Protocol: rel.Protocol}
+	var out []int64
+	for _, sl := range slots {
+		if !canTakePick(sl.State) && !StuckChoice(sl, time.Now()) || turnedDownFor(rel, sl.ID) || slotHasProtectedCopy(ctx, db, sl.ID) {
+			continue
+		}
+		if c, err := s.loadSlot(ctx, sl.ID); err != nil || c.cur != nil && !mediafiles.Gains(jr, c.pr.Body, c.cur) {
+			continue
+		}
+		out = append(out, sl.ID)
+	}
+	return out, part.Name
 }
 
 // episodeLabel names an episode as S01E02 for messages.
@@ -535,6 +629,9 @@ func (s *Searcher) chooseMany(ctx context.Context, rel domain.Release, slots []i
 	var took []int64
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 		for _, id := range slots {
+			if _, err := freeStuckChoiceTx(ctx, tx, id, by); err != nil {
+				return err
+			}
 			st, err := choiceStateTx(tx, id)
 			if err != nil {
 				return err

@@ -81,5 +81,5 @@
 "settings.naming.holding": "保留フォルダー",
 "settings.naming.clearOld": "古い保留ファイルを削除",
 "settings.naming.clearOldHint": "毎日自動で実行されます",
-"settings.naming.clearNow": "今すぐ削除"
+"settings.naming.clearNow": "削除"
 }

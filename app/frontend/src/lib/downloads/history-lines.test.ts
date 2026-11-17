@@ -1,6 +1,10 @@
 import { dayWord, episodeBits, eventText, fakeEpisodeName, plainWhy, resolutionOf, rowText } from './history-lines.ts';
 import { groupDownloads } from './history.ts';
 import { describe, expect, it } from 'vitest';
+import { lang } from '../core/i18n/i18n.svelte.ts';
+import { serverWords } from '../core/i18n/server-words.ts';
+import de from '../core/i18n/messages/de/server-lines.json';
+import en from '../core/i18n/messages/en/server-lines.json';
 import type { EventRecord } from '../core/types.ts';
 
 let id = 0;
@@ -46,6 +50,7 @@ describe('line 2', () => {
 		expect(eventText(ev('import_failed', { Data: { reason: 'no video file found' } }), ctx).line).toBe('No video file found');
 		expect(eventText(ev('import_rejected'), ctx).line).toBe('Nothing could be placed');
 		expect(plainWhy('no Release passed the Pick rules')).toBe('nothing good enough was found');
+		expect(plainWhy('not sent: no Usenet Downloader is set up')).toBe('not sent: no Usenet Downloader is set up');
 		expect(resolutionOf('Se7en.1995.1080p.BluRay')).toBe('1080p');
 		expect(resolutionOf('Dune.2160p.WEB')).toBe('4K');
 	});
@@ -54,6 +59,7 @@ describe('line 2', () => {
 			expect(eventText(ev(k, { Data: { ...d } }), ctx).line, k).not.toMatch(/will look|brings it|sending it|bringing it|in the Library$|^Sent to download|^Downloaded/);
 		expect(eventText(ev('download_sent', { Data: { release: 'Dune.2021.1080p.WEB' } }), ctx).line).toBe('1080p');
 		expect(eventText(ev('needs_decision', { Data: { reason: 'nothing could be placed; look at the import plan' } }), ctx).line).toBe('Nothing could be placed');
+		expect(eventText(ev('needs_decision', { Data: { reason: 'no file in the download matched an episode; match the files by hand' } }), ctx).line).toBe('No file in the download matched an episode');
 	});
 	it('never repeats the title', () => {
 		for (const k of ['title_added', 'gate_opened', 'title_refreshed', 'folder_scanned', 'ask_approved', 'album_changed', 'search_done', 'download_sent', 'import_done', 'title_removed', 'needs_decision', 'renamed', 'something_new'])
@@ -93,6 +99,14 @@ describe('asks', () => {
 		const no = eventText(ev('ask_turned_down', { Actor: { kind: 'user', id: 2 }, Data: { turned_down_by: 'home', note: 'already have it' } }), ctx);
 		expect([no.tag.word, no.line]).toEqual(['Turned down', 'home · Already have it']);
 	});
+	it('an approval that added nothing says so, with why', () => {
+		const slow = eventText(ev('ask_not_added', { title_name: undefined, TitleID: undefined, Summary: 'Dune (2021): could not add it, back in Waiting', Data: { slow: true, reason: 'the metadata server did not answer in time' } }), ctx);
+		expect([slow.name, slow.tag.word, slow.line]).toEqual(['Dune', 'Failed', 'Not added; back in Waiting · the metadata server did not answer in time']);
+		// Never the raw error with its address, also on lines written before.
+		const down = 'Not added; back in Waiting · the metadata server could not be reached';
+		expect(eventText(ev('ask_not_added', { Data: { down: true, reason: 'the metadata server could not be reached' } }), ctx).line).toBe(down);
+		expect(eventText(ev('ask_not_added', { Data: { slow: false, reason: 'TMDB: dial tcp 10.0.0.5:443: address refused by the network policy' } }), ctx).line).toBe(down);
+	});
 });
 
 describe('system rows', () => {
@@ -119,5 +133,20 @@ describe('system rows', () => {
 		]);
 		const t = rowText(row, ctx);
 		expect([t.tag.word, t.line]).toEqual(['Failed', 'Nothing could be placed']);
+	});
+});
+
+describe('stored reasons in another language', () => {
+	it('shows the refused-send and no-file reasons in German, even after the row capitalises them', () => {
+		const was = { value: lang.value, words: lang.words };
+		lang.value = 'de';
+		lang.words = { ...(en as Record<string, string>), ...(de as Record<string, string>) };
+		try {
+			expect(plainWhy('the Source has no such Release file')).toBe('die Quelle hat diese Release-Datei nicht');
+			expect(serverWords('The Source has no such Release file')).toBe('Die Quelle hat diese Release-Datei nicht');
+		} finally {
+			lang.value = was.value;
+			lang.words = was.words;
+		}
 	});
 });

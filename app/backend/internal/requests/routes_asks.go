@@ -41,6 +41,7 @@ func (h *AskHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/asks/{id}", h.getAsk)
 	m.HandleFunc("GET /api/v1/asks/{id}/parts", h.askParts)
 	m.HandleFunc("DELETE /api/v1/asks/{id}", h.withdrawAsk)
+	m.HandleFunc("POST /api/v1/asks/remove", h.removeAsks)
 	m.HandleFunc("POST /api/v1/asks/{id}/approve", h.approveAsk)
 	m.HandleFunc("POST /api/v1/asks/{id}/turn-down", h.turnDownAsk)
 	m.HandleFunc("GET /api/v1/settings/asks", h.getAskSettings)
@@ -69,8 +70,12 @@ func (h *AskHandlers) askError(w http.ResponseWriter, err error) {
 		secs := int(time.Until(le.RetryAt).Seconds()) + 1
 		w.Header().Set("Retry-After", strconv.Itoa(max(secs, 1)))
 		webserver.WriteJSON(w, http.StatusTooManyRequests, map[string]any{"error": err.Error(), "retry_at": le.RetryAt, "per_week": le.PerWeek, "kind": le.Kind})
-	case errors.Is(err, ErrNotOpen), errors.Is(err, ErrAskedAgain):
+	case errors.Is(err, ErrNotAddedSlow):
+		webserver.Fail(w, http.StatusServiceUnavailable, err.Error())
+	case errors.Is(err, ErrNotOpen), errors.Is(err, ErrAskedAgain), errors.Is(err, ErrQualityTaken):
 		webserver.Fail(w, http.StatusConflict, err.Error())
+	case errors.Is(err, ErrQualityNotOffered), errors.Is(err, ErrQualityName), errors.Is(err, ErrQualityAllHidden):
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, ErrNotYours), errors.Is(err, ErrAboveLimit):
 		webserver.Fail(w, http.StatusForbidden, err.Error())
 	case errors.Is(err, ErrNoteLength), errors.Is(err, ErrPerWeek), errors.Is(err, ErrEmail), errors.Is(err, ErrDiscordID),
@@ -205,15 +210,23 @@ func (h *AskHandlers) makeAsk(w http.ResponseWriter, r *http.Request) {
 		Editions map[string]string `json:"editions"`
 		// Follow puts the title on the asker's calendar (default true).
 		Follow *bool `json:"follow"`
-		// FourK asks a movie for a 4K copy (approved apart from a plain ask).
+		// FourK asks a movie or show for a 4K copy (approved apart from a plain ask).
 		FourK bool `json:"four_k"`
+		// Quality picks a line of what people can ask for by id (standard,
+		// 4k; GET /asks/limit lists the ones the person may use). Empty:
+		// the 4K line with four_k, else the person's first line.
+		Quality string `json:"quality"`
 	}
 	if !webserver.Decode(w, r, &body, askHelp) {
 		return
 	}
-	if (len(body.Editions) > 0 && body.Kind != "artist") || (body.FourK && body.Kind != "" && body.Kind != "movie") {
+	if (len(body.Editions) > 0 && body.Kind != "artist") || ((body.FourK || body.Quality != "") && body.Kind == "artist") ||
+		(body.FourK && body.Quality != "" && body.Quality != QualityFourK) || len(body.Quality) > 40 {
 		webserver.Fail(w, http.StatusBadRequest, askHelp)
 		return
+	}
+	if body.FourK {
+		body.Quality = QualityFourK
 	}
 	// No one can ask for a title of a part that is off.
 	askKind := body.Kind
@@ -232,22 +245,14 @@ func (h *AskHandlers) makeAsk(w http.ResponseWriter, r *http.Request) {
 			webserver.Fail(w, http.StatusBadRequest, askHelp)
 			return
 		}
-		if body.FourK {
-			res, err = h.Svc.Ask4K(r.Context(), h.Person(r), num)
-		} else {
-			res, err = h.Svc.Ask(r.Context(), h.Person(r), num)
-		}
+		res, err = h.Svc.AskQuality(r.Context(), h.Person(r), num, body.Quality)
 	case "show":
 		if !ok || num == "" || len(num) > 20 || (src != "tmdb" && src != "tvdb" && src != "tvmaze" && src != "imdb") || len(body.Seasons) > 200 || len(body.Albums) > 0 ||
 			len(body.Episodes) > 200 || (body.FutureOnly && (len(body.Seasons) > 0 || len(body.Episodes) > 0)) || tooManyEpisodes(body.Episodes) {
 			webserver.Fail(w, http.StatusBadRequest, askHelp)
 			return
 		}
-		if body.FutureOnly {
-			res, err = h.Svc.AskShowFutureOnly(r.Context(), h.Person(r), src+":"+num)
-		} else {
-			res, err = h.Svc.AskShowParts(r.Context(), h.Person(r), src+":"+num, body.Seasons, body.Episodes)
-		}
+		res, err = h.Svc.AskShowQuality(r.Context(), h.Person(r), src+":"+num, body.Seasons, body.Episodes, body.FutureOnly, body.Quality)
 	case "artist":
 		if !ok || (src != "mbid" && src != "musicbrainz") || !metadata.ValidMBID(num) || len(body.Seasons) > 0 || len(body.Episodes) > 0 || len(body.Albums) > 500 || body.FutureOnly {
 			webserver.Fail(w, http.StatusBadRequest, askHelp)
@@ -299,7 +304,7 @@ func (h *AskHandlers) makeAsk(w http.ResponseWriter, r *http.Request) {
 	h.answerAsk(w, r, code, res.Ask.ID, map[string]any{"joined": res.Joined, "already": res.Already})
 }
 
-const askHelp = `send {"id": "tmdb:<number>"} for a movie, {"kind": "show", "id": "tmdb:<n>" (or tvdb:, tvmaze:, imdb:), "seasons": [1, 2]} for a show (no seasons: the whole show; "episodes": [{"season": 2, "episodes": [1, 2, 5]}] adds single episodes of other seasons; "future_only": true instead of seasons: the future seasons only), or {"kind": "artist", "id": "mbid:<MusicBrainz artist id>", "albums": ["<MusicBrainz album id>"], "editions": {"<album id>": "<release id>"}} for music (no albums: the whole artist; editions optional); any ask may add "follow": false to leave the title off your calendar; a movie ask may add "four_k": true to ask for a 4K copy`
+const askHelp = `send {"id": "tmdb:<number>"} for a movie, {"kind": "show", "id": "tmdb:<n>" (or tvdb:, tvmaze:, imdb:), "seasons": [1, 2]} for a show (no seasons: the whole show; "episodes": [{"season": 2, "episodes": [1, 2, 5]}] adds single episodes of other seasons; "future_only": true instead of seasons: the future seasons only), or {"kind": "artist", "id": "mbid:<MusicBrainz artist id>", "albums": ["<MusicBrainz album id>"], "editions": {"<album id>": "<release id>"}} for music (no albums: the whole artist; editions optional); any ask may add "follow": false to leave the title off your calendar; a movie or show ask may add "four_k": true to ask for a 4K copy`
 
 func (h *AskHandlers) askLimit(w http.ResponseWriter, r *http.Request) {
 	l, err := h.Svc.LimitOf(r.Context(), h.Person(r))
@@ -307,7 +312,40 @@ func (h *AskHandlers) askLimit(w http.ResponseWriter, r *http.Request) {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	webserver.WriteJSON(w, http.StatusOK, l)
+	// Qualities are the lines of what people can ask for that this person
+	// may use, per kind, in order (the Quality row on the Ask sheets; one
+	// line or none hides the row). FourK says which kinds offer the 4K line.
+	out := struct {
+		Limit
+		FourK struct {
+			Movie bool `json:"movie"`
+			Show  bool `json:"show"`
+		} `json:"four_k"`
+		Qualities struct {
+			Movie []QualityChoice `json:"movie"`
+			Show  []QualityChoice `json:"show"`
+		} `json:"qualities"`
+	}{Limit: l}
+	set, err := ReadSettings(r.Context(), h.Svc.Store.Read())
+	if err != nil {
+		webserver.Internal(w, "api", err)
+		return
+	}
+	for _, kind := range []string{"movie", "show"} {
+		lines, err := qualityLines(r.Context(), h.Svc.Store.Read(), set, kind)
+		if err != nil {
+			webserver.Internal(w, "api", err)
+			return
+		}
+		mine := choicesOf(offered(lines, h.Person(r)))
+		_, fourK := lineByID(offered(lines, h.Person(r)), QualityFourK)
+		if kind == "show" {
+			out.Qualities.Show, out.FourK.Show = mine, fourK
+		} else {
+			out.Qualities.Movie, out.FourK.Movie = mine, fourK
+		}
+	}
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 func (h *AskHandlers) withdrawAsk(w http.ResponseWriter, r *http.Request) {
@@ -315,11 +353,39 @@ func (h *AskHandlers) withdrawAsk(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// People who approve can remove an ask in any state; a waiting ask is
+	// taken back as always (others who joined keep it).
+	if v.State != domain.AskAsked && mayApprove(r) {
+		if err := h.Svc.Remove(r.Context(), v.ID, h.Person(r)); err != nil {
+			h.askError(w, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	if err := h.Svc.Withdraw(r.Context(), v.ID, h.Person(r), mayApprove(r)); err != nil {
 		h.askError(w, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// removeAsks removes several asks at once, for people who approve: the
+// ids sent, or every "failed" or "finished" one.
+func (h *AskHandlers) removeAsks(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		IDs    []int64 `json:"ids"`
+		Filter string  `json:"filter"`
+	}
+	if !webserver.Decode(w, r, &in, `send {"ids":[1,2]} or {"filter":"failed"} or {"filter":"finished"}`) {
+		return
+	}
+	n, err := h.Svc.RemoveMany(r.Context(), h.Person(r), in.IDs, in.Filter)
+	if err != nil {
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"removed": n})
 }
 
 // askParts answers an ask's stored lists (season episodes, album songs),
@@ -348,14 +414,20 @@ func (h *AskHandlers) approveAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var opt ApproveOptions
-	if r.ContentLength != 0 && !webserver.Decode(w, r, &opt, `send {} or any of library_folder_id, pick_rules_id, audio_languages, seasons, episodes, albums, note`) {
+	if r.ContentLength != 0 && !webserver.Decode(w, r, &opt, `send {} or any of library_folder_id, pick_rules_id, quality, audio_languages, seasons, episodes, albums, note`) {
 		return
 	}
-	if _, err := h.Svc.Approve(r.Context(), v.ID, h.Person(r), opt); err != nil {
+	_, said, err := h.Svc.ApproveSaying(r.Context(), v.ID, h.Person(r), opt)
+	if err != nil {
 		h.askError(w, err)
 		return
 	}
-	h.answerAsk(w, r, http.StatusOK, v.ID, nil)
+	// Notice tells the approver their quality was not used (the copy was there).
+	var extra map[string]any
+	if said != "" {
+		extra = map[string]any{"notice": said}
+	}
+	h.answerAsk(w, r, http.StatusOK, v.ID, extra)
 }
 
 func (h *AskHandlers) turnDownAsk(w http.ResponseWriter, r *http.Request) {
@@ -378,6 +450,9 @@ func (h *AskHandlers) turnDownAsk(w http.ResponseWriter, r *http.Request) {
 
 func (h *AskHandlers) getAskSettings(w http.ResponseWriter, r *http.Request) {
 	s, err := ReadSettings(r.Context(), h.Store.Read())
+	if err == nil {
+		s.Qualities, err = resolveQualities(r.Context(), h.Store.Read(), s)
+	}
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -392,7 +467,7 @@ func (h *AskHandlers) putAskSettings(w http.ResponseWriter, r *http.Request) {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	if !webserver.Decode(w, r, &s, "send any of movies_per_week, shows_per_week, music_per_week, library_folder_id, pick_rules_id, search_on_approve, show_library_folder_id, show_pick_rules_id, music_library_folder_id, music_pick_rules_id") {
+	if !webserver.Decode(w, r, &s, "send any of movies_per_week, shows_per_week, music_per_week, library_folder_id, pick_rules_id, search_on_approve, show_library_folder_id, show_pick_rules_id, music_library_folder_id, music_pick_rules_id, qualities") {
 		return
 	}
 	if err := SaveSettings(r.Context(), h.Store, s, h.Actor(r)); err != nil {

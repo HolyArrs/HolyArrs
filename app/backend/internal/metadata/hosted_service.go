@@ -43,6 +43,15 @@ type Hosted struct {
 	Gate *Gate
 	// Disk keeps TMDB answers across restarts (lookup_cache).
 	Disk Cache
+	// Modes is where details come from (server, own keys or off).
+	Modes *Modes
+	// Vault holds the owner's own keys.
+	Vault *secrets.Vault
+	// Direct reaches outside sources over public addresses while Your own
+	// keys is picked (a stand-in may be on this machine).
+	Direct *http.Client
+	// stand is the TMDB stand-in (tests), "" for TMDB itself.
+	stand string
 }
 
 func NewHosted(v *secrets.Vault) (*Hosted, error) {
@@ -61,15 +70,17 @@ func NewHosted(v *secrets.Vault) (*Hosted, error) {
 	d := outbound.PolicyDialer(allow)
 	// One pooled HTTP/2 transport for every call to the server: text
 	// answers here, and the server's pictures through the artwork client.
-	tr := &Gate{Next: NewServerTransport(d.DialContext)}
+	modes := EnvModes()
+	tr := &Gate{Next: NewServerTransport(d.DialContext), Modes: modes}
 	cl := &http.Client{Transport: keyCheck{next: tr, refused: dropUnknownKey(v)}, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	h := &Hosted{HTTP: cl, Transport: tr, Gate: tr}
+	h := &Hosted{HTTP: cl, Transport: tr, Gate: tr, Modes: modes, Vault: v}
 	access := installationAccess(v, func(ctx context.Context) (string, error) { return h.Service.Register(ctx) })
 	service, err := NewService(ServiceOptions{URL: ServiceURL(), HTTP: cl, Access: access, AllowLocal: local})
 	if err != nil {
 		return nil, err
 	}
 	h.Service, h.Health = service, &Health{Service: service}
+	modes.OnSet = service.ResetRegisterWait
 	// HOLYARRS_TMDB_URL points at a stand-in TMDB (browser tests); it
 	// serves pictures too.
 	stand := strings.TrimRight(os.Getenv("HOLYARRS_TMDB_URL"), "/")
@@ -77,6 +88,12 @@ func NewHosted(v *secrets.Vault) (*Hosted, error) {
 		h.Images = stand + "/images"
 		webserver.ImageHosts += " " + stand
 	}
+	h.stand = stand
+	// Title art from fanart.tv with the owner's own key loads from its host.
+	if fan := strings.TrimSuffix(FanartPictureHost, "/"); !strings.Contains(webserver.ImageHosts, fan) {
+		webserver.ImageHosts += " " + fan
+	}
+	h.Direct = directClient(modes, stand != "")
 	switch key, file := strings.TrimSpace(os.Getenv(EnvTMDBKey)), os.Getenv(EnvTokenFile); {
 	case key != "":
 		h.OwnKey, h.TMDBBase = true, stand
@@ -87,21 +104,23 @@ func NewHosted(v *secrets.Vault) (*Hosted, error) {
 	default:
 		h.TMDBBase, h.TMDBAccess = service.Base()+TMDBPath, access
 	}
-	if h.OwnKey {
+	switch {
+	case modes.BadValue() != "":
+		log.Printf("metadata: %s is not full, own or off, so lookups are off", EnvMode)
+	case modes.Locked():
+		log.Printf("metadata: details come from %s (set by the Docker settings)", modes.Current())
+	case h.OwnKey:
 		log.Printf("metadata: TMDB directly with the key from the environment")
-	} else {
+	default:
 		log.Printf("metadata: the HolyArrs metadata server at %s", service.Base())
 	}
 	return h, nil
 }
 
-// TMDB is a TMDB client for movies, shows, Explore, people and ratings.
+// TMDB is a TMDB client for movies, shows, Explore, people and ratings. Each
+// request goes where the mode says (TMDBRoute).
 func (h *Hosted) TMDB() *TMDB {
-	t := &TMDB{Access: h.TMDBAccess, BaseURL: h.TMDBBase, Images: h.Images, Disk: h.Disk}
-	if !h.OwnKey {
-		t.HTTP = h.HTTP
-	}
-	return t
+	return &TMDB{Route: h.TMDBRoute, Images: h.Images, Disk: h.Disk}
 }
 
 // installationAccess reads the install's credential: from the file named by

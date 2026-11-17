@@ -32,6 +32,7 @@ var screenOwners = map[string]Owner{
 	"/library/[id]/albums/[album]":   music,
 	"/library/held":                  Media,
 	"/library/deleted":               Media,
+	"/library/stats":                 Media,
 	"/library/turned-down":           Media,
 	"/library/import":                Media,
 	"/library/import-files":          Media,
@@ -96,7 +97,11 @@ var loopOwners = map[string]Owner{
 	"jobs_core":        Core,
 	"jobs_io":          Core,
 	"jobs_heavy":       Core,
+	"jobs_migrate":     Core,
+	"jobs_translate":   Core,
 	"stranded_imports": Media,
+	"pack_watched":     Media,
+	"watch_history":    Media,
 	"gates":            movies,
 	"wishlist":         wishlist,
 	"music_warm":       music,
@@ -122,12 +127,14 @@ var jobOwners = map[string]Owner{
 	"rename_files":       Media,
 	"clean_holding":      Media,
 	"rescan_library":     Media,
+	"recheck_pick_rules": Media,
 	// The title (or Library folder) the Job is about decides.
 	"search_slot":         ByTitle,
 	"grab":                ByTitle,
 	"import_download":     ByTitle,
 	"refresh_title":       ByTitle,
 	"scan_title":          ByTitle,
+	"rescan_title":        ByTitle,
 	"move_title":          ByTitle,
 	"scan_library_folder": ByTitle,
 	"adopt_library":       ByTitle,
@@ -142,6 +149,9 @@ var jobOwners = map[string]Owner{
 	"subtitle_missing": subtitles,
 	"subtitle_better":  subtitles,
 	"subtitle_look":    subtitles,
+
+	"subtitle_translate": subtitles,
+
 	// Requests.
 	"sync_plex_watchlists": wishlist,
 }
@@ -198,7 +208,7 @@ var SafeLibrary = map[string]bool{
 // SafeScreens are the pages that show in safe mode for the same reason.
 var SafeScreens = []string{"/library", "/library/[id]", "/library/[id]/albums/[album]"}
 
-// Register adds the five parts and their route, screen, loop and Job kind
+// Register adds the parts and their route, screen, loop and Job kind
 // owners to the registry. The program wiring calls it once before anything
 // reads the registry; calling it again does nothing.
 func Register() {
@@ -211,7 +221,7 @@ func register() {
 	for _, p := range []struct {
 		part  Part
 		label string
-	}{{Movies, "Movies"}, {Shows, "TV shows"}, {Music, "Music"}, {Subtitles, "Subtitles"}, {Wishlist, "Requests"}} {
+	}{{Movies, "Movies"}, {Shows, "TV shows"}, {Music, "Music"}, {Subtitles, "Subtitles"}, {Wishlist, "Requests"}, {Sources, "Sources"}} {
 		startup.RegisterPart(p.part, p.label)
 	}
 	startup.RegisterOwners(startup.RouteOwners, routeOwners)

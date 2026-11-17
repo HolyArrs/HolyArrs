@@ -81,7 +81,7 @@ func TestDownloaderAttemptErrorsArePublicSentinels(t *testing.T) {
 // to the first page's size (2,000 torrents, then 2,200 asked: still 2,000).
 func TestOutsideLimitHoldsAtItsMost(t *testing.T) {
 	t.Parallel()
-	for q, want := range map[string]int{"": 200, "x": 200, "0": 200, "-5": 200, "400": 400, "2000": 2000, "2200": 2000, "99999": 2000} {
+	for q, want := range map[string]int{"": 200, "x": 200, "0": 200, "-5": 200, "400": 400, "2000": 2000, "2200": 2200, "5000": 5000, "20000": 5000, "99999": 5000} {
 		r := httptest.NewRequest(http.MethodGet, "/api/v1/downloads/view?outside_limit="+q, nil)
 		if got := outsideLimit(r); got != want {
 			t.Errorf("outside_limit=%q: %d, want %d", q, got, want)

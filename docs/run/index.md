@@ -15,9 +15,11 @@ Keep a running HolyArrs updated, backed up and healthy.
 - [Schedules](schedules.md): see what runs on a timer and change how often.
 - [Logs and storage](logs.md): read the log, share it safely, find your files.
 - [Parts and safe mode](parts-safe-mode.md): turn parts off, start in safe mode.
+- [Outside addresses](outside-hosts.md): every outside address HolyArrs contacts, for a firewall.
 
 ## Choose where it runs
 
 - [NAS, Synology and Unraid](platforms.md): one shared media mount.
 - [Reverse proxy and URL base](url-base.md): serve HolyArrs under a path.
 - [Portable build](portable.md): run without Docker on Linux or Windows.
+- [Synology package](synology.md): experimental, installs from Package Center without Container Manager.

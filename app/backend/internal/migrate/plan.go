@@ -2,6 +2,7 @@ package migrate
 
 import (
 	"fmt"
+	"net/url"
 	"path"
 	"sort"
 	"strings"
@@ -10,13 +11,18 @@ import (
 
 // builder carries a plan being built.
 type builder struct {
-	p          *Plan
-	rules      []PathRule
-	skip       map[string]bool
-	items      map[string]*Group
-	keys       map[string]bool
-	folders    []FolderPlan      // every folder planned (for title placement)
-	presets    map[string]string // app + profile id -> preset
+	p        *Plan
+	rules    []PathRule
+	leave    map[string]bool // old folders left out, cleaned
+	skip     map[string]bool
+	items    map[string]*Group
+	keys     map[string]bool
+	folders  []FolderPlan      // every folder planned (for title placement)
+	presets  map[string]string // app + profile id -> preset
+	imported map[string]bool   // Pick rules names made from a profile, not ready-made
+	// snapRules are the Pick rules made from the current Snapshot's
+	// profiles; its default wait goes into them.
+	snapRules  []*RulesPlan
 	titles     map[string]string // kind:id -> name (asks take names from here)
 	planned    map[string]bool   // person keys planned
 	personRefs map[string]string // app/source id -> stable person key
@@ -28,7 +34,11 @@ type builder struct {
 	listNames map[string]bool // Outside list names planned (lower case)
 	app       Kind
 	snapID    int64
-	paths     []pathRow // usable path rewrites from every app, placed by pathMaps
+	noFormats bool
+	// label names the app's address after its rule names when more than
+	// one copy of that app is imported ("" otherwise).
+	label string
+	paths []pathRow // usable path rewrites from every app, placed by pathMaps
 }
 
 // waitFrom is one app's untagged default wait rule as Pick rules waits.
@@ -145,10 +155,16 @@ func (e *RuleError) Error() string { return e.Text }
 func BuildPlan(in []Input, ch Choices) *Plan {
 	p := &Plan{covered: map[string]bool{}, Snapshots: []int64{}, Apps: []string{}, NotMoved: []NotMoved{}, NeedsInput: []string{}, Paths: []string{}}
 	b := &builder{p: p, rules: ch.PathRules, skip: map[string]bool{}, items: map[string]*Group{}, keys: map[string]bool{},
-		presets: map[string]string{}, titles: map[string]string{}, planned: map[string]bool{}, personRefs: map[string]string{}, choices: ch.People,
+		presets: map[string]string{}, imported: map[string]bool{}, noFormats: ch.NoFormats, titles: map[string]string{}, planned: map[string]bool{}, personRefs: map[string]string{}, choices: ch.People,
 		waits: map[string][]waitFrom{}, listNames: map[string]bool{}}
 	for _, s := range ch.Skip {
 		b.skip[s] = true
+	}
+	b.leave = map[string]bool{}
+	for _, f := range ch.LeaveFolders {
+		if op := oldPath(f); op != "" {
+			b.leave[op] = true
+		}
 	}
 	for _, name := range GroupOrder {
 		p.Groups = append(p.Groups, Group{Name: name, Label: GroupLabels[name], Skipped: b.skip[name], Items: []Item{}})
@@ -168,11 +184,23 @@ func BuildPlan(in []Input, ch Choices) *Plan {
 	}
 	sorted := append([]Input(nil), in...)
 	sort.SliceStable(sorted, func(i, j int) bool { return order(sorted[i].Snap.Kind) < order(sorted[j].Snap.Kind) })
+	copies := map[Kind]map[string]bool{}
+	for _, x := range sorted {
+		if x.Snap != nil {
+			if copies[x.Snap.Kind] == nil {
+				copies[x.Snap.Kind] = map[string]bool{}
+			}
+			copies[x.Snap.Kind][x.Snap.Address] = true
+		}
+	}
 	for _, x := range sorted {
 		if x.Snap == nil {
 			continue
 		}
-		b.app, b.snapID = x.Snap.Kind, x.ID
+		b.app, b.snapID, b.label = x.Snap.Kind, x.ID, ""
+		if len(copies[x.Snap.Kind]) > 1 {
+			b.label = instanceLabel(x.Snap.Address)
+		}
 		p.Snapshots = append(p.Snapshots, x.ID)
 		p.Apps = append(p.Apps, string(x.Snap.Kind))
 		b.snapshot(x.Snap)
@@ -183,6 +211,28 @@ func BuildPlan(in []Input, ch Choices) *Plan {
 	p.Notes = noteList(p.Notes)
 	p.Paths = noteList(p.Paths)
 	return p
+}
+
+// presetKey keys an app's quality profile to its Pick rules; profile ids
+// repeat across two copies of one app, so the read is part of the key.
+func (b *builder) presetKey(k Kind, id int64) string {
+	return fmt.Sprintf("%d:%s:%d", b.snapID, k, id)
+}
+
+// instanceLabel is the host (and port) of an address, or "backup".
+func instanceLabel(address string) string {
+	if u, err := url.Parse(address); err == nil && u.Host != "" {
+		return u.Host
+	}
+	return "backup"
+}
+
+// named adds the app copy's label to a name when one is set.
+func (b *builder) named(name string) string {
+	if b.label == "" {
+		return name
+	}
+	return name + " (" + b.label + ")"
 }
 
 func (b *builder) from(field string, i int) string {
@@ -210,10 +260,10 @@ func (b *builder) add(group string, it Item) {
 	}
 	switch {
 	case b.keys[it.Key]:
-		b.not(group, it.From, it.Name, "the same thing came from another app or twice from this one; it is moved once")
+		b.not(group, it.From, it.Name, "the same thing came from another app or twice from this one; it is imported once")
 		return
 	case len(g.Items) >= limit:
-		b.not(group, it.From, it.Name, fmt.Sprintf("more than %d in one move; move again after this one", limit))
+		b.not(group, it.From, it.Name, fmt.Sprintf("more than %d in one import; import again after this one", limit))
 		return
 	}
 	b.keys[it.Key] = true
@@ -228,7 +278,7 @@ func (b *builder) cover(fields ...string) {
 
 func (b *builder) snapshot(s *Snapshot) {
 	// The read's own facts are not settings.
-	b.cover("kind", "via", "version", "schema", "read_at")
+	b.cover("kind", "via", "version", "schema", "read_at", "address")
 	// An import list's sign-in has nowhere to go here: its own Not moved
 	// line says so (leftBehind) instead of asking for it.
 	var needs []string

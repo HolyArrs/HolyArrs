@@ -1,0 +1,16 @@
+{
+	"settings.danger.stopping": "HolyArrs நிறுத்தப்படுகிறது.",
+	"settings.danger.couldnt": "{action} முடியவில்லை",
+	"settings.danger.title": "ஆபத்துப் பகுதி",
+	"settings.danger.ownerOnly": "உரிமையாளரும் நிர்வாகிகளும் மட்டும்",
+	"settings.danger.ask": "{label}?",
+	"settings.danger.yes": "ஆம், {action}",
+	"settings.danger.cancel": "ரத்துசெய்",
+	"settings.danger.expires": "60 வினாடியில் காலாவதியாகும்",
+	"settings.danger.wholeApp": "முழு ஆப்",
+	"settings.danger.intro": "இவை HolyArrs ஐ நிறுத்தும். Docker மறுதொடக்கக் கொள்கை <code>no</code> ஆக இல்லாவிட்டால் சில வினாடிகளில் அது மீண்டும் தொடங்கும்; இருந்தால் கொள்கலனை நீங்களே தொடங்குங்கள். ஒவ்வொன்றும் முதலில் கேட்கும்.",
+	"settings.danger.restart": "HolyArrs ஐ மறுதொடக்கு",
+	"settings.danger.safe": "பாதுகாப்பு முறையில் மறுதொடக்கு",
+	"settings.danger.shutdown": "நிறுத்து",
+	"settings.danger.safeNote": "உள்நுழைவு, அமைப்புகள், நூலகம் மட்டும் கொண்டு ஒருமுறை தொடங்கும். ஒரு பகுதி தொடக்கத்தைத் தடுக்கும்போது இதைப் பயன்படுத்துங்கள்."
+}

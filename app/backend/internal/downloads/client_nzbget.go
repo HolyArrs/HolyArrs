@@ -23,11 +23,20 @@ import (
 const (
 	nzbgetMarker = "HolyArrsID"
 	nzbgetMaxNZB = 16 << 20
+	// nzbgetAppendTimeout gives NZBGet time to read a large NZB before it answers;
+	// a season pack on a Raspberry Pi can take longer than the usual 30 seconds.
+	nzbgetAppendTimeout = 3 * time.Minute
 )
+
+// nzbgetReply is a request NZBGet answered without doing it: an error answer,
+// or a reply that is not a result. NZBGet appends before it answers, so after
+// one of these a job that is not in its queue or history was never added.
+type nzbgetReply struct{ method, msg string }
+
+func (e nzbgetReply) Error() string { return "nzbget " + e.method + ": " + e.msg }
 
 var (
 	errNZBGetAmbiguousMarker = errors.New("NZBGet has multiple jobs with the same HolyArrs marker")
-	errNZBGetForeignMarker   = errors.New("the NZBGet job marker belongs to another category")
 )
 
 // NZBGet is a Client for the NZBGet JSON-RPC API.
@@ -36,6 +45,7 @@ type NZBGet struct {
 	user, pass string
 	http       *http.Client
 	Category   string
+	Others     []string // more categories that are also ours
 }
 
 type nzbgetRPCError struct {
@@ -132,7 +142,8 @@ func (n *NZBGet) Add(ctx context.Context, r AddRequest) (string, error) {
 				return id, nil
 			}
 			if r.ReconcileOnly {
-				return "", ErrUncertain
+				// NZBGet answered, and neither its queue nor its history holds the marker.
+				return "", errors.Join(ErrUncertain, ErrNotArrived)
 			}
 			break
 		}
@@ -160,25 +171,32 @@ func (n *NZBGet) Add(ctx context.Context, r AddRequest) (string, error) {
 	params := []any{name, base64.StdEncoding.EncodeToString(payload), r.Category, 0, false, false, "", 0, "SCORE", false,
 		[][]string{{nzbgetMarker, id}}}
 	var native int
-	if err := n.rpc(ctx, "append", params, &native); err != nil {
+	if err := n.appendRPC(ctx, params, &native); err != nil {
 		if ctx.Err() == nil {
 			_, found, getErr := n.lookup(ctx, id, r.Category)
-			if errors.Is(getErr, errNZBGetAmbiguousMarker) || errors.Is(getErr, errNZBGetForeignMarker) {
+			if errors.Is(getErr, errNZBGetAmbiguousMarker) {
 				return "", errors.Join(ErrUncertain, getErr)
 			}
 			if getErr == nil && found {
 				return id, nil
 			}
+			if getErr == nil && nzbgetAnswered(err) {
+				// NZBGet answered and holds no job with this marker: it said no.
+				return "", fmt.Errorf("NZBGet did not take the NZB: %w", err)
+			}
 		}
 		return "", errors.Join(ErrUncertain, err)
 	}
 	if native <= 0 {
-		return "", errors.New("NZBGet refused the NZB")
+		return "", fmt.Errorf("NZBGet refused the NZB (append answered %d)", native)
 	}
 	return id, nil
 }
 
-// List returns the jobs in category.
+// List returns the jobs in category that carry HolyArrs's marker. NZBGet
+// renames the category of a job when that category has an Alias (tv becomes
+// Series), so a marked job in a category HolyArrs does not use counts as one
+// of ours too.
 func (n *NZBGet) List(ctx context.Context, category string) ([]Job, error) {
 	active, history, err := n.rows(ctx)
 	if err != nil {
@@ -186,12 +204,12 @@ func (n *NZBGet) List(ctx context.Context, category string) ([]Job, error) {
 	}
 	ids := map[string]bool{}
 	for _, r := range active {
-		if id := nzbgetMarkerID(r.Parameters); id != "" && (category == "" || strings.EqualFold(r.Category, category)) {
+		if id := nzbgetMarkerID(r.Parameters); id != "" && n.listed(r.Category, category) {
 			ids[id] = true
 		}
 	}
 	for _, r := range history {
-		if id := nzbgetMarkerID(r.Parameters); id != "" && (category == "" || strings.EqualFold(r.Category, category)) {
+		if id := nzbgetMarkerID(r.Parameters); id != "" && n.listed(r.Category, category) {
 			ids[id] = true
 		}
 	}
@@ -205,8 +223,19 @@ func (n *NZBGet) List(ctx context.Context, category string) ([]Job, error) {
 			out = append(out, match.row.job(match.history))
 		}
 	}
-	n.shareSpeed(ctx, out)
+	n.applyStatus(ctx, out)
 	return out, nil
+}
+
+// listed reports whether a marked job in rowCat belongs in a List of category:
+// the same category, or, when category is one of ours, a category none of
+// ours has (NZBGet renamed it through an Alias).
+func (n *NZBGet) listed(rowCat, category string) bool {
+	if category == "" || strings.EqualFold(rowCat, category) {
+		return true
+	}
+	ours := append([]string{n.Category}, n.Others...)
+	return hasCategory(ours, category) && !hasCategory(ours, rowCat)
 }
 
 // Get returns the job with the given id.
@@ -267,6 +296,36 @@ func (n *NZBGet) Remove(ctx context.Context, id string, deleteFiles bool) error 
 	return nil
 }
 
+// appendRPC sends the append with a longer time limit than other calls.
+func (n *NZBGet) appendRPC(ctx context.Context, params []any, out any) error {
+	h := *n.http
+	if h.Timeout != 0 && h.Timeout < nzbgetAppendTimeout {
+		h.Timeout = nzbgetAppendTimeout
+	}
+	return (&NZBGet{base: n.base, user: n.user, pass: n.pass, http: &h}).rpc(ctx, "append", params, out)
+}
+
+// nzbgetAnswered tells whether NZBGet itself answered a request it did not do,
+// as opposed to no answer, a time-out or a proxy in front of it failing.
+func nzbgetAnswered(err error) bool {
+	var reply nzbgetReply
+	var status adapterHTTPError
+	return errors.As(err, &reply) ||
+		errors.As(err, &status) && status.status >= 400 && status.status < 500 && status.status != 408 && status.status != 429
+}
+
+// nzbgetMessage keeps a reply short enough for a log line and never repeats the password.
+func nzbgetMessage(s, pass string) string {
+	s = strings.TrimSpace(s)
+	if pass != "" {
+		s = strings.ReplaceAll(s, pass, "***")
+	}
+	if len(s) > 200 {
+		s = s[:200] + "..."
+	}
+	return s
+}
+
 func (n *NZBGet) rpc(ctx context.Context, method string, params []any, out any) error {
 	in := struct {
 		Version string `json:"version"`
@@ -307,21 +366,67 @@ func (n *NZBGet) rpc(ctx context.Context, method string, params []any, out any) 
 		Error  *nzbgetRPCError `json:"error"`
 	}
 	if err := json.Unmarshal(body, &answer); err != nil {
-		return fmt.Errorf("nzbget %s: the address did not answer like NZBGet", method)
+		return nzbgetReply{method, "the address did not answer like NZBGet"}
 	}
 	if answer.Error != nil {
 		if answer.Error.Code == http.StatusUnauthorized {
 			return ErrAuth
 		}
-		return fmt.Errorf("nzbget %s: RPC error %d", method, answer.Error.Code)
+		return nzbgetReply{method, fmt.Sprintf("NZBGet answered %q (code %d)", nzbgetMessage(answer.Error.Message, n.pass), answer.Error.Code)}
 	}
 	if len(answer.Result) == 0 || string(answer.Result) == "null" {
-		return fmt.Errorf("nzbget %s: empty result", method)
+		return nzbgetReply{method, "empty result"}
 	}
 	if err := json.Unmarshal(answer.Result, out); err != nil {
-		return fmt.Errorf("nzbget %s: invalid result", method)
+		return nzbgetReply{method, "invalid result " + nzbgetMessage(string(answer.Result), n.pass)}
 	}
 	return nil
+}
+
+// finishedFolders tells where NZBGet puts finished jobs, as it sees them:
+// its main folder for them first, then for each of cats the category's own
+// folder, or the main one with the category's name added when NZBGet adds it.
+func (n *NZBGet) finishedFolders(ctx context.Context, cats []string) ([]string, error) {
+	var opts []nzbParam
+	if err := n.rpc(ctx, "config", nil, &opts); err != nil {
+		return nil, err
+	}
+	o := make(map[string]string, len(opts))
+	for _, p := range opts {
+		o[strings.ToLower(p.Name)] = p.Value
+	}
+	main := nzbgetExpand(o["destdir"], o["maindir"])
+	var out []string
+	if main != "" {
+		out = append(out, main)
+	}
+	appendName := !strings.EqualFold(strings.TrimSpace(o["appendcategorydir"]), "no")
+	for i := 1; i < 1000; i++ {
+		key := "category" + strconv.Itoa(i)
+		name, ok := o[key+".name"]
+		if !ok {
+			break
+		}
+		if !hasCategory(cats, name) {
+			continue
+		}
+		if dir := nzbgetExpand(o[key+".destdir"], o["maindir"]); dir != "" {
+			out = append(out, dir)
+		} else if appendName && main != "" {
+			out = append(out, joinFolder(main, name))
+		}
+	}
+	return out, nil
+}
+
+// nzbgetExpand puts the main folder in for ${MainDir}, as NZBGet does.
+func nzbgetExpand(v, mainDir string) string {
+	v = strings.TrimSpace(v)
+	const key = "${maindir}"
+	if i := strings.Index(strings.ToLower(v), key); i >= 0 {
+		v = v[:i] + strings.TrimSpace(mainDir) + v[i+len(key):]
+	}
+	return v
 }
 
 func nzbgetID(r AddRequest, attempt int) string {
@@ -374,15 +479,13 @@ func validNZB(b []byte) bool {
 	}
 }
 
+// nzbgetFind finds the job carrying marker id in any category (see List).
 func nzbgetFind(active, history []nzbgetRow, id, category string) (nzbgetMatch, bool, error) {
 	var match nzbgetMatch
 	found := false
 	add := func(r nzbgetRow, isHistory bool) error {
 		if nzbgetMarkerID(r.Parameters) != id {
 			return nil
-		}
-		if category != "" && !strings.EqualFold(r.Category, category) {
-			return errNZBGetForeignMarker
 		}
 		if !found {
 			match, found = nzbgetMatch{row: r, history: isHistory}, true
@@ -524,25 +627,37 @@ func (n *NZBGet) lookup(ctx context.Context, id, category string) (nzbgetMatch, 
 	return nzbgetFind(active, history, id, category)
 }
 
-func (n *NZBGet) shareSpeed(ctx context.Context, jobs []Job) {
-	moving := 0
+// applyStatus reads NZBGet's status once: a paused download queue holds
+// every job waiting or downloading, and the speed is shared among the jobs
+// still moving.
+func (n *NZBGet) applyStatus(ctx context.Context, jobs []Job) {
+	ask := false
 	for _, j := range jobs {
-		if j.State == StateDownloading {
+		ask = ask || j.State == StateDownloading || nzbgetHeld(j)
+	}
+	if !ask {
+		return
+	}
+	var st nzbgetStatus
+	if err := n.rpc(ctx, "status", nil, &st); err != nil {
+		return
+	}
+	moving := 0
+	for i := range jobs {
+		if st.DownloadPaused && nzbgetHeld(jobs[i]) {
+			jobs[i].State = StatePaused
+		}
+		if jobs[i].State == StateDownloading {
 			moving++
 		}
 	}
-	if moving == 0 {
-		return
-	}
-	var st struct {
-		DownloadRate int64 `json:"DownloadRate"`
-	}
-	if err := n.rpc(ctx, "status", nil, &st); err != nil || st.DownloadRate <= 0 {
+	rate := st.rate()
+	if moving == 0 || rate <= 0 {
 		return
 	}
 	for i := range jobs {
 		if jobs[i].State == StateDownloading {
-			jobs[i].Speed = st.DownloadRate / int64(moving)
+			jobs[i].Speed = rate / int64(moving)
 		}
 	}
 }

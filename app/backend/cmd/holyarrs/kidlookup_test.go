@@ -151,7 +151,7 @@ func TestKidExploreNotCachedForOthers(t *testing.T) {
 				t.Fatal(err)
 			}
 			_ = resp.Body.Close()
-			if resp.StatusCode != 200 || resp.Header.Get("Vary") != "Cookie, Authorization" {
+			if resp.StatusCode != 200 || resp.Header.Get("Vary") != "Cookie, Authorization, X-HolyArrs-Language, Accept-Language" {
 				t.Errorf("%s: %d, Vary %q", p, resp.StatusCode, resp.Header.Get("Vary"))
 			}
 			if c.cache != "" && resp.Header.Get("Cache-Control") != c.cache {

@@ -79,6 +79,46 @@ describe('status rows', () => {
 		expect(headline(rows)).toBe('2 checks need attention');
 	});
 
+	it('shows imported downloads waiting to be cleared, fixed on Downloads', () => {
+		const rows = buildRows({
+			checks: [{ key: 'clear_waiting', kind: 'clear_waiting', subject: 'Downloads', state: 'warning', message: '1 imported download is still waiting to be cleared' } as never]
+		});
+		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason, r.fix])).toEqual([
+			['Imported downloads still in a Downloader', 'library', 'wait', '1 imported download is still waiting to be cleared', '/downloads']
+		]);
+	});
+
+	it('names the Downloader with no save folder, fixed in Settings > Downloaders', () => {
+		const rows = buildRows({
+			checks: [{ key: 'save_folder:2', kind: 'save_folder', subject: 'SABnzbd', state: 'warning', message: 'SABnzbd has no save folder set' } as never]
+		});
+		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason, r.fix])).toEqual([
+			['Save folder for SABnzbd', 'downloaders', 'wait', "SABnzbd has no save folder set, so HolyArrs can't import its finished downloads. Add a path pair in Settings › Downloaders.", '/settings/downloaders']
+		]);
+	});
+
+	it('warns when the Sources find downloads no Downloader can take', () => {
+		const rows = buildRows({
+			checks: [
+				{ key: 'no_downloader:usenet', kind: 'no_downloader', subject: 'usenet', state: 'warning', message: 'x' } as never,
+				{ key: 'no_downloader:torrent', kind: 'no_downloader', subject: 'torrent', state: 'ok', message: '' } as never
+			]
+		});
+		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason, r.fix])).toEqual([
+			['Usenet Downloader', 'downloaders', 'wait', 'Your Sources find Usenet downloads, but no Usenet Downloader is set up, so none can be sent. Add one in Settings › Downloaders.', '/settings/downloaders'],
+			['Torrent Downloader', 'downloaders', 'ok', '', '/settings/downloaders']
+		]);
+	});
+
+	it('names a Downloader added twice, fixed in Settings > Downloaders', () => {
+		const rows = buildRows({
+			checks: [{ key: 'same_downloader:2', kind: 'same_downloader', subject: 'SABnzbd (moved)', state: 'warning', message: 'SABnzbd (moved) reaches the same app as SABnzbd' } as never]
+		});
+		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason, r.fix])).toEqual([
+			['Added twice: SABnzbd (moved)', 'downloaders', 'wait', 'SABnzbd (moved) reaches the same download app as another Downloader, so its downloads can show twice. Remove one in Settings › Downloaders.', '/settings/downloaders']
+		]);
+	});
+
 	it('does not count a starting part as a problem', () => {
 		expect(needsAttention(buildRows({ states: [link('source', 1, 'starting')] }))).toEqual([]);
 	});

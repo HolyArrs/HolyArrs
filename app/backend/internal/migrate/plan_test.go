@@ -64,9 +64,10 @@ func fullSnapshots() []Input {
 		AppProfiles:    []map[string]any{{"name": "Standard"}},
 	}
 	bazarr := &Snapshot{Kind: Bazarr, Subtitles: &SubtitleSetup{Languages: []string{"en", "es", "fr"},
-		Profiles:  []SubtitleProfile{{ID: 1, Name: "Main", Languages: []SubtitleLanguage{{Language: "en"}, {Language: "es", HI: true}}}, {ID: 2, Name: "Anime"}},
-		Providers: []Provider{{Name: "podnapisi", Kind: "podnapisi"}, {Name: "opensubtitlescom", Kind: "opensubtitlescom", NeedsReentry: []string{"password"}}, {Name: "addic7ed", Kind: "addic7ed"}},
-		Defaults:  map[string]any{"movie_default_profile": int64(1), "use_embedded_subs": true}}}
+		Profiles: []SubtitleProfile{{ID: 1, Name: "Main", Languages: []SubtitleLanguage{{Language: "en"}, {Language: "es", HI: true}}}, {ID: 2, Name: "Anime"}},
+		Providers: []Provider{{Name: "podnapisi", Kind: "podnapisi"}, {Name: "opensubtitlescom", Kind: "opensubtitlescom", NeedsReentry: []string{"password"}}, {Name: "addic7ed", Kind: "addic7ed"},
+			{Name: "yifysubtitles", Kind: "yifysubtitles"}, {Name: "tvsubtitles", Kind: "tvsubtitles"}, {Name: "bsplayer", Kind: "bsplayer"}, {Name: "subf2m", Kind: "subf2m"}},
+		Defaults: map[string]any{"movie_default_profile": int64(1), "use_embedded_subs": true}}}
 	qbit := &Snapshot{Kind: QBittorrent, Downloader: &Downloader{Host: "10.0.0.5", Port: 8080, Username: "admin", NeedsPassword: true, SavePath: "/downloads",
 		Categories: []Category{{Name: "radarr", Path: "/downloads/radarr"}}}}
 	sab := &Snapshot{Kind: SABnzbd, Downloader: &Downloader{Host: "sab", Port: 8080, Servers: []Provider{{Name: "news.example"}}}}
@@ -256,7 +257,7 @@ func notMoved(p *Plan, from string) (NotMoved, bool) {
 }
 
 func TestPlanMapsEachGroup(t *testing.T) {
-	p := planOf(t, Choices{PathRules: []PathRule{{From: `D:\TV`, To: "/tv"}, {From: "/movies", To: "/data/movies"}}, People: map[string]string{"person:seerr:1": PersonOwner}})
+	p := planOf(t, Choices{NoFormats: true, PathRules: []PathRule{{From: `D:\TV`, To: "/tv"}, {From: "/movies", To: "/data/movies"}}, People: map[string]string{"person:seerr:1": PersonOwner}})
 	// Folders follow the path rules.
 	if f := item(t, p, GroupFolders, "folder:/data/movies").Folder; f.Kind != "movie" || f.OldPath != "/movies" {
 		t.Fatalf("movie folder %+v", f)
@@ -329,6 +330,14 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	if n, ok := notMoved(p, "bazarr subtitles.providers[2]"); !ok || !strings.Contains(n.Why, "Gestdown") {
 		t.Fatalf("addic7ed %+v", n)
 	}
+	for _, k := range []string{"yifysubtitles", "tvsubtitles", "bsplayer"} {
+		if it := item(t, p, GroupSubtitles, "subtitle_site:"+k); it.Subtitles.SiteKind != k {
+			t.Fatalf("%s %+v", k, it)
+		}
+	}
+	if _, ok := notMoved(p, "bazarr subtitles.providers[6]"); !ok {
+		t.Fatal("subf2m should stay behind")
+	}
 	// People: the owner maps to us; others are placeholders. Non-seven-day
 	// source windows stay explicit in NotMoved rather than widening access.
 	if o := item(t, p, GroupPeople, "person:seerr:1"); o.Person.Role != "owner" || o.Needs != "" {
@@ -351,7 +360,7 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	if ask.Name != "The Matrix" || ask.Ask.By != "person:seerr:2" || ask.Ask.Approved {
 		t.Fatalf("ask %+v", ask)
 	}
-	if sh := item(t, p, GroupRequests, "ask:seerr:8").Ask; !sh.Approved || sh.Ref != "tvdb:73739" || sh.Decider != "person:seerr:1" || sh.Note == "" {
+	if sh := item(t, p, GroupRequests, "ask:seerr:8").Ask; !sh.Approved || sh.Ref != "tvdb:73739" || sh.Decider != "person:seerr:1" || !sh.FourK {
 		t.Fatalf("show ask %+v", sh)
 	}
 	// Alerts: Discord and email (off until their secret), others listed.
@@ -529,7 +538,7 @@ func TestPlanTagScope(t *testing.T) {
 		}
 	}
 	if n, _ := notMoved(p, "radarr delay_profiles[0]"); n.What != "wait before grabbing (tags: kids)" ||
-		n.Why != "applied only to titles tagged kids; HolyArrs has no tags, so its waits (prefer torrent, Usenet 30 min, torrent 0 min) were not moved; set them on a copy of the Pick rules if those titles need them" {
+		n.Why != "applied only to titles tagged kids; HolyArrs has no tags, so its waits (prefer torrent, Usenet 30 min, torrent 0 min) were not imported; set them on a copy of the Pick rules if those titles need them" {
 		t.Errorf("tagged delay %+v", n)
 	}
 	// With no quality profile read, the default rule has no Pick rules to go to.
@@ -667,7 +676,7 @@ func TestPlanDefaultWait(t *testing.T) {
 	if it.Detail != "from the default wait rule of radarr: prefer usenet, Usenet 0 min, torrent 120 min" {
 		t.Errorf("detail %q", it.Detail)
 	}
-	if n, ok := notMoved(p, "radarr delay_profiles[0]"); !ok || !strings.HasPrefix(n.Why, "applied only to titles tagged anime; HolyArrs has no tags, so its waits (prefer torrent, Usenet 30 min, torrent 0 min) were not moved") {
+	if n, ok := notMoved(p, "radarr delay_profiles[0]"); !ok || !strings.HasPrefix(n.Why, "applied only to titles tagged anime; HolyArrs has no tags, so its waits (prefer torrent, Usenet 30 min, torrent 0 min) were not imported") {
 		t.Errorf("tagged rule %+v", n)
 	}
 
@@ -685,7 +694,7 @@ func TestPlanDefaultWait(t *testing.T) {
 			t.Errorf("detail %q lacks %q", it.Detail, want)
 		}
 	}
-	if n, ok := notMoved(p, "radarr delay_profiles[0].bypass_score"); !ok || !strings.HasPrefix(n.Why, "format scores do not move") {
+	if n, ok := notMoved(p, "radarr delay_profiles[0].bypass_score"); !ok || !strings.HasPrefix(n.Why, "format scores are not imported") {
 		t.Errorf("score skip %+v", n)
 	}
 
@@ -833,22 +842,27 @@ func TestSyncHours(t *testing.T) {
 	}
 }
 
-// Transmission, Deluge and NZBGet set up in the old apps come over as
-// Downloaders, like qBittorrent and SABnzbd; other clients stay behind.
+// Transmission, Deluge, rTorrent, aria2 and NZBGet set up in the old apps come
+// over as Downloaders, like qBittorrent and SABnzbd; other clients stay behind.
 func TestPlanEveryDownloaderKind(t *testing.T) {
 	s := &Snapshot{Kind: Sonarr, DownloadClients: []Provider{
 		{Name: "Trans", Kind: "Transmission", Settings: map[string]any{"host": "transmission", "port": int64(9091), "urlBase": "/transmission/", "username": "me"}, NeedsReentry: []string{"password"}},
 		{Name: "Del", Kind: "Deluge", Settings: map[string]any{"host": "deluge", "port": int64(8112)}, NeedsReentry: []string{"password"}},
+		{Name: "RT", Kind: "RTorrent", Settings: map[string]any{"host": "rtorrent", "port": int64(8080), "urlBase": "RPC2", "username": "me", "tvCategory": "tv-sonarr"}, NeedsReentry: []string{"password"}},
+		{Name: "A2", Kind: "Aria2", Settings: map[string]any{"host": "aria2", "port": int64(6800), "rpcPath": "/rpc", "useSsl": false, "directory": "/data/dl"}, NeedsReentry: []string{"secretToken"}},
 		{Name: "NZB", Kind: "Nzbget", Settings: map[string]any{"host": "nzbget", "port": int64(6789), "username": "nzb"}},
 		{Name: "Old", Kind: "Vuze", Settings: map[string]any{"host": "vuze", "port": int64(9091)}},
+		{Name: "A2 open", Kind: "Aria2", Settings: map[string]any{"host": "aria2-open", "port": int64(6800), "directory": ""}},
 	}}
 	s.finish()
 	p := BuildPlan([]Input{{1, s}}, Choices{})
 	got := map[string]*DownloaderPlan{}
+	needs := map[string]string{}
 	for _, it := range p.Group(GroupDownloaders).Items {
 		got[it.Name] = it.Downloader
+		needs[it.Name] = it.Needs
 	}
-	for name, want := range map[string]string{"Trans": "transmission", "Del": "deluge", "NZB": "nzbget"} {
+	for name, want := range map[string]string{"Trans": "transmission", "Del": "deluge", "RT": "rtorrent", "A2": "aria2", "A2 open": "aria2", "NZB": "nzbget"} {
 		if d := got[name]; d == nil || d.Adapter != want {
 			t.Fatalf("%s: %+v", name, d)
 		}
@@ -856,7 +870,22 @@ func TestPlanEveryDownloaderKind(t *testing.T) {
 	if got["Trans"].URL != "http://transmission:9091/transmission" || got["Trans"].Username != "me" || !got["Trans"].NeedsInput || got["NZB"].NeedsInput {
 		t.Fatalf("details: %+v %+v", got["Trans"], got["NZB"])
 	}
-	if n, ok := notMoved(p, "sonarr download_clients[3]"); !ok || n.Why != "HolyArrs talks to qBittorrent, Transmission, Deluge, SABnzbd and NZBGet only" {
+	if rt := got["RT"]; rt.URL != "http://rtorrent:8080/RPC2" || rt.Username != "me" || !rt.NeedsInput {
+		t.Fatalf("rtorrent: %+v", rt)
+	}
+	if a := got["A2"]; a.URL != "http://aria2:6800/jsonrpc" || a.Username != "" || !a.NeedsInput || needs["A2"] != "your secret token" {
+		t.Fatalf("aria2: %+v needs %q", a, needs["A2"])
+	}
+	if n, ok := notMoved(p, "sonarr download_clients[3].directory"); !ok || n.Why != "the Downloader keeps its own folders; HolyArrs reads where each download lands" {
+		t.Fatalf("aria2 folder: %+v", n)
+	}
+	if a := got["A2 open"]; a.URL != "http://aria2-open:6800/jsonrpc" || a.NeedsInput || needs["A2 open"] != "" {
+		t.Fatalf("aria2 without a secret: %+v needs %q", a, needs["A2 open"])
+	}
+	if n, ok := notMoved(p, "sonarr download_clients[6].directory"); ok {
+		t.Fatalf("empty aria2 folder noted: %+v", n)
+	}
+	if n, ok := notMoved(p, "sonarr download_clients[5]"); !ok || n.Why != "HolyArrs talks to qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd and NZBGet only" {
 		t.Fatalf("vuze: %+v", n)
 	}
 }

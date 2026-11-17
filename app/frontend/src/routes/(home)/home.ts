@@ -6,6 +6,7 @@ import { stageOf } from '#lib/downloads/index.ts';
 import type { CalendarEntry, HealthCheck, TitleView } from '#lib/core/types.ts';
 import type { Fresh } from '#lib/ui/fresh.ts';
 import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 /** downloadLine is the meta line under a download card: percent and time left. */
 export function downloadLine(d: Pick<DownloadRow, 'progress' | 'eta' | 'state' | 'label'>): string {
@@ -36,17 +37,38 @@ export function homeFailures<T extends StageBits>(rows: T[]): T[] {
 
 const fetching = new Set(['checking', 'queued', 'downloading', 'stalled', 'importing']);
 
+type CardRow = StageBits & Pick<DownloadRow, 'id' | 'active' | 'client_item' | 'outside' | 'title_id'>;
+
+/**
+ * homeCounts says whether Home counts a download as HolyArrs's: its own, its
+ * own older ones that only come back as Downloader rows, and torrents linked
+ * to a title in the Library.
+ */
+export function homeCounts(d: Pick<DownloadRow, 'client_item' | 'outside' | 'title_id'>): boolean {
+	return !d.client_item || !d.outside || !!d.title_id;
+}
+
+const fetchingNow = (d: CardRow) => fetching.has(stageOf(d)) && (isActive(d) || stageOf(d) === 'importing');
+
 /**
  * downloadingNow is Home's Downloading row: what HolyArrs is fetching now,
  * furthest along first, at most `cap`. A download being imported counts: the
- * server no longer calls it active (its state is finished), but it is not in the Library yet. Torrents only the Downloader knows,
+ * server no longer calls it active (its state is finished), but it is not in the Library yet. Torrents HolyArrs did not send,
  * seeding, finished and failed rows stay on Downloads.
  */
-export function downloadingNow<T extends StageBits & Pick<DownloadRow, 'id' | 'active' | 'client_item'>>(rows: T[], cap = 20): T[] {
+export function downloadingNow<T extends CardRow>(rows: T[], cap = 20): T[] {
 	return rows
-		.filter((d) => !d.client_item && fetching.has(stageOf(d)) && (isActive(d) || stageOf(d) === 'importing'))
+		.filter((d) => homeCounts(d) && fetchingNow(d))
 		.sort((a, b) => (b.progress || 0) - (a.progress || 0) || b.id - a.id)
 		.slice(0, cap);
+}
+
+/** homeDownloadsURL reads every Downloader row (up to the server's 2000), so a busy Downloader or a second one is not cut off after 200. */
+export const homeDownloadsURL = '/downloads/view?limit=100&outside_limit=2000';
+
+/** notSentNow is what the Downloader is fetching that HolyArrs did not send and Home does not count. */
+export function notSentNow<T extends CardRow>(rows: T[]): T[] {
+	return rows.filter((d) => !homeCounts(d) && fetchingNow(d));
 }
 
 export interface Attention {
@@ -81,11 +103,16 @@ export function healthFix(kind: HealthCheck['kind']): string {
 		case 'source':
 			return '/settings/sources';
 		case 'downloader':
+		case 'save_folder':
+		case 'no_downloader':
+		case 'same_downloader':
 			return '/settings/downloaders';
 		case 'backups':
 			return '/settings/backups';
 		case 'waiting_downloads':
 			return '/downloads?show=waiting.paused';
+		case 'clear_waiting':
+			return '/downloads';
 		case 'config_folder':
 			// No setting fixes it: Status shows the steps.
 			return '/health';
@@ -108,6 +135,10 @@ const healthWords = (): Record<HealthKind, { one: string; many: string; error: [
 	config_disk: { one: t('home.configFolder'), many: t('home.configFolder'), error: [t('home.almostOutOfSpace'), t('home.almostOutOfSpace')], warning: [t('home.runningLowOnSpace'), t('home.runningLowOnSpace')] },
 	config_folder: { one: t('home.configFolder'), many: t('home.configFolder'), error: [t('home.lostIfTheContainer'), t('home.lostIfTheContainer')], warning: [t('home.needsALook'), t('home.needsALook')] },
 	waiting_downloads: { one: t('home.downloads'), many: t('home.downloads'), error: [t('home.waitingForTheirFiles'), t('home.waitingForTheirFiles')], warning: [t('home.waitingForTheirFiles'), t('home.waitingForTheirFiles')] },
+	clear_waiting: { one: t('home.downloads'), many: t('home.downloads'), error: [t('home.waitingToBeCleared'), t('home.waitingToBeCleared')], warning: [t('home.waitingToBeCleared'), t('home.waitingToBeCleared')] },
+	save_folder: { one: t('home.downloader'), many: t('home.downloaders'), error: [t('home.noSaveFolder'), t('home.noSaveFolderMany')], warning: [t('home.noSaveFolder'), t('home.noSaveFolderMany')] },
+	no_downloader: { one: t('home.downloader'), many: t('home.downloaders'), error: [t('home.noneForSources'), t('home.noneForSources')], warning: [t('home.noneForSources'), t('home.noneForSources')] },
+	same_downloader: { one: t('home.downloader'), many: t('home.downloaders'), error: [t('home.addedTwice'), t('home.addedTwiceMany')], warning: [t('home.addedTwice'), t('home.addedTwiceMany')] },
 	// The backups:key check: no key kit saved for the current master key.
 	key_kit: { one: t('home.masterKey'), many: t('home.masterKey'), error: [t('home.noKeyKitSaved'), t('home.noKeyKitSaved')], warning: [t('home.noKeyKitSaved'), t('home.noKeyKitSaved')] },
 	trailers: { one: t('home.trailers'), many: t('home.trailers'), error: [t('home.notLoading'), t('home.notLoading')], warning: [t('home.lookupsFailing'), t('home.lookupsFailing')] }
@@ -314,6 +345,19 @@ export function arrivedHead(cards: Pick<HomeCard, 'at'>[], now = Date.now()): { 
 	return { title: arrivedTitle(newest, now), subtitle: now - newest < 14 * DAY ? t('home.newInTheLast') : undefined };
 }
 
+/** upLine is one Coming up line: its episode words and when it airs. The day comes from the card's
+ * own date in the app's language; the server's English day words are the fallback. */
+export function upLine(c: { line?: string; at?: string }, today: string, locale = appLocale()): { sub: string; when: string; now: boolean } {
+	let [sub = '', tail] = (c.line ?? '').split(' · ');
+	const outNow = /out now/i.test(tail ?? '');
+	const now = outNow || c.at?.slice(0, 10) === today;
+	const d = /^\d{4}-\d{2}-\d{2}/.test(c.at ?? '') ? new Date(`${c.at!.slice(0, 10)}T00:00:00Z`) : null;
+	const day = d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }) : '';
+	// A movie's line is "Out <day>": the date column holds the day.
+	if (tail === undefined && /^Out \S/.test(sub) && day) [sub, tail] = ['', day];
+	return { sub, when: outNow ? t('home.outNow') : now ? t('home.today') : day || (tail ?? ''), now };
+}
+
 /** soonTitle is Coming soon's subtitle: what is next and when. */
 export function soonLine(first: { name: string; subtitle?: string } | undefined): string {
 	if (!first) return t('home.theNext30Days');
@@ -454,8 +498,8 @@ export function fallbackRows(owner: boolean): HomeRow[] {
 export function homeStrip(c: Pick<HomeCard, 'kind' | 'name' | 'line'>): Fresh | null {
 	// The server's plain "Show" and "Music" lines say nothing is new: no strip.
 	if (!c.line || c.line === 'Show' || c.line === 'Music') return null;
-	if (c.kind === 'show') return { kind: c.line.startsWith('Season') && !c.line.includes('·') ? 'new_season' : 'new_episode', text: c.line };
-	if (c.kind === 'artist') return { kind: 'recently_added', text: `${c.name} · ${c.line}` };
+	if (c.kind === 'show') return { kind: c.line.startsWith('Season') && !c.line.includes('·') ? 'new_season' : 'new_episode', text: serverWords(c.line) };
+	if (c.kind === 'artist') return { kind: 'recently_added', text: `${c.name} · ${serverWords(c.line)}` };
 	return null;
 }
 

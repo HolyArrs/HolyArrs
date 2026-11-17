@@ -2,10 +2,14 @@ package migrate
 
 import (
 	"fmt"
+	"net/url"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
 // sourceKinds are the media kinds a Source from an app serves.
@@ -153,6 +157,12 @@ func (b *builder) indexers(s *Snapshot) {
 			it.Needs = "your key"
 			it.Detail = format + " at " + u + "; added paused until you type its key and resume it"
 		}
+		// A backup holds no Prowlarr key: a Source through Prowlarr needs it typed.
+		if s.Via == ViaBackup && throughProwlarr(u) {
+			sp.NeedsKey = true
+			it.Needs = "Prowlarr's API key"
+			it.Detail = format + " at " + u + "; goes through Prowlarr, so it needs Prowlarr's API key: added paused until you type it and resume it"
+		}
 		// Prowlarr's indexer tags only pick apps and proxies: a proxy
 		// sharing one of them was used for this indexer.
 		for _, px := range s.IndexerProxies {
@@ -160,7 +170,23 @@ func (b *builder) indexers(s *Snapshot) {
 				it.Detail += "; used proxy " + clip(px.Name, 80) + " there; set a proxy on this Source"
 			}
 		}
-		b.addTagged(s.Kind, GroupSources, it, ix.Tags)
+		if prev := b.sameSource(it.Key, sp); prev != nil {
+			// The same indexer in another app: one Source serves both kinds.
+			for _, k := range sp.Kinds {
+				if !slices.Contains(prev.Kinds, k) {
+					prev.Kinds = append(prev.Kinds, k)
+				}
+				if cs := sp.Categories[k]; len(cs) > 0 && len(prev.Categories[k]) == 0 {
+					if prev.Categories == nil {
+						prev.Categories = map[string][]int{}
+					}
+					prev.Categories[k] = cs
+				}
+			}
+			b.p.Mapped = append(b.p.Mapped, from)
+		} else {
+			b.addTagged(s.Kind, GroupSources, it, ix.Tags)
+		}
 		keys := make([]string, 0, len(ix.Settings))
 		for k := range ix.Settings {
 			keys = append(keys, k)
@@ -179,13 +205,35 @@ func (b *builder) indexers(s *Snapshot) {
 	}
 }
 
-func anyKey(m map[string]any, key string) any {
-	for k, v := range m {
-		if strings.EqualFold(k, key) {
-			return v
+// sameSource finds the Source already planned under this key when it is
+// the same feed (format and address), or nil.
+func (b *builder) sameSource(key string, sp *SourcePlan) *SourcePlan {
+	if !b.keys[key] {
+		return nil
+	}
+	for _, it := range b.items[GroupSources].Items {
+		if it.Key == key && it.Source != nil && it.Source.Format == sp.Format && it.Source.URL == sp.URL && it.Source.Protocol == sp.Protocol {
+			return it.Source
 		}
 	}
 	return nil
+}
+
+func anyKey(m map[string]any, key string) any {
+	if v, ok := m[key]; ok {
+		return v
+	}
+	// Keys that differ only in case: the smallest wins, every time.
+	best, found := "", false
+	for k := range m {
+		if strings.EqualFold(k, key) && (!found || k < best) {
+			best, found = k, true
+		}
+	}
+	if !found {
+		return nil
+	}
+	return m[best]
 }
 
 func hostURL(host string, port int, tls bool, base string) string {
@@ -213,24 +261,34 @@ func (b *builder) downloaders(s *Snapshot) {
 		from := b.from("download_clients", i)
 		var adapter string
 		switch k := strings.ToLower(d.Kind); k {
-		case "qbittorrent", "sabnzbd", "transmission", "deluge", "nzbget":
+		case "qbittorrent", "sabnzbd", "transmission", "deluge", "rtorrent", "aria2", "nzbget":
 			adapter = k
 		}
 		if adapter == "" {
-			b.not(GroupDownloaders, from, d.Name, "HolyArrs talks to qBittorrent, Transmission, Deluge, SABnzbd and NZBGet only")
+			b.not(GroupDownloaders, from, d.Name, "HolyArrs talks to qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd and NZBGet only")
 			continue
 		}
 		port, _ := setNum(d.Settings, "port")
+		if port < 0 || port > 65535 {
+			port = 0
+		}
 		tls := strings.EqualFold(setStr(d.Settings, "useSsl"), "true")
-		u := hostURL(setStr(d.Settings, "host"), int(port), tls, setStr(d.Settings, "urlBase"))
+		path := setStr(d.Settings, "urlBase", "rpcPath")
+		if adapter == "aria2" {
+			path = downloads.Aria2Path(path)
+		}
+		u := hostURL(setStr(d.Settings, "host"), int(port), tls, path)
 		if u == "" || metadataHost(u) {
 			b.not(GroupDownloaders, from, d.Name, "no usable address")
 			continue
 		}
 		cat := setStr(d.Settings, "movieCategory", "tvCategory", "musicCategory", "category")
-		locked := hasField(d.NeedsReentry, "password", "apiKey")
+		locked := hasField(d.NeedsReentry, "password", "apiKey", "secretToken")
 		b.addDownloader(s.Kind, from, d.Name, &DownloaderPlan{Adapter: adapter, URL: u, Username: clip(setStr(d.Settings, "username"), 100),
 			Category: clean64(cat), Priority: d.Priority, NeedsInput: locked}, d.Tags)
+		if adapter == "aria2" && setStr(d.Settings, "directory") != "" {
+			b.not(GroupDownloaders, from+".directory", "download folders", "the Downloader keeps its own folders; HolyArrs reads where each download lands")
+		}
 	}
 	if d := s.Downloader; d != nil {
 		adapter := map[Kind]string{QBittorrent: "qbittorrent", SABnzbd: "sabnzbd"}[s.Kind]
@@ -270,8 +328,11 @@ func (b *builder) addDownloader(app Kind, from, name string, d *DownloaderPlan, 
 	it.Detail += "; added paused: check it and resume it yourself"
 	if d.NeedsInput {
 		it.Needs = "your password"
-		if d.Adapter == "sabnzbd" {
+		switch d.Adapter {
+		case "sabnzbd":
 			it.Needs = "your key"
+		case "aria2":
+			it.Needs = "your secret token"
 		}
 		it.Detail = d.Adapter + " at " + d.URL + "; added paused until you type " + it.Needs + " and resume it"
 	}
@@ -394,7 +455,8 @@ func (b *builder) naming(s *Snapshot) {
 }
 
 // subtitleSiteKinds maps their subtitle site names to ours.
-var subtitleSiteKinds = map[string]string{"podnapisi": "podnapisi", "gestdown": "gestdown"}
+var subtitleSiteKinds = map[string]string{"podnapisi": "podnapisi", "gestdown": "gestdown", "yifysubtitles": "yifysubtitles",
+	"tvsubtitles": "tvsubtitles", "bsplayer": "bsplayer"}
 
 func (b *builder) subtitles(s *Snapshot) {
 	b.cover("subtitles")
@@ -433,7 +495,7 @@ func (b *builder) subtitles(s *Snapshot) {
 	} else {
 		langFrom = b.from("subtitles.profiles", used)
 		if len(sub.Languages) > 0 {
-			b.not(GroupSubtitles, b.from("subtitles.languages", -1), strings.Join(sub.Languages, ", "), "the default profile's languages were moved; the other enabled languages are only choices in Bazarr")
+			b.not(GroupSubtitles, b.from("subtitles.languages", -1), strings.Join(sub.Languages, ", "), "the default profile's languages were imported; the other enabled languages are only choices in Bazarr")
 		}
 	}
 	if len(wants) > 0 {
@@ -525,4 +587,19 @@ func sourceTime(v string) (time.Time, bool) {
 		}
 	}
 	return time.Time{}, false
+}
+
+// throughProwlarr says whether addr is a Prowlarr per-site feed
+// (http://prowlarr:9696/5/api).
+func throughProwlarr(addr string) bool {
+	u, err := url.Parse(addr)
+	if err != nil {
+		return false
+	}
+	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
+	if len(parts) != 2 || parts[1] != "api" {
+		return false
+	}
+	_, err = strconv.Atoi(parts[0])
+	return err == nil
 }

@@ -89,8 +89,8 @@ func TestShowAsksMigrationKeepsAsks(t *testing.T) {
 		t.Fatalf("show ask: %v", err)
 	}
 	err = s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO asks (created_at, created_by, updated_at, updated_by, kind, tmdb_id, name, state, asked_by, asked_at)
-			VALUES (` + meta + `, 'movie', '693134', 'Dune again', 'asked', 11, ` + at + `)`)
+		_, err := tx.Exec(`INSERT INTO asks (created_at, created_by, updated_at, updated_by, kind, tmdb_id, name, state, asked_by, asked_at, quality)
+			VALUES (` + meta + `, 'movie', '693134', 'Dune again', 'asked', 11, ` + at + `, 'standard')`)
 		return err
 	})
 	if err == nil {

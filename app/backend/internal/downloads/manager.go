@@ -1,7 +1,10 @@
 package downloads
 
 import (
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
+
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,6 +15,7 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 // KindGrab is the Job kind that sends a chosen Release to a Downloader.
@@ -53,6 +57,9 @@ type Manager struct {
 	Live     Publisher                                 // may be nil
 	Engine   func(d domain.Downloader) (Engine, error) // nil means the built-in adapters
 	SavePath string                                    // where the Downloader saves, as it sees it
+	// ConfigDir is HolyArrs's own config folder. A Downloader's save root is
+	// never kept inside it or around it.
+	ConfigDir string
 	// StallAfter and ActAfter override the settings stalled_after_hours and
 	// stalled_act_hours (tests); zero reads the settings.
 	StallAfter  time.Duration
@@ -75,6 +82,11 @@ type Manager struct {
 	// through the proxy with every address checked. Nil refuses such a send to
 	// qBittorrent or SABnzbd.
 	SourceTransport func(ctx context.Context, src domain.Source) (http.RoundTripper, error)
+	// SourceHeader gives headers a Source's own site needs to hand out a
+	// Release file, such as a sign-in cookie; nil or empty needs none. With
+	// one, HolyArrs fetches the file itself and sends it, so the Downloader
+	// never needs the cookie and it is never stored in a link.
+	SourceHeader func(ctx context.Context, src domain.Source) (http.Header, error)
 	// FromVault reads a Downloader's key or password from the vault.
 	FromVault func(ctx context.Context, id int64) (string, error)
 	// Sync, when set and on (downloads.sync = on), is the background reader.
@@ -91,6 +103,9 @@ type Manager struct {
 	hosts            map[string]chan struct{} // one send at a time per host (a slot of one)
 	lastSend         map[string]time.Time
 	missed           map[int64]missCount // downloads missing from their Downloader, by id
+	crawl            map[int64]crawlMark // speed windows of the crawling torrent rule, by download id
+	relinkTried      map[int64]time.Time // last look for a removed Downloader's download in the others, by download id
+	packMu           sync.Mutex          // one Widen at a time
 }
 
 // missCount is how many syncs in a row a download was missing, the snapshot
@@ -109,6 +124,11 @@ type releaseRefused struct{ msg string }
 // grabFailed holds each Downloader's refusal of one grab, in the order tried.
 // It is final only when every refusal was the Release's own.
 type grabFailed []error
+
+// NoDownloaderError says no Downloader takes the Release's protocol at all.
+type NoDownloaderError struct{ Protocol string }
+
+func (e *NoDownloaderError) Error() string { return sources.NoDownloader(e.Protocol) }
 
 // TagsError says no Downloader of the protocol takes the title's tags.
 type TagsError struct {
@@ -168,26 +188,57 @@ func (m *Manager) EngineFor(ctx context.Context, d domain.Downloader) (Engine, e
 	h := Client(d.URL, d.AllowLocal)
 	switch d.Adapter {
 	case "qbittorrent":
+		q := NewQbittorrentKey(d.URL, secret, h)
 		if d.Username != "" {
-			return NewQbittorrentLogin(d.URL, d.Username, secret, h), nil
+			q = NewQbittorrentLogin(d.URL, d.Username, secret, h)
 		}
-		return NewQbittorrentKey(d.URL, secret, h), nil
+		q.cats = d.Categories()
+		return q, nil
 	case "sabnzbd":
 		return NewSabnzbd(d.URL, secret, h), nil
 	case "transmission":
 		e := NewTransmission(d.URL, d.Username, secret, h)
-		e.category = d.Category
+		e.category, e.others = d.Category, otherCategories(d)
 		return e, nil
 	case "nzbget":
 		e := NewNZBGet(d.URL, d.Username, secret, h)
-		e.Category = d.Category
+		e.Category, e.Others = d.Category, otherCategories(d)
 		return e, nil
 	case "deluge":
 		e := NewDeluge(d.URL, secret, h)
-		e.Category = d.Category
+		e.Category, e.Others = d.Category, otherCategories(d)
+		return e, nil
+	case "rtorrent":
+		e := NewRTorrent(d.URL, d.Username, secret, h)
+		e.Category, e.Others = d.Category, otherCategories(d)
+		e.PathMap, e.SaveRoot = d.PathMap, m.SavePath
+		e.Keep = m.libraryFolders
+		return e, nil
+	case "aria2":
+		e := NewAria2(d.URL, secret, h)
+		e.Category, e.Others = d.Category, otherCategories(d)
+		e.PathMap, e.SaveRoot = d.PathMap, m.SavePath
+		e.Keep = m.libraryFolders
 		return e, nil
 	}
 	return nil, fmt.Errorf("no engine for adapter %q", d.Adapter)
+}
+
+// libraryFolders are the Library folders' paths. An rTorrent or aria2 remove
+// never deletes in or around them, whatever path the Downloader reports.
+func (m *Manager) libraryFolders(ctx context.Context) ([]string, error) {
+	if m.Store == nil {
+		return nil, errors.New("no database")
+	}
+	fs, err := database.Select[mediafiles.LibraryFolder](ctx, m.Store.Read(), "library_folders", "1 = 1")
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+	out := make([]string, 0, len(fs))
+	for _, f := range fs {
+		out = append(out, f.Path)
+	}
+	return out, nil
 }
 
 func (e *TagsError) Error() string {
@@ -284,4 +335,37 @@ func (m *Manager) engine(ctx context.Context, d domain.Downloader) (Engine, erro
 	m.engines[d.ID] = e
 	m.mu.Unlock()
 	return e, nil
+}
+
+// otherCategories lists d's categories other than d.Category, the one in use.
+func otherCategories(d domain.Downloader) []string {
+	var out []string
+	for _, c := range d.Categories() {
+		if !sameCategory(c, d.Category) {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// listCategories lists the jobs in each of cats, once each.
+func listCategories(ctx context.Context, e Engine, cats []string) ([]Job, error) {
+	if len(cats) == 1 {
+		return e.List(ctx, cats[0])
+	}
+	seen := map[string]bool{}
+	var out []Job
+	for _, c := range cats {
+		jobs, err := e.List(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+		for _, j := range jobs {
+			if !seen[j.ID] {
+				seen[j.ID] = true
+				out = append(out, j)
+			}
+		}
+	}
+	return out, nil
 }

@@ -24,6 +24,7 @@ var (
 	ErrURL         = errors.New("the address must start with http:// or https:// and name a host, with no name or password in it")
 	ErrCategory    = errors.New("the category must be 1 to 64 characters with no slashes")
 	ErrDelugeLabel = errors.New("Deluge labels use only lowercase letters, digits, _ - and .")
+	ErrAria2Folder = errors.New("aria2 keeps each category in a folder, so the category must be a plain folder name")
 	ErrPriority    = errors.New("priority must be 1 to 50 (1 is used first)")
 	ErrPathMap     = errors.New("each path map needs both paths, each starting with / or a drive letter")
 	ErrUsername    = errors.New("the sign-in name must be at most 100 characters")
@@ -31,24 +32,39 @@ var (
 	ErrQbitKey     = errors.New("qBittorrent needs an API key (qBittorrent 5.2 or newer: Options > Web UI > API key) or a user name and password")
 	ErrKeyAgain    = errors.New("the address changed to another host; type the key or password again so it is never sent to a new host by itself")
 	ErrNoVault     = errors.New("keys cannot be stored: the secrets vault is not open")
-	ErrBusy        = errors.New("this Downloader still has active downloads; pause it and let them finish first (its category and address cannot change, and it cannot be removed, while they run)")
+	// ErrAfterImportCategory means a category after import was asked of a
+	// Downloader other than qBittorrent.
+	ErrAfterImportCategory = errors.New("moving a torrent to another category after import works with qBittorrent only")
+	// ErrAfterImportSame means the category after import is one of the main categories.
+	ErrAfterImportSame = errors.New("the category after import must differ from the Downloader's own categories")
+	ErrBusy            = errors.New("this Downloader still has active downloads; pause it and let them finish first (its category and address cannot change, and it cannot be removed, while they run)")
 )
 
 // Input holds the fields a caller sets when saving a Downloader.
 type Input struct {
-	Name          string           `json:"name"`
-	Adapter       string           `json:"kind"`
-	URL           string           `json:"url"`
-	Username      *string          `json:"username"`
-	Secret        string           `json:"secret"`
-	ClearSecret   bool             `json:"clear_secret"`
-	Category      *string          `json:"category"`
-	Priority      *int             `json:"priority"`
-	PathMap       []domain.PathMap `json:"path_map"`
-	AllowLocal    *bool            `json:"allow_local_network"`
-	Writable      *bool            `json:"writable"`
-	ClearFinished *bool            `json:"clear_finished"`
-	Tags          []string         `json:"tags"`
+	Name        string  `json:"name"`
+	Adapter     string  `json:"kind"`
+	URL         string  `json:"url"`
+	Username    *string `json:"username"`
+	Secret      string  `json:"secret"`
+	ClearSecret bool    `json:"clear_secret"`
+	Category    *string `json:"category"`
+	// Category for one kind of title; "" uses Category.
+	CategoryMovies *string          `json:"category_movies"`
+	CategoryShows  *string          `json:"category_shows"`
+	CategoryMusic  *string          `json:"category_music"`
+	Priority       *int             `json:"priority"`
+	PathMap        []domain.PathMap `json:"path_map"`
+	AllowLocal     *bool            `json:"allow_local_network"`
+	Writable       *bool            `json:"writable"`
+	ClearFinished  *bool            `json:"clear_finished"`
+	Tags           []string         `json:"tags"`
+	// AfterSeeding: left out, the choice stays as it is.
+	AfterSeeding *SeedingChoice `json:"after_seeding"`
+	// CategoryAfterImport: "" clears it; qBittorrent only.
+	CategoryAfterImport *string `json:"category_after_import"`
+	// OwnOnly: show and change only HolyArrs's own items.
+	OwnOnly *bool `json:"own_only"`
 }
 
 // HealthView is the stored health of a Downloader as shown to users.
@@ -106,12 +122,12 @@ func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, 
 		} else if n > 0 {
 			return ErrPendingAttempt
 		}
-		oldHost, oldCat := hostOf(d.URL), d.Category
+		oldHost, oldCat := hostOf(d.URL), strings.Join(mainCategories(d), "/")
 		oldLogin := d.Username != ""
 		if err := fill(in, &d, false); err != nil {
 			return err
 		}
-		if hostOf(d.URL) != oldHost || d.Category != oldCat {
+		if hostOf(d.URL) != oldHost || !sameCategory(strings.Join(mainCategories(d), "/"), oldCat) {
 			n, err := activeCount(tx, id)
 			if err != nil {
 				return err
@@ -219,7 +235,11 @@ func HealthOf(d domain.Downloader, now time.Time) HealthView {
 	case d.State == "auth_failed":
 		return HealthView{"sign_in_refused", "Sign-in refused", "It turned down the key or sign-in. Check them and test again."}
 	case d.BackoffUntil != nil && d.BackoffUntil.After(now):
-		return HealthView{"resting", "Resting", "It did not answer, so HolyArrs waits until " + d.BackoffUntil.UTC().Format("15:04 UTC") + " before sending to it again. " + d.LastError}
+		why := ""
+		if e := strings.TrimRight(strings.TrimSpace(d.LastError), "."); e != "" {
+			why = " (" + e + ")"
+		}
+		return HealthView{"resting", "Resting", "It did not answer" + why + ", so HolyArrs waits until " + d.BackoffUntil.UTC().Format("15:04 UTC") + " before sending to it again."}
 	case d.State == "unreachable":
 		return HealthView{"not_answering", "Not answering", "It did not answer the last check. " + d.LastError}
 	}
@@ -246,7 +266,7 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 	d.Name = name
 	if isNew || in.Adapter != "" {
 		switch in.Adapter {
-		case "qbittorrent", "transmission", "deluge":
+		case "qbittorrent", "transmission", "deluge", "rtorrent", "aria2":
 			d.Protocol = "torrent"
 		case "sabnzbd", "nzbget":
 			d.Protocol = "usenet"
@@ -272,16 +292,29 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 		d.Username = strings.TrimSpace(*in.Username)
 	}
 	if in.Category != nil {
-		c := strings.TrimSpace(*in.Category)
-		if c == "" || len(c) > 64 || strings.ContainsAny(c, `/\`) {
-			return ErrCategory
+		c, err := checkCategory(*in.Category, d.Adapter)
+		if err != nil {
+			return err
 		}
-		if d.Adapter == "deluge" && strings.Trim(c, "abcdefghijklmnopqrstuvwxyz0123456789_.-") != "" {
-			return ErrDelugeLabel
+		if c == "" {
+			return ErrCategory
 		}
 		d.Category = c
 	} else if isNew {
 		d.Category = "holyarrs"
+	}
+	for _, k := range []struct {
+		in  *string
+		out *string
+	}{{in.CategoryMovies, &d.CategoryMovies}, {in.CategoryShows, &d.CategoryShows}, {in.CategoryMusic, &d.CategoryMusic}} {
+		if k.in == nil {
+			continue
+		}
+		c, err := checkCategory(*k.in, d.Adapter)
+		if err != nil {
+			return err
+		}
+		*k.out = c
 	}
 	if in.Priority != nil {
 		if *in.Priority < 1 || *in.Priority > 50 {
@@ -319,6 +352,22 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 	}
 	if isNew {
 		d.AfterImport, d.State = "leave", "ok"
+	}
+	if in.OwnOnly != nil {
+		d.OwnOnly = *in.OwnOnly
+	}
+	if in.CategoryAfterImport != nil {
+		c, err := checkCategory(*in.CategoryAfterImport, d.Adapter)
+		if err != nil {
+			return err
+		}
+		d.CategoryAfterImport = c
+	}
+	if err := checkAfterImport(*d); err != nil {
+		return err
+	}
+	if in.AfterSeeding != nil {
+		return applySeeding(*in.AfterSeeding, d)
 	}
 	return nil
 }
@@ -364,4 +413,43 @@ func activeCount(tx *sql.Tx, id int64) (int, error) {
 	var n int
 	err := tx.QueryRow("SELECT count(*) FROM downloads WHERE downloader_id = ? AND state IN ("+activeStates+")", id).Scan(&n)
 	return n, err
+}
+
+// checkCategory trims a category and checks it; "" is returned as is.
+func checkCategory(raw, adapter string) (string, error) {
+	c := strings.TrimSpace(raw)
+	if c == "" {
+		return "", nil
+	}
+	if len(c) > 64 || strings.ContainsAny(c, `/\`) {
+		return "", ErrCategory
+	}
+	if adapter == "deluge" && strings.Trim(c, "abcdefghijklmnopqrstuvwxyz0123456789_.-") != "" {
+		return "", ErrDelugeLabel
+	}
+	if adapter == "aria2" && (c == "." || c == ".." || strings.ContainsAny(c, `:*?"<>|`) || strings.ContainsFunc(c, func(r rune) bool { return r < 0x20 || r == 0x7f })) {
+		return "", ErrAria2Folder
+	}
+	return c, nil
+}
+
+// checkAfterImport refuses a category after import on anything but
+// qBittorrent, and one that is a main category.
+func checkAfterImport(d domain.Downloader) error {
+	if d.CategoryAfterImport == "" {
+		return nil
+	}
+	if d.Adapter != "qbittorrent" {
+		return ErrAfterImportCategory
+	}
+	if hasCategory(mainCategories(d), d.CategoryAfterImport) {
+		return ErrAfterImportSame
+	}
+	return nil
+}
+
+// mainCategories are the categories new items go to, without the one after import.
+func mainCategories(d domain.Downloader) []string {
+	d.CategoryAfterImport = ""
+	return d.Categories()
 }

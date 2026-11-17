@@ -1,0 +1,18 @@
+{
+	"settings.logs.title": "Logi",
+	"settings.logs.download": "Pobierz",
+	"settings.logs.filter": "Filtruj log",
+	"settings.logs.level": "Poziom",
+	"settings.logs.every": "Każda linia",
+	"settings.logs.warnings": "Ostrzeżenia i błędy",
+	"settings.logs.errors": "Tylko błędy",
+	"settings.logs.text": "Tekst",
+	"settings.logs.example": "np. qBittorrent",
+	"settings.logs.from": "Od",
+	"settings.logs.to": "Do",
+	"settings.logs.apply": "Zastosuj",
+	"settings.logs.clear": "Wyczyść",
+	"settings.logs.lines": "Linie",
+	"settings.logs.newer": "Nowsze",
+	"settings.logs.older": "Starsze"
+}

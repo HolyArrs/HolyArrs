@@ -23,6 +23,7 @@ var optionalInterfaces = []reflect.Type{
 	reflect.TypeFor[TorrentInspector](),
 	reflect.TypeFor[Retrier](),
 	reflect.TypeFor[AllLister](),
+	reflect.TypeFor[ActiveLister](),
 	reflect.TypeFor[TorrentAdder](),
 	reflect.TypeFor[TorrentFolders](),
 	reflect.TypeFor[TorrentBulk](),
@@ -71,6 +72,26 @@ type roSab struct {
 	roUsenetQueue
 }
 
+// roRTorrent is rTorrent's shape: the engine, the row controls and the
+// background read of what is still downloading.
+type roRTorrent struct {
+	*roCore
+	roController
+	roActiveLister
+}
+
+// roTransmission is Transmission's shape: the engine plus the full list.
+type roTransmission struct {
+	*roCore
+	roAllLister
+}
+
+// roAria2 is aria2's shape: the engine plus the row controls.
+type roAria2 struct {
+	*roCore
+	roController
+}
+
 type roUsenetQueue struct{ c *roCore }
 
 type roController struct{ c *roCore }
@@ -82,6 +103,8 @@ type roTorrentInspector struct{ c *roCore }
 type roRetrier struct{ c *roCore }
 
 type roAllLister struct{ c *roCore }
+
+type roActiveLister struct{ c *roCore }
 
 type roTorrentAdder struct{ c *roCore }
 
@@ -180,6 +203,10 @@ func (r roAllLister) ListAll(ctx context.Context) ([]Job, error) {
 	return r.c.inner.(AllLister).ListAll(ctx)
 }
 
+func (r roActiveLister) ListActive(ctx context.Context, ids []string) ([]Job, error) {
+	return r.c.inner.(ActiveLister).ListActive(ctx, ids)
+}
+
 func (r roTorrentAdder) AddTorrents(ctx context.Context, b AddBatch) (AddOutcome, error) {
 	if r.c.allowAdd {
 		return r.c.inner.(TorrentAdder).AddTorrents(ctx, b)
@@ -212,6 +239,8 @@ func (roTrackerEditor) RemoveTrackers(context.Context, string, []string) error {
 func (roMover) SetLocation(context.Context, []string, string) error { return ErrReadOnly }
 
 func (roMover) SetTorrentLimits(context.Context, []string, int64, int64) error { return ErrReadOnly }
+
+func (roMover) SetCategory(context.Context, string, string) error { return ErrReadOnly }
 
 func (r roMainSyncer) SyncMain(ctx context.Context, rid int64) (MainData, error) {
 	return r.c.inner.(MainSyncer).SyncMain(ctx, rid)
@@ -274,6 +303,12 @@ func readOnlyWrap(inner Engine, allowAdd bool) Engine {
 			roTorrentFolders{c}, roTorrentBulk{c}, roShareLimiter{c}, roSlowModer{c}, roTrackerEditor{c}, roMover{c}, roMainSyncer{c}}
 	case shapeOf(&Sabnzbd{}):
 		return roSab{c, roController{c}, roRetrier{c}, roHistoryReader{c}, roQueueReader{c}, roUsenetInspector{c}, roUsenetQueue{c}}
+	case shapeOf(&RTorrent{}):
+		return roRTorrent{c, roController{c}, roActiveLister{c}}
+	case shapeOf(&Aria2{}):
+		return roAria2{c, roController{c}}
+	case shapeOf(&Transmission{}):
+		return roTransmission{c, roAllLister{c}}
 	}
 	return c
 }

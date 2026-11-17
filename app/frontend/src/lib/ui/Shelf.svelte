@@ -174,7 +174,7 @@
 	@media (max-width: 767px) { .sk { --w: calc(var(--item) * .78); } }
 	.row > :global(*) { scroll-snap-align: start; }
 	.arrow { position: absolute; top: calc(50% - 26px); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
-	.arrow :global(.ui-ibtn) { width: 40px; height: 40px; box-shadow: var(--shadow-lift); background: var(--surface-1); color: var(--text); }
+	.arrow :global(.ui-ibtn) { width: 36px; height: 36px; box-shadow: var(--shadow-lift); background: var(--surface-1); color: var(--text); }
 	.left { inset-inline-start: -12px; }
 	.right { inset-inline-end: -12px; }
 	.wrap:hover .arrow:not(.hide) { opacity: 1; }

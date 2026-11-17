@@ -10,7 +10,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
-	import { MoveSteps, StepFoot, ReadSheet, type ReadAnswer, type SavedKey, ItemsSheet, type SheetRow, type ShowList, ReadStep, ChooseStep, BeforeSheet, MoveStep, DoneStep, createFollower, appName, asStep, buckets, countWords, extraProblems, folderProblem, moveTotal, plural, rulesFrom, running, stepGate, type AppKind, type Line, type Move, type PathRule, type PersonChoice, type Plan, type Report, type Snapshot, type Step } from '#lib/migrate/index.ts';
+	import { MoveSteps, StepFoot, ReadSheet, type ReadAnswer, type SavedKey, ItemsSheet, type SheetRow, type ShowList, ReadStep, ChooseStep, BeforeSheet, MoveStep, DoneStep, createFollower, appName, asStep, leaveFolders, latestPerInstance, buckets, countWords, extraProblems, folderProblem, moveTotal, plural, rulesFrom, running, stepGate, usedByMoves, type AppKind, type Line, type Move, type PathRule, type PersonChoice, type Plan, type Report, type Snapshot, type Step } from '#lib/migrate/index.ts';
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -34,7 +34,7 @@
 
 	// What the page knows. An owner who signs in another way has no password to confirm: moving asks for one, so the step shows how to set it (Settings and the wizard).
 	const passwordFlowCtx = {
-		get runFlow() { return runFlow; },
+		get runFlow() { return runFlow; }, get step() { return step; },
 	};
 	const passwordFlow = createMovePassword(passwordFlowCtx);
 	onMount(() => {
@@ -49,13 +49,13 @@
 					passwordFlow.resumeMove = true;
 					passwordFlow.pwSheet = true;
 				}
-			}
+			} else if (path === '/migrate/moves') passwordFlow.waitForCheck();
 		};
 		window.addEventListener('holyarrs:reauth', onReauth);
 		return () => window.removeEventListener('holyarrs:reauth', onReauth);
 	});
 	$effect(() => {
-		if (passwordFlow.mustSetPw && session.s.hasPassword) passwordFlow.mustSetPw = false;
+		passwordFlow.settle();
 	});
 	let loaded = $state(false);
 	let loadError = $state('');
@@ -72,6 +72,7 @@
 	let readOpen = $state(false);
 	let readStart = $state<AppKind>('radarr');
 	let readAgain = $state(false);
+	let readAddress = $state('');
 	let reading = $state('');
 	let forgetting = $state<Snapshot | null>(null);
 	let forgetOpen = $state(false);
@@ -86,7 +87,11 @@
 	let others = $state<Record<string, string>>({});
 	let extra = $state<PathRule[]>([]);
 	let suggested = $state<Record<string, string>>({});
+	let missingPaths = $state<Record<string, string>>({});
+	let seenFolders = $state<string[]>([]);
 	let skip = $state<string[]>([]);
+	// On by default: profiles bring their formats and scores as traits.
+	let noFormats = $state(false);
 	let people = $state<Record<string, PersonChoice>>({});
 	let changes = $state(0);
 	let planTimer: ReturnType<typeof setTimeout> | undefined;
@@ -155,12 +160,7 @@
 		tryCtrl?.abort();
 	});
 
-	const usedBy = $derived.by(() => {
-		const m = new Map<number, number>();
-		// Newest first: the newest done move that used a read names it.
-		for (const mv of moves) if (mv.state === 'done') for (const id of mv.snapshots ?? []) if (!m.has(id)) m.set(id, mv.id);
-		return m;
-	});
+	const usedBy = $derived(usedByMoves(moves, snapshots));
 	// Only rows on screen count: a folder from a read switched off is not marked anywhere.
 	const folderErrors = $derived(Object.keys(picks).filter((p) => (plan?.old_paths ?? []).includes(p) && folderProblem(p, picks[p], others[p]) !== '').length);
 	const extraErrors = $derived(extraProblems(extra));
@@ -254,16 +254,11 @@
 	}
 	onMount(() => void load());
 
-	/** Switches on the newest read of each app, unless a move already used it. */
+	/** Switches on the newest read of each copy of an app, unless a move already used it. */
 	function defaultPicks(): number[] {
-		const out: number[] = [];
-		const kinds = new Set<string>();
-		for (const s of snapshots) {
-			if (kinds.has(s.kind)) continue;
-			kinds.add(s.kind);
-			if (!usedBy.has(s.id)) out.push(s.id);
-		}
-		return out;
+		return latestPerInstance(snapshots)
+			.filter((s) => !usedBy.has(s.id))
+			.map((s) => s.id);
 	}
 
 	// The address: one entry per step, so the browser's Back works.
@@ -343,7 +338,9 @@
 	function choices() {
 		// Only rules that check out are sent; a row with a problem is marked on screen and holds the step.
 		const ok = Object.fromEntries(Object.entries(picks).filter(([p, v]) => folderProblem(p, v, others[p]) === ''));
-		return { snapshots: picked, path_rules: rulesFrom(ok, others, extra.filter((_, i) => extraErrors[i] === '')), skip, people };
+		// Old folders set to "Don't bring them": their titles stay behind.
+		const leave = leaveFolders(plan, folders, picks);
+		return { snapshots: picked, path_rules: rulesFrom(ok, others, extra.filter((_, i) => extraErrors[i] === '')), skip, people, no_formats: noFormats, leave_folders: leave };
 	}
 
 	function changed() {
@@ -365,10 +362,12 @@
 	function addApp() {
 		readStart = 'radarr';
 		readAgain = false;
+		readAddress = '';
 		readOpen = true;
 	}
-	function readAgainFor(kind: AppKind) {
-		readStart = kind;
+	function readAgainFor(s: Snapshot) {
+		readStart = s.kind as AppKind;
+		readAddress = s.address ?? '';
 		readAgain = true;
 		readOpen = true;
 	}
@@ -422,6 +421,10 @@
 		set plan(v) { plan = v; },
 		get suggested() { return suggested; },
 		set suggested(v) { suggested = v; },
+		get missingPaths() { return missingPaths; },
+		set missingPaths(v) { missingPaths = v; },
+		get seenFolders() { return seenFolders; },
+		set seenFolders(v) { seenFolders = v; },
 		get picks() { return picks; },
 		set picks(v) { picks = v; },
 		get extra() { return extra; },
@@ -541,6 +544,7 @@
 		planHash = '';
 		plan = null;
 		suggested = {};
+		missingPaths = {};
 		tryNotice = '';
 		enter('read');
 	}
@@ -551,6 +555,7 @@
 		people = { ...people, ...((m.choices?.people ?? {}) as Record<string, PersonChoice>) };
 		// The move's other choices too: the groups it left out and its folders.
 		skip = [...(m.choices?.skip ?? skip)];
+		noFormats = !!m.choices?.no_formats;
 		const rules = m.choices?.path_rules ?? [];
 		if (rules.length > 0) {
 			const p = { ...picks };
@@ -646,8 +651,12 @@
 			{extra}
 			{extraErrors}
 			{suggested}
+			missing={missingPaths}
+			seen={seenFolders}
 			{skip}
 			{people}
+			{noFormats}
+			onformats={(on) => ((noFormats = !on), changed(), planFlow.replan(true))}
 			onfolder={planFlow.onfolder}
 			onother={planFlow.onother}
 			onextra={planFlow.onextra}
@@ -707,7 +716,7 @@
 	{/if}
 {/if}
 
-<ReadSheet bind:open={readOpen} bind:reading start={readStart} again={readAgain} saved={savedKeys} {onread} />
+<ReadSheet bind:open={readOpen} bind:reading start={readStart} startAddress={readAddress} again={readAgain} saved={savedKeys} known={snapshots.map((s) => s.address ?? '')} {onread} />
 
 <ItemsSheet bind:open={listOpen} title={listTitle} items={listItems} row={listRow} />
 

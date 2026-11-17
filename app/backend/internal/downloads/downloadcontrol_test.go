@@ -23,6 +23,9 @@ func (f *recordingQB) saw() string {
 	return strings.Join(f.calls, " ")
 }
 
+// pauseAllHash is the torrent controlSeed's client holds in each category.
+var pauseAllHash = strings.Repeat("c", 40)
+
 func controlSeed(t *testing.T) (*dl41, *recordingQB) {
 	t.Helper()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
@@ -41,6 +44,11 @@ func controlSeed(t *testing.T) (*dl41, *recordingQB) {
 		case "sync/torrentPeers":
 			_, _ = w.Write([]byte(`{"peers":{}}`))
 		case "torrents/info":
+			// One torrent in each category asked for, so Pause all has something of ours.
+			if c := r.Form.Get("category"); c != "" {
+				_, _ = w.Write([]byte(`[{"hash":"` + pauseAllHash + `","category":"` + c + `","state":"downloading"}]`))
+				return
+			}
 			_, _ = w.Write([]byte(`[]`))
 		case "torrents/properties":
 			_, _ = w.Write([]byte(`{"total_size":2000,"total_downloaded":500,"share_ratio":0.25,"seeds":1,"seeds_total":5,"peers":2,"peers_total":8,"addition_date":1700000000,"save_path":"/downloads","is_private":false}`))
@@ -111,7 +119,7 @@ func TestDownloadClientsAndAll(t *testing.T) {
 	do(t, "PUT", x.srv.URL+"/api/v1/downloaders/"+id+"/speed-limit", `{"down":1048576,"up":0}`, 200)
 	do(t, "PUT", x.srv.URL+"/api/v1/downloaders/999/speed-limit", `{"down":0}`, 404)
 	got := f.saw()
-	for _, w := range []string{"torrents/stop=all", "torrents/start=all", "transfer/setDownloadLimit=1048576", "transfer/setUploadLimit=0"} {
+	for _, w := range []string{"torrents/stop=" + pauseAllHash, "torrents/start=" + pauseAllHash, "transfer/setDownloadLimit=1048576", "transfer/setUploadLimit=0"} {
 		if !strings.Contains(got, w) {
 			t.Fatalf("missing %s in %s", w, got)
 		}
@@ -151,4 +159,35 @@ func TestDownloadDetailAndFiles(t *testing.T) {
 		t.Fatalf("a finished download asks the client: %+v", d)
 	}
 	do(t, "GET", base+"/files", "", 409)
+}
+
+// A download a person picked, sent by a background job, names that person in
+// the list and in the pane alike; "HolyArrs" shows only when no person did.
+func TestRequestedByAgreesInListAndPane(t *testing.T) {
+	t.Parallel()
+	x, _ := controlSeed(t)
+	exec41(t, x.s, `INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES (2, 't', '{}', 't', '{}', 'ana', 'member', 'x')`)
+	exec41(t, x.s, `UPDATE downloads SET started_by = '{"kind":"job","id":7}'`)
+	both := func() (string, string) {
+		var d DownloadDetailView
+		_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/"+itoa(x.dlID)+"/detail", "", 200), &d)
+		var v viewRows
+		_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view", "", 200), &v)
+		if len(v.Downloads) == 0 {
+			t.Fatal("no list row")
+		}
+		return v.Downloads[0].RequestedBy, d.RequestedBy
+	}
+	if list, pane := both(); list != "" || pane != "HolyArrs" {
+		t.Fatalf("nobody picked it: list %q pane %q", list, pane)
+	}
+	exec41(t, x.s, `UPDATE titles SET created_by = '{"kind":"user","id":2}'`)
+	if list, pane := both(); list != "ana" || pane != "ana" {
+		t.Fatalf("title owner: list %q pane %q", list, pane)
+	}
+	exec41(t, x.s, `INSERT INTO users(id, created_at, created_by, updated_at, updated_by, name, role, password_hash) VALUES (3, 't', '{}', 't', '{}', 'bo', 'member', 'x')`)
+	exec41(t, x.s, `UPDATE downloads SET started_by = '{"kind":"user","id":3}'`)
+	if list, pane := both(); list != "bo" || pane != "bo" {
+		t.Fatalf("person who picked it: list %q pane %q", list, pane)
+	}
 }

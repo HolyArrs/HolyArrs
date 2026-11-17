@@ -137,7 +137,7 @@ func TestPartSwitchesOverHTTP(t *testing.T) {
 		SafeMode bool                   `json:"safe_mode"`
 	}
 	decodeJSON(t, do(t, "GET", u+"parts", "", 200), &got)
-	if len(got.Parts) != 5 || !got.Parts[2].On || got.Parts[2].State != "running" || got.Screens["/settings/music"] != parts.Of(parts.Music) {
+	if len(got.Parts) != 6 || got.Parts[5].Part != parts.Sources || !got.Parts[2].On || got.Parts[2].State != "running" || got.Screens["/settings/music"] != parts.Of(parts.Music) {
 		t.Fatalf("parts: %+v", got)
 	}
 	do(t, "GET", u+"settings/music", "", 200)
@@ -352,7 +352,7 @@ func TestHealthStatesListParts(t *testing.T) {
 			seen[s.Key] = s.State
 		}
 	}
-	if len(seen) != 5 || seen["part:music"] != jobs.Off || seen["part:movies"] != jobs.Running {
+	if len(seen) != 6 || seen["part:music"] != jobs.Off || seen["part:sources"] != jobs.Running || seen["part:movies"] != jobs.Running {
 		t.Fatalf("parts in health states: %v", seen)
 	}
 }

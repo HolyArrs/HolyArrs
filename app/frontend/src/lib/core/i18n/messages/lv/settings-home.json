@@ -1,0 +1,10 @@
+{
+	"settings.home.advanced": "Papildu",
+	"settings.home.page": "{group} · lapa",
+	"settings.home.title": "Iestatījumi",
+	"settings.home.search": "Meklēt iestatījumos",
+	"settings.home.matching": "Atbilstošie iestatījumi",
+	"settings.home.noMatch": "Nav atbilstošu iestatījumu",
+	"settings.home.noMatchText": "Izmēģini citu vārdu, piemēram, mape, atslēga vai parole.",
+	"settings.home.clear": "Notīrīt meklēšanu"
+}

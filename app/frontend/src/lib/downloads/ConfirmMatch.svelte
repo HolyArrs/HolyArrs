@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
-	// Sheet for torrents added outside HolyArrs that could not be matched to one title for sure. Picking a choice adds the title if missing and links the torrent. Reads only from HolyArrs, no outside lookups.
+	// Sheet for downloads added outside HolyArrs that could not be matched to one title for sure (never other apps' Usenet categories). Picking a choice adds the title if missing and links the download. Reads only from HolyArrs, no outside lookups.
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { bannerWords, candidateLine, type Match, type Matches } from './matches.ts';

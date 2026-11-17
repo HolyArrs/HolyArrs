@@ -96,7 +96,7 @@ func TestImportSecretsOffline(t *testing.T) {
 		t.Fatalf("dry %d\n%s", code, out)
 	}
 	code, out = runImport(t, "-file", p, "-config", dir)
-	if code != 0 || !strings.Contains(out, "mode: offline") || !strings.Contains(out, "indexers[1]") || strings.Count(out, " set") < 4 {
+	if code != 0 || !strings.Contains(out, "mode: offline") || !strings.Contains(out, "indexers[1]") || strings.Count(out, " set") < 5 {
 		t.Fatalf("run %d\n%s", code, out)
 	}
 	code, out = runImport(t, "-file", p, "-config", dir, "-delete")

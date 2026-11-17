@@ -14,8 +14,10 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // ViewDeps are the services the views read; field names match api.Server.
@@ -23,6 +25,8 @@ type ViewDeps struct {
 	Store *database.Store
 	Asks  *requests.Service
 	Live  *webserver.LiveHub
+	// Groups names a show's chosen TMDB episode order; nil leaves it unnamed.
+	Groups metadata.EpisodeGroupSource
 }
 
 // ViewHandlers builds views over ViewDeps.
@@ -86,6 +90,9 @@ type TitleView struct {
 	Stage            string     `json:"stage"`       // announced, in_cinemas, released
 	GateOpen         bool       `json:"gate_open"`   // searching may start
 	GateReason       string     `json:"gate_reason"` // why it is or is not searched yet
+	// NoDownloader names the protocol ("usenet", "torrent") wanted copies could
+	// not be sent for, since no Downloader takes it; "" when none.
+	NoDownloader string `json:"no_downloader,omitempty"`
 	// The main Version: its folder and Pick rules.
 	LibraryFolderID int64    `json:"library_folder_id,omitempty"`
 	FolderPath      string   `json:"folder_path,omitempty"`
@@ -100,6 +107,9 @@ type TitleView struct {
 	RuntimeMinutes int      `json:"runtime_minutes,omitempty"`
 	Rating         string   `json:"rating,omitempty"`
 	People         []string `json:"people"`
+	// Score is the members' average out of 10 and Votes how many voted.
+	Score float64 `json:"score,omitempty"`
+	Votes int     `json:"votes,omitempty"`
 	// Tags route the title's grabs and searches to the Downloaders and Sources that share one.
 	Tags []string `json:"tags"`
 	// AddedAt is when the title joined the Library; SizeBytes is the sum of
@@ -154,7 +164,10 @@ func (h *ViewHandlers) View(ctx context.Context, t mediafiles.Title) (TitleView,
 		GateDriver: t.GateDriver, GateOpensAt: t.GateOpensAt, CinemaDate: t.CinemaDate, DigitalDate: t.DigitalDate,
 		PhysicalDate: t.PhysicalDate, RefreshedAt: t.RefreshedAt, DroppedAt: t.DroppedAt, Artwork: ArtworkLinks(t.Artwork),
 		Backdrop: t.Backdrop, Logo: t.Logo, Genres: nonNil(t.Genres), RuntimeMinutes: t.RuntimeMinutes, Rating: t.Rating, People: nonNil(t.People),
-		AddedAt: t.CreatedAt, Tags: nonNil(t.Tags)}
+		AddedAt: t.CreatedAt, Tags: nonNil(t.Tags), Votes: t.Votes}
+	if t.Score != nil {
+		v.Score = *t.Score
+	}
 	now := time.Now()
 	var err error
 	facts := factsOf(ctx)
@@ -173,6 +186,7 @@ func (h *ViewHandlers) View(ctx context.Context, t mediafiles.Title) (TitleView,
 		if v.LastActivity, err = mediafiles.TitleActivity(ctx, db, t.ID); err != nil {
 			return v, err
 		}
+		v.NoDownloader = titleNoDownloader(ctx, db, t.ID)
 	}
 	if t.Kind == "artist" {
 		v.Stage, v.GateOpen = t.Status, true
@@ -216,6 +230,7 @@ func (h *ViewHandlers) View(ctx context.Context, t mediafiles.Title) (TitleView,
 		if v.Show, err = shows.InfoOf(ctx, h.Store.Read(), t); err != nil {
 			return v, err
 		}
+		shows.NameEpisodeGroup(ctx, h.Groups, t, v.Show)
 		v.Asks, err = titleAsks()
 		return TrimForViewer(ctx, v), err
 	}
@@ -243,6 +258,9 @@ func (h *ViewHandlers) View(ctx context.Context, t mediafiles.Title) (TitleView,
 		sv := SlotView{ID: s.ID, Version: ver.Label, VersionID: ver.ID, State: string(s.State), StateLabel: mediafiles.StateLabels[s.State], DownloadID: s.ActiveDownloadID}
 		if s.LastReason != nil {
 			sv.Reason = *s.LastReason
+		}
+		if sources.StuckChoice(s, time.Now()) {
+			sv.Reason = sources.StuckChoiceReason
 		}
 		if s.ActiveDownloadID != nil {
 			var d domain.Download

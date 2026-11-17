@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrivedAt, libraryCards, n, arrivedTitle, arrivedHead, askProgressLine, attention, downloadMoved, downloadingNow, fallbackRows, groupAttention, homeFailures, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, moreLink, shownState, soonLine, splitArrivals, uncheckedLine, freeSpace, partCount } from './home.ts';
+import { arrivedAt, libraryCards, n, arrivedTitle, arrivedHead, askProgressLine, attention, downloadMoved, downloadingNow, homeDownloadsURL, notSentNow, fallbackRows, groupAttention, homeFailures, homeStrip, downloadLine, downloadSubtitle, healthFix, homeFresh, isActive, mixLine, moreLink, shownState, soonLine, splitArrivals, upLine, uncheckedLine, freeSpace, partCount } from './home.ts';
 import type { HealthCheck } from '#lib/core/types.ts';
 
 const check = (key: string, state: HealthCheck['state'], kind: HealthCheck['kind'] = 'source'): HealthCheck => ({ id: 1, key, kind, subject: 'S', state, message: `${key} broke`, since: '', checked_at: '' });
@@ -108,6 +108,20 @@ describe('home', () => {
 		expect(member.map((i) => i.href)).toEqual(['/health', '/health']);
 	});
 
+	it('names imported downloads waiting to be cleared, linked to Downloads', () => {
+		const [item] = attention({ failed: [], decisions: [], health: [check('clear_waiting', 'warning', 'clear_waiting')] });
+		expect(`${item.title} · ${item.reason}`).toBe('Downloads · waiting to be cleared');
+		expect([item.href, item.action]).toEqual(['/downloads', 'Downloads']);
+		expect(item.text).toBe('Imported downloads are waiting to be cleared from their Downloader.');
+	});
+
+	it('names a Downloader with no save folder, linked to Settings > Downloaders', () => {
+		const [item] = attention({ failed: [], decisions: [], health: [{ ...check('save_folder:2', 'warning', 'save_folder'), subject: 'SABnzbd' }] });
+		expect(item.reason).toBe('has no save folder set');
+		expect(item.href).toBe('/settings/downloaders');
+		expect(item.text).toBe("A Downloader has no save folder set, so HolyArrs can't import its finished downloads.");
+	});
+
 	it('follows the flap guard when the server sends the confirmed state', () => {
 		const flaky = { ...check('d', 'error', 'downloader'), confirmed: 'ok' as const };
 		const held = { ...check('s', 'ok', 'source'), confirmed: 'warning' as const };
@@ -141,7 +155,7 @@ describe('home', () => {
 			row(2, 'waiting', 'queued', 0),
 			row(3, 'downloading', 'downloading', 0.8),
 			row(4, 'done', 'seeding', 1, { active: true }),
-			row(5, 'downloading', 'downloading', 0.5, { client_item: true }),
+			row(5, 'downloading', 'downloading', 0.5, { client_item: true, outside: true }),
 			row(6, 'failed', 'failed', 0.3),
 			row(7, 'done', 'completed', 1),
 			row(8, 'stalled', 'stalled', 0.2)
@@ -176,6 +190,12 @@ describe('home rows', () => {
 		expect(arrivedTitle(now - 3 * 86400000, now)).toBe('New this week');
 		expect(arrivedTitle(now - 10 * 86400000, now)).toBe('Just arrived');
 		expect(arrivedTitle(now - 40 * 86400000, now)).toBe('Recently added');
+		// Coming up writes its date from the card's day, in the app's language, not the server's English words.
+		expect(upLine({ line: 'S2E1 · Nov 14', at: '2026-11-14' }, '2026-11-12')).toEqual({ sub: 'S2E1', when: 'Nov 14', now: false });
+		expect(upLine({ line: 'Out Nov 20', at: '2026-11-20' }, '2026-11-12')).toEqual({ sub: '', when: 'Nov 20', now: false });
+		expect(upLine({ line: 'S1E4 · Nov 12', at: '2026-11-12T21:00:00-05:00' }, '2026-11-12')).toEqual({ sub: 'S1E4', when: 'Today', now: true });
+		expect(upLine({ line: 'S3 · Out now', at: '2026-11-01' }, '2026-11-12')).toEqual({ sub: 'S3', when: 'Out now', now: true });
+		expect(upLine({ line: 'S2E1 · Nov 14', at: '2026-11-14' }, '2026-11-12', 'de')).toEqual({ sub: 'S2E1', when: '14. Nov.', now: false });
 		expect(soonLine({ name: 'Dune', subtitle: 'Fri' })).toBe('Next up: Dune, Fri');
 		expect(soonLine(undefined)).toBe('The next 30 days');
 	});
@@ -269,6 +289,30 @@ describe('downloads that are being imported', () => {
 			{ id: 4, phase: 'downloading', state: 'downloading', progress: 0.4, active: true, client_item: false }
 		];
 		expect(downloadingNow(rows).map((d) => d.id).sort()).toEqual([1, 2, 4]);
+	});
+});
+
+describe('torrents only the Downloader lists', () => {
+	const row = (id: number, extra: object = {}) => ({ id, phase: 'downloading', state: 'downloading', progress: 0.5, active: true, client_item: true, live_key: `2:${id}`, ...extra });
+	const rows = [
+		row(1, { outside: true }),
+		row(2, { outside: true, title_id: 40 }),
+		row(3),
+		row(4, { outside: true, phase: 'waiting', state: 'queued', progress: 0 }),
+		row(5, { outside: true, phase: 'done', state: 'seeding', progress: 1 })
+	];
+	it('count when linked to a Library title or when HolyArrs sent them before its newest 100', () => {
+		expect(downloadingNow(rows).map((d) => d.live_key).sort()).toEqual(['2:2', '2:3']);
+	});
+	it('that HolyArrs did not send are counted apart, only while they are fetching', () => {
+		expect(notSentNow(rows).map((d) => d.live_key).sort()).toEqual(['2:1', '2:4']);
+		expect(notSentNow([])).toEqual([]);
+	});
+	it('are all read, not only the first 200 Downloader rows', () => {
+		const q = new URLSearchParams(homeDownloadsURL.split('?')[1]);
+		expect(homeDownloadsURL.startsWith('/downloads/view?')).toBe(true);
+		expect(q.get('limit')).toBe('100');
+		expect(Number(q.get('outside_limit'))).toBe(2000);
 	});
 });
 

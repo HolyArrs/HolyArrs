@@ -62,6 +62,25 @@ export async function finishFirstRun(page: Page, moviesPath: string, o: { tv?: b
 	} else await page.getByRole('button', { name: 'Open Home' }).click();
 }
 
+/**
+ * setUpFresh makes the owner on a fresh HolyArrs and walks the whole first run
+ * (finishFirstRun), so the wizard gate lets every page open afterwards. A server
+ * that just started can still show "starting": reload until set-up shows.
+ */
+export async function setUpFresh(page: Page, o: Owner, moviesPath: string, parts: { tv?: boolean; music?: boolean; invite?: boolean } = {}) {
+	await expect(async () => {
+		await page.goto('/');
+		await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible({ timeout: 2_000 });
+	}).toPass({ timeout: 120_000 });
+	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
+	await page.getByLabel('Name').fill(o.name);
+	await page.getByLabel('Password', { exact: true }).fill(o.password);
+	await page.getByLabel('Password again').fill(o.password);
+	await page.getByRole('button', { name: 'Create account' }).click();
+	await expect(page).toHaveURL(/\/welcome\?first=1$/);
+	await finishFirstRun(page, moviesPath, parts);
+}
+
 /** plainForm leaves the remembered people (one person's step, or the list) for the name-and-password form. */
 export async function plainForm(page: Page) {
 	await expect(page.getByRole('heading', { name: /^(Sign in|Who's signing in\?)$/ })).toBeVisible();

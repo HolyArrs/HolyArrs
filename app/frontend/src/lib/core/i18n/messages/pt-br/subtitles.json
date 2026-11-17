@@ -147,5 +147,19 @@
 	"subtitles.wants.language": "Idioma",
 	"subtitles.wants.pick": "Escolha um idioma",
 	"subtitles.wants.takeOff": "Tirar {name}",
-	"subtitles.wants.thisLanguage": "este idioma"
+	"subtitles.wants.thisLanguage": "este idioma",
+	"subtitles.made.translated": "Traduzido",
+	"subtitles.made.partial": "Traduzido em parte",
+	"subtitles.made.ai": "Traduzido por IA",
+	"subtitles.made.machine": "Tradução automática",
+	"subtitles.wants.translateFrom": "Traduzir de",
+	"subtitles.wants.noTranslate": "Não traduzir",
+	"subtitles.panel.picture": "Imagem",
+	"subtitles.panel.pictureTitle": "Legenda em imagem: não pode ser traduzida",
+	"subtitles.panel.translate": "Traduzir",
+	"subtitles.panel.translateFor": "Traduzir uma legenda em {name}",
+	"subtitles.panel.translateFrom": "Traduzir de",
+	"subtitles.panel.translateQueued": "Traduzindo",
+	"subtitles.panel.translateQueuedBody": "A legenda em {name} aparece aqui quando terminar.",
+	"subtitles.panel.translating": "Nada encontrado, então seu tradutor está criando uma."
 }

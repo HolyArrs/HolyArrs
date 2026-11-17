@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createLive, type SourceFactory } from './live.svelte.ts';
 import { createToasts } from './toasts.svelte.ts';
 import { createSession } from './session.svelte.ts';
+import { createViews } from './views.svelte.ts';
 import { createClient } from './api.ts';
 
 describe('live', () => {
@@ -303,6 +304,20 @@ describe('session', () => {
 		expect(c.csrf()).toBe('');
 	});
 
+	it('takes the saved views with the session and forgets them on sign-out', async () => {
+		const c = server({
+			'GET /auth/me': json(200, { name: 'luis', via: 'session', csrf: 'abc', views: { 'library.view.movie': 'posters' } }),
+			'POST /auth/logout': () => new Response(null, { status: 204 }),
+			'GET /auth/state': json(200, { needs_setup: false })
+		});
+		const v = createViews(c, () => undefined);
+		const s = createSession(c, v);
+		await s.load();
+		expect(v.get('library.view.movie')).toBe('posters');
+		await s.logout();
+		expect(v.get('library.view.movie')).toBeUndefined();
+	});
+
 	it('runs first-run setup with the setup code', async () => {
 		let sent: unknown;
 		const c = createClient(async (url: string, init?: RequestInit) => {
@@ -521,6 +536,19 @@ describe('session', () => {
 		expect(s.s.localRecent).toBe(true);
 		expect(s.s.authMethod).toBe('password');
 		expect(c.csrf()).toBe('fresh');
+	});
+
+	it("takes the server's own answer for a recent proof", async () => {
+		const recent = async (extra: Record<string, unknown>) => {
+			const me = { name: 'boss', via: 'session', auth_method: 'plex', ...extra };
+			const s = createSession(createClient(async () => new Response(JSON.stringify(me))));
+			await s.load();
+			return s.s.localRecent;
+		};
+		expect(await recent({ outside_recent: true, has_password: false, recent_proof: true })).toBe(true);
+		// Two-factor still to turn on: the server says no even right after signing in.
+		expect(await recent({ outside_recent: true, has_password: false, must_two_factor: true, recent_proof: false })).toBe(false);
+		expect(await recent({ local_recent: true, must_two_factor: true, recent_proof: false })).toBe(false);
 	});
 
 	it('starts and finishes OIDC linking and links forward auth explicitly', async () => {

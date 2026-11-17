@@ -18,7 +18,8 @@ func reasonOf(v Verdict, rule string) (Reason, bool) {
 }
 
 // 4.3.5: a Release posted before its movie came out is refused, unless a
-// person searched (then it warns); a grace covers time zones; off when the
+// person picks from a list (then it warns); a search a person started that
+// chooses on its own still refuses it; a grace covers time zones; off when the
 // setting is off.
 func TestPostedEarly(t *testing.T) {
 	out := time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC)
@@ -33,8 +34,12 @@ func TestPostedEarly(t *testing.T) {
 	}
 	hand := set
 	hand.HandSearch = true
+	if v := Judge(rel, hand, GoodEveryday()); v.Passed {
+		t.Fatalf("search now passed a likely fake: %+v", v.Reasons)
+	}
+	hand.Listing = true
 	if r, ok := reasonOf(Judge(rel, hand, GoodEveryday()), "safety:posted_early"); !ok || r.Effect != "warn" {
-		t.Fatalf("hand search: %+v", r)
+		t.Fatalf("hand search list: %+v", r)
 	}
 	rel.PublishedAt = out.Add(-12 * time.Hour) // inside the grace
 	if _, ok := reasonOf(Judge(rel, set, GoodEveryday()), "safety:posted_early"); ok {

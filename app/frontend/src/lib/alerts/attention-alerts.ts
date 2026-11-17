@@ -8,6 +8,8 @@ export interface PinnedAlert {
 	tone: 'fail' | 'warn' | 'info';
 	href: string;
 	label: string;
+	/** A fix that runs in place (Clear now) instead of the link. */
+	run?: { label: string; go: () => Promise<void> };
 }
 
 // Server text looks like "Page: Title: next step". The page prefix is dropped because the button names it.

@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "ШІ-застосунки вимкнено. Дозвіл їх увімкне.",
 	"arrapi.ai.offOther": "ШІ-застосунки вимкнено. Попроси власника їх увімкнути й спробуй ще раз.",
 	"arrapi.ai.allow": "Дозволити",
-	"arrapi.ai.cancel": "Скасувати"
+	"arrapi.ai.cancel": "Скасувати",
+	"arrapi.seerr.sentTitle": "Надіслано іншими застосунками",
+	"arrapi.seerr.sentHint": "Формати й профілі, які надіслали застосунки на кшталт Profilarr. Тут лише для читання.",
+	"arrapi.seerr.sentFormat": "Формат",
+	"arrapi.seerr.sentProfile": "Профіль",
+	"arrapi.seerr.sentUpdated": "оновлено {ago}"
 }

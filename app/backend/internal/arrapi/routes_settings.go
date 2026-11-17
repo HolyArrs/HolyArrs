@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"sort"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
@@ -27,6 +28,40 @@ type Handlers struct {
 	// Auth makes, lists and deletes the keys of both sides. Nil means
 	// sign-in is off and no key can be made.
 	Auth *accounts.Auth
+
+	hooks *hookSender
+}
+
+// Watch sends each import the Library records to the webhook records
+// those apps keep, on goroutines Wait waits for. Ending ctx stops them.
+func (h *Handlers) Watch(ctx context.Context) {
+	h.hooks = &hookSender{store: h.Store, vault: h.Secrets, allowed: h.maySend}
+	h.hooks.watch(ctx)
+}
+
+// Wait waits for the sends Watch started.
+func (h *Handlers) Wait() {
+	if h.hooks != nil {
+		h.hooks.wait()
+	}
+}
+
+// maySend reports whether a side may tell its hooks: the arr API is on
+// and the side still has a key. Taking a side's key away stops its hooks.
+func (h *Handlers) maySend(ctx context.Context, side string) bool {
+	if h.Auth == nil || !h.On(ctx) {
+		return false
+	}
+	keys, err := h.Auth.ArrKeys(ctx)
+	if err != nil {
+		return false
+	}
+	for _, k := range keys {
+		if k.Side == side {
+			return true
+		}
+	}
+	return false
 }
 
 // Routes registers the two prefixes and their settings. Each prefix gets
@@ -115,8 +150,56 @@ func (h *Handlers) answer(r *http.Request) (map[string]any, error) {
 		}
 		sides = append(sides, v)
 	}
+	pushed, err := h.pushed(r.Context())
+	if err != nil {
+		return nil, err
+	}
 	return map[string]any{"enabled": h.On(r.Context()), "delete_files": h.deleteFilesOn(r.Context()), "sides": sides,
-		"versions": map[string]string{"sonarr": SonarrVersion, "radarr": RadarrVersion}}, nil
+		"versions": map[string]string{"sonarr": SonarrVersion, "radarr": RadarrVersion}, "pushed": pushed}, nil
+}
+
+// PushedFormat is a format an app sent to a side: whether it became a
+// trait, and why not when it did not.
+type PushedFormat struct {
+	Side      string `json:"side"`
+	Name      string `json:"name"`
+	TraitID   int64  `json:"trait_id,omitempty"`
+	Skipped   string `json:"skipped,omitempty"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+// PushedProfile is a profile an app sent to a side, the Pick rules it
+// became and what did not carry over.
+type PushedProfile struct {
+	Side        string   `json:"side"`
+	Name        string   `json:"name"`
+	PickRulesID int64    `json:"pick_rules_id"`
+	Notes       []string `json:"notes"`
+	UpdatedAt   string   `json:"updated_at"`
+}
+
+// pushed lists what apps such as Profilarr sent to both sides.
+func (h *Handlers) pushed(ctx context.Context) (map[string]any, error) {
+	formats := []PushedFormat{}
+	for _, side := range accounts.ArrSides {
+		fs, err := listFormatRows(ctx, h.Store.Read(), side)
+		if err != nil {
+			return nil, err
+		}
+		for _, f := range fs {
+			formats = append(formats, PushedFormat{Side: side, Name: f.Name, TraitID: f.TraitID, Skipped: f.Skipped, UpdatedAt: f.Updated})
+		}
+	}
+	rows, err := listProfileRows(ctx, h.Store.Read())
+	if err != nil {
+		return nil, err
+	}
+	profiles := []PushedProfile{}
+	for _, p := range rows {
+		profiles = append(profiles, PushedProfile{Side: p.Side, Name: p.Name, PickRulesID: p.PickRulesID, Notes: append([]string{}, p.Notes...), UpdatedAt: p.Updated})
+	}
+	sort.Slice(profiles, func(i, j int) bool { return profiles[i].PickRulesID < profiles[j].PickRulesID })
+	return map[string]any{"formats": formats, "profiles": profiles}, nil
 }
 
 func (h *Handlers) getSettings(w http.ResponseWriter, r *http.Request) {

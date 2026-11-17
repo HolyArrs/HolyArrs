@@ -72,5 +72,10 @@
 	"arrapi.ai.offOwner": "AI apps are off. Allowing turns them on.",
 	"arrapi.ai.offOther": "AI apps are off. Ask the owner to turn them on, then try again.",
 	"arrapi.ai.allow": "Allow",
-	"arrapi.ai.cancel": "Cancel"
+	"arrapi.ai.cancel": "Cancel",
+	"arrapi.seerr.sentTitle": "Sent by other apps",
+	"arrapi.seerr.sentHint": "Formats and profiles that apps such as Profilarr sent. Shown here to read only.",
+	"arrapi.seerr.sentFormat": "Format",
+	"arrapi.seerr.sentProfile": "Profile",
+	"arrapi.seerr.sentUpdated": "updated {ago}"
 }

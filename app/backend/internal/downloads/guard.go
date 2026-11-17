@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"strings"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 
@@ -61,7 +62,7 @@ func (g *guardedEngine) Remove(ctx context.Context, id string, files bool) error
 	return g.run(ctx, func() error { return g.Engine.Remove(ctx, id, files) })
 }
 
-// SyncMain, History, Queue and ListAll are methods of the guard itself, so the
+// SyncMain, History, Queue, ListAll and ListActive are methods of the guard itself, so the
 // background reader cannot reach an optional part around outbound.Begin, as
 // unwrapping through ControlEngine would allow.
 func (g *guardedEngine) SyncMain(ctx context.Context, rid int64) (d MainData, err error) {
@@ -100,12 +101,21 @@ func (g *guardedEngine) ListAll(ctx context.Context) (jobs []Job, err error) {
 	return
 }
 
+func (g *guardedEngine) ListActive(ctx context.Context, ids []string) (jobs []Job, err error) {
+	s, ok := g.Engine.(ActiveLister)
+	if !ok {
+		return nil, ErrNotSupported
+	}
+	err = g.run(ctx, func() error { var e error; jobs, e = s.ListActive(ctx, ids); return e })
+	return
+}
+
 func protectEngine(e Engine, d domain.Downloader, instance string) Engine {
 	secret := ""
 	if d.SecretRef != nil {
 		secret = strconv.FormatInt(*d.SecretRef, 10)
 	}
-	return &guardedEngine{Engine: e, target: outbound.Target{Kind: "downloader", Identity: []string{instance, strconv.FormatInt(d.ID, 10), d.Adapter, d.URL, d.Username, secret, d.Category, strconv.FormatBool(d.AllowLocal)}}, begin: outbound.Begin}
+	return &guardedEngine{Engine: e, target: outbound.Target{Kind: "downloader", Identity: []string{instance, strconv.FormatInt(d.ID, 10), d.Adapter, d.URL, d.Username, secret, d.Category, strings.Join(otherCategories(d), "/"), strconv.FormatBool(d.AllowLocal)}}, begin: outbound.Begin}
 }
 
 func (g *guardedEngine) run(ctx context.Context, call func() error) error {

@@ -37,8 +37,8 @@
 	import { afterNavigate, beforeNavigate, goto, snapshot } from '$app/navigation';
 	import { page } from '$app/state';
 	import { to } from '#lib/core/paths.ts';
-	import { focusField, forgetReturn, playFieldEntry, searchField, searchHooks } from '#lib/core/search-field.svelte.ts';
-	import { api, message, ApiError } from '#lib/core/api.ts';
+	import { focusOnOpen, forgetReturn, playFieldEntry, searchField, searchHooks } from '#lib/core/search-field.svelte.ts';
+	import { api, message, ApiError, isSourceOff } from '#lib/core/api.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { reducedMotion } from '#lib/core/motion.ts';
 	import { plainReason } from '#lib/core/plain.ts';
@@ -245,7 +245,7 @@
 						groups[t] = [];
 						failures++;
 						if (err instanceof ApiError && err.status === 503) noTMDB = true;
-						else if (!(err instanceof ApiError && err.status === 403)) error = message(err);
+						else if (!(err instanceof ApiError && err.status === 403) && !isSourceOff(err)) error = message(err);
 					})
 			)
 		);
@@ -360,7 +360,7 @@
 		searchHooks.submit = () => void run(new SubmitEvent('submit'));
 		searchHooks.blur = blurred;
 		searchHooks.exit = entry.exit;
-		if (!(document.activeElement instanceof HTMLInputElement)) focusField();
+		if (!(document.activeElement instanceof HTMLInputElement)) focusOnOpen();
 		playFieldEntry(calm || restored);
 		return () => {
 			searchHooks.submit = searchHooks.blur = searchHooks.exit = undefined;
@@ -387,7 +387,7 @@
 		browse.mood = readMood(dest.url.searchParams);
 		browse.cat = readCategory(dest.url.searchParams);
 		browse.mgenre = dest.url.searchParams.get('mgenre')?.trim() || null;
-		void tick().then(() => focusField());
+		void tick().then(() => focusOnOpen());
 		if (q === searchField.term && s === scope) return;
 		searchField.term = lastTerm = q;
 		scope = s;
@@ -745,9 +745,7 @@
 	@media (max-width: 767px) { .phone-field { position: sticky; top: 8px; z-index: 22; display: flex; justify-content: center; } .phone-field :global(.ui-search) { width: 100%; } }
 	/* The same floating glass pill as Explore's type switch. */
 	.types { display: flex; justify-content: center; pointer-events: none; }
-	.types :global(.ui-seg) { pointer-events: auto; border-radius: 999px; padding: 3px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
-	.types :global(.ui-seg .thumb) { top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 999px; }
-	.types :global(.ui-seg button) { min-height: 44px; padding: 0 20px; border-radius: 999px; }
+	.types :global(.ui-seg) { pointer-events: auto; background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 6px; } }
 	@media (max-width: 419px) { .types :global(.ui-seg button span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }
 	.results-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; margin-bottom: -12px; }

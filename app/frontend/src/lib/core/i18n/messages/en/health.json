@@ -12,6 +12,9 @@
 	"health.check.freeSpace": "Free space",
 	"health.check.update": "Update",
 	"health.check.waiting": "Downloads waiting for files",
+	"health.check.clearWaiting": "Imported downloads still in a Downloader",
+	"health.check.saveFolder": "Save folder for",
+	"health.check.saveFolderWhy": "{app} has no save folder set, so HolyArrs can't import its finished downloads. Add a path pair in Settings › Downloaders.",
 	"health.day.ahead": "{count} ahead",
 	"health.day.cancelled": "was cancelled",
 	"health.day.due": "due",
@@ -85,6 +88,8 @@
 	"health.kind.trailers": "Trailer reader",
 	"health.kind.update": "Update",
 	"health.kind.waitingDownloads": "Downloads waiting for files",
+	"health.kind.clearWaiting": "Imported downloads still in a Downloader",
+	"health.kind.saveFolder": "Downloader save folder",
 	"health.link.downloader": "Downloader",
 	"health.link.mediaServer": "Media server",
 	"health.link.part": "Part",
@@ -259,5 +264,12 @@
 	"health.word.broken": "Broken",
 	"health.word.notSent": "Not sent yet",
 	"health.word.notSynced": "Not synced yet",
-	"health.word.working": "Working"
+	"health.word.working": "Working",
+	"health.check.usenetDl": "Usenet Downloader",
+	"health.check.torrentDl": "Torrent Downloader",
+	"health.check.noUsenetDl": "Your Sources find Usenet downloads, but no Usenet Downloader is set up, so none can be sent. Add one in Settings › Downloaders.",
+	"health.check.noTorrentDl": "Your Sources find torrent downloads, but no torrent Downloader is set up, so none can be sent. Add one in Settings › Downloaders.",
+	"health.check.sameDownloader": "Added twice:",
+	"health.check.sameDownloaderWhy": "{app} reaches the same download app as another Downloader, so its downloads can show twice. Remove one in Settings › Downloaders.",
+	"health.kind.sameDownloader": "Downloader added twice"
 }

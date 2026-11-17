@@ -25,6 +25,9 @@
 	"home.lostIfTheContainer": "perdida se o contêiner for recriado",
 	"home.downloads": "Downloads",
 	"home.waitingForTheirFiles": "esperando os arquivos",
+	"home.waitingToBeCleared": "esperando a limpeza",
+	"home.noSaveFolder": "não tem pasta de salvamento",
+	"home.noSaveFolderMany": "não têm pasta de salvamento",
 	"home.masterKey": "Chave mestra",
 	"home.noKeyKitSaved": "nenhum kit de chave salvo",
 	"home.trailers": "Trailers",
@@ -254,6 +257,7 @@
 	"home.finished": "Concluído {when}",
 	"home.nothingIsDownloadingRight": "Nada está sendo baixado agora.",
 	"home.paused2": "{n} pausados.",
+	"home.notSentByHolyArrs": "{n} no gerenciador de downloads que o HolyArrs não enviou.",
 	"home.someChecksCouldNot": "Algumas verificações não puderam ser lidas agora.",
 	"home.otherCheckPassed": "{n} outra verificação passou.",
 	"home.otherChecksPassed": "{n} outras verificações passaram.",
@@ -265,5 +269,10 @@
 	"home.version": "Versão {version}",
 	"home.metadataServerDown": "Servidor de metadados fora do ar",
 	"home.metadataServerOnline": "Servidor de metadados no ar",
-	"home.homeCouldNotRead3": "O Início não conseguiu ler os downloads agora."
+	"home.homeCouldNotRead3": "O Início não conseguiu ler os downloads agora.",
+	"home.off": "Desligado",
+	"home.sourcesOff": "Desligado em Partes",
+	"home.noneForSources": "falta para o que suas fontes encontram",
+	"home.addedTwice": "está adicionado duas vezes",
+	"home.addedTwiceMany": "estão adicionados duas vezes"
 }

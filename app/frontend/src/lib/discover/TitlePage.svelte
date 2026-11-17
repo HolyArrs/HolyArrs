@@ -23,9 +23,10 @@
 	import TitleScores from './TitleScores.svelte';
 	import TitleTrailers from './TitleTrailers.svelte';
 	import { createOwnedTitle } from './title-owned.svelte.ts';
+	import { NoDownloaderNote } from '#lib/downloads/index.ts';
 	import TitleLibrary from './TitleLibrary.svelte';
 	import TitleOwnedSheets from './TitleOwnedSheets.svelte';
-	import { SearchOutcomeLine, QuickAsk, AddMovieDialog, AddShowDialog, AskShowDialog, AskMovieDialog } from '#lib/requests/index.ts';
+	import { SearchOutcomeLine, keptSeasons, completeSeasons, seasonsToAsk, QuickAsk, AddMovieDialog, AddShowDialog, AskShowDialog, AskMovieDialog, fourKReady } from '#lib/requests/index.ts';
 	import { seasonWords, SeasonFolds } from '#lib/shows/index.ts';
 	import { detailPath, fourKOffer, isDetailKind, loadDetails, remembered, type TitleDetails } from '#lib/metadata/index.ts';
 	import type { GateDefaults } from '#lib/mediafiles/index.ts';
@@ -45,6 +46,10 @@
 	import { bytes, ago } from '#lib/core/format.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { date } from '#lib/core/format.ts';
+	import type { MenuItem } from '#lib/ui/Menu.svelte';
+	import HideSheet from './HideSheet.svelte';
+	import { hiddenPill, type Hide } from './hidden.ts';
+
 
 	// The one title page for a movie or show, wherever it is opened from (/title/<kind>/<tmdb> and /library/<id> both render it). Not in the Library: Add (people who manage it) or Ask (members). In the Library: the same page with its Library tab.
 	let { kind, tmdb, libraryId, backHref }: { kind: string; tmdb: string; libraryId?: number; backHref?: string } = $props();
@@ -80,6 +85,30 @@
 	const ownedFailed = $derived(own.ownedFailed);
 	const moreMenu = $derived(own.moreMenu);
 	const mayReport = $derived(own.mayReport);
+	// Hidden from browsing: owners and admins hide a title or its genre, and see the hides that cover it.
+	const mayHide = $derived(session.can('users'));
+	let hideOpen = $state(false);
+	let people = $state<ReadonlyMap<number, string>>(new Map());
+	let peopleAsked = false;
+	function loadPeople() {
+		if (peopleAsked || !mayHide) return;
+		peopleAsked = true;
+		api.get<{ users: { id: number; name: string }[] }>('/users').then(
+			(r) => (people = new Map(r.users.map((u) => [u.id, u.name]))),
+			() => (peopleAsked = false)
+		);
+	}
+	// Fetched with the page so the Hide sheet opens with its For choice already there.
+	$effect(() => {
+		if (mayHide) loadPeople();
+	});
+	const hideItem = $derived<MenuItem>({ label: t('discover.hidden.menu'), icon: 'eyeOff', onselect: () => { loadPeople(); hideOpen = true; } });
+	const titleMenu = $derived<MenuItem[]>(mayHide ? [...moreMenu, ...(moreMenu.length ? [{ kind: 'separator' as const }] : []), hideItem] : moreMenu);
+	const hiddenShown = (d: TitleDetails) => mayHide && !!(d.hides?.length || d.hidden);
+	function hidesChanged(next: Hide[]) {
+		if (!details) return;
+		details = { ...details, hides: next, hidden: next.some((h) => !h.user_id || h.user_id === session.s.id) };
+	}
 	// The short facts about the copy you have: quality, size, kept up to date.
 	let rules = $state<PickRulesView[]>([]);
 	let folders = $state<LibraryFolder[]>([]);
@@ -92,6 +121,24 @@
 	});
 	const askers = $derived(owned ? (askedBy.titles[String(owned.id)]?.askers ?? []) : []);
 	const mayAsk = $derived(session.can('ask') && !manage);
+	// A show in the Library can still be asked for the seasons it does not keep up to date.
+	const kept = $derived(owned ? keptSeasons(owned) : []);
+	const complete = $derived(owned ? completeSeasons(owned) : []);
+	const askable = $derived(owned ? seasonsToAsk(details?.show?.seasons, [...kept, ...complete]) : []);
+	// The 4K request button shows only when 4K quality is set up for movies.
+	let fourKMovies = $state(false);
+	$effect(() => {
+		if (mayAsk) void fourKReady().then((r) => (fourKMovies = r.movie));
+	});
+	// Phones share one row between the 4K, Follow and Trailer buttons: the 4K caption shortens to "4K" so it is never cut to "Req…".
+	let phone = $state(false);
+	$effect(() => {
+		const mq = matchMedia('(max-width: 767px)');
+		const set = () => (phone = mq.matches);
+		set();
+		mq.addEventListener('change', set);
+		return () => mq.removeEventListener('change', set);
+	});
 	let gateDefault = $state('released');
 	let showDefaults = $state<ShowSettings | null>(null);
 	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
@@ -365,16 +412,19 @@
 			tagline={info?.tagline}
 			certification={rich?.certification ?? certOf(d.rating)}
 			score={rich?.score ?? scoreOf(d.rating)}
-			status={d.neverAdd || d.ask ? heroPill(d).kind : undefined}
-			statusLabel={d.neverAdd || d.ask ? heroPill(d).label : undefined}
+			status={hiddenShown(d) ? 'turned_down' : d.neverAdd || d.ask ? heroPill(d).kind : undefined}
+			statusLabel={hiddenShown(d) ? hiddenPill(d.hides ?? [], people) : d.neverAdd || d.ask ? heroPill(d).label : undefined}
 			vtName={tmdbArtName(d.kind, d.tmdb)}
 		>
 			{#snippet byline()}{#if owned}<AskedByLine {askers} />{#if ownState.kind !== 'have' && ownState.kind !== 'downloading'}<SearchOutcomeLine titleId={owned.id} />{/if}{/if}{/snippet}
 			{#snippet actions()}
 				{#if owned}
 					<ActionButton icon={ownState.kind === 'have' ? 'check' : ownState.kind === 'failed' ? 'refresh' : ownState.kind === 'downloading' ? 'download' : 'search'} label={ownState.label} caption={ownState.kind === 'failed' && manage ? t('discover.titlePage.retry') : ownState.kind === 'missing' && manage ? t('discover.titlePage.searchNow') : ownState.label} primary onclick={() => (manage && (ownState.kind === 'failed' || ownState.kind === 'missing') ? own.ownRun('search') : own.setTab('library'))} data-testid="hero-library" />
-					{#if manage || mayReport}<ActionMenu label={t('discover.titlePage.moreActions')} caption={t('discover.titlePage.more')} icon="more" items={moreMenu} />{/if}
+					{#if manage || mayReport || mayHide}<ActionMenu label={t('discover.titlePage.moreActions')} caption={t('discover.titlePage.more')} icon="more" items={titleMenu} />{/if}
 					{#if mayAsk}{@render ask4kButton(d)}{/if}
+					{#if mayAsk && d.kind === 'show' && d.show && !d.neverAdd && askable.length > 0}
+						<ActionButton icon="wish" pill label={t('discover.titlePage.askFor', { name: d.name })} caption={t('discover.titlePage.request')} onclick={() => askShow?.open(d.show as LookupShow, kept, complete)} data-testid="hero-ask-seasons" />
+					{/if}
 				{:else if manage && !d.neverAdd}
 					{#if d.kind === 'movie' && d.movie}
 						<ActionButton icon="plus" label={t('discover.titlePage.addToTheLibrary', { name: d.name })} caption={t('discover.titlePage.addToLibrary')} primary onclick={() => addMovie?.open(d.movie as LookupMovie)} />
@@ -383,20 +433,21 @@
 					{/if}
 				{:else if mayAsk && !d.neverAdd}
 					{#if d.kind === 'movie'}
-						<ActionButton icon="wish" label={d.ask ? t('discover.titlePage.askForToo', { name: d.name }) : t('discover.titlePage.askFor', { name: d.name })} caption={d.ask?.mine ? t('discover.titlePage.requestedCaption') : d.ask ? t('discover.titlePage.requestToo') : t('discover.titlePage.request')} primary disabled={!!d.ask?.mine} onclick={() => askMovieDialog?.open({ tmdb: d.tmdb, name: d.name, year: d.year, ask: d.ask, ask4k: d.ask4k })} />
+						<ActionButton icon="wish" label={d.ask ? t('discover.titlePage.askForToo', { name: d.name }) : t('discover.titlePage.askFor', { name: d.name })} caption={d.ask?.mine ? t('discover.titlePage.requestedCaption') : d.ask ? t('discover.titlePage.requestToo') : t('discover.titlePage.request')} primary disabled={!!d.ask?.mine} onclick={() => askMovieDialog?.open({ tmdb: d.tmdb, name: d.name, year: d.year, ask: d.ask, ask4k: d.ask4k, has4k: d.has4k })} />
 						{@render ask4kButton(d)}
 					{:else if d.show}
 						<ActionButton icon="wish" label={d.ask ? t('discover.titlePage.askForToo', { name: d.name }) : t('discover.titlePage.askFor', { name: d.name })} caption={d.ask ? t('discover.titlePage.requestToo') : t('discover.titlePage.request')} primary onclick={() => askShow?.open(d.show as LookupShow)} />
 					{/if}
 				{/if}
 				{#if d.kind === 'show' || d.kind === 'movie'}<FollowButton titleId={owned?.id} tmdb={d.tmdb} kind={d.kind} />{/if}
+				{#if mayHide && !owned}<ActionMenu label={t('discover.titlePage.moreActions')} caption={t('discover.titlePage.more')} icon="more" items={[hideItem]} />{/if}
 			{/snippet}
 		</TitleHero>
 
 		{#snippet ask4kButton(td: TitleDetails)}
-			{@const offer = fourKOffer({ ...td, titleId: td.titleId ?? owned?.id })}
+			{@const offer = fourKMovies ? fourKOffer({ ...td, titleId: td.titleId ?? owned?.id }) : null}
 			{#if offer}
-				<ActionButton icon="wish" pill label={offer === 'asked' ? t('discover.titlePage.askedFor4k', { name: td.name }) : t('discover.titlePage.askFor4k', { name: td.name })} caption={offer === 'asked' ? t('discover.titlePage.requested4kCaption') : t('discover.titlePage.request4k')} disabled={offer === 'asked'} onclick={() => askMovieDialog?.open({ tmdb: td.tmdb, name: td.name, year: td.year, ask4k: td.ask4k, fourKOnly: true })} data-testid="hero-ask-4k" />
+				<ActionButton icon="wish" pill label={offer === 'asked' ? t('discover.titlePage.askedFor4k', { name: td.name }) : t('discover.titlePage.askFor4k', { name: td.name })} caption={phone ? '4K' : offer === 'asked' ? t('discover.titlePage.requested4kCaption') : t('discover.titlePage.request4k')} disabled={offer === 'asked'} onclick={() => askMovieDialog?.open({ tmdb: td.tmdb, name: td.name, year: td.year, ask: td.ask, ask4k: td.ask4k, fourKOnly: true, inLibrary: !!(td.titleId ?? owned?.id), has4k: td.has4k })} data-testid="hero-ask-4k" />
 			{/if}
 		{/snippet}
 		{#snippet castRow()}
@@ -412,7 +463,7 @@
 			{#each list.slice(0, max) as p, i (p.name + i)}{#if i}{', '}{/if}{#if personHref(p.id)}<a href={personHref(p.id)}>{p.name}</a>{:else}{p.name}{/if}{/each}
 		{/snippet}
 		{#snippet story()}
-			{#if d.overview}<p class="lead" data-testid="title-story">{d.overview}</p>{/if}
+			{#if d.overview}<p class="lead" data-testid="title-story" dir="auto">{d.overview}</p>{/if}
 		{/snippet}
 		{#snippet trailers()}
 			<TitleTrailers kind={d.kind} tmdb={d.tmdb} title={d.name} videos={rich?.videos ?? []} art={[d.backdrop, ...(rich?.backdrops ?? [])]} />
@@ -443,6 +494,7 @@
 		{/if}
 		{#if owned}
 			{@render ownTabBar()}
+			<NoDownloaderNote kind={owned.no_downloader} {manage} />
 			<TitleLibrary {own} {folders} {rules} />
 			<TitleOwnedSheets {own} />
 		{/if}
@@ -504,6 +556,7 @@
 			</section>
 
 		{/if}
+		{#if mayHide}<HideSheet bind:open={hideOpen} kind={d.kind} tmdb={d.tmdb} name={d.name} genres={d.genres} hides={d.hides ?? []} {people} onchange={hidesChanged} />{/if}
 		<Sheet bind:open={allCast} title={t('discover.titlePage.castAndCrew')} size="lg">
 			<ul class="all-grid people">
 				{#each d.cast as p, i (p.name + i)}

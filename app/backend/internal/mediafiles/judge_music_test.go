@@ -132,7 +132,7 @@ func TestMusicGoodEnoughAndBetter(t *testing.T) {
 	if ReachesGoodEnough(mp3, rules) || !ReachesGoodEnough(flac, rules) {
 		t.Fatal("good enough is lossless")
 	}
-	cur := CurrentOf(mp3, time.Now(), rules)
+	cur := CurrentOf(mp3, 0, time.Now(), rules)
 	if cur.Step != "lossy_high" {
 		t.Fatalf("current %+v", cur)
 	}
@@ -141,7 +141,7 @@ func TestMusicGoodEnoughAndBetter(t *testing.T) {
 		t.Fatal("lossless should replace a 320 copy")
 	}
 	low := releasename.Parse(mp3, releasename.Hints{Music: true})
-	fl := CurrentOf(flac, time.Now(), rules)
+	fl := CurrentOf(flac, 0, time.Now(), rules)
 	if Gains(ReleaseFacts{Name: mp3, Parse: low}, rules, &fl) {
 		t.Fatal("a 320 copy never replaces lossless")
 	}
@@ -195,6 +195,9 @@ func TestMusicMatching(t *testing.T) {
 		{"Velvet Cartography - Glass Ocean (2019) [FLAC]", 1, 0, false, true},
 		{"Jay-Rook-Lowlands-WEB-2022-GRP", 3, 14, false, false},
 		{"Velvet Cartography Harbour Songs 2021 FLAC", 1, 11, false, false},
+		// No clear split with a disc count and a country after the album.
+		{"Velvet Cartography Harbour Songs 2CD DE 2021 MOD", 1, 11, false, false},
+		{"Velvet Cartography Low Tide Atlas 3CD 2019", 1, 10, false, false},
 	}
 	for _, c := range cases {
 		p := releasename.Parse(c.name, releasename.Hints{Music: true})

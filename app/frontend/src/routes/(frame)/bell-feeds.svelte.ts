@@ -1,5 +1,6 @@
 // What reaches the bell from outside the page you are on: request updates, failed downloads, downloads waiting for a decision and a new version. All of it rides on data the app already loads (the inbox, the decisions list, live events), plus one update check every few hours for people who manage the app.
-import { cut, messageWords } from './bell-words.ts';
+import { clearPin, cut, messageWords } from './bell-words.ts';
+import type { HealthChecks } from '#lib/health/index.ts';
 import { decisions } from '#lib/downloads/index.ts';
 import type { PinnedAlert } from '#lib/alerts/index.ts';
 import { goto } from '$app/navigation';
@@ -12,7 +13,7 @@ import type { UpdateInfo } from '#lib/core/types.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 /** Pinned rows from these feeds (Settings warnings are added by the panel). */
-export const feedPins = $state<{ update: PinnedAlert | null }>({ update: null });
+export const feedPins = $state<{ update: PinnedAlert | null; clear: PinnedAlert | null }>({ update: null, clear: null });
 
 /** Downloads waiting for a person, pinned until handled. */
 export function decisionPins(): PinnedAlert[] {
@@ -80,11 +81,42 @@ export function startBellFeeds(canManage: boolean): () => void {
 		void check();
 		const timer = setInterval(check, 6 * 3600_000);
 		stops.push(() => clearInterval(timer));
+
+		// Imported downloads the Downloader has not cleared yet: one pinned row with Clear now. Read from the Health checks every few minutes and soon after a download changes.
+		const readClear = () =>
+			api
+				.get<HealthChecks>('/health/checks')
+				.then((h) => (feedPins.clear = clearPin(h.checks ?? [], clearNow)))
+				.catch(() => {});
+		const clearNow = async () => {
+			try {
+				const r = await api.post<{ left: number }>('/downloads/clear-now');
+				if (r.left) toasts.push(t('frame.feeds.clearStill'), 'warn', { body: t('frame.feeds.clearBody') });
+				else toasts.push(t('frame.feeds.cleared'), 'ok');
+			} catch {
+				toasts.push(t('frame.feeds.clearStill'), 'warn', { body: t('frame.feeds.clearBody') });
+			}
+			await readClear();
+		};
+		void readClear();
+		const clearTimer = setInterval(readClear, 5 * 60_000);
+		let soon: ReturnType<typeof setTimeout> | undefined;
+		stops.push(
+			live.on('download', () => {
+				clearTimeout(soon);
+				soon = setTimeout(readClear, 5_000);
+			}),
+			() => {
+				clearInterval(clearTimer);
+				clearTimeout(soon);
+			}
+		);
 	}
 
 	return () => {
 		stops.forEach((s) => s());
 		feedPins.update = null;
+		feedPins.clear = null;
 	};
 }
 

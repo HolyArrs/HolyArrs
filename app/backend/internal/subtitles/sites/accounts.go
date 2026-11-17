@@ -130,7 +130,7 @@ func baseLang(code string) string {
 func (o *openSubtitles) Search(ctx context.Context, q Query) ([]Candidate, error) {
 	langs := make([]string, 0, len(q.Languages))
 	for _, l := range q.Languages {
-		if l = baseLang(l); l != "" && !slices.Contains(langs, l) {
+		if l = siteLang(l); l != "" && !slices.Contains(langs, l) {
 			langs = append(langs, l)
 		}
 	}
@@ -191,17 +191,25 @@ func (o *openSubtitles) Search(ctx context.Context, q Query) ([]Candidate, error
 	out := make([]Candidate, 0, len(res.Data))
 	for _, s := range res.Data {
 		a := s.Attributes
-		if len(a.Files) == 0 || a.Files[0].FileID <= 0 || a.AITranslated || a.MachineTranslated {
+		if len(a.Files) == 0 || a.Files[0].FileID <= 0 {
 			continue
 		}
-		lang := baseLang(a.Language)
-		if !slices.Contains(langs, lang) {
+		lang := siteLang(a.Language)
+		if !langWanted(langs, lang) {
 			continue // the site answered in another language
 		}
 		f := a.Feature
 		c := Candidate{Site: o.c.cfg.Name, Key: strconv.FormatInt(a.Files[0].FileID, 10), Language: lang, HearingImpaired: a.HearingImpaired,
 			Forced: a.ForeignPartsOnly, Title: f.Title, Year: f.Year, Uploader: a.Uploader.Name, Trusted: a.FromTrusted, FPS: a.FPS,
 			Downloads: a.DownloadCount, Format: "srt", Link: strconv.FormatInt(a.Files[0].FileID, 10)}
+		// Machine-made files are flagged; the site's switch decides whether they
+		// are used at all.
+		switch {
+		case a.AITranslated:
+			c.MachineMade = AITranslated
+		case a.MachineTranslated:
+			c.MachineMade = MachineTranslated
+		}
 		if r := strings.TrimSpace(a.Release); r != "" && len(r) <= 300 {
 			c.ReleaseNames = []string{r}
 		}
@@ -331,10 +339,13 @@ type sdSub struct {
 }
 
 func (s *subdl) Search(ctx context.Context, q Query) ([]Candidate, error) {
-	var langs []string
+	var langs, codes []string
 	for _, l := range q.Languages {
-		if l = baseLang(l); l != "" && !slices.Contains(langs, l) {
+		if l = siteLang(l); l != "" && !slices.Contains(langs, l) {
 			langs = append(langs, l)
+		}
+		if b := baseLang(l); b != "" && !slices.Contains(codes, b) {
+			codes = append(codes, b)
 		}
 	}
 	if len(langs) == 0 {
@@ -342,7 +353,7 @@ func (s *subdl) Search(ctx context.Context, q Query) ([]Candidate, error) {
 	}
 	v := url.Values{}
 	v.Set("api_key", s.c.cfg.Key)
-	v.Set("languages", strings.ToUpper(strings.Join(langs, ",")))
+	v.Set("languages", strings.ToUpper(strings.Join(codes, ",")))
 	v.Set("subs_per_page", "30")
 	v.Set("hi", "1")
 	switch q.Kind {
@@ -406,8 +417,8 @@ func (s *subdl) Search(ctx context.Context, q Query) ([]Candidate, error) {
 		if !strings.HasPrefix(x.URL, "/") || strings.HasPrefix(x.URL, "//") || len(x.URL) > 300 || x.FullSeason {
 			continue
 		}
-		lang := baseLang(x.Language)
-		if !slices.Contains(langs, lang) {
+		lang := siteLang(x.Language)
+		if !langWanted(langs, lang) {
 			continue
 		}
 		c := Candidate{Site: s.c.cfg.Name, Key: strings.TrimSuffix(path.Base(x.URL), ".zip"), Language: lang, HearingImpaired: x.HI,

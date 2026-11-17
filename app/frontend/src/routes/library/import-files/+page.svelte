@@ -3,7 +3,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
-	import { LibraryToolPage, blocker, episodeCode, itemsFor, pickLine, resultLine, startPick, startTicked, type ByHandFile, type ByHandResult, type ByHandScan, type Mode, type Pick } from '#lib/mediafiles/index.ts';
+	import { LibraryToolPage, blocker, episodeCode, itemsFor, pickLine, resultLine, startPick, startTicked, type ByHandFile, type ByHandResult, type ByHandScan, type Pick } from '#lib/mediafiles/index.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
@@ -11,6 +11,8 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import type { EpisodeView, TitleView } from '#lib/core/types.ts';
 	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
+	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 
 	let path = $state('');
 	let scanning = $state(false);
@@ -18,7 +20,6 @@
 	let picks = $state<Record<string, Pick | null>>({});
 	let ticked = $state<Record<string, boolean>>({});
 	let results = $state<Record<string, ByHandResult>>({});
-	let mode = $state<Mode>('copy');
 	let importing = $state(false);
 	let error = $state('');
 
@@ -35,9 +36,18 @@
 	let episode = $state<number | undefined>(undefined);
 
 	const files = $derived(scan?.files ?? []);
-	const items = $derived(itemsFor(files, picks, ticked, mode));
+	const items = $derived(itemsFor(files, picks, ticked));
 	const seasons = $derived([...new Set(episodes.map((e) => e.season))].sort((a, b) => a - b));
 	const seasonEps = $derived(episodes.filter((e) => e.season === season));
+
+	// Review's Import files by hand sends ?path= (the download's folder): look in it straight away.
+	onMount(() => {
+		const asked = page.url.searchParams.get('path')?.trim();
+		if (asked) {
+			path = asked;
+			void doScan();
+		}
+	});
 
 	async function doScan(e?: SubmitEvent) {
 		e?.preventDefault();
@@ -133,8 +143,17 @@
 		editFor = null;
 	}
 
+	function setReplace(f: ByHandFile, on: boolean) {
+		const p = picks[f.path];
+		if (!p) return;
+		picks[f.path] = { ...p, replace: on };
+		ticked[f.path] = !blocker(f, picks[f.path]);
+	}
+
 	async function doImport() {
 		if (!items.length) return;
+		const swaps = items.filter((x) => x.replace).length;
+		if (swaps && !confirm(tr(swaps === 1 ? 'library.byHand.askReplaceOne' : 'library.byHand.askReplaceMany', { n: swaps }))) return;
 		importing = true;
 		error = '';
 		try {
@@ -145,7 +164,7 @@
 				if (x.outcome === 'placed') {
 					ticked[x.path] = false;
 					const p = picks[x.path];
-					if (p) picks[x.path] = { ...p, has_file: true };
+					if (p) picks[x.path] = { ...p, has_file: true, replace: false };
 				}
 			}
 			results = next;
@@ -209,6 +228,12 @@
 									{#if !f.in_library && editFor !== f.path}<Button variant="plain" size="sm" onclick={() => openEditor(f)} disabled={importing}>{tr('shows.versions.change')}</Button>{/if}
 								</div>
 							{/if}
+							{#if p?.has_file && f.kind === 'video' && !f.in_library && !done}
+								<label class="tick swap">
+									<input type="checkbox" checked={!!p.replace} onchange={(e) => setReplace(f, e.currentTarget.checked)} disabled={importing} />
+									<span class="small">{tr('mediafiles.byHand.replace')}</span>
+								</label>
+							{/if}
 							{#if why}<p class="xs muted">{why}</p>{:else if f.note}<p class="xs muted">{f.note}</p>{/if}
 							{#if done}
 								<p class="xs" class:ok-text={done.outcome === 'placed'} class:bad-text={done.outcome !== 'placed'} role="status">
@@ -271,11 +296,6 @@
 					{/each}
 				</ul>
 				<div class="row end">
-					<fieldset class="modes">
-						<legend class="xs muted">{tr('library.byHand.how')}</legend>
-						<label class="checkline"><input type="radio" bind:group={mode} value="copy" /> <span><b>{tr('library.byHand.copy')}</b><br /><span class="hint">{tr('library.byHand.copyHint')}</span></span></label>
-						<label class="checkline"><input type="radio" bind:group={mode} value="move" /> <span><b>{tr('library.byHand.move')}</b><br /><span class="hint">{tr('library.byHand.moveHint')}</span></span></label>
-					</fieldset>
 					<span class="small muted">{tr('library.byHand.ticked', { n: items.length })}</span>
 					<Button variant="primary" icon="download" onclick={doImport} disabled={!items.length} busy={importing}>
 						{tr(items.length === 1 ? 'library.byHand.importOne' : 'library.byHand.importMany', { n: items.length })}
@@ -316,12 +336,10 @@
 	.picks .field { margin-bottom: 0; min-width: 0; flex: 1 1 140px; }
 	.end { justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-5); }
 	.end.tight { margin-top: 0; }
-	.modes { display: flex; flex-wrap: wrap; gap: var(--s-3); margin: 0 auto 0 0; padding: 0; border: 0; min-width: 0; }
 	.ok-text { color: var(--ok); }
 	.bad-text { color: var(--fail); }
 	@media (max-width: 600px) {
 		.pick > :global(.ui-btn), .end > :global(.ui-btn) { width: 100%; }
 		.top, .found li { align-items: flex-start; flex-direction: column; }
-		.modes { flex-direction: column; }
 	}
 </style>

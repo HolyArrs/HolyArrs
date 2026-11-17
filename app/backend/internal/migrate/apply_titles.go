@@ -6,9 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -27,7 +30,7 @@ func (r *run) titleHere(t *TitlePlan) int64 {
 	case "show":
 		ids := map[string]string{}
 		for _, k := range []string{"tvdb", "tmdb", "imdb"} {
-			if t.IDs[k] != "" {
+			if t.IDs[k] != "" && (k != "tmdb" || t.IDs["tvdb"] == "") {
 				ids[k] = t.IDs[k]
 			}
 		}
@@ -80,23 +83,97 @@ func (r *run) title(it Item) (string, string) {
 	if !filepath.IsLocal(t.Folder) || strings.ContainsAny(t.Folder, `/\`) {
 		return ResFailed, "its folder name is not one folder"
 	}
+	// A folder that is on this server but left out of this import (the
+	// Library folders group unchecked) keeps its titles behind: they are
+	// not added somewhere else, so nothing is downloaded twice. The dry run
+	// says the same.
+	lfID := r.id("SELECT id FROM library_folders WHERE path = ?", filepath.Clean(lib))
+	if lfID == 0 && isDir(lib) {
+		if r.dry && !r.foldersOff && slices.Contains(r.coming[t.Kind], filepath.Clean(lib)) {
+			lfID = -1 // the folder itself comes over in this same run
+		} else {
+			r.attn, r.attnFolder = AttnUnchecked, filepath.ToSlash(filepath.Clean(lib))
+			return ResSkipped, "left out: " + r.attnFolder + " is set to \"Don't bring them\"; pick a folder for it and import again"
+		}
+	}
+	// A title whose own folder is missing (wanted, never downloaded) still
+	// comes over, with no files, as Radarr and Sonarr keep it; only a
+	// missing Library folder means the paths are wrong.
+	noFiles := false
+	// fallback is the Library folder here a title goes to when its old one
+	// is not on this server at all: it comes over as wanted, of the same
+	// kind, and the report says to fix its folder.
+	fallback := ""
 	if fi, err := os.Lstat(dir); err != nil || !fi.IsDir() {
-		return ResNotFound, "no folder at " + filepath.ToSlash(dir) + " on this server; add a path rule"
+		if err != nil && !errors.Is(err, fs.ErrNotExist) && isDir(lib) {
+			return ResNotFound, "no folder at " + filepath.ToSlash(dir) + " on this server; add a path rule"
+		}
+		if err == nil && isDir(lib) {
+			return ResNotFound, "no folder at " + filepath.ToSlash(dir) + " on this server; add a path rule"
+		}
+		noFiles = true
+	}
+	if lfID == 0 && r.left[filepath.Clean(lib)] {
+		// Set to "Don't bring them" although this server cannot see it.
+		r.attn, r.attnFolder = AttnUnchecked, filepath.ToSlash(filepath.Clean(lib))
+		return ResSkipped, "left out: " + r.attnFolder + " is set to \"Don't bring them\"; pick a folder for it and import again"
+	}
+	if lfID == 0 {
+		var here string
+		_ = r.m.Store.Read().QueryRowContext(r.ctx, "SELECT id, path FROM library_folders WHERE kind = ? ORDER BY id LIMIT 1", t.Kind).Scan(&lfID, &here)
+		if lfID == 0 && r.dry && len(r.coming[t.Kind]) > 0 {
+			lfID, here = -1, r.coming[t.Kind][0] // added earlier in this same run
+		}
+		if lfID == 0 {
+			return ResNotFound, "its Library folder " + t.Library + " is not on this server, and there is no " + t.Kind + " Library folder here to add it to; add one and import again"
+		}
+		noFiles = true
+		r.attn, r.attnFolder = AttnUnreachable, filepath.ToSlash(filepath.Clean(lib))
+		fallback = filepath.ToSlash(here)
+	}
+	// Brought into a folder here that holds none of the titles of an old
+	// folder this server cannot see: wanted, and it needs attention too.
+	if old := r.unseen[filepath.Clean(lib)]; fallback == "" && noFiles && old != "" {
+		r.attn, r.attnFolder = AttnUnreachable, old
+		fallback, dir = filepath.ToSlash(lib), filepath.FromSlash(path.Join(old, t.Folder))
 	}
 	if r.dry {
+		if fallback != "" {
+			return ResCreate, "will be added to " + fallback + " as wanted with no files; needs attention: its old folder " + filepath.ToSlash(dir) + " is not on this server; fix its folder or add a path rule"
+		}
+		if noFiles {
+			return ResCreate, "will be added with no files yet; there is no folder at " + filepath.ToSlash(dir)
+		}
 		return ResAdopt, "uses the folder " + filepath.ToSlash(dir) + " where it is; no file is moved or renamed"
 	}
-	lfID := r.id("SELECT id FROM library_folders WHERE path = ?", filepath.Clean(lib))
-	if lfID == 0 {
-		return ResNotFound, "its Library folder " + t.Library + " is not here (not imported, or left out)"
-	}
-	c := library.AdoptChoice{Folder: t.Folder, ID: t.ID}
-	if t.Kind == "movie" {
-		c = library.AdoptChoice{Folder: t.Folder, TMDB: strings.TrimPrefix(t.ID, "tmdb:"), ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays}
-	}
-	res, err := r.m.Library.Adopt(r.ctx, lfID, []library.AdoptChoice{c}, r.by)
-	if err == nil && len(res) == 1 && res[0].Error != "" {
-		err = errors.New(res[0].Error)
+	var res []library.AdoptResult
+	var err error
+	if noFiles {
+		var id int64
+		err = r.withShowIDs(t, func(sid string) error {
+			tt := *t
+			tt.ID = sid
+			var e error
+			id, e = r.addNoFiles(lfID, &tt)
+			return e
+		})
+		res = []library.AdoptResult{{TitleID: id}}
+	} else {
+		c := library.AdoptChoice{Folder: t.Folder, ID: t.ID}
+		if t.Kind == "movie" {
+			c = library.AdoptChoice{Folder: t.Folder, TMDB: strings.TrimPrefix(t.ID, "tmdb:"), ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays}
+		}
+		err = r.withShowIDs(t, func(sid string) error {
+			if t.Kind != "movie" {
+				c.ID = sid
+			}
+			var e error
+			res, e = r.m.Library.Adopt(r.ctx, lfID, []library.AdoptChoice{c}, r.by)
+			if e == nil && len(res) == 1 && res[0].Error != "" {
+				e = errors.New(res[0].Error)
+			}
+			return e
+		})
 	}
 	if err != nil {
 		return ResFailed, err.Error()
@@ -152,13 +229,58 @@ func (r *run) title(it Item) (string, string) {
 		_ = shows.New(r.m.Library).SetSeason(r.ctx, id, n, false, r.by) // a season the show does not have is fine
 	}
 	d := "uses the folder " + filepath.ToSlash(dir) + " where it is"
+	if noFiles {
+		d = "added with no files yet; there is no folder at " + filepath.ToSlash(dir)
+	}
+	if fallback != "" {
+		d = "added to " + fallback + " as wanted with no files; needs attention: its old folder " + filepath.ToSlash(dir) + " is not on this server; fix its folder or add a path rule"
+	}
 	if res[0].File != "" {
 		d += ", with " + res[0].File
 	}
 	if !t.KeepUpToDate {
 		d += "; Keep up to date off"
 	}
+	if noFiles {
+		return ResCreated, d
+	}
 	return ResAdopted, d
+}
+
+// addNoFiles adds a title whose folder is not on disk the way a request
+// adds one: its ids, its folder name from the old app, and no files.
+func (r *run) addNoFiles(lfID int64, t *TitlePlan) (int64, error) {
+	switch t.Kind {
+	case "movie":
+		if r.m.Library.Metadata == nil {
+			return 0, errors.New("no metadata source")
+		}
+		tmdb := strings.TrimPrefix(t.ID, "tmdb:")
+		m, err := r.m.Library.Metadata.Movie(r.ctx, "tmdb:"+tmdb)
+		if err != nil {
+			return 0, fmt.Errorf("TMDB %s: %w", tmdb, err)
+		}
+		id, _, err := r.m.Library.Add(r.ctx, m, library.AddOptions{LibraryFolderID: lfID, WhyAdded: "import",
+			ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays, Adopt: &library.Adoption{FolderName: t.Folder}}, r.by)
+		return id, err
+	case "show":
+		id, _, err := shows.New(r.m.Library).AddShow(r.ctx, t.ID, shows.ShowAddOptions{LibraryFolderID: lfID, WhyAdded: "import",
+			Adopt: &shows.ShowAdoption{FolderName: t.Folder, LibraryPath: filepath.FromSlash(t.Library)}}, r.by)
+		return id, err
+	case "artist":
+		id, _, err := r.m.Library.AddArtist(r.ctx, t.ID, library.ArtistAddOptions{LibraryFolderID: lfID, WhyAdded: "import",
+			Adopt: &library.MusicAdoption{FolderName: t.Folder}}, r.by)
+		if err != nil {
+			return 0, err
+		}
+		// The albums are read now, so the old app's album choices apply.
+		if _, err := r.m.Library.RefreshArtist(r.ctx, id, r.by, nil); err != nil {
+			_, _ = r.m.Library.Remove(context.WithoutCancel(r.ctx), id, library.RemoveChoice{}, true, r.by)
+			return 0, fmt.Errorf("its albums could not be read: %w", err)
+		}
+		return id, nil
+	}
+	return 0, errors.New("unknown title kind " + t.Kind)
 }
 
 type musicPartState struct {

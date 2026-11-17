@@ -7,6 +7,8 @@ export interface Want {
 	language: string;
 	hearing_impaired: HI;
 	forced: boolean;
+	// When nothing is found, translate one from this language with the owner's translator.
+	translate_from?: string;
 }
 
 export interface Language {
@@ -52,6 +54,7 @@ export interface SiteView {
 	downloads_today: number;
 	allow_local_network: boolean;
 	priority: number;
+	machine_made?: boolean;
 	has_account: boolean;
 }
 
@@ -93,6 +96,24 @@ export interface SubtitleRow {
 	tries: number;
 	next_try_at?: string;
 	sync: Record<string, unknown>;
+	// What made it when a person did not: a translation, whole or partial, or a site's machine-made file.
+	made?: 'translated' | 'translated_partial' | 'ai_translated' | 'machine_translated';
+	// A built-in track stored as pictures, which cannot be translated.
+	picture?: boolean;
+	track_index?: number;
+}
+
+export interface Translator {
+	kind: '' | 'openai' | 'lingarr';
+	url: string;
+	model: string;
+	has_key: boolean;
+	built_in_auto: boolean;
+}
+
+export interface TranslatorForm extends Translator {
+	key: string;
+	clear_key: boolean;
 }
 
 export interface Resolved {
@@ -137,6 +158,7 @@ export interface Candidate {
 	trusted?: boolean;
 	downloads?: number;
 	format?: string;
+	machine_made?: 'ai_translated' | 'machine_translated';
 	score: { total: number; parts: ScorePart[]; refused?: string };
 }
 
@@ -190,6 +212,7 @@ export interface SiteForm {
 	username: string;
 	password: string;
 	api_key: string;
+	machine_made: boolean;
 }
 
 // These word lists use getters, so each line follows the language picked when it is read.
@@ -352,7 +375,8 @@ export function siteForm(k: SiteKind, s?: SiteView): SiteForm {
 		limits: s ? { ...s.limits } : { gap_ms: 1000, per_window: 60, window_seconds: 3600, downloads_per_day: 0 },
 		username: '',
 		password: '',
-		api_key: ''
+		api_key: '',
+		machine_made: s?.machine_made ?? false
 	};
 }
 
@@ -364,6 +388,7 @@ export function siteBody(f: SiteForm): Record<string, unknown> {
 		priority: Number(f.priority),
 		allow_local_network: f.allow_local_network,
 		enabled: f.enabled,
+		machine_made: f.machine_made,
 		limits: {
 			gap_ms: Number(f.limits.gap_ms),
 			per_window: Number(f.limits.per_window),
@@ -412,4 +437,48 @@ export function offsetWords(ms: number): string {
 
 export function jobsDone(ids: number[], states: Record<number, string>): number {
 	return ids.filter((id) => ['done', 'failed', 'cancelled'].includes(states[id] ?? '')).length;
+}
+
+// What made a subtitle when no person did, or '' for a person's file.
+export function madeLabel(made: SubtitleRow['made']): string {
+	switch (made) {
+		case 'translated':
+			return t('subtitles.made.translated');
+		case 'translated_partial':
+			return t('subtitles.made.partial');
+		case 'ai_translated':
+			return t('subtitles.made.ai');
+		case 'machine_translated':
+			return t('subtitles.made.machine');
+	}
+	return '';
+}
+
+// The subtitles a missing language can be translated from: text files beside
+// the video and text tracks inside it, in another language.
+export function translateSources(rows: SubtitleRow[], language: string): SubtitleRow[] {
+	return present(rows).filter(
+		(r) => r.language !== language && !r.picture && ((r.place === 'beside' && !!r.relative_path) || (r.place === 'built_in' && r.track_index !== undefined && r.track_index !== null))
+	);
+}
+
+export function translateBody(m: Pick<SubtitleRow, 'language' | 'forced'>, src: SubtitleRow): Record<string, unknown> {
+	const b: Record<string, unknown> = { language: m.language, from: src.language };
+	if (m.forced) b.forced = true;
+	if (src.place === 'built_in') {
+		b.source = 'built_in';
+		b.track = src.track_index;
+	} else {
+		b.source = 'beside';
+		b.path = src.relative_path;
+	}
+	return b;
+}
+
+// Only the fields the translator keeps; a typed key is sent, an empty one keeps the stored key.
+export function translatorBody(f: TranslatorForm): Record<string, unknown> {
+	const b: Record<string, unknown> = { kind: f.kind, url: f.url.trim(), model: f.kind === 'openai' ? f.model.trim() : '', built_in_auto: f.built_in_auto };
+	if (f.key.trim()) b.key = f.key.trim();
+	else if (f.clear_key) b.clear_key = true;
+	return b;
 }

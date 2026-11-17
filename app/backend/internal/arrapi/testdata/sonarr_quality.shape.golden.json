@@ -1,6 +1,22 @@
 [
   {
+    "cutoff": "number",
+    "cutoffFormatScore": "number",
+    "formatItems": [],
     "id": "number",
-    "name": "string"
+    "items": [
+      {
+        "allowed": "bool",
+        "items": [],
+        "quality": {
+          "id": "number",
+          "name": "string"
+        }
+      }
+    ],
+    "minFormatScore": "number",
+    "minUpgradeFormatScore": "number",
+    "name": "string",
+    "upgradeAllowed": "bool"
   }
 ]

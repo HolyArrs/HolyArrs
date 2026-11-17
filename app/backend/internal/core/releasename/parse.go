@@ -74,6 +74,16 @@ var langWords = map[string]string{
 	"russian": "ru", "rus": "ru", "japanese": "ja", "jpn": "ja", "korean": "ko", "kor": "ko",
 }
 
+// moreLangWords are read as languages after the title, but never end a title,
+// because many are ordinary title words ("My Big Fat Greek Wedding"). Short
+// words that clash with names (fin, dan, hun, tur, pol, chi, pl, nl) stay out.
+var moreLangWords = map[string]string{
+	"polish": "pl", "dutch": "nl", "flemish": "nl", "portuguese": "pt", "swedish": "sv", "swe": "sv",
+	"danish": "da", "norwegian": "no", "finnish": "fi", "czech": "cs", "cze": "cs", "hungarian": "hu",
+	"greek": "el", "hebrew": "he", "heb": "he", "turkish": "tr", "arabic": "ar", "hindi": "hi",
+	"chinese": "zh", "mandarin": "zh", "thai": "th", "vietnamese": "vi", "ukrainian": "uk", "ukr": "uk",
+}
+
 var editions = []struct{ words, name string }{
 	{"directors cut", "Directors Cut"}, {"extended", "Extended"}, {"theatrical", "Theatrical"},
 	{"remastered", "Remastered"}, {"imax", "IMAX"}, {"unrated", "Unrated"}, {"anniversary", "Anniversary"},
@@ -164,6 +174,17 @@ type Result struct {
 	Show *ShowNumbers `json:"show,omitempty"`
 	// Music holds what an album Release name says; nil for movies and shows.
 	Music *MusicInfo `json:"music,omitempty"`
+	// Size is the whole Release's size in bytes when the judge knows it
+	// (0: not known). Parse leaves it unset.
+	Size int64 `json:"-"`
+	// OriginalLanguage is the matched title's original language and
+	// AudioLanguages a library file's audio track languages, when the judge
+	// knows them; Parse leaves both unset.
+	OriginalLanguage string   `json:"-"`
+	AudioLanguages   []string `json:"-"`
+	// TitleYear is the matched title's year when the judge knows it (0:
+	// not known); a year trait test reads it when the name has no year.
+	TitleYear int `json:"-"`
 }
 
 // ShowNumbers are the numbers a show Release names.
@@ -376,6 +397,20 @@ func CleanName(s string) string {
 	return strings.Join(words, " ")
 }
 
+// SameName says whether a library name cleans to want (a CleanName of a
+// release name). An apostrophe in the library name is tried both as a
+// separator ("Schitt s Creek", "d Amelie") and as nothing ("Schitts Creek"),
+// since release names show either.
+func SameName(libName, want string) bool {
+	if CleanName(libName) == want {
+		return true
+	}
+	if !strings.ContainsAny(libName, "'’ʼ") {
+		return false
+	}
+	return CleanName(strings.NewReplacer("'", "", "’", "", "ʼ", "").Replace(libName)) == want
+}
+
 func sure[T any](v T) Field[T] { return Field[T]{v, Sure} }
 
 func likely[T any](v T) Field[T] { return Field[T]{v, Likely} }
@@ -418,6 +453,25 @@ func isTag(tok string) bool {
 	}
 	if _, ok := langWords[t]; ok {
 		return true
+	}
+	return false
+}
+
+// plainWord says a lower-case word is neither a tag, a language nor a
+// number, so it reads as part of a title or a note.
+func plainWord(t string) bool {
+	_, lang := moreLangWords[t]
+	return !lang && !isTag(t) && !reNumber(t) && t != "dub" && t != "audio"
+}
+
+// ReadsLanguage reports whether Release names can show the language code at all.
+func ReadsLanguage(code string) bool {
+	for _, words := range []map[string]string{langWords, moreLangWords} {
+		for _, c := range words {
+			if c == code {
+				return true
+			}
+		}
 	}
 	return false
 }
@@ -571,17 +625,26 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 	}
 	r.Audio.Atmos = has("atmos")
 
-	// Languages.
-	for _, t := range low {
-		if code, ok := langWords[t]; ok && !slices.Contains(r.Languages, code) {
+	// Languages. A newer language word before an ordinary word belongs to
+	// an episode title or a subtitle note ("The Chinese Restaurant", "Thai Sub").
+	for i, t := range low {
+		code, ok := langWords[t]
+		if !ok {
+			code, ok = moreLangWords[t]
+			ok = ok && (i+1 == len(low) || !plainWord(low[i+1]))
+		}
+		if ok && !slices.Contains(r.Languages, code) {
 			r.Languages = append(r.Languages, code)
 		}
 	}
 	if has("multi") {
 		flags["multi"] = true
 	}
-	if has("dl", "dual") {
-		flags["dual"] = true
+	// DL is dual language, except after WEB, where it is the source ("WEB.DL").
+	for i, t := range low {
+		if t == "dual" || t == "dl" && (i == 0 || low[i-1] != "web") {
+			flags["dual"] = true
+		}
 	}
 
 	// Edition.

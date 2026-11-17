@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"maps"
 	"net/http"
 	"strconv"
 	"strings"
@@ -135,7 +136,7 @@ func (h *TitleHandlers) editTitle(w http.ResponseWriter, r *http.Request) {
 		library.TitleChange
 		DetailsSource *string `json:"details_source"`
 	}
-	if !webserver.Decode(w, r, &c, "send any of keep_up_to_date, pick_rules_id, library_folder_id; for movies release_gate, gate_delay_days; for shows episode_order, new_seasons, details_source") {
+	if !webserver.Decode(w, r, &c, "send any of keep_up_to_date, pick_rules_id, library_folder_id; for movies release_gate, gate_delay_days; for shows episode_order, episode_group_id, new_seasons, details_source") {
 		return
 	}
 	dry := r.URL.Query().Get("dry_run") == "1" || r.URL.Query().Get("dry_run") == "true"
@@ -146,6 +147,17 @@ func (h *TitleHandlers) editTitle(w http.ResponseWriter, r *http.Request) {
 		}
 		if !metadata.ValidShowSource(*c.DetailsSource) {
 			h.ShowError(w, metadata.ErrUnknownSource)
+			return
+		}
+	}
+	// A new episode order renumbers the episodes: the show is refreshed
+	// after the edit, and a rename is offered when the numbers moved.
+	regroup := c.EpisodeGroupID != nil && !dry && t.Kind == "show" && *c.EpisodeGroupID != strOr(t.EpisodeGroupID)
+	var before map[int64][2]int
+	if regroup {
+		var err error
+		if before, err = library.EpisodeNamedNumbers(r.Context(), h.Store.Read(), t.ID); err != nil {
+			webserver.Internal(w, "api", err)
 			return
 		}
 	}
@@ -160,6 +172,20 @@ func (h *TitleHandlers) editTitle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	renamed := false
+	if regroup {
+		// A refresh that fails puts the old order back.
+		if _, err := shows.New(h.Library).Regroup(r.Context(), t.ID, t.EpisodeGroupID, h.Actor(r)); err != nil {
+			h.ShowError(w, err)
+			return
+		}
+		after, err := library.EpisodeNamedNumbers(r.Context(), h.Store.Read(), t.ID)
+		if err != nil {
+			webserver.Internal(w, "api", err)
+			return
+		}
+		renamed = !maps.Equal(before, after)
+	}
 	_ = database.Get(r.Context(), h.Store.Read(), "titles", t.ID, &t)
 	v, err := h.TitleView(r.Context(), t)
 	if err != nil {
@@ -169,7 +195,11 @@ func (h *TitleHandlers) editTitle(w http.ResponseWriter, r *http.Request) {
 	if !dry && h.Live {
 		h.PublishTitleView(v)
 	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"title": v, "changes": res})
+	out := map[string]any{"title": v, "changes": res}
+	if regroup {
+		out["rename_suggested"] = renamed
+	}
+	webserver.WriteJSON(w, http.StatusOK, out)
 }
 
 func (h *TitleHandlers) moveTitle(w http.ResponseWriter, r *http.Request) {
@@ -203,6 +233,8 @@ type LookupView struct {
 	Ask4K *requests.AskBrief `json:"ask_4k,omitempty"`
 	// Has4K: the Library copy has a 4K Version, so no 4K ask is needed.
 	Has4K bool `json:"has_4k,omitempty"`
+	// Hidden: hidden from browsing; managers still find it here to add it.
+	Hidden bool `json:"hidden,omitempty"`
 }
 
 // lookupTitles finds movies to add by name, "tmdb:<id>" or "imdb:<tt id>".
@@ -217,7 +249,8 @@ func (h *TitleHandlers) lookupTitles(w http.ResponseWriter, r *http.Request) {
 	}
 	var ms []metadata.Movie
 	low := strings.ToLower(term)
-	if strings.HasPrefix(low, "tmdb:") || strings.HasPrefix(low, "imdb:") {
+	byID := strings.HasPrefix(low, "tmdb:") || strings.HasPrefix(low, "imdb:")
+	if byID {
 		m, err := h.Metadata.Movie(r.Context(), low[:5]+strings.TrimSpace(term[5:]))
 		if err != nil && !errors.Is(err, metadata.ErrNotFound) {
 			h.Fail(w, err)
@@ -239,6 +272,11 @@ func (h *TitleHandlers) lookupTitles(w http.ResponseWriter, r *http.Request) {
 	for _, m := range h.KidMovies(r.Context(), h.KidMax(r), ms) {
 		v := LookupView{Movie: m}
 		if id := m.IDs["tmdb"]; id != "" {
+			hidden, drop := HiddenMark(r.Context(), h.Store, "movie", id, m.Genres)
+			if drop && !byID { // an id is a link: it still finds the title
+				continue
+			}
+			v.Hidden = hidden
 			var err error
 			if v.TitleID, err = library.TitleByTMDB(r.Context(), db, id); err != nil {
 				webserver.Internal(w, "api", err)
