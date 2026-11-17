@@ -138,6 +138,8 @@ for (const width of [1280, 390]) {
 			await open(page, '/health?tab=support');
 			const panel = page.getByTestId('status-support');
 			await expect(panel.getByRole('heading', { name: 'HolyArrs is built by one person, in the open.' })).toBeVisible();
+			await expect(panel.getByRole('heading', { name: 'What your support does' })).toBeVisible();
+			await expect(panel.getByRole('listitem')).toHaveCount(3);
 			await expect(panel.getByText('Read the note')).toHaveCount(0);
 			const heights = new Set<number>();
 			for (const [name, href] of supportHrefs) {
