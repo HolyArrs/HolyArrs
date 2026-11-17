@@ -31,6 +31,8 @@
 	let editing = $state<DownloaderView | null>(null);
 	let isNew = $state(false);
 	let form = $state<DownloaderForm>(emptyForm());
+	// A new Downloader shows only the app tiles until one is picked.
+	let kindChosen = $state(false);
 	let busy = $state(false);
 	let formError = $state('');
 	let testing = $state(0);
@@ -120,6 +122,7 @@
 		editing = { id: 0, name: '' } as DownloaderView;
 		form = emptyForm();
 		formError = '';
+		kindChosen = false;
 	}
 
 	// HOLYARRS_READONLY_DOWNLOADERS keeps a Downloader read only; its switch shows locked.
@@ -159,6 +162,7 @@
 		const fresh = emptyForm(k);
 		form = { ...fresh, url: form.url !== 'http://' ? form.url : fresh.url, allow_local_network: form.allow_local_network, writable: form.writable };
 		qbitWay = 'key';
+		kindChosen = true;
 	}
 
 	function hasUsername(kind: DownloaderForm['kind']): boolean {
@@ -373,11 +377,12 @@
 	<form class="sc-form" onsubmit={save} aria-label={isNew ? t('settings.downloaders.add') : t('settings.downloaders.change', { name: editing.name })}>
 		<SettingsCard title={isNew ? t('settings.downloaders.add') : t('settings.downloaders.change', { name: editing.name })}>
 			{#if isNew}
-				<fieldset class="group">
+				<fieldset class="group" style="margin-bottom: var(--s-4)">
 					<legend class="label">{t('settings.downloaders.whichApp')}</legend>
-					<AppTiles name="kind" groups={kindGroups} value={form.kind} onpick={pickKind} />
+					<AppTiles name="kind" groups={kindGroups} value={kindChosen ? form.kind : undefined} onpick={pickKind} />
 				</fieldset>
 			{/if}
+			{#if !isNew || kindChosen}
 			<Field id="dl-name" label={t('settings.downloaders.name')} style="margin-top: var(--s-4)">
 				<input id="dl-name" class="input" bind:value={form.name} maxlength="80" required />
 			</Field>
@@ -460,9 +465,10 @@
 					{/if}
 				</fieldset>
 			{/if}
+			{/if}
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
-				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>{t('settings.downloaders.save')}</Button>
+				{#if !isNew || kindChosen}<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>{t('settings.downloaders.save')}</Button>{/if}
 				<Button variant="plain" type="button" onclick={() => (editing = null)}>{t('settings.downloaders.cancel')}</Button>
 				{#if !isNew && editing}{@const cur = editing}<Button variant="plain" type="button" disabled={testing === cur.id} aria-busy={testing === cur.id} onclick={() => test(cur)} data-testid="dl-form-test">{t('settings.downloaders.test')}</Button>{/if}
 				{#if !isNew && editing && results[editing.id]}{@const r = results[editing.id]}<TestTag ok={r.ok} text={r.text} app={kindWords[editing.kind]} />{#if !r.ok}<span class="small bad-text">{r.text}</span>{/if}{/if}

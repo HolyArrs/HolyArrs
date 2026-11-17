@@ -3,7 +3,7 @@
 	type Tile = { value: K; name: string; badge: string; hue: number; hint?: string };
 	type Group = { id: string; title: string; tiles: Tile[] };
 
-	let { name, groups, value, onpick }: { name: string; groups: Group[]; value: K; onpick: (v: K) => void } = $props();
+	let { name, groups, value, onpick }: { name: string; groups: Group[]; value: K | undefined; onpick: (v: K) => void } = $props();
 </script>
 
 <div class="app-tiles">
