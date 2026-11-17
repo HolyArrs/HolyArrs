@@ -6,7 +6,7 @@ level: Setup
 
 Make new movies, shows and music appear in Plex, Jellyfin or Emby right after import.
 
-HolyArrs tells the server to look at a folder again after it imports, renames or deletes files there.
+HolyArrs tells the server to look at a folder again after it imports, renames or deletes files there. With Jellyfin or Emby, title pages can also show an **Open in Jellyfin** button that opens the title on the server.
 
 ## Before you start
 
@@ -22,7 +22,8 @@ HolyArrs tells the server to look at a folder again after it imports, renames or
 4. Pick the **Kind**: Plex, Jellyfin or Emby. You cannot change it later.
 5. Enter the **Address** with `http` or `https`, such as `http://192.168.1.10:32400` for Plex or `http://192.168.1.10:8096` for Jellyfin and Emby.
 6. Paste the **Plex token**, or the **API key** for Jellyfin and Emby.
-7. Select **Save**, then **Test** on the new card. You should see the library names (Plex) or the server name and version (Jellyfin, Emby).
+7. Optional, for Jellyfin and Emby: enter the **Address for browsers**, such as `http://192.168.1.10:8096`. See [Address for browsers](#address-for-browsers).
+8. Select **Save**, then **Test** on the new card. You should see the library names (Plex) or the server name and version (Jellyfin, Emby).
 
 :::caution
 If the server sees your files under another path, for example in another container, scans find nothing new. Set the path pair under [Paths](#paths).
@@ -37,6 +38,14 @@ Pick which changes the server hears about: **An import**, **A rename**, **A dele
 ### Paths
 
 Fill **HolyArrs path** and **Same folder on the server** only when the two see files under different paths. If HolyArrs sees `/movies` and the server sees `/media/movies`, enter `/movies` first and `/media/movies` second. Fill both or neither.
+
+### Address for browsers
+
+Jellyfin and Emby only. Where people open the server on their phone or computer. With it set, the title pages of the Library and Explore show **Open in Jellyfin** (or **Open in Emby**) for movies and shows the server has. It opens the title's page on the server in a new tab.
+
+It is often not the same as **Address**. HolyArrs may reach the server at a name only Docker knows, such as `http://jellyfin:8096`, which a phone cannot open. Enter the address you type in the browser, such as `http://192.168.1.10:8096` or `https://jellyfin.example.com`.
+
+Leave it empty for no button. With two servers of one kind, each button shows the server's name.
 
 ### Reach the local network
 
@@ -63,6 +72,9 @@ The card shows the last check or the last error. Each update also lands in [Hist
 | "type the token again when the server address changes" | Paste the token again and save |
 | "give both sides of the path map, or neither" | Fill both path boxes, or clear both |
 | The server scans, but nothing new shows | The paths differ. Set the path pair |
+| "the browser address must be an http or https link with a host" | Enter the full address with `http://` or `https://` |
+| No **Open in Jellyfin** button | Fill **Address for browsers**, and check that **Send updates** is on and the server has the title. A new title shows the button about 30 s after it lands on the server |
+| The button opens a page that does not load | **Address for browsers** is one only HolyArrs reaches. Enter the address you use in the browser |
 
 ## For experts
 
@@ -77,6 +89,12 @@ HolyArrs waits 10 s and gathers every changed folder before it sends, so renamin
 | Emby | The list of created, changed or deleted folders |
 
 A request to a server times out after 20 s, and **Test** after 30 s.
+
+</details>
+
+<details class="ha-more"><summary>How Open in Jellyfin finds a title</summary>
+
+HolyArrs reads the server's list of movies or shows and matches the title by its TMDB, TVDB or IMDb id. The list is kept for 10 minutes. When a title is not in a list older than 30 s, the list is read again, so new arrivals get the button without the wait. A server that does not answer is left out.
 
 </details>
 
