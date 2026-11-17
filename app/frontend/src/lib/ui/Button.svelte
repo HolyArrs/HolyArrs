@@ -22,7 +22,7 @@
 </script>
 
 {#if href && !disabled}
-	<a class="ui-btn {variant} {size} {cls}" class:full {href} use:press={'button'} aria-busy={busy || undefined}>
+	<a class="ui-btn {variant} {size} {cls}" class:full {href} aria-label={rest['aria-label']} use:press={'button'} aria-busy={busy || undefined}>
 		{#if icon}<Icon name={icon} size={iconSize} />{/if}<span>{@render children()}</span>{#if iconAfter}<Icon name={iconAfter} size={iconSize} />{/if}
 	</a>
 {:else}

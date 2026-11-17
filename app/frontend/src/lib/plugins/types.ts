@@ -14,7 +14,12 @@ export interface Plugin {
 	running: boolean;
 	enabled: boolean;
 	disabled_reason?: string;
+	name?: string;
+	author?: string;
+	description?: string;
+	icon?: string;
 	access: PluginAccess | null;
+	reaches_app?: boolean;
 }
 
 export interface ActiveLimits {

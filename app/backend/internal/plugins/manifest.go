@@ -19,15 +19,25 @@ var (
 	semverRe = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$`)
 )
 
+// Display limits for the optional manifest fields.
+const (
+	maxDescription = 240
+	maxIcon        = 48 << 10
+)
+
 // ErrManifest marks every manifest refusal.
 var ErrManifest = errors.New("plugin manifest refused")
 
 // Manifest describes one plugin program and the access it asks for.
 type Manifest struct {
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	Version       string `json:"version"`
-	Author        string `json:"author"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	Author  string `json:"author"`
+	// Description is one or two plain lines on what the plugin does; optional.
+	Description string `json:"description,omitempty"`
+	// Icon is a small base64 PNG or SVG data URL shown in an img tag; optional.
+	Icon          string `json:"icon,omitempty"`
 	Access        Access `json:"access"`
 	MinAppVersion string `json:"min_app_version"`
 	SHA256        string `json:"sha256"`
@@ -43,11 +53,11 @@ type Access struct {
 // ParseManifest reads a manifest and refuses unknown, duplicate, missing or
 // empty fields and unsafe ids, versions, folders and hosts.
 func ParseManifest(data []byte) (*Manifest, error) {
-	top, err := strictKeys(data, "", "id", "name", "version", "author", "access", "min_app_version", "sha256")
+	top, err := strictKeys(data, "", []string{"description", "icon"}, "id", "name", "version", "author", "access", "min_app_version", "sha256")
 	if err != nil {
 		return nil, err
 	}
-	if _, err := strictKeys(top["access"], "access.", "hosts", "folders", "actions"); err != nil {
+	if _, err := strictKeys(top["access"], "access.", nil, "hosts", "folders", "actions"); err != nil {
 		return nil, err
 	}
 
@@ -76,6 +86,12 @@ func ParseManifest(data []byte) (*Manifest, error) {
 	if !validSHA256(m.SHA256) {
 		return nil, fmt.Errorf("%w: \"sha256\" must be 64 lowercase hex characters", ErrManifest)
 	}
+	if len(m.Description) > maxDescription || strings.ContainsAny(m.Description, "<>") {
+		return nil, fmt.Errorf("%w: \"description\" is too long or has markup", ErrManifest)
+	}
+	if m.Icon != "" && (len(m.Icon) > maxIcon || !(strings.HasPrefix(m.Icon, "data:image/png;base64,") || strings.HasPrefix(m.Icon, "data:image/svg+xml;base64,"))) {
+		return nil, fmt.Errorf("%w: \"icon\" must be a base64 PNG or SVG data URL under 48 KB", ErrManifest)
+	}
 	for _, f := range m.Access.Folders {
 		// Folders are relative to the plugin's own area: no "/x" or "C:".
 		if !safeItem(f) || path.IsAbs(f) || strings.Contains(f, ":") {
@@ -95,9 +111,9 @@ func safeItem(s string) bool {
 	return strings.TrimSpace(s) != "" && !strings.Contains(s, "..") && !strings.Contains(s, `\`)
 }
 
-// strictKeys checks data is one JSON object whose keys are exactly keys, each
-// once and not null, and returns its values.
-func strictKeys(data []byte, prefix string, keys ...string) (map[string]json.RawMessage, error) {
+// strictKeys checks data is one JSON object whose keys are exactly keys (plus
+// any of optional), each once and keys not null, and returns its values.
+func strictKeys(data []byte, prefix string, optional []string, keys ...string) (map[string]json.RawMessage, error) {
 	name := strings.TrimSuffix(prefix, ".")
 	notObject := fmt.Errorf("%w: %q must be a JSON object", ErrManifest, name)
 	dec := json.NewDecoder(bytes.NewReader(data))
@@ -105,7 +121,7 @@ func strictKeys(data []byte, prefix string, keys ...string) (map[string]json.Raw
 		return nil, notObject
 	}
 	allowed := map[string]bool{}
-	for _, k := range keys {
+	for _, k := range append(append([]string{}, keys...), optional...) {
 		allowed[k] = true
 	}
 	obj := map[string]json.RawMessage{}

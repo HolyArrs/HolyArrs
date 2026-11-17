@@ -67,12 +67,23 @@ func TestParseManifest(t *testing.T) {
 	if m, err := ParseManifest(manifestJSON(nil)); err != nil || m.ID != "tailscale" || len(m.Access.Hosts) != 1 {
 		t.Fatalf("valid manifest: %v %+v", err, m)
 	}
+	withShow := manifestJSON(func(m map[string]any) {
+		m["description"] = "Reach HolyArrs anywhere."
+		m["icon"] = "data:image/svg+xml;base64,PHN2Zy8+"
+	})
+	if m, err := ParseManifest(withShow); err != nil || m.Description == "" || m.Icon == "" {
+		t.Fatalf("manifest with description and icon: %v %+v", err, m)
+	}
 	tests := []struct {
 		name string
 		data []byte
 		want string
 	}{
 		{"not json", []byte("{"), "JSON object"},
+		{"description markup", manifestJSON(func(m map[string]any) { m["description"] = "<b>x</b>" }), `"description"`},
+		{"description too long", manifestJSON(func(m map[string]any) { m["description"] = strings.Repeat("a", 241) }), `"description"`},
+		{"icon not data url", manifestJSON(func(m map[string]any) { m["icon"] = "https://x/icon.png" }), `"icon"`},
+		{"icon html", manifestJSON(func(m map[string]any) { m["icon"] = "data:text/html;base64,PGI+" }), `"icon"`},
 		{"array", []byte("[]"), "JSON object"},
 		{"unknown field", manifestJSON(func(m map[string]any) { m["extra"] = 1 }), "unknown field"},
 		{"unknown access field", manifestJSON(func(m map[string]any) {

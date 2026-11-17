@@ -19,8 +19,9 @@ const fake = {
 	can_run: true,
 	limits: { Cgroup: true, Pids: true, Memory: true, CPU: true, GroupKill: true },
 	plugins: [
-		{ id: 'tailscale', version: '1.2.0', installed: false, running: false, enabled: false, access: { hosts: ['controlplane.tailscale.com'], folders: ['/config/plugins/tailscale'], actions: [] } },
-		{ id: 'mcp-server', version: '0.3.0', installed: true, installed_version: '0.3.0', running: true, enabled: true, access: null },
+		{ id: 'tailscale', version: '1.2.0', installed: false, running: false, enabled: false, name: 'Tailscale', author: 'HolyArrs', reaches_app: true, access: { hosts: ['controlplane.tailscale.com'], folders: ['tailscale'], actions: [] } },
+		{ id: 'mcp-server', version: '0.3.0', installed: true, installed_version: '0.2.0', running: true, enabled: true, access: null },
+		{ id: 'a-plugin-with-a-really-quite-long-name-to-wrap', version: '10.20.30-beta.1', installed: false, running: false, enabled: false, author: 'Someone With A Long Name', description: 'Does one small thing and explains it in a sentence that runs long enough to need two lines or be cut.', access: { hosts: ['example.org'], folders: [], actions: [] } },
 		{ id: 'old-thing', version: '0.1.0', installed: true, running: false, enabled: false, disabled_reason: 'on the blocklist', access: null }
 	]
 };
@@ -36,8 +37,8 @@ test('plugins: the real server answer shows its notices', async ({ page }) => {
 	await signIn(page, owner());
 	await page.goto('/plugins');
 	await expect(page.getByRole('heading', { name: 'Plugins', level: 1 })).toBeVisible();
-	// This test build has no signing key; off Linux it cannot run plugins either.
-	await expect(page.getByTestId('plugins-notice').first()).toContainText("Plugins can't be installed yet");
+	// The signing keys are pinned now; off Linux the page says plugins can't run here.
+	if (process.platform !== 'linux') await expect(page.getByTestId('plugins-notice').first()).toContainText('Plugins run only on Linux.');
 	await expect(page.getByRole('navigation').getByRole('link', { name: 'Plugins' }).first()).toBeVisible();
 });
 
@@ -58,23 +59,33 @@ for (const width of [1280, 375]) {
 		await withFake(page, calls);
 		await page.goto('/plugins');
 		const rows = page.getByTestId('plugin-row');
-		await expect(rows).toHaveCount(3);
+		await expect(rows).toHaveCount(4);
 		await expect(rows.nth(0)).toContainText('Tailscale');
-		await expect(rows.nth(0)).toContainText('By HolyArrs · signed');
+		await expect(rows.nth(0)).toContainText('By HolyArrs');
+		await expect(rows.nth(0)).toContainText('Signed');
+		await expect(rows.nth(0)).toContainText('without opening ports');
+		await expect(page.getByRole('heading', { name: 'Plugins', level: 2 })).toHaveCount(0);
 		await expect(rows.nth(0)).toContainText('Not installed');
-		await expect(rows.nth(1)).toContainText('Running');
-		await expect(rows.nth(2)).toContainText('Turned off');
-		await expect(rows.nth(2).getByTestId('plugin-hint')).toHaveText('on the blocklist');
-		await expect(rows.nth(2).getByRole('button', { name: 'Start Old thing' })).toHaveCount(0);
+		await expect(rows.nth(1)).toContainText('Update available');
+		await expect(rows.nth(1).getByRole('button', { name: 'Update MCP Server' })).toBeVisible();
+		await expect(rows.nth(3)).toContainText('Turned off');
+		await expect(rows.nth(3).getByTestId('plugin-hint')).toHaveText('on the blocklist');
+		await expect(rows.nth(3).getByRole('button', { name: 'Start Old thing' })).toHaveCount(0);
 		await expect(page.getByTestId('plugins-notice')).toHaveText(["Couldn't check for blocked plugins for over a week."]);
-		await expect(page.getByText('At most 256 processes')).toBeVisible();
+		await expect(page.getByTestId('plugin-limit')).toHaveCount(7);
+		await expect(page.getByTestId('plugin-limit').nth(2)).toContainText('Up to 256');
+		// The list and the Limits card keep the settings gap between them.
+		const gap = await page.evaluate(() => document.getElementById('plugin-limits')!.getBoundingClientRect().top - document.getElementById('h-plugins')!.getBoundingClientRect().bottom);
+		expect(gap).toBeGreaterThanOrEqual(12);
 		await noSidewaysScroll(page);
 		await page.screenshot({ path: test.info().outputPath(`plugins-${width}.png`), fullPage: true });
 
 		await rows.nth(0).getByRole('button', { name: 'Install' }).click();
 		const reach = page.getByRole('dialog', { name: 'Install Tailscale?' });
-		await expect(reach.getByTestId('plugin-reach')).toContainText('controlplane.tailscale.com');
-		await expect(reach.getByTestId('plugin-reach')).toContainText('/config/plugins/tailscale');
+		await expect(reach).toContainText('without opening ports');
+		await expect(reach.getByTestId('plugin-reach')).toContainText("Connect to Tailscale's servers");
+		await expect(reach.getByTestId('plugin-reach')).toContainText('Let devices on your tailnet open HolyArrs');
+		await expect(reach.getByTestId('plugin-reach')).toContainText('Keep files in its own folder');
 		await page.screenshot({ path: test.info().outputPath(`plugins-install-${width}.png`) });
 		await reach.getByRole('button', { name: 'Cancel' }).click();
 		await expect(reach).toBeHidden();
@@ -140,7 +151,7 @@ for (const width of [1280, 375]) {
 		});
 		await page.goto('/plugins');
 		await expect(page.getByTestId('remote-access')).toHaveCount(0);
-		await page.getByTestId('plugin-row').first().getByRole('link', { name: 'Remote access settings' }).click();
+		await page.getByTestId('plugin-row').first().getByRole('link', { name: 'Open Tailscale' }).click();
 		await expect(page).toHaveURL(/\/settings\/remote-access$/);
 		const card = page.getByTestId('remote-access');
 		await expect(page.getByRole('heading', { name: 'Remote access', level: 1 })).toBeVisible();
