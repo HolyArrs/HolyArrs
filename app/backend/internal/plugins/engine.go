@@ -724,6 +724,11 @@ func (e *Engine) Status(id string) (*TailscaleStatus, error) {
 		return nil, err
 	}
 	defer f.Close()
+	// The path may have been swapped for a link between Lstat and Open:
+	// the opened file must be the same plain file Lstat saw.
+	if ofi, err := f.Stat(); err != nil || !ofi.Mode().IsRegular() || !os.SameFile(fi, ofi) {
+		return nil, errors.New("plugin status: not a regular file")
+	}
 	var out TailscaleStatus
 	if err := json.NewDecoder(io.LimitReader(f, statusMax)).Decode(&out); err != nil {
 		return nil, fmt.Errorf("plugin status: %w", err)
