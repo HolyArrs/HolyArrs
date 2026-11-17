@@ -15,11 +15,15 @@ const pw = `e2e-${Math.random().toString(36).slice(2)}-pw`;
 const owner = () => ({ name: 'luis', password: pw });
 
 const item = (id: number) => ({ kind: id % 2 ? 'movie' : 'show', tmdb_id: 9000 + id, name: `Pick ${id}`, year: 2026, poster: `/p${id}.jpg`, backdrop: `/b${id}.jpg` });
+// A loadable picture for the tile art (the fake paths above never load).
+const art = (a: string, b: string) => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='600' height='900'><linearGradient id='g' x2='1' y2='1'><stop stop-color='${a}'/><stop offset='1' stop-color='${b}'/></linearGradient><rect width='600' height='900' fill='url(#g)'/><circle cx='420' cy='260' r='170' fill='rgb(255 255 255 / 18%)'/></svg>`)}`;
 const row = (id: string, title: string) => ({ id, type: 'trending', title, wide: true, items: Array.from({ length: 8 }, (_, i) => item(i + 1)) });
 const head = { type: 'all', building: false, seeds: 0, tail_cap: 0, tail_rows: 0, head: [row('trending_now', 'Trending now'), row('trending_week', 'Trending this week')] };
 
 async function freshHome(page: Page) {
 	await page.route('**/api/**/explore/head**', (r) => r.fulfill({ json: head }));
+	// New & Popular's first page gives the New & Popular and Calendar tiles their art.
+	await page.route((u) => u.pathname.endsWith('/explore/new'), (r) => r.fulfill({ json: { type: 'all', page: 0, more: false, building: false, hero: [{ ...item(3), backdrop: art('#7a2e3a', '#1d2a44') }], rail: [{ day: '2026-12-01', items: [4, 5, 6].map((i) => ({ ...item(i), poster: art(['#2f5d62', '#6b3e75', '#8a5a2b'][i - 4], '#111'), what: 'Premiere', following: false, upcoming: true })) }], rows: [] } }));
 	await signIn(page, owner());
 	await page.goto('/');
 	await expect(page.getByTestId('home-welcome')).toBeVisible();

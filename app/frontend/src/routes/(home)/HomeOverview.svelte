@@ -11,6 +11,7 @@
 	import SettingsTile from '#lib/ui/SettingsTile.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { artGone } from './art-check.ts';
+	import { SvelteSet } from 'svelte/reactivity';
 	import Button from '#lib/ui/Button.svelte';
 	import type { IconName } from '#lib/ui/Icon.svelte';
 	import type { Tint } from '#lib/core/settings.ts';
@@ -43,8 +44,17 @@
 		uncheckedHealth: boolean;
 		health: Health | null;
 		picTile: Snippet<[{ c: HomeCard; label: string }, string, boolean]>;
+		tileArt: { pop: string[]; soon: string[] };
 	};
-	let { overview, disk, admin, settled, attentionView, uncheckedParts, retrying, retry, approver, kid, uncheckedAsks, downloading, mineOpen, mineDeclined, fetchingAll, home, uncheckedDl, now, uncheckedHealth, health, picTile }: Props = $props();
+	let { overview, disk, admin, settled, attentionView, uncheckedParts, retrying, retry, approver, kid, uncheckedAsks, downloading, mineOpen, mineDeclined, fetchingAll, home, uncheckedDl, now, uncheckedHealth, health, picTile, tileArt }: Props = $props();
+	// Tile art: a picture that cannot load drops out and the next takes its place; with none left the tile keeps its plain sheet.
+	const badArt = new SvelteSet<string>();
+	const popArt = $derived(tileArt.pop.find((b) => !badArt.has(b)));
+	// The Calendar tile shows what is next in this Library; an empty Library borrows New & Popular's next releases.
+	const calArt = $derived.by(() => {
+		const own = (home?.soon ?? []).map((c) => c.poster).filter((p): p is string => !!p);
+		return (own.length ? own : tileArt.soon).filter((p) => !badArt.has(p)).slice(0, 3);
+	});
 </script>
 
 {#if overview.showOverview}
@@ -196,13 +206,15 @@
 					<span class="sm">{t('home.pickWhatToAsk')}</span>
 				</a>
 			{:else if key === 'popular'}
-				<a class="tile stat {cls}" href={to('/popular')}>
+				<a class="tile stat {cls}" class:art={!!popArt} href={to('/popular')}>
+					{#if popArt}<img class="bg" src={sized(popArt, cls === 'big' ? 'large' : 'backdrop')} alt="" decoding="async" use:artGone={() => badArt.add(popArt)} />{/if}
 					{@render head('star', 'pink', t('home.newPopular'))}
 					<span class="word">{t('home.whatSTrending')}</span>
 					<span class="sm">{t('home.top10sAndComing')}</span>
 				</a>
 			{:else if key === 'calendar'}
-				<a class="tile stat {cls}" href={to('/calendar')}>
+				<a class="tile stat {cls}" class:art={calArt.length > 0} href={to('/calendar')}>
+					{#if calArt.length}<span class="bg posters" aria-hidden="true">{#each calArt as p (p)}<img src={sized(p, 'poster', 400)} alt="" decoding="async" use:artGone={() => badArt.add(p)} />{/each}</span>{/if}
 					{@render head('calendarDay', 'purple', t('home.calendar'))}
 					<span class="word">{t('home.whatSNext')}</span>
 					<span class="sm">{t('home.airDatesAndReleases')}</span>
@@ -381,6 +393,15 @@
 	.life.pips i.bad { background: var(--wait); }
 	.life.pips i.off { background: var(--track); }
 	.pic .sm { color: rgb(255 255 255 / 86%); font: 600 12px / 1.3 var(--font-ui); -webkit-line-clamp: 1; line-clamp: 1; }
+
+	/* A count tile with art: the picture fills the sheet and a dark fade from the foot keeps the words white and readable, in both themes. */
+	.tile.art { color: #fff; background: #17181d; }
+	.tile.art .bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; }
+	.tile.art .posters { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+	.tile.art .posters img { width: 100%; height: 100%; min-width: 0; object-fit: cover; }
+	.tile.art::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgb(0 0 0 / 85%), rgb(0 0 0 / 45%) 50%, rgb(0 0 0 / 30%)); }
+	.tile.art .lab, .tile.art .go { color: #fff; }
+	.tile.art .sm { color: rgb(255 255 255 / 82%); }
 
 	.ask-stack { margin-top: auto; display: flex; align-items: center; }
 	.ask-stack img { width: 38px; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 7px; margin-inline-start: -12px; background: var(--surface-3); box-shadow: 0 0 0 2.5px var(--sheet-b), 0 6px 14px -4px rgb(0 0 0 / 35%); }
