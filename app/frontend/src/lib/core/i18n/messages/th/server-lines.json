@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "คุณเปลี่ยนบทบาทหรือสิทธิ์ของตัวเองไม่ได้",
 	"server.accounts.you-may-reset-two-factor-sign": "คุณรีเซ็ตการเข้าสู่ระบบสองขั้นตอนได้เฉพาะคนที่อยู่ต่ำกว่าคุณ เจ้าของใช้คำสั่ง reset-owner",
 	"server.accounts.you-may-set-a-password-only": "คุณตั้งรหัสผ่านได้เฉพาะคนที่อยู่ต่ำกว่าคุณ เจ้าของใช้คำสั่ง reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "การบันทึกถูกบล็อกเพราะ HolyArrs ไม่รู้จักชื่อ {host} เปิด HolyArrs ที่ที่อยู่ภายในเครื่อง แล้วเพิ่มชื่อนี้ใน ตั้งค่า > การเข้าสู่ระบบและความปลอดภัย > ชื่อโฮสต์ที่อนุญาต หรือเพิ่มลงใน HOLYARRS_ALLOWED_HOSTS",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "คุณเปิด HolyArrs เป็น {host} เก็บชื่อนั้นไว้ในรายการ หรือเปลี่ยนรายการจากที่อยู่ IP",
 	"server.accounts.your-account-may-not-do-this": "บัญชีของคุณทำสิ่งนี้ไม่ได้ ถามเจ้าของ",
 	"server.ai.ai-key-for": "AI ({client}, คีย์ {keylabel}) {did} {name} สำหรับ {name2}",

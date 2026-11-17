@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "não pode mudar o seu próprio papel ou permissões",
 	"server.accounts.you-may-reset-two-factor-sign": "só pode redefinir o início de sessão em duas etapas de pessoas abaixo de si; o proprietário usa o comando reset-owner",
 	"server.accounts.you-may-set-a-password-only": "só pode definir a palavra-passe de pessoas abaixo de si; o proprietário usa o comando reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Guardar está bloqueado porque o HolyArrs não conhece o nome {host}. Abra o HolyArrs pelo endereço local e adicione esse nome em Definições > Início de sessão e segurança > Nomes de host permitidos, ou adicione-o a HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "abriu o HolyArrs como {host}; mantenha esse nome na lista, ou mude a lista a partir do endereço IP",
 	"server.accounts.your-account-may-not-do-this": "a sua conta não pode fazer isto; fale com o proprietário",
 	"server.ai.ai-key-for": "IA ({client}, chave {keylabel}) {did} {name} para {name2}",

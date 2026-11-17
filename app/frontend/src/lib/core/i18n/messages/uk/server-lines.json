@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "ти не можеш змінити власну роль чи права",
 	"server.accounts.you-may-reset-two-factor-sign": "двоетапну перевірку можна скинути лише для людей нижчих за тебе; власник користується командою reset-owner",
 	"server.accounts.you-may-set-a-password-only": "пароль можна задати лише для людей нижчих за тебе; власник користується командою reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Збереження заблоковано, бо HolyArrs не знає ім’я {host}. Відкрий HolyArrs за локальною адресою і додай це ім’я в Налаштування > Вхід і безпека > Дозволені імена хостів або додай його в HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "ти відкрив(ла) HolyArrs як {host}; залиш це ім’я в списку або змінюй список з IP-адреси",
 	"server.accounts.your-account-may-not-do-this": "твій обліковий запис не може цього робити; запитай власника",
 	"server.ai.ai-key-for": "ШІ ({client}, ключ {keylabel}) {did} {name} для {name2}",

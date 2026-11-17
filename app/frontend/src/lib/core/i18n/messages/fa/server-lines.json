@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "نمی‌توانی نقش یا دسترسی‌های خودت را تغییر بدهی",
 	"server.accounts.you-may-reset-two-factor-sign": "فقط برای افراد زیر دست خودت می‌توانی ورود دومرحله‌ای را بازنشانی کنی؛ مالک از دستور reset-owner استفاده می‌کند",
 	"server.accounts.you-may-set-a-password-only": "فقط برای افراد زیر دست خودت می‌توانی رمز عبور تنظیم کنی؛ مالک از دستور reset-owner استفاده می‌کند",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "ذخیره مسدود است چون HolyArrs نام {host} را نمی‌شناسد. HolyArrs را با آدرس محلی‌اش باز کن و این نام را در تنظیمات > ورود و امنیت > نام‌های میزبان مجاز اضافه کن، یا آن را به HOLYARRS_ALLOWED_HOSTS اضافه کن.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "HolyArrs را با نام {host} باز کرده‌ای؛ آن نام را در فهرست نگه دار، یا فهرست را از آدرس IP تغییر بده",
 	"server.accounts.your-account-may-not-do-this": "حسابت اجازه این کار را ندارد؛ از مالک بپرس",
 	"server.ai.ai-key-for": "هوش مصنوعی ({client}، کلید {keylabel}) {did} {name} برای {name2}",

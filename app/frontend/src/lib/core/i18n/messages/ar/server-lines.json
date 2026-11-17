@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "لا تستطيع تغيير دورك أو صلاحياتك",
 	"server.accounts.you-may-reset-two-factor-sign": "تستطيع إعادة ضبط المصادقة الثنائية للأشخاص دونك فقط؛ والمالك يستخدم الأمر reset-owner",
 	"server.accounts.you-may-set-a-password-only": "تستطيع تعيين كلمة مرور للأشخاص دونك فقط؛ والمالك يستخدم الأمر reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "الحفظ محظور لأن HolyArrs لا يعرف الاسم {host}. افتح HolyArrs على عنوانه المحلي وأضف هذا الاسم في الإعدادات > تسجيل الدخول والأمان > أسماء المضيفين المسموحة، أو أضفه إلى HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "فتحت HolyArrs باسم {host}؛ أبقِ هذا الاسم في القائمة، أو غيّر القائمة من عنوان IP",
 	"server.accounts.your-account-may-not-do-this": "حسابك لا يستطيع فعل هذا؛ اسأل المالك",
 	"server.ai.ai-key-for": "الذكاء الاصطناعي ({client}، المفتاح {keylabel}) {did} {name} لـ {name2}",

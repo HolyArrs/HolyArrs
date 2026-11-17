@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "உங்கள் சொந்த role அல்லது அனுமதிகளை மாற்ற முடியாது",
 	"server.accounts.you-may-reset-two-factor-sign": "உங்களுக்குக் கீழுள்ளவர்களுக்கு மட்டுமே இரண்டு-படி உள்நுழைவை மீட்டமைக்கலாம்; உரிமையாளர் reset-owner கட்டளையைப் பயன்படுத்துவார்",
 	"server.accounts.you-may-set-a-password-only": "உங்களுக்குக் கீழுள்ளவர்களுக்கு மட்டுமே கடவுச்சொல்லை அமைக்கலாம்; உரிமையாளர் reset-owner கட்டளையைப் பயன்படுத்துவார்",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "HolyArrs க்கு {host} என்ற பெயர் தெரியாததால் சேமிப்பு தடுக்கப்பட்டுள்ளது. HolyArrs ஐ அதன் உள்ளூர் முகவரியில் திறந்து இந்தப் பெயரை அமைப்புகள் > உள்நுழைவும் பாதுகாப்பும் > அனுமதிக்கப்பட்ட ஹோஸ்ட் பெயர்கள் இல் சேர்க்கவும், அல்லது HOLYARRS_ALLOWED_HOSTS இல் சேர்க்கவும்.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "நீங்கள் HolyArrs ஐ {host} ஆகத் திறந்தீர்கள்; அந்தப் பெயரைப் பட்டியலில் வைத்திருங்கள், அல்லது IP முகவரியிலிருந்து பட்டியலை மாற்றுங்கள்",
 	"server.accounts.your-account-may-not-do-this": "உங்கள் கணக்கால் இதைச் செய்ய முடியாது; உரிமையாளரிடம் கேளுங்கள்",
 	"server.ai.ai-key-for": "AI ({client}, விசை {keylabel}) {name2} க்காக {name} ஐ {did}",

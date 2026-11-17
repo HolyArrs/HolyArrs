@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "du kan ikke ændre din egen rolle eller dine tilladelser",
 	"server.accounts.you-may-reset-two-factor-sign": "du må kun nulstille tofaktor-login for personer under dig. Ejeren bruger kommandoen reset-owner",
 	"server.accounts.you-may-set-a-password-only": "du må kun sætte en adgangskode for personer under dig. Ejeren bruger kommandoen reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Gemning er blokeret, fordi HolyArrs ikke kender navnet {host}. Åbn HolyArrs på dens lokale adresse og tilføj navnet under Indstillinger > Login og sikkerhed > Tilladte værtsnavne, eller tilføj det til HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "du åbnede HolyArrs som {host}. Behold det navn på listen, eller ændr listen fra IP-adressen",
 	"server.accounts.your-account-may-not-do-this": "din konto må ikke gøre dette. Spørg ejeren",
 	"server.ai.ai-key-for": "AI ({client}, nøgle {keylabel}) {did} {name} for {name2}",

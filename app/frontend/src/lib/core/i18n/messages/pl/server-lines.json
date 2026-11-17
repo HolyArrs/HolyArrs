@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "nie możesz zmienić własnej roli ani uprawnień",
 	"server.accounts.you-may-reset-two-factor-sign": "uwierzytelnianie dwuskładnikowe możesz zresetować tylko osobom poniżej siebie; właściciel używa polecenia reset-owner",
 	"server.accounts.you-may-set-a-password-only": "hasło możesz ustawić tylko osobom poniżej siebie; właściciel używa polecenia reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Zapisywanie jest zablokowane, bo HolyArrs nie zna nazwy {host}. Otwórz HolyArrs pod jego adresem lokalnym i dodaj tę nazwę w Ustawienia > Logowanie i bezpieczeństwo > Dozwolone nazwy hostów albo dodaj ją do HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "otworzono HolyArrs jako {host}; zostaw tę nazwę na liście albo zmień listę z adresu IP",
 	"server.accounts.your-account-may-not-do-this": "twoje konto nie może tego zrobić; zapytaj właściciela",
 	"server.ai.ai-key-for": "AI ({client}, klucz {keylabel}) {did}: {name} dla {name2}",

@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "nu îți poți schimba propriul rol sau permisiuni",
 	"server.accounts.you-may-reset-two-factor-sign": "poți reseta autentificarea în doi pași doar pentru persoanele de sub tine; proprietarul folosește comanda reset-owner",
 	"server.accounts.you-may-set-a-password-only": "poți seta o parolă doar pentru persoanele de sub tine; proprietarul folosește comanda reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Salvarea este blocată deoarece HolyArrs nu cunoaște numele {host}. Deschide HolyArrs la adresa sa locală și adaugă acest nume în Setări > Autentificare și securitate > Nume de gazdă permise sau adaugă-l în HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "ai deschis HolyArrs ca {host}; păstrează acel nume în listă sau schimbă lista de la adresa IP",
 	"server.accounts.your-account-may-not-do-this": "contul tău nu are voie să facă asta; întreabă proprietarul",
 	"server.ai.ai-key-for": "AI ({client}, cheia {keylabel}) {did} {name} pentru {name2}",

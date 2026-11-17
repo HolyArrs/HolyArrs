@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "bạn không thể đổi vai trò hay quyền của chính mình",
 	"server.accounts.you-may-reset-two-factor-sign": "bạn chỉ được đặt lại đăng nhập hai lớp cho người dưới bạn; chủ sở hữu dùng lệnh reset-owner",
 	"server.accounts.you-may-set-a-password-only": "bạn chỉ được đặt mật khẩu cho người dưới bạn; chủ sở hữu dùng lệnh reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Không thể lưu vì HolyArrs không biết tên {host}. Mở HolyArrs bằng địa chỉ cục bộ và thêm tên này trong Cài đặt > Đăng nhập và bảo mật > Tên máy chủ được phép, hoặc thêm vào HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "bạn đã mở HolyArrs với tên {host}; hãy giữ tên đó trong danh sách, hoặc đổi danh sách từ địa chỉ IP",
 	"server.accounts.your-account-may-not-do-this": "tài khoản của bạn không được làm việc này; hãy hỏi chủ sở hữu",
 	"server.ai.ai-key-for": "AI ({client}, khóa {keylabel}) {did} {name} cho {name2}",

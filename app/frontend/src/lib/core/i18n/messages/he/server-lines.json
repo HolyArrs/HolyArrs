@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "אתה לא יכול לשנות את התפקיד או ההרשאות של עצמך",
 	"server.accounts.you-may-reset-two-factor-sign": "אתה יכול לאפס אימות דו־שלבי רק לאנשים מתחתיך; הבעלים משתמש בפקודה reset-owner",
 	"server.accounts.you-may-set-a-password-only": "אתה יכול להגדיר סיסמה רק לאנשים מתחתיך; הבעלים משתמש בפקודה reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "השמירה חסומה כי HolyArrs לא מכיר את השם {host}. פתח את HolyArrs בכתובת המקומית שלו והוסף את השם הזה תחת הגדרות > התחברות ואבטחה > שמות מארח מותרים, או הוסף אותו ל־HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "פתחת את HolyArrs בתור {host}; השאר את השם הזה ברשימה, או שנה את הרשימה מכתובת ה־IP",
 	"server.accounts.your-account-may-not-do-this": "החשבון שלך לא מורשה לעשות את זה; פנה לבעלים",
 	"server.ai.ai-key-for": "AI ({client}, מפתח {keylabel}) {did} {name} עבור {name2}",

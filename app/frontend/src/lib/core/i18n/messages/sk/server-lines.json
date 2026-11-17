@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "svoju rolu ani oprávnenia nemôžete zmeniť",
 	"server.accounts.you-may-reset-two-factor-sign": "dvojfaktorové prihlásenie môžete obnoviť iba ľuďom pod vami; vlastník používa príkaz reset-owner",
 	"server.accounts.you-may-set-a-password-only": "heslo môžete nastaviť iba ľuďom pod vami; vlastník používa príkaz reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Ukladanie je zablokované, pretože HolyArrs nepozná názov {host}. Otvorte HolyArrs na jeho miestnej adrese a pridajte tento názov v Nastavenia > Prihlásenie a zabezpečenie > Povolené názvy hostiteľov, alebo ho pridajte do HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "HolyArrs ste otvorili ako {host}; ponechajte tento názov v zozname alebo zmeňte zoznam z adresy IP",
 	"server.accounts.your-account-may-not-do-this": "váš účet toto nesmie robiť; požiadajte vlastníka",
 	"server.ai.ai-key-for": "AI ({client}, kľúč {keylabel}) {did} {name} pre {name2}",

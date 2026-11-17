@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "自分の役割や権限は変更できません",
 	"server.accounts.you-may-reset-two-factor-sign": "二要素認証のリセットは、自分より下の人に対してのみ行えます。オーナーは reset-owner コマンドを使います",
 	"server.accounts.you-may-set-a-password-only": "パスワードの設定は、自分より下の人に対してのみ行えます。オーナーは reset-owner コマンドを使います",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "HolyArrs が {host} という名前を知らないため、保存がブロックされています。ローカルアドレスで HolyArrs を開き、設定 > サインインとセキュリティ > 許可するホスト名 にこの名前を追加するか、HOLYARRS_ALLOWED_HOSTS に追加してください。",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "{host} として HolyArrs を開きました。その名前を一覧に残すか、IP アドレスから一覧を変更してください",
 	"server.accounts.your-account-may-not-do-this": "あなたのアカウントでは、この操作はできません。オーナーに相談してください",
 	"server.ai.ai-key-for": "AI({client}、キー {keylabel})が {name} を{did}({name2} 向け)",

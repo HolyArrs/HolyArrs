@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "ne možeš mijenjati vlastitu ulogu ni dopuštenja",
 	"server.accounts.you-may-reset-two-factor-sign": "dvofaktorsku prijavu možeš poništiti samo osobama ispod tebe; vlasnik koristi naredbu reset-owner",
 	"server.accounts.you-may-set-a-password-only": "lozinku možeš postaviti samo osobama ispod tebe; vlasnik koristi naredbu reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Spremanje je blokirano jer HolyArrs ne poznaje naziv {host}. Otvori HolyArrs na njegovoj lokalnoj adresi i dodaj taj naziv pod Postavke > Prijava i sigurnost > Dopušteni nazivi hostova ili ga dodaj u HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "HolyArrs si otvorio kao {host}; zadrži taj naziv na popisu ili promijeni popis s IP adrese",
 	"server.accounts.your-account-may-not-do-this": "tvoj račun ovo ne smije; pitaj vlasnika",
 	"server.ai.ai-key-for": "AI ({client}, ključ {keylabel}) {did} {name} za {name2}",

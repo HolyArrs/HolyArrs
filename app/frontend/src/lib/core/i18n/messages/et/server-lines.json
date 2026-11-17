@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "sa ei saa muuta oma rolli ega õigusi",
 	"server.accounts.you-may-reset-two-factor-sign": "kaheastmelise sisselogimise saad lähtestada ainult enda all olevatele inimestele; omanik kasutab käsku reset-owner",
 	"server.accounts.you-may-set-a-password-only": "parooli saad määrata ainult enda all olevatele inimestele; omanik kasutab käsku reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Salvestamine on blokeeritud, sest HolyArrs ei tunne nime {host}. Ava HolyArrs selle kohaliku aadressi kaudu ja lisa see nimi jaotisesse Seaded > Sisselogimine ja turvalisus > Lubatud hostinimed või lisa see muutujasse HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "avasid HolyArrsi nime {host} all; hoia see nimi nimekirjas või muuda nimekirja IP-aadressi kaudu",
 	"server.accounts.your-account-may-not-do-this": "sinu konto ei tohi seda teha; küsi omanikult",
 	"server.ai.ai-key-for": "Tehisintellekt ({client}, võti {keylabel}) {did} {name}: {name2}",
