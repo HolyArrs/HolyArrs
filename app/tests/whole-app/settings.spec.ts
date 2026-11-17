@@ -152,6 +152,24 @@ test('Save in the bar saves through the page form, with a toast', async () => {
 	await expect(page.getByText('Request settings saved').first()).toBeVisible();
 });
 
+test('Approvals lists the owner with their own switch, on by default, and saves it', async () => {
+	await page.goto('/settings/requests');
+	const card = page.locator('#approvals');
+	await expect(card.getByText('Approve requests automatically')).toBeVisible();
+	await expect(card.getByText('Off = their requests wait for you. Plex watchlist titles follow the same switch.')).toBeVisible();
+	const owner = card.getByRole('checkbox').first();
+	await expect(owner).toBeChecked();
+	await owner.uncheck();
+	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByText('Request settings saved').first()).toBeVisible();
+	await page.reload();
+	await expect(card.getByRole('checkbox').first()).not.toBeChecked();
+	expect((await (await page.request.get('/api/v1/settings/asks')).json()).owner_auto_approve).toBe(false);
+	await card.getByRole('checkbox').first().check();
+	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByTestId('savebar')).toHaveCount(0);
+});
+
 test('Advanced starts closed and stays as the person left it', async () => {
 	await page.goto('/settings/search');
 	const card = page.locator('#early-fake');

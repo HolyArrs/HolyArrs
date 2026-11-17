@@ -69,6 +69,8 @@ export interface AskSettings {
 	plex_watchlists_everyone?: boolean;
 	/** Also read the watchlists of people imported from Plex, with the owner's Plex link. */
 	plex_friends?: boolean;
+	/** The owner's own requests, Plex watchlist ones too, are approved straight away. */
+	owner_auto_approve?: boolean;
 	/** What people can ask for: the Quality buttons, per kind. Only names and hidden are saved. */
 	qualities?: { movie: QualityLine[]; show: QualityLine[] };
 }

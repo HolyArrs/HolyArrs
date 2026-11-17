@@ -1182,6 +1182,7 @@ owned_titles
 owner
 owner_active
 owner_api_key
+owner_auto_approve
 owner_id
 owner_linked
 p

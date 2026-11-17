@@ -48,5 +48,9 @@
 	"settings.requests.choiceShown": "Zobrazit lidem",
 	"settings.requests.choiceMain": "{rules} · hlavní kopie titulu",
 	"settings.requests.choiceOwn": "{rules} · vedená jako samostatná kopie",
-	"settings.requests.choiceNotReady": "Nabídne se, až bude výše nastavena kvalita 4K"
+	"settings.requests.choiceNotReady": "Nabídne se, až bude výše nastavena kvalita 4K",
+	"settings.requests.approvals": "Schvalování",
+	"settings.requests.autoApprove": "Schvalovat žádosti automaticky",
+	"settings.requests.autoApproveNote": "Vypnuto = jejich žádosti čekají na vás. Tituly ze seznamu Plex se řídí stejným přepínačem.",
+	"settings.requests.ownerTag": "Vlastník"
 }

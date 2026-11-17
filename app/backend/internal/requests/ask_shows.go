@@ -228,7 +228,7 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 	}
 	s.event(ctx, &domain.Event{Actor: p.actor(), Kind: domain.EventAskMade, Summary: p.Name + " asked for " + label(a),
 		Data: map[string]any{"ask_id": a.ID, "show": id, "seasons": askSeasonWords(a), "asked_by": p.Name}, GroupKey: groupKey(a.ID)})
-	if p.autoApproves(fourK) {
+	if s.autoApproves(ctx, p, fourK) {
 		if got, _, err := s.decide(ctx, a.ID, p, ApproveOptions{}, true); err == nil {
 			return Result{Ask: got}, nil
 		} else {
@@ -363,7 +363,7 @@ func (s *Service) joinWiderWith(ctx context.Context, p Person, o domain.Ask, kin
 	}
 	s.event(ctx, &domain.Event{Actor: p.actor(), Kind: domain.EventAskJoined, TitleID: cur.TitleID, Summary: p.Name + " also asked for " + label(cur),
 		Data: d, GroupKey: groupKey(cur.ID)})
-	if p.autoApproves(cur.FourK) {
+	if s.autoApproves(ctx, p, cur.FourK) {
 		if got, _, err := s.decide(ctx, cur.ID, p, ApproveOptions{}, true); err == nil {
 			cur = got
 		}
