@@ -335,25 +335,14 @@ func (h *Handlers) ExploreHero(r *http.Request, pg engine.Page, all bool, me int
 			vs = append(vs, v)
 		}
 	}
-	h.FillTrailerKeys(r, vs)
-	h.FillCardArt(r, vs)
+	h.HeroArt(r, vs)
 	items := map[string]engine.Item{}
 	for _, it := range cands {
 		items[it.Key()] = it
 	}
-	var ready, artOnly []engine.Item
-	for _, v := range vs {
-		it := items[v.Kind+":"+v.TMDBID]
-		switch {
-		case !HeroArtReady(v):
-		case v.TrailerKey != "":
-			ready = append(ready, it)
-		default:
-			artOnly = append(artOnly, it)
-		}
-	}
-	if len(ready) < engine.HeroCount/2 {
-		ready = append(ready, artOnly...)
+	var ready []engine.Item
+	for _, v := range HeroReady(vs, len(vs)) {
+		ready = append(ready, items[v.Kind+":"+v.TMDBID])
 	}
 	day := engine.Day(h.Explore.Now())
 	picked := engine.PickHero(ready, all, me, day)

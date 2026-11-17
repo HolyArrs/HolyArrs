@@ -104,6 +104,8 @@ export default defineConfig({
 		{ name: 'home', testMatch: '**/whole-app/home.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		{ name: 'exploremem', testMatch: '**/discover/explore-memory.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		{ name: 'communitybrowse', testMatch: '**/discover/community-browse.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
+		// Explore's hero on the first visit: a placeholder, then the hero without a reload.
+		{ name: 'herofirst', testMatch: '**/discover/hero-first-load.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'appframe', testMatch: '**/whole-app/appframe.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Settings: the seven groups, setting search with a deep link and highlight, the save bar and its leave guard, Advanced kept per person, Danger zone, a phone and accessibility.
 		{ name: 'settings', testMatch: '**/whole-app/settings.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
