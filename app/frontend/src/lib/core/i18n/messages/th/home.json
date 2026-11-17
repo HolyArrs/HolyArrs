@@ -276,5 +276,9 @@
 	"home.addedTwice": "ถูกเพิ่มซ้ำ",
 	"home.addedTwiceMany": "ถูกเพิ่มซ้ำ",
 	"home.notSetUpYet": "ยังไม่ได้ตั้งค่า",
-	"home.setUpToAdd": "ตั้งค่าให้เสร็จเพื่อเพิ่ม {name}"
+	"home.setUpToAdd": "ตั้งค่าให้เสร็จเพื่อเพิ่ม {name}",
+	"home.comingThisWeek": "มาสัปดาห์นี้",
+	"home.thisWeek": "สัปดาห์นี้",
+	"home.landingThisWeek": "ตอนและภาพยนตร์ที่มาสัปดาห์นี้",
+	"home.popularThisWeek": "ผลงานยอดนิยมที่มาสัปดาห์นี้"
 }

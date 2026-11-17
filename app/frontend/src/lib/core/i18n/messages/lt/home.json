@@ -276,5 +276,9 @@
 	"home.addedTwice": "pridėtas du kartus",
 	"home.addedTwiceMany": "pridėti du kartus",
 	"home.notSetUpYet": "Dar nenustatyta",
-	"home.setUpToAdd": "Užbaikite sąranką, kad pridėtumėte {name}"
+	"home.setUpToAdd": "Užbaikite sąranką, kad pridėtumėte {name}",
+	"home.comingThisWeek": "Šią savaitę",
+	"home.thisWeek": "šią savaitę",
+	"home.landingThisWeek": "Šią savaitę pasirodantys epizodai ir filmai",
+	"home.popularThisWeek": "Šią savaitę pasirodantys populiarūs leidimai"
 }

@@ -276,5 +276,9 @@
 	"home.addedTwice": "er lagt til to ganger",
 	"home.addedTwiceMany": "er lagt til to ganger",
 	"home.notSetUpYet": "Ikke satt opp ennå",
-	"home.setUpToAdd": "Fullfør oppsettet for å legge til {name}"
+	"home.setUpToAdd": "Fullfør oppsettet for å legge til {name}",
+	"home.comingThisWeek": "Kommer denne uken",
+	"home.thisWeek": "denne uken",
+	"home.landingThisWeek": "Episoder og filmer som kommer denne uken",
+	"home.popularThisWeek": "Populære utgivelser som kommer denne uken"
 }

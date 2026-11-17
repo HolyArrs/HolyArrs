@@ -28,6 +28,8 @@ test.afterAll(async () => {
 });
 
 test('first run makes the owner, adds the key and folder, then returns Home', async () => {
+	// Home's first visit waits (30 s at most) for Explore's lists, which the fake metadata server is slow to give.
+	test.setTimeout(120_000);
 	await page.goto('/');
 	await expect(page).toHaveURL(/\/login/);
 	await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible();
@@ -69,7 +71,7 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
 	await expect(page.getByTestId('home-greeting')).toContainText(/luis/i);
 	const gettingStarted = page.getByRole('region', { name: 'Welcome to HolyArrs' });
-	await expect(gettingStarted.getByText('1 of 4 done', { exact: true })).toBeVisible();
+	await expect(gettingStarted.getByText('1 of 4 done', { exact: true })).toBeVisible({ timeout: 35_000 });
 	await expect(gettingStarted.getByText(/TMDB/)).toHaveCount(0);
 	await expect(page.getByText('Metadata server is down')).toHaveCount(0);
 	await expect(gettingStarted.getByRole('link', { name: /Choose a Library folder.*\(done\)/ })).toBeVisible();

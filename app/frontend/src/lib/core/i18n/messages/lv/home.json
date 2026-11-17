@@ -276,5 +276,9 @@
 	"home.addedTwice": "ir pievienots divreiz",
 	"home.addedTwiceMany": "ir pievienoti divreiz",
 	"home.notSetUpYet": "Vēl nav iestatīts",
-	"home.setUpToAdd": "Pabeidziet iestatīšanu, lai pievienotu {name}"
+	"home.setUpToAdd": "Pabeidziet iestatīšanu, lai pievienotu {name}",
+	"home.comingThisWeek": "Šonedēļ",
+	"home.thisWeek": "šonedēļ",
+	"home.landingThisWeek": "Sērijas un filmas, kas iznāk šonedēļ",
+	"home.popularThisWeek": "Populāri izlaidumi, kas iznāk šonedēļ"
 }

@@ -276,5 +276,9 @@
 	"home.addedTwice": "被重複新增",
 	"home.addedTwiceMany": "被重複新增",
 	"home.notSetUpYet": "尚未設定",
-	"home.setUpToAdd": "完成設定後即可新增 {name}"
+	"home.setUpToAdd": "完成設定後即可新增 {name}",
+	"home.comingThisWeek": "本週上線",
+	"home.thisWeek": "本週",
+	"home.landingThisWeek": "本週上線的劇集和電影",
+	"home.popularThisWeek": "本週上線的熱門作品"
 }

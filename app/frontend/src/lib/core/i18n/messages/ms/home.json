@@ -276,5 +276,9 @@
 	"home.addedTwice": "ditambah dua kali",
 	"home.addedTwiceMany": "ditambah dua kali",
 	"home.notSetUpYet": "Belum disediakan",
-	"home.setUpToAdd": "Selesaikan persediaan untuk menambah {name}"
+	"home.setUpToAdd": "Selesaikan persediaan untuk menambah {name}",
+	"home.comingThisWeek": "Tiba minggu ini",
+	"home.thisWeek": "minggu ini",
+	"home.landingThisWeek": "Episod dan filem yang tiba minggu ini",
+	"home.popularThisWeek": "Keluaran popular yang tiba minggu ini"
 }

@@ -276,5 +276,9 @@
 	"home.addedTwice": "두 번 추가됨",
 	"home.addedTwiceMany": "두 번 추가됨",
 	"home.notSetUpYet": "아직 설정되지 않음",
-	"home.setUpToAdd": "{name}을(를) 추가하려면 설정을 마치세요"
+	"home.setUpToAdd": "{name}을(를) 추가하려면 설정을 마치세요",
+	"home.comingThisWeek": "이번 주 공개",
+	"home.thisWeek": "이번 주",
+	"home.landingThisWeek": "이번 주 공개되는 에피소드와 영화",
+	"home.popularThisWeek": "이번 주 공개되는 인기 작품"
 }

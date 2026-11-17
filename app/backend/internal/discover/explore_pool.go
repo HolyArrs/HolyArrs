@@ -113,6 +113,8 @@ type Explore struct {
 	slots    chan struct{}
 	// calls are the outside calls of each pool's last build.
 	calls map[PoolKey]*engine.Calls
+	// empty are the pools whose last build had no seeds, with the retries so far.
+	empty map[PoolKey]int
 }
 
 // Now is the Explore clock.

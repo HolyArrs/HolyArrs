@@ -133,3 +133,50 @@ func TestExploreBusyWaitsForRetryAfter(t *testing.T) {
 		t.Fatalf("busy lists should not log per list:\n%s", b)
 	}
 }
+
+// An empty pool built while the server is down is built again at 15 s, 30 s
+// and 60 s, and at once when the server answers again.
+func TestExploreEmptyPoolRefillsWhenServerReturns(t *testing.T) {
+	captureLog(t)
+	now := time.Date(2026, 11, 17, 8, 0, 0, 0, time.UTC)
+	l := &countLister{err: metadata.ErrServiceUnavailable}
+	e := &Explore{Store: noStore, Clock: func() time.Time { return now }, Paced: &engine.Paced{Source: ListerSource{L: l}, Burst: 100}}
+	s := ExploreSource{E: e, Lister: l, Calls: &engine.Calls{}}
+	_, _ = s.List(context.Background(), engine.Request{List: "trending", Kind: "movie"})
+	k := PoolKey{1, "all"}
+	for _, want := range []time.Duration{15 * time.Second, 30 * time.Second, time.Minute, time.Minute} {
+		e.noteEmpty(k, true, now)
+		e.mu.Lock()
+		got := e.due[k]
+		delete(e.due, k)
+		e.mu.Unlock()
+		if got.Sub(now) != want {
+			t.Fatalf("want a rebuild in %s, got %s", want, got.Sub(now))
+		}
+	}
+	e.hold.mu.Lock()
+	e.hold.until = time.Time{}
+	e.hold.mu.Unlock()
+	l.err = nil
+	_, _ = s.List(context.Background(), engine.Request{List: "best", Kind: "movie"})
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		e.mu.Lock()
+		got, ok := e.due[k]
+		e.mu.Unlock()
+		if ok && !got.After(now) {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("the empty pool was not queued when the server answered again")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	e.noteEmpty(k, false, now)
+	e.mu.Lock()
+	_, still := e.empty[k]
+	e.mu.Unlock()
+	if still {
+		t.Fatal("a pool with seeds should clear its retries")
+	}
+}
