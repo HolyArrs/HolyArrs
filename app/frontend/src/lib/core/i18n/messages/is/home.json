@@ -276,5 +276,9 @@
 	"home.addedTwice": "er bætt við tvisvar",
 	"home.addedTwiceMany": "eru bætt við tvisvar",
 	"home.notSetUpYet": "Ekki sett upp enn",
-	"home.setUpToAdd": "Ljúktu uppsetningu til að bæta við {name}"
+	"home.setUpToAdd": "Ljúktu uppsetningu til að bæta við {name}",
+	"home.comingThisWeek": "Kemur í þessari viku",
+	"home.thisWeek": "í þessari viku",
+	"home.landingThisWeek": "Þættir og myndir sem koma í þessari viku",
+	"home.popularThisWeek": "Vinsælar útgáfur sem koma í þessari viku"
 }

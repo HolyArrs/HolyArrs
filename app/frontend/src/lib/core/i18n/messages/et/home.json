@@ -276,5 +276,9 @@
 	"home.addedTwice": "on lisatud kaks korda",
 	"home.addedTwiceMany": "on lisatud kaks korda",
 	"home.notSetUpYet": "Veel seadistamata",
-	"home.setUpToAdd": "Lõpeta seadistus, et lisada {name}"
+	"home.setUpToAdd": "Lõpeta seadistus, et lisada {name}",
+	"home.comingThisWeek": "Sel nädalal tulekul",
+	"home.thisWeek": "sel nädalal",
+	"home.landingThisWeek": "Sel nädalal ilmuvad osad ja filmid",
+	"home.popularThisWeek": "Sel nädalal ilmuvad populaarsed uudised"
 }

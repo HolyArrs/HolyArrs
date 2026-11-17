@@ -276,5 +276,9 @@
 	"home.addedTwice": "додано двічі",
 	"home.addedTwiceMany": "додано двічі",
 	"home.notSetUpYet": "Ще не налаштовано",
-	"home.setUpToAdd": "Завершіть налаштування, щоб додати {name}"
+	"home.setUpToAdd": "Завершіть налаштування, щоб додати {name}",
+	"home.comingThisWeek": "Цього тижня",
+	"home.thisWeek": "цього тижня",
+	"home.landingThisWeek": "Серії та фільми, що виходять цього тижня",
+	"home.popularThisWeek": "Популярні прем'єри цього тижня"
 }

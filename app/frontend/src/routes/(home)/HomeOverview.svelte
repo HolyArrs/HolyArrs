@@ -44,7 +44,7 @@
 		uncheckedHealth: boolean;
 		health: Health | null;
 		picTile: Snippet<[{ c: HomeCard; label: string }, string, boolean]>;
-		tileArt: { pop: string[]; soon: string[] };
+		tileArt: { pop: string[]; soon: string[]; week: { count: number; posters: string[] } };
 	};
 	let { overview, disk, admin, settled, attentionView, uncheckedParts, retrying, retry, approver, kid, uncheckedAsks, downloading, mineOpen, mineDeclined, fetchingAll, home, uncheckedDl, now, uncheckedHealth, health, picTile, tileArt }: Props = $props();
 	// Tile art: a picture that cannot load drops out and the next takes its place; with none left the tile keeps its plain sheet.
@@ -54,6 +54,14 @@
 	const calArt = $derived.by(() => {
 		const own = (home?.soon ?? []).map((c) => c.poster).filter((p): p is string => !!p);
 		return (own.length ? own : tileArt.soon).filter((p) => !badArt.has(p)).slice(0, 3);
+	});
+	// Coming this week: what lands in this Library from now to seven days on; with nothing of its own, New & Popular's releases this week, so the tile is never empty. Both lists already keep to a Kid's limit.
+	const week = $derived.by(() => {
+		const until = now.getTime() + 7 * 86400000;
+		const own = (home?.soon ?? []).filter((c) => c.at && Date.parse(c.at) < until);
+		const mine = own.length > 0;
+		const posters = mine ? own.map((c) => c.poster).filter((p): p is string => !!p) : tileArt.week.posters;
+		return { mine, count: mine ? own.length : tileArt.week.count, posters: posters.filter((p) => !badArt.has(p)).slice(0, 3) };
 	});
 </script>
 
@@ -211,6 +219,19 @@
 					{@render head('star', 'pink', t('home.newPopular'))}
 					<span class="word">{t('home.whatSTrending')}</span>
 					<span class="sm">{t('home.top10sAndComing')}</span>
+				</a>
+			{:else if key === 'week'}
+				<a class="tile stat {cls}" href={to('/calendar')} data-testid="home-week">
+					{@render head('calendar', 'teal', t('home.comingThisWeek'))}
+					{#if !settled}
+						{@render wait()}
+					{:else}
+						<span class="wk">
+							<span class="num">{n(week.count)}<small>{t('home.thisWeek')}</small></span>
+							{#if week.posters.length}<span class="wk-pics" aria-hidden="true">{#each week.posters as p (p)}<img src={sized(p, 'poster', 80)} alt="" decoding="async" use:artGone={() => badArt.add(p)} />{/each}</span>{/if}
+						</span>
+						<span class="sm">{week.mine ? t('home.landingThisWeek') : t('home.popularThisWeek')}</span>
+					{/if}
 				</a>
 			{:else if key === 'calendar'}
 				<a class="tile stat {cls}" class:art={calArt.length > 0} href={to('/calendar')}>
@@ -408,6 +429,12 @@
 	.ask-stack img:first-child { margin-inline-start: 0; }
 	.ask-stack b { min-width: 30px; height: 30px; margin-inline-start: 10px; padding: 0 8px; display: grid; place-items: center; border-radius: 999px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); font: var(--t-footnote); font-weight: 700; font-variant-numeric: tabular-nums; }
 
+	/* Coming this week: the count with the next posters beside it, each a fixed size so nothing moves as they load. */
+	.wk { margin-top: auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; min-width: 0; }
+	.wk .num { margin-top: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+	.wk-pics { flex: none; display: flex; }
+	.wk-pics img { width: 30px; height: 45px; object-fit: cover; border-radius: 6px; margin-inline-start: -10px; background: var(--surface-3); box-shadow: 0 0 0 2px var(--sheet-b), 0 6px 14px -4px rgb(0 0 0 / 35%); }
+	.wk-pics img:first-child { margin-inline-start: 0; }
 	.dl .num, .dl > .word { margin-top: 14px; }
 	.flow { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 12px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); }
 	.flow li { position: relative; min-width: 0; padding: 9px 12px; display: flex; flex-direction: column; gap: 2px; }
@@ -451,6 +478,8 @@
 	@container home (max-width: 900px) {
 		.bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 132px; gap: 10px; }
 		.tile.tall { grid-row: span 1; }
+		/* The Calendar keeps its two rows here too; the eight-tile shape leaves room for it. */
+		.tile.tall.keep { grid-row: span 2; }
 		.tile { padding: 12px 14px; border-radius: 18px; }
 		.head { gap: 8px; }
 		.lab { font-size: 13px; }
@@ -461,6 +490,7 @@
 		.sm { line-height: 1.3; }
 		.ask-stack img { width: 32px; margin-inline-start: -10px; border-radius: 6px; }
 		.ask-stack b { min-width: 26px; height: 26px; margin-inline-start: 8px; }
+		.wk-pics img { width: 26px; height: 39px; margin-inline-start: -8px; }
 		.dl .num, .dl > .word { margin-top: 10px; }
 		.flow { margin-top: 10px; }
 		.flow li { padding: 7px 10px; }

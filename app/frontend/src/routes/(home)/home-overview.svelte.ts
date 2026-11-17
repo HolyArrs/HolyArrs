@@ -53,8 +53,10 @@ export function createHomeOverview(ctx: Pick<HomeContext, 'manager' | 'kid' | 'h
 			ctx.canAsk ? 'ask' : '',
 			ctx.libCards.length && !(welcome && ctx.owner) ? 'lib' : '',
 			ctx.showDisk ? 'disk' : '',
+			// Coming this week sits beside On disk; it goes with the Calendar, which it opens, and stands in for the 30-day count.
+			ctx.manager ? 'week' : '',
 			ctx.fetchingAll.length ? 'dl' : '',
-			ctx.owner && ctx.home?.soon?.length && !pics.some((p) => p.label === t('home.comingSoon2')) ? 'soon' : '',
+			!ctx.manager && ctx.owner && ctx.home?.soon?.length && !pics.some((p) => p.label === t('home.comingSoon2')) ? 'soon' : '',
 			recentNew ? 'new' : '',
 			'explore',
 			'popular',
@@ -73,7 +75,19 @@ export function createHomeOverview(ctx: Pick<HomeContext, 'manager' | 'kid' | 'h
 		1: ['banner']
 	};
 	
+	// With the Calendar there are eight places: one big, the Calendar standing two rows tall at every width, and six small. Four columns make three full rows, two columns six.
+	const CAL_SHAPE = ['big', '', '', 'tall keep', '', '', '', ''];
 	const places = $derived.by((): Place[] => {
+		if (statPool.includes('calendar') && statPool.length - 1 >= (pics.length ? 6 : 7)) {
+			const st = statPool.filter((k) => k !== 'calendar');
+			const out: Place[] = CAL_SHAPE.map((shape) => ({ key: '', shape }));
+			out[3].stat = 'calendar';
+			if (pics.length) out[0].pic = pics[0];
+			for (const pl of out) if (!pl.pic && !pl.stat && pl.shape === '') pl.stat = st.shift();
+			if (!out[0].pic) out[0].stat = st.shift();
+			for (const pl of out) pl.key = pl.pic ? `p${pl.pic.c.title_id}` : `s${pl.stat}`;
+			return out;
+		}
 		const shapes = SHAPES[Math.min(7, pics.length + statPool.length)] ?? [];
 		const p = [...pics];
 		const st = [...statPool];

@@ -19,9 +19,8 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import { artGone, lightOnDark } from './art-check.ts';
 	import { arrivedHead, attention, setupBlocker, welcomeRows, downloadMoved, downloadingNow, fallbackRows, homeDownloadsURL, homeStrip, n, type HomeAnswer, type HomeCard, type HomeRow } from './home.ts';
-	import { MetadataNotice, detailPath, remember } from '#lib/metadata/index.ts';
-	import { headPath, type HeadAnswer } from '#lib/discover/index.ts';
-	import { newPath, type NewAnswer } from '#lib/discover/popular.ts';
+	import { MetadataNotice, checkMetadata, detailPath, remember } from '#lib/metadata/index.ts';
+	import { headPath, newPath, ymd, type HeadAnswer, type NewAnswer } from '#lib/discover/index.ts';
 	import { cardTmdb, type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
 	import { homeFacts, homeGreeting, homeNews } from './home-line.ts';
 	import type { Health, HealthChecks } from '#lib/health/index.ts';
@@ -51,7 +50,7 @@
 	// Before setup: Explore's first picture rows (from the metadata server, no setup needed), read before Home shows.
 	let picks = $state<(ExploreRow & { wide: boolean; type: string })[]>([]);
 	// Art for the New & Popular and Calendar tiles, from New & Popular's first page (the same Kid-limited answer that page reads): its first new backdrop and the next releases' posters.
-	let tileArt = $state<{ pop: string[]; soon: string[] }>({ pop: [], soon: [] });
+	let tileArt = $state<{ pop: string[]; soon: string[]; week: { count: number; posters: string[] } }>({ pop: [], soon: [], week: { count: 0, posters: [] } });
 	let health = $state<Health | null>(null);
 	let checks = $state<HealthChecks | null>(null);
 	// The downloads or health read failed on the last load: Home could not check, so it does not say All good.
@@ -160,9 +159,13 @@
 	async function loadAll() {
 		// The first screen (the Home answer) loads now; the bigger asks wait until the sign-in hand-off has left, so its frames stay smooth.
 		// A fresh install waits for everything (its picture rows too), so nothing jumps in under the welcome card.
-		const first = Promise.all([loadHome(), loadTileArt()]).then(async () => {
-			if (home?.rows?.includes('welcome')) await loadPicks();
-			else if (home) loaded = true;
+		// The first visit keeps the loading screen until everything Home shows is there, pictures decoded, for 30 s at most; after that Home shows and the rest fills in as it arrives. With the metadata server down there is nothing to wait for: Home shows at once and fills in when it is back.
+		const homeRead = loadHome();
+		const art = (artReady ??= loadTileArt());
+		const picksRead = homeRead.then(() => (home?.rows?.includes('welcome') ? loadPicks() : undefined));
+		const ready = Promise.all([homeRead, checkMetadata()]).then(([, up]) => (up ? Promise.all([art, picksRead]).then(decoded) : undefined));
+		const first = Promise.race([ready, new Promise<void>((r) => setTimeout(r, FIRST_WAIT))]).then(() => {
+			if (home) loaded = true;
 		});
 		await afterHandoff();
 		const [, fo, dl, he, ch, as] = await Promise.allSettled([
@@ -190,35 +193,62 @@
 		settled = true;
 	}
 
-	// Read once per visit; a slow metadata server never holds Home: after 3 s it shows without the rows.
+	// The longest the loading screen waits on the first visit.
+	const FIRST_WAIT = 30000;
+	// While Explore's lists are still being built (a fresh install, or a slow metadata server) an answer comes back empty and says so: ask again every few seconds, for two minutes at most.
+	const AGAIN_EVERY = 3000;
+	const AGAIN_FOR = 120000;
+	const pause = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+	async function untilFull<T extends { building: boolean }>(read: () => Promise<T | null>, full: (v: T) => boolean, keep: (v: T) => void): Promise<void> {
+		const stop = Date.now() + AGAIN_FOR;
+		for (;;) {
+			const got = await read().catch(() => null);
+			if (got) keep(got);
+			if ((got && (full(got) || !got.building)) || Date.now() > stop) return;
+			await pause(AGAIN_EVERY);
+		}
+	}
+	// The tiles' pictures, decoded at the size the tiles show them, so they paint with the grid.
+	function decoded(): Promise<unknown> {
+		const urls = [...tileArt.pop.map((b) => sized(b, 'backdrop')), ...tileArt.soon.slice(0, 3).map((p) => sized(p, 'poster', 400)), ...tileArt.week.posters.map((p) => sized(p, 'poster', 80)), ...(home?.soon ?? []).slice(0, 3).flatMap((c) => (c.poster ? [sized(c.poster, 'poster', 400), sized(c.poster, 'poster', 80)] : []))];
+		return Promise.all(
+			urls.map((u) => {
+				const img = new Image();
+				img.src = u;
+				return img.decode().catch(() => undefined);
+			})
+		);
+	}
+
+	// Read once per visit, asked again while it is empty.
 	let picksTried = false;
 	async function loadPicks() {
 		if (picksTried) return;
 		picksTried = true;
-		try {
-			const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-			const read = api.get<HeadAnswer>(headPath({ type: 'all', tz })).then((a) => welcomeRows(a.head ?? [])).catch(() => null);
-			const late = new Promise<null>((r) => setTimeout(() => r(null), 3000));
-			const got = await Promise.race([read, late]);
-			if (got) picks = got;
-		} catch {
-			// No picture rows: the grid and Explore still work.
-		}
+		const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		await untilFull(
+			() => api.get<HeadAnswer>(headPath({ type: 'all', tz })).then((a) => ({ building: !!a.building, rows: welcomeRows(a.head ?? []) })),
+			(r) => r.rows.length > 0,
+			(r) => (picks = r.rows)
+		);
 	}
 
-	// Read with Home (3 s at most), so the tiles have their art when the grid first shows.
-	async function loadTileArt() {
-		try {
-			const read = api.get<NewAnswer>(newPath('all', 0)).then((a) => {
+	// Read once per visit with Home, so the tiles have their art when the grid first shows; asked again while New & Popular is still empty.
+	let artReady: Promise<void> | undefined;
+	function loadTileArt(): Promise<void> {
+		return untilFull(
+			() => api.get<NewAnswer>(newPath('all', 0)).then((a) => {
 				const pop = (a.hero ?? []).map((h) => h.backdrop).filter((b): b is string => !!b).slice(0, 3);
 				const soon = (a.rail ?? []).flatMap((d) => d.items).filter((i) => i.upcoming && i.poster).map((i) => i.poster as string);
-				return { pop, soon: [...new Set(soon)].slice(0, 6) };
-			});
-			const got = await Promise.race([read, new Promise<null>((r) => setTimeout(() => r(null), 3000))]);
-			if (got) tileArt = got;
-		} catch {
-			// No art: the tiles keep their words.
-		}
+				// Coming this week on an empty Library: New & Popular's releases from today to six days on (already within the Kid limit).
+				const from = ymd(new Date()), until = ymd(new Date(Date.now() + 6 * 86400000));
+				const wk = (a.rail ?? []).filter((d) => d.day >= from && d.day <= until).flatMap((d) => d.items).filter((i) => i.upcoming);
+				const posters = [...new Set(wk.map((i) => i.poster).filter((p): p is string => !!p))].slice(0, 3);
+				return { building: !!a.building, art: { pop, soon: [...new Set(soon)].slice(0, 6), week: { count: wk.length, posters } } };
+			}),
+			(a) => a.art.pop.length > 0 && a.art.soon.length > 0,
+			(a) => (tileArt = a.art)
+		);
 	}
 
 	const welcomeOn = $derived(rows.includes('welcome'));

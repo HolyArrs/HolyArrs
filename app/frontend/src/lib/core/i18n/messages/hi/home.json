@@ -276,5 +276,9 @@
 	"home.addedTwice": "दो बार जोड़ा गया है",
 	"home.addedTwiceMany": "दो बार जोड़े गए हैं",
 	"home.notSetUpYet": "अभी सेट अप नहीं हुआ",
-	"home.setUpToAdd": "{name} जोड़ने के लिए सेटअप पूरा करें"
+	"home.setUpToAdd": "{name} जोड़ने के लिए सेटअप पूरा करें",
+	"home.comingThisWeek": "इस हफ़्ते आ रहा है",
+	"home.thisWeek": "इस हफ़्ते",
+	"home.landingThisWeek": "इस हफ़्ते आ रहे एपिसोड और फ़िल्में",
+	"home.popularThisWeek": "इस हफ़्ते आ रही लोकप्रिय रिलीज़"
 }

@@ -276,5 +276,9 @@
 	"home.addedTwice": "iki kez eklendi",
 	"home.addedTwiceMany": "iki kez eklendi",
 	"home.notSetUpYet": "Henüz ayarlanmadı",
-	"home.setUpToAdd": "{name} eklemek için kurulumu bitirin"
+	"home.setUpToAdd": "{name} eklemek için kurulumu bitirin",
+	"home.comingThisWeek": "Bu hafta geliyor",
+	"home.thisWeek": "bu hafta",
+	"home.landingThisWeek": "Bu hafta gelen bölümler ve filmler",
+	"home.popularThisWeek": "Bu hafta gelen popüler yapımlar"
 }

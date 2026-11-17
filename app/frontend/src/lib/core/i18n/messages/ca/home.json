@@ -276,5 +276,9 @@
 	"home.addedTwice": "està afegit dues vegades",
 	"home.addedTwiceMany": "estan afegits dues vegades",
 	"home.notSetUpYet": "Encara no està configurat",
-	"home.setUpToAdd": "Acaba la configuració per afegir {name}"
+	"home.setUpToAdd": "Acaba la configuració per afegir {name}",
+	"home.comingThisWeek": "Aquesta setmana",
+	"home.thisWeek": "aquesta setmana",
+	"home.landingThisWeek": "Episodis i pel·lícules que arriben aquesta setmana",
+	"home.popularThisWeek": "Estrenes populars que arriben aquesta setmana"
 }

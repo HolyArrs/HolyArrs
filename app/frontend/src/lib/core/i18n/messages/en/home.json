@@ -276,5 +276,9 @@
 	"home.addedTwice": "is added twice",
 	"home.addedTwiceMany": "are added twice",
 	"home.notSetUpYet": "Not set up yet",
-	"home.setUpToAdd": "Finish setup to add {name}"
+	"home.setUpToAdd": "Finish setup to add {name}",
+	"home.comingThisWeek": "Coming this week",
+	"home.thisWeek": "this week",
+	"home.landingThisWeek": "Episodes and movies landing this week",
+	"home.popularThisWeek": "Popular releases landing this week"
 }

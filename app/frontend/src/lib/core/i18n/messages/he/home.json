@@ -276,5 +276,9 @@
 	"home.addedTwice": "נוסף פעמיים",
 	"home.addedTwiceMany": "נוספו פעמיים",
 	"home.notSetUpYet": "עדיין לא הוגדר",
-	"home.setUpToAdd": "סיימו את ההגדרה כדי להוסיף את {name}"
+	"home.setUpToAdd": "סיימו את ההגדרה כדי להוסיף את {name}",
+	"home.comingThisWeek": "מגיע השבוע",
+	"home.thisWeek": "השבוע",
+	"home.landingThisWeek": "פרקים וסרטים שיוצאים השבוע",
+	"home.popularThisWeek": "יציאות פופולריות שמגיעות השבוע"
 }

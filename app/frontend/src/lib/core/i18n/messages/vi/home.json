@@ -276,5 +276,9 @@
 	"home.addedTwice": "được thêm hai lần",
 	"home.addedTwiceMany": "được thêm hai lần",
 	"home.notSetUpYet": "Chưa thiết lập",
-	"home.setUpToAdd": "Hoàn tất thiết lập để thêm {name}"
+	"home.setUpToAdd": "Hoàn tất thiết lập để thêm {name}",
+	"home.comingThisWeek": "Ra mắt tuần này",
+	"home.thisWeek": "tuần này",
+	"home.landingThisWeek": "Tập phim và phim ra mắt tuần này",
+	"home.popularThisWeek": "Phim nổi bật ra mắt tuần này"
 }

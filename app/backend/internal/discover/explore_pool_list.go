@@ -82,7 +82,9 @@ func (s ExploreSource) List(ctx context.Context, q engine.Request) ([]engine.Ite
 		return nil, f.err
 	}
 	s.noteListDown(key, false)
-	e.hold.note(nil, time.Now())
+	if e.hold.note(nil, time.Now()) {
+		go e.refillEmpty()
+	}
 	now := time.Now()
 	s.keepList(key, exploreList{at: now, items: f.items})
 	if s.E.Store() != nil {
@@ -373,19 +375,23 @@ func (e *Explore) BuildPool(ctx context.Context, member int64, sw string) error 
 		return err
 	}
 	log.Printf("explore: pool %d/%s built in %s, %d seeds, outside calls %s", member, sw, time.Since(start).Round(time.Millisecond), pool.Seeds, calls)
+	empty := pool.Seeds == 0 && !e.lookupsOff()
 	raw, err := json.Marshal(pool)
 	if err != nil {
 		return err
 	}
 	err = e.Store().Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec(`INSERT INTO explore_pool (member_id, type_switch, day, built_at, stale, due, pool) VALUES (?, ?, ?, ?, 0, NULL, ?)
-			ON CONFLICT (member_id, type_switch, day) DO UPDATE SET built_at = excluded.built_at, stale = 0, due = NULL, pool = excluded.pool`,
-			member, sw, day, database.FormatTime(now), string(raw))
+		// A pool with no seeds is kept stale, so pages say "building" and ask again.
+		_, err := tx.Exec(`INSERT INTO explore_pool (member_id, type_switch, day, built_at, stale, due, pool) VALUES (?, ?, ?, ?, ?, NULL, ?)
+			ON CONFLICT (member_id, type_switch, day) DO UPDATE SET built_at = excluded.built_at, stale = excluded.stale, due = NULL, pool = excluded.pool`,
+			member, sw, day, database.FormatTime(now), empty, string(raw))
 		return err
 	})
 	if err != nil {
 		return err
 	}
+	// No seeds (the metadata server was slow or down) is never final: build it again soon.
+	e.noteEmpty(PoolKey{member, sw}, empty, now)
 	e.mu.Lock()
 	e.builds++
 	if e.calls == nil {

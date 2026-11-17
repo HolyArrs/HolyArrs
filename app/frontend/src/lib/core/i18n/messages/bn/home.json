@@ -276,5 +276,9 @@
 	"home.addedTwice": "দুবার যোগ করা",
 	"home.addedTwiceMany": "দুবার যোগ করা",
 	"home.notSetUpYet": "এখনও সেট আপ হয়নি",
-	"home.setUpToAdd": "{name} যোগ করতে সেটআপ শেষ করুন"
+	"home.setUpToAdd": "{name} যোগ করতে সেটআপ শেষ করুন",
+	"home.comingThisWeek": "এই সপ্তাহে আসছে",
+	"home.thisWeek": "এই সপ্তাহে",
+	"home.landingThisWeek": "এই সপ্তাহে আসছে পর্ব ও সিনেমা",
+	"home.popularThisWeek": "এই সপ্তাহে আসছে জনপ্রিয় রিলিজ"
 }
