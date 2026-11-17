@@ -362,7 +362,7 @@ func values(f NameFacts) map[string]string {
 
 func renderVals(s NamingSettings, pat string, vals map[string]string) string {
 	var b strings.Builder
-	for rest := pat; rest != ""; {
+	for rest := dropEmptyGroups(pat, vals); rest != ""; {
 		open := strings.IndexByte(rest, '{')
 		end := -1
 		if open >= 0 {
@@ -408,6 +408,57 @@ func renderVals(s NamingSettings, pat string, vals map[string]string) string {
 		out = t
 	}
 	return clean(s, out)
+}
+
+// dropEmptyGroups removes a [...] or (...) whose words are all empty, with one
+// space beside it, so "[imdbid-{imdb}]" without an id leaves nothing behind.
+func dropEmptyGroups(pat string, vals map[string]string) string {
+	for i := 0; i < len(pat); i++ {
+		c := pat[i]
+		if c != '[' && c != '(' {
+			continue
+		}
+		shut := byte(']')
+		if c == '(' {
+			shut = ')'
+		}
+		j := strings.IndexAny(pat[i+1:], "[]()")
+		if j < 0 || pat[i+1+j] != shut {
+			continue
+		}
+		j += i + 1
+		inner := pat[i+1 : j]
+		if !strings.Contains(inner, "{") || !allEmpty(inner, vals) {
+			continue
+		}
+		start, end := i, j+1
+		if start > 0 && pat[start-1] == ' ' {
+			start--
+		} else if end < len(pat) && pat[end] == ' ' {
+			end++
+		}
+		pat = pat[:start] + pat[end:]
+		i = start - 1
+	}
+	return pat
+}
+
+// allEmpty reports whether every {word} in text has no value.
+func allEmpty(text string, vals map[string]string) bool {
+	for {
+		open := strings.IndexByte(text, '{')
+		if open < 0 {
+			return true
+		}
+		end := strings.IndexByte(text[open:], '}')
+		if end < 0 {
+			return true
+		}
+		if vals[text[open+1:open+end]] != "" {
+			return false
+		}
+		text = text[open+end+1:]
+	}
 }
 
 // opensName reports whether text ends where a name or a bracket starts, so a
