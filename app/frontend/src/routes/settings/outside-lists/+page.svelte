@@ -485,7 +485,11 @@
 			flex-direction: column;
 		}
 		.acts {
-			flex-wrap: nowrap;
+			flex-wrap: wrap;
 		}
+	}
+	/* Buttons keep their full label; the row wraps instead. */
+	.acts :global(.ui-btn) {
+		flex: none;
 	}
 </style>
