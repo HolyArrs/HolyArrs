@@ -9,20 +9,22 @@
 		variant?: 'primary' | 'secondary' | 'plain' | 'destructive';
 		size?: 'lg' | 'md' | 'sm';
 		href?: string;
+		target?: string;
+		rel?: string;
 		icon?: IconName;
 		iconAfter?: IconName;
 		busy?: boolean;
 		full?: boolean;
 		children: Snippet;
 	};
-	let { variant = 'secondary', size = 'md', href, icon, iconAfter, busy = false, full = false, type = 'button', disabled, children, class: cls = '', ...rest }: Props = $props();
+	let { variant = 'secondary', size = 'md', href, target, rel, icon, iconAfter, busy = false, full = false, type = 'button', disabled, children, class: cls = '', ...rest }: Props = $props();
 	const iconSize = $derived(size === 'lg' ? 20 : size === 'sm' ? 16 : 18);
 	// Busy can come from the prop or a passed aria-busy.
 	const working = $derived(busy || rest['aria-busy'] === true || rest['aria-busy'] === 'true');
 </script>
 
 {#if href && !disabled}
-	<a class="ui-btn {variant} {size} {cls}" class:full {href} aria-label={rest['aria-label']} use:press={'button'} aria-busy={busy || undefined}>
+	<a class="ui-btn {variant} {size} {cls}" class:full {href} {target} {rel} aria-label={rest['aria-label']} use:press={'button'} aria-busy={busy || undefined}>
 		{#if icon}<Icon name={icon} size={iconSize} />{/if}<span>{@render children()}</span>{#if iconAfter}<Icon name={iconAfter} size={iconSize} />{/if}
 	</a>
 {:else}
