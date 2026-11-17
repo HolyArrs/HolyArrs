@@ -35,6 +35,7 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 | Backups | [Backups](run/backups.md) |
 | Health | [Health checks](run/health.md), [logs](run/logs.md), [schedules](run/schedules.md) |
 | Updates | [Updates](run/updates.md) |
+| Plugins and remote access | [Plugins](run/plugins.md), [remote access with Tailscale](run/remote-access.md) |
 
 ## Platforms
 
@@ -77,6 +78,7 @@ A changing number or token is in square brackets.
 | Import a library, Rename files | `/library/import`, `/library/rename` | Organising [movies](movies/organise.md), [shows](shows/organise.md), [music](music/organise.md) |
 | Missing subtitles | `/library/missing-subtitles` | [Subtitles](library/subtitles.md) |
 | Connect an AI app | `/ai` | [Connect AI apps](reference/ai.md) (held back) |
+| Plugins | `/plugins` | [Plugins](run/plugins.md) |
 | Settings | `/settings` | [Home and Settings](start/home-and-settings.md#settings) |
 | Request rules | `/settings/requests` | [Weekly limits and Request rules](requests/settings.md) |
 | AI apps | `/settings/ai` | [Connect AI apps](reference/ai.md) (held back) |
@@ -86,6 +88,7 @@ A changing number or token is in square brackets.
 | Downloaders | `/settings/downloaders` | [Downloaders](downloads/downloaders.md) |
 | Library folders | `/settings/library-folders` | [Library folders](library/folders.md) |
 | Media servers | `/settings/media-servers` | [Media servers](library/media-servers.md) |
+| Remote access | `/settings/remote-access` | [Remote access](run/remote-access.md) |
 | Parts | `/settings/parts` | [Parts and safe mode](run/parts-safe-mode.md) |
 | Sign-in and security | `/settings/sign-in` | [Sign-in and passwords](users/sign-in.md) |
 | Sources | `/settings/sources` | [Sources](downloads/sources.md) |

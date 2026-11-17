@@ -88,6 +88,21 @@ It acts as the person who connected it, with their permissions, request limit an
 
 Only `ask_for_title` changes anything. It counts as your own request. An app can't approve requests, change settings, people or keys, see others' requests, or delete or move files.
 
+### What each AI key may do
+
+Each AI key also has six tick boxes, a second limit on top of the tools above. They're set when the key is made and can't be changed later; make a new key instead. The key still can't do more than the person who made it.
+
+| Tick box | Lets the app | On for new keys |
+|---|---|---|
+| See library and activity | Look at your library, calendar, downloads and history | Yes |
+| Add and request | Add titles, ask for titles, follow and report | Yes |
+| Control downloads | Start searches, pause or move downloads, rename and import files | Yes |
+| Change settings | Change downloaders, sources, folders, alerts and other settings | Yes |
+| Delete | Remove or delete anything | No |
+| Admin | Users, sign-in, keys, backups, updates, restarts and logs | No |
+
+When an app tries something its key doesn't allow, it gets a message naming the tick box, such as "This key can't Delete."
+
 ## If it does not work
 
 | Symptom | Fix |
