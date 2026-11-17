@@ -1246,6 +1246,7 @@
 	"downloads.why.conflict": "Import nie mógł się zakończyć sam.",
 	"downloads.why.notReplaced": "Jego pobranie zostało usunięte poza HolyArrs i nie jest zastępowane samo (ustawienie).",
 	"downloads.why.notSent": "Żaden Downloader go nie przyjął: sprawdź tagi tytułu i swoje Downloadery.",
+	"downloads.why.linkRefused": "Downloader go nie dostał: link release'u prowadził do adresu, do którego HolyArrs nie może sięgać.",
 	"downloads.why.out": "HolyArrs wyczerpał release'y, które przechodzą Reguły wyboru.",
 	"downloads.why.taken": "Inna aplikacja zabrała pliki, zanim HolyArrs zdążył je zaimportować.",
 	"downloads.row.imported": "Zaimportowano",

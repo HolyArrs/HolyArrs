@@ -403,6 +403,10 @@ export interface Choice {
 	slot_ids?: number[];
 	forced: boolean;
 	warnings: string[];
+	/** Why the Downloader did not get the Release. */
+	not_sent?: string;
+	/** The send had not ended when the answer went out. */
+	sending?: boolean;
 }
 
 export interface Download {
@@ -623,7 +627,7 @@ export interface Decision {
 	year?: number;
 	version: string;
 	versions: number;
-	why: 'ran_out' | 'conflict' | 'not_replaced' | 'not_sent' | 'taken';
+	why: 'ran_out' | 'conflict' | 'not_replaced' | 'not_sent' | 'link_refused' | 'taken';
 	reason: string;
 	release_id?: number;
 	release_name?: string;

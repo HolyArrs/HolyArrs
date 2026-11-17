@@ -59,6 +59,18 @@ func (m *Manager) HandleGrab(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(map[string]any{"not_sent": sg.Error()})
 		return nil
 	}
+	if rr, ok := linkRefused(err); ok {
+		// The Release link led to an address HolyArrs may not reach. Another Release
+		// from the same Source would likely fail the same way, so the Slot waits for a
+		// person with the reason instead of being searched again unseen.
+		reason := "not sent: " + rr.msg
+		if mediafiles.MoveSlot(ctx, m.Store, r.Job.Subject.ID, mediafiles.SlotNeedsADecision, reason, domain.Actor{Kind: "job", ID: r.Job.ID}) == nil {
+			m.publish("slot", map[string]any{"id": r.Job.Subject.ID, "state": mediafiles.SlotNeedsADecision, "reason": reason})
+			m.notSentEvent(ctx, r.Job.Subject.ID, int64(relID), rr.msg, domain.Actor{Kind: "job", ID: r.Job.ID})
+		}
+		r.SetResult(map[string]any{"not_sent": rr.msg})
+		return nil
+	}
 	var fe interface{ Final() bool }
 	if errors.As(err, &fe) && fe.Final() {
 		// The Release can never be sent, so it is turned down and the Slot is searched
@@ -98,6 +110,25 @@ func (g grabFailed) Error() string {
 		s[i] = e.Error()
 	}
 	return strings.Join(s, "; ")
+}
+
+// linkRefused finds a refusal of the Release link's address in err, also
+// inside the failures of several Downloaders.
+func linkRefused(err error) (releaseRefused, bool) {
+	var g grabFailed
+	if errors.As(err, &g) {
+		for _, e := range g {
+			if rr, ok := linkRefused(e); ok {
+				return rr, true
+			}
+		}
+		return releaseRefused{}, false
+	}
+	var rr releaseRefused
+	if errors.As(err, &rr) && (rr == errLinkLocal || rr == errLinkOtherLocal) {
+		return rr, true
+	}
+	return releaseRefused{}, false
 }
 
 func (g grabFailed) Final() bool {

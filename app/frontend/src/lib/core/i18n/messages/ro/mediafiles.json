@@ -302,6 +302,7 @@
 	"mediafiles.gate.released": "Odată ce apare digital sau pe disc",
 	"mediafiles.gate.releasedHelp": "Caută de la prima dată digitală sau pe disc.",
 	"mediafiles.title.sent": "Trimis la Programul de descărcare",
+	"mediafiles.title.sending": "Se trimite la Programul de descărcare",
 	"mediafiles.title.warnings": "{n} avertismente",
 	"mediafiles.title.didNotPass": "nu a trecut",
 	"mediafiles.title.turnedDown": "Lansare respinsă",

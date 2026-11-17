@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "La importació no s'ha pogut acabar per si sola.",
 	"downloads.why.notReplaced": "La seva baixada s'ha eliminat fora de HolyArrs i no es substitueix per si sola (paràmetre).",
 	"downloads.why.notSent": "Cap Gestor de baixades l'ha pogut acceptar: comprova les etiquetes del títol i els teus Gestors de baixades.",
+	"downloads.why.linkRefused": "El Gestor de baixades no l'ha rebut: l'enllaç del Llançament portava a una adreça on HolyArrs no pot accedir.",
 	"downloads.why.out": "A HolyArrs se li han acabat els Llançaments que superen les Regles d'elecció.",
 	"downloads.why.taken": "Una altra app ha agafat els fitxers abans que HolyArrs els pogués importar.",
 	"downloads.pr.lang.pl": "Polonès",

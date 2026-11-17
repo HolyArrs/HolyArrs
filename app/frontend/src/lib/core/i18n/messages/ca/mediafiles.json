@@ -302,6 +302,7 @@
 	"mediafiles.gate.released": "Quan surt en digital o disc",
 	"mediafiles.gate.releasedHelp": "Cerca a partir de la primera data digital o de disc.",
 	"mediafiles.title.sent": "Enviat al Gestor de baixades",
+	"mediafiles.title.sending": "S'està enviant al Gestor de baixades",
 	"mediafiles.title.warnings": "{n} advertiments",
 	"mediafiles.title.didNotPass": "no ha passat",
 	"mediafiles.title.turnedDown": "Llançament descartat",

@@ -48,6 +48,10 @@ type Choice struct {
 	SlotIDs   []int64  `json:"slot_ids,omitempty"`
 	Forced    bool     `json:"forced"`
 	Warnings  []string `json:"warnings"`
+	// NotSent is why the Downloader did not get the Release; Sending says the
+	// send had not ended when the answer went out.
+	NotSent string `json:"not_sent,omitempty"`
+	Sending bool   `json:"sending,omitempty"`
 }
 
 // ListedRelease is a Release with the names a list shows beside it.

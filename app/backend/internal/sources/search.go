@@ -37,6 +37,9 @@ type Searcher struct {
 	SourcesOn func() bool
 	// HasDownloader says a Downloader takes the protocol. Nil means yes.
 	HasDownloader func(ctx context.Context, protocol string) bool
+	// SendWait is how long a pick by hand waits for its send, so the page can
+	// say whether the Downloader got it. Zero answers at once.
+	SendWait time.Duration
 
 	mu         sync.Mutex
 	clients    map[int64]*Client

@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "Hãy hoàn tất thiết lập trên mạng gia đình trước.",
 	"server.accounts.api-key-changed": "Đã đổi khóa API {label}",
 	"server.accounts.only-the-owner-and-admins-may-2": "chỉ chủ sở hữu và quản trị viên đã đăng nhập mới được đổi khóa",
-	"server.metadata.your-router-or-vpn-is-sending": "Router hoặc VPN của bạn đang gửi HolyArrs tới một địa chỉ giả (198.18.x.x). Việc này thường do Clash hoặc Surge. Hãy thêm {host} vào danh sách kết nối trực tiếp của nó."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "Router hoặc VPN của bạn đang gửi HolyArrs tới một địa chỉ giả (198.18.x.x). Việc này thường do Clash hoặc Surge. Hãy thêm {host} vào danh sách kết nối trực tiếp của nó.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "gửi {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "hãy bật Gắn nhãn cho các tựa được yêu cầu trước",
 	"server.mediaservers.a-label-needs-1-to-64": "nhãn cần từ 1 đến 64 ký tự"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "liên kết của Bản phát hành đi tới một địa chỉ khác trong mạng gia đình của bạn, điều này không được phép: ở đó chỉ được truy cập địa chỉ của chính Nguồn"
+>>>>>>> fix/422-423-nzbget
 }

@@ -302,6 +302,7 @@
 	"mediafiles.gate.released": "數位版或光碟發行後",
 	"mediafiles.gate.releasedHelp": "從首個數位版或光碟發行日期起尋找。",
 	"mediafiles.title.sent": "已傳送到下載器",
+	"mediafiles.title.sending": "正在傳送到下載器",
 	"mediafiles.title.warnings": "{n} 條警告",
 	"mediafiles.title.didNotPass": "它沒有透過",
 	"mediafiles.title.turnedDown": "資源已排除",

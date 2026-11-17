@@ -302,6 +302,7 @@
 	"mediafiles.gate.released": "Kui see on ilmunud digitaalselt või plaadil",
 	"mediafiles.gate.releasedHelp": "Otsi esimesest digitaalsest või plaadikuupäevast alates.",
 	"mediafiles.title.sent": "Saadetud allalaadijale",
+	"mediafiles.title.sending": "Saadan allalaadijale",
 	"mediafiles.title.warnings": "{n} hoiatust",
 	"mediafiles.title.didNotPass": "see ei läbinud",
 	"mediafiles.title.turnedDown": "Väljalase tagasi lükatud",

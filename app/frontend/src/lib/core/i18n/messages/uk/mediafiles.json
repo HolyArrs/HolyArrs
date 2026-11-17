@@ -303,6 +303,7 @@
 	"mediafiles.gate.released": "Коли він вийде в цифрі або на диску",
 	"mediafiles.gate.releasedHelp": "Шукати від першої дати виходу в цифрі або на диску.",
 	"mediafiles.title.sent": "Надіслано завантажувачу",
+	"mediafiles.title.sending": "Надсилається завантажувачу",
 	"mediafiles.title.warnings": "Попереджень: {n}",
 	"mediafiles.title.didNotPass": "не пройшов",
 	"mediafiles.title.turnedDown": "Реліз відкинуто",

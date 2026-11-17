@@ -302,6 +302,7 @@
 	"mediafiles.gate.released": "Kapag lumabas na sa digital o disc",
 	"mediafiles.gate.releasedHelp": "Maghanap mula sa unang petsa ng digital o disc.",
 	"mediafiles.title.sent": "Ipinadala sa Downloader",
+	"mediafiles.title.sending": "Ipinapadala sa Downloader",
 	"mediafiles.title.warnings": "{n} babala",
 	"mediafiles.title.didNotPass": "hindi ito pumasa",
 	"mediafiles.title.turnedDown": "Tinanggihan ang Release",

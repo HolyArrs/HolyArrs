@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "Az importálás egyedül nem tudott befejeződni.",
 	"downloads.why.notReplaced": "A letöltését a HolyArrson kívül eltávolították, és magától nem pótolja (beállítás).",
 	"downloads.why.notSent": "Egyetlen Letöltő sem tudta átvenni: ellenőrizze a cím címkéit és a Letöltőit.",
+	"downloads.why.linkRefused": "A Letöltő nem kapta meg: a release hivatkozása olyan címre vezetett, amelyet a HolyArrs nem érhet el.",
 	"downloads.why.out": "A HolyArrsnak elfogytak a Kiválasztási szabályoknak megfelelő release-ei.",
 	"downloads.why.taken": "Egy másik alkalmazás elvitte a fájlokat, mielőtt a HolyArrs importálhatta volna.",
 	"downloads.pr.lang.pl": "lengyel",

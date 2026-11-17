@@ -1246,6 +1246,7 @@
 	"downloads.why.conflict": "L'importazione non è riuscita a finire da sola.",
 	"downloads.why.notReplaced": "Il suo download è stato rimosso fuori da HolyArrs e non viene sostituito da solo (impostazione).",
 	"downloads.why.notSent": "Nessun downloader ha potuto prenderlo: controlla i tag del titolo e i tuoi downloader.",
+	"downloads.why.linkRefused": "Il downloader non l'ha mai ricevuta: il link della release portava a un indirizzo che HolyArrs non può raggiungere.",
 	"downloads.why.out": "A HolyArrs sono finite le release che superano le Regole di scelta.",
 	"downloads.why.taken": "Un'altra app ha preso i file prima che HolyArrs potesse importarli.",
 	"downloads.row.imported": "Importato",

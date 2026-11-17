@@ -302,6 +302,7 @@
 	"mediafiles.gate.released": "Kad tas iznāk digitāli vai uz diska",
 	"mediafiles.gate.releasedHelp": "Meklēt no pirmā digitālā vai diska datuma.",
 	"mediafiles.title.sent": "Nosūtīts Lejupielādētājam",
+	"mediafiles.title.sending": "Sūta Lejupielādētājam",
 	"mediafiles.title.warnings": "Brīdinājumi: {n}",
 	"mediafiles.title.didNotPass": "tas neizturēja pārbaudi",
 	"mediafiles.title.turnedDown": "Izlaidums noraidīts",

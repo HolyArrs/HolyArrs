@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "סיימו קודם את ההגדרה ברשת הביתית.",
 	"server.accounts.api-key-changed": "מפתח ה־API {label} שונה",
 	"server.accounts.only-the-owner-and-admins-may-2": "רק הבעלים והמנהלים, לאחר התחברות, יכולים לשנות מפתח",
-	"server.metadata.your-router-or-vpn-is-sending": "הנתב או ה-VPN שלך שולחים את HolyArrs לכתובת מזויפת (198.18.x.x). זה בדרך כלל מגיע מ-Clash או מ-Surge. הוסף את {host} לרשימת החיבור הישיר שלו."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "הנתב או ה-VPN שלך שולחים את HolyArrs לכתובת מזויפת (198.18.x.x). זה בדרך כלל מגיע מ-Clash או מ-Surge. הוסף את {host} לרשימת החיבור הישיר שלו.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "שלחו {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "הפעילו קודם את תיוג כותרים שהתבקשו",
 	"server.mediaservers.a-label-needs-1-to-64": "תווית צריכה 1 עד 64 תווים"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "קישור הריליז הוביל לכתובת אחרת ברשת הביתית שלך, וזה לא מותר: שם מותר להגיע רק לכתובת של המקור עצמו"
+>>>>>>> fix/422-423-nzbget
 }

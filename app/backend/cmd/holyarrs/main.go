@@ -355,7 +355,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	im := &importer.Importer{Store: s, Live: hub, SavePath: c.SavePath}
 	// Safe mode holds every part's work already; it says nothing about Sources.
 	sourcesOn := func() bool { return c.SafeMode || pc.On(parts.Sources) }
-	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, PackReady: dm.PackReady, HasDownloader: dm.HasDownloader, SourcesOn: sourcesOn, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
+	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, PackReady: dm.PackReady, HasDownloader: dm.HasDownloader, SourcesOn: sourcesOn, SendWait: 20 * time.Second, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
 		enqueue(ctx, downloads.KindGrab, domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, downloads.GrabKey(slotID, releaseID))
 	}}
 	// A rejected Import turned its Release down: remove the Download from

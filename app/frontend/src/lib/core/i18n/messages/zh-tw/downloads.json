@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "匯入無法自行完成。",
 	"downloads.why.notReplaced": "它的下載在 HolyArrs 之外被移除，且不會自動替換（設定）。",
 	"downloads.why.notSent": "沒有下載器能接收它：請檢查該項目的標籤和你的下載器。",
+	"downloads.why.linkRefused": "下載器沒有收到：資源的連結指向了 HolyArrs 不允許存取的位址。",
 	"downloads.why.out": "符合挑選規則的資源已經用完了。",
 	"downloads.why.taken": "另一個應用程式在 HolyArrs 匯入前取走了檔案。",
 	"downloads.pr.lang.pl": "波蘭語",

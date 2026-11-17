@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "Innflutningurinn gat ekki klárast sjálfur.",
 	"downloads.why.notReplaced": "Niðurhal þess var fjarlægt utan HolyArrs og er ekki skipt út sjálfkrafa (stilling).",
 	"downloads.why.notSent": "Enginn niðurhalari gat tekið við því: athugaðu merkin á titlinum og niðurhalarana þína.",
+	"downloads.why.linkRefused": "Niðurhalarinn fékk þetta aldrei: tengill útgáfunnar vísaði á vistfang sem HolyArrs má ekki ná til.",
 	"downloads.why.out": "HolyArrs er uppiskroppa með útgáfur sem standast valreglurnar.",
 	"downloads.why.taken": "Annað forrit tók skrárnar áður en HolyArrs gat flutt þær inn.",
 	"downloads.pr.lang.pl": "pólska",

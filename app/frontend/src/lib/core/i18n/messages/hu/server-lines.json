@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "Előbb fejezd be a beállítást az otthoni hálózaton.",
 	"server.accounts.api-key-changed": "A(z) {label} API-kulcs módosítva",
 	"server.accounts.only-the-owner-and-admins-may-2": "kulcsot csak a bejelentkezett tulajdonos és az adminok módosíthatnak",
-	"server.metadata.your-router-or-vpn-is-sending": "A routered vagy a VPN hamis címre (198.18.x.x) küldi a HolyArrst. Ez általában a Clash vagy a Surge miatt van. Add hozzá a(z) {host} címet a közvetlen listájához."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "A routered vagy a VPN hamis címre (198.18.x.x) küldi a HolyArrst. Ez általában a Clash vagy a Surge miatt van. Add hozzá a(z) {host} címet a közvetlen listájához.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "küldd ezt: {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "előbb kapcsold be a Kért címek felcímkézése opciót",
 	"server.mediaservers.a-label-needs-1-to-64": "a címke 1–64 karakter lehet"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "a release hivatkozása az otthoni hálózatod egy másik címére vezetett, ez nem megengedett: ott csak a Forrás saját címe érhető el"
+>>>>>>> fix/422-423-nzbget
 }

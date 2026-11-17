@@ -224,7 +224,7 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		return "", false, err
 	}
 	req := AddRequest{URL: link, File: file, Name: rel.Name, Category: d.Category, SavePath: m.SavePath, InfoHash: hash, Skip: skip,
-		AllowLocal: allowLocal, OperationKey: fmt.Sprintf("%d:%d:%d", d.ID, rel.ID, slotID), Stopped: stopped}
+		AllowLocal: allowLocal, SourceURL: src.URL, OperationKey: fmt.Sprintf("%d:%d:%d", d.ID, rel.ID, slotID), Stopped: stopped}
 	if a != nil {
 		req.AttemptMarker, req.ReconcileOnly = a.marker, !a.created
 	}

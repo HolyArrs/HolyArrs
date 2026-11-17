@@ -103,7 +103,7 @@ type DecisionView struct {
 	Year        *int      `json:"year,omitempty"`
 	Version     string    `json:"version"`
 	Versions    int       `json:"versions"` // how many Versions the Title has
-	Why         string    `json:"why"`      // ran_out, conflict, not_replaced, not_sent, taken
+	Why         string    `json:"why"`      // ran_out, conflict, not_replaced, not_sent, link_refused, taken
 	Reason      string    `json:"reason"`
 	ReleaseID   *int64    `json:"release_id,omitempty"`
 	ReleaseName string    `json:"release_name,omitempty"`
@@ -135,6 +135,9 @@ func why(reason string) string {
 		return "taken"
 	case strings.Contains(reason, "not replaced (setting)"):
 		return "not_replaced"
+	case strings.HasPrefix(reason, "not sent: the Release link"):
+		// The Release link led to an address HolyArrs may not reach.
+		return "link_refused"
 	case strings.HasPrefix(reason, "not sent:"):
 		// No Downloader takes the title's tags.
 		return "not_sent"

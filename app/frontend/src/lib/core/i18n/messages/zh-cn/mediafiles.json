@@ -303,6 +303,7 @@
 	"mediafiles.gate.released": "数字版或光盘发行后",
 	"mediafiles.gate.releasedHelp": "从首个数字版或光盘发行日期起查找。",
 	"mediafiles.title.sent": "已发送到下载器",
+	"mediafiles.title.sending": "正在发送到下载器",
 	"mediafiles.title.warnings": "{n} 条警告",
 	"mediafiles.title.didNotPass": "它没有通过",
 	"mediafiles.title.turnedDown": "资源已排除",

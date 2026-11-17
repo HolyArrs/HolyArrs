@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "Viimeistele käyttöönotto ensin kotiverkossa.",
 	"server.accounts.api-key-changed": "API-avain {label} muutettu",
 	"server.accounts.only-the-owner-and-admins-may-2": "vain sisäänkirjautunut omistaja ja ylläpitäjät voivat muuttaa avainta",
-	"server.metadata.your-router-or-vpn-is-sending": "Reitittimesi tai VPN ohjaa HolyArrsin väärennettyyn osoitteeseen (198.18.x.x). Syy on yleensä Clash tai Surge. Lisää {host} sen suorien yhteyksien listaan."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "Reitittimesi tai VPN ohjaa HolyArrsin väärennettyyn osoitteeseen (198.18.x.x). Syy on yleensä Clash tai Surge. Lisää {host} sen suorien yhteyksien listaan.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "lähetä {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "ota ensin käyttöön Merkitse pyydetyt nimikkeet tunnisteella",
 	"server.mediaservers.a-label-needs-1-to-64": "tunnisteessa on oltava 1–64 merkkiä"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "julkaisun linkki meni kotiverkkosi toiseen osoitteeseen, mikä ei ole sallittua: siellä saa käyttää vain lähteen omaa osoitetta"
+>>>>>>> fix/422-423-nzbget
 }

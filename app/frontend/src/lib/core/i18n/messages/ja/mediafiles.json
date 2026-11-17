@@ -303,6 +303,7 @@
 	"mediafiles.gate.released": "デジタルまたはディスクで発売されてから",
 	"mediafiles.gate.releasedHelp": "最初のデジタルまたはディスクの発売日から探します。",
 	"mediafiles.title.sent": "ダウンローダーに送信しました",
+	"mediafiles.title.sending": "ダウンローダーに送信中",
 	"mediafiles.title.warnings": "{n} 件の警告",
 	"mediafiles.title.didNotPass": "合格しませんでした",
 	"mediafiles.title.turnedDown": "リリースを不採用にしました",

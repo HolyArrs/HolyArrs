@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "Termina primero la configuración en la red de casa.",
 	"server.accounts.api-key-changed": "Clave API {label} cambiada",
 	"server.accounts.only-the-owner-and-admins-may-2": "solo el propietario y los administradores pueden cambiar una clave, con la sesión iniciada",
-	"server.metadata.your-router-or-vpn-is-sending": "Tu router o VPN está enviando HolyArrs a una dirección falsa (198.18.x.x). Suele venir de Clash o Surge. Añade {host} a su lista directa."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "Tu router o VPN está enviando HolyArrs a una dirección falsa (198.18.x.x). Suele venir de Clash o Surge. Añade {host} a su lista directa.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "envía {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "primero activa Etiquetar títulos solicitados",
 	"server.mediaservers.a-label-needs-1-to-64": "una etiqueta necesita de 1 a 64 caracteres"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "el enlace del lanzamiento fue a otra dirección de tu red doméstica, y eso no está permitido: ahí solo se puede acceder a la dirección propia de la Fuente"
+>>>>>>> fix/422-423-nzbget
 }

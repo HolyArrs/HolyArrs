@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "먼저 집 네트워크에서 설정을 마치세요.",
 	"server.accounts.api-key-changed": "API 키 {label}을(를) 변경했습니다",
 	"server.accounts.only-the-owner-and-admins-may-2": "키는 로그인한 소유자와 관리자만 변경할 수 있습니다",
-	"server.metadata.your-router-or-vpn-is-sending": "라우터나 VPN이 HolyArrs를 가짜 주소(198.18.x.x)로 보내고 있습니다. 보통 Clash나 Surge 때문입니다. {host}을(를) 직접 연결 목록에 추가하세요."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "라우터나 VPN이 HolyArrs를 가짜 주소(198.18.x.x)로 보내고 있습니다. 보통 Clash나 Surge 때문입니다. {host}을(를) 직접 연결 목록에 추가하세요.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "{\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false} 을(를) 보내세요",
 	"server.mediaservers.turn-on-label-requested-titles-first": "먼저 요청된 작품에 라벨 붙이기를 켜세요",
 	"server.mediaservers.a-label-needs-1-to-64": "라벨은 1~64자여야 합니다"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "릴리스 링크가 집 네트워크의 다른 주소로 연결되었으며, 이는 허용되지 않습니다. 그곳에서는 소스 자체의 주소에만 접근할 수 있습니다"
+>>>>>>> fix/422-423-nzbget
 }

@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "Hindi natapos ang import nang mag-isa.",
 	"downloads.why.notReplaced": "Inalis ang download nito sa labas ng HolyArrs at hindi ito kusang pinapalitan (setting).",
 	"downloads.why.notSent": "Walang Downloader na nakakuha nito: suriin ang mga tag sa title at ang mga Downloader mo.",
+	"downloads.why.linkRefused": "Hindi ito natanggap ng Downloader: papunta ang link ng Release sa address na hindi pwedeng abutin ng HolyArrs.",
 	"downloads.why.out": "Naubusan ang HolyArrs ng mga Release na pumapasa sa Mga panuntunan sa pagpili.",
 	"downloads.why.taken": "Kinuha ng ibang app ang mga file bago ito ma-import ng HolyArrs.",
 	"downloads.pr.lang.pl": "Polish",

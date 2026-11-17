@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "আগে হোম নেটওয়ার্কে সেটআপ শেষ করুন।",
 	"server.accounts.api-key-changed": "API কী {label} বদলানো হয়েছে",
 	"server.accounts.only-the-owner-and-admins-may-2": "শুধু ওনার ও অ্যাডমিনরা সাইন ইন করে কী বদলাতে পারেন",
-	"server.metadata.your-router-or-vpn-is-sending": "আপনার রাউটার বা VPN HolyArrs-কে একটি ভুয়া ঠিকানায় (198.18.x.x) পাঠাচ্ছে। এটি সাধারণত Clash বা Surge থেকে হয়। {host} এর সরাসরি (direct) তালিকায় যোগ করুন।"
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "আপনার রাউটার বা VPN HolyArrs-কে একটি ভুয়া ঠিকানায় (198.18.x.x) পাঠাচ্ছে। এটি সাধারণত Clash বা Surge থেকে হয়। {host} এর সরাসরি (direct) তালিকায় যোগ করুন।",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "{\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false} পাঠান",
 	"server.mediaservers.turn-on-label-requested-titles-first": "আগে অনুরোধ করা টাইটেলে লেবেল দিন চালু করুন",
 	"server.mediaservers.a-label-needs-1-to-64": "লেবেলে 1 থেকে 64টি অক্ষর লাগবে"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "রিলিজের লিংক তোমার বাড়ির নেটওয়ার্কের অন্য একটি ঠিকানায় গেছে, যা অনুমোদিত নয়: সেখানে শুধু সোর্সের নিজের ঠিকানায় পৌঁছানো যায়"
+>>>>>>> fix/422-423-nzbget
 }

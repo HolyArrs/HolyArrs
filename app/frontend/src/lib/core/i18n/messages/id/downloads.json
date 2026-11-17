@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "Impor tidak bisa selesai sendiri.",
 	"downloads.why.notReplaced": "Unduhannya dihapus di luar HolyArrs dan tidak diganti sendiri (pengaturan).",
 	"downloads.why.notSent": "Tidak ada Pengunduh yang bisa menerimanya: periksa tag pada judul dan Pengunduhmu.",
+	"downloads.why.linkRefused": "Pengunduh tidak pernah menerimanya: tautan Rilis mengarah ke alamat yang tidak boleh dijangkau HolyArrs.",
 	"downloads.why.out": "HolyArrs kehabisan Rilis yang lolos Aturan pilihan.",
 	"downloads.why.taken": "Aplikasi lain mengambil file sebelum HolyArrs sempat mengimpornya.",
 	"downloads.pr.lang.pl": "Polandia",

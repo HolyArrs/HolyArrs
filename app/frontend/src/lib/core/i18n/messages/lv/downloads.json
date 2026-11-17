@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "Importu pats nevarēja pabeigt.",
 	"downloads.why.notReplaced": "Tās lejupielāde tika noņemta ārpus HolyArrs, un to pati neaizstāj (iestatījums).",
 	"downloads.why.notSent": "Neviens Lejupielādētājs to nevarēja paņemt: pārbaudi nosaukuma birkas un savus Lejupielādētājus.",
+	"downloads.why.linkRefused": "Lejupielādētājs to nesaņēma: Izlaiduma saite veda uz adresi, kurai HolyArrs nedrīkst piekļūt.",
 	"downloads.why.out": "HolyArrs beidzās Izlaidumi, kas iztur Izvēles noteikumus.",
 	"downloads.why.taken": "Cita lietotne paņēma failus, pirms HolyArrs tos varēja importēt.",
 	"downloads.pr.lang.pl": "poļu",

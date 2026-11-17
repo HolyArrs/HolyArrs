@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "ตั้งค่าให้เสร็จบนเครือข่ายในบ้านก่อน",
 	"server.accounts.api-key-changed": "เปลี่ยนคีย์ API {label} แล้ว",
 	"server.accounts.only-the-owner-and-admins-may-2": "เฉพาะเจ้าของและผู้ดูแลที่ลงชื่อเข้าใช้แล้วที่เปลี่ยนคีย์ได้",
-	"server.metadata.your-router-or-vpn-is-sending": "เราเตอร์หรือ VPN ของคุณกำลังส่ง HolyArrs ไปยังที่อยู่ปลอม (198.18.x.x) ส่วนใหญ่มาจาก Clash หรือ Surge ให้เพิ่ม {host} ในรายการเชื่อมต่อตรงของมัน"
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "เราเตอร์หรือ VPN ของคุณกำลังส่ง HolyArrs ไปยังที่อยู่ปลอม (198.18.x.x) ส่วนใหญ่มาจาก Clash หรือ Surge ให้เพิ่ม {host} ในรายการเชื่อมต่อตรงของมัน",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "ส่ง {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "เปิด ติดป้ายกำกับเรื่องที่ขอ ก่อน",
 	"server.mediaservers.a-label-needs-1-to-64": "ป้ายกำกับต้องมี 1 ถึง 64 ตัวอักษร"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "ลิงก์ของรีลีสไปยังที่อยู่อื่นในเครือข่ายบ้านของคุณ ซึ่งไม่อนุญาต ที่นั่นเข้าถึงได้เฉพาะที่อยู่ของแหล่งที่มาเองเท่านั้น"
+>>>>>>> fix/422-423-nzbget
 }

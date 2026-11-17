@@ -303,6 +303,7 @@
 	"mediafiles.gate.released": "Once it is out on digital or disc",
 	"mediafiles.gate.releasedHelp": "Look from the first digital or disc date.",
 	"mediafiles.title.sent": "Sent to Downloader",
+	"mediafiles.title.sending": "Sending to Downloader",
 	"mediafiles.title.warnings": "{n} warnings",
 	"mediafiles.title.didNotPass": "it did not pass",
 	"mediafiles.title.turnedDown": "Release turned down",

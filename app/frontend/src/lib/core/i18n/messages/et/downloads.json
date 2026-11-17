@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "Importi ei saanud ise lõpule viia.",
 	"downloads.why.notReplaced": "Selle allalaadimine eemaldati väljaspool HolyArrsi ja seda ei asendata ise (säte).",
 	"downloads.why.notSent": "Ükski allalaadija ei saanud seda vastu võtta: kontrolli pealkirja silte ja oma allalaadijaid.",
+	"downloads.why.linkRefused": "Allalaadija ei saanud seda kätte: väljalaske link viis aadressile, kuhu HolyArrs ei tohi minna.",
 	"downloads.why.out": "HolyArrsil said väljalasked otsa, mis valikureeglid läbivad.",
 	"downloads.why.taken": "Teine rakendus võttis failid, enne kui HolyArrs jõudis neid importida.",
 	"downloads.pr.lang.pl": "poola",

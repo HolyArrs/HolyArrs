@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "Nejprve dokončete nastavení v domácí síti.",
 	"server.accounts.api-key-changed": "Klíč API {label} změněn",
 	"server.accounts.only-the-owner-and-admins-may-2": "klíč smí změnit jen vlastník a správci, po přihlášení",
-	"server.metadata.your-router-or-vpn-is-sending": "Váš router nebo VPN posílá HolyArrs na falešnou adresu (198.18.x.x). Obvykle to způsobuje Clash nebo Surge. Přidejte {host} do jeho seznamu přímých připojení."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "Váš router nebo VPN posílá HolyArrs na falešnou adresu (198.18.x.x). Obvykle to způsobuje Clash nebo Surge. Přidejte {host} do jeho seznamu přímých připojení.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "pošlete {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "nejprve zapněte Označit požadované tituly štítkem",
 	"server.mediaservers.a-label-needs-1-to-64": "štítek musí mít 1 až 64 znaků"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "odkaz release vedl na jinou adresu v tvé domácí síti, což není dovoleno: smí se tam jen na vlastní adresu Zdroje"
+>>>>>>> fix/422-423-nzbget
 }

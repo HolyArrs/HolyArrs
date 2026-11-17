@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "Importul nu a putut fi terminat singur.",
 	"downloads.why.notReplaced": "Descărcarea lui a fost eliminată în afara HolyArrs și nu e înlocuită singură (setare).",
 	"downloads.why.notSent": "Niciun Program de descărcare nu l-a putut lua: verifică etichetele titlului și Programele tale de descărcare.",
+	"downloads.why.linkRefused": "Programul de descărcare nu l-a primit: linkul Lansării ducea la o adresă pe care HolyArrs nu o poate accesa.",
 	"downloads.why.out": "HolyArrs a rămas fără Lansări care trec de Regulile de alegere.",
 	"downloads.why.taken": "O altă aplicație a luat fișierele înainte ca HolyArrs să le poată importa.",
 	"downloads.pr.lang.pl": "poloneză",

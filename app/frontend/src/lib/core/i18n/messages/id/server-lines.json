@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "Selesaikan penyiapan di jaringan rumah dulu.",
 	"server.accounts.api-key-changed": "Kunci API {label} diubah",
 	"server.accounts.only-the-owner-and-admins-may-2": "hanya pemilik dan admin yang sudah masuk yang boleh mengubah kunci",
-	"server.metadata.your-router-or-vpn-is-sending": "Router atau VPN kamu mengirim HolyArrs ke alamat palsu (198.18.x.x). Biasanya ini dari Clash atau Surge. Tambahkan {host} ke daftar direct-nya."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "Router atau VPN kamu mengirim HolyArrs ke alamat palsu (198.18.x.x). Biasanya ini dari Clash atau Surge. Tambahkan {host} ke daftar direct-nya.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "kirim {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "nyalakan dulu Beri label pada judul yang diminta",
 	"server.mediaservers.a-label-needs-1-to-64": "label perlu 1 sampai 64 karakter"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "tautan Rilis menuju alamat lain di jaringan rumahmu, dan itu tidak diizinkan: di sana hanya alamat Sumber itu sendiri yang boleh dijangkau"
+>>>>>>> fix/422-423-nzbget
 }

@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "Uvoz se nije mogao dovršiti sam.",
 	"downloads.why.notReplaced": "Njegovo preuzimanje uklonjeno je izvan HolyArrsa i ne zamjenjuje se samo (postavka).",
 	"downloads.why.notSent": "Nijedan preuzimatelj ga nije mogao prihvatiti: provjeri oznake na naslovu i svoje preuzimatelje.",
+	"downloads.why.linkRefused": "Preuzimatelj ga nije dobio: poveznica izdanja vodila je na adresu do koje HolyArrs ne smije.",
 	"downloads.why.out": "HolyArrsu su ponestala izdanja koja prolaze pravila odabira.",
 	"downloads.why.taken": "Druga aplikacija uzela je datoteke prije nego ih je HolyArrs mogao uvesti.",
 	"downloads.pr.lang.pl": "poljski",

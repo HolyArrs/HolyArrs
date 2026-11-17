@@ -303,6 +303,7 @@
 	"mediafiles.gate.released": "Quando esce in digitale o su disco",
 	"mediafiles.gate.releasedHelp": "Cerca dalla prima data digitale o su disco.",
 	"mediafiles.title.sent": "Inviata al downloader",
+	"mediafiles.title.sending": "Invio al downloader",
 	"mediafiles.title.warnings": "{n} avvertenze",
 	"mediafiles.title.didNotPass": "non ha superato il controllo",
 	"mediafiles.title.turnedDown": "Release scartata",

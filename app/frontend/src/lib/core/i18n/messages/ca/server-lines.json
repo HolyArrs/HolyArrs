@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "Acaba primer la configuració a la xarxa de casa.",
 	"server.accounts.api-key-changed": "Clau d'API {label} canviada",
 	"server.accounts.only-the-owner-and-admins-may-2": "només el propietari i els administradors poden canviar una clau, amb la sessió iniciada",
-	"server.metadata.your-router-or-vpn-is-sending": "El teu router o VPN està enviant HolyArrs a una adreça falsa (198.18.x.x). Normalment ve de Clash o Surge. Afegeix {host} a la seva llista directa."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "El teu router o VPN està enviant HolyArrs a una adreça falsa (198.18.x.x). Normalment ve de Clash o Surge. Afegeix {host} a la seva llista directa.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "envia {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "primer activa Etiqueta els títols demanats",
 	"server.mediaservers.a-label-needs-1-to-64": "una etiqueta necessita d'1 a 64 caràcters"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "l'enllaç del Llançament ha anat a una altra adreça de la teva xarxa domèstica, cosa que no està permesa: només s'hi pot accedir a l'adreça pròpia de la Font"
+>>>>>>> fix/422-423-nzbget
 }

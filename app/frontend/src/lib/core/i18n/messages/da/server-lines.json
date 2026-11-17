@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "Gør opsætningen færdig på hjemmenetværket først.",
 	"server.accounts.api-key-changed": "API-nøglen {label} ændret",
 	"server.accounts.only-the-owner-and-admins-may-2": "kun ejeren og administratorer må ændre en nøgle, når de er logget ind",
-	"server.metadata.your-router-or-vpn-is-sending": "Din router eller VPN sender HolyArrs til en falsk adresse (198.18.x.x). Det kommer som regel fra Clash eller Surge. Tilføj {host} til dens direkte liste."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "Din router eller VPN sender HolyArrs til en falsk adresse (198.18.x.x). Det kommer som regel fra Clash eller Surge. Tilføj {host} til dens direkte liste.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "send {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "slå Sæt etiket på ønskede titler til først",
 	"server.mediaservers.a-label-needs-1-to-64": "en etiket skal have 1 til 64 tegn"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "Udgivelsens link gik til en anden adresse på dit hjemmenetværk, og det er ikke tilladt: kun Kildens egen adresse må nås der"
+>>>>>>> fix/422-423-nzbget
 }

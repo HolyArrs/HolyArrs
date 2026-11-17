@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "Спершу завершіть налаштування в домашній мережі.",
 	"server.accounts.api-key-changed": "Ключ API {label} змінено",
 	"server.accounts.only-the-owner-and-admins-may-2": "змінювати ключ можуть лише власник і адміни після входу",
-	"server.metadata.your-router-or-vpn-is-sending": "Ваш роутер або VPN спрямовує HolyArrs на підроблену адресу (198.18.x.x). Зазвичай це робить Clash або Surge. Додайте {host} до його списку прямих з'єднань."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "Ваш роутер або VPN спрямовує HolyArrs на підроблену адресу (198.18.x.x). Зазвичай це робить Clash або Surge. Додайте {host} до його списку прямих з'єднань.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "надішліть {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "спершу увімкніть Додавати мітку запитаним тайтлам",
 	"server.mediaservers.a-label-needs-1-to-64": "мітка має містити від 1 до 64 символів"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "посилання релізу пішло на іншу адресу у твоїй домашній мережі, а це не дозволено: там можна звертатися лише до власної адреси джерела"
+>>>>>>> fix/422-423-nzbget
 }

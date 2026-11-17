@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "Prvo završite podešavanje na kućnoj mreži.",
 	"server.accounts.api-key-changed": "API кључ {label} је промењен",
 	"server.accounts.only-the-owner-and-admins-may-2": "само пријављени власник и администратори могу да промене кључ",
-	"server.metadata.your-router-or-vpn-is-sending": "Ваш рутер или VPN шаље HolyArrs на лажну адресу (198.18.x.x). То обично долази од Clash-а или Surge-а. Додајте {host} на његову листу директних веза."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "Ваш рутер или VPN шаље HolyArrs на лажну адресу (198.18.x.x). То обично долази од Clash-а или Surge-а. Додајте {host} на његову листу директних веза.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "пошаљите {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "прво укључите Означи тражене наслове",
 	"server.mediaservers.a-label-needs-1-to-64": "ознака мора имати од 1 до 64 знака"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "веза Издања отишла је на другу адресу у твојој кућној мрежи, што није дозвољено: тамо се сме доћи само до сопствене адресе Извора"
+>>>>>>> fix/422-423-nzbget
 }

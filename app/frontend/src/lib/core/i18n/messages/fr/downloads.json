@@ -1230,6 +1230,7 @@
 	"downloads.why.conflict": "L'import n'a pas pu se terminer seul.",
 	"downloads.why.notReplaced": "Son téléchargement a été retiré hors de HolyArrs et n'est pas remplacé automatiquement (paramètre).",
 	"downloads.why.notSent": "Aucun client de téléchargement n'a pu le prendre : vérifiez les étiquettes du titre et vos clients de téléchargement.",
+	"downloads.why.linkRefused": "Le client de téléchargement ne l'a jamais reçu : le lien de la release menait à une adresse que HolyArrs ne peut pas joindre.",
 	"downloads.why.out": "HolyArrs n'a plus de releases qui passent les règles de sélection.",
 	"downloads.why.taken": "Une autre app a pris les fichiers avant que HolyArrs puisse les importer.",
 	"downloads.ot.fromTrash": "De TRaSH Guides ({n})",

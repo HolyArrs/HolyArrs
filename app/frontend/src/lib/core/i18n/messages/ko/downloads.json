@@ -1230,6 +1230,7 @@
 	"downloads.why.conflict": "가져오기를 스스로 마치지 못했습니다.",
 	"downloads.why.notReplaced": "다운로드가 HolyArrs 밖에서 제거되었고 자동으로 대체되지 않습니다(설정).",
 	"downloads.why.notSent": "받을 수 있는 다운로더가 없습니다. 작품의 태그와 다운로더를 확인하세요.",
+	"downloads.why.linkRefused": "다운로더가 받지 못했습니다. 릴리스 링크가 HolyArrs가 접근할 수 없는 주소로 연결되었습니다.",
 	"downloads.why.out": "선택 규칙을 통과하는 릴리스가 더 이상 없습니다.",
 	"downloads.why.taken": "HolyArrs가 가져오기 전에 다른 앱이 파일을 가져갔습니다.",
 	"downloads.ot.fromTrash": "TRaSH Guides에서 ({n})",

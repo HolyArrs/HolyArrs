@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "Import tidak dapat diselesaikan sendiri.",
 	"downloads.why.notReplaced": "Muat turunnya dibuang di luar HolyArrs dan tidak diganti sendiri (tetapan).",
 	"downloads.why.notSent": "Tiada Pemuat turun dapat menerimanya: semak tag pada tajuk dan Pemuat turun anda.",
+	"downloads.why.linkRefused": "Pemuat turun tidak pernah menerimanya: pautan Keluaran menuju alamat yang tidak boleh dicapai oleh HolyArrs.",
 	"downloads.why.out": "HolyArrs kehabisan Keluaran yang lulus Peraturan pilihan.",
 	"downloads.why.taken": "Apl lain mengambil fail sebelum HolyArrs dapat mengimportnya.",
 	"downloads.pr.lang.pl": "Poland",

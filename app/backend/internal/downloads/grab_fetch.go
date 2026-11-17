@@ -16,6 +16,10 @@ import (
 
 var errLinkLocal = releaseRefused{`the Release link leads to a local or blocked address; if this Source is on your home network, turn on "May reach the local network" for it`}
 
+// errLinkOtherLocal is the refusal when the Source may already reach the local
+// network: the link went to another local address than the Source's own.
+var errLinkOtherLocal = releaseRefused{"the Release link went to a different address on your home network, which is not allowed: only the Source's own address may be reached there"}
+
 var sabMaxNZB int64 = 128 << 20
 
 var (
@@ -85,10 +89,14 @@ func fetchGrabLinkHeader(ctx context.Context, raw string, limit int64, rt http.R
 			return nil, "", ctx.Err()
 		}
 		if errors.Is(err, outbound.ErrAddressRefused) || errors.Is(err, errLinkLocal) {
-			if proxied {
-				return nil, "", errors.New(errLinkLocal.msg)
+			refused := errLinkLocal
+			if localHost != "" && errors.Is(err, outbound.ErrAddressRefused) {
+				refused = errLinkOtherLocal
 			}
-			return nil, "", errLinkLocal
+			if proxied {
+				return nil, "", errors.New(refused.msg)
+			}
+			return nil, "", refused
 		}
 		return nil, "", errors.New("the Release file could not be read from its Source")
 	}

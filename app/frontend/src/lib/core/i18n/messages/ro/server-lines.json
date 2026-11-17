@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "Termină mai întâi configurarea în rețeaua de acasă.",
 	"server.accounts.api-key-changed": "Cheia API {label} modificată",
 	"server.accounts.only-the-owner-and-admins-may-2": "doar proprietarul și administratorii, autentificați, pot modifica o cheie",
-	"server.metadata.your-router-or-vpn-is-sending": "Routerul sau VPN-ul tău trimite HolyArrs la o adresă falsă (198.18.x.x). De obicei vine de la Clash sau Surge. Adaugă {host} în lista lui directă."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "Routerul sau VPN-ul tău trimite HolyArrs la o adresă falsă (198.18.x.x). De obicei vine de la Clash sau Surge. Adaugă {host} în lista lui directă.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "trimite {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "activează mai întâi Etichetează titlurile cerute",
 	"server.mediaservers.a-label-needs-1-to-64": "o etichetă are nevoie de 1 până la 64 de caractere"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "linkul Lansării a mers la o altă adresă din rețeaua ta de acasă, iar asta nu e permis: acolo se poate accesa doar adresa proprie a Sursei"
+>>>>>>> fix/422-423-nzbget
 }

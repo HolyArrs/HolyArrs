@@ -303,6 +303,7 @@
 	"mediafiles.gate.released": "Zodra hij uit is op digitaal of schijf",
 	"mediafiles.gate.releasedHelp": "Zoek vanaf de eerste digitale datum of schijfdatum.",
 	"mediafiles.title.sent": "Naar Downloader gestuurd",
+	"mediafiles.title.sending": "Wordt naar Downloader gestuurd",
 	"mediafiles.title.warnings": "{n} waarschuwingen",
 	"mediafiles.title.didNotPass": "hij is niet geslaagd",
 	"mediafiles.title.turnedDown": "Release afgekeurd",

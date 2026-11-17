@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "Tuonti ei voinut valmistua itsestään.",
 	"downloads.why.notReplaced": "Sen lataus poistettiin HolyArrsin ulkopuolella eikä sitä korvata automaattisesti (asetus).",
 	"downloads.why.notSent": "Mikään lataaja ei voinut ottaa sitä: tarkista nimikkeen tunnisteet ja lataajasi.",
+	"downloads.why.linkRefused": "Lataaja ei saanut sitä: julkaisun linkki vei osoitteeseen, johon HolyArrs ei saa mennä.",
 	"downloads.why.out": "HolyArrsilta loppuivat valintasäännöt läpäisevät julkaisut.",
 	"downloads.why.taken": "Toinen sovellus otti tiedostot, ennen kuin HolyArrs ehti tuoda ne.",
 	"downloads.pr.lang.pl": "puola",

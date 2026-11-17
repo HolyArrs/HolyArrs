@@ -303,6 +303,7 @@
 	"mediafiles.gate.released": "После выхода в цифре или на диске",
 	"mediafiles.gate.releasedHelp": "Искать с первой даты цифрового или дискового выхода.",
 	"mediafiles.title.sent": "Отправлено в загрузчик",
+	"mediafiles.title.sending": "Отправляется в загрузчик",
 	"mediafiles.title.warnings": "Предупреждений: {n}",
 	"mediafiles.title.didNotPass": "не прошёл",
 	"mediafiles.title.turnedDown": "Релиз отброшен",

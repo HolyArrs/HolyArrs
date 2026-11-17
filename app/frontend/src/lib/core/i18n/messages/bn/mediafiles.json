@@ -302,6 +302,7 @@
 	"mediafiles.gate.released": "ডিজিটাল বা ডিস্কে বেরোলে",
 	"mediafiles.gate.releasedHelp": "প্রথম ডিজিটাল বা ডিস্কের তারিখ থেকে খুঁজুন।",
 	"mediafiles.title.sent": "ডাউনলোডারে পাঠানো হয়েছে",
+	"mediafiles.title.sending": "ডাউনলোডারে পাঠানো হচ্ছে",
 	"mediafiles.title.warnings": "{n}টি সতর্কতা",
 	"mediafiles.title.didNotPass": "এটি পাস করেনি",
 	"mediafiles.title.turnedDown": "রিলিজ বাতিল হয়েছে",

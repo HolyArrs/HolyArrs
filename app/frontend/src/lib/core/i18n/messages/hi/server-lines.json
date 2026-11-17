@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "पहले घर के नेटवर्क पर सेटअप पूरा करें।",
 	"server.accounts.api-key-changed": "API कुंजी {label} बदली गई",
 	"server.accounts.only-the-owner-and-admins-may-2": "कुंजी सिर्फ़ साइन इन किए ओनर और एडमिन बदल सकते हैं",
-	"server.metadata.your-router-or-vpn-is-sending": "आपका राउटर या VPN HolyArrs को एक नकली पते (198.18.x.x) पर भेज रहा है। यह आमतौर पर Clash या Surge से होता है। {host} को उसकी डायरेक्ट सूची में जोड़ें।"
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "आपका राउटर या VPN HolyArrs को एक नकली पते (198.18.x.x) पर भेज रहा है। यह आमतौर पर Clash या Surge से होता है। {host} को उसकी डायरेक्ट सूची में जोड़ें।",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "{\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false} भेजें",
 	"server.mediaservers.turn-on-label-requested-titles-first": "पहले अनुरोधित टाइटल पर लेबल लगाएँ चालू करें",
 	"server.mediaservers.a-label-needs-1-to-64": "लेबल में 1 से 64 अक्षर होने चाहिए"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "रिलीज़ का लिंक तुम्हारे घर के नेटवर्क के किसी दूसरे पते पर गया, जिसकी अनुमति नहीं है: वहां सिर्फ़ सोर्स के अपने पते तक पहुंचा जा सकता है"
+>>>>>>> fix/422-423-nzbget
 }

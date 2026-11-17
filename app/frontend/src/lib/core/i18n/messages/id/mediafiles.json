@@ -302,6 +302,7 @@
 	"mediafiles.gate.released": "Begitu rilis digital atau cakram",
 	"mediafiles.gate.releasedHelp": "Cari mulai tanggal rilis digital atau cakram pertama.",
 	"mediafiles.title.sent": "Dikirim ke Pengunduh",
+	"mediafiles.title.sending": "Mengirim ke Pengunduh",
 	"mediafiles.title.warnings": "{n} peringatan",
 	"mediafiles.title.didNotPass": "tidak lolos",
 	"mediafiles.title.turnedDown": "Rilis ditolak",

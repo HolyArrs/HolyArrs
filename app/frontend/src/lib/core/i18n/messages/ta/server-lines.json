@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "முதலில் வீட்டு நெட்வொர்க்கில் அமைப்பை முடிக்கவும்.",
 	"server.accounts.api-key-changed": "API விசை {label} மாற்றப்பட்டது",
 	"server.accounts.only-the-owner-and-admins-may-2": "உள்நுழைந்த உரிமையாளரும் நிர்வாகிகளும் மட்டுமே விசையை மாற்றலாம்",
-	"server.metadata.your-router-or-vpn-is-sending": "உங்கள் ரூட்டர் அல்லது VPN HolyArrs-ஐ ஒரு போலி முகவரிக்கு (198.18.x.x) அனுப்புகிறது. இது பொதுவாக Clash அல்லது Surge காரணமாக வருகிறது. {host}-ஐ அதன் நேரடி பட்டியலில் சேர்க்கவும்."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "உங்கள் ரூட்டர் அல்லது VPN HolyArrs-ஐ ஒரு போலி முகவரிக்கு (198.18.x.x) அனுப்புகிறது. இது பொதுவாக Clash அல்லது Surge காரணமாக வருகிறது. {host}-ஐ அதன் நேரடி பட்டியலில் சேர்க்கவும்.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "{\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false} அனுப்பவும்",
 	"server.mediaservers.turn-on-label-requested-titles-first": "முதலில் கோரப்பட்ட தலைப்புகளுக்கு லேபிள் இடு என்பதை இயக்கவும்",
 	"server.mediaservers.a-label-needs-1-to-64": "லேபிளில் 1 முதல் 64 எழுத்துகள் இருக்க வேண்டும்"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "வெளியீட்டின் இணைப்பு உன் வீட்டு நெட்வொர்க்கில் வேறொரு முகவரிக்குச் சென்றது, அது அனுமதிக்கப்படவில்லை: அங்கே மூலத்தின் சொந்த முகவரியை மட்டுமே அணுகலாம்"
+>>>>>>> fix/422-423-nzbget
 }

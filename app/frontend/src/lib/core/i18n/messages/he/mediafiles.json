@@ -302,6 +302,7 @@
 	"mediafiles.gate.released": "ברגע שהוא יוצא בדיגיטל או בדיסק",
 	"mediafiles.gate.releasedHelp": "לחפש מהתאריך הדיגיטלי או הדיסק הראשון.",
 	"mediafiles.title.sent": "נשלח למוריד",
+	"mediafiles.title.sending": "שולח למוריד",
 	"mediafiles.title.warnings": "{n} אזהרות",
 	"mediafiles.title.didNotPass": "הוא לא עבר",
 	"mediafiles.title.turnedDown": "הריליז נפסל",

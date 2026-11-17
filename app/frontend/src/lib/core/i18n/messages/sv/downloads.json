@@ -1228,6 +1228,7 @@
 	"downloads.why.conflict": "Importen kunde inte slutföras på egen hand.",
 	"downloads.why.notReplaced": "Dess nedladdning togs bort utanför HolyArrs och ersätts inte av sig själv (inställning).",
 	"downloads.why.notSent": "Ingen nedladdare kunde ta den: kontrollera taggarna på titeln och dina nedladdare.",
+	"downloads.why.linkRefused": "Nedladdaren fick den aldrig: releasens länk ledde till en adress som HolyArrs inte får nå.",
 	"downloads.why.out": "HolyArrs fick slut på releaser som klarar valreglerna.",
 	"downloads.why.taken": "En annan app tog filerna innan HolyArrs hann importera dem.",
 	"downloads.pr.lang.pl": "Polska",

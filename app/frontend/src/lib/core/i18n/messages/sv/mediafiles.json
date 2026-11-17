@@ -302,6 +302,7 @@
 	"mediafiles.gate.released": "När den kommit ut digitalt eller på skiva",
 	"mediafiles.gate.releasedHelp": "Sök från det första digitala datumet eller skivdatumet.",
 	"mediafiles.title.sent": "Skickad till nedladdaren",
+	"mediafiles.title.sending": "Skickar till nedladdaren",
 	"mediafiles.title.warnings": "{n} varningar",
 	"mediafiles.title.didNotPass": "den klarade sig inte",
 	"mediafiles.title.turnedDown": "Releasen nekades",

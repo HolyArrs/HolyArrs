@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "Ολοκληρώστε πρώτα τη ρύθμιση στο οικιακό δίκτυο.",
 	"server.accounts.api-key-changed": "Το κλειδί API «{label}» άλλαξε",
 	"server.accounts.only-the-owner-and-admins-may-2": "μόνο ο ιδιοκτήτης και οι διαχειριστές μπορούν να αλλάξουν κλειδί, συνδεδεμένοι",
-	"server.metadata.your-router-or-vpn-is-sending": "Ο δρομολογητής ή το VPN σας στέλνει το HolyArrs σε ψεύτικη διεύθυνση (198.18.x.x). Συνήθως αυτό οφείλεται στο Clash ή στο Surge. Προσθέστε το {host} στη λίστα άμεσης σύνδεσής του."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "Ο δρομολογητής ή το VPN σας στέλνει το HolyArrs σε ψεύτικη διεύθυνση (198.18.x.x). Συνήθως αυτό οφείλεται στο Clash ή στο Surge. Προσθέστε το {host} στη λίστα άμεσης σύνδεσής του.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "στείλτε {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "ενεργοποιήστε πρώτα την Ετικέτα στους τίτλους που ζητήθηκαν",
 	"server.mediaservers.a-label-needs-1-to-64": "η ετικέτα χρειάζεται 1 έως 64 χαρακτήρες"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "ο σύνδεσμος της κυκλοφορίας πήγε σε άλλη διεύθυνση του οικιακού σου δικτύου, κάτι που δεν επιτρέπεται: εκεί επιτρέπεται μόνο η δική διεύθυνση της Πηγής"
+>>>>>>> fix/422-423-nzbget
 }

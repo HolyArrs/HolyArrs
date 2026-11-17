@@ -302,6 +302,7 @@
 	"mediafiles.gate.released": "เมื่อออกทางดิจิทัลหรือแผ่นแล้ว",
 	"mediafiles.gate.releasedHelp": "มองหาตั้งแต่วันดิจิทัลหรือแผ่นวันแรก",
 	"mediafiles.title.sent": "ส่งไปที่ตัวดาวน์โหลดแล้ว",
+	"mediafiles.title.sending": "กำลังส่งไปที่ตัวดาวน์โหลด",
 	"mediafiles.title.warnings": "คำเตือน {n} รายการ",
 	"mediafiles.title.didNotPass": "ไม่ผ่าน",
 	"mediafiles.title.turnedDown": "ปฏิเสธรีลีสแล้ว",

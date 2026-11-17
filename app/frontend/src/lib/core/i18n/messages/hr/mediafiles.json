@@ -302,6 +302,7 @@
 	"mediafiles.gate.released": "Kad izađe digitalno ili na disku",
 	"mediafiles.gate.releasedHelp": "Traži od prvog digitalnog datuma ili datuma diska.",
 	"mediafiles.title.sent": "Poslano preuzimatelju",
+	"mediafiles.title.sending": "Šalje se preuzimatelju",
 	"mediafiles.title.warnings": "Upozorenja: {n}",
 	"mediafiles.title.didNotPass": "nije prošlo",
 	"mediafiles.title.turnedDown": "Izdanje je odbačeno",

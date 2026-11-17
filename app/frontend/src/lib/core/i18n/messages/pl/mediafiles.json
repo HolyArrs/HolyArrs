@@ -303,6 +303,7 @@
 	"mediafiles.gate.released": "Gdy wyjdzie cyfrowo lub na płycie",
 	"mediafiles.gate.releasedHelp": "Szukaj od pierwszej daty wydania cyfrowego lub na płycie.",
 	"mediafiles.title.sent": "Wysłano do Downloadera",
+	"mediafiles.title.sending": "Wysyłanie do Downloadera",
 	"mediafiles.title.warnings": "Ostrzeżenia: {n}",
 	"mediafiles.title.didNotPass": "nie przeszedł",
 	"mediafiles.title.turnedDown": "Release odrzucony na stałe",

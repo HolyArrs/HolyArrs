@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "Finish setup on the home network first.",
 	"server.accounts.api-key-changed": "API key {label} changed",
 	"server.accounts.only-the-owner-and-admins-may-2": "only the owner and admins may change a key, signed in",
-	"server.metadata.your-router-or-vpn-is-sending": "Your router or VPN is sending HolyArrs to a fake address (198.18.x.x). This usually comes from Clash or Surge. Add {host} to its direct list."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "Your router or VPN is sending HolyArrs to a fake address (198.18.x.x). This usually comes from Clash or Surge. Add {host} to its direct list.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "send {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "turn on Label requested titles first",
 	"server.mediaservers.a-label-needs-1-to-64": "a label needs 1 to 64 characters"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "the Release link went to a different address on your home network, which is not allowed: only the Source's own address may be reached there"
+>>>>>>> fix/422-423-nzbget
 }

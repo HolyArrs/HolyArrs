@@ -302,6 +302,7 @@
 	"mediafiles.gate.released": "Μόλις βγει ψηφιακά ή σε δίσκο",
 	"mediafiles.gate.releasedHelp": "Αναζήτηση από την πρώτη ψηφιακή ημερομηνία ή ημερομηνία δίσκου.",
 	"mediafiles.title.sent": "Στάλθηκε στο Πρόγραμμα λήψης",
+	"mediafiles.title.sending": "Αποστολή στο Πρόγραμμα λήψης",
 	"mediafiles.title.warnings": "{n} προειδοποιήσεις",
 	"mediafiles.title.didNotPass": "δεν πέρασε",
 	"mediafiles.title.turnedDown": "Η κυκλοφορία απορρίφθηκε",

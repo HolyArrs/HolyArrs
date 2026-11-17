@@ -302,6 +302,7 @@
   "mediafiles.gate.released": "Þegar hún er út á stafrænu formi eða diski",
   "mediafiles.gate.releasedHelp": "Leita frá fyrsta stafræna degi eða disksdegi.",
   "mediafiles.title.sent": "Sent til niðurhalara",
+	"mediafiles.title.sending": "Sendi til niðurhalara",
   "mediafiles.title.warnings": "{n} viðvaranir",
   "mediafiles.title.didNotPass": "hún stóðst ekki",
   "mediafiles.title.turnedDown": "Útgáfu hafnað",

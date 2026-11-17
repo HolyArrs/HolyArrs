@@ -1377,10 +1377,11 @@
 	"server.accounts.finish-setup-on-the-home-network": "Lõpeta seadistus kõigepealt koduvõrgus.",
 	"server.accounts.api-key-changed": "API võti {label} muudetud",
 	"server.accounts.only-the-owner-and-admins-may-2": "võtit tohivad muuta ainult sisse loginud omanik ja administraatorid",
-	"server.metadata.your-router-or-vpn-is-sending": "Sinu ruuter või VPN saadab HolyArrsi võltsaadressile (198.18.x.x). Tavaliselt tuleb see Clashist või Surge'ist. Lisa {host} selle otseühenduse loendisse."
-=======
+	"server.metadata.your-router-or-vpn-is-sending": "Sinu ruuter või VPN saadab HolyArrsi võltsaadressile (198.18.x.x). Tavaliselt tuleb see Clashist või Surge'ist. Lisa {host} selle otseühenduse loendisse.",
 	"server.mediaservers.send-enabled-true-label-holyarrs-askers": "saada {\"enabled\": true, \"label\": \"holyarrs\", \"askers\": false}",
 	"server.mediaservers.turn-on-label-requested-titles-first": "lülita esmalt sisse Lisa soovitud pealkirjadele silt",
 	"server.mediaservers.a-label-needs-1-to-64": "silt peab olema 1 kuni 64 märki"
->>>>>>> feat/407-plex-labels
+=======
+	"server.downloads.the-release-link-went-to-a": "väljalaske link läks sinu koduvõrgus teisele aadressile, mis pole lubatud: seal tohib minna ainult allika enda aadressile"
+>>>>>>> fix/422-423-nzbget
 }
