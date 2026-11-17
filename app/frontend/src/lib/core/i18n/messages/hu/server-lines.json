@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "a jelszava",
 	"server.migrate.your-secret-token-line": "a titkos tokenje",
 	"server.core.it-does-not-answer-holyarrs-tries": "Nem válaszol; a HolyArrs magától újrapróbálkozik.",
+	"server.parts.turned-off-in-the-part-switches": "A részek kapcsolóinál kikapcsolva.",
 	"server.downloads.app-must-be-sonarr-shows-or": "az app sonarr (sorozatok) vagy radarr (filmek) legyen",
 	"server.library.deleted-from-the-library-3": "törölve a Médiatárból",
 	"server.migrate.its-movie-series": "{name}: a filmsorozata",

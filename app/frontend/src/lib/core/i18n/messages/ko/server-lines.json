@@ -1075,6 +1075,7 @@
 	"server.migrate.your-password-line": "내 비밀번호",
 	"server.migrate.your-secret-token-line": "내 시크릿 토큰",
 	"server.core.it-does-not-answer-holyarrs-tries": "응답하지 않습니다. HolyArrs가 알아서 다시 시도합니다.",
+	"server.parts.turned-off-in-the-part-switches": "파트 스위치에서 꺼졌습니다.",
 	"server.downloads.app-must-be-sonarr-shows-or": "앱은 sonarr(시리즈) 또는 radarr(영화)여야 합니다",
 	"server.library.deleted-from-the-library-3": "라이브러리에서 삭제됨",
 	"server.migrate.its-movie-series": "{name}: 소속 영화 시리즈",

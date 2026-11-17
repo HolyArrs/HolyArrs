@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "mật khẩu của bạn",
 	"server.migrate.your-secret-token-line": "token bí mật của bạn",
 	"server.core.it-does-not-answer-holyarrs-tries": "Nó không phản hồi; HolyArrs tự thử lại.",
+	"server.parts.turned-off-in-the-part-switches": "Đã tắt trong công tắc các phần.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app phải là sonarr (phim bộ) hoặc radarr (phim)",
 	"server.library.deleted-from-the-library-3": "đã xóa khỏi Thư viện",
 	"server.migrate.its-movie-series": "{name}: loạt phim của nó",

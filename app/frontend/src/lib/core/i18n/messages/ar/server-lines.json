@@ -1075,6 +1075,7 @@
 	"server.migrate.your-password-line": "كلمة مرورك",
 	"server.migrate.your-secret-token-line": "رمزك السري",
 	"server.core.it-does-not-answer-holyarrs-tries": "لا يستجيب؛ يحاول HolyArrs مجددًا من تلقاء نفسه.",
+	"server.parts.turned-off-in-the-part-switches": "أُوقف من مفاتيح الأجزاء.",
 	"server.downloads.app-must-be-sonarr-shows-or": "يجب أن يكون التطبيق sonarr (المسلسلات) أو radarr (الأفلام)",
 	"server.library.deleted-from-the-library-3": "حُذف من المكتبة",
 	"server.migrate.its-movie-series": "{name}: سلسلة أفلامه",

@@ -1075,6 +1075,7 @@
 	"server.migrate.your-password-line": "tu contraseña",
 	"server.migrate.your-secret-token-line": "tu token secreto",
 	"server.core.it-does-not-answer-holyarrs-tries": "No responde; HolyArrs lo intenta de nuevo por su cuenta.",
+	"server.parts.turned-off-in-the-part-switches": "Desactivado en los interruptores de partes.",
 	"server.downloads.app-must-be-sonarr-shows-or": "la app debe ser sonarr (series) o radarr (películas)",
 	"server.library.deleted-from-the-library-3": "eliminado de la Biblioteca",
 	"server.migrate.its-movie-series": "{name}: su saga de películas",

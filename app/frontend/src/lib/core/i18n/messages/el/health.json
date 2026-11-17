@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "Λήψεις σε αναμονή για αρχεία",
 	"health.link.downloader": "Πρόγραμμα λήψης",
 	"health.link.mediaServer": "Διακομιστής πολυμέσων",
+	"health.link.outsideCall": "Εξωτερική υπηρεσία",
 	"health.link.part": "Ενότητα",
 	"health.link.source": "Πηγή",
 	"health.link.stage": "Στάδιο",

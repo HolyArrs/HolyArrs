@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "vaše heslo",
 	"server.migrate.your-secret-token-line": "váš tajný token",
 	"server.core.it-does-not-answer-holyarrs-tries": "Neodpovídá; HolyArrs to zkusí znovu sám.",
+	"server.parts.turned-off-in-the-part-switches": "Vypnuto v přepínačích částí.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app musí být sonarr (seriály) nebo radarr (filmy)",
 	"server.library.deleted-from-the-library-3": "smazáno z knihovny",
 	"server.migrate.its-movie-series": "{name}: jeho filmová série",

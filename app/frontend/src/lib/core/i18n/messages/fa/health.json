@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "دانلودهای منتظر فایل",
 	"health.link.downloader": "دانلودر",
 	"health.link.mediaServer": "سرور رسانه",
+	"health.link.outsideCall": "سرویس بیرونی",
 	"health.link.part": "بخش",
 	"health.link.source": "منبع",
 	"health.link.stage": "مرحله",

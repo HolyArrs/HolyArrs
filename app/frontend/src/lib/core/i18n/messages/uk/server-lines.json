@@ -1075,6 +1075,7 @@
 	"server.migrate.your-password-line": "твій пароль",
 	"server.migrate.your-secret-token-line": "твій секретний токен",
 	"server.core.it-does-not-answer-holyarrs-tries": "Не відповідає; HolyArrs спробує знову сам.",
+	"server.parts.turned-off-in-the-part-switches": "Вимкнено перемикачами частин.",
 	"server.downloads.app-must-be-sonarr-shows-or": "застосунок має бути sonarr (серіали) або radarr (фільми)",
 	"server.library.deleted-from-the-library-3": "видалено з Медіатеки",
 	"server.migrate.its-movie-series": "{name}: його серія фільмів",

@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "رمز عبورت",
 	"server.migrate.your-secret-token-line": "توکن مخفی‌ات",
 	"server.core.it-does-not-answer-holyarrs-tries": "پاسخ نمی‌دهد؛ HolyArrs خودش دوباره تلاش می‌کند.",
+	"server.parts.turned-off-in-the-part-switches": "در کلیدهای بخش‌ها خاموش شده است.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app باید sonarr (سریال‌ها) یا radarr (فیلم‌ها) باشد",
 	"server.library.deleted-from-the-library-3": "از کتابخانه حذف شد",
 	"server.migrate.its-movie-series": "{name}: سری فیلم‌هایش",

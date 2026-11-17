@@ -92,6 +92,7 @@
 	"health.kind.saveFolder": "Pasta de salvamento do gerenciador de downloads",
 	"health.link.downloader": "Gerenciador de downloads",
 	"health.link.mediaServer": "Servidor de mídia",
+	"health.link.outsideCall": "Serviço externo",
 	"health.link.part": "Parte",
 	"health.link.source": "Fonte",
 	"health.link.stage": "Etapa",

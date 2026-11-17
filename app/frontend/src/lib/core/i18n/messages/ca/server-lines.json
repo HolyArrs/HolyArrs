@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "la teva contrasenya",
 	"server.migrate.your-secret-token-line": "el teu testimoni secret",
 	"server.core.it-does-not-answer-holyarrs-tries": "No respon; HolyArrs ho torna a provar per si sol.",
+	"server.parts.turned-off-in-the-part-switches": "Desactivat als interruptors de parts.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app ha de ser sonarr (sèries) o radarr (pel·lícules)",
 	"server.library.deleted-from-the-library-3": "suprimit de la Biblioteca",
 	"server.migrate.its-movie-series": "{name}: la seva saga de pel·lícules",

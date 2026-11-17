@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "password mo",
 	"server.migrate.your-secret-token-line": "secret token mo",
 	"server.core.it-does-not-answer-holyarrs-tries": "Hindi ito sumasagot; susubukan itong muli ng HolyArrs nang mag-isa.",
+	"server.parts.turned-off-in-the-part-switches": "Pinatay sa mga switch ng bahagi.",
 	"server.downloads.app-must-be-sonarr-shows-or": "dapat sonarr (mga show) o radarr (mga pelikula) ang app",
 	"server.library.deleted-from-the-library-3": "na-delete sa Library",
 	"server.migrate.its-movie-series": "{name}: ang serye ng pelikula nito",

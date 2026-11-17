@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "Preuzimanja čekaju datoteke",
 	"health.link.downloader": "Preuzimatelj",
 	"health.link.mediaServer": "Medijski poslužitelj",
+	"health.link.outsideCall": "Vanjska usluga",
 	"health.link.part": "Dio",
 	"health.link.source": "Izvor",
 	"health.link.stage": "Faza",

@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "вашата парола",
 	"server.migrate.your-secret-token-line": "вашият таен токен",
 	"server.core.it-does-not-answer-holyarrs-tries": "Не отговаря; HolyArrs опитва отново сам.",
+	"server.parts.turned-off-in-the-part-switches": "Изключено от превключвателите на частите.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app трябва да е sonarr (сериали) или radarr (филми)",
 	"server.library.deleted-from-the-library-3": "изтрито от библиотеката",
 	"server.migrate.its-movie-series": "{name}: филмовата му серия",

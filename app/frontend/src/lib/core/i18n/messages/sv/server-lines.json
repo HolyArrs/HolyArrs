@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "ditt lösenord",
 	"server.migrate.your-secret-token-line": "din hemliga token",
 	"server.core.it-does-not-answer-holyarrs-tries": "Den svarar inte; HolyArrs försöker igen på egen hand.",
+	"server.parts.turned-off-in-the-part-switches": "Avstängd i delbrytarna.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app måste vara sonarr (serier) eller radarr (filmer)",
 	"server.library.deleted-from-the-library-3": "raderad från Biblioteket",
 	"server.migrate.its-movie-series": "{name}: dess filmserie",

@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "你的密碼",
 	"server.migrate.your-secret-token-line": "你的金鑰權杖",
 	"server.core.it-does-not-answer-holyarrs-tries": "它沒有回應；HolyArrs 會自動重試。",
+	"server.parts.turned-off-in-the-part-switches": "已在部件開關中關閉。",
 	"server.downloads.app-must-be-sonarr-shows-or": "應用程式必須是 sonarr（影集）或 radarr（電影）",
 	"server.library.deleted-from-the-library-3": "已從媒體庫刪除",
 	"server.migrate.its-movie-series": "{name}：它所屬的電影系列",

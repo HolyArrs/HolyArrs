@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "下載在等待檔案",
 	"health.link.downloader": "下載器",
 	"health.link.mediaServer": "媒體伺服器",
+	"health.link.outsideCall": "外部服務",
 	"health.link.part": "功能模組",
 	"health.link.source": "來源",
 	"health.link.stage": "環節",

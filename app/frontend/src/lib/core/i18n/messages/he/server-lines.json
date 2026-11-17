@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "הסיסמה שלך",
 	"server.migrate.your-secret-token-line": "אסימון הסוד שלך",
 	"server.core.it-does-not-answer-holyarrs-tries": "הוא לא עונה; HolyArrs מנסה שוב בעצמו.",
+	"server.parts.turned-off-in-the-part-switches": "כובה במתגי החלקים.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app חייב להיות sonarr (סדרות) או radarr (סרטים)",
 	"server.library.deleted-from-the-library-3": "נמחק מהספרייה",
 	"server.migrate.its-movie-series": "{name}: סדרת הסרטים שלו",

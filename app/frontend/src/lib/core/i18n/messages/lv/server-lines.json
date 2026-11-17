@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "tava parole",
 	"server.migrate.your-secret-token-line": "tavs slepenais marķieris",
 	"server.core.it-does-not-answer-holyarrs-tries": "Tas neatbild; HolyArrs mēģina pats vēlreiz.",
+	"server.parts.turned-off-in-the-part-switches": "Izslēgts daļu slēdžos.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app jābūt sonarr (seriāli) vai radarr (filmas)",
 	"server.library.deleted-from-the-library-3": "dzēsts no Bibliotēkas",
 	"server.migrate.its-movie-series": "{name}: tā filmu sērijas",

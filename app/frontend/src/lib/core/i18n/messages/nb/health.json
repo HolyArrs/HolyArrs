@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "Nedlastinger som venter på filer",
 	"health.link.downloader": "Nedlaster",
 	"health.link.mediaServer": "Medieserver",
+	"health.link.outsideCall": "Ekstern tjeneste",
 	"health.link.part": "Del",
 	"health.link.source": "Kilde",
 	"health.link.stage": "Trinn",

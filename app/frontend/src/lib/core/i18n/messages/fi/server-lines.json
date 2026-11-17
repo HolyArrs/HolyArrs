@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "salasanasi",
 	"server.migrate.your-secret-token-line": "salaisen tunnisteesi",
 	"server.core.it-does-not-answer-holyarrs-tries": "Se ei vastaa; HolyArrs yrittää itse uudelleen.",
+	"server.parts.turned-off-in-the-part-switches": "Kytketty pois osien kytkimistä.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app on sonarr (sarjat) tai radarr (elokuvat)",
 	"server.library.deleted-from-the-library-3": "poistettu Kirjastosta",
 	"server.migrate.its-movie-series": "{name}: sen elokuvasarja",

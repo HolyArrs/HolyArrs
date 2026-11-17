@@ -92,6 +92,7 @@
 	"health.kind.saveFolder": "ダウンローダーの保存先フォルダー",
 	"health.link.downloader": "ダウンローダー",
 	"health.link.mediaServer": "メディアサーバー",
+	"health.link.outsideCall": "外部サービス",
 	"health.link.part": "パート",
 	"health.link.source": "ソース",
 	"health.link.stage": "ステージ",

@@ -92,6 +92,7 @@
 	"health.kind.saveFolder": "Папка сохранения загрузчика",
 	"health.link.downloader": "Загрузчик",
 	"health.link.mediaServer": "Медиасервер",
+	"health.link.outsideCall": "Внешний сервис",
 	"health.link.part": "Часть",
 	"health.link.source": "Источник",
 	"health.link.stage": "Этап",

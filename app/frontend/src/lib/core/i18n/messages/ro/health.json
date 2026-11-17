@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "Descărcări care așteaptă fișiere",
 	"health.link.downloader": "Program de descărcare",
 	"health.link.mediaServer": "Server media",
+	"health.link.outsideCall": "Serviciu extern",
 	"health.link.part": "Modul",
 	"health.link.source": "Sursă",
 	"health.link.stage": "Etapă",
