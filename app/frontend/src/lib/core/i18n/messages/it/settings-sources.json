@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Sito",
 	"settings.sources.addressSite": "L’indirizzo del sito. Cambialo solo se il sito si è spostato.",
 	"settings.sources.siteKeyLabel": "Cookie o chiave RSS",
-	"settings.sources.siteKeyHint": "Dal tuo account: uid e pass dal cookie del browser, oppure u e tp dal tuo link RSS. Conservato cifrato."
+	"settings.sources.siteKeyHint": "Dal tuo account: uid e pass dal cookie del browser, oppure u e tp dal tuo link RSS. Conservato cifrato.",
+	"settings.sources.sendTo": "Invia i download a",
+	"settings.sources.sendToAny": "Qualsiasi downloader",
+	"settings.sources.sendToHint": "Tutto ciò che viene scelto da questa fonte va solo a questo downloader. Se non funziona, aspetta.",
+	"settings.sources.sendToGone": "Il downloader scelto è stato rimosso. I download di questa fonte ora vanno a qualsiasi downloader."
 }

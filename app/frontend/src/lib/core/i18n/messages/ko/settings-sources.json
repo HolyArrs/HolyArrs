@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "사이트",
 	"settings.sources.addressSite": "사이트 자체의 주소입니다. 사이트가 옮겨진 경우에만 바꾸세요.",
 	"settings.sources.siteKeyLabel": "쿠키 또는 RSS 키",
-	"settings.sources.siteKeyHint": "내 계정에서: 브라우저 쿠키의 uid와 pass, 또는 RSS 링크의 u와 tp. 암호화되어 보관됩니다."
+	"settings.sources.siteKeyHint": "내 계정에서: 브라우저 쿠키의 uid와 pass, 또는 RSS 링크의 u와 tp. 암호화되어 보관됩니다.",
+	"settings.sources.sendTo": "다운로드 보낼 곳",
+	"settings.sources.sendToAny": "아무 다운로더",
+	"settings.sources.sendToHint": "이 소스에서 고른 것은 모두 이 다운로더로만 갑니다. 꺼져 있으면 기다립니다.",
+	"settings.sources.sendToGone": "고른 다운로더가 삭제되었습니다. 이 소스의 다운로드는 이제 아무 다운로더로 갑니다."
 }

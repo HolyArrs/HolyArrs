@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "الموقع",
 	"settings.sources.addressSite": "عنوان الموقع نفسه. غيّره فقط إذا انتقل الموقع.",
 	"settings.sources.siteKeyLabel": "ملف تعريف الارتباط أو مفتاح RSS",
-	"settings.sources.siteKeyHint": "من حسابك الخاص: uid وpass من ملف تعريف الارتباط في المتصفح، أو u وtp من رابط RSS الخاص بك. يُحفظ مشفّرًا."
+	"settings.sources.siteKeyHint": "من حسابك الخاص: uid وpass من ملف تعريف الارتباط في المتصفح، أو u وtp من رابط RSS الخاص بك. يُحفظ مشفّرًا.",
+	"settings.sources.sendTo": "أرسل التنزيلات إلى",
+	"settings.sources.sendToAny": "أي برنامج تنزيل",
+	"settings.sources.sendToHint": "كل ما يُختار من هذا المصدر يذهب إلى برنامج التنزيل هذا فقط. إن كان متوقفًا، ينتظر.",
+	"settings.sources.sendToGone": "أُزيل برنامج التنزيل المختار. تنزيلات هذا المصدر تذهب الآن إلى أي برنامج تنزيل."
 }

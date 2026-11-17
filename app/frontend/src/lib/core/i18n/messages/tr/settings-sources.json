@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Site",
 	"settings.sources.addressSite": "Sitenin kendi adresi. Yalnızca site taşındıysa değiştirin.",
 	"settings.sources.siteKeyLabel": "Çerez veya RSS anahtarı",
-	"settings.sources.siteKeyHint": "Kendi hesabınızdan: tarayıcı çerezinden uid ve pass ya da RSS bağlantınızdan u ve tp. Şifreli saklanır."
+	"settings.sources.siteKeyHint": "Kendi hesabınızdan: tarayıcı çerezinden uid ve pass ya da RSS bağlantınızdan u ve tp. Şifreli saklanır.",
+	"settings.sources.sendTo": "İndirmeleri gönder",
+	"settings.sources.sendToAny": "Herhangi bir indirici",
+	"settings.sources.sendToHint": "Bu kaynaktan seçilen her şey yalnızca bu indiriciye gider. Çalışmıyorsa bekler.",
+	"settings.sources.sendToGone": "Seçilen indirici kaldırıldı. Bu kaynağın indirmeleri artık herhangi bir indiriciye gidiyor."
 }

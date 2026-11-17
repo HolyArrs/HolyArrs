@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Sivusto",
 	"settings.sources.addressSite": "Sivuston oma osoite. Muuta sitä vain, jos sivusto on muuttanut.",
 	"settings.sources.siteKeyLabel": "Eväste tai RSS-avain",
-	"settings.sources.siteKeyHint": "Omalta tililtäsi: uid ja pass selaimen evästeestä tai u ja tp RSS-linkistäsi. Tallennetaan salattuna."
+	"settings.sources.siteKeyHint": "Omalta tililtäsi: uid ja pass selaimen evästeestä tai u ja tp RSS-linkistäsi. Tallennetaan salattuna.",
+	"settings.sources.sendTo": "Lähetä lataukset",
+	"settings.sources.sendToAny": "Mikä tahansa lataaja",
+	"settings.sources.sendToHint": "Kaikki tästä lähteestä valittu menee vain tälle lataajalle. Jos se ei toimi, odotetaan.",
+	"settings.sources.sendToGone": "Valittu lataaja poistettiin. Tämän lähteen lataukset menevät nyt mille tahansa lataajalle."
 }

@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Oldal",
 	"settings.sources.addressSite": "Az oldal saját címe. Csak akkor módosítsd, ha az oldal elköltözött.",
 	"settings.sources.siteKeyLabel": "Süti vagy RSS-kulcs",
-	"settings.sources.siteKeyHint": "A saját fiókodból: uid és pass a böngésző sütijéből, vagy u és tp az RSS-linkedből. Titkosítva tároljuk."
+	"settings.sources.siteKeyHint": "A saját fiókodból: uid és pass a böngésző sütijéből, vagy u és tp az RSS-linkedből. Titkosítva tároljuk.",
+	"settings.sources.sendTo": "Letöltések küldése ide",
+	"settings.sources.sendToAny": "Bármelyik letöltő",
+	"settings.sources.sendToHint": "Minden, amit ebből a forrásból választ, csak ehhez a letöltőhöz kerül. Ha nem működik, vár.",
+	"settings.sources.sendToGone": "A választott letöltőt eltávolították. A forrás letöltései most bármelyik letöltőhöz kerülnek."
 }

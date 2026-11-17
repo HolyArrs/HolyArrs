@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Site",
 	"settings.sources.addressSite": "Ang sariling address ng site. Palitan lang kung lumipat ang site.",
 	"settings.sources.siteKeyLabel": "Cookie o RSS key",
-	"settings.sources.siteKeyHint": "Mula sa sarili mong account: uid at pass mula sa cookie ng browser, o u at tp mula sa iyong RSS link. Naka-encrypt ang pagkakatago."
+	"settings.sources.siteKeyHint": "Mula sa sarili mong account: uid at pass mula sa cookie ng browser, o u at tp mula sa iyong RSS link. Naka-encrypt ang pagkakatago.",
+	"settings.sources.sendTo": "Ipadala ang mga download sa",
+	"settings.sources.sendToAny": "Kahit anong Downloader",
+	"settings.sources.sendToHint": "Lahat ng napili mula sa Source na ito ay papunta lang sa Downloader na ito. Kung sira ito, maghihintay.",
+	"settings.sources.sendToGone": "Inalis ang napiling Downloader. Ang mga download mula sa Source na ito ay papunta na sa kahit anong Downloader."
 }

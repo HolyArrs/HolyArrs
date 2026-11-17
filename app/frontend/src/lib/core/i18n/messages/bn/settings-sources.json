@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "সাইট",
 	"settings.sources.addressSite": "সাইটের নিজস্ব ঠিকানা। সাইট সরে গেলে তবেই বদলান।",
 	"settings.sources.siteKeyLabel": "কুকি বা RSS কী",
-	"settings.sources.siteKeyHint": "আপনার নিজের অ্যাকাউন্ট থেকে: ব্রাউজার কুকি থেকে uid ও pass, অথবা আপনার RSS লিঙ্ক থেকে u ও tp। এনক্রিপ্ট করে রাখা হয়।"
+	"settings.sources.siteKeyHint": "আপনার নিজের অ্যাকাউন্ট থেকে: ব্রাউজার কুকি থেকে uid ও pass, অথবা আপনার RSS লিঙ্ক থেকে u ও tp। এনক্রিপ্ট করে রাখা হয়।",
+	"settings.sources.sendTo": "ডাউনলোড পাঠান",
+	"settings.sources.sendToAny": "যেকোনো ডাউনলোডার",
+	"settings.sources.sendToHint": "এই উৎস থেকে বাছাই করা সবকিছু শুধু এই ডাউনলোডারে যায়। এটি বন্ধ থাকলে অপেক্ষা করে।",
+	"settings.sources.sendToGone": "বাছাই করা ডাউনলোডারটি সরানো হয়েছে। এই উৎসের ডাউনলোড এখন যেকোনো ডাউনলোডারে যায়।"
 }

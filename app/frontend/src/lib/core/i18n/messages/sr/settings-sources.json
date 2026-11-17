@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Сајт",
 	"settings.sources.addressSite": "Сопствена адреса сајта. Промени је само ако се сајт преселио.",
 	"settings.sources.siteKeyLabel": "Колачић или RSS кључ",
-	"settings.sources.siteKeyHint": "Са сопственог налога: uid и pass из колачића прегледача или u и tp из твог RSS линка. Чува се шифровано."
+	"settings.sources.siteKeyHint": "Са сопственог налога: uid и pass из колачића прегледача или u и tp из твог RSS линка. Чува се шифровано.",
+	"settings.sources.sendTo": "Шаљи преузимања у",
+	"settings.sources.sendToAny": "Било који преузимач",
+	"settings.sources.sendToHint": "Све одабрано из овог извора иде само овом преузимачу. Ако не ради, чека се.",
+	"settings.sources.sendToGone": "Одабрани преузимач је уклоњен. Преузимања из овог извора сада иду било ком преузимачу."
 }

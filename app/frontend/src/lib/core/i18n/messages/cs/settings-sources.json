@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Web",
 	"settings.sources.addressSite": "Vlastní adresa webu. Změňte ji jen tehdy, když se web přestěhoval.",
 	"settings.sources.siteKeyLabel": "Cookie nebo klíč RSS",
-	"settings.sources.siteKeyHint": "Z vlastního účtu: uid a pass z cookie prohlížeče, nebo u a tp z vašeho odkazu RSS. Uloženo šifrovaně."
+	"settings.sources.siteKeyHint": "Z vlastního účtu: uid a pass z cookie prohlížeče, nebo u a tp z vašeho odkazu RSS. Uloženo šifrovaně.",
+	"settings.sources.sendTo": "Posílat stahování do",
+	"settings.sources.sendToAny": "Libovolný stahovač",
+	"settings.sources.sendToHint": "Vše vybrané z tohoto zdroje jde jen do tohoto stahovače. Když neběží, čeká se.",
+	"settings.sources.sendToGone": "Vybraný stahovač byl odebrán. Stahování z tohoto zdroje teď jde do libovolného stahovače."
 }

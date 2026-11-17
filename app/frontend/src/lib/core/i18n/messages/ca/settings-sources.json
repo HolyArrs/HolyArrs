@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Lloc",
 	"settings.sources.addressSite": "L’adreça pròpia del lloc. Canvia-la només si el lloc s’ha traslladat.",
 	"settings.sources.siteKeyLabel": "Galeta o clau RSS",
-	"settings.sources.siteKeyHint": "Del teu propi compte: uid i pass de la galeta del navegador, o u i tp del teu enllaç RSS. Es desa xifrada."
+	"settings.sources.siteKeyHint": "Del teu propi compte: uid i pass de la galeta del navegador, o u i tp del teu enllaç RSS. Es desa xifrada.",
+	"settings.sources.sendTo": "Envia les baixades a",
+	"settings.sources.sendToAny": "Qualsevol gestor de baixades",
+	"settings.sources.sendToHint": "Tot el que es tria d'aquesta font va només a aquest gestor. Si no funciona, espera.",
+	"settings.sources.sendToGone": "El gestor de baixades triat s'ha eliminat. Les baixades d'aquesta font ara van a qualsevol gestor."
 }

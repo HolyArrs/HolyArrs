@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Situs",
 	"settings.sources.addressSite": "Alamat situs itu sendiri. Ubah hanya jika situsnya pindah.",
 	"settings.sources.siteKeyLabel": "Cookie atau kunci RSS",
-	"settings.sources.siteKeyHint": "Dari akun Anda sendiri: uid dan pass dari cookie browser, atau u dan tp dari tautan RSS Anda. Disimpan terenkripsi."
+	"settings.sources.siteKeyHint": "Dari akun Anda sendiri: uid dan pass dari cookie browser, atau u dan tp dari tautan RSS Anda. Disimpan terenkripsi.",
+	"settings.sources.sendTo": "Kirim unduhan ke",
+	"settings.sources.sendToAny": "Pengunduh mana saja",
+	"settings.sources.sendToHint": "Semua yang dipilih dari Sumber ini hanya dikirim ke pengunduh ini. Jika mati, akan menunggu.",
+	"settings.sources.sendToGone": "Pengunduh yang dipilih sudah dihapus. Unduhan dari Sumber ini sekarang ke pengunduh mana saja."
 }

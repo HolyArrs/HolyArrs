@@ -13,7 +13,7 @@
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import { ConnectBridge } from '#lib/sources/index.ts';
 	import { partOff } from '#lib/mediafiles/index.ts';
-	import { healthTone, healthWord, pausedUntil, SourceCheck, emptyForm, formBody, formFrom, ms, uses, builtInSites, pickSite, type SourceForm } from '#lib/sources/index.ts';
+	import { healthTone, healthWord, pausedUntil, SourceCheck, emptyForm, formBody, formFrom, ms, uses, builtInSites, pickSite, sendToChoices, type SourceForm } from '#lib/sources/index.ts';
 	import type { SourceHealth, SourceView } from '#lib/sources/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
@@ -33,6 +33,8 @@
 	let busy = $state(false);
 	let formError = $state('');
 	let testing = $state(0);
+	let downloaders = $state<{ id: number; name: string; protocol: string }[] | null>(null);
+	let sendGone = $state(false);
 	let results = $state<Record<number, { ok: boolean; text: string; extra?: string; hover?: string }>>({});
 
 	async function load() {
@@ -45,12 +47,24 @@
 			loaded = true;
 		}
 	}
-	onMount(load);
+	// Not every account may list Downloaders; then the choice stays hidden.
+	async function loadDownloaders() {
+		try {
+			downloaders = (await api.get<{ downloaders: { id: number; name: string; protocol: string }[] }>('/downloaders')).downloaders ?? [];
+		} catch {
+			downloaders = null;
+		}
+	}
+	onMount(() => {
+		load();
+		loadDownloaders();
+	});
 
 	function startAdd() {
 		isNew = true;
 		editing = { id: 0, name: '' } as SourceView;
 		form = emptyForm();
+		sendGone = false;
 		formError = '';
 	}
 
@@ -58,9 +72,20 @@
 		isNew = false;
 		editing = s;
 		form = formFrom(s);
+		sendGone = false;
 		formError = '';
 	}
 
+	const sendProto = $derived(form.format === 'site' ? 'torrent' : form.protocol);
+	const sendTo = $derived(sendToChoices(downloaders ?? [], sendProto, form.downloader_id));
+	// A chosen Downloader that is not on the list (removed, or of the other
+	// kind after a switch) means any Downloader. Only a removed one is worth a
+	// warning.
+	$effect(() => {
+		if (!downloaders || !sendTo.missing) return;
+		sendGone = !!editing && sendProto === editing.protocol && form.downloader_id === (editing.downloader_id ?? 0);
+		form.downloader_id = 0;
+	});
 	const siteNeedsKey = $derived(builtInSites.find((x) => x.id === form.site)?.key ?? false);
 
 	function setFormat(v: string) {
@@ -216,6 +241,15 @@
 			<Field id="so-tags" label={t('settings.sources.tags')} hint={t('settings.sources.tagsHint')}>
 				<TagInput id="so-tags" bind:value={form.tags} describedby="so-tags-hint" testid="so-tags" />
 			</Field>
+			{#if downloaders}
+				<Field id="so-send" label={t('settings.sources.sendTo')} hint={t('settings.sources.sendToHint')}>
+					<select id="so-send" class="input" bind:value={form.downloader_id} aria-describedby="so-send-hint" data-testid="so-send">
+						<option value={0}>{t('settings.sources.sendToAny')}</option>
+						{#each sendTo.choices as d (d.id)}<option value={d.id}>{d.name}</option>{/each}
+					</select>
+				</Field>
+				{#if sendGone}<p class="notice warn" role="status" data-testid="so-send-gone">{t('settings.sources.sendToGone')}</p>{/if}
+			{/if}
 			<details class="more">
 				<summary>{t('settings.sources.limits')}</summary>
 				<div class="two">

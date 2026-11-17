@@ -105,6 +105,9 @@ type Source struct {
 	PathSecretRef *int64 `db:"path_secret_ref"`
 	// Tags: with any, this Source serves only titles that share one of them.
 	Tags []string `db:"tags,json"`
+	// DownloaderID sends every grab from this Source to that one Downloader;
+	// nil sends to any.
+	DownloaderID *int64 `db:"downloader_id"`
 }
 
 // Release is one search result.

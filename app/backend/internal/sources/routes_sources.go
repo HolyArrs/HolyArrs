@@ -43,6 +43,8 @@ type SourceView struct {
 	ProxyAllowLocal bool     `json:"proxy_allow_local_network"`
 	Summary         Summary  `json:"summary"`
 	Tags            []string `json:"tags"`
+	// DownloaderID is the one Downloader this Source's grabs go to; 0 is any.
+	DownloaderID int64 `json:"downloader_id"`
 }
 
 // SourceViewOf is x as the API shows it, with its summary.
@@ -52,6 +54,9 @@ func SourceViewOf(x domain.Source, sum Summary) SourceView {
 		AllowLocal: x.AllowLocal, Proxy: x.ProxyURL, ProxyAllowLocal: x.ProxyAllowLocal, Summary: sum, Tags: x.Tags}
 	if v.Tags == nil {
 		v.Tags = []string{}
+	}
+	if x.DownloaderID != nil {
+		v.DownloaderID = *x.DownloaderID
 	}
 	if v.Kinds == nil {
 		v.Kinds = []string{}

@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Svetainė",
 	"settings.sources.addressSite": "Pačios svetainės adresas. Keiskite jį tik tada, jei svetainė persikėlė.",
 	"settings.sources.siteKeyLabel": "Slapukas arba RSS raktas",
-	"settings.sources.siteKeyHint": "Iš savo paskyros: uid ir pass iš naršyklės slapuko arba u ir tp iš savo RSS nuorodos. Saugoma užšifruota."
+	"settings.sources.siteKeyHint": "Iš savo paskyros: uid ir pass iš naršyklės slapuko arba u ir tp iš savo RSS nuorodos. Saugoma užšifruota.",
+	"settings.sources.sendTo": "Siųsti atsisiuntimus į",
+	"settings.sources.sendToAny": "Bet kuris atsisiuntėjas",
+	"settings.sources.sendToHint": "Viskas, kas pasirinkta iš šio šaltinio, eina tik į šį atsisiuntėją. Jei jis neveikia, laukiama.",
+	"settings.sources.sendToGone": "Pasirinktas atsisiuntėjas pašalintas. Šio šaltinio atsisiuntimai dabar eina į bet kurį atsisiuntėją."
 }
