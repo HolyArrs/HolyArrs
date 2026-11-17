@@ -21,6 +21,7 @@
 	import { arrivedHead, attention, setupBlocker, welcomeRows, downloadMoved, downloadingNow, fallbackRows, homeDownloadsURL, homeStrip, n, type HomeAnswer, type HomeCard, type HomeRow } from './home.ts';
 	import { MetadataNotice, detailPath, remember } from '#lib/metadata/index.ts';
 	import { headPath, type HeadAnswer } from '#lib/discover/index.ts';
+	import { newPath, type NewAnswer } from '#lib/discover/popular.ts';
 	import { cardTmdb, type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
 	import { homeFacts, homeGreeting, homeNews } from './home-line.ts';
 	import type { Health, HealthChecks } from '#lib/health/index.ts';
@@ -49,6 +50,8 @@
 	let asks = $state<Ask[]>([]);
 	// Before setup: Explore's first picture rows (from the metadata server, no setup needed), read before Home shows.
 	let picks = $state<(ExploreRow & { wide: boolean; type: string })[]>([]);
+	// Art for the New & Popular and Calendar tiles, from New & Popular's first page (the same Kid-limited answer that page reads): its first new backdrop and the next releases' posters.
+	let tileArt = $state<{ pop: string[]; soon: string[] }>({ pop: [], soon: [] });
 	let health = $state<Health | null>(null);
 	let checks = $state<HealthChecks | null>(null);
 	// The downloads or health read failed on the last load: Home could not check, so it does not say All good.
@@ -157,7 +160,7 @@
 	async function loadAll() {
 		// The first screen (the Home answer) loads now; the bigger asks wait until the sign-in hand-off has left, so its frames stay smooth.
 		// A fresh install waits for everything (its picture rows too), so nothing jumps in under the welcome card.
-		const first = loadHome().then(async () => {
+		const first = Promise.all([loadHome(), loadTileArt()]).then(async () => {
 			if (home?.rows?.includes('welcome')) await loadPicks();
 			else if (home) loaded = true;
 		});
@@ -200,6 +203,21 @@
 			if (got) picks = got;
 		} catch {
 			// No picture rows: the grid and Explore still work.
+		}
+	}
+
+	// Read with Home (3 s at most), so the tiles have their art when the grid first shows.
+	async function loadTileArt() {
+		try {
+			const read = api.get<NewAnswer>(newPath('all', 0)).then((a) => {
+				const pop = (a.hero ?? []).map((h) => h.backdrop).filter((b): b is string => !!b).slice(0, 3);
+				const soon = (a.rail ?? []).flatMap((d) => d.items).filter((i) => i.upcoming && i.poster).map((i) => i.poster as string);
+				return { pop, soon: [...new Set(soon)].slice(0, 6) };
+			});
+			const got = await Promise.race([read, new Promise<null>((r) => setTimeout(() => r(null), 3000))]);
+			if (got) tileArt = got;
+		} catch {
+			// No art: the tiles keep their words.
 		}
 	}
 
@@ -393,7 +411,7 @@
 
 		<PageLoader loading={!loaded} label={t('home.loadingHome')} onretry={retry}>
 		{#if welcomeOn}{@render welcomeCard()}{/if}
-		<HomeOverview {overview} {disk} {admin} {settled} {attentionView} {uncheckedParts} {retrying} {retry} {approver} {kid} {uncheckedAsks} {downloading} {mineOpen} {mineDeclined} {fetchingAll} {home} {uncheckedDl} {now} {uncheckedHealth} {health} {picTile} />
+		<HomeOverview {overview} {disk} {admin} {settled} {attentionView} {uncheckedParts} {retrying} {retry} {approver} {kid} {uncheckedAsks} {downloading} {mineOpen} {mineDeclined} {fetchingAll} {home} {uncheckedDl} {now} {uncheckedHealth} {health} {picTile} {tileArt} />
 		{#if welcomeOn}{#each picks as r (r.id)}{@render pickRow(r)}{/each}{/if}
 		{#each rows as row (row)}
 			{#if row === 'arrived'}
