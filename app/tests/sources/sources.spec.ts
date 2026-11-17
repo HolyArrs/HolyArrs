@@ -65,8 +65,10 @@ test('the health page shows state, last answer and calls over time', async () =>
 	await expect(page.getByRole('heading', { level: 1, name: 'Lab Torznab' })).toBeVisible();
 	await expect(page.getByTestId('health-state')).toHaveText('Working');
 	await expect(page.getByTestId('last-success')).not.toHaveText('Never');
-	await expect(page.getByTestId('call')).toHaveCount(2);
-	await expect(page.getByTestId('call').first()).toContainText('Test');
+	// Every save tests the Source again: added, wrong key saved, Test pressed, right key saved.
+	await expect(page.getByTestId('call')).toHaveCount(4);
+	await expect(page.getByTestId('call').first()).toContainText('Answered');
+	await expect(page.getByTestId('call').nth(1)).toContainText('Login refused');
 	await page.getByRole('link', { name: 'Sources' }).first().click();
 	const row2 = page.getByTestId('source').filter({ hasText: 'Lab feed' });
 	page.once('dialog', (d) => d.accept());
