@@ -30,6 +30,7 @@
 		{ id: 'parts', label: t('health.sections.tabStatus') },
 		{ id: 'jobs', label: t('health.sections.tabJobs') },
 		{ id: 'updates', label: t('health.sections.tabUpdates') },
+		{ id: 'support', label: t('health.sections.tabSupport') },
 		{ id: 'about', label: t('health.sections.tabAbout') }
 	]);
 	// Names of reads an account may not do, mapped to the kind they remove.
@@ -284,6 +285,16 @@
 		{:else}
 			{@render updates({ upd, docker: about ? about.docker : null, reader, checksKnown: !failed.includes('health checks'), canAct, onupd: (u) => (upd = u) })}
 		{/if}
+	{:else if tab === 'support'}
+		<section class="st-plate give" aria-labelledby="s-give" data-testid="status-support">
+			<h2 id="s-give">{t('health.sections.tabSupport')}</h2>
+			<p class="help-text">{t('health.sections.giveThanks')}</p>
+			<p class="help-text">{t('health.sections.givePays')}</p>
+			<div class="give-row">
+				<Button variant="primary" href="https://github.com/sponsors/CoderLuii" target="_blank" rel="noopener">{t('health.why.support')}</Button>
+				<Button variant="plain" onclick={() => why?.open()} aria-haspopup="dialog">{t('health.sections.readNote')}</Button>
+			</div>
+		</section>
 	{:else}
 		<section class="st-plate" aria-labelledby="s-about">
 			<h2 id="s-about">{t('health.sections.tabAbout')}</h2>
@@ -326,12 +337,13 @@
 			<div><h2 id="s-story">{t('health.why.title')}</h2><small>{t('health.sections.note')}</small></div>
 			<button class="why-btn" type="button" aria-haspopup="dialog" onclick={() => why?.open()} data-testid="why-open"><span class="px" aria-hidden="true">&gt;_</span>{t('health.sections.readNote')}</button>
 		</section>
-		<WhyNote bind:this={why} />
 	{/if}
 	</div>
+	<WhyNote bind:this={why} />
 </div>
 
 <style>
+	.give-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
 	.secs, .panel { display: flex; flex-direction: column; gap: var(--s-4); }
 	ul { list-style: none; margin: 0; padding: 0; }
 	/* Same pill track as the Downloads page. */
