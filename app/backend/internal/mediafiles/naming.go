@@ -378,9 +378,11 @@ func renderVals(s NamingSettings, pat string, vals map[string]string) string {
 			// A word with no value takes one dot, dash or underscore the
 			// pattern wrote beside it, never a character of another word's
 			// value: "{audio}.{resolution}" without a codec gives "2160p".
+			// It takes the one after it only when nothing stands before it
+			// to join, so " {edition}-{group}" keeps the group's dash.
 			if n := len(lit); n > 0 && strings.IndexByte("._-", lit[n-1]) >= 0 {
 				lit = lit[:n-1]
-			} else if rest != "" && strings.IndexByte("._-", rest[0]) >= 0 {
+			} else if rest != "" && strings.IndexByte("._-", rest[0]) >= 0 && opensName(b.String()+lit) {
 				rest = rest[1:]
 			}
 		}
@@ -406,6 +408,12 @@ func renderVals(s NamingSettings, pat string, vals map[string]string) string {
 		out = t
 	}
 	return clean(s, out)
+}
+
+// opensName reports whether text ends where a name or a bracket starts, so a
+// separator after an empty word there has nothing to join.
+func opensName(text string) bool {
+	return text == "" || strings.IndexByte("[(", text[len(text)-1]) >= 0
 }
 
 func splitStep(step string) (res, src string) {
