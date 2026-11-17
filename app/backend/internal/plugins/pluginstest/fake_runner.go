@@ -13,7 +13,8 @@ type FakeRunner struct {
 	Err    error
 }
 
-// Start records spec and returns a process that runs until stopped or ctx ends.
+// Start records spec and returns a process that runs until stopped or ctx
+// ends; a start with arguments is a one-shot run that ends at once.
 func (f *FakeRunner) Start(ctx context.Context, spec plugins.Spec) (plugins.Process, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -22,6 +23,9 @@ func (f *FakeRunner) Start(ctx context.Context, spec plugins.Spec) (plugins.Proc
 	}
 	f.Starts = append(f.Starts, spec)
 	p := &fakeProcess{done: make(chan struct{})}
+	if len(spec.Args) > 0 { // one-shot runs such as --sign-out end at once
+		p.Stop()
+	}
 	go func() {
 		select {
 		case <-ctx.Done():

@@ -1,2 +1,3 @@
 export type * from './types.ts';
-export { limitLines, notices, pluginName, pluginState, shownVersion, stateLabel } from './view.ts';
+export { connectionLabel, limitLines, notices, pluginName, pluginState, remoteStateLabel, shownVersion, stateLabel } from './view.ts';
+export { default as RemoteAccess } from './RemoteAccess.svelte';

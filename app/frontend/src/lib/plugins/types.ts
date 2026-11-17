@@ -33,3 +33,16 @@ export interface PluginOverview {
 	limits: ActiveLimits;
 	plugins: Plugin[];
 }
+
+/** GET /api/v1/plugins/tailscale/status: the plugin's own status file. */
+export interface TailscaleStatus {
+	state: string;
+	login_url?: string;
+	login_qr?: string[];
+	device_name?: string;
+	tsnet_name?: string;
+	tailscale_version?: string;
+	last_updated?: string;
+	login_expiry?: string;
+	connection?: string;
+}

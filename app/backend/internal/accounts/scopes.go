@@ -17,6 +17,8 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /api/v1/plugins/{id}/start":                   webserver.NeedOwner,
 	"POST /api/v1/plugins/{id}/stop":                    webserver.NeedOwner,
 	"DELETE /api/v1/plugins/{id}":                       webserver.NeedOwner,
+	"GET /api/v1/plugins/tailscale/status":              webserver.NeedOwner,
+	"POST /api/v1/plugins/tailscale/signout":            webserver.NeedOwner,
 	"GET /api/v1/data-packs":                            webserver.NeedOwner,
 	"GET /api/v1/data-packs/{id}":                       webserver.NeedOwner,
 	"GET /api/v1/data-packs/{id}/preview":               webserver.NeedOwner,

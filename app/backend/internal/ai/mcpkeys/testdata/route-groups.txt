@@ -185,6 +185,7 @@ GET /api/v1/people/{id} see
 GET /api/v1/pick-rules see
 GET /api/v1/pick-rules/{id} see
 GET /api/v1/plugins admin
+GET /api/v1/plugins/tailscale/status admin
 GET /api/v1/public/signin-art see
 GET /api/v1/public/signin-pic/t/p/{size}/{file} see
 GET /api/v1/rename see
@@ -439,6 +440,7 @@ POST /api/v1/parts/{part}/restart admin
 POST /api/v1/people/{id}/movies/review add
 POST /api/v1/pick-rules settings
 POST /api/v1/pick-rules/{id}/trash delete
+POST /api/v1/plugins/tailscale/signout admin
 POST /api/v1/plugins/{id}/install admin
 POST /api/v1/plugins/{id}/start admin
 POST /api/v1/plugins/{id}/stop admin

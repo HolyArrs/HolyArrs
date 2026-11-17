@@ -15,7 +15,7 @@
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { limitLines, notices, pluginName, pluginState, shownVersion, stateLabel, type Plugin, type PluginOverview } from '#lib/plugins/index.ts';
+	import { limitLines, notices, pluginName, pluginState, RemoteAccess, shownVersion, stateLabel, type Plugin, type PluginOverview } from '#lib/plugins/index.ts';
 
 	const owner = $derived(session.s.role === 'owner');
 	let ov = $state<PluginOverview | null>(null);
@@ -31,6 +31,7 @@
 	const notes = $derived(ov ? notices(ov) : []);
 	const limits = $derived(ov ? limitLines(ov.limits) : []);
 	const canInstall = $derived(!!ov && ov.key_set && ov.can_run);
+	const tailscale = $derived(ov?.plugins.find((p) => p.id === 'tailscale' && p.installed) ?? null);
 	const reach = $derived(
 		reaching
 			? [
@@ -78,7 +79,7 @@
 		}
 	}
 	// Start shows for an off plugin only when the owner stopped it (or no reason is given); other reasons need a fix first.
-	const startable = (p: Plugin) => !p.disabled_reason || p.disabled_reason === 'stopped by the owner';
+	const startable = (p: Plugin) => !p.disabled_reason || p.disabled_reason === 'stopped by the owner' || p.disabled_reason === 'signed out by the owner';
 
 	const path = (p: Plugin) => `/plugins/${encodeURIComponent(p.id)}`;
 
@@ -152,6 +153,8 @@
 			</ul>
 		{/if}
 	</section>
+
+	{#if tailscale}<RemoteAccess plugin={tailscale} canRun={ov.can_run} onchange={load} />{/if}
 
 	<SettingsCard id="plugin-limits" title={t('plugins.limits')} description={t('plugins.limitsAbout')}>
 		{#if limits.length}

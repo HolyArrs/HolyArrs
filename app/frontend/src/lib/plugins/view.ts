@@ -48,3 +48,34 @@ export function limitLines(l: ActiveLimits): string[] {
 	if (l.GroupKill) out.push(t('plugins.limitKill'));
 	return out;
 }
+
+/** The Remote access state in plain words. A plugin the owner stopped reads as disconnected, whatever its last status says; a signed-out one as not connected. */
+export function remoteStateLabel(state: string, p?: Pick<Plugin, 'running' | 'enabled' | 'disabled_reason'>): string {
+	if (p && !p.running) {
+		if (p.enabled) return t('plugins.remoteStarting');
+		return p.disabled_reason === 'signed out by the owner' ? t('plugins.remoteNotConnected') : t('plugins.remotePaused');
+	}
+	switch (state) {
+		case 'waiting_for_sign_in':
+			return t('plugins.remoteSignIn');
+		case 'waiting_for_admin_approval':
+			return t('plugins.remoteAdmin');
+		case 'connected':
+			return t('plugins.remoteConnected');
+		case 'login_expiring':
+			return t('plugins.remoteExpiring');
+		case 'login_expired':
+			return t('plugins.remoteExpired');
+		case 'device_deleted':
+			return t('plugins.remoteDeleted');
+		default:
+			return t('plugins.remoteNotConnected');
+	}
+}
+
+/** Direct or relayed in plain words; empty when Tailscale has not said. */
+export function connectionLabel(c: string | undefined): string {
+	if (c === 'direct') return t('plugins.remoteDirect');
+	if (c === 'relayed') return t('plugins.remoteRelayed');
+	return '';
+}

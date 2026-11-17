@@ -54,6 +54,7 @@ var screenOwners = map[string]Owner{
 	"/settings/health":               Core,
 	"/settings/alerts":               Core,
 	"/settings/backups":              Core,
+	"/plugins":                       Core,
 	"/settings/move":                 Core,
 	"/settings/downloaders":          Core,
 	"/settings/library-folders":      Core,

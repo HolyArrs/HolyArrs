@@ -3,6 +3,7 @@ package plugins
 import (
 	"context"
 	"crypto/ed25519"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -100,16 +101,16 @@ type Plugin struct {
 
 // Overview is the answer of the plugin list route.
 type Overview struct {
-	KeySet  bool         `json:"key_set"`
+	KeySet bool `json:"key_set"`
 	// BlocklistCheckedAt is when the blocklist last verified; null before
 	// the first check.
 	BlocklistCheckedAt *time.Time `json:"blocklist_checked_at"`
 	// BlocklistStale is true when plugins are installed and the last
 	// check is older than 7 days.
-	BlocklistStale bool `json:"blocklist_stale"`
-	CanRun  bool         `json:"can_run"`
-	Limits  ActiveLimits `json:"limits"`
-	Plugins []Plugin     `json:"plugins"`
+	BlocklistStale bool         `json:"blocklist_stale"`
+	CanRun         bool         `json:"can_run"`
+	Limits         ActiveLimits `json:"limits"`
+	Plugins        []Plugin     `json:"plugins"`
 }
 
 // List shows the plugins of the cached signed list (fetched once when none
@@ -674,4 +675,86 @@ func newerVersion(a, b string) bool {
 		return pa == ""
 	}
 	return pa > pb
+}
+
+// signedOut is the disabled reason a sign-out leaves.
+const signedOut = "signed out by the owner"
+
+// signOutWithin caps a sign-out run; the plugin's own logout gives up sooner.
+const signOutWithin = 30 * time.Second
+
+// Status returns the plugin's status.json as written by the plugin, or a
+// not-connected answer when it has written none yet.
+func (e *Engine) Status(id string) (map[string]any, error) {
+	if err := e.init(); err != nil {
+		return nil, err
+	}
+	if _, err := e.installed(id); err != nil {
+		return nil, err
+	}
+	raw, err := os.ReadFile(filepath.Join(e.store.DataDir(id), "status.json"))
+	if errors.Is(err, os.ErrNotExist) {
+		return map[string]any{"state": "not_connected"}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var out map[string]any
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil, fmt.Errorf("plugin status: %w", err)
+	}
+	return out, nil
+}
+
+// SignOut stops id, runs it once with --sign-out through the same checked,
+// sandboxed start, and leaves it stopped.
+func (e *Engine) SignOut(ctx context.Context, id string) error {
+	if err := e.init(); err != nil {
+		return err
+	}
+	if e.Runner == nil {
+		return ErrNotLinux
+	}
+	e.opMu.Lock()
+	defer e.opMu.Unlock()
+	p, err := e.installed(id)
+	if err != nil {
+		return err
+	}
+	if err := e.stopProc(id); err != nil {
+		return fmt.Errorf("stopping plugin: %w", err)
+	}
+	// The run passes the same start checks, which refuse a disabled plugin:
+	// an owner stop is lifted for the run, any other reason still refuses.
+	if !p.Enabled && (p.DisabledReason == "" || p.DisabledReason == "stopped by the owner" || p.DisabledReason == signedOut) {
+		if err := e.store.SetEnabled(id, true, ""); err != nil {
+			return err
+		}
+	}
+	defer func() { _ = e.store.SetEnabled(id, false, signedOut) }()
+	e.mu.Lock()
+	in, err := e.startInput()
+	e.mu.Unlock()
+	if err != nil {
+		return err
+	}
+	var env []string
+	if e.Env != nil {
+		env = e.Env(id)
+	}
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), signOutWithin)
+	defer cancel()
+	proc, err := e.store.Start(ctx, e.Runner, id, in, []string{"--sign-out"}, env)
+	if err != nil {
+		return err
+	}
+	done := make(chan error, 1)
+	go func() { done <- proc.Wait() }()
+	select {
+	case err := <-done:
+		return err
+	case <-ctx.Done():
+		_ = proc.Stop()
+		return fmt.Errorf("sign-out did not finish in %s", signOutWithin)
+	}
 }

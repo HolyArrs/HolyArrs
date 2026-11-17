@@ -434,3 +434,44 @@ func TestPluginWritesRefuseAPIKeys(t *testing.T) {
 		t.Fatal("installed with an API key")
 	}
 }
+
+func TestTailscaleStatusAndSignOut(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, run := newEngine(t, ls, pub)
+	m := mux(e)
+
+	call(t, m, "GET", "/api/v1/plugins/tailscale/status", http.StatusNotFound)
+	call(t, m, "POST", "/api/v1/plugins/tailscale/signout", http.StatusNotFound)
+
+	call(t, m, "POST", "/api/v1/plugins/tailscale/install", http.StatusOK)
+	if st := call(t, m, "GET", "/api/v1/plugins/tailscale/status", http.StatusOK); st["state"] != "not_connected" {
+		t.Fatalf("status before the plugin wrote one: %v", st)
+	}
+	data := run.Starts[0].DataDir
+	body := `{"state":"waiting_for_sign_in","login_url":"https://login.tailscale.com/a/x","last_updated":"2026-11-16T00:00:00Z"}`
+	if err := os.WriteFile(filepath.Join(data, "status.json"), []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	st := call(t, m, "GET", "/api/v1/plugins/tailscale/status", http.StatusOK)
+	if st["state"] != "waiting_for_sign_in" || st["login_url"] != "https://login.tailscale.com/a/x" || st["login_qr"] == nil {
+		t.Fatalf("status: %v", st)
+	}
+
+	// An API key never sees the sign-in link.
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/api/v1/plugins/tailscale/status", nil)
+	req = req.WithContext(webserver.ContextWith(req.Context(), webserver.Caller{KeyID: 7}))
+	m.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || strings.Contains(rec.Body.String(), "login_") {
+		t.Fatalf("status through a key = %d %s", rec.Code, rec.Body)
+	}
+
+	call(t, m, "POST", "/api/v1/plugins/tailscale/signout", http.StatusOK)
+	if len(run.Starts) != 2 || len(run.Starts[1].Args) != 1 || run.Starts[1].Args[0] != "--sign-out" {
+		t.Fatalf("sign-out run: %+v", run.Starts)
+	}
+	p := row(t, call(t, m, "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
+	if p["running"] != false || p["enabled"] != false {
+		t.Fatalf("after sign-out: %v", p)
+	}
+}

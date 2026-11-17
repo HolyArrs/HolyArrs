@@ -31,6 +31,7 @@ var RouteScopes = map[string]string{
 	"POST /api/v1/people/{id}/movies/review":                     webserver.ScopeRead,
 	"GET /api/v1/health/states":                                  webserver.ScopeHealthRead,
 	"GET /api/v1/plugins":                                        webserver.ScopeAdmin,
+	"GET /api/v1/plugins/tailscale/status":                       webserver.ScopeAdmin,
 	"GET /api/v1/data-packs":                                     webserver.ScopeAdmin,
 	"GET /api/v1/library/stats":                                  webserver.ScopeAdmin,
 	"GET /api/v1/library/stats/watched":                          webserver.ScopeAdmin,

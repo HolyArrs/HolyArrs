@@ -95,3 +95,63 @@ for (const width of [1280, 375]) {
 		await page.context().close();
 	});
 }
+
+// Remote access card: a mocked Tailscale status, the sign-in link and QR,
+// the 5 s refresh to Connected with its facts, Disconnect and Sign out.
+for (const width of [1280, 375]) {
+	test(`plugins: remote access card at ${width}`, async ({ browser }) => {
+		const page = await (await browser.newContext({ viewport: { width, height: 844 } })).newPage();
+		await signIn(page, owner());
+		const ov = { ...fake, blocklist_stale: false, plugins: [{ ...fake.plugins[0], installed: true, installed_version: '1.2.0', running: true, enabled: true }] };
+		let status: Record<string, unknown> = {
+			state: 'waiting_for_sign_in',
+			login_url: 'https://login.tailscale.com/a/e2e',
+			login_qr: ['1110111', '1010101', '1110111', '0000000', '1110111', '1010101', '1110111'],
+			last_updated: new Date().toISOString()
+		};
+		const calls: string[] = [];
+		await page.route('**/api/v1/plugins**', async (route) => {
+			const r = route.request();
+			const path = new URL(r.url()).pathname;
+			if (r.method() === 'GET') return route.fulfill({ json: path.endsWith('/tailscale/status') ? status : ov });
+			calls.push(`${r.method()} ${path}`);
+			return route.fulfill({ json: { ok: true } });
+		});
+		await page.goto('/plugins');
+		const card = page.getByTestId('remote-access');
+		await expect(page.getByRole('heading', { name: 'Remote access' })).toBeVisible();
+		await expect(card).toContainText('Waiting for sign-in');
+		await expect(card.getByRole('button', { name: 'Open Tailscale sign-in' })).toBeVisible();
+		await expect(card.getByRole('img', { name: 'QR code for the Tailscale sign-in link' })).toBeVisible();
+		await noSidewaysScroll(page);
+		await page.screenshot({ path: test.info().outputPath(`remote-signin-${width}.png`), fullPage: true });
+
+		status = {
+			state: 'connected',
+			tsnet_name: 'holyarrs.tail1234.ts.net',
+			tailscale_version: '1.90.0',
+			last_updated: new Date().toISOString(),
+			login_expiry: new Date(Date.now() + 90 * 864e5).toISOString(),
+			connection: 'direct'
+		};
+		await expect(card).toContainText('Connected', { timeout: 8000 });
+		await expect(card).toContainText('holyarrs.tail1234.ts.net');
+		await expect(card).toContainText('1.90.0');
+		await expect(card).toContainText('Direct');
+		await expect(card.getByRole('button', { name: 'Open Tailscale sign-in' })).toHaveCount(0);
+		await noSidewaysScroll(page);
+		await page.screenshot({ path: test.info().outputPath(`remote-connected-${width}.png`), fullPage: true });
+
+		await card.getByRole('button', { name: 'Disconnect' }).click();
+		await expect.poll(() => calls).toContain('POST /api/v1/plugins/tailscale/stop');
+		await card.getByRole('button', { name: 'Sign out' }).click();
+		const ask = page.getByRole('dialog', { name: 'Sign out of Tailscale?' });
+		await ask.getByRole('button', { name: 'Cancel' }).click();
+		await expect(ask).toBeHidden();
+		expect(calls).not.toContain('POST /api/v1/plugins/tailscale/signout');
+		await card.getByRole('button', { name: 'Sign out' }).click();
+		await ask.getByRole('button', { name: 'Sign out' }).click();
+		await expect.poll(() => calls).toContain('POST /api/v1/plugins/tailscale/signout');
+		await page.context().close();
+	});
+}

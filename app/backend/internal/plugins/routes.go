@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
@@ -20,6 +21,8 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/plugins/{id}/start", sessionOnly(h.start))
 	m.HandleFunc("POST /api/v1/plugins/{id}/stop", sessionOnly(h.stop))
 	m.HandleFunc("DELETE /api/v1/plugins/{id}", sessionOnly(h.remove))
+	m.HandleFunc("GET /api/v1/plugins/tailscale/status", h.tailscaleStatus)
+	m.HandleFunc("POST /api/v1/plugins/tailscale/signout", sessionOnly(h.tailscaleSignOut))
 }
 
 // sessionOnly refuses every API key: an owner's admin key passes the scope
@@ -97,6 +100,41 @@ func (h *Handlers) remove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"removed": true})
+}
+
+// tailscaleStatus returns the Tailscale plugin's status.json. The sign-in
+// link is given only to the signed-in owner, never through an API key.
+func (h *Handlers) tailscaleStatus(w http.ResponseWriter, r *http.Request) {
+	if !h.ready(w) {
+		return
+	}
+	st, err := h.Engine.Status("tailscale")
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	if who, ok := webserver.From(r.Context()); ok && who.KeyID != 0 {
+		delete(st, "login_url")
+	} else if link, _ := st["login_url"].(string); link != "" {
+		// A code to scan from a phone.
+		if rows := accounts.QRRows(link); rows != nil {
+			st["login_qr"] = rows
+		}
+	}
+	webserver.WriteJSON(w, http.StatusOK, st)
+}
+
+// tailscaleSignOut logs the device out, wipes its state and leaves the
+// plugin stopped.
+func (h *Handlers) tailscaleSignOut(w http.ResponseWriter, r *http.Request) {
+	if !h.ready(w) {
+		return
+	}
+	if err := h.Engine.SignOut(r.Context(), "tailscale"); err != nil {
+		fail(w, err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"signed_out": true})
 }
 
 // fail maps Engine refusals to answers that say what went wrong.

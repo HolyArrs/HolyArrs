@@ -23378,6 +23378,40 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/plugins/tailscale/signout": {
+      "post": {
+        "description": "Owner only, signed-in session only. Stops the Tailscale plugin, runs it once to log the device out and wipe its Tailscale state, and leaves it stopped. If the logout itself fails the state is still wiped; remove the device in Tailscale's admin page.",
+        "responses": {
+          "200": {
+            "description": "Signed out; the plugin stays stopped"
+          },
+          "404": {
+            "description": "The Tailscale plugin is not installed"
+          }
+        },
+        "summary": "Sign the Tailscale plugin out",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/tailscale/status": {
+      "get": {
+        "description": "Owner only. The Tailscale plugin's own status file: state, device and ts.net name, Tailscale version, last update, login expiry and direct or relayed. The sign-in link is left out when the request uses an API key.",
+        "responses": {
+          "200": {
+            "description": "Status; state is not_connected until the plugin has written one"
+          },
+          "404": {
+            "description": "The Tailscale plugin is not installed"
+          }
+        },
+        "summary": "Tailscale plugin status",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/plugins/{id}": {
       "delete": {
         "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
