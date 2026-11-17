@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "Порог выхода пропускается: этот фильм пока не считается вышедшим",
 	"server.sources.this-version-already-has-a-good": "У этого варианта уже есть достаточно хорошая копия; новая её заменит",
 	"server.requests.removed-the-request-for": "{name} удалил(а) запрос на {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex не передал код аккаунта этого человека, поэтому его список просмотра не читается."
+	"server.requests.plex-gave-no-account-code-for": "Plex не передал код аккаунта этого человека, поэтому его список просмотра не читается.",
+	"server.metadata.your-router-or-vpn-is-sending": "Ваш роутер или VPN направляет HolyArrs на поддельный адрес (198.18.x.x). Обычно это делает Clash или Surge. Добавьте {host} в его список прямых подключений."
 }

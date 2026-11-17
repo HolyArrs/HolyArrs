@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "De Releasedrempel wordt overgeslagen: deze film telt nog niet als uit",
 	"server.sources.this-version-already-has-a-good": "Deze variant heeft al een kopie die goed genoeg is; de nieuwe vervangt die",
 	"server.requests.removed-the-request-for": "{name} heeft het verzoek voor {a} verwijderd",
-	"server.requests.plex-gave-no-account-code-for": "Plex gaf geen accountcode voor deze persoon, dus zijn of haar kijklijst wordt niet gelezen."
+	"server.requests.plex-gave-no-account-code-for": "Plex gaf geen accountcode voor deze persoon, dus zijn of haar kijklijst wordt niet gelezen.",
+	"server.metadata.your-router-or-vpn-is-sending": "Je router of VPN stuurt HolyArrs naar een nepadres (198.18.x.x). Dit komt meestal door Clash of Surge. Zet {host} op de directe lijst daarvan."
 }

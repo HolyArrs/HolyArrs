@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Filmas",
 	"metadata.health.downTitle": "Metaduomenys neprieinami",
 	"metadata.health.down": "Paieška ir nauji viršeliai sustabdomi, kol sugrįš. Jūsų Biblioteka veikia toliau.",
-	"metadata.health.back": "Metaduomenys vėl prieinami"
+	"metadata.health.back": "Metaduomenys vėl prieinami",
+	"metadata.health.fakeIp": "Jūsų maršrutizatorius arba VPN siunčia HolyArrs į netikrą adresą (198.18.x.x). Dažniausiai tai daro Clash arba Surge. Įtraukite {host} į jo tiesioginio ryšio sąrašą."
 }

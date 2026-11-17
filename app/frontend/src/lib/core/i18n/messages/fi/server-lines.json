@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "Julkaisuportti ohitetaan: tämän elokuvan ei lasketa vielä ilmestyneen",
 	"server.sources.this-version-already-has-a-good": "Tällä versiolla on jo riittävän hyvä kopio; uusi korvaa sen",
 	"server.requests.removed-the-request-for": "{name} poisti pyynnön: {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex ei antanut tälle henkilölle tilikoodia, joten hänen katselulistaansa ei lueta."
+	"server.requests.plex-gave-no-account-code-for": "Plex ei antanut tälle henkilölle tilikoodia, joten hänen katselulistaansa ei lueta.",
+	"server.metadata.your-router-or-vpn-is-sending": "Reitittimesi tai VPN ohjaa HolyArrsin väärennettyyn osoitteeseen (198.18.x.x). Syy on yleensä Clash tai Surge. Lisää {host} sen suorien yhteyksien listaan."
 }

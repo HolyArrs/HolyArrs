@@ -24,6 +24,8 @@ const notWords = new Set(['dash', 'each', 'range', 'smart', 'remove', 'normal', 
 const handLines = { 'Because you have {name}': 'suggest', 'No Downloader has confirmed this Release yet. You can choose another one.': 'sources', 'Deleted by hand': 'downloads', 'Marked bad': 'downloads',
 	'{name} paused the stage {stage}': 'accounts', '{name} resumed the stage {stage}': 'accounts',
 	'{name} restarted the stage {stage}': 'accounts', 'Download removed': 'downloads', 'Download removed by {name}': 'downloads',
+	// outbound.FakeIPMessage: a name that resolved to 198.18.x.x (Clash or Surge fake-IP mode).
+	'Your router or VPN is sending HolyArrs to a fake address (198.18.x.x). This usually comes from Clash or Surge. Add {host} to its direct list.': 'metadata',
 	// metadata.ErrServiceSlow, answered through library.ServiceError.
 	'The metadata server is slow right now. This comes back on its own.': 'metadata',
 	// requests.ErrNotAddedSlow, answered when an approval could not add its title.

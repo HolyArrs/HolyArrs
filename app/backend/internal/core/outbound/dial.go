@@ -18,7 +18,11 @@ func PolicyDialer(allow func(net.IP) bool) *net.Dialer {
 		if err != nil {
 			return err
 		}
-		if ip := net.ParseIP(host); ip == nil || !allow(ip) {
+		ip := net.ParseIP(host)
+		if ip == nil || !allow(ip) {
+			if IsFakeIP(ip) {
+				return errFakeIPAddr
+			}
 			return ErrAddressRefused
 		}
 		return nil

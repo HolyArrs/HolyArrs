@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "Släppgränsen hoppas över: den här filmen räknas inte som utgiven ännu",
 	"server.sources.this-version-already-has-a-good": "Den här versionen har redan en tillräckligt bra kopia; den nya ersätter den",
 	"server.requests.removed-the-request-for": "{name} tog bort begäran om {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte."
+	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte.",
+	"server.metadata.your-router-or-vpn-is-sending": "Din router eller VPN skickar HolyArrs till en falsk adress (198.18.x.x). Det kommer oftast från Clash eller Surge. Lägg till {host} i dess direktlista."
 }

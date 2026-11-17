@@ -94,7 +94,7 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	(&datapack.Handlers{Deps: datapack.Deps{Store: a.s.Store}}).Routes(m)
 	a.scheduleHandlers().Routes(m)
 	m.HandleFunc("GET /api/v1/metadata/search", a.searchMetadata)
-	(&metadata.Handlers{Up: func(ctx context.Context) bool { return a.s.MetadataUp == nil || a.s.MetadataUp(ctx) }}).Routes(m)
+	(&metadata.Handlers{Up: func(ctx context.Context) bool { return a.s.MetadataUp == nil || a.s.MetadataUp(ctx) }, FakeIP: metadata.ServerFakeIP}).Routes(m)
 	a.metadataModeHandlers().Routes(m)
 	a.disc.Routes(m)
 	a.shows.AnimeRoutes(m)

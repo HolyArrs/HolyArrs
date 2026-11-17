@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "Prah vydania sa preskočí: tento film sa ešte nepočíta ako vydaný",
 	"server.sources.this-version-already-has-a-good": "Táto Verzia už má dostatočnú kópiu; nová ju nahradí",
 	"server.requests.removed-the-request-for": "{name} odstránil(a) žiadosť o {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex pre túto osobu nedal kód účtu, preto sa jej zoznam na pozretie nečíta."
+	"server.requests.plex-gave-no-account-code-for": "Plex pre túto osobu nedal kód účtu, preto sa jej zoznam na pozretie nečíta.",
+	"server.metadata.your-router-or-vpn-is-sending": "Váš smerovač alebo VPN posiela HolyArrs na falošnú adresu (198.18.x.x). Zvyčajne to spôsobuje Clash alebo Surge. Pridajte {host} do jeho zoznamu priamych pripojení."
 }

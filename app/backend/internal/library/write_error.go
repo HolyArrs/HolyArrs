@@ -2,6 +2,7 @@ package library
 
 import (
 	"errors"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"net/http"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -55,6 +56,8 @@ func ServiceError(w http.ResponseWriter, err error) bool {
 		return true
 	case errors.Is(err, metadata.ErrServiceAccess):
 		message = metadata.ErrServiceAccess.Error()
+	case metadata.FakeIPHost(err) != "":
+		message = outbound.FakeIPMessage(metadata.FakeIPHost(err))
 	case errors.Is(err, metadata.ErrServiceSlow):
 		message = metadata.ErrServiceSlow.Error()
 	case errors.Is(err, metadata.ErrServiceUnavailable):

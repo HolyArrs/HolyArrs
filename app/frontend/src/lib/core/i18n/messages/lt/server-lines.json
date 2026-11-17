@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "Išleidimo riba praleidžiama: šis filmas dar neskaitomas kaip išėjęs",
 	"server.sources.this-version-already-has-a-good": "Ši Versija jau turi pakankamai gerą kopiją; nauja ją pakeis",
 	"server.requests.removed-the-request-for": "{name} pašalino užklausą: {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nepateikė šio asmens paskyros kodo, todėl jo žiūrėjimo sąrašas neskaitomas."
+	"server.requests.plex-gave-no-account-code-for": "Plex nepateikė šio asmens paskyros kodo, todėl jo žiūrėjimo sąrašas neskaitomas.",
+	"server.metadata.your-router-or-vpn-is-sending": "Jūsų maršrutizatorius arba VPN siunčia HolyArrs į netikrą adresą (198.18.x.x). Dažniausiai tai daro Clash arba Surge. Įtraukite {host} į jo tiesioginio ryšio sąrašą."
 }

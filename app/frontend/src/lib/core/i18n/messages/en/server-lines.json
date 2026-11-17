@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "the Release gate is skipped: this Title is not out yet",
 	"server.sources.this-version-already-has-a-good": "this Version already has a good enough copy; the new one will replace it",
 	"server.requests.removed-the-request-for": "{name} removed the request for {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex gave no account code for this person, so their watchlist is not read."
+	"server.requests.plex-gave-no-account-code-for": "Plex gave no account code for this person, so their watchlist is not read.",
+	"server.metadata.your-router-or-vpn-is-sending": "Your router or VPN is sending HolyArrs to a fake address (198.18.x.x). This usually comes from Clash or Surge. Add {host} to its direct list."
 }

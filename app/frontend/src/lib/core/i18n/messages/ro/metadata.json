@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Film",
 	"metadata.health.downTitle": "Metadate offline",
 	"metadata.health.down": "Căutarea și imaginile noi se opresc până revine serverul. Biblioteca ta funcționează în continuare.",
-	"metadata.health.back": "Metadatele sunt din nou online"
+	"metadata.health.back": "Metadatele sunt din nou online",
+	"metadata.health.fakeIp": "Routerul sau VPN-ul tău trimite HolyArrs la o adresă falsă (198.18.x.x). De obicei vine de la Clash sau Surge. Adaugă {host} în lista lui directă."
 }

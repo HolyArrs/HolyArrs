@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "Batas rilis dilewati: film ini belum dianggap rilis",
 	"server.sources.this-version-already-has-a-good": "Versi ini sudah punya salinan yang cukup baik; yang baru akan menggantikannya",
 	"server.requests.removed-the-request-for": "{name} menghapus permintaan untuk {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kode akun untuk orang ini, jadi daftar tontonannya tidak dibaca."
+	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kode akun untuk orang ini, jadi daftar tontonannya tidak dibaca.",
+	"server.metadata.your-router-or-vpn-is-sending": "Router atau VPN kamu mengirim HolyArrs ke alamat palsu (198.18.x.x). Biasanya ini dari Clash atau Surge. Tambahkan {host} ke daftar direct-nya."
 }

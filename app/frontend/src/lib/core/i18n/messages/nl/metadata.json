@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Film",
 	"metadata.health.downTitle": "Metadata offline",
 	"metadata.health.down": "Zoeken en nieuwe afbeeldingen pauzeren tot het weer werkt. Je Bibliotheek werkt gewoon door.",
-	"metadata.health.back": "Metadata weer online"
+	"metadata.health.back": "Metadata weer online",
+	"metadata.health.fakeIp": "Je router of VPN stuurt HolyArrs naar een nepadres (198.18.x.x). Dit komt meestal door Clash of Surge. Zet {host} op de directe lijst daarvan."
 }

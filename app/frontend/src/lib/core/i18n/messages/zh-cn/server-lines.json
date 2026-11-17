@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "已跳过发行门槛：这部电影还不算已上映",
 	"server.sources.this-version-already-has-a-good": "这个版本已有足够好的副本；新的会替换它",
 	"server.requests.removed-the-request-for": "{name} 移除了 {a} 的请求",
-	"server.requests.plex-gave-no-account-code-for": "Plex 没有提供此人的账户代码，因此不会读取其待看清单。"
+	"server.requests.plex-gave-no-account-code-for": "Plex 没有提供此人的账户代码，因此不会读取其待看清单。",
+	"server.metadata.your-router-or-vpn-is-sending": "你的路由器或 VPN 把 HolyArrs 指向了一个假地址（198.18.x.x）。这通常来自 Clash 或 Surge。请把 {host} 加入它的直连列表。"
 }

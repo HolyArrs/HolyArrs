@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "公開判定は省かれます。この映画は、まだ公開済みとして数えられません",
 	"server.sources.this-version-already-has-a-good": "このバージョンには、すでに十分な品質のコピーがあります。新しいものが置き換えます",
 	"server.requests.removed-the-request-for": "{name} が {a} のリクエストを削除しました",
-	"server.requests.plex-gave-no-account-code-for": "Plex がこの人のアカウントコードを返さなかったため、ウォッチリストは読み取られません。"
+	"server.requests.plex-gave-no-account-code-for": "Plex がこの人のアカウントコードを返さなかったため、ウォッチリストは読み取られません。",
+	"server.metadata.your-router-or-vpn-is-sending": "ルーターまたは VPN が HolyArrs を偽のアドレス (198.18.x.x) に送っています。通常は Clash か Surge が原因です。{host} をその直接接続リストに追加してください。"
 }

@@ -1343,5 +1343,6 @@
 	"server.sources.the-release-gate-is-skipped-this": "O Marco de lançamento é ignorado: este filme ainda não conta como lançado",
 	"server.sources.this-version-already-has-a-good": "Esta Versão já tem uma cópia boa o bastante; a nova vai substituí-la",
 	"server.requests.removed-the-request-for": "{name} removeu o pedido de {a}",
-	"server.requests.plex-gave-no-account-code-for": "O Plex não deu nenhum código de conta para esta pessoa, então a lista de interesse dela não é lida."
+	"server.requests.plex-gave-no-account-code-for": "O Plex não deu nenhum código de conta para esta pessoa, então a lista de interesse dela não é lida.",
+	"server.metadata.your-router-or-vpn-is-sending": "Seu roteador ou VPN está mandando o HolyArrs para um endereço falso (198.18.x.x). Isso costuma vir do Clash ou do Surge. Adicione {host} à lista direta dele."
 }
