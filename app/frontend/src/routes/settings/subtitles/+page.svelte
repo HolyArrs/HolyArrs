@@ -635,7 +635,8 @@
 		}
 	}
 	/* No languages yet: the note and Add a language share one row. */
-	:global(#lang-card > .body:has(> .wants > li.small)) { flex-direction: row !important; align-items: center; justify-content: space-between; min-height: 64px; }
+	:global(#lang-card > .body:has(> .wants > li.small)) { flex-direction: row !important; flex-wrap: wrap; column-gap: 12px; align-items: center; justify-content: space-between; min-height: 64px; }
 	:global(#lang-card > .body:has(> .wants > li.small) > *) { margin: 0 !important; box-shadow: none !important; padding-block: 12px !important; }
 	:global(#lang-card > .body:has(> .wants > li.small) > .add) { padding-left: 0 !important; }
+	:global(#lang-card .add .ui-btn) { white-space: nowrap; }
 </style>

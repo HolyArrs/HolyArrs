@@ -174,7 +174,7 @@
 						<div class="grow">
 							<div class="name">
 								{p.name}
-								<span class="chip {runTone(p.state)}">{runWord({ state: p.state, stuck: false })}</span>
+								{#if p.state !== 'running'}<span class="chip {runTone(p.state)}">{runWord({ state: p.state, stuck: false })}</span>{/if}
 							</div>
 							<p class="xs muted">{t('settings.parts.whenOff', { what: partStops[p.part as PartName] })}</p>
 							{#if partNeeds[p.part as PartName]}<p class="xs muted">{partNeeds[p.part as PartName]}</p>{/if}
@@ -183,7 +183,7 @@
 						<div class="row acts">
 							{#if p.on}
 								<Button type="button" onclick={() => restartPart(p)} disabled={!!busy} aria-label={t('settings.parts.restartName', { name: p.name })}>{t('settings.parts.restart')}</Button>
-								<Button variant="plain" type="button" onclick={() => switchPart(p, false)} disabled={!!busy} aria-label={t('settings.parts.turnOffName', { name: p.name })}>{t('settings.parts.turnOff')}</Button>
+								<Button type="button" onclick={() => switchPart(p, false)} disabled={!!busy} aria-label={t('settings.parts.turnOffName', { name: p.name })}>{t('settings.parts.turnOff')}</Button>
 							{:else}
 								<Button variant="primary" type="button" onclick={() => switchPart(p, true)} disabled={!!busy} aria-label={t('settings.parts.turnOnName', { name: p.name })}>{t('settings.parts.turnOn')}</Button>
 							{/if}
@@ -203,7 +203,7 @@
 					{#each split.stages as s (s.key)}
 						<li data-testid="control-stage" data-state={s.state}>
 							<div class="grow">
-								<div class="name">{s.name} <span class="chip {runTone(s.state)}">{runWord(s)}</span></div>
+								<div class="name">{s.name} {#if s.state !== 'running' || s.stuck}<span class="chip {runTone(s.state)}">{runWord(s)}</span>{/if}</div>
 								{#if s.reason}<p class="xs muted">{s.reason}</p>{/if}
 							</div>
 							{#if pausable(s)}<div class="row acts">
@@ -230,7 +230,7 @@
 					{#each split.links as l (l.key)}
 						<li data-testid="control-link" data-state={l.state}>
 							<div class="grow">
-								<div class="name">{l.name} <span class="xs muted">{linkLabel(l.kind)}</span> <span class="chip {runTone(l.state)}">{runWord(l)}</span></div>
+								<div class="name">{l.name} <span class="xs muted">{linkLabel(l.kind)}</span> {#if l.state !== 'running' || l.stuck}<span class="chip {runTone(l.state)}">{runWord(l)}</span>{/if}</div>
 								{#if l.reason}<p class="xs muted">{l.reason}</p>{/if}
 							</div>
 							{#if linkTarget(l.key)}

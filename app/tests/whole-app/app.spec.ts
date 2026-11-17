@@ -173,7 +173,8 @@ test('settings pages render their forms', async () => {
 	for (const name of ['Backups', 'Download sync', 'Schedules', 'Session clean-up', 'Core workers']) {
 		await expect(stages.getByTestId('control-stage').filter({ hasText: name })).toHaveAttribute('data-state', 'running');
 	}
-	await expect(stages.getByTestId('control-stage').filter({ hasText: 'Backups' }).locator('.chip')).toHaveText('Running');
+	// A running stage shows no state word (only states that are not the normal one do).
+	await expect(stages.getByTestId('control-stage').filter({ hasText: 'Backups' })).toHaveAttribute('data-state', 'running');
 	await expect(page.getByTestId('control-links').getByRole('heading', { name: 'Linked apps' })).toBeVisible();
 });
 
