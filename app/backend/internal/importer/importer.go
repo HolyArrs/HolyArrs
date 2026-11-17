@@ -557,12 +557,35 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 		r.Outcome, r.Error = "refused", "a file appeared at the target"
 		return r
 	}
+	// After hardlink fails, try rename before copy. Same-mount FUSE/WebDAV
+	// often allows rename but not hardlink; rename does not read bytes,
+	// unlike a full stream copy that may pull remote content.
+	if !s.Move && ops.Move != nil {
+		merr := ops.Move(s.SourceFile, s.TargetPath)
+		if merr == nil {
+			r.Outcome, r.PlacedBy, r.FellBack = "placed", "move", true
+			r.Error = moveNote + "hardlink not possible: " + linkErr.Error()
+			if fi, serr := os.Lstat(s.TargetPath); serr == nil {
+				r.MoveSize, r.MoveMod = fi.Size(), fi.ModTime().UnixNano()
+			}
+			return r
+		}
+		if errors.Is(merr, fs.ErrExist) {
+			r.Outcome, r.Error = "refused", "a file appeared at the target"
+			return r
+		}
+		moveNote += "rename not possible: " + merr.Error() + "; "
+	}
 	if err := CheckSpace(filepath.Dir(s.TargetPath), sfi.Size()); err != nil {
 		r.Outcome, r.Error = "refused", err.Error()
 		return r
 	}
 	if err := ops.Copy(s.SourceFile, s.TargetPath); err != nil {
-		r.Outcome, r.Error = "failed", placeWhy(err, fmt.Sprintf("hardlink failed (%v), copy failed (%v)", linkErr, err), s.SourceFile)
+		msg := fmt.Sprintf("hardlink failed (%v), copy failed (%v)", linkErr, err)
+		if moveNote != "" {
+			msg = moveNote + msg
+		}
+		r.Outcome, r.Error = "failed", placeWhy(err, msg, s.SourceFile)
 		return r
 	}
 	r.Outcome, r.PlacedBy, r.FellBack = "placed", "copy", true

@@ -25,4 +25,33 @@ func TestGrabLinkAllowedSourcePolicy(t *testing.T) {
 	if err != nil || strings.Contains(got, "10.0.0.5") || !strings.Contains(got, "tracker.example") {
 		t.Errorf("magnet not cleaned: %q %v", got, err)
 	}
+	t.Setenv(TrackerURLPrefixesEnv, "iptv://")
+	iptv := "magnet:?xt=urn:btih:b791a0df00000000000000000000000000000000&dn=Landman.S02E09&tr=iptv://b791a0df00000000000000000000000000000000/streamq/landman"
+	got, err = grabLinkAllowed("qbittorrent", iptv, false)
+	if err != nil || !strings.Contains(got, "tr=iptv%3A%2F%2F") {
+		t.Errorf("iptv tracker stripped: %q %v", got, err)
+	}
+}
+
+func TestTrackerURLPrefixesEnv(t *testing.T) {
+	iptv := "iptv://b791a0df00000000000000000000000000000000/streamq/landman"
+	custom := "facade://guid/path"
+
+	t.Setenv(TrackerURLPrefixesEnv, "")
+	if trackerAllowed(iptv, false) {
+		t.Errorf("empty %s still allowed iptv://", TrackerURLPrefixesEnv)
+	}
+
+	t.Setenv(TrackerURLPrefixesEnv, "facade://, other://")
+	if trackerAllowed(iptv, false) {
+		t.Errorf("iptv:// allowed when env lists other prefixes")
+	}
+	if !trackerAllowed(custom, false) {
+		t.Errorf("facade:// refused when listed in %s", TrackerURLPrefixesEnv)
+	}
+
+	t.Setenv(TrackerURLPrefixesEnv, "IPTV://")
+	if !trackerAllowed(iptv, false) {
+		t.Errorf("case-insensitive prefix match failed")
+	}
 }

@@ -105,7 +105,10 @@ func TestExecuteCrossDeviceFallsBackToCopy(t *testing.T) {
 	write(t, src, 4096)
 	cands, _ := Scan(dl)
 	steps := Plan(cands, target(lib))
-	ops := Ops{Link: func(string, string) error { return &os.LinkError{Op: "link", Err: syscall.EXDEV} }}
+	ops := Ops{
+		Link: func(string, string) error { return &os.LinkError{Op: "link", Err: syscall.EXDEV} },
+		Move: func(string, string) error { return &os.LinkError{Op: "rename", Err: syscall.EXDEV} },
+	}
 	res := Execute(steps, ops)
 	if len(res) != 1 || res[0].Outcome != "placed" || res[0].PlacedBy != "copy" || !res[0].FellBack {
 		t.Fatalf("result %+v", res)
@@ -117,6 +120,28 @@ func TestExecuteCrossDeviceFallsBackToCopy(t *testing.T) {
 	}
 	if _, err := os.Stat(src); err != nil {
 		t.Fatal("source must stay where it is")
+	}
+}
+
+func TestExecuteFallsBackToRenameWhenHardlinkFails(t *testing.T) {
+	dl, lib := t.TempDir(), t.TempDir()
+	src := filepath.Join(dl, relName+".mkv")
+	write(t, src, 4096)
+	cands, _ := Scan(dl)
+	steps := Plan(cands, target(lib))
+	ops := Ops{
+		Link: func(string, string) error { return &os.LinkError{Op: "link", Err: syscall.EXDEV} },
+		Copy: func(string, string) error { t.Fatal("copy must not run when rename works"); return errors.New("unused") },
+	}
+	res := Execute(steps, ops)
+	if len(res) != 1 || res[0].Outcome != "placed" || res[0].PlacedBy != "move" || !res[0].FellBack {
+		t.Fatalf("result %+v", res)
+	}
+	if _, err := os.Stat(src); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("source should have been renamed away")
+	}
+	if fi, err := os.Stat(steps[0].TargetPath); err != nil || fi.Size() != 4096 {
+		t.Fatalf("target missing: %v", err)
 	}
 }
 

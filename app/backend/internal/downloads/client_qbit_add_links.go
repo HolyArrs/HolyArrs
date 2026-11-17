@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"net/url"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -12,6 +13,11 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
+
+// TrackerURLPrefixesEnv lists magnet tracker URL prefixes HolyArrs keeps
+// beyond http/https/udp (for example iptv://). Comma separated. Unset and
+// empty both mean no extra prefixes.
+const TrackerURLPrefixesEnv = "HOLYARRS_TRACKER_URL_PREFIXES"
 
 // addFetchMax caps a fetched .torrent at 10 MiB. Real ones are tiny, so a bigger answer is not a torrent. It is a variable so tests can lower it.
 var addFetchMax int64 = 10 << 20
@@ -101,12 +107,48 @@ func safeMagnet(link string, allowLocal bool) (string, int, error) {
 	return "magnet:?" + strings.Join(parts, "&"), dropped, nil
 }
 
-// trackerAllowed accepts http, https and udp trackers on public hosts. Cloud metadata addresses are never allowed.
-// User info and odd forms of an address are refused, since the client and this check could read them differently.
+// trackerURLPrefixes returns magnet tracker URL prefixes that skip the normal
+// http/https/udp host checks. HOLYARRS_TRACKER_URL_PREFIXES is a comma-separated
+// list; unset and empty both mean none.
+func trackerURLPrefixes() []string {
+	parts := strings.Split(os.Getenv(TrackerURLPrefixesEnv), ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		out = append(out, p)
+	}
+	return out
+}
+
+// trackerHasConfiguredPrefix reports whether v starts with a configured
+// tracker URL prefix (case-insensitive on the prefix).
+func trackerHasConfiguredPrefix(v string) bool {
+	lower := strings.ToLower(v)
+	for _, p := range trackerURLPrefixes() {
+		if p != "" && strings.HasPrefix(lower, strings.ToLower(p)) {
+			return true
+		}
+	}
+	return false
+}
+
+// trackerAllowed accepts http, https and udp trackers on public hosts, plus any
+// URL prefixes listed in HOLYARRS_TRACKER_URL_PREFIXES. Cloud metadata
+// addresses are never allowed. User info and odd forms of an address are
+// refused, since the client and this check could read them differently.
 func trackerAllowed(v string, allowLocal bool) bool {
 	u, err := url.Parse(v)
 	if err != nil || u.Hostname() == "" || u.User != nil || oddAuthority(v) {
 		return false
+	}
+	// Some qBittorrent facades put a non-dialed routing URI in the magnet
+	// tracker slot; stripping those prefixes makes the grab look like a
+	// normal uncached torrent and fail.
+	if trackerHasConfiguredPrefix(v) {
+		return true
 	}
 	switch strings.ToLower(u.Scheme) {
 	case "http", "https", "udp":
