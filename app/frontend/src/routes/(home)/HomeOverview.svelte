@@ -370,7 +370,7 @@
 	.num, .word { margin-top: auto; }
 	.num { font: 800 40px / 1 var(--font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
 	.num small { margin-inline-start: 5px; font: 500 13px / 1 var(--font-ui); letter-spacing: 0; color: var(--text-muted); }
-	.word { font: 700 24px / 1.1 var(--font-display); letter-spacing: -0.025em; }
+	.word { font: 700 20px / 1.1 var(--font-display); letter-spacing: -0.025em; }
 	.sm { margin-top: 5px; font: var(--t-footnote); color: var(--text-muted); overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
 	.stat > .num + .sm:not(:has(+ .sm)), .stat > .word + .sm:not(:has(+ .sm)) { min-height: 2.6em; }
 	/* Two lines that must both show: the row (cut with an ellipsis if long) and "and N more". */
@@ -456,7 +456,7 @@
 		.lab { font-size: 13px; }
 		.num { font-size: 30px; }
 		.num small { font-size: 12px; margin-inline-start: 4px; }
-		.word { font-size: 19px; }
+		.word { font-size: 17px; }
 		.life { left: 14px; right: 14px; bottom: 5px; height: 3px; }
 		.sm { line-height: 1.3; }
 		.ask-stack img { width: 32px; margin-inline-start: -10px; border-radius: 6px; }
