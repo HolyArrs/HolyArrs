@@ -18,7 +18,8 @@
 		ontoggle,
 		onpick,
 		toggle = $bindable(),
-		footer
+		footer,
+		dotPanel
 	}: {
 		id?: string;
 		sections: NavSection[];
@@ -35,6 +36,8 @@
 		onpick?: () => void;
 		toggle?: HTMLElement;
 		footer?: Snippet;
+		/** The list a row's red dot opens. */
+		dotPanel?: Snippet<[() => void]>;
 	} = $props();
 
 	let list = $state<HTMLElement>();
@@ -75,7 +78,7 @@
 					<ul>
 						{#each s.items as item (key(s, item))}
 							<li>
-								<SidebarItem href={link(item.href)} label={item.label} icon={item.icon} current={currentHref === item.href} {collapsed} badge={item.badge} badgeLabel={item.badgeLabel} ring={item.ring} dot={item.dot} badgeTestid={item.href === '/downloads' ? 'nav-decide' : undefined} onclick={onpick} />
+								<SidebarItem href={link(item.href)} label={item.label} icon={item.icon} current={currentHref === item.href} {collapsed} badge={item.badge} badgeLabel={item.badgeLabel} ring={item.ring} dot={item.dot} {dotPanel} badgeTestid={item.href === '/downloads' ? 'nav-decide' : undefined} onclick={onpick} />
 							</li>
 						{/each}
 					</ul>
@@ -127,6 +130,7 @@
 	.collapsed .div { opacity: 1; }
 	.collapsed .section + .section { margin-top: 6px; }
 	ul { display: flex; flex-direction: column; gap: 2px; }
+	li { position: relative; }
 	.foot { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
 	@media (max-width: 767px) { .ui-sidebar { display: none; } }
 </style>

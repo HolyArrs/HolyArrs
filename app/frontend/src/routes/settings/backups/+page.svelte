@@ -18,6 +18,7 @@
 	import { bytes, dateTime, words } from '#lib/core/format.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { freshAsk } from '#lib/backups/index.ts';
+	import { recheckSettingsStatus } from '#lib/alerts/index.ts';
 	import { goto } from '$app/navigation';
 
 	type Preset = 'balanced' | 'light' | 'careful' | 'off';
@@ -102,6 +103,8 @@
 			setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 			if (keyKit) keyKit = { ...keyKit, needed: false };
 			toasts.push(t('settings.backups.kitDownloaded'), 'ok', { body: t('settings.backups.kitApart') });
+			// The key kit warning and the menu dot go out now, not at the next timed check.
+			void recheckSettingsStatus('backups');
 		} catch (e) {
 			toasts.push(t('settings.backups.kitFailed'), 'fail', { body: message(e) });
 		} finally {
