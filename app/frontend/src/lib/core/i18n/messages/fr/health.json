@@ -92,6 +92,7 @@
 	"health.kind.saveFolder": "Dossier d'enregistrement du client de téléchargement",
 	"health.link.downloader": "Client de téléchargement",
 	"health.link.mediaServer": "Serveur multimédia",
+	"health.link.outsideCall": "Service externe",
 	"health.link.part": "Module",
 	"health.link.source": "Source",
 	"health.link.stage": "Phase",

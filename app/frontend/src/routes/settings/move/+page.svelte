@@ -726,7 +726,7 @@
 		{#if forgetError}<p class="form-error" role="alert">{forgetError}</p>{/if}
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (forgetOpen = false)}>{t('settings.move.cancel')}</Button>
+		<Button onclick={() => (forgetOpen = false)}>{t('settings.move.cancel')}</Button>
 		<Button variant="destructive" type="submit" form="move-forget-form" busy={forgetBusy}>{t('settings.move.remove')}</Button>
 	{/snippet}
 </Sheet>
@@ -763,7 +763,7 @@
 		<p class="small muted">{fromApps ? t('settings.move.from', { apps: fromApps }) + ' ' : ''}{embedded ? t('settings.move.undoLaterEmbedded') : t('settings.move.undoLaterPage')}</p>
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (confirmMove = false)}>{t('settings.move.cancel')}</Button>
+		<Button onclick={() => (confirmMove = false)}>{t('settings.move.cancel')}</Button>
 		<Button variant="primary" type="submit" form="move-confirm-form">{t('settings.move.move')}</Button>
 	{/snippet}
 </Sheet>
@@ -773,7 +773,7 @@
 		<p class="small muted">{t('settings.move.undoNote')}</p>
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (confirmUndo = false)}>{t('settings.move.cancel')}</Button>
+		<Button onclick={() => (confirmUndo = false)}>{t('settings.move.cancel')}</Button>
 		<Button variant="destructive" type="submit" form="move-undo-form" disabled={undoing}>{t('settings.move.undoMove')}</Button>
 	{/snippet}
 </Sheet>

@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "Изтегляния, чакащи файлове",
 	"health.link.downloader": "Програма за изтегляне",
 	"health.link.mediaServer": "Медиен сървър",
+	"health.link.outsideCall": "Външна услуга",
 	"health.link.part": "Част",
 	"health.link.source": "Източник",
 	"health.link.stage": "Етап",

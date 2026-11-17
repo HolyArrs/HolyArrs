@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "Tiedostoja odottavat lataukset",
 	"health.link.downloader": "Lataaja",
 	"health.link.mediaServer": "Mediapalvelin",
+	"health.link.outsideCall": "Ulkoinen palvelu",
 	"health.link.part": "Osa",
 	"health.link.source": "Lähde",
 	"health.link.stage": "Vaihe",

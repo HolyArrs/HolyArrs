@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "Niðurhöl bíða eftir skrám",
 	"health.link.downloader": "Niðurhalari",
 	"health.link.mediaServer": "Margmiðlunarþjónn",
+	"health.link.outsideCall": "Ytri þjónusta",
 	"health.link.part": "Hluti",
 	"health.link.source": "Heimild",
 	"health.link.stage": "Þrep",

@@ -92,6 +92,7 @@
 	"health.kind.saveFolder": "Carpeta de descarga del gestor",
 	"health.link.downloader": "Gestor de descargas",
 	"health.link.mediaServer": "Servidor multimedia",
+	"health.link.outsideCall": "Servicio externo",
 	"health.link.part": "Parte",
 	"health.link.source": "Fuente",
 	"health.link.stage": "Etapa",

@@ -1075,6 +1075,7 @@
 	"server.migrate.your-password-line": "parolan",
 	"server.migrate.your-secret-token-line": "gizli anahtarın",
 	"server.core.it-does-not-answer-holyarrs-tries": "Yanıt vermiyor; HolyArrs kendi kendine yeniden dener.",
+	"server.parts.turned-off-in-the-part-switches": "Bölüm anahtarlarından kapatıldı.",
 	"server.downloads.app-must-be-sonarr-shows-or": "uygulama sonarr (diziler) ya da radarr (filmler) olmalı",
 	"server.library.deleted-from-the-library-3": "Kütüphane'den silindi",
 	"server.migrate.its-movie-series": "{name}: ait olduğu film serisi",

@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "tvoja lozinka",
 	"server.migrate.your-secret-token-line": "tvoj tajni token",
 	"server.core.it-does-not-answer-holyarrs-tries": "Ne odgovara; HolyArrs pokušava ponovno sam.",
+	"server.parts.turned-off-in-the-part-switches": "Isključeno u prekidačima dijelova.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app mora biti sonarr (serije) ili radarr (filmovi)",
 	"server.library.deleted-from-the-library-3": "obrisano iz biblioteke",
 	"server.migrate.its-movie-series": "{name}: njegov niz filmova",

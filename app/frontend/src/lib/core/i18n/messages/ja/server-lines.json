@@ -1075,6 +1075,7 @@
 	"server.migrate.your-password-line": "パスワード",
 	"server.migrate.your-secret-token-line": "シークレットトークン",
 	"server.core.it-does-not-answer-holyarrs-tries": "応答がありません。HolyArrs が自動でもう一度試します。",
+	"server.parts.turned-off-in-the-part-switches": "パーツのスイッチでオフにしました。",
 	"server.downloads.app-must-be-sonarr-shows-or": "アプリは sonarr（シリーズ）か radarr（映画）にしてください",
 	"server.library.deleted-from-the-library-3": "ライブラリから削除しました",
 	"server.migrate.its-movie-series": "{name}：その映画シリーズ",

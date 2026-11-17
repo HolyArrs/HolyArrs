@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "Stahování čekající na soubory",
 	"health.link.downloader": "Stahovač",
 	"health.link.mediaServer": "Mediální server",
+	"health.link.outsideCall": "Vnější služba",
 	"health.link.part": "Část",
 	"health.link.source": "Zdroj",
 	"health.link.stage": "Fáze",

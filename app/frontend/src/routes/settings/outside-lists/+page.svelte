@@ -366,8 +366,8 @@
 					</div>
 					<div class="row acts">
 						<Button icon="refresh" type="button" onclick={() => syncNow(l)} disabled={busyId === l.id || !l.enabled} aria-busy={busyId === l.id}>{t('settings.outsideLists.readNow')}</Button>
-						<Button variant="plain" type="button" onclick={() => openForm(l)}>{t('settings.outsideLists.changeButton')}</Button>
-						<Button variant="plain" type="button" onclick={() => remove(l)} disabled={busyId === l.id}>{t('settings.outsideLists.remove')}</Button>
+						<Button type="button" onclick={() => openForm(l)}>{t('settings.outsideLists.changeButton')}</Button>
+						<Button type="button" onclick={() => remove(l)} disabled={busyId === l.id}>{t('settings.outsideLists.remove')}</Button>
 					</div>
 				</li>
 			{/each}
@@ -433,8 +433,8 @@
 			<ul class="never" aria-label={t('settings.outsideLists.never')}>
 				{#each never as n (n.id)}
 					<li data-testid="never-add">
-						<span class="grow"><b>{n.name}</b> <span class="xs muted mono">{n.kind === 'show' ? t('settings.outsideLists.showDot') + ' ' : ''}tmdb:{n.ids.tmdb}</span>{#if n.reason}<span class="xs muted"> · {n.reason}</span>{/if}</span>
-						<Button variant="plain" type="button" onclick={() => removeNever(n)}>{t('settings.outsideLists.takeOff', { name: n.name })}</Button>
+						<span class="grow never-name"><b>{n.name}</b> <span class="xs muted mono">{n.kind === 'show' ? t('settings.outsideLists.showDot') + ' ' : ''}tmdb:{n.ids.tmdb}</span>{#if n.reason}<span class="xs muted"> · {n.reason}</span>{/if}</span>
+						<Button type="button" aria-label={t('settings.outsideLists.takeOff', { name: n.name })} onclick={() => removeNever(n)}>{t('settings.outsideLists.remove')}</Button>
 					</li>
 				{/each}
 			</ul>
@@ -470,6 +470,13 @@
 		align-items: center;
 		padding: var(--s-2) 0;
 	}
+	.never-name {
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+	.never li :global(.ui-btn) {
+		flex: none;
+	}
 	.never li + li {
 		border-top: 1px solid var(--line);
 	}
@@ -480,5 +487,9 @@
 		.acts {
 			flex-wrap: wrap;
 		}
+	}
+	/* Buttons keep their full label; the row wraps instead. */
+	.acts :global(.ui-btn) {
+		flex: none;
 	}
 </style>

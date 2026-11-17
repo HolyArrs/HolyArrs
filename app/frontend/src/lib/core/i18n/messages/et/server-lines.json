@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "sinu parool",
 	"server.migrate.your-secret-token-line": "sinu salatunnus",
 	"server.core.it-does-not-answer-holyarrs-tries": "See ei vasta; HolyArrs proovib ise uuesti.",
+	"server.parts.turned-off-in-the-part-switches": "Osade lülititest välja lülitatud.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app peab olema sonarr (sarjad) või radarr (filmid)",
 	"server.library.deleted-from-the-library-3": "kustutatud meediakogust",
 	"server.migrate.its-movie-series": "{name}: selle filmisari",

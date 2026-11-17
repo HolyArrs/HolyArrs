@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "Các lượt tải đang đợi tệp",
 	"health.link.downloader": "Trình tải",
 	"health.link.mediaServer": "Máy chủ media",
+	"health.link.outsideCall": "Dịch vụ bên ngoài",
 	"health.link.part": "Phần",
 	"health.link.source": "Nguồn",
 	"health.link.stage": "Công đoạn",

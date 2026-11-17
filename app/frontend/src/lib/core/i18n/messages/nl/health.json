@@ -92,6 +92,7 @@
 	"health.kind.saveFolder": "Opslagmap van de Downloader",
 	"health.link.downloader": "Downloader",
 	"health.link.mediaServer": "Mediaserver",
+	"health.link.outsideCall": "Externe dienst",
 	"health.link.part": "Onderdeel",
 	"health.link.source": "Bron",
 	"health.link.stage": "Fase",

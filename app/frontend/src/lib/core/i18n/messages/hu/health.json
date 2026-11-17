@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "Fájlokra váró letöltések",
 	"health.link.downloader": "Letöltő",
 	"health.link.mediaServer": "Médiaszerver",
+	"health.link.outsideCall": "Külső szolgáltatás",
 	"health.link.part": "Modul",
 	"health.link.source": "Forrás",
 	"health.link.stage": "Szakasz",

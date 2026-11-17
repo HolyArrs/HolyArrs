@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "lykilorðið þitt",
 	"server.migrate.your-secret-token-line": "leyniákn þitt",
 	"server.core.it-does-not-answer-holyarrs-tries": "Það svarar ekki; HolyArrs reynir aftur sjálft.",
+	"server.parts.turned-off-in-the-part-switches": "Slökkt í hlutarofunum.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app verður að vera sonarr (þættir) eða radarr (kvikmyndir)",
 	"server.library.deleted-from-the-library-3": "eytt úr safninu",
 	"server.migrate.its-movie-series": "{name}: kvikmyndaröð hennar",

@@ -92,6 +92,7 @@
 	"health.kind.saveFolder": "다운로더 저장 폴더",
 	"health.link.downloader": "다운로더",
 	"health.link.mediaServer": "미디어 서버",
+	"health.link.outsideCall": "외부 서비스",
 	"health.link.part": "파트",
 	"health.link.source": "소스",
 	"health.link.stage": "단계",

@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "ο κωδικός σας",
 	"server.migrate.your-secret-token-line": "το μυστικό διακριτικό σας",
 	"server.core.it-does-not-answer-holyarrs-tries": "Δεν απαντά· το HolyArrs δοκιμάζει ξανά μόνο του.",
+	"server.parts.turned-off-in-the-part-switches": "Απενεργοποιήθηκε στους διακόπτες τμημάτων.",
 	"server.downloads.app-must-be-sonarr-shows-or": "το app πρέπει να είναι sonarr (σειρές) ή radarr (ταινίες)",
 	"server.library.deleted-from-the-library-3": "διαγράφηκε από τη Βιβλιοθήκη",
 	"server.migrate.its-movie-series": "{name}: η σειρά ταινιών του",

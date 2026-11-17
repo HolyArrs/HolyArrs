@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "Mga download na naghihintay ng mga file",
 	"health.link.downloader": "Downloader",
 	"health.link.mediaServer": "Media server",
+	"health.link.outsideCall": "Panlabas na serbisyo",
 	"health.link.part": "Bahagi",
 	"health.link.source": "Source",
 	"health.link.stage": "Yugto",

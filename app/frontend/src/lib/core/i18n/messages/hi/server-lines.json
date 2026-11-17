@@ -1075,6 +1075,7 @@
 	"server.migrate.your-password-line": "आपका पासवर्ड",
 	"server.migrate.your-secret-token-line": "आपका सीक्रेट टोकन",
 	"server.core.it-does-not-answer-holyarrs-tries": "जवाब नहीं दे रहा; HolyArrs अपने आप फिर कोशिश करेगा।",
+	"server.parts.turned-off-in-the-part-switches": "भाग स्विच में बंद किया गया।",
 	"server.downloads.app-must-be-sonarr-shows-or": "ऐप sonarr (शोज़) या radarr (फ़िल्में) होना चाहिए",
 	"server.library.deleted-from-the-library-3": "लाइब्रेरी से हटाया गया",
 	"server.migrate.its-movie-series": "{name}: इसकी फ़िल्म सीरीज़",

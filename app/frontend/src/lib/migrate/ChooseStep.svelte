@@ -255,7 +255,7 @@
 				{/if}
 				{#if err}<p class="form-error" id="{id}-err">{err}</p>{/if}
 				{#if gone}<p class="sub warn note" data-testid="folder-not-here">{t('migrate.notInContainer', { path: ltr(gone) })}{#if seen.length}{' ' + t('migrate.foldersItSees', { list: seen.map(ltr).join(', ') })}{/if}</p>
-					{#if oldRows.length > 0 && !extra.some((r) => r.from === p)}<Button icon="plus" variant="plain" data-testid="folder-not-here-rule" onclick={() => (onextra([...extra, { from: p, to: '' }]), (advOpen = true))}>{t('migrate.addAPathRule')}</Button>{/if}
+					{#if oldRows.length > 0 && !extra.some((r) => r.from === p)}<Button icon="plus" data-testid="folder-not-here-rule" onclick={() => (onextra([...extra, { from: p, to: '' }]), (advOpen = true))}>{t('migrate.addAPathRule')}</Button>{/if}
 				{/if}
 				{#if twins.length}<p class="sub warn note" data-testid="folder-shared">{t('migrate.sameNewFolder', { list: twins.map(ltr).join(', ') })}</p>{/if}
 			</div>
@@ -277,7 +277,7 @@
 			{#if err}<div class="below"><p class="form-error" id="move-rule-{i}-err">{err}</p></div>{/if}
 		</li>
 	{/each}
-	<li class="mrow"><Button icon="plus" variant="plain" onclick={() => onextra([...extra, { from: '', to: '' }])}>{t('migrate.addAPathRule')}</Button></li>
+	<li class="mrow"><Button icon="plus" onclick={() => onextra([...extra, { from: '', to: '' }])}>{t('migrate.addAPathRule')}</Button></li>
 {/snippet}
 
 <div class="choose" class:dim={planning && !!plan} aria-busy={planning}>
@@ -502,7 +502,7 @@
 	/* Settings pages stretch a switch that sits straight in a list row; here the row's words take that room. */
 	.list > .mrow > label.switch { width: auto; }
 
-	select.pick { flex: none; width: 240px; min-height: 36px; height: 36px; }
+	select.pick { flex: none; width: auto; min-width: 240px; max-width: 100%; min-height: 36px; height: 36px; }
 	.half { flex: 1 1 0; min-width: 0; min-height: 36px; height: 36px; }
 	.wide { width: 100%; max-width: 100%; box-sizing: border-box; min-height: 36px; }
 	.below { flex-basis: 100%; padding-bottom: 6px; }

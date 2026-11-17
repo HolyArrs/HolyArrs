@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "Atsisiuntimai, laukiantys failų",
 	"health.link.downloader": "Atsisiuntėjas",
 	"health.link.mediaServer": "Medijos serveris",
+	"health.link.outsideCall": "Išorinė paslauga",
 	"health.link.part": "Dalis",
 	"health.link.source": "Šaltinis",
 	"health.link.stage": "Etapas",

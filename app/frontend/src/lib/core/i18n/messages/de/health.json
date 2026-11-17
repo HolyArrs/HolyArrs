@@ -92,6 +92,7 @@
 	"health.kind.saveFolder": "Speicherordner des Downloaders",
 	"health.link.downloader": "Downloader",
 	"health.link.mediaServer": "Medienserver",
+	"health.link.outsideCall": "Externer Dienst",
 	"health.link.part": "Bereich",
 	"health.link.source": "Quelle",
 	"health.link.stage": "Stufe",

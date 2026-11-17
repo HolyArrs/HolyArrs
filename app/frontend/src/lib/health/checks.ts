@@ -22,13 +22,14 @@ const kinds: Record<string, string> = {
 };
 
 // Stage or linked app kind to its label.
-const linkKinds: Record<StageState['kind'], string> = {
+const linkKinds: Record<StageState['kind'] | 'outside_call', string> = {
 	get stage() { return t('health.link.stage'); },
 	get part() { return t('health.link.part'); },
 	get source() { return t('health.link.source'); },
 	get downloader() { return t('health.link.downloader'); },
 	get subtitle_site() { return t('health.link.subtitleSite'); },
-	get media_server() { return t('health.link.mediaServer'); }
+	get media_server() { return t('health.link.mediaServer'); },
+	get outside_call() { return t('health.link.outsideCall'); }
 };
 
 export function checkLabel(kind: string): string {

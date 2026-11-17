@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "parola ta",
 	"server.migrate.your-secret-token-line": "tokenul tău secret",
 	"server.core.it-does-not-answer-holyarrs-tries": "Nu răspunde; HolyArrs încearcă din nou singur.",
+	"server.parts.turned-off-in-the-part-switches": "Oprit din comutatoarele părților.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app trebuie să fie sonarr (seriale) sau radarr (filme)",
 	"server.library.deleted-from-the-library-3": "șters din Bibliotecă",
 	"server.migrate.its-movie-series": "{name}: seria lui de filme",

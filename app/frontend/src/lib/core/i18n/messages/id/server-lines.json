@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "kata sandimu",
 	"server.migrate.your-secret-token-line": "token rahasiamu",
 	"server.core.it-does-not-answer-holyarrs-tries": "Ia tidak menjawab; HolyArrs mencoba lagi sendiri.",
+	"server.parts.turned-off-in-the-part-switches": "Dimatikan di sakelar bagian.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app harus sonarr (serial) atau radarr (film)",
 	"server.library.deleted-from-the-library-3": "dihapus dari Pustaka",
 	"server.migrate.its-movie-series": "{name}: seri filmnya",

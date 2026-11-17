@@ -1075,6 +1075,7 @@
 	"server.migrate.your-password-line": "je wachtwoord",
 	"server.migrate.your-secret-token-line": "je geheime token",
 	"server.core.it-does-not-answer-holyarrs-tries": "Hij antwoordt niet; HolyArrs probeert het zelf opnieuw.",
+	"server.parts.turned-off-in-the-part-switches": "Uitgezet bij de onderdeelschakelaars.",
 	"server.downloads.app-must-be-sonarr-shows-or": "de app moet sonarr (series) of radarr (films) zijn",
 	"server.library.deleted-from-the-library-3": "verwijderd uit de Bibliotheek",
 	"server.migrate.its-movie-series": "{name}: zijn filmreeks",

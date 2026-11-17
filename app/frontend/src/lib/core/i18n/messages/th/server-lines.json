@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "รหัสผ่านของคุณ",
 	"server.migrate.your-secret-token-line": "โทเคนลับของคุณ",
 	"server.core.it-does-not-answer-holyarrs-tries": "ไม่ตอบ HolyArrs จะลองอีกครั้งเอง",
+	"server.parts.turned-off-in-the-part-switches": "ปิดไว้ที่สวิตช์ส่วนต่างๆ",
 	"server.downloads.app-must-be-sonarr-shows-or": "app ต้องเป็น sonarr (ซีรีส์) หรือ radarr (ภาพยนตร์)",
 	"server.library.deleted-from-the-library-3": "ลบออกจากไลบรารีแล้ว",
 	"server.migrate.its-movie-series": "{name}: ภาพยนตร์ชุดของมัน",

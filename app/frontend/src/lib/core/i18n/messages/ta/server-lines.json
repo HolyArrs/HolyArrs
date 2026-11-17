@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "உங்கள் கடவுச்சொல்",
 	"server.migrate.your-secret-token-line": "உங்கள் ரகசிய டோக்கன்",
 	"server.core.it-does-not-answer-holyarrs-tries": "அது பதிலளிக்கவில்லை; HolyArrs தானாகவே மீண்டும் முயலும்.",
+	"server.parts.turned-off-in-the-part-switches": "பகுதி சுவிட்சுகளில் அணைக்கப்பட்டது.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app என்பது sonarr (தொடர்கள்) அல்லது radarr (திரைப்படங்கள்) ஆக இருக்க வேண்டும்",
 	"server.library.deleted-from-the-library-3": "நூலகத்திலிருந்து நீக்கப்பட்டது",
 	"server.migrate.its-movie-series": "{name}: அதன் திரைப்படத் தொடர்",

@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "கோப்புகளுக்காகக் காத்திருக்கும் பதிவிறக்கங்கள்",
 	"health.link.downloader": "பதிவிறக்கி",
 	"health.link.mediaServer": "ஊடக சேவையகம்",
+	"health.link.outsideCall": "வெளிச் சேவை",
 	"health.link.part": "பகுதி",
 	"health.link.source": "மூலம்",
 	"health.link.stage": "நிலை",

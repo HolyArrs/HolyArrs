@@ -87,6 +87,7 @@
 	"health.kind.waitingDownloads": "ফাইলের অপেক্ষায় থাকা ডাউনলোড",
 	"health.link.downloader": "ডাউনলোডার",
 	"health.link.mediaServer": "মিডিয়া সার্ভার",
+	"health.link.outsideCall": "বাইরের পরিষেবা",
 	"health.link.part": "অংশ",
 	"health.link.source": "সোর্স",
 	"health.link.stage": "স্টেজ",

@@ -1071,6 +1071,7 @@
 	"server.migrate.your-password-line": "jūsų slaptažodis",
 	"server.migrate.your-secret-token-line": "jūsų slaptasis žetonas",
 	"server.core.it-does-not-answer-holyarrs-tries": "Neatsako; HolyArrs bando iš naujo pats.",
+	"server.parts.turned-off-in-the-part-switches": "Išjungta dalių jungikliuose.",
 	"server.downloads.app-must-be-sonarr-shows-or": "app turi būti sonarr (serialai) arba radarr (filmai)",
 	"server.library.deleted-from-the-library-3": "ištrinta iš Bibliotekos",
 	"server.migrate.its-movie-series": "{name}: jo filmų serija",

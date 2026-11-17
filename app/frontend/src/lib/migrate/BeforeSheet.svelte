@@ -78,7 +78,7 @@
 		{/if}
 	</div>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (open = false)}>{t('migrate.goBack')}</Button>
+		<Button onclick={() => (open = false)}>{t('migrate.goBack')}</Button>
 		<Button variant="primary" onclick={onmove} disabled={!ready || trying} busy={trying}>{t('migrate.moveAnyway')}</Button>
 	{/snippet}
 </Sheet>

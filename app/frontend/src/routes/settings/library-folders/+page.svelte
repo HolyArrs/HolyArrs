@@ -313,7 +313,7 @@
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
 				<Button variant="primary" type="submit" disabled={saving} aria-busy={saving}>{t('settings.libraryFolders.addButton')}</Button>
-				<Button variant="plain" type="button" onclick={() => ((adding = false), (formError = ''))}>{t('settings.libraryFolders.cancel')}</Button>
+				<Button type="button" onclick={() => ((adding = false), (formError = ''))}>{t('settings.libraryFolders.cancel')}</Button>
 			</div>
 		</SettingsCard>
 	</form>
@@ -335,7 +335,7 @@
 						<label class="sr-only" for="ed-{f.id}">{t('settings.libraryFolders.name')}</label>
 						<input id="ed-{f.id}" class="input" bind:value={editLabel} maxlength="64" />
 						<Button variant="primary" type="submit" disabled={busyId === f.id}>{t('settings.libraryFolders.save')}</Button>
-						<Button variant="plain" type="button" onclick={() => (editing = null)}>{t('settings.libraryFolders.cancel')}</Button>
+						<Button type="button" onclick={() => (editing = null)}>{t('settings.libraryFolders.cancel')}</Button>
 					</form>
 				{:else}
 					<div class="top"><span class="name">{f.label || f.path}</span><span class="kind" data-testid="folder-kind">{f.kind === 'show' ? t('settings.libraryFolders.forShows') : f.kind === 'music' ? t('settings.libraryFolders.forMusic') : t('settings.libraryFolders.forMovies')}</span></div>
@@ -360,7 +360,7 @@
 			<span class="st {rowTone(f)}"><i></i><span>{rowHealth(f)}</span>{#if f.health === 'no_hardlink'}<a class="why-link" href={copiesDoc} target="_blank" rel="noopener noreferrer">{t('settings.libraryFolders.whyCopies')}</a>{/if}</span>
 			<div class="acts">
 				<IconButton icon="refresh" label={t('settings.libraryFolders.checkAgain', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => recheck(f)} />
-				{#if f.health === 'no_hardlink'}<Button variant="plain" type="button" disabled={busyId === f.id} onclick={() => setCopies(f, !f.copies_expected)}>{f.copies_expected ? t('settings.libraryFolders.warnAgain') : t('settings.libraryFolders.copiesExpected')}</Button>{/if}
+				{#if f.health === 'no_hardlink'}<Button type="button" disabled={busyId === f.id} onclick={() => setCopies(f, !f.copies_expected)}>{f.copies_expected ? t('settings.libraryFolders.warnAgain') : t('settings.libraryFolders.copiesExpected')}</Button>{/if}
 				<IconButton icon="pencil" label={t('settings.libraryFolders.renameOf', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => ((editing = f.id), (editLabel = f.label))} />
 				<IconButton icon="folderMove" label={t('settings.libraryFolders.changePathOf', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} aria-expanded={moving === f.id} onclick={() => openMove(f)} />
 				<IconButton icon="trash" label={t('settings.libraryFolders.removePath', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => remove(f)} />
@@ -371,7 +371,7 @@
 					<div class="mv-row">
 						<input id="mv-{f.id}" class="input mono" dir="ltr" bind:value={movePath} autocomplete="off" spellcheck="false" disabled={moveBusy} aria-describedby="mv-{f.id}-hint" />
 						<Button variant="primary" type="submit" busy={moveBusy} disabled={moveBusy}>{moveBusy ? t('settings.libraryFolders.checkingFiles') : t('settings.libraryFolders.changePath')}</Button>
-						<Button variant="plain" type="button" disabled={moveBusy} onclick={() => (moving = null)}>{t('settings.libraryFolders.cancel')}</Button>
+						<Button type="button" disabled={moveBusy} onclick={() => (moving = null)}>{t('settings.libraryFolders.cancel')}</Button>
 					</div>
 					<p class="hint" id="mv-{f.id}-hint">{t('settings.libraryFolders.changePathHint')}</p>
 					{#if moveError}<p class="form-error" role="alert">{moveError}</p>{/if}
