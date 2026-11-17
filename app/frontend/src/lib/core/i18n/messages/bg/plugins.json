@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Прекъсни",
 	"plugins.remoteSignOut": "Изход",
 	"plugins.remoteSignOutTitle": "Изход от Tailscale?",
-	"plugins.remoteSignOutAbout": "HolyArrs напуска вашия tailnet и входът му в Tailscale се изтрива. Ако не успее, премахнете го от админ страницата на Tailscale.",
+	"plugins.remoteSignOutAbout": "HolyArrs напуска вашия tailnet и входът му в Tailscale се изтрива.",
 	"plugins.remoteSignedOut": "Излязохте от Tailscale",
 	"plugins.remoteSignOutFailed": "Неуспешен изход от Tailscale",
+	"plugins.remoteRemoveInAdmin": "Излязохте тук. Премахнете устройството и от админ страницата на Tailscale.",
 	"plugins.remoteReconnecting": "Повторно свързване с Tailscale",
 	"plugins.remoteDisconnected": "Прекъснато от Tailscale",
 	"plugins.remoteLoadFailed": "Състоянието на Tailscale не може да се прочете"

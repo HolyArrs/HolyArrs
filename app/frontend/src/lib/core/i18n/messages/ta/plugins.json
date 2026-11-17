@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "துண்டி",
 	"plugins.remoteSignOut": "வெளியேறு",
 	"plugins.remoteSignOutTitle": "Tailscale-இலிருந்து வெளியேறவா?",
-	"plugins.remoteSignOutAbout": "HolyArrs உங்கள் tailnet-ஐ விட்டு வெளியேறும், அதன் Tailscale உள்நுழைவு அழிக்கப்படும். தோல்வியுற்றால், Tailscale நிர்வாகப் பக்கத்தில் நீக்கவும்.",
+	"plugins.remoteSignOutAbout": "HolyArrs உங்கள் tailnet-ஐ விட்டு வெளியேறும், அதன் Tailscale உள்நுழைவு அழிக்கப்படும்.",
 	"plugins.remoteSignedOut": "Tailscale-இலிருந்து வெளியேறியது",
 	"plugins.remoteSignOutFailed": "Tailscale-இலிருந்து வெளியேற முடியவில்லை",
+	"plugins.remoteRemoveInAdmin": "இங்கே வெளியேறியது. Tailscale நிர்வாகப் பக்கத்திலும் சாதனத்தை நீக்கவும்.",
 	"plugins.remoteReconnecting": "Tailscale-உடன் மீண்டும் இணைக்கிறது",
 	"plugins.remoteDisconnected": "Tailscale-இலிருந்து துண்டிக்கப்பட்டது",
 	"plugins.remoteLoadFailed": "Tailscale நிலையைப் படிக்க முடியவில்லை"

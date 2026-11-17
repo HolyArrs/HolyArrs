@@ -79,3 +79,8 @@ export function connectionLabel(c: string | undefined): string {
 	if (c === 'relayed') return t('plugins.remoteRelayed');
 	return '';
 }
+
+/** The card's note after a sign-out: empty when Tailscale removed the device too. */
+export function signOutNotice(res: { removed_remotely?: boolean } | null | undefined): string {
+	return res?.removed_remotely === false ? t('plugins.remoteRemoveInAdmin') : '';
+}

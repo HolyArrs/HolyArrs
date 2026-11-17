@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Leválasztás",
 	"plugins.remoteSignOut": "Kijelentkezés",
 	"plugins.remoteSignOutTitle": "Kijelentkezel a Tailscale-ből?",
-	"plugins.remoteSignOutAbout": "A HolyArrs kilép a tailnetedből, és a Tailscale-bejelentkezése törlődik. Ha ez nem sikerül, töröld a Tailscale admin oldalán.",
+	"plugins.remoteSignOutAbout": "A HolyArrs kilép a tailnetedből, és a Tailscale-bejelentkezése törlődik.",
 	"plugins.remoteSignedOut": "Kijelentkezve a Tailscale-ből",
 	"plugins.remoteSignOutFailed": "Nem sikerült kijelentkezni a Tailscale-ből",
+	"plugins.remoteRemoveInAdmin": "Itt kijelentkezve. Töröld az eszközt a Tailscale admin oldalán is.",
 	"plugins.remoteReconnecting": "Újracsatlakozás a Tailscale-hez",
 	"plugins.remoteDisconnected": "Leválasztva a Tailscale-ről",
 	"plugins.remoteLoadFailed": "Nem sikerült beolvasni a Tailscale állapotát"

@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "연결 끊기",
 	"plugins.remoteSignOut": "로그아웃",
 	"plugins.remoteSignOutTitle": "Tailscale에서 로그아웃할까요?",
-	"plugins.remoteSignOutAbout": "HolyArrs가 tailnet에서 나가고 Tailscale 로그인 정보가 지워집니다. 실패하면 Tailscale 관리 페이지에서 제거하세요.",
+	"plugins.remoteSignOutAbout": "HolyArrs가 tailnet에서 나가고 Tailscale 로그인 정보가 지워집니다.",
 	"plugins.remoteSignedOut": "Tailscale에서 로그아웃됨",
 	"plugins.remoteSignOutFailed": "Tailscale에서 로그아웃할 수 없음",
+	"plugins.remoteRemoveInAdmin": "여기서 로그아웃했습니다. Tailscale 관리 페이지에서도 기기를 제거하세요.",
 	"plugins.remoteReconnecting": "Tailscale에 다시 연결 중",
 	"plugins.remoteDisconnected": "Tailscale 연결 끊김",
 	"plugins.remoteLoadFailed": "Tailscale 상태를 읽을 수 없음"

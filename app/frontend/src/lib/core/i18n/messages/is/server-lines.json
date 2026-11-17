@@ -1346,5 +1346,6 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex gaf engan reikningskóða fyrir þessa manneskju, þannig að áhorfslistinn hennar er ekki lesinn.",
 	"server.ai.ai-connections-are-off-the-owner": "Gervigreindartengingar eru óvirkar. Eigandinn getur kveikt á þeim í Stillingar → Gervigreindartengingar.",
 	"server.plugins.plugins-are-changed-only-from-a": "viðbótum er aðeins breytt úr innskráðri lotu eiganda, aldrei með API-lykli",
-	"server.plugins.plugins-are-not-set-up-in": "viðbætur eru ekki settar upp í þessari útgáfu"
+	"server.plugins.plugins-are-not-set-up-in": "viðbætur eru ekki settar upp í þessari útgáfu",
+	"server.accounts.finish-setup-on-the-home-network": "Ljúktu fyrst uppsetningu á heimanetinu."
 }

@@ -1346,5 +1346,6 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte.",
 	"server.ai.ai-connections-are-off-the-owner": "AI-anslutningar är avstängda. Ägaren kan slå på dem i Inställningar → AI-anslutningar.",
 	"server.plugins.plugins-are-changed-only-from-a": "tillägg ändras bara från en inloggad ägarsession, aldrig med en API-nyckel",
-	"server.plugins.plugins-are-not-set-up-in": "tillägg är inte konfigurerade i den här versionen"
+	"server.plugins.plugins-are-not-set-up-in": "tillägg är inte konfigurerade i den här versionen",
+	"server.accounts.finish-setup-on-the-home-network": "Slutför konfigurationen på hemnätverket först."
 }

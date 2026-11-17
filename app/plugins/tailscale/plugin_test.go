@@ -157,6 +157,15 @@ func TestSignOutWipes(t *testing.T) {
 	}
 }
 
+func TestSignOutCode(t *testing.T) {
+	if c := signOutCode(nil); c != 0 {
+		t.Errorf("logout worked: exit %d", c)
+	}
+	if c := signOutCode(errors.New("control unreachable")); c != 3 {
+		t.Errorf("logout failed: exit %d, want 3", c)
+	}
+}
+
 func TestRedact(t *testing.T) {
 	if got := redact("visit https://login.tailscale.com/a/abc123 now tskey-auth-x"); got != "visit [hidden] now [hidden]" {
 		t.Error(got)

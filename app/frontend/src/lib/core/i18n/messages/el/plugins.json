@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Αποσύνδεση",
 	"plugins.remoteSignOut": "Έξοδος",
 	"plugins.remoteSignOutTitle": "Έξοδος από το Tailscale;",
-	"plugins.remoteSignOutAbout": "Το HolyArrs φεύγει από το tailnet σας και η σύνδεσή του στο Tailscale διαγράφεται. Αν αποτύχει, αφαιρέστε το στη σελίδα διαχείρισης του Tailscale.",
+	"plugins.remoteSignOutAbout": "Το HolyArrs φεύγει από το tailnet σας και η σύνδεσή του στο Tailscale διαγράφεται.",
 	"plugins.remoteSignedOut": "Έγινε έξοδος από το Tailscale",
 	"plugins.remoteSignOutFailed": "Δεν ήταν δυνατή η έξοδος από το Tailscale",
+	"plugins.remoteRemoveInAdmin": "Αποσυνδέθηκε εδώ. Αφαιρέστε τη συσκευή και στη σελίδα διαχείρισης του Tailscale.",
 	"plugins.remoteReconnecting": "Επανασύνδεση στο Tailscale",
 	"plugins.remoteDisconnected": "Αποσυνδέθηκε από το Tailscale",
 	"plugins.remoteLoadFailed": "Δεν ήταν δυνατή η ανάγνωση της κατάστασης Tailscale"

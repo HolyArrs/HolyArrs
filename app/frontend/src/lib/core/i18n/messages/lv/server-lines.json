@@ -1346,5 +1346,6 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex nedeva šīs personas konta kodu, tāpēc viņas skatīšanās saraksts netiek lasīts.",
 	"server.ai.ai-connections-are-off-the-owner": "MI savienojumi ir izslēgti. Īpašnieks tos var ieslēgt sadaļā Iestatījumi → MI savienojumi.",
 	"server.plugins.plugins-are-changed-only-from-a": "spraudņus maina tikai no īpašnieka pieteiktas sesijas, nekad ar API atslēgu",
-	"server.plugins.plugins-are-not-set-up-in": "spraudņi šajā versijā nav iestatīti"
+	"server.plugins.plugins-are-not-set-up-in": "spraudņi šajā versijā nav iestatīti",
+	"server.accounts.finish-setup-on-the-home-network": "Vispirms pabeidziet iestatīšanu mājas tīklā."
 }

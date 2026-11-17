@@ -22,3 +22,16 @@ func signOut(ctx context.Context, data string, logout func(context.Context) erro
 	}
 	return logoutErr, wipeErr
 }
+
+// exitLoggedOutLocally is the --sign-out exit code when the state was wiped
+// but the logout itself failed, so HolyArrs can tell the owner to remove the
+// device in Tailscale's admin page.
+const exitLoggedOutLocally = 3
+
+// signOutCode is the exit code for a sign-out whose wipe worked.
+func signOutCode(logoutErr error) int {
+	if logoutErr != nil {
+		return exitLoggedOutLocally
+	}
+	return 0
+}

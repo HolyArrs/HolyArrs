@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Prekini vezu",
 	"plugins.remoteSignOut": "Odjava",
 	"plugins.remoteSignOutTitle": "Odjaviti se iz Tailscalea?",
-	"plugins.remoteSignOutAbout": "HolyArrs napušta vaš tailnet i njegova Tailscale prijava se briše. Ako ne uspije, uklonite ga na admin stranici Tailscalea.",
+	"plugins.remoteSignOutAbout": "HolyArrs napušta vaš tailnet i njegova Tailscale prijava se briše.",
 	"plugins.remoteSignedOut": "Odjavljeno iz Tailscalea",
 	"plugins.remoteSignOutFailed": "Odjava iz Tailscalea nije uspjela",
+	"plugins.remoteRemoveInAdmin": "Odjavljeno ovdje. Uklonite uređaj i na admin stranici Tailscalea.",
 	"plugins.remoteReconnecting": "Ponovno povezivanje s Tailscaleom",
 	"plugins.remoteDisconnected": "Veza s Tailscaleom prekinuta",
 	"plugins.remoteLoadFailed": "Stanje Tailscalea nije moguće pročitati"

@@ -1346,5 +1346,6 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex no ha donat cap codi de compte d'aquesta persona, així que no se'n llegeix la llista de seguiment.",
 	"server.ai.ai-connections-are-off-the-owner": "Les connexions d'IA estan desactivades. El propietari les pot activar a Configuració → Connexions d'IA.",
 	"server.plugins.plugins-are-changed-only-from-a": "els connectors només es canvien des d'una sessió iniciada del propietari, mai amb una clau API",
-	"server.plugins.plugins-are-not-set-up-in": "els connectors no estan configurats en aquesta versió"
+	"server.plugins.plugins-are-not-set-up-in": "els connectors no estan configurats en aquesta versió",
+	"server.accounts.finish-setup-on-the-home-network": "Acaba primer la configuració a la xarxa de casa."
 }

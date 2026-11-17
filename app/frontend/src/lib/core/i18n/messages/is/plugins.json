@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Aftengja",
 	"plugins.remoteSignOut": "Skrá út",
 	"plugins.remoteSignOutTitle": "Skrá út úr Tailscale?",
-	"plugins.remoteSignOutAbout": "HolyArrs yfirgefur tailnetið þitt og Tailscale-innskráningunni er eytt. Ef það mistekst, fjarlægðu það á stjórnsíðu Tailscale.",
+	"plugins.remoteSignOutAbout": "HolyArrs yfirgefur tailnetið þitt og Tailscale-innskráningunni er eytt.",
 	"plugins.remoteSignedOut": "Skráð út úr Tailscale",
 	"plugins.remoteSignOutFailed": "Gat ekki skráð út úr Tailscale",
+	"plugins.remoteRemoveInAdmin": "Skráð út hér. Fjarlægðu tækið líka á stjórnsíðu Tailscale.",
 	"plugins.remoteReconnecting": "Tengist Tailscale aftur",
 	"plugins.remoteDisconnected": "Aftengt frá Tailscale",
 	"plugins.remoteLoadFailed": "Gat ekki lesið stöðu Tailscale"

@@ -1346,5 +1346,6 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex hat für diese Person keinen Kontocode geliefert, deshalb wird ihre Merkliste nicht gelesen.",
 	"server.ai.ai-connections-are-off-the-owner": "KI-Verbindungen sind aus. Der Besitzer kann sie unter Einstellungen → KI-Verbindungen einschalten.",
 	"server.plugins.plugins-are-changed-only-from-a": "Plugins werden nur in einer angemeldeten Sitzung des Besitzers geändert, nie mit einem API-Schlüssel",
-	"server.plugins.plugins-are-not-set-up-in": "Plugins sind in diesem Build nicht eingerichtet"
+	"server.plugins.plugins-are-not-set-up-in": "Plugins sind in diesem Build nicht eingerichtet",
+	"server.accounts.finish-setup-on-the-home-network": "Schließe die Einrichtung zuerst im Heimnetz ab."
 }

@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "قطع الاتصال",
 	"plugins.remoteSignOut": "تسجيل الخروج",
 	"plugins.remoteSignOutTitle": "تسجيل الخروج من Tailscale؟",
-	"plugins.remoteSignOutAbout": "يغادر HolyArrs شبكة tailnet الخاصة بك ويُمسح تسجيل دخوله إلى Tailscale. إن فشل ذلك، أزله من صفحة إدارة Tailscale.",
+	"plugins.remoteSignOutAbout": "يغادر HolyArrs شبكة tailnet الخاصة بك ويُمسح تسجيل دخوله إلى Tailscale.",
 	"plugins.remoteSignedOut": "تم تسجيل الخروج من Tailscale",
 	"plugins.remoteSignOutFailed": "تعذّر تسجيل الخروج من Tailscale",
+	"plugins.remoteRemoveInAdmin": "تم تسجيل الخروج هنا. أزل الجهاز من صفحة إدارة Tailscale أيضًا.",
 	"plugins.remoteReconnecting": "جارٍ إعادة الاتصال بـ Tailscale",
 	"plugins.remoteDisconnected": "تم قطع الاتصال بـ Tailscale",
 	"plugins.remoteLoadFailed": "تعذّرت قراءة حالة Tailscale"

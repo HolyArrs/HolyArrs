@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Katkaise",
 	"plugins.remoteSignOut": "Kirjaudu ulos",
 	"plugins.remoteSignOutTitle": "Kirjaudutaanko ulos Tailscalesta?",
-	"plugins.remoteSignOutAbout": "HolyArrs poistuu tailnetistäsi ja sen Tailscale-kirjautuminen pyyhitään. Jos se epäonnistuu, poista laite Tailscalen hallintasivulla.",
+	"plugins.remoteSignOutAbout": "HolyArrs poistuu tailnetistäsi ja sen Tailscale-kirjautuminen pyyhitään.",
 	"plugins.remoteSignedOut": "Kirjauduttu ulos Tailscalesta",
 	"plugins.remoteSignOutFailed": "Uloskirjautuminen Tailscalesta epäonnistui",
+	"plugins.remoteRemoveInAdmin": "Kirjauduttu ulos täällä. Poista laite myös Tailscalen hallintasivulla.",
 	"plugins.remoteReconnecting": "Yhdistetään uudelleen Tailscaleen",
 	"plugins.remoteDisconnected": "Yhteys Tailscaleen katkaistu",
 	"plugins.remoteLoadFailed": "Tailscalen tilaa ei voitu lukea"

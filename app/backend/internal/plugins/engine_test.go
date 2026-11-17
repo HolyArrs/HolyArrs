@@ -466,12 +466,120 @@ func TestTailscaleStatusAndSignOut(t *testing.T) {
 		t.Fatalf("status through a key = %d %s", rec.Code, rec.Body)
 	}
 
-	call(t, m, "POST", "/api/v1/plugins/tailscale/signout", http.StatusOK)
+	if out := call(t, m, "POST", "/api/v1/plugins/tailscale/signout", http.StatusOK); out["removed_remotely"] != true {
+		t.Fatalf("sign-out answer: %v", out)
+	}
 	if len(run.Starts) != 2 || len(run.Starts[1].Args) != 1 || run.Starts[1].Args[0] != "--sign-out" {
 		t.Fatalf("sign-out run: %+v", run.Starts)
 	}
 	p := row(t, call(t, m, "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
 	if p["running"] != false || p["enabled"] != false {
 		t.Fatalf("after sign-out: %v", p)
+	}
+}
+
+// exitErr stands in for *exec.ExitError.
+type exitErr int
+
+func (e exitErr) Error() string { return "exit status" }
+func (e exitErr) ExitCode() int { return int(e) }
+
+func TestTailscaleSignOutLocalOnly(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, run := newEngine(t, ls, pub)
+	m := mux(e)
+	call(t, m, "POST", "/api/v1/plugins/tailscale/install", http.StatusOK)
+	run.OneShot = func(plugins.Spec) error { return exitErr(3) }
+	out := call(t, m, "POST", "/api/v1/plugins/tailscale/signout", http.StatusOK)
+	if out["signed_out"] != true || out["removed_remotely"] != false {
+		t.Fatalf("logout failed, state wiped: %v", out)
+	}
+	run.OneShot = func(plugins.Spec) error { return exitErr(1) }
+	call(t, m, "POST", "/api/v1/plugins/tailscale/signout", http.StatusInternalServerError)
+}
+
+func TestTailscaleSignOutKeepsSecurityReason(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, run := newEngine(t, ls, pub)
+	m := mux(e)
+	call(t, m, "POST", "/api/v1/plugins/tailscale/install", http.StatusOK)
+	// The blocklist turns the plugin off while the sign-out runs.
+	run.OneShot = func(plugins.Spec) error {
+		st, err := plugins.NewStore(e.Dir)
+		if err != nil {
+			return err
+		}
+		return st.SetEnabled("tailscale", false, "on the blocklist")
+	}
+	call(t, m, "POST", "/api/v1/plugins/tailscale/signout", http.StatusOK)
+	p := row(t, call(t, m, "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
+	if p["enabled"] != false || p["disabled_reason"] != "on the blocklist" {
+		t.Fatalf("security reason overwritten: %v", p)
+	}
+	// A plugin already off for a security reason is not signed out at all.
+	run.OneShot = nil
+	call(t, m, "POST", "/api/v1/plugins/tailscale/signout", http.StatusUnprocessableEntity)
+	p = row(t, call(t, m, "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
+	if p["disabled_reason"] != "on the blocklist" {
+		t.Fatalf("after refused sign-out: %v", p)
+	}
+}
+
+func TestTailscaleStatusSafeRead(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, run := newEngine(t, ls, pub)
+	m := mux(e)
+	call(t, m, "POST", "/api/v1/plugins/tailscale/install", http.StatusOK)
+	data := run.Starts[0].DataDir
+	status := filepath.Join(data, "status.json")
+	write := func(body string) {
+		t.Helper()
+		os.Remove(status)
+		if err := os.WriteFile(status, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Unknown fields are dropped; only the known ones come back.
+	write(`{"state":"connected","tsnet_name":"holyarrs","secret_thing":"x"}`)
+	st := call(t, m, "GET", "/api/v1/plugins/tailscale/status", http.StatusOK)
+	if st["state"] != "connected" || st["tsnet_name"] != "holyarrs" || st["secret_thing"] != nil {
+		t.Fatalf("status fields: %v", st)
+	}
+
+	// Sign-in links off Tailscale's host, or not https, are dropped with no QR.
+	for _, link := range []string{"http://login.tailscale.com/a/x", "https://evil.example/a/x", "javascript:alert(1)", "https://login.tailscale.com.evil.example/a"} {
+		write(`{"state":"waiting_for_sign_in","login_url":"` + link + `"}`)
+		st = call(t, m, "GET", "/api/v1/plugins/tailscale/status", http.StatusOK)
+		if st["login_url"] != nil || st["login_qr"] != nil {
+			t.Fatalf("untrusted link %q kept: %v", link, st)
+		}
+	}
+	// The configured login server's host is trusted.
+	hm := http.NewServeMux()
+	(&plugins.Handlers{Engine: e, LoginServer: "https://hs.example.net"}).Routes(hm)
+	write(`{"state":"waiting_for_sign_in","login_url":"https://hs.example.net/register/x"}`)
+	if st = call(t, hm, "GET", "/api/v1/plugins/tailscale/status", http.StatusOK); st["login_url"] == nil || st["login_qr"] == nil {
+		t.Fatalf("login server link dropped: %v", st)
+	}
+
+	// Anything but a regular file is refused.
+	os.Remove(status)
+	if err := os.Mkdir(status, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	rec := httptest.NewRecorder()
+	m.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/plugins/tailscale/status", nil))
+	if rec.Code == http.StatusOK {
+		t.Fatalf("directory read as status: %s", rec.Body)
+	}
+	os.Remove(status)
+
+	// Only the first 64 KiB is read: a huge file fails to decode.
+	write(`{"state":"connected","tsnet_name":"` + strings.Repeat("a", 70<<10) + `"}`)
+	rec = httptest.NewRecorder()
+	m.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/plugins/tailscale/status", nil))
+	if rec.Code == http.StatusOK {
+		t.Fatalf("oversized status read: %d", rec.Body.Len())
 	}
 }

@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Verbreken",
 	"plugins.remoteSignOut": "Afmelden",
 	"plugins.remoteSignOutTitle": "Afmelden bij Tailscale?",
-	"plugins.remoteSignOutAbout": "HolyArrs verlaat je tailnet en de Tailscale-aanmelding wordt gewist. Lukt dat niet, verwijder het dan op de beheerpagina van Tailscale.",
+	"plugins.remoteSignOutAbout": "HolyArrs verlaat je tailnet en de Tailscale-aanmelding wordt gewist.",
 	"plugins.remoteSignedOut": "Afgemeld bij Tailscale",
 	"plugins.remoteSignOutFailed": "Afmelden bij Tailscale mislukt",
+	"plugins.remoteRemoveInAdmin": "Hier afgemeld. Verwijder het apparaat ook op de beheerpagina van Tailscale.",
 	"plugins.remoteReconnecting": "Opnieuw verbinden met Tailscale",
 	"plugins.remoteDisconnected": "Verbinding met Tailscale verbroken",
 	"plugins.remoteLoadFailed": "Tailscale-status kon niet worden gelezen"

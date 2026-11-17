@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Odpojit",
 	"plugins.remoteSignOut": "Odhlásit",
 	"plugins.remoteSignOutTitle": "Odhlásit z Tailscale?",
-	"plugins.remoteSignOutAbout": "HolyArrs opustí váš tailnet a jeho přihlášení do Tailscale se smaže. Pokud to selže, odeberte ho na stránce správy Tailscale.",
+	"plugins.remoteSignOutAbout": "HolyArrs opustí váš tailnet a jeho přihlášení do Tailscale se smaže.",
 	"plugins.remoteSignedOut": "Odhlášeno z Tailscale",
 	"plugins.remoteSignOutFailed": "Odhlášení z Tailscale se nezdařilo",
+	"plugins.remoteRemoveInAdmin": "Zde odhlášeno. Odeberte zařízení i na stránce správy Tailscale.",
 	"plugins.remoteReconnecting": "Znovu se připojuje k Tailscale",
 	"plugins.remoteDisconnected": "Odpojeno od Tailscale",
 	"plugins.remoteLoadFailed": "Stav Tailscale nelze načíst"

@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Ühenda lahti",
 	"plugins.remoteSignOut": "Logi välja",
 	"plugins.remoteSignOutTitle": "Logida Tailscale'ist välja?",
-	"plugins.remoteSignOutAbout": "HolyArrs lahkub su tailnetist ja selle Tailscale'i sisselogimine kustutatakse. Kui see ebaõnnestub, eemalda see Tailscale'i halduslehel.",
+	"plugins.remoteSignOutAbout": "HolyArrs lahkub su tailnetist ja selle Tailscale'i sisselogimine kustutatakse.",
 	"plugins.remoteSignedOut": "Tailscale'ist välja logitud",
 	"plugins.remoteSignOutFailed": "Tailscale'ist väljalogimine ebaõnnestus",
+	"plugins.remoteRemoveInAdmin": "Siin välja logitud. Eemalda seade ka Tailscale'i halduslehel.",
 	"plugins.remoteReconnecting": "Ühendan uuesti Tailscale'iga",
 	"plugins.remoteDisconnected": "Tailscale'ist lahti ühendatud",
 	"plugins.remoteLoadFailed": "Tailscale'i olekut ei saanud lugeda"

@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "ניתוק",
 	"plugins.remoteSignOut": "התנתקות",
 	"plugins.remoteSignOutTitle": "להתנתק מ-Tailscale?",
-	"plugins.remoteSignOutAbout": "HolyArrs יעזוב את ה-tailnet שלכם וההתחברות שלו ל-Tailscale תימחק. אם זה נכשל, הסירו אותו בדף הניהול של Tailscale.",
+	"plugins.remoteSignOutAbout": "HolyArrs יעזוב את ה-tailnet שלכם וההתחברות שלו ל-Tailscale תימחק.",
 	"plugins.remoteSignedOut": "התנתקת מ-Tailscale",
 	"plugins.remoteSignOutFailed": "לא ניתן להתנתק מ-Tailscale",
+	"plugins.remoteRemoveInAdmin": "התנתקתם כאן. הסירו את המכשיר גם בדף הניהול של Tailscale.",
 	"plugins.remoteReconnecting": "מתחבר מחדש ל-Tailscale",
 	"plugins.remoteDisconnected": "מנותק מ-Tailscale",
 	"plugins.remoteLoadFailed": "לא ניתן לקרוא את מצב Tailscale"

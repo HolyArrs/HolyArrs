@@ -1346,5 +1346,6 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex gave no account code for this person, so their watchlist is not read.",
 	"server.ai.ai-connections-are-off-the-owner": "AI connections are off. The owner can turn them on in Settings → AI connections.",
 	"server.plugins.plugins-are-changed-only-from-a": "plugins are changed only from a signed-in owner session, never with an API key",
-	"server.plugins.plugins-are-not-set-up-in": "plugins are not set up in this build"
+	"server.plugins.plugins-are-not-set-up-in": "plugins are not set up in this build",
+	"server.accounts.finish-setup-on-the-home-network": "Finish setup on the home network first."
 }

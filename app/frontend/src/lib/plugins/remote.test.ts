@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { connectionLabel, remoteStateLabel } from './view.ts';
+import { connectionLabel, remoteStateLabel, signOutNotice } from './view.ts';
 
 describe('remote access wording', () => {
 	it('names every Tailscale state in plain words', () => {
@@ -22,5 +22,10 @@ describe('remote access wording', () => {
 		expect(connectionLabel('direct')).toBe('Direct');
 		expect(connectionLabel('relayed')).toBe('Relayed');
 		expect(connectionLabel(undefined)).toBe('');
+	});
+	it('tells the owner to remove the device when Tailscale could not', () => {
+		expect(signOutNotice({ removed_remotely: false })).toBe("Signed out here. Remove the device in Tailscale's admin page too.");
+		expect(signOutNotice({ removed_remotely: true })).toBe('');
+		expect(signOutNotice(undefined)).toBe('');
 	});
 });

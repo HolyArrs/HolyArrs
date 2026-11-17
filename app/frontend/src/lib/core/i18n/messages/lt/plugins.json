@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Atjungti",
 	"plugins.remoteSignOut": "Atsijungti",
 	"plugins.remoteSignOutTitle": "Atsijungti nuo Tailscale?",
-	"plugins.remoteSignOutAbout": "HolyArrs palieka jūsų tailnet, o jo Tailscale prisijungimas ištrinamas. Jei nepavyks, pašalinkite jį Tailscale administravimo puslapyje.",
+	"plugins.remoteSignOutAbout": "HolyArrs palieka jūsų tailnet, o jo Tailscale prisijungimas ištrinamas.",
 	"plugins.remoteSignedOut": "Atsijungta nuo Tailscale",
 	"plugins.remoteSignOutFailed": "Nepavyko atsijungti nuo Tailscale",
+	"plugins.remoteRemoveInAdmin": "Čia atsijungta. Pašalinkite įrenginį ir Tailscale administravimo puslapyje.",
 	"plugins.remoteReconnecting": "Jungiamasi prie Tailscale iš naujo",
 	"plugins.remoteDisconnected": "Atjungta nuo Tailscale",
 	"plugins.remoteLoadFailed": "Nepavyko nuskaityti Tailscale būsenos"

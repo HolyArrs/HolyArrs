@@ -1346,5 +1346,6 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex pre túto osobu nedal kód účtu, preto sa jej zoznam na pozretie nečíta.",
 	"server.ai.ai-connections-are-off-the-owner": "Pripojenia AI sú vypnuté. Vlastník ich môže zapnúť v Nastavenia → Pripojenia AI.",
 	"server.plugins.plugins-are-changed-only-from-a": "pluginy sa menia len z prihlásenej relácie vlastníka, nikdy kľúčom API",
-	"server.plugins.plugins-are-not-set-up-in": "pluginy nie sú v tejto verzii nastavené"
+	"server.plugins.plugins-are-not-set-up-in": "pluginy nie sú v tejto verzii nastavené",
+	"server.accounts.finish-setup-on-the-home-network": "Najprv dokončite nastavenie v domácej sieti."
 }

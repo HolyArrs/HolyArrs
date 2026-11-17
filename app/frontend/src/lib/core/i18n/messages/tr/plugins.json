@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Bağlantıyı kes",
 	"plugins.remoteSignOut": "Çıkış yap",
 	"plugins.remoteSignOutTitle": "Tailscale'den çıkış yapılsın mı?",
-	"plugins.remoteSignOutAbout": "HolyArrs tailnet'inizden ayrılır ve Tailscale oturumu silinir. Başarısız olursa Tailscale yönetim sayfasından kaldırın.",
+	"plugins.remoteSignOutAbout": "HolyArrs tailnet'inizden ayrılır ve Tailscale oturumu silinir.",
 	"plugins.remoteSignedOut": "Tailscale'den çıkış yapıldı",
 	"plugins.remoteSignOutFailed": "Tailscale'den çıkış yapılamadı",
+	"plugins.remoteRemoveInAdmin": "Burada çıkış yapıldı. Cihazı Tailscale yönetim sayfasından da kaldırın.",
 	"plugins.remoteReconnecting": "Tailscale'e yeniden bağlanılıyor",
 	"plugins.remoteDisconnected": "Tailscale bağlantısı kesildi",
 	"plugins.remoteLoadFailed": "Tailscale durumu okunamadı"

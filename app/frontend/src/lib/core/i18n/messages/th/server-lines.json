@@ -1346,5 +1346,6 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex ไม่ได้ให้รหัสบัญชีของคนนี้ จึงไม่อ่านรายการที่อยากดูของเขา",
 	"server.ai.ai-connections-are-off-the-owner": "การเชื่อมต่อ AI ปิดอยู่ เจ้าของเปิดได้ที่ การตั้งค่า → การเชื่อมต่อ AI",
 	"server.plugins.plugins-are-changed-only-from-a": "ปลั๊กอินเปลี่ยนได้จากเซสชันที่เจ้าของลงชื่อเข้าใช้เท่านั้น ไม่ใช่ด้วยคีย์ API",
-	"server.plugins.plugins-are-not-set-up-in": "ปลั๊กอินยังไม่ได้ตั้งค่าในบิลด์นี้"
+	"server.plugins.plugins-are-not-set-up-in": "ปลั๊กอินยังไม่ได้ตั้งค่าในบิลด์นี้",
+	"server.accounts.finish-setup-on-the-home-network": "ตั้งค่าให้เสร็จบนเครือข่ายในบ้านก่อน"
 }

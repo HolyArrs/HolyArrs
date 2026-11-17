@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Desconectar",
 	"plugins.remoteSignOut": "Cerrar sesión",
 	"plugins.remoteSignOutTitle": "¿Cerrar sesión en Tailscale?",
-	"plugins.remoteSignOutAbout": "HolyArrs sale de tu tailnet y se borra su sesión de Tailscale. Si falla, quítalo en la página de admin de Tailscale.",
+	"plugins.remoteSignOutAbout": "HolyArrs sale de tu tailnet y se borra su sesión de Tailscale.",
 	"plugins.remoteSignedOut": "Sesión de Tailscale cerrada",
 	"plugins.remoteSignOutFailed": "No se pudo cerrar la sesión de Tailscale",
+	"plugins.remoteRemoveInAdmin": "Sesión cerrada aquí. Quita también el dispositivo en la página de admin de Tailscale.",
 	"plugins.remoteReconnecting": "Reconectando a Tailscale",
 	"plugins.remoteDisconnected": "Desconectado de Tailscale",
 	"plugins.remoteLoadFailed": "No se pudo leer el estado de Tailscale"

@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Ngắt kết nối",
 	"plugins.remoteSignOut": "Đăng xuất",
 	"plugins.remoteSignOutTitle": "Đăng xuất khỏi Tailscale?",
-	"plugins.remoteSignOutAbout": "HolyArrs rời tailnet của bạn và thông tin đăng nhập Tailscale bị xóa. Nếu thất bại, hãy xóa nó trong trang quản trị Tailscale.",
+	"plugins.remoteSignOutAbout": "HolyArrs rời tailnet của bạn và thông tin đăng nhập Tailscale bị xóa.",
 	"plugins.remoteSignedOut": "Đã đăng xuất khỏi Tailscale",
 	"plugins.remoteSignOutFailed": "Không thể đăng xuất khỏi Tailscale",
+	"plugins.remoteRemoveInAdmin": "Đã đăng xuất ở đây. Hãy xóa thiết bị trong trang quản trị Tailscale nữa.",
 	"plugins.remoteReconnecting": "Đang kết nối lại Tailscale",
 	"plugins.remoteDisconnected": "Đã ngắt khỏi Tailscale",
 	"plugins.remoteLoadFailed": "Không đọc được trạng thái Tailscale"

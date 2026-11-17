@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Rozłącz",
 	"plugins.remoteSignOut": "Wyloguj",
 	"plugins.remoteSignOutTitle": "Wylogować z Tailscale?",
-	"plugins.remoteSignOutAbout": "HolyArrs opuści Twój tailnet, a jego logowanie Tailscale zostanie usunięte. Jeśli się nie uda, usuń je na stronie admina Tailscale.",
+	"plugins.remoteSignOutAbout": "HolyArrs opuści Twój tailnet, a jego logowanie Tailscale zostanie usunięte.",
 	"plugins.remoteSignedOut": "Wylogowano z Tailscale",
 	"plugins.remoteSignOutFailed": "Nie udało się wylogować z Tailscale",
+	"plugins.remoteRemoveInAdmin": "Wylogowano tutaj. Usuń urządzenie także na stronie admina Tailscale.",
 	"plugins.remoteReconnecting": "Ponowne łączenie z Tailscale",
 	"plugins.remoteDisconnected": "Rozłączono z Tailscale",
 	"plugins.remoteLoadFailed": "Nie udało się odczytać stanu Tailscale"

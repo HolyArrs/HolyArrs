@@ -11,6 +11,9 @@ type FakeRunner struct {
 	mu     sync.Mutex
 	Starts []plugins.Spec
 	Err    error
+	// OneShot, when set, runs for each one-shot start; its error is what
+	// that run's Wait returns (such as an exit code).
+	OneShot func(plugins.Spec) error
 }
 
 // Start records spec and returns a process that runs until stopped or ctx
@@ -24,6 +27,9 @@ func (f *FakeRunner) Start(ctx context.Context, spec plugins.Spec) (plugins.Proc
 	f.Starts = append(f.Starts, spec)
 	p := &fakeProcess{done: make(chan struct{})}
 	if len(spec.Args) > 0 { // one-shot runs such as --sign-out end at once
+		if f.OneShot != nil {
+			p.err = f.OneShot(spec)
+		}
 		p.Stop()
 	}
 	go func() {
@@ -39,6 +45,7 @@ func (f *FakeRunner) Start(ctx context.Context, spec plugins.Spec) (plugins.Proc
 type fakeProcess struct {
 	once sync.Once
 	done chan struct{}
+	err  error
 }
 
 func (p *fakeProcess) Stop() error {
@@ -48,5 +55,5 @@ func (p *fakeProcess) Stop() error {
 
 func (p *fakeProcess) Wait() error {
 	<-p.done
-	return nil
+	return p.err
 }

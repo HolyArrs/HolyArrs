@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Desligar",
 	"plugins.remoteSignOut": "Terminar sessão",
 	"plugins.remoteSignOutTitle": "Terminar sessão no Tailscale?",
-	"plugins.remoteSignOutAbout": "O HolyArrs sai da sua tailnet e a sessão do Tailscale é apagada. Se falhar, remova-o na página de admin do Tailscale.",
+	"plugins.remoteSignOutAbout": "O HolyArrs sai da sua tailnet e a sessão do Tailscale é apagada.",
 	"plugins.remoteSignedOut": "Sessão do Tailscale terminada",
 	"plugins.remoteSignOutFailed": "Não foi possível terminar a sessão do Tailscale",
+	"plugins.remoteRemoveInAdmin": "Sessão terminada aqui. Remova também o dispositivo na página de admin do Tailscale.",
 	"plugins.remoteReconnecting": "A voltar a ligar ao Tailscale",
 	"plugins.remoteDisconnected": "Desligado do Tailscale",
 	"plugins.remoteLoadFailed": "Não foi possível ler o estado do Tailscale"

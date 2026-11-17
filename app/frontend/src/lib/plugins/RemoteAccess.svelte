@@ -11,7 +11,7 @@
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { dateTime } from '#lib/core/format.ts';
-	import { connectionLabel, remoteStateLabel } from './view.ts';
+	import { connectionLabel, remoteStateLabel, signOutNotice } from './view.ts';
 	import type { Plugin, TailscaleStatus } from './types.ts';
 
 	let { plugin, canRun, onchange }: { plugin: Plugin; canRun: boolean; onchange: () => Promise<void> | void } = $props();
@@ -20,6 +20,7 @@
 	let error = $state('');
 	let busy = $state('');
 	let confirmOpen = $state(false);
+	let notice = $state('');
 
 	const label = $derived(st ? remoteStateLabel(st.state, plugin) : '');
 	const signIn = $derived(plugin.running && st?.state === 'waiting_for_sign_in' && !!st.login_url);
@@ -53,7 +54,8 @@
 		if (busy) return;
 		busy = key;
 		try {
-			await api.post(path);
+			const res = await api.post<{ removed_remotely?: boolean }>(path);
+			notice = key === 'signout' ? signOutNotice(res) : '';
 			toasts.push(t(done), 'ok');
 		} catch (e) {
 			toasts.push(t(fail), 'fail', { body: message(e) });
@@ -77,7 +79,7 @@
 			<div><Badge label={label} /></div>
 			{#if signIn}
 				<div class="signin">
-					<Button variant="primary" iconAfter="arrowUpRight" onclick={() => window.open(st?.login_url, '_blank', 'noopener,noreferrer')}>{t('plugins.remoteOpenSignIn')}</Button>
+					<Button variant="primary" iconAfter="arrowUpRight" onclick={() => st?.login_url?.startsWith('https://') && window.open(st.login_url, '_blank', 'noopener,noreferrer')}>{t('plugins.remoteOpenSignIn')}</Button>
 					{#if st.login_qr?.length}
 						<p class="xs muted">{t('plugins.remoteScan')}</p>
 						<div class="qr"><QrCode rows={st.login_qr} label={t('plugins.remoteQr')} /></div>
@@ -90,6 +92,7 @@
 				</dl>
 			{/if}
 		{/if}
+		{#if notice}<p class="small" data-testid="remote-notice">{notice}</p>{/if}
 		<div class="acts">
 			{#if plugin.running}
 				<Button disabled={!!busy} busy={busy === 'stop'} onclick={() => act('stop', '/plugins/tailscale/stop', 'plugins.remoteDisconnected', 'plugins.failed')}>{t('plugins.remoteDisconnect')}</Button>

@@ -1346,5 +1346,6 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex gaf geen accountcode voor deze persoon, dus zijn of haar kijklijst wordt niet gelezen.",
 	"server.ai.ai-connections-are-off-the-owner": "AI-verbindingen staan uit. De eigenaar kan ze aanzetten in Instellingen → AI-verbindingen.",
 	"server.plugins.plugins-are-changed-only-from-a": "plug-ins worden alleen gewijzigd vanuit een aangemelde sessie van de eigenaar, nooit met een API-sleutel",
-	"server.plugins.plugins-are-not-set-up-in": "plug-ins zijn niet ingesteld in deze build"
+	"server.plugins.plugins-are-not-set-up-in": "plug-ins zijn niet ingesteld in deze build",
+	"server.accounts.finish-setup-on-the-home-network": "Rond eerst de installatie af op het thuisnetwerk."
 }

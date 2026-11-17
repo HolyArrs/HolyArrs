@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "断开",
 	"plugins.remoteSignOut": "退出登录",
 	"plugins.remoteSignOutTitle": "退出 Tailscale 登录？",
-	"plugins.remoteSignOutAbout": "HolyArrs 将离开你的 tailnet，并清除其 Tailscale 登录。如果失败，请在 Tailscale 管理页面中移除。",
+	"plugins.remoteSignOutAbout": "HolyArrs 将离开你的 tailnet，并清除其 Tailscale 登录。",
 	"plugins.remoteSignedOut": "已退出 Tailscale",
 	"plugins.remoteSignOutFailed": "无法退出 Tailscale",
+	"plugins.remoteRemoveInAdmin": "已在此处退出。也请在 Tailscale 管理页面中移除该设备。",
 	"plugins.remoteReconnecting": "正在重新连接 Tailscale",
 	"plugins.remoteDisconnected": "已与 Tailscale 断开",
 	"plugins.remoteLoadFailed": "无法读取 Tailscale 状态"

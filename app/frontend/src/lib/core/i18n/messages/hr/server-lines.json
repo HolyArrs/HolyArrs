@@ -1346,5 +1346,6 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru računa za ovu osobu, pa se njezin popis za gledanje ne čita.",
 	"server.ai.ai-connections-are-off-the-owner": "AI veze su isključene. Vlasnik ih može uključiti u Postavke → AI veze.",
 	"server.plugins.plugins-are-changed-only-from-a": "dodaci se mijenjaju samo iz prijavljene sesije vlasnika, nikad API ključem",
-	"server.plugins.plugins-are-not-set-up-in": "dodaci nisu postavljeni u ovoj verziji"
+	"server.plugins.plugins-are-not-set-up-in": "dodaci nisu postavljeni u ovoj verziji",
+	"server.accounts.finish-setup-on-the-home-network": "Najprije dovršite postavljanje na kućnoj mreži."
 }

@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "ตัดการเชื่อมต่อ",
 	"plugins.remoteSignOut": "ออกจากระบบ",
 	"plugins.remoteSignOutTitle": "ออกจากระบบ Tailscale?",
-	"plugins.remoteSignOutAbout": "HolyArrs จะออกจาก tailnet ของคุณและข้อมูลลงชื่อเข้าใช้ Tailscale จะถูกลบ หากไม่สำเร็จ ให้นำออกในหน้าผู้ดูแลของ Tailscale",
+	"plugins.remoteSignOutAbout": "HolyArrs จะออกจาก tailnet ของคุณและข้อมูลลงชื่อเข้าใช้ Tailscale จะถูกลบ",
 	"plugins.remoteSignedOut": "ออกจากระบบ Tailscale แล้ว",
 	"plugins.remoteSignOutFailed": "ออกจากระบบ Tailscale ไม่ได้",
+	"plugins.remoteRemoveInAdmin": "ออกจากระบบที่นี่แล้ว นำอุปกรณ์ออกในหน้าผู้ดูแลของ Tailscale ด้วย",
 	"plugins.remoteReconnecting": "กำลังเชื่อมต่อ Tailscale ใหม่",
 	"plugins.remoteDisconnected": "ตัดการเชื่อมต่อจาก Tailscale แล้ว",
 	"plugins.remoteLoadFailed": "อ่านสถานะ Tailscale ไม่ได้"

@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Idiskonekta",
 	"plugins.remoteSignOut": "Mag-sign out",
 	"plugins.remoteSignOutTitle": "Mag-sign out sa Tailscale?",
-	"plugins.remoteSignOutAbout": "Aalis ang HolyArrs sa tailnet mo at buburahin ang Tailscale login nito. Kung pumalya, alisin ito sa admin page ng Tailscale.",
+	"plugins.remoteSignOutAbout": "Aalis ang HolyArrs sa tailnet mo at buburahin ang Tailscale login nito.",
 	"plugins.remoteSignedOut": "Naka-sign out na sa Tailscale",
 	"plugins.remoteSignOutFailed": "Hindi maka-sign out sa Tailscale",
+	"plugins.remoteRemoveInAdmin": "Naka-sign out na rito. Alisin din ang device sa admin page ng Tailscale.",
 	"plugins.remoteReconnecting": "Kumokonekta ulit sa Tailscale",
 	"plugins.remoteDisconnected": "Nadiskonekta sa Tailscale",
 	"plugins.remoteLoadFailed": "Hindi mabasa ang status ng Tailscale"

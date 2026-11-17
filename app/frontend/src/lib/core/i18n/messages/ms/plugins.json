@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "Putuskan",
 	"plugins.remoteSignOut": "Log keluar",
 	"plugins.remoteSignOutTitle": "Log keluar daripada Tailscale?",
-	"plugins.remoteSignOutAbout": "HolyArrs keluar dari tailnet anda dan log masuk Tailscale dipadam. Jika gagal, buangnya di halaman admin Tailscale.",
+	"plugins.remoteSignOutAbout": "HolyArrs keluar dari tailnet anda dan log masuk Tailscale dipadam.",
 	"plugins.remoteSignedOut": "Telah log keluar daripada Tailscale",
 	"plugins.remoteSignOutFailed": "Tidak dapat log keluar daripada Tailscale",
+	"plugins.remoteRemoveInAdmin": "Telah log keluar di sini. Buang juga peranti di halaman admin Tailscale.",
 	"plugins.remoteReconnecting": "Menyambung semula ke Tailscale",
 	"plugins.remoteDisconnected": "Diputuskan daripada Tailscale",
 	"plugins.remoteLoadFailed": "Tidak dapat membaca status Tailscale"

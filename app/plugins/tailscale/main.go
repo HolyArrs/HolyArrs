@@ -107,7 +107,8 @@ func main() {
 		if wipeErr != nil {
 			log.Fatal(wipeErr)
 		}
-		return
+		cancel()
+		os.Exit(signOutCode(logoutErr))
 	}
 
 	target, err := parseTarget(os.Getenv(envTarget))

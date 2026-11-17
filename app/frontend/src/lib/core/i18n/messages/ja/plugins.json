@@ -74,9 +74,10 @@
 	"plugins.remoteDisconnect": "切断",
 	"plugins.remoteSignOut": "サインアウト",
 	"plugins.remoteSignOutTitle": "Tailscale からサインアウトしますか？",
-	"plugins.remoteSignOutAbout": "HolyArrs は tailnet から外れ、Tailscale のログイン情報は消去されます。失敗した場合は Tailscale の管理ページで削除してください。",
+	"plugins.remoteSignOutAbout": "HolyArrs は tailnet から外れ、Tailscale のログイン情報は消去されます。",
 	"plugins.remoteSignedOut": "Tailscale からサインアウトしました",
 	"plugins.remoteSignOutFailed": "Tailscale からサインアウトできませんでした",
+	"plugins.remoteRemoveInAdmin": "ここではサインアウトしました。Tailscale の管理ページでもデバイスを削除してください。",
 	"plugins.remoteReconnecting": "Tailscale に再接続中",
 	"plugins.remoteDisconnected": "Tailscale から切断しました",
 	"plugins.remoteLoadFailed": "Tailscale の状態を読み取れませんでした"

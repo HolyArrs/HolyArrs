@@ -1346,5 +1346,6 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kode akun untuk orang ini, jadi daftar tontonannya tidak dibaca.",
 	"server.ai.ai-connections-are-off-the-owner": "Koneksi AI mati. Pemilik bisa menyalakannya di Pengaturan → Koneksi AI.",
 	"server.plugins.plugins-are-changed-only-from-a": "plugin hanya diubah dari sesi pemilik yang masuk, tidak pernah dengan kunci API",
-	"server.plugins.plugins-are-not-set-up-in": "plugin belum disiapkan di build ini"
+	"server.plugins.plugins-are-not-set-up-in": "plugin belum disiapkan di build ini",
+	"server.accounts.finish-setup-on-the-home-network": "Selesaikan penyiapan di jaringan rumah dulu."
 }

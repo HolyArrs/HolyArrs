@@ -1346,5 +1346,6 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokode for denne person, så vedkommendes ønskeliste læses ikke.",
 	"server.ai.ai-connections-are-off-the-owner": "AI-forbindelser er slået fra. Ejeren kan slå dem til under Indstillinger → AI-forbindelser.",
 	"server.plugins.plugins-are-changed-only-from-a": "plugins ændres kun fra en indlogget session som ejer, aldrig med en API-nøgle",
-	"server.plugins.plugins-are-not-set-up-in": "plugins er ikke sat op i dette build"
+	"server.plugins.plugins-are-not-set-up-in": "plugins er ikke sat op i dette build",
+	"server.accounts.finish-setup-on-the-home-network": "Gør opsætningen færdig på hjemmenetværket først."
 }

@@ -115,7 +115,7 @@ for (const width of [1280, 375]) {
 			const path = new URL(r.url()).pathname;
 			if (r.method() === 'GET') return route.fulfill({ json: path.endsWith('/tailscale/status') ? status : ov });
 			calls.push(`${r.method()} ${path}`);
-			return route.fulfill({ json: { ok: true } });
+			return route.fulfill({ json: path.endsWith('/tailscale/signout') ? { signed_out: true, removed_remotely: false } : { ok: true } });
 		});
 		await page.goto('/plugins');
 		const card = page.getByTestId('remote-access');
@@ -152,6 +152,7 @@ for (const width of [1280, 375]) {
 		await card.getByRole('button', { name: 'Sign out' }).click();
 		await ask.getByRole('button', { name: 'Sign out' }).click();
 		await expect.poll(() => calls).toContain('POST /api/v1/plugins/tailscale/signout');
+		await expect(card.getByTestId('remote-notice')).toHaveText("Signed out here. Remove the device in Tailscale's admin page too.");
 		await page.context().close();
 	});
 }

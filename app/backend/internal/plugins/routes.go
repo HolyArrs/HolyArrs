@@ -3,6 +3,8 @@ package plugins
 import (
 	"errors"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -12,6 +14,9 @@ import (
 type Handlers struct {
 	// Engine runs the plugins; nil answers that plugins are not set up.
 	Engine *Engine
+	// LoginServer is the configured Headscale address, if any; its host is
+	// the only sign-in host trusted besides login.tailscale.com.
+	LoginServer string
 }
 
 // Routes registers the plugin routes.
@@ -113,15 +118,37 @@ func (h *Handlers) tailscaleStatus(w http.ResponseWriter, r *http.Request) {
 		fail(w, err)
 		return
 	}
-	if who, ok := webserver.From(r.Context()); ok && who.KeyID != 0 {
-		delete(st, "login_url")
-	} else if link, _ := st["login_url"].(string); link != "" {
-		// A code to scan from a phone.
-		if rows := accounts.QRRows(link); rows != nil {
-			st["login_qr"] = rows
-		}
+	if who, ok := webserver.From(r.Context()); ok && who.KeyID != 0 || !h.trustedLogin(st.LoginURL) {
+		st.LoginURL = ""
 	}
-	webserver.WriteJSON(w, http.StatusOK, st)
+	type withQR struct {
+		*TailscaleStatus
+		LoginQR []string `json:"login_qr,omitempty"`
+	}
+	resp := withQR{TailscaleStatus: st}
+	if st.LoginURL != "" {
+		// A code to scan from a phone.
+		resp.LoginQR = accounts.QRRows(st.LoginURL)
+	}
+	webserver.WriteJSON(w, http.StatusOK, resp)
+}
+
+// trustedLogin reports whether link is an https sign-in link on Tailscale's
+// own host or the configured login server's host.
+func (h *Handlers) trustedLogin(link string) bool {
+	u, err := url.Parse(link)
+	if err != nil || u.Scheme != "https" || u.Host == "" {
+		return false
+	}
+	host := strings.ToLower(u.Hostname())
+	if host == "login.tailscale.com" {
+		return true
+	}
+	if h.LoginServer == "" {
+		return false
+	}
+	ls, err := url.Parse(h.LoginServer)
+	return err == nil && ls.Hostname() != "" && strings.EqualFold(ls.Hostname(), host)
 }
 
 // tailscaleSignOut logs the device out, wipes its state and leaves the
@@ -130,11 +157,12 @@ func (h *Handlers) tailscaleSignOut(w http.ResponseWriter, r *http.Request) {
 	if !h.ready(w) {
 		return
 	}
-	if err := h.Engine.SignOut(r.Context(), "tailscale"); err != nil {
+	remote, err := h.Engine.SignOut(r.Context(), "tailscale")
+	if err != nil {
 		fail(w, err)
 		return
 	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"signed_out": true})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"signed_out": true, "removed_remotely": remote})
 }
 
 // fail maps Engine refusals to answers that say what went wrong.

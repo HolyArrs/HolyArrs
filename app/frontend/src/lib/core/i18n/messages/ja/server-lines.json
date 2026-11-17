@@ -1346,5 +1346,6 @@
 	"server.requests.plex-gave-no-account-code-for": "Plex がこの人のアカウントコードを返さなかったため、ウォッチリストは読み取られません。",
 	"server.ai.ai-connections-are-off-the-owner": "AI 接続はオフです。オーナーが 設定 → AI 接続 でオンにできます。",
 	"server.plugins.plugins-are-changed-only-from-a": "プラグインはサインイン中のオーナーのセッションからのみ変更でき、API キーでは変更できません",
-	"server.plugins.plugins-are-not-set-up-in": "このビルドではプラグインが設定されていません"
+	"server.plugins.plugins-are-not-set-up-in": "このビルドではプラグインが設定されていません",
+	"server.accounts.finish-setup-on-the-home-network": "まず自宅のネットワークでセットアップを完了してください。"
 }
