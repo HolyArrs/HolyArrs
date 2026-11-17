@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { libraryBrief } from '#lib/mediafiles/index.ts';
 	import { decisionName, manyWords, removeBody, removeFilesWords, removeStart, rowName, rowPath, type DownloaderSettings, type DownloaderView, type RemoveChoice, applyPatch, fromAnswer, isDl, mergeClient, wentStale, type Sync, dlPush, decisions, refreshDecisions, DlSections, ConfirmMatch, byDownload, AddTorrents, SteerSheet, BULK_DONE, byClient, type BulkAction } from '#lib/downloads/index.ts';
@@ -311,7 +312,7 @@
 
 	let busy = $state(0);
 	async function markFailed(r: DownloadRow) {
-		if (!confirm(t('downloads.page.markFailedAsk', { name: who(r) }))) return;
+		if (!(await ask(t('downloads.page.markFailedAsk', { name: who(r) })))) return;
 		busy = r.id;
 		try {
 			await api.post(`/downloads/${r.id}/mark-failed`);

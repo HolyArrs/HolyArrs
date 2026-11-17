@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
@@ -145,7 +146,7 @@
 	}
 
 	async function remove(s: SourceView) {
-		if (!confirm(t('settings.sources.confirmRemove', { name: s.name }))) return;
+		if (!(await ask(t('settings.sources.confirmRemove', { name: s.name })))) return;
 		try {
 			await api.del(`/sources/${s.id}`);
 			await load();

@@ -71,9 +71,9 @@ test('the health page shows state, last answer and calls over time', async () =>
 	await expect(page.getByTestId('call').nth(1)).toContainText('Login refused');
 	await page.getByRole('link', { name: 'Sources' }).first().click();
 	const row2 = page.getByTestId('source').filter({ hasText: 'Lab feed' });
-	page.once('dialog', (d) => d.accept());
 	await row2.hover(); // buttons show on hover
 	await row2.getByRole('button', { name: 'Remove Lab feed' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(page.getByTestId('source').filter({ hasText: 'Lab feed' })).toHaveCount(0);
 });
 

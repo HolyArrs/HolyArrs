@@ -180,8 +180,8 @@ test('change a show list, then remove both lists and take the show off the Never
 	expect(outside_lists.find((l) => l.name === 'Lab shows')).toMatchObject({ seasons: 'future', new_seasons: 'all' });
 
 	for (const name of listNames) {
-		page.once('dialog', (d) => d.accept());
 		await page.getByTestId('outside-list').filter({ hasText: name }).getByRole('button', { name: 'Remove' }).click();
+		await page.getByTestId('ask-yes').click();
 		await expect(page.getByTestId('outside-list').filter({ hasText: name })).toHaveCount(0);
 	}
 	// The shows the lists added stay in the Library.

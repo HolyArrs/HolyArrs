@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
@@ -171,7 +172,7 @@
 	}
 
 	async function remove(l: OutsideList) {
-		if (!confirm(l.title_kind === 'show' ? t('settings.outsideLists.confirmRemoveShows', { name: l.name }) : t('settings.outsideLists.confirmRemoveMovies', { name: l.name }))) return;
+		if (!(await ask(l.title_kind === 'show' ? t('settings.outsideLists.confirmRemoveShows', { name: l.name }) : t('settings.outsideLists.confirmRemoveMovies', { name: l.name })))) return;
 		busyId = l.id;
 		try {
 			await api.del(`/outside-lists/${l.id}`);

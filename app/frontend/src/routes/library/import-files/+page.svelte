@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
@@ -202,7 +203,7 @@
 	async function doImport() {
 		if (!items.length) return;
 		const swaps = items.filter((x) => x.replace).length;
-		if (swaps && !confirm(tr(swaps === 1 ? 'library.byHand.askReplaceOne' : 'library.byHand.askReplaceMany', { n: swaps }))) return;
+		if (swaps && !(await ask(tr(swaps === 1 ? 'library.byHand.askReplaceOne' : 'library.byHand.askReplaceMany', { n: swaps })))) return;
 		importing = true;
 		error = '';
 		try {

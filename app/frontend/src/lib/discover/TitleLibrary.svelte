@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
@@ -265,7 +266,7 @@
 	let failing = $state(0);
 
 	async function markFailed(downloadID: number) {
-		if (!confirm(t('discover.titleLibrary.confirmMarkFailed'))) return;
+		if (!(await ask(t('discover.titleLibrary.confirmMarkFailed')))) return;
 		failing = downloadID;
 		try {
 			await api.post(`/downloads/${downloadID}/mark-failed`);

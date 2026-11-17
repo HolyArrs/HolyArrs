@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
@@ -320,12 +321,12 @@
 	}
 
 	async function setState(u: User, state: 'active' | 'disabled') {
-		if (state === 'disabled' && !confirm(t('settings.users.confirmOff', { name: u.name }))) return;
+		if (state === 'disabled' && !(await ask(t('settings.users.confirmOff', { name: u.name })))) return;
 		await put(u, { state }, state === 'disabled' ? t('settings.users.turnedOff', { name: u.name }) : t('settings.users.turnedOn', { name: u.name }));
 	}
 
 	async function resetTwoFactor(u: User) {
-		if (!confirm(t('settings.users.confirmReset', { name: u.name }))) return;
+		if (!(await ask(t('settings.users.confirmReset', { name: u.name })))) return;
 		try {
 			await api.post(`/users/${u.id}/two-factor/reset`);
 			toasts.push(t('settings.users.resetDone', { name: u.name }), 'ok');
@@ -345,14 +346,14 @@
 		}
 	};
 	async function unlinkSSO(u: User, l: { kind: string; issuer: string }) {
-		if (!confirm(t('settings.users.confirmUnlink', { name: u.name, kind: ssoWord(l.kind) }))) return;
+		if (!(await ask(t('settings.users.confirmUnlink', { name: u.name, kind: ssoWord(l.kind) })))) return;
 		const body: Record<string, unknown> = { kind: l.kind, issuer: l.issuer };
 		try {
 			try {
 				await api.post(`/users/${u.id}/sso/unlink`, body);
 			} catch (e) {
 				if (!(e instanceof ApiError && e.body.code === 'no_way_in')) throw e;
-				if (!confirm(t('settings.users.confirmLockout', { name: u.name }))) return;
+				if (!(await ask(t('settings.users.confirmLockout', { name: u.name })))) return;
 				await api.post(`/users/${u.id}/sso/unlink`, { ...body, confirm_no_way_in: true });
 			}
 			toasts.push(t('settings.users.unlinked', { name: u.name }), 'ok', { body: ssoWord(l.kind) });

@@ -147,8 +147,8 @@ test('clear all empties the Turned down list', async () => {
 	await expect(release(sheet, '.HDCAM.').filter({ has: page.locator('.rs-verdict', { hasText: 'Turned down' }) })).toHaveCount(1);
 	await page.goto('/library/turned-down');
 	await expect(page.getByTestId('listed-release')).toHaveCount(1);
-	page.once('dialog', (d) => d.accept());
 	await page.getByRole('button', { name: 'Clear all' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(page.getByText('Nothing turned down.')).toBeVisible();
 });
 

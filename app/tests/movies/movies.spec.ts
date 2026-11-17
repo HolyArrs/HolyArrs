@@ -178,9 +178,9 @@ test('add a movie with a second 4K Version; the Movie page shows both and can ad
 	await vd.getByLabel('Version name').fill('Small');
 	await vd.getByRole('button', { name: 'Add version' }).click();
 	await expect(versions).toHaveCount(3);
-	page.once('dialog', (d) => d.accept());
 	await page.getByRole('button', { name: 'Version actions for Small' }).click();
 	await page.getByRole('menuitem', { name: 'Remove Small' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(versions).toHaveCount(2);
 	await expect(page.getByRole('button', { name: 'Remove Main' })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: /^Version actions for Main/ })).toHaveCount(0);

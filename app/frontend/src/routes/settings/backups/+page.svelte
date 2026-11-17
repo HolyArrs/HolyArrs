@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -142,7 +143,7 @@
 	}
 
 	async function remove(b: BackupInfo) {
-		if (!confirm(t('settings.backups.confirmRemove', { name: b.name }))) return;
+		if (!(await ask(t('settings.backups.confirmRemove', { name: b.name })))) return;
 		try {
 			await api.del(`/backups/${encodeURIComponent(b.name)}`);
 			backups = backups.filter((x) => x.name !== b.name);
@@ -155,7 +156,7 @@
 	async function restore(e: Event) {
 		const file = (e.currentTarget as HTMLInputElement).files?.[0];
 		if (!file) return;
-		if (!confirm(t('settings.backups.confirmRestore', { name: file.name }))) {
+		if (!(await ask(t('settings.backups.confirmRestore', { name: file.name })))) {
 			(e.currentTarget as HTMLInputElement).value = '';
 			return;
 		}
