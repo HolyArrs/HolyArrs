@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs путања",
 	"settings.mediaServers.pathTo": "Иста фасцикла на серверу",
 	"settings.mediaServers.pathHint": "Само ако сервер види твоје датотеке под другом путањом",
+	"settings.mediaServers.webUrl": "Адреса за прегледаче",
+	"settings.mediaServers.webUrlHint": "Адреса на којој сви отварају сервер на телефону или рачунару. Додаје дугме Отвори на странице наслова које сервер има. Оставите празно ако не желите дугме.",
 	"settings.mediaServers.local": "Допри до локалне мреже",
 	"settings.mediaServers.send": "Шаљи ажурирања",
 	"settings.mediaServers.save": "Сачувај",

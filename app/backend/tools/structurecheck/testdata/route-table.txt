@@ -140,6 +140,7 @@ GET /api/v1/logs auth=users scope=admin assurance=false part=core
 GET /api/v1/logs/download auth=users scope=admin assurance=false part=core
 GET /api/v1/mcp auth=signed_in scope=mcp assurance=false part=core
 GET /api/v1/media-servers auth=settings scope=read assurance=false part=core
+GET /api/v1/media-servers/watch-links auth=manage_library scope=read assurance=false part=media
 GET /api/v1/messages auth=signed_in scope=read assurance=false part=wishlist
 GET /api/v1/metadata/album/{mbid}/follow auth=signed_in scope=read assurance=false part=music
 GET /api/v1/metadata/health auth=signed_in scope=read assurance=false part=core

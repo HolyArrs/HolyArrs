@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} tog bort begäran om {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs läser MDBList-listor; lägg till den igen under Inställningar > Externa listor",
-	"server.requests.send-key-mdblist-api-key-or": "skicka {\"key\": \"<MDBList-API-nyckel>\"}, eller {\"key\": \"\"} för att ta bort den"
+	"server.requests.send-key-mdblist-api-key-or": "skicka {\"key\": \"<MDBList-API-nyckel>\"}, eller {\"key\": \"\"} för att ta bort den",
+	"server.mediaservers.no-such-title": "den titeln finns inte",
+	"server.mediaservers.send-title-a-library-title-id": "skicka title, id för en titel i Biblioteket"
 }

@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} fjernede anmodningen om {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokode for denne person, så vedkommendes ønskeliste læses ikke.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs læser MDBList-lister. Tilføj den igen under Indstillinger > Eksterne lister",
-	"server.requests.send-key-mdblist-api-key-or": "send {\"key\": \"<MDBList-API-nøgle>\"}, eller {\"key\": \"\"} for at fjerne den"
+	"server.requests.send-key-mdblist-api-key-or": "send {\"key\": \"<MDBList-API-nøgle>\"}, eller {\"key\": \"\"} for at fjerne den",
+	"server.mediaservers.no-such-title": "den titel findes ikke",
+	"server.mediaservers.send-title-a-library-title-id": "send title, id’et på en titel i Biblioteket"
 }

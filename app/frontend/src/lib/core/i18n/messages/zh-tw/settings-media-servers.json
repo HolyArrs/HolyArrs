@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs 中的路徑",
 	"settings.mediaServers.pathTo": "伺服器上的同一資料夾",
 	"settings.mediaServers.pathHint": "僅當伺服器看到的檔案路徑不同時才需要",
+	"settings.mediaServers.webUrl": "瀏覽器使用的網址",
+	"settings.mediaServers.webUrlHint": "大家在手機或電腦上開啟伺服器的網址。會在伺服器已有作品的頁面加上「開啟」按鈕。留空則不顯示按鈕。",
 	"settings.mediaServers.local": "存取區域網路",
 	"settings.mediaServers.send": "傳送更新",
 	"settings.mediaServers.save": "儲存",

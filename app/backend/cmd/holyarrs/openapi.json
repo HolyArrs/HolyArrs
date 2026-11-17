@@ -2993,6 +2993,10 @@
           },
           "url": {
             "type": "string"
+          },
+          "web_url": {
+            "description": "Where people's browsers open the server, for the Open in button on Library title pages (Jellyfin and Emby). Empty: no button.",
+            "type": "string"
           }
         },
         "type": "object"
@@ -3042,6 +3046,10 @@
           },
           "url": {
             "description": "The server's address, e.g. http://192.168.1.10:32400 (Plex) or http://192.168.1.10:8096 (Jellyfin, Emby).",
+            "type": "string"
+          },
+          "web_url": {
+            "description": "Where people's browsers open the server, for the Open in button on Library title pages (Jellyfin and Emby). Empty: no button.",
             "type": "string"
           }
         },
@@ -19072,6 +19080,41 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/media-servers/watch-links": {
+      "get": {
+        "description": "The switched-on Jellyfin and Emby servers with a browser address that have this Library movie or show, each with the link that opens it in the server's web app. A server that cannot be reached is left out.",
+        "operationId": "getWatchLinks",
+        "parameters": [
+          {
+            "description": "A Library title id.",
+            "in": "query",
+            "name": "title",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{\"links\": [{\"server\", \"kind\", \"url\"}]}, empty when no server has it."
+          },
+          "400": {
+            "description": "No title id."
+          },
+          "404": {
+            "description": "No such title."
+          }
+        },
+        "summary": "Where a title opens on the media servers",
+        "tags": [
+          "Media servers"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
       }
     },
     "/api/v1/media-servers/{id}": {

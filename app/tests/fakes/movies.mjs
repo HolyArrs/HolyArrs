@@ -51,6 +51,8 @@ export const tmdbMovies = [
 	{ id: 900452, title: 'Lichen Postcard', release_date: '2013-11-03', imdb_id: 'tt9004520', overview: 'A postcard that grows a new picture every spring.', dates: [[3, '2013-11-03'], [4, '2014-01-10']] },
 	// Only library-missing.spec.ts adds these: Search all missing finds them.
 	{ id: 900271, title: 'Hollow Compass', release_date: '2015-02-02', imdb_id: 'tt9002710', overview: 'A compass that points at whatever was lost last.', dates: [[3, '2015-02-02'], [4, '2015-04-01']] },
+	// Only mediaservers/open-in.spec.ts uses this one: the fake Jellyfin holds it.
+	{ id: 900415, title: 'Saffron Lighthouse', release_date: '2016-05-05', imdb_id: 'tt9004150', overview: 'A lighthouse that shines only for ships carrying spices.', dates: [[3, '2016-05-05'], [4, '2016-07-01']] },
 	{ id: 900272, title: 'Brass Meadow', release_date: '2014-06-06', imdb_id: 'tt9002720', overview: 'A meadow of brass flowers that ring in the wind.', dates: [[3, '2014-06-06'], [4, '2014-08-01']] },
 	// Only plex-watchlist.spec.ts uses these: asked from the watchlist, already in the Library, added after Movies is off.
 	{ id: 900102, title: 'Rowan Semaphore', release_date: '2012-04-04', imdb_id: 'tt9001020', overview: 'Flags on a hilltop that answer before anyone asks.', dates: [[3, '2012-04-04'], [4, '2012-06-01']] },

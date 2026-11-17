@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} удалил(а) запрос на {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex не передал код аккаунта этого человека, поэтому его список просмотра не читается.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs читает списки MDBList; добавьте его заново в разделе «Настройки > Внешние списки»",
-	"server.requests.send-key-mdblist-api-key-or": "отправьте {\"key\": \"<ключ API MDBList>\"} или {\"key\": \"\"}, чтобы удалить его"
+	"server.requests.send-key-mdblist-api-key-or": "отправьте {\"key\": \"<ключ API MDBList>\"} или {\"key\": \"\"}, чтобы удалить его",
+	"server.mediaservers.no-such-title": "такого тайтла нет",
+	"server.mediaservers.send-title-a-library-title-id": "отправьте title — id тайтла из Медиатеки"
 }

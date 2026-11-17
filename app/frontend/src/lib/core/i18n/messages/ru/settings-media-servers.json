@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Путь в HolyArrs",
 	"settings.mediaServers.pathTo": "Та же папка на сервере",
 	"settings.mediaServers.pathHint": "Нужно, только если сервер видит ваши файлы по другому пути",
+	"settings.mediaServers.webUrl": "Адрес для браузеров",
+	"settings.mediaServers.webUrlHint": "Адрес, по которому все открывают сервер на телефоне или компьютере. Добавляет кнопку «Открыть» на страницы тайтлов, которые есть на сервере. Оставьте пустым, чтобы кнопки не было.",
 	"settings.mediaServers.local": "Доступ к локальной сети",
 	"settings.mediaServers.send": "Отправлять обновления",
 	"settings.mediaServers.save": "Сохранить",

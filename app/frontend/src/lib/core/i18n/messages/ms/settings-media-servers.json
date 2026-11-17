@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Laluan HolyArrs",
 	"settings.mediaServers.pathTo": "Folder yang sama pada pelayan",
 	"settings.mediaServers.pathHint": "Hanya jika pelayan melihat fail anda di bawah laluan lain",
+	"settings.mediaServers.webUrl": "Alamat untuk pelayar",
+	"settings.mediaServers.webUrlHint": "Alamat tempat semua orang membuka pelayan pada telefon atau komputer. Menambah butang Buka pada halaman tajuk yang ada padanya. Biarkan kosong jika tidak mahu butang.",
 	"settings.mediaServers.local": "Capai rangkaian setempat",
 	"settings.mediaServers.send": "Hantar kemas kini",
 	"settings.mediaServers.save": "Simpan",

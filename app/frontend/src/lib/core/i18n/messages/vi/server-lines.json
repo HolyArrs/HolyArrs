@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} đã gỡ yêu cầu cho {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex không đưa mã tài khoản của người này nên danh sách xem của họ không được đọc.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs đọc danh sách MDBList; hãy thêm lại trong Cài đặt > Danh sách ngoài",
-	"server.requests.send-key-mdblist-api-key-or": "gửi {\"key\": \"<khóa API MDBList>\"}, hoặc {\"key\": \"\"} để xóa nó"
+	"server.requests.send-key-mdblist-api-key-or": "gửi {\"key\": \"<khóa API MDBList>\"}, hoặc {\"key\": \"\"} để xóa nó",
+	"server.mediaservers.no-such-title": "không có tựa này",
+	"server.mediaservers.send-title-a-library-title-id": "gửi title, id của một tựa trong Thư viện"
 }

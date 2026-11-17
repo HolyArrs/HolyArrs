@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} je uklonio/la zahtev za {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru naloga za ovu osobu, pa se njena lista za gledanje ne čita.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs чита MDBList листе; додај је поново у Подешавања > Спољне листе",
-	"server.requests.send-key-mdblist-api-key-or": "пошаљи {\"key\": \"<MDBList API кључ>\"}, или {\"key\": \"\"} да га уклониш"
+	"server.requests.send-key-mdblist-api-key-or": "пошаљи {\"key\": \"<MDBList API кључ>\"}, или {\"key\": \"\"} да га уклониш",
+	"server.mediaservers.no-such-title": "такав наслов не постоји",
+	"server.mediaservers.send-title-a-library-title-id": "пошаљите title, id наслова из Библиотеке"
 }

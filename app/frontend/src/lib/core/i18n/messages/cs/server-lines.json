@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} odebral(a) žádost o {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex u této osoby nedal kód účtu, proto se její seznam ke zhlédnutí nečte.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs čte seznamy MDBList; přidejte ho znovu v Nastavení > Externí seznamy",
-	"server.requests.send-key-mdblist-api-key-or": "pošlete {\"key\": \"<klíč API MDBList>\"}, nebo {\"key\": \"\"} pro jeho odebrání"
+	"server.requests.send-key-mdblist-api-key-or": "pošlete {\"key\": \"<klíč API MDBList>\"}, nebo {\"key\": \"\"} pro jeho odebrání",
+	"server.mediaservers.no-such-title": "takový titul neexistuje",
+	"server.mediaservers.send-title-a-library-title-id": "pošlete title, id titulu z Knihovny"
 }

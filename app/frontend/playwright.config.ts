@@ -43,6 +43,8 @@ export default defineConfig({
 		{ name: 'phone', testMatch: '**/whole-app/phone.spec.ts', use: { ...devices['Pixel 7'] }, dependencies: ['desktop'] },
 		{ name: 'accounts', testMatch: '**/accounts/accounts.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'plexwatchlist', testMatch: '**/mediaservers/plex-watchlist.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
+		// Open in Jellyfin: a Library movie the fake Jellyfin has gets a button to its details page at the browser address; a phone.
+		{ name: 'openin', testMatch: '**/mediaservers/open-in.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'a11y', testMatch: 'a11y.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'movies', testMatch: '**/movies/movies.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'lists', testMatch: '**/requests/lists.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },

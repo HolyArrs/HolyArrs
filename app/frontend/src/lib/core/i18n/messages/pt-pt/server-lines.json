@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} removeu o pedido de {a}",
 	"server.requests.plex-gave-no-account-code-for": "O Plex não deu nenhum código de conta para esta pessoa, por isso a lista de interesse dela não é lida.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "O HolyArrs lê listas do MDBList; adicione-a novamente em Definições > Listas externas",
-	"server.requests.send-key-mdblist-api-key-or": "envie {\"key\": \"<chave de API do MDBList>\"}, ou {\"key\": \"\"} para a remover"
+	"server.requests.send-key-mdblist-api-key-or": "envie {\"key\": \"<chave de API do MDBList>\"}, ou {\"key\": \"\"} para a remover",
+	"server.mediaservers.no-such-title": "esse título não existe",
+	"server.mediaservers.send-title-a-library-title-id": "envie title, o id de um título da Biblioteca"
 }

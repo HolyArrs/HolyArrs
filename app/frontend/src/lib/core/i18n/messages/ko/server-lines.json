@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name}님이 {a} 요청을 삭제했습니다",
 	"server.requests.plex-gave-no-account-code-for": "Plex가 이 사람의 계정 코드를 주지 않아 관심 목록을 읽지 않습니다.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs는 MDBList 목록을 읽습니다. 설정 > 외부 목록에서 다시 추가하세요",
-	"server.requests.send-key-mdblist-api-key-or": "{\"key\": \"<MDBList API 키>\"}를 보내거나, 삭제하려면 {\"key\": \"\"}를 보내세요"
+	"server.requests.send-key-mdblist-api-key-or": "{\"key\": \"<MDBList API 키>\"}를 보내거나, 삭제하려면 {\"key\": \"\"}를 보내세요",
+	"server.mediaservers.no-such-title": "그런 작품이 없습니다",
+	"server.mediaservers.send-title-a-library-title-id": "title에 라이브러리 작품 ID를 보내세요"
 }

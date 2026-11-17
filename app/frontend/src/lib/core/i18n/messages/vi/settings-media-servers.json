@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Đường dẫn trong HolyArrs",
 	"settings.mediaServers.pathTo": "Cùng thư mục trên máy chủ",
 	"settings.mediaServers.pathHint": "Chỉ khi máy chủ thấy tệp của bạn ở một đường dẫn khác",
+	"settings.mediaServers.webUrl": "Địa chỉ cho trình duyệt",
+	"settings.mediaServers.webUrlHint": "Địa chỉ mọi người dùng để mở máy chủ trên điện thoại hoặc máy tính. Thêm nút Mở vào trang của các tựa phim máy chủ có. Để trống nếu không muốn có nút.",
 	"settings.mediaServers.local": "Truy cập mạng nội bộ",
 	"settings.mediaServers.send": "Gửi cập nhật",
 	"settings.mediaServers.save": "Lưu",

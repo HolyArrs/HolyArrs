@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} mengalih keluar permintaan untuk {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex tidak memberi kod akaun untuk orang ini, jadi senarai tontonannya tidak dibaca.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs membaca senarai MDBList; tambahnya semula di bawah Tetapan > Senarai luar",
-	"server.requests.send-key-mdblist-api-key-or": "hantar {\"key\": \"<kunci API MDBList>\"}, atau {\"key\": \"\"} untuk membuangnya"
+	"server.requests.send-key-mdblist-api-key-or": "hantar {\"key\": \"<kunci API MDBList>\"}, atau {\"key\": \"\"} untuk membuangnya",
+	"server.mediaservers.no-such-title": "tajuk itu tiada",
+	"server.mediaservers.send-title-a-library-title-id": "hantar title, id tajuk dalam Pustaka"
 }

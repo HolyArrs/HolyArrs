@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "Ο/Η {name} αφαίρεσε το αίτημα για {a}",
 	"server.requests.plex-gave-no-account-code-for": "Το Plex δεν έδωσε κωδικό λογαριασμού για αυτό το άτομο, οπότε η λίστα παρακολούθησής του δεν διαβάζεται.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "Το HolyArrs διαβάζει λίστες MDBList· προσθέστε τη ξανά στις Ρυθμίσεις > Εξωτερικές λίστες",
-	"server.requests.send-key-mdblist-api-key-or": "στείλτε {\"key\": \"<κλειδί API του MDBList>\"}, ή {\"key\": \"\"} για να το αφαιρέσετε"
+	"server.requests.send-key-mdblist-api-key-or": "στείλτε {\"key\": \"<κλειδί API του MDBList>\"}, ή {\"key\": \"\"} για να το αφαιρέσετε",
+	"server.mediaservers.no-such-title": "δεν υπάρχει τέτοιος τίτλος",
+	"server.mediaservers.send-title-a-library-title-id": "στείλτε title, το id ενός τίτλου της Βιβλιοθήκης"
 }

@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} ลบคำขอ {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex ไม่ได้ให้รหัสบัญชีของคนนี้ จึงไม่อ่านรายการที่อยากดูของเขา",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs อ่านรายการ MDBList เพิ่มอีกครั้งในการตั้งค่า > รายการภายนอก",
-	"server.requests.send-key-mdblist-api-key-or": "ส่ง {\"key\": \"<คีย์ API ของ MDBList>\"} หรือ {\"key\": \"\"} เพื่อลบ"
+	"server.requests.send-key-mdblist-api-key-or": "ส่ง {\"key\": \"<คีย์ API ของ MDBList>\"} หรือ {\"key\": \"\"} เพื่อลบ",
+	"server.mediaservers.no-such-title": "ไม่มีชื่อเรื่องนี้",
+	"server.mediaservers.send-title-a-library-title-id": "ส่ง title ซึ่งเป็น id ของชื่อเรื่องในคลัง"
 }

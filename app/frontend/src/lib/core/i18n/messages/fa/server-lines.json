@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} درخواست {a} را حذف کرد",
 	"server.requests.plex-gave-no-account-code-for": "Plex کد حساب این شخص را نداد، بنابراین فهرست تماشای او خوانده نمی‌شود.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs فهرست‌های MDBList را می‌خواند؛ دوباره زیر تنظیمات > فهرست‌های بیرونی اضافه‌اش کن",
-	"server.requests.send-key-mdblist-api-key-or": "بفرست {\"key\": \"<کلید API از MDBList>\"}، یا {\"key\": \"\"} تا حذف شود"
+	"server.requests.send-key-mdblist-api-key-or": "بفرست {\"key\": \"<کلید API از MDBList>\"}، یا {\"key\": \"\"} تا حذف شود",
+	"server.mediaservers.no-such-title": "چنین عنوانی وجود ندارد",
+	"server.mediaservers.send-title-a-library-title-id": "title را بفرستید، شناسهٔ یک عنوان در کتابخانه"
 }

@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrsi tee",
 	"settings.mediaServers.pathTo": "Sama kaust serveris",
 	"settings.mediaServers.pathHint": "Ainult siis, kui server näeb sinu faile mõne teise tee all",
+	"settings.mediaServers.webUrl": "Aadress brauseritele",
+	"settings.mediaServers.webUrlHint": "Aadress, kust inimesed serveri telefonis või arvutis avavad. Lisab Ava-nupu nende pealkirjade lehtedele, mis serveris on. Jäta tühjaks, kui nuppu pole vaja.",
 	"settings.mediaServers.local": "Luba ligipääs kohtvõrku",
 	"settings.mediaServers.send": "Saada uuendusi",
 	"settings.mediaServers.save": "Salvesta",

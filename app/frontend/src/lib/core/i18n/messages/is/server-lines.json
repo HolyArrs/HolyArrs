@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} fjarlægði beiðni um {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex gaf engan reikningskóða fyrir þessa manneskju, þannig að áhorfslistinn hennar er ekki lesinn.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs les MDBList-lista; bættu honum við aftur undir Stillingar > Ytri listar",
-	"server.requests.send-key-mdblist-api-key-or": "sendu {\"key\": \"<MDBList API-lykill>\"}, eða {\"key\": \"\"} til að fjarlægja hann"
+	"server.requests.send-key-mdblist-api-key-or": "sendu {\"key\": \"<MDBList API-lykill>\"}, eða {\"key\": \"\"} til að fjarlægja hann",
+	"server.mediaservers.no-such-title": "enginn slíkur titill",
+	"server.mediaservers.send-title-a-library-title-id": "sendu title, auðkenni titils í Safninu"
 }

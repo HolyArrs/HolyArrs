@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} a eliminat cererea pentru {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex nu a dat niciun cod de cont pentru această persoană, așa că lista ei de vizionare nu este citită.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs citește listele MDBList; adaug-o din nou în Setări > Liste externe",
-	"server.requests.send-key-mdblist-api-key-or": "trimite {\"key\": \"<cheie API MDBList>\"}, sau {\"key\": \"\"} pentru a o elimina"
+	"server.requests.send-key-mdblist-api-key-or": "trimite {\"key\": \"<cheie API MDBList>\"}, sau {\"key\": \"\"} pentru a o elimina",
+	"server.mediaservers.no-such-title": "nu există acest titlu",
+	"server.mediaservers.send-title-a-library-title-id": "trimite title, id-ul unui titlu din Bibliotecă"
 }

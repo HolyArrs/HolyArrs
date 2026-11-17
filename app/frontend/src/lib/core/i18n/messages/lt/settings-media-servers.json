@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs kelias",
 	"settings.mediaServers.pathTo": "Tas pats aplankas serveryje",
 	"settings.mediaServers.pathHint": "Tik jei serveris mato jūsų failus kitu keliu",
+	"settings.mediaServers.webUrl": "Adresas naršyklėms",
+	"settings.mediaServers.webUrlHint": "Adresas, kuriuo visi atidaro serverį telefone ar kompiuteryje. Prideda mygtuką Atidaryti prie pavadinimų, kuriuos turi serveris, puslapių. Palikite tuščią, jei mygtuko nereikia.",
 	"settings.mediaServers.local": "Pasiekti vietinį tinklą",
 	"settings.mediaServers.send": "Siųsti naujinimus",
 	"settings.mediaServers.save": "Išsaugoti",

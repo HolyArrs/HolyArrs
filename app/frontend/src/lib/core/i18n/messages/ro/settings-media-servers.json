@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Calea HolyArrs",
 	"settings.mediaServers.pathTo": "Același dosar pe server",
 	"settings.mediaServers.pathHint": "Doar dacă serverul vede fișierele tale sub altă cale",
+	"settings.mediaServers.webUrl": "Adresă pentru browsere",
+	"settings.mediaServers.webUrlHint": "Adresa la care oamenii deschid serverul pe telefon sau calculator. Adaugă un buton Deschide pe paginile titlurilor pe care le are. Lasă gol pentru niciun buton.",
 	"settings.mediaServers.local": "Acces la rețeaua locală",
 	"settings.mediaServers.send": "Trimite actualizări",
 	"settings.mediaServers.save": "Salvează",

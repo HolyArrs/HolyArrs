@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} премахна заявката за {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex не даде код на акаунта за този човек, затова списъкът му за гледане не се чете.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs чете списъци от MDBList; добавете го отново в Настройки > Външни списъци",
-	"server.requests.send-key-mdblist-api-key-or": "изпратете {\"key\": \"<API ключ на MDBList>\"}, или {\"key\": \"\"}, за да го премахнете"
+	"server.requests.send-key-mdblist-api-key-or": "изпратете {\"key\": \"<API ключ на MDBList>\"}, или {\"key\": \"\"}, за да го премахнете",
+	"server.mediaservers.no-such-title": "няма такова заглавие",
+	"server.mediaservers.send-title-a-library-title-id": "изпратете title, id на заглавие от Библиотеката"
 }

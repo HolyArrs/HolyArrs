@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "Inalis ni {name} ang kahilingan para sa {a}",
 	"server.requests.plex-gave-no-account-code-for": "Walang ibinigay na account code ang Plex para sa taong ito, kaya hindi binabasa ang watchlist niya.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "Binabasa ng HolyArrs ang mga listahan ng MDBList; idagdag ulit sa Settings > Mga Panlabas na listahan",
-	"server.requests.send-key-mdblist-api-key-or": "ipadala ang {\"key\": \"<MDBList API key>\"}, o {\"key\": \"\"} para alisin ito"
+	"server.requests.send-key-mdblist-api-key-or": "ipadala ang {\"key\": \"<MDBList API key>\"}, o {\"key\": \"\"} para alisin ito",
+	"server.mediaservers.no-such-title": "walang ganoong title",
+	"server.mediaservers.send-title-a-library-title-id": "ipadala ang title, ang id ng isang title sa Library"
 }

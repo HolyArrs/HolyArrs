@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs sökväg",
 	"settings.mediaServers.pathTo": "Samma mapp på servern",
 	"settings.mediaServers.pathHint": "Bara om servern ser dina filer under en annan sökväg",
+	"settings.mediaServers.webUrl": "Adress för webbläsare",
+	"settings.mediaServers.webUrlHint": "Där folk öppnar servern på mobilen eller datorn. Lägger till en Öppna-knapp på sidorna för titlar den har. Lämna tomt för ingen knapp.",
 	"settings.mediaServers.local": "Nå det lokala nätverket",
 	"settings.mediaServers.send": "Skicka uppdateringar",
 	"settings.mediaServers.save": "Spara",

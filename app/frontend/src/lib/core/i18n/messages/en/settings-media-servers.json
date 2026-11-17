@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs path",
 	"settings.mediaServers.pathTo": "Same folder on the server",
 	"settings.mediaServers.pathHint": "Only if the server sees your files under another path",
+	"settings.mediaServers.webUrl": "Address for browsers",
+	"settings.mediaServers.webUrlHint": "Where people open the server on their phone or computer. Adds an Open in button to the title pages it has. Leave empty for no button.",
 	"settings.mediaServers.local": "Reach the local network",
 	"settings.mediaServers.send": "Send updates",
 	"settings.mediaServers.save": "Save",

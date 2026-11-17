@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} pašalino užklausą: {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex nepateikė šio asmens paskyros kodo, todėl jo žiūrėjimo sąrašas neskaitomas.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs skaito MDBList sąrašus; pridėkite jį iš naujo skiltyje Nustatymai > Išoriniai sąrašai",
-	"server.requests.send-key-mdblist-api-key-or": "siųskite {\"key\": \"<MDBList API raktas>\"}, arba {\"key\": \"\"}, kad jį pašalintumėte"
+	"server.requests.send-key-mdblist-api-key-or": "siųskite {\"key\": \"<MDBList API raktas>\"}, arba {\"key\": \"\"}, kad jį pašalintumėte",
+	"server.mediaservers.no-such-title": "tokio pavadinimo nėra",
+	"server.mediaservers.send-title-a-library-title-id": "nusiųskite title – Bibliotekos pavadinimo id"
 }

@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} noņēma pieprasījumu: {a}",
 	"server.requests.plex-gave-no-account-code-for": "Plex nedeva šīs personas konta kodu, tāpēc viņas skatīšanās saraksts netiek lasīts.",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs lasa MDBList sarakstus; pievieno to vēlreiz sadaļā Iestatījumi > Ārējie saraksti",
-	"server.requests.send-key-mdblist-api-key-or": "sūti {\"key\": \"<MDBList API atslēga>\"}, vai {\"key\": \"\"}, lai to noņemtu"
+	"server.requests.send-key-mdblist-api-key-or": "sūti {\"key\": \"<MDBList API atslēga>\"}, vai {\"key\": \"\"}, lai to noņemtu",
+	"server.mediaservers.no-such-title": "tāda nosaukuma nav",
+	"server.mediaservers.send-title-a-library-title-id": "nosūtiet title — Bibliotēkas nosaukuma id"
 }

@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Cesta v HolyArrs",
 	"settings.mediaServers.pathTo": "Rovnaký priečinok na serveri",
 	"settings.mediaServers.pathHint": "Len ak server vidí vaše súbory pod inou cestou",
+	"settings.mediaServers.webUrl": "Adresa pre prehliadače",
+	"settings.mediaServers.webUrlHint": "Adresa, na ktorej ľudia otvárajú server v telefóne alebo počítači. Pridá tlačidlo Otvoriť na stránky titulov, ktoré server má. Nechajte prázdne, ak tlačidlo nechcete.",
 	"settings.mediaServers.local": "Dosiahnuť lokálnu sieť",
 	"settings.mediaServers.send": "Posielať aktualizácie",
 	"settings.mediaServers.save": "Uložiť",

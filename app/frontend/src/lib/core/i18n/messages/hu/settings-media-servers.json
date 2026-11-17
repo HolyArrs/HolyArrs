@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs-útvonal",
 	"settings.mediaServers.pathTo": "Ugyanaz a mappa a szerveren",
 	"settings.mediaServers.pathHint": "Csak ha a szerver a fájlokat másik útvonalon látja",
+	"settings.mediaServers.webUrl": "Cím böngészőknek",
+	"settings.mediaServers.webUrlHint": "Ezen a címen nyitják meg a szervert telefonon vagy számítógépen. Megnyitás gombot tesz azoknak a címeknek az oldalára, amelyek a szerveren vannak. Hagyd üresen, ha nem kell gomb.",
 	"settings.mediaServers.local": "Elérés a helyi hálózaton",
 	"settings.mediaServers.send": "Frissítések küldése",
 	"settings.mediaServers.save": "Mentés",

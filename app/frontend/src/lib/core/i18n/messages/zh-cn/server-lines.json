@@ -1345,5 +1345,7 @@
 	"server.requests.removed-the-request-for": "{name} 移除了 {a} 的请求",
 	"server.requests.plex-gave-no-account-code-for": "Plex 没有提供此人的账户代码，因此不会读取其待看清单。",
 	"server.migrate.holyarrs-reads-mdblist-lists-add-it": "HolyArrs 可读取 MDBList 列表；请在 设置 > 外部列表 中重新添加",
-	"server.requests.send-key-mdblist-api-key-or": "请发送 {\"key\": \"<MDBList API 密钥>\"}，或发送 {\"key\": \"\"} 将其移除"
+	"server.requests.send-key-mdblist-api-key-or": "请发送 {\"key\": \"<MDBList API 密钥>\"}，或发送 {\"key\": \"\"} 将其移除",
+	"server.mediaservers.no-such-title": "没有这个作品",
+	"server.mediaservers.send-title-a-library-title-id": "请发送 title，即媒体库中作品的 id"
 }

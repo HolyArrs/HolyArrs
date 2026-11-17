@@ -27,6 +27,8 @@
 "settings.mediaServers.pathFrom": "HolyArrs 側のパス",
 "settings.mediaServers.pathTo": "サーバー側の同じフォルダー",
 "settings.mediaServers.pathHint": "サーバーがファイルを別のパスで見ている場合のみ",
+	"settings.mediaServers.webUrl": "ブラウザー用のアドレス",
+	"settings.mediaServers.webUrlHint": "みんながスマホやパソコンでサーバーを開くアドレスです。サーバーにある作品のページに「開く」ボタンが付きます。ボタンが不要なら空欄のままにします。",
 "settings.mediaServers.local": "ローカルネットワークに接続",
 "settings.mediaServers.send": "更新を送信",
 "settings.mediaServers.save": "保存",
