@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"slices"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 // WatchRelink links old asks to a title as it comes into the Library: a
@@ -51,43 +53,50 @@ func (s *Service) WatchRelink() {
 // titleID (same kind and TMDB id, or TVDB id for a show) whose own title
 // is gone. It returns how many it linked.
 func (s *Service) RelinkTitle(ctx context.Context, titleID int64) (int, error) {
-	return s.relink(ctx, relinkSQL+relinkTitleSQL+relinkOrderSQL, titleID)
+	if titleID <= 0 {
+		return 0, nil
+	}
+	return s.relink(ctx, titleID)
 }
 
 // RelinkAll does RelinkTitle for every Library title, once at start, so
 // asks left without their title before this existed find it again.
 func (s *Service) RelinkAll(ctx context.Context) (int, error) {
-	return s.relink(ctx, relinkSQL+relinkOrderSQL)
+	return s.relink(ctx, 0)
 }
 
-func (s *Service) relink(ctx context.Context, q string, args ...any) (int, error) {
-	rows, err := s.Store.Read().QueryContext(ctx, q, args...)
+// relinkAsk is an ask that may follow a Library title back.
+type relinkAsk struct {
+	kind, tmdb, tvdb string
+	askID            int64
+	titleID          sql.NullInt64
+}
+
+func (s *Service) relink(ctx context.Context, titleID int64) (int, error) {
+	db := s.Store.Read()
+	titles, err := mediafiles.LiveTitleIDs(ctx, db, titleID)
+	if err != nil || len(titles) == 0 {
+		return 0, err
+	}
+	removed, err := mediafiles.RemovedTitleIDs(ctx, db)
 	if err != nil {
 		return 0, err
 	}
-	pairs := map[int64]int64{}
-	var order []int64
-	for rows.Next() {
-		var ask, title int64
-		if err := rows.Scan(&ask, &title); err != nil {
-			rows.Close()
-			return 0, err
-		}
-		if _, ok := pairs[ask]; ok {
-			continue // the first Library title with that id wins
-		}
-		pairs[ask] = title
-		order = append(order, ask)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
+	asks, err := lostAsks(ctx, db, removed)
+	if err != nil {
 		return 0, err
 	}
 	n := 0
-	for _, ask := range order {
+	for _, a := range asks {
+		// the first Library title with that id wins
+		i := slices.IndexFunc(titles, func(t mediafiles.TitleIDs) bool { return sameTitle(a, t) })
+		if i < 0 {
+			continue
+		}
+		to := titles[i].ID
 		var moved int64
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-			res, err := tx.Exec(relinkSetSQL, pairs[ask], database.FormatTime(s.now()), ask)
+			res, err := tx.Exec(relinkSetSQL, to, database.FormatTime(s.now()), a.askID, a.titleID)
 			if err == nil {
 				moved, _ = res.RowsAffected()
 			}
@@ -100,10 +109,38 @@ func (s *Service) relink(ctx context.Context, q string, args ...any) (int, error
 			continue
 		}
 		n++
-		if err := s.followAskers(ctx, ask, pairs[ask]); err != nil {
-			log.Printf("asks: follows of ask %d: %v", ask, err)
+		if err := s.followAskers(ctx, a.askID, to); err != nil {
+			log.Printf("asks: follows of ask %d: %v", a.askID, err)
 		}
-		s.changed(ctx, ask)
+		s.changed(ctx, a.askID)
 	}
 	return n, nil
+}
+
+// lostAsks lists the approved or ready movie and show asks whose title was
+// never linked or was deleted from the Library, by id.
+func lostAsks(ctx context.Context, db database.Lister, removed map[int64]bool) ([]relinkAsk, error) {
+	rows, err := db.QueryContext(ctx, relinkAsksSQL)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []relinkAsk
+	for rows.Next() {
+		var a relinkAsk
+		if err := rows.Scan(&a.askID, &a.kind, &a.tmdb, &a.tvdb, &a.titleID); err != nil {
+			return nil, err
+		}
+		if !a.titleID.Valid || removed[a.titleID.Int64] {
+			out = append(out, a)
+		}
+	}
+	return out, rows.Err()
+}
+
+func sameTitle(a relinkAsk, t mediafiles.TitleIDs) bool {
+	if t.Kind != a.kind {
+		return false
+	}
+	return (a.tmdb != "" && t.TMDB == a.tmdb) || (a.kind == "show" && a.tvdb != "" && t.TVDB == a.tvdb)
 }
