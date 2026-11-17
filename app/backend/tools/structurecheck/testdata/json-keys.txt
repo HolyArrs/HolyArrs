@@ -1114,6 +1114,7 @@ noofslots_total
 not_media
 not_moved
 not_out_yet
+not_sent
 note
 notes
 notes_short
@@ -1541,6 +1542,7 @@ seerr
 selected
 selections
 sendUpdatesToClient
+sending
 serial
 series
 seriesId
