@@ -32,6 +32,7 @@
 	"settings.backups.key": "คีย์หลัก",
 	"settings.backups.keyDesc": "การสำรองข้อมูลไม่รวมคีย์นี้ เก็บสำเนาไว้ในที่ปลอดภัย",
 	"settings.backups.noKit": "ยังไม่มีชุดคีย์ที่บันทึกไว้สำหรับคีย์นี้ หากไม่มี จะเปิดรหัสผ่านที่บันทึกในการสำรองข้อมูลบนเครื่องใหม่ไม่ได้",
+	"settings.backups.kitRecommended": "แนะนำ: ดาวน์โหลดชุดคีย์ของคุณ.",
 	"settings.backups.ownerOnlyKit": "เฉพาะเจ้าของที่ดาวน์โหลดได้ ลองขอให้เขาดาวน์โหลดให้",
 	"settings.backups.fingerprint": "ลายนิ้วมือของคีย์",
 	"settings.backups.downloadKit": "ดาวน์โหลดชุดคีย์",

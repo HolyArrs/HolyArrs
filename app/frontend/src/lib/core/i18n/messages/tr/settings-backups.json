@@ -35,6 +35,7 @@
 	"settings.backups.key": "Ana anahtar",
 	"settings.backups.keyDesc": "Yedekler bu anahtarı içermez. Bir kopyasını güvenli bir yerde sakla.",
 	"settings.backups.noKit": "Bu anahtar için kayıtlı anahtar paketi henüz yok. Olmadan, bir yedekteki kayıtlı parolalar yeni bir bilgisayarda açılamaz.",
+	"settings.backups.kitRecommended": "Önerilen: anahtar paketini indir.",
 	"settings.backups.ownerOnlyKit": "Yalnızca sahip indirebilir; ondan iste.",
 	"settings.backups.fingerprint": "Anahtar parmak izi",
 	"settings.backups.downloadKit": "Anahtar paketini indir",

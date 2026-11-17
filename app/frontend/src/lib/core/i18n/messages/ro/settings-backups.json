@@ -32,6 +32,7 @@
 	"settings.backups.key": "Cheia principală",
 	"settings.backups.keyDesc": "Copiile de siguranță nu includ această cheie. Păstrează o copie într-un loc sigur.",
 	"settings.backups.noKit": "Încă nu e salvat niciun set de chei pentru această cheie. Fără el, parolele salvate dintr-o copie de siguranță nu pot fi deschise pe un calculator nou.",
+	"settings.backups.kitRecommended": "Recomandat: descarcă setul de chei.",
 	"settings.backups.ownerOnlyKit": "Doar proprietarul îl poate descărca; roagă-l să o facă.",
 	"settings.backups.fingerprint": "Amprenta cheii",
 	"settings.backups.downloadKit": "Descarcă setul de chei",

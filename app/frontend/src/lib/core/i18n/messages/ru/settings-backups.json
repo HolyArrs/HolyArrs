@@ -35,6 +35,7 @@
 	"settings.backups.key": "Главный ключ",
 	"settings.backups.keyDesc": "В резервные копии этот ключ не входит. Сохраните его копию в надёжном месте.",
 	"settings.backups.noKit": "Для этого ключа набор ещё не сохранён. Без него сохранённые в копии пароли нельзя открыть на новой машине.",
+	"settings.backups.kitRecommended": "Рекомендуется: скачайте набор ключа.",
 	"settings.backups.ownerOnlyKit": "Скачать его может только владелец; попросите его.",
 	"settings.backups.fingerprint": "Отпечаток ключа",
 	"settings.backups.downloadKit": "Скачать набор ключа",

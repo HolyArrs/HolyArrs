@@ -32,6 +32,7 @@
 	"settings.backups.key": "Galvenā atslēga",
 	"settings.backups.keyDesc": "Dublējumos šīs atslēgas nav. Glabā kopiju drošā vietā.",
 	"settings.backups.noKit": "Šai atslēgai vēl nav saglabāta atslēgu komplekta. Bez tā dublējumā saglabātās paroles nevar atvērt jaunā datorā.",
+	"settings.backups.kitRecommended": "Ieteicams: lejupielādē atslēgu komplektu.",
 	"settings.backups.ownerOnlyKit": "To var lejupielādēt tikai īpašnieks; palūdz viņam.",
 	"settings.backups.fingerprint": "Atslēgas pirkstu nospiedums",
 	"settings.backups.downloadKit": "Lejupielādēt atslēgu komplektu",

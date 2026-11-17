@@ -35,6 +35,7 @@
 	"settings.backups.key": "Clave maestra",
 	"settings.backups.keyDesc": "Las copias de seguridad no incluyen esta clave. Guarda una copia en un lugar seguro.",
 	"settings.backups.noKit": "Aún no hay un kit guardado para esta clave. Sin él, las contraseñas guardadas de una copia de seguridad no se pueden abrir en otro equipo.",
+	"settings.backups.kitRecommended": "Recomendado: descarga tu kit de clave.",
 	"settings.backups.ownerOnlyKit": "Solo el propietario puede descargarlo; pídeselo.",
 	"settings.backups.fingerprint": "Huella de la clave",
 	"settings.backups.downloadKit": "Descargar kit de clave",

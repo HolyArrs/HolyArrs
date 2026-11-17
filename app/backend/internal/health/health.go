@@ -19,6 +19,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -58,11 +59,9 @@ type Backups struct {
 	// Started says the first scheduled pass since start has finished (a
 	// fresh install has no backup until then, which is not a problem).
 	Started bool
-	// KeyPrint is the current master key's fingerprint; "" when the key
-	// is a named file (HOLYARRS_MASTER_KEY_FILE) the person looks after.
-	KeyPrint string
-	// KeyKitPrint is the fingerprint of the last key kit downloaded.
-	KeyKitPrint string
+	// KeyKit is how loudly to ask for the key kit: secrets.KitRecommend,
+	// secrets.KitWarn, or "" when it is saved or not needed yet.
+	KeyKit string
 	// Off says the owner turned scheduled backups off: no backup is
 	// expected, so missing or old ones and the key kit are not warned about.
 	Off bool
@@ -632,10 +631,16 @@ func (e *Engine) backups(ctx context.Context) ([]Result, error) {
 		r.State, r.Message = Warning, "The newest backup is from "+b.Newest.UTC().Format("2006-01-02")
 	}
 	// Backups do not hold the master key: without a copy of it, the saved
-	// passwords in a backup cannot be opened on a new machine.
+	// passwords in a backup cannot be opened on a new machine. Until that
+	// is a real risk it is only a calm note, so it raises no alert or dot.
 	k := Result{Key: "backups:key", Kind: "backups", Subject: "Backups", State: OK}
-	if err == nil && !b.Off && b.KeyPrint != "" && b.KeyKitPrint != b.KeyPrint {
-		k.State, k.Message = Warning, "Download your key kit: Backups don't include the master key"
+	if err == nil && !b.Off {
+		switch b.KeyKit {
+		case secrets.KitWarn:
+			k.State, k.Message = Warning, KeyKitWarning
+		case secrets.KitRecommend:
+			k.Message = KeyKitRecommended
+		}
 	}
 	return []Result{r, k}, nil
 }

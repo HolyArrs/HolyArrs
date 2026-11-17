@@ -88,6 +88,8 @@
 	// Library rows are folder and disk checks, so they show in Storage beside each disk.
 	const libRows = $derived(parts.find((g) => g.id === 'library')?.rows ?? []);
 	const backups = $derived(libRows.find((r) => r.key.startsWith('backups')));
+	// The key kit's calm recommendation rides on the Backups line; a real warning is a problem row of its own.
+	const keyKitNote = $derived(libRows.find((r) => r.key === 'backups:key' && r.tone === 'ok' && r.reason)?.reason);
 	const jobs = $derived(groups.find((g) => g.id === 'jobs')?.rows ?? []);
 	const jobsTone = $derived(jobs.some((j) => j.tone === 'fail') ? 'fail' : jobs.some((j) => j.tone === 'wait') ? 'wait' : null);
 	const allRows = $derived(groups.flatMap((g) => g.rows));
@@ -248,7 +250,7 @@
 				</ul>
 			{/if}
 			{#if backups}
-				<p class="bk">{t('health.kind.backups')} <span class="chip {backups.tone}">{backups.word}</span>{#if backups.at} · {t('health.sections.lastChecked')} <time datetime={backups.at} title={dateTime(backups.at)}>{ago(backups.at, now)}</time>{/if}{#if backups.reason && backups.tone !== 'ok'} · {serverWords(backups.reason)}{/if}</p>
+				<p class="bk">{t('health.kind.backups')} <span class="chip {backups.tone}">{backups.word}</span>{#if backups.at} · {t('health.sections.lastChecked')} <time datetime={backups.at} title={dateTime(backups.at)}>{ago(backups.at, now)}</time>{/if}{#if backups.reason && backups.tone !== 'ok'} · {serverWords(backups.reason)}{/if}{#if keyKitNote} · <span data-testid="key-kit-note">{keyKitNote}</span>{/if}</p>
 			{/if}
 		</section>
 	{:else if tab === 'jobs'}

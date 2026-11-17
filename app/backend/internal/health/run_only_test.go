@@ -28,11 +28,11 @@ func (w *world) runOnly(t *testing.T, group string) map[string]string {
 // problem stays exactly as the last full run left it.
 func TestRunOnlyClearsJustThatCheck(t *testing.T) {
 	w := newWorld(t)
-	w.bk.KeyPrint = "1a2b3c4d"
+	w.bk.KeyKit = "warn"
 	w.addDownloader(t, "SAB", "unreachable")
 	w.run(t)
 	w.run(t) // two runs: both warnings are confirmed
-	w.bk.KeyKitPrint = "1a2b3c4d"
+	w.bk.KeyKit = ""
 	w.exec(t, "UPDATE downloaders SET state = 'ok'")
 	got := w.runOnly(t, "backups")
 	if got["backups:key"] != "ok/ok" {
@@ -64,7 +64,7 @@ func TestRunOnlyKeepsTheGuardForNewProblems(t *testing.T) {
 // else's rows.
 func TestRunOnlyDropsGoneRowsInItsGroupOnly(t *testing.T) {
 	w := newWorld(t)
-	w.bk.KeyPrint = "1a2b3c4d"
+	w.bk.KeyKit = "warn"
 	w.addDownloader(t, "SAB", "unreachable")
 	w.run(t)
 	w.exec(t, "UPDATE downloaders SET removed = 1")
@@ -82,9 +82,9 @@ func TestRunOnlyDropsGoneRowsInItsGroupOnly(t *testing.T) {
 func TestRunOnlyRoute(t *testing.T) {
 	s := openStore(t)
 	addMovieFolder(t, s)
-	kit := ""
+	kit := "warn"
 	eng := &Engine{Store: s, Version: "test", Backups: func(context.Context) (Backups, error) {
-		return Backups{Newest: time.Now(), Started: true, KeyPrint: "1a2b3c4d", KeyKitPrint: kit}, nil
+		return Backups{Newest: time.Now(), Started: true, KeyKit: kit}, nil
 	}}
 	r := newRig(t, s, rigOpts{Engine: eng})
 	srv := httptest.NewServer(r.status.ForgetOnWrite(r.mux))
@@ -107,7 +107,7 @@ func TestRunOnlyRoute(t *testing.T) {
 	if !strings.Contains(call("GET", "/api/v1/settings/status", 200), "key kit") {
 		t.Fatal("no key kit item before the download")
 	}
-	kit = "1a2b3c4d"
+	kit = ""
 	call("POST", "/api/v1/health/checks/run?only=backups", 200)
 	if got := call("GET", "/api/v1/settings/status", 200); strings.Contains(got, "key kit") {
 		t.Fatalf("key kit still listed after the re-run: %s", got)

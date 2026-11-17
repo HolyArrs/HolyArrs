@@ -32,6 +32,7 @@
 	"settings.backups.key": "Hovednøkkel",
 	"settings.backups.keyDesc": "Sikkerhetskopiene inneholder ikke denne nøkkelen. Ta vare på en kopi på et trygt sted.",
 	"settings.backups.noKit": "Ingen nøkkelpakke er lagret for denne nøkkelen ennå. Uten den kan ikke lagrede passord i en sikkerhetskopi åpnes på en ny maskin.",
+	"settings.backups.kitRecommended": "Anbefalt: last ned nøkkelpakken.",
 	"settings.backups.ownerOnlyKit": "Bare eieren kan laste den ned. Be vedkommende om det.",
 	"settings.backups.fingerprint": "Nøkkelens fingeravtrykk",
 	"settings.backups.downloadKit": "Last ned nøkkelpakke",

@@ -32,6 +32,7 @@
 	"settings.backups.key": "Aðallykill",
 	"settings.backups.keyDesc": "Afrit innihalda ekki þennan lykil. Geymdu eintak á öruggum stað.",
 	"settings.backups.noKit": "Enginn lyklapakki er vistaður fyrir þennan lykil enn. Án hans er ekki hægt að opna vistuð lykilorð afrits á nýrri vél.",
+	"settings.backups.kitRecommended": "Mælt með: sæktu lyklapakkann.",
 	"settings.backups.ownerOnlyKit": "Aðeins eigandinn getur sótt hann; biddu hann um það.",
 	"settings.backups.fingerprint": "Fingrafar lykils",
 	"settings.backups.downloadKit": "Sækja lyklapakka",

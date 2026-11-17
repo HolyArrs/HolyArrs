@@ -35,6 +35,7 @@
 "settings.backups.key": "マスターキー",
 "settings.backups.keyDesc": "バックアップにはこのキーが含まれません。安全な場所にコピーを保管してください。",
 "settings.backups.noKit": "このキーのキーキットはまだ保存されていません。キーキットがないと、バックアップに保存されたパスワードを新しいマシンで開けません。",
+"settings.backups.kitRecommended": "推奨: キーキットをダウンロードしてください。",
 "settings.backups.ownerOnlyKit": "ダウンロードできるのはオーナーだけです。オーナーに依頼してください。",
 "settings.backups.fingerprint": "キーのフィンガープリント",
 "settings.backups.downloadKit": "キーキットをダウンロード",

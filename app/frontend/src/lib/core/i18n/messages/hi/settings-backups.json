@@ -35,6 +35,7 @@
 	"settings.backups.key": "मास्टर कुंजी",
 	"settings.backups.keyDesc": "बैकअप में यह कुंजी शामिल नहीं होती। इसकी एक कॉपी सुरक्षित जगह रखें।",
 	"settings.backups.noKit": "इस कुंजी की कोई कुंजी किट अभी सेव नहीं है। इसके बिना बैकअप के सेव पासवर्ड नई मशीन पर नहीं खुल सकते।",
+	"settings.backups.kitRecommended": "सुझाव: अपनी कुंजी किट डाउनलोड करें.",
 	"settings.backups.ownerOnlyKit": "इसे सिर्फ़ ओनर डाउनलोड कर सकता है; उनसे कहें।",
 	"settings.backups.fingerprint": "कुंजी फ़िंगरप्रिंट",
 	"settings.backups.downloadKit": "कुंजी किट डाउनलोड करें",

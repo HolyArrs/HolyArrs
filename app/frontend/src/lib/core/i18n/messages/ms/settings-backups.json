@@ -32,6 +32,7 @@
 	"settings.backups.key": "Kunci induk",
 	"settings.backups.keyDesc": "Sandaran tidak termasuk kunci ini. Simpan satu salinan di tempat yang selamat.",
 	"settings.backups.noKit": "Belum ada kit kunci disimpan untuk kunci ini. Tanpanya, kata laluan tersimpan dalam sandaran tidak dapat dibuka pada mesin baharu.",
+	"settings.backups.kitRecommended": "Disyorkan: muat turun kit kunci anda.",
 	"settings.backups.ownerOnlyKit": "Hanya pemilik boleh memuat turunnya; minta mereka melakukannya.",
 	"settings.backups.fingerprint": "Cap jari kunci",
 	"settings.backups.downloadKit": "Muat turun kit kunci",

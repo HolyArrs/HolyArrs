@@ -16,6 +16,17 @@ import (
 // only the owner can download the kit.
 const KeyKitForOthers = "Ask the owner for the key kit: Backups don't include the master key"
 
+// KeyKitWarning is the key kit check once backups and saved secrets have
+// gone a while without a kit.
+const KeyKitWarning = "Download your key kit: Backups don't include the master key"
+
+// KeyKitRecommended is the calm note before that, and its wording for
+// people who are not the owner.
+const (
+	KeyKitRecommended          = "Recommended: download your key kit"
+	KeyKitRecommendedForOthers = "Recommended: ask the owner for the key kit"
+)
+
 // Handlers serves the health check routes and the health settings.
 type Handlers struct {
 	Store  *database.Store
@@ -171,8 +182,12 @@ func ownerWords(r *http.Request, cs []domain.HealthCheck) {
 		return
 	}
 	for i := range cs {
-		if cs[i].Key == "backups:key" && cs[i].State != OK {
+		switch {
+		case cs[i].Key != "backups:key" || cs[i].Message == "":
+		case cs[i].State != OK:
 			cs[i].Message = KeyKitForOthers
+		default:
+			cs[i].Message = KeyKitRecommendedForOthers
 		}
 	}
 }

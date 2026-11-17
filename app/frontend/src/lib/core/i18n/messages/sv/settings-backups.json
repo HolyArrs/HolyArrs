@@ -32,6 +32,7 @@
 	"settings.backups.key": "Huvudnyckel",
 	"settings.backups.keyDesc": "Säkerhetskopiorna innehåller inte den här nyckeln. Förvara en kopia på ett säkert ställe.",
 	"settings.backups.noKit": "Inget nyckelpaket är sparat för den här nyckeln ännu. Utan det går det inte att öppna en säkerhetskopias sparade lösenord på en ny maskin.",
+	"settings.backups.kitRecommended": "Rekommenderas: ladda ned ditt nyckelpaket.",
 	"settings.backups.ownerOnlyKit": "Bara ägaren kan ladda ned det; be ägaren göra det.",
 	"settings.backups.fingerprint": "Nyckelns fingeravtryck",
 	"settings.backups.downloadKit": "Ladda ned nyckelpaket",
