@@ -1,5 +1,7 @@
 <script lang="ts">
 	import Words from '#lib/ui/Words.svelte';
+	import Icon from '#lib/ui/Icon.svelte';
+	import { supportLinks } from './support-links.ts';
 	// Retro about window: types its lines, slams tags in, and sends runners across the title bar.
 	import silkscreen from '@fontsource/silkscreen/files/silkscreen-latin-400-normal.woff2?url';
 	import { tick } from 'svelte';
@@ -13,7 +15,6 @@
 		void face.load().catch(() => {});
 	}
 
-	const SUPPORT_URL = 'https://github.com/sponsors/CoderLuii';
 	// Run-cycle frames for the two runners.
 	const luisF = [0, 1, 2, 1].map((i) => to(`/why/coderluii-run-${i}.png`));
 	const dogF = [0, 1, 2, 3, 4, 5].map((i) => to(`/why/peanut-run-${i}.png`));
@@ -271,8 +272,12 @@
 					<p class="big typed">{t('health.why.thanksBig')}</p>
 					<p class="say typed">{t('health.why.thanksSay')}</p>
 					<div class="give">
-						<p class="say typed">{t('health.why.saves')}<span class="cur" aria-hidden="true"></span></p>
-						<a href={SUPPORT_URL} target="_blank" rel="noopener" class="sponsor stk" style="--r0:14deg"><span class="heart" aria-hidden="true">{#each '01101101111111011111000111000001000' as c, i (i)}{#if c === '1'}<b></b>{:else}<s></s>{/if}{/each}</span>{t('health.why.support')}</a>
+						<p class="say typed">{t('health.support.line2')}<span class="cur" aria-hidden="true"></span></p>
+						<div class="give-row">
+							{#each supportLinks as l, i (l.id)}
+								<a href={l.href} target={l.newTab ? '_blank' : undefined} rel={l.newTab ? 'noopener' : undefined} class="sponsor stk" class:alt={l.id !== 'sponsor'} style="--r0:{i % 2 ? -10 : 12}deg" data-testid="why-{l.id}"><Icon name={l.icon} size={16} stroke={2} />{t(`health.support.${l.id}`)}</a>
+							{/each}
+						</div>
 					</div>
 				</section>
 			</div>
@@ -352,7 +357,9 @@
 	.give { display: grid; gap: 12px; justify-items: start; margin-top: 16px; padding-top: 16px; border-top: 2px dashed rgb(243 239 229 / 20%); }
 	.give .say { margin: 0; }
 	.sponsor { display: inline-flex; align-items: center; gap: 10px; min-height: 40px; padding: 8px 16px; background: var(--red); color: var(--cream); border: 2px solid var(--cream); box-shadow: 4px 4px 0 var(--shade); text-decoration: none; font: 400 12px/1.3 var(--pixel); letter-spacing: .16em; word-spacing: .2em; text-transform: uppercase; --r1: -2deg; transform: rotate(-2deg); }
-	.sponsor .heart b { background: var(--cream); }
+	.give-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 14px; }
+	.sponsor.alt { background: transparent; }
+	.sponsor:nth-child(even) { --r1: 1.5deg; transform: rotate(1.5deg); }
 	.sponsor:hover { box-shadow: 6px 6px 0 var(--shade); }
 	.sponsor:focus-visible { outline: 2px solid var(--cream); outline-offset: 4px; }
 	.cur { display: inline-block; width: 8px; height: 15px; margin-left: 6px; vertical-align: -2px; background: var(--cream); animation: blink 1s steps(1) infinite; }
