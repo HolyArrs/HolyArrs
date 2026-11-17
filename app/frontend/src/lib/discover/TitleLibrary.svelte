@@ -657,7 +657,7 @@
 	.lib-st-sub { margin: 6px 0 0 20px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.lib-bar { height: 6px; margin: 12px 0 0 20px; border-radius: 99px; background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
 	.lib-bar span { display: block; width: 100%; height: 100%; border-radius: 99px; background: var(--info); transition: transform var(--dur-slow) var(--ease-out); }
-	.lib-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); white-space: nowrap; text-decoration: none; cursor: pointer; }
+	.lib-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); white-space: nowrap; text-decoration: none; cursor: pointer; }
 	.lib-btn.primary { background: var(--text); color: var(--bg); }
 	.lib-btn:hover { filter: brightness(1.08); }
 	.lib-head-acts { display: flex; gap: 8px; }
@@ -697,7 +697,7 @@
 		.lib-head-acts .lib-btn.sm { padding: 0 10px; }
 	}	.lib-eps-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 	.lib-eps-head .lib-h { margin-bottom: 14px; }
-	.lib-btn.sm { height: 34px; padding: 0 14px; font-size: 13px; margin-top: 22px; }
+	.lib-btn.sm { height: 36px; padding: 0 14px; font-size: 13px; margin-top: 22px; }
 	.lib-eps { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
 	.lib-ep { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto 34px; align-items: center; gap: 14px; padding: 6px; border-radius: 12px; transition: background var(--dur-fast) var(--ease-out); }
 	.lib-ep { position: relative; cursor: pointer; }
