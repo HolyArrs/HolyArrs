@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Wyłączone w Częściach",
 	"home.noneForSources": "brak dla tego, co znajdują twoje źródła",
 	"home.addedTwice": "jest dodany dwa razy",
-	"home.addedTwiceMany": "są dodane dwa razy"
+	"home.addedTwiceMany": "są dodane dwa razy",
+	"home.notSetUpYet": "Jeszcze nie skonfigurowano",
+	"home.setUpToAdd": "Dokończ konfigurację, aby dodać {name}"
 }

@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Vypnuto v Částech",
 	"home.noneForSources": "chybí pro to, co najdou vaše zdroje",
 	"home.addedTwice": "je přidán dvakrát",
-	"home.addedTwiceMany": "jsou přidány dvakrát"
+	"home.addedTwiceMany": "jsou přidány dvakrát",
+	"home.notSetUpYet": "Zatím nenastaveno",
+	"home.setUpToAdd": "Dokončete nastavení a přidejte {name}"
 }

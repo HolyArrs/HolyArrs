@@ -18,8 +18,10 @@
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { artGone, lightOnDark } from './art-check.ts';
-	import { arrivedHead, attention, downloadMoved, downloadingNow, fallbackRows, homeDownloadsURL, homeStrip, n, type HomeAnswer, type HomeCard, type HomeRow } from './home.ts';
-	import { MetadataNotice } from '#lib/metadata/index.ts';
+	import { arrivedHead, attention, setupBlocker, welcomeRows, downloadMoved, downloadingNow, fallbackRows, homeDownloadsURL, homeStrip, n, type HomeAnswer, type HomeCard, type HomeRow } from './home.ts';
+	import { MetadataNotice, detailPath, remember } from '#lib/metadata/index.ts';
+	import { headPath, type HeadAnswer } from '#lib/discover/index.ts';
+	import { cardTmdb, type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
 	import { homeFacts, homeGreeting, homeNews } from './home-line.ts';
 	import type { Health, HealthChecks } from '#lib/health/index.ts';
 	import { onMount } from 'svelte';
@@ -45,6 +47,8 @@
 	let folders = $state<LibraryFolder[]>([]);
 	let downloads = $state<DownloadRow[]>([]);
 	let asks = $state<Ask[]>([]);
+	// Before setup: Explore's first picture rows (from the metadata server, no setup needed), read before Home shows.
+	let picks = $state<(ExploreRow & { wide: boolean; type: string })[]>([]);
 	let health = $state<Health | null>(null);
 	let checks = $state<HealthChecks | null>(null);
 	// The downloads or health read failed on the last load: Home could not check, so it does not say All good.
@@ -152,8 +156,10 @@
 
 	async function loadAll() {
 		// The first screen (the Home answer) loads now; the bigger asks wait until the sign-in hand-off has left, so its frames stay smooth.
-		const first = loadHome().then(() => {
-			if (home) loaded = true;
+		// A fresh install waits for everything (its picture rows too), so nothing jumps in under the welcome card.
+		const first = loadHome().then(async () => {
+			if (home?.rows?.includes('welcome')) await loadPicks();
+			else if (home) loaded = true;
 		});
 		await afterHandoff();
 		const [, fo, dl, he, ch, as] = await Promise.allSettled([
@@ -179,6 +185,27 @@
 		now = new Date();
 		loaded = true;
 		settled = true;
+	}
+
+	async function loadPicks() {
+		if (picks.length) return;
+		try {
+			const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+			picks = welcomeRows((await api.get<HeadAnswer>(headPath({ type: 'all', tz }))).head ?? []);
+		} catch {
+			// No picture rows: the grid and Explore still work.
+		}
+	}
+
+	const welcomeOn = $derived(rows.includes('welcome'));
+	// Add needs a folder, a Source and a Downloader: until they are there, the card's Add opens the missing step.
+	const blocker = $derived(owner && admin ? setupBlocker(attentionView.steps) : '');
+	function pickHref(c: ExploreCard): string | undefined {
+		if (c.titleId !== undefined) return to(`/library/${c.titleId}`);
+		const tmdb = cardTmdb(c);
+		if (!tmdb || (c.kind !== 'movie' && c.kind !== 'show')) return undefined;
+		remember(c.kind, tmdb, { name: c.name, year: c.year, poster: c.image });
+		return to(detailPath(c.kind, tmdb));
 	}
 
 	async function retry() {
@@ -303,50 +330,67 @@
 			</a>
 		{/snippet}
 
+		{#snippet welcomeCard()}
+		{#if owner}
+			<!-- Compact: what is done, the next step and the steps in one sheet; Home's own grid and rows follow under it. -->
+			<section class="setup" aria-labelledby="h-setup" data-testid="home-welcome" style="--n: {attentionView.steps.length}">
+				<div class="setup-head">
+					<div class="setup-title">
+						<p class="kicker">{t('home.ofDone', { done: attentionView.doneCount, total: attentionView.steps.length })}</p>
+						<h2 id="h-setup">{t('home.welcomeToHolyarrs')}</h2>
+					</div>
+					<div class="welcome-acts">
+						<Button variant="primary" href={to(attentionView.nextStep.href)} iconAfter="chevronRight">{attentionView.nextStep.cta}</Button>
+						<Button variant="secondary" href={to('/library/import')}>{t('home.importWhatYouHave')}</Button>
+					</div>
+				</div>
+				<div class="segs" aria-hidden="true">{#each attentionView.steps as s, i (i)}<i class:on={s.done}></i>{/each}</div>
+				<ol class="steps">
+					{#each attentionView.steps as s, i (i)}
+						<li class:done={s.done}>
+							<a href={to(s.href)}>
+								<span class="dot">{#if s.done}<Icon name="check" size={14} />{:else}{i + 1}{/if}</span>
+								<span class="grow">{s.text}</span>
+								<span class="sr-only">{s.done ? t('home.done') : t('home.toDo')}</span>
+							</a>
+						</li>
+					{/each}
+				</ol>
+			</section>
+		{:else}
+			<section class="prompt" aria-labelledby="h-welcome" data-testid="home-welcome">
+				<div>
+					<h2 id="h-welcome">{t('home.welcomeToHolyarrs')}</h2>
+					<p>{t('home.nothingHereYetAsk')}</p>
+				</div>
+				<Button variant="primary" size="lg" icon="compass" href={to('/explore')}>{t('home.startAsking')}</Button>
+			</section>
+		{/if}
+		{/snippet}
+
+		{#snippet pickRow(r: ExploreRow & { wide: boolean; type: string })}
+			<div class="wide-row" data-testid="home-pick">
+				<Shelf title={serverWords(r.title)} subtitle={r.subtitle ? serverWords(r.subtitle) : undefined} href={to('/explore')} item="var(--title-item)">
+					{#each r.cards as c (c.key)}
+						{@const tmdb = cardTmdb(c)}
+						<WideCard cover title={c.name} href={pickHref(c)} image={c.wide ?? c.image} art={c.art} kind={c.kind} subtitle={c.subtitle} fresh={c.fresh} typed row={r.type} preview={tmdb && (c.kind === 'movie' || c.kind === 'show') ? { kind: c.kind, tmdb, year: c.year, titleId: c.titleId } : undefined}>
+							{#snippet growAction()}
+								{#if blocker && c.titleId === undefined}
+									<IconButton icon="plus" label={t('home.setUpToAdd', { name: c.name })} variant="glass" size="lg" href={to(blocker)} />
+								{/if}
+							{/snippet}
+						</WideCard>
+					{/each}
+				</Shelf>
+			</div>
+		{/snippet}
+
 		<PageLoader loading={!loaded} label={t('home.loadingHome')} onretry={retry}>
+		{#if welcomeOn}{@render welcomeCard()}{/if}
 		<HomeOverview {overview} {disk} {admin} {settled} {attentionView} {uncheckedParts} {retrying} {retry} {approver} {kid} {uncheckedAsks} {downloading} {mineOpen} {mineDeclined} {fetchingAll} {home} {uncheckedDl} {now} {uncheckedHealth} {health} {picTile} />
+		{#if welcomeOn}{#each picks as r (r.id)}{@render pickRow(r)}{/each}{/if}
 		{#each rows as row (row)}
-			{#if row === 'welcome'}
-				{#if owner}
-					<section class="setup" aria-labelledby="h-setup" data-testid="home-welcome">
-						<div class="setup-main">
-							<p class="kicker">{#if settled}{t('home.ofDone', { done: attentionView.doneCount, total: attentionView.steps.length })}{:else}&nbsp;{/if}</p>
-							<h2 id="h-setup">{t('home.welcomeToHolyarrs')}</h2>
-							<div class="segs" aria-hidden="true">{#each attentionView.steps as s, i (i)}<i class:on={settled && s.done}></i>{/each}</div>
-							{#if settled}
-								<h3>{attentionView.nextStep.text}</h3>
-								<p>{attentionView.nextStep.detail}</p>
-							{:else}
-								<span class="sk setup-wait" aria-hidden="true"><i></i><i></i></span><span class="sr-only">{t('home.loading')}</span>
-							{/if}
-							<div class="welcome-acts" class:hide={!settled}>
-								<Button variant="primary" size="lg" href={to(attentionView.nextStep.href)} iconAfter="chevronRight">{attentionView.nextStep.cta}</Button>
-								<Button variant="secondary" size="lg" href={to('/library/import')}>{t('home.importWhatYouHave')}</Button>
-							</div>
-						</div>
-						<ol class="steps">
-							{#each attentionView.steps as s, i (i)}
-								<li class:done={settled && s.done}>
-									<a href={to(s.href)}>
-										<span class="dot">{#if settled && s.done}<Icon name="check" size={14} />{:else}{i + 1}{/if}</span>
-										<span class="grow">{s.text}</span>
-										<span class="sr-only">{!settled ? '' : s.done ? t('home.done') : t('home.toDo')}</span>
-										<Icon name="chevronRight" size={15} />
-									</a>
-								</li>
-							{/each}
-						</ol>
-					</section>
-				{:else}
-					<section class="prompt" aria-labelledby="h-welcome" data-testid="home-welcome">
-						<div>
-							<h2 id="h-welcome">{t('home.welcomeToHolyarrs')}</h2>
-							<p>{t('home.nothingHereYetAsk')}</p>
-						</div>
-						<Button variant="primary" size="lg" icon="compass" href={to('/explore')}>{t('home.startAsking')}</Button>
-					</section>
-				{/if}
-			{:else if row === 'arrived'}
+			{#if row === 'arrived'}
 				{@render wideRow(overview.below(home?.arrived), 'home_arrived', { ...arrivedHead(home?.arrived ?? [], now.getTime()), href: to(overview.kindHref(home?.arrived?.[0])) })}
 			{:else if row === overview.upAt && overview.comingUp.length}
 				<section class="up" aria-labelledby="h-up" data-testid="home_coming_up">
@@ -502,36 +546,38 @@
 		.up-th { width: 60px; }
 }
 
-	/* The Welcome card and the first-ask prompt are the same sheet as the tiles. */
-	.setup { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr); gap: 0; border-radius: 20px; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: var(--edge), var(--drop); overflow: hidden; }
-	.setup-main { padding: clamp(20px, 3vw, 32px); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+	/* The Welcome card and the first-ask prompt are the same sheet as the tiles. Before setup the card is compact: a head line, the bar and the steps side by side. */
+	.setup { display: flex; flex-direction: column; gap: 12px; padding: clamp(16px, 2.4vw, 22px); border-radius: 20px; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: var(--edge), var(--drop); }
+	.setup-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; }
+	.setup-title { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 	.kicker { color: var(--text-muted); font: var(--t-subhead); font-variant-numeric: tabular-nums; }
 	.setup h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
-	.setup h3 { font: var(--t-headline); margin-top: 8px; }
-	.setup-main > p:not(.kicker) { color: var(--text-muted); max-width: 52ch; margin-bottom: 8px; }
-	.setup-wait { margin: 12px 0 14px; width: min(320px, 100%); }
-	.segs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; width: min(320px, 100%); margin: 4px 0; }
+	.segs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; width: 100%; }
 	.segs i { height: 4px; border-radius: 2px; background: var(--track); }
 	.segs i.on { background: var(--ok); }
-	.steps { list-style: none; margin: 0; padding: 12px; background: var(--well); box-shadow: inset 1px 0 0 var(--line); display: flex; flex-direction: column; justify-content: center; }
-	.steps a { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 10px; border-radius: var(--r-btn); color: var(--text); font: var(--t-callout); font-weight: 500; }
+	.steps { list-style: none; margin: 0 -10px -6px; padding: 0; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 4px; }
+	.steps li { min-width: 0; }
+	.steps a { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px; border-radius: var(--r-btn); color: var(--text); font: var(--t-subhead); font-weight: 500; }
 	.steps a:hover { background: var(--well); }
 	.steps a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	.steps a > :global(.icon) { color: var(--text-muted); }
 	.steps .done a { color: var(--text-muted); }
-	.steps .dot { width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--surface-1); outline: 1px solid var(--line-strong); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
+	.steps .dot { width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--surface-1); outline: 1px solid var(--line-strong); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
 	.steps .done .dot { background: var(--ok); color: var(--on-art); outline: none; }
-	.grow { flex: 1; min-width: 0; }
+	.grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	/* A narrow window: two steps a row. A phone: the bar and the next-step button say it; the steps fold away. */
+	@container home (max-width: 900px) { .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } .steps li:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+	@container home (max-width: 560px) {
+		.steps { display: none; }
+		.welcome-acts { width: 100%; }
+		.welcome-acts :global(a) { flex: 1 0 auto; white-space: nowrap; }
+	}
 
 	.prompt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: clamp(18px, 3vw, 28px); border-radius: 20px; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: var(--edge), var(--drop); }
 	.prompt h2 { font: var(--t-title2); letter-spacing: var(--t-title2-track); }
 	.prompt p { color: var(--text-muted); max-width: 56ch; margin-top: 4px; }
 
 	.welcome-acts { display: flex; flex-wrap: wrap; gap: 8px; }
-	.welcome-acts.hide { visibility: hidden; }
 
-	@media (max-width: 900px) { .setup { grid-template-columns: 1fr; } .steps { box-shadow: inset 0 1px 0 var(--line); }
-}
 
 	/* High Contrast (forced colors) drops shadows and fills: tiles, the steps box and the ticks get a system border, focus gets a system outline, and the small coloured marks (dots, pips, the foot line, the count) keep their colours. */
 	@media (forced-colors: active) {

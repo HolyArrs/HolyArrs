@@ -274,5 +274,7 @@
 	"home.sourcesOff": "অংশে বন্ধ করা আছে",
 	"home.noneForSources": "আপনার সোর্স যা খুঁজে পায় তার জন্য নেই",
 	"home.addedTwice": "দুবার যোগ করা",
-	"home.addedTwiceMany": "দুবার যোগ করা"
+	"home.addedTwiceMany": "দুবার যোগ করা",
+	"home.notSetUpYet": "এখনও সেট আপ হয়নি",
+	"home.setUpToAdd": "{name} যোগ করতে সেটআপ শেষ করুন"
 }

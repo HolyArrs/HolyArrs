@@ -3,7 +3,7 @@
 	import type { Snippet } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { bytes, percent, agoLong, duration } from '#lib/core/format.ts';
-	import { n, uncheckedLine, type HomeAnswer, type HomeCard } from './home.ts';
+	import { n, setupBlocker, uncheckedLine, type HomeAnswer, type HomeCard } from './home.ts';
 	import { sized } from '#lib/core/tmdb-image.ts';
 	import { stageOf } from '#lib/downloads/index.ts';
 	import { partOff } from '#lib/mediafiles/index.ts';
@@ -180,6 +180,13 @@
 					{@render head('sparkle', 'pink', t('home.newForYou'))}
 					<span class="num">{n(overview.recentNew)}</span>
 					<span class="sm">{overview.recentArrived.length && home?.new_seasons?.length ? t('home.arrivalsAndNewSeasons') : overview.recentArrived.length ? t('home.arrivedInTheLast') : home?.new_seasons?.length === 1 ? t('home.newSeasonOfA') : t('home.newSeasonsOfShows')}</span>
+				</a>
+			{:else if key === 'setup'}
+				<!-- Before setup: the Library's place says what it needs and opens that step. -->
+				<a class="tile stat {cls}" href={to(setupBlocker(attentionView.steps) || '/settings/library-folders')} data-testid="home-setup-library">
+					{#if setupBlocker(attentionView.steps) === '/settings/library-folders'}{@render head('library', 'indigo', t('home.library'))}{:else}{@render head('download', 'blue', t('home.downloads'))}{/if}
+					<span class="word">{t('home.notSetUpYet')}</span>
+					<span class="sm">{attentionView.steps.find((s) => !s.done && s.href !== '/search')?.text ?? t('home.chooseALibraryFolder')}</span>
 				</a>
 			{:else if key === 'explore'}
 				<a class="tile stat {cls}" href={to('/explore')}>

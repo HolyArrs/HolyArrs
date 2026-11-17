@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Kikapcsolva a Modulokban",
 	"home.noneForSources": "hiányzik ahhoz, amit a forrásaid találnak",
 	"home.addedTwice": "kétszer van hozzáadva",
-	"home.addedTwiceMany": "kétszer vannak hozzáadva"
+	"home.addedTwiceMany": "kétszer vannak hozzáadva",
+	"home.notSetUpYet": "Még nincs beállítva",
+	"home.setUpToAdd": "Fejezd be a beállítást a(z) {name} hozzáadásához"
 }

@@ -274,5 +274,7 @@
 	"home.sourcesOff": "In Teile ausgeschaltet",
 	"home.noneForSources": "fehlt für das, was deine Quellen finden",
 	"home.addedTwice": "ist doppelt hinzugefügt",
-	"home.addedTwiceMany": "sind doppelt hinzugefügt"
+	"home.addedTwiceMany": "sind doppelt hinzugefügt",
+	"home.notSetUpYet": "Noch nicht eingerichtet",
+	"home.setUpToAdd": "Einrichtung abschließen, um {name} hinzuzufügen"
 }

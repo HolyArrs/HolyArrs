@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Dimatikan di Bagian",
 	"home.noneForSources": "tidak ada untuk yang ditemukan sumbermu",
 	"home.addedTwice": "ditambahkan dua kali",
-	"home.addedTwiceMany": "ditambahkan dua kali"
+	"home.addedTwiceMany": "ditambahkan dua kali",
+	"home.notSetUpYet": "Belum diatur",
+	"home.setUpToAdd": "Selesaikan penyiapan untuk menambahkan {name}"
 }

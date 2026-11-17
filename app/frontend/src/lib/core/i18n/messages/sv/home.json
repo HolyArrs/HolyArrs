@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Avstängd i Delar",
 	"home.noneForSources": "saknas för det dina källor hittar",
 	"home.addedTwice": "är tillagd två gånger",
-	"home.addedTwiceMany": "är tillagda två gånger"
+	"home.addedTwiceMany": "är tillagda två gånger",
+	"home.notSetUpYet": "Inte konfigurerat än",
+	"home.setUpToAdd": "Slutför konfigurationen för att lägga till {name}"
 }

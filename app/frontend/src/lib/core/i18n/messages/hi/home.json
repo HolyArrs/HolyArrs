@@ -274,5 +274,7 @@
 	"home.sourcesOff": "हिस्सों में बंद",
 	"home.noneForSources": "आपके सोर्स जो ढूँढते हैं उसके लिए नहीं है",
 	"home.addedTwice": "दो बार जोड़ा गया है",
-	"home.addedTwiceMany": "दो बार जोड़े गए हैं"
+	"home.addedTwiceMany": "दो बार जोड़े गए हैं",
+	"home.notSetUpYet": "अभी सेट अप नहीं हुआ",
+	"home.setUpToAdd": "{name} जोड़ने के लिए सेटअप पूरा करें"
 }

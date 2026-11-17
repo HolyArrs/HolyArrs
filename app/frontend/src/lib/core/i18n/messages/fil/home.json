@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Naka-off sa Mga Bahagi",
 	"home.noneForSources": "wala para sa nahahanap ng mga Source mo",
 	"home.addedTwice": "ay dalawang beses idinagdag",
-	"home.addedTwiceMany": "ay dalawang beses idinagdag"
+	"home.addedTwiceMany": "ay dalawang beses idinagdag",
+	"home.notSetUpYet": "Hindi pa naka-set up",
+	"home.setUpToAdd": "Tapusin ang setup para idagdag ang {name}"
 }

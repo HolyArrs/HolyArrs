@@ -274,5 +274,7 @@
 	"home.sourcesOff": "در بخش‌ها خاموش است",
 	"home.noneForSources": "برای چیزی که منابعت پیدا می‌کنند وجود ندارد",
 	"home.addedTwice": "دو بار افزوده شده",
-	"home.addedTwiceMany": "دو بار افزوده شده‌اند"
+	"home.addedTwiceMany": "دو بار افزوده شده‌اند",
+	"home.notSetUpYet": "هنوز راه‌اندازی نشده",
+	"home.setUpToAdd": "برای افزودن {name} راه‌اندازی را تمام کنید"
 }

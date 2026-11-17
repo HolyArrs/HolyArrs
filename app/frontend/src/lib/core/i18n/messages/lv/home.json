@@ -274,5 +274,7 @@
 	"home.sourcesOff": "Izslēgts sadaļā Daļas",
 	"home.noneForSources": "trūkst tam, ko atrod tavi avoti",
 	"home.addedTwice": "ir pievienots divreiz",
-	"home.addedTwiceMany": "ir pievienoti divreiz"
+	"home.addedTwiceMany": "ir pievienoti divreiz",
+	"home.notSetUpYet": "Vēl nav iestatīts",
+	"home.setUpToAdd": "Pabeidziet iestatīšanu, lai pievienotu {name}"
 }

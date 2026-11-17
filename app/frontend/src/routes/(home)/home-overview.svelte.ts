@@ -41,15 +41,17 @@ export function createHomeOverview(ctx: Pick<HomeContext, 'manager' | 'kid' | 'h
 		}
 		return out;
 	});
-	const showOverview = $derived(!ctx.rows.includes('welcome'));
+	// Before setup the grid shows too: the welcome card sits above it, and the Library place points to setup.
+	const welcome = $derived(ctx.rows.includes('welcome'));
+	const showOverview = true;
 	// The count tiles, in order. The first four are always there for the person they are for (Needs attention, asks, Library, disk), so they never change places while the page loads; the rest fill the picture places that have no picture. Explore, New & Popular and Search always can, so the grid never has a hole.
 	const recentArrived = $derived((ctx.home?.arrived ?? []).filter((c) => c.at && ctx.now.getTime() - Date.parse(c.at) < 14 * 86400000));
 	const recentNew = $derived(recentArrived.length + (ctx.home?.new_seasons?.length ?? 0));
 	const statPool = $derived(
 		[
-			ctx.owner ? 'att' : '',
+			ctx.owner ? (welcome ? 'setup' : 'att') : '',
 			ctx.canAsk ? 'ask' : '',
-			ctx.libCards.length ? 'lib' : '',
+			ctx.libCards.length && !(welcome && ctx.owner) ? 'lib' : '',
 			ctx.showDisk ? 'disk' : '',
 			ctx.fetchingAll.length ? 'dl' : '',
 			ctx.owner && ctx.home?.soon?.length && !pics.some((p) => p.label === t('home.comingSoon2')) ? 'soon' : '',
@@ -145,6 +147,7 @@ export function createHomeOverview(ctx: Pick<HomeContext, 'manager' | 'kid' | 'h
 		askPic,
 		get showSystem() { return showSystem; },
 		get showOverview() { return showOverview; },
+		get welcome() { return welcome; },
 		get board() { return board; },
 		set board(v) { board = v; },
 		get shown() { return shown; },
