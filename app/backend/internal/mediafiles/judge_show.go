@@ -216,3 +216,71 @@ func Gains(rel ReleaseFacts, rules PickRulesBody, cur *Current) bool {
 	v.better(rel, rules, cur, idx, sumPoints(rel.Parse, rules))
 	return !v.failed()
 }
+
+// taggedShows finds shows whose name, or an alias, matches once a trailing
+// country or year mark is left off ("The Office (US)" for "The.Office.S01E01"),
+// the way scene names leave the mark out. A release that names a year must
+// agree with the show's year, so "Doctor.Who.1963" never takes "Doctor Who (2005)".
+// A release naming another country never gets here: "office uk" is not "office".
+func taggedShows(p releasename.Result, name string, lib []TitleRef) []*TitleRef {
+	var cands []*TitleRef
+	for i := range lib {
+		t := &lib[i]
+		if t.Kind != "show" {
+			continue
+		}
+		for _, n := range append([]string{t.Name}, t.Aliases...) {
+			base, _, year, ok := releasename.SplitNameTag(n)
+			if !ok || !releasename.SameName(base, name) {
+				continue
+			}
+			if year == 0 {
+				year = t.Year
+			}
+			if p.Year.Value > 0 && year > 0 && year != p.Year.Value {
+				continue
+			}
+			cands = append(cands, t)
+			break
+		}
+	}
+	return cands
+}
+
+// withTaggedShows adds the second try: shows whose name carries a country
+// or year mark. It runs when the plain names found nothing, and also when
+// the release names a year none of them has, so a plain-named original
+// never takes a release of a year-marked remake.
+func withTaggedShows(p releasename.Result, name string, lib []TitleRef, cands []*TitleRef) []*TitleRef {
+	if len(cands) == 0 {
+		return taggedShows(p, name, lib)
+	}
+	if p.Year.Value == 0 {
+		return cands
+	}
+	for _, t := range cands {
+		if t.Year == p.Year.Value {
+			return cands
+		}
+	}
+	var dated []*TitleRef
+	for _, t := range taggedShows(p, name, lib) {
+		if t.Year == p.Year.Value || tagYear(t, name) == p.Year.Value {
+			dated = append(dated, t)
+		}
+	}
+	if len(dated) > 0 {
+		return dated
+	}
+	return cands
+}
+
+// tagYear is the year in a show's name mark that fits the base name; 0: none.
+func tagYear(t *TitleRef, name string) int {
+	for _, n := range append([]string{t.Name}, t.Aliases...) {
+		if base, _, year, ok := releasename.SplitNameTag(n); ok && year > 0 && releasename.SameName(base, name) {
+			return year
+		}
+	}
+	return 0
+}

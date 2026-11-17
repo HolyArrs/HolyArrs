@@ -173,6 +173,9 @@ func MatchTitle(p releasename.Result, lib []TitleRef) Match {
 			}
 		}
 	}
+	if p.IsShow() {
+		cands = withTaggedShows(p, name, lib, cands)
+	}
 	if len(cands) == 0 {
 		return Match{Conf: releasename.Unknown, Detail: fmt.Sprintf("no Title in the library is called %q", p.Title.Value)}
 	}
