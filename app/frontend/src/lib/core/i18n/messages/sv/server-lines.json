@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "Släppgränsen hoppas över: den här filmen räknas inte som utgiven ännu",
 	"server.sources.this-version-already-has-a-good": "Den här versionen har redan en tillräckligt bra kopia; den nya ersätter den",
 	"server.requests.removed-the-request-for": "{name} tog bort begäran om {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte."
+	"server.requests.plex-gave-no-account-code-for": "Plex gav ingen kontokod för den här personen, så hens bevakningslista läses inte.",
+	"server.ai.ai-connections-are-off-the-owner": "AI-anslutningar är avstängda. Ägaren kan slå på dem i Inställningar → AI-anslutningar.",
+	"server.plugins.plugins-are-changed-only-from-a": "tillägg ändras bara från en inloggad ägarsession, aldrig med en API-nyckel",
+	"server.plugins.plugins-are-not-set-up-in": "tillägg är inte konfigurerade i den här versionen"
 }

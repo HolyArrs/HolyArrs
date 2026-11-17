@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "Прагът за излизане е пропуснат: този филм не се брои за излязъл",
 	"server.sources.this-version-already-has-a-good": "Този вариант вече има достатъчно добро копие; новото ще го замени",
 	"server.requests.removed-the-request-for": "{name} премахна заявката за {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex не даде код на акаунта за този човек, затова списъкът му за гледане не се чете."
+	"server.requests.plex-gave-no-account-code-for": "Plex не даде код на акаунта за този човек, затова списъкът му за гледане не се чете.",
+	"server.ai.ai-connections-are-off-the-owner": "AI връзките са изключени. Собственикът може да ги включи от Настройки → AI връзки.",
+	"server.plugins.plugins-are-changed-only-from-a": "добавките се променят само от вписана сесия на собственика, никога с API ключ",
+	"server.plugins.plugins-are-not-set-up-in": "добавките не са настроени в тази версия"
 }

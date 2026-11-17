@@ -17,6 +17,7 @@
 	"frame.nav.history": "Historial",
 	"frame.nav.status": "Estat",
 	"frame.nav.settings": "Configuració",
+	"frame.nav.plugins": "Connectors",
 	"frame.nav.goTo": "Ves a",
 	"frame.nav.active": "{n} actives, {percent}%",
 	"frame.nav.decide": "{n} requereixen una decisió",

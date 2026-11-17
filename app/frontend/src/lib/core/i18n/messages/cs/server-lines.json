@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "Práh vydání se přeskočí: tento film se ještě nepočítá jako vydaný",
 	"server.sources.this-version-already-has-a-good": "Tato Verze už má dost dobrou kopii; nová ji nahradí",
 	"server.requests.removed-the-request-for": "{name} odebral(a) žádost o {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex u této osoby nedal kód účtu, proto se její seznam ke zhlédnutí nečte."
+	"server.requests.plex-gave-no-account-code-for": "Plex u této osoby nedal kód účtu, proto se její seznam ke zhlédnutí nečte.",
+	"server.ai.ai-connections-are-off-the-owner": "Připojení AI jsou vypnutá. Vlastník je může zapnout v Nastavení → Připojení AI.",
+	"server.plugins.plugins-are-changed-only-from-a": "pluginy se mění jen z přihlášené relace vlastníka, nikdy klíčem API",
+	"server.plugins.plugins-are-not-set-up-in": "pluginy nejsou v této verzi nastavené"
 }

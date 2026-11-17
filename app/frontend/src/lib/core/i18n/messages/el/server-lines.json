@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "Το Όριο κυκλοφορίας παραλείπεται: αυτή η ταινία δεν θεωρείται ακόμη κυκλοφορημένη",
 	"server.sources.this-version-already-has-a-good": "Αυτή η παραλλαγή έχει ήδη αρκετά καλό αντίγραφο· το νέο θα το αντικαταστήσει",
 	"server.requests.removed-the-request-for": "Ο/Η {name} αφαίρεσε το αίτημα για {a}",
-	"server.requests.plex-gave-no-account-code-for": "Το Plex δεν έδωσε κωδικό λογαριασμού για αυτό το άτομο, οπότε η λίστα παρακολούθησής του δεν διαβάζεται."
+	"server.requests.plex-gave-no-account-code-for": "Το Plex δεν έδωσε κωδικό λογαριασμού για αυτό το άτομο, οπότε η λίστα παρακολούθησής του δεν διαβάζεται.",
+	"server.ai.ai-connections-are-off-the-owner": "Οι συνδέσεις AI είναι απενεργοποιημένες. Ο κάτοχος μπορεί να τις ενεργοποιήσει στις Ρυθμίσεις → Συνδέσεις AI.",
+	"server.plugins.plugins-are-changed-only-from-a": "τα πρόσθετα αλλάζουν μόνο από συνδεδεμένη συνεδρία του κατόχου, ποτέ με κλειδί API",
+	"server.plugins.plugins-are-not-set-up-in": "τα πρόσθετα δεν έχουν ρυθμιστεί σε αυτή την έκδοση"
 }

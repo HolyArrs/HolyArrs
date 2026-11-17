@@ -17,6 +17,7 @@
 	"frame.nav.history": "履歴",
 	"frame.nav.status": "ステータス",
 	"frame.nav.settings": "設定",
+	"frame.nav.plugins": "プラグイン",
 	"frame.nav.goTo": "移動",
 	"frame.nav.active": "{n} 件実行中、{percent}%",
 	"frame.nav.decide": "{n} 件が判断待ち",

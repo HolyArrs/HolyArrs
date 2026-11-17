@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "已跳过发行门槛：这部电影还不算已上映",
 	"server.sources.this-version-already-has-a-good": "这个版本已有足够好的副本；新的会替换它",
 	"server.requests.removed-the-request-for": "{name} 移除了 {a} 的请求",
-	"server.requests.plex-gave-no-account-code-for": "Plex 没有提供此人的账户代码，因此不会读取其待看清单。"
+	"server.requests.plex-gave-no-account-code-for": "Plex 没有提供此人的账户代码，因此不会读取其待看清单。",
+	"server.ai.ai-connections-are-off-the-owner": "AI 连接已关闭。所有者可以在 设置 → AI 连接 中打开。",
+	"server.plugins.plugins-are-changed-only-from-a": "插件只能在所有者已登录的会话中更改，绝不能用 API 密钥",
+	"server.plugins.plugins-are-not-set-up-in": "此版本未设置插件"
 }

@@ -17,6 +17,7 @@
 	"frame.nav.history": "हिस्ट्री",
 	"frame.nav.status": "स्टेटस",
 	"frame.nav.settings": "सेटिंग",
+	"frame.nav.plugins": "प्लगइन",
 	"frame.nav.goTo": "यहां जाएं",
 	"frame.nav.active": "{n} चालू, {percent}%",
 	"frame.nav.decide": "{n} पर फ़ैसला चाहिए",

@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "রিলিজ গেট বাদ গেছে: এই সিনেমা এখনো বেরিয়েছে বলে গণ্য হয় না",
 	"server.sources.this-version-already-has-a-good": "এই ভার্সনের আগেই একটি যথেষ্ট ভালো কপি আছে; নতুনটি সেটি বদলে দেবে",
 	"server.requests.removed-the-request-for": "{name} {a}-এর অনুরোধ সরিয়েছেন",
-	"server.requests.plex-gave-no-account-code-for": "Plex এই ব্যক্তির অ্যাকাউন্ট কোড দেয়নি, তাই তার ওয়াচলিস্ট পড়া হচ্ছে না।"
+	"server.requests.plex-gave-no-account-code-for": "Plex এই ব্যক্তির অ্যাকাউন্ট কোড দেয়নি, তাই তার ওয়াচলিস্ট পড়া হচ্ছে না।",
+	"server.ai.ai-connections-are-off-the-owner": "AI সংযোগ বন্ধ আছে। মালিক সেটিংস → AI সংযোগ থেকে এগুলো চালু করতে পারেন।",
+	"server.plugins.plugins-are-changed-only-from-a": "প্লাগইন শুধু মালিকের সাইন-ইন করা সেশন থেকে বদলানো যায়, কখনও API কী দিয়ে নয়",
+	"server.plugins.plugins-are-not-set-up-in": "এই বিল্ডে প্লাগইন সেট আপ করা নেই"
 }

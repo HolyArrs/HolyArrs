@@ -17,6 +17,7 @@
 	"frame.nav.history": "হিস্ট্রি",
 	"frame.nav.status": "স্ট্যাটাস",
 	"frame.nav.settings": "সেটিংস",
+	"frame.nav.plugins": "প্লাগইন",
 	"frame.nav.goTo": "যান",
 	"frame.nav.active": "{n}টি সক্রিয়, {percent}%",
 	"frame.nav.decide": "{n}টির সিদ্ধান্ত দরকার",

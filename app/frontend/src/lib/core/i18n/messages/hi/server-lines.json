@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "रिलीज़ गेट छोड़ा गया: यह फ़िल्म अभी रिलीज़ नहीं मानी जाती",
 	"server.sources.this-version-already-has-a-good": "इस वर्ज़न की काफ़ी अच्छी कॉपी पहले से है; नई कॉपी उसकी जगह ले लेगी",
 	"server.requests.removed-the-request-for": "{name} ने {a} का अनुरोध हटाया",
-	"server.requests.plex-gave-no-account-code-for": "Plex ने इस व्यक्ति के लिए खाता कोड नहीं दिया, इसलिए उनकी वॉचलिस्ट नहीं पढ़ी जा रही है।"
+	"server.requests.plex-gave-no-account-code-for": "Plex ने इस व्यक्ति के लिए खाता कोड नहीं दिया, इसलिए उनकी वॉचलिस्ट नहीं पढ़ी जा रही है।",
+	"server.ai.ai-connections-are-off-the-owner": "AI कनेक्शन बंद हैं। मालिक इन्हें सेटिंग्स → AI कनेक्शन में चालू कर सकता है।",
+	"server.plugins.plugins-are-changed-only-from-a": "प्लगइन केवल मालिक के साइन-इन सत्र से बदले जाते हैं, कभी API कुंजी से नहीं",
+	"server.plugins.plugins-are-not-set-up-in": "इस बिल्ड में प्लगइन सेट अप नहीं हैं"
 }

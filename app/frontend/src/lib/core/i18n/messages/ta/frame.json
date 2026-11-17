@@ -17,6 +17,7 @@
 	"frame.nav.history": "வரலாறு",
 	"frame.nav.status": "நிலை",
 	"frame.nav.settings": "அமைப்புகள்",
+	"frame.nav.plugins": "செருகுநிரல்கள்",
 	"frame.nav.goTo": "செல்",
 	"frame.nav.active": "{n} செயலில், {percent}%",
 	"frame.nav.decide": "{n} க்கு முடிவு தேவை",

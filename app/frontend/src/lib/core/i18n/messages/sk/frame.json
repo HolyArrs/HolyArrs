@@ -17,6 +17,7 @@
 	"frame.nav.history": "História",
 	"frame.nav.status": "Stav",
 	"frame.nav.settings": "Nastavenia",
+	"frame.nav.plugins": "Pluginy",
 	"frame.nav.goTo": "Prejsť na",
 	"frame.nav.active": "Aktívne: {n}, {percent} %",
 	"frame.nav.decide": "Vyžaduje rozhodnutie: {n}",

@@ -17,6 +17,7 @@
 	"frame.nav.history": "Historia",
 	"frame.nav.status": "Tila",
 	"frame.nav.settings": "Asetukset",
+	"frame.nav.plugins": "Laajennukset",
 	"frame.nav.goTo": "Siirry",
 	"frame.nav.active": "{n} aktiivista, {percent} %",
 	"frame.nav.decide": "{n} vaatii päätöksen",

@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "출시 기준을 건너뜁니다. 이 영화는 아직 공개된 것으로 보지 않습니다",
 	"server.sources.this-version-already-has-a-good": "이 버전에는 이미 충분한 품질의 사본이 있습니다. 새 사본으로 교체됩니다",
 	"server.requests.removed-the-request-for": "{name}님이 {a} 요청을 삭제했습니다",
-	"server.requests.plex-gave-no-account-code-for": "Plex가 이 사람의 계정 코드를 주지 않아 관심 목록을 읽지 않습니다."
+	"server.requests.plex-gave-no-account-code-for": "Plex가 이 사람의 계정 코드를 주지 않아 관심 목록을 읽지 않습니다.",
+	"server.ai.ai-connections-are-off-the-owner": "AI 연결이 꺼져 있습니다. 소유자가 설정 → AI 연결에서 켤 수 있습니다.",
+	"server.plugins.plugins-are-changed-only-from-a": "플러그인은 로그인한 소유자 세션에서만 변경되며 API 키로는 절대 변경되지 않습니다",
+	"server.plugins.plugins-are-not-set-up-in": "이 빌드에는 플러그인이 설정되어 있지 않습니다"
 }

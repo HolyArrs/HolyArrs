@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "Prag izlaska se preskače: ovaj film se još ne računa kao izašao",
 	"server.sources.this-version-already-has-a-good": "Ova verzija već ima dovoljno dobru kopiju; nova će je zamijeniti",
 	"server.requests.removed-the-request-for": "{name} je uklonio/la zahtjev za {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru računa za ovu osobu, pa se njezin popis za gledanje ne čita."
+	"server.requests.plex-gave-no-account-code-for": "Plex nije dao šifru računa za ovu osobu, pa se njezin popis za gledanje ne čita.",
+	"server.ai.ai-connections-are-off-the-owner": "AI veze su isključene. Vlasnik ih može uključiti u Postavke → AI veze.",
+	"server.plugins.plugins-are-changed-only-from-a": "dodaci se mijenjaju samo iz prijavljene sesije vlasnika, nikad API ključem",
+	"server.plugins.plugins-are-not-set-up-in": "dodaci nisu postavljeni u ovoj verziji"
 }

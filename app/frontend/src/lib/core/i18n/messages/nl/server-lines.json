@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "De Releasedrempel wordt overgeslagen: deze film telt nog niet als uit",
 	"server.sources.this-version-already-has-a-good": "Deze variant heeft al een kopie die goed genoeg is; de nieuwe vervangt die",
 	"server.requests.removed-the-request-for": "{name} heeft het verzoek voor {a} verwijderd",
-	"server.requests.plex-gave-no-account-code-for": "Plex gaf geen accountcode voor deze persoon, dus zijn of haar kijklijst wordt niet gelezen."
+	"server.requests.plex-gave-no-account-code-for": "Plex gaf geen accountcode voor deze persoon, dus zijn of haar kijklijst wordt niet gelezen.",
+	"server.ai.ai-connections-are-off-the-owner": "AI-verbindingen staan uit. De eigenaar kan ze aanzetten in Instellingen → AI-verbindingen.",
+	"server.plugins.plugins-are-changed-only-from-a": "plug-ins worden alleen gewijzigd vanuit een aangemelde sessie van de eigenaar, nooit met een API-sleutel",
+	"server.plugins.plugins-are-not-set-up-in": "plug-ins zijn niet ingesteld in deze build"
 }

@@ -17,6 +17,7 @@
 	"frame.nav.history": "Historikk",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Innstillinger",
+	"frame.nav.plugins": "Utvidelser",
 	"frame.nav.goTo": "Gå til",
 	"frame.nav.active": "{n} aktive, {percent} %",
 	"frame.nav.decide": "{n} trenger en avgjørelse",

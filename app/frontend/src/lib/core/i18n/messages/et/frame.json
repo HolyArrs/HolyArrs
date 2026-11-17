@@ -17,6 +17,7 @@
 	"frame.nav.history": "Ajalugu",
 	"frame.nav.status": "Olek",
 	"frame.nav.settings": "Seaded",
+	"frame.nav.plugins": "Pluginad",
 	"frame.nav.goTo": "Mine",
 	"frame.nav.active": "{n} aktiivset, {percent}%",
 	"frame.nav.decide": "{n} vajab otsust",

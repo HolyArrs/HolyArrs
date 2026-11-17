@@ -17,6 +17,7 @@
 	"frame.nav.history": "История",
 	"frame.nav.status": "Статус",
 	"frame.nav.settings": "Настройки",
+	"frame.nav.plugins": "Плагины",
 	"frame.nav.goTo": "Перейти",
 	"frame.nav.active": "Активно: {n}, {percent}%",
 	"frame.nav.decide": "Требуют решения: {n}",

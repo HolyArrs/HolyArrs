@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "O Marco de lançamento é ignorado: este filme ainda não conta como lançado",
 	"server.sources.this-version-already-has-a-good": "Esta Versão já tem uma cópia boa o bastante; a nova vai substituí-la",
 	"server.requests.removed-the-request-for": "{name} removeu o pedido de {a}",
-	"server.requests.plex-gave-no-account-code-for": "O Plex não deu nenhum código de conta para esta pessoa, então a lista de interesse dela não é lida."
+	"server.requests.plex-gave-no-account-code-for": "O Plex não deu nenhum código de conta para esta pessoa, então a lista de interesse dela não é lida.",
+	"server.ai.ai-connections-are-off-the-owner": "As conexões de IA estão desligadas. O dono pode ligá-las em Configurações → Conexões de IA.",
+	"server.plugins.plugins-are-changed-only-from-a": "plugins só são alterados numa sessão do dono conectado, nunca com uma chave de API",
+	"server.plugins.plugins-are-not-set-up-in": "plugins não estão configurados nesta versão"
 }

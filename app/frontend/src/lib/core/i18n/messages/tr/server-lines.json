@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "Çıkış eşiği atlandı: bu film henüz çıkmış sayılmıyor",
 	"server.sources.this-version-already-has-a-good": "Bu versiyonun zaten yeterince iyi bir kopyası var; yenisi onun yerini alır",
 	"server.requests.removed-the-request-for": "{name}, {a} isteğini kaldırdı",
-	"server.requests.plex-gave-no-account-code-for": "Plex bu kişi için hesap kodu vermedi, bu yüzden izleme listesi okunmuyor."
+	"server.requests.plex-gave-no-account-code-for": "Plex bu kişi için hesap kodu vermedi, bu yüzden izleme listesi okunmuyor.",
+	"server.ai.ai-connections-are-off-the-owner": "Yapay zekâ bağlantıları kapalı. Sahip bunları Ayarlar → Yapay zekâ bağlantıları bölümünden açabilir.",
+	"server.plugins.plugins-are-changed-only-from-a": "eklentiler yalnızca sahibin oturum açılmış oturumundan değiştirilir, asla bir API anahtarıyla değil",
+	"server.plugins.plugins-are-not-set-up-in": "eklentiler bu sürümde kurulu değil"
 }

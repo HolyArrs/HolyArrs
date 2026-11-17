@@ -1343,5 +1343,8 @@
 	"server.sources.the-release-gate-is-skipped-this": "Pragul de lansare e sărit: acest film nu se consideră încă apărut",
 	"server.sources.this-version-already-has-a-good": "Această Versiune are deja o copie suficient de bună; cea nouă o va înlocui",
 	"server.requests.removed-the-request-for": "{name} a eliminat cererea pentru {a}",
-	"server.requests.plex-gave-no-account-code-for": "Plex nu a dat niciun cod de cont pentru această persoană, așa că lista ei de vizionare nu este citită."
+	"server.requests.plex-gave-no-account-code-for": "Plex nu a dat niciun cod de cont pentru această persoană, așa că lista ei de vizionare nu este citită.",
+	"server.ai.ai-connections-are-off-the-owner": "Conexiunile AI sunt oprite. Proprietarul le poate porni din Setări → Conexiuni AI.",
+	"server.plugins.plugins-are-changed-only-from-a": "pluginurile se schimbă doar dintr-o sesiune a proprietarului conectat, niciodată cu o cheie API",
+	"server.plugins.plugins-are-not-set-up-in": "pluginurile nu sunt configurate în această versiune"
 }
