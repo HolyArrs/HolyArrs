@@ -2,7 +2,6 @@
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// History page: a search bar, a live dot and one Filter (steps, type, who, dates, Source). Active filters show as removable chips. Routine work is left out. Every filter lives in the address, so Back and links show the same list. Old ?look= and ?acts= links are ignored.
 	import Icon from '#lib/ui/Icon.svelte';
-	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LookDays from './HistoryDays.svelte';
 	import DetailActions from './HistoryActions.svelte';
@@ -198,8 +197,10 @@
 			{/each}
 		</div>
 	</div>
-	<div class="fl"><span class="fh">{t('downloads.hpage.type')}</span>
-		<SegmentedControl size="sm" label={t('downloads.hpage.type')} options={typeOptions} value={st.type} onchange={(v) => set({ type: v })} testid="history-type" />
+	<div class="fl"><span class="fh" id="hf-type">{t('downloads.hpage.type')}</span>
+		<div class="steps" role="group" aria-labelledby="hf-type" data-testid="history-type">
+			{#each typeOptions as o (o.value)}<button type="button" class="step" aria-pressed={st.type === o.value} onclick={() => set({ type: o.value })}>{o.label}</button>{/each}
+		</div>
 	</div>
 	<div class="fl"><span class="fh" id="hf-who">{t('downloads.hpage.who')}</span>
 		<div class="steps" role="group" aria-labelledby="hf-who">
@@ -310,9 +311,11 @@
 	.menu:focus, .sheet:focus { outline: none; }
 	.fl { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
 	.fh { color: var(--text-muted); font: 600 12px/1 var(--font-ui); }
-	.brk { flex-basis: 100%; height: 4px; }
-	.steps { display: flex; flex-wrap: wrap; gap: 5px; }
-	.step { height: 30px; padding: 0 11px; border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--surface-1); color: var(--text); font: 500 12.5px/1 var(--font-ui); cursor: pointer; }
+	.brk { flex-basis: 100%; height: 0; }
+	/* Row space sits on the chips, so the Step line break adds no extra gap. */
+	.steps { display: flex; flex-wrap: wrap; column-gap: 6px; margin-bottom: -6px; }
+	.steps > .step { margin-bottom: 6px; }
+	.step { min-height: 30px; max-width: 100%; padding: 4px 11px; box-sizing: border-box; border: 1px solid var(--line); border-radius: var(--r-pill); background: var(--surface-1); color: var(--text); font: 500 12.5px/1.2 var(--font-ui); overflow-wrap: anywhere; cursor: pointer; }
 	.step[aria-pressed='true'] { background: var(--seg-thumb); border-color: var(--line-strong); box-shadow: 0 0 0 1px var(--line-strong); }
 	.step.fail[aria-pressed='true'] { color: var(--fail-text); box-shadow: 0 0 0 1px var(--fail); }
 	.fc { width: 100%; min-width: 0; height: 30px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-1); color: var(--text); font: 500 13px/1 var(--font-ui); color-scheme: light dark; }
@@ -326,7 +329,8 @@
 	.sht { color: var(--text); font: 600 15px/1.2 var(--font-ui); }
 	.done { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 0; border-radius: var(--r-pill); background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	@media (pointer: coarse) {
-		.fc, .clear, .chip, .all, .step { height: 44px; }
+		.fc, .clear, .chip, .all { height: 44px; }
+		.step { min-height: 44px; }
 		.search input, .fc { font-size: 16px; }
 	}
 	@media (max-width: 767px) {
