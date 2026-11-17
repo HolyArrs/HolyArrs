@@ -122,6 +122,9 @@ jobs:
           VERSION: ${{ steps.what.outputs.version }}
         run: |
           set -euo pipefail
+          # The tool links the plugins package, which embeds the web app; an
+          # empty placeholder is enough, the tool never serves it.
+          mkdir -p app/frontend/dist && touch app/frontend/dist/.placeholder
           go build -o pluginkey ./app/backend/tools/pluginkey
           if [ "$ACTION" = publish ]; then
             ./pluginkey stage -id "$ID" -version "$VERSION" -meta "app/plugins/$ID/plugin.json" -builds builds -current live -out out
