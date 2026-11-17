@@ -117,6 +117,23 @@ Fix: add it again. If you deleted its files, take them back from `.holyarrs-repl
 | Other characters a disk cannot hold | Swap them for safe ones, or drop them. | Swap | Same. |
 | Rename files when they are imported | Off keeps the name the download came with. | On | You rename files yourself. |
 
+**Words for names**
+
+| Word | Gives | Example |
+| --- | --- | --- |
+| `{title}`, `{sort_title}`, `{year}` | The title, the title with "The" moved to the end, the year | `Heat`, `Matrix, The`, `1995` |
+| `{quality}`, `{resolution}`, `{source}` | Resolution and source, or one of them | `2160p WEB`, `2160p`, `WEB` |
+| `{audio}` | The audio codec. Read from the file when the release name has none. | `EAC3`, `DTS-HD`, `TrueHD` |
+| `{hdr}` | The HDR kind. Empty for SDR. | `DolbyVision`, `HDR10+`, `DolbyVisionHDR10` |
+| `{edition}`, `{group}`, `{release}` | The edition, the release group, the whole release name | `Director's Cut`, `GRP` |
+| `{tmdb}`, `{imdb}` | The ids | `693134`, `tt15239678` |
+
+A bracket whose words are all empty drops out: `[imdbid-{imdb}]` without an IMDb id leaves nothing.
+With `{title} ({year}) - [{audio}.{resolution}.{hdr}.{source}-{group}]`:
+
+- `Dune - Part Two (2024) - [EAC3.2160p.DolbyVision.WEB-GRP].mkv`
+- an SDR file: `Dune - Part Two (2024) - [EAC3.2160p.WEB-GRP].mkv`
+
 </details>
 
 ## Related
