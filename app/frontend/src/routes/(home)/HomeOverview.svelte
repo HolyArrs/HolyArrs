@@ -420,7 +420,7 @@
 	.dl-list span { color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 	.pb { grid-column: 1 / -1; display: block; height: 4px; border-radius: 4px; background: var(--track); overflow: hidden; }
 	.pb i { display: block; height: 100%; border-radius: inherit; background: var(--info); }
-	.quiet { margin-top: auto; font: var(--t-callout); color: var(--text-muted); }
+	.quiet { margin-top: 14px; font: var(--t-callout); color: var(--text-muted); }
 
 	/* Dark theme's red and amber are light colours, so the digits go dark there to stay readable. */
 	.count { flex: none; min-width: 24px; height: 24px; padding: 0 7px; display: grid; place-items: center; border-radius: 999px; background: var(--fail); color: light-dark(#fff, #17171b); font: 700 12px / 1 var(--font-ui); font-variant-numeric: tabular-nums; }
@@ -436,7 +436,7 @@
 	.ft { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 	.ft b { font: 600 14px / 1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.ft > span:last-child { font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.fa { flex: none; display: inline-flex; align-items: center; gap: 2px; color: var(--accent-text); font: 600 13px / 1 var(--font-ui); white-space: nowrap; }
+	.fa { flex: none; display: inline-flex; align-items: center; gap: 2px; color: var(--text-muted); font: 500 13px / 1 var(--font-ui); white-space: nowrap; }
 	.more { position: relative; margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: 2px; min-height: 28px; border-radius: 8px; color: var(--accent-text); font: 600 13px / 1 var(--font-ui); }
 	.more::after { content: ''; position: absolute; inset: -8px 0; }
 	.more:hover { text-decoration: underline; text-underline-offset: 3px; }
