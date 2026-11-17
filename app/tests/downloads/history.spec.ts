@@ -141,7 +141,7 @@ test('calendar: cards and list views, a movie on the day it is out to watch', as
 
 test('alerts: add a webhook with Library moments, send a test, the receiver gets a signed message', async () => {
 	await page.goto('/settings/alerts');
-	await page.getByRole('button', { name: 'Add an Alert' }).first().click();
+	await page.getByRole('button', { name: 'Add an alert' }).first().click();
 	await page.getByLabel('Name', { exact: true }).fill('Home server hook');
 	await page.getByLabel('Kind').selectOption('webhook');
 	await page.getByLabel('Webhook link').fill(`http://127.0.0.1:${discordPort}/hook`);
@@ -172,7 +172,7 @@ test('alerts: add a webhook with Library moments, send a test, the receiver gets
 
 test('alerts: add a Telegram bot, send a test, the chat gets the text', async () => {
 	await page.goto('/settings/alerts');
-	await page.getByRole('button', { name: 'Add an Alert' }).first().click();
+	await page.getByRole('button', { name: 'Add an alert' }).first().click();
 	await page.getByLabel('Name', { exact: true }).fill('Family Telegram');
 	await page.getByLabel('Kind').selectOption('telegram');
 	await page.getByLabel('Bot token').fill(['123456789', 'AAHstandInTokenForE2eTests_0123'].join(':'));
@@ -197,7 +197,7 @@ test('alerts: add a Telegram bot, send a test, the chat gets the text', async ()
 
 test('alerts: add an ntfy topic, send a test, the topic gets the text', async () => {
 	await page.goto('/settings/alerts');
-	await page.getByRole('button', { name: 'Add an Alert' }).first().click();
+	await page.getByRole('button', { name: 'Add an alert' }).first().click();
 	await page.getByLabel('Name', { exact: true }).fill('Phone ntfy');
 	await page.getByLabel('Kind').selectOption('ntfy');
 	await page.getByLabel('Server address').fill(`http://127.0.0.1:${discordPort}`);
