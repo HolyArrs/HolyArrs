@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "anda tidak boleh mengubah peranan atau kebenaran anda sendiri",
 	"server.accounts.you-may-reset-two-factor-sign": "anda hanya boleh menetapkan semula log masuk dua faktor untuk orang di bawah anda; pemilik menggunakan arahan reset-owner",
 	"server.accounts.you-may-set-a-password-only": "anda hanya boleh menetapkan kata laluan untuk orang di bawah anda; pemilik menggunakan arahan reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Simpanan disekat kerana HolyArrs tidak mengenali nama {host}. Buka HolyArrs pada alamat setempatnya dan tambah nama ini di bawah Tetapan > Log masuk dan keselamatan > Nama hos yang dibenarkan, atau tambahkannya ke HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "anda membuka HolyArrs sebagai {host}; kekalkan nama itu dalam senarai, atau ubah senarai daripada alamat IP",
 	"server.accounts.your-account-may-not-do-this": "akaun anda tidak boleh melakukan ini; tanya pemilik",
 	"server.ai.ai-key-for": "AI ({client}, kunci {keylabel}) {did} {name} untuk {name2}",

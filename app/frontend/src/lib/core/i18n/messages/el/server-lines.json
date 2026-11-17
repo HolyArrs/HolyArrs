@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "δεν μπορείτε να αλλάξετε τον δικό σας ρόλο ή τα δικαιώματά σας",
 	"server.accounts.you-may-reset-two-factor-sign": "μπορείτε να επαναφέρετε τη σύνδεση δύο παραγόντων μόνο για άτομα κάτω από εσάς· ο ιδιοκτήτης χρησιμοποιεί την εντολή reset-owner",
 	"server.accounts.you-may-set-a-password-only": "μπορείτε να ορίσετε κωδικό μόνο για άτομα κάτω από εσάς· ο ιδιοκτήτης χρησιμοποιεί την εντολή reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Η αποθήκευση έχει αποκλειστεί επειδή το HolyArrs δεν γνωρίζει το όνομα {host}. Ανοίξτε το HolyArrs στην τοπική του διεύθυνση και προσθέστε αυτό το όνομα στο Ρυθμίσεις > Σύνδεση και ασφάλεια > Επιτρεπόμενα ονόματα υπολογιστών, ή προσθέστε το στο HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "ανοίξατε το HolyArrs ως {host}· κρατήστε αυτό το όνομα στη λίστα ή αλλάξτε τη λίστα από τη διεύθυνση IP",
 	"server.accounts.your-account-may-not-do-this": "ο λογαριασμός σας δεν επιτρέπεται να το κάνει· ρωτήστε τον ιδιοκτήτη",
 	"server.ai.ai-key-for": "AI ({client}, κλειδί {keylabel}) {did} {name} για {name2}",

@@ -33,6 +33,14 @@ describe('serverWords', () => {
 		);
 	});
 
+	it('says why a save on an unknown host name is blocked, in the picked language', async () => {
+		const de = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>('./messages/de/server-lines.json', { eager: true })).map((f) => f.default));
+		speak(de);
+		expect(serverWords("Saving is blocked because HolyArrs doesn't know the name media.example.com. Open HolyArrs at its local address and add this name under Settings > Sign-in and security > Allowed host names, or add it to HOLYARRS_ALLOWED_HOSTS.")).toBe(
+			'Speichern ist blockiert, weil HolyArrs den Namen media.example.com nicht kennt. Öffne HolyArrs über seine lokale Adresse und füge den Namen unter Einstellungen > Anmeldung und Sicherheit > Erlaubte Hostnamen hinzu, oder trage ihn in HOLYARRS_ALLOWED_HOSTS ein.'
+		);
+	});
+
 	it('says the Import by hand folder refusal in the picked language', async () => {
 		const de = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>('./messages/de/server-lines.json', { eager: true })).map((f) => f.default));
 		speak(de);

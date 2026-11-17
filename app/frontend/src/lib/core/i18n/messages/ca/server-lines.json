@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "no pots canviar el teu propi rol ni els teus permisos",
 	"server.accounts.you-may-reset-two-factor-sign": "només pots restablir la verificació en dos passos de les persones per sota teu; el propietari fa servir l'ordre reset-owner",
 	"server.accounts.you-may-set-a-password-only": "només pots definir la contrasenya de les persones per sota teu; el propietari fa servir l'ordre reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "No es pot desar perquè HolyArrs no coneix el nom {host}. Obre HolyArrs a la seva adreça local i afegeix aquest nom a Configuració > Inici de sessió i seguretat > Noms de host permesos, o afegeix-lo a HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "has obert HolyArrs com a {host}; conserva aquest nom a la llista, o canvia la llista des de l'adreça IP",
 	"server.accounts.your-account-may-not-do-this": "el teu compte no pot fer això; demana-ho al propietari",
 	"server.ai.ai-key-for": "IA ({client}, clau {keylabel}) {did} {name} per a {name2}",

@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "hindi mo mababago ang sarili mong role o mga pahintulot",
 	"server.accounts.you-may-reset-two-factor-sign": "ang two-factor sign-in ay maaari mo lang i-reset para sa mga nasa ibaba mo; gumagamit ng reset-owner command ang owner",
 	"server.accounts.you-may-set-a-password-only": "ang password ay maaari mo lang itakda para sa mga nasa ibaba mo; gumagamit ng reset-owner command ang owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Naka-block ang pag-save dahil hindi kilala ng HolyArrs ang pangalang {host}. Buksan ang HolyArrs sa local address nito at idagdag ang pangalang ito sa Mga Setting > Sign-in at seguridad > Mga pinapayagang host name, o idagdag ito sa HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "binuksan mo ang HolyArrs bilang {host}; panatilihin ang pangalang iyon sa listahan, o baguhin ang listahan mula sa IP address",
 	"server.accounts.your-account-may-not-do-this": "hindi ito maaaring gawin ng account mo; tanungin ang owner",
 	"server.ai.ai-key-for": "AI ({client}, key {keylabel}) {did} {name} para sa {name2}",

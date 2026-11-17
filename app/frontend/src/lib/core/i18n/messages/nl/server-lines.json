@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "je kunt je eigen rol of rechten niet wijzigen",
 	"server.accounts.you-may-reset-two-factor-sign": "je mag tweestapsverificatie alleen resetten voor mensen onder je; de eigenaar gebruikt de opdracht reset-owner",
 	"server.accounts.you-may-set-a-password-only": "je mag alleen een wachtwoord instellen voor mensen onder je; de eigenaar gebruikt de opdracht reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Opslaan is geblokkeerd omdat HolyArrs de naam {host} niet kent. Open HolyArrs via zijn lokale adres en voeg deze naam toe onder Instellingen > Aanmelden en beveiliging > Toegestane hostnamen, of voeg hem toe aan HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "je hebt HolyArrs geopend als {host}; houd die naam in de lijst, of wijzig de lijst via het IP-adres",
 	"server.accounts.your-account-may-not-do-this": "je account mag dit niet doen; vraag het de eigenaar",
 	"server.ai.ai-key-for": "AI ({client}, sleutel {keylabel}) {did} {name} voor {name2}",

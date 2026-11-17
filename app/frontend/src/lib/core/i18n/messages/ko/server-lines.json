@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "자신의 역할이나 권한은 변경할 수 없습니다",
 	"server.accounts.you-may-reset-two-factor-sign": "2단계 인증 로그인은 나보다 낮은 사용자에게만 초기화할 수 있습니다. 소유자는 reset-owner 명령을 사용합니다",
 	"server.accounts.you-may-set-a-password-only": "비밀번호는 나보다 낮은 사용자에게만 설정할 수 있습니다. 소유자는 reset-owner 명령을 사용합니다",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "HolyArrs가 {host} 이름을 알지 못해 저장이 차단되었습니다. 로컬 주소로 HolyArrs를 열고 설정 > 로그인 및 보안 > 허용된 호스트 이름에 이 이름을 추가하거나, HOLYARRS_ALLOWED_HOSTS에 추가하세요.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "{host}(으)로 HolyArrs를 열었습니다. 목록에 그 이름을 유지하거나, IP 주소로 접속해 목록을 변경하세요",
 	"server.accounts.your-account-may-not-do-this": "이 계정으로는 할 수 없습니다. 소유자에게 문의하세요",
 	"server.ai.ai-key-for": "AI({client}, 키 {keylabel})가 {name2}에 {name} {did}",

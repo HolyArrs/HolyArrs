@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "þú getur ekki breytt þínu eigin hlutverki eða heimildum",
 	"server.accounts.you-may-reset-two-factor-sign": "þú mátt aðeins endurstilla tveggja þátta innskráningu fyrir fólk fyrir neðan þig; eigandinn notar reset-owner-skipunina",
 	"server.accounts.you-may-set-a-password-only": "þú mátt aðeins setja lykilorð fyrir fólk fyrir neðan þig; eigandinn notar reset-owner-skipunina",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Vistun er læst vegna þess að HolyArrs þekkir ekki nafnið {host}. Opnaðu HolyArrs á staðbundnu vistfangi þess og bættu nafninu við undir Stillingar > Innskráning og öryggi > Leyfð hýsilnöfn, eða bættu því við HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "þú opnaðir HolyArrs sem {host}; hafðu það nafn á listanum, eða breyttu listanum frá IP-tölunni",
 	"server.accounts.your-account-may-not-do-this": "aðgangurinn þinn má ekki gera þetta; spurðu eigandann",
 	"server.ai.ai-key-for": "gervigreind ({client}, lykill {keylabel}) {did} {name} fyrir {name2}",

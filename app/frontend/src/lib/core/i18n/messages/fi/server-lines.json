@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "et voi muuttaa omaa rooliasi tai oikeuksiasi",
 	"server.accounts.you-may-reset-two-factor-sign": "voit nollata kaksivaiheisen kirjautumisen vain itseäsi alemmille; omistaja käyttää reset-owner-komentoa",
 	"server.accounts.you-may-set-a-password-only": "voit asettaa salasanan vain itseäsi alemmille; omistaja käyttää reset-owner-komentoa",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Tallennus on estetty, koska HolyArrs ei tunne nimeä {host}. Avaa HolyArrs sen paikallisesta osoitteesta ja lisää nimi kohtaan Asetukset > Kirjautuminen ja turvallisuus > Sallitut isäntänimet tai lisää se muuttujaan HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "avasit HolyArrsin nimellä {host}; pidä se nimi listassa tai muuta listaa IP-osoitteesta",
 	"server.accounts.your-account-may-not-do-this": "tilisi ei saa tehdä tätä; kysy omistajalta",
 	"server.ai.ai-key-for": "Tekoäly ({client}, avain {keylabel}) {did} {name} kohteelle {name2}",

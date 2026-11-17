@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "tu nevari mainīt savu lomu vai atļaujas",
 	"server.accounts.you-may-reset-two-factor-sign": "divfaktoru pieteikšanos drīkst atiestatīt tikai cilvēkiem zem tevis; īpašnieks izmanto komandu reset-owner",
 	"server.accounts.you-may-set-a-password-only": "paroli drīkst iestatīt tikai cilvēkiem zem tevis; īpašnieks izmanto komandu reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Saglabāšana ir bloķēta, jo HolyArrs nezina nosaukumu {host}. Atver HolyArrs tā lokālajā adresē un pievieno šo nosaukumu sadaļā Iestatījumi > Pieteikšanās un drošība > Atļautie resursdatoru nosaukumi vai pievieno to HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "tu atvēri HolyArrs kā {host}; paturi šo nosaukumu sarakstā vai maini sarakstu no IP adreses",
 	"server.accounts.your-account-may-not-do-this": "tavs konts to nedrīkst darīt; pajautā īpašniekam",
 	"server.ai.ai-key-for": "MI ({client}, atslēga {keylabel}) {did} {name} par {name2}",

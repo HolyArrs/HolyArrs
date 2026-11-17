@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "kendi rolünü ya da izinlerini değiştiremezsin",
 	"server.accounts.you-may-reset-two-factor-sign": "iki adımlı girişi yalnızca altındaki kişiler için sıfırlayabilirsin; sahip reset-owner komutunu kullanır",
 	"server.accounts.you-may-set-a-password-only": "parolayı yalnızca altındaki kişiler için belirleyebilirsin; sahip reset-owner komutunu kullanır",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "HolyArrs {host} adını tanımadığı için kaydetme engellendi. HolyArrs'ı yerel adresinden aç ve bu adı Ayarlar > Giriş ve güvenlik > İzin verilen host adları bölümüne ekle ya da HOLYARRS_ALLOWED_HOSTS içine ekle.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "HolyArrs'ı {host} olarak açtın; bu adı listede tut ya da listeyi IP adresinden değiştir",
 	"server.accounts.your-account-may-not-do-this": "hesabın bunu yapamaz; sahibine sor",
 	"server.ai.ai-key-for": "Yapay zekâ ({client}, anahtar {keylabel}) {name} için {did} {name2}",

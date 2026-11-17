@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "আপনি নিজের ভূমিকা বা অনুমতি বদলাতে পারবেন না",
 	"server.accounts.you-may-reset-two-factor-sign": "আপনি শুধু আপনার নিচের মানুষদের টু-ফ্যাক্টর সাইন ইন রিসেট করতে পারেন; ওনার reset-owner কমান্ড ব্যবহার করেন",
 	"server.accounts.you-may-set-a-password-only": "আপনি শুধু আপনার নিচের মানুষদের পাসওয়ার্ড সেট করতে পারেন; ওনার reset-owner কমান্ড ব্যবহার করেন",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "সেভ করা বন্ধ, কারণ HolyArrs {host} নামটি চেনে না। HolyArrs তার লোকাল ঠিকানায় খুলুন এবং এই নামটি সেটিংস > সাইন ইন ও নিরাপত্তা > অনুমোদিত হোস্ট নাম-এ যোগ করুন, বা HOLYARRS_ALLOWED_HOSTS-এ যোগ করুন।",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "আপনি HolyArrs {host} নামে খুলেছেন; ওই নামটি তালিকায় রাখুন, বা IP ঠিকানা থেকে তালিকা বদলান",
 	"server.accounts.your-account-may-not-do-this": "আপনার অ্যাকাউন্ট এটি করতে পারে না; ওনারকে বলুন",
 	"server.ai.ai-key-for": "AI ({client}, কী {keylabel}) {name2}-এর জন্য {name} {did}",

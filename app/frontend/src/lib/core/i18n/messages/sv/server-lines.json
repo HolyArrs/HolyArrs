@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "du kan inte ändra din egen roll eller dina egna behörigheter",
 	"server.accounts.you-may-reset-two-factor-sign": "du får bara återställa tvåstegsverifiering för personer under dig; ägaren använder kommandot reset-owner",
 	"server.accounts.you-may-set-a-password-only": "du får bara sätta lösenord för personer under dig; ägaren använder kommandot reset-owner",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Sparande är blockerat eftersom HolyArrs inte känner till namnet {host}. Öppna HolyArrs på dess lokala adress och lägg till namnet under Inställningar > Inloggning och säkerhet > Tillåtna värdnamn, eller lägg till det i HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "du öppnade HolyArrs som {host}; behåll det namnet i listan, eller ändra listan från IP-adressen",
 	"server.accounts.your-account-may-not-do-this": "ditt konto får inte göra det här; fråga ägaren",
 	"server.ai.ai-key-for": "AI ({client}, nyckel {keylabel}) {did} {name} för {name2}",

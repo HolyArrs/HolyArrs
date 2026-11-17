@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Dialog, type Locator, type Page } from '@playwright/test';
 import { createHmac } from 'node:crypto';
-import { owner, signIn, signOut } from '../helpers/helpers.ts';
+import { owner, plainForm, signIn, signOut } from '../helpers/helpers.ts';
 import { embyUser, jellyfinPort, mediaUser } from '../fakes/index.mjs';
 
 test.describe.configure({ mode: 'serial' });
@@ -419,4 +419,19 @@ test('sign in with Plex makes a member (fake Plex)', async ({ browser }) => {
 	await expect(own.getByText('Jellyfin: Mum')).toBeVisible();
 	await expect(own.getByText('Emby: Gran')).toBeVisible();
 	await expect(own.getByText('Plex: plexkid')).toBeVisible();
+});
+
+test('a save on a host name HolyArrs does not know says why and where to add the name', async ({ browser, baseURL }) => {
+	// *.localhost reaches this machine but is not an allowed host name, so the block stays and the message explains it.
+	const page = await fresh(browser);
+	const port = new URL(baseURL!).port;
+	await page.goto(`http://unknown-name.localhost:${port}/login`);
+	await plainForm(page);
+	await page.getByLabel('Name').fill(owner().name);
+	await page.getByLabel('Password', { exact: true }).fill(owner().password);
+	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+	await expect(page.getByText("Saving is blocked because HolyArrs doesn't know the name unknown-name.localhost.")).toBeVisible();
+	await expect(page.getByText(/Settings > Sign-in and security > Allowed host names/)).toBeVisible();
+	await expect(page).toHaveURL(/\/login/);
+	await page.context().close();
 });

@@ -47,6 +47,8 @@ const handLines = { 'Because you have {name}': 'suggest', 'No Downloader has con
 	'a quality name can be at most 30 characters': 'requests', 'keep at least one quality shown for movies and one for shows': 'requests',
 	'that quality cannot be asked for': 'requests', 'someone already asked for this movie in that quality; decide their ask instead': 'requests',
 	'The quality you picked was not used: this title already has that copy.': 'requests',
+	// accounts hosts.go hostRefusedMsg: the name and the env name are joined in.
+	"Saving is blocked because HolyArrs doesn't know the name {host}. Open HolyArrs at its local address and add this name under Settings > Sign-in and security > Allowed host names, or add it to HOLYARRS_ALLOWED_HOSTS.": 'accounts',
 	// sources choose.go: a forced pick's reasons, each ending in the verdict text.
 	// doctor.CategoryLine, the Category line with the missing category's name.
 	'Category missing: {name}. Add it in the download app, or pick another one here.': 'core',

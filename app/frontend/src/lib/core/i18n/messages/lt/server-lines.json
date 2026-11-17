@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "savo rolės ar teisių keisti negalite",
 	"server.accounts.you-may-reset-two-factor-sign": "dviejų veiksnių prisijungimą atkurti galite tik žemesnio rango žmonėms; savininkas naudoja reset-owner komandą",
 	"server.accounts.you-may-set-a-password-only": "slaptažodį nustatyti galite tik žemesnio rango žmonėms; savininkas naudoja reset-owner komandą",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "Išsaugoti užblokuota, nes HolyArrs nežino pavadinimo {host}. Atidarykite HolyArrs jo vietiniu adresu ir pridėkite šį pavadinimą skiltyje Nustatymai > Prisijungimas ir sauga > Leidžiami pagrindinio kompiuterio pavadinimai arba įrašykite jį į HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "atidarėte HolyArrs kaip {host}; palikite tą pavadinimą sąraše arba keiskite sąrašą iš IP adreso",
 	"server.accounts.your-account-may-not-do-this": "jūsų paskyra negali to daryti; paklauskite savininko",
 	"server.ai.ai-key-for": "DI ({client}, raktas {keylabel}) {did} {name}: {name2}",

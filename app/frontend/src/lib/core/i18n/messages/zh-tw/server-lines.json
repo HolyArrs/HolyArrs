@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "你不能更改自己的角色或權限",
 	"server.accounts.you-may-reset-two-factor-sign": "你只能重設比你級別低的人的雙重驗證登入；擁有者請使用 reset-owner 命令",
 	"server.accounts.you-may-set-a-password-only": "你只能為比你級別低的人設定密碼；擁有者請使用 reset-owner 命令",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "儲存已被封鎖，因為 HolyArrs 不認得名稱 {host}。請透過本機位址開啟 HolyArrs，並在 設定 > 登入與安全 > 允許的主機名稱 中加入此名稱，或將其加入 HOLYARRS_ALLOWED_HOSTS。",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "你是以 {host} 開啟 HolyArrs 的；請在清單中保留這個名稱，或從 IP 位址更改清單",
 	"server.accounts.your-account-may-not-do-this": "你的帳號無權執行此操作；請聯絡擁有者",
 	"server.ai.ai-key-for": "AI（{client}，金鑰 {keylabel}）{did} {name}，針對 {name2}",

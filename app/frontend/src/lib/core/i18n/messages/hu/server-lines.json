@@ -156,6 +156,7 @@
 	"server.accounts.you-cannot-change-your-own-role": "a saját szerepkörét vagy jogosultságait nem módosíthatja",
 	"server.accounts.you-may-reset-two-factor-sign": "a kétlépcsős bejelentkezést csak Önnél alacsonyabb szintű személyeknek állíthatja vissza; a tulajdonos a reset-owner parancsot használja",
 	"server.accounts.you-may-set-a-password-only": "jelszót csak Önnél alacsonyabb szintű személynek állíthat be; a tulajdonos a reset-owner parancsot használja",
+	"server.accounts.saving-is-blocked-because-holyarrs-doesnt": "A mentés le van tiltva, mert a HolyArrs nem ismeri ezt a nevet: {host}. Nyissa meg a HolyArrst a helyi címén, és adja hozzá a nevet itt: Beállítások > Bejelentkezés és biztonság > Engedélyezett gépnevek, vagy adja hozzá ehhez: HOLYARRS_ALLOWED_HOSTS.",
 	"server.accounts.you-opened-holyarrs-as-keep-that": "a HolyArrst ezzel a névvel nyitotta meg: {host}; tartsa meg ezt a nevet a listában, vagy módosítsa a listát az IP-címről",
 	"server.accounts.your-account-may-not-do-this": "a fiókja ezt nem teheti meg; kérdezze a tulajdonost",
 	"server.ai.ai-key-for": "AI ({client}, kulcs: {keylabel}) {did} {name} ehhez: {name2}",
