@@ -172,8 +172,27 @@ func planSubtitles(root, from, to string, taken map[string]bool) []SubtitleMove 
 // "after_move") as if the process died there.
 var renameCrash func(stage string) error
 
+// addMediaLabels fills an audio codec or HDR kind the release name left out
+// from what the media inspection read: a hash-named file says nothing in its
+// name, and the inspection still knows. A label the release name gave stays,
+// as it is the finer of the two (DTS-HD MA against the inspection's DTS).
+func addMediaLabels(f mediafiles.File, fa *mediafiles.NameFacts) {
+	if fa.Audio == "" {
+		if ac, ok := f.MediaInfo["audio_codec"].(string); ok && ac != "" {
+			fa.Audio = mediafiles.AudioLabel(ac)
+		}
+	}
+	if fa.HDR == "" {
+		if h, ok := f.MediaInfo["hdr"].(string); ok && h != "" {
+			fa.HDR = mediafiles.HDRLabel(h)
+		}
+	}
+}
+
 // fileFacts are the naming facts for a File already in the Library: the
-// same ones its import used (the release name and its quality step).
+// same ones its import used (the release name and its quality step), except
+// an audio codec or HDR kind the release name left out, which the
+// inspection fills (see addMediaLabels).
 func fileFacts(t mediafiles.Title, f mediafiles.File) mediafiles.NameFacts {
 	release := ""
 	if f.ReleaseName != nil {
@@ -185,6 +204,7 @@ func fileFacts(t mediafiles.Title, f mediafiles.File) mediafiles.NameFacts {
 	}
 	ext := path.Ext(f.RelativePath)
 	fa := mediafiles.FactsFrom(t.Name, year, t.SourceIDs, releasename.Parse(release, releasename.Hints{}), release, ext)
+	addMediaLabels(f, &fa)
 	if edition, ok := f.MediaInfo["edition"].(string); ok {
 		fa.Edition = edition
 	}
@@ -260,6 +280,7 @@ func episodeFacts(t mediafiles.Title, f mediafiles.File, eps []importer.Episode)
 		})
 	}
 	fa := importer.EpisodeFactsFor(t.Name, year, t.SourceIDs, order, releasename.Parse(release, releasename.Hints{Show: true}), release, path.Ext(f.RelativePath), eps)
+	addMediaLabels(f, &fa.NameFacts)
 	if step, ok := f.MediaInfo["step"].(string); ok && step != "" {
 		fa.Step = step
 	}

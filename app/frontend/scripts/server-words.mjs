@@ -18,6 +18,8 @@ const banned = ['Monitored', 'Activity', 'Wanted', 'Cutoff', 'Quality Profile', 
 // Codes and names the scan picks up that no one reads as words (setting values,
 // ids, kinds); they stay out of the file and the check.
 const notWords = new Set(['dash', 'each', 'range', 'smart', 'remove', 'normal', 'key', 'movie', 'show', 'artist',
+	// The audio codec and HDR labels a file name carries (mediafiles/naming_media.go): names, not words to translate.
+	'AAC', 'AC3', 'EAC3', 'DTS', 'DTS-HD', 'TrueHD', 'FLAC', 'ALAC', 'MP3', 'Opus', 'Vorbis', 'PCM', 'DolbyVision', 'HDR10', 'HDR10+', 'HLG',
 	'podnapisi', 'gestdown', 'yifysubtitles', 'tvsubtitles', 'bsplayer', 'qBittorrent', 'subtitles:languages', 'subtitle site ', 'tmdb:{v}', 'mbid:{v}']);
 // Lines the scan cannot put together: a control's Event starts with the person's name (setup ControlEvent)
 // and takes its verb from a map; a removal's reason may name who removed it.

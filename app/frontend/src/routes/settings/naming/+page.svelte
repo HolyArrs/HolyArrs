@@ -269,7 +269,7 @@
 				<summary class="small">{t('settings.naming.wordsEpisodes')}</summary>
 				<dl>
 					{#each Object.entries(words)
-						.filter(([w]) => showWords.includes(w) || ['title', 'year', 'quality', 'group', 'release'].includes(w))
+						.filter(([w]) => showWords.includes(w) || ['title', 'year', 'quality', 'audio', 'hdr', 'group', 'release'].includes(w))
 						.sort() as [w, about] (w)}
 						<dt>
 							<Button variant="plain" class="mono" type="button" onclick={() => addWord('episode_pattern', w)} aria-label={t('settings.naming.addToEpisode', { word: '{' + w + '}' })}

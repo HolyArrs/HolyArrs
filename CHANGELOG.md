@@ -2,6 +2,21 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.1.5
+
+### Added
+
+- File names can carry the audio codec and HDR kind with {audio} and {hdr}. ([#397](https://github.com/HolyArrs/HolyArrs/pull/397))
+
+### Changed
+
+- Files named with dots no longer get double dots when a part is missing. Check the Rename page after updating. ([#397](https://github.com/HolyArrs/HolyArrs/pull/397))
+- A bracket in a file name drops out when all its words are empty, such as `[imdbid-{imdb}]` with no IMDb id. ([#397](https://github.com/HolyArrs/HolyArrs/pull/397))
+
+### Thanks
+
+Thanks to [@mrijke](https://github.com/HolyArrs/HolyArrs/pull/397) for {audio} and {hdr}.
+
 ## 1.1.4
 
 ### Added

@@ -600,18 +600,21 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 		r.Codec.Conf = Unknown
 	}
 
-	// HDR.
+	// HDR. The words HolyArrs writes in a file name read back too, so a
+	// Library it named keeps its quality. A written label is one word that
+	// holds several kinds: DolbyVisionHDR10+, DolbyVisionHLG, HDR10HLG.
 	var hdr []string
-	if has("dv", "dovi") || strings.Contains(line, " dolby vision ") {
+	if has("dv", "dovi", "dolbyvision", "dolbyvisionhdr10", "dolbyvisionhdr10+", "dolbyvisionhlg",
+		"dolbyvisionhdr10hlg", "dolbyvisionhdr10+hlg") || strings.Contains(line, " dolby vision ") {
 		hdr = append(hdr, "dv")
 	}
 	switch {
-	case has("hdr10plus", "hdr10+"):
+	case has("hdr10plus", "hdr10+", "dolbyvisionhdr10+", "dolbyvisionhdr10+hlg", "hdr10+hlg"):
 		hdr = append(hdr, "hdr10plus")
-	case has("hdr10", "hdr"):
+	case has("hdr10", "hdr", "dolbyvisionhdr10", "dolbyvisionhdr10hlg", "hdr10hlg"):
 		hdr = append(hdr, "hdr10")
 	}
-	if has("hlg") {
+	if has("hlg", "dolbyvisionhlg", "dolbyvisionhdr10hlg", "dolbyvisionhdr10+hlg", "hdr10hlg", "hdr10+hlg") {
 		hdr = append(hdr, "hlg")
 	}
 	if hdr != nil {
