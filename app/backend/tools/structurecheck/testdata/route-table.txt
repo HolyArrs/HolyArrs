@@ -526,6 +526,7 @@ PUT /api/v1/account/avatar auth=self scope=write assurance=false part=core
 PUT /api/v1/albums/{id} auth=manage_library scope=write assurance=false part=music
 PUT /api/v1/alerts/{id} auth=settings scope=write assurance=false part=core
 PUT /api/v1/ask-limits/{id} auth=users scope=admin assurance=false part=wishlist
+PUT /api/v1/auth/keys/{id} auth=settings scope=admin assurance=true part=core
 PUT /api/v1/auth/settings auth=owner scope=admin assurance=true part=core
 PUT /api/v1/auth/sso auth=owner scope=admin assurance=true part=core
 PUT /api/v1/backups/settings auth=settings scope=write assurance=false part=core
