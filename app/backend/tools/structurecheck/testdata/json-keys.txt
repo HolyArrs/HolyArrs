@@ -102,6 +102,7 @@ airsTime
 airstamp
 airtime
 album
+album_artist
 album_choice
 album_extra_files
 album_folder_pattern
@@ -112,6 +113,7 @@ album_track_tolerance
 album_type
 album_types
 album_words
+album_year
 albums
 albums_added
 albums_changed
@@ -1370,6 +1372,7 @@ release_date
 release_dates
 release_gate
 release_group_count
+release_group_id
 release_groups
 release_groups_complete
 release_id
@@ -1760,6 +1763,7 @@ track_count
 track_fingerprints
 track_ids
 track_index
+track_name
 track_pattern
 trackedDownloadState
 trackedDownloadStatus
