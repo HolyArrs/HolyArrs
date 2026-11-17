@@ -51,6 +51,8 @@ func TestFilePatterns(t *testing.T) {
 			NameFacts{Title: "S.W.A.T.", Year: 2024, Step: "1080p_bluray", Ext: ".mkv"}, "S.W.A.T. (2024) - 1080p BluRay.mkv"},
 		{"an empty word leaves the next word's dash", "{title} ({year}) {edition}-{group}", "", "",
 			NameFacts{Title: "Heat", Year: 1995, Group: "GRP", Ext: ".mkv"}, "Heat (1995) -GRP.mkv"},
+		{"an empty word after a space takes the dot after it", "{title} {edition}.{quality}", "", "",
+			NameFacts{Title: "Heat", Step: "720p_web", Ext: ".mkv"}, "Heat 720p WEB.mkv"},
 		{"an empty first word takes its trailing dot", "{edition}.{title}", "", "",
 			NameFacts{Title: "Heat", Ext: ".mkv"}, "Heat.mkv"},
 		{"two empty words in a row take their dots", "{title}.{audio}.{hdr}.{resolution}", "", "",

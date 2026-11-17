@@ -378,11 +378,11 @@ func renderVals(s NamingSettings, pat string, vals map[string]string) string {
 			// A word with no value takes one dot, dash or underscore the
 			// pattern wrote beside it, never a character of another word's
 			// value: "{audio}.{resolution}" without a codec gives "2160p".
-			// It takes the one after it only when nothing stands before it
+			// It takes a dash after it only when nothing stands before it
 			// to join, so " {edition}-{group}" keeps the group's dash.
 			if n := len(lit); n > 0 && strings.IndexByte("._-", lit[n-1]) >= 0 {
 				lit = lit[:n-1]
-			} else if rest != "" && strings.IndexByte("._-", rest[0]) >= 0 && opensName(b.String()+lit) {
+			} else if rest != "" && strings.IndexByte("._-", rest[0]) >= 0 && (rest[0] != '-' || opensName(b.String()+lit)) {
 				rest = rest[1:]
 			}
 		}
