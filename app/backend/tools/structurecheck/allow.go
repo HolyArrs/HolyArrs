@@ -48,6 +48,7 @@ var coreRows = map[string]int{
 	"logs":        2,
 	"jobs":        2,
 	"model":       2,
+	"doctor":      2,
 	"webserver":   3,
 	"startup":     3,
 	"parts":       4,

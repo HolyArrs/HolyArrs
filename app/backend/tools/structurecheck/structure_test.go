@@ -21,7 +21,7 @@ var Modules = []string{"suggest", "importer", "library", "requests", "movies", "
 	"health", "updates", "setup", "plugins"}
 
 // CoreParts are the packages allowed under internal/core/.
-var CoreParts = []string{"database", "webserver", "outbound", "jobs", "logs", "files", "secrets", "startup", "releasename", "model", "parts"}
+var CoreParts = []string{"database", "webserver", "outbound", "jobs", "logs", "files", "secrets", "startup", "releasename", "model", "parts", "doctor"}
 
 // sourceRoots are the top folders the guards walk.
 var sourceRoots = []string{"app"}
