@@ -418,7 +418,7 @@
 									<li class="xs muted">
 										<span>{l.kind === 'oidc' ? t('settings.users.ssoCap') : t('settings.users.proxyCap')}: <span class="mono">{hostOf(l.issuer)}</span>{#if l.name}, {l.name}{/if}</span>
 										{#if isOwner}
-											<Button variant="plain" size="sm" type="button" onclick={() => unlinkSSO(u, l)} aria-label={t('settings.users.unlinkLabel', { kind: ssoWord(l.kind), name: u.name })}>{t('settings.users.unlink')}</Button>
+											<Button variant="plain" type="button" onclick={() => unlinkSSO(u, l)} aria-label={t('settings.users.unlinkLabel', { kind: ssoWord(l.kind), name: u.name })}>{t('settings.users.unlink')}</Button>
 										{/if}
 									</li>
 								{/each}

@@ -301,16 +301,16 @@
 					{#if s.summary.calls_24h > 0}<div class="num" title={t('settings.sources.lastAnswer', { ago: s.summary.last_success ? ago(s.summary.last_success) : t('settings.sources.never'), failed: s.summary.failures_24h, calls: s.summary.calls_24h })}><b>{ms(s.summary.avg_ms_24h)}</b><small>{t('settings.sources.avg')}</small></div>{/if}
 					<span class="st {healthTone(s.health)}"><i></i><span data-testid="source-state">{healthWord(s.health)}</span></span>
 					<div class="acts">
-						<Button variant="plain" size="sm" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s)}>{t('settings.sources.test')}</Button>
+						<Button variant="plain" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s)}>{t('settings.sources.test')}</Button>
 						{#if s.state === 'disabled'}
-							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(s, false)}>{t('settings.sources.resume')}</Button>
+							<Button variant="plain" type="button" onclick={() => setPaused(s, false)}>{t('settings.sources.resume')}</Button>
 						{:else}
-							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(s, true)}>{t('settings.sources.pause')}</Button>
-							{#if s.state === 'paused'}<Button variant="plain" size="sm" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s, 'try')} data-testid="source-try">{t('settings.sources.tryNow')}</Button>{/if}
+							<Button variant="plain" type="button" onclick={() => setPaused(s, true)}>{t('settings.sources.pause')}</Button>
+							{#if s.state === 'paused'}<Button variant="plain" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s, 'try')} data-testid="source-try">{t('settings.sources.tryNow')}</Button>{/if}
 						{/if}
-						<Button variant="plain" size="sm" href={to(`/settings/sources/${s.id}`)}>{t('settings.sources.health')}</Button>
-						<Button variant="plain" size="sm" type="button" onclick={() => startChange(s)}>{t('settings.sources.changeButton')}</Button>
-						<Button variant="plain" size="sm" type="button" onclick={() => remove(s)} aria-label={t('settings.sources.removeName', { name: s.name })}>{t('settings.sources.remove')}</Button>
+						<Button variant="plain" href={to(`/settings/sources/${s.id}`)}>{t('settings.sources.health')}</Button>
+						<Button variant="plain" type="button" onclick={() => startChange(s)}>{t('settings.sources.changeButton')}</Button>
+						<Button variant="plain" type="button" onclick={() => remove(s)} aria-label={t('settings.sources.removeName', { name: s.name })}>{t('settings.sources.remove')}</Button>
 					</div>
 				</div>
 				<p class="note" class:bad-text={s.health.state !== 'working' && s.health.state !== 'disabled'} class:sr-only={s.health.state === 'working' || s.health.state === 'disabled' || s.state === 'paused'} data-testid="source-text">{serverWords(s.health.text)}{until(s.health)}</p>

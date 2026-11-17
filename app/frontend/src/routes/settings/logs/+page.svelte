@@ -86,8 +86,8 @@
 			<input id="lg-to" class="input" type="date" bind:value={filter.to} onchange={() => apply()} />
 		</Field>
 		<div class="go">
-			<Button variant="primary" size="sm" type="submit" disabled={busy} aria-busy={busy}>{t('settings.logs.apply')}</Button>
-			<Button size="sm" type="button" onclick={clear}>{t('settings.logs.clear')}</Button>
+			<Button variant="primary" type="submit" disabled={busy} aria-busy={busy}>{t('settings.logs.apply')}</Button>
+			<Button type="button" onclick={clear}>{t('settings.logs.clear')}</Button>
 		</div>
 	</div>
 </form>

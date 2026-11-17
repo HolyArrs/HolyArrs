@@ -360,8 +360,8 @@
 			<span class="st {rowTone(f)}"><i></i><span>{rowHealth(f)}</span>{#if f.health === 'no_hardlink'}<a class="why-link" href={copiesDoc} target="_blank" rel="noopener noreferrer">{t('settings.libraryFolders.whyCopies')}</a>{/if}</span>
 			<div class="acts">
 				<IconButton icon="refresh" label={t('settings.libraryFolders.checkAgain', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => recheck(f)} />
-				{#if f.health === 'no_hardlink'}<Button variant="plain" size="sm" type="button" disabled={busyId === f.id} onclick={() => setCopies(f, !f.copies_expected)}>{f.copies_expected ? t('settings.libraryFolders.warnAgain') : t('settings.libraryFolders.copiesExpected')}</Button>{/if}
-				<Button variant="plain" size="sm" type="button" onclick={() => ((editing = f.id), (editLabel = f.label))}>{t('settings.libraryFolders.rename')}</Button>
+				{#if f.health === 'no_hardlink'}<Button variant="plain" type="button" disabled={busyId === f.id} onclick={() => setCopies(f, !f.copies_expected)}>{f.copies_expected ? t('settings.libraryFolders.warnAgain') : t('settings.libraryFolders.copiesExpected')}</Button>{/if}
+				<Button variant="plain" type="button" onclick={() => ((editing = f.id), (editLabel = f.label))}>{t('settings.libraryFolders.rename')}</Button>
 				<IconButton icon="folderMove" label={t('settings.libraryFolders.changePathOf', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} aria-expanded={moving === f.id} onclick={() => openMove(f)} />
 				<IconButton icon="trash" label={t('settings.libraryFolders.removePath', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => remove(f)} />
 			</div>
@@ -370,8 +370,8 @@
 					<label for="mv-{f.id}">{t('settings.libraryFolders.newPath')}</label>
 					<div class="mv-row">
 						<input id="mv-{f.id}" class="input mono" dir="ltr" bind:value={movePath} autocomplete="off" spellcheck="false" disabled={moveBusy} aria-describedby="mv-{f.id}-hint" />
-						<Button variant="primary" size="sm" type="submit" busy={moveBusy} disabled={moveBusy}>{moveBusy ? t('settings.libraryFolders.checkingFiles') : t('settings.libraryFolders.changePath')}</Button>
-						<Button variant="plain" size="sm" type="button" disabled={moveBusy} onclick={() => (moving = null)}>{t('settings.libraryFolders.cancel')}</Button>
+						<Button variant="primary" type="submit" busy={moveBusy} disabled={moveBusy}>{moveBusy ? t('settings.libraryFolders.checkingFiles') : t('settings.libraryFolders.changePath')}</Button>
+						<Button variant="plain" type="button" disabled={moveBusy} onclick={() => (moving = null)}>{t('settings.libraryFolders.cancel')}</Button>
 					</div>
 					<p class="hint" id="mv-{f.id}-hint">{t('settings.libraryFolders.changePathHint')}</p>
 					{#if moveError}<p class="form-error" role="alert">{moveError}</p>{/if}

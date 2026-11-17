@@ -91,7 +91,7 @@
 		</form>
 
 		{#if keys.length === 0}
-			<p class="small muted" style="margin-top: var(--s-4)">{t('arrapi.keys.none')}</p>
+			<p class="empty-row">{t('arrapi.keys.none')}</p>
 		{:else}
 			<ul class="rows" style="margin-top: var(--s-3)">
 				{#each keys as k (k.id)}

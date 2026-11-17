@@ -62,11 +62,11 @@
 
 <div class="media-link" data-testid="user-media-link">
 	{#each linked as l (l.provider)}
-		<Button variant="plain" size="sm" type="button" onclick={() => unlink(l.provider)} disabled={busy}
+		<Button variant="plain" type="button" onclick={() => unlink(l.provider)} disabled={busy}
 			aria-label={t('settings.users.unlinkLabel', { kind: l.provider === 'emby' ? 'Emby' : 'Jellyfin', name: user.name })}>{t('settings.users.unlink')}</Button>
 	{/each}
 	{#if !open}
-		<Button variant="plain" size="sm" type="button" onclick={start}>{t('settings.users.serverAccount')}</Button>
+		<Button variant="plain" type="button" onclick={start}>{t('settings.users.serverAccount')}</Button>
 	{:else}
 		<label class="sr-only" for="ml-{user.id}">{t('settings.users.pickAccount')}</label>
 		<select id="ml-{user.id}" class="input" bind:value={pick}>
@@ -77,8 +77,8 @@
 				</optgroup>
 			{/each}
 		</select>
-		<Button size="sm" type="button" onclick={save} disabled={!pick || busy} busy={busy}>{t('accounts.security.link')}</Button>
-		<Button variant="plain" size="sm" type="button" onclick={() => (open = false)}>{t('accounts.signin.cancel')}</Button>
+		<Button type="button" onclick={save} disabled={!pick || busy} busy={busy}>{t('accounts.security.link')}</Button>
+		<Button variant="plain" type="button" onclick={() => (open = false)}>{t('accounts.signin.cancel')}</Button>
 	{/if}
 	{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 </div>

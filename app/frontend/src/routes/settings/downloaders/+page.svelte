@@ -494,14 +494,14 @@
 					<div class="num" title={d.checked_at ? t('settings.downloaders.checked', { ago: ago(d.checked_at) }) : undefined}><b>{d.active_downloads}</b><small>{t('settings.downloaders.active')}</small></div>
 					<span class="st {healthTone(d.health.state)}"><i></i><span data-testid="downloader-state">{healthLabel(d.health)}</span></span>
 					<div class="acts">
-						<Button variant="plain" size="sm" type="button" disabled={testing === d.id} aria-busy={testing === d.id} onclick={() => test(d)}>{t('settings.downloaders.test')}</Button>
+						<Button variant="plain" type="button" disabled={testing === d.id} aria-busy={testing === d.id} onclick={() => test(d)}>{t('settings.downloaders.test')}</Button>
 						{#if d.health.state === 'paused'}
-							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(d, false)}>{t('settings.downloaders.resume')}</Button>
+							<Button variant="plain" type="button" onclick={() => setPaused(d, false)}>{t('settings.downloaders.resume')}</Button>
 						{:else}
-							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(d, true)}>{t('settings.downloaders.pause')}</Button>
+							<Button variant="plain" type="button" onclick={() => setPaused(d, true)}>{t('settings.downloaders.pause')}</Button>
 						{/if}
-						<Button variant="plain" size="sm" type="button" onclick={() => startChange(d)}>{t('settings.downloaders.changeButton')}</Button>
-						<Button variant="plain" size="sm" type="button" onclick={() => remove(d)} aria-label={t('settings.downloaders.removeName', { name: d.name })}>{t('settings.downloaders.remove')}</Button>
+						<Button variant="plain" type="button" onclick={() => startChange(d)}>{t('settings.downloaders.changeButton')}</Button>
+						<Button variant="plain" type="button" onclick={() => remove(d)} aria-label={t('settings.downloaders.removeName', { name: d.name })}>{t('settings.downloaders.remove')}</Button>
 					</div>
 				</div>
 				{#if d.health.text && !(results[d.id] && !results[d.id].ok)}<p class="note" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{serverWords(d.health.text)}</p>{/if}
