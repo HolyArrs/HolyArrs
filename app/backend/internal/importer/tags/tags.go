@@ -19,6 +19,14 @@ type Tags struct {
 	Album  string `json:"album,omitempty"`
 	Track  int    `json:"track,omitempty"`
 	Disc   int    `json:"disc,omitempty"`
+
+	AlbumArtist string `json:"album_artist,omitempty"`
+	// MusicBrainz ids, when a tagger wrote them; only well-formed ids are kept.
+	// ArtistID holds every artist id of the track, space-separated.
+	ArtistID       string `json:"artist_id,omitempty"`
+	ReleaseGroupID string `json:"release_group_id,omitempty"`
+	ReleaseID      string `json:"release_id,omitempty"`
+	RecordingID    string `json:"recording_id,omitempty"`
 }
 
 // Empty says no tag was found.
@@ -128,7 +136,45 @@ func (t *Tags) set(key, v string) {
 		if t.Disc == 0 {
 			t.Disc = number(v)
 		}
+	case "ALBUMARTIST", "ALBUM ARTIST", "TPE2", "TP2":
+		if t.AlbumArtist == "" {
+			t.AlbumArtist = clean(v)
+		}
+	case "MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID":
+		// A track with a featured artist lists several ids; keep each, space-separated.
+		for _, part := range strings.FieldsFunc(v, func(r rune) bool { return r == ';' || r == '/' || r == ',' || r == 0 }) {
+			var id string
+			if setID(&id, part); id != "" && !strings.Contains(t.ArtistID, id) && len(t.ArtistID) < 200 {
+				t.ArtistID = strings.TrimSpace(t.ArtistID + " " + id)
+			}
+		}
+	case "MUSICBRAINZ_RELEASEGROUPID", "MUSICBRAINZ RELEASE GROUP ID":
+		setID(&t.ReleaseGroupID, v)
+	case "MUSICBRAINZ_ALBUMID", "MUSICBRAINZ ALBUM ID":
+		setID(&t.ReleaseID, v)
+	case "MUSICBRAINZ_TRACKID":
+		setID(&t.RecordingID, v)
 	}
+}
+
+// setID keeps the first id of a value that may list several.
+func setID(dst *string, v string) {
+	if *dst != "" {
+		return
+	}
+	v = strings.ToLower(strings.TrimSpace(v))
+	if len(v) > 36 {
+		v = strings.TrimRight(v[:36], "; /")
+	}
+	if len(v) != 36 || strings.Count(v, "-") != 4 {
+		return
+	}
+	for _, r := range v {
+		if r != '-' && (r < '0' || r > '9') && (r < 'a' || r > 'f') {
+			return
+		}
+	}
+	*dst = v
 }
 
 func syncsafe(b []byte) (int, bool) {
@@ -212,7 +258,13 @@ func readID3(r io.Reader, ver byte) (Tags, error) {
 		if ver == 3 && fflags&0x00C0 != 0 || ver == 4 && fflags&0x000F != 0 {
 			continue
 		}
-		if len(id) > 0 && id[0] == 'T' && len(body) > 0 {
+		switch {
+		case (id == "TXXX" || id == "TXX") && len(body) > 1:
+			// A user text frame: a description, a NUL, then the value.
+			if desc, val, ok := userText(body); ok {
+				t.set(desc, val)
+			}
+		case len(id) > 0 && id[0] == 'T' && len(body) > 0:
 			t.set(id, id3Text(body))
 		}
 	}
@@ -220,6 +272,24 @@ func readID3(r io.Reader, ver byte) (Tags, error) {
 		return t, ErrNoTags
 	}
 	return t, nil
+}
+
+// userText splits a TXXX body into its description and value.
+func userText(b []byte) (string, string, bool) {
+	enc := b[0]
+	rest := b[1:]
+	sep, step := []byte{0}, 1
+	if enc == 1 || enc == 2 {
+		sep, step = []byte{0, 0}, 2
+	}
+	for i := 0; i+len(sep) <= len(rest); i += step {
+		if bytes.Equal(rest[i:i+len(sep)], sep) {
+			desc := id3Text(append([]byte{enc}, rest[:i]...))
+			val := id3Text(append([]byte{enc}, rest[i+len(sep):]...))
+			return desc, val, true
+		}
+	}
+	return "", "", false
 }
 
 // id3Text decodes a text frame's body: an encoding byte, then the text.
