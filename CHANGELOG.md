@@ -11,6 +11,7 @@ All notable changes to HolyArrs are listed here. The format follows [Keep a Chan
 ### Changed
 
 - Files named with dots no longer get double dots when a part is missing. Check the Rename page after updating. ([#397](https://github.com/HolyArrs/HolyArrs/pull/397))
+- A bracket in a file name drops out when all its words are empty, such as `[imdbid-{imdb}]` with no IMDb id. ([#397](https://github.com/HolyArrs/HolyArrs/pull/397))
 
 ### Thanks
 
