@@ -31,7 +31,7 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 | Alerts | [Alerts](users/alerts.md) |
 | Importing from other apps | [Import from other apps](migrate/index.md), [how HolyArrs reads them](migrate/what-is-read.md) |
 | Older apps' API | [Connect Seerr, Overseerr, Bazarr and others](reference/old-app-api.md) |
-| AI apps (held back) | [Connect AI apps](reference/ai.md) |
+| AI apps (held back) | [MCP plugin](reference/ai.md) |
 | Backups | [Backups](run/backups.md) |
 | Health | [Health checks](run/health.md), [logs](run/logs.md), [schedules](run/schedules.md) |
 | Updates | [Updates](run/updates.md) |
@@ -77,11 +77,11 @@ A changing number or token is in square brackets.
 | Held and turned-down releases | `/library/held`, `/library/turned-down` | Searching for [movies](movies/search.md), [shows](shows/search.md), [music](music/search.md) |
 | Import a library, Rename files | `/library/import`, `/library/rename` | Organising [movies](movies/organise.md), [shows](shows/organise.md), [music](music/organise.md) |
 | Missing subtitles | `/library/missing-subtitles` | [Subtitles](library/subtitles.md) |
-| Connect an AI app | `/ai` | [Connect AI apps](reference/ai.md) (held back) |
+| Allow an AI app | `/ai` | [MCP plugin](reference/ai.md) (held back) |
 | Plugins | `/plugins` | [Plugins](run/plugins.md) |
 | Settings | `/settings` | [Home and Settings](start/home-and-settings.md#settings) |
 | Request rules | `/settings/requests` | [Weekly limits and Request rules](requests/settings.md) |
-| AI apps | `/settings/ai` | [Connect AI apps](reference/ai.md) (held back) |
+| AI apps | `/settings/ai` | [MCP plugin](reference/ai.md) (held back) |
 | Alerts | `/settings/alerts` | [Alerts](users/alerts.md) |
 | Backups | `/settings/backups` | [Backups](run/backups.md) |
 | Import from other apps | `/settings/move` | [Import from other apps](migrate/index.md) |

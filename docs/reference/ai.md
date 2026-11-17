@@ -1,6 +1,6 @@
 ---
 title: AI apps
-description: Connect Claude, ChatGPT, Cursor and other MCP apps to HolyArrs, and what app makers need to know.
+description: The MCP plugin: let AI apps reach HolyArrs over MCP, AI keys, and what app makers need to know.
 level: Expert
 sidebar: { order: 4 }
 ---
@@ -11,14 +11,14 @@ Ask an AI app "what's downloading?" or have it request a movie, over MCP.
 AI apps are held back in this release. You see them only when the `ai_apps` feature is switched on.
 :::
 
-## Connect an AI app
+## Turn on the MCP plugin
 
-1. Open **Settings > AI apps** on the same address your AI app will use. The page builds the steps from the address in your browser.
+HolyArrs has no per-app guides. The MCP plugin is the whole feature: turn it on, copy the address and give it to your AI app.
+
+1. Open **Settings > AI apps** (`/settings/ai`). This is where the MCP plugin is turned on and AI keys are made.
 2. Switch on **Let AI apps connect**. Only the owner can.
-3. Under **Connect an AI app**, pick your app and follow its steps.
-4. Ask your app: "What's downloading in HolyArrs?" You should see it under **Linked AI apps** with a last used time.
-
-Or click **Or let your agent do it** and paste the short prompt into a coding agent. If the prompt holds a key, paste it only into your own agent.
+3. Copy the **AI address** and add it in your AI app as a remote MCP server (Streamable HTTP).
+4. The app signs in through your browser and you click **Allow**, or you make an AI key under **Linked AI apps > Make a key by hand** and the app sends it as a header.
 
 The AI address is your HolyArrs address plus `/api/v1/mcp`, such as `http://your-server:6262/api/v1/mcp`. `/mcp` works too. Under a URL base, put the base first.
 
@@ -29,7 +29,7 @@ The AI address is your HolyArrs address plus `/api/v1/mcp`, such as `http://your
 | Way | How | Needs |
 |---|---|---|
 | Browser sign-in | Add the address; the app opens HolyArrs, you click **Allow**. The app gets its own key. | `https`, or the app on the same computer (`localhost`) |
-| AI key | Click **Make a key** next to your app, copy it once into the config shown. | Any address |
+| AI key | Under **Linked AI apps**, open **Make a key by hand**, copy the key once into the app's config. | Any address |
 
 | You open HolyArrs on | Apps on your computer | Cloud apps (Claude app, ChatGPT, Gemini app, Grok, Perplexity) |
 |---|---|---|
@@ -38,28 +38,9 @@ The AI address is your HolyArrs address plus `/api/v1/mcp`, such as `http://your
 | `localhost` | Browser sign-in | Can't reach it |
 | Plain `http`, such as `http://your-server:6262` | AI key | Can't reach it |
 
-The page can't tell whether an `https` name is open to the internet, so it may show cloud steps that won't work on a home-only name. Claude Desktop can reach a home address through the `mcp-remote` bridge, which needs Node.js.
+Cloud apps can't reach a home-only `https` name. Claude Desktop can reach a home address through the `mcp-remote` bridge, which needs Node.js.
 
 Keep an AI key out of links and chats; it belongs in the app's config. AI keys work only on the AI address, and ordinary API keys don't work there.
-
-### Where each app takes the address
-
-Settings > AI apps shows these steps with your address filled in. Any other app that adds a remote MCP server works too.
-
-| App | Where you add HolyArrs | On plain `http` |
-|---|---|---|
-| Claude app | **Connectors**, add custom connector | Can't reach it |
-| ChatGPT | Add custom MCP server | Can't reach it |
-| Gemini app | Custom connected app | Can't reach it |
-| Grok | **Connectors**, custom | Can't reach it |
-| Perplexity | Add MCP connector, remote | Can't reach it |
-| Claude Code | `claude mcp add` | AI key |
-| Codex | `codex mcp add` | AI key |
-| Cursor | `~/.cursor/mcp.json` | AI key |
-| VS Code | **MCP Servers**, **Add Server** | AI key |
-| Gemini CLI | `gemini mcp add` | AI key |
-| Claude Desktop at home | Developer config, through `mcp-remote` | AI key |
-| Open WebUI, LM Studio | The app's MCP settings | AI key |
 
 ### Getting an https address
 
@@ -110,7 +91,7 @@ When an app tries something its key doesn't allow, it gets a message naming the 
 | 404 or "not found" | Switch on **Let AI apps connect**. Check the address ends in `/api/v1/mcp`. |
 | 401 or "sign in" | Key missing, revoked or its account is off. Sign in again from the app, or make a new key. |
 | 403 about the `mcp` scope | The app sent an ordinary API key. Make an AI key. |
-| Sign-in refused on plain `http` | Use **Make a key**, or reach HolyArrs over `https` or `localhost`. |
+| Sign-in refused on plain `http` | Use an AI key from **Make a key by hand**, or reach HolyArrs over `https` or `localhost`. |
 | Sign-in fails behind a proxy | Set `HOLYARRS_TRUSTED_PROXIES` and send `X-Forwarded-Proto: https`. |
 | "request from another site or host name refused" | Add the name to `HOLYARRS_ALLOWED_HOSTS`. |
 | "This AI app is not registered with HolyArrs." | Remove HolyArrs from the app and add it again. |
@@ -125,8 +106,8 @@ When an app tries something its key doesn't allow, it gets a message naming the 
 <details class="ha-more"><summary>Linked AI apps and History</summary>
 
 - The card lists each AI key: name, last 4 characters, made and last used.
-- **Revoke** stops an app at once. **Make a key by hand** names a key for apps not in the list.
-- What an AI key may do: in **Settings > AI apps** (`/settings/ai`), card **Linked AI apps**, open **Make a key by hand**. Six tick boxes: **See library and activity**, **Add and request**, **Control downloads**, **Change settings**, **Delete** and **Admin (users, keys, backups, updates)**. The first four start ticked. A key made from an app's steps gets those four. The list shows each key's boxes in short form, such as *Can: See · Add · Downloads · Settings*. A key can't be changed after it is made; to change its boxes, make a new key and revoke the old one. Keys made before this came keep all six.
+- **Revoke** stops an app at once. **Make a key by hand** names a new key.
+- What an AI key may do: in **Settings > AI apps** (`/settings/ai`), card **Linked AI apps**, open **Make a key by hand**. Six tick boxes: **See library and activity**, **Add and request**, **Control downloads**, **Change settings**, **Delete** and **Admin (users, keys, backups, updates)**. The first four start ticked. The list shows each key's boxes in short form, such as *Can: See · Add · Downloads · Settings*. A key can't be changed after it is made; to change its boxes, make a new key and revoke the old one. Keys made before this came keep all six.
 - The owner sees every AI key; others who may change settings see their own. Managing keys needs that permission and a recent password sign-in.
 - A key stops working when its account is turned off.
 - While **Let AI apps connect** is off, a keyed app gets not found; an app without a key is still sent to sign in. The owner clicking **Allow** turns it on.
