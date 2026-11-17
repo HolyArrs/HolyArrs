@@ -187,11 +187,17 @@
 		settled = true;
 	}
 
+	// Read once per visit; a slow metadata server never holds Home: after 3 s it shows without the rows.
+	let picksTried = false;
 	async function loadPicks() {
-		if (picks.length) return;
+		if (picksTried) return;
+		picksTried = true;
 		try {
 			const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-			picks = welcomeRows((await api.get<HeadAnswer>(headPath({ type: 'all', tz }))).head ?? []);
+			const read = api.get<HeadAnswer>(headPath({ type: 'all', tz })).then((a) => welcomeRows(a.head ?? [])).catch(() => null);
+			const late = new Promise<null>((r) => setTimeout(() => r(null), 3000));
+			const got = await Promise.race([read, late]);
+			if (got) picks = got;
 		} catch {
 			// No picture rows: the grid and Explore still work.
 		}
