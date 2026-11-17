@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
@@ -242,7 +243,7 @@
 	}
 
 	async function remove(d: DownloaderView) {
-		if (!confirm(t('settings.downloaders.confirmRemove', { name: d.name }))) return;
+		if (!(await ask(t('settings.downloaders.confirmRemove', { name: d.name })))) return;
 		try {
 			await api.del(`/downloaders/${d.id}`);
 			await load();
@@ -254,9 +255,9 @@
 
 	async function abandonAttempt(d: DownloaderView, attempt: DownloaderAttempt) {
 		if (
-			!confirm(
+			!(await ask(
 				t('settings.downloaders.confirmAbandon', { release: attempt.release_id, slot: attempt.slot_id, name: d.name, app: kindWords[d.kind] })
-			)
+			))
 		)
 			return;
 		abandoning = attempt.id;

@@ -1,4 +1,4 @@
-import { expect, test, type Browser, type Dialog, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
 import { createHmac } from 'node:crypto';
 import { owner, plainForm, signIn, signOut } from '../helpers/helpers.ts';
 import { embyUser, jellyfinPort, mediaUser } from '../fakes/index.mjs';
@@ -164,13 +164,13 @@ test('the owner changes what a member may do, and can turn them off', async () =
 	await expect(ana.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Downloads' })).toBeVisible();
 
 	await own.getByRole('button', { name: 'Reset two-factor sign-in for ana' }).click({ trial: true });
-	own.once('dialog', (d) => d.accept());
 	await own.getByRole('button', { name: 'Turn off ana' }).click();
+	await own.getByTestId('ask-yes').click();
 	await expect(own.getByText('ana turned off')).toBeVisible();
 	await ana.goto('/library');
 	await expect(ana).toHaveURL(/\/login/);
-	own.once('dialog', (d) => d.accept());
 	await own.getByRole('button', { name: 'Turn on ana' }).click();
+	await own.getByTestId('ask-yes').click();
 	await expect(own.getByText('ana turned on')).toBeVisible();
 });
 
@@ -348,15 +348,11 @@ test('single sign-on links are undone: the owner unlinks a person, and the owner
 
 	// The owner unlinks Pat from Users; the browser asks twice, since it is Pat's only way in.
 	await own.goto('/settings/users');
-	const asked: string[] = [];
-	const yes = (d: Dialog) => (asked.push(d.message()), d.accept());
-	own.removeAllListeners('dialog'); // a once() above may still wait for a dialog that never came
-	own.on('dialog', yes);
 	await own.getByRole('button', { name: 'Unlink the single sign-on sign-in of pat' }).click();
+	await own.getByTestId('ask-yes').click();
+	await expect(own.getByTestId('ask-text')).toContainText('has no password and will be locked out');
+	await own.getByTestId('ask-yes').click();
 	await expect(own.getByText('Sign-in unlinked for pat')).toBeVisible();
-	own.off('dialog', yes);
-	expect(asked).toHaveLength(2);
-	expect(asked[1]).toContain('has no password and will be locked out');
 	await expect(own.getByRole('button', { name: 'Unlink the single sign-on sign-in of pat' })).toHaveCount(0);
 	// The device that single sign-on signed in is signed out.
 	await pat.reload();

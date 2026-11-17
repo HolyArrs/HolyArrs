@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -46,7 +47,7 @@
 	}
 
 	async function revoke(k: ApiKey) {
-		if (!confirm(t('arrapi.keys.revokeConfirm', { label: k.label }))) return;
+		if (!(await ask(t('arrapi.keys.revokeConfirm', { label: k.label })))) return;
 		try {
 			await api.del(`/auth/keys/${k.id}`);
 			keys = keys.filter((x) => x.id !== k.id);

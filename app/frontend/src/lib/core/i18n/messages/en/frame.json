@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs tries again on its own",
 	"frame.feeds.clearNow": "Clear now",
 	"frame.feeds.cleared": "Cleared from the Downloader",
-	"frame.feeds.clearStill": "Not cleared yet"
+	"frame.feeds.clearStill": "Not cleared yet",
+	"frame.error.pageGone": "This page doesn't exist. The link may be old or mistyped."
 }

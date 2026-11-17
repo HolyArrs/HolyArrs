@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask as askSure } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// Choices for a download that needs a decision: one reason, one primary fix, the rest under More, and the plan behind Why. A season pack or album gets the same shape for the whole pack.
@@ -39,7 +40,7 @@
 				? t('downloads.dp.stopMany', { episodes, each: pack ? t('downloads.dp.eachOfThem') : t('downloads.dp.thisOne', { one: w.one }), whole })
 				: t('downloads.dp.stopPlain', { name, version: d.version })
 		}[action];
-		if (ask && !confirm(ask)) return;
+		if (ask && !(await askSure(ask))) return;
 		busy = key;
 		try {
 			await api.post(`/needs-decision/${d.slot_id}/decide`, pack ? { action, pack: true } : { action });
@@ -56,7 +57,7 @@
 	// Import this file: the person says the download's one video is this movie. A movie with a file swaps it; the old one goes to Recently deleted.
 	async function importFile(d: Decision, key: string) {
 		const ask = d.has_copy ? 'downloads.dp.askImportReplace' : 'downloads.dp.askImport';
-		if (!confirm(t(ask, { file: d.import_file ?? '', name: decisionName(d) }))) return;
+		if (!(await askSure(t(ask, { file: d.import_file ?? '', name: decisionName(d) })))) return;
 		busy = key;
 		try {
 			await api.post(`/needs-decision/${d.slot_id}/decide`, { action: 'import', replace: d.has_copy });

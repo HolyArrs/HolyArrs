@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs จะลองใหม่เอง",
 	"frame.feeds.clearNow": "ล้างเดี๋ยวนี้",
 	"frame.feeds.cleared": "ล้างออกจากตัวดาวน์โหลดแล้ว",
-	"frame.feeds.clearStill": "ยังไม่ได้ล้าง"
+	"frame.feeds.clearStill": "ยังไม่ได้ล้าง",
+	"frame.error.pageGone": "ไม่มีหน้านี้ ลิงก์อาจเก่าหรือพิมพ์ผิด"
 }

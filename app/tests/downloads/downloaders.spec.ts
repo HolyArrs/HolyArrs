@@ -134,10 +134,10 @@ test('a movie downloads through qBittorrent; Mark failed sends the next Release 
 	let state = await (await fetch(`${qbit}/state`)).json();
 	expect(state.added.filter((hash: string) => hash === first)).toHaveLength(1);
 
-	page.once('dialog', (d) => d.accept());
 	await dl.getByTestId('dl-line').click();
 	await page.getByTestId('dl-pane').getByRole('button', { name: 'More actions' }).click();
 	await page.getByRole('menuitem', { name: 'Mark failed' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(page.getByText('Marked failed')).toBeVisible();
 	// The failed one leaves qBittorrent and the 720p copy is sent instead.
 	await expect.poll(async () => {

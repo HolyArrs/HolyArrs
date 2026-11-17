@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs покушава поново сам",
 	"frame.feeds.clearNow": "Очисти сада",
 	"frame.feeds.cleared": "Очишћено из Преузимача",
-	"frame.feeds.clearStill": "Још није очишћено"
+	"frame.feeds.clearStill": "Још није очишћено",
+	"frame.error.pageGone": "Ова страница не постоји. Веза је можда стара или погрешно унета."
 }

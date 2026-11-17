@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs kendisi yeniden dener",
 	"frame.feeds.clearNow": "Şimdi kaldır",
 	"frame.feeds.cleared": "İndiriciden kaldırıldı",
-	"frame.feeds.clearStill": "Henüz kaldırılmadı"
+	"frame.feeds.clearStill": "Henüz kaldırılmadı",
+	"frame.error.pageGone": "Bu sayfa yok. Bağlantı eski ya da yanlış yazılmış olabilir."
 }

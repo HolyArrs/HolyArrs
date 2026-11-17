@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "O HolyArrs tenta de novo sozinho",
 	"frame.feeds.clearNow": "Limpar agora",
 	"frame.feeds.cleared": "Limpo do Gestor de downloads",
-	"frame.feeds.clearStill": "Ainda não limpo"
+	"frame.feeds.clearStill": "Ainda não limpo",
+	"frame.error.pageGone": "Esta página não existe. A ligação pode estar desatualizada ou mal escrita."
 }

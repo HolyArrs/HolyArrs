@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "يعيد HolyArrs المحاولة تلقائيًا",
 	"frame.feeds.clearNow": "إزالة الآن",
 	"frame.feeds.cleared": "تمت الإزالة من برنامج التنزيل",
-	"frame.feeds.clearStill": "لم تتم الإزالة بعد"
+	"frame.feeds.clearStill": "لم تتم الإزالة بعد",
+	"frame.error.pageGone": "هذه الصفحة غير موجودة. ربما الرابط قديم أو مكتوب بشكل خاطئ."
 }

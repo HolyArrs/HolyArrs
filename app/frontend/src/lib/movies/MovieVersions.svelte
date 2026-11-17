@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
@@ -66,7 +67,7 @@
 	}
 
 	export async function remove(v: VersionView) {
-		if (!confirm(t('movies.versions.stopConfirm', { label: v.label }))) return;
+		if (!(await ask(t('movies.versions.stopConfirm', { label: v.label })))) return;
 		try {
 			await api.del(`/titles/${title.id}/versions/${v.id}`);
 			await onchange();

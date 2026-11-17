@@ -101,5 +101,6 @@
   "frame.feeds.clearBody": "HolyArrs försöker igen av sig själv",
   "frame.feeds.clearNow": "Rensa nu",
   "frame.feeds.cleared": "Rensad från Nedladdaren",
-  "frame.feeds.clearStill": "Inte rensad än"
+  "frame.feeds.clearStill": "Inte rensad än",
+	"frame.error.pageGone": "Sidan finns inte. Länken kan vara gammal eller felskriven."
 }

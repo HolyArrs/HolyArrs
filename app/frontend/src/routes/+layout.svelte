@@ -44,6 +44,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { trackInputModality } from './(frame)/focus.ts';
 	import { focusField, rememberReturn, searchField } from '#lib/core/search-field.svelte.ts';
+	import AskHost from './(frame)/AskHost.svelte';
 	import {
 		buildNav,
 		currentHref,
@@ -572,6 +573,7 @@
 	</Sheet>
 {/if}
 <ToastList />
+<AskHost />
 <Theater />
 
 <style>

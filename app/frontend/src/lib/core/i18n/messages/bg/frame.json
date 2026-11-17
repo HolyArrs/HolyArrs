@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs опитва отново сам",
 	"frame.feeds.clearNow": "Изчисти сега",
 	"frame.feeds.cleared": "Изчистено от Програмата за изтегляне",
-	"frame.feeds.clearStill": "Още не е изчистено"
+	"frame.feeds.clearStill": "Още не е изчистено",
+	"frame.error.pageGone": "Тази страница не съществува. Връзката може да е стара или сгрешена."
 }

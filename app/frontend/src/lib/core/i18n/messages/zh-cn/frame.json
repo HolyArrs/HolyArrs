@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs 会自动重试",
 	"frame.feeds.clearNow": "立即清除",
 	"frame.feeds.cleared": "已从下载器清除",
-	"frame.feeds.clearStill": "尚未清除"
+	"frame.feeds.clearStill": "尚未清除",
+	"frame.error.pageGone": "此页面不存在。链接可能已过期或输入有误。"
 }

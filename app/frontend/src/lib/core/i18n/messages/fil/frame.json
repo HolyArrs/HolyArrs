@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "Sinusubukan ulit ng HolyArrs nang mag-isa",
 	"frame.feeds.clearNow": "I-clear na ngayon",
 	"frame.feeds.cleared": "Na-clear mula sa Downloader",
-	"frame.feeds.clearStill": "Hindi pa na-clear"
+	"frame.feeds.clearStill": "Hindi pa na-clear",
+	"frame.error.pageGone": "Wala ang page na ito. Maaaring luma o mali ang pagkakasulat ng link."
 }

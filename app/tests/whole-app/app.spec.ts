@@ -194,8 +194,8 @@ test('make and revoke an API key', async () => {
 	await page.getByRole('button', { name: 'Make a key' }).click();
 	await expect(page.getByText('It is shown only once')).toBeVisible();
 	await expect(page.locator('code.key')).toContainText('hak_');
-	page.once('dialog', (d) => d.accept());
 	await page.getByRole('button', { name: 'Revoke' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(page.getByText('No API keys')).toBeVisible();
 });
 

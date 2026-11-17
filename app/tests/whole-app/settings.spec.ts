@@ -327,8 +327,8 @@ test('Requests from Seerr and Overseerr: switch on, make a key shown once, remov
 	await expect(card.getByTestId('seerr-key-sonarr')).toContainText(key.slice(-4));
 	await expect(card).not.toContainText(key);
 
-	page.once('dialog', (d) => void d.accept());
 	await card.getByTestId('seerr-side-sonarr').getByRole('button', { name: 'Remove key' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(card.getByTestId('seerr-side-sonarr')).toContainText('No key');
 	await card.getByTestId('seerr-on').uncheck();
 	await expect(card.getByTestId('seerr-side-sonarr')).toHaveCount(0);

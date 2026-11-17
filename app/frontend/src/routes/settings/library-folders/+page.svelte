@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
@@ -262,7 +263,7 @@
 	}
 
 	async function remove(f: LibraryFolder) {
-		if (!confirm(t('settings.libraryFolders.confirmRemove', { path: f.path }))) return;
+		if (!(await ask(t('settings.libraryFolders.confirmRemove', { path: f.path })))) return;
 		busyId = f.id;
 		try {
 			await api.del(`/library-folders/${f.id}`);

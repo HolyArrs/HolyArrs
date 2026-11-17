@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs bando iš naujo pats",
 	"frame.feeds.clearNow": "Išvalyti dabar",
 	"frame.feeds.cleared": "Išvalyta iš Atsisiuntėjo",
-	"frame.feeds.clearStill": "Dar neišvalyta"
+	"frame.feeds.clearStill": "Dar neišvalyta",
+	"frame.error.pageGone": "Šio puslapio nėra. Nuoroda gali būti sena arba neteisingai įvesta."
 }

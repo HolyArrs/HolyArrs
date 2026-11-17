@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
@@ -110,7 +111,7 @@
 		}
 	}
 	async function unlinkPlex() {
-		if (!confirm(t('settings.signIn.confirmUnlink'))) return;
+		if (!(await ask(t('settings.signIn.confirmUnlink')))) return;
 		try {
 			plexOwner = await api.del<{ linked: boolean; name: string; can_import: boolean }>('/auth/plex/link');
 			plexServers = [];

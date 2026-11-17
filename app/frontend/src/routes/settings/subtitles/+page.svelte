@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
@@ -213,7 +214,7 @@
 	}
 
 	async function remove(s: SiteView) {
-		if (!confirm(t('settings.subtitles.confirmRemove', { name: s.name }))) return;
+		if (!(await ask(t('settings.subtitles.confirmRemove', { name: s.name })))) return;
 		try {
 			await api.del(`/subtitle-sites/${s.ID}`);
 			await loadSites();

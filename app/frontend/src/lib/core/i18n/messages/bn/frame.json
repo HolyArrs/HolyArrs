@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs নিজেই আবার চেষ্টা করে",
 	"frame.feeds.clearNow": "এখনই মুছুন",
 	"frame.feeds.cleared": "ডাউনলোডার থেকে মোছা হয়েছে",
-	"frame.feeds.clearStill": "এখনও মোছা হয়নি"
+	"frame.feeds.clearStill": "এখনও মোছা হয়নি",
+	"frame.error.pageGone": "এই পেজটি নেই। লিংকটি পুরনো বা ভুল লেখা হতে পারে।"
 }

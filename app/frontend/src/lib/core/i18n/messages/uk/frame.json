@@ -101,5 +101,6 @@
 	"frame.feeds.clearBody": "HolyArrs спробує знову сам",
 	"frame.feeds.clearNow": "Прибрати зараз",
 	"frame.feeds.cleared": "Прибрано із завантажувача",
-	"frame.feeds.clearStill": "Ще не прибрано"
+	"frame.feeds.clearStill": "Ще не прибрано",
+	"frame.error.pageGone": "Такої сторінки немає. Можливо, посилання застаріле або набране з помилкою."
 }
