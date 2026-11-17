@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "سایت",
 	"settings.sources.addressSite": "نشانی خود سایت. فقط اگر سایت جابه‌جا شده آن را تغییر دهید.",
 	"settings.sources.siteKeyLabel": "کوکی یا کلید RSS",
-	"settings.sources.siteKeyHint": "از حساب خودتان: uid و pass از کوکی مرورگر، یا u و tp از پیوند RSS شما. به‌صورت رمزگذاری‌شده نگه داشته می‌شود."
+	"settings.sources.siteKeyHint": "از حساب خودتان: uid و pass از کوکی مرورگر، یا u و tp از پیوند RSS شما. به‌صورت رمزگذاری‌شده نگه داشته می‌شود.",
+	"settings.sources.sendTo": "ارسال دانلودها به",
+	"settings.sources.sendToAny": "هر دانلودری",
+	"settings.sources.sendToHint": "هر چه از این منبع انتخاب شود فقط به این دانلودر می‌رود. اگر از کار افتاده باشد، منتظر می‌ماند.",
+	"settings.sources.sendToGone": "دانلودر انتخاب‌شده حذف شد. دانلودهای این منبع اکنون به هر دانلودری می‌روند."
 }

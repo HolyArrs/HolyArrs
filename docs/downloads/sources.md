@@ -107,6 +107,7 @@ More in [Troubleshooting](../../help/troubleshooting/).
 | Priority | 1 to 50. Lower is asked first and wins ties between equal Releases | 25 | You trust one Source more |
 | Fewest seeders | Torrents with fewer seeders are skipped | 1 | You want healthier torrents |
 | Tags | Only titles with a matching tag use it. Empty means all titles | Empty | A Source is for some titles only |
+| Send downloads to | Every Release chosen from this Source goes only to this Downloader, whatever the title's tags. If that Downloader is paused or down, the download waits and never goes to another one. If it is removed, the Source goes back to any Downloader and its settings say so | Any Downloader | Private trackers that must use their own torrent app |
 | Limits | **Most searches per window**, **Window (hours)**, **Least time between calls (ms)**, **Give up after (seconds)**. 0 is no limit, except give up after: 1 to 300 | 0 | The site has a daily cap or slows you down |
 | Proxy | Sends every call through an HTTP or SOCKS5 proxy, such as `socks5://name@host:1080` or `http://host:3128` | Empty | The site needs another route |
 | Reach the local network | Lets it call this machine or your home network | Off | Jackett or Prowlarr runs at home |

@@ -79,6 +79,9 @@ type Input struct {
 	ProxyAllowLocal *bool                `json:"proxy_allow_local_network"`
 	// Tags limit the Source to titles that share one of them. Nil keeps the stored tags.
 	Tags []string `json:"tags"`
+	// DownloaderID picks the one Downloader this Source's grabs go to; 0 is
+	// any Downloader and nil keeps the stored choice.
+	DownloaderID *int64 `json:"downloader_id"`
 }
 
 // queryErr is the error behind ErrQuery.
@@ -597,6 +600,13 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 	}
 	if in.Tags != nil || isNew || src.Tags == nil {
 		src.Tags = mediafiles.CleanTags(in.Tags)
+	}
+	if in.DownloaderID != nil {
+		src.DownloaderID = nil
+		if *in.DownloaderID > 0 {
+			id := *in.DownloaderID
+			src.DownloaderID = &id
+		}
 	}
 	if in.Priority != nil {
 		if *in.Priority < 1 || *in.Priority > 50 {

@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "साइट",
 	"settings.sources.addressSite": "साइट का अपना पता। इसे तभी बदलें जब साइट कहीं और चली गई हो।",
 	"settings.sources.siteKeyLabel": "कुकी या RSS कुंजी",
-	"settings.sources.siteKeyHint": "अपने ही खाते से: ब्राउज़र कुकी से uid और pass, या अपने RSS लिंक से u और tp। एन्क्रिप्ट करके रखा जाता है।"
+	"settings.sources.siteKeyHint": "अपने ही खाते से: ब्राउज़र कुकी से uid और pass, या अपने RSS लिंक से u और tp। एन्क्रिप्ट करके रखा जाता है।",
+	"settings.sources.sendTo": "डाउनलोड यहाँ भेजें",
+	"settings.sources.sendToAny": "कोई भी डाउनलोडर",
+	"settings.sources.sendToHint": "इस स्रोत से चुनी गई हर चीज़ सिर्फ़ इसी डाउनलोडर में जाती है। यह बंद हो तो इंतज़ार होता है।",
+	"settings.sources.sendToGone": "चुना गया डाउनलोडर हटा दिया गया। इस स्रोत के डाउनलोड अब किसी भी डाउनलोडर में जाते हैं।"
 }

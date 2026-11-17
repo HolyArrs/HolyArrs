@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Vietne",
 	"settings.sources.addressSite": "Vietnes pašas adrese. Maini to tikai tad, ja vietne ir pārvākusies.",
 	"settings.sources.siteKeyLabel": "Sīkdatne vai RSS atslēga",
-	"settings.sources.siteKeyHint": "No sava konta: uid un pass no pārlūka sīkdatnes vai u un tp no tavas RSS saites. Glabājas šifrēti."
+	"settings.sources.siteKeyHint": "No sava konta: uid un pass no pārlūka sīkdatnes vai u un tp no tavas RSS saites. Glabājas šifrēti.",
+	"settings.sources.sendTo": "Sūtīt lejupielādes uz",
+	"settings.sources.sendToAny": "Jebkurš lejupielādētājs",
+	"settings.sources.sendToHint": "Viss, kas izvēlēts no šī avota, nonāk tikai šajā lejupielādētājā. Ja tas nedarbojas, gaida.",
+	"settings.sources.sendToGone": "Izvēlētais lejupielādētājs ir noņemts. Šī avota lejupielādes tagad nonāk jebkurā lejupielādētājā."
 }

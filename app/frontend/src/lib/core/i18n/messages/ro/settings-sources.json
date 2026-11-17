@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Site",
 	"settings.sources.addressSite": "Adresa proprie a site-ului. Schimb-o doar dacă site-ul s-a mutat.",
 	"settings.sources.siteKeyLabel": "Cookie sau cheie RSS",
-	"settings.sources.siteKeyHint": "Din contul tău: uid și pass din cookie-ul browserului, sau u și tp din linkul tău RSS. Păstrat criptat."
+	"settings.sources.siteKeyHint": "Din contul tău: uid și pass din cookie-ul browserului, sau u și tp din linkul tău RSS. Păstrat criptat.",
+	"settings.sources.sendTo": "Trimite descărcările la",
+	"settings.sources.sendToAny": "Orice program de descărcare",
+	"settings.sources.sendToHint": "Tot ce se alege din această sursă merge doar la acest program. Dacă nu merge, așteaptă.",
+	"settings.sources.sendToGone": "Programul de descărcare ales a fost eliminat. Descărcările din această sursă merg acum la orice program."
 }

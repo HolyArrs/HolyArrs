@@ -148,3 +148,25 @@ test('the Connect card fits a phone and passes the accessibility check', async (
 	expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
 	await page.setViewportSize({ width: 1280, height: 720 });
 });
+
+// A Source tied to a Downloader that was later removed goes back to any
+// Downloader, and its settings say so.
+test('a Source whose chosen Downloader is gone says so and goes back to any', async () => {
+	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
+	const call = (method: string, path: string, data?: unknown) => page.request.fetch(`/api/v1${path}`, { method, data, headers: { 'X-CSRF-Token': me.csrf } });
+	const list = ((await (await call('GET', '/sources')).json()) as { sources: { id: number; name: string }[] }).sources;
+	const src = list.find((x) => x.name === 'Lab Torznab');
+	if (!src) throw new Error('Lab Torznab is missing');
+	expect((await call('PUT', `/sources/${src.id}`, { name: 'Lab Torznab', downloader_id: 999999 })).ok()).toBe(true);
+
+	await page.goto('/settings/sources');
+	const row = page.getByTestId('source').filter({ hasText: 'Lab Torznab' });
+	await row.hover();
+	await row.getByRole('button', { name: 'Change' }).click();
+	await expect(page.getByTestId('so-send-gone')).toContainText('The chosen Downloader was removed');
+	await expect(page.getByLabel('Send downloads to')).toHaveValue('0');
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(row).toBeVisible();
+	const saved = ((await (await call('GET', '/sources')).json()) as { sources: { id: number; downloader_id: number }[] }).sources.find((x) => x.id === src.id);
+	expect(saved?.downloader_id).toBe(0);
+});

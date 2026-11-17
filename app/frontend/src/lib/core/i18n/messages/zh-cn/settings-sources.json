@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "站点",
 	"settings.sources.addressSite": "站点自身的地址。仅在站点迁移后才更改。",
 	"settings.sources.siteKeyLabel": "Cookie 或 RSS 密钥",
-	"settings.sources.siteKeyHint": "来自你自己的账号：浏览器 Cookie 中的 uid 和 pass，或 RSS 链接中的 u 和 tp。加密保存。"
+	"settings.sources.siteKeyHint": "来自你自己的账号：浏览器 Cookie 中的 uid 和 pass，或 RSS 链接中的 u 和 tp。加密保存。",
+	"settings.sources.sendTo": "下载发送到",
+	"settings.sources.sendToAny": "任意下载器",
+	"settings.sources.sendToHint": "从此来源选中的内容只发送到这个下载器。它停止时会等待。",
+	"settings.sources.sendToGone": "所选下载器已被删除。此来源的下载现在发送到任意下载器。"
 }

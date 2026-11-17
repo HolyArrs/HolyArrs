@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "網站",
 	"settings.sources.addressSite": "網站本身的位址。只有在網站搬家時才變更。",
 	"settings.sources.siteKeyLabel": "Cookie 或 RSS 金鑰",
-	"settings.sources.siteKeyHint": "來自你自己的帳號：瀏覽器 Cookie 中的 uid 和 pass，或 RSS 連結中的 u 和 tp。加密保存。"
+	"settings.sources.siteKeyHint": "來自你自己的帳號：瀏覽器 Cookie 中的 uid 和 pass，或 RSS 連結中的 u 和 tp。加密保存。",
+	"settings.sources.sendTo": "下載傳送到",
+	"settings.sources.sendToAny": "任意下載器",
+	"settings.sources.sendToHint": "從此來源選中的內容只傳送到這個下載器。它停止時會等待。",
+	"settings.sources.sendToGone": "所選下載器已被刪除。此來源的下載現在傳送到任意下載器。"
 }

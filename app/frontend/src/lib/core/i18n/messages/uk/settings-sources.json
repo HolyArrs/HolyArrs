@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Сайт",
 	"settings.sources.addressSite": "Власна адреса сайту. Змінюйте її, лише якщо сайт переїхав.",
 	"settings.sources.siteKeyLabel": "Cookie або ключ RSS",
-	"settings.sources.siteKeyHint": "З вашого облікового запису: uid і pass із cookie браузера або u і tp із вашого посилання RSS. Зберігається зашифрованим."
+	"settings.sources.siteKeyHint": "З вашого облікового запису: uid і pass із cookie браузера або u і tp із вашого посилання RSS. Зберігається зашифрованим.",
+	"settings.sources.sendTo": "Надсилати завантаження до",
+	"settings.sources.sendToAny": "Будь-який завантажувач",
+	"settings.sources.sendToHint": "Усе, що вибрано з цього джерела, йде лише до цього завантажувача. Якщо він не працює, чекає.",
+	"settings.sources.sendToGone": "Вибраний завантажувач видалено. Завантаження з цього джерела тепер ідуть до будь-якого завантажувача."
 }

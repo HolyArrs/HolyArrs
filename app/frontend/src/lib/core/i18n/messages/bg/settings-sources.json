@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Сайт",
 	"settings.sources.addressSite": "Собственият адрес на сайта. Променяй го само ако сайтът се е преместил.",
 	"settings.sources.siteKeyLabel": "Бисквитка или RSS ключ",
-	"settings.sources.siteKeyHint": "От собствения ти профил: uid и pass от бисквитката в браузъра или u и tp от RSS връзката ти. Пази се шифровано."
+	"settings.sources.siteKeyHint": "От собствения ти профил: uid и pass от бисквитката в браузъра или u и tp от RSS връзката ти. Пази се шифровано.",
+	"settings.sources.sendTo": "Изпращай изтеглянията към",
+	"settings.sources.sendToAny": "Всяка програма за изтегляне",
+	"settings.sources.sendToHint": "Всичко избрано от този източник отива само към тази програма. Ако не работи, изчаква.",
+	"settings.sources.sendToGone": "Избраната програма за изтегляне е премахната. Изтеглянията от този източник вече отиват към всяка програма."
 }

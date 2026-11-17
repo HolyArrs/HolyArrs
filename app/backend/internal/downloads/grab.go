@@ -233,6 +233,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	} else {
 		var dls []domain.Downloader
 		var skipped []string
+		tryOne := false
 		if attempt != nil {
 			window = 0
 			var original domain.Downloader
@@ -254,6 +255,12 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 				return 0, err
 			}
 			fit := mediafiles.Downloaders(all, titleTags, func(d domain.Downloader) []string { return d.Tags })
+			// A Source tied to one Downloader sends there whatever the tags, and
+			// never on to another when that one is down.
+			if own := sourceDownloader(ctx, db, rel, all); own != nil {
+				fit = []domain.Downloader{*own}
+				tryOne = true
+			}
 			if len(fit) == 0 && len(all) > 0 {
 				return 0, &TagsError{Protocol: rel.Protocol, Title: titleTags}
 			}
@@ -277,7 +284,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		// When one cannot take the Release, the next of the same protocol is tried
 		// (setting try_next_downloader, default on), and the error says why each one
 		// failed.
-		tryNext := true
+		tryNext := !tryOne
 		var v string
 		if db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'what_to_pick' AND key = 'try_next_downloader'").Scan(&v) == nil && v == "false" {
 			tryNext = false
@@ -699,4 +706,20 @@ func (m *Manager) settleLostChoices(ctx context.Context) {
 		log.Printf("downloads: warning: Release %d chosen for Slot %d was never sent to a Downloader; the Slot goes back to wanted", p[1], p[0])
 		m.giveUp(ctx, p[0], p[1], lostChoiceReason, false, domain.System)
 	}
+}
+
+// sourceDownloader is the one Downloader the Release's Source sends to, or nil
+// for any. A chosen Downloader that was removed, or is for the other protocol,
+// counts as any.
+func sourceDownloader(ctx context.Context, db database.Querier, rel domain.Release, all []domain.Downloader) *domain.Downloader {
+	var src domain.Source
+	if database.Get(ctx, db, "sources", rel.SourceID, &src) != nil || src.DownloaderID == nil {
+		return nil
+	}
+	for i := range all {
+		if all[i].ID == *src.DownloaderID {
+			return &all[i]
+		}
+	}
+	return nil
 }

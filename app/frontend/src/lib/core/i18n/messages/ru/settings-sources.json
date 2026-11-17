@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Сайт",
 	"settings.sources.addressSite": "Собственный адрес сайта. Меняйте его, только если сайт переехал.",
 	"settings.sources.siteKeyLabel": "Cookie или ключ RSS",
-	"settings.sources.siteKeyHint": "Из вашего аккаунта: uid и pass из cookie браузера или u и tp из вашей ссылки RSS. Хранится в зашифрованном виде."
+	"settings.sources.siteKeyHint": "Из вашего аккаунта: uid и pass из cookie браузера или u и tp из вашей ссылки RSS. Хранится в зашифрованном виде.",
+	"settings.sources.sendTo": "Отправлять загрузки в",
+	"settings.sources.sendToAny": "Любой загрузчик",
+	"settings.sources.sendToHint": "Всё, что выбрано из этого источника, идёт только в этот загрузчик. Если он не работает, ждёт.",
+	"settings.sources.sendToGone": "Выбранный загрузчик удалён. Загрузки из этого источника теперь идут в любой загрузчик."
 }

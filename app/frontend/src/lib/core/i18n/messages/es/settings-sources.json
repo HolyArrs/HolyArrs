@@ -77,5 +77,9 @@
 	"settings.sources.siteLabel": "Sitio",
 	"settings.sources.addressSite": "La dirección propia del sitio. Cámbiala solo si el sitio se mudó.",
 	"settings.sources.siteKeyLabel": "Cookie o clave RSS",
-	"settings.sources.siteKeyHint": "De tu propia cuenta: uid y pass de la cookie del navegador, o u y tp de tu enlace RSS. Se guarda cifrada."
+	"settings.sources.siteKeyHint": "De tu propia cuenta: uid y pass de la cookie del navegador, o u y tp de tu enlace RSS. Se guarda cifrada.",
+	"settings.sources.sendTo": "Enviar descargas a",
+	"settings.sources.sendToAny": "Cualquier gestor de descargas",
+	"settings.sources.sendToHint": "Todo lo elegido de esta fuente va solo a este gestor. Si no funciona, espera.",
+	"settings.sources.sendToGone": "El gestor de descargas elegido se eliminó. Las descargas de esta fuente ahora van a cualquier gestor."
 }
