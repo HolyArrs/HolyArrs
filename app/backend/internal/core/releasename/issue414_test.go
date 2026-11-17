@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// Issue #414: a written number beats UHD/4K, and HUN reads as Hungarian.
+// A written number beats UHD/4K, and HUN reads as Hungarian.
 func TestIssue414_NumberBeatsUHD(t *testing.T) {
 	r := Parse("The.Matrix.Reloaded.2003.720p.UHD.BluRay.DD-EX5.1 x264.HuN-SnyderHD", Hints{})
 	if r.Resolution.Value != 720 || r.Resolution.Conf != Sure || len(r.Notes) != 0 {

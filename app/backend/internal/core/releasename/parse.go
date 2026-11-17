@@ -77,7 +77,7 @@ var langWords = map[string]string{
 // moreLangWords are read as languages after the title, but never end a title,
 // because many are ordinary title words ("My Big Fat Greek Wedding"). Short
 // words that clash with names (fin, dan, tur, pol, chi, pl, nl) stay out; hun
-// is common in Hungarian release names (#414) and needs a tag on both sides.
+// is common in Hungarian release names and needs a tag on both sides.
 var moreLangWords = map[string]string{
 	"polish": "pl", "dutch": "nl", "flemish": "nl", "portuguese": "pt", "swedish": "sv", "swe": "sv",
 	"danish": "da", "norwegian": "no", "finnish": "fi", "czech": "cs", "cze": "cs", "hungarian": "hu", "hun": "hu",
@@ -506,7 +506,7 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 
 	// Resolution. Two different values make it a guess; the later one wins.
 	// UHD and 4K count only when no number is written ("720p.UHD.BluRay"
-	// is a 720p cut of a UHD disc, as Sonarr and Radarr read it; #414).
+	// is a 720p cut of a UHD disc, as Sonarr and Radarr read it).
 	var seen []int
 	for _, t := range low {
 		if m := reResWord.FindStringSubmatch(t); m != nil {
