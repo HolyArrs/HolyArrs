@@ -38,6 +38,10 @@ Pick which changes the server hears about: **An import**, **A rename**, **A dele
 
 Fill **HolyArrs path** and **Same folder on the server** only when the two see files under different paths. If HolyArrs sees `/movies` and the server sees `/media/movies`, enter `/movies` first and `/media/movies` second. Fill both or neither.
 
+### Address for browsers
+
+Jellyfin and Emby only. Enter the address people open the server at on their phone or computer, like `https://jellyfin.example.com`. Library title pages the server has then show an **Open in Jellyfin** (or **Open in Emby**) button that opens the title in the server's web app, in a new tab. Only people who manage the Library see the button. Leave it empty for no button. Plex has no button.
+
 ### Reach the local network
 
 On by default, since media servers are almost always at home. Turn it off for a server on the internet. HolyArrs never calls link-local or cloud metadata addresses, whatever this says.
@@ -62,6 +66,8 @@ The card shows the last check or the last error. Each update also lands in [Hist
 | "the server has no movie, TV or music library" | Add a library in Plex, then test again |
 | "type the token again when the server address changes" | Paste the token again and save |
 | "give both sides of the path map, or neither" | Fill both path boxes, or clear both |
+| "the browser address must be an http or https link with a host" | Enter the full address with `http://` or `https://` |
+| No Open in button on a title page | The server lacks that title, or its address for browsers is empty, or the server did not answer |
 | The server scans, but nothing new shows | The paths differ. Set the path pair |
 
 ## For experts
