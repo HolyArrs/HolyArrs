@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Indsæt et id, f.eks. tmdb:693134 eller tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Eller beskriv den, f.eks. “rumfilm med en robot fra 2014”.",
 	"discover.search.lookEverywhere": "Led overalt",
-	"discover.search.searchIndexersFor": "Søg i indeksere efter “{searched}”",
+	"discover.search.searchIndexersFor": "Tjek dine kilder",
 	"discover.search.topMatches": "Bedste match",
 	"discover.people.goToTheFilmography": "Gå til filmografien",
 	"discover.people.filmography": "Filmografi",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Passer ikke til denne version",
 	"discover.leftovers.reason.movie_has_file": "Filmen har allerede en fil",
 	"discover.leftovers.reason.replaced_by_hand": "Erstattet af en anden fil",
-	"discover.leftovers.reason.unmatched": "Kobling fjernet i hånden"
+	"discover.leftovers.reason.unmatched": "Kobling fjernet i hånden",
+	"discover.searchSections.genres": "Genrer",
+	"discover.searchSections.moods": "Stemninger",
+	"discover.searchSections.stories": "Historier og temaer",
+	"discover.searchSections.worlds": "Verdener og miljøer",
+	"discover.searchSections.eras": "Perioder",
+	"discover.searchSections.world": "Fra hele verden",
+	"discover.searchSections.collections": "Samlinger",
+	"discover.popularRail.out": "Udkommer",
+	"discover.popularRail.comingDay": "Kommer",
+	"discover.titleLibrary.turnShowOnHint": "Slå serien til for at begynde at lede.",
+	"discover.leftovers.reason.seasons_differ": "Fundet kun via den gamle apps TMDB-nummer: tjek, at det er den samme serie, og match så filen selv"
 }

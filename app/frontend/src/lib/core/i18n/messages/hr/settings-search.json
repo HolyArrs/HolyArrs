@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Odbaci izdanja objavljena prije izlaska",
 	"settings.search.refuseEarlyHint": "Vjerojatno su lažna. Ručni odabir izdanja ih i dalje prikazuje, s upozorenjem.",
 	"settings.search.refuseTiny": "Odbaci lažna izdanja po veličini i vrsti datoteke",
-	"settings.search.refuseTinyHint": "Premala izdanja, prazne datoteke i .wmv ili .asf pod HD nazivima",
+	"settings.search.refuseTinyHint": "Premala izdanja, prazne datoteke, prekinuti videozapisi i .wmv ili .asf pod HD nazivima",
 	"settings.search.grace": "Sati koliko izdanje smije biti rano",
 	"settings.search.graceHint": "Zbog vremenskih zona. Zadano 24.",
 	"settings.search.floors": "Provjeri veličine datoteka pri uvozu",

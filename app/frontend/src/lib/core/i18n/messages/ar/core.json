@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "اسمح لمساعدي الذكاء الاصطناعي باستخدام HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "مفاتيح ومسارات للتطبيقات الأخرى",
+	"core.settings.remoteAccess.label": "الوصول عن بُعد",
+	"core.settings.remoteAccess.about": "الوصول إلى HolyArrs بعيدًا عن المنزل",
 	"core.settings.tmdb.label": "البيانات الوصفية",
 	"core.settings.tmdb.about": "مصدر الملصقات والأسماء",
 	"core.settings.health.label": "فحوصات السلامة",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "كلمة المرور والمصادقة الثنائية والأجهزة",
 	"core.api.sourceOff": "بعض الصفوف متوقفة في هذا التثبيت.",
 	"core.plain.noDownloader": "مصادرك تجد تنزيلات لا يستطيع أي من برامج التنزيل لديك استلامها، لذا لا يمكن إرسال أي منها.",
-	"core.plain.sameDownloader": "إعدادان يصلان إلى برنامج التنزيل نفسه، لذا قد تظهر التنزيلات مرتين."
+	"core.plain.sameDownloader": "إعدادان يصلان إلى برنامج التنزيل نفسه، لذا قد تظهر التنزيلات مرتين.",
+	"core.plain.peopleCheck": "تعذّرت قراءة قائمة مستخدمي خادم الوسائط، لذا لا يُوقف هنا من حُذفوا هناك.",
+	"core.plain.deleted": "محذوف",
+	"core.plain.deletedName": "{name} (محذوف)"
 }

@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "nessuno",
 	"settings.thisApp.needsRestart": "Richiede un riavvio. HOLYARRS_URL_BASE o -url-base lo sostituisce.",
 	"settings.thisApp.save": "Salva",
-	"settings.thisApp.licence": "HolyArrs è software libero con licenza AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs è software libero con licenza AGPL-3.0.",
+	"settings.thisApp.proxy": "Proxy",
+	"settings.thisApp.proxyDesc": "Invia le chiamate esterne tramite un proxy. Le regole di blocco e di rete locale valgono ancora per la vera destinazione.",
+	"settings.thisApp.proxyType": "Tipo",
+	"settings.thisApp.proxyOff": "Spento",
+	"settings.thisApp.proxyHost": "Host",
+	"settings.thisApp.proxyPort": "Porta",
+	"settings.thisApp.proxyUser": "Nome utente",
+	"settings.thisApp.proxyPasswordLabel": "Password",
+	"settings.thisApp.proxyPasswordKept": "Lascia vuoto per mantenere la password salvata",
+	"settings.thisApp.proxyBypass": "Salta il proxy per",
+	"settings.thisApp.proxyBypassHint": "Nomi, indirizzi o intervalli, separati da virgole. *.example.com copre tutti i nomi sotto.",
+	"settings.thisApp.proxyBypassLocal": "Salta il proxy per gli indirizzi locali",
+	"settings.thisApp.proxyBypassLocalHint": "Questa macchina e la rete di casa si collegano direttamente",
+	"settings.thisApp.proxySaved": "Proxy salvato",
+	"settings.thisApp.proxyOffSaved": "Proxy spento"
 }

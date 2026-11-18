@@ -20,8 +20,9 @@
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import type { AlertView } from '#lib/core/types.ts';
 	import { testLabel } from '#lib/core/test-tag.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 
-	const tab = $derived(['jobs', 'updates', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
+	const tab = $derived(['jobs', 'updates', 'support', 'about'].find((t) => t === page.url.searchParams.get('tab')) ?? 'parts');
 	let input = $state<StatusInput | null>(null);
 	// The trailers check is the YouTube reader's state; it is not a part, so it is not a row.
 	const reader = $derived(input?.checks?.find((c) => (c.kind as string) === 'trailers'));
@@ -145,7 +146,7 @@
 				afterChecks(r);
 			} else {
 				const res = await api.post<{ ok: boolean; text: string }>(`/${c.kind}s/${c.id}/test`);
-				toasts.push(res.ok ? t('health.page.connected', { name: r.name }) : t('health.page.cantConnect', { name: r.name }), res.ok ? 'ok' : 'fail', { body: res.ok ? testLabel(res.text) : res.text.trim() || undefined });
+				toasts.push(res.ok ? t('health.page.connected', { name: r.name }) : t('health.page.cantConnect', { name: r.name }), res.ok ? 'ok' : 'fail', { body: res.ok ? testLabel(res.text) : serverWords(res.text.trim()) || undefined });
 				await load(true);
 			}
 		} catch (e) {
@@ -199,7 +200,7 @@
 <div class="status" class:jobs={tab === 'jobs'} data-testid="status-page">
 	<PageHeader title={t('health.page.header')} subtitle={input ? top : undefined}>
 		{#snippet actions()}
-			{#if canAct}
+			{#if canAct && tab !== 'updates'}
 				<Button onclick={checkAll} busy={running.has('all')} disabled={running.has('all')} data-testid="status-check-all">{t('health.page.checkAgain')}</Button>
 			{/if}
 		{/snippet}

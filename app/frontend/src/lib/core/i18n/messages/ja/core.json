@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "AI アシスタントに HolyArrs を使わせる",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "ほかのアプリ向けのキーとルート",
+	"core.settings.remoteAccess.label": "リモートアクセス",
+	"core.settings.remoteAccess.about": "外出先からHolyArrsを使う",
 	"core.settings.tmdb.label": "メタデータ",
 	"core.settings.tmdb.about": "ポスターや名前の取得元",
 	"core.settings.health.label": "稼働状態チェック",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "パスワード、二要素認証、デバイス",
 	"core.api.sourceOff": "このインストールでは一部の行がオフです。",
 	"core.plain.noDownloader": "ソースが見つけたダウンロードを受け取れるダウンローダーが設定されていないため、送信できません。",
-	"core.plain.sameDownloader": "2つのダウンローダーが同じダウンロードアプリにつながっているため、ダウンロードが二重に表示されることがあります。"
+	"core.plain.sameDownloader": "2つのダウンローダーが同じダウンロードアプリにつながっているため、ダウンロードが二重に表示されることがあります。",
+	"core.plain.peopleCheck": "メディアサーバーのユーザー一覧を読み取れないため、そこで削除された人をここでオフにできません。",
+	"core.plain.deleted": "削除済み",
+	"core.plain.deletedName": "{name}（削除済み）"
 }

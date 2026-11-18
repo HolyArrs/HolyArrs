@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "AI 어시스턴트가 HolyArrs를 쓰도록 허용",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "다른 앱용 키와 경로",
+	"core.settings.remoteAccess.label": "원격 접속",
+	"core.settings.remoteAccess.about": "집 밖에서 HolyArrs 사용",
 	"core.settings.tmdb.label": "메타데이터",
 	"core.settings.tmdb.about": "포스터와 이름을 가져오는 곳",
 	"core.settings.health.label": "상태 점검",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "비밀번호, 2단계 인증, 기기",
 	"core.api.sourceOff": "이 설치에서는 일부 줄이 꺼져 있습니다.",
 	"core.plain.noDownloader": "소스가 찾은 다운로드를 받을 수 있는 다운로더가 없어 아무것도 보낼 수 없습니다.",
-	"core.plain.sameDownloader": "두 다운로더가 같은 다운로드 앱에 연결되어 다운로드가 두 번 보일 수 있습니다."
+	"core.plain.sameDownloader": "두 다운로더가 같은 다운로드 앱에 연결되어 다운로드가 두 번 보일 수 있습니다.",
+	"core.plain.peopleCheck": "미디어 서버의 사용자 목록을 읽을 수 없어 그곳에서 삭제된 사람을 여기서 끄지 못합니다.",
+	"core.plain.deleted": "삭제됨",
+	"core.plain.deletedName": "{name} (삭제됨)"
 }

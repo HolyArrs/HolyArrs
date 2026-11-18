@@ -99,6 +99,8 @@ describe('slotNotes', () => {
 	it('drops gate notes (the Why line says it) and repeats across Versions', () => {
 		const slots = [{ reason: 'release gate: searching from 2023-11-21 (digital date)' }, { reason: 'release gate: searching from 2023-11-21 (digital date)' }, { reason: 'searching' }, { reason: 'searching' }, { reason: '' }];
 		expect(slotNotes(slots)).toEqual(['searching']);
+		// A Slot whose import runs again does not show the reason of the card it came from.
+		expect(slotNotes([{ state: 'importing', reason: 'the file could not be placed: something went wrong; see the log' }, { state: 'importing', reason: 'importing' }, { state: 'needs_a_decision', reason: 'a card' }])).toEqual(['importing', 'a card']);
 	});
 });
 

@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "மொழியைச் சேமிக்க முடியவில்லை",
 	"accounts.language.count.one": "1 மொழி",
 	"accounts.language.count.other": "{n} மொழிகள்",
-	"accounts.account.watchEveryone": "உரிமையாளர் இதை அனைவருக்கும் இயக்கியுள்ளார். நிறுத்த இரண்டையும் அணையுங்கள்."
+	"accounts.account.watchEveryone": "உரிமையாளர் இதை அனைவருக்கும் இயக்கியுள்ளார். நிறுத்த இரண்டையும் அணையுங்கள்.",
+	"accounts.watch.title": "பார்த்த குறிகள்",
+	"accounts.watch.hint": "நூலகம் நீங்கள் பார்த்ததைக் காட்ட, ஒரு மீடியா சர்வரில் உங்கள் கணக்கை இங்கே இணைக்கவும்.",
+	"accounts.watch.as": "{server}, {name} ஆக",
+	"accounts.watch.nameOn": "{server} இல் பெயர்",
+	"accounts.watch.passwordOnce": "உங்கள் கடவுச்சொல் {server} க்கு மட்டுமே செல்கிறது, சேமிக்கப்படாது.",
+	"accounts.watch.linked": "{server} இல் {name} உடன் இணைக்கப்பட்டது",
+	"accounts.watch.unlinked": "இணைப்பு நீக்கப்பட்டது",
+	"accounts.login.importPaused": "உங்கள் உள்நுழைவு முடிந்ததால் இறக்குமதி இடைநிறுத்தப்பட்டது. உள்நுழைந்து, நூலகத்தை இறக்குமதி செய் திறந்து, தொடர ஸ்கேன் அழுத்து."
 }

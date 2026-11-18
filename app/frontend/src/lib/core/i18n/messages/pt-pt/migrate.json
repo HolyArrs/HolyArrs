@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Precisam de atenção: {n}",
 	"migrate.needAttentionWhy": "A pasta antiga deles não está neste servidor, por isso chegam como pretendidos a uma pasta daqui. Corrija a pasta ou adicione uma regra de caminho: {list}",
 	"migrate.leftOutUncheckedN": "Deixados de fora: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} está em \"Não trazer\"; escolha uma pasta para ela e importe novamente"
+	"migrate.leftOutUncheckedWhy": "{folder} está em \"Não trazer\"; escolha uma pasta para ela e importe novamente",
+	"migrate.seasonsDifferOne": "Verifica 1 série encontrada pelo número do TMDB",
+	"migrate.seasonsDifferOther": "Verifica {n} séries encontradas pelo número do TMDB",
+	"migrate.seasonsDifferWhy": "Só o número do TMDB da app antiga encontrou {list}, com outro nome aqui. Abre cada uma e verifica se é a mesma série. Se for, as temporadas estão numeradas de outra forma: associa os Ficheiros a mais e depois liga a série. Se não for, remove-a; os ficheiros ficam onde estão.",
+	"migrate.stillChecking": "Séries que o servidor de metadados ainda está a verificar: {n}. Esta lista atualiza-se sozinha quando terminar.",
+	"migrate.stillCheckingImport": "Séries que o servidor de metadados ainda está a verificar: {n}. Já pode importar; são verificadas durante a importação."
 }

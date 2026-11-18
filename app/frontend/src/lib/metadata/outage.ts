@@ -1,4 +1,5 @@
-// An outage needs `fails` failures in a row or failures lasting `ms`, so one slow check never raises it.
+// An outage needs at least `fails` failures in a row spread over at least `ms`,
+// so a short busy spell or one slow check never raises it.
 export interface OutageRules {
 	fails: number;
 	ms: number;
@@ -14,7 +15,7 @@ export interface OutageState {
 
 export type OutageEvent = 'down' | 'up' | null;
 
-export const OUTAGE_RULES: OutageRules = { fails: 2, ms: 20_000 };
+export const OUTAGE_RULES: OutageRules = { fails: 3, ms: 60_000 };
 
 export function outageStart(): OutageState {
 	return { fails: 0, since: 0, down: false, outage: 0, dismissed: 0 };
@@ -28,7 +29,7 @@ export function outageStep(s: OutageState, ok: boolean, now: number, rules: Outa
 	const fails = s.fails + 1;
 	const since = s.fails > 0 ? s.since : now;
 	if (s.down) return { state: { ...s, fails, since }, event: null };
-	if (fails >= rules.fails || now - since >= rules.ms) {
+	if (fails >= rules.fails && now - since >= rules.ms) {
 		return { state: { ...s, fails, since, down: true, outage: s.outage + 1 }, event: 'down' };
 	}
 	return { state: { ...s, fails, since }, event: null };

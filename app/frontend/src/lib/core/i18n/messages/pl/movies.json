@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Reguły wyboru dla tej Odmiany",
 	"movies.versions.folderLabel": "Folder biblioteki dla tej Odmiany",
 	"movies.versions.cancel": "Anuluj",
-	"movies.versions.addButton": "Dodaj odmianę"
+	"movies.versions.addButton": "Dodaj odmianę",
+	"movies.versions.setEdition": "Ustaw wydanie",
+	"movies.versions.editionFileHint": "Które wydanie to jest, na przykład Theatrical lub Directors Cut. Zostaw puste, aby wyczyścić.",
+	"movies.versions.unprotectConfirm": "Usunąć ochronę z {label}? Lepsza kopia znów będzie mogła ją zastąpić.",
+	"movies.versions.editionChars": "Niedozwolone:",
+	"movies.versions.editionInvalid": "Tego wydania nie można użyć. Niech będzie krótkie (litery z akcentami i nielacińskie zajmują więcej miejsca), pomiń znaki wymienione wyżej i nie kończ kropką.",
+	"movies.versions.editionDevice": "Windows rezerwuje nazwę {name} dla urządzeń, więc nie można jej użyć. Wpisz inną."
 }

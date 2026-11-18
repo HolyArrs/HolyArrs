@@ -6,6 +6,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -17,6 +18,8 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
@@ -188,6 +191,26 @@ func (a *handlers) uiHandlers() *health.UIHandlers {
 	return h
 }
 
+// proxyHandlers build the app proxy setting routes (health).
+func (a *handlers) proxyHandlers() *health.ProxyHandlers {
+	return &health.ProxyHandlers{Store: a.s.Store, Secrets: a.s.Secrets}
+}
+
 // ApplyCountryCount passes the stored "Count this install" on to the
 // requests to the metadata server (at start and after each change).
 func (a *handlers) ApplyCountryCount(ctx context.Context) { a.uiHandlers().ApplyCountryCount(ctx) }
+
+// openVault opens the secrets vault and turns on the saved app proxy before
+// anything calls out. A saved proxy that no longer checks out leaves calls
+// going direct, as before it was set.
+func openVault(ctx context.Context, s *database.Store, key []byte) (*secrets.Vault, error) {
+	vault, err := secrets.Open(ctx, s, key)
+	if err != nil {
+		return nil, err
+	}
+	outbound.UseForDefaultTransport()
+	if err := health.LoadProxy(ctx, s, vault); err != nil {
+		log.Printf("proxy: the saved proxy is not used: %v", err)
+	}
+	return vault, nil
+}

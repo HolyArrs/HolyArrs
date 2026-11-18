@@ -3,6 +3,7 @@
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { Snippet } from 'svelte';
 	import IconButton from './IconButton.svelte';
+	import Isolated from './Isolated.svelte';
 	import { reducedMotion } from '../core/motion.ts';
 	import { DUR, EASE } from '../core/transitions.ts';
 	import { dragOffset, dragShuts } from './sheet-drag.ts';
@@ -67,6 +68,8 @@
 		dialog?.close();
 	}
 	function closed() {
+		// The close event arrives a moment after close(); a sheet reopened in between (one question right after another) stays open.
+		if (dialog?.open) return;
 		closing = false;
 		if (dialog) dialog.style.transform = dialog.style.transition = '';
 		if (open) open = false;
@@ -125,7 +128,7 @@
 	<div class="inner" onpointerdown={dragStart} onpointermove={dragMove} onpointerup={dragEnd} onpointercancel={dragEnd}>
 		<header class:sr={hideTitle}>
 			<div class="titles">
-				<h2 id="{id}-t" class:sr-only={hideTitle}>{title}</h2>
+				<h2 id="{id}-t" class:sr-only={hideTitle}><Isolated text={title} /></h2>
 				{#if description}<p id="{id}-d" class:sr-only={hideTitle}>{description}</p>{/if}
 			</div>
 			{#if !hideTitle}<IconButton icon="x" label={closeLabel} variant="tinted" size="sm" tooltip={false} onclick={() => (open = false)} />{/if}

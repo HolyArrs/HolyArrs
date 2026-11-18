@@ -78,6 +78,12 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl mediafiles.Slot, ver media
 			continue
 		}
 		why := copyRefusal(ver, filepath.Base(plan[i].SourceFile), u.relName, d.ConfirmedEdition, facts)
+		if unread := unreadOr(why, facts, plan[i].SourceFile); unread != why {
+			// A refused file that cannot be opened says that, not what its unread audio or edition lacks.
+			plan[i].Method, plan[i].TargetPath = "refuse", ""
+			plan[i].Why = append(plan[i].Why, unread)
+			continue
+		}
 		if why == "" && u.old != nil {
 			if edition, _ := u.old.MediaInfo["edition"].(string); edition != "" && EditionKey(edition) != EditionKey(fmt.Sprint(facts["edition"])) {
 				why = "the new edition differs from the copy in place; choose another Version"

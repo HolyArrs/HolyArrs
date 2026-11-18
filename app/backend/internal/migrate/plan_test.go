@@ -464,7 +464,9 @@ func TestPlanHostileSnapshot(t *testing.T) {
 func TestPlanImportListLines(t *testing.T) {
 	sonarr := &Snapshot{Kind: Sonarr, ImportLists: []Provider{{Name: "Trakt shows", Kind: "TraktListImport", NeedsReentry: []string{"accessToken"}}}}
 	radarr := &Snapshot{Kind: Radarr, ImportLists: []Provider{{Name: "Top films", Kind: "TMDbListImport"}, {Name: "Watch", Kind: "TraktListImport", NeedsReentry: []string{"accessToken"}},
-		{Name: "Other box", Kind: "RadarrImport", NeedsReentry: []string{"apiKey"}}, {Name: "Picks", Kind: "IMDbListImport"}}}
+		{Name: "Other box", Kind: "RadarrImport", NeedsReentry: []string{"apiKey"}}, {Name: "Picks", Kind: "IMDbListImport"},
+		{Name: "MDB picks", Kind: "MDBListImport"}, {Name: "MDB by link", Kind: "CustomImport", Settings: map[string]any{"url": "https://mdblist.com/lists/kim/picks/json"}},
+		{Name: "MDB custom", Kind: "RadarrListImport", Settings: map[string]any{"url": "https://mdblist.com/lists/kim/picks/json"}}}}
 	lidarr := &Snapshot{Kind: Lidarr, ImportLists: []Provider{{Name: "Saved albums", Kind: "SpotifySavedAlbums", NeedsReentry: []string{"refreshToken"}}}}
 	for _, s := range []*Snapshot{sonarr, radarr, lidarr} {
 		s.finish()
@@ -478,6 +480,9 @@ func TestPlanImportListLines(t *testing.T) {
 		"radarr import_lists[1]": {GroupLists, "", "", "its Trakt user or list name did not come over; add it again under Settings > Outside lists"},
 		"radarr import_lists[2]": {GroupOther, "", "", "HolyArrs is one app; it does not copy from another instance; its sign-in does not come over"},
 		"radarr import_lists[3]": {GroupOther, "", "", "HolyArrs reads TMDB lists and public Trakt lists only; this list stays in Radarr"},
+		"radarr import_lists[4]": {GroupOther, "", "", "HolyArrs reads MDBList lists; add it again under Settings > Outside lists"},
+		"radarr import_lists[5]": {GroupOther, "", "", "HolyArrs reads MDBList lists; add it again under Settings > Outside lists"},
+		"radarr import_lists[6]": {GroupOther, "", "", "HolyArrs reads MDBList lists; add it again under Settings > Outside lists"},
 		"lidarr import_lists[0]": {GroupOther, "", "", "HolyArrs Outside lists add movies only for now; this music list stays in Lidarr; its sign-in does not come over"},
 	} {
 		if n, ok := notMoved(p, from); !ok || n.Group != want.Group || n.Why != want.Why {

@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Keele salvestamine ebaõnnestus",
 	"accounts.language.count.one": "1 keel",
 	"accounts.language.count.other": "{n} keelt",
-	"accounts.account.watchEveryone": "Omanik lülitas selle kõigile sisse. Peatamiseks lülita mõlemad välja."
+	"accounts.account.watchEveryone": "Omanik lülitas selle kõigile sisse. Peatamiseks lülita mõlemad välja.",
+	"accounts.watch.title": "Vaadatud-märgid",
+	"accounts.watch.hint": "Seo siin oma konto meediaserveris, et Raamatukogu näitaks, mida oled vaadanud.",
+	"accounts.watch.as": "{server}, kasutajana {name}",
+	"accounts.watch.nameOn": "Nimi serveris {server}",
+	"accounts.watch.passwordOnce": "Su parool läheb ainult serverisse {server} ja seda ei hoita.",
+	"accounts.watch.linked": "Seotud kasutajaga {name} serveris {server}",
+	"accounts.watch.unlinked": "Sidumine eemaldatud",
+	"accounts.login.importPaused": "Sinu sisselogimine lõppes, seega import peatus. Logi sisse, ava Impordi meediakogu ja vajuta jätkamiseks Skanni."
 }

@@ -18,10 +18,10 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="مجوز: AGPL-3.0"></a>
 </p>
 
-<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="HolyArrs/HolyArrs on Trendshift" width="250" height="55"></a></p>
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="Trending on Trendshift" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.4: هر درخواستی را می‌توانید حذف کنید، و فهرست‌های تماشای Plex دوستان دوباره خوانده می‌شوند.** کیفیت هر پوشه حالا روی کارتش نشان داده می‌شود، و Settings یکدست شد. [ببینید چه چیزی تازه است](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.2.0: یک نقطهٔ قرمز نشان می‌دهد چه چیزی نیاز به توجه دارد، و آزمون اتصال مشکل را دقیق نام می‌برد.** برچسب‌های Plex برای عنوان‌های درخواستی، نام‌ها به زبان شما و بیش از ۳۰ رفع اشکال. برنامه‌ها را با کلیدهایی که خودتان کنترل می‌کنید از راه MCP وصل کنید. [ببینید چه چیزی تازه است](https://holyarrs.com/whats-new/)
 
 > هر پوستر، تریلر و امتیازی که در HolyArrs می‌بینید از سروری می‌آید که خودم اجرا می‌کنم و هزینه‌اش را خودم می‌دهم تا برای همه رایگان بماند. اگر HolyArrs شب فیلم شما را کمی بهتر کرده، یک حامی مالی چراغ را برای همهٔ ما روشن نگه می‌دارد 💛
 >

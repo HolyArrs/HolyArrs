@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Kunne ikke koble til {name}",
 	"settings.parts.connected": "{name} tilkoblet",
 	"settings.parts.title": "Deler",
+	"settings.parts.onOff": "Slå deler av eller på",
 	"settings.parts.ownerOnly": "Bare eier og administratorer",
 	"settings.parts.safeMode": "HolyArrs kjører i sikkermodus: bare kjernen kjører, og delbrytere og trinnkontroller avvises til en vanlig oppstart. Bruk <b>Start HolyArrs på nytt</b> i <a>Faresonen</a> for å forlate sikkermodus.",
 	"settings.parts.dangerZone": "Faresone",

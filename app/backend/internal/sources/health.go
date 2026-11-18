@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
@@ -51,6 +52,8 @@ type Health struct {
 	Reason string `json:"reason,omitempty"`
 	// Block is the kind of block when a site's protection stops the Source.
 	Block string `json:"block,omitempty"`
+	// Cause names why it cannot be reached (doctor causes), when known.
+	Cause string `json:"cause,omitempty"`
 }
 
 // Summary is a Source's last day at a glance.
@@ -106,18 +109,22 @@ func HealthOf(src domain.Source) Health {
 	case src.State == "disabled":
 		return Health{State: StateDisabled, Text: "Paused by you. HolyArrs does not use it until you resume it."}
 	case src.State == "paused" && src.PauseReason != nil && *src.PauseReason == KindLoginRefused:
-		return Health{State: StateAuthFailed, Text: "It turned down the key. Check the key, then test it.", Until: src.PausedUntil, Reason: "key"}
+		return Health{State: StateAuthFailed, Text: doctor.Line(doctor.Auth), Until: src.PausedUntil, Reason: "key", Cause: string(doctor.Auth)}
 	case src.State == "paused":
+		reason := "down"
+		if src.PauseReason != nil && reasonWord[*src.PauseReason] != "" {
+			reason = reasonWord[*src.PauseReason]
+		}
+		// A known cause says what is wrong and the fix, as the Test button does.
+		if c := doctor.Cause(src.Extra["cause"]); doctor.Line(c) != "" && BlockOf(src) == "" {
+			return Health{State: StateUnreachable, Text: doctor.Line(c), Until: src.PausedUntil, Reason: reason, Cause: string(c)}
+		}
 		text := reasonText[KindDown]
 		if src.PauseReason != nil && reasonText[*src.PauseReason] != "" {
 			text = reasonText[*src.PauseReason]
 		}
 		if b := BlockOf(src); b != "" {
 			text = blockText[b]
-		}
-		reason := "down"
-		if src.PauseReason != nil && reasonWord[*src.PauseReason] != "" {
-			reason = reasonWord[*src.PauseReason]
 		}
 		return Health{State: StateUnreachable, Text: text + " HolyArrs tries again on its own.", Until: src.PausedUntil, Reason: reason, Block: BlockOf(src)}
 	}

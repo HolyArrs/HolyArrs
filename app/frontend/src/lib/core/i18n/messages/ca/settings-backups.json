@@ -32,11 +32,12 @@
 	"settings.backups.key": "Clau mestra",
 	"settings.backups.keyDesc": "Les còpies de seguretat no inclouen aquesta clau. Guarda'n una còpia en un lloc segur.",
 	"settings.backups.noKit": "Encara no hi ha cap joc de claus desat per a aquesta clau. Sense ell, les contrasenyes desades d'una còpia de seguretat no es poden obrir en una màquina nova.",
+	"settings.backups.kitRecommended": "Recomanat: baixa el joc de claus.",
 	"settings.backups.ownerOnlyKit": "Només el propietari el pot baixar; demana-li que ho faci.",
 	"settings.backups.fingerprint": "Empremta de la clau",
 	"settings.backups.downloadKit": "Baixa el joc de claus",
 	"settings.backups.restoreKey": "Per restaurar: canvia-li el nom a holyarrs.key i posa'l a la carpeta config",
 	"settings.backups.offPlan": "Desactivat",
-	"settings.backups.offAbout": "No hi ha còpies de seguretat programades. Abans de cada actualització es fa una còpia igualment.",
+	"settings.backups.offAbout": "Cap còpia de seguretat automàtica, ni tan sols abans d'una actualització. Les còpies que facis tu encara funcionen.",
 	"settings.backups.offKeeps": "Desactivat conserva les còpies de seguretat que ja tens."
 }

@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Jazyk se nepodařilo uložit",
 	"accounts.language.count.one": "1 jazyk",
 	"accounts.language.count.other": "Jazyky: {n}",
-	"accounts.account.watchEveryone": "Vlastník to zapnul pro všechny. Pro vypnutí vypněte obojí."
+	"accounts.account.watchEveryone": "Vlastník to zapnul pro všechny. Pro vypnutí vypněte obojí.",
+	"accounts.watch.title": "Značky zhlédnutí",
+	"accounts.watch.hint": "Propojte zde svůj účet na mediálním serveru, aby Knihovna ukazovala, co jste viděli.",
+	"accounts.watch.as": "{server}, jako {name}",
+	"accounts.watch.nameOn": "Jméno na {server}",
+	"accounts.watch.passwordOnce": "Vaše heslo jde jen na {server} a neukládá se.",
+	"accounts.watch.linked": "Propojeno s {name} na {server}",
+	"accounts.watch.unlinked": "Odpojeno",
+	"accounts.login.importPaused": "Vaše přihlášení skončilo, a tak se import pozastavil. Přihlaste se, otevřete Importovat knihovnu a stiskněte Prohledat, aby pokračoval."
 }

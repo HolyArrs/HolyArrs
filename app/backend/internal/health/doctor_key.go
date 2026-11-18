@@ -30,12 +30,12 @@ func masterKeyChecks(r *Report, dir string) {
 		// A named key file must exist: only the config folder's default is
 		// made on first start.
 		if named {
-			r.add(s, StatusFail, p+" (named in "+secrets.EnvKeyFile+") is missing; HolyArrs will not start without it",
+			r.add(s, StatusFail, p+" (named in "+secrets.EnvKeyFile+") is missing; HolyArrs will not start without it. "+secrets.WhereNamedLooked(dir, p).Plain(),
 				"put the key file back at "+p+" or unset "+secrets.EnvKeyFile)
 			return
 		}
 		if saved {
-			r.add(s, StatusFail, p+" is missing, but the database holds saved secrets that only that key can open",
+			r.add(s, StatusFail, p+" is missing, but the database holds saved secrets that only that key can open. "+secrets.WhereLooked(dir, p).Plain(),
 				"put the key file (or your key kit renamed to "+secrets.KeyFile+") back at "+p+", or name it in "+secrets.EnvKeyFile)
 		} else {
 			r.add(s, StatusOK, "no key yet; HolyArrs makes one on first start", "")

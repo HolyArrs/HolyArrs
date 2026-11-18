@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "ทั้งสองพาธเหมือนกัน คู่นี้จึงไม่เปลี่ยนอะไร แต่ยังบอก HolyArrs ว่าไฟล์ของตัวดาวน์โหลดนี้อยู่ที่ไหน จึงเก็บไว้ได้",
 	"settings.downloaders.change": "เปลี่ยน {name}",
 	"settings.downloaders.whichApp": "แอปไหน",
-	"settings.downloaders.torrents": "(ทอร์เรนต์)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "ทอร์เรนต์",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "ใช้มากที่สุด",
 	"settings.downloaders.name": "ชื่อ",
 	"settings.downloaders.address": "ที่อยู่",
 	"settings.downloaders.addressHint": "หน้าเว็บของมัน สำหรับ SABnzbd ให้ใช้ IP หรืออนุญาตชื่อโฮสต์ของ HolyArrs",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "หมวดหลังนำเข้า",
 	"settings.downloaders.categoryAfterImportHint": "เมื่อนำเข้าทอร์เรนต์แล้ว HolyArrs จะย้ายไปยังหมวดนี้ เว้นว่างไว้เพื่อให้อยู่ในหมวดหลัก",
 	"settings.downloaders.ownOnly": "แสดงเฉพาะรายการของ HolyArrs",
-	"settings.downloaders.ownOnlyHint": "รายการของแอปอื่นในโปรแกรมดาวน์โหลดนี้จะถูกซ่อน และ HolyArrs จะไม่เปลี่ยนแปลง"
+	"settings.downloaders.ownOnlyHint": "รายการของแอปอื่นในโปรแกรมดาวน์โหลดนี้จะถูกซ่อน และ HolyArrs จะไม่เปลี่ยนแปลง",
+	"settings.downloaders.state.notAnswering": "ไม่ตอบสนอง",
+	"settings.downloaders.state.paused": "หยุดชั่วคราว",
+	"settings.downloaders.state.resting": "กำลังพัก",
+	"settings.downloaders.state.signInRefused": "การลงชื่อเข้าใช้ถูกปฏิเสธ",
+	"settings.downloaders.state.working": "ทำงานปกติ"
 }

@@ -131,6 +131,7 @@ Fix: none needed. Watch an episode or press **Get the next 2 episodes**.
 | Setting | Default | Change it when |
 | --- | --- | --- |
 | Show folder pattern | `{title} ({year})` | Your media server wants another layout. Applies to shows added from now on. |
+| `{title_first}` in a pattern | Not used. Puts the first letter of the sorted title in a name, such as `{title_first}/{title} ({year})` for A to Z folders. | You keep shows in letter folders. |
 | A folder for each season | On | You want every episode in the show folder. |
 | Season folder pattern | `Season {season}` | You prefer `Season 01` or similar. |
 | Episode file name pattern | `{title} - {episode} - {episode_title} {quality}` | Your media server wants another name. |

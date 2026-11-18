@@ -41,6 +41,10 @@ describe('line 2', () => {
 		expect(eventText(ev('title_added', { Actor: { kind: 'user', id: 5 }, Data: { why_added: 'by_hand' } }), ctx).line).toBe('Added to the Library by Maya');
 		expect(eventText(ev('title_added', { Actor: { kind: 'user', id: 1 }, Data: { why_added: 'by_hand' } }), ctx).line).toBe('Added to the Library by you');
 	});
+	it('names the list a title came from', () => {
+		expect(eventText(ev('title_added', { Actor: { kind: 'system' }, Data: { why_added: 'list', list_name: 'Weekend picks' } }), ctx).line).toBe('Added from the list Weekend picks');
+		expect(eventText(ev('title_added', { Actor: { kind: 'system' }, Data: { why_added: 'list' } }), ctx).line).toBe('Added from a list');
+	});
 	it('checks, problems and plain reasons', () => {
 		expect(eventText(ev('folder_scanned', { Data: { versions: [{ exists: true }] } }), ctx).line).toBe('Checked its folder · nothing changed');
 		const f = eventText(ev('download_failed', { Data: { reason: 'the Downloader says error' } }), ctx);
@@ -60,6 +64,24 @@ describe('line 2', () => {
 		expect(eventText(ev('download_sent', { Data: { release: 'Dune.2021.1080p.WEB' } }), ctx).line).toBe('1080p');
 		expect(eventText(ev('needs_decision', { Data: { reason: 'nothing could be placed; look at the import plan' } }), ctx).line).toBe('Nothing could be placed');
 		expect(eventText(ev('needs_decision', { Data: { reason: 'no file in the download matched an episode; match the files by hand' } }), ctx).line).toBe('No file in the download matched an episode');
+	});
+	it('says when a search passed over the folder tags', () => {
+		const note = "No Source this search can use has this folder's tags, so Sources without tags were asked too.";
+		expect(eventText(ev('search_done', { Summary: 'no Release passed the Pick rules (2 found, 2 refused)', Data: { sources_note: note } }), ctx).line).toContain(note);
+		expect(eventText(ev('search_failed', { Data: { reason: 'no Source answered: A: not reachable', sources_note: note } }), ctx).line).toContain(note);
+		expect(eventText(ev('search_done', { Summary: 'no Release passed the Pick rules (2 found, 2 refused)' }), ctx).line).not.toContain('Source');
+		expect(eventText(ev('release_chosen', { Summary: 'Chose Dune.2021.1080p.WEB out of 3 Releases', Data: { sources_note: note } }), ctx).line).toContain(note);
+		expect(eventText(ev('release_held', { Summary: 'Holding Dune.2021.1080p.WEB', Data: { sources_note: note } }), ctx).line).toContain(note);
+		expect(eventText(ev('release_chosen', { Summary: 'Chose Dune.2021.1080p.WEB out of 3 Releases' }), ctx).line).not.toContain('Source');
+		// Folded into its download's row, the pick still says it, once.
+		const pick = ev('release_chosen', { Summary: 'Chose Dune.2021.1080p.WEB out of 3 Releases', Data: { sources_note: note } });
+		for (const head of [ev('download_sent', { Data: { release: 'Dune.2021.1080p.WEB' } }), ev('import_done', { Data: { release: 'Dune.2021.1080p.WEB' } }), ev('download_failed', { Data: { reason: 'the downloader says error' } })]) {
+			const state = head.Kind === 'download_failed' ? 'failed' : 'done';
+			const key = head.Kind === 'import_done' ? 'imported' : 'sent';
+			const line = rowText({ key: 'd1', head, events: [head, pick], steps: [{ key, label: 'x', state }] }, ctx).line;
+			expect(line.split(note).length - 1, head.Kind + ': ' + line).toBe(1);
+		}
+		expect(rowText({ key: 'e1', head: pick, events: [pick], steps: [{ key: 'sent', label: 'x', state: 'waiting' }] }, ctx).line.split(note).length - 1).toBe(1);
 	});
 	it('never repeats the title', () => {
 		for (const k of ['title_added', 'gate_opened', 'title_refreshed', 'folder_scanned', 'ask_approved', 'album_changed', 'search_done', 'download_sent', 'import_done', 'title_removed', 'needs_decision', 'renamed', 'something_new'])
@@ -92,6 +114,8 @@ describe('reported problems', () => {
 
 describe('asks', () => {
 	it('who and what, never "Asked for by" or "Approved by"', () => {
+		expect(eventText(ev('ask_made', { Actor: { kind: 'user', id: 7 }, actor_name: 'maria⁣2', Data: { asked_by: 'maria' } }), ctx).line).toBe('⁣maria⁤');
+		expect(eventText(ev('ask_approved', { Actor: { kind: 'user', id: 7 }, actor_name: 'maria⁣2', Data: { approved_by: 'maria' } }), ctx).line).toBe('⁣maria⁤');
 		expect(eventText(ev('ask_made', { Actor: { kind: 'user', id: 5 }, Data: { albums: 'every album', asked_by: 'Maya' } }), ctx).line).toBe('Maya · Every album');
 		expect(eventText(ev('ask_made', { Actor: { kind: 'user', id: 9 }, actor_name: 'leo', Data: {} }), ctx).line).toBe('leo');
 		expect(eventText(ev('ask_approved', { Actor: { kind: 'user', id: 2 }, Data: { approved_by: 'home' } }), ctx).line).toBe('home');
@@ -113,6 +137,19 @@ describe('system rows', () => {
 	it('a sign-in keeps the username as it is', () => {
 		expect(eventText(ev('signed_in', { TitleID: null, title_name: undefined, Summary: 'agent-check signed in', actor_name: 'agent-check', Data: { name: 'agent-check' } }), ctx).line).toBe('agent-check signed in');
 	});
+	it("a deleted person's sign-in is marked, a new person with the same name is not", () => {
+		const gone = eventText(ev('signed_in', { TitleID: null, title_name: undefined, Summary: 'maria signed in', actor_name: 'maria⁣7', Data: { name: 'maria' } }), ctx).line;
+		const fresh = eventText(ev('signed_in', { TitleID: null, title_name: undefined, Summary: 'maria signed in', actor_name: 'maria', Data: { name: 'maria' } }), ctx).line;
+		expect(gone).toBe('⁣maria⁤ signed in');
+		expect(fresh).toBe('maria signed in');
+	});
+	it('an ask that names a deleted asker by id marks that name only', () => {
+		const line = eventText(ev('ask_available', { Summary: 'Dune is ready for maria, tom', Actor: { kind: 'system' }, asked_names: ['maria⁣7', 'tom'], Data: { asked_by: ['maria', 'tom'], asked_by_ids: [7, 8] } }), ctx).line;
+		expect(line).toContain('⁣maria⁤');
+		expect(line).not.toContain('⁣tom');
+		const old = eventText(ev('ask_available', { Summary: 'Dune is ready for maria', Actor: { kind: 'system' }, Data: { asked_by: ['maria'] } }), ctx).line;
+		expect(old).not.toContain('⁣');
+	});
 	it('a Library folder out of reach: the folder and the count, no question', () => {
 		const t = eventText(ev('library_folder_unreachable', { TitleID: null, title_name: undefined, Summary: 'Library folder Music: 1347 of 1347 files are gone at once; is a drive or share not mounted? No file was marked missing', Data: { gone: 1347, known: 1347 } }), ctx);
 		expect([t.tag.word, t.line]).toEqual(['Failed', 'Music folder · All 1,347 files gone']);
@@ -124,6 +161,12 @@ describe('system rows', () => {
 		expect(eventText(ev('season_changed', { Data: { season: 2, keep_up_to_date: true } }), ctx).line).toBe('Season 2 · Kept up to date');
 		expect(eventText(ev('season_changed', { Data: { season: 2, keep_up_to_date: false } }), ctx).line).toBe('Season 2 · No longer kept up to date');
 		expect(eventText(ev('download_removed'), ctx).line).toBe('Removed from downloader');
+	});
+	it('a remove says whether the files went, why they stayed, and a retry that worked later', () => {
+		expect(eventText(ev('download_removed', { Data: { delete_files: true } }), ctx).line).toBe('Removed from downloader · files deleted');
+		expect(eventText(ev('download_removed', { Data: { delete_files: false, kept: '/data/media is a whole save folder' } }), ctx).line).toBe('Removed from downloader · files kept: /data/media is a whole save folder');
+		expect(eventText(ev('download_removed', { Data: { retried: true, delete_files: false } }), ctx).line).toBe('Removed from downloader on a later try');
+		expect(eventText(ev('download_removed', { Data: { retried: true, delete_files: false, kept: '/data/media is a whole save folder' } }), ctx).line).toBe('Removed from downloader on a later try · files kept: /data/media is a whole save folder');
 	});
 	it('a failed download row says the reason alone', () => {
 		const [row] = groupDownloads([
@@ -148,5 +191,56 @@ describe('stored reasons in another language', () => {
 			lang.value = was.value;
 			lang.words = was.words;
 		}
+	});
+});
+
+describe('a removal waiting on a Downloader that is down', () => {
+	const down = () => ev('download_not_removed', { DownloadID: 4, Actor: { kind: 'user', id: 5 }, actor_name: 'Maya', Summary: 'qBit is not answering right now; HolyArrs tries again on the next sync' });
+	it('says the event’s own sentence, not that it was removed', () => {
+		const t = eventText(down(), ctx);
+		expect(t.line).toBe('qBit is not answering right now; HolyArrs tries again on the next sync');
+		expect(t.tag.word).not.toMatch(/Removed|Deleted/);
+	});
+	it('falls back to the fixed line when the event has no sentence', () => {
+		expect(eventText(ev('download_not_removed', { Summary: '' }), ctx).line).toBe('Could not remove it from the downloader');
+	});
+	it('reads the sentence in the person’s language', () => {
+		const was = { value: lang.value, words: lang.words };
+		try {
+			lang.value = 'de';
+			lang.words = { ...lang.words, ...de };
+			expect(eventText(down(), ctx).line).toBe(serverWords('qBit is not answering right now; HolyArrs tries again on the next sync'));
+			expect(eventText(down(), ctx).line).not.toBe('qBit is not answering right now; HolyArrs tries again on the next sync');
+		} finally {
+			lang.value = was.value;
+			lang.words = was.words;
+		}
+	});
+});
+
+describe('people removed on a media server', () => {
+	const inGerman = (f: () => void) => {
+		const was = { value: lang.value, words: lang.words };
+		lang.value = 'de';
+		lang.words = { ...(en as Record<string, string>), ...(de as Record<string, string>) };
+		try {
+			f();
+		} finally {
+			lang.value = was.value;
+			lang.words = was.words;
+		}
+	};
+	it('translates the health warnings that end in a full stop', () => {
+		inGerman(() => {
+			const msg = "Can't check for people removed on the Jellyfin server: its user list could not be read 3 times in a row.";
+			const line = eventText(ev('health_broken', { TitleID: undefined, title_name: undefined, Summary: msg, Data: { state: 'warning', message: msg } }), ctx).line;
+			expect(line).not.toContain("Can't check");
+			expect(line).toContain('Jellyfin');
+		});
+	});
+	it('keeps the name as typed', () => {
+		const e = ev('account_changed', { TitleID: undefined, title_name: undefined, Summary: 'ana-2 was removed on the Jellyfin server, so turned off here', Data: { user_id: 3, reason: 'jellyfin' } });
+		expect(eventText(e, ctx).line).toBe('ana-2 was removed on the Jellyfin server, so turned off here');
+		inGerman(() => expect(eventText(e, ctx).line).toBe('ana-2 wurde auf dem Jellyfin-Server entfernt, daher hier ausgeschaltet'));
 	});
 });

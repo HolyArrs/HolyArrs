@@ -83,6 +83,7 @@
 	"settings.users.preset": "Predložak",
 	"settings.users.comingSoon": "Uskoro",
 	"settings.users.custom": "Prilagođeno",
+	"settings.users.customHint": "Ovo je vaša vlastita kombinacija prekidača u nastavku. Odabir predloška zamjenjuje je; ponovno odaberite Prilagođeno da je vratite.",
 	"settings.users.ageRating": "Dobna ocjena",
 	"settings.users.newPasswordFor": "Nova lozinka za {name}",
 	"settings.users.passwordNote": "Koristi ovo kad je {name} zaboravio lozinku. Osoba je odjavljena posvuda i prijavljuje se novom lozinkom. Reci joj je osobno.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "npr. Mama",
 	"settings.users.days": "Dana važenja poveznice",
 	"settings.users.makeInvite": "Napravi poveznicu pozivnice",
-	"settings.users.permAuto4k": "4K zahtjevi odobreni bez čekanja"
+	"settings.users.permAuto4k": "4K zahtjevi odobreni bez čekanja",
+	"settings.users.serverAccount": "Račun na poslužitelju",
+	"settings.users.pickAccount": "Odaberite račun na medijskom poslužitelju",
+	"settings.users.accountLinked": "Povezano s {name}",
+	"settings.users.removedOnServer": "Uklonjen na poslužitelju {word}, pa je ovdje isključen",
+	"settings.users.delete": "Izbriši",
+	"settings.users.deleteName": "Izbriši {name}",
+	"settings.users.confirmDelete": "Izbrisati {name}? Trajno se odjavljuje i ključevi nestaju. Zahtjevi ostaju, prikazani kao uklonjena osoba.",
+	"settings.users.deleteYes": "Izbriši osobu",
+	"settings.users.keep": "Zadrži",
+	"settings.users.deleted": "{name} izbrisan",
+	"settings.users.couldntDelete": "Brisanje nije uspjelo",
+	"settings.users.confirmDeleteKeys": "Ključevi za Seerr koje je napravio prestaju raditi za sve dok se ne napravi novi.",
+	"settings.users.qualities": "Kvalitete",
+	"settings.users.qualitiesHint": "Mogu birati samo uključene. Kad su sve uključene, nude se i nove."
 }

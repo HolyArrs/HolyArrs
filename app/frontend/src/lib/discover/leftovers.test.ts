@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { reasonKey, shiftGuess, type Leftover, type MatchEpisode } from './leftovers.ts';
+import { namePick, reasonKey, shiftGuess, type Leftover, type MatchEpisode } from './leftovers.ts';
 
 const left = (id: number, s: number, e: number, reason = 'episode_not_listed'): Leftover => ({
 	file_id: id,
@@ -66,5 +66,22 @@ describe('reasonKey', () => {
 	it('falls back for an unknown key', () => {
 		expect(reasonKey({ reason: 'something_new' })).toBe('discover.leftovers.reason.episode_not_listed');
 		expect(reasonKey({ reason: 'movie_more_than_one' })).toBe('discover.leftovers.reason.movie_more_than_one');
+	});
+	it('says when the old app numbers the seasons differently', () => {
+		expect(reasonKey({ reason: 'seasons_differ' })).toBe('discover.leftovers.reason.seasons_differ');
+	});
+});
+
+describe('namePick', () => {
+	const eps = [
+		{ id: 11, season: 1, episode: 1, hasFile: false },
+		{ id: 21, season: 2, episode: 1, hasFile: false }
+	];
+	it('picks the episode found by name for a file whose seasons differ', () => {
+		expect(namePick({ reason: 'seasons_differ', guess: { season: 2, episodes: [1] } }, eps)).toEqual([21]);
+	});
+	it('picks nothing without a name match, or for any other leftover', () => {
+		expect(namePick({ reason: 'seasons_differ' }, eps)).toEqual([]);
+		expect(namePick({ reason: 'episode_not_listed', guess: { season: 1, episodes: [1] } }, eps)).toEqual([]);
 	});
 });

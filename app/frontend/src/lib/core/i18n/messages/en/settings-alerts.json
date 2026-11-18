@@ -13,7 +13,7 @@
 	"settings.alerts.confirmRemove": "Remove {name}?",
 	"settings.alerts.removeFailed": "Couldn't remove Alert",
 	"settings.alerts.title": "Alerts",
-	"settings.alerts.add": "Add an Alert",
+	"settings.alerts.add": "Add an alert",
 	"settings.alerts.lead": "Everyone also gets these messages inside HolyArrs, on their Requests page. For email and Discord, each person adds their address or Discord user ID in My account.",
 	"settings.alerts.change": "Change {name}",
 	"settings.alerts.name": "Name",

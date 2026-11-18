@@ -83,6 +83,7 @@
 	"settings.users.preset": "Vorlage",
 	"settings.users.comingSoon": "Bald verfügbar",
 	"settings.users.custom": "Eigene",
+	"settings.users.customHint": "Ihre eigene Auswahl der Schalter unten. Eine Vorlage ersetzt sie; wählen Sie noch einmal Eigene, um sie zurückzuholen.",
 	"settings.users.ageRating": "Altersfreigabe",
 	"settings.users.newPasswordFor": "Neues Passwort für {name}",
 	"settings.users.passwordNote": "Nutze das, wenn {name} das Passwort vergessen hat. Die Person wird überall abgemeldet und meldet sich mit dem neuen wieder an. Sag es ihr persönlich.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "z. B. Mama",
 	"settings.users.days": "Tage, die der Link gilt",
 	"settings.users.makeInvite": "Einladungslink erstellen",
-	"settings.users.permAuto4k": "4K-Anfragen ohne Warten genehmigt"
+	"settings.users.permAuto4k": "4K-Anfragen ohne Warten genehmigt",
+	"settings.users.serverAccount": "Server-Konto",
+	"settings.users.pickAccount": "Konto auf einem Medienserver wählen",
+	"settings.users.accountLinked": "Mit {name} verknüpft",
+	"settings.users.removedOnServer": "Auf dem {word}-Server entfernt, daher hier ausgeschaltet",
+	"settings.users.delete": "Löschen",
+	"settings.users.deleteName": "{name} löschen",
+	"settings.users.confirmDelete": "{name} löschen? Die Person wird endgültig abgemeldet und ihre Schlüssel entfernt. Ihre Anfragen bleiben, angezeigt als entfernte Person.",
+	"settings.users.deleteYes": "Person löschen",
+	"settings.users.keep": "Behalten",
+	"settings.users.deleted": "{name} gelöscht",
+	"settings.users.couldntDelete": "Löschen fehlgeschlagen",
+	"settings.users.confirmDeleteKeys": "Seerr-Schlüssel, die die Person erstellt hat, funktionieren für niemanden mehr, bis ein neuer erstellt wird.",
+	"settings.users.qualities": "Qualitäten",
+	"settings.users.qualitiesHint": "Sie können nur die eingeschalteten wählen. Sind alle an, werden neue auch angeboten."
 }

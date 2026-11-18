@@ -1,9 +1,11 @@
 // History: the address it reads, the "who did it" filter, a row's step and extra piece, and the actions a row's details offer.
+import { shownPerson } from '#lib/core/plain.ts';
 import { t as say, lang, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 import { readFilter, type HistoryRow } from './history.ts';
 import { fineCheck, historyTabs, tabKinds } from './history-tabs.ts';
-import { cap, episodeBits, missingLine, plainWhy, resolutionOf } from './history-lines.ts';
+import { cap, episodeBits, missingLine, plainWhy, resolutionOf, withNote } from './history-lines.ts';
 import type { Verb } from './history-kinds.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 import { bytes } from '../core/format.ts';
 import type { EventRecord } from '../core/types.ts';
 
@@ -110,10 +112,10 @@ const mergedSteps: Record<string, string> = { out: 'added', chosen: 'sent', medi
 /** Every kind but routine work: what the search shows with no step picked. */
 export const nonRoutineKinds = historyTabs.filter((t) => t.key !== 'routine').flatMap((t) => t.subs.flatMap((s) => s.kinds));
 
-/** What the picked steps ask the server for; every kind but routine when none is picked. */
+/** What the picked steps ask the server for; every kind but routine when none is picked, plus the searches and feed checks that say which Sources they left out (":noted"). */
 export function stepKinds(steps: string[]): string[] {
 	const picked = searchSteps.filter((s) => steps.includes(s.key));
-	return picked.length ? [...new Set(picked.flatMap((s) => s.kinds))] : [...nonRoutineKinds];
+	return picked.length ? [...new Set(picked.flatMap((s) => s.kinds))] : [...nonRoutineKinds, 'search_done:noted', 'feed_checked:noted'];
 }
 
 export type MediaType = '' | 'movies' | 'shows' | 'music';
@@ -131,13 +133,13 @@ export function typeMatches(kind: string | undefined, type: MediaType): boolean 
 	return kind === 'artist' || kind === 'album' || kind === 'music';
 }
 
-/** Keeps an Event whose title, summary, episode, source, release or person holds the text. */
+/** Keeps an Event whose title, summary, episode, source, release, list or person holds the text. */
 export function textMatches(e: EventRecord, q: string, people?: Map<number, string>): boolean {
 	const t = q.trim().toLowerCase();
 	if (!t) return true;
 	const d = e.Data ?? {};
-	const who = e.Actor?.kind === 'user' ? (e.Actor.id != null ? people?.get(e.Actor.id) : '') || e.actor_name : '';
-	return [e.title_name, e.Summary, e.episode, who, str(d.source_name), str(d.indexer), str(d.source), str(d.release), str(d.client)].some((v) => v?.toLowerCase().includes(t));
+	const who = e.Actor?.kind === 'user' ? (e.Actor.id != null ? people?.get(e.Actor.id) : '') || shownPerson(e.actor_name) : '';
+	return [e.title_name, e.Summary, e.episode, who, str(d.source_name), str(d.indexer), str(d.source), str(d.release), str(d.client), str(d.list_name)].some((v) => v?.toLowerCase().includes(t));
 }
 
 /** Everything the Search view reads from the address. */
@@ -258,7 +260,7 @@ export function rowStep(row: HistoryRow, fallback = ''): RowStep {
 }
 /** The extra piece after a row's step: who for asks and adds, quality when chosen or sent, size when imported, old → new quality when upgraded, language for subtitles, otherwise the reason. */
 export function rowExtra(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string = () => '', line = ''): string {
-	return extraOf(row, step, who) || (row.head.TitleID ? '' : line);
+	return withNote(extraOf(row, step, who) || (row.head.TitleID ? '' : line), row);
 }
 /** A row's step as the mark its details show, so both name the same step. */
 export function stepVerb(row: HistoryRow, tag: Verb): Verb {
@@ -292,6 +294,7 @@ const failedWords: Record<string, string> = {
 };
 function extraOf(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string): string {
 	if (step.failed) {
+		if (row.head.Kind === 'download_not_removed') return (row.head.Summary && serverWords(row.head.Summary.trim())) || say('downloads.hl.notRemoved');
 		for (const e of row.events) {
 			const d = e.Data ?? {};
 			const why = str(d.reason) || str(d.error) || str(d.message);
@@ -309,8 +312,8 @@ function extraOf(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string
 			return [who(row.head), cap(str(d.albums) || str(d.seasons))].filter(Boolean).join(' · ');
 		}
 		case W('Approved'):
-		case W('Turned down'):
-		case W('Added'): return who(row.head);
+		case W('Turned down'): return who(row.head);
+		case W('Added'): return who(row.head) || (str(row.head.Data?.why_added) === 'list' && str(row.head.Data?.list_name) ? say('downloads.hp.fromListNamed', { list: str(row.head.Data?.list_name) }) : '');
 		case W('Chosen'):
 		case W('Sent'): return qualityOf(row);
 		case W('Upgraded'): {
@@ -363,6 +366,9 @@ export function dropAiTwins(events: EventRecord[]): EventRecord[] {
 
 /** The row is about an actual release (a release name or a download id), so another one can be looked for. */
 export function canFind(row: HistoryRow): boolean {
+	// Only the remove from the Downloader was refused: the download itself was fine.
+	const bad = row.events.filter((e) => isProblem(e.Kind));
+	if (bad.length && bad.every((e) => e.Kind === 'download_not_removed')) return false;
 	return row.events.some((e) => {
 		if (!findKind.test(e.Kind)) return false;
 		const d = e.Data ?? {};

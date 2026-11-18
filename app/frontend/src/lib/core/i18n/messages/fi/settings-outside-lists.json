@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Trakt-listojasi ei voi lukea, ennen kuin se on määritetty.",
 	"settings.outsideLists.replaceKey": "Vaihda Trakt-avain",
 	"settings.outsideLists.pasteKey": "Liitä Trakt-avain",
+	"settings.outsideLists.mdblistKey": "MDBList-avain",
+	"settings.outsideLists.mdblistInfo": "Valinnainen. MDBList-API-avaimellasi MDBList-listat luetaan MDBList-API:n kautta; ilman sitä niiden julkisen linkin kautta. Se tallennetaan salattuna, ja se on sama avain, jota ulkopuoliset arvosanat käyttävät Omat avaimesi -tilassa.",
+	"settings.outsideLists.pasteMdblistKey": "Liitä MDBList-API-avaimesi",
+	"settings.outsideLists.replaceMdblistKey": "Vaihda MDBList-avain",
+	"settings.outsideLists.removeMdblistKey": "Poista avain",
+	"settings.outsideLists.mdblistKeySaved": "MDBList-avain tallennettu",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList-avain poistettu; listat käyttävät julkista linkkiään",
 	"settings.outsideLists.replaceVip": "Vaihda VIP-käyttötunniste",
 	"settings.outsideLists.vip": "VIP-käyttötunniste (valinnainen)",
 	"settings.outsideLists.vipHint": "Lisää nimikesivuille Trakt-välilehden: pisteet, katsojat ja kommentit",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Lisää Ei-lisättävien listalle",
 	"settings.outsideLists.showDot": "sarja ·",
 	"settings.outsideLists.takeOff": "Poista listalta {name}",
-	"settings.outsideLists.empty": "Tyhjä"
+	"settings.outsideLists.empty": "Tällä listalla ei ole vielä mitään"
 }

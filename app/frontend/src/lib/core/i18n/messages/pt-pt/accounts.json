@@ -373,5 +373,13 @@
 	"accounts.language.count.other": "{n} idiomas",
 	"accounts.account.watchEveryone": "O proprietário ativou isso para todos. Desative os dois para parar.",
 	"accounts.language.top": "Mais usados",
-	"accounts.language.more": "Mais idiomas"
+	"accounts.language.more": "Mais idiomas",
+	"accounts.watch.title": "Marcas de visto",
+	"accounts.watch.hint": "Associe aqui a sua conta de um servidor multimédia para a Biblioteca mostrar o que viu.",
+	"accounts.watch.as": "{server}, como {name}",
+	"accounts.watch.nameOn": "Nome no {server}",
+	"accounts.watch.passwordOnce": "A sua palavra-passe vai apenas para o {server} e não é guardada.",
+	"accounts.watch.linked": "Associado a {name} no {server}",
+	"accounts.watch.unlinked": "Associação removida",
+	"accounts.login.importPaused": "A sua sessão terminou, por isso a importação está em pausa. Inicie sessão, abra Importar uma biblioteca e prima Varrer para continuar."
 }

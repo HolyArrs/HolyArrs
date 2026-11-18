@@ -1,6 +1,6 @@
 // Picture records and cover URL sizing for artwork.
 
-import { to } from './paths.ts';
+import { to, toOwn } from './paths.ts';
 
 export type PictureRecord = { v: string; w: number; h: number; color: string };
 
@@ -81,9 +81,9 @@ export function coverSize(css: number, ratio = globalThis.devicePixelRatio || 1,
 // Rewrites a cover URL to the size it will be drawn at.
 export function coverFor(src: string | null | undefined, css: number, ratio = globalThis.devicePixelRatio || 1, hero = false): { src: string | null } {
 	const at = src ? coverAt(src) : null;
-	if (at) return { src: at(coverSize(css, ratio, hero)) };
-	if (src && !hero && thumbOnly.test(src) && coverSize(css, ratio) === 250) return { src: `${src}${src.includes('?') ? '&' : '?'}size=250` };
-	return { src: src ?? null };
+	if (at) return { src: toOwn(at(coverSize(css, ratio, hero))) };
+	if (src && !hero && thumbOnly.test(src) && coverSize(css, ratio) === 250) return { src: toOwn(`${src}${src.includes('?') ? '&' : '?'}size=250`) };
+	return { src: src ? toOwn(src) : (src ?? null) };
 }
 
 // Returns a resizer for hosts we know how to size, or null for anything else.

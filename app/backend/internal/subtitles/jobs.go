@@ -219,7 +219,7 @@ func (s *Service) handleBetter(ctx context.Context, r *jobs.Run) error {
 		return nil
 	}
 	since := database.FormatTime(now().AddDate(0, 0, -set.BetterDays))
-	rows, err := s.Store.Read().QueryContext(ctx, `SELECT DISTINCT file_id FROM subtitles WHERE place = 'beside' AND state = 'present' AND origin = 'fetched'
+	rows, err := s.Store.Read().QueryContext(ctx, `SELECT DISTINCT file_id FROM subtitles WHERE place = 'beside' AND state = 'present' AND origin = 'fetched' AND json_extract(sync, '$.from_subtitle_id') IS NULL
 		AND score < 99 AND saved_at >= ? ORDER BY saved_at LIMIT ?`, since, set.Batch)
 	if err != nil {
 		return err

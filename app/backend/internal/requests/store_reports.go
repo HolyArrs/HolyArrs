@@ -13,7 +13,7 @@ const (
 	reportSQL7      = "SELECT count(*) FROM reports WHERE made_by = ? AND state = 'open'"
 	reportSlotSQL   = "SELECT id FROM slots WHERE item_id = ? AND version_id = ?"
 	tellReporterSQL = `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, '')
-		FROM users u LEFT JOIN user_ask_settings x ON x.user_id = u.id WHERE u.id = ?`
+		FROM users u LEFT JOIN user_ask_settings x ON x.user_id = u.id WHERE u.id = ? AND u.removed_at = ''`
 	tellReporterSQL2 = "INSERT INTO messages (created_at, user_id, kind, text, title_id, report_id) VALUES (?, ?, 'fixed', ?, ?, ?)"
 	openReportsSQL   = "SELECT count(*) FROM reports WHERE state = 'open'"
 	reportViewsSQL   = "SELECT name FROM users WHERE id = ?"

@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "พาธของ HolyArrs",
 	"settings.mediaServers.pathTo": "โฟลเดอร์เดียวกันบนเซิร์ฟเวอร์",
 	"settings.mediaServers.pathHint": "ใช้เฉพาะเมื่อเซิร์ฟเวอร์เห็นไฟล์ของคุณในพาธอื่น",
+	"settings.mediaServers.webUrl": "ที่อยู่สำหรับเบราว์เซอร์",
+	"settings.mediaServers.webUrlHint": "ที่อยู่ที่ทุกคนใช้เปิดเซิร์ฟเวอร์บนมือถือหรือคอมพิวเตอร์ เพิ่มปุ่มเปิดในหน้าของชื่อเรื่องที่เซิร์ฟเวอร์มี เว้นว่างไว้หากไม่ต้องการปุ่ม",
 	"settings.mediaServers.local": "เข้าถึงเครือข่ายภายใน",
 	"settings.mediaServers.send": "ส่งการอัปเดต",
 	"settings.mediaServers.save": "บันทึก",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "ปิดประวัติการรับชมไหม ทุกอย่างที่อ่านมาจนถึงตอนนี้จะถูกลบ",
 	"settings.mediaServers.watchTurnedOn": "เปิดประวัติการรับชมแล้ว การอ่านครั้งแรกจะเกิดขึ้นภายใน 30 นาที",
 	"settings.mediaServers.watchTurnedOff": "ปิดประวัติการรับชมแล้ว",
-	"settings.mediaServers.watchFailed": "เปลี่ยนประวัติการรับชมไม่ได้"
+	"settings.mediaServers.watchFailed": "เปลี่ยนประวัติการรับชมไม่ได้",
+	"settings.mediaServers.labelTitle": "ป้ายกำกับ Plex",
+	"settings.mediaServers.labelSwitch": "ติดป้ายกำกับเรื่องที่ขอ",
+	"settings.mediaServers.labelHint": "เมื่อภาพยนตร์หรือซีรีส์ที่ขอเข้ามาใน Plex แล้ว HolyArrs จะติดป้ายกำกับให้ เพื่อให้คุณกรอง สร้างคอลเลกชัน หรือแชร์ตามป้ายนั้นใน Plex ได้ ป้ายกำกับที่มีอยู่แล้วยังคงอยู่",
+	"settings.mediaServers.labelText": "ป้ายกำกับ",
+	"settings.mediaServers.labelAskers": "เพิ่มชื่อผู้ขอเป็นป้ายกำกับด้วย",
+	"settings.mediaServers.labelSaved": "บันทึกป้ายกำกับ Plex แล้ว",
+	"settings.mediaServers.labelFailed": "บันทึกป้ายกำกับ Plex ไม่ได้",
+	"settings.mediaServers.labelExisting": "ติดป้ายกำกับเรื่องที่ขอไว้แล้ว",
+	"settings.mediaServers.labelExistingStarted": "เริ่มติดป้ายกำกับแล้ว เรื่องต่าง ๆ จะได้ป้ายกำกับภายในไม่กี่นาที",
+	"settings.mediaServers.labelExistingFailed": "เริ่มติดป้ายกำกับไม่ได้"
 }

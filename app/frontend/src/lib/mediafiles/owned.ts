@@ -21,6 +21,11 @@ export async function libraryTitles(client: Client = api): Promise<TitleView[]> 
 	return (await client.warm<{ titles?: TitleView[] }>('/titles', LIBRARY_KEEP)).titles ?? [];
 }
 
+// The Library page's list: every title with what the grid draws, sorts and filters by; a title's own page reads the rest.
+export async function libraryGrid(client: Client = api): Promise<TitleView[]> {
+	return (await client.warm<{ titles?: TitleView[] }>('/titles?grid=1', LIBRARY_KEEP)).titles ?? [];
+}
+
 export async function libraryBrief(client: Client = api): Promise<TitleView[]> {
 	return (await client.warm<{ titles?: TitleView[] }>('/titles?brief=1', LIBRARY_KEEP)).titles ?? [];
 }

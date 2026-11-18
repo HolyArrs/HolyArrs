@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Nechte AI asistenty používat HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Klíče a trasy pro jiné aplikace",
+	"core.settings.remoteAccess.label": "Vzdálený přístup",
+	"core.settings.remoteAccess.about": "Přístup k HolyArrs mimo domov",
 	"core.settings.tmdb.label": "Metadata",
 	"core.settings.tmdb.about": "Odkud pocházejí plakáty a názvy",
 	"core.settings.health.label": "Kontroly stavu",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "Jeden Stahovač nemá nastavenou složku pro ukládání, takže HolyArrs nemůže importovat jeho dokončená stahování.",
 	"core.api.sourceOff": "Některé řádky jsou v této instalaci vypnuté.",
 	"core.plain.noDownloader": "Vaše zdroje nacházejí stahování, která žádný z vašich stahovačů nemůže převzít, takže nic nelze odeslat.",
-	"core.plain.sameDownloader": "Dva stahovače vedou na stejnou stahovací aplikaci, takže se stahování může zobrazit dvakrát."
+	"core.plain.sameDownloader": "Dva stahovače vedou na stejnou stahovací aplikaci, takže se stahování může zobrazit dvakrát.",
+	"core.plain.peopleCheck": "Seznam uživatelů mediálního serveru nelze přečíst, proto se zde nevypínají lidé, kteří tam byli odebráni.",
+	"core.plain.deleted": "smazán",
+	"core.plain.deletedName": "{name} (smazán)"
 }

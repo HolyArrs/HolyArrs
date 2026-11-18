@@ -61,6 +61,14 @@ export function startChoices(defaults: TitleDefaults | null | undefined, folders
 	return { folderId, rulesId, keep: d.keep_up_to_date, searchOnAdd: d.search_on_add };
 }
 
+// The add dialogs remember the last Search when added choice per kind in the saved defaults.
+// Gives the defaults to save, or null when nothing changed.
+export function rememberSearch(defaults: TitleDefaults | null | undefined, kind: TitleKind, searchOnAdd: boolean): TitleDefaults | null {
+	const d = defaults ?? builtInDefaults;
+	if (d[kind].search_on_add === searchOnAdd) return null;
+	return { ...d, [kind]: { ...d[kind], search_on_add: searchOnAdd } } as TitleDefaults;
+}
+
 // Keeps the promise itself so many callers share one request.
 export function defaultsLoader(get: (path: string) => Promise<TitleDefaults>): DefaultsLoader {
 	let kept: Promise<TitleDefaults | null> | null = null;

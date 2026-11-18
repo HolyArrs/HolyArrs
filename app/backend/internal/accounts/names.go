@@ -55,3 +55,15 @@ func ignorable(c rune) bool {
 	}
 	return false
 }
+
+// NewPersonName is a name from outside (a media server, an outside sign-in,
+// an import) made fit to store: spaces tidied and cut to max bytes, or
+// fallback when it still has hidden characters, such as the mark a deleted
+// person's stored name carries.
+func NewPersonName(s, fallback string, max int) string {
+	s = strings.TrimSpace(strings.ToValidUTF8(truncate(strings.Join(strings.Fields(s), " "), max), ""))
+	if nameProblem(s) != "" {
+		return fallback
+	}
+	return s
+}

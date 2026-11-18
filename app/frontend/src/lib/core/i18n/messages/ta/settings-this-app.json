@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "இல்லை",
 	"settings.thisApp.needsRestart": "மறுதொடக்கம் தேவை. HOLYARRS_URL_BASE அல்லது -url-base இதை மீறும்.",
 	"settings.thisApp.save": "சேமி",
-	"settings.thisApp.licence": "HolyArrs என்பது AGPL-3.0 கீழ் உள்ள கட்டற்ற மென்பொருள்."
+	"settings.thisApp.licence": "HolyArrs என்பது AGPL-3.0 கீழ் உள்ள கட்டற்ற மென்பொருள்.",
+	"settings.thisApp.proxy": "ப்ராக்ஸி",
+	"settings.thisApp.proxyDesc": "வெளி அழைப்புகளை ப்ராக்ஸி வழியாக அனுப்பு. தடை மற்றும் வீட்டு நெட்வொர்க் விதிகள் உண்மையான இலக்குக்கு தொடர்ந்து பொருந்தும்.",
+	"settings.thisApp.proxyType": "வகை",
+	"settings.thisApp.proxyOff": "அணை",
+	"settings.thisApp.proxyHost": "ஹோஸ்ட்",
+	"settings.thisApp.proxyPort": "போர்ட்",
+	"settings.thisApp.proxyUser": "பயனர்பெயர்",
+	"settings.thisApp.proxyPasswordLabel": "கடவுச்சொல்",
+	"settings.thisApp.proxyPasswordKept": "சேமித்த கடவுச்சொல்லை வைத்திருக்க காலியாக விடவும்",
+	"settings.thisApp.proxyBypass": "இவற்றுக்கு ப்ராக்ஸியைத் தவிர்",
+	"settings.thisApp.proxyBypassHint": "பெயர்கள், முகவரிகள் அல்லது வரம்புகள், காற்புள்ளியால் பிரிக்கப்பட்டவை. *.example.com அதன் கீழுள்ள எல்லா பெயர்களையும் உள்ளடக்கும்.",
+	"settings.thisApp.proxyBypassLocal": "உள்ளூர் முகவரிகளுக்கு ப்ராக்ஸியைத் தவிர்",
+	"settings.thisApp.proxyBypassLocalHint": "இந்த கணினியும் வீட்டு நெட்வொர்க்கும் நேரடியாக இணைகின்றன",
+	"settings.thisApp.proxySaved": "ப்ராக்ஸி சேமிக்கப்பட்டது",
+	"settings.thisApp.proxyOffSaved": "ப்ராக்ஸி அணைக்கப்பட்டது"
 }

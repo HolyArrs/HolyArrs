@@ -7,6 +7,7 @@
 	"settings.sources.title": "Šaltiniai",
 	"settings.sources.add": "Pridėti Šaltinį",
 	"settings.sources.lead": "Prioritetas 1 eina pirmas. Šaltinis, kuris nepavyksta, praleidžiamas iki šešių valandų. Svetainėms be srauto pridėkite Jackett ar Prowlarr kaip Torznab srautą.",
+	"settings.sources.builtIn": "Įtaisytoms svetainėms Jackett ar Prowlarr nereikia: {sites}. Skiltyje {kind} pasirinkite {site}.",
 	"settings.sources.change": "Keisti: {name}",
 	"settings.sources.name": "Pavadinimas",
 	"settings.sources.feedKind": "Srauto rūšis",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Išsaugoti",
 	"settings.sources.cancel": "Atšaukti",
 	"settings.sources.none": "Šaltinių nėra",
-	"settings.sources.noneText": "Pridėkite Torznab ar Newznab srautą arba Jackett ar Prowlarr.",
+	"settings.sources.noneText": "Pridėkite įtaisytą svetainę, Torznab ar Newznab srautą arba Jackett ar Prowlarr.",
 	"settings.sources.rowTitle": "{url} · prioritetas {priority} · {uses}",
 	"settings.sources.priorityUses": "Prioritetas {priority} · {uses}",
 	"settings.sources.keyIs": "raktas {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Svetainė",
 	"settings.sources.addressSite": "Pačios svetainės adresas. Keiskite jį tik tada, jei svetainė persikėlė.",
 	"settings.sources.siteKeyLabel": "Slapukas arba RSS raktas",
-	"settings.sources.siteKeyHint": "Iš savo paskyros: uid ir pass iš naršyklės slapuko arba u ir tp iš savo RSS nuorodos. Saugoma užšifruota."
+	"settings.sources.siteKeyHint": "Iš savo paskyros: uid ir pass iš naršyklės slapuko arba u ir tp iš savo RSS nuorodos. Saugoma užšifruota.",
+	"settings.sources.sendTo": "Siųsti atsisiuntimus į",
+	"settings.sources.sendToAny": "Bet kuris atsisiuntėjas",
+	"settings.sources.sendToHint": "Viskas, kas pasirinkta iš šio šaltinio, eina tik į šį atsisiuntėją. Jei jis neveikia, laukiama.",
+	"settings.sources.sendToGone": "Pasirinktas atsisiuntėjas pašalintas. Šio šaltinio atsisiuntimai dabar eina į bet kurį atsisiuntėją."
 }

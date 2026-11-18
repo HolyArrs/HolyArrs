@@ -274,5 +274,13 @@
 	"home.sourcesOff": "در بخش‌ها خاموش است",
 	"home.noneForSources": "برای چیزی که منابعت پیدا می‌کنند وجود ندارد",
 	"home.addedTwice": "دو بار افزوده شده",
-	"home.addedTwiceMany": "دو بار افزوده شده‌اند"
+	"home.addedTwiceMany": "دو بار افزوده شده‌اند",
+	"home.notSetUpYet": "هنوز راه‌اندازی نشده",
+	"home.setUpToAdd": "برای افزودن {name} راه‌اندازی را تمام کنید",
+	"home.comingThisWeek": "این هفته می‌آید",
+	"home.thisWeek": "این هفته",
+	"home.landingThisWeek": "قسمت‌ها و فیلم‌هایی که این هفته می‌رسند",
+	"home.popularThisWeek": "انتشارهای محبوبی که این هفته می‌رسند",
+	"home.peopleCheck": "بررسی افراد",
+	"home.cantReadUsers": "فهرست کاربران خوانده نمی‌شود"
 }

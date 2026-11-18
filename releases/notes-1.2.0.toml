@@ -1,0 +1,142 @@
+version = "1.2.0"
+theme = "Clearer warnings, smarter connection tests, Plex labels and many fixes."
+images = [
+  {registry = "Docker Hub", name = "holyarrs/holyarrs"},
+]
+docs_url = ""
+known_issues = []
+security = []
+credits = [
+  {github = "Yakouaho", link = "https://github.com/HolyArrs/HolyArrs/issues/437", issues = [437]},
+  {github = "mrijke", link = "https://github.com/HolyArrs/HolyArrs/pull/397", issues = [397, 400]},
+  {github = "Jaylouisw", link = "https://github.com/HolyArrs/HolyArrs/pull/405", issues = [403]},
+  {github = "biacz", link = "https://github.com/HolyArrs/HolyArrs/pull/415", issues = [415]},
+  {github = "chadouming", link = "https://github.com/HolyArrs/HolyArrs/pull/417", issues = [417]},
+  {name = "Nippo", issues = [407]},
+  {name = "405 left hands", issues = [438]},
+  {name = "tekhop", issues = [385]},
+  {name = "Tharkys", issues = [366]},
+  {name = "GreyJoshy94", issues = [312]},
+  {github = "danielbaercgn", link = "https://github.com/HolyArrs/HolyArrs/issues/308", issues = [308]},
+  {github = "krayhons", link = "https://github.com/HolyArrs/HolyArrs/issues/308#issuecomment-6862553238", issues = [308]},
+  {github = "JulianAtkins", link = "https://github.com/HolyArrs/HolyArrs/issues/325", issues = [388, 389]},
+  {github = "johngully", link = "https://github.com/HolyArrs/HolyArrs/issues/336", issues = [336, 337]},
+  {github = "zaldev", link = "https://github.com/HolyArrs/HolyArrs/issues/339", issues = [339]},
+  {github = "mimedo", link = "https://github.com/HolyArrs/HolyArrs/issues/348#issuecomment-6862124869", issues = [348]},
+  {github = "stormbyte", link = "https://github.com/HolyArrs/HolyArrs/issues/361", issues = [361]},
+  {github = "ArChAnG3LsFuRy", link = "https://github.com/HolyArrs/HolyArrs/issues/363#issuecomment-6872787622", issues = [363]},
+  {github = "Cavamania", link = "https://github.com/HolyArrs/HolyArrs/issues/373", issues = [373]},
+  {github = "riquecouto", link = "https://github.com/HolyArrs/HolyArrs/issues/377", issues = [377]},
+  {github = "Nviviri", link = "https://github.com/HolyArrs/HolyArrs/issues/390", issues = [390]},
+  {github = "chevalierbenoit", link = "https://github.com/HolyArrs/HolyArrs/issues/390#issuecomment-6912724999", issues = [390]},
+  {github = "irwinthetapemeasure", link = "https://github.com/HolyArrs/HolyArrs/issues/402", issues = [402]},
+  {github = "atocqueville", link = "https://github.com/HolyArrs/HolyArrs/issues/413", issues = [413]},
+  {github = "levaib-git", link = "https://github.com/HolyArrs/HolyArrs/issues/414", issues = [414]},
+  {github = "erichobson", link = "https://github.com/HolyArrs/HolyArrs/issues/378", issues = [378]},
+  {github = "jorgytim", link = "https://github.com/HolyArrs/HolyArrs/issues/379", issues = [379]},
+  {github = "michaeljmcauliffe-ctrl", link = "https://github.com/HolyArrs/HolyArrs/issues/391", issues = [391]},
+]
+
+[[highlights]]
+line = "Tap the red dot to see what needs attention. Fixed warnings clear."
+issues = [409, 410]
+shot = "Home with the red dot open on the attention list"
+
+[[highlights]]
+line = "Connection tests name the exact problem and what a name became."
+issues = [411, 434]
+shot = "Downloader test showing the named problem"
+
+[[highlights]]
+line = "Plex labels requested titles with your own label text."
+issues = [407]
+shot = "Settings > Media servers, Plex labels card"
+
+[groups]
+Requests = [
+  "The owner's requests can wait for approval too. (#421)",
+  "Add dialogs remember your last Search when added choice. (#437)",
+  "Fixed: Requests no longer stay Failed after a movie is added back. (#408)",
+  "Fixed: Requests that came from Seerr can be removed. (#365)",
+]
+Library = [
+  "New names can use your language, and {title_first} for first letters. (#437)",
+  "File names can carry {audio} and {hdr}; dotted names lose double dots. (#397)",
+  "Import files by hand works for music. (#406)",
+  "Broken files are checked after download. (#138)",
+  "See which Trakt list added a title. (#124)",
+  "Shows can be kept apart from anime. (#361)",
+  "A Watched mark on titles, and a Watched by anyone filter. (#385)",
+  "Big libraries scan in minutes on first import. (#425)",
+  "Fixed: Movies reuse a folder that differs only by case or accents. (#437)",
+  "Fixed: Import a library looks in subfolders. (#379)",
+  "Fixed: Import a library handles huge libraries. (#374)",
+  "Fixed: Radarr imports link the files already on disk. (#391)",
+  "Fixed: Movie import uses title aliases, and Review can import the file. (#308)",
+  "Fixed: The Movies page opens fast. (#363)",
+  "Fixed: Poster pictures use the URL base. (#336)",
+  "Fixed: Cunk on Earth and similar shows import. (#339)",
+]
+Downloads = [
+  "Send a Source's grabs to one chosen Downloader. (#402)",
+  "Fixed: Pick anyway on a movie sends it, with no episode error. (#438)",
+  "Fixed: NZBGet grabs work when a link redirects to another host. (#423)",
+  "Fixed: NZBGet gets post-processing settings in the right form. (#422)",
+  "Fixed: rdt-client imports with a leading slash work. (#377)",
+  "Fixed: The ghost torrent Downloader is gone. (#413)",
+  "Fixed: Downloads buttons work right after you allow changes. (#395)",
+  "Fixed: SABnzbd episodes import when the file name hides the episode. (#312)",
+]
+Indexers = [
+  "Fixed: Shows with a country tag, like The Office (US), match releases. (#424)",
+  "Fixed: A REPACK ranks above the plain copy. (#412)",
+  "Fixed: 720p is no longer read as UHD; HUN reads as Hungarian. (#414)",
+  "Fixed: Show searches send IMDb and TMDB ids. (#390)",
+  "Fixed: A repost marker after the group is no longer the group. (#400)",
+]
+Accounts = [
+  "Delete a person from Users. (#378)",
+  "Connect apps over MCP with keys you control. (#81)",
+  "Fixed: User invite settings are clearer. (#337)",
+  "Fixed: Make key in Linked apps works on phones. (#384)",
+]
+Health = [
+  "Say so when a router's proxy sends lookups to a fake address. (#432)",
+  "Fixed: Explore waits when the metadata server says it is busy. (#420)",
+  "Fixed: Your own TMDB v3 key works. (#403)",
+  "Fixed: Turned-off backups stop making backups. (#388)",
+  "Fixed: The master key no longer reads missing after a restart. (#366)",
+]
+Setup = [
+  "Saving says why when HolyArrs is opened by an unknown name. (#436)",
+  "Fixed: First-run Sonarr and Radarr import no longer signs the owner out. (#345)",
+  "Fixed: Allow local network blocks only local addresses. (#373)",
+  "Docs: Why an app name works or not when connecting. (#433)",
+]
+"Media servers" = [
+  "Open a title in Jellyfin or Emby from its page. (#415)",
+]
+"Outside lists" = [
+  "Outside lists can read MDBList lists. (#417)",
+]
+"arr API" = [
+  "arr API works with more dashboards and phone apps. (#333)",
+]
+Movies = [
+  "Fixed: Hover previews stay behind the More like this popup. (#394)",
+]
+Translations = [
+  "Badges, dates and row titles show in all 44 languages. (#352)",
+]
+Subtitles = [
+  "Fixed: Test-only subtitle sites are gone from Settings. (#383)",
+]
+Install = [
+  "Add your own certificate authority to the container. (#389)",
+  "Run HolyArrs as a Proxmox LXC. (#348)",
+]
+
+[stats]
+issues_done = 53
+still_building = 7
+people_credited = 28

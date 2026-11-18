@@ -52,7 +52,7 @@ func TestMediaServersOverHTTP(t *testing.T) {
 	// The masked token keeps the stored one; a wrong one fails the test plainly.
 	r.owner.call("PUT", "/api/v1/media-servers/"+itoa(v.ID), fmt.Sprintf(`{"name":"Jellyfin","on_delete":false,"token":%q}`, secrets.Masked), 200)
 	r.owner.call("PUT", "/api/v1/media-servers/"+itoa(v.ID), `{"name":"Jellyfin","token":"wrong-1"}`, 200)
-	if b := r.owner.call("POST", "/api/v1/media-servers/"+itoa(v.ID)+"/test", "", 502); !strings.Contains(string(b), "turned down the token") {
+	if b := r.owner.call("POST", "/api/v1/media-servers/"+itoa(v.ID)+"/test", "", 502); !strings.Contains(string(b), "password refused") {
 		t.Fatalf("wrong token %s", b)
 	}
 	r.owner.call("PUT", "/api/v1/media-servers/999", `{"name":"x"}`, 404)

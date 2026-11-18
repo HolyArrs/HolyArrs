@@ -83,6 +83,7 @@
 	"settings.users.preset": "Voorinstelling",
 	"settings.users.comingSoon": "Binnenkort",
 	"settings.users.custom": "Aangepast",
+	"settings.users.customHint": "Je eigen combinatie van de schakelaars hieronder. Een voorinstelling vervangt die; kies opnieuw Aangepast om hem terug te krijgen.",
 	"settings.users.ageRating": "Leeftijdsklasse",
 	"settings.users.newPasswordFor": "Nieuw wachtwoord voor {name}",
 	"settings.users.passwordNote": "Gebruik dit als {name} het wachtwoord is vergeten. Diegene wordt overal afgemeld en meldt zich opnieuw aan met het nieuwe. Vertel het persoonlijk.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "bijv. Mama",
 	"settings.users.days": "Dagen dat de link geldig is",
 	"settings.users.makeInvite": "Een uitnodigingslink maken",
-	"settings.users.permAuto4k": "4K-aanvragen zonder wachten goedgekeurd"
+	"settings.users.permAuto4k": "4K-aanvragen zonder wachten goedgekeurd",
+	"settings.users.serverAccount": "Serveraccount",
+	"settings.users.pickAccount": "Kies een account op een mediaserver",
+	"settings.users.accountLinked": "Gekoppeld aan {name}",
+	"settings.users.removedOnServer": "Verwijderd op de {word}-server, dus hier uitgezet",
+	"settings.users.delete": "Verwijderen",
+	"settings.users.deleteName": "{name} verwijderen",
+	"settings.users.confirmDelete": "{name} verwijderen? Diegene wordt voorgoed afgemeld en de sleutels verdwijnen. Verzoeken blijven, getoond als verwijderde persoon.",
+	"settings.users.deleteYes": "Persoon verwijderen",
+	"settings.users.keep": "Houden",
+	"settings.users.deleted": "{name} verwijderd",
+	"settings.users.couldntDelete": "Verwijderen mislukt",
+	"settings.users.confirmDeleteKeys": "Seerr-sleutels die diegene heeft gemaakt werken voor niemand meer tot er een nieuwe is gemaakt.",
+	"settings.users.qualities": "Kwaliteiten",
+	"settings.users.qualitiesHint": "Ze kunnen alleen de ingeschakelde kiezen. Staan ze allemaal aan, dan worden nieuwe ook aangeboden."
 }

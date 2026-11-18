@@ -222,3 +222,25 @@ func TestSkipLocalNeverForSelfCalls(t *testing.T) {
 		t.Fatal("a call HolyArrs sent itself skipped sign-in")
 	}
 }
+
+// A visit the Tailscale plugin hands in comes from inside the machine but
+// must never skip sign-in, whatever the header holds.
+func TestSkipLocalRefusesPluginProxy(t *testing.T) {
+	nets, err := parseLocalNets([]string{"127.0.0.0/8", "10.0.0.0/8"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := setup(t, Options{}).a
+	a.localNets.Store(nets)
+	a.skipLocal.Store(true)
+	for _, v := range []string{"", "token", "x"} {
+		r := httptest.NewRequest("GET", "/api/v1/titles", nil)
+		r.RemoteAddr, r.Host = "10.0.0.5:5000", "10.0.0.9:6262"
+		if v != "" {
+			r.Header.Set(PluginProxyHeader, v)
+		}
+		if got := a.strictLocal(r); got != (v == "") {
+			t.Errorf("header %q: skip = %v", v, got)
+		}
+	}
+}

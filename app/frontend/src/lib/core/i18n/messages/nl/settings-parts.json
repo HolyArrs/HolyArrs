@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Kon {name} niet verbinden",
 	"settings.parts.connected": "{name} verbonden",
 	"settings.parts.title": "Onderdelen",
+	"settings.parts.onOff": "Onderdelen aan- of uitzetten",
 	"settings.parts.ownerOnly": "Alleen eigenaar en beheerders",
 	"settings.parts.safeMode": "HolyArrs draait in veilige modus: alleen de kern draait, en schakelaars voor onderdelen en bediening van fases worden geweigerd tot een normale start. Gebruik <b>HolyArrs herstarten</b> in de <a>Gevarenzone</a> om de veilige modus te verlaten.",
 	"settings.parts.dangerZone": "Gevarenzone",

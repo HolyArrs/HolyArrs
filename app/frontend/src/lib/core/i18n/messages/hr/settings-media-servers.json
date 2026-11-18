@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs putanja",
 	"settings.mediaServers.pathTo": "Ista mapa na poslužitelju",
 	"settings.mediaServers.pathHint": "Samo ako poslužitelj vidi tvoje datoteke pod drugom putanjom",
+	"settings.mediaServers.webUrl": "Adresa za preglednike",
+	"settings.mediaServers.webUrlHint": "Adresa na kojoj svi otvaraju poslužitelj na mobitelu ili računalu. Dodaje gumb Otvori na stranice naslova koje poslužitelj ima. Ostavite prazno ako ne želite gumb.",
 	"settings.mediaServers.local": "Dosegni lokalnu mrežu",
 	"settings.mediaServers.send": "Šalji ažuriranja",
 	"settings.mediaServers.save": "Spremi",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Isključiti povijest gledanja? Sve što je dosad pročitano briše se.",
 	"settings.mediaServers.watchTurnedOn": "Povijest gledanja uključena. Prvo čitanje obavlja se u roku od 30 minuta.",
 	"settings.mediaServers.watchTurnedOff": "Povijest gledanja isključena",
-	"settings.mediaServers.watchFailed": "Povijest gledanja nije se mogla promijeniti"
+	"settings.mediaServers.watchFailed": "Povijest gledanja nije se mogla promijeniti",
+	"settings.mediaServers.labelTitle": "Oznake u Plexu",
+	"settings.mediaServers.labelSwitch": "Označi tražene naslove",
+	"settings.mediaServers.labelHint": "Kad je traženi film ili serija u Plexu, HolyArrs mu dodaje oznaku kako biste po njoj u Plexu mogli filtrirati, slagati kolekcije ili dijeliti. Postojeće oznake ostaju.",
+	"settings.mediaServers.labelText": "Oznaka",
+	"settings.mediaServers.labelAskers": "Dodaj i ime podnositelja zahtjeva kao oznaku",
+	"settings.mediaServers.labelSaved": "Oznake u Plexu spremljene",
+	"settings.mediaServers.labelFailed": "Oznake u Plexu nije moguće spremiti",
+	"settings.mediaServers.labelExisting": "Označi već tražene naslove",
+	"settings.mediaServers.labelExistingStarted": "Označavanje je pokrenuto. Naslovi dobivaju oznake za nekoliko minuta.",
+	"settings.mediaServers.labelExistingFailed": "Označavanje nije moguće pokrenuti"
 }

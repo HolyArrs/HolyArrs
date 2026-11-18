@@ -35,6 +35,14 @@ export function fakeEpisodeName(name?: string): boolean {
 	return new RegExp(`^(${day})?(\\d{1,2}(st|nd|rd|th)?\\s+(${months})\\.?,?(\\s+\\d{4})?|(${months})\\.?\\s+\\d{1,2}(st|nd|rd|th)?,?(\\s+\\d{4})?)$`, 'i').test(n);
 }
 
+/** Daily shows name episodes "November 17, 2026 - Guest": the date repeats the day column and stays in English, so keep only the guest. */
+export function episodeName(name?: string): string {
+	const n = (name ?? '').trim();
+	const m = /^(.+?)\s+[-–—:|]\s+(.+)$/.exec(n);
+	if (m && fakeEpisodeName(m[1])) return m[2].trim();
+	return fakeEpisodeName(n) ? '' : n;
+}
+
 /** An episode's air time in the viewer's own format: "7 PM", "7:30 PM", "19:00". */
 export function clockTime(e: Pick<CalendarEntry, 'kind' | 'date' | 'timed'>, locale?: string): string {
 	if (e.kind !== 'episode' || !e.timed) return '';
@@ -197,7 +205,7 @@ export function musicCaption(e: CalendarEntry, look: number): string {
 export function rowWords(g: CalGroup, look: CaptionLook, today: string): RowWords {
 	const e = g.lead;
 	if (e.kind === 'episode') {
-		const name = g.entries.length === 1 && !fakeEpisodeName(e.episode_name) ? (e.episode_name ?? '') : '';
+		const name = g.entries.length === 1 ? episodeName(e.episode_name) : '';
 		const chan = channelShown(e.network, look) ? (e.network ?? '') : '';
 		const at = clockTime(e);
 		return { title: e.name, lines: [name, episodeWords(g.entries), chan].filter(Boolean), when: at || t('discover.calendarCaptions.allDay'), quiet: !at };
@@ -218,7 +226,7 @@ export function cardLines(g: CalGroup, look: CaptionLook, today: string): string
 	// An episode card: the time, then one line "Season 4, Episode 3 · Its name" (two lines on every card, all alike).
 	if (g.lead.kind === 'episode') {
 		const e = g.lead;
-		const name = g.entries.length === 1 && !fakeEpisodeName(e.episode_name) ? (e.episode_name ?? '') : '';
+		const name = g.entries.length === 1 ? episodeName(e.episode_name) : '';
 		return [w.when, [episodeWords(g.entries), name].filter(Boolean).join(' · ')];
 	}
 	return [w.when, ...(g.lead.kind === 'album' ? [w.title, ...w.lines.slice(1)] : w.lines)];

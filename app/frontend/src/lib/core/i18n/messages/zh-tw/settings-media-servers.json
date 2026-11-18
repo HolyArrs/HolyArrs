@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs 中的路徑",
 	"settings.mediaServers.pathTo": "伺服器上的同一資料夾",
 	"settings.mediaServers.pathHint": "僅當伺服器看到的檔案路徑不同時才需要",
+	"settings.mediaServers.webUrl": "瀏覽器使用的網址",
+	"settings.mediaServers.webUrlHint": "大家在手機或電腦上開啟伺服器的網址。會在伺服器已有作品的頁面加上「開啟」按鈕。留空則不顯示按鈕。",
 	"settings.mediaServers.local": "存取區域網路",
 	"settings.mediaServers.send": "傳送更新",
 	"settings.mediaServers.save": "儲存",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "要關閉觀看紀錄嗎？到目前為止讀取的所有內容都會被刪除。",
 	"settings.mediaServers.watchTurnedOn": "觀看紀錄已開啟。第一次讀取會在 30 分鐘內進行。",
 	"settings.mediaServers.watchTurnedOff": "觀看紀錄已關閉",
-	"settings.mediaServers.watchFailed": "無法變更觀看紀錄"
+	"settings.mediaServers.watchFailed": "無法變更觀看紀錄",
+	"settings.mediaServers.labelTitle": "Plex 標籤",
+	"settings.mediaServers.labelSwitch": "為請求的作品加上標籤",
+	"settings.mediaServers.labelHint": "請求的電影或節目進入 Plex 後，HolyArrs 會為它加上標籤，方便你在 Plex 依標籤篩選、建立收藏或分享。原有的標籤會保留。",
+	"settings.mediaServers.labelText": "標籤",
+	"settings.mediaServers.labelAskers": "同時把請求者的名字加為標籤",
+	"settings.mediaServers.labelSaved": "已儲存 Plex 標籤",
+	"settings.mediaServers.labelFailed": "無法儲存 Plex 標籤",
+	"settings.mediaServers.labelExisting": "為已請求的作品加上標籤",
+	"settings.mediaServers.labelExistingStarted": "已開始加上標籤。作品會在幾分鐘內取得標籤。",
+	"settings.mediaServers.labelExistingFailed": "無法開始加上標籤"
 }

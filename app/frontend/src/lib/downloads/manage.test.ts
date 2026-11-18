@@ -135,7 +135,8 @@ import { countLabel, toolbarTargets } from './manage.ts';
 describe('the toolbar targets', () => {
 	const paused = { can_act: true, state: 'paused' };
 	const running = { can_act: true, state: 'downloading' };
-	const locked = { can_act: false, state: 'downloading' };
+	const locked = { can_act: false, client_locked: true, state: 'downloading' };
+	const done = { can_act: false, state: 'finished' };
 	it('mean the ticked rows first, else the open row', () => {
 		expect(toolbarTargets([paused, running], undefined, 'paused').rows).toEqual([paused]);
 		expect(toolbarTargets([], running, 'running').rows).toEqual([running]);
@@ -145,6 +146,14 @@ describe('the toolbar targets', () => {
 		expect(toolbarTargets([], undefined, 'any').why).toBe('select a download');
 		expect(toolbarTargets([locked], undefined, 'any').why).toBe('this Downloader is read-only');
 		expect(toolbarTargets([], locked, 'running').why).toBe('this Downloader is read-only');
+		// A finished row on a Downloader HolyArrs may change is done, not read-only.
+		expect(toolbarTargets([done], undefined, 'any').why).toBe('this download is done');
+		expect(toolbarTargets([], done, 'paused').why).toBe('this download is done');
+		expect(toolbarTargets([done, { ...done }], undefined, 'any').why).toBe('this download is done');
+		// A running row the user may not manage is not done.
+		const noPerm = { can_act: false, state: 'downloading', phase: 'downloading' };
+		expect(toolbarTargets([noPerm], undefined, 'any').why).toBe('this Downloader is read-only');
+		expect(toolbarTargets([locked, done], undefined, 'any').why).toBe('this Downloader is read-only');
 		expect(toolbarTargets([running], undefined, 'paused').why).toBe('select a paused download');
 		expect(toolbarTargets([paused], undefined, 'running').why).toBe('select a running download');
 		expect(toolbarTargets([running], undefined, 'running', () => false).why).toBe('not for this Downloader');

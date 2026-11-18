@@ -7,16 +7,20 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
-// Handlers serves the update check's state and the "check now" button.
-// HolyArrs never updates itself.
+// Handlers serves the update check's state, the "check now" button and
+// the in-app update controls.
 type Handlers struct {
 	Checker *Checker
+	// ImageVersion is the image's own program version ("Go back" without a
+	// kept download returns to it).
+	ImageVersion string
 }
 
 // Routes adds the update routes.
 func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/app/update", h.get)
 	m.HandleFunc("POST /api/v1/app/update/check", h.check)
+	h.installRoutes(m)
 }
 
 // ViewFor shows the feed only to people who may change settings, and then

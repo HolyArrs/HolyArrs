@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "수상: {name}",
 	"ui.wikiFacts.nominated": "후보: {name}",
 	"ui.wikiFacts.andMore": "외 {count}개",
-	"ui.pageLoader.loading": "불러오는 중"
+	"ui.pageLoader.loading": "불러오는 중",
+	"ui.connectHelp.link": "해결 방법",
+	"ui.ask.remove": "제거",
+	"ui.ask.restore": "복원",
+	"ui.ask.stop": "중지",
+	"ui.ask.revoke": "취소",
+	"ui.ask.replace": "교체",
+	"ui.ask.unlink": "연결 해제",
+	"ui.ask.turnOff": "끄기",
+	"ui.ask.markFailed": "실패로 표시",
+	"ui.ask.reset": "재설정",
+	"ui.ask.import": "가져오기"
 }

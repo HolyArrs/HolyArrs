@@ -340,9 +340,8 @@
 							<label class="switch">
 								<input type="checkbox" role="switch" bind:checked={s.allowed} />
 								<span class="sw" aria-hidden="true"></span>
-								<span>{stepLabel(s.quality)}</span>
+								<span class="step-name">{stepLabel(s.quality)}{#if s.allowed && s.quality === form.body.good_enough_at}<span class="chip ok">{t('settings.pickRuleEdit.goodEnough')}</span>{/if}</span>
 							</label>
-							{#if s.allowed && s.quality === form.body.good_enough_at}<span class="chip ok">{t('settings.pickRuleEdit.goodEnough')}</span>{/if}
 						</li>
 					{/each}
 				</ul>
@@ -354,7 +353,7 @@
 				</select>
 			</Field>
 			<Field id="pr-good-enough-points" label={t('settings.pickRuleEdit.goodEnoughPoints')} hint={t('settings.pickRuleEdit.goodEnoughPointsHint')} error={errors.good_enough_points}>
-				<input id="pr-good-enough-points" class="input narrow" type="number" min={-maxPoints} max={maxPoints} step="1" bind:value={form.body.good_enough_points} {...bad('good_enough_points')} />
+				<input id="pr-good-enough-points" class="input" type="number" min={-maxPoints} max={maxPoints} step="1" bind:value={form.body.good_enough_points} {...bad('good_enough_points')} />
 			</Field>
 		</SettingsCard>
 
@@ -381,8 +380,10 @@
 				</ul>
 			{/if}
 			{#if errors.traits}<span class="field-error" id="pr-traits-error" role="alert">{errors.traits}</span>{/if}
-			<div><Button id="pr-add-trait" icon="plus" onclick={addTrait} disabled={form.body.traits.length >= own.length}>{t('settings.pickRuleEdit.addTrait')}</Button></div>
-			<p class="hint"><a href={to('/settings/pick-rules#own-traits')}>{t('settings.pickRuleEdit.ownTrait')}</a></p>
+			<div class="trait-actions">
+				<Button id="pr-add-trait" icon="plus" onclick={addTrait} disabled={form.body.traits.length >= own.length}>{t('settings.pickRuleEdit.addTrait')}</Button>
+				<Button variant="secondary" href={to('/settings/pick-rules#own-traits')}>{t('settings.pickRuleEdit.ownTrait')}</Button>
+			</div>
 			{#snippet advanced()}
 				<Field id="pr-order" label={t('settings.pickRuleEdit.whichWins')} hint={orderChoices.find(([v]) => v === form.body.order)?.[2]} error={errors.order}>
 					<select id="pr-order" class="input" bind:value={form.body.order}>
@@ -390,10 +391,10 @@
 					</select>
 				</Field>
 				<Field id="pr-upgrade" label={t('settings.pickRuleEdit.upgrade')} hint={t('settings.pickRuleEdit.upgradeHint')} error={errors.upgrade_min_points}>
-					<input id="pr-upgrade" class="input narrow" type="number" min={-maxPoints} max={maxPoints} step="1" bind:value={form.body.upgrade_min_points} {...bad('upgrade_min_points')} />
+					<input id="pr-upgrade" class="input" type="number" min={-maxPoints} max={maxPoints} step="1" bind:value={form.body.upgrade_min_points} {...bad('upgrade_min_points')} />
 				</Field>
 				<Field id="pr-min-points" label={t('settings.pickRuleEdit.minPoints')} error={errors.min_points}>
-					<input id="pr-min-points" class="input narrow" type="number" min={-maxPoints} max={maxPoints} step="1" bind:value={form.body.min_points} {...bad('min_points')} />
+					<input id="pr-min-points" class="input" type="number" min={-maxPoints} max={maxPoints} step="1" bind:value={form.body.min_points} {...bad('min_points')} />
 				</Field>
 				<Field id="pr-proper" label={t('settings.pickRuleEdit.fixedCopies')} hint={properChoices.find(([v]) => v === form.body.proper_policy.mode)?.[2]} error={errors.proper_policy}>
 					<select id="pr-proper" class="input" bind:value={form.body.proper_policy.mode}>
@@ -402,7 +403,7 @@
 				</Field>
 				{#if form.body.proper_policy.mode === 'take_any' || form.body.proper_policy.mode === 'same_group_only'}
 					<Field id="pr-proper-age" label={t('settings.pickRuleEdit.properAge')} hint={t('settings.pickRuleEdit.properAgeHint')} error={errors.max_age_days}>
-						<input id="pr-proper-age" class="input narrow" type="number" min="0" max="36500" step="1" bind:value={form.body.proper_policy.max_age_days} placeholder="0" {...bad('max_age_days')} />
+						<input id="pr-proper-age" class="input" type="number" min="0" max="36500" step="1" bind:value={form.body.proper_policy.max_age_days} placeholder="0" {...bad('max_age_days')} />
 					</Field>
 				{/if}
 			{/snippet}
@@ -488,10 +489,10 @@
 		<SettingsCard id="rules-size" title={t('settings.pickRuleEdit.size')} description={music ? t('settings.pickRuleEdit.sizeMusic') : t('settings.pickRuleEdit.sizeVideo')}>
 			<div class="pair">
 				<Field id="pr-size-min" label={t('settings.pickRuleEdit.smallest')} error={errors.size_limits}>
-					<input id="pr-size-min" class="input narrow" type="number" min="0" step="0.01" inputmode="decimal" placeholder={t('settings.pickRuleEdit.noLimit')} value={form.size.min} oninput={(e) => setSize('min', e.currentTarget.value)} {...bad('size_limits')} />
+					<input id="pr-size-min" class="input" type="number" min="0" step="0.01" inputmode="decimal" placeholder={t('settings.pickRuleEdit.noLimit')} value={form.size.min} oninput={(e) => setSize('min', e.currentTarget.value)} {...bad('size_limits')} />
 				</Field>
 				<Field id="pr-size-max" label={t('settings.pickRuleEdit.largest')}>
-					<input id="pr-size-max" class="input narrow" type="number" min="0" step="0.01" inputmode="decimal" placeholder={t('settings.pickRuleEdit.noLimit')} value={form.size.max} oninput={(e) => setSize('max', e.currentTarget.value)} />
+					<input id="pr-size-max" class="input" type="number" min="0" step="0.01" inputmode="decimal" placeholder={t('settings.pickRuleEdit.noLimit')} value={form.size.max} oninput={(e) => setSize('max', e.currentTarget.value)} />
 				</Field>
 			</div>
 			<p class="hint">{t('settings.pickRuleEdit.sizeNote')}{#if otherSizes} {otherSizes === 1 ? t('settings.pickRuleEdit.oneStep') : t('settings.pickRuleEdit.manySteps', { n: otherSizes })}{/if}</p>
@@ -505,10 +506,10 @@
 			</div>
 			<div class="pair">
 				<Field id="pr-wait-torrent" label={t('settings.pickRuleEdit.waitTorrent')} error={errors.wait_minutes_torrent}>
-					<input id="pr-wait-torrent" class="input narrow" type="number" min="0" max="10080" step="1" bind:value={form.body.protocol.wait_minutes_torrent} {...bad('wait_minutes_torrent')} />
+					<input id="pr-wait-torrent" class="input" type="number" min="0" max="10080" step="1" bind:value={form.body.protocol.wait_minutes_torrent} {...bad('wait_minutes_torrent')} />
 				</Field>
 				<Field id="pr-wait-usenet" label={t('settings.pickRuleEdit.waitUsenet')} error={errors.wait_minutes_usenet}>
-					<input id="pr-wait-usenet" class="input narrow" type="number" min="0" max="10080" step="1" bind:value={form.body.protocol.wait_minutes_usenet} {...bad('wait_minutes_usenet')} />
+					<input id="pr-wait-usenet" class="input" type="number" min="0" max="10080" step="1" bind:value={form.body.protocol.wait_minutes_usenet} {...bad('wait_minutes_usenet')} />
 				</Field>
 			</div>
 			<label class="checkline">
@@ -554,7 +555,6 @@
 	.skipped { margin: 8px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
 	.loading { display: flex; flex-direction: column; gap: 16px; }
 	.ro { font: var(--t-body); }
-	.hint a { color: var(--accent-text); font-weight: 600; }
 	.group { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
 	.group:focus { outline: none; }
 	.cards { min-width: 0; gap: 12px; }
@@ -571,7 +571,10 @@
 	/* One control height per row: select, points and the remove button. */
 	.traits .input { height: 32px; min-height: 32px; padding-block: 0; }
 	.points { width: 140px; flex: none; }
-	.narrow { max-width: 180px; }
+	.step-name { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; }
+	.trait-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-block: 12px; }
+	/* Number boxes fill the same control column as the pickers above them. */
+	.cards :global(.field > input.input[type='number']) { max-width: none; }
 	.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
 	.pair :global(.field + .field) { margin-top: 0; }
 	.chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 32px; }
@@ -579,7 +582,10 @@
 	/* Phones: points stay on the trait's row, narrower. */
 	@media (max-width: 600px) {
 		.traits .input { height: 40px; min-height: 40px; }
-		.points { width: 96px; }
+		/* The trait gets the whole first line so its name is never cut; points and remove sit below. */
+		.traits li { flex-wrap: wrap; }
+		.traits select { flex: 1 1 100%; }
+		.points { flex: 1; width: auto; }
 	}
 	@media (pointer: coarse) { .traits .input { height: 44px; min-height: 44px; } }
 </style>

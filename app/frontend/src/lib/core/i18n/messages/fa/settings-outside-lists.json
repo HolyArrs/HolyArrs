@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "تا وقتی تنظیم نشود، فهرست‌های Trakt خوانده نمی‌شوند.",
 	"settings.outsideLists.replaceKey": "عوض کردن کلید Trakt",
 	"settings.outsideLists.pasteKey": "کلید Trakt را بچسبان",
+	"settings.outsideLists.mdblistKey": "کلید MDBList",
+	"settings.outsideLists.mdblistInfo": "اختیاری. با کلید API خودت از MDBList، فهرست‌های MDBList از راه API MDBList خوانده می‌شوند؛ بدون آن، از راه پیوند عمومی‌شان. رمزگذاری‌شده ذخیره می‌شود و همان کلیدی است که امتیازهای بیرونی در حالت کلیدهای خودتان به کار می‌برند.",
+	"settings.outsideLists.pasteMdblistKey": "کلید API خودت از MDBList را بچسبان",
+	"settings.outsideLists.replaceMdblistKey": "عوض کردن کلید MDBList",
+	"settings.outsideLists.removeMdblistKey": "حذف کلید",
+	"settings.outsideLists.mdblistKeySaved": "کلید MDBList ذخیره شد",
+	"settings.outsideLists.mdblistKeyRemoved": "کلید MDBList حذف شد؛ فهرست‌ها از پیوند عمومی‌شان استفاده می‌کنند",
 	"settings.outsideLists.replaceVip": "عوض کردن توکن دسترسی VIP",
 	"settings.outsideLists.vip": "توکن دسترسی VIP (اختیاری)",
 	"settings.outsideLists.vipHint": "یک زبانه Trakt به صفحه عنوان‌ها اضافه می‌کند: امتیاز، بینندگان و نظرها",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "افزودن به فهرست «هرگز اضافه نشود»",
 	"settings.outsideLists.showDot": "سریال ·",
 	"settings.outsideLists.takeOff": "برداشتن {name}",
-	"settings.outsideLists.empty": "خالی"
+	"settings.outsideLists.empty": "هنوز چیزی در این فهرست نیست"
 }

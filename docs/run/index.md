@@ -16,10 +16,14 @@ Keep a running HolyArrs updated, backed up and healthy.
 - [Logs and storage](logs.md): read the log, share it safely, find your files.
 - [Parts and safe mode](parts-safe-mode.md): turn parts off, start in safe mode.
 - [Outside addresses](outside-hosts.md): every outside address HolyArrs contacts, for a firewall.
+- [Plugins](plugins.md): install, start, stop and remove signed plugins.
+- [Your own certificate authority](own-certificates.md): trust `https://` addresses signed by your own CA.
 
 ## Choose where it runs
 
 - [NAS, Synology and Unraid](platforms.md): one shared media mount.
 - [Reverse proxy and URL base](url-base.md): serve HolyArrs under a path.
 - [Portable build](portable.md): run without Docker on Linux or Windows.
+- [Remote access](remote-access.md): reach HolyArrs from your devices anywhere through Tailscale.
 - [Synology package](synology.md): experimental, installs from Package Center without Container Manager.
+- [Proxmox container](proxmox.md): one script makes a container and installs HolyArrs without Docker.

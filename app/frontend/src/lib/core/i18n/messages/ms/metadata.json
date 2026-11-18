@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Filem",
 	"metadata.health.downTitle": "Metadata di luar talian",
 	"metadata.health.down": "Carian dan karya seni baharu dijeda sehingga ia kembali. Pustaka anda masih berfungsi.",
-	"metadata.health.back": "Metadata kembali dalam talian"
+	"metadata.health.back": "Metadata kembali dalam talian",
+	"metadata.health.fakeIp": "Penghala atau VPN anda menghantar HolyArrs ke alamat palsu (198.18.x.x). Biasanya ini daripada Clash atau Surge. Tambah {host} ke senarai direct-nya."
 }

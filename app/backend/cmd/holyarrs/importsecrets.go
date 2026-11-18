@@ -21,6 +21,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate/secretsfile"
 )
@@ -264,7 +265,7 @@ func loopbackHost(h string) bool {
 // link-local address.
 func metadataHost(h string) bool {
 	if ip := net.ParseIP(h); ip != nil {
-		return ip.IsLinkLocalUnicast() || ip.Equal(net.ParseIP("fd00:ec2::254")) || ip.Equal(net.ParseIP("100.100.100.200"))
+		return ip.IsLinkLocalUnicast() || outbound.MetadataIP(ip)
 	}
 	return h == "metadata.google.internal" || h == "metadata"
 }

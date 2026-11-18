@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Ayarlanana kadar Trakt listelerin okunamaz.",
 	"settings.outsideLists.replaceKey": "Trakt anahtarını değiştir",
 	"settings.outsideLists.pasteKey": "Trakt anahtarını yapıştır",
+	"settings.outsideLists.mdblistKey": "MDBList anahtarı",
+	"settings.outsideLists.mdblistInfo": "İsteğe bağlı. MDBList API anahtarınla MDBList listeleri MDBList API üzerinden okunur; anahtar olmadan herkese açık bağlantıları üzerinden. Şifreli saklanır ve Kendi anahtarların modunda dış puanların kullandığı anahtarla aynıdır.",
+	"settings.outsideLists.pasteMdblistKey": "MDBList API anahtarını yapıştır",
+	"settings.outsideLists.replaceMdblistKey": "MDBList anahtarını değiştir",
+	"settings.outsideLists.removeMdblistKey": "Anahtarı kaldır",
+	"settings.outsideLists.mdblistKeySaved": "MDBList anahtarı kaydedildi",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList anahtarı kaldırıldı; listeler herkese açık bağlantılarını kullanır",
 	"settings.outsideLists.replaceVip": "VIP erişim token'ını değiştir",
 	"settings.outsideLists.vip": "VIP erişim token'ı (isteğe bağlı)",
 	"settings.outsideLists.vipHint": "Başlık sayfalarına bir Trakt sekmesi ekler: puan, izleyenler ve yorumlar",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Asla ekleme listesine ekle",
 	"settings.outsideLists.showDot": "dizi ·",
 	"settings.outsideLists.takeOff": "{name} listeden çıkar",
-	"settings.outsideLists.empty": "Boş"
+	"settings.outsideLists.empty": "Bu listede henüz bir şey yok"
 }

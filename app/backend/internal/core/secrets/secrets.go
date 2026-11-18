@@ -119,7 +119,13 @@ func LoadKey(dir, named string) ([]byte, error) {
 	if named != "" {
 		b, err := os.ReadFile(named)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %s (named in %s): %w", ErrKeyUnreadable, named, EnvKeyFile, folderErr(named, err))
+			err = folderErr(named, err)
+			// The hint is for the first start; the held page's recheck
+			// passes no folder and must stay cheap.
+			if dir != "" && errors.Is(err, os.ErrNotExist) && !errors.Is(err, ErrKeyIsFolder) {
+				return nil, fmt.Errorf("%w: %s (named in %s): %w; %w", ErrKeyUnreadable, named, EnvKeyFile, err, keyHint(dir, named, true))
+			}
+			return nil, fmt.Errorf("%w: %s (named in %s): %w", ErrKeyUnreadable, named, EnvKeyFile, err)
 		}
 		return keyIn(named, b)
 	}
@@ -140,7 +146,7 @@ func LoadKey(dir, named string) ([]byte, error) {
 		return nil, fmt.Errorf("master key: checking the database for saved secrets: %w", err)
 	} else if saved {
 		return nil, fmt.Errorf("%w: the master key file %s is missing, but the database already holds saved secrets that only that key can open; "+
-			"put the key file (or your key kit renamed to %s) back in the config folder, or name it in %s", ErrKeyMissing, p, KeyFile, EnvKeyFile)
+			"put the key file (or your key kit renamed to %s) back in the config folder, or name it in %s; %w", ErrKeyMissing, p, KeyFile, EnvKeyFile, keyHint(dir, p, false))
 	}
 	key := make([]byte, KeySize)
 	if _, err := rand.Read(key); err != nil {

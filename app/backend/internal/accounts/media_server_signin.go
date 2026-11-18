@@ -98,14 +98,24 @@ func (a *Auth) checkMediaServer(w http.ResponseWriter, r *http.Request, kind str
 		} `json:"User"`
 		AccessToken string `json:"AccessToken"`
 	}
-	code, err := a.serverFetch(ctx, http.MethodPost, v.URL+"/Users/AuthenticateByName", hdr, map[string]string{"Username": c.Name, "Pw": c.Password}, &got)
+	var refusal []byte
+	code, err := a.serverFetch(ctx, http.MethodPost, v.URL+"/Users/AuthenticateByName", hdr, map[string]string{"Username": c.Name, "Pw": c.Password}, keepRefusal{&got, &refusal})
 	if err != nil {
 		undo(code)
 		log.Printf("auth: %s sign-in: %v", kind, err)
 		fail(w, http.StatusBadGateway, "the "+kind+" server did not answer; ask the owner")
 		return mediaMe{}, place{}, false
 	}
-	if code == http.StatusUnauthorized || code == http.StatusForbidden || code/100 == 4 {
+	// A turned-off account is not a wrong password, so the try is taken back
+	// from the name; it still counts at the address, so guessing stays limited.
+	byName := []failMark{marks[len(marks)-1]}
+	if mediaOff(code, refusal) {
+		a.undoFail(byName)
+		a.failedEvent(r, a.linkedName(ctx, kind, "", c.Name), kind+" turned off")
+		fail(w, http.StatusForbidden, mediaOffLine(kind))
+		return mediaMe{}, place{}, false
+	}
+	if code/100 == 4 {
 		log.Printf("auth: failed %s sign-in from %s", kind, r.RemoteAddr)
 		a.failedEvent(r, a.linkedName(ctx, kind, "", c.Name), kind)
 		fail(w, http.StatusUnauthorized, "wrong name or password")
@@ -124,8 +134,9 @@ func (a *Auth) checkMediaServer(w http.ResponseWriter, r *http.Request, kind str
 		_, _ = a.serverFetch(context.WithoutCancel(ctx), http.MethodPost, v.URL+"/Sessions/Logout", lh, nil, nil)
 	}
 	if got.User.Policy.IsDisabled {
+		a.undoFail(byName)
 		a.failedEvent(r, a.linkedName(ctx, kind, got.User.ID, got.User.Name), kind+" turned off")
-		fail(w, http.StatusForbidden, "this account is turned off on the "+kind+" server")
+		fail(w, http.StatusForbidden, mediaOffLine(kind))
 		return mediaMe{}, place{}, false
 	}
 	a.mu.Lock()

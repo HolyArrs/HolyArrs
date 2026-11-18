@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "{name}에 연결할 수 없습니다",
 	"settings.parts.connected": "{name}에 연결되었습니다",
 	"settings.parts.title": "파트",
+	"settings.parts.onOff": "파트 켜기 또는 끄기",
 	"settings.parts.ownerOnly": "소유자와 관리자만",
 	"settings.parts.safeMode": "HolyArrs가 안전 모드로 실행 중입니다. 핵심 기능만 실행되며, 정상 시작 전까지 파트 스위치와 단계 제어는 거부됩니다. 안전 모드를 끝내려면 <a>위험 구역</a>에서 <b>HolyArrs 다시 시작</b>을 사용하세요.",
 	"settings.parts.dangerZone": "위험 구역",

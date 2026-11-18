@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Ruta en HolyArrs",
 	"settings.mediaServers.pathTo": "La misma carpeta en el servidor",
 	"settings.mediaServers.pathHint": "Solo si el servidor ve tus archivos en otra ruta",
+	"settings.mediaServers.webUrl": "Dirección para navegadores",
+	"settings.mediaServers.webUrlHint": "Donde la gente abre el servidor en su móvil u ordenador. Añade un botón Abrir en las páginas de los títulos que tiene. Déjalo vacío para no mostrar botón.",
 	"settings.mediaServers.local": "Acceder a la red local",
 	"settings.mediaServers.send": "Enviar actualizaciones",
 	"settings.mediaServers.save": "Guardar",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "¿Apagar el historial? Se borra todo lo leído hasta ahora.",
 	"settings.mediaServers.watchTurnedOn": "Historial activado. La primera lectura llega en menos de 30 minutos.",
 	"settings.mediaServers.watchTurnedOff": "Historial apagado",
-	"settings.mediaServers.watchFailed": "No se pudo cambiar el historial"
+	"settings.mediaServers.watchFailed": "No se pudo cambiar el historial",
+	"settings.mediaServers.labelTitle": "Etiquetas de Plex",
+	"settings.mediaServers.labelSwitch": "Etiquetar títulos solicitados",
+	"settings.mediaServers.labelHint": "Cuando una película o serie solicitada está en Plex, HolyArrs le añade una etiqueta para que puedas filtrar, crear colecciones o compartir con ella en Plex. Las etiquetas que ya tiene se quedan.",
+	"settings.mediaServers.labelText": "Etiqueta",
+	"settings.mediaServers.labelAskers": "Añadir también el nombre de quien lo solicitó como etiqueta",
+	"settings.mediaServers.labelSaved": "Etiquetas de Plex guardadas",
+	"settings.mediaServers.labelFailed": "No se pudieron guardar las etiquetas de Plex",
+	"settings.mediaServers.labelExisting": "Etiquetar títulos ya solicitados",
+	"settings.mediaServers.labelExistingStarted": "Etiquetado iniciado. Los títulos tendrán sus etiquetas en unos minutos.",
+	"settings.mediaServers.labelExistingFailed": "No se pudo iniciar el etiquetado"
 }

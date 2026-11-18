@@ -1,6 +1,6 @@
-import { expect, test, type Browser, type Dialog, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
 import { createHmac } from 'node:crypto';
-import { owner, signIn, signOut } from '../helpers/helpers.ts';
+import { owner, plainForm, signIn, signOut } from '../helpers/helpers.ts';
 import { embyUser, jellyfinPort, mediaUser } from '../fakes/index.mjs';
 
 test.describe.configure({ mode: 'serial' });
@@ -18,6 +18,22 @@ function totp(secret: string, at = Date.now()): string {
 	const h = createHmac('sha1', key).update(msg).digest();
 	const off = h[h.length - 1] & 15;
 	return String((h.readUInt32BE(off) & 0x7fffffff) % 1_000_000).padStart(6, '0');
+}
+
+// One media-server sign-in click. Every sign-in from 127.0.0.1 shares one address limit, and earlier
+// specs' deliberate wrong passwords count toward it; when the server says wait (429), wait as long as it
+// says and try again, as a person would.
+async function mediaSignIn(p: Page, kind: 'Jellyfin' | 'Emby', password: string) {
+	for (let i = 0; i < 6; i++) {
+		const answer = p.waitForResponse((r) => /\/api\/v1\/auth\/media-server\/[a-z]+$/.test(new URL(r.url()).pathname) && r.request().method() === 'POST');
+		// A refused try clears the password field; type it again each time.
+		await p.getByLabel('Password', { exact: true }).fill(password);
+		await p.getByRole('button', { name: `Sign in with ${kind}` }).click();
+		const r = await answer;
+		if (r.status() !== 429) return;
+		await p.waitForTimeout((Number(r.headers()['retry-after'] ?? '1') + 0.5) * 1000);
+	}
+	throw new Error(`${kind} sign-in stayed rate limited`);
 }
 
 async function fresh(browser: Browser): Promise<Page> {
@@ -164,12 +180,11 @@ test('the owner changes what a member may do, and can turn them off', async () =
 	await expect(ana.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Downloads' })).toBeVisible();
 
 	await own.getByRole('button', { name: 'Reset two-factor sign-in for ana' }).click({ trial: true });
-	own.once('dialog', (d) => d.accept());
 	await own.getByRole('button', { name: 'Turn off ana' }).click();
+	await own.getByTestId('ask-yes').click();
 	await expect(own.getByText('ana turned off')).toBeVisible();
 	await ana.goto('/library');
 	await expect(ana).toHaveURL(/\/login/);
-	own.once('dialog', (d) => d.accept());
 	await own.getByRole('button', { name: 'Turn on ana' }).click();
 	await expect(own.getByText('ana turned on')).toBeVisible();
 });
@@ -223,11 +238,9 @@ test('sign in with Jellyfin makes a member', async ({ browser }) => {
 	await mum.goto('/login');
 	await mum.getByRole('button', { name: 'Continue with Jellyfin' }).click();
 	await mum.getByLabel('Name').fill(mediaUser.name);
-	await mum.getByLabel('Password', { exact: true }).fill('not it');
-	await mum.getByRole('button', { name: 'Sign in with Jellyfin' }).click();
+	await mediaSignIn(mum, 'Jellyfin', 'not it');
 	await expect(mum.getByRole('alert')).toContainText(/wrong name or password/i);
-	await mum.getByLabel('Password', { exact: true }).fill(mediaUser.password);
-	await mum.getByRole('button', { name: 'Sign in with Jellyfin' }).click();
+	await mediaSignIn(mum, 'Jellyfin', mediaUser.password);
 	await expect(mum).toHaveURL(/\/$/);
 	await expect(mum.getByRole('button', { name: 'Account and appearance' })).toBeVisible();
 
@@ -265,11 +278,9 @@ test('sign in with Emby makes a member, next to Jellyfin', async ({ browser }) =
 	await gran.getByRole('button', { name: 'Emby', exact: true }).click();
 	await gran.getByLabel('Name').fill(embyUser.name);
 	// Mum's Jellyfin password is not an Emby password.
-	await gran.getByLabel('Password', { exact: true }).fill(mediaUser.password);
-	await gran.getByRole('button', { name: 'Sign in with Emby' }).click();
+	await mediaSignIn(gran, 'Emby', mediaUser.password);
 	await expect(gran.getByRole('alert')).toContainText(/wrong name or password/i);
-	await gran.getByLabel('Password', { exact: true }).fill(embyUser.password);
-	await gran.getByRole('button', { name: 'Sign in with Emby' }).click();
+	await mediaSignIn(gran, 'Emby', embyUser.password);
 	await expect(gran).toHaveURL(/\/$/);
 	await expect(gran.getByRole('button', { name: 'Account and appearance' })).toBeVisible();
 });
@@ -348,15 +359,11 @@ test('single sign-on links are undone: the owner unlinks a person, and the owner
 
 	// The owner unlinks Pat from Users; the browser asks twice, since it is Pat's only way in.
 	await own.goto('/settings/users');
-	const asked: string[] = [];
-	const yes = (d: Dialog) => (asked.push(d.message()), d.accept());
-	own.removeAllListeners('dialog'); // a once() above may still wait for a dialog that never came
-	own.on('dialog', yes);
 	await own.getByRole('button', { name: 'Unlink the single sign-on sign-in of pat' }).click();
+	await own.getByTestId('ask-yes').click();
+	await expect(own.getByTestId('ask-text')).toContainText('has no password and will be locked out');
+	await own.getByTestId('ask-yes').click();
 	await expect(own.getByText('Sign-in unlinked for pat')).toBeVisible();
-	own.off('dialog', yes);
-	expect(asked).toHaveLength(2);
-	expect(asked[1]).toContain('has no password and will be locked out');
 	await expect(own.getByRole('button', { name: 'Unlink the single sign-on sign-in of pat' })).toHaveCount(0);
 	// The device that single sign-on signed in is signed out.
 	await pat.reload();
@@ -419,4 +426,19 @@ test('sign in with Plex makes a member (fake Plex)', async ({ browser }) => {
 	await expect(own.getByText('Jellyfin: Mum')).toBeVisible();
 	await expect(own.getByText('Emby: Gran')).toBeVisible();
 	await expect(own.getByText('Plex: plexkid')).toBeVisible();
+});
+
+test('a save on a host name HolyArrs does not know says why and where to add the name', async ({ browser, baseURL }) => {
+	// *.localhost reaches this machine but is not an allowed host name, so the block stays and the message explains it.
+	const page = await fresh(browser);
+	const port = new URL(baseURL!).port;
+	await page.goto(`http://unknown-name.localhost:${port}/login`);
+	await plainForm(page);
+	await page.getByLabel('Name').fill(owner().name);
+	await page.getByLabel('Password', { exact: true }).fill(owner().password);
+	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+	await expect(page.getByText("Saving is blocked because HolyArrs doesn't know the name unknown-name.localhost.")).toBeVisible();
+	await expect(page.getByText(/Settings > Sign-in and security > Allowed host names/)).toBeVisible();
+	await expect(page).toHaveURL(/\/login/);
+	await page.context().close();
 });

@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "المساران متطابقان، لذا لا يغيّر هذا الزوج أي اسم. لكنه يخبر HolyArrs بمكان ملفات هذا التنزيل، فيمكنك إبقاؤه.",
 	"settings.downloaders.change": "تغيير {name}",
 	"settings.downloaders.whichApp": "أي تطبيق",
-	"settings.downloaders.torrents": "(تورنت)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "تورنت",
+	"settings.downloaders.usenetHead": "يوزنت",
+	"settings.downloaders.mostUsed": "الأكثر استخدامًا",
 	"settings.downloaders.name": "الاسم",
 	"settings.downloaders.address": "العنوان",
 	"settings.downloaders.addressHint": "صفحته على الويب. لـ SABnzbd، استخدم عنوان IP أو اسمح باسم مضيف HolyArrs.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "الفئة بعد الاستيراد",
 	"settings.downloaders.categoryAfterImportHint": "بعد استيراد التورنت ينقله HolyArrs إلى هذه الفئة. اتركها فارغة لإبقائه في الفئة الرئيسية.",
 	"settings.downloaders.ownOnly": "إظهار عناصر HolyArrs فقط",
-	"settings.downloaders.ownOnlyHint": "تُخفى عناصر التطبيقات الأخرى في برنامج التنزيل هذا، ولا يغيّرها HolyArrs."
+	"settings.downloaders.ownOnlyHint": "تُخفى عناصر التطبيقات الأخرى في برنامج التنزيل هذا، ولا يغيّرها HolyArrs.",
+	"settings.downloaders.state.notAnswering": "لا يستجيب",
+	"settings.downloaders.state.paused": "موقوف مؤقتًا",
+	"settings.downloaders.state.resting": "في استراحة",
+	"settings.downloaders.state.signInRefused": "رُفض تسجيل الدخول",
+	"settings.downloaders.state.working": "يعمل"
 }

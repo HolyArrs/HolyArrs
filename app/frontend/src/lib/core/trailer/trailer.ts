@@ -121,6 +121,11 @@ export function finePointer(): boolean {
 	return typeof window !== 'undefined' && (window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ?? false);
 }
 
+// While a dialog is open the page behind it gets no hover cards, and cards inside it get none either (the card would sit under the dialog).
+export function modalOpen(): boolean {
+	return typeof document !== 'undefined' && !!document.querySelector('dialog[open]');
+}
+
 // A card under a resting pointer must not grow because the page scrolled under it:
 // after a scroll, hover waits until the pointer itself moves.
 let lastScroll = -Infinity;

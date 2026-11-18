@@ -72,7 +72,7 @@ export function failReason(im: ImportRecord | undefined): string | null {
 /** The short line after a row's status word: what an import in progress is doing, why it failed, or a seeding torrent's ratio. Empty when the word says it all. */
 export function statusDetail(r: Pick<DownloadRow, 'phase' | 'state' | 'progress' | 'ratio' | 'refused_why'>, im: ImportRecord | undefined): string {
 	const stage = stageOf(r);
-	if ((stage === 'done' || stage === 'decide') && filesGone(im)) return t('downloads.detail.filesGone');
+	if ((stage === 'done' || stage === 'seeding' || stage === 'decide') && filesGone(im)) return t('downloads.detail.filesGone');
 	if (stage === 'importing') {
 		// Bytes are in; the Downloader verifies, repairs and unpacks (Usenet).
 		if (r.phase === 'downloading') return t('downloads.detail.unpacking');

@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Noraidīt Izlaidumus, kas publicēti pirms iznākšanas",
 	"settings.search.refuseEarlyHint": "Visticamāk viltojumi. Izvēlies izlaidumu tos tomēr rāda ar brīdinājumu.",
 	"settings.search.refuseTiny": "Noraidīt viltojumus pēc izmēra un faila veida",
-	"settings.search.refuseTinyHint": "Pārāk mazi Izlaidumi, tukši faili un .wmv vai .asf zem HD nosaukumiem",
+	"settings.search.refuseTinyHint": "Pārāk mazi Izlaidumi, tukši faili, pārtraukti video un .wmv vai .asf zem HD nosaukumiem",
 	"settings.search.grace": "Stundas, cik pāragri Izlaidums drīkst būt",
 	"settings.search.graceHint": "Laika joslām. Noklusējums 24.",
 	"settings.search.floors": "Pārbaudīt failu izmērus importā",

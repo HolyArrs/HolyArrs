@@ -58,14 +58,14 @@ func (d *feedDrops) into(result map[string]any) {
 // matchFeedItem matches one feed Release to a Title the way the feed check
 // and its probe do: as named, then as a show, then as an album.
 func matchFeedItem(it Item, refs []mediafiles.TitleRef, hasShow, hasArtist bool) mediafiles.Match {
-	m := mediafiles.MatchTitle(releasename.Parse(it.Title, releasename.Hints{Size: it.Size}), refs)
+	m := mediafiles.MatchRelease(releasename.Parse(it.Title, releasename.Hints{Size: it.Size}), refs)
 	if m.Title == nil && hasShow {
 		// Read again as a show name ("Part 2" before tags, "- 12").
-		m = mediafiles.MatchTitle(releasename.Parse(it.Title, releasename.Hints{Size: it.Size, Show: true}), refs)
+		m = mediafiles.MatchRelease(releasename.Parse(it.Title, releasename.Hints{Size: it.Size, Show: true}), refs)
 	}
 	if m.Title == nil && hasArtist {
 		// Read again as an album name ("Artist - Album (Year) [FLAC]").
-		m = mediafiles.MatchTitle(releasename.Parse(it.Title, releasename.Hints{Size: it.Size, Music: true}), refs)
+		m = mediafiles.MatchRelease(releasename.Parse(it.Title, releasename.Hints{Size: it.Size, Music: true}), refs)
 	}
 	return m
 }

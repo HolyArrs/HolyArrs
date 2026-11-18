@@ -164,6 +164,15 @@ export function navEnded(): void {
 	leave(node);
 }
 
+// A page change a page cancels ("Leave anyway?" answered no) never arrives, so its end comes from complete.
+// One a newer page change replaced ends the same way while the newer one is still on its way: the veil stays for it.
+export function navWatch(complete: Promise<unknown> | undefined, replaced: () => boolean = () => false): void {
+	navStarted();
+	complete?.catch(() => {
+		if (!replaced()) navEnded();
+	});
+}
+
 // Hold is zero on first loads so only reloads replay the full loader.
 function pageHold(): number {
 	if (typeof performance === 'undefined' || typeof location === 'undefined') return HOLD_MS;

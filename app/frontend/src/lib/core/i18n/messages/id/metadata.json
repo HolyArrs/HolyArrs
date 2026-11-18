@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Film",
 	"metadata.health.downTitle": "Metadata offline",
 	"metadata.health.down": "Pencarian dan gambar baru dijeda sampai metadata kembali. Pustaka kamu tetap berfungsi.",
-	"metadata.health.back": "Metadata kembali online"
+	"metadata.health.back": "Metadata kembali online",
+	"metadata.health.fakeIp": "Router atau VPN kamu mengirim HolyArrs ke alamat palsu (198.18.x.x). Biasanya ini dari Clash atau Surge. Tambahkan {host} ke daftar direct-nya."
 }

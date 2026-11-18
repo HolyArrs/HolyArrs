@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Nie udało się zapisać języka",
 	"accounts.language.count.one": "1 język",
 	"accounts.language.count.other": "Języki: {n}",
-	"accounts.account.watchEveryone": "Właściciel włączył to dla wszystkich. Wyłącz oba, aby to zatrzymać."
+	"accounts.account.watchEveryone": "Właściciel włączył to dla wszystkich. Wyłącz oba, aby to zatrzymać.",
+	"accounts.watch.title": "Znaczniki obejrzanych",
+	"accounts.watch.hint": "Połącz tu swoje konto na serwerze multimediów, aby Biblioteka pokazywała, co obejrzałeś.",
+	"accounts.watch.as": "{server}, jako {name}",
+	"accounts.watch.nameOn": "Nazwa na {server}",
+	"accounts.watch.passwordOnce": "Twoje hasło trafia tylko do {server} i nie jest zapisywane.",
+	"accounts.watch.linked": "Połączono z {name} na {server}",
+	"accounts.watch.unlinked": "Odłączono",
+	"accounts.login.importPaused": "Twoje logowanie wygasło, więc import jest wstrzymany. Zaloguj się, otwórz Import biblioteki i naciśnij Skanuj, aby kontynuować."
 }

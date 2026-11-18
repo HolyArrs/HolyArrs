@@ -85,9 +85,9 @@ test('stuck tracks on a phone', async ({ browser }) => {
 
 test('Stop looking for one track settles it; the rest of the album stays in the library', async () => {
 	const card = details().getByTestId('decision').filter({ hasText: 'Harbour Songs' });
-	page.once('dialog', (d) => d.accept());
 	await card.getByRole('button', { name: /^More/ }).click();
 	await page.getByRole('menuitem', { name: 'Stop looking', exact: true }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(page.getByText(/Stopped looking for Tin Lanterns – Harbour Songs Track 04/)).toBeVisible();
 	await expect(card).toHaveCount(0, { timeout: 30_000 });
 });

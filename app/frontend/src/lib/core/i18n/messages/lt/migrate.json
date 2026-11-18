@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Reikia dėmesio: {n}",
 	"migrate.needAttentionWhy": "Jų senojo aplanko šiame serveryje nėra, todėl jie atkeliauja kaip norimi į aplanką čia. Pataisykite aplanką arba pridėkite kelio taisyklę: {list}",
 	"migrate.leftOutUncheckedN": "Praleista: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} nustatytas į „Neįtraukti jų“; pasirinkite jam aplanką ir importuokite iš naujo"
+	"migrate.leftOutUncheckedWhy": "{folder} nustatytas į „Neįtraukti jų“; pasirinkite jam aplanką ir importuokite iš naujo",
+	"migrate.seasonsDifferOne": "Patikrinkite 1 serialą, rastą pagal TMDB numerį",
+	"migrate.seasonsDifferOther": "Pagal TMDB numerį rasti serialai, kuriuos reikia patikrinti: {n}",
+	"migrate.seasonsDifferWhy": "{list} rado tik senos programos TMDB numeris, čia kitu pavadinimu. Atidarykite kiekvieną ir patikrinkite, ar tai tas pats serialas. Jei taip, jo sezonai numeruojami kitaip: susiekite jo Likusius failus ir tada įjunkite serialą. Jei ne, pašalinkite jį; jo failai lieka savo vietoje.",
+	"migrate.stillChecking": "Serialai, kuriuos metaduomenų serveris dar tikrina: {n}. Sąrašas atsinaujins pats, kai bus baigta.",
+	"migrate.stillCheckingImport": "Serialai, kuriuos metaduomenų serveris dar tikrina: {n}. Galite importuoti jau dabar; jie bus patikrinti importuojant."
 }

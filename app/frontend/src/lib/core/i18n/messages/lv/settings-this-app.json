@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "nav",
 	"settings.thisApp.needsRestart": "Nepieciešama restartēšana. To pārraksta HOLYARRS_URL_BASE vai -url-base.",
 	"settings.thisApp.save": "Saglabāt",
-	"settings.thisApp.licence": "HolyArrs ir brīva programmatūra ar AGPL-3.0 licenci."
+	"settings.thisApp.licence": "HolyArrs ir brīva programmatūra ar AGPL-3.0 licenci.",
+	"settings.thisApp.proxy": "Starpniekserveris",
+	"settings.thisApp.proxyDesc": "Sūtīt ārējos pieprasījumus caur starpniekserveri. Bloķēšanas un mājas tīkla noteikumi joprojām attiecas uz īsto galamērķi.",
+	"settings.thisApp.proxyType": "Veids",
+	"settings.thisApp.proxyOff": "Izslēgts",
+	"settings.thisApp.proxyHost": "Resursdators",
+	"settings.thisApp.proxyPort": "Ports",
+	"settings.thisApp.proxyUser": "Lietotājvārds",
+	"settings.thisApp.proxyPasswordLabel": "Parole",
+	"settings.thisApp.proxyPasswordKept": "Atstājiet tukšu, lai paturētu saglabāto paroli",
+	"settings.thisApp.proxyBypass": "Apiet starpniekserveri",
+	"settings.thisApp.proxyBypassHint": "Nosaukumi, adreses vai diapazoni, atdalīti ar komatiem. *.example.com aptver visus nosaukumus zem tā.",
+	"settings.thisApp.proxyBypassLocal": "Apiet starpniekserveri vietējām adresēm",
+	"settings.thisApp.proxyBypassLocalHint": "Šī iekārta un jūsu mājas tīkls savienojas tieši",
+	"settings.thisApp.proxySaved": "Starpniekserveris saglabāts",
+	"settings.thisApp.proxyOffSaved": "Starpniekserveris izslēgts"
 }

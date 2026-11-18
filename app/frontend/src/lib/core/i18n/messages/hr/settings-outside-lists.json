@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Tvoji Trakt popisi ne mogu se čitati dok se ne postavi.",
 	"settings.outsideLists.replaceKey": "Zamijeni Trakt ključ",
 	"settings.outsideLists.pasteKey": "Zalijepi Trakt ključ",
+	"settings.outsideLists.mdblistKey": "MDBList ključ",
+	"settings.outsideLists.mdblistInfo": "Neobavezno. S tvojim MDBList API ključem MDBList popisi čitaju se putem MDBList API-ja; bez njega putem njihove javne poveznice. Pohranjuje se šifriran i isti je ključ koji vanjske ocjene koriste u načinu Vaši vlastiti ključevi.",
+	"settings.outsideLists.pasteMdblistKey": "Zalijepi svoj MDBList API ključ",
+	"settings.outsideLists.replaceMdblistKey": "Zamijeni MDBList ključ",
+	"settings.outsideLists.removeMdblistKey": "Ukloni ključ",
+	"settings.outsideLists.mdblistKeySaved": "MDBList ključ spremljen",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList ključ uklonjen; popisi koriste svoju javnu poveznicu",
 	"settings.outsideLists.replaceVip": "Zamijeni VIP pristupni token",
 	"settings.outsideLists.vip": "VIP pristupni token (neobavezno)",
 	"settings.outsideLists.vipHint": "Dodaje karticu Trakt na stranice naslova: ocjena, gledatelji i komentari",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Dodaj na popis za nikad dodati",
 	"settings.outsideLists.showDot": "serija ·",
 	"settings.outsideLists.takeOff": "Skini {name}",
-	"settings.outsideLists.empty": "Prazno"
+	"settings.outsideLists.empty": "Na ovom popisu još nema ničega"
 }

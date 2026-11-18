@@ -4,7 +4,7 @@ import type { DownloadRow } from '../core/types.ts';
 
 export type Stage = 'checking' | 'queued' | 'paused' | 'downloading' | 'stalled' | 'importing' | 'done' | 'seeding' | 'failed' | 'decide';
 
-type RowBits = Pick<DownloadRow, 'phase' | 'state' | 'progress'> & { replaced?: boolean; client_hint?: DownloadRow['client_hint']; pack?: DownloadRow['pack'] };
+type RowBits = Pick<DownloadRow, 'phase' | 'state' | 'progress'> & { replaced?: boolean; client_hint?: DownloadRow['client_hint']; pack?: DownloadRow['pack']; seeding?: boolean };
 
 export type TabKey = 'active' | 'waiting' | 'progress' | 'done' | 'problems';
 
@@ -224,7 +224,8 @@ export function statusWord(r: RowBits): string {
 		case 'failed':
 			return t('downloads.status.failed');
 	}
-	return t('downloads.status.done');
+	// A finished torrent still shared reads as its panel does.
+	return r.seeding ? t('downloads.status.doneSeeding') : t('downloads.status.done');
 }
 
 /** A quiet sentence for the tooltip after the status word, or ''. */
@@ -323,6 +324,6 @@ export function emptyOf(tab: string, sub = '', term = '', kind = '', tabs: Tab[]
 	const tb = tabs.find((x) => x.key === tab) ?? tabs[0];
 	const s = tb.subs.find((x) => x.key === sub);
 	const base = EMPTY[tb.key] ?? EMPTY.active;
-	if (s) return { title: s.empty.replace(/\.$/, ''), text: s.hint, glyph: tb.key === 'problems' ? 'check' : base.glyph };
+	if (s) return { title: s.empty.replace(/\.$/, ''), text: '', glyph: tb.key === 'problems' ? 'check' : base.glyph };
 	return { title: tb.empty, ...base };
 }

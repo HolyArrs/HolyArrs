@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Поставете идентификатор, например tmdb:693134 или tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Или го опишете, например „космически филм с робот от 2014“.",
 	"discover.search.lookEverywhere": "Търсене навсякъде",
-	"discover.search.searchIndexersFor": "Търсене в индексаторите за „{searched}“",
+	"discover.search.searchIndexersFor": "Проверете източниците си",
 	"discover.search.topMatches": "Най-добри съвпадения",
 	"discover.people.goToTheFilmography": "Към филмографията",
 	"discover.people.filmography": "Филмография",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Не пасва на тази версия",
 	"discover.leftovers.reason.movie_has_file": "Филмът вече има файл",
 	"discover.leftovers.reason.replaced_by_hand": "Заменен с друг файл",
-	"discover.leftovers.reason.unmatched": "Свързването е премахнато ръчно"
+	"discover.leftovers.reason.unmatched": "Свързването е премахнато ръчно",
+	"discover.searchSections.genres": "Жанрове",
+	"discover.searchSections.moods": "Настроения",
+	"discover.searchSections.stories": "Истории и теми",
+	"discover.searchSections.worlds": "Светове и места",
+	"discover.searchSections.eras": "Епохи",
+	"discover.searchSections.world": "По света",
+	"discover.searchSections.collections": "Колекции",
+	"discover.popularRail.out": "Излиза",
+	"discover.popularRail.comingDay": "Предстои",
+	"discover.titleLibrary.turnShowOnHint": "Включете сериала, за да започне търсенето.",
+	"discover.leftovers.reason.seasons_differ": "Намерен само по номера в TMDB от старото приложение: проверете дали е същият сериал и после свържете файла сами"
 }

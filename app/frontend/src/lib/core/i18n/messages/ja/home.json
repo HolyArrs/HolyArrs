@@ -274,5 +274,13 @@
 	"home.sourcesOff": "パーツでオフ",
 	"home.noneForSources": "ソースが見つけるものに対応するものがありません",
 	"home.addedTwice": "が二重に追加されています",
-	"home.addedTwiceMany": "が二重に追加されています"
+	"home.addedTwiceMany": "が二重に追加されています",
+	"home.notSetUpYet": "まだ設定されていません",
+	"home.setUpToAdd": "{name} を追加するにはセットアップを完了してください",
+	"home.comingThisWeek": "今週の公開",
+	"home.thisWeek": "今週",
+	"home.landingThisWeek": "今週公開のエピソードと映画",
+	"home.popularThisWeek": "今週公開の人気作品",
+	"home.peopleCheck": "利用者チェック",
+	"home.cantReadUsers": "ユーザー一覧を読み取れません"
 }

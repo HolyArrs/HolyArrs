@@ -124,7 +124,12 @@ If you run it anyway, point its Sonarr and Radarr entries at `/sonarr` and `/rad
 1. Add the Sonarr widget with `http://your-server:6262/sonarr` and the Sonarr-side key.
 2. You should see the show count, the download list, aired episodes with no file, and the calendar. Lists show 10 per page, newest first.
 
-The Radarr widget doesn't work yet: its missing list and calendar answer 404.
+The Radarr side answers the same lists as the Sonarr side: movies with no file (`/wanted/missing`), movies by release date (`/calendar`), the download list (`/queue/details`), its counts (`/queue/status`) and what is wrong (`/health`). Lists show 10 per page. A movie that is not out yet is listed as missing too, as in Radarr. The Homepage Radarr widget asks for the movies and the download list and its counts each time it draws, and HolyArrs answers all of them. It has not been tried against HolyArrs itself yet.
+
+### Monitoring
+
+- To see if HolyArrs is up, point Uptime Kuma or another monitor at `/healthz` on the main address. It answers without a key.
+- To list problems the way Sonarr and Radarr do, call `/sonarr/api/v3/health` or `/radarr/api/v3/health` with the key. A healthy HolyArrs gives an empty list. Each problem is a warning or an error with the same text as the Health page.
 
 ## Related
 

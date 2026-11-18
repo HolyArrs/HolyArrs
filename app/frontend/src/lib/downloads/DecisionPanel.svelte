@@ -1,10 +1,12 @@
 <script lang="ts">
+	import { ask as askSure } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	// Choices for a download that needs a decision: one reason, one primary fix, the rest under More, and the plan behind Why. A season pack or album gets the same shape for the whole pack.
 	import Button from '#lib/ui/Button.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { decisionName, groupDecisions, manyWords, whyWords, type DecisionGroup } from './downloaders.ts';
-	import { decisionFix, noMatchKind, reasonKind, type Fix } from './decision-fix.ts';
+	import { canImportAgain, decisionFix, packImportAgain, noMatchKind, reasonKind, reasonWords, refusedLine, type Fix } from './decision-fix.ts';
 	import { refreshDecisions } from './decisions.svelte.ts';
 	import { editionDecisionBody } from '../mediafiles/index.ts';
 	import { to } from '../core/paths.ts';
@@ -38,7 +40,7 @@
 				? t('downloads.dp.stopMany', { episodes, each: pack ? t('downloads.dp.eachOfThem') : t('downloads.dp.thisOne', { one: w.one }), whole })
 				: t('downloads.dp.stopPlain', { name, version: d.version })
 		}[action];
-		if (ask && !confirm(ask)) return;
+		if (ask && !(await askSure(ask, action === 'stop' ? { yes: t('ui.ask.stop') } : {}))) return;
 		busy = key;
 		try {
 			await api.post(`/needs-decision/${d.slot_id}/decide`, pack ? { action, pack: true } : { action });
@@ -55,7 +57,7 @@
 	// Import this file: the person says the download's one video is this movie. A movie with a file swaps it; the old one goes to Recently deleted.
 	async function importFile(d: Decision, key: string) {
 		const ask = d.has_copy ? 'downloads.dp.askImportReplace' : 'downloads.dp.askImport';
-		if (!confirm(t(ask, { file: d.import_file ?? '', name: decisionName(d) }))) return;
+		if (!(await askSure(t(ask, { file: d.import_file ?? '', name: decisionName(d) }), { yes: t('ui.ask.import') }))) return;
 		busy = key;
 		try {
 			await api.post(`/needs-decision/${d.slot_id}/decide`, { action: 'import', replace: d.has_copy });
@@ -63,7 +65,24 @@
 			await refreshDecisions();
 			ondone?.();
 		} catch (e) {
-			toasts.push(t('downloads.dp.importFailed'), 'fail', { body: plainReason(message(e)).text });
+			toasts.push(t('downloads.dp.importFailed'), 'fail', { body: reasonWords(plainReason(message(e)).text) });
+			await refreshDecisions();
+		} finally {
+			busy = '';
+		}
+	}
+
+	// Import again: the folder, the mount or the permission the reason names is fixed, so the same download is imported once more.
+	async function importAgain(d: Decision, key: string) {
+		busy = key;
+		try {
+			await api.post(`/downloads/${d.download_id}/import`);
+			toasts.push(t('downloads.act.importQueued'), 'ok');
+			await refreshDecisions();
+			ondone?.();
+		} catch (e) {
+			toasts.push(t('downloads.dp.importFailed'), 'fail', { body: reasonWords(plainReason(message(e)).text) });
+			await refreshDecisions();
 		} finally {
 			busy = '';
 		}
@@ -72,15 +91,20 @@
 	const primary = (d: Decision): Fix => decisionFix(d);
 	// Set edition only for an edition refusal; a file refused in place of the copy points to another Version.
 	function reasonLine(d: Decision): string {
+		if (d.reading) return t('downloads.dp.readingFolder');
 		const k = reasonKind(d);
 		if (k === 'edition') return t('downloads.dp.editionUnknown');
 		if (k === 'copy') return t('downloads.dp.copyInPlace');
-		if (k === 'taken') return whyWords(d);
+		// A file missing from the download says so, as Sonarr and Lidarr do; it is never blamed on another app.
+		if (k === 'taken' && !d.reason) return whyWords(d);
+		if (d.why === 'link_refused' && d.reason) return serverWords(d.reason.replace(/^not sent: /, ''));
 		if (k === 'nomatch') {
 			const m = noMatchKind(d.reason);
 			return t(m === 'episode' ? 'downloads.dp.noMatchEpisode' : m === 'track' ? 'downloads.dp.noMatchTrack' : 'downloads.dp.noMatchMovie');
 		}
-		const r = d.reason ? plainReason(d.reason).text : '';
+		// The server line, in the picked language (server-lines.json), names the refused file.
+		if (k === 'refused') return refusedLine(d.reason);
+		const r = d.reason ? reasonWords(plainReason(d.reason).text) : '';
 		return r || whyWords(d);
 	}
 	// Import files by hand, opened on the download's folder so its files can be matched.
@@ -88,6 +112,7 @@
 	const versionLabel = (d: Decision) => (d.versions > 1 ? t('downloads.dp.anotherVersion') : t('downloads.dp.addVersion'));
 	function more(d: Decision, key: string, fix: Fix): MenuItem[] {
 		const out: MenuItem[] = [];
+		if (canImportAgain(d) && fix !== 'again') out.push({ label: t('downloads.act.importAgain'), disabled: !!d.reading, onselect: () => importAgain(d, key) });
 		if (d.import_file && fix !== 'import') out.push({ label: t('downloads.dp.importFile'), onselect: () => importFile(d, key) });
 		if (d.import_folder && fix !== 'match') out.push({ label: t('downloads.dp.importByHand'), href: byHandHref(d) });
 		if (fix !== 'search') out.push({ label: t('downloads.dp.searchAgain'), onselect: () => act(d, 'search', false, key) });
@@ -98,9 +123,11 @@
 		out.push({ kind: 'separator' }, { label: t('downloads.dp.openTitle'), href: to(`/library/${d.title_id}`) });
 		return out;
 	}
-	function packMore(d: Decision, key: string): MenuItem[] {
+	// When Import again leads, Search again for these stays here.
+	function packMore(d: Decision, key: string, again = false): MenuItem[] {
 		const w = manyWords(d.kind);
 		return [
+			...(again ? [{ label: t('downloads.dp.searchThese', { many: w?.many ?? '' }), onselect: () => act(d, 'search', true, key) }] : []),
 			...(d.release_id ? [{ label: t('downloads.dp.addPackTurnedDown', { kind: w?.pack === w?.pack && d.kind === 'artist' ? t('downloads.dp.albumWord') : t('downloads.dp.pack') }), onselect: () => act(d, 'turn_down', true, key) }] : []),
 			{ label: t('downloads.dp.stopThese', { many: w?.many ?? '' }), destructive: true, onselect: () => act(d, 'stop', true, key) },
 			{ kind: 'separator' },
@@ -147,7 +174,7 @@
 	{@const r = d.reason ? plainReason(d.reason) : null}
 	<div class="raw" id="why-{key}" hidden={!whyOpen[key]} data-testid="decision-why-box">
 		<p>{whyWords(d)}</p>
-		{#if r && r.text !== reasonLine(d)}<p>{r.text}</p>{/if}
+		{#if r && reasonKind(d) !== 'plain'}<p>{reasonWords(r.text)}</p>{/if}
 		{#if d.has_copy}<p>{t('downloads.dp.hasCopy')}</p>{/if}
 		{#if admin && d.release_name}<p class="mono">{t('downloads.dp.releaseColon', { name: d.release_name })}</p>{/if}
 		{#if admin && r?.detail}<p class="mono">{r.detail}</p>{/if}
@@ -174,6 +201,8 @@
 					<Button size="sm" variant="primary" href={to('/settings/downloaders')} data-testid="decision-fix">{t('downloads.dp.openDownloaders')}</Button>
 				{:else if fix === 'import'}
 					<Button size="sm" variant="primary" onclick={() => importFile(d, key)} disabled={busy === key} busy={busy === key} data-testid="decision-fix">{t('downloads.dp.importFile')}</Button>
+				{:else if fix === 'again'}
+					<Button size="sm" variant="primary" onclick={() => importAgain(d, key)} disabled={busy === key || !!d.reading} busy={busy === key} data-testid="decision-fix">{t('downloads.act.importAgain')}</Button>
 				{:else if fix === 'match'}
 					<Button size="sm" variant="primary" href={byHandHref(d)} data-testid="decision-fix">{t('downloads.dp.importByHand')}</Button>
 				{:else if fix === 'hand'}
@@ -202,11 +231,16 @@
 		{@const d = g.lead}
 		{#if g.pack}
 			{@const w = manyWords(d.kind)}
+			{@const again = packImportAgain(g.items)}
 			<div class="dec" data-testid="decision-pack">
 				<p class="line"><span class="why">{packLine(g)}.</span> <span class="sub">· {d.kind === 'artist' ? t('downloads.hp.album') : t('downloads.dp.seasonPack')} · {ago(d.since)}</span></p>
 				<div class="acts">
-					<Button size="sm" variant="primary" onclick={() => act(d, 'search', true, g.key)} disabled={busy === g.key} busy={busy === g.key}>{t('downloads.dp.searchThese', { many: w?.many ?? '' })}</Button>
-					<Menu label={t('downloads.dp.moreChoices')} variant="button" text={t('downloads.dp.more')} icon="chevronDown" items={packMore(d, g.key)} width={260} align="start" />
+					{#if again}
+						<Button size="sm" variant="primary" onclick={() => importAgain(d, g.key)} disabled={busy === g.key || g.items.some((x) => x.reading)} busy={busy === g.key} data-testid="decision-pack-fix">{t('downloads.act.importAgain')}</Button>
+					{:else}
+						<Button size="sm" variant="primary" onclick={() => act(d, 'search', true, g.key)} disabled={busy === g.key} busy={busy === g.key} data-testid="decision-pack-fix">{t('downloads.dp.searchThese', { many: w?.many ?? '' })}</Button>
+					{/if}
+					<Menu label={t('downloads.dp.moreChoices')} variant="button" text={t('downloads.dp.more')} icon="chevronDown" items={packMore(d, g.key, again)} width={260} align="start" />
 					{@render whyBtn(g.key)}
 				</div>
 				{@render why(d, g.key)}

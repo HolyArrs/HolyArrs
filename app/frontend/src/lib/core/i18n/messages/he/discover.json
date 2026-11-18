@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "הדבק מזהה, למשל tmdb:693134 או tvmaze:82.",
 	"discover.search.orDescribeItSuch": "או תאר אותו, למשל “סרט חלל עם רובוט מ־2014”.",
 	"discover.search.lookEverywhere": "חיפוש בכל מקום",
-	"discover.search.searchIndexersFor": "חיפוש במקורות עבור “{searched}”",
+	"discover.search.searchIndexersFor": "בדיקת המקורות שלך",
 	"discover.search.topMatches": "ההתאמות הטובות ביותר",
 	"discover.people.goToTheFilmography": "מעבר לפילמוגרפיה",
 	"discover.people.filmography": "פילמוגרפיה",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "לא מתאים לגרסה הזו",
 	"discover.leftovers.reason.movie_has_file": "לסרט כבר יש קובץ",
 	"discover.leftovers.reason.replaced_by_hand": "הוחלף בקובץ אחר",
-	"discover.leftovers.reason.unmatched": "ההתאמה בוטלה ידנית"
+	"discover.leftovers.reason.unmatched": "ההתאמה בוטלה ידנית",
+	"discover.searchSections.genres": "ז׳אנרים",
+	"discover.searchSections.moods": "מצבי רוח",
+	"discover.searchSections.stories": "סיפורים ונושאים",
+	"discover.searchSections.worlds": "עולמות ותפאורות",
+	"discover.searchSections.eras": "תקופות",
+	"discover.searchSections.world": "מסביב לעולם",
+	"discover.searchSections.collections": "אוספים",
+	"discover.popularRail.out": "יוצא",
+	"discover.popularRail.comingDay": "בקרוב",
+	"discover.titleLibrary.turnShowOnHint": "הפעילו את הסדרה כדי להתחיל לחפש.",
+	"discover.leftovers.reason.seasons_differ": "נמצאה רק לפי מספר ה-TMDB מהאפליקציה הישנה: בדוק שזו אותה סדרה, ואז התאם את הקובץ בעצמך"
 }

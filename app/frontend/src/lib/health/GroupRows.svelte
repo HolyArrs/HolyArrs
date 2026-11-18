@@ -36,8 +36,8 @@
 				{#if r.reason}<p class="why">{serverWords(r.reason)}</p>{/if}
 				{#if canAct && (r.check || r.fix)}
 					<div class="acts">
-						{#if r.check}<Button variant="plain" size="sm" disabled={busy(r.key)} onclick={() => oncheck(r)}>{t('health.rows.check')}</Button>{/if}
-						{#if r.fix}<Button variant="plain" size="sm" href={to(r.fix)}>{t('health.rows.fix')}</Button>{/if}
+						{#if r.check}<Button variant="secondary" disabled={busy(r.key)} onclick={() => oncheck(r)}>{t('health.rows.check')}</Button>{/if}
+						{#if r.fix}<Button variant="secondary" href={to(r.fix)}>{t('health.rows.fix')}</Button>{/if}
 					</div>
 				{/if}
 			{/if}
@@ -61,7 +61,7 @@
 	.pr.bad { background: color-mix(in srgb, var(--fail) 6%, var(--surface-1)); padding-bottom: 10px; }
 	.pr.bad[data-tone='wait'] { background: color-mix(in srgb, var(--wait) 7%, var(--surface-1)); }
 	.line { display: flex; align-items: center; gap: 10px; min-height: 44px; }
-	.nm { flex: 1 1 auto; min-width: 0; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.nm { flex: 1 1 auto; min-width: 0; font-size: 14px; color: var(--text); overflow-wrap: anywhere; }
 	.at { flex: none; font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.chip { flex: none; }
 	.why { margin: -4px 0 0 17px; font-size: 13px; line-height: 1.45; color: var(--text-muted); overflow-wrap: anywhere; }

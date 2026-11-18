@@ -61,6 +61,10 @@ export interface BoardCtx {
 	readonly approverTab: ApproverTab;
 	/** Asks per approver tab, and how many in Processing failed. */
 	readonly approverCounts: Record<ApproverTab, number> & { failed: number };
+	/** True when approverCounts are the server's totals of every request (no type or person filter on), which can be more than the list holds. */
+	readonly totalsKnown: boolean;
+	/** Set when the list holds only the newest requests: how many it shows and how many there are. */
+	readonly listCap: { shown: number; total: number } | null;
 	setApproverTab(t: ApproverTab): void;
 	readonly approver: boolean;
 	readonly choosable: boolean;
@@ -83,8 +87,8 @@ export interface BoardCtx {
 	takeBack(a: Ask): void;
 	/** Remove one request in any state (confirm sheet); people who approve only. */
 	removeAsk(a: Ask): void;
-	/** Remove every failed or every finished request (confirm sheet with the count). */
-	clearAll(which: 'failed' | 'finished', n: number): void;
+	/** Remove every failed or every finished request (confirm sheet with the count); narrowed: a status is picked, so only the cards shown go. */
+	clearAll(which: 'failed' | 'finished', current: () => Ask[], n: number, narrowed?: boolean): void;
 	foldersFor(a: Ask): LibraryFolder[];
 	/** The Quality row when approving: the lines, other Pick rules and the 4K line, with the asked line. */
 	qualityRow(a: Ask): { pills: QualityPill[]; asked: string };

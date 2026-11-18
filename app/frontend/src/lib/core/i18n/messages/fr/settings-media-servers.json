@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Chemin dans HolyArrs",
 	"settings.mediaServers.pathTo": "Même dossier sur le serveur",
 	"settings.mediaServers.pathHint": "Seulement si le serveur voit vos fichiers sous un autre chemin",
+	"settings.mediaServers.webUrl": "Adresse pour les navigateurs",
+	"settings.mediaServers.webUrlHint": "L’adresse où chacun ouvre le serveur sur son téléphone ou son ordinateur. Ajoute un bouton Ouvrir aux pages des titres qu’il possède. Laissez vide pour ne pas afficher de bouton.",
 	"settings.mediaServers.local": "Joindre le réseau local",
 	"settings.mediaServers.send": "Envoyer les mises à jour",
 	"settings.mediaServers.save": "Enregistrer",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Désactiver l’historique ? Tout ce qui a été lu est effacé.",
 	"settings.mediaServers.watchTurnedOn": "Historique activé. La première lecture arrive sous 30 minutes.",
 	"settings.mediaServers.watchTurnedOff": "Historique désactivé",
-	"settings.mediaServers.watchFailed": "Impossible de changer l’historique"
+	"settings.mediaServers.watchFailed": "Impossible de changer l’historique",
+	"settings.mediaServers.labelTitle": "Libellés Plex",
+	"settings.mediaServers.labelSwitch": "Étiqueter les titres demandés",
+	"settings.mediaServers.labelHint": "Quand un film ou une série demandé est dans Plex, HolyArrs lui ajoute un libellé, pour filtrer, créer des collections ou partager avec dans Plex. Les libellés déjà présents restent.",
+	"settings.mediaServers.labelText": "Libellé",
+	"settings.mediaServers.labelAskers": "Ajouter aussi le nom du demandeur comme libellé",
+	"settings.mediaServers.labelSaved": "Libellés Plex enregistrés",
+	"settings.mediaServers.labelFailed": "Impossible d'enregistrer les libellés Plex",
+	"settings.mediaServers.labelExisting": "Étiqueter les titres déjà demandés",
+	"settings.mediaServers.labelExistingStarted": "Étiquetage lancé. Les titres reçoivent leurs libellés d'ici quelques minutes.",
+	"settings.mediaServers.labelExistingFailed": "Impossible de lancer l'étiquetage"
 }

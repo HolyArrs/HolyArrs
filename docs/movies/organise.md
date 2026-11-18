@@ -22,7 +22,7 @@ HolyArrs takes over a folder of movies as it is. It moves and renames nothing.
    | Not matched | Press **Look up** and find the movie. |
 
    Movies already in the Library, on the Never-add list or without a video file are listed with the reason they are left out.
-5. Tick the movies you want and press **Adopt**. The button shows the count, such as **Adopt 3 movies**.
+5. Tick the movies you want, or use **Select all** in the count bar, and press **Adopt**. The button shows the count, such as **Adopt 3 movies**.
 
 You should see the movies in **Library** with their files present.
 
@@ -111,11 +111,30 @@ Fix: add it again. If you deleted its files, take them back from `.holyarrs-repl
 
 | Setting | What it does | Default | Change it when |
 | --- | --- | --- | --- |
-| File name pattern | Text with words in braces, such as `{title} ({year}) {quality}`. Empty words drop out. The example shows the result as you type. HolyArrs cannot save an unknown word. | `{title} ({year}) {quality}` | Your media server wants another layout. |
+| File name pattern | Text with words in braces, such as `{title} ({year}) {quality}`. An empty word drops out, with the dot, dash or underscore beside it. The example shows the result as you type. HolyArrs cannot save an unknown word. | `{title} ({year}) {quality}` | Your media server wants another layout. |
 | Folder name pattern | Same, for folders. Applies to movies added from now on. | `{title} ({year})` | Same. |
+| Name language | The language of the movie and show name used in new folders and files. Existing names change only when you rename. | English | You want names like *Very Bad Trip* instead of *The Hangover*. |
 | A colon in a name becomes | Replaces the colon. | Smart | You prefer another style. |
 | Other characters a disk cannot hold | Swap them for safe ones, or drop them. | Swap | Same. |
 | Rename files when they are imported | Off keeps the name the download came with. | On | You rename files yourself. |
+
+**Words for names**
+
+| Word | Gives | Example |
+| --- | --- | --- |
+| `{title}`, `{sort_title}`, `{year}` | The title, the title with "The" moved to the end, the year | `Heat`, `Matrix, The`, `1995` |
+| `{title_first}` | The first letter of the sorted title. `0-9` for a digit, `#` for anything else. Use it for A to Z folders, like `{title_first}/{title} ({year})` | `M` for The Matrix |
+| `{quality}`, `{resolution}`, `{source}` | Resolution and source, or one of them | `2160p WEB`, `2160p`, `WEB` |
+| `{audio}` | The audio codec. Read from the file when the release name has none. | `EAC3`, `DTS-HD`, `TrueHD` |
+| `{hdr}` | The HDR kind. Empty for SDR. | `DolbyVision`, `HDR10+`, `DolbyVisionHDR10` |
+| `{edition}`, `{group}`, `{release}` | The edition, the release group, the whole release name | `Director's Cut`, `GRP` |
+| `{tmdb}`, `{imdb}` | The ids | `693134`, `tt15239678` |
+
+A bracket whose words are all empty drops out: `[imdbid-{imdb}]` without an IMDb id leaves nothing.
+With `{title} ({year}) - [{audio}.{resolution}.{hdr}.{source}-{group}]`:
+
+- `Dune - Part Two (2024) - [EAC3.2160p.DolbyVision.WEB-GRP].mkv`
+- an SDR file: `Dune - Part Two (2024) - [EAC3.2160p.WEB-GRP].mkv`
 
 </details>
 

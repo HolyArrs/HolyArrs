@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Прикажи људима",
 	"settings.requests.choiceMain": "{rules} · главна копија наслова",
 	"settings.requests.choiceOwn": "{rules} · чува се као засебна копија",
-	"settings.requests.choiceNotReady": "Нуди се када се изнад подеси 4K квалитет"
+	"settings.requests.choiceNotReady": "Нуди се када се изнад подеси 4K квалитет",
+	"settings.requests.approvals": "Одобрења",
+	"settings.requests.autoApprove": "Аутоматски одобри захтеве",
+	"settings.requests.autoApproveNote": "Искључено = њихови захтеви чекају вас. Наслови са Plex листе прате исти прекидач.",
+	"settings.requests.ownerTag": "Власник",
+	"settings.requests.choiceAdd": "Додај квалитет",
+	"settings.requests.choiceNew": "Нови квалитет",
+	"settings.requests.choiceLabel": "Ваш назив",
+	"settings.requests.choiceSeen": "Други виде"
 }

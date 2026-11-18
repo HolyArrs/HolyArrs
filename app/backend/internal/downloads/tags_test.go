@@ -3,7 +3,9 @@ package downloads
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -82,5 +84,25 @@ func tagTitle(t *testing.T, w *world, tags string) {
 		return err
 	}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// The tag list also names the tags set on Library folders, so a Source's
+// tag field suggests them.
+func TestTagListNamesFolderTags(t *testing.T) {
+	w, _ := setup(t)
+	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(`UPDATE library_folders SET new_title_tags = '["anime"]'`)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	rec := httptest.NewRecorder()
+	(&TagHandlers{DB: w.s.Read()}).listTags(rec, httptest.NewRequest("GET", "/api/v1/tags", nil))
+	var got struct {
+		Tags []TagUse `json:"tags"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil || len(got.Tags) != 1 || got.Tags[0].Label != "anime" || got.Tags[0].Folders != 1 {
+		t.Fatalf("tags %+v %v (%s)", got.Tags, err, rec.Body.String())
 	}
 }

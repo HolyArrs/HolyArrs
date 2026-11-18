@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Οι λίστες σας στο Trakt δεν μπορούν να διαβαστούν μέχρι να οριστεί.",
 	"settings.outsideLists.replaceKey": "Αντικατάσταση του κλειδιού Trakt",
 	"settings.outsideLists.pasteKey": "Επικολλήστε το κλειδί Trakt",
+	"settings.outsideLists.mdblistKey": "Κλειδί MDBList",
+	"settings.outsideLists.mdblistInfo": "Προαιρετικό. Με το κλειδί API του MDBList σας, οι λίστες MDBList διαβάζονται μέσω του API του MDBList· χωρίς αυτό, μέσω του δημόσιου συνδέσμου τους. Αποθηκεύεται κρυπτογραφημένο και είναι το ίδιο κλειδί που χρησιμοποιούν οι εξωτερικές βαθμολογίες στη λειτουργία Τα δικά σας κλειδιά.",
+	"settings.outsideLists.pasteMdblistKey": "Επικολλήστε το κλειδί API του MDBList σας",
+	"settings.outsideLists.replaceMdblistKey": "Αντικατάσταση του κλειδιού MDBList",
+	"settings.outsideLists.removeMdblistKey": "Αφαίρεση του κλειδιού",
+	"settings.outsideLists.mdblistKeySaved": "Το κλειδί MDBList αποθηκεύτηκε",
+	"settings.outsideLists.mdblistKeyRemoved": "Το κλειδί MDBList αφαιρέθηκε· οι λίστες χρησιμοποιούν τον δημόσιο σύνδεσμό τους",
 	"settings.outsideLists.replaceVip": "Αντικατάσταση του διακριτικού πρόσβασης VIP",
 	"settings.outsideLists.vip": "Διακριτικό πρόσβασης VIP (προαιρετικό)",
 	"settings.outsideLists.vipHint": "Προσθέτει μια καρτέλα Trakt στις σελίδες τίτλων: βαθμολογία, θεατές και σχόλια",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Προσθήκη στη λίστα μη προσθήκης",
 	"settings.outsideLists.showDot": "σειρά ·",
 	"settings.outsideLists.takeOff": "Αφαίρεση του «{name}»",
-	"settings.outsideLists.empty": "Κενή"
+	"settings.outsideLists.empty": "Δεν υπάρχει τίποτα ακόμα σε αυτή τη λίστα"
 }

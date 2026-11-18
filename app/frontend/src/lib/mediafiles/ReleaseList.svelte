@@ -1,5 +1,6 @@
 <!-- Held or turned down releases with undo, clear all and paging. -->
 <script lang="ts">
+	import { ask as askSure } from '#lib/ui/ask.svelte.ts';
 	import { onMount } from 'svelte';
 	import Poster from '#lib/ui/Poster.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -77,7 +78,7 @@
 		const ask = held
 			? t('mediafiles.releaseList.stopAll', { n: total })
 			: t('mediafiles.releaseList.takeAll', { n: total });
-		if (!confirm(ask)) return;
+		if (!(await askSure(ask))) return;
 		busy = true;
 		try {
 			await api.del<{ removed: number }>(`/${list}`);

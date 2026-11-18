@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Laimėjo: {name}",
 	"ui.wikiFacts.nominated": "Nominuota: {name}",
 	"ui.wikiFacts.andMore": "ir dar {count}",
-	"ui.pageLoader.loading": "Įkeliama"
+	"ui.pageLoader.loading": "Įkeliama",
+	"ui.connectHelp.link": "Kaip pataisyti",
+	"ui.ask.remove": "Pašalinti",
+	"ui.ask.restore": "Atkurti",
+	"ui.ask.stop": "Sustabdyti",
+	"ui.ask.revoke": "Atšaukti",
+	"ui.ask.replace": "Pakeisti",
+	"ui.ask.unlink": "Atsieti",
+	"ui.ask.turnOff": "Išjungti",
+	"ui.ask.markFailed": "Pažymėti kaip nepavykusį",
+	"ui.ask.reset": "Atstatyti",
+	"ui.ask.import": "Importuoti"
 }

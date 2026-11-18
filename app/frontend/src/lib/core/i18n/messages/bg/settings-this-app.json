@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "няма",
 	"settings.thisApp.needsRestart": "Изисква рестартиране. HOLYARRS_URL_BASE или -url-base го заместват.",
 	"settings.thisApp.save": "Запазване",
-	"settings.thisApp.licence": "HolyArrs е свободен софтуер под AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs е свободен софтуер под AGPL-3.0.",
+	"settings.thisApp.proxy": "Прокси",
+	"settings.thisApp.proxyDesc": "Изпращане на външните заявки през прокси. Правилата за блокиране и домашна мрежа важат за истинската цел.",
+	"settings.thisApp.proxyType": "Вид",
+	"settings.thisApp.proxyOff": "Изключено",
+	"settings.thisApp.proxyHost": "Хост",
+	"settings.thisApp.proxyPort": "Порт",
+	"settings.thisApp.proxyUser": "Потребителско име",
+	"settings.thisApp.proxyPasswordLabel": "Парола",
+	"settings.thisApp.proxyPasswordKept": "Оставете празно, за да запазите записаната парола",
+	"settings.thisApp.proxyBypass": "Без прокси за",
+	"settings.thisApp.proxyBypassHint": "Имена, адреси или диапазони, разделени със запетаи. *.example.com покрива всички имена под него.",
+	"settings.thisApp.proxyBypassLocal": "Без прокси за локални адреси",
+	"settings.thisApp.proxyBypassLocalHint": "Тази машина и домашната мрежа се свързват директно",
+	"settings.thisApp.proxySaved": "Проксито е запазено",
+	"settings.thisApp.proxyOffSaved": "Проксито е изключено"
 }

@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "یک شناسه بچسبان، مثل tmdb:693134 یا tvmaze:82.",
 	"discover.search.orDescribeItSuch": "یا توصیفش کن، مثل «فیلم فضایی با یک ربات از 2014».",
 	"discover.search.lookEverywhere": "همه‌جا را بگرد",
-	"discover.search.searchIndexersFor": "جستجوی «{searched}» در ایندکسرها",
+	"discover.search.searchIndexersFor": "بررسی منابع شما",
 	"discover.search.topMatches": "برترین تطابق‌ها",
 	"discover.people.goToTheFilmography": "رفتن به فیلم‌شناسی",
 	"discover.people.filmography": "فیلم‌شناسی",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "با این نسخه جور نیست",
 	"discover.leftovers.reason.movie_has_file": "فیلم از قبل فایل دارد",
 	"discover.leftovers.reason.replaced_by_hand": "با فایل دیگری جایگزین شد",
-	"discover.leftovers.reason.unmatched": "تطبیق به‌صورت دستی برداشته شد"
+	"discover.leftovers.reason.unmatched": "تطبیق به‌صورت دستی برداشته شد",
+	"discover.searchSections.genres": "ژانرها",
+	"discover.searchSections.moods": "حال‌وهوا",
+	"discover.searchSections.stories": "داستان‌ها و موضوع‌ها",
+	"discover.searchSections.worlds": "جهان‌ها و فضاها",
+	"discover.searchSections.eras": "دوره‌ها",
+	"discover.searchSections.world": "از سراسر جهان",
+	"discover.searchSections.collections": "مجموعه‌ها",
+	"discover.popularRail.out": "منتشر می‌شود",
+	"discover.popularRail.comingDay": "به‌زودی",
+	"discover.titleLibrary.turnShowOnHint": "سریال را روشن کنید تا جستجو شروع شود.",
+	"discover.leftovers.reason.seasons_differ": "فقط با شمارهٔ TMDB برنامهٔ قدیمی پیدا شد: بررسی کنید همان سریال باشد، سپس فایل را خودتان جور کنید"
 }

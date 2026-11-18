@@ -37,6 +37,15 @@ type ByHandGuess struct {
 	HasFile    bool    `json:"has_file,omitempty"`
 	Confidence float64 `json:"confidence"`
 	Detail     string  `json:"detail,omitempty"`
+
+	// Music: the album and track the file is, or Reason (a Music* word) when there is none.
+	AlbumID   int64  `json:"album_id,omitempty"`
+	AlbumName string `json:"album_name,omitempty"`
+	AlbumYear int    `json:"album_year,omitempty"`
+	Disc      int    `json:"disc,omitempty"`
+	Track     int    `json:"track,omitempty"`
+	TrackName string `json:"track_name,omitempty"`
+	Reason    string `json:"reason,omitempty"`
 }
 
 // ByHandFile is one file found by a by-hand scan.
@@ -230,6 +239,10 @@ func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, er
 		refs = append(refs, mediafiles.TitleRef{ID: t.ID, Name: t.Name, Aliases: OtherNames(t), Year: year, Kind: t.Kind})
 	}
 	cache := map[int64]*byHandTitle{}
+	music, err := newMusicLibrary(ctx, db)
+	if err != nil {
+		return out, err
+	}
 	err = filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
 		if cerr := ctx.Err(); cerr != nil {
 			return cerr
@@ -267,7 +280,9 @@ func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, er
 		}
 		f.InLibrary = libraryFile(ctx, db, folders, p)
 		if kind == "audio" {
-			f.Note = "music is not imported by hand yet"
+			if err := music.guessMusicByHand(ctx, &f); err != nil {
+				return err
+			}
 			out.Files = append(out.Files, f)
 			return nil
 		}
@@ -313,6 +328,11 @@ func (im *Importer) guessByHand(ctx context.Context, db *sql.DB, cache map[int64
 	item := bt.movie
 	if bt.t.Kind == "show" {
 		item = 0
+		if mediafiles.SeasonsDiffer(ctx, db, bt.t.ID) != 0 {
+			// The old app numbers its seasons differently: the numbers in
+			// the name may name another episode here, so none is guessed.
+			return nil
+		}
 		order := mediafiles.OrderAired
 		if bt.t.EpisodeOrder != nil && *bt.t.EpisodeOrder != "" {
 			order = *bt.t.EpisodeOrder
@@ -415,8 +435,9 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 	if err != nil || !sfi.Mode().IsRegular() {
 		return refuse("not a plain file")
 	}
-	if !videoExt[strings.ToLower(filepath.Ext(src))] {
-		return refuse("only video files are imported by hand for now")
+	ext := strings.ToLower(filepath.Ext(src))
+	if !videoExt[ext] && !audioExt[ext] {
+		return refuse("only video and music files are imported by hand")
 	}
 	if libraryFile(ctx, db, folders, src) {
 		return refuse("already a file in the Library")
@@ -455,8 +476,12 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 		return refuse("the Slot belongs to another title")
 	case ti.State == "removed" || sl.State == mediafiles.SlotRemoved:
 		return refuse("the title was removed")
-	case item.Kind != "movie" && item.Kind != "episode":
-		return refuse("music is not imported by hand yet")
+	case item.Kind != "movie" && item.Kind != "episode" && item.Kind != "track":
+		return refuse("this is not a movie, an episode or a track")
+	case item.Kind == "track" && !audioExt[ext]:
+		return refuse("a track takes a music file, not a video")
+	case item.Kind != "track" && !videoExt[ext]:
+		return refuse("a music file goes to a track, not to a movie or an episode")
 	case sl.State == mediafiles.SlotDownloading || sl.State == mediafiles.SlotImporting || sl.State == mediafiles.SlotChosen:
 		return refuse("a download is on its way for this; wait for it or remove it first")
 	case sl.FileID != nil && !it.Replace:
@@ -482,13 +507,19 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 	p := releasename.Parse(filepath.Base(src), releasename.Hints{Size: sfi.Size(), Show: item.Kind == "episode"})
 	folder := safeName(ver.FolderName)
 	var target string
-	if item.Kind == "movie" {
+	switch item.Kind {
+	case "track":
+		if target, err = trackTarget(ctx, db, ns, lf, ver, ti, item, src); err != nil {
+			return refuse(err.Error())
+		}
+	case "movie":
+		folder = safeFolder(ver.FolderName)
 		if folder == "" || folder == "." || folder == ".." {
 			folder = FolderName(ti.Name, year)
 		}
 		t := Target{TitleName: ti.Name, Year: year, IDs: ti.SourceIDs, Naming: &ns, Edition: ver.Edition}
 		target = filepath.Join(lf.Path, folder, t.fileName(p, src))
-	} else {
+	default:
 		if folder == "" || folder == "." || folder == ".." {
 			folder = mediafiles.ShowFolder(ns, mediafiles.NameFacts{Title: ti.Name, Year: year})
 		}
@@ -546,7 +577,9 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 			return r, nil
 		}
 		placedBy, fellBack = res.PlacedBy, res.FellBack
-		im.placeSideFiles(ctx, "", []mediafiles.PlanStep{{SourceFile: src, TargetPath: target}}, []mediafiles.PlaceResult{res}, item.Kind == "episode")
+		if item.Kind != "track" {
+			im.placeSideFiles(ctx, "", []mediafiles.PlanStep{{SourceFile: src, TargetPath: target}}, []mediafiles.PlaceResult{res}, item.Kind == "episode")
+		}
 		if mode == "move" {
 			if err := os.Remove(src); err != nil {
 				r.Error = "placed, but the original could not be removed: " + err.Error()
@@ -595,6 +628,15 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 		info[k] = v
 	}
 	release := strings.TrimSuffix(filepath.Base(src), filepath.Ext(src))
+	if item.Kind == "track" {
+		// A track's file name carries no format, so add it the way adopted music does.
+		ext := strings.ToLower(filepath.Ext(src))
+		word := strings.ToUpper(strings.TrimPrefix(ext, "."))
+		if info, err := mediafiles.Inspect(target); err == nil && info.AudioWord() != "" && (ext == ".m4a" || ext == ".mka" || ext == ".mp4") {
+			word = info.AudioWord()
+		}
+		release += " [" + word + "]"
+	}
 	var pr mediafiles.PickRules
 	ge := false
 	if database.Get(ctx, im.Store.Read(), "pick_rules", ver.PickRulesID, &pr) == nil {
@@ -605,9 +647,9 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 		state, why = mediafiles.SlotBetterWanted, "imported by hand below good enough, so a better copy is sought"
 	}
 	step := mediafiles.PlanStep{SourceFile: src, TargetSlotIDs: []int64{sl.ID}, TargetPath: target, Method: "hardlink", Confidence: 1, Why: []string{"chosen by hand"}}
-	kind := "movie"
-	if item.Kind == "episode" {
-		kind = "episodes"
+	kind := map[string]string{"episode": "episodes", "track": "tracks"}[item.Kind]
+	if kind == "" {
+		kind = "movie"
 	}
 	heldRel := ""
 	if rec.old != nil {
@@ -640,8 +682,11 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 			Quality:   mediafiles.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
 			Languages: InspectedLanguages(facts), MediaInfo: info, ReleaseName: &release, Origin: "imported", PlacedBy: r.PlacedBy,
 			FellBack: r.FellBack, Role: "main", State: "present"}
-		if g := p.Group.Value; g != "" {
+		if g := p.Group.Value; g != "" && item.Kind != "track" {
 			f.Group = &g
+		}
+		if item.Kind == "track" {
+			f.Quality, f.Languages = mediafiles.Quality{Source: strings.TrimPrefix(strings.ToLower(filepath.Ext(src)), ".")}, []string{}
 		}
 		// A library scan may have noted this file as found, with or without its episodes; that note gives way.
 		srcRel := f.RelativePath
@@ -656,6 +701,9 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 		f.Protected = protected
 		if _, err := tx.Exec(`DELETE FROM files WHERE version_id = ? AND relative_path IN (?, ?) AND (slot_ids = '[]' OR origin = 'found')`,
 			ver.ID, f.RelativePath, srcRel); err != nil {
+			return err
+		}
+		if err := mediafiles.EndSeasonsWaitTx(ctx, tx, ti.ID); err != nil {
 			return err
 		}
 		id, err := database.Insert(tx, "files", f, by)

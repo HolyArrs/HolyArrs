@@ -1,6 +1,7 @@
 package shows
 
 import (
+	"cmp"
 	"context"
 	"database/sql"
 	"errors"
@@ -58,7 +59,13 @@ func showID(sh metadata.Show) string {
 // matchShowFolder looks a show folder up at the details source.
 func matchShowFolder(ctx context.Context, p metadata.ShowProvider, folder string) (string, int, []library.AdoptMatch, error) {
 	if m := reShowTag.FindStringSubmatch(folder); m != nil {
-		sh, err := p.Show(ctx, strings.ToLower(m[1])+":"+m[2])
+		kind := strings.ToLower(m[1])
+		sh, err := p.Show(ctx, kind+":"+m[2])
+		if err == nil && (kind == "tvdb" || kind == "tvmaze") && sh.Source == "tmdb" && copiedTMDB(sh.IDs) {
+			// The TMDB show whose own id is the tag's number is another
+			// show: the folder is matched by its name instead.
+			err = metadata.ErrShowNotFound
+		}
 		if err == nil {
 			return sh.Name, sh.Year, []library.AdoptMatch{{ID: showID(sh), TMDB: sh.IDs["tmdb"], Name: sh.Name, Year: sh.Year, Score: 1, Poster: sh.Poster}}, nil
 		}
@@ -173,6 +180,7 @@ func PlanShowAdoptFrom(ctx context.Context, db library.Reader, shows metadata.Sh
 		known[library.FolderKey(v.FolderName, fold)] = v.TitleID
 	}
 	p.Warning = library.MountWarning(ctx, db, lf, len(ents))
+	p.Offset, p.Total = library.ScanPlace(ents, after)
 	total := library.ScanTotal(ents, after, p.Limit)
 	defer func() { library.ReportScan(ctx, len(p.Folders), total) }()
 	for _, e := range ents {
@@ -199,6 +207,9 @@ func PlanShowAdoptFrom(ctx context.Context, db library.Reader, shows metadata.Sh
 				return p, ctx.Err()
 			}
 			c.Status, c.Why = "unmatched", "the show lookup failed ("+err.Error()+"); look it up by hand or scan again later"
+			if library.MetadataDown(err) {
+				c.Status, c.Why, p.Warning = library.NotLookedUp, library.MetadataNotAnswering, cmp.Or(p.Warning, library.MetadataNotAnsweringScan)
+			}
 			p.Folders = append(p.Folders, c)
 			p.Counts[c.Status]++
 			continue
@@ -221,6 +232,9 @@ func PlanShowAdoptFrom(ctx context.Context, db library.Reader, shows metadata.Sh
 				return p, ctx.Err()
 			}
 			c.Status, c.Why = "unmatched", "the episode list could not be read ("+err.Error()+"); scan again later"
+			if library.MetadataDown(err) {
+				c.Status, c.Why, p.Warning = library.NotLookedUp, library.MetadataNotAnswering, cmp.Or(p.Warning, library.MetadataNotAnsweringScan)
+			}
 			p.Folders = append(p.Folders, c)
 			p.Counts[c.Status]++
 			continue
@@ -275,6 +289,9 @@ func PlanShowAdoptFrom(ctx context.Context, db library.Reader, shows metadata.Sh
 type ShowAdoption struct {
 	FolderName  string
 	LibraryPath string
+	// SeasonsDiffer leaves every file for the person to place (leftover
+	// reason seasons_differ): the old app numbers the seasons differently.
+	SeasonsDiffer bool
 	// Filled in by AddShow: the files adopted and the ones left alone.
 	Adopted  int
 	Episodes int
@@ -293,6 +310,16 @@ func adoptEpisodesTx(ctx context.Context, tx *sql.Tx, titleID, versionID, pickRu
 	for _, af := range files {
 		if len(af.Keys) == 0 {
 			a.Unknown = append(a.Unknown, af.Path+": "+af.Why)
+			if a.SeasonsDiffer {
+				// Noted in this same write, so no scan links it first.
+				release := strings.TrimSuffix(path.Base(af.Path), path.Ext(af.Path))
+				reason := seasonsDiffer
+				f := &mediafiles.File{SlotIDs: []int64{}, VersionID: versionID, RelativePath: af.Path, Size: af.Size, AddedAt: now, Languages: []string{},
+					MediaInfo: map[string]any{}, ReleaseName: &release, Origin: "found", PlacedBy: "none", Role: "main", State: "present", LeftoverReason: &reason}
+				if _, err := database.Insert(tx, "files", f, by); err != nil {
+					return err
+				}
+			}
 			continue
 		}
 		var slotIDs []int64
@@ -368,13 +395,14 @@ func (s *Service) adoptShowOne(ctx context.Context, lf mediafiles.LibraryFolder,
 	if fi, err := os.Lstat(filepath.Join(lf.Path, c.Folder)); err != nil || !fi.IsDir() {
 		return r, errors.New("no such folder in the Library folder")
 	}
-	if taken, err := library.FolderTaken(ctx, s.Store.Read(), lf, c.Folder); err != nil {
+	// A folder already in the Library (an import run again after a restart)
+	// counts as brought in, so its title is followed too.
+	if id, err := library.FolderTaken(ctx, s.Store.Read(), lf, c.Folder); err != nil || id != 0 {
+		r.TitleID = id
 		return r, err
-	} else if taken {
-		return r, errors.New("this folder already belongs to a show in the Library")
 	}
 	a := &ShowAdoption{FolderName: c.Folder, LibraryPath: lf.Path}
-	id, _, err := s.AddShow(ctx, c.ID, ShowAddOptions{LibraryFolderID: lf.ID, WhyAdded: "import", Adopt: a}, by)
+	id, _, err := s.AddShow(ctx, c.ID, ShowAddOptions{LibraryFolderID: lf.ID, WhyAdded: "import", Adopt: a, SeasonsDiffer: c.SeasonsDiffer}, by)
 	if err != nil {
 		return r, err
 	}
@@ -463,21 +491,19 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 	}
 	// Found notes of earlier rescans are looked at again, so one whose
 	// episodes are still empty gets linked.
-	notes := map[string]int64{}
-	rows, err := db.QueryContext(ctx, "SELECT id, relative_path FROM files WHERE version_id = ? AND origin = 'found' AND state = 'present'", v.ID)
+	// While a show's files wait to be placed because the old app numbers
+	// its seasons differently, none is linked by the numbers in its name;
+	// a file noted for that reason never is.
+	notes, oldNumbers := map[string]int64{}, map[int64]bool{}
+	waiting := mediafiles.SeasonsDiffer(ctx, db, t.ID) == 1
+	found, err := mediafiles.FoundNotes(ctx, db, v.ID)
 	if err != nil {
 		return 0, err
 	}
-	for rows.Next() {
-		var id int64
-		var rel string
-		if err := rows.Scan(&id, &rel); err != nil {
-			_ = rows.Close()
-			return 0, err
-		}
-		notes[strings.ToLower(rel)] = id
+	for _, f := range found {
+		notes[strings.ToLower(f.Path)] = f.ID
+		oldNumbers[f.ID] = f.Reason == seasonsDiffer
 	}
-	_ = rows.Close()
 	var unknown []library.AdoptVideo
 	for _, vid := range library.ListVideosN(lf.Path, v.FolderName, maxShowVideos) {
 		if !known[strings.ToLower(vid.Path)] || notes[strings.ToLower(vid.Path)] != 0 {
@@ -500,6 +526,10 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 			if db.QueryRowContext(ctx, "SELECT id FROM slots WHERE version_id = ? AND item_id = ?", v.ID, byKey[k]).Scan(&sid) == nil {
 				slotIDs = append(slotIDs, sid)
 			}
+		}
+		differ := waiting || oldNumbers[note]
+		if differ {
+			slotIDs = []int64{}
 		}
 		if len(slotIDs) > 0 && len(slotIDs) == len(af.Keys) {
 			linked := false
@@ -567,6 +597,9 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 			}
 		}
 		reason := leftoverReason(af, len(slotIDs))
+		if differ {
+			reason = seasonsDiffer
+		}
 		if note != 0 {
 			if err := s.Store.Write(ctx, func(tx *sql.Tx) error { return mediafiles.SetLeftoverReason(ctx, tx, note, reason) }); err != nil {
 				return n, err
@@ -589,6 +622,10 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 	}
 	return n, nil
 }
+
+// seasonsDiffer is the leftover reason of a file the old app numbered by
+// other seasons than the show here.
+const seasonsDiffer = "seasons_differ"
 
 // leftoverReason is the short key the app translates for why a found file
 // fills no episode; slots is how many of its episodes have a Slot.

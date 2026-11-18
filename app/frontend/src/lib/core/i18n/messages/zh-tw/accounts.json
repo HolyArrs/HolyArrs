@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "無法儲存語言",
 	"accounts.language.count.one": "1 種語言",
 	"accounts.language.count.other": "{n} 種語言",
-	"accounts.account.watchEveryone": "擁有者已為所有人開啟此功能。關閉兩項即可停止。"
+	"accounts.account.watchEveryone": "擁有者已為所有人開啟此功能。關閉兩項即可停止。",
+	"accounts.watch.title": "已看標記",
+	"accounts.watch.hint": "在這裡連結你在媒體伺服器上的帳號，媒體庫就會顯示你看過的內容。",
+	"accounts.watch.as": "{server}，身分為 {name}",
+	"accounts.watch.nameOn": "在 {server} 上的名稱",
+	"accounts.watch.passwordOnce": "你的密碼只會傳送到 {server}，不會保存。",
+	"accounts.watch.linked": "已連結 {server} 上的 {name}",
+	"accounts.watch.unlinked": "已取消連結",
+	"accounts.login.importPaused": "你的登入已結束，所以匯入已暫停。請登入，開啟「匯入媒體庫」並按「掃描」繼續。"
 }

@@ -21,7 +21,7 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 | Shows | [Searching](shows/search.md), [downloads](shows/downloads.md), [organising](shows/organise.md) |
 | Music | [Searching](music/search.md), [downloads](music/downloads.md), [organising](music/organise.md) |
 | Explore and the calendar | [Explore](discover/explore.md), [people](discover/popular-people.md), [calendar](discover/calendar.md) |
-| Sources | [Sources, Jackett and Prowlarr](downloads/sources.md), [find titles in the Library](downloads/library-search.md) |
+| Sources | [Sources, built-in sites, Jackett and Prowlarr](downloads/sources.md), [find titles in the Library](downloads/library-search.md) |
 | Downloads | [Downloaders](downloads/downloaders.md), [history](downloads/history.md) |
 | Subtitles | [Subtitles](library/subtitles.md) |
 | Files and folders | [Library folders](library/folders.md), [move to one data folder](library/move-to-one-folder.md), [codecs and media inspection](library/codecs-inspection.md), [audio versions](library/audio-versions.md), [protected copies](library/protected-copies.md) |
@@ -31,10 +31,11 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 | Alerts | [Alerts](users/alerts.md) |
 | Importing from other apps | [Import from other apps](migrate/index.md), [how HolyArrs reads them](migrate/what-is-read.md) |
 | Older apps' API | [Connect Seerr, Overseerr, Bazarr and others](reference/old-app-api.md) |
-| AI apps (held back) | [Connect AI apps](reference/ai.md) |
+| AI apps (held back) | [MCP plugin](reference/ai.md) |
 | Backups | [Backups](run/backups.md) |
 | Health | [Health checks](run/health.md), [logs](run/logs.md), [schedules](run/schedules.md) |
 | Updates | [Updates](run/updates.md) |
+| Plugins and remote access | [Plugins](run/plugins.md), [remote access with Tailscale](run/remote-access.md) |
 
 ## Platforms
 
@@ -76,16 +77,18 @@ A changing number or token is in square brackets.
 | Held and turned-down releases | `/library/held`, `/library/turned-down` | Searching for [movies](movies/search.md), [shows](shows/search.md), [music](music/search.md) |
 | Import a library, Rename files | `/library/import`, `/library/rename` | Organising [movies](movies/organise.md), [shows](shows/organise.md), [music](music/organise.md) |
 | Missing subtitles | `/library/missing-subtitles` | [Subtitles](library/subtitles.md) |
-| Connect an AI app | `/ai` | [Connect AI apps](reference/ai.md) (held back) |
+| Allow an AI app | `/ai` | [MCP plugin](reference/ai.md) (held back) |
+| Plugins | `/plugins` | [Plugins](run/plugins.md) |
 | Settings | `/settings` | [Home and Settings](start/home-and-settings.md#settings) |
 | Request rules | `/settings/requests` | [Weekly limits and Request rules](requests/settings.md) |
-| AI apps | `/settings/ai` | [Connect AI apps](reference/ai.md) (held back) |
+| AI apps | `/settings/ai` | [MCP plugin](reference/ai.md) (held back) |
 | Alerts | `/settings/alerts` | [Alerts](users/alerts.md) |
 | Backups | `/settings/backups` | [Backups](run/backups.md) |
 | Import from other apps | `/settings/move` | [Import from other apps](migrate/index.md) |
 | Downloaders | `/settings/downloaders` | [Downloaders](downloads/downloaders.md) |
 | Library folders | `/settings/library-folders` | [Library folders](library/folders.md) |
 | Media servers | `/settings/media-servers` | [Media servers](library/media-servers.md) |
+| Remote access | `/settings/remote-access` | [Remote access](run/remote-access.md) |
 | Parts | `/settings/parts` | [Parts and safe mode](run/parts-safe-mode.md) |
 | Sign-in and security | `/settings/sign-in` | [Sign-in and passwords](users/sign-in.md) |
 | Sources | `/settings/sources` | [Sources](downloads/sources.md) |

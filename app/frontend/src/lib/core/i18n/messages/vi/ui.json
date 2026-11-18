@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Thắng: {name}",
 	"ui.wikiFacts.nominated": "Được đề cử: {name}",
 	"ui.wikiFacts.andMore": "và {count} nữa",
-	"ui.pageLoader.loading": "Đang tải"
+	"ui.pageLoader.loading": "Đang tải",
+	"ui.connectHelp.link": "Cách khắc phục",
+	"ui.ask.remove": "Gỡ",
+	"ui.ask.restore": "Khôi phục",
+	"ui.ask.stop": "Dừng",
+	"ui.ask.revoke": "Thu hồi",
+	"ui.ask.replace": "Thay thế",
+	"ui.ask.unlink": "Hủy liên kết",
+	"ui.ask.turnOff": "Tắt",
+	"ui.ask.markFailed": "Đánh dấu thất bại",
+	"ui.ask.reset": "Đặt lại",
+	"ui.ask.import": "Nhập"
 }

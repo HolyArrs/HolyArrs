@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Dán một id, ví dụ tmdb:693134 hoặc tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Hoặc mô tả nó, ví dụ “phim không gian có người máy năm 2014”.",
 	"discover.search.lookEverywhere": "Tìm khắp nơi",
-	"discover.search.searchIndexersFor": "Tìm “{searched}” trên các indexer",
+	"discover.search.searchIndexersFor": "Kiểm tra nguồn của bạn",
 	"discover.search.topMatches": "Kết quả khớp nhất",
 	"discover.people.goToTheFilmography": "Đi tới danh sách tác phẩm",
 	"discover.people.filmography": "Các tác phẩm",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Không hợp với phiên bản này",
 	"discover.leftovers.reason.movie_has_file": "Phim đã có tệp",
 	"discover.leftovers.reason.replaced_by_hand": "Đã được thay bằng tệp khác",
-	"discover.leftovers.reason.unmatched": "Đã bỏ ghép bằng tay"
+	"discover.leftovers.reason.unmatched": "Đã bỏ ghép bằng tay",
+	"discover.searchSections.genres": "Thể loại",
+	"discover.searchSections.moods": "Tâm trạng",
+	"discover.searchSections.stories": "Câu chuyện & chủ đề",
+	"discover.searchSections.worlds": "Thế giới & bối cảnh",
+	"discover.searchSections.eras": "Thời kỳ",
+	"discover.searchSections.world": "Khắp thế giới",
+	"discover.searchSections.collections": "Bộ sưu tập",
+	"discover.popularRail.out": "Ra mắt",
+	"discover.popularRail.comingDay": "Sắp ra mắt",
+	"discover.titleLibrary.turnShowOnHint": "Bật chương trình để bắt đầu tìm.",
+	"discover.leftovers.reason.seasons_differ": "Chỉ tìm thấy qua số TMDB của ứng dụng cũ: hãy kiểm tra đó có đúng là cùng một chương trình không, rồi tự ghép tệp"
 }

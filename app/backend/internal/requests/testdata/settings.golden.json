@@ -16,11 +16,13 @@
   "plex_watchlists": true,
   "plex_watchlists_everyone": true,
   "plex_friends": true,
+  "owner_auto_approve": true,
   "qualities": {
     "movie": [
       {
         "id": "s",
         "name": "s",
+        "label": "s",
         "hidden": true,
         "pick_rules_id": 7,
         "library_folder_id": 7,
@@ -32,6 +34,7 @@
       {
         "id": "s",
         "name": "s",
+        "label": "s",
         "hidden": true,
         "pick_rules_id": 7,
         "library_folder_id": 7,

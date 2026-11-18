@@ -34,9 +34,11 @@ type Handlers struct {
 
 // Watch sends each import the Library records to the webhook records
 // those apps keep, on goroutines Wait waits for. Ending ctx stops them.
+// It also gives profiles an earlier version cut their formats back.
 func (h *Handlers) Watch(ctx context.Context) {
 	h.hooks = &hookSender{store: h.Store, vault: h.Secrets, allowed: h.maySend}
 	h.hooks.watch(ctx)
+	h.RestoreCut(ctx)
 }
 
 // Wait waits for the sends Watch started.

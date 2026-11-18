@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "แสดงให้ผู้คนเห็น",
 	"settings.requests.choiceMain": "{rules} · สำเนาหลักของรายการ",
 	"settings.requests.choiceOwn": "{rules} · เก็บเป็นสำเนาแยก",
-	"settings.requests.choiceNotReady": "จะแสดงเมื่อตั้งค่าคุณภาพ 4K ด้านบนแล้ว"
+	"settings.requests.choiceNotReady": "จะแสดงเมื่อตั้งค่าคุณภาพ 4K ด้านบนแล้ว",
+	"settings.requests.approvals": "การอนุมัติ",
+	"settings.requests.autoApprove": "อนุมัติคำขอโดยอัตโนมัติ",
+	"settings.requests.autoApproveNote": "ปิด = คำขอของเขาจะรอคุณ ชื่อเรื่องจากรายการ Plex ใช้สวิตช์เดียวกัน",
+	"settings.requests.ownerTag": "เจ้าของ",
+	"settings.requests.choiceAdd": "เพิ่มคุณภาพ",
+	"settings.requests.choiceNew": "คุณภาพใหม่",
+	"settings.requests.choiceLabel": "ชื่อของคุณ",
+	"settings.requests.choiceSeen": "คนอื่นเห็น"
 }

@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Díj: {name}",
 	"ui.wikiFacts.nominated": "Jelölés: {name}",
 	"ui.wikiFacts.andMore": "és még {count}",
-	"ui.pageLoader.loading": "Betöltés"
+	"ui.pageLoader.loading": "Betöltés",
+	"ui.connectHelp.link": "Hogyan javítsd",
+	"ui.ask.remove": "Eltávolítás",
+	"ui.ask.restore": "Visszaállítás",
+	"ui.ask.stop": "Leállítás",
+	"ui.ask.revoke": "Visszavonás",
+	"ui.ask.replace": "Csere",
+	"ui.ask.unlink": "Leválasztás",
+	"ui.ask.turnOff": "Kikapcsolás",
+	"ui.ask.markFailed": "Megjelölés sikertelenként",
+	"ui.ask.reset": "Alaphelyzet",
+	"ui.ask.import": "Importálás"
 }

@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "لا شيء",
 	"settings.thisApp.needsRestart": "يحتاج إلى إعادة تشغيل. HOLYARRS_URL_BASE أو -url-base يتجاوزه.",
 	"settings.thisApp.save": "حفظ",
-	"settings.thisApp.licence": "HolyArrs برنامج حر بموجب رخصة AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs برنامج حر بموجب رخصة AGPL-3.0.",
+	"settings.thisApp.proxy": "الوكيل",
+	"settings.thisApp.proxyDesc": "إرسال الاتصالات الخارجية عبر وكيل. تظل قواعد الحظر والشبكة المنزلية سارية على الوجهة الحقيقية.",
+	"settings.thisApp.proxyType": "النوع",
+	"settings.thisApp.proxyOff": "متوقف",
+	"settings.thisApp.proxyHost": "المضيف",
+	"settings.thisApp.proxyPort": "المنفذ",
+	"settings.thisApp.proxyUser": "اسم المستخدم",
+	"settings.thisApp.proxyPasswordLabel": "كلمة المرور",
+	"settings.thisApp.proxyPasswordKept": "اتركه فارغًا للإبقاء على كلمة المرور المحفوظة",
+	"settings.thisApp.proxyBypass": "تخطي الوكيل لـ",
+	"settings.thisApp.proxyBypassHint": "أسماء أو عناوين أو نطاقات مفصولة بفواصل. يشمل ‎*.example.com كل الأسماء تحته.",
+	"settings.thisApp.proxyBypassLocal": "تخطي الوكيل للعناوين المحلية",
+	"settings.thisApp.proxyBypassLocalHint": "هذا الجهاز وشبكتك المنزلية يتصلان مباشرة",
+	"settings.thisApp.proxySaved": "تم حفظ الوكيل",
+	"settings.thisApp.proxyOffSaved": "الوكيل متوقف"
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PersonText from '#lib/ui/PersonText.svelte';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import '#lib/ui/title-page.css';
@@ -122,11 +123,11 @@
 		{#each title.asks as a (a.id)}
 			<dl class="facts">
 				<dt>{t('music.askedBy')}</dt>
-				<dd>{peopleNames(a.people.map((p) => p.name))} · {date(a.asked_at)}</dd>
+				<dd><PersonText text={peopleNames(a.people.map((p) => p.name))} /> · {date(a.asked_at)}</dd>
 				<dt>{t('music.for')}</dt>
 				<dd>{a.album_words ?? albumWords(a.albums)}</dd>
 				{#if decided(a)}<dt>{t('music.decided')}</dt>
-					<dd>{decided(a)}{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
+					<dd><PersonText text={decided(a)} />{a.decided_at ? ` · ${date(a.decided_at)}` : ''}</dd>{/if}
 				<dt>{t('music.now2')}</dt>
 				<dd>{serverWords(a.state_label)}</dd>
 				{#if a.note}<dt>{t('music.note')}</dt>

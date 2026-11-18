@@ -32,11 +32,12 @@
 	"settings.backups.key": "主金鑰",
 	"settings.backups.keyDesc": "備份不包含這個金鑰，請在安全的地方保留一份。",
 	"settings.backups.noKit": "還沒有為這個金鑰儲存金鑰包。沒有它，備份中儲存的密碼無法在新機器上開啟。",
+	"settings.backups.kitRecommended": "建議：下載你的金鑰包。",
 	"settings.backups.ownerOnlyKit": "只有擁有者可以下載，請聯絡擁有者。",
 	"settings.backups.fingerprint": "金鑰指紋",
 	"settings.backups.downloadKit": "下載金鑰包",
 	"settings.backups.restoreKey": "還原方法：改名為 holyarrs.key，放入 config 資料夾",
 	"settings.backups.offPlan": "關閉",
-	"settings.backups.offAbout": "沒有排程備份。每次更新前仍會建立一份副本。",
+	"settings.backups.offAbout": "不進行自動備份，更新前也不備份。手動備份仍然可用。",
 	"settings.backups.offKeeps": "關閉會保留你現有的備份。"
 }

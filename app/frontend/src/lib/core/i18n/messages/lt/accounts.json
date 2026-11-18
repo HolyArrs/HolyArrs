@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Nepavyko išsaugoti kalbos",
 	"accounts.language.count.one": "1 kalba",
 	"accounts.language.count.other": "Kalbų: {n}",
-	"accounts.account.watchEveryone": "Savininkas tai įjungė visiems. Išjunkite abu, kad tai sustotų."
+	"accounts.account.watchEveryone": "Savininkas tai įjungė visiems. Išjunkite abu, kad tai sustotų.",
+	"accounts.watch.title": "Peržiūrėta žymos",
+	"accounts.watch.hint": "Susiekite čia savo paskyrą medijos serveryje, kad Biblioteka rodytų, ką peržiūrėjote.",
+	"accounts.watch.as": "{server}, kaip {name}",
+	"accounts.watch.nameOn": "Vardas serveryje {server}",
+	"accounts.watch.passwordOnce": "Jūsų slaptažodis siunčiamas tik į {server} ir nesaugomas.",
+	"accounts.watch.linked": "Susieta su {name} serveryje {server}",
+	"accounts.watch.unlinked": "Atsieta",
+	"accounts.login.importPaused": "Baigėsi jūsų prisijungimas, todėl importas pristabdytas. Prisijunkite, atverkite „Importuoti biblioteką“ ir paspauskite „Nuskaityti“, kad tęstumėte."
 }

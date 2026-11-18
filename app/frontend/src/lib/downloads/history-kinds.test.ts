@@ -40,6 +40,7 @@ describe('words', () => {
 		expect(verbOf('subtitle_saved').word).toBe('Subtitles');
 	});
 	it('says who did it', () => {
+		expect(byWhom({ Actor: { kind: 'user', id: 2 }, Data: { asked_by: 'maria' }, actor_name: 'maria⁣2' })).toBe('⁣maria⁤');
 		expect(byWhom({ Actor: { kind: 'user', id: 3 }, Data: { asked_by: 'Maya' } })).toBe('Maya');
 		expect(byWhom({ Actor: { kind: 'ai', id: 3 }, Data: { client: 'Claude' }, actor_name: 'Maya' })).toBe('Claude for Maya');
 		expect(byWhom({ Actor: { kind: 'ai', id: 3 }, Data: {} })).toBe('An AI app');

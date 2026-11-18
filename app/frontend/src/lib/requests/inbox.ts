@@ -1,6 +1,7 @@
 // What an ask carries from the metadata answer (seasons, release dates, language), the audio languages an approver can ask for, and who asked.
 
 import { lang, t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
+import { shownPerson } from '#lib/core/plain.ts';
 import type { Ask } from '../core/types.ts';
 
 /** A season as the metadata answer lists it. */
@@ -112,7 +113,7 @@ export function askers(asks: Pick<Ask, 'asked_by' | 'people'>[]): { id: number; 
 	const by = new Map<number, { id: number; name: string; n: number }>();
 	for (const a of asks) {
 		const w = a.people[0] ?? a.asked_by;
-		const g = by.get(w.id) ?? { id: w.id, name: w.name, n: 0 };
+		const g = by.get(w.id) ?? { id: w.id, name: shownPerson(w.name), n: 0 };
 		g.n++;
 		by.set(w.id, g);
 	}

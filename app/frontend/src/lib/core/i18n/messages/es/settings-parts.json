@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "No se pudo conectar {name}",
 	"settings.parts.connected": "{name} conectado",
 	"settings.parts.title": "Partes",
+	"settings.parts.onOff": "Activar o desactivar partes",
 	"settings.parts.ownerOnly": "Solo propietario y administradores",
 	"settings.parts.safeMode": "HolyArrs funciona en modo seguro: solo corre el núcleo, y los interruptores de Partes y los controles de etapas se rechazan hasta un inicio normal. Usa <b>Reiniciar HolyArrs</b> en la <a>Zona de peligro</a> para salir del modo seguro.",
 	"settings.parts.dangerZone": "Zona de peligro",

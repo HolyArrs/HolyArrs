@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "Ambele căi sunt la fel, deci această pereche nu schimbă nimic. Totuși îi spune lui HolyArrs unde sunt fișierele acestui client, așa că o poți păstra.",
 	"settings.downloaders.change": "Schimbă {name}",
 	"settings.downloaders.whichApp": "Ce aplicație",
-	"settings.downloaders.torrents": "(torrente)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torrente",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "Cel mai folosit",
 	"settings.downloaders.name": "Nume",
 	"settings.downloaders.address": "Adresă",
 	"settings.downloaders.addressHint": "Pagina lui web. Pentru SABnzbd, folosește IP-ul sau permite numele de gazdă al HolyArrs.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Categorie după import",
 	"settings.downloaders.categoryAfterImportHint": "După ce un torrent este importat, HolyArrs îl mută în această categorie. Lăsați gol ca să rămână în categoria principală.",
 	"settings.downloaders.ownOnly": "Arată doar elementele HolyArrs",
-	"settings.downloaders.ownOnlyHint": "Elementele altor aplicații din acest client de descărcare sunt ascunse, iar HolyArrs nu le schimbă."
+	"settings.downloaders.ownOnlyHint": "Elementele altor aplicații din acest client de descărcare sunt ascunse, iar HolyArrs nu le schimbă.",
+	"settings.downloaders.state.notAnswering": "Nu răspunde",
+	"settings.downloaders.state.paused": "Pe pauză",
+	"settings.downloaders.state.resting": "În repaus",
+	"settings.downloaders.state.signInRefused": "Autentificare refuzată",
+	"settings.downloaders.state.working": "Funcționează"
 }

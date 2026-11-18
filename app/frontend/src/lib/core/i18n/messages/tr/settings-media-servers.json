@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs yolu",
 	"settings.mediaServers.pathTo": "Sunucudaki aynı klasör",
 	"settings.mediaServers.pathHint": "Yalnızca sunucu dosyalarını başka bir yolda görüyorsa",
+	"settings.mediaServers.webUrl": "Tarayıcılar için adres",
+	"settings.mediaServers.webUrlHint": "Herkesin sunucuyu telefonda veya bilgisayarda açtığı adres. Sunucuda olan başlıkların sayfalarına Aç düğmesi ekler. Düğme istemiyorsan boş bırak.",
 	"settings.mediaServers.local": "Yerel ağa eriş",
 	"settings.mediaServers.send": "Güncellemeleri gönder",
 	"settings.mediaServers.save": "Kaydet",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "İzleme geçmişi kapatılsın mı? Şimdiye kadar okunan her şey silinir.",
 	"settings.mediaServers.watchTurnedOn": "İzleme geçmişi açık. İlk okuma 30 dakika içinde gelir.",
 	"settings.mediaServers.watchTurnedOff": "İzleme geçmişi kapalı",
-	"settings.mediaServers.watchFailed": "İzleme geçmişi değiştirilemedi"
+	"settings.mediaServers.watchFailed": "İzleme geçmişi değiştirilemedi",
+	"settings.mediaServers.labelTitle": "Plex etiketleri",
+	"settings.mediaServers.labelSwitch": "İstenen yapımları etiketle",
+	"settings.mediaServers.labelHint": "İstenen bir film ya da dizi Plex'e girince HolyArrs ona bir etiket ekler; böylece Plex'te ona göre filtreleyebilir, koleksiyon oluşturabilir veya paylaşabilirsin. Var olan etiketler kalır.",
+	"settings.mediaServers.labelText": "Etiket",
+	"settings.mediaServers.labelAskers": "İsteyen kişinin adını da etiket olarak ekle",
+	"settings.mediaServers.labelSaved": "Plex etiketleri kaydedildi",
+	"settings.mediaServers.labelFailed": "Plex etiketleri kaydedilemedi",
+	"settings.mediaServers.labelExisting": "Daha önce istenen yapımları etiketle",
+	"settings.mediaServers.labelExistingStarted": "Etiketleme başladı. Yapımlar birkaç dakika içinde etiketlerini alır.",
+	"settings.mediaServers.labelExistingFailed": "Etiketleme başlatılamadı"
 }

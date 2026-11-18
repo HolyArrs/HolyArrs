@@ -7,6 +7,7 @@
 	"settings.sources.title": "Izvori",
 	"settings.sources.add": "Dodaj izvor",
 	"settings.sources.lead": "Prioritet 1 ide prvi. Izvor koji ne uspije preskače se do šest sati. Za stranice bez feeda dodaj Jackett ili Prowlarr kao Torznab feed.",
+	"settings.sources.builtIn": "Ugrađene stranice ne trebaju Jackett ni Prowlarr: {sites}. Odaberi {site} pod {kind}.",
 	"settings.sources.change": "Promijeni {name}",
 	"settings.sources.name": "Naziv",
 	"settings.sources.feedKind": "Vrsta feeda",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Spremi",
 	"settings.sources.cancel": "Odustani",
 	"settings.sources.none": "Nema izvora",
-	"settings.sources.noneText": "Dodaj Torznab ili Newznab feed, ili Jackett ili Prowlarr.",
+	"settings.sources.noneText": "Dodaj ugrađenu stranicu, Torznab ili Newznab feed, ili Jackett ili Prowlarr.",
 	"settings.sources.rowTitle": "{url} · prioritet {priority} · {uses}",
 	"settings.sources.priorityUses": "Prioritet {priority} · {uses}",
 	"settings.sources.keyIs": "ključ {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Stranica",
 	"settings.sources.addressSite": "Vlastita adresa stranice. Promijeni je samo ako se stranica preselila.",
 	"settings.sources.siteKeyLabel": "Kolačić ili RSS ključ",
-	"settings.sources.siteKeyHint": "Iz vlastitog računa: uid i pass iz kolačića preglednika ili u i tp iz tvoje RSS poveznice. Čuva se šifrirano."
+	"settings.sources.siteKeyHint": "Iz vlastitog računa: uid i pass iz kolačića preglednika ili u i tp iz tvoje RSS poveznice. Čuva se šifrirano.",
+	"settings.sources.sendTo": "Šalji preuzimanja u",
+	"settings.sources.sendToAny": "Bilo koji preuzimatelj",
+	"settings.sources.sendToHint": "Sve odabrano iz ovog izvora ide samo ovom preuzimatelju. Ako ne radi, čeka se.",
+	"settings.sources.sendToGone": "Odabrani preuzimatelj je uklonjen. Preuzimanja iz ovog izvora sada idu bilo kojem preuzimatelju."
 }

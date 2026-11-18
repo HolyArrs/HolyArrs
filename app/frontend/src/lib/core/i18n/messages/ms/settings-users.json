@@ -83,6 +83,7 @@
 	"settings.users.preset": "Pratetap",
 	"settings.users.comingSoon": "Akan datang",
 	"settings.users.custom": "Tersuai",
+	"settings.users.customHint": "Gabungan suis di bawah yang anda tetapkan sendiri. Memilih pratetap akan menggantikannya; pilih Tersuai sekali lagi untuk mengembalikannya.",
 	"settings.users.ageRating": "Penilaian umur",
 	"settings.users.newPasswordFor": "Kata laluan baharu untuk {name}",
 	"settings.users.passwordNote": "Gunakan ini apabila {name} terlupa kata laluannya. Mereka dilog keluar di mana-mana dan log masuk semula dengan yang baharu. Beritahu mereka secara bersemuka.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "cth. Mak",
 	"settings.users.days": "Hari pautan bertahan",
 	"settings.users.makeInvite": "Buat pautan jemputan",
-	"settings.users.permAuto4k": "Permintaan 4K diluluskan tanpa menunggu"
+	"settings.users.permAuto4k": "Permintaan 4K diluluskan tanpa menunggu",
+	"settings.users.serverAccount": "Akaun pelayan",
+	"settings.users.pickAccount": "Pilih akaun pada pelayan media",
+	"settings.users.accountLinked": "Dipautkan kepada {name}",
+	"settings.users.removedOnServer": "Dibuang di pelayan {word}, jadi dimatikan di sini",
+	"settings.users.delete": "Padam",
+	"settings.users.deleteName": "Padam {name}",
+	"settings.users.confirmDelete": "Padam {name}? Dia dilog keluar untuk selamanya dan kuncinya dibuang. Permintaannya kekal, dipaparkan sebagai orang yang dibuang.",
+	"settings.users.deleteYes": "Padam orang",
+	"settings.users.keep": "Simpan",
+	"settings.users.deleted": "{name} dipadam",
+	"settings.users.couldntDelete": "Tidak dapat memadam",
+	"settings.users.confirmDeleteKeys": "Kunci Seerr yang dibuatnya berhenti berfungsi untuk semua orang sehingga kunci baharu dibuat.",
+	"settings.users.qualities": "Kualiti",
+	"settings.users.qualitiesHint": "Mereka hanya boleh pilih yang dihidupkan. Jika semua hidup, yang baharu turut ditawarkan."
 }

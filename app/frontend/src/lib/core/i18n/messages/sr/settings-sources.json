@@ -7,6 +7,7 @@
 	"settings.sources.title": "Извори",
 	"settings.sources.add": "Додај Извор",
 	"settings.sources.lead": "Приоритет 1 иде први. Извор који не успе прескаче се до шест сати. За сајтове без фида додај Jackett или Prowlarr као Torznab фид.",
+	"settings.sources.builtIn": "Уграђеним сајтовима нису потребни Jackett ни Prowlarr: {sites}. Изабери {site} под {kind}.",
 	"settings.sources.change": "Измени {name}",
 	"settings.sources.name": "Назив",
 	"settings.sources.feedKind": "Врста фида",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Сачувај",
 	"settings.sources.cancel": "Откажи",
 	"settings.sources.none": "Нема Извора",
-	"settings.sources.noneText": "Додај Torznab или Newznab фид, или Jackett или Prowlarr.",
+	"settings.sources.noneText": "Додај уграђени сајт, Torznab или Newznab фид, или Jackett или Prowlarr.",
 	"settings.sources.rowTitle": "{url} · приоритет {priority} · {uses}",
 	"settings.sources.priorityUses": "Приоритет {priority} · {uses}",
 	"settings.sources.keyIs": "кључ {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Сајт",
 	"settings.sources.addressSite": "Сопствена адреса сајта. Промени је само ако се сајт преселио.",
 	"settings.sources.siteKeyLabel": "Колачић или RSS кључ",
-	"settings.sources.siteKeyHint": "Са сопственог налога: uid и pass из колачића прегледача или u и tp из твог RSS линка. Чува се шифровано."
+	"settings.sources.siteKeyHint": "Са сопственог налога: uid и pass из колачића прегледача или u и tp из твог RSS линка. Чува се шифровано.",
+	"settings.sources.sendTo": "Шаљи преузимања у",
+	"settings.sources.sendToAny": "Било који преузимач",
+	"settings.sources.sendToHint": "Све одабрано из овог извора иде само овом преузимачу. Ако не ради, чека се.",
+	"settings.sources.sendToGone": "Одабрани преузимач је уклоњен. Преузимања из овог извора сада иду било ком преузимачу."
 }

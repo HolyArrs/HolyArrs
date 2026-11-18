@@ -145,3 +145,53 @@ func TestSlotCopyProtectedNoFileAndProtected(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestTitleInFolderAndMarkSeasonsDiffer(t *testing.T) {
+	w := newCatalogWorld(t)
+	ctx := context.Background()
+	if !TitleInFolder(ctx, w.s.Read(), w.title, w.root, "A") || TitleInFolder(ctx, w.s.Read(), w.title, w.root, "Z") {
+		t.Fatal("TitleInFolder")
+	}
+	if err := w.s.Write(ctx, func(tx *sql.Tx) error { return MarkSeasonsDifferTx(ctx, tx, w.title) }); err != nil {
+		t.Fatal(err)
+	}
+	if got := SeasonsDiffer(ctx, w.s.Read(), w.title); got != 1 {
+		t.Fatalf("differ = %d", got)
+	}
+}
+
+// FolderSourceTags lists every copy of a title with the tags of its Library
+// folder when that folder asks only tagged Sources, and no tags for a copy in
+// another folder.
+func TestFolderSourceTags(t *testing.T) {
+	w := newCatalogWorld(t)
+	ctx := context.Background()
+	set := func(q string, args ...any) {
+		t.Helper()
+		if err := w.s.Write(ctx, func(tx *sql.Tx) error { _, err := tx.Exec(q, args...); return err }); err != nil {
+			t.Fatal(err)
+		}
+	}
+	set(`UPDATE library_folders SET new_title_tags = '["anime","subs"]'`)
+	got, err := FolderSourceTags(ctx, w.s.Read(), w.title)
+	if err != nil || len(got) != 0 {
+		t.Fatalf("no folder has the switch on, and copies were still listed: %v %v", got, err)
+	}
+	set(`UPDATE library_folders SET only_tagged_sources = 1`)
+	// The third copy moves to a plain folder.
+	set(`INSERT INTO library_folders (path, kind, label, health, same_disk_as, created_at, updated_at, created_by, updated_by)
+		SELECT path || '2', kind, 'Plain', health, same_disk_as, created_at, updated_at, created_by, updated_by FROM library_folders`)
+	set(`UPDATE versions SET library_folder_id = (SELECT max(id) FROM library_folders) WHERE id = ?`, w.v3)
+	for _, id := range []int64{0, w.title} {
+		got, err := FolderSourceTags(ctx, w.s.Read(), id)
+		if err != nil || !reflect.DeepEqual(CleanTags(got[w.title][w.v1]), []string{"anime", "subs"}) || !reflect.DeepEqual(CleanTags(got[w.title][w.v2]), []string{"anime", "subs"}) {
+			t.Fatalf("switch on (%d): %v %v", id, got, err)
+		}
+		if tags, ok := got[w.title][w.v3]; !ok || len(tags) != 0 {
+			t.Fatalf("the copy in the plain folder (%d): %v %v", id, tags, ok)
+		}
+	}
+	if got, _ := FolderSourceTags(ctx, w.s.Read(), w.title+1); len(got) != 0 {
+		t.Fatalf("another title: %v", got)
+	}
+}

@@ -153,7 +153,7 @@ func TestDownloaderCheck(t *testing.T) {
 		t.Fatalf("working Downloader %+v", c)
 	}
 	w.exec(t, "UPDATE downloaders SET state = 'unreachable'")
-	if c := w.run(t)["downloader:1"]; c.State != Warning || c.Message != "Downloader qBittorrent does not answer: connection refused" {
+	if c := w.run(t)["downloader:1"]; c.State != Warning || c.Message != "Downloader qBittorrent does not answer: Nothing answers on that port. Check the port, and that the app is running." {
 		t.Fatalf("unplugged %+v", c)
 	}
 	w.exec(t, "UPDATE downloaders SET state = 'auth_failed'")

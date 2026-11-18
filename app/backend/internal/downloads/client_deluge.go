@@ -341,7 +341,7 @@ func (d *Deluge) rpcOnce(ctx context.Context, method string, params any, out any
 			return ctx.Err()
 		}
 		if errors.Is(err, outbound.ErrAddressRefused) {
-			return outbound.ErrAddressRefused
+			return outbound.Refusal(err)
 		}
 		return fmt.Errorf("deluge %s: %w", method, errDownloaderUnavailable)
 	}

@@ -121,3 +121,51 @@ test('status: tabs move with the arrow keys and keep focus', async ({ browser })
 	await expect(page.getByText('Checks ran')).toBeVisible();
 	await page.context().close();
 });
+
+// Support: four links in one row (wrapping on a phone), all the same height, and the
+// Why HolyArrs note ends with the same four. Shots go to SUPPORT_SHOTS when it is set.
+const supportHrefs = [
+	['Sponsor on GitHub', 'https://github.com/sponsors/CoderLuii'],
+	['Buy me a coffee', 'https://buymeacoffee.com/coderluii'],
+	['Star on GitHub', 'https://github.com/HolyArrs/HolyArrs'],
+	['Send a note', 'mailto:support@holyarrs.com?subject=A%20note%20about%20HolyArrs']
+];
+for (const width of [1280, 390]) {
+	test(`status: Support shows the four ways to help at ${width}`, async ({ browser }) => {
+		for (const colorScheme of ['light', 'dark'] as const) {
+			const page = await (await browser.newContext({ viewport: { width, height: 844 }, colorScheme })).newPage();
+			await signIn(page, owner());
+			await open(page, '/health?tab=support');
+			const panel = page.getByTestId('status-support');
+			await expect(panel.getByRole('heading', { name: 'HolyArrs is built by one person, in the open.' })).toBeVisible();
+			await expect(panel.getByRole('heading', { name: 'What your support does' })).toBeVisible();
+			await expect(panel.getByRole('listitem')).toHaveCount(3);
+			await expect(panel.getByText('Read the note')).toHaveCount(0);
+			const heights = new Set<number>();
+			for (const [name, href] of supportHrefs) {
+				const link = panel.getByRole('link', { name });
+				await expect(link).toHaveAttribute('href', href);
+				if (href.startsWith('mailto:')) await expect(link).not.toHaveAttribute('target', /./);
+				else { await expect(link).toHaveAttribute('target', '_blank'); await expect(link).toHaveAttribute('rel', 'noopener'); }
+				heights.add(Math.round((await link.boundingBox())!.height));
+			}
+			expect([...heights]).toHaveLength(1);
+			await noSidewaysScroll(page);
+			const shots = process.env.SUPPORT_SHOTS;
+			if (shots) await panel.screenshot({ path: join(shots, `support-${width}-${colorScheme}.png`) });
+			await page.context().close();
+		}
+	});
+}
+
+test('status: the Why HolyArrs note ends with the same four ways to help', async ({ browser }) => {
+	const page = await (await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' })).newPage();
+	await signIn(page, owner());
+	await open(page, '/health?tab=about');
+	await page.getByTestId('why-open').click();
+	const dialog = page.getByRole('dialog');
+	for (const [name, href] of supportHrefs) await expect(dialog.getByRole('link', { name })).toHaveAttribute('href', href);
+	const shots = process.env.SUPPORT_SHOTS;
+	if (shots) { const box = dialog.locator('.thanks'); await box.scrollIntoViewIfNeeded(); await box.screenshot({ path: join(shots, 'why-thanks-1280.png') }); }
+	await page.context().close();
+});

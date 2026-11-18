@@ -683,3 +683,44 @@ func TestAskStepOverHTTP(t *testing.T) {
 		t.Fatalf("approver's step %v", s)
 	}
 }
+
+// The person editor sets which qualities one person may pick through the
+// weekly-limit call: the list comes back with every line, the Ask sheet
+// offers only those lines, and an empty kind is refused.
+func TestPersonQualitiesOverHTTP(t *testing.T) {
+	t.Parallel()
+	r := newAskRig(t)
+	r.owner.call("PUT", "/api/v1/ask-limits/"+itoa(r.ana.id), `{"movies_per_week":3,"qualities":{"movie":["standard"],"show":null}}`, 200)
+	r.owner.call("PUT", "/api/v1/ask-limits/"+itoa(r.ana.id), `{"movies_per_week":3,"qualities":{"movie":[]}}`, 400)
+	var got struct {
+		Limits []struct {
+			Name      string                   `json:"name"`
+			Movies    *int                     `json:"movies_per_week"`
+			Qualities requests.PersonQualities `json:"qualities"`
+		} `json:"limits"`
+		Lines requests.QualityLists `json:"lines"`
+	}
+	_ = json.Unmarshal(r.owner.call("GET", "/api/v1/ask-limits", "", 200), &got)
+	if len(got.Lines.Movie) != 2 || len(got.Lines.Show) != 2 {
+		t.Fatalf("lines %+v", got.Lines)
+	}
+	ok := false
+	for _, l := range got.Limits {
+		if l.Name == "ana" {
+			ok = l.Movies != nil && *l.Movies == 3 && len(l.Qualities.Movie) == 1 && l.Qualities.Show == nil
+		}
+	}
+	if !ok {
+		t.Fatalf("limits %+v", got.Limits)
+	}
+	var sheet struct {
+		Qualities struct {
+			Movie []requests.QualityChoice `json:"movie"`
+		} `json:"qualities"`
+	}
+	_ = json.Unmarshal(r.ana.call("GET", "/api/v1/asks/limit", "", 200), &sheet)
+	if len(sheet.Qualities.Movie) != 1 || sheet.Qualities.Movie[0].ID != "standard" {
+		t.Fatalf("sheet %+v", sheet)
+	}
+	r.ana.call("POST", "/api/v1/asks", `{"id":"tmdb:693134","quality":"4k"}`, 400)
+}

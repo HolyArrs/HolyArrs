@@ -1,21 +1,24 @@
 ---
 title: Sources
-description: Add Torznab, Newznab or RSS Sources, or link Jackett or Prowlarr, so HolyArrs can find Releases.
+description: Add a built-in site, a Torznab, Newznab or RSS Source, or link Jackett or Prowlarr, so HolyArrs can find Releases.
 level: Setup
 sidebar: { order: 3 }
 ---
 
 Give HolyArrs Sources so it can find Releases for your movies, shows and music.
 
-A Source is a feed HolyArrs asks for Releases. It reads 3 kinds itself:
+A Source is a feed HolyArrs asks for Releases. It reads 4 kinds itself:
 
 | Kind | For | Search |
 |---|---|---|
 | Torznab | Torrents (Jackett and Prowlarr give these) | Yes |
 | Newznab | Usenet | Yes |
 | RSS | Newest Releases only | No |
+| Built-in site | Knaben, TorrentsCSV, SubsPlease or IPTorrents, read directly | Yes |
 
-Most torrent sites have no feed of their own. For those, run Jackett or Prowlarr next to HolyArrs. They sign in to the sites and give HolyArrs one feed per site.
+Four torrent sites are built in, so you need no Jackett or Prowlarr for them. See [Built-in sites](built-in-sites.md). Pick **Built-in site** under **Kind of feed** when you add a Source.
+
+Most other torrent sites have no feed of their own. For those, run Jackett or Prowlarr next to HolyArrs. They sign in to the sites and give HolyArrs one feed per site.
 
 ## Link Jackett or Prowlarr
 
@@ -107,6 +110,7 @@ More in [Troubleshooting](../../help/troubleshooting/).
 | Priority | 1 to 50. Lower is asked first and wins ties between equal Releases | 25 | You trust one Source more |
 | Fewest seeders | Torrents with fewer seeders are skipped | 1 | You want healthier torrents |
 | Tags | Only titles with a matching tag use it. Empty means all titles | Empty | A Source is for some titles only |
+| Send downloads to | Every Release chosen from this Source goes only to this Downloader, whatever the title's tags. If that Downloader is paused or down, the download waits and never goes to another one. If it is removed, the Source goes back to any Downloader and its settings say so | Any Downloader | Private trackers that must use their own torrent app |
 | Limits | **Most searches per window**, **Window (hours)**, **Least time between calls (ms)**, **Give up after (seconds)**. 0 is no limit, except give up after: 1 to 300 | 0 | The site has a daily cap or slows you down |
 | Proxy | Sends every call through an HTTP or SOCKS5 proxy, such as `socks5://name@host:1080` or `http://host:3128` | Empty | The site needs another route |
 | Reach the local network | Lets it call this machine or your home network | Off | Jackett or Prowlarr runs at home |

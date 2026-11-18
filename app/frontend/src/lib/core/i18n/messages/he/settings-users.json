@@ -83,6 +83,7 @@
 	"settings.users.preset": "תבנית",
 	"settings.users.comingSoon": "בקרוב",
 	"settings.users.custom": "מותאם אישית",
+	"settings.users.customHint": "זה השילוב האישי שלך של המתגים שלמטה. בחירת הגדרה מוכנה מחליפה אותו; בחרו שוב ״מותאם אישית״ כדי להחזיר אותו.",
 	"settings.users.ageRating": "סיווג גיל",
 	"settings.users.newPasswordFor": "סיסמה חדשה עבור {name}",
 	"settings.users.passwordNote": "השתמש בזה כש־{name} שכח את הסיסמה. הוא יתנתק מכל המקומות ויתחבר שוב עם הסיסמה החדשה. מסור לו אותה פנים אל פנים.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "לדוגמה: אמא",
 	"settings.users.days": "ימים שהקישור תקף",
 	"settings.users.makeInvite": "יצירת קישור הזמנה",
-	"settings.users.permAuto4k": "בקשות 4K שמאושרות בלי להמתין"
+	"settings.users.permAuto4k": "בקשות 4K שמאושרות בלי להמתין",
+	"settings.users.serverAccount": "חשבון בשרת",
+	"settings.users.pickAccount": "בחרו חשבון בשרת מדיה",
+	"settings.users.accountLinked": "קושר אל {name}",
+	"settings.users.removedOnServer": "הוסר בשרת {word}, ולכן כובה כאן",
+	"settings.users.delete": "מחיקה",
+	"settings.users.deleteName": "מחיקת {name}",
+	"settings.users.confirmDelete": "למחוק את {name}? החשבון ינותק לצמיתות והמפתחות יימחקו. הבקשות נשארות ויוצגו כאדם שהוסר.",
+	"settings.users.deleteYes": "מחיקת האדם",
+	"settings.users.keep": "השארה",
+	"settings.users.deleted": "{name} נמחק",
+	"settings.users.couldntDelete": "המחיקה נכשלה",
+	"settings.users.confirmDeleteKeys": "מפתחות Seerr שיצר יפסיקו לעבוד לכולם עד שייווצר מפתח חדש.",
+	"settings.users.qualities": "איכויות",
+	"settings.users.qualitiesHint": "אפשר לבחור רק את המופעלות. כשכולן מופעלות, גם חדשות מוצעות."
 }

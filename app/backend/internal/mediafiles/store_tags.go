@@ -23,3 +23,21 @@ func TitleTagUses(ctx context.Context, db *sql.DB) (map[string]int, error) {
 	}
 	return out, rows.Err()
 }
+
+// FolderTagUses counts, per tag, the Library folders that carry it.
+func FolderTagUses(ctx context.Context, db *sql.DB) (map[string]int, error) {
+	rows, err := db.QueryContext(ctx, "SELECT j.value FROM library_folders x, json_each(x.new_title_tags) j WHERE json_type(x.new_title_tags) = 'array'")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]int{}
+	for rows.Next() {
+		var label string
+		if err := rows.Scan(&label); err != nil {
+			return nil, err
+		}
+		out[label]++
+	}
+	return out, rows.Err()
+}

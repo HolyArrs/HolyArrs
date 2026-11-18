@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "שני הנתיבים זהים, כך שהזוג הזה לא משנה דבר. הוא עדיין אומר ל-HolyArrs איפה נמצאים הקבצים של לקוח ההורדות הזה, אז אפשר להשאיר אותו.",
 	"settings.downloaders.change": "שינוי {name}",
 	"settings.downloaders.whichApp": "איזו אפליקציה",
-	"settings.downloaders.torrents": "(טורנטים)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "טורנטים",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "הנפוץ ביותר",
 	"settings.downloaders.name": "שם",
 	"settings.downloaders.address": "כתובת",
 	"settings.downloaders.addressHint": "דף הווב שלו. ב־SABnzbd, השתמש ב־IP או אשר את שם המארח של HolyArrs.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "קטגוריה אחרי הייבוא",
 	"settings.downloaders.categoryAfterImportHint": "אחרי שטורנט יובא, HolyArrs מעביר אותו לקטגוריה הזו. השאירו ריק כדי להשאיר אותו בקטגוריה הראשית.",
 	"settings.downloaders.ownOnly": "להציג רק פריטים של HolyArrs",
-	"settings.downloaders.ownOnlyHint": "פריטים של אפליקציות אחרות במוריד הזה מוסתרים, ו־HolyArrs לא משנה אותם."
+	"settings.downloaders.ownOnlyHint": "פריטים של אפליקציות אחרות במוריד הזה מוסתרים, ו־HolyArrs לא משנה אותם.",
+	"settings.downloaders.state.notAnswering": "לא עונה",
+	"settings.downloaders.state.paused": "מושהה",
+	"settings.downloaders.state.resting": "במנוחה",
+	"settings.downloaders.state.signInRefused": "הכניסה נדחתה",
+	"settings.downloaders.state.working": "פועל"
 }

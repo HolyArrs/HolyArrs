@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Avstängd i Delar",
 	"home.noneForSources": "saknas för det dina källor hittar",
 	"home.addedTwice": "är tillagd två gånger",
-	"home.addedTwiceMany": "är tillagda två gånger"
+	"home.addedTwiceMany": "är tillagda två gånger",
+	"home.notSetUpYet": "Inte konfigurerat än",
+	"home.setUpToAdd": "Slutför konfigurationen för att lägga till {name}",
+	"home.comingThisWeek": "Kommer den här veckan",
+	"home.thisWeek": "den här veckan",
+	"home.landingThisWeek": "Avsnitt och filmer som kommer den här veckan",
+	"home.popularThisWeek": "Populära släpp som kommer den här veckan",
+	"home.peopleCheck": "Personkontroll",
+	"home.cantReadUsers": "användarlistan kan inte läsas"
 }

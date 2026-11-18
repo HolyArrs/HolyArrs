@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "ei mitään",
 	"settings.thisApp.needsRestart": "Vaatii uudelleenkäynnistyksen. HOLYARRS_URL_BASE tai -url-base ohittaa sen.",
 	"settings.thisApp.save": "Tallenna",
-	"settings.thisApp.licence": "HolyArrs on vapaa ohjelmisto AGPL-3.0-lisenssillä."
+	"settings.thisApp.licence": "HolyArrs on vapaa ohjelmisto AGPL-3.0-lisenssillä.",
+	"settings.thisApp.proxy": "Välityspalvelin",
+	"settings.thisApp.proxyDesc": "Lähetä ulkoiset kutsut välityspalvelimen kautta. Esto- ja kotiverkkosäännöt koskevat yhä todellista kohdetta.",
+	"settings.thisApp.proxyType": "Tyyppi",
+	"settings.thisApp.proxyOff": "Pois",
+	"settings.thisApp.proxyHost": "Palvelin",
+	"settings.thisApp.proxyPort": "Portti",
+	"settings.thisApp.proxyUser": "Käyttäjänimi",
+	"settings.thisApp.proxyPasswordLabel": "Salasana",
+	"settings.thisApp.proxyPasswordKept": "Jätä tyhjäksi, niin tallennettu salasana säilyy",
+	"settings.thisApp.proxyBypass": "Ohita välityspalvelin kohteille",
+	"settings.thisApp.proxyBypassHint": "Nimet, osoitteet tai alueet pilkuilla eroteltuina. *.example.com kattaa kaikki sen alla olevat nimet.",
+	"settings.thisApp.proxyBypassLocal": "Ohita välityspalvelin paikallisille osoitteille",
+	"settings.thisApp.proxyBypassLocalHint": "Tämä kone ja kotiverkkosi yhdistävät suoraan",
+	"settings.thisApp.proxySaved": "Välityspalvelin tallennettu",
+	"settings.thisApp.proxyOffSaved": "Välityspalvelin pois"
 }

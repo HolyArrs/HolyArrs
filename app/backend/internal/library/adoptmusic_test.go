@@ -148,10 +148,13 @@ func TestAdoptMusicMovesNothing(t *testing.T) {
 			t.Fatalf("slot %s", state)
 		}
 	}
-	// Adopting the same folder again is refused.
+	// Adopting the same folder again adds nothing: it answers with the artist already there.
+	first := res[0].TitleID
 	res, _ = svc.Adopt(ctx, lf.ID, []AdoptChoice{{Folder: "Lab Band", ID: "mbid:" + labArtist}}, domain.System)
-	if res[0].Error == "" {
-		t.Fatal("adopted twice")
+	var artists int
+	_ = s.Read().QueryRow("SELECT count(*) FROM titles").Scan(&artists)
+	if res[0].TitleID != first || artists != 1 {
+		t.Fatalf("adopted twice: %+v, %d titles", res[0], artists)
 	}
 	for _, bad := range []string{"../x", "Lab Band/Old Days (2010)", ".holding", "Missing"} {
 		res, _ = svc.Adopt(ctx, lf.ID, []AdoptChoice{{Folder: bad, ID: "mbid:" + labArtist}}, domain.System)

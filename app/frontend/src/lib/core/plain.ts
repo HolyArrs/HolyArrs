@@ -2,6 +2,66 @@
 
 import type { Ask, HealthCheck } from './types.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
+
+// A deleted person's row keeps their real name with an invisible separator and
+// their id after it. Shown names carry the person between two invisible marks,
+// so sentences that hold them can still draw the deleted mark (ui/PersonText).
+const storedGone = /^([\s\S]*)\u2063\d+$/;
+const shownGone = /\u2063([^\u2063\u2064]*)\u2064/g;
+
+export function shownPerson<T extends string | null | undefined>(name: T): T {
+	const m = typeof name === 'string' ? storedGone.exec(name) : null;
+	return (m ? `\u2063${m[1].trim()}\u2064` : name) as T;
+}
+
+// Whether a stored or shown name belongs to a deleted person.
+export function isGone(name: string | null | undefined): boolean {
+	return !!name && (storedGone.test(name) || name.includes('\u2064'));
+}
+
+// The shown text cut into plain runs and deleted people's names.
+export function personParts(text: string | null | undefined): { text: string; gone: boolean }[] {
+	const s = shownPerson(text ?? '');
+	const out: { text: string; gone: boolean }[] = [];
+	let at = 0;
+	for (const m of s.matchAll(shownGone)) {
+		if (m.index > at) out.push({ text: s.slice(at, m.index), gone: false });
+		out.push({ text: m[1], gone: true });
+		at = m.index + m[0].length;
+	}
+	if (at < s.length) out.push({ text: s.slice(at), gone: false });
+	return out;
+}
+
+// The shown text as plain words, for labels, tooltips and messages: "maria (deleted)".
+export function personText(text: string | null | undefined): string {
+	return shownPerson(text ?? '').replace(shownGone, (_, name: string) => t('core.plain.deletedName', { name }));
+}
+
+// The shown text with the marks taken out, for sorting and initials.
+export function bareNames(text: string | null | undefined): string {
+	return shownPerson(text ?? '').replace(shownGone, '$1');
+}
+
+// A name an Event saved as plain words, marked deleted when it is the deleted actor's own name.
+export function asActor(name: string, actorName: string | null | undefined): string {
+	return isGone(actorName) && name.trim() === bareNames(actorName) ? shownPerson(actorName ?? '') : name;
+}
+
+// Text that names askers, with each one whose saved id now belongs to a deleted person marked.
+// The names come stored ("maria" plus the deleted mark) from the server; older Events have none and stay plain.
+export function markAsked(text: string, stored: string[] | null | undefined): string {
+	let out = text;
+	for (const s of stored ?? []) {
+		const m = storedGone.exec(s);
+		const bare = m?.[1].trim();
+		if (!bare) continue;
+		const re = new RegExp(`(^|[\\s,(])${bare.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=$|[\\s,.;:)])`);
+		out = out.replace(re, (_, pre: string) => pre + shownPerson(s));
+	}
+	return out;
+}
 
 // Plain wording per check kind: first for errors, second for warnings.
 const sentences = (): Record<HealthCheck['kind'], [error: string, warning: string]> => ({
@@ -17,7 +77,8 @@ const sentences = (): Record<HealthCheck['kind'], [error: string, warning: strin
 	clear_waiting: [t('core.plain.clearWaiting'), t('core.plain.clearWaiting')],
 	save_folder: [t('core.plain.saveFolder'), t('core.plain.saveFolder')],
 	no_downloader: [t('core.plain.noDownloader'), t('core.plain.noDownloader')],
-	same_downloader: [t('core.plain.sameDownloader'), t('core.plain.sameDownloader')]
+	same_downloader: [t('core.plain.sameDownloader'), t('core.plain.sameDownloader')],
+	people_check: [t('core.plain.peopleCheck'), t('core.plain.peopleCheck')]
 });
 
 // Signs of raw system text that people should not see as the main message.
@@ -34,7 +95,7 @@ export function looksLikeId(name: string | null | undefined): boolean {
 
 // Shows the name, or a friendly stand-in when it is only an id.
 export function personName(name: string | null | undefined, fallback = t('core.plain.someone')): string {
-	return looksLikeId(name) ? fallback : (name ?? '').trim();
+	return looksLikeId(name) ? fallback : shownPerson((name ?? '').trim());
 }
 
 // One calm sentence for a health check, never raw system text.
@@ -49,7 +110,7 @@ export function healthSentence(c: Pick<HealthCheck, 'kind' | 'state'> & { key?: 
 
 // Joins names into a list and folds hidden ids into a count.
 export function peopleNames(list: (string | null | undefined)[]): string {
-	const real = list.filter((n) => !looksLikeId(n)).map((n) => (n ?? '').trim());
+	const real = list.filter((n) => !looksLikeId(n)).map((n) => shownPerson((n ?? '').trim()));
 	const hidden = list.length - real.length;
 	if (hidden && !real.length) return hidden === 1 ? t('core.plain.someone') : t('core.plain.peopleInHousehold', { count: hidden });
 	if (hidden) real.push(hidden === 1 ? t('core.plain.oneOther') : t('core.plain.othersInHousehold', { count: hidden }));
@@ -72,7 +133,7 @@ export function plainReason(text: string): { text: string; detail?: string } {
 export function decidedWho(a: Pick<Ask, 'state' | 'decided_by'>, me?: { id: number; displayName: string }): string {
 	if (!a.decided_by || a.state === 'asked') return '';
 	const mine = me && me.id === a.decided_by.id ? me.displayName.trim() : '';
-	return mine || a.decided_by.display_name?.trim() || a.decided_by.name || t('core.plain.anAdmin');
+	return mine || a.decided_by.display_name?.trim() || shownPerson(a.decided_by.name) || t('core.plain.anAdmin');
 }
 
 // Who settled a request, worded for the viewer; empty while still open.

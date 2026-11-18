@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Loại bản phát hành đăng trước ngày ra mắt",
 	"settings.search.refuseEarlyHint": "Nhiều khả năng là bản giả. Chọn bản phát hành vẫn hiện chúng, kèm cảnh báo.",
 	"settings.search.refuseTiny": "Loại bản giả theo dung lượng và loại tệp",
-	"settings.search.refuseTinyHint": "Bản phát hành quá nhỏ, tệp rỗng và .wmv hay .asf mang tên HD",
+	"settings.search.refuseTinyHint": "Bản phát hành quá nhỏ, tệp rỗng, video bị cắt dở và .wmv hay .asf mang tên HD",
 	"settings.search.grace": "Số giờ bản phát hành được phép sớm",
 	"settings.search.graceHint": "Cho múi giờ. Mặc định 24.",
 	"settings.search.floors": "Kiểm tra dung lượng tệp khi nhập",

@@ -54,91 +54,7 @@ test('AI apps are off until the owner turns them on, then an AI key works only t
 	expect(other.status()).toBe(403);
 });
 
-const GUIDE = /^https:\/\/holyarrs\.coderluii\.dev\/docs\/ai\/((claude-app|chatgpt|gemini-app|claude-code|codex|cursor|claude-desktop-home|local-ai)\/|#(apps|any-other-app))$/;
-
-test('the table lists where each app takes HolyArrs, and a row opens its steps', async () => {
-	await page.goto('/settings/ai');
-	const table = page.getByTestId('ai-table');
-	for (const g of ['Chat apps', 'Agents and editors', 'On your computer']) await expect(table.getByText(g, { exact: true })).toBeVisible();
-	// No row is picked until you pick one.
-	await expect(page.getByTestId('ai-guide')).toHaveCount(0);
-	// Every Guide link goes to one of the website's 8 guides or the main page.
-	const guides = table.getByRole('link', { name: /^Guide for / });
-	await expect(guides).toHaveCount(13);
-	for (const href of await guides.evaluateAll((els) => els.map((e) => e.getAttribute('href') ?? ''))) expect(href).toMatch(GUIDE);
-	await expect(table.getByRole('link', { name: 'Guide for Cursor' })).toHaveAttribute('href', 'https://holyarrs.coderluii.dev/docs/ai/cursor/');
-	await expect(table.getByRole('link', { name: 'Guide for Any other app' })).toHaveAttribute('href', 'https://holyarrs.coderluii.dev/docs/ai/#any-other-app');
-	await expect(page.getByRole('link', { name: 'All AI guides' })).toHaveAttribute('href', 'https://holyarrs.coderluii.dev/docs/ai/');
-	await expect(page.getByRole('link', { name: 'Only on your home network?' }).first()).toHaveAttribute('href', 'https://holyarrs.coderluii.dev/docs/ai/#home-network');
-
-	// The test server is on this computer, where apps sign in through the browser.
-	await expect(page.getByTestId('ai-mode')).toContainText('You press Allow once');
-	await expect(page.getByTestId('ai-steps')).toContainText('then press Allow');
-	const origin = new URL(page.url()).origin;
-	await expect(page.getByTestId('ai-prompt')).toHaveText(
-		`Read https://holyarrs.coderluii.dev/docs/ai/ai.md and connect yourself to my HolyArrs at ${origin}. Only add the HolyArrs MCP server. Ask me before you change anything else.`
-	);
-	await expect(page.getByTestId('ai-check')).toContainText("What's downloading in HolyArrs?");
-
-	// Picking a row opens its steps, and only its steps.
-	const before = new URL(page.url());
-	await table.getByRole('button', { name: 'Claude Code', exact: true }).click();
-	await expect(page).toHaveURL(/\?app=claude-code$/);
-	// Picking changes only ?app= in the address, never more (no key can reach it).
-	const after = new URL(page.url());
-	expect(after.pathname).toBe(before.pathname);
-	expect([...after.searchParams.keys()]).toEqual(['app']);
-	const guide = page.getByTestId('ai-guide');
-	await expect(guide).toHaveCount(1);
-	await expect(guide).toContainText('claude mcp add --transport http --scope user holyarrs');
-	await expect(guide).not.toContainText('Bearer');
-	await expect(guide).toContainText('Tested with HolyArrs on 3 Nov 2026');
-	await table.getByRole('button', { name: 'Cursor', exact: true }).click();
-	await expect(table.getByRole('button', { name: 'Claude Code', exact: true })).toHaveAttribute('aria-expanded', 'false');
-	await expect(table.getByRole('button', { name: 'Cursor', exact: true })).toHaveAttribute('aria-expanded', 'true');
-	await expect(guide).toHaveCount(1);
-	await expect(guide).toContainText('~/.cursor/mcp.json');
-	await expect(guide.getByRole('link', { name: 'Add to Cursor' })).toHaveAttribute('href', /^cursor:\/\/anysphere\.cursor-deeplink\/mcp\/install\?name=holyarrs&config=/);
-	await expect(guide).toContainText("Not tested with HolyArrs yet. These steps follow Cursor's own help pages.");
-	// On sign-in the table offers the same one-click buttons.
-	await expect(table.getByRole('link', { name: 'Add to Cursor' })).toHaveAttribute('href', /^cursor:\/\//);
-	await expect(table.getByRole('link', { name: 'Add to VS Code' })).toHaveAttribute('href', /^vscode:mcp\/install\?/);
-	await noSidewaysScroll(page);
-	// Picking it again closes it.
-	await table.getByRole('button', { name: 'Cursor', exact: true }).click();
-	await expect(guide).toHaveCount(0);
-});
-
-test('a link picks its row, old app names included', async () => {
-	const expanded = (name: string) => page.getByTestId('ai-table').getByRole('button', { name, exact: true, expanded: true });
-	await page.goto('/settings/ai?app=cursor');
-	await expect(expanded('Cursor')).toBeVisible();
-	await page.goto('/settings/ai?app=codex-ide');
-	await expect(expanded('Codex')).toBeVisible();
-	await expect(page.getByTestId('ai-guide').getByRole('heading')).toHaveText('Codex IDE extension');
-	// LM Studio sits under the local row but shows its own steps, not Open WebUI's.
-	await page.goto('/settings/ai?app=lm-studio');
-	await expect(expanded('Open WebUI, LM Studio, Ollama')).toBeVisible();
-	await expect(page.getByTestId('ai-guide').getByRole('heading')).toHaveText('LM Studio');
-	await expect(page.getByTestId('ai-guide')).toContainText('Edit mcp.json');
-	await expect(page.getByTestId('ai-guide')).not.toContainText('Admin Panel');
-	// A row that covers several apps switches between their steps.
-	const which = page.getByRole('group', { name: 'Which app' });
-	await expect(which.getByRole('button', { name: 'LM Studio', pressed: true })).toBeVisible();
-	await which.getByRole('button', { name: 'Open WebUI', exact: true }).click();
-	await expect(page.getByTestId('ai-guide').getByRole('heading')).toHaveText('Open WebUI');
-	await expect(page.getByTestId('ai-guide')).toContainText('Admin Panel');
-	await expect(page).toHaveURL(/app=open-webui/);
-	// An app without a row (the website's key steps say "pick Windsurf") still opens its steps.
-	await page.goto('/settings/ai?app=windsurf');
-	await expect(page.getByTestId('ai-guide').getByRole('heading')).toHaveText('Windsurf');
-	await expect(page.getByTestId('ai-table').getByRole('button', { expanded: true })).toHaveCount(0);
-	await page.goto('/settings/ai?app=nope');
-	await expect(page.getByTestId('ai-table')).toBeVisible();
-	await expect(page.getByTestId('ai-guide')).toHaveCount(0);
-});
-
-test('on a plain-http home address apps use an AI key, and cloud apps need https', async ({ browser }) => {
+test('on a plain-http home address the page shows that address and makes AI keys', async ({ browser }) => {
 	// The page opens at a home-network address; its requests reach the test server.
 	const real = new URL(page.url()).origin;
 	const home = `http://10.254.254.254:${new URL(real).port}`;
@@ -169,56 +85,26 @@ test('on a plain-http home address apps use an AI key, and cloud apps need https
 	await signIn(p, owner());
 	await p.goto('/settings/ai');
 	await expect(p.getByTestId('ai-address')).toHaveText(home + '/api/v1/mcp');
-	await expect(p.getByTestId('ai-mode')).toContainText('This is a plain-http address');
-	await expect(p.getByTestId('ai-steps')).toContainText('Paste the AI key from Make a key');
-	const table = p.getByTestId('ai-table');
-	const row = (name: string) => table.getByRole('row').filter({ has: p.getByRole('button', { name, exact: true }) });
-	await expect(row('Claude app')).toContainText('Needs a public https address.');
-	await expect(row('ChatGPT')).toContainText('Needs a public https address.');
-	await expect(row('Cursor')).not.toContainText('Needs a public https address.');
-	// No one-click button and no header-less command on a home address.
-	await expect(row('Cursor')).not.toContainText('Add to Cursor');
-	await expect(row('Gemini CLI')).toContainText('--header "Authorization: Bearer <your AI key>"');
-	await expect(p.getByTestId('ai-prompt')).toHaveText(
-		`Read https://holyarrs.coderluii.dev/docs/ai/ai.md and connect yourself to my HolyArrs at ${home}. Only add the HolyArrs MCP server. Ask me before you change anything else. I'll give you an AI key when you ask.`
-	);
-	await expect(p.getByText('first to put your key in the prompt.')).toBeVisible();
+	await expect(p.getByTestId('ai-table')).toHaveCount(0);
+	await expect(p.getByTestId('ai-guide')).toHaveCount(0);
 
-	// Make a key fills the app's steps and the agent prompt.
-	await table.getByRole('button', { name: 'Cursor', exact: true }).click();
-	const guide = p.getByTestId('ai-guide');
-	await expect(guide.getByRole('link', { name: 'Add to Cursor' })).toHaveCount(0);
-	await guide.getByRole('button', { name: 'Make a key for Cursor' }).click();
+	// A key made here shows once, then lists under Linked AI apps.
+	await p.getByText('Make a key by hand').click();
+	await p.getByLabel('Key name').fill('Cursor');
+	await p.getByRole('button', { name: 'Make an AI key' }).click();
 	const fresh = p.getByRole('status').filter({ hasText: 'shown only once' });
 	const k = (await fresh.locator('code').textContent())!.trim();
 	expect(k.length).toBeGreaterThan(10);
-	await expect(guide).toContainText(`"Authorization": "Bearer ${k}"`);
-	await expect(guide.getByRole('button', { name: 'Make a key for Cursor' })).toHaveCount(0);
-	await expect(p.getByTestId('ai-prompt')).toContainText(`Use this AI key: ${k}. Only add`);
-	await expect(p.getByText('Contains your key. Paste only into your own agent.')).toBeVisible();
-	expect([...new URL(p.url()).searchParams.keys()]).toEqual(['app']);
 	expect(p.url()).not.toContain(k);
 
-	// The key is Cursor's only: another app's steps and its prompt never get it.
-	await table.getByRole('button', { name: 'Claude Code', exact: true }).click();
-	await expect(guide.getByRole('heading')).toHaveText('Claude Code');
-	await expect(guide).not.toContainText(k);
-	await expect(guide.getByRole('button', { name: 'Make a key for Claude Code' })).toBeVisible();
-	await expect(p.getByTestId('ai-prompt')).not.toContainText(k);
-
-	// A cloud app says it needs a public https address.
-	await table.getByRole('button', { name: 'Claude app', exact: true }).click();
-	await expect(p.getByTestId('ai-unreachable')).toHaveText('Needs a public https address.');
-
-	// Revoke asks first, then the key is gone, from the list and from Cursor's steps.
+	// Revoke asks first, then the key is gone.
 	const keys = p.locator('#ai-keys');
 	await keys.getByRole('listitem').filter({ hasText: 'Cursor' }).getByRole('button', { name: 'Revoke' }).click();
 	await p.getByRole('dialog', { name: 'Revoke Cursor?' }).getByRole('button', { name: 'Revoke' }).click();
 	await expect(keys.getByRole('listitem').filter({ hasText: 'Cursor' })).toHaveCount(0);
-	await table.getByRole('button', { name: 'Cursor', exact: true }).click();
-	await expect(guide).not.toContainText(k);
-	await expect(guide.getByRole('button', { name: 'Make a key for Cursor' })).toBeVisible();
-	await expect(p.getByTestId('ai-prompt')).not.toContainText(k);
+	await expect(fresh).toHaveCount(0);
+	// Background calls may still be passing through the stand-in route; let them go before closing.
+	await ctx.unrouteAll({ behavior: 'ignoreErrors' });
 	await ctx.close();
 });
 
@@ -290,12 +176,6 @@ test('AI apps and plain-words search fit a phone screen', async () => {
 	await page.goto('/settings/ai');
 	await expect(page.getByRole('checkbox', { name: 'Let AI apps connect' })).toBeVisible();
 	await noSidewaysScroll(page);
-	// On a phone a picked row opens its steps right under it; long config still fits.
-	for (const name of ['Claude Desktop at home', 'Gemini CLI', 'Any other app']) {
-		await page.getByTestId('ai-table').getByRole('button', { name, exact: true }).click();
-		await expect(page.getByTestId('ai-table').getByTestId('ai-guide')).toBeVisible();
-		await noSidewaysScroll(page);
-	}
 	await page.goto('/search?q=' + encodeURIComponent('driftwood moon movie'));
 	await expect(page.getByTestId('search-plain')).toBeVisible();
 	await noSidewaysScroll(page);

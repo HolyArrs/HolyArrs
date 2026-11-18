@@ -103,9 +103,9 @@
 							<b>{r.name}</b>
 							<span class="xs muted meta">{[kinds(r), usedWords(r.in_use)].filter(Boolean).join(' · ')}</span>
 						</span>
-						{#if r.preset}<span class="chip">{t('settings.pickRules.readyMade')}</span>{/if}
+						{#if r.preset && rules.some((x) => !x.preset)}<span class="chip">{t('settings.pickRules.readyMade')}</span>{/if}
 						<span class="acts">
-							<Button variant="plain" href={to(`/settings/pick-rules/${r.id}`)}>{mayEdit ? t('settings.pickRules.change') : t('settings.pickRules.open')}</Button>
+							<Button variant="secondary" size="sm" href={to(`/settings/pick-rules/${r.id}`)}>{mayEdit ? t('settings.pickRules.change') : t('settings.pickRules.open')}</Button>
 							{#if mayEdit}<Menu
 								label={t('settings.pickRules.moreFor', { name: r.name })}
 								items={[
@@ -117,6 +117,7 @@
 					</li>
 				{/each}
 			</ul>
+			{#if mayEdit}<p class="hint">{t('settings.pickRules.hint')}</p>{/if}
 		{/if}
 	</SettingsCard>
 
@@ -130,8 +131,7 @@
 			<li><Words key="settings.pickRules.whereLists" links={{ a: to('/settings/outside-lists') }} /></li>
 			<li>{t('settings.pickRules.whereTitle')}</li>
 		</ul>
-		{#if mayEdit}<p class="hint">{t('settings.pickRules.hint')}</p>
-		{:else}<p class="hint" data-testid="read-only">{t('settings.pickRules.readOnly')}</p>{/if}
+		{#if !mayEdit}<p class="hint" data-testid="read-only">{t('settings.pickRules.readOnly')}</p>{/if}
 	</SettingsCard>
 {/if}
 

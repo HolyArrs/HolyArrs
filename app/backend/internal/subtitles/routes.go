@@ -104,6 +104,7 @@ type FileView struct {
 	FileID       int64      `json:"file_id"`
 	ItemID       int64      `json:"item_id"`
 	VersionID    int64      `json:"version_id"`
+	VersionLabel string     `json:"version_label"`
 	RelativePath string     `json:"relative_path"`
 	Wish         Resolved   `json:"wish"`
 	Subtitles    []Subtitle `json:"subtitles"`
@@ -128,8 +129,8 @@ func (a *Handlers) titleSubtitles(w http.ResponseWriter, r *http.Request) {
 	files := []FileView{}
 	for _, id := range ids {
 		v := FileView{FileID: id}
-		if err := db.QueryRowContext(ctx, `SELECT f.relative_path, f.version_id, s.item_id FROM files f JOIN slots s ON s.id = json_extract(f.slot_ids, '$[0]') WHERE f.id = ?`,
-			id).Scan(&v.RelativePath, &v.VersionID, &v.ItemID); err != nil {
+		if err := db.QueryRowContext(ctx, `SELECT f.relative_path, f.version_id, s.item_id, COALESCE(ve.label, '') FROM files f JOIN slots s ON s.id = json_extract(f.slot_ids, '$[0]') LEFT JOIN versions ve ON ve.id = f.version_id WHERE f.id = ?`,
+			id).Scan(&v.RelativePath, &v.VersionID, &v.ItemID, &v.VersionLabel); err != nil {
 			continue
 		}
 		v.Wish, _ = WishFor(ctx, db, t.ID, v.VersionID, v.ItemID)
@@ -394,7 +395,7 @@ func (a *Handlers) listSubtitleSites(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Handlers) subtitleSiteKinds(w http.ResponseWriter, r *http.Request) {
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"kinds": sites.Kinds})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"kinds": offeredKinds()})
 }
 
 func (a *Handlers) addSubtitleSite(w http.ResponseWriter, r *http.Request) {

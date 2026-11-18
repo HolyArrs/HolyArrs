@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Listele tale Trakt nu pot fi citite până nu e setată.",
 	"settings.outsideLists.replaceKey": "Înlocuiește cheia Trakt",
 	"settings.outsideLists.pasteKey": "Lipește cheia Trakt",
+	"settings.outsideLists.mdblistKey": "Cheie MDBList",
+	"settings.outsideLists.mdblistInfo": "Opțional. Cu cheia ta API MDBList, listele MDBList se citesc prin API-ul MDBList; fără ea, prin linkul lor public. Se păstrează criptată și este aceeași cheie pe care o folosesc evaluările externe în modul Cheile tale proprii.",
+	"settings.outsideLists.pasteMdblistKey": "Lipește cheia ta API MDBList",
+	"settings.outsideLists.replaceMdblistKey": "Înlocuiește cheia MDBList",
+	"settings.outsideLists.removeMdblistKey": "Elimină cheia",
+	"settings.outsideLists.mdblistKeySaved": "Cheia MDBList a fost salvată",
+	"settings.outsideLists.mdblistKeyRemoved": "Cheia MDBList a fost eliminată; listele folosesc linkul lor public",
 	"settings.outsideLists.replaceVip": "Înlocuiește tokenul de acces VIP",
 	"settings.outsideLists.vip": "Token de acces VIP (opțional)",
 	"settings.outsideLists.vipHint": "Adaugă o filă Trakt pe paginile titlurilor: scor, vizionători și comentarii",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Adaugă în lista „Nu adăuga niciodată”",
 	"settings.outsideLists.showDot": "serial ·",
 	"settings.outsideLists.takeOff": "Scoate {name}",
-	"settings.outsideLists.empty": "Goală"
+	"settings.outsideLists.empty": "Încă nu e nimic pe această listă"
 }

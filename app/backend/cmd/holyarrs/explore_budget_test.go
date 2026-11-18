@@ -80,9 +80,9 @@ func TestExploreBuildsInParallel(t *testing.T) {
 	deadline := time.Now().Add(20 * time.Second)
 	for {
 		a.explore.RunDue(ctx)
-		done, queued, busy := a.explore.BuildCounts()
-		left := queued + busy
-		if done == 4 && left == 0 {
+		// A pool built with no seeds is queued again later on purpose; only running builds count here.
+		done, _, busy := a.explore.BuildCounts()
+		if done >= 4 && busy == 0 {
 			break
 		}
 		if time.Now().After(deadline) {

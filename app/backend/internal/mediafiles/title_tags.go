@@ -60,9 +60,45 @@ func SourceServes(source, title []string) bool {
 
 // SourceTakesTitle says whether a Source with these tags is read for a title:
 // it serves the title's own tags, or shares a tag with the title's Pick rules.
-// Search and the feed both use it.
-func SourceTakesTitle(source, title, rules []string) bool {
+// A title in a folder that asks only tagged Sources (only) is not served by
+// an untagged Source. Search and the feed both use it.
+func SourceTakesTitle(source, title, rules []string, only bool) bool {
+	if only && len(title) > 0 && len(source) == 0 {
+		return false
+	}
 	return SourceServes(source, title) || Shares(source, CleanTags(rules))
+}
+
+// SourceTags is the tags a copy of a title has when Sources are chosen for it:
+// the title's own plus those of its Library folder when that folder asks only
+// tagged Sources (folder). only says the folder does. Each list is cleaned by
+// itself, so a title that carries as many tags as it may keeps the folder's.
+func SourceTags(title, folder []string) (tags []string, only bool) {
+	if len(folder) == 0 {
+		return title, false
+	}
+	tags = CleanTags(title)
+	for _, t := range CleanTags(folder) {
+		if !slices.Contains(tags, t) {
+			tags = append(tags, t)
+		}
+	}
+	return tags, true
+}
+
+// OnlyTagged says whether a title that asks only tagged Sources really does:
+// it has tags and at least one of the Sources it could use shares one, so it
+// is never left with nothing to ask.
+func OnlyTagged(only bool, title []string, sourceTags [][]string) bool {
+	if !only || len(title) == 0 {
+		return false
+	}
+	for _, s := range sourceTags {
+		if Shares(s, title) {
+			return true
+		}
+	}
+	return false
 }
 
 // RulesTakeSource says whether Pick rules with these tags let a Source with

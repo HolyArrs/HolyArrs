@@ -160,13 +160,23 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(result)
 		return nil
 	}
-	fs, failures, answered, skipped, err := s.askAll(ctx, r, albumQuery(ti, part), hand, false, ti.Tags, set.pr.Body.Tags)
+	fs, failures, answered, skipped, note, err := s.askAll(ctx, r, albumQuery(ti, part), hand, false, ti, ver.ID, set.pr.Body.Tags)
 	if err != nil {
 		return err
 	}
+	if keptApart(note) {
+		rest(note)
+		ids := make([]int64, 0, len(looking))
+		for _, t := range looking {
+			ids = append(ids, t.it.ID)
+		}
+		s.touchSearched(ctx, ids...)
+		s.keptApartDone(ctx, r, by, ti.ID, targets[0], hand, note)
+		return nil
+	}
 	if reason, data, ok, failed := noAnswer(failures, answered, skipped); ok {
 		rest(reason)
-		s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchFailed, reason, data)
+		s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchFailed, reason, noted(data, note))
 		if !failed {
 			return nil
 		}
@@ -211,7 +221,7 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 	if beforeSettle != nil {
 		beforeSettle(targets[0])
 	}
-	chosen, held, took := s.settlePicks(ctx, by, &jobID, ti.ID, set.labels(), all, vs, ids, picks, "Album search")
+	chosen, held, took := s.settlePicks(ctx, by, &jobID, ti.ID, set.labels(), all, vs, ids, picks, "Album search", note)
 	for _, pk := range picks {
 		if !took[pk.slots[0]] {
 			continue
@@ -237,7 +247,7 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 		}
 		rest(reason)
 		if chosen+held == 0 {
-			s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchDone, part.Name+": "+reason, nil)
+			s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchDone, part.Name+": "+reason, noted(nil, note))
 		}
 	}
 	r.SetResult(result)
@@ -370,7 +380,7 @@ func (s *Searcher) judgeAlbum(ctx context.Context, set albumSet, all []found, ha
 		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Music: true})
 		rels[i] = mediafiles.ReleaseFacts{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
-		ss := mediafiles.SlotSet{Match: mediafiles.MatchTitle(p, []mediafiles.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, Listing: set.listing, SkipGate: skipGate, Out: true,
+		ss := mediafiles.SlotSet{Match: mediafiles.MatchRelease(p, []mediafiles.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, Listing: set.listing, SkipGate: skipGate, Out: true,
 			OutSince: outSince, Checks: checks}
 		if ss.Match.Title != nil {
 			set.lines(&ss, rels[i], f.item.Files, rules, turnedFor)
@@ -608,7 +618,7 @@ func (s *Searcher) feedArtist(ctx context.Context, by domain.Actor, jobID *int64
 			}
 		}
 		heldNow := map[int64]int64{}
-		cands := rulesTake(group[0].pr.Body.Tags, fs)
+		cands := copyTakes(group[0], fs)
 		for _, c := range group {
 			if !kept[c.sl.ID] {
 				continue
@@ -620,7 +630,7 @@ func (s *Searcher) feedArtist(ctx context.Context, by domain.Actor, jobID *int64
 				for _, f := range cands {
 					dup = dup || f.relID == *c.sl.HeldReleaseID
 				}
-				if f, ok := s.storedFound(ctx, *c.sl.HeldReleaseID); ok && !dup {
+				if f, ok := s.storedFound(ctx, *c.sl.HeldReleaseID); ok && !dup && c.from.takes(f.src.Tags, c.pr.Body.Tags) {
 					cands = append(cands, f)
 				}
 			}
@@ -651,6 +661,9 @@ func (s *Searcher) feedArtist(ctx context.Context, by domain.Actor, jobID *int64
 				stored++
 			}
 		}
+		if err := s.freeFailedHeld(ctx, by, heldNow, cands, vs); err != nil {
+			return chosen, held, stored, err
+		}
 		keep := picks[:0]
 		for _, pk := range picks {
 			same := pk.held
@@ -664,7 +677,7 @@ func (s *Searcher) feedArtist(ctx context.Context, by domain.Actor, jobID *int64
 		if beforeSettle != nil {
 			beforeSettle(first)
 		}
-		c1, h1, _ := s.settlePicks(ctx, by, jobID, set.ti.ID, set.labels(), cands, vs, ids, keep, "Feed check")
+		c1, h1, _ := s.settlePicks(ctx, by, jobID, set.ti.ID, set.labels(), cands, vs, ids, keep, "Feed check", group[0].note)
 		chosen, held = chosen+c1, held+h1
 	}
 	return chosen, held, stored, nil

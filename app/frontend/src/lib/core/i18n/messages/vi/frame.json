@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} đang chờ",
 	"frame.nav.new": "{n} mới",
 	"frame.nav.manage": "Quản lý",
+	"frame.nav.activity": "Hoạt động",
+	"frame.nav.system": "Hệ thống",
 	"frame.nav.history": "Lịch sử",
 	"frame.nav.status": "Trạng thái",
 	"frame.nav.settings": "Cài đặt",
+	"frame.nav.plugins": "Plugin",
 	"frame.nav.goTo": "Đi tới",
 	"frame.nav.active": "{n} đang chạy, {percent}%",
 	"frame.nav.decide": "{n} cần quyết định",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Theo hệ thống",
 	"frame.layout.switch": "Đổi tài khoản",
 	"frame.layout.signOut": "Đăng xuất",
+	"frame.layout.support": "Ủng hộ HolyArrs",
 	"frame.layout.signOutFail": "Không thể xác nhận đăng xuất",
 	"frame.layout.signedOut": "Đã đăng xuất",
 	"frame.layout.accountMenu": "{name}, {role}: tài khoản và giao diện",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs tự thử lại",
 	"frame.feeds.clearNow": "Dọn ngay",
 	"frame.feeds.cleared": "Đã dọn khỏi Trình tải",
-	"frame.feeds.clearStill": "Chưa dọn"
+	"frame.feeds.clearStill": "Chưa dọn",
+	"frame.error.pageGone": "Trang này không tồn tại. Liên kết có thể đã cũ hoặc gõ sai."
 }

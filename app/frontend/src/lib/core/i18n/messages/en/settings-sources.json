@@ -7,6 +7,7 @@
 	"settings.sources.title": "Sources",
 	"settings.sources.add": "Add a Source",
 	"settings.sources.lead": "Priority 1 goes first. A Source that fails is skipped for up to six hours. For sites without a feed, add Jackett or Prowlarr as a Torznab feed.",
+	"settings.sources.builtIn": "Built-in sites need no Jackett or Prowlarr: {sites}. Choose {site} under {kind}.",
 	"settings.sources.change": "Change {name}",
 	"settings.sources.name": "Name",
 	"settings.sources.feedKind": "Kind of feed",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Save",
 	"settings.sources.cancel": "Cancel",
 	"settings.sources.none": "No Sources",
-	"settings.sources.noneText": "Add a Torznab or Newznab feed, or Jackett or Prowlarr.",
+	"settings.sources.noneText": "Add a built-in site, a Torznab or Newznab feed, or Jackett or Prowlarr.",
 	"settings.sources.rowTitle": "{url} · priority {priority} · {uses}",
 	"settings.sources.priorityUses": "Priority {priority} · {uses}",
 	"settings.sources.keyIs": "key {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Site",
 	"settings.sources.addressSite": "The site's own address. Change it only if the site moved.",
 	"settings.sources.siteKeyLabel": "Cookie or RSS key",
-	"settings.sources.siteKeyHint": "From your own account: uid and pass from your browser cookie, or u and tp from your RSS link. Kept encrypted."
+	"settings.sources.siteKeyHint": "From your own account: uid and pass from your browser cookie, or u and tp from your RSS link. Kept encrypted.",
+	"settings.sources.sendTo": "Send downloads to",
+	"settings.sources.sendToAny": "Any Downloader",
+	"settings.sources.sendToHint": "Everything chosen from this Source goes only to this Downloader. If it's down, it waits.",
+	"settings.sources.sendToGone": "The chosen Downloader was removed. Downloads from this Source now go to any Downloader."
 }

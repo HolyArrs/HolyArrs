@@ -135,7 +135,7 @@ describe('app.html boot requests', () => {
 	});
 
 	it('asks Library, a Library title, Requests and Downloads', () => {
-		expect(boot({ url: '/library' }).asked).toEqual(['/api/v1/auth/me', '/api/v1/titles', '/api/v1/collections']);
+		expect(boot({ url: '/library' }).asked).toEqual(['/api/v1/auth/me', '/api/v1/titles?grid=1', '/api/v1/collections']);
 		expect(boot({ url: '/library/294' }).asked).toEqual(['/api/v1/auth/me', '/api/v1/titles/294']);
 		expect(boot({ url: '/library/held' }).asked).toEqual(['/api/v1/auth/me']);
 		expect(boot({ url: '/requests' }).asked).toEqual(['/api/v1/auth/me', '/api/v1/asks']);

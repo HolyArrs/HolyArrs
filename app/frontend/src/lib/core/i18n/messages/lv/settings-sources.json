@@ -7,6 +7,7 @@
 	"settings.sources.title": "Avoti",
 	"settings.sources.add": "Pievienot Avotu",
 	"settings.sources.lead": "Prioritāte 1 ir pirmā. Avots, kas neizdodas, tiek izlaists līdz sešām stundām. Vietnēm bez plūsmas pievieno Jackett vai Prowlarr kā Torznab plūsmu.",
+	"settings.sources.builtIn": "Iebūvētajām vietnēm Jackett vai Prowlarr nav vajadzīgs: {sites}. Sadaļā {kind} izvēlies {site}.",
 	"settings.sources.change": "Mainīt: {name}",
 	"settings.sources.name": "Nosaukums",
 	"settings.sources.feedKind": "Plūsmas veids",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Saglabāt",
 	"settings.sources.cancel": "Atcelt",
 	"settings.sources.none": "Nav Avotu",
-	"settings.sources.noneText": "Pievieno Torznab vai Newznab plūsmu, vai Jackett vai Prowlarr.",
+	"settings.sources.noneText": "Pievieno iebūvētu vietni, Torznab vai Newznab plūsmu, vai Jackett vai Prowlarr.",
 	"settings.sources.rowTitle": "{url} · prioritāte {priority} · {uses}",
 	"settings.sources.priorityUses": "Prioritāte {priority} · {uses}",
 	"settings.sources.keyIs": "atslēga {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Vietne",
 	"settings.sources.addressSite": "Vietnes pašas adrese. Maini to tikai tad, ja vietne ir pārvākusies.",
 	"settings.sources.siteKeyLabel": "Sīkdatne vai RSS atslēga",
-	"settings.sources.siteKeyHint": "No sava konta: uid un pass no pārlūka sīkdatnes vai u un tp no tavas RSS saites. Glabājas šifrēti."
+	"settings.sources.siteKeyHint": "No sava konta: uid un pass no pārlūka sīkdatnes vai u un tp no tavas RSS saites. Glabājas šifrēti.",
+	"settings.sources.sendTo": "Sūtīt lejupielādes uz",
+	"settings.sources.sendToAny": "Jebkurš lejupielādētājs",
+	"settings.sources.sendToHint": "Viss, kas izvēlēts no šī avota, nonāk tikai šajā lejupielādētājā. Ja tas nedarbojas, gaida.",
+	"settings.sources.sendToGone": "Izvēlētais lejupielādētājs ir noņemts. Šī avota lejupielādes tagad nonāk jebkurā lejupielādētājā."
 }

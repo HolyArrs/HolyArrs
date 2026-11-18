@@ -230,7 +230,7 @@
 						{ownGateway ? t('settings.signIn.youBridgeOk', { ip: seen }) : onBridge ? t('settings.signIn.youBridge', { ip: seen }) : covered === true ? t('settings.signIn.youCovered', { ip: seen }) : t('settings.signIn.youNot', { ip: seen })}
 					</p>
 				{/if}
-				<div><Button type="button" size="sm" onclick={addHome}>{t('settings.signIn.addHome')}</Button></div>
+				<div><Button type="button" onclick={addHome}>{t('settings.signIn.addHome')}</Button></div>
 				<label class="checkline">
 					<input type="checkbox" checked={hasCgnat} onchange={(e) => setCgnat(e.currentTarget.checked)} />
 					<span>{t('settings.signIn.cgnat')}<br /><span class="xs muted">{t('settings.signIn.cgnatHint', { range: cgnat })}</span></span>

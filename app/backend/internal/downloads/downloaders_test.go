@@ -44,6 +44,7 @@ func TestDownloadersAddTestPauseDelete(t *testing.T) {
 		Text   string `json:"text"`
 		Health struct {
 			State string `json:"state"`
+			Text  string `json:"text"`
 		} `json:"health"`
 	}
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/downloaders/"+id+"/test", "", 200), &res)
@@ -55,7 +56,7 @@ func TestDownloadersAddTestPauseDelete(t *testing.T) {
 	do(t, "PUT", srv.URL+"/api/v1/downloaders/"+id, body(map[string]any{"name": "Lab SABnzbd", "secret": keep, "category": "movies"}), 200)
 	do(t, "PUT", srv.URL+"/api/v1/downloaders/"+id, body(map[string]any{"name": "Lab SABnzbd", "secret": wrong}), 200)
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/downloaders/"+id+"/test", "", 200), &res)
-	if res.OK || !strings.Contains(res.Text, "turned down the key") || res.Health.State != "sign_in_refused" {
+	if res.OK || !strings.Contains(res.Text, "password refused") || res.Health.State != "sign_in_refused" || res.Health.Text != res.Text {
 		t.Fatalf("wrong key test %+v", res)
 	}
 	// A new host needs the key again.
@@ -64,7 +65,7 @@ func TestDownloadersAddTestPauseDelete(t *testing.T) {
 	// A category SABnzbd lacks.
 	do(t, "PUT", srv.URL+"/api/v1/downloaders/"+id, `{"name":"Lab SABnzbd","category":"holyarrs"}`, 200)
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/downloaders/"+id+"/test", "", 200), &res)
-	if res.OK || !strings.Contains(res.Text, "category does not exist") {
+	if res.OK || !strings.Contains(res.Text, "Category missing") {
 		t.Fatalf("category test %+v", res)
 	}
 
@@ -100,7 +101,7 @@ func TestDownloaderOnTheLocalNetworkNeedsTheSwitch(t *testing.T) {
 		Text string `json:"text"`
 	}
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/downloaders/"+itoa(d.ID)+"/test", "", 200), &res)
-	if res.OK || !strings.Contains(res.Text, "May reach the local network") {
+	if res.OK || !strings.Contains(res.Text, "Reach the local network") {
 		t.Fatalf("test %+v", res)
 	}
 }

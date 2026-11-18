@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "Deja que asistentes de IA usen HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Claves y rutas para otras apps",
+	"core.settings.remoteAccess.label": "Acceso remoto",
+	"core.settings.remoteAccess.about": "Usa HolyArrs fuera de casa",
 	"core.settings.tmdb.label": "Metadatos",
 	"core.settings.tmdb.about": "De dónde vienen carteles y nombres",
 	"core.settings.health.label": "Comprobaciones de salud",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "Contraseña, dos pasos, dispositivos",
 	"core.api.sourceOff": "Algunas filas están desactivadas en esta instalación.",
 	"core.plain.noDownloader": "Tus fuentes encuentran descargas que ninguno de tus gestores de descargas puede aceptar, así que no se puede enviar ninguna.",
-	"core.plain.sameDownloader": "Dos gestores de descargas llegan a la misma aplicación, así que las descargas pueden aparecer dos veces."
+	"core.plain.sameDownloader": "Dos gestores de descargas llegan a la misma aplicación, así que las descargas pueden aparecer dos veces.",
+	"core.plain.peopleCheck": "No se puede leer la lista de usuarios del servidor multimedia, así que quien se elimina allí no se desactiva aquí.",
+	"core.plain.deleted": "eliminado",
+	"core.plain.deletedName": "{name} (eliminado)"
 }

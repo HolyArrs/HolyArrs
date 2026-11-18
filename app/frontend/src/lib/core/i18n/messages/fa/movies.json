@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "قوانین انتخاب برای این نسخه",
 	"movies.versions.folderLabel": "پوشه کتابخانه برای این نسخه",
 	"movies.versions.cancel": "انصراف",
-	"movies.versions.addButton": "افزودن نسخه"
+	"movies.versions.addButton": "افزودن نسخه",
+	"movies.versions.setEdition": "تنظیم ویرایش",
+	"movies.versions.editionFileHint": "این فایل کدام ویرایش است، مثلاً Theatrical یا Directors Cut. برای پاک کردن، خالی بگذارید.",
+	"movies.versions.unprotectConfirm": "محافظت از {label} برداشته شود؟ یک کپی بهتر دوباره می‌تواند جایگزین آن شود.",
+	"movies.versions.editionChars": "مجاز نیست:",
+	"movies.versions.editionInvalid": "این ویرایش قابل استفاده نیست. آن را کوتاه نگه دارید (حروف دارای نشانه و غیرلاتین جای بیشتری می‌گیرند)، نویسه‌های فهرست‌شده در بالا را به کار نبرید و آن را با نقطه تمام نکنید.",
+	"movies.versions.editionDevice": "نام {name} را Windows برای دستگاه‌ها نگه می‌دارد، بنابراین قابل استفاده نیست. نام دیگری بنویسید."
 }

@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Neizdevās savienot: {name}",
 	"settings.parts.connected": "{name} savienots",
 	"settings.parts.title": "Daļas",
+	"settings.parts.onOff": "Ieslēgt vai izslēgt daļas",
 	"settings.parts.ownerOnly": "Tikai īpašniekam un adminiem",
 	"settings.parts.safeMode": "HolyArrs darbojas drošajā režīmā: darbojas tikai kodols, un daļu slēdži un posmu vadība tiek noraidīti līdz parastai startēšanai. Lai izietu no drošā režīma, sadaļā <a>Bīstamā zona</a> izmanto <b>Restartēt HolyArrs</b>.",
 	"settings.parts.dangerZone": "Bīstamā zona",

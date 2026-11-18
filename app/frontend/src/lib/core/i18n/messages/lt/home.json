@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Išjungta Dalyse",
 	"home.noneForSources": "trūksta tam, ką randa jūsų šaltiniai",
 	"home.addedTwice": "pridėtas du kartus",
-	"home.addedTwiceMany": "pridėti du kartus"
+	"home.addedTwiceMany": "pridėti du kartus",
+	"home.notSetUpYet": "Dar nenustatyta",
+	"home.setUpToAdd": "Užbaikite sąranką, kad pridėtumėte {name}",
+	"home.comingThisWeek": "Šią savaitę",
+	"home.thisWeek": "šią savaitę",
+	"home.landingThisWeek": "Šią savaitę pasirodantys epizodai ir filmai",
+	"home.popularThisWeek": "Šią savaitę pasirodantys populiarūs leidimai",
+	"home.peopleCheck": "Žmonių patikra",
+	"home.cantReadUsers": "nepavyksta perskaityti naudotojų sąrašo"
 }

@@ -4,6 +4,8 @@ import { createToasts } from './toasts.svelte.ts';
 import { createSession } from './session.svelte.ts';
 import { createViews } from './views.svelte.ts';
 import { createClient } from './api.ts';
+import { watchedNow } from '../mediafiles/watched.svelte.ts';
+import { watchedIndex } from '../mediafiles/watched.ts';
 
 describe('live', () => {
 	function fakeSource() {
@@ -316,6 +318,19 @@ describe('session', () => {
 		expect(v.get('library.view.movie')).toBe('posters');
 		await s.logout();
 		expect(v.get('library.view.movie')).toBeUndefined();
+	});
+
+	it("drops the last person's Watched marks on sign-out", async () => {
+		const c = server({
+			'GET /auth/me': json(200, { name: 'luis', via: 'session', csrf: 'abc' }),
+			'POST /auth/logout': () => new Response(null, { status: 204 }),
+			'GET /auth/state': json(200, { needs_setup: false })
+		});
+		const s = createSession(c);
+		await s.load();
+		watchedNow.ix = watchedIndex({ enabled: true, linked: true, movies: [7], shows: {} } as never);
+		await s.logout();
+		expect(watchedNow.ix.movies.size).toBe(0);
 	});
 
 	it('runs first-run setup with the setup code', async () => {

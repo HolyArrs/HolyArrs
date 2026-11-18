@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "قواعد الاختيار لهذه النسخة",
 	"movies.versions.folderLabel": "مجلد المكتبة لهذه النسخة",
 	"movies.versions.cancel": "إلغاء",
-	"movies.versions.addButton": "أضف النسخة"
+	"movies.versions.addButton": "أضف النسخة",
+	"movies.versions.setEdition": "تعيين الإصدار",
+	"movies.versions.editionFileHint": "الإصدار الذي يمثله هذا الملف، مثل Theatrical أو Directors Cut. اتركه فارغًا لمسحه.",
+	"movies.versions.unprotectConfirm": "هل تريد إزالة الحماية عن {label}؟ يمكن لنسخة أفضل أن تحل محلها مجددًا.",
+	"movies.versions.editionChars": "غير مسموح:",
+	"movies.versions.editionInvalid": "لا يمكن استخدام هذا الإصدار. اجعله قصيرًا (الحروف المشكولة وغير اللاتينية تأخذ مساحة أكبر)، واستبعد الأحرف المذكورة أعلاه، ولا تنهِه بنقطة.",
+	"movies.versions.editionDevice": "يحجز Windows الاسم {name} للأجهزة، لذلك لا يمكن استخدامه. اكتب اسمًا آخر."
 }

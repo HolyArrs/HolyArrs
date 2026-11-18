@@ -274,5 +274,13 @@
 	"home.sourcesOff": "已在“部分”中关闭",
 	"home.noneForSources": "缺少能处理来源所找内容的下载器",
 	"home.addedTwice": "被重复添加",
-	"home.addedTwiceMany": "被重复添加"
+	"home.addedTwiceMany": "被重复添加",
+	"home.notSetUpYet": "尚未设置",
+	"home.setUpToAdd": "完成设置后即可添加 {name}",
+	"home.comingThisWeek": "本周上线",
+	"home.thisWeek": "本周",
+	"home.landingThisWeek": "本周上线的剧集和电影",
+	"home.popularThisWeek": "本周上线的热门作品",
+	"home.peopleCheck": "人员检查",
+	"home.cantReadUsers": "无法读取用户列表"
 }

@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "भाषा सेव नहीं हो सकी",
 	"accounts.language.count.one": "1 भाषा",
 	"accounts.language.count.other": "{n} भाषाएँ",
-	"accounts.account.watchEveryone": "मालिक ने इसे सभी के लिए चालू किया है। रोकने के लिए दोनों बंद करें।"
+	"accounts.account.watchEveryone": "मालिक ने इसे सभी के लिए चालू किया है। रोकने के लिए दोनों बंद करें।",
+	"accounts.watch.title": "देखे गए निशान",
+	"accounts.watch.hint": "यहाँ किसी मीडिया सर्वर पर अपना खाता जोड़ें ताकि लाइब्रेरी दिखाए कि आपने क्या देखा।",
+	"accounts.watch.as": "{server}, {name} के रूप में",
+	"accounts.watch.nameOn": "{server} पर नाम",
+	"accounts.watch.passwordOnce": "आपका पासवर्ड केवल {server} को जाता है और रखा नहीं जाता।",
+	"accounts.watch.linked": "{server} पर {name} से जोड़ा गया",
+	"accounts.watch.unlinked": "जोड़ हटाया गया",
+	"accounts.login.importPaused": "आपका साइन-इन खत्म हो गया, इसलिए इम्पोर्ट रुक गया है। साइन इन करें, लाइब्रेरी इंपोर्ट करें खोलें और जारी रखने के लिए स्कैन करें दबाएँ।"
 }

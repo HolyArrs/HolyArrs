@@ -34,7 +34,7 @@ def button_row(m: re.Match) -> str:
 # Pictures Docker Hub would show at full size: the width that keeps the look.
 WIDTHS = {"btn-sponsor": 225}
 
-LONE_BADGE = re.compile(r'<p align="center">\s*<a href="[^"]+">\s*<img\b[^>]*\bwidth="\d+"[^>]*>\s*</a>\s*</p>')
+LONE_BADGE = re.compile(r'<p align="center">\s*(?:<a href="[^"]+">\s*<img\b[^>]*\bwidth="\d+"[^>]*>\s*</a>(?:\s|&nbsp;)*)+</p>')
 
 
 def sized(m: re.Match) -> str:

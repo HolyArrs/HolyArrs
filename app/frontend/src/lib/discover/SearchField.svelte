@@ -90,6 +90,12 @@
 	function typed() {
 		if (scoped) return;
 		open(searchField.term);
+		// On Search itself the live results already fill the page, so the dropdown would only cover them.
+		if (onSearch() && live.on !== false) {
+			close();
+			waiting = false;
+			return;
+		}
 		waiting = [...searchField.term.trim()].length >= SUGGEST_MIN && live.on !== false && !answer;
 		suggest.type(searchField.term);
 	}

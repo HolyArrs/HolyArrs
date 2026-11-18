@@ -22,7 +22,7 @@
 "settings.search.refuseEarly": "公開前に投稿されたリリースを不採用にする",
 "settings.search.refuseEarlyHint": "偽物の可能性が高いものです。リリースを自分で選ぶ画面には警告付きで表示されます。",
 "settings.search.refuseTiny": "サイズとファイル形式から偽物を不採用にする",
-"settings.search.refuseTinyHint": "小さすぎるリリース、空のファイル、HD 表記なのに .wmv や .asf のもの",
+"settings.search.refuseTinyHint": "小さすぎるリリース、空のファイル、途中で切れた動画、HD 表記なのに .wmv や .asf のもの",
 "settings.search.grace": "リリースが早くてよい時間",
 "settings.search.graceHint": "タイムゾーンの差を考慮します。初期値は 24。",
 "settings.search.floors": "インポート時にファイルサイズを確認",

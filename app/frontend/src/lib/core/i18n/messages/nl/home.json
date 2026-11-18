@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Uitgezet in Onderdelen",
 	"home.noneForSources": "ontbreekt voor wat je bronnen vinden",
 	"home.addedTwice": "is twee keer toegevoegd",
-	"home.addedTwiceMany": "zijn twee keer toegevoegd"
+	"home.addedTwiceMany": "zijn twee keer toegevoegd",
+	"home.notSetUpYet": "Nog niet ingesteld",
+	"home.setUpToAdd": "Rond de installatie af om {name} toe te voegen",
+	"home.comingThisWeek": "Deze week",
+	"home.thisWeek": "deze week",
+	"home.landingThisWeek": "Afleveringen en films die deze week uitkomen",
+	"home.popularThisWeek": "Populaire releases die deze week uitkomen",
+	"home.peopleCheck": "Personencontrole",
+	"home.cantReadUsers": "gebruikerslijst niet leesbaar"
 }

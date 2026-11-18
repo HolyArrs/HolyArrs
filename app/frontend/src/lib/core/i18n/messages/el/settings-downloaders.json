@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "Οι δύο διαδρομές είναι ίδιες, οπότε αυτό το ζεύγος δεν αλλάζει τίποτα. Λέει όμως στο HolyArrs πού βρίσκονται τα αρχεία αυτού του προγράμματος, οπότε μπορείτε να το κρατήσετε.",
 	"settings.downloaders.change": "Αλλαγή: {name}",
 	"settings.downloaders.whichApp": "Ποια εφαρμογή",
-	"settings.downloaders.torrents": "(torrents)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torrent",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "Το πιο διαδεδομένο",
 	"settings.downloaders.name": "Όνομα",
 	"settings.downloaders.address": "Διεύθυνση",
 	"settings.downloaders.addressHint": "Η ιστοσελίδα της. Για το SABnzbd, χρησιμοποιήστε την IP ή επιτρέψτε το όνομα υπολογιστή του HolyArrs.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Κατηγορία μετά την εισαγωγή",
 	"settings.downloaders.categoryAfterImportHint": "Μόλις εισαχθεί ένα torrent, το HolyArrs το μεταφέρει σε αυτή την κατηγορία. Αφήστε το κενό για να μείνει στην κύρια κατηγορία.",
 	"settings.downloaders.ownOnly": "Εμφάνιση μόνο στοιχείων του HolyArrs",
-	"settings.downloaders.ownOnlyHint": "Τα στοιχεία άλλων εφαρμογών σε αυτό το πρόγραμμα λήψης κρύβονται και το HolyArrs δεν τα αλλάζει."
+	"settings.downloaders.ownOnlyHint": "Τα στοιχεία άλλων εφαρμογών σε αυτό το πρόγραμμα λήψης κρύβονται και το HolyArrs δεν τα αλλάζει.",
+	"settings.downloaders.state.notAnswering": "Δεν απαντά",
+	"settings.downloaders.state.paused": "Σε παύση",
+	"settings.downloaders.state.resting": "Σε αναμονή",
+	"settings.downloaders.state.signInRefused": "Η σύνδεση απορρίφθηκε",
+	"settings.downloaders.state.working": "Λειτουργεί"
 }

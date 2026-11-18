@@ -44,6 +44,9 @@ type ArtistAddOptions struct {
 // ArtistAlreadyAddedError says the artist is already in the Library.
 type ArtistAlreadyAddedError struct{ TitleID int64 }
 
+// InLibrary is the title already in the Library.
+func (e *ArtistAlreadyAddedError) InLibrary() int64 { return e.TitleID }
+
 func (e *ArtistAlreadyAddedError) Error() string {
 	return fmt.Sprintf("this artist is already in the Library (Title %d)", e.TitleID)
 }
@@ -355,7 +358,7 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 		t = mediafiles.Title{Kind: "artist", Aliases: []string{}, SourceIDs: map[string]string{}, MetadataSource: "musicbrainz", KeepUpToDate: keep,
 			NewPartsPolicy: policy, ReleaseGate: GateReleased, MusicTypes: opt.AlbumTypes, MusicSecondary: opt.SecondaryTypes,
 			MusicStatuses: opt.ReleaseStatuses, WhyAdded: opt.WhyAdded, Artwork: []string{}, State: "active", GateDriver: "none",
-			AlbumChoice: &choice, RefreshedAt: &now}
+			AlbumChoice: &choice, RefreshedAt: &now, Tags: TagsFromFolder(lf)}
 		applyArtist(&t, a)
 		if _, err := database.Insert(tx, "titles", &t, by); err != nil {
 			return err

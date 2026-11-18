@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "هر دو مسیر یکسان‌اند، پس این جفت چیزی را تغییر نمی‌دهد. ولی به HolyArrs می‌گوید فایل‌های این دانلودر کجاست، پس می‌توانید نگهش دارید.",
 	"settings.downloaders.change": "تغییر {name}",
 	"settings.downloaders.whichApp": "کدام برنامه",
-	"settings.downloaders.torrents": "(تورنت‌ها)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "تورنت",
+	"settings.downloaders.usenetHead": "یوزنت",
+	"settings.downloaders.mostUsed": "پرکاربردترین",
 	"settings.downloaders.name": "نام",
 	"settings.downloaders.address": "آدرس",
 	"settings.downloaders.addressHint": "صفحه وبش. برای SABnzbd از IP استفاده کن یا نام میزبان HolyArrs را مجاز کن.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "دسته پس از وارد کردن",
 	"settings.downloaders.categoryAfterImportHint": "پس از وارد شدن تورنت، HolyArrs آن را به این دسته می‌برد. برای ماندن در دسته اصلی خالی بگذارید.",
 	"settings.downloaders.ownOnly": "فقط موارد HolyArrs را نشان بده",
-	"settings.downloaders.ownOnlyHint": "موارد برنامه‌های دیگر در این دانلودر پنهان می‌شوند و HolyArrs آن‌ها را تغییر نمی‌دهد."
+	"settings.downloaders.ownOnlyHint": "موارد برنامه‌های دیگر در این دانلودر پنهان می‌شوند و HolyArrs آن‌ها را تغییر نمی‌دهد.",
+	"settings.downloaders.state.notAnswering": "پاسخ نمی‌دهد",
+	"settings.downloaders.state.paused": "متوقف",
+	"settings.downloaders.state.resting": "در استراحت",
+	"settings.downloaders.state.signInRefused": "ورود رد شد",
+	"settings.downloaders.state.working": "کار می‌کند"
 }

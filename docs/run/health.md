@@ -27,7 +27,7 @@ Checks run every 5 minutes, at start, and right after an import is refused for l
 | Downloader | Working, or paused by you | Does not answer, or refused the sign-in | |
 | Waiting downloads | No download waits for its files | A download waits because the downloader cannot use its files, often a share that mounted late | One has waited about 3 days |
 | Backups | A recent backup exists | No backup yet, or the newest is old | The last scheduled backup failed |
-| Key kit | A key kit was saved for the current master key | No key kit saved yet | |
+| Key kit | A key kit was saved for the current master key, or nothing needs it yet (a quiet recommendation once a password is saved) | Saved passwords and backups have gone 7 days without a key kit | |
 | Trailer reader (when trailers are on) | Lookups work | 5 different videos failed in a row. If YouTube refuses the reader sooner, the row says so | |
 | Update | You run the newest version | A newer HolyArrs is out | |
 
@@ -60,7 +60,7 @@ The update settings live on the same card; see [Updates](updates.md#choices).
 **Fix:** mount it, then select **Check again**.
 
 **Symptom:** the key kit warning stays.
-**Cause:** no key kit was saved for the current master key.
+**Cause:** saved passwords and backups have gone 7 days without a key kit for the current master key.
 **Fix:** the owner selects **Settings > Backups > Download key kit**. See [Backups](backups.md#save-the-master-key).
 
 **Symptom:** Config folder is broken.

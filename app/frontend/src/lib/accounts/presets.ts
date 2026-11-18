@@ -43,3 +43,27 @@ export function presetOf(perms: readonly Perm[], grantable: readonly Perm[], max
 	}
 	return 'custom';
 }
+
+/** The segments of the preset bar. Custom is always there so the bar keeps its shape; it can be picked only while there is a mix to show or bring back. */
+export function presetOptions(grantable: readonly Perm[], customLabel: string, customUsable: boolean): { value: PresetId | 'custom'; label: string; disabled?: boolean }[] {
+	const list: { value: PresetId | 'custom'; label: string; disabled?: boolean }[] = presetsFor(grantable).filter((x) => !x.soon).map((pr) => ({ value: pr.id, label: pr.label }));
+	list.push({ value: 'custom', label: customLabel, disabled: !customUsable });
+	return list;
+}
+
+export interface Mix {
+	perms: Perm[];
+	max: string;
+}
+
+/**
+ * What picking a segment does. A preset replaces the switches, but the person's own mix is kept so
+ * picking Custom again brings it back; Custom with nothing kept changes nothing (mix null).
+ */
+export function choosePreset(id: PresetId | 'custom', grantable: readonly Perm[], now: Mix, saved: Mix | null): { mix: Mix | null; saved: Mix | null } {
+	if (id === 'custom') return { mix: saved, saved };
+	const next = presetPerms(id, grantable);
+	if (!next) return { mix: null, saved };
+	const keep = presetOf(now.perms, grantable, now.max) === 'custom' ? { perms: [...now.perms], max: now.max } : saved;
+	return { mix: { perms: next, max: presets.find((p) => p.id === id)?.maxRating ?? '' }, saved: keep };
+}

@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Deixa que els assistents d'IA facin servir HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Claus i rutes per a altres apps",
+	"core.settings.remoteAccess.label": "Accés remot",
+	"core.settings.remoteAccess.about": "Accedeix a HolyArrs fora de casa",
 	"core.settings.tmdb.label": "Metadades",
 	"core.settings.tmdb.about": "D'on vénen els pòsters i els noms",
 	"core.settings.health.label": "Comprovacions d'estat",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "Un gestor de baixades no té carpeta de desament, així que HolyArrs no pot importar les baixades acabades.",
 	"core.api.sourceOff": "Algunes files estan desactivades en aquesta instal·lació.",
 	"core.plain.noDownloader": "Les teves fonts troben baixades que cap dels teus gestors de baixades pot agafar, així que no se'n pot enviar cap.",
-	"core.plain.sameDownloader": "Dos gestors de baixades arriben a la mateixa aplicació, així que les baixades poden sortir dues vegades."
+	"core.plain.sameDownloader": "Dos gestors de baixades arriben a la mateixa aplicació, així que les baixades poden sortir dues vegades.",
+	"core.plain.peopleCheck": "No es pot llegir la llista d’usuaris del servidor multimèdia, així que qui s’hi elimina no es desactiva aquí.",
+	"core.plain.deleted": "eliminat",
+	"core.plain.deletedName": "{name} (eliminat)"
 }

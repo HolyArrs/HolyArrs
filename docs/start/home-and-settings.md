@@ -33,6 +33,19 @@ After setup, Home shows:
 
 Home updates by itself. If a card says **Could not read**, press **Try again**.
 
+## The menu
+
+| Group | Pages |
+|---|---|
+| **Activity** | Downloads, History |
+| **System** | Status, Plugins (owner only), Settings |
+
+You see only the pages your account may use.
+
+## Support tab
+
+**Status > Support** says how HolyArrs is kept running and lists four ways to help: sponsor on GitHub, buy a coffee, star the project on GitHub, or send a note.
+
 ## Settings
 
 Open **Settings** from the menu. You see only the screens your account may use, and only for parts that are on. The Settings home lists what needs attention, such as a source that does not answer or no recent backup, with a link to the fix.

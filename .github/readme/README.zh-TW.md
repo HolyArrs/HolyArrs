@@ -18,10 +18,10 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="授權：AGPL-3.0"></a>
 </p>
 
-<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="HolyArrs/HolyArrs on Trendshift" width="250" height="55"></a></p>
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="Trending on Trendshift" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.4：可以移除任何請求，朋友的 Plex 待看清單也能再次讀取了。**資料夾的品質現在會顯示在它的卡片上，Settings 也統一了。[查看新功能](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.2.0：紅點顯示需要處理的事項，連線測試會說出具體問題。**為請求的作品加 Plex 標籤，名稱用你的語言，以及 30 多項修正。 用你自己掌控的金鑰，透過 MCP 連接應用程式。[查看新功能](https://holyarrs.com/whats-new/)
 
 > 你的 HolyArrs 裡每一張海報、每一支預告片和每一個評分，都來自我自己架設、自己付費的伺服器，所以它能對所有人保持免費。如果 HolyArrs 讓你的電影夜好過了一點，贊助能讓我們大家的燈一直亮著 💛
 >

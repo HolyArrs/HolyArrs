@@ -42,7 +42,7 @@ func TestMoreLanguageWords_TitlesAndClashes(t *testing.T) {
 		}
 	}
 	// Short words that clash with names stay out, and subtitle tags are not audio.
-	for _, word := range []string{"FIN", "DAN", "HUN", "TUR", "POL", "CHI", "PL", "NL", "VOSTFR", "SUBFRENCH", "NORDIC"} {
+	for _, word := range []string{"FIN", "DAN", "TUR", "POL", "CHI", "PL", "NL", "VOSTFR", "SUBFRENCH", "NORDIC"} {
 		r := Parse("Quiet.Harbour.2019."+word+".1080p.WEB.H264-GROUP", Hints{})
 		if len(r.Languages) != 0 {
 			t.Errorf("%s read as %v", word, r.Languages)

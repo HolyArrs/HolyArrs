@@ -7,6 +7,7 @@
 "settings.sources.title": "ソース",
 "settings.sources.add": "ソースを追加",
 "settings.sources.lead": "優先度 1 が最初です。失敗したソースは、最大 6 時間スキップされます。フィードのないサイトは、Jackett か Prowlarr を Torznab フィードとして追加してください。",
+"settings.sources.builtIn": "組み込みサイトに Jackett や Prowlarr は不要です: {sites}。{kind} で {site} を選んでください。",
 "settings.sources.change": "{name} を変更",
 "settings.sources.name": "名前",
 "settings.sources.feedKind": "フィードの種類",
@@ -50,7 +51,7 @@
 "settings.sources.save": "保存",
 "settings.sources.cancel": "キャンセル",
 "settings.sources.none": "ソースがありません",
-"settings.sources.noneText": "Torznab または Newznab フィード、あるいは Jackett か Prowlarr を追加してください。",
+"settings.sources.noneText": "組み込みサイト、Torznab または Newznab フィード、あるいは Jackett か Prowlarr を追加してください。",
 "settings.sources.rowTitle": "{url} · 優先度 {priority} · {uses}",
 "settings.sources.priorityUses": "優先度 {priority} · {uses}",
 "settings.sources.keyIs": "キー {key}",
@@ -77,5 +78,9 @@
 "settings.sources.siteLabel": "サイト",
 "settings.sources.addressSite": "サイト自体のアドレスです。サイトが移転した場合のみ変更してください。",
 "settings.sources.siteKeyLabel": "Cookie または RSS キー",
-"settings.sources.siteKeyHint": "ご自身のアカウントから：ブラウザーの Cookie の uid と pass、または RSS リンクの u と tp。暗号化して保存されます。"
+"settings.sources.siteKeyHint": "ご自身のアカウントから：ブラウザーの Cookie の uid と pass、または RSS リンクの u と tp。暗号化して保存されます。",
+"settings.sources.sendTo": "ダウンロードの送り先",
+"settings.sources.sendToAny": "どのダウンローダーでも",
+"settings.sources.sendToHint": "このソースから選んだものはすべてこのダウンローダーだけに送ります。停止中なら待ちます。",
+"settings.sources.sendToGone": "選んだダウンローダーは削除されました。このソースのダウンロードは今どのダウンローダーにも送られます。"
 }

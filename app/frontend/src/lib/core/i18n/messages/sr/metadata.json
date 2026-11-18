@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Филм",
 	"metadata.health.downTitle": "Метаподаци нису доступни",
 	"metadata.health.down": "Претрага и нове слике су паузирани док се не врати. Твоја Библиотека и даље ради.",
-	"metadata.health.back": "Метаподаци су поново доступни"
+	"metadata.health.back": "Метаподаци су поново доступни",
+	"metadata.health.fakeIp": "Ваш рутер или VPN шаље HolyArrs на лажну адресу (198.18.x.x). То обично долази од Clash-а или Surge-а. Додајте {host} на његову листу директних веза."
 }

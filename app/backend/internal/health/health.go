@@ -2,7 +2,6 @@ package health
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,7 +17,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
@@ -58,11 +59,9 @@ type Backups struct {
 	// Started says the first scheduled pass since start has finished (a
 	// fresh install has no backup until then, which is not a problem).
 	Started bool
-	// KeyPrint is the current master key's fingerprint; "" when the key
-	// is a named file (HOLYARRS_MASTER_KEY_FILE) the person looks after.
-	KeyPrint string
-	// KeyKitPrint is the fingerprint of the last key kit downloaded.
-	KeyKitPrint string
+	// KeyKit is how loudly to ask for the key kit: secrets.KitRecommend,
+	// secrets.KitWarn, or "" when it is saved or not needed yet.
+	KeyKit string
 	// Off says the owner turned scheduled backups off: no backup is
 	// expected, so missing or old ones and the key kit are not warned about.
 	Off bool
@@ -102,6 +101,9 @@ type Engine struct {
 	Publish func(topic string, data any)
 	// Trailers reports the trailer lookups (nil skips the check).
 	Trailers func(ctx context.Context) Trailers
+	// UnreadUserLists is, per Jellyfin or Emby kind, why its user list cannot
+	// be read for the removed-people check ("" while it reads; nil: no check).
+	UnreadUserLists func(ctx context.Context) map[string]string
 	// ConfigUnmapped is "anonymous" or "none" when /config is not mapped to
 	// the host (an Error until it is); "" adds no check.
 	ConfigUnmapped string
@@ -200,7 +202,7 @@ func (e *Engine) update(ctx context.Context) ([]Result, error) {
 // Check runs every check once and returns the results, without storing.
 func (e *Engine) Check(ctx context.Context) ([]Result, error) {
 	var out []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.downloaderKinds, e.sameDownloaders, e.saveFolders, e.waiting, e.clearing, e.backups, e.trailers, e.update} {
+	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.downloaderKinds, e.sameDownloaders, e.saveFolders, e.waiting, e.clearing, e.backups, e.trailers, e.peopleChecks, e.update} {
 		rs, err := f(ctx)
 		if err != nil {
 			return nil, err
@@ -226,7 +228,7 @@ func (e *Engine) Probe(ctx context.Context, now time.Time) (bool, any, error) {
 		return true, nil, nil
 	}
 	var rs []Result
-	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.sameDownloaders, e.saveFolders, e.waiting, e.clearing, e.backups, e.trailers} {
+	for _, f := range []func(context.Context) ([]Result, error){e.configFolder, e.folders, e.sources, e.downloaders, e.sameDownloaders, e.saveFolders, e.waiting, e.clearing, e.backups, e.trailers, e.peopleChecks} {
 		got, err := f(ctx)
 		if err != nil {
 			return true, nil, err
@@ -267,81 +269,7 @@ func (e *Engine) Run(ctx context.Context) ([]domain.HealthCheck, error) {
 	if err != nil {
 		return nil, err
 	}
-	guard := e.intSetting(ctx, settingGuard, 2, 1, 20)
-	now := e.now()
-	var events []*domain.Event
-	err = e.Store.Write(ctx, func(tx *sql.Tx) error {
-		events = nil
-		old, err := database.Select[domain.HealthCheck](ctx, tx, "health_checks", "1=1")
-		if err != nil {
-			return err
-		}
-		byKey := map[string]domain.HealthCheck{}
-		for _, c := range old {
-			byKey[c.Key] = c
-		}
-		seen := map[string]bool{}
-		for _, r := range rs {
-			seen[r.Key] = true
-			c, had := byKey[r.Key]
-			if !had {
-				c = domain.HealthCheck{Key: r.Key, Since: now, Confirmed: OK}
-			}
-			if had && c.State == r.State {
-				c.Streak++
-			} else {
-				c.Streak, c.Since = 1, now
-			}
-			c.Kind, c.Subject, c.State, c.Message, c.CheckedAt = r.Kind, r.Subject, r.State, r.Message, now
-			if c.State != c.Confirmed && c.Streak >= guard {
-				ev := &domain.Event{Kind: domain.EventHealthBroken, Summary: c.Message,
-					Data:     map[string]any{"check": c.Key, "kind": c.Kind, "subject": c.Subject, "state": c.State, "message": c.Message, "was": c.Confirmed},
-					GroupKey: "health:" + c.Key}
-				if c.State == OK {
-					ev.Kind, ev.Summary = domain.EventHealthRecovered, "Fixed: "+label(c.Kind)+" "+c.Subject
-				}
-				events = append(events, ev)
-				c.Confirmed = c.State
-			}
-			if had {
-				if _, err := tx.Exec(`UPDATE health_checks SET kind = ?, subject = ?, state = ?, message = ?, since = ?, checked_at = ?, streak = ?, confirmed = ? WHERE id = ?`,
-					c.Kind, c.Subject, c.State, c.Message, database.FormatTime(c.Since), database.FormatTime(c.CheckedAt), c.Streak, c.Confirmed, c.ID); err != nil {
-					return err
-				}
-			} else if _, err := tx.Exec(`INSERT INTO health_checks (check_key, kind, subject, state, message, since, checked_at, streak, confirmed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-				c.Key, c.Kind, c.Subject, c.State, c.Message, database.FormatTime(c.Since), database.FormatTime(c.CheckedAt), c.Streak, c.Confirmed); err != nil {
-				return err
-			}
-		}
-		// Things that are gone (a removed Downloader) drop their check. A
-		// trailers check stays while nothing reports trailers yet (at start,
-		// before the reader is wired), so a kept warning is not dropped and
-		// announced again.
-		for k, c := range byKey {
-			if !seen[k] && (c.Kind != "trailers" || e.Trailers != nil) {
-				if _, err := tx.Exec("DELETE FROM health_checks WHERE id = ?", c.ID); err != nil {
-					return err
-				}
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	for _, ev := range events {
-		if err := e.Store.AddEvent(ctx, ev); err != nil {
-			return nil, err
-		}
-		if e.Publish != nil {
-			e.Publish("event", ev)
-		}
-	}
-	cs, err := List(ctx, e.Store)
-	if err == nil && e.Publish != nil {
-		e.Publish("health", map[string]any{"checks": len(cs)})
-	}
-	return cs, err
+	return e.keep(ctx, rs, nil)
 }
 
 // List returns the stored results, worst first.
@@ -389,6 +317,8 @@ func label(kind string) string {
 		return "update check"
 	case "trailers":
 		return "trailer lookups"
+	case "people_check":
+		return "people check on"
 	case "config_folder":
 		return "config folder"
 	case "config_disk":
@@ -586,6 +516,9 @@ func (e *Engine) downloaders(ctx context.Context) ([]Result, error) {
 	for _, d := range ds {
 		r := Result{Key: "downloader:" + strconv.FormatInt(d.ID, 10), Kind: "downloader", Subject: d.Name, State: OK}
 		why := strings.TrimSpace(d.LastError)
+		if line := doctor.LineOf(why); line != "" {
+			why = line
+		}
 		switch d.State {
 		case "unreachable":
 			r.State, r.Message = Warning, "Downloader "+d.Name+" does not answer"
@@ -703,10 +636,16 @@ func (e *Engine) backups(ctx context.Context) ([]Result, error) {
 		r.State, r.Message = Warning, "The newest backup is from "+b.Newest.UTC().Format("2006-01-02")
 	}
 	// Backups do not hold the master key: without a copy of it, the saved
-	// passwords in a backup cannot be opened on a new machine.
+	// passwords in a backup cannot be opened on a new machine. Until that
+	// is a real risk it is only a calm note, so it raises no alert or dot.
 	k := Result{Key: "backups:key", Kind: "backups", Subject: "Backups", State: OK}
-	if err == nil && !b.Off && b.KeyPrint != "" && b.KeyKitPrint != b.KeyPrint {
-		k.State, k.Message = Warning, "Download your key kit: Backups don't include the master key"
+	if err == nil && !b.Off {
+		switch b.KeyKit {
+		case secrets.KitWarn:
+			k.State, k.Message = Warning, KeyKitWarning
+		case secrets.KitRecommend:
+			k.Message = KeyKitRecommended
+		}
 	}
 	return []Result{r, k}, nil
 }

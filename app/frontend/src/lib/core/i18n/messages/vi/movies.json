@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Quy tắc chọn cho Phiên bản này",
 	"movies.versions.folderLabel": "Thư mục thư viện cho Phiên bản này",
 	"movies.versions.cancel": "Hủy",
-	"movies.versions.addButton": "Thêm phiên bản"
+	"movies.versions.addButton": "Thêm phiên bản",
+	"movies.versions.setEdition": "Đặt ấn bản",
+	"movies.versions.editionFileHint": "Tệp này là ấn bản nào, ví dụ Theatrical hoặc Directors Cut. Để trống để xóa.",
+	"movies.versions.unprotectConfirm": "Gỡ bảo vệ khỏi {label}? Một bản sao tốt hơn có thể thay thế nó trở lại.",
+	"movies.versions.editionChars": "Không cho phép:",
+	"movies.versions.editionInvalid": "Không dùng được ấn bản này. Hãy giữ ngắn (chữ có dấu và chữ không phải Latin chiếm nhiều chỗ hơn), bỏ các ký tự nêu ở trên và đừng kết thúc bằng dấu chấm.",
+	"movies.versions.editionDevice": "Windows dành tên {name} cho thiết bị nên không dùng được. Hãy nhập tên khác."
 }

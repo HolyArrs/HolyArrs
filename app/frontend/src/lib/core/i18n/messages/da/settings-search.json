@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Afvis Udgivelser, der er postet før udgivelsen",
 	"settings.search.refuseEarlyHint": "Sandsynlige forfalskninger. Vælg en udgivelse viser dem stadig med en advarsel.",
 	"settings.search.refuseTiny": "Afvis forfalskninger efter størrelse og filtype",
-	"settings.search.refuseTinyHint": "For små Udgivelser, tomme filer og .wmv eller .asf under HD-navne",
+	"settings.search.refuseTinyHint": "For små Udgivelser, tomme filer, afbrudte videoer og .wmv eller .asf under HD-navne",
 	"settings.search.grace": "Timer, en Udgivelse må være for tidlig",
 	"settings.search.graceHint": "På grund af tidszoner. Standard 24.",
 	"settings.search.floors": "Tjek filstørrelser ved import",

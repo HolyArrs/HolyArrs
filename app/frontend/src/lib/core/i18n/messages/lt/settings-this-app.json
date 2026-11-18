@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "nėra",
 	"settings.thisApp.needsRestart": "Reikia paleisti iš naujo. Pakeičia HOLYARRS_URL_BASE arba -url-base.",
 	"settings.thisApp.save": "Išsaugoti",
-	"settings.thisApp.licence": "HolyArrs yra laisvoji programinė įranga pagal AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs yra laisvoji programinė įranga pagal AGPL-3.0.",
+	"settings.thisApp.proxy": "Tarpinis serveris",
+	"settings.thisApp.proxyDesc": "Siųsti išorines užklausas per tarpinį serverį. Blokavimo ir namų tinklo taisyklės vis tiek taikomos tikrajai paskirčiai.",
+	"settings.thisApp.proxyType": "Tipas",
+	"settings.thisApp.proxyOff": "Išjungta",
+	"settings.thisApp.proxyHost": "Serveris",
+	"settings.thisApp.proxyPort": "Prievadas",
+	"settings.thisApp.proxyUser": "Naudotojo vardas",
+	"settings.thisApp.proxyPasswordLabel": "Slaptažodis",
+	"settings.thisApp.proxyPasswordKept": "Palikite tuščią, kad liktų išsaugotas slaptažodis",
+	"settings.thisApp.proxyBypass": "Aplenkti tarpinį serverį",
+	"settings.thisApp.proxyBypassHint": "Vardai, adresai ar intervalai, atskirti kableliais. *.example.com apima visus vardus po juo.",
+	"settings.thisApp.proxyBypassLocal": "Aplenkti tarpinį serverį vietiniams adresams",
+	"settings.thisApp.proxyBypassLocalHint": "Šis kompiuteris ir namų tinklas jungiasi tiesiogiai",
+	"settings.thisApp.proxySaved": "Tarpinis serveris išsaugotas",
+	"settings.thisApp.proxyOffSaved": "Tarpinis serveris išjungtas"
 }

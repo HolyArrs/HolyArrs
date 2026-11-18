@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -64,6 +65,12 @@ type Line struct {
 	// title stays behind). Folder names that old folder.
 	Attention string `json:"attention,omitempty"`
 	Folder    string `json:"folder,omitempty"`
+	// TitleID is the show here an AttnSeasons line is about, so the Done
+	// page can open it (its name here can differ from the old app's).
+	TitleID int64 `json:"title_id,omitempty"`
+	// Here is the show's name here when only the old app's TMDB id found
+	// it, under another name: the owner checks it is the same show.
+	Here string `json:"here,omitempty"`
 	// open says the choice is still missing (the person stays behind).
 	open bool
 }
@@ -72,6 +79,9 @@ type Line struct {
 const (
 	AttnUnreachable = "unreachable"
 	AttnUnchecked   = "unchecked"
+	// AttnSeasons: the show was found only by the old app's TMDB id, under
+	// another name, so its files wait to be placed by hand.
+	AttnSeasons = "seasons"
 )
 
 // Why a person needs the owner's choice (Line.Choose).
@@ -94,12 +104,20 @@ type Report struct {
 	NeedsInput []string       `json:"needs_input"`
 	Notes      []string       `json:"notes,omitempty"`
 	Next       []string       `json:"next"`
+	// Checking counts the shows a dry run had no time to look up; they are
+	// looked up after it answers, and the next dry run has them.
+	Checking int `json:"checking,omitempty"`
 }
 
 // Mover runs moves. It never moves, renames or deletes a media file and
 // never contacts or writes to the old apps: it works from kept Snapshots.
 type Mover struct {
-	Store   *database.Store
+	// dryShows keeps the dry runs' show lookups by source and id; dryWarm
+	// says the shows a dry run had no time for are being looked up.
+	dryMu    sync.Mutex
+	dryShows map[string]dryShow
+	dryWarm  bool
+	Store    *database.Store
 	Library *library.Service
 	Queue   *jobs.Queue
 	// PartOn says whether a part is on. The part keys are movies, shows,
@@ -307,8 +325,17 @@ type run struct {
 	// ruleIDs are the Pick rules this run made from profiles, by the name
 	// the plan gave them (the name here may differ when it was taken).
 	ruleIDs map[string]int64
-	// attn and attnFolder are set by title() for the item it just ran.
+	// attn and attnFolder are set by title() for the item it just ran, and
+	// attnTitle with AttnSeasons.
 	attn, attnFolder string
+	attnTitle        int64
+	here             string
+	// preview is the plan's own quick check: shows are not looked up.
+	preview bool
+	// lookupBy ends a dry run's show lookups; unchecked lists the shows
+	// that were not looked up in time (Report.Checking).
+	lookupBy  time.Time
+	unchecked []TitlePlan
 	// foldersOff says the Library folders group was left out; coming lists,
 	// per kind, the planned Library folders on this server that this run adds.
 	foldersOff bool
@@ -318,6 +345,8 @@ type run struct {
 	// server cannot see whose titles are not in that folder.
 	left   map[string]bool
 	unseen map[string]string
+	// movieFolders counts the movies of this import by folder name, any case.
+	movieFolders map[string]int
 	// prowlarr is the kept Prowlarr address and key, read once.
 	prowlarr *secretsfile.MoveCredential
 }
@@ -351,8 +380,13 @@ func (r *run) sourceOrMoveTime(source string) (time.Time, error) {
 // folderGroup reads the Library folders group: whether it was left out,
 // and the folders on this server it adds.
 func (r *run) folderGroup(p *Plan) {
-	r.coming, r.left, r.unseen = map[string][]string{}, map[string]bool{}, map[string]string{}
+	r.coming, r.left, r.unseen, r.movieFolders = map[string][]string{}, map[string]bool{}, map[string]string{}, map[string]int{}
 	for _, g := range p.Groups {
+		for _, it := range g.Items {
+			if t := it.Title; t != nil && t.Kind == "movie" {
+				r.movieFolders[strings.ToLower(t.Folder)]++
+			}
+		}
 		if g.Name != GroupFolders {
 			continue
 		}
@@ -376,7 +410,7 @@ func (r *run) folderGroup(p *Plan) {
 // with its folder at "Don't bring them", wanted and needing attention, or
 // added with no files. It asks the same check the dry run makes.
 func (m *Mover) PreviewTitles(ctx context.Context, p *Plan) {
-	r := &run{m: m, ctx: ctx, dry: true}
+	r := &run{m: m, ctx: ctx, dry: true, preview: true}
 	r.folderGroup(p)
 	for gi := range p.Groups {
 		g := &p.Groups[gi]
@@ -401,6 +435,9 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 	r := &run{m: m, ctx: ctx, move: moveID, dry: dry, by: by, people: map[string]int64{}, personStable: map[string]bool{}, personMarked: map[string]bool{},
 		rep: &Report{Move: moveID, Dry: dry, Apps: p.Apps, At: m.now(), Lines: []Line{}, Counts: map[string]int{},
 			NotMoved: append([]NotMoved{}, p.NotMoved...), NeedsInput: append([]string{}, p.NeedsInput...), Notes: p.Notes}}
+	if dry {
+		r.lookupBy = time.Now().Add(dryLookupBudget)
+	}
 	r.folderGroup(p)
 	for _, g := range p.Groups {
 		for _, it := range g.Items {
@@ -427,7 +464,7 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 			}
 			var res, detail string
 			r.choose = ""
-			r.attn, r.attnFolder, r.found = "", "", ""
+			r.attn, r.attnFolder, r.found, r.attnTitle, r.here = "", "", "", 0, ""
 			switch {
 			case g.Skipped:
 				res, detail = ResSkipped, "you left "+strings.ToLower(GroupLabels[g.Name])+" out"
@@ -446,7 +483,11 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 			}
 			if r.attn != "" {
 				l := &r.rep.Lines[len(r.rep.Lines)-1]
-				l.Attention, l.Folder = r.attn, r.attnFolder
+				l.Attention, l.Folder, l.TitleID = r.attn, r.attnFolder, r.attnTitle
+			}
+			if r.here != "" {
+				l := &r.rep.Lines[len(r.rep.Lines)-1]
+				l.Here, l.TitleID = r.here, r.attnTitle
 			}
 			if r.choose != "" {
 				l := &r.rep.Lines[len(r.rep.Lines)-1]
@@ -460,6 +501,9 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 		}
 	}
 	r.rep.Next = next(r.rep)
+	if r.rep.Checking = len(r.unchecked); dry {
+		r.warm(r.unchecked)
+	}
 	return r.rep
 }
 

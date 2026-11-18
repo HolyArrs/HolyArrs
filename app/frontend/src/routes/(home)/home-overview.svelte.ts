@@ -4,6 +4,7 @@ import { askArtist, askDetails, wantDetails } from '#lib/requests/index.ts';
 import { arrivedTitle, upLine, type HomeCard } from './home.ts';
 import { localDay } from './home-line.ts';
 import { SvelteSet } from 'svelte/reactivity';
+import { toOwn } from '#lib/core/paths.ts';
 import type { Ask } from '#lib/core/types.ts';
 
 export type Place = { key: string; shape: string; pic?: { c: HomeCard; label: string }; stat?: string };
@@ -41,18 +42,22 @@ export function createHomeOverview(ctx: Pick<HomeContext, 'manager' | 'kid' | 'h
 		}
 		return out;
 	});
-	const showOverview = $derived(!ctx.rows.includes('welcome'));
+	// Before setup the grid shows too: the welcome card sits above it, and the Library place points to setup.
+	const welcome = $derived(ctx.rows.includes('welcome'));
+	const showOverview = true;
 	// The count tiles, in order. The first four are always there for the person they are for (Needs attention, asks, Library, disk), so they never change places while the page loads; the rest fill the picture places that have no picture. Explore, New & Popular and Search always can, so the grid never has a hole.
 	const recentArrived = $derived((ctx.home?.arrived ?? []).filter((c) => c.at && ctx.now.getTime() - Date.parse(c.at) < 14 * 86400000));
 	const recentNew = $derived(recentArrived.length + (ctx.home?.new_seasons?.length ?? 0));
 	const statPool = $derived(
 		[
-			ctx.owner ? 'att' : '',
+			ctx.owner ? (welcome ? 'setup' : 'att') : '',
 			ctx.canAsk ? 'ask' : '',
-			ctx.libCards.length ? 'lib' : '',
+			ctx.libCards.length && !(welcome && ctx.owner) ? 'lib' : '',
 			ctx.showDisk ? 'disk' : '',
+			// Coming this week sits beside On disk; it goes with the Calendar, which it opens, and stands in for the 30-day count.
+			ctx.manager ? 'week' : '',
 			ctx.fetchingAll.length ? 'dl' : '',
-			ctx.owner && ctx.home?.soon?.length && !pics.some((p) => p.label === t('home.comingSoon2')) ? 'soon' : '',
+			!ctx.manager && ctx.owner && ctx.home?.soon?.length && !pics.some((p) => p.label === t('home.comingSoon2')) ? 'soon' : '',
 			recentNew ? 'new' : '',
 			'explore',
 			'popular',
@@ -71,7 +76,25 @@ export function createHomeOverview(ctx: Pick<HomeContext, 'manager' | 'kid' | 'h
 		1: ['banner']
 	};
 	
+	// With the Calendar there are eight places: one big, the Calendar standing two rows tall at every width, and six small. Four columns make three full rows, two columns six.
+	// A big place with no picture takes New & Popular, which brings its own backdrop, so the biggest tile is never a plain word on an empty sheet.
+	const bigArt = (pl: Place, st: string[]) => {
+		const i = st.indexOf('popular');
+		if (i >= 0) pl.stat = st.splice(i, 1)[0];
+	};
+	const CAL_SHAPE = ['big', '', '', 'tall keep', '', '', '', ''];
 	const places = $derived.by((): Place[] => {
+		if (statPool.includes('calendar') && statPool.length - 1 >= (pics.length ? 6 : 7)) {
+			const st = statPool.filter((k) => k !== 'calendar');
+			const out: Place[] = CAL_SHAPE.map((shape) => ({ key: '', shape }));
+			out[3].stat = 'calendar';
+			if (pics.length) out[0].pic = pics[0];
+			else bigArt(out[0], st);
+			for (const pl of out) if (!pl.pic && !pl.stat && pl.shape === '') pl.stat = st.shift();
+			if (!out[0].pic && !out[0].stat) out[0].stat = st.shift();
+			for (const pl of out) pl.key = pl.pic ? `p${pl.pic.c.title_id}` : `s${pl.stat}`;
+			return out;
+		}
 		const shapes = SHAPES[Math.min(7, pics.length + statPool.length)] ?? [];
 		const p = [...pics];
 		const st = [...statPool];
@@ -79,6 +102,7 @@ export function createHomeOverview(ctx: Pick<HomeContext, 'manager' | 'kid' | 'h
 		const roomy = (shape: string) => shape === 'big' || shape === 'tall' || shape === 'wide' || shape === 'banner';
 		// Pictures take the roomy places, the first count tiles take the small ones, and what is left fills the rest.
 		for (const pl of out) if (roomy(pl.shape) && p.length) pl.pic = p.shift();
+		if (out[0]?.shape === 'big' && !out[0].pic) bigArt(out[0], st);
 		for (const pl of out) if (!roomy(pl.shape) && st.length) pl.stat = st.shift();
 		for (const pl of out) {
 			if (!pl.pic && !pl.stat) {
@@ -137,7 +161,7 @@ export function createHomeOverview(ctx: Pick<HomeContext, 'manager' | 'kid' | 'h
 			tried.add(a.id);
 			const probe = new Image();
 			probe.onerror = () => badArt.add(a.id);
-			probe.src = a.poster;
+			probe.src = toOwn(a.poster);
 		}
 	});
 
@@ -145,6 +169,7 @@ export function createHomeOverview(ctx: Pick<HomeContext, 'manager' | 'kid' | 'h
 		askPic,
 		get showSystem() { return showSystem; },
 		get showOverview() { return showOverview; },
+		get welcome() { return welcome; },
 		get board() { return board; },
 		set board(v) { board = v; },
 		get shown() { return shown; },

@@ -32,11 +32,12 @@
 	"settings.backups.key": "Pagrindinis raktas",
 	"settings.backups.keyDesc": "Atsarginėse kopijose šio rakto nėra. Laikykite jo kopiją saugioje vietoje.",
 	"settings.backups.noKit": "Šiam raktui raktų rinkinys dar neišsaugotas. Be jo atsarginės kopijos išsaugotų slaptažodžių naujame įrenginyje atidaryti nepavyks.",
+	"settings.backups.kitRecommended": "Rekomenduojama: atsisiųskite raktų rinkinį.",
 	"settings.backups.ownerOnlyKit": "Atsisiųsti gali tik savininkas; paprašykite jo.",
 	"settings.backups.fingerprint": "Rakto kontrolinis kodas",
 	"settings.backups.downloadKit": "Atsisiųsti raktų rinkinį",
 	"settings.backups.restoreKey": "Norėdami atkurti: pervadinkite į holyarrs.key ir įdėkite į config aplanką",
 	"settings.backups.offPlan": "Išjungta",
-	"settings.backups.offAbout": "Suplanuotų atsarginių kopijų nėra. Kopija vis tiek daroma prieš kiekvieną naujinimą.",
+	"settings.backups.offAbout": "Jokių automatinių atsarginių kopijų, net prieš naujinimą. Pačių daromos kopijos vis tiek veikia.",
 	"settings.backups.offKeeps": "Išjungta palieka jau turimas atsargines kopijas."
 }

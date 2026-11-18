@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Tampal id, seperti tmdb:693134 atau tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Atau huraikannya, seperti “filem angkasa dengan robot dari 2014”.",
 	"discover.search.lookEverywhere": "Cari di mana-mana",
-	"discover.search.searchIndexersFor": "Cari pengindeks untuk “{searched}”",
+	"discover.search.searchIndexersFor": "Semak sumber anda",
 	"discover.search.topMatches": "Padanan teratas",
 	"discover.people.goToTheFilmography": "Pergi ke filmografi",
 	"discover.people.filmography": "Filmografi",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Tidak sesuai dengan versi ini",
 	"discover.leftovers.reason.movie_has_file": "Filem sudah ada fail",
 	"discover.leftovers.reason.replaced_by_hand": "Diganti dengan fail lain",
-	"discover.leftovers.reason.unmatched": "Padanan dibuang secara manual"
+	"discover.leftovers.reason.unmatched": "Padanan dibuang secara manual",
+	"discover.searchSections.genres": "Genre",
+	"discover.searchSections.moods": "Suasana",
+	"discover.searchSections.stories": "Cerita & tema",
+	"discover.searchSections.worlds": "Dunia & latar",
+	"discover.searchSections.eras": "Era",
+	"discover.searchSections.world": "Dari seluruh dunia",
+	"discover.searchSections.collections": "Koleksi",
+	"discover.popularRail.out": "Keluar",
+	"discover.popularRail.comingDay": "Akan datang",
+	"discover.titleLibrary.turnShowOnHint": "Hidupkan rancangan ini untuk mula mencari.",
+	"discover.leftovers.reason.seasons_differ": "Ditemui hanya melalui nombor TMDB aplikasi lama: pastikan ini rancangan yang sama, kemudian padankan fail itu sendiri"
 }

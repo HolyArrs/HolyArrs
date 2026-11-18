@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Kunne ikke lagre språket",
 	"accounts.language.count.one": "1 språk",
 	"accounts.language.count.other": "{n} språk",
-	"accounts.account.watchEveryone": "Eieren slo dette på for alle. Slå av begge for å stoppe det."
+	"accounts.account.watchEveryone": "Eieren slo dette på for alle. Slå av begge for å stoppe det.",
+	"accounts.watch.title": "Sett-merker",
+	"accounts.watch.hint": "Koble kontoen din på en medieserver her, så viser Biblioteket hva du har sett.",
+	"accounts.watch.as": "{server}, som {name}",
+	"accounts.watch.nameOn": "Navn på {server}",
+	"accounts.watch.passwordOnce": "Passordet ditt går bare til {server} og lagres ikke.",
+	"accounts.watch.linked": "Koblet til {name} på {server}",
+	"accounts.watch.unlinked": "Koblet fra",
+	"accounts.login.importPaused": "Innloggingen din utløp, så importen er satt på pause. Logg inn, åpne Importer et bibliotek og trykk Skann for å fortsette."
 }

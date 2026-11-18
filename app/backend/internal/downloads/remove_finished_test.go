@@ -12,16 +12,21 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
+// A finished download cannot be marked failed, nor removed from a Downloader
+// HolyArrs only reads.
 func TestRemoveRefusesAFinishedDownload(t *testing.T) {
 	w, m := setup(t)
 	id := grabbed(t, w, m)
 	if err := w.s.Write(context.Background(), func(tx *sql.Tx) error {
 		_, err := tx.Exec("UPDATE downloads SET state = 'finished', progress = 1 WHERE id = ?", id)
+		if err == nil {
+			_, err = tx.Exec("UPDATE downloaders SET writable = 0")
+		}
 		return err
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Remove(context.Background(), id, RemoveChoice{DeleteFiles: true}, luis, "luis"); !errors.Is(err, ErrNotActive) {
+	if err := m.Remove(context.Background(), id, RemoveChoice{DeleteFiles: true}, luis, "luis"); !errors.Is(err, ErrDownloaderReadOnly) {
 		t.Fatalf("remove finished: %v", err)
 	}
 	if err := m.MarkFailed(context.Background(), id, luis, "luis"); !errors.Is(err, ErrNotActive) {

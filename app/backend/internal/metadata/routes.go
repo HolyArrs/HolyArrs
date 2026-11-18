@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
@@ -18,6 +19,8 @@ const Slow = "The metadata server is slow right now. This comes back on its own.
 type Handlers struct {
 	// Up reports whether the metadata server answers; nil counts as up.
 	Up func(context.Context) bool
+	// FakeIP is the host last refused for a fake address, "" when none.
+	FakeIP func() string
 }
 
 // Routes registers the metadata routes.
@@ -32,6 +35,16 @@ func (h *Handlers) health(w http.ResponseWriter, r *http.Request) {
 	body := map[string]any{"up": up}
 	if !up {
 		body["message"] = Down
+		if h := h.fakeIP(); h != "" {
+			body["fakeIP"], body["message"] = h, outbound.FakeIPMessage(h)
+		}
 	}
 	webserver.WriteJSON(w, http.StatusOK, body)
+}
+
+func (h *Handlers) fakeIP() string {
+	if h.FakeIP == nil {
+		return ""
+	}
+	return h.FakeIP()
 }

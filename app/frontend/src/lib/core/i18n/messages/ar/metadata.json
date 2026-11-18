@@ -3,5 +3,6 @@
 	"metadata.details.movie": "فيلم",
 	"metadata.health.downTitle": "البيانات الوصفية غير متاحة",
 	"metadata.health.down": "يتوقف البحث والصور الجديدة حتى تعود. تبقى مكتبتك تعمل.",
-	"metadata.health.back": "عادت البيانات الوصفية"
+	"metadata.health.back": "عادت البيانات الوصفية",
+	"metadata.health.fakeIp": "جهاز التوجيه أو الـ VPN لديك يرسل HolyArrs إلى عنوان وهمي (198.18.x.x). يحدث هذا غالبًا بسبب Clash أو Surge. أضف {host} إلى قائمة الاتصال المباشر فيه."
 }

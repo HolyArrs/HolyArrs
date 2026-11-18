@@ -3,5 +3,6 @@
 	"metadata.details.movie": "סרט",
 	"metadata.health.downTitle": "המטא-דאטה במצב לא מקוון",
 	"metadata.health.down": "החיפוש והתמונות החדשות מושהים עד שהשירות יחזור. הספרייה שלך ממשיכה לעבוד.",
-	"metadata.health.back": "המטא-דאטה חזר לפעול"
+	"metadata.health.back": "המטא-דאטה חזר לפעול",
+	"metadata.health.fakeIp": "הנתב או ה-VPN שלך שולחים את HolyArrs לכתובת מזויפת (198.18.x.x). זה בדרך כלל מגיע מ-Clash או מ-Surge. הוסף את {host} לרשימת החיבור הישיר שלו."
 }

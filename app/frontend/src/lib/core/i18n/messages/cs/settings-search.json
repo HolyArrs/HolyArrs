@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Zamítat release zveřejněná před vydáním",
 	"settings.search.refuseEarlyHint": "Pravděpodobně falešná. Ruční výběr release je stále ukáže, s varováním.",
 	"settings.search.refuseTiny": "Zamítat falešná podle velikosti a typu souboru",
-	"settings.search.refuseTinyHint": "Příliš malá release, prázdné soubory a .wmv nebo .asf pod názvy HD",
+	"settings.search.refuseTinyHint": "Příliš malá release, prázdné soubory, useknutá videa a .wmv nebo .asf pod názvy HD",
 	"settings.search.grace": "Hodin, o kolik smí být release předčasné",
 	"settings.search.graceHint": "Kvůli časovým pásmům. Výchozí 24.",
 	"settings.search.floors": "Kontrolovat velikost souborů při importu",

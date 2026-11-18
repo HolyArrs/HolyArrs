@@ -58,7 +58,7 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 	if err != nil {
 		return true, nil, err
 	}
-	refs, err := s.wantedTitleRefs(ctx)
+	refs, _, err := s.wantedTitleRefs(ctx)
 	if err != nil {
 		return true, nil, err
 	}
@@ -138,14 +138,14 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 				continue
 			}
 			p := releasename.Parse(item.Title, releasename.Hints{Size: item.Size})
-			m := mediafiles.MatchTitle(p, refs)
+			m := mediafiles.MatchRelease(p, refs)
 			if m.Title == nil && hasShow {
-				m = mediafiles.MatchTitle(releasename.Parse(item.Title, releasename.Hints{Size: item.Size, Show: true}), refs)
+				m = mediafiles.MatchRelease(releasename.Parse(item.Title, releasename.Hints{Size: item.Size, Show: true}), refs)
 			}
 			if m.Title == nil && hasArtist {
-				m = mediafiles.MatchTitle(releasename.Parse(item.Title, releasename.Hints{Size: item.Size, Music: true}), refs)
+				m = mediafiles.MatchRelease(releasename.Parse(item.Title, releasename.Hints{Size: item.Size, Music: true}), refs)
 			}
-			if m.Title != nil && mediafiles.SourceTakesTitle(answer.src.Tags, m.Title.Tags, m.Title.RuleTags) {
+			if m.Title != nil && mediafiles.SourceTakesTitle(answer.src.Tags, m.Title.Tags, m.Title.RuleTags, m.Title.TagsOnly) {
 				return true, prepared, nil
 			}
 		}

@@ -2,6 +2,7 @@
 
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import { api } from '../core/api.ts';
+import { shownPerson } from '../core/plain.ts';
 
 export type ReportKind = 'picture' | 'sound' | 'subtitles' | 'wont_play' | 'other';
 export type ReportState = 'open' | 'fixed';
@@ -80,7 +81,7 @@ export function kindLabel(kind: string): string {
 
 /** The name a person chose, else their sign-in name. */
 export function whoName(w: ReportWho | undefined): string {
-	return w ? w.display_name || w.name : '';
+	return w ? w.display_name || shownPerson(w.name) : '';
 }
 
 /** The title with its year: "Driftwood Moon (2024)". */

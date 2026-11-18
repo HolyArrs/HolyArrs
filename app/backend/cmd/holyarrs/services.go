@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
 	"log"
@@ -40,6 +41,8 @@ import (
 // them to every module.
 type services struct {
 	Store *database.Store
+	// Plugins runs the Plugin Engine; nil answers that plugins are not set up.
+	Plugins *plugins.Engine
 	// DLSync is the background download reader (downloads.sync = on); nil
 	// keeps the Downloads view's own client reads.
 	DLSync   *downloads.Sync
@@ -202,7 +205,7 @@ func (s *services) fill() {
 		WireUpdateChecks(s.Health, s.Updates)
 	}
 	if s.Media == nil && s.Secrets != nil {
-		s.Media = &mediaservers.Linker{Store: s.Store, Vault: s.Secrets}
+		s.Media = &mediaservers.Linker{Store: s.Store, Vault: s.Secrets, Asked: requests.AskedForLabels(s.Store)}
 	}
 	if s.Subtitles == nil {
 		s.Subtitles = subtitles.NewService(s.Store, s.Secrets, s.Live, s.Queue)

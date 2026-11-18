@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} بالانتظار",
 	"frame.nav.new": "{n} جديد",
 	"frame.nav.manage": "الإدارة",
+	"frame.nav.activity": "النشاط",
+	"frame.nav.system": "النظام",
 	"frame.nav.history": "السجل",
 	"frame.nav.status": "الحالة",
 	"frame.nav.settings": "الإعدادات",
+	"frame.nav.plugins": "الإضافات",
 	"frame.nav.goTo": "انتقل إلى",
 	"frame.nav.active": "{n} نشط، {percent}%",
 	"frame.nav.decide": "{n} بحاجة إلى قرار",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "النظام",
 	"frame.layout.switch": "تبديل الحساب",
 	"frame.layout.signOut": "تسجيل الخروج",
+	"frame.layout.support": "ادعم HolyArrs",
 	"frame.layout.signOutFail": "تعذّر تأكيد تسجيل الخروج",
 	"frame.layout.signedOut": "تم تسجيل الخروج",
 	"frame.layout.accountMenu": "{name}، {role}: الحساب والمظهر",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "يعيد HolyArrs المحاولة تلقائيًا",
 	"frame.feeds.clearNow": "إزالة الآن",
 	"frame.feeds.cleared": "تمت الإزالة من برنامج التنزيل",
-	"frame.feeds.clearStill": "لم تتم الإزالة بعد"
+	"frame.feeds.clearStill": "لم تتم الإزالة بعد",
+	"frame.error.pageGone": "هذه الصفحة غير موجودة. ربما الرابط قديم أو مكتوب بشكل خاطئ."
 }

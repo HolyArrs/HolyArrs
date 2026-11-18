@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Ganhou: {name}",
 	"ui.wikiFacts.nominated": "Indicado: {name}",
 	"ui.wikiFacts.andMore": "e mais {count}",
-	"ui.pageLoader.loading": "A carregar"
+	"ui.pageLoader.loading": "A carregar",
+	"ui.connectHelp.link": "Como corrigir",
+	"ui.ask.remove": "Remover",
+	"ui.ask.restore": "Restaurar",
+	"ui.ask.stop": "Parar",
+	"ui.ask.revoke": "Revogar",
+	"ui.ask.replace": "Substituir",
+	"ui.ask.unlink": "Desassociar",
+	"ui.ask.turnOff": "Desativar",
+	"ui.ask.markFailed": "Marcar como falhada",
+	"ui.ask.reset": "Repor",
+	"ui.ask.import": "Importar"
 }
