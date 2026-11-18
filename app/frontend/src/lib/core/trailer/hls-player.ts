@@ -16,6 +16,48 @@ export const BUFFER = {
 	startFragPrefetch: false
 } as const;
 
+// hls.js gives every text track it makes a <track src="data:,WEBVTT">, which
+// the page's policy (media-src) blocks and the browser logs as an error. So it
+// makes none: closed captions and timed metadata, which no screen shows, are
+// off, and subtitle cues come to showSubtitles instead.
+export const NO_TRACK_ELEMENTS = {
+	renderTextTracksNatively: false,
+	enableCEA708Captions: false,
+	enableID3MetadataCues: false,
+	enableEmsgMetadataCues: false,
+	enableDateRangeMetadataCues: false
+} as const;
+
+// The one subtitle track of each video. A track made with addTextTrack has no
+// element and cannot be removed, so the next trailer on the video reuses it.
+const subtitleTracks = new WeakMap<HTMLVideoElement, TextTrack>();
+
+// Shows the stream's default subtitle track, the only one hls.js reads on its
+// own, as the browser's own subtitles. Returns what clears them.
+function showSubtitles(Hls: typeof HlsType, hls: HlsType, video: HTMLVideoElement): () => void {
+	const clear = () => {
+		const t = subtitleTracks.get(video);
+		if (!t) return;
+		if (t.mode === 'disabled') t.mode = 'hidden'; // a disabled track has no cues to read
+		for (const c of Array.from(t.cues ?? [])) t.removeCue(c);
+		t.mode = 'disabled';
+	};
+	clear();
+	hls.on(Hls.Events.CUES_PARSED, (_e, d) => {
+		if (d.type !== 'subtitles') return;
+		const from = (d as { subtitleTrack?: { name?: string; lang?: string } }).subtitleTrack;
+		let t = subtitleTracks.get(video);
+		if (!t) {
+			t = video.addTextTrack('subtitles', from?.name ?? '', from?.lang ?? '');
+			subtitleTracks.set(video, t);
+		}
+		t.mode = 'showing';
+		for (const c of d.cues as VTTCue[]) if (!t.cues?.getCueById(c.id)) t.addCue(c);
+	});
+	hls.on(Hls.Events.SUBTITLE_TRACK_SWITCH, clear);
+	return clear;
+}
+
 // target is the tallest picture worth fetching; floor is the least height to keep
 // whatever the player's size (a retry when a smaller one would not decode).
 export async function attachHLS(video: HTMLVideoElement, url: string, native: boolean, start = 0, target = 720, floor = 0): Promise<() => void> {
@@ -29,7 +71,8 @@ export async function attachHLS(video: HTMLVideoElement, url: string, native: bo
 	}
 	const Hls = await loadHls();
 	if (!Hls.isSupported()) throw new Error('no MediaSource');
-	const hls = new Hls({ startPosition: start, ...BUFFER, capLevelToPlayerSize: false, enableWorker: true, abrEwmaDefaultEstimate: 8_000_000 });
+	const hls = new Hls({ startPosition: start, ...BUFFER, ...NO_TRACK_ELEMENTS, capLevelToPlayerSize: false, enableWorker: true, abrEwmaDefaultEstimate: 8_000_000 });
+	const stopSubtitles = showSubtitles(Hls, hls, video);
 	// The stream mixes codecs at the same sizes and switching codec mid-play stalls,
 	// so only H.264 stays. The cap follows what the player shows now.
 	let avc: { height: number }[] = [];
@@ -71,6 +114,7 @@ export async function attachHLS(video: HTMLVideoElement, url: string, native: bo
 		ro?.disconnect();
 		document.removeEventListener('fullscreenchange', recap);
 		window.removeEventListener('resize', recap);
+		stopSubtitles();
 		hls.destroy();
 	};
 }

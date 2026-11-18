@@ -3,7 +3,7 @@
 type Handler = (e: string, d?: unknown) => void;
 
 export default class FakeHls {
-	static Events = { MANIFEST_PARSED: 'hlsManifestParsed', AUDIO_TRACKS_UPDATED: 'hlsAudioTracksUpdated', ERROR: 'hlsError' };
+	static Events = { MANIFEST_PARSED: 'hlsManifestParsed', AUDIO_TRACKS_UPDATED: 'hlsAudioTracksUpdated', ERROR: 'hlsError', CUES_PARSED: 'hlsCuesParsed', SUBTITLE_TRACK_SWITCH: 'hlsSubtitleTrackSwitch' };
 	static isSupported() {
 		return true;
 	}
