@@ -20,6 +20,8 @@
 
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="Trending on Trendshift" width="250" height="55"></a></p>
 
+<p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
+
 > [!NOTE]
 > **HolyArrs 1.2.0: கவனிக்க வேண்டியதை ஒரு சிவப்புப் புள்ளி காட்டுகிறது, இணைப்புச் சோதனை சரியான சிக்கலைச் சொல்கிறது.** கோரிய தலைப்புகளுக்கு Plex லேபிள்கள், உங்கள் மொழியில் பெயர்கள், 30-க்கும் மேற்பட்ட திருத்தங்கள். நீங்கள் கட்டுப்படுத்தும் சாவிகளுடன் MCP வழியாக செயலிகளை இணைக்கவும். [புதியவை என்ன](https://holyarrs.com/whats-new/)
 

@@ -20,6 +20,8 @@
 
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="Trending on Trendshift" width="250" height="55"></a></p>
 
+<p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
+
 > [!NOTE]
 > **HolyArrs 1.2.0: 빨간 점이 확인할 것을 보여 주고, 연결 테스트가 정확한 문제를 알려 줍니다.** 요청 작품용 Plex 라벨, 내 언어로 된 이름, 30개가 넘는 수정. 직접 관리하는 키로 MCP를 통해 앱을 연결하세요. [새로운 기능](https://holyarrs.com/whats-new/)
 

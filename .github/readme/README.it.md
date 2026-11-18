@@ -20,6 +20,8 @@
 
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="Trending on Trendshift" width="250" height="55"></a></p>
 
+<p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
+
 > [!NOTE]
 > **HolyArrs 1.2.0: un punto rosso mostra cosa richiede attenzione, e i test di connessione indicano il problema esatto.** Etichette Plex per i titoli richiesti, nomi nella tua lingua e oltre 30 correzioni. Collega app tramite MCP con chiavi che controlli tu. [Novità](https://holyarrs.com/whats-new/)
 

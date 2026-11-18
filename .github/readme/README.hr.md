@@ -20,6 +20,8 @@
 
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="Trending on Trendshift" width="250" height="55"></a></p>
 
+<p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
+
 > [!NOTE]
 > **HolyArrs 1.2.0: crvena točka pokazuje što traži pažnju, a test veze imenuje točan problem.** Oznake u Plexu za tražene naslove, imena na vašem jeziku i više od 30 ispravaka. Povežite aplikacije preko MCP-a ključevima koje vi kontrolirate. [Pogledaj što je novo](https://holyarrs.com/whats-new/)
 

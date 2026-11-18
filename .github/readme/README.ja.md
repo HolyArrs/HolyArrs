@@ -20,6 +20,8 @@
 
 <p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="Trending on Trendshift" width="250" height="55"></a></p>
 
+<p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
+
 > [!NOTE]
 > **HolyArrs 1.2.0：赤い点で対応が必要なものがわかり、接続テストが問題をはっきり示します。**リクエスト作品への Plex ラベル、あなたの言語での名前、30 件以上の修正。 自分で管理するキーで、MCP 経由でアプリを接続できます。[新機能を見る](https://holyarrs.com/whats-new/)
 
