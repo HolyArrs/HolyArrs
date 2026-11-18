@@ -309,6 +309,33 @@ type slotFilter struct {
 	id   int64
 }
 
+// latestSearchJobsSQL is the query of latestSearchJobs; slotFilterSQL narrows
+// the title's Slots.
+//
+// Each part starts from the releases or the jobs and checks the title's
+// Slots (ts) from there. Joined the other way round, SQLite reads every
+// Release again for each Slot of the title (matched_slot_ids is JSON, so no
+// index leads from a Slot to its Releases), which takes minutes for a long
+// show.
+func latestSearchJobsSQL(slotFilterSQL string) string {
+	return `WITH ts AS MATERIALIZED (
+			SELECT s.id AS id, s.version_id AS version_id, i.part_id AS part_id FROM slots s JOIN items i ON i.id = s.item_id
+			WHERE i.title_id = ?` + slotFilterSQL + `)
+	SELECT max(job_id) FROM (
+		SELECT j.value AS slot, r.job_id AS job_id FROM releases r JOIN json_each(r.matched_slot_ids) j
+			WHERE r.job_id IS NOT NULL AND r.found_by != 'feed' AND j.value IN (SELECT id FROM ts)
+		UNION ALL
+		SELECT ts.id, jb.id FROM jobs jb JOIN ts ON ts.id = json_extract(jb.subject, '$.id')
+			WHERE jb.kind = ? AND json_extract(jb.subject, '$.type') = 'slot'
+			AND EXISTS (SELECT 1 FROM releases r WHERE r.job_id = jb.id)
+		UNION ALL
+		SELECT ts.id, jb.id FROM jobs jb JOIN ts ON ts.part_id = json_extract(jb.subject, '$.id')
+			AND ts.version_id = json_extract(jb.params, '$.version_id')
+			WHERE jb.kind IN (?, ?) AND json_extract(jb.subject, '$.type') = 'part'
+			AND EXISTS (SELECT 1 FROM releases r WHERE r.job_id = jb.id)
+	) GROUP BY slot`
+}
+
 // latestSearchJobs lists the newest search Job of each Slot of a Title: one
 // whose Releases matched the Slot, or a search of the Slot itself, so Releases
 // that matched no Title are listed too.
@@ -319,22 +346,8 @@ func latestSearchJobs(ctx context.Context, db *sql.DB, titleID int64, filters []
 		slotFilterSQL += f.cond
 		slotArg = append(slotArg, f.id)
 	}
-	args := append(append([]any{titleID}, slotArg...), append([]any{jobs.KindSearchSlot, titleID}, slotArg...)...)
-	args = append(args, append([]any{jobs.KindSearchSeason, jobs.KindSearchAlbum, titleID}, slotArg...)...)
-	rows, err := db.QueryContext(ctx, `SELECT max(job_id) FROM (
-		SELECT s.id AS slot, r.job_id AS job_id FROM releases r JOIN json_each(r.matched_slot_ids) j
-			JOIN slots s ON s.id = j.value JOIN items i ON i.id = s.item_id
-			WHERE i.title_id = ? AND r.job_id IS NOT NULL AND r.found_by != 'feed'`+slotFilterSQL+`
-		UNION ALL
-		SELECT s.id, jb.id FROM jobs jb JOIN slots s ON s.id = json_extract(jb.subject, '$.id') JOIN items i ON i.id = s.item_id
-			WHERE jb.kind = ? AND json_extract(jb.subject, '$.type') = 'slot' AND i.title_id = ?`+slotFilterSQL+`
-			AND EXISTS (SELECT 1 FROM releases r WHERE r.job_id = jb.id)
-		UNION ALL
-		SELECT s.id, jb.id FROM jobs jb JOIN items i ON i.part_id = json_extract(jb.subject, '$.id')
-			JOIN slots s ON s.item_id = i.id AND s.version_id = json_extract(jb.params, '$.version_id')
-			WHERE jb.kind IN (?, ?) AND json_extract(jb.subject, '$.type') = 'part' AND i.title_id = ?`+slotFilterSQL+`
-			AND EXISTS (SELECT 1 FROM releases r WHERE r.job_id = jb.id)
-	) GROUP BY slot`, args...)
+	args := append(append([]any{titleID}, slotArg...), jobs.KindSearchSlot, jobs.KindSearchSeason, jobs.KindSearchAlbum)
+	rows, err := db.QueryContext(ctx, latestSearchJobsSQL(slotFilterSQL), args...)
 	if err != nil {
 		return nil, err
 	}
