@@ -316,7 +316,7 @@ type slotFilter struct {
 // Slots (ts) from there. Joined the other way round, SQLite reads every
 // Release again for each Slot of the title (matched_slot_ids is JSON, so no
 // index leads from a Slot to its Releases), which takes minutes for a long
-// show.
+// show. The releases_job index holds every releases column read here.
 func latestSearchJobsSQL(slotFilterSQL string) string {
 	return `WITH ts AS MATERIALIZED (
 			SELECT s.id AS id, s.version_id AS version_id, i.part_id AS part_id FROM slots s JOIN items i ON i.id = s.item_id
